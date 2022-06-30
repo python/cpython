@@ -1,3 +1,0 @@
-Fix a rare interpreter unhandled exception state SystemError only seen when
-using subprocess with a preexec_fn while an after_parent handler has been
-registered with os.register_at_fork and the fork system call fails.

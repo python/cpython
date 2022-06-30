@@ -27,11 +27,13 @@ __credits__ = ('GvR, ESR, Tim Peters, Thomas Wouters, Fred Drake, '
 from builtins import open as _builtin_open
 from codecs import lookup, BOM_UTF8
 import collections
+import functools
 from io import TextIOWrapper
 import itertools as _itertools
 import re
 import sys
 from token import *
+from token import EXACT_TOKEN_TYPES
 
 cookie_re = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
 blank_re = re.compile(br'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
@@ -40,55 +42,6 @@ import token
 __all__ = token.__all__ + ["tokenize", "generate_tokens", "detect_encoding",
                            "untokenize", "TokenInfo"]
 del token
-
-EXACT_TOKEN_TYPES = {
-    '(':   LPAR,
-    ')':   RPAR,
-    '[':   LSQB,
-    ']':   RSQB,
-    ':':   COLON,
-    ',':   COMMA,
-    ';':   SEMI,
-    '+':   PLUS,
-    '-':   MINUS,
-    '*':   STAR,
-    '/':   SLASH,
-    '|':   VBAR,
-    '&':   AMPER,
-    '<':   LESS,
-    '>':   GREATER,
-    '=':   EQUAL,
-    '.':   DOT,
-    '%':   PERCENT,
-    '{':   LBRACE,
-    '}':   RBRACE,
-    '==':  EQEQUAL,
-    '!=':  NOTEQUAL,
-    '<=':  LESSEQUAL,
-    '>=':  GREATEREQUAL,
-    '~':   TILDE,
-    '^':   CIRCUMFLEX,
-    '<<':  LEFTSHIFT,
-    '>>':  RIGHTSHIFT,
-    '**':  DOUBLESTAR,
-    '+=':  PLUSEQUAL,
-    '-=':  MINEQUAL,
-    '*=':  STAREQUAL,
-    '/=':  SLASHEQUAL,
-    '%=':  PERCENTEQUAL,
-    '&=':  AMPEREQUAL,
-    '|=':  VBAREQUAL,
-    '^=':  CIRCUMFLEXEQUAL,
-    '<<=': LEFTSHIFTEQUAL,
-    '>>=': RIGHTSHIFTEQUAL,
-    '**=': DOUBLESTAREQUAL,
-    '//':  DOUBLESLASH,
-    '//=': DOUBLESLASHEQUAL,
-    '...': ELLIPSIS,
-    '->':  RARROW,
-    '@':   AT,
-    '@=':  ATEQUAL,
-}
 
 class TokenInfo(collections.namedtuple('TokenInfo', 'type string start end line')):
     def __repr__(self):
@@ -130,7 +83,7 @@ Number = group(Imagnumber, Floatnumber, Intnumber)
 # Return the empty string, plus all of the valid string prefixes.
 def _all_string_prefixes():
     # The valid string prefixes. Only contain the lower case versions,
-    #  and don't contain any permuations (include 'fr', but not
+    #  and don't contain any permutations (include 'fr', but not
     #  'rf'). The various permutations will be generated.
     _valid_string_prefixes = ['b', 'r', 'u', 'f', 'br', 'fr']
     # if we add binary f-strings, add: ['fb', 'fbr']
@@ -143,6 +96,7 @@ def _all_string_prefixes():
                 result.add(''.join(u))
     return result
 
+@functools.lru_cache
 def _compile(expr):
     return re.compile(expr, re.UNICODE)
 
@@ -163,17 +117,11 @@ Triple = group(StringPrefix + "'''", StringPrefix + '"""')
 String = group(StringPrefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*'",
                StringPrefix + r'"[^\n"\\]*(?:\\.[^\n"\\]*)*"')
 
-# Because of leftmost-then-longest match semantics, be sure to put the
-# longest operators first (e.g., if = came before ==, == would get
-# recognized as two instances of =).
-Operator = group(r"\*\*=?", r">>=?", r"<<=?", r"!=",
-                 r"//=?", r"->",
-                 r"[+\-*/%&@|^=<>]=?",
-                 r"~")
-
-Bracket = '[][(){}]'
-Special = group(r'\r?\n', r'\.\.\.', r'[:;.,@]')
-Funny = group(Operator, Bracket, Special)
+# Sorting in reverse order puts the long operators before their prefixes.
+# Otherwise if = came before ==, == would get recognized as two instances
+# of =.
+Special = group(*map(re.escape, sorted(EXACT_TOKEN_TYPES, reverse=True)))
+Funny = group(r'\r?\n', Special)
 
 PlainToken = group(Number, Funny, String, Name)
 Token = Ignore + PlainToken
@@ -195,6 +143,7 @@ for _prefix in _all_string_prefixes():
     endpats[_prefix + '"'] = Double
     endpats[_prefix + "'''"] = Single3
     endpats[_prefix + '"""'] = Double3
+del _prefix
 
 # A set of all of the single and triple quoted string prefixes,
 #  including the opening quotes.
@@ -205,6 +154,7 @@ for t in _all_string_prefixes():
         single_quoted.add(u)
     for u in (t + '"""', t + "'''"):
         triple_quoted.add(u)
+del t, u
 
 tabsize = 8
 
@@ -469,7 +419,7 @@ def tokenize(readline):
     column where the token begins in the source; a 2-tuple (erow, ecol) of
     ints specifying the row and column where the token ends in the source;
     and the line on which the token was found.  The line passed is the
-    logical line; continuation lines are included.
+    physical line.
 
     The first token sequence will always be an ENCODING token
     which tells you which encoding was used to decode the bytes stream.
@@ -656,7 +606,7 @@ def _tokenize(readline, encoding):
                 pos += 1
 
     # Add an implicit NEWLINE if the input doesn't end in one
-    if last_line and last_line[-1] not in '\r\n':
+    if last_line and last_line[-1] not in '\r\n' and not last_line.strip().startswith("#"):
         yield TokenInfo(NEWLINE, '', (lnum - 1, len(last_line)), (lnum - 1, len(last_line) + 1), '')
     for indent in indents[1:]:                 # pop remaining indent levels
         yield TokenInfo(DEDENT, '', (lnum, 0), (lnum, 0), '')
@@ -731,6 +681,14 @@ def main():
     except Exception as err:
         perror("unexpected error: %s" % err)
         raise
+
+def _generate_tokens_from_c_tokenizer(source):
+    """Tokenize a source reading Python code as unicode strings using the internal C tokenizer"""
+    import _tokenize as c_tokenizer
+    for info in c_tokenizer.TokenizerIter(source):
+        tok, type, lineno, end_lineno, col_off, end_col_off, line = info
+        yield TokenInfo(type, tok, (lineno, col_off), (end_lineno, end_col_off), line)
+
 
 if __name__ == "__main__":
     main()

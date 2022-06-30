@@ -1,2 +1,0 @@
-Fix xml.dom.minidom cloneNode() on a document with an entity: pass the
-correct arguments to the user data handler of an entity.

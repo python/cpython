@@ -2,8 +2,8 @@ import os
 import signal
 import socket
 import sys
-import subprocess
 import time
+import threading
 import unittest
 from unittest import mock
 
@@ -16,7 +16,6 @@ import _winapi
 import asyncio
 from asyncio import windows_events
 from test.test_asyncio import utils as test_utils
-from test.support.script_helper import spawn_python
 
 
 def tearDownModule():
@@ -38,20 +37,46 @@ class UpperProto(asyncio.Protocol):
 
 
 class ProactorLoopCtrlC(test_utils.TestCase):
-    def test_ctrl_c(self):
-        from .test_ctrl_c_in_proactor_loop_helper import __file__ as f
 
-        # ctrl-c will be sent to all processes that share the same console
-        # in order to isolate the effect of raising ctrl-c we'll create
-        # a process with a new console
-        flags = subprocess.CREATE_NEW_CONSOLE
-        with spawn_python(f, creationflags=flags) as p:
-            try:
-                exit_code = p.wait(timeout=5)
-                self.assertEqual(exit_code, 255)
-            except:
-                p.kill()
-                raise
+    def test_ctrl_c(self):
+
+        def SIGINT_after_delay():
+            time.sleep(0.1)
+            signal.raise_signal(signal.SIGINT)
+
+        thread = threading.Thread(target=SIGINT_after_delay)
+        loop = asyncio.new_event_loop()
+        try:
+            # only start the loop once the event loop is running
+            loop.call_soon(thread.start)
+            loop.run_forever()
+            self.fail("should not fall through 'run_forever'")
+        except KeyboardInterrupt:
+            pass
+        finally:
+            self.close_loop(loop)
+        thread.join()
+
+
+class ProactorMultithreading(test_utils.TestCase):
+    def test_run_from_nonmain_thread(self):
+        finished = False
+
+        async def coro():
+            await asyncio.sleep(0)
+
+        def func():
+            nonlocal finished
+            loop = asyncio.new_event_loop()
+            loop.run_until_complete(coro())
+            # close() must not call signal.set_wakeup_fd()
+            loop.close()
+            finished = True
+
+        thread = threading.Thread(target=func)
+        thread.start()
+        thread.join()
+        self.assertTrue(finished)
 
 
 class ProactorTests(test_utils.TestCase):
@@ -185,6 +210,34 @@ class ProactorTests(test_utils.TestCase):
         fut = self.loop._proactor.wait_for_handle(event)
         fut.cancel()
         fut.cancel()
+
+    def test_read_self_pipe_restart(self):
+        # Regression test for https://bugs.python.org/issue39010
+        # Previously, restarting a proactor event loop in certain states
+        # would lead to spurious ConnectionResetErrors being logged.
+        self.loop.call_exception_handler = mock.Mock()
+        # Start an operation in another thread so that the self-pipe is used.
+        # This is theoretically timing-dependent (the task in the executor
+        # must complete before our start/stop cycles), but in practice it
+        # seems to work every time.
+        f = self.loop.run_in_executor(None, lambda: None)
+        self.loop.stop()
+        self.loop.run_forever()
+        self.loop.stop()
+        self.loop.run_forever()
+
+        # Shut everything down cleanly. This is an important part of the
+        # test - in issue 39010, the error occurred during loop.close(),
+        # so we want to close the loop during the test instead of leaving
+        # it for tearDown.
+        #
+        # First wait for f to complete to avoid a "future's result was never
+        # retrieved" error.
+        self.loop.run_until_complete(f)
+        # Now shut down the loop itself (self.close_loop also shuts down the
+        # loop's default executor).
+        self.close_loop(self.loop)
+        self.assertFalse(self.loop.call_exception_handler.called)
 
 
 class WinPolicyTests(test_utils.TestCase):

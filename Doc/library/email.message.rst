@@ -178,7 +178,7 @@ message objects.
 
    .. method:: __contains__(name)
 
-      Return true if the message object has a field named *name*. Matching is
+      Return ``True`` if the message object has a field named *name*. Matching is
       done without regard to case and *name* does not include the trailing
       colon.  Used for the ``in`` operator.  For example::
 
@@ -487,7 +487,6 @@ message objects.
          from email import message_from_binary_file
          with open('../Lib/test/test_email/data/msg_16.txt', 'rb') as f:
              msg = message_from_binary_file(f)
-         from email.iterators import _structure
 
       .. doctest::
 
@@ -509,6 +508,7 @@ message objects.
 
       .. doctest::
 
+         >>> from email.iterators import _structure
          >>> for part in msg.walk():
          ...     print(part.get_content_maintype() == 'multipart',
          ...           part.is_multipart())

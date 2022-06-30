@@ -539,7 +539,6 @@ locale to the ``LC_NUMERIC`` locale to decode ``decimal_point`` and
 ``thousands_sep`` byte strings if they are non-ASCII or longer than 1 byte,
 and the ``LC_NUMERIC`` locale is different than the ``LC_CTYPE`` locale.
 This temporary change affects other threads.
-
 Same change for the :meth:`str.format` method when formatting a number
 (:class:`int`, :class:`float`, :class:`float` and subclasses) with the ``n``
 type (ex: ``'{:n}'.format(1234)``).

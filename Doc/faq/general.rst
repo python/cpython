@@ -17,12 +17,13 @@ What is Python?
 
 Python is an interpreted, interactive, object-oriented programming language.  It
 incorporates modules, exceptions, dynamic typing, very high level dynamic data
-types, and classes.  Python combines remarkable power with very clear syntax.
-It has interfaces to many system calls and libraries, as well as to various
-window systems, and is extensible in C or C++.  It is also usable as an
-extension language for applications that need a programmable interface.
-Finally, Python is portable: it runs on many Unix variants, on the Mac, and on
-Windows 2000 and later.
+types, and classes.  It supports multiple programming paradigms beyond
+object-oriented programming, such as procedural and functional programming.
+Python combines remarkable power with very clear syntax. It has interfaces to
+many system calls and libraries, as well as to various window systems, and is
+extensible in C or C++.  It is also usable as an extension language for
+applications that need a programmable interface. Finally, Python is portable:
+it runs on many Unix variants including Linux and macOS, and on Windows.
 
 To find out more, start with :ref:`tutorial-index`.  The `Beginner's Guide to
 Python <https://wiki.python.org/moin/BeginnersGuide>`_ links to other
@@ -112,7 +113,7 @@ to many different classes of problems.
 
 The language comes with a large standard library that covers areas such as
 string processing (regular expressions, Unicode, calculating differences between
-files), Internet protocols (HTTP, FTP, SMTP, XML-RPC, POP, IMAP, CGI
+files), internet protocols (HTTP, FTP, SMTP, XML-RPC, POP, IMAP, CGI
 programming), software engineering (unit testing, logging, profiling, parsing
 Python code), and operating system interfaces (system calls, filesystems, TCP/IP
 sockets).  Look at the table of contents for :ref:`library-index` to get an idea
@@ -141,9 +142,9 @@ to fix critical bugs.
 Alpha, beta and release candidate versions have an additional suffix.  The
 suffix for an alpha version is "aN" for some small number N, the suffix for a
 beta version is "bN" for some small number N, and the suffix for a release
-candidate version is "cN" for some small number N.  In other words, all versions
+candidate version is "rcN" for some small number N.  In other words, all versions
 labeled 2.0aN precede the versions labeled 2.0bN, which precede versions labeled
-2.0cN, and *those* precede 2.0.
+2.0rcN, and *those* precede 2.0.
 
 You may also find version numbers with a "+" suffix, e.g. "2.2+".  These are
 unreleased versions, built directly from the CPython development repository.  In
@@ -229,14 +230,8 @@ You can also access the development version of Python through Git.  See
 How do I submit bug reports and patches for Python?
 ---------------------------------------------------
 
-To report a bug or submit a patch, please use the Roundup installation at
-https://bugs.python.org/.
-
-You must have a Roundup account to report bugs; this makes it possible for us to
-contact you if we have follow-up questions.  It will also enable Roundup to send
-you updates as we act on your bug. If you had previously used SourceForge to
-report bugs to Python, you can obtain your Roundup password through Roundup's
-`password reset procedure <https://bugs.python.org/user?@template=forgotten>`_.
+To report a bug or submit a patch, use the issue tracker at
+https://github.com/python/cpython/issues.
 
 For more information on how Python is developed, consult `the Python Developer's
 Guide <https://devguide.python.org/>`_.
@@ -268,14 +263,8 @@ Python references; or perhaps search for "Python" and "language".
 Where in the world is www.python.org located?
 ---------------------------------------------
 
-The Python project's infrastructure is located all over the world.
-`www.python.org <https://www.python.org>`_ is graciously hosted by `Rackspace
-<https://www.rackspace.com>`_, with CDN caching provided by `Fastly
-<https://www.fastly.com>`_.  `Upfront Systems
-<http://www.upfrontsoftware.co.za>`_ hosts `bugs.python.org
-<https://bugs.python.org>`_.  Many other Python services like `the Wiki
-<https://wiki.python.org>`_ are hosted by `Oregon State
-University Open Source Lab <https://osuosl.org>`_.
+The Python project's infrastructure is located all over the world and is managed
+by the Python Infrastructure Team. Details `here <http://infra.psf.io>`__.
 
 
 Why is it called Python?
@@ -301,8 +290,8 @@ How stable is Python?
 ---------------------
 
 Very stable.  New, stable releases have been coming out roughly every 6 to 18
-months since 1991, and this seems likely to continue.  Currently there are
-usually around 18 months between major releases.
+months since 1991, and this seems likely to continue.  As of version 3.9,
+Python will have a major new release every 12 months (:pep:`602`).
 
 The developers issue "bugfix" releases of older versions, so the stability of
 existing releases gradually improves.  Bugfix releases, indicated by a third
@@ -312,20 +301,16 @@ guaranteed that interfaces will remain the same throughout a series of bugfix
 releases.
 
 The latest stable releases can always be found on the `Python download page
-<https://www.python.org/downloads/>`_.  There are two production-ready version
-of Python: 2.x and 3.x, but the recommended one at this times is Python 3.x.
-Although Python 2.x is still widely used, `it will not be
-maintained after January 1, 2020 <https://www.python.org/dev/peps/pep-0373/>`_.
-Python 2.x was known for having more third-party libraries available, however,
-by the time of this writing, most of the widely used libraries support Python 3.x,
-and some are even dropping the Python 2.x support.
-
+<https://www.python.org/downloads/>`_.  There are two production-ready versions
+of Python: 2.x and 3.x. The recommended version is 3.x, which is supported by
+most widely used libraries.  Although 2.x is still widely used, `it is not
+maintained anymore <https://peps.python.org/pep-0373/>`_.
 
 How many people are using Python?
 ---------------------------------
 
-There are probably tens of thousands of users, though it's difficult to obtain
-an exact count.
+There are probably millions of users, though it's difficult to obtain an exact
+count.
 
 Python is available for free download, so there are no sales figures, and it's
 available from many different sites and packaged with many Linux distributions,
@@ -354,7 +339,7 @@ include Google, Yahoo, and Lucasfilm Ltd.
 What new developments are expected for Python in the future?
 ------------------------------------------------------------
 
-See https://www.python.org/dev/peps/ for the Python Enhancement Proposals
+See https://peps.python.org/ for the Python Enhancement Proposals
 (PEPs). PEPs are design documents describing a suggested new feature for Python,
 providing a concise technical specification and a rationale.  Look for a PEP
 titled "Python X.Y Release Schedule", where X.Y is a version that hasn't been

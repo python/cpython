@@ -1,5 +1,6 @@
 """Tests for selector_events.py"""
 
+import sys
 import selectors
 import socket
 import unittest
@@ -70,44 +71,6 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
 
         close_transport(transport)
 
-    @unittest.skipIf(ssl is None, 'No ssl module')
-    def test_make_ssl_transport(self):
-        m = mock.Mock()
-        self.loop._add_reader = mock.Mock()
-        self.loop._add_reader._is_coroutine = False
-        self.loop._add_writer = mock.Mock()
-        self.loop._remove_reader = mock.Mock()
-        self.loop._remove_writer = mock.Mock()
-        waiter = asyncio.Future(loop=self.loop)
-        with test_utils.disable_logger():
-            transport = self.loop._make_ssl_transport(
-                m, asyncio.Protocol(), m, waiter)
-
-            with self.assertRaisesRegex(RuntimeError,
-                                        r'SSL transport.*not.*initialized'):
-                transport.is_reading()
-
-            # execute the handshake while the logger is disabled
-            # to ignore SSL handshake failure
-            test_utils.run_briefly(self.loop)
-
-        self.assertTrue(transport.is_reading())
-        transport.pause_reading()
-        transport.pause_reading()
-        self.assertFalse(transport.is_reading())
-        transport.resume_reading()
-        transport.resume_reading()
-        self.assertTrue(transport.is_reading())
-
-        # Sanity check
-        class_name = transport.__class__.__name__
-        self.assertIn("ssl", class_name.lower())
-        self.assertIn("transport", class_name.lower())
-
-        transport.close()
-        # execute pending callbacks to close the socket transport
-        test_utils.run_briefly(self.loop)
-
     @mock.patch('asyncio.selector_events.ssl', None)
     @mock.patch('asyncio.sslproto.ssl', None)
     def test_make_ssl_transport_without_ssl_error(self):
@@ -154,7 +117,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.loop.close()
 
         # operation blocked when the loop is closed
-        f = asyncio.Future(loop=self.loop)
+        f = self.loop.create_future()
         self.assertRaises(RuntimeError, self.loop.run_forever)
         self.assertRaises(RuntimeError, self.loop.run_until_complete, f)
         fd = 0
@@ -187,6 +150,24 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         # _write_to_self() swallows OSError
         self.loop._csock.send.side_effect = RuntimeError()
         self.assertRaises(RuntimeError, self.loop._write_to_self)
+
+    @mock.patch('socket.getaddrinfo')
+    def test_sock_connect_resolve_using_socket_params(self, m_gai):
+        addr = ('need-resolution.com', 8080)
+        for sock_type in [socket.SOCK_STREAM, socket.SOCK_DGRAM]:
+            with self.subTest(sock_type):
+                sock = test_utils.mock_nonblocking_socket(type=sock_type)
+
+                m_gai.side_effect = \
+                    lambda *args: [(None, None, None, None, ('127.0.0.1', 0))]
+
+                con = self.loop.create_task(self.loop.sock_connect(sock, addr))
+                self.loop.run_until_complete(con)
+                m_gai.assert_called_with(
+                    addr[0], addr[1], sock.family, sock.type, sock.proto, 0)
+
+                self.loop.run_until_complete(con)
+                sock.connect.assert_called_with(('127.0.0.1', 0))
 
     def test_add_reader(self):
         self.loop._selector.get_key.side_effect = KeyError
@@ -363,14 +344,16 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         sock.accept.return_value = (mock.Mock(), mock.Mock())
         backlog = 100
         # Mock the coroutine generation for a connection to prevent
-        # warnings related to un-awaited coroutines.
+        # warnings related to un-awaited coroutines. _accept_connection2
+        # is an async function that is patched with AsyncMock. create_task
+        # creates a task out of coroutine returned by AsyncMock, so use
+        # asyncio.sleep(0) to ensure created tasks are complete to avoid
+        # task pending warnings.
         mock_obj = mock.patch.object
         with mock_obj(self.loop, '_accept_connection2') as accept2_mock:
-            accept2_mock.return_value = None
-            with mock_obj(self.loop, 'create_task') as task_mock:
-                task_mock.return_value = None
-                self.loop._accept_connection(
-                    mock.Mock(), sock, backlog=backlog)
+            self.loop._accept_connection(
+                mock.Mock(), sock, backlog=backlog)
+        self.loop.run_until_complete(asyncio.sleep(0))
         self.assertEqual(sock.accept.call_count, backlog)
 
 
@@ -448,10 +431,23 @@ class SelectorTransportTests(test_utils.TestCase):
         tr._force_close = mock.Mock()
         tr._fatal_error(exc)
 
+        m_exc.assert_not_called()
+
+        tr._force_close.assert_called_with(exc)
+
+    @mock.patch('asyncio.log.logger.error')
+    def test_fatal_error_custom_exception(self, m_exc):
+        class MyError(Exception):
+            pass
+        exc = MyError()
+        tr = self.create_transport()
+        tr._force_close = mock.Mock()
+        tr._fatal_error(exc)
+
         m_exc.assert_called_with(
             test_utils.MockPattern(
                 'Fatal error on transport\nprotocol:.*\ntransport:.*'),
-            exc_info=(OSError, MOCK_ANY, MOCK_ANY))
+            exc_info=(MyError, MOCK_ANY, MOCK_ANY))
 
         tr._force_close.assert_called_with(exc)
 
@@ -501,7 +497,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         return transport
 
     def test_ctor(self):
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         tr = self.socket_transport(waiter=waiter)
         self.loop.run_until_complete(waiter)
 
@@ -510,7 +506,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.protocol.connection_made.assert_called_with(tr)
 
     def test_ctor_with_waiter(self):
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         self.socket_transport(waiter=waiter)
         self.loop.run_until_complete(waiter)
 
@@ -789,6 +785,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.sock.close.assert_called_with()
         self.protocol.connection_lost.assert_called_with(None)
 
+    @unittest.skipIf(sys.flags.optimize, "Assertions are disabled in optimized mode")
     def test_write_ready_no_data(self):
         transport = self.socket_transport()
         # This is an internal error.
@@ -896,7 +893,7 @@ class SelectorSocketTransportBufferedProtocolTests(test_utils.TestCase):
         return transport
 
     def test_ctor(self):
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         tr = self.socket_transport(waiter=waiter)
         self.loop.run_until_complete(waiter)
 
@@ -1065,6 +1062,7 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
         self.sock.fileno.return_value = 7
 
     def datagram_transport(self, address=None):
+        self.sock.getpeername.side_effect = None if address else OSError
         transport = _SelectorDatagramTransport(self.loop, self.sock,
                                                self.protocol,
                                                address=address)
@@ -1337,10 +1335,20 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
         err = ConnectionRefusedError()
         transport._fatal_error(err)
         self.assertFalse(self.protocol.error_received.called)
+        m_exc.assert_not_called()
+
+    @mock.patch('asyncio.base_events.logger.error')
+    def test_fatal_error_connected_custom_error(self, m_exc):
+        class MyException(Exception):
+            pass
+        transport = self.datagram_transport(address=('0.0.0.0', 1))
+        err = MyException()
+        transport._fatal_error(err)
+        self.assertFalse(self.protocol.error_received.called)
         m_exc.assert_called_with(
             test_utils.MockPattern(
                 'Fatal error on transport\nprotocol:.*\ntransport:.*'),
-            exc_info=(ConnectionRefusedError, MOCK_ANY, MOCK_ANY))
+            exc_info=(MyException, MOCK_ANY, MOCK_ANY))
 
 
 if __name__ == '__main__':

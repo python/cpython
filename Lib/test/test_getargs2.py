@@ -3,8 +3,10 @@ import math
 import string
 import sys
 from test import support
+from test.support import import_helper
+from test.support import warnings_helper
 # Skip this test if the _testcapi module isn't available.
-_testcapi = support.import_module('_testcapi')
+_testcapi = import_helper.import_module('_testcapi')
 from _testcapi import getargs_keywords, getargs_keyword_only
 
 # > How about the following counterproposal. This also changes some of
@@ -52,6 +54,27 @@ NAN = float('nan')
 LLONG_MAX = 2**63-1
 LLONG_MIN = -2**63
 ULLONG_MAX = 2**64-1
+
+class Index:
+    def __index__(self):
+        return 99
+
+class IndexIntSubclass(int):
+    def __index__(self):
+        return 99
+
+class BadIndex:
+    def __index__(self):
+        return 1.0
+
+class BadIndex2:
+    def __index__(self):
+        return True
+
+class BadIndex3(int):
+    def __index__(self):
+        return True
+
 
 class Int:
     def __int__(self):
@@ -134,11 +157,16 @@ class Unsigned_TestCase(unittest.TestCase):
         from _testcapi import getargs_b
         # b returns 'unsigned char', and does range checking (0 ... UCHAR_MAX)
         self.assertRaises(TypeError, getargs_b, 3.14)
-        self.assertEqual(99, getargs_b(Int()))
+        self.assertEqual(99, getargs_b(Index()))
+        self.assertEqual(0, getargs_b(IndexIntSubclass()))
+        self.assertRaises(TypeError, getargs_b, BadIndex())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(1, getargs_b(BadIndex2()))
+        self.assertEqual(0, getargs_b(BadIndex3()))
+        self.assertRaises(TypeError, getargs_b, Int())
         self.assertEqual(0, getargs_b(IntSubclass()))
         self.assertRaises(TypeError, getargs_b, BadInt())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(1, getargs_b(BadInt2()))
+        self.assertRaises(TypeError, getargs_b, BadInt2())
         self.assertEqual(0, getargs_b(BadInt3()))
 
         self.assertRaises(OverflowError, getargs_b, -1)
@@ -153,11 +181,16 @@ class Unsigned_TestCase(unittest.TestCase):
         from _testcapi import getargs_B
         # B returns 'unsigned char', no range checking
         self.assertRaises(TypeError, getargs_B, 3.14)
-        self.assertEqual(99, getargs_B(Int()))
+        self.assertEqual(99, getargs_B(Index()))
+        self.assertEqual(0, getargs_B(IndexIntSubclass()))
+        self.assertRaises(TypeError, getargs_B, BadIndex())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(1, getargs_B(BadIndex2()))
+        self.assertEqual(0, getargs_B(BadIndex3()))
+        self.assertRaises(TypeError, getargs_B, Int())
         self.assertEqual(0, getargs_B(IntSubclass()))
         self.assertRaises(TypeError, getargs_B, BadInt())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(1, getargs_B(BadInt2()))
+        self.assertRaises(TypeError, getargs_B, BadInt2())
         self.assertEqual(0, getargs_B(BadInt3()))
 
         self.assertEqual(UCHAR_MAX, getargs_B(-1))
@@ -172,11 +205,16 @@ class Unsigned_TestCase(unittest.TestCase):
         from _testcapi import getargs_H
         # H returns 'unsigned short', no range checking
         self.assertRaises(TypeError, getargs_H, 3.14)
-        self.assertEqual(99, getargs_H(Int()))
+        self.assertEqual(99, getargs_H(Index()))
+        self.assertEqual(0, getargs_H(IndexIntSubclass()))
+        self.assertRaises(TypeError, getargs_H, BadIndex())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(1, getargs_H(BadIndex2()))
+        self.assertEqual(0, getargs_H(BadIndex3()))
+        self.assertRaises(TypeError, getargs_H, Int())
         self.assertEqual(0, getargs_H(IntSubclass()))
         self.assertRaises(TypeError, getargs_H, BadInt())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(1, getargs_H(BadInt2()))
+        self.assertRaises(TypeError, getargs_H, BadInt2())
         self.assertEqual(0, getargs_H(BadInt3()))
 
         self.assertEqual(USHRT_MAX, getargs_H(-1))
@@ -192,11 +230,16 @@ class Unsigned_TestCase(unittest.TestCase):
         from _testcapi import getargs_I
         # I returns 'unsigned int', no range checking
         self.assertRaises(TypeError, getargs_I, 3.14)
-        self.assertEqual(99, getargs_I(Int()))
+        self.assertEqual(99, getargs_I(Index()))
+        self.assertEqual(0, getargs_I(IndexIntSubclass()))
+        self.assertRaises(TypeError, getargs_I, BadIndex())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(1, getargs_I(BadIndex2()))
+        self.assertEqual(0, getargs_I(BadIndex3()))
+        self.assertRaises(TypeError, getargs_I, Int())
         self.assertEqual(0, getargs_I(IntSubclass()))
         self.assertRaises(TypeError, getargs_I, BadInt())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(1, getargs_I(BadInt2()))
+        self.assertRaises(TypeError, getargs_I, BadInt2())
         self.assertEqual(0, getargs_I(BadInt3()))
 
         self.assertEqual(UINT_MAX, getargs_I(-1))
@@ -213,6 +256,11 @@ class Unsigned_TestCase(unittest.TestCase):
         # k returns 'unsigned long', no range checking
         # it does not accept float, or instances with __int__
         self.assertRaises(TypeError, getargs_k, 3.14)
+        self.assertRaises(TypeError, getargs_k, Index())
+        self.assertEqual(0, getargs_k(IndexIntSubclass()))
+        self.assertRaises(TypeError, getargs_k, BadIndex())
+        self.assertRaises(TypeError, getargs_k, BadIndex2())
+        self.assertEqual(0, getargs_k(BadIndex3()))
         self.assertRaises(TypeError, getargs_k, Int())
         self.assertEqual(0, getargs_k(IntSubclass()))
         self.assertRaises(TypeError, getargs_k, BadInt())
@@ -233,11 +281,16 @@ class Signed_TestCase(unittest.TestCase):
         from _testcapi import getargs_h
         # h returns 'short', and does range checking (SHRT_MIN ... SHRT_MAX)
         self.assertRaises(TypeError, getargs_h, 3.14)
-        self.assertEqual(99, getargs_h(Int()))
+        self.assertEqual(99, getargs_h(Index()))
+        self.assertEqual(0, getargs_h(IndexIntSubclass()))
+        self.assertRaises(TypeError, getargs_h, BadIndex())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(1, getargs_h(BadIndex2()))
+        self.assertEqual(0, getargs_h(BadIndex3()))
+        self.assertRaises(TypeError, getargs_h, Int())
         self.assertEqual(0, getargs_h(IntSubclass()))
         self.assertRaises(TypeError, getargs_h, BadInt())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(1, getargs_h(BadInt2()))
+        self.assertRaises(TypeError, getargs_h, BadInt2())
         self.assertEqual(0, getargs_h(BadInt3()))
 
         self.assertRaises(OverflowError, getargs_h, SHRT_MIN-1)
@@ -252,11 +305,16 @@ class Signed_TestCase(unittest.TestCase):
         from _testcapi import getargs_i
         # i returns 'int', and does range checking (INT_MIN ... INT_MAX)
         self.assertRaises(TypeError, getargs_i, 3.14)
-        self.assertEqual(99, getargs_i(Int()))
+        self.assertEqual(99, getargs_i(Index()))
+        self.assertEqual(0, getargs_i(IndexIntSubclass()))
+        self.assertRaises(TypeError, getargs_i, BadIndex())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(1, getargs_i(BadIndex2()))
+        self.assertEqual(0, getargs_i(BadIndex3()))
+        self.assertRaises(TypeError, getargs_i, Int())
         self.assertEqual(0, getargs_i(IntSubclass()))
         self.assertRaises(TypeError, getargs_i, BadInt())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(1, getargs_i(BadInt2()))
+        self.assertRaises(TypeError, getargs_i, BadInt2())
         self.assertEqual(0, getargs_i(BadInt3()))
 
         self.assertRaises(OverflowError, getargs_i, INT_MIN-1)
@@ -271,11 +329,16 @@ class Signed_TestCase(unittest.TestCase):
         from _testcapi import getargs_l
         # l returns 'long', and does range checking (LONG_MIN ... LONG_MAX)
         self.assertRaises(TypeError, getargs_l, 3.14)
-        self.assertEqual(99, getargs_l(Int()))
+        self.assertEqual(99, getargs_l(Index()))
+        self.assertEqual(0, getargs_l(IndexIntSubclass()))
+        self.assertRaises(TypeError, getargs_l, BadIndex())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(1, getargs_l(BadIndex2()))
+        self.assertEqual(0, getargs_l(BadIndex3()))
+        self.assertRaises(TypeError, getargs_l, Int())
         self.assertEqual(0, getargs_l(IntSubclass()))
         self.assertRaises(TypeError, getargs_l, BadInt())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(1, getargs_l(BadInt2()))
+        self.assertRaises(TypeError, getargs_l, BadInt2())
         self.assertEqual(0, getargs_l(BadInt3()))
 
         self.assertRaises(OverflowError, getargs_l, LONG_MIN-1)
@@ -291,6 +354,12 @@ class Signed_TestCase(unittest.TestCase):
         # n returns 'Py_ssize_t', and does range checking
         # (PY_SSIZE_T_MIN ... PY_SSIZE_T_MAX)
         self.assertRaises(TypeError, getargs_n, 3.14)
+        self.assertEqual(99, getargs_n(Index()))
+        self.assertEqual(0, getargs_n(IndexIntSubclass()))
+        self.assertRaises(TypeError, getargs_n, BadIndex())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(1, getargs_n(BadIndex2()))
+        self.assertEqual(0, getargs_n(BadIndex3()))
         self.assertRaises(TypeError, getargs_n, Int())
         self.assertEqual(0, getargs_n(IntSubclass()))
         self.assertRaises(TypeError, getargs_n, BadInt())
@@ -313,11 +382,16 @@ class LongLong_TestCase(unittest.TestCase):
         # ... LLONG_MAX)
         self.assertRaises(TypeError, getargs_L, 3.14)
         self.assertRaises(TypeError, getargs_L, "Hello")
-        self.assertEqual(99, getargs_L(Int()))
+        self.assertEqual(99, getargs_L(Index()))
+        self.assertEqual(0, getargs_L(IndexIntSubclass()))
+        self.assertRaises(TypeError, getargs_L, BadIndex())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(1, getargs_L(BadIndex2()))
+        self.assertEqual(0, getargs_L(BadIndex3()))
+        self.assertRaises(TypeError, getargs_L, Int())
         self.assertEqual(0, getargs_L(IntSubclass()))
         self.assertRaises(TypeError, getargs_L, BadInt())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(1, getargs_L(BadInt2()))
+        self.assertRaises(TypeError, getargs_L, BadInt2())
         self.assertEqual(0, getargs_L(BadInt3()))
 
         self.assertRaises(OverflowError, getargs_L, LLONG_MIN-1)
@@ -332,6 +406,11 @@ class LongLong_TestCase(unittest.TestCase):
         from _testcapi import getargs_K
         # K return 'unsigned long long', no range checking
         self.assertRaises(TypeError, getargs_K, 3.14)
+        self.assertRaises(TypeError, getargs_K, Index())
+        self.assertEqual(0, getargs_K(IndexIntSubclass()))
+        self.assertRaises(TypeError, getargs_K, BadIndex())
+        self.assertRaises(TypeError, getargs_K, BadIndex2())
+        self.assertEqual(0, getargs_K(BadIndex3()))
         self.assertRaises(TypeError, getargs_K, Int())
         self.assertEqual(0, getargs_K(IntSubclass()))
         self.assertRaises(TypeError, getargs_K, BadInt())
@@ -364,6 +443,8 @@ class Float_TestCase(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(getargs_f(BadFloat2()), 4.25)
         self.assertEqual(getargs_f(BadFloat3(7.5)), 7.5)
+        self.assertEqual(getargs_f(Index()), 99.0)
+        self.assertRaises(TypeError, getargs_f, Int())
 
         for x in (FLT_MIN, -FLT_MIN, FLT_MAX, -FLT_MAX, INF, -INF):
             self.assertEqual(getargs_f(x), x)
@@ -396,6 +477,8 @@ class Float_TestCase(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(getargs_d(BadFloat2()), 4.25)
         self.assertEqual(getargs_d(BadFloat3(7.5)), 7.5)
+        self.assertEqual(getargs_d(Index()), 99.0)
+        self.assertRaises(TypeError, getargs_d, Int())
 
         for x in (DBL_MIN, -DBL_MIN, DBL_MAX, -DBL_MAX, INF, -INF):
             self.assertEqual(getargs_d(x), x)
@@ -418,6 +501,8 @@ class Float_TestCase(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(getargs_D(BadComplex2()), 4.25+0.5j)
         self.assertEqual(getargs_D(BadComplex3(7.5+0.25j)), 7.5+0.25j)
+        self.assertEqual(getargs_D(Index()), 99.0+0j)
+        self.assertRaises(TypeError, getargs_D, Int())
 
         for x in (DBL_MIN, -DBL_MIN, DBL_MAX, -DBL_MAX, INF, -INF):
             c = complex(x, 1.0)
@@ -789,6 +874,13 @@ class String_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_s_hash, memoryview(b'memoryview'))
         self.assertRaises(TypeError, getargs_s_hash, None)
 
+    def test_s_hash_int(self):
+        # "s#" without PY_SSIZE_T_CLEAN defined.
+        from _testcapi import getargs_s_hash_int
+        self.assertRaises(SystemError, getargs_s_hash_int, "abc")
+        self.assertRaises(SystemError, getargs_s_hash_int, x=42)
+        # getargs_s_hash_int() don't raise SystemError because skipitem() is not called.
+
     def test_z(self):
         from _testcapi import getargs_z
         self.assertEqual(getargs_z('abc\xe9'), b'abc\xc3\xa9')
@@ -892,41 +984,69 @@ class String_TestCase(unittest.TestCase):
         buf = bytearray()
         self.assertRaises(ValueError, getargs_et_hash, 'abc\xe9', 'latin1', buf)
 
+    @support.requires_legacy_unicode_capi
     def test_u(self):
         from _testcapi import getargs_u
-        self.assertEqual(getargs_u('abc\xe9'), 'abc\xe9')
-        self.assertRaises(ValueError, getargs_u, 'nul:\0')
-        self.assertRaises(TypeError, getargs_u, b'bytes')
-        self.assertRaises(TypeError, getargs_u, bytearray(b'bytearray'))
-        self.assertRaises(TypeError, getargs_u, memoryview(b'memoryview'))
-        self.assertRaises(TypeError, getargs_u, None)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(getargs_u('abc\xe9'), 'abc\xe9')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(ValueError, getargs_u, 'nul:\0')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_u, b'bytes')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_u, bytearray(b'bytearray'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_u, memoryview(b'memoryview'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_u, None)
 
+    @support.requires_legacy_unicode_capi
     def test_u_hash(self):
         from _testcapi import getargs_u_hash
-        self.assertEqual(getargs_u_hash('abc\xe9'), 'abc\xe9')
-        self.assertEqual(getargs_u_hash('nul:\0'), 'nul:\0')
-        self.assertRaises(TypeError, getargs_u_hash, b'bytes')
-        self.assertRaises(TypeError, getargs_u_hash, bytearray(b'bytearray'))
-        self.assertRaises(TypeError, getargs_u_hash, memoryview(b'memoryview'))
-        self.assertRaises(TypeError, getargs_u_hash, None)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(getargs_u_hash('abc\xe9'), 'abc\xe9')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(getargs_u_hash('nul:\0'), 'nul:\0')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_u_hash, b'bytes')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_u_hash, bytearray(b'bytearray'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_u_hash, memoryview(b'memoryview'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_u_hash, None)
 
+    @support.requires_legacy_unicode_capi
     def test_Z(self):
         from _testcapi import getargs_Z
-        self.assertEqual(getargs_Z('abc\xe9'), 'abc\xe9')
-        self.assertRaises(ValueError, getargs_Z, 'nul:\0')
-        self.assertRaises(TypeError, getargs_Z, b'bytes')
-        self.assertRaises(TypeError, getargs_Z, bytearray(b'bytearray'))
-        self.assertRaises(TypeError, getargs_Z, memoryview(b'memoryview'))
-        self.assertIsNone(getargs_Z(None))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(getargs_Z('abc\xe9'), 'abc\xe9')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(ValueError, getargs_Z, 'nul:\0')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_Z, b'bytes')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_Z, bytearray(b'bytearray'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_Z, memoryview(b'memoryview'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsNone(getargs_Z(None))
 
+    @support.requires_legacy_unicode_capi
     def test_Z_hash(self):
         from _testcapi import getargs_Z_hash
-        self.assertEqual(getargs_Z_hash('abc\xe9'), 'abc\xe9')
-        self.assertEqual(getargs_Z_hash('nul:\0'), 'nul:\0')
-        self.assertRaises(TypeError, getargs_Z_hash, b'bytes')
-        self.assertRaises(TypeError, getargs_Z_hash, bytearray(b'bytearray'))
-        self.assertRaises(TypeError, getargs_Z_hash, memoryview(b'memoryview'))
-        self.assertIsNone(getargs_Z_hash(None))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(getargs_Z_hash('abc\xe9'), 'abc\xe9')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(getargs_Z_hash('nul:\0'), 'nul:\0')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_Z_hash, b'bytes')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_Z_hash, bytearray(b'bytearray'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_Z_hash, memoryview(b'memoryview'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsNone(getargs_Z_hash(None))
 
 
 class Object_TestCase(unittest.TestCase):
@@ -965,6 +1085,8 @@ class Test6012(unittest.TestCase):
 
 class SkipitemTest(unittest.TestCase):
 
+    # u, and Z raises DeprecationWarning
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_skipitem(self):
         """
         If this test failed, you probably added a new "format unit"
@@ -1040,7 +1162,7 @@ class SkipitemTest(unittest.TestCase):
         dict_b = {'b':1}
         keywords = ["a", "b"]
 
-        supported = ('s#', 's*', 'z#', 'z*', 'u#', 'Z#', 'y#', 'y*', 'w#', 'w*')
+        supported = ('s#', 's*', 'z#', 'z*', 'y#', 'y*', 'w#', 'w*')
         for c in string.ascii_letters:
             for c2 in '#*':
                 f = c + c2

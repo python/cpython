@@ -57,7 +57,7 @@ ffi_call_unix64(
 	of SSESF, SSEDF classes, that are basically SSE class, just gcc will
 	use SF or DFmode move instead of DImode to avoid reformating penalties.
 
-	Similary we play games with INTEGERSI_CLASS to use cheaper SImode moves
+	Similarly we play games with INTEGERSI_CLASS to use cheaper SImode moves
 	whenever possible (upper half does contain padding).  */
 enum x86_64_reg_class
 {

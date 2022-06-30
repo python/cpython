@@ -162,10 +162,10 @@ Windows improvements:
 
 * A ``._pth`` file can be added to force isolated mode and fully specify
   all search paths to avoid registry and environment lookup. See
-  :ref:`the documentation <finding_modules>` for more information.
+  :ref:`the documentation <windows_finding_modules>` for more information.
 
 * A ``python36.zip`` file now works as a landmark to infer
-  :envvar:`PYTHONHOME`. See :ref:`the documentation <finding_modules>` for
+  :envvar:`PYTHONHOME`. See :ref:`the documentation <windows_finding_modules>` for
   more information.
 
 
@@ -722,8 +722,8 @@ for the following events in the interpreter:
 * line of code executed.
 
 This can be used to instrument running interpreters in production,
-without the need to recompile specific debug builds or providing
-application-specific profiling/debugging code.
+without the need to recompile specific :ref:`debug builds <debug-build>` or
+providing application-specific profiling/debugging code.
 
 More details in :ref:`instrumentation`.
 
@@ -1422,7 +1422,7 @@ The socket module now supports the address family
 Victor Stinner.)
 
 New Linux constants ``TCP_USER_TIMEOUT`` and ``TCP_CONGESTION`` were added.
-(Contributed by Omar Sandoval, issue:`26273`).
+(Contributed by Omar Sandoval, :issue:`26273`).
 
 
 socketserver
@@ -1597,7 +1597,7 @@ to filter block traces by their address space (domain).
 typing
 ------
 
-Since the :mod:`typing` module is :term:`provisional <provisional api>`,
+Since the :mod:`typing` module is :term:`provisional <provisional API>`,
 all changes introduced in Python 3.6 have also been
 backported to Python 3.5.x.
 
@@ -2117,7 +2117,8 @@ API and Feature Removals
   platform specific ``Lib/plat-*/`` directories, but were chronically out of
   date, inconsistently available across platforms, and unmaintained.  The
   script that created these modules is still available in the source
-  distribution at :source:`Tools/scripts/h2py.py`.
+  distribution at `Tools/scripts/h2py.py
+  <https://github.com/python/cpython/blob/v3.6.15/Tools/scripts/h2py.py>`_.
 
 * The deprecated ``asynchat.fifo`` class has been removed.
 
@@ -2316,6 +2317,17 @@ Changes in the Python API
   a :exc:`DeprecationWarning` in Python 3.6 and a :exc:`RuntimeError` in
   Python 3.8.
 
+* With the introduction of :exc:`ModuleNotFoundError`, import system consumers
+  may start expecting import system replacements to raise that more specific
+  exception when appropriate, rather than the less-specific :exc:`ImportError`.
+  To provide future compatibility with such consumers, implementors of
+  alternative import systems that completely replace :func:`__import__` will
+  need to update their implementations to raise the new subclass when a module
+  can't be found at all. Implementors of compliant plugins to the default
+  import system shouldn't need to make any changes, as the default import
+  system will raise the new subclass when appropriate.
+
+
 Changes in the C API
 --------------------
 
@@ -2422,3 +2434,26 @@ In 3.6.7 the :mod:`tokenize` module now implicitly emits a ``NEWLINE`` token
 when provided with input that does not have a trailing new line.  This behavior
 now matches what the C tokenizer does internally.
 (Contributed by Ammar Askar in :issue:`33899`.)
+
+Notable changes in Python 3.6.10
+================================
+
+Due to significant security concerns, the *reuse_address* parameter of
+:meth:`asyncio.loop.create_datagram_endpoint` is no longer supported. This is
+because of the behavior of the socket option ``SO_REUSEADDR`` in UDP. For more
+details, see the documentation for ``loop.create_datagram_endpoint()``.
+(Contributed by Kyle Stanley, Antoine Pitrou, and Yury Selivanov in
+:issue:`37228`.)
+
+Notable changes in Python 3.6.13
+================================
+
+Earlier Python versions allowed using both ``;`` and ``&`` as
+query parameter separators in :func:`urllib.parse.parse_qs` and
+:func:`urllib.parse.parse_qsl`.  Due to security concerns, and to conform with
+newer W3C recommendations, this has been changed to allow only a single
+separator key, with ``&`` as the default.  This change also affects
+:func:`cgi.parse` and :func:`cgi.parse_multipart` as they use the affected
+functions internally. For more details, please see their respective
+documentation.
+(Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)

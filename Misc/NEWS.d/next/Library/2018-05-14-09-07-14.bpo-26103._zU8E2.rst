@@ -1,2 +1,0 @@
-Correct ``inspect.isdatadescriptor`` to look for ``__set__`` or
-``__delete__``.  Patch by Aaron Hall.

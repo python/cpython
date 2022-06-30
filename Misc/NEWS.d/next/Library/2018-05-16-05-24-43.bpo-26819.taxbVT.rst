@@ -1,2 +1,0 @@
-Fix race condition with `ReadTransport.resume_reading` in Windows proactor
-event loop.

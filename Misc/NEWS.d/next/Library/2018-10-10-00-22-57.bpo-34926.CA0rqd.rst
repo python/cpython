@@ -1,2 +1,0 @@
-:meth:`mimetypes.MimeTypes.guess_type` now accepts :term:`path-like object` in addition to url strings.
-Patch by Mayank Asthana.

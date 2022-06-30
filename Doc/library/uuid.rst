@@ -118,7 +118,7 @@ which relays any information about the UUID's safety, using this enumeration:
 
 .. attribute:: UUID.hex
 
-   The UUID as a 32-character hexadecimal string.
+   The UUID as a 32-character lowercase hexadecimal string.
 
 
 .. attribute:: UUID.int

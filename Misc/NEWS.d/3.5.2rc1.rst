@@ -1,7 +1,73 @@
+.. bpo: 26556
+.. date: 9636
+.. nonce: v5j2uL
+.. release date: 2016-06-12
+.. original section: Library
+.. section: Security
+
+Update expat to 2.1.1, fixes CVE-2015-1283.
+
+..
+
+.. bpo: 0
+.. date: 9635
+.. nonce: E4ochz
+.. original section: Library
+.. section: Security
+
+Fix TLS stripping vulnerability in smtplib, CVE-2016-0772. Reported by Team
+Oststrom
+
+..
+
+.. bpo: 26839
+.. date: 9629
+.. nonce: yVvy7R
+.. original section: Library
+.. section: Security
+
+On Linux, :func:`os.urandom` now calls ``getrandom()`` with
+``GRND_NONBLOCK`` to fall back on reading ``/dev/urandom`` if the urandom
+entropy pool is not initialized yet. Patch written by Colm Buckley.
+
+..
+
+.. bpo: 26657
+.. date: 9597
+.. nonce: C_-XFg
+.. original section: Library
+.. section: Security
+
+Fix directory traversal vulnerability with http.server on Windows.  This
+fixes a regression that was introduced in 3.3.4rc1 and 3.4.0rc1.  Based on
+patch by Philipp Hagemeister.
+
+..
+
+.. bpo: 26313
+.. date: 9581
+.. nonce: LjZAjy
+.. original section: Library
+.. section: Security
+
+ssl.py _load_windows_store_certs fails if windows cert store is empty. Patch
+by Baji.
+
+..
+
+.. bpo: 25939
+.. date: 9561
+.. nonce: X49Fqd
+.. original section: Library
+.. section: Security
+
+On Windows open the cert store readonly in ssl.enum_certificates.
+
+..
+
 .. bpo: 27066
 .. date: 9673
 .. nonce: SNExZi
-.. release date: 2016-06-12
 .. section: Core and Builtins
 
 Fixed SystemError if a custom opener (for open()) returns a negative number
@@ -373,27 +439,6 @@ PendingDeprecationWarning.
 
 ..
 
-.. bpo: 26556
-.. date: 9636
-.. nonce: v5j2uL
-.. original section: Library
-.. section: Security
-
-Update expat to 2.1.1, fixes CVE-2015-1283.
-
-..
-
-.. bpo: 0
-.. date: 9635
-.. nonce: E4ochz
-.. original section: Library
-.. section: Security
-
-Fix TLS stripping vulnerability in smtplib, CVE-2016-0772. Reported by Team
-Oststrom
-
-..
-
 .. bpo: 21386
 .. date: 9634
 .. nonce: DjV72U
@@ -446,18 +491,6 @@ responses that don't have a body.  Patch by Susumu Koshiba.
 
 Fix the "platform" module to tolerate when sys.version contains truncated
 build information.
-
-..
-
-.. bpo: 26839
-.. date: 9629
-.. nonce: yVvy7R
-.. original section: Library
-.. section: Security
-
-On Linux, :func:`os.urandom` now calls ``getrandom()`` with
-``GRND_NONBLOCK`` to fall back on reading ``/dev/urandom`` if the urandom
-entropy pool is not initialized yet. Patch written by Colm Buckley.
 
 ..
 
@@ -678,7 +711,6 @@ Fixed the comparison of plistlib.Data with other types.
 .. section: Library
 
 Fix an uninitialized variable in `ctypes.util`.
-
 The bug only occurs on SunOS when the ctypes implementation searches for the
 `crle` program.  Patch by Xiang Zhang.  Tested on SunOS by Kees Bos.
 
@@ -774,18 +806,6 @@ Barry.
 
 tarfile's ustar and gnu formats now correctly calculate name and link field
 limits for multibyte character encodings like utf-8.
-
-..
-
-.. bpo: 26657
-.. date: 9597
-.. nonce: C_-XFg
-.. original section: Library
-.. section: Security
-
-Fix directory traversal vulnerability with http.server on Windows.  This
-fixes a regression that was introduced in 3.3.4rc1 and 3.4.0rc1.  Based on
-patch by Philipp Hagemeister.
 
 ..
 
@@ -935,17 +955,6 @@ compiled with Readline 7.
 
 Avoid potential ValueError in BaseHandler.start_response. Initial patch by
 Peter Inglesby.
-
-..
-
-.. bpo: 26313
-.. date: 9581
-.. nonce: LjZAjy
-.. original section: Library
-.. section: Security
-
-ssl.py _load_windows_store_certs fails if windows cert store is empty. Patch
-by Baji.
 
 ..
 
@@ -1134,16 +1143,6 @@ importlib.__import__() raises SystemError like builtins.__import__() when
 
 In the "socketserver" module, shut down the request (closing the connected
 socket) when verify_request() returns false.  Patch by Aviv Palivoda.
-
-..
-
-.. bpo: 25939
-.. date: 9561
-.. nonce: X49Fqd
-.. original section: Library
-.. section: Security
-
-On Windows open the cert store readonly in ssl.enum_certificates.
 
 ..
 
@@ -2006,7 +2005,7 @@ Adds validation of ucrtbase[d].dll version with warning for old versions.
 .. nonce: 102DA-
 .. section: Build
 
-Avoid error about nonexistant fileblocks.o file by using a lower-level check
+Avoid error about nonexistent fileblocks.o file by using a lower-level check
 for st_blocks in struct stat.
 
 ..
@@ -2155,6 +2154,16 @@ Excludes venv from library when generating embeddable distro.
 
 ..
 
+.. bpo: 17500
+.. date: 9453
+.. nonce: QTZbRV
+.. section: Windows
+
+Remove unused and outdated icons. (See also:
+https://github.com/python/pythondotorg/issues/945)
+
+..
+
 .. bpo: 26799
 .. date: 9457
 .. nonce: gK2VXX
@@ -2192,13 +2201,3 @@ Teo.
 .. section: Tools/Demos
 
 Fix variable name typo in Argument Clinic.
-
-..
-
-.. bpo: 17500
-.. date: 9453
-.. nonce: QTZbRV
-.. section: Windows
-
-Remove unused and outdated icons. (See also:
-https://github.com/python/pythondotorg/issues/945)

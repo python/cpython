@@ -1,4 +1,4 @@
-.. highlightlang:: none
+.. highlight:: none
 
 .. _installing-index:
 
@@ -44,7 +44,7 @@ Key terms
   ``venv``. It allows virtual environments to be used on versions of
   Python prior to 3.4, which either don't provide ``venv`` at all, or
   aren't able to automatically install ``pip`` into created environments.
-* The `Python Packaging Index <https://pypi.org>`__ is a public
+* The `Python Package Index <https://pypi.org>`__ is a public
   repository of open source licensed packages made available for use by
   other Python users.
 * the `Python Packaging Authority
@@ -53,7 +53,7 @@ Key terms
   evolution of the standard packaging tools and the associated metadata and
   file format standards. They maintain a variety of tools, documentation,
   and issue trackers on both `GitHub <https://github.com/pypa>`__ and
-  `BitBucket <https://bitbucket.org/pypa/>`__.
+  `Bitbucket <https://bitbucket.org/pypa/>`__.
 * ``distutils`` is the original build and distribution system first added to
   the Python standard library in 1998. While direct use of ``distutils`` is
   being phased out, it still laid the foundation for the current packaging
@@ -78,13 +78,13 @@ The standard packaging tools are all designed to be used from the command
 line.
 
 The following command will install the latest version of a module and its
-dependencies from the Python Packaging Index::
+dependencies from the Python Package Index::
 
     python -m pip install SomePackage
 
 .. note::
 
-   For POSIX users (including Mac OS X and Linux users), the examples in
+   For POSIX users (including macOS and Linux users), the examples in
    this guide assume the use of a :term:`virtual environment`.
 
    For Windows users, the examples in this guide assume that the option to
@@ -163,7 +163,7 @@ rather than attempting to install them with ``pip``.
 ... work with multiple versions of Python installed in parallel?
 ----------------------------------------------------------------
 
-On Linux, Mac OS X, and other POSIX systems, use the versioned Python commands
+On Linux, macOS, and other POSIX systems, use the versioned Python commands
 in combination with the ``-m`` switch to run the appropriate copy of
 ``pip``::
 
@@ -214,7 +214,7 @@ It is possible that ``pip`` does not get installed by default. One potential fix
     python -m ensurepip --default-pip
 
 There are also additional resources for `installing pip.
-<https://packaging.python.org/tutorials/installing-packages/#install-pip-setuptools-and-wheel>`__
+<https://packaging.python.org/en/latest/tutorials/installing-packages/#ensure-pip-setuptools-and-wheel-are-up-to-date>`__
 
 
 Installing binary extensions
@@ -225,8 +225,8 @@ users being expected to compile extension modules from source as part of
 the installation process.
 
 With the introduction of support for the binary ``wheel`` format, and the
-ability to publish wheels for at least Windows and Mac OS X through the
-Python Packaging Index, this problem is expected to diminish over time,
+ability to publish wheels for at least Windows and macOS through the
+Python Package Index, this problem is expected to diminish over time,
 as users are more regularly able to install pre-built extensions rather
 than needing to build them themselves.
 

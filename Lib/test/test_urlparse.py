@@ -1,3 +1,5 @@
+import sys
+import unicodedata
 import unittest
 import urllib.parse
 
@@ -30,16 +32,10 @@ parse_qsl_test_cases = [
     (b"&a=b", [(b'a', b'b')]),
     (b"a=a+b&b=b+c", [(b'a', b'a b'), (b'b', b'b c')]),
     (b"a=1&a=2", [(b'a', b'1'), (b'a', b'2')]),
-    (";", []),
-    (";;", []),
-    (";a=b", [('a', 'b')]),
-    ("a=a+b;b=b+c", [('a', 'a b'), ('b', 'b c')]),
-    ("a=1;a=2", [('a', '1'), ('a', '2')]),
-    (b";", []),
-    (b";;", []),
-    (b";a=b", [(b'a', b'b')]),
-    (b"a=a+b;b=b+c", [(b'a', b'a b'), (b'b', b'b c')]),
-    (b"a=1;a=2", [(b'a', b'1'), (b'a', b'2')]),
+    (";a=b", [(';a', 'b')]),
+    ("a=a+b;b=b+c", [('a', 'a b;b=b c')]),
+    (b";a=b", [(b';a', b'b')]),
+    (b"a=a+b;b=b+c", [(b'a', b'a b;b=b c')]),
 ]
 
 # Each parse_qs testcase is a two-tuple that contains
@@ -66,16 +62,10 @@ parse_qs_test_cases = [
     (b"&a=b", {b'a': [b'b']}),
     (b"a=a+b&b=b+c", {b'a': [b'a b'], b'b': [b'b c']}),
     (b"a=1&a=2", {b'a': [b'1', b'2']}),
-    (";", {}),
-    (";;", {}),
-    (";a=b", {'a': ['b']}),
-    ("a=a+b;b=b+c", {'a': ['a b'], 'b': ['b c']}),
-    ("a=1;a=2", {'a': ['1', '2']}),
-    (b";", {}),
-    (b";;", {}),
-    (b";a=b", {b'a': [b'b']}),
-    (b"a=a+b;b=b+c", {b'a': [b'a b'], b'b': [b'b c']}),
-    (b"a=1;a=2", {b'a': [b'1', b'2']}),
+    (";a=b", {';a': ['b']}),
+    ("a=a+b;b=b+c", {'a': ['a b;b=b c']}),
+    (b";a=b", {b';a': [b'b']}),
+    (b"a=a+b;b=b+c", {b'a':[ b'a b;b=b c']}),
 ]
 
 class UrlParseTestCase(unittest.TestCase):
@@ -622,6 +612,43 @@ class UrlParseTestCase(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "out of range"):
             p.port
 
+    def test_urlsplit_remove_unsafe_bytes(self):
+        # Remove ASCII tabs and newlines from input
+        url = "http\t://www.python\n.org\t/java\nscript:\talert('msg\r\n')/?query\n=\tsomething#frag\nment"
+        p = urllib.parse.urlsplit(url)
+        self.assertEqual(p.scheme, "http")
+        self.assertEqual(p.netloc, "www.python.org")
+        self.assertEqual(p.path, "/javascript:alert('msg')/")
+        self.assertEqual(p.query, "query=something")
+        self.assertEqual(p.fragment, "fragment")
+        self.assertEqual(p.username, None)
+        self.assertEqual(p.password, None)
+        self.assertEqual(p.hostname, "www.python.org")
+        self.assertEqual(p.port, None)
+        self.assertEqual(p.geturl(), "http://www.python.org/javascript:alert('msg')/?query=something#fragment")
+
+        # Remove ASCII tabs and newlines from input as bytes.
+        url = b"http\t://www.python\n.org\t/java\nscript:\talert('msg\r\n')/?query\n=\tsomething#frag\nment"
+        p = urllib.parse.urlsplit(url)
+        self.assertEqual(p.scheme, b"http")
+        self.assertEqual(p.netloc, b"www.python.org")
+        self.assertEqual(p.path, b"/javascript:alert('msg')/")
+        self.assertEqual(p.query, b"query=something")
+        self.assertEqual(p.fragment, b"fragment")
+        self.assertEqual(p.username, None)
+        self.assertEqual(p.password, None)
+        self.assertEqual(p.hostname, b"www.python.org")
+        self.assertEqual(p.port, None)
+        self.assertEqual(p.geturl(), b"http://www.python.org/javascript:alert('msg')/?query=something#fragment")
+
+        # with scheme as cache-key
+        url = "http://www.python.org/java\nscript:\talert('msg\r\n')/?query\n=\tsomething#frag\nment"
+        scheme = "ht\ntp"
+        for _ in range(2):
+            p = urllib.parse.urlsplit(url, scheme=scheme)
+            self.assertEqual(p.scheme, "http")
+            self.assertEqual(p.geturl(), "http://www.python.org/javascript:alert('msg')/?query=something#fragment")
+
     def test_attributes_bad_port(self):
         """Check handling of invalid ports."""
         for bytes in (False, True):
@@ -707,15 +734,17 @@ class UrlParseTestCase(unittest.TestCase):
 
     def test_portseparator(self):
         # Issue 754016 makes changes for port separator ':' from scheme separator
-        self.assertEqual(urllib.parse.urlparse("path:80"),
-                ('','','path:80','','',''))
+        self.assertEqual(urllib.parse.urlparse("http:80"), ('http','','80','','',''))
+        self.assertEqual(urllib.parse.urlparse("https:80"), ('https','','80','','',''))
+        self.assertEqual(urllib.parse.urlparse("path:80"), ('path','','80','','',''))
         self.assertEqual(urllib.parse.urlparse("http:"),('http','','','','',''))
         self.assertEqual(urllib.parse.urlparse("https:"),('https','','','','',''))
         self.assertEqual(urllib.parse.urlparse("http://www.python.org:80"),
                 ('http','www.python.org:80','','','',''))
         # As usual, need to check bytes input as well
-        self.assertEqual(urllib.parse.urlparse(b"path:80"),
-                (b'',b'',b'path:80',b'',b'',b''))
+        self.assertEqual(urllib.parse.urlparse(b"http:80"), (b'http',b'',b'80',b'',b'',b''))
+        self.assertEqual(urllib.parse.urlparse(b"https:80"), (b'https',b'',b'80',b'',b'',b''))
+        self.assertEqual(urllib.parse.urlparse(b"path:80"), (b'path',b'',b'80',b'',b'',b''))
         self.assertEqual(urllib.parse.urlparse(b"http:"),(b'http',b'',b'',b'',b'',b''))
         self.assertEqual(urllib.parse.urlparse(b"https:"),(b'https',b'',b'',b'',b'',b''))
         self.assertEqual(urllib.parse.urlparse(b"http://www.python.org:80"),
@@ -882,9 +911,49 @@ class UrlParseTestCase(unittest.TestCase):
     def test_parse_qsl_max_num_fields(self):
         with self.assertRaises(ValueError):
             urllib.parse.parse_qs('&'.join(['a=a']*11), max_num_fields=10)
-        with self.assertRaises(ValueError):
-            urllib.parse.parse_qs(';'.join(['a=a']*11), max_num_fields=10)
         urllib.parse.parse_qs('&'.join(['a=a']*10), max_num_fields=10)
+
+    def test_parse_qs_separator(self):
+        parse_qs_semicolon_cases = [
+            (";", {}),
+            (";;", {}),
+            (";a=b", {'a': ['b']}),
+            ("a=a+b;b=b+c", {'a': ['a b'], 'b': ['b c']}),
+            ("a=1;a=2", {'a': ['1', '2']}),
+            (b";", {}),
+            (b";;", {}),
+            (b";a=b", {b'a': [b'b']}),
+            (b"a=a+b;b=b+c", {b'a': [b'a b'], b'b': [b'b c']}),
+            (b"a=1;a=2", {b'a': [b'1', b'2']}),
+        ]
+        for orig, expect in parse_qs_semicolon_cases:
+            with self.subTest(f"Original: {orig!r}, Expected: {expect!r}"):
+                result = urllib.parse.parse_qs(orig, separator=';')
+                self.assertEqual(result, expect, "Error parsing %r" % orig)
+                result_bytes = urllib.parse.parse_qs(orig, separator=b';')
+                self.assertEqual(result_bytes, expect, "Error parsing %r" % orig)
+
+
+    def test_parse_qsl_separator(self):
+        parse_qsl_semicolon_cases = [
+            (";", []),
+            (";;", []),
+            (";a=b", [('a', 'b')]),
+            ("a=a+b;b=b+c", [('a', 'a b'), ('b', 'b c')]),
+            ("a=1;a=2", [('a', '1'), ('a', '2')]),
+            (b";", []),
+            (b";;", []),
+            (b";a=b", [(b'a', b'b')]),
+            (b"a=a+b;b=b+c", [(b'a', b'a b'), (b'b', b'b c')]),
+            (b"a=1;a=2", [(b'a', b'1'), (b'a', b'2')]),
+        ]
+        for orig, expect in parse_qsl_semicolon_cases:
+            with self.subTest(f"Original: {orig!r}, Expected: {expect!r}"):
+                result = urllib.parse.parse_qsl(orig, separator=';')
+                self.assertEqual(result, expect, "Error parsing %r" % orig)
+                result_bytes = urllib.parse.parse_qsl(orig, separator=b';')
+                self.assertEqual(result_bytes, expect, "Error parsing %r" % orig)
+
 
     def test_urlencode_sequences(self):
         # Other tests incidentally urlencode things; test non-covered cases:
@@ -975,8 +1044,16 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p1.params, 'phone-context=+1-914-555')
 
     def test_Quoter_repr(self):
-        quoter = urllib.parse.Quoter(urllib.parse._ALWAYS_SAFE)
+        quoter = urllib.parse._Quoter(urllib.parse._ALWAYS_SAFE)
         self.assertIn('Quoter', repr(quoter))
+
+    def test_clear_cache_for_code_coverage(self):
+        urllib.parse.clear_cache()
+
+    def test_urllib_parse_getattr_failure(self):
+        """Test that urllib.parse.__getattr__() fails correctly."""
+        with self.assertRaises(AttributeError):
+            unused = urllib.parse.this_does_not_exist
 
     def test_all(self):
         expected = []
@@ -984,7 +1061,7 @@ class UrlParseTestCase(unittest.TestCase):
             'splitattr', 'splithost', 'splitnport', 'splitpasswd',
             'splitport', 'splitquery', 'splittag', 'splittype', 'splituser',
             'splitvalue',
-            'Quoter', 'ResultBase', 'clear_cache', 'to_bytes', 'unwrap',
+            'ResultBase', 'clear_cache', 'to_bytes', 'unwrap',
         }
         for name in dir(urllib.parse):
             if name.startswith('_') or name in undocumented:
@@ -994,6 +1071,35 @@ class UrlParseTestCase(unittest.TestCase):
                 expected.append(name)
         self.assertCountEqual(urllib.parse.__all__, expected)
 
+    def test_urlsplit_normalization(self):
+        # Certain characters should never occur in the netloc,
+        # including under normalization.
+        # Ensure that ALL of them are detected and cause an error
+        illegal_chars = '/:#?@'
+        hex_chars = {'{:04X}'.format(ord(c)) for c in illegal_chars}
+        denorm_chars = [
+            c for c in map(chr, range(128, sys.maxunicode))
+            if unicodedata.decomposition(c)
+            and (hex_chars & set(unicodedata.decomposition(c).split()))
+            and c not in illegal_chars
+        ]
+        # Sanity check that we found at least one such character
+        self.assertIn('\u2100', denorm_chars)
+        self.assertIn('\uFF03', denorm_chars)
+
+        # bpo-36742: Verify port separators are ignored when they
+        # existed prior to decomposition
+        urllib.parse.urlsplit('http://\u30d5\u309a:80')
+        with self.assertRaises(ValueError):
+            urllib.parse.urlsplit('http://\u30d5\u309a\ufe1380')
+
+        for scheme in ["http", "https", "ftp"]:
+            for netloc in ["netloc{}false.netloc", "n{}user@netloc"]:
+                for c in denorm_chars:
+                    url = "{}://{}/path".format(scheme, netloc.format(c))
+                    with self.subTest(url=url, char='{:04X}'.format(ord(c))):
+                        with self.assertRaises(ValueError):
+                            urllib.parse.urlsplit(url)
 
 class Utility_Tests(unittest.TestCase):
     """Testcase to test the various utility functions in the urllib."""
@@ -1140,11 +1246,19 @@ class Utility_Tests(unittest.TestCase):
                           'http://www.python.org/medi\u00e6val')
 
     def test_unwrap(self):
-        url = urllib.parse._unwrap('<URL:type://host/path>')
-        self.assertEqual(url, 'type://host/path')
+        for wrapped_url in ('<URL:scheme://host/path>', '<scheme://host/path>',
+                            'URL:scheme://host/path', 'scheme://host/path'):
+            url = urllib.parse.unwrap(wrapped_url)
+            self.assertEqual(url, 'scheme://host/path')
 
 
 class DeprecationTest(unittest.TestCase):
+
+    def test_Quoter_deprecation(self):
+        with self.assertWarns(DeprecationWarning) as cm:
+            old_class = urllib.parse.Quoter
+            self.assertIs(old_class, urllib.parse._Quoter)
+        self.assertIn('Quoter will be removed', str(cm.warning))
 
     def test_splittype_deprecation(self):
         with self.assertWarns(DeprecationWarning) as cm:
@@ -1221,12 +1335,6 @@ class DeprecationTest(unittest.TestCase):
             urllib.parse.to_bytes('')
         self.assertEqual(str(cm.warning),
                          'urllib.parse.to_bytes() is deprecated as of 3.8')
-
-    def test_unwrap(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            urllib.parse.unwrap('')
-        self.assertEqual(str(cm.warning),
-                         'urllib.parse.unwrap() is deprecated as of 3.8')
 
 
 if __name__ == "__main__":

@@ -109,7 +109,7 @@ Example::
 
        for f in os.listdir(top):
            pathname = os.path.join(top, f)
-           mode = os.stat(pathname).st_mode
+           mode = os.lstat(pathname).st_mode
            if S_ISDIR(mode):
                # It's a directory, recurse into it
                walktree(pathname, callback)
@@ -372,11 +372,11 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
 .. data:: UF_COMPRESSED
 
-   The file is stored compressed (Mac OS X 10.6+).
+   The file is stored compressed (macOS 10.6+).
 
 .. data:: UF_HIDDEN
 
-   The file should not be displayed in a GUI (Mac OS X 10.5+).
+   The file should not be displayed in a GUI (macOS 10.5+).
 
 .. data:: SF_ARCHIVED
 
@@ -398,7 +398,7 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
    The file is a snapshot file.
 
-See the \*BSD or Mac OS systems man page :manpage:`chflags(2)` for more information.
+See the \*BSD or macOS systems man page :manpage:`chflags(2)` for more information.
 
 On Windows, the following file attribute constants are available for use when
 testing bits in the ``st_file_attributes`` member returned by :func:`os.stat`.
@@ -425,3 +425,13 @@ for more detail on the meaning of these constants.
           FILE_ATTRIBUTE_VIRTUAL
 
    .. versionadded:: 3.5
+
+On Windows, the following constants are available for comparing against the
+``st_reparse_tag`` member returned by :func:`os.lstat`. These are well-known
+constants, but are not an exhaustive list.
+
+.. data:: IO_REPARSE_TAG_SYMLINK
+          IO_REPARSE_TAG_MOUNT_POINT
+          IO_REPARSE_TAG_APPEXECLINK
+
+   .. versionadded:: 3.8

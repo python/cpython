@@ -2,8 +2,6 @@
 
 #include "Python.h"
 #include "pycore_object.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
 
 PyObject *
 PyCell_New(PyObject *obj)
@@ -20,6 +18,37 @@ PyCell_New(PyObject *obj)
     return (PyObject *)op;
 }
 
+PyDoc_STRVAR(cell_new_doc,
+"cell([contents])\n"
+"--\n"
+"\n"
+"Create a new cell object.\n"
+"\n"
+"  contents\n"
+"    the contents of the cell. If not specified, the cell will be empty,\n"
+"    and \n further attempts to access its cell_contents attribute will\n"
+"    raise a ValueError.");
+
+
+static PyObject *
+cell_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *obj = NULL;
+
+    if (!_PyArg_NoKeywords("cell", kwargs)) {
+        goto exit;
+    }
+    /* min = 0: we allow the cell to be empty */
+    if (!PyArg_UnpackTuple(args, "cell", 0, 1, &obj)) {
+        goto exit;
+    }
+    return_value = PyCell_New(obj);
+
+exit:
+    return return_value;
+}
+
 PyObject *
 PyCell_Get(PyObject *op)
 {
@@ -27,22 +56,21 @@ PyCell_Get(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    Py_XINCREF(((PyCellObject*)op)->ob_ref);
-    return PyCell_GET(op);
+    PyObject *value = PyCell_GET(op);
+    return Py_XNewRef(value);
 }
 
 int
-PyCell_Set(PyObject *op, PyObject *obj)
+PyCell_Set(PyObject *op, PyObject *value)
 {
-    PyObject* oldobj;
     if (!PyCell_Check(op)) {
         PyErr_BadInternalCall();
         return -1;
     }
-    oldobj = PyCell_GET(op);
-    Py_XINCREF(obj);
-    PyCell_SET(op, obj);
-    Py_XDECREF(oldobj);
+    PyObject *old_value = PyCell_GET(op);
+    Py_XINCREF(value);
+    PyCell_SET(op, value);
+    Py_XDECREF(old_value);
     return 0;
 }
 
@@ -81,7 +109,7 @@ cell_repr(PyCellObject *op)
         return PyUnicode_FromFormat("<cell at %p: empty>", op);
 
     return PyUnicode_FromFormat("<cell at %p: %.80s object at %p>",
-                               op, op->ob_ref->ob_type->tp_name,
+                               op, Py_TYPE(op->ob_ref)->tp_name,
                                op->ob_ref);
 }
 
@@ -131,10 +159,10 @@ PyTypeObject PyCell_Type = {
     sizeof(PyCellObject),
     0,
     (destructor)cell_dealloc,                   /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)cell_repr,                        /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -146,7 +174,7 @@ PyTypeObject PyCell_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
-    0,                                          /* tp_doc */
+    cell_new_doc,                               /* tp_doc */
     (traverseproc)cell_traverse,                /* tp_traverse */
     (inquiry)cell_clear,                        /* tp_clear */
     cell_richcompare,                           /* tp_richcompare */
@@ -156,4 +184,13 @@ PyTypeObject PyCell_Type = {
     0,                                          /* tp_methods */
     0,                                          /* tp_members */
     cell_getsetlist,                            /* tp_getset */
+    0,                                          /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    0,                                          /* tp_alloc */
+    (newfunc)cell_new,                          /* tp_new */
+    0,                                          /* tp_free */
 };

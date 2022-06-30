@@ -1,12 +1,13 @@
 #include "Python.h"
 
+#include "pycore_bitutils.h"      // _Py_popcount32
 #include "pycore_hamt.h"
-#include "pycore_object.h"
-#include "pycore_pystate.h"
-#include "structmember.h"
+#include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include <stddef.h>               // offsetof()
 
 /*
-This file provides an implemention of an immutable mapping using the
+This file provides an implementation of an immutable mapping using the
 Hash Array Mapped Trie (or HAMT) datastructure.
 
 This design allows to have:
@@ -274,9 +275,9 @@ to introspect the tree:
 */
 
 
-#define IS_ARRAY_NODE(node)     (Py_TYPE(node) == &_PyHamt_ArrayNode_Type)
-#define IS_BITMAP_NODE(node)    (Py_TYPE(node) == &_PyHamt_BitmapNode_Type)
-#define IS_COLLISION_NODE(node) (Py_TYPE(node) == &_PyHamt_CollisionNode_Type)
+#define IS_ARRAY_NODE(node)     Py_IS_TYPE(node, &_PyHamt_ArrayNode_Type)
+#define IS_BITMAP_NODE(node)    Py_IS_TYPE(node, &_PyHamt_BitmapNode_Type)
+#define IS_COLLISION_NODE(node) Py_IS_TYPE(node, &_PyHamt_CollisionNode_Type)
 
 
 /* Return type for 'find' (lookup a key) functions.
@@ -408,14 +409,22 @@ hamt_hash(PyObject *o)
         return -1;
     }
 
-    /* While it's suboptimal to reduce Python's 64 bit hash to
+    /* While it's somewhat suboptimal to reduce Python's 64 bit hash to
        32 bits via XOR, it seems that the resulting hash function
        is good enough (this is also how Long type is hashed in Java.)
        Storing 10, 100, 1000 Python strings results in a relatively
        shallow and uniform tree structure.
 
-       Please don't change this hashing algorithm, as there are many
-       tests that test some exact tree shape to cover all code paths.
+       Also it's worth noting that it would be possible to adapt the tree
+       structure to 64 bit hashes, but that would increase memory pressure
+       and provide little to no performance benefits for collections with
+       fewer than billions of key/value pairs.
+
+       Important: do not change this hash reducing function. There are many
+       tests that need an exact tree shape to cover all code paths and
+       we do that by specifying concrete values for test data's `__hash__`.
+       If this function is changed most of the regression tests would
+       become useless.
     */
     int32_t xored = (int32_t)(hash & 0xffffffffl) ^ (int32_t)(hash >> 32);
     return xored == -1 ? -2 : xored;
@@ -435,29 +444,9 @@ hamt_bitpos(int32_t hash, uint32_t shift)
 }
 
 static inline uint32_t
-hamt_bitcount(uint32_t i)
-{
-    /* We could use native popcount instruction but that would
-       require to either add configure flags to enable SSE4.2
-       support or to detect it dynamically.  Otherwise, we have
-       a risk of CPython not working properly on older hardware.
-
-       In practice, there's no observable difference in
-       performance between using a popcount instruction or the
-       following fallback code.
-
-       The algorithm is copied from:
-       https://graphics.stanford.edu/~seander/bithacks.html
-    */
-    i = i - ((i >> 1) & 0x55555555);
-    i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
-    return (((i + (i >> 4)) & 0xF0F0F0F) * 0x1010101) >> 24;
-}
-
-static inline uint32_t
 hamt_bitindex(uint32_t bitmap, uint32_t bit)
 {
-    return hamt_bitcount(bitmap & (bit - 1));
+    return (uint32_t)_Py_popcount32(bitmap & (bit - 1));
 }
 
 
@@ -507,11 +496,7 @@ _hamt_dump_format(_PyUnicodeWriter *writer, const char *format, ...)
     int ret;
 
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     msg = PyUnicode_FromFormatV(format, vargs);
     va_end(vargs);
 
@@ -551,7 +536,7 @@ hamt_node_bitmap_new(Py_ssize_t size)
         return NULL;
     }
 
-    Py_SIZE(node) = size;
+    Py_SET_SIZE(node, size);
 
     for (i = 0; i < size; i++) {
         node->b_array[i] = NULL;
@@ -821,7 +806,7 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
     else {
         /* There was no key before with the same (shift,hash). */
 
-        uint32_t n = hamt_bitcount(self->b_bitmap);
+        uint32_t n = (uint32_t)_Py_popcount32(self->b_bitmap);
 
         if (n >= 16) {
             /* When we have a situation where we want to store more
@@ -830,7 +815,7 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
 
                Instead we start using an Array node, which has
                simpler (faster) implementation at the expense of
-               having prealocated 32 pointers for its keys/values
+               having preallocated 32 pointers for its keys/values
                pairs.
 
                Small hamt objects (<30 keys) usually don't have any
@@ -1176,7 +1161,7 @@ hamt_node_bitmap_dealloc(PyHamtNode_Bitmap *self)
     Py_ssize_t i;
 
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_SAFE_BEGIN(self)
+    Py_TRASHCAN_BEGIN(self, hamt_node_bitmap_dealloc)
 
     if (len > 0) {
         i = len;
@@ -1186,7 +1171,7 @@ hamt_node_bitmap_dealloc(PyHamtNode_Bitmap *self)
     }
 
     Py_TYPE(self)->tp_free((PyObject *)self);
-    Py_TRASHCAN_SAFE_END(self)
+    Py_TRASHCAN_END
 }
 
 #ifdef Py_DEBUG
@@ -1288,7 +1273,7 @@ hamt_node_collision_new(int32_t hash, Py_ssize_t size)
         node->c_array[i] = NULL;
     }
 
-    Py_SIZE(node) = size;
+    Py_SET_SIZE(node, size);
     node->c_hash = hash;
 
     _PyObject_GC_TRACK(node);
@@ -1584,7 +1569,7 @@ hamt_node_collision_dealloc(PyHamtNode_Collision *self)
     Py_ssize_t len = Py_SIZE(self);
 
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_SAFE_BEGIN(self)
+    Py_TRASHCAN_BEGIN(self, hamt_node_collision_dealloc)
 
     if (len > 0) {
 
@@ -1594,7 +1579,7 @@ hamt_node_collision_dealloc(PyHamtNode_Collision *self)
     }
 
     Py_TYPE(self)->tp_free((PyObject *)self);
-    Py_TRASHCAN_SAFE_END(self)
+    Py_TRASHCAN_END
 }
 
 #ifdef Py_DEBUG
@@ -1864,7 +1849,7 @@ hamt_node_array_without(PyHamtNode_Array *self,
                     continue;
                 }
 
-                bitmap |= 1 << i;
+                bitmap |= 1U << i;
 
                 if (IS_BITMAP_NODE(node)) {
                     PyHamtNode_Bitmap *child = (PyHamtNode_Bitmap *)node;
@@ -1969,14 +1954,14 @@ hamt_node_array_dealloc(PyHamtNode_Array *self)
     Py_ssize_t i;
 
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_SAFE_BEGIN(self)
+    Py_TRASHCAN_BEGIN(self, hamt_node_array_dealloc)
 
     for (i = 0; i < HAMT_ARRAY_NODE_SIZE; i++) {
         Py_XDECREF(self->a_array[i]);
     }
 
     Py_TYPE(self)->tp_free((PyObject *)self);
-    Py_TRASHCAN_SAFE_END(self)
+    Py_TRASHCAN_END
 }
 
 #ifdef Py_DEBUG
@@ -2005,7 +1990,7 @@ hamt_node_array_dump(PyHamtNode_Array *node,
             goto error;
         }
 
-        if (_hamt_dump_format(writer, "%d::\n", i)) {
+        if (_hamt_dump_format(writer, "%zd::\n", i)) {
             goto error;
         }
 
@@ -2864,14 +2849,14 @@ hamt_py_values(PyHamtObject *self, PyObject *args)
 }
 
 static PyObject *
-hamt_py_keys(PyHamtObject *self, PyObject *args)
+hamt_py_keys(PyHamtObject *self, PyObject *Py_UNUSED(args))
 {
     return _PyHamt_NewIterKeys(self);
 }
 
 #ifdef Py_DEBUG
 static PyObject *
-hamt_py_dump(PyHamtObject *self, PyObject *args)
+hamt_py_dump(PyHamtObject *self, PyObject *Py_UNUSED(args))
 {
     return hamt_dump(self);
 }
@@ -2879,14 +2864,14 @@ hamt_py_dump(PyHamtObject *self, PyObject *args)
 
 
 static PyMethodDef PyHamt_methods[] = {
-    {"set", (PyCFunction)hamt_py_set, METH_VARARGS, NULL},
-    {"get", (PyCFunction)hamt_py_get, METH_VARARGS, NULL},
-    {"delete", (PyCFunction)hamt_py_delete, METH_O, NULL},
-    {"items", (PyCFunction)hamt_py_items, METH_NOARGS, NULL},
-    {"keys", (PyCFunction)hamt_py_keys, METH_NOARGS, NULL},
-    {"values", (PyCFunction)hamt_py_values, METH_NOARGS, NULL},
+    {"set", _PyCFunction_CAST(hamt_py_set), METH_VARARGS, NULL},
+    {"get", _PyCFunction_CAST(hamt_py_get), METH_VARARGS, NULL},
+    {"delete", _PyCFunction_CAST(hamt_py_delete), METH_O, NULL},
+    {"items", _PyCFunction_CAST(hamt_py_items), METH_NOARGS, NULL},
+    {"keys", _PyCFunction_CAST(hamt_py_keys), METH_NOARGS, NULL},
+    {"values", _PyCFunction_CAST(hamt_py_values), METH_NOARGS, NULL},
 #ifdef Py_DEBUG
-    {"__dump__", (PyCFunction)hamt_py_dump, METH_NOARGS, NULL},
+    {"__dump__", _PyCFunction_CAST(hamt_py_dump), METH_NOARGS, NULL},
 #endif
     {NULL, NULL}
 };
@@ -2972,25 +2957,8 @@ PyTypeObject _PyHamt_CollisionNode_Type = {
 };
 
 
-int
-_PyHamt_Init(void)
-{
-    if ((PyType_Ready(&_PyHamt_Type) < 0) ||
-        (PyType_Ready(&_PyHamt_ArrayNode_Type) < 0) ||
-        (PyType_Ready(&_PyHamt_BitmapNode_Type) < 0) ||
-        (PyType_Ready(&_PyHamt_CollisionNode_Type) < 0) ||
-        (PyType_Ready(&_PyHamtKeys_Type) < 0) ||
-        (PyType_Ready(&_PyHamtValues_Type) < 0) ||
-        (PyType_Ready(&_PyHamtItems_Type) < 0))
-    {
-        return 0;
-    }
-
-    return 1;
-}
-
 void
-_PyHamt_Fini(void)
+_PyHamt_Fini(PyInterpreterState *interp)
 {
     Py_CLEAR(_empty_hamt);
     Py_CLEAR(_empty_bitmap_node);

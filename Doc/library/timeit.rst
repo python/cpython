@@ -15,8 +15,8 @@
 This module provides a simple way to time small bits of Python code. It has both
 a :ref:`timeit-command-line-interface` as well as a :ref:`callable <python-interface>`
 one.  It avoids a number of common traps for measuring execution times.
-See also Tim Peters' introduction to the "Algorithms" chapter in the *Python
-Cookbook*, published by O'Reilly.
+See also Tim Peters' introduction to the "Algorithms" chapter in the second
+edition of *Python Cookbook*, published by O'Reilly.
 
 
 Basic Examples
@@ -44,8 +44,12 @@ This can be achieved from the :ref:`python-interface` with::
    >>> timeit.timeit('"-".join(map(str, range(100)))', number=10000)
    0.23702679807320237
 
+A callable can also be passed from the :ref:`python-interface`::
 
-Note however that :mod:`timeit` will automatically determine the number of
+   >>> timeit.timeit(lambda: "-".join(map(str, range(100))), number=10000)
+   0.19665591977536678
+
+Note however that :func:`.timeit` will automatically determine the number of
 repetitions only when the command-line interface is used.  In the
 :ref:`timeit-examples` section you can find more advanced examples.
 
@@ -129,7 +133,7 @@ The module defines three convenience functions and a public class:
 
          By default, :meth:`.timeit` temporarily turns off :term:`garbage
          collection` during the timing.  The advantage of this approach is that
-         it makes independent timings more comparable.  This disadvantage is
+         it makes independent timings more comparable.  The disadvantage is
          that GC may be an important component of the performance of the
          function being measured.  If so, GC can be re-enabled as the first
          statement in the *setup* string.  For example::
@@ -229,7 +233,7 @@ Where the following options are understood:
 
 .. cmdoption:: -u, --unit=U
 
-    specify a time unit for timer output; can select nsec, usec, msec, or sec
+   specify a time unit for timer output; can select ``nsec``, ``usec``, ``msec``, or ``sec``
 
    .. versionadded:: 3.5
 
@@ -247,7 +251,8 @@ quotes and using leading spaces.  Multiple :option:`-s` options are treated
 similarly.
 
 If :option:`-n` is not given, a suitable number of loops is calculated by trying
-successive powers of 10 until the total time is at least 0.2 seconds.
+increasing numbers from the sequence 1, 2, 5, 10, 20, 50, ... until the total
+time is at least 0.2 seconds.
 
 :func:`default_timer` measurements can be affected by other programs running on
 the same machine, so the best thing to do when accurate timing is necessary is
@@ -277,6 +282,13 @@ It is possible to provide a setup statement that is executed only once at the be
    $ python -m timeit -s 'text = "sample string"; char = "g"'  'text.find(char)'
    1000000 loops, best of 5: 0.342 usec per loop
 
+In the output, there are three fields. The loop count, which tells you how many
+times the statement body was run per timing loop repetition. The repetition
+count ('best of 5') which tells you how many times the timing loop was
+repeated, and finally the time the statement body took on average within the
+best repetition of the timing loop. That is, the time the fastest repetition
+took divided by the loop count.
+
 ::
 
    >>> import timeit
@@ -292,7 +304,7 @@ The same can be done using the :class:`Timer` class and its methods::
    >>> t.timeit()
    0.3955516149999312
    >>> t.repeat()
-   [0.40193588800002544, 0.3960157959998014, 0.39594301399984033]
+   [0.40183617287970225, 0.37027556854118704, 0.38344867356679524, 0.3712595970846668, 0.37866875250654886]
 
 
 The following examples show how to time expressions that contain multiple lines.

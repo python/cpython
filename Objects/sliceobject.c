@@ -14,10 +14,10 @@ this type and there is exactly one in existence.
 */
 
 #include "Python.h"
-#include "pycore_object.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
-#include "structmember.h"
+#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "structmember.h"         // PyMemberDef
 
 static PyObject *
 ellipsis_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
@@ -53,10 +53,10 @@ PyTypeObject PyEllipsis_Type = {
     0,                                  /* tp_basicsize */
     0,                                  /* tp_itemsize */
     0, /*never called*/                 /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     ellipsis_repr,                      /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -96,15 +96,12 @@ PyObject _Py_EllipsisObject = {
 
 /* Slice object implementation */
 
-/* Using a cache is very effective since typically only a single slice is
- * created and then deleted again
- */
-static PySliceObject *slice_cache = NULL;
-void PySlice_Fini(void)
+
+void _PySlice_Fini(PyInterpreterState *interp)
 {
-    PySliceObject *obj = slice_cache;
+    PySliceObject *obj = interp->slice_cache;
     if (obj != NULL) {
-        slice_cache = NULL;
+        interp->slice_cache = NULL;
         PyObject_GC_Del(obj);
     }
 }
@@ -113,33 +110,59 @@ void PySlice_Fini(void)
    index is present.
 */
 
+static PySliceObject *
+_PyBuildSlice_Consume2(PyObject *start, PyObject *stop, PyObject *step)
+{
+    assert(start != NULL && stop != NULL && step != NULL);
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PySliceObject *obj;
+    if (interp->slice_cache != NULL) {
+        obj = interp->slice_cache;
+        interp->slice_cache = NULL;
+        _Py_NewReference((PyObject *)obj);
+    }
+    else {
+        obj = PyObject_GC_New(PySliceObject, &PySlice_Type);
+        if (obj == NULL) {
+            goto error;
+        }
+    }
+
+    obj->start = start;
+    obj->stop = stop;
+    obj->step = Py_NewRef(step);
+
+    _PyObject_GC_TRACK(obj);
+    return obj;
+error:
+    Py_DECREF(start);
+    Py_DECREF(stop);
+    return NULL;
+}
+
 PyObject *
 PySlice_New(PyObject *start, PyObject *stop, PyObject *step)
 {
-    PySliceObject *obj;
-    if (slice_cache != NULL) {
-        obj = slice_cache;
-        slice_cache = NULL;
-        _Py_NewReference((PyObject *)obj);
-    } else {
-        obj = PyObject_GC_New(PySliceObject, &PySlice_Type);
-        if (obj == NULL)
-            return NULL;
+    if (step == NULL) {
+        step = Py_None;
     }
-
-    if (step == NULL) step = Py_None;
-    Py_INCREF(step);
-    if (start == NULL) start = Py_None;
+    if (start == NULL) {
+        start = Py_None;
+    }
+    if (stop == NULL) {
+        stop = Py_None;
+    }
     Py_INCREF(start);
-    if (stop == NULL) stop = Py_None;
     Py_INCREF(stop);
+    return (PyObject *) _PyBuildSlice_Consume2(start, stop, step);
+}
 
-    obj->step = step;
-    obj->start = start;
-    obj->stop = stop;
-
-    _PyObject_GC_TRACK(obj);
-    return (PyObject *) obj;
+PyObject *
+_PyBuildSlice_ConsumeRefs(PyObject *start, PyObject *stop)
+{
+    assert(start != NULL && stop != NULL);
+    return (PyObject *)_PyBuildSlice_Consume2(start, stop, Py_None);
 }
 
 PyObject *
@@ -200,7 +223,8 @@ PySlice_Unpack(PyObject *_r,
     PySliceObject *r = (PySliceObject*)_r;
     /* this is harder to get right than you might think */
 
-    Py_BUILD_ASSERT(PY_SSIZE_T_MIN + 1 <= -PY_SSIZE_T_MAX);
+    static_assert(PY_SSIZE_T_MIN + 1 <= -PY_SSIZE_T_MAX,
+                  "-PY_SSIZE_T_MAX < PY_SSIZE_T_MIN + 1");
 
     if (r->step == Py_None) {
         *step = 1;
@@ -324,14 +348,17 @@ Create a slice object.  This is used for extended slicing (e.g. a[0:10:2]).");
 static void
 slice_dealloc(PySliceObject *r)
 {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyObject_GC_UNTRACK(r);
     Py_DECREF(r->step);
     Py_DECREF(r->start);
     Py_DECREF(r->stop);
-    if (slice_cache == NULL)
-        slice_cache = r;
-    else
+    if (interp->slice_cache == NULL) {
+        interp->slice_cache = r;
+    }
+    else {
         PyObject_GC_Del(r);
+    }
 }
 
 static PyObject *
@@ -353,7 +380,7 @@ static PyMemberDef slice_members[] = {
 static PyObject*
 evaluate_slice_index(PyObject *v)
 {
-    if (PyIndex_Check(v)) {
+    if (_PyIndex_Check(v)) {
         return PyNumber_Index(v);
     }
     else {
@@ -379,7 +406,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
 
     /* Convert step to an integer; raise for zero step. */
     if (self->step == Py_None) {
-        step = _PyLong_One;
+        step = _PyLong_GetOne();
         Py_INCREF(step);
         step_is_negative = 0;
     }
@@ -408,7 +435,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
             goto error;
     }
     else {
-        lower = _PyLong_Zero;
+        lower = _PyLong_GetZero();
         Py_INCREF(lower);
         upper = length;
         Py_INCREF(upper);
@@ -565,14 +592,11 @@ static PyMethodDef slice_methods[] = {
 static PyObject *
 slice_richcompare(PyObject *v, PyObject *w, int op)
 {
-    PyObject *t1;
-    PyObject *t2;
-    PyObject *res;
-
     if (!PySlice_Check(v) || !PySlice_Check(w))
         Py_RETURN_NOTIMPLEMENTED;
 
     if (v == w) {
+        PyObject *res;
         /* XXX Do we really need this shortcut?
            There's a unit test for it, but is that fair? */
         switch (op) {
@@ -589,34 +613,27 @@ slice_richcompare(PyObject *v, PyObject *w, int op)
         return res;
     }
 
-    t1 = PyTuple_New(3);
-    if (t1 == NULL)
+
+    PyObject *t1 = PyTuple_Pack(3,
+                                ((PySliceObject *)v)->start,
+                                ((PySliceObject *)v)->stop,
+                                ((PySliceObject *)v)->step);
+    if (t1 == NULL) {
         return NULL;
-    t2 = PyTuple_New(3);
+    }
+
+    PyObject *t2 = PyTuple_Pack(3,
+                                ((PySliceObject *)w)->start,
+                                ((PySliceObject *)w)->stop,
+                                ((PySliceObject *)w)->step);
     if (t2 == NULL) {
         Py_DECREF(t1);
         return NULL;
     }
 
-    PyTuple_SET_ITEM(t1, 0, ((PySliceObject *)v)->start);
-    PyTuple_SET_ITEM(t1, 1, ((PySliceObject *)v)->stop);
-    PyTuple_SET_ITEM(t1, 2, ((PySliceObject *)v)->step);
-    PyTuple_SET_ITEM(t2, 0, ((PySliceObject *)w)->start);
-    PyTuple_SET_ITEM(t2, 1, ((PySliceObject *)w)->stop);
-    PyTuple_SET_ITEM(t2, 2, ((PySliceObject *)w)->step);
-
-    res = PyObject_RichCompare(t1, t2, op);
-
-    PyTuple_SET_ITEM(t1, 0, NULL);
-    PyTuple_SET_ITEM(t1, 1, NULL);
-    PyTuple_SET_ITEM(t1, 2, NULL);
-    PyTuple_SET_ITEM(t2, 0, NULL);
-    PyTuple_SET_ITEM(t2, 1, NULL);
-    PyTuple_SET_ITEM(t2, 2, NULL);
-
+    PyObject *res = PyObject_RichCompare(t1, t2, op);
     Py_DECREF(t1);
     Py_DECREF(t2);
-
     return res;
 }
 
@@ -635,10 +652,10 @@ PyTypeObject PySlice_Type = {
     sizeof(PySliceObject),      /* Basic object size */
     0,                          /* Item size for varobject */
     (destructor)slice_dealloc,                  /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)slice_repr,                       /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */

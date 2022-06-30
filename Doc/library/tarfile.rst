@@ -37,7 +37,7 @@ Some facts and figures:
    Added support for :mod:`lzma` compression.
 
 
-.. function:: open(name=None, mode='r', fileobj=None, bufsize=10240, \*\*kwargs)
+.. function:: open(name=None, mode='r', fileobj=None, bufsize=10240, **kwargs)
 
    Return a :class:`TarFile` object for the pathname *name*. For detailed
    information on :class:`TarFile` objects and the keyword arguments that are
@@ -63,19 +63,19 @@ Some facts and figures:
    +------------------+---------------------------------------------+
    | ``'x'`` or       | Create a tarfile exclusively without        |
    | ``'x:'``         | compression.                                |
-   |                  | Raise an :exc:`FileExistsError` exception   |
+   |                  | Raise a :exc:`FileExistsError` exception    |
    |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
    | ``'x:gz'``       | Create a tarfile with gzip compression.     |
-   |                  | Raise an :exc:`FileExistsError` exception   |
+   |                  | Raise a :exc:`FileExistsError` exception    |
    |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
    | ``'x:bz2'``      | Create a tarfile with bzip2 compression.    |
-   |                  | Raise an :exc:`FileExistsError` exception   |
+   |                  | Raise a :exc:`FileExistsError` exception    |
    |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
    | ``'x:xz'``       | Create a tarfile with lzma compression.     |
-   |                  | Raise an :exc:`FileExistsError` exception   |
+   |                  | Raise a :exc:`FileExistsError` exception    |
    |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
    | ``'a' or 'a:'``  | Open for appending with no compression. The |
@@ -98,9 +98,12 @@ Some facts and figures:
    If *fileobj* is specified, it is used as an alternative to a :term:`file object`
    opened in binary mode for *name*. It is supposed to be at position 0.
 
-   For modes ``'w:gz'``, ``'r:gz'``, ``'w:bz2'``, ``'r:bz2'``, ``'x:gz'``,
-   ``'x:bz2'``, :func:`tarfile.open` accepts the keyword argument
+   For modes ``'w:gz'``, ``'x:gz'``, ``'w|gz'``, ``'w:bz2'``, ``'x:bz2'``,
+   ``'w|bz2'``, :func:`tarfile.open` accepts the keyword argument
    *compresslevel* (default ``9``) to specify the compression level of the file.
+
+   For modes ``'w:xz'`` and ``'x:xz'``, :func:`tarfile.open` accepts the
+   keyword argument *preset* to specify the compression level of the file.
 
    For special purposes, there is a second format for *mode*:
    ``'filemode|[compression]'``.  :func:`tarfile.open` will return a :class:`TarFile`
@@ -149,8 +152,12 @@ Some facts and figures:
    .. versionchanged:: 3.6
       The *name* parameter accepts a :term:`path-like object`.
 
+   .. versionchanged:: 3.12
+      The *compresslevel* keyword argument also works for streams.
+
 
 .. class:: TarFile
+   :noindex:
 
    Class for reading and writing tar archives. Do not use this class directly:
    use :func:`tarfile.open` instead. See :ref:`tarfile-objects`.
@@ -159,7 +166,10 @@ Some facts and figures:
 .. function:: is_tarfile(name)
 
    Return :const:`True` if *name* is a tar archive file, that the :mod:`tarfile`
-   module can read.
+   module can read. *name* may be a :class:`str`, file, or file-like object.
+
+   .. versionchanged:: 3.9
+      Support for file and file-like objects.
 
 
 The :mod:`tarfile` module defines the following exceptions:
@@ -229,7 +239,11 @@ details.
 
 .. data:: DEFAULT_FORMAT
 
-   The default format for creating archives. This is currently :const:`GNU_FORMAT`.
+   The default format for creating archives. This is currently :const:`PAX_FORMAT`.
+
+   .. versionchanged:: 3.8
+      The default format for new archives was changed to
+      :const:`PAX_FORMAT` from :const:`GNU_FORMAT`.
 
 
 .. seealso::
@@ -286,9 +300,10 @@ be finalized; only the internally used file object will be closed. See the
 
       *fileobj* is not closed, when :class:`TarFile` is closed.
 
-   *format* controls the archive format. It must be one of the constants
+   *format* controls the archive format for writing. It must be one of the constants
    :const:`USTAR_FORMAT`, :const:`GNU_FORMAT` or :const:`PAX_FORMAT` that are
-   defined at module level.
+   defined at module level. When reading, format will be automatically detected, even
+   if different formats are present in a single archive.
 
    The *tarinfo* argument can be used to replace the default :class:`TarInfo` class
    with a different one.
@@ -436,10 +451,11 @@ be finalized; only the internally used file object will be closed. See the
 
 .. method:: TarFile.extractfile(member)
 
-   Extract a member from the archive as a file object. *member* may be a filename
-   or a :class:`TarInfo` object. If *member* is a regular file or a link, an
-   :class:`io.BufferedReader` object is returned. Otherwise, :const:`None` is
-   returned.
+   Extract a member from the archive as a file object. *member* may be
+   a filename or a :class:`TarInfo` object. If *member* is a regular file or
+   a link, an :class:`io.BufferedReader` object is returned. For all other
+   existing members, :const:`None` is returned. If *member* does not appear
+   in the archive, :exc:`KeyError` is raised.
 
    .. versionchanged:: 3.3
       Return an :class:`io.BufferedReader` object.
@@ -779,7 +795,7 @@ How to read a gzip compressed tar archive and display some member information::
    import tarfile
    tar = tarfile.open("sample.tar.gz", "r:gz")
    for tarinfo in tar:
-       print(tarinfo.name, "is", tarinfo.size, "bytes in size and is", end="")
+       print(tarinfo.name, "is", tarinfo.size, "bytes in size and is ", end="")
        if tarinfo.isreg():
            print("a regular file.")
        elif tarinfo.isdir():
@@ -809,8 +825,8 @@ Supported tar formats
 There are three tar formats that can be created with the :mod:`tarfile` module:
 
 * The POSIX.1-1988 ustar format (:const:`USTAR_FORMAT`). It supports filenames
-  up to a length of at best 256 characters and linknames up to 100 characters. The
-  maximum file size is 8 GiB. This is an old and limited but widely
+  up to a length of at best 256 characters and linknames up to 100 characters.
+  The maximum file size is 8 GiB. This is an old and limited but widely
   supported format.
 
 * The GNU tar format (:const:`GNU_FORMAT`). It supports long filenames and
@@ -820,14 +836,17 @@ There are three tar formats that can be created with the :mod:`tarfile` module:
 
 * The POSIX.1-2001 pax format (:const:`PAX_FORMAT`). It is the most flexible
   format with virtually no limits. It supports long filenames and linknames, large
-  files and stores pathnames in a portable way. However, not all tar
-  implementations today are able to handle pax archives properly.
+  files and stores pathnames in a portable way. Modern tar implementations,
+  including GNU tar, bsdtar/libarchive and star, fully support extended *pax*
+  features; some old or unmaintained libraries may not, but should treat
+  *pax* archives as if they were in the universally-supported *ustar* format.
+  It is the current default format for new archives.
 
-  The *pax* format is an extension to the existing *ustar* format. It uses extra
-  headers for information that cannot be stored otherwise. There are two flavours
-  of pax headers: Extended headers only affect the subsequent file header, global
-  headers are valid for the complete archive and affect all following files. All
-  the data in a pax header is encoded in *UTF-8* for portability reasons.
+  It extends the existing *ustar* format with extra headers for information
+  that cannot be stored otherwise. There are two flavours of pax headers:
+  Extended headers only affect the subsequent file header, global
+  headers are valid for the complete archive and affect all following files.
+  All the data in a pax header is encoded in *UTF-8* for portability reasons.
 
 There are some more variants of the tar format which can be read, but not
 created:
@@ -871,7 +890,7 @@ converted. Possible values are listed in section :ref:`error-handlers`.
 The default scheme is ``'surrogateescape'`` which Python also uses for its
 file system calls, see :ref:`os-filenames`.
 
-In case of :const:`PAX_FORMAT` archives, *encoding* is generally not needed
+For :const:`PAX_FORMAT` archives (the default), *encoding* is generally not needed
 because all the metadata is stored using *UTF-8*. *encoding* is only used in
 the rare cases when binary pax headers are decoded or when strings with
 surrogate characters are stored.

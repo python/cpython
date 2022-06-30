@@ -6,9 +6,15 @@ annotated by François Pinard, and converted to C by Raymond Hettinger.
 
 */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
+#include "pycore_list.h"          // _PyList_ITEMS()
 
 #include "clinic/_heapqmodule.c.h"
+
 
 /*[clinic input]
 module _heapq
@@ -36,7 +42,11 @@ siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
     while (pos > startpos) {
         parentpos = (pos - 1) >> 1;
         parent = arr[parentpos];
+        Py_INCREF(newitem);
+        Py_INCREF(parent);
         cmp = PyObject_RichCompareBool(newitem, parent, Py_LT);
+        Py_DECREF(parent);
+        Py_DECREF(newitem);
         if (cmp < 0)
             return -1;
         if (size != PyList_GET_SIZE(heap)) {
@@ -78,10 +88,13 @@ siftup(PyListObject *heap, Py_ssize_t pos)
         /* Set childpos to index of smaller child.   */
         childpos = 2*pos + 1;    /* leftmost child position  */
         if (childpos + 1 < endpos) {
-            cmp = PyObject_RichCompareBool(
-                arr[childpos],
-                arr[childpos + 1],
-                Py_LT);
+            PyObject* a = arr[childpos];
+            PyObject* b = arr[childpos + 1];
+            Py_INCREF(a);
+            Py_INCREF(b);
+            cmp = PyObject_RichCompareBool(a, b, Py_LT);
+            Py_DECREF(a);
+            Py_DECREF(b);
             if (cmp < 0)
                 return -1;
             childpos += ((unsigned)cmp ^ 1);   /* increment when cmp==0 */
@@ -106,7 +119,7 @@ siftup(PyListObject *heap, Py_ssize_t pos)
 /*[clinic input]
 _heapq.heappush
 
-    heap: object
+    heap: object(subclass_of='&PyList_Type')
     item: object
     /
 
@@ -115,13 +128,8 @@ Push item onto heap, maintaining the heap invariant.
 
 static PyObject *
 _heapq_heappush_impl(PyObject *module, PyObject *heap, PyObject *item)
-/*[clinic end generated code: output=912c094f47663935 input=7913545cb5118842]*/
+/*[clinic end generated code: output=912c094f47663935 input=7c69611f3698aceb]*/
 {
-    if (!PyList_Check(heap)) {
-        PyErr_SetString(PyExc_TypeError, "heap argument must be a list");
-        return NULL;
-    }
-
     if (PyList_Append(heap, item))
         return NULL;
 
@@ -135,11 +143,6 @@ heappop_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
 {
     PyObject *lastelt, *returnitem;
     Py_ssize_t n;
-
-    if (!PyList_Check(heap)) {
-        PyErr_SetString(PyExc_TypeError, "heap argument must be a list");
-        return NULL;
-    }
 
     /* raises IndexError if the heap is empty */
     n = PyList_GET_SIZE(heap);
@@ -170,15 +173,15 @@ heappop_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
 /*[clinic input]
 _heapq.heappop
 
-    heap: object
+    heap: object(subclass_of='&PyList_Type')
     /
 
 Pop the smallest item off the heap, maintaining the heap invariant.
 [clinic start generated code]*/
 
 static PyObject *
-_heapq_heappop(PyObject *module, PyObject *heap)
-/*[clinic end generated code: output=e1bbbc9866bce179 input=9bd36317b806033d]*/
+_heapq_heappop_impl(PyObject *module, PyObject *heap)
+/*[clinic end generated code: output=96dfe82d37d9af76 input=91487987a583c856]*/
 {
     return heappop_internal(heap, siftup);
 }
@@ -187,11 +190,6 @@ static PyObject *
 heapreplace_internal(PyObject *heap, PyObject *item, int siftup_func(PyListObject *, Py_ssize_t))
 {
     PyObject *returnitem;
-
-    if (!PyList_Check(heap)) {
-        PyErr_SetString(PyExc_TypeError, "heap argument must be a list");
-        return NULL;
-    }
 
     if (PyList_GET_SIZE(heap) == 0) {
         PyErr_SetString(PyExc_IndexError, "index out of range");
@@ -212,7 +210,7 @@ heapreplace_internal(PyObject *heap, PyObject *item, int siftup_func(PyListObjec
 /*[clinic input]
 _heapq.heapreplace
 
-    heap: object
+    heap: object(subclass_of='&PyList_Type')
     item: object
     /
 
@@ -229,7 +227,7 @@ this routine unless written as part of a conditional replacement:
 
 static PyObject *
 _heapq_heapreplace_impl(PyObject *module, PyObject *heap, PyObject *item)
-/*[clinic end generated code: output=82ea55be8fbe24b4 input=e57ae8f4ecfc88e3]*/
+/*[clinic end generated code: output=82ea55be8fbe24b4 input=719202ac02ba10c8]*/
 {
     return heapreplace_internal(heap, item, siftup);
 }
@@ -237,7 +235,7 @@ _heapq_heapreplace_impl(PyObject *module, PyObject *heap, PyObject *item)
 /*[clinic input]
 _heapq.heappushpop
 
-    heap: object
+    heap: object(subclass_of='&PyList_Type')
     item: object
     /
 
@@ -249,22 +247,20 @@ a separate call to heappop().
 
 static PyObject *
 _heapq_heappushpop_impl(PyObject *module, PyObject *heap, PyObject *item)
-/*[clinic end generated code: output=67231dc98ed5774f input=eb48c90ba77b2214]*/
+/*[clinic end generated code: output=67231dc98ed5774f input=5dc701f1eb4a4aa7]*/
 {
     PyObject *returnitem;
     int cmp;
-
-    if (!PyList_Check(heap)) {
-        PyErr_SetString(PyExc_TypeError, "heap argument must be a list");
-        return NULL;
-    }
 
     if (PyList_GET_SIZE(heap) == 0) {
         Py_INCREF(item);
         return item;
     }
 
-    cmp = PyObject_RichCompareBool(PyList_GET_ITEM(heap, 0), item, Py_LT);
+    PyObject* top = PyList_GET_ITEM(heap, 0);
+    Py_INCREF(top);
+    cmp = PyObject_RichCompareBool(top, item, Py_LT);
+    Py_DECREF(top);
     if (cmp < 0)
         return NULL;
     if (cmp == 0) {
@@ -357,11 +353,6 @@ heapify_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
 {
     Py_ssize_t i, n;
 
-    if (!PyList_Check(heap)) {
-        PyErr_SetString(PyExc_TypeError, "heap argument must be a list");
-        return NULL;
-    }
-
     /* For heaps likely to be bigger than L1 cache, we use the cache
        friendly heapify function.  For smaller heaps that fit entirely
        in cache, we prefer the simpler algorithm with less branching.
@@ -386,15 +377,15 @@ heapify_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
 /*[clinic input]
 _heapq.heapify
 
-    heap: object
+    heap: object(subclass_of='&PyList_Type')
     /
 
 Transform list into a heap, in-place, in O(len(heap)) time.
 [clinic start generated code]*/
 
 static PyObject *
-_heapq_heapify(PyObject *module, PyObject *heap)
-/*[clinic end generated code: output=11483f23627c4616 input=872c87504b8de970]*/
+_heapq_heapify_impl(PyObject *module, PyObject *heap)
+/*[clinic end generated code: output=e63a636fcf83d6d0 input=53bb7a2166febb73]*/
 {
     return heapify_internal(heap, siftup);
 }
@@ -420,7 +411,11 @@ siftdown_max(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
     while (pos > startpos) {
         parentpos = (pos - 1) >> 1;
         parent = arr[parentpos];
+        Py_INCREF(parent);
+        Py_INCREF(newitem);
         cmp = PyObject_RichCompareBool(parent, newitem, Py_LT);
+        Py_DECREF(parent);
+        Py_DECREF(newitem);
         if (cmp < 0)
             return -1;
         if (size != PyList_GET_SIZE(heap)) {
@@ -462,10 +457,13 @@ siftup_max(PyListObject *heap, Py_ssize_t pos)
         /* Set childpos to index of smaller child.   */
         childpos = 2*pos + 1;    /* leftmost child position  */
         if (childpos + 1 < endpos) {
-            cmp = PyObject_RichCompareBool(
-                arr[childpos + 1],
-                arr[childpos],
-                Py_LT);
+            PyObject* a = arr[childpos + 1];
+            PyObject* b = arr[childpos];
+            Py_INCREF(a);
+            Py_INCREF(b);
+            cmp = PyObject_RichCompareBool(a, b, Py_LT);
+            Py_DECREF(a);
+            Py_DECREF(b);
             if (cmp < 0)
                 return -1;
             childpos += ((unsigned)cmp ^ 1);   /* increment when cmp==0 */
@@ -491,15 +489,15 @@ siftup_max(PyListObject *heap, Py_ssize_t pos)
 /*[clinic input]
 _heapq._heappop_max
 
-    heap: object
+    heap: object(subclass_of='&PyList_Type')
     /
 
 Maxheap variant of heappop.
 [clinic start generated code]*/
 
 static PyObject *
-_heapq__heappop_max(PyObject *module, PyObject *heap)
-/*[clinic end generated code: output=acd30acf6384b13c input=62ede3ba9117f541]*/
+_heapq__heappop_max_impl(PyObject *module, PyObject *heap)
+/*[clinic end generated code: output=9e77aadd4e6a8760 input=362c06e1c7484793]*/
 {
     return heappop_internal(heap, siftup_max);
 }
@@ -507,7 +505,7 @@ _heapq__heappop_max(PyObject *module, PyObject *heap)
 /*[clinic input]
 _heapq._heapreplace_max
 
-    heap: object
+    heap: object(subclass_of='&PyList_Type')
     item: object
     /
 
@@ -517,7 +515,7 @@ Maxheap variant of heapreplace.
 static PyObject *
 _heapq__heapreplace_max_impl(PyObject *module, PyObject *heap,
                              PyObject *item)
-/*[clinic end generated code: output=8ad7545e4a5e8adb input=6d8f25131e0f0e5f]*/
+/*[clinic end generated code: output=8ad7545e4a5e8adb input=f2dd27cbadb948d7]*/
 {
     return heapreplace_internal(heap, item, siftup_max);
 }
@@ -525,19 +523,18 @@ _heapq__heapreplace_max_impl(PyObject *module, PyObject *heap,
 /*[clinic input]
 _heapq._heapify_max
 
-    heap: object
+    heap: object(subclass_of='&PyList_Type')
     /
 
 Maxheap variant of heapify.
 [clinic start generated code]*/
 
 static PyObject *
-_heapq__heapify_max(PyObject *module, PyObject *heap)
-/*[clinic end generated code: output=1c6bb6b60d6a2133 input=cdfcc6835b14110d]*/
+_heapq__heapify_max_impl(PyObject *module, PyObject *heap)
+/*[clinic end generated code: output=2cb028beb4a8b65e input=c1f765ee69f124b8]*/
 {
     return heapify_internal(heap, siftup_max);
 }
-
 
 static PyMethodDef heapq_methods[] = {
     _HEAPQ_HEAPPUSH_METHODDEF
@@ -677,13 +674,29 @@ Believe me, real good tape sorts were quite spectacular to watch!\n\
 From all times, sorting has always been a Great Art! :-)\n");
 
 
+static int
+heapq_exec(PyObject *m)
+{
+    PyObject *about = PyUnicode_FromString(__about__);
+    if (PyModule_AddObject(m, "__about__", about) < 0) {
+        Py_DECREF(about);
+        return -1;
+    }
+    return 0;
+}
+
+static struct PyModuleDef_Slot heapq_slots[] = {
+    {Py_mod_exec, heapq_exec},
+    {0, NULL}
+};
+
 static struct PyModuleDef _heapqmodule = {
     PyModuleDef_HEAD_INIT,
     "_heapq",
     module_doc,
-    -1,
+    0,
     heapq_methods,
-    NULL,
+    heapq_slots,
     NULL,
     NULL,
     NULL
@@ -692,13 +705,5 @@ static struct PyModuleDef _heapqmodule = {
 PyMODINIT_FUNC
 PyInit__heapq(void)
 {
-    PyObject *m, *about;
-
-    m = PyModule_Create(&_heapqmodule);
-    if (m == NULL)
-        return NULL;
-    about = PyUnicode_DecodeUTF8(__about__, strlen(__about__), NULL);
-    PyModule_AddObject(m, "__about__", about);
-    return m;
+    return PyModuleDef_Init(&_heapqmodule);
 }
-

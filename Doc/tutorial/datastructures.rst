@@ -78,7 +78,7 @@ objects:
    Return the number of times *x* appears in the list.
 
 
-.. method:: list.sort(key=None, reverse=False)
+.. method:: list.sort(*, key=None, reverse=False)
    :noindex:
 
    Sort the items of the list in place (the arguments can be used for sort
@@ -124,6 +124,13 @@ You might have noticed that methods like ``insert``, ``remove`` or ``sort`` that
 only modify the list have no return value printed -- they return the default
 ``None``. [1]_  This is a design principle for all mutable data structures in
 Python.
+
+Another thing you might notice is that not all data can be sorted or
+compared.  For instance, ``[None, 'hello', 10]`` doesn't sort because
+integers can't be compared to strings and *None* can't be compared to
+other types.  Also, there are some types that don't have a defined
+ordering relation.  For example, ``3+4j < 5+7j`` isn't a valid
+comparison.
 
 
 .. _tut-lists-as-stacks:
@@ -261,10 +268,10 @@ it must be parenthesized. ::
    [(0, 0), (1, 1), (2, 4), (3, 9), (4, 16), (5, 25)]
    >>> # the tuple must be parenthesized, otherwise an error is raised
    >>> [x, x**2 for x in range(6)]
-     File "<stdin>", line 1, in <module>
+     File "<stdin>", line 1
        [x, x**2 for x in range(6)]
-                  ^
-   SyntaxError: invalid syntax
+        ^^^^^^^
+   SyntaxError: did you forget parentheses around the comprehension target?
    >>> # flatten a list using a listcomp with two 'for'
    >>> vec = [[1,2,3], [4,5,6], [7,8,9]]
    >>> [num for elem in vec for num in elem]
@@ -296,7 +303,7 @@ The following list comprehension will transpose rows and columns::
    >>> [[row[i] for row in matrix] for i in range(4)]
    [[1, 5, 9], [2, 6, 10], [3, 7, 11], [4, 8, 12]]
 
-As we saw in the previous section, the nested listcomp is evaluated in
+As we saw in the previous section, the inner list comprehension is evaluated in
 the context of the :keyword:`for` that follows it, so this example is
 equivalent to::
 
@@ -607,6 +614,21 @@ To loop over a sequence in sorted order, use the :func:`sorted` function which
 returns a new sorted list while leaving the source unaltered. ::
 
    >>> basket = ['apple', 'orange', 'apple', 'pear', 'orange', 'banana']
+   >>> for i in sorted(basket):
+   ...     print(i)
+   ...
+   apple
+   apple
+   banana
+   orange
+   orange
+   pear
+
+Using :func:`set` on a sequence eliminates duplicate elements. The use of
+:func:`sorted` in combination with :func:`set` over a sequence is an idiomatic
+way to loop over unique elements of the sequence in sorted order. ::
+
+   >>> basket = ['apple', 'orange', 'apple', 'pear', 'orange', 'banana']
    >>> for f in sorted(set(basket)):
    ...     print(f)
    ...
@@ -637,11 +659,12 @@ More on Conditions
 The conditions used in ``while`` and ``if`` statements can contain any
 operators, not just comparisons.
 
-The comparison operators ``in`` and ``not in`` check whether a value occurs
-(does not occur) in a sequence.  The operators ``is`` and ``is not`` compare
-whether two objects are really the same object; this only matters for mutable
-objects like lists.  All comparison operators have the same priority, which is
-lower than that of all numerical operators.
+
+The comparison operators ``in`` and ``not in`` are membership tests that
+determine whether a value is in (or not in) a container.  The operators ``is``
+and ``is not`` compare whether two objects are really the same object.  All
+comparison operators have the same priority, which is lower than that of all
+numerical operators.
 
 Comparisons can be chained.  For example, ``a < b == c`` tests whether ``a`` is
 less than ``b`` and moreover ``b`` equals ``c``.
@@ -668,28 +691,28 @@ to a variable.  For example, ::
    >>> non_null
    'Trondheim'
 
-Note that in Python, unlike C, assignment cannot occur inside expressions. C
-programmers may grumble about this, but it avoids a common class of problems
-encountered in C programs: typing ``=`` in an expression when ``==`` was
-intended.
+Note that in Python, unlike C, assignment inside expressions must be done
+explicitly with the
+:ref:`walrus operator <why-can-t-i-use-an-assignment-in-an-expression>` ``:=``.
+This avoids a common class of problems encountered in C programs: typing ``=``
+in an expression when ``==`` was intended.
 
 
 .. _tut-comparing:
 
 Comparing Sequences and Other Types
 ===================================
-
-Sequence objects may be compared to other objects with the same sequence type.
-The comparison uses *lexicographical* ordering: first the first two items are
-compared, and if they differ this determines the outcome of the comparison; if
-they are equal, the next two items are compared, and so on, until either
-sequence is exhausted. If two items to be compared are themselves sequences of
-the same type, the lexicographical comparison is carried out recursively.  If
-all items of two sequences compare equal, the sequences are considered equal.
-If one sequence is an initial sub-sequence of the other, the shorter sequence is
-the smaller (lesser) one.  Lexicographical ordering for strings uses the Unicode
-code point number to order individual characters.  Some examples of comparisons
-between sequences of the same type::
+Sequence objects typically may be compared to other objects with the same sequence
+type. The comparison uses *lexicographical* ordering: first the first two
+items are compared, and if they differ this determines the outcome of the
+comparison; if they are equal, the next two items are compared, and so on, until
+either sequence is exhausted. If two items to be compared are themselves
+sequences of the same type, the lexicographical comparison is carried out
+recursively.  If all items of two sequences compare equal, the sequences are
+considered equal. If one sequence is an initial sub-sequence of the other, the
+shorter sequence is the smaller (lesser) one.  Lexicographical ordering for
+strings uses the Unicode code point number to order individual characters.
+Some examples of comparisons between sequences of the same type::
 
    (1, 2, 3)              < (1, 2, 4)
    [1, 2, 3]              < [1, 2, 4]

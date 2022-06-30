@@ -1,3 +1,0 @@
-The xml.sax and xml.dom.domreg no longer use environment variables to
-override parser implementations when sys.flags.ignore_environment is set by
--E or -I arguments.

@@ -1,2 +1,0 @@
-Add ``functools.cached_property`` decorator, for computed properties cached
-for the life of the instance.

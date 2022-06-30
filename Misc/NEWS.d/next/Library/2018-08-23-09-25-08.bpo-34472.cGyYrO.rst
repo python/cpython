@@ -1,3 +1,0 @@
-Improved compatibility for streamed files in :mod:`zipfile`. Previously an
-optional signature was not being written and certain ZIP applications were
-not supported. Patch by Silas Sewell.

@@ -48,19 +48,9 @@
  * POSIX support
  */
 
-#define PyCOND_ADD_MICROSECONDS(tv, interval) \
-do { /* TODO: add overflow and truncation checks */ \
-    tv.tv_usec += (long) interval; \
-    tv.tv_sec += tv.tv_usec / 1000000; \
-    tv.tv_usec %= 1000000; \
-} while (0)
-
-/* We assume all modern POSIX systems have gettimeofday() */
-#ifdef GETTIMEOFDAY_NO_TZ
-#define PyCOND_GETTIMEOFDAY(ptv) gettimeofday(ptv)
-#else
-#define PyCOND_GETTIMEOFDAY(ptv) gettimeofday(ptv, (struct timezone *)NULL)
-#endif
+/* These private functions are implemented in Python/thread_pthread.h */
+int _PyThread_cond_init(PyCOND_T *cond);
+void _PyThread_cond_after(long long us, struct timespec *abs);
 
 /* The following functions return 0 on success, nonzero on error */
 #define PyMUTEX_INIT(mut)       pthread_mutex_init((mut), NULL)
@@ -68,7 +58,7 @@ do { /* TODO: add overflow and truncation checks */ \
 #define PyMUTEX_LOCK(mut)       pthread_mutex_lock(mut)
 #define PyMUTEX_UNLOCK(mut)     pthread_mutex_unlock(mut)
 
-#define PyCOND_INIT(cond)       pthread_cond_init((cond), NULL)
+#define PyCOND_INIT(cond)       _PyThread_cond_init(cond)
 #define PyCOND_FINI(cond)       pthread_cond_destroy(cond)
 #define PyCOND_SIGNAL(cond)     pthread_cond_signal(cond)
 #define PyCOND_BROADCAST(cond)  pthread_cond_broadcast(cond)
@@ -78,22 +68,16 @@ do { /* TODO: add overflow and truncation checks */ \
 Py_LOCAL_INLINE(int)
 PyCOND_TIMEDWAIT(PyCOND_T *cond, PyMUTEX_T *mut, long long us)
 {
-    int r;
-    struct timespec ts;
-    struct timeval deadline;
-
-    PyCOND_GETTIMEOFDAY(&deadline);
-    PyCOND_ADD_MICROSECONDS(deadline, us);
-    ts.tv_sec = deadline.tv_sec;
-    ts.tv_nsec = deadline.tv_usec * 1000;
-
-    r = pthread_cond_timedwait((cond), (mut), &ts);
-    if (r == ETIMEDOUT)
+    struct timespec abs_timeout;
+    _PyThread_cond_after(us, &abs_timeout);
+    int ret = pthread_cond_timedwait(cond, mut, &abs_timeout);
+    if (ret == ETIMEDOUT) {
         return 1;
-    else if (r)
+    }
+    if (ret) {
         return -1;
-    else
-        return 0;
+    }
+    return 0;
 }
 
 #elif defined(NT_THREADS)
@@ -115,7 +99,7 @@ PyCOND_TIMEDWAIT(PyCOND_T *cond, PyMUTEX_T *mut, long long us)
    http://birrell.org/andrew/papers/ImplementingCVs.pdf
 
    Generic emulations of the pthread_cond_* API using
-   earlier Win32 functions can be found on the Web.
+   earlier Win32 functions can be found on the web.
    The following read can be give background information to these issues,
    but the implementations are all broken in some way.
    http://www.cse.wustl.edu/~schmidt/win32-cv-1.html
@@ -194,7 +178,7 @@ _PyCOND_WAIT_MS(PyCOND_T *cv, PyMUTEX_T *cs, DWORD ms)
          * just means an extra spurious wakeup for a waiting thread.
          * ('waiting' corresponds to the semaphore's "negative" count and
          * we may end up with e.g. (waiting == -1 && sem.count == 1).  When
-         * a new thread comes along, it will pass right throuhgh, having
+         * a new thread comes along, it will pass right through, having
          * adjusted it to (waiting == 0 && sem.count == 0).
          */
 

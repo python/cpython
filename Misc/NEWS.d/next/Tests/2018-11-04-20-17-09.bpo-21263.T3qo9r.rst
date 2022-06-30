@@ -1,4 +1,0 @@
-After several reports that test_gdb does not work properly on macOS and
-since gdb is not shipped by default anymore, test_gdb is now skipped on
-macOS when LLVM Clang has been used to compile Python. Patch by
-Lysandros Nikolaou

@@ -1,1 +1,0 @@
-Improved an error message when mock assert_has_calls fails.

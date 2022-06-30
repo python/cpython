@@ -28,7 +28,7 @@ PyDoc_STRVAR(os_stat__doc__,
 "  an open file descriptor.");
 
 #define OS_STAT_METHODDEF    \
-    {"stat", (PyCFunction)(void(*)(void))os_stat, METH_FASTCALL|METH_KEYWORDS, os_stat__doc__},
+    {"stat", _PyCFunction_CAST(os_stat), METH_FASTCALL|METH_KEYWORDS, os_stat__doc__},
 
 static PyObject *
 os_stat_impl(PyObject *module, path_t *path, int dir_fd, int follow_symlinks);
@@ -38,15 +38,36 @@ os_stat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "dir_fd", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {"O&|$O&p:stat", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "stat", 0};
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("stat", "path", 0, 1);
     int dir_fd = DEFAULT_DIR_FD;
     int follow_symlinks = 1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, FSTATAT_DIR_FD_CONVERTER, &dir_fd, &follow_symlinks)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[1]) {
+        if (!FSTATAT_DIR_FD_CONVERTER(args[1], &dir_fd)) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    follow_symlinks = PyObject_IsTrue(args[2]);
+    if (follow_symlinks < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = os_stat_impl(module, &path, dir_fd, follow_symlinks);
 
 exit:
@@ -66,7 +87,7 @@ PyDoc_STRVAR(os_lstat__doc__,
 "Equivalent to stat(path, follow_symlinks=False).");
 
 #define OS_LSTAT_METHODDEF    \
-    {"lstat", (PyCFunction)(void(*)(void))os_lstat, METH_FASTCALL|METH_KEYWORDS, os_lstat__doc__},
+    {"lstat", _PyCFunction_CAST(os_lstat), METH_FASTCALL|METH_KEYWORDS, os_lstat__doc__},
 
 static PyObject *
 os_lstat_impl(PyObject *module, path_t *path, int dir_fd);
@@ -76,14 +97,26 @@ os_lstat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {"O&|$O&:lstat", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "lstat", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("lstat", "path", 0, 0);
     int dir_fd = DEFAULT_DIR_FD;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, FSTATAT_DIR_FD_CONVERTER, &dir_fd)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (!FSTATAT_DIR_FD_CONVERTER(args[1], &dir_fd)) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = os_lstat_impl(module, &path, dir_fd);
 
 exit:
@@ -126,7 +159,7 @@ PyDoc_STRVAR(os_access__doc__,
 "  has the specified access to the path.");
 
 #define OS_ACCESS_METHODDEF    \
-    {"access", (PyCFunction)(void(*)(void))os_access, METH_FASTCALL|METH_KEYWORDS, os_access__doc__},
+    {"access", _PyCFunction_CAST(os_access), METH_FASTCALL|METH_KEYWORDS, os_access__doc__},
 
 static int
 os_access_impl(PyObject *module, path_t *path, int mode, int dir_fd,
@@ -137,7 +170,9 @@ os_access(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "mode", "dir_fd", "effective_ids", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {"O&i|$O&pp:access", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "access", 0};
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t path = PATH_T_INITIALIZE("access", "path", 0, 0);
     int mode;
     int dir_fd = DEFAULT_DIR_FD;
@@ -145,10 +180,42 @@ os_access(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     int follow_symlinks = 1;
     int _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, &mode, FACCESSAT_DIR_FD_CONVERTER, &dir_fd, &effective_ids, &follow_symlinks)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    mode = _PyLong_AsInt(args[1]);
+    if (mode == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[2]) {
+        if (!FACCESSAT_DIR_FD_CONVERTER(args[2], &dir_fd)) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[3]) {
+        effective_ids = PyObject_IsTrue(args[3]);
+        if (effective_ids < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    follow_symlinks = PyObject_IsTrue(args[4]);
+    if (follow_symlinks < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
     _return_value = os_access_impl(module, &path, mode, dir_fd, effective_ids, follow_symlinks);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -185,7 +252,8 @@ os_ttyname(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!PyArg_Parse(arg, "i:ttyname", &fd)) {
+    fd = _PyLong_AsInt(arg);
+    if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_ttyname_impl(module, fd);
@@ -229,7 +297,7 @@ PyDoc_STRVAR(os_chdir__doc__,
 "  If this functionality is unavailable, using it raises an exception.");
 
 #define OS_CHDIR_METHODDEF    \
-    {"chdir", (PyCFunction)(void(*)(void))os_chdir, METH_FASTCALL|METH_KEYWORDS, os_chdir__doc__},
+    {"chdir", _PyCFunction_CAST(os_chdir), METH_FASTCALL|METH_KEYWORDS, os_chdir__doc__},
 
 static PyObject *
 os_chdir_impl(PyObject *module, path_t *path);
@@ -239,11 +307,15 @@ os_chdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {"O&:chdir", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "chdir", 0};
+    PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE("chdir", "path", 0, PATH_HAVE_FCHDIR);
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &path)) {
         goto exit;
     }
     return_value = os_chdir_impl(module, &path);
@@ -267,7 +339,7 @@ PyDoc_STRVAR(os_fchdir__doc__,
 "Equivalent to os.chdir(fd).");
 
 #define OS_FCHDIR_METHODDEF    \
-    {"fchdir", (PyCFunction)(void(*)(void))os_fchdir, METH_FASTCALL|METH_KEYWORDS, os_fchdir__doc__},
+    {"fchdir", _PyCFunction_CAST(os_fchdir), METH_FASTCALL|METH_KEYWORDS, os_fchdir__doc__},
 
 static PyObject *
 os_fchdir_impl(PyObject *module, int fd);
@@ -277,11 +349,15 @@ os_fchdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", NULL};
-    static _PyArg_Parser _parser = {"O&:fchdir", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "fchdir", 0};
+    PyObject *argsbuf[1];
     int fd;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        fildes_converter, &fd)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     return_value = os_fchdir_impl(module, fd);
@@ -319,7 +395,7 @@ PyDoc_STRVAR(os_chmod__doc__,
 "  If they are unavailable, using them will raise a NotImplementedError.");
 
 #define OS_CHMOD_METHODDEF    \
-    {"chmod", (PyCFunction)(void(*)(void))os_chmod, METH_FASTCALL|METH_KEYWORDS, os_chmod__doc__},
+    {"chmod", _PyCFunction_CAST(os_chmod), METH_FASTCALL|METH_KEYWORDS, os_chmod__doc__},
 
 static PyObject *
 os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
@@ -330,16 +406,41 @@ os_chmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "mode", "dir_fd", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {"O&i|$O&p:chmod", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "chmod", 0};
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t path = PATH_T_INITIALIZE("chmod", "path", 0, PATH_HAVE_FCHMOD);
     int mode;
     int dir_fd = DEFAULT_DIR_FD;
     int follow_symlinks = 1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, &mode, FCHMODAT_DIR_FD_CONVERTER, &dir_fd, &follow_symlinks)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    mode = _PyLong_AsInt(args[1]);
+    if (mode == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[2]) {
+        if (!FCHMODAT_DIR_FD_CONVERTER(args[2], &dir_fd)) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    follow_symlinks = PyObject_IsTrue(args[3]);
+    if (follow_symlinks < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = os_chmod_impl(module, &path, mode, dir_fd, follow_symlinks);
 
 exit:
@@ -360,7 +461,7 @@ PyDoc_STRVAR(os_fchmod__doc__,
 "Equivalent to os.chmod(fd, mode).");
 
 #define OS_FCHMOD_METHODDEF    \
-    {"fchmod", (PyCFunction)(void(*)(void))os_fchmod, METH_FASTCALL|METH_KEYWORDS, os_fchmod__doc__},
+    {"fchmod", _PyCFunction_CAST(os_fchmod), METH_FASTCALL|METH_KEYWORDS, os_fchmod__doc__},
 
 static PyObject *
 os_fchmod_impl(PyObject *module, int fd, int mode);
@@ -370,12 +471,21 @@ os_fchmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", "mode", NULL};
-    static _PyArg_Parser _parser = {"ii:fchmod", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "fchmod", 0};
+    PyObject *argsbuf[2];
     int fd;
     int mode;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &fd, &mode)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    mode = _PyLong_AsInt(args[1]);
+    if (mode == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_fchmod_impl(module, fd, mode);
@@ -398,7 +508,7 @@ PyDoc_STRVAR(os_lchmod__doc__,
 "Equivalent to chmod(path, mode, follow_symlinks=False).\"");
 
 #define OS_LCHMOD_METHODDEF    \
-    {"lchmod", (PyCFunction)(void(*)(void))os_lchmod, METH_FASTCALL|METH_KEYWORDS, os_lchmod__doc__},
+    {"lchmod", _PyCFunction_CAST(os_lchmod), METH_FASTCALL|METH_KEYWORDS, os_lchmod__doc__},
 
 static PyObject *
 os_lchmod_impl(PyObject *module, path_t *path, int mode);
@@ -408,12 +518,20 @@ os_lchmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "mode", NULL};
-    static _PyArg_Parser _parser = {"O&i:lchmod", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "lchmod", 0};
+    PyObject *argsbuf[2];
     path_t path = PATH_T_INITIALIZE("lchmod", "path", 0, 0);
     int mode;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, &mode)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    mode = _PyLong_AsInt(args[1]);
+    if (mode == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_lchmod_impl(module, &path, mode);
@@ -442,7 +560,7 @@ PyDoc_STRVAR(os_chflags__doc__,
 "unavailable, using it will raise a NotImplementedError.");
 
 #define OS_CHFLAGS_METHODDEF    \
-    {"chflags", (PyCFunction)(void(*)(void))os_chflags, METH_FASTCALL|METH_KEYWORDS, os_chflags__doc__},
+    {"chflags", _PyCFunction_CAST(os_chflags), METH_FASTCALL|METH_KEYWORDS, os_chflags__doc__},
 
 static PyObject *
 os_chflags_impl(PyObject *module, path_t *path, unsigned long flags,
@@ -453,15 +571,33 @@ os_chflags(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "flags", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {"O&k|p:chflags", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "chflags", 0};
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t path = PATH_T_INITIALIZE("chflags", "path", 0, 0);
     unsigned long flags;
     int follow_symlinks = 1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, &flags, &follow_symlinks)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    if (!PyLong_Check(args[1])) {
+        _PyArg_BadArgument("chflags", "argument 'flags'", "int", args[1]);
+        goto exit;
+    }
+    flags = PyLong_AsUnsignedLongMask(args[1]);
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    follow_symlinks = PyObject_IsTrue(args[2]);
+    if (follow_symlinks < 0) {
+        goto exit;
+    }
+skip_optional_pos:
     return_value = os_chflags_impl(module, &path, flags, follow_symlinks);
 
 exit:
@@ -485,7 +621,7 @@ PyDoc_STRVAR(os_lchflags__doc__,
 "Equivalent to chflags(path, flags, follow_symlinks=False).");
 
 #define OS_LCHFLAGS_METHODDEF    \
-    {"lchflags", (PyCFunction)(void(*)(void))os_lchflags, METH_FASTCALL|METH_KEYWORDS, os_lchflags__doc__},
+    {"lchflags", _PyCFunction_CAST(os_lchflags), METH_FASTCALL|METH_KEYWORDS, os_lchflags__doc__},
 
 static PyObject *
 os_lchflags_impl(PyObject *module, path_t *path, unsigned long flags);
@@ -495,14 +631,23 @@ os_lchflags(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "flags", NULL};
-    static _PyArg_Parser _parser = {"O&k:lchflags", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "lchflags", 0};
+    PyObject *argsbuf[2];
     path_t path = PATH_T_INITIALIZE("lchflags", "path", 0, 0);
     unsigned long flags;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, &flags)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    if (!PyLong_Check(args[1])) {
+        _PyArg_BadArgument("lchflags", "argument 'flags'", "int", args[1]);
+        goto exit;
+    }
+    flags = PyLong_AsUnsignedLongMask(args[1]);
     return_value = os_lchflags_impl(module, &path, flags);
 
 exit:
@@ -523,7 +668,7 @@ PyDoc_STRVAR(os_chroot__doc__,
 "Change root directory to path.");
 
 #define OS_CHROOT_METHODDEF    \
-    {"chroot", (PyCFunction)(void(*)(void))os_chroot, METH_FASTCALL|METH_KEYWORDS, os_chroot__doc__},
+    {"chroot", _PyCFunction_CAST(os_chroot), METH_FASTCALL|METH_KEYWORDS, os_chroot__doc__},
 
 static PyObject *
 os_chroot_impl(PyObject *module, path_t *path);
@@ -533,11 +678,15 @@ os_chroot(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {"O&:chroot", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "chroot", 0};
+    PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE("chroot", "path", 0, 0);
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &path)) {
         goto exit;
     }
     return_value = os_chroot_impl(module, &path);
@@ -560,7 +709,7 @@ PyDoc_STRVAR(os_fsync__doc__,
 "Force write of fd to disk.");
 
 #define OS_FSYNC_METHODDEF    \
-    {"fsync", (PyCFunction)(void(*)(void))os_fsync, METH_FASTCALL|METH_KEYWORDS, os_fsync__doc__},
+    {"fsync", _PyCFunction_CAST(os_fsync), METH_FASTCALL|METH_KEYWORDS, os_fsync__doc__},
 
 static PyObject *
 os_fsync_impl(PyObject *module, int fd);
@@ -570,11 +719,15 @@ os_fsync(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", NULL};
-    static _PyArg_Parser _parser = {"O&:fsync", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "fsync", 0};
+    PyObject *argsbuf[1];
     int fd;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        fildes_converter, &fd)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     return_value = os_fsync_impl(module, fd);
@@ -616,7 +769,7 @@ PyDoc_STRVAR(os_fdatasync__doc__,
 "Force write of fd to disk without forcing update of metadata.");
 
 #define OS_FDATASYNC_METHODDEF    \
-    {"fdatasync", (PyCFunction)(void(*)(void))os_fdatasync, METH_FASTCALL|METH_KEYWORDS, os_fdatasync__doc__},
+    {"fdatasync", _PyCFunction_CAST(os_fdatasync), METH_FASTCALL|METH_KEYWORDS, os_fdatasync__doc__},
 
 static PyObject *
 os_fdatasync_impl(PyObject *module, int fd);
@@ -626,11 +779,15 @@ os_fdatasync(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", NULL};
-    static _PyArg_Parser _parser = {"O&:fdatasync", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "fdatasync", 0};
+    PyObject *argsbuf[1];
     int fd;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        fildes_converter, &fd)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     return_value = os_fdatasync_impl(module, fd);
@@ -674,7 +831,7 @@ PyDoc_STRVAR(os_chown__doc__,
 "  If they are unavailable, using them will raise a NotImplementedError.");
 
 #define OS_CHOWN_METHODDEF    \
-    {"chown", (PyCFunction)(void(*)(void))os_chown, METH_FASTCALL|METH_KEYWORDS, os_chown__doc__},
+    {"chown", _PyCFunction_CAST(os_chown), METH_FASTCALL|METH_KEYWORDS, os_chown__doc__},
 
 static PyObject *
 os_chown_impl(PyObject *module, path_t *path, uid_t uid, gid_t gid,
@@ -685,17 +842,44 @@ os_chown(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "uid", "gid", "dir_fd", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {"O&O&O&|$O&p:chown", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "chown", 0};
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     path_t path = PATH_T_INITIALIZE("chown", "path", 0, PATH_HAVE_FCHOWN);
     uid_t uid;
     gid_t gid;
     int dir_fd = DEFAULT_DIR_FD;
     int follow_symlinks = 1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, _Py_Uid_Converter, &uid, _Py_Gid_Converter, &gid, FCHOWNAT_DIR_FD_CONVERTER, &dir_fd, &follow_symlinks)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    if (!_Py_Uid_Converter(args[1], &uid)) {
+        goto exit;
+    }
+    if (!_Py_Gid_Converter(args[2], &gid)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[3]) {
+        if (!FCHOWNAT_DIR_FD_CONVERTER(args[3], &dir_fd)) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    follow_symlinks = PyObject_IsTrue(args[4]);
+    if (follow_symlinks < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = os_chown_impl(module, &path, uid, gid, dir_fd, follow_symlinks);
 
 exit:
@@ -718,7 +902,7 @@ PyDoc_STRVAR(os_fchown__doc__,
 "Equivalent to os.chown(fd, uid, gid).");
 
 #define OS_FCHOWN_METHODDEF    \
-    {"fchown", (PyCFunction)(void(*)(void))os_fchown, METH_FASTCALL|METH_KEYWORDS, os_fchown__doc__},
+    {"fchown", _PyCFunction_CAST(os_fchown), METH_FASTCALL|METH_KEYWORDS, os_fchown__doc__},
 
 static PyObject *
 os_fchown_impl(PyObject *module, int fd, uid_t uid, gid_t gid);
@@ -728,13 +912,24 @@ os_fchown(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", "uid", "gid", NULL};
-    static _PyArg_Parser _parser = {"iO&O&:fchown", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "fchown", 0};
+    PyObject *argsbuf[3];
     int fd;
     uid_t uid;
     gid_t gid;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &fd, _Py_Uid_Converter, &uid, _Py_Gid_Converter, &gid)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!_Py_Uid_Converter(args[1], &uid)) {
+        goto exit;
+    }
+    if (!_Py_Gid_Converter(args[2], &gid)) {
         goto exit;
     }
     return_value = os_fchown_impl(module, fd, uid, gid);
@@ -757,7 +952,7 @@ PyDoc_STRVAR(os_lchown__doc__,
 "Equivalent to os.chown(path, uid, gid, follow_symlinks=False).");
 
 #define OS_LCHOWN_METHODDEF    \
-    {"lchown", (PyCFunction)(void(*)(void))os_lchown, METH_FASTCALL|METH_KEYWORDS, os_lchown__doc__},
+    {"lchown", _PyCFunction_CAST(os_lchown), METH_FASTCALL|METH_KEYWORDS, os_lchown__doc__},
 
 static PyObject *
 os_lchown_impl(PyObject *module, path_t *path, uid_t uid, gid_t gid);
@@ -767,13 +962,23 @@ os_lchown(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "uid", "gid", NULL};
-    static _PyArg_Parser _parser = {"O&O&O&:lchown", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "lchown", 0};
+    PyObject *argsbuf[3];
     path_t path = PATH_T_INITIALIZE("lchown", "path", 0, 0);
     uid_t uid;
     gid_t gid;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, _Py_Uid_Converter, &uid, _Py_Gid_Converter, &gid)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    if (!_Py_Uid_Converter(args[1], &uid)) {
+        goto exit;
+    }
+    if (!_Py_Gid_Converter(args[2], &gid)) {
         goto exit;
     }
     return_value = os_lchown_impl(module, &path, uid, gid);
@@ -843,7 +1048,7 @@ PyDoc_STRVAR(os_link__doc__,
 "  NotImplementedError.");
 
 #define OS_LINK_METHODDEF    \
-    {"link", (PyCFunction)(void(*)(void))os_link, METH_FASTCALL|METH_KEYWORDS, os_link__doc__},
+    {"link", _PyCFunction_CAST(os_link), METH_FASTCALL|METH_KEYWORDS, os_link__doc__},
 
 static PyObject *
 os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
@@ -854,17 +1059,49 @@ os_link(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"src", "dst", "src_dir_fd", "dst_dir_fd", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {"O&O&|$O&O&p:link", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "link", 0};
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t src = PATH_T_INITIALIZE("link", "src", 0, 0);
     path_t dst = PATH_T_INITIALIZE("link", "dst", 0, 0);
     int src_dir_fd = DEFAULT_DIR_FD;
     int dst_dir_fd = DEFAULT_DIR_FD;
     int follow_symlinks = 1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &src, path_converter, &dst, dir_fd_converter, &src_dir_fd, dir_fd_converter, &dst_dir_fd, &follow_symlinks)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!path_converter(args[0], &src)) {
+        goto exit;
+    }
+    if (!path_converter(args[1], &dst)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[2]) {
+        if (!dir_fd_converter(args[2], &src_dir_fd)) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[3]) {
+        if (!dir_fd_converter(args[3], &dst_dir_fd)) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    follow_symlinks = PyObject_IsTrue(args[4]);
+    if (follow_symlinks < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = os_link_impl(module, &src, &dst, src_dir_fd, dst_dir_fd, follow_symlinks);
 
 exit:
@@ -896,7 +1133,7 @@ PyDoc_STRVAR(os_listdir__doc__,
 "entries \'.\' and \'..\' even if they are present in the directory.");
 
 #define OS_LISTDIR_METHODDEF    \
-    {"listdir", (PyCFunction)(void(*)(void))os_listdir, METH_FASTCALL|METH_KEYWORDS, os_listdir__doc__},
+    {"listdir", _PyCFunction_CAST(os_listdir), METH_FASTCALL|METH_KEYWORDS, os_listdir__doc__},
 
 static PyObject *
 os_listdir_impl(PyObject *module, path_t *path);
@@ -906,13 +1143,22 @@ os_listdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {"|O&:listdir", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "listdir", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     path_t path = PATH_T_INITIALIZE("listdir", "path", 1, PATH_HAVE_FDOPENDIR);
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+skip_optional_pos:
     return_value = os_listdir_impl(module, &path);
 
 exit:
@@ -941,7 +1187,7 @@ os__getfullpathname(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     path_t path = PATH_T_INITIALIZE("_getfullpathname", "path", 0, 0);
 
-    if (!PyArg_Parse(arg, "O&:_getfullpathname", path_converter, &path)) {
+    if (!path_converter(arg, &path)) {
         goto exit;
     }
     return_value = os__getfullpathname_impl(module, &path);
@@ -975,7 +1221,7 @@ os__getfinalpathname(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     path_t path = PATH_T_INITIALIZE("_getfinalpathname", "path", 0, 0);
 
-    if (!PyArg_Parse(arg, "O&:_getfinalpathname", path_converter, &path)) {
+    if (!path_converter(arg, &path)) {
         goto exit;
     }
     return_value = os__getfinalpathname_impl(module, &path);
@@ -991,19 +1237,6 @@ exit:
 
 #if defined(MS_WINDOWS)
 
-PyDoc_STRVAR(os__isdir__doc__,
-"_isdir($module, path, /)\n"
-"--\n"
-"\n"
-"Return true if the pathname refers to an existing directory.");
-
-#define OS__ISDIR_METHODDEF    \
-    {"_isdir", (PyCFunction)os__isdir, METH_O, os__isdir__doc__},
-
-#endif /* defined(MS_WINDOWS) */
-
-#if defined(MS_WINDOWS)
-
 PyDoc_STRVAR(os__getvolumepathname__doc__,
 "_getvolumepathname($module, /, path)\n"
 "--\n"
@@ -1011,7 +1244,7 @@ PyDoc_STRVAR(os__getvolumepathname__doc__,
 "A helper function for ismount on Win32.");
 
 #define OS__GETVOLUMEPATHNAME_METHODDEF    \
-    {"_getvolumepathname", (PyCFunction)(void(*)(void))os__getvolumepathname, METH_FASTCALL|METH_KEYWORDS, os__getvolumepathname__doc__},
+    {"_getvolumepathname", _PyCFunction_CAST(os__getvolumepathname), METH_FASTCALL|METH_KEYWORDS, os__getvolumepathname__doc__},
 
 static PyObject *
 os__getvolumepathname_impl(PyObject *module, path_t *path);
@@ -1021,11 +1254,15 @@ os__getvolumepathname(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {"O&:_getvolumepathname", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "_getvolumepathname", 0};
+    PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE("_getvolumepathname", "path", 0, 0);
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &path)) {
         goto exit;
     }
     return_value = os__getvolumepathname_impl(module, &path);
@@ -1038,6 +1275,79 @@ exit:
 }
 
 #endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os__path_splitroot__doc__,
+"_path_splitroot($module, /, path)\n"
+"--\n"
+"\n"
+"Removes everything after the root on Win32.");
+
+#define OS__PATH_SPLITROOT_METHODDEF    \
+    {"_path_splitroot", _PyCFunction_CAST(os__path_splitroot), METH_FASTCALL|METH_KEYWORDS, os__path_splitroot__doc__},
+
+static PyObject *
+os__path_splitroot_impl(PyObject *module, path_t *path);
+
+static PyObject *
+os__path_splitroot(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "_path_splitroot", 0};
+    PyObject *argsbuf[1];
+    path_t path = PATH_T_INITIALIZE("_path_splitroot", "path", 0, 0);
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    return_value = os__path_splitroot_impl(module, &path);
+
+exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+PyDoc_STRVAR(os__path_normpath__doc__,
+"_path_normpath($module, /, path)\n"
+"--\n"
+"\n"
+"Basic path normalization.");
+
+#define OS__PATH_NORMPATH_METHODDEF    \
+    {"_path_normpath", _PyCFunction_CAST(os__path_normpath), METH_FASTCALL|METH_KEYWORDS, os__path_normpath__doc__},
+
+static PyObject *
+os__path_normpath_impl(PyObject *module, PyObject *path);
+
+static PyObject *
+os__path_normpath(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "_path_normpath", 0};
+    PyObject *argsbuf[1];
+    PyObject *path;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    path = args[0];
+    return_value = os__path_normpath_impl(module, path);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(os_mkdir__doc__,
 "mkdir($module, /, path, mode=511, *, dir_fd=None)\n"
@@ -1053,7 +1363,7 @@ PyDoc_STRVAR(os_mkdir__doc__,
 "The mode argument is ignored on Windows.");
 
 #define OS_MKDIR_METHODDEF    \
-    {"mkdir", (PyCFunction)(void(*)(void))os_mkdir, METH_FASTCALL|METH_KEYWORDS, os_mkdir__doc__},
+    {"mkdir", _PyCFunction_CAST(os_mkdir), METH_FASTCALL|METH_KEYWORDS, os_mkdir__doc__},
 
 static PyObject *
 os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd);
@@ -1063,15 +1373,40 @@ os_mkdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "mode", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {"O&|i$O&:mkdir", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "mkdir", 0};
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("mkdir", "path", 0, 0);
     int mode = 511;
     int dir_fd = DEFAULT_DIR_FD;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, &mode, MKDIRAT_DIR_FD_CONVERTER, &dir_fd)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[1]) {
+        mode = _PyLong_AsInt(args[1]);
+        if (mode == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (!MKDIRAT_DIR_FD_CONVERTER(args[2], &dir_fd)) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = os_mkdir_impl(module, &path, mode, dir_fd);
 
 exit:
@@ -1101,7 +1436,8 @@ os_nice(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int increment;
 
-    if (!PyArg_Parse(arg, "i:nice", &increment)) {
+    increment = _PyLong_AsInt(arg);
+    if (increment == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_nice_impl(module, increment);
@@ -1121,7 +1457,7 @@ PyDoc_STRVAR(os_getpriority__doc__,
 "Return program scheduling priority.");
 
 #define OS_GETPRIORITY_METHODDEF    \
-    {"getpriority", (PyCFunction)(void(*)(void))os_getpriority, METH_FASTCALL|METH_KEYWORDS, os_getpriority__doc__},
+    {"getpriority", _PyCFunction_CAST(os_getpriority), METH_FASTCALL|METH_KEYWORDS, os_getpriority__doc__},
 
 static PyObject *
 os_getpriority_impl(PyObject *module, int which, int who);
@@ -1131,12 +1467,21 @@ os_getpriority(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"which", "who", NULL};
-    static _PyArg_Parser _parser = {"ii:getpriority", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "getpriority", 0};
+    PyObject *argsbuf[2];
     int which;
     int who;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &which, &who)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    which = _PyLong_AsInt(args[0]);
+    if (which == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    who = _PyLong_AsInt(args[1]);
+    if (who == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_getpriority_impl(module, which, who);
@@ -1156,7 +1501,7 @@ PyDoc_STRVAR(os_setpriority__doc__,
 "Set program scheduling priority.");
 
 #define OS_SETPRIORITY_METHODDEF    \
-    {"setpriority", (PyCFunction)(void(*)(void))os_setpriority, METH_FASTCALL|METH_KEYWORDS, os_setpriority__doc__},
+    {"setpriority", _PyCFunction_CAST(os_setpriority), METH_FASTCALL|METH_KEYWORDS, os_setpriority__doc__},
 
 static PyObject *
 os_setpriority_impl(PyObject *module, int which, int who, int priority);
@@ -1166,13 +1511,26 @@ os_setpriority(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"which", "who", "priority", NULL};
-    static _PyArg_Parser _parser = {"iii:setpriority", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "setpriority", 0};
+    PyObject *argsbuf[3];
     int which;
     int who;
     int priority;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &which, &who, &priority)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    which = _PyLong_AsInt(args[0]);
+    if (which == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    who = _PyLong_AsInt(args[1]);
+    if (who == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    priority = _PyLong_AsInt(args[2]);
+    if (priority == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_setpriority_impl(module, which, who, priority);
@@ -1196,7 +1554,7 @@ PyDoc_STRVAR(os_rename__doc__,
 "  If they are unavailable, using them will raise a NotImplementedError.");
 
 #define OS_RENAME_METHODDEF    \
-    {"rename", (PyCFunction)(void(*)(void))os_rename, METH_FASTCALL|METH_KEYWORDS, os_rename__doc__},
+    {"rename", _PyCFunction_CAST(os_rename), METH_FASTCALL|METH_KEYWORDS, os_rename__doc__},
 
 static PyObject *
 os_rename_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
@@ -1207,16 +1565,39 @@ os_rename(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"src", "dst", "src_dir_fd", "dst_dir_fd", NULL};
-    static _PyArg_Parser _parser = {"O&O&|$O&O&:rename", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "rename", 0};
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t src = PATH_T_INITIALIZE("rename", "src", 0, 0);
     path_t dst = PATH_T_INITIALIZE("rename", "dst", 0, 0);
     int src_dir_fd = DEFAULT_DIR_FD;
     int dst_dir_fd = DEFAULT_DIR_FD;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &src, path_converter, &dst, dir_fd_converter, &src_dir_fd, dir_fd_converter, &dst_dir_fd)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!path_converter(args[0], &src)) {
+        goto exit;
+    }
+    if (!path_converter(args[1], &dst)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[2]) {
+        if (!dir_fd_converter(args[2], &src_dir_fd)) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (!dir_fd_converter(args[3], &dst_dir_fd)) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = os_rename_impl(module, &src, &dst, src_dir_fd, dst_dir_fd);
 
 exit:
@@ -1238,10 +1619,10 @@ PyDoc_STRVAR(os_replace__doc__,
 "  descriptor open to a directory, and the respective path string (src or dst)\n"
 "  should be relative; the path will then be relative to that directory.\n"
 "src_dir_fd and dst_dir_fd, may not be implemented on your platform.\n"
-"  If they are unavailable, using them will raise a NotImplementedError.\"");
+"  If they are unavailable, using them will raise a NotImplementedError.");
 
 #define OS_REPLACE_METHODDEF    \
-    {"replace", (PyCFunction)(void(*)(void))os_replace, METH_FASTCALL|METH_KEYWORDS, os_replace__doc__},
+    {"replace", _PyCFunction_CAST(os_replace), METH_FASTCALL|METH_KEYWORDS, os_replace__doc__},
 
 static PyObject *
 os_replace_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
@@ -1252,16 +1633,39 @@ os_replace(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"src", "dst", "src_dir_fd", "dst_dir_fd", NULL};
-    static _PyArg_Parser _parser = {"O&O&|$O&O&:replace", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "replace", 0};
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t src = PATH_T_INITIALIZE("replace", "src", 0, 0);
     path_t dst = PATH_T_INITIALIZE("replace", "dst", 0, 0);
     int src_dir_fd = DEFAULT_DIR_FD;
     int dst_dir_fd = DEFAULT_DIR_FD;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &src, path_converter, &dst, dir_fd_converter, &src_dir_fd, dir_fd_converter, &dst_dir_fd)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!path_converter(args[0], &src)) {
+        goto exit;
+    }
+    if (!path_converter(args[1], &dst)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[2]) {
+        if (!dir_fd_converter(args[2], &src_dir_fd)) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (!dir_fd_converter(args[3], &dst_dir_fd)) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = os_replace_impl(module, &src, &dst, src_dir_fd, dst_dir_fd);
 
 exit:
@@ -1285,7 +1689,7 @@ PyDoc_STRVAR(os_rmdir__doc__,
 "  If it is unavailable, using it will raise a NotImplementedError.");
 
 #define OS_RMDIR_METHODDEF    \
-    {"rmdir", (PyCFunction)(void(*)(void))os_rmdir, METH_FASTCALL|METH_KEYWORDS, os_rmdir__doc__},
+    {"rmdir", _PyCFunction_CAST(os_rmdir), METH_FASTCALL|METH_KEYWORDS, os_rmdir__doc__},
 
 static PyObject *
 os_rmdir_impl(PyObject *module, path_t *path, int dir_fd);
@@ -1295,14 +1699,26 @@ os_rmdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {"O&|$O&:rmdir", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "rmdir", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("rmdir", "path", 0, 0);
     int dir_fd = DEFAULT_DIR_FD;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, UNLINKAT_DIR_FD_CONVERTER, &dir_fd)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (!UNLINKAT_DIR_FD_CONVERTER(args[1], &dir_fd)) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = os_rmdir_impl(module, &path, dir_fd);
 
 exit:
@@ -1321,7 +1737,7 @@ PyDoc_STRVAR(os_system__doc__,
 "Execute the command in a subshell.");
 
 #define OS_SYSTEM_METHODDEF    \
-    {"system", (PyCFunction)(void(*)(void))os_system, METH_FASTCALL|METH_KEYWORDS, os_system__doc__},
+    {"system", _PyCFunction_CAST(os_system), METH_FASTCALL|METH_KEYWORDS, os_system__doc__},
 
 static long
 os_system_impl(PyObject *module, const Py_UNICODE *command);
@@ -1331,12 +1747,21 @@ os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"command", NULL};
-    static _PyArg_Parser _parser = {"u:system", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "system", 0};
+    PyObject *argsbuf[1];
     const Py_UNICODE *command;
     long _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &command)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("system", "argument 'command'", "str", args[0]);
+        goto exit;
+    }
+    command = PyUnicode_AsWideCharString(args[0], NULL);
+    if (command == NULL) {
         goto exit;
     }
     _return_value = os_system_impl(module, command);
@@ -1346,6 +1771,9 @@ os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     return_value = PyLong_FromLong(_return_value);
 
 exit:
+    /* Cleanup for command */
+    PyMem_Free((void *)command);
+
     return return_value;
 }
 
@@ -1360,7 +1788,7 @@ PyDoc_STRVAR(os_system__doc__,
 "Execute the command in a subshell.");
 
 #define OS_SYSTEM_METHODDEF    \
-    {"system", (PyCFunction)(void(*)(void))os_system, METH_FASTCALL|METH_KEYWORDS, os_system__doc__},
+    {"system", _PyCFunction_CAST(os_system), METH_FASTCALL|METH_KEYWORDS, os_system__doc__},
 
 static long
 os_system_impl(PyObject *module, PyObject *command);
@@ -1370,12 +1798,16 @@ os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"command", NULL};
-    static _PyArg_Parser _parser = {"O&:system", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "system", 0};
+    PyObject *argsbuf[1];
     PyObject *command = NULL;
     long _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        PyUnicode_FSConverter, &command)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_FSConverter(args[0], &command)) {
         goto exit;
     }
     _return_value = os_system_impl(module, command);
@@ -1392,6 +1824,8 @@ exit:
 }
 
 #endif /* defined(HAVE_SYSTEM) && !defined(MS_WINDOWS) */
+
+#if defined(HAVE_UMASK)
 
 PyDoc_STRVAR(os_umask__doc__,
 "umask($module, mask, /)\n"
@@ -1411,7 +1845,8 @@ os_umask(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int mask;
 
-    if (!PyArg_Parse(arg, "i:umask", &mask)) {
+    mask = _PyLong_AsInt(arg);
+    if (mask == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_umask_impl(module, mask);
@@ -1419,6 +1854,8 @@ os_umask(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
+
+#endif /* defined(HAVE_UMASK) */
 
 PyDoc_STRVAR(os_unlink__doc__,
 "unlink($module, /, path, *, dir_fd=None)\n"
@@ -1432,7 +1869,7 @@ PyDoc_STRVAR(os_unlink__doc__,
 "  If it is unavailable, using it will raise a NotImplementedError.");
 
 #define OS_UNLINK_METHODDEF    \
-    {"unlink", (PyCFunction)(void(*)(void))os_unlink, METH_FASTCALL|METH_KEYWORDS, os_unlink__doc__},
+    {"unlink", _PyCFunction_CAST(os_unlink), METH_FASTCALL|METH_KEYWORDS, os_unlink__doc__},
 
 static PyObject *
 os_unlink_impl(PyObject *module, path_t *path, int dir_fd);
@@ -1442,14 +1879,26 @@ os_unlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {"O&|$O&:unlink", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "unlink", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("unlink", "path", 0, 0);
     int dir_fd = DEFAULT_DIR_FD;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, UNLINKAT_DIR_FD_CONVERTER, &dir_fd)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (!UNLINKAT_DIR_FD_CONVERTER(args[1], &dir_fd)) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = os_unlink_impl(module, &path, dir_fd);
 
 exit:
@@ -1471,7 +1920,7 @@ PyDoc_STRVAR(os_remove__doc__,
 "  If it is unavailable, using it will raise a NotImplementedError.");
 
 #define OS_REMOVE_METHODDEF    \
-    {"remove", (PyCFunction)(void(*)(void))os_remove, METH_FASTCALL|METH_KEYWORDS, os_remove__doc__},
+    {"remove", _PyCFunction_CAST(os_remove), METH_FASTCALL|METH_KEYWORDS, os_remove__doc__},
 
 static PyObject *
 os_remove_impl(PyObject *module, path_t *path, int dir_fd);
@@ -1481,14 +1930,26 @@ os_remove(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {"O&|$O&:remove", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "remove", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("remove", "path", 0, 0);
     int dir_fd = DEFAULT_DIR_FD;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, UNLINKAT_DIR_FD_CONVERTER, &dir_fd)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (!UNLINKAT_DIR_FD_CONVERTER(args[1], &dir_fd)) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = os_remove_impl(module, &path, dir_fd);
 
 exit:
@@ -1524,8 +1985,8 @@ os_uname(PyObject *module, PyObject *Py_UNUSED(ignored))
 #endif /* defined(HAVE_UNAME) */
 
 PyDoc_STRVAR(os_utime__doc__,
-"utime($module, /, path, times=None, *, ns=None, dir_fd=None,\n"
-"      follow_symlinks=True)\n"
+"utime($module, /, path, times=None, *, ns=<unrepresentable>,\n"
+"      dir_fd=None, follow_symlinks=True)\n"
 "--\n"
 "\n"
 "Set the access and modified time of path.\n"
@@ -1553,7 +2014,7 @@ PyDoc_STRVAR(os_utime__doc__,
 "  If they are unavailable, using them will raise a NotImplementedError.");
 
 #define OS_UTIME_METHODDEF    \
-    {"utime", (PyCFunction)(void(*)(void))os_utime, METH_FASTCALL|METH_KEYWORDS, os_utime__doc__},
+    {"utime", _PyCFunction_CAST(os_utime), METH_FASTCALL|METH_KEYWORDS, os_utime__doc__},
 
 static PyObject *
 os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
@@ -1564,17 +2025,54 @@ os_utime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "times", "ns", "dir_fd", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {"O&|O$OO&p:utime", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "utime", 0};
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("utime", "path", 0, PATH_UTIME_HAVE_FD);
-    PyObject *times = NULL;
+    PyObject *times = Py_None;
     PyObject *ns = NULL;
     int dir_fd = DEFAULT_DIR_FD;
     int follow_symlinks = 1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, &times, &ns, FUTIMENSAT_DIR_FD_CONVERTER, &dir_fd, &follow_symlinks)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[1]) {
+        times = args[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[2]) {
+        ns = args[2];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[3]) {
+        if (!FUTIMENSAT_DIR_FD_CONVERTER(args[3], &dir_fd)) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    follow_symlinks = PyObject_IsTrue(args[4]);
+    if (follow_symlinks < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = os_utime_impl(module, &path, times, ns, dir_fd, follow_symlinks);
 
 exit:
@@ -1591,7 +2089,7 @@ PyDoc_STRVAR(os__exit__doc__,
 "Exit to the system with specified status, without normal exit processing.");
 
 #define OS__EXIT_METHODDEF    \
-    {"_exit", (PyCFunction)(void(*)(void))os__exit, METH_FASTCALL|METH_KEYWORDS, os__exit__doc__},
+    {"_exit", _PyCFunction_CAST(os__exit), METH_FASTCALL|METH_KEYWORDS, os__exit__doc__},
 
 static PyObject *
 os__exit_impl(PyObject *module, int status);
@@ -1601,11 +2099,16 @@ os__exit(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {"i:_exit", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "_exit", 0};
+    PyObject *argsbuf[1];
     int status;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &status)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    status = _PyLong_AsInt(args[0]);
+    if (status == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os__exit_impl(module, status);
@@ -1628,7 +2131,7 @@ PyDoc_STRVAR(os_execv__doc__,
 "    Tuple or list of strings.");
 
 #define OS_EXECV_METHODDEF    \
-    {"execv", (PyCFunction)(void(*)(void))os_execv, METH_FASTCALL, os_execv__doc__},
+    {"execv", _PyCFunction_CAST(os_execv), METH_FASTCALL, os_execv__doc__},
 
 static PyObject *
 os_execv_impl(PyObject *module, path_t *path, PyObject *argv);
@@ -1640,10 +2143,13 @@ os_execv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     path_t path = PATH_T_INITIALIZE("execv", "path", 0, 0);
     PyObject *argv;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&O:execv",
-        path_converter, &path, &argv)) {
+    if (!_PyArg_CheckPositional("execv", nargs, 2, 2)) {
         goto exit;
     }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    argv = args[1];
     return_value = os_execv_impl(module, &path, argv);
 
 exit:
@@ -1671,7 +2177,7 @@ PyDoc_STRVAR(os_execve__doc__,
 "    Dictionary of strings mapping to strings.");
 
 #define OS_EXECVE_METHODDEF    \
-    {"execve", (PyCFunction)(void(*)(void))os_execve, METH_FASTCALL|METH_KEYWORDS, os_execve__doc__},
+    {"execve", _PyCFunction_CAST(os_execve), METH_FASTCALL|METH_KEYWORDS, os_execve__doc__},
 
 static PyObject *
 os_execve_impl(PyObject *module, path_t *path, PyObject *argv, PyObject *env);
@@ -1681,15 +2187,21 @@ os_execve(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "argv", "env", NULL};
-    static _PyArg_Parser _parser = {"O&OO:execve", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "execve", 0};
+    PyObject *argsbuf[3];
     path_t path = PATH_T_INITIALIZE("execve", "path", 0, PATH_HAVE_FEXECVE);
     PyObject *argv;
     PyObject *env;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, &argv, &env)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    argv = args[1];
+    env = args[2];
     return_value = os_execve_impl(module, &path, argv, env);
 
 exit:
@@ -1705,8 +2217,135 @@ exit:
 
 PyDoc_STRVAR(os_posix_spawn__doc__,
 "posix_spawn($module, path, argv, env, /, *, file_actions=(),\n"
-"            setpgroup=None, resetids=False, setsigmask=(),\n"
-"            setsigdef=(), scheduler=None)\n"
+"            setpgroup=<unrepresentable>, resetids=False, setsid=False,\n"
+"            setsigmask=(), setsigdef=(), scheduler=<unrepresentable>)\n"
+"--\n"
+"\n"
+"Execute the program specified by path in a new process.\n"
+"\n"
+"  path\n"
+"    Path of executable file.\n"
+"  argv\n"
+"    Tuple or list of strings.\n"
+"  env\n"
+"    Dictionary of strings mapping to strings.\n"
+"  file_actions\n"
+"    A sequence of file action tuples.\n"
+"  setpgroup\n"
+"    The pgroup to use with the POSIX_SPAWN_SETPGROUP flag.\n"
+"  resetids\n"
+"    If the value is `true` the POSIX_SPAWN_RESETIDS will be activated.\n"
+"  setsid\n"
+"    If the value is `true` the POSIX_SPAWN_SETSID or POSIX_SPAWN_SETSID_NP will be activated.\n"
+"  setsigmask\n"
+"    The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.\n"
+"  setsigdef\n"
+"    The sigmask to use with the POSIX_SPAWN_SETSIGDEF flag.\n"
+"  scheduler\n"
+"    A tuple with the scheduler policy (optional) and parameters.");
+
+#define OS_POSIX_SPAWN_METHODDEF    \
+    {"posix_spawn", _PyCFunction_CAST(os_posix_spawn), METH_FASTCALL|METH_KEYWORDS, os_posix_spawn__doc__},
+
+static PyObject *
+os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
+                    PyObject *env, PyObject *file_actions,
+                    PyObject *setpgroup, int resetids, int setsid,
+                    PyObject *setsigmask, PyObject *setsigdef,
+                    PyObject *scheduler);
+
+static PyObject *
+os_posix_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "", "", "file_actions", "setpgroup", "resetids", "setsid", "setsigmask", "setsigdef", "scheduler", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "posix_spawn", 0};
+    PyObject *argsbuf[10];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
+    path_t path = PATH_T_INITIALIZE("posix_spawn", "path", 0, 0);
+    PyObject *argv;
+    PyObject *env;
+    PyObject *file_actions = NULL;
+    PyObject *setpgroup = NULL;
+    int resetids = 0;
+    int setsid = 0;
+    PyObject *setsigmask = NULL;
+    PyObject *setsigdef = NULL;
+    PyObject *scheduler = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    argv = args[1];
+    env = args[2];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[3]) {
+        file_actions = args[3];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[4]) {
+        setpgroup = args[4];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[5]) {
+        resetids = _PyLong_AsInt(args[5]);
+        if (resetids == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[6]) {
+        setsid = _PyLong_AsInt(args[6]);
+        if (setsid == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[7]) {
+        setsigmask = args[7];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[8]) {
+        setsigdef = args[8];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    scheduler = args[9];
+skip_optional_kwonly:
+    return_value = os_posix_spawn_impl(module, &path, argv, env, file_actions, setpgroup, resetids, setsid, setsigmask, setsigdef, scheduler);
+
+exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
+    return return_value;
+}
+
+#endif /* defined(HAVE_POSIX_SPAWN) */
+
+#if defined(HAVE_POSIX_SPAWNP)
+
+PyDoc_STRVAR(os_posix_spawnp__doc__,
+"posix_spawnp($module, path, argv, env, /, *, file_actions=(),\n"
+"             setpgroup=<unrepresentable>, resetids=False, setsid=False,\n"
+"             setsigmask=(), setsigdef=(), scheduler=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Execute the program specified by path in a new process.\n"
@@ -1723,6 +2362,8 @@ PyDoc_STRVAR(os_posix_spawn__doc__,
 "    The pgroup to use with the POSIX_SPAWN_SETPGROUP flag.\n"
 "  resetids\n"
 "    If the value is `True` the POSIX_SPAWN_RESETIDS will be activated.\n"
+"  setsid\n"
+"    If the value is `True` the POSIX_SPAWN_SETSID or POSIX_SPAWN_SETSID_NP will be activated.\n"
 "  setsigmask\n"
 "    The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.\n"
 "  setsigdef\n"
@@ -1730,36 +2371,92 @@ PyDoc_STRVAR(os_posix_spawn__doc__,
 "  scheduler\n"
 "    A tuple with the scheduler policy (optional) and parameters.");
 
-#define OS_POSIX_SPAWN_METHODDEF    \
-    {"posix_spawn", (PyCFunction)(void(*)(void))os_posix_spawn, METH_FASTCALL|METH_KEYWORDS, os_posix_spawn__doc__},
+#define OS_POSIX_SPAWNP_METHODDEF    \
+    {"posix_spawnp", _PyCFunction_CAST(os_posix_spawnp), METH_FASTCALL|METH_KEYWORDS, os_posix_spawnp__doc__},
 
 static PyObject *
-os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
-                    PyObject *env, PyObject *file_actions,
-                    PyObject *setpgroup, int resetids, PyObject *setsigmask,
-                    PyObject *setsigdef, PyObject *scheduler);
+os_posix_spawnp_impl(PyObject *module, path_t *path, PyObject *argv,
+                     PyObject *env, PyObject *file_actions,
+                     PyObject *setpgroup, int resetids, int setsid,
+                     PyObject *setsigmask, PyObject *setsigdef,
+                     PyObject *scheduler);
 
 static PyObject *
-os_posix_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+os_posix_spawnp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"", "", "", "file_actions", "setpgroup", "resetids", "setsigmask", "setsigdef", "scheduler", NULL};
-    static _PyArg_Parser _parser = {"O&OO|$OOiOOO:posix_spawn", _keywords, 0};
-    path_t path = PATH_T_INITIALIZE("posix_spawn", "path", 0, 0);
+    static const char * const _keywords[] = {"", "", "", "file_actions", "setpgroup", "resetids", "setsid", "setsigmask", "setsigdef", "scheduler", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "posix_spawnp", 0};
+    PyObject *argsbuf[10];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
+    path_t path = PATH_T_INITIALIZE("posix_spawnp", "path", 0, 0);
     PyObject *argv;
     PyObject *env;
     PyObject *file_actions = NULL;
     PyObject *setpgroup = NULL;
     int resetids = 0;
+    int setsid = 0;
     PyObject *setsigmask = NULL;
     PyObject *setsigdef = NULL;
     PyObject *scheduler = NULL;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, &argv, &env, &file_actions, &setpgroup, &resetids, &setsigmask, &setsigdef, &scheduler)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    return_value = os_posix_spawn_impl(module, &path, argv, env, file_actions, setpgroup, resetids, setsigmask, setsigdef, scheduler);
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    argv = args[1];
+    env = args[2];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[3]) {
+        file_actions = args[3];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[4]) {
+        setpgroup = args[4];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[5]) {
+        resetids = _PyLong_AsInt(args[5]);
+        if (resetids == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[6]) {
+        setsid = _PyLong_AsInt(args[6]);
+        if (setsid == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[7]) {
+        setsigmask = args[7];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[8]) {
+        setsigdef = args[8];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    scheduler = args[9];
+skip_optional_kwonly:
+    return_value = os_posix_spawnp_impl(module, &path, argv, env, file_actions, setpgroup, resetids, setsid, setsigmask, setsigdef, scheduler);
 
 exit:
     /* Cleanup for path */
@@ -1768,9 +2465,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_POSIX_SPAWN) */
+#endif /* defined(HAVE_POSIX_SPAWNP) */
 
-#if (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV))
+#if (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV) || defined(HAVE_RTPSPAWN))
 
 PyDoc_STRVAR(os_spawnv__doc__,
 "spawnv($module, mode, path, argv, /)\n"
@@ -1786,7 +2483,7 @@ PyDoc_STRVAR(os_spawnv__doc__,
 "    Tuple or list of strings.");
 
 #define OS_SPAWNV_METHODDEF    \
-    {"spawnv", (PyCFunction)(void(*)(void))os_spawnv, METH_FASTCALL, os_spawnv__doc__},
+    {"spawnv", _PyCFunction_CAST(os_spawnv), METH_FASTCALL, os_spawnv__doc__},
 
 static PyObject *
 os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv);
@@ -1799,10 +2496,17 @@ os_spawnv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     path_t path = PATH_T_INITIALIZE("spawnv", "path", 0, 0);
     PyObject *argv;
 
-    if (!_PyArg_ParseStack(args, nargs, "iO&O:spawnv",
-        &mode, path_converter, &path, &argv)) {
+    if (!_PyArg_CheckPositional("spawnv", nargs, 3, 3)) {
         goto exit;
     }
+    mode = _PyLong_AsInt(args[0]);
+    if (mode == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!path_converter(args[1], &path)) {
+        goto exit;
+    }
+    argv = args[2];
     return_value = os_spawnv_impl(module, mode, &path, argv);
 
 exit:
@@ -1812,9 +2516,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV)) */
+#endif /* (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV) || defined(HAVE_RTPSPAWN)) */
 
-#if (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV))
+#if (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV) || defined(HAVE_RTPSPAWN))
 
 PyDoc_STRVAR(os_spawnve__doc__,
 "spawnve($module, mode, path, argv, env, /)\n"
@@ -1832,7 +2536,7 @@ PyDoc_STRVAR(os_spawnve__doc__,
 "    Dictionary of strings mapping to strings.");
 
 #define OS_SPAWNVE_METHODDEF    \
-    {"spawnve", (PyCFunction)(void(*)(void))os_spawnve, METH_FASTCALL, os_spawnve__doc__},
+    {"spawnve", _PyCFunction_CAST(os_spawnve), METH_FASTCALL, os_spawnve__doc__},
 
 static PyObject *
 os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
@@ -1847,10 +2551,18 @@ os_spawnve(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *argv;
     PyObject *env;
 
-    if (!_PyArg_ParseStack(args, nargs, "iO&OO:spawnve",
-        &mode, path_converter, &path, &argv, &env)) {
+    if (!_PyArg_CheckPositional("spawnve", nargs, 4, 4)) {
         goto exit;
     }
+    mode = _PyLong_AsInt(args[0]);
+    if (mode == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!path_converter(args[1], &path)) {
+        goto exit;
+    }
+    argv = args[2];
+    env = args[3];
     return_value = os_spawnve_impl(module, mode, &path, argv, env);
 
 exit:
@@ -1860,13 +2572,14 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV)) */
+#endif /* (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV) || defined(HAVE_RTPSPAWN)) */
 
 #if defined(HAVE_FORK)
 
 PyDoc_STRVAR(os_register_at_fork__doc__,
-"register_at_fork($module, /, *, before=None, after_in_child=None,\n"
-"                 after_in_parent=None)\n"
+"register_at_fork($module, /, *, before=<unrepresentable>,\n"
+"                 after_in_child=<unrepresentable>,\n"
+"                 after_in_parent=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Register callables to be called when forking a new process.\n"
@@ -1882,7 +2595,7 @@ PyDoc_STRVAR(os_register_at_fork__doc__,
 "\'after_in_child\' and \'after_in_parent\' callbacks are called in order.");
 
 #define OS_REGISTER_AT_FORK_METHODDEF    \
-    {"register_at_fork", (PyCFunction)(void(*)(void))os_register_at_fork, METH_FASTCALL|METH_KEYWORDS, os_register_at_fork__doc__},
+    {"register_at_fork", _PyCFunction_CAST(os_register_at_fork), METH_FASTCALL|METH_KEYWORDS, os_register_at_fork__doc__},
 
 static PyObject *
 os_register_at_fork_impl(PyObject *module, PyObject *before,
@@ -1893,15 +2606,34 @@ os_register_at_fork(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"before", "after_in_child", "after_in_parent", NULL};
-    static _PyArg_Parser _parser = {"|$OOO:register_at_fork", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "register_at_fork", 0};
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *before = NULL;
     PyObject *after_in_child = NULL;
     PyObject *after_in_parent = NULL;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &before, &after_in_child, &after_in_parent)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[0]) {
+        before = args[0];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[1]) {
+        after_in_child = args[1];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    after_in_parent = args[2];
+skip_optional_kwonly:
     return_value = os_register_at_fork_impl(module, before, after_in_child, after_in_parent);
 
 exit:
@@ -1967,7 +2699,7 @@ PyDoc_STRVAR(os_sched_get_priority_max__doc__,
 "Get the maximum scheduling priority for policy.");
 
 #define OS_SCHED_GET_PRIORITY_MAX_METHODDEF    \
-    {"sched_get_priority_max", (PyCFunction)(void(*)(void))os_sched_get_priority_max, METH_FASTCALL|METH_KEYWORDS, os_sched_get_priority_max__doc__},
+    {"sched_get_priority_max", _PyCFunction_CAST(os_sched_get_priority_max), METH_FASTCALL|METH_KEYWORDS, os_sched_get_priority_max__doc__},
 
 static PyObject *
 os_sched_get_priority_max_impl(PyObject *module, int policy);
@@ -1977,11 +2709,16 @@ os_sched_get_priority_max(PyObject *module, PyObject *const *args, Py_ssize_t na
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"policy", NULL};
-    static _PyArg_Parser _parser = {"i:sched_get_priority_max", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "sched_get_priority_max", 0};
+    PyObject *argsbuf[1];
     int policy;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &policy)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    policy = _PyLong_AsInt(args[0]);
+    if (policy == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_sched_get_priority_max_impl(module, policy);
@@ -2001,7 +2738,7 @@ PyDoc_STRVAR(os_sched_get_priority_min__doc__,
 "Get the minimum scheduling priority for policy.");
 
 #define OS_SCHED_GET_PRIORITY_MIN_METHODDEF    \
-    {"sched_get_priority_min", (PyCFunction)(void(*)(void))os_sched_get_priority_min, METH_FASTCALL|METH_KEYWORDS, os_sched_get_priority_min__doc__},
+    {"sched_get_priority_min", _PyCFunction_CAST(os_sched_get_priority_min), METH_FASTCALL|METH_KEYWORDS, os_sched_get_priority_min__doc__},
 
 static PyObject *
 os_sched_get_priority_min_impl(PyObject *module, int policy);
@@ -2011,11 +2748,16 @@ os_sched_get_priority_min(PyObject *module, PyObject *const *args, Py_ssize_t na
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"policy", NULL};
-    static _PyArg_Parser _parser = {"i:sched_get_priority_min", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "sched_get_priority_min", 0};
+    PyObject *argsbuf[1];
     int policy;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &policy)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    policy = _PyLong_AsInt(args[0]);
+    if (policy == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_sched_get_priority_min_impl(module, policy);
@@ -2032,7 +2774,7 @@ PyDoc_STRVAR(os_sched_getscheduler__doc__,
 "sched_getscheduler($module, pid, /)\n"
 "--\n"
 "\n"
-"Get the scheduling policy for the process identifiedy by pid.\n"
+"Get the scheduling policy for the process identified by pid.\n"
 "\n"
 "Passing 0 for pid returns the scheduling policy for the calling process.");
 
@@ -2065,7 +2807,7 @@ PyDoc_STRVAR(os_sched_param__doc__,
 "sched_param(sched_priority)\n"
 "--\n"
 "\n"
-"Current has only one field: sched_priority\");\n"
+"Currently has only one field: sched_priority\n"
 "\n"
 "  sched_priority\n"
 "    A scheduling parameter.");
@@ -2078,13 +2820,17 @@ os_sched_param(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"sched_priority", NULL};
-    static _PyArg_Parser _parser = {"O:sched_param", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "sched_param", 0};
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *sched_priority;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &sched_priority)) {
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
+    sched_priority = fastargs[0];
     return_value = os_sched_param_impl(type, sched_priority);
 
 exit:
@@ -2105,11 +2851,11 @@ PyDoc_STRVAR(os_sched_setscheduler__doc__,
 "param is an instance of sched_param.");
 
 #define OS_SCHED_SETSCHEDULER_METHODDEF    \
-    {"sched_setscheduler", (PyCFunction)(void(*)(void))os_sched_setscheduler, METH_FASTCALL, os_sched_setscheduler__doc__},
+    {"sched_setscheduler", _PyCFunction_CAST(os_sched_setscheduler), METH_FASTCALL, os_sched_setscheduler__doc__},
 
 static PyObject *
 os_sched_setscheduler_impl(PyObject *module, pid_t pid, int policy,
-                           struct sched_param *param);
+                           PyObject *param_obj);
 
 static PyObject *
 os_sched_setscheduler(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -2117,13 +2863,13 @@ os_sched_setscheduler(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     pid_t pid;
     int policy;
-    struct sched_param param;
+    PyObject *param_obj;
 
-    if (!_PyArg_ParseStack(args, nargs, "" _Py_PARSE_PID "iO&:sched_setscheduler",
-        &pid, &policy, convert_sched_param, &param)) {
+    if (!_PyArg_ParseStack(args, nargs, "" _Py_PARSE_PID "iO:sched_setscheduler",
+        &pid, &policy, &param_obj)) {
         goto exit;
     }
-    return_value = os_sched_setscheduler_impl(module, pid, policy, &param);
+    return_value = os_sched_setscheduler_impl(module, pid, policy, param_obj);
 
 exit:
     return return_value;
@@ -2177,24 +2923,23 @@ PyDoc_STRVAR(os_sched_setparam__doc__,
 "param should be an instance of sched_param.");
 
 #define OS_SCHED_SETPARAM_METHODDEF    \
-    {"sched_setparam", (PyCFunction)(void(*)(void))os_sched_setparam, METH_FASTCALL, os_sched_setparam__doc__},
+    {"sched_setparam", _PyCFunction_CAST(os_sched_setparam), METH_FASTCALL, os_sched_setparam__doc__},
 
 static PyObject *
-os_sched_setparam_impl(PyObject *module, pid_t pid,
-                       struct sched_param *param);
+os_sched_setparam_impl(PyObject *module, pid_t pid, PyObject *param_obj);
 
 static PyObject *
 os_sched_setparam(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     pid_t pid;
-    struct sched_param param;
+    PyObject *param_obj;
 
-    if (!_PyArg_ParseStack(args, nargs, "" _Py_PARSE_PID "O&:sched_setparam",
-        &pid, convert_sched_param, &param)) {
+    if (!_PyArg_ParseStack(args, nargs, "" _Py_PARSE_PID "O:sched_setparam",
+        &pid, &param_obj)) {
         goto exit;
     }
-    return_value = os_sched_setparam_impl(module, pid, &param);
+    return_value = os_sched_setparam_impl(module, pid, param_obj);
 
 exit:
     return return_value;
@@ -2273,7 +3018,7 @@ PyDoc_STRVAR(os_sched_setaffinity__doc__,
 "mask should be an iterable of integers identifying CPUs.");
 
 #define OS_SCHED_SETAFFINITY_METHODDEF    \
-    {"sched_setaffinity", (PyCFunction)(void(*)(void))os_sched_setaffinity, METH_FASTCALL, os_sched_setaffinity__doc__},
+    {"sched_setaffinity", _PyCFunction_CAST(os_sched_setaffinity), METH_FASTCALL, os_sched_setaffinity__doc__},
 
 static PyObject *
 os_sched_setaffinity_impl(PyObject *module, pid_t pid, PyObject *mask);
@@ -2354,6 +3099,41 @@ os_openpty(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 #endif /* (defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX)) */
+
+#if (defined(HAVE_LOGIN_TTY) || defined(HAVE_FALLBACK_LOGIN_TTY))
+
+PyDoc_STRVAR(os_login_tty__doc__,
+"login_tty($module, fd, /)\n"
+"--\n"
+"\n"
+"Prepare the tty of which fd is a file descriptor for a new login session.\n"
+"\n"
+"Make the calling process a session leader; make the tty the\n"
+"controlling tty, the stdin, the stdout, and the stderr of the\n"
+"calling process; close fd.");
+
+#define OS_LOGIN_TTY_METHODDEF    \
+    {"login_tty", (PyCFunction)os_login_tty, METH_O, os_login_tty__doc__},
+
+static PyObject *
+os_login_tty_impl(PyObject *module, int fd);
+
+static PyObject *
+os_login_tty(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int fd;
+
+    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
+        goto exit;
+    }
+    return_value = os_login_tty_impl(module, fd);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(HAVE_LOGIN_TTY) || defined(HAVE_FALLBACK_LOGIN_TTY)) */
 
 #if defined(HAVE_FORKPTY)
 
@@ -2470,6 +3250,113 @@ os_getpid(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_GETPID) */
 
+#if defined(HAVE_GETGROUPLIST) && defined(__APPLE__)
+
+PyDoc_STRVAR(os_getgrouplist__doc__,
+"getgrouplist($module, user, group, /)\n"
+"--\n"
+"\n"
+"Returns a list of groups to which a user belongs.\n"
+"\n"
+"  user\n"
+"    username to lookup\n"
+"  group\n"
+"    base group id of the user");
+
+#define OS_GETGROUPLIST_METHODDEF    \
+    {"getgrouplist", _PyCFunction_CAST(os_getgrouplist), METH_FASTCALL, os_getgrouplist__doc__},
+
+static PyObject *
+os_getgrouplist_impl(PyObject *module, const char *user, int basegid);
+
+static PyObject *
+os_getgrouplist(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    const char *user;
+    int basegid;
+
+    if (!_PyArg_CheckPositional("getgrouplist", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("getgrouplist", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    Py_ssize_t user_length;
+    user = PyUnicode_AsUTF8AndSize(args[0], &user_length);
+    if (user == NULL) {
+        goto exit;
+    }
+    if (strlen(user) != (size_t)user_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    basegid = _PyLong_AsInt(args[1]);
+    if (basegid == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = os_getgrouplist_impl(module, user, basegid);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_GETGROUPLIST) && defined(__APPLE__) */
+
+#if defined(HAVE_GETGROUPLIST) && !defined(__APPLE__)
+
+PyDoc_STRVAR(os_getgrouplist__doc__,
+"getgrouplist($module, user, group, /)\n"
+"--\n"
+"\n"
+"Returns a list of groups to which a user belongs.\n"
+"\n"
+"  user\n"
+"    username to lookup\n"
+"  group\n"
+"    base group id of the user");
+
+#define OS_GETGROUPLIST_METHODDEF    \
+    {"getgrouplist", _PyCFunction_CAST(os_getgrouplist), METH_FASTCALL, os_getgrouplist__doc__},
+
+static PyObject *
+os_getgrouplist_impl(PyObject *module, const char *user, gid_t basegid);
+
+static PyObject *
+os_getgrouplist(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    const char *user;
+    gid_t basegid;
+
+    if (!_PyArg_CheckPositional("getgrouplist", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("getgrouplist", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    Py_ssize_t user_length;
+    user = PyUnicode_AsUTF8AndSize(args[0], &user_length);
+    if (user == NULL) {
+        goto exit;
+    }
+    if (strlen(user) != (size_t)user_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    if (!_Py_Gid_Converter(args[1], &basegid)) {
+        goto exit;
+    }
+    return_value = os_getgrouplist_impl(module, user, basegid);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_GETGROUPLIST) && !defined(__APPLE__) */
+
 #if defined(HAVE_GETGROUPS)
 
 PyDoc_STRVAR(os_getgroups__doc__,
@@ -2492,6 +3379,97 @@ os_getgroups(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_GETGROUPS) */
 
+#if defined(HAVE_INITGROUPS) && defined(__APPLE__)
+
+PyDoc_STRVAR(os_initgroups__doc__,
+"initgroups($module, username, gid, /)\n"
+"--\n"
+"\n"
+"Initialize the group access list.\n"
+"\n"
+"Call the system initgroups() to initialize the group access list with all of\n"
+"the groups of which the specified username is a member, plus the specified\n"
+"group id.");
+
+#define OS_INITGROUPS_METHODDEF    \
+    {"initgroups", _PyCFunction_CAST(os_initgroups), METH_FASTCALL, os_initgroups__doc__},
+
+static PyObject *
+os_initgroups_impl(PyObject *module, PyObject *oname, int gid);
+
+static PyObject *
+os_initgroups(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *oname = NULL;
+    int gid;
+
+    if (!_PyArg_CheckPositional("initgroups", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_FSConverter(args[0], &oname)) {
+        goto exit;
+    }
+    gid = _PyLong_AsInt(args[1]);
+    if (gid == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = os_initgroups_impl(module, oname, gid);
+
+exit:
+    /* Cleanup for oname */
+    Py_XDECREF(oname);
+
+    return return_value;
+}
+
+#endif /* defined(HAVE_INITGROUPS) && defined(__APPLE__) */
+
+#if defined(HAVE_INITGROUPS) && !defined(__APPLE__)
+
+PyDoc_STRVAR(os_initgroups__doc__,
+"initgroups($module, username, gid, /)\n"
+"--\n"
+"\n"
+"Initialize the group access list.\n"
+"\n"
+"Call the system initgroups() to initialize the group access list with all of\n"
+"the groups of which the specified username is a member, plus the specified\n"
+"group id.");
+
+#define OS_INITGROUPS_METHODDEF    \
+    {"initgroups", _PyCFunction_CAST(os_initgroups), METH_FASTCALL, os_initgroups__doc__},
+
+static PyObject *
+os_initgroups_impl(PyObject *module, PyObject *oname, gid_t gid);
+
+static PyObject *
+os_initgroups(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *oname = NULL;
+    gid_t gid;
+
+    if (!_PyArg_CheckPositional("initgroups", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_FSConverter(args[0], &oname)) {
+        goto exit;
+    }
+    if (!_Py_Gid_Converter(args[1], &gid)) {
+        goto exit;
+    }
+    return_value = os_initgroups_impl(module, oname, gid);
+
+exit:
+    /* Cleanup for oname */
+    Py_XDECREF(oname);
+
+    return return_value;
+}
+
+#endif /* defined(HAVE_INITGROUPS) && !defined(__APPLE__) */
+
 #if defined(HAVE_GETPGID)
 
 PyDoc_STRVAR(os_getpgid__doc__,
@@ -2501,7 +3479,7 @@ PyDoc_STRVAR(os_getpgid__doc__,
 "Call the system call getpgid(), and return the result.");
 
 #define OS_GETPGID_METHODDEF    \
-    {"getpgid", (PyCFunction)(void(*)(void))os_getpgid, METH_FASTCALL|METH_KEYWORDS, os_getpgid__doc__},
+    {"getpgid", _PyCFunction_CAST(os_getpgid), METH_FASTCALL|METH_KEYWORDS, os_getpgid__doc__},
 
 static PyObject *
 os_getpgid_impl(PyObject *module, pid_t pid);
@@ -2648,7 +3626,7 @@ PyDoc_STRVAR(os_kill__doc__,
 "Kill a process with a signal.");
 
 #define OS_KILL_METHODDEF    \
-    {"kill", (PyCFunction)(void(*)(void))os_kill, METH_FASTCALL, os_kill__doc__},
+    {"kill", _PyCFunction_CAST(os_kill), METH_FASTCALL, os_kill__doc__},
 
 static PyObject *
 os_kill_impl(PyObject *module, pid_t pid, Py_ssize_t signal);
@@ -2681,7 +3659,7 @@ PyDoc_STRVAR(os_killpg__doc__,
 "Kill a process group with a signal.");
 
 #define OS_KILLPG_METHODDEF    \
-    {"killpg", (PyCFunction)(void(*)(void))os_killpg, METH_FASTCALL, os_killpg__doc__},
+    {"killpg", _PyCFunction_CAST(os_killpg), METH_FASTCALL, os_killpg__doc__},
 
 static PyObject *
 os_killpg_impl(PyObject *module, pid_t pgid, int signal);
@@ -2725,7 +3703,8 @@ os_plock(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int op;
 
-    if (!PyArg_Parse(arg, "i:plock", &op)) {
+    op = _PyLong_AsInt(arg);
+    if (op == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_plock_impl(module, op);
@@ -2756,7 +3735,7 @@ os_setuid(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     uid_t uid;
 
-    if (!PyArg_Parse(arg, "O&:setuid", _Py_Uid_Converter, &uid)) {
+    if (!_Py_Uid_Converter(arg, &uid)) {
         goto exit;
     }
     return_value = os_setuid_impl(module, uid);
@@ -2787,7 +3766,7 @@ os_seteuid(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     uid_t euid;
 
-    if (!PyArg_Parse(arg, "O&:seteuid", _Py_Uid_Converter, &euid)) {
+    if (!_Py_Uid_Converter(arg, &euid)) {
         goto exit;
     }
     return_value = os_seteuid_impl(module, euid);
@@ -2818,7 +3797,7 @@ os_setegid(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     gid_t egid;
 
-    if (!PyArg_Parse(arg, "O&:setegid", _Py_Gid_Converter, &egid)) {
+    if (!_Py_Gid_Converter(arg, &egid)) {
         goto exit;
     }
     return_value = os_setegid_impl(module, egid);
@@ -2838,7 +3817,7 @@ PyDoc_STRVAR(os_setreuid__doc__,
 "Set the current process\'s real and effective user ids.");
 
 #define OS_SETREUID_METHODDEF    \
-    {"setreuid", (PyCFunction)(void(*)(void))os_setreuid, METH_FASTCALL, os_setreuid__doc__},
+    {"setreuid", _PyCFunction_CAST(os_setreuid), METH_FASTCALL, os_setreuid__doc__},
 
 static PyObject *
 os_setreuid_impl(PyObject *module, uid_t ruid, uid_t euid);
@@ -2850,8 +3829,13 @@ os_setreuid(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     uid_t ruid;
     uid_t euid;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&O&:setreuid",
-        _Py_Uid_Converter, &ruid, _Py_Uid_Converter, &euid)) {
+    if (!_PyArg_CheckPositional("setreuid", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!_Py_Uid_Converter(args[0], &ruid)) {
+        goto exit;
+    }
+    if (!_Py_Uid_Converter(args[1], &euid)) {
         goto exit;
     }
     return_value = os_setreuid_impl(module, ruid, euid);
@@ -2871,7 +3855,7 @@ PyDoc_STRVAR(os_setregid__doc__,
 "Set the current process\'s real and effective group ids.");
 
 #define OS_SETREGID_METHODDEF    \
-    {"setregid", (PyCFunction)(void(*)(void))os_setregid, METH_FASTCALL, os_setregid__doc__},
+    {"setregid", _PyCFunction_CAST(os_setregid), METH_FASTCALL, os_setregid__doc__},
 
 static PyObject *
 os_setregid_impl(PyObject *module, gid_t rgid, gid_t egid);
@@ -2883,8 +3867,13 @@ os_setregid(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     gid_t rgid;
     gid_t egid;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&O&:setregid",
-        _Py_Gid_Converter, &rgid, _Py_Gid_Converter, &egid)) {
+    if (!_PyArg_CheckPositional("setregid", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!_Py_Gid_Converter(args[0], &rgid)) {
+        goto exit;
+    }
+    if (!_Py_Gid_Converter(args[1], &egid)) {
         goto exit;
     }
     return_value = os_setregid_impl(module, rgid, egid);
@@ -2915,7 +3904,7 @@ os_setgid(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     gid_t gid;
 
-    if (!PyArg_Parse(arg, "O&:setgid", _Py_Gid_Converter, &gid)) {
+    if (!_Py_Gid_Converter(arg, &gid)) {
         goto exit;
     }
     return_value = os_setgid_impl(module, gid);
@@ -2951,7 +3940,7 @@ PyDoc_STRVAR(os_wait3__doc__,
 "  (pid, status, rusage)");
 
 #define OS_WAIT3_METHODDEF    \
-    {"wait3", (PyCFunction)(void(*)(void))os_wait3, METH_FASTCALL|METH_KEYWORDS, os_wait3__doc__},
+    {"wait3", _PyCFunction_CAST(os_wait3), METH_FASTCALL|METH_KEYWORDS, os_wait3__doc__},
 
 static PyObject *
 os_wait3_impl(PyObject *module, int options);
@@ -2961,11 +3950,16 @@ os_wait3(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"options", NULL};
-    static _PyArg_Parser _parser = {"i:wait3", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "wait3", 0};
+    PyObject *argsbuf[1];
     int options;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &options)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    options = _PyLong_AsInt(args[0]);
+    if (options == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_wait3_impl(module, options);
@@ -2988,7 +3982,7 @@ PyDoc_STRVAR(os_wait4__doc__,
 "  (pid, status, rusage)");
 
 #define OS_WAIT4_METHODDEF    \
-    {"wait4", (PyCFunction)(void(*)(void))os_wait4, METH_FASTCALL|METH_KEYWORDS, os_wait4__doc__},
+    {"wait4", _PyCFunction_CAST(os_wait4), METH_FASTCALL|METH_KEYWORDS, os_wait4__doc__},
 
 static PyObject *
 os_wait4_impl(PyObject *module, pid_t pid, int options);
@@ -3034,7 +4028,7 @@ PyDoc_STRVAR(os_waitid__doc__,
 "no children in a waitable state.");
 
 #define OS_WAITID_METHODDEF    \
-    {"waitid", (PyCFunction)(void(*)(void))os_waitid, METH_FASTCALL, os_waitid__doc__},
+    {"waitid", _PyCFunction_CAST(os_waitid), METH_FASTCALL, os_waitid__doc__},
 
 static PyObject *
 os_waitid_impl(PyObject *module, idtype_t idtype, id_t id, int options);
@@ -3073,7 +4067,7 @@ PyDoc_STRVAR(os_waitpid__doc__,
 "The options argument is ignored on Windows.");
 
 #define OS_WAITPID_METHODDEF    \
-    {"waitpid", (PyCFunction)(void(*)(void))os_waitpid, METH_FASTCALL, os_waitpid__doc__},
+    {"waitpid", _PyCFunction_CAST(os_waitpid), METH_FASTCALL, os_waitpid__doc__},
 
 static PyObject *
 os_waitpid_impl(PyObject *module, pid_t pid, int options);
@@ -3097,7 +4091,7 @@ exit:
 
 #endif /* defined(HAVE_WAITPID) */
 
-#if defined(HAVE_CWAIT)
+#if !defined(HAVE_WAITPID) && defined(HAVE_CWAIT)
 
 PyDoc_STRVAR(os_waitpid__doc__,
 "waitpid($module, pid, options, /)\n"
@@ -3111,7 +4105,7 @@ PyDoc_STRVAR(os_waitpid__doc__,
 "The options argument is ignored on Windows.");
 
 #define OS_WAITPID_METHODDEF    \
-    {"waitpid", (PyCFunction)(void(*)(void))os_waitpid, METH_FASTCALL, os_waitpid__doc__},
+    {"waitpid", _PyCFunction_CAST(os_waitpid), METH_FASTCALL, os_waitpid__doc__},
 
 static PyObject *
 os_waitpid_impl(PyObject *module, intptr_t pid, int options);
@@ -3133,7 +4127,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_CWAIT) */
+#endif /* !defined(HAVE_WAITPID) && defined(HAVE_CWAIT) */
 
 #if defined(HAVE_WAIT)
 
@@ -3160,6 +4154,44 @@ os_wait(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_WAIT) */
 
+#if (defined(__linux__) && defined(__NR_pidfd_open))
+
+PyDoc_STRVAR(os_pidfd_open__doc__,
+"pidfd_open($module, /, pid, flags=0)\n"
+"--\n"
+"\n"
+"Return a file descriptor referring to the process *pid*.\n"
+"\n"
+"The descriptor can be used to perform process management without races and\n"
+"signals.");
+
+#define OS_PIDFD_OPEN_METHODDEF    \
+    {"pidfd_open", _PyCFunction_CAST(os_pidfd_open), METH_FASTCALL|METH_KEYWORDS, os_pidfd_open__doc__},
+
+static PyObject *
+os_pidfd_open_impl(PyObject *module, pid_t pid, unsigned int flags);
+
+static PyObject *
+os_pidfd_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"pid", "flags", NULL};
+    static _PyArg_Parser _parser = {"" _Py_PARSE_PID "|O&:pidfd_open", _keywords, 0};
+    pid_t pid;
+    unsigned int flags = 0;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &pid, _PyLong_UnsignedInt_Converter, &flags)) {
+        goto exit;
+    }
+    return_value = os_pidfd_open_impl(module, pid, flags);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(__linux__) && defined(__NR_pidfd_open)) */
+
 #if (defined(HAVE_READLINK) || defined(MS_WINDOWS))
 
 PyDoc_STRVAR(os_readlink__doc__,
@@ -3175,7 +4207,7 @@ PyDoc_STRVAR(os_readlink__doc__,
 "using it will raise a NotImplementedError.");
 
 #define OS_READLINK_METHODDEF    \
-    {"readlink", (PyCFunction)(void(*)(void))os_readlink, METH_FASTCALL|METH_KEYWORDS, os_readlink__doc__},
+    {"readlink", _PyCFunction_CAST(os_readlink), METH_FASTCALL|METH_KEYWORDS, os_readlink__doc__},
 
 static PyObject *
 os_readlink_impl(PyObject *module, path_t *path, int dir_fd);
@@ -3185,14 +4217,26 @@ os_readlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {"O&|$O&:readlink", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "readlink", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("readlink", "path", 0, 0);
     int dir_fd = DEFAULT_DIR_FD;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, READLINKAT_DIR_FD_CONVERTER, &dir_fd)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (!READLINKAT_DIR_FD_CONVERTER(args[1], &dir_fd)) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = os_readlink_impl(module, &path, dir_fd);
 
 exit:
@@ -3223,7 +4267,7 @@ PyDoc_STRVAR(os_symlink__doc__,
 "  If it is unavailable, using it will raise a NotImplementedError.");
 
 #define OS_SYMLINK_METHODDEF    \
-    {"symlink", (PyCFunction)(void(*)(void))os_symlink, METH_FASTCALL|METH_KEYWORDS, os_symlink__doc__},
+    {"symlink", _PyCFunction_CAST(os_symlink), METH_FASTCALL|METH_KEYWORDS, os_symlink__doc__},
 
 static PyObject *
 os_symlink_impl(PyObject *module, path_t *src, path_t *dst,
@@ -3234,16 +4278,44 @@ os_symlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"src", "dst", "target_is_directory", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {"O&O&|p$O&:symlink", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "symlink", 0};
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t src = PATH_T_INITIALIZE("symlink", "src", 0, 0);
     path_t dst = PATH_T_INITIALIZE("symlink", "dst", 0, 0);
     int target_is_directory = 0;
     int dir_fd = DEFAULT_DIR_FD;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &src, path_converter, &dst, &target_is_directory, SYMLINKAT_DIR_FD_CONVERTER, &dir_fd)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!path_converter(args[0], &src)) {
+        goto exit;
+    }
+    if (!path_converter(args[1], &dst)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[2]) {
+        target_is_directory = PyObject_IsTrue(args[2]);
+        if (target_is_directory < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (!SYMLINKAT_DIR_FD_CONVERTER(args[3], &dir_fd)) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = os_symlink_impl(module, &src, &dst, target_is_directory, dir_fd);
 
 exit:
@@ -3345,7 +4417,7 @@ PyDoc_STRVAR(os_setpgid__doc__,
 "Call the system call setpgid(pid, pgrp).");
 
 #define OS_SETPGID_METHODDEF    \
-    {"setpgid", (PyCFunction)(void(*)(void))os_setpgid, METH_FASTCALL, os_setpgid__doc__},
+    {"setpgid", _PyCFunction_CAST(os_setpgid), METH_FASTCALL, os_setpgid__doc__},
 
 static PyObject *
 os_setpgid_impl(PyObject *module, pid_t pid, pid_t pgrp);
@@ -3389,7 +4461,8 @@ os_tcgetpgrp(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!PyArg_Parse(arg, "i:tcgetpgrp", &fd)) {
+    fd = _PyLong_AsInt(arg);
+    if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_tcgetpgrp_impl(module, fd);
@@ -3409,7 +4482,7 @@ PyDoc_STRVAR(os_tcsetpgrp__doc__,
 "Set the process group associated with the terminal specified by fd.");
 
 #define OS_TCSETPGRP_METHODDEF    \
-    {"tcsetpgrp", (PyCFunction)(void(*)(void))os_tcsetpgrp, METH_FASTCALL, os_tcsetpgrp__doc__},
+    {"tcsetpgrp", _PyCFunction_CAST(os_tcsetpgrp), METH_FASTCALL, os_tcsetpgrp__doc__},
 
 static PyObject *
 os_tcsetpgrp_impl(PyObject *module, int fd, pid_t pgid);
@@ -3445,7 +4518,7 @@ PyDoc_STRVAR(os_open__doc__,
 "  If it is unavailable, using it will raise a NotImplementedError.");
 
 #define OS_OPEN_METHODDEF    \
-    {"open", (PyCFunction)(void(*)(void))os_open, METH_FASTCALL|METH_KEYWORDS, os_open__doc__},
+    {"open", _PyCFunction_CAST(os_open), METH_FASTCALL|METH_KEYWORDS, os_open__doc__},
 
 static int
 os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd);
@@ -3455,17 +4528,46 @@ os_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "flags", "mode", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {"O&i|i$O&:open", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "open", 0};
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t path = PATH_T_INITIALIZE("open", "path", 0, 0);
     int flags;
     int mode = 511;
     int dir_fd = DEFAULT_DIR_FD;
     int _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, &flags, &mode, OPENAT_DIR_FD_CONVERTER, &dir_fd)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    flags = _PyLong_AsInt(args[1]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[2]) {
+        mode = _PyLong_AsInt(args[2]);
+        if (mode == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (!OPENAT_DIR_FD_CONVERTER(args[3], &dir_fd)) {
+        goto exit;
+    }
+skip_optional_kwonly:
     _return_value = os_open_impl(module, &path, flags, mode, dir_fd);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -3486,7 +4588,7 @@ PyDoc_STRVAR(os_close__doc__,
 "Close a file descriptor.");
 
 #define OS_CLOSE_METHODDEF    \
-    {"close", (PyCFunction)(void(*)(void))os_close, METH_FASTCALL|METH_KEYWORDS, os_close__doc__},
+    {"close", _PyCFunction_CAST(os_close), METH_FASTCALL|METH_KEYWORDS, os_close__doc__},
 
 static PyObject *
 os_close_impl(PyObject *module, int fd);
@@ -3496,11 +4598,16 @@ os_close(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", NULL};
-    static _PyArg_Parser _parser = {"i:close", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "close", 0};
+    PyObject *argsbuf[1];
     int fd;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &fd)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_close_impl(module, fd);
@@ -3516,7 +4623,7 @@ PyDoc_STRVAR(os_closerange__doc__,
 "Closes all file descriptors in [fd_low, fd_high), ignoring errors.");
 
 #define OS_CLOSERANGE_METHODDEF    \
-    {"closerange", (PyCFunction)(void(*)(void))os_closerange, METH_FASTCALL, os_closerange__doc__},
+    {"closerange", _PyCFunction_CAST(os_closerange), METH_FASTCALL, os_closerange__doc__},
 
 static PyObject *
 os_closerange_impl(PyObject *module, int fd_low, int fd_high);
@@ -3528,8 +4635,15 @@ os_closerange(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int fd_low;
     int fd_high;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:closerange",
-        &fd_low, &fd_high)) {
+    if (!_PyArg_CheckPositional("closerange", nargs, 2, 2)) {
+        goto exit;
+    }
+    fd_low = _PyLong_AsInt(args[0]);
+    if (fd_low == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    fd_high = _PyLong_AsInt(args[1]);
+    if (fd_high == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_closerange_impl(module, fd_low, fd_high);
@@ -3557,7 +4671,8 @@ os_dup(PyObject *module, PyObject *arg)
     int fd;
     int _return_value;
 
-    if (!PyArg_Parse(arg, "i:dup", &fd)) {
+    fd = _PyLong_AsInt(arg);
+    if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = os_dup_impl(module, fd);
@@ -3577,7 +4692,7 @@ PyDoc_STRVAR(os_dup2__doc__,
 "Duplicate file descriptor.");
 
 #define OS_DUP2_METHODDEF    \
-    {"dup2", (PyCFunction)(void(*)(void))os_dup2, METH_FASTCALL|METH_KEYWORDS, os_dup2__doc__},
+    {"dup2", _PyCFunction_CAST(os_dup2), METH_FASTCALL|METH_KEYWORDS, os_dup2__doc__},
 
 static int
 os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable);
@@ -3587,16 +4702,34 @@ os_dup2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", "fd2", "inheritable", NULL};
-    static _PyArg_Parser _parser = {"ii|p:dup2", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "dup2", 0};
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     int fd;
     int fd2;
     int inheritable = 1;
     int _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &fd, &fd2, &inheritable)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    fd2 = _PyLong_AsInt(args[1]);
+    if (fd2 == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    inheritable = PyObject_IsTrue(args[2]);
+    if (inheritable < 0) {
+        goto exit;
+    }
+skip_optional_pos:
     _return_value = os_dup2_impl(module, fd, fd2, inheritable);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -3623,7 +4756,7 @@ PyDoc_STRVAR(os_lockf__doc__,
 "    The number of bytes to lock, starting at the current position.");
 
 #define OS_LOCKF_METHODDEF    \
-    {"lockf", (PyCFunction)(void(*)(void))os_lockf, METH_FASTCALL, os_lockf__doc__},
+    {"lockf", _PyCFunction_CAST(os_lockf), METH_FASTCALL, os_lockf__doc__},
 
 static PyObject *
 os_lockf_impl(PyObject *module, int fd, int command, Py_off_t length);
@@ -3636,8 +4769,18 @@ os_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int command;
     Py_off_t length;
 
-    if (!_PyArg_ParseStack(args, nargs, "iiO&:lockf",
-        &fd, &command, Py_off_t_converter, &length)) {
+    if (!_PyArg_CheckPositional("lockf", nargs, 3, 3)) {
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    command = _PyLong_AsInt(args[1]);
+    if (command == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[2], &length)) {
         goto exit;
     }
     return_value = os_lockf_impl(module, fd, command, length);
@@ -3658,7 +4801,7 @@ PyDoc_STRVAR(os_lseek__doc__,
 "relative to the beginning of the file.");
 
 #define OS_LSEEK_METHODDEF    \
-    {"lseek", (PyCFunction)(void(*)(void))os_lseek, METH_FASTCALL, os_lseek__doc__},
+    {"lseek", _PyCFunction_CAST(os_lseek), METH_FASTCALL, os_lseek__doc__},
 
 static Py_off_t
 os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how);
@@ -3672,8 +4815,18 @@ os_lseek(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int how;
     Py_off_t _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "iO&i:lseek",
-        &fd, Py_off_t_converter, &position, &how)) {
+    if (!_PyArg_CheckPositional("lseek", nargs, 3, 3)) {
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[1], &position)) {
+        goto exit;
+    }
+    how = _PyLong_AsInt(args[2]);
+    if (how == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = os_lseek_impl(module, fd, position, how);
@@ -3693,7 +4846,7 @@ PyDoc_STRVAR(os_read__doc__,
 "Read from a file descriptor.  Returns a bytes object.");
 
 #define OS_READ_METHODDEF    \
-    {"read", (PyCFunction)(void(*)(void))os_read, METH_FASTCALL, os_read__doc__},
+    {"read", _PyCFunction_CAST(os_read), METH_FASTCALL, os_read__doc__},
 
 static PyObject *
 os_read_impl(PyObject *module, int fd, Py_ssize_t length);
@@ -3705,9 +4858,24 @@ os_read(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int fd;
     Py_ssize_t length;
 
-    if (!_PyArg_ParseStack(args, nargs, "in:read",
-        &fd, &length)) {
+    if (!_PyArg_CheckPositional("read", nargs, 2, 2)) {
         goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        length = ival;
     }
     return_value = os_read_impl(module, fd, length);
 
@@ -3732,7 +4900,7 @@ PyDoc_STRVAR(os_readv__doc__,
 "which may be less than the total capacity of all the buffers.");
 
 #define OS_READV_METHODDEF    \
-    {"readv", (PyCFunction)(void(*)(void))os_readv, METH_FASTCALL, os_readv__doc__},
+    {"readv", _PyCFunction_CAST(os_readv), METH_FASTCALL, os_readv__doc__},
 
 static Py_ssize_t
 os_readv_impl(PyObject *module, int fd, PyObject *buffers);
@@ -3745,10 +4913,14 @@ os_readv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *buffers;
     Py_ssize_t _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "iO:readv",
-        &fd, &buffers)) {
+    if (!_PyArg_CheckPositional("readv", nargs, 2, 2)) {
         goto exit;
     }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    buffers = args[1];
     _return_value = os_readv_impl(module, fd, buffers);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -3773,21 +4945,39 @@ PyDoc_STRVAR(os_pread__doc__,
 "the beginning of the file.  The file offset remains unchanged.");
 
 #define OS_PREAD_METHODDEF    \
-    {"pread", (PyCFunction)(void(*)(void))os_pread, METH_FASTCALL, os_pread__doc__},
+    {"pread", _PyCFunction_CAST(os_pread), METH_FASTCALL, os_pread__doc__},
 
 static PyObject *
-os_pread_impl(PyObject *module, int fd, int length, Py_off_t offset);
+os_pread_impl(PyObject *module, int fd, Py_ssize_t length, Py_off_t offset);
 
 static PyObject *
 os_pread(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
-    int length;
+    Py_ssize_t length;
     Py_off_t offset;
 
-    if (!_PyArg_ParseStack(args, nargs, "iiO&:pread",
-        &fd, &length, Py_off_t_converter, &offset)) {
+    if (!_PyArg_CheckPositional("pread", nargs, 3, 3)) {
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        length = ival;
+    }
+    if (!Py_off_t_converter(args[2], &offset)) {
         goto exit;
     }
     return_value = os_pread_impl(module, fd, length, offset);
@@ -3821,7 +5011,7 @@ PyDoc_STRVAR(os_preadv__doc__,
 "Using non-zero flags requires Linux 4.6 or newer.");
 
 #define OS_PREADV_METHODDEF    \
-    {"preadv", (PyCFunction)(void(*)(void))os_preadv, METH_FASTCALL, os_preadv__doc__},
+    {"preadv", _PyCFunction_CAST(os_preadv), METH_FASTCALL, os_preadv__doc__},
 
 static Py_ssize_t
 os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
@@ -3837,10 +5027,25 @@ os_preadv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int flags = 0;
     Py_ssize_t _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "iOO&|i:preadv",
-        &fd, &buffers, Py_off_t_converter, &offset, &flags)) {
+    if (!_PyArg_CheckPositional("preadv", nargs, 3, 4)) {
         goto exit;
     }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    buffers = args[1];
+    if (!Py_off_t_converter(args[2], &offset)) {
+        goto exit;
+    }
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    flags = _PyLong_AsInt(args[3]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     _return_value = os_preadv_impl(module, fd, buffers, offset, flags);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -3860,7 +5065,7 @@ PyDoc_STRVAR(os_write__doc__,
 "Write a bytes object to a file descriptor.");
 
 #define OS_WRITE_METHODDEF    \
-    {"write", (PyCFunction)(void(*)(void))os_write, METH_FASTCALL, os_write__doc__},
+    {"write", _PyCFunction_CAST(os_write), METH_FASTCALL, os_write__doc__},
 
 static Py_ssize_t
 os_write_impl(PyObject *module, int fd, Py_buffer *data);
@@ -3873,8 +5078,18 @@ os_write(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_buffer data = {NULL, NULL};
     Py_ssize_t _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "iy*:write",
-        &fd, &data)) {
+    if (!_PyArg_CheckPositional("write", nargs, 2, 2)) {
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &data, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&data, 'C')) {
+        _PyArg_BadArgument("write", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     _return_value = os_write_impl(module, fd, &data);
@@ -3892,33 +5107,271 @@ exit:
     return return_value;
 }
 
+#if defined(HAVE_SENDFILE) && defined(__APPLE__)
+
+PyDoc_STRVAR(os_sendfile__doc__,
+"sendfile($module, /, out_fd, in_fd, offset, count, headers=(),\n"
+"         trailers=(), flags=0)\n"
+"--\n"
+"\n"
+"Copy count bytes from file descriptor in_fd to file descriptor out_fd.");
+
+#define OS_SENDFILE_METHODDEF    \
+    {"sendfile", _PyCFunction_CAST(os_sendfile), METH_FASTCALL|METH_KEYWORDS, os_sendfile__doc__},
+
+static PyObject *
+os_sendfile_impl(PyObject *module, int out_fd, int in_fd, Py_off_t offset,
+                 Py_off_t sbytes, PyObject *headers, PyObject *trailers,
+                 int flags);
+
+static PyObject *
+os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"out_fd", "in_fd", "offset", "count", "headers", "trailers", "flags", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "sendfile", 0};
+    PyObject *argsbuf[7];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 4;
+    int out_fd;
+    int in_fd;
+    Py_off_t offset;
+    Py_off_t sbytes;
+    PyObject *headers = NULL;
+    PyObject *trailers = NULL;
+    int flags = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 4, 7, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    out_fd = _PyLong_AsInt(args[0]);
+    if (out_fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    in_fd = _PyLong_AsInt(args[1]);
+    if (in_fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[2], &offset)) {
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[3], &sbytes)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[4]) {
+        headers = args[4];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[5]) {
+        trailers = args[5];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    flags = _PyLong_AsInt(args[6]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = os_sendfile_impl(module, out_fd, in_fd, offset, sbytes, headers, trailers, flags);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_SENDFILE) && defined(__APPLE__) */
+
+#if defined(HAVE_SENDFILE) && !defined(__APPLE__) && (defined(__FreeBSD__) || defined(__DragonFly__))
+
+PyDoc_STRVAR(os_sendfile__doc__,
+"sendfile($module, /, out_fd, in_fd, offset, count, headers=(),\n"
+"         trailers=(), flags=0)\n"
+"--\n"
+"\n"
+"Copy count bytes from file descriptor in_fd to file descriptor out_fd.");
+
+#define OS_SENDFILE_METHODDEF    \
+    {"sendfile", _PyCFunction_CAST(os_sendfile), METH_FASTCALL|METH_KEYWORDS, os_sendfile__doc__},
+
+static PyObject *
+os_sendfile_impl(PyObject *module, int out_fd, int in_fd, Py_off_t offset,
+                 Py_ssize_t count, PyObject *headers, PyObject *trailers,
+                 int flags);
+
+static PyObject *
+os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"out_fd", "in_fd", "offset", "count", "headers", "trailers", "flags", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "sendfile", 0};
+    PyObject *argsbuf[7];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 4;
+    int out_fd;
+    int in_fd;
+    Py_off_t offset;
+    Py_ssize_t count;
+    PyObject *headers = NULL;
+    PyObject *trailers = NULL;
+    int flags = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 4, 7, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    out_fd = _PyLong_AsInt(args[0]);
+    if (out_fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    in_fd = _PyLong_AsInt(args[1]);
+    if (in_fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[2], &offset)) {
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[3]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        count = ival;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[4]) {
+        headers = args[4];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[5]) {
+        trailers = args[5];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    flags = _PyLong_AsInt(args[6]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = os_sendfile_impl(module, out_fd, in_fd, offset, count, headers, trailers, flags);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_SENDFILE) && !defined(__APPLE__) && (defined(__FreeBSD__) || defined(__DragonFly__)) */
+
+#if defined(HAVE_SENDFILE) && !defined(__APPLE__) && !(defined(__FreeBSD__) || defined(__DragonFly__))
+
+PyDoc_STRVAR(os_sendfile__doc__,
+"sendfile($module, /, out_fd, in_fd, offset, count)\n"
+"--\n"
+"\n"
+"Copy count bytes from file descriptor in_fd to file descriptor out_fd.");
+
+#define OS_SENDFILE_METHODDEF    \
+    {"sendfile", _PyCFunction_CAST(os_sendfile), METH_FASTCALL|METH_KEYWORDS, os_sendfile__doc__},
+
+static PyObject *
+os_sendfile_impl(PyObject *module, int out_fd, int in_fd, PyObject *offobj,
+                 Py_ssize_t count);
+
+static PyObject *
+os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"out_fd", "in_fd", "offset", "count", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "sendfile", 0};
+    PyObject *argsbuf[4];
+    int out_fd;
+    int in_fd;
+    PyObject *offobj;
+    Py_ssize_t count;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 4, 4, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    out_fd = _PyLong_AsInt(args[0]);
+    if (out_fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    in_fd = _PyLong_AsInt(args[1]);
+    if (in_fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    offobj = args[2];
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[3]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        count = ival;
+    }
+    return_value = os_sendfile_impl(module, out_fd, in_fd, offobj, count);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_SENDFILE) && !defined(__APPLE__) && !(defined(__FreeBSD__) || defined(__DragonFly__)) */
+
 #if defined(__APPLE__)
 
 PyDoc_STRVAR(os__fcopyfile__doc__,
-"_fcopyfile($module, infd, outfd, flags, /)\n"
+"_fcopyfile($module, in_fd, out_fd, flags, /)\n"
 "--\n"
 "\n"
 "Efficiently copy content or metadata of 2 regular file descriptors (macOS).");
 
 #define OS__FCOPYFILE_METHODDEF    \
-    {"_fcopyfile", (PyCFunction)(void(*)(void))os__fcopyfile, METH_FASTCALL, os__fcopyfile__doc__},
+    {"_fcopyfile", _PyCFunction_CAST(os__fcopyfile), METH_FASTCALL, os__fcopyfile__doc__},
 
 static PyObject *
-os__fcopyfile_impl(PyObject *module, int infd, int outfd, int flags);
+os__fcopyfile_impl(PyObject *module, int in_fd, int out_fd, int flags);
 
 static PyObject *
 os__fcopyfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    int infd;
-    int outfd;
+    int in_fd;
+    int out_fd;
     int flags;
 
-    if (!_PyArg_ParseStack(args, nargs, "iii:_fcopyfile",
-        &infd, &outfd, &flags)) {
+    if (!_PyArg_CheckPositional("_fcopyfile", nargs, 3, 3)) {
         goto exit;
     }
-    return_value = os__fcopyfile_impl(module, infd, outfd, flags);
+    in_fd = _PyLong_AsInt(args[0]);
+    if (in_fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    out_fd = _PyLong_AsInt(args[1]);
+    if (out_fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    flags = _PyLong_AsInt(args[2]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = os__fcopyfile_impl(module, in_fd, out_fd, flags);
 
 exit:
     return return_value;
@@ -3936,7 +5389,7 @@ PyDoc_STRVAR(os_fstat__doc__,
 "Equivalent to os.stat(fd).");
 
 #define OS_FSTAT_METHODDEF    \
-    {"fstat", (PyCFunction)(void(*)(void))os_fstat, METH_FASTCALL|METH_KEYWORDS, os_fstat__doc__},
+    {"fstat", _PyCFunction_CAST(os_fstat), METH_FASTCALL|METH_KEYWORDS, os_fstat__doc__},
 
 static PyObject *
 os_fstat_impl(PyObject *module, int fd);
@@ -3946,11 +5399,16 @@ os_fstat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", NULL};
-    static _PyArg_Parser _parser = {"i:fstat", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "fstat", 0};
+    PyObject *argsbuf[1];
     int fd;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &fd)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_fstat_impl(module, fd);
@@ -3981,7 +5439,8 @@ os_isatty(PyObject *module, PyObject *arg)
     int fd;
     int _return_value;
 
-    if (!PyArg_Parse(arg, "i:isatty", &fd)) {
+    fd = _PyLong_AsInt(arg);
+    if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = os_isatty_impl(module, fd);
@@ -4045,7 +5504,8 @@ os_pipe2(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flags;
 
-    if (!PyArg_Parse(arg, "i:pipe2", &flags)) {
+    flags = _PyLong_AsInt(arg);
+    if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_pipe2_impl(module, flags);
@@ -4068,7 +5528,7 @@ PyDoc_STRVAR(os_writev__doc__,
 "buffers must be a sequence of bytes-like objects.");
 
 #define OS_WRITEV_METHODDEF    \
-    {"writev", (PyCFunction)(void(*)(void))os_writev, METH_FASTCALL, os_writev__doc__},
+    {"writev", _PyCFunction_CAST(os_writev), METH_FASTCALL, os_writev__doc__},
 
 static Py_ssize_t
 os_writev_impl(PyObject *module, int fd, PyObject *buffers);
@@ -4081,10 +5541,14 @@ os_writev(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *buffers;
     Py_ssize_t _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "iO:writev",
-        &fd, &buffers)) {
+    if (!_PyArg_CheckPositional("writev", nargs, 2, 2)) {
         goto exit;
     }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    buffers = args[1];
     _return_value = os_writev_impl(module, fd, buffers);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -4110,7 +5574,7 @@ PyDoc_STRVAR(os_pwrite__doc__,
 "current file offset.");
 
 #define OS_PWRITE_METHODDEF    \
-    {"pwrite", (PyCFunction)(void(*)(void))os_pwrite, METH_FASTCALL, os_pwrite__doc__},
+    {"pwrite", _PyCFunction_CAST(os_pwrite), METH_FASTCALL, os_pwrite__doc__},
 
 static Py_ssize_t
 os_pwrite_impl(PyObject *module, int fd, Py_buffer *buffer, Py_off_t offset);
@@ -4124,8 +5588,21 @@ os_pwrite(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_off_t offset;
     Py_ssize_t _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "iy*O&:pwrite",
-        &fd, &buffer, Py_off_t_converter, &offset)) {
+    if (!_PyArg_CheckPositional("pwrite", nargs, 3, 3)) {
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &buffer, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
+        _PyArg_BadArgument("pwrite", "argument 2", "contiguous buffer", args[1]);
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[2], &offset)) {
         goto exit;
     }
     _return_value = os_pwrite_impl(module, fd, &buffer, offset);
@@ -4164,11 +5641,12 @@ PyDoc_STRVAR(os_pwritev__doc__,
 "\n"
 "- RWF_DSYNC\n"
 "- RWF_SYNC\n"
+"- RWF_APPEND\n"
 "\n"
 "Using non-zero flags requires Linux 4.7 or newer.");
 
 #define OS_PWRITEV_METHODDEF    \
-    {"pwritev", (PyCFunction)(void(*)(void))os_pwritev, METH_FASTCALL, os_pwritev__doc__},
+    {"pwritev", _PyCFunction_CAST(os_pwritev), METH_FASTCALL, os_pwritev__doc__},
 
 static Py_ssize_t
 os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
@@ -4184,10 +5662,25 @@ os_pwritev(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int flags = 0;
     Py_ssize_t _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "iOO&|i:pwritev",
-        &fd, &buffers, Py_off_t_converter, &offset, &flags)) {
+    if (!_PyArg_CheckPositional("pwritev", nargs, 3, 4)) {
         goto exit;
     }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    buffers = args[1];
+    if (!Py_off_t_converter(args[2], &offset)) {
+        goto exit;
+    }
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    flags = _PyLong_AsInt(args[3]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     _return_value = os_pwritev_impl(module, fd, buffers, offset, flags);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -4199,6 +5692,193 @@ exit:
 }
 
 #endif /* (defined(HAVE_PWRITEV) || defined (HAVE_PWRITEV2)) */
+
+#if defined(HAVE_COPY_FILE_RANGE)
+
+PyDoc_STRVAR(os_copy_file_range__doc__,
+"copy_file_range($module, /, src, dst, count, offset_src=None,\n"
+"                offset_dst=None)\n"
+"--\n"
+"\n"
+"Copy count bytes from one file descriptor to another.\n"
+"\n"
+"  src\n"
+"    Source file descriptor.\n"
+"  dst\n"
+"    Destination file descriptor.\n"
+"  count\n"
+"    Number of bytes to copy.\n"
+"  offset_src\n"
+"    Starting offset in src.\n"
+"  offset_dst\n"
+"    Starting offset in dst.\n"
+"\n"
+"If offset_src is None, then src is read from the current position;\n"
+"respectively for offset_dst.");
+
+#define OS_COPY_FILE_RANGE_METHODDEF    \
+    {"copy_file_range", _PyCFunction_CAST(os_copy_file_range), METH_FASTCALL|METH_KEYWORDS, os_copy_file_range__doc__},
+
+static PyObject *
+os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
+                        PyObject *offset_src, PyObject *offset_dst);
+
+static PyObject *
+os_copy_file_range(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"src", "dst", "count", "offset_src", "offset_dst", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "copy_file_range", 0};
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
+    int src;
+    int dst;
+    Py_ssize_t count;
+    PyObject *offset_src = Py_None;
+    PyObject *offset_dst = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 5, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    src = _PyLong_AsInt(args[0]);
+    if (src == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    dst = _PyLong_AsInt(args[1]);
+    if (dst == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[2]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        count = ival;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[3]) {
+        offset_src = args[3];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    offset_dst = args[4];
+skip_optional_pos:
+    return_value = os_copy_file_range_impl(module, src, dst, count, offset_src, offset_dst);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_COPY_FILE_RANGE) */
+
+#if ((defined(HAVE_SPLICE) && !defined(_AIX)))
+
+PyDoc_STRVAR(os_splice__doc__,
+"splice($module, /, src, dst, count, offset_src=None, offset_dst=None,\n"
+"       flags=0)\n"
+"--\n"
+"\n"
+"Transfer count bytes from one pipe to a descriptor or vice versa.\n"
+"\n"
+"  src\n"
+"    Source file descriptor.\n"
+"  dst\n"
+"    Destination file descriptor.\n"
+"  count\n"
+"    Number of bytes to copy.\n"
+"  offset_src\n"
+"    Starting offset in src.\n"
+"  offset_dst\n"
+"    Starting offset in dst.\n"
+"  flags\n"
+"    Flags to modify the semantics of the call.\n"
+"\n"
+"If offset_src is None, then src is read from the current position;\n"
+"respectively for offset_dst. The offset associated to the file\n"
+"descriptor that refers to a pipe must be None.");
+
+#define OS_SPLICE_METHODDEF    \
+    {"splice", _PyCFunction_CAST(os_splice), METH_FASTCALL|METH_KEYWORDS, os_splice__doc__},
+
+static PyObject *
+os_splice_impl(PyObject *module, int src, int dst, Py_ssize_t count,
+               PyObject *offset_src, PyObject *offset_dst,
+               unsigned int flags);
+
+static PyObject *
+os_splice(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"src", "dst", "count", "offset_src", "offset_dst", "flags", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "splice", 0};
+    PyObject *argsbuf[6];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
+    int src;
+    int dst;
+    Py_ssize_t count;
+    PyObject *offset_src = Py_None;
+    PyObject *offset_dst = Py_None;
+    unsigned int flags = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 6, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    src = _PyLong_AsInt(args[0]);
+    if (src == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    dst = _PyLong_AsInt(args[1]);
+    if (dst == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[2]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        count = ival;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[3]) {
+        offset_src = args[3];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[4]) {
+        offset_dst = args[4];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (!_PyLong_UnsignedInt_Converter(args[5], &flags)) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = os_splice_impl(module, src, dst, count, offset_src, offset_dst, flags);
+
+exit:
+    return return_value;
+}
+
+#endif /* ((defined(HAVE_SPLICE) && !defined(_AIX))) */
 
 #if defined(HAVE_MKFIFO)
 
@@ -4214,7 +5894,7 @@ PyDoc_STRVAR(os_mkfifo__doc__,
 "  If it is unavailable, using it will raise a NotImplementedError.");
 
 #define OS_MKFIFO_METHODDEF    \
-    {"mkfifo", (PyCFunction)(void(*)(void))os_mkfifo, METH_FASTCALL|METH_KEYWORDS, os_mkfifo__doc__},
+    {"mkfifo", _PyCFunction_CAST(os_mkfifo), METH_FASTCALL|METH_KEYWORDS, os_mkfifo__doc__},
 
 static PyObject *
 os_mkfifo_impl(PyObject *module, path_t *path, int mode, int dir_fd);
@@ -4224,15 +5904,40 @@ os_mkfifo(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "mode", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {"O&|i$O&:mkfifo", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "mkfifo", 0};
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("mkfifo", "path", 0, 0);
     int mode = 438;
     int dir_fd = DEFAULT_DIR_FD;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, &mode, MKFIFOAT_DIR_FD_CONVERTER, &dir_fd)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[1]) {
+        mode = _PyLong_AsInt(args[1]);
+        if (mode == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (!MKFIFOAT_DIR_FD_CONVERTER(args[2], &dir_fd)) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = os_mkfifo_impl(module, &path, mode, dir_fd);
 
 exit:
@@ -4265,7 +5970,7 @@ PyDoc_STRVAR(os_mknod__doc__,
 "  If it is unavailable, using it will raise a NotImplementedError.");
 
 #define OS_MKNOD_METHODDEF    \
-    {"mknod", (PyCFunction)(void(*)(void))os_mknod, METH_FASTCALL|METH_KEYWORDS, os_mknod__doc__},
+    {"mknod", _PyCFunction_CAST(os_mknod), METH_FASTCALL|METH_KEYWORDS, os_mknod__doc__},
 
 static PyObject *
 os_mknod_impl(PyObject *module, path_t *path, int mode, dev_t device,
@@ -4276,16 +5981,49 @@ os_mknod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "mode", "device", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {"O&|iO&$O&:mknod", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "mknod", 0};
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("mknod", "path", 0, 0);
     int mode = 384;
     dev_t device = 0;
     int dir_fd = DEFAULT_DIR_FD;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, &mode, _Py_Dev_Converter, &device, MKNODAT_DIR_FD_CONVERTER, &dir_fd)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[1]) {
+        mode = _PyLong_AsInt(args[1]);
+        if (mode == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[2]) {
+        if (!_Py_Dev_Converter(args[2], &device)) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (!MKNODAT_DIR_FD_CONVERTER(args[3], &dir_fd)) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = os_mknod_impl(module, &path, mode, device, dir_fd);
 
 exit:
@@ -4318,7 +6056,7 @@ os_major(PyObject *module, PyObject *arg)
     dev_t device;
     unsigned int _return_value;
 
-    if (!PyArg_Parse(arg, "O&:major", _Py_Dev_Converter, &device)) {
+    if (!_Py_Dev_Converter(arg, &device)) {
         goto exit;
     }
     _return_value = os_major_impl(module, device);
@@ -4354,7 +6092,7 @@ os_minor(PyObject *module, PyObject *arg)
     dev_t device;
     unsigned int _return_value;
 
-    if (!PyArg_Parse(arg, "O&:minor", _Py_Dev_Converter, &device)) {
+    if (!_Py_Dev_Converter(arg, &device)) {
         goto exit;
     }
     _return_value = os_minor_impl(module, device);
@@ -4378,7 +6116,7 @@ PyDoc_STRVAR(os_makedev__doc__,
 "Composes a raw device number from the major and minor device numbers.");
 
 #define OS_MAKEDEV_METHODDEF    \
-    {"makedev", (PyCFunction)(void(*)(void))os_makedev, METH_FASTCALL, os_makedev__doc__},
+    {"makedev", _PyCFunction_CAST(os_makedev), METH_FASTCALL, os_makedev__doc__},
 
 static dev_t
 os_makedev_impl(PyObject *module, int major, int minor);
@@ -4391,8 +6129,15 @@ os_makedev(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int minor;
     dev_t _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:makedev",
-        &major, &minor)) {
+    if (!_PyArg_CheckPositional("makedev", nargs, 2, 2)) {
+        goto exit;
+    }
+    major = _PyLong_AsInt(args[0]);
+    if (major == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    minor = _PyLong_AsInt(args[1]);
+    if (minor == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = os_makedev_impl(module, major, minor);
@@ -4416,7 +6161,7 @@ PyDoc_STRVAR(os_ftruncate__doc__,
 "Truncate a file, specified by file descriptor, to a specific length.");
 
 #define OS_FTRUNCATE_METHODDEF    \
-    {"ftruncate", (PyCFunction)(void(*)(void))os_ftruncate, METH_FASTCALL, os_ftruncate__doc__},
+    {"ftruncate", _PyCFunction_CAST(os_ftruncate), METH_FASTCALL, os_ftruncate__doc__},
 
 static PyObject *
 os_ftruncate_impl(PyObject *module, int fd, Py_off_t length);
@@ -4428,8 +6173,14 @@ os_ftruncate(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int fd;
     Py_off_t length;
 
-    if (!_PyArg_ParseStack(args, nargs, "iO&:ftruncate",
-        &fd, Py_off_t_converter, &length)) {
+    if (!_PyArg_CheckPositional("ftruncate", nargs, 2, 2)) {
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[1], &length)) {
         goto exit;
     }
     return_value = os_ftruncate_impl(module, fd, length);
@@ -4452,7 +6203,7 @@ PyDoc_STRVAR(os_truncate__doc__,
 "  If this functionality is unavailable, using it raises an exception.");
 
 #define OS_TRUNCATE_METHODDEF    \
-    {"truncate", (PyCFunction)(void(*)(void))os_truncate, METH_FASTCALL|METH_KEYWORDS, os_truncate__doc__},
+    {"truncate", _PyCFunction_CAST(os_truncate), METH_FASTCALL|METH_KEYWORDS, os_truncate__doc__},
 
 static PyObject *
 os_truncate_impl(PyObject *module, path_t *path, Py_off_t length);
@@ -4462,12 +6213,19 @@ os_truncate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "length", NULL};
-    static _PyArg_Parser _parser = {"O&O&:truncate", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "truncate", 0};
+    PyObject *argsbuf[2];
     path_t path = PATH_T_INITIALIZE("truncate", "path", 0, PATH_HAVE_FTRUNCATE);
     Py_off_t length;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, Py_off_t_converter, &length)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[1], &length)) {
         goto exit;
     }
     return_value = os_truncate_impl(module, &path, length);
@@ -4493,7 +6251,7 @@ PyDoc_STRVAR(os_posix_fallocate__doc__,
 "starting at offset bytes from the beginning and continuing for length bytes.");
 
 #define OS_POSIX_FALLOCATE_METHODDEF    \
-    {"posix_fallocate", (PyCFunction)(void(*)(void))os_posix_fallocate, METH_FASTCALL, os_posix_fallocate__doc__},
+    {"posix_fallocate", _PyCFunction_CAST(os_posix_fallocate), METH_FASTCALL, os_posix_fallocate__doc__},
 
 static PyObject *
 os_posix_fallocate_impl(PyObject *module, int fd, Py_off_t offset,
@@ -4507,8 +6265,17 @@ os_posix_fallocate(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_off_t offset;
     Py_off_t length;
 
-    if (!_PyArg_ParseStack(args, nargs, "iO&O&:posix_fallocate",
-        &fd, Py_off_t_converter, &offset, Py_off_t_converter, &length)) {
+    if (!_PyArg_CheckPositional("posix_fallocate", nargs, 3, 3)) {
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[1], &offset)) {
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[2], &length)) {
         goto exit;
     }
     return_value = os_posix_fallocate_impl(module, fd, offset, length);
@@ -4536,7 +6303,7 @@ PyDoc_STRVAR(os_posix_fadvise__doc__,
 "POSIX_FADV_DONTNEED.");
 
 #define OS_POSIX_FADVISE_METHODDEF    \
-    {"posix_fadvise", (PyCFunction)(void(*)(void))os_posix_fadvise, METH_FASTCALL, os_posix_fadvise__doc__},
+    {"posix_fadvise", _PyCFunction_CAST(os_posix_fadvise), METH_FASTCALL, os_posix_fadvise__doc__},
 
 static PyObject *
 os_posix_fadvise_impl(PyObject *module, int fd, Py_off_t offset,
@@ -4551,8 +6318,21 @@ os_posix_fadvise(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_off_t length;
     int advice;
 
-    if (!_PyArg_ParseStack(args, nargs, "iO&O&i:posix_fadvise",
-        &fd, Py_off_t_converter, &offset, Py_off_t_converter, &length, &advice)) {
+    if (!_PyArg_CheckPositional("posix_fadvise", nargs, 4, 4)) {
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[1], &offset)) {
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[2], &length)) {
+        goto exit;
+    }
+    advice = _PyLong_AsInt(args[3]);
+    if (advice == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_posix_fadvise_impl(module, fd, offset, length, advice);
@@ -4563,7 +6343,7 @@ exit:
 
 #endif /* (defined(HAVE_POSIX_FADVISE) && !defined(POSIX_FADVISE_AIX_BUG)) */
 
-#if defined(HAVE_PUTENV) && defined(MS_WINDOWS)
+#if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_putenv__doc__,
 "putenv($module, name, value, /)\n"
@@ -4572,7 +6352,7 @@ PyDoc_STRVAR(os_putenv__doc__,
 "Change or add an environment variable.");
 
 #define OS_PUTENV_METHODDEF    \
-    {"putenv", (PyCFunction)(void(*)(void))os_putenv, METH_FASTCALL, os_putenv__doc__},
+    {"putenv", _PyCFunction_CAST(os_putenv), METH_FASTCALL, os_putenv__doc__},
 
 static PyObject *
 os_putenv_impl(PyObject *module, PyObject *name, PyObject *value);
@@ -4584,19 +6364,34 @@ os_putenv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *name;
     PyObject *value;
 
-    if (!_PyArg_ParseStack(args, nargs, "UU:putenv",
-        &name, &value)) {
+    if (!_PyArg_CheckPositional("putenv", nargs, 2, 2)) {
         goto exit;
     }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("putenv", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    name = args[0];
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("putenv", "argument 2", "str", args[1]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[1]) == -1) {
+        goto exit;
+    }
+    value = args[1];
     return_value = os_putenv_impl(module, name, value);
 
 exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_PUTENV) && defined(MS_WINDOWS) */
+#endif /* defined(MS_WINDOWS) */
 
-#if defined(HAVE_PUTENV) && !defined(MS_WINDOWS)
+#if !defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_putenv__doc__,
 "putenv($module, name, value, /)\n"
@@ -4605,7 +6400,7 @@ PyDoc_STRVAR(os_putenv__doc__,
 "Change or add an environment variable.");
 
 #define OS_PUTENV_METHODDEF    \
-    {"putenv", (PyCFunction)(void(*)(void))os_putenv, METH_FASTCALL, os_putenv__doc__},
+    {"putenv", _PyCFunction_CAST(os_putenv), METH_FASTCALL, os_putenv__doc__},
 
 static PyObject *
 os_putenv_impl(PyObject *module, PyObject *name, PyObject *value);
@@ -4617,8 +6412,13 @@ os_putenv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *name = NULL;
     PyObject *value = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&O&:putenv",
-        PyUnicode_FSConverter, &name, PyUnicode_FSConverter, &value)) {
+    if (!_PyArg_CheckPositional("putenv", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_FSConverter(args[0], &name)) {
+        goto exit;
+    }
+    if (!PyUnicode_FSConverter(args[1], &value)) {
         goto exit;
     }
     return_value = os_putenv_impl(module, name, value);
@@ -4632,9 +6432,45 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_PUTENV) && !defined(MS_WINDOWS) */
+#endif /* !defined(MS_WINDOWS) */
 
-#if defined(HAVE_UNSETENV)
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os_unsetenv__doc__,
+"unsetenv($module, name, /)\n"
+"--\n"
+"\n"
+"Delete an environment variable.");
+
+#define OS_UNSETENV_METHODDEF    \
+    {"unsetenv", (PyCFunction)os_unsetenv, METH_O, os_unsetenv__doc__},
+
+static PyObject *
+os_unsetenv_impl(PyObject *module, PyObject *name);
+
+static PyObject *
+os_unsetenv(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *name;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("unsetenv", "argument", "str", arg);
+        goto exit;
+    }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    name = arg;
+    return_value = os_unsetenv_impl(module, name);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if !defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_unsetenv__doc__,
 "unsetenv($module, name, /)\n"
@@ -4654,7 +6490,7 @@ os_unsetenv(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *name = NULL;
 
-    if (!PyArg_Parse(arg, "O&:unsetenv", PyUnicode_FSConverter, &name)) {
+    if (!PyUnicode_FSConverter(arg, &name)) {
         goto exit;
     }
     return_value = os_unsetenv_impl(module, name);
@@ -4666,7 +6502,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_UNSETENV) */
+#endif /* !defined(MS_WINDOWS) */
 
 PyDoc_STRVAR(os_strerror__doc__,
 "strerror($module, code, /)\n"
@@ -4686,7 +6522,8 @@ os_strerror(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int code;
 
-    if (!PyArg_Parse(arg, "i:strerror", &code)) {
+    code = _PyLong_AsInt(arg);
+    if (code == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_strerror_impl(module, code);
@@ -4716,7 +6553,8 @@ os_WCOREDUMP(PyObject *module, PyObject *arg)
     int status;
     int _return_value;
 
-    if (!PyArg_Parse(arg, "i:WCOREDUMP", &status)) {
+    status = _PyLong_AsInt(arg);
+    if (status == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = os_WCOREDUMP_impl(module, status);
@@ -4743,7 +6581,7 @@ PyDoc_STRVAR(os_WIFCONTINUED__doc__,
 "job control stop.");
 
 #define OS_WIFCONTINUED_METHODDEF    \
-    {"WIFCONTINUED", (PyCFunction)(void(*)(void))os_WIFCONTINUED, METH_FASTCALL|METH_KEYWORDS, os_WIFCONTINUED__doc__},
+    {"WIFCONTINUED", _PyCFunction_CAST(os_WIFCONTINUED), METH_FASTCALL|METH_KEYWORDS, os_WIFCONTINUED__doc__},
 
 static int
 os_WIFCONTINUED_impl(PyObject *module, int status);
@@ -4753,12 +6591,17 @@ os_WIFCONTINUED(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {"i:WIFCONTINUED", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "WIFCONTINUED", 0};
+    PyObject *argsbuf[1];
     int status;
     int _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &status)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    status = _PyLong_AsInt(args[0]);
+    if (status == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = os_WIFCONTINUED_impl(module, status);
@@ -4782,7 +6625,7 @@ PyDoc_STRVAR(os_WIFSTOPPED__doc__,
 "Return True if the process returning status was stopped.");
 
 #define OS_WIFSTOPPED_METHODDEF    \
-    {"WIFSTOPPED", (PyCFunction)(void(*)(void))os_WIFSTOPPED, METH_FASTCALL|METH_KEYWORDS, os_WIFSTOPPED__doc__},
+    {"WIFSTOPPED", _PyCFunction_CAST(os_WIFSTOPPED), METH_FASTCALL|METH_KEYWORDS, os_WIFSTOPPED__doc__},
 
 static int
 os_WIFSTOPPED_impl(PyObject *module, int status);
@@ -4792,12 +6635,17 @@ os_WIFSTOPPED(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {"i:WIFSTOPPED", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "WIFSTOPPED", 0};
+    PyObject *argsbuf[1];
     int status;
     int _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &status)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    status = _PyLong_AsInt(args[0]);
+    if (status == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = os_WIFSTOPPED_impl(module, status);
@@ -4821,7 +6669,7 @@ PyDoc_STRVAR(os_WIFSIGNALED__doc__,
 "Return True if the process returning status was terminated by a signal.");
 
 #define OS_WIFSIGNALED_METHODDEF    \
-    {"WIFSIGNALED", (PyCFunction)(void(*)(void))os_WIFSIGNALED, METH_FASTCALL|METH_KEYWORDS, os_WIFSIGNALED__doc__},
+    {"WIFSIGNALED", _PyCFunction_CAST(os_WIFSIGNALED), METH_FASTCALL|METH_KEYWORDS, os_WIFSIGNALED__doc__},
 
 static int
 os_WIFSIGNALED_impl(PyObject *module, int status);
@@ -4831,12 +6679,17 @@ os_WIFSIGNALED(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {"i:WIFSIGNALED", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "WIFSIGNALED", 0};
+    PyObject *argsbuf[1];
     int status;
     int _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &status)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    status = _PyLong_AsInt(args[0]);
+    if (status == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = os_WIFSIGNALED_impl(module, status);
@@ -4860,7 +6713,7 @@ PyDoc_STRVAR(os_WIFEXITED__doc__,
 "Return True if the process returning status exited via the exit() system call.");
 
 #define OS_WIFEXITED_METHODDEF    \
-    {"WIFEXITED", (PyCFunction)(void(*)(void))os_WIFEXITED, METH_FASTCALL|METH_KEYWORDS, os_WIFEXITED__doc__},
+    {"WIFEXITED", _PyCFunction_CAST(os_WIFEXITED), METH_FASTCALL|METH_KEYWORDS, os_WIFEXITED__doc__},
 
 static int
 os_WIFEXITED_impl(PyObject *module, int status);
@@ -4870,12 +6723,17 @@ os_WIFEXITED(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {"i:WIFEXITED", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "WIFEXITED", 0};
+    PyObject *argsbuf[1];
     int status;
     int _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &status)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    status = _PyLong_AsInt(args[0]);
+    if (status == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = os_WIFEXITED_impl(module, status);
@@ -4899,7 +6757,7 @@ PyDoc_STRVAR(os_WEXITSTATUS__doc__,
 "Return the process return code from status.");
 
 #define OS_WEXITSTATUS_METHODDEF    \
-    {"WEXITSTATUS", (PyCFunction)(void(*)(void))os_WEXITSTATUS, METH_FASTCALL|METH_KEYWORDS, os_WEXITSTATUS__doc__},
+    {"WEXITSTATUS", _PyCFunction_CAST(os_WEXITSTATUS), METH_FASTCALL|METH_KEYWORDS, os_WEXITSTATUS__doc__},
 
 static int
 os_WEXITSTATUS_impl(PyObject *module, int status);
@@ -4909,12 +6767,17 @@ os_WEXITSTATUS(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {"i:WEXITSTATUS", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "WEXITSTATUS", 0};
+    PyObject *argsbuf[1];
     int status;
     int _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &status)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    status = _PyLong_AsInt(args[0]);
+    if (status == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = os_WEXITSTATUS_impl(module, status);
@@ -4938,7 +6801,7 @@ PyDoc_STRVAR(os_WTERMSIG__doc__,
 "Return the signal that terminated the process that provided the status value.");
 
 #define OS_WTERMSIG_METHODDEF    \
-    {"WTERMSIG", (PyCFunction)(void(*)(void))os_WTERMSIG, METH_FASTCALL|METH_KEYWORDS, os_WTERMSIG__doc__},
+    {"WTERMSIG", _PyCFunction_CAST(os_WTERMSIG), METH_FASTCALL|METH_KEYWORDS, os_WTERMSIG__doc__},
 
 static int
 os_WTERMSIG_impl(PyObject *module, int status);
@@ -4948,12 +6811,17 @@ os_WTERMSIG(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {"i:WTERMSIG", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "WTERMSIG", 0};
+    PyObject *argsbuf[1];
     int status;
     int _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &status)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    status = _PyLong_AsInt(args[0]);
+    if (status == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = os_WTERMSIG_impl(module, status);
@@ -4977,7 +6845,7 @@ PyDoc_STRVAR(os_WSTOPSIG__doc__,
 "Return the signal that stopped the process that provided the status value.");
 
 #define OS_WSTOPSIG_METHODDEF    \
-    {"WSTOPSIG", (PyCFunction)(void(*)(void))os_WSTOPSIG, METH_FASTCALL|METH_KEYWORDS, os_WSTOPSIG__doc__},
+    {"WSTOPSIG", _PyCFunction_CAST(os_WSTOPSIG), METH_FASTCALL|METH_KEYWORDS, os_WSTOPSIG__doc__},
 
 static int
 os_WSTOPSIG_impl(PyObject *module, int status);
@@ -4987,12 +6855,17 @@ os_WSTOPSIG(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"status", NULL};
-    static _PyArg_Parser _parser = {"i:WSTOPSIG", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "WSTOPSIG", 0};
+    PyObject *argsbuf[1];
     int status;
     int _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &status)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    status = _PyLong_AsInt(args[0]);
+    if (status == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = os_WSTOPSIG_impl(module, status);
@@ -5029,7 +6902,8 @@ os_fstatvfs(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!PyArg_Parse(arg, "i:fstatvfs", &fd)) {
+    fd = _PyLong_AsInt(arg);
+    if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_fstatvfs_impl(module, fd);
@@ -5053,7 +6927,7 @@ PyDoc_STRVAR(os_statvfs__doc__,
 "  If this functionality is unavailable, using it raises an exception.");
 
 #define OS_STATVFS_METHODDEF    \
-    {"statvfs", (PyCFunction)(void(*)(void))os_statvfs, METH_FASTCALL|METH_KEYWORDS, os_statvfs__doc__},
+    {"statvfs", _PyCFunction_CAST(os_statvfs), METH_FASTCALL|METH_KEYWORDS, os_statvfs__doc__},
 
 static PyObject *
 os_statvfs_impl(PyObject *module, path_t *path);
@@ -5063,11 +6937,15 @@ os_statvfs(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {"O&:statvfs", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "statvfs", 0};
+    PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE("statvfs", "path", 0, PATH_HAVE_FSTATVFS);
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &path)) {
         goto exit;
     }
     return_value = os_statvfs_impl(module, &path);
@@ -5090,7 +6968,7 @@ PyDoc_STRVAR(os__getdiskusage__doc__,
 "Return disk usage statistics about the given path as a (total, free) tuple.");
 
 #define OS__GETDISKUSAGE_METHODDEF    \
-    {"_getdiskusage", (PyCFunction)(void(*)(void))os__getdiskusage, METH_FASTCALL|METH_KEYWORDS, os__getdiskusage__doc__},
+    {"_getdiskusage", _PyCFunction_CAST(os__getdiskusage), METH_FASTCALL|METH_KEYWORDS, os__getdiskusage__doc__},
 
 static PyObject *
 os__getdiskusage_impl(PyObject *module, path_t *path);
@@ -5100,11 +6978,15 @@ os__getdiskusage(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {"O&:_getdiskusage", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "_getdiskusage", 0};
+    PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE("_getdiskusage", "path", 0, 0);
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &path)) {
         goto exit;
     }
     return_value = os__getdiskusage_impl(module, &path);
@@ -5129,7 +7011,7 @@ PyDoc_STRVAR(os_fpathconf__doc__,
 "If there is no limit, return -1.");
 
 #define OS_FPATHCONF_METHODDEF    \
-    {"fpathconf", (PyCFunction)(void(*)(void))os_fpathconf, METH_FASTCALL, os_fpathconf__doc__},
+    {"fpathconf", _PyCFunction_CAST(os_fpathconf), METH_FASTCALL, os_fpathconf__doc__},
 
 static long
 os_fpathconf_impl(PyObject *module, int fd, int name);
@@ -5142,8 +7024,13 @@ os_fpathconf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int name;
     long _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "iO&:fpathconf",
-        &fd, conv_path_confname, &name)) {
+    if (!_PyArg_CheckPositional("fpathconf", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+        goto exit;
+    }
+    if (!conv_path_confname(args[1], &name)) {
         goto exit;
     }
     _return_value = os_fpathconf_impl(module, fd, name);
@@ -5171,7 +7058,7 @@ PyDoc_STRVAR(os_pathconf__doc__,
 "  If this functionality is unavailable, using it raises an exception.");
 
 #define OS_PATHCONF_METHODDEF    \
-    {"pathconf", (PyCFunction)(void(*)(void))os_pathconf, METH_FASTCALL|METH_KEYWORDS, os_pathconf__doc__},
+    {"pathconf", _PyCFunction_CAST(os_pathconf), METH_FASTCALL|METH_KEYWORDS, os_pathconf__doc__},
 
 static long
 os_pathconf_impl(PyObject *module, path_t *path, int name);
@@ -5181,13 +7068,20 @@ os_pathconf(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "name", NULL};
-    static _PyArg_Parser _parser = {"O&O&:pathconf", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "pathconf", 0};
+    PyObject *argsbuf[2];
     path_t path = PATH_T_INITIALIZE("pathconf", "path", 0, PATH_HAVE_FPATHCONF);
     int name;
     long _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, conv_path_confname, &name)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    if (!conv_path_confname(args[1], &name)) {
         goto exit;
     }
     _return_value = os_pathconf_impl(module, &path, name);
@@ -5225,7 +7119,7 @@ os_confstr(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int name;
 
-    if (!PyArg_Parse(arg, "O&:confstr", conv_confstr_confname, &name)) {
+    if (!conv_confstr_confname(arg, &name)) {
         goto exit;
     }
     return_value = os_confstr_impl(module, name);
@@ -5257,7 +7151,7 @@ os_sysconf(PyObject *module, PyObject *arg)
     int name;
     long _return_value;
 
-    if (!PyArg_Parse(arg, "O&:sysconf", conv_sysconf_confname, &name)) {
+    if (!conv_sysconf_confname(arg, &name)) {
         goto exit;
     }
     _return_value = os_sysconf_impl(module, name);
@@ -5296,10 +7190,9 @@ os_abort(PyObject *module, PyObject *Py_UNUSED(ignored))
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_startfile__doc__,
-"startfile($module, /, filepath, operation=None)\n"
+"startfile($module, /, filepath, operation=<unrepresentable>,\n"
+"          arguments=<unrepresentable>, cwd=None, show_cmd=1)\n"
 "--\n"
-"\n"
-"startfile(filepath [, operation])\n"
 "\n"
 "Start a file with its associated application.\n"
 "\n"
@@ -5310,6 +7203,16 @@ PyDoc_STRVAR(os_startfile__doc__,
 "When another \"operation\" is given, it specifies what should be done with\n"
 "the file.  A typical operation is \"print\".\n"
 "\n"
+"\"arguments\" is passed to the application, but should be omitted if the\n"
+"file is a document.\n"
+"\n"
+"\"cwd\" is the working directory for the operation. If \"filepath\" is\n"
+"relative, it will be resolved against this directory. This argument\n"
+"should usually be an absolute path.\n"
+"\n"
+"\"show_cmd\" can be used to override the recommended visibility option.\n"
+"See the Windows ShellExecute documentation for values.\n"
+"\n"
 "startfile returns as soon as the associated application is launched.\n"
 "There is no option to wait for the application to close, and no way\n"
 "to retrieve the application\'s exit status.\n"
@@ -5319,30 +7222,87 @@ PyDoc_STRVAR(os_startfile__doc__,
 "the underlying Win32 ShellExecute function doesn\'t work if it is.");
 
 #define OS_STARTFILE_METHODDEF    \
-    {"startfile", (PyCFunction)(void(*)(void))os_startfile, METH_FASTCALL|METH_KEYWORDS, os_startfile__doc__},
+    {"startfile", _PyCFunction_CAST(os_startfile), METH_FASTCALL|METH_KEYWORDS, os_startfile__doc__},
 
 static PyObject *
 os_startfile_impl(PyObject *module, path_t *filepath,
-                  const Py_UNICODE *operation);
+                  const Py_UNICODE *operation, const Py_UNICODE *arguments,
+                  path_t *cwd, int show_cmd);
 
 static PyObject *
 os_startfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"filepath", "operation", NULL};
-    static _PyArg_Parser _parser = {"O&|u:startfile", _keywords, 0};
+    static const char * const _keywords[] = {"filepath", "operation", "arguments", "cwd", "show_cmd", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "startfile", 0};
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t filepath = PATH_T_INITIALIZE("startfile", "filepath", 0, 0);
     const Py_UNICODE *operation = NULL;
+    const Py_UNICODE *arguments = NULL;
+    path_t cwd = PATH_T_INITIALIZE("startfile", "cwd", 1, 0);
+    int show_cmd = 1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &filepath, &operation)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 5, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    return_value = os_startfile_impl(module, &filepath, operation);
+    if (!path_converter(args[0], &filepath)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[1]) {
+        if (!PyUnicode_Check(args[1])) {
+            _PyArg_BadArgument("startfile", "argument 'operation'", "str", args[1]);
+            goto exit;
+        }
+        operation = PyUnicode_AsWideCharString(args[1], NULL);
+        if (operation == NULL) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[2]) {
+        if (!PyUnicode_Check(args[2])) {
+            _PyArg_BadArgument("startfile", "argument 'arguments'", "str", args[2]);
+            goto exit;
+        }
+        arguments = PyUnicode_AsWideCharString(args[2], NULL);
+        if (arguments == NULL) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[3]) {
+        if (!path_converter(args[3], &cwd)) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    show_cmd = _PyLong_AsInt(args[4]);
+    if (show_cmd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = os_startfile_impl(module, &filepath, operation, arguments, &cwd, show_cmd);
 
 exit:
     /* Cleanup for filepath */
     path_cleanup(&filepath);
+    /* Cleanup for operation */
+    PyMem_Free((void *)operation);
+    /* Cleanup for arguments */
+    PyMem_Free((void *)arguments);
+    /* Cleanup for cwd */
+    path_cleanup(&cwd);
 
     return return_value;
 }
@@ -5385,7 +7345,7 @@ PyDoc_STRVAR(os_device_encoding__doc__,
 "If the device is not a terminal, return None.");
 
 #define OS_DEVICE_ENCODING_METHODDEF    \
-    {"device_encoding", (PyCFunction)(void(*)(void))os_device_encoding, METH_FASTCALL|METH_KEYWORDS, os_device_encoding__doc__},
+    {"device_encoding", _PyCFunction_CAST(os_device_encoding), METH_FASTCALL|METH_KEYWORDS, os_device_encoding__doc__},
 
 static PyObject *
 os_device_encoding_impl(PyObject *module, int fd);
@@ -5395,11 +7355,16 @@ os_device_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", NULL};
-    static _PyArg_Parser _parser = {"i:device_encoding", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "device_encoding", 0};
+    PyObject *argsbuf[1];
     int fd;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &fd)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_device_encoding_impl(module, fd);
@@ -5417,7 +7382,7 @@ PyDoc_STRVAR(os_setresuid__doc__,
 "Set the current process\'s real, effective, and saved user ids.");
 
 #define OS_SETRESUID_METHODDEF    \
-    {"setresuid", (PyCFunction)(void(*)(void))os_setresuid, METH_FASTCALL, os_setresuid__doc__},
+    {"setresuid", _PyCFunction_CAST(os_setresuid), METH_FASTCALL, os_setresuid__doc__},
 
 static PyObject *
 os_setresuid_impl(PyObject *module, uid_t ruid, uid_t euid, uid_t suid);
@@ -5430,8 +7395,16 @@ os_setresuid(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     uid_t euid;
     uid_t suid;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&O&O&:setresuid",
-        _Py_Uid_Converter, &ruid, _Py_Uid_Converter, &euid, _Py_Uid_Converter, &suid)) {
+    if (!_PyArg_CheckPositional("setresuid", nargs, 3, 3)) {
+        goto exit;
+    }
+    if (!_Py_Uid_Converter(args[0], &ruid)) {
+        goto exit;
+    }
+    if (!_Py_Uid_Converter(args[1], &euid)) {
+        goto exit;
+    }
+    if (!_Py_Uid_Converter(args[2], &suid)) {
         goto exit;
     }
     return_value = os_setresuid_impl(module, ruid, euid, suid);
@@ -5451,7 +7424,7 @@ PyDoc_STRVAR(os_setresgid__doc__,
 "Set the current process\'s real, effective, and saved group ids.");
 
 #define OS_SETRESGID_METHODDEF    \
-    {"setresgid", (PyCFunction)(void(*)(void))os_setresgid, METH_FASTCALL, os_setresgid__doc__},
+    {"setresgid", _PyCFunction_CAST(os_setresgid), METH_FASTCALL, os_setresgid__doc__},
 
 static PyObject *
 os_setresgid_impl(PyObject *module, gid_t rgid, gid_t egid, gid_t sgid);
@@ -5464,8 +7437,16 @@ os_setresgid(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     gid_t egid;
     gid_t sgid;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&O&O&:setresgid",
-        _Py_Gid_Converter, &rgid, _Py_Gid_Converter, &egid, _Py_Gid_Converter, &sgid)) {
+    if (!_PyArg_CheckPositional("setresgid", nargs, 3, 3)) {
+        goto exit;
+    }
+    if (!_Py_Gid_Converter(args[0], &rgid)) {
+        goto exit;
+    }
+    if (!_Py_Gid_Converter(args[1], &egid)) {
+        goto exit;
+    }
+    if (!_Py_Gid_Converter(args[2], &sgid)) {
         goto exit;
     }
     return_value = os_setresgid_impl(module, rgid, egid, sgid);
@@ -5534,7 +7515,7 @@ PyDoc_STRVAR(os_getxattr__doc__,
 "  the link points to.");
 
 #define OS_GETXATTR_METHODDEF    \
-    {"getxattr", (PyCFunction)(void(*)(void))os_getxattr, METH_FASTCALL|METH_KEYWORDS, os_getxattr__doc__},
+    {"getxattr", _PyCFunction_CAST(os_getxattr), METH_FASTCALL|METH_KEYWORDS, os_getxattr__doc__},
 
 static PyObject *
 os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
@@ -5545,15 +7526,31 @@ os_getxattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "attribute", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {"O&O&|$p:getxattr", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "getxattr", 0};
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t path = PATH_T_INITIALIZE("getxattr", "path", 0, 1);
     path_t attribute = PATH_T_INITIALIZE("getxattr", "attribute", 0, 0);
     int follow_symlinks = 1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, path_converter, &attribute, &follow_symlinks)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    if (!path_converter(args[1], &attribute)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    follow_symlinks = PyObject_IsTrue(args[2]);
+    if (follow_symlinks < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = os_getxattr_impl(module, &path, &attribute, follow_symlinks);
 
 exit:
@@ -5582,7 +7579,7 @@ PyDoc_STRVAR(os_setxattr__doc__,
 "  the link points to.");
 
 #define OS_SETXATTR_METHODDEF    \
-    {"setxattr", (PyCFunction)(void(*)(void))os_setxattr, METH_FASTCALL|METH_KEYWORDS, os_setxattr__doc__},
+    {"setxattr", _PyCFunction_CAST(os_setxattr), METH_FASTCALL|METH_KEYWORDS, os_setxattr__doc__},
 
 static PyObject *
 os_setxattr_impl(PyObject *module, path_t *path, path_t *attribute,
@@ -5593,17 +7590,53 @@ os_setxattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "attribute", "value", "flags", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {"O&O&y*|i$p:setxattr", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "setxattr", 0};
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     path_t path = PATH_T_INITIALIZE("setxattr", "path", 0, 1);
     path_t attribute = PATH_T_INITIALIZE("setxattr", "attribute", 0, 0);
     Py_buffer value = {NULL, NULL};
     int flags = 0;
     int follow_symlinks = 1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, path_converter, &attribute, &value, &flags, &follow_symlinks)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 4, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    if (!path_converter(args[1], &attribute)) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[2], &value, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&value, 'C')) {
+        _PyArg_BadArgument("setxattr", "argument 'value'", "contiguous buffer", args[2]);
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[3]) {
+        flags = _PyLong_AsInt(args[3]);
+        if (flags == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    follow_symlinks = PyObject_IsTrue(args[4]);
+    if (follow_symlinks < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = os_setxattr_impl(module, &path, &attribute, &value, flags, follow_symlinks);
 
 exit:
@@ -5635,7 +7668,7 @@ PyDoc_STRVAR(os_removexattr__doc__,
 "  the link points to.");
 
 #define OS_REMOVEXATTR_METHODDEF    \
-    {"removexattr", (PyCFunction)(void(*)(void))os_removexattr, METH_FASTCALL|METH_KEYWORDS, os_removexattr__doc__},
+    {"removexattr", _PyCFunction_CAST(os_removexattr), METH_FASTCALL|METH_KEYWORDS, os_removexattr__doc__},
 
 static PyObject *
 os_removexattr_impl(PyObject *module, path_t *path, path_t *attribute,
@@ -5646,15 +7679,31 @@ os_removexattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "attribute", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {"O&O&|$p:removexattr", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "removexattr", 0};
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t path = PATH_T_INITIALIZE("removexattr", "path", 0, 1);
     path_t attribute = PATH_T_INITIALIZE("removexattr", "attribute", 0, 0);
     int follow_symlinks = 1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, path_converter, &attribute, &follow_symlinks)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    if (!path_converter(args[1], &attribute)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    follow_symlinks = PyObject_IsTrue(args[2]);
+    if (follow_symlinks < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = os_removexattr_impl(module, &path, &attribute, follow_symlinks);
 
 exit:
@@ -5683,7 +7732,7 @@ PyDoc_STRVAR(os_listxattr__doc__,
 "  the link points to.");
 
 #define OS_LISTXATTR_METHODDEF    \
-    {"listxattr", (PyCFunction)(void(*)(void))os_listxattr, METH_FASTCALL|METH_KEYWORDS, os_listxattr__doc__},
+    {"listxattr", _PyCFunction_CAST(os_listxattr), METH_FASTCALL|METH_KEYWORDS, os_listxattr__doc__},
 
 static PyObject *
 os_listxattr_impl(PyObject *module, path_t *path, int follow_symlinks);
@@ -5693,14 +7742,36 @@ os_listxattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {"|O&$p:listxattr", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "listxattr", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     path_t path = PATH_T_INITIALIZE("listxattr", "path", 1, 1);
     int follow_symlinks = 1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, &follow_symlinks)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        if (!path_converter(args[0], &path)) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    follow_symlinks = PyObject_IsTrue(args[1]);
+    if (follow_symlinks < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = os_listxattr_impl(module, &path, follow_symlinks);
 
 exit:
@@ -5730,14 +7801,252 @@ os_urandom(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_ssize_t size;
 
-    if (!PyArg_Parse(arg, "n:urandom", &size)) {
-        goto exit;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(arg);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        size = ival;
     }
     return_value = os_urandom_impl(module, size);
 
 exit:
     return return_value;
 }
+
+#if defined(HAVE_MEMFD_CREATE)
+
+PyDoc_STRVAR(os_memfd_create__doc__,
+"memfd_create($module, /, name, flags=MFD_CLOEXEC)\n"
+"--\n"
+"\n");
+
+#define OS_MEMFD_CREATE_METHODDEF    \
+    {"memfd_create", _PyCFunction_CAST(os_memfd_create), METH_FASTCALL|METH_KEYWORDS, os_memfd_create__doc__},
+
+static PyObject *
+os_memfd_create_impl(PyObject *module, PyObject *name, unsigned int flags);
+
+static PyObject *
+os_memfd_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"name", "flags", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "memfd_create", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *name = NULL;
+    unsigned int flags = MFD_CLOEXEC;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_FSConverter(args[0], &name)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    flags = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
+    if (flags == (unsigned int)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = os_memfd_create_impl(module, name, flags);
+
+exit:
+    /* Cleanup for name */
+    Py_XDECREF(name);
+
+    return return_value;
+}
+
+#endif /* defined(HAVE_MEMFD_CREATE) */
+
+#if defined(HAVE_EVENTFD)
+
+PyDoc_STRVAR(os_eventfd__doc__,
+"eventfd($module, /, initval, flags=EFD_CLOEXEC)\n"
+"--\n"
+"\n"
+"Creates and returns an event notification file descriptor.");
+
+#define OS_EVENTFD_METHODDEF    \
+    {"eventfd", _PyCFunction_CAST(os_eventfd), METH_FASTCALL|METH_KEYWORDS, os_eventfd__doc__},
+
+static PyObject *
+os_eventfd_impl(PyObject *module, unsigned int initval, int flags);
+
+static PyObject *
+os_eventfd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"initval", "flags", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "eventfd", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    unsigned int initval;
+    int flags = EFD_CLOEXEC;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!_PyLong_UnsignedInt_Converter(args[0], &initval)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    flags = _PyLong_AsInt(args[1]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = os_eventfd_impl(module, initval, flags);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_EVENTFD) */
+
+#if defined(HAVE_EVENTFD)
+
+PyDoc_STRVAR(os_eventfd_read__doc__,
+"eventfd_read($module, /, fd)\n"
+"--\n"
+"\n"
+"Read eventfd value");
+
+#define OS_EVENTFD_READ_METHODDEF    \
+    {"eventfd_read", _PyCFunction_CAST(os_eventfd_read), METH_FASTCALL|METH_KEYWORDS, os_eventfd_read__doc__},
+
+static PyObject *
+os_eventfd_read_impl(PyObject *module, int fd);
+
+static PyObject *
+os_eventfd_read(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"fd", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "eventfd_read", 0};
+    PyObject *argsbuf[1];
+    int fd;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+        goto exit;
+    }
+    return_value = os_eventfd_read_impl(module, fd);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_EVENTFD) */
+
+#if defined(HAVE_EVENTFD)
+
+PyDoc_STRVAR(os_eventfd_write__doc__,
+"eventfd_write($module, /, fd, value)\n"
+"--\n"
+"\n"
+"Write eventfd value.");
+
+#define OS_EVENTFD_WRITE_METHODDEF    \
+    {"eventfd_write", _PyCFunction_CAST(os_eventfd_write), METH_FASTCALL|METH_KEYWORDS, os_eventfd_write__doc__},
+
+static PyObject *
+os_eventfd_write_impl(PyObject *module, int fd, unsigned long long value);
+
+static PyObject *
+os_eventfd_write(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"fd", "value", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "eventfd_write", 0};
+    PyObject *argsbuf[2];
+    int fd;
+    unsigned long long value;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+        goto exit;
+    }
+    if (!_PyLong_UnsignedLongLong_Converter(args[1], &value)) {
+        goto exit;
+    }
+    return_value = os_eventfd_write_impl(module, fd, value);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_EVENTFD) */
+
+#if (defined(TERMSIZE_USE_CONIO) || defined(TERMSIZE_USE_IOCTL))
+
+PyDoc_STRVAR(os_get_terminal_size__doc__,
+"get_terminal_size($module, fd=<unrepresentable>, /)\n"
+"--\n"
+"\n"
+"Return the size of the terminal window as (columns, lines).\n"
+"\n"
+"The optional argument fd (default standard output) specifies\n"
+"which file descriptor should be queried.\n"
+"\n"
+"If the file descriptor is not connected to a terminal, an OSError\n"
+"is thrown.\n"
+"\n"
+"This function will only be defined if an implementation is\n"
+"available for this system.\n"
+"\n"
+"shutil.get_terminal_size is the high-level function which should\n"
+"normally be used, os.get_terminal_size is the low-level implementation.");
+
+#define OS_GET_TERMINAL_SIZE_METHODDEF    \
+    {"get_terminal_size", _PyCFunction_CAST(os_get_terminal_size), METH_FASTCALL, os_get_terminal_size__doc__},
+
+static PyObject *
+os_get_terminal_size_impl(PyObject *module, int fd);
+
+static PyObject *
+os_get_terminal_size(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fd = fileno(stdout);
+
+    if (!_PyArg_CheckPositional("get_terminal_size", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = os_get_terminal_size_impl(module, fd);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(TERMSIZE_USE_CONIO) || defined(TERMSIZE_USE_IOCTL)) */
 
 PyDoc_STRVAR(os_cpu_count__doc__,
 "cpu_count($module, /)\n"
@@ -5780,7 +8089,8 @@ os_get_inheritable(PyObject *module, PyObject *arg)
     int fd;
     int _return_value;
 
-    if (!PyArg_Parse(arg, "i:get_inheritable", &fd)) {
+    fd = _PyLong_AsInt(arg);
+    if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = os_get_inheritable_impl(module, fd);
@@ -5800,7 +8110,7 @@ PyDoc_STRVAR(os_set_inheritable__doc__,
 "Set the inheritable flag of the specified file descriptor.");
 
 #define OS_SET_INHERITABLE_METHODDEF    \
-    {"set_inheritable", (PyCFunction)(void(*)(void))os_set_inheritable, METH_FASTCALL, os_set_inheritable__doc__},
+    {"set_inheritable", _PyCFunction_CAST(os_set_inheritable), METH_FASTCALL, os_set_inheritable__doc__},
 
 static PyObject *
 os_set_inheritable_impl(PyObject *module, int fd, int inheritable);
@@ -5812,8 +8122,15 @@ os_set_inheritable(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int fd;
     int inheritable;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:set_inheritable",
-        &fd, &inheritable)) {
+    if (!_PyArg_CheckPositional("set_inheritable", nargs, 2, 2)) {
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    inheritable = _PyLong_AsInt(args[1]);
+    if (inheritable == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_set_inheritable_impl(module, fd, inheritable);
@@ -5867,7 +8184,7 @@ PyDoc_STRVAR(os_set_handle_inheritable__doc__,
 "Set the inheritable flag of the specified handle.");
 
 #define OS_SET_HANDLE_INHERITABLE_METHODDEF    \
-    {"set_handle_inheritable", (PyCFunction)(void(*)(void))os_set_handle_inheritable, METH_FASTCALL, os_set_handle_inheritable__doc__},
+    {"set_handle_inheritable", _PyCFunction_CAST(os_set_handle_inheritable), METH_FASTCALL, os_set_handle_inheritable__doc__},
 
 static PyObject *
 os_set_handle_inheritable_impl(PyObject *module, intptr_t handle,
@@ -5915,7 +8232,8 @@ os_get_blocking(PyObject *module, PyObject *arg)
     int fd;
     int _return_value;
 
-    if (!PyArg_Parse(arg, "i:get_blocking", &fd)) {
+    fd = _PyLong_AsInt(arg);
+    if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = os_get_blocking_impl(module, fd);
@@ -5942,7 +8260,7 @@ PyDoc_STRVAR(os_set_blocking__doc__,
 "clear the O_NONBLOCK flag otherwise.");
 
 #define OS_SET_BLOCKING_METHODDEF    \
-    {"set_blocking", (PyCFunction)(void(*)(void))os_set_blocking, METH_FASTCALL, os_set_blocking__doc__},
+    {"set_blocking", _PyCFunction_CAST(os_set_blocking), METH_FASTCALL, os_set_blocking__doc__},
 
 static PyObject *
 os_set_blocking_impl(PyObject *module, int fd, int blocking);
@@ -5954,8 +8272,15 @@ os_set_blocking(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int fd;
     int blocking;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:set_blocking",
-        &fd, &blocking)) {
+    if (!_PyArg_CheckPositional("set_blocking", nargs, 2, 2)) {
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    blocking = _PyLong_AsInt(args[1]);
+    if (blocking == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_set_blocking_impl(module, fd, blocking);
@@ -5973,18 +8298,22 @@ PyDoc_STRVAR(os_DirEntry_is_symlink__doc__,
 "Return True if the entry is a symbolic link; cached per entry.");
 
 #define OS_DIRENTRY_IS_SYMLINK_METHODDEF    \
-    {"is_symlink", (PyCFunction)os_DirEntry_is_symlink, METH_NOARGS, os_DirEntry_is_symlink__doc__},
+    {"is_symlink", _PyCFunction_CAST(os_DirEntry_is_symlink), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, os_DirEntry_is_symlink__doc__},
 
 static int
-os_DirEntry_is_symlink_impl(DirEntry *self);
+os_DirEntry_is_symlink_impl(DirEntry *self, PyTypeObject *defining_class);
 
 static PyObject *
-os_DirEntry_is_symlink(DirEntry *self, PyObject *Py_UNUSED(ignored))
+os_DirEntry_is_symlink(DirEntry *self, PyTypeObject *defining_class, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     int _return_value;
 
-    _return_value = os_DirEntry_is_symlink_impl(self);
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "is_symlink() takes no arguments");
+        goto exit;
+    }
+    _return_value = os_DirEntry_is_symlink_impl(self, defining_class);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -6001,24 +8330,35 @@ PyDoc_STRVAR(os_DirEntry_stat__doc__,
 "Return stat_result object for the entry; cached per entry.");
 
 #define OS_DIRENTRY_STAT_METHODDEF    \
-    {"stat", (PyCFunction)(void(*)(void))os_DirEntry_stat, METH_FASTCALL|METH_KEYWORDS, os_DirEntry_stat__doc__},
+    {"stat", _PyCFunction_CAST(os_DirEntry_stat), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, os_DirEntry_stat__doc__},
 
 static PyObject *
-os_DirEntry_stat_impl(DirEntry *self, int follow_symlinks);
+os_DirEntry_stat_impl(DirEntry *self, PyTypeObject *defining_class,
+                      int follow_symlinks);
 
 static PyObject *
-os_DirEntry_stat(DirEntry *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+os_DirEntry_stat(DirEntry *self, PyTypeObject *defining_class, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {"|$p:stat", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "stat", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int follow_symlinks = 1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &follow_symlinks)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    return_value = os_DirEntry_stat_impl(self, follow_symlinks);
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    follow_symlinks = PyObject_IsTrue(args[0]);
+    if (follow_symlinks < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = os_DirEntry_stat_impl(self, defining_class, follow_symlinks);
 
 exit:
     return return_value;
@@ -6031,25 +8371,36 @@ PyDoc_STRVAR(os_DirEntry_is_dir__doc__,
 "Return True if the entry is a directory; cached per entry.");
 
 #define OS_DIRENTRY_IS_DIR_METHODDEF    \
-    {"is_dir", (PyCFunction)(void(*)(void))os_DirEntry_is_dir, METH_FASTCALL|METH_KEYWORDS, os_DirEntry_is_dir__doc__},
+    {"is_dir", _PyCFunction_CAST(os_DirEntry_is_dir), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, os_DirEntry_is_dir__doc__},
 
 static int
-os_DirEntry_is_dir_impl(DirEntry *self, int follow_symlinks);
+os_DirEntry_is_dir_impl(DirEntry *self, PyTypeObject *defining_class,
+                        int follow_symlinks);
 
 static PyObject *
-os_DirEntry_is_dir(DirEntry *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+os_DirEntry_is_dir(DirEntry *self, PyTypeObject *defining_class, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {"|$p:is_dir", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "is_dir", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int follow_symlinks = 1;
     int _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &follow_symlinks)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    _return_value = os_DirEntry_is_dir_impl(self, follow_symlinks);
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    follow_symlinks = PyObject_IsTrue(args[0]);
+    if (follow_symlinks < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    _return_value = os_DirEntry_is_dir_impl(self, defining_class, follow_symlinks);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -6066,25 +8417,36 @@ PyDoc_STRVAR(os_DirEntry_is_file__doc__,
 "Return True if the entry is a file; cached per entry.");
 
 #define OS_DIRENTRY_IS_FILE_METHODDEF    \
-    {"is_file", (PyCFunction)(void(*)(void))os_DirEntry_is_file, METH_FASTCALL|METH_KEYWORDS, os_DirEntry_is_file__doc__},
+    {"is_file", _PyCFunction_CAST(os_DirEntry_is_file), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, os_DirEntry_is_file__doc__},
 
 static int
-os_DirEntry_is_file_impl(DirEntry *self, int follow_symlinks);
+os_DirEntry_is_file_impl(DirEntry *self, PyTypeObject *defining_class,
+                         int follow_symlinks);
 
 static PyObject *
-os_DirEntry_is_file(DirEntry *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+os_DirEntry_is_file(DirEntry *self, PyTypeObject *defining_class, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {"|$p:is_file", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "is_file", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int follow_symlinks = 1;
     int _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &follow_symlinks)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    _return_value = os_DirEntry_is_file_impl(self, follow_symlinks);
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    follow_symlinks = PyObject_IsTrue(args[0]);
+    if (follow_symlinks < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    _return_value = os_DirEntry_is_file_impl(self, defining_class, follow_symlinks);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -6143,7 +8505,7 @@ PyDoc_STRVAR(os_scandir__doc__,
 "If path is None, uses the path=\'.\'.");
 
 #define OS_SCANDIR_METHODDEF    \
-    {"scandir", (PyCFunction)(void(*)(void))os_scandir, METH_FASTCALL|METH_KEYWORDS, os_scandir__doc__},
+    {"scandir", _PyCFunction_CAST(os_scandir), METH_FASTCALL|METH_KEYWORDS, os_scandir__doc__},
 
 static PyObject *
 os_scandir_impl(PyObject *module, path_t *path);
@@ -6153,13 +8515,22 @@ os_scandir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {"|O&:scandir", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "scandir", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     path_t path = PATH_T_INITIALIZE("scandir", "path", 1, PATH_HAVE_FDOPENDIR);
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+skip_optional_pos:
     return_value = os_scandir_impl(module, &path);
 
 exit:
@@ -6180,7 +8551,7 @@ PyDoc_STRVAR(os_fspath__doc__,
 "types raise a TypeError.");
 
 #define OS_FSPATH_METHODDEF    \
-    {"fspath", (PyCFunction)(void(*)(void))os_fspath, METH_FASTCALL|METH_KEYWORDS, os_fspath__doc__},
+    {"fspath", _PyCFunction_CAST(os_fspath), METH_FASTCALL|METH_KEYWORDS, os_fspath__doc__},
 
 static PyObject *
 os_fspath_impl(PyObject *module, PyObject *path);
@@ -6190,13 +8561,15 @@ os_fspath(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {"O:fspath", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "fspath", 0};
+    PyObject *argsbuf[1];
     PyObject *path;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &path)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    path = args[0];
     return_value = os_fspath_impl(module, path);
 
 exit:
@@ -6212,7 +8585,7 @@ PyDoc_STRVAR(os_getrandom__doc__,
 "Obtain a series of random bytes.");
 
 #define OS_GETRANDOM_METHODDEF    \
-    {"getrandom", (PyCFunction)(void(*)(void))os_getrandom, METH_FASTCALL|METH_KEYWORDS, os_getrandom__doc__},
+    {"getrandom", _PyCFunction_CAST(os_getrandom), METH_FASTCALL|METH_KEYWORDS, os_getrandom__doc__},
 
 static PyObject *
 os_getrandom_impl(PyObject *module, Py_ssize_t size, int flags);
@@ -6222,14 +8595,36 @@ os_getrandom(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"size", "flags", NULL};
-    static _PyArg_Parser _parser = {"n|i:getrandom", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "getrandom", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_ssize_t size;
     int flags = 0;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &size, &flags)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        size = ival;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    flags = _PyLong_AsInt(args[1]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
     return_value = os_getrandom_impl(module, size, flags);
 
 exit:
@@ -6237,6 +8632,142 @@ exit:
 }
 
 #endif /* defined(HAVE_GETRANDOM_SYSCALL) */
+
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os__add_dll_directory__doc__,
+"_add_dll_directory($module, /, path)\n"
+"--\n"
+"\n"
+"Add a path to the DLL search path.\n"
+"\n"
+"This search path is used when resolving dependencies for imported\n"
+"extension modules (the module itself is resolved through sys.path),\n"
+"and also by ctypes.\n"
+"\n"
+"Returns an opaque value that may be passed to os.remove_dll_directory\n"
+"to remove this directory from the search path.");
+
+#define OS__ADD_DLL_DIRECTORY_METHODDEF    \
+    {"_add_dll_directory", _PyCFunction_CAST(os__add_dll_directory), METH_FASTCALL|METH_KEYWORDS, os__add_dll_directory__doc__},
+
+static PyObject *
+os__add_dll_directory_impl(PyObject *module, path_t *path);
+
+static PyObject *
+os__add_dll_directory(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "_add_dll_directory", 0};
+    PyObject *argsbuf[1];
+    path_t path = PATH_T_INITIALIZE("_add_dll_directory", "path", 0, 0);
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    return_value = os__add_dll_directory_impl(module, &path);
+
+exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os__remove_dll_directory__doc__,
+"_remove_dll_directory($module, /, cookie)\n"
+"--\n"
+"\n"
+"Removes a path from the DLL search path.\n"
+"\n"
+"The parameter is an opaque value that was returned from\n"
+"os.add_dll_directory. You can only remove directories that you added\n"
+"yourself.");
+
+#define OS__REMOVE_DLL_DIRECTORY_METHODDEF    \
+    {"_remove_dll_directory", _PyCFunction_CAST(os__remove_dll_directory), METH_FASTCALL|METH_KEYWORDS, os__remove_dll_directory__doc__},
+
+static PyObject *
+os__remove_dll_directory_impl(PyObject *module, PyObject *cookie);
+
+static PyObject *
+os__remove_dll_directory(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"cookie", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "_remove_dll_directory", 0};
+    PyObject *argsbuf[1];
+    PyObject *cookie;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    cookie = args[0];
+    return_value = os__remove_dll_directory_impl(module, cookie);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if (defined(WIFEXITED) || defined(MS_WINDOWS))
+
+PyDoc_STRVAR(os_waitstatus_to_exitcode__doc__,
+"waitstatus_to_exitcode($module, /, status)\n"
+"--\n"
+"\n"
+"Convert a wait status to an exit code.\n"
+"\n"
+"On Unix:\n"
+"\n"
+"* If WIFEXITED(status) is true, return WEXITSTATUS(status).\n"
+"* If WIFSIGNALED(status) is true, return -WTERMSIG(status).\n"
+"* Otherwise, raise a ValueError.\n"
+"\n"
+"On Windows, return status shifted right by 8 bits.\n"
+"\n"
+"On Unix, if the process is being traced or if waitpid() was called with\n"
+"WUNTRACED option, the caller must first check if WIFSTOPPED(status) is true.\n"
+"This function must not be called if WIFSTOPPED(status) is true.");
+
+#define OS_WAITSTATUS_TO_EXITCODE_METHODDEF    \
+    {"waitstatus_to_exitcode", _PyCFunction_CAST(os_waitstatus_to_exitcode), METH_FASTCALL|METH_KEYWORDS, os_waitstatus_to_exitcode__doc__},
+
+static PyObject *
+os_waitstatus_to_exitcode_impl(PyObject *module, PyObject *status_obj);
+
+static PyObject *
+os_waitstatus_to_exitcode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"status", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "waitstatus_to_exitcode", 0};
+    PyObject *argsbuf[1];
+    PyObject *status_obj;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    status_obj = args[0];
+    return_value = os_waitstatus_to_exitcode_impl(module, status_obj);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(WIFEXITED) || defined(MS_WINDOWS)) */
 
 #ifndef OS_TTYNAME_METHODDEF
     #define OS_TTYNAME_METHODDEF
@@ -6306,13 +8837,13 @@ exit:
     #define OS__GETFINALPATHNAME_METHODDEF
 #endif /* !defined(OS__GETFINALPATHNAME_METHODDEF) */
 
-#ifndef OS__ISDIR_METHODDEF
-    #define OS__ISDIR_METHODDEF
-#endif /* !defined(OS__ISDIR_METHODDEF) */
-
 #ifndef OS__GETVOLUMEPATHNAME_METHODDEF
     #define OS__GETVOLUMEPATHNAME_METHODDEF
 #endif /* !defined(OS__GETVOLUMEPATHNAME_METHODDEF) */
+
+#ifndef OS__PATH_SPLITROOT_METHODDEF
+    #define OS__PATH_SPLITROOT_METHODDEF
+#endif /* !defined(OS__PATH_SPLITROOT_METHODDEF) */
 
 #ifndef OS_NICE_METHODDEF
     #define OS_NICE_METHODDEF
@@ -6330,6 +8861,10 @@ exit:
     #define OS_SYSTEM_METHODDEF
 #endif /* !defined(OS_SYSTEM_METHODDEF) */
 
+#ifndef OS_UMASK_METHODDEF
+    #define OS_UMASK_METHODDEF
+#endif /* !defined(OS_UMASK_METHODDEF) */
+
 #ifndef OS_UNAME_METHODDEF
     #define OS_UNAME_METHODDEF
 #endif /* !defined(OS_UNAME_METHODDEF) */
@@ -6345,6 +8880,10 @@ exit:
 #ifndef OS_POSIX_SPAWN_METHODDEF
     #define OS_POSIX_SPAWN_METHODDEF
 #endif /* !defined(OS_POSIX_SPAWN_METHODDEF) */
+
+#ifndef OS_POSIX_SPAWNP_METHODDEF
+    #define OS_POSIX_SPAWNP_METHODDEF
+#endif /* !defined(OS_POSIX_SPAWNP_METHODDEF) */
 
 #ifndef OS_SPAWNV_METHODDEF
     #define OS_SPAWNV_METHODDEF
@@ -6410,6 +8949,10 @@ exit:
     #define OS_OPENPTY_METHODDEF
 #endif /* !defined(OS_OPENPTY_METHODDEF) */
 
+#ifndef OS_LOGIN_TTY_METHODDEF
+    #define OS_LOGIN_TTY_METHODDEF
+#endif /* !defined(OS_LOGIN_TTY_METHODDEF) */
+
 #ifndef OS_FORKPTY_METHODDEF
     #define OS_FORKPTY_METHODDEF
 #endif /* !defined(OS_FORKPTY_METHODDEF) */
@@ -6430,9 +8973,17 @@ exit:
     #define OS_GETPID_METHODDEF
 #endif /* !defined(OS_GETPID_METHODDEF) */
 
+#ifndef OS_GETGROUPLIST_METHODDEF
+    #define OS_GETGROUPLIST_METHODDEF
+#endif /* !defined(OS_GETGROUPLIST_METHODDEF) */
+
 #ifndef OS_GETGROUPS_METHODDEF
     #define OS_GETGROUPS_METHODDEF
 #endif /* !defined(OS_GETGROUPS_METHODDEF) */
+
+#ifndef OS_INITGROUPS_METHODDEF
+    #define OS_INITGROUPS_METHODDEF
+#endif /* !defined(OS_INITGROUPS_METHODDEF) */
 
 #ifndef OS_GETPGID_METHODDEF
     #define OS_GETPGID_METHODDEF
@@ -6518,6 +9069,10 @@ exit:
     #define OS_WAIT_METHODDEF
 #endif /* !defined(OS_WAIT_METHODDEF) */
 
+#ifndef OS_PIDFD_OPEN_METHODDEF
+    #define OS_PIDFD_OPEN_METHODDEF
+#endif /* !defined(OS_PIDFD_OPEN_METHODDEF) */
+
 #ifndef OS_READLINK_METHODDEF
     #define OS_READLINK_METHODDEF
 #endif /* !defined(OS_READLINK_METHODDEF) */
@@ -6566,6 +9121,10 @@ exit:
     #define OS_PREADV_METHODDEF
 #endif /* !defined(OS_PREADV_METHODDEF) */
 
+#ifndef OS_SENDFILE_METHODDEF
+    #define OS_SENDFILE_METHODDEF
+#endif /* !defined(OS_SENDFILE_METHODDEF) */
+
 #ifndef OS__FCOPYFILE_METHODDEF
     #define OS__FCOPYFILE_METHODDEF
 #endif /* !defined(OS__FCOPYFILE_METHODDEF) */
@@ -6589,6 +9148,14 @@ exit:
 #ifndef OS_PWRITEV_METHODDEF
     #define OS_PWRITEV_METHODDEF
 #endif /* !defined(OS_PWRITEV_METHODDEF) */
+
+#ifndef OS_COPY_FILE_RANGE_METHODDEF
+    #define OS_COPY_FILE_RANGE_METHODDEF
+#endif /* !defined(OS_COPY_FILE_RANGE_METHODDEF) */
+
+#ifndef OS_SPLICE_METHODDEF
+    #define OS_SPLICE_METHODDEF
+#endif /* !defined(OS_SPLICE_METHODDEF) */
 
 #ifndef OS_MKFIFO_METHODDEF
     #define OS_MKFIFO_METHODDEF
@@ -6734,6 +9301,26 @@ exit:
     #define OS_LISTXATTR_METHODDEF
 #endif /* !defined(OS_LISTXATTR_METHODDEF) */
 
+#ifndef OS_MEMFD_CREATE_METHODDEF
+    #define OS_MEMFD_CREATE_METHODDEF
+#endif /* !defined(OS_MEMFD_CREATE_METHODDEF) */
+
+#ifndef OS_EVENTFD_METHODDEF
+    #define OS_EVENTFD_METHODDEF
+#endif /* !defined(OS_EVENTFD_METHODDEF) */
+
+#ifndef OS_EVENTFD_READ_METHODDEF
+    #define OS_EVENTFD_READ_METHODDEF
+#endif /* !defined(OS_EVENTFD_READ_METHODDEF) */
+
+#ifndef OS_EVENTFD_WRITE_METHODDEF
+    #define OS_EVENTFD_WRITE_METHODDEF
+#endif /* !defined(OS_EVENTFD_WRITE_METHODDEF) */
+
+#ifndef OS_GET_TERMINAL_SIZE_METHODDEF
+    #define OS_GET_TERMINAL_SIZE_METHODDEF
+#endif /* !defined(OS_GET_TERMINAL_SIZE_METHODDEF) */
+
 #ifndef OS_GET_HANDLE_INHERITABLE_METHODDEF
     #define OS_GET_HANDLE_INHERITABLE_METHODDEF
 #endif /* !defined(OS_GET_HANDLE_INHERITABLE_METHODDEF) */
@@ -6753,4 +9340,16 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=87a3ebadb91bc46b input=a9049054013a1b77]*/
+
+#ifndef OS__ADD_DLL_DIRECTORY_METHODDEF
+    #define OS__ADD_DLL_DIRECTORY_METHODDEF
+#endif /* !defined(OS__ADD_DLL_DIRECTORY_METHODDEF) */
+
+#ifndef OS__REMOVE_DLL_DIRECTORY_METHODDEF
+    #define OS__REMOVE_DLL_DIRECTORY_METHODDEF
+#endif /* !defined(OS__REMOVE_DLL_DIRECTORY_METHODDEF) */
+
+#ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
+    #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
+#endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
+/*[clinic end generated code: output=bae15f09a1b3d2e7 input=a9049054013a1b77]*/

@@ -3,7 +3,7 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(unicodedata_UCD_decimal__doc__,
-"decimal($self, chr, default=None, /)\n"
+"decimal($self, chr, default=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Converts a Unicode character into its equivalent decimal value.\n"
@@ -13,7 +13,7 @@ PyDoc_STRVAR(unicodedata_UCD_decimal__doc__,
 "ValueError is raised.");
 
 #define UNICODEDATA_UCD_DECIMAL_METHODDEF    \
-    {"decimal", (PyCFunction)(void(*)(void))unicodedata_UCD_decimal, METH_FASTCALL, unicodedata_UCD_decimal__doc__},
+    {"decimal", _PyCFunction_CAST(unicodedata_UCD_decimal), METH_FASTCALL, unicodedata_UCD_decimal__doc__},
 
 static PyObject *
 unicodedata_UCD_decimal_impl(PyObject *self, int chr,
@@ -26,10 +26,26 @@ unicodedata_UCD_decimal(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     int chr;
     PyObject *default_value = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "C|O:decimal",
-        &chr, &default_value)) {
+    if (!_PyArg_CheckPositional("decimal", nargs, 1, 2)) {
         goto exit;
     }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("decimal", "argument 1", "a unicode character", args[0]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[0])) {
+        goto exit;
+    }
+    if (PyUnicode_GET_LENGTH(args[0]) != 1) {
+        _PyArg_BadArgument("decimal", "argument 1", "a unicode character", args[0]);
+        goto exit;
+    }
+    chr = PyUnicode_READ_CHAR(args[0], 0);
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    default_value = args[1];
+skip_optional:
     return_value = unicodedata_UCD_decimal_impl(self, chr, default_value);
 
 exit:
@@ -37,7 +53,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicodedata_UCD_digit__doc__,
-"digit($self, chr, default=None, /)\n"
+"digit($self, chr, default=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Converts a Unicode character into its equivalent digit value.\n"
@@ -47,7 +63,7 @@ PyDoc_STRVAR(unicodedata_UCD_digit__doc__,
 "ValueError is raised.");
 
 #define UNICODEDATA_UCD_DIGIT_METHODDEF    \
-    {"digit", (PyCFunction)(void(*)(void))unicodedata_UCD_digit, METH_FASTCALL, unicodedata_UCD_digit__doc__},
+    {"digit", _PyCFunction_CAST(unicodedata_UCD_digit), METH_FASTCALL, unicodedata_UCD_digit__doc__},
 
 static PyObject *
 unicodedata_UCD_digit_impl(PyObject *self, int chr, PyObject *default_value);
@@ -59,10 +75,26 @@ unicodedata_UCD_digit(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     int chr;
     PyObject *default_value = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "C|O:digit",
-        &chr, &default_value)) {
+    if (!_PyArg_CheckPositional("digit", nargs, 1, 2)) {
         goto exit;
     }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("digit", "argument 1", "a unicode character", args[0]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[0])) {
+        goto exit;
+    }
+    if (PyUnicode_GET_LENGTH(args[0]) != 1) {
+        _PyArg_BadArgument("digit", "argument 1", "a unicode character", args[0]);
+        goto exit;
+    }
+    chr = PyUnicode_READ_CHAR(args[0], 0);
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    default_value = args[1];
+skip_optional:
     return_value = unicodedata_UCD_digit_impl(self, chr, default_value);
 
 exit:
@@ -70,7 +102,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicodedata_UCD_numeric__doc__,
-"numeric($self, chr, default=None, /)\n"
+"numeric($self, chr, default=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Converts a Unicode character into its equivalent numeric value.\n"
@@ -80,7 +112,7 @@ PyDoc_STRVAR(unicodedata_UCD_numeric__doc__,
 "ValueError is raised.");
 
 #define UNICODEDATA_UCD_NUMERIC_METHODDEF    \
-    {"numeric", (PyCFunction)(void(*)(void))unicodedata_UCD_numeric, METH_FASTCALL, unicodedata_UCD_numeric__doc__},
+    {"numeric", _PyCFunction_CAST(unicodedata_UCD_numeric), METH_FASTCALL, unicodedata_UCD_numeric__doc__},
 
 static PyObject *
 unicodedata_UCD_numeric_impl(PyObject *self, int chr,
@@ -93,10 +125,26 @@ unicodedata_UCD_numeric(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     int chr;
     PyObject *default_value = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "C|O:numeric",
-        &chr, &default_value)) {
+    if (!_PyArg_CheckPositional("numeric", nargs, 1, 2)) {
         goto exit;
     }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("numeric", "argument 1", "a unicode character", args[0]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[0])) {
+        goto exit;
+    }
+    if (PyUnicode_GET_LENGTH(args[0]) != 1) {
+        _PyArg_BadArgument("numeric", "argument 1", "a unicode character", args[0]);
+        goto exit;
+    }
+    chr = PyUnicode_READ_CHAR(args[0], 0);
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    default_value = args[1];
+skip_optional:
     return_value = unicodedata_UCD_numeric_impl(self, chr, default_value);
 
 exit:
@@ -121,9 +169,18 @@ unicodedata_UCD_category(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int chr;
 
-    if (!PyArg_Parse(arg, "C:category", &chr)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("category", "argument", "a unicode character", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg)) {
+        goto exit;
+    }
+    if (PyUnicode_GET_LENGTH(arg) != 1) {
+        _PyArg_BadArgument("category", "argument", "a unicode character", arg);
+        goto exit;
+    }
+    chr = PyUnicode_READ_CHAR(arg, 0);
     return_value = unicodedata_UCD_category_impl(self, chr);
 
 exit:
@@ -150,9 +207,18 @@ unicodedata_UCD_bidirectional(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int chr;
 
-    if (!PyArg_Parse(arg, "C:bidirectional", &chr)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("bidirectional", "argument", "a unicode character", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg)) {
+        goto exit;
+    }
+    if (PyUnicode_GET_LENGTH(arg) != 1) {
+        _PyArg_BadArgument("bidirectional", "argument", "a unicode character", arg);
+        goto exit;
+    }
+    chr = PyUnicode_READ_CHAR(arg, 0);
     return_value = unicodedata_UCD_bidirectional_impl(self, chr);
 
 exit:
@@ -180,9 +246,18 @@ unicodedata_UCD_combining(PyObject *self, PyObject *arg)
     int chr;
     int _return_value;
 
-    if (!PyArg_Parse(arg, "C:combining", &chr)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("combining", "argument", "a unicode character", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg)) {
+        goto exit;
+    }
+    if (PyUnicode_GET_LENGTH(arg) != 1) {
+        _PyArg_BadArgument("combining", "argument", "a unicode character", arg);
+        goto exit;
+    }
+    chr = PyUnicode_READ_CHAR(arg, 0);
     _return_value = unicodedata_UCD_combining_impl(self, chr);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -215,9 +290,18 @@ unicodedata_UCD_mirrored(PyObject *self, PyObject *arg)
     int chr;
     int _return_value;
 
-    if (!PyArg_Parse(arg, "C:mirrored", &chr)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("mirrored", "argument", "a unicode character", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg)) {
+        goto exit;
+    }
+    if (PyUnicode_GET_LENGTH(arg) != 1) {
+        _PyArg_BadArgument("mirrored", "argument", "a unicode character", arg);
+        goto exit;
+    }
+    chr = PyUnicode_READ_CHAR(arg, 0);
     _return_value = unicodedata_UCD_mirrored_impl(self, chr);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -246,9 +330,18 @@ unicodedata_UCD_east_asian_width(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int chr;
 
-    if (!PyArg_Parse(arg, "C:east_asian_width", &chr)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("east_asian_width", "argument", "a unicode character", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg)) {
+        goto exit;
+    }
+    if (PyUnicode_GET_LENGTH(arg) != 1) {
+        _PyArg_BadArgument("east_asian_width", "argument", "a unicode character", arg);
+        goto exit;
+    }
+    chr = PyUnicode_READ_CHAR(arg, 0);
     return_value = unicodedata_UCD_east_asian_width_impl(self, chr);
 
 exit:
@@ -275,9 +368,18 @@ unicodedata_UCD_decomposition(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int chr;
 
-    if (!PyArg_Parse(arg, "C:decomposition", &chr)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("decomposition", "argument", "a unicode character", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg)) {
+        goto exit;
+    }
+    if (PyUnicode_GET_LENGTH(arg) != 1) {
+        _PyArg_BadArgument("decomposition", "argument", "a unicode character", arg);
+        goto exit;
+    }
+    chr = PyUnicode_READ_CHAR(arg, 0);
     return_value = unicodedata_UCD_decomposition_impl(self, chr);
 
 exit:
@@ -293,7 +395,7 @@ PyDoc_STRVAR(unicodedata_UCD_is_normalized__doc__,
 "Valid values for form are \'NFC\', \'NFKC\', \'NFD\', and \'NFKD\'.");
 
 #define UNICODEDATA_UCD_IS_NORMALIZED_METHODDEF    \
-    {"is_normalized", (PyCFunction)(void(*)(void))unicodedata_UCD_is_normalized, METH_FASTCALL, unicodedata_UCD_is_normalized__doc__},
+    {"is_normalized", _PyCFunction_CAST(unicodedata_UCD_is_normalized), METH_FASTCALL, unicodedata_UCD_is_normalized__doc__},
 
 static PyObject *
 unicodedata_UCD_is_normalized_impl(PyObject *self, PyObject *form,
@@ -306,10 +408,25 @@ unicodedata_UCD_is_normalized(PyObject *self, PyObject *const *args, Py_ssize_t 
     PyObject *form;
     PyObject *input;
 
-    if (!_PyArg_ParseStack(args, nargs, "UU:is_normalized",
-        &form, &input)) {
+    if (!_PyArg_CheckPositional("is_normalized", nargs, 2, 2)) {
         goto exit;
     }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("is_normalized", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    form = args[0];
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("is_normalized", "argument 2", "str", args[1]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[1]) == -1) {
+        goto exit;
+    }
+    input = args[1];
     return_value = unicodedata_UCD_is_normalized_impl(self, form, input);
 
 exit:
@@ -325,7 +442,7 @@ PyDoc_STRVAR(unicodedata_UCD_normalize__doc__,
 "Valid values for form are \'NFC\', \'NFKC\', \'NFD\', and \'NFKD\'.");
 
 #define UNICODEDATA_UCD_NORMALIZE_METHODDEF    \
-    {"normalize", (PyCFunction)(void(*)(void))unicodedata_UCD_normalize, METH_FASTCALL, unicodedata_UCD_normalize__doc__},
+    {"normalize", _PyCFunction_CAST(unicodedata_UCD_normalize), METH_FASTCALL, unicodedata_UCD_normalize__doc__},
 
 static PyObject *
 unicodedata_UCD_normalize_impl(PyObject *self, PyObject *form,
@@ -338,10 +455,25 @@ unicodedata_UCD_normalize(PyObject *self, PyObject *const *args, Py_ssize_t narg
     PyObject *form;
     PyObject *input;
 
-    if (!_PyArg_ParseStack(args, nargs, "UU:normalize",
-        &form, &input)) {
+    if (!_PyArg_CheckPositional("normalize", nargs, 2, 2)) {
         goto exit;
     }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("normalize", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    form = args[0];
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("normalize", "argument 2", "str", args[1]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[1]) == -1) {
+        goto exit;
+    }
+    input = args[1];
     return_value = unicodedata_UCD_normalize_impl(self, form, input);
 
 exit:
@@ -349,7 +481,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicodedata_UCD_name__doc__,
-"name($self, chr, default=None, /)\n"
+"name($self, chr, default=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Returns the name assigned to the character chr as a string.\n"
@@ -358,7 +490,7 @@ PyDoc_STRVAR(unicodedata_UCD_name__doc__,
 "ValueError is raised.");
 
 #define UNICODEDATA_UCD_NAME_METHODDEF    \
-    {"name", (PyCFunction)(void(*)(void))unicodedata_UCD_name, METH_FASTCALL, unicodedata_UCD_name__doc__},
+    {"name", _PyCFunction_CAST(unicodedata_UCD_name), METH_FASTCALL, unicodedata_UCD_name__doc__},
 
 static PyObject *
 unicodedata_UCD_name_impl(PyObject *self, int chr, PyObject *default_value);
@@ -370,10 +502,26 @@ unicodedata_UCD_name(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     int chr;
     PyObject *default_value = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "C|O:name",
-        &chr, &default_value)) {
+    if (!_PyArg_CheckPositional("name", nargs, 1, 2)) {
         goto exit;
     }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("name", "argument 1", "a unicode character", args[0]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[0])) {
+        goto exit;
+    }
+    if (PyUnicode_GET_LENGTH(args[0]) != 1) {
+        _PyArg_BadArgument("name", "argument 1", "a unicode character", args[0]);
+        goto exit;
+    }
+    chr = PyUnicode_READ_CHAR(args[0], 0);
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    default_value = args[1];
+skip_optional:
     return_value = unicodedata_UCD_name_impl(self, chr, default_value);
 
 exit:
@@ -394,14 +542,14 @@ PyDoc_STRVAR(unicodedata_UCD_lookup__doc__,
 
 static PyObject *
 unicodedata_UCD_lookup_impl(PyObject *self, const char *name,
-                            Py_ssize_clean_t name_length);
+                            Py_ssize_t name_length);
 
 static PyObject *
 unicodedata_UCD_lookup(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     const char *name;
-    Py_ssize_clean_t name_length;
+    Py_ssize_t name_length;
 
     if (!PyArg_Parse(arg, "s#:lookup", &name, &name_length)) {
         goto exit;
@@ -411,4 +559,4 @@ unicodedata_UCD_lookup(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=67f474927be668bf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=78d7a7ae57014502 input=a9049054013a1b77]*/

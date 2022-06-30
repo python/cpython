@@ -7,6 +7,7 @@ import collections
 import logging
 import threading
 import time
+import types
 
 FIRST_COMPLETED = 'FIRST_COMPLETED'
 FIRST_EXCEPTION = 'FIRST_EXCEPTION'
@@ -49,9 +50,7 @@ class CancelledError(Error):
     """The Future was cancelled."""
     pass
 
-class TimeoutError(Error):
-    """The operation exceeded the given deadline."""
-    pass
+TimeoutError = TimeoutError  # make local alias for the standard exception
 
 class InvalidStateError(Error):
     """The operation is not allowed in this state."""
@@ -283,13 +282,14 @@ def wait(fs, timeout=None, return_when=ALL_COMPLETED):
         A named 2-tuple of sets. The first set, named 'done', contains the
         futures that completed (is finished or cancelled) before the wait
         completed. The second set, named 'not_done', contains uncompleted
-        futures.
+        futures. Duplicate futures given to *fs* are removed and will be
+        returned only once.
     """
+    fs = set(fs)
     with _AcquireFutures(fs):
-        done = set(f for f in fs
-                   if f._state in [CANCELLED_AND_NOTIFIED, FINISHED])
-        not_done = set(fs) - done
-
+        done = {f for f in fs
+                   if f._state in [CANCELLED_AND_NOTIFIED, FINISHED]}
+        not_done = fs - done
         if (return_when == FIRST_COMPLETED) and done:
             return DoneAndNotDoneFutures(done, not_done)
         elif (return_when == FIRST_EXCEPTION) and done:
@@ -308,7 +308,7 @@ def wait(fs, timeout=None, return_when=ALL_COMPLETED):
             f._waiters.remove(waiter)
 
     done.update(waiter.finished_futures)
-    return DoneAndNotDoneFutures(done, set(fs) - done)
+    return DoneAndNotDoneFutures(done, fs - done)
 
 class Future(object):
     """Represents the result of an asynchronous computation."""
@@ -379,13 +379,17 @@ class Future(object):
             return self._state == RUNNING
 
     def done(self):
-        """Return True of the future was cancelled or finished executing."""
+        """Return True if the future was cancelled or finished executing."""
         with self._condition:
             return self._state in [CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED]
 
     def __get_result(self):
         if self._exception:
-            raise self._exception
+            try:
+                raise self._exception
+            finally:
+                # Break a reference cycle with the exception in self._exception
+                self = None
         else:
             return self._result
 
@@ -404,7 +408,10 @@ class Future(object):
             if self._state not in [CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED]:
                 self._done_callbacks.append(fn)
                 return
-        fn(self)
+        try:
+            fn(self)
+        except Exception:
+            LOGGER.exception('exception calling callback for %r', self)
 
     def result(self, timeout=None):
         """Return the result of the call that the future represents.
@@ -422,20 +429,24 @@ class Future(object):
                 timeout.
             Exception: If the call raised then that exception will be raised.
         """
-        with self._condition:
-            if self._state in [CANCELLED, CANCELLED_AND_NOTIFIED]:
-                raise CancelledError()
-            elif self._state == FINISHED:
-                return self.__get_result()
+        try:
+            with self._condition:
+                if self._state in [CANCELLED, CANCELLED_AND_NOTIFIED]:
+                    raise CancelledError()
+                elif self._state == FINISHED:
+                    return self.__get_result()
 
-            self._condition.wait(timeout)
+                self._condition.wait(timeout)
 
-            if self._state in [CANCELLED, CANCELLED_AND_NOTIFIED]:
-                raise CancelledError()
-            elif self._state == FINISHED:
-                return self.__get_result()
-            else:
-                raise TimeoutError()
+                if self._state in [CANCELLED, CANCELLED_AND_NOTIFIED]:
+                    raise CancelledError()
+                elif self._state == FINISHED:
+                    return self.__get_result()
+                else:
+                    raise TimeoutError()
+        finally:
+            # Break a reference cycle with the exception in self._exception
+            self = None
 
     def exception(self, timeout=None):
         """Return the exception raised by the call that the future represents.
@@ -541,10 +552,12 @@ class Future(object):
             self._condition.notify_all()
         self._invoke_callbacks()
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
 class Executor(object):
     """This is an abstract base class for concrete asynchronous executors."""
 
-    def submit(self, fn, *args, **kwargs):
+    def submit(self, fn, /, *args, **kwargs):
         """Submits a callable to be executed with the given arguments.
 
         Schedules the callable to be executed as fn(*args, **kwargs) and returns
@@ -599,7 +612,7 @@ class Executor(object):
                     future.cancel()
         return result_iterator()
 
-    def shutdown(self, wait=True):
+    def shutdown(self, wait=True, *, cancel_futures=False):
         """Clean-up the resources associated with the Executor.
 
         It is safe to call this method several times. Otherwise, no other
@@ -609,6 +622,9 @@ class Executor(object):
             wait: If True then shutdown will not return until all running
                 futures have finished executing and the resources used by the
                 executor have been reclaimed.
+            cancel_futures: If True then shutdown will cancel all pending
+                futures. Futures that are completed or running will not be
+                cancelled.
         """
         pass
 

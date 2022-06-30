@@ -1,3 +1,0 @@
-Rename :mod:`test.bisect` module to :mod:`test.bisect_cmd` to avoid conflict
-with :mod:`bisect` module when running directly a test like
-``./python Lib/test/test_xmlrpc.py``.

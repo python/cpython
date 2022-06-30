@@ -1,7 +1,0 @@
-:meth:`sqlite3.Connection.create_aggregate`,
-:meth:`sqlite3.Connection.create_function`,
-:meth:`sqlite3.Connection.set_authorizer`,
-:meth:`sqlite3.Connection.set_progress_handler` methods raises TypeError
-when unhashable objects are passed as callable. These methods now don't pass
-such objects to SQLite API. Previous behavior could lead to segfaults. Patch
-by Sergey Fedoseev.

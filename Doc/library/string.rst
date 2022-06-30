@@ -56,8 +56,7 @@ The constants defined in this module are:
 .. data:: punctuation
 
    String of ASCII characters which are considered punctuation characters
-   in the ``C`` locale.
-
+   in the ``C`` locale: ``!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~``.
 
 .. data:: printable
 
@@ -89,7 +88,7 @@ implementation as the built-in :meth:`~str.format` method.
 
    The :class:`Formatter` class has the following public methods:
 
-   .. method:: format(format_string, *args, **kwargs)
+   .. method:: format(format_string, /, *args, **kwargs)
 
       The primary API method.  It takes a format string and
       an arbitrary set of positional and keyword arguments.
@@ -147,7 +146,7 @@ implementation as the built-in :meth:`~str.format` method.
       keyword arguments.
 
       For compound field names, these functions are only called for the first
-      component of the field name; Subsequent components are handled through
+      component of the field name; subsequent components are handled through
       normal attribute and indexing operations.
 
       So for example, the field expression '0.name' would cause
@@ -189,8 +188,8 @@ Format String Syntax
 The :meth:`str.format` method and the :class:`Formatter` class share the same
 syntax for format strings (although in the case of :class:`Formatter`,
 subclasses can define their own format string syntax).  The syntax is
-related to that of :ref:`formatted string literals <f-strings>`, but
-there are differences.
+related to that of :ref:`formatted string literals <f-strings>`, but it is
+less sophisticated and, in particular, does not support arbitrary expressions.
 
 .. index::
    single: {} (curly brackets); in string formatting
@@ -206,7 +205,7 @@ literal text, it can be escaped by doubling: ``{{`` and ``}}``.
 
 The grammar for a replacement field is as follows:
 
-   .. productionlist:: sf
+   .. productionlist:: format-string
       replacement_field: "{" [`field_name`] ["!" `conversion`] [":" `format_spec`] "}"
       field_name: arg_name ("." `attribute_name` | "[" `element_index` "]")*
       arg_name: [`identifier` | `digit`+]
@@ -303,14 +302,14 @@ specification is to be interpreted.
 Most built-in types implement the following options for format specifications,
 although some of the formatting options are only supported by the numeric types.
 
-A general convention is that an empty format string (``""``) produces
+A general convention is that an empty format specification produces
 the same result as if you had called :func:`str` on the value. A
-non-empty format string typically modifies the result.
+non-empty format specification typically modifies the result.
 
 The general form of a *standard format specifier* is:
 
-.. productionlist:: sf
-   format_spec: [[`fill`]`align`][`sign`][#][0][`width`][`grouping_option`][.`precision`][`type`]
+.. productionlist:: format-spec
+   format_spec: [[`fill`]`align`][`sign`][z][#][0][`width`][`grouping_option`][.`precision`][`type`]
    fill: <any character>
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
@@ -348,8 +347,8 @@ The meaning of the various alignment options is as follows:
    | ``'='`` | Forces the padding to be placed after the sign (if any)  |
    |         | but before the digits.  This is used for printing fields |
    |         | in the form '+000000120'. This alignment option is only  |
-   |         | valid for numeric types.  It becomes the default when '0'|
-   |         | immediately precedes the field width.                    |
+   |         | valid for numeric types.  It becomes the default for     |
+   |         | numbers when '0' immediately precedes the field width.   |
    +---------+----------------------------------------------------------+
    | ``'^'`` | Forces the field to be centered within the available     |
    |         | space.                                                   |
@@ -381,14 +380,23 @@ following:
    +---------+----------------------------------------------------------+
 
 
+.. index:: single: z; in string formatting
+
+The ``'z'`` option coerces negative zero floating-point values to positive
+zero after rounding to the format precision.  This option is only valid for
+floating-point presentation types.
+
+.. versionchanged:: 3.11
+   Added the ``'z'`` option (see also :pep:`682`).
+
 .. index:: single: # (hash); in string formatting
 
 The ``'#'`` option causes the "alternate form" to be used for the
 conversion.  The alternate form is defined differently for different
-types.  This option is only valid for integer, float, complex and
-Decimal types. For integers, when binary, octal, or hexadecimal output
-is used, this option adds the prefix respective ``'0b'``, ``'0o'``, or
-``'0x'`` to the output value. For floats, complex and Decimal the
+types.  This option is only valid for integer, float and complex
+types. For integers, when binary, octal, or hexadecimal output
+is used, this option adds the respective prefix ``'0b'``, ``'0o'``,
+``'0x'``, or ``'0X'`` to the output value. For float and complex the
 alternate form causes the result of the conversion to always contain a
 decimal-point character, even if no digits follow it. Normally, a
 decimal-point character appears in the result of these conversions
@@ -416,20 +424,26 @@ error.
 .. versionchanged:: 3.6
    Added the ``'_'`` option (see also :pep:`515`).
 
-*width* is a decimal integer defining the minimum field width.  If not
-specified, then the field width will be determined by the content.
+*width* is a decimal integer defining the minimum total field width,
+including any prefixes, separators, and other formatting characters.
+If not specified, then the field width will be determined by the content.
 
 When no explicit alignment is given, preceding the *width* field by a zero
 (``'0'``) character enables
 sign-aware zero-padding for numeric types.  This is equivalent to a *fill*
 character of ``'0'`` with an *alignment* type of ``'='``.
 
-The *precision* is a decimal number indicating how many digits should be
-displayed after the decimal point for a floating point value formatted with
-``'f'`` and ``'F'``, or before and after the decimal point for a floating point
-value formatted with ``'g'`` or ``'G'``.  For non-number types the field
+.. versionchanged:: 3.10
+   Preceding the *width* field by ``'0'`` no longer affects the default
+   alignment for strings.
+
+The *precision* is a decimal integer indicating how many digits should be
+displayed after the decimal point for presentation types
+``'f'`` and ``'F'``, or before and after the decimal point for presentation
+types ``'g'`` or ``'G'``.  For string presentation types the field
 indicates the maximum field size - in other words, how many characters will be
-used from the field content. The *precision* is not allowed for integer values.
+used from the field content.  The *precision* is not allowed for integer
+presentation types.
 
 Finally, the *type* determines how the data should be presented.
 
@@ -463,6 +477,8 @@ The available integer presentation types are:
    +---------+----------------------------------------------------------+
    | ``'X'`` | Hex format. Outputs the number in base 16, using         |
    |         | upper-case letters for the digits above 9.               |
+   |         | In case ``'#'`` is specified, the prefix ``'0x'`` will   |
+   |         | be upper-cased to ``'0X'`` as well.                      |
    +---------+----------------------------------------------------------+
    | ``'n'`` | Number. This is the same as ``'d'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |
@@ -476,20 +492,36 @@ with the floating point presentation types listed below (except
 ``'n'`` and ``None``). When doing so, :func:`float` is used to convert the
 integer to a floating point number before formatting.
 
-The available presentation types for floating point and decimal values are:
+The available presentation types for :class:`float` and
+:class:`~decimal.Decimal` values are:
 
    +---------+----------------------------------------------------------+
    | Type    | Meaning                                                  |
    +=========+==========================================================+
-   | ``'e'`` | Exponent notation. Prints the number in scientific       |
-   |         | notation using the letter 'e' to indicate the exponent.  |
-   |         | The default precision is ``6``.                          |
+   | ``'e'`` | Scientific notation. For a given precision ``p``,        |
+   |         | formats the number in scientific notation with the       |
+   |         | letter 'e' separating the coefficient from the exponent. |
+   |         | The coefficient has one digit before and ``p`` digits    |
+   |         | after the decimal point, for a total of ``p + 1``        |
+   |         | significant digits. With no precision given, uses a      |
+   |         | precision of ``6`` digits after the decimal point for    |
+   |         | :class:`float`, and shows all coefficient digits         |
+   |         | for :class:`~decimal.Decimal`. If no digits follow the   |
+   |         | decimal point, the decimal point is also removed unless  |
+   |         | the ``#`` option is used.                                |
    +---------+----------------------------------------------------------+
-   | ``'E'`` | Exponent notation. Same as ``'e'`` except it uses an     |
-   |         | upper case 'E' as the separator character.               |
+   | ``'E'`` | Scientific notation. Same as ``'e'`` except it uses      |
+   |         | an upper case 'E' as the separator character.            |
    +---------+----------------------------------------------------------+
-   | ``'f'`` | Fixed-point notation. Displays the number as a           |
-   |         | fixed-point number.  The default precision is ``6``.     |
+   | ``'f'`` | Fixed-point notation. For a given precision ``p``,       |
+   |         | formats the number as a decimal number with exactly      |
+   |         | ``p`` digits following the decimal point. With no        |
+   |         | precision given, uses a precision of ``6`` digits after  |
+   |         | the decimal point for :class:`float`, and uses a         |
+   |         | precision large enough to show all coefficient digits    |
+   |         | for :class:`~decimal.Decimal`. If no digits follow the   |
+   |         | decimal point, the decimal point is also removed unless  |
+   |         | the ``#`` option is used.                                |
    +---------+----------------------------------------------------------+
    | ``'F'`` | Fixed-point notation. Same as ``'f'``, but converts      |
    |         | ``nan`` to  ``NAN`` and ``inf`` to ``INF``.              |
@@ -498,25 +530,35 @@ The available presentation types for floating point and decimal values are:
    |         | this rounds the number to ``p`` significant digits and   |
    |         | then formats the result in either fixed-point format     |
    |         | or in scientific notation, depending on its magnitude.   |
+   |         | A precision of ``0`` is treated as equivalent to a       |
+   |         | precision of ``1``.                                      |
    |         |                                                          |
    |         | The precise rules are as follows: suppose that the       |
    |         | result formatted with presentation type ``'e'`` and      |
-   |         | precision ``p-1`` would have exponent ``exp``.  Then     |
-   |         | if ``-4 <= exp < p``, the number is formatted            |
-   |         | with presentation type ``'f'`` and precision             |
+   |         | precision ``p-1`` would have exponent ``exp``.  Then,    |
+   |         | if ``m <= exp < p``, where ``m`` is -4 for floats and -6 |
+   |         | for :class:`Decimals <decimal.Decimal>`, the number is   |
+   |         | formatted with presentation type ``'f'`` and precision   |
    |         | ``p-1-exp``.  Otherwise, the number is formatted         |
    |         | with presentation type ``'e'`` and precision ``p-1``.    |
    |         | In both cases insignificant trailing zeros are removed   |
    |         | from the significand, and the decimal point is also      |
-   |         | removed if there are no remaining digits following it.   |
+   |         | removed if there are no remaining digits following it,   |
+   |         | unless the ``'#'`` option is used.                       |
+   |         |                                                          |
+   |         | With no precision given, uses a precision of ``6``       |
+   |         | significant digits for :class:`float`. For               |
+   |         | :class:`~decimal.Decimal`, the coefficient of the result |
+   |         | is formed from the coefficient digits of the value;      |
+   |         | scientific notation is used for values smaller than      |
+   |         | ``1e-6`` in absolute value and values where the place    |
+   |         | value of the least significant digit is larger than 1,   |
+   |         | and fixed-point notation is used otherwise.              |
    |         |                                                          |
    |         | Positive and negative infinity, positive and negative    |
    |         | zero, and nans, are formatted as ``inf``, ``-inf``,      |
    |         | ``0``, ``-0`` and ``nan`` respectively, regardless of    |
    |         | the precision.                                           |
-   |         |                                                          |
-   |         | A precision of ``0`` is treated as equivalent to a       |
-   |         | precision of ``1``.  The default precision is ``6``.     |
    +---------+----------------------------------------------------------+
    | ``'G'`` | General format. Same as ``'g'`` except switches to       |
    |         | ``'E'`` if the number gets too large. The                |
@@ -529,12 +571,18 @@ The available presentation types for floating point and decimal values are:
    | ``'%'`` | Percentage. Multiplies the number by 100 and displays    |
    |         | in fixed (``'f'``) format, followed by a percent sign.   |
    +---------+----------------------------------------------------------+
-   | None    | Similar to ``'g'``, except that fixed-point notation,    |
-   |         | when used, has at least one digit past the decimal point.|
-   |         | The default precision is as high as needed to represent  |
-   |         | the particular value. The overall effect is to match the |
-   |         | output of :func:`str` as altered by the other format     |
-   |         | modifiers.                                               |
+   | None    | For :class:`float` this is the same as ``'g'``, except   |
+   |         | that when fixed-point notation is used to format the     |
+   |         | result, it always includes at least one digit past the   |
+   |         | decimal point. The precision used is as large as needed  |
+   |         | to represent the given value faithfully.                 |
+   |         |                                                          |
+   |         | For :class:`~decimal.Decimal`, this is the same as       |
+   |         | either ``'g'`` or ``'G'`` depending on the value of      |
+   |         | ``context.capitals`` for the current decimal context.    |
+   |         |                                                          |
+   |         | The overall effect is to match the output of :func:`str` |
+   |         | as altered by the other format modifiers.                |
    +---------+----------------------------------------------------------+
 
 
@@ -721,7 +769,7 @@ these rules.  The methods of :class:`Template` are:
    The constructor takes a single argument which is the template string.
 
 
-   .. method:: substitute(mapping, **kwds)
+   .. method:: substitute(mapping={}, /, **kwds)
 
       Performs the template substitution, returning a new string.  *mapping* is
       any dictionary-like object with keys that match the placeholders in the
@@ -730,7 +778,7 @@ these rules.  The methods of :class:`Template` are:
       and there are duplicates, the placeholders from *kwds* take precedence.
 
 
-   .. method:: safe_substitute(mapping, **kwds)
+   .. method:: safe_substitute(mapping={}, /, **kwds)
 
       Like :meth:`substitute`, except that if placeholders are missing from
       *mapping* and *kwds*, instead of raising a :exc:`KeyError` exception, the
@@ -744,6 +792,22 @@ these rules.  The methods of :class:`Template` are:
       anything other than safe, since it will silently ignore malformed
       templates containing dangling delimiters, unmatched braces, or
       placeholders that are not valid Python identifiers.
+
+
+   .. method:: is_valid()
+
+      Returns false if the template has invalid placeholders that will cause
+      :meth:`substitute` to raise :exc:`ValueError`.
+
+      .. versionadded:: 3.11
+
+
+   .. method:: get_identifiers()
+
+      Returns a list of the valid identifiers in the template, in the order
+      they first appear, ignoring any invalid identifiers.
+
+      .. versionadded:: 3.11
 
    :class:`Template` instances also provide one public data attribute:
 
@@ -830,6 +894,9 @@ rule:
 
 * *invalid* -- This group matches any other delimiter pattern (usually a single
   delimiter), and it should appear last in the regular expression.
+
+The methods on this class will raise :exc:`ValueError` if the pattern matches
+the template without one of these named groups matching.
 
 
 Helper functions

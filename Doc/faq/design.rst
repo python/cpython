@@ -24,14 +24,16 @@ programmers will encounter a fragment of code like this::
    z++;
 
 Only the ``x++`` statement is executed if the condition is true, but the
-indentation leads you to believe otherwise.  Even experienced C programmers will
-sometimes stare at it a long time wondering why ``y`` is being decremented even
+indentation leads many to believe otherwise.  Even experienced C programmers will
+sometimes stare at it a long time wondering as to why ``y`` is being decremented even
 for ``x > y``.
 
 Because there are no begin/end brackets, Python is much less prone to
 coding-style conflicts.  In C there are many different ways to place the braces.
-If you're used to reading and writing code that uses one style, you will feel at
-least slightly uneasy when reading (or being required to write) another style.
+After becoming used to reading and writing code using a particular style,
+it is normal to feel somewhat uneasy when reading (or being required to write)
+in a different one.
+
 
 Many coding styles place begin/end brackets on a line by themselves.  This makes
 programs considerably longer and wastes valuable screen space, making it harder
@@ -146,69 +148,20 @@ variables and instance variables live in two different namespaces, and you need
 to tell Python which namespace to use.
 
 
+.. _why-can-t-i-use-an-assignment-in-an-expression:
+
 Why can't I use an assignment in an expression?
 -----------------------------------------------
 
-Many people used to C or Perl complain that they want to use this C idiom:
+Starting in Python 3.8, you can!
 
-.. code-block:: c
+Assignment expressions using the walrus operator `:=` assign a variable in an
+expression::
 
-   while (line = readline(f)) {
-       // do something with line
-   }
+   while chunk := fp.read(200):
+      print(chunk)
 
-where in Python you're forced to write this::
-
-   while True:
-       line = f.readline()
-       if not line:
-           break
-       ...  # do something with line
-
-The reason for not allowing assignment in Python expressions is a common,
-hard-to-find bug in those other languages, caused by this construct:
-
-.. code-block:: c
-
-    if (x = 0) {
-        // error handling
-    }
-    else {
-        // code that only works for nonzero x
-    }
-
-The error is a simple typo: ``x = 0``, which assigns 0 to the variable ``x``,
-was written while the comparison ``x == 0`` is certainly what was intended.
-
-Many alternatives have been proposed.  Most are hacks that save some typing but
-use arbitrary or cryptic syntax or keywords, and fail the simple criterion for
-language change proposals: it should intuitively suggest the proper meaning to a
-human reader who has not yet been introduced to the construct.
-
-An interesting phenomenon is that most experienced Python programmers recognize
-the ``while True`` idiom and don't seem to be missing the assignment in
-expression construct much; it's only newcomers who express a strong desire to
-add this to the language.
-
-There's an alternative way of spelling this that seems attractive but is
-generally less robust than the "while True" solution::
-
-   line = f.readline()
-   while line:
-       ...  # do something with line...
-       line = f.readline()
-
-The problem with this is that if you change your mind about exactly how you get
-the next line (e.g. you want to change it into ``sys.stdin.readline()``) you
-have to remember to change two places in your program -- the second occurrence
-is hidden at the bottom of the loop.
-
-The best approach is to use iterators, making it possible to loop through
-objects using the ``for`` statement.  For example, :term:`file objects
-<file object>` support the iterator protocol, so you can write simply::
-
-   for line in f:
-       ...  # do something with line...
+See :pep:`572` for more information.
 
 
 
@@ -306,20 +259,16 @@ Why isn't there a switch or case statement in Python?
 -----------------------------------------------------
 
 You can do this easily enough with a sequence of ``if... elif... elif... else``.
-There have been some proposals for switch statement syntax, but there is no
-consensus (yet) on whether and how to do range tests.  See :pep:`275` for
-complete details and the current status.
+For literal values, or constants within a namespace, you can also use a
+``match ... case`` statement.
 
 For cases where you need to choose from a very large number of possibilities,
 you can create a dictionary mapping case values to functions to call.  For
 example::
 
-   def function_1(...):
-       ...
-
    functions = {'a': function_1,
                 'b': function_2,
-                'c': self.method_1, ...}
+                'c': self.method_1}
 
    func = functions[value]
    func()
@@ -327,14 +276,14 @@ example::
 For calling methods on objects, you can simplify yet further by using the
 :func:`getattr` built-in to retrieve methods with a particular name::
 
-   def visit_a(self, ...):
-       ...
-   ...
+   class MyVisitor:
+       def visit_a(self):
+           ...
 
-   def dispatch(self, value):
-       method_name = 'visit_' + str(value)
-       method = getattr(self, method_name)
-       method()
+       def dispatch(self, value):
+           method_name = 'visit_' + str(value)
+           method = getattr(self, method_name)
+           method()
 
 It's suggested that you use a prefix for the method names, such as ``visit_`` in
 this example.  Without such a prefix, if values are coming from an untrusted
@@ -375,8 +324,7 @@ Can Python be compiled to machine code, C or some other language?
 `Cython <http://cython.org/>`_ compiles a modified version of Python with
 optional annotations into C extensions.  `Nuitka <http://www.nuitka.net/>`_ is
 an up-and-coming compiler of Python into C++ code, aiming to support the full
-Python language. For compiling to Java you can consider
-`VOC <https://voc.readthedocs.io>`_.
+Python language.
 
 
 How does Python manage memory?
@@ -620,8 +568,7 @@ whether an instance or a class implements a particular ABC.  The
 :class:`~collections.abc.MutableMapping`.
 
 For Python, many of the advantages of interface specifications can be obtained
-by an appropriate test discipline for components.  There is also a tool,
-PyChecker, which can be used to find problems due to subclassing.
+by an appropriate test discipline for components.
 
 A good test suite for a module can both provide a regression test and serve as a
 module interface specification and a set of examples.  Many Python modules can
@@ -639,17 +586,25 @@ to the end of some internal list; an interface specification cannot test that
 your :meth:`append` implementation will actually do this correctly, but it's
 trivial to check this property in a test suite.
 
-Writing test suites is very helpful, and you might want to design your code with
-an eye to making it easily tested.  One increasingly popular technique,
-test-directed development, calls for writing parts of the test suite first,
-before you write any of the actual code.  Of course Python allows you to be
-sloppy and not write test cases at all.
+Writing test suites is very helpful, and you might want to design your code to
+make it easily tested. One increasingly popular technique, test-driven
+development, calls for writing parts of the test suite first, before you write
+any of the actual code.  Of course Python allows you to be sloppy and not write
+test cases at all.
 
 
 Why is there no goto?
 ---------------------
 
-You can use exceptions to provide a "structured goto" that even works across
+In the 1970s people realized that unrestricted goto could lead
+to messy "spaghetti" code that was hard to understand and revise.
+In a high-level language, it is also unneeded as long as there
+are ways to branch (in Python, with ``if`` statements and ``or``,
+``and``, and ``if-else`` expressions) and loop (with ``while``
+and ``for`` statements, possibly containing ``continue`` and ``break``).
+
+One can also use exceptions to provide a "structured goto"
+that works even across
 function calls.  Many feel that exceptions can conveniently emulate all
 reasonable uses of the "go" or "goto" constructs of C, Fortran, and other
 languages.  For example::
@@ -698,7 +653,7 @@ Why doesn't Python have a "with" statement for attribute assignments?
 ---------------------------------------------------------------------
 
 Python has a 'with' statement that wraps the execution of a block, calling code
-on the entrance and exit from the block.  Some language have a construct that
+on the entrance and exit from the block.  Some languages have a construct that
 looks like this::
 
    with obj:
@@ -747,6 +702,15 @@ write this::
 This also has the side-effect of increasing execution speed because name
 bindings are resolved at run-time in Python, and the second version only needs
 to perform the resolution once.
+
+
+Why don't generators support the with statement?
+------------------------------------------------
+
+For technical reasons, a generator used directly as a context manager
+would not work correctly.  When, as is most common, a generator is used as
+an iterator run to completion, no closing is needed.  When it is, wrap
+it as "contextlib.closing(generator)" in the 'with' statement.
 
 
 Why are colons required for the if/while/def/class statements?

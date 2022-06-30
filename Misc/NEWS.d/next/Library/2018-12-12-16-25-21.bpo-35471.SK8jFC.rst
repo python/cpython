@@ -1,2 +1,0 @@
-Python 2.4 dropped MacOS 9 support. The macpath module was deprecated in
-Python 3.7. The module is now removed.

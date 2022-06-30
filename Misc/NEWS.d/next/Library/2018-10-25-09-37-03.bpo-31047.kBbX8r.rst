@@ -1,2 +1,0 @@
-Fix ``ntpath.abspath`` regression where it didn't remove a trailing
-separator on Windows. Patch by Tim Graham.

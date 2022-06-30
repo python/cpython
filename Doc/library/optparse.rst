@@ -55,7 +55,7 @@ equivalent to the above example::
    <yourscript> -q -foutfile
    <yourscript> -qfoutfile
 
-Additionally, users can run one of  ::
+Additionally, users can run one of the following ::
 
    <yourscript> -h
    <yourscript> --help
@@ -131,7 +131,7 @@ option
    These option syntaxes are not supported by :mod:`optparse`, and they never
    will be.  This is deliberate: the first three are non-standard on any
    environment, and the last only makes sense if you're exclusively targeting
-   VMS, MS-DOS, and/or Windows.
+   Windows or certain legacy platforms (e.g. VMS, MS-DOS).
 
 option argument
    an argument that follows an option, is closely associated with that option,
@@ -928,10 +928,10 @@ The canonical way to create an :class:`Option` instance is with the
       store a constant value
 
    ``"store_true"``
-      store a true value
+      store ``True``
 
    ``"store_false"``
-      store a false value
+      store ``False``
 
    ``"append"``
       append this option's argument to a list
@@ -1135,12 +1135,12 @@ must specify for any option using that action.
 
 * ``"store_true"`` [relevant: :attr:`~Option.dest`]
 
-  A special case of ``"store_const"`` that stores a true value to
+  A special case of ``"store_const"`` that stores ``True`` to
   :attr:`~Option.dest`.
 
 * ``"store_false"`` [relevant: :attr:`~Option.dest`]
 
-  Like ``"store_true"``, but stores a false value.
+  Like ``"store_true"``, but stores ``False``.
 
   Example::
 
@@ -1396,7 +1396,7 @@ provides several methods to help you out:
 
 .. method:: OptionParser.has_option(opt_str)
 
-   Return true if the OptionParser has an option with option string *opt_str*
+   Return ``True`` if the OptionParser has an option with option string *opt_str*
    (e.g., ``-q`` or ``--verbose``).
 
 .. method:: OptionParser.remove_option(opt_str)

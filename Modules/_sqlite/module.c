@@ -24,459 +24,738 @@
 #include "connection.h"
 #include "statement.h"
 #include "cursor.h"
-#include "cache.h"
 #include "prepare_protocol.h"
 #include "microprotocols.h"
 #include "row.h"
+#include "blob.h"
 
-#if SQLITE_VERSION_NUMBER >= 3003003
-#define HAVE_SHARED_CACHE
+#if SQLITE_VERSION_NUMBER < 3007015
+#error "SQLite 3.7.15 or higher required"
 #endif
 
-/* static objects at module-level */
+#define clinic_state() (pysqlite_get_state(module))
+#include "clinic/module.c.h"
+#undef clinic_state
 
-PyObject *pysqlite_Error = NULL;
-PyObject *pysqlite_Warning = NULL;
-PyObject *pysqlite_InterfaceError = NULL;
-PyObject *pysqlite_DatabaseError = NULL;
-PyObject *pysqlite_InternalError = NULL;
-PyObject *pysqlite_OperationalError = NULL;
-PyObject *pysqlite_ProgrammingError = NULL;
-PyObject *pysqlite_IntegrityError = NULL;
-PyObject *pysqlite_DataError = NULL;
-PyObject *pysqlite_NotSupportedError = NULL;
+/*[clinic input]
+module _sqlite3
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=81e330492d57488e]*/
 
-PyObject* _pysqlite_converters = NULL;
-int _pysqlite_enable_callback_tracebacks = 0;
-int pysqlite_BaseTypeAdapted = 0;
+// NOTE: This must equal sqlite3.Connection.__init__ argument spec!
+/*[clinic input]
+_sqlite3.connect as pysqlite_connect
 
-static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
-        kwargs)
+    database: object
+    timeout: double = 5.0
+    detect_types: int = 0
+    isolation_level: object = NULL
+    check_same_thread: bool(accept={int}) = True
+    factory: object(c_default='(PyObject*)clinic_state()->ConnectionType') = ConnectionType
+    cached_statements: int = 128
+    uri: bool = False
+
+Opens a connection to the SQLite database file database.
+
+You can use ":memory:" to open a database connection to a database that resides
+in RAM instead of on disk.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
+                      int detect_types, PyObject *isolation_level,
+                      int check_same_thread, PyObject *factory,
+                      int cached_statements, int uri)
+/*[clinic end generated code: output=450ac9078b4868bb input=e16914663ddf93ce]*/
 {
-    /* Python seems to have no way of extracting a single keyword-arg at
-     * C-level, so this code is redundant with the one in connection_init in
-     * connection.c and must always be copied from there ... */
-
-    static char *kwlist[] = {
-        "database", "timeout", "detect_types", "isolation_level",
-        "check_same_thread", "factory", "cached_statements", "uri",
-        NULL
-    };
-    PyObject* database;
-    int detect_types = 0;
-    PyObject* isolation_level;
-    PyObject* factory = NULL;
-    int check_same_thread = 1;
-    int cached_statements;
-    int uri = 0;
-    double timeout = 5.0;
-
-    PyObject* result;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|diOiOip", kwlist,
-                                     &database, &timeout, &detect_types,
-                                     &isolation_level, &check_same_thread,
-                                     &factory, &cached_statements, &uri))
-    {
-        return NULL;
+    if (isolation_level == NULL) {
+        isolation_level = PyUnicode_FromString("");
+        if (isolation_level == NULL) {
+            return NULL;
+        }
     }
-
-    if (factory == NULL) {
-        factory = (PyObject*)&pysqlite_ConnectionType;
+    else {
+        Py_INCREF(isolation_level);
     }
-
-    result = PyObject_Call(factory, args, kwargs);
-
-    return result;
+    PyObject *res = PyObject_CallFunction(factory, "OdiOiOii", database,
+                                          timeout, detect_types,
+                                          isolation_level, check_same_thread,
+                                          factory, cached_statements, uri);
+    Py_DECREF(isolation_level);
+    return res;
 }
 
-PyDoc_STRVAR(module_connect_doc,
-"connect(database[, timeout, detect_types, isolation_level,\n\
-        check_same_thread, factory, cached_statements, uri])\n\
-\n\
-Opens a connection to the SQLite database file *database*. You can use\n\
-\":memory:\" to open a database connection to a database that resides in\n\
-RAM instead of on disk.");
+/*[clinic input]
+_sqlite3.complete_statement as pysqlite_complete_statement
 
-static PyObject* module_complete(PyObject* self, PyObject* args, PyObject*
-        kwargs)
+    statement: str
+
+Checks if a string contains a complete SQL statement.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_complete_statement_impl(PyObject *module, const char *statement)
+/*[clinic end generated code: output=e55f1ff1952df558 input=ac45d257375bb828]*/
 {
-    static char *kwlist[] = {"statement", NULL, NULL};
-    char* statement;
-
-    PyObject* result;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s", kwlist, &statement))
-    {
-        return NULL;
-    }
-
     if (sqlite3_complete(statement)) {
-        result = Py_True;
+        return Py_NewRef(Py_True);
     } else {
-        result = Py_False;
-    }
-
-    Py_INCREF(result);
-
-    return result;
-}
-
-PyDoc_STRVAR(module_complete_doc,
-"complete_statement(sql)\n\
-\n\
-Checks if a string contains a complete SQL statement. Non-standard.");
-
-#ifdef HAVE_SHARED_CACHE
-static PyObject* module_enable_shared_cache(PyObject* self, PyObject* args, PyObject*
-        kwargs)
-{
-    static char *kwlist[] = {"do_enable", NULL, NULL};
-    int do_enable;
-    int rc;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i", kwlist, &do_enable))
-    {
-        return NULL;
-    }
-
-    rc = sqlite3_enable_shared_cache(do_enable);
-
-    if (rc != SQLITE_OK) {
-        PyErr_SetString(pysqlite_OperationalError, "Changing the shared_cache flag failed");
-        return NULL;
-    } else {
-        Py_RETURN_NONE;
+        return Py_NewRef(Py_False);
     }
 }
 
-PyDoc_STRVAR(module_enable_shared_cache_doc,
-"enable_shared_cache(do_enable)\n\
-\n\
-Enable or disable shared cache mode for the calling thread.\n\
-Experimental/Non-standard.");
-#endif /* HAVE_SHARED_CACHE */
+/*[clinic input]
+_sqlite3.register_adapter as pysqlite_register_adapter
 
-static PyObject* module_register_adapter(PyObject* self, PyObject* args)
+    type: object(type='PyTypeObject *')
+    adapter as caster: object
+    /
+
+Register a function to adapt Python objects to SQLite values.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_register_adapter_impl(PyObject *module, PyTypeObject *type,
+                               PyObject *caster)
+/*[clinic end generated code: output=a287e8db18e8af23 input=29a5e0f213030242]*/
 {
-    PyTypeObject* type;
-    PyObject* caster;
     int rc;
-
-    if (!PyArg_ParseTuple(args, "OO", &type, &caster)) {
-        return NULL;
-    }
 
     /* a basic type is adapted; there's a performance optimization if that's not the case
      * (99 % of all usages) */
     if (type == &PyLong_Type || type == &PyFloat_Type
             || type == &PyUnicode_Type || type == &PyByteArray_Type) {
-        pysqlite_BaseTypeAdapted = 1;
+        pysqlite_state *state = pysqlite_get_state(module);
+        state->BaseTypeAdapted = 1;
     }
 
-    rc = pysqlite_microprotocols_add(type, (PyObject*)&pysqlite_PrepareProtocolType, caster);
-    if (rc == -1)
+    pysqlite_state *state = pysqlite_get_state(module);
+    PyObject *protocol = (PyObject *)state->PrepareProtocolType;
+    rc = pysqlite_microprotocols_add(state, type, protocol, caster);
+    if (rc == -1) {
         return NULL;
+    }
 
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(module_register_adapter_doc,
-"register_adapter(type, callable)\n\
-\n\
-Registers an adapter with pysqlite's adapter registry. Non-standard.");
+/*[clinic input]
+_sqlite3.register_converter as pysqlite_register_converter
 
-static PyObject* module_register_converter(PyObject* self, PyObject* args)
+    typename as orig_name: unicode
+    converter as callable: object
+    /
+
+Register a function to convert SQLite values to Python objects.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_register_converter_impl(PyObject *module, PyObject *orig_name,
+                                 PyObject *callable)
+/*[clinic end generated code: output=a2f2bfeed7230062 input=159a444971b40378]*/
 {
-    PyObject* orig_name;
     PyObject* name = NULL;
-    PyObject* callable;
     PyObject* retval = NULL;
-    _Py_IDENTIFIER(upper);
-
-    if (!PyArg_ParseTuple(args, "UO", &orig_name, &callable)) {
-        return NULL;
-    }
 
     /* convert the name to upper case */
-    name = _PyObject_CallMethodId(orig_name, &PyId_upper, NULL);
+    pysqlite_state *state = pysqlite_get_state(module);
+    name = PyObject_CallMethodNoArgs(orig_name, state->str_upper);
     if (!name) {
         goto error;
     }
 
-    if (PyDict_SetItem(_pysqlite_converters, name, callable) != 0) {
+    if (PyDict_SetItem(state->converters, name, callable) != 0) {
         goto error;
     }
 
-    Py_INCREF(Py_None);
-    retval = Py_None;
+    retval = Py_NewRef(Py_None);
 error:
     Py_XDECREF(name);
     return retval;
 }
 
-PyDoc_STRVAR(module_register_converter_doc,
-"register_converter(typename, callable)\n\
-\n\
-Registers a converter with pysqlite. Non-standard.");
+/*[clinic input]
+_sqlite3.enable_callback_tracebacks as pysqlite_enable_callback_trace
 
-static PyObject* enable_callback_tracebacks(PyObject* self, PyObject* args)
+    enable: int
+    /
+
+Enable or disable callback functions throwing errors to stderr.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_enable_callback_trace_impl(PyObject *module, int enable)
+/*[clinic end generated code: output=4ff1d051c698f194 input=cb79d3581eb77c40]*/
 {
-    if (!PyArg_ParseTuple(args, "i", &_pysqlite_enable_callback_tracebacks)) {
-        return NULL;
-    }
+    pysqlite_state *state = pysqlite_get_state(module);
+    state->enable_callback_tracebacks = enable;
 
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(enable_callback_tracebacks_doc,
-"enable_callback_tracebacks(flag)\n\
-\n\
-Enable or disable callback functions throwing errors to stderr.");
+/*[clinic input]
+_sqlite3.adapt as pysqlite_adapt
 
-static void converters_init(PyObject* dict)
+    obj: object
+    proto: object(c_default='(PyObject *)clinic_state()->PrepareProtocolType') = PrepareProtocolType
+    alt: object = NULL
+    /
+
+Adapt given object to given protocol.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_adapt_impl(PyObject *module, PyObject *obj, PyObject *proto,
+                    PyObject *alt)
+/*[clinic end generated code: output=0c3927c5fcd23dd9 input=a53dc9993e81e15f]*/
 {
-    _pysqlite_converters = PyDict_New();
-    if (!_pysqlite_converters) {
-        return;
+    pysqlite_state *state = pysqlite_get_state(module);
+    return pysqlite_microprotocols_adapt(state, obj, proto, alt);
+}
+
+static int converters_init(PyObject* module)
+{
+    pysqlite_state *state = pysqlite_get_state(module);
+    state->converters = PyDict_New();
+    if (state->converters == NULL) {
+        return -1;
     }
 
-    PyDict_SetItemString(dict, "converters", _pysqlite_converters);
+    return PyModule_AddObjectRef(module, "converters", state->converters);
+}
+
+static int
+load_functools_lru_cache(PyObject *module)
+{
+    pysqlite_state *state = pysqlite_get_state(module);
+    state->lru_cache = _PyImport_GetModuleAttrString("functools", "lru_cache");
+    if (state->lru_cache == NULL) {
+        return -1;
+    }
+    return 0;
 }
 
 static PyMethodDef module_methods[] = {
-    {"connect",  (PyCFunction)(void(*)(void))module_connect,
-     METH_VARARGS | METH_KEYWORDS, module_connect_doc},
-    {"complete_statement",  (PyCFunction)(void(*)(void))module_complete,
-     METH_VARARGS | METH_KEYWORDS, module_complete_doc},
-#ifdef HAVE_SHARED_CACHE
-    {"enable_shared_cache",  (PyCFunction)(void(*)(void))module_enable_shared_cache,
-     METH_VARARGS | METH_KEYWORDS, module_enable_shared_cache_doc},
-#endif
-    {"register_adapter", (PyCFunction)module_register_adapter,
-     METH_VARARGS, module_register_adapter_doc},
-    {"register_converter", (PyCFunction)module_register_converter,
-     METH_VARARGS, module_register_converter_doc},
-    {"adapt",  (PyCFunction)pysqlite_adapt, METH_VARARGS,
-     pysqlite_adapt_doc},
-    {"enable_callback_tracebacks",  (PyCFunction)enable_callback_tracebacks,
-     METH_VARARGS, enable_callback_tracebacks_doc},
+    PYSQLITE_ADAPT_METHODDEF
+    PYSQLITE_COMPLETE_STATEMENT_METHODDEF
+    PYSQLITE_CONNECT_METHODDEF
+    PYSQLITE_ENABLE_CALLBACK_TRACE_METHODDEF
+    PYSQLITE_REGISTER_ADAPTER_METHODDEF
+    PYSQLITE_REGISTER_CONVERTER_METHODDEF
     {NULL, NULL}
 };
 
-struct _IntConstantPair {
-    const char *constant_name;
-    int constant_value;
-};
-
-typedef struct _IntConstantPair IntConstantPair;
-
-static const IntConstantPair _int_constants[] = {
-    {"PARSE_DECLTYPES", PARSE_DECLTYPES},
-    {"PARSE_COLNAMES", PARSE_COLNAMES},
-
-    {"SQLITE_OK", SQLITE_OK},
-    {"SQLITE_DENY", SQLITE_DENY},
-    {"SQLITE_IGNORE", SQLITE_IGNORE},
-    {"SQLITE_CREATE_INDEX", SQLITE_CREATE_INDEX},
-    {"SQLITE_CREATE_TABLE", SQLITE_CREATE_TABLE},
-    {"SQLITE_CREATE_TEMP_INDEX", SQLITE_CREATE_TEMP_INDEX},
-    {"SQLITE_CREATE_TEMP_TABLE", SQLITE_CREATE_TEMP_TABLE},
-    {"SQLITE_CREATE_TEMP_TRIGGER", SQLITE_CREATE_TEMP_TRIGGER},
-    {"SQLITE_CREATE_TEMP_VIEW", SQLITE_CREATE_TEMP_VIEW},
-    {"SQLITE_CREATE_TRIGGER", SQLITE_CREATE_TRIGGER},
-    {"SQLITE_CREATE_VIEW", SQLITE_CREATE_VIEW},
-    {"SQLITE_DELETE", SQLITE_DELETE},
-    {"SQLITE_DROP_INDEX", SQLITE_DROP_INDEX},
-    {"SQLITE_DROP_TABLE", SQLITE_DROP_TABLE},
-    {"SQLITE_DROP_TEMP_INDEX", SQLITE_DROP_TEMP_INDEX},
-    {"SQLITE_DROP_TEMP_TABLE", SQLITE_DROP_TEMP_TABLE},
-    {"SQLITE_DROP_TEMP_TRIGGER", SQLITE_DROP_TEMP_TRIGGER},
-    {"SQLITE_DROP_TEMP_VIEW", SQLITE_DROP_TEMP_VIEW},
-    {"SQLITE_DROP_TRIGGER", SQLITE_DROP_TRIGGER},
-    {"SQLITE_DROP_VIEW", SQLITE_DROP_VIEW},
-    {"SQLITE_INSERT", SQLITE_INSERT},
-    {"SQLITE_PRAGMA", SQLITE_PRAGMA},
-    {"SQLITE_READ", SQLITE_READ},
-    {"SQLITE_SELECT", SQLITE_SELECT},
-    {"SQLITE_TRANSACTION", SQLITE_TRANSACTION},
-    {"SQLITE_UPDATE", SQLITE_UPDATE},
-    {"SQLITE_ATTACH", SQLITE_ATTACH},
-    {"SQLITE_DETACH", SQLITE_DETACH},
-#if SQLITE_VERSION_NUMBER >= 3002001
-    {"SQLITE_ALTER_TABLE", SQLITE_ALTER_TABLE},
-    {"SQLITE_REINDEX", SQLITE_REINDEX},
+/* SQLite C API result codes. See also:
+ * - https://www.sqlite.org/c3ref/c_abort_rollback.html
+ * - https://sqlite.org/changes.html#version_3_3_8
+ * - https://sqlite.org/changes.html#version_3_7_16
+ * - https://sqlite.org/changes.html#version_3_7_17
+ * - https://sqlite.org/changes.html#version_3_8_0
+ * - https://sqlite.org/changes.html#version_3_8_3
+ * - https://sqlite.org/changes.html#version_3_14
+ *
+ * Note: the SQLite changelogs rarely mention new result codes, so in order to
+ * keep the 'error_codes' table in sync with SQLite, we must manually inspect
+ * sqlite3.h for every release.
+ *
+ * We keep the SQLITE_VERSION_NUMBER checks in order to easily declutter the
+ * code when we adjust the SQLite version requirement.
+ */
+static const struct {
+    const char *name;
+    long value;
+} error_codes[] = {
+#define DECLARE_ERROR_CODE(code) {#code, code}
+    // Primary result code list
+    DECLARE_ERROR_CODE(SQLITE_ABORT),
+    DECLARE_ERROR_CODE(SQLITE_AUTH),
+    DECLARE_ERROR_CODE(SQLITE_BUSY),
+    DECLARE_ERROR_CODE(SQLITE_CANTOPEN),
+    DECLARE_ERROR_CODE(SQLITE_CONSTRAINT),
+    DECLARE_ERROR_CODE(SQLITE_CORRUPT),
+    DECLARE_ERROR_CODE(SQLITE_DONE),
+    DECLARE_ERROR_CODE(SQLITE_EMPTY),
+    DECLARE_ERROR_CODE(SQLITE_ERROR),
+    DECLARE_ERROR_CODE(SQLITE_FORMAT),
+    DECLARE_ERROR_CODE(SQLITE_FULL),
+    DECLARE_ERROR_CODE(SQLITE_INTERNAL),
+    DECLARE_ERROR_CODE(SQLITE_INTERRUPT),
+    DECLARE_ERROR_CODE(SQLITE_IOERR),
+    DECLARE_ERROR_CODE(SQLITE_LOCKED),
+    DECLARE_ERROR_CODE(SQLITE_MISMATCH),
+    DECLARE_ERROR_CODE(SQLITE_MISUSE),
+    DECLARE_ERROR_CODE(SQLITE_NOLFS),
+    DECLARE_ERROR_CODE(SQLITE_NOMEM),
+    DECLARE_ERROR_CODE(SQLITE_NOTADB),
+    DECLARE_ERROR_CODE(SQLITE_NOTFOUND),
+    DECLARE_ERROR_CODE(SQLITE_OK),
+    DECLARE_ERROR_CODE(SQLITE_PERM),
+    DECLARE_ERROR_CODE(SQLITE_PROTOCOL),
+    DECLARE_ERROR_CODE(SQLITE_RANGE),
+    DECLARE_ERROR_CODE(SQLITE_READONLY),
+    DECLARE_ERROR_CODE(SQLITE_ROW),
+    DECLARE_ERROR_CODE(SQLITE_SCHEMA),
+    DECLARE_ERROR_CODE(SQLITE_TOOBIG),
+#if SQLITE_VERSION_NUMBER >= 3007017
+    DECLARE_ERROR_CODE(SQLITE_NOTICE),
+    DECLARE_ERROR_CODE(SQLITE_WARNING),
 #endif
-#if SQLITE_VERSION_NUMBER >= 3003000
-    {"SQLITE_ANALYZE", SQLITE_ANALYZE},
+    // Extended result code list
+    DECLARE_ERROR_CODE(SQLITE_ABORT_ROLLBACK),
+    DECLARE_ERROR_CODE(SQLITE_BUSY_RECOVERY),
+    DECLARE_ERROR_CODE(SQLITE_CANTOPEN_FULLPATH),
+    DECLARE_ERROR_CODE(SQLITE_CANTOPEN_ISDIR),
+    DECLARE_ERROR_CODE(SQLITE_CANTOPEN_NOTEMPDIR),
+    DECLARE_ERROR_CODE(SQLITE_CORRUPT_VTAB),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_ACCESS),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_BLOCKED),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_CHECKRESERVEDLOCK),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_CLOSE),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_DELETE),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_DELETE_NOENT),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_DIR_CLOSE),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_DIR_FSYNC),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_FSTAT),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_FSYNC),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_LOCK),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_NOMEM),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_RDLOCK),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_READ),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_SEEK),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_SHMLOCK),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_SHMMAP),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_SHMOPEN),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_SHMSIZE),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_SHORT_READ),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_TRUNCATE),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_UNLOCK),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_WRITE),
+    DECLARE_ERROR_CODE(SQLITE_LOCKED_SHAREDCACHE),
+    DECLARE_ERROR_CODE(SQLITE_READONLY_CANTLOCK),
+    DECLARE_ERROR_CODE(SQLITE_READONLY_RECOVERY),
+#if SQLITE_VERSION_NUMBER >= 3007016
+    DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_CHECK),
+    DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_COMMITHOOK),
+    DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_FOREIGNKEY),
+    DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_FUNCTION),
+    DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_NOTNULL),
+    DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_PRIMARYKEY),
+    DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_TRIGGER),
+    DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_UNIQUE),
+    DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_VTAB),
+    DECLARE_ERROR_CODE(SQLITE_READONLY_ROLLBACK),
 #endif
-#if SQLITE_VERSION_NUMBER >= 3003007
-    {"SQLITE_CREATE_VTABLE", SQLITE_CREATE_VTABLE},
-    {"SQLITE_DROP_VTABLE", SQLITE_DROP_VTABLE},
+#if SQLITE_VERSION_NUMBER >= 3007017
+    DECLARE_ERROR_CODE(SQLITE_IOERR_MMAP),
+    DECLARE_ERROR_CODE(SQLITE_NOTICE_RECOVER_ROLLBACK),
+    DECLARE_ERROR_CODE(SQLITE_NOTICE_RECOVER_WAL),
 #endif
-#if SQLITE_VERSION_NUMBER >= 3003008
-    {"SQLITE_FUNCTION", SQLITE_FUNCTION},
+#if SQLITE_VERSION_NUMBER >= 3008000
+    DECLARE_ERROR_CODE(SQLITE_BUSY_SNAPSHOT),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_GETTEMPPATH),
+    DECLARE_ERROR_CODE(SQLITE_WARNING_AUTOINDEX),
 #endif
-#if SQLITE_VERSION_NUMBER >= 3006008
-    {"SQLITE_SAVEPOINT", SQLITE_SAVEPOINT},
+#if SQLITE_VERSION_NUMBER >= 3008001
+    DECLARE_ERROR_CODE(SQLITE_CANTOPEN_CONVPATH),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_CONVPATH),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3008002
+    DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_ROWID),
 #endif
 #if SQLITE_VERSION_NUMBER >= 3008003
-    {"SQLITE_RECURSIVE", SQLITE_RECURSIVE},
+    DECLARE_ERROR_CODE(SQLITE_READONLY_DBMOVED),
 #endif
-#if SQLITE_VERSION_NUMBER >= 3006011
-    {"SQLITE_DONE", SQLITE_DONE},
+#if SQLITE_VERSION_NUMBER >= 3008007
+    DECLARE_ERROR_CODE(SQLITE_AUTH_USER),
 #endif
-    {(char*)NULL, 0}
+#if SQLITE_VERSION_NUMBER >= 3009000
+    DECLARE_ERROR_CODE(SQLITE_IOERR_VNODE),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3010000
+    DECLARE_ERROR_CODE(SQLITE_IOERR_AUTH),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3014001
+    DECLARE_ERROR_CODE(SQLITE_OK_LOAD_PERMANENTLY),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3021000
+    DECLARE_ERROR_CODE(SQLITE_IOERR_BEGIN_ATOMIC),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_COMMIT_ATOMIC),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_ROLLBACK_ATOMIC),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3022000
+    DECLARE_ERROR_CODE(SQLITE_ERROR_MISSING_COLLSEQ),
+    DECLARE_ERROR_CODE(SQLITE_ERROR_RETRY),
+    DECLARE_ERROR_CODE(SQLITE_READONLY_CANTINIT),
+    DECLARE_ERROR_CODE(SQLITE_READONLY_DIRECTORY),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3024000
+    DECLARE_ERROR_CODE(SQLITE_CORRUPT_SEQUENCE),
+    DECLARE_ERROR_CODE(SQLITE_LOCKED_VTAB),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3025000
+    DECLARE_ERROR_CODE(SQLITE_CANTOPEN_DIRTYWAL),
+    DECLARE_ERROR_CODE(SQLITE_ERROR_SNAPSHOT),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3031000
+    DECLARE_ERROR_CODE(SQLITE_CANTOPEN_SYMLINK),
+    DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_PINNED),
+    DECLARE_ERROR_CODE(SQLITE_OK_SYMLINK),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3032000
+    DECLARE_ERROR_CODE(SQLITE_BUSY_TIMEOUT),
+    DECLARE_ERROR_CODE(SQLITE_CORRUPT_INDEX),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_DATA),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3034000
+    DECLARE_ERROR_CODE(SQLITE_IOERR_CORRUPTFS),
+#endif
+#undef DECLARE_ERROR_CODE
+    {NULL, 0},
 };
 
-
-static struct PyModuleDef _sqlite3module = {
-        PyModuleDef_HEAD_INIT,
-        "_sqlite3",
-        NULL,
-        -1,
-        module_methods,
-        NULL,
-        NULL,
-        NULL,
-        NULL
-};
-
-PyMODINIT_FUNC PyInit__sqlite3(void)
+static int
+add_error_constants(PyObject *module)
 {
-    PyObject *module, *dict;
-    PyObject *tmp_obj;
-    int i;
+    for (int i = 0; error_codes[i].name != NULL; i++) {
+        const char *name = error_codes[i].name;
+        const long value = error_codes[i].value;
+        if (PyModule_AddIntConstant(module, name, value) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
 
-    module = PyModule_Create(&_sqlite3module);
+const char *
+pysqlite_error_name(int rc)
+{
+    for (int i = 0; error_codes[i].name != NULL; i++) {
+        if (error_codes[i].value == rc) {
+            return error_codes[i].name;
+        }
+    }
+    // No error code matched.
+    return NULL;
+}
 
-    if (!module ||
-        (pysqlite_row_setup_types() < 0) ||
-        (pysqlite_cursor_setup_types() < 0) ||
-        (pysqlite_connection_setup_types() < 0) ||
-        (pysqlite_cache_setup_types() < 0) ||
-        (pysqlite_statement_setup_types() < 0) ||
-        (pysqlite_prepare_protocol_setup_types() < 0)
-       ) {
-        Py_XDECREF(module);
-        return NULL;
+static int
+add_integer_constants(PyObject *module) {
+#define ADD_INT(ival)                                           \
+    do {                                                        \
+        if (PyModule_AddIntConstant(module, #ival, ival) < 0) { \
+            return -1;                                          \
+        }                                                       \
+    } while (0);                                                \
+
+    ADD_INT(PARSE_DECLTYPES);
+    ADD_INT(PARSE_COLNAMES);
+    ADD_INT(SQLITE_DENY);
+    ADD_INT(SQLITE_IGNORE);
+    ADD_INT(SQLITE_CREATE_INDEX);
+    ADD_INT(SQLITE_CREATE_TABLE);
+    ADD_INT(SQLITE_CREATE_TEMP_INDEX);
+    ADD_INT(SQLITE_CREATE_TEMP_TABLE);
+    ADD_INT(SQLITE_CREATE_TEMP_TRIGGER);
+    ADD_INT(SQLITE_CREATE_TEMP_VIEW);
+    ADD_INT(SQLITE_CREATE_TRIGGER);
+    ADD_INT(SQLITE_CREATE_VIEW);
+    ADD_INT(SQLITE_DELETE);
+    ADD_INT(SQLITE_DROP_INDEX);
+    ADD_INT(SQLITE_DROP_TABLE);
+    ADD_INT(SQLITE_DROP_TEMP_INDEX);
+    ADD_INT(SQLITE_DROP_TEMP_TABLE);
+    ADD_INT(SQLITE_DROP_TEMP_TRIGGER);
+    ADD_INT(SQLITE_DROP_TEMP_VIEW);
+    ADD_INT(SQLITE_DROP_TRIGGER);
+    ADD_INT(SQLITE_DROP_VIEW);
+    ADD_INT(SQLITE_INSERT);
+    ADD_INT(SQLITE_PRAGMA);
+    ADD_INT(SQLITE_READ);
+    ADD_INT(SQLITE_SELECT);
+    ADD_INT(SQLITE_TRANSACTION);
+    ADD_INT(SQLITE_UPDATE);
+    ADD_INT(SQLITE_ATTACH);
+    ADD_INT(SQLITE_DETACH);
+    ADD_INT(SQLITE_ALTER_TABLE);
+    ADD_INT(SQLITE_REINDEX);
+    ADD_INT(SQLITE_ANALYZE);
+    ADD_INT(SQLITE_CREATE_VTABLE);
+    ADD_INT(SQLITE_DROP_VTABLE);
+    ADD_INT(SQLITE_FUNCTION);
+    ADD_INT(SQLITE_SAVEPOINT);
+#if SQLITE_VERSION_NUMBER >= 3008003
+    ADD_INT(SQLITE_RECURSIVE);
+#endif
+    // Run-time limit categories
+    ADD_INT(SQLITE_LIMIT_LENGTH);
+    ADD_INT(SQLITE_LIMIT_SQL_LENGTH);
+    ADD_INT(SQLITE_LIMIT_COLUMN);
+    ADD_INT(SQLITE_LIMIT_EXPR_DEPTH);
+    ADD_INT(SQLITE_LIMIT_COMPOUND_SELECT);
+    ADD_INT(SQLITE_LIMIT_VDBE_OP);
+    ADD_INT(SQLITE_LIMIT_FUNCTION_ARG);
+    ADD_INT(SQLITE_LIMIT_ATTACHED);
+    ADD_INT(SQLITE_LIMIT_LIKE_PATTERN_LENGTH);
+    ADD_INT(SQLITE_LIMIT_VARIABLE_NUMBER);
+    ADD_INT(SQLITE_LIMIT_TRIGGER_DEPTH);
+#if SQLITE_VERSION_NUMBER >= 3008007
+    ADD_INT(SQLITE_LIMIT_WORKER_THREADS);
+#endif
+#undef ADD_INT
+    return 0;
+}
+
+/* Convert SQLite default threading mode (as set by the compile-time constant
+ * SQLITE_THREADSAFE) to the corresponding DB-API 2.0 (PEP 249) threadsafety
+ * level. */
+static int
+get_threadsafety(pysqlite_state *state)
+{
+    int mode = sqlite3_threadsafe();
+    switch (mode) {
+    case 0:        // Single-thread mode; threads may not share the module.
+        return 0;
+    case 1:        // Serialized mode; threads may share the module,
+        return 3;  // connections, and cursors.
+    case 2:        // Multi-thread mode; threads may share the module, but not
+        return 1;  // connections.
+    default:
+        PyErr_Format(state->InterfaceError,
+                     "Unable to interpret SQLite threadsafety mode. Got %d, "
+                     "expected 0, 1, or 2", mode);
+        return -1;
+    }
+}
+
+static int
+module_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    pysqlite_state *state = pysqlite_get_state(module);
+
+    // Exceptions
+    Py_VISIT(state->DataError);
+    Py_VISIT(state->DatabaseError);
+    Py_VISIT(state->Error);
+    Py_VISIT(state->IntegrityError);
+    Py_VISIT(state->InterfaceError);
+    Py_VISIT(state->InternalError);
+    Py_VISIT(state->NotSupportedError);
+    Py_VISIT(state->OperationalError);
+    Py_VISIT(state->ProgrammingError);
+    Py_VISIT(state->Warning);
+
+    // Types
+    Py_VISIT(state->BlobType);
+    Py_VISIT(state->ConnectionType);
+    Py_VISIT(state->CursorType);
+    Py_VISIT(state->PrepareProtocolType);
+    Py_VISIT(state->RowType);
+    Py_VISIT(state->StatementType);
+
+    // Misc
+    Py_VISIT(state->converters);
+    Py_VISIT(state->lru_cache);
+    Py_VISIT(state->psyco_adapters);
+
+    return 0;
+}
+
+static int
+module_clear(PyObject *module)
+{
+    pysqlite_state *state = pysqlite_get_state(module);
+
+    // Exceptions
+    Py_CLEAR(state->DataError);
+    Py_CLEAR(state->DatabaseError);
+    Py_CLEAR(state->Error);
+    Py_CLEAR(state->IntegrityError);
+    Py_CLEAR(state->InterfaceError);
+    Py_CLEAR(state->InternalError);
+    Py_CLEAR(state->NotSupportedError);
+    Py_CLEAR(state->OperationalError);
+    Py_CLEAR(state->ProgrammingError);
+    Py_CLEAR(state->Warning);
+
+    // Types
+    Py_CLEAR(state->BlobType);
+    Py_CLEAR(state->ConnectionType);
+    Py_CLEAR(state->CursorType);
+    Py_CLEAR(state->PrepareProtocolType);
+    Py_CLEAR(state->RowType);
+    Py_CLEAR(state->StatementType);
+
+    // Misc
+    Py_CLEAR(state->converters);
+    Py_CLEAR(state->lru_cache);
+    Py_CLEAR(state->psyco_adapters);
+
+    // Interned strings
+    Py_CLEAR(state->str___adapt__);
+    Py_CLEAR(state->str___conform__);
+    Py_CLEAR(state->str_executescript);
+    Py_CLEAR(state->str_finalize);
+    Py_CLEAR(state->str_inverse);
+    Py_CLEAR(state->str_step);
+    Py_CLEAR(state->str_upper);
+    Py_CLEAR(state->str_value);
+
+    return 0;
+}
+
+static void
+module_free(void *module)
+{
+    module_clear((PyObject *)module);
+}
+
+#define ADD_TYPE(module, type)                 \
+do {                                           \
+    if (PyModule_AddType(module, type) < 0) {  \
+        goto error;                            \
+    }                                          \
+} while (0)
+
+#define ADD_EXCEPTION(module, state, exc, base)                        \
+do {                                                                   \
+    state->exc = PyErr_NewException(MODULE_NAME "." #exc, base, NULL); \
+    if (state->exc == NULL) {                                          \
+        goto error;                                                    \
+    }                                                                  \
+    ADD_TYPE(module, (PyTypeObject *)state->exc);                      \
+} while (0)
+
+#define ADD_INTERNED(state, string)                      \
+do {                                                     \
+    PyObject *tmp = PyUnicode_InternFromString(#string); \
+    if (tmp == NULL) {                                   \
+        goto error;                                      \
+    }                                                    \
+    state->str_ ## string = tmp;                         \
+} while (0)
+
+static int
+module_exec(PyObject *module)
+{
+    if (sqlite3_libversion_number() < 3007015) {
+        PyErr_SetString(PyExc_ImportError, MODULE_NAME ": SQLite 3.7.15 or higher required");
+        return -1;
     }
 
-    Py_INCREF(&pysqlite_ConnectionType);
-    PyModule_AddObject(module, "Connection", (PyObject*) &pysqlite_ConnectionType);
-    Py_INCREF(&pysqlite_CursorType);
-    PyModule_AddObject(module, "Cursor", (PyObject*) &pysqlite_CursorType);
-    Py_INCREF(&pysqlite_CacheType);
-    PyModule_AddObject(module, "Statement", (PyObject*)&pysqlite_StatementType);
-    Py_INCREF(&pysqlite_StatementType);
-    PyModule_AddObject(module, "Cache", (PyObject*) &pysqlite_CacheType);
-    Py_INCREF(&pysqlite_PrepareProtocolType);
-    PyModule_AddObject(module, "PrepareProtocol", (PyObject*) &pysqlite_PrepareProtocolType);
-    Py_INCREF(&pysqlite_RowType);
-    PyModule_AddObject(module, "Row", (PyObject*) &pysqlite_RowType);
+    int rc = sqlite3_initialize();
+    if (rc != SQLITE_OK) {
+        PyErr_SetString(PyExc_ImportError, sqlite3_errstr(rc));
+        return -1;
+    }
 
-    if (!(dict = PyModule_GetDict(module))) {
+    if ((pysqlite_row_setup_types(module) < 0) ||
+        (pysqlite_cursor_setup_types(module) < 0) ||
+        (pysqlite_connection_setup_types(module) < 0) ||
+        (pysqlite_statement_setup_types(module) < 0) ||
+        (pysqlite_prepare_protocol_setup_types(module) < 0) ||
+        (pysqlite_blob_setup_types(module) < 0)
+       ) {
         goto error;
     }
+
+    pysqlite_state *state = pysqlite_get_state(module);
+    ADD_TYPE(module, state->BlobType);
+    ADD_TYPE(module, state->ConnectionType);
+    ADD_TYPE(module, state->CursorType);
+    ADD_TYPE(module, state->PrepareProtocolType);
+    ADD_TYPE(module, state->RowType);
 
     /*** Create DB-API Exception hierarchy */
-
-    if (!(pysqlite_Error = PyErr_NewException(MODULE_NAME ".Error", PyExc_Exception, NULL))) {
-        goto error;
-    }
-    PyDict_SetItemString(dict, "Error", pysqlite_Error);
-
-    if (!(pysqlite_Warning = PyErr_NewException(MODULE_NAME ".Warning", PyExc_Exception, NULL))) {
-        goto error;
-    }
-    PyDict_SetItemString(dict, "Warning", pysqlite_Warning);
+    ADD_EXCEPTION(module, state, Error, PyExc_Exception);
+    ADD_EXCEPTION(module, state, Warning, PyExc_Exception);
 
     /* Error subclasses */
+    ADD_EXCEPTION(module, state, InterfaceError, state->Error);
+    ADD_EXCEPTION(module, state, DatabaseError, state->Error);
 
-    if (!(pysqlite_InterfaceError = PyErr_NewException(MODULE_NAME ".InterfaceError", pysqlite_Error, NULL))) {
+    /* DatabaseError subclasses */
+    ADD_EXCEPTION(module, state, InternalError, state->DatabaseError);
+    ADD_EXCEPTION(module, state, OperationalError, state->DatabaseError);
+    ADD_EXCEPTION(module, state, ProgrammingError, state->DatabaseError);
+    ADD_EXCEPTION(module, state, IntegrityError, state->DatabaseError);
+    ADD_EXCEPTION(module, state, DataError, state->DatabaseError);
+    ADD_EXCEPTION(module, state, NotSupportedError, state->DatabaseError);
+
+    /* Add interned strings */
+    ADD_INTERNED(state, __adapt__);
+    ADD_INTERNED(state, __conform__);
+    ADD_INTERNED(state, executescript);
+    ADD_INTERNED(state, finalize);
+    ADD_INTERNED(state, inverse);
+    ADD_INTERNED(state, step);
+    ADD_INTERNED(state, upper);
+    ADD_INTERNED(state, value);
+
+    /* Set error constants */
+    if (add_error_constants(module) < 0) {
         goto error;
     }
-    PyDict_SetItemString(dict, "InterfaceError", pysqlite_InterfaceError);
-
-    if (!(pysqlite_DatabaseError = PyErr_NewException(MODULE_NAME ".DatabaseError", pysqlite_Error, NULL))) {
-        goto error;
-    }
-    PyDict_SetItemString(dict, "DatabaseError", pysqlite_DatabaseError);
-
-    /* pysqlite_DatabaseError subclasses */
-
-    if (!(pysqlite_InternalError = PyErr_NewException(MODULE_NAME ".InternalError", pysqlite_DatabaseError, NULL))) {
-        goto error;
-    }
-    PyDict_SetItemString(dict, "InternalError", pysqlite_InternalError);
-
-    if (!(pysqlite_OperationalError = PyErr_NewException(MODULE_NAME ".OperationalError", pysqlite_DatabaseError, NULL))) {
-        goto error;
-    }
-    PyDict_SetItemString(dict, "OperationalError", pysqlite_OperationalError);
-
-    if (!(pysqlite_ProgrammingError = PyErr_NewException(MODULE_NAME ".ProgrammingError", pysqlite_DatabaseError, NULL))) {
-        goto error;
-    }
-    PyDict_SetItemString(dict, "ProgrammingError", pysqlite_ProgrammingError);
-
-    if (!(pysqlite_IntegrityError = PyErr_NewException(MODULE_NAME ".IntegrityError", pysqlite_DatabaseError,NULL))) {
-        goto error;
-    }
-    PyDict_SetItemString(dict, "IntegrityError", pysqlite_IntegrityError);
-
-    if (!(pysqlite_DataError = PyErr_NewException(MODULE_NAME ".DataError", pysqlite_DatabaseError, NULL))) {
-        goto error;
-    }
-    PyDict_SetItemString(dict, "DataError", pysqlite_DataError);
-
-    if (!(pysqlite_NotSupportedError = PyErr_NewException(MODULE_NAME ".NotSupportedError", pysqlite_DatabaseError, NULL))) {
-        goto error;
-    }
-    PyDict_SetItemString(dict, "NotSupportedError", pysqlite_NotSupportedError);
-
-    /* In Python 2.x, setting Connection.text_factory to
-       OptimizedUnicode caused Unicode objects to be returned for
-       non-ASCII data and bytestrings to be returned for ASCII data.
-       Now OptimizedUnicode is an alias for str, so it has no
-       effect. */
-    Py_INCREF((PyObject*)&PyUnicode_Type);
-    PyDict_SetItemString(dict, "OptimizedUnicode", (PyObject*)&PyUnicode_Type);
 
     /* Set integer constants */
-    for (i = 0; _int_constants[i].constant_name != NULL; i++) {
-        tmp_obj = PyLong_FromLong(_int_constants[i].constant_value);
-        if (!tmp_obj) {
-            goto error;
-        }
-        PyDict_SetItemString(dict, _int_constants[i].constant_name, tmp_obj);
-        Py_DECREF(tmp_obj);
-    }
-
-    if (!(tmp_obj = PyUnicode_FromString(PYSQLITE_VERSION))) {
+    if (add_integer_constants(module) < 0) {
         goto error;
     }
-    PyDict_SetItemString(dict, "version", tmp_obj);
-    Py_DECREF(tmp_obj);
 
-    if (!(tmp_obj = PyUnicode_FromString(sqlite3_libversion()))) {
+    if (PyModule_AddStringConstant(module, "_deprecated_version", PYSQLITE_VERSION) < 0) {
         goto error;
     }
-    PyDict_SetItemString(dict, "sqlite_version", tmp_obj);
-    Py_DECREF(tmp_obj);
+
+    if (PyModule_AddStringConstant(module, "sqlite_version", sqlite3_libversion())) {
+        goto error;
+    }
+
+    int threadsafety = get_threadsafety(state);
+    if (threadsafety < 0) {
+        goto error;
+    }
+    if (PyModule_AddIntConstant(module, "threadsafety", threadsafety) < 0) {
+        goto error;
+    }
 
     /* initialize microprotocols layer */
-    pysqlite_microprotocols_init(dict);
+    if (pysqlite_microprotocols_init(module) < 0) {
+        goto error;
+    }
 
     /* initialize the default converters */
-    converters_init(dict);
+    if (converters_init(module) < 0) {
+        goto error;
+    }
+
+    if (load_functools_lru_cache(module) < 0) {
+        goto error;
+    }
+
+    return 0;
 
 error:
-    if (PyErr_Occurred())
-    {
-        PyErr_SetString(PyExc_ImportError, MODULE_NAME ": init failed");
-        Py_DECREF(module);
-        module = NULL;
-    }
-    return module;
+    sqlite3_shutdown();
+    return -1;
+}
+
+static struct PyModuleDef_Slot module_slots[] = {
+    {Py_mod_exec, module_exec},
+    {0, NULL},
+};
+
+struct PyModuleDef _sqlite3module = {
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_sqlite3",
+    .m_size = sizeof(pysqlite_state),
+    .m_methods = module_methods,
+    .m_slots = module_slots,
+    .m_traverse = module_traverse,
+    .m_clear = module_clear,
+    .m_free = module_free,
+};
+
+PyMODINIT_FUNC
+PyInit__sqlite3(void)
+{
+    return PyModuleDef_Init(&_sqlite3module);
 }

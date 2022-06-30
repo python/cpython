@@ -1,2 +1,0 @@
-Fixed :meth:`unittest.TestCase.debug` when used to call test methods with
-subtests.  Patch by Bruno Oliveira.

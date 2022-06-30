@@ -1,0 +1,3 @@
+:func:`inspect.iscoroutinefunction` now properly returns ``True`` when an instance
+of :class:`unittest.mock.AsyncMock` is passed to it.  This makes it consistent with
+behavior of :func:`asyncio.iscoroutinefunction`.  Patch by Mehdi ABAAKOUK.
