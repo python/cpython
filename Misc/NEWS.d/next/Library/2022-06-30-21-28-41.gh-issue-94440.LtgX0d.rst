@@ -1,0 +1,3 @@
+Fixed ``concurrent.futures.process._ExecutorManagerThread`` to flush canceled
+futures before attempting to shutdown, so that it doesn't hang if all that
+remained in its pending work items are canceled futures.
