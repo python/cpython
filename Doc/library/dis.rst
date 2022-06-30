@@ -1389,14 +1389,13 @@ but are replaced by real opcodes or removed before bytecode is generated.
 
 .. opcode:: SETUP_WITH (target)
 
-   Set up an exception handler for a :keyword:`with` or :keyword:`async with`
-   block. Pushes the last executed instruction (``lasti``) to the stack like
-   ``SETUP_CLEANUP``. If an exception occurs, the value stack level and the
-   last instruction on the frame are restored to their current state. The
-   the context manager's :meth:`~object.__exit__` or
-   :meth:`~object.__aexit__` (which was poped from the stack) is called, its
-   return value is pushed to the stack, and control is transferred to the
-   exception handler at ``target``.
+   Like ``SETUP_FINALLY``, but in case of exception one more item is popped
+   from the stack before control is transferred to the exception handler at
+   ``target``.
+
+   This variant is used in :keyword:`with` and :keyword:`async with`
+   constructs, which push the context manager's :meth:`~object.__enter__`
+   or :meth:`~object.__aenter__` to the stack.
 
 
 .. opcode:: POP_BLOCK
