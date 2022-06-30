@@ -1034,7 +1034,6 @@ call fails (for example because the path doesn't exist).
         )
         if '__pycache__' in dirs:
               dirs.remove('__pycache__')
-   
    In the next example (simple implementation of :func:`shutil.rmtree`),
    walking the tree bottom-up is essential, :func:`rmdir` doesn't allow
    deleting a directory before the directory is empty::
