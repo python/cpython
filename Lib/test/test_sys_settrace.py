@@ -2264,25 +2264,25 @@ class JumpTestCase(unittest.TestCase):
             output.append(2)
         output.append(3)
 
-    @jump_test(1, 3, [], (ValueError, 'depth'))
+    @jump_test(1, 3, [], (ValueError, 'stack'))
     def test_no_jump_forwards_into_with_block(output):
         output.append(1)
         with tracecontext(output, 2):
             output.append(3)
 
-    @async_jump_test(1, 3, [], (ValueError, 'depth'))
+    @async_jump_test(1, 3, [], (ValueError, 'stack'))
     async def test_no_jump_forwards_into_async_with_block(output):
         output.append(1)
         async with asynctracecontext(output, 2):
             output.append(3)
 
-    @jump_test(3, 2, [1, 2, -1], (ValueError, 'depth'))
+    @jump_test(3, 2, [1, 2, -1], (ValueError, 'stack'))
     def test_no_jump_backwards_into_with_block(output):
         with tracecontext(output, 1):
             output.append(2)
         output.append(3)
 
-    @async_jump_test(3, 2, [1, 2, -1], (ValueError, 'depth'))
+    @async_jump_test(3, 2, [1, 2, -1], (ValueError, 'stack'))
     async def test_no_jump_backwards_into_async_with_block(output):
         async with asynctracecontext(output, 1):
             output.append(2)
@@ -2584,6 +2584,24 @@ output.append(4)
         output.append(7)
         output.append(8)
 
+    # checking for segfaults.
+    @jump_test(3, 7, [], error=(ValueError, "stack"))
+    def test_jump_with_null_on_stack(output):
+        a = 1
+        print(
+            output.append(3)
+        )
+        output.append(5)
+        (
+            ( # 7
+                a
+                +
+                10
+            )
+            +
+            13
+        )
+        output.append(15)
 
 class TestExtendedArgs(unittest.TestCase):
 
