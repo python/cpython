@@ -4093,54 +4093,54 @@ Help on class Color in module %s:
 
 class Color(enum.Enum)
  |  Color(value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None)
- |\x20\x20
+ |
  |  Method resolution order:
  |      Color
  |      enum.Enum
  |      builtins.object
- |\x20\x20
+ |
  |  Data and other attributes defined here:
- |\x20\x20
+ |
  |  CYAN = <Color.CYAN: 1>
- |\x20\x20
+ |
  |  MAGENTA = <Color.MAGENTA: 2>
- |\x20\x20
+ |
  |  YELLOW = <Color.YELLOW: 3>
- |\x20\x20
+ |
  |  ----------------------------------------------------------------------
  |  Data descriptors inherited from enum.Enum:
- |\x20\x20
+ |
  |  name
  |      The name of the Enum member.
- |\x20\x20
+ |
  |  value
  |      The value of the Enum member.
- |\x20\x20
+ |
  |  ----------------------------------------------------------------------
  |  Methods inherited from enum.EnumType:
- |\x20\x20
+ |
  |  __contains__(value) from enum.EnumType
  |      Return True if `value` is in `cls`.
- |      
+ |
  |      `value` is in `cls` if:
  |      1) `value` is a member of `cls`, or
  |      2) `value` is the value of one of the `cls`'s members.
- |\x20\x20
+ |
  |  __getitem__(name) from enum.EnumType
  |      Return the member matching `name`.
- |\x20\x20
+ |
  |  __iter__() from enum.EnumType
  |      Return members in definition order.
- |\x20\x20
+ |
  |  __len__() from enum.EnumType
  |      Return the number of members (no aliases)
- |\x20\x20
+ |
  |  ----------------------------------------------------------------------
  |  Readonly properties inherited from enum.EnumType:
- |\x20\x20
+ |
  |  __members__
  |      Returns a mapping of member name->value.
- |\x20\x20\x20\x20\x20\x20
+ |
  |      This mapping lists all enum members, including aliases. Note that this
  |      is a read-only view of the internal mapping."""
 
@@ -4149,30 +4149,30 @@ Help on class Color in module %s:
 
 class Color(enum.Enum)
  |  Color(value, names=None, *, module=None, qualname=None, type=None, start=1)
- |\x20\x20
+ |
  |  Method resolution order:
  |      Color
  |      enum.Enum
  |      builtins.object
- |\x20\x20
+ |
  |  Data and other attributes defined here:
- |\x20\x20
+ |
  |  YELLOW = <Color.YELLOW: 3>
- |\x20\x20
+ |
  |  MAGENTA = <Color.MAGENTA: 2>
- |\x20\x20
+ |
  |  CYAN = <Color.CYAN: 1>
- |\x20\x20
+ |
  |  ----------------------------------------------------------------------
  |  Data descriptors inherited from enum.Enum:
- |\x20\x20
+ |
  |  name
- |\x20\x20
+ |
  |  value
- |\x20\x20
+ |
  |  ----------------------------------------------------------------------
  |  Data descriptors inherited from enum.EnumType:
- |\x20\x20
+ |
  |  __members__"""
 
 class TestStdLib(unittest.TestCase):

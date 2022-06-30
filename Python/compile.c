@@ -1030,8 +1030,12 @@ stack_effect(int opcode, int oparg, int jump)
 
         case BINARY_SUBSCR:
             return -1;
+        case BINARY_SLICE:
+            return -2;
         case STORE_SUBSCR:
             return -3;
+        case STORE_SLICE:
+            return -4;
         case DELETE_SUBSCR:
             return -2;
 
@@ -5864,7 +5868,14 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         }
         break;
     case Slice_kind:
-        return compiler_slice(c, e);
+    {
+        int n = compiler_slice(c, e);
+        if (n == 0) {
+            return 0;
+        }
+        ADDOP_I(c, BUILD_SLICE, n);
+        break;
+    }
     case Name_kind:
         return compiler_nameop(c, e->v.Name.id, e->v.Name.ctx);
     /* child nodes of List and Tuple will have expr_context set */
@@ -5884,6 +5895,13 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
     int res = compiler_visit_expr1(c, e);
     c->u->u_loc = old_loc;
     return res;
+}
+
+static bool
+is_two_element_slice(expr_ty s)
+{
+    return s->kind == Slice_kind &&
+           s->v.Slice.step == NULL;
 }
 
 static int
@@ -5906,10 +5924,21 @@ compiler_augassign(struct compiler *c, stmt_ty s)
         break;
     case Subscript_kind:
         VISIT(c, expr, e->v.Subscript.value);
-        VISIT(c, expr, e->v.Subscript.slice);
-        ADDOP_I(c, COPY, 2);
-        ADDOP_I(c, COPY, 2);
-        ADDOP(c, BINARY_SUBSCR);
+        if (is_two_element_slice(e->v.Subscript.slice)) {
+            if (!compiler_slice(c, e->v.Subscript.slice)) {
+                return 0;
+            }
+            ADDOP_I(c, COPY, 3);
+            ADDOP_I(c, COPY, 3);
+            ADDOP_I(c, COPY, 3);
+            ADDOP(c, BINARY_SLICE);
+        }
+        else {
+            VISIT(c, expr, e->v.Subscript.slice);
+            ADDOP_I(c, COPY, 2);
+            ADDOP_I(c, COPY, 2);
+            ADDOP(c, BINARY_SUBSCR);
+        }
         break;
     case Name_kind:
         if (!compiler_nameop(c, e->v.Name.id, Load))
@@ -5936,9 +5965,17 @@ compiler_augassign(struct compiler *c, stmt_ty s)
         ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
         break;
     case Subscript_kind:
-        ADDOP_I(c, SWAP, 3);
-        ADDOP_I(c, SWAP, 2);
-        ADDOP(c, STORE_SUBSCR);
+        if (is_two_element_slice(e->v.Subscript.slice)) {
+            ADDOP_I(c, SWAP, 4);
+            ADDOP_I(c, SWAP, 3);
+            ADDOP_I(c, SWAP, 2);
+            ADDOP(c, STORE_SLICE);
+        }
+        else {
+            ADDOP_I(c, SWAP, 3);
+            ADDOP_I(c, SWAP, 2);
+            ADDOP(c, STORE_SUBSCR);
+        }
         break;
     case Name_kind:
         return compiler_nameop(c, e->v.Name.id, Store);
@@ -6146,18 +6183,34 @@ compiler_subscript(struct compiler *c, expr_ty e)
         }
     }
 
-    switch (ctx) {
-        case Load:    op = BINARY_SUBSCR; break;
-        case Store:   op = STORE_SUBSCR; break;
-        case Del:     op = DELETE_SUBSCR; break;
-    }
-    assert(op);
     VISIT(c, expr, e->v.Subscript.value);
-    VISIT(c, expr, e->v.Subscript.slice);
-    ADDOP(c, op);
+    if (is_two_element_slice(e->v.Subscript.slice) && ctx != Del) {
+        if (!compiler_slice(c, e->v.Subscript.slice)) {
+            return 0;
+        }
+        if (ctx == Load) {
+            ADDOP(c, BINARY_SLICE);
+        }
+        else {
+            assert(ctx == Store);
+            ADDOP(c, STORE_SLICE);
+        }
+    }
+    else {
+        VISIT(c, expr, e->v.Subscript.slice);
+        switch (ctx) {
+            case Load:    op = BINARY_SUBSCR; break;
+            case Store:   op = STORE_SUBSCR; break;
+            case Del:     op = DELETE_SUBSCR; break;
+        }
+        assert(op);
+        ADDOP(c, op);
+    }
     return 1;
 }
 
+/* Returns the number of the values emitted,
+ * thus are needed to build the slice, or 0 if there is an error. */
 static int
 compiler_slice(struct compiler *c, expr_ty s)
 {
@@ -6183,8 +6236,7 @@ compiler_slice(struct compiler *c, expr_ty s)
         n++;
         VISIT(c, expr, s->v.Slice.step);
     }
-    ADDOP_I(c, BUILD_SLICE, n);
-    return 1;
+    return n;
 }
 
 
@@ -8502,6 +8554,8 @@ assemble(struct compiler *c, int addNone)
 {
     PyCodeObject *co = NULL;
     PyObject *consts = NULL;
+    struct assembler a;
+    memset(&a, 0, sizeof(struct assembler));
 
     int code_flags = compute_code_flags(c);
     if (code_flags < 0) {
@@ -8631,7 +8685,6 @@ assemble(struct compiler *c, int addNone)
 
 
     /* Create assembler */
-    struct assembler a;
     if (!assemble_init(&a, c->u->u_firstlineno))
         goto error;
 
