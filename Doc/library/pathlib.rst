@@ -1001,7 +1001,6 @@ call fails (for example because the path doesn't exist).
       does not keep track of the directories it visited already.
 
    .. note::
-   
       If self is a relative Path, don't change the current working directory between
       resumptions of :meth:`Path.walk`. :meth:`Path.walk` never changes the current
       directory, and assumes that the caller doesn't either.
