@@ -288,6 +288,20 @@ Task Groups
 Task groups combine a task creation API with a convenient
 and reliable way to wait for all tasks in the group to finish.
 
+.. class:: TaskGroup()
+
+   An :ref:`asynchronous context manager <async-context-managers>`
+   holding a group of tasks.
+   Tasks can be added to the group using :meth:`create_task`.
+   All tasks are awaited when the context manager exits.
+
+   .. versionadded:: 3.11
+
+   .. method:: create_task(coro, *, name=None, context=None)
+
+      Create a task in this task group.
+      The signature matches that of :func:`asyncio.create_task`.
+
 Example::
 
     async def main():
@@ -336,20 +350,6 @@ unless it is :exc:`asyncio.CancelledError`,
 is also included in the exception group.
 The same special case is made for
 :exc:`KeyboardInterrupt` and :exc:`SystemExit` as in the previous paragraph.
-
-.. class:: TaskGroup()
-
-   An :ref:`asynchronous context manager <async-context-managers>`
-   holding a group of tasks.
-   Tasks can be added to the group using :meth:`create_task`.
-   All tasks are awaited when the context manager exits.
-
-   .. versionadded:: 3.11
-
-   .. method:: create_task(coro, *, name=None, context=None)
-
-      Create a task in this task group.
-      The signature matches that of :func:`asyncio.create_task`.
 
 
 Sleeping
