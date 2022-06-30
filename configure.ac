@@ -3605,7 +3605,10 @@ AS_VAR_IF([with_system_ffi], [yes], [
   PKG_CHECK_MODULES([LIBFFI], [libffi], [have_libffi=yes], [
     AC_CHECK_HEADER([ffi.h], [
       WITH_SAVE_ENV([
-        AC_CHECK_LIB([ffi], [ffi_call], [have_libffi=yes], [have_libffi=no])
+        AC_CHECK_LIB([ffi], [ffi_call], [
+          have_libffi=yes
+          LIBFFI_LIBS="-lffi"
+        ], [have_libffi=no])
       ])
     ])
   ])
