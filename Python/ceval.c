@@ -5706,9 +5706,8 @@ handle_eval_breaker:
 #else
         EXTRA_CASES  // From opcode.h, a 'case' for each unused opcode
 #endif
-            /* Reload opcode for MSVC to optimize switch(opcode) separately.
-               next_instr, which EXTRA_CASES do not increment, points
-               the current instruction here. */
+            /* Tell C compilers not to hold the opcode variable in the loop.
+               next_instr points the current instruction without TARGET(). */
             opcode = _Py_OPCODE(*next_instr);
             fprintf(stderr, "XXX lineno: %d, opcode: %d\n",
                     _PyInterpreterFrame_GetLine(frame),  opcode);
