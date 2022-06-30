@@ -1018,7 +1018,6 @@ call fails (for example because the path doesn't exist).
 
       Unlike :func:`os.walk`, :meth:`Path.walk` adds symlinks to directories into *filenames*
       if *follow_symlinks* is ``True``
-   
    This example displays the number of bytes taken by non-directory files in each
    directory under the starting directory, except that it doesn't look under any
    __pycache__ subdirectory::
