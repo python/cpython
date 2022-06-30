@@ -5706,7 +5706,7 @@ handle_eval_breaker:
 #else
         EXTRA_CASES  // From opcode.h, a 'case' for each unused opcode
 #endif
-            /* Load opcode for MSVC to optimize switch(opcode) separately.
+            /* Reload opcode for MSVC to optimize switch(opcode) separately.
                next_instr, which EXTRA_CASES do not increment, points
                the current instruction here. */
             opcode = _Py_OPCODE(*next_instr);
