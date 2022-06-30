@@ -269,8 +269,6 @@ operation is being performed, so the intermediate analysis object isn't useful:
    This generator function uses the ``co_lines`` method
    of the code object *code* to find the offsets which are starts of
    lines in the source code.  They are generated as ``(offset, lineno)`` pairs.
-   See :source:`Objects/lnotab_notes.txt` for details about the ``co_lines``
-   method.
 
    .. versionchanged:: 3.6
       Line numbers can be decreasing. Before, they were always increasing.
