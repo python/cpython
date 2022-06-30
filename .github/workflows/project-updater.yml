@@ -1,4 +1,4 @@
-name: Update projects when an issue/PR is created/labeled
+name: Update GH projects
 
 on:
   issues:
@@ -12,7 +12,7 @@ on:
 
 jobs:
   add-to-project:
-    name: Add to the Release and Deferred blocker project
+    name: Add to the Release and Deferred Blocker project
     runs-on: ubuntu-latest
     steps:
       - uses: actions/add-to-project@v0.1.0
