@@ -1757,13 +1757,8 @@
 /* Define to 1 if you want to emulate signals on WASI */
 #undef _WASI_EMULATED_SIGNAL
 
-
-    /* Define to the level of X/Open that your system supports */
-    /* some pkg-config files add CFLAGS -D_XOPEN_SOURCE=600 */
-    #if !defined(_XOPEN_SOURCE)
-    #  define _XOPEN_SOURCE 700
-    #endif
-  
+/* Define to the level of X/Open that your system supports */
+#undef _XOPEN_SOURCE
 
 /* Define to activate Unix95-and-earlier features */
 #undef _XOPEN_SOURCE_EXTENDED

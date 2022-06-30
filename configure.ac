@@ -675,14 +675,8 @@ esac
 if test $define_xopen_source = yes
 then
   # X/Open 7, incorporating POSIX.1-2008
-  dnl NOTE: #undef does not work here, it gets commented out by templating.
-  AH_VERBATIM([_XOPEN_SOURCE], [
-    /* Define to the level of X/Open that your system supports */
-    /* some pkg-config files add CFLAGS -D_XOPEN_SOURCE=600 */
-    #if !defined(_XOPEN_SOURCE)
-    #  define _XOPEN_SOURCE 700
-    #endif
-  ])
+  AC_DEFINE(_XOPEN_SOURCE, 700,
+            Define to the level of X/Open that your system supports)
 
   # On Tru64 Unix 4.0F, defining _XOPEN_SOURCE also requires
   # definition of _XOPEN_SOURCE_EXTENDED and _POSIX_C_SOURCE, or else
@@ -6104,6 +6098,10 @@ AS_VAR_IF([ac_cv_header_ncurses_h], [yes], [
   ])
 
 ])dnl ac_cv_header_ncurses_h = yes
+
+dnl remove _XOPEN_SOURCE macro from curses cflags. pyconfig.h sets
+dnl the macro to 700.
+CURSES_CFLAGS=$(echo $CURSES_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//')
 
 if test "$have_curses" = no -a "$ac_sys_system" = "Darwin"; then
   dnl On macOS, there is no separate /usr/lib/libncursesw nor libpanelw.
