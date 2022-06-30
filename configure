@@ -20534,6 +20534,33 @@ fi
 
 
 
+py_cv_lib_readline=no
+
+
+# Check whether --with-readline was given.
+if test "${with_readline+set}" = set; then :
+  withval=$with_readline;
+    case $with_readline in #(
+  editline|edit) :
+    with_readline=edit ;; #(
+  yes|readline) :
+    with_readline=readline ;; #(
+  no) :
+     ;; #(
+  *) :
+    as_fn_error $? "proper usage is --with(out)-readline[=editline|readline|no]" "$LINENO" 5
+     ;;
+esac
+
+else
+  with_readline=readline
+
+fi
+
+
+if test "x$with_readline" = xreadline; then :
+
+
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBREADLINE" >&5
 $as_echo_n "checking for LIBREADLINE... " >&6; }
@@ -20542,12 +20569,12 @@ if test -n "$LIBREADLINE_CFLAGS"; then
     pkg_cv_LIBREADLINE_CFLAGS="$LIBREADLINE_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"readline >= 4.2\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "readline >= 4.2") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"readline\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "readline") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LIBREADLINE_CFLAGS=`$PKG_CONFIG --cflags "readline >= 4.2" 2>/dev/null`
+  pkg_cv_LIBREADLINE_CFLAGS=`$PKG_CONFIG --cflags "readline" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -20559,12 +20586,12 @@ if test -n "$LIBREADLINE_LIBS"; then
     pkg_cv_LIBREADLINE_LIBS="$LIBREADLINE_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"readline >= 4.2\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "readline >= 4.2") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"readline\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "readline") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LIBREADLINE_LIBS=`$PKG_CONFIG --libs "readline >= 4.2" 2>/dev/null`
+  pkg_cv_LIBREADLINE_LIBS=`$PKG_CONFIG --libs "readline" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -20585,15 +20612,15 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        LIBREADLINE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "readline >= 4.2" 2>&1`
+	        LIBREADLINE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "readline" 2>&1`
         else
-	        LIBREADLINE_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "readline >= 4.2" 2>&1`
+	        LIBREADLINE_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "readline" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$LIBREADLINE_PKG_ERRORS" >&5
 
 
-  for ac_header in readline/readline.h
+    for ac_header in readline/readline.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "readline/readline.h" "ac_cv_header_readline_readline_h" "$ac_includes_default"
 if test "x$ac_cv_header_readline_readline_h" = xyes; then :
@@ -20601,15 +20628,15 @@ if test "x$ac_cv_header_readline_readline_h" = xyes; then :
 #define HAVE_READLINE_READLINE_H 1
 _ACEOF
 
-    save_CFLAGS=$CFLAGS
+      save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for rl_catch_signals in -lreadline" >&5
-$as_echo_n "checking for rl_catch_signals in -lreadline... " >&6; }
-if ${ac_cv_lib_readline_rl_catch_signals+:} false; then :
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for readline in -lreadline" >&5
+$as_echo_n "checking for readline in -lreadline... " >&6; }
+if ${ac_cv_lib_readline_readline+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -20623,35 +20650,36 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char rl_catch_signals ();
+char readline ();
 int
 main ()
 {
-return rl_catch_signals ();
+return readline ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_readline_rl_catch_signals=yes
+  ac_cv_lib_readline_readline=yes
 else
-  ac_cv_lib_readline_rl_catch_signals=no
+  ac_cv_lib_readline_readline=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_readline_rl_catch_signals" >&5
-$as_echo "$ac_cv_lib_readline_rl_catch_signals" >&6; }
-if test "x$ac_cv_lib_readline_rl_catch_signals" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_readline_readline" >&5
+$as_echo "$ac_cv_lib_readline_readline" >&6; }
+if test "x$ac_cv_lib_readline_readline" = xyes; then :
 
-        have_libreadline=yes
-        LIBREADLINE_CFLAGS=${LIBREADLINE_CFLAGS-""}
-        LIBREADLINE_LIBS=${LIBREADLINE_LIBS-"-lreadline"}
+          py_cv_lib_readline=yes
+          LIBREADLINE=readline
+          READLINE_CFLAGS=${LIBREADLINE_CFLAGS-""}
+          READLINE_LIBS=${LIBREADLINE_LIBS-"-lreadline"}
 
 else
 
-        have_libreadline=no
+          with_readline=no
 
 fi
 
@@ -20664,7 +20692,7 @@ LIBS=$save_LIBS
 
 
 else
-  have_libreadline=no
+  with_readline=no
 fi
 
 done
@@ -20674,7 +20702,7 @@ elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-  for ac_header in readline/readline.h
+    for ac_header in readline/readline.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "readline/readline.h" "ac_cv_header_readline_readline_h" "$ac_includes_default"
 if test "x$ac_cv_header_readline_readline_h" = xyes; then :
@@ -20682,15 +20710,15 @@ if test "x$ac_cv_header_readline_readline_h" = xyes; then :
 #define HAVE_READLINE_READLINE_H 1
 _ACEOF
 
-    save_CFLAGS=$CFLAGS
+      save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for rl_catch_signals in -lreadline" >&5
-$as_echo_n "checking for rl_catch_signals in -lreadline... " >&6; }
-if ${ac_cv_lib_readline_rl_catch_signals+:} false; then :
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for readline in -lreadline" >&5
+$as_echo_n "checking for readline in -lreadline... " >&6; }
+if ${ac_cv_lib_readline_readline+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -20704,35 +20732,36 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char rl_catch_signals ();
+char readline ();
 int
 main ()
 {
-return rl_catch_signals ();
+return readline ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_readline_rl_catch_signals=yes
+  ac_cv_lib_readline_readline=yes
 else
-  ac_cv_lib_readline_rl_catch_signals=no
+  ac_cv_lib_readline_readline=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_readline_rl_catch_signals" >&5
-$as_echo "$ac_cv_lib_readline_rl_catch_signals" >&6; }
-if test "x$ac_cv_lib_readline_rl_catch_signals" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_readline_readline" >&5
+$as_echo "$ac_cv_lib_readline_readline" >&6; }
+if test "x$ac_cv_lib_readline_readline" = xyes; then :
 
-        have_libreadline=yes
-        LIBREADLINE_CFLAGS=${LIBREADLINE_CFLAGS-""}
-        LIBREADLINE_LIBS=${LIBREADLINE_LIBS-"-lreadline"}
+          py_cv_lib_readline=yes
+          LIBREADLINE=readline
+          READLINE_CFLAGS=${LIBREADLINE_CFLAGS-""}
+          READLINE_LIBS=${LIBREADLINE_LIBS-"-lreadline"}
 
 else
 
-        have_libreadline=no
+          with_readline=no
 
 fi
 
@@ -20745,7 +20774,7 @@ LIBS=$save_LIBS
 
 
 else
-  have_libreadline=no
+  with_readline=no
 fi
 
 done
@@ -20757,9 +20786,16 @@ else
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
-  have_libreadline=yes
+    py_cv_lib_readline=yes
+    LIBREADLINE=readline
+    READLINE_CFLAGS=$LIBREADLINE_CFLAGS
+    READLINE_LIBS=$LIBREADLINE_LIBS
 
 fi
+
+fi
+
+if test "x$with_readline" = xedit; then :
 
 
 pkg_failed=no
@@ -20821,7 +20857,7 @@ fi
 	echo "$LIBEDIT_PKG_ERRORS" >&5
 
 
-  for ac_header in editline/readline.h
+    for ac_header in editline/readline.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "editline/readline.h" "ac_cv_header_editline_readline_h" "$ac_includes_default"
 if test "x$ac_cv_header_editline_readline_h" = xyes; then :
@@ -20829,15 +20865,15 @@ if test "x$ac_cv_header_editline_readline_h" = xyes; then :
 #define HAVE_EDITLINE_READLINE_H 1
 _ACEOF
 
-    save_CFLAGS=$CFLAGS
+      save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for rl_catch_signals in -ledit" >&5
-$as_echo_n "checking for rl_catch_signals in -ledit... " >&6; }
-if ${ac_cv_lib_edit_rl_catch_signals+:} false; then :
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for readline in -ledit" >&5
+$as_echo_n "checking for readline in -ledit... " >&6; }
+if ${ac_cv_lib_edit_readline+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -20851,35 +20887,38 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char rl_catch_signals ();
+char readline ();
 int
 main ()
 {
-return rl_catch_signals ();
+return readline ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_edit_rl_catch_signals=yes
+  ac_cv_lib_edit_readline=yes
 else
-  ac_cv_lib_edit_rl_catch_signals=no
+  ac_cv_lib_edit_readline=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_edit_rl_catch_signals" >&5
-$as_echo "$ac_cv_lib_edit_rl_catch_signals" >&6; }
-if test "x$ac_cv_lib_edit_rl_catch_signals" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_edit_readline" >&5
+$as_echo "$ac_cv_lib_edit_readline" >&6; }
+if test "x$ac_cv_lib_edit_readline" = xyes; then :
 
-        have_libedit=yes
-        LIBEDIT_CFLAGS=${LIBEDIT_CFLAGS-""}
-        LIBEDIT_LIBS=${LIBEDIT_LIBS-"-ledit"}
+          py_cv_lib_readline=yes
+          LIBREADLINE=edit
+          $as_echo "#define WITH_EDITLINE 1" >>confdefs.h
+
+          READLINE_CFLAGS=${LIBEDIT_CFLAGS-""}
+          READLINE_LIBS=${LIBEDIT_LIBS-"-ledit"}
 
 else
 
-        have_libedit=no
+          with_readline=no
 
 fi
 
@@ -20892,7 +20931,7 @@ LIBS=$save_LIBS
 
 
 else
-  have_libedit=no
+  with_readline=no
 fi
 
 done
@@ -20902,7 +20941,7 @@ elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-  for ac_header in editline/readline.h
+    for ac_header in editline/readline.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "editline/readline.h" "ac_cv_header_editline_readline_h" "$ac_includes_default"
 if test "x$ac_cv_header_editline_readline_h" = xyes; then :
@@ -20910,15 +20949,15 @@ if test "x$ac_cv_header_editline_readline_h" = xyes; then :
 #define HAVE_EDITLINE_READLINE_H 1
 _ACEOF
 
-    save_CFLAGS=$CFLAGS
+      save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for rl_catch_signals in -ledit" >&5
-$as_echo_n "checking for rl_catch_signals in -ledit... " >&6; }
-if ${ac_cv_lib_edit_rl_catch_signals+:} false; then :
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for readline in -ledit" >&5
+$as_echo_n "checking for readline in -ledit... " >&6; }
+if ${ac_cv_lib_edit_readline+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -20932,35 +20971,38 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char rl_catch_signals ();
+char readline ();
 int
 main ()
 {
-return rl_catch_signals ();
+return readline ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_edit_rl_catch_signals=yes
+  ac_cv_lib_edit_readline=yes
 else
-  ac_cv_lib_edit_rl_catch_signals=no
+  ac_cv_lib_edit_readline=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_edit_rl_catch_signals" >&5
-$as_echo "$ac_cv_lib_edit_rl_catch_signals" >&6; }
-if test "x$ac_cv_lib_edit_rl_catch_signals" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_edit_readline" >&5
+$as_echo "$ac_cv_lib_edit_readline" >&6; }
+if test "x$ac_cv_lib_edit_readline" = xyes; then :
 
-        have_libedit=yes
-        LIBEDIT_CFLAGS=${LIBEDIT_CFLAGS-""}
-        LIBEDIT_LIBS=${LIBEDIT_LIBS-"-ledit"}
+          py_cv_lib_readline=yes
+          LIBREADLINE=edit
+          $as_echo "#define WITH_EDITLINE 1" >>confdefs.h
+
+          READLINE_CFLAGS=${LIBEDIT_CFLAGS-""}
+          READLINE_LIBS=${LIBEDIT_LIBS-"-ledit"}
 
 else
 
-        have_libedit=no
+          with_readline=no
 
 fi
 
@@ -20973,7 +21015,7 @@ LIBS=$save_LIBS
 
 
 else
-  have_libedit=no
+  with_readline=no
 fi
 
 done
@@ -20985,149 +21027,326 @@ else
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
-  have_libedit=yes
+    $as_echo "#define WITH_EDITLINE 1" >>confdefs.h
 
-fi
-
-
-# Check whether --with-readline was given.
-if test "${with_readline+set}" = set; then :
-  withval=$with_readline;
-else
-  with_readline=readline
-
-fi
-
-
-py_cv_lib_readline=no
-
-case $with_readline in #(
-  editline|edit) :
-
-    with_readline=edit
+    py_cv_lib_readline=yes
+    LIBREADLINE=edit
     READLINE_CFLAGS=$LIBEDIT_CFLAGS
     READLINE_LIBS=$LIBEDIT_LIBS
 
-$as_echo "#define WITH_EDITLINE 1" >>confdefs.h
-
-   ;; #(
-  yes|readline) :
-
-    with_readline=readline
-    READLINE_CFLAGS=$LIBREADLINE_CFLAGS
-    READLINE_LIBS=$LIBREADLINE_LIBS
-   ;; #(
-  no) :
-     ;; #(
-  *) :
-    as_fn_error $? "proper usage is --with(out)-readline[=editline|readline|no]" "$LINENO" 5
- ;;
-esac
-
-if test "$with_readline" != "no"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking how to link readline libs" >&5
-$as_echo_n "checking how to link readline libs... " >&6; }
-  # for py_libtermcap in "" tinfo ncursesw ncurses termcap; do
-  #   if test -z "$py_libtermcap"; then
-  #     READLINE_TERMCAP_LIBS=""
-  #   else
-  #     READLINE_TERMCAP_LIBS="-l$py_libtermcap"
-  #   fi
-
-    READLINE_TERMCAP_LIBS=""
-    save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-      CPPFLAGS="$READLINE_CFLAGS $CFLAGS"
-      LIBS="$READLINE_LIBS $READLINE_TERMCAP_LIBS $LIBS"
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-          #include <stdio.h> /* Must be first for Gnu Readline */
-          #ifdef WITH_EDITLINE
-          # include <editline/readline.h>
-          #else
-          # include <readline/readline.h>
-          # include <readline/history.h>
-          #endif
-
-int
-main ()
-{
-
-          rl_catch_signals = 0;
-          void *x1 = rl_resize_terminal;
-          void *x2 = append_history;
-
-  ;
-  return 0;
-}
-
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  py_cv_lib_readline=yes
 fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
 
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
+fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking how to link readline" >&5
+$as_echo_n "checking how to link readline... " >&6; }
+if test "x$py_cv_lib_readline" = xyes; then :
 
-
-  #   AS_VAR_IF([py_cv_lib_readline], [yes], [
-  #     if test -n "$ADD_READLINE_LIBS"; then
-  #       AS_VAR_APPEND([READLINE_LIBS], [" $READLINE_TERMCAP_LIBS"])
-  #     fi
-  #     break
-  #   ])
-  # done
-
-  if test "x$py_cv_lib_readline" = xyes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $READLINE_LIBS" >&5
-$as_echo "$READLINE_LIBS" >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_readline (CFLAGS: $READLINE_CFLAGS, LIBS: $READLINE_LIBS)" >&5
+$as_echo "$with_readline (CFLAGS: $READLINE_CFLAGS, LIBS: $READLINE_LIBS)" >&6; }
 
 else
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: none" >&5
-$as_echo "none" >&6; }
-
-fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 
 fi
 
 if test "x$py_cv_lib_readline" = xyes; then :
 
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CPPFLAGS="$READLINE_CFLAGS $CFLAGS"
+    LIBS="$READLINE_LIBS $LIBS"
+
+    # check for readline 2.2
+    ac_fn_c_check_decl "$LINENO" "rl_completion_append_character" "ac_cv_have_decl_rl_completion_append_character" "
+      #include <stdio.h> /* Must be first for Gnu Readline */
+      #ifdef WITH_EDITLINE
+      # include <editline/readline.h>
+      #else
+      # include <readline/readline.h>
+      #endif
+
+"
+if test "x$ac_cv_have_decl_rl_completion_append_character" = xyes; then :
 
 $as_echo "#define HAVE_RL_COMPLETION_APPEND_CHARACTER 1" >>confdefs.h
 
+fi
+
+
+    ac_fn_c_check_decl "$LINENO" "rl_completion_suppress_append" "ac_cv_have_decl_rl_completion_suppress_append" "
+      #include <stdio.h> /* Must be first for Gnu Readline */
+      #ifdef WITH_EDITLINE
+      # include <editline/readline.h>
+      #else
+      # include <readline/readline.h>
+      #endif
+
+"
+if test "x$ac_cv_have_decl_rl_completion_suppress_append" = xyes; then :
 
 $as_echo "#define HAVE_RL_COMPLETION_SUPPRESS_APPEND 1" >>confdefs.h
 
+fi
+
+
+    # check for readline 4.0
+    as_ac_Lib=`$as_echo "ac_cv_lib_$LIBREADLINE''_rl_pre_input_hook" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for rl_pre_input_hook in -l$LIBREADLINE" >&5
+$as_echo_n "checking for rl_pre_input_hook in -l$LIBREADLINE... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-l$LIBREADLINE  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char rl_pre_input_hook ();
+int
+main ()
+{
+return rl_pre_input_hook ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  eval "$as_ac_Lib=yes"
+else
+  eval "$as_ac_Lib=no"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
 
 $as_echo "#define HAVE_RL_PRE_INPUT_HOOK 1" >>confdefs.h
 
+fi
+
+
+    # also in 4.0
+    as_ac_Lib=`$as_echo "ac_cv_lib_$LIBREADLINE''_rl_completion_display_matches_hook" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for rl_completion_display_matches_hook in -l$LIBREADLINE" >&5
+$as_echo_n "checking for rl_completion_display_matches_hook in -l$LIBREADLINE... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-l$LIBREADLINE  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char rl_completion_display_matches_hook ();
+int
+main ()
+{
+return rl_completion_display_matches_hook ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  eval "$as_ac_Lib=yes"
+else
+  eval "$as_ac_Lib=no"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
 
 $as_echo "#define HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK 1" >>confdefs.h
 
+fi
+
+
+    # also in 4.0, but not in editline
+    as_ac_Lib=`$as_echo "ac_cv_lib_$LIBREADLINE''_rl_resize_terminal" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for rl_resize_terminal in -l$LIBREADLINE" >&5
+$as_echo_n "checking for rl_resize_terminal in -l$LIBREADLINE... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-l$LIBREADLINE  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char rl_resize_terminal ();
+int
+main ()
+{
+return rl_resize_terminal ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  eval "$as_ac_Lib=yes"
+else
+  eval "$as_ac_Lib=no"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
 
 $as_echo "#define HAVE_RL_RESIZE_TERMINAL 1" >>confdefs.h
 
+fi
+
+
+    # check for readline 4.2
+    as_ac_Lib=`$as_echo "ac_cv_lib_$LIBREADLINE''_rl_completion_matches" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for rl_completion_matches in -l$LIBREADLINE" >&5
+$as_echo_n "checking for rl_completion_matches in -l$LIBREADLINE... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-l$LIBREADLINE  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char rl_completion_matches ();
+int
+main ()
+{
+return rl_completion_matches ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  eval "$as_ac_Lib=yes"
+else
+  eval "$as_ac_Lib=no"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
 
 $as_echo "#define HAVE_RL_COMPLETION_MATCHES 1" >>confdefs.h
 
+fi
+
+
+    # also in readline 4.2
+    ac_fn_c_check_decl "$LINENO" "rl_catch_signals" "ac_cv_have_decl_rl_catch_signals" "
+      #include <stdio.h> /* Must be first for Gnu Readline */
+      #ifdef WITH_EDITLINE
+      # include <editline/readline.h>
+      #else
+      # include <readline/readline.h>
+      #endif
+
+"
+if test "x$ac_cv_have_decl_rl_catch_signals" = xyes; then :
 
 $as_echo "#define HAVE_RL_CATCH_SIGNAL 1" >>confdefs.h
 
+fi
+
+
+    as_ac_Lib=`$as_echo "ac_cv_lib_$LIBREADLINE''_append_history" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for append_history in -l$LIBREADLINE" >&5
+$as_echo_n "checking for append_history in -l$LIBREADLINE... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-l$LIBREADLINE  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char append_history ();
+int
+main ()
+{
+return append_history ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  eval "$as_ac_Lib=yes"
+else
+  eval "$as_ac_Lib=no"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
 
 $as_echo "#define HAVE_RL_APPEND_HISTORY 1" >>confdefs.h
+
+fi
+
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
 
 
 fi
@@ -21412,6 +21631,7 @@ done
 
 if test "x$ac_cv_header_ncurses_h" = xyes; then :
 
+  if test "$ac_sys_system" != "Darwin"; then
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CURSES" >&5
@@ -21472,13 +21692,13 @@ fi
 	echo "$CURSES_PKG_ERRORS" >&5
 
 
-    save_CFLAGS=$CFLAGS
+      save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for initscr in -lncursesw" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for initscr in -lncursesw" >&5
 $as_echo_n "checking for initscr in -lncursesw... " >&6; }
 if ${ac_cv_lib_ncursesw_initscr+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -21516,11 +21736,11 @@ fi
 $as_echo "$ac_cv_lib_ncursesw_initscr" >&6; }
 if test "x$ac_cv_lib_ncursesw_initscr" = xyes; then :
 
-        $as_echo "#define HAVE_NCURSESW 1" >>confdefs.h
+          $as_echo "#define HAVE_NCURSESW 1" >>confdefs.h
 
-        have_curses=ncursesw
-        CURSES_CFLAGS=${CURSES_CFLAGS-""}
-        CURSES_LIBS=${CURSES_LIBS-"-lncursesw"}
+          have_curses=ncursesw
+          CURSES_CFLAGS=${CURSES_CFLAGS-""}
+          CURSES_LIBS=${CURSES_LIBS-"-lncursesw"}
 
 fi
 
@@ -21536,13 +21756,13 @@ elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-    save_CFLAGS=$CFLAGS
+      save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for initscr in -lncursesw" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for initscr in -lncursesw" >&5
 $as_echo_n "checking for initscr in -lncursesw... " >&6; }
 if ${ac_cv_lib_ncursesw_initscr+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -21580,11 +21800,11 @@ fi
 $as_echo "$ac_cv_lib_ncursesw_initscr" >&6; }
 if test "x$ac_cv_lib_ncursesw_initscr" = xyes; then :
 
-        $as_echo "#define HAVE_NCURSESW 1" >>confdefs.h
+          $as_echo "#define HAVE_NCURSESW 1" >>confdefs.h
 
-        have_curses=ncursesw
-        CURSES_CFLAGS=${CURSES_CFLAGS-""}
-        CURSES_LIBS=${CURSES_LIBS-"-lncursesw"}
+          have_curses=ncursesw
+          CURSES_CFLAGS=${CURSES_CFLAGS-""}
+          CURSES_LIBS=${CURSES_LIBS-"-lncursesw"}
 
 fi
 
@@ -21602,9 +21822,10 @@ else
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
-    have_curses=ncursesw
+      have_curses=ncursesw
 
 fi
+  fi
 
   if test "x$have_curses" = xno; then :
 
@@ -21814,8 +22035,17 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking curses module flags" >&5
 $as_echo_n "checking curses module flags... " >&6; }
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $CURSES_CFLAGS $CURSES_LIBS" >&5
-$as_echo "$CURSES_CFLAGS $CURSES_LIBS" >&6; }
+if test "x$have_curses" = xno; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+else
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_curses (CFLAGS: $CURSES_CFLAGS, LIBS: $CURSES_LIBS)" >&5
+$as_echo "$have_curses (CFLAGS: $CURSES_CFLAGS, LIBS: $CURSES_LIBS)" >&6; }
+
+fi
 
 for ac_header in panel.h
 do :
@@ -21833,7 +22063,8 @@ done
 if test "x$ac_cv_header_panel_h" = xyes; then :
 
 
-  if test "x$have_curses" = xncursesw; then :
+  if test "$ac_sys_system" != "Darwin"; then
+        if test "x$have_curses" = xncursesw; then :
 
 
 pkg_failed=no
@@ -21895,13 +22126,13 @@ fi
 	echo "$PANEL_PKG_ERRORS" >&5
 
 
-      save_CFLAGS=$CFLAGS
+        save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for update_panels in -lpanelw" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for update_panels in -lpanelw" >&5
 $as_echo_n "checking for update_panels in -lpanelw... " >&6; }
 if ${ac_cv_lib_panelw_update_panels+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -21939,9 +22170,9 @@ fi
 $as_echo "$ac_cv_lib_panelw_update_panels" >&6; }
 if test "x$ac_cv_lib_panelw_update_panels" = xyes; then :
 
-          have_panel=panelw
-          PANEL_CFLAGS=${PANEL_CFLAGS-""}
-          PANEL_LIBS=${PANEL_LIBS-"-lpanelw"}
+            have_panel=panelw
+            PANEL_CFLAGS=${PANEL_CFLAGS-""}
+            PANEL_LIBS=${PANEL_LIBS-"-lpanelw"}
 
 fi
 
@@ -21957,13 +22188,13 @@ elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-      save_CFLAGS=$CFLAGS
+        save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for update_panels in -lpanelw" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for update_panels in -lpanelw" >&5
 $as_echo_n "checking for update_panels in -lpanelw... " >&6; }
 if ${ac_cv_lib_panelw_update_panels+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -22001,9 +22232,9 @@ fi
 $as_echo "$ac_cv_lib_panelw_update_panels" >&6; }
 if test "x$ac_cv_lib_panelw_update_panels" = xyes; then :
 
-          have_panel=panelw
-          PANEL_CFLAGS=${PANEL_CFLAGS-""}
-          PANEL_LIBS=${PANEL_LIBS-"-lpanelw"}
+            have_panel=panelw
+            PANEL_CFLAGS=${PANEL_CFLAGS-""}
+            PANEL_LIBS=${PANEL_LIBS-"-lpanelw"}
 
 fi
 
@@ -22021,11 +22252,13 @@ else
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
-      have_panel=panelw
+        have_panel=panelw
 
 fi
 
 fi
+  fi
+
   if test "x$have_curses" = xncurses; then :
 
 
@@ -22220,11 +22453,21 @@ fi
 
 fi
 
+
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking panel flags" >&5
 $as_echo_n "checking panel flags... " >&6; }
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $PANEL_CFLAGS $PANEL_LIBS" >&5
-$as_echo "$PANEL_CFLAGS $PANEL_LIBS" >&6; }
+if test "x$have_panel" = xno; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+else
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_panel (CFLAGS: $PANEL_CFLAGS, LIBS: $PANEL_LIBS)" >&5
+$as_echo "$have_panel (CFLAGS: $PANEL_CFLAGS, LIBS: $PANEL_LIBS)" >&6; }
+
+fi
 
 # first curses header check
 ac_save_cppflags="$CPPFLAGS"
@@ -25745,7 +25988,7 @@ fi
   if test "x$py_cv_module__curses" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__CURSES_CFLAGS=$CURSES_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__CURSES_LDFLAGS=$CURSES_LIBS $READLINE_TERMCAP_LIBS
+    as_fn_append MODULE_BLOCK "MODULE__CURSES_LDFLAGS=$CURSES_LIBS
 $as_nl"
 
 fi
@@ -25780,7 +26023,7 @@ fi
   if test "x$py_cv_module__curses_panel" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__CURSES_PANEL_CFLAGS=$PANEL_CFLAGS $CURSES_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__CURSES_PANEL_LDFLAGS=$PANEL_LIBS $CURSES_LIBS $READLINE_TERMCAP_LIBS
+    as_fn_append MODULE_BLOCK "MODULE__CURSES_PANEL_LDFLAGS=$PANEL_LIBS $CURSES_LIBS
 $as_nl"
 
 fi
