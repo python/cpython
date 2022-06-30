@@ -290,6 +290,9 @@
 /* Defined when any dynamic module loading is enabled. */
 #undef HAVE_DYNAMIC_LOADING
 
+/* Define to 1 if you have the <editline/readline.h> header file. */
+#undef HAVE_EDITLINE_READLINE_H
+
 /* Define to 1 if you have the <endian.h> header file. */
 #undef HAVE_ENDIAN_H
 
@@ -646,9 +649,6 @@
 /* Define to 1 if you have the <libintl.h> header file. */
 #undef HAVE_LIBINTL_H
 
-/* Define to build the readline module. */
-#undef HAVE_LIBREADLINE
-
 /* Define to 1 if you have the `resolv' library (-lresolv). */
 #undef HAVE_LIBRESOLV
 
@@ -784,6 +784,9 @@
 /* Define to 1 if you have the `nanosleep' function. */
 #undef HAVE_NANOSLEEP
 
+/* Define to 1 if you have the `ncursesw' library. */
+#undef HAVE_NCURSESW
+
 /* Define to 1 if you have the <ncurses.h> header file. */
 #undef HAVE_NCURSES_H
 
@@ -820,6 +823,9 @@
 
 /* Define to 1 if you have the `openpty' function. */
 #undef HAVE_OPENPTY
+
+/* Define to 1 if you have the <panel.h> header file. */
+#undef HAVE_PANEL_H
 
 /* Define to 1 if you have the `pathconf' function. */
 #undef HAVE_PATHCONF
@@ -905,6 +911,9 @@
 /* Define to 1 if you have the `pwritev2' function. */
 #undef HAVE_PWRITEV2
 
+/* Define to 1 if you have the <readline/readline.h> header file. */
+#undef HAVE_READLINE_READLINE_H
+
 /* Define to 1 if you have the `readlink' function. */
 #undef HAVE_READLINK
 
@@ -926,22 +935,22 @@
 /* Define if you can turn off readline's signal handling. */
 #undef HAVE_RL_CATCH_SIGNAL
 
-/* Define if you have readline 2.2 */
+/* Define if you have rl_completion_append_character */
 #undef HAVE_RL_COMPLETION_APPEND_CHARACTER
 
-/* Define if you have readline 4.0 */
+/* Define if you haverl_completion_display_matches_hook */
 #undef HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK
 
-/* Define if you have readline 4.2 */
+/* Define if you have rl_completion_matches */
 #undef HAVE_RL_COMPLETION_MATCHES
 
 /* Define if you have rl_completion_suppress_append */
 #undef HAVE_RL_COMPLETION_SUPPRESS_APPEND
 
-/* Define if you have readline 4.0 */
+/* Define if you have rl_pre_input_hook */
 #undef HAVE_RL_PRE_INPUT_HOOK
 
-/* Define if you have readline 4.0 */
+/* Define if you have rl_resize_terminal */
 #undef HAVE_RL_RESIZE_TERMINAL
 
 /* Define to 1 if you have the <rpc/rpc.h> header file. */
@@ -1662,7 +1671,7 @@
    Dyld is necessary to support frameworks. */
 #undef WITH_DYLD
 
-/* Define to build the readline module against Editline. */
+/* Define to build the readline module against libedit. */
 #undef WITH_EDITLINE
 
 /* Define if you want to compile in object freelists optimization */
@@ -1748,8 +1757,13 @@
 /* Define to 1 if you want to emulate signals on WASI */
 #undef _WASI_EMULATED_SIGNAL
 
-/* Define to the level of X/Open that your system supports */
-#undef _XOPEN_SOURCE
+
+    /* Define to the level of X/Open that your system supports */
+    /* some pkg-config files add CFLAGS -D_XOPEN_SOURCE=600 */
+    #if !defined(_XOPEN_SOURCE)
+    #  define _XOPEN_SOURCE 700
+    #endif
+  
 
 /* Define to activate Unix95-and-earlier features */
 #undef _XOPEN_SOURCE_EXTENDED
