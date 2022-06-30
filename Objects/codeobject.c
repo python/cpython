@@ -341,14 +341,20 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->_co_linearray = NULL;
     memcpy(_PyCode_CODE(co), PyBytes_AS_STRING(con->code),
            PyBytes_GET_SIZE(con->code));
+    int entry_point = 0;
+    while (entry_point < Py_SIZE(co) &&
+        _Py_OPCODE(_PyCode_CODE(co)[entry_point]) != RESUME) {
+        entry_point++;
+    }
+    co->_co_firsttraceable = entry_point;
 }
 
 static int
 scan_varint(const uint8_t *ptr)
 {
-    int read = *ptr++;
-    int val = read & 63;
-    int shift = 0;
+    unsigned int read = *ptr++;
+    unsigned int val = read & 63;
+    unsigned int shift = 0;
     while (read & 64) {
         read = *ptr++;
         shift += 6;
@@ -360,7 +366,7 @@ scan_varint(const uint8_t *ptr)
 static int
 scan_signed_varint(const uint8_t *ptr)
 {
-    int uval = scan_varint(ptr);
+    unsigned int uval = scan_varint(ptr);
     if (uval & 1) {
         return -(int)(uval >> 1);
     }
@@ -839,9 +845,9 @@ read_byte(PyCodeAddressRange *bounds)
 static int
 read_varint(PyCodeAddressRange *bounds)
 {
-    int read = read_byte(bounds);
-    int val = read & 63;
-    int shift = 0;
+    unsigned int read = read_byte(bounds);
+    unsigned int val = read & 63;
+    unsigned int shift = 0;
     while (read & 64) {
         read = read_byte(bounds);
         shift += 6;
@@ -853,7 +859,7 @@ read_varint(PyCodeAddressRange *bounds)
 static int
 read_signed_varint(PyCodeAddressRange *bounds)
 {
-    int uval = read_varint(bounds);
+    unsigned int uval = read_varint(bounds);
     if (uval & 1) {
         return -(int)(uval >> 1);
     }

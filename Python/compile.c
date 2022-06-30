@@ -8299,6 +8299,7 @@ assemble(struct compiler *c, int addNone)
     int j, nblocks;
     PyCodeObject *co = NULL;
     PyObject *consts = NULL;
+    memset(&a, 0, sizeof(struct assembler));
 
     /* Make sure every block that falls off the end returns None. */
     if (!c->u->u_curblock->b_return) {
@@ -8390,12 +8391,7 @@ assemble(struct compiler *c, int addNone)
     if (maxdepth < 0) {
         goto error;
     }
-    if (maxdepth > MAX_ALLOWED_STACK_USE) {
-        PyErr_Format(PyExc_SystemError,
-                     "excessive stack use: stack is %d deep",
-                     maxdepth);
-        goto error;
-    }
+    /* TO DO -- For 3.12, make sure that `maxdepth <= MAX_ALLOWED_STACK_USE` */
 
     if (label_exception_targets(entryblock)) {
         goto error;

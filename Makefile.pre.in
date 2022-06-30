@@ -222,7 +222,7 @@ OPENSSL_RPATH=@OPENSSL_RPATH@
 #   * missing: build dependency is missing
 #   * disabled: module is disabled
 #   * n/a: module is not available on the current platform
-# MODULE_EGG=yes  # yes, missing, disabled, n/a
+# MODULE_EGG_STATE=yes  # yes, missing, disabled, n/a
 # MODULE_EGG_CFLAGS=
 # MODULE_EGG_LDFLAGS=
 @MODULE_BLOCK@
@@ -831,7 +831,7 @@ python.worker.js: $(srcdir)/Tools/wasm/python.worker.js
 
 ##########################################################################
 # Build static libmpdec.a
-LIBMPDEC_CFLAGS=$(PY_STDMODULE_CFLAGS) $(CCSHARED) @LIBMPDEC_CFLAGS@
+LIBMPDEC_CFLAGS=@LIBMPDEC_CFLAGS@ $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
 # for setup.py
 DECIMAL_CFLAGS=@LIBMPDEC_CFLAGS@
@@ -889,7 +889,7 @@ $(LIBMPDEC_A): $(LIBMPDEC_OBJS)
 
 ##########################################################################
 # Build static libexpat.a
-LIBEXPAT_CFLAGS=$(PY_STDMODULE_CFLAGS) $(CCSHARED) @LIBEXPAT_CFLAGS@
+LIBEXPAT_CFLAGS=@LIBEXPAT_CFLAGS@ $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
 # for setup.py
 EXPAT_CFLAGS=@LIBEXPAT_CFLAGS@

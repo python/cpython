@@ -6240,7 +6240,7 @@ case $host/$ac_cv_cc_name in #(
     PY_SUPPORT_TIER=3 ;; #(
     s390x-*-linux-gnu/gcc) :
     PY_SUPPORT_TIER=3 ;; #(
-        x86_64-*-freebsd/clang) :
+        x86_64-*-freebsd*/clang) :
     PY_SUPPORT_TIER=3 ;; #(
   *) :
       PY_SUPPORT_TIER=0
@@ -22751,7 +22751,7 @@ else
   MODULE__IO_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__IO=$py_cv_module__io$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__IO_STATE=$py_cv_module__io$as_nl"
   if test "x$py_cv_module__io" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__IO_CFLAGS=-I\$(srcdir)/Modules/_io$as_nl"
@@ -22771,7 +22771,7 @@ else
   MODULE_TIME_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE_TIME=$py_cv_module_time$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_TIME_STATE=$py_cv_module_time$as_nl"
   if test "x$py_cv_module_time" = xyes; then :
 
 
@@ -22792,7 +22792,7 @@ else
   MODULE_ARRAY_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE_ARRAY=$py_cv_module_array$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_ARRAY_STATE=$py_cv_module_array$as_nl"
   if test "x$py_cv_module_array" = xyes; then :
 
 
@@ -22812,7 +22812,7 @@ else
   MODULE__ASYNCIO_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__ASYNCIO=$py_cv_module__asyncio$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__ASYNCIO_STATE=$py_cv_module__asyncio$as_nl"
   if test "x$py_cv_module__asyncio" = xyes; then :
 
 
@@ -22832,7 +22832,7 @@ else
   MODULE__BISECT_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__BISECT=$py_cv_module__bisect$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__BISECT_STATE=$py_cv_module__bisect$as_nl"
   if test "x$py_cv_module__bisect" = xyes; then :
 
 
@@ -22852,7 +22852,7 @@ else
   MODULE__CONTEXTVARS_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__CONTEXTVARS=$py_cv_module__contextvars$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__CONTEXTVARS_STATE=$py_cv_module__contextvars$as_nl"
   if test "x$py_cv_module__contextvars" = xyes; then :
 
 
@@ -22872,7 +22872,7 @@ else
   MODULE__CSV_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__CSV=$py_cv_module__csv$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__CSV_STATE=$py_cv_module__csv$as_nl"
   if test "x$py_cv_module__csv" = xyes; then :
 
 
@@ -22892,7 +22892,7 @@ else
   MODULE__HEAPQ_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__HEAPQ=$py_cv_module__heapq$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__HEAPQ_STATE=$py_cv_module__heapq$as_nl"
   if test "x$py_cv_module__heapq" = xyes; then :
 
 
@@ -22912,7 +22912,7 @@ else
   MODULE__JSON_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__JSON=$py_cv_module__json$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__JSON_STATE=$py_cv_module__json$as_nl"
   if test "x$py_cv_module__json" = xyes; then :
 
 
@@ -22932,7 +22932,7 @@ else
   MODULE__LSPROF_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__LSPROF=$py_cv_module__lsprof$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__LSPROF_STATE=$py_cv_module__lsprof$as_nl"
   if test "x$py_cv_module__lsprof" = xyes; then :
 
 
@@ -22952,7 +22952,7 @@ else
   MODULE__OPCODE_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__OPCODE=$py_cv_module__opcode$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__OPCODE_STATE=$py_cv_module__opcode$as_nl"
   if test "x$py_cv_module__opcode" = xyes; then :
 
 
@@ -22972,7 +22972,7 @@ else
   MODULE__PICKLE_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__PICKLE=$py_cv_module__pickle$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__PICKLE_STATE=$py_cv_module__pickle$as_nl"
   if test "x$py_cv_module__pickle" = xyes; then :
 
 
@@ -22992,7 +22992,7 @@ else
   MODULE__POSIXSUBPROCESS_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__POSIXSUBPROCESS=$py_cv_module__posixsubprocess$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__POSIXSUBPROCESS_STATE=$py_cv_module__posixsubprocess$as_nl"
   if test "x$py_cv_module__posixsubprocess" = xyes; then :
 
 
@@ -23012,7 +23012,7 @@ else
   MODULE__QUEUE_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__QUEUE=$py_cv_module__queue$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__QUEUE_STATE=$py_cv_module__queue$as_nl"
   if test "x$py_cv_module__queue" = xyes; then :
 
 
@@ -23032,7 +23032,7 @@ else
   MODULE__RANDOM_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__RANDOM=$py_cv_module__random$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__RANDOM_STATE=$py_cv_module__random$as_nl"
   if test "x$py_cv_module__random" = xyes; then :
 
 
@@ -23052,7 +23052,7 @@ else
   MODULE_SELECT_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE_SELECT=$py_cv_module_select$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_SELECT_STATE=$py_cv_module_select$as_nl"
   if test "x$py_cv_module_select" = xyes; then :
 
 
@@ -23072,7 +23072,7 @@ else
   MODULE__STRUCT_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__STRUCT=$py_cv_module__struct$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__STRUCT_STATE=$py_cv_module__struct$as_nl"
   if test "x$py_cv_module__struct" = xyes; then :
 
 
@@ -23092,7 +23092,7 @@ else
   MODULE__TYPING_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__TYPING=$py_cv_module__typing$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__TYPING_STATE=$py_cv_module__typing$as_nl"
   if test "x$py_cv_module__typing" = xyes; then :
 
 
@@ -23112,7 +23112,7 @@ else
   MODULE__XXSUBINTERPRETERS_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__XXSUBINTERPRETERS=$py_cv_module__xxsubinterpreters$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__XXSUBINTERPRETERS_STATE=$py_cv_module__xxsubinterpreters$as_nl"
   if test "x$py_cv_module__xxsubinterpreters" = xyes; then :
 
 
@@ -23132,7 +23132,7 @@ else
   MODULE__ZONEINFO_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__ZONEINFO=$py_cv_module__zoneinfo$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__ZONEINFO_STATE=$py_cv_module__zoneinfo$as_nl"
   if test "x$py_cv_module__zoneinfo" = xyes; then :
 
 
@@ -23157,7 +23157,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING=$py_cv_module__multiprocessing$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING_STATE=$py_cv_module__multiprocessing$as_nl"
   if test "x$py_cv_module__multiprocessing" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING_CFLAGS=-I\$(srcdir)/Modules/_multiprocessing$as_nl"
@@ -23191,7 +23191,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM=$py_cv_module__posixshmem$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_STATE=$py_cv_module__posixshmem$as_nl"
   if test "x$py_cv_module__posixshmem" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_CFLAGS=$POSIXSHMEM_CFLAGS$as_nl"
@@ -23222,7 +23222,7 @@ else
   MODULE_AUDIOOP_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE_AUDIOOP=$py_cv_module_audioop$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_AUDIOOP_STATE=$py_cv_module_audioop$as_nl"
   if test "x$py_cv_module_audioop" = xyes; then :
 
 
@@ -23242,7 +23242,7 @@ else
   MODULE__STATISTICS_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__STATISTICS=$py_cv_module__statistics$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__STATISTICS_STATE=$py_cv_module__statistics$as_nl"
   if test "x$py_cv_module__statistics" = xyes; then :
 
 
@@ -23262,7 +23262,7 @@ else
   MODULE_CMATH_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE_CMATH=$py_cv_module_cmath$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_CMATH_STATE=$py_cv_module_cmath$as_nl"
   if test "x$py_cv_module_cmath" = xyes; then :
 
 
@@ -23282,7 +23282,7 @@ else
   MODULE_MATH_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE_MATH=$py_cv_module_math$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_MATH_STATE=$py_cv_module_math$as_nl"
   if test "x$py_cv_module_math" = xyes; then :
 
 
@@ -23303,7 +23303,7 @@ else
   MODULE__DATETIME_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__DATETIME=$py_cv_module__datetime$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__DATETIME_STATE=$py_cv_module__datetime$as_nl"
   if test "x$py_cv_module__datetime" = xyes; then :
 
 
@@ -23328,7 +23328,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_FCNTL=$py_cv_module_fcntl$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_FCNTL_STATE=$py_cv_module_fcntl$as_nl"
   if test "x$py_cv_module_fcntl" = xyes; then :
 
 
@@ -23362,7 +23362,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_MMAP=$py_cv_module_mmap$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_MMAP_STATE=$py_cv_module_mmap$as_nl"
   if test "x$py_cv_module_mmap" = xyes; then :
 
 
@@ -23396,7 +23396,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__SOCKET=$py_cv_module__socket$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__SOCKET_STATE=$py_cv_module__socket$as_nl"
   if test "x$py_cv_module__socket" = xyes; then :
 
 
@@ -23431,7 +23431,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_GRP=$py_cv_module_grp$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_GRP_STATE=$py_cv_module_grp$as_nl"
   if test "x$py_cv_module_grp" = xyes; then :
 
 
@@ -23465,7 +23465,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_OSSAUDIODEV=$py_cv_module_ossaudiodev$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_OSSAUDIODEV_STATE=$py_cv_module_ossaudiodev$as_nl"
   if test "x$py_cv_module_ossaudiodev" = xyes; then :
 
 
@@ -23499,7 +23499,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_PWD=$py_cv_module_pwd$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_PWD_STATE=$py_cv_module_pwd$as_nl"
   if test "x$py_cv_module_pwd" = xyes; then :
 
 
@@ -23533,7 +23533,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_RESOURCE=$py_cv_module_resource$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_RESOURCE_STATE=$py_cv_module_resource$as_nl"
   if test "x$py_cv_module_resource" = xyes; then :
 
 
@@ -23567,7 +23567,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__SCPROXY=$py_cv_module__scproxy$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__SCPROXY_STATE=$py_cv_module__scproxy$as_nl"
   if test "x$py_cv_module__scproxy" = xyes; then :
 
 
@@ -23601,7 +23601,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_SPWD=$py_cv_module_spwd$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_SPWD_STATE=$py_cv_module_spwd$as_nl"
   if test "x$py_cv_module_spwd" = xyes; then :
 
 
@@ -23635,7 +23635,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_SYSLOG=$py_cv_module_syslog$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_SYSLOG_STATE=$py_cv_module_syslog$as_nl"
   if test "x$py_cv_module_syslog" = xyes; then :
 
 
@@ -23669,7 +23669,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_TERMIOS=$py_cv_module_termios$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_TERMIOS_STATE=$py_cv_module_termios$as_nl"
   if test "x$py_cv_module_termios" = xyes; then :
 
 
@@ -23704,7 +23704,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_PYEXPAT=$py_cv_module_pyexpat$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_PYEXPAT_STATE=$py_cv_module_pyexpat$as_nl"
   if test "x$py_cv_module_pyexpat" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE_PYEXPAT_CFLAGS=$LIBEXPAT_CFLAGS$as_nl"
@@ -23738,7 +23738,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__ELEMENTTREE=$py_cv_module__elementtree$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__ELEMENTTREE_STATE=$py_cv_module__elementtree$as_nl"
   if test "x$py_cv_module__elementtree" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__ELEMENTTREE_CFLAGS=$LIBEXPAT_CFLAGS$as_nl"
@@ -23768,7 +23768,7 @@ else
   MODULE__CODECS_CN_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__CODECS_CN=$py_cv_module__codecs_cn$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_CN_STATE=$py_cv_module__codecs_cn$as_nl"
   if test "x$py_cv_module__codecs_cn" = xyes; then :
 
 
@@ -23788,7 +23788,7 @@ else
   MODULE__CODECS_HK_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__CODECS_HK=$py_cv_module__codecs_hk$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_HK_STATE=$py_cv_module__codecs_hk$as_nl"
   if test "x$py_cv_module__codecs_hk" = xyes; then :
 
 
@@ -23808,7 +23808,7 @@ else
   MODULE__CODECS_ISO2022_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__CODECS_ISO2022=$py_cv_module__codecs_iso2022$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_ISO2022_STATE=$py_cv_module__codecs_iso2022$as_nl"
   if test "x$py_cv_module__codecs_iso2022" = xyes; then :
 
 
@@ -23828,7 +23828,7 @@ else
   MODULE__CODECS_JP_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__CODECS_JP=$py_cv_module__codecs_jp$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_JP_STATE=$py_cv_module__codecs_jp$as_nl"
   if test "x$py_cv_module__codecs_jp" = xyes; then :
 
 
@@ -23848,7 +23848,7 @@ else
   MODULE__CODECS_KR_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__CODECS_KR=$py_cv_module__codecs_kr$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_KR_STATE=$py_cv_module__codecs_kr$as_nl"
   if test "x$py_cv_module__codecs_kr" = xyes; then :
 
 
@@ -23868,7 +23868,7 @@ else
   MODULE__CODECS_TW_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__CODECS_TW=$py_cv_module__codecs_tw$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_TW_STATE=$py_cv_module__codecs_tw$as_nl"
   if test "x$py_cv_module__codecs_tw" = xyes; then :
 
 
@@ -23888,7 +23888,7 @@ else
   MODULE__MULTIBYTECODEC_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__MULTIBYTECODEC=$py_cv_module__multibytecodec$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__MULTIBYTECODEC_STATE=$py_cv_module__multibytecodec$as_nl"
   if test "x$py_cv_module__multibytecodec" = xyes; then :
 
 
@@ -23908,7 +23908,7 @@ else
   MODULE_UNICODEDATA_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE_UNICODEDATA=$py_cv_module_unicodedata$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_UNICODEDATA_STATE=$py_cv_module_unicodedata$as_nl"
   if test "x$py_cv_module_unicodedata" = xyes; then :
 
 
@@ -23933,7 +23933,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__MD5=$py_cv_module__md5$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__MD5_STATE=$py_cv_module__md5$as_nl"
   if test "x$py_cv_module__md5" = xyes; then :
 
 
@@ -23967,7 +23967,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__SHA1=$py_cv_module__sha1$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__SHA1_STATE=$py_cv_module__sha1$as_nl"
   if test "x$py_cv_module__sha1" = xyes; then :
 
 
@@ -24001,7 +24001,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__SHA256=$py_cv_module__sha256$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__SHA256_STATE=$py_cv_module__sha256$as_nl"
   if test "x$py_cv_module__sha256" = xyes; then :
 
 
@@ -24035,7 +24035,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__SHA512=$py_cv_module__sha512$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__SHA512_STATE=$py_cv_module__sha512$as_nl"
   if test "x$py_cv_module__sha512" = xyes; then :
 
 
@@ -24069,7 +24069,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__SHA3=$py_cv_module__sha3$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__SHA3_STATE=$py_cv_module__sha3$as_nl"
   if test "x$py_cv_module__sha3" = xyes; then :
 
 
@@ -24103,7 +24103,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__BLAKE2=$py_cv_module__blake2$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__BLAKE2_STATE=$py_cv_module__blake2$as_nl"
   if test "x$py_cv_module__blake2" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__BLAKE2_CFLAGS=$LIBB2_CFLAGS$as_nl"
@@ -24138,7 +24138,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__CRYPT=$py_cv_module__crypt$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__CRYPT_STATE=$py_cv_module__crypt$as_nl"
   if test "x$py_cv_module__crypt" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__CRYPT_CFLAGS=$LIBCRYPT_CFLAGS$as_nl"
@@ -24172,7 +24172,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__DECIMAL=$py_cv_module__decimal$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__DECIMAL_STATE=$py_cv_module__decimal$as_nl"
   if test "x$py_cv_module__decimal" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__DECIMAL_CFLAGS=$LIBMPDEC_CFLAGS$as_nl"
@@ -24206,7 +24206,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__GDBM=$py_cv_module__gdbm$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__GDBM_STATE=$py_cv_module__gdbm$as_nl"
   if test "x$py_cv_module__gdbm" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__GDBM_CFLAGS=$GDBM_CFLAGS$as_nl"
@@ -24240,7 +24240,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_NIS=$py_cv_module_nis$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_NIS_STATE=$py_cv_module_nis$as_nl"
   if test "x$py_cv_module_nis" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE_NIS_CFLAGS=$LIBNSL_CFLAGS$as_nl"
@@ -24274,7 +24274,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__SQLITE3=$py_cv_module__sqlite3$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__SQLITE3_STATE=$py_cv_module__sqlite3$as_nl"
   if test "x$py_cv_module__sqlite3" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__SQLITE3_CFLAGS=$LIBSQLITE3_CFLAGS$as_nl"
@@ -24308,7 +24308,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__TKINTER=$py_cv_module__tkinter$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__TKINTER_STATE=$py_cv_module__tkinter$as_nl"
   if test "x$py_cv_module__tkinter" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__TKINTER_CFLAGS=$TCLTK_CFLAGS$as_nl"
@@ -24342,7 +24342,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__UUID=$py_cv_module__uuid$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__UUID_STATE=$py_cv_module__uuid$as_nl"
   if test "x$py_cv_module__uuid" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__UUID_CFLAGS=$LIBUUID_CFLAGS$as_nl"
@@ -24377,7 +24377,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_ZLIB=$py_cv_module_zlib$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_ZLIB_STATE=$py_cv_module_zlib$as_nl"
   if test "x$py_cv_module_zlib" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE_ZLIB_CFLAGS=$ZLIB_CFLAGS$as_nl"
@@ -24407,7 +24407,7 @@ else
   MODULE_BINASCII_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE_BINASCII=$py_cv_module_binascii$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_BINASCII_STATE=$py_cv_module_binascii$as_nl"
   if test "x$py_cv_module_binascii" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE_BINASCII_CFLAGS=$BINASCII_CFLAGS$as_nl"
@@ -24431,7 +24431,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__BZ2=$py_cv_module__bz2$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__BZ2_STATE=$py_cv_module__bz2$as_nl"
   if test "x$py_cv_module__bz2" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__BZ2_CFLAGS=$BZIP2_CFLAGS$as_nl"
@@ -24465,7 +24465,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__LZMA=$py_cv_module__lzma$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__LZMA_STATE=$py_cv_module__lzma$as_nl"
   if test "x$py_cv_module__lzma" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__LZMA_CFLAGS=$LIBLZMA_CFLAGS$as_nl"
@@ -24500,7 +24500,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__SSL=$py_cv_module__ssl$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__SSL_STATE=$py_cv_module__ssl$as_nl"
   if test "x$py_cv_module__ssl" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__SSL_CFLAGS=$OPENSSL_INCLUDES$as_nl"
@@ -24534,7 +24534,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__HASHLIB=$py_cv_module__hashlib$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__HASHLIB_STATE=$py_cv_module__hashlib$as_nl"
   if test "x$py_cv_module__hashlib" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__HASHLIB_CFLAGS=$OPENSSL_INCLUDES$as_nl"
@@ -24569,7 +24569,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__TESTCAPI=$py_cv_module__testcapi$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__TESTCAPI_STATE=$py_cv_module__testcapi$as_nl"
   if test "x$py_cv_module__testcapi" = xyes; then :
 
 
@@ -24603,7 +24603,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__TESTINTERNALCAPI=$py_cv_module__testinternalcapi$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__TESTINTERNALCAPI_STATE=$py_cv_module__testinternalcapi$as_nl"
   if test "x$py_cv_module__testinternalcapi" = xyes; then :
 
 
@@ -24637,7 +24637,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__TESTBUFFER=$py_cv_module__testbuffer$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__TESTBUFFER_STATE=$py_cv_module__testbuffer$as_nl"
   if test "x$py_cv_module__testbuffer" = xyes; then :
 
 
@@ -24671,7 +24671,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__TESTIMPORTMULTIPLE=$py_cv_module__testimportmultiple$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__TESTIMPORTMULTIPLE_STATE=$py_cv_module__testimportmultiple$as_nl"
   if test "x$py_cv_module__testimportmultiple" = xyes; then :
 
 
@@ -24705,7 +24705,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__TESTMULTIPHASE=$py_cv_module__testmultiphase$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__TESTMULTIPHASE_STATE=$py_cv_module__testmultiphase$as_nl"
   if test "x$py_cv_module__testmultiphase" = xyes; then :
 
 
@@ -24739,7 +24739,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__XXTESTFUZZ=$py_cv_module__xxtestfuzz$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__XXTESTFUZZ_STATE=$py_cv_module__xxtestfuzz$as_nl"
   if test "x$py_cv_module__xxtestfuzz" = xyes; then :
 
 
@@ -24773,7 +24773,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST=$py_cv_module__ctypes_test$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_STATE=$py_cv_module__ctypes_test$as_nl"
   if test "x$py_cv_module__ctypes_test" = xyes; then :
 
 
@@ -24808,7 +24808,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_XXLIMITED=$py_cv_module_xxlimited$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_XXLIMITED_STATE=$py_cv_module_xxlimited$as_nl"
   if test "x$py_cv_module_xxlimited" = xyes; then :
 
 
@@ -24842,7 +24842,7 @@ else
 fi
 
 fi
-  as_fn_append MODULE_BLOCK "MODULE_XXLIMITED_35=$py_cv_module_xxlimited_35$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE_XXLIMITED_35_STATE=$py_cv_module_xxlimited_35$as_nl"
   if test "x$py_cv_module_xxlimited_35" = xyes; then :
 
 

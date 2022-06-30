@@ -5858,122 +5858,125 @@
         <var-decl name='bounds' type-id='type-id-445' visibility='default' filepath='./Include/cpython/pystate.h' line='33' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='PyCodeObject' size-in-bits='1472' is-struct='yes' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1' id='type-id-446'>
+    <class-decl name='PyCodeObject' size-in-bits='1536' is-struct='yes' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1' id='type-id-446'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='ob_base' type-id='type-id-77' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='ob_base' type-id='type-id-77' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='192'>
-        <var-decl name='co_consts' type-id='type-id-14' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='co_consts' type-id='type-id-14' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='256'>
-        <var-decl name='co_names' type-id='type-id-14' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='co_names' type-id='type-id-14' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='320'>
-        <var-decl name='co_exceptiontable' type-id='type-id-14' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='co_exceptiontable' type-id='type-id-14' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='384'>
-        <var-decl name='co_flags' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='co_flags' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='416'>
-        <var-decl name='co_warmup' type-id='type-id-232' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='co_warmup' type-id='type-id-232' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='432'>
-        <var-decl name='_co_linearray_entry_size' type-id='type-id-232' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='_co_linearray_entry_size' type-id='type-id-232' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='448'>
-        <var-decl name='co_argcount' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='co_argcount' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='480'>
-        <var-decl name='co_posonlyargcount' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='co_posonlyargcount' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='512'>
-        <var-decl name='co_kwonlyargcount' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='co_kwonlyargcount' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='544'>
-        <var-decl name='co_stacksize' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='co_stacksize' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='576'>
-        <var-decl name='co_firstlineno' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='co_firstlineno' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='608'>
-        <var-decl name='co_nlocalsplus' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='co_nlocalsplus' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='640'>
-        <var-decl name='co_nlocals' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='co_nlocals' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='672'>
-        <var-decl name='co_nplaincellvars' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='co_nplaincellvars' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='704'>
-        <var-decl name='co_ncellvars' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='co_ncellvars' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='736'>
-        <var-decl name='co_nfreevars' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='co_nfreevars' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='768'>
-        <var-decl name='co_localsplusnames' type-id='type-id-14' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='co_localsplusnames' type-id='type-id-14' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='832'>
-        <var-decl name='co_localspluskinds' type-id='type-id-14' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='co_localspluskinds' type-id='type-id-14' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='896'>
-        <var-decl name='co_filename' type-id='type-id-14' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='co_filename' type-id='type-id-14' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='960'>
-        <var-decl name='co_name' type-id='type-id-14' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='co_name' type-id='type-id-14' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1024'>
-        <var-decl name='co_qualname' type-id='type-id-14' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='co_qualname' type-id='type-id-14' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1088'>
-        <var-decl name='co_linetable' type-id='type-id-14' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='co_linetable' type-id='type-id-14' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1152'>
-        <var-decl name='co_weakreflist' type-id='type-id-14' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='co_weakreflist' type-id='type-id-14' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1216'>
-        <var-decl name='_co_code' type-id='type-id-14' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='_co_code' type-id='type-id-14' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1280'>
-        <var-decl name='_co_linearray' type-id='type-id-115' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='_co_linearray' type-id='type-id-115' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1344'>
-        <var-decl name='co_extra' type-id='type-id-18' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='_co_firsttraceable' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1408'>
-        <var-decl name='co_code_adaptive' type-id='type-id-262' visibility='default' filepath='./Include/cpython/code.h' line='102' column='1'/>
+        <var-decl name='co_extra' type-id='type-id-18' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='1472'>
+        <var-decl name='co_code_adaptive' type-id='type-id-262' visibility='default' filepath='./Include/cpython/code.h' line='103' column='1'/>
       </data-member>
     </class-decl>
     <typedef-decl name='PyCodeObject' type-id='type-id-446' filepath='./Include/pytypedefs.h' line='21' column='1' id='type-id-447'/>
     <pointer-type-def type-id='type-id-447' size-in-bits='64' id='type-id-444'/>
-    <class-decl name='_line_offsets' size-in-bits='320' is-struct='yes' visibility='default' filepath='./Include/cpython/code.h' line='178' column='1' id='type-id-448'>
+    <class-decl name='_line_offsets' size-in-bits='320' is-struct='yes' visibility='default' filepath='./Include/cpython/code.h' line='179' column='1' id='type-id-448'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='ar_start' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='179' column='1'/>
+        <var-decl name='ar_start' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='180' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='32'>
-        <var-decl name='ar_end' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='180' column='1'/>
+        <var-decl name='ar_end' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='181' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='ar_line' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='181' column='1'/>
+        <var-decl name='ar_line' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='182' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='128'>
-        <var-decl name='opaque' type-id='type-id-449' visibility='default' filepath='./Include/cpython/code.h' line='182' column='1'/>
+        <var-decl name='opaque' type-id='type-id-449' visibility='default' filepath='./Include/cpython/code.h' line='183' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='_opaque' size-in-bits='192' is-struct='yes' visibility='default' filepath='./Include/cpython/code.h' line='172' column='1' id='type-id-449'>
+    <class-decl name='_opaque' size-in-bits='192' is-struct='yes' visibility='default' filepath='./Include/cpython/code.h' line='173' column='1' id='type-id-449'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='computed_line' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='173' column='1'/>
+        <var-decl name='computed_line' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='174' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='lo_next' type-id='type-id-450' visibility='default' filepath='./Include/cpython/code.h' line='174' column='1'/>
+        <var-decl name='lo_next' type-id='type-id-450' visibility='default' filepath='./Include/cpython/code.h' line='175' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='128'>
-        <var-decl name='limit' type-id='type-id-450' visibility='default' filepath='./Include/cpython/code.h' line='175' column='1'/>
+        <var-decl name='limit' type-id='type-id-450' visibility='default' filepath='./Include/cpython/code.h' line='176' column='1'/>
       </data-member>
     </class-decl>
     <qualified-type-def type-id='type-id-285' const='yes' id='type-id-451'/>
     <pointer-type-def type-id='type-id-451' size-in-bits='64' id='type-id-450'/>
-    <typedef-decl name='PyCodeAddressRange' type-id='type-id-448' filepath='./Include/cpython/code.h' line='183' column='1' id='type-id-445'/>
+    <typedef-decl name='PyCodeAddressRange' type-id='type-id-448' filepath='./Include/cpython/code.h' line='184' column='1' id='type-id-445'/>
     <typedef-decl name='PyTraceInfo' type-id='type-id-443' filepath='./Include/cpython/pystate.h' line='34' column='1' id='type-id-20'/>
     <class-decl name='_stack_chunk' size-in-bits='256' is-struct='yes' visibility='default' filepath='./Include/cpython/pystate.h' line='75' column='1' id='type-id-452'>
       <data-member access='public' layout-offset-in-bits='0'>
@@ -7454,93 +7457,93 @@
     </function-decl>
   </abi-instr>
   <abi-instr version='1.0' address-size='64' path='Objects/codeobject.c' comp-dir-path='/src' language='LANG_C99'>
-    <var-decl name='PyCode_Type' type-id='type-id-112' mangled-name='PyCode_Type' visibility='default' filepath='./Include/cpython/code.h' line='139' column='1' elf-symbol-id='PyCode_Type'/>
-    <function-decl name='_PyCode_ConstantKey' mangled-name='_PyCode_ConstantKey' filepath='Objects/codeobject.c' line='2014' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_ConstantKey'>
-      <parameter type-id='type-id-14' name='op' filepath='Objects/codeobject.c' line='2014' column='1'/>
+    <var-decl name='PyCode_Type' type-id='type-id-112' mangled-name='PyCode_Type' visibility='default' filepath='./Include/cpython/code.h' line='140' column='1' elf-symbol-id='PyCode_Type'/>
+    <function-decl name='_PyCode_ConstantKey' mangled-name='_PyCode_ConstantKey' filepath='Objects/codeobject.c' line='2020' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_ConstantKey'>
+      <parameter type-id='type-id-14' name='op' filepath='Objects/codeobject.c' line='2020' column='1'/>
       <return type-id='type-id-14'/>
     </function-decl>
-    <function-decl name='PyCode_GetCode' mangled-name='PyCode_GetCode' filepath='Objects/codeobject.c' line='1440' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_GetCode'>
-      <parameter type-id='type-id-444' name='co' filepath='Objects/codeobject.c' line='1440' column='1'/>
+    <function-decl name='PyCode_GetCode' mangled-name='PyCode_GetCode' filepath='Objects/codeobject.c' line='1446' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_GetCode'>
+      <parameter type-id='type-id-444' name='co' filepath='Objects/codeobject.c' line='1446' column='1'/>
       <return type-id='type-id-14'/>
     </function-decl>
-    <function-decl name='_PyCode_SetExtra' mangled-name='_PyCode_SetExtra' filepath='Objects/codeobject.c' line='1345' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_SetExtra'>
-      <parameter type-id='type-id-14' name='code' filepath='Objects/codeobject.c' line='1345' column='1'/>
-      <parameter type-id='type-id-36' name='index' filepath='Objects/codeobject.c' line='1345' column='1'/>
-      <parameter type-id='type-id-18' name='extra' filepath='Objects/codeobject.c' line='1345' column='1'/>
+    <function-decl name='_PyCode_SetExtra' mangled-name='_PyCode_SetExtra' filepath='Objects/codeobject.c' line='1351' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_SetExtra'>
+      <parameter type-id='type-id-14' name='code' filepath='Objects/codeobject.c' line='1351' column='1'/>
+      <parameter type-id='type-id-36' name='index' filepath='Objects/codeobject.c' line='1351' column='1'/>
+      <parameter type-id='type-id-18' name='extra' filepath='Objects/codeobject.c' line='1351' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_PyCode_GetExtra' mangled-name='_PyCode_GetExtra' filepath='Objects/codeobject.c' line='1324' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_GetExtra'>
-      <parameter type-id='type-id-14' name='code' filepath='Objects/codeobject.c' line='1324' column='1'/>
-      <parameter type-id='type-id-36' name='index' filepath='Objects/codeobject.c' line='1324' column='1'/>
-      <parameter type-id='type-id-482' name='extra' filepath='Objects/codeobject.c' line='1324' column='1'/>
+    <function-decl name='_PyCode_GetExtra' mangled-name='_PyCode_GetExtra' filepath='Objects/codeobject.c' line='1330' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_GetExtra'>
+      <parameter type-id='type-id-14' name='code' filepath='Objects/codeobject.c' line='1330' column='1'/>
+      <parameter type-id='type-id-36' name='index' filepath='Objects/codeobject.c' line='1330' column='1'/>
+      <parameter type-id='type-id-482' name='extra' filepath='Objects/codeobject.c' line='1330' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
     <pointer-type-def type-id='type-id-8' size-in-bits='64' id='type-id-501'/>
-    <function-decl name='PyCode_Addr2Location' mangled-name='PyCode_Addr2Location' filepath='Objects/codeobject.c' line='960' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_Addr2Location'>
-      <parameter type-id='type-id-444' name='co' filepath='Objects/codeobject.c' line='960' column='1'/>
-      <parameter type-id='type-id-8' name='addrq' filepath='Objects/codeobject.c' line='960' column='1'/>
-      <parameter type-id='type-id-501' name='start_line' filepath='Objects/codeobject.c' line='961' column='1'/>
-      <parameter type-id='type-id-501' name='start_column' filepath='Objects/codeobject.c' line='961' column='1'/>
-      <parameter type-id='type-id-501' name='end_line' filepath='Objects/codeobject.c' line='962' column='1'/>
-      <parameter type-id='type-id-501' name='end_column' filepath='Objects/codeobject.c' line='962' column='1'/>
+    <function-decl name='PyCode_Addr2Location' mangled-name='PyCode_Addr2Location' filepath='Objects/codeobject.c' line='966' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_Addr2Location'>
+      <parameter type-id='type-id-444' name='co' filepath='Objects/codeobject.c' line='966' column='1'/>
+      <parameter type-id='type-id-8' name='addrq' filepath='Objects/codeobject.c' line='966' column='1'/>
+      <parameter type-id='type-id-501' name='start_line' filepath='Objects/codeobject.c' line='967' column='1'/>
+      <parameter type-id='type-id-501' name='start_column' filepath='Objects/codeobject.c' line='967' column='1'/>
+      <parameter type-id='type-id-501' name='end_line' filepath='Objects/codeobject.c' line='968' column='1'/>
+      <parameter type-id='type-id-501' name='end_column' filepath='Objects/codeobject.c' line='968' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
     <pointer-type-def type-id='type-id-445' size-in-bits='64' id='type-id-502'/>
-    <function-decl name='_PyCode_CheckLineNumber' mangled-name='_PyCode_CheckLineNumber' filepath='Objects/codeobject.c' line='783' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_CheckLineNumber'>
-      <parameter type-id='type-id-8' name='lasti' filepath='Objects/codeobject.c' line='783' column='1'/>
-      <parameter type-id='type-id-502' name='bounds' filepath='Objects/codeobject.c' line='783' column='1'/>
+    <function-decl name='_PyCode_CheckLineNumber' mangled-name='_PyCode_CheckLineNumber' filepath='Objects/codeobject.c' line='789' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_CheckLineNumber'>
+      <parameter type-id='type-id-8' name='lasti' filepath='Objects/codeobject.c' line='789' column='1'/>
+      <parameter type-id='type-id-502' name='bounds' filepath='Objects/codeobject.c' line='789' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyCode_Addr2Line' mangled-name='PyCode_Addr2Line' filepath='Objects/codeobject.c' line='745' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_Addr2Line'>
-      <parameter type-id='type-id-444' name='co' filepath='Objects/codeobject.c' line='745' column='1'/>
-      <parameter type-id='type-id-8' name='addrq' filepath='Objects/codeobject.c' line='745' column='1'/>
+    <function-decl name='PyCode_Addr2Line' mangled-name='PyCode_Addr2Line' filepath='Objects/codeobject.c' line='751' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_Addr2Line'>
+      <parameter type-id='type-id-444' name='co' filepath='Objects/codeobject.c' line='751' column='1'/>
+      <parameter type-id='type-id-8' name='addrq' filepath='Objects/codeobject.c' line='751' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyCode_NewEmpty' mangled-name='PyCode_NewEmpty' filepath='Objects/codeobject.c' line='641' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_NewEmpty'>
-      <parameter type-id='type-id-3' name='filename' filepath='Objects/codeobject.c' line='641' column='1'/>
-      <parameter type-id='type-id-3' name='funcname' filepath='Objects/codeobject.c' line='641' column='1'/>
-      <parameter type-id='type-id-8' name='firstlineno' filepath='Objects/codeobject.c' line='641' column='1'/>
+    <function-decl name='PyCode_NewEmpty' mangled-name='PyCode_NewEmpty' filepath='Objects/codeobject.c' line='647' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_NewEmpty'>
+      <parameter type-id='type-id-3' name='filename' filepath='Objects/codeobject.c' line='647' column='1'/>
+      <parameter type-id='type-id-3' name='funcname' filepath='Objects/codeobject.c' line='647' column='1'/>
+      <parameter type-id='type-id-8' name='firstlineno' filepath='Objects/codeobject.c' line='647' column='1'/>
       <return type-id='type-id-444'/>
     </function-decl>
-    <function-decl name='PyCode_New' mangled-name='PyCode_New' filepath='Objects/codeobject.c' line='616' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_New'>
-      <parameter type-id='type-id-8' name='argcount' filepath='Objects/codeobject.c' line='616' column='1'/>
-      <parameter type-id='type-id-8' name='kwonlyargcount' filepath='Objects/codeobject.c' line='616' column='1'/>
-      <parameter type-id='type-id-8' name='nlocals' filepath='Objects/codeobject.c' line='617' column='1'/>
-      <parameter type-id='type-id-8' name='stacksize' filepath='Objects/codeobject.c' line='617' column='1'/>
-      <parameter type-id='type-id-8' name='flags' filepath='Objects/codeobject.c' line='617' column='1'/>
-      <parameter type-id='type-id-14' name='code' filepath='Objects/codeobject.c' line='618' column='1'/>
-      <parameter type-id='type-id-14' name='consts' filepath='Objects/codeobject.c' line='618' column='1'/>
-      <parameter type-id='type-id-14' name='names' filepath='Objects/codeobject.c' line='618' column='1'/>
-      <parameter type-id='type-id-14' name='varnames' filepath='Objects/codeobject.c' line='619' column='1'/>
-      <parameter type-id='type-id-14' name='freevars' filepath='Objects/codeobject.c' line='619' column='1'/>
-      <parameter type-id='type-id-14' name='cellvars' filepath='Objects/codeobject.c' line='619' column='1'/>
-      <parameter type-id='type-id-14' name='filename' filepath='Objects/codeobject.c' line='620' column='1'/>
-      <parameter type-id='type-id-14' name='name' filepath='Objects/codeobject.c' line='620' column='1'/>
-      <parameter type-id='type-id-14' name='qualname' filepath='Objects/codeobject.c' line='620' column='1'/>
-      <parameter type-id='type-id-8' name='firstlineno' filepath='Objects/codeobject.c' line='621' column='1'/>
-      <parameter type-id='type-id-14' name='linetable' filepath='Objects/codeobject.c' line='622' column='1'/>
-      <parameter type-id='type-id-14' name='exceptiontable' filepath='Objects/codeobject.c' line='623' column='1'/>
+    <function-decl name='PyCode_New' mangled-name='PyCode_New' filepath='Objects/codeobject.c' line='622' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_New'>
+      <parameter type-id='type-id-8' name='argcount' filepath='Objects/codeobject.c' line='622' column='1'/>
+      <parameter type-id='type-id-8' name='kwonlyargcount' filepath='Objects/codeobject.c' line='622' column='1'/>
+      <parameter type-id='type-id-8' name='nlocals' filepath='Objects/codeobject.c' line='623' column='1'/>
+      <parameter type-id='type-id-8' name='stacksize' filepath='Objects/codeobject.c' line='623' column='1'/>
+      <parameter type-id='type-id-8' name='flags' filepath='Objects/codeobject.c' line='623' column='1'/>
+      <parameter type-id='type-id-14' name='code' filepath='Objects/codeobject.c' line='624' column='1'/>
+      <parameter type-id='type-id-14' name='consts' filepath='Objects/codeobject.c' line='624' column='1'/>
+      <parameter type-id='type-id-14' name='names' filepath='Objects/codeobject.c' line='624' column='1'/>
+      <parameter type-id='type-id-14' name='varnames' filepath='Objects/codeobject.c' line='625' column='1'/>
+      <parameter type-id='type-id-14' name='freevars' filepath='Objects/codeobject.c' line='625' column='1'/>
+      <parameter type-id='type-id-14' name='cellvars' filepath='Objects/codeobject.c' line='625' column='1'/>
+      <parameter type-id='type-id-14' name='filename' filepath='Objects/codeobject.c' line='626' column='1'/>
+      <parameter type-id='type-id-14' name='name' filepath='Objects/codeobject.c' line='626' column='1'/>
+      <parameter type-id='type-id-14' name='qualname' filepath='Objects/codeobject.c' line='626' column='1'/>
+      <parameter type-id='type-id-8' name='firstlineno' filepath='Objects/codeobject.c' line='627' column='1'/>
+      <parameter type-id='type-id-14' name='linetable' filepath='Objects/codeobject.c' line='628' column='1'/>
+      <parameter type-id='type-id-14' name='exceptiontable' filepath='Objects/codeobject.c' line='629' column='1'/>
       <return type-id='type-id-444'/>
     </function-decl>
-    <function-decl name='PyCode_NewWithPosOnlyArgs' mangled-name='PyCode_NewWithPosOnlyArgs' filepath='Objects/codeobject.c' line='492' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_NewWithPosOnlyArgs'>
-      <parameter type-id='type-id-8' name='argcount' filepath='Objects/codeobject.c' line='492' column='1'/>
-      <parameter type-id='type-id-8' name='posonlyargcount' filepath='Objects/codeobject.c' line='492' column='1'/>
-      <parameter type-id='type-id-8' name='kwonlyargcount' filepath='Objects/codeobject.c' line='492' column='1'/>
-      <parameter type-id='type-id-8' name='nlocals' filepath='Objects/codeobject.c' line='493' column='1'/>
-      <parameter type-id='type-id-8' name='stacksize' filepath='Objects/codeobject.c' line='493' column='1'/>
-      <parameter type-id='type-id-8' name='flags' filepath='Objects/codeobject.c' line='493' column='1'/>
-      <parameter type-id='type-id-14' name='code' filepath='Objects/codeobject.c' line='494' column='1'/>
-      <parameter type-id='type-id-14' name='consts' filepath='Objects/codeobject.c' line='494' column='1'/>
-      <parameter type-id='type-id-14' name='names' filepath='Objects/codeobject.c' line='494' column='1'/>
-      <parameter type-id='type-id-14' name='varnames' filepath='Objects/codeobject.c' line='495' column='1'/>
-      <parameter type-id='type-id-14' name='freevars' filepath='Objects/codeobject.c' line='495' column='1'/>
-      <parameter type-id='type-id-14' name='cellvars' filepath='Objects/codeobject.c' line='495' column='1'/>
-      <parameter type-id='type-id-14' name='filename' filepath='Objects/codeobject.c' line='496' column='1'/>
-      <parameter type-id='type-id-14' name='name' filepath='Objects/codeobject.c' line='496' column='1'/>
-      <parameter type-id='type-id-14' name='qualname' filepath='Objects/codeobject.c' line='497' column='1'/>
-      <parameter type-id='type-id-8' name='firstlineno' filepath='Objects/codeobject.c' line='497' column='1'/>
-      <parameter type-id='type-id-14' name='linetable' filepath='Objects/codeobject.c' line='498' column='1'/>
-      <parameter type-id='type-id-14' name='exceptiontable' filepath='Objects/codeobject.c' line='499' column='1'/>
+    <function-decl name='PyCode_NewWithPosOnlyArgs' mangled-name='PyCode_NewWithPosOnlyArgs' filepath='Objects/codeobject.c' line='498' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_NewWithPosOnlyArgs'>
+      <parameter type-id='type-id-8' name='argcount' filepath='Objects/codeobject.c' line='498' column='1'/>
+      <parameter type-id='type-id-8' name='posonlyargcount' filepath='Objects/codeobject.c' line='498' column='1'/>
+      <parameter type-id='type-id-8' name='kwonlyargcount' filepath='Objects/codeobject.c' line='498' column='1'/>
+      <parameter type-id='type-id-8' name='nlocals' filepath='Objects/codeobject.c' line='499' column='1'/>
+      <parameter type-id='type-id-8' name='stacksize' filepath='Objects/codeobject.c' line='499' column='1'/>
+      <parameter type-id='type-id-8' name='flags' filepath='Objects/codeobject.c' line='499' column='1'/>
+      <parameter type-id='type-id-14' name='code' filepath='Objects/codeobject.c' line='500' column='1'/>
+      <parameter type-id='type-id-14' name='consts' filepath='Objects/codeobject.c' line='500' column='1'/>
+      <parameter type-id='type-id-14' name='names' filepath='Objects/codeobject.c' line='500' column='1'/>
+      <parameter type-id='type-id-14' name='varnames' filepath='Objects/codeobject.c' line='501' column='1'/>
+      <parameter type-id='type-id-14' name='freevars' filepath='Objects/codeobject.c' line='501' column='1'/>
+      <parameter type-id='type-id-14' name='cellvars' filepath='Objects/codeobject.c' line='501' column='1'/>
+      <parameter type-id='type-id-14' name='filename' filepath='Objects/codeobject.c' line='502' column='1'/>
+      <parameter type-id='type-id-14' name='name' filepath='Objects/codeobject.c' line='502' column='1'/>
+      <parameter type-id='type-id-14' name='qualname' filepath='Objects/codeobject.c' line='503' column='1'/>
+      <parameter type-id='type-id-8' name='firstlineno' filepath='Objects/codeobject.c' line='503' column='1'/>
+      <parameter type-id='type-id-14' name='linetable' filepath='Objects/codeobject.c' line='504' column='1'/>
+      <parameter type-id='type-id-14' name='exceptiontable' filepath='Objects/codeobject.c' line='505' column='1'/>
       <return type-id='type-id-444'/>
     </function-decl>
     <class-decl name='_PyCodeConstructor' size-in-bits='896' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_code.h' line='168' column='1' id='type-id-503'>
@@ -7594,8 +7597,8 @@
       </data-member>
     </class-decl>
     <pointer-type-def type-id='type-id-503' size-in-bits='64' id='type-id-504'/>
-    <function-decl name='_PyCode_New' mangled-name='_PyCode_New' filepath='Objects/codeobject.c' line='440' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_New'>
-      <parameter type-id='type-id-504' name='con' filepath='Objects/codeobject.c' line='440' column='1'/>
+    <function-decl name='_PyCode_New' mangled-name='_PyCode_New' filepath='Objects/codeobject.c' line='446' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_New'>
+      <parameter type-id='type-id-504' name='con' filepath='Objects/codeobject.c' line='446' column='1'/>
       <return type-id='type-id-444'/>
     </function-decl>
     <function-decl name='_PyCode_Validate' mangled-name='_PyCode_Validate' filepath='Objects/codeobject.c' line='231' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_Validate'>
@@ -11172,32 +11175,32 @@
     <var-decl name='PyZip_Type' type-id='type-id-112' mangled-name='PyZip_Type' visibility='default' filepath='./Include/bltinmodule.h' line='9' column='1' elf-symbol-id='PyZip_Type'/>
   </abi-instr>
   <abi-instr version='1.0' address-size='64' path='Python/ceval.c' comp-dir-path='/src' language='LANG_C99'>
-    <function-decl name='Py_LeaveRecursiveCall' mangled-name='Py_LeaveRecursiveCall' filepath='Python/ceval.c' line='7919' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_LeaveRecursiveCall'>
+    <function-decl name='Py_LeaveRecursiveCall' mangled-name='Py_LeaveRecursiveCall' filepath='Python/ceval.c' line='7908' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_LeaveRecursiveCall'>
       <return type-id='type-id-70'/>
     </function-decl>
-    <function-decl name='Py_EnterRecursiveCall' mangled-name='Py_EnterRecursiveCall' filepath='Python/ceval.c' line='7912' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_EnterRecursiveCall'>
-      <parameter type-id='type-id-3' name='where' filepath='Python/ceval.c' line='7912' column='1'/>
+    <function-decl name='Py_EnterRecursiveCall' mangled-name='Py_EnterRecursiveCall' filepath='Python/ceval.c' line='7901' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_EnterRecursiveCall'>
+      <parameter type-id='type-id-3' name='where' filepath='Python/ceval.c' line='7901' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_PyEval_RequestCodeExtraIndex' mangled-name='_PyEval_RequestCodeExtraIndex' filepath='Python/ceval.c' line='7831' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_RequestCodeExtraIndex'>
-      <parameter type-id='type-id-104' name='free' filepath='Python/ceval.c' line='7831' column='1'/>
+    <function-decl name='_PyEval_RequestCodeExtraIndex' mangled-name='_PyEval_RequestCodeExtraIndex' filepath='Python/ceval.c' line='7820' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_RequestCodeExtraIndex'>
+      <parameter type-id='type-id-104' name='free' filepath='Python/ceval.c' line='7820' column='1'/>
       <return type-id='type-id-36'/>
     </function-decl>
-    <function-decl name='_PyEval_SliceIndexNotNone' mangled-name='_PyEval_SliceIndexNotNone' filepath='Python/ceval.c' line='7351' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_SliceIndexNotNone'>
+    <function-decl name='_PyEval_SliceIndexNotNone' mangled-name='_PyEval_SliceIndexNotNone' filepath='Python/ceval.c' line='7340' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_SliceIndexNotNone'>
       <parameter type-id='type-id-14' name='exc' filepath='Objects/exceptions.c' line='2704' column='1'/>
       <parameter type-id='type-id-168' name='end' filepath='Objects/exceptions.c' line='2704' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_PyEval_SliceIndex' mangled-name='_PyEval_SliceIndex' filepath='Python/ceval.c' line='7329' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_SliceIndex'>
-      <parameter type-id='type-id-14' name='v' filepath='Python/ceval.c' line='7329' column='1'/>
-      <parameter type-id='type-id-168' name='pi' filepath='Python/ceval.c' line='7329' column='1'/>
+    <function-decl name='_PyEval_SliceIndex' mangled-name='_PyEval_SliceIndex' filepath='Python/ceval.c' line='7318' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_SliceIndex'>
+      <parameter type-id='type-id-14' name='v' filepath='Python/ceval.c' line='7318' column='1'/>
+      <parameter type-id='type-id-168' name='pi' filepath='Python/ceval.c' line='7318' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyEval_GetFuncDesc' mangled-name='PyEval_GetFuncDesc' filepath='Python/ceval.c' line='7202' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetFuncDesc'>
+    <function-decl name='PyEval_GetFuncDesc' mangled-name='PyEval_GetFuncDesc' filepath='Python/ceval.c' line='7191' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetFuncDesc'>
       <parameter type-id='type-id-14' name='ob' filepath='Objects/exceptions.c' line='421' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='PyEval_GetFuncName' mangled-name='PyEval_GetFuncName' filepath='Python/ceval.c' line='7189' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetFuncName'>
+    <function-decl name='PyEval_GetFuncName' mangled-name='PyEval_GetFuncName' filepath='Python/ceval.c' line='7178' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetFuncName'>
       <parameter type-id='type-id-14' name='ob' filepath='Objects/exceptions.c' line='421' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
@@ -11211,33 +11214,33 @@
     </class-decl>
     <typedef-decl name='PyCompilerFlags' type-id='type-id-592' filepath='./Include/cpython/compile.h' line='29' column='1' id='type-id-591'/>
     <pointer-type-def type-id='type-id-591' size-in-bits='64' id='type-id-593'/>
-    <function-decl name='PyEval_MergeCompilerFlags' mangled-name='PyEval_MergeCompilerFlags' filepath='Python/ceval.c' line='7170' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_MergeCompilerFlags'>
-      <parameter type-id='type-id-593' name='cf' filepath='Python/ceval.c' line='7170' column='1'/>
+    <function-decl name='PyEval_MergeCompilerFlags' mangled-name='PyEval_MergeCompilerFlags' filepath='Python/ceval.c' line='7159' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_MergeCompilerFlags'>
+      <parameter type-id='type-id-593' name='cf' filepath='Python/ceval.c' line='7159' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyEval_GetGlobals' mangled-name='PyEval_GetGlobals' filepath='Python/ceval.c' line='7159' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetGlobals'>
+    <function-decl name='PyEval_GetGlobals' mangled-name='PyEval_GetGlobals' filepath='Python/ceval.c' line='7148' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetGlobals'>
       <return type-id='type-id-14'/>
     </function-decl>
-    <function-decl name='PyEval_GetLocals' mangled-name='PyEval_GetLocals' filepath='Python/ceval.c' line='7140' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetLocals'>
+    <function-decl name='PyEval_GetLocals' mangled-name='PyEval_GetLocals' filepath='Python/ceval.c' line='7129' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetLocals'>
       <return type-id='type-id-14'/>
     </function-decl>
-    <function-decl name='_PyEval_GetBuiltinId' mangled-name='_PyEval_GetBuiltinId' filepath='Python/ceval.c' line='7134' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_GetBuiltinId'>
-      <parameter type-id='type-id-499' name='name' filepath='Python/ceval.c' line='7134' column='1'/>
+    <function-decl name='_PyEval_GetBuiltinId' mangled-name='_PyEval_GetBuiltinId' filepath='Python/ceval.c' line='7123' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_GetBuiltinId'>
+      <parameter type-id='type-id-499' name='name' filepath='Python/ceval.c' line='7123' column='1'/>
       <return type-id='type-id-14'/>
     </function-decl>
-    <function-decl name='_PyEval_GetBuiltin' mangled-name='_PyEval_GetBuiltin' filepath='Python/ceval.c' line='7120' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_GetBuiltin'>
+    <function-decl name='_PyEval_GetBuiltin' mangled-name='_PyEval_GetBuiltin' filepath='Python/ceval.c' line='7109' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_GetBuiltin'>
       <parameter type-id='type-id-14' name='v' filepath='Objects/abstract.c' line='2122' column='1'/>
       <return type-id='type-id-14'/>
     </function-decl>
-    <function-decl name='PyEval_GetBuiltins' mangled-name='PyEval_GetBuiltins' filepath='Python/ceval.c' line='7112' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetBuiltins'>
+    <function-decl name='PyEval_GetBuiltins' mangled-name='PyEval_GetBuiltins' filepath='Python/ceval.c' line='7101' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetBuiltins'>
       <return type-id='type-id-14'/>
     </function-decl>
-    <function-decl name='PyEval_GetFrame' mangled-name='PyEval_GetFrame' filepath='Python/ceval.c' line='7088' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetFrame'>
+    <function-decl name='PyEval_GetFrame' mangled-name='PyEval_GetFrame' filepath='Python/ceval.c' line='7077' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetFrame'>
       <return type-id='type-id-438'/>
     </function-decl>
-    <function-decl name='PyEval_SetTrace' mangled-name='PyEval_SetTrace' filepath='Python/ceval.c' line='7008' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_SetTrace'>
-      <parameter type-id='type-id-13' name='func' filepath='Python/ceval.c' line='7008' column='1'/>
-      <parameter type-id='type-id-14' name='arg' filepath='Python/ceval.c' line='7008' column='1'/>
+    <function-decl name='PyEval_SetTrace' mangled-name='PyEval_SetTrace' filepath='Python/ceval.c' line='6997' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_SetTrace'>
+      <parameter type-id='type-id-13' name='func' filepath='Python/ceval.c' line='6997' column='1'/>
+      <parameter type-id='type-id-14' name='arg' filepath='Python/ceval.c' line='6997' column='1'/>
       <return type-id='type-id-70'/>
     </function-decl>
     <class-decl name='_ts' size-in-bits='2880' is-struct='yes' visibility='default' filepath='./Include/cpython/pystate.h' line='82' column='1' id='type-id-594'>
@@ -11363,43 +11366,43 @@
       </data-member>
     </class-decl>
     <pointer-type-def type-id='type-id-24' size-in-bits='64' id='type-id-595'/>
-    <function-decl name='_PyEval_SetTrace' mangled-name='_PyEval_SetTrace' filepath='Python/ceval.c' line='6976' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_SetTrace'>
-      <parameter type-id='type-id-10' name='tstate' filepath='Python/ceval.c' line='6976' column='1'/>
-      <parameter type-id='type-id-13' name='func' filepath='Python/ceval.c' line='6976' column='1'/>
-      <parameter type-id='type-id-14' name='arg' filepath='Python/ceval.c' line='6976' column='1'/>
+    <function-decl name='_PyEval_SetTrace' mangled-name='_PyEval_SetTrace' filepath='Python/ceval.c' line='6965' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_SetTrace'>
+      <parameter type-id='type-id-10' name='tstate' filepath='Python/ceval.c' line='6965' column='1'/>
+      <parameter type-id='type-id-13' name='func' filepath='Python/ceval.c' line='6965' column='1'/>
+      <parameter type-id='type-id-14' name='arg' filepath='Python/ceval.c' line='6965' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyEval_SetProfile' mangled-name='PyEval_SetProfile' filepath='Python/ceval.c' line='6966' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_SetProfile'>
-      <parameter type-id='type-id-13' name='func' filepath='Python/ceval.c' line='7008' column='1'/>
-      <parameter type-id='type-id-14' name='arg' filepath='Python/ceval.c' line='7008' column='1'/>
+    <function-decl name='PyEval_SetProfile' mangled-name='PyEval_SetProfile' filepath='Python/ceval.c' line='6955' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_SetProfile'>
+      <parameter type-id='type-id-13' name='func' filepath='Python/ceval.c' line='6997' column='1'/>
+      <parameter type-id='type-id-14' name='arg' filepath='Python/ceval.c' line='6997' column='1'/>
       <return type-id='type-id-70'/>
     </function-decl>
-    <function-decl name='_PyEval_SetProfile' mangled-name='_PyEval_SetProfile' filepath='Python/ceval.c' line='6935' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_SetProfile'>
-      <parameter type-id='type-id-10' name='tstate' filepath='Python/ceval.c' line='6976' column='1'/>
-      <parameter type-id='type-id-13' name='func' filepath='Python/ceval.c' line='6976' column='1'/>
-      <parameter type-id='type-id-14' name='arg' filepath='Python/ceval.c' line='6976' column='1'/>
+    <function-decl name='_PyEval_SetProfile' mangled-name='_PyEval_SetProfile' filepath='Python/ceval.c' line='6924' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_SetProfile'>
+      <parameter type-id='type-id-10' name='tstate' filepath='Python/ceval.c' line='6965' column='1'/>
+      <parameter type-id='type-id-13' name='func' filepath='Python/ceval.c' line='6965' column='1'/>
+      <parameter type-id='type-id-14' name='arg' filepath='Python/ceval.c' line='6965' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyThreadState_LeaveTracing' mangled-name='PyThreadState_LeaveTracing' filepath='Python/ceval.c' line='6834' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_LeaveTracing'>
+    <function-decl name='PyThreadState_LeaveTracing' mangled-name='PyThreadState_LeaveTracing' filepath='Python/ceval.c' line='6828' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_LeaveTracing'>
       <parameter type-id='type-id-10' name='tstate' filepath='Objects/object.c' line='2291' column='1'/>
       <return type-id='type-id-70'/>
     </function-decl>
-    <function-decl name='PyThreadState_EnterTracing' mangled-name='PyThreadState_EnterTracing' filepath='Python/ceval.c' line='6828' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_EnterTracing'>
+    <function-decl name='PyThreadState_EnterTracing' mangled-name='PyThreadState_EnterTracing' filepath='Python/ceval.c' line='6822' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_EnterTracing'>
       <parameter type-id='type-id-10' name='tstate' filepath='Objects/object.c' line='2291' column='1'/>
       <return type-id='type-id-70'/>
     </function-decl>
-    <function-decl name='PyEval_EvalCodeEx' mangled-name='PyEval_EvalCodeEx' filepath='Python/ceval.c' line='6431' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_EvalCodeEx'>
-      <parameter type-id='type-id-14' name='_co' filepath='Python/ceval.c' line='6431' column='1'/>
-      <parameter type-id='type-id-14' name='globals' filepath='Python/ceval.c' line='6431' column='1'/>
-      <parameter type-id='type-id-14' name='locals' filepath='Python/ceval.c' line='6431' column='1'/>
-      <parameter type-id='type-id-200' name='args' filepath='Python/ceval.c' line='6432' column='1'/>
-      <parameter type-id='type-id-8' name='argcount' filepath='Python/ceval.c' line='6432' column='1'/>
-      <parameter type-id='type-id-200' name='kws' filepath='Python/ceval.c' line='6433' column='1'/>
-      <parameter type-id='type-id-8' name='kwcount' filepath='Python/ceval.c' line='6433' column='1'/>
-      <parameter type-id='type-id-200' name='defs' filepath='Python/ceval.c' line='6434' column='1'/>
-      <parameter type-id='type-id-8' name='defcount' filepath='Python/ceval.c' line='6434' column='1'/>
-      <parameter type-id='type-id-14' name='kwdefs' filepath='Python/ceval.c' line='6435' column='1'/>
-      <parameter type-id='type-id-14' name='closure' filepath='Python/ceval.c' line='6435' column='1'/>
+    <function-decl name='PyEval_EvalCodeEx' mangled-name='PyEval_EvalCodeEx' filepath='Python/ceval.c' line='6425' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_EvalCodeEx'>
+      <parameter type-id='type-id-14' name='_co' filepath='Python/ceval.c' line='6425' column='1'/>
+      <parameter type-id='type-id-14' name='globals' filepath='Python/ceval.c' line='6425' column='1'/>
+      <parameter type-id='type-id-14' name='locals' filepath='Python/ceval.c' line='6425' column='1'/>
+      <parameter type-id='type-id-200' name='args' filepath='Python/ceval.c' line='6426' column='1'/>
+      <parameter type-id='type-id-8' name='argcount' filepath='Python/ceval.c' line='6426' column='1'/>
+      <parameter type-id='type-id-200' name='kws' filepath='Python/ceval.c' line='6427' column='1'/>
+      <parameter type-id='type-id-8' name='kwcount' filepath='Python/ceval.c' line='6427' column='1'/>
+      <parameter type-id='type-id-200' name='defs' filepath='Python/ceval.c' line='6428' column='1'/>
+      <parameter type-id='type-id-8' name='defcount' filepath='Python/ceval.c' line='6428' column='1'/>
+      <parameter type-id='type-id-14' name='kwdefs' filepath='Python/ceval.c' line='6429' column='1'/>
+      <parameter type-id='type-id-14' name='closure' filepath='Python/ceval.c' line='6429' column='1'/>
       <return type-id='type-id-14'/>
     </function-decl>
     <typedef-decl name='_PyInterpreterFrame' type-id='type-id-375' filepath='./Include/internal/pycore_frame.h' line='67' column='1' id='type-id-596'/>
@@ -14919,7 +14922,7 @@
       <return type-id='type-id-14'/>
     </function-decl>
     <function-decl name='PyRun_SimpleString' mangled-name='PyRun_SimpleString' filepath='Python/pythonrun.c' line='1976' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyRun_SimpleString'>
-      <parameter type-id='type-id-3' name='where' filepath='Python/ceval.c' line='7912' column='1'/>
+      <parameter type-id='type-id-3' name='where' filepath='Python/ceval.c' line='7901' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
     <function-decl name='PyRun_String' mangled-name='PyRun_String' filepath='Python/pythonrun.c' line='1969' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyRun_String'>

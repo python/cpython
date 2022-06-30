@@ -1723,8 +1723,7 @@ class WFile(object):
         return self.name == other.name
 
 
-@unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
-                 "non-root user required")
+@os_helper.skip_if_dac_override
 class TestFileTypeW(TempDirMixin, ParserTestCase):
     """Test the FileType option/argument type for writing files"""
 
@@ -1746,8 +1745,8 @@ class TestFileTypeW(TempDirMixin, ParserTestCase):
         ('-x - -', NS(x=eq_stdout, spam=eq_stdout)),
     ]
 
-@unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
-                 "non-root user required")
+
+@os_helper.skip_if_dac_override
 class TestFileTypeX(TempDirMixin, ParserTestCase):
     """Test the FileType option/argument type for writing new files only"""
 
@@ -1767,8 +1766,7 @@ class TestFileTypeX(TempDirMixin, ParserTestCase):
     ]
 
 
-@unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
-                 "non-root user required")
+@os_helper.skip_if_dac_override
 class TestFileTypeWB(TempDirMixin, ParserTestCase):
     """Test the FileType option/argument type for writing binary files"""
 
@@ -1785,8 +1783,7 @@ class TestFileTypeWB(TempDirMixin, ParserTestCase):
     ]
 
 
-@unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
-                 "non-root user required")
+@os_helper.skip_if_dac_override
 class TestFileTypeXB(TestFileTypeX):
     "Test the FileType option/argument type for writing new binary files only"
 

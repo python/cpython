@@ -1086,7 +1086,7 @@ AS_CASE([$host/$ac_cv_cc_name],
   [s390x-*-linux-gnu/gcc],           [PY_SUPPORT_TIER=3], dnl Linux on 64bit s390x (big endian), glibc, gcc
   dnl [wasm32-unknown-emscripten/clang], [PY_SUPPORT_TIER=3], dnl WebAssembly Emscripten
   dnl [wasm32-unknown-wasi/clang],       [PY_SUPPORT_TIER=3], dnl WebAssembly System Interface
-  [x86_64-*-freebsd/clang],          [PY_SUPPORT_TIER=3], dnl FreeBSD on AMD64
+  [x86_64-*-freebsd*/clang],         [PY_SUPPORT_TIER=3], dnl FreeBSD on AMD64
   [PY_SUPPORT_TIER=0]
 )
 
@@ -6794,7 +6794,7 @@ MODULE_BLOCK=
 
 dnl Check for stdlib extension modules
 dnl PY_STDLIB_MOD([NAME], [ENABLED-TEST], [SUPPORTED-TEST], [CFLAGS], [LDFLAGS])
-dnl sets MODULE_$NAME based on PY_STDLIB_MOD_SET_NA(), ENABLED-TEST,
+dnl sets MODULE_$NAME_STATE based on PY_STDLIB_MOD_SET_NA(), ENABLED-TEST,
 dnl and SUPPORTED_TEST. ENABLED-TEST and SUPPORTED-TEST default to true if
 dnl empty.
 dnl    n/a: marked unavailable on platform by PY_STDLIB_MOD_SET_NA()
@@ -6812,7 +6812,7 @@ AC_DEFUN([PY_STDLIB_MOD], [
        [AS_IF([m4_ifblank([$3], [true], [$3])], [modstate=yes], [modstate=missing])],
        [modstate=disabled])
   ])
-  _MODULE_BLOCK_ADD(modcond, [$modstate])
+  _MODULE_BLOCK_ADD(modcond[_STATE], [$modstate])
   AS_VAR_IF([modstate], [yes], [
     m4_ifblank([$4], [], [_MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$4])])
     m4_ifblank([$5], [], [_MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_LDFLAGS], [$5])])
@@ -6833,7 +6833,7 @@ AC_DEFUN([PY_STDLIB_MOD_SIMPLE], [
   dnl Check if module has been disabled by PY_STDLIB_MOD_SET_NA()
   AS_IF([test "$modstate" != "n/a"], [modstate=yes])
   AM_CONDITIONAL(modcond, [test "$modstate" = yes])
-  _MODULE_BLOCK_ADD(modcond, [$modstate])
+  _MODULE_BLOCK_ADD(modcond[_STATE], [$modstate])
   AS_VAR_IF([modstate], [yes], [
     m4_ifblank([$2], [], [_MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$2])])
     m4_ifblank([$3], [], [_MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_LDFLAGS], [$3])])
