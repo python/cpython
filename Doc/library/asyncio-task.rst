@@ -320,6 +320,7 @@ no new tasks may be added to the group.
 The first time any of the tasks belonging to the group fails
 with an exception other than :exc:`asyncio.CancelledError`,
 the remaining tasks in the group are cancelled.
+No further tasks can then be added to the group.
 At this point, if the body of the ``async with`` statement is still active
 (i.e., :meth:`~object.__aexit__` hasn't been called yet),
 the task directly containing the ``async with`` statement is also cancelled.
