@@ -1,2 +1,2 @@
-The MSVC compiler is now expected to generate faster switch code to dispatch
-an opcode in the interpreter main loop, reducing memory access instructions.
+Reload ``opcode`` when raising ``unknown opcode error`` in the interpreter main loop,
+for C compilers to generate dispatching code independently.
