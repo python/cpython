@@ -1429,8 +1429,7 @@ instructions:
 
    .. versionchanged:: 3.12
       The collections now contain virtual opcodes as well. These are
-      opcodes in the range between ``MIN_VIRTUAL_OPCODE`` and
-      ``MAX_VIRTUAL_OPCODE``.
+      opcodes with values ``>= MIN_VIRTUAL_OPCODE``.
 
 .. data:: opname
 
