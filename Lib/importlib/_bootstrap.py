@@ -54,7 +54,14 @@ def _new_module(name):
 # A dict mapping module names to weakrefs of _ModuleLock instances
 # Dictionary protected by the global import lock
 _module_locks = {}
-# A dict mapping thread ids to _ModuleLock instances
+
+# A dict mapping thread ids to lists of _ModuleLock instances.  This maps a
+# thread to the module locks it is blocking on acquiring.  The values are
+# lists because a single thread could perform a re-entrant import and be "in
+# the process" of blocking on locks for more than one module.  "in the
+# process" because a thread cannot actually block on acquiring more than one
+# lock but it can have set up bookkeeping that reflects that it intends to
+# block on acquiring more than one lock.
 _blocking_on = {}
 
 
@@ -75,18 +82,73 @@ class _BlockingOnManager:
         Mark the running thread as waiting for the lock this manager knows
         about.
         """
-        _blocking_on[self.tid] = self.lock
+        # Interactions with _blocking_on are *not* protected by the global
+        # import lock here because each thread only touches the state that it
+        # owns (state keyed on its thread id).  The global import lock is
+        # re-entrant (ie, a single thread may take it more than once) so it
+        # wouldn't help us be correct in the face of re-entrancy either.
+
+        # First look up the module locks the running thread already intends to
+        # take.  If this thread hasn't done an import before, it may not be
+        # present in the dict so be sure to initialize it in this case.
+        self.blocked_on = _blocking_on.setdefault(self.tid, [])
+
+        # Whether we are re-entering or not, add this lock to the list because
+        # now this thread is going to be blocked on it.
+        self.blocked_on.append(self.lock)
 
     def __exit__(self, *args, **kwargs):
         """
         Mark the running thread as no longer waiting for the lock this manager
         knows about.
         """
-        del _blocking_on[self.tid]
+        self.blocked_on.remove(self.lock)
 
 
 class _DeadlockError(RuntimeError):
     pass
+
+
+
+def _has_deadlock(seen, subject, tids, _blocking_on):
+    """
+    Considering a graph where nodes are threads (represented by their id
+    as keys in ``blocking_on``) and edges are "blocked on" relationships
+    (represented by values in ``_blocking_on``), determine whether ``subject``
+    is reachable starting from any of the threads given by ``tids``.
+
+    :param seen: A set of threads that have already been visited.
+    :param subject: The thread id to try to reach.
+    :param tids: The thread ids from which to begin.
+    :param blocking_on: A dict representing the thread/blocking-on graph.
+    """
+    if subject in tids:
+        # If we have already reached the subject, we're done - signal that it
+        # is reachable.
+        return True
+
+    # Otherwise, try to reach the subject from each of the given tids.
+    for tid in tids:
+        blocking_on = _blocking_on.get(tid)
+        if blocking_on is None:
+            # There are no edges out from this node, skip it.
+            continue
+
+        if tid in seen:
+            # bpo 38091: the chain of tid's we encounter here
+            # eventually leads to a fixpoint or a cycle, but
+            # does not reach 'me'.  This means we would not
+            # actually deadlock.  This can happen if other
+            # threads are at the beginning of acquire() below.
+            return False
+        seen.add(tid)
+
+        # Follow the edges out from this thread.
+        edges = [lock.owner for lock in blocking_on]
+        if _has_deadlock(seen, subject, edges, _blocking_on):
+            return True
+
+    return False
 
 
 class _ModuleLock:
@@ -96,8 +158,29 @@ class _ModuleLock:
     """
 
     def __init__(self, name):
-        self.lock = _thread.allocate_lock()
+        # Create an RLock for protecting the import process for the
+        # corresponding module.  Since it is an RLock a single thread will be
+        # able to take it more than once.  This is necessary to support
+        # re-entrancy in the import system that arises from (at least) signal
+        # handlers and the garbage collector.  Consider the case of:
+        #
+        #  import foo
+        #  -> ...
+        #     -> importlib._bootstrap._ModuleLock.acquire
+        #        -> ...
+        #           -> <garbage collector>
+        #              -> __del__
+        #                 -> import foo
+        #                    -> ...
+        #                       -> importlib._bootstrap._ModuleLock.acquire
+        #                          -> _BlockingOnManager.__enter__
+        #
+        # If a different thread than the running thread holds the lock then it
+        # will have to block on taking it which is just what we want for
+        # thread safety.
+        self.lock = _thread.RLock()
         self.wakeup = _thread.allocate_lock()
+
         # The name of the module for which this is a lock.
         self.name = name
 
@@ -110,7 +193,11 @@ class _ModuleLock:
         # behavior, necessary in case a single thread is following a circular
         # import dependency and needs to take the lock for a single module
         # more than once.
-        self.count = 0
+        #
+        # Counts are represented as a list of None because list.append(None)
+        # and list.pop() are both atomic and thread-safe and it's hard to find
+        # another primitive with the same properties.
+        self.count = []
 
         # This is a count of the number of threads that are blocking on
         # `self.wakeup.acquire()` to try to get their turn holding this module
@@ -122,28 +209,25 @@ class _ModuleLock:
         #
         # This is incremented in `self.acquire` when a thread notices it is
         # going to have to wait for another thread to finish.
-        self.waiters = 0
+        #
+        # See the comment above count for explanation of the representation.
+        self.waiters = []
 
     def has_deadlock(self):
-        # Deadlock avoidance for concurrent circular imports.
-        me = _thread.get_ident()
-        tid = self.owner
-        seen = set()
-        while True:
-            lock = _blocking_on.get(tid)
-            if lock is None:
-                return False
-            tid = lock.owner
-            if tid == me:
-                return True
-            if tid in seen:
-                # bpo 38091: the chain of tid's we encounter here
-                # eventually leads to a fixpoint or a cycle, but
-                # does not reach 'me'.  This means we would not
-                # actually deadlock.  This can happen if other
-                # threads are at the beginning of acquire() below.
-                return False
-            seen.add(tid)
+        # To avoid deadlocks for concurrent or re-entrant circular imports,
+        # look at the "blocking on" state to see if any threads are blocking
+        # on getting the import lock for any module for which the import lock
+        # is held by this thread.
+        return _has_deadlock(
+            seen=set(),
+            # Try to find this thread
+            subject=_thread.get_ident(),
+            # starting from the thread that holds the import lock for this
+            # module.
+            tids=[self.owner],
+            # using the global "blocking on" state.
+            _blocking_on=_blocking_on,
+        )
 
     def acquire(self):
         """
@@ -158,7 +242,7 @@ class _ModuleLock:
                 # lock.  This makes it safe for more than one thread to try to
                 # acquire the lock for a single module at the same time.
                 with self.lock:
-                    if self.count == 0 or self.owner == tid:
+                    if self.count == [] or self.owner == tid:
                         # If the lock for this module is unowned then we can
                         # take the lock immediately and succeed.  If the lock
                         # for this module is owned by the running thread then
@@ -166,9 +250,8 @@ class _ModuleLock:
                         # supports circular imports (thread T imports module A
                         # which imports module B which imports module A).
                         self.owner = tid
-                        self.count += 1
+                        self.count.append(None)
                         return True
-
 
                     # At this point we know the lock is held (because count !=
                     # 0) by another thread (because owner != tid).  We'll have
@@ -190,7 +273,6 @@ class _ModuleLock:
                     if self.has_deadlock():
                         raise _DeadlockError('deadlock detected by %r' % self)
 
-
                     # Check to see if we're going to be able to acquire the
                     # lock.  If we are going to have to wait then increment
                     # the waiters so `self.release` will know to unblock us
@@ -203,7 +285,7 @@ class _ModuleLock:
                     # should just take self.wakeup in the return codepath
                     # above.
                     if self.wakeup.acquire(False):
-                        self.waiters += 1
+                        self.waiters.append(None)
 
                 # Now blockingly take the lock.  This won't complete until the
                 # thread holding this lock (self.owner) calls self.release.
@@ -219,12 +301,12 @@ class _ModuleLock:
         with self.lock:
             if self.owner != tid:
                 raise RuntimeError('cannot release un-acquired lock')
-            assert self.count > 0
-            self.count -= 1
-            if self.count == 0:
+            assert len(self.count) > 0
+            self.count.pop()
+            if len(self.count) == 0:
                 self.owner = None
-                if self.waiters:
-                    self.waiters -= 1
+                if len(self.waiters) > 0:
+                    self.waiters.pop()
                     self.wakeup.release()
 
     def __repr__(self):
