@@ -1017,6 +1017,7 @@ call fails (for example because the path doesn't exist).
 
       Unlike :func:`os.walk`, :meth:`Path.walk` adds symlinks to directories into *filenames*
       if *follow_symlinks* is ``True``
+
    This example displays the number of bytes taken by non-directory files in each
    directory under the starting directory, except that it doesn't look under any
    __pycache__ subdirectory::
@@ -1033,6 +1034,7 @@ call fails (for example because the path doesn't exist).
         )
         if '__pycache__' in dirs:
               dirs.remove('__pycache__')
+
    In the next example (simple implementation of :func:`shutil.rmtree`),
    walking the tree bottom-up is essential, :func:`rmdir` doesn't allow
    deleting a directory before the directory is empty::
@@ -1046,6 +1048,7 @@ call fails (for example because the path doesn't exist).
               (root / name).unlink()
           for name in dirs:
               (root / name).rmdir()
+
    .. versionadded:: 3.12
 
 .. method:: Path.lchmod(mode)
