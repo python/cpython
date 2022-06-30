@@ -364,9 +364,9 @@ class _ExecutorManagerThread(threading.Thread):
             if self.is_shutting_down():
                 self.flag_executor_shutting_down()
 
-                # If only canceled futures remain in pending_work_items, we
-                # should purge them now to avoid waiting forever in our
-                # subsequent call to wait_result_broken_or_wakeup.
+                # When only canceled futures remain in pending_work_items, our
+                # next call to wait_result_broken_or_wakeup would hang forever.
+                # This makes sure we have some running futures or none at all.
                 self.add_call_item_to_queue()
 
                 # Since no new work items can be added, it is safe to shutdown
