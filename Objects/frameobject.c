@@ -278,7 +278,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 {
                     int64_t target_stack = pop_value(next_stack);
                     stacks[i+1] = push_value(next_stack, Object);
-                    j = get_arg(code, i) + i + 1;
+                    j = get_arg(code, i) + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + i;
                     assert(j < len);
                     assert(stacks[j] == UNINITIALIZED || stacks[j] == target_stack);
                     stacks[j] = target_stack;
@@ -418,7 +418,7 @@ static void
 frame_stack_pop(PyFrameObject *f)
 {
     PyObject *v = _PyFrame_StackPop(f->f_frame);
-    Py_DECREF(v);
+    Py_XDECREF(v);
 }
 
 static PyFrameState
@@ -458,21 +458,29 @@ _PyFrame_GetState(PyFrameObject *frame)
 static void
 add_load_fast_null_checks(PyCodeObject *co)
 {
+    int changed = 0;
     _Py_CODEUNIT *instructions = _PyCode_CODE(co);
     for (Py_ssize_t i = 0; i < Py_SIZE(co); i++) {
         switch (_Py_OPCODE(instructions[i])) {
             case LOAD_FAST:
             case LOAD_FAST__LOAD_FAST:
             case LOAD_FAST__LOAD_CONST:
+                changed = 1;
                 _Py_SET_OPCODE(instructions[i], LOAD_FAST_CHECK);
                 break;
             case LOAD_CONST__LOAD_FAST:
+                changed = 1;
                 _Py_SET_OPCODE(instructions[i], LOAD_CONST);
                 break;
             case STORE_FAST__LOAD_FAST:
+                changed = 1;
                 _Py_SET_OPCODE(instructions[i], STORE_FAST);
                 break;
         }
+    }
+    if (changed) {
+        // invalidate cached co_code object
+        Py_CLEAR(co->_co_code);
     }
 }
 
@@ -850,8 +858,9 @@ init_frame(_PyInterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
 {
     /* _PyFrame_InitializeSpecials consumes reference to func */
     Py_INCREF(func);
+    Py_XINCREF(locals);
     PyCodeObject *code = (PyCodeObject *)func->func_code;
-    _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
+    _PyFrame_InitializeSpecials(frame, func, locals, code);
     for (Py_ssize_t i = 0; i < code->co_nlocalsplus; i++) {
         frame->localsplus[i] = NULL;
     }

@@ -21,7 +21,6 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "frameobject.h"          // PyFrame_Check()
 #include "datetime.h"             // PyDateTimeAPI
 #include "marshal.h"              // PyMarshal_WriteLongToFile
 #include "structmember.h"         // PyMemberDef
@@ -1208,6 +1207,162 @@ test_get_type_name(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 
+static PyType_Slot empty_type_slots[] = {
+    {0, 0},
+};
+
+static PyType_Spec MinimalMetaclass_spec = {
+    .name = "_testcapi.MinimalMetaclass",
+    .basicsize = sizeof(PyHeapTypeObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .slots = empty_type_slots,
+};
+
+static PyType_Spec MinimalType_spec = {
+    .name = "_testcapi.MinimalSpecType",
+    .basicsize = 0,  // Updated later
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = empty_type_slots,
+};
+
+static PyObject *
+test_from_spec_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *metaclass = NULL;
+    PyObject *class = NULL;
+    PyObject *new = NULL;
+    PyObject *subclasses = NULL;
+    PyObject *result = NULL;
+    int r;
+
+    metaclass = PyType_FromSpecWithBases(&MinimalMetaclass_spec, (PyObject*)&PyType_Type);
+    if (metaclass == NULL) {
+        goto finally;
+    }
+    class = PyObject_CallFunction(metaclass, "s(){}", "TestClass");
+    if (class == NULL) {
+        goto finally;
+    }
+
+    MinimalType_spec.basicsize = (int)(((PyTypeObject*)class)->tp_basicsize);
+    new = PyType_FromSpecWithBases(&MinimalType_spec, class);
+    if (new == NULL) {
+        goto finally;
+    }
+    if (Py_TYPE(new) != (PyTypeObject*)metaclass) {
+        PyErr_SetString(PyExc_AssertionError,
+                "Metaclass not set properly!");
+        goto finally;
+    }
+
+    /* Assert that __subclasses__ is updated */
+    subclasses = PyObject_CallMethod(class, "__subclasses__", "");
+    if (!subclasses) {
+        goto finally;
+    }
+    r = PySequence_Contains(subclasses, new);
+    if (r < 0) {
+        goto finally;
+    }
+    if (r == 0) {
+        PyErr_SetString(PyExc_AssertionError,
+                "subclasses not set properly!");
+        goto finally;
+    }
+
+    result = Py_NewRef(Py_None);
+
+finally:
+    Py_XDECREF(metaclass);
+    Py_XDECREF(class);
+    Py_XDECREF(new);
+    Py_XDECREF(subclasses);
+    return result;
+}
+
+
+static PyObject *
+test_from_spec_invalid_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *metaclass_a = NULL;
+    PyObject *metaclass_b = NULL;
+    PyObject *class_a = NULL;
+    PyObject *class_b = NULL;
+    PyObject *bases = NULL;
+    PyObject *new = NULL;
+    PyObject *meta_error_string = NULL;
+    PyObject *exc_type = NULL;
+    PyObject *exc_value = NULL;
+    PyObject *exc_traceback = NULL;
+    PyObject *result = NULL;
+
+    metaclass_a = PyType_FromSpecWithBases(&MinimalMetaclass_spec, (PyObject*)&PyType_Type);
+    if (metaclass_a == NULL) {
+        goto finally;
+    }
+    metaclass_b = PyType_FromSpecWithBases(&MinimalMetaclass_spec, (PyObject*)&PyType_Type);
+    if (metaclass_b == NULL) {
+        goto finally;
+    }
+    class_a = PyObject_CallFunction(metaclass_a, "s(){}", "TestClassA");
+    if (class_a == NULL) {
+        goto finally;
+    }
+
+    class_b = PyObject_CallFunction(metaclass_b, "s(){}", "TestClassB");
+    if (class_b == NULL) {
+        goto finally;
+    }
+
+    bases = PyTuple_Pack(2, class_a, class_b);
+    if (bases == NULL) {
+        goto finally;
+    }
+
+    /*
+     * The following should raise a TypeError due to a MetaClass conflict.
+     */
+    new = PyType_FromSpecWithBases(&MinimalType_spec, bases);
+    if (new != NULL) {
+        PyErr_SetString(PyExc_AssertionError,
+                "MetaType conflict not recognized by PyType_FromSpecWithBases");
+            goto finally;
+    }
+
+    // Assert that the correct exception was raised
+    if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+        PyErr_Fetch(&exc_type, &exc_value, &exc_traceback);
+
+        meta_error_string = PyUnicode_FromString("metaclass conflict:");
+        if (meta_error_string == NULL) {
+            goto finally;
+        }
+        int res = PyUnicode_Contains(exc_value, meta_error_string);
+        if (res < 0) {
+            goto finally;
+        }
+        if (res == 0) {
+            PyErr_SetString(PyExc_AssertionError,
+                    "TypeError did not inlclude expected message.");
+            goto finally;
+        }
+        result = Py_NewRef(Py_None);
+    }
+finally:
+    Py_XDECREF(metaclass_a);
+    Py_XDECREF(metaclass_b);
+    Py_XDECREF(bases);
+    Py_XDECREF(new);
+    Py_XDECREF(meta_error_string);
+    Py_XDECREF(exc_type);
+    Py_XDECREF(exc_value);
+    Py_XDECREF(exc_traceback);
+    Py_XDECREF(class_a);
+    Py_XDECREF(class_b);
+    return result;
+}
+
+
 static PyObject *
 simple_str(PyObject *self) {
     return PyUnicode_FromString("<test>");
@@ -1325,6 +1480,63 @@ test_type_from_ephemeral_spec(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_XDECREF(instance);
     Py_XDECREF(obj);
     return result;
+}
+
+PyType_Slot repeated_doc_slots[] = {
+    {Py_tp_doc, "A class used for tests·"},
+    {Py_tp_doc, "A class used for tests"},
+    {0, 0},
+};
+
+PyType_Spec repeated_doc_slots_spec = {
+    .name = "RepeatedDocSlotClass",
+    .basicsize = sizeof(PyObject),
+    .slots = repeated_doc_slots,
+};
+
+typedef struct {
+    PyObject_HEAD
+    int data;
+} HeapCTypeWithDataObject;
+
+
+static struct PyMemberDef members_to_repeat[] = {
+    {"T_INT", T_INT, offsetof(HeapCTypeWithDataObject, data), 0, NULL},
+    {NULL}
+};
+
+PyType_Slot repeated_members_slots[] = {
+    {Py_tp_members, members_to_repeat},
+    {Py_tp_members, members_to_repeat},
+    {0, 0},
+};
+
+PyType_Spec repeated_members_slots_spec = {
+    .name = "RepeatedMembersSlotClass",
+    .basicsize = sizeof(HeapCTypeWithDataObject),
+    .slots = repeated_members_slots,
+};
+
+static PyObject *
+create_type_from_repeated_slots(PyObject *self, PyObject *variant_obj)
+{
+    PyObject *class = NULL;
+    int variant = PyLong_AsLong(variant_obj);
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+    switch (variant) {
+        case 0:
+            class = PyType_FromSpec(&repeated_doc_slots_spec);
+            break;
+        case 1:
+            class = PyType_FromSpec(&repeated_members_slots_spec);
+            break;
+        default:
+            PyErr_SetString(PyExc_ValueError, "bad test variant");
+            break;
+        }
+    return class;
 }
 
 
@@ -3976,6 +4188,48 @@ test_pymem_alloc0(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_pyobject_new(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *obj;
+    PyTypeObject *type = &PyBaseObject_Type;
+    PyTypeObject *var_type = &PyLong_Type;
+
+    // PyObject_New()
+    obj = PyObject_New(PyObject, type);
+    if (obj == NULL) {
+        goto alloc_failed;
+    }
+    Py_DECREF(obj);
+
+    // PyObject_NEW()
+    obj = PyObject_NEW(PyObject, type);
+    if (obj == NULL) {
+        goto alloc_failed;
+    }
+    Py_DECREF(obj);
+
+    // PyObject_NewVar()
+    obj = PyObject_NewVar(PyObject, var_type, 3);
+    if (obj == NULL) {
+        goto alloc_failed;
+    }
+    Py_DECREF(obj);
+
+    // PyObject_NEW_VAR()
+    obj = PyObject_NEW_VAR(PyObject, var_type, 3);
+    if (obj == NULL) {
+        goto alloc_failed;
+    }
+    Py_DECREF(obj);
+
+    Py_RETURN_NONE;
+
+alloc_failed:
+    PyErr_NoMemory();
+    return NULL;
+}
+
 typedef struct {
     PyMemAllocatorEx alloc;
 
@@ -5858,12 +6112,35 @@ settrace_to_record(PyObject *self, PyObject *list)
     Py_RETURN_NONE;
 }
 
+
 static PyObject *
 test_macros(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    // Py_MIN(), Py_MAX()
+    struct MyStruct {
+        int x;
+    };
+    wchar_t array[3];
+
+    // static_assert(), Py_BUILD_ASSERT()
+    static_assert(1 == 1, "bug");
+    Py_BUILD_ASSERT(1 == 1);
+
+
+    // Py_MIN(), Py_MAX(), Py_ABS()
     assert(Py_MIN(5, 11) == 5);
     assert(Py_MAX(5, 11) == 11);
+    assert(Py_ABS(-5) == 5);
+
+    // Py_STRINGIFY()
+    assert(strcmp(Py_STRINGIFY(123), "123") == 0);
+
+    // Py_MEMBER_SIZE(), Py_ARRAY_LENGTH()
+    assert(Py_MEMBER_SIZE(struct MyStruct, x) == sizeof(int));
+    assert(Py_ARRAY_LENGTH(array) == 3);
+
+    // Py_CHARMASK()
+    int c = 0xab00 | 7;
+    assert(Py_CHARMASK(c) == 7);
 
     // _Py_IS_TYPE_SIGNED()
     assert(_Py_IS_TYPE_SIGNED(int));
@@ -5871,6 +6148,7 @@ test_macros(PyObject *self, PyObject *Py_UNUSED(args))
 
     Py_RETURN_NONE;
 }
+
 
 static PyObject *negative_dictoffset(PyObject *, PyObject *);
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
@@ -5952,6 +6230,13 @@ static PyMethodDef TestMethods[] = {
     {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
     {"test_get_type_qualname",    test_get_type_qualname,        METH_NOARGS},
     {"test_type_from_ephemeral_spec", test_type_from_ephemeral_spec, METH_NOARGS},
+    {"create_type_from_repeated_slots",
+        create_type_from_repeated_slots, METH_O},
+    {"test_from_spec_metatype_inheritance", test_from_spec_metatype_inheritance,
+     METH_NOARGS},
+    {"test_from_spec_invalid_metatype_inheritance",
+     test_from_spec_invalid_metatype_inheritance,
+     METH_NOARGS},
     {"get_kwargs", _PyCFunction_CAST(get_kwargs),
       METH_VARARGS|METH_KEYWORDS},
     {"getargs_tuple",           getargs_tuple,                   METH_VARARGS},
@@ -6041,6 +6326,7 @@ static PyMethodDef TestMethods[] = {
     {"with_tp_del",             with_tp_del,                     METH_VARARGS},
     {"create_cfunction",        create_cfunction,                METH_NOARGS},
     {"test_pymem_alloc0",       test_pymem_alloc0,               METH_NOARGS},
+    {"test_pyobject_new",       test_pyobject_new,               METH_NOARGS},
     {"test_pymem_setrawallocators",test_pymem_setrawallocators,  METH_NOARGS},
     {"test_pymem_setallocators",test_pymem_setallocators,        METH_NOARGS},
     {"test_pyobject_setallocators",test_pyobject_setallocators,  METH_NOARGS},
