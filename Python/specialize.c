@@ -359,6 +359,8 @@ miss_counter_start(void) {
 #define SPEC_FAIL_OUT_OF_RANGE 4
 #define SPEC_FAIL_EXPECTED_ERROR 5
 #define SPEC_FAIL_WRONG_NUMBER_ARGUMENTS 6
+#define SPEC_FAIL_NOT_PY_FUNCTION 7
+
 
 #define SPEC_FAIL_LOAD_GLOBAL_NON_STRING_OR_SPLIT 18
 
@@ -499,7 +501,7 @@ miss_counter_start(void) {
 #define SPEC_FAIL_UNPACK_SEQUENCE_SEQUENCE 9
 
 static int function_kind(PyCodeObject *code);
-static uint32_t maybe_function_get_version(PyObject *o, int expected_argcount, int opcode);
+static uint32_t function_get_version(PyObject *o, int expected_argcount, int opcode);
 
 static int
 specialize_module_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
@@ -773,7 +775,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_EXPECTED_ERROR);
                 goto fail;
             }
-            uint32_t version = maybe_function_get_version(fget,
+            uint32_t version = function_get_version(fget,
                 1, LOAD_ATTR);
             if (version == 0) {
                 goto fail;
@@ -826,11 +828,10 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             goto fail;
         case GET_CALL_GETATTRIBUTE:
         {
-            getattrofunc getattro_slot = type->tp_getattro;
-            assert(getattro_slot == _Py_slot_tp_getattro);
+            assert(type->tp_getattro == _Py_slot_tp_getattro);
             assert(Py_IS_TYPE(descr, &PyFunction_Type));
             _PyLoadMethodCache *lm_cache = (_PyLoadMethodCache *)(instr + 1);
-            uint32_t func_version = maybe_function_get_version(descr, 2,
+            uint32_t func_version = function_get_version(descr, 2,
                 LOAD_ATTR);
             if (func_version == 0) {
                 goto fail;
@@ -1264,11 +1265,13 @@ function_kind(PyCodeObject *code) {
     return SIMPLE_FUNCTION;
 }
 
+/* Returning 0 indicates a failure. */
 static uint32_t
-maybe_function_get_version(PyObject *o, int expected_argcount, int opcode)
+function_get_version(PyObject *o, int expected_argcount, int opcode)
 {
     uint32_t version = 0;
     if (!Py_IS_TYPE(o, &PyFunction_Type)) {
+        SPECIALIZATION_FAIL(opcode, SPEC_FAIL_NOT_PY_FUNCTION);
         goto fail;
     }
     PyFunctionObject *func = (PyFunctionObject *)o;

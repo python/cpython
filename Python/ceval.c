@@ -3708,8 +3708,8 @@ handle_eval_breaker:
             Py_INCREF(fget);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f);
             SET_TOP(NULL);
-            int push_null = !(oparg & 1);
-            STACK_SHRINK(push_null);
+            int shrink_stack = !(oparg & 1);
+            STACK_SHRINK(shrink_stack);
             new_frame->localsplus[0] = owner;
             for (int i = 1; i < code->co_nlocalsplus; i++) {
                 new_frame->localsplus[i] = NULL;
@@ -3747,8 +3747,8 @@ handle_eval_breaker:
             Py_INCREF(f);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f);
             SET_TOP(NULL);
-            int push_null = !(oparg & 1);
-            STACK_SHRINK(push_null);
+            int shrink_stack = !(oparg & 1);
+            STACK_SHRINK(shrink_stack);
             Py_INCREF(name);
             new_frame->localsplus[0] = owner;
             new_frame->localsplus[1] = name;
