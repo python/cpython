@@ -47,7 +47,6 @@ with warnings.catch_warnings():
     )
 
     from distutils.command.build_ext import build_ext
-    from distutils.command.build_scripts import build_scripts
     from distutils.command.install import install
     from distutils.command.install_lib import install_lib
     from distutils.core import Extension, setup
@@ -407,10 +406,6 @@ class PyBuildExt(build_ext):
             # files relative to build base, e.g. libmpdec.a, libexpat.a
             os.getcwd()
         ]
-
-        # Fix up the paths for scripts, too
-        self.distribution.scripts = [os.path.join(self.srcdir, filename)
-                                     for filename in self.distribution.scripts]
 
         # Python header files
         include_dir = escape(sysconfig.get_path('include'))
@@ -1463,26 +1458,6 @@ class PyBuildInstallLib(install_lib):
             if not self.dry_run: os.chmod(dirpath, mode)
 
 
-class PyBuildScripts(build_scripts):
-    def copy_scripts(self):
-        outfiles, updated_files = build_scripts.copy_scripts(self)
-        fullversion = '-{0[0]}.{0[1]}'.format(sys.version_info)
-        minoronly = '.{0[1]}'.format(sys.version_info)
-        newoutfiles = []
-        newupdated_files = []
-        for filename in outfiles:
-            if filename.endswith('2to3'):
-                newfilename = filename + fullversion
-            else:
-                newfilename = filename + minoronly
-            log.info(f'renaming {filename} to {newfilename}')
-            os.rename(filename, newfilename)
-            newoutfiles.append(newfilename)
-            if filename in updated_files:
-                newupdated_files.append(newfilename)
-        return newoutfiles, newupdated_files
-
-
 def main():
     global LIST_MODULE_NAMES
 
@@ -1517,18 +1492,11 @@ def main():
 
           # Build info
           cmdclass = {'build_ext': PyBuildExt,
-                      'build_scripts': PyBuildScripts,
                       'install': PyBuildInstall,
                       'install_lib': PyBuildInstallLib},
           # A dummy module is defined here, because build_ext won't be
           # called unless there's at least one extension module defined.
           ext_modules=[Extension('_dummy', ['_dummy.c'])],
-
-          # If you change the scripts installed here, you also need to
-          # check the PyBuildScripts command above, and change the links
-          # created by the bininstall target in Makefile.pre.in
-          scripts = ["Tools/scripts/pydoc3", "Tools/scripts/idle3",
-                     "Tools/scripts/2to3"]
         )
 
 # --install-platlib

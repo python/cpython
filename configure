@@ -6302,7 +6302,7 @@ case $host/$ac_cv_cc_name in #(
     PY_SUPPORT_TIER=3 ;; #(
     s390x-*-linux-gnu/gcc) :
     PY_SUPPORT_TIER=3 ;; #(
-        x86_64-*-freebsd/clang) :
+        x86_64-*-freebsd*/clang) :
     PY_SUPPORT_TIER=3 ;; #(
   *) :
       PY_SUPPORT_TIER=0
