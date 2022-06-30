@@ -6,6 +6,12 @@
 
 **Source code:** :source:`Lib/dis.py`
 
+.. testsetup::
+
+   import dis
+   def myfunc(alist):
+       return len(alist)
+
 --------------
 
 The :mod:`dis` module supports the analysis of CPython :term:`bytecode` by
@@ -37,16 +43,17 @@ Example: Given the function :func:`myfunc`::
        return len(alist)
 
 the following command can be used to display the disassembly of
-:func:`myfunc`::
+:func:`myfunc`:
+
+.. doctest::
 
    >>> dis.dis(myfunc)
-     1           0 RESUME                   0
-
-     2           2 PUSH_NULL
-                 4 LOAD_GLOBAL              1 (NULL + len)
-                 6 LOAD_FAST                0 (alist)
-                 8 CALL                     1
-                18 RETURN_VALUE
+     2           0 RESUME                   0
+   <BLANKLINE>
+     3           2 LOAD_GLOBAL              1 (NULL + len)
+                14 LOAD_FAST                0 (alist)
+                16 CALL                     1
+                26 RETURN_VALUE
 
 (The "2" is a line number).
 
@@ -108,14 +115,15 @@ code.
    .. versionchanged:: 3.11
       Added the ``show_caches`` parameter.
 
-Example::
+Example:
+
+.. doctest::
 
     >>> bytecode = dis.Bytecode(myfunc)
     >>> for instr in bytecode:
     ...     print(instr.opname)
     ...
     RESUME
-    PUSH_NULL
     LOAD_GLOBAL
     LOAD_FAST
     CALL
@@ -438,12 +446,13 @@ result back on the stack.
 
 **Binary and in-place operations**
 
-Binary operations remove the top of the stack (TOS) and the second top-most
-stack item (TOS1) from the stack.  They perform the operation, and put the
-result back on the stack.
+In the following, TOS is the top-of-stack.
+TOS1, TOS2, TOS3 are the second, thrid and fourth items on the stack, respectively.
 
-In-place operations are like binary operations, in that they remove TOS and
-TOS1, and push the result back on the stack, but the operation is done in-place
+Binary operations remove the top two items from the stack (TOS and TOS1).
+They perform the operation, then put the result back on the stack.
+
+In-place operations are like binary operations, but the operation is done in-place
 when TOS1 supports it, and the resulting TOS may be (but does not have to be)
 the original TOS1.
 
@@ -452,6 +461,7 @@ the original TOS1.
 
    Implements the binary and in-place operators (depending on the value of
    *op*).
+   ``TOS = TOS1 op TOS``.
 
    .. versionadded:: 3.11
 
@@ -469,6 +479,20 @@ the original TOS1.
 .. opcode:: DELETE_SUBSCR
 
    Implements ``del TOS1[TOS]``.
+
+
+.. opcode:: BINARY_SLICE
+
+   Implements ``TOS = TOS2[TOS1:TOS]``.
+
+   .. versionadded:: 3.12
+
+
+.. opcode:: STORE_SLICE
+
+   Implements ``TOS2[TOS1:TOS] = TOS3``.
+
+   .. versionadded:: 3.12
 
 
 **Coroutine opcodes**
@@ -504,8 +528,8 @@ the original TOS1.
 
 .. opcode:: GET_ANEXT
 
-   Implements ``PUSH(get_awaitable(TOS.__anext__()))``.  See ``GET_AWAITABLE``
-   for details about ``get_awaitable``
+   Pushes ``get_awaitable(TOS.__anext__())`` to the stack.  See
+   ``GET_AWAITABLE`` for details about ``get_awaitable``.
 
    .. versionadded:: 3.5
 
@@ -879,7 +903,20 @@ iterations of the loop.
 
 .. opcode:: LOAD_ATTR (namei)
 
-   Replaces TOS with ``getattr(TOS, co_names[namei])``.
+   If the low bit of ``namei`` is not set, this replaces TOS with
+   ``getattr(TOS, co_names[namei>>1])``.
+
+   If the low bit of ``namei`` is set, this will attempt to load a method named
+   ``co_names[namei>>1]`` from the TOS object. TOS is popped.
+   This bytecode distinguishes two cases: if TOS has a method with the correct
+   name, the bytecode pushes the unbound method and TOS. TOS will be used as
+   the first argument (``self``) by :opcode:`CALL` when calling the
+   unbound method. Otherwise, ``NULL`` and the object return by the attribute
+   lookup are pushed.
+
+   .. versionchanged:: 3.12
+      If the low bit of ``namei`` is set, then a ``NULL`` or ``self`` is
+      pushed to the stack before the attribute or unbound method respectively.
 
 
 .. opcode:: COMPARE_OP (opname)
@@ -1034,6 +1071,17 @@ iterations of the loop.
 
    Pushes a reference to the local ``co_varnames[var_num]`` onto the stack.
 
+   .. versionchanged:: 3.12
+      This opcode is now only used in situations where the local variable is
+      guaranteed to be initialized. It cannot raise :exc:`UnboundLocalError`.
+
+.. opcode:: LOAD_FAST_CHECK (var_num)
+
+   Pushes a reference to the local ``co_varnames[var_num]`` onto the stack,
+   raising an :exc:`UnboundLocalError` if the local variable has not been
+   initialized.
+
+   .. versionadded:: 3.12
 
 .. opcode:: STORE_FAST (var_num)
 
@@ -1168,18 +1216,6 @@ iterations of the loop.
    returned by the callable object.
 
    .. versionadded:: 3.6
-
-
-.. opcode:: LOAD_METHOD (namei)
-
-   Loads a method named ``co_names[namei]`` from the TOS object. TOS is popped.
-   This bytecode distinguishes two cases: if TOS has a method with the correct
-   name, the bytecode pushes the unbound method and TOS. TOS will be used as
-   the first argument (``self``) by :opcode:`CALL` when calling the
-   unbound method. Otherwise, ``NULL`` and the object return by the attribute
-   lookup are pushed.
-
-   .. versionadded:: 3.7
 
 
 .. opcode:: PUSH_NULL

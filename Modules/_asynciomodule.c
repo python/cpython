@@ -385,7 +385,7 @@ call_soon(PyObject *loop, PyObject *func, PyObject *arg, PyObject *ctx)
             nargs++;
         }
         stack[nargs] = (PyObject *)ctx;
-
+        EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, callable);
         handle = PyObject_Vectorcall(callable, stack, nargs, context_kwname);
         Py_DECREF(callable);
     }
@@ -2963,6 +2963,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
         PyObject *stack[2];
         stack[0] = wrapper;
         stack[1] = (PyObject *)task->task_context;
+        EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, add_cb);
         tmp = PyObject_Vectorcall(add_cb, stack, 1, context_kwname);
         Py_DECREF(add_cb);
         Py_DECREF(wrapper);

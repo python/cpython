@@ -86,6 +86,19 @@ python \- an interpreted, interactive, object-oriented programming language
 ]
 .br
        [
+.B \--help
+]
+[
+.B \--help-env
+]
+[
+.B \--help-xoptions
+]
+[
+.B \--help-all
+]
+.br
+       [
 .B \-c
 .I command
 |
@@ -148,6 +161,16 @@ the behavior of the interpreter.
 .TP
 .B \-h ", " \-? ", "\-\-help
 Prints the usage for the interpreter executable and exits.
+.TP
+.B "\-\-help\-env"
+Prints help about Python-specific environment variables and exits.
+.TP
+.B "\-\-help\-xoptions"
+Prints help about implementation-specific \fB\-X\fP options and exits.
+.TP
+.TP
+.B "\-\-help\-all"
+Prints complete usage information and exits.
 .TP
 .B \-i
 When a script is passed as first argument or the \fB\-c\fP option is
@@ -287,7 +310,7 @@ a regular expression on the warning message.
 
 .TP
 .BI "\-X " option
-Set implementation specific option. The following options are available:
+Set implementation-specific option. The following options are available:
 
     -X faulthandler: enable faulthandler
 
@@ -332,7 +355,7 @@ Set implementation specific option. The following options are available:
        files are desired as well as suppressing the extra visual location indicators
        when the interpreter displays tracebacks.
 
-    -X frozen_modules=[on|off]: whether or not frozen modules should be used
+    -X frozen_modules=[on|off]: whether or not frozen modules should be used.
        The default is "on" (or "off" if you are running a local build).
 
 .TP
