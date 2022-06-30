@@ -3956,17 +3956,30 @@ WITH_SAVE_ENV([
   ], [have_gdbm=no])
 ])
 
-# check for _dbmmodule.c dependencies
+dnl check for _dbmmodule.c dependencies
+dnl ndbm, gdbm_compat, libdb
 AC_CHECK_HEADERS([ndbm.h], [
-  LIBS_SAVE="$LIBS"
-  AC_CHECK_LIB([ndbm], [dbm_open])
-  LIBS="$LIBS_SAVE"
-  AC_CHECK_LIB([gdbm_compat], [dbm_open])
-  LIBS="$LIBS_SAVE"
+  WITH_SAVE_ENV([
+    AC_SEARCH_LIBS([dbm_open], [ndbm gdbm_compat])
+  ])
 ])
 
-# "gdbm-ndbm.h" and "gdbm/ndbm.h" are both normalized to "gdbm_ndbm_h"
-# unset ac_cv_header_gdbm_ndbm_h to prevent false positive cache hits.
+AC_MSG_CHECKING([for ndbm presence and linker args])
+AS_CASE([$ac_cv_search_dbm_open],
+  [*ndbm*|*gdbm_compat*], [
+    dbm_ndbm="$ac_cv_search_dbm_open"
+    have_ndbm=yes
+  ],
+  [none*], [
+    dbm_ndbm=""
+    have_ndbm=yes
+  ],
+  [no], [have_ndbm=no]
+)
+AC_MSG_RESULT([$have_ndbm ($dbm_ndbm)])
+
+dnl "gdbm-ndbm.h" and "gdbm/ndbm.h" are both normalized to "gdbm_ndbm_h"
+dnl unset ac_cv_header_gdbm_ndbm_h to prevent false positive cache hits.
 AS_UNSET([ac_cv_header_gdbm_ndbm_h])
 AC_CACHE_VAL([ac_cv_header_gdbm_slash_ndbm_h], [
   AC_CHECK_HEADER(
@@ -3991,26 +4004,26 @@ AS_VAR_IF([ac_cv_header_gdbm_dash_ndbm_h], [yes], [
 AS_UNSET([ac_cv_header_gdbm_ndbm_h])
 
 if test "$ac_cv_header_gdbm_slash_ndbm_h" = yes -o "$ac_cv_header_gdbm_dash_ndbm_h" = yes; then
-  LIBS_SAVE="$LIBS"
-  AC_CHECK_LIB([gdbm_compat], [dbm_open])
-  LIBS="$LIBS_SAVE"
+  WITH_SAVE_ENV([
+    AC_SEARCH_LIBS([dbm_open], [gdbm_compat])
+  ])
 fi
 
 # Check for libdb >= 5 with dbm_open()
 # db.h re-defines the name of the function
 AC_CHECK_HEADERS([db.h], [
   AC_CACHE_CHECK([for libdb], [ac_cv_have_libdb], [
-    LIBS_SAVE="$LIBS"
-    LIBS="$LIBS -ldb"
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([
-      #define DB_DBM_HSEARCH 1
-      #include <db.h>
-      #if DB_VERSION_MAJOR < 5
-        #error "dh.h: DB_VERSION_MAJOR < 5 is not supported."
-      #endif
-      ], [DBM *dbm = dbm_open(NULL, 0, 0)])
-    ], [ac_cv_have_libdb=yes], [ac_cv_have_libdb=no])
-    LIBS="$LIBS_SAVE"
+    WITH_SAVE_ENV([
+      LIBS="$LIBS -ldb"
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([
+        #define DB_DBM_HSEARCH 1
+        #include <db.h>
+        #if DB_VERSION_MAJOR < 5
+          #error "dh.h: DB_VERSION_MAJOR < 5 is not supported."
+        #endif
+        ], [DBM *dbm = dbm_open(NULL, 0, 0)])
+      ], [ac_cv_have_libdb=yes], [ac_cv_have_libdb=no])
+    ])
   ])
   AS_VAR_IF([ac_cv_have_libdb], [yes], [
     AC_DEFINE([HAVE_LIBDB], [1], [Define to 1 if you have the `db' library (-ldb).])
@@ -4018,7 +4031,7 @@ AC_CHECK_HEADERS([db.h], [
 ])
 
 # Check for --with-dbmliborder
-AC_MSG_CHECKING(for --with-dbmliborder)
+AC_MSG_CHECKING([for --with-dbmliborder])
 AC_ARG_WITH(dbmliborder,
             AS_HELP_STRING([--with-dbmliborder=db1:db2:...], [override order to check db backends for dbm; a valid value is a colon separated string with the backend names `ndbm', `gdbm' and `bdb'.]),
 [], [with_dbmliborder=gdbm:ndbm:bdb])
@@ -4038,7 +4051,42 @@ IFS=$as_save_IFS
 AS_VAR_IF([with_dbmliborder], [error], [
   AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:... (gdbm:ndbm:bdb)])
 ])
-AC_MSG_RESULT($with_dbmliborder)
+AC_MSG_RESULT([$with_dbmliborder])
+
+AC_MSG_CHECKING([for _dbm module CFLAGS and LIBS])
+have_dbm=no
+as_save_IFS=$IFS
+IFS=:
+for db in $with_dbmliborder; do
+  case "$db" in
+    ndbm)
+      if test "$have_ndbm" = yes; then
+        DBM_CFLAGS="-DUSE_NDBM"
+        DBM_LIBS="$dbm_ndbm"
+        have_dbm=yes
+        break
+      fi
+      ;;
+    gdbm)
+      if test "$have_gdbm_compat" = yes; then
+        DBM_CFLAGS="-DUSE_GDBM_COMPAT"
+        DBM_LIBS="-lgdbm_compat"
+        have_dbm=yes
+        break
+      fi
+      ;;
+    bdb)
+      if test "$ac_cv_have_libdb" = yes; then
+        DBM_CFLAGS="-DUSE_BERKDB"
+        DBM_LIBS="-ldb"
+        have_dbm=yes
+        break
+      fi
+     ;;
+  esac
+done
+IFS=$as_save_IFS
+AC_MSG_RESULT([$DBM_CFLAGS $DBM_LIBS])
 
 # Templates for things AC_DEFINEd more than once.
 # For a single AC_DEFINE, no template is needed.
@@ -6940,7 +6988,9 @@ PY_STDLIB_MOD([_ctypes],
 dnl PY_STDLIB_MOD([_curses], [], [], [], [])
 dnl PY_STDLIB_MOD([_curses_panel], [], [], [], [])
 PY_STDLIB_MOD([_decimal], [], [], [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LDFLAGS])
-dnl PY_STDLIB_MOD([_dbm], [], [], [], [])
+PY_STDLIB_MOD([_dbm],
+  [test -n "$with_dbmliborder"], [test "$have_dbm" != "no"],
+  [$DBM_CFLAGS], [$DBM_LIBS])
 PY_STDLIB_MOD([_gdbm],
   [test "$have_gdbm_dbmliborder" = yes], [test "$have_gdbm" = yes],
   [$GDBM_CFLAGS], [$GDBM_LIBS])
