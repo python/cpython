@@ -1011,7 +1011,7 @@ call fails (for example because the path doesn't exist).
       its resumptions. I.e. If a directory from *dirnames* has been replaced
       with a symlink and *follow_symlinks* = ``False``, :meth:`Path.walk` will
       still try to descend into it. To prevent such behavior, remove directories
-      from *dirnames* if they have been modified and you do not want to 
+      from *dirnames* if they have been modified and you do not want to
       descend into them anymore.
 
    .. note::
