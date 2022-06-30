@@ -5661,6 +5661,9 @@ handle_eval_breaker:
 #else
         EXTRA_CASES  // From opcode.h, a 'case' for each unused opcode
 #endif
+            /* Tell C compilers not to hold the opcode variable in the loop.
+               next_instr points the current instruction without TARGET(). */
+            opcode = _Py_OPCODE(*next_instr);
             fprintf(stderr, "XXX lineno: %d, opcode: %d\n",
                     _PyInterpreterFrame_GetLine(frame),  opcode);
             _PyErr_SetString(tstate, PyExc_SystemError, "unknown opcode");
