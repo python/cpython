@@ -105,7 +105,7 @@ To actually run a coroutine, asyncio provides three main mechanisms:
 
 * The :class:`asyncio.TaskGroup` class provides a more modern
   alternative to :func:`create_task`.
-  Using this API the last example becomes::
+  Using this API, the last example becomes::
 
       async def main():
           async with asyncio.TaskGroup() as tg:
@@ -121,10 +121,10 @@ To actually run a coroutine, asyncio provides three main mechanisms:
 
           print(f"finished at {time.strftime('%X')}")
 
-The timing and output should be the same as for the previous version.
+  The timing and output should be the same as for the previous version.
 
-   .. versionchanged:: 3.11
-      Added :class:`asyncio.TaskGroup`.
+  .. versionadded:: 3.11
+     :class:`asyncio.TaskGroup`.
 
 
 .. _asyncio-awaitables:
@@ -286,7 +286,7 @@ Task Groups
 ===========
 
 Task groups combine a task creation API with a convenient
-and reliable API to wait for all tasks in the group to finish.
+and reliable way to wait for all tasks in the group to finish.
 
 Example::
 
@@ -303,13 +303,11 @@ and calling ``tg.create_task()`` in that coroutine).
 Once the last task has finished and the ``async with`` block is exited,
 no new tasks may be added to the group.
 
-When one of the tasks belonging to the group fails
+The first time any of the tasks belonging to the group fails
 with an exception other than :exc:`asyncio.CancelledError`,
 the remaining tasks in the group are cancelled.
-This cancellation of the remaining tasks is done only
-the first time any task fails (excluding :exc:`asyncio.CancelledError`).
 At this point, if the body of the ``async with`` statement is still active
-(i.e., ``__aexit__`` hasn't been called yet),
+(i.e., :meth:`~object.__aexit__` hasn't been called yet),
 the task directly containing the ``async with`` statement is also cancelled.
 The resulting :exc:`asyncio.CancelledError` will interrupt an ``await``,
 but it will not bubble out of the containing ``async with`` statement.
@@ -318,7 +316,7 @@ Once all tasks have finished, if any tasks have failed
 with an exception other than :exc:`asyncio.CancelledError`,
 those exceptions are combined in an
 :exc:`ExceptionGroup` or :exc:`BaseExceptionGroup`
-(as appropriate, see their documentation)
+(as appropriate; see their documentation)
 which is then raised.
 
 Two base exceptions are treated specially:
@@ -328,16 +326,16 @@ but then the initial :exc:`KeyboardInterrupt` or :exc:`SystemExit`
 is re-raised instead of :exc:`ExceptionGroup` or :exc:`BaseExceptionGroup`.
 
 If the body of the ``async with`` statement exits with an exception
-(so ``__aexit__`` is called with an exception set),
+(so :meth:`~object.__aexit__` is called with an exception set),
 this is treated the same as if one of the tasks failed:
 the remaining tasks are cancelled and then waited for,
-and non-cancellation exceptions are grouped into a
-(base) exception group and raised.
-The exception passed into ``__aexit__``,
+and non-cancellation exceptions are grouped into an
+exception group and raised.
+The exception passed into :meth:`~object.__aexit__`,
 unless it is :exc:`asyncio.CancelledError`,
 is also included in the exception group.
 The same special case is made for
-:exc:`KeyboardInterrupt` and :exc:`SystemExit` here.
+:exc:`KeyboardInterrupt` and :exc:`SystemExit` as in the previous paragraph.
 
 .. class:: TaskGroup()
 
