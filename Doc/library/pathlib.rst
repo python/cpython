@@ -1049,7 +1049,6 @@ call fails (for example because the path doesn't exist).
               (root / name).unlink()
           for name in dirs:
               (root / name).rmdir()
-   
    .. versionadded:: 3.12
 
 .. method:: Path.lchmod(mode)
