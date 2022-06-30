@@ -669,6 +669,7 @@ future_get_result(FutureObj *fut, PyObject **result)
         }
         Py_INCREF(fut->fut_exception);
         *result = fut->fut_exception;
+        Py_CLEAR(fut->fut_exception_tb);
         return 1;
     }
 

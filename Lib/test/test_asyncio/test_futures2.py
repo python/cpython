@@ -1,6 +1,5 @@
 # IsolatedAsyncioTestCase based tests
 import asyncio
-import inspect
 import unittest
 import traceback
 
@@ -10,58 +9,22 @@ def tearDownModule():
 
 
 class FutureTests(unittest.IsolatedAsyncioTestCase):
-    maxDiff = None
 
     async def test_future_traceback(self):
-        # Note: the test is sensitive to line numbers.
-        #
-        # To make the test more flexible
-        # and ready for future file modifications,
-        # RAISE_MARKER and AWAIT_MARKER_<N> are
-        # used for finding analyzed line numbers.
-
-        markers = {}
-
-        def init_markers():
-            source_lines, offset = inspect.getsourcelines(
-                FutureTests.test_future_traceback,
-            )
-            mark = "# pos: "
-            for pos, line in enumerate(source_lines):
-                found = line.find(mark)
-                if found != -1:
-                    marker = line[found + len(mark):].strip()
-                    if marker == '"':
-                        # skip 'mark' variable definition from above
-                        continue
-                    markers[marker] = offset + pos
-
-        init_markers()
-
-        def analyze_traceback(tb, await_marker):
-            summary = traceback.extract_tb(tb)
-            self.assertEqual(2, len(summary))
-            self.assertEqual(markers[await_marker], summary[0].lineno)
-            self.assertEqual(markers["RAISE_MARKER"], summary[1].lineno)
 
         async def raise_exc():
-            raise TypeError(42)  # pos: RAISE_MARKER
+            raise TypeError(42)
 
         future = asyncio.create_task(raise_exc())
-        # first await
-        try:
-            await future  # pos: AWAIT_MARKER_1
-        except TypeError as exc:
-            analyze_traceback(exc.__traceback__, "AWAIT_MARKER_1")
-        else:
-            self.fail('TypeError not raised')
-        # the second await replaces traceback
-        try:
-            await future  # pos: AWAIT_MARKER_2
-        except TypeError as exc:
-            analyze_traceback(exc.__traceback__, "AWAIT_MARKER_2")
-        else:
-            self.fail('TypeError not raised')
+
+        for _ in range(5):
+            try:
+                await future
+            except TypeError as e:
+                tb = ''.join(traceback.format_tb(e.__traceback__))
+                self.assertEqual(tb.count("await fut"), 1)
+            else:
+                self.fail('TypeError was not raised')
 
     async def test_recursive_repr_for_pending_tasks(self):
         # The call crashes if the guard for recursive call
