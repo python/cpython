@@ -1349,24 +1349,23 @@ iterations of the loop.
 .. opcode:: HAVE_ARGUMENT
 
    This is not really an opcode.  It identifies the dividing line between
-   non-virtual opcodes which don't use their argument and those that do
-   (``< HAVE_ARGUMENT`` and ``>= HAVE_ARGUMENT``, respectively).
+   opcodes in the range [0,255] which don't use their argument and those
+   that do (``< HAVE_ARGUMENT`` and ``>= HAVE_ARGUMENT``, respectively).
 
-   See also the :data:`hasarg` collection, which contains virtual as well
-   as non-virtual opcodes that use their argument.
+   If your application uses pseudo instructions, use the :data:`hasarg`
+   collection instead.
 
    .. versionchanged:: 3.6
       Now every instruction has an argument, but opcodes ``< HAVE_ARGUMENT``
       ignore it. Before, only opcodes ``>= HAVE_ARGUMENT`` had an argument.
 
    .. versionchanged:: 3.12
-      Virtual opcodes were added to the :mod:`dis` module, and for them it
-      is not true that comparison with ``HAVE_ARGUMENT`` indicates whether
-      they use their arg. Check membership in :data:`hasarg` instead if your
-      application uses virtual opcodes.
+      Pseudo instructions were added to the :mod:`dis` module, and for them
+      it is not true that comparison with ``HAVE_ARGUMENT`` indicates whether
+      they use their arg.
 
 
-**Virtual opcodes**
+**Pseudo-instructions**
 
 These opcodes do not appear in python bytecode, they are used by the compiler
 but are replaced by real opcodes or removed before bytecode is generated.
@@ -1428,8 +1427,8 @@ These collections are provided for automatic introspection of bytecode
 instructions:
 
    .. versionchanged:: 3.12
-      The collections now contain virtual opcodes as well. These are
-      opcodes with values ``>= MIN_VIRTUAL_OPCODE``.
+      The collections now contain pseudo instructions as well. These are
+      opcodes with values ``>= MIN_PSEUDO_OPCODE``.
 
 .. data:: opname
 

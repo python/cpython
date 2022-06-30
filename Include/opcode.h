@@ -120,7 +120,7 @@ extern "C" {
 #define POP_JUMP_BACKWARD_IF_NONE              174
 #define POP_JUMP_BACKWARD_IF_FALSE             175
 #define POP_JUMP_BACKWARD_IF_TRUE              176
-#define MIN_VIRTUAL_OPCODE                     256
+#define MIN_PSEUDO_OPCODE                      256
 #define SETUP_FINALLY                          256
 #define SETUP_CLEANUP                          257
 #define SETUP_WITH                             258
@@ -132,7 +132,7 @@ extern "C" {
 #define POP_JUMP_IF_NONE                       264
 #define POP_JUMP_IF_NOT_NONE                   265
 #define LOAD_METHOD                            266
-#define MAX_VIRTUAL_OPCODE                     266
+#define MAX_PSEUDO_OPCODE                      266
 #define BINARY_OP_ADAPTIVE                       3
 #define BINARY_OP_ADD_FLOAT                      4
 #define BINARY_OP_ADD_INT                        5
@@ -207,7 +207,7 @@ extern "C" {
 #define UNPACK_SEQUENCE_TWO_TUPLE              182
 #define DO_TRACING                             255
 
-#define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_VIRTUAL_OPCODE(op)))\
+#define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
     || ((op) == JUMP) \
     || ((op) == JUMP_NO_INTERRUPT) \
     || ((op) == POP_JUMP_IF_FALSE) \
@@ -250,7 +250,7 @@ extern "C" {
 #define NB_INPLACE_XOR                          25
 
 
-#define IS_VIRTUAL_OPCODE(op) (((op) >= MIN_VIRTUAL_OPCODE) && ((op) <= MAX_VIRTUAL_OPCODE))
+#define IS_PSEUDO_OPCODE(op) (((op) >= MIN_PSEUDO_OPCODE) && ((op) <= MAX_PSEUDO_OPCODE))
 
 #ifdef __cplusplus
 }

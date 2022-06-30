@@ -75,7 +75,7 @@
 
 #define IS_WITHIN_OPCODE_RANGE(opcode) \
         (((opcode) >= 0 && (opcode) <= MAX_REAL_OPCODE) || \
-         IS_VIRTUAL_OPCODE(opcode))
+         IS_PSEUDO_OPCODE(opcode))
 
 #define IS_JUMP_OPCODE(opcode) \
          is_bit_set_in_table(_PyOpcode_Jump, opcode)
@@ -191,7 +191,7 @@ static int
 instr_size(struct instr *instruction)
 {
     int opcode = instruction->i_opcode;
-    assert(!IS_VIRTUAL_OPCODE(opcode));
+    assert(!IS_PSEUDO_OPCODE(opcode));
     int oparg = HAS_ARG(opcode) ? instruction->i_oparg : 0;
     int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
     int caches = _PyOpcode_Caches[opcode];
@@ -202,7 +202,7 @@ static void
 write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
 {
     int opcode = instruction->i_opcode;
-    assert(!IS_VIRTUAL_OPCODE(opcode));
+    assert(!IS_PSEUDO_OPCODE(opcode));
     int oparg = HAS_ARG(opcode) ? instruction->i_oparg : 0;
     int caches = _PyOpcode_Caches[opcode];
     switch (ilen - caches) {

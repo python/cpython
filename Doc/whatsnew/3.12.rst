@@ -93,10 +93,12 @@ Improved Modules
 dis
 ---
 
-* Virtual opcodes are now exposed in :mod:`dis`. :data:`~dis.HAVE_ARGUMENT`
-  is still relevant to real opcodes, but it is not useful for virtual opcodes.
-  Use the new :data:`~dis.hasarg` collection instead if your application uses
-  virtual opcodes.
+* Pseudo instruction opcodes (which are used by the compiler but
+  do not appear in executable bytecode) are now exposed in the
+  :mod:`dis` module.
+  :data:`~dis.HAVE_ARGUMENT` is still relevant to real opcodes,
+  but it is not useful for pseudo instrcutions. Use the new
+  :data:`~dis.hasarg` collection instead.
   (Contributed by Irit Katriel in :gh:`94216`.)
 
 os

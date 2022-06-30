@@ -21,7 +21,7 @@ extern "C" {{
 
 footer = """
 
-#define IS_VIRTUAL_OPCODE(op) (((op) >= MIN_VIRTUAL_OPCODE) && ((op) <= MAX_VIRTUAL_OPCODE))
+#define IS_PSEUDO_OPCODE(op) (((op) >= MIN_PSEUDO_OPCODE) && ((op) <= MAX_PSEUDO_OPCODE))
 
 #ifdef __cplusplus
 }
@@ -82,12 +82,12 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
     hasconst = opcode['hasconst']
     hasjrel = opcode['hasjrel']
     hasjabs = opcode['hasjabs']
-    is_virtual = opcode['is_virtual']
-    _virtual_ops = opcode['_virtual_ops']
+    is_pseudo = opcode['is_pseudo']
+    _pseudo_ops = opcode['_pseudo_ops']
 
     HAVE_ARGUMENT = opcode["HAVE_ARGUMENT"]
-    MIN_VIRTUAL_OPCODE = opcode["MIN_VIRTUAL_OPCODE"]
-    MAX_VIRTUAL_OPCODE = opcode["MAX_VIRTUAL_OPCODE"]
+    MIN_PSEUDO_OPCODE = opcode["MIN_PSEUDO_OPCODE"]
+    MAX_PSEUDO_OPCODE = opcode["MAX_PSEUDO_OPCODE"]
 
     NUM_OPCODES = len(opname)
     used = [ False ] * len(opname)
@@ -117,13 +117,13 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
                 op = opmap[name]
                 if op == HAVE_ARGUMENT:
                     fobj.write(DEFINE.format("HAVE_ARGUMENT", HAVE_ARGUMENT))
-                if op == MIN_VIRTUAL_OPCODE:
-                    fobj.write(DEFINE.format("MIN_VIRTUAL_OPCODE", MIN_VIRTUAL_OPCODE))
+                if op == MIN_PSEUDO_OPCODE:
+                    fobj.write(DEFINE.format("MIN_PSEUDO_OPCODE", MIN_PSEUDO_OPCODE))
 
                 fobj.write(DEFINE.format(name, op))
 
-                if op == MAX_VIRTUAL_OPCODE:
-                    fobj.write(DEFINE.format("MAX_VIRTUAL_OPCODE", MAX_VIRTUAL_OPCODE))
+                if op == MAX_PSEUDO_OPCODE:
+                    fobj.write(DEFINE.format("MAX_PSEUDO_OPCODE", MAX_PSEUDO_OPCODE))
 
 
         for name, op in specialized_opmap.items():
@@ -144,7 +144,7 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
 
         deoptcodes = {}
         for basic, op in opmap.items():
-            if not is_virtual(op):
+            if not is_pseudo(op):
                 deoptcodes[basic] = basic
         for basic, family in opcode["_specializations"].items():
             for specialized in family:
@@ -162,8 +162,8 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
         iobj.write("#endif   // NEED_OPCODE_TABLES\n")
 
         fobj.write("\n")
-        fobj.write("#define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_VIRTUAL_OPCODE(op)))\\")
-        for op in _virtual_ops:
+        fobj.write("#define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\\")
+        for op in _pseudo_ops:
             if opmap[op] in hasarg:
                 fobj.write(f"\n    || ((op) == {op}) \\")
         fobj.write("\n    )\n")

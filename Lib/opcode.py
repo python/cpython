@@ -33,17 +33,17 @@ hascompare = []
 hasfree = []
 hasexc = []
 
-def is_virtual(op):
-    return op >= MIN_VIRTUAL_OPCODE and op <= MAX_VIRTUAL_OPCODE
+def is_pseudo(op):
+    return op >= MIN_PSEUDO_OPCODE and op <= MAX_PSEUDO_OPCODE
 
 oplists = [hasarg, hasconst, hasname, hasjrel, hasjabs,
            haslocal, hascompare, hasfree, hasexc]
 
 opmap = {}
 
-## virtual opcodes (used in the compiler) mapped to the values
+## pseudo opcodes (used in the compiler) mapped to the values
 ## they can become in the actual code.
-_virtual_ops = {}
+_pseudo_ops = {}
 
 def def_op(name, op):
     opmap[name] = op
@@ -60,10 +60,10 @@ def jabs_op(name, op):
     def_op(name, op)
     hasjabs.append(op)
 
-def virtual_op(name, op, real_ops):
+def pseudo_op(name, op, real_ops):
     def_op(name, op)
-    _virtual_ops[name] = real_ops
-    # add the virtual opcode to the lists its targets are in
+    _pseudo_ops[name] = real_ops
+    # add the pseudo opcode to the lists its targets are in
     for oplist in oplists:
         res = [opmap[rop] in oplist for rop in real_ops]
         if any(res):
@@ -125,7 +125,7 @@ def_op('ASYNC_GEN_WRAP', 87)
 def_op('PREP_RERAISE_STAR', 88)
 def_op('POP_EXCEPT', 89)
 
-HAVE_ARGUMENT = 90             # Non-virtual opcodes from here have an argument:
+HAVE_ARGUMENT = 90             # real opcodes from here have an argument:
 
 name_op('STORE_NAME', 90)       # Index in name list
 name_op('DELETE_NAME', 91)      # ""
@@ -222,29 +222,29 @@ jrel_op('POP_JUMP_BACKWARD_IF_TRUE', 176)
 
 hasarg.extend([op for op in opmap.values() if op >= HAVE_ARGUMENT])
 
-MIN_VIRTUAL_OPCODE = 256
+MIN_PSEUDO_OPCODE = 256
 
-virtual_op('SETUP_FINALLY', 256, ['NOP'])
+pseudo_op('SETUP_FINALLY', 256, ['NOP'])
 hasexc.append(256)
-virtual_op('SETUP_CLEANUP', 257, ['NOP'])
+pseudo_op('SETUP_CLEANUP', 257, ['NOP'])
 hasexc.append(257)
-virtual_op('SETUP_WITH', 258, ['NOP'])
+pseudo_op('SETUP_WITH', 258, ['NOP'])
 hasexc.append(258)
-virtual_op('POP_BLOCK', 259, ['NOP'])
+pseudo_op('POP_BLOCK', 259, ['NOP'])
 
-virtual_op('JUMP', 260, ['JUMP_FORWARD', 'JUMP_BACKWARD'])
-virtual_op('JUMP_NO_INTERRUPT', 261, ['JUMP_FORWARD', 'JUMP_BACKWARD_NO_INTERRUPT'])
-virtual_op('POP_JUMP_IF_FALSE', 262, ['POP_JUMP_FORWARD_IF_FALSE', 'POP_JUMP_BACKWARD_IF_FALSE'])
-virtual_op('POP_JUMP_IF_TRUE', 263, ['POP_JUMP_FORWARD_IF_TRUE', 'POP_JUMP_BACKWARD_IF_TRUE'])
-virtual_op('POP_JUMP_IF_NONE', 264, ['POP_JUMP_FORWARD_IF_NONE', 'POP_JUMP_BACKWARD_IF_NONE'])
-virtual_op('POP_JUMP_IF_NOT_NONE', 265, ['POP_JUMP_FORWARD_IF_NOT_NONE', 'POP_JUMP_BACKWARD_IF_NOT_NONE'])
-virtual_op('LOAD_METHOD', 266, ['LOAD_ATTR'])
+pseudo_op('JUMP', 260, ['JUMP_FORWARD', 'JUMP_BACKWARD'])
+pseudo_op('JUMP_NO_INTERRUPT', 261, ['JUMP_FORWARD', 'JUMP_BACKWARD_NO_INTERRUPT'])
+pseudo_op('POP_JUMP_IF_FALSE', 262, ['POP_JUMP_FORWARD_IF_FALSE', 'POP_JUMP_BACKWARD_IF_FALSE'])
+pseudo_op('POP_JUMP_IF_TRUE', 263, ['POP_JUMP_FORWARD_IF_TRUE', 'POP_JUMP_BACKWARD_IF_TRUE'])
+pseudo_op('POP_JUMP_IF_NONE', 264, ['POP_JUMP_FORWARD_IF_NONE', 'POP_JUMP_BACKWARD_IF_NONE'])
+pseudo_op('POP_JUMP_IF_NOT_NONE', 265, ['POP_JUMP_FORWARD_IF_NOT_NONE', 'POP_JUMP_BACKWARD_IF_NOT_NONE'])
+pseudo_op('LOAD_METHOD', 266, ['LOAD_ATTR'])
 
-MAX_VIRTUAL_OPCODE = MIN_VIRTUAL_OPCODE + len(_virtual_ops) - 1
+MAX_PSEUDO_OPCODE = MIN_PSEUDO_OPCODE + len(_pseudo_ops) - 1
 
-del def_op, name_op, jrel_op, jabs_op, virtual_op
+del def_op, name_op, jrel_op, jabs_op, pseudo_op
 
-opname = ['<%r>' % (op,) for op in range(MAX_VIRTUAL_OPCODE + 1)]
+opname = ['<%r>' % (op,) for op in range(MAX_PSEUDO_OPCODE + 1)]
 for op, i in opmap.items():
     opname[i] = op
 
