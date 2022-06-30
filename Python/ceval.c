@@ -2266,7 +2266,7 @@ handle_eval_breaker:
             DEOPT_IF(index >= ascii->length, BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
             Py_UCS1 ch = *((Py_UCS1*)(ascii + 1) + index);
-            PyObject *res = (PyObject*)&_Py_SINGLETON(strings).ascii[ch];
+            PyObject *res = _Py_SINGLETON_ASCII(ch);
             Py_INCREF(res);
             assert(res != NULL);
             STACK_SHRINK(1);

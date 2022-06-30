@@ -55,6 +55,7 @@ struct _Py_unicode_state {
 
 extern void _PyUnicode_ClearInterned(PyInterpreterState *interp);
 
+#define _Py_SINGLETON_ASCII(ch) (PyObject*)&_Py_SINGLETON(strings).ascii[ch]
 
 #ifdef __cplusplus
 }
