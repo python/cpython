@@ -5,6 +5,7 @@ Copyright (C) 2011-2012 Vinay Sajip.
 Licensed to the PSF under a contributor agreement.
 """
 
+import contextlib
 import ensurepip
 import os
 import os.path
@@ -558,16 +559,10 @@ class EnsurePipTest(BaseTest):
 
                 # Actually run the create command with all that unhelpful
                 # config in place to ensure we ignore it
-                try:
+                with self.nicer_error():
                     self.run_with_capture(venv.create, self.env_dir,
                                           system_site_packages=system_site_packages,
                                           with_pip=True)
-                except subprocess.CalledProcessError as exc:
-                    # The output this produces can be a little hard to read,
-                    # but at least it has all the details
-                    details = exc.output.decode(errors="replace")
-                    msg = "{}\n\n**Subprocess Output**\n{}"
-                    self.fail(msg.format(exc, details))
         # Ensure pip is available in the virtual environment
         envpy = os.path.join(os.path.realpath(self.env_dir), self.bindir, self.exe)
         # Ignore DeprecationWarning since pip code is not part of Python
@@ -588,13 +583,14 @@ class EnsurePipTest(BaseTest):
         # Check the private uninstall command provided for the Windows
         # installers works (at least in a virtual environment)
         with EnvironmentVarGuard() as envvars:
-            # It seems ensurepip._uninstall calls subprocesses which do not
-            # inherit the interpreter settings.
-            envvars["PYTHONWARNINGS"] = "ignore"
-            out, err = check_output([envpy,
-                '-W', 'ignore::DeprecationWarning',
-                '-W', 'ignore::ImportWarning', '-I',
-                '-m', 'ensurepip._uninstall'])
+            with self.nicer_error():
+                # It seems ensurepip._uninstall calls subprocesses which do not
+                # inherit the interpreter settings.
+                envvars["PYTHONWARNINGS"] = "ignore"
+                out, err = check_output([envpy,
+                    '-W', 'ignore::DeprecationWarning',
+                    '-W', 'ignore::ImportWarning', '-I',
+                    '-m', 'ensurepip._uninstall'])
         # We force everything to text, so unittest gives the detailed diff
         # if we get unexpected results
         err = err.decode("latin-1") # Force to text, prevent decoding errors
@@ -620,10 +616,30 @@ class EnsurePipTest(BaseTest):
         if not system_site_packages:
             self.assert_pip_not_installed()
 
+    @contextlib.contextmanager
+    def nicer_error(self):
+        """
+        Capture output from a failed subprocess for easier debugging.
+
+        The output this handler produces can be a little hard to read,
+        but at least it has all the details.
+        """
+        try:
+            yield
+        except subprocess.CalledProcessError as exc:
+            out = exc.output.decode(errors="replace")
+            err = exc.stderr.decode(errors="replace")
+            self.fail(
+                f"{exc}\n\n"
+                f"**Subprocess Output**\n{out}\n\n"
+                f"**Subprocess Error**\n{err}"
+            )
+
     @requires_venv_with_pip()
     def test_with_pip(self):
         self.do_test_with_pip(False)
         self.do_test_with_pip(True)
+
 
 if __name__ == "__main__":
     unittest.main()
