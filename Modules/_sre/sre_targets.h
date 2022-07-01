@@ -11,7 +11,7 @@
  * See the sre.c file for information on usage and redistribution.
  */
 
-static void *sre_targets[44] = {
+static void *sre_targets[43] = {
     &&TARGET_SRE_OP_FAILURE,
     &&TARGET_SRE_OP_SUCCESS,
     &&TARGET_SRE_OP_ANY,
@@ -20,7 +20,6 @@ static void *sre_targets[44] = {
     &&TARGET_SRE_OP_ASSERT_NOT,
     &&TARGET_SRE_OP_AT,
     &&TARGET_SRE_OP_BRANCH,
-    &&TARGET_SRE_OP_CALL,
     &&TARGET_SRE_OP_CATEGORY,
     &&TARGET_SRE_OP_CHARSET,
     &&TARGET_SRE_OP_BIGCHARSET,

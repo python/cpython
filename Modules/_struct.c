@@ -1496,10 +1496,26 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
     return ret;
 }
 
+static int
+s_clear(PyStructObject *s)
+{
+    Py_CLEAR(s->s_format);
+    return 0;
+}
+
+static int
+s_traverse(PyStructObject *s, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(s));
+    Py_VISIT(s->s_format);
+    return 0;
+}
+
 static void
 s_dealloc(PyStructObject *s)
 {
     PyTypeObject *tp = Py_TYPE(s);
+    PyObject_GC_UnTrack(s);
     if (s->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)s);
     if (s->s_codes != NULL) {
@@ -1725,7 +1741,8 @@ static PyType_Spec unpackiter_type_spec = {
     "_struct.unpack_iterator",
     sizeof(unpackiterobject),
     0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+     Py_TPFLAGS_IMMUTABLETYPE),
     unpackiter_type_slots
 };
 
@@ -2049,8 +2066,8 @@ s_sizeof(PyStructObject *self, void *unused)
 
 static struct PyMethodDef s_methods[] = {
     STRUCT_ITER_UNPACK_METHODDEF
-    {"pack",            (PyCFunction)(void(*)(void))s_pack, METH_FASTCALL, s_pack__doc__},
-    {"pack_into",       (PyCFunction)(void(*)(void))s_pack_into, METH_FASTCALL, s_pack_into__doc__},
+    {"pack",            _PyCFunction_CAST(s_pack), METH_FASTCALL, s_pack__doc__},
+    {"pack_into",       _PyCFunction_CAST(s_pack_into), METH_FASTCALL, s_pack_into__doc__},
     STRUCT_UNPACK_METHODDEF
     STRUCT_UNPACK_FROM_METHODDEF
     {"__sizeof__",      (PyCFunction)s_sizeof, METH_NOARGS, s_sizeof__doc__},
@@ -2078,13 +2095,15 @@ static PyType_Slot PyStructType_slots[] = {
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_setattro, PyObject_GenericSetAttr},
     {Py_tp_doc, (void*)s__doc__},
+    {Py_tp_traverse, s_traverse},
+    {Py_tp_clear, s_clear},
     {Py_tp_methods, s_methods},
     {Py_tp_members, s_members},
     {Py_tp_getset, s_getsetlist},
     {Py_tp_init, Struct___init__},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_new, s_new},
-    {Py_tp_free, PyObject_Del},
+    {Py_tp_free, PyObject_GC_Del},
     {0, 0},
 };
 
@@ -2092,7 +2111,8 @@ static PyType_Spec PyStructType_spec = {
     "_struct.Struct",
     sizeof(PyStructObject),
     0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+     Py_TPFLAGS_BASETYPE | Py_TPFLAGS_IMMUTABLETYPE),
     PyStructType_slots
 };
 
@@ -2298,8 +2318,8 @@ static struct PyMethodDef module_functions[] = {
     _CLEARCACHE_METHODDEF
     CALCSIZE_METHODDEF
     ITER_UNPACK_METHODDEF
-    {"pack",            (PyCFunction)(void(*)(void))pack, METH_FASTCALL,   pack_doc},
-    {"pack_into",       (PyCFunction)(void(*)(void))pack_into, METH_FASTCALL,   pack_into_doc},
+    {"pack",            _PyCFunction_CAST(pack), METH_FASTCALL,   pack_doc},
+    {"pack_into",       _PyCFunction_CAST(pack_into), METH_FASTCALL,   pack_into_doc},
     UNPACK_METHODDEF
     UNPACK_FROM_METHODDEF
     {NULL,       NULL}          /* sentinel */

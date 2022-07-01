@@ -112,7 +112,7 @@ PyDoc_STRVAR(math_ldexp__doc__,
 "This is essentially the inverse of frexp().");
 
 #define MATH_LDEXP_METHODDEF    \
-    {"ldexp", (PyCFunction)(void(*)(void))math_ldexp, METH_FASTCALL, math_ldexp__doc__},
+    {"ldexp", _PyCFunction_CAST(math_ldexp), METH_FASTCALL, math_ldexp__doc__},
 
 static PyObject *
 math_ldexp_impl(PyObject *module, double x, PyObject *i);
@@ -250,7 +250,7 @@ PyDoc_STRVAR(math_fmod__doc__,
 "x % y may differ.");
 
 #define MATH_FMOD_METHODDEF    \
-    {"fmod", (PyCFunction)(void(*)(void))math_fmod, METH_FASTCALL, math_fmod__doc__},
+    {"fmod", _PyCFunction_CAST(math_fmod), METH_FASTCALL, math_fmod__doc__},
 
 static PyObject *
 math_fmod_impl(PyObject *module, double x, double y);
@@ -304,7 +304,7 @@ PyDoc_STRVAR(math_dist__doc__,
 "    sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))");
 
 #define MATH_DIST_METHODDEF    \
-    {"dist", (PyCFunction)(void(*)(void))math_dist, METH_FASTCALL, math_dist__doc__},
+    {"dist", _PyCFunction_CAST(math_dist), METH_FASTCALL, math_dist__doc__},
 
 static PyObject *
 math_dist_impl(PyObject *module, PyObject *p, PyObject *q);
@@ -334,7 +334,7 @@ PyDoc_STRVAR(math_pow__doc__,
 "Return x**y (x to the power of y).");
 
 #define MATH_POW_METHODDEF    \
-    {"pow", (PyCFunction)(void(*)(void))math_pow, METH_FASTCALL, math_pow__doc__},
+    {"pow", _PyCFunction_CAST(math_pow), METH_FASTCALL, math_pow__doc__},
 
 static PyObject *
 math_pow_impl(PyObject *module, double x, double y);
@@ -568,7 +568,7 @@ PyDoc_STRVAR(math_isclose__doc__,
 "only close to themselves.");
 
 #define MATH_ISCLOSE_METHODDEF    \
-    {"isclose", (PyCFunction)(void(*)(void))math_isclose, METH_FASTCALL|METH_KEYWORDS, math_isclose__doc__},
+    {"isclose", _PyCFunction_CAST(math_isclose), METH_FASTCALL|METH_KEYWORDS, math_isclose__doc__},
 
 static int
 math_isclose_impl(PyObject *module, double a, double b, double rel_tol,
@@ -664,7 +664,7 @@ PyDoc_STRVAR(math_prod__doc__,
 "non-numeric types.");
 
 #define MATH_PROD_METHODDEF    \
-    {"prod", (PyCFunction)(void(*)(void))math_prod, METH_FASTCALL|METH_KEYWORDS, math_prod__doc__},
+    {"prod", _PyCFunction_CAST(math_prod), METH_FASTCALL|METH_KEYWORDS, math_prod__doc__},
 
 static PyObject *
 math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start);
@@ -712,7 +712,7 @@ PyDoc_STRVAR(math_perm__doc__,
 "Raises ValueError if either of the arguments are negative.");
 
 #define MATH_PERM_METHODDEF    \
-    {"perm", (PyCFunction)(void(*)(void))math_perm, METH_FASTCALL, math_perm__doc__},
+    {"perm", _PyCFunction_CAST(math_perm), METH_FASTCALL, math_perm__doc__},
 
 static PyObject *
 math_perm_impl(PyObject *module, PyObject *n, PyObject *k);
@@ -756,7 +756,7 @@ PyDoc_STRVAR(math_comb__doc__,
 "Raises ValueError if either of the arguments are negative.");
 
 #define MATH_COMB_METHODDEF    \
-    {"comb", (PyCFunction)(void(*)(void))math_comb, METH_FASTCALL, math_comb__doc__},
+    {"comb", _PyCFunction_CAST(math_comb), METH_FASTCALL, math_comb__doc__},
 
 static PyObject *
 math_comb_impl(PyObject *module, PyObject *n, PyObject *k);
@@ -786,7 +786,7 @@ PyDoc_STRVAR(math_nextafter__doc__,
 "Return the next floating-point value after x towards y.");
 
 #define MATH_NEXTAFTER_METHODDEF    \
-    {"nextafter", (PyCFunction)(void(*)(void))math_nextafter, METH_FASTCALL, math_nextafter__doc__},
+    {"nextafter", _PyCFunction_CAST(math_nextafter), METH_FASTCALL, math_nextafter__doc__},
 
 static PyObject *
 math_nextafter_impl(PyObject *module, double x, double y);
@@ -865,4 +865,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6381e7d982ff3711 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=965f99dabaa72165 input=a9049054013a1b77]*/

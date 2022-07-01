@@ -30,7 +30,6 @@ from sphinx.locale import translators
 from sphinx.util import status_iterator, logging
 from sphinx.util.nodes import split_explicit_title
 from sphinx.writers.text import TextWriter, TextTranslator
-from sphinx.writers.latex import LaTeXTranslator
 
 try:
     from sphinx.domains.python import PyFunction, PyMethod
@@ -44,6 +43,7 @@ import suspicious
 
 
 ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
+GH_ISSUE_URI = 'https://github.com/python/cpython/issues/%s'
 SOURCE_URI = 'https://github.com/python/cpython/tree/main/%s'
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
@@ -58,8 +58,30 @@ Body.enum.converters['loweralpha'] = \
 
 def issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
     issue = utils.unescape(text)
+    # sanity check: there are no bpo issues within these two values
+    if 47261 < int(issue) < 400000:
+        msg = inliner.reporter.error(f'The BPO ID {text!r} seems too high -- '
+                                     'use :gh:`...` for GitHub IDs', line=lineno)
+        prb = inliner.problematic(rawtext, rawtext, msg)
+        return [prb], [msg]
     text = 'bpo-' + issue
     refnode = nodes.reference(text, text, refuri=ISSUE_URI % issue)
+    return [refnode], []
+
+
+# Support for marking up and linking to GitHub issues
+
+def gh_issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
+    issue = utils.unescape(text)
+    # sanity check: all GitHub issues have ID >= 32426
+    # even though some of them are also valid BPO IDs
+    if int(issue) < 32426:
+        msg = inliner.reporter.error(f'The GitHub ID {text!r} seems too low -- '
+                                     'use :issue:`...` for BPO IDs', line=lineno)
+        prb = inliner.problematic(rawtext, rawtext, msg)
+        return [prb], [msg]
+    text = 'gh-' + issue
+    refnode = nodes.reference(text, text, refuri=GH_ISSUE_URI % issue)
     return [refnode], []
 
 
@@ -395,18 +417,14 @@ class DeprecatedRemoved(Directive):
                                    translatable=False)
             node.append(para)
         env = self.state.document.settings.env
-        # deprecated pre-Sphinx-2 method
-        if hasattr(env, 'note_versionchange'):
-            env.note_versionchange('deprecated', version[0], node, self.lineno)
-        # new method
-        else:
-            env.get_domain('changeset').note_changeset(node)
+        env.get_domain('changeset').note_changeset(node)
         return [node] + messages
 
 
 # Support for including Misc/NEWS
 
-issue_re = re.compile('(?:[Ii]ssue #|bpo-)([0-9]+)')
+issue_re = re.compile('(?:[Ii]ssue #|bpo-)([0-9]+)', re.I)
+gh_issue_re = re.compile('(?:gh-issue-|gh-)([0-9]+)', re.I)
 whatsnew_re = re.compile(r"(?im)^what's new in (.*?)\??$")
 
 
@@ -433,9 +451,9 @@ class MiscNews(Directive):
             text = 'The NEWS file is not available.'
             node = nodes.strong(text, text)
             return [node]
-        content = issue_re.sub(r'`bpo-\1 <https://bugs.python.org/'
-                               r'issue?@action=redirect&bpo=\1>`__',
-                               content)
+        content = issue_re.sub(r':issue:`\1`', content)
+        # Fallback handling for the GitHub issue
+        content = gh_issue_re.sub(r':gh:`\1`', content)
         content = whatsnew_re.sub(r'\1', content)
         # remove first 3 lines as they are the main heading
         lines = ['.. default-role:: obj', ''] + content.splitlines()[3:]
@@ -615,6 +633,7 @@ def process_audit_events(app, doctree, fromdocname):
 
 def setup(app):
     app.add_role('issue', issue_role)
+    app.add_role('gh', gh_issue_role)
     app.add_role('source', source_role)
     app.add_directive('impl-detail', ImplementationDetail)
     app.add_directive('availability', Availability)

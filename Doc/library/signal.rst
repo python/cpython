@@ -95,7 +95,7 @@ The signal module defines three enums:
 
    :class:`enum.IntEnum` collection the constants :const:`SIG_BLOCK`, :const:`SIG_UNBLOCK` and :const:`SIG_SETMASK`.
 
-   Availability: Unix. See the man page :manpage:`sigprocmask(3)` and
+   Availability: Unix. See the man page :manpage:`sigprocmask(2)` and
    :manpage:`pthread_sigmask(3)` for further information.
 
    .. versionadded:: 3.5
@@ -266,6 +266,7 @@ The variables defined in the :mod:`signal` module are:
 .. data:: NSIG
 
    One more than the number of the highest signal number.
+   Use :func:`valid_signals` to get valid signal numbers.
 
 
 .. data:: ITIMER_REAL
@@ -738,7 +739,7 @@ To illustrate this issue, consider the following code::
         def __enter__(self):
             # If KeyboardInterrupt occurs here, everything is fine
             self.lock.acquire()
-            # If KeyboardInterrupt occcurs here, __exit__ will not be called
+            # If KeyboardInterrupt occurs here, __exit__ will not be called
             ...
             # KeyboardInterrupt could occur just before the function returns
 

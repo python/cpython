@@ -5520,6 +5520,7 @@ class CWhitebox(unittest.TestCase):
 
         with localcontext() as c:
 
+            c.prec = 9
             c.traps[InvalidOperation] = True
             c.traps[Overflow] = True
             c.traps[Underflow] = True

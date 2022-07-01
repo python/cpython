@@ -1195,14 +1195,6 @@ gc_collect_main(PyThreadState *tstate, int generation,
     assert(gcstate->garbage != NULL);
     assert(!_PyErr_Occurred(tstate));
 
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-    if (tstate->interp->config._isolated_interpreter) {
-        // bpo-40533: The garbage collector must not be run on parallel on
-        // Python objects shared by multiple interpreters.
-        return 0;
-    }
-#endif
-
     if (gcstate->debug & DEBUG_STATS) {
         PySys_WriteStderr("gc: collecting generation %d...\n", generation);
         show_stats_each_generations(gcstate);
@@ -2165,6 +2157,12 @@ gc_fini_untrack(PyGC_Head *list)
     for (gc = GC_NEXT(list); gc != list; gc = GC_NEXT(list)) {
         PyObject *op = FROM_GC(gc);
         _PyObject_GC_UNTRACK(op);
+        // gh-92036: If a deallocator function expect the object to be tracked
+        // by the GC (ex: func_dealloc()), it can crash if called on an object
+        // which is no longer tracked by the GC. Leak one strong reference on
+        // purpose so the object is never deleted and its deallocator is not
+        // called.
+        Py_INCREF(op);
     }
 }
 

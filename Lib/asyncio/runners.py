@@ -5,7 +5,6 @@ import enum
 import functools
 import threading
 import signal
-import sys
 from . import coroutines
 from . import events
 from . import exceptions
@@ -100,7 +99,13 @@ class Runner:
             and signal.getsignal(signal.SIGINT) is signal.default_int_handler
         ):
             sigint_handler = functools.partial(self._on_sigint, main_task=task)
-            signal.signal(signal.SIGINT, sigint_handler)
+            try:
+                signal.signal(signal.SIGINT, sigint_handler)
+            except ValueError:
+                # `signal.signal` may throw if `threading.main_thread` does
+                # not support signals (e.g. embedded interpreter with signals
+                # not registered - see gh-91880)
+                sigint_handler = None
         else:
             sigint_handler = None
 

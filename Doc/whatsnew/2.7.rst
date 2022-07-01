@@ -1545,7 +1545,7 @@ changes, or look through the Subversion logs for all the details.
   *ciphers* argument that's a string listing the encryption algorithms
   to be allowed; the format of the string is described
   `in the OpenSSL documentation
-  <https://www.openssl.org/docs/manmaster/man1/ciphers.html#CIPHER-LIST-FORMAT>`__.
+  <https://www.openssl.org/docs/man1.0.2/man1/ciphers.html>`__.
   (Added by Antoine Pitrou; :issue:`8322`.)
 
   Another change makes the extension load all of OpenSSL's ciphers and
@@ -2001,7 +2001,7 @@ module is imported or used.
 
 .. seealso::
 
-  http://www.voidspace.org.uk/python/articles/unittest2.shtml
+  https://web.archive.org/web/20210619163128/http://www.voidspace.org.uk/python/articles/unittest2.shtml
     Describes the new features, how to use them, and the
     rationale for various design decisions.  (By Michael Foord.)
 
@@ -2089,7 +2089,7 @@ version 1.3.  Some of the new features are:
 
 Fredrik Lundh develops ElementTree and produced the 1.3 version;
 you can read his article describing 1.3 at
-http://effbot.org/zone/elementtree-13-intro.htm.
+https://web.archive.org/web/20200703234532/http://effbot.org/zone/elementtree-13-intro.htm.
 Florent Xicluna updated the version included with
 Python, after discussions on python-dev and in :issue:`6472`.)
 
