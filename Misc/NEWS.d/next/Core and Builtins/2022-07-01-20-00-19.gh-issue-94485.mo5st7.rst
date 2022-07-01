@@ -1,0 +1,2 @@
+Line number of a module's ``RESUME`` instruction is set to 0 as specified in
+:pep:`626`.  A
