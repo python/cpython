@@ -57,7 +57,8 @@ collections.abc.Sequence.register(Row)
 def register_adapters_and_converters():
     from warnings import warn
 
-    msg = "The default {what} are deprecated as of Python 3.12"
+    msg = ("The default {what} are deprecated as of Python 3.12; "
+           "see the sqlite3 documentation for suggested replacement recipes")
 
     def adapt_date(val):
         warn(msg.format(what="adapters"), DeprecationWarning, stacklevel=2)

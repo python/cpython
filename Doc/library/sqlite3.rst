@@ -1347,22 +1347,27 @@ The following example illustrates the implicit and explicit approaches:
 .. literalinclude:: ../includes/sqlite3/converter_point.py
 
 
+.. _sqlite3-default-converters:
+
 Default adapters and converters (deprecated)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
 
    The default adapters and converters are deprecated as of Python 3.12.
-   Instead, use the :ref:`sqlite3-adapter-converter-recipes`,
+   Instead, use the :ref:`sqlite3-adapter-converter-recipes`
    and tailor them to your needs.
 
-The deprecated default adapters and converters consists of:
+The deprecated default adapters and converters consist of:
 
-* Adapt :class:`datetime.date` objects to :class:`strings <str>` in ISO format.
-* Adapt :class:`datetime.datetime` objects to strings ISO format.
-* Convert :ref:`declared <sqlite3-converters>` "date" types to ``datetime.date``
-  objects.
-* Convert declared "timestamp" types to ``datetime.datetime`` objects.
+* An adapter for :class:`datetime.date` objects to :class:`strings <str>` in
+  `ISO 8601`_ format.
+* An adapter for :class:`datetime.datetime` objects to strings in
+  ISO 8601 format.
+* A converter for :ref:`declared <sqlite3-converters>` "date" types to
+  :class:`datetime.date` objects.
+* A converter for declared "timestamp" types to
+  :class:`datetime.datetime` objects.
   Fractional parts will be truncated to 6 digits (microsecond precision).
 
 .. note::
@@ -1372,11 +1377,9 @@ The deprecated default adapters and converters consists of:
    offsets in timestamps, either leave converters disabled, or register an
    offset-aware converter with :func:`register_converter`.
 
-.. versionchanged:: 3.12
-
-   Deprecated default adapters and converters.
-
 .. deprecated:: 3.12
+
+.. _ISO 8601: https://en.wikipedia.org/wiki/ISO_8601
 
 
 .. _sqlite3-adapter-converter-recipes:
