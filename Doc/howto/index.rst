@@ -31,4 +31,5 @@ Currently, the HOWTOs are:
    clinic.rst
    instrumentation.rst
    annotations.rst
+   isolating-extensions.rst
 
