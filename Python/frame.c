@@ -66,9 +66,13 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     f->f_frame = frame;
     frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
     assert(f->f_back == NULL);
-    if (frame->previous != NULL) {
+    _PyInterpreterFrame *prev = frame->previous;
+    while (prev && _PyFrame_IsIncomplete(prev)) {
+        prev = prev->previous;
+    }
+    if (prev) {
         /* Link PyFrameObjects.f_back and remove link through _PyInterpreterFrame.previous */
-        PyFrameObject *back = _PyFrame_GetFrameObject(frame->previous);
+        PyFrameObject *back = _PyFrame_GetFrameObject(prev);
         if (back == NULL) {
             /* Memory error here. */
             assert(PyErr_ExceptionMatches(PyExc_MemoryError));

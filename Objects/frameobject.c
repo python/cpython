@@ -1133,8 +1133,14 @@ PyFrame_GetBack(PyFrameObject *frame)
 {
     assert(frame != NULL);
     PyFrameObject *back = frame->f_back;
-    if (back == NULL && frame->f_frame->previous != NULL) {
-        back = _PyFrame_GetFrameObject(frame->f_frame->previous);
+    if (back == NULL) {
+        _PyInterpreterFrame *prev = frame->f_frame->previous;
+        while (prev && _PyFrame_IsIncomplete(prev)) {
+            prev = prev->previous;
+        }
+        if (prev) {
+            back = _PyFrame_GetFrameObject(prev);
+        }
     }
     Py_XINCREF(back);
     return back;
