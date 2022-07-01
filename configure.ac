@@ -1133,6 +1133,18 @@ AS_CASE([$PY_SUPPORT_TIER],
 
 AC_DEFINE_UNQUOTED([PY_SUPPORT_TIER], [$PY_SUPPORT_TIER], [PEP 11 Support tier (1, 2, 3 or 0 for unsupported)])
 
+AS_CASE([$host],
+  [aarch64*], [
+    AS_FOR(option, opt, [-mbranch-protection=pac-ret -msign-return-address=all], [
+      AX_CHECK_COMPILE_FLAG(option, [branch_protection=yes], [branch_protection=no])
+      AS_IF([test "x$branch_protection" = xyes], [
+        BASECFLAGS="${BASECFLAGS} $opt"
+        break
+      ])
+    ])
+  ]
+)
+
 AC_CACHE_CHECK([for -Wl,--no-as-needed], [ac_cv_wl_no_as_needed], [
   save_LDFLAGS="$LDFLAGS"
   AS_VAR_APPEND([LDFLAGS], [" -Wl,--no-as-needed"])
