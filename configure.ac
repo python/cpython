@@ -5792,7 +5792,6 @@ dnl library (tinfo ncursesw ncurses termcap). We now assume that libreadline
 dnl or readline.pc provide correct linker information.
 
 AH_TEMPLATE([WITH_EDITLINE], [Define to build the readline module against libedit.])
-py_cv_lib_readline=no
 
 AC_ARG_WITH(
   [readline],
@@ -5811,7 +5810,6 @@ AC_ARG_WITH(
 
 AS_VAR_IF([with_readline], [readline], [
   PKG_CHECK_MODULES([LIBREADLINE], [readline], [
-    py_cv_lib_readline=yes
     LIBREADLINE=readline
     READLINE_CFLAGS=$LIBREADLINE_CFLAGS
     READLINE_LIBS=$LIBREADLINE_LIBS
@@ -5819,7 +5817,6 @@ AS_VAR_IF([with_readline], [readline], [
     AC_CHECK_HEADERS([readline/readline.h], [
       WITH_SAVE_ENV([
         AC_CHECK_LIB([readline], [readline], [
-          py_cv_lib_readline=yes
           LIBREADLINE=readline
           READLINE_CFLAGS=${LIBREADLINE_CFLAGS-""}
           READLINE_LIBS=${LIBREADLINE_LIBS-"-lreadline"}
@@ -5834,7 +5831,6 @@ AS_VAR_IF([with_readline], [readline], [
 AS_VAR_IF([with_readline], [edit], [
   PKG_CHECK_MODULES([LIBEDIT], [libedit], [
     AC_DEFINE([WITH_EDITLINE], [1])
-    py_cv_lib_readline=yes
     LIBREADLINE=edit
     READLINE_CFLAGS=$LIBEDIT_CFLAGS
     READLINE_LIBS=$LIBEDIT_LIBS
@@ -5842,7 +5838,6 @@ AS_VAR_IF([with_readline], [edit], [
     AC_CHECK_HEADERS([editline/readline.h], [
       WITH_SAVE_ENV([
         AC_CHECK_LIB([edit], [readline], [
-          py_cv_lib_readline=yes
           LIBREADLINE=edit
           AC_DEFINE([WITH_EDITLINE], [1])
           READLINE_CFLAGS=${LIBEDIT_CFLAGS-""}
@@ -5856,78 +5851,79 @@ AS_VAR_IF([with_readline], [edit], [
 ])
 
 AC_MSG_CHECKING([how to link readline])
-AS_VAR_IF([py_cv_lib_readline], [yes], [
-  AC_MSG_RESULT([$with_readline (CFLAGS: $READLINE_CFLAGS, LIBS: $READLINE_LIBS)])
-], [
+AS_VAR_IF([with_readline], [no], [
   AC_MSG_RESULT([no])
-])
+], [
+  AC_MSG_RESULT([$with_readline (CFLAGS: $READLINE_CFLAGS, LIBS: $READLINE_LIBS)])
 
-AS_VAR_IF([py_cv_lib_readline], [yes], [
   WITH_SAVE_ENV([
     CPPFLAGS="$READLINE_CFLAGS $CFLAGS"
     LIBS="$READLINE_LIBS $LIBS"
+    LIBS_SAVE=$LIBS
 
     # check for readline 2.2
-    AC_CHECK_DECL(rl_completion_append_character,
-      AC_DEFINE(HAVE_RL_COMPLETION_APPEND_CHARACTER, 1,
-        [Define if you have readline 2.2]),,
-      [
+    AC_CHECK_DECL([rl_completion_append_character], [
+      AC_DEFINE([HAVE_RL_COMPLETION_APPEND_CHARACTER], [1], [Define if you have readline 2.2])
+    ], [], [
       #include <stdio.h> /* Must be first for Gnu Readline */
       #ifdef WITH_EDITLINE
       # include <editline/readline.h>
       #else
       # include <readline/readline.h>
       #endif
-      ])
+    ])
 
-    AC_CHECK_DECL(rl_completion_suppress_append,
-      AC_DEFINE(HAVE_RL_COMPLETION_SUPPRESS_APPEND, 1,
-        [Define if you have rl_completion_suppress_append]),,
-      [
+    AC_CHECK_DECL([rl_completion_suppress_append], [
+      AC_DEFINE([HAVE_RL_COMPLETION_SUPPRESS_APPEND], [1], [Define if you have rl_completion_suppress_append])
+    ], [], [
       #include <stdio.h> /* Must be first for Gnu Readline */
       #ifdef WITH_EDITLINE
       # include <editline/readline.h>
       #else
       # include <readline/readline.h>
       #endif
-      ])
+    ])
 
     # check for readline 4.0
-    AC_CHECK_LIB($LIBREADLINE, rl_pre_input_hook,
-      AC_DEFINE(HAVE_RL_PRE_INPUT_HOOK, 1,
-        [Define if you have readline 4.0]))
+    AC_CHECK_LIB([$LIBREADLINE], [rl_pre_input_hook], [
+      AC_DEFINE([HAVE_RL_PRE_INPUT_HOOK], [1], [Define if you have readline 4.0])
+    ])
+    LIBS=$LIBS_SAVE
 
     # also in 4.0
-    AC_CHECK_LIB($LIBREADLINE, rl_completion_display_matches_hook,
-      AC_DEFINE(HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK, 1,
-        [Define if you have readline 4.0]))
+    AC_CHECK_LIB([$LIBREADLINE], [rl_completion_display_matches_hook], [
+      AC_DEFINE([HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK], [1], [Define if you have readline 4.0])
+    ])
+    LIBS=$LIBS_SAVE
 
     # also in 4.0, but not in editline
-    AC_CHECK_LIB($LIBREADLINE, rl_resize_terminal,
-      AC_DEFINE(HAVE_RL_RESIZE_TERMINAL, 1,
-        [Define if you have readline 4.0]))
+    AC_CHECK_LIB([$LIBREADLINE], [rl_resize_terminal], [
+      AC_DEFINE([HAVE_RL_RESIZE_TERMINAL], [1], [Define if you have readline 4.0])
+    ])
+    LIBS=$LIBS_SAVE
 
     # check for readline 4.2
-    AC_CHECK_LIB($LIBREADLINE, rl_completion_matches,
-      AC_DEFINE(HAVE_RL_COMPLETION_MATCHES, 1,
-        [Define if you have readline 4.2]))
+    AC_CHECK_LIB([$LIBREADLINE], [rl_completion_matches], [
+      AC_DEFINE([HAVE_RL_COMPLETION_MATCHES], [1], [Define if you have readline 4.2])
+    ])
+    LIBS=$LIBS_SAVE
 
     # also in readline 4.2
-    AC_CHECK_DECL(rl_catch_signals,
-      AC_DEFINE(HAVE_RL_CATCH_SIGNAL, 1,
-        [Define if you can turn off readline's signal handling.]),,
-      [
+    AC_CHECK_DECL([rl_catch_signals], [
+      AC_DEFINE([HAVE_RL_CATCH_SIGNAL], [1], [Define if you can turn off readline's signal handling.])
+    ], [], [
       #include <stdio.h> /* Must be first for Gnu Readline */
       #ifdef WITH_EDITLINE
       # include <editline/readline.h>
       #else
       # include <readline/readline.h>
       #endif
-      ])
+    ])
 
-    AC_CHECK_LIB($LIBREADLINE, append_history,
-      AC_DEFINE(HAVE_RL_APPEND_HISTORY, 1,
-        [Define if readline supports append_history]))
+    AC_CHECK_LIB([$LIBREADLINE], [append_history], [
+      AC_DEFINE([HAVE_RL_APPEND_HISTORY], [1], [Define if readline supports append_history])
+    ])
+    LIBS=$LIBS_SAVE
 
   ])dnl WITH_SAVE_ENV()
 ])
@@ -7144,7 +7140,7 @@ PY_STDLIB_MOD([nis],
   [], [test "$have_nis" = yes -a "$ac_cv_header_rpc_rpc_h" = yes],
   [$LIBNSL_CFLAGS], [$LIBNSL_LIBS])
  PY_STDLIB_MOD([readline],
-  [], [test "$py_cv_lib_readline" = "yes"],
+  [], [test "$with_readline" != "no"],
   [$READLINE_CFLAGS], [$READLINE_LIBS])
 PY_STDLIB_MOD([_sqlite3],
   [test "$have_sqlite3" = "yes"],

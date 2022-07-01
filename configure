@@ -20534,7 +20534,6 @@ fi
 
 
 
-py_cv_lib_readline=no
 
 
 # Check whether --with-readline was given.
@@ -20672,7 +20671,6 @@ fi
 $as_echo "$ac_cv_lib_readline_readline" >&6; }
 if test "x$ac_cv_lib_readline_readline" = xyes; then :
 
-          py_cv_lib_readline=yes
           LIBREADLINE=readline
           READLINE_CFLAGS=${LIBREADLINE_CFLAGS-""}
           READLINE_LIBS=${LIBREADLINE_LIBS-"-lreadline"}
@@ -20754,7 +20752,6 @@ fi
 $as_echo "$ac_cv_lib_readline_readline" >&6; }
 if test "x$ac_cv_lib_readline_readline" = xyes; then :
 
-          py_cv_lib_readline=yes
           LIBREADLINE=readline
           READLINE_CFLAGS=${LIBREADLINE_CFLAGS-""}
           READLINE_LIBS=${LIBREADLINE_LIBS-"-lreadline"}
@@ -20786,7 +20783,6 @@ else
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
-    py_cv_lib_readline=yes
     LIBREADLINE=readline
     READLINE_CFLAGS=$LIBREADLINE_CFLAGS
     READLINE_LIBS=$LIBREADLINE_LIBS
@@ -20909,7 +20905,6 @@ fi
 $as_echo "$ac_cv_lib_edit_readline" >&6; }
 if test "x$ac_cv_lib_edit_readline" = xyes; then :
 
-          py_cv_lib_readline=yes
           LIBREADLINE=edit
           $as_echo "#define WITH_EDITLINE 1" >>confdefs.h
 
@@ -20993,7 +20988,6 @@ fi
 $as_echo "$ac_cv_lib_edit_readline" >&6; }
 if test "x$ac_cv_lib_edit_readline" = xyes; then :
 
-          py_cv_lib_readline=yes
           LIBREADLINE=edit
           $as_echo "#define WITH_EDITLINE 1" >>confdefs.h
 
@@ -21029,7 +21023,6 @@ $as_echo "yes" >&6; }
 
     $as_echo "#define WITH_EDITLINE 1" >>confdefs.h
 
-    py_cv_lib_readline=yes
     LIBREADLINE=edit
     READLINE_CFLAGS=$LIBEDIT_CFLAGS
     READLINE_LIBS=$LIBEDIT_LIBS
@@ -21040,19 +21033,15 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking how to link readline" >&5
 $as_echo_n "checking how to link readline... " >&6; }
-if test "x$py_cv_lib_readline" = xyes; then :
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_readline (CFLAGS: $READLINE_CFLAGS, LIBS: $READLINE_LIBS)" >&5
-$as_echo "$with_readline (CFLAGS: $READLINE_CFLAGS, LIBS: $READLINE_LIBS)" >&6; }
-
-else
+if test "x$with_readline" = xno; then :
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-fi
+else
 
-if test "x$py_cv_lib_readline" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_readline (CFLAGS: $READLINE_CFLAGS, LIBS: $READLINE_LIBS)" >&5
+$as_echo "$with_readline (CFLAGS: $READLINE_CFLAGS, LIBS: $READLINE_LIBS)" >&6; }
 
   save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
@@ -21062,6 +21051,7 @@ save_LIBS=$LIBS
 
     CPPFLAGS="$READLINE_CFLAGS $CFLAGS"
     LIBS="$READLINE_LIBS $LIBS"
+    LIBS_SAVE=$LIBS
 
     # check for readline 2.2
     ac_fn_c_check_decl "$LINENO" "rl_completion_append_character" "ac_cv_have_decl_rl_completion_append_character" "
@@ -21075,7 +21065,9 @@ save_LIBS=$LIBS
 "
 if test "x$ac_cv_have_decl_rl_completion_append_character" = xyes; then :
 
+
 $as_echo "#define HAVE_RL_COMPLETION_APPEND_CHARACTER 1" >>confdefs.h
+
 
 fi
 
@@ -21091,7 +21083,9 @@ fi
 "
 if test "x$ac_cv_have_decl_rl_completion_suppress_append" = xyes; then :
 
+
 $as_echo "#define HAVE_RL_COMPLETION_SUPPRESS_APPEND 1" >>confdefs.h
+
 
 fi
 
@@ -21137,10 +21131,13 @@ eval ac_res=\$$as_ac_Lib
 $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
 
+
 $as_echo "#define HAVE_RL_PRE_INPUT_HOOK 1" >>confdefs.h
+
 
 fi
 
+    LIBS=$LIBS_SAVE
 
     # also in 4.0
     as_ac_Lib=`$as_echo "ac_cv_lib_$LIBREADLINE''_rl_completion_display_matches_hook" | $as_tr_sh`
@@ -21183,10 +21180,13 @@ eval ac_res=\$$as_ac_Lib
 $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
 
+
 $as_echo "#define HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK 1" >>confdefs.h
+
 
 fi
 
+    LIBS=$LIBS_SAVE
 
     # also in 4.0, but not in editline
     as_ac_Lib=`$as_echo "ac_cv_lib_$LIBREADLINE''_rl_resize_terminal" | $as_tr_sh`
@@ -21229,10 +21229,13 @@ eval ac_res=\$$as_ac_Lib
 $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
 
+
 $as_echo "#define HAVE_RL_RESIZE_TERMINAL 1" >>confdefs.h
+
 
 fi
 
+    LIBS=$LIBS_SAVE
 
     # check for readline 4.2
     as_ac_Lib=`$as_echo "ac_cv_lib_$LIBREADLINE''_rl_completion_matches" | $as_tr_sh`
@@ -21275,10 +21278,13 @@ eval ac_res=\$$as_ac_Lib
 $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
 
+
 $as_echo "#define HAVE_RL_COMPLETION_MATCHES 1" >>confdefs.h
+
 
 fi
 
+    LIBS=$LIBS_SAVE
 
     # also in readline 4.2
     ac_fn_c_check_decl "$LINENO" "rl_catch_signals" "ac_cv_have_decl_rl_catch_signals" "
@@ -21292,7 +21298,9 @@ fi
 "
 if test "x$ac_cv_have_decl_rl_catch_signals" = xyes; then :
 
+
 $as_echo "#define HAVE_RL_CATCH_SIGNAL 1" >>confdefs.h
+
 
 fi
 
@@ -21337,10 +21345,13 @@ eval ac_res=\$$as_ac_Lib
 $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
 
+
 $as_echo "#define HAVE_RL_APPEND_HISTORY 1" >>confdefs.h
+
 
 fi
 
+    LIBS=$LIBS_SAVE
 
 
 CFLAGS=$save_CFLAGS
@@ -26180,7 +26191,7 @@ $as_echo_n "checking for stdlib extension module readline... " >&6; }
         if test "$py_cv_module_readline" != "n/a"; then :
 
     if true; then :
-  if test "$py_cv_lib_readline" = "yes"; then :
+  if test "$with_readline" != "no"; then :
   py_cv_module_readline=yes
 else
   py_cv_module_readline=missing
