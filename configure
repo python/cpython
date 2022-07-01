@@ -664,6 +664,8 @@ MODULE_NIS_FALSE
 MODULE_NIS_TRUE
 MODULE__GDBM_FALSE
 MODULE__GDBM_TRUE
+MODULE__DBM_FALSE
+MODULE__DBM_TRUE
 MODULE__DECIMAL_FALSE
 MODULE__DECIMAL_TRUE
 MODULE__CTYPES_FALSE
@@ -14040,7 +14042,6 @@ LIBS=$save_LIBS
 
 
 
-# check for _dbmmodule.c dependencies
 for ac_header in ndbm.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "ndbm.h" "ac_cv_header_ndbm_h" "$ac_includes_default"
@@ -14049,14 +14050,18 @@ if test "x$ac_cv_header_ndbm_h" = xyes; then :
 #define HAVE_NDBM_H 1
 _ACEOF
 
-  LIBS_SAVE="$LIBS"
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dbm_open in -lndbm" >&5
-$as_echo_n "checking for dbm_open in -lndbm... " >&6; }
-if ${ac_cv_lib_ndbm_dbm_open+:} false; then :
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing dbm_open" >&5
+$as_echo_n "checking for library containing dbm_open... " >&6; }
+if ${ac_cv_search_dbm_open+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lndbm  $LIBS"
+  ac_func_search_save_LIBS=$LIBS
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -14075,81 +14080,73 @@ return dbm_open ();
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_ndbm_dbm_open=yes
-else
-  ac_cv_lib_ndbm_dbm_open=no
+for ac_lib in '' ndbm gdbm_compat; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_dbm_open=$ac_res
 fi
 rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
+    conftest$ac_exeext
+  if ${ac_cv_search_dbm_open+:} false; then :
+  break
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ndbm_dbm_open" >&5
-$as_echo "$ac_cv_lib_ndbm_dbm_open" >&6; }
-if test "x$ac_cv_lib_ndbm_dbm_open" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBNDBM 1
-_ACEOF
+done
+if ${ac_cv_search_dbm_open+:} false; then :
 
-  LIBS="-lndbm $LIBS"
-
-fi
-
-  LIBS="$LIBS_SAVE"
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dbm_open in -lgdbm_compat" >&5
-$as_echo_n "checking for dbm_open in -lgdbm_compat... " >&6; }
-if ${ac_cv_lib_gdbm_compat_dbm_open+:} false; then :
-  $as_echo_n "(cached) " >&6
 else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lgdbm_compat  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char dbm_open ();
-int
-main ()
-{
-return dbm_open ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_gdbm_compat_dbm_open=yes
-else
-  ac_cv_lib_gdbm_compat_dbm_open=no
+  ac_cv_search_dbm_open=no
 fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_gdbm_compat_dbm_open" >&5
-$as_echo "$ac_cv_lib_gdbm_compat_dbm_open" >&6; }
-if test "x$ac_cv_lib_gdbm_compat_dbm_open" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBGDBM_COMPAT 1
-_ACEOF
-
-  LIBS="-lgdbm_compat $LIBS"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_dbm_open" >&5
+$as_echo "$ac_cv_search_dbm_open" >&6; }
+ac_res=$ac_cv_search_dbm_open
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
 fi
 
-  LIBS="$LIBS_SAVE"
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
 
 fi
 
 done
 
 
-# "gdbm-ndbm.h" and "gdbm/ndbm.h" are both normalized to "gdbm_ndbm_h"
-# unset ac_cv_header_gdbm_ndbm_h to prevent false positive cache hits.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ndbm presence and linker args" >&5
+$as_echo_n "checking for ndbm presence and linker args... " >&6; }
+case $ac_cv_search_dbm_open in #(
+  *ndbm*|*gdbm_compat*) :
+
+    dbm_ndbm="$ac_cv_search_dbm_open"
+    have_ndbm=yes
+   ;; #(
+  none*) :
+
+    dbm_ndbm=""
+    have_ndbm=yes
+   ;; #(
+  no) :
+    have_ndbm=no
+ ;; #(
+  *) :
+     ;;
+esac
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_ndbm ($dbm_ndbm)" >&5
+$as_echo "$have_ndbm ($dbm_ndbm)" >&6; }
+
 { ac_cv_header_gdbm_ndbm_h=; unset ac_cv_header_gdbm_ndbm_h;}
 if ${ac_cv_header_gdbm_slash_ndbm_h+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -14202,14 +14199,18 @@ fi
 { ac_cv_header_gdbm_ndbm_h=; unset ac_cv_header_gdbm_ndbm_h;}
 
 if test "$ac_cv_header_gdbm_slash_ndbm_h" = yes -o "$ac_cv_header_gdbm_dash_ndbm_h" = yes; then
-  LIBS_SAVE="$LIBS"
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dbm_open in -lgdbm_compat" >&5
-$as_echo_n "checking for dbm_open in -lgdbm_compat... " >&6; }
-if ${ac_cv_lib_gdbm_compat_dbm_open+:} false; then :
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing dbm_open" >&5
+$as_echo_n "checking for library containing dbm_open... " >&6; }
+if ${ac_cv_search_dbm_open+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lgdbm_compat  $LIBS"
+  ac_func_search_save_LIBS=$LIBS
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -14228,27 +14229,45 @@ return dbm_open ();
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_gdbm_compat_dbm_open=yes
-else
-  ac_cv_lib_gdbm_compat_dbm_open=no
+for ac_lib in '' gdbm_compat; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_dbm_open=$ac_res
 fi
 rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
+    conftest$ac_exeext
+  if ${ac_cv_search_dbm_open+:} false; then :
+  break
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_gdbm_compat_dbm_open" >&5
-$as_echo "$ac_cv_lib_gdbm_compat_dbm_open" >&6; }
-if test "x$ac_cv_lib_gdbm_compat_dbm_open" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBGDBM_COMPAT 1
-_ACEOF
+done
+if ${ac_cv_search_dbm_open+:} false; then :
 
-  LIBS="-lgdbm_compat $LIBS"
+else
+  ac_cv_search_dbm_open=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_dbm_open" >&5
+$as_echo "$ac_cv_search_dbm_open" >&6; }
+ac_res=$ac_cv_search_dbm_open
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
 fi
 
-  LIBS="$LIBS_SAVE"
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
 fi
 
 # Check for libdb >= 5 with dbm_open()
@@ -14267,16 +14286,21 @@ if ${ac_cv_have_libdb+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-    LIBS_SAVE="$LIBS"
-    LIBS="$LIBS -ldb"
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+    save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+      LIBS="$LIBS -ldb"
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-      #define DB_DBM_HSEARCH 1
-      #include <db.h>
-      #if DB_VERSION_MAJOR < 5
-        #error "dh.h: DB_VERSION_MAJOR < 5 is not supported."
-      #endif
+        #define DB_DBM_HSEARCH 1
+        #include <db.h>
+        #if DB_VERSION_MAJOR < 5
+          #error "dh.h: DB_VERSION_MAJOR < 5 is not supported."
+        #endif
 
 int
 main ()
@@ -14294,7 +14318,13 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-    LIBS="$LIBS_SAVE"
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
 
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_have_libdb" >&5
@@ -14348,6 +14378,43 @@ if test "x$with_dbmliborder" = xerror; then :
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_dbmliborder" >&5
 $as_echo "$with_dbmliborder" >&6; }
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for _dbm module CFLAGS and LIBS" >&5
+$as_echo_n "checking for _dbm module CFLAGS and LIBS... " >&6; }
+have_dbm=no
+as_save_IFS=$IFS
+IFS=:
+for db in $with_dbmliborder; do
+  case "$db" in
+    ndbm)
+      if test "$have_ndbm" = yes; then
+        DBM_CFLAGS="-DUSE_NDBM"
+        DBM_LIBS="$dbm_ndbm"
+        have_dbm=yes
+        break
+      fi
+      ;;
+    gdbm)
+      if test "$have_gdbm_compat" = yes; then
+        DBM_CFLAGS="-DUSE_GDBM_COMPAT"
+        DBM_LIBS="-lgdbm_compat"
+        have_dbm=yes
+        break
+      fi
+      ;;
+    bdb)
+      if test "$ac_cv_have_libdb" = yes; then
+        DBM_CFLAGS="-DUSE_BERKDB"
+        DBM_LIBS="-ldb"
+        have_dbm=yes
+        break
+      fi
+     ;;
+  esac
+done
+IFS=$as_save_IFS
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $DBM_CFLAGS $DBM_LIBS" >&5
+$as_echo "$DBM_CFLAGS $DBM_LIBS" >&6; }
 
 # Templates for things AC_DEFINEd more than once.
 # For a single AC_DEFINE, no template is needed.
@@ -24604,6 +24671,40 @@ fi
 $as_echo "$py_cv_module__decimal" >&6; }
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _dbm" >&5
+$as_echo_n "checking for stdlib extension module _dbm... " >&6; }
+        if test "$py_cv_module__dbm" != "n/a"; then :
+
+    if test -n "$with_dbmliborder"; then :
+  if test "$have_dbm" != "no"; then :
+  py_cv_module__dbm=yes
+else
+  py_cv_module__dbm=missing
+fi
+else
+  py_cv_module__dbm=disabled
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__DBM_STATE=$py_cv_module__dbm$as_nl"
+  if test "x$py_cv_module__dbm" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__DBM_CFLAGS=$DBM_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__DBM_LDFLAGS=$DBM_LIBS$as_nl"
+
+fi
+   if test "$py_cv_module__dbm" = yes; then
+  MODULE__DBM_TRUE=
+  MODULE__DBM_FALSE='#'
+else
+  MODULE__DBM_TRUE='#'
+  MODULE__DBM_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__dbm" >&5
+$as_echo "$py_cv_module__dbm" >&6; }
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _gdbm" >&5
 $as_echo_n "checking for stdlib extension module _gdbm... " >&6; }
         if test "$py_cv_module__gdbm" != "n/a"; then :
@@ -25620,6 +25721,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__DECIMAL_TRUE}" && test -z "${MODULE__DECIMAL_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__DECIMAL\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__DBM_TRUE}" && test -z "${MODULE__DBM_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__DBM\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__GDBM_TRUE}" && test -z "${MODULE__GDBM_FALSE}"; then
