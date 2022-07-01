@@ -2215,7 +2215,7 @@ class MockTest(unittest.TestCase):
         class Foo():
             one = 'one'
         # patch, patch.object and create_autospec need to check for misspelled
-        # arguments explicitly and throw a RuntimError if found.
+        # arguments explicitly and throw a RuntimeError if found.
         with self.assertRaises(RuntimeError):
             with patch(f'{__name__}.Something.meth', autospect=True): pass
         with self.assertRaises(RuntimeError):
@@ -2243,16 +2243,39 @@ class MockTest(unittest.TestCase):
             with patch.multiple(
                 f'{__name__}.Something', meth=DEFAULT, set_spec=True): pass
 
-        with patch(f'{__name__}.Something.meth', unsafe=True, autospect=True):
-            pass
-        with patch.object(Foo, 'one', unsafe=True, autospect=True): pass
-        with patch(f'{__name__}.Something.meth', unsafe=True, auto_spec=True):
-            pass
-        with patch.object(Foo, 'one', unsafe=True, auto_spec=True): pass
-        with patch(f'{__name__}.Something.meth', unsafe=True, set_spec=True):
-            pass
-        with patch.object(Foo, 'one', unsafe=True, set_spec=True): pass
+        with patch(
+            f'{__name__}.Something.meth', unsafe=True, autospect=True
+        ) as patched_object:
+            self.assertEqual(patched_object._mock_unsafe, True)
+
+        with patch.object(
+            Foo, 'one', unsafe=True, autospect=True
+        ) as patched_object:
+            self.assertEqual(patched_object._mock_unsafe, True)
+
+        with patch(
+            f'{__name__}.Something.meth', unsafe=True, auto_spec=True
+        ) as patched_object:
+            self.assertEqual(patched_object._mock_unsafe, True)
+
+        with patch.object(
+            Foo, 'one', unsafe=True, auto_spec=True
+        ) as patched_object:
+            self.assertEqual(patched_object._mock_unsafe, True)
+
+        with patch(
+            f'{__name__}.Something.meth', unsafe=True, set_spec=True
+        ) as patched_object:
+            self.assertEqual(patched_object._mock_unsafe, True)
+
+        with patch.object(
+            Foo, 'one', unsafe=True, set_spec=True
+        ) as patched_object:
+            self.assertEqual(patched_object._mock_unsafe, True)
+
         m = create_autospec(Foo, set_spec=True, unsafe=True)
+        self.assertEqual(m._mock_unsafe, True)
+
         with patch.multiple(
             f'{__name__}.Typos', autospect=True, set_spec=True, auto_spec=True):
             pass

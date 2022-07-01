@@ -1282,6 +1282,8 @@ class _patch(object):
                 f'Cannot spec attr {attribute!r} as the spec_set '
                 f'target has already been mocked out. [spec_set={spec_set!r}]')
 
+        if unsafe:
+            kwargs.update({'unsafe': unsafe})
         self.getter = getter
         self.attribute = attribute
         self.new = new
@@ -2652,6 +2654,8 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         _check_spec_arg_typos(kwargs)
 
     _kwargs.update(kwargs)
+    if unsafe:
+        _kwargs.update({'unsafe': unsafe})
 
     Klass = MagicMock
     if inspect.isdatadescriptor(spec):
