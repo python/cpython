@@ -1390,13 +1390,13 @@ but are replaced by real opcodes or removed before bytecode is generated.
 
 .. opcode:: SETUP_WITH (target)
 
-   Like ``SETUP_FINALLY``, but in case of exception one more item is popped
+   Like ``SETUP_CLEANUP``, but in case of exception one more item is popped
    from the stack before control is transferred to the exception handler at
    ``target``.
 
    This variant is used in :keyword:`with` and :keyword:`async with`
-   constructs, which push the context manager's :meth:`~object.__enter__`
-   or :meth:`~object.__aenter__` to the stack.
+   constructs, which push the return value of the context manager's
+   :meth:`~object.__enter__` or :meth:`~object.__aenter__` to the stack.
 
 
 .. opcode:: POP_BLOCK
