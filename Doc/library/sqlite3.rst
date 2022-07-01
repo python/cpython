@@ -8,7 +8,11 @@
 
 **Source code:** :source:`Lib/sqlite3/`
 
---------------
+
+.. _sqlite3-intro:
+
+Introduction
+------------
 
 SQLite is a C library that provides a lightweight disk-based database that
 doesn't require a separate server process and allows accessing the database
@@ -20,6 +24,12 @@ PostgreSQL or Oracle.
 The sqlite3 module was written by Gerhard Häring.  It provides an SQL interface
 compliant with the DB-API 2.0 specification described by :pep:`249`, and
 requires SQLite 3.7.15 or newer.
+
+
+.. _sqlite3-tutorial:
+
+Tutorial
+--------
 
 To use the module, start by creating a :class:`Connection` object that
 represents the database.  Here the data will be stored in the
@@ -113,10 +123,15 @@ both styles:
       PEP written by Marc-André Lemburg.
 
 
+.. _sqlite3-reference:
+
+Reference
+---------
+
 .. _sqlite3-module-contents:
 
 Module functions and constants
-------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 .. data:: apilevel
@@ -398,7 +413,7 @@ Module functions and constants
 .. _sqlite3-connection-objects:
 
 Connection Objects
-------------------
+~~~~~~~~~~~~~~~~~~
 
 .. class:: Connection
 
@@ -867,7 +882,7 @@ Connection Objects
 .. _sqlite3-cursor-objects:
 
 Cursor Objects
---------------
+~~~~~~~~~~~~~~
 
 .. class:: Cursor
 
@@ -1023,7 +1038,7 @@ Cursor Objects
 .. _sqlite3-row-objects:
 
 Row Objects
------------
+~~~~~~~~~~~
 
 .. class:: Row
 
@@ -1089,7 +1104,7 @@ Now we plug :class:`Row` in::
 .. _sqlite3-blob-objects:
 
 Blob Objects
-------------
+~~~~~~~~~~~~
 
 .. versionadded:: 3.11
 
@@ -1143,7 +1158,7 @@ Blob Objects
 .. _sqlite3-exceptions:
 
 Exceptions
-----------
+~~~~~~~~~~
 
 The exception hierarchy is defined by the DB-API 2.0 (:pep:`249`).
 
@@ -1230,60 +1245,15 @@ The exception hierarchy is defined by the DB-API 2.0 (:pep:`249`).
    ``NotSupportedError`` is a subclass of :exc:`DatabaseError`.
 
 
-.. _sqlite3-types:
+.. _sqlite3-guides:
 
-SQLite and Python types
------------------------
+Guides
+------
 
-
-Introduction
-^^^^^^^^^^^^
-
-SQLite natively supports the following types: ``NULL``, ``INTEGER``,
-``REAL``, ``TEXT``, ``BLOB``.
-
-The following Python types can thus be sent to SQLite without any problem:
-
-+-------------------------------+-------------+
-| Python type                   | SQLite type |
-+===============================+=============+
-| :const:`None`                 | ``NULL``    |
-+-------------------------------+-------------+
-| :class:`int`                  | ``INTEGER`` |
-+-------------------------------+-------------+
-| :class:`float`                | ``REAL``    |
-+-------------------------------+-------------+
-| :class:`str`                  | ``TEXT``    |
-+-------------------------------+-------------+
-| :class:`bytes`                | ``BLOB``    |
-+-------------------------------+-------------+
-
-
-This is how SQLite types are converted to Python types by default:
-
-+-------------+----------------------------------------------+
-| SQLite type | Python type                                  |
-+=============+==============================================+
-| ``NULL``    | :const:`None`                                |
-+-------------+----------------------------------------------+
-| ``INTEGER`` | :class:`int`                                 |
-+-------------+----------------------------------------------+
-| ``REAL``    | :class:`float`                               |
-+-------------+----------------------------------------------+
-| ``TEXT``    | depends on :attr:`~Connection.text_factory`, |
-|             | :class:`str` by default                      |
-+-------------+----------------------------------------------+
-| ``BLOB``    | :class:`bytes`                               |
-+-------------+----------------------------------------------+
-
-The type system of the :mod:`sqlite3` module is extensible in two ways: you can
-store additional Python types in an SQLite database via object adaptation, and
-you can let the :mod:`sqlite3` module convert SQLite types to different Python
-types via converters.
-
+.. _sqlite3-adapters:
 
 Using adapters to store custom Python types in SQLite databases
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 SQLite supports only a limited set of data types natively.
 To store custom Python types in SQLite databases, *adapt* them to one of the
@@ -1322,8 +1292,10 @@ This function can then be registered using :func:`register_adapter`.
 .. literalinclude:: ../includes/sqlite3/adapter_point_2.py
 
 
+.. _sqlite3-converters:
+
 Converting SQLite values to custom Python types
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Writing an adapter lets you convert *from* custom Python types *to* SQLite
 values.
@@ -1362,40 +1334,10 @@ The following example illustrates the implicit and explicit approaches:
 .. literalinclude:: ../includes/sqlite3/converter_point.py
 
 
-Default adapters and converters
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-There are default adapters for the date and datetime types in the datetime
-module. They will be sent as ISO dates/ISO timestamps to SQLite.
-
-The default converters are registered under the name "date" for
-:class:`datetime.date` and under the name "timestamp" for
-:class:`datetime.datetime`.
-
-This way, you can use date/timestamps from Python without any additional
-fiddling in most cases. The format of the adapters is also compatible with the
-experimental SQLite date/time functions.
-
-The following example demonstrates this.
-
-.. literalinclude:: ../includes/sqlite3/pysqlite_datetime.py
-
-If a timestamp stored in SQLite has a fractional part longer than 6
-numbers, its value will be truncated to microsecond precision by the
-timestamp converter.
-
-.. note::
-
-   The default "timestamp" converter ignores UTC offsets in the database and
-   always returns a naive :class:`datetime.datetime` object. To preserve UTC
-   offsets in timestamps, either leave converters disabled, or register an
-   offset-aware converter with :func:`register_converter`.
-
-
 .. _sqlite3-adapter-converter-recipes:
 
 Adapter and Converter Recipes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This section shows recipes for common adapters and converters.
 
@@ -1437,10 +1379,151 @@ This section shows recipes for common adapters and converters.
    sqlite3.register_converter("timestamp", convert_timestamp)
 
 
+.. _sqlite3-default-adapters:
+
+Default adapters and converters
+"""""""""""""""""""""""""""""""
+
+There are default adapters for the date and datetime types in the datetime
+module. They will be sent as ISO dates/ISO timestamps to SQLite.
+
+The default converters are registered under the name "date" for
+:class:`datetime.date` and under the name "timestamp" for
+:class:`datetime.datetime`.
+
+This way, you can use date/timestamps from Python without any additional
+fiddling in most cases. The format of the adapters is also compatible with the
+experimental SQLite date/time functions.
+
+The following example demonstrates this.
+
+.. literalinclude:: ../includes/sqlite3/pysqlite_datetime.py
+
+If a timestamp stored in SQLite has a fractional part longer than 6
+numbers, its value will be truncated to microsecond precision by the
+timestamp converter.
+
+.. note::
+
+   The default "timestamp" converter ignores UTC offsets in the database and
+   always returns a naive :class:`datetime.datetime` object. To preserve UTC
+   offsets in timestamps, either leave converters disabled, or register an
+   offset-aware converter with :func:`register_converter`.
+
+
+.. _sqlite3-shortcut-methods:
+
+Using shortcut methods
+~~~~~~~~~~~~~~~~~~~~~~
+
+Using the nonstandard :meth:`execute`, :meth:`executemany` and
+:meth:`executescript` methods of the :class:`Connection` object, your code can
+be written more concisely because you don't have to create the (often
+superfluous) :class:`Cursor` objects explicitly. Instead, the :class:`Cursor`
+objects are created implicitly and these shortcut methods return the cursor
+objects. This way, you can execute a ``SELECT`` statement and iterate over it
+directly using only a single call on the :class:`Connection` object.
+
+.. literalinclude:: ../includes/sqlite3/shortcut_methods.py
+
+
+.. _sqlite3-columns-by-name:
+
+Accessing columns by name instead of by index
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+One useful feature of the :mod:`sqlite3` module is the built-in
+:class:`sqlite3.Row` class designed to be used as a row factory.
+
+Rows wrapped with this class can be accessed both by index (like tuples) and
+case-insensitively by name:
+
+.. literalinclude:: ../includes/sqlite3/rowclass.py
+
+
+.. _sqlite3-connection-context-manager:
+
+Using the connection as a context manager
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A :class:`Connection` object can be used as a context manager that
+automatically commits or rolls back open transactions when leaving the body of
+the context manager.
+If the body of the :keyword:`with` statement finishes without exceptions,
+the transaction is committed.
+If this commit fails,
+or if the body of the ``with`` statement raises an uncaught exception,
+the transaction is rolled back.
+
+If there is no open transaction upon leaving the body of the ``with`` statement,
+the context manager is a no-op.
+
+.. note::
+
+   The context manager neither implicitly opens a new transaction
+   nor closes the connection.
+
+.. literalinclude:: ../includes/sqlite3/ctx_manager.py
+
+
+.. _sqlite3-concepts:
+
+Concepts
+--------
+
+.. _sqlite3-types:
+
+SQLite and Python types
+~~~~~~~~~~~~~~~~~~~~~~~
+
+SQLite natively supports the following types: ``NULL``, ``INTEGER``,
+``REAL``, ``TEXT``, ``BLOB``.
+
+The following Python types can thus be sent to SQLite without any problem:
+
++-------------------------------+-------------+
+| Python type                   | SQLite type |
++===============================+=============+
+| :const:`None`                 | ``NULL``    |
++-------------------------------+-------------+
+| :class:`int`                  | ``INTEGER`` |
++-------------------------------+-------------+
+| :class:`float`                | ``REAL``    |
++-------------------------------+-------------+
+| :class:`str`                  | ``TEXT``    |
++-------------------------------+-------------+
+| :class:`bytes`                | ``BLOB``    |
++-------------------------------+-------------+
+
+
+This is how SQLite types are converted to Python types by default:
+
++-------------+----------------------------------------------+
+| SQLite type | Python type                                  |
++=============+==============================================+
+| ``NULL``    | :const:`None`                                |
++-------------+----------------------------------------------+
+| ``INTEGER`` | :class:`int`                                 |
++-------------+----------------------------------------------+
+| ``REAL``    | :class:`float`                               |
++-------------+----------------------------------------------+
+| ``TEXT``    | depends on :attr:`~Connection.text_factory`, |
+|             | :class:`str` by default                      |
++-------------+----------------------------------------------+
+| ``BLOB``    | :class:`bytes`                               |
++-------------+----------------------------------------------+
+
+The type system of the :mod:`sqlite3` module is extensible in two ways: you can
+store additional Python types in an SQLite database via
+:ref:`object adapters <sqlite3-adapters>`,
+and you can let the :mod:`sqlite3` module convert SQLite types to
+Python types via :ref:`converters <sqlite3-converters>`.
+
+
 .. _sqlite3-controlling-transactions:
 
 Controlling Transactions
-------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 The ``sqlite3`` module does not adhere to the transaction handling recommended
 by :pep:`249`.
@@ -1478,61 +1561,6 @@ regardless of the value of :attr:`~Connection.isolation_level`.
 
 .. _SQLite transaction behaviour:
    https://www.sqlite.org/lang_transaction.html#deferred_immediate_and_exclusive_transactions
-
-
-Using :mod:`sqlite3` efficiently
---------------------------------
-
-
-Using shortcut methods
-^^^^^^^^^^^^^^^^^^^^^^
-
-Using the nonstandard :meth:`execute`, :meth:`executemany` and
-:meth:`executescript` methods of the :class:`Connection` object, your code can
-be written more concisely because you don't have to create the (often
-superfluous) :class:`Cursor` objects explicitly. Instead, the :class:`Cursor`
-objects are created implicitly and these shortcut methods return the cursor
-objects. This way, you can execute a ``SELECT`` statement and iterate over it
-directly using only a single call on the :class:`Connection` object.
-
-.. literalinclude:: ../includes/sqlite3/shortcut_methods.py
-
-
-Accessing columns by name instead of by index
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-One useful feature of the :mod:`sqlite3` module is the built-in
-:class:`sqlite3.Row` class designed to be used as a row factory.
-
-Rows wrapped with this class can be accessed both by index (like tuples) and
-case-insensitively by name:
-
-.. literalinclude:: ../includes/sqlite3/rowclass.py
-
-
-.. _sqlite3-connection-context-manager:
-
-Using the connection as a context manager
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-A :class:`Connection` object can be used as a context manager that
-automatically commits or rolls back open transactions when leaving the body of
-the context manager.
-If the body of the :keyword:`with` statement finishes without exceptions,
-the transaction is committed.
-If this commit fails,
-or if the body of the ``with`` statement raises an uncaught exception,
-the transaction is rolled back.
-
-If there is no open transaction upon leaving the body of the ``with`` statement,
-the context manager is a no-op.
-
-.. note::
-
-   The context manager neither implicitly opens a new transaction
-   nor closes the connection.
-
-.. literalinclude:: ../includes/sqlite3/ctx_manager.py
 
 
 .. rubric:: Footnotes
