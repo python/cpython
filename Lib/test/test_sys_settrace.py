@@ -2586,10 +2586,49 @@ output.append(4)
 
     # checking for segfaults.
     @jump_test(3, 7, [], error=(ValueError, "stack"))
-    def test_jump_with_null_on_stack(output):
+    def test_jump_with_null_on_stack_load_global(output):
         a = 1
         print(
             output.append(3)
+        )
+        output.append(5)
+        (
+            ( # 7
+                a
+                +
+                10
+            )
+            +
+            13
+        )
+        output.append(15)
+
+    # checking for segfaults.
+    @jump_test(4, 8, [], error=(ValueError, "stack"))
+    def test_jump_with_null_on_stack_push_null(output):
+        a = 1
+        f = print
+        f(
+            output.append(4)
+        )
+        output.append(6)
+        (
+            ( # 8
+                a
+                +
+                11
+            )
+            +
+            14
+        )
+        output.append(16)
+
+    # checking for segfaults.
+    @jump_test(3, 7, [], error=(ValueError, "stack"))
+    def test_jump_with_null_on_stack_load_attr(output):
+        a = 1
+        list.append(
+            output, 3
         )
         output.append(5)
         (
