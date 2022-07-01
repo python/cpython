@@ -324,6 +324,12 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     next_stack = push_value(next_stack, Object);
                     stacks[i+1] = next_stack;
                     break;
+                case LOAD_METHOD:
+                    next_stack = pop_value(next_stack);
+                    next_stack = push_value(next_stack, Null);
+                    next_stack = push_value(next_stack, Object);
+                    stacks[i+1] = next_stack;
+                    break;
                 default:
                 {
                     int delta = PyCompile_OpcodeStackEffect(opcode, _Py_OPARG(code[i]));
