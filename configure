@@ -21031,6 +21031,7 @@ fi
 
 fi
 
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking how to link readline" >&5
 $as_echo_n "checking how to link readline... " >&6; }
 if test "x$with_readline" = xno; then :
@@ -21095,45 +21096,44 @@ fi
 
 
     # check for readline 4.0
-    as_ac_Lib=`$as_echo "ac_cv_lib_$LIBREADLINE''_rl_pre_input_hook" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for rl_pre_input_hook in -l$LIBREADLINE" >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for rl_pre_input_hook in -l$LIBREADLINE" >&5
 $as_echo_n "checking for rl_pre_input_hook in -l$LIBREADLINE... " >&6; }
-if eval \${$as_ac_Lib+:} false; then :
+if ${ac_cv_readline_rl_pre_input_hook+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-l$LIBREADLINE  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char rl_pre_input_hook ();
+      #include <stdio.h> /* Must be first for Gnu Readline */
+      #ifdef WITH_EDITLINE
+      # include <editline/readline.h>
+      #else
+      # include <readline/readline.h>
+      # include <readline/history.h>
+      #endif
+
 int
 main ()
 {
-return rl_pre_input_hook ();
+void *x = rl_pre_input_hook
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  eval "$as_ac_Lib=yes"
+  ac_cv_readline_rl_pre_input_hook=yes
 else
-  eval "$as_ac_Lib=no"
+  ac_cv_readline_rl_pre_input_hook=no
+
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
+
 fi
-eval ac_res=\$$as_ac_Lib
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_readline_rl_pre_input_hook" >&5
+$as_echo "$ac_cv_readline_rl_pre_input_hook" >&6; }
+    if test "x$ac_cv_readline_rl_pre_input_hook" = xyes; then :
 
 
 $as_echo "#define HAVE_RL_PRE_INPUT_HOOK 1" >>confdefs.h
@@ -21141,48 +21141,45 @@ $as_echo "#define HAVE_RL_PRE_INPUT_HOOK 1" >>confdefs.h
 
 fi
 
-    LIBS=$LIBS_SAVE
-
     # also in 4.0
-    as_ac_Lib=`$as_echo "ac_cv_lib_$LIBREADLINE''_rl_completion_display_matches_hook" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for rl_completion_display_matches_hook in -l$LIBREADLINE" >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for rl_completion_display_matches_hook in -l$LIBREADLINE" >&5
 $as_echo_n "checking for rl_completion_display_matches_hook in -l$LIBREADLINE... " >&6; }
-if eval \${$as_ac_Lib+:} false; then :
+if ${ac_cv_readline_rl_completion_display_matches_hook+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-l$LIBREADLINE  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char rl_completion_display_matches_hook ();
+      #include <stdio.h> /* Must be first for Gnu Readline */
+      #ifdef WITH_EDITLINE
+      # include <editline/readline.h>
+      #else
+      # include <readline/readline.h>
+      # include <readline/history.h>
+      #endif
+
 int
 main ()
 {
-return rl_completion_display_matches_hook ();
+void *x = rl_completion_display_matches_hook
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  eval "$as_ac_Lib=yes"
+  ac_cv_readline_rl_completion_display_matches_hook=yes
 else
-  eval "$as_ac_Lib=no"
+  ac_cv_readline_rl_completion_display_matches_hook=no
+
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
+
 fi
-eval ac_res=\$$as_ac_Lib
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_readline_rl_completion_display_matches_hook" >&5
+$as_echo "$ac_cv_readline_rl_completion_display_matches_hook" >&6; }
+    if test "x$ac_cv_readline_rl_completion_display_matches_hook" = xyes; then :
 
 
 $as_echo "#define HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK 1" >>confdefs.h
@@ -21190,48 +21187,45 @@ $as_echo "#define HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK 1" >>confdefs.h
 
 fi
 
-    LIBS=$LIBS_SAVE
-
     # also in 4.0, but not in editline
-    as_ac_Lib=`$as_echo "ac_cv_lib_$LIBREADLINE''_rl_resize_terminal" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for rl_resize_terminal in -l$LIBREADLINE" >&5
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for rl_resize_terminal in -l$LIBREADLINE" >&5
 $as_echo_n "checking for rl_resize_terminal in -l$LIBREADLINE... " >&6; }
-if eval \${$as_ac_Lib+:} false; then :
+if ${ac_cv_readline_rl_resize_terminal+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-l$LIBREADLINE  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char rl_resize_terminal ();
+      #include <stdio.h> /* Must be first for Gnu Readline */
+      #ifdef WITH_EDITLINE
+      # include <editline/readline.h>
+      #else
+      # include <readline/readline.h>
+      # include <readline/history.h>
+      #endif
+
 int
 main ()
 {
-return rl_resize_terminal ();
+void *x = rl_resize_terminal
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  eval "$as_ac_Lib=yes"
+  ac_cv_readline_rl_resize_terminal=yes
 else
-  eval "$as_ac_Lib=no"
+  ac_cv_readline_rl_resize_terminal=no
+
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
+
 fi
-eval ac_res=\$$as_ac_Lib
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_readline_rl_resize_terminal" >&5
+$as_echo "$ac_cv_readline_rl_resize_terminal" >&6; }
+    if test "x$ac_cv_readline_rl_resize_terminal" = xyes; then :
 
 
 $as_echo "#define HAVE_RL_RESIZE_TERMINAL 1" >>confdefs.h
@@ -21239,56 +21233,51 @@ $as_echo "#define HAVE_RL_RESIZE_TERMINAL 1" >>confdefs.h
 
 fi
 
-    LIBS=$LIBS_SAVE
-
     # check for readline 4.2
-    as_ac_Lib=`$as_echo "ac_cv_lib_$LIBREADLINE''_rl_completion_matches" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for rl_completion_matches in -l$LIBREADLINE" >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for rl_completion_matches in -l$LIBREADLINE" >&5
 $as_echo_n "checking for rl_completion_matches in -l$LIBREADLINE... " >&6; }
-if eval \${$as_ac_Lib+:} false; then :
+if ${ac_cv_readline_rl_completion_matches+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-l$LIBREADLINE  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char rl_completion_matches ();
+      #include <stdio.h> /* Must be first for Gnu Readline */
+      #ifdef WITH_EDITLINE
+      # include <editline/readline.h>
+      #else
+      # include <readline/readline.h>
+      # include <readline/history.h>
+      #endif
+
 int
 main ()
 {
-return rl_completion_matches ();
+void *x = rl_completion_matches
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  eval "$as_ac_Lib=yes"
+  ac_cv_readline_rl_completion_matches=yes
 else
-  eval "$as_ac_Lib=no"
+  ac_cv_readline_rl_completion_matches=no
+
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
+
 fi
-eval ac_res=\$$as_ac_Lib
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_readline_rl_completion_matches" >&5
+$as_echo "$ac_cv_readline_rl_completion_matches" >&6; }
+    if test "x$ac_cv_readline_rl_completion_matches" = xyes; then :
 
 
 $as_echo "#define HAVE_RL_COMPLETION_MATCHES 1" >>confdefs.h
 
 
 fi
-
-    LIBS=$LIBS_SAVE
 
     # also in readline 4.2
     ac_fn_c_check_decl "$LINENO" "rl_catch_signals" "ac_cv_have_decl_rl_catch_signals" "
@@ -21310,53 +21299,50 @@ $as_echo "#define HAVE_RL_CATCH_SIGNAL 1" >>confdefs.h
 fi
 
 
-    as_ac_Lib=`$as_echo "ac_cv_lib_$LIBREADLINE''_append_history" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for append_history in -l$LIBREADLINE" >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for append_history in -l$LIBREADLINE" >&5
 $as_echo_n "checking for append_history in -l$LIBREADLINE... " >&6; }
-if eval \${$as_ac_Lib+:} false; then :
+if ${ac_cv_readline_append_history+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-l$LIBREADLINE  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char append_history ();
+      #include <stdio.h> /* Must be first for Gnu Readline */
+      #ifdef WITH_EDITLINE
+      # include <editline/readline.h>
+      #else
+      # include <readline/readline.h>
+      # include <readline/history.h>
+      #endif
+
 int
 main ()
 {
-return append_history ();
+void *x = append_history
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  eval "$as_ac_Lib=yes"
+  ac_cv_readline_append_history=yes
 else
-  eval "$as_ac_Lib=no"
+  ac_cv_readline_append_history=no
+
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
+
 fi
-eval ac_res=\$$as_ac_Lib
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_readline_append_history" >&5
+$as_echo "$ac_cv_readline_append_history" >&6; }
+    if test "x$ac_cv_readline_append_history" = xyes; then :
 
 
 $as_echo "#define HAVE_RL_APPEND_HISTORY 1" >>confdefs.h
 
 
 fi
-
-    LIBS=$LIBS_SAVE
 
 
 

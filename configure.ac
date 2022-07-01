@@ -5850,6 +5850,7 @@ AS_VAR_IF([with_readline], [edit], [
   ])
 ])
 
+
 AC_MSG_CHECKING([how to link readline])
 AS_VAR_IF([with_readline], [no], [
   AC_MSG_RESULT([no])
@@ -5881,38 +5882,63 @@ AS_VAR_IF([with_readline], [no], [
     ], [], [readline_includes])
 
     # check for readline 4.0
-    AC_CHECK_LIB([$LIBREADLINE], [rl_pre_input_hook], [
+    AC_CACHE_CHECK([for rl_pre_input_hook in -l$LIBREADLINE], [ac_cv_readline_rl_pre_input_hook], [
+      AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([readline_includes], [void *x = rl_pre_input_hook])],
+        [ac_cv_readline_rl_pre_input_hook=yes], [ac_cv_readline_rl_pre_input_hook=no]
+      )
+    ])
+    AS_VAR_IF([ac_cv_readline_rl_pre_input_hook], [yes], [
       AC_DEFINE([HAVE_RL_PRE_INPUT_HOOK], [1], [Define if you have readline 4.0])
     ])
-    LIBS=$LIBS_SAVE
 
     # also in 4.0
-    AC_CHECK_LIB([$LIBREADLINE], [rl_completion_display_matches_hook], [
+    AC_CACHE_CHECK([for rl_completion_display_matches_hook in -l$LIBREADLINE], [ac_cv_readline_rl_completion_display_matches_hook], [
+      AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([readline_includes], [void *x = rl_completion_display_matches_hook])],
+        [ac_cv_readline_rl_completion_display_matches_hook=yes], [ac_cv_readline_rl_completion_display_matches_hook=no]
+      )
+    ])
+    AS_VAR_IF([ac_cv_readline_rl_completion_display_matches_hook], [yes], [
       AC_DEFINE([HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK], [1], [Define if you have readline 4.0])
     ])
-    LIBS=$LIBS_SAVE
 
     # also in 4.0, but not in editline
-    AC_CHECK_LIB([$LIBREADLINE], [rl_resize_terminal], [
+      AC_CACHE_CHECK([for rl_resize_terminal in -l$LIBREADLINE], [ac_cv_readline_rl_resize_terminal], [
+      AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([readline_includes], [void *x = rl_resize_terminal])],
+        [ac_cv_readline_rl_resize_terminal=yes], [ac_cv_readline_rl_resize_terminal=no]
+      )
+    ])
+    AS_VAR_IF([ac_cv_readline_rl_resize_terminal], [yes], [
       AC_DEFINE([HAVE_RL_RESIZE_TERMINAL], [1], [Define if you have readline 4.0])
     ])
-    LIBS=$LIBS_SAVE
 
     # check for readline 4.2
-    AC_CHECK_LIB([$LIBREADLINE], [rl_completion_matches], [
+    AC_CACHE_CHECK([for rl_completion_matches in -l$LIBREADLINE], [ac_cv_readline_rl_completion_matches], [
+      AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([readline_includes], [void *x = rl_completion_matches])],
+        [ac_cv_readline_rl_completion_matches=yes], [ac_cv_readline_rl_completion_matches=no]
+      )
+    ])
+    AS_VAR_IF([ac_cv_readline_rl_completion_matches], [yes], [
       AC_DEFINE([HAVE_RL_COMPLETION_MATCHES], [1], [Define if you have readline 4.2])
     ])
-    LIBS=$LIBS_SAVE
 
     # also in readline 4.2
     AC_CHECK_DECL([rl_catch_signals], [
       AC_DEFINE([HAVE_RL_CATCH_SIGNAL], [1], [Define if you can turn off readline's signal handling.])
     ], [], [readline_includes])
 
-    AC_CHECK_LIB([$LIBREADLINE], [append_history], [
+    AC_CACHE_CHECK([for append_history in -l$LIBREADLINE], [ac_cv_readline_append_history], [
+      AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([readline_includes], [void *x = append_history])],
+        [ac_cv_readline_append_history=yes], [ac_cv_readline_append_history=no]
+      )
+    ])
+    AS_VAR_IF([ac_cv_readline_append_history], [yes], [
       AC_DEFINE([HAVE_RL_APPEND_HISTORY], [1], [Define if readline supports append_history])
     ])
-    LIBS=$LIBS_SAVE
 
     m4_undefine([readline_includes])
   ])dnl WITH_SAVE_ENV()
