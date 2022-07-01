@@ -5860,29 +5860,22 @@ AS_VAR_IF([with_readline], [no], [
     CPPFLAGS="$READLINE_CFLAGS $CFLAGS"
     LIBS="$READLINE_LIBS $LIBS"
     LIBS_SAVE=$LIBS
-
+    m4_define([readline_includes], [
+      #include <stdio.h> /* Must be first for Gnu Readline */
+      #ifdef WITH_EDITLINE
+      # include <editline/readline.h>
+      #else
+      # include <readline/readline.h>
+      #endif
+    ]
     # check for readline 2.2
     AC_CHECK_DECL([rl_completion_append_character], [
       AC_DEFINE([HAVE_RL_COMPLETION_APPEND_CHARACTER], [1], [Define if you have readline 2.2])
-    ], [], [
-      #include <stdio.h> /* Must be first for Gnu Readline */
-      #ifdef WITH_EDITLINE
-      # include <editline/readline.h>
-      #else
-      # include <readline/readline.h>
-      #endif
-    ])
+    ], [], [readline_includes])
 
     AC_CHECK_DECL([rl_completion_suppress_append], [
       AC_DEFINE([HAVE_RL_COMPLETION_SUPPRESS_APPEND], [1], [Define if you have rl_completion_suppress_append])
-    ], [], [
-      #include <stdio.h> /* Must be first for Gnu Readline */
-      #ifdef WITH_EDITLINE
-      # include <editline/readline.h>
-      #else
-      # include <readline/readline.h>
-      #endif
-    ])
+    ], [], [readline_includes])
 
     # check for readline 4.0
     AC_CHECK_LIB([$LIBREADLINE], [rl_pre_input_hook], [
@@ -5911,20 +5904,14 @@ AS_VAR_IF([with_readline], [no], [
     # also in readline 4.2
     AC_CHECK_DECL([rl_catch_signals], [
       AC_DEFINE([HAVE_RL_CATCH_SIGNAL], [1], [Define if you can turn off readline's signal handling.])
-    ], [], [
-      #include <stdio.h> /* Must be first for Gnu Readline */
-      #ifdef WITH_EDITLINE
-      # include <editline/readline.h>
-      #else
-      # include <readline/readline.h>
-      #endif
-    ])
+    ], [], [readline_includes])
 
     AC_CHECK_LIB([$LIBREADLINE], [append_history], [
       AC_DEFINE([HAVE_RL_APPEND_HISTORY], [1], [Define if readline supports append_history])
     ])
     LIBS=$LIBS_SAVE
 
+    m4_undefine([readline_includes])
   ])dnl WITH_SAVE_ENV()
 ])
 
