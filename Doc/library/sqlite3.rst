@@ -406,19 +406,18 @@ Connection Objects
 
    .. attribute:: isolation_level
 
-      Get or set the current default isolation level.
+      Get or set the isolation level.
       Set to :const:`None` to disable implicit transaction handling,
-      or one of "", "DEFERRED", "IMMEDIATE" or "EXCLUSIVE".
-      Defaults to the former (`""`), unless overridden at :func:`connect`,
-      using the *isolation_level* parameter.
-      Both "" and "DEFERRED" carry the same meaning;
-      they imply deferred isolation level.
+      or to one of the ``"DEFERRED"``, ``"IMMEDIATE"``, or ``"EXCLUSIVE"``
+      transaction handling modes.
+      If not overridden by the *isolation_level* parameter of :func:`connect`,
+      the default is ``""``, which is an alias for ``"DEFERRED"``.
       See :ref:`sqlite3-controlling-transactions` for more details.
 
    .. attribute:: in_transaction
 
-      This read-only attribute corresponds to the low-level SQLite autocommit
-      mode.
+      This read-only attribute corresponds to the low-level SQLite
+      `autocommit mode`_.
 
       :const:`True` if a transaction is active (there are uncommitted changes),
       :const:`False` otherwise.
@@ -884,8 +883,8 @@ Cursor Objects
       :meth:`executescript` if you want to execute multiple SQL statements with one
       call.
 
-      If :attr:`isolation_level` is not :const:`None`,
-      *sql* is an INSERT, UPDATE, DELETE, or REPLACE statement,
+      If :attr:`~Connection.isolation_level` is not :const:`None`,
+      *sql* is an ``INSERT``, ``UPDATE``, ``DELETE``, or ``REPLACE`` statement,
       and there is no open transaction,
       a transaction is implicitly opened before executing *sql*.
 
@@ -1441,44 +1440,35 @@ Controlling Transactions
 ------------------------
 
 The ``sqlite3`` module does not adhere to the transaction handling recommended
-by PEP 249.
-If the connection attribute :attr:`isolation_level` is not :const:`None`,
-the following implicit transaction handling is performed:
-New transactions are implicitly opened before
-:meth:`~Cursor.execute` and :meth:`~Cursor.executemany` executes any of the
-following statements:
+by :pep:`249`.
+If the connection attribute :attr:`~Connection.isolation_level`
+is not :const:`None`,
+new transactions are implicitly opened before
+:meth:`~Cursor.execute` and :meth:`~Cursor.executemany` executes
+``INSERT``, ``UPDATE``, ``DELETE``, or ``REPLACE`` statements.
 
-* INSERT
-* UPDATE
-* DELETE
-* REPLACE
-
-In addition, any pending transaction is implicitly committed in
-:meth:`~Cursor.executescript`, before execution of the given SQL script.
+The :meth:`~Cursor.executescript` method implicitly commits
+any pending transaction before execution of the given SQL script.
 No other implicit transaction handling is performed.
-Use the :meth:`~Connection.commit` and :meth:`~Connection.rollback` method
+Use the :meth:`~Connection.commit` and :meth:`~Connection.rollback` methods
 to respectively commit and roll back pending transactions.
 
 You can control which kind of ``BEGIN`` statements ``sqlite3`` implicitly
-executes via the :attr:`isolation_level` connection attribute.
+executes via the :attr:`~Connection.isolation_level` attribute.
 
 The ``sqlite3`` module lets the user bypass its transaction handling by
-setting :attr:`isolation_level` to :const:`None`.
-This leaves the underlying SQLite library in autocommit mode,
-but also allows the user to perform any transaction handling using explicit SQL
-statements.
+setting :attr:`~Connection.isolation_level` to :const:`None`.
+This leaves the underlying SQLite library in `autocommit mode`_,
+but also allows the user to perform their own transaction handling
+using explicit SQL statements.
 The underlying SQLite library autocommit mode can be queried using the
-:attr:`in_transaction` connection attribute.
-
-.. note::
-
-   PEP 249's autocommit concept must not be mistaken for SQLite's autocommit
-   mode.
-   Though related, they are different concepts with different semantics.
+:attr:`~Connection.in_transaction` attribute.
 
 .. versionchanged:: 3.6
    :mod:`sqlite3` used to implicitly commit an open transaction before DDL
    statements.  This is no longer the case.
+
+.. _autocommit mode: https://sqlite.org/lang_transaction.html
 
 
 Using :mod:`sqlite3` efficiently
