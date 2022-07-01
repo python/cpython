@@ -1,0 +1,1 @@
+Enable pointer authentication on arm64 builds to mitigate return oriented programming.
