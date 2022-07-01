@@ -640,17 +640,11 @@
 /* Define to 1 if you have the `dld' library (-ldld). */
 #undef HAVE_LIBDLD
 
-/* Define to 1 if you have the `gdbm_compat' library (-lgdbm_compat). */
-#undef HAVE_LIBGDBM_COMPAT
-
 /* Define to 1 if you have the `ieee' library (-lieee). */
 #undef HAVE_LIBIEEE
 
 /* Define to 1 if you have the <libintl.h> header file. */
 #undef HAVE_LIBINTL_H
-
-/* Define to 1 if you have the `ndbm' library (-lndbm). */
-#undef HAVE_LIBNDBM
 
 /* Define to build the readline module. */
 #undef HAVE_LIBREADLINE
