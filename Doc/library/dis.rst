@@ -266,14 +266,16 @@ operation is being performed, so the intermediate analysis object isn't useful:
 
 .. function:: findlinestarts(code)
 
-   This generator function uses the ``co_firstlineno`` and ``co_lnotab``
-   attributes of the code object *code* to find the offsets which are starts of
+   This generator function uses the ``co_lines`` method
+   of the code object *code* to find the offsets which are starts of
    lines in the source code.  They are generated as ``(offset, lineno)`` pairs.
-   See :source:`Objects/lnotab_notes.txt` for the ``co_lnotab`` format and
-   how to decode it.
 
    .. versionchanged:: 3.6
       Line numbers can be decreasing. Before, they were always increasing.
+
+   .. versionchanged:: 3.10
+      The :pep:`626` ``co_lines`` method is used instead of the ``co_firstlineno``
+      and ``co_lnotab`` attributes of the code object.
 
 
 .. function:: findlabels(code)
@@ -446,12 +448,13 @@ result back on the stack.
 
 **Binary and in-place operations**
 
-Binary operations remove the top of the stack (TOS) and the second top-most
-stack item (TOS1) from the stack.  They perform the operation, and put the
-result back on the stack.
+In the following, TOS is the top-of-stack.
+TOS1, TOS2, TOS3 are the second, thrid and fourth items on the stack, respectively.
 
-In-place operations are like binary operations, in that they remove TOS and
-TOS1, and push the result back on the stack, but the operation is done in-place
+Binary operations remove the top two items from the stack (TOS and TOS1).
+They perform the operation, then put the result back on the stack.
+
+In-place operations are like binary operations, but the operation is done in-place
 when TOS1 supports it, and the resulting TOS may be (but does not have to be)
 the original TOS1.
 
@@ -460,6 +463,7 @@ the original TOS1.
 
    Implements the binary and in-place operators (depending on the value of
    *op*).
+   ``TOS = TOS1 op TOS``.
 
    .. versionadded:: 3.11
 
@@ -477,6 +481,20 @@ the original TOS1.
 .. opcode:: DELETE_SUBSCR
 
    Implements ``del TOS1[TOS]``.
+
+
+.. opcode:: BINARY_SLICE
+
+   Implements ``TOS = TOS2[TOS1:TOS]``.
+
+   .. versionadded:: 3.12
+
+
+.. opcode:: STORE_SLICE
+
+   Implements ``TOS2[TOS1:TOS] = TOS3``.
+
+   .. versionadded:: 3.12
 
 
 **Coroutine opcodes**
@@ -512,8 +530,8 @@ the original TOS1.
 
 .. opcode:: GET_ANEXT
 
-   Implements ``PUSH(get_awaitable(TOS.__anext__()))``.  See ``GET_AWAITABLE``
-   for details about ``get_awaitable``
+   Pushes ``get_awaitable(TOS.__anext__())`` to the stack.  See
+   ``GET_AWAITABLE`` for details about ``get_awaitable``.
 
    .. versionadded:: 3.5
 
