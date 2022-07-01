@@ -12133,7 +12133,10 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ffi_ffi_call" >&5
 $as_echo "$ac_cv_lib_ffi_ffi_call" >&6; }
 if test "x$ac_cv_lib_ffi_ffi_call" = xyes; then :
-  have_libffi=yes
+
+          have_libffi=yes
+          LIBFFI_LIBS="-lffi"
+
 else
   have_libffi=no
 fi
@@ -12200,7 +12203,10 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ffi_ffi_call" >&5
 $as_echo "$ac_cv_lib_ffi_ffi_call" >&6; }
 if test "x$ac_cv_lib_ffi_ffi_call" = xyes; then :
-  have_libffi=yes
+
+          have_libffi=yes
+          LIBFFI_LIBS="-lffi"
+
 else
   have_libffi=no
 fi
