@@ -1033,7 +1033,7 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
 /*[clinic input]
 warn_explicit as warnings_warn_explicit
 
-    module as _module
+    module as _module: object
     message: object
     category: object
     filename: unicode
