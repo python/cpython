@@ -7,7 +7,7 @@
     <meta name="author" content="Katie Bell">
     <meta name="description" content="Simple REPL for Python WASM">
     <title>wasm-python terminal</title>
-    <link rel="stylesheet" href="https://unpkg.com/xterm@4.18.0/css/xterm.css" crossorigin/>
+    <link rel="stylesheet" href="https://unpkg.com/xterm@4.18.0/css/xterm.css" crossorigin integrity="sha384-4eEEn/eZgVHkElpKAzzPx/Kow/dTSgFk1BNe+uHdjHa+NkZJDh5Vqkq31+y7Eycd"/>
     <style>
         body {
             font-family: arial;
@@ -32,7 +32,7 @@
             padding: 6px 18px;
         }
     </style>
-    <script src="https://unpkg.com/xterm@4.18.0/lib/xterm.js" crossorigin></script>
+    <script src="https://unpkg.com/xterm@4.18.0/lib/xterm.js" crossorigin integrity="sha384-yYdNmem1ioP5Onm7RpXutin5A8TimLheLNQ6tnMi01/ZpxXdAwIm2t4fJMx1Djs+"/></script>
     <script type="module">
 class WorkerManager {
     constructor(workerURL, standardIO, readyCallBack) {
