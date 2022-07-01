@@ -8554,6 +8554,8 @@ assemble(struct compiler *c, int addNone)
 {
     PyCodeObject *co = NULL;
     PyObject *consts = NULL;
+    struct assembler a;
+    memset(&a, 0, sizeof(struct assembler));
 
     int code_flags = compute_code_flags(c);
     if (code_flags < 0) {
@@ -8650,12 +8652,7 @@ assemble(struct compiler *c, int addNone)
     if (maxdepth < 0) {
         goto error;
     }
-    if (maxdepth > MAX_ALLOWED_STACK_USE) {
-        PyErr_Format(PyExc_SystemError,
-                     "excessive stack use: stack is %d deep",
-                     maxdepth);
-        goto error;
-    }
+    /* TO DO -- For 3.12, make sure that `maxdepth <= MAX_ALLOWED_STACK_USE` */
 
     if (label_exception_targets(entryblock)) {
         goto error;
@@ -8683,7 +8680,6 @@ assemble(struct compiler *c, int addNone)
 
 
     /* Create assembler */
-    struct assembler a;
     if (!assemble_init(&a, c->u->u_firstlineno))
         goto error;
 

@@ -1776,9 +1776,17 @@ sys__getframe_impl(PyObject *module, int depth)
         return NULL;
     }
 
-    while (depth > 0 && frame != NULL) {
-        frame = frame->previous;
-        --depth;
+    if (frame != NULL) {
+        while (depth > 0) {
+            frame = frame->previous;
+            if (frame == NULL) {
+                break;
+            }
+            if (_PyFrame_IsIncomplete(frame)) {
+                continue;
+            }
+            --depth;
+        }
     }
     if (frame == NULL) {
         _PyErr_SetString(tstate, PyExc_ValueError,

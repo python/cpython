@@ -1121,7 +1121,7 @@ AS_CASE([$host/$ac_cv_cc_name],
   [s390x-*-linux-gnu/gcc],           [PY_SUPPORT_TIER=3], dnl Linux on 64bit s390x (big endian), glibc, gcc
   dnl [wasm32-unknown-emscripten/clang], [PY_SUPPORT_TIER=3], dnl WebAssembly Emscripten
   dnl [wasm32-unknown-wasi/clang],       [PY_SUPPORT_TIER=3], dnl WebAssembly System Interface
-  [x86_64-*-freebsd/clang],          [PY_SUPPORT_TIER=3], dnl FreeBSD on AMD64
+  [x86_64-*-freebsd*/clang],         [PY_SUPPORT_TIER=3], dnl FreeBSD on AMD64
   [PY_SUPPORT_TIER=0]
 )
 
@@ -3605,7 +3605,10 @@ AS_VAR_IF([with_system_ffi], [yes], [
   PKG_CHECK_MODULES([LIBFFI], [libffi], [have_libffi=yes], [
     AC_CHECK_HEADER([ffi.h], [
       WITH_SAVE_ENV([
-        AC_CHECK_LIB([ffi], [ffi_call], [have_libffi=yes], [have_libffi=no])
+        AC_CHECK_LIB([ffi], [ffi_call], [
+          have_libffi=yes
+          LIBFFI_LIBS="-lffi"
+        ], [have_libffi=no])
       ])
     ])
   ])

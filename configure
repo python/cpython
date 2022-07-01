@@ -6302,7 +6302,7 @@ case $host/$ac_cv_cc_name in #(
     PY_SUPPORT_TIER=3 ;; #(
     s390x-*-linux-gnu/gcc) :
     PY_SUPPORT_TIER=3 ;; #(
-        x86_64-*-freebsd/clang) :
+        x86_64-*-freebsd*/clang) :
     PY_SUPPORT_TIER=3 ;; #(
   *) :
       PY_SUPPORT_TIER=0
@@ -12133,7 +12133,10 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ffi_ffi_call" >&5
 $as_echo "$ac_cv_lib_ffi_ffi_call" >&6; }
 if test "x$ac_cv_lib_ffi_ffi_call" = xyes; then :
-  have_libffi=yes
+
+          have_libffi=yes
+          LIBFFI_LIBS="-lffi"
+
 else
   have_libffi=no
 fi
@@ -12200,7 +12203,10 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ffi_ffi_call" >&5
 $as_echo "$ac_cv_lib_ffi_ffi_call" >&6; }
 if test "x$ac_cv_lib_ffi_ffi_call" = xyes; then :
-  have_libffi=yes
+
+          have_libffi=yes
+          LIBFFI_LIBS="-lffi"
+
 else
   have_libffi=no
 fi
