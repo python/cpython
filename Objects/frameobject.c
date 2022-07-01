@@ -318,12 +318,26 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     stacks[i+1] = next_stack;
                     break;
                 case LOAD_GLOBAL:
-                    if (_Py_OPARG(code[i]) & 1) {
+                {
+                    int j = get_arg(code, i);
+                    if (j & 1) {
                         next_stack = push_value(next_stack, Null);
                     }
                     next_stack = push_value(next_stack, Object);
                     stacks[i+1] = next_stack;
                     break;
+                }
+                case LOAD_ATTR:
+                {
+                    int j = get_arg(code, i);
+                    if (j & 1) {
+                        next_stack = pop_value(next_stack);
+                        next_stack = push_value(next_stack, Null);
+                        next_stack = push_value(next_stack, Object);
+                    }
+                    stacks[i+1] = next_stack;
+                    break;
+                }
                 default:
                 {
                     int delta = PyCompile_OpcodeStackEffect(opcode, _Py_OPARG(code[i]));
