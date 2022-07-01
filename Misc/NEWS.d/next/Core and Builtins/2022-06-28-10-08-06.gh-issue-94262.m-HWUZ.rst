@@ -1,0 +1,3 @@
+Don't create frame objects for incomplete frames. Prevents the creation of
+generators and closures from being observable to Python and C extensions,
+restoring the behavior of 3.10 and earlier.

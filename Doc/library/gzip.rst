@@ -165,6 +165,10 @@ The module defines the following items:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
+   .. versionchanged:: 3.12
+      Remove the ``filename`` attribute, use the :attr:`~GzipFile.name`
+      attribute instead.
+
    .. deprecated:: 3.9
       Opening :class:`GzipFile` for writing without specifying the *mode*
       argument is deprecated.

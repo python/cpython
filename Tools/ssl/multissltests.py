@@ -35,7 +35,6 @@ except ImportError:
     from urllib2 import urlopen, HTTPError
 import re
 import shutil
-import string
 import subprocess
 import sys
 import tarfile

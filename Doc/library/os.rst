@@ -798,17 +798,31 @@ as internal buffering of data.
    Copy *count* bytes from file descriptor *src*, starting from offset
    *offset_src*, to file descriptor *dst*, starting from offset *offset_dst*.
    If *offset_src* is None, then *src* is read from the current position;
-   respectively for *offset_dst*. The files pointed by *src* and *dst*
+   respectively for *offset_dst*.
+
+   In Linux kernel older than 5.3, the files pointed by *src* and *dst*
    must reside in the same filesystem, otherwise an :exc:`OSError` is
    raised with :attr:`~OSError.errno` set to :data:`errno.EXDEV`.
 
    This copy is done without the additional cost of transferring data
    from the kernel to user space and then back into the kernel. Additionally,
-   some filesystems could implement extra optimizations. The copy is done as if
-   both files are opened as binary.
+   some filesystems could implement extra optimizations, such as the use of
+   reflinks (i.e., two or more inodes that share pointers to the same
+   copy-on-write disk blocks; supported file systems include btrfs and XFS)
+   and server-side copy (in the case of NFS).
+
+   The function copies bytes between two file descriptors. Text options, like
+   the encoding and the line ending, are ignored.
 
    The return value is the amount of bytes copied. This could be less than the
    amount requested.
+
+   .. note::
+
+      On Linux, :func:`os.copy_file_range` should not be used for copying a
+      range of a pseudo file from a special filesystem like procfs and sysfs.
+      It will always copy no bytes and return 0 as if the file was empty
+      because of a known Linux kernel issue.
 
    .. availability:: Linux kernel >= 4.5 or glibc >= 2.27.
 
@@ -2328,7 +2342,7 @@ features:
    :exc:`IsADirectoryError` or a :exc:`NotADirectoryError` will be raised
    respectively.  If both are directories and *dst* is empty, *dst* will be
    silently replaced.  If *dst* is a non-empty directory, an :exc:`OSError`
-   is raised. If both are files, *dst* it will be replaced silently if the user
+   is raised. If both are files, *dst* will be replaced silently if the user
    has permission.  The operation may fail on some Unix flavors if *src* and
    *dst* are on different filesystems.  If successful, the renaming will be an
    atomic operation (this is a POSIX requirement).
@@ -3897,15 +3911,24 @@ written in Python, such as a mail server's external command delivery program.
 
 .. function:: pidfd_open(pid, flags=0)
 
-   Return a file descriptor referring to the process *pid*.  This descriptor can
-   be used to perform process management without races and signals.  The *flags*
-   argument is provided for future extensions; no flag values are currently
-   defined.
+   Return a file descriptor referring to the process *pid* with *flags* set.
+   This descriptor can be used to perform process management without races
+   and signals.
 
    See the :manpage:`pidfd_open(2)` man page for more details.
 
    .. availability:: Linux 5.3+
    .. versionadded:: 3.9
+
+   .. data:: PIDFD_NONBLOCK
+
+      This flag indicates that the file descriptor will be non-blocking.
+      If the process referred to by the file descriptor has not yet terminated,
+      then an attempt to wait on the file descriptor using :manpage:`waitid(2)`
+      will immediately return the error :data:`~errno.EAGAIN` rather than blocking.
+
+   .. availability:: Linux 5.10+
+   .. versionadded:: 3.12
 
 
 .. function:: plock(op)
@@ -4295,7 +4318,7 @@ written in Python, such as a mail server's external command delivery program.
    :attr:`!children_system`, and :attr:`!elapsed` in that order.
 
    See the Unix manual page
-   :manpage:`times(2)` and :manpage:`times(3)` manual page on Unix or `the GetProcessTimes MSDN
+   :manpage:`times(2)` and `times(3) <https://www.freebsd.org/cgi/man.cgi?time(3)>`_ manual page on Unix or `the GetProcessTimes MSDN
    <https://docs.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes>`_
    on Windows. On Windows, only :attr:`!user` and :attr:`!system` are known; the other attributes are zero.
 

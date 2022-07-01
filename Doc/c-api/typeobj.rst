@@ -727,12 +727,6 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       When a user sets :attr:`__call__` in Python code, only *tp_call* is updated,
       likely making it inconsistent with the vectorcall function.
 
-   .. note::
-
-      The semantics of the ``tp_vectorcall_offset`` slot are provisional and
-      expected to be finalized in Python 3.9.
-      If you use vectorcall, plan for updating your code for Python 3.9.
-
    .. versionchanged:: 3.8
 
       Before version 3.8, this slot was named ``tp_print``.
@@ -2529,11 +2523,11 @@ Slot Type typedefs
 
 .. c:type:: PyObject *(*descrgetfunc)(PyObject *, PyObject *, PyObject *)
 
-   See :c:member:`~PyTypeObject.tp_descrget`.
+   See :c:member:`~PyTypeObject.tp_descr_get`.
 
 .. c:type:: int (*descrsetfunc)(PyObject *, PyObject *, PyObject *)
 
-   See :c:member:`~PyTypeObject.tp_descrset`.
+   See :c:member:`~PyTypeObject.tp_descr_set`.
 
 .. c:type:: Py_hash_t (*hashfunc)(PyObject *)
 

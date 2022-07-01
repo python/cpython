@@ -731,6 +731,7 @@ class ElementTree:
         with _get_writer(file_or_filename, encoding) as (write, declared_encoding):
             if method == "xml" and (xml_declaration or
                     (xml_declaration is None and
+                     encoding.lower() != "unicode" and
                      declared_encoding.lower() not in ("utf-8", "us-ascii"))):
                 write("<?xml version='1.0' encoding='%s'?>\n" % (
                     declared_encoding,))
@@ -757,13 +758,10 @@ def _get_writer(file_or_filename, encoding):
     except AttributeError:
         # file_or_filename is a file name
         if encoding.lower() == "unicode":
-            file = open(file_or_filename, "w",
-                        errors="xmlcharrefreplace")
-        else:
-            file = open(file_or_filename, "w", encoding=encoding,
-                        errors="xmlcharrefreplace")
-        with file:
-            yield file.write, file.encoding
+            encoding="utf-8"
+        with open(file_or_filename, "w", encoding=encoding,
+                  errors="xmlcharrefreplace") as file:
+            yield file.write, encoding
     else:
         # file_or_filename is a file-like object
         # encoding determines if it is a text or binary writer
