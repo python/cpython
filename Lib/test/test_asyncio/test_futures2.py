@@ -22,7 +22,7 @@ class FutureTests(unittest.IsolatedAsyncioTestCase):
                 await future
             except TypeError as e:
                 tb = ''.join(traceback.format_tb(e.__traceback__))
-                self.assertEqual(tb.count("await fut"), 1)
+                self.assertEqual(tb.count("await future"), 1)
             else:
                 self.fail('TypeError was not raised')
 
