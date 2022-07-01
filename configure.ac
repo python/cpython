@@ -5860,14 +5860,17 @@ AS_VAR_IF([with_readline], [no], [
     CPPFLAGS="$READLINE_CFLAGS $CFLAGS"
     LIBS="$READLINE_LIBS $LIBS"
     LIBS_SAVE=$LIBS
+
     m4_define([readline_includes], [
       #include <stdio.h> /* Must be first for Gnu Readline */
       #ifdef WITH_EDITLINE
       # include <editline/readline.h>
       #else
       # include <readline/readline.h>
+      # include <readline/history.h>
       #endif
-    ]
+    ])
+
     # check for readline 2.2
     AC_CHECK_DECL([rl_completion_append_character], [
       AC_DEFINE([HAVE_RL_COMPLETION_APPEND_CHARACTER], [1], [Define if you have readline 2.2])

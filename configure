@@ -21053,6 +21053,8 @@ save_LIBS=$LIBS
     LIBS="$READLINE_LIBS $LIBS"
     LIBS_SAVE=$LIBS
 
+
+
     # check for readline 2.2
     ac_fn_c_check_decl "$LINENO" "rl_completion_append_character" "ac_cv_have_decl_rl_completion_append_character" "
       #include <stdio.h> /* Must be first for Gnu Readline */
@@ -21060,6 +21062,7 @@ save_LIBS=$LIBS
       # include <editline/readline.h>
       #else
       # include <readline/readline.h>
+      # include <readline/history.h>
       #endif
 
 "
@@ -21078,6 +21081,7 @@ fi
       # include <editline/readline.h>
       #else
       # include <readline/readline.h>
+      # include <readline/history.h>
       #endif
 
 "
@@ -21293,6 +21297,7 @@ fi
       # include <editline/readline.h>
       #else
       # include <readline/readline.h>
+      # include <readline/history.h>
       #endif
 
 "
@@ -21352,6 +21357,7 @@ $as_echo "#define HAVE_RL_APPEND_HISTORY 1" >>confdefs.h
 fi
 
     LIBS=$LIBS_SAVE
+
 
 
 CFLAGS=$save_CFLAGS
