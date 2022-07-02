@@ -122,10 +122,8 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(t2.cancelled())
 
     async def test_cancel_children_on_child_error(self):
-        """
-        When a child task raises an error, the rest of the children
-        are cancelled and the errors are gathered into an EG.
-        """
+        # When a child task raises an error, the rest of the children
+        # are cancelled and the errors are gathered into an EG.
 
         NUM = 0
         t2_cancel = False
@@ -721,6 +719,27 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             t2 = g.create_task(coro(2), context=ctx)
             await t2
             self.assertEqual(2, ctx.get(cvar))
+
+    async def test_taskgroup_no_create_task_after_failure(self):
+        async def coro1():
+            await asyncio.sleep(0.001)
+            1 / 0
+        async def coro2(g):
+            try:
+                await asyncio.sleep(1)
+            except asyncio.CancelledError:
+                with self.assertRaises(RuntimeError):
+                    g.create_task(c1 := coro1())
+                # We still have to await c1 to avoid a warning
+                with self.assertRaises(ZeroDivisionError):
+                    await c1
+
+        with self.assertRaises(ExceptionGroup) as cm:
+            async with taskgroups.TaskGroup() as g:
+                g.create_task(coro1())
+                g.create_task(coro2(g))
+
+        self.assertEqual(get_error_types(cm.exception), {ZeroDivisionError})
 
 
 if __name__ == "__main__":

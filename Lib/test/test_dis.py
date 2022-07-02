@@ -897,7 +897,7 @@ class DisTests(DisTestBase):
                 continue
             with self.subTest(opname=opname):
                 width = dis._OPNAME_WIDTH
-                if opcode < dis.HAVE_ARGUMENT:
+                if opcode in dis.hasarg:
                     width += 1 + dis._OPARG_WIDTH
                 self.assertLessEqual(len(opname), width)
 

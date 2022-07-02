@@ -1069,6 +1069,8 @@ Now we plug :class:`Row` in::
    35.14
 
 
+.. _sqlite3-blob-objects:
+
 Blob Objects
 ------------
 
@@ -1210,8 +1212,6 @@ The exception hierarchy is defined by the DB-API 2.0 (:pep:`249`).
    does not support deterministic functions.
    ``NotSupportedError`` is a subclass of :exc:`DatabaseError`.
 
-
-.. _sqlite3-blob-objects:
 
 .. _sqlite3-types:
 

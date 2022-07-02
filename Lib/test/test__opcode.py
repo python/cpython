@@ -18,9 +18,10 @@ class OpcodeTests(unittest.TestCase):
         self.assertRaises(ValueError, stack_effect, dis.opmap['BUILD_SLICE'])
         self.assertRaises(ValueError, stack_effect, dis.opmap['POP_TOP'], 0)
         # All defined opcodes
+        has_arg = dis.hasarg
         for name, code in filter(lambda item: item[0] not in dis.deoptmap, dis.opmap.items()):
             with self.subTest(opname=name):
-                if code < dis.HAVE_ARGUMENT:
+                if code not in has_arg:
                     stack_effect(code)
                     self.assertRaises(ValueError, stack_effect, code, 0)
                 else:
@@ -46,10 +47,12 @@ class OpcodeTests(unittest.TestCase):
         self.assertEqual(stack_effect(JUMP_FORWARD, 0, jump=True), 0)
         self.assertEqual(stack_effect(JUMP_FORWARD, 0, jump=False), 0)
         # All defined opcodes
+        has_arg = dis.hasarg
+        has_exc = dis.hasexc
         has_jump = dis.hasjabs + dis.hasjrel
         for name, code in filter(lambda item: item[0] not in dis.deoptmap, dis.opmap.items()):
             with self.subTest(opname=name):
-                if code < dis.HAVE_ARGUMENT:
+                if code not in has_arg:
                     common = stack_effect(code)
                     jump = stack_effect(code, jump=True)
                     nojump = stack_effect(code, jump=False)
@@ -57,7 +60,7 @@ class OpcodeTests(unittest.TestCase):
                     common = stack_effect(code, 0)
                     jump = stack_effect(code, 0, jump=True)
                     nojump = stack_effect(code, 0, jump=False)
-                if code in has_jump:
+                if code in has_jump or code in has_exc:
                     self.assertEqual(common, max(jump, nojump))
                 else:
                     self.assertEqual(jump, common)
