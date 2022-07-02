@@ -272,7 +272,7 @@ PyList_SetItem(PyObject *op, Py_ssize_t i,
 static int
 ins1(PyListObject *self, Py_ssize_t where, PyObject *v)
 {
-    Py_ssize_t i, n = Py_SIZE(self);
+    Py_ssize_t n = Py_SIZE(self);
     PyObject **items;
     if (v == NULL) {
         PyErr_BadInternalCall();
@@ -291,8 +291,7 @@ ins1(PyListObject *self, Py_ssize_t where, PyObject *v)
     if (where > n)
         where = n;
     items = self->ob_item;
-    for (i = n; --i >= where; )
-        items[i+1] = items[i];
+    memmove(&items[where+1], &items[where], (n-where)*sizeof(PyObject *));
     Py_INCREF(v);
     items[where] = v;
     return 0;
