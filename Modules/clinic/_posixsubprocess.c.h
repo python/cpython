@@ -33,7 +33,7 @@ PyDoc_STRVAR(subprocess_fork_exec__doc__,
 "Raises: Only on an error in the parent process.");
 
 #define SUBPROCESS_FORK_EXEC_METHODDEF    \
-    {"fork_exec", (PyCFunction)(void(*)(void))subprocess_fork_exec, METH_FASTCALL, subprocess_fork_exec__doc__},
+    {"fork_exec", _PyCFunction_CAST(subprocess_fork_exec), METH_FASTCALL, subprocess_fork_exec__doc__},
 
 static PyObject *
 subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
@@ -85,4 +85,4 @@ subprocess_fork_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=847823a9cb220990 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5ad4c6bc39662d25 input=a9049054013a1b77]*/
