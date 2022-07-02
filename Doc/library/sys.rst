@@ -314,6 +314,35 @@ always available.
    yourself to control bytecode file generation.
 
 
+.. data:: _emscripten_info
+
+   A :term:`named tuple` holding information about the environment on the
+   *wasm32-emscripten* platform. The named tuple is provisional and may change
+   in the future.
+
+   .. tabularcolumns:: |l|L|
+
+   +-----------------------------+----------------------------------------------+
+   | Attribute                   | Explanation                                  |
+   +=============================+==============================================+
+   | :const:`emscripten_version` | Emscripten version as tuple of ints          |
+   |                             | (major, minor, micro), e.g. ``(3, 1, 8)``.   |
+   +-----------------------------+----------------------------------------------+
+   | :const:`runtime`            | Runtime string, e.g. browser user agent,     |
+   |                             | ``'Node.js v14.18.2'``, or ``'UNKNOWN'``.    |
+   +-----------------------------+----------------------------------------------+
+   | :const:`pthreads`           | ``True`` if Python is compiled with          |
+   |                             | Emscripten pthreads support.                 |
+   +-----------------------------+----------------------------------------------+
+   | :const:`shared_memory`      | ``True`` if Python is compiled with shared   |
+   |                             | memory support.                              |
+   +-----------------------------+----------------------------------------------+
+
+   .. availability:: WebAssembly Emscripten platform (*wasm32-emscripten*).
+
+   .. versionadded:: 3.11
+
+
 .. data:: pycache_prefix
 
    If this is set (not ``None``), Python will write bytecode-cache ``.pyc``
@@ -491,6 +520,7 @@ always available.
    :const:`hash_randomization`   :option:`-R`
    :const:`dev_mode`             :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
    :const:`utf8_mode`            :option:`-X utf8 <-X>`
+   :const:`safe_path`            :option:`-P`
    ============================= ================================================================
 
    .. versionchanged:: 3.2
@@ -509,6 +539,9 @@ always available.
       Added the ``dev_mode`` attribute for the new :ref:`Python Development
       Mode <devmode>` and the ``utf8_mode`` attribute for the new  :option:`-X`
       ``utf8`` flag.
+
+   .. versionchanged:: 3.11
+      Added the ``safe_path`` attribute for :option:`-P` option.
 
 
 .. data:: float_info
@@ -1054,7 +1087,8 @@ always available.
 
     A list of :term:`meta path finder` objects that have their
     :meth:`~importlib.abc.MetaPathFinder.find_spec` methods called to see if one
-    of the objects can find the module to be imported. The
+    of the objects can find the module to be imported. By default, it holds entries
+    that implement Python's default import semantics. The
     :meth:`~importlib.abc.MetaPathFinder.find_spec` method is called with at
     least the absolute name of the module being imported. If the module to be
     imported is contained in a package, then the parent package's :attr:`__path__`
@@ -1109,15 +1143,19 @@ always available.
    the environment variable :envvar:`PYTHONPATH`, plus an installation-dependent
    default.
 
-   As initialized upon program startup, the first item of this list, ``path[0]``,
-   is the directory containing the script that was used to invoke the Python
-   interpreter.  If the script directory is not available (e.g.  if the interpreter
-   is invoked interactively or if the script is read from standard input),
-   ``path[0]`` is the empty string, which directs Python to search modules in the
-   current directory first.  Notice that the script directory is inserted *before*
-   the entries inserted as a result of :envvar:`PYTHONPATH`.
+   By default, as initialized upon program startup, a potentially unsafe path
+   is prepended to :data:`sys.path` (*before* the entries inserted as a result
+   of :envvar:`PYTHONPATH`):
 
-   The initialization of :data:`sys.path` is documented at :ref:`sys-path-init`.
+   * ``python -m module`` command line: prepend the current working
+     directory.
+   * ``python script.py`` command line: prepend the script's directory.
+     If it's a symbolic link, resolve symbolic links.
+   * ``python -c code`` and ``python`` (REPL) command lines: prepend an empty
+     string, which means the current working directory.
+
+   To not prepend this potentially unsafe path, use the :option:`-P` command
+   line option or the :envvar:`PYTHONSAFEPATH` environment variable?
 
    A program is free to modify this list for its own purposes.  Only strings
    and bytes should be added to :data:`sys.path`; all other data types are

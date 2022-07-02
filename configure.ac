@@ -6,7 +6,7 @@ dnl Python's configure script requires autoconf 2.69 and autoconf-archive.
 dnl
 
 # Set VERSION so we only need to edit in one place (i.e., here)
-m4_define(PYTHON_VERSION, 3.11)
+m4_define(PYTHON_VERSION, 3.12)
 
 AC_PREREQ([2.69])
 
@@ -48,6 +48,26 @@ AC_DEFUN([WITH_SAVE_ENV],
 [$1]
 [RESTORE_ENV]
 )dnl
+
+dnl PY_CHECK_FUNC(FUNCTION, [INCLUDES], [AC_DEFINE-VAR])
+AC_DEFUN([PY_CHECK_FUNC],
+[ AS_VAR_PUSHDEF([py_var], [ac_cv_func_$1])
+  AS_VAR_PUSHDEF([py_define], m4_ifblank([$3], [[HAVE_]m4_toupper($1)], [$3]))
+  AC_CACHE_CHECK(
+    [for $1],
+    [py_var],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([$2], [void *x=$1])],
+      [AS_VAR_SET([py_var], [yes])],
+      [AS_VAR_SET([py_var], [no])])]
+  )
+  AS_VAR_IF(
+    [py_var],
+    [yes],
+    [AC_DEFINE([py_define], [1], [Define if you have the '$1' function.])])
+  AS_VAR_POPDEF([py_var])
+  AS_VAR_POPDEF([py_define])
+])
 
 AC_SUBST(BASECPPFLAGS)
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
@@ -143,6 +163,7 @@ AS_VAR_IF([cross_compiling], [yes],
     FREEZE_MODULE_BOOTSTRAP_DEPS='$(srcdir)/Programs/_freeze_module.py'
     FREEZE_MODULE='$(FREEZE_MODULE_BOOTSTRAP)'
     FREEZE_MODULE_DEPS='$(FREEZE_MODULE_BOOTSTRAP_DEPS)'
+    PYTHON_FOR_BUILD_DEPS=''
   ],
   [
     dnl internal build tools also depend on Programs/_freeze_module and _bootstrap_python.
@@ -150,12 +171,14 @@ AS_VAR_IF([cross_compiling], [yes],
     FREEZE_MODULE_BOOTSTRAP_DEPS="Programs/_freeze_module"
     FREEZE_MODULE='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
     FREEZE_MODULE_DEPS="_bootstrap_python \$(srcdir)/Programs/_freeze_module.py"
+    PYTHON_FOR_BUILD_DEPS='$(BUILDPYTHON)'
   ]
 )
 AC_SUBST([FREEZE_MODULE_BOOTSTRAP])
 AC_SUBST([FREEZE_MODULE_BOOTSTRAP_DEPS])
 AC_SUBST([FREEZE_MODULE])
 AC_SUBST([FREEZE_MODULE_DEPS])
+AC_SUBST([PYTHON_FOR_BUILD_DEPS])
 
 AC_CHECK_PROGS([PYTHON_FOR_REGEN],
   [python$PACKAGE_VERSION python3.10 python3.9 python3.8 python3.7 python3.6 python3 python],
@@ -710,6 +733,21 @@ fi
 
 if test "$ac_sys_system" = "Darwin"
 then
+  dnl look for SDKROOT
+  AC_CHECK_PROG([HAS_XCRUN], [xcrun], [yes], [missing])
+  AC_MSG_CHECKING([macOS SDKROOT])
+  if test -z "$SDKROOT"; then
+    dnl SDKROOT not set
+    if test "$HAS_XCRUN" = "yes"; then
+      dnl detect with Xcode
+      SDKROOT=$(xcrun --show-sdk-path)
+    else
+      dnl default to root
+      SDKROOT="/"
+    fi
+  fi
+  AC_MSG_RESULT([$SDKROOT])
+
 	# Compiler selection on MacOSX is more complicated than
 	# AC_PROG_CC can handle, see Mac/README for more
 	# information
@@ -769,6 +807,35 @@ AC_PROG_CPP
 AC_PROG_GREP
 AC_PROG_SED
 AC_PROG_EGREP
+
+dnl detect compiler name
+dnl check for xlc before clang, newer xlc's can use clang as frontend.
+dnl check for GCC last, other compilers set __GNUC__, too.
+dnl msvc is listed for completeness.
+AC_CACHE_CHECK([for CC compiler name], [ac_cv_cc_name], [
+cat > conftest.c <<EOF
+#if defined(__INTEL_COMPILER) || defined(__ICC)
+  icc
+#elif defined(__ibmxl__) || defined(__xlc__) || defined(__xlC__)
+  xlc
+#elif defined(_MSC_VER)
+  msvc
+#elif defined(__clang__)
+  clang
+#elif defined(__GNUC__)
+  gcc
+#else
+#  error unknown compiler
+#endif
+EOF
+
+if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
+  ac_cv_cc_name=`grep -v '^#' conftest.out | grep -v '^ *$' | tr -d ' 	'`
+else
+  ac_cv_cc_name="unknown"
+fi
+rm -f conftest.c conftest.out
+])
 
 # checks for UNIX variants that set C preprocessor variables
 # may set _GNU_SOURCE, __EXTENSIONS__, _POSIX_PTHREAD_SEMANTICS,
@@ -1031,9 +1098,45 @@ if test x$MULTIARCH != x; then
 fi
 AC_SUBST(MULTIARCH_CPPFLAGS)
 
+dnl Support tiers according to https://peps.python.org/pep-0011/
+dnl
+dnl NOTE: Windows support tiers are defined in PC/pyconfig.h.
+dnl
+AC_MSG_CHECKING([for PEP 11 support tier])
+AS_CASE([$host/$ac_cv_cc_name],
+  [x86_64-*-linux-gnu/gcc],          [PY_SUPPORT_TIER=1], dnl Linux on AMD64, any vendor, glibc, gcc
+  [x86_64-apple-darwin*/clang],      [PY_SUPPORT_TIER=1], dnl macOS on Intel, any version
+  [i686-pc-windows-msvc/msvc],       [PY_SUPPORT_TIER=1], dnl 32bit Windows on Intel, MSVC
+  [x86_64-pc-windows-msvc/msvc],     [PY_SUPPORT_TIER=1], dnl 64bit Windows on AMD64, MSVC
+
+  [aarch64-apple-darwin*/clang],     [PY_SUPPORT_TIER=2], dnl macOS on M1, any version
+  [aarch64-*-linux-gnu/gcc],         [PY_SUPPORT_TIER=2], dnl Linux ARM64, glibc, gcc+clang
+  [aarch64-*-linux-gnu/clang],       [PY_SUPPORT_TIER=2],
+  [powerpc64le-*-linux-gnu/gcc],     [PY_SUPPORT_TIER=2], dnl Linux on PPC64 little endian, glibc, gcc
+  [x86_64-*-linux-gnu/clang],        [PY_SUPPORT_TIER=2], dnl Linux on AMD64, any vendor, glibc, clang
+
+  [aarch64-pc-windows-msvc/msvc],    [PY_SUPPORT_TIER=3], dnl Windows ARM64, MSVC
+  [armv7l-*-linux-gnueabihf/gcc],    [PY_SUPPORT_TIER=3], dnl ARMv7 LE with hardware floats, any vendor, glibc, gcc
+  [powerpc64le-*-linux-gnu/clang],   [PY_SUPPORT_TIER=3], dnl Linux on PPC64 little endian, glibc, clang
+  [s390x-*-linux-gnu/gcc],           [PY_SUPPORT_TIER=3], dnl Linux on 64bit s390x (big endian), glibc, gcc
+  dnl [wasm32-unknown-emscripten/clang], [PY_SUPPORT_TIER=3], dnl WebAssembly Emscripten
+  dnl [wasm32-unknown-wasi/clang],       [PY_SUPPORT_TIER=3], dnl WebAssembly System Interface
+  [x86_64-*-freebsd*/clang],         [PY_SUPPORT_TIER=3], dnl FreeBSD on AMD64
+  [PY_SUPPORT_TIER=0]
+)
+
+AS_CASE([$PY_SUPPORT_TIER],
+  [1], [AC_MSG_RESULT([$host/$ac_cv_cc_name has tier 1 (supported)])],
+  [2], [AC_MSG_RESULT([$host/$ac_cv_cc_name has tier 2 (supported)])],
+  [3], [AC_MSG_RESULT([$host/$ac_cv_cc_name has tier 3 (partially supported)])],
+  [AC_MSG_WARN([$host/$ac_cv_cc_name is not supported])]
+)
+
+AC_DEFINE_UNQUOTED([PY_SUPPORT_TIER], [$PY_SUPPORT_TIER], [PEP 11 Support tier (1, 2, 3 or 0 for unsupported)])
+
 AC_CACHE_CHECK([for -Wl,--no-as-needed], [ac_cv_wl_no_as_needed], [
   save_LDFLAGS="$LDFLAGS"
-  AS_VAR_APPEND([LDFLAGS], [-Wl,--no-as-needed])
+  AS_VAR_APPEND([LDFLAGS], [" -Wl,--no-as-needed"])
   AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
     [NO_AS_NEEDED="-Wl,--no-as-needed"
      ac_cv_wl_no_as_needed=yes],
@@ -1125,6 +1228,21 @@ AC_ARG_ENABLE([wasm-dynamic-linking],
   enable_wasm_dynamic_linking=missing
 ])
 AC_MSG_RESULT([$enable_wasm_dynamic_linking])
+
+AC_MSG_CHECKING([for --enable-wasm-pthreads])
+AC_ARG_ENABLE([wasm-pthreads],
+  [AS_HELP_STRING([--enable-wasm-pthreads],
+                  [Enable pthread emulation for WebAssembly (default is no)])],
+[
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [],
+    [WASI], [AC_MSG_ERROR([WASI threading is not implemented yet.])],
+    [AC_MSG_ERROR([--enable-wasm-pthreads only applies to Emscripten and WASI])]
+  )
+], [
+  enable_wasm_pthreads=missing
+])
+AC_MSG_RESULT([$enable_wasm_pthreads])
 
 AC_MSG_CHECKING([for --with-suffix])
 AC_ARG_WITH([suffix],
@@ -1395,6 +1513,33 @@ fi
 
 if test "$cross_compiling" = yes; then
 	RUNSHARED=
+fi
+
+AC_ARG_VAR([HOSTRUNNER], [Program to run CPython for the host platform])
+AC_MSG_CHECKING([HOSTRUNNER])
+if test -z "$HOSTRUNNER"
+then
+  AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
+    [Emscripten/node*], [
+      # bigint for ctypes c_longlong, c_longdouble
+      HOSTRUNNER="node --experimental-wasm-bigint"
+      AS_VAR_IF([enable_wasm_pthreads], [yes], [
+        HOSTRUNNER="$HOSTRUNNER --experimental-wasm-threads --experimental-wasm-bulk-memory"
+      ])
+    ],
+    dnl TODO: support other WASI runtimes
+    dnl wasmtime starts the proces with "/" as CWD. For OOT builds add the
+    dnl directory containing _sysconfigdata to PYTHONPATH.
+    [WASI/*], [HOSTRUNNER='wasmtime run --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --mapdir /::$(srcdir) --'],
+    [HOSTRUNNER='']
+  )
+fi
+AC_SUBST([HOSTRUNNER])
+AC_MSG_RESULT([$HOSTRUNNER])
+
+if test -n "$HOSTRUNNER"; then
+  dnl Pass hostrunner variable as env var in order to expand shell expressions.
+  PYTHON_FOR_BUILD="_PYTHON_HOSTRUNNER='$HOSTRUNNER' $PYTHON_FOR_BUILD"
 fi
 
 AC_MSG_RESULT($LDLIBRARY)
@@ -1909,43 +2054,65 @@ then
 fi
 
 # WASM flags
-AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-  [Emscripten/browser*], [
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -sALLOW_MEMORY_GROWTH"
-    LINKFORSHARED="--preload-file=\$(WASM_ASSETS_DIR)"
+AS_CASE([$ac_sys_system],
+  [Emscripten], [
+    dnl build with WASM debug info if either Py_DEBUG is set or the target is
+    dnl node-debug or browser-debug.
+    AS_VAR_IF([Py_DEBUG], [yes], [wasm_debug=yes], [wasm_debug=no])
+
+    dnl Start with 20 MB and allow to grow
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH -sTOTAL_MEMORY=20971520"])
+
+    dnl map int64_t and uint64_t to JS bigint
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sWASM_BIGINT"])
+
+    dnl Include file system support
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
+
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
       AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE"])
     ])
-    WASM_ASSETS_DIR=".\$(prefix)"
-    WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
-    dnl separate-dwarf does not seem to work in Chrome DevTools Support.
-    if test "$Py_DEBUG" = 'true' -o "$ac_sys_emscripten_target" = "browser-debug"; then
-      LDFLAGS_NODIST="$LDFLAGS_NODIST -sASSERTIONS"
-      LINKFORSHARED="$LINKFORSHARED -gsource-map --emit-symbol-map"
-    else
-      LINKFORSHARED="$LINKFORSHARED -O2 -g0"
-    fi
-  ],
-  [Emscripten/node*], [
-    LDFLAGS_NODIST="$LDFLAGS_NODIST -sALLOW_MEMORY_GROWTH -sNODERAWFS -sUSE_PTHREADS"
-    LINKFORSHARED="-sPROXY_TO_PTHREAD -sEXIT_RUNTIME"
-    AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
-      AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE"])
+
+    AS_VAR_IF([enable_wasm_pthreads], [yes], [
+      AS_VAR_APPEND([CFLAGS_NODIST], [" -pthread"])
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -sUSE_PTHREADS"])
+      AS_VAR_APPEND([LINKFORSHARED], [" -sPROXY_TO_PTHREAD"])
     ])
-    CFLAGS_NODIST="$CFLAGS_NODIST -pthread"
-    if test "$Py_DEBUG" = 'true' -o "$ac_sys_emscripten_target" = "node-debug"; then
-      LDFLAGS_NODIST="$LDFLAGS_NODIST -sASSERTIONS"
-      LINKFORSHARED="$LINKFORSHARED -gseparate-dwarf --emit-symbol-map"
-    else
-      LINKFORSHARED="$LINKFORSHARED -O2 -g0"
-    fi
+
+    AS_CASE([$ac_sys_emscripten_target],
+      [browser*], [
+        AS_VAR_IF([ac_sys_emscripten_target], [browser-debug], [wasm_debug=yes])
+        AS_VAR_APPEND([LINKFORSHARED], [" --preload-file=\$(WASM_ASSETS_DIR)"])
+        WASM_ASSETS_DIR=".\$(prefix)"
+        WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
+        dnl separate-dwarf does not seem to work in Chrome DevTools Support.
+        WASM_LINKFORSHARED_DEBUG="-gsource-map --emit-symbol-map"
+      ],
+      [node*], [
+        AS_VAR_IF([ac_sys_emscripten_target], [node-debug], [wasm_debug=yes])
+        AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH -sNODERAWFS"])
+        AS_VAR_APPEND([LINKFORSHARED], [" -sEXIT_RUNTIME"])
+        WASM_LINKFORSHARED_DEBUG="-gseparate-dwarf --emit-symbol-map"
+      ]
+    )
+
+    AS_VAR_IF([wasm_debug], [yes], [
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -sASSERTIONS"])
+      AS_VAR_APPEND([LINKFORSHARED], [" $WASM_LINKFORSHARED_DEBUG"])
+    ], [
+      AS_VAR_APPEND([LINKFORSHARED], [" -O2 -g0"])
+    ])
   ],
-  [WASI/*], [
+  [WASI], [
     AC_DEFINE([_WASI_EMULATED_SIGNAL], [1], [Define to 1 if you want to emulate signals on WASI])
     AC_DEFINE([_WASI_EMULATED_GETPID], [1], [Define to 1 if you want to emulate getpid() on WASI])
     AC_DEFINE([_WASI_EMULATED_PROCESS_CLOCKS], [1], [Define to 1 if you want to emulate process clocks on WASI])
     LIBS="$LIBS -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
     echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
+
+    dnl increase initial memory and stack size, move stack first
+    dnl https://github.com/WebAssembly/wasi-libc/issues/233
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -z stack-size=524288 -Wl,--stack-first -Wl,--initial-memory=10485760"])
   ]
 )
 
@@ -2452,7 +2619,8 @@ AC_DEFINE(STDC_HEADERS, 1, [Define to 1 if you have the ANSI C header files.])
 # checks for header files
 AC_CHECK_HEADERS([ \
   alloca.h asm/types.h bluetooth.h conio.h crypt.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
-  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/memfd.h linux/random.h linux/soundcard.h \
+  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/memfd.h \
+  linux/random.h linux/soundcard.h \
   linux/tipc.h linux/wait.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
@@ -2460,7 +2628,7 @@ AC_CHECK_HEADERS([ \
   sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/soundcard.h sys/stat.h \
   sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysmacros.h sys/termio.h sys/time.h sys/times.h \
   sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h sys/xattr.h sysexits.h syslog.h \
-  termios.h util.h utime.h \
+  termios.h util.h utime.h utmp.h \
 ])
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
@@ -2954,6 +3122,9 @@ then
 			BLDSHARED="$LDSHARED"
 		fi
 		;;
+	Emscripten|WASI)
+		LDSHARED='$(CC) -shared'
+		LDCXXSHARED='$(CXX) -shared';;
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
@@ -3428,12 +3599,63 @@ else
     with_system_ffi="yes"
 fi
 
-if test "$with_system_ffi" = "yes" && test -n "$PKG_CONFIG"; then
-    LIBFFI_INCLUDEDIR="`"$PKG_CONFIG" libffi --cflags-only-I 2>/dev/null | sed -e 's/^-I//;s/ *$//'`"
-else
-    LIBFFI_INCLUDEDIR=""
-fi
-AC_SUBST(LIBFFI_INCLUDEDIR)
+dnl detect libffi
+have_libffi=missing
+AS_VAR_IF([with_system_ffi], [yes], [
+  PKG_CHECK_MODULES([LIBFFI], [libffi], [have_libffi=yes], [
+    AC_CHECK_HEADER([ffi.h], [
+      WITH_SAVE_ENV([
+        AC_CHECK_LIB([ffi], [ffi_call], [
+          have_libffi=yes
+          LIBFFI_LIBS="-lffi"
+        ], [have_libffi=no])
+      ])
+    ])
+  ])
+], [
+  AS_VAR_IF([ac_sys_system], [Darwin], [
+    WITH_SAVE_ENV([
+      CFLAGS="-I${SDKROOT}/usr/include/ffi $CFLAGS"
+      AC_CHECK_HEADER([ffi.h], [
+        AC_CHECK_LIB([ffi], [ffi_call], [
+          dnl use ffi from SDK root
+          have_libffi=yes
+          LIBFFI_CFLAGS="-I${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"
+          LIBFFI_LIBS="-lffi"
+        ], [have_libffi=no])
+      ])
+    ])
+  ])
+])
+
+AS_VAR_IF([have_libffi], [yes], [
+  ctypes_malloc_closure=no
+  AS_CASE([$ac_sys_system],
+    [Darwin], [
+      dnl when do we need USING_APPLE_OS_LIBFFI?
+      AS_VAR_APPEND([LIBFFI_CFLAGS], [" -I\$(srcdir)/Modules/_ctypes/darwin -DMACOSX"])
+      ctypes_malloc_closure=yes
+    ],
+    [sunos5], [AS_VAR_APPEND([LIBFFI_LIBS], [" -mimpure-text"])]
+  )
+  AS_VAR_IF([ctypes_malloc_closure], [yes], [
+    MODULE__CTYPES_MALLOC_CLOSURE=_ctypes/malloc_closure.c
+    AS_VAR_APPEND([LIBFFI_CFLAGS], [" -DUSING_MALLOC_CLOSURE_DOT_C=1"])
+  ])
+  AC_SUBST([MODULE__CTYPES_MALLOC_CLOSURE])
+
+  dnl HAVE_LIBDL: for dlopen, see gh-76828
+  AS_VAR_IF([ac_cv_lib_dl_dlopen], [yes], [AS_VAR_APPEND([LIBFFI_LIBS], [" -ldl"])])
+
+  WITH_SAVE_ENV([
+    CFLAGS="$LIBFFI_CFLAGS $CFLAGS"
+    LDFLAGS="$LIBFFI_LIBS $LDFLAGS"
+
+    PY_CHECK_FUNC([ffi_prep_cif_var], [#include <ffi.h>])
+    PY_CHECK_FUNC([ffi_prep_closure_loc], [#include <ffi.h>])
+    PY_CHECK_FUNC([ffi_closure_alloc], [#include <ffi.h>])
+  ])
+])
 
 # Check for use of the system libmpdec library
 AC_MSG_CHECKING(for --with-system-libmpdec)
@@ -3734,17 +3956,30 @@ WITH_SAVE_ENV([
   ], [have_gdbm=no])
 ])
 
-# check for _dbmmodule.c dependencies
+dnl check for _dbmmodule.c dependencies
+dnl ndbm, gdbm_compat, libdb
 AC_CHECK_HEADERS([ndbm.h], [
-  LIBS_SAVE="$LIBS"
-  AC_CHECK_LIB([ndbm], [dbm_open])
-  LIBS="$LIBS_SAVE"
-  AC_CHECK_LIB([gdbm_compat], [dbm_open])
-  LIBS="$LIBS_SAVE"
+  WITH_SAVE_ENV([
+    AC_SEARCH_LIBS([dbm_open], [ndbm gdbm_compat])
+  ])
 ])
 
-# "gdbm-ndbm.h" and "gdbm/ndbm.h" are both normalized to "gdbm_ndbm_h"
-# unset ac_cv_header_gdbm_ndbm_h to prevent false positive cache hits.
+AC_MSG_CHECKING([for ndbm presence and linker args])
+AS_CASE([$ac_cv_search_dbm_open],
+  [*ndbm*|*gdbm_compat*], [
+    dbm_ndbm="$ac_cv_search_dbm_open"
+    have_ndbm=yes
+  ],
+  [none*], [
+    dbm_ndbm=""
+    have_ndbm=yes
+  ],
+  [no], [have_ndbm=no]
+)
+AC_MSG_RESULT([$have_ndbm ($dbm_ndbm)])
+
+dnl "gdbm-ndbm.h" and "gdbm/ndbm.h" are both normalized to "gdbm_ndbm_h"
+dnl unset ac_cv_header_gdbm_ndbm_h to prevent false positive cache hits.
 AS_UNSET([ac_cv_header_gdbm_ndbm_h])
 AC_CACHE_VAL([ac_cv_header_gdbm_slash_ndbm_h], [
   AC_CHECK_HEADER(
@@ -3769,26 +4004,26 @@ AS_VAR_IF([ac_cv_header_gdbm_dash_ndbm_h], [yes], [
 AS_UNSET([ac_cv_header_gdbm_ndbm_h])
 
 if test "$ac_cv_header_gdbm_slash_ndbm_h" = yes -o "$ac_cv_header_gdbm_dash_ndbm_h" = yes; then
-  LIBS_SAVE="$LIBS"
-  AC_CHECK_LIB([gdbm_compat], [dbm_open])
-  LIBS="$LIBS_SAVE"
+  WITH_SAVE_ENV([
+    AC_SEARCH_LIBS([dbm_open], [gdbm_compat])
+  ])
 fi
 
 # Check for libdb >= 5 with dbm_open()
 # db.h re-defines the name of the function
 AC_CHECK_HEADERS([db.h], [
   AC_CACHE_CHECK([for libdb], [ac_cv_have_libdb], [
-    LIBS_SAVE="$LIBS"
-    LIBS="$LIBS -ldb"
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([
-      #define DB_DBM_HSEARCH 1
-      #include <db.h>
-      #if DB_VERSION_MAJOR < 5
-        #error "dh.h: DB_VERSION_MAJOR < 5 is not supported."
-      #endif
-      ], [DBM *dbm = dbm_open(NULL, 0, 0)])
-    ], [ac_cv_have_libdb=yes], [ac_cv_have_libdb=no])
-    LIBS="$LIBS_SAVE"
+    WITH_SAVE_ENV([
+      LIBS="$LIBS -ldb"
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([
+        #define DB_DBM_HSEARCH 1
+        #include <db.h>
+        #if DB_VERSION_MAJOR < 5
+          #error "dh.h: DB_VERSION_MAJOR < 5 is not supported."
+        #endif
+        ], [DBM *dbm = dbm_open(NULL, 0, 0)])
+      ], [ac_cv_have_libdb=yes], [ac_cv_have_libdb=no])
+    ])
   ])
   AS_VAR_IF([ac_cv_have_libdb], [yes], [
     AC_DEFINE([HAVE_LIBDB], [1], [Define to 1 if you have the `db' library (-ldb).])
@@ -3796,10 +4031,10 @@ AC_CHECK_HEADERS([db.h], [
 ])
 
 # Check for --with-dbmliborder
-AC_MSG_CHECKING(for --with-dbmliborder)
+AC_MSG_CHECKING([for --with-dbmliborder])
 AC_ARG_WITH(dbmliborder,
             AS_HELP_STRING([--with-dbmliborder=db1:db2:...], [override order to check db backends for dbm; a valid value is a colon separated string with the backend names `ndbm', `gdbm' and `bdb'.]),
-[], [with_dbmliborder=ndbm:gdbm:bdb])
+[], [with_dbmliborder=gdbm:ndbm:bdb])
 
 have_gdbm_dbmliborder=no
 as_save_IFS=$IFS
@@ -3814,9 +4049,44 @@ for db in $with_dbmliborder; do
 done
 IFS=$as_save_IFS
 AS_VAR_IF([with_dbmliborder], [error], [
-  AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:... (ndbm:gdbm:bdb)])
+  AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:... (gdbm:ndbm:bdb)])
 ])
-AC_MSG_RESULT($with_dbmliborder)
+AC_MSG_RESULT([$with_dbmliborder])
+
+AC_MSG_CHECKING([for _dbm module CFLAGS and LIBS])
+have_dbm=no
+as_save_IFS=$IFS
+IFS=:
+for db in $with_dbmliborder; do
+  case "$db" in
+    ndbm)
+      if test "$have_ndbm" = yes; then
+        DBM_CFLAGS="-DUSE_NDBM"
+        DBM_LIBS="$dbm_ndbm"
+        have_dbm=yes
+        break
+      fi
+      ;;
+    gdbm)
+      if test "$have_gdbm_compat" = yes; then
+        DBM_CFLAGS="-DUSE_GDBM_COMPAT"
+        DBM_LIBS="-lgdbm_compat"
+        have_dbm=yes
+        break
+      fi
+      ;;
+    bdb)
+      if test "$ac_cv_have_libdb" = yes; then
+        DBM_CFLAGS="-DUSE_BERKDB"
+        DBM_LIBS="-ldb"
+        have_dbm=yes
+        break
+      fi
+     ;;
+  esac
+done
+IFS=$as_save_IFS
+AC_MSG_RESULT([$DBM_CFLAGS $DBM_LIBS])
 
 # Templates for things AC_DEFINEd more than once.
 # For a single AC_DEFINE, no template is needed.
@@ -3995,12 +4265,16 @@ dnl the check does not work on cross compilation case...
 #include <sys/types.h>
 #include <sys/socket.h>]],
 [[int domain = AF_INET6;]])],[
-  AC_MSG_RESULT(yes)
   ipv6=yes
 ],[
-  AC_MSG_RESULT(no)
   ipv6=no
 ])
+
+AS_CASE([$ac_sys_system],
+  [WASI], [ipv6=no]
+)
+
+AC_MSG_RESULT([$ipv6])
 
 if test "$ipv6" = "yes"; then
 	AC_MSG_CHECKING(if RFC2553 API is available)
@@ -4181,9 +4455,10 @@ AC_ARG_WITH(pymalloc,
 
 if test -z "$with_pymalloc"
 then
-  dnl default to yes except for wasm32-emscripten
+  dnl default to yes except for wasm32-emscripten and wasm32-wasi.
   AS_CASE([$ac_sys_system],
     [Emscripten], [with_pymalloc="no"],
+    [WASI], [with_pymalloc="no"],
     [with_pymalloc="yes"]
   )
 fi
@@ -4384,26 +4659,6 @@ AC_CHECK_DECL(dirfd,
               Define if you have the 'dirfd' function or macro.), ,
       [#include <sys/types.h>
        #include <dirent.h>])
-
-dnl PY_CHECK_FUNC(FUNCTION, [INCLUDES], [AC_DEFINE-VAR])
-AC_DEFUN([PY_CHECK_FUNC],
-[ AS_VAR_PUSHDEF([py_var], [ac_cv_func_$1])
-  AS_VAR_PUSHDEF([py_define], m4_ifblank([$3], [[HAVE_]m4_toupper($1)], [$3]))
-  AC_CACHE_CHECK(
-    [for $1],
-    [py_var],
-    [AC_COMPILE_IFELSE(
-      [AC_LANG_PROGRAM([$2], [void *x=$1])],
-      [AS_VAR_SET([py_var], [yes])],
-      [AS_VAR_SET([py_var], [no])])]
-  )
-  AS_VAR_IF(
-    [py_var],
-    [yes],
-    [AC_DEFINE([py_define], [1], [Define if you have the '$1' function.])])
-  AS_VAR_POPDEF([py_var])
-  AS_VAR_POPDEF([py_define])
-])
 
 # For some functions, having a definition is not sufficient, since
 # we want to take their address.
@@ -4619,13 +4874,16 @@ PY_CHECK_FUNC([setgroups], [
 #endif
 ])
 
-# check for openpty and forkpty
+# check for openpty, login_tty, and forkpty
 
 AC_CHECK_FUNCS(openpty,,
    AC_CHECK_LIB(util,openpty,
      [AC_DEFINE(HAVE_OPENPTY) LIBS="$LIBS -lutil"],
      AC_CHECK_LIB(bsd,openpty, [AC_DEFINE(HAVE_OPENPTY) LIBS="$LIBS -lbsd"])
    )
+)
+AC_SEARCH_LIBS([login_tty], [util],
+ [AC_DEFINE([HAVE_LOGIN_TTY], [1], [Define to 1 if you have the `login_tty' function.])]
 )
 AC_CHECK_FUNCS(forkpty,,
    AC_CHECK_LIB(util,forkpty,
@@ -4957,27 +5215,6 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[int foo(int x) { return 0; }]], [[return fo
 AS_VAR_IF([ac_cv_function_prototypes], [yes], [
   AC_DEFINE(HAVE_PROTOTYPES, 1,
      [Define if your compiler supports function prototype])
-])
-
-works=no
-AC_CACHE_CHECK([for variable length prototypes and stdarg.h], [ac_cv_stdarg_prototypes], [
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <stdarg.h>
-int foo(int x, ...) {
-	va_list va;
-	va_start(va, x);
-	va_arg(va, int);
-	va_arg(va, char *);
-	va_arg(va, double);
-	return 0;
-}
-]], [[return foo(10, "", 3.14);]])],
-  [ac_cv_stdarg_prototypes=yes], [ac_cv_stdarg_prototypes=no])
-])
-AS_VAR_IF([ac_cv_stdarg_prototypes], [yes], [
-  AC_DEFINE(HAVE_STDARG_PROTOTYPES, 1,
-   [Define if your compiler supports variable length function prototypes
-   (e.g. void fprintf(FILE *, char *, ...);) *and* <stdarg.h>])
 ])
 
 
@@ -5941,52 +6178,6 @@ then
 	LIBS="$LIBS -framework CoreFoundation"
 fi
 
-AC_CACHE_CHECK([for %zd printf() format support], ac_cv_have_size_t_format, [dnl
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <stdio.h>
-#include <stddef.h>
-#include <string.h>
-
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-
-#ifdef HAVE_SSIZE_T
-typedef ssize_t Py_ssize_t;
-#elif SIZEOF_VOID_P == SIZEOF_LONG
-typedef long Py_ssize_t;
-#else
-typedef int Py_ssize_t;
-#endif
-
-int main()
-{
-    char buffer[256];
-
-    if(sprintf(buffer, "%zd", (size_t)123) < 0)
-       	return 1;
-
-    if (strcmp(buffer, "123"))
-	return 1;
-
-    if (sprintf(buffer, "%zd", (Py_ssize_t)-123) < 0)
-       	return 1;
-
-    if (strcmp(buffer, "-123"))
-	return 1;
-
-    return 0;
-}
-]])],
-  [ac_cv_have_size_t_format=yes],
-  [ac_cv_have_size_t_format=no],
-  [ac_cv_have_size_t_format="cross -- assuming yes"
-])])
-if test "$ac_cv_have_size_t_format" != no ; then
-  AC_DEFINE(PY_FORMAT_SIZE_T, "z",
-  [Define to printf format modifier for Py_ssize_t])
-fi
-
 AC_CHECK_TYPE(socklen_t,,
   AC_DEFINE(socklen_t,int,
             [Define to `int' if <sys/socket.h> does not define.]),[
@@ -6544,23 +6735,6 @@ AS_VAR_IF([with_builtin_blake2], [yes], [
   ], [have_libb2=no])
 ])
 
-# --with-experimental-isolated-subinterpreters
-AH_TEMPLATE(EXPERIMENTAL_ISOLATED_SUBINTERPRETERS,
-            [Better isolate subinterpreters, experimental build mode.])
-AC_MSG_CHECKING(for --with-experimental-isolated-subinterpreters)
-AC_ARG_WITH(experimental-isolated-subinterpreters,
-  AS_HELP_STRING([--with-experimental-isolated-subinterpreters],
-                 [better isolate subinterpreters, experimental build mode (default is no)]),
-[
-if test "$withval" != no
-then
-  AC_MSG_RESULT(yes);
-  AC_DEFINE(EXPERIMENTAL_ISOLATED_SUBINTERPRETERS)
-else
-  AC_MSG_RESULT(no);
-fi],
-[AC_MSG_RESULT(no)])
-
 # Check whether to disable test modules. Once set, setup.py will not build
 # test extension modules and "make install" will not install test suites.
 AC_MSG_CHECKING([for --disable-test-modules])
@@ -6585,43 +6759,19 @@ AC_DEFUN([PY_STDLIB_MOD_SET_NA], [
 dnl Modules that are not available on some platforms
 dnl AIX has shadow passwords, but access is not via getspent()
 dnl VxWorks does not provide crypt() function
-AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-  [AIX/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
-  [VxWorks*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [_crypt], [termios], [grp])],
-  [Darwin/*], [PY_STDLIB_MOD_SET_NA([ossaudiodev], [spwd])],
-  [CYGWIN*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
-  [QNX*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
-  [FreeBSD*/*], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
-  [Emscripten/browser*], [
+AS_CASE([$ac_sys_system],
+  [AIX], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
+  [VxWorks*], [PY_STDLIB_MOD_SET_NA([_scproxy], [_crypt], [termios], [grp])],
+  [Darwin], [PY_STDLIB_MOD_SET_NA([ossaudiodev], [spwd])],
+  [CYGWIN*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
+  [QNX*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
+  [FreeBSD*], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
+  [Emscripten|WASI], [
+    dnl subprocess and multiprocessing are not supported (no fork syscall).
+    dnl curses and tkinter user interface are not available.
+    dnl dbm and gdbm aren't available, too.
+    dnl Emscripten and WASI provide only stubs for pwd, grp APIs.
     PY_STDLIB_MOD_SET_NA(
-      [_ctypes],
-      [_curses],
-      [_curses_panel],
-      [_dbm],
-      [_gdbm],
-      [_multiprocessing],
-      [_posixshmem],
-      [_posixsubprocess],
-      [_scproxy],
-      [_tkinter],
-      [_xxsubinterpreters],
-      [fcntl],
-      [grp],
-      [nis],
-      [ossaudiodev],
-      [pwd],
-      [resource],
-      [readline],
-      [spwd],
-      [syslog],
-      [termios],
-    )
-  ],
-  dnl Some modules like _posixsubprocess do not work. We build them anyway
-  dnl so imports in tests do not fail.
-  [Emscripten/node*], [
-    PY_STDLIB_MOD_SET_NA(
-      [_ctypes],
       [_curses],
       [_curses_panel],
       [_dbm],
@@ -6639,24 +6789,27 @@ AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
       [spwd],
       [syslog],
     )
-  ],
-  [WASI/*], [
-    PY_STDLIB_MOD_SET_NA(
-      [_ctypes],
-      [_ctypes_test],
-      [_curses],
-      [_curses_panel],
-      [_dbm],
-      [_gdbm],
-      [_scproxy],
-      [_tkinter],
-      [_xxsubinterpreters],
-      [grp],
-      [nis],
-      [ossaudiodev],
-      [pwd],
-      [spwd],
-      [syslog],
+    AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
+      [Emscripten/browser*], [
+        dnl These modules are not particularly useful in browsers.
+        PY_STDLIB_MOD_SET_NA(
+          [fcntl],
+          [resource],
+          [readline],
+          [termios],
+        )
+      ],
+      [Emscripten/node*], [],
+      [WASI/*], [
+        dnl WASI SDK 15.0 does not support file locking, mmap, and more.
+        PY_STDLIB_MOD_SET_NA(
+          [_ctypes_test],
+          [fcntl],
+          [mmap],
+          [resource],
+          [termios],
+        )
+      ]
     )
   ],
   [PY_STDLIB_MOD_SET_NA([_scproxy])]
@@ -6689,7 +6842,7 @@ MODULE_BLOCK=
 
 dnl Check for stdlib extension modules
 dnl PY_STDLIB_MOD([NAME], [ENABLED-TEST], [SUPPORTED-TEST], [CFLAGS], [LDFLAGS])
-dnl sets MODULE_$NAME based on PY_STDLIB_MOD_SET_NA(), ENABLED-TEST,
+dnl sets MODULE_$NAME_STATE based on PY_STDLIB_MOD_SET_NA(), ENABLED-TEST,
 dnl and SUPPORTED_TEST. ENABLED-TEST and SUPPORTED-TEST default to true if
 dnl empty.
 dnl    n/a: marked unavailable on platform by PY_STDLIB_MOD_SET_NA()
@@ -6707,7 +6860,7 @@ AC_DEFUN([PY_STDLIB_MOD], [
        [AS_IF([m4_ifblank([$3], [true], [$3])], [modstate=yes], [modstate=missing])],
        [modstate=disabled])
   ])
-  _MODULE_BLOCK_ADD(modcond, [$modstate])
+  _MODULE_BLOCK_ADD(modcond[_STATE], [$modstate])
   AS_VAR_IF([modstate], [yes], [
     m4_ifblank([$4], [], [_MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$4])])
     m4_ifblank([$5], [], [_MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_LDFLAGS], [$5])])
@@ -6728,7 +6881,7 @@ AC_DEFUN([PY_STDLIB_MOD_SIMPLE], [
   dnl Check if module has been disabled by PY_STDLIB_MOD_SET_NA()
   AS_IF([test "$modstate" != "n/a"], [modstate=yes])
   AM_CONDITIONAL(modcond, [test "$modstate" = yes])
-  _MODULE_BLOCK_ADD(modcond, [$modstate])
+  _MODULE_BLOCK_ADD(modcond[_STATE], [$modstate])
   AS_VAR_IF([modstate], [yes], [
     m4_ifblank([$2], [], [_MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$2])])
     m4_ifblank([$3], [], [_MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_LDFLAGS], [$3])])
@@ -6829,11 +6982,15 @@ PY_STDLIB_MOD([_blake2],
 PY_STDLIB_MOD([_crypt],
   [], [test "$ac_cv_crypt_crypt" = yes],
   [$LIBCRYPT_CFLAGS], [$LIBCRYPT_LIBS])
-dnl PY_STDLIB_MOD([_ctypes], [], [], [], [])
+PY_STDLIB_MOD([_ctypes],
+  [], [test "$have_libffi" = yes],
+  [$LIBFFI_CFLAGS], [$LIBFFI_LIBS])
 dnl PY_STDLIB_MOD([_curses], [], [], [], [])
 dnl PY_STDLIB_MOD([_curses_panel], [], [], [], [])
 PY_STDLIB_MOD([_decimal], [], [], [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LDFLAGS])
-dnl PY_STDLIB_MOD([_dbm], [], [], [], [])
+PY_STDLIB_MOD([_dbm],
+  [test -n "$with_dbmliborder"], [test "$have_dbm" != "no"],
+  [$DBM_CFLAGS], [$DBM_LIBS])
 PY_STDLIB_MOD([_gdbm],
   [test "$have_gdbm_dbmliborder" = yes], [test "$have_gdbm" = yes],
   [$GDBM_CFLAGS], [$GDBM_LIBS])
@@ -6845,12 +7002,12 @@ PY_STDLIB_MOD([_sqlite3],
   [test "$have_sqlite3" = "yes"],
   [test "$have_supported_sqlite3" = "yes"],
   [$LIBSQLITE3_CFLAGS], [$LIBSQLITE3_LIBS])
-dnl PY_STDLIB_MOD([_tkinter], [], [], [], [])
+PY_STDLIB_MOD([_tkinter],
+  [], [test "$have_tcltk" = "yes"],
+  [$TCLTK_CFLAGS], [$TCLTK_LIBS])
 PY_STDLIB_MOD([_uuid],
   [], [test "$have_uuid" = "yes"],
   [$LIBUUID_CFLAGS], [$LIBUUID_LIBS])
-PY_STDLIB_MOD([_tkinter], [],
-  [test "$have_tcltk" = "yes"], [$TCLTK_CFLAGS], [$TCLTK_LIBS])
 
 dnl compression libs
 PY_STDLIB_MOD([zlib], [], [test "$have_zlib" = yes],
@@ -6875,7 +7032,9 @@ PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
-PY_STDLIB_MOD([_ctypes_test], [test "$TEST_MODULES" = yes], [], [], [-lm])
+PY_STDLIB_MOD([_ctypes_test],
+  [test "$TEST_MODULES" = yes], [test "$have_libffi" = yes -a "$ac_cv_func_dlopen" = yes],
+  [], [$LIBM])
 
 dnl Limited API template modules.
 dnl The limited C API is not compatible with the Py_TRACE_REFS macro.
@@ -6915,3 +7074,9 @@ If you want a release build with all stable optimizations active (PGO, etc),
 please run ./configure --enable-optimizations
 ])
 fi
+
+AS_VAR_IF([PY_SUPPORT_TIER], [0], [AC_MSG_WARN([
+
+Platform "$host" with compiler "$ac_cv_cc_name" is not supported by the
+CPython core team, see https://peps.python.org/pep-0011/ for more information.
+])])

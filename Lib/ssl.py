@@ -18,9 +18,10 @@ Functions:
                           seconds past the Epoch (the time values
                           returned from time.time())
 
-  fetch_server_certificate (HOST, PORT) -- fetch the certificate provided
-                          by the server running on HOST at port PORT.  No
-                          validation of the certificate is performed.
+  get_server_certificate (addr, ssl_version, ca_certs, timeout) -- Retrieve the
+                          certificate from the server at the specified
+                          address and return it as a PEM-encoded string
+
 
 Integer constants:
 
@@ -105,7 +106,7 @@ from _ssl import (
     SSLSyscallError, SSLEOFError, SSLCertVerificationError
     )
 from _ssl import txt2obj as _txt2obj, nid2obj as _nid2obj
-from _ssl import RAND_status, RAND_add, RAND_bytes, RAND_pseudo_bytes
+from _ssl import RAND_status, RAND_add, RAND_bytes
 try:
     from _ssl import RAND_egd
 except ImportError:
@@ -370,68 +371,6 @@ def _ipaddress_match(cert_ipaddress, host_ip):
     # commonly with IPv6 addresses. Strip off trailing \n.
     ip = _inet_paton(cert_ipaddress.rstrip())
     return ip == host_ip
-
-
-def match_hostname(cert, hostname):
-    """Verify that *cert* (in decoded format as returned by
-    SSLSocket.getpeercert()) matches the *hostname*.  RFC 2818 and RFC 6125
-    rules are followed.
-
-    The function matches IP addresses rather than dNSNames if hostname is a
-    valid ipaddress string. IPv4 addresses are supported on all platforms.
-    IPv6 addresses are supported on platforms with IPv6 support (AF_INET6
-    and inet_pton).
-
-    CertificateError is raised on failure. On success, the function
-    returns nothing.
-    """
-    warnings.warn(
-        "ssl.match_hostname() is deprecated",
-        category=DeprecationWarning,
-        stacklevel=2
-    )
-    if not cert:
-        raise ValueError("empty or no certificate, match_hostname needs a "
-                         "SSL socket or SSL context with either "
-                         "CERT_OPTIONAL or CERT_REQUIRED")
-    try:
-        host_ip = _inet_paton(hostname)
-    except ValueError:
-        # Not an IP address (common case)
-        host_ip = None
-    dnsnames = []
-    san = cert.get('subjectAltName', ())
-    for key, value in san:
-        if key == 'DNS':
-            if host_ip is None and _dnsname_match(value, hostname):
-                return
-            dnsnames.append(value)
-        elif key == 'IP Address':
-            if host_ip is not None and _ipaddress_match(value, host_ip):
-                return
-            dnsnames.append(value)
-    if not dnsnames:
-        # The subject is only checked when there is no dNSName entry
-        # in subjectAltName
-        for sub in cert.get('subject', ()):
-            for key, value in sub:
-                # XXX according to RFC 2818, the most specific Common Name
-                # must be used.
-                if key == 'commonName':
-                    if _dnsname_match(value, hostname):
-                        return
-                    dnsnames.append(value)
-    if len(dnsnames) > 1:
-        raise CertificateError("hostname %r "
-            "doesn't match either of %s"
-            % (hostname, ', '.join(map(repr, dnsnames))))
-    elif len(dnsnames) == 1:
-        raise CertificateError("hostname %r "
-            "doesn't match %r"
-            % (hostname, dnsnames[0]))
-    else:
-        raise CertificateError("no appropriate commonName or "
-            "subjectAltName fields were found")
 
 
 DefaultVerifyPaths = namedtuple("DefaultVerifyPaths",

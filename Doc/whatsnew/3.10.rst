@@ -47,7 +47,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.10, compared to 3.9.
-
+Python 3.10 was released on October 4, 2021.
 For full details, see the :ref:`changelog <changelog>`.
 
 Summary -- Release highlights
@@ -1223,6 +1223,12 @@ now call :func:`inspect.get_annotations` to retrieve annotations. This means
 also now un-stringize stringized annotations.
 (Contributed by Larry Hastings in :issue:`43817`.)
 
+itertools
+---------
+
+Add :func:`itertools.pairwise()`.
+(Contributed by Raymond Hettinger in :issue:`38200`.)
+
 linecache
 ---------
 
@@ -1740,7 +1746,7 @@ Deprecated
 
   * ``threading.Thread.setDaemon`` => :attr:`threading.Thread.daemon`
 
-  (Contributed by Jelle Zijlstra in :issue:`21574`.)
+  (Contributed by Jelle Zijlstra in :gh:`87889`.)
 
 * :meth:`pathlib.Path.link_to` is deprecated and slated for removal in
   Python 3.12. Use :meth:`pathlib.Path.hardlink_to` instead.

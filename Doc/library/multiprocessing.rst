@@ -96,7 +96,7 @@ Depending on the platform, :mod:`multiprocessing` supports three ways
 to start a process.  These *start methods* are
 
   *spawn*
-    The parent process starts a fresh python interpreter process.  The
+    The parent process starts a fresh Python interpreter process.  The
     child process will only inherit those resources necessary to run
     the process object's :meth:`~Process.run` method.  In particular,
     unnecessary file descriptors and handles from the parent process
@@ -1075,6 +1075,9 @@ Miscellaneous
    .. versionchanged:: 3.4
       Now supported on Unix when the ``'spawn'`` start method is used.
 
+   .. versionchanged:: 3.11
+      Accepts a :term:`path-like object`.
+
 .. function:: set_start_method(method)
 
    Set the method which should be used to start child processes.
@@ -1663,6 +1666,7 @@ different machines. A manager object controls a server process which manages
 proxies.
 
 .. function:: multiprocessing.Manager()
+   :module:
 
    Returns a started :class:`~multiprocessing.managers.SyncManager` object which
    can be used for sharing objects between processes.  The returned manager

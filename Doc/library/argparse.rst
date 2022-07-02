@@ -22,8 +22,8 @@
 The :mod:`argparse` module makes it easy to write user-friendly command-line
 interfaces. The program defines what arguments it requires, and :mod:`argparse`
 will figure out how to parse those out of :data:`sys.argv`.  The :mod:`argparse`
-module also automatically generates help and usage messages and issues errors
-when users give the program invalid arguments.
+module also automatically generates help and usage messages.  The module
+will also issue errors when users give the program invalid arguments.
 
 
 Core Functionality
@@ -34,20 +34,20 @@ around an instance of :class:`argparse.ArgumentParser`.  It is a container for
 argument specifications and has options that apply the parser as whole::
 
    parser = argparse.ArgumentParser(
-                 prog = 'ProgramName',
-                 description = 'What the program does',
-                 epilog = 'Text at the bottom of help')
+                       prog = 'ProgramName',
+                       description = 'What the program does',
+                       epilog = 'Text at the bottom of help')
 
-The :func:`ArgumentParser.add_argument` function attaches individual argument
+The :meth:`ArgumentParser.add_argument` method attaches individual argument
 specifications to the parser.  It supports positional arguments, options that
 accept values, and on/off flags::
 
    parser.add_argument('filename')           # positional argument
-   parser.add_argument('-c', '--count')      # option that takes value
+   parser.add_argument('-c', '--count')      # option that takes a value
    parser.add_argument('-v', '--verbose',
                        action='store_true')  # on/off flag
 
-The :func:`ArgumentParser.parse_args` function runs the parser and puts
+The :meth:`ArgumentParser.parse_args` method runs the parser and places
 the extracted data in a :class:`argparse.Namespace` object::
 
    args = parser.parse_args()
@@ -61,15 +61,15 @@ Quick Links for add_argument()
 Name                   Description                                                 Values
 ====================== =========================================================== ==========================================================================================================================
 action_                Specify how an argument should be handled                   ``'store'``, ``'store_const'``, ``'store_true'``, ``'append'``, ``'append_const'``, ``'count'``, ``'help'``, ``'version'``
-choices_               Limit values to specific set of choices                     ``['foo', 'bar']``, ``range(1, 10)``, or an object that supports ``in`` operator
+choices_               Limit values to a specific set of choices                   ``['foo', 'bar']``, ``range(1, 10)``, or :class:`~collections.abc.Container` instance
 const_                 Store a constant value
-default_               Default value used when an argument is not provided
-dest_                  Specify the attribute name in result namespace
+default_               Default value used when an argument is not provided         Defaults to *None*
+dest_                  Specify the attribute name used in the result namespace
 help_                  Help message for an argument
 metavar_               Alternate display name for the argument as shown in help
-nargs_                 Number of times the argument can be used                    ``N`` (:class:`int`), ``'?'``, ``'*'``, ``'+'``, ``argparse.REMAINDER``
-required_              Indicate whether an optional argument is required or not    ``True``, ``False``
-type_                  Automatically convert an argument to the given type         :class:`int`, :class:`float`, ``argparse.FileType('w')``, or any callable function
+nargs_                 Number of times the argument can be used                    :class:`int`, ``'?'``, ``'*'``, ``'+'``, or ``argparse.REMAINDER``
+required_              Indicate whether an argument is required or optional        ``True`` or ``False``
+type_                  Automatically convert an argument to the given type         :class:`int`, :class:`float`, ``argparse.FileType('w')``, or callable function
 ====================== =========================================================== ==========================================================================================================================
 
 
@@ -91,8 +91,8 @@ produces either the sum or the max::
    args = parser.parse_args()
    print(args.accumulate(args.integers))
 
-Assuming the Python code above is saved into a file called ``prog.py``, it can
-be run at the command line and provides useful help messages:
+Assuming the above Python code is saved into a file called ``prog.py``, it can
+be run at the command line and it provides useful help messages:
 
 .. code-block:: shell-session
 
@@ -119,7 +119,7 @@ the command-line integers:
    $ python prog.py 1 2 3 4 --sum
    10
 
-If invalid arguments are passed in, it will issue an error:
+If invalid arguments are passed in, an error will be displayed:
 
 .. code-block:: shell-session
 
@@ -159,7 +159,7 @@ used when :meth:`~ArgumentParser.parse_args` is called. For example::
 
 Later, calling :meth:`~ArgumentParser.parse_args` will return an object with
 two attributes, ``integers`` and ``accumulate``.  The ``integers`` attribute
-will be a list of one or more ints, and the ``accumulate`` attribute will be
+will be a list of one or more integers, and the ``accumulate`` attribute will be
 either the :func:`sum` function, if ``--sum`` was specified at the command line,
 or the :func:`max` function if it was not.
 
@@ -555,14 +555,14 @@ disallowed.
 fromfile_prefix_chars
 ^^^^^^^^^^^^^^^^^^^^^
 
-Sometimes, for example when dealing with a particularly long argument lists, it
+Sometimes, when dealing with a particularly long argument list, it
 may make sense to keep the list of arguments in a file rather than typing it out
 at the command line.  If the ``fromfile_prefix_chars=`` argument is given to the
 :class:`ArgumentParser` constructor, then arguments that start with any of the
 specified characters will be treated as files, and will be replaced by the
 arguments they contain.  For example::
 
-   >>> with open('args.txt', 'w') as fp:
+   >>> with open('args.txt', 'w', encoding=sys.getfilesystemencoding()) as fp:
    ...     fp.write('-f\nbar')
    >>> parser = argparse.ArgumentParser(fromfile_prefix_chars='@')
    >>> parser.add_argument('-f')
@@ -575,8 +575,17 @@ were in the same place as the original file referencing argument on the command
 line.  So in the example above, the expression ``['-f', 'foo', '@args.txt']``
 is considered equivalent to the expression ``['-f', 'foo', '-f', 'bar']``.
 
+:class:`ArgumentParser` uses :term:`filesystem encoding and error handler`
+to read the file containing arguments.
+
 The ``fromfile_prefix_chars=`` argument defaults to ``None``, meaning that
 arguments will never be treated as file references.
+
+.. versionchanged:: 3.12
+   :class:`ArgumentParser` changed encoding and errors to read arguments files
+   from default (e.g. :func:`locale.getpreferredencoding(False)` and
+   ``"strict"``) to :term:`filesystem encoding and error handler`.
+   Arguments file should be encoded in UTF-8 instead of ANSI Codepage on Windows.
 
 
 argument_default
@@ -846,8 +855,10 @@ how the command-line arguments should be handled. The supplied actions are:
     Namespace(foo=True, bar=False, baz=True)
 
 * ``'append'`` - This stores a list, and appends each argument value to the
-  list.  This is useful to allow an option to be specified multiple times.
-  Example usage::
+  list. It is useful to allow an option to be specified multiple times.
+  If the default value is non-empty, the default elements will be present
+  in the parsed value for the option, with any values from the
+  command line appended after those default values. Example usage::
 
     >>> parser = argparse.ArgumentParser()
     >>> parser.add_argument('--foo', action='append')
@@ -949,8 +960,8 @@ nargs
 
 ArgumentParser objects usually associate a single command-line argument with a
 single action to be taken.  The ``nargs`` keyword argument associates a
-different number of command-line arguments with a single action.  The supported
-values are:
+different number of command-line arguments with a single action.
+See also :ref:`specifying-ambiguous-arguments`. The supported values are:
 
 * ``N`` (an integer).  ``N`` arguments from the command line will be gathered
   together into a list.  For example::
@@ -1228,7 +1239,7 @@ Any container can be passed as the *choices* value, so :class:`list` objects,
 Use of :class:`enum.Enum` is not recommended because it is difficult to
 control its appearance in usage, help, and error messages.
 
-Formatted choices overrides the default *metavar* which is normally derived
+Formatted choices override the default *metavar* which is normally derived
 from *dest*.  This is usually what you want because the user never sees the
 *dest* parameter.  If this display isn't desirable (perhaps because there are
 many choices), just specify an explicit metavar_.
@@ -1608,6 +1619,9 @@ argument::
    >>> parser.parse_args(['--', '-f'])
    Namespace(foo='-f', one=None)
 
+See also :ref:`the argparse howto on ambiguous arguments <specifying-ambiguous-arguments>`
+for more details.
+
 .. _prefix-matching:
 
 Argument abbreviations (prefix matching)
@@ -1696,7 +1710,7 @@ Sub-commands
 
 .. method:: ArgumentParser.add_subparsers([title], [description], [prog], \
                                           [parser_class], [action], \
-                                          [option_string], [dest], [required], \
+                                          [option_strings], [dest], [required], \
                                           [help], [metavar])
 
    Many programs split up their functionality into a number of sub-commands,

@@ -4,6 +4,7 @@ from collections import namedtuple
 from io import StringIO
 import linecache
 import sys
+import types
 import inspect
 import unittest
 import re
@@ -14,7 +15,6 @@ from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
-import os
 import textwrap
 import traceback
 from functools import partial
@@ -615,6 +615,7 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
             '    ^^^^^^^^^^\n'
             f'  File "{TESTFN}", line {lineno_f}, in <module>\n'
             f'    {source}\n'
+            f'    {"^"*len(source)}\n'
         )
         self.assertEqual(result_lines, expected_error.splitlines())
 
@@ -1128,7 +1129,7 @@ boundaries = re.compile(
 class BaseExceptionReportingTests:
 
     def get_exception(self, exception_or_callable):
-        if isinstance(exception_or_callable, Exception):
+        if isinstance(exception_or_callable, BaseException):
             return exception_or_callable
         try:
             exception_or_callable()
@@ -1848,6 +1849,31 @@ class BaseExceptionReportingTests:
                     f'    +------------------------------------\n')
 
         report = self.get_report(exc)
+        self.assertEqual(report, expected)
+
+    def test_KeyboardInterrupt_at_first_line_of_frame(self):
+        # see GH-93249
+        def f():
+            return sys._getframe()
+
+        tb_next = None
+        frame = f()
+        lasti = 0
+        lineno = f.__code__.co_firstlineno
+        tb = types.TracebackType(tb_next, frame, lasti, lineno)
+
+        exc = KeyboardInterrupt()
+        exc.__traceback__ = tb
+
+        expected = (f'Traceback (most recent call last):\n'
+                    f'  File "{__file__}", line {lineno}, in f\n'
+                    f'    def f():\n'
+                    f'\n'
+                    f'KeyboardInterrupt\n')
+
+        report = self.get_report(exc)
+        # remove trailing writespace:
+        report = '\n'.join([l.rstrip() for l in report.split('\n')])
         self.assertEqual(report, expected)
 
 

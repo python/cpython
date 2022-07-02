@@ -103,7 +103,7 @@ PyDoc_STRVAR(_io__Buffered_peek__doc__,
 "\n");
 
 #define _IO__BUFFERED_PEEK_METHODDEF    \
-    {"peek", (PyCFunction)(void(*)(void))_io__Buffered_peek, METH_FASTCALL, _io__Buffered_peek__doc__},
+    {"peek", _PyCFunction_CAST(_io__Buffered_peek), METH_FASTCALL, _io__Buffered_peek__doc__},
 
 static PyObject *
 _io__Buffered_peek_impl(buffered *self, Py_ssize_t size);
@@ -145,7 +145,7 @@ PyDoc_STRVAR(_io__Buffered_read__doc__,
 "\n");
 
 #define _IO__BUFFERED_READ_METHODDEF    \
-    {"read", (PyCFunction)(void(*)(void))_io__Buffered_read, METH_FASTCALL, _io__Buffered_read__doc__},
+    {"read", _PyCFunction_CAST(_io__Buffered_read), METH_FASTCALL, _io__Buffered_read__doc__},
 
 static PyObject *
 _io__Buffered_read_impl(buffered *self, Py_ssize_t n);
@@ -178,7 +178,7 @@ PyDoc_STRVAR(_io__Buffered_read1__doc__,
 "\n");
 
 #define _IO__BUFFERED_READ1_METHODDEF    \
-    {"read1", (PyCFunction)(void(*)(void))_io__Buffered_read1, METH_FASTCALL, _io__Buffered_read1__doc__},
+    {"read1", _PyCFunction_CAST(_io__Buffered_read1), METH_FASTCALL, _io__Buffered_read1__doc__},
 
 static PyObject *
 _io__Buffered_read1_impl(buffered *self, Py_ssize_t n);
@@ -294,7 +294,7 @@ PyDoc_STRVAR(_io__Buffered_readline__doc__,
 "\n");
 
 #define _IO__BUFFERED_READLINE_METHODDEF    \
-    {"readline", (PyCFunction)(void(*)(void))_io__Buffered_readline, METH_FASTCALL, _io__Buffered_readline__doc__},
+    {"readline", _PyCFunction_CAST(_io__Buffered_readline), METH_FASTCALL, _io__Buffered_readline__doc__},
 
 static PyObject *
 _io__Buffered_readline_impl(buffered *self, Py_ssize_t size);
@@ -327,7 +327,7 @@ PyDoc_STRVAR(_io__Buffered_seek__doc__,
 "\n");
 
 #define _IO__BUFFERED_SEEK_METHODDEF    \
-    {"seek", (PyCFunction)(void(*)(void))_io__Buffered_seek, METH_FASTCALL, _io__Buffered_seek__doc__},
+    {"seek", _PyCFunction_CAST(_io__Buffered_seek), METH_FASTCALL, _io__Buffered_seek__doc__},
 
 static PyObject *
 _io__Buffered_seek_impl(buffered *self, PyObject *targetobj, int whence);
@@ -363,7 +363,7 @@ PyDoc_STRVAR(_io__Buffered_truncate__doc__,
 "\n");
 
 #define _IO__BUFFERED_TRUNCATE_METHODDEF    \
-    {"truncate", (PyCFunction)(void(*)(void))_io__Buffered_truncate, METH_FASTCALL, _io__Buffered_truncate__doc__},
+    {"truncate", _PyCFunction_CAST(_io__Buffered_truncate), METH_FASTCALL, _io__Buffered_truncate__doc__},
 
 static PyObject *
 _io__Buffered_truncate_impl(buffered *self, PyObject *pos);
@@ -638,4 +638,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=79138a088729b5ee input=a9049054013a1b77]*/
+/*[clinic end generated code: output=820461c6b0e29e48 input=a9049054013a1b77]*/

@@ -6,6 +6,12 @@
 
 **Source code:** :source:`Lib/dis.py`
 
+.. testsetup::
+
+   import dis
+   def myfunc(alist):
+       return len(alist)
+
 --------------
 
 The :mod:`dis` module supports the analysis of CPython :term:`bytecode` by
@@ -37,17 +43,17 @@ Example: Given the function :func:`myfunc`::
        return len(alist)
 
 the following command can be used to display the disassembly of
-:func:`myfunc`::
+:func:`myfunc`:
+
+.. doctest::
 
    >>> dis.dis(myfunc)
-     1           0 RESUME                   0
-
-     2           2 PUSH_NULL
-                 4 LOAD_GLOBAL              1 (NULL + len)
-                 6 LOAD_FAST                0 (alist)
-                 8 PRECALL                  1
-                10 CALL                     1
-                12 RETURN_VALUE
+     2           0 RESUME                   0
+   <BLANKLINE>
+     3           2 LOAD_GLOBAL              1 (NULL + len)
+                14 LOAD_FAST                0 (alist)
+                16 CALL                     1
+                26 RETURN_VALUE
 
 (The "2" is a line number).
 
@@ -109,17 +115,17 @@ code.
    .. versionchanged:: 3.11
       Added the ``show_caches`` parameter.
 
-Example::
+Example:
+
+.. doctest::
 
     >>> bytecode = dis.Bytecode(myfunc)
     >>> for instr in bytecode:
     ...     print(instr.opname)
     ...
     RESUME
-    PUSH_NULL
     LOAD_GLOBAL
     LOAD_FAST
-    PRECALL
     CALL
     RETURN_VALUE
 
@@ -260,14 +266,16 @@ operation is being performed, so the intermediate analysis object isn't useful:
 
 .. function:: findlinestarts(code)
 
-   This generator function uses the ``co_firstlineno`` and ``co_lnotab``
-   attributes of the code object *code* to find the offsets which are starts of
+   This generator function uses the ``co_lines`` method
+   of the code object *code* to find the offsets which are starts of
    lines in the source code.  They are generated as ``(offset, lineno)`` pairs.
-   See :source:`Objects/lnotab_notes.txt` for the ``co_lnotab`` format and
-   how to decode it.
 
    .. versionchanged:: 3.6
       Line numbers can be decreasing. Before, they were always increasing.
+
+   .. versionchanged:: 3.10
+      The :pep:`626` ``co_lines`` method is used instead of the ``co_firstlineno``
+      and ``co_lnotab`` attributes of the code object.
 
 
 .. function:: findlabels(code)
@@ -440,12 +448,13 @@ result back on the stack.
 
 **Binary and in-place operations**
 
-Binary operations remove the top of the stack (TOS) and the second top-most
-stack item (TOS1) from the stack.  They perform the operation, and put the
-result back on the stack.
+In the following, TOS is the top-of-stack.
+TOS1, TOS2, TOS3 are the second, thrid and fourth items on the stack, respectively.
 
-In-place operations are like binary operations, in that they remove TOS and
-TOS1, and push the result back on the stack, but the operation is done in-place
+Binary operations remove the top two items from the stack (TOS and TOS1).
+They perform the operation, then put the result back on the stack.
+
+In-place operations are like binary operations, but the operation is done in-place
 when TOS1 supports it, and the resulting TOS may be (but does not have to be)
 the original TOS1.
 
@@ -454,6 +463,7 @@ the original TOS1.
 
    Implements the binary and in-place operators (depending on the value of
    *op*).
+   ``TOS = TOS1 op TOS``.
 
    .. versionadded:: 3.11
 
@@ -471,6 +481,20 @@ the original TOS1.
 .. opcode:: DELETE_SUBSCR
 
    Implements ``del TOS1[TOS]``.
+
+
+.. opcode:: BINARY_SLICE
+
+   Implements ``TOS = TOS2[TOS1:TOS]``.
+
+   .. versionadded:: 3.12
+
+
+.. opcode:: STORE_SLICE
+
+   Implements ``TOS2[TOS1:TOS] = TOS3``.
+
+   .. versionadded:: 3.12
 
 
 **Coroutine opcodes**
@@ -506,8 +530,8 @@ the original TOS1.
 
 .. opcode:: GET_ANEXT
 
-   Implements ``PUSH(get_awaitable(TOS.__anext__()))``.  See ``GET_AWAITABLE``
-   for details about ``get_awaitable``
+   Pushes ``get_awaitable(TOS.__anext__())`` to the stack.  See
+   ``GET_AWAITABLE`` for details about ``get_awaitable``.
 
    .. versionadded:: 3.5
 
@@ -577,6 +601,8 @@ iterations of the loop.
 
    Pops TOS and yields it from a :term:`generator`.
 
+    .. versionchanged:: 3.11
+       oparg set to be the stack depth, for efficient handling on frames.
 
 .. opcode:: YIELD_FROM
 
@@ -879,7 +905,20 @@ iterations of the loop.
 
 .. opcode:: LOAD_ATTR (namei)
 
-   Replaces TOS with ``getattr(TOS, co_names[namei])``.
+   If the low bit of ``namei`` is not set, this replaces TOS with
+   ``getattr(TOS, co_names[namei>>1])``.
+
+   If the low bit of ``namei`` is set, this will attempt to load a method named
+   ``co_names[namei>>1]`` from the TOS object. TOS is popped.
+   This bytecode distinguishes two cases: if TOS has a method with the correct
+   name, the bytecode pushes the unbound method and TOS. TOS will be used as
+   the first argument (``self``) by :opcode:`CALL` when calling the
+   unbound method. Otherwise, ``NULL`` and the object return by the attribute
+   lookup are pushed.
+
+   .. versionchanged:: 3.12
+      If the low bit of ``namei`` is set, then a ``NULL`` or ``self`` is
+      pushed to the stack before the attribute or unbound method respectively.
 
 
 .. opcode:: COMPARE_OP (opname)
@@ -1034,6 +1073,17 @@ iterations of the loop.
 
    Pushes a reference to the local ``co_varnames[var_num]`` onto the stack.
 
+   .. versionchanged:: 3.12
+      This opcode is now only used in situations where the local variable is
+      guaranteed to be initialized. It cannot raise :exc:`UnboundLocalError`.
+
+.. opcode:: LOAD_FAST_CHECK (var_num)
+
+   Pushes a reference to the local ``co_varnames[var_num]`` onto the stack,
+   raising an :exc:`UnboundLocalError` if the local variable has not been
+   initialized.
+
+   .. versionadded:: 3.12
 
 .. opcode:: STORE_FAST (var_num)
 
@@ -1170,27 +1220,6 @@ iterations of the loop.
    .. versionadded:: 3.6
 
 
-.. opcode:: LOAD_METHOD (namei)
-
-   Loads a method named ``co_names[namei]`` from the TOS object. TOS is popped.
-   This bytecode distinguishes two cases: if TOS has a method with the correct
-   name, the bytecode pushes the unbound method and TOS. TOS will be used as
-   the first argument (``self``) by :opcode:`CALL` when calling the
-   unbound method. Otherwise, ``NULL`` and the object return by the attribute
-   lookup are pushed.
-
-   .. versionadded:: 3.7
-
-
-.. opcode:: PRECALL (argc)
-
-   Prefixes :opcode:`CALL`. Logically this is a no op.
-   It exists to enable effective specialization of calls.
-   ``argc`` is the number of arguments as described in :opcode:`CALL`.
-
-   .. versionadded:: 3.11
-
-
 .. opcode:: PUSH_NULL
 
     Pushes a ``NULL`` to the stack.
@@ -1202,7 +1231,7 @@ iterations of the loop.
 
 .. opcode:: KW_NAMES (i)
 
-   Prefixes :opcode:`PRECALL`.
+   Prefixes :opcode:`CALL`.
    Stores a reference to ``co_consts[consti]`` into an internal variable
    for use by :opcode:`CALL`. ``co_consts[consti]`` must be a tuple of strings.
 
@@ -1322,12 +1351,73 @@ iterations of the loop.
 .. opcode:: HAVE_ARGUMENT
 
    This is not really an opcode.  It identifies the dividing line between
-   opcodes which don't use their argument and those that do
-   (``< HAVE_ARGUMENT`` and ``>= HAVE_ARGUMENT``, respectively).
+   opcodes in the range [0,255] which don't use their argument and those
+   that do (``< HAVE_ARGUMENT`` and ``>= HAVE_ARGUMENT``, respectively).
+
+   If your application uses pseudo instructions, use the :data:`hasarg`
+   collection instead.
 
    .. versionchanged:: 3.6
       Now every instruction has an argument, but opcodes ``< HAVE_ARGUMENT``
       ignore it. Before, only opcodes ``>= HAVE_ARGUMENT`` had an argument.
+
+   .. versionchanged:: 3.12
+      Pseudo instructions were added to the :mod:`dis` module, and for them
+      it is not true that comparison with ``HAVE_ARGUMENT`` indicates whether
+      they use their arg.
+
+
+**Pseudo-instructions**
+
+These opcodes do not appear in python bytecode, they are used by the compiler
+but are replaced by real opcodes or removed before bytecode is generated.
+
+.. opcode:: SETUP_FINALLY (target)
+
+   Set up an exception handler for the following code block. If an exception
+   occurs, the value stack level is restored to its current state and control
+   is transferred to the exception handler at ``target``.
+
+
+.. opcode:: SETUP_CLEANUP (target)
+
+   Like ``SETUP_FINALLY``, but in case of exception also pushes the last
+   instruction (``lasti``) to the stack so that ``RERAISE`` can restore it.
+   If an exception occurs, the value stack level and the last instruction on
+   the frame are restored to their current state, and control is transferred
+   to the exception handler at ``target``.
+
+
+.. opcode:: SETUP_WITH (target)
+
+   Like ``SETUP_CLEANUP``, but in case of exception one more item is popped
+   from the stack before control is transferred to the exception handler at
+   ``target``.
+
+   This variant is used in :keyword:`with` and :keyword:`async with`
+   constructs, which push the return value of the context manager's
+   :meth:`~object.__enter__` or :meth:`~object.__aenter__` to the stack.
+
+
+.. opcode:: POP_BLOCK
+
+   Marks the end of the code block associated with the last ``SETUP_FINALLY``,
+   ``SETUP_CLEANUP`` or ``SETUP_WITH``.
+
+.. opcode:: JUMP
+.. opcode:: JUMP_NO_INTERRUPT
+.. opcode:: POP_JUMP_IF_FALSE
+.. opcode:: POP_JUMP_IF_TRUE
+.. opcode:: POP_JUMP_IF_NONE
+.. opcode:: POP_JUMP_IF_NOT_NONE
+
+   Undirected relative jump instructions which are replaced by their
+   directed (forward/backward) counterparts by the assembler.
+
+.. opcode:: LOAD_METHOD
+
+   Optimized unbound method lookup. Emitted as a ``LOAD_ATTR`` opcode
+   with a flag set in the arg.
 
 
 .. _opcode_collections:
@@ -1337,6 +1427,10 @@ Opcode collections
 
 These collections are provided for automatic introspection of bytecode
 instructions:
+
+   .. versionchanged:: 3.12
+      The collections now contain pseudo instructions as well. These are
+      opcodes with values ``>= MIN_PSEUDO_OPCODE``.
 
 .. data:: opname
 
@@ -1351,6 +1445,13 @@ instructions:
 .. data:: cmp_op
 
    Sequence of all compare operation names.
+
+
+.. data:: hasarg
+
+   Sequence of bytecodes that use their argument.
+
+    .. versionadded:: 3.12
 
 
 .. data:: hasconst
@@ -1389,3 +1490,9 @@ instructions:
 .. data:: hascompare
 
    Sequence of bytecodes of Boolean operations.
+
+.. data:: hasexc
+
+   Sequence of bytecodes that set an exception handler.
+
+    .. versionadded:: 3.12

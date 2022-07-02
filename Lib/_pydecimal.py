@@ -441,6 +441,10 @@ import contextvars
 
 _current_context_var = contextvars.ContextVar('decimal_context')
 
+_context_attributes = frozenset(
+    ['prec', 'Emin', 'Emax', 'capitals', 'clamp', 'rounding', 'flags', 'traps']
+)
+
 def getcontext():
     """Returns this thread's context.
 
@@ -464,7 +468,7 @@ def setcontext(context):
 
 del contextvars        # Don't contaminate the namespace
 
-def localcontext(ctx=None):
+def localcontext(ctx=None, **kwargs):
     """Return a context manager for a copy of the supplied context
 
     Uses a copy of the current context if no context is specified
@@ -500,8 +504,14 @@ def localcontext(ctx=None):
     >>> print(getcontext().prec)
     28
     """
-    if ctx is None: ctx = getcontext()
-    return _ContextManager(ctx)
+    if ctx is None:
+        ctx = getcontext()
+    ctx_manager = _ContextManager(ctx)
+    for key, value in kwargs.items():
+        if key not in _context_attributes:
+            raise TypeError(f"'{key}' is an invalid keyword argument for this function")
+        setattr(ctx_manager.new_context, key, value)
+    return ctx_manager
 
 
 ##### Decimal class #######################################################

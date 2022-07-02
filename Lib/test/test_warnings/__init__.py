@@ -22,8 +22,6 @@ py_warnings = import_helper.import_fresh_module('warnings',
 c_warnings = import_helper.import_fresh_module('warnings',
                                                fresh=['_warnings'])
 
-Py_DEBUG = hasattr(sys, 'gettotalrefcount')
-
 @contextmanager
 def warnings_state(module):
     """Use a specific warnings implementation in warning_tests."""
@@ -372,6 +370,25 @@ class FilterTests(BaseTest):
             self.assertEqual(len(w), 0,
                 "appended duplicate changed order of filters"
             )
+
+    def test_catchwarnings_with_simplefilter_ignore(self):
+        with original_warnings.catch_warnings(module=self.module):
+            self.module.resetwarnings()
+            self.module.simplefilter("error")
+            with self.module.catch_warnings(
+                module=self.module, action="ignore"
+            ):
+                self.module.warn("This will be ignored")
+
+    def test_catchwarnings_with_simplefilter_error(self):
+        with original_warnings.catch_warnings(module=self.module):
+            self.module.resetwarnings()
+            with self.module.catch_warnings(
+                module=self.module, action="error", category=FutureWarning
+            ):
+                self.module.warn("Other types of warnings are not errors")
+                self.assertRaises(FutureWarning,
+                                  self.module.warn, FutureWarning("msg"))
 
 class CFilterTests(FilterTests, unittest.TestCase):
     module = c_warnings
@@ -1172,7 +1189,7 @@ class EnvironmentVariableTests(BaseTest):
 
     def test_default_filter_configuration(self):
         pure_python_api = self.module is py_warnings
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             expected_default_filters = []
         else:
             if pure_python_api:

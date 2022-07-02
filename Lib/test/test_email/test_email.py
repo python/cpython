@@ -7,7 +7,6 @@ import time
 import base64
 import unittest
 import textwrap
-import warnings
 
 from io import StringIO, BytesIO
 from itertools import chain
@@ -19,24 +18,25 @@ import email
 import email.policy
 
 from email.charset import Charset
-from email.header import Header, decode_header, make_header
-from email.parser import Parser, HeaderParser
 from email.generator import Generator, DecodedGenerator, BytesGenerator
+from email.header import Header, decode_header, make_header
+from email.headerregistry import HeaderRegistry
 from email.message import Message
 from email.mime.application import MIMEApplication
 from email.mime.audio import MIMEAudio
-from email.mime.text import MIMEText
-from email.mime.image import MIMEImage
 from email.mime.base import MIMEBase
+from email.mime.image import MIMEImage
 from email.mime.message import MIMEMessage
 from email.mime.multipart import MIMEMultipart
 from email.mime.nonmultipart import MIMENonMultipart
-from email import utils
-from email import errors
-from email import encoders
-from email import iterators
+from email.mime.text import MIMEText
+from email.parser import Parser, HeaderParser
 from email import base64mime
+from email import encoders
+from email import errors
+from email import iterators
 from email import quoprimime
+from email import utils
 
 from test.support import threading_helper
 from test.support.os_helper import unlink
@@ -44,7 +44,7 @@ from test.test_email import openfile, TestEmailBase
 
 # These imports are documented to work, but we are testing them using a
 # different path, so we import them here just to make sure they are importable.
-from email.parser import FeedParser, BytesFeedParser
+from email.parser import FeedParser
 
 NL = '\n'
 EMPTYSTRING = ''
@@ -1515,37 +1515,49 @@ Blah blah blah
 
 # Test the basic MIMEAudio class
 class TestMIMEAudio(unittest.TestCase):
-    def setUp(self):
-        with openfile('audiotest.au', 'rb') as fp:
+    def _make_audio(self, ext):
+        with openfile(f'sndhdr.{ext}', 'rb') as fp:
             self._audiodata = fp.read()
         self._au = MIMEAudio(self._audiodata)
 
     def test_guess_minor_type(self):
-        self.assertEqual(self._au.get_content_type(), 'audio/basic')
+        for ext, subtype in {
+            'aifc': 'x-aiff',
+            'aiff': 'x-aiff',
+            'wav': 'x-wav',
+            'au': 'basic',
+        }.items():
+            self._make_audio(ext)
+            subtype = ext if subtype is None else subtype
+            self.assertEqual(self._au.get_content_type(), f'audio/{subtype}')
 
     def test_encoding(self):
+        self._make_audio('au')
         payload = self._au.get_payload()
         self.assertEqual(base64.decodebytes(bytes(payload, 'ascii')),
-                self._audiodata)
+                         self._audiodata)
 
     def test_checkSetMinor(self):
+        self._make_audio('au')
         au = MIMEAudio(self._audiodata, 'fish')
         self.assertEqual(au.get_content_type(), 'audio/fish')
 
     def test_add_header(self):
+        self._make_audio('au')
         eq = self.assertEqual
         self._au.add_header('Content-Disposition', 'attachment',
-                            filename='audiotest.au')
+                            filename='sndhdr.au')
         eq(self._au['content-disposition'],
-           'attachment; filename="audiotest.au"')
+           'attachment; filename="sndhdr.au"')
         eq(self._au.get_params(header='content-disposition'),
-           [('attachment', ''), ('filename', 'audiotest.au')])
+           [('attachment', ''), ('filename', 'sndhdr.au')])
         eq(self._au.get_param('filename', header='content-disposition'),
-           'audiotest.au')
+           'sndhdr.au')
         missing = []
         eq(self._au.get_param('attachment', header='content-disposition'), '')
-        self.assertIs(self._au.get_param('foo', failobj=missing,
-                                         header='content-disposition'), missing)
+        self.assertIs(self._au.get_param(
+            'foo', failobj=missing,
+            header='content-disposition'), missing)
         # Try some missing stuff
         self.assertIs(self._au.get_param('foobar', missing), missing)
         self.assertIs(self._au.get_param('attachment', missing,
@@ -3462,7 +3474,7 @@ multipart/report
         self.assertEqual(s.getvalue(), msgtxt)
 
     def test_mime_classes_policy_argument(self):
-        with openfile('audiotest.au', 'rb') as fp:
+        with openfile('sndhdr.au', 'rb') as fp:
             audiodata = fp.read()
         with openfile('python.gif', 'rb') as fp:
             bindata = fp.read()
@@ -5348,6 +5360,15 @@ Content-Disposition: inline; filename*=X-UNKNOWN''myfile.txt
         msg = email.message_from_string(m)
         self.assertEqual(msg.get_filename(), 'myfile.txt')
 
+    def test_rfc2231_bad_character_in_encoding(self):
+        m = """\
+Content-Transfer-Encoding: 8bit
+Content-Disposition: inline; filename*=utf-8\udce2\udc80\udc9d''myfile.txt
+
+"""
+        msg = email.message_from_string(m)
+        self.assertEqual(msg.get_filename(), 'myfile.txt')
+
     def test_rfc2231_single_tick_in_filename_extended(self):
         eq = self.assertEqual
         m = """\
@@ -5520,7 +5541,12 @@ class TestSigned(TestEmailBase):
         result = fp.getvalue()
         self._signed_parts_eq(original, result)
 
-
+class TestHeaderRegistry(TestEmailBase):
+    # See issue gh-93010.
+    def test_HeaderRegistry(self):
+        reg = HeaderRegistry()
+        a = reg('Content-Disposition', 'attachment; 0*00="foo"')
+        self.assertIsInstance(a.defects[0], errors.InvalidHeaderDefect)
 
 if __name__ == '__main__':
     unittest.main()

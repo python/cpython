@@ -68,7 +68,7 @@ else:
 
 # Does io.IOBase finalizer log the exception if the close() method fails?
 # The exception is ignored silently by default in release build.
-IOBASE_EMITS_UNRAISABLE = (hasattr(sys, "gettotalrefcount") or sys.flags.dev_mode)
+IOBASE_EMITS_UNRAISABLE = (support.Py_DEBUG or sys.flags.dev_mode)
 
 
 def _default_chunk_size():
@@ -429,6 +429,7 @@ class IOTest(unittest.TestCase):
     @unittest.skipIf(
         support.is_emscripten, "fstat() of a pipe fd is not supported"
     )
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_optional_abilities(self):
         # Test for OSError when optional APIs are not supported
         # The purpose of this test is to try fileno(), reading, writing and
@@ -2726,7 +2727,7 @@ class TextIOWrapperTest(unittest.TestCase):
                 if key in os.environ:
                     del os.environ[key]
 
-            current_locale_encoding = locale.getpreferredencoding(False)
+            current_locale_encoding = locale.getencoding()
             b = self.BytesIO()
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", EncodingWarning)
@@ -3569,6 +3570,10 @@ class TextIOWrapperTest(unittest.TestCase):
         F.tell = lambda x: 0
         t = self.TextIOWrapper(F(), encoding='utf-8')
 
+    def test_reconfigure_locale(self):
+        wrapper = io.TextIOWrapper(io.BytesIO(b"test"))
+        wrapper.reconfigure(encoding="locale")
+
     def test_reconfigure_encoding_read(self):
         # latin1 -> utf8
         # (latin1 can decode utf-8 encoded string)
@@ -3970,6 +3975,7 @@ class MiscIOTest(unittest.TestCase):
     @unittest.skipIf(
         support.is_emscripten, "fstat() of a pipe fd is not supported"
     )
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_open_pipe_with_append(self):
         # bpo-27805: Ignore ESPIPE from lseek() in open().
         r, w = os.pipe()
@@ -4108,6 +4114,7 @@ class MiscIOTest(unittest.TestCase):
         with warnings_helper.check_no_resource_warning(self):
             open(r, *args, closefd=False, **kwargs)
 
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_warn_on_dealloc_fd(self):
         self._check_warn_on_dealloc_fd("rb", buffering=0)
         self._check_warn_on_dealloc_fd("rb")
@@ -4147,6 +4154,7 @@ class MiscIOTest(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'set_blocking'),
                          'os.set_blocking() required for this test')
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def _test_nonblock_pipe_write(self, bufsize):
         sent = []
         received = []
@@ -4292,14 +4300,6 @@ class MiscIOTest(unittest.TestCase):
 
         proc = assert_python_ok('-X', 'utf8=1', '-c', code)
         self.assertEqual(b"utf-8", proc.out.strip())
-
-    @support.cpython_only
-    # Depending if OpenWrapper was already created or not, the warning is
-    # emitted or not. For example, the attribute is already created when this
-    # test is run multiple times.
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
-    def test_openwrapper(self):
-        self.assertIs(self.io.OpenWrapper, self.io.open)
 
 
 class CMiscIOTest(MiscIOTest):
@@ -4458,14 +4458,17 @@ class SignalsTest(unittest.TestCase):
                     raise
 
     @requires_alarm
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_interrupted_write_unbuffered(self):
         self.check_interrupted_write(b"xy", b"xy", mode="wb", buffering=0)
 
     @requires_alarm
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_interrupted_write_buffered(self):
         self.check_interrupted_write(b"xy", b"xy", mode="wb")
 
     @requires_alarm
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_interrupted_write_text(self):
         self.check_interrupted_write("xy", b"xy", mode="w", encoding="ascii")
 

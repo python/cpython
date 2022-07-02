@@ -9,6 +9,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -231,8 +232,6 @@ _Pickle_InitState(PickleState *st)
 {
     PyObject *copyreg = NULL;
     PyObject *compat_pickle = NULL;
-    PyObject *codecs = NULL;
-    PyObject *functools = NULL;
 
     st->getattr = _PyEval_GetBuiltin(&_Py_ID(getattr));
     if (st->getattr == NULL)
@@ -328,10 +327,7 @@ _Pickle_InitState(PickleState *st)
     }
     Py_CLEAR(compat_pickle);
 
-    codecs = PyImport_ImportModule("codecs");
-    if (codecs == NULL)
-        goto error;
-    st->codecs_encode = PyObject_GetAttrString(codecs, "encode");
+    st->codecs_encode = _PyImport_GetModuleAttrString("codecs", "encode");
     if (st->codecs_encode == NULL) {
         goto error;
     }
@@ -341,23 +337,16 @@ _Pickle_InitState(PickleState *st)
                      Py_TYPE(st->codecs_encode)->tp_name);
         goto error;
     }
-    Py_CLEAR(codecs);
 
-    functools = PyImport_ImportModule("functools");
-    if (!functools)
-        goto error;
-    st->partial = PyObject_GetAttrString(functools, "partial");
+    st->partial = _PyImport_GetModuleAttrString("functools", "partial");
     if (!st->partial)
         goto error;
-    Py_CLEAR(functools);
 
     return 0;
 
   error:
     Py_CLEAR(copyreg);
     Py_CLEAR(compat_pickle);
-    Py_CLEAR(codecs);
-    Py_CLEAR(functools);
     _Pickle_ClearState(st);
     return -1;
 }
@@ -964,7 +953,7 @@ _write_size64(char *out, size_t value)
 {
     size_t i;
 
-    Py_BUILD_ASSERT(sizeof(size_t) <= 8);
+    static_assert(sizeof(size_t) <= 8, "size_t is larger than 64-bit");
 
     for (i = 0; i < sizeof(size_t); i++) {
         out[i] = (unsigned char)((value >> (8 * i)) & 0xff);
@@ -2578,7 +2567,7 @@ raw_unicode_escape(PyObject *obj)
     char *p;
     Py_ssize_t i, size;
     const void *data;
-    unsigned int kind;
+    int kind;
     _PyBytesWriter writer;
 
     if (PyUnicode_READY(obj))
@@ -3005,7 +2994,10 @@ batch_list_exact(PicklerObject *self, PyObject *obj)
 
     if (PyList_GET_SIZE(obj) == 1) {
         item = PyList_GET_ITEM(obj, 0);
-        if (save(self, item, 0) < 0)
+        Py_INCREF(item);
+        int err = save(self, item, 0);
+        Py_DECREF(item);
+        if (err < 0)
             return -1;
         if (_Pickler_Write(self, &append_op, 1) < 0)
             return -1;
@@ -3020,7 +3012,10 @@ batch_list_exact(PicklerObject *self, PyObject *obj)
             return -1;
         while (total < PyList_GET_SIZE(obj)) {
             item = PyList_GET_ITEM(obj, total);
-            if (save(self, item, 0) < 0)
+            Py_INCREF(item);
+            int err = save(self, item, 0);
+            Py_DECREF(item);
+            if (err < 0)
                 return -1;
             total++;
             if (++this_batch == BATCHSIZE)
@@ -3068,21 +3063,21 @@ save_list(PicklerObject *self, PyObject *obj)
     if (len != 0) {
         /* Materialize the list elements. */
         if (PyList_CheckExact(obj) && self->proto > 0) {
-            if (Py_EnterRecursiveCall(" while pickling an object"))
+            if (_Py_EnterRecursiveCall(" while pickling an object"))
                 goto error;
             status = batch_list_exact(self, obj);
-            Py_LeaveRecursiveCall();
+            _Py_LeaveRecursiveCall();
         } else {
             PyObject *iter = PyObject_GetIter(obj);
             if (iter == NULL)
                 goto error;
 
-            if (Py_EnterRecursiveCall(" while pickling an object")) {
+            if (_Py_EnterRecursiveCall(" while pickling an object")) {
                 Py_DECREF(iter);
                 goto error;
             }
             status = batch_list(self, iter);
-            Py_LeaveRecursiveCall();
+            _Py_LeaveRecursiveCall();
             Py_DECREF(iter);
         }
     }
@@ -3258,10 +3253,16 @@ batch_dict_exact(PicklerObject *self, PyObject *obj)
     /* Special-case len(d) == 1 to save space. */
     if (dict_size == 1) {
         PyDict_Next(obj, &ppos, &key, &value);
-        if (save(self, key, 0) < 0)
-            return -1;
-        if (save(self, value, 0) < 0)
-            return -1;
+        Py_INCREF(key);
+        Py_INCREF(value);
+        if (save(self, key, 0) < 0) {
+            goto error;
+        }
+        if (save(self, value, 0) < 0) {
+            goto error;
+        }
+        Py_CLEAR(key);
+        Py_CLEAR(value);
         if (_Pickler_Write(self, &setitem_op, 1) < 0)
             return -1;
         return 0;
@@ -3273,10 +3274,16 @@ batch_dict_exact(PicklerObject *self, PyObject *obj)
         if (_Pickler_Write(self, &mark_op, 1) < 0)
             return -1;
         while (PyDict_Next(obj, &ppos, &key, &value)) {
-            if (save(self, key, 0) < 0)
-                return -1;
-            if (save(self, value, 0) < 0)
-                return -1;
+            Py_INCREF(key);
+            Py_INCREF(value);
+            if (save(self, key, 0) < 0) {
+                goto error;
+            }
+            if (save(self, value, 0) < 0) {
+                goto error;
+            }
+            Py_CLEAR(key);
+            Py_CLEAR(value);
             if (++i == BATCHSIZE)
                 break;
         }
@@ -3291,6 +3298,10 @@ batch_dict_exact(PicklerObject *self, PyObject *obj)
 
     } while (i == BATCHSIZE);
     return 0;
+error:
+    Py_XDECREF(key);
+    Py_XDECREF(value);
+    return -1;
 }
 
 static int
@@ -3327,10 +3338,10 @@ save_dict(PicklerObject *self, PyObject *obj)
         if (PyDict_CheckExact(obj) && self->proto > 0) {
             /* We can take certain shortcuts if we know this is a dict and
                not a dict subclass. */
-            if (Py_EnterRecursiveCall(" while pickling an object"))
+            if (_Py_EnterRecursiveCall(" while pickling an object"))
                 goto error;
             status = batch_dict_exact(self, obj);
-            Py_LeaveRecursiveCall();
+            _Py_LeaveRecursiveCall();
         } else {
             items = PyObject_CallMethodNoArgs(obj, &_Py_ID(items));
             if (items == NULL)
@@ -3339,12 +3350,12 @@ save_dict(PicklerObject *self, PyObject *obj)
             Py_DECREF(items);
             if (iter == NULL)
                 goto error;
-            if (Py_EnterRecursiveCall(" while pickling an object")) {
+            if (_Py_EnterRecursiveCall(" while pickling an object")) {
                 Py_DECREF(iter);
                 goto error;
             }
             status = batch_dict(self, iter);
-            Py_LeaveRecursiveCall();
+            _Py_LeaveRecursiveCall();
             Py_DECREF(iter);
         }
     }
@@ -3408,7 +3419,10 @@ save_set(PicklerObject *self, PyObject *obj)
         if (_Pickler_Write(self, &mark_op, 1) < 0)
             return -1;
         while (_PySet_NextEntry(obj, &ppos, &item, &hash)) {
-            if (save(self, item, 0) < 0)
+            Py_INCREF(item);
+            int err = save(self, item, 0);
+            Py_CLEAR(item);
+            if (err < 0)
                 return -1;
             if (++i == BATCHSIZE)
                 break;
@@ -4300,9 +4314,9 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
         return save_unicode(self, obj);
     }
 
-    /* We're only calling Py_EnterRecursiveCall here so that atomic
+    /* We're only calling _Py_EnterRecursiveCall here so that atomic
        types above are pickled faster. */
-    if (Py_EnterRecursiveCall(" while pickling an object")) {
+    if (_Py_EnterRecursiveCall(" while pickling an object")) {
         return -1;
     }
 
@@ -4460,7 +4474,7 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
     }
   done:
 
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall();
     Py_XDECREF(reduce_func);
     Py_XDECREF(reduce_value);
 
@@ -4747,7 +4761,9 @@ _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
     {
         return -1;
     }
-
+    if (self->dispatch_table != NULL) {
+        return 0;
+    }
     if (_PyObject_LookupAttr((PyObject *)self, &_Py_ID(dispatch_table),
                              &self->dispatch_table) < 0) {
         return -1;

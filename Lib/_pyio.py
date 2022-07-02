@@ -303,22 +303,6 @@ except AttributeError:
     open_code = _open_code_with_warning
 
 
-def __getattr__(name):
-    if name == "OpenWrapper":
-        # bpo-43680: Until Python 3.9, _pyio.open was not a static method and
-        # builtins.open was set to OpenWrapper to not become a bound method
-        # when set to a class variable. _io.open is a built-in function whereas
-        # _pyio.open is a Python function. In Python 3.10, _pyio.open() is now
-        # a static method, and builtins.open() is now io.open().
-        import warnings
-        warnings.warn('OpenWrapper is deprecated, use open instead',
-                      DeprecationWarning, stacklevel=2)
-        global OpenWrapper
-        OpenWrapper = open
-        return OpenWrapper
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
-
 # In normal operation, both `UnsupportedOperation`s should be bound to the
 # same object.
 try:
@@ -2022,13 +2006,7 @@ class TextIOWrapper(TextIOBase):
         encoding = text_encoding(encoding)
 
         if encoding == "locale":
-            try:
-                import locale
-            except ImportError:
-                # Importing locale may fail if Python is being built
-                encoding = "utf-8"
-            else:
-                encoding = locale.getencoding()
+            encoding = self._get_locale_encoding()
 
         if not isinstance(encoding, str):
             raise ValueError("invalid encoding: %r" % encoding)
@@ -2161,6 +2139,8 @@ class TextIOWrapper(TextIOBase):
         else:
             if not isinstance(encoding, str):
                 raise TypeError("invalid encoding: %r" % encoding)
+            if encoding == "locale":
+                encoding = self._get_locale_encoding()
 
         if newline is Ellipsis:
             newline = self._readnl
@@ -2264,6 +2244,15 @@ class TextIOWrapper(TextIOBase):
             chars = self._decoded_chars[offset:offset + n]
         self._decoded_chars_used += len(chars)
         return chars
+
+    def _get_locale_encoding(self):
+        try:
+            import locale
+        except ImportError:
+            # Importing locale may fail if Python is being built
+            return "utf-8"
+        else:
+            return locale.getencoding()
 
     def _rewind_decoded_chars(self, n):
         """Rewind the _decoded_chars buffer."""

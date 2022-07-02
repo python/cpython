@@ -13,12 +13,18 @@ between the __future__ import, Annotated, and Required.
 
 from __future__ import annotations
 
-from typing import Annotated, Optional, Required, TypedDict
+from typing import Annotated, Generic, Optional, Required, TypedDict, TypeVar
+
 
 OptionalIntType = Optional[int]
 
 class Foo(TypedDict):
     a: OptionalIntType
+
+T = TypeVar("T")
+
+class FooGeneric(TypedDict, Generic[T]):
+    a: Optional[T]
 
 class VeryAnnotated(TypedDict, total=False):
     a: Annotated[Annotated[Annotated[Required[int], "a"], "b"], "c"]

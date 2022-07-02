@@ -88,19 +88,17 @@ def wait_threads_exit(timeout=None):
         yield
     finally:
         start_time = time.monotonic()
-        deadline = start_time + timeout
-        while True:
+        for _ in support.sleeping_retry(timeout, error=False):
+            support.gc_collect()
             count = _thread._count()
             if count <= old_count:
                 break
-            if time.monotonic() > deadline:
-                dt = time.monotonic() - start_time
-                msg = (f"wait_threads() failed to cleanup {count - old_count} "
-                       f"threads after {dt:.1f} seconds "
-                       f"(count: {count}, old count: {old_count})")
-                raise AssertionError(msg)
-            time.sleep(0.010)
-            support.gc_collect()
+        else:
+            dt = time.monotonic() - start_time
+            msg = (f"wait_threads() failed to cleanup {count - old_count} "
+                   f"threads after {dt:.1f} seconds "
+                   f"(count: {count}, old count: {old_count})")
+            raise AssertionError(msg)
 
 
 def join_thread(thread, timeout=None):
@@ -222,12 +220,7 @@ def _can_start_thread() -> bool:
       support (-s USE_PTHREADS / __EMSCRIPTEN_PTHREADS__).
     """
     if sys.platform == "emscripten":
-        try:
-            _thread.start_new_thread(lambda: None, ())
-        except RuntimeError:
-            return False
-        else:
-            return True
+        return sys._emscripten_info.pthreads
     elif sys.platform == "wasi":
         return False
     else:

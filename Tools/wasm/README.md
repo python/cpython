@@ -4,10 +4,16 @@
 
 This directory contains configuration and helpers to facilitate cross
 compilation of CPython to WebAssembly (WASM). For now we support
-*wasm32-emscripten* builds for modern browser and for *Node.js*. It's not
-possible to build for *wasm32-wasi* out-of-the-box yet.
+*wasm32-emscripten* builds for modern browser and for *Node.js*. WASI
+(*wasm32-wasi*) is work-in-progress
 
 ## wasm32-emscripten build
+
+For now the build system has two target flavors. The ``Emscripten/browser``
+target (``--with-emscripten-target=browser``) is optimized for browsers.
+It comes with a reduced and preloaded stdlib without tests and threading
+support. The ``Emscripten/node`` target has threading enabled and can
+access the file system directly.
 
 Cross compiling to the wasm32-emscripten platform needs the
 [Emscripten](https://emscripten.org/) SDK and a build Python interpreter.
@@ -76,7 +82,7 @@ and header files with debug builds.
 
 ### Cross compile to wasm32-emscripten for node
 
-```
+```shell
 mkdir -p builddir/emscripten-node
 pushd builddir/emscripten-node
 
@@ -91,9 +97,11 @@ emmake make -j$(nproc)
 popd
 ```
 
+```shell
+node --experimental-wasm-threads --experimental-wasm-bulk-memory --experimental-wasm-bigint builddir/emscripten-node/python.js
 ```
-node --experimental-wasm-threads --experimental-wasm-bulk-memory builddir/emscripten-node/python.js
-```
+
+(``--experimental-wasm-bigint`` is not needed with recent NodeJS versions)
 
 # wasm32-emscripten limitations and issues
 
@@ -115,17 +123,26 @@ functions.
 - The ``select`` module is limited. ``select.select()`` crashes the runtime
   due to lack of exectfd support.
 
-## processes, threads, signals
+## processes, signals
 
 - Processes are not supported. System calls like fork, popen, and subprocess
   fail with ``ENOSYS`` or ``ENOSUP``.
 - Signal support is limited. ``signal.alarm``, ``itimer``, ``sigaction``
   are not available or do not work correctly. ``SIGTERM`` exits the runtime.
 - Keyboard interrupt (CTRL+C) handling is not implemented yet.
-- Browser builds cannot start new threads. Node's web workers consume
-  extra file descriptors.
 - Resource-related functions like ``os.nice`` and most functions of the
   ``resource`` module are not available.
+
+## threading
+
+- Threading is disabled by default. The ``configure`` option
+  ``--enable-wasm-pthreads`` adds compiler flag ``-pthread`` and
+  linker flags ``-sUSE_PTHREADS -sPROXY_TO_PTHREAD``. 
+- pthread support requires WASM threads and SharedArrayBuffer (bulk memory).
+  The Node.JS runtime keeps a pool of web workers around. Each web worker
+  uses several file descriptors (eventfd, epoll, pipe).
+- It's not advised to enable threading when building for browsers or with
+  dynamic linking support; there are performance and stability issues.
 
 ## file system
 
@@ -150,14 +167,16 @@ functions.
 - Most stdlib modules with a dependency on external libraries are missing,
   e.g. ``ctypes``, ``readline``, ``sqlite3``, ``ssl``, and more.
 - Shared extension modules are not implemented yet. All extension modules
-  are statically linked into the main binary.
-  The experimental configure option ``--enable-wasm-dynamic-linking`` enables
-  dynamic extensions.
+  are statically linked into the main binary. The experimental configure
+  option ``--enable-wasm-dynamic-linking`` enables dynamic extensions
+  supports. It's currently known to crash in combination with threading.
 - glibc extensions for date and time formatting are not available.
 - ``locales`` module is affected by musl libc issues,
   [bpo-46390](https://bugs.python.org/issue46390).
 - Python's object allocator ``obmalloc`` is disabled by default.
 - ``ensurepip`` is not available.
+- Some ``ctypes`` features like ``c_longlong`` and ``c_longdouble`` may need
+   NodeJS option ``--experimental-wasm-bigint``.
 
 ## wasm32-emscripten in browsers
 
@@ -167,18 +186,16 @@ functions.
   distutils, multiprocessing, dbm, tests and similar modules
   are not shipped. All other modules are bundled as pre-compiled
   ``pyc`` files.
-- Threading is not supported.
 - In-memory file system (MEMFS) is not persistent and limited.
+- Test modules are disabled by default. Use ``--enable-test-modules`` build
+  test modules like ``_testcapi``.
 
 ## wasm32-emscripten in node
 
-Node builds use ``NODERAWFS``, ``USE_PTHREADS`` and ``PROXY_TO_PTHREAD``
-linker options.
+Node builds use ``NODERAWFS``.
 
-- Node RawFS allows direct access to the host file system.
-- pthread support requires WASM threads and SharedArrayBuffer (bulk memory).
-  The runtime keeps a pool of web workers around. Each web worker uses
-  several file descriptors (eventfd, epoll, pipe).
+- Node RawFS allows direct access to the host file system without need to
+  perform ``FS.mount()`` call.
 
 # Hosting Python WASM builds
 
@@ -205,11 +222,54 @@ AddType application/wasm wasm
 </IfModule>
 ```
 
+# WASI (wasm32-wasi)
+
+WASI builds require [WASI SDK](https://github.com/WebAssembly/wasi-sdk) 15.0+
+and currently [wasix](https://github.com/singlestore-labs/wasix) for POSIX
+compatibility stubs.
+
+## WASI limitations and issues (WASI SDK 15.0)
+
+A lot of Emscripten limitations also apply to WASI. Noticable restrictions
+are:
+
+- Call stack size is limited. Default recursion limit and parser stack size
+  are smaller than in regular Python builds.
+- ``socket(2)`` cannot create new socket file descriptors. WASI programs can
+  call read/write/accept on a file descriptor that is passed into the process.
+- ``socket.gethostname()`` and host name resolution APIs like
+  ``socket.gethostbyname()`` are not implemented and always fail.
+- ``open(2)`` checks flags more strictly. Caller must pass either
+  ``O_RDONLY``, ``O_RDWR``, or ``O_WDONLY`` to ``os.open``. Directory file
+  descriptors must be created with flags ``O_RDONLY | O_DIRECTORY``.
+- ``chmod(2)`` is not available. It's not possible to modify file permissions,
+  yet. A future version of WASI may provide a limited ``set_permissions`` API.
+- User/group related features like ``os.chown()``, ``os.getuid``, etc. are
+  stubs or fail with ``ENOTSUP``.
+- File locking (``fcntl``) is not available.
+- ``os.pipe()``, ``os.mkfifo()``, and ``os.mknod()`` are not supported.
+- ``process_time`` does not work as expected because it's implemented using
+  wall clock.
+- ``os.umask()`` is a stub.
+- ``sys.executable`` is empty.
+- ``/dev/null`` / ``os.devnull`` may not be available.
+- ``os.utime*()`` is buggy in WASM SDK 15.0, see
+  [utimensat() with timespec=NULL sets wrong time](https://github.com/bytecodealliance/wasmtime/issues/4184)
+- ``os.symlink()`` fails with ``PermissionError`` when attempting to create a
+  symlink with an absolute path with wasmtime 0.36.0. The wasmtime runtime
+  uses ``openat2(2)`` syscall with flag ``RESOLVE_BENEATH`` to open files.
+  The flag causes the syscall to reject symlinks with absolute paths.
+- ``os.curdir`` (aka ``.``) seems to behave differently, which breaks some
+  ``importlib`` tests that add ``.`` to ``sys.path`` and indirectly
+  ``sys.path_importer_cache``.
+- WASI runtime environments may not provide a dedicated temp directory.
+
+
 # Detect WebAssembly builds
 
 ## Python code
 
-```# python
+```python
 import os, sys
 
 if sys.platform == "emscripten":
@@ -222,7 +282,36 @@ if os.name == "posix":
     # Windows does not provide os.uname().
     machine = os.uname().machine
     if machine.startswith("wasm"):
-        # WebAssembly (wasm32 or wasm64)
+        # WebAssembly (wasm32, wasm64 in the future)
+```
+
+```python
+>>> import os, sys
+>>> os.uname()
+posix.uname_result(sysname='Emscripten', nodename='emscripten', release='1.0', version='#1', machine='wasm32')
+>>> os.name
+'posix'
+>>> sys.platform
+'emscripten'
+>>> sys._emscripten_info
+sys._emscripten_info(
+    emscripten_version=(3, 1, 8),
+    runtime='Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:99.0) Gecko/20100101 Firefox/99.0',
+    pthreads=False,
+    shared_memory=False
+)
+>>> sys._emscripten_info
+sys._emscripten_info(emscripten_version=(3, 1, 8), runtime='Node.js v14.18.2', pthreads=True, shared_memory=True)
+```
+
+```python
+>>> import os, sys
+>>> os.uname()
+posix.uname_result(sysname='wasi', nodename='(none)', release='0.0.0', version='0.0.0', machine='wasm32')
+>>> os.name
+'posix'
+>>> sys.platform
+'wasi'
 ```
 
 ## C code
@@ -231,7 +320,7 @@ Emscripten SDK and WASI SDK define several built-in macros. You can dump a
 full list of built-ins with ``emcc -dM -E - < /dev/null`` and
 ``/path/to/wasi-sdk/bin/clang -dM -E - < /dev/null``.
 
-```# C
+```C
 #ifdef __EMSCRIPTEN__
     // Python on Emscripten
 #endif
@@ -253,3 +342,81 @@ Feature detection flags:
 * ``__wasm_bulk_memory__``
 * ``__wasm_atomics__``
 * ``__wasm_mutable_globals__``
+
+## Install SDKs and dependencies manually
+
+In some cases (e.g. build bots) you may prefer to install build dependencies
+directly on the system instead of using the container image. Total disk size
+of SDKs and cached libraries is about 1.6 GB.
+
+### Install OS dependencies
+
+```shell
+# Debian/Ubuntu
+apt update
+apt install -y git make xz-utils bzip2 curl python3-minimal ccache
+```
+
+```shell
+# Fedora
+dnf install -y git make xz bzip2 which ccache
+```
+
+### Install [Emscripten SDK](https://emscripten.org/docs/getting_started/downloads.html)
+
+**NOTE**: Follow the on-screen instructions how to add the SDK to ``PATH``.
+
+```shell
+git clone https://github.com/emscripten-core/emsdk.git /opt/emsdk
+/opt/emsdk/emsdk install latest
+/opt/emsdk/emsdk activate latest
+```
+
+### Optionally: pre-build and cache static libraries
+
+Emscripten SDK provides static builds of core libraries without PIC
+(position-independent code). Python builds with ``dlopen`` support require
+PIC. To populate the build cache, run:
+
+```shell
+. /opt/emsdk/emsdk_env.sh
+embuilder build --force zlib bzip2
+embuilder build --force --pic \
+    zlib bzip2 libc-mt libdlmalloc-mt libsockets-mt \
+    libstubs libcompiler_rt libcompiler_rt-mt crtbegin libhtml5 \
+    libc++-mt-noexcept libc++abi-mt-noexcept \
+    libal libGL-mt libstubs-debug libc-mt-debug
+```
+
+### Install [WASI-SDK](https://github.com/WebAssembly/wasi-sdk)
+
+**NOTE**: WASI-SDK's clang may show a warning on Fedora:
+``/lib64/libtinfo.so.6: no version information available``,
+[RHBZ#1875587](https://bugzilla.redhat.com/show_bug.cgi?id=1875587).
+
+```shell
+export WASI_VERSION=16
+export WASI_VERSION_FULL=${WASI_VERSION}.0
+curl -sSf -L -O https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_VERSION}/wasi-sdk-${WASI_VERSION_FULL}-linux.tar.gz
+mkdir -p /opt/wasi-sdk
+tar --strip-components=1 -C /opt/wasi-sdk -xvf wasi-sdk-${WASI_VERSION_FULL}-linux.tar.gz
+rm -f wasi-sdk-${WASI_VERSION_FULL}-linux.tar.gz
+```
+
+### Install [wasmtime](https://github.com/bytecodealliance/wasmtime) WASI runtime
+
+**NOTE**: wasmtime 0.37 has a bug. Newer versions should be fine again.
+
+```shell
+curl -sSf -L -o ~/install-wasmtime.sh https://wasmtime.dev/install.sh
+chmod +x ~/install-wasmtime.sh
+~/install-wasmtime.sh --version v0.36.0
+ln -srf -t /usr/local/bin/ ~/.wasmtime/bin/wasmtime
+```
+
+### Install [WASIX](https://github.com/singlestore-labs/wasix)
+
+```shell
+git clone https://github.com/singlestore-labs/wasix.git ~/wasix
+make install -C ~/wasix
+```
