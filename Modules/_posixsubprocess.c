@@ -84,8 +84,16 @@ module _posixsubprocess
 class pid_t_converter(CConverter):
     type = 'pid_t'
     format_unit = '" _Py_PARSE_PID "'
+
+    def parse_arg(self, argname, displayname):
+        return """
+            {paramname} = PyLong_AsPid({argname});
+            if ({paramname} == -1 && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """.format(argname=argname, paramname=self.parser_name)
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=0c1d19f640d57e48]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=5af1c116d56cbb5a]*/
 
 #include "clinic/_posixsubprocess.c.h"
 

@@ -76,8 +76,76 @@ subprocess_fork_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *preexec_fn;
     int allow_vfork;
 
-    if (!_PyArg_ParseStack(args, nargs, "OOpO!OOiiiiiiiipp" _Py_PARSE_PID "OOOiOp:fork_exec",
-        &process_args, &executable_list, &close_fds, &PyTuple_Type, &py_fds_to_keep, &cwd_obj, &env_list, &p2cread, &p2cwrite, &c2pread, &c2pwrite, &errread, &errwrite, &errpipe_read, &errpipe_write, &restore_signals, &call_setsid, &pgid_to_set, &gid_object, &groups_list, &uid_object, &child_umask, &preexec_fn, &allow_vfork)) {
+    if (!_PyArg_CheckPositional("fork_exec", nargs, 23, 23)) {
+        goto exit;
+    }
+    process_args = args[0];
+    executable_list = args[1];
+    close_fds = PyObject_IsTrue(args[2]);
+    if (close_fds < 0) {
+        goto exit;
+    }
+    if (!PyTuple_Check(args[3])) {
+        _PyArg_BadArgument("fork_exec", "argument 4", "tuple", args[3]);
+        goto exit;
+    }
+    py_fds_to_keep = args[3];
+    cwd_obj = args[4];
+    env_list = args[5];
+    p2cread = _PyLong_AsInt(args[6]);
+    if (p2cread == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    p2cwrite = _PyLong_AsInt(args[7]);
+    if (p2cwrite == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    c2pread = _PyLong_AsInt(args[8]);
+    if (c2pread == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    c2pwrite = _PyLong_AsInt(args[9]);
+    if (c2pwrite == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    errread = _PyLong_AsInt(args[10]);
+    if (errread == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    errwrite = _PyLong_AsInt(args[11]);
+    if (errwrite == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    errpipe_read = _PyLong_AsInt(args[12]);
+    if (errpipe_read == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    errpipe_write = _PyLong_AsInt(args[13]);
+    if (errpipe_write == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    restore_signals = PyObject_IsTrue(args[14]);
+    if (restore_signals < 0) {
+        goto exit;
+    }
+    call_setsid = PyObject_IsTrue(args[15]);
+    if (call_setsid < 0) {
+        goto exit;
+    }
+    pgid_to_set = PyLong_AsPid(args[16]);
+    if (pgid_to_set == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    gid_object = args[17];
+    groups_list = args[18];
+    uid_object = args[19];
+    child_umask = _PyLong_AsInt(args[20]);
+    if (child_umask == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    preexec_fn = args[21];
+    allow_vfork = PyObject_IsTrue(args[22]);
+    if (allow_vfork < 0) {
         goto exit;
     }
     return_value = subprocess_fork_exec_impl(module, process_args, executable_list, close_fds, py_fds_to_keep, cwd_obj, env_list, p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite, errpipe_read, errpipe_write, restore_signals, call_setsid, pgid_to_set, gid_object, groups_list, uid_object, child_umask, preexec_fn, allow_vfork);
@@ -85,4 +153,4 @@ subprocess_fork_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5ad4c6bc39662d25 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b976621b8861610b input=a9049054013a1b77]*/
