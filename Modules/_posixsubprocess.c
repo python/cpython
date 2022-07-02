@@ -814,8 +814,8 @@ _posixsubprocess.fork_exec as subprocess_fork_exec
     errwrite: int
     errpipe_read: int
     errpipe_write: int
-    restore_signals: int
-    call_setsid: int
+    restore_signals: bool
+    call_setsid: bool
     pgid_to_set: pid_t
     gid as gid_object: object
     groups_list: object
@@ -860,7 +860,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
                           PyObject *groups_list, PyObject *uid_object,
                           int child_umask, PyObject *preexec_fn,
                           int allow_vfork)
-/*[clinic end generated code: output=7c8ff5a6dc92af1b input=da74d2ddbd5de762]*/
+/*[clinic end generated code: output=7c8ff5a6dc92af1b input=c59d1152ecdffcf9]*/
 {
     PyObject *converted_args = NULL, *fast_args = NULL;
     PyObject *preexec_fn_args_tuple = NULL;

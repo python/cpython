@@ -76,7 +76,7 @@ subprocess_fork_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *preexec_fn;
     int allow_vfork;
 
-    if (!_PyArg_ParseStack(args, nargs, "OOpO!OOiiiiiiiiii" _Py_PARSE_PID "OOOiOp:fork_exec",
+    if (!_PyArg_ParseStack(args, nargs, "OOpO!OOiiiiiiiipp" _Py_PARSE_PID "OOOiOp:fork_exec",
         &process_args, &executable_list, &close_fds, &PyTuple_Type, &py_fds_to_keep, &cwd_obj, &env_list, &p2cread, &p2cwrite, &c2pread, &c2pwrite, &errread, &errwrite, &errpipe_read, &errpipe_write, &restore_signals, &call_setsid, &pgid_to_set, &gid_object, &groups_list, &uid_object, &child_umask, &preexec_fn, &allow_vfork)) {
         goto exit;
     }
@@ -85,4 +85,4 @@ subprocess_fork_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d0909dc97cac8f01 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=847823a9cb220990 input=a9049054013a1b77]*/
