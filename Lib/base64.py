@@ -567,10 +567,10 @@ def decodebytes(s):
 def main():
     """Small main program"""
     import sys, getopt
-    usage = """usage: %s [-h|-d|-e|-u|-t] [file|-]
+    usage = f"""usage: {sys.argv[0]} [-h|-d|-e|-u|-t] [file|-]
         -h: print this help message and exit
         -d, -u: decode
-        -e: encode (default)"""%sys.argv[0]
+        -e: encode (default)"""
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hdeut')
     except getopt.error as msg:
