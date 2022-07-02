@@ -23,6 +23,8 @@
 #  define T_POINTER T_ULONGLONG
 #endif
 
+#define F_HANDLE F_POINTER
+#define F_ULONG_PTR F_POINTER
 #define F_DWORD "k"
 #define F_BOOL "i"
 #define F_UINT "I"
