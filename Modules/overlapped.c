@@ -23,8 +23,6 @@
 #  define T_POINTER T_ULONGLONG
 #endif
 
-#define F_HANDLE F_POINTER
-#define F_ULONG_PTR F_POINTER
 #define F_DWORD "k"
 #define F_BOOL "i"
 #define F_UINT "I"
@@ -32,27 +30,33 @@
 #define T_HANDLE T_POINTER
 
 /*[python input]
-class OVERLAPPED_converter(CConverter):
-    type = 'OVERLAPPED *'
+class pointer_converter(CConverter):
     format_unit = '"F_POINTER"'
 
-class HANDLE_converter(CConverter):
+    def parse_arg(self, argname, displayname):
+        return """
+            {paramname} = PyLong_AsVoidPtr({argname});
+            if (!{paramname} && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """.format(argname=argname, paramname=self.parser_name)
+
+class OVERLAPPED_converter(pointer_converter):
+    type = 'OVERLAPPED *'
+
+class HANDLE_converter(pointer_converter):
     type = 'HANDLE'
-    format_unit = '"F_HANDLE"'
 
-class ULONG_PTR_converter(CConverter):
+class ULONG_PTR_converter(pointer_converter):
     type = 'ULONG_PTR'
-    format_unit = '"F_ULONG_PTR"'
 
-class DWORD_converter(CConverter):
+class DWORD_converter(unsigned_long_converter):
     type = 'DWORD'
-    format_unit = 'k'
 
-class BOOL_converter(CConverter):
+class BOOL_converter(int_converter):
     type = 'BOOL'
-    format_unit = 'i'
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=83bb8c2c2514f2a8]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=a19133a9e14fae9c]*/
 
 /*[clinic input]
 module _overlapped
