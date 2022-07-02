@@ -145,7 +145,7 @@ msvcrt_open_osfhandle(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     handle = PyLong_AsVoidPtr(args[0]);
-    if (handle == -1 && PyErr_Occurred()) {
+    if (!handle && PyErr_Occurred()) {
         goto exit;
     }
     flags = _PyLong_AsInt(args[1]);
@@ -503,7 +503,7 @@ msvcrt_CrtSetReportFile(PyObject *module, PyObject *const *args, Py_ssize_t narg
         goto exit;
     }
     file = PyLong_AsVoidPtr(args[1]);
-    if (file == -1 && PyErr_Occurred()) {
+    if (!file && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = msvcrt_CrtSetReportFile_impl(module, type, file);
@@ -661,4 +661,4 @@ exit:
 #ifndef MSVCRT_SET_ERROR_MODE_METHODDEF
     #define MSVCRT_SET_ERROR_MODE_METHODDEF
 #endif /* !defined(MSVCRT_SET_ERROR_MODE_METHODDEF) */
-/*[clinic end generated code: output=6f7e89276b9e4248 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9d89e9414484d28c input=a9049054013a1b77]*/
