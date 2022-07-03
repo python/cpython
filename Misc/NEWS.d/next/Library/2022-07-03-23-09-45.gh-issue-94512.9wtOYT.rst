@@ -1,0 +1,1 @@
+Convert :mod:`resource` to use Argument Clinic.
