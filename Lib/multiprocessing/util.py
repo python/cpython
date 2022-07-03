@@ -451,13 +451,10 @@ def spawnv_passfds(path, args, passfds):
     errpipe_read, errpipe_write = os.pipe()
     try:
         return _posixsubprocess.fork_exec(
-            args, executable_list=[path], close_fds=True,
-            pass_fds=passfds, cwd=None, env=None, p2cread=-1, p2cwrite=-1,
-            c2pread=-1, c2pwrite=-1, errread=-1, errwrite=-1,
-            errpipe_read=errpipe_read, errpipe_write=errpipe_write,
-            restore_signals=False, call_setsid=False, pgid_to_set=-1, gid=None,
-            groups_list=None, uid=None, child_umask=-1, preexec_fn=None,
-            allow_vfork=subprocess._USE_VFORK)
+            args, [path], True, passfds, None, None,
+            -1, -1, -1, -1, -1, -1, errpipe_read, errpipe_write,
+            False, False, -1, None, None, None, -1, None,
+            subprocess._USE_VFORK)
     finally:
         os.close(errpipe_read)
         os.close(errpipe_write)
