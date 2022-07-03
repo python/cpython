@@ -1148,7 +1148,7 @@ PyDoc_STRVAR(module_doc,
 "A POSIX helper for the subprocess module.");
 
 static PyMethodDef module_methods[] = {
-    _POSIXSUBPROCESS_FORK_EXEC_METHODDEF
+    SUBPROCESS_FORK_EXEC_METHODDEF
     {NULL, NULL}  /* sentinel */
 };
 
