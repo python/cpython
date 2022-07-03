@@ -1480,6 +1480,7 @@ Struct_impl(PyTypeObject *type, PyObject *format)
     self->s_format = format;
 
     if (prepare_s(self) < 0) {
+        Py_DECREF(self);
         return NULL;
     }
     return (PyObject *)self;
