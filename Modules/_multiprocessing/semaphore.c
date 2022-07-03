@@ -749,7 +749,7 @@ static PyMemberDef semlock_members[] = {
  * Semaphore type
  */
 
-PyType_Slot _PyMp_SemLockType_slots[] = {
+static PyType_Slot _PyMp_SemLockType_slots[] = {
     {Py_tp_dealloc, semlock_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_setattro, PyObject_GenericSetAttr},
