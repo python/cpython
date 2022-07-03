@@ -1451,7 +1451,10 @@ static PyObject *
 Struct_impl(PyTypeObject *type, PyObject *format)
 /*[clinic end generated code: output=49468b044e334308 input=8b91868eb1df0e28]*/
 {
-    PyStructObject *self = (PyStructObject *)type->tp_alloc(type, 0);
+    allocfunc alloc = PyType_GetSlot(type, Py_tp_alloc);
+    assert(alloc != NULL);
+    PyStructObject *self = (PyStructObject *)alloc(type, 0);
+
     if (self == NULL) {
         return NULL;
     }
