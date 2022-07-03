@@ -25,13 +25,13 @@ __all__ = [
 ]
 
 
-def __getattr__(name, canonical=_resources_abc):
+def __getattr__(name):
     """
     For backwards compatibility, continue to make names
-    from canonical available through this module. #93963
+    from _resources_abc available through this module. #93963
     """
-    if name in canonical.__all__:
-        obj = getattr(canonical, name)
+    if name in _resources_abc.__all__:
+        obj = getattr(_resources_abc, name)
         warnings._deprecated(__name__, remove=(3, 14))
         globals()[name] = obj
         return obj
