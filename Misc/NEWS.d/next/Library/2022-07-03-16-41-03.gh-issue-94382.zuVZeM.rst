@@ -1,0 +1,1 @@
+Fix memory leak in ``_multiprocessing`` extension module when it is loaded/unloaded multiple times by converting static types to heap types. Patch by Kumar Aditya.
