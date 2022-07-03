@@ -1451,7 +1451,7 @@ new transactions are implicitly opened before
 ``INSERT``, ``UPDATE``, ``DELETE``, or ``REPLACE`` statements.
 Use the :meth:`~Connection.commit` and :meth:`~Connection.rollback` methods
 to respectively commit and roll back pending transactions.
-You can chose the underlying SQLite `transaction behaviour`_,
+You can choose the underlying SQLite `transaction behaviour`_,
 that is the kind of ``BEGIN`` statements ``sqlite3`` implicitly executes,
 via the :attr:`~Connection.isolation_level` attribute.
 
