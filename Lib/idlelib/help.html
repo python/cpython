@@ -664,7 +664,7 @@ until one hits <kbd class="kbd docutils literal notranslate">Return</kbd>, as sp
 One may edit pasted code first.
 If one pastes more than one statement into Shell, the result will be a
 <a class="reference internal" href="exceptions.html#SyntaxError" title="SyntaxError"><code class="xref py py-exc docutils literal notranslate"><span class="pre">SyntaxError</span></code></a> when multiple statements are compiled as if they were one.</p>
-<p>Lines containing`’RESTART’` mean that the user execution process has been
+<p>Lines containing <code class="docutils literal notranslate"><span class="pre">RESTART</span></code> mean that the user execution process has been
 re-started.  This occurs when the user execution process has crashed,
 when one requests a restart on the Shell menu, or when one runs code
 in an editor window.</p>
@@ -821,7 +821,9 @@ and <a class="reference internal" href="stdtypes.html#str.join" title="str.join"
 created in the execution process, whether directly by user code or by
 modules such as multiprocessing.  If such subprocess use <code class="docutils literal notranslate"><span class="pre">input</span></code> from
 sys.stdin or <code class="docutils literal notranslate"><span class="pre">print</span></code> or <code class="docutils literal notranslate"><span class="pre">write</span></code> to sys.stdout or sys.stderr,
-IDLE should be started in a command line window.  The secondary subprocess
+IDLE should be started in a command line window.  (On Windows,
+use <code class="docutils literal notranslate"><span class="pre">python</span></code> or <code class="docutils literal notranslate"><span class="pre">py</span></code> rather than <code class="docutils literal notranslate"><span class="pre">pythonw</span></code> or <code class="docutils literal notranslate"><span class="pre">pyw</span></code>.)
+The secondary subprocess
 will then be attached to that window for input and output.</p>
 <p>If <code class="docutils literal notranslate"><span class="pre">sys</span></code> is reset by user code, such as with <code class="docutils literal notranslate"><span class="pre">importlib.reload(sys)</span></code>,
 IDLE’s changes are lost and input from the keyboard and output to the screen
@@ -1139,7 +1141,7 @@ also used for testing.</p>
 <br />
     <br />
 
-    Last updated on Jun 26, 2022.
+    Last updated on Jul 03, 2022.
     <a href="/bugs.html">Found a bug</a>?
     <br />
 
