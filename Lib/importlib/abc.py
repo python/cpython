@@ -32,7 +32,7 @@ def __getattr__(name):
     """
     if name in _resources_abc.__all__:
         obj = getattr(_resources_abc, name)
-        warnings._deprecated(__name__, remove=(3, 14))
+        warnings._deprecated(f"{__name__}.{name}", remove=(3, 14))
         globals()[name] = obj
         return obj
     raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
