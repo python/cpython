@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-PyDoc_STRVAR(Struct___init____doc__,
+PyDoc_STRVAR(Struct__doc__,
 "Struct(format)\n"
 "--\n"
 "\n"
@@ -13,13 +13,13 @@ PyDoc_STRVAR(Struct___init____doc__,
 "\n"
 "See help(struct) for more on format strings.");
 
-static int
-Struct___init___impl(PyStructObject *self, PyObject *format);
+static PyObject *
+Struct_impl(PyTypeObject *type, PyObject *format);
 
-static int
-Struct___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+static PyObject *
+Struct(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    int return_value = -1;
+    PyObject *return_value = NULL;
     static const char * const _keywords[] = {"format", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "Struct", 0};
     PyObject *argsbuf[1];
@@ -32,7 +32,7 @@ Struct___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     format = fastargs[0];
-    return_value = Struct___init___impl((PyStructObject *)self, format);
+    return_value = Struct_impl(type, format);
 
 exit:
     return return_value;
@@ -376,4 +376,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=2065c9b007be631c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f2fb11258c927c88 input=a9049054013a1b77]*/

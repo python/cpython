@@ -700,6 +700,12 @@ class StructTest(unittest.TestCase):
                 with self.assertRaises(TypeError):
                     cls.x = 1
 
+    @support.cpython_only
+    def test__struct_Struct__new__initialized(self):
+        # See https://github.com/python/cpython/issues/78724
+
+        s = struct.Struct.__new__(struct.Struct, "b")
+        s.unpack_from(b"abcd")
 
     def test_issue35714(self):
         # Embedded null characters should not be allowed in format strings.
