@@ -961,9 +961,7 @@ call fails (for example because the path doesn't exist).
    Note that the names in the lists contain no path components. To get a full
    path (which begins with *self*) to a file or directory in *dirpath*, do
    ``dirpath / name``. Whether or not the lists are sorted depends on the file
-   system. If a file or a directory is removed from or added to the *dirpath*
-   during the generation of *dirnames* and *filenames*, it is uncertain whether
-   the new entry will appear in the generated lists.
+   system.
 
    If optional argument *top_down* is ``True`` or not specified, the triple for a
    directory is generated before the triples for any of its subdirectories
