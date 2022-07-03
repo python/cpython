@@ -68,7 +68,7 @@
 
 # dbm/gdbm
 # dbm needs either libndbm, libgdbm_compat, or libdb 5.x
-#@MODULE__DBM_TRUE@_dbm _dbmmodule.c
+@MODULE__DBM_TRUE@_dbm _dbmmodule.c
 # gdbm module needs -lgdbm
 @MODULE__GDBM_TRUE@_gdbm _gdbmmodule.c
 
