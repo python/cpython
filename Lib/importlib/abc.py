@@ -28,18 +28,11 @@ __all__ = [
 def __getattr__(name, canonical=_resources_abc):
     """
     For backwards compatibility, continue to make names
-    from canonical available through this module.
+    from canonical available through this module. #93963
     """
     if name in canonical.__all__:
         obj = getattr(canonical, name)
-        import warnings
-        warnings.warn(
-            f"Using or importing the ABCs from {__name__!r} instead "
-            f"of from {canonical.__name__!r} is now deprecated, "
-            "scheduled for removal in Python 3.13",
-            DeprecationWarning,
-            stacklevel=2,
-        )
+        warnings._deprecated(__name__, remove=(3, 14))
         globals()[name] = obj
         return obj
     raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
