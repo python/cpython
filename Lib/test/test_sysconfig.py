@@ -369,7 +369,7 @@ class TestSysConfig(unittest.TestCase):
                 base = base.replace(sys.base_prefix, sys.prefix)
             if HAS_USER_BASE:
                 user_path = get_path(name, 'posix_user')
-                expected = global_path.replace(base, user, 1)
+                expected = os.path.normpath(global_path.replace(base, user, 1))
                 # bpo-44860: platlib of posix_user doesn't use sys.platlibdir,
                 # whereas posix_prefix does.
                 if name == 'platlib':

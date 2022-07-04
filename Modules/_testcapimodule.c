@@ -21,7 +21,6 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "frameobject.h"          // PyFrame_Check()
 #include "datetime.h"             // PyDateTimeAPI
 #include "marshal.h"              // PyMarshal_WriteLongToFile
 #include "structmember.h"         // PyMemberDef
@@ -4189,6 +4188,48 @@ test_pymem_alloc0(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_pyobject_new(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *obj;
+    PyTypeObject *type = &PyBaseObject_Type;
+    PyTypeObject *var_type = &PyLong_Type;
+
+    // PyObject_New()
+    obj = PyObject_New(PyObject, type);
+    if (obj == NULL) {
+        goto alloc_failed;
+    }
+    Py_DECREF(obj);
+
+    // PyObject_NEW()
+    obj = PyObject_NEW(PyObject, type);
+    if (obj == NULL) {
+        goto alloc_failed;
+    }
+    Py_DECREF(obj);
+
+    // PyObject_NewVar()
+    obj = PyObject_NewVar(PyObject, var_type, 3);
+    if (obj == NULL) {
+        goto alloc_failed;
+    }
+    Py_DECREF(obj);
+
+    // PyObject_NEW_VAR()
+    obj = PyObject_NEW_VAR(PyObject, var_type, 3);
+    if (obj == NULL) {
+        goto alloc_failed;
+    }
+    Py_DECREF(obj);
+
+    Py_RETURN_NONE;
+
+alloc_failed:
+    PyErr_NoMemory();
+    return NULL;
+}
+
 typedef struct {
     PyMemAllocatorEx alloc;
 
@@ -6071,12 +6112,35 @@ settrace_to_record(PyObject *self, PyObject *list)
     Py_RETURN_NONE;
 }
 
+
 static PyObject *
 test_macros(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    // Py_MIN(), Py_MAX()
+    struct MyStruct {
+        int x;
+    };
+    wchar_t array[3];
+
+    // static_assert(), Py_BUILD_ASSERT()
+    static_assert(1 == 1, "bug");
+    Py_BUILD_ASSERT(1 == 1);
+
+
+    // Py_MIN(), Py_MAX(), Py_ABS()
     assert(Py_MIN(5, 11) == 5);
     assert(Py_MAX(5, 11) == 11);
+    assert(Py_ABS(-5) == 5);
+
+    // Py_STRINGIFY()
+    assert(strcmp(Py_STRINGIFY(123), "123") == 0);
+
+    // Py_MEMBER_SIZE(), Py_ARRAY_LENGTH()
+    assert(Py_MEMBER_SIZE(struct MyStruct, x) == sizeof(int));
+    assert(Py_ARRAY_LENGTH(array) == 3);
+
+    // Py_CHARMASK()
+    int c = 0xab00 | 7;
+    assert(Py_CHARMASK(c) == 7);
 
     // _Py_IS_TYPE_SIGNED()
     assert(_Py_IS_TYPE_SIGNED(int));
@@ -6084,6 +6148,7 @@ test_macros(PyObject *self, PyObject *Py_UNUSED(args))
 
     Py_RETURN_NONE;
 }
+
 
 static PyObject *negative_dictoffset(PyObject *, PyObject *);
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
@@ -6261,6 +6326,7 @@ static PyMethodDef TestMethods[] = {
     {"with_tp_del",             with_tp_del,                     METH_VARARGS},
     {"create_cfunction",        create_cfunction,                METH_NOARGS},
     {"test_pymem_alloc0",       test_pymem_alloc0,               METH_NOARGS},
+    {"test_pyobject_new",       test_pyobject_new,               METH_NOARGS},
     {"test_pymem_setrawallocators",test_pymem_setrawallocators,  METH_NOARGS},
     {"test_pymem_setallocators",test_pymem_setallocators,        METH_NOARGS},
     {"test_pyobject_setallocators",test_pyobject_setallocators,  METH_NOARGS},
