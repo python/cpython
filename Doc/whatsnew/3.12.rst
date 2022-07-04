@@ -171,6 +171,24 @@ APIs:
 * :func:`unittest.getTestCaseNames` (:gh:`50096`)
 * :class:`webbrowser.MacOSX` (:gh:`86421`)
 
+Pending Removal in Python 3.14
+==============================
+
+* Deprecated the following :mod:`importlib.abc` classes, scheduled for removal in
+  Python 3.14:
+
+  * :class:`importlib.abc.ResourceReader`
+  * :class:`importlib.abc.Traversable`
+  * :class:`importlib.abc.TraversableResources`
+
+  Use :mod:`importlib.resources.abc` classes instead:
+
+  * :class:`importlib.resources.abc.TraversableResources`
+  * :class:`importlib.resources.abc.Traversable`
+  * :class:`importlib.resources.abc.TraversableResources`
+
+  (Contributed by Jason R. Coombs and Hugo van Kemenade in :gh:`93963`.)
+
 Pending Removal in Future Versions
 ==================================
 

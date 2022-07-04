@@ -33,6 +33,9 @@
 
     .. versionadded:: 3.7
 
+    .. deprecated-removed:: 3.12 3.14
+       Use :class:`importlib.resources.abc.TraversableResources` instead.
+
     .. abstractmethod:: open_resource(resource)
 
         Returns an opened, :term:`file-like object` for binary reading
@@ -324,6 +327,9 @@
 
     .. versionadded:: 3.9
 
+    .. deprecated-removed:: 3.12 3.14
+       Use :class:`importlib.resources.abc.Traversable` instead.
+
     .. attribute:: name
 
        Abstract. The base name of this object without any parent references.
@@ -378,6 +384,9 @@
     implement this interface.
 
     .. versionadded:: 3.9
+
+    .. deprecated-removed:: 3.12 3.14
+       Use :class:`importlib.resources.abc.TraversableResources` instead.
 
     .. abstractmethod:: files()
 
