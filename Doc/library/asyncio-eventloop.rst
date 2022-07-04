@@ -210,11 +210,14 @@ Scheduling callbacks
    used later to cancel the callback.
 
    This method is not thread-safe.
+   Note: Although this is safe to call from a signal handler (since it may not use locks),
+   the event loop will not wake up from a call to the IO multiplexer.
 
 .. method:: loop.call_soon_threadsafe(callback, *args, context=None)
 
    A thread-safe variant of :meth:`call_soon`.  Must be used to
    schedule callbacks *from another thread*.
+   The returned Handle, however, is not thread-safe.
 
    Raises :exc:`RuntimeError` if called on a loop that's been closed.
    This can happen on a secondary thread when the main application is
@@ -222,6 +225,8 @@ Scheduling callbacks
 
    See the :ref:`concurrency and multithreading <asyncio-multithreading>`
    section of the documentation.
+   
+   Note: this is safe to call from a signal handler (since it may not use locks)
 
 .. versionchanged:: 3.7
    The *context* keyword-only parameter was added. See :pep:`567`
