@@ -265,8 +265,12 @@ class ModuleChecker:
         return names
 
     def get_builddir(self) -> pathlib.Path:
-        with open(self.pybuilddir_txt, encoding="utf-8") as f:
-            builddir = f.read()
+        try:
+            with open(self.pybuilddir_txt, encoding="utf-8") as f:
+                builddir = f.read()
+        except FileNotFoundError:
+            logger.error("%s must be run from the top build directory", __file__)
+            raise
         builddir = pathlib.Path(builddir)
         logger.debug("%s: %s", self.pybuilddir_txt, builddir)
         return builddir
