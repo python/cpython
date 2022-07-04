@@ -233,7 +233,7 @@ is the module's name in the Python package namespace.
          2006-02-08 22:20:02,165 192.168.0.1 fbloggs  Protocol problem: connection reset
 
       The keys in the dictionary passed in *extra* should not clash with the keys used
-      by the logging system. (See the :class:`Formatter` documentation for more
+      by the logging system. (See the section on :ref:`logrecord-attributes` for more
       information on which keys are used by the logging system.)
 
       If you choose to use these attributes in logged messages, you need to exercise
