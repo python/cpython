@@ -458,7 +458,6 @@ class ModuleChecker:
 
 def main():
     args = parser.parse_args()
-    print(args)
     if args.debug:
         args.verbose = True
     logging.basicConfig(
