@@ -636,11 +636,10 @@ PyCode_New(int argcount, int kwonlyargcount,
                                      exceptiontable);
 }
 
-static const char assert0[4] = {
-    LOAD_ASSERTION_ERROR,
-    0,
-    RAISE_VARARGS,
-    1
+static const char assert0[6] = {
+    RESUME, 0,
+    LOAD_ASSERTION_ERROR, 0,
+    RAISE_VARARGS, 1
 };
 
 PyCodeObject *
@@ -664,7 +663,7 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
     if (filename_ob == NULL) {
         goto failed;
     }
-    code_ob = PyBytes_FromStringAndSize(assert0, 4);
+    code_ob = PyBytes_FromStringAndSize(assert0, 6);
     if (code_ob == NULL) {
         goto failed;
     }
