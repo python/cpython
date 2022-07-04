@@ -129,7 +129,7 @@ class RegressionTests(unittest.TestCase):
         con = sqlite.connect(":memory:",detect_types=sqlite.PARSE_DECLTYPES)
         cur = con.cursor()
         cur.execute("create table foo(bar timestamp)")
-        with self.assertWarnsRegex(DeprecationWarning, "adapters"):
+        with self.assertWarnsRegex(DeprecationWarning, "adapter"):
             cur.execute("insert into foo(bar) values (?)", (datetime.datetime.now(),))
         cur.execute(SELECT)
         cur.execute("drop table foo")
@@ -306,7 +306,7 @@ class RegressionTests(unittest.TestCase):
         cur.execute("INSERT INTO t (x) VALUES ('2012-04-04 15:06:00.123456789')")
 
         cur.execute("SELECT * FROM t")
-        with self.assertWarnsRegex(DeprecationWarning, "converters"):
+        with self.assertWarnsRegex(DeprecationWarning, "converter"):
             values = [x[0] for x in cur.fetchall()]
 
         self.assertEqual(values, [
