@@ -23320,7 +23320,7 @@ else
   MODULE__COPY_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__COPY=$py_cv_module__copy$as_nl"
+  as_fn_append MODULE_BLOCK "MODULE__COPY_STATE=$py_cv_module__copy$as_nl"
   if test "x$py_cv_module__copy" = xyes; then :
 
 

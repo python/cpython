@@ -272,7 +272,8 @@ static PyTypeObject* const atomic_type[] = {
 };
 #define N_ATOMIC_TYPES Py_ARRAY_LENGTH(atomic_type)
 
-typedef  PyObject* (deepcopy_dispatcher_handler)(PyObject *module, PyObject* x, PyObject* memo, PyObject* id_x, Py_hash_t hash_id_x) ;
+typedef PyObject* (deepcopy_dispatcher_handler)(PyObject *module, PyObject* x,
+                        PyObject* memo, PyObject* id_x, Py_hash_t hash_id_x);
 
 struct deepcopy_dispatcher {
     PyTypeObject* type;
