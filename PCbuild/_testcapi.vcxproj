@@ -94,6 +94,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_testcapimodule.c" />
+    <ClCompile Include="..\Modules\_testcapi\test_vectorcall.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />
