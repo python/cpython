@@ -63,7 +63,7 @@ do_deepcopy_fallback(PyObject* module, PyObject* x, PyObject* memo)
     copy_module_state *state = get_copy_module_state(module);
 
     const int nargsf = 3;
-    PyObject * args[nargsf];
+    PyObject * args[3];
     args[0] = state->python_copy_module;;
     args[1] = x;
     args[2] = memo;
