@@ -8759,6 +8759,10 @@ update_one_slot(PyTypeObject *type, slotdef *p)
         else {
             use_generic = 1;
             generic = p->function;
+            if (p->function == slot_tp_call) {
+                /* A generic __call__ is incompatible with vectorcall */
+                type->tp_flags &= ~Py_TPFLAGS_HAVE_VECTORCALL;
+            }
         }
     } while ((++p)->offset == offset);
     if (specific && !use_generic)
