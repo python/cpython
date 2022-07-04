@@ -343,7 +343,7 @@ class ModuleChecker:
 
     def parse_setup_file(self, setup_file: pathlib.Path) -> Iterable[ModuleInfo]:
         """Parse a Modules/Setup file"""
-        assign_var = re.compile("^\w+=")  # EGG_SPAM=foo
+        assign_var = re.compile(r"^\w+=")  # EGG_SPAM=foo
         # default to static module
         state = ModuleState.BUILTIN
         logger.debug("Parsing Setup file %s", setup_file)
