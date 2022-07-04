@@ -1,1 +1,3 @@
-Convert :mod:`resource` to use Argument Clinic.
+:meth:`resource.prlimit` changed its signature from
+``prlimit(pid, resource, [limits], /)`` to
+``prlimit($module, pid, resource, limits=None, /)``.
