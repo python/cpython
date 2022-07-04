@@ -17,6 +17,14 @@ Isolating Extension Modules
     importantly—accessing per-module state from code.
 
 
+Who should read this
+====================
+
+This guide is written for maintainers of :ref:`C-API <c-api-index>` extensions
+who would like to make that extension safer to use in applications where
+Python itself is used as a library.
+
+
 Background
 ==========
 
