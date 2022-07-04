@@ -8,7 +8,7 @@ files are renamed on failed import.
 Module information are parsed from several sources:
 
 - core modules hard-coded in Modules/config.c.in
-- Windows-specific modyles that are hard-coded in PC/config.c
+- Windows-specific modules that are hard-coded in PC/config.c
 - MODULE_{name}_STATE entries in Makefile (provided through sysconfig)
 - Various makesetup files:
   - $(srcdir)/Modules/Setup
