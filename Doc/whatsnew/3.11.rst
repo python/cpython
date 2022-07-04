@@ -443,6 +443,11 @@ asyncio
   the asyncio library. (Contributed by Yves Duprat and Andrew Svetlov in
   :gh:`87518`.)
 
+* Add :class:`~asyncio.TaskGroup` class,
+  an :ref:`asynchronous context manager <async-context-managers>`
+  holding a group of tasks that will wait for all of them upon exit.
+  (Contributed by Yury Seliganov and others.)
+
 datetime
 --------
 
