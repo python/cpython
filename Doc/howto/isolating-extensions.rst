@@ -34,7 +34,7 @@ two cases to think about—users may run interpreters:
 
 Both cases (and combinations of them) would be most useful when
 embedding Python within a library. Libraries generally shouldn't make
-assumptions about the application that uses them, which includes
+assumptions about the application that uses them, which include
 assuming a process-wide "main Python interpreter".
 
 Historically, Python extension modules don't handle this use case well.
@@ -68,7 +68,7 @@ interpreter shutdown" hooks to think—or forget—about.
 Note that there are use cases for different kinds of "globals":
 per-process, per-interpreter, per-thread or per-task state.
 With per-module state as the default, these are still possible,
-but you should threat them as exceptional cases:
+but you should treat them as exceptional cases:
 if you need them, you should give them additional care and testing.
 (Note that this guide does not cover them.)
 
@@ -141,7 +141,7 @@ Making Modules Safe with Multiple Interpreters
 Managing Global State
 ---------------------
 
-Sometimes, state of a Python module is not specific to that module, but
+Sometimes, the state associated with a Python module is not specific to that module, but
 to the entire process (or something else "more global" than a module).
 For example:
 
@@ -152,9 +152,8 @@ For example:
 In these cases, the Python module should provide *access* to the global
 state, rather than *own* it. If possible, write the module so that
 multiple copies of it can access the state independently (along with
-other libraries, whether for Python or other languages).
-
-If that is not possible, consider explicit locking.
+other libraries, whether for Python or other languages). If that is not
+possible, consider explicit locking.
 
 If it is necessary to use process-global state, the simplest way to
 avoid issues with multiple interpreters is to explicitly prevent a
@@ -239,7 +238,7 @@ the state, you can use ``PyModule_GetState``::
    }
 
 .. note::
-   ``PyModule_GetState`` may return NULL without setting an
+   ``PyModule_GetState`` may return ``NULL`` without setting an
    exception if there is no module state, i.e. ``PyModuleDef.m_size`` was
    zero. In your own module, you're in control of ``m_size``, so this is
    easy to prevent.
@@ -257,7 +256,7 @@ between module objects requires paying attention to any state they own
 or access. To limit the possible issues, static types are immutable at
 the Python level: for example, you can't set ``str.myattribute = 123``.
 
-.. note::
+.. impl-detail::
    Sharing truly immutable objects between interpreters is fine,
    as long as they don't provide access to mutable objects.
    However, in CPython, every Python object has a mutable implementation
@@ -280,21 +279,21 @@ Changing Static Types to Heap Types
 
 Static types can be converted to heap types, but note that
 the heap type API was not designed for "lossless" conversion
-from static types -- that is, creating a type that works exactly like a given
+from static types—that is, creating a type that works exactly like a given
 static type.
 So, when rewriting the class definition in a new API,
-you are likely to unintentionally change a few details (e.g. pickle-ability
+you are likely to unintentionally change a few details (e.g. pickleability
 or inherited slots).
 Always test the details that are important to you.
 
-Several points to watch out for follow, but this is not a comprehensive list.
+Watch out for the following two points in particular (but note that this is not
+a comprehensive list):
 
-Unlike static types, heap type objects are mutable by default.
-Use the :c:data:`Py_TPFLAGS_IMMUTABLETYPE` flag to prevent mutability.
-
-Heap types inherit :c:member:`~PyTypeObject.tp_new` by default,
-so it may become possible to instantiate them from Python code.
-You can prevent this with the :c:data:`Py_TPFLAGS_DISALLOW_INSTANTIATION` flag.
+* Unlike static types, heap type objects are mutable by default.
+  Use the :c:data:`Py_TPFLAGS_IMMUTABLETYPE` flag to prevent mutability.
+* Heap types inherit :c:member:`~PyTypeObject.tp_new` by default,
+  so it may become possible to instantiate them from Python code.
+  You can prevent this with the :c:data:`Py_TPFLAGS_DISALLOW_INSTANTIATION` flag.
 
 
 Defining Heap Types
@@ -314,7 +313,7 @@ safe access from C) and the module's ``__dict__`` (for access from
 Python code).
 
 
-Garbage Collection Protocol
+Garbage-Collection Protocol
 ---------------------------
 
 Instances of heap types hold a reference to their type.
@@ -458,9 +457,9 @@ Module State Access from Slot Methods, Getters and Setters
       you must update ``Py_LIMITED_API`` to ``0x030b0000``, losing ABI
       compatibility with earlier versions.
 
-Slot methods -- the fast C equivalents for special methods, such as
+Slot methods—the fast C equivalents for special methods, such as
 :c:member:`~PyNumberMethods.nb_add` for :py:attr:`~object.__add__` or
-:c:member:`~PyType.tp_new` for initialization -- have a very simple API that
+:c:member:`~PyType.tp_new` for initialization—have a very simple API that
 doesn't allow passing in the defining class, unlike with :c:type:`PyCMethod`.
 The same goes for getters and setters defined with
 :c:type:`PyGetSetDef`.
@@ -516,9 +515,9 @@ mailing list <https://mail.python.org/mailman3/lists/capi-sig.python.org/>`__.
 Per-Class Scope
 ---------------
 
-It is currently (Python 3.11) not possible to attach state to individual
+It is currently (as of Python 3.11) not possible to attach state to individual
 *types* without relying on CPython implementation details (which may change
-in the future – perhaps, ironically, to allow a proper solution for
+in the future—perhaps, ironically, to allow a proper solution for
 per-class scope).
 
 
