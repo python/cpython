@@ -233,7 +233,7 @@ class Random(_random.Random):
                 break
 
     def _randbelow_with_getrandbits(self, n):
-        "Return a random int in the range [0,n).  Defined for n > 0."
+        "Return a random int in the range [0, n].  Defined for n > 0."
 
         getrandbits = self.getrandbits
         k = n.bit_length()  # don't use (n-1) here because n can be 1
@@ -243,7 +243,7 @@ class Random(_random.Random):
         return r
 
     def _randbelow_without_getrandbits(self, n, maxsize=1<<BPF):
-        """Return a random int in the range [0,n).  Defined for n > 0.
+        """Return a random int in the range [0, n].  Defined for n > 0.
 
         The implementation does not use getrandbits, but only random.
         """
@@ -482,7 +482,7 @@ class Random(_random.Random):
     ## -------------------- real-valued distributions  -------------------
 
     def uniform(self, a, b):
-        "Get a random number in the range [a, b) or [a, b] depending on rounding."
+        "Get a random number in the range [a, b] or [a, b] depending on rounding."
         return a + (b - a) * self.random()
 
     def triangular(self, low=0.0, high=1.0, mode=None):
@@ -758,7 +758,7 @@ class SystemRandom(Random):
     """
 
     def random(self):
-        """Get the next random number in the range [0.0, 1.0)."""
+        """Get the next random number in the range [0.0, 1.0]."""
         return (int.from_bytes(_urandom(7)) >> 3) * RECIP_BPF
 
     def getrandbits(self, k):
