@@ -1,6 +1,6 @@
 """Check extension modules
 
-The script checks extension and built-in modules. It verifies that the
+The script checks shared and built-in extension modules. It verifies that the
 modules have been built and that they can be import successfully. Missing
 modules and failed imports are reported to the user. Shared extension
 files are renamed on failed import.
