@@ -293,6 +293,12 @@ Removed
   a C implementation of :func:`~hashlib.pbkdf2_hmac()` which is faster.
   (Contributed by Victor Stinner in :gh:`94199`.)
 
+* :mod:`xml.etree`: Remove the ``ElementTree.Element.copy()`` method of the
+  pure Python implementation, deprecated in Python 3.10, use the
+  :func:`copy.copy` function instead.  The C implementation of :mod:`xml.etree`
+  has no ``copy()`` method, only a ``__copy__()`` method.
+  (Contributed by Victor Stinner in :gh:`94383`.)
+
 
 Porting to Python 3.12
 ======================
