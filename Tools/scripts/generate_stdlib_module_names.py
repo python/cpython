@@ -7,7 +7,7 @@ import subprocess
 import sys
 import sysconfig
 
-from check_modules import ModuleChecker
+from check_extension_modules import ModuleChecker
 
 
 SRC_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))

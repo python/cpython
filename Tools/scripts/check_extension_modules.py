@@ -1,9 +1,27 @@
 """Check extension modules
+
+The script checks extension and built-in modules. It verifies that the
+modules have been built and that they can be import successfully. Missing
+modules and failed imports are reported to the user. Shared extension
+files are renamed on failed import.
+
+Module information are parsed from several sources:
+
+- core modules hard-coded in Modules/config.c.in
+- Windows-specific modyles that are hard-coded in PC/config.c
+- MODULE_{name}_STATE entries in Makefile (provided through sysconfig)
+- Various makesetup files:
+  - $(srcdir)/Modules/Setup
+  - Modules/Setup.[local|bootstrap|stdlib] files, which are generated
+    from $(srcdir)/Modules/Setup.*.in files
+
+See --help for more information
 """
 import argparse
 import collections
 import enum
 import logging
+from operator import mod
 import os
 import pathlib
 import re
@@ -47,22 +65,47 @@ WINDOWS_MODULES = {
 logger = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(
-    prog="check_modules", description="Check extension modules"
+    prog="check_extension_modules",
+    description=__doc__,
+    formatter_class=argparse.RawDescriptionHelpFormatter,
 )
+
+parser.add_argument(
+    "--verbose",
+    action="store_true",
+    help="Verbose, report builtin, shared, and unavailable modules",
+)
+
 parser.add_argument(
     "--debug",
     action="store_true",
     help="Enable debug logging",
 )
+
 parser.add_argument(
-    "--verbose",
-    action="store_true",
-    help="Verbose output",
+    "--strict",
+    action=argparse.BooleanOptionalAction,
+    help=(
+        "Strict check, fail when a module is missing or fails to import"
+        "(default: no, unless env var PYTHONSTRICTEXTENSIONBUILD is set)"
+    ),
+    default=bool(os.environ.get("PYTHONSTRICTEXTENSIONBUILD")),
 )
+
+parser.add_argument(
+    "--cross-compiling",
+    action=argparse.BooleanOptionalAction,
+    help=(
+        "Use cross-compiling checks "
+        "(default: no, unless env var _PYTHON_HOST_PLATFORM is set)."
+    ),
+    default="_PYTHON_HOST_PLATFORM" in os.environ,
+)
+
 parser.add_argument(
     "--list-module-names",
     action="store_true",
-    help="Print a list of module names to stdout",
+    help="Print a list of module names to stdout and exit",
 )
 
 
@@ -94,9 +137,9 @@ class ModuleChecker:
         "Modules/Setup.stdlib",
     )
 
-    def __init__(self):
-        self.cross_compiling = "_PYTHON_HOST_PLATFORM" in os.environ
-        self.strict_extensions_build = os.environ.get("PYTHONSTRICTEXTENSIONBUILD")
+    def __init__(self, cross_compiling: bool = False, strict: bool = False):
+        self.cross_compiling = cross_compiling
+        self.strict_extensions_build = strict
         self.ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
         self.platform = sysconfig.get_platform()
         self.builddir = self.get_builddir()
@@ -349,9 +392,22 @@ class ModuleChecker:
         else:
             return None
 
+    def _check_file(self, modinfo: ModuleInfo, spec: ModuleSpec):
+        """Check that the module file is present and not empty"""
+        if spec.loader is BuiltinImporter:
+            return
+        try:
+            st = os.stat(spec.origin)
+        except FileNotFoundError:
+            logger.error("%s (%s) is missing", modinfo.name, spec.origin)
+            raise
+        if not st.st_size:
+            raise ImportError(f"{spec.origin} is an empty file")
+
     def check_module_import(self, modinfo: ModuleInfo):
         """Attempt to import module and report errors"""
         spec = self.get_spec(modinfo)
+        self._check_file(modinfo, spec)
         try:
             with warnings.catch_warnings():
                 # ignore deprecation warning from deprecated modules
@@ -367,11 +423,7 @@ class ModuleChecker:
     def check_module_cross(self, modinfo: ModuleInfo):
         """Sanity check for cross compiling"""
         spec = self.get_spec(modinfo)
-        if spec.loader is BuiltinImporter:
-            return
-        st = os.stat(spec.origin)
-        if not st.st_size:
-            raise ImportError(f"{spec.origin} is an empty file")
+        self._check_file(modinfo, spec)
 
     def rename_module(self, modinfo: ModuleInfo) -> None:
         """Rename module file"""
@@ -406,6 +458,7 @@ class ModuleChecker:
 
 def main():
     args = parser.parse_args()
+    print(args)
     if args.debug:
         args.verbose = True
     logging.basicConfig(
@@ -413,7 +466,10 @@ def main():
         format="[%(levelname)s] %(message)s",
     )
 
-    checker = ModuleChecker()
+    checker = ModuleChecker(
+        cross_compiling=args.cross_compiling,
+        strict=args.strict,
+    )
     if args.list_module_names:
         names = checker.list_module_names(all=True)
         for name in sorted(names):
@@ -421,7 +477,10 @@ def main():
     else:
         checker.check()
         checker.summary(verbose=args.verbose)
-        checker.check_strict_build()
+        try:
+            checker.check_strict_build()
+        except RuntimeError as e:
+            parser.exit(1, f"\nError: {e}\n")
 
 
 if __name__ == "__main__":

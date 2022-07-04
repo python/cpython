@@ -919,7 +919,7 @@ oldsharedmods: $(SHAREDMODS) pybuilddir.txt
 	done
 
 checksharedmods: oldsharedmods sharedmods $(PYTHON_FOR_BUILD_DEPS)
-	@$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/scripts/check_modules.py
+	@$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/scripts/check_extension_modules.py
 
 Modules/Setup.local:
 	@# Create empty Setup.local when file was deleted by user
