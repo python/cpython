@@ -1,1 +1,0 @@
-Convert :mod:`winreg` to use Argument Clinic.
