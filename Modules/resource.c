@@ -300,7 +300,7 @@ resource_prlimit_impl(PyObject *module, pid_t pid, int resource,
         return NULL;
     }
 
-    if (limits) {
+    if (limits != Py_None) {
         if (py2rlimit(limits, &new_limit) < 0) {
             return NULL;
         }
