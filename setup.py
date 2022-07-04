@@ -1163,77 +1163,7 @@ class PyBuildExt(build_ext):
         self.addext(Extension('_crypt', ['_cryptmodule.c']))
 
     def detect_dbm_gdbm(self):
-        # Modules that provide persistent dictionary-like semantics.  You will
-        # probably want to arrange for at least one of them to be available on
-        # your machine, though none are defined by default because of library
-        # dependencies.  The Python module dbm/__init__.py provides an
-        # implementation independent wrapper for these; dbm/dumb.py provides
-        # similar functionality (but slower of course) implemented in Python.
-
-        dbm_setup_debug = False   # verbose debug prints from this script?
-        dbm_order = ['gdbm']
-
-        # libdb, gdbm and ndbm headers and libraries
-        have_ndbm_h = sysconfig.get_config_var("HAVE_NDBM_H")
-        have_gdbm_ndbm_h = sysconfig.get_config_var("HAVE_GDBM_NDBM_H")
-        have_gdbm_dash_ndbm_h = sysconfig.get_config_var("HAVE_GDBM_DASH_NDBM_H")
-        have_libndbm = sysconfig.get_config_var("HAVE_LIBNDBM")
-        have_libgdbm_compat = sysconfig.get_config_var("HAVE_LIBGDBM_COMPAT")
-        have_libdb = sysconfig.get_config_var("HAVE_LIBDB")
-
-        # The standard Unix dbm module:
-        if not CYGWIN:
-            config_args = [arg.strip("'")
-                           for arg in sysconfig.get_config_var("CONFIG_ARGS").split()]
-            dbm_args = [arg for arg in config_args
-                        if arg.startswith('--with-dbmliborder=')]
-            if dbm_args:
-                dbm_order = [arg.split('=')[-1] for arg in dbm_args][-1].split(":")
-            else:
-                dbm_order = "gdbm:ndbm:bdb".split(":")
-            dbmext = None
-            for cand in dbm_order:
-                if cand == "ndbm":
-                    if have_ndbm_h:
-                        # Some systems have -lndbm, others have -lgdbm_compat,
-                        # others don't have either
-                        if have_libndbm:
-                            ndbm_libs = ['ndbm']
-                        elif have_libgdbm_compat:
-                            ndbm_libs = ['gdbm_compat']
-                        else:
-                            ndbm_libs = []
-                        if dbm_setup_debug: print("building dbm using ndbm")
-                        dbmext = Extension(
-                            '_dbm', ['_dbmmodule.c'],
-                            define_macros=[('USE_NDBM', None)],
-                            libraries=ndbm_libs
-                        )
-                        break
-                elif cand == "gdbm":
-                    # dbm_open() is provided by libgdbm_compat, which wraps libgdbm
-                    if have_libgdbm_compat and (have_gdbm_ndbm_h or have_gdbm_dash_ndbm_h):
-                        if dbm_setup_debug: print("building dbm using gdbm")
-                        dbmext = Extension(
-                            '_dbm', ['_dbmmodule.c'],
-                            define_macros=[('USE_GDBM_COMPAT', None)],
-                            libraries=['gdbm_compat']
-                        )
-                        break
-                elif cand == "bdb":
-                    if have_libdb:
-                        if dbm_setup_debug: print("building dbm using bdb")
-                        dbmext = Extension(
-                            '_dbm', ['_dbmmodule.c'],
-                            define_macros=[('USE_BERKDB', None)],
-                            libraries=['db']
-                        )
-                        break
-            if dbmext is not None:
-                self.add(dbmext)
-            else:
-                self.missing.append('_dbm')
-
+        self.addext(Extension('_dbm', ['_dbmmodule.c']))
         # Anthony Baxter's gdbm module.  GNU dbm(3) will require -lgdbm:
         self.addext(Extension('_gdbm', ['_gdbmmodule.c']))
 
