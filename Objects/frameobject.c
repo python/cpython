@@ -256,10 +256,6 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     stacks[i+1] = next_stack;
                     break;
                 }
-                case POP_EXCEPT:
-                    next_stack = pop_value(pop_value(pop_value(next_stack)));
-                    stacks[i+1] = next_stack;
-                    break;
                 case SEND:
                     j = get_arg(code, i) + i + 1;
                     assert(j < len);
@@ -304,10 +300,12 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     stacks[i+1] = next_stack;
                     break;
                 case PUSH_EXC_INFO:
-                    next_stack = push_value(next_stack, Except);
-                    next_stack = push_value(next_stack, Except);
-                    next_stack = push_value(next_stack, Except);
-                    stacks[i+1] = next_stack;
+                case POP_EXCEPT:
+                    /* These instructions only appear in exception handlers, which
+                     * skip this switch ever since the move to zero-cost exceptions
+                     * (their stack remains UNINITIALIZED because nothing sets it).
+                     */
+                    Py_UNREACHABLE();
                 case RETURN_VALUE:
                 case RAISE_VARARGS:
                 case RERAISE:
