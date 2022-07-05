@@ -51,7 +51,7 @@ class Repr:
         self.maxdeque = maxdeque
         self.maxstring = maxstring
         self.maxlong = maxlong
-        self.maxother = maxanother
+        self.maxother = maxother
 
     def repr(self, x):
         return self.repr1(x, self.maxlevel)
