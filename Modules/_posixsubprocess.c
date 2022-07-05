@@ -1015,6 +1015,8 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
 #endif /* HAVE_SETGROUPS */
     }
 
+    /* if gid is left uninitialized, call_setgid == 0 so no read access. */
+    gid_t gid;
     if (gid_object != Py_None) {
 #ifdef HAVE_SETREGID
         if (!_Py_Gid_Converter(gid_object, &gid))
@@ -1028,6 +1030,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
 #endif /* HAVE_SETREUID */
     }
 
+    /* if uid is left uninitialized, call_setuid == 0 so no read access. */
     uid_t uid;
     if (uid_object != Py_None) {
 #ifdef HAVE_SETREUID
