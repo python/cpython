@@ -1407,6 +1407,74 @@ def test_pdb_issue_gh_91742():
     (Pdb) continue
     Author: 'pi' Version: '3.14'
     """
+
+def test_pdb_issue_gh_94215():
+    """See GH-94215
+
+    Check that frame_setlineno() does not leak references.
+
+    >>> def test_function():
+    ...    def func():
+    ...        def inner(v): pass
+    ...        inner(
+    ...             42
+    ...        )
+    ...
+    ...    import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...    func()
+
+    >>> reset_Breakpoint()
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'step',
+    ...     'next',
+    ...     'next',
+    ...     'jump 3',
+    ...     'next',
+    ...     'next',
+    ...     'jump 3',
+    ...     'next',
+    ...     'next',
+    ...     'jump 3',
+    ...     'continue'
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_issue_gh_94215[0]>(9)test_function()
+    -> func()
+    (Pdb) step
+    --Call--
+    > <doctest test.test_pdb.test_pdb_issue_gh_94215[0]>(2)func()
+    -> def func():
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_94215[0]>(3)func()
+    -> def inner(v): pass
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_94215[0]>(4)func()
+    -> inner(
+    (Pdb) jump 3
+    > <doctest test.test_pdb.test_pdb_issue_gh_94215[0]>(3)func()
+    -> def inner(v): pass
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_94215[0]>(4)func()
+    -> inner(
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_94215[0]>(5)func()
+    -> 42
+    (Pdb) jump 3
+    > <doctest test.test_pdb.test_pdb_issue_gh_94215[0]>(3)func()
+    -> def inner(v): pass
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_94215[0]>(4)func()
+    -> inner(
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_94215[0]>(5)func()
+    -> 42
+    (Pdb) jump 3
+    > <doctest test.test_pdb.test_pdb_issue_gh_94215[0]>(3)func()
+    -> def inner(v): pass
+    (Pdb) continue
+    """
+
+
 @support.requires_subprocess()
 class PdbTestCase(unittest.TestCase):
     def tearDown(self):
@@ -1414,7 +1482,7 @@ class PdbTestCase(unittest.TestCase):
 
     @unittest.skipIf(sys.flags.safe_path,
                      'PYTHONSAFEPATH changes default sys.path')
-    def _run_pdb(self, pdb_args, commands):
+    def _run_pdb(self, pdb_args, commands, expected_returncode=0):
         self.addCleanup(os_helper.rmtree, '__pycache__')
         cmd = [sys.executable, '-m', 'pdb'] + pdb_args
         with subprocess.Popen(
@@ -1427,15 +1495,20 @@ class PdbTestCase(unittest.TestCase):
             stdout, stderr = proc.communicate(str.encode(commands))
         stdout = stdout and bytes.decode(stdout)
         stderr = stderr and bytes.decode(stderr)
+        self.assertEqual(
+            proc.returncode,
+            expected_returncode,
+            f"Unexpected return code\nstdout: {stdout}\nstderr: {stderr}"
+        )
         return stdout, stderr
 
-    def run_pdb_script(self, script, commands):
+    def run_pdb_script(self, script, commands, expected_returncode=0):
         """Run 'script' lines with pdb and the pdb 'commands'."""
         filename = 'main.py'
         with open(filename, 'w') as f:
             f.write(textwrap.dedent(script))
         self.addCleanup(os_helper.unlink, filename)
-        return self._run_pdb([filename], commands)
+        return self._run_pdb([filename], commands, expected_returncode)
 
     def run_pdb_module(self, script, commands):
         """Runs the script code as part of a module"""
@@ -1641,7 +1714,9 @@ def bœr():
         script = "def f: pass\n"
         commands = ''
         expected = "SyntaxError:"
-        stdout, stderr = self.run_pdb_script(script, commands)
+        stdout, stderr = self.run_pdb_script(
+            script, commands, expected_returncode=1
+        )
         self.assertIn(expected, stdout,
             '\n\nExpected:\n{}\nGot:\n{}\n'
             'Fail to handle a syntax error in the debuggee.'
@@ -1804,7 +1879,9 @@ def bœr():
         with open(init_file, 'w'):
             pass
         self.addCleanup(os_helper.rmtree, module_name)
-        stdout, stderr = self._run_pdb(['-m', module_name], "")
+        stdout, stderr = self._run_pdb(
+            ['-m', module_name], "", expected_returncode=1
+        )
         self.assertIn("ImportError: No module named t_main.__main__",
                       stdout.splitlines())
 
@@ -1817,7 +1894,9 @@ def bœr():
         with open(modpath + '/__init__.py', 'w'):
             pass
         self.addCleanup(os_helper.rmtree, pkg_name)
-        stdout, stderr = self._run_pdb(['-m', modpath.replace('/', '.')], "")
+        stdout, stderr = self._run_pdb(
+            ['-m', modpath.replace('/', '.')], "", expected_returncode=1
+        )
         self.assertIn(
             "'t_pkg.t_main' is a package and cannot be directly executed",
             stdout)
@@ -2006,6 +2085,25 @@ def bœr():
             expected = '(Pdb) The correct file was executed'
             self.assertEqual(stdout.split('\n')[6].rstrip('\r'), expected)
 
+    @unittest.skip("test crashes, see gh-94215")
+    def test_gh_94215_crash(self):
+        script = """\
+            def func():
+                def inner(v): pass
+                inner(
+                    42
+                )
+            func()
+        """
+        commands = textwrap.dedent("""
+            break func
+            continue
+            next
+            next
+            jump 2
+        """)
+        stdout, stderr = self.run_pdb_script(script, commands)
+        self.assertFalse(stderr)
 
 class ChecklineTests(unittest.TestCase):
     def setUp(self):
