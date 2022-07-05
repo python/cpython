@@ -220,6 +220,11 @@ mark_stacks(PyCodeObject *code_obj, int len)
             }
             opcode = _Py_OPCODE(code[i]);
             switch (opcode) {
+                case CACHE:
+                {
+                    stacks[i+1] = stacks[i];
+                    break;
+                }
                 case JUMP_IF_FALSE_OR_POP:
                 case JUMP_IF_TRUE_OR_POP:
                 case POP_JUMP_FORWARD_IF_FALSE:
