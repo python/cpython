@@ -6976,7 +6976,7 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     static int reentrant = 0;
     if (reentrant) {
         _PyErr_SetString(tstate, PyExc_RuntimeError, "Cannot install a profile function "
-                         "while another trace function is being installed");
+                         "while another profile function is being installed");
         reentrant = 0;
         return -1;
     }
