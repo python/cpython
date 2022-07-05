@@ -171,7 +171,9 @@ on a per-module basis in Python 3.7 using a :mod:`__future__` import::
 
     from __future__ import annotations
 
-It will become the default in Python 3.10.
+Postponed evaluation will become the default `in a future version of Python`_.
+
+.. _in a future version of Python: https://mail.python.org/archives/list/python-dev@python.org/message/VIZEBX5EYMSYIJNDBF6DMUMZOCWHARSO/
 
 .. seealso::
 
