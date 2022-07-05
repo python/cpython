@@ -30,8 +30,6 @@ from sysconfig import (
     parse_config_h as sysconfig_parse_config_h,
 
     _init_non_posix,
-    _is_python_source_dir,
-    _sys_home,
 
     _variable_rx,
     _findvar1_rx,
@@ -51,9 +49,6 @@ from sysconfig import (
 # because it makes sure that the global dictionary is initialized
 # which might not be true in the time of import.
 _config_vars = get_config_vars()
-
-if os.name == "nt":
-    from sysconfig import _fix_pcbuild
 
 warnings.warn(
     'The distutils.sysconfig module is deprecated, use sysconfig instead',
@@ -287,7 +282,7 @@ def get_python_inc(plat_specific=0, prefix=None):
             # must use "srcdir" from the makefile to find the "Include"
             # directory.
             if plat_specific:
-                return _sys_home or project_base
+                return project_base
             else:
                 incdir = os.path.join(get_config_var('srcdir'), 'Include')
                 return os.path.normpath(incdir)
