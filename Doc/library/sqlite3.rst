@@ -673,7 +673,7 @@ Connection Objects
 
       If returning a tuple doesn't suffice and you want name-based access to
       columns, you should consider setting :attr:`row_factory` to the
-      highly-optimized :class:`sqlite3.Row` type. :class:`Row` provides both
+      highly optimized :class:`sqlite3.Row` type. :class:`Row` provides both
       index-based and case-insensitive name-based access to columns with almost no
       memory overhead. It will probably be better than your own custom
       dictionary-based approach or even a db_row based solution.
