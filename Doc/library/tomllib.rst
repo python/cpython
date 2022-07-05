@@ -40,7 +40,7 @@ This module defines the following functions:
    Python using this :ref:`conversion table <toml-to-py-table>`. The first
    argument should be a readable binary file-like object.  Returns a
    :class:`dict`.
-   
+
 
    *parse_float* will be called with the string of every TOML
    float to be decoded.  By default, this is equivalent to ``float(num_str)``.
