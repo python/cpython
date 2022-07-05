@@ -4716,7 +4716,7 @@ class DSLParser:
         elif names and parameter_name == names[0] and c_name is None:
             fail("Params named 'module' or 'self' need custom C names")
 
-        key = f"{parameter_name}_{c_name}" if c_name else parameter_name
+        key = f"{parameter_name}_as_{c_name}" if c_name else parameter_name
         self.function.parameters[key] = p
 
     def parse_converter(self, annotation):
