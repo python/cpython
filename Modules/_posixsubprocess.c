@@ -498,6 +498,9 @@ reset_signal_handlers(const sigset_t *child_sigmask)
 #endif /* VFORK_USABLE */
 
 
+#define RESERVED_UID (uid_t)-1
+#define RESERVED_GID (gid_t)-1
+
 /*
  * This function is code executed in the child process immediately after
  * (v)fork to set things up and call exec().
@@ -646,12 +649,12 @@ child_exec(char *const exec_array[],
 #endif /* HAVE_SETGROUPS */
 
 #ifdef HAVE_SETREGID
-    if (call_setgid)
+    if (gid == RESERVED_GID)
         POSIX_CALL(setregid(gid, gid));
 #endif /* HAVE_SETREGID */
 
 #ifdef HAVE_SETREUID
-    if (call_setuid)
+    if (uid == RESERVED_UID)
         POSIX_CALL(setreuid(uid, uid));
 #endif /* HAVE_SETREUID */
 
@@ -1015,8 +1018,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
 #endif /* HAVE_SETGROUPS */
     }
 
-    /* if gid is left uninitialized, call_setgid == 0 so no read access. */
-    gid_t gid;
+    gid_t gid = RESERVED_GID;
     if (gid_object != Py_None) {
 #ifdef HAVE_SETREGID
         if (!_Py_Gid_Converter(gid_object, &gid))
@@ -1030,8 +1032,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
 #endif /* HAVE_SETREUID */
     }
 
-    /* if uid is left uninitialized, call_setuid == 0 so no read access. */
-    uid_t uid;
+    uid_t uid = RESERVED_UID;
     if (uid_object != Py_None) {
 #ifdef HAVE_SETREUID
         if (!_Py_Uid_Converter(uid_object, &uid))
