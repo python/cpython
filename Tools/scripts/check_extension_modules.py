@@ -1,11 +1,11 @@
 """Check extension modules
 
 The script checks shared and built-in extension modules. It verifies that the
-modules have been built and that they can be import successfully. Missing
+modules have been built and that they can be imported successfully. Missing
 modules and failed imports are reported to the user. Shared extension
 files are renamed on failed import.
 
-Module information are parsed from several sources:
+Module information is parsed from several sources:
 
 - core modules hard-coded in Modules/config.c.in
 - Windows-specific modules that are hard-coded in PC/config.c
