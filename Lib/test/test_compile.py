@@ -1032,8 +1032,8 @@ if 1:
         def check_op_count(func, op, expected):
             actual = 0
             for instr in dis.Bytecode(func):
-                 if instr.opname == op:
-                     actual += 1
+                if instr.opname == op:
+                    actual += 1
             self.assertEqual(actual, expected)
 
         def load():
