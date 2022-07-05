@@ -267,7 +267,7 @@ Disassembly of g:
 expr_str = "x + 1"
 
 dis_expr_str = """\
-           RESUME                   0
+  0        RESUME                   0
 
   1        LOAD_NAME                0 (x)
            LOAD_CONST               0 (1)
@@ -278,7 +278,7 @@ dis_expr_str = """\
 simple_stmt_str = "x = x + 1"
 
 dis_simple_stmt_str = """\
-           RESUME                   0
+  0        RESUME                   0
 
   1        LOAD_NAME                0 (x)
            LOAD_CONST               0 (1)
@@ -297,7 +297,7 @@ lst[fun(0)]: int = 1
 # leading newline is for a reason (tests lineno)
 
 dis_annot_stmt_str = """\
-           RESUME                   0
+  0        RESUME                   0
 
   2        SETUP_ANNOTATIONS
            LOAD_CONST               0 (1)
@@ -335,7 +335,7 @@ while 1:
 # Trailing newline has been deliberately omitted
 
 dis_compound_stmt_str = """\
-           RESUME                   0
+  0        RESUME                   0
 
   1        LOAD_CONST               0 (0)
            STORE_NAME               0 (x)
@@ -1092,7 +1092,7 @@ class DisTests(DisTestBase):
     @cpython_only
     def test_binary_specialize(self):
         binary_op_quicken = """\
-              0 RESUME_QUICK             0
+  0           0 RESUME_QUICK             0
 
   1           2 LOAD_NAME                0 (a)
               4 LOAD_NAME                1 (b)
@@ -1110,7 +1110,7 @@ class DisTests(DisTestBase):
         self.do_disassembly_compare(got, binary_op_quicken % "BINARY_OP_ADD_UNICODE     0 (+)", True)
 
         binary_subscr_quicken = """\
-              0 RESUME_QUICK             0
+  0           0 RESUME_QUICK             0
 
   1           2 LOAD_NAME                0 (a)
               4 LOAD_CONST               0 (0)
@@ -1130,7 +1130,7 @@ class DisTests(DisTestBase):
     @cpython_only
     def test_load_attr_specialize(self):
         load_attr_quicken = """\
-              0 RESUME_QUICK             0
+  0           0 RESUME_QUICK             0
 
   1           2 LOAD_CONST               0 ('a')
               4 LOAD_ATTR_SLOT           0 (__class__)
@@ -1144,7 +1144,7 @@ class DisTests(DisTestBase):
     @cpython_only
     def test_call_specialize(self):
         call_quicken = """\
-           RESUME_QUICK             0
+  0        RESUME_QUICK             0
 
   1        PUSH_NULL
            LOAD_NAME                0 (str)
@@ -1718,7 +1718,7 @@ class InstructionTests(InstructionTestCase):
             for instr in dis.get_instructions(code)
         ]
         expected = [
-            (None, None, None, None),
+            (0, 1, 0, 0),
             (1, 1, 0, 1),
             (1, 1, 0, 1),
             (2, 2, 2, 3),
