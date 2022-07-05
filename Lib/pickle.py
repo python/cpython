@@ -1816,5 +1816,9 @@ if __name__ == "__main__":
         else:
             import pprint
             for f in args.pickle_file:
-                obj = load(f)
-                pprint.pprint(obj)
+                try:
+                    obj = load(f)
+                    pprint.pprint(obj)
+                finally:
+                    f.close()
+

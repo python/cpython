@@ -1,0 +1,2 @@
+Fix bug where ``pickle`` and ``pickletools`` command line interfaces do not
+close files

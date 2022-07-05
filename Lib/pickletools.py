@@ -2880,11 +2880,19 @@ if __name__ == "__main__":
         if not args.pickle_file:
             parser.print_help()
         elif len(args.pickle_file) == 1:
-            dis(args.pickle_file[0], args.output, None,
-                args.indentlevel, annotate)
+            try:
+                dis(args.pickle_file[0], args.output, None,
+                    args.indentlevel, annotate)
+            finally:
+                args.pickle_file[0].close()
+                args.output.close()
         else:
             memo = {} if args.memo else None
             for f in args.pickle_file:
-                preamble = args.preamble.format(name=f.name)
-                args.output.write(preamble + '\n')
-                dis(f, args.output, memo, args.indentlevel, annotate)
+                try:
+                    preamble = args.preamble.format(name=f.name)
+                    args.output.write(preamble + '\n')
+                    dis(f, args.output, memo, args.indentlevel, annotate)
+                finally:
+                    f.close()
+                    args.output.close()
