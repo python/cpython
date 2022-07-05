@@ -336,8 +336,8 @@ See :pep:`681` for more details.
 (Contributed by Jelle Zijlstra in :gh:`91860`. PEP written by
 Erik De Bonte and Eric Traut.)
 
-Non-futures Related to Type Hints
----------------------------------
+PEP 563 May Not Be the Future
+-----------------------------
 
 * :pep:`563` Postponed Evaluation of Annotations, ``__future__.annotations``
   that was planned for this release has been indefinitely postponed.
