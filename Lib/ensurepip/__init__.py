@@ -99,7 +99,7 @@ runpy.run_module("pip", run_name="__main__", alter_sys=True)
     ]
     if sys.flags.isolated:
         # run code in isolated mode if currently running isolated
-        cmd.insert(1, '-I')        
+        cmd.insert(1, '-I')
     return subprocess.run(cmd, check=True).returncode
 
 
