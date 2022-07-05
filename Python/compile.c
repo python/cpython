@@ -1803,7 +1803,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     c->u->u_curblock = block;
 
     if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
-        c->u->u_lineno = -1;
+        c->u->u_lineno = 0;
     }
     else {
         if (!compiler_set_qualname(c))
@@ -1811,6 +1811,9 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
     ADDOP_I(c, RESUME, 0);
 
+    if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
+        c->u->u_lineno = -1;
+    }
     return 1;
 }
 
