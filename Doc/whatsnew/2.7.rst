@@ -279,7 +279,7 @@ Comparing an :class:`~collections.OrderedDict` with a regular dictionary
 ignores the insertion order and just compares the keys and values.
 
 How does the :class:`~collections.OrderedDict` work?  It maintains a
-doubly-linked list of keys, appending new keys to the list as they're inserted.
+doubly linked list of keys, appending new keys to the list as they're inserted.
 A secondary dictionary maps keys to their corresponding list node, so
 deletion doesn't have to traverse the entire linked list and therefore
 remains O(1).
@@ -1968,7 +1968,7 @@ GvR worked on merging them into Python's version of :mod:`unittest`.
 
 * :meth:`~unittest.TestCase.assertAlmostEqual` and :meth:`~unittest.TestCase.assertNotAlmostEqual` test
   whether *first* and *second* are approximately equal.  This method
-  can either round their difference to an optionally-specified number
+  can either round their difference to an optionally specified number
   of *places* (the default is 7) and compare it to zero, or require
   the difference to be smaller than a supplied *delta* value.
 
@@ -2333,7 +2333,7 @@ Port-Specific Changes: Windows
 
 * The :mod:`_winreg` module for accessing the registry now implements
   the :func:`~_winreg.CreateKeyEx` and :func:`~_winreg.DeleteKeyEx`
-  functions, extended versions of previously-supported functions that
+  functions, extended versions of previously supported functions that
   take several extra arguments.  The :func:`~_winreg.DisableReflectionKey`,
   :func:`~_winreg.EnableReflectionKey`, and :func:`~_winreg.QueryReflectionKey`
   were also tested and documented.
