@@ -308,7 +308,7 @@ tok_concatenate_interactive_new_line(struct tok_state *tok, const char *line) {
 
     Py_ssize_t current_size = tok->interactive_src_end - tok->interactive_src_start;
     Py_ssize_t line_size = strlen(line);
-    char last_char = line[line_size > 0 ? line_size - 1: line_size];
+    char last_char = line[line_size > 0 ? line_size - 1 : line_size];
     if (last_char != '\n') {
         line_size += 1;
     }
