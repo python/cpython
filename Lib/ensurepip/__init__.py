@@ -91,14 +91,16 @@ runpy.run_module("pip", run_name="__main__", alter_sys=True)
 """
 
     cmd = [
-      sys.executable,
-      # run code in isolated mode if currently running isolated
-      *([ '-I'] if sys.flags.isolated else []),
-      '-W', 'ignore::DeprecationWarning',
-      '-c',
-      code ]
-
-    return subprocess.run( cmd, check = True ).returncode
+        sys.executable,
+        '-W',
+        'ignore::DeprecationWarning',
+        '-c',
+        code,
+    ]
+    if sys.flags.isolated:
+        # run code in isolated mode if currently running isolated
+        cmd.insert(1, '-I')        
+    return subprocess.run(cmd, check=True).returncode
 
 
 def version():
