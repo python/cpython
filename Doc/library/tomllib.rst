@@ -36,9 +36,11 @@ This module defines the following functions:
 
 .. function:: load(fp, /, *, parse_float=float)
 
-   Read a TOML file. The first argument should be a readable and binary file object.
-   Return a :class:`dict`. Convert TOML types to Python using this
-   :ref:`conversion table <toml-to-py-table>`.
+   Deserialize TOML data from a file-like object, converting TOML types to
+   Python using this :ref:`conversion table <toml-to-py-table>`. The first
+   argument should be a readable binary file-like object.  Returns a
+   :class:`dict`.
+   
 
    *parse_float* will be called with the string of every TOML
    float to be decoded.  By default, this is equivalent to ``float(num_str)``.
@@ -51,9 +53,10 @@ This module defines the following functions:
 
 .. function:: loads(s, /, *, parse_float=float)
 
-   Load TOML from a :class:`str` object. Return a :class:`dict`. Convert TOML
-   types to Python using this :ref:`conversion table <toml-to-py-table>`. The
-   *parse_float* argument has the same meaning as in :func:`load`.
+   Deserialize TOML data from a :class:`str` object, converting TOML types to
+   Python using this :ref:`conversion table <toml-to-py-table>`. Returns a
+   :class:`dict`. The *parse_float* argument has the same meaning as in
+   :func:`load`.
 
    A :exc:`TOMLDecodeError` will be raised on an invalid TOML document.
 
