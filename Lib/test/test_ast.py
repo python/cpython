@@ -336,6 +336,41 @@ class AST_Tests(unittest.TestCase):
             tree = ast.parse(snippet)
             compile(tree, '<string>', 'exec')
 
+    def test_invalid_position_information(self):
+        invalid_linenos = [
+            (10, 1), (-10, -11), (10, -11), (-5, -2), (-5, 1)
+        ]
+
+        for lineno, end_lineno in invalid_linenos:
+            with self.subTest(f"Check invalid linenos {lineno}:{end_lineno}"):
+                snippet = "a = 1"
+                tree = ast.parse(snippet)
+                tree.body[0].lineno = lineno
+                tree.body[0].end_lineno = end_lineno
+                with self.assertRaises(ValueError):
+                    compile(tree, '<string>', 'exec')
+
+        invalid_col_offsets = [
+            (10, 1), (-10, -11), (10, -11), (-5, -2), (-5, 1)
+        ]
+        for col_offset, end_col_offset in invalid_col_offsets:
+            with self.subTest(f"Check invalid col_offset {col_offset}:{end_col_offset}"):
+                snippet = "a = 1"
+                tree = ast.parse(snippet)
+                tree.body[0].col_offset = col_offset
+                tree.body[0].end_col_offset = end_col_offset
+                with self.assertRaises(ValueError):
+                    compile(tree, '<string>', 'exec')
+
+    def test_compilation_of_ast_nodes_with_default_end_position_values(self):
+        tree = ast.Module(body=[
+            ast.Import(names=[ast.alias(name='builtins', lineno=1, col_offset=0)], lineno=1, col_offset=0),
+            ast.Import(names=[ast.alias(name='traceback', lineno=0, col_offset=0)], lineno=0, col_offset=1)
+        ], type_ignores=[])
+
+        # Check that compilation doesn't crash. Note: this may crash explicitly only on debug mode.
+        compile(tree, "<string>", "exec")
+
     def test_slice(self):
         slc = ast.parse("x[::]").body[0].value.slice
         self.assertIsNone(slc.upper)

@@ -1,0 +1,28 @@
+name: Verify bundled pip and setuptools
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'Lib/ensurepip/_bundled/**'
+      - '.github/workflows/verify-ensurepip-wheels.yml'
+      - 'Tools/scripts/verify_ensurepip_wheels.py'
+  pull_request:
+    paths:
+      - 'Lib/ensurepip/_bundled/**'
+      - '.github/workflows/verify-ensurepip-wheels.yml'
+      - 'Tools/scripts/verify_ensurepip_wheels.py'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3'
+      - name: Compare checksums of bundled pip and setuptools to ones published on PyPI
+        run: ./Tools/scripts/verify_ensurepip_wheels.py

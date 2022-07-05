@@ -116,7 +116,7 @@ class EnvBuilder:
             elif os.path.islink(d) or os.path.isfile(d):
                 raise ValueError('Unable to create directory %r' % d)
 
-        if os.pathsep in env_dir:
+        if os.pathsep in os.fspath(env_dir):
             raise ValueError(f'Refusing to create a venv in {env_dir} because '
                              f'it contains the PATH separator {os.pathsep}.')
         if os.path.exists(env_dir) and self.clear:
@@ -138,6 +138,7 @@ class EnvBuilder:
 
         context.inc_path = incpath
         create_if_needed(incpath)
+        context.lib_path = libpath
         create_if_needed(libpath)
         # Issue 21197: create lib64 as a symlink to lib on 64-bit non-OS X POSIX
         if ((sys.maxsize > 2**32) and (os.name == 'posix') and
