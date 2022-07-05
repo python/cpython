@@ -75,7 +75,7 @@ New syntax features:
 New typing features:
 
 * :pep:`646`: Variadic generics.
-* :pep:`655`: Marking individual TypedDict items as required or potentially-missing.
+* :pep:`655`: Marking individual TypedDict items as required or potentially missing.
 * :pep:`673`: ``Self`` type.
 * :pep:`675`: Arbitrary literal string type.
 
