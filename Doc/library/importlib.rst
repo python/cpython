@@ -447,7 +447,7 @@ ABC hierarchy::
             package. This attribute is not set on modules.
 
         - :attr:`__package__`
-            The fully-qualified name of the package under which the module was
+            The fully qualified name of the package under which the module was
             loaded as a submodule (or the empty string for top-level modules).
             For packages, it is the same as :attr:`__name__`.  The
             :func:`importlib.util.module_for_loader` decorator can handle the
@@ -1410,7 +1410,7 @@ find and load modules.
 
    (``__name__``)
 
-   A string for the fully-qualified name of the module.
+   A string for the fully qualified name of the module.
 
    .. attribute:: loader
 
@@ -1450,7 +1450,7 @@ find and load modules.
 
    (``__package__``)
 
-   (Read-only) The fully-qualified name of the package under which the module
+   (Read-only) The fully qualified name of the package under which the module
    should be loaded as a submodule (or the empty string for top-level modules).
    For packages, it is the same as :attr:`__name__`.
 
