@@ -918,6 +918,9 @@ oldsharedmods: $(SHAREDMODS) pybuilddir.txt
 		fi; \
 	done
 
+checksharedmods: oldsharedmods sharedmods $(PYTHON_FOR_BUILD_DEPS)
+	@$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/scripts/check_extension_modules.py
+
 Modules/Setup.local:
 	@# Create empty Setup.local when file was deleted by user
 	echo "# Edit this file for local setup changes" > $@
@@ -2531,7 +2534,8 @@ update-config:
 Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
 
 # Declare targets that aren't real files
-.PHONY: all build_all build_wasm sharedmods check-clean-src oldsharedmods test quicktest
+.PHONY: all build_all build_wasm sharedmods check-clean-src
+.PHONY: oldsharedmods checksharedmods test quicktest
 .PHONY: install altinstall oldsharedinstall bininstall altbininstall
 .PHONY: maninstall libinstall inclinstall libainstall sharedinstall
 .PHONY: frameworkinstall frameworkinstallframework frameworkinstallstructure
