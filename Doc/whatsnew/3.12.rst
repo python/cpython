@@ -299,6 +299,11 @@ Removed
   has no ``copy()`` method, only a ``__copy__()`` method.
   (Contributed by Victor Stinner in :gh:`94383`.)
 
+* :mod:`zipimport`: Remove ``find_loader()`` and ``find_module()`` methods,
+  deprecated in Python 3.10: use the ``find_spec()`` method instead.  See
+  :pep:`451` for the rationale.
+  (Contributed by Victor Stinner in :gh:`94379`.)
+
 
 Porting to Python 3.12
 ======================
