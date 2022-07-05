@@ -542,7 +542,7 @@ Glossary
       machines.
 
       However, some extension modules, either standard or third-party,
-      are designed so as to release the GIL when doing computationally-intensive
+      are designed so as to release the GIL when doing computationally intensive
       tasks such as compression or hashing.  Also, the GIL is always released
       when doing I/O.
 

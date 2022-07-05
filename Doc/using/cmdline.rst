@@ -321,7 +321,7 @@ Miscellaneous options
    between repeated invocations of Python.
 
    Hash randomization is intended to provide protection against a
-   denial-of-service caused by carefully-chosen inputs that exploit the worst
+   denial-of-service caused by carefully chosen inputs that exploit the worst
    case performance of a dict construction, O(n\ :sup:`2`) complexity.  See
    http://www.ocert.org/advisories/ocert-2011-003.html for details.
 
@@ -417,7 +417,7 @@ Miscellaneous options
    whether the actual warning category of the message is a subclass of the
    specified warning category.
 
-   The *module* field matches the (fully-qualified) module name; this match is
+   The *module* field matches the (fully qualified) module name; this match is
    case-sensitive.
 
    The *lineno* field matches the line number, where zero matches all line

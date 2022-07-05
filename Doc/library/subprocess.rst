@@ -358,7 +358,7 @@ functions.
 
    .. warning::
 
-      For maximum reliability, use a fully-qualified path for the executable.
+      For maximum reliability, use a fully qualified path for the executable.
       To search for an unqualified name on :envvar:`PATH`, use
       :meth:`shutil.which`. On all platforms, passing :data:`sys.executable`
       is the recommended way to launch the current Python interpreter again,

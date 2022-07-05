@@ -41,7 +41,7 @@ For example, ``'[?]'`` matches the character ``'?'``.
 
 .. function:: glob(pathname, *, root_dir=None, dir_fd=None, recursive=False)
 
-   Return a possibly-empty list of path names that match *pathname*, which must be
+   Return a possibly empty list of path names that match *pathname*, which must be
    a string containing a path specification. *pathname* can be either absolute
    (like :file:`/usr/src/Python-1.5/Makefile`) or relative (like
    :file:`../../Tools/\*/\*.gif`), and can contain shell-style wildcards. Broken
