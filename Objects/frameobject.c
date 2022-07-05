@@ -304,8 +304,12 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     /* These instructions only appear in exception handlers, which
                      * skip this switch ever since the move to zero-cost exceptions
                      * (their stack remains UNINITIALIZED because nothing sets it).
+                     *
+                     * Note that explain_incompatible_stack interprets an
+                     * UNINITIALIZED stack as belonging to an exception handler.
                      */
                     Py_UNREACHABLE();
+                    break;
                 case RETURN_VALUE:
                 case RAISE_VARARGS:
                 case RERAISE:
