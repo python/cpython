@@ -21,7 +21,6 @@ import argparse
 import collections
 import enum
 import logging
-from operator import mod
 import os
 import pathlib
 import re
