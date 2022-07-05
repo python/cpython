@@ -873,14 +873,12 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
     PyObject *converted_args = NULL, *fast_args = NULL;
     PyObject *preexec_fn_args_tuple = NULL;
     int call_setgid = 0, call_setgroups = 0, call_setuid = 0;
-    uid_t uid;
-    gid_t gid, *groups = NULL;
+    gid_t *groups = NULL;
     PyObject *cwd_obj2 = NULL;
-    const char *cwd;
-    pid_t pid = -1;
+    const char *cwd = NULL;
     int need_to_reenable_gc = 0;
-    char *const *exec_array, *const *argv = NULL, *const *envp = NULL;
-    Py_ssize_t arg_num, num_groups = 0;
+    char *const *argv = NULL, *const *envp = NULL;
+    Py_ssize_t num_groups = 0;
     int need_after_fork = 0;
     int saved_errno = 0;
 
@@ -913,7 +911,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
         need_to_reenable_gc = PyGC_Disable();
     }
 
-    exec_array = _PySequence_BytesToCharpArray(executable_list);
+    char *const *exec_array = _PySequence_BytesToCharpArray(executable_list);
     if (!exec_array)
         goto cleanup;
 
@@ -931,7 +929,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
         converted_args = PyTuple_New(num_args);
         if (converted_args == NULL)
             goto cleanup;
-        for (arg_num = 0; arg_num < num_args; ++arg_num) {
+        for (Py_ssize_t arg_num = 0; arg_num < num_args; ++arg_num) {
             PyObject *borrowed_arg, *converted_arg;
             if (PySequence_Fast_GET_SIZE(fast_args) != num_args) {
                 PyErr_SetString(PyExc_RuntimeError, "args changed during iteration");
@@ -960,8 +958,6 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
         if (PyUnicode_FSConverter(cwd_obj, &cwd_obj2) == 0)
             goto cleanup;
         cwd = PyBytes_AsString(cwd_obj2);
-    } else {
-        cwd = NULL;
     }
 
     if (groups_list != Py_None) {
@@ -1001,6 +997,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
                 Py_DECREF(elem);
                 goto cleanup;
             } else {
+                gid_t gid;
                 if (!_Py_Gid_Converter(elem, &gid)) {
                     Py_DECREF(elem);
                     PyErr_SetString(PyExc_ValueError, "invalid group id");
@@ -1031,6 +1028,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
 #endif /* HAVE_SETREUID */
     }
 
+    uid_t uid;
     if (uid_object != Py_None) {
 #ifdef HAVE_SETREUID
         if (!_Py_Uid_Converter(uid_object, &uid))
@@ -1080,6 +1078,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
     }
 #endif
 
+    pid_t pid;
     pid = do_fork_exec(exec_array, argv, envp, cwd,
                        p2cread, p2cwrite, c2pread, c2pwrite,
                        errread, errwrite, errpipe_read, errpipe_write,
