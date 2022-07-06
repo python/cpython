@@ -1307,7 +1307,7 @@ As an application developer, it may make more sense to take direct control by
 registering custom adapter functions.
 
 
-.. _sqlite3-conform
+.. _sqlite3-conform:
 
 Letting your object adapt itself
 """"""""""""""""""""""""""""""""
