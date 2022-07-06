@@ -71,40 +71,14 @@
 #define MAX_ALLOWED_STACK_USE (STACK_USE_GUIDELINE * 100)
 
 
-/* Pseudo-instructions used in the compiler,
- * but turned into NOPs or other instructions
- * by the assembler. */
-#define SETUP_FINALLY -1
-#define SETUP_CLEANUP -2
-#define SETUP_WITH -3
-#define POP_BLOCK -4
-#define JUMP -5
-#define JUMP_NO_INTERRUPT -6
-#define POP_JUMP_IF_FALSE -7
-#define POP_JUMP_IF_TRUE -8
-#define POP_JUMP_IF_NONE -9
-#define POP_JUMP_IF_NOT_NONE -10
-#define LOAD_METHOD -11
-
-#define MIN_VIRTUAL_OPCODE -11
-#define MAX_ALLOWED_OPCODE 254
+#define MAX_REAL_OPCODE 254
 
 #define IS_WITHIN_OPCODE_RANGE(opcode) \
-        ((opcode) >= MIN_VIRTUAL_OPCODE && (opcode) <= MAX_ALLOWED_OPCODE)
-
-#define IS_VIRTUAL_OPCODE(opcode) ((opcode) < 0)
-
-#define IS_VIRTUAL_JUMP_OPCODE(opcode) \
-        ((opcode) == JUMP || \
-         (opcode) == JUMP_NO_INTERRUPT || \
-         (opcode) == POP_JUMP_IF_NONE || \
-         (opcode) == POP_JUMP_IF_NOT_NONE || \
-         (opcode) == POP_JUMP_IF_FALSE || \
-         (opcode) == POP_JUMP_IF_TRUE)
+        (((opcode) >= 0 && (opcode) <= MAX_REAL_OPCODE) || \
+         IS_PSEUDO_OPCODE(opcode))
 
 #define IS_JUMP_OPCODE(opcode) \
-        (IS_VIRTUAL_JUMP_OPCODE(opcode) || \
-         is_bit_set_in_table(_PyOpcode_Jump, opcode))
+         is_bit_set_in_table(_PyOpcode_Jump, opcode)
 
 #define IS_BLOCK_PUSH_OPCODE(opcode) \
         ((opcode) == SETUP_FINALLY || \
@@ -124,7 +98,6 @@
          (opcode) == POP_JUMP_BACKWARD_IF_TRUE || \
          (opcode) == POP_JUMP_FORWARD_IF_FALSE || \
          (opcode) == POP_JUMP_BACKWARD_IF_FALSE)
-
 
 #define IS_BACKWARDS_JUMP_OPCODE(opcode) \
         ((opcode) == JUMP_BACKWARD || \
@@ -183,11 +156,11 @@ typedef struct exceptstack {
 static inline int
 is_bit_set_in_table(const uint32_t *table, int bitindex) {
     /* Is the relevant bit set in the relevant word? */
-    /* 256 bits fit into 8 32-bits words.
+    /* 512 bits fit into 9 32-bits words.
      * Word is indexed by (bitindex>>ln(size of int in bits)).
      * Bit within word is the low bits of bitindex.
      */
-    if (bitindex >= 0 && bitindex < 256) {
+    if (bitindex >= 0 && bitindex < 512) {
         uint32_t word = table[bitindex >> LOG_BITS_PER_INT];
         return (word >> (bitindex & MASK_LOW_LOG_BITS)) & 1;
     }
@@ -218,7 +191,7 @@ static int
 instr_size(struct instr *instruction)
 {
     int opcode = instruction->i_opcode;
-    assert(!IS_VIRTUAL_OPCODE(opcode));
+    assert(!IS_PSEUDO_OPCODE(opcode));
     int oparg = HAS_ARG(opcode) ? instruction->i_oparg : 0;
     int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
     int caches = _PyOpcode_Caches[opcode];
@@ -229,7 +202,7 @@ static void
 write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
 {
     int opcode = instruction->i_opcode;
-    assert(!IS_VIRTUAL_OPCODE(opcode));
+    assert(!IS_PSEUDO_OPCODE(opcode));
     int oparg = HAS_ARG(opcode) ? instruction->i_oparg : 0;
     int caches = _PyOpcode_Caches[opcode];
     switch (ilen - caches) {
@@ -1274,7 +1247,7 @@ static int
 is_end_of_basic_block(struct instr *instr)
 {
     int opcode = instr->i_opcode;
-    return is_jump(instr) || IS_SCOPE_EXIT_OPCODE(opcode);
+    return IS_JUMP_OPCODE(opcode) || IS_SCOPE_EXIT_OPCODE(opcode);
 }
 
 static int
@@ -1324,7 +1297,7 @@ basicblock_addop(basicblock *b, int opcode, int oparg,
 static int
 compiler_addop(struct compiler *c, int opcode, bool line)
 {
-    assert(!HAS_ARG(opcode) || IS_ARTIFICIAL(opcode));
+    assert(!HAS_ARG(opcode));
     if (compiler_use_new_implicit_block_if_needed(c) < 0) {
         return -1;
     }
@@ -1786,7 +1759,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     c->u->u_curblock = block;
 
     if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
-        c->u->u_loc.lineno = -1;
+        c->u->u_loc.lineno = 0;
     }
     else {
         if (!compiler_set_qualname(c))
@@ -1794,6 +1767,9 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
     ADDOP_I(c, RESUME, 0);
 
+    if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
+        c->u->u_loc.lineno = -1;
+    }
     return 1;
 }
 
@@ -8554,6 +8530,8 @@ assemble(struct compiler *c, int addNone)
 {
     PyCodeObject *co = NULL;
     PyObject *consts = NULL;
+    struct assembler a;
+    memset(&a, 0, sizeof(struct assembler));
 
     int code_flags = compute_code_flags(c);
     if (code_flags < 0) {
@@ -8650,12 +8628,7 @@ assemble(struct compiler *c, int addNone)
     if (maxdepth < 0) {
         goto error;
     }
-    if (maxdepth > MAX_ALLOWED_STACK_USE) {
-        PyErr_Format(PyExc_SystemError,
-                     "excessive stack use: stack is %d deep",
-                     maxdepth);
-        goto error;
-    }
+    /* TO DO -- For 3.12, make sure that `maxdepth <= MAX_ALLOWED_STACK_USE` */
 
     if (label_exception_targets(entryblock)) {
         goto error;
@@ -8683,7 +8656,6 @@ assemble(struct compiler *c, int addNone)
 
 
     /* Create assembler */
-    struct assembler a;
     if (!assemble_init(&a, c->u->u_firstlineno))
         goto error;
 
@@ -8994,7 +8966,6 @@ apply_static_swaps(basicblock *block, int i)
 static bool
 jump_thread(struct instr *inst, struct instr *target, int opcode)
 {
-    assert(!IS_VIRTUAL_OPCODE(opcode) || IS_VIRTUAL_JUMP_OPCODE(opcode));
     assert(is_jump(inst));
     assert(is_jump(target));
     // bpo-45773: If inst->i_target == target->i_target, then nothing actually

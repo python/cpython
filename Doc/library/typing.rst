@@ -78,7 +78,7 @@ annotations. These include:
      *Introducing* :data:`TypeVarTuple`
 * :pep:`647`: User-Defined Type Guards
      *Introducing* :data:`TypeGuard`
-* :pep:`655`: Marking individual TypedDict items as required or potentially-missing
+* :pep:`655`: Marking individual TypedDict items as required or potentially missing
      *Introducing* :data:`Required` and :data:`NotRequired`
 * :pep:`673`: Self type
     *Introducing* :data:`Self`
@@ -1034,7 +1034,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    as either required or non-required respectively.
 
    For more information, see :class:`TypedDict` and
-   :pep:`655` ("Marking individual TypedDict items as required or potentially-missing").
+   :pep:`655` ("Marking individual TypedDict items as required or potentially missing").
 
    .. versionadded:: 3.11
 
