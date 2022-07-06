@@ -115,11 +115,13 @@ class IsolatedAsyncioTestCase(TestCase):
     def _setupAsyncioRunner(self):
         assert self._asyncioRunner is None, 'asyncio runner is already initialized'
         runner = asyncio.Runner(debug=True)
+        asyncio.set_event_loop(runner.get_loop())
         self._asyncioRunner = runner
 
     def _tearDownAsyncioRunner(self):
         runner = self._asyncioRunner
         runner.close()
+        asyncio.set_event_loop(None)
 
     def run(self, result=None):
         self._setupAsyncioRunner()
