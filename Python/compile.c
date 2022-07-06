@@ -8981,7 +8981,6 @@ jump_thread(struct instr *inst, struct instr *target, int opcode)
 }
 
 /* Maximum size of basic block that should be copied in optimizer */
-/* Set to 0 to disable to optimisation - see gh-92228 */
 #define MAX_COPY_SIZE 4
 
 /* Optimization */
