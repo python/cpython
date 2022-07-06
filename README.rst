@@ -70,7 +70,7 @@ section of the `Developer Guide`_ for current detailed information on
 dependencies for various Linux distributions and macOS.
 
 On macOS, there are additional configure and build options related
-to macOS framework and universal builds.  Refer to `Mac/README.rst
+to the macOS framework and universal builds.  Refer to `Mac/README.rst
 <https://github.com/python/cpython/blob/main/Mac/README.rst>`_.
 
 On Windows, see `PCbuild/readme.txt
@@ -90,7 +90,7 @@ a ``make clean`` at the top-level first.)
 
 To get an optimized build of Python, ``configure --enable-optimizations``
 before you run ``make``.  This sets the default make targets up to enable
-Profile Guided Optimization (PGO) and may be used to auto-enable Link Time
+Profile Guided Optimization (PGO) may be used to auto-enable Link Time
 Optimization (LTO) on some platforms.  For more details, see the sections
 below.
 
@@ -100,7 +100,7 @@ Profile Guided Optimization
 PGO takes advantage of recent versions of the GCC or Clang compilers.  If used,
 either via ``configure --enable-optimizations`` or by manually running
 ``make profile-opt`` regardless of configure flags, the optimized build
-process will perform the following steps:
+the process will perform the following steps:
 
 The entire Python directory is cleaned of temporary files that may have
 resulted from a previous compilation.
@@ -112,7 +112,7 @@ profiling instructions embedded inside.
 
 After the instrumented interpreter is built, the Makefile will run a training
 workload.  This is necessary in order to profile the interpreter's execution.
-Note also that any output, both stdout and stderr, that may appear at this step
+Note also that any output, both stdout, and stderr, that may appear at this step
 is suppressed.
 
 The final step is to build the actual interpreter, using the information
@@ -134,7 +134,7 @@ What's New
 
 We have a comprehensive overview of the changes in the `What's New in Python
 3.12 <https://docs.python.org/3.12/whatsnew/3.12.html>`_ document.  For a more
-detailed change log, read `Misc/NEWS
+the detailed change log, read `Misc/NEWS
 <https://github.com/python/cpython/blob/main/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
 <https://github.com/python/cpython/commits/main>`_.
@@ -161,7 +161,7 @@ For information about building Python's documentation, refer to `Doc/README.rst
 Converting From Python 2.x to 3.x
 ---------------------------------
 
-Significant backward incompatible changes were made for the release of Python
+Significant backward-incompatible changes were made for the release of Python
 3.0, which may cause programs written for Python 2 to fail when run with Python
 3.  For more information about porting your code from Python 2 to Python 3, see
 the `Porting HOWTO <https://docs.python.org/3/howto/pyporting.html>`_.
@@ -218,7 +218,7 @@ Bug reports are welcome!  You can use Github to `report bugs
 <https://github.com/python/cpython/issues>`_, and/or `submit pull requests
 <https://github.com/python/cpython/pulls>`_.
 
-You can also follow development discussion on the `python-dev mailing list
+You can also follow the development discussion on the `python-dev mailing list
 <https://mail.python.org/mailman/listinfo/python-dev/>`_.
 
 
