@@ -320,163 +320,161 @@ def testing_context(server_cert=SIGNED_CERTFILE, *, server_chain=True):
     return client_context, server_context, hostname
 
 
-class Server(threading_helper.Server):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(self._on_client, *args, **kwargs)
-
-    def _on_client(self, socket, peer_address, certificate=None,
+def _on_ssl_client(socket, peer_address, certificate=None,
                    ssl_version=ssl.PROTOCOL_TLS_SERVER,
                    certreqs=ssl.CERT_NONE, cacerts=None,
                    chatty=True, starttls_server=False,
                    alpn_protocols=None, ciphers=None, context=None):
-        # A mildly complicated server, because we want it to work both
-        # with and without the SSL wrapper around the socket connection, so
-        # that we can test the STARTTLS functionality.
+    # A mildly complicated server, because we want it to work both
+    # with and without the SSL wrapper around the socket connection, so
+    # that we can test the STARTTLS functionality.
 
-        def log(message):
-            if support.verbose and chatty:
-                sys.stdout.write(f' server: {message}\n')
+    def log(message):
+        if support.verbose and chatty:
+            sys.stdout.write(f' server: {message}\n')
 
-        if context is None:
-            context = ssl.SSLContext(ssl_version)
-            context.verify_mode = certreqs
-            if cacerts:
-                context.load_verify_locations(cacerts)
-            if certificate:
-                context.load_cert_chain(certificate)
-            if alpn_protocols:
-                context.set_alpn_protocols(alpn_protocols)
-            if ciphers:
-                context.set_ciphers(ciphers)
+    if context is None:
+        context = ssl.SSLContext(ssl_version)
+        context.verify_mode = certreqs
+        if cacerts:
+            context.load_verify_locations(cacerts)
+        if certificate:
+            context.load_cert_chain(certificate)
+        if alpn_protocols:
+            context.set_alpn_protocols(alpn_protocols)
+        if ciphers:
+            context.set_ciphers(ciphers)
 
-        # Returned via the future
-        selected_alpn_protocols = []
-        shared_ciphers = []
+    # Returned via the future
+    selected_alpn_protocols = []
+    shared_ciphers = []
 
-        # Functions swithed on wrapping/unwrapping
-        read = lambda: socket.recv(1024)
-        write = socket.send
-        # A caller of on_client will close the socket
-        close = lambda: None
+    # Functions swithed on wrapping/unwrapping
+    read = lambda: socket.recv(1024)
+    write = socket.send
+    # A caller of on_client will close the socket
+    close = lambda: None
 
-        def wrap_conn(socket):
-            # Notes on how to treat exceptions thrown by wrap_socket:
-            #
-            # We treat ConnectionResetError as though it were an
-            # SSLError - OpenSSL on Ubuntu abruptly closes the
-            # connection when asked to use an unsupported protocol.
-            #
-            # BrokenPipeError is raised in TLS 1.3 mode, when OpenSSL
-            # tries to send session tickets after handshake.
-            # https://github.com/openssl/openssl/issues/6342
-            #
-            # ConnectionAbortedError is raised in TLS 1.3 mode, when OpenSSL
-            # tries to send session tickets after handshake when using WinSock.
-            #
-            # OSError may occur with wrong protocols, e.g. both
-            # sides use PROTOCOL_TLS_SERVER.
-
-            try:
-                sslconn = context.wrap_socket(socket, server_side=True)
-                nonlocal read, write, close
-                read = lambda: sslconn.read()
-                write = sslconn.write
-                close = sslconn.close
-
-                nonlocal selected_alpn_protocols, shared_ciphers
-                selected_alpn_protocols = sslconn.selected_alpn_protocol()
-                shared_ciphers = sslconn.shared_ciphers()
-
-                if context.verify_mode == ssl.CERT_REQUIRED:
-                    cert = sslconn.getpeercert()
-                    log(f"client cert is {pprint.pformat(cert)}")
-                    cert_binary = sslconn.getpeercert(True)
-                    if cert_binary is None:
-                        log("client did not provide a cert")
-                    else:
-                        log(f"cert binary is {len(cert_binary)}b")
-
-                log(f"connection cipher is now {sslconn.cipher()}")
-                return sslconn
-
-            except (ssl.SSLError, OSError) as e:
-                # bpo-44229, bpo-43855, bpo-44237, and bpo-33450:
-                # Ignore spurious EPROTOTYPE returned by write() on macOS.
-                # See also http://erickt.github.io/blog/2014/11/19/adventures-in-debugging-a-potential-osx-kernel-bug/
-                if e.errno != errno.EPROTOTYPE and sys.platform != "darwin":
-                    raise
-
-        log(f'new connection from {peer_address!r}')
-        sslconn = None if starttls_server else wrap_conn(socket)
-
-        forced_exit = False
-        while not forced_exit and (msg := read()):
-            stripped = msg.strip()
-
-            if stripped == b'over':
-                log("client closed connection")
-                forced_exit = True
-                close()
-
-            elif starttls_server and stripped == b'STARTTLS':
-                log("read STARTTLS from client, sending OK")
-                write(b"OK\n")
-                sslconn = wrap_conn(socket)
-
-            elif starttls_server and sslconn and stripped == b'ENDTLS':
-                log("read ENDTLS from client, sending OK")
-                write(b"OK\n")
-                socket = sslconn.unwrap()
-                sslconn = None
-                log("connection is now unencrypted")
-
-            elif stripped == b'CB tls-unique':
-                log("read CB tls-unique from client, sending our CB data")
-                data = sslconn.get_channel_binding("tls-unique")
-                write(repr(data).encode("us-ascii") + b"\n")
-
-            elif stripped == b'PHA':
-                log("initiating post handshake auth")
-                try:
-                    sslconn.verify_client_post_handshake()
-                except ssl.SSLError as e:
-                    write(repr(e).encode("us-ascii") + b"\n")
-                else:
-                    write(b"OK\n")
-
-            elif stripped == b'HASCERT':
-                if sslconn.getpeercert() is not None:
-                    write(b'TRUE\n')
-                else:
-                    write(b'FALSE\n')
-
-            elif stripped == b'GETCERT':
-                cert = sslconn.getpeercert()
-                write(repr(cert).encode("us-ascii") + b"\n")
-
-            elif stripped == b'VERIFIEDCHAIN':
-                certs = sslconn._sslobj.get_verified_chain()
-                write(len(certs).to_bytes(1, "big") + b"\n")
-
-            elif stripped == b'UNVERIFIEDCHAIN':
-                certs = sslconn._sslobj.get_unverified_chain()
-                write(len(certs).to_bytes(1, "big") + b"\n")
-
-            else:
-                ctype = "encrypted" if sslconn else "unencrypted"
-                log(f"read {msg} ({ctype}), sending back {msg.lower()} ({ctype})")
-                write(msg.lower())
+    def wrap_conn(socket):
+        # Notes on how to treat exceptions thrown by wrap_socket:
+        #
+        # We treat ConnectionResetError as though it were an
+        # SSLError - OpenSSL on Ubuntu abruptly closes the
+        # connection when asked to use an unsupported protocol.
+        #
+        # BrokenPipeError is raised in TLS 1.3 mode, when OpenSSL
+        # tries to send session tickets after handshake.
+        # https://github.com/openssl/openssl/issues/6342
+        #
+        # ConnectionAbortedError is raised in TLS 1.3 mode, when OpenSSL
+        # tries to send session tickets after handshake when using WinSock.
+        #
+        # OSError may occur with wrong protocols, e.g. both
+        # sides use PROTOCOL_TLS_SERVER.
 
         try:
-            socket = sslconn.unwrap()
-        except OSError:
-            # Many tests shut the TCP connection down without an SSL shutdown.
-            # This causes unwrap() to raise OSError with errno=0.
-            pass
+            sslconn = context.wrap_socket(socket, server_side=True)
+            nonlocal read, write, close
+            read = lambda: sslconn.read()
+            write = sslconn.write
+            close = sslconn.close
 
-        close()
-        return selected_alpn_protocols, shared_ciphers
+            nonlocal selected_alpn_protocols, shared_ciphers
+            selected_alpn_protocols = sslconn.selected_alpn_protocol()
+            shared_ciphers = sslconn.shared_ciphers()
+
+            if context.verify_mode == ssl.CERT_REQUIRED:
+                cert = sslconn.getpeercert()
+                log(f"client cert is {pprint.pformat(cert)}")
+                cert_binary = sslconn.getpeercert(True)
+                if cert_binary is None:
+                    log("client did not provide a cert")
+                else:
+                    log(f"cert binary is {len(cert_binary)}b")
+
+            log(f"connection cipher is now {sslconn.cipher()}")
+            return sslconn
+
+        except (ssl.SSLError, OSError) as e:
+            # bpo-44229, bpo-43855, bpo-44237, and bpo-33450:
+            # Ignore spurious EPROTOTYPE returned by write() on macOS.
+            # See also http://erickt.github.io/blog/2014/11/19/adventures-in-debugging-a-potential-osx-kernel-bug/
+            if e.errno != errno.EPROTOTYPE and sys.platform != "darwin":
+                raise
+
+    log(f'new connection from {peer_address!r}')
+    sslconn = None if starttls_server else wrap_conn(socket)
+
+    forced_exit = False
+    while not forced_exit and (msg := read()):
+        stripped = msg.strip()
+
+        if stripped == b'over':
+            log("client closed connection")
+            forced_exit = True
+            close()
+
+        elif starttls_server and stripped == b'STARTTLS':
+            log("read STARTTLS from client, sending OK")
+            write(b"OK\n")
+            sslconn = wrap_conn(socket)
+
+        elif starttls_server and sslconn and stripped == b'ENDTLS':
+            log("read ENDTLS from client, sending OK")
+            write(b"OK\n")
+            socket = sslconn.unwrap()
+            sslconn = None
+            log("connection is now unencrypted")
+
+        elif stripped == b'CB tls-unique':
+            log("read CB tls-unique from client, sending our CB data")
+            data = sslconn.get_channel_binding("tls-unique")
+            write(repr(data).encode("us-ascii") + b"\n")
+
+        elif stripped == b'PHA':
+            log("initiating post handshake auth")
+            try:
+                sslconn.verify_client_post_handshake()
+            except ssl.SSLError as e:
+                write(repr(e).encode("us-ascii") + b"\n")
+            else:
+                write(b"OK\n")
+
+        elif stripped == b'HASCERT':
+            if sslconn.getpeercert() is not None:
+                write(b'TRUE\n')
+            else:
+                write(b'FALSE\n')
+
+        elif stripped == b'GETCERT':
+            cert = sslconn.getpeercert()
+            write(repr(cert).encode("us-ascii") + b"\n")
+
+        elif stripped == b'VERIFIEDCHAIN':
+            certs = sslconn._sslobj.get_verified_chain()
+            write(len(certs).to_bytes(1, "big") + b"\n")
+
+        elif stripped == b'UNVERIFIEDCHAIN':
+            certs = sslconn._sslobj.get_unverified_chain()
+            write(len(certs).to_bytes(1, "big") + b"\n")
+
+        else:
+            ctype = "encrypted" if sslconn else "unencrypted"
+            log(f"read {msg} ({ctype}), sending back {msg.lower()} ({ctype})")
+            write(msg.lower())
+
+    try:
+        socket = sslconn.unwrap()
+    except OSError:
+        # Many tests shut the TCP connection down without an SSL shutdown.
+        # This causes unwrap() to raise OSError with errno=0.
+        pass
+
+    close()
+    return selected_alpn_protocols, shared_ciphers
+
+
+Server = functools.partial(threading_helper.Server, _on_ssl_client)
 
 
 class BasicSocketTests(unittest.TestCase):
