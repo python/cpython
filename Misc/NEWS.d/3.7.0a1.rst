@@ -3149,7 +3149,7 @@ they are finished in multiprocessing.Pool.
 .. section: Library
 
 The mode argument of os.makedirs() no longer affects the file permission
-bits of newly-created intermediate-level directories.
+bits of newly created intermediate-level directories.
 
 ..
 
