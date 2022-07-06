@@ -4714,7 +4714,7 @@ class DSLParser:
         if parameter_name in names[1:]:
             fail("You can't have two parameters named " + repr(parameter_name) + "!")
         elif names and parameter_name == names[0] and c_name is None:
-            fail("Params named 'module' or 'self' need custom C names")
+            fail(f"Parameter '{parameter_name}' requires a custom C name")
 
         key = f"{parameter_name}_as_{c_name}" if c_name else parameter_name
         self.function.parameters[key] = p
