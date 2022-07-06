@@ -848,6 +848,12 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         finally:
             tempfile.tempdir = orig_tempdir
 
+    def test_absolute_path(self):
+        """Test that the path returned is absolute"""
+        path = tempfile.mkdtemp(dir=".")
+        self.assertEqual(os.path.isabs(path), True)
+        os.rmdir(path)
+
 
 class TestMktemp(BaseTestCase):
     """Test mktemp()."""
