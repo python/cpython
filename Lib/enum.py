@@ -309,18 +309,17 @@ class _proto_member:
         if descriptor and not need_override:
             # previous enum.property found, no further action needed
             pass
+        elif descriptor and need_override:
+            redirect = property()
+            redirect.__set_name__(enum_class, member_name)
+            # previous enum.property found, but some other inherited attribute
+            # is in the way; copy fget, fset, fdel to this one
+            redirect.fget = descriptor.fget
+            redirect.fset = descriptor.fset
+            redirect.fdel = descriptor.fdel
+            setattr(enum_class, member_name, redirect)
         else:
-            if descriptor and need_override:
-                redirect = property()
-                redirect.__set_name__(enum_class, member_name)
-                # previous enum.property found, but some other inherited attribute
-                # is in the way; copy fget, fset, fdel to this one
-                redirect.fget = descriptor.fget
-                redirect.fset = descriptor.fset
-                redirect.fdel = descriptor.fdel
-                setattr(enum_class, member_name, redirect)
-            else:
-                setattr(enum_class, member_name, enum_member)
+            setattr(enum_class, member_name, enum_member)
         # now add to _member_map_ (even aliases)
         enum_class._member_map_[member_name] = enum_member
         try:
