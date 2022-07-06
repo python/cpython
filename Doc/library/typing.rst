@@ -2216,7 +2216,7 @@ Corresponding to other types in :mod:`collections.abc`
    An alias to :class:`collections.abc.Hashable`.
 
    .. deprecated:: 3.12
-      :class:`collections.abc.Hashable` should be directly imported from the original module.
+      :class:`collections.abc.Hashable` should be directly imported from the :class:`collections.abc`.
 
 .. class:: Reversible(Iterable[T_co])
 
@@ -2231,7 +2231,7 @@ Corresponding to other types in :mod:`collections.abc`
    An alias to :class:`collections.abc.Sized`.
 
    .. deprecated:: 3.12
-      :class:`collections.abc.Sized` should be directly imported from the original module.
+      :class:`collections.abc.Sized` should be directly imported from the :class:`collections.abc`.
 
 Asynchronous programming
 """"""""""""""""""""""""
