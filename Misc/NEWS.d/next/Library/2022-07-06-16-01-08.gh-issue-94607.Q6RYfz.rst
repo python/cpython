@@ -1,0 +1,1 @@
+Fix subclassing complex generics with type variables in :mod:`typing`. Previously an error message saying ``Some type variables ... are not listed in Generic[...]`` was shown.
