@@ -410,7 +410,7 @@ Connection Objects
       <sqlite3-controlling-transactions>` performed by ``sqlite3``.
       If set to :const:`None`, transactions are never implicitly opened.
       If set to one of ``"DEFERRED"``, ``"IMMEDIATE"``, or ``"EXCLUSIVE"``,
-      the strings representing the underlying SQLite `transaction behaviour`_,
+      corresponding to the underlying `SQLite transaction behaviour`_,
       transactions are implicitly opened before some DML statements.
 
       If not overridden by the *isolation_level* parameter of :func:`connect`,
@@ -1451,8 +1451,9 @@ new transactions are implicitly opened before
 ``INSERT``, ``UPDATE``, ``DELETE``, or ``REPLACE`` statements.
 Use the :meth:`~Connection.commit` and :meth:`~Connection.rollback` methods
 to respectively commit and roll back pending transactions.
-You can choose the underlying SQLite `transaction behaviour`_,
-that is the kind of ``BEGIN`` statements ``sqlite3`` implicitly executes,
+You can choose the underlying `SQLite transaction behaviour`_ —
+that is, whether and what type of ``BEGIN`` statements ``sqlite3``
+implicitly executes –
 via the :attr:`~Connection.isolation_level` attribute.
 
 If :attr:`~Connection.isolation_level` is set to :const:`None`,
@@ -1465,15 +1466,17 @@ The underlying SQLite library autocommit mode can be queried using the
 
 The :meth:`~Cursor.executescript` method implicitly commits
 any pending transaction before execution of the given SQL script,
-regardless of the value of :attr:`~Connection.isolation_level`,
+regardless of the value of :attr:`~Connection.isolation_level`.
 
 .. versionchanged:: 3.6
    :mod:`sqlite3` used to implicitly commit an open transaction before DDL
    statements.  This is no longer the case.
 
-.. _autocommit mode: https://www.sqlite.org/lang_transaction.html#implicit_versus_explicit_transactions
+.. _autocommit mode:
+   https://www.sqlite.org/lang_transaction.html#implicit_versus_explicit_transactions
 
-.. _transaction behaviour: https://www.sqlite.org/lang_transaction.html#deferred_immediate_and_exclusive_transactions
+.. _SQLite transaction behaviour:
+   https://www.sqlite.org/lang_transaction.html#deferred_immediate_and_exclusive_transactions
 
 
 Using :mod:`sqlite3` efficiently
