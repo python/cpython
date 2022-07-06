@@ -396,14 +396,24 @@ Connection Objects
 
    .. attribute:: isolation_level
 
-      Get or set the current default isolation level. :const:`None` for autocommit mode or
-      one of "DEFERRED", "IMMEDIATE" or "EXCLUSIVE". See section
-      :ref:`sqlite3-controlling-transactions` for a more detailed explanation.
+      This attribute controls the :ref:`transaction handling
+      <sqlite3-controlling-transactions>` performed by ``sqlite3``.
+      If set to :const:`None`, transactions are never implicitly opened.
+      If set to one of ``"DEFERRED"``, ``"IMMEDIATE"``, or ``"EXCLUSIVE"``,
+      corresponding to the underlying `SQLite transaction behaviour`_,
+      implicit :ref:`transaction management
+      <sqlite3-controlling-transactions>` is performed.
+
+      If not overridden by the *isolation_level* parameter of :func:`connect`,
+      the default is ``""``, which is an alias for ``"DEFERRED"``.
 
    .. attribute:: in_transaction
 
+      This read-only attribute corresponds to the low-level SQLite
+      `autocommit mode`_.
+
       :const:`True` if a transaction is active (there are uncommitted changes),
-      :const:`False` otherwise.  Read-only attribute.
+      :const:`False` otherwise.
 
       .. versionadded:: 3.2
 
@@ -858,7 +868,7 @@ Cursor Objects
 
    .. method:: execute(sql[, parameters])
 
-      Executes an SQL statement. Values may be bound to the statement using
+      Execute an SQL statement. Values may be bound to the statement using
       :ref:`placeholders <sqlite3-placeholders>`.
 
       :meth:`execute` will only execute a single SQL statement. If you try to execute
@@ -866,13 +876,19 @@ Cursor Objects
       :meth:`executescript` if you want to execute multiple SQL statements with one
       call.
 
+      If :attr:`~Connection.isolation_level` is not :const:`None`,
+      *sql* is an ``INSERT``, ``UPDATE``, ``DELETE``, or ``REPLACE`` statement,
+      and there is no open transaction,
+      a transaction is implicitly opened before executing *sql*.
+
 
    .. method:: executemany(sql, seq_of_parameters)
 
-      Executes a :ref:`parameterized <sqlite3-placeholders>` SQL command
+      Execute a :ref:`parameterized <sqlite3-placeholders>` SQL command
       against all parameter sequences or mappings found in the sequence
-      *seq_of_parameters*. The :mod:`sqlite3` module also allows using an
+      *seq_of_parameters*.  It is also possible to use an
       :term:`iterator` yielding parameters instead of a sequence.
+      Uses the same implicit transaction handling as :meth:`~Cursor.execute`.
 
       .. literalinclude:: ../includes/sqlite3/executemany_1.py
 
@@ -883,12 +899,13 @@ Cursor Objects
 
    .. method:: executescript(sql_script)
 
-      This is a nonstandard convenience method for executing multiple SQL statements
-      at once. It issues a ``COMMIT`` statement first, then executes the SQL script it
-      gets as a parameter.  This method disregards :attr:`isolation_level`; any
-      transaction control must be added to *sql_script*.
+      Execute multiple SQL statements at once.
+      If there is a pending transaciton,
+      an implicit ``COMMIT`` statement is executed first.
+      No other implicit transaction control is performed;
+      any transaction control must be added to *sql_script*.
 
-      *sql_script* can be an instance of :class:`str`.
+      *sql_script* must be a :class:`string <str>`.
 
       Example:
 
@@ -1415,37 +1432,42 @@ This section shows recipes for common adapters and converters.
 Controlling Transactions
 ------------------------
 
-The underlying ``sqlite3`` library operates in ``autocommit`` mode by default,
-but the Python :mod:`sqlite3` module by default does not.
+The ``sqlite3`` module does not adhere to the transaction handling recommended
+by :pep:`249`.
 
-``autocommit`` mode means that statements that modify the database take effect
-immediately.  A ``BEGIN`` or ``SAVEPOINT`` statement disables ``autocommit``
-mode, and a ``COMMIT``, a ``ROLLBACK``, or a ``RELEASE`` that ends the
-outermost transaction, turns ``autocommit`` mode back on.
+If the connection attribute :attr:`~Connection.isolation_level`
+is not :const:`None`,
+new transactions are implicitly opened before
+:meth:`~Cursor.execute` and :meth:`~Cursor.executemany` executes
+``INSERT``, ``UPDATE``, ``DELETE``, or ``REPLACE`` statements.
+Use the :meth:`~Connection.commit` and :meth:`~Connection.rollback` methods
+to respectively commit and roll back pending transactions.
+You can choose the underlying `SQLite transaction behaviour`_ —
+that is, whether and what type of ``BEGIN`` statements ``sqlite3``
+implicitly executes –
+via the :attr:`~Connection.isolation_level` attribute.
 
-The Python :mod:`sqlite3` module by default issues a ``BEGIN`` statement
-implicitly before a Data Modification Language (DML) statement (i.e.
-``INSERT``/``UPDATE``/``DELETE``/``REPLACE``).
+If :attr:`~Connection.isolation_level` is set to :const:`None`,
+no transactions are implicitly opened at all.
+This leaves the underlying SQLite library in `autocommit mode`_,
+but also allows the user to perform their own transaction handling
+using explicit SQL statements.
+The underlying SQLite library autocommit mode can be queried using the
+:attr:`~Connection.in_transaction` attribute.
 
-You can control which kind of ``BEGIN`` statements :mod:`sqlite3` implicitly
-executes via the *isolation_level* parameter to the :func:`connect`
-call, or via the :attr:`isolation_level` property of connections.
-If you specify no *isolation_level*, a plain ``BEGIN`` is used, which is
-equivalent to specifying ``DEFERRED``.  Other possible values are ``IMMEDIATE``
-and ``EXCLUSIVE``.
-
-You can disable the :mod:`sqlite3` module's implicit transaction management by
-setting :attr:`isolation_level` to ``None``.  This will leave the underlying
-``sqlite3`` library operating in ``autocommit`` mode.  You can then completely
-control the transaction state by explicitly issuing ``BEGIN``, ``ROLLBACK``,
-``SAVEPOINT``, and ``RELEASE`` statements in your code.
-
-Note that :meth:`~Cursor.executescript` disregards
-:attr:`isolation_level`; any transaction control must be added explicitly.
+The :meth:`~Cursor.executescript` method implicitly commits
+any pending transaction before execution of the given SQL script,
+regardless of the value of :attr:`~Connection.isolation_level`.
 
 .. versionchanged:: 3.6
    :mod:`sqlite3` used to implicitly commit an open transaction before DDL
    statements.  This is no longer the case.
+
+.. _autocommit mode:
+   https://www.sqlite.org/lang_transaction.html#implicit_versus_explicit_transactions
+
+.. _SQLite transaction behaviour:
+   https://www.sqlite.org/lang_transaction.html#deferred_immediate_and_exclusive_transactions
 
 
 Using :mod:`sqlite3` efficiently
