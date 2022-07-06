@@ -67,18 +67,16 @@ class EmbeddingTestsMixin:
             ext = ("_d" if debug_build(sys.executable) else "") + ".exe"
             exename += ext
             exepath = builddir
-            expecteddir = os.path.join(support.REPO_ROOT, builddir)
         else:
             exepath = os.path.join(builddir, 'Programs')
-            expecteddir = os.path.join(support.REPO_ROOT, 'Programs')
         self.test_exe = exe = os.path.join(exepath, exename)
-        if exepath != expecteddir or not os.path.exists(exe):
+        if not os.path.exists(exe):
             self.skipTest("%r doesn't exist" % exe)
         # This is needed otherwise we get a fatal error:
         # "Py_Initialize: Unable to get the locale encoding
         # LookupError: no codec search functions registered: can't find encoding"
         self.oldcwd = os.getcwd()
-        os.chdir(support.REPO_ROOT)
+        os.chdir(builddir)
 
     def tearDown(self):
         os.chdir(self.oldcwd)
@@ -629,7 +627,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         return configs
 
     def get_expected_config(self, expected_preconfig, expected,
-                            env, api, modify_path_cb=None, cwd=None):
+                            env, api, modify_path_cb=None):
         configs = self._get_expected_config()
 
         pre_config = configs['pre_config']
@@ -672,14 +670,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             expected['base_executable'] = default_executable
         if expected['program_name'] is self.GET_DEFAULT_CONFIG:
             expected['program_name'] = './_testembed'
-            if MS_WINDOWS:
-                # follow the calculation in getpath.py
-                tmpname = expected['program_name'] + '.exe'
-                if cwd:
-                    tmpname = os.path.join(cwd, tmpname)
-                if os.path.isfile(tmpname):
-                    expected['program_name'] += '.exe'
-                del tmpname
 
         config = configs['config']
         for key, value in expected.items():
@@ -709,6 +699,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def check_config(self, configs, expected):
         config = dict(configs['config'])
+        if MS_WINDOWS:
+            value = config.get(key := 'program_name')
+            if value and isinstance(value, str):
+                ext = '_d.exe' if debug_build(sys.executable) else '.exe'
+                config[key] = value[:len(value.lower().removesuffix(ext))]
         for key, value in list(expected.items()):
             if value is self.IGNORE_CONFIG:
                 config.pop(key, None)
@@ -773,7 +768,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.get_expected_config(expected_preconfig,
                                  expected_config,
                                  env,
-                                 api, modify_path_cb, cwd)
+                                 api, modify_path_cb)
 
         out, err = self.run_embedded_interpreter(testname,
                                                  env=env, cwd=cwd)
@@ -1378,10 +1373,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         with self.tmpdir_with_python() as tmpdir:
             # pybuilddir.txt is a sub-directory relative to the current
             # directory (tmpdir)
+            vpath = sysconfig.get_config_var("VPATH") or ''
             subdir = 'libdir'
             libdir = os.path.join(tmpdir, subdir)
             # The stdlib dir is dirname(executable) + VPATH + 'Lib'
-            stdlibdir = os.path.join(tmpdir, 'Lib')
+            stdlibdir = os.path.normpath(os.path.join(tmpdir, vpath, 'Lib'))
             os.mkdir(libdir)
 
             filename = os.path.join(tmpdir, 'pybuilddir.txt')

@@ -85,6 +85,12 @@ typedef struct {
 
 #define INLINE_CACHE_ENTRIES_STORE_SUBSCR CACHE_ENTRIES(_PyStoreSubscrCache)
 
+typedef struct {
+    _Py_CODEUNIT counter;
+} _PyForIterCache;
+
+#define INLINE_CACHE_ENTRIES_FOR_ITER CACHE_ENTRIES(_PyForIterCache)
+
 #define QUICKENING_WARMUP_DELAY 8
 
 /* We want to compare to zero for efficiency, so we offset values accordingly */
@@ -243,6 +249,7 @@ extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
                                      _Py_CODEUNIT *instr, int oparg);
 extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
                                           int oparg);
+extern void _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr);
 
 /* Deallocator function for static codeobjects used in deepfreeze.py */
 extern void _PyStaticCode_Dealloc(PyCodeObject *co);
@@ -252,16 +259,16 @@ extern int _PyStaticCode_InternStrings(PyCodeObject *co);
 #ifdef Py_STATS
 
 
-#define STAT_INC(opname, name) _py_stats.opcode_stats[opname].specialization.name++
-#define STAT_DEC(opname, name) _py_stats.opcode_stats[opname].specialization.name--
-#define OPCODE_EXE_INC(opname) _py_stats.opcode_stats[opname].execution_count++
-#define CALL_STAT_INC(name) _py_stats.call_stats.name++
-#define OBJECT_STAT_INC(name) _py_stats.object_stats.name++
+#define STAT_INC(opname, name) do { if (_py_stats) _py_stats->opcode_stats[opname].specialization.name++; } while (0)
+#define STAT_DEC(opname, name) do { if (_py_stats) _py_stats->opcode_stats[opname].specialization.name--; } while (0)
+#define OPCODE_EXE_INC(opname) do { if (_py_stats) _py_stats->opcode_stats[opname].execution_count++; } while (0)
+#define CALL_STAT_INC(name) do { if (_py_stats) _py_stats->call_stats.name++; } while (0)
+#define OBJECT_STAT_INC(name) do { if (_py_stats) _py_stats->object_stats.name++; } while (0)
 #define OBJECT_STAT_INC_COND(name, cond) \
-    do { if (cond) _py_stats.object_stats.name++; } while (0)
-#define EVAL_CALL_STAT_INC(name) _py_stats.call_stats.eval_calls[name]++
+    do { if (_py_stats && cond) _py_stats->object_stats.name++; } while (0)
+#define EVAL_CALL_STAT_INC(name) do { if (_py_stats) _py_stats->call_stats.eval_calls[name]++; } while (0)
 #define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) \
-    do { if (PyFunction_Check(callable)) _py_stats.call_stats.eval_calls[name]++; } while (0)
+    do { if (_py_stats && PyFunction_Check(callable)) _py_stats->call_stats.eval_calls[name]++; } while (0)
 
 // Used by the _opcode extension which is built as a shared library
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
@@ -458,6 +465,35 @@ adaptive_counter_backoff(uint16_t counter) {
     }
     unsigned int value = (1 << backoff) - 1;
     return adaptive_counter_bits(value, backoff);
+}
+
+
+/* Line array cache for tracing */
+
+extern int _PyCode_CreateLineArray(PyCodeObject *co);
+
+static inline int
+_PyCode_InitLineArray(PyCodeObject *co)
+{
+    if (co->_co_linearray) {
+        return 0;
+    }
+    return _PyCode_CreateLineArray(co);
+}
+
+static inline int
+_PyCode_LineNumberFromArray(PyCodeObject *co, int index)
+{
+    assert(co->_co_linearray != NULL);
+    assert(index >= 0);
+    assert(index < Py_SIZE(co));
+    if (co->_co_linearray_entry_size == 2) {
+        return ((int16_t *)co->_co_linearray)[index];
+    }
+    else {
+        assert(co->_co_linearray_entry_size == 4);
+        return ((int32_t *)co->_co_linearray)[index];
+    }
 }
 
 

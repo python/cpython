@@ -6,10 +6,6 @@
 
 /* Standard object interface */
 
-PyAPI_DATA(PyTypeObject) PyFrame_Type;
-
-#define PyFrame_Check(op) Py_IS_TYPE((op), &PyFrame_Type)
-
 PyAPI_FUNC(PyFrameObject *) PyFrame_New(PyThreadState *, PyCodeObject *,
                                         PyObject *, PyObject *);
 
@@ -31,12 +27,3 @@ PyAPI_FUNC(int) _PyFrame_IsEntryFrame(PyFrameObject *frame);
 
 PyAPI_FUNC(int) PyFrame_FastToLocalsWithError(PyFrameObject *f);
 PyAPI_FUNC(void) PyFrame_FastToLocals(PyFrameObject *);
-
-PyAPI_FUNC(PyFrameObject *) PyFrame_GetBack(PyFrameObject *frame);
-PyAPI_FUNC(PyObject *) PyFrame_GetLocals(PyFrameObject *frame);
-
-PyAPI_FUNC(PyObject *) PyFrame_GetGlobals(PyFrameObject *frame);
-PyAPI_FUNC(PyObject *) PyFrame_GetBuiltins(PyFrameObject *frame);
-
-PyAPI_FUNC(PyObject *) PyFrame_GetGenerator(PyFrameObject *frame);
-PyAPI_FUNC(int) PyFrame_GetLasti(PyFrameObject *frame);

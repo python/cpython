@@ -1828,12 +1828,6 @@ class SocketHandlerTest(BaseTest):
         time.sleep(self.sock_hdlr.retryTime - now + 0.001)
         self.root_logger.error('Nor this')
 
-def _get_temp_domain_socket():
-    fn = make_temp_file(prefix='test_logging_', suffix='.sock')
-    # just need a name - file can't be present, or we'll get an
-    # 'address already in use' error.
-    os.remove(fn)
-    return fn
 
 @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
 class UnixSocketHandlerTest(SocketHandlerTest):
@@ -1845,12 +1839,9 @@ class UnixSocketHandlerTest(SocketHandlerTest):
 
     def setUp(self):
         # override the definition in the base class
-        self.address = _get_temp_domain_socket()
+        self.address = socket_helper.create_unix_domain_name()
+        self.addCleanup(os_helper.unlink, self.address)
         SocketHandlerTest.setUp(self)
-
-    def tearDown(self):
-        SocketHandlerTest.tearDown(self)
-        os_helper.unlink(self.address)
 
 @support.requires_working_socket()
 @threading_helper.requires_working_threading()
@@ -1928,12 +1919,9 @@ class UnixDatagramHandlerTest(DatagramHandlerTest):
 
     def setUp(self):
         # override the definition in the base class
-        self.address = _get_temp_domain_socket()
+        self.address = socket_helper.create_unix_domain_name()
+        self.addCleanup(os_helper.unlink, self.address)
         DatagramHandlerTest.setUp(self)
-
-    def tearDown(self):
-        DatagramHandlerTest.tearDown(self)
-        os_helper.unlink(self.address)
 
 @support.requires_working_socket()
 @threading_helper.requires_working_threading()
@@ -2022,12 +2010,9 @@ class UnixSysLogHandlerTest(SysLogHandlerTest):
 
     def setUp(self):
         # override the definition in the base class
-        self.address = _get_temp_domain_socket()
+        self.address = socket_helper.create_unix_domain_name()
+        self.addCleanup(os_helper.unlink, self.address)
         SysLogHandlerTest.setUp(self)
-
-    def tearDown(self):
-        SysLogHandlerTest.tearDown(self)
-        os_helper.unlink(self.address)
 
 @unittest.skipUnless(socket_helper.IPV6_ENABLED,
                      'IPv6 support required for this test.')
@@ -3618,6 +3603,9 @@ class ConfigDictTest(BaseTest):
                 if qh.listener.queue.empty():
                     break
 
+            # wait until the handler completed its last task
+            qh.listener.queue.join()
+
             with open(fn, encoding='utf-8') as f:
                 data = f.read().splitlines()
             self.assertEqual(data, ['foo', 'bar', 'baz'])
@@ -3820,7 +3808,7 @@ class QueueHandlerTest(BaseTest):
     @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
                          'logging.handlers.QueueListener required for this test')
     def test_queue_listener_with_StreamHandler(self):
-        # Test that traceback only appends once (bpo-34334).
+        # Test that traceback and stack-info only appends once (bpo-34334, bpo-46755).
         listener = logging.handlers.QueueListener(self.queue, self.root_hdlr)
         listener.start()
         try:
@@ -3828,8 +3816,10 @@ class QueueHandlerTest(BaseTest):
         except ZeroDivisionError as e:
             exc = e
             self.que_logger.exception(self.next_message(), exc_info=exc)
+        self.que_logger.error(self.next_message(), stack_info=True)
         listener.stop()
         self.assertEqual(self.stream.getvalue().strip().count('Traceback'), 1)
+        self.assertEqual(self.stream.getvalue().strip().count('Stack'), 1)
 
     @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
                          'logging.handlers.QueueListener required for this test')
