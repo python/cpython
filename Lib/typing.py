@@ -253,7 +253,8 @@ def _collect_parameters(args):
         if hasattr(t, '__typing_subst__'):
             if t not in parameters:
                 parameters.append(t)
-        # Ensures we aren't grabbing from something non-generic. E.g. a bare Python class isn't generic.
+        # Ensures we aren't grabbing from something non-generic.
+        # E.g. a bare Python class isn't generic.
         elif isinstance(t, (_GenericAlias, GenericAlias, types.UnionType)):
             for x in getattr(t, '__parameters__', ()):
                 if x not in parameters:
