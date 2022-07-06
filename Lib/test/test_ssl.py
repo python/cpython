@@ -1963,20 +1963,19 @@ class SimpleBackgroundTests(unittest.TestCase):
         self.server_addr = (HOST, server.port)
 
     def test_connect(self):
-        with Server(context=self.server_context, client_count=2) as address:
-            with test_wrap_socket(socket.socket(socket.AF_INET),
-                                cert_reqs=ssl.CERT_NONE) as s:
-                s.connect(address)
-                self.assertEqual({}, s.getpeercert())
-                self.assertFalse(s.server_side)
+        with test_wrap_socket(socket.socket(socket.AF_INET),
+                            cert_reqs=ssl.CERT_NONE) as s:
+            s.connect(self.server_addr)
+            self.assertEqual({}, s.getpeercert())
+            self.assertFalse(s.server_side)
 
-            # this should succeed because we specify the root cert
-            with test_wrap_socket(socket.socket(socket.AF_INET),
-                                cert_reqs=ssl.CERT_REQUIRED,
-                                ca_certs=SIGNING_CA) as s:
-                s.connect(address)
-                self.assertTrue(s.getpeercert())
-                self.assertFalse(s.server_side)
+        # this should succeed because we specify the root cert
+        with test_wrap_socket(socket.socket(socket.AF_INET),
+                            cert_reqs=ssl.CERT_REQUIRED,
+                            ca_certs=SIGNING_CA) as s:
+            s.connect(self.server_addr)
+            self.assertTrue(s.getpeercert())
+            self.assertFalse(s.server_side)
 
     def test_connect_fail(self):
         # This should fail because we have no verification certs. Connection
