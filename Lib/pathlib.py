@@ -1,3 +1,6 @@
+"""Classes representing filesystem paths with semantics appropriate for
+different operating systems."""
+
 import fnmatch
 import functools
 import io
