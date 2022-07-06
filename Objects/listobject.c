@@ -1040,21 +1040,26 @@ list_pop_impl(PyListObject *self, Py_ssize_t index)
         PyErr_SetString(PyExc_IndexError, "pop index out of range");
         return NULL;
     }
-    v = self->ob_item[index];
-    if (index == Py_SIZE(self) - 1) {
-        status = list_resize(self, Py_SIZE(self) - 1);
-        if (status >= 0)
-            return v; /* and v now owns the reference the list had */
-        else
-            return NULL;
+
+    PyObject **items = self->ob_item;
+    v = items[index];
+    if(Py_SIZE(self)-1==0) {
+        Py_INCREF(v);
+        status = _list_clear(self);
     }
-    Py_INCREF(v);
-    status = list_ass_slice(self, index, index+1, (PyObject *)NULL);
-    if (status < 0) {
-        Py_DECREF(v);
+    else {
+        if (Py_SIZE(self)-1-index)
+            memmove(&items[index], &items[index+1], (Py_SIZE(self)-1-index)* sizeof(PyObject *));
+        status = list_resize(self, Py_SIZE(self) - 1);
+    }
+    if (status >= 0)
+        return v; /* and v now owns the reference the list had */
+    else {
+        // list resize failed, need to restore
+        memmove(&items[index+1], &items[index], (Py_SIZE(self)-1-index)* sizeof(PyObject *));
+        items[index] = v;
         return NULL;
     }
-    return v;
 }
 
 /* Reverse a slice of a list in place, from lo up to (exclusive) hi. */
