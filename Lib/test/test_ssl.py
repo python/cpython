@@ -1077,13 +1077,19 @@ class BasicSocketTests(unittest.TestCase):
     def test_read_write_zero(self):
         # empty reads and writes now work, bpo-42854, bpo-31711
         client_context, server_context, hostname = testing_context()
-        server = ThreadedEchoServer(context=server_context)
-        with server:
+        with Server(context=server_context) as address:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
-                s.connect((HOST, server.port))
+                s.connect(address)
                 self.assertEqual(s.recv(0), b"")
                 self.assertEqual(s.send(b""), 0)
+                # A temporary workaround for delayed tlsv1.3 session ticket
+                # eachange; the proper fix will be merges after this PR because
+                # it hangs test_session_handling.
+                #
+                # This problem manufested before as well but was just logged
+                # andsilenced by a server thread.
+                s.unwrap().close()
 
 
 class ContextTests(unittest.TestCase):
