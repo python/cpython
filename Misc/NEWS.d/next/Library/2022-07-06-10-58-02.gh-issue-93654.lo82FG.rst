@@ -1,1 +1,1 @@
-Add docstring to :module:`pathlib`
+Add docstring to pathlib
