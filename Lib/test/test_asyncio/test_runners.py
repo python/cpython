@@ -198,6 +198,18 @@ class RunTests(BaseTest):
         self.assertIsNone(spinner.ag_frame)
         self.assertFalse(spinner.ag_running)
 
+    def test_asyncio_run_set_event_loop(self):
+        #See https://github.com/python/cpython/issues/93896
+
+        async def main():
+            await asyncio.sleep(0)
+            return 42
+
+        policy = asyncio.get_event_loop_policy()
+        policy.set_event_loop = mock.Mock()
+        asyncio.run(main())
+        self.assertTrue(policy.set_event_loop.called)
+
 
 class RunnerTests(BaseTest):
 
