@@ -899,7 +899,6 @@ class EventLoopTestsMixin:
 
     def _create_ssl_context(self, certfile, keyfile=None):
         sslcontext = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        sslcontext.options |= ssl.OP_NO_SSLv2
         sslcontext.load_cert_chain(certfile, keyfile)
         return sslcontext
 
@@ -988,11 +987,6 @@ class EventLoopTestsMixin:
             lambda: proto, test_utils.SIGNED_CERTFILE)
 
         sslcontext_client = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        sslcontext_client.options |= ssl.OP_NO_SSLv2
-        sslcontext_client.verify_mode = ssl.CERT_REQUIRED
-        if hasattr(sslcontext_client, 'check_hostname'):
-            sslcontext_client.check_hostname = True
-
 
         # no CA loaded
         f_c = self.loop.create_connection(MyProto, host, port,
@@ -1018,10 +1012,6 @@ class EventLoopTestsMixin:
             lambda: proto, test_utils.SIGNED_CERTFILE)
 
         sslcontext_client = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        sslcontext_client.options |= ssl.OP_NO_SSLv2
-        sslcontext_client.verify_mode = ssl.CERT_REQUIRED
-        if hasattr(sslcontext_client, 'check_hostname'):
-            sslcontext_client.check_hostname = True
 
         # no CA loaded
         f_c = self.loop.create_unix_connection(MyProto, path,
@@ -1047,12 +1037,8 @@ class EventLoopTestsMixin:
             lambda: proto, test_utils.SIGNED_CERTFILE)
 
         sslcontext_client = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        sslcontext_client.options |= ssl.OP_NO_SSLv2
-        sslcontext_client.verify_mode = ssl.CERT_REQUIRED
         sslcontext_client.load_verify_locations(
             cafile=test_utils.SIGNING_CA)
-        if hasattr(sslcontext_client, 'check_hostname'):
-            sslcontext_client.check_hostname = True
 
         # incorrect server_hostname
         f_c = self.loop.create_connection(MyProto, host, port,
@@ -1078,11 +1064,7 @@ class EventLoopTestsMixin:
             lambda: proto, test_utils.SIGNED_CERTFILE)
 
         sslcontext_client = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        sslcontext_client.options |= ssl.OP_NO_SSLv2
-        sslcontext_client.verify_mode = ssl.CERT_REQUIRED
         sslcontext_client.load_verify_locations(cafile=test_utils.SIGNING_CA)
-        if hasattr(sslcontext_client, 'check_hostname'):
-            sslcontext_client.check_hostname = True
 
         # Connection succeeds with correct CA and server hostname.
         f_c = self.loop.create_unix_connection(MyProto, path,
@@ -1104,11 +1086,7 @@ class EventLoopTestsMixin:
             lambda: proto, test_utils.SIGNED_CERTFILE)
 
         sslcontext_client = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        sslcontext_client.options |= ssl.OP_NO_SSLv2
-        sslcontext_client.verify_mode = ssl.CERT_REQUIRED
         sslcontext_client.load_verify_locations(cafile=test_utils.SIGNING_CA)
-        if hasattr(sslcontext_client, 'check_hostname'):
-            sslcontext_client.check_hostname = True
 
         # Connection succeeds with correct CA and server hostname.
         f_c = self.loop.create_connection(MyProto, host, port,

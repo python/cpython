@@ -749,10 +749,7 @@ else:
             '''Set up secure control connection by using TLS/SSL.'''
             if isinstance(self.sock, ssl.SSLSocket):
                 raise ValueError("Already using TLS")
-            if self.ssl_version >= ssl.PROTOCOL_TLS:
-                resp = self.voidcmd('AUTH TLS')
-            else:
-                resp = self.voidcmd('AUTH SSL')
+            resp = self.voidcmd('AUTH TLS')
             self.sock = self.context.wrap_socket(self.sock, server_hostname=self.host)
             self.file = self.sock.makefile(mode='r', encoding=self.encoding)
             return resp

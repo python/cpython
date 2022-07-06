@@ -120,20 +120,6 @@ static void _PySSLFixErrno(void) {
 #include "_ssl_data.h"
 #endif
 
-/* OpenSSL API 1.1.0+ does not include version methods */
-#ifndef OPENSSL_NO_SSL3_METHOD
-extern const SSL_METHOD *SSLv3_method(void);
-#endif
-#ifndef OPENSSL_NO_TLS1_METHOD
-extern const SSL_METHOD *TLSv1_method(void);
-#endif
-#ifndef OPENSSL_NO_TLS1_1_METHOD
-extern const SSL_METHOD *TLSv1_1_method(void);
-#endif
-#ifndef OPENSSL_NO_TLS1_2_METHOD
-extern const SSL_METHOD *TLSv1_2_method(void);
-#endif
-
 #ifndef INVALID_SOCKET /* MS defines this */
 #define INVALID_SOCKET (-1)
 #endif
@@ -204,21 +190,13 @@ enum py_ssl_cert_requirements {
 };
 
 enum py_ssl_version {
-    PY_SSL_VERSION_SSL2,
-    PY_SSL_VERSION_SSL3=1,
-    PY_SSL_VERSION_TLS, /* SSLv23 */
-    PY_SSL_VERSION_TLS1,
-    PY_SSL_VERSION_TLS1_1,
-    PY_SSL_VERSION_TLS1_2,
+    PY_SSL_VERSION_TLS=2, /* deprecated */
     PY_SSL_VERSION_TLS_CLIENT=0x10,
     PY_SSL_VERSION_TLS_SERVER,
 };
 
 enum py_proto_version {
     PY_PROTO_MINIMUM_SUPPORTED = -2,
-    PY_PROTO_SSLv3 = SSL3_VERSION,
-    PY_PROTO_TLSv1 = TLS1_VERSION,
-    PY_PROTO_TLSv1_1 = TLS1_1_VERSION,
     PY_PROTO_TLSv1_2 = TLS1_2_VERSION,
 #ifdef TLS1_3_VERSION
     PY_PROTO_TLSv1_3 = TLS1_3_VERSION,
@@ -231,13 +209,7 @@ enum py_proto_version {
  * available version, and the other way around. We have to figure out the
  * minimum and maximum available version on our own and hope for the best.
  */
-#if defined(SSL3_VERSION) && !defined(OPENSSL_NO_SSL3)
-    PY_PROTO_MINIMUM_AVAILABLE = PY_PROTO_SSLv3,
-#elif defined(TLS1_VERSION) && !defined(OPENSSL_NO_TLS1)
-    PY_PROTO_MINIMUM_AVAILABLE = PY_PROTO_TLSv1,
-#elif defined(TLS1_1_VERSION) && !defined(OPENSSL_NO_TLS1_1)
-    PY_PROTO_MINIMUM_AVAILABLE = PY_PROTO_TLSv1_1,
-#elif defined(TLS1_2_VERSION) && !defined(OPENSSL_NO_TLS1_2)
+#if defined(TLS1_2_VERSION) && !defined(OPENSSL_NO_TLS1_2)
     PY_PROTO_MINIMUM_AVAILABLE = PY_PROTO_TLSv1_2,
 #elif defined(TLS1_3_VERSION) && !defined(OPENSSL_NO_TLS1_3)
     PY_PROTO_MINIMUM_AVAILABLE = PY_PROTO_TLSv1_3,
@@ -249,12 +221,6 @@ enum py_proto_version {
     PY_PROTO_MAXIMUM_AVAILABLE = PY_PROTO_TLSv1_3,
 #elif defined(TLS1_2_VERSION) && !defined(OPENSSL_NO_TLS1_2)
     PY_PROTO_MAXIMUM_AVAILABLE = PY_PROTO_TLSv1_2,
-#elif defined(TLS1_1_VERSION) && !defined(OPENSSL_NO_TLS1_1)
-    PY_PROTO_MAXIMUM_AVAILABLE = PY_PROTO_TLSv1_1,
-#elif defined(TLS1_VERSION) && !defined(OPENSSL_NO_TLS1)
-    PY_PROTO_MAXIMUM_AVAILABLE = PY_PROTO_TLSv1,
-#elif defined(SSL3_VERSION) && !defined(OPENSSL_NO_SSL3)
-    PY_PROTO_MAXIMUM_AVAILABLE = PY_PROTO_SSLv3,
 #else
     #error "PY_PROTO_MAXIMUM_AVAILABLE not found"
 #endif
@@ -686,16 +652,6 @@ _setSSLError (_sslmodulestate *state, const char *errstr, int errcode, const cha
     ERR_clear_error();
     return NULL;
 }
-
-static int
-_ssl_deprecated(const char* msg, int stacklevel) {
-    return PyErr_WarnEx(
-        PyExc_DeprecationWarning, msg, stacklevel
-    );
-}
-
-#define PY_SSL_DEPRECATED(name, stacklevel, ret) \
-    if (_ssl_deprecated((name), (stacklevel)) == -1) return (ret)
 
 /*
  * SSL objects
@@ -3001,40 +2957,6 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     }
 
     switch(proto_version) {
-#if defined(SSL3_VERSION) && !defined(OPENSSL_NO_SSL3)
-    case PY_SSL_VERSION_SSL3:
-        PY_SSL_DEPRECATED("ssl.PROTOCOL_SSLv3 is deprecated", 2, NULL);
-        method = SSLv3_method();
-        break;
-#endif
-#if (defined(TLS1_VERSION) && \
-        !defined(OPENSSL_NO_TLS1) && \
-        !defined(OPENSSL_NO_TLS1_METHOD))
-    case PY_SSL_VERSION_TLS1:
-        PY_SSL_DEPRECATED("ssl.PROTOCOL_TLSv1 is deprecated", 2, NULL);
-        method = TLSv1_method();
-        break;
-#endif
-#if (defined(TLS1_1_VERSION) && \
-        !defined(OPENSSL_NO_TLS1_1) && \
-        !defined(OPENSSL_NO_TLS1_1_METHOD))
-    case PY_SSL_VERSION_TLS1_1:
-        PY_SSL_DEPRECATED("ssl.PROTOCOL_TLSv1_1 is deprecated", 2, NULL);
-        method = TLSv1_1_method();
-        break;
-#endif
-#if (defined(TLS1_2_VERSION) && \
-        !defined(OPENSSL_NO_TLS1_2) && \
-        !defined(OPENSSL_NO_TLS1_2_METHOD))
-    case PY_SSL_VERSION_TLS1_2:
-        PY_SSL_DEPRECATED("ssl.PROTOCOL_TLSv1_2 is deprecated", 2, NULL);
-        method = TLSv1_2_method();
-        break;
-#endif
-    case PY_SSL_VERSION_TLS:
-        PY_SSL_DEPRECATED("ssl.PROTOCOL_TLS is deprecated", 2, NULL);
-        method = TLS_method();
-        break;
     case PY_SSL_VERSION_TLS_CLIENT:
         method = TLS_client_method();
         break;
@@ -3093,10 +3015,9 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     }
     /* Defaults */
     options = SSL_OP_ALL & ~SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS;
-    if (proto_version != PY_SSL_VERSION_SSL2)
-        options |= SSL_OP_NO_SSLv2;
-    if (proto_version != PY_SSL_VERSION_SSL3)
-        options |= SSL_OP_NO_SSLv3;
+    options |= SSL_OP_NO_SSLv3;
+    options |= SSL_OP_NO_TLSv1;
+    options |= SSL_OP_NO_TLSv1_1;
     /* Minimal security flags for server and client side context.
      * Client sockets ignore server-side parameters. */
 #ifdef SSL_OP_NO_COMPRESSION
@@ -3119,17 +3040,12 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
 
     /* A bare minimum cipher list without completely broken cipher suites.
      * It's far from perfect but gives users a better head start. */
-    if (proto_version != PY_SSL_VERSION_SSL2) {
 #if PY_SSL_DEFAULT_CIPHERS == 2
         /* stick to OpenSSL's default settings */
         result = 1;
 #else
         result = SSL_CTX_set_cipher_list(ctx, PY_SSL_DEFAULT_CIPHER_STRING);
 #endif
-    } else {
-        /* SSLv2 needs MD5 */
-        result = SSL_CTX_set_cipher_list(ctx, "HIGH:!aNULL:!eNULL");
-    }
     if (result == 0) {
         Py_DECREF(self);
         ERR_clear_error();
@@ -3455,15 +3371,6 @@ set_min_max_proto_version(PySSLContext *self, PyObject *arg, int what)
 
     /* check for deprecations and supported values */
     switch(v) {
-        case PY_PROTO_SSLv3:
-            PY_SSL_DEPRECATED("ssl.TLSVersion.SSLv3 is deprecated", 2, -1);
-            break;
-        case PY_PROTO_TLSv1:
-            PY_SSL_DEPRECATED("ssl.TLSVersion.TLSv1 is deprecated", 2, -1);
-            break;
-        case PY_PROTO_TLSv1_1:
-            PY_SSL_DEPRECATED("ssl.TLSVersion.TLSv1_1 is deprecated", 2, -1);
-            break;
         case PY_PROTO_MINIMUM_SUPPORTED:
         case PY_PROTO_MAXIMUM_SUPPORTED:
         case PY_PROTO_TLSv1_2:
@@ -3605,11 +3512,11 @@ set_options(PySSLContext *self, PyObject *arg, void *c)
     clear = opts & ~new_opts;
     set = ~opts & new_opts;
 
-    if ((set & opt_no) != 0) {
-        if (_ssl_deprecated("ssl.OP_NO_SSL*/ssl.OP_NO_TLS* options are "
-                            "deprecated", 2) < 0) {
-            return -1;
-        }
+    if ((set & opt_no) != 0 || (clear & opt_no) != 0) {
+        PyErr_SetString(
+            PyExc_ValueError, "Cannot set or clear OP_NO_TLS* options"
+        );
+        return -1;
     }
     if (clear) {
         SSL_CTX_clear_options(self->ctx, clear);
@@ -5826,25 +5733,10 @@ sslmodule_init_constants(PyObject *m)
 #undef ADD_AD_CONSTANT
 
     /* protocol versions */
-#ifndef OPENSSL_NO_SSL3
-    PyModule_AddIntConstant(m, "PROTOCOL_SSLv3",
-                            PY_SSL_VERSION_SSL3);
-#endif
-    PyModule_AddIntConstant(m, "PROTOCOL_SSLv23",
-                            PY_SSL_VERSION_TLS);
-    PyModule_AddIntConstant(m, "PROTOCOL_TLS",
-                            PY_SSL_VERSION_TLS);
     PyModule_AddIntConstant(m, "PROTOCOL_TLS_CLIENT",
                             PY_SSL_VERSION_TLS_CLIENT);
     PyModule_AddIntConstant(m, "PROTOCOL_TLS_SERVER",
                             PY_SSL_VERSION_TLS_SERVER);
-    PyModule_AddIntConstant(m, "PROTOCOL_TLSv1",
-                            PY_SSL_VERSION_TLS1);
-    PyModule_AddIntConstant(m, "PROTOCOL_TLSv1_1",
-                            PY_SSL_VERSION_TLS1_1);
-    PyModule_AddIntConstant(m, "PROTOCOL_TLSv1_2",
-                            PY_SSL_VERSION_TLS1_2);
-
     /* protocol options */
     PyModule_AddIntConstant(m, "OP_ALL",
                             SSL_OP_ALL & ~SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS);
@@ -5864,22 +5756,32 @@ sslmodule_init_constants(PyObject *m)
     PyModule_AddIntConstant(m, "OP_NO_TICKET", SSL_OP_NO_TICKET);
 #ifdef SSL_OP_SINGLE_ECDH_USE
     PyModule_AddIntConstant(m, "OP_SINGLE_ECDH_USE", SSL_OP_SINGLE_ECDH_USE);
+#else
+    PyModule_AddIntConstant(m, "OP_SINGLE_ECDH_USE", 0)
 #endif
 #ifdef SSL_OP_NO_COMPRESSION
     PyModule_AddIntConstant(m, "OP_NO_COMPRESSION",
                             SSL_OP_NO_COMPRESSION);
+#else
+    PyModule_AddIntConstant(m, "OP_NO_COMPRESSION", 0);
 #endif
 #ifdef SSL_OP_ENABLE_MIDDLEBOX_COMPAT
     PyModule_AddIntConstant(m, "OP_ENABLE_MIDDLEBOX_COMPAT",
                             SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
+#else
+    PyModule_AddIntConstant(m, "OP_ENABLE_MIDDLEBOX_COMPAT", 0);
 #endif
 #ifdef SSL_OP_NO_RENEGOTIATION
     PyModule_AddIntConstant(m, "OP_NO_RENEGOTIATION",
                             SSL_OP_NO_RENEGOTIATION);
+#else
+    PyModule_AddIntConstant(m, "OP_NO_RENEGOTIATION", 0);
 #endif
 #ifdef SSL_OP_IGNORE_UNEXPECTED_EOF
     PyModule_AddIntConstant(m, "OP_IGNORE_UNEXPECTED_EOF",
                             SSL_OP_IGNORE_UNEXPECTED_EOF);
+#else
+    PyModule_AddIntConstant(m, "OP_IGNORE_UNEXPECTED_EOF", 0);
 #endif
 
 #ifdef X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT
@@ -5916,9 +5818,6 @@ sslmodule_init_constants(PyObject *m)
                             PY_PROTO_MINIMUM_SUPPORTED);
     PyModule_AddIntConstant(m, "PROTO_MAXIMUM_SUPPORTED",
                             PY_PROTO_MAXIMUM_SUPPORTED);
-    PyModule_AddIntConstant(m, "PROTO_SSLv3", PY_PROTO_SSLv3);
-    PyModule_AddIntConstant(m, "PROTO_TLSv1", PY_PROTO_TLSv1);
-    PyModule_AddIntConstant(m, "PROTO_TLSv1_1", PY_PROTO_TLSv1_1);
     PyModule_AddIntConstant(m, "PROTO_TLSv1_2", PY_PROTO_TLSv1_2);
     PyModule_AddIntConstant(m, "PROTO_TLSv1_3", PY_PROTO_TLSv1_3);
 
@@ -5936,24 +5835,9 @@ sslmodule_init_constants(PyObject *m)
     addbool(m, "HAS_ALPN", 1);
 
     addbool(m, "HAS_SSLv2", 0);
-
-#if defined(SSL3_VERSION) && !defined(OPENSSL_NO_SSL3)
-    addbool(m, "HAS_SSLv3", 1);
-#else
     addbool(m, "HAS_SSLv3", 0);
-#endif
-
-#if defined(TLS1_VERSION) && !defined(OPENSSL_NO_TLS1)
-    addbool(m, "HAS_TLSv1", 1);
-#else
     addbool(m, "HAS_TLSv1", 0);
-#endif
-
-#if defined(TLS1_1_VERSION) && !defined(OPENSSL_NO_TLS1_1)
-    addbool(m, "HAS_TLSv1_1", 1);
-#else
     addbool(m, "HAS_TLSv1_1", 0);
-#endif
 
 #if defined(TLS1_2_VERSION) && !defined(OPENSSL_NO_TLS1_2)
     addbool(m, "HAS_TLSv1_2", 1);
