@@ -332,7 +332,7 @@ Module functions and constants
       Added the ``sqlite3.connect/handle`` auditing event.
 
 
-.. function:: register_converter(typename, converter)
+.. function:: register_converter(typename, converter, /)
 
    Register the *converter* callable to convert SQLite objects of type
    *typename* into a Python object of a specific type.
@@ -346,7 +346,7 @@ Module functions and constants
    case-insensitively.
 
 
-.. function:: register_adapter(type, adapter)
+.. function:: register_adapter(type, adapter, /)
 
    Register an *adapter* callable to adapt the Python type *type* into an
    SQLite type.
@@ -368,7 +368,7 @@ Module functions and constants
    .. literalinclude:: ../includes/sqlite3/complete_statement.py
 
 
-.. function:: enable_callback_tracebacks(flag)
+.. function:: enable_callback_tracebacks(flag, /)
 
    By default you will not get any tracebacks in user-defined functions,
    aggregates, converters, authorizer callbacks etc. If you want to debug them,
@@ -508,7 +508,7 @@ Connection Objects
       .. literalinclude:: ../includes/sqlite3/md5func.py
 
 
-   .. method:: create_aggregate(name, n_arg, aggregate_class)
+   .. method:: create_aggregate(name, /, n_arg, aggregate_class)
 
       Creates a user-defined aggregate function.
 
@@ -647,7 +647,7 @@ Connection Objects
       .. versionadded:: 3.3
 
 
-   .. method:: enable_load_extension(enabled)
+   .. method:: enable_load_extension(enabled, /)
 
       This routine allows/disallows the SQLite engine to load SQLite extensions
       from shared libraries.  SQLite extensions can define new functions,
@@ -665,7 +665,7 @@ Connection Objects
 
       .. literalinclude:: ../includes/sqlite3/load_extension.py
 
-   .. method:: load_extension(path)
+   .. method:: load_extension(path, /)
 
       This routine loads an SQLite extension from a shared library.  You have to
       enable extension loading with :meth:`enable_load_extension` before you can
@@ -876,7 +876,7 @@ Cursor Objects
    .. index:: single: ? (question mark); in SQL statements
    .. index:: single: : (colon); in SQL statements
 
-   .. method:: execute(sql[, parameters])
+   .. method:: execute(sql, parameters=(), /)
 
       Execute an SQL statement. Values may be bound to the statement using
       :ref:`placeholders <sqlite3-placeholders>`.
@@ -892,7 +892,7 @@ Cursor Objects
       a transaction is implicitly opened before executing *sql*.
 
 
-   .. method:: executemany(sql, seq_of_parameters)
+   .. method:: executemany(sql, seq_of_parameters, /)
 
       Execute a :ref:`parameterized <sqlite3-placeholders>` SQL command
       against all parameter sequences or mappings found in the sequence
@@ -907,7 +907,7 @@ Cursor Objects
       .. literalinclude:: ../includes/sqlite3/executemany_2.py
 
 
-   .. method:: executescript(sql_script)
+   .. method:: executescript(sql_script, /)
 
       Execute multiple SQL statements at once.
       If there is a pending transaciton,
@@ -957,11 +957,11 @@ Cursor Objects
       The cursor will be unusable from this point forward; a :exc:`ProgrammingError`
       exception will be raised if any operation is attempted with the cursor.
 
-   .. method:: setinputsizes(sizes)
+   .. method:: setinputsizes(sizes, /)
 
       Required by the DB-API. Does nothing in :mod:`sqlite3`.
 
-   .. method:: setoutputsize(size [, column])
+   .. method:: setoutputsize(size, column=None, /)
 
       Required by the DB-API. Does nothing in :mod:`sqlite3`.
 
