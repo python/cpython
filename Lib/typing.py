@@ -253,7 +253,8 @@ def _collect_parameters(args):
         if hasattr(t, '__typing_subst__'):
             if t not in parameters:
                 parameters.append(t)
-        else:
+        # We need to avoid bare Python types as those aren't really generic.
+        elif not type(t) is type:
             for x in getattr(t, '__parameters__', ()):
                 if x not in parameters:
                     parameters.append(x)
