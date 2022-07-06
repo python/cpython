@@ -763,7 +763,7 @@ The add_argument() method
 
    * type_ - The type to which the command-line argument should be converted.
 
-   * choices_ - A container of the allowable values for the argument.
+   * choices_ - A sequence of the allowable values for the argument.
 
    * required_ - Whether or not the command-line option may be omitted
      (optionals only).
@@ -1207,7 +1207,7 @@ choices
 ^^^^^^^
 
 Some command-line arguments should be selected from a restricted set of values.
-These can be handled by passing a container object as the *choices* keyword
+These can be handled by passing a sequence object as the *choices* keyword
 argument to :meth:`~ArgumentParser.add_argument`.  When the command line is
 parsed, argument values will be checked, and an error message will be displayed
 if the argument was not one of the acceptable values::
@@ -1221,9 +1221,9 @@ if the argument was not one of the acceptable values::
    game.py: error: argument move: invalid choice: 'fire' (choose from 'rock',
    'paper', 'scissors')
 
-Note that inclusion in the *choices* container is checked after any type_
+Note that inclusion in the *choices* sequence is checked after any type_
 conversions have been performed, so the type of the objects in the *choices*
-container should match the type_ specified::
+sequence should match the type_ specified::
 
    >>> parser = argparse.ArgumentParser(prog='doors.py')
    >>> parser.add_argument('door', type=int, choices=range(1, 4))
@@ -1233,8 +1233,8 @@ container should match the type_ specified::
    usage: doors.py [-h] {1,2,3}
    doors.py: error: argument door: invalid choice: 4 (choose from 1, 2, 3)
 
-Any container can be passed as the *choices* value, so :class:`list` objects,
-:class:`set` objects, and custom containers are all supported.
+Any sequence can be passed as the *choices* value, so :class:`list` objects,
+:class:`set` objects, and custom sequences are all supported.
 
 Use of :class:`enum.Enum` is not recommended because it is difficult to
 control its appearance in usage, help, and error messages.
