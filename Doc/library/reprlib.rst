@@ -17,7 +17,7 @@ debugger and may be useful in other contexts as well.
 This module provides a class, an instance, and a function:
 
 
-.. class:: Repr(maxlevel=6, maxtuple=6, maxlist=6, maxarray=5, maxdict=4, \
+.. class:: Repr(*, maxlevel=6, maxtuple=6, maxlist=6, maxarray=5, maxdict=4, \
                 maxset=6, maxfrozenset=6, maxdeque=6, maxstring=30, maxlong=40, \
                 maxother=30, fillvalue="...")
 
