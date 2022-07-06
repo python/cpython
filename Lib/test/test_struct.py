@@ -707,6 +707,15 @@ class StructTest(unittest.TestCase):
         s = struct.Struct.__new__(struct.Struct, "b")
         s.unpack_from(b"abcd")
 
+    @support.cpython_only
+    def test__struct_Struct_subclassing(self):
+        class Bob(struct.Struct):
+            def __init__(self, format):
+                super().__init__(format)
+
+        s = Bob("b")
+        s.unpack_from(b"abcd")
+
     def test_issue35714(self):
         # Embedded null characters should not be allowed in format strings.
         for s in '\0', '2\0i', b'\0':

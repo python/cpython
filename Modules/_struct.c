@@ -1489,6 +1489,44 @@ Struct_impl(PyTypeObject *type, PyObject *format)
     return (PyObject *)self;
 }
 
+/*[clinic input]
+Struct.__init__
+
+    format: object
+
+[clinic start generated code]*/
+
+static int
+Struct___init___impl(PyStructObject *self, PyObject *format)
+/*[clinic end generated code: output=b8e80862444e92d0 input=6c10faf9b8d53954]*/
+{
+    if (PyUnicode_Check(format)) {
+        format = PyUnicode_AsASCIIString(format);
+        if (format == NULL) {
+            return -1;
+        }
+    }
+    else {
+        Py_INCREF(format);
+    }
+
+    if (!PyBytes_Check(format)) {
+        Py_DECREF(format);
+        PyErr_Format(PyExc_TypeError,
+                     "Struct() argument 1 must be a str or bytes object, "
+                     "not %.200s",
+                     _PyType_Name(Py_TYPE(format)));
+        return -1;
+    }
+
+    Py_SETREF(self->s_format, format);
+
+    if (prepare_s(self) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
 static int
 s_clear(PyStructObject *s)
 {
@@ -2094,6 +2132,7 @@ static PyType_Slot PyStructType_slots[] = {
     {Py_tp_members, s_members},
     {Py_tp_getset, s_getsetlist},
     {Py_tp_new, Struct},
+    {Py_tp_init, Struct___init__},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_free, PyObject_GC_Del},
     {0, 0},
