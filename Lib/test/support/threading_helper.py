@@ -292,7 +292,7 @@ class Server:
         self._result_out = results
 
     def _thread_func(self, server_socket, client_func, client_count, args, kwargs):
-        server_socket.settimeout(3)
+        server_socket.settimeout(support.LOOPBACK_TIMEOUT)
         with server_socket:
             results = []
             for i in range(client_count):
