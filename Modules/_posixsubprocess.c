@@ -498,8 +498,9 @@ reset_signal_handlers(const sigset_t *child_sigmask)
 #endif /* VFORK_USABLE */
 
 
-#define RESERVED_UID (uid_t)-1
 #define RESERVED_GID (gid_t)-1
+#define RESERVED_PID (pid_t)-1
+#define RESERVED_UID (uid_t)-1
 
 /*
  * This function is code executed in the child process immediately after
@@ -758,7 +759,7 @@ do_fork_exec(char *const exec_array[],
              PyObject *preexec_fn_args_tuple)
 {
 
-    pid_t pid;
+    pid_t pid = 0;
 
 #ifdef VFORK_USABLE
     if (child_sigmask) {
@@ -769,7 +770,7 @@ do_fork_exec(char *const exec_array[],
         assert(preexec_fn == Py_None);
 
         pid = vfork();
-        if (pid == -1) {
+        if (pid == RESERVED_PID) {
             /* If vfork() fails, fall back to using fork(). When it isn't
              * allowed in a process by the kernel, vfork can return -1
              * with errno EINVAL. https://bugs.python.org/issue47151. */
@@ -1092,7 +1093,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
                        py_fds_to_keep, preexec_fn, preexec_fn_args_tuple);
 
     /* Parent (original) process */
-    if (pid == -1) {
+    if (pid == RESERVED_PID) {
         /* Capture errno for the exception. */
         saved_errno = errno;
     }
