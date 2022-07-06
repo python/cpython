@@ -46,10 +46,13 @@ pysqlite_prepare_protocol_dealloc(pysqlite_PrepareProtocol *self)
     Py_DECREF(tp);
 }
 
+PyDoc_STRVAR(doc, "sqlite3 object adaption protocol type");
+
 static PyType_Slot type_slots[] = {
     {Py_tp_dealloc, pysqlite_prepare_protocol_dealloc},
     {Py_tp_init, pysqlite_prepare_protocol_init},
     {Py_tp_traverse, pysqlite_prepare_protocol_traverse},
+    {Py_tp_doc, (void *)doc},
     {0, NULL},
 };
 
