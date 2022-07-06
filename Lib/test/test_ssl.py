@@ -2999,7 +2999,7 @@ class ThreadedTests(unittest.TestCase):
                 cert = s.getpeercert()
                 self.assertTrue(cert, "Can't get peer certificate.")
 
-    def test_check_hostname(self):
+    def test_check_hostname_correct(self):
         if support.verbose:
             sys.stdout.write("\n")
 
@@ -3013,7 +3013,12 @@ class ThreadedTests(unittest.TestCase):
                 cert = s.getpeercert()
                 self.assertTrue(cert, "Can't get peer certificate.")
 
-        # incorrect hostname should raise an exception
+    def test_check_hostname_incorrect(self):
+        if support.verbose:
+            sys.stdout.write("\n")
+
+        client_context, server_context, hostname = testing_context()
+
         with self.assertRaisesRegex(ssl.SSLError, 'SSL: SSLV3_ALERT_BAD_CERTIFICATE'):
             with Server(context=server_context) as address:
                 with client_context.wrap_socket(socket.socket(),
@@ -3023,7 +3028,12 @@ class ThreadedTests(unittest.TestCase):
                             "Hostname mismatch, certificate is not valid for 'invalid'."):
                         s.connect(address)
 
-        # missing server_hostname arg should cause an exception, too
+    def test_check_hostname_missing(self):
+        if support.verbose:
+            sys.stdout.write("\n")
+
+        client_context, server_context, hostname = testing_context()
+
         with socket.socket() as s:
             with self.assertRaisesRegex(ValueError,
                                         "check_hostname requires server_hostname"):
