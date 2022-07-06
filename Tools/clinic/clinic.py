@@ -4120,7 +4120,7 @@ class DSLParser:
             self.block.output.append('\n')
             return
 
-        d = self.clinic.get_destination(destination)
+        d = self.clinic.get_destination_buffer(destination)
 
         if command_or_name == "everything":
             for name in list(fd):

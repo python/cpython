@@ -1034,7 +1034,7 @@ possible, while any potentially slow operations (such as sending an email via
       method is enqueued.
 
       The base implementation formats the record to merge the message,
-      arguments, and exception information, if present.  It also removes
+      arguments, exception and stack information, if present.  It also removes
       unpickleable items from the record in-place. Specifically, it overwrites
       the record's :attr:`msg` and :attr:`message` attributes with the merged
       message (obtained by calling the handler's :meth:`format` method), and
