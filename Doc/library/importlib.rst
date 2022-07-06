@@ -493,20 +493,6 @@ ABC hierarchy::
            other responsibilities of :meth:`load_module` when
            :meth:`exec_module` is implemented.
 
-    .. method:: module_repr(module)
-
-        A legacy method which when implemented calculates and returns the given
-        module's representation, as a string.  The module type's default
-        :meth:`__repr__` will use the result of this method as appropriate.
-
-        .. versionadded:: 3.3
-
-        .. versionchanged:: 3.4
-           Made optional instead of an abstractmethod.
-
-        .. deprecated:: 3.4
-           The import machinery now takes care of this automatically.
-
 
 .. include:: importlib.resources.abc.rst
 

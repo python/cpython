@@ -296,11 +296,6 @@ def _module_repr(module):
     loader = getattr(module, '__loader__', None)
     if spec := getattr(module, "__spec__", None):
         return _module_repr_from_spec(spec)
-    elif hasattr(loader, 'module_repr'):
-        try:
-            return loader.module_repr(module)
-        except Exception:
-            pass
     # Fall through to a catch-all which always succeeds.
     try:
         name = module.__name__
@@ -582,7 +577,6 @@ def module_from_spec(spec):
 
 def _module_repr_from_spec(spec):
     """Return the repr to use for the module."""
-    # We mostly replicate _module_repr() using the spec attributes.
     name = '?' if spec.name is None else spec.name
     if spec.origin is None:
         if spec.loader is None:
