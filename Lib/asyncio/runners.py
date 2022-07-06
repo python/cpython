@@ -56,14 +56,18 @@ class Runner:
 
     # Note: the class is final, it is not intended for inheritance.
 
-    def __init__(self, *, debug=None, loop_factory=None, set_policy_loop=False):
+    def __init__(self, *, debug=None, loop_factory=None, set_policy_loop=None):
         self._state = _State.CREATED
         self._debug = debug
         self._loop_factory = loop_factory
         self._loop = None
         self._context = None
         self._interrupt_count = 0
-        self._set_policy_loop = set_policy_loop
+        if set_policy_loop is None and loop_factory is None:
+            # default to setting the policy loop, if the loop_factory is not set
+            self._set_policy_loop = True
+        else:
+            self._set_policy_loop = set_policy_loop
 
     def __enter__(self):
         self._lazy_init()
