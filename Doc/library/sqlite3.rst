@@ -411,7 +411,8 @@ Connection Objects
       If set to :const:`None`, transactions are never implicitly opened.
       If set to one of ``"DEFERRED"``, ``"IMMEDIATE"``, or ``"EXCLUSIVE"``,
       corresponding to the underlying `SQLite transaction behaviour`_,
-      transactions are implicitly opened before some DML statements.
+      implicit :ref:`transaction management
+      <sqlite3-controlling-transactions>` is performed.
 
       If not overridden by the *isolation_level* parameter of :func:`connect`,
       the default is ``""``, which is an alias for ``"DEFERRED"``.
