@@ -39,7 +39,7 @@ def threading_cleanup(*original_values):
 
         if not count:
             # Display a warning at the first iteration
-            support.environment_altered = True ### ---- именно этот участок выбрасывает  ошибку - мы не завершвем работу сервера
+            support.environment_altered = True
             dangling_threads = values[1]
             support.print_warning(f"threading_cleanup() failed to cleanup "
                                   f"{values[0] - original_values[0]} threads "
