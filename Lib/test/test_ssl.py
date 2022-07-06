@@ -321,7 +321,6 @@ def testing_context(server_cert=SIGNED_CERTFILE, *, server_chain=True):
 
 
 def _on_ssl_client(socket, peer_address, certificate=None,
-                   ssl_version=ssl.PROTOCOL_TLS_SERVER,
                    certreqs=ssl.CERT_NONE, cacerts=None,
                    chatty=True, starttls_server=False,
                    alpn_protocols=None, ciphers=None, context=None):
@@ -334,7 +333,7 @@ def _on_ssl_client(socket, peer_address, certificate=None,
             sys.stdout.write(f' server: {message}\n')
 
     if context is None:
-        context = ssl.SSLContext(ssl_version)
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.verify_mode = certreqs
         if cacerts:
             context.load_verify_locations(cacerts)
