@@ -121,7 +121,6 @@ class IsolatedAsyncioTestCase(TestCase):
     def _tearDownAsyncioRunner(self):
         runner = self._asyncioRunner
         runner.close()
-        asyncio.set_event_loop(None)
 
     def run(self, result=None):
         self._setupAsyncioRunner()

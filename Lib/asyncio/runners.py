@@ -176,12 +176,12 @@ def run(main, *, debug=None):
         raise RuntimeError(
             "asyncio.run() cannot be called from a running event loop")
 
-    with Runner(debug=debug) as runner:
-        try:
+    try:
+        with Runner(debug=debug) as runner:
             events.set_event_loop(runner.get_loop())
             return runner.run(main)
-        finally:
-            events.set_event_loop(None)
+    finally:
+        events.set_event_loop(None)
 
 
 def _cancel_all_tasks(loop):
