@@ -103,6 +103,29 @@ To actually run a coroutine, asyncio provides three main mechanisms:
       world
       finished at 17:14:34
 
+* The :class:`asyncio.TaskGroup` class provides a more modern
+  alternative to :func:`create_task`.
+  Using this API, the last example becomes::
+
+      async def main():
+          async with asyncio.TaskGroup() as tg:
+              task1 = tg.create_task(
+                  say_after(1, 'hello'))
+
+              task2 = tg.create_task(
+                  say_after(2, 'world'))
+
+              print(f"started at {time.strftime('%X')}")
+
+          # The wait is implicit when the context manager exits.
+
+          print(f"finished at {time.strftime('%X')}")
+
+  The timing and output should be the same as for the previous version.
+
+  .. versionadded:: 3.11
+     :class:`asyncio.TaskGroup`.
+
 
 .. _asyncio-awaitables:
 
@@ -223,6 +246,11 @@ Creating Tasks
    :exc:`RuntimeError` is raised if there is no running loop in
    current thread.
 
+   .. note::
+
+      :meth:`asyncio.TaskGroup.create_task` is a newer alternative
+      that allows for convenient waiting for a group of related tasks.
+
    .. important::
 
       Save a reference to the result of this function, to avoid
@@ -252,6 +280,77 @@ Creating Tasks
 
    .. versionchanged:: 3.11
       Added the *context* parameter.
+
+
+Task Groups
+===========
+
+Task groups combine a task creation API with a convenient
+and reliable way to wait for all tasks in the group to finish.
+
+.. class:: TaskGroup()
+
+   An :ref:`asynchronous context manager <async-context-managers>`
+   holding a group of tasks.
+   Tasks can be added to the group using :meth:`create_task`.
+   All tasks are awaited when the context manager exits.
+
+   .. versionadded:: 3.11
+
+   .. method:: create_task(coro, *, name=None, context=None)
+
+      Create a task in this task group.
+      The signature matches that of :func:`asyncio.create_task`.
+
+Example::
+
+    async def main():
+        async with asyncio.TaskGroup() as tg:
+            task1 = tg.create_task(some_coro(...))
+            task2 = tg.create_task(another_coro(...))
+        print("Both tasks have completed now.")
+
+The ``async with`` statement will wait for all tasks in the group to finish.
+While waiting, new tasks may still be added to the group
+(for example, by passing ``tg`` into one of the coroutines
+and calling ``tg.create_task()`` in that coroutine).
+Once the last task has finished and the ``async with`` block is exited,
+no new tasks may be added to the group.
+
+The first time any of the tasks belonging to the group fails
+with an exception other than :exc:`asyncio.CancelledError`,
+the remaining tasks in the group are cancelled.
+No further tasks can then be added to the group.
+At this point, if the body of the ``async with`` statement is still active
+(i.e., :meth:`~object.__aexit__` hasn't been called yet),
+the task directly containing the ``async with`` statement is also cancelled.
+The resulting :exc:`asyncio.CancelledError` will interrupt an ``await``,
+but it will not bubble out of the containing ``async with`` statement.
+
+Once all tasks have finished, if any tasks have failed
+with an exception other than :exc:`asyncio.CancelledError`,
+those exceptions are combined in an
+:exc:`ExceptionGroup` or :exc:`BaseExceptionGroup`
+(as appropriate; see their documentation)
+which is then raised.
+
+Two base exceptions are treated specially:
+If any task fails with :exc:`KeyboardInterrupt` or :exc:`SystemExit`,
+the task group still cancels the remaining tasks and waits for them,
+but then the initial :exc:`KeyboardInterrupt` or :exc:`SystemExit`
+is re-raised instead of :exc:`ExceptionGroup` or :exc:`BaseExceptionGroup`.
+
+If the body of the ``async with`` statement exits with an exception
+(so :meth:`~object.__aexit__` is called with an exception set),
+this is treated the same as if one of the tasks failed:
+the remaining tasks are cancelled and then waited for,
+and non-cancellation exceptions are grouped into an
+exception group and raised.
+The exception passed into :meth:`~object.__aexit__`,
+unless it is :exc:`asyncio.CancelledError`,
+is also included in the exception group.
+The same special case is made for
+:exc:`KeyboardInterrupt` and :exc:`SystemExit` as in the previous paragraph.
 
 
 Sleeping
@@ -327,8 +426,9 @@ Running Tasks Concurrently
    cancellation of one submitted Task/Future to cause other
    Tasks/Futures to be cancelled.
 
-   .. versionchanged:: 3.10
-      Removed the *loop* parameter.
+   .. note::
+      A more modern way to create and run tasks concurrently and
+      wait for their completion is :class:`asyncio.TaskGroup`.
 
    .. _asyncio_example_gather:
 
