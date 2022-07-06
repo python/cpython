@@ -1,7 +1,6 @@
 import _thread
 import asyncio
 import contextvars
-from email import policy
 import re
 import signal
 import threading
