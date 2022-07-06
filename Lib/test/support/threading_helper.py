@@ -12,6 +12,7 @@ import unittest
 from test import support
 
 _thread_pool = ThreadPoolExecutor()
+unittest.addModuleCleanup(lambda: _thread_pool = None)
 
 #=======================================================================
 # Threading support to prevent reporting refleaks when running regrtest.py -R
