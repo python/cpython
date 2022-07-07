@@ -271,7 +271,7 @@ class Server:
     The server listens on an address returned from the ``with`` statement.
     """
 
-    def __init__(self, client_func, *args, client_count=1, results=None,
+    def __init__(self, client_func, *args, client_count=1,
                  client_fails=False, **kwargs):
         """Create and run the server.
 
@@ -279,6 +279,10 @@ class Server:
 
         When client_func raises an exception, all server-side sockets are
         closed.
+
+        If a client_func returns a value, it got stored as a ``Server.result``
+        field. Since ``with ... as`` section keeps its parameter alive, the
+        field can be accessed outside of the section.
 
         Args:
             client_func: a function called in a dedicated thread for each new
@@ -293,7 +297,7 @@ class Server:
             client_fails: if True, a client is expected to cause
                 connection-related exceptions by reasons asserted on its side.
                 As a result, a server should swallow these exceptions and
-                proceed to the next client instead. 
+                proceed to the next client instead.
             kwargs: keyword arguments passed to client_func.
 
         Throws:
@@ -306,7 +310,6 @@ class Server:
         self._result = _thread_pool.submit(self._thread_func, server_socket,
                                            client_func, client_count,
                                            client_fails, args, kwargs)
-        self._result_out = results if results else []
 
     def _thread_func(self, server_socket, client_func, client_count,
                      client_fails, args, kwargs):
@@ -340,5 +343,5 @@ class Server:
                 generic = RuntimeError('server-side error')
                 raise generic from self._result.exception()
             return False
-        self._result_out.append(self._result.result())
+        self.result = self._result.result()
         return False
