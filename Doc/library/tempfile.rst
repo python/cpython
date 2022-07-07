@@ -239,8 +239,8 @@ The module defines the following user-callable items:
    .. versionchanged:: 3.6
       The *dir* parameter now accepts a :term:`path-like object`.
 
-   .. versionchanged:: 3.12 :func:`mkdtemp` now always returns an absolute
-      path, even if *dir* is relative.
+   .. versionchanged:: 3.12
+      :func:`mkdtemp` now always returns an absolute path, even if *dir* is relative.
 
 
 .. function:: gettempdir()
