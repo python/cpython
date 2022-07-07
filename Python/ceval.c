@@ -5683,6 +5683,8 @@ handle_eval_breaker:
                     err = maybe_call_line_trace(tstate->c_tracefunc,
                                                 tstate->c_traceobj,
                                                 tstate, frame, instr_prev);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    frame->stacktop = -1;
                     if (err) {
                         /* trace function raised an exception */
                         next_instr++;
@@ -5690,9 +5692,6 @@ handle_eval_breaker:
                     }
                     /* Reload possibly changed frame fields */
                     next_instr = frame->prev_instr;
-
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
-                    frame->stacktop = -1;
                 }
             }
         }
@@ -5795,11 +5794,6 @@ exception_unwind:
 
                 /* Pop remaining stack entries. */
                 PyObject **stackbase = _PyFrame_Stackbase(frame);
-                if (frame->stacktop != -1) {
-                    // frame_setlineno() may have popped off additional stacks in
-                    // frame_stack_pop(). Re-calculate stack pointer.
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
-                }
                 while (stack_pointer > stackbase) {
                     PyObject *o = POP();
                     Py_XDECREF(o);
