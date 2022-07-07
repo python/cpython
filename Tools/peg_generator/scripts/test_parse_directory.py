@@ -5,7 +5,6 @@ import ast
 import os
 import sys
 import time
-import traceback
 import tokenize
 from glob import glob, escape
 from pathlib import PurePath
@@ -13,7 +12,6 @@ from pathlib import PurePath
 from typing import List, Optional, Any, Tuple
 
 sys.path.insert(0, os.getcwd())
-from pegen.ast_dump import ast_dump
 from pegen.testutil import print_memstats
 
 SUCCESS = "\033[92m"

@@ -2,11 +2,13 @@
 
 from test import support
 import unittest
+from unittest.mock import MagicMock
 import sys
 import difflib
 import gc
 from functools import wraps
 import asyncio
+from test.support import import_helper
 
 support.requires_working_socket(module=True)
 
@@ -606,6 +608,58 @@ class TraceTestCase(unittest.TestCase):
         except Exception:
             pass
         self.compare_events(doit_async.__code__.co_firstlineno,
+                            tracer.events, events)
+
+    def test_async_for_backwards_jump_has_no_line(self):
+        async def arange(n):
+            for i in range(n):
+                yield i
+        async def f():
+            async for i in arange(3):
+                if i > 100:
+                    break # should never be traced
+
+        tracer = self.make_tracer()
+        coro = f()
+        try:
+            sys.settrace(tracer.trace)
+            coro.send(None)
+        except Exception:
+            pass
+        finally:
+            sys.settrace(None)
+
+        events = [
+            (0, 'call'),
+            (1, 'line'),
+            (-3, 'call'),
+            (-2, 'line'),
+            (-1, 'line'),
+            (-1, 'return'),
+            (1, 'exception'),
+            (2, 'line'),
+            (1, 'line'),
+            (-1, 'call'),
+            (-2, 'line'),
+            (-1, 'line'),
+            (-1, 'return'),
+            (1, 'exception'),
+            (2, 'line'),
+            (1, 'line'),
+            (-1, 'call'),
+            (-2, 'line'),
+            (-1, 'line'),
+            (-1, 'return'),
+            (1, 'exception'),
+            (2, 'line'),
+            (1, 'line'),
+            (-1, 'call'),
+            (-2, 'line'),
+            (-2, 'return'),
+            (1, 'exception'),
+            (1, 'return'),
+        ]
+        self.compare_events(f.__code__.co_firstlineno,
                             tracer.events, events)
 
     def test_21_repeated_pass(self):
@@ -1473,6 +1527,58 @@ class TraceTestCase(unittest.TestCase):
              (3, 'return'),
              (1, 'return')])
 
+    @support.cpython_only
+    def test_no_line_event_after_creating_generator(self):
+        # Spurious line events before call events only show up with C tracer
+
+        # Skip this test if the _testcapi module isn't available.
+        _testcapi = import_helper.import_module('_testcapi')
+
+        def gen():
+            yield 1
+
+        def func():
+            for _ in (
+                gen()
+            ):
+                pass
+
+        EXPECTED_EVENTS = [
+            (0, 'call'),
+            (2, 'line'),
+            (1, 'line'),
+            (-3, 'call'),
+            (-2, 'line'),
+            (-2, 'return'),
+            (4, 'line'),
+            (1, 'line'),
+            (-2, 'call'),
+            (-2, 'return'),
+            (1, 'return'),
+        ]
+
+        # C level events should be the same as expected and the same as Python level.
+
+        events = []
+        # Turning on and off tracing must be on same line to avoid unwanted LINE events.
+        _testcapi.settrace_to_record(events); func(); sys.settrace(None)
+        start_line = func.__code__.co_firstlineno
+        events = [
+            (line-start_line, EVENT_NAMES[what])
+            for (what, line, arg) in events
+        ]
+        self.assertEqual(events, EXPECTED_EVENTS)
+
+        self.run_and_compare(func, EXPECTED_EVENTS)
+
+
+EVENT_NAMES = [
+    'call',
+    'exception',
+    'line',
+    'return'
+]
+
 
 class SkipLineEventsTraceTestCase(TraceTestCase):
     """Repeat the trace tests, but with per-line events skipped"""
@@ -1936,6 +2042,15 @@ class JumpTestCase(unittest.TestCase):
             output.append(6)
         output.append(7)
 
+    @jump_test(6, 1, [1, 5, 1, 5])
+    def test_jump_over_try_except(output):
+        output.append(1)
+        try:
+            1 / 0
+        except ZeroDivisionError as e:
+            output.append(5)
+        x = 42  # has to be a two-instruction block
+
     @jump_test(2, 4, [1, 4, 5, -4])
     def test_jump_across_with(output):
         output.append(1)
@@ -2159,25 +2274,25 @@ class JumpTestCase(unittest.TestCase):
             output.append(2)
         output.append(3)
 
-    @jump_test(1, 3, [], (ValueError, 'depth'))
+    @jump_test(1, 3, [], (ValueError, 'stack'))
     def test_no_jump_forwards_into_with_block(output):
         output.append(1)
         with tracecontext(output, 2):
             output.append(3)
 
-    @async_jump_test(1, 3, [], (ValueError, 'depth'))
+    @async_jump_test(1, 3, [], (ValueError, 'stack'))
     async def test_no_jump_forwards_into_async_with_block(output):
         output.append(1)
         async with asynctracecontext(output, 2):
             output.append(3)
 
-    @jump_test(3, 2, [1, 2, -1], (ValueError, 'depth'))
+    @jump_test(3, 2, [1, 2, -1], (ValueError, 'stack'))
     def test_no_jump_backwards_into_with_block(output):
         with tracecontext(output, 1):
             output.append(2)
         output.append(3)
 
-    @async_jump_test(3, 2, [1, 2, -1], (ValueError, 'depth'))
+    @async_jump_test(3, 2, [1, 2, -1], (ValueError, 'stack'))
     async def test_no_jump_backwards_into_async_with_block(output):
         async with asynctracecontext(output, 1):
             output.append(2)
@@ -2431,6 +2546,111 @@ output.append(4)
         next(gen())
         output.append(5)
 
+    @jump_test(2, 3, [1, 3])
+    def test_jump_forward_over_listcomp(output):
+        output.append(1)
+        x = [i for i in range(10)]
+        output.append(3)
+
+    # checking for segfaults.
+    # See https://github.com/python/cpython/issues/92311
+    @jump_test(3, 1, [])
+    def test_jump_backward_over_listcomp(output):
+        a = 1
+        x = [i for i in range(10)]
+        c = 3
+
+    @jump_test(8, 2, [2, 7, 2])
+    def test_jump_backward_over_listcomp_v2(output):
+        flag = False
+        output.append(2)
+        if flag:
+            return
+        x = [i for i in range(5)]
+        flag = 6
+        output.append(7)
+        output.append(8)
+
+    @async_jump_test(2, 3, [1, 3])
+    async def test_jump_forward_over_async_listcomp(output):
+        output.append(1)
+        x = [i async for i in asynciter(range(10))]
+        output.append(3)
+
+    @async_jump_test(3, 1, [])
+    async def test_jump_backward_over_async_listcomp(output):
+        a = 1
+        x = [i async for i in asynciter(range(10))]
+        c = 3
+
+    @async_jump_test(8, 2, [2, 7, 2])
+    async def test_jump_backward_over_async_listcomp_v2(output):
+        flag = False
+        output.append(2)
+        if flag:
+            return
+        x = [i async for i in asynciter(range(5))]
+        flag = 6
+        output.append(7)
+        output.append(8)
+
+    # checking for segfaults.
+    @jump_test(3, 7, [], error=(ValueError, "stack"))
+    def test_jump_with_null_on_stack_load_global(output):
+        a = 1
+        print(
+            output.append(3)
+        )
+        output.append(5)
+        (
+            ( # 7
+                a
+                +
+                10
+            )
+            +
+            13
+        )
+        output.append(15)
+
+    # checking for segfaults.
+    @jump_test(4, 8, [], error=(ValueError, "stack"))
+    def test_jump_with_null_on_stack_push_null(output):
+        a = 1
+        f = print
+        f(
+            output.append(4)
+        )
+        output.append(6)
+        (
+            ( # 8
+                a
+                +
+                11
+            )
+            +
+            14
+        )
+        output.append(16)
+
+    # checking for segfaults.
+    @jump_test(3, 7, [], error=(ValueError, "stack"))
+    def test_jump_with_null_on_stack_load_attr(output):
+        a = 1
+        list.append(
+            output, 3
+        )
+        output.append(5)
+        (
+            ( # 7
+                a
+                +
+                10
+            )
+            +
+            13
+        )
+        output.append(15)
 
 class TestExtendedArgs(unittest.TestCase):
 
@@ -2472,6 +2692,44 @@ class TestExtendedArgs(unittest.TestCase):
         exec(code, ns)
         counts = self.count_traces(ns["f"])
         self.assertEqual(counts, {'call': 1, 'line': 2000, 'return': 1})
+
+
+class TestEdgeCases(unittest.TestCase):
+
+    def setUp(self):
+        self.addCleanup(sys.settrace, sys.gettrace())
+        sys.settrace(None)
+
+    def test_reentrancy(self):
+        def foo(*args):
+            ...
+
+        def bar(*args):
+            ...
+
+        class A:
+            def __call__(self, *args):
+                pass
+
+            def __del__(self):
+                sys.settrace(bar)
+
+        sys.settrace(A())
+        with support.catch_unraisable_exception() as cm:
+            sys.settrace(foo)
+            self.assertEqual(cm.unraisable.object, A.__del__)
+            self.assertIsInstance(cm.unraisable.exc_value, RuntimeError)
+
+        self.assertEqual(sys.gettrace(), foo)
+
+
+    def test_same_object(self):
+        def foo(*args):
+            ...
+
+        sys.settrace(foo)
+        del foo
+        sys.settrace(sys.gettrace())
 
 
 if __name__ == "__main__":

@@ -393,7 +393,10 @@ class BuiltinTest(unittest.TestCase):
                                 msg=f"source={source} mode={mode}")
 
 
-    @unittest.skipIf(support.is_emscripten, "socket.accept is broken")
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "socket.accept is broken"
+    )
     def test_compile_top_level_await(self):
         """Test whether code some top level await can be compiled.
 
@@ -2185,7 +2188,7 @@ class PtyTests(unittest.TestCase):
         # the readline implementation. In some cases, the Python readline
         # callback rlhandler() is called by readline with a string without
         # non-ASCII characters. Skip tests on non-ASCII characters if the
-        # readline module is loaded, since test_builtin is not intented to test
+        # readline module is loaded, since test_builtin is not intended to test
         # the readline module, but the builtins module.
         if 'readline' in sys.modules:
             self.skipTest("the readline module is loaded")

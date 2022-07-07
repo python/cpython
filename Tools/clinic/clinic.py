@@ -22,7 +22,6 @@ import re
 import shlex
 import string
 import sys
-import tempfile
 import textwrap
 import traceback
 import types
@@ -3526,9 +3525,7 @@ class Py_UNICODE_converter(CConverter):
     def cleanup(self):
         if not self.length:
             return """\
-#if !USE_UNICODE_WCHAR_CACHE
 PyMem_Free((void *){name});
-#endif /* USE_UNICODE_WCHAR_CACHE */
 """.format(name=self.name)
 
     def parse_arg(self, argname, argnum):
@@ -3539,11 +3536,7 @@ PyMem_Free((void *){name});
                         _PyArg_BadArgument("{{name}}", {argnum}, "str", {argname});
                         goto exit;
                     }}}}
-                    #if USE_UNICODE_WCHAR_CACHE
-                    {paramname} = _PyUnicode_AsUnicode({argname});
-                    #else /* USE_UNICODE_WCHAR_CACHE */
                     {paramname} = PyUnicode_AsWideCharString({argname}, NULL);
-                    #endif /* USE_UNICODE_WCHAR_CACHE */
                     if ({paramname} == NULL) {{{{
                         goto exit;
                     }}}}
@@ -3554,11 +3547,7 @@ PyMem_Free((void *){name});
                         {paramname} = NULL;
                     }}}}
                     else if (PyUnicode_Check({argname})) {{{{
-                        #if USE_UNICODE_WCHAR_CACHE
-                        {paramname} = _PyUnicode_AsUnicode({argname});
-                        #else /* USE_UNICODE_WCHAR_CACHE */
                         {paramname} = PyUnicode_AsWideCharString({argname}, NULL);
-                        #endif /* USE_UNICODE_WCHAR_CACHE */
                         if ({paramname} == NULL) {{{{
                             goto exit;
                         }}}}
@@ -4131,7 +4120,7 @@ class DSLParser:
             self.block.output.append('\n')
             return
 
-        d = self.clinic.get_destination(destination)
+        d = self.clinic.get_destination_buffer(destination)
 
         if command_or_name == "everything":
             for name in list(fd):
@@ -4721,9 +4710,14 @@ class DSLParser:
 
         p = Parameter(parameter_name, kind, function=self.function, converter=converter, default=value, group=self.group)
 
-        if parameter_name in self.function.parameters:
+        names = [k.name for k in self.function.parameters.values()]
+        if parameter_name in names[1:]:
             fail("You can't have two parameters named " + repr(parameter_name) + "!")
-        self.function.parameters[parameter_name] = p
+        elif names and parameter_name == names[0] and c_name is None:
+            fail(f"Parameter '{parameter_name}' requires a custom C name")
+
+        key = f"{parameter_name}_as_{c_name}" if c_name else parameter_name
+        self.function.parameters[key] = p
 
     def parse_converter(self, annotation):
         if (hasattr(ast, 'Constant') and

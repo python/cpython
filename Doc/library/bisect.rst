@@ -198,7 +198,7 @@ a 'B', and so on::
    >>> [grade(score) for score in [33, 99, 77, 70, 89, 90, 100]]
    ['F', 'A', 'C', 'C', 'B', 'A', 'A']
 
-The :func:`bisect`function and :func:`insort` functions also work with lists of
+The :func:`bisect` and :func:`insort` functions also work with lists of
 tuples.  The *key* argument can serve to extract the field used for ordering
 records in a table::
 

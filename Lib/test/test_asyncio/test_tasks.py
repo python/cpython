@@ -1,22 +1,18 @@
 """Tests for tasks.py."""
 
 import collections
-import contextlib
 import contextvars
-import functools
 import gc
 import io
 import random
 import re
 import sys
-import textwrap
 import traceback
 import unittest
 from unittest import mock
 from types import GenericAlias
 
 import asyncio
-from asyncio import coroutines
 from asyncio import futures
 from asyncio import tasks
 from test.test_asyncio import utils as test_utils
@@ -1653,6 +1649,7 @@ class BaseTaskTests:
         self.assertTrue(asyncio.iscoroutinefunction(fn2))
 
         self.assertFalse(asyncio.iscoroutinefunction(mock.Mock()))
+        self.assertTrue(asyncio.iscoroutinefunction(mock.AsyncMock()))
 
     def test_coroutine_non_gen_function(self):
         async def func():

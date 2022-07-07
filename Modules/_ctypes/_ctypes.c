@@ -396,9 +396,9 @@ _ctypes_alloc_format_string_with_shape(int ndim, const Py_ssize_t *shape,
         strcat(new_prefix, "(");
         for (k = 0; k < ndim; ++k) {
             if (k < ndim-1) {
-                sprintf(buf, "%"PY_FORMAT_SIZE_T"d,", shape[k]);
+                sprintf(buf, "%zd,", shape[k]);
             } else {
-                sprintf(buf, "%"PY_FORMAT_SIZE_T"d)", shape[k]);
+                sprintf(buf, "%zd)", shape[k]);
             }
             strcat(new_prefix, buf);
         }
@@ -5784,6 +5784,7 @@ _ctypes_add_objects(PyObject *mod)
     MOD_ADD("RTLD_GLOBAL", PyLong_FromLong(RTLD_GLOBAL));
     MOD_ADD("CTYPES_MAX_ARGCOUNT", PyLong_FromLong(CTYPES_MAX_ARGCOUNT));
     MOD_ADD("ArgumentError", Py_NewRef(PyExc_ArgError));
+    MOD_ADD("SIZEOF_TIME_T", PyLong_FromSsize_t(SIZEOF_TIME_T));
     return 0;
 #undef MOD_ADD
 }

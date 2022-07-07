@@ -137,9 +137,24 @@ typedef enum kind {
     Iterator = 1,
     Except = 2,
     Object = 3,
+    Null = 4,
 } Kind;
 
-#define BITS_PER_BLOCK 2
+static int
+compatible_kind(Kind from, Kind to) {
+    if (to == 0) {
+        return 0;
+    }
+    if (to == Object) {
+        return from != Null;
+    }
+    if (to == Null) {
+        return 1;
+    }
+    return from == to;
+}
+
+#define BITS_PER_BLOCK 3
 
 #define UNINITIALIZED -2
 #define OVERFLOWED -1
@@ -241,10 +256,6 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     stacks[i+1] = next_stack;
                     break;
                 }
-                case POP_EXCEPT:
-                    next_stack = pop_value(pop_value(pop_value(next_stack)));
-                    stacks[i+1] = next_stack;
-                    break;
                 case SEND:
                     j = get_arg(code, i) + i + 1;
                     assert(j < len);
@@ -278,7 +289,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 {
                     int64_t target_stack = pop_value(next_stack);
                     stacks[i+1] = push_value(next_stack, Object);
-                    j = get_arg(code, i) + i + 1;
+                    j = get_arg(code, i) + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + i;
                     assert(j < len);
                     assert(stacks[j] == UNINITIALIZED || stacks[j] == target_stack);
                     stacks[j] = target_stack;
@@ -289,15 +300,46 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     stacks[i+1] = next_stack;
                     break;
                 case PUSH_EXC_INFO:
-                    next_stack = push_value(next_stack, Except);
-                    next_stack = push_value(next_stack, Except);
-                    next_stack = push_value(next_stack, Except);
-                    stacks[i+1] = next_stack;
+                case POP_EXCEPT:
+                    /* These instructions only appear in exception handlers, which
+                     * skip this switch ever since the move to zero-cost exceptions
+                     * (their stack remains UNINITIALIZED because nothing sets it).
+                     *
+                     * Note that explain_incompatible_stack interprets an
+                     * UNINITIALIZED stack as belonging to an exception handler.
+                     */
+                    Py_UNREACHABLE();
+                    break;
                 case RETURN_VALUE:
                 case RAISE_VARARGS:
                 case RERAISE:
                     /* End of block */
                     break;
+                case PUSH_NULL:
+                    next_stack = push_value(next_stack, Null);
+                    stacks[i+1] = next_stack;
+                    break;
+                case LOAD_GLOBAL:
+                {
+                    int j = get_arg(code, i);
+                    if (j & 1) {
+                        next_stack = push_value(next_stack, Null);
+                    }
+                    next_stack = push_value(next_stack, Object);
+                    stacks[i+1] = next_stack;
+                    break;
+                }
+                case LOAD_ATTR:
+                {
+                    int j = get_arg(code, i);
+                    if (j & 1) {
+                        next_stack = pop_value(next_stack);
+                        next_stack = push_value(next_stack, Null);
+                        next_stack = push_value(next_stack, Object);
+                    }
+                    stacks[i+1] = next_stack;
+                    break;
+                }
                 default:
                 {
                     int delta = PyCompile_OpcodeStackEffect(opcode, _Py_OPARG(code[i]));
@@ -316,17 +358,6 @@ mark_stacks(PyCodeObject *code_obj, int len)
     }
     Py_DECREF(co_code);
     return stacks;
-}
-
-static int
-compatible_kind(Kind from, Kind to) {
-    if (to == 0) {
-        return 0;
-    }
-    if (to == Object) {
-        return 1;
-    }
-    return from == to;
 }
 
 static int
@@ -365,7 +396,8 @@ explain_incompatible_stack(int64_t to_stack)
         case Except:
             return "can't jump into an 'except' block as there's no exception";
         case Object:
-            return "differing stack depth";
+        case Null:
+            return "incompatible stacks";
         case Iterator:
             return "can't jump into the body of a for loop";
         default:
@@ -418,7 +450,7 @@ static void
 frame_stack_pop(PyFrameObject *f)
 {
     PyObject *v = _PyFrame_StackPop(f->f_frame);
-    Py_DECREF(v);
+    Py_XDECREF(v);
 }
 
 static PyFrameState
@@ -455,6 +487,34 @@ _PyFrame_GetState(PyFrameObject *frame)
     Py_UNREACHABLE();
 }
 
+static void
+add_load_fast_null_checks(PyCodeObject *co)
+{
+    int changed = 0;
+    _Py_CODEUNIT *instructions = _PyCode_CODE(co);
+    for (Py_ssize_t i = 0; i < Py_SIZE(co); i++) {
+        switch (_Py_OPCODE(instructions[i])) {
+            case LOAD_FAST:
+            case LOAD_FAST__LOAD_FAST:
+            case LOAD_FAST__LOAD_CONST:
+                changed = 1;
+                _Py_SET_OPCODE(instructions[i], LOAD_FAST_CHECK);
+                break;
+            case LOAD_CONST__LOAD_FAST:
+                changed = 1;
+                _Py_SET_OPCODE(instructions[i], LOAD_CONST);
+                break;
+            case STORE_FAST__LOAD_FAST:
+                changed = 1;
+                _Py_SET_OPCODE(instructions[i], STORE_FAST);
+                break;
+        }
+    }
+    if (changed) {
+        // invalidate cached co_code object
+        Py_CLEAR(co->_co_code);
+    }
+}
 
 /* Setter for f_lineno - you can set f_lineno from within a trace function in
  * order to jump to a given line of code, subject to some restrictions.  Most
@@ -544,6 +604,8 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
                     new_lineno);
         return -1;
     }
+
+    add_load_fast_null_checks(f->f_frame->f_code);
 
     /* PyCode_NewWithPosOnlyArgs limits co_code to be under INT_MAX so this
      * should never overflow. */
@@ -828,8 +890,9 @@ init_frame(_PyInterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
 {
     /* _PyFrame_InitializeSpecials consumes reference to func */
     Py_INCREF(func);
+    Py_XINCREF(locals);
     PyCodeObject *code = (PyCodeObject *)func->func_code;
-    _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
+    _PyFrame_InitializeSpecials(frame, func, locals, code);
     for (Py_ssize_t i = 0; i < code->co_nlocalsplus; i++) {
         frame->localsplus[i] = NULL;
     }
@@ -1047,6 +1110,7 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
     }
     fast = _PyFrame_GetLocalsArray(frame);
     co = frame->f_code;
+    bool added_null_checks = false;
 
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
     for (int i = 0; i < co->co_nlocalsplus; i++) {
@@ -1066,6 +1130,10 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
             }
         }
         PyObject *oldvalue = fast[i];
+        if (!added_null_checks && oldvalue != NULL && value == NULL) {
+            add_load_fast_null_checks(co);
+            added_null_checks = true;
+        }
         PyObject *cell = NULL;
         if (kind == CO_FAST_FREE) {
             // The cell was set when the frame was created from
@@ -1086,9 +1154,9 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
         if (cell != NULL) {
             oldvalue = PyCell_GET(cell);
             if (value != oldvalue) {
-                Py_XDECREF(oldvalue);
                 Py_XINCREF(value);
                 PyCell_SET(cell, value);
+                Py_XDECREF(oldvalue);
             }
         }
         else if (value != oldvalue) {
@@ -1133,8 +1201,14 @@ PyFrame_GetBack(PyFrameObject *frame)
 {
     assert(frame != NULL);
     PyFrameObject *back = frame->f_back;
-    if (back == NULL && frame->f_frame->previous != NULL) {
-        back = _PyFrame_GetFrameObject(frame->f_frame->previous);
+    if (back == NULL) {
+        _PyInterpreterFrame *prev = frame->f_frame->previous;
+        while (prev && _PyFrame_IsIncomplete(prev)) {
+            prev = prev->previous;
+        }
+        if (prev) {
+            back = _PyFrame_GetFrameObject(prev);
+        }
     }
     Py_XINCREF(back);
     return back;

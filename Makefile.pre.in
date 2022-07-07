@@ -150,6 +150,8 @@ CONFINCLUDEDIR=	$(exec_prefix)/include
 PLATLIBDIR=	@PLATLIBDIR@
 SCRIPTDIR=	$(prefix)/$(PLATLIBDIR)
 ABIFLAGS=	@ABIFLAGS@
+# executable name for shebangs
+EXENAME=	$(BINDIR)/python$(LDVERSION)$(EXE)
 # Variable used by ensurepip
 WHEEL_PKG_DIR=	@WHEEL_PKG_DIR@
 
@@ -222,7 +224,7 @@ OPENSSL_RPATH=@OPENSSL_RPATH@
 #   * missing: build dependency is missing
 #   * disabled: module is disabled
 #   * n/a: module is not available on the current platform
-# MODULE_EGG=yes  # yes, missing, disabled, n/a
+# MODULE_EGG_STATE=yes  # yes, missing, disabled, n/a
 # MODULE_EGG_CFLAGS=
 # MODULE_EGG_LDFLAGS=
 @MODULE_BLOCK@
@@ -247,8 +249,8 @@ SRCDIRS= 	@SRCDIRS@
 SUBDIRSTOO=	Include Lib Misc
 
 # assets for Emscripten browser builds
-WASM_ASSETS_DIR=".$(prefix)"
-WASM_STDLIB="$(WASM_ASSETS_DIR)/local/lib/python$(VERSION)/os.py"
+WASM_ASSETS_DIR=.$(prefix)
+WASM_STDLIB=$(WASM_ASSETS_DIR)/lib/python$(VERSION)/os.py
 
 # Files and directories to be distributed
 CONFIGFILES=	configure configure.ac acconfig.h pyconfig.h.in Makefile.pre.in
@@ -290,8 +292,11 @@ HOSTRUNNER= @HOSTRUNNER@
 PYTHON_FOR_REGEN?=@PYTHON_FOR_REGEN@
 UPDATE_FILE=$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/update_file.py
 PYTHON_FOR_BUILD=@PYTHON_FOR_BUILD@
+# Single-platform builds depend on $(BUILDPYTHON). Cross builds use an
+# external "build Python" and have an empty PYTHON_FOR_BUILD_DEPS.
+PYTHON_FOR_BUILD_DEPS=@PYTHON_FOR_BUILD_DEPS@
 
-# Normal builds use Programs/_freeze_module.c for bootstrapping and
+# Single-platform builds use Programs/_freeze_module.c for bootstrapping and
 # ./_bootstrap_python Programs/_freeze_module.py for remaining modules
 # Cross builds use an external "build Python" for all modules.
 PYTHON_FOR_FREEZE=@PYTHON_FOR_FREEZE@
@@ -336,10 +341,6 @@ IO_OBJS=	\
 		Modules/_io/textio.o \
 		Modules/_io/bytesio.o \
 		Modules/_io/stringio.o
-
-##########################################################################
-
-LIBFFI_INCLUDEDIR=	@LIBFFI_INCLUDEDIR@
 
 ##########################################################################
 # Parser
@@ -580,8 +581,8 @@ LIBEXPAT_HEADERS= \
 
 # Default target
 all:		@DEF_MAKE_ALL_RULE@
-build_all:	check-clean-src $(BUILDPYTHON) oldsharedmods sharedmods gdbhooks \
-		Programs/_testembed python-config
+build_all:	check-clean-src $(BUILDPYTHON) platform oldsharedmods sharedmods \
+		gdbhooks Programs/_testembed scripts
 build_wasm: check-clean-src $(BUILDPYTHON) platform oldsharedmods python-config
 
 # Check that the source is clean when building out of source.
@@ -700,7 +701,7 @@ clinic: check-clean-src $(srcdir)/Modules/_blake2/blake2s_impl.c
 $(BUILDPYTHON):	Programs/python.o $(LINK_PYTHON_DEPS)
 	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
-platform: $(BUILDPYTHON) pybuilddir.txt
+platform: $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt
 	$(RUNSHARED) $(PYTHON_FOR_BUILD) -c 'import sys ; from sysconfig import get_platform ; print("%s-%d.%d" % (get_platform(), *sys.version_info[:2]))' >platform
 
 # Create build directory and generate the sysconfig build-time data there.
@@ -710,7 +711,7 @@ platform: $(BUILDPYTHON) pybuilddir.txt
 # problems by creating a dummy pybuilddir.txt just to allow interpreter
 # initialization to succeed.  It will be overwritten by generate-posix-vars
 # or removed in case of failure.
-pybuilddir.txt: $(BUILDPYTHON)
+pybuilddir.txt: $(PYTHON_FOR_BUILD_DEPS)
 	@echo "none" > ./pybuilddir.txt
 	$(RUNSHARED) $(PYTHON_FOR_BUILD) -S -m sysconfig --generate-posix-vars ;\
 	if test $$? -ne 0 ; then \
@@ -729,7 +730,7 @@ $(srcdir)/Modules/_blake2/blake2s_impl.c: $(srcdir)/Modules/_blake2/blake2b_impl
 # -s, --silent or --quiet is always the first char.
 # Under BSD make, MAKEFLAGS might be " -s -v x=y".
 # Ignore macros passed by GNU make, passed after --
-sharedmods: $(BUILDPYTHON) pybuilddir.txt @LIBMPDEC_INTERNAL@ @LIBEXPAT_INTERNAL@
+sharedmods: $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt @LIBMPDEC_INTERNAL@ @LIBEXPAT_INTERNAL@
 	@case "`echo X $$MAKEFLAGS | sed 's/^X //;s/ -- .*//'`" in \
 	    *\ -s*|s*) quiet="-q";; \
 	    *) quiet="";; \
@@ -818,7 +819,7 @@ $(WASM_STDLIB): $(srcdir)/Lib/*.py $(srcdir)/Lib/*/*.py \
 	    Makefile pybuilddir.txt Modules/Setup.local \
 	    python.html python.worker.js
 	$(PYTHON_FOR_BUILD) $(srcdir)/Tools/wasm/wasm_assets.py \
-	    --builddir . --prefix $(prefix)
+	    --buildroot . --prefix $(prefix)
 
 python.html: $(srcdir)/Tools/wasm/python.html python.worker.js
 	@cp $(srcdir)/Tools/wasm/python.html $@
@@ -828,7 +829,7 @@ python.worker.js: $(srcdir)/Tools/wasm/python.worker.js
 
 ##########################################################################
 # Build static libmpdec.a
-LIBMPDEC_CFLAGS=$(PY_STDMODULE_CFLAGS) $(CCSHARED) @LIBMPDEC_CFLAGS@
+LIBMPDEC_CFLAGS=@LIBMPDEC_CFLAGS@ $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
 # for setup.py
 DECIMAL_CFLAGS=@LIBMPDEC_CFLAGS@
@@ -886,7 +887,7 @@ $(LIBMPDEC_A): $(LIBMPDEC_OBJS)
 
 ##########################################################################
 # Build static libexpat.a
-LIBEXPAT_CFLAGS=$(PY_STDMODULE_CFLAGS) $(CCSHARED) @LIBEXPAT_CFLAGS@
+LIBEXPAT_CFLAGS=@LIBEXPAT_CFLAGS@ $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
 # for setup.py
 EXPAT_CFLAGS=@LIBEXPAT_CFLAGS@
@@ -916,6 +917,9 @@ oldsharedmods: $(SHAREDMODS) pybuilddir.txt
 			$(LN) -sf ../../$$mod $$target/`basename $$mod`; \
 		fi; \
 	done
+
+checksharedmods: oldsharedmods sharedmods $(PYTHON_FOR_BUILD_DEPS)
+	@$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/scripts/check_extension_modules.py
 
 Modules/Setup.local:
 	@# Create empty Setup.local when file was deleted by user
@@ -1198,6 +1202,14 @@ regen-global-objects: $(srcdir)/Tools/scripts/generate_global_objects.py
 ############################################################################
 # ABI
 
+regen-abidump: all
+	@$(MKDIR_P) $(srcdir)/Doc/data/
+	abidw "libpython$(LDVERSION).so" --no-architecture --out-file $(srcdir)/Doc/data/python$(LDVERSION).abi.new
+	@$(UPDATE_FILE) --create $(srcdir)/Doc/data/python$(LDVERSION).abi $(srcdir)/Doc/data/python$(LDVERSION).abi.new
+
+check-abidump: all
+	abidiff $(srcdir)/Doc/data/python$(LDVERSION).abi "libpython$(LDVERSION).so" --drop-private-types --no-architecture --no-added-syms
+
 regen-limited-abi: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py --generate-all $(srcdir)/Misc/stable_abi.toml
 
@@ -1325,11 +1337,11 @@ regen-token:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token.py rst \
 		$(srcdir)/Grammar/Tokens \
 		$(srcdir)/Doc/library/token-list.inc
-	# Regenerate Include/token.h from Grammar/Tokens
+	# Regenerate Include/internal/pycore_token.h from Grammar/Tokens
 	# using Tools/scripts/generate_token.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token.py h \
 		$(srcdir)/Grammar/Tokens \
-		$(srcdir)/Include/token.h
+		$(srcdir)/Include/internal/pycore_token.h
 	# Regenerate Parser/token.c from Grammar/Tokens
 	# using Tools/scripts/generate_token.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token.py c \
@@ -1405,8 +1417,7 @@ UNICODE_DEPS = \
 		$(srcdir)/Objects/stringlib/ucs2lib.h \
 		$(srcdir)/Objects/stringlib/ucs4lib.h \
 		$(srcdir)/Objects/stringlib/undef.h \
-		$(srcdir)/Objects/stringlib/unicode_format.h \
-		$(srcdir)/Objects/stringlib/unicodedefs.h
+		$(srcdir)/Objects/stringlib/unicode_format.h
 
 Objects/bytes_methods.o: $(srcdir)/Objects/bytes_methods.c $(BYTESTR_DEPS)
 Objects/bytesobject.o: $(srcdir)/Objects/bytesobject.c $(BYTESTR_DEPS)
@@ -1510,6 +1521,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pymem.h \
 		$(srcdir)/Include/pyport.h \
 		$(srcdir)/Include/pystate.h \
+		$(srcdir)/Include/pystats.h \
 		$(srcdir)/Include/pystrcmp.h \
 		$(srcdir)/Include/pystrtod.h \
 		$(srcdir)/Include/pythonrun.h \
@@ -1521,7 +1533,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/structmember.h \
 		$(srcdir)/Include/structseq.h \
 		$(srcdir)/Include/sysmodule.h \
-		$(srcdir)/Include/token.h \
 		$(srcdir)/Include/traceback.h \
 		$(srcdir)/Include/tracemalloc.h \
 		$(srcdir)/Include/tupleobject.h \
@@ -1565,6 +1576,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pydebug.h \
 		$(srcdir)/Include/cpython/pyerrors.h \
 		$(srcdir)/Include/cpython/pyfpe.h \
+		$(srcdir)/Include/cpython/pyframe.h \
 		$(srcdir)/Include/cpython/pylifecycle.h \
 		$(srcdir)/Include/cpython/pymem.h \
 		$(srcdir)/Include/cpython/pystate.h \
@@ -1596,6 +1608,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_condvar.h \
 		$(srcdir)/Include/internal/pycore_context.h \
 		$(srcdir)/Include/internal/pycore_dict.h \
+		$(srcdir)/Include/internal/pycore_descrobject.h \
 		$(srcdir)/Include/internal/pycore_dtoa.h \
 		$(srcdir)/Include/internal/pycore_exceptions.h \
 		$(srcdir)/Include/internal/pycore_fileutils.h \
@@ -1624,7 +1637,9 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_pylifecycle.h \
 		$(srcdir)/Include/internal/pycore_pymem.h \
 		$(srcdir)/Include/internal/pycore_pystate.h \
+		$(srcdir)/Include/internal/pycore_range.h \
 		$(srcdir)/Include/internal/pycore_runtime.h \
+		$(srcdir)/Include/internal/pycore_runtime_init_generated.h \
 		$(srcdir)/Include/internal/pycore_runtime_init.h \
 		$(srcdir)/Include/internal/pycore_signal.h \
 		$(srcdir)/Include/internal/pycore_sliceobject.h \
@@ -1632,6 +1647,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_structseq.h \
 		$(srcdir)/Include/internal/pycore_symtable.h \
 		$(srcdir)/Include/internal/pycore_sysmodule.h \
+		$(srcdir)/Include/internal/pycore_token.h \
 		$(srcdir)/Include/internal/pycore_traceback.h \
 		$(srcdir)/Include/internal/pycore_tuple.h \
 		$(srcdir)/Include/internal/pycore_typeobject.h \
@@ -1663,7 +1679,7 @@ cleantest: all
 
 # Run a basic set of regression tests.
 # This excludes some tests that are particularly resource-intensive.
-test:		@DEF_MAKE_RULE@ platform
+test: all
 		$(TESTRUNNER) $(TESTOPTS)
 
 # Run the full test suite twice - once without .pyc files, and once with.
@@ -1673,7 +1689,7 @@ test:		@DEF_MAKE_RULE@ platform
 # the bytecode read from a .pyc file had the bug, sometimes the directly
 # generated bytecode.  This is sometimes a very shy bug needing a lot of
 # sample data.
-testall:	@DEF_MAKE_RULE@ platform
+testall: all
 		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
 		$(TESTPYTHON) -E $(srcdir)/Lib/compileall.py
 		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
@@ -1682,7 +1698,7 @@ testall:	@DEF_MAKE_RULE@ platform
 
 # Run the test suite for both architectures in a Universal build on OSX.
 # Must be run on an Intel box.
-testuniversal:	@DEF_MAKE_RULE@ platform
+testuniversal: all
 		@if [ `arch` != 'i386' ]; then \
 			echo "This can only be used on OSX/i386" ;\
 			exit 1 ;\
@@ -1693,7 +1709,7 @@ testuniversal:	@DEF_MAKE_RULE@ platform
 
 # Like testall, but with only one pass and without multiple processes.
 # Run an optional script to include information about the build environment.
-buildbottest:	all platform
+buildbottest: all
 		-@if which pybuildbot.identify >/dev/null 2>&1; then \
 			pybuildbot.identify "CC='$(CC)'" "CXX='$(CXX)'"; \
 		fi
@@ -1708,7 +1724,7 @@ QUICKTESTOPTS=	$(TESTOPTS) -x test_subprocess test_io test_lib2to3 \
 		test_multiprocessing_forkserver \
 		test_mailbox test_nntplib test_socket test_poll \
 		test_select test_zipfile test_concurrent_futures
-quicktest:	@DEF_MAKE_RULE@ platform
+quicktest: all
 		$(TESTRUNNER) $(QUICKTESTOPTS)
 
 # SSL tests
@@ -1719,6 +1735,10 @@ multisslcompile: all
 multissltest: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/ssl/multissltests.py
 
+# All install targets use the "all" target as synchronization point to
+# prevent race conditions with PGO builds. PGO builds use recursive make,
+# which can lead to two parallel `./python setup.py build` processes that
+# step on each others toes.
 install: @FRAMEWORKINSTALLFIRST@ commoninstall bininstall maninstall @FRAMEWORKINSTALLLAST@
 	if test "x$(ENSUREPIP)" != "xno"  ; then \
 		case $(ENSUREPIP) in \
@@ -1747,7 +1767,7 @@ commoninstall:  check-clean-src @FRAMEWORKALTINSTALLFIRST@ \
 # Install shared libraries enabled by Setup
 DESTDIRS=	$(exec_prefix) $(LIBDIR) $(BINLIBDEST) $(DESTSHARED)
 
-oldsharedinstall: $(DESTSHARED) $(SHAREDMODS)
+oldsharedinstall: $(DESTSHARED) all
 		@for i in X $(SHAREDMODS); do \
 		  if test $$i != X; then \
 		    echo $(INSTALL_SHARED) $$i $(DESTSHARED)/`basename $$i`; \
@@ -1909,13 +1929,8 @@ LIBSUBDIRS=	asyncio \
 		xmlrpc \
 		zoneinfo \
 		__phello__
-TESTSUBDIRS=	ctypes/test \
-		distutils/tests \
+TESTSUBDIRS=	distutils/tests \
 		idlelib/idle_test \
-		lib2to3/tests \
-		lib2to3/tests/data \
-		lib2to3/tests/data/fixers \
-		lib2to3/tests/data/fixers/myfixes \
 		test test/audiodata \
 		test/capath test/cjkencodings \
 		test/data test/decimaltestdata \
@@ -1924,6 +1939,7 @@ TESTSUBDIRS=	ctypes/test \
 		test/libregrtest test/sndhdrdata \
 		test/subprocessdata test/support \
 		test/test_asyncio \
+		test/test_ctypes \
 		test/test_email test/test_email/data \
 		test/test_import \
 		test/test_import/data \
@@ -1976,16 +1992,20 @@ TESTSUBDIRS=	ctypes/test \
 		test/test_importlib/zipdata01 \
 		test/test_importlib/zipdata02 \
 		test/test_json \
+		test/test_lib2to3 \
+		test/test_lib2to3/data \
+		test/test_lib2to3/data/fixers \
+		test/test_lib2to3/data/fixers/myfixes \
 		test/test_peg_generator \
+		test/test_tkinter \
 		test/test_tools \
+		test/test_ttk \
 		test/test_warnings test/test_warnings/data \
 		test/test_zoneinfo test/test_zoneinfo/data \
+		test/test_unittest test/test_unittest/testmock \
 		test/tracedmodules \
 		test/xmltestdata test/xmltestdata/c14n-20 \
-		test/ziptestdata \
-		tkinter/test tkinter/test/test_tkinter \
-		tkinter/test/test_ttk \
-		unittest/test unittest/test/testmock
+		test/ziptestdata
 
 TEST_MODULES=@TEST_MODULES@
 libinstall:	all $(srcdir)/Modules/xxmodule.c
@@ -2063,17 +2083,17 @@ libinstall:	all $(srcdir)/Modules/xxmodule.c
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST)  $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -Wi $(DESTDIR)$(LIBDEST)/compileall.py \
 		-j0 -d $(LIBDEST) -f \
-		-x 'bad_coding|badsyntax|site-packages|lib2to3/tests/data' \
+		-x 'bad_coding|badsyntax|site-packages|test/test_lib2to3/data' \
 		$(DESTDIR)$(LIBDEST)
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -Wi -O $(DESTDIR)$(LIBDEST)/compileall.py \
 		-j0 -d $(LIBDEST) -f \
-		-x 'bad_coding|badsyntax|site-packages|lib2to3/tests/data' \
+		-x 'bad_coding|badsyntax|site-packages|test/test_lib2to3/data' \
 		$(DESTDIR)$(LIBDEST)
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -Wi -OO $(DESTDIR)$(LIBDEST)/compileall.py \
 		-j0 -d $(LIBDEST) -f \
-		-x 'bad_coding|badsyntax|site-packages|lib2to3/tests/data' \
+		-x 'bad_coding|badsyntax|site-packages|test/test_lib2to3/data' \
 		$(DESTDIR)$(LIBDEST)
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -Wi $(DESTDIR)$(LIBDEST)/compileall.py \
@@ -2097,7 +2117,7 @@ libinstall:	all $(srcdir)/Modules/xxmodule.c
 python-config: $(srcdir)/Misc/python-config.in Misc/python-config.sh
 	@ # Substitution happens here, as the completely-expanded BINDIR
 	@ # is not available in configure
-	sed -e "s,@EXENAME@,$(BINDIR)/python$(LDVERSION)$(EXE)," < $(srcdir)/Misc/python-config.in >python-config.py
+	sed -e "s,@EXENAME@,$(EXENAME)," < $(srcdir)/Misc/python-config.in >python-config.py
 	@ # Replace makefile compat. variable references with shell script compat. ones; $(VAR) -> ${VAR}
 	LC_ALL=C sed -e 's,\$$(\([A-Za-z0-9_]*\)),\$$\{\1\},g' < Misc/python-config.sh >python-config
 	@ # On Darwin, always use the python version of the script, the shell
@@ -2107,6 +2127,29 @@ python-config: $(srcdir)/Misc/python-config.in Misc/python-config.sh
 		cp python-config.py python-config; \
 	fi
 
+# macOS' make seems to ignore a dependency on a
+# "$(BUILD_SCRIPTS_DIR): $(MKDIR_P) $@" rule.
+BUILD_SCRIPTS_DIR=build/scripts-$(VERSION)
+SCRIPT_2TO3=$(BUILD_SCRIPTS_DIR)/2to3-$(VERSION)
+SCRIPT_IDLE=$(BUILD_SCRIPTS_DIR)/idle$(VERSION)
+SCRIPT_PYDOC=$(BUILD_SCRIPTS_DIR)/pydoc$(VERSION)
+
+$(SCRIPT_2TO3): $(srcdir)/Tools/scripts/2to3
+	@$(MKDIR_P) $(BUILD_SCRIPTS_DIR)
+	sed -e "s,/usr/bin/env python3,$(EXENAME)," < $(srcdir)/Tools/scripts/2to3 > $@
+	@chmod +x $@
+
+$(SCRIPT_IDLE): $(srcdir)/Tools/scripts/idle3
+	@$(MKDIR_P) $(BUILD_SCRIPTS_DIR)
+	sed -e "s,/usr/bin/env python3,$(EXENAME)," < $(srcdir)/Tools/scripts/idle3 > $@
+	@chmod +x $@
+
+$(SCRIPT_PYDOC): $(srcdir)/Tools/scripts/pydoc3
+	@$(MKDIR_P) $(BUILD_SCRIPTS_DIR)
+	sed -e "s,/usr/bin/env python3,$(EXENAME)," < $(srcdir)/Tools/scripts/pydoc3 > $@
+	@chmod +x $@
+
+scripts: $(SCRIPT_2TO3) $(SCRIPT_IDLE) $(SCRIPT_PYDOC) python-config
 
 # Install the include files
 INCLDIRSTOMAKE=$(INCLUDEDIR) $(CONFINCLUDEDIR) $(INCLUDEPY) $(CONFINCLUDEPY)
@@ -2153,7 +2196,7 @@ LIBPL=		@LIBPL@
 # pkgconfig directory
 LIBPC=		$(LIBDIR)/pkgconfig
 
-libainstall:	@DEF_MAKE_RULE@ python-config
+libainstall: all scripts
 	@for i in $(LIBDIR) $(LIBPL) $(LIBPC) $(BINDIR); \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
@@ -2189,6 +2232,9 @@ libainstall:	@DEF_MAKE_RULE@ python-config
 	$(INSTALL_SCRIPT) $(srcdir)/install-sh $(DESTDIR)$(LIBPL)/install-sh
 	$(INSTALL_SCRIPT) python-config.py $(DESTDIR)$(LIBPL)/python-config.py
 	$(INSTALL_SCRIPT) python-config $(DESTDIR)$(BINDIR)/python$(LDVERSION)-config
+	$(INSTALL_SCRIPT) $(SCRIPT_2TO3) $(DESTDIR)$(BINDIR)/2to3-$(VERSION)
+	$(INSTALL_SCRIPT) $(SCRIPT_IDLE) $(DESTDIR)$(BINDIR)/idle$(VERSION)
+	$(INSTALL_SCRIPT) $(SCRIPT_PYDOC) $(DESTDIR)$(BINDIR)/pydoc$(VERSION)
 	@if [ -s Modules/python.exp -a \
 		"`echo $(MACHDEP) | sed 's/^\(...\).*/\1/'`" = "aix" ]; then \
 		echo; echo "Installing support files for building shared extension modules on AIX:"; \
@@ -2207,7 +2253,7 @@ libainstall:	@DEF_MAKE_RULE@ python-config
 
 # Install the dynamically loadable modules
 # This goes into $(exec_prefix)
-sharedinstall: sharedmods
+sharedinstall: all
 	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/setup.py install \
 	   	--prefix=$(prefix) \
 		--install-scripts=$(BINDIR) \
@@ -2383,7 +2429,7 @@ clean-retain-profile: pycremoval
 	-rm -f Lib/lib2to3/*Grammar*.pickle
 	-rm -f _bootstrap_python
 	-rm -f python.html python*.js python.data python*.symbols python*.map
-	-rm -rf $(WASM_STDLIB)
+	-rm -f $(WASM_STDLIB)
 	-rm -f Programs/_testembed Programs/_freeze_module
 	-rm -f Python/deepfreeze/*.[co]
 	-rm -f Python/frozen_modules/*.h
@@ -2437,7 +2483,7 @@ distclean: clobber
 				     -exec rm -f {} ';'
 
 # Check that all symbols exported by libpython start with "Py" or "_Py"
-smelly: @DEF_MAKE_RULE@
+smelly: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/smelly.py
 
 # Find files with funny names
@@ -2472,7 +2518,7 @@ funny:
 		-o -print
 
 # Perform some verification checks on any modified files.
-patchcheck: @DEF_MAKE_RULE@
+patchcheck: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/patchcheck.py
 
 check-limited-abi: all
@@ -2489,7 +2535,8 @@ update-config:
 Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
 
 # Declare targets that aren't real files
-.PHONY: all build_all build_wasm sharedmods check-clean-src oldsharedmods test quicktest
+.PHONY: all build_all build_wasm sharedmods check-clean-src
+.PHONY: oldsharedmods checksharedmods test quicktest
 .PHONY: install altinstall oldsharedinstall bininstall altbininstall
 .PHONY: maninstall libinstall inclinstall libainstall sharedinstall
 .PHONY: frameworkinstall frameworkinstallframework frameworkinstallstructure
@@ -2498,17 +2545,18 @@ Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
 .PHONY: smelly funny patchcheck touch altmaninstall commoninstall
 .PHONY: clean-retain-profile profile-removal run_profile_task
 .PHONY: build_all_generate_profile build_all_merge_profile
-.PHONY: gdbhooks
+.PHONY: gdbhooks scripts
 
 ##########################################################################
-# Module dependencies
+# Module dependencies and platform-specific files
 
 MODULE_CMATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_MATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_PYEXPAT_DEPS=$(LIBEXPAT_HEADERS) @LIBEXPAT_INTERNAL@
 MODULE_UNICODEDATA_DEPS=$(srcdir)/Modules/unicodedata_db.h $(srcdir)/Modules/unicodename_db.h
 MODULE__BLAKE2_DEPS=$(srcdir)/Modules/_blake2/impl/blake2-config.h $(srcdir)/Modules/_blake2/impl/blake2-impl.h $(srcdir)/Modules/_blake2/impl/blake2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2b-ref.c $(srcdir)/Modules/_blake2/impl/blake2b-round.h $(srcdir)/Modules/_blake2/impl/blake2b.c $(srcdir)/Modules/_blake2/impl/blake2s-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2s-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2s-load-xop.h $(srcdir)/Modules/_blake2/impl/blake2s-ref.c $(srcdir)/Modules/_blake2/impl/blake2s-round.h $(srcdir)/Modules/_blake2/impl/blake2s.c $(srcdir)/Modules/_blake2/blake2module.h $(srcdir)/Modules/hashlib.h
-MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h
+MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h $(srcdir)/Modules/_ctypes/darwin/dlfcn.h
+MODULE__CTYPES_MALLOC_CLOSURE=@MODULE__CTYPES_MALLOC_CLOSURE@
 MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h $(LIBMPDEC_HEADERS) @LIBMPDEC_INTERNAL@
 MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c $(LIBEXPAT_HEADERS) @LIBEXPAT_INTERNAL@
 MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
