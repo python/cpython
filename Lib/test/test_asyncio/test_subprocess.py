@@ -695,6 +695,12 @@ if sys.platform != 'win32':
                                       test_utils.TestCase):
         Watcher = unix_events.PidfdChildWatcher
 
+
+    class MultiLoopChildWatcherTests(unittest.TestCase):
+        def test_deprecated(self):
+            with self.assertWarns(DeprecationWarning):
+                asyncio.MultiLoopChildWatcher()
+
 else:
     # Windows
     class SubprocessProactorTests(SubprocessMixin, test_utils.TestCase):
