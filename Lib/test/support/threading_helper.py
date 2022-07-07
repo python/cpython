@@ -320,7 +320,7 @@ class Server:
                 # ssl.SSLError subclass OSError so we need a separate logic
                 # to split them away. Fortunately, they always set errno to 0.
                 except OSError as e:
-                    print('***************************************', e)
+                    print('***************************************', e.errno, e)
                     if not client_fails or e.errno != 0:
                         raise
             return results
