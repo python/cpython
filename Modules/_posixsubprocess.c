@@ -650,12 +650,12 @@ child_exec(char *const exec_array[],
 #endif /* HAVE_SETGROUPS */
 
 #ifdef HAVE_SETREGID
-    if (gid == RESERVED_GID)
+    if (gid != RESERVED_GID)
         POSIX_CALL(setregid(gid, gid));
 #endif /* HAVE_SETREGID */
 
 #ifdef HAVE_SETREUID
-    if (uid == RESERVED_UID)
+    if (uid != RESERVED_UID)
         POSIX_CALL(setreuid(uid, uid));
 #endif /* HAVE_SETREUID */
 
