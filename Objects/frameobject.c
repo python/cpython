@@ -361,15 +361,29 @@ mark_stacks(PyCodeObject *code_obj, int len)
 }
 
 static int
+stack_depth(int64_t stack)
+{
+    int depth = 0;
+    while(stack) {
+        depth += 1;
+        stack = pop_value(stack);
+    }
+    return depth;
+}
+
+static int
 compatible_stack(int64_t from_stack, int64_t to_stack)
 {
     if (from_stack < 0 || to_stack < 0) {
         return 0;
     }
-    while(from_stack > to_stack) {
-        from_stack = pop_value(from_stack);
+    if (from_stack == to_stack) {
+        return 1;
     }
-    while(from_stack) {
+    if (stack_depth(from_stack) != stack_depth(to_stack)) {
+        return 0;
+    }
+    while (from_stack && to_stack) {
         Kind from_top = top_of_stack(from_stack);
         Kind to_top = top_of_stack(to_stack);
         if (!compatible_kind(from_top, to_top)) {
@@ -378,7 +392,7 @@ compatible_stack(int64_t from_stack, int64_t to_stack)
         from_stack = pop_value(from_stack);
         to_stack = pop_value(to_stack);
     }
-    return to_stack == 0;
+    return to_stack == 0 && from_stack == 0;
 }
 
 static const char *
@@ -651,6 +665,9 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
                 }
                 else if (start_stack == UNINITIALIZED) {
                     msg = "can't jump from within an exception handler";
+                }
+                else if (start_stack != target_stack) {
+                    msg = "incompatible stacks";
                 }
                 else {
                     msg = explain_incompatible_stack(target_stack);
