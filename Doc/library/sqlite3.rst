@@ -236,90 +236,89 @@ Module functions and constants
    (bitwise or) operator.
 
 
-.. function:: connect(database[, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri])
 
-   Opens a connection to the SQLite database file *database*. By default returns a
-   :class:`Connection` object, unless a custom *factory* is given.
+.. function:: connect(database, timeout=5.0, detect_types=0, isolation_level="DEFERRED", check_same_thread=True, factory=sqlite3.Connection, cached_statements=128, uri=False)
 
-   *database* is a :term:`path-like object` giving the pathname (absolute or
-   relative to the current  working directory) of the database file to be opened.
-   You can use ``":memory:"`` to open a database connection to a database that
-   resides in RAM instead of on disk.
+   Open a connection to an SQLite database.
 
-   When a database is accessed by multiple connections, and one of the processes
-   modifies the database, the SQLite database is locked until that transaction is
-   committed. The *timeout* parameter specifies how long the connection should wait
-   for the lock to go away until raising an exception. The default for the timeout
-   parameter is 5.0 (five seconds).
+   :param database:
+       The path to the database file to be opened.
+       Pass ``":memory:"`` to open a connection to a database that is
+       in RAM instead of on disk.
+   :type database: :term:`path-like object`
 
-   For the *isolation_level* parameter, please see the
-   :attr:`~Connection.isolation_level` property of :class:`Connection` objects.
+   :param timeout:
+       How many seconds the connection should wait before raising
+       an exception, if the database is locked by another connection.
+       If another connection opens a transaction to modify the database,
+       it will be locked until that transaction is committed.
+       Default five seconds.
+   :type timeout: float
 
-   SQLite natively supports only the types TEXT, INTEGER, REAL, BLOB and NULL. If
-   you want to use other types you must add support for them yourself. The
-   *detect_types* parameter and using custom **converters** registered with the
-   module-level :func:`register_converter` function allow you to easily do that.
+   :param detect_types:
+       Control whether and how data types not
+       :ref:`natively supported by SQLite <sqlite3-types>`
+       are looked up to be converted to Python types,
+       using the converters registered with :func:`register_converter`.
+       Set it to any combination (using ``|``, bitwise or) of
+       :const:`PARSE_DECLTYPES` and :const:`PARSE_COLNAMES`
+       to enable this.
+       Column names takes precedence over declared types if both flags are set.
+       Types cannot be detected for generated fields (for example ``max(data)``),
+       even when the *detect_types* parameter is set; :class:`str` will be
+       returned instead.
+       By default (``0``), type detection is disabled.
+   :type detect_types: int
 
-   *detect_types* defaults to 0 (type detection disabled).
-   Set it to any combination (using ``|``, bitwise or) of
-   :const:`PARSE_DECLTYPES` and :const:`PARSE_COLNAMES`
-   to enable type detection.
-   Column names takes precedence over declared types if both flags are set.
-   Types cannot be detected for generated fields (for example ``max(data)``),
-   even when the *detect_types* parameter is set.
-   In such cases, the returned type is :class:`str`.
+   :param isolation_level:
+       The :attr:`~Connection.isolation_level` of the connection,
+       controlling whether and how transactions are implicitly opened.
+       Can be ``"DEFERRED"`` (default), ``"EXCLUSIVE"`` or ``"IMMEDIATE"``;
+       or :const:`None` to disable opening transactions implicitly.
+       See :ref:`sqlite3-controlling-transactions` for more.
+   :type isolation_level: str | None
 
-   By default, *check_same_thread* is :const:`True` and only the creating thread may
-   use the connection. If set :const:`False`, the returned connection may be shared
-   across multiple threads. When using multiple threads with the same connection
-   writing operations should be serialized by the user to avoid data corruption.
+   :param check_same_thread:
+       If :const:`True` (default), only the creating thread may use the connection.
+       If :const:`False`, the connection may be shared across multiple threads;
+       if so, write operations should be serialized by the user to avoid data
+       corruption.
+   :type check_same_thread: bool
 
-   By default, the :mod:`sqlite3` module uses its :class:`Connection` class for the
-   connect call.  You can, however, subclass the :class:`Connection` class and make
-   :func:`connect` use your class instead by providing your class for the *factory*
-   parameter.
+   :param factory:
+       A custom subclass of :class:`Connection` to create the connection with,
+       if not the default :class:`Connection` class.
+   :type factory: :class:`Connection`
 
-   Consult the section :ref:`sqlite3-types` of this manual for details.
+   :param cached_statements:
+       The number of statements that ``sqlite3``
+       should internally cache for this connection, to avoid parsing overhead.
+       By default, 128 statements.
+   :type cached_statements: int
 
-   The :mod:`sqlite3` module internally uses a statement cache to avoid SQL parsing
-   overhead. If you want to explicitly set the number of statements that are cached
-   for the connection, you can set the *cached_statements* parameter. The currently
-   implemented default is to cache 128 statements.
+   :param uri:
+       If set to :const:`True`, *database* is interpreted as a
+       :abbr:`URI (Uniform Resource Identifier)` with a file path
+       and an optional query string.
+       The scheme part *must* be ``"file:"``,
+       and the path can be relative or absolute.
+       The query string allows passing parameters to SQLite,
+       enabling various :ref:`sqlite3-uri-tricks`.
+   :type uri: bool
 
-   If *uri* is :const:`True`, *database* is interpreted as a
-   :abbr:`URI (Uniform Resource Identifier)` with a file path and an optional
-   query string.  The scheme part *must* be ``"file:"``.  The path can be a
-   relative or absolute file path.  The query string allows us to pass
-   parameters to SQLite. Some useful URI tricks include::
-
-       # Open a database in read-only mode.
-       con = sqlite3.connect("file:template.db?mode=ro", uri=True)
-
-       # Don't implicitly create a new database file if it does not already exist.
-       # Will raise sqlite3.OperationalError if unable to open a database file.
-       con = sqlite3.connect("file:nosuchdb.db?mode=rw", uri=True)
-
-       # Create a shared named in-memory database.
-       con1 = sqlite3.connect("file:mem1?mode=memory&cache=shared", uri=True)
-       con2 = sqlite3.connect("file:mem1?mode=memory&cache=shared", uri=True)
-       con1.executescript("create table t(t); insert into t values(28);")
-       rows = con2.execute("select * from t").fetchall()
-
-   More information about this feature, including a list of recognized
-   parameters, can be found in the
-   `SQLite URI documentation <https://www.sqlite.org/uri.html>`_.
+   :rtype: sqlite3.Connection
 
    .. audit-event:: sqlite3.connect database sqlite3.connect
    .. audit-event:: sqlite3.connect/handle connection_handle sqlite3.connect
 
-   .. versionchanged:: 3.4
-      Added the *uri* parameter.
+   .. versionadded:: 3.4
+      The *uri* parameter.
 
    .. versionchanged:: 3.7
       *database* can now also be a :term:`path-like object`, not only a string.
 
-   .. versionchanged:: 3.10
-      Added the ``sqlite3.connect/handle`` auditing event.
+   .. versionadded:: 3.10
+      The ``sqlite3.connect/handle`` auditing event.
 
 
 .. function:: register_converter(typename, converter, /)
@@ -1469,6 +1468,36 @@ regardless of the value of :attr:`~Connection.isolation_level`.
 .. _SQLite transaction behaviour:
    https://www.sqlite.org/lang_transaction.html#deferred_immediate_and_exclusive_transactions
 
+
+.. _sqlite3-uri-tricks:
+
+SQLite URI tricks
+-----------------
+
+Some useful URI tricks include:
+
+* Open a database in read-only mode::
+
+    con = sqlite3.connect("file:template.db?mode=ro", uri=True)
+
+* Do not implicitly create a new database file if it does not already exist;
+  will raise :exc:`~sqlite3.OperationalError` if unable to create a new file::
+
+    con = sqlite3.connect("file:nosuchdb.db?mode=rw", uri=True)
+
+* Create a shared named in-memory database::
+
+    con1 = sqlite3.connect("file:mem1?mode=memory&cache=shared", uri=True)
+    con2 = sqlite3.connect("file:mem1?mode=memory&cache=shared", uri=True)
+    con1.execute("create table t(t)")
+    con1.execute("insert into t values(28)")
+    con1.commit()
+    rows = con2.execute("select * from t").fetchall()
+
+More information about this feature, including a list of parameters,
+can be found in the `SQLite URI documentation`_.
+
+.. _SQLite URI documentation: https://www.sqlite.org/uri.html
 
 Using :mod:`sqlite3` efficiently
 --------------------------------
