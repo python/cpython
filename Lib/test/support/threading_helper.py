@@ -1,5 +1,5 @@
 import _thread
-from concurrent.futures import ThreadPoolExecutor, wait
+from concurrent.futures import ThreadPoolExecutor
 import contextlib
 import functools
 import sys
@@ -15,10 +15,12 @@ _thread_pool = None
 
 
 def _release():
+    global _thread_pool
     _thread_pool = None
 
 
 def init():
+    global _thread_pool
     _thread_pool = ThreadPoolExecutor()
     unittest.addModuleCleanup(_release)
 
@@ -333,7 +335,6 @@ class Server:
         return HOST, self._port
 
     def __exit__(self, etype, evalue, traceback):
-        wait([self._result])
         if etype is ConnectionAbortedError or etype is ConnectionResetError:
             if self._result.exception() is not None:
                 generic = RuntimeError('server-side error')
