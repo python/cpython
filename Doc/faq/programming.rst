@@ -1274,7 +1274,7 @@ Or, you can use an extension that provides a matrix datatype; `NumPy
 
 
 How do I apply a method or function to a sequence of objects?
--------------------------------------------------
+-------------------------------------------------------------
 
 If you want a list of the return values of the method or function, use a list
 comprehension::
