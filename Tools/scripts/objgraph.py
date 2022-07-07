@@ -180,7 +180,8 @@ def main():
         if filename == '-':
             readinput(sys.stdin)
         else:
-            readinput(open(filename, 'r'))
+            with open(filename) as f:
+                readinput(f)
     #
     warndups()
     #

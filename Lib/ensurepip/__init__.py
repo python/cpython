@@ -1,38 +1,114 @@
+import collections
 import os
 import os.path
-import pkgutil
+import subprocess
 import sys
+import sysconfig
 import tempfile
+from importlib import resources
 
 
 __all__ = ["version", "bootstrap"]
-
-
-_SETUPTOOLS_VERSION = "28.8.0"
-
-_PIP_VERSION = "9.0.1"
-
+_PACKAGE_NAMES = ('setuptools', 'pip')
+_SETUPTOOLS_VERSION = "58.1.0"
+_PIP_VERSION = "22.0.4"
 _PROJECTS = [
-    ("setuptools", _SETUPTOOLS_VERSION),
-    ("pip", _PIP_VERSION),
+    ("setuptools", _SETUPTOOLS_VERSION, "py3"),
+    ("pip", _PIP_VERSION, "py3"),
 ]
+
+# Packages bundled in ensurepip._bundled have wheel_name set.
+# Packages from WHEEL_PKG_DIR have wheel_path set.
+_Package = collections.namedtuple('Package',
+                                  ('version', 'wheel_name', 'wheel_path'))
+
+# Directory of system wheel packages. Some Linux distribution packaging
+# policies recommend against bundling dependencies. For example, Fedora
+# installs wheel packages in the /usr/share/python-wheels/ directory and don't
+# install the ensurepip._bundled package.
+_WHEEL_PKG_DIR = sysconfig.get_config_var('WHEEL_PKG_DIR')
+
+
+def _find_packages(path):
+    packages = {}
+    try:
+        filenames = os.listdir(path)
+    except OSError:
+        # Ignore: path doesn't exist or permission error
+        filenames = ()
+    # Make the code deterministic if a directory contains multiple wheel files
+    # of the same package, but don't attempt to implement correct version
+    # comparison since this case should not happen.
+    filenames = sorted(filenames)
+    for filename in filenames:
+        # filename is like 'pip-21.2.4-py3-none-any.whl'
+        if not filename.endswith(".whl"):
+            continue
+        for name in _PACKAGE_NAMES:
+            prefix = name + '-'
+            if filename.startswith(prefix):
+                break
+        else:
+            continue
+
+        # Extract '21.2.4' from 'pip-21.2.4-py3-none-any.whl'
+        version = filename.removeprefix(prefix).partition('-')[0]
+        wheel_path = os.path.join(path, filename)
+        packages[name] = _Package(version, None, wheel_path)
+    return packages
+
+
+def _get_packages():
+    global _PACKAGES, _WHEEL_PKG_DIR
+    if _PACKAGES is not None:
+        return _PACKAGES
+
+    packages = {}
+    for name, version, py_tag in _PROJECTS:
+        wheel_name = f"{name}-{version}-{py_tag}-none-any.whl"
+        packages[name] = _Package(version, wheel_name, None)
+    if _WHEEL_PKG_DIR:
+        dir_packages = _find_packages(_WHEEL_PKG_DIR)
+        # only used the wheel package directory if all packages are found there
+        if all(name in dir_packages for name in _PACKAGE_NAMES):
+            packages = dir_packages
+    _PACKAGES = packages
+    return packages
+_PACKAGES = None
 
 
 def _run_pip(args, additional_paths=None):
-    # Add our bundled software to the sys.path so we can import it
-    if additional_paths is not None:
-        sys.path = additional_paths + sys.path
+    # Run the bootstrapping in a subprocess to avoid leaking any state that happens
+    # after pip has executed. Particularly, this avoids the case when pip holds onto
+    # the files in *additional_paths*, preventing us to remove them at the end of the
+    # invocation.
+    code = f"""
+import runpy
+import sys
+sys.path = {additional_paths or []} + sys.path
+sys.argv[1:] = {args}
+runpy.run_module("pip", run_name="__main__", alter_sys=True)
+"""
 
-    # Install the bundled software
-    import pip
-    return pip.main(args)
+    cmd = [
+        sys.executable,
+        '-W',
+        'ignore::DeprecationWarning',
+        '-c',
+        code,
+    ]
+    if sys.flags.isolated:
+        # run code in isolated mode if currently running isolated
+        cmd.insert(1, '-I')
+    return subprocess.run(cmd, check=True).returncode
 
 
 def version():
     """
     Returns a string specifying the bundled version of pip.
     """
-    return _PIP_VERSION
+    return _get_packages()['pip'].version
+
 
 def _disable_pip_configuration_settings():
     # We deliberately ignore all pip environment variables
@@ -73,6 +149,8 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
     if altinstall and default_pip:
         raise ValueError("Cannot use altinstall and default_pip together")
 
+    sys.audit("ensurepip.bootstrap", root)
+
     _disable_pip_configuration_settings()
 
     # By default, installing pip and setuptools installs all of the
@@ -92,19 +170,26 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
         # Put our bundled wheels into a temporary directory and construct the
         # additional paths that need added to sys.path
         additional_paths = []
-        for project, version in _PROJECTS:
-            wheel_name = "{}-{}-py2.py3-none-any.whl".format(project, version)
-            whl = pkgutil.get_data(
-                "ensurepip",
-                "_bundled/{}".format(wheel_name),
-            )
-            with open(os.path.join(tmpdir, wheel_name), "wb") as fp:
+        for name, package in _get_packages().items():
+            if package.wheel_name:
+                # Use bundled wheel package
+                wheel_name = package.wheel_name
+                wheel_path = resources.files("ensurepip") / "_bundled" / wheel_name
+                whl = wheel_path.read_bytes()
+            else:
+                # Use the wheel package directory
+                with open(package.wheel_path, "rb") as fp:
+                    whl = fp.read()
+                wheel_name = os.path.basename(package.wheel_path)
+
+            filename = os.path.join(tmpdir, wheel_name)
+            with open(filename, "wb") as fp:
                 fp.write(whl)
 
-            additional_paths.append(os.path.join(tmpdir, wheel_name))
+            additional_paths.append(filename)
 
         # Construct the arguments to be passed to the pip command
-        args = ["install", "--no-index", "--find-links", tmpdir]
+        args = ["install", "--no-cache-dir", "--no-index", "--find-links", tmpdir]
         if root:
             args += ["--root", root]
         if upgrade:
@@ -114,7 +199,7 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
         if verbosity:
             args += ["-" + "v" * verbosity]
 
-        return _run_pip(args + [p[0] for p in _PROJECTS], additional_paths)
+        return _run_pip([*args, *_PACKAGE_NAMES], additional_paths)
 
 def _uninstall_helper(*, verbosity=0):
     """Helper to support a clean default uninstall process on Windows
@@ -127,11 +212,14 @@ def _uninstall_helper(*, verbosity=0):
     except ImportError:
         return
 
-    # If the pip version doesn't match the bundled one, leave it alone
-    if pip.__version__ != _PIP_VERSION:
-        msg = ("ensurepip will only uninstall a matching version "
-               "({!r} installed, {!r} bundled)")
-        print(msg.format(pip.__version__, _PIP_VERSION), file=sys.stderr)
+    # If the installed pip version doesn't match the available one,
+    # leave it alone
+    available_version = version()
+    if pip.__version__ != available_version:
+        print(f"ensurepip will only uninstall a matching version "
+              f"({pip.__version__!r} installed, "
+              f"{available_version!r} available)",
+              file=sys.stderr)
         return
 
     _disable_pip_configuration_settings()
@@ -141,7 +229,7 @@ def _uninstall_helper(*, verbosity=0):
     if verbosity:
         args += ["-" + "v" * verbosity]
 
-    return _run_pip(args + [p[0] for p in reversed(_PROJECTS)])
+    return _run_pip([*args, *reversed(_PACKAGE_NAMES)])
 
 
 def _main(argv=None):
@@ -182,15 +270,15 @@ def _main(argv=None):
         "--altinstall",
         action="store_true",
         default=False,
-        help=("Make an alternate install, installing only the X.Y versioned"
-              "scripts (Default: pipX, pipX.Y, easy_install-X.Y)"),
+        help=("Make an alternate install, installing only the X.Y versioned "
+              "scripts (Default: pipX, pipX.Y, easy_install-X.Y)."),
     )
     parser.add_argument(
         "--default-pip",
         action="store_true",
         default=False,
         help=("Make a default pip install, installing the unqualified pip "
-              "and easy_install in addition to the versioned scripts"),
+              "and easy_install in addition to the versioned scripts."),
     )
 
     args = parser.parse_args(argv)

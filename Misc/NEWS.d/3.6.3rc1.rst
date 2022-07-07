@@ -1,0 +1,1243 @@
+.. bpo: 29781
+.. date: 2017-09-05-15-26-30
+.. nonce: LwYtBP
+.. release date: 2017-09-18
+.. section: Security
+
+SSLObject.version() now correctly returns None when handshake over BIO has
+not been performed yet.
+
+..
+
+.. bpo: 30947
+.. date: 2017-08-16-16-35-59
+.. nonce: iNMmm4
+.. section: Security
+
+Upgrade libexpat embedded copy from version 2.2.1 to 2.2.3 to get security
+fixes.
+
+..
+
+.. bpo: 31471
+.. date: 2017-09-14-19-47-57
+.. nonce: 0yiA5Q
+.. section: Core and Builtins
+
+Fix an assertion failure in `subprocess.Popen()` on Windows, in case the env
+argument has a bad keys() method. Patch by Oren Milman.
+
+..
+
+.. bpo: 31418
+.. date: 2017-09-13-13-03-52
+.. nonce: rS-FlC
+.. section: Core and Builtins
+
+Fix an assertion failure in `PyErr_WriteUnraisable()` in case of an
+exception with a bad ``__module__`` attribute. Patch by Oren Milman.
+
+..
+
+.. bpo: 31416
+.. date: 2017-09-11-12-54-35
+.. nonce: 2hlQFd
+.. section: Core and Builtins
+
+Fix assertion failures in case of a bad warnings.filters or
+warnings.defaultaction. Patch by Oren Milman.
+
+..
+
+.. bpo: 31411
+.. date: 2017-09-11-08-50-41
+.. nonce: HZz82I
+.. section: Core and Builtins
+
+Raise a TypeError instead of SystemError in case warnings.onceregistry is
+not a dictionary. Patch by Oren Milman.
+
+..
+
+.. bpo: 31373
+.. date: 2017-09-06-15-25-59
+.. nonce: dC4jd4
+.. section: Core and Builtins
+
+Fix several possible instances of undefined behavior due to floating-point
+demotions.
+
+..
+
+.. bpo: 30465
+.. date: 2017-09-06-10-47-29
+.. nonce: oe-3GD
+.. section: Core and Builtins
+
+Location information (``lineno`` and ``col_offset``) in f-strings is now
+(mostly) correct.  This fixes tools like flake8 from showing warnings on the
+wrong line (typically the first line of the file).
+
+..
+
+.. bpo: 31343
+.. date: 2017-09-04-14-57-27
+.. nonce: Kl_fS5
+.. section: Core and Builtins
+
+Include sys/sysmacros.h for major(), minor(), and makedev(). GNU C libray
+plans to remove the functions from sys/types.h.
+
+..
+
+.. bpo: 31291
+.. date: 2017-08-28-11-51-29
+.. nonce: t8QggK
+.. section: Core and Builtins
+
+Fix an assertion failure in `zipimport.zipimporter.get_data` on Windows,
+when the return value of ``pathname.replace('/','\\')`` isn't a string.
+Patch by Oren Milman.
+
+..
+
+.. bpo: 31271
+.. date: 2017-08-25-20-43-22
+.. nonce: YMduKF
+.. section: Core and Builtins
+
+Fix an assertion failure in the write() method of `io.TextIOWrapper`, when
+the encoder doesn't return a bytes object. Patch by Oren Milman.
+
+..
+
+.. bpo: 31243
+.. date: 2017-08-24-13-34-49
+.. nonce: dRJzqR
+.. section: Core and Builtins
+
+Fix a crash in some methods of `io.TextIOWrapper`, when the decoder's state
+is invalid. Patch by Oren Milman.
+
+..
+
+.. bpo: 30721
+.. date: 2017-08-18-15-15-20
+.. nonce: Hmc56z
+.. section: Core and Builtins
+
+``print`` now shows correct usage hint for using Python 2 redirection
+syntax.  Patch by Sanyam Khurana.
+
+..
+
+.. bpo: 31070
+.. date: 2017-08-09-09-40-54
+.. nonce: oDyLiI
+.. section: Core and Builtins
+
+Fix a race condition in importlib _get_module_lock().
+
+..
+
+.. bpo: 31095
+.. date: 2017-08-01-18-48-30
+.. nonce: bXWZDb
+.. section: Core and Builtins
+
+Fix potential crash during GC caused by ``tp_dealloc`` which doesn't call
+``PyObject_GC_UnTrack()``.
+
+..
+
+.. bpo: 31071
+.. date: 2017-07-31-13-28-53
+.. nonce: P9UBDy
+.. section: Core and Builtins
+
+Avoid masking original TypeError in call with * unpacking when other
+arguments are passed.
+
+..
+
+.. bpo: 30978
+.. date: 2017-07-21-07-39-05
+.. nonce: f0jODc
+.. section: Core and Builtins
+
+str.format_map() now passes key lookup exceptions through. Previously any
+exception was replaced with a KeyError exception.
+
+..
+
+.. bpo: 30808
+.. date: 2017-07-17-12-12-59
+.. nonce: bA3zOv
+.. section: Core and Builtins
+
+Use _Py_atomic API for concurrency-sensitive signal state.
+
+..
+
+.. bpo: 30876
+.. date: 2017-07-11-06-31-32
+.. nonce: x35jZX
+.. section: Core and Builtins
+
+Relative import from unloaded package now reimports the package instead of
+failing with SystemError.  Relative import from non-package now fails with
+ImportError rather than SystemError.
+
+..
+
+.. bpo: 30703
+.. date: 2017-06-28-21-07-32
+.. nonce: ULCdFp
+.. section: Core and Builtins
+
+Improve signal delivery.
+Avoid using Py_AddPendingCall from signal handler, to avoid calling
+signal-unsafe functions. The tests I'm adding here fail without the rest of
+the patch, on Linux and OS X. This means our signal delivery logic had
+defects (some signals could be lost).
+
+..
+
+.. bpo: 30765
+.. date: 2017-06-26-14-29-50
+.. nonce: Q5iBmf
+.. section: Core and Builtins
+
+Avoid blocking in pthread_mutex_lock() when PyThread_acquire_lock() is asked
+not to block.
+
+..
+
+.. bpo: 31161
+.. date: 06
+.. nonce: FcUAA0
+.. section: Core and Builtins
+
+Make sure the 'Missing parentheses' syntax error message is only applied to
+SyntaxError, not to subclasses. Patch by Martijn Pieters.
+
+..
+
+.. bpo: 30814
+.. date: 05
+.. nonce: HcYsfM
+.. section: Core and Builtins
+
+Fixed a race condition when import a submodule from a package.
+
+..
+
+.. bpo: 30597
+.. date: 04
+.. nonce: 7erHiP
+.. section: Core and Builtins
+
+``print`` now shows expected input in custom error message when used as a
+Python 2 statement. Patch by Sanyam Khurana.
+
+..
+
+.. bpo: 31499
+.. date: 2017-09-18-10-57-04
+.. nonce: BydYhf
+.. section: Library
+
+xml.etree: Fix a crash when a parser is part of a reference cycle.
+
+..
+
+.. bpo: 28556
+.. date: 2017-09-14-11-02-56
+.. nonce: EUOiYs
+.. section: Library
+
+typing.get_type_hints now finds the right globalns for classes and modules
+by default (when no ``globalns`` was specified by the caller).
+
+..
+
+.. bpo: 28556
+.. date: 2017-09-13-23-27-39
+.. nonce: UmTQvv
+.. section: Library
+
+Speed improvements to the ``typing`` module.  Original PRs by Ivan
+Levkivskyi and Mitar.
+
+..
+
+.. bpo: 31544
+.. date: 2017-09-13-19-55-35
+.. nonce: beTh6t
+.. section: Library
+
+The C accelerator module of ElementTree ignored exceptions raised when
+looking up TreeBuilder target methods in XMLParser().
+
+..
+
+.. bpo: 31234
+.. date: 2017-09-13-18-05-56
+.. nonce: lGkcPg
+.. section: Library
+
+socket.create_connection() now fixes manually a reference cycle: clear the
+variable storing the last exception on success.
+
+..
+
+.. bpo: 31457
+.. date: 2017-09-13-13-33-39
+.. nonce: bIVBtI
+.. section: Library
+
+LoggerAdapter objects can now be nested.
+
+..
+
+.. bpo: 31400
+.. date: 2017-09-08-14-19-57
+.. nonce: YOTPKi
+.. section: Library
+
+Improves SSL error handling to avoid losing error numbers.
+
+..
+
+.. bpo: 28958
+.. date: 2017-09-06-19-41-01
+.. nonce: x4-K5F
+.. section: Library
+
+ssl.SSLContext() now uses OpenSSL error information when a context cannot be
+instantiated.
+
+..
+
+.. bpo: 27340
+.. date: 2017-09-06-06-50-41
+.. nonce: GgekV5
+.. section: Library
+
+SSLSocket.sendall() now uses memoryview to create slices of data. This fixes
+support for all bytes-like object. It is also more efficient and avoids
+costly copies.
+
+..
+
+.. bpo: 31178
+.. date: 2017-09-05-14-55-28
+.. nonce: JrSFo7
+.. section: Library
+
+Fix string concatenation bug in rare error path in the subprocess module
+
+..
+
+.. bpo: 31350
+.. date: 2017-09-05-10-30-48
+.. nonce: dXJ-7N
+.. section: Library
+
+Micro-optimize :func:`asyncio._get_running_loop` to become up to 10% faster.
+
+..
+
+.. bpo: 31170
+.. date: 2017-09-04-23-41-35
+.. nonce: QGmJ1t
+.. section: Library
+
+expat: Update libexpat from 2.2.3 to 2.2.4. Fix copying of partial
+characters for UTF-8 input (libexpat bug 115):
+https://github.com/libexpat/libexpat/issues/115
+
+..
+
+.. bpo: 29136
+.. date: 2017-09-04-16-39-49
+.. nonce: vSn1oR
+.. section: Library
+
+Add TLS 1.3 cipher suites and OP_NO_TLSv1_3.
+
+..
+
+.. bpo: 29212
+.. date: 2017-09-03-14-31-00
+.. nonce: bicycl
+.. section: Library
+
+Fix concurrent.futures.thread.ThreadPoolExecutor threads to have a non
+repr() based thread name by default when no thread_name_prefix is supplied.
+They will now identify themselves as "ThreadPoolExecutor-y_n".
+
+..
+
+.. bpo: 9146
+.. date: 2017-09-03-14-10-00
+.. nonce: _-oo-_
+.. section: Library
+
+Fix a segmentation fault in _hashopenssl when standard hash functions such
+as md5 are not available in the linked OpenSSL library.  As in some special
+FIPS-140 build environments.
+
+..
+
+.. bpo: 27144
+.. date: 2017-08-30-11-26-14
+.. nonce: PEDJsE
+.. section: Library
+
+The ``map()`` and ``as_completed()`` iterators in ``concurrent.futures`` now
+avoid keeping a reference to yielded objects.
+
+..
+
+.. bpo: 10746
+.. date: 2017-08-28-13-01-05
+.. nonce: nmAvfu
+.. section: Library
+
+Fix ctypes producing wrong :pep:`3118` type codes for integer types.
+
+..
+
+.. bpo: 22536
+.. date: 2017-08-23
+.. nonce: _narf_
+.. section: Library
+
+The subprocess module now sets the filename when FileNotFoundError is raised
+on POSIX systems due to the executable or cwd not being found.
+
+..
+
+.. bpo: 31249
+.. date: 2017-08-22-12-44-48
+.. nonce: STPbb9
+.. section: Library
+
+concurrent.futures: WorkItem.run() used by ThreadPoolExecutor now breaks a
+reference cycle between an exception object and the WorkItem object.
+
+..
+
+.. bpo: 31247
+.. date: 2017-08-21-17-50-27
+.. nonce: 8S3zJp
+.. section: Library
+
+xmlrpc.server now explicitly breaks reference cycles when using
+sys.exc_info() in code handling exceptions.
+
+..
+
+.. bpo: 30102
+.. date: 2017-08-16-21-14-31
+.. nonce: 1sPqmc
+.. section: Library
+
+The ssl and hashlib modules now call OPENSSL_add_all_algorithms_noconf() on
+OpenSSL < 1.1.0. The function detects CPU features and enables optimizations
+on some CPU architectures such as POWER8. Patch is based on research from
+Gustavo Serra Scalet.
+
+..
+
+.. bpo: 31185
+.. date: 2017-08-11-19-30-00
+.. nonce: i6TPgL
+.. section: Library
+
+Fixed miscellaneous errors in asyncio speedup module.
+
+..
+
+.. bpo: 31135
+.. date: 2017-08-08-14-44-37
+.. nonce: HH94xR
+.. section: Library
+
+ttk: fix the destroy() method of LabeledScale and OptionMenu classes. Call
+the parent destroy() method even if the used attribute doesn't exist. The
+LabeledScale.destroy() method now also explicitly clears label and scale
+attributes to help the garbage collector to destroy all widgets.
+
+..
+
+.. bpo: 31107
+.. date: 2017-08-02-12-48-15
+.. nonce: 1t2hn5
+.. section: Library
+
+Fix `copyreg._slotnames()` mangled attribute calculation for classes whose
+name begins with an underscore. Patch by Shane Harvey.
+
+..
+
+.. bpo: 31061
+.. date: 2017-08-01-09-32-58
+.. nonce: husAYX
+.. section: Library
+
+Fixed a crash when using asyncio and threads.
+
+..
+
+.. bpo: 30502
+.. date: 2017-07-27-11-33-58
+.. nonce: GJlfU8
+.. section: Library
+
+Fix handling of long oids in ssl.  Based on patch by Christian Heimes.
+
+..
+
+.. bpo: 30119
+.. date: 2017-07-26-15-15-00
+.. nonce: DZ6C_S
+.. section: Library
+
+ftplib.FTP.putline() now throws ValueError on commands that contains CR or
+LF. Patch by Dong-hee Na.
+
+..
+
+.. bpo: 30595
+.. date: 2017-07-26-04-46-12
+.. nonce: -zJ7d8
+.. section: Library
+
+multiprocessing.Queue.get() with a timeout now polls its reader in
+non-blocking mode if it succeeded to acquire the lock but the acquire took
+longer than the timeout.
+
+..
+
+.. bpo: 29403
+.. date: 2017-07-20-02-29-49
+.. nonce: 3RinCV
+.. section: Library
+
+Fix ``unittest.mock``'s autospec to not fail on method-bound builtin
+functions.  Patch by Aaron Gallagher.
+
+..
+
+.. bpo: 30961
+.. date: 2017-07-18-23-47-51
+.. nonce: 064jz0
+.. section: Library
+
+Fix decrementing a borrowed reference in tracemalloc.
+
+..
+
+.. bpo: 25684
+.. date: 2017-07-17-11-35-00
+.. nonce: usELVx
+.. section: Library
+
+Change ``ttk.OptionMenu`` radiobuttons to be unique across instances of
+``OptionMenu``.
+
+..
+
+.. bpo: 30886
+.. date: 2017-07-10-12-14-22
+.. nonce: nqQj34
+.. section: Library
+
+Fix multiprocessing.Queue.join_thread(): it now waits until the thread
+completes, even if the thread was started by the same process which created
+the queue.
+
+..
+
+.. bpo: 29854
+.. date: 2017-07-07-02-18-57
+.. nonce: J8wKb_
+.. section: Library
+
+Fix segfault in readline when using readline's history-size option.  Patch
+by Nir Soffer.
+
+..
+
+.. bpo: 30319
+.. date: 2017-07-04-13-48-21
+.. nonce: hg_3TX
+.. section: Library
+
+socket.close() now ignores ECONNRESET error.
+
+..
+
+.. bpo: 30828
+.. date: 2017-07-04-13-10-52
+.. nonce: CLvEvV
+.. section: Library
+
+Fix out of bounds write in `asyncio.CFuture.remove_done_callback()`.
+
+..
+
+.. bpo: 30807
+.. date: 2017-06-29-22-04-44
+.. nonce: sLtjY-
+.. section: Library
+
+signal.setitimer() may disable the timer when passed a tiny value.
+Tiny values (such as 1e-6) are valid non-zero values for setitimer(), which
+is specified as taking microsecond-resolution intervals. However, on some
+platform, our conversion routine could convert 1e-6 into a zero interval,
+therefore disabling the timer instead of (re-)scheduling it.
+
+..
+
+.. bpo: 30441
+.. date: 2017-06-29-14-25-14
+.. nonce: 3Wh9kc
+.. section: Library
+
+Fix bug when modifying os.environ while iterating over it
+
+..
+
+.. bpo: 30532
+.. date: 2017-06-26-11-01-59
+.. nonce: qTeL1o
+.. section: Library
+
+Fix email header value parser dropping folding white space in certain cases.
+
+..
+
+.. bpo: 30879
+.. date: 03
+.. nonce: N3KI-o
+.. section: Library
+
+os.listdir() and os.scandir() now emit bytes names when called with
+bytes-like argument.
+
+..
+
+.. bpo: 30746
+.. date: 02
+.. nonce: 7drQI0
+.. section: Library
+
+Prohibited the '=' character in environment variable names in
+``os.putenv()`` and ``os.spawn*()``.
+
+..
+
+.. bpo: 29755
+.. date: 01
+.. nonce: diQcY_
+.. section: Library
+
+Fixed the lgettext() family of functions in the gettext module. They now
+always return bytes.
+
+..
+
+.. bpo: 31294
+.. date: 2017-09-07-20-49-09
+.. nonce: WgI18w
+.. section: Documentation
+
+Fix incomplete code snippet in the ZeroMQSocketListener and
+ZeroMQSocketHandler examples and adapt them to Python 3.
+
+..
+
+.. bpo: 21649
+.. date: 2017-09-06-10-11-57
+.. nonce: EUvqA9
+.. section: Documentation
+
+Add RFC 7525 and Mozilla server side TLS links to SSL documentation.
+
+..
+
+.. bpo: 30803
+.. date: 2017-07-29-14-55-50
+.. nonce: 6hutqQ
+.. section: Documentation
+
+Clarify doc on truth value testing. Original patch by Peter Thomassen.
+
+..
+
+.. bpo: 31320
+.. date: 2017-09-05-14-23-35
+.. nonce: JRDHx7
+.. section: Tests
+
+Silence traceback in test_ssl
+
+..
+
+.. bpo: 25674
+.. date: 2017-09-04-13-03-55
+.. nonce: whVTXh
+.. section: Tests
+
+Remove sha256.tbs-internet.com ssl test
+
+..
+
+.. bpo: 30715
+.. date: 2017-07-25-15-27-44
+.. nonce: Sp7bTF
+.. section: Tests
+
+Address ALPN callback changes for OpenSSL 1.1.0f. The latest version behaves
+like OpenSSL 1.0.2 and no longer aborts handshake.
+
+..
+
+.. bpo: 30822
+.. date: 2017-07-20-14-29-54
+.. nonce: X0wREo
+.. section: Tests
+
+regrtest: Exclude tzdata from regrtest --all. When running the test suite
+using --use=all / -u all, exclude tzdata since it makes test_datetime too
+slow (15-20 min on some buildbots) which then times out on some buildbots.
+Fix also regrtest command line parser to allow passing -u extralargefile to
+run test_zipfile64.
+
+..
+
+.. bpo: 30854
+.. date: 2017-07-05-16-54-59
+.. nonce: sPADRI
+.. section: Build
+
+Fix compile error when compiling --without-threads. Patch by Masayuki
+Yamamoto.
+
+..
+
+.. bpo: 30389
+.. date: 2017-09-06-17-14-54
+.. nonce: 9Dizrx
+.. section: Windows
+
+Adds detection of Visual Studio 2017 to distutils on Windows.
+
+..
+
+.. bpo: 31340
+.. date: 2017-09-04-13-19-05
+.. nonce: MbkzLi
+.. section: Windows
+
+Change to building with MSVC v141 (included with Visual Studio 2017)
+
+..
+
+.. bpo: 30581
+.. date: 2017-08-04-10-05-19
+.. nonce: OQhR7l
+.. section: Windows
+
+os.cpu_count() now returns the correct number of processors on Windows when
+the number of logical processors is greater than 64.
+
+..
+
+.. bpo: 30731
+.. date: 2017-07-13-11-22-53
+.. nonce: nmMDwI
+.. section: Windows
+
+Add a missing xmlns to python.manifest so that it matches the schema.
+
+..
+
+.. bpo: 31493
+.. date: 2017-09-16-23-43-39
+.. nonce: nmHMCR
+.. section: IDLE
+
+IDLE code context -- fix code update and font update timers.
+Canceling timers prevents a warning message when test_idle completes.
+
+..
+
+.. bpo: 31488
+.. date: 2017-09-16-01-21-20
+.. nonce: 0rtXIT
+.. section: IDLE
+
+IDLE - Update non-key options in former extension classes. When applying
+configdialog changes, call .reload for each feature class. Change ParenMatch
+so updated options affect existing instances attached to existing editor
+windows.
+
+..
+
+.. bpo: 31477
+.. date: 2017-09-15-12-38-47
+.. nonce: n__6sa
+.. section: IDLE
+
+IDLE - Improve rstrip entry in doc. Strip trailing whitespace strips more
+than blank spaces.  Multiline string literals are not skipped.
+
+..
+
+.. bpo: 31480
+.. date: 2017-09-14-17-53-53
+.. nonce: 4WJ0pl
+.. section: IDLE
+
+IDLE - make tests pass with zzdummy extension disabled by default.
+
+..
+
+.. bpo: 31421
+.. date: 2017-09-12-08-38-27
+.. nonce: mYfQNq
+.. section: IDLE
+
+Document how IDLE runs tkinter programs. IDLE calls tcl/tk update in the
+background in order to make live
+interaction and experimentation with tkinter applications much easier.
+
+..
+
+.. bpo: 31414
+.. date: 2017-09-11-15-46-05
+.. nonce: wiepgK
+.. section: IDLE
+
+IDLE -- fix tk entry box tests by deleting first. Adding to an int entry is
+not the same as deleting and inserting because int('') will fail.
+
+..
+
+.. bpo: 31051
+.. date: 2017-08-30-00-06-58
+.. nonce: 50Jp_Q
+.. section: IDLE
+
+Rearrange IDLE configdialog GenPage into Window, Editor, and Help sections.
+
+..
+
+.. bpo: 30617
+.. date: 2017-08-27-16-49-36
+.. nonce: UHnswr
+.. section: IDLE
+
+IDLE - Add docstrings and tests for outwin subclass of editor.
+Move some data and functions from the class to module level. Patch by Cheryl
+Sabella.
+
+..
+
+.. bpo: 31287
+.. date: 2017-08-27-15-31-33
+.. nonce: aZERfI
+.. section: IDLE
+
+IDLE - Do not modify tkinter.message in test_configdialog.
+
+..
+
+.. bpo: 27099
+.. date: 2017-08-24-13-48-16
+.. nonce: rENefC
+.. section: IDLE
+
+Convert IDLE's built-in 'extensions' to regular features.
+About 10 IDLE features were implemented as supposedly optional extensions.
+Their different behavior could be confusing or worse for users and not good
+for maintenance.  Hence the conversion.
+The main difference for users is that user configurable key bindings for
+builtin features are now handled uniformly.  Now, editing a binding in a
+keyset only affects its value in the keyset.  All bindings are defined
+together in the system-specific default keysets in config-extensions.def.
+All custom keysets are saved as a whole in config-extension.cfg.  All take
+effect as soon as one clicks Apply or Ok.
+The affected events are '<<force-open-completions>>', '<<expand-word>>',
+'<<force-open-calltip>>', '<<flash-paren>>', '<<format-paragraph>>',
+'<<run-module>>', '<<check-module>>', and '<<zoom-height>>'.  Any (global)
+customizations made before 3.6.3 will not affect their keyset-specific
+customization after 3.6.3. and vice versa.
+Initial patch by Charles Wohlganger.
+
+..
+
+.. bpo: 31206
+.. date: 2017-08-18-14-13-42
+.. nonce: F1-tKK
+.. section: IDLE
+
+IDLE: Factor HighPage(Frame) class from ConfigDialog. Patch by Cheryl
+Sabella.
+
+..
+
+.. bpo: 31001
+.. date: 2017-08-17-15-00-20
+.. nonce: KLxYHC
+.. section: IDLE
+
+Add tests for configdialog highlight tab.  Patch by Cheryl Sabella.
+
+..
+
+.. bpo: 31205
+.. date: 2017-08-15-12-58-23
+.. nonce: iuziZ5
+.. section: IDLE
+
+IDLE: Factor KeysPage(Frame) class from ConfigDialog.  The slightly modified
+tests continue to pass.  Patch by Cheryl Sabella.
+
+..
+
+.. bpo: 31130
+.. date: 2017-08-07-14-02-56
+.. nonce: FbsC7f
+.. section: IDLE
+
+IDLE -- stop leaks in test_configdialog. Initial patch by Victor Stinner.
+
+..
+
+.. bpo: 31002
+.. date: 2017-08-03-17-54-02
+.. nonce: kUSgTE
+.. section: IDLE
+
+Add tests for configdialog keys tab. Patch by Cheryl Sabella.
+
+..
+
+.. bpo: 19903
+.. date: 2017-08-03-14-08-42
+.. nonce: sqE1FS
+.. section: IDLE
+
+IDLE: Calltips use `inspect.signature` instead of `inspect.getfullargspec`.
+This improves calltips for builtins converted to use Argument Clinic. Patch
+by Louie Lu.
+
+..
+
+.. bpo: 31083
+.. date: 2017-07-31-23-20-51
+.. nonce: 991FXm
+.. section: IDLE
+
+IDLE - Add an outline of a TabPage class in configdialog. Update existing
+classes to match outline. Initial patch by Cheryl Sabella.
+
+..
+
+.. bpo: 31050
+.. date: 2017-07-30-17-39-59
+.. nonce: AXR3kP
+.. section: IDLE
+
+Factor GenPage(Frame) class from ConfigDialog. The slightly modified tests
+continue to pass. Patch by Cheryl Sabella.
+
+..
+
+.. bpo: 31004
+.. date: 2017-07-30-01-00-58
+.. nonce: m8cc1t
+.. section: IDLE
+
+IDLE - Factor FontPage(Frame) class from ConfigDialog.
+Slightly modified tests continue to pass. Fix General tests. Patch mostly by
+Cheryl Sabella.
+
+..
+
+.. bpo: 30781
+.. date: 2017-07-28-18-59-06
+.. nonce: ud5m18
+.. section: IDLE
+
+IDLE - Use ttk widgets in ConfigDialog. Patches by Terry Jan Reedy and
+Cheryl Sabella.
+
+..
+
+.. bpo: 31060
+.. date: 2017-07-27-14-48-42
+.. nonce: GdY_VY
+.. section: IDLE
+
+IDLE - Finish rearranging methods of ConfigDialog Grouping methods
+pertaining to each tab and the buttons will aid writing tests and improving
+the tabs and will enable splitting the groups into classes.
+
+..
+
+.. bpo: 30853
+.. date: 2017-07-27-10-01-14
+.. nonce: enPvvc
+.. section: IDLE
+
+IDLE -- Factor a VarTrace class out of ConfigDialog.
+Instance tracers manages pairs consisting of a tk variable and a callback
+function.  When tracing is turned on, setting the variable calls the
+function.  Test coverage for the new class is 100%.
+
+..
+
+.. bpo: 31003
+.. date: 2017-07-25-01-28-35
+.. nonce: bYINVH
+.. section: IDLE
+
+IDLE: Add more tests for General tab.
+
+..
+
+.. bpo: 30993
+.. date: 2017-07-22-18-08-41
+.. nonce: 34vJkB
+.. section: IDLE
+
+IDLE - Improve configdialog font page and tests.
+In configdialog: Document causal pathways in create_font_tab docstring.
+Simplify some attribute names. Move set_samples calls to var_changed_font
+(idea from Cheryl Sabella).  Move related functions to positions after the
+create widgets function.
+In test_configdialog: Fix test_font_set so not order dependent.  Fix renamed
+test_indent_scale so it tests the widget.  Adjust tests for movement of
+set_samples call.  Add tests for load functions.  Put all font tests in one
+class and tab indent tests in another.  Except for two lines, these tests
+completely cover the related functions.
+
+..
+
+.. bpo: 30981
+.. date: 2017-07-21-01-55-14
+.. nonce: ZFvQPt
+.. section: IDLE
+
+IDLE -- Add more configdialog font page tests.
+
+..
+
+.. bpo: 28523
+.. date: 2017-07-21-00-54-52
+.. nonce: OPcqYJ
+.. section: IDLE
+
+IDLE: replace 'colour' with 'color' in configdialog.
+
+..
+
+.. bpo: 30917
+.. date: 2017-07-17-23-35-57
+.. nonce: hSiuuO
+.. section: IDLE
+
+Add tests for idlelib.config.IdleConf. Increase coverage from 46% to 96%.
+Patch by Louie Lu.
+
+..
+
+.. bpo: 30934
+.. date: 2017-07-15-22-26-57
+.. nonce: BanuSB
+.. section: IDLE
+
+Document coverage details for idlelib tests.
+Add section to idlelib/idle-test/README.txt.
+Include check that branches are taken both ways.
+Exclude IDLE-specific code that does not run during unit tests.
+
+..
+
+.. bpo: 30913
+.. date: 2017-07-13-23-07-33
+.. nonce: aezn_e
+.. section: IDLE
+
+IDLE: Document ConfigDialog tk Vars, methods, and widgets in docstrings This
+will facilitate improving the dialog and splitting up the class. Original
+patch by Cheryl Sabella.
+
+..
+
+.. bpo: 30899
+.. date: 2017-07-11-02-26-17
+.. nonce: SQmVO8
+.. section: IDLE
+
+IDLE: Add tests for ConfigParser subclasses in config. Patch by Louie Lu.
+
+..
+
+.. bpo: 30881
+.. date: 2017-07-11-02-21-42
+.. nonce: 4KAq_9
+.. section: IDLE
+
+IDLE: Add docstrings to browser.py. Patch by Cheryl Sabella.
+
+..
+
+.. bpo: 30851
+.. date: 2017-07-09-23-53-00
+.. nonce: AHXBYa
+.. section: IDLE
+
+IDLE: Remove unused variables in configdialog.  One is a duplicate, one is
+set but cannot be altered by users. Patch by Cheryl Sabella.
+
+..
+
+.. bpo: 30870
+.. date: 2017-07-08-17-57-04
+.. nonce: IcR2pf
+.. section: IDLE
+
+IDLE: In Settings dialog, select font with Up, Down keys as well as mouse.
+Initial patch by Louie Lu.
+
+..
+
+.. bpo: 8231
+.. date: 2017-07-07-21-10-55
+.. nonce: yEge3L
+.. section: IDLE
+
+IDLE: call config.IdleConf.GetUserCfgDir only once.
+
+..
+
+.. bpo: 30779
+.. date: 2017-07-07-20-26-37
+.. nonce: 8KXEXN
+.. section: IDLE
+
+IDLE: Factor ConfigChanges class from configdialog, put in config; test. *
+In config, put dump test code in a function; run it and unittest in   'if
+__name__ == '__main__'. * Add class config.ConfigChanges based on
+changes_class_v4.py on bpo issue. * Add class test_config.ChangesTest,
+partly using configdialog_tests_v1.py. * Revise configdialog to use
+ConfigChanges; see tracker msg297804. * Revise test_configdialog to match
+configdialog changes. * Remove configdialog functions unused or moved to
+ConfigChanges. Cheryl Sabella contributed parts of the patch.
+
+..
+
+.. bpo: 30777
+.. date: 2017-07-04-22-45-46
+.. nonce: uxzlMB
+.. section: IDLE
+
+IDLE: configdialog - Add docstrings and fix comments. Patch by Cheryl
+Sabella.
+
+..
+
+.. bpo: 30495
+.. date: 2017-06-29-18-23-06
+.. nonce: qIWgc4
+.. section: IDLE
+
+IDLE: Improve textview with docstrings, PEP8 names, and more tests. Patch by
+Cheryl Sabella.
+
+..
+
+.. bpo: 30723
+.. date: 2017-06-27-19-05-40
+.. nonce: rQh06y
+.. section: IDLE
+
+IDLE: Make several improvements to parenmatch. Add 'parens' style to
+highlight both opener and closer. Make 'default' style, which is not
+default, a synonym for 'opener'. Make time-delay work the same with all
+styles. Add help for config dialog extensions tab, including help for
+parenmatch. Add new tests.  Original patch by Charles Wohlganger.
+
+..
+
+.. bpo: 30674
+.. date: 2017-06-27-01-40-34
+.. nonce: ppK_q8
+.. section: IDLE
+
+IDLE: add docstrings to grep module. Patch by Cheryl Sabella
+
+..
+
+.. bpo: 21519
+.. date: 2017-06-27-00-29-56
+.. nonce: fTj9T0
+.. section: IDLE
+
+IDLE's basic custom key entry dialog now detects duplicates properly.
+Original patch by Saimadhav Heblikar.
+
+..
+
+.. bpo: 29910
+.. date: 2017-06-26-22-45-27
+.. nonce: mqHh7u
+.. section: IDLE
+
+IDLE no longer deletes a character after commenting out a region by a key
+shortcut.  Add ``return 'break'`` for this and other potential conflicts
+between IDLE and default key bindings.
+
+..
+
+.. bpo: 30728
+.. date: 2017-06-26-15-47-13
+.. nonce: qH4TGL
+.. section: IDLE
+
+Review and change idlelib.configdialog names. Lowercase method and attribute
+names. Replace 'colour' with 'color', expand overly cryptic names, delete
+unneeded underscores. Replace ``import *`` with specific imports. Patches by
+Cheryl Sabella.
+
+..
+
+.. bpo: 6739
+.. date: 2017-06-26-00-28-59
+.. nonce: x5MfhB
+.. section: IDLE
+
+IDLE: Verify user-entered key sequences by trying to bind them with tk. Add
+tests for all 3 validation functions. Original patch by G Polo.  Tests added
+by Cheryl Sabella.
+
+..
+
+.. bpo: 30983
+.. date: 2017-08-18-17-19-23
+.. nonce: ggGz9z
+.. section: Tools/Demos
+
+gdb integration commands (py-bt, etc.) work on optimized shared builds now,
+too.  :pep:`523` introduced _PyEval_EvalFrameDefault which inlines
+PyEval_EvalFrameEx on non-debug shared builds.  This broke the ability to
+use py-bt, py-up, and a few other Python-specific gdb integrations. The
+problem is fixed by only looking for _PyEval_EvalFrameDefault frames in
+python-gdb.py.  Original patch by Bruno "Polaco" Penteado.

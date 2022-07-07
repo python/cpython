@@ -1,2 +1,0 @@
-Remove the bad example in the tutorial of the Generator Expression. Patch by
-Stéphane Wirtel

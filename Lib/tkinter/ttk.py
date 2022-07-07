@@ -19,7 +19,7 @@ __author__ = "Guilherme Polo <ggpolo@gmail.com>"
 __all__ = ["Button", "Checkbutton", "Combobox", "Entry", "Frame", "Label",
            "Labelframe", "LabelFrame", "Menubutton", "Notebook", "Panedwindow",
            "PanedWindow", "Progressbar", "Radiobutton", "Scale", "Scrollbar",
-           "Separator", "Sizegrip", "Style", "Treeview",
+           "Separator", "Sizegrip", "Spinbox", "Style", "Treeview",
            # Extensions
            "LabeledScale", "OptionMenu",
            # functions
@@ -28,23 +28,6 @@ __all__ = ["Button", "Checkbutton", "Combobox", "Entry", "Frame", "Label",
 import tkinter
 from tkinter import _flatten, _join, _stringify, _splitdict
 
-# Verify if Tk is new enough to not need the Tile package
-_REQUIRE_TILE = True if tkinter.TkVersion < 8.5 else False
-
-def _load_tile(master):
-    if _REQUIRE_TILE:
-        import os
-        tilelib = os.environ.get('TILE_LIBRARY')
-        if tilelib:
-            # append custom tile path to the list of directories that
-            # Tcl uses when attempting to resolve packages with the package
-            # command
-            master.tk.eval(
-                    'global auto_path; '
-                    'lappend auto_path {%s}' % tilelib)
-
-        master.tk.eval('package require tile') # TclError may be raised here
-        master._tile_loaded = True
 
 def _format_optvalue(value, script=False):
     """Internal function."""
@@ -81,8 +64,6 @@ def _mapdict_values(items):
     #   ['active selected', 'grey', 'focus', [1, 2, 3, 4]]
     opt_val = []
     for *state, val in items:
-        # hacks for backward compatibility
-        state[0] # raise IndexError if empty
         if len(state) == 1:
             # if it is empty (something that evaluates to False), then
             # format it to Tcl code to denote the "normal" state
@@ -243,19 +224,22 @@ def _script_from_settings(settings):
 def _list_from_statespec(stuple):
     """Construct a list from the given statespec tuple according to the
     accepted statespec accepted by _format_mapdict."""
-    nval = []
-    for val in stuple:
-        typename = getattr(val, 'typename', None)
-        if typename is None:
-            nval.append(val)
-        else: # this is a Tcl object
+    if isinstance(stuple, str):
+        return stuple
+    result = []
+    it = iter(stuple)
+    for state, val in zip(it, it):
+        if hasattr(state, 'typename'):  # this is a Tcl object
+            state = str(state).split()
+        elif isinstance(state, str):
+            state = state.split()
+        elif not isinstance(state, (tuple, list)):
+            state = (state,)
+        if hasattr(val, 'typename'):
             val = str(val)
-            if typename == 'StateSpec':
-                val = val.split()
-            nval.append(val)
+        result.append((*state, val))
 
-    it = iter(nval)
-    return [_flatten(spec) for spec in zip(it, it)]
+    return result
 
 def _list_from_layouttuple(tk, ltuple):
     """Construct a list from the tuple returned by ttk::layout, this is
@@ -348,12 +332,7 @@ def setup_master(master=None):
     If it is not allowed to use the default root and master is None,
     RuntimeError is raised."""
     if master is None:
-        if tkinter._support_default_root:
-            master = tkinter._default_root or tkinter.Tk()
-        else:
-            raise RuntimeError(
-                    "No master specified and tkinter is "
-                    "configured to not support default root")
+        master = tkinter._get_default_root()
     return master
 
 
@@ -364,11 +343,6 @@ class Style(object):
 
     def __init__(self, master=None):
         master = setup_master(master)
-
-        if not getattr(master, '_tile_loaded', False):
-            # Load tile now, if needed
-            _load_tile(master)
-
         self.master = master
         self.tk = self.master.tk
 
@@ -395,13 +369,12 @@ class Style(object):
         or something else of your preference. A statespec is compound of
         one or more states and then a value."""
         if query_opt is not None:
-            return _list_from_statespec(self.tk.splitlist(
-                self.tk.call(self._name, "map", style, '-%s' % query_opt)))
+            result = self.tk.call(self._name, "map", style, '-%s' % query_opt)
+            return _list_from_statespec(self.tk.splitlist(result))
 
-        return _splitdict(
-            self.tk,
-            self.tk.call(self._name, "map", style, *_format_mapdict(kw)),
-            conv=_tclobj_to_py)
+        result = self.tk.call(self._name, "map", style, *_format_mapdict(kw))
+        return {k: _list_from_statespec(self.tk.splitlist(v))
+                for k, v in _splitdict(self.tk, result).items()}
 
 
     def lookup(self, style, option, state=None, default=None):
@@ -551,9 +524,6 @@ class Widget(tkinter.Widget):
             readonly, alternate, invalid
         """
         master = setup_master(master)
-        if not getattr(master, '_tile_loaded', False):
-            # Load tile now, if needed
-            _load_tile(master)
         tkinter.Widget.__init__(self, master, widgetname, kw=kw)
 
 
@@ -574,7 +544,7 @@ class Widget(tkinter.Widget):
         matches statespec. statespec is expected to be a sequence."""
         ret = self.tk.getboolean(
                 self.tk.call(self._w, "instate", ' '.join(statespec)))
-        if ret and callback:
+        if ret and callback is not None:
             return callback(*args, **kw)
 
         return ret
@@ -1084,11 +1054,12 @@ class Scale(Widget, tkinter.Scale):
 
         Setting a value for any of the "from", "from_" or "to" options
         generates a <<RangeChanged>> event."""
-        if cnf:
+        retval = Widget.configure(self, cnf, **kw)
+        if not isinstance(cnf, (type(None), str)):
             kw.update(cnf)
-        Widget.configure(self, **kw)
         if any(['from' in kw, 'from_' in kw, 'to' in kw]):
             self.event_generate('<<RangeChanged>>')
+        return retval
 
 
     def get(self, x=None, y=None):
@@ -1147,6 +1118,33 @@ class Sizegrip(Widget):
             class, cursor, state, style, takefocus
         """
         Widget.__init__(self, master, "ttk::sizegrip", kw)
+
+
+class Spinbox(Entry):
+    """Ttk Spinbox is an Entry with increment and decrement arrows
+
+    It is commonly used for number entry or to select from a list of
+    string values.
+    """
+
+    def __init__(self, master=None, **kw):
+        """Construct a Ttk Spinbox widget with the parent master.
+
+        STANDARD OPTIONS
+
+            class, cursor, style, takefocus, validate,
+            validatecommand, xscrollcommand, invalidcommand
+
+        WIDGET-SPECIFIC OPTIONS
+
+            to, from_, increment, values, wrap, format, command
+        """
+        Entry.__init__(self, master, "ttk::spinbox", **kw)
+
+
+    def set(self, value):
+        """Sets the value of the Spinbox to value."""
+        self.tk.call(self._w, "set", value)
 
 
 class Treeview(Widget, tkinter.XView, tkinter.YView):
@@ -1334,7 +1332,7 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         already exist in the tree. Otherwise, a new unique identifier
         is generated."""
         opts = _format_optdict(kw)
-        if iid:
+        if iid is not None:
             res = self.tk.call(self._w, "insert", parent, index,
                 "-id", iid, *opts)
         else:
@@ -1510,7 +1508,10 @@ class LabeledScale(Frame):
         scale_side = 'bottom' if self._label_top else 'top'
         label_side = 'top' if scale_side == 'bottom' else 'bottom'
         self.scale.pack(side=scale_side, fill='x')
-        tmp = Label(self).pack(side=label_side) # place holder
+        # Dummy required to make frame correct height
+        dummy = Label(self)
+        dummy.pack(side=label_side)
+        dummy.lower()
         self.label.place(anchor='n' if label_side == 'top' else 's')
 
         # update the label as scale or variable changes
@@ -1617,7 +1618,10 @@ class OptionMenu(Menubutton):
         menu.delete(0, 'end')
         for val in values:
             menu.add_radiobutton(label=val,
-                command=tkinter._setit(self._variable, val, self._callback),
+                command=(
+                    None if self._callback is None
+                    else lambda val=val: self._callback(val)
+                ),
                 variable=self._variable)
 
         if default:

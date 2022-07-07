@@ -1,12 +1,16 @@
 from collections import abc
 import array
+import gc
 import math
 import operator
 import unittest
 import struct
 import sys
+import weakref
 
 from test import support
+from test.support import import_helper
+from test.support.script_helper import assert_python_ok
 
 ISBIGENDIAN = sys.byteorder == "big"
 
@@ -579,13 +583,21 @@ class StructTest(unittest.TestCase):
         self.check_sizeof('0c', 0)
 
     def test_boundary_error_message(self):
-        regex = (
+        regex1 = (
             r'pack_into requires a buffer of at least 6 '
             r'bytes for packing 1 bytes at offset 5 '
             r'\(actual buffer size is 1\)'
         )
-        with self.assertRaisesRegex(struct.error, regex):
+        with self.assertRaisesRegex(struct.error, regex1):
             struct.pack_into('b', bytearray(1), 5, 1)
+
+        regex2 = (
+            r'unpack_from requires a buffer of at least 6 '
+            r'bytes for unpacking 1 bytes at offset 5 '
+            r'\(actual buffer size is 1\)'
+        )
+        with self.assertRaisesRegex(struct.error, regex2):
+            struct.unpack_from('b', bytearray(1), 5)
 
     def test_boundary_error_message_with_negative_offset(self):
         byte_list = bytearray(10)
@@ -599,15 +611,33 @@ class StructTest(unittest.TestCase):
                 'offset -11 out of range for 10-byte buffer'):
             struct.pack_into('<B', byte_list, -11, 123)
 
+        with self.assertRaisesRegex(
+                struct.error,
+                r'not enough data to unpack 4 bytes at offset -2'):
+            struct.unpack_from('<I', byte_list, -2)
+
+        with self.assertRaisesRegex(
+                struct.error,
+                "offset -11 out of range for 10-byte buffer"):
+            struct.unpack_from('<B', byte_list, -11)
+
     def test_boundary_error_message_with_large_offset(self):
         # Test overflows cause by large offset and value size (issue 30245)
-        regex = (
+        regex1 = (
             r'pack_into requires a buffer of at least ' + str(sys.maxsize + 4) +
             r' bytes for packing 4 bytes at offset ' + str(sys.maxsize) +
             r' \(actual buffer size is 10\)'
         )
-        with self.assertRaisesRegex(struct.error, regex):
+        with self.assertRaisesRegex(struct.error, regex1):
             struct.pack_into('<I', bytearray(10), sys.maxsize, 1)
+
+        regex2 = (
+            r'unpack_from requires a buffer of at least ' + str(sys.maxsize + 4) +
+            r' bytes for unpacking 4 bytes at offset ' + str(sys.maxsize) +
+            r' \(actual buffer size is 10\)'
+        )
+        with self.assertRaisesRegex(struct.error, regex2):
+            struct.unpack_from('<I', bytearray(10), sys.maxsize)
 
     def test_issue29802(self):
         # When the second argument of struct.unpack() was of wrong type
@@ -625,6 +655,76 @@ class StructTest(unittest.TestCase):
         # use a bytes string
         s2 = struct.Struct(s.format.encode())
         self.assertEqual(s2.format, s.format)
+
+    def test_struct_cleans_up_at_runtime_shutdown(self):
+        code = """if 1:
+            import struct
+
+            class C:
+                def __init__(self):
+                    self.pack = struct.pack
+                def __del__(self):
+                    self.pack('I', -42)
+
+            struct.x = C()
+            """
+        rc, stdout, stderr = assert_python_ok("-c", code)
+        self.assertEqual(rc, 0)
+        self.assertEqual(stdout.rstrip(), b"")
+        self.assertIn(b"Exception ignored in:", stderr)
+        self.assertIn(b"C.__del__", stderr)
+
+    def test__struct_reference_cycle_cleaned_up(self):
+        # Regression test for python/cpython#94207.
+
+        # When we create a new struct module, trigger use of its cache,
+        # and then delete it ...
+        _struct_module = import_helper.import_fresh_module("_struct")
+        module_ref = weakref.ref(_struct_module)
+        _struct_module.calcsize("b")
+        del _struct_module
+
+        # Then the module should have been garbage collected.
+        gc.collect()
+        self.assertIsNone(
+            module_ref(), "_struct module was not garbage collected")
+
+    @support.cpython_only
+    def test__struct_types_immutable(self):
+        # See https://github.com/python/cpython/issues/94254
+
+        Struct = struct.Struct
+        unpack_iterator = type(struct.iter_unpack("b", b'x'))
+        for cls in (Struct, unpack_iterator):
+            with self.subTest(cls=cls):
+                with self.assertRaises(TypeError):
+                    cls.x = 1
+
+
+    def test_issue35714(self):
+        # Embedded null characters should not be allowed in format strings.
+        for s in '\0', '2\0i', b'\0':
+            with self.assertRaisesRegex(struct.error,
+                                        'embedded null character'):
+                struct.calcsize(s)
+
+    @support.cpython_only
+    def test_issue45034_unsigned(self):
+        _testcapi = import_helper.import_module('_testcapi')
+        error_msg = f'ushort format requires 0 <= number <= {_testcapi.USHRT_MAX}'
+        with self.assertRaisesRegex(struct.error, error_msg):
+            struct.pack('H', 70000)  # too large
+        with self.assertRaisesRegex(struct.error, error_msg):
+            struct.pack('H', -1)  # too small
+
+    @support.cpython_only
+    def test_issue45034_signed(self):
+        _testcapi = import_helper.import_module('_testcapi')
+        error_msg = f'short format requires {_testcapi.SHRT_MIN} <= number <= {_testcapi.SHRT_MAX}'
+        with self.assertRaisesRegex(struct.error, error_msg):
+            struct.pack('h', 70000)  # too large
+        with self.assertRaisesRegex(struct.error, error_msg):
+            struct.pack('h', -70000)  # too small
 
 
 class UnpackIteratorTest(unittest.TestCase):
@@ -652,6 +752,10 @@ class UnpackIteratorTest(unittest.TestCase):
             s.iter_unpack(b"")
         with self.assertRaises(struct.error):
             s.iter_unpack(b"12")
+
+    def test_uninstantiable(self):
+        iter_unpack_type = type(struct.Struct(">ibcp").iter_unpack(b""))
+        self.assertRaises(TypeError, iter_unpack_type)
 
     def test_iterate(self):
         s = struct.Struct('>IB')

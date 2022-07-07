@@ -1,8 +1,5 @@
-import re, sys
+import re
 from unicodedata import ucd_3_2_0 as unicodedata
-
-if sys.maxunicode == 65535:
-    raise RuntimeError("need UCS-4 Python")
 
 def gen_category(cats):
     for i in range(0, 0x110000):

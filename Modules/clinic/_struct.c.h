@@ -21,13 +21,17 @@ Struct___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     static const char * const _keywords[] = {"format", NULL};
-    static _PyArg_Parser _parser = {"O:Struct", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "Struct", 0};
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *format;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &format)) {
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
+    format = fastargs[0];
     return_value = Struct___init___impl((PyStructObject *)self, format);
 
 exit:
@@ -57,7 +61,11 @@ Struct_unpack(PyStructObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer buffer = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "y*:unpack", &buffer)) {
+    if (PyObject_GetBuffer(arg, &buffer, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
+        _PyArg_BadArgument("unpack", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = Struct_unpack_impl(self, &buffer);
@@ -79,12 +87,13 @@ PyDoc_STRVAR(Struct_unpack_from__doc__,
 "\n"
 "Values are unpacked according to the format string Struct.format.\n"
 "\n"
-"The buffer\'s size in bytes, minus offset, must be at least Struct.size.\n"
+"The buffer\'s size in bytes, starting at position offset, must be\n"
+"at least Struct.size.\n"
 "\n"
 "See help(struct) for more on format strings.");
 
 #define STRUCT_UNPACK_FROM_METHODDEF    \
-    {"unpack_from", (PyCFunction)Struct_unpack_from, METH_FASTCALL|METH_KEYWORDS, Struct_unpack_from__doc__},
+    {"unpack_from", _PyCFunction_CAST(Struct_unpack_from), METH_FASTCALL|METH_KEYWORDS, Struct_unpack_from__doc__},
 
 static PyObject *
 Struct_unpack_from_impl(PyStructObject *self, Py_buffer *buffer,
@@ -95,14 +104,39 @@ Struct_unpack_from(PyStructObject *self, PyObject *const *args, Py_ssize_t nargs
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"buffer", "offset", NULL};
-    static _PyArg_Parser _parser = {"y*|n:unpack_from", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "unpack_from", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer buffer = {NULL, NULL};
     Py_ssize_t offset = 0;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &buffer, &offset)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (PyObject_GetBuffer(args[0], &buffer, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
+        _PyArg_BadArgument("unpack_from", "argument 'buffer'", "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        offset = ival;
+    }
+skip_optional_pos:
     return_value = Struct_unpack_from_impl(self, &buffer, offset);
 
 exit:
@@ -165,7 +199,7 @@ calcsize(PyObject *module, PyObject *arg)
     PyStructObject *s_object = NULL;
     Py_ssize_t _return_value;
 
-    if (!PyArg_Parse(arg, "O&:calcsize", cache_struct_converter, &s_object)) {
+    if (!cache_struct_converter(module, arg, &s_object)) {
         goto exit;
     }
     _return_value = calcsize_impl(module, s_object);
@@ -192,7 +226,7 @@ PyDoc_STRVAR(unpack__doc__,
 "See help(struct) for more on format strings.");
 
 #define UNPACK_METHODDEF    \
-    {"unpack", (PyCFunction)unpack, METH_FASTCALL, unpack__doc__},
+    {"unpack", _PyCFunction_CAST(unpack), METH_FASTCALL, unpack__doc__},
 
 static PyObject *
 unpack_impl(PyObject *module, PyStructObject *s_object, Py_buffer *buffer);
@@ -204,8 +238,17 @@ unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyStructObject *s_object = NULL;
     Py_buffer buffer = {NULL, NULL};
 
-    if (!_PyArg_ParseStack(args, nargs, "O&y*:unpack",
-        cache_struct_converter, &s_object, &buffer)) {
+    if (!_PyArg_CheckPositional("unpack", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!cache_struct_converter(module, args[0], &s_object)) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &buffer, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
+        _PyArg_BadArgument("unpack", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     return_value = unpack_impl(module, s_object, &buffer);
@@ -232,7 +275,7 @@ PyDoc_STRVAR(unpack_from__doc__,
 "See help(struct) for more on format strings.");
 
 #define UNPACK_FROM_METHODDEF    \
-    {"unpack_from", (PyCFunction)unpack_from, METH_FASTCALL|METH_KEYWORDS, unpack_from__doc__},
+    {"unpack_from", _PyCFunction_CAST(unpack_from), METH_FASTCALL|METH_KEYWORDS, unpack_from__doc__},
 
 static PyObject *
 unpack_from_impl(PyObject *module, PyStructObject *s_object,
@@ -243,15 +286,43 @@ unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "buffer", "offset", NULL};
-    static _PyArg_Parser _parser = {"O&y*|n:unpack_from", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "unpack_from", 0};
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyStructObject *s_object = NULL;
     Py_buffer buffer = {NULL, NULL};
     Py_ssize_t offset = 0;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        cache_struct_converter, &s_object, &buffer, &offset)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!cache_struct_converter(module, args[0], &s_object)) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &buffer, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
+        _PyArg_BadArgument("unpack_from", "argument 'buffer'", "contiguous buffer", args[1]);
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[2]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        offset = ival;
+    }
+skip_optional_pos:
     return_value = unpack_from_impl(module, s_object, &buffer, offset);
 
 exit:
@@ -277,7 +348,7 @@ PyDoc_STRVAR(iter_unpack__doc__,
 "Requires that the bytes length be a multiple of the format struct size.");
 
 #define ITER_UNPACK_METHODDEF    \
-    {"iter_unpack", (PyCFunction)iter_unpack, METH_FASTCALL, iter_unpack__doc__},
+    {"iter_unpack", _PyCFunction_CAST(iter_unpack), METH_FASTCALL, iter_unpack__doc__},
 
 static PyObject *
 iter_unpack_impl(PyObject *module, PyStructObject *s_object,
@@ -290,10 +361,13 @@ iter_unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyStructObject *s_object = NULL;
     PyObject *buffer;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&O:iter_unpack",
-        cache_struct_converter, &s_object, &buffer)) {
+    if (!_PyArg_CheckPositional("iter_unpack", nargs, 2, 2)) {
         goto exit;
     }
+    if (!cache_struct_converter(module, args[0], &s_object)) {
+        goto exit;
+    }
+    buffer = args[1];
     return_value = iter_unpack_impl(module, s_object, buffer);
 
 exit:
@@ -302,4 +376,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=9119f213a951e4cc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2065c9b007be631c input=a9049054013a1b77]*/

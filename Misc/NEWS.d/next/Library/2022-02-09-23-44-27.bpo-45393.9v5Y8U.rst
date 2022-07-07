@@ -1,0 +1,2 @@
+Fix the formatting for ``await x`` and ``not x`` in the operator precedence
+table when using the :func:`help` system.

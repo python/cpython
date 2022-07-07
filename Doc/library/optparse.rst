@@ -55,7 +55,7 @@ equivalent to the above example::
    <yourscript> -q -foutfile
    <yourscript> -qfoutfile
 
-Additionally, users can run one of  ::
+Additionally, users can run one of the following ::
 
    <yourscript> -h
    <yourscript> --help
@@ -131,7 +131,7 @@ option
    These option syntaxes are not supported by :mod:`optparse`, and they never
    will be.  This is deliberate: the first three are non-standard on any
    environment, and the last only makes sense if you're exclusively targeting
-   VMS, MS-DOS, and/or Windows.
+   Windows or certain legacy platforms (e.g. VMS, MS-DOS).
 
 option argument
    an argument that follows an option, is closely associated with that option,
@@ -379,8 +379,8 @@ types is covered in section :ref:`optparse-extending-optparse`.
 Handling boolean (flag) options
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Flag options---set a variable to true or false when a particular option is seen
----are quite common.  :mod:`optparse` supports them with two separate actions,
+Flag options---set a variable to true or false when a particular option is
+seen---are quite common.  :mod:`optparse` supports them with two separate actions,
 ``store_true`` and ``store_false``.  For example, you might have a ``verbose``
 flag that is turned on with ``-v`` and off with ``-q``::
 
@@ -388,8 +388,8 @@ flag that is turned on with ``-v`` and off with ``-q``::
    parser.add_option("-q", action="store_false", dest="verbose")
 
 Here we have two different options with the same destination, which is perfectly
-OK.  (It just means you have to be a bit careful when setting default values---
-see below.)
+OK.  (It just means you have to be a bit careful when setting default
+values---see below.)
 
 When :mod:`optparse` encounters ``-v`` on the command line, it sets
 ``options.verbose`` to ``True``; when it encounters ``-q``,
@@ -415,7 +415,7 @@ Some other actions supported by :mod:`optparse` are:
 ``"callback"``
    call a specified function
 
-These are covered in section :ref:`optparse-reference-guide`, Reference Guide
+These are covered in section :ref:`optparse-reference-guide`,
 and section :ref:`optparse-option-callbacks`.
 
 
@@ -525,11 +525,11 @@ help message:
   default: ``"Usage: %prog [options]"``, which is fine if your script doesn't
   take any positional arguments.
 
-* every option defines a help string, and doesn't worry about line-wrapping---
-  :mod:`optparse` takes care of wrapping lines and making the help output look
-  good.
+* every option defines a help string, and doesn't worry about
+  line-wrapping---\ :mod:`optparse` takes care of wrapping lines and making
+  the help output look good.
 
-* options that take a value indicate this fact in their automatically-generated
+* options that take a value indicate this fact in their automatically generated
   help message, e.g. for the "mode" option::
 
      -m MODE, --mode=MODE
@@ -539,7 +539,7 @@ help message:
   :mod:`optparse` converts the destination variable name to uppercase and uses
   that for the meta-variable.  Sometimes, that's not what you want---for
   example, the ``--filename`` option explicitly sets ``metavar="FILE"``,
-  resulting in this automatically-generated option description::
+  resulting in this automatically generated option description::
 
      -f FILE, --filename=FILE
 
@@ -928,10 +928,10 @@ The canonical way to create an :class:`Option` instance is with the
       store a constant value
 
    ``"store_true"``
-      store a true value
+      store ``True``
 
    ``"store_false"``
-      store a false value
+      store ``False``
 
    ``"append"``
       append this option's argument to a list
@@ -1135,12 +1135,12 @@ must specify for any option using that action.
 
 * ``"store_true"`` [relevant: :attr:`~Option.dest`]
 
-  A special case of ``"store_const"`` that stores a true value to
+  A special case of ``"store_const"`` that stores ``True`` to
   :attr:`~Option.dest`.
 
 * ``"store_false"`` [relevant: :attr:`~Option.dest`]
 
-  Like ``"store_true"``, but stores a false value.
+  Like ``"store_true"``, but stores ``False``.
 
   Example::
 
@@ -1396,7 +1396,7 @@ provides several methods to help you out:
 
 .. method:: OptionParser.has_option(opt_str)
 
-   Return true if the OptionParser has an option with option string *opt_str*
+   Return ``True`` if the OptionParser has an option with option string *opt_str*
    (e.g., ``-q`` or ``--verbose``).
 
 .. method:: OptionParser.remove_option(opt_str)
@@ -1449,7 +1449,7 @@ intelligently and add conflicting options to it::
    parser.add_option("-n", "--dry-run", ..., help="do no harm")
    parser.add_option("-n", "--noisy", ..., help="be noisy")
 
-At this point, :mod:`optparse` detects that a previously-added option is already
+At this point, :mod:`optparse` detects that a previously added option is already
 using the ``-n`` option string.  Since ``conflict_handler`` is ``"resolve"``,
 it resolves the situation by removing ``-n`` from the earlier option's list of
 option strings.  Now ``--dry-run`` is the only way for the user to activate
@@ -1460,7 +1460,7 @@ that option.  If the user asks for help, the help message will reflect that::
      ...
      -n, --noisy   be noisy
 
-It's possible to whittle away the option strings for a previously-added option
+It's possible to whittle away the option strings for a previously added option
 until there are none left, and the user has no way of invoking that option from
 the command-line.  In that case, :mod:`optparse` removes that option completely,
 so it doesn't show up in help text or anywhere else. Carrying on with our
@@ -1677,7 +1677,7 @@ The callback function should raise :exc:`OptionValueError` if there are any
 problems with the option or its argument(s).  :mod:`optparse` catches this and
 terminates the program, printing the error message you supply to stderr.  Your
 message should be clear, concise, accurate, and mention the option at fault.
-Otherwise, the user will have a hard time figuring out what he did wrong.
+Otherwise, the user will have a hard time figuring out what they did wrong.
 
 
 .. _optparse-callback-example-1:

@@ -21,7 +21,7 @@ The :mod:`secrets` module is used for generating cryptographically strong
 random numbers suitable for managing data such as passwords, account
 authentication, security tokens, and related secrets.
 
-In particularly, :mod:`secrets` should be used in preference to the
+In particular, :mod:`secrets` should be used in preference to the
 default pseudo-random number generator in the :mod:`random` module, which
 is designed for modelling and simulation, not security or cryptography.
 
@@ -44,7 +44,7 @@ randomness that your operating system provides.
 
 .. function:: choice(sequence)
 
-   Return a randomly-chosen element from a non-empty sequence.
+   Return a randomly chosen element from a non-empty sequence.
 
 .. function:: randbelow(n)
 
@@ -129,7 +129,7 @@ Other functions
 .. function:: compare_digest(a, b)
 
    Return ``True`` if strings *a* and *b* are equal, otherwise ``False``,
-   in such a way as to reduce the risk of
+   using a "constant-time compare" to reduce the risk of
    `timing attacks <https://codahale.com/a-lesson-in-timing-attacks/>`_.
    See :func:`hmac.compare_digest` for additional details.
 
@@ -145,8 +145,9 @@ Generate an eight-character alphanumeric password:
 .. testcode::
 
    import string
+   import secrets
    alphabet = string.ascii_letters + string.digits
-   password = ''.join(choice(alphabet) for i in range(8))
+   password = ''.join(secrets.choice(alphabet) for i in range(8))
 
 
 .. note::
@@ -154,7 +155,7 @@ Generate an eight-character alphanumeric password:
    Applications should not
    `store passwords in a recoverable format <http://cwe.mitre.org/data/definitions/257.html>`_,
    whether plain text or encrypted.  They should be salted and hashed
-   using a cryptographically-strong one-way (irreversible) hash function.
+   using a cryptographically strong one-way (irreversible) hash function.
 
 
 Generate a ten-character alphanumeric password with at least one
@@ -164,9 +165,10 @@ three digits:
 .. testcode::
 
    import string
+   import secrets
    alphabet = string.ascii_letters + string.digits
    while True:
-       password = ''.join(choice(alphabet) for i in range(10))
+       password = ''.join(secrets.choice(alphabet) for i in range(10))
        if (any(c.islower() for c in password)
                and any(c.isupper() for c in password)
                and sum(c.isdigit() for c in password) >= 3):
@@ -177,11 +179,12 @@ Generate an `XKCD-style passphrase <https://xkcd.com/936/>`_:
 
 .. testcode::
 
+   import secrets
    # On standard Linux systems, use a convenient dictionary file.
    # Other platforms may need to provide their own word-list.
    with open('/usr/share/dict/words') as f:
        words = [word.strip() for word in f]
-       password = ' '.join(choice(words) for i in range(4))
+       password = ' '.join(secrets.choice(words) for i in range(4))
 
 
 Generate a hard-to-guess temporary URL containing a security token
@@ -189,7 +192,8 @@ suitable for password recovery applications:
 
 .. testcode::
 
-   url = 'https://mydomain.com/reset=' + token_urlsafe()
+   import secrets
+   url = 'https://example.com/reset=' + secrets.token_urlsafe()
 
 
 

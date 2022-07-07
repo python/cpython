@@ -4,13 +4,13 @@
   HOWTO Fetch Internet Resources Using The urllib Package
 ***********************************************************
 
-:Author: `Michael Foord <http://www.voidspace.org.uk/python/index.shtml>`_
+:Author: `Michael Foord <https://agileabstractions.com/>`_
 
 .. note::
 
     There is a French translation of an earlier revision of this
     HOWTO, available at `urllib2 - Le Manuel manquant
-    <http://www.voidspace.org.uk/python/articles/urllib2_francais.shtml>`_.
+    <https://web.archive.org/web/20200910051922/http://www.voidspace.org.uk/python/articles/urllib2_francais.shtml>`_.
 
 
 
@@ -22,7 +22,7 @@ Introduction
     You may also find useful the following article on fetching web resources
     with Python:
 
-    * `Basic Authentication <http://www.voidspace.org.uk/python/articles/authentication.shtml>`_
+    * `Basic Authentication <https://web.archive.org/web/20201215133350/http://www.voidspace.org.uk/python/articles/authentication.shtml>`_
 
         A tutorial on *Basic Authentication*, with examples in Python.
 
@@ -56,12 +56,20 @@ The simplest way to use urllib.request is as follows::
     with urllib.request.urlopen('http://python.org/') as response:
        html = response.read()
 
-If you wish to retrieve a resource via URL and store it in a temporary location,
-you can do so via the :func:`~urllib.request.urlretrieve` function::
+If you wish to retrieve a resource via URL and store it in a temporary
+location, you can do so via the :func:`shutil.copyfileobj` and
+:func:`tempfile.NamedTemporaryFile` functions::
 
+    import shutil
+    import tempfile
     import urllib.request
-    local_filename, headers = urllib.request.urlretrieve('http://python.org/')
-    html = open(local_filename)
+
+    with urllib.request.urlopen('http://python.org/') as response:
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+            shutil.copyfileobj(response, tmp_file)
+
+    with open(tmp_file.name) as html:
+        pass
 
 Many uses of urllib will be that simple (note that instead of an 'http:' URL we
 could have used a URL starting with 'ftp:', 'file:', etc.).  However, it's the
@@ -89,7 +97,7 @@ schemes.  For example, you can make an FTP request like so::
 
 In the case of HTTP, there are two extra things that Request objects allow you
 to do: First, you can pass data to be sent to the server.  Second, you can pass
-extra information ("metadata") *about* the data or the about request itself, to
+extra information ("metadata") *about* the data or about the request itself, to
 the server - this information is sent as HTTP "headers".  Let's look at each of
 these in turn.
 
@@ -231,7 +239,7 @@ a different URL, urllib will handle that for you). For those it can't handle,
 urlopen will raise an :exc:`HTTPError`. Typical errors include '404' (page not
 found), '403' (request forbidden), and '401' (authentication required).
 
-See section 10 of RFC 2616 for a reference on all the HTTP error codes.
+See section 10 of :rfc:`2616` for a reference on all the HTTP error codes.
 
 The :exc:`HTTPError` instance raised will have an integer 'code' attribute, which
 corresponds to the error sent by the server.
@@ -244,7 +252,7 @@ codes in the 100--299 range indicate success, you will usually only see error
 codes in the 400--599 range.
 
 :attr:`http.server.BaseHTTPRequestHandler.responses` is a useful dictionary of
-response codes in that shows all the response codes used by RFC 2616. The
+response codes in that shows all the response codes used by :rfc:`2616`. The
 dictionary is reproduced here for convenience ::
 
     # Table mapping response codes to messages; entries have the
@@ -412,7 +420,7 @@ Openers and Handlers
 ====================
 
 When you fetch a URL you use an opener (an instance of the perhaps
-confusingly-named :class:`urllib.request.OpenerDirector`). Normally we have been using
+confusingly named :class:`urllib.request.OpenerDirector`). Normally we have been using
 the default opener - via ``urlopen`` - but you can create custom
 openers. Openers use handlers. All the "heavy lifting" is done by the
 handlers. Each handler knows how to open URLs for a particular URL scheme (http,
@@ -457,7 +465,9 @@ error code) requesting authentication.  This specifies the authentication scheme
 and a 'realm'. The header looks like: ``WWW-Authenticate: SCHEME
 realm="REALM"``.
 
-e.g. ::
+e.g.
+
+.. code-block:: none
 
     WWW-Authenticate: Basic realm="cPanel Users"
 

@@ -4,6 +4,16 @@
 API Reference
 *************
 
+.. seealso::
+
+   `New and changed setup.py arguments in setuptools`_
+      The ``setuptools`` project adds new capabilities to the ``setup`` function
+      and other APIs, makes the API consistent across different Python versions,
+      and is hence recommended over using ``distutils`` directly.
+
+.. _New and changed setup.py arguments in setuptools: https://web.archive.org/web/20210614192516/https://setuptools.pypa.io/en/stable/userguide/keywords.html
+
+.. include:: ./_setuptools_disclaimer.rst
 
 :mod:`distutils.core` --- Core Distutils functionality
 ======================================================
@@ -78,7 +88,7 @@ setup script). Indirectly provides the  :class:`distutils.dist.Distribution` and
    |                    | be built                       | :class:`distutils.core.Extension`                           |
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | *classifiers*      | A list of categories for the   | a list of strings; valid classifiers are listed on `PyPI    |
-   |                    | package                        | <https://pypi.python.org/pypi?:action=list_classifiers>`_.  |
+   |                    | package                        | <https://pypi.org/classifiers>`_.                           |
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | *distclass*        | the :class:`Distribution`      | a subclass of                                               |
    |                    | class to use                   | :class:`distutils.core.Distribution`                        |
@@ -183,8 +193,9 @@ the full reference.
    | *sources*              | list of source filenames,      | a list of strings         |
    |                        | relative to the distribution   |                           |
    |                        | root (where the setup script   |                           |
-   |                        | lives), in Unix form (slash-   |                           |
-   |                        | separated) for portability.    |                           |
+   |                        | lives), in Unix form           |                           |
+   |                        | (slash-separated) for          |                           |
+   |                        | portability.                   |                           |
    |                        | Source files may be C, C++,    |                           |
    |                        | SWIG (.i), platform-specific   |                           |
    |                        | resource files, or whatever    |                           |
@@ -276,6 +287,11 @@ the full reference.
    |                        | simply skip the extension.     |                           |
    +------------------------+--------------------------------+---------------------------+
 
+   .. versionchanged:: 3.8
+
+      On Unix, C extensions are no longer linked to libpython except on
+      Android and Cygwin.
+
 
 .. class:: Distribution
 
@@ -357,7 +373,7 @@ This module provides the following functions.
    compiler object under Unix---if you supply a value for *compiler*, *plat* is
    ignored.
 
-   .. % Is the posix/nt only thing still true? Mac OS X seems to work, and
+   .. % Is the posix/nt only thing still true? macOS seems to work, and
    .. % returns a UnixCCompiler instance. How to document this... hmm.
 
 
@@ -940,7 +956,7 @@ timestamp dependency analysis.
 .. function:: newer_group(sources, target[, missing='error'])
 
    Return true if *target* is out-of-date with respect to any file listed in
-   *sources*  In other words, if *target* exists and is newer than every file in
+   *sources*.  In other words, if *target* exists and is newer than every file in
    *sources*, return false; otherwise return true. *missing* controls what we do
    when a source file is missing; the default (``'error'``) is to blow up with an
    :exc:`OSError` from  inside :func:`os.stat`; if it is ``'ignore'``, we silently
@@ -1103,11 +1119,11 @@ other utility module.
 
    For non-POSIX platforms, currently just returns ``sys.platform``.
 
-   For Mac OS X systems the OS version reflects the minimal version on which
+   For macOS systems the OS version reflects the minimal version on which
    binaries will run (that is, the value of ``MACOSX_DEPLOYMENT_TARGET``
    during the build of Python), not the OS version of the current system.
 
-   For universal binary builds on Mac OS X the architecture value reflects
+   For universal binary builds on macOS the architecture value reflects
    the universal binary status instead of the architecture of the current
    processor. For 32-bit universal binaries the architecture is ``fat``,
    for 64-bit universal binaries the architecture is ``fat64``, and
@@ -1116,7 +1132,7 @@ other utility module.
    a 3-way universal build (ppc, i386, x86_64) and ``intel`` is used for
    a universal build with the i386 and x86_64 architectures
 
-   Examples of returned values on Mac OS X:
+   Examples of returned values on macOS:
 
    * ``macosx-10.3-ppc``
 
@@ -1125,6 +1141,24 @@ other utility module.
    * ``macosx-10.5-universal``
 
    * ``macosx-10.6-intel``
+
+   For AIX, Python 3.9 and later return a string starting with "aix", followed
+   by additional fields (separated by ``'-'``) that represent the combined
+   values of AIX Version, Release and Technology Level (first field), Build Date
+   (second field), and bit-size (third field). Python 3.8 and earlier returned
+   only a single additional field with the AIX Version and Release.
+
+   Examples of returned values on AIX:
+
+   * ``aix-5307-0747-32`` # 32-bit build on AIX ``oslevel -s``: 5300-07-00-0000
+
+   * ``aix-7105-1731-64`` # 64-bit build on AIX ``oslevel -s``: 7100-05-01-1731
+
+   * ``aix-7.2``          # Legacy form reported in Python 3.8 and earlier
+
+   .. versionchanged:: 3.9
+      The AIX platform string format now also includes the technology level,
+      build date, and ABI bit-size.
 
 
 .. function:: convert_path(pathname)
@@ -1164,7 +1198,7 @@ other utility module.
    it contains certain values: see :func:`check_environ`.  Raise :exc:`ValueError`
    for any variables not found in either *local_vars* or ``os.environ``.
 
-   Note that this is not a fully-fledged string interpolation function. A valid
+   Note that this is not a full-fledged string interpolation function. A valid
    ``$variable`` can consist only of upper and lower case letters, numbers and an
    underscore. No { } or ( ) style quoting is available.
 
@@ -1393,11 +1427,11 @@ This module provides the :class:`FileList` class, used for poking about the
 filesystem and building lists of files.
 
 
-:mod:`distutils.log` --- Simple PEP 282-style logging
-=====================================================
+:mod:`distutils.log` --- Simple :pep:`282`-style logging
+========================================================
 
 .. module:: distutils.log
-   :synopsis: A simple logging mechanism, 282-style
+   :synopsis: A simple logging mechanism, :pep:`282`-style
 
 
 :mod:`distutils.spawn` --- Spawn a sub-process
@@ -1418,6 +1452,8 @@ name.
 
 .. module:: distutils.sysconfig
    :synopsis: Low-level access to configuration information of the Python interpreter.
+.. deprecated:: 3.10
+   :mod:`distutils.sysconfig` has been merged into :mod:`sysconfig`.
 .. moduleauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 .. moduleauthor:: Greg Ward <gward@python.net>
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
@@ -1476,6 +1512,9 @@ for other parts of the :mod:`distutils` package.
    meaning for other platforms will vary.  The file is a platform-specific text
    file, if it exists. This function is only useful on POSIX platforms.
 
+The following functions are deprecated together with this module and they
+have no direct replacement.
+
 
 .. function:: get_python_inc([plat_specific[, prefix]])
 
@@ -1529,7 +1568,7 @@ Python's own build procedures.
 =================================================
 
 .. module:: distutils.text_file
-   :synopsis: provides the TextFile class, a simple interface to text files
+   :synopsis: Provides the TextFile class, a simple interface to text files
 
 
 This module provides the :class:`TextFile` class, which gives an interface  to
@@ -1566,8 +1605,8 @@ lines, and joining lines with backslashes.
    +------------------+--------------------------------+---------+
    | option name      | description                    | default |
    +==================+================================+=========+
-   | *strip_comments* | strip from ``'#'`` to end-of-  | true    |
-   |                  | line, as well as any           |         |
+   | *strip_comments* | strip from ``'#'`` to          | true    |
+   |                  | end-of-line, as well as any    |         |
    |                  | whitespace leading up to the   |         |
    |                  | ``'#'``\ ---unless it is       |         |
    |                  | escaped by a backslash         |         |
@@ -1668,7 +1707,7 @@ lines, and joining lines with backslashes.
 ===================================================
 
 .. module:: distutils.version
-   :synopsis: implements classes that represent module version numbers.
+   :synopsis: Implements classes that represent module version numbers.
 
 
 .. % todo
@@ -1683,7 +1722,7 @@ lines, and joining lines with backslashes.
 ===================================================================
 
 .. module:: distutils.cmd
-   :synopsis: This module provides the abstract base class Command. This class
+   :synopsis: Provides the abstract base class :class:`~distutils.cmd.Command`. This class
               is subclassed by the modules in the distutils.command subpackage.
 
 
@@ -1776,7 +1815,7 @@ Subclasses of :class:`Command` must define the following methods.
 ==========================================================
 
 .. module:: distutils.command
-   :synopsis: This subpackage contains one module for each standard Distutils command.
+   :synopsis: Contains one module for each standard Distutils command.
 
 
 .. % \subsubsection{Individual Distutils commands}
@@ -1813,39 +1852,11 @@ Subclasses of :class:`Command` must define the following methods.
 .. % todo
 
 
-:mod:`distutils.command.bdist_msi` --- Build a Microsoft Installer binary package
-=================================================================================
-
-.. module:: distutils.command.bdist_msi
-   :synopsis: Build a binary distribution as a Windows MSI file
-
-.. class:: bdist_msi
-
-   Builds a `Windows Installer`_ (.msi) binary package.
-
-   .. _Windows Installer: https://msdn.microsoft.com/en-us/library/cc185688(VS.85).aspx
-
-   In most cases, the ``bdist_msi`` installer is a better choice than the
-   ``bdist_wininst`` installer, because it provides better support for
-   Win64 platforms, allows administrators to perform non-interactive
-   installations, and allows installation through group policies.
-
-
 :mod:`distutils.command.bdist_rpm` --- Build a binary distribution as a Redhat RPM and SRPM
 ===========================================================================================
 
 .. module:: distutils.command.bdist_rpm
    :synopsis: Build a binary distribution as a Redhat RPM and SRPM
-
-
-.. % todo
-
-
-:mod:`distutils.command.bdist_wininst` --- Build a Windows installer
-====================================================================
-
-.. module:: distutils.command.bdist_wininst
-   :synopsis: Build a Windows installer
 
 
 .. % todo
@@ -2020,7 +2031,7 @@ This is described in more detail in :pep:`301`.
 ===================================================================
 
 .. module:: distutils.command.check
-   :synopsis: Check the metadata of a package
+   :synopsis: Check the meta-data of a package
 
 
 The ``check`` command performs some tests on the meta-data of a package.

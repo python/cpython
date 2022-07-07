@@ -46,6 +46,11 @@ can be customized by end users easily.
 
    import configparser
 
+.. testcleanup::
+
+   import os
+   os.remove("example.ini")
+
 
 Quick Start
 -----------
@@ -134,6 +139,30 @@ As we can see above, the API is pretty straightforward.  The only bit of magic
 involves the ``DEFAULT`` section which provides default values for all other
 sections [1]_.  Note also that keys in sections are
 case-insensitive and stored in lowercase [1]_.
+
+It is possible to read several configurations into a single
+:class:`ConfigParser`, where the most recently added configuration has the
+highest priority. Any conflicting keys are taken from the more recent
+configuration while the previously existing keys are retained.
+
+.. doctest::
+
+   >>> another_config = configparser.ConfigParser()
+   >>> another_config.read('example.ini')
+   ['example.ini']
+   >>> another_config['topsecret.server.com']['Port']
+   '50022'
+   >>> another_config.read_string("[topsecret.server.com]\nPort=48484")
+   >>> another_config['topsecret.server.com']['Port']
+   '48484'
+   >>> another_config.read_dict({"topsecret.server.com": {"Port": 21212}})
+   >>> another_config['topsecret.server.com']['Port']
+   '21212'
+   >>> another_config['topsecret.server.com']['ForwardX11']
+   'no'
+
+This behaviour is equivalent to a :meth:`ConfigParser.read` call with several
+files passed to the *filenames* parameter.
 
 
 Supported Datatypes
@@ -232,10 +261,14 @@ A configuration file consists of sections, each led by a ``[section]`` header,
 followed by key/value entries separated by a specific string (``=`` or ``:`` by
 default [1]_).  By default, section names are case sensitive but keys are not
 [1]_.  Leading and trailing whitespace is removed from keys and values.
-Values can be omitted, in which case the key/value delimiter may also be left
+Values can be omitted if the parser is configured to allow it [1]_,
+in which case the key/value delimiter may also be left
 out.  Values can also span multiple lines, as long as they are indented deeper
 than the first line of the value.  Depending on the parser's mode, blank lines
 may be treated as parts of multiline values or ignored.
+
+By default,  a valid section name can be any string that does not contain '\\n' or ']'.
+To change this, see :attr:`ConfigParser.SECTCRE`.
 
 Configuration files may include comments, prefixed by specific
 characters (``#`` and ``;`` by default [1]_).  Comments may appear on
@@ -295,6 +328,8 @@ On top of the core functionality, :class:`ConfigParser` supports
 interpolation.  This means values can be preprocessed before returning them
 from ``get()`` calls.
 
+.. index:: single: % (percent); interpolation in configuration files
+
 .. class:: BasicInterpolation()
 
    The default implementation used by :class:`ConfigParser`.  It enables
@@ -311,6 +346,9 @@ from ``get()`` calls.
       my_dir: %(home_dir)s/lumberjack
       my_pictures: %(my_dir)s/Pictures
 
+      [Escape]
+      # use a %% to escape the % sign (% is the only character that needs to be escaped):
+      gain: 80%%
 
    In the example above, :class:`ConfigParser` with *interpolation* set to
    ``BasicInterpolation()`` would resolve ``%(home_dir)s`` to the value of
@@ -322,6 +360,8 @@ from ``get()`` calls.
    With ``interpolation`` set to ``None``, the parser would simply return
    ``%(my_dir)s/Pictures`` as the value of ``my_pictures`` and
    ``%(home_dir)s/lumberjack`` as the value of ``my_dir``.
+
+.. index:: single: $ (dollar); interpolation in configuration files
 
 .. class:: ExtendedInterpolation()
 
@@ -341,6 +381,10 @@ from ``get()`` calls.
       home_dir: /Users
       my_dir: ${home_dir}/lumberjack
       my_pictures: ${my_dir}/Pictures
+
+      [Escape]
+      # use a $$ to escape the $ sign ($ is the only character that needs to be escaped):
+      cost: $$80
 
    Values from other sections can be fetched as well:
 
@@ -397,11 +441,11 @@ However, there are a few differences that should be taken into account:
   because default values cannot be deleted from the section (because technically
   they are not there).  If they are overridden in the section, deleting causes
   the default value to be visible again.  Trying to delete a default value
-  causes a ``KeyError``.
+  causes a :exc:`KeyError`.
 
 * ``DEFAULTSECT`` cannot be removed from the parser:
 
-  * trying to delete it raises ``ValueError``,
+  * trying to delete it raises :exc:`ValueError`,
 
   * ``parser.clear()`` leaves it intact,
 
@@ -445,20 +489,19 @@ the :meth:`__init__` options:
   Hint: if you want to specify default values for a specific section, use
   :meth:`read_dict` before you read the actual file.
 
-* *dict_type*, default value: :class:`collections.OrderedDict`
+* *dict_type*, default value: :class:`dict`
 
   This option has a major impact on how the mapping protocol will behave and how
-  the written configuration files look.  With the default ordered
-  dictionary, every section is stored in the order they were added to the
-  parser.  Same goes for options within sections.
+  the written configuration files look.  With the standard dictionary, every
+  section is stored in the order they were added to the parser.  Same goes for
+  options within sections.
 
   An alternative dictionary type can be used for example to sort sections and
-  options on write-back.  You can also use a regular dictionary for performance
-  reasons.
+  options on write-back.
 
   Please note: there are ways to add a set of key-value pairs in a single
   operation.  When you use a regular dictionary in those operations, the order
-  of the keys may be random.  For example:
+  of the keys will be ordered.  For example:
 
   .. doctest::
 
@@ -473,41 +516,10 @@ the :meth:`__init__` options:
      ...                                'bar': 'y',
      ...                                'baz': 'z'}
      ... })
-     >>> parser.sections()  # doctest: +SKIP
-     ['section3', 'section2', 'section1']
-     >>> [option for option in parser['section3']] # doctest: +SKIP
-     ['baz', 'foo', 'bar']
-
-  In these operations you need to use an ordered dictionary as well:
-
-  .. doctest::
-
-     >>> from collections import OrderedDict
-     >>> parser = configparser.ConfigParser()
-     >>> parser.read_dict(
-     ...   OrderedDict((
-     ...     ('s1',
-     ...      OrderedDict((
-     ...        ('1', '2'),
-     ...        ('3', '4'),
-     ...        ('5', '6'),
-     ...      ))
-     ...     ),
-     ...     ('s2',
-     ...      OrderedDict((
-     ...        ('a', 'b'),
-     ...        ('c', 'd'),
-     ...        ('e', 'f'),
-     ...      ))
-     ...     ),
-     ...   ))
-     ... )
-     >>> parser.sections()  # doctest: +SKIP
-     ['s1', 's2']
-     >>> [option for option in parser['s1']]  # doctest: +SKIP
-     ['1', '3', '5']
-     >>> [option for option in parser['s2'].values()]  # doctest: +SKIP
-     ['b', 'd', 'f']
+     >>> parser.sections()
+     ['section1', 'section2', 'section3']
+     >>> [option for option in parser['section3']]
+     ['foo', 'bar', 'baz']
 
 * *allow_no_value*, default value: ``False``
 
@@ -695,93 +707,100 @@ More advanced customization may be achieved by overriding default values of
 these parser attributes.  The defaults are defined on the classes, so they may
 be overridden by subclasses or by attribute assignment.
 
-.. attribute:: BOOLEAN_STATES
+.. attribute:: ConfigParser.BOOLEAN_STATES
 
-  By default when using :meth:`~ConfigParser.getboolean`, config parsers
-  consider the following values ``True``: ``'1'``, ``'yes'``, ``'true'``,
-  ``'on'`` and the following values ``False``: ``'0'``, ``'no'``, ``'false'``,
-  ``'off'``.  You can override this by specifying a custom dictionary of strings
-  and their Boolean outcomes. For example:
+   By default when using :meth:`~ConfigParser.getboolean`, config parsers
+   consider the following values ``True``: ``'1'``, ``'yes'``, ``'true'``,
+   ``'on'`` and the following values ``False``: ``'0'``, ``'no'``, ``'false'``,
+   ``'off'``.  You can override this by specifying a custom dictionary of strings
+   and their Boolean outcomes. For example:
 
-  .. doctest::
+   .. doctest::
 
-     >>> custom = configparser.ConfigParser()
-     >>> custom['section1'] = {'funky': 'nope'}
-     >>> custom['section1'].getboolean('funky')
-     Traceback (most recent call last):
-     ...
-     ValueError: Not a boolean: nope
-     >>> custom.BOOLEAN_STATES = {'sure': True, 'nope': False}
-     >>> custom['section1'].getboolean('funky')
-     False
+      >>> custom = configparser.ConfigParser()
+      >>> custom['section1'] = {'funky': 'nope'}
+      >>> custom['section1'].getboolean('funky')
+      Traceback (most recent call last):
+      ...
+      ValueError: Not a boolean: nope
+      >>> custom.BOOLEAN_STATES = {'sure': True, 'nope': False}
+      >>> custom['section1'].getboolean('funky')
+      False
 
-  Other typical Boolean pairs include ``accept``/``reject`` or
-  ``enabled``/``disabled``.
+   Other typical Boolean pairs include ``accept``/``reject`` or
+   ``enabled``/``disabled``.
 
-.. method:: optionxform(option)
+.. method:: ConfigParser.optionxform(option)
+   :noindex:
 
-  This method transforms option names on every read, get, or set
-  operation.  The default converts the name to lowercase.  This also
-  means that when a configuration file gets written, all keys will be
-  lowercase.  Override this method if that's unsuitable.
-  For example:
+   This method transforms option names on every read, get, or set
+   operation.  The default converts the name to lowercase.  This also
+   means that when a configuration file gets written, all keys will be
+   lowercase.  Override this method if that's unsuitable.
+   For example:
 
-  .. doctest::
+   .. doctest::
 
-     >>> config = """
-     ... [Section1]
-     ... Key = Value
-     ...
-     ... [Section2]
-     ... AnotherKey = Value
-     ... """
-     >>> typical = configparser.ConfigParser()
-     >>> typical.read_string(config)
-     >>> list(typical['Section1'].keys())
-     ['key']
-     >>> list(typical['Section2'].keys())
-     ['anotherkey']
-     >>> custom = configparser.RawConfigParser()
-     >>> custom.optionxform = lambda option: option
-     >>> custom.read_string(config)
-     >>> list(custom['Section1'].keys())
-     ['Key']
-     >>> list(custom['Section2'].keys())
-     ['AnotherKey']
+      >>> config = """
+      ... [Section1]
+      ... Key = Value
+      ...
+      ... [Section2]
+      ... AnotherKey = Value
+      ... """
+      >>> typical = configparser.ConfigParser()
+      >>> typical.read_string(config)
+      >>> list(typical['Section1'].keys())
+      ['key']
+      >>> list(typical['Section2'].keys())
+      ['anotherkey']
+      >>> custom = configparser.RawConfigParser()
+      >>> custom.optionxform = lambda option: option
+      >>> custom.read_string(config)
+      >>> list(custom['Section1'].keys())
+      ['Key']
+      >>> list(custom['Section2'].keys())
+      ['AnotherKey']
 
-.. attribute:: SECTCRE
+   .. note::
+      The optionxform function transforms option names to a canonical form.
+      This should be an idempotent function: if the name is already in
+      canonical form, it should be returned unchanged.
 
-  A compiled regular expression used to parse section headers.  The default
-  matches ``[section]`` to the name ``"section"``.  Whitespace is considered
-  part of the section name, thus ``[  larch  ]`` will be read as a section of
-  name ``"  larch  "``.  Override this attribute if that's unsuitable.  For
-  example:
 
-  .. doctest::
+.. attribute:: ConfigParser.SECTCRE
 
-     >>> import re
-     >>> config = """
-     ... [Section 1]
-     ... option = value
-     ...
-     ... [  Section 2  ]
-     ... another = val
-     ... """
-     >>> typical = configparser.ConfigParser()
-     >>> typical.read_string(config)
-     >>> typical.sections()
-     ['Section 1', '  Section 2  ']
-     >>> custom = configparser.ConfigParser()
-     >>> custom.SECTCRE = re.compile(r"\[ *(?P<header>[^]]+?) *\]")
-     >>> custom.read_string(config)
-     >>> custom.sections()
-     ['Section 1', 'Section 2']
+   A compiled regular expression used to parse section headers.  The default
+   matches ``[section]`` to the name ``"section"``.  Whitespace is considered
+   part of the section name, thus ``[  larch  ]`` will be read as a section of
+   name ``"  larch  "``.  Override this attribute if that's unsuitable.  For
+   example:
 
-  .. note::
+   .. doctest::
 
-     While ConfigParser objects also use an ``OPTCRE`` attribute for recognizing
-     option lines, it's not recommended to override it because that would
-     interfere with constructor options *allow_no_value* and *delimiters*.
+      >>> import re
+      >>> config = """
+      ... [Section 1]
+      ... option = value
+      ...
+      ... [  Section 2  ]
+      ... another = val
+      ... """
+      >>> typical = configparser.ConfigParser()
+      >>> typical.read_string(config)
+      >>> typical.sections()
+      ['Section 1', '  Section 2  ']
+      >>> custom = configparser.ConfigParser()
+      >>> custom.SECTCRE = re.compile(r"\[ *(?P<header>[^]]+?) *\]")
+      >>> custom.read_string(config)
+      >>> custom.sections()
+      ['Section 1', 'Section 2']
+
+   .. note::
+
+      While ConfigParser objects also use an ``OPTCRE`` attribute for recognizing
+      option lines, it's not recommended to override it because that would
+      interfere with constructor options *allow_no_value* and *delimiters*.
 
 
 Legacy API Examples
@@ -887,7 +906,7 @@ interpolation if an option used is not defined elsewhere. ::
 ConfigParser Objects
 --------------------
 
-.. class:: ConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=('#', ';'), inline_comment_prefixes=None, strict=True, empty_lines_in_values=True, default_section=configparser.DEFAULTSECT, interpolation=BasicInterpolation(), converters={})
+.. class:: ConfigParser(defaults=None, dict_type=dict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=('#', ';'), inline_comment_prefixes=None, strict=True, empty_lines_in_values=True, default_section=configparser.DEFAULTSECT, interpolation=BasicInterpolation(), converters={})
 
    The main configuration parser.  When *defaults* is given, it is initialized
    into the dictionary of intrinsic defaults.  When *dict_type* is given, it
@@ -949,6 +968,9 @@ ConfigParser Objects
       providing consistent behavior across the parser: non-string
       keys and values are implicitly converted to strings.
 
+   .. versionchanged:: 3.8
+      The default *dict_type* is :class:`dict`, since it now preserves
+      insertion order.
 
    .. method:: defaults()
 
@@ -992,16 +1014,17 @@ ConfigParser Objects
 
    .. method:: read(filenames, encoding=None)
 
-      Attempt to read and parse a list of filenames, returning a list of
+      Attempt to read and parse an iterable of filenames, returning a list of
       filenames which were successfully parsed.
 
       If *filenames* is a string, a :class:`bytes` object or a
       :term:`path-like object`, it is treated as
       a single filename.  If a file named in *filenames* cannot be opened, that
-      file will be ignored.  This is designed so that you can specify a list of
-      potential configuration file locations (for example, the current
-      directory, the user's home directory, and some system-wide directory),
-      and all existing configuration files in the list will be read.
+      file will be ignored.  This is designed so that you can specify an
+      iterable of potential configuration file locations (for example, the
+      current directory, the user's home directory, and some system-wide
+      directory), and all existing configuration files in the iterable will be
+      read.
 
       If none of the named files exist, the :class:`ConfigParser`
       instance will contain an empty dataset.  An application which requires
@@ -1120,10 +1143,11 @@ ConfigParser Objects
       given *section*.  Optional arguments have the same meaning as for the
       :meth:`get` method.
 
-      .. versionchanged:: 3.2
+      .. versionchanged:: 3.8
          Items present in *vars* no longer appear in the result.  The previous
          behaviour mixed actual parser options with variables provided for
          interpolation.
+
 
    .. method:: set(section, option, value)
 
@@ -1139,6 +1163,13 @@ ConfigParser Objects
       representation can be parsed by a future :meth:`read` call.  If
       *space_around_delimiters* is true, delimiters between
       keys and values are surrounded by spaces.
+
+   .. note::
+
+      Comments in the original configuration file are not preserved when
+      writing the configuration back.
+      What is considered a comment, depends on the given values for
+      *comment_prefix* and *inline_comment_prefix*.
 
 
    .. method:: remove_option(section, option)
@@ -1175,28 +1206,6 @@ ConfigParser Objects
       names is stripped before :meth:`optionxform` is called.
 
 
-   .. method:: readfp(fp, filename=None)
-
-      .. deprecated:: 3.2
-         Use :meth:`read_file` instead.
-
-      .. versionchanged:: 3.2
-         :meth:`readfp` now iterates on *fp* instead of calling ``fp.readline()``.
-
-      For existing code calling :meth:`readfp` with arguments which don't
-      support iteration, the following generator may be used as a wrapper
-      around the file-like object::
-
-         def readline_generator(fp):
-             line = fp.readline()
-             while line:
-                 yield line
-                 line = fp.readline()
-
-      Instead of ``parser.readfp(fp)`` use
-      ``parser.read_file(readline_generator(fp))``.
-
-
 .. data:: MAX_INTERPOLATION_DEPTH
 
    The maximum depth for recursive interpolation for :meth:`get` when the *raw*
@@ -1209,7 +1218,7 @@ ConfigParser Objects
 RawConfigParser Objects
 -----------------------
 
-.. class:: RawConfigParser(defaults=None, dict_type=collections.OrderedDict, \
+.. class:: RawConfigParser(defaults=None, dict_type=dict, \
                            allow_no_value=False, *, delimiters=('=', ':'), \
                            comment_prefixes=('#', ';'), \
                            inline_comment_prefixes=None, strict=True, \
@@ -1221,6 +1230,10 @@ RawConfigParser Objects
    disabled by default and allows for non-string section names, option
    names, and values via its unsafe ``add_section`` and ``set`` methods,
    as well as the legacy ``defaults=`` keyword argument handling.
+
+   .. versionchanged:: 3.8
+      The default *dict_type* is :class:`dict`, since it now preserves
+      insertion order.
 
    .. note::
       Consider using :class:`ConfigParser` instead which checks types of
@@ -1326,10 +1339,9 @@ Exceptions
 
    Exception raised when errors occur attempting to parse a file.
 
-   .. versionchanged:: 3.2
-      The ``filename`` attribute and :meth:`__init__` argument were renamed to
-      ``source`` for consistency.
-
+.. versionchanged:: 3.12
+   The ``filename`` attribute and :meth:`__init__` constructor argument were
+   removed.  They have been available using the name ``source`` since 3.2.
 
 .. rubric:: Footnotes
 

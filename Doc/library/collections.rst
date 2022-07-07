@@ -33,11 +33,6 @@ Python's general purpose built-in containers, :class:`dict`, :class:`list`,
 :class:`UserString`     wrapper around string objects for easier string subclassing
 =====================   ====================================================================
 
-.. versionchanged:: 3.3
-    Moved :ref:`collections-abstract-base-classes` to the :mod:`collections.abc` module.
-    For backwards compatibility, they continue to be visible in this module through
-    Python 3.7.  Subsequently, they will be removed entirely.
-
 
 :class:`ChainMap` objects
 -------------------------
@@ -77,18 +72,22 @@ The class can be used to simulate nested scopes and is useful in templating.
         be modified to change which mappings are searched.  The list should
         always contain at least one mapping.
 
-    .. method:: new_child(m=None)
+    .. method:: new_child(m=None, **kwargs)
 
         Returns a new :class:`ChainMap` containing a new map followed by
         all of the maps in the current instance.  If ``m`` is specified,
         it becomes the new map at the front of the list of mappings; if not
         specified, an empty dict is used, so that a call to ``d.new_child()``
-        is equivalent to: ``ChainMap({}, *d.maps)``.  This method is used for
-        creating subcontexts that can be updated without altering values in any
-        of the parent mappings.
+        is equivalent to: ``ChainMap({}, *d.maps)``. If any keyword arguments
+        are specified, they update passed map or new empty dict. This method
+        is used for creating subcontexts that can be updated without altering
+        values in any of the parent mappings.
 
         .. versionchanged:: 3.4
            The optional ``m`` parameter was added.
+
+        .. versionchanged:: 3.10
+           Keyword arguments support was added.
 
     .. attribute:: parents
 
@@ -100,6 +99,24 @@ The class can be used to simulate nested scopes and is useful in templating.
         :func:`super` function.  A reference to ``d.parents`` is equivalent to:
         ``ChainMap(*d.maps[1:])``.
 
+    Note, the iteration order of a :class:`ChainMap()` is determined by
+    scanning the mappings last to first::
+
+        >>> baseline = {'music': 'bach', 'art': 'rembrandt'}
+        >>> adjustments = {'art': 'van gogh', 'opera': 'carmen'}
+        >>> list(ChainMap(adjustments, baseline))
+        ['music', 'art', 'opera']
+
+    This gives the same ordering as a series of :meth:`dict.update` calls
+    starting with the last mapping::
+
+        >>> combined = baseline.copy()
+        >>> combined.update(adjustments)
+        >>> list(combined)
+        ['music', 'art', 'opera']
+
+    .. versionchanged:: 3.9
+       Added support for ``|`` and ``|=`` operators, specified in :pep:`584`.
 
 .. seealso::
 
@@ -110,11 +127,11 @@ The class can be used to simulate nested scopes and is useful in templating.
       writing to any mapping in the chain.
 
     * Django's `Context class
-      <https://github.com/django/django/blob/master/django/template/context.py>`_
+      <https://github.com/django/django/blob/main/django/template/context.py>`_
       for templating is a read-only chain of mappings.  It also features
       pushing and popping of contexts similar to the
       :meth:`~collections.ChainMap.new_child` method and the
-      :meth:`~collections.ChainMap.parents` property.
+      :attr:`~collections.ChainMap.parents` property.
 
     * The `Nested Contexts recipe
       <https://code.activestate.com/recipes/577434/>`_ has options to control
@@ -147,7 +164,7 @@ environment variables which in turn take precedence over default values::
         parser.add_argument('-u', '--user')
         parser.add_argument('-c', '--color')
         namespace = parser.parse_args()
-        command_line_args = {k:v for k, v in vars(namespace).items() if v}
+        command_line_args = {k: v for k, v in vars(namespace).items() if v is not None}
 
         combined = ChainMap(command_line_args, os.environ, defaults)
         print(combined['color'])
@@ -163,8 +180,8 @@ contexts::
         e.maps[-1]            # Root context -- like Python's globals()
         e.parents             # Enclosing context chain -- like Python's nonlocals
 
-        d['x']                # Get first key in the chain of contexts
         d['x'] = 1            # Set value in current context
+        d['x']                # Get first key in the chain of contexts
         del d['x']            # Delete from current context
         list(d)               # All nested values
         k in d                # Check all nested values
@@ -198,6 +215,7 @@ updates keys found deeper in the chain::
     >>> d['lion'] = 'orange'         # update an existing key two levels down
     >>> d['snake'] = 'red'           # new keys get added to the topmost dict
     >>> del d['elephant']            # remove an existing key one level down
+    >>> d                            # display result
     DeepChainMap({'zebra': 'black', 'snake': 'red'}, {}, {'lion': 'orange'})
 
 
@@ -224,7 +242,7 @@ For example::
 .. class:: Counter([iterable-or-mapping])
 
     A :class:`Counter` is a :class:`dict` subclass for counting hashable objects.
-    It is an unordered collection where elements are stored as dictionary keys
+    It is a collection where elements are stored as dictionary keys
     and their counts are stored as dictionary values.  Counts are allowed to be
     any integer value including zero or negative counts.  The :class:`Counter`
     class is similar to bags or multisets in other languages.
@@ -252,15 +270,20 @@ For example::
 
     .. versionadded:: 3.1
 
+    .. versionchanged:: 3.7 As a :class:`dict` subclass, :class:`Counter`
+       inherited the capability to remember insertion order.  Math operations
+       on *Counter* objects also preserve order.  Results are ordered
+       according to when an element is first encountered in the left operand
+       and then by the order encountered in the right operand.
 
-    Counter objects support three methods beyond those available for all
+    Counter objects support additional methods beyond those available for all
     dictionaries:
 
     .. method:: elements()
 
         Return an iterator over elements repeating each as many times as its
-        count.  Elements are returned in arbitrary order.  If an element's count
-        is less than one, :meth:`elements` will ignore it.
+        count.  Elements are returned in the order first encountered. If an
+        element's count is less than one, :meth:`elements` will ignore it.
 
             >>> c = Counter(a=4, b=2, c=0, d=-2)
             >>> sorted(c.elements())
@@ -270,11 +293,11 @@ For example::
 
         Return a list of the *n* most common elements and their counts from the
         most common to the least.  If *n* is omitted or ``None``,
-        :func:`most_common` returns *all* elements in the counter.
-        Elements with equal counts are ordered arbitrarily:
+        :meth:`most_common` returns *all* elements in the counter.
+        Elements with equal counts are ordered in the order first encountered:
 
-            >>> Counter('abracadabra').most_common(3)  # doctest: +SKIP
-            [('a', 5), ('r', 2), ('b', 2)]
+            >>> Counter('abracadabra').most_common(3)
+            [('a', 5), ('b', 2), ('r', 2)]
 
     .. method:: subtract([iterable-or-mapping])
 
@@ -290,6 +313,16 @@ For example::
 
         .. versionadded:: 3.2
 
+    .. method:: total()
+
+        Compute the sum of the counts.
+
+            >>> c = Counter(a=10, b=5, c=0)
+            >>> c.total()
+            15
+
+        .. versionadded:: 3.10
+
     The usual dictionary methods are available for :class:`Counter` objects
     except for two which work differently for counters.
 
@@ -304,9 +337,22 @@ For example::
         instead of replacing them.  Also, the *iterable* is expected to be a
         sequence of elements, not a sequence of ``(key, value)`` pairs.
 
+Counters support rich comparison operators for equality, subset, and
+superset relationships: ``==``, ``!=``, ``<``, ``<=``, ``>``, ``>=``.
+All of those tests treat missing elements as having zero counts so that
+``Counter(a=1) == Counter(a=1, b=0)`` returns true.
+
+.. versionadded:: 3.10
+   Rich comparison operations were added.
+
+.. versionchanged:: 3.10
+   In equality tests, missing elements are treated as having zero counts.
+   Formerly, ``Counter(a=3)`` and ``Counter(a=3, b=0)`` were considered
+   distinct.
+
 Common patterns for working with :class:`Counter` objects::
 
-    sum(c.values())                 # total of all counts
+    c.total()                       # total of all counts
     c.clear()                       # reset all counts
     list(c)                         # list unique elements
     set(c)                          # convert to a set
@@ -320,8 +366,11 @@ Several mathematical operations are provided for combining :class:`Counter`
 objects to produce multisets (counters that have counts greater than zero).
 Addition and subtraction combine counters by adding or subtracting the counts
 of corresponding elements.  Intersection and union return the minimum and
-maximum of corresponding counts.  Each operation can accept inputs with signed
+maximum of corresponding counts.  Equality and inclusion compare
+corresponding counts.  Each operation can accept inputs with signed
 counts, but the output will exclude results with counts of zero or less.
+
+.. doctest::
 
     >>> c = Counter(a=3, b=1)
     >>> d = Counter(a=1, b=2)
@@ -329,10 +378,14 @@ counts, but the output will exclude results with counts of zero or less.
     Counter({'a': 4, 'b': 3})
     >>> c - d                       # subtract (keeping only positive counts)
     Counter({'a': 2})
-    >>> c & d                       # intersection:  min(c[x], d[x]) # doctest: +SKIP
+    >>> c & d                       # intersection:  min(c[x], d[x])
     Counter({'a': 1, 'b': 1})
     >>> c | d                       # union:  max(c[x], d[x])
     Counter({'a': 3, 'b': 2})
+    >>> c == d                      # equality:  c[x] == d[x]
+    False
+    >>> c <= d                      # inclusion:  c[x] <= d[x]
+    False
 
 Unary addition and subtraction are shortcuts for adding an empty counter
 or subtracting from an empty counter.
@@ -357,12 +410,12 @@ or subtracting from an empty counter.
       restrictions on its keys and values.  The values are intended to be numbers
       representing counts, but you *could* store anything in the value field.
 
-    * The :meth:`most_common` method requires only that the values be orderable.
+    * The :meth:`~Counter.most_common` method requires only that the values be orderable.
 
     * For in-place operations such as ``c[key] += 1``, the value type need only
       support addition and subtraction.  So fractions, floats, and decimals would
       work and negative values are supported.  The same is also true for
-      :meth:`update` and :meth:`subtract` which allow negative and zero values
+      :meth:`~Counter.update` and :meth:`~Counter.subtract` which allow negative and zero values
       for both inputs and outputs.
 
     * The multiset methods are designed only for use cases with positive values.
@@ -370,7 +423,7 @@ or subtracting from an empty counter.
       are created.  There are no type restrictions, but the value type needs to
       support addition, subtraction, and comparison.
 
-    * The :meth:`elements` method requires integer counts.  It ignores zero and
+    * The :meth:`~Counter.elements` method requires integer counts.  It ignores zero and
       negative counts.
 
 .. seealso::
@@ -388,9 +441,9 @@ or subtracting from an empty counter.
       Section 4.6.3, Exercise 19*.
 
     * To enumerate all distinct multisets of a given size over a given set of
-      elements, see :func:`itertools.combinations_with_replacement`:
+      elements, see :func:`itertools.combinations_with_replacement`::
 
-            map(Counter, combinations_with_replacement('ABC', 2)) --> AA AB AC BB BC CC
+          map(Counter, combinations_with_replacement('ABC', 2)) # --> AA AB AC BB BC CC
 
 
 :class:`deque` objects
@@ -530,9 +583,9 @@ or subtracting from an empty counter.
 
 In addition to the above, deques support iteration, pickling, ``len(d)``,
 ``reversed(d)``, ``copy.copy(d)``, ``copy.deepcopy(d)``, membership testing with
-the :keyword:`in` operator, and subscript references such as ``d[-1]``.  Indexed
-access is O(1) at both ends but slows to O(n) in the middle.  For fast random
-access, use lists instead.
+the :keyword:`in` operator, and subscript references such as ``d[0]`` to access
+the first element.  Indexed access is O(1) at both ends but slows to O(n) in
+the middle.  For fast random access, use lists instead.
 
 Starting in version 3.5, deques support ``__add__()``, ``__mul__()``,
 and ``__imul__()``.
@@ -640,9 +693,9 @@ the :meth:`~deque.rotate` method::
                 # Remove an exhausted iterator.
                 iterators.popleft()
 
-The :meth:`rotate` method provides a way to implement :class:`deque` slicing and
+The :meth:`~deque.rotate` method provides a way to implement :class:`deque` slicing and
 deletion.  For example, a pure Python implementation of ``del d[n]`` relies on
-the :meth:`rotate` method to position elements to be popped::
+the ``rotate()`` method to position elements to be popped::
 
     def delete_nth(d, n):
         d.rotate(-n)
@@ -650,8 +703,8 @@ the :meth:`rotate` method to position elements to be popped::
         d.rotate(n)
 
 To implement :class:`deque` slicing, use a similar approach applying
-:meth:`rotate` to bring a target element to the left side of the deque. Remove
-old entries with :meth:`popleft`, add new entries with :meth:`extend`, and then
+:meth:`~deque.rotate` to bring a target element to the left side of the deque. Remove
+old entries with :meth:`~deque.popleft`, add new entries with :meth:`~deque.extend`, and then
 reverse the rotation.
 With minor variations on that approach, it is easy to implement Forth style
 stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
@@ -661,9 +714,9 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
 :class:`defaultdict` objects
 ----------------------------
 
-.. class:: defaultdict([default_factory[, ...]])
+.. class:: defaultdict(default_factory=None, /, [...])
 
-    Returns a new dictionary-like object.  :class:`defaultdict` is a subclass of the
+    Return a new dictionary-like object.  :class:`defaultdict` is a subclass of the
     built-in :class:`dict` class.  It overrides one method and adds one writable
     instance variable.  The remaining functionality is the same as for the
     :class:`dict` class and is not documented here.
@@ -708,11 +761,15 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
         initialized from the first argument to the constructor, if present, or to
         ``None``, if absent.
 
+    .. versionchanged:: 3.9
+       Added merge (``|``) and update (``|=``) operators, specified in
+       :pep:`584`.
+
 
 :class:`defaultdict` Examples
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Using :class:`list` as the :attr:`default_factory`, it is easy to group a
+Using :class:`list` as the :attr:`~defaultdict.default_factory`, it is easy to group a
 sequence of key-value pairs into a dictionary of lists:
 
     >>> s = [('yellow', 1), ('blue', 2), ('yellow', 3), ('blue', 4), ('red', 1)]
@@ -724,7 +781,7 @@ sequence of key-value pairs into a dictionary of lists:
     [('blue', [2, 4]), ('red', [1]), ('yellow', [1, 3])]
 
 When each key is encountered for the first time, it is not already in the
-mapping; so an entry is automatically created using the :attr:`default_factory`
+mapping; so an entry is automatically created using the :attr:`~defaultdict.default_factory`
 function which returns an empty :class:`list`.  The :meth:`list.append`
 operation then attaches the value to the new list.  When keys are encountered
 again, the look-up proceeds normally (returning the list for that key) and the
@@ -738,7 +795,7 @@ simpler and faster than an equivalent technique using :meth:`dict.setdefault`:
     >>> sorted(d.items())
     [('blue', [2, 4]), ('red', [1]), ('yellow', [1, 3])]
 
-Setting the :attr:`default_factory` to :class:`int` makes the
+Setting the :attr:`~defaultdict.default_factory` to :class:`int` makes the
 :class:`defaultdict` useful for counting (like a bag or multiset in other
 languages):
 
@@ -751,7 +808,7 @@ languages):
     [('i', 4), ('m', 1), ('p', 2), ('s', 4)]
 
 When a letter is first encountered, it is missing from the mapping, so the
-:attr:`default_factory` function calls :func:`int` to supply a default count of
+:attr:`~defaultdict.default_factory` function calls :func:`int` to supply a default count of
 zero.  The increment operation then builds up the count for each letter.
 
 The function :func:`int` which always returns zero is just a special case of
@@ -766,7 +823,7 @@ zero):
     >>> '%(name)s %(action)s to %(object)s' % d
     'John ran to <missing>'
 
-Setting the :attr:`default_factory` to :class:`set` makes the
+Setting the :attr:`~defaultdict.default_factory` to :class:`set` makes the
 :class:`defaultdict` useful for building a dictionary of sets:
 
     >>> s = [('red', 1), ('blue', 2), ('red', 3), ('blue', 4), ('red', 1), ('blue', 4)]
@@ -821,6 +878,9 @@ they add the ability to access fields by name instead of position index.
     Named tuple instances do not have per-instance dictionaries, so they are
     lightweight and require no more memory than regular tuples.
 
+    To support pickling, the named tuple class should be assigned to a variable
+    that matches *typename*.
+
     .. versionchanged:: 3.1
        Added support for *rename*.
 
@@ -832,7 +892,7 @@ they add the ability to access fields by name instead of position index.
        Added the *module* parameter.
 
     .. versionchanged:: 3.7
-       Remove the *verbose* parameter and the :attr:`_source` attribute.
+       Removed the *verbose* parameter and the :attr:`_source` attribute.
 
     .. versionchanged:: 3.7
        Added the *defaults* parameter and the :attr:`_field_defaults`
@@ -886,17 +946,24 @@ field names, the method and attribute names start with an underscore.
 
 .. method:: somenamedtuple._asdict()
 
-    Return a new :class:`OrderedDict` which maps field names to their corresponding
+    Return a new :class:`dict` which maps field names to their corresponding
     values:
 
     .. doctest::
 
         >>> p = Point(x=11, y=22)
         >>> p._asdict()
-        OrderedDict([('x', 11), ('y', 22)])
+        {'x': 11, 'y': 22}
 
     .. versionchanged:: 3.1
         Returns an :class:`OrderedDict` instead of a regular :class:`dict`.
+
+    .. versionchanged:: 3.8
+        Returns a regular :class:`dict` instead of an :class:`OrderedDict`.
+        As of Python 3.7, regular dicts are guaranteed to be ordered.  If the
+        extra features of :class:`OrderedDict` are required, the suggested
+        remediation is to cast the result to the desired type:
+        ``OrderedDict(nt._asdict())``.
 
 .. method:: somenamedtuple._replace(**kwargs)
 
@@ -925,14 +992,14 @@ field names, the method and attribute names start with an underscore.
         >>> Pixel(11, 22, 128, 255, 0)
         Pixel(x=11, y=22, red=128, green=255, blue=0)
 
-.. attribute:: somenamedtuple._fields_defaults
+.. attribute:: somenamedtuple._field_defaults
 
    Dictionary mapping field names to default values.
 
    .. doctest::
 
         >>> Account = namedtuple('Account', ['type', 'balance'], defaults=[0])
-        >>> Account._fields_defaults
+        >>> Account._field_defaults
         {'balance': 0}
         >>> Account('premium')
         Account(type='premium', balance=0)
@@ -973,7 +1040,7 @@ The subclass shown above sets ``__slots__`` to an empty tuple.  This helps
 keep memory requirements low by preventing the creation of instance dictionaries.
 
 Subclassing is not useful for adding new, stored fields.  Instead, simply
-create a new named tuple type from the :attr:`_fields` attribute:
+create a new named tuple type from the :attr:`~somenamedtuple._fields` attribute:
 
     >>> Point3D = namedtuple('Point3D', Point._fields + ('z',))
 
@@ -989,44 +1056,79 @@ fields:
 .. versionchanged:: 3.5
    Property docstrings became writeable.
 
-Default values can be implemented by using :meth:`_replace` to
-customize a prototype instance:
-
-    >>> Account = namedtuple('Account', 'owner balance transaction_count')
-    >>> default_account = Account('<owner name>', 0.0, 0)
-    >>> johns_account = default_account._replace(owner='John')
-    >>> janes_account = default_account._replace(owner='Jane')
-
-
 .. seealso::
 
-    * `Recipe for named tuple abstract base class with a metaclass mix-in
-      <https://code.activestate.com/recipes/577629-namedtupleabc-abstract-base-class-mix-in-for-named/>`_
-      by Jan Kaliszewski.  Besides providing an :term:`abstract base class` for
-      named tuples, it also supports an alternate :term:`metaclass`-based
-      constructor that is convenient for use cases where named tuples are being
-      subclassed.
+    * See :class:`typing.NamedTuple` for a way to add type hints for named
+      tuples.  It also provides an elegant notation using the :keyword:`class`
+      keyword::
+
+          class Component(NamedTuple):
+              part_number: int
+              weight: float
+              description: Optional[str] = None
 
     * See :meth:`types.SimpleNamespace` for a mutable namespace based on an
       underlying dictionary instead of a tuple.
 
-    * See :meth:`typing.NamedTuple` for a way to add type hints for named tuples.
+    * The :mod:`dataclasses` module provides a decorator and functions for
+      automatically adding generated special methods to user-defined classes.
 
 
 :class:`OrderedDict` objects
 ----------------------------
 
-Ordered dictionaries are just like regular dictionaries but they remember the
-order that items were inserted.  When iterating over an ordered dictionary,
-the items are returned in the order their keys were first added.
+Ordered dictionaries are just like regular dictionaries but have some extra
+capabilities relating to ordering operations.  They have become less
+important now that the built-in :class:`dict` class gained the ability
+to remember insertion order (this new behavior became guaranteed in
+Python 3.7).
+
+Some differences from :class:`dict` still remain:
+
+* The regular :class:`dict` was designed to be very good at mapping
+  operations.  Tracking insertion order was secondary.
+
+* The :class:`OrderedDict` was designed to be good at reordering operations.
+  Space efficiency, iteration speed, and the performance of update
+  operations were secondary.
+
+* The :class:`OrderedDict` algorithm can handle frequent reordering operations
+  better than :class:`dict`.  As shown in the recipes below, this makes it
+  suitable for implementing various kinds of LRU caches.
+
+* The equality operation for :class:`OrderedDict` checks for matching order.
+
+  A regular :class:`dict` can emulate the order sensitive equality test with
+  ``p == q and all(k1 == k2 for k1, k2 in zip(p, q))``.
+
+* The :meth:`popitem` method of :class:`OrderedDict` has a different
+  signature.  It accepts an optional argument to specify which item is popped.
+
+  A regular :class:`dict` can emulate OrderedDict's ``od.popitem(last=True)``
+  with ``d.popitem()`` which is guaranteed to pop the rightmost (last) item.
+
+  A regular :class:`dict` can emulate OrderedDict's ``od.popitem(last=False)``
+  with ``(k := next(iter(d)), d.pop(k))`` which will return and remove the
+  leftmost (first) item if it exists.
+
+* :class:`OrderedDict` has a :meth:`move_to_end` method to efficiently
+  reposition an element to an endpoint.
+
+  A regular :class:`dict` can emulate OrderedDict's ``od.move_to_end(k,
+  last=True)`` with ``d[k] = d.pop(k)`` which will move the key and its
+  associated value to the rightmost (last) position.
+
+  A regular :class:`dict` does not have an efficient equivalent for
+  OrderedDict's ``od.move_to_end(k, last=False)`` which moves the key
+  and its associated value to the leftmost (first) position.
+
+* Until Python 3.8, :class:`dict` lacked a :meth:`__reversed__` method.
+
 
 .. class:: OrderedDict([items])
 
-    Return an instance of a dict subclass, supporting the usual :class:`dict`
-    methods.  An *OrderedDict* is a dict that remembers the order that keys
-    were first inserted. If a new entry overwrites an existing entry, the
-    original insertion position is left unchanged.  Deleting an entry and
-    reinserting it will move it to the end.
+    Return an instance of a :class:`dict` subclass that has methods
+    specialized for rearranging dictionary order.
 
     .. versionadded:: 3.1
 
@@ -1042,14 +1144,16 @@ the items are returned in the order their keys were first added.
         Move an existing *key* to either end of an ordered dictionary.  The item
         is moved to the right end if *last* is true (the default) or to the
         beginning if *last* is false.  Raises :exc:`KeyError` if the *key* does
-        not exist::
+        not exist:
+
+        .. doctest::
 
             >>> d = OrderedDict.fromkeys('abcde')
             >>> d.move_to_end('b')
-            >>> ''.join(d.keys())
+            >>> ''.join(d)
             'acdeb'
             >>> d.move_to_end('b', last=False)
-            >>> ''.join(d.keys())
+            >>> ''.join(d)
             'bacde'
 
         .. versionadded:: 3.2
@@ -1073,32 +1177,14 @@ anywhere a regular dictionary is used.
    passed to the :class:`OrderedDict` constructor and its :meth:`update`
    method.
 
+.. versionchanged:: 3.9
+    Added merge (``|``) and update (``|=``) operators, specified in :pep:`584`.
+
+
 :class:`OrderedDict` Examples and Recipes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Since an ordered dictionary remembers its insertion order, it can be used
-in conjunction with sorting to make a sorted dictionary::
-
-    >>> # regular unsorted dictionary
-    >>> d = {'banana': 3, 'apple': 4, 'pear': 1, 'orange': 2}
-
-    >>> # dictionary sorted by key
-    >>> OrderedDict(sorted(d.items(), key=lambda t: t[0]))
-    OrderedDict([('apple', 4), ('banana', 3), ('orange', 2), ('pear', 1)])
-
-    >>> # dictionary sorted by value
-    >>> OrderedDict(sorted(d.items(), key=lambda t: t[1]))
-    OrderedDict([('pear', 1), ('orange', 2), ('banana', 3), ('apple', 4)])
-
-    >>> # dictionary sorted by length of the key string
-    >>> OrderedDict(sorted(d.items(), key=lambda t: len(t[0])))
-    OrderedDict([('pear', 1), ('apple', 4), ('orange', 2), ('banana', 3)])
-
-The new sorted dictionaries maintain their sort order when entries
-are deleted.  But when new keys are added, the keys are appended
-to the end and the sort is not maintained.
-
-It is also straight-forward to create an ordered dictionary variant
+It is straightforward to create an ordered dictionary variant
 that remembers the order the keys were *last* inserted.
 If a new entry overwrites an existing entry, the
 original insertion position is changed and moved to the end::
@@ -1107,22 +1193,105 @@ original insertion position is changed and moved to the end::
         'Store items in the order the keys were last added'
 
         def __setitem__(self, key, value):
-            if key in self:
-                del self[key]
-            OrderedDict.__setitem__(self, key, value)
+            super().__setitem__(key, value)
+            self.move_to_end(key)
 
-An ordered dictionary can be combined with the :class:`Counter` class
-so that the counter remembers the order elements are first encountered::
+An :class:`OrderedDict` would also be useful for implementing
+variants of :func:`functools.lru_cache`:
 
-    class OrderedCounter(Counter, OrderedDict):
-        'Counter that remembers the order elements are first encountered'
+.. testcode::
 
-        def __repr__(self):
-            return '%s(%r)' % (self.__class__.__name__, OrderedDict(self))
+    from time import time
 
-        def __reduce__(self):
-            return self.__class__, (OrderedDict(self),)
+    class TimeBoundedLRU:
+        "LRU Cache that invalidates and refreshes old entries."
 
+        def __init__(self, func, maxsize=128, maxage=30):
+            self.cache = OrderedDict()      # { args : (timestamp, result)}
+            self.func = func
+            self.maxsize = maxsize
+            self.maxage = maxage
+
+        def __call__(self, *args):
+            if args in self.cache:
+                self.cache.move_to_end(args)
+                timestamp, result = self.cache[args]
+                if time() - timestamp <= self.maxage:
+                    return result
+            result = self.func(*args)
+            self.cache[args] = time(), result
+            if len(self.cache) > self.maxsize:
+                self.cache.popitem(0)
+            return result
+
+
+.. testcode::
+
+    class MultiHitLRUCache:
+        """ LRU cache that defers caching a result until
+            it has been requested multiple times.
+
+            To avoid flushing the LRU cache with one-time requests,
+            we don't cache until a request has been made more than once.
+
+        """
+
+        def __init__(self, func, maxsize=128, maxrequests=4096, cache_after=1):
+            self.requests = OrderedDict()   # { uncached_key : request_count }
+            self.cache = OrderedDict()      # { cached_key : function_result }
+            self.func = func
+            self.maxrequests = maxrequests  # max number of uncached requests
+            self.maxsize = maxsize          # max number of stored return values
+            self.cache_after = cache_after
+
+        def __call__(self, *args):
+            if args in self.cache:
+                self.cache.move_to_end(args)
+                return self.cache[args]
+            result = self.func(*args)
+            self.requests[args] = self.requests.get(args, 0) + 1
+            if self.requests[args] <= self.cache_after:
+                self.requests.move_to_end(args)
+                if len(self.requests) > self.maxrequests:
+                    self.requests.popitem(0)
+            else:
+                self.requests.pop(args, None)
+                self.cache[args] = result
+                if len(self.cache) > self.maxsize:
+                    self.cache.popitem(0)
+            return result
+
+.. doctest::
+    :hide:
+
+    >>> def square(x):
+    ...     return x * x
+    ...
+    >>> f = MultiHitLRUCache(square, maxsize=4, maxrequests=6)
+    >>> list(map(f, range(10)))  # First requests, don't cache
+    [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+    >>> f(4)  # Cache the second request
+    16
+    >>> f(6)  # Cache the second request
+    36
+    >>> f(2)  # The first request aged out, so don't cache
+    4
+    >>> f(6)  # Cache hit
+    36
+    >>> f(4)  # Cache hit and move to front
+    16
+    >>> list(f.cache.values())
+    [36, 16]
+    >>> set(f.requests).isdisjoint(f.cache)
+    True
+    >>> list(map(f, [9, 8, 7]))   # Cache these second requests
+    [81, 64, 49]
+    >>> list(map(f, [7, 9]))  # Cache hits
+    [49, 81]
+    >>> list(f.cache.values())
+    [16, 64, 49, 81]
+    >>> set(f.requests).isdisjoint(f.cache)
+    True
 
 :class:`UserDict` objects
 -------------------------
@@ -1139,7 +1308,7 @@ attribute.
     regular dictionary, which is accessible via the :attr:`data` attribute of
     :class:`UserDict` instances.  If *initialdata* is provided, :attr:`data` is
     initialized with its contents; note that a reference to *initialdata* will not
-    be kept, allowing it be used for other purposes.
+    be kept, allowing it to be used for other purposes.
 
     In addition to supporting the methods and operations of mappings,
     :class:`UserDict` instances provide the following attribute:
@@ -1200,15 +1369,22 @@ subclass directly from :class:`str`; however, this class can be easier
 to work with because the underlying string is accessible as an
 attribute.
 
-.. class:: UserString([sequence])
+.. class:: UserString(seq)
 
-    Class that simulates a string or a Unicode string object.  The instance's
+    Class that simulates a string object.  The instance's
     content is kept in a regular string object, which is accessible via the
     :attr:`data` attribute of :class:`UserString` instances.  The instance's
-    contents are initially set to a copy of *sequence*.  The *sequence* can
-    be an instance of :class:`bytes`, :class:`str`, :class:`UserString` (or a
-    subclass) or an arbitrary sequence which can be converted into a string using
-    the built-in :func:`str` function.
+    contents are initially set to a copy of *seq*.  The *seq* argument can
+    be any object which can be converted into a string using the built-in
+    :func:`str` function.
+
+    In addition to supporting the methods and operations of strings,
+    :class:`UserString` instances provide the following attribute:
+
+    .. attribute:: data
+
+        A real :class:`str` object used to store the contents of the
+        :class:`UserString` class.
 
     .. versionchanged:: 3.5
        New methods ``__getnewargs__``, ``__rmod__``, ``casefold``,

@@ -4,6 +4,7 @@
 .. module:: msilib
    :platform: Windows
    :synopsis: Creation of Microsoft Installer files, and CAB files.
+   :deprecated:
 
 .. moduleauthor:: Martin v. Löwis <martin@v.loewis.de>
 .. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
@@ -11,6 +12,10 @@
 **Source code:** :source:`Lib/msilib/__init__.py`
 
 .. index:: single: msi
+
+.. deprecated-removed:: 3.11 3.13
+   The :mod:`msilib` module is deprecated
+   (see :pep:`PEP 594 <594#msilib>` for details).
 
 --------------
 
@@ -20,10 +25,9 @@ exposes an API to create CAB files. Support for reading ``.cab`` files is
 currently not implemented; read support for the ``.msi`` database is possible.
 
 This package aims to provide complete access to all tables in an ``.msi`` file,
-therefore, it is a fairly low-level API. Two primary applications of this
-package are the :mod:`distutils` command ``bdist_msi``, and the creation of
-Python installer package itself (although that currently uses a different
-version of ``msilib``).
+therefore, it is a fairly low-level API. One primary application of this
+package is the creation of Python installer package itself (although that currently
+uses a different version of ``msilib``).
 
 The package contents can be roughly split into four parts: low-level CAB
 routines, low-level MSI routines, higher-level MSI routines, and standard table
@@ -119,7 +123,7 @@ structures.
 .. function:: gen_uuid()
 
    Return a new UUID, in the format that MSI typically requires (i.e. in curly
-   braces, and with all hexdigits in upper-case).
+   braces, and with all hexdigits in uppercase).
 
 
 .. seealso::
@@ -439,9 +443,7 @@ GUI classes
 -----------
 
 :mod:`msilib` provides several classes that wrap the GUI tables in an MSI
-database. However, no standard user interface is provided; use
-:mod:`~distutils.command.bdist_msi` to create MSI files with a user-interface
-for installing Python packages.
+database. However, no standard user interface is provided.
 
 
 .. class:: Control(dlg, name)

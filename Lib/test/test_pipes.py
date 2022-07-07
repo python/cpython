@@ -1,12 +1,19 @@
-import pipes
 import os
 import string
 import unittest
 import shutil
-from test.support import TESTFN, run_unittest, unlink, reap_children
+from test.support import reap_children, unix_shell
+from test.support.os_helper import TESTFN, unlink
+from test.support.warnings_helper import import_deprecated
+
+pipes = import_deprecated("pipes")
+
 
 if os.name != 'posix':
     raise unittest.SkipTest('pipes module only works on posix')
+
+if not (unix_shell and os.path.exists(unix_shell)):
+    raise unittest.SkipTest('pipes module requires a shell')
 
 TESTFN2 = TESTFN + "2"
 
@@ -23,9 +30,8 @@ class SimplePipeTests(unittest.TestCase):
             self.skipTest('tr is not available')
         t = pipes.Template()
         t.append(s_command, pipes.STDIN_STDOUT)
-        f = t.open(TESTFN, 'w')
-        f.write('hello world #1')
-        f.close()
+        with t.open(TESTFN, 'w') as f:
+            f.write('hello world #1')
         with open(TESTFN) as f:
             self.assertEqual(f.read(), 'HELLO WORLD #1')
 
@@ -195,9 +201,10 @@ class SimplePipeTests(unittest.TestCase):
         self.assertNotEqual(id(t.steps), id(u.steps))
         self.assertEqual(t.debugging, u.debugging)
 
-def test_main():
-    run_unittest(SimplePipeTests)
+
+def tearDownModule():
     reap_children()
 
+
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

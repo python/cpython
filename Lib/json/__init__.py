@@ -28,8 +28,7 @@ Encoding basic Python object hierarchies::
 Compact encoding::
 
     >>> import json
-    >>> from collections import OrderedDict
-    >>> mydict = OrderedDict([('4', 5), ('6', 7)])
+    >>> mydict = {'4': 5, '6': 7}
     >>> json.dumps([1,2,3,mydict], separators=(',', ':'))
     '[1,2,3,{"4":5,"6":7}]'
 
@@ -134,7 +133,7 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
 
     If ``check_circular`` is false, then the circular reference check
     for container types will be skipped and a circular reference will
-    result in an ``OverflowError`` (or worse).
+    result in an ``RecursionError`` (or worse).
 
     If ``allow_nan`` is false, then it will be a ``ValueError`` to
     serialize out of range ``float`` values (``nan``, ``inf``, ``-inf``)
@@ -196,7 +195,7 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
 
     If ``check_circular`` is false, then the circular reference check
     for container types will be skipped and a circular reference will
-    result in an ``OverflowError`` (or worse).
+    result in an ``RecursionError`` (or worse).
 
     If ``allow_nan`` is false, then it will be a ``ValueError`` to
     serialize out of range ``float`` values (``nan``, ``inf``, ``-inf``) in
@@ -285,14 +284,11 @@ def load(fp, *, cls=None, object_hook=None, parse_float=None,
     ``object_pairs_hook`` is an optional function that will be called with the
     result of any object literal decoded with an ordered list of pairs.  The
     return value of ``object_pairs_hook`` will be used instead of the ``dict``.
-    This feature can be used to implement custom decoders that rely on the
-    order that the key and value pairs are decoded (for example,
-    collections.OrderedDict will remember the order of insertion). If
-    ``object_hook`` is also defined, the ``object_pairs_hook`` takes priority.
+    This feature can be used to implement custom decoders.  If ``object_hook``
+    is also defined, the ``object_pairs_hook`` takes priority.
 
     To use a custom ``JSONDecoder`` subclass, specify it with the ``cls``
     kwarg; otherwise ``JSONDecoder`` is used.
-
     """
     return loads(fp.read(),
         cls=cls, object_hook=object_hook,
@@ -300,7 +296,7 @@ def load(fp, *, cls=None, object_hook=None, parse_float=None,
         parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
 
 
-def loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None,
+def loads(s, *, cls=None, object_hook=None, parse_float=None,
         parse_int=None, parse_constant=None, object_pairs_hook=None, **kw):
     """Deserialize ``s`` (a ``str``, ``bytes`` or ``bytearray`` instance
     containing a JSON document) to a Python object.
@@ -313,10 +309,8 @@ def loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None,
     ``object_pairs_hook`` is an optional function that will be called with the
     result of any object literal decoded with an ordered list of pairs.  The
     return value of ``object_pairs_hook`` will be used instead of the ``dict``.
-    This feature can be used to implement custom decoders that rely on the
-    order that the key and value pairs are decoded (for example,
-    collections.OrderedDict will remember the order of insertion). If
-    ``object_hook`` is also defined, the ``object_pairs_hook`` takes priority.
+    This feature can be used to implement custom decoders.  If ``object_hook``
+    is also defined, the ``object_pairs_hook`` takes priority.
 
     ``parse_float``, if specified, will be called with the string
     of every JSON float to be decoded. By default this is equivalent to
@@ -335,9 +329,6 @@ def loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None,
 
     To use a custom ``JSONDecoder`` subclass, specify it with the ``cls``
     kwarg; otherwise ``JSONDecoder`` is used.
-
-    The ``encoding`` argument is ignored and deprecated.
-
     """
     if isinstance(s, str):
         if s.startswith('\ufeff'):
