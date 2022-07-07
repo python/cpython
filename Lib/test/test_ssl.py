@@ -3028,7 +3028,7 @@ class ThreadedTests(unittest.TestCase):
                                 ssl.CertificateError,
                                 "Hostname mismatch, certificate is not valid for 'invalid'."):
                             s.connect(address)
-            except Excaption as e:
+            except Exception as e:
                 print('**************************************************')
                 print(e)
                 raise
