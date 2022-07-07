@@ -244,7 +244,10 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     size_t n;
     char *p, *pr;
     PyThreadState *tstate = _PyOS_ReadlineTState;
-    assert(tstate != NULL);
+    if (tstate == NULL)
+    {
+        return NULL;
+    }
 
 #ifdef MS_WINDOWS
     const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
