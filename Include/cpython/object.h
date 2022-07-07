@@ -217,7 +217,7 @@ struct _typeobject {
     inquiry tp_is_gc; /* For PyObject_IS_GC */
     PyObject *tp_bases;
     PyObject *tp_mro; /* method resolution order */
-    PyObject *tp_cache;
+    PyObject *tp_cache; /* no longer used */
     PyObject *tp_subclasses;
     PyObject *tp_weaklist;
     destructor tp_del;
