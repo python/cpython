@@ -312,10 +312,15 @@ class Server:
                     with client:
                         results.append(client_func(client, peer_address,
                                                    *args, **kwargs))
-                # OSError is caused by read()/write() on a socket unexpectedly
-                # closed by a client.
-                except (ConnectionAbortedError, ConnectionResetError, OSError):
+                except (ConnectionAbortedError, ConnectionResetError):
                     if not client_fails:
+                        raise
+                # OSError is caused by read()/write() on a socket unexpectedly
+                # closed by a client. However, important exceprions like
+                # ssl.SSLError subclass OSError so we need a separate logic
+                # to split them away. Fortunately, they always set errno to 0.
+                except OSError as e:
+                    if not client_fails or e.errno != 0:
                         raise
             return results
 
