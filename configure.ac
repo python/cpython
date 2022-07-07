@@ -6112,6 +6112,7 @@ AS_VAR_IF([ac_cv_header_ncurses_h], [yes], [
   if test "$ac_sys_system" != "Darwin"; then
     dnl On macOS, there is no separate /usr/lib/libncursesw nor libpanelw.
     PKG_CHECK_MODULES([CURSES], [ncursesw], [
+      AC_DEFINE([HAVE_NCURSESW], [1])
       have_curses=ncursesw
     ], [
       WITH_SAVE_ENV([
