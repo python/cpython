@@ -1140,6 +1140,9 @@ Blob Objects
       end).
 
 
+PrepareProtocol Objects
+-----------------------
+
 .. class:: PrepareProtocol
 
    The PrepareProtocol type's single purpose is to act as a :pep:`246` style
