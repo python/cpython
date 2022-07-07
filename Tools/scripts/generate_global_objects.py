@@ -105,6 +105,8 @@ def iter_files():
 
 
 def iter_global_strings():
+    # Use of _Py_ID() in pycore_runtime_init_generated.h are
+    # ignored.
     id_regex = re.compile(r'\b_Py_ID\((\w+)\)')
     str_regex = re.compile(r'\b_Py_DECLARE_STR\((\w+), "(.*?)"\)')
     for filename in iter_files():
@@ -285,7 +287,8 @@ def generate_runtime_init(identifiers, strings):
                 with printer.block('.tuple_empty =', ','):
                     printer.write('.ob_base = _PyVarObject_IMMORTAL_INIT(&PyTuple_Type, 0)')
         printer.write('')
-        with printer.block("static inline void\n_Py_StaticStrings_Intern(void)"):
+        printer.write("static inline void")
+        with printer.block("_PyUnicode_InitStaticStrings(void)"):
             printer.write(f'PyObject *string;')
             for i in sorted(identifiers):
                 printer.write(f'string = &_Py_ID({i});')

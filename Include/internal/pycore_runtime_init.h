@@ -1246,7 +1246,7 @@ extern "C" {
 }
 
 static inline void
-_Py_StaticStrings_Intern(void) {
+_PyUnicode_InitStaticStrings(void) {
     PyObject *string;
     string = &_Py_ID(False);
     PyUnicode_InternInPlace(&string);
