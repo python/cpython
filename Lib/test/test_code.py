@@ -376,7 +376,6 @@ class CodeTest(unittest.TestCase):
                 for instruction in artificial_instructions
             ],
             [
-                ('RESUME', 0),
                 ("PUSH_EXC_INFO", None),
                 ("LOAD_CONST", None), # artificial 'None'
                 ("STORE_NAME", "e"),  # XX: we know the location for this

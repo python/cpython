@@ -19,7 +19,7 @@ extern const uint8_t _PyOpcode_Deopt[256];
 extern const uint8_t _PyOpcode_Original[256];
 
 #ifdef NEED_OPCODE_TABLES
-static const uint32_t _PyOpcode_RelativeJump[8] = {
+static const uint32_t _PyOpcode_RelativeJump[9] = {
     0U,
     0U,
     536870912U,
@@ -28,8 +28,9 @@ static const uint32_t _PyOpcode_RelativeJump[8] = {
     122880U,
     0U,
     0U,
+    1008U,
 };
-static const uint32_t _PyOpcode_Jump[8] = {
+static const uint32_t _PyOpcode_Jump[9] = {
     0U,
     0U,
     536870912U,
@@ -38,6 +39,7 @@ static const uint32_t _PyOpcode_Jump[8] = {
     122880U,
     0U,
     0U,
+    1008U,
 };
 
 const uint8_t _PyOpcode_Caches[256] = {
@@ -427,7 +429,7 @@ const uint8_t _PyOpcode_Original[256] = {
 #endif   // NEED_OPCODE_TABLES
 
 #ifdef Py_DEBUG
-static const char *const _PyOpcode_OpName[256] = {
+static const char *const _PyOpcode_OpName[267] = {
     [CACHE] = "CACHE",
     [POP_TOP] = "POP_TOP",
     [PUSH_NULL] = "PUSH_NULL",
@@ -684,6 +686,17 @@ static const char *const _PyOpcode_OpName[256] = {
     [253] = "<253>",
     [254] = "<254>",
     [DO_TRACING] = "DO_TRACING",
+    [SETUP_FINALLY] = "SETUP_FINALLY",
+    [SETUP_CLEANUP] = "SETUP_CLEANUP",
+    [SETUP_WITH] = "SETUP_WITH",
+    [POP_BLOCK] = "POP_BLOCK",
+    [JUMP] = "JUMP",
+    [JUMP_NO_INTERRUPT] = "JUMP_NO_INTERRUPT",
+    [POP_JUMP_IF_FALSE] = "POP_JUMP_IF_FALSE",
+    [POP_JUMP_IF_TRUE] = "POP_JUMP_IF_TRUE",
+    [POP_JUMP_IF_NONE] = "POP_JUMP_IF_NONE",
+    [POP_JUMP_IF_NOT_NONE] = "POP_JUMP_IF_NOT_NONE",
+    [LOAD_METHOD] = "LOAD_METHOD",
 };
 #endif
 
