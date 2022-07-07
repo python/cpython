@@ -3668,7 +3668,11 @@ class GenericTests(BaseTestCase):
         class A:
             __parameters__ = (T,)
         # Bare classes should be skipped
-        self.assertEqual(List[A].__parameters__, ())
+        for a in List, list:
+            for b in (A, int, TypeVar, TypeVarTuple, ParamSpec, types.GenericAlias, types.UnionType):
+                with self.subTest(generic=a, sub=b):
+                    with self.assertRaisesRegex(TypeError, '.* is not a generic class'):
+                        a[b][str]
         # Duck-typing anything that looks like it has __parameters__.
         # This test is optional and failure is okay.
         self.assertEqual(List[A()].__parameters__, (T,))
