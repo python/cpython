@@ -105,8 +105,7 @@ def iter_files():
 
 
 def iter_global_strings():
-    # Use of _Py_ID() in pycore_runtime_init_generated.h are
-    # ignored.
+    # Use of _Py_ID() is ignored in pycore_runtime_init_generated.h.
     id_regex = re.compile(r'\b_Py_ID\((\w+)\)')
     str_regex = re.compile(r'\b_Py_DECLARE_STR\((\w+), "(.*?)"\)')
     for filename in iter_files():
