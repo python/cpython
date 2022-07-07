@@ -40,6 +40,7 @@ class ReprTests(unittest.TestCase):
             "maxlong": 110,
             "maxother": 111,
             "fillvalue": "x" * 112,
+            "indent": "x" * 113,
         }
         r1 = Repr()
         for attr, val in example_kwargs.items():
