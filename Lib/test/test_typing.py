@@ -3662,6 +3662,17 @@ class GenericTests(BaseTestCase):
         class Sub(Base, Generic[T]):
             ...
 
+    def test_parameter_detection(self):
+        self.assertEqual(List[T].__parameters__, (T,))
+        self.assertEqual(List[List[T]].__parameters__, (T,))
+        class A:
+            __parameters__ = (T,)
+        # Bare classes should be skipped
+        self.assertEqual(List[A].__parameters__, ())
+        # Duck-typing anything that looks like it has __parameters__.
+        # This test is optional and failure is okay.
+        self.assertEqual(List[A()].__parameters__, (T,))
+
 
 class ClassVarTests(BaseTestCase):
 
