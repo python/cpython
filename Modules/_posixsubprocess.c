@@ -1080,8 +1080,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
     }
 #endif
 
-    pid_t pid;
-    pid = do_fork_exec(exec_array, argv, envp, cwd,
+    pid_t pid = do_fork_exec(exec_array, argv, envp, cwd,
                        p2cread, p2cwrite, c2pread, c2pwrite,
                        errread, errwrite, errpipe_read, errpipe_write,
                        close_fds, restore_signals, call_setsid, pgid_to_set,
