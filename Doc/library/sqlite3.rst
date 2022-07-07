@@ -1139,6 +1139,16 @@ Blob Objects
       end).
 
 
+PrepareProtocol Objects
+-----------------------
+
+.. class:: PrepareProtocol
+
+   The PrepareProtocol type's single purpose is to act as a :pep:`246` style
+   adaption protocol for objects that can :ref:`adapt themselves
+   <sqlite3-conform>` to :ref:`native SQLite types <sqlite3-types>`.
+
+
 .. _sqlite3-exceptions:
 
 Exceptions
@@ -1296,6 +1306,8 @@ it may make sense to enable that type to adapt itself.
 As an application developer, it may make more sense to take direct control by
 registering custom adapter functions.
 
+
+.. _sqlite3-conform:
 
 Letting your object adapt itself
 """"""""""""""""""""""""""""""""
