@@ -384,21 +384,21 @@ def _on_ssl_client(socket, peer_address, certificate=None,
 
             if context.verify_mode == ssl.CERT_REQUIRED:
                 cert = sslconn.getpeercert()
-                log(f"client cert is {pprint.pformat(cert)}")
+                log(f'client cert is {pprint.pformat(cert)}')
                 cert_binary = sslconn.getpeercert(True)
                 if cert_binary is None:
-                    log("client did not provide a cert")
+                    log('client did not provide a cert')
                 else:
-                    log(f"cert binary is {len(cert_binary)}b")
+                    log(f'cert binary is {len(cert_binary)}b')
 
-            log(f"connection cipher is now {sslconn.cipher()}")
+            log(f'connection cipher is now {sslconn.cipher()}')
             return sslconn
 
         except (ssl.SSLError, OSError) as e:
             # bpo-44229, bpo-43855, bpo-44237, and bpo-33450:
             # Ignore spurious EPROTOTYPE returned by write() on macOS.
             # See also http://erickt.github.io/blog/2014/11/19/adventures-in-debugging-a-potential-osx-kernel-bug/
-            if e.errno != errno.EPROTOTYPE and sys.platform != "darwin":
+            if e.errno != errno.EPROTOTYPE and sys.platform != 'darwin':
                 raise
 
     log(f'new connection from {peer_address!r}')
@@ -409,35 +409,35 @@ def _on_ssl_client(socket, peer_address, certificate=None,
         stripped = msg.strip()
 
         if stripped == b'over':
-            log("client closed connection")
+            log('client closed connection')
             forced_exit = True
             close()
 
         elif starttls_server and stripped == b'STARTTLS':
-            log("read STARTTLS from client, sending OK")
-            write(b"OK\n")
+            log('read STARTTLS from client, sending OK')
+            write(b'OK\n')
             sslconn = wrap_conn(socket)
 
         elif starttls_server and sslconn and stripped == b'ENDTLS':
-            log("read ENDTLS from client, sending OK")
-            write(b"OK\n")
+            log('read ENDTLS from client, sending OK')
+            write(b'OK\n')
             socket = sslconn.unwrap()
             sslconn = None
-            log("connection is now unencrypted")
+            log('connection is now unencrypted')
 
         elif stripped == b'CB tls-unique':
-            log("read CB tls-unique from client, sending our CB data")
-            data = sslconn.get_channel_binding("tls-unique")
-            write(repr(data).encode("us-ascii") + b"\n")
+            log('read CB tls-unique from client, sending our CB data')
+            data = sslconn.get_channel_binding('tls-unique')
+            write(repr(data).encode('us-ascii') + b'\n')
 
         elif stripped == b'PHA':
-            log("initiating post handshake auth")
+            log('initiating post handshake auth')
             try:
                 sslconn.verify_client_post_handshake()
             except ssl.SSLError as e:
-                write(repr(e).encode("us-ascii") + b"\n")
+                write(repr(e).encode('us-ascii') + b'\n')
             else:
-                write(b"OK\n")
+                write(b'OK\n')
 
         elif stripped == b'HASCERT':
             if sslconn.getpeercert() is not None:
@@ -447,19 +447,19 @@ def _on_ssl_client(socket, peer_address, certificate=None,
 
         elif stripped == b'GETCERT':
             cert = sslconn.getpeercert()
-            write(repr(cert).encode("us-ascii") + b"\n")
+            write(repr(cert).encode('us-ascii') + b'\n')
 
         elif stripped == b'VERIFIEDCHAIN':
             certs = sslconn._sslobj.get_verified_chain()
-            write(len(certs).to_bytes(1, "big") + b"\n")
+            write(len(certs).to_bytes(1, 'big') + b'\n')
 
         elif stripped == b'UNVERIFIEDCHAIN':
             certs = sslconn._sslobj.get_unverified_chain()
-            write(len(certs).to_bytes(1, "big") + b"\n")
+            write(len(certs).to_bytes(1, 'big') + b'\n')
 
         else:
-            ctype = "encrypted" if sslconn else "unencrypted"
-            log(f"read {msg} ({ctype}), sending back {msg.lower()} ({ctype})")
+            ctype = 'encrypted' if sslconn else 'unencrypted'
+            log(f'read {msg} ({ctype}), sending back {msg.lower()} ({ctype})')
             write(msg.lower())
 
     try:
