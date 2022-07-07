@@ -49,15 +49,29 @@ specialsre = re.compile(r'[][\\()<>@,:;".]')
 escapesre = re.compile(r'[\\"]')
 
 def _has_surrogates(s):
-    """Return True if s contains surrogate-escaped binary data."""
+    """Return True if s may contain surrogate-escaped binary data."""
     # This check is based on the fact that unless there are surrogates, utf8
     # (Python's default encoding) can encode any string.  This is the fastest
-    # way to check for surrogates, see issue 11454 for timings.
+    # way to check for surrogates, see issue 11454 (moved to GH 55663) for timings.
+    # This will pass some strings that are not valid for surrogateescape encoding.
     try:
         s.encode()
         return False
     except UnicodeEncodeError:
         return True
+
+def _has_decoded_with_surrogateescape(s):
+    """Return True if s is a valid str decoded using surrogateescape"""
+    # Slower test than _has_surrogates to be used when the string must
+    # be encodable with surrogateescape, but is no slower if the string
+    # does not have any unicode surrogate characters.
+    if _has_surrogates(s):
+        try:
+            s.encode('ascii', 'surrogateescape')
+        except UnicodeEncodeError:
+            return False
+        return True
+    return False
 
 # How to deal with a string containing bytes before handing it to the
 # application through the 'normal' interface.

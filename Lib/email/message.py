@@ -290,7 +290,7 @@ class Message:
         cte = str(self.get('content-transfer-encoding', '')).lower()
         # payload may be bytes here.
         if isinstance(payload, str):
-            if utils._has_surrogates(payload):
+            if utils._has_decoded_with_surrogateescape(payload):
                 bpayload = payload.encode('ascii', 'surrogateescape')
                 if not decode:
                     try:

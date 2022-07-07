@@ -954,6 +954,42 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         # AttributeError: 'str' object has no attribute 'is_attachment'
         m.get_body()
 
+    def test_get_payload_unicode_surrogate1(self):
+        """test that fix for GH issue 94606 does not break this"""
+        msg = "String that could have been decod\udcc3\udcabd with surrogateescape"
+        expected = b'String that could have been decod\xc3\xabd with surrogateescape'
+        m = self._str_msg(msg)
+        payload = m.get_payload(decode=True)
+        self.assertEqual(expected, payload)
+
+    def test_get_payload_unicode_surrogate2(self):
+        """test that fix for GH issue 94606 does not break this"""
+        msg = "Unicode string with a utf-8 charactër"
+        expected = b'Unicode string with a utf-8 charact\xebr'
+        m = self._str_msg(msg)
+        payload = m.get_payload(decode=True)
+        self.assertEqual(expected, payload)
+
+    def test_get_payload_unicode_surrogate3(self):
+        """test for GH issue 94606"""
+        msg = "String that could not have been dëcod\udcc3\udcabd with surrogateescape"
+        expected = b'String that could not have been d\xebcod\\udcc3\udcabd with surrogateescape'
+        m = self._str_msg(msg)
+        # In GH issue 94606, this would raise
+        # UnicodeEncodeError: 'ascii' codec can't encode character '\xeb' in position 33: ordinal not in range(128)
+        payload = m.get_payload(decode=True)
+        self.assertEqual(expected, payload)
+
+    def test_get_payload_unicode_surrogate4(self):
+        """test for GH issue 94606"""
+        msg = "Different reason \udfff could not have been decoded with surrogateescape"
+        expected = b'Different reason \\udfff could not have been decoded with surrogateescape'
+        m = self._str_msg(msg)
+        # In GH issue 94606, this would raise
+        # UnicodeEncodeError: 'ascii' codec can't encode character '\udfff' in position 17: ordinal not in range(128)
+        payload = m.get_payload(decode=True)
+        self.assertEqual(expected, payload)
+
 
 class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
     # Doing the full test run here may seem a bit redundant, since the two
