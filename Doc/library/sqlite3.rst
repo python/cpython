@@ -1492,11 +1492,11 @@ Some useful URI tricks include:
 
 * Do not implicitly create a new database file if it does not already exist;
   will raise :exc:`~sqlite3.OperationalError` if unable to create a new file::
-  
+
     con = sqlite3.connect("file:nosuchdb.db?mode=rw", uri=True)
 
 * Create a shared named in-memory database::
-  
+
     con1 = sqlite3.connect("file:mem1?mode=memory&cache=shared", uri=True)
     con2 = sqlite3.connect("file:mem1?mode=memory&cache=shared", uri=True)
     con1.execute("create table t(t)")
