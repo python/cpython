@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(libffiIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(libffiOutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libffi-8.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <_LIBFFIDLL Include="$(libffiOutDir)\libffi-8.dll" />
+  </ItemGroup>
+  <Target Name="_CopyLIBFFIDLL" Inputs="@(_LIBFFIDLL)" Outputs="@(_LIBFFIDLL->'$(OutDir)%(Filename)%(Extension)')" AfterTargets="Build">
+    <Copy SourceFiles="@(_LIBFFIDLL)" DestinationFolder="$(OutDir)" />
+  </Target>
+  <Target Name="_CleanLIBFFIDLL" BeforeTargets="Clean">
+    <Delete Files="@(_LIBFFIDLL->'$(OutDir)%(Filename)%(Extension)')" TreatErrorsAsWarnings="true" />
+  </Target>
+</Project>

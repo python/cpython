@@ -1,0 +1,3 @@
+Fixed names and ``__module__`` value of :mod:`weakref` classes
+:class:`~weakref.ReferenceType`, :class:`~weakref.ProxyType`,
+:class:`~weakref.CallableProxyType`. It makes them pickleable.

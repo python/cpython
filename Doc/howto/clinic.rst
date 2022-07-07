@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 **********************
 Argument Clinic How-To
@@ -22,8 +22,8 @@ Argument Clinic How-To
   compatibility for future versions.  In other words: if you
   maintain an external C extension for CPython, you're welcome
   to experiment with Argument Clinic in your own code.  But the
-  version of Argument Clinic that ships with CPython 3.5 *could*
-  be totally incompatible and break all your code.
+  version of Argument Clinic that ships with the next version
+  of CPython *could* be totally incompatible and break all your code.
 
 The Goals Of Argument Clinic
 ============================
@@ -267,12 +267,16 @@ Let's dive in!
    should get its own line.  All the parameter lines should be
    indented from the function name and the docstring.
 
-   The general form of these parameter lines is as follows::
+   The general form of these parameter lines is as follows:
+
+   .. code-block:: none
 
        name_of_parameter: converter
 
    If the parameter has a default value, add that after the
-   converter::
+   converter:
+
+   .. code-block:: none
 
        name_of_parameter: converter = default_value
 
@@ -537,7 +541,7 @@ Let's dive in!
 
 16. Compile, then run the relevant portions of the regression-test suite.
     This change should not introduce any new compile-time warnings or errors,
-    and there should be no externally-visible change to Python's behavior.
+    and there should be no externally visible change to Python's behavior.
 
     Well, except for one difference: ``inspect.signature()`` run on your function
     should now provide a valid signature!
@@ -562,9 +566,6 @@ expression.  Currently the following are explicitly supported:
 * ``True``, ``False``, and ``None``
 * Simple symbolic constants like ``sys.maxsize``, which must
   start with the name of the module
-
-In case you're curious, this is implemented in  ``from_builtin()``
-in ``Lib/inspect.py``.
 
 (In the future, this may need to get even more elaborate,
 to allow full expressions like ``CONSTANT - 1``.)
@@ -761,7 +762,7 @@ All Argument Clinic converters accept the following arguments:
 
   ``annotation``
     The annotation value for this parameter.  Not currently supported,
-    because PEP 8 mandates that the Python library may not use
+    because :pep:`8` mandates that the Python library may not use
     annotations.
 
 In addition, some converters accept additional arguments.  Here is a list
@@ -847,15 +848,15 @@ on the right is the text you'd replace it with.
 ``'s#'``    ``str(zeroes=True)``
 ``'s*'``    ``Py_buffer(accept={buffer, str})``
 ``'U'``     ``unicode``
-``'u'``     ``Py_UNICODE``
-``'u#'``    ``Py_UNICODE(zeroes=True)``
+``'u'``     ``wchar_t``
+``'u#'``    ``wchar_t(zeroes=True)``
 ``'w*'``    ``Py_buffer(accept={rwbuffer})``
 ``'Y'``     ``PyByteArrayObject``
 ``'y'``     ``str(accept={bytes})``
 ``'y#'``    ``str(accept={robuffer}, zeroes=True)``
 ``'y*'``    ``Py_buffer``
-``'Z'``     ``Py_UNICODE(accept={str, NoneType})``
-``'Z#'``    ``Py_UNICODE(accept={str, NoneType}, zeroes=True)``
+``'Z'``     ``wchar_t(accept={str, NoneType})``
+``'Z#'``    ``wchar_t(accept={str, NoneType}, zeroes=True)``
 ``'z'``     ``str(accept={str, NoneType})``
 ``'z#'``    ``str(accept={str, NoneType}, zeroes=True)``
 ``'z*'``    ``Py_buffer(accept={buffer, str, NoneType})``
@@ -873,6 +874,12 @@ converter::
 
     Write a pickled representation of obj to the open file.
     [clinic start generated code]*/
+
+One advantage of real converters is that they're more flexible than legacy
+converters.  For example, the ``unsigned_int`` converter (and all the
+``unsigned_`` converters) can be specified without ``bitwise=True``.  Their
+default behavior performs range checking on the value, and they won't accept
+negative numbers.  You just can't do that with a legacy converter!
 
 Argument Clinic will show you all the converters it has
 available.  For each converter it'll show you all the parameters
@@ -925,13 +932,17 @@ Parameter default values
 ------------------------
 
 Default values for parameters can be any of a number of values.
-At their simplest, they can be string, int, or float literals::
+At their simplest, they can be string, int, or float literals:
+
+.. code-block:: none
 
     foo: str = "abc"
     bar: int = 123
     bat: float = 45.6
 
-They can also use any of Python's built-in constants::
+They can also use any of Python's built-in constants:
+
+.. code-block:: none
 
     yep:  bool = True
     nope: bool = False
@@ -959,7 +970,9 @@ It can be an entire expression, using math operators and looking up attributes
 on objects.  However, this support isn't exactly simple, because of some
 non-obvious semantics.
 
-Consider the following example::
+Consider the following example:
+
+.. code-block:: none
 
     foo: Py_ssize_t = sys.maxsize - 1
 
@@ -970,7 +983,9 @@ runtime, when the user asks for the function's signature.
 
 What namespace is available when the expression is evaluated?  It's evaluated
 in the context of the module the builtin came from.  So, if your module has an
-attribute called "``max_widgets``", you may simply use it::
+attribute called "``max_widgets``", you may simply use it:
+
+.. code-block:: none
 
     foo: Py_ssize_t = max_widgets
 
@@ -982,7 +997,9 @@ it's best to restrict yourself to modules that are preloaded by Python itself.)
 Evaluating default values only at runtime means Argument Clinic can't compute
 the correct equivalent C default value.  So you need to tell it explicitly.
 When you use an expression, you must also specify the equivalent expression
-in C, using the ``c_default`` parameter to the converter::
+in C, using the ``c_default`` parameter to the converter:
+
+.. code-block:: none
 
     foo: Py_ssize_t(c_default="PY_SSIZE_T_MAX - 1") = sys.maxsize - 1
 
@@ -1050,7 +1067,7 @@ Currently Argument Clinic supports only a few return converters:
     DecodeFSDefault
 
 None of these take parameters.  For the first three, return -1 to indicate
-error.  For ``DecodeFSDefault``, the return type is ``const char *``; return a NULL
+error.  For ``DecodeFSDefault``, the return type is ``const char *``; return a ``NULL``
 pointer to indicate an error.
 
 (There's also an experimental ``NoneType`` converter, which lets you
@@ -1100,7 +1117,7 @@ Here's the syntax for cloning a function::
 ``module.class`` in the sample just to illustrate that you must
 use the full path to *both* functions.)
 
-Sorry, there's no syntax for partially-cloning a function, or cloning a function
+Sorry, there's no syntax for partially cloning a function, or cloning a function
 then modifying it.  Cloning is an all-or nothing proposition.
 
 Also, the function you are cloning from must have been previously defined
@@ -1186,6 +1203,68 @@ type for ``self``, it's best to create your own converter, subclassing
     [clinic start generated code]*/
 
 
+Using a "defining class" converter
+----------------------------------
+
+Argument Clinic facilitates gaining access to the defining class of a method.
+This is useful for :ref:`heap type <heap-types>` methods that need to fetch
+module level state.  Use :c:func:`PyType_FromModuleAndSpec` to associate a new
+heap type with a module.  You can now use :c:func:`PyType_GetModuleState` on
+the defining class to fetch the module state, for example from a module method.
+
+Example from ``Modules/zlibmodule.c``.  First, ``defining_class`` is added to
+the clinic input::
+
+    /*[clinic input]
+    zlib.Compress.compress
+
+      cls: defining_class
+      data: Py_buffer
+        Binary data to be compressed.
+      /
+
+
+After running the Argument Clinic tool, the following function signature is
+generated::
+
+    /*[clinic start generated code]*/
+    static PyObject *
+    zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
+                                Py_buffer *data)
+    /*[clinic end generated code: output=6731b3f0ff357ca6 input=04d00f65ab01d260]*/
+
+
+The following code can now use ``PyType_GetModuleState(cls)`` to fetch the
+module state::
+
+    zlibstate *state = PyType_GetModuleState(cls);
+
+
+Each method may only have one argument using this converter, and it must appear
+after ``self``, or, if ``self`` is not used, as the first argument.  The argument
+will be of type ``PyTypeObject *``.  The argument will not appear in the
+``__text_signature__``.
+
+The ``defining_class`` converter is not compatible with ``__init__`` and ``__new__``
+methods, which cannot use the ``METH_METHOD`` convention.
+
+It is not possible to use ``defining_class`` with slot methods.  In order to
+fetch the module state from such methods, use :c:func:`PyType_GetModuleByDef`
+to look up the module and then :c:func:`PyModule_GetState` to fetch the module
+state.  Example from the ``setattro`` slot method in
+``Modules/_threadmodule.c``::
+
+    static int
+    local_setattro(localobject *self, PyObject *name, PyObject *v)
+    {
+        PyObject *module = PyType_GetModuleByDef(Py_TYPE(self), &thread_module);
+        thread_module_state *state = get_thread_state(module);
+        ...
+    }
+
+
+See also :pep:`573`.
+
 
 Writing a custom converter
 --------------------------
@@ -1236,7 +1315,7 @@ to specify in your subclass.  Here's the current list:
     there is no default, but not specifying a default may
     result in an "uninitialized variable" warning.  This can
     easily happen when using option groups—although
-    properly-written code will never actually use this value,
+    properly written code will never actually use this value,
     the variable does get passed in to the impl, and the
     C compiler will complain about the "use" of the
     uninitialized value.  This value should always be a
@@ -1268,7 +1347,7 @@ Here's the simplest example of a custom converter, from ``Modules/zlibmodule.c``
     /*[python end generated code: output=da39a3ee5e6b4b0d input=35521e4e733823c7]*/
 
 This block adds a converter to Argument Clinic named ``ssize_t``.  Parameters
-declared as ``ssize_t`` will be declared as type ``Py_ssize_t``, and will
+declared as ``ssize_t`` will be declared as type :c:type:`Py_ssize_t`, and will
 be parsed by the ``'O&'`` format unit, which will call the
 ``ssize_t_converter`` converter function.  ``ssize_t`` variables
 automatically support default values.
@@ -1359,7 +1438,9 @@ Let's start with defining some terminology:
   A field, in this context, is a subsection of Clinic's output.
   For example, the ``#define`` for the ``PyMethodDef`` structure
   is a field, called ``methoddef_define``.  Clinic has seven
-  different fields it can output per function definition::
+  different fields it can output per function definition:
+
+  .. code-block:: none
 
       docstring_prototype
       docstring_definition
@@ -1416,7 +1497,9 @@ Let's start with defining some terminology:
 
 Clinic defines five new directives that let you reconfigure its output.
 
-The first new directive is ``dump``::
+The first new directive is ``dump``:
+
+.. code-block:: none
 
    dump <destination>
 
@@ -1425,7 +1508,9 @@ the current block, and empties it.  This only works with ``buffer`` and
 ``two-pass`` destinations.
 
 The second new directive is ``output``.  The most basic form of ``output``
-is like this::
+is like this:
+
+.. code-block:: none
 
     output <field> <destination>
 
@@ -1433,7 +1518,9 @@ This tells Clinic to output *field* to *destination*.  ``output`` also
 supports a special meta-destination, called ``everything``, which tells
 Clinic to output *all* fields to that *destination*.
 
-``output`` has a number of other functions::
+``output`` has a number of other functions:
+
+.. code-block:: none
 
     output push
     output pop
@@ -1508,7 +1595,9 @@ preset configurations, as follows:
     Suppresses the ``impl_prototype``, write the ``docstring_definition``
     and ``parser_definition`` to ``buffer``, write everything else to ``block``.
 
-The third new directive is ``destination``::
+The third new directive is ``destination``:
+
+.. code-block:: none
 
     destination <name> <command> [...]
 
@@ -1516,7 +1605,9 @@ This performs an operation on the destination named ``name``.
 
 There are two defined subcommands: ``new`` and ``clear``.
 
-The ``new`` subcommand works like this::
+The ``new`` subcommand works like this:
+
+.. code-block:: none
 
     destination <name> new <type>
 
@@ -1564,7 +1655,9 @@ There are five destination types:
         A two-pass buffer, like the "two-pass" builtin destination above.
 
 
-The ``clear`` subcommand works like this::
+The ``clear`` subcommand works like this:
+
+.. code-block:: none
 
     destination <name> clear
 
@@ -1572,7 +1665,9 @@ It removes all the accumulated text up to this point in the destination.
 (I don't know what you'd need this for, but I thought maybe it'd be
 useful while someone's experimenting.)
 
-The fourth new directive is ``set``::
+The fourth new directive is ``set``:
+
+.. code-block:: none
 
     set line_prefix "string"
     set line_suffix "string"
@@ -1590,7 +1685,9 @@ Both of these support two format strings:
     Turns into the string ``*/``, the end-comment text sequence for C files.
 
 The final new directive is one you shouldn't need to use directly,
-called ``preserve``::
+called ``preserve``:
+
+.. code-block:: none
 
     preserve
 
@@ -1638,7 +1735,9 @@ like so::
     #endif /* HAVE_FUNCTIONNAME */
 
 Then, remove those three lines from the ``PyMethodDef`` structure,
-replacing them with the macro Argument Clinic generated::
+replacing them with the macro Argument Clinic generated:
+
+.. code-block:: none
 
     MODULE_FUNCTIONNAME_METHODDEF
 

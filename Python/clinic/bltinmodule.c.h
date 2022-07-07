@@ -2,6 +2,85 @@
 preserve
 [clinic start generated code]*/
 
+PyDoc_STRVAR(builtin___import____doc__,
+"__import__($module, /, name, globals=None, locals=None, fromlist=(),\n"
+"           level=0)\n"
+"--\n"
+"\n"
+"Import a module.\n"
+"\n"
+"Because this function is meant for use by the Python\n"
+"interpreter and not for general use, it is better to use\n"
+"importlib.import_module() to programmatically import a module.\n"
+"\n"
+"The globals argument is only used to determine the context;\n"
+"they are not modified.  The locals argument is unused.  The fromlist\n"
+"should be a list of names to emulate ``from name import ...\'\', or an\n"
+"empty list to emulate ``import name\'\'.\n"
+"When importing a module from a package, note that __import__(\'A.B\', ...)\n"
+"returns package A when fromlist is empty, but its submodule B when\n"
+"fromlist is not empty.  The level argument is used to determine whether to\n"
+"perform absolute or relative imports: 0 is absolute, while a positive number\n"
+"is the number of parent directories to search relative to the current module.");
+
+#define BUILTIN___IMPORT___METHODDEF    \
+    {"__import__", _PyCFunction_CAST(builtin___import__), METH_FASTCALL|METH_KEYWORDS, builtin___import____doc__},
+
+static PyObject *
+builtin___import___impl(PyObject *module, PyObject *name, PyObject *globals,
+                        PyObject *locals, PyObject *fromlist, int level);
+
+static PyObject *
+builtin___import__(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"name", "globals", "locals", "fromlist", "level", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "__import__", 0};
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *name;
+    PyObject *globals = NULL;
+    PyObject *locals = NULL;
+    PyObject *fromlist = NULL;
+    int level = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 5, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    name = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[1]) {
+        globals = args[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[2]) {
+        locals = args[2];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[3]) {
+        fromlist = args[3];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    level = _PyLong_AsInt(args[4]);
+    if (level == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = builtin___import___impl(module, name, globals, locals, fromlist, level);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(builtin_abs__doc__,
 "abs($module, x, /)\n"
 "--\n"
@@ -82,7 +161,7 @@ PyDoc_STRVAR(builtin_format__doc__,
 "details.");
 
 #define BUILTIN_FORMAT_METHODDEF    \
-    {"format", (PyCFunction)builtin_format, METH_FASTCALL, builtin_format__doc__},
+    {"format", _PyCFunction_CAST(builtin_format), METH_FASTCALL, builtin_format__doc__},
 
 static PyObject *
 builtin_format_impl(PyObject *module, PyObject *value, PyObject *format_spec);
@@ -94,10 +173,22 @@ builtin_format(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *value;
     PyObject *format_spec = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|U:format",
-        &value, &format_spec)) {
+    if (!_PyArg_CheckPositional("format", nargs, 1, 2)) {
         goto exit;
     }
+    value = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("format", "argument 2", "str", args[1]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[1]) == -1) {
+        goto exit;
+    }
+    format_spec = args[1];
+skip_optional:
     return_value = builtin_format_impl(module, value, format_spec);
 
 exit:
@@ -122,7 +213,8 @@ builtin_chr(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int i;
 
-    if (!PyArg_Parse(arg, "i:chr", &i)) {
+    i = _PyLong_AsInt(arg);
+    if (i == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = builtin_chr_impl(module, i);
@@ -133,7 +225,7 @@ exit:
 
 PyDoc_STRVAR(builtin_compile__doc__,
 "compile($module, /, source, filename, mode, flags=0,\n"
-"        dont_inherit=False, optimize=-1)\n"
+"        dont_inherit=False, optimize=-1, *, _feature_version=-1)\n"
 "--\n"
 "\n"
 "Compile source into a code object that can be executed by exec() or eval().\n"
@@ -150,31 +242,90 @@ PyDoc_STRVAR(builtin_compile__doc__,
 "in addition to any features explicitly specified.");
 
 #define BUILTIN_COMPILE_METHODDEF    \
-    {"compile", (PyCFunction)builtin_compile, METH_FASTCALL|METH_KEYWORDS, builtin_compile__doc__},
+    {"compile", _PyCFunction_CAST(builtin_compile), METH_FASTCALL|METH_KEYWORDS, builtin_compile__doc__},
 
 static PyObject *
 builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                      const char *mode, int flags, int dont_inherit,
-                     int optimize);
+                     int optimize, int feature_version);
 
 static PyObject *
 builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"source", "filename", "mode", "flags", "dont_inherit", "optimize", NULL};
-    static _PyArg_Parser _parser = {"OO&s|iii:compile", _keywords, 0};
+    static const char * const _keywords[] = {"source", "filename", "mode", "flags", "dont_inherit", "optimize", "_feature_version", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "compile", 0};
+    PyObject *argsbuf[7];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     PyObject *source;
     PyObject *filename;
     const char *mode;
     int flags = 0;
     int dont_inherit = 0;
     int optimize = -1;
+    int feature_version = -1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &source, PyUnicode_FSDecoder, &filename, &mode, &flags, &dont_inherit, &optimize)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 6, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    return_value = builtin_compile_impl(module, source, filename, mode, flags, dont_inherit, optimize);
+    source = args[0];
+    if (!PyUnicode_FSDecoder(args[1], &filename)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[2])) {
+        _PyArg_BadArgument("compile", "argument 'mode'", "str", args[2]);
+        goto exit;
+    }
+    Py_ssize_t mode_length;
+    mode = PyUnicode_AsUTF8AndSize(args[2], &mode_length);
+    if (mode == NULL) {
+        goto exit;
+    }
+    if (strlen(mode) != (size_t)mode_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[3]) {
+        flags = _PyLong_AsInt(args[3]);
+        if (flags == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[4]) {
+        dont_inherit = _PyLong_AsInt(args[4]);
+        if (dont_inherit == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[5]) {
+        optimize = _PyLong_AsInt(args[5]);
+        if (optimize == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    feature_version = _PyLong_AsInt(args[6]);
+    if (feature_version == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = builtin_compile_impl(module, source, filename, mode, flags, dont_inherit, optimize, feature_version);
 
 exit:
     return return_value;
@@ -187,7 +338,7 @@ PyDoc_STRVAR(builtin_divmod__doc__,
 "Return the tuple (x//y, x%y).  Invariant: div*y + mod == x.");
 
 #define BUILTIN_DIVMOD_METHODDEF    \
-    {"divmod", (PyCFunction)builtin_divmod, METH_FASTCALL, builtin_divmod__doc__},
+    {"divmod", _PyCFunction_CAST(builtin_divmod), METH_FASTCALL, builtin_divmod__doc__},
 
 static PyObject *
 builtin_divmod_impl(PyObject *module, PyObject *x, PyObject *y);
@@ -199,11 +350,11 @@ builtin_divmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_UnpackStack(args, nargs, "divmod",
-        2, 2,
-        &x, &y)) {
+    if (!_PyArg_CheckPositional("divmod", nargs, 2, 2)) {
         goto exit;
     }
+    x = args[0];
+    y = args[1];
     return_value = builtin_divmod_impl(module, x, y);
 
 exit:
@@ -223,7 +374,7 @@ PyDoc_STRVAR(builtin_eval__doc__,
 "If only globals is given, locals defaults to it.");
 
 #define BUILTIN_EVAL_METHODDEF    \
-    {"eval", (PyCFunction)builtin_eval, METH_FASTCALL, builtin_eval__doc__},
+    {"eval", _PyCFunction_CAST(builtin_eval), METH_FASTCALL, builtin_eval__doc__},
 
 static PyObject *
 builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
@@ -237,11 +388,19 @@ builtin_eval(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *globals = Py_None;
     PyObject *locals = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "eval",
-        1, 3,
-        &source, &globals, &locals)) {
+    if (!_PyArg_CheckPositional("eval", nargs, 1, 3)) {
         goto exit;
     }
+    source = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    globals = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    locals = args[2];
+skip_optional:
     return_value = builtin_eval_impl(module, source, globals, locals);
 
 exit:
@@ -249,7 +408,7 @@ exit:
 }
 
 PyDoc_STRVAR(builtin_exec__doc__,
-"exec($module, source, globals=None, locals=None, /)\n"
+"exec($module, source, globals=None, locals=None, /, *, closure=None)\n"
 "--\n"
 "\n"
 "Execute the given source in the context of globals and locals.\n"
@@ -258,29 +417,52 @@ PyDoc_STRVAR(builtin_exec__doc__,
 "or a code object as returned by compile().\n"
 "The globals must be a dictionary and locals can be any mapping,\n"
 "defaulting to the current globals and locals.\n"
-"If only globals is given, locals defaults to it.");
+"If only globals is given, locals defaults to it.\n"
+"The closure must be a tuple of cellvars, and can only be used\n"
+"when source is a code object requiring exactly that many cellvars.");
 
 #define BUILTIN_EXEC_METHODDEF    \
-    {"exec", (PyCFunction)builtin_exec, METH_FASTCALL, builtin_exec__doc__},
+    {"exec", _PyCFunction_CAST(builtin_exec), METH_FASTCALL|METH_KEYWORDS, builtin_exec__doc__},
 
 static PyObject *
 builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
-                  PyObject *locals);
+                  PyObject *locals, PyObject *closure);
 
 static PyObject *
-builtin_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+builtin_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "", "", "closure", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "exec", 0};
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *source;
     PyObject *globals = Py_None;
     PyObject *locals = Py_None;
+    PyObject *closure = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "exec",
-        1, 3,
-        &source, &globals, &locals)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    return_value = builtin_exec_impl(module, source, globals, locals);
+    source = args[0];
+    if (nargs < 2) {
+        goto skip_optional_posonly;
+    }
+    noptargs--;
+    globals = args[1];
+    if (nargs < 3) {
+        goto skip_optional_posonly;
+    }
+    noptargs--;
+    locals = args[2];
+skip_optional_posonly:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    closure = args[3];
+skip_optional_kwonly:
+    return_value = builtin_exec_impl(module, source, globals, locals, closure);
 
 exit:
     return return_value;
@@ -316,7 +498,7 @@ PyDoc_STRVAR(builtin_hasattr__doc__,
 "This is done by calling getattr(obj, name) and catching AttributeError.");
 
 #define BUILTIN_HASATTR_METHODDEF    \
-    {"hasattr", (PyCFunction)builtin_hasattr, METH_FASTCALL, builtin_hasattr__doc__},
+    {"hasattr", _PyCFunction_CAST(builtin_hasattr), METH_FASTCALL, builtin_hasattr__doc__},
 
 static PyObject *
 builtin_hasattr_impl(PyObject *module, PyObject *obj, PyObject *name);
@@ -328,11 +510,11 @@ builtin_hasattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *obj;
     PyObject *name;
 
-    if (!_PyArg_UnpackStack(args, nargs, "hasattr",
-        2, 2,
-        &obj, &name)) {
+    if (!_PyArg_CheckPositional("hasattr", nargs, 2, 2)) {
         goto exit;
     }
+    obj = args[0];
+    name = args[1];
     return_value = builtin_hasattr_impl(module, obj, name);
 
 exit:
@@ -360,7 +542,7 @@ PyDoc_STRVAR(builtin_setattr__doc__,
 "setattr(x, \'y\', v) is equivalent to ``x.y = v\'\'");
 
 #define BUILTIN_SETATTR_METHODDEF    \
-    {"setattr", (PyCFunction)builtin_setattr, METH_FASTCALL, builtin_setattr__doc__},
+    {"setattr", _PyCFunction_CAST(builtin_setattr), METH_FASTCALL, builtin_setattr__doc__},
 
 static PyObject *
 builtin_setattr_impl(PyObject *module, PyObject *obj, PyObject *name,
@@ -374,11 +556,12 @@ builtin_setattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *name;
     PyObject *value;
 
-    if (!_PyArg_UnpackStack(args, nargs, "setattr",
-        3, 3,
-        &obj, &name, &value)) {
+    if (!_PyArg_CheckPositional("setattr", nargs, 3, 3)) {
         goto exit;
     }
+    obj = args[0];
+    name = args[1];
+    value = args[2];
     return_value = builtin_setattr_impl(module, obj, name, value);
 
 exit:
@@ -394,7 +577,7 @@ PyDoc_STRVAR(builtin_delattr__doc__,
 "delattr(x, \'y\') is equivalent to ``del x.y\'\'");
 
 #define BUILTIN_DELATTR_METHODDEF    \
-    {"delattr", (PyCFunction)builtin_delattr, METH_FASTCALL, builtin_delattr__doc__},
+    {"delattr", _PyCFunction_CAST(builtin_delattr), METH_FASTCALL, builtin_delattr__doc__},
 
 static PyObject *
 builtin_delattr_impl(PyObject *module, PyObject *obj, PyObject *name);
@@ -406,11 +589,11 @@ builtin_delattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *obj;
     PyObject *name;
 
-    if (!_PyArg_UnpackStack(args, nargs, "delattr",
-        2, 2,
-        &obj, &name)) {
+    if (!_PyArg_CheckPositional("delattr", nargs, 2, 2)) {
         goto exit;
     }
+    obj = args[0];
+    name = args[1];
     return_value = builtin_delattr_impl(module, obj, name);
 
 exit:
@@ -440,6 +623,53 @@ PyDoc_STRVAR(builtin_hex__doc__,
 
 #define BUILTIN_HEX_METHODDEF    \
     {"hex", (PyCFunction)builtin_hex, METH_O, builtin_hex__doc__},
+
+PyDoc_STRVAR(builtin_aiter__doc__,
+"aiter($module, async_iterable, /)\n"
+"--\n"
+"\n"
+"Return an AsyncIterator for an AsyncIterable object.");
+
+#define BUILTIN_AITER_METHODDEF    \
+    {"aiter", (PyCFunction)builtin_aiter, METH_O, builtin_aiter__doc__},
+
+PyDoc_STRVAR(builtin_anext__doc__,
+"anext($module, aiterator, default=<unrepresentable>, /)\n"
+"--\n"
+"\n"
+"async anext(aiterator[, default])\n"
+"\n"
+"Return the next item from the async iterator.  If default is given and the async\n"
+"iterator is exhausted, it is returned instead of raising StopAsyncIteration.");
+
+#define BUILTIN_ANEXT_METHODDEF    \
+    {"anext", _PyCFunction_CAST(builtin_anext), METH_FASTCALL, builtin_anext__doc__},
+
+static PyObject *
+builtin_anext_impl(PyObject *module, PyObject *aiterator,
+                   PyObject *default_value);
+
+static PyObject *
+builtin_anext(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *aiterator;
+    PyObject *default_value = NULL;
+
+    if (!_PyArg_CheckPositional("anext", nargs, 1, 2)) {
+        goto exit;
+    }
+    aiterator = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    default_value = args[1];
+skip_optional:
+    return_value = builtin_anext_impl(module, aiterator, default_value);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(builtin_len__doc__,
 "len($module, obj, /)\n"
@@ -494,36 +724,121 @@ PyDoc_STRVAR(builtin_ord__doc__,
     {"ord", (PyCFunction)builtin_ord, METH_O, builtin_ord__doc__},
 
 PyDoc_STRVAR(builtin_pow__doc__,
-"pow($module, x, y, z=None, /)\n"
+"pow($module, /, base, exp, mod=None)\n"
 "--\n"
 "\n"
-"Equivalent to x**y (with two arguments) or x**y % z (with three arguments)\n"
+"Equivalent to base**exp with 2 arguments or base**exp % mod with 3 arguments\n"
 "\n"
 "Some types, such as ints, are able to use a more efficient algorithm when\n"
 "invoked using the three argument form.");
 
 #define BUILTIN_POW_METHODDEF    \
-    {"pow", (PyCFunction)builtin_pow, METH_FASTCALL, builtin_pow__doc__},
+    {"pow", _PyCFunction_CAST(builtin_pow), METH_FASTCALL|METH_KEYWORDS, builtin_pow__doc__},
 
 static PyObject *
-builtin_pow_impl(PyObject *module, PyObject *x, PyObject *y, PyObject *z);
+builtin_pow_impl(PyObject *module, PyObject *base, PyObject *exp,
+                 PyObject *mod);
 
 static PyObject *
-builtin_pow(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+builtin_pow(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    PyObject *x;
-    PyObject *y;
-    PyObject *z = Py_None;
+    static const char * const _keywords[] = {"base", "exp", "mod", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "pow", 0};
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
+    PyObject *base;
+    PyObject *exp;
+    PyObject *mod = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "pow",
-        2, 3,
-        &x, &y, &z)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    return_value = builtin_pow_impl(module, x, y, z);
+    base = args[0];
+    exp = args[1];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    mod = args[2];
+skip_optional_pos:
+    return_value = builtin_pow_impl(module, base, exp, mod);
 
 exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(builtin_print__doc__,
+"print($module, /, *args, sep=\' \', end=\'\\n\', file=None, flush=False)\n"
+"--\n"
+"\n"
+"Prints the values to a stream, or to sys.stdout by default.\n"
+"\n"
+"  sep\n"
+"    string inserted between values, default a space.\n"
+"  end\n"
+"    string appended after the last value, default a newline.\n"
+"  file\n"
+"    a file-like object (stream); defaults to the current sys.stdout.\n"
+"  flush\n"
+"    whether to forcibly flush the stream.");
+
+#define BUILTIN_PRINT_METHODDEF    \
+    {"print", _PyCFunction_CAST(builtin_print), METH_FASTCALL|METH_KEYWORDS, builtin_print__doc__},
+
+static PyObject *
+builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
+                   PyObject *end, PyObject *file, int flush);
+
+static PyObject *
+builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"sep", "end", "file", "flush", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "print", 0};
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *__clinic_args = NULL;
+    PyObject *sep = Py_None;
+    PyObject *end = Py_None;
+    PyObject *file = Py_None;
+    int flush = 0;
+
+    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    __clinic_args = args[0];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[1]) {
+        sep = args[1];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[2]) {
+        end = args[2];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[3]) {
+        file = args[3];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    flush = PyObject_IsTrue(args[4]);
+    if (flush < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = builtin_print_impl(module, __clinic_args, sep, end, file, flush);
+
+exit:
+    Py_XDECREF(__clinic_args);
     return return_value;
 }
 
@@ -540,7 +855,7 @@ PyDoc_STRVAR(builtin_input__doc__,
 "On *nix systems, readline is used if available.");
 
 #define BUILTIN_INPUT_METHODDEF    \
-    {"input", (PyCFunction)builtin_input, METH_FASTCALL, builtin_input__doc__},
+    {"input", _PyCFunction_CAST(builtin_input), METH_FASTCALL, builtin_input__doc__},
 
 static PyObject *
 builtin_input_impl(PyObject *module, PyObject *prompt);
@@ -551,11 +866,14 @@ builtin_input(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *prompt = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "input",
-        0, 1,
-        &prompt)) {
+    if (!_PyArg_CheckPositional("input", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    prompt = args[0];
+skip_optional:
     return_value = builtin_input_impl(module, prompt);
 
 exit:
@@ -583,7 +901,7 @@ PyDoc_STRVAR(builtin_round__doc__,
 "the return value has the same type as the number.  ndigits may be negative.");
 
 #define BUILTIN_ROUND_METHODDEF    \
-    {"round", (PyCFunction)builtin_round, METH_FASTCALL|METH_KEYWORDS, builtin_round__doc__},
+    {"round", _PyCFunction_CAST(builtin_round), METH_FASTCALL|METH_KEYWORDS, builtin_round__doc__},
 
 static PyObject *
 builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits);
@@ -593,14 +911,22 @@ builtin_round(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"number", "ndigits", NULL};
-    static _PyArg_Parser _parser = {"O|O:round", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "round", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *number;
-    PyObject *ndigits = NULL;
+    PyObject *ndigits = Py_None;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &number, &ndigits)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    number = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    ndigits = args[1];
+skip_optional_pos:
     return_value = builtin_round_impl(module, number, ndigits);
 
 exit:
@@ -608,7 +934,7 @@ exit:
 }
 
 PyDoc_STRVAR(builtin_sum__doc__,
-"sum($module, iterable, start=0, /)\n"
+"sum($module, iterable, /, start=0)\n"
 "--\n"
 "\n"
 "Return the sum of a \'start\' value (default: 0) plus an iterable of numbers\n"
@@ -618,23 +944,32 @@ PyDoc_STRVAR(builtin_sum__doc__,
 "reject non-numeric types.");
 
 #define BUILTIN_SUM_METHODDEF    \
-    {"sum", (PyCFunction)builtin_sum, METH_FASTCALL, builtin_sum__doc__},
+    {"sum", _PyCFunction_CAST(builtin_sum), METH_FASTCALL|METH_KEYWORDS, builtin_sum__doc__},
 
 static PyObject *
 builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start);
 
 static PyObject *
-builtin_sum(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+builtin_sum(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "start", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "sum", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *iterable;
     PyObject *start = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "sum",
-        1, 2,
-        &iterable, &start)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    iterable = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    start = args[1];
+skip_optional_pos:
     return_value = builtin_sum_impl(module, iterable, start);
 
 exit:
@@ -652,7 +987,7 @@ PyDoc_STRVAR(builtin_isinstance__doc__,
 "or ...`` etc.");
 
 #define BUILTIN_ISINSTANCE_METHODDEF    \
-    {"isinstance", (PyCFunction)builtin_isinstance, METH_FASTCALL, builtin_isinstance__doc__},
+    {"isinstance", _PyCFunction_CAST(builtin_isinstance), METH_FASTCALL, builtin_isinstance__doc__},
 
 static PyObject *
 builtin_isinstance_impl(PyObject *module, PyObject *obj,
@@ -665,11 +1000,11 @@ builtin_isinstance(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *obj;
     PyObject *class_or_tuple;
 
-    if (!_PyArg_UnpackStack(args, nargs, "isinstance",
-        2, 2,
-        &obj, &class_or_tuple)) {
+    if (!_PyArg_CheckPositional("isinstance", nargs, 2, 2)) {
         goto exit;
     }
+    obj = args[0];
+    class_or_tuple = args[1];
     return_value = builtin_isinstance_impl(module, obj, class_or_tuple);
 
 exit:
@@ -680,14 +1015,14 @@ PyDoc_STRVAR(builtin_issubclass__doc__,
 "issubclass($module, cls, class_or_tuple, /)\n"
 "--\n"
 "\n"
-"Return whether \'cls\' is a derived from another class or is the same class.\n"
+"Return whether \'cls\' is derived from another class or is the same class.\n"
 "\n"
 "A tuple, as in ``issubclass(x, (A, B, ...))``, may be given as the target to\n"
 "check against. This is equivalent to ``issubclass(x, A) or issubclass(x, B)\n"
-"or ...`` etc.");
+"or ...``.");
 
 #define BUILTIN_ISSUBCLASS_METHODDEF    \
-    {"issubclass", (PyCFunction)builtin_issubclass, METH_FASTCALL, builtin_issubclass__doc__},
+    {"issubclass", _PyCFunction_CAST(builtin_issubclass), METH_FASTCALL, builtin_issubclass__doc__},
 
 static PyObject *
 builtin_issubclass_impl(PyObject *module, PyObject *cls,
@@ -700,14 +1035,14 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *cls;
     PyObject *class_or_tuple;
 
-    if (!_PyArg_UnpackStack(args, nargs, "issubclass",
-        2, 2,
-        &cls, &class_or_tuple)) {
+    if (!_PyArg_CheckPositional("issubclass", nargs, 2, 2)) {
         goto exit;
     }
+    cls = args[0];
+    class_or_tuple = args[1];
     return_value = builtin_issubclass_impl(module, cls, class_or_tuple);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9f17c7a87d740374 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a2c5c53e8aead7c3 input=a9049054013a1b77]*/

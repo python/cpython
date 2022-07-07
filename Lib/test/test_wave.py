@@ -1,7 +1,8 @@
 import unittest
 from test import audiotests
 from test import support
-from audioop import byteswap
+import io
+import struct
 import sys
 import wave
 
@@ -46,7 +47,7 @@ class WavePCM16Test(WaveTest, unittest.TestCase):
       E4B50CEB 63440A5A 08CA0A1F 2BBA0B0B 51460E47 8BCB113C B6F50EEA 44150A59 \
       """)
     if sys.byteorder != 'big':
-        frames = byteswap(frames, 2)
+        frames = wave._byteswap(frames, 2)
 
 
 class WavePCM24Test(WaveTest, unittest.TestCase):
@@ -73,7 +74,7 @@ class WavePCM24Test(WaveTest, unittest.TestCase):
       51486F0E44E1 8BCC64113B05 B6F4EC0EEB36 4413170A5B48 \
       """)
     if sys.byteorder != 'big':
-        frames = byteswap(frames, 3)
+        frames = wave._byteswap(frames, 3)
 
 
 class WavePCM32Test(WaveTest, unittest.TestCase):
@@ -100,15 +101,72 @@ class WavePCM32Test(WaveTest, unittest.TestCase):
       51486F800E44E190 8BCC6480113B0580 B6F4EC000EEB3630 441317800A5B48A0 \
       """)
     if sys.byteorder != 'big':
-        frames = byteswap(frames, 4)
+        frames = wave._byteswap(frames, 4)
 
 
-class MiscTestCase(audiotests.AudioMiscTests, unittest.TestCase):
-    module = wave
-
+class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        blacklist = {'WAVE_FORMAT_PCM'}
-        support.check__all__(self, wave, blacklist=blacklist)
+        support.check__all__(self, wave, not_exported={'WAVE_FORMAT_PCM'})
+
+
+class WaveLowLevelTest(unittest.TestCase):
+
+    def test_read_no_chunks(self):
+        b = b'SPAM'
+        with self.assertRaises(EOFError):
+            wave.open(io.BytesIO(b))
+
+    def test_read_no_riff_chunk(self):
+        b = b'SPAM' + struct.pack('<L', 0)
+        with self.assertRaisesRegex(wave.Error,
+                                    'file does not start with RIFF id'):
+            wave.open(io.BytesIO(b))
+
+    def test_read_not_wave(self):
+        b = b'RIFF' + struct.pack('<L', 4) + b'SPAM'
+        with self.assertRaisesRegex(wave.Error,
+                                    'not a WAVE file'):
+            wave.open(io.BytesIO(b))
+
+    def test_read_no_fmt_no_data_chunk(self):
+        b = b'RIFF' + struct.pack('<L', 4) + b'WAVE'
+        with self.assertRaisesRegex(wave.Error,
+                                    'fmt chunk and/or data chunk missing'):
+            wave.open(io.BytesIO(b))
+
+    def test_read_no_data_chunk(self):
+        b = b'RIFF' + struct.pack('<L', 28) + b'WAVE'
+        b += b'fmt ' + struct.pack('<LHHLLHH', 16, 1, 1, 11025, 11025, 1, 8)
+        with self.assertRaisesRegex(wave.Error,
+                                    'fmt chunk and/or data chunk missing'):
+            wave.open(io.BytesIO(b))
+
+    def test_read_no_fmt_chunk(self):
+        b = b'RIFF' + struct.pack('<L', 12) + b'WAVE'
+        b += b'data' + struct.pack('<L', 0)
+        with self.assertRaisesRegex(wave.Error, 'data chunk before fmt chunk'):
+            wave.open(io.BytesIO(b))
+
+    def test_read_wrong_form(self):
+        b = b'RIFF' + struct.pack('<L', 36) + b'WAVE'
+        b += b'fmt ' + struct.pack('<LHHLLHH', 16, 2, 1, 11025, 11025, 1, 1)
+        b += b'data' + struct.pack('<L', 0)
+        with self.assertRaisesRegex(wave.Error, 'unknown format: 2'):
+            wave.open(io.BytesIO(b))
+
+    def test_read_wrong_number_of_channels(self):
+        b = b'RIFF' + struct.pack('<L', 36) + b'WAVE'
+        b += b'fmt ' + struct.pack('<LHHLLHH', 16, 1, 0, 11025, 11025, 1, 8)
+        b += b'data' + struct.pack('<L', 0)
+        with self.assertRaisesRegex(wave.Error, 'bad # of channels'):
+            wave.open(io.BytesIO(b))
+
+    def test_read_wrong_sample_width(self):
+        b = b'RIFF' + struct.pack('<L', 36) + b'WAVE'
+        b += b'fmt ' + struct.pack('<LHHLLHH', 16, 1, 1, 11025, 11025, 1, 0)
+        b += b'data' + struct.pack('<L', 0)
+        with self.assertRaisesRegex(wave.Error, 'bad sample width'):
+            wave.open(io.BytesIO(b))
 
 
 if __name__ == '__main__':

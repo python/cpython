@@ -1,7 +1,8 @@
 # Test the module type
 import unittest
 import weakref
-from test.support import gc_collect, requires_type_collecting
+from test.support import gc_collect
+from test.support import import_helper
 from test.support.script_helper import assert_python_ok
 
 import sys
@@ -21,8 +22,8 @@ class ModuleTests(unittest.TestCase):
         # An uninitialized module has no __dict__ or __name__,
         # and __doc__ is None
         foo = ModuleType.__new__(ModuleType)
-        self.assertTrue(foo.__dict__ is None)
-        self.assertRaises(SystemError, dir, foo)
+        self.assertTrue(isinstance(foo.__dict__, dict))
+        self.assertEqual(dir(foo), [])
         try:
             s = foo.__name__
             self.fail("__name__ = %s" % repr(s))
@@ -101,7 +102,6 @@ class ModuleTests(unittest.TestCase):
         gc_collect()
         self.assertEqual(f().__dict__["bar"], 4)
 
-    @requires_type_collecting
     def test_clear_dict_in_ref_cycle(self):
         destroyed = []
         m = ModuleType("foo")
@@ -266,7 +266,6 @@ a = A(destroyed)"""
         self.assertEqual(r[-len(ends_with):], ends_with,
                          '{!r} does not end with {!r}'.format(r, ends_with))
 
-    @requires_type_collecting
     def test_module_finalization_at_shutdown(self):
         # Module globals and builtins should still be available during shutdown
         rc, out, err = assert_python_ok("-c", "from test import final_a")
@@ -288,7 +287,83 @@ a = A(destroyed)"""
             melon = Descr()
         self.assertRaises(RuntimeError, getattr, M("mymod"), "melon")
 
+    def test_lazy_create_annotations(self):
+        # module objects lazy create their __annotations__ dict on demand.
+        # the annotations dict is stored in module.__dict__.
+        # a freshly created module shouldn't have an annotations dict yet.
+        foo = ModuleType("foo")
+        for i in range(4):
+            self.assertFalse("__annotations__" in foo.__dict__)
+            d = foo.__annotations__
+            self.assertTrue("__annotations__" in foo.__dict__)
+            self.assertEqual(foo.__annotations__, d)
+            self.assertEqual(foo.__dict__['__annotations__'], d)
+            if i % 2:
+                del foo.__annotations__
+            else:
+                del foo.__dict__['__annotations__']
+
+    def test_setting_annotations(self):
+        foo = ModuleType("foo")
+        for i in range(4):
+            self.assertFalse("__annotations__" in foo.__dict__)
+            d = {'a': int}
+            foo.__annotations__ = d
+            self.assertTrue("__annotations__" in foo.__dict__)
+            self.assertEqual(foo.__annotations__, d)
+            self.assertEqual(foo.__dict__['__annotations__'], d)
+            if i % 2:
+                del foo.__annotations__
+            else:
+                del foo.__dict__['__annotations__']
+
+    def test_annotations_getset_raises(self):
+        # double delete
+        foo = ModuleType("foo")
+        foo.__annotations__ = {}
+        del foo.__annotations__
+        with self.assertRaises(AttributeError):
+            del foo.__annotations__
+
+    def test_annotations_are_created_correctly(self):
+        ann_module4 = import_helper.import_fresh_module('test.ann_module4')
+        self.assertTrue("__annotations__" in ann_module4.__dict__)
+        del ann_module4.__annotations__
+        self.assertFalse("__annotations__" in ann_module4.__dict__)
+
+
+    def test_repeated_attribute_pops(self):
+        # Repeated accesses to module attribute will be specialized
+        # Check that popping the attribute doesn't break it
+        m = ModuleType("test")
+        d = m.__dict__
+        count = 0
+        for _ in range(100):
+            m.attr = 1
+            count += m.attr # Might be specialized
+            d.pop("attr")
+        self.assertEqual(count, 100)
+
     # frozen and namespace module reprs are tested in importlib.
+
+    def test_subclass_with_slots(self):
+        # In 3.11alpha this crashed, as the slots weren't NULLed.
+
+        class ModuleWithSlots(ModuleType):
+            __slots__ = ("a", "b")
+
+            def __init__(self, name):
+                super().__init__(name)
+
+        m = ModuleWithSlots("name")
+        with self.assertRaises(AttributeError):
+            m.a
+        with self.assertRaises(AttributeError):
+            m.b
+        m.a, m.b = 1, 2
+        self.assertEqual(m.a, 1)
+        self.assertEqual(m.b, 2)
+
 
 
 if __name__ == '__main__':

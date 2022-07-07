@@ -17,11 +17,30 @@ debugger and may be useful in other contexts as well.
 This module provides a class, an instance, and a function:
 
 
-.. class:: Repr()
+.. class:: Repr(*, maxlevel=6, maxtuple=6, maxlist=6, maxarray=5, maxdict=4, \
+                maxset=6, maxfrozenset=6, maxdeque=6, maxstring=30, maxlong=40, \
+                maxother=30, fillvalue="...")
 
    Class which provides formatting services useful in implementing functions
    similar to the built-in :func:`repr`; size limits for  different object types
    are added to avoid the generation of representations which are excessively long.
+
+   The keyword arguments of the constructor can be used as a shortcut to set the
+   attributes of the :class:`Repr` instance. Which means that the following
+   initialization::
+
+      aRepr = reprlib.Repr(maxlevel=3)
+
+   Is equivalent to::
+
+      aRepr = reprlib.Repr()
+      aRepr.maxlevel = 3
+
+   See section `Repr Objects`_ for more information about :class:`Repr`
+   attributes.
+
+   .. versionchanged:: 3.12
+      Allow attributes to be set via keyword arguments.
 
 
 .. data:: aRepr
@@ -41,6 +60,9 @@ This module provides a class, an instance, and a function:
 In addition to size-limiting tools, the module also provides a decorator for
 detecting recursive calls to :meth:`__repr__` and substituting a placeholder
 string instead.
+
+
+.. index:: single: ...; placeholder
 
 .. decorator:: recursive_repr(fillvalue="...")
 
@@ -71,6 +93,14 @@ Repr Objects
 :class:`Repr` instances provide several attributes which can be used to provide
 size limits for the representations of different object types,  and methods
 which format specific object types.
+
+
+.. attribute:: Repr.fillvalue
+
+   This string is displayed for recursive references. It defaults to
+   ``...``.
+
+   .. versionadded:: 3.11
 
 
 .. attribute:: Repr.maxlevel

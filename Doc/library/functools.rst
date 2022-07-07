@@ -8,9 +8,15 @@
 .. moduleauthor:: Raymond Hettinger <python@rcn.com>
 .. moduleauthor:: Nick Coghlan <ncoghlan@gmail.com>
 .. moduleauthor:: Łukasz Langa <lukasz@langa.pl>
+.. moduleauthor:: Pablo Galindo <pablogsal@gmail.com>
 .. sectionauthor:: Peter Harris <scav@blueyonder.co.uk>
 
 **Source code:** :source:`Lib/functools.py`
+
+.. testsetup:: default
+
+   import functools
+   from functools import *
 
 --------------
 
@@ -19,6 +25,90 @@ or return other functions. In general, any callable object can be treated as a
 function for the purposes of this module.
 
 The :mod:`functools` module defines the following functions:
+
+.. decorator:: cache(user_function)
+
+   Simple lightweight unbounded function cache.  Sometimes called
+   `"memoize" <https://en.wikipedia.org/wiki/Memoization>`_.
+
+   Returns the same as ``lru_cache(maxsize=None)``, creating a thin
+   wrapper around a dictionary lookup for the function arguments.  Because it
+   never needs to evict old values, this is smaller and faster than
+   :func:`lru_cache()` with a size limit.
+
+   For example::
+
+        @cache
+        def factorial(n):
+            return n * factorial(n-1) if n else 1
+
+        >>> factorial(10)      # no previously cached result, makes 11 recursive calls
+        3628800
+        >>> factorial(5)       # just looks up cached value result
+        120
+        >>> factorial(12)      # makes two new recursive calls, the other 10 are cached
+        479001600
+
+   .. versionadded:: 3.9
+
+
+.. decorator:: cached_property(func)
+
+   Transform a method of a class into a property whose value is computed once
+   and then cached as a normal attribute for the life of the instance. Similar
+   to :func:`property`, with the addition of caching. Useful for expensive
+   computed properties of instances that are otherwise effectively immutable.
+
+   Example::
+
+       class DataSet:
+
+           def __init__(self, sequence_of_numbers):
+               self._data = tuple(sequence_of_numbers)
+
+           @cached_property
+           def stdev(self):
+               return statistics.stdev(self._data)
+
+   The mechanics of :func:`cached_property` are somewhat different from
+   :func:`property`.  A regular property blocks attribute writes unless a
+   setter is defined. In contrast, a *cached_property* allows writes.
+
+   The *cached_property* decorator only runs on lookups and only when an
+   attribute of the same name doesn't exist.  When it does run, the
+   *cached_property* writes to the attribute with the same name. Subsequent
+   attribute reads and writes take precedence over the *cached_property*
+   method and it works like a normal attribute.
+
+   The cached value can be cleared by deleting the attribute.  This
+   allows the *cached_property* method to run again.
+
+   Note, this decorator interferes with the operation of :pep:`412`
+   key-sharing dictionaries.  This means that instance dictionaries
+   can take more space than usual.
+
+   Also, this decorator requires that the ``__dict__`` attribute on each instance
+   be a mutable mapping. This means it will not work with some types, such as
+   metaclasses (since the ``__dict__`` attributes on type instances are
+   read-only proxies for the class namespace), and those that specify
+   ``__slots__`` without including ``__dict__`` as one of the defined slots
+   (as such classes don't provide a ``__dict__`` attribute at all).
+
+   If a mutable mapping is not available or if space-efficient key sharing
+   is desired, an effect similar to :func:`cached_property` can be achieved
+   by a stacking :func:`property` on top of :func:`cache`::
+
+       class DataSet:
+           def __init__(self, sequence_of_numbers):
+               self._data = sequence_of_numbers
+
+           @property
+           @cache
+           def stdev(self):
+               return statistics.stdev(self._data)
+
+   .. versionadded:: 3.8
+
 
 .. function:: cmp_to_key(func)
 
@@ -43,7 +133,8 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.2
 
 
-.. decorator:: lru_cache(maxsize=128, typed=False)
+.. decorator:: lru_cache(user_function)
+               lru_cache(maxsize=128, typed=False)
 
    Decorator to wrap a function with a memoizing callable that saves up to the
    *maxsize* most recent calls.  It can save time when an expensive or I/O bound
@@ -52,19 +143,43 @@ The :mod:`functools` module defines the following functions:
    Since a dictionary is used to cache results, the positional and keyword
    arguments to the function must be hashable.
 
+   Distinct argument patterns may be considered to be distinct calls with
+   separate cache entries.  For example, `f(a=1, b=2)` and `f(b=2, a=1)`
+   differ in their keyword argument order and may have two separate cache
+   entries.
+
+   If *user_function* is specified, it must be a callable. This allows the
+   *lru_cache* decorator to be applied directly to a user function, leaving
+   the *maxsize* at its default value of 128::
+
+       @lru_cache
+       def count_vowels(sentence):
+           return sum(sentence.count(vowel) for vowel in 'AEIOUaeiou')
+
    If *maxsize* is set to ``None``, the LRU feature is disabled and the cache can
-   grow without bound.  The LRU feature performs best when *maxsize* is a
-   power-of-two.
+   grow without bound.
 
    If *typed* is set to true, function arguments of different types will be
-   cached separately.  For example, ``f(3)`` and ``f(3.0)`` will be treated
-   as distinct calls with distinct results.
+   cached separately.  If *typed* is false, the implementation will usually
+   regard them as equivalent calls and only cache a single result. (Some
+   types such as *str* and *int* may be cached separately even when *typed*
+   is false.)
+
+   Note, type specificity applies only to the function's immediate arguments
+   rather than their contents.  The scalar arguments, ``Decimal(42)`` and
+   ``Fraction(42)`` are be treated as distinct calls with distinct results.
+   In contrast, the tuple arguments ``('answer', Decimal(42))`` and
+   ``('answer', Fraction(42))`` are treated as equivalent.
+
+   The wrapped function is instrumented with a :func:`cache_parameters`
+   function that returns a new :class:`dict` showing the values for *maxsize*
+   and *typed*.  This is for information purposes only.  Mutating the values
+   has no effect.
 
    To help measure the effectiveness of the cache and tune the *maxsize*
    parameter, the wrapped function is instrumented with a :func:`cache_info`
    function that returns a :term:`named tuple` showing *hits*, *misses*,
-   *maxsize* and *currsize*.  In a multi-threaded environment, the hits
-   and misses are approximate.
+   *maxsize* and *currsize*.
 
    The decorator also provides a :func:`cache_clear` function for clearing or
    invalidating the cache.
@@ -73,19 +188,27 @@ The :mod:`functools` module defines the following functions:
    :attr:`__wrapped__` attribute.  This is useful for introspection, for
    bypassing the cache, or for rewrapping the function with a different cache.
 
+   The cache keeps references to the arguments and return values until they age
+   out of the cache or until the cache is cleared.
+
    An `LRU (least recently used) cache
-   <https://en.wikipedia.org/wiki/Cache_algorithms#Examples>`_ works
-   best when the most recent calls are the best predictors of upcoming calls (for
-   example, the most popular articles on a news server tend to change each day).
-   The cache's size limit assures that the cache does not grow without bound on
-   long-running processes such as web servers.
+   <https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)>`_
+   works best when the most recent calls are the best predictors of upcoming
+   calls (for example, the most popular articles on a news server tend to
+   change each day).  The cache's size limit assures that the cache does not
+   grow without bound on long-running processes such as web servers.
+
+   In general, the LRU cache should only be used when you want to reuse
+   previously computed values.  Accordingly, it doesn't make sense to cache
+   functions with side-effects, functions that need to create distinct mutable
+   objects on each call, or impure functions such as time() or random().
 
    Example of an LRU cache for static web content::
 
         @lru_cache(maxsize=32)
         def get_pep(num):
             'Retrieve text of a Python Enhancement Proposal'
-            resource = 'http://www.python.org/dev/peps/pep-%04d/' % num
+            resource = 'https://peps.python.org/pep-%04d/' % num
             try:
                 with urllib.request.urlopen(resource) as s:
                     return s.read()
@@ -121,6 +244,12 @@ The :mod:`functools` module defines the following functions:
 
    .. versionchanged:: 3.3
       Added the *typed* option.
+
+   .. versionchanged:: 3.8
+      Added the *user_function* option.
+
+   .. versionadded:: 3.9
+      Added the function :func:`cache_parameters`
 
 .. decorator:: total_ordering
 
@@ -159,24 +288,31 @@ The :mod:`functools` module defines the following functions:
       application, implementing all six rich comparison methods instead is
       likely to provide an easy speed boost.
 
+   .. note::
+
+      This decorator makes no attempt to override methods that have been
+      declared in the class *or its superclasses*. Meaning that if a
+      superclass defines a comparison operator, *total_ordering* will not
+      implement it again, even if the original method is abstract.
+
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.4
       Returning NotImplemented from the underlying comparison function for
       unrecognised types is now supported.
 
-.. function:: partial(func, *args, **keywords)
+.. function:: partial(func, /, *args, **keywords)
 
-   Return a new :class:`partial` object which when called will behave like *func*
-   called with the positional arguments *args* and keyword arguments *keywords*. If
-   more arguments are supplied to the call, they are appended to *args*. If
-   additional keyword arguments are supplied, they extend and override *keywords*.
+   Return a new :ref:`partial object<partial-objects>` which when called
+   will behave like *func* called with the positional arguments *args*
+   and keyword arguments *keywords*. If more arguments are supplied to the
+   call, they are appended to *args*. If additional keyword arguments are
+   supplied, they extend and override *keywords*.
    Roughly equivalent to::
 
-      def partial(func, *args, **keywords):
+      def partial(func, /, *args, **keywords):
           def newfunc(*fargs, **fkeywords):
-              newkeywords = keywords.copy()
-              newkeywords.update(fkeywords)
+              newkeywords = {**keywords, **fkeywords}
               return func(*args, *fargs, **newkeywords)
           newfunc.func = func
           newfunc.args = args
@@ -196,7 +332,7 @@ The :mod:`functools` module defines the following functions:
       18
 
 
-.. class:: partialmethod(func, *args, **keywords)
+.. class:: partialmethod(func, /, *args, **keywords)
 
    Return a new :class:`partialmethod` descriptor which behaves
    like :class:`partial` except that it is designed to be used as a method
@@ -209,7 +345,7 @@ The :mod:`functools` module defines the following functions:
    :func:`classmethod`, :func:`staticmethod`, :func:`abstractmethod` or
    another instance of :class:`partialmethod`), calls to ``__get__`` are
    delegated to the underlying descriptor, and an appropriate
-   :class:`partial` object returned as the result.
+   :ref:`partial object<partial-objects>` returned as the result.
 
    When *func* is a non-descriptor callable, an appropriate bound method is
    created dynamically. This behaves like a normal Python function when
@@ -219,7 +355,7 @@ The :mod:`functools` module defines the following functions:
 
    Example::
 
-      >>> class Cell(object):
+      >>> class Cell:
       ...     def __init__(self):
       ...         self._alive = False
       ...     @property
@@ -242,14 +378,14 @@ The :mod:`functools` module defines the following functions:
 
 .. function:: reduce(function, iterable[, initializer])
 
-   Apply *function* of two arguments cumulatively to the items of *sequence*, from
-   left to right, so as to reduce the sequence to a single value.  For example,
+   Apply *function* of two arguments cumulatively to the items of *iterable*, from
+   left to right, so as to reduce the iterable to a single value.  For example,
    ``reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])`` calculates ``((((1+2)+3)+4)+5)``.
    The left argument, *x*, is the accumulated value and the right argument, *y*, is
-   the update value from the *sequence*.  If the optional *initializer* is present,
-   it is placed before the items of the sequence in the calculation, and serves as
-   a default when the sequence is empty.  If *initializer* is not given and
-   *sequence* contains only one item, the first item is returned.
+   the update value from the *iterable*.  If the optional *initializer* is present,
+   it is placed before the items of the iterable in the calculation, and serves as
+   a default when the iterable is empty.  If *initializer* is not given and
+   *iterable* contains only one item, the first item is returned.
 
    Roughly equivalent to::
 
@@ -263,6 +399,8 @@ The :mod:`functools` module defines the following functions:
               value = function(value, element)
           return value
 
+   See :func:`itertools.accumulate` for an iterator that yields all intermediate
+   values.
 
 .. decorator:: singledispatch
 
@@ -270,8 +408,8 @@ The :mod:`functools` module defines the following functions:
    dispatch>` :term:`generic function`.
 
    To define a generic function, decorate it with the ``@singledispatch``
-   decorator. Note that the dispatch happens on the type of the first argument,
-   create your function accordingly::
+   decorator. When defining a function using ``@singledispatch``, note that the
+   dispatch happens on the type of the first argument::
 
      >>> from functools import singledispatch
      >>> @singledispatch
@@ -281,9 +419,9 @@ The :mod:`functools` module defines the following functions:
      ...     print(arg)
 
    To add overloaded implementations to the function, use the :func:`register`
-   attribute of the generic function.  It is a decorator.  For functions
-   annotated with types, the decorator will infer the type of the first
-   argument automatically::
+   attribute of the generic function, which can be used as a decorator.  For
+   functions annotated with types, the decorator will infer the type of the
+   first argument automatically::
 
      >>> @fun.register
      ... def _(arg: int, verbose=False):
@@ -298,6 +436,23 @@ The :mod:`functools` module defines the following functions:
      ...     for i, elem in enumerate(arg):
      ...         print(i, elem)
 
+   :data:`types.UnionType` and :data:`typing.Union` can also be used::
+
+    >>> @fun.register
+    ... def _(arg: int | float, verbose=False):
+    ...     if verbose:
+    ...         print("Strength in numbers, eh?", end=" ")
+    ...     print(arg)
+    ...
+    >>> from typing import Union
+    >>> @fun.register
+    ... def _(arg: Union[list, set], verbose=False):
+    ...     if verbose:
+    ...         print("Enumerate this:")
+    ...     for i, elem in enumerate(arg):
+    ...         print(i, elem)
+    ...
+
    For code which doesn't use type annotations, the appropriate type
    argument can be passed explicitly to the decorator itself::
 
@@ -309,17 +464,17 @@ The :mod:`functools` module defines the following functions:
      ...
 
 
-   To enable registering lambdas and pre-existing functions, the
-   :func:`register` attribute can be used in a functional form::
+   To enable registering :term:`lambdas<lambda>` and pre-existing functions,
+   the :func:`register` attribute can also be used in a functional form::
 
      >>> def nothing(arg, verbose=False):
      ...     print("Nothing.")
      ...
      >>> fun.register(type(None), nothing)
 
-   The :func:`register` attribute returns the undecorated function which
-   enables decorator stacking, pickling, as well as creating unit tests for
-   each variant independently::
+   The :func:`register` attribute returns the undecorated function. This
+   enables decorator stacking, :mod:`pickling<pickle>`, and the creation
+   of unit tests for each variant independently::
 
      >>> @fun.register(float)
      ... @fun.register(Decimal)
@@ -354,10 +509,25 @@ The :mod:`functools` module defines the following functions:
    Where there is no registered implementation for a specific type, its
    method resolution order is used to find a more generic implementation.
    The original function decorated with ``@singledispatch`` is registered
-   for the base ``object`` type, which means it is used if no better
+   for the base :class:`object` type, which means it is used if no better
    implementation is found.
 
-   To check which implementation will the generic function choose for
+   If an implementation is registered to an :term:`abstract base class`,
+   virtual subclasses of the base class will be dispatched to that
+   implementation::
+
+     >>> from collections.abc import Mapping
+     >>> @fun.register
+     ... def _(arg: Mapping, verbose=False):
+     ...     if verbose:
+     ...         print("Keys & Values")
+     ...     for key, value in arg.items():
+     ...         print(key, "=>", value)
+     ...
+     >>> fun({"a": "b"})
+     a => b
+
+   To check which implementation the generic function will choose for
    a given type, use the ``dispatch()`` attribute::
 
      >>> fun.dispatch(float)
@@ -380,7 +550,63 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.7
-      The :func:`register` attribute supports using type annotations.
+      The :func:`register` attribute now supports using type annotations.
+
+   .. versionchanged:: 3.11
+      The :func:`register` attribute now supports :data:`types.UnionType`
+      and :data:`typing.Union` as type annotations.
+
+
+.. class:: singledispatchmethod(func)
+
+   Transform a method into a :term:`single-dispatch <single
+   dispatch>` :term:`generic function`.
+
+   To define a generic method, decorate it with the ``@singledispatchmethod``
+   decorator. When defining a function using ``@singledispatchmethod``, note
+   that the dispatch happens on the type of the first non-*self* or non-*cls*
+   argument::
+
+    class Negator:
+        @singledispatchmethod
+        def neg(self, arg):
+            raise NotImplementedError("Cannot negate a")
+
+        @neg.register
+        def _(self, arg: int):
+            return -arg
+
+        @neg.register
+        def _(self, arg: bool):
+            return not arg
+
+   ``@singledispatchmethod`` supports nesting with other decorators such as
+   :func:`@classmethod<classmethod>`. Note that to allow for
+   ``dispatcher.register``, ``singledispatchmethod`` must be the *outer most*
+   decorator. Here is the ``Negator`` class with the ``neg`` methods bound to
+   the class, rather than an instance of the class::
+
+    class Negator:
+        @singledispatchmethod
+        @classmethod
+        def neg(cls, arg):
+            raise NotImplementedError("Cannot negate a")
+
+        @neg.register
+        @classmethod
+        def _(cls, arg: int):
+            return -arg
+
+        @neg.register
+        @classmethod
+        def _(cls, arg: bool):
+            return not arg
+
+   The same pattern can be used for other similar decorators:
+   :func:`@staticmethod<staticmethod>`,
+   :func:`@abstractmethod<abc.abstractmethod>`, and others.
+
+   .. versionadded:: 3.8
 
 
 .. function:: update_wrapper(wrapper, wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)

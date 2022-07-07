@@ -1,0 +1,26 @@
+# Locate a set of the tools used for builds
+
+steps:
+  - template: windows-release/find-sdk.yml
+    parameters:
+      toolname: 'signtool.exe'
+
+  - powershell: |
+      $vcvarsall = (& "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" `
+          -prerelease `
+          -latest `
+          -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+          -find VC\Auxiliary\Build\vcvarsall.bat)
+      Write-Host "Found vcvarsall at $vcvarsall"
+      Write-Host "##vso[task.setVariable variable=vcvarsall]$vcvarsall"
+    displayName: 'Find vcvarsall.bat'
+
+  - powershell: |
+      $msbuild = (& "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" `
+          -prerelease `
+          -latest `
+          -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+          -find MSBuild\Current\Bin\msbuild.exe)
+      Write-Host "Found MSBuild at $msbuild"
+      Write-Host "##vso[task.setVariable variable=msbuild]$msbuild"
+    displayName: 'Find MSBuild'

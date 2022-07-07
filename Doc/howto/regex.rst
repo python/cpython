@@ -89,15 +89,16 @@ is the same as ``[a-c]``, which uses a range to express the same set of
 characters.  If you wanted to match only lowercase letters, your RE would be
 ``[a-z]``.
 
-Metacharacters are not active inside classes.  For example, ``[akm$]`` will
+Metacharacters (except ``\``) are not active inside classes.  For example, ``[akm$]`` will
 match any of the characters ``'a'``, ``'k'``, ``'m'``, or ``'$'``; ``'$'`` is
 usually a metacharacter, but inside a character class it's stripped of its
 special nature.
 
 You can match the characters not listed within the class by :dfn:`complementing`
 the set.  This is indicated by including a ``'^'`` as the first character of the
-class; ``'^'`` outside a character class will simply match the ``'^'``
-character.  For example, ``[^5]`` will match any character except ``'5'``.
+class. For example, ``[^5]`` will match any character except ``'5'``.  If the
+caret appears elsewhere in a character class, it does not have special meaning.
+For example: ``[5^]`` will match either a ``'5'`` or a ``'^'``.
 
 Perhaps the most important metacharacter is the backslash, ``\``.   As in Python
 string literals, the backslash can be followed by various characters to signal
@@ -229,13 +230,13 @@ while ``+`` requires at least *one* occurrence.  To use a similar example,
 ``ca+t`` will match ``'cat'`` (1 ``'a'``), ``'caaat'`` (3 ``'a'``\ s), but won't
 match ``'ct'``.
 
-There are two more repeating qualifiers.  The question mark character, ``?``,
+There are two more repeating operators or quantifiers.  The question mark character, ``?``,
 matches either once or zero times; you can think of it as marking something as
 being optional.  For example, ``home-?brew`` matches either ``'homebrew'`` or
 ``'home-brew'``.
 
-The most complicated repeated qualifier is ``{m,n}``, where *m* and *n* are
-decimal integers.  This qualifier means there must be at least *m* repetitions,
+The most complicated quantifier is ``{m,n}``, where *m* and *n* are
+decimal integers.  This quantifier means there must be at least *m* repetitions,
 and at most *n*.  For example, ``a/{1,3}b`` will match ``'a/b'``, ``'a//b'``, and
 ``'a///b'``.  It won't match ``'ab'``, which has no slashes, or ``'a////b'``, which
 has four.
@@ -244,7 +245,7 @@ You can omit either *m* or *n*; in that case, a reasonable value is assumed for
 the missing value.  Omitting *m* is interpreted as a lower limit of 0, while
 omitting *n* results in an upper bound of infinity.
 
-Readers of a reductionist bent may notice that the three other qualifiers can
+Readers of a reductionist bent may notice that the three other quantifiers can
 all be expressed using this notation.  ``{0,}`` is the same as ``*``, ``{1,}``
 is equivalent to ``+``, and ``{0,1}`` is the same as ``?``.  It's better to use
 ``*``, ``+``, or ``?`` when you can, simply because they're shorter and easier
@@ -786,7 +787,9 @@ Frequently you need to obtain more information than just whether the RE matched
 or not.  Regular expressions are often used to dissect strings by writing a RE
 divided into several subgroups which match different components of interest.
 For example, an RFC-822 header line is divided into a header name and a value,
-separated by a ``':'``, like this::
+separated by a ``':'``, like this:
+
+.. code-block:: none
 
    From: author@example.com
    User-Agent: Thunderbird 1.5.0.9 (X11/20061227)
@@ -800,7 +803,7 @@ which matches the header's value.
 Groups are marked by the ``'('``, ``')'`` metacharacters. ``'('`` and ``')'``
 have much the same meaning as they do in mathematical expressions; they group
 together the expressions contained inside them, and you can repeat the contents
-of a group with a repeating qualifier, such as ``*``, ``+``, ``?``, or
+of a group with a quantifier, such as ``*``, ``+``, ``?``, or
 ``{m,n}``.  For example, ``(ab)*`` will match zero or more repetitions of
 ``ab``. ::
 
@@ -939,7 +942,14 @@ given numbers, so you can retrieve information about a group in two ways::
    >>> m.group(1)
    'Lots'
 
-Named groups are handy because they let you use easily-remembered names, instead
+Additionally, you can retrieve named groups as a dictionary with
+:meth:`~re.Match.groupdict`::
+
+   >>> m = re.match(r'(?P<first>\w+) (?P<last>\w+)', 'Jane Doe')
+   >>> m.groupdict()
+   {'first': 'Jane', 'last': 'Doe'}
+
+Named groups are handy because they let you use easily remembered names, instead
 of having to remember numbers.  Here's an example RE from the :mod:`imaplib`
 module::
 
@@ -1316,7 +1326,7 @@ backtrack character by character until it finds a match for the ``>``.   The
 final match extends from the ``'<'`` in ``'<html>'`` to the ``'>'`` in
 ``'</title>'``, which isn't what you want.
 
-In this case, the solution is to use the non-greedy qualifiers ``*?``, ``+?``,
+In this case, the solution is to use the non-greedy quantifiers ``*?``, ``+?``,
 ``??``, or ``{m,n}?``, which match as *little* text as possible.  In the above
 example, the ``'>'`` is tried immediately after the first ``'<'`` matches, and
 when it fails, the engine advances a character at a time, retrying the ``'>'``

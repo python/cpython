@@ -14,7 +14,7 @@ PyDoc_STRVAR(crypt_crypt__doc__,
 "results for a given *word*.");
 
 #define CRYPT_CRYPT_METHODDEF    \
-    {"crypt", (PyCFunction)crypt_crypt, METH_FASTCALL, crypt_crypt__doc__},
+    {"crypt", _PyCFunction_CAST(crypt_crypt), METH_FASTCALL, crypt_crypt__doc__},
 
 static PyObject *
 crypt_crypt_impl(PyObject *module, const char *word, const char *salt);
@@ -26,8 +26,33 @@ crypt_crypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const char *word;
     const char *salt;
 
-    if (!_PyArg_ParseStack(args, nargs, "ss:crypt",
-        &word, &salt)) {
+    if (!_PyArg_CheckPositional("crypt", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("crypt", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    Py_ssize_t word_length;
+    word = PyUnicode_AsUTF8AndSize(args[0], &word_length);
+    if (word == NULL) {
+        goto exit;
+    }
+    if (strlen(word) != (size_t)word_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("crypt", "argument 2", "str", args[1]);
+        goto exit;
+    }
+    Py_ssize_t salt_length;
+    salt = PyUnicode_AsUTF8AndSize(args[1], &salt_length);
+    if (salt == NULL) {
+        goto exit;
+    }
+    if (strlen(salt) != (size_t)salt_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = crypt_crypt_impl(module, word, salt);
@@ -35,4 +60,4 @@ crypt_crypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8d803e53466b1cd3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6f61ab29e361f9d0 input=a9049054013a1b77]*/

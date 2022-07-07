@@ -130,6 +130,24 @@ type___sizeof__(PyTypeObject *self, PyObject *Py_UNUSED(ignored))
     return type___sizeof___impl(self);
 }
 
+PyDoc_STRVAR(object___getstate____doc__,
+"__getstate__($self, /)\n"
+"--\n"
+"\n"
+"Helper for pickle.");
+
+#define OBJECT___GETSTATE___METHODDEF    \
+    {"__getstate__", (PyCFunction)object___getstate__, METH_NOARGS, object___getstate____doc__},
+
+static PyObject *
+object___getstate___impl(PyObject *self);
+
+static PyObject *
+object___getstate__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return object___getstate___impl(self);
+}
+
 PyDoc_STRVAR(object___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
@@ -166,7 +184,8 @@ object___reduce_ex__(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int protocol;
 
-    if (!PyArg_Parse(arg, "i:__reduce_ex__", &protocol)) {
+    protocol = _PyLong_AsInt(arg);
+    if (protocol == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = object___reduce_ex___impl(self, protocol);
@@ -193,9 +212,14 @@ object___format__(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *format_spec;
 
-    if (!PyArg_Parse(arg, "U:__format__", &format_spec)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("__format__", "argument", "str", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    format_spec = arg;
     return_value = object___format___impl(self, format_spec);
 
 exit:
@@ -237,4 +261,4 @@ object___dir__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return object___dir___impl(self);
 }
-/*[clinic end generated code: output=8c4c856859564eaa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a30090032b8e6195 input=a9049054013a1b77]*/

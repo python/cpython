@@ -1,13 +1,16 @@
-from test.support import check_no_resource_warning, findfile, TESTFN, unlink
+from test.support import findfile
+from test.support.os_helper import TESTFN, unlink
+from test.support.warnings_helper import check_no_resource_warning, import_deprecated
 import unittest
 from unittest import mock
 from test import audiotests
-from audioop import byteswap
 import io
 import sys
 import struct
-import aifc
-import warnings
+
+
+aifc = import_deprecated("aifc")
+audioop = import_deprecated("audioop")
 
 
 class AifcTest(audiotests.AudioWriteTests,
@@ -121,7 +124,7 @@ class AifcULAWTest(AifcTest, unittest.TestCase):
       E5040CBC 617C0A3C 08BC0A3C 2C7C0B3C 517C0E3C 8A8410FC B6840EBC 457C0A3C \
       """)
     if sys.byteorder != 'big':
-        frames = byteswap(frames, 2)
+        frames = audioop.byteswap(frames, 2)
 
 
 class AifcALAWTest(AifcTest, unittest.TestCase):
@@ -142,16 +145,15 @@ class AifcALAWTest(AifcTest, unittest.TestCase):
       E4800CC0 62000A40 08C00A40 2B000B40 52000E40 8A001180 B6000EC0 46000A40 \
       """)
     if sys.byteorder != 'big':
-        frames = byteswap(frames, 2)
+        frames = audioop.byteswap(frames, 2)
 
 
-class AifcMiscTest(audiotests.AudioMiscTests, unittest.TestCase):
-    module = aifc
-
+class AifcMiscTest(unittest.TestCase):
     def test_skipunknown(self):
         #Issue 2245
         #This file contains chunk types aifc doesn't recognize.
-        self.f = aifc.open(findfile('Sine-1000Hz-300ms.aif'))
+        f = aifc.open(findfile('Sine-1000Hz-300ms.aif'))
+        f.close()
 
     def test_close_opened_files_on_error(self):
         non_aifc_file = findfile('pluck-pcm8.wav', subdir='audiodata')
@@ -174,7 +176,8 @@ class AifcMiscTest(audiotests.AudioMiscTests, unittest.TestCase):
         f.setparams((1, 1, 1, 1, b'NONE', b''))
         f.close()
 
-        f = self.f = aifc.open(TESTFN, 'rb')
+        f = aifc.open(TESTFN, 'rb')
+        self.addCleanup(f.close)
         params = f.getparams()
         self.assertEqual(params.nchannels, f.getnchannels())
         self.assertEqual(params.sampwidth, f.getsampwidth())
@@ -210,7 +213,8 @@ class AifcMiscTest(audiotests.AudioMiscTests, unittest.TestCase):
         fout.setmark(2, 0, b'even')
         fout.writeframes(b'\x00')
         fout.close()
-        f = self.f = aifc.open(TESTFN, 'rb')
+        f = aifc.open(TESTFN, 'rb')
+        self.addCleanup(f.close)
         self.assertEqual(f.getmarkers(), [(1, 0, b'odd'), (2, 0, b'even')])
         self.assertEqual(f.getmark(1), (1, 0, b'odd'))
         self.assertEqual(f.getmark(2), (2, 0, b'even'))
@@ -266,15 +270,46 @@ class AIFCLowLevelTest(unittest.TestCase):
         b = io.BytesIO(b'FORM' + struct.pack('>L', 4) + b'AIFF')
         self.assertRaises(aifc.Error, aifc.open, b)
 
+    def test_read_no_ssnd_chunk(self):
+        b = b'FORM' + struct.pack('>L', 4) + b'AIFC'
+        b += b'COMM' + struct.pack('>LhlhhLL', 38, 1, 0, 8,
+                                   0x4000 | 12, 11025<<18, 0)
+        b += b'NONE' + struct.pack('B', 14) + b'not compressed' + b'\x00'
+        with self.assertRaisesRegex(aifc.Error, 'COMM chunk and/or SSND chunk'
+                                                ' missing'):
+            aifc.open(io.BytesIO(b))
+
     def test_read_wrong_compression_type(self):
         b = b'FORM' + struct.pack('>L', 4) + b'AIFC'
-        b += b'COMM' + struct.pack('>LhlhhLL', 23, 0, 0, 0, 0, 0, 0)
+        b += b'COMM' + struct.pack('>LhlhhLL', 23, 1, 0, 8,
+                                   0x4000 | 12, 11025<<18, 0)
         b += b'WRNG' + struct.pack('B', 0)
         self.assertRaises(aifc.Error, aifc.open, io.BytesIO(b))
 
+    def test_read_wrong_number_of_channels(self):
+        for nchannels in 0, -1:
+            b = b'FORM' + struct.pack('>L', 4) + b'AIFC'
+            b += b'COMM' + struct.pack('>LhlhhLL', 38, nchannels, 0, 8,
+                                       0x4000 | 12, 11025<<18, 0)
+            b += b'NONE' + struct.pack('B', 14) + b'not compressed' + b'\x00'
+            b += b'SSND' + struct.pack('>L', 8) + b'\x00' * 8
+            with self.assertRaisesRegex(aifc.Error, 'bad # of channels'):
+                aifc.open(io.BytesIO(b))
+
+    def test_read_wrong_sample_width(self):
+        for sampwidth in 0, -1:
+            b = b'FORM' + struct.pack('>L', 4) + b'AIFC'
+            b += b'COMM' + struct.pack('>LhlhhLL', 38, 1, 0, sampwidth,
+                                       0x4000 | 12, 11025<<18, 0)
+            b += b'NONE' + struct.pack('B', 14) + b'not compressed' + b'\x00'
+            b += b'SSND' + struct.pack('>L', 8) + b'\x00' * 8
+            with self.assertRaisesRegex(aifc.Error, 'bad sample width'):
+                aifc.open(io.BytesIO(b))
+
     def test_read_wrong_marks(self):
         b = b'FORM' + struct.pack('>L', 4) + b'AIFF'
-        b += b'COMM' + struct.pack('>LhlhhLL', 18, 0, 0, 0, 0, 0, 0)
+        b += b'COMM' + struct.pack('>LhlhhLL', 18, 1, 0, 8,
+                                   0x4000 | 12, 11025<<18, 0)
         b += b'SSND' + struct.pack('>L', 8) + b'\x00' * 8
         b += b'MARK' + struct.pack('>LhB', 3, 1, 1)
         with self.assertWarns(UserWarning) as cm:
@@ -285,7 +320,8 @@ class AIFCLowLevelTest(unittest.TestCase):
 
     def test_read_comm_kludge_compname_even(self):
         b = b'FORM' + struct.pack('>L', 4) + b'AIFC'
-        b += b'COMM' + struct.pack('>LhlhhLL', 18, 0, 0, 0, 0, 0, 0)
+        b += b'COMM' + struct.pack('>LhlhhLL', 18, 1, 0, 8,
+                                   0x4000 | 12, 11025<<18, 0)
         b += b'NONE' + struct.pack('B', 4) + b'even' + b'\x00'
         b += b'SSND' + struct.pack('>L', 8) + b'\x00' * 8
         with self.assertWarns(UserWarning) as cm:
@@ -295,7 +331,8 @@ class AIFCLowLevelTest(unittest.TestCase):
 
     def test_read_comm_kludge_compname_odd(self):
         b = b'FORM' + struct.pack('>L', 4) + b'AIFC'
-        b += b'COMM' + struct.pack('>LhlhhLL', 18, 0, 0, 0, 0, 0, 0)
+        b += b'COMM' + struct.pack('>LhlhhLL', 18, 1, 0, 8,
+                                   0x4000 | 12, 11025<<18, 0)
         b += b'NONE' + struct.pack('B', 3) + b'odd'
         b += b'SSND' + struct.pack('>L', 8) + b'\x00' * 8
         with self.assertWarns(UserWarning) as cm:

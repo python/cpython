@@ -47,11 +47,12 @@ Physical lines
 --------------
 
 A physical line is a sequence of characters terminated by an end-of-line
-sequence.  In source files, any of the standard platform line termination
-sequences can be used - the Unix form using ASCII LF (linefeed), the Windows
-form using the ASCII sequence CR LF (return followed by linefeed), or the old
-Macintosh form using the ASCII CR (return) character.  All of these forms can be
-used equally, regardless of platform.
+sequence.  In source files and strings, any of the standard platform line
+termination sequences can be used - the Unix form using ASCII LF (linefeed),
+the Windows form using the ASCII sequence CR LF (return followed by linefeed),
+or the old Macintosh form using the ASCII CR (return) character.  All of these
+forms can be used equally, regardless of platform. The end of input also serves
+as an implicit terminator for the final physical line.
 
 When embedding Python, source code strings should be passed to Python APIs using
 the standard C conventions for newline characters (the ``\n`` character,
@@ -64,11 +65,12 @@ Comments
 --------
 
 .. index:: comment, hash character
+   single: # (hash); comment
 
 A comment starts with a hash character (``#``) that is not part of a string
 literal, and ends at the end of the physical line.  A comment signifies the end
 of the logical line unless the implicit line joining rules are invoked. Comments
-are ignored by the syntax; they are not tokens.
+are ignored by the syntax.
 
 
 .. _encodings:
@@ -77,6 +79,7 @@ Encoding declarations
 ---------------------
 
 .. index:: source character set, encoding declarations (source file)
+   single: # (hash); source encoding declaration
 
 If a comment in the first or second line of the Python script matches the
 regular expression ``coding[=:]\s*([-\w.]+)``, this comment is processed as an
@@ -98,11 +101,10 @@ addition, if the first bytes of the file are the UTF-8 byte-order mark
 (``b'\xef\xbb\xbf'``), the declared file encoding is UTF-8 (this is supported,
 among others, by Microsoft's :program:`notepad`).
 
-If an encoding is declared, the encoding name must be recognized by Python. The
+If an encoding is declared, the encoding name must be recognized by Python
+(see :ref:`standard-encodings`). The
 encoding is used for all lexical analysis, including string literals, comments
 and identifiers.
-
-.. XXX there should be a list of supported encodings.
 
 
 .. _explicit-joining:
@@ -293,7 +295,7 @@ Unicode Character Database as included in the :mod:`unicodedata` module.
 
 Identifiers are unlimited in length.  Case is significant.
 
-.. productionlist::
+.. productionlist:: python-grammar
    identifier: `xid_start` `xid_continue`*
    id_start: <all characters in general categories Lu, Ll, Lt, Lm, Lo, Nl, the underscore, and characters with the Other_ID_Start property>
    id_continue: <all characters in `id_start`, plus characters in the categories Mn, Mc, Nd, Pc and others with the Other_ID_Continue property>
@@ -313,7 +315,7 @@ The Unicode category codes mentioned above stand for:
 * *Nd* - decimal numbers
 * *Pc* - connector punctuations
 * *Other_ID_Start* - explicit list of characters in `PropList.txt
-  <http://www.unicode.org/Public/10.0.0/ucd/PropList.txt>`_ to support backwards
+  <https://www.unicode.org/Public/14.0.0/ucd/PropList.txt>`_ to support backwards
   compatibility
 * *Other_ID_Continue* - likewise
 
@@ -321,8 +323,8 @@ All identifiers are converted into the normal form NFKC while parsing; compariso
 of identifiers is based on NFKC.
 
 A non-normative HTML file listing all valid identifier characters for Unicode
-4.1 can be found at
-https://www.dcl.hpi.uni-potsdam.de/home/loewis/table-3131.html.
+14.0.0 can be found at
+https://www.unicode.org/Public/14.0.0/ucd/DerivedCoreProperties.txt
 
 
 .. _keywords:
@@ -348,6 +350,30 @@ exactly as written here:
    assert     del        global     not        with
    async      elif       if         or         yield
 
+
+.. _soft-keywords:
+
+Soft Keywords
+-------------
+
+.. index:: soft keyword, keyword
+
+.. versionadded:: 3.10
+
+Some identifiers are only reserved under specific contexts. These are known as
+*soft keywords*.  The identifiers ``match``, ``case`` and ``_`` can
+syntactically act as keywords in contexts related to the pattern matching
+statement, but this distinction is done at the parser level, not when
+tokenizing.
+
+As soft keywords, their use with pattern matching is possible while still
+preserving compatibility with existing code that uses ``match``, ``case`` and ``_`` as
+identifier names.
+
+
+.. index::
+   single: _, identifiers
+   single: __, identifiers
 .. _id-classes:
 
 Reserved classes of identifiers
@@ -358,10 +384,20 @@ classes are identified by the patterns of leading and trailing underscore
 characters:
 
 ``_*``
-   Not imported by ``from module import *``.  The special identifier ``_`` is used
-   in the interactive interpreter to store the result of the last evaluation; it is
-   stored in the :mod:`builtins` module.  When not in interactive mode, ``_``
-   has no special meaning and is not defined. See section :ref:`import`.
+   Not imported by ``from module import *``.
+
+``_``
+   In a ``case`` pattern within a :keyword:`match` statement, ``_`` is a
+   :ref:`soft keyword <soft-keywords>` that denotes a
+   :ref:`wildcard <wildcard-patterns>`.
+
+   Separately, the interactive interpreter makes the result of the last evaluation
+   available in the variable ``_``.
+   (It is stored in the :mod:`builtins` module, alongside built-in
+   functions like ``print``.)
+
+   Elsewhere, ``_`` is a regular identifier. It is often used to name
+   "special" items, but it is not special to Python itself.
 
    .. note::
 
@@ -369,12 +405,14 @@ characters:
       refer to the documentation for the :mod:`gettext` module for more
       information on this convention.
 
+      It is also commonly used for unused variables.
+
 ``__*__``
-   System-defined names. These names are defined by the interpreter and its
-   implementation (including the standard library).  Current system names are
-   discussed in the :ref:`specialnames` section and elsewhere.  More will likely
-   be defined in future versions of Python.  *Any* use of ``__*__`` names, in
-   any context, that does not follow explicitly documented use, is subject to
+   System-defined names, informally known as "dunder" names. These names are
+   defined by the interpreter and its implementation (including the standard library).
+   Current system names are discussed in the :ref:`specialnames` section and elsewhere.
+   More will likely be defined in future versions of Python.  *Any* use of ``__*__`` names,
+   in any context, that does not follow explicitly documented use, is subject to
    breakage without warning.
 
 ``__*``
@@ -394,16 +432,19 @@ Literals
 Literals are notations for constant values of some built-in types.
 
 
+.. index:: string literal, bytes literal, ASCII
+   single: ' (single quote); string literal
+   single: " (double quote); string literal
+   single: u'; string literal
+   single: u"; string literal
 .. _strings:
 
 String and Bytes literals
 -------------------------
 
-.. index:: string literal, bytes literal, ASCII
-
 String literals are described by the following lexical definitions:
 
-.. productionlist::
+.. productionlist:: python-grammar
    stringliteral: [`stringprefix`](`shortstring` | `longstring`)
    stringprefix: "r" | "u" | "R" | "U" | "f" | "F"
                : | "fr" | "Fr" | "fR" | "FR" | "rf" | "rF" | "Rf" | "RF"
@@ -415,7 +456,7 @@ String literals are described by the following lexical definitions:
    longstringchar: <any source character except "\">
    stringescapeseq: "\" <any source character>
 
-.. productionlist::
+.. productionlist:: python-grammar
    bytesliteral: `bytesprefix`(`shortbytes` | `longbytes`)
    bytesprefix: "b" | "B" | "br" | "Br" | "bR" | "BR" | "rb" | "rB" | "Rb" | "RB"
    shortbytes: "'" `shortbytesitem`* "'" | '"' `shortbytesitem`* '"'
@@ -427,24 +468,36 @@ String literals are described by the following lexical definitions:
    bytesescapeseq: "\" <any ASCII character>
 
 One syntactic restriction not indicated by these productions is that whitespace
-is not allowed between the :token:`stringprefix` or :token:`bytesprefix` and the
-rest of the literal. The source character set is defined by the encoding
-declaration; it is UTF-8 if no encoding declaration is given in the source file;
-see section :ref:`encodings`.
+is not allowed between the :token:`~python-grammar:stringprefix` or
+:token:`~python-grammar:bytesprefix` and the rest of the literal. The source
+character set is defined by the encoding declaration; it is UTF-8 if no encoding
+declaration is given in the source file; see section :ref:`encodings`.
 
 .. index:: triple-quoted string, Unicode Consortium, raw string
+   single: """; string literal
+   single: '''; string literal
 
 In plain English: Both types of literals can be enclosed in matching single quotes
 (``'``) or double quotes (``"``).  They can also be enclosed in matching groups
 of three single or double quotes (these are generally referred to as
-*triple-quoted strings*).  The backslash (``\``) character is used to escape
-characters that otherwise have a special meaning, such as newline, backslash
-itself, or the quote character.
+*triple-quoted strings*). The backslash (``\``) character is used to give special
+meaning to otherwise ordinary characters like ``n``, which means 'newline' when
+escaped (``\n``). It can also be used to escape characters that otherwise have a
+special meaning, such as newline, backslash itself, or the quote character.
+See :ref:`escape sequences <escape-sequences>` below for examples.
+
+.. index::
+   single: b'; bytes literal
+   single: b"; bytes literal
 
 Bytes literals are always prefixed with ``'b'`` or ``'B'``; they produce an
 instance of the :class:`bytes` type instead of the :class:`str` type.  They
 may only contain ASCII characters; bytes with a numeric value of 128 or greater
 must be expressed with escapes.
+
+.. index::
+   single: r'; raw string literal
+   single: r"; raw string literal
 
 Both string and bytes literals may optionally be prefixed with a letter ``'r'``
 or ``'R'``; such strings are called :dfn:`raw strings` and treat backslashes as
@@ -462,6 +515,10 @@ is not supported.
    to simplify the maintenance of dual Python 2.x and 3.x codebases.
    See :pep:`414` for more information.
 
+.. index::
+   single: f'; formatted string literal
+   single: f"; formatted string literal
+
 A string literal with ``'f'`` or ``'F'`` in its prefix is a
 :dfn:`formatted string literal`; see :ref:`f-strings`.  The ``'f'`` may be
 combined with ``'r'``, but not with ``'b'`` or ``'u'``, therefore raw
@@ -472,6 +529,21 @@ retained), except that three unescaped quotes in a row terminate the literal.  (
 "quote" is the character used to open the literal, i.e. either ``'`` or ``"``.)
 
 .. index:: physical line, escape sequence, Standard C, C
+   single: \ (backslash); escape sequence
+   single: \\; escape sequence
+   single: \a; escape sequence
+   single: \b; escape sequence
+   single: \f; escape sequence
+   single: \n; escape sequence
+   single: \r; escape sequence
+   single: \t; escape sequence
+   single: \v; escape sequence
+   single: \x; escape sequence
+   single: \N; escape sequence
+   single: \u; escape sequence
+   single: \U; escape sequence
+
+.. _escape-sequences:
 
 Unless an ``'r'`` or ``'R'`` prefix is present, escape sequences in string and
 bytes literals are interpreted according to rules similar to those used by
@@ -528,6 +600,11 @@ Notes:
 (1)
    As in Standard C, up to three octal digits are accepted.
 
+   .. versionchanged:: 3.11
+      Octal escapes with value larger than ``0o377`` produce a :exc:`DeprecationWarning`.
+      In a future Python version they will be a :exc:`SyntaxWarning` and
+      eventually a :exc:`SyntaxError`.
+
 (2)
    Unlike in Standard C, exactly two hex digits are required.
 
@@ -558,8 +635,9 @@ escape sequences only recognized in string literals fall into the category of
 unrecognized escapes for bytes literals.
 
    .. versionchanged:: 3.6
-      Unrecognized escape sequences produce a DeprecationWarning.  In
-      some future version of Python they will be a SyntaxError.
+      Unrecognized escape sequences produce a :exc:`DeprecationWarning`.  In
+      a future Python version they will be a :exc:`SyntaxWarning` and
+      eventually a :exc:`SyntaxError`.
 
 Even in a raw literal, quotes can be escaped with a backslash, but the
 backslash remains in the result; for example, ``r"\""`` is a valid string
@@ -600,6 +678,11 @@ and formatted string literals may be concatenated with plain string literals.
    single: string; formatted literal
    single: string; interpolated literal
    single: f-string
+   single: fstring
+   single: {} (curly brackets); in formatted string literal
+   single: ! (exclamation); in formatted string literal
+   single: : (colon); in formatted string literal
+   single: = (equals); for help in debugging using string literals
 .. _f-strings:
 
 Formatted string literals
@@ -617,9 +700,9 @@ Escape sequences are decoded like in ordinary string literals (except when
 a literal is also marked as a raw string).  After decoding, the grammar
 for the contents of the string is:
 
-.. productionlist::
+.. productionlist:: python-grammar
    f_string: (`literal_char` | "{{" | "}}" | `replacement_field`)*
-   replacement_field: "{" `f_expression` ["!" `conversion`] [":" `format_spec`] "}"
+   replacement_field: "{" `f_expression` ["="] ["!" `conversion`] [":" `format_spec`] "}"
    f_expression: (`conditional_expression` | "*" `or_expr`)
                :   ("," `conditional_expression` | "," "*" `or_expr`)* [","]
                : | `yield_expression`
@@ -631,18 +714,36 @@ The parts of the string outside curly braces are treated literally,
 except that any doubled curly braces ``'{{'`` or ``'}}'`` are replaced
 with the corresponding single curly brace.  A single opening curly
 bracket ``'{'`` marks a replacement field, which starts with a
-Python expression.  After the expression, there may be a conversion field,
-introduced by an exclamation point ``'!'``.  A format specifier may also
-be appended, introduced by a colon ``':'``.  A replacement field ends
-with a closing curly bracket ``'}'``.
+Python expression. To display both the expression text and its value after
+evaluation, (useful in debugging), an equal sign ``'='`` may be added after the
+expression. A conversion field, introduced by an exclamation point ``'!'`` may
+follow.  A format specifier may also be appended, introduced by a colon ``':'``.
+A replacement field ends with a closing curly bracket ``'}'``.
 
 Expressions in formatted string literals are treated like regular
 Python expressions surrounded by parentheses, with a few exceptions.
-An empty expression is not allowed, and a :keyword:`lambda` expression
-must be surrounded by explicit parentheses.  Replacement expressions
-can contain line breaks (e.g. in triple-quoted strings), but they
-cannot contain comments.  Each expression is evaluated in the context
-where the formatted string literal appears, in order from left to right.
+An empty expression is not allowed, and both :keyword:`lambda`  and
+assignment expressions ``:=`` must be surrounded by explicit parentheses.
+Replacement expressions can contain line breaks (e.g. in triple-quoted
+strings), but they cannot contain comments.  Each expression is evaluated
+in the context where the formatted string literal appears, in order from
+left to right.
+
+.. versionchanged:: 3.7
+   Prior to Python 3.7, an :keyword:`await` expression and comprehensions
+   containing an :keyword:`async for` clause were illegal in the expressions
+   in formatted string literals due to a problem with the implementation.
+
+When the equal sign ``'='`` is provided, the output will have the expression
+text, the ``'='`` and the evaluated value. Spaces after the opening brace
+``'{'``, within the expression and after the ``'='`` are all retained in the
+output. By default, the ``'='`` causes the :func:`repr` of the expression to be
+provided, unless there is a format specified. When a format is specified it
+defaults to the :func:`str` of the expression unless a conversion ``'!r'`` is
+declared.
+
+.. versionadded:: 3.8
+   The equal sign ``'='``.
 
 If a conversion is specified, the result of evaluating the expression
 is converted before formatting.  Conversion ``'!s'`` calls :func:`str` on
@@ -656,9 +757,9 @@ the final value of the whole string.
 
 Top-level format specifiers may include nested replacement fields. These nested
 fields may include their own conversion fields and :ref:`format specifiers
-<formatspec>`, but may not include more deeply-nested replacement fields. The
+<formatspec>`, but may not include more deeply nested replacement fields. The
 :ref:`format specifier mini-language <formatspec>` is the same as that used by
-the string .format() method.
+the :meth:`str.format` method.
 
 Formatted string literals may be concatenated, but replacement fields
 cannot be split across literals.
@@ -678,9 +779,22 @@ Some examples of formatted string literals::
    >>> today = datetime(year=2017, month=1, day=27)
    >>> f"{today:%B %d, %Y}"  # using date format specifier
    'January 27, 2017'
+   >>> f"{today=:%B %d, %Y}" # using date format specifier and debugging
+   'today=January 27, 2017'
    >>> number = 1024
    >>> f"{number:#0x}"  # using integer format specifier
    '0x400'
+   >>> foo = "bar"
+   >>> f"{ foo = }" # preserves whitespace
+   " foo = 'bar'"
+   >>> line = "The mill's closed"
+   >>> f"{line = }"
+   'line = "The mill\'s closed"'
+   >>> f"{line = :20}"
+   "line = The mill's closed   "
+   >>> f"{line = !r:20}"
+   'line = "The mill\'s closed" '
+
 
 A consequence of sharing the same syntax as regular string literals is
 that characters in the replacement fields must not conflict with the
@@ -734,6 +848,12 @@ actually an expression composed of the unary operator '``-``' and the literal
 ``1``.
 
 
+.. index::
+   single: 0b; integer literal
+   single: 0o; integer literal
+   single: 0x; integer literal
+   single: _ (underscore); in numeric literal
+
 .. _integers:
 
 Integer literals
@@ -741,7 +861,7 @@ Integer literals
 
 Integer literals are described by the following lexical definitions:
 
-.. productionlist::
+.. productionlist:: python-grammar
    integer: `decinteger` | `bininteger` | `octinteger` | `hexinteger`
    decinteger: `nonzerodigit` (["_"] `digit`)* | "0"+ (["_"] "0")*
    bininteger: "0" ("b" | "B") (["_"] `bindigit`)+
@@ -774,6 +894,10 @@ Some examples of integer literals::
    Underscores are now allowed for grouping purposes in literals.
 
 
+.. index::
+   single: . (dot); in numeric literal
+   single: e; in numeric literal
+   single: _ (underscore); in numeric literal
 .. _floating:
 
 Floating point literals
@@ -781,7 +905,7 @@ Floating point literals
 
 Floating point literals are described by the following lexical definitions:
 
-.. productionlist::
+.. productionlist:: python-grammar
    floatnumber: `pointfloat` | `exponentfloat`
    pointfloat: [`digitpart`] `fraction` | `digitpart` "."
    exponentfloat: (`digitpart` | `pointfloat`) `exponent`
@@ -802,6 +926,8 @@ Some examples of floating point literals::
    Underscores are now allowed for grouping purposes in literals.
 
 
+.. index::
+   single: j; in numeric literal
 .. _imaginary:
 
 Imaginary literals
@@ -809,7 +935,7 @@ Imaginary literals
 
 Imaginary literals are described by the following lexical definitions:
 
-.. productionlist::
+.. productionlist:: python-grammar
    imagnumber: (`floatnumber` | `digitpart`) ("j" | "J")
 
 An imaginary literal yields a complex number with a real part of 0.0.  Complex
@@ -834,7 +960,7 @@ The following tokens are operators:
 
 
    +       -       *       **      /       //      %      @
-   <<      >>      &       |       ^       ~
+   <<      >>      &       |       ^       ~       :=
    <       >       <=      >=      ==      !=
 
 
@@ -876,4 +1002,4 @@ occurrence outside string literals and comments is an unconditional error:
 
 .. rubric:: Footnotes
 
-.. [#] http://www.unicode.org/Public/10.0.0/ucd/NameAliases.txt
+.. [#] https://www.unicode.org/Public/11.0.0/ucd/NameAliases.txt

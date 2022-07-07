@@ -101,7 +101,7 @@ PEP 405: Virtual Environments
 
 Virtual environments help create separate Python setups while sharing a
 system-wide base install, for ease of maintenance.  Virtual environments
-have their own set of private site packages (i.e. locally-installed
+have their own set of private site packages (i.e. locally installed
 libraries), and are optionally segregated from the system-wide site
 packages.  Their concept and implementation are inspired by the popular
 ``virtualenv`` third-party package, but benefit from tighter integration
@@ -217,7 +217,7 @@ exist in parallel; over time, this compatibility should be phased out.
 
 On the Python side, there should be no downside to this change.
 
-On the C API side, PEP 393 is fully backward compatible.  The legacy API
+On the C API side, :pep:`393` is fully backward compatible.  The legacy API
 should remain available at least five years.  Applications using the legacy
 API will not fully benefit of the memory reduction, or - worse - may use
 a bit more memory, because Python may have to maintain two versions of each
@@ -303,7 +303,7 @@ The launcher can also be used explicitly from the command line as the ``py``
 application. Running ``py`` follows the same version selection rules as
 implicitly launching scripts, but a more specific version can be selected
 by passing appropriate arguments (such as ``-3`` to request Python 3 when
-Python 2 is also installed, or ``-2.6`` to specifclly request an earlier
+Python 2 is also installed, or ``-2.6`` to specifically request an earlier
 Python version when a more recent version is installed).
 
 In addition to the launcher, the Windows installer now includes an
@@ -898,7 +898,7 @@ an IP address associated with a specific IP subnet).
 lzma
 ----
 
-The newly-added :mod:`lzma` module provides data compression and decompression
+The newly added :mod:`lzma` module provides data compression and decompression
 using the LZMA algorithm, including support for the ``.xz`` and ``.lzma``
 file formats.
 
@@ -1096,7 +1096,7 @@ decimal
    C-module and libmpdec written by Stefan Krah.
 
 The new C version of the decimal module integrates the high speed libmpdec
-library for arbitrary precision correctly-rounded decimal floating point
+library for arbitrary precision correctly rounded decimal floating point
 arithmetic. libmpdec conforms to IBM's General Decimal Arithmetic Specification.
 
 Performance gains range from 10x for database applications to 100x for
@@ -1158,8 +1158,8 @@ API changes
   in order to obtain a rounded or inexact value.
 
 
-* The power function in decimal.py is always correctly-rounded. In the
-  C version, it is defined in terms of the correctly-rounded
+* The power function in decimal.py is always correctly rounded. In the
+  C version, it is defined in terms of the correctly rounded
   :meth:`~decimal.Decimal.exp` and :meth:`~decimal.Decimal.ln` functions,
   but the final result is only "almost always correctly rounded".
 
@@ -1414,7 +1414,7 @@ http
 :class:`http.server.BaseHTTPRequestHandler` now buffers the headers and writes
 them all at once when :meth:`~http.server.BaseHTTPRequestHandler.end_headers` is
 called.  A new method :meth:`~http.server.BaseHTTPRequestHandler.flush_headers`
-can be used to directly manage when the accumlated headers are sent.
+can be used to directly manage when the accumulated headers are sent.
 (Contributed by Andrew Schaaf in :issue:`3709`.)
 
 :class:`http.server` now produces valid ``HTML 4.01 strict`` output.
@@ -2002,8 +2002,8 @@ platform-independent fashion.  (Contributed by Ross Lagerwall in
 sys
 ---
 
-The :mod:`sys` module has a new :data:`~sys.thread_info` :term:`struct
-sequence` holding information about the thread implementation
+The :mod:`sys` module has a new :data:`~sys.thread_info` :term:`named
+tuple` holding information about the thread implementation
 (:issue:`11223`).
 
 
@@ -2082,7 +2082,7 @@ Add a new :class:`types.MappingProxyType` class: Read-only proxy of a mapping.
 
 
 The new functions :func:`types.new_class` and :func:`types.prepare_class` provide support
-for PEP 3115 compliant dynamic type creation. (:issue:`14588`)
+for :pep:`3115` compliant dynamic type creation. (:issue:`14588`)
 
 
 unittest
@@ -2137,7 +2137,7 @@ zlib
 ----
 
 New attribute :attr:`zlib.Decompress.eof` makes it possible to distinguish
-between a properly-formed compressed stream and an incomplete or truncated one.
+between a properly formed compressed stream and an incomplete or truncated one.
 (Contributed by Nadeem Vawda in :issue:`12646`.)
 
 New attribute :attr:`zlib.ZLIB_RUNTIME_VERSION` reports the version string of
@@ -2309,9 +2309,9 @@ Encoders:
   :c:func:`PyUnicode_AsUTF8String`
 * :c:func:`PyUnicode_EncodeUTF32`
 * :c:func:`PyUnicode_EncodeUTF16`
-* :c:func:`PyUnicode_EncodeUnicodeEscape:` use
+* :c:func:`PyUnicode_EncodeUnicodeEscape` use
   :c:func:`PyUnicode_AsUnicodeEscapeString`
-* :c:func:`PyUnicode_EncodeRawUnicodeEscape:` use
+* :c:func:`PyUnicode_EncodeRawUnicodeEscape` use
   :c:func:`PyUnicode_AsRawUnicodeEscapeString`
 * :c:func:`PyUnicode_EncodeLatin1`: use :c:func:`PyUnicode_AsLatin1String`
 * :c:func:`PyUnicode_EncodeASCII`: use :c:func:`PyUnicode_AsASCIIString`
@@ -2386,7 +2386,7 @@ Porting Python code
   finder, you will need to remove keys paired with values of ``None`` **and**
   :class:`imp.NullImporter` to be backwards-compatible. This will lead to extra
   overhead on older versions of Python that re-insert ``None`` into
-  :attr:`sys.path_importer_cache` where it repesents the use of implicit
+  :attr:`sys.path_importer_cache` where it represents the use of implicit
   finders, but semantically it should not change anything.
 
 * :class:`importlib.abc.Finder` no longer specifies a `find_module()` abstract
@@ -2396,7 +2396,7 @@ Porting Python code
   case of working with :term:`path entry finders <path entry finder>`.
 
 * :mod:`pkgutil` has been converted to use :mod:`importlib` internally. This
-  eliminates many edge cases where the old behaviour of the PEP 302 import
+  eliminates many edge cases where the old behaviour of the :pep:`302` import
   emulation failed to match the behaviour of the real import system. The
   import emulation itself is still present, but is now deprecated. The
   :func:`pkgutil.iter_importers` and :func:`pkgutil.walk_packages` functions
@@ -2472,7 +2472,7 @@ Porting C code
   functions using this type are deprecated (but will stay available for
   at least five years).  If you were using low-level Unicode APIs to
   construct and access unicode objects and you want to benefit of the
-  memory footprint reduction provided by PEP 393, you have to convert
+  memory footprint reduction provided by :pep:`393`, you have to convert
   your code to the new :doc:`Unicode API <../c-api/unicode>`.
 
   However, if you only have been using high-level functions such as
@@ -2480,12 +2480,12 @@ Porting C code
   :c:func:`PyUnicode_FromFormat()`, your code will automatically take
   advantage of the new unicode representations.
 
-* :c:func:`PyImport_GetMagicNumber` now returns -1 upon failure.
+* :c:func:`PyImport_GetMagicNumber` now returns ``-1`` upon failure.
 
 * As a negative value for the *level* argument to :func:`__import__` is no
   longer valid, the same now holds for :c:func:`PyImport_ImportModuleLevel`.
   This also means that the value of *level* used by
-  :c:func:`PyImport_ImportModuleEx` is now 0 instead of -1.
+  :c:func:`PyImport_ImportModuleEx` is now ``0`` instead of ``-1``.
 
 
 Building C extensions

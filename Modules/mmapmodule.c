@@ -18,9 +18,16 @@
  / ftp://squirl.nightmare.com/pub/python/python-ext.
 */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
-#include "structmember.h"
+#include "pycore_bytesobject.h"   // _PyBytes_Find()
+#include "pycore_fileutils.h"     // _Py_stat_struct
+#include "structmember.h"         // PyMemberDef
+#include <stddef.h>               // offsetof()
 
 #ifndef MS_WINDOWS
 #define UNIX
@@ -97,7 +104,7 @@ typedef struct {
 #else
     off_t       offset;
 #endif
-    int     exports;
+    Py_ssize_t  exports;
 
 #ifdef MS_WINDOWS
     HANDLE      map_handle;
@@ -113,32 +120,47 @@ typedef struct {
     access_mode access;
 } mmap_object;
 
+static int
+mmap_object_traverse(mmap_object *m_obj, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(m_obj));
+    return 0;
+}
 
 static void
 mmap_object_dealloc(mmap_object *m_obj)
 {
+    PyTypeObject *tp = Py_TYPE(m_obj);
+    PyObject_GC_UnTrack(m_obj);
+
 #ifdef MS_WINDOWS
+    Py_BEGIN_ALLOW_THREADS
     if (m_obj->data != NULL)
         UnmapViewOfFile (m_obj->data);
     if (m_obj->map_handle != NULL)
         CloseHandle (m_obj->map_handle);
     if (m_obj->file_handle != INVALID_HANDLE_VALUE)
         CloseHandle (m_obj->file_handle);
+    Py_END_ALLOW_THREADS
     if (m_obj->tagname)
         PyMem_Free(m_obj->tagname);
 #endif /* MS_WINDOWS */
 
 #ifdef UNIX
+    Py_BEGIN_ALLOW_THREADS
     if (m_obj->fd >= 0)
         (void) close(m_obj->fd);
     if (m_obj->data!=NULL) {
         munmap(m_obj->data, m_obj->size);
     }
+    Py_END_ALLOW_THREADS
 #endif /* UNIX */
 
     if (m_obj->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) m_obj);
-    Py_TYPE(m_obj)->tp_free((PyObject*)m_obj);
+
+    tp->tp_free(m_obj);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -157,28 +179,37 @@ mmap_close_method(mmap_object *self, PyObject *unused)
        again.
        TODO - should we check for errors in the close operations???
     */
-    if (self->data != NULL) {
-        UnmapViewOfFile(self->data);
-        self->data = NULL;
+    HANDLE map_handle = self->map_handle;
+    HANDLE file_handle = self->file_handle;
+    char *data = self->data;
+    self->map_handle = NULL;
+    self->file_handle = INVALID_HANDLE_VALUE;
+    self->data = NULL;
+    Py_BEGIN_ALLOW_THREADS
+    if (data != NULL) {
+        UnmapViewOfFile(data);
     }
-    if (self->map_handle != NULL) {
-        CloseHandle(self->map_handle);
-        self->map_handle = NULL;
+    if (map_handle != NULL) {
+        CloseHandle(map_handle);
     }
-    if (self->file_handle != INVALID_HANDLE_VALUE) {
-        CloseHandle(self->file_handle);
-        self->file_handle = INVALID_HANDLE_VALUE;
+    if (file_handle != INVALID_HANDLE_VALUE) {
+        CloseHandle(file_handle);
     }
+    Py_END_ALLOW_THREADS
 #endif /* MS_WINDOWS */
 
 #ifdef UNIX
-    if (0 <= self->fd)
-        (void) close(self->fd);
+    int fd = self->fd;
+    char *data = self->data;
     self->fd = -1;
-    if (self->data != NULL) {
-        munmap(self->data, self->size);
-        self->data = NULL;
+    self->data = NULL;
+    Py_BEGIN_ALLOW_THREADS
+    if (0 <= fd)
+        (void) close(fd);
+    if (data != NULL) {
+        munmap(data, self->size);
     }
+    Py_END_ALLOW_THREADS
 #endif
 
     Py_RETURN_NONE;
@@ -273,12 +304,8 @@ mmap_gfind(mmap_object *self,
     if (!PyArg_ParseTuple(args, reverse ? "y*|nn:rfind" : "y*|nn:find",
                           &view, &start, &end)) {
         return NULL;
-    } else {
-        const char *p, *start_p, *end_p;
-        int sign = reverse ? -1 : 1;
-        const char *needle = view.buf;
-        Py_ssize_t len = view.len;
-
+    }
+    else {
         if (start < 0)
             start += self->size;
         if (start < 0)
@@ -293,21 +320,19 @@ mmap_gfind(mmap_object *self,
         else if (end > self->size)
             end = self->size;
 
-        start_p = self->data + start;
-        end_p = self->data + end;
-
-        for (p = (reverse ? end_p - len : start_p);
-             (p >= start_p) && (p + len <= end_p); p += sign) {
-            Py_ssize_t i;
-            for (i = 0; i < len && needle[i] == p[i]; ++i)
-                /* nothing */;
-            if (i == len) {
-                PyBuffer_Release(&view);
-                return PyLong_FromSsize_t(p - self->data);
-            }
+        Py_ssize_t res;
+        if (reverse) {
+            res = _PyBytes_ReverseFind(
+                self->data + start, end - start,
+                view.buf, view.len, start);
+        }
+        else {
+            res = _PyBytes_Find(
+                self->data + start, end - start,
+                view.buf, view.len, start);
         }
         PyBuffer_Release(&view);
-        return PyLong_FromLong(-1);
+        return PyLong_FromSsize_t(res);
     }
 }
 
@@ -339,14 +364,15 @@ is_resizeable(mmap_object *self)
 {
     if (self->exports > 0) {
         PyErr_SetString(PyExc_BufferError,
-                        "mmap can't resize with extant buffers exported.");
+            "mmap can't resize with extant buffers exported.");
         return 0;
     }
     if ((self->access == ACCESS_WRITE) || (self->access == ACCESS_DEFAULT))
         return 1;
     PyErr_Format(PyExc_TypeError,
-                 "mmap can't resize a readonly or copy-on-write memory map.");
+        "mmap can't resize a readonly or copy-on-write memory map.");
     return 0;
+
 }
 
 
@@ -467,50 +493,100 @@ mmap_resize_method(mmap_object *self,
 
     {
 #ifdef MS_WINDOWS
-        DWORD dwErrCode = 0;
-        DWORD off_hi, off_lo, newSizeLow, newSizeHigh;
-        /* First, unmap the file view */
-        UnmapViewOfFile(self->data);
-        self->data = NULL;
-        /* Close the mapping object */
+        DWORD error = 0, file_resize_error = 0;
+        char* old_data = self->data;
+        LARGE_INTEGER offset, max_size;
+        offset.QuadPart = self->offset;
+        max_size.QuadPart = self->offset + new_size;
+        /* close the file mapping */
         CloseHandle(self->map_handle);
-        self->map_handle = NULL;
-        /* Move to the desired EOF position */
-        newSizeHigh = (DWORD)((self->offset + new_size) >> 32);
-        newSizeLow = (DWORD)((self->offset + new_size) & 0xFFFFFFFF);
-        off_hi = (DWORD)(self->offset >> 32);
-        off_lo = (DWORD)(self->offset & 0xFFFFFFFF);
-        SetFilePointer(self->file_handle,
-                       newSizeLow, &newSizeHigh, FILE_BEGIN);
-        /* Change the size of the file */
-        SetEndOfFile(self->file_handle);
-        /* Create another mapping object and remap the file view */
+        /* if the file mapping still exists, it cannot be resized. */
+        if (self->tagname) {
+            self->map_handle = OpenFileMapping(FILE_MAP_WRITE, FALSE,
+                                    self->tagname);
+            if (self->map_handle) {
+                PyErr_SetFromWindowsErr(ERROR_USER_MAPPED_FILE);
+                return NULL;
+            }
+        } else {
+            self->map_handle = NULL;
+        }
+
+        /* if it's not the paging file, unmap the view and resize the file */
+        if (self->file_handle != INVALID_HANDLE_VALUE) {
+            if (!UnmapViewOfFile(self->data)) {
+                return PyErr_SetFromWindowsErr(GetLastError());
+            };
+            self->data = NULL;
+            /* resize the file */
+            if (!SetFilePointerEx(self->file_handle, max_size, NULL,
+                FILE_BEGIN) ||
+                !SetEndOfFile(self->file_handle)) {
+                /* resizing failed. try to remap the file */
+                file_resize_error = GetLastError();
+                max_size.QuadPart = self->size;
+                new_size = self->size;
+            }
+        }
+
+        /* create a new file mapping and map a new view */
+        /* FIXME: call CreateFileMappingW with wchar_t tagname */
         self->map_handle = CreateFileMapping(
             self->file_handle,
             NULL,
             PAGE_READWRITE,
-            0,
-            0,
+            max_size.HighPart,
+            max_size.LowPart,
             self->tagname);
-        if (self->map_handle != NULL) {
-            self->data = (char *) MapViewOfFile(self->map_handle,
-                                                FILE_MAP_WRITE,
-                                                off_hi,
-                                                off_lo,
-                                                new_size);
+
+        error = GetLastError();
+        /* ERROR_ALREADY_EXISTS implies that between our closing the handle above and
+        calling CreateFileMapping here, someone's created a different mapping with
+        the same name. There's nothing we can usefully do so we invalidate our
+        mapping and error out.
+        */
+        if (error == ERROR_ALREADY_EXISTS) {
+            CloseHandle(self->map_handle);
+            self->map_handle = NULL;
+        }
+        else if (self->map_handle != NULL) {
+            self->data = MapViewOfFile(self->map_handle,
+                FILE_MAP_WRITE,
+                offset.HighPart,
+                offset.LowPart,
+                new_size);
             if (self->data != NULL) {
+                /* copy the old view if using the paging file */
+                if (self->file_handle == INVALID_HANDLE_VALUE) {
+                    memcpy(self->data, old_data,
+                           self->size < new_size ? self->size : new_size);
+                    if (!UnmapViewOfFile(old_data)) {
+                        error = GetLastError();
+                    }
+                }
                 self->size = new_size;
-                Py_RETURN_NONE;
-            } else {
-                dwErrCode = GetLastError();
+            }
+            else {
+                error = GetLastError();
                 CloseHandle(self->map_handle);
                 self->map_handle = NULL;
             }
-        } else {
-            dwErrCode = GetLastError();
         }
-        PyErr_SetFromWindowsErr(dwErrCode);
-        return NULL;
+
+        if (error) {
+            return PyErr_SetFromWindowsErr(error);
+            return NULL;
+        }
+        /* It's possible for a resize to fail, typically because another mapping
+        is still held against the same underlying file. Even if nothing has
+        failed -- ie we're still returning a valid file mapping -- raise the
+        error as an exception as the resize won't have happened
+        */
+        if (file_resize_error) {
+            PyErr_SetFromWindowsErr(file_resize_error);
+            return NULL;
+        }
+        Py_RETURN_NONE;
 #endif /* MS_WINDOWS */
 
 #ifdef UNIX
@@ -569,18 +645,21 @@ mmap_flush_method(mmap_object *self, PyObject *args)
     }
 
     if (self->access == ACCESS_READ || self->access == ACCESS_COPY)
-        return PyLong_FromLong(0);
+        Py_RETURN_NONE;
 
 #ifdef MS_WINDOWS
-    return PyLong_FromLong((long) FlushViewOfFile(self->data+offset, size));
+    if (!FlushViewOfFile(self->data+offset, size)) {
+        PyErr_SetFromWindowsErr(GetLastError());
+        return NULL;
+    }
+    Py_RETURN_NONE;
 #elif defined(UNIX)
-    /* XXX semantics of return value? */
     /* XXX flags for msync? */
     if (-1 == msync(self->data + offset, size, MS_SYNC)) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
-    return PyLong_FromLong(0);
+    Py_RETURN_NONE;
 #else
     PyErr_SetString(PyExc_ValueError, "flush not supported on this system");
     return NULL;
@@ -653,7 +732,7 @@ mmap_move_method(mmap_object *self, PyObject *args)
 }
 
 static PyObject *
-mmap_closed_get(mmap_object *self)
+mmap_closed_get(mmap_object *self, void *Py_UNUSED(ignored))
 {
 #ifdef MS_WINDOWS
     return PyBool_FromLong(self->map_handle == NULL ? 1 : 0);
@@ -674,9 +753,52 @@ mmap__enter__method(mmap_object *self, PyObject *args)
 static PyObject *
 mmap__exit__method(PyObject *self, PyObject *args)
 {
-    _Py_IDENTIFIER(close);
+    return mmap_close_method((mmap_object *)self, NULL);
+}
 
-    return _PyObject_CallMethodId(self, &PyId_close, NULL);
+static PyObject *
+mmap__repr__method(PyObject *self)
+{
+    mmap_object *mobj = (mmap_object *)self;
+
+#ifdef MS_WINDOWS
+#define _Py_FORMAT_OFFSET "lld"
+    if (mobj->map_handle == NULL)
+#elif defined(UNIX)
+# ifdef HAVE_LARGEFILE_SUPPORT
+# define _Py_FORMAT_OFFSET "lld"
+# else
+# define _Py_FORMAT_OFFSET "ld"
+# endif
+    if (mobj->data == NULL)
+#endif
+    {
+        return PyUnicode_FromFormat("<%s closed=True>", Py_TYPE(self)->tp_name);
+    } else {
+        const char *access_str;
+
+        switch (mobj->access) {
+            case ACCESS_DEFAULT:
+                access_str = "ACCESS_DEFAULT";
+                break;
+            case ACCESS_READ:
+                access_str = "ACCESS_READ";
+                break;
+            case ACCESS_WRITE:
+                access_str = "ACCESS_WRITE";
+                break;
+            case ACCESS_COPY:
+                access_str = "ACCESS_COPY";
+                break;
+            default:
+                Py_UNREACHABLE();
+        }
+
+        return PyUnicode_FromFormat("<%s closed=False, access=%s, length=%zd, "
+                                    "pos=%zd, offset=%" _Py_FORMAT_OFFSET ">",
+                                    Py_TYPE(self)->tp_name, access_str,
+                                    mobj->size, mobj->pos, mobj->offset);
+    }
 }
 
 #ifdef MS_WINDOWS
@@ -692,11 +814,59 @@ mmap__sizeof__method(mmap_object *self, void *unused)
 }
 #endif
 
+#ifdef HAVE_MADVISE
+static PyObject *
+mmap_madvise_method(mmap_object *self, PyObject *args)
+{
+    int option;
+    Py_ssize_t start = 0, length;
+
+    CHECK_VALID(NULL);
+    length = self->size;
+
+    if (!PyArg_ParseTuple(args, "i|nn:madvise", &option, &start, &length)) {
+        return NULL;
+    }
+
+    if (start < 0 || start >= self->size) {
+        PyErr_SetString(PyExc_ValueError, "madvise start out of bounds");
+        return NULL;
+    }
+    if (length < 0) {
+        PyErr_SetString(PyExc_ValueError, "madvise length invalid");
+        return NULL;
+    }
+    if (PY_SSIZE_T_MAX - start < length) {
+        PyErr_SetString(PyExc_OverflowError, "madvise length too large");
+        return NULL;
+    }
+
+    if (start + length > self->size) {
+        length = self->size - start;
+    }
+
+    if (madvise(self->data + start, length, option) != 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+#endif // HAVE_MADVISE
+
+static struct PyMemberDef mmap_object_members[] = {
+    {"__weaklistoffset__", T_PYSSIZET, offsetof(mmap_object, weakreflist), READONLY},
+    {NULL},
+};
+
 static struct PyMethodDef mmap_object_methods[] = {
     {"close",           (PyCFunction) mmap_close_method,        METH_NOARGS},
     {"find",            (PyCFunction) mmap_find_method,         METH_VARARGS},
     {"rfind",           (PyCFunction) mmap_rfind_method,        METH_VARARGS},
     {"flush",           (PyCFunction) mmap_flush_method,        METH_VARARGS},
+#ifdef HAVE_MADVISE
+    {"madvise",         (PyCFunction) mmap_madvise_method,      METH_VARARGS},
+#endif
     {"move",            (PyCFunction) mmap_move_method,         METH_VARARGS},
     {"read",            (PyCFunction) mmap_read_method,         METH_VARARGS},
     {"read_byte",       (PyCFunction) mmap_read_byte_method,    METH_NOARGS},
@@ -790,7 +960,8 @@ mmap_subscript(mmap_object *self, PyObject *item)
                                               slicelen);
         else {
             char *result_buf = (char *)PyMem_Malloc(slicelen);
-            Py_ssize_t cur, i;
+            size_t cur;
+            Py_ssize_t i;
             PyObject *result;
 
             if (result_buf == NULL)
@@ -810,24 +981,6 @@ mmap_subscript(mmap_object *self, PyObject *item)
                         "mmap indices must be integers");
         return NULL;
     }
-}
-
-static PyObject *
-mmap_concat(mmap_object *self, PyObject *bb)
-{
-    CHECK_VALID(NULL);
-    PyErr_SetString(PyExc_SystemError,
-                    "mmaps don't support concatenation");
-    return NULL;
-}
-
-static PyObject *
-mmap_repeat(mmap_object *self, Py_ssize_t n)
-{
-    CHECK_VALID(NULL);
-    PyErr_SetString(PyExc_SystemError,
-                    "mmaps don't support repeat operation");
-    return NULL;
 }
 
 static int
@@ -928,7 +1081,8 @@ mmap_ass_subscript(mmap_object *self, PyObject *item, PyObject *value)
             memcpy(self->data + start, vbuf.buf, slicelen);
         }
         else {
-            Py_ssize_t cur, i;
+            size_t cur;
+            Py_ssize_t i;
 
             for (cur = start, i = 0;
                  i < slicelen;
@@ -946,27 +1100,6 @@ mmap_ass_subscript(mmap_object *self, PyObject *item, PyObject *value)
         return -1;
     }
 }
-
-static PySequenceMethods mmap_as_sequence = {
-    (lenfunc)mmap_length,            /*sq_length*/
-    (binaryfunc)mmap_concat,         /*sq_concat*/
-    (ssizeargfunc)mmap_repeat,       /*sq_repeat*/
-    (ssizeargfunc)mmap_item,         /*sq_item*/
-    0,                               /*sq_slice*/
-    (ssizeobjargproc)mmap_ass_item,  /*sq_ass_item*/
-    0,                               /*sq_ass_slice*/
-};
-
-static PyMappingMethods mmap_as_mapping = {
-    (lenfunc)mmap_length,
-    (binaryfunc)mmap_subscript,
-    (objobjargproc)mmap_ass_subscript,
-};
-
-static PyBufferProcs mmap_as_buffer = {
-    (getbufferproc)mmap_buffer_getbuf,
-    (releasebufferproc)mmap_buffer_releasebuf,
-};
 
 static PyObject *
 new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict);
@@ -995,47 +1128,39 @@ The default value is MAP_SHARED.\n\
 To map anonymous memory, pass -1 as the fileno (both versions).");
 
 
-static PyTypeObject mmap_object_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "mmap.mmap",                                /* tp_name */
-    sizeof(mmap_object),                        /* tp_size */
-    0,                                          /* tp_itemsize */
-    /* methods */
-    (destructor) mmap_object_dealloc,           /* tp_dealloc */
-    0,                                          /* tp_print */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    &mmap_as_sequence,                          /*tp_as_sequence*/
-    &mmap_as_mapping,                           /*tp_as_mapping*/
-    0,                                          /*tp_hash*/
-    0,                                          /*tp_call*/
-    0,                                          /*tp_str*/
-    PyObject_GenericGetAttr,                    /*tp_getattro*/
-    0,                                          /*tp_setattro*/
-    &mmap_as_buffer,                            /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /*tp_flags*/
-    mmap_doc,                                   /*tp_doc*/
-    0,                                          /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    offsetof(mmap_object, weakreflist),         /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    mmap_object_methods,                        /* tp_methods */
-    0,                                          /* tp_members */
-    mmap_object_getset,                         /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    PyType_GenericAlloc,                        /* tp_alloc */
-    new_mmap_object,                            /* tp_new */
-    PyObject_Del,                               /* tp_free */
+static PyType_Slot mmap_object_slots[] = {
+    {Py_tp_new, new_mmap_object},
+    {Py_tp_dealloc, mmap_object_dealloc},
+    {Py_tp_repr, mmap__repr__method},
+    {Py_tp_doc, (void *)mmap_doc},
+    {Py_tp_methods, mmap_object_methods},
+    {Py_tp_members, mmap_object_members},
+    {Py_tp_getset, mmap_object_getset},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_traverse, mmap_object_traverse},
+
+    /* as sequence */
+    {Py_sq_length, mmap_length},
+    {Py_sq_item, mmap_item},
+    {Py_sq_ass_item, mmap_ass_item},
+
+    /* as mapping */
+    {Py_mp_length, mmap_length},
+    {Py_mp_subscript, mmap_subscript},
+    {Py_mp_ass_subscript, mmap_ass_subscript},
+
+    /* as buffer */
+    {Py_bf_getbuffer, mmap_buffer_getbuf},
+    {Py_bf_releasebuffer, mmap_buffer_releasebuf},
+    {0, NULL},
+};
+
+static PyType_Spec mmap_object_spec = {
+    .name = "mmap.mmap",
+    .basicsize = sizeof(mmap_object),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = mmap_object_slots,
 };
 
 
@@ -1050,6 +1175,7 @@ static PyObject *
 new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 {
     struct _Py_stat_struct status;
+    int fstat_result = -1;
     mmap_object *m_obj;
     Py_ssize_t map_size;
     off_t offset = 0;
@@ -1066,7 +1192,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
         return NULL;
     if (map_size < 0) {
         PyErr_SetString(PyExc_OverflowError,
-                        "memory mapped length must be postiive");
+                        "memory mapped length must be positive");
         return NULL;
     }
     if (offset < 0) {
@@ -1109,14 +1235,25 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
                             "mmap invalid access parameter.");
     }
 
+    if (PySys_Audit("mmap.__new__", "ini" _Py_PARSE_OFF_T,
+                    fd, map_size, access, offset) < 0) {
+        return NULL;
+    }
+
 #ifdef __APPLE__
     /* Issue #11277: fsync(2) is not enough on OS X - a special, OS X specific
        fcntl(2) is necessary to force DISKSYNC and get around mmap(2) bug */
     if (fd != -1)
         (void)fcntl(fd, F_FULLFSYNC);
 #endif
-    if (fd != -1 && _Py_fstat_noraise(fd, &status) == 0
-        && S_ISREG(status.st_mode)) {
+
+    if (fd != -1) {
+        Py_BEGIN_ALLOW_THREADS
+        fstat_result = _Py_fstat_noraise(fd, &status);
+        Py_END_ALLOW_THREADS
+    }
+
+    if (fd != -1 && fstat_result == 0 && S_ISREG(status.st_mode)) {
         if (map_size == 0) {
             if (status.st_size == 0) {
                 PyErr_SetString(PyExc_ValueError,
@@ -1157,6 +1294,13 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 #ifdef MAP_ANONYMOUS
         /* BSD way to map anonymous memory */
         flags |= MAP_ANONYMOUS;
+
+        /* VxWorks only supports MAP_ANONYMOUS with MAP_PRIVATE flag */
+#ifdef __VXWORKS__
+        flags &= ~MAP_SHARED;
+        flags |= MAP_PRIVATE;
+#endif
+
 #else
         /* SVR4 method to map anonymous memory is to open /dev/zero */
         fd = devzero = _Py_open("/dev/zero", O_RDWR);
@@ -1226,6 +1370,11 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
         return NULL;
     }
 
+    if (PySys_Audit("mmap.__new__", "iniL",
+                    fileno, map_size, access, offset) < 0) {
+        return NULL;
+    }
+
     switch((access_mode)access) {
     case ACCESS_READ:
         flProtect = PAGE_READONLY;
@@ -1246,7 +1395,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 
     if (map_size < 0) {
         PyErr_SetString(PyExc_OverflowError,
-                        "memory mapped length must be postiive");
+                        "memory mapped length must be positive");
         return NULL;
     }
     if (offset < 0) {
@@ -1266,13 +1415,10 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
      */
     if (fileno != -1 && fileno != 0) {
         /* Ensure that fileno is within the CRT's valid range */
-        _Py_BEGIN_SUPPRESS_IPH
-        fh = (HANDLE)_get_osfhandle(fileno);
-        _Py_END_SUPPRESS_IPH
-        if (fh==(HANDLE)-1) {
-            PyErr_SetFromErrno(PyExc_OSError);
+        fh = _Py_get_osfhandle(fileno);
+        if (fh == INVALID_HANDLE_VALUE)
             return NULL;
-        }
+
         /* Win9x appears to need us seeked to zero */
         lseek(fileno, 0, SEEK_SET);
     }
@@ -1397,78 +1543,180 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 }
 #endif /* MS_WINDOWS */
 
-static void
-setint(PyObject *d, const char *name, long value)
+static int
+mmap_exec(PyObject *module)
 {
-    PyObject *o = PyLong_FromLong(value);
-    if (o && PyDict_SetItemString(d, name, o) == 0) {
-        Py_DECREF(o);
+    Py_INCREF(PyExc_OSError);
+    if (PyModule_AddObject(module, "error", PyExc_OSError) < 0) {
+        Py_DECREF(PyExc_OSError);
+        return -1;
     }
+
+    PyObject *mmap_object_type = PyType_FromModuleAndSpec(module,
+                                                  &mmap_object_spec, NULL);
+    if (mmap_object_type == NULL) {
+        return -1;
+    }
+    int rc = PyModule_AddType(module, (PyTypeObject *)mmap_object_type);
+    Py_DECREF(mmap_object_type);
+    if (rc < 0) {
+        return -1;
+    }
+
+#define ADD_INT_MACRO(module, constant)                                     \
+    do {                                                                    \
+        if (PyModule_AddIntConstant(module, #constant, constant) < 0) {     \
+            return -1;                                                      \
+        }                                                                   \
+    } while (0)
+
+#ifdef PROT_EXEC
+    ADD_INT_MACRO(module, PROT_EXEC);
+#endif
+#ifdef PROT_READ
+    ADD_INT_MACRO(module, PROT_READ);
+#endif
+#ifdef PROT_WRITE
+    ADD_INT_MACRO(module, PROT_WRITE);
+#endif
+
+#ifdef MAP_SHARED
+    ADD_INT_MACRO(module, MAP_SHARED);
+#endif
+#ifdef MAP_PRIVATE
+    ADD_INT_MACRO(module, MAP_PRIVATE);
+#endif
+#ifdef MAP_DENYWRITE
+    ADD_INT_MACRO(module, MAP_DENYWRITE);
+#endif
+#ifdef MAP_EXECUTABLE
+    ADD_INT_MACRO(module, MAP_EXECUTABLE);
+#endif
+#ifdef MAP_ANONYMOUS
+    if (PyModule_AddIntConstant(module, "MAP_ANON", MAP_ANONYMOUS) < 0 ) {
+        return -1;
+    }
+    ADD_INT_MACRO(module, MAP_ANONYMOUS);
+#endif
+#ifdef MAP_POPULATE
+    ADD_INT_MACRO(module, MAP_POPULATE);
+#endif
+#ifdef MAP_STACK
+    // Mostly a no-op on Linux and NetBSD, but useful on OpenBSD
+    // for stack usage (even on x86 arch)
+    ADD_INT_MACRO(module, MAP_STACK);
+#endif
+    if (PyModule_AddIntConstant(module, "PAGESIZE", (long)my_getpagesize()) < 0 ) {
+        return -1;
+    }
+
+    if (PyModule_AddIntConstant(module, "ALLOCATIONGRANULARITY", (long)my_getallocationgranularity()) < 0 ) {
+        return -1;
+    }
+
+    ADD_INT_MACRO(module, ACCESS_DEFAULT);
+    ADD_INT_MACRO(module, ACCESS_READ);
+    ADD_INT_MACRO(module, ACCESS_WRITE);
+    ADD_INT_MACRO(module, ACCESS_COPY);
+
+#ifdef HAVE_MADVISE
+    // Conventional advice values
+#ifdef MADV_NORMAL
+    ADD_INT_MACRO(module, MADV_NORMAL);
+#endif
+#ifdef MADV_RANDOM
+    ADD_INT_MACRO(module, MADV_RANDOM);
+#endif
+#ifdef MADV_SEQUENTIAL
+    ADD_INT_MACRO(module, MADV_SEQUENTIAL);
+#endif
+#ifdef MADV_WILLNEED
+    ADD_INT_MACRO(module, MADV_WILLNEED);
+#endif
+#ifdef MADV_DONTNEED
+    ADD_INT_MACRO(module, MADV_DONTNEED);
+#endif
+
+    // Linux-specific advice values
+#ifdef MADV_REMOVE
+    ADD_INT_MACRO(module, MADV_REMOVE);
+#endif
+#ifdef MADV_DONTFORK
+    ADD_INT_MACRO(module, MADV_DONTFORK);
+#endif
+#ifdef MADV_DOFORK
+    ADD_INT_MACRO(module, MADV_DOFORK);
+#endif
+#ifdef MADV_HWPOISON
+    ADD_INT_MACRO(module, MADV_HWPOISON);
+#endif
+#ifdef MADV_MERGEABLE
+    ADD_INT_MACRO(module, MADV_MERGEABLE);
+#endif
+#ifdef MADV_UNMERGEABLE
+    ADD_INT_MACRO(module, MADV_UNMERGEABLE);
+#endif
+#ifdef MADV_SOFT_OFFLINE
+    ADD_INT_MACRO(module, MADV_SOFT_OFFLINE);
+#endif
+#ifdef MADV_HUGEPAGE
+    ADD_INT_MACRO(module, MADV_HUGEPAGE);
+#endif
+#ifdef MADV_NOHUGEPAGE
+    ADD_INT_MACRO(module, MADV_NOHUGEPAGE);
+#endif
+#ifdef MADV_DONTDUMP
+    ADD_INT_MACRO(module, MADV_DONTDUMP);
+#endif
+#ifdef MADV_DODUMP
+    ADD_INT_MACRO(module, MADV_DODUMP);
+#endif
+#ifdef MADV_FREE // (Also present on FreeBSD and macOS.)
+    ADD_INT_MACRO(module, MADV_FREE);
+#endif
+
+    // FreeBSD-specific
+#ifdef MADV_NOSYNC
+    ADD_INT_MACRO(module, MADV_NOSYNC);
+#endif
+#ifdef MADV_AUTOSYNC
+    ADD_INT_MACRO(module, MADV_AUTOSYNC);
+#endif
+#ifdef MADV_NOCORE
+    ADD_INT_MACRO(module, MADV_NOCORE);
+#endif
+#ifdef MADV_CORE
+    ADD_INT_MACRO(module, MADV_CORE);
+#endif
+#ifdef MADV_PROTECT
+    ADD_INT_MACRO(module, MADV_PROTECT);
+#endif
+
+    // Darwin-specific
+#ifdef MADV_FREE_REUSABLE // (As MADV_FREE but reclaims more faithful for task_info/Activity Monitor...)
+    ADD_INT_MACRO(module, MADV_FREE_REUSABLE);
+#endif
+#ifdef MADV_FREE_REUSE // (Reuse pages previously tagged as reusable)
+    ADD_INT_MACRO(module, MADV_FREE_REUSE);
+#endif
+#endif // HAVE_MADVISE
+    return 0;
 }
 
+static PyModuleDef_Slot mmap_slots[] = {
+    {Py_mod_exec, mmap_exec},
+    {0, NULL}
+};
 
 static struct PyModuleDef mmapmodule = {
-    PyModuleDef_HEAD_INIT,
-    "mmap",
-    NULL,
-    -1,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "mmap",
+    .m_size = 0,
+    .m_slots = mmap_slots,
 };
 
 PyMODINIT_FUNC
 PyInit_mmap(void)
 {
-    PyObject *dict, *module;
-
-    if (PyType_Ready(&mmap_object_type) < 0)
-        return NULL;
-
-    module = PyModule_Create(&mmapmodule);
-    if (module == NULL)
-        return NULL;
-    dict = PyModule_GetDict(module);
-    if (!dict)
-        return NULL;
-    PyDict_SetItemString(dict, "error", PyExc_OSError);
-    PyDict_SetItemString(dict, "mmap", (PyObject*) &mmap_object_type);
-#ifdef PROT_EXEC
-    setint(dict, "PROT_EXEC", PROT_EXEC);
-#endif
-#ifdef PROT_READ
-    setint(dict, "PROT_READ", PROT_READ);
-#endif
-#ifdef PROT_WRITE
-    setint(dict, "PROT_WRITE", PROT_WRITE);
-#endif
-
-#ifdef MAP_SHARED
-    setint(dict, "MAP_SHARED", MAP_SHARED);
-#endif
-#ifdef MAP_PRIVATE
-    setint(dict, "MAP_PRIVATE", MAP_PRIVATE);
-#endif
-#ifdef MAP_DENYWRITE
-    setint(dict, "MAP_DENYWRITE", MAP_DENYWRITE);
-#endif
-#ifdef MAP_EXECUTABLE
-    setint(dict, "MAP_EXECUTABLE", MAP_EXECUTABLE);
-#endif
-#ifdef MAP_ANONYMOUS
-    setint(dict, "MAP_ANON", MAP_ANONYMOUS);
-    setint(dict, "MAP_ANONYMOUS", MAP_ANONYMOUS);
-#endif
-
-    setint(dict, "PAGESIZE", (long)my_getpagesize());
-
-    setint(dict, "ALLOCATIONGRANULARITY", (long)my_getallocationgranularity());
-
-    setint(dict, "ACCESS_DEFAULT", ACCESS_DEFAULT);
-    setint(dict, "ACCESS_READ", ACCESS_READ);
-    setint(dict, "ACCESS_WRITE", ACCESS_WRITE);
-    setint(dict, "ACCESS_COPY", ACCESS_COPY);
-    return module;
+    return PyModuleDef_Init(&mmapmodule);
 }

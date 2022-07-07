@@ -7,6 +7,7 @@ import re
 import os
 import sys
 from test import support
+from test.support import skip_if_buggy_ucrt_strfptime
 from datetime import date as datetime_date
 
 import _strptime
@@ -69,6 +70,9 @@ class LocaleTime_Tests(unittest.TestCase):
         self.assertEqual(self.LT_ins.am_pm[position], strftime_output,
                          "AM/PM representation in the wrong position within the tuple")
 
+    @unittest.skipIf(
+        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
+    )
     def test_timezone(self):
         # Make sure timezone is correct
         timezone = time.strftime("%Z", self.time_tuple).lower()
@@ -135,6 +139,7 @@ class TimeRETests(unittest.TestCase):
                       "%s does not have re characters escaped properly" %
                       pattern_string)
 
+    @skip_if_buggy_ucrt_strfptime
     def test_compile(self):
         # Check that compiled regex is correct
         found = self.time_re.compile(r"%A").match(self.locale_time.f_weekday[6])
@@ -363,8 +368,12 @@ class StrptimeTests(unittest.TestCase):
             _strptime._strptime("-01:30:30:123456", "%z")
         with self.assertRaises(ValueError) as err:
             _strptime._strptime("-01:3030", "%z")
-        self.assertEqual("Unconsistent use of : in -01:3030", str(err.exception))
+        self.assertEqual("Inconsistent use of : in -01:3030", str(err.exception))
 
+    @skip_if_buggy_ucrt_strfptime
+    @unittest.skipIf(
+        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
+    )
     def test_timezone(self):
         # Test timezone directives.
         # When gmtime() is used with %Z, entire result of strftime() is empty.
@@ -387,6 +396,9 @@ class StrptimeTests(unittest.TestCase):
                             "LocaleTime().timezone has duplicate values and "
                              "time.daylight but timezone value not set to -1")
 
+    @unittest.skipUnless(
+        hasattr(time, "tzset"), "time module has no attribute tzset"
+        )
     def test_bad_timezone(self):
         # Explicitly test possibility of bad timezone;
         # when time.tzname[0] == time.tzname[1] and time.daylight
@@ -489,6 +501,7 @@ class CalculationTests(unittest.TestCase):
     def setUp(self):
         self.time_tuple = time.gmtime()
 
+    @skip_if_buggy_ucrt_strfptime
     def test_julian_calculation(self):
         # Make sure that when Julian is missing that it is calculated
         format_string = "%Y %m %d %H %M %S %w %Z"
@@ -498,6 +511,7 @@ class CalculationTests(unittest.TestCase):
                         "Calculation of tm_yday failed; %s != %s" %
                          (result.tm_yday, self.time_tuple.tm_yday))
 
+    @skip_if_buggy_ucrt_strfptime
     def test_gregorian_calculation(self):
         # Test that Gregorian date can be calculated from Julian day
         format_string = "%Y %H %M %S %w %j %Z"
@@ -506,19 +520,20 @@ class CalculationTests(unittest.TestCase):
         self.assertTrue(result.tm_year == self.time_tuple.tm_year and
                          result.tm_mon == self.time_tuple.tm_mon and
                          result.tm_mday == self.time_tuple.tm_mday,
-                        "Calculation of Gregorian date failed;"
+                        "Calculation of Gregorian date failed; "
                          "%s-%s-%s != %s-%s-%s" %
                          (result.tm_year, result.tm_mon, result.tm_mday,
                           self.time_tuple.tm_year, self.time_tuple.tm_mon,
                           self.time_tuple.tm_mday))
 
+    @skip_if_buggy_ucrt_strfptime
     def test_day_of_week_calculation(self):
         # Test that the day of the week is calculated as needed
         format_string = "%Y %m %d %H %S %j %Z"
         result = _strptime._strptime_time(time.strftime(format_string, self.time_tuple),
                                     format_string)
         self.assertTrue(result.tm_wday == self.time_tuple.tm_wday,
-                        "Calculation of day of the week failed;"
+                        "Calculation of day of the week failed; "
                          "%s != %s" % (result.tm_wday, self.time_tuple.tm_wday))
 
     if support.is_android:
@@ -692,7 +707,7 @@ class CacheTests(unittest.TestCase):
         finally:
             locale.setlocale(locale.LC_TIME, locale_info)
 
-    @support.run_with_tz('STD-1DST')
+    @support.run_with_tz('STD-1DST,M4.1.0,M10.1.0')
     def test_TimeRE_recreation_timezone(self):
         # The TimeRE instance should be recreated upon changing the timezone.
         oldtzname = time.tzname

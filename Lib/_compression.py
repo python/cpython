@@ -1,7 +1,7 @@
 """Internal classes used by the gzip, lzma and bz2 modules"""
 
 import io
-
+import sys
 
 BUFFER_SIZE = io.DEFAULT_BUFFER_SIZE  # Compressed data read chunk size
 
@@ -109,6 +109,16 @@ class DecompressReader(io.RawIOBase):
             return b""
         self._pos += len(data)
         return data
+
+    def readall(self):
+        chunks = []
+        # sys.maxsize means the max length of output buffer is unlimited,
+        # so that the whole input buffer can be decompressed within one
+        # .decompress() call.
+        while data := self.read(sys.maxsize):
+            chunks.append(data)
+
+        return b"".join(chunks)
 
     # Rewind the file to the beginning of the data stream.
     def _rewind(self):

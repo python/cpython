@@ -5,6 +5,7 @@ from Cocoa import NSPropertyListSerialization, NSPropertyListOpenStepFormat
 from Cocoa import NSPropertyListXMLFormat_v1_0, NSPropertyListBinaryFormat_v1_0
 from Cocoa import CFUUIDCreateFromString, NSNull, NSUUID, CFPropertyListCreateData
 from Cocoa import NSURL
+from Cocoa import NSKeyedArchiver
 
 import datetime
 from collections import OrderedDict
@@ -89,6 +90,8 @@ def main():
         else:
             print("    %s: binascii.a2b_base64(b'''\n        %s'''),"%(fmt_name, _encode_base64(bytes(data)).decode('ascii')[:-1]))
 
+    keyed_archive_data = NSKeyedArchiver.archivedDataWithRootObject_("KeyArchive UID Test")
+    print("    'KEYED_ARCHIVE': binascii.a2b_base64(b'''\n        %s''')," % (_encode_base64(bytes(keyed_archive_data)).decode('ascii')[:-1]))
     print("}")
     print()
 

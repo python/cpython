@@ -12,7 +12,7 @@ with open(textfile) as fp:
 
 # me == the sender's email address
 # you == the recipient's email address
-msg['Subject'] = 'The contents of %s' % textfile
+msg['Subject'] = f'The contents of {textfile}'
 msg['From'] = me
 msg['To'] = you
 

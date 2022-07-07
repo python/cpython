@@ -1,4 +1,4 @@
-from test.support import requires_IEEE_754, cpython_only
+from test.support import requires_IEEE_754, cpython_only, import_helper
 from test.test_math import parse_testfile, test_file
 import test.test_math as test_math
 import unittest
@@ -6,7 +6,7 @@ import cmath, math
 from cmath import phase, polar, rect, pi
 import platform
 import sys
-import sysconfig
+
 
 INF = float('inf')
 NAN = float('nan')
@@ -60,7 +60,7 @@ class CMathTests(unittest.TestCase):
     test_functions.append(lambda x : cmath.log(14.-27j, x))
 
     def setUp(self):
-        self.test_values = open(test_file)
+        self.test_values = open(test_file, encoding="utf-8")
 
     def tearDown(self):
         self.test_values.close()
@@ -220,12 +220,11 @@ class CMathTests(unittest.TestCase):
             pass
         class NeitherComplexNorFloatOS:
             pass
-        class MyInt(object):
+        class Index:
             def __int__(self): return 2
             def __index__(self): return 2
-        class MyIntOS:
+        class MyInt:
             def __int__(self): return 2
-            def __index__(self): return 2
 
         # other possible combinations of __float__ and __complex__
         # that should work
@@ -255,6 +254,7 @@ class CMathTests(unittest.TestCase):
             self.assertEqual(f(FloatAndComplexOS()), f(cx_arg))
             self.assertEqual(f(JustFloat()), f(flt_arg))
             self.assertEqual(f(JustFloatOS()), f(flt_arg))
+            self.assertEqual(f(Index()), f(int(Index())))
             # TypeError should be raised for classes not providing
             # either __complex__ or __float__, even if they provide
             # __int__ or __index__.  An old-style class
@@ -263,7 +263,6 @@ class CMathTests(unittest.TestCase):
             self.assertRaises(TypeError, f, NeitherComplexNorFloat())
             self.assertRaises(TypeError, f, MyInt())
             self.assertRaises(Exception, f, NeitherComplexNorFloatOS())
-            self.assertRaises(Exception, f, MyIntOS())
             # non-complex return value from __complex__ -> TypeError
             for bad_complex in non_complexes:
                 self.assertRaises(TypeError, f, MyComplex(bad_complex))
@@ -453,13 +452,13 @@ class CMathTests(unittest.TestCase):
     @cpython_only
     def test_polar_errno(self):
         # Issue #24489: check a previously set C errno doesn't disturb polar()
-        from _testcapi import set_errno
+        _testcapi = import_helper.import_module('_testcapi')
         def polar_with_errno_set(z):
-            set_errno(11)
+            _testcapi.set_errno(11)
             try:
                 return polar(z)
             finally:
-                set_errno(0)
+                _testcapi.set_errno(0)
         self.check_polar(polar_with_errno_set)
 
     def test_phase(self):
@@ -577,8 +576,6 @@ class CMathTests(unittest.TestCase):
         self.assertTrue(cmath.isinf(complex(INF, NAN)))
 
     @requires_IEEE_754
-    @unittest.skipIf(sysconfig.get_config_var('TANH_PRESERVES_ZERO_SIGN') == 0,
-                     "system tanh() function doesn't copy the sign")
     def testTanhSign(self):
         for z in complex_zeros:
             self.assertComplexIdentical(cmath.tanh(z), z)

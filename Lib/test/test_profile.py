@@ -6,11 +6,12 @@ import unittest
 import os
 from difflib import unified_diff
 from io import StringIO
-from test.support import TESTFN, run_unittest, unlink
+from test.support.os_helper import TESTFN, unlink, temp_dir, change_cwd
 from contextlib import contextmanager
 
 import profile
 from test.profilee import testfunc, timer
+from test.support.script_helper import assert_python_failure, assert_python_ok
 
 
 class ProfileTest(unittest.TestCase):
@@ -51,13 +52,18 @@ class ProfileTest(unittest.TestCase):
         results = self.do_profiling()
         expected = self.get_expected_output()
         self.assertEqual(results[0], 1000)
+        fail = []
         for i, method in enumerate(self.methodnames):
-            if results[i+1] != expected[method]:
-                print("Stats.%s output for %s doesn't fit expectation!" %
-                      (method, self.profilerclass.__name__))
-                print('\n'.join(unified_diff(
-                                  results[i+1].split('\n'),
-                                  expected[method].split('\n'))))
+            a = expected[method]
+            b = results[i+1]
+            if a != b:
+                fail.append(f"\nStats.{method} output for "
+                            f"{self.profilerclass.__name__} "
+                             "does not fit expectation:")
+                fail.extend(unified_diff(a.split('\n'), b.split('\n'),
+                            lineterm=""))
+        if fail:
+            self.fail("\n".join(fail))
 
     def test_calling_conventions(self):
         # Issue #5330: profile and cProfile wouldn't report C functions called
@@ -93,6 +99,32 @@ class ProfileTest(unittest.TestCase):
                                   filename=TESTFN)
         self.assertTrue(os.path.exists(TESTFN))
 
+    def test_run_profile_as_module(self):
+        # Test that -m switch needs an argument
+        assert_python_failure('-m', self.profilermodule.__name__, '-m')
+
+        # Test failure for not-existent module
+        assert_python_failure('-m', self.profilermodule.__name__,
+                              '-m', 'random_module_xyz')
+
+        # Test successful run
+        assert_python_ok('-m', self.profilermodule.__name__,
+                         '-m', 'timeit', '-n', '1')
+
+    def test_output_file_when_changing_directory(self):
+        with temp_dir() as tmpdir, change_cwd(tmpdir):
+            os.mkdir('dest')
+            with open('demo.py', 'w', encoding="utf-8") as f:
+                f.write('import os; os.chdir("dest")')
+
+            assert_python_ok(
+                '-m', self.profilermodule.__name__,
+                '-o', 'out.pstats',
+                'demo.py',
+            )
+
+            self.assertTrue(os.path.exists('out.pstats'))
+
 
 def regenerate_expected_output(filename, cls):
     filename = filename.rstrip('co')
@@ -123,12 +155,10 @@ def silent():
     finally:
         sys.stdout = stdout
 
-def test_main():
-    run_unittest(ProfileTest)
 
 def main():
     if '-r' not in sys.argv:
-        test_main()
+        unittest.main()
     else:
         regenerate_expected_output(__file__, ProfileTest)
 

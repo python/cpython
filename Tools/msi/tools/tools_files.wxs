@@ -8,9 +8,6 @@
             <Component Id="Tools_scripts_pydoc3.py" Directory="Tools_scripts" Guid="*">
                 <File Id="Tools_scripts_pydoc3.py" Name="pydoc3.py" Source="!(bindpath.src)Tools\scripts\pydoc3" />
             </Component>
-            <Component Id="Tools_scripts_pyvenv.py" Directory="Tools_scripts" Guid="*">
-                <File Id="Tools_scripts_pyvenv.py" Name="pyvenv.py" Source="!(bindpath.src)Tools\scripts\pyvenv" />
-            </Component>
         </ComponentGroup>
     </Fragment>
     <Fragment>
