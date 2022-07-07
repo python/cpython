@@ -746,6 +746,35 @@ class TestEmailMessageBase:
         self.assertEqual(len(list(m.iter_attachments())), 2)
         self.assertEqual(m.get_payload(), orig)
 
+    get_payload_surrogate_params = {
+
+        'good_surrogateescape': (
+            "String that can be encod\udcc3\udcabd with surrogateescape",
+            b'String that can be encod\xc3\xabd with surrogateescape'
+            ),
+
+        'string_with_utf8': (
+            "String with utf-8 charactër",
+            b'String with utf-8 charact\xebr'
+            ),
+
+        'surrogate_and_utf8': (
+            "String that cannot be ëncod\udcc3\udcabd with surrogateescape",
+             b'String that cannot be \xebncod\\udcc3\\udcabd with surrogateescape'
+            ),
+
+        'out_of_range_surrogate': (
+            "String with \udfff cannot be encoded with surrogateescape",
+             b'String with \\udfff cannot be encoded with surrogateescape'
+            ),
+    }
+
+    def get_payload_surrogate_as_gh_94606(self, msg, expected):
+        """test for GH issue 94606"""
+        m = self._str_msg(msg)
+        payload = m.get_payload(decode=True)
+        self.assertEqual(expected, payload)
+
 
 class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
     message = EmailMessage
@@ -953,42 +982,6 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         # In bpo-42892, this would raise
         # AttributeError: 'str' object has no attribute 'is_attachment'
         m.get_body()
-
-    def test_get_payload_unicode_surrogate1(self):
-        """test that fix for GH issue 94606 does not break this"""
-        msg = "String that could have been decod\udcc3\udcabd with surrogateescape"
-        expected = b'String that could have been decod\xc3\xabd with surrogateescape'
-        m = self._str_msg(msg)
-        payload = m.get_payload(decode=True)
-        self.assertEqual(expected, payload)
-
-    def test_get_payload_unicode_surrogate2(self):
-        """test that fix for GH issue 94606 does not break this"""
-        msg = "Unicode string with a utf-8 charactër"
-        expected = b'Unicode string with a utf-8 charact\xebr'
-        m = self._str_msg(msg)
-        payload = m.get_payload(decode=True)
-        self.assertEqual(expected, payload)
-
-    def test_get_payload_unicode_surrogate3(self):
-        """test for GH issue 94606"""
-        msg = "String that could not have been dëcod\udcc3\udcabd with surrogateescape"
-        expected = b'String that could not have been d\xebcod\\udcc3\udcabd with surrogateescape'
-        m = self._str_msg(msg)
-        # In GH issue 94606, this would raise
-        # UnicodeEncodeError: 'ascii' codec can't encode character '\xeb' in position 33: ordinal not in range(128)
-        payload = m.get_payload(decode=True)
-        self.assertEqual(expected, payload)
-
-    def test_get_payload_unicode_surrogate4(self):
-        """test for GH issue 94606"""
-        msg = "Different reason \udfff could not have been decoded with surrogateescape"
-        expected = b'Different reason \\udfff could not have been decoded with surrogateescape'
-        m = self._str_msg(msg)
-        # In GH issue 94606, this would raise
-        # UnicodeEncodeError: 'ascii' codec can't encode character '\udfff' in position 17: ordinal not in range(128)
-        payload = m.get_payload(decode=True)
-        self.assertEqual(expected, payload)
 
 
 class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
