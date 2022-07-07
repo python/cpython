@@ -312,11 +312,11 @@ Module functions and constants
        and an optional query string.
        The scheme part *must* be ``"file:"``,
        and the path can be relative or absolute.
-       The query string allows passing parameters to SQLite.
-       See :ref:`sqlite3-uri-tricks`.
+       The query string allows passing parameters to SQLite,
+       enabling various :ref:`sqlite3-uri-tricks`.
    :type uri: bool
 
-   :rtype: typing.Any
+   :rtype: sqlite3.Connection
 
    .. audit-event:: sqlite3.connect database sqlite3.connect
    .. audit-event:: sqlite3.connect/handle connection_handle sqlite3.connect
@@ -1484,22 +1484,25 @@ regardless of the value of :attr:`~Connection.isolation_level`.
 SQLite URI tricks
 -----------------
 
-Some useful URI tricks include::
+Some useful URI tricks include:
 
-   # Open a database in read-only mode.
-   con = sqlite3.connect("file:template.db?mode=ro", uri=True)
+* Open a database in read-only mode::
 
-   # Don't implicitly create a new database file if it does not already exist.
-   # Will raise sqlite3.OperationalError if unable to open a database file.
-   con = sqlite3.connect("file:nosuchdb.db?mode=rw", uri=True)
+    con = sqlite3.connect("file:template.db?mode=ro", uri=True)
 
-   # Create a shared named in-memory database.
-   con1 = sqlite3.connect("file:mem1?mode=memory&cache=shared", uri=True)
-   con2 = sqlite3.connect("file:mem1?mode=memory&cache=shared", uri=True)
-   con1.execute("create table t(t)")
-   con1.execute("insert into t values(28)")
-   con1.commit()
-   rows = con2.execute("select * from t").fetchall()
+* Do not implicitly create a new database file if it does not already exist;
+  will raise :exc:`~sqlite3.OperationalError` if unable to create a new file::
+  
+    con = sqlite3.connect("file:nosuchdb.db?mode=rw", uri=True)
+
+* Create a shared named in-memory database::
+  
+    con1 = sqlite3.connect("file:mem1?mode=memory&cache=shared", uri=True)
+    con2 = sqlite3.connect("file:mem1?mode=memory&cache=shared", uri=True)
+    con1.execute("create table t(t)")
+    con1.execute("insert into t values(28)")
+    con1.commit()
+    rows = con2.execute("select * from t").fetchall()
 
 More information about this feature, including a list of parameters,
 can be found in the `SQLite URI documentation`_.
