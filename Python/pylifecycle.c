@@ -835,7 +835,8 @@ pycore_interp_init(PyThreadState *tstate)
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
-
+    // Intern strings in deep-frozen modules first so that others
+    // can use it instead of creating a heap allocated string.
     if (_Py_Deepfreeze_Init() < 0) {
         return _PyStatus_ERR("failed to initialize deep-frozen modules");
     }
@@ -1461,7 +1462,7 @@ finalize_restore_builtins(PyThreadState *tstate)
     }
     PyDict_Clear(interp->builtins);
     if (PyDict_Update(interp->builtins, interp->builtins_copy)) {
-        _PyErr_Clear(tstate);
+        PyErr_WriteUnraisable(NULL);
     }
     Py_XDECREF(dict);
 }
@@ -2937,28 +2938,30 @@ Py_Exit(int sts)
 int
 Py_FdIsInteractive(FILE *fp, const char *filename)
 {
-    if (isatty((int)fileno(fp)))
+    if (isatty(fileno(fp))) {
         return 1;
-    if (!Py_InteractiveFlag)
+    }
+    if (!_Py_GetConfig()->interactive) {
         return 0;
-    return (filename == NULL) ||
-           (strcmp(filename, "<stdin>") == 0) ||
-           (strcmp(filename, "???") == 0);
+    }
+    return ((filename == NULL)
+            || (strcmp(filename, "<stdin>") == 0)
+            || (strcmp(filename, "???") == 0));
 }
 
 
 int
 _Py_FdIsInteractive(FILE *fp, PyObject *filename)
 {
-    if (isatty((int)fileno(fp))) {
+    if (isatty(fileno(fp))) {
         return 1;
     }
-    if (!Py_InteractiveFlag) {
+    if (!_Py_GetConfig()->interactive) {
         return 0;
     }
-    return (filename == NULL) ||
-           (PyUnicode_CompareWithASCIIString(filename, "<stdin>") == 0) ||
-           (PyUnicode_CompareWithASCIIString(filename, "???") == 0);
+    return ((filename == NULL)
+            || (PyUnicode_CompareWithASCIIString(filename, "<stdin>") == 0)
+            || (PyUnicode_CompareWithASCIIString(filename, "???") == 0));
 }
 
 
