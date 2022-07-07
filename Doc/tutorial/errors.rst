@@ -263,6 +263,20 @@ instantiated by calling its constructor with no arguments::
 
    raise ValueError  # shorthand for 'raise ValueError()'
 
+If you want to use an exception instance as the argument of :keyword:`raise`,
+you need to construct the exception instance in the :keyword:`raise` statement.
+Otherwise, unexpected stack trace entries may be obtained::
+
+  >>> try:
+  ...     raise NameError('HiThere')  # Good: call exception constructor
+  ... except NameError as e:
+  ...     traceback.print_exception(e)
+  ...
+  Traceback (most recent call last):
+    File "<stdin>", line 2, in <module>
+      raise NameError('HiThere')  # Good: call exception constructor
+  NameError: HiThere
+
 If you need to determine whether an exception was raised but don't intend to
 handle it, a simpler form of the :keyword:`raise` statement allows you to
 re-raise the exception::
