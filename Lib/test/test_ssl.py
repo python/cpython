@@ -4969,5 +4969,9 @@ def setUpModule():
             raise support.TestFailed("Can't read certificate file %r" % filename)
 
 
+def setUpModule():
+    threading_helper.init()
+
+
 if __name__ == "__main__":
     unittest.main()

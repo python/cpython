@@ -14,12 +14,13 @@ from test import support
 _thread_pool = None
 
 
-def setUpModule():
-    _thread_pool = ThreadPoolExecutor()
-
-
-def tearDownModule():
+def _release():
     _thread_pool = None
+
+
+def init():
+    _thread_pool = ThreadPoolExecutor()
+    unittest.addModuleCleanup(_release)
 
 
 #=======================================================================
