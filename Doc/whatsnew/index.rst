@@ -17,6 +17,7 @@ anyone wishing to stay up-to-date after a new release.
    3.9.rst
    3.8.rst
    3.7.rst
+   3.7.errata.rst
    3.6.rst
    3.5.rst
    3.4.rst

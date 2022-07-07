@@ -1,0 +1,12 @@
+*****************************************
+  Errata for "What's New In Python 3.7"
+*****************************************
+
+Below are a collection of corrections to the
+:ref:`release notes for Python 3.7 <whatsnew37>`.
+
+* The :ref:`claim <whatsnew37-pep563>` that PEP 563 would be implemented in
+  Python 3.10 is incorrect, as that decision has since been deferred. See
+  related mailing list posts by `Thomas Wouters <https://mail.python.org/archives/list/python-dev@python.org/thread/CLVXXPQ2T2LQ5MP2Y53VVQFCXYWQJHKZ/>`_
+  and `Barry Warsaw <https://mail.python.org/archives/list/python-dev@python.org/message/VIZEBX5EYMSYIJNDBF6DMUMZOCWHARSO/>`_
+  for more information.
