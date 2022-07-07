@@ -21031,6 +21031,7 @@ fi
 
 fi
 
+READLINE_CFLAGS=$(echo $READLINE_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking how to link readline" >&5
 $as_echo_n "checking how to link readline... " >&6; }
@@ -22028,7 +22029,7 @@ fi
 
 
 fi
-CURSES_CFLAGS=$(echo $CURSES_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//')
+CURSES_CFLAGS=$(echo $CURSES_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
 if test "$have_curses" = no -a "$ac_sys_system" = "Darwin"; then
 
@@ -22460,6 +22461,8 @@ fi
 
 
 fi
+PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking panel flags" >&5
 $as_echo_n "checking panel flags... " >&6; }
 if test "x$have_panel" = xno; then :
