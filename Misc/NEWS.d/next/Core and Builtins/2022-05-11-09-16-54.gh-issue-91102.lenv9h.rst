@@ -1,8 +1,1 @@
-8-argument :meth:`_warnings.warn_explicit` is ported to Argument Clinic.
-Benefits:
-
-1. :c:data:`METH_VARARGS` calling convention is replaced with
-   a little faster :c:data:`METH_FASTCALL` (no extra tuple creation)
-2. :c:func:`PyArg_ParseTupleAndKeywords` call is replaced with
-   :c:func:`_PyArg_UnpackKeywords` and a tailored parser generated specially
-   for the ported function.
+:meth:`_warnings.warn_explicit` is ported to Argument Clinic.
