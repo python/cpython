@@ -2042,6 +2042,15 @@ class JumpTestCase(unittest.TestCase):
             output.append(6)
         output.append(7)
 
+    @jump_test(6, 1, [1, 5, 1, 5])
+    def test_jump_over_try_except(output):
+        output.append(1)
+        try:
+            1 / 0
+        except ZeroDivisionError as e:
+            output.append(5)
+        x = 42  # has to be a two-instruction block
+
     @jump_test(2, 4, [1, 4, 5, -4])
     def test_jump_across_with(output):
         output.append(1)

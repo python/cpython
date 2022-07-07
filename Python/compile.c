@@ -9224,6 +9224,16 @@ error:
     return -1;
 }
 
+static bool
+basicblock_has_lineno(const basicblock *bb) {
+    for (int i = 0; i < bb->b_iused; i++) {
+        if (bb->b_instr[i].i_loc.lineno > 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /* If this block ends with an unconditional jump to an exit block,
  * then remove the jump and extend this block with the target.
  */
@@ -9240,6 +9250,10 @@ extend_block(basicblock *bb) {
     }
     if (basicblock_exits_scope(last->i_target) && last->i_target->b_iused <= MAX_COPY_SIZE) {
         basicblock *to_copy = last->i_target;
+        if (basicblock_has_lineno(to_copy)) {
+            /* copy only blocks without line number (like implicit 'return None's) */
+            return 0;
+        }
         last->i_opcode = NOP;
         for (int i = 0; i < to_copy->b_iused; i++) {
             int index = basicblock_next_instr(bb);
