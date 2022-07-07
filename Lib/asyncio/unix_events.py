@@ -1229,6 +1229,7 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
     # but retrieves the current loop by get_running_loop()
 
     def __init__(self):
+        warnings._deprecated("asyncio.MultiLoopChildWatcher", remove=(3, 14))
         self._callbacks = {}
         self._saved_sighandler = None
 
