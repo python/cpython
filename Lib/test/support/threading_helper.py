@@ -298,10 +298,11 @@ class Server:
         server_socket.listen()
         self._result = _thread_pool.submit(self._thread_func, server_socket,
                                            client_func, client_count,
-                                           args, kwargs)
+                                           client_fails, args, kwargs)
         self._result_out = results
 
-    def _thread_func(self, server_socket, client_func, client_count, args, kwargs):
+    def _thread_func(self, server_socket, client_func, client_count,
+                     client_fails, args, kwargs):
         server_socket.settimeout(support.LOOPBACK_TIMEOUT)
         with server_socket:
             results = []
