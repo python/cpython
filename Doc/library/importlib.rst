@@ -124,6 +124,11 @@ Functions
     need to call :func:`invalidate_caches` in order for the new module to be
     noticed by the import system.
 
+    If the module cannot be imported, :func:`import_module` will raise an
+    :exc:`ImportError`. If the module is found and loaded, but the code in the
+    module raises an exception, :func:`import_module` will pass that exception
+    to the module that called it.
+
     .. versionchanged:: 3.3
        Parent packages are automatically imported.
 
