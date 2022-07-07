@@ -1276,9 +1276,16 @@ Or, you can use an extension that provides a matrix datatype; `NumPy
 How do I apply a method to a sequence of objects?
 -------------------------------------------------
 
-Use a list comprehension::
+If you want a list of the return values of the methods, use a list
+comprehension::
 
    result = [obj.method() for obj in mylist]
+
+If you don't care about the return values and just want to run the methods (for
+example, if the method updates the objects in place), use a for loop::
+
+   for obj in mylist:
+       obj.method()
 
 .. _faq-augmented-assignment-tuple-error:
 
