@@ -3693,9 +3693,10 @@ copying.
    ``len(view)`` is equal to the length of :class:`~memoryview.tolist`, which
    is the nested list representation of the view. If ``view.ndim = 1``,
    this is equal to the number of elements in the view.
-   
-   .. versionchanged:: 3.10
-       If ``view.ndim = 0``, ``len(view)`` now raises `TypeError` instead of returning 1.
+
+   .. versionchanged:: 3.11
+      If ``view.ndim == 0``, ``len(view)`` now raises :exc:`TypeError` instead of returning 1.
+
    The :class:`~memoryview.itemsize` attribute will give you the number of
    bytes in a single element.
 

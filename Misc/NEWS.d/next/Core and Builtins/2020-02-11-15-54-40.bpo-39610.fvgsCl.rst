@@ -1,8 +1,2 @@
-0d ``memoryview`` objects no longer have a ``len``::
-
-    >>> import ctypes
-    >>> mem_0d = memoryview(ctypes.c_uint8(42))
-    >>> len(mem_0d)
-    TypeError: ...
-
-Previously this returned ``1``, which was not consistent with the behavior of ``mem_0d[0]``.
+``len()`` for 0-dimensional ``memoryview`` objects (such as ``memoryview(ctypes.c_uint8(42))``) now raises a ``TypeError``.
+Previously this returned ``1``, which was not consistent with ``mem_0d[0]`` raising an ``IndexError``.
