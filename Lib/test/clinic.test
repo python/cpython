@@ -3321,7 +3321,7 @@ PyDoc_STRVAR(test_paramname_module__doc__,
 "\n");
 
 #define TEST_PARAMNAME_MODULE_METHODDEF    \
-    {"test_paramname_module", _PyCFunction_CAST(test_paramname_module), METH_FASTCALL|METH_KEYWORDS, test_paramname_module__doc__},
+    {"test_paramname_module", (PyCFunction)(void(*)(void))test_paramname_module, METH_FASTCALL|METH_KEYWORDS, test_paramname_module__doc__},
 
 static PyObject *
 test_paramname_module_impl(PyObject *module, PyObject *mod);
@@ -3348,4 +3348,4 @@ exit:
 
 static PyObject *
 test_paramname_module_impl(PyObject *module, PyObject *mod)
-/*[clinic end generated code: output=23379a7ffa65c514 input=afefe259667f13ba]*/
+/*[clinic end generated code: output=2a6769d34d1b2be0 input=afefe259667f13ba]*/
