@@ -2085,7 +2085,7 @@ def bœr():
             expected = '(Pdb) The correct file was executed'
             self.assertEqual(stdout.split('\n')[6].rstrip('\r'), expected)
 
-    @unittest.skip("test crashes, see gh-94215")
+    # @unittest.skip("test crashes, see gh-94215")
     def test_gh_94215_crash(self):
         script = """\
             def func():

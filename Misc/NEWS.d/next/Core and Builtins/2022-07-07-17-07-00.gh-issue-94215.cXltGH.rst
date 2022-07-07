@@ -1,0 +1,4 @@
+Fix a reference counting bug in exception unwinding code for zero-cost
+exception handling. The code did not take into account that
+``frame_setlineno()`` can pop off stacks, too.
+Patch by Irit Katriel and Christian Heimes.

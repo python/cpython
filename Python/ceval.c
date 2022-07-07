@@ -5795,6 +5795,11 @@ exception_unwind:
 
                 /* Pop remaining stack entries. */
                 PyObject **stackbase = _PyFrame_Stackbase(frame);
+                if (frame->stacktop != -1) {
+                    // frame_setlineno() may have popped off additional stacks in
+                    // frame_stack_pop(). Re-calculate stack pointer.
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                }
                 while (stack_pointer > stackbase) {
                     PyObject *o = POP();
                     Py_XDECREF(o);
