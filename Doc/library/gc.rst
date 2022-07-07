@@ -72,6 +72,8 @@ The :mod:`gc` module provides the following functions:
    .. versionchanged:: 3.8
       New *generation* parameter.
 
+   .. audit-event:: gc.get_objects generation gc.get_objects
+
 .. function:: get_stats()
 
    Return a list of three per-generation dictionaries containing collection
@@ -106,9 +108,9 @@ The :mod:`gc` module provides the following functions:
    allocations minus the number of deallocations exceeds *threshold0*, collection
    starts.  Initially only generation ``0`` is examined.  If generation ``0`` has
    been examined more than *threshold1* times since generation ``1`` has been
-   examined, then generation ``1`` is examined as well.  Similarly, *threshold2*
-   controls the number of collections of generation ``1`` before collecting
-   generation ``2``.
+   examined, then generation ``1`` is examined as well.
+   With the third generation, things are a bit more complicated,
+   see `Collecting the oldest generation <https://devguide.python.org/garbage_collector/#collecting-the-oldest-generation>`_ for more information.
 
 
 .. function:: get_count()
@@ -135,10 +137,13 @@ The :mod:`gc` module provides the following functions:
    resulting referrers.  To get only currently live objects, call :func:`collect`
    before calling :func:`get_referrers`.
 
-   Care must be taken when using objects returned by :func:`get_referrers` because
-   some of them could still be under construction and hence in a temporarily
-   invalid state. Avoid using :func:`get_referrers` for any purpose other than
-   debugging.
+   .. warning::
+      Care must be taken when using objects returned by :func:`get_referrers` because
+      some of them could still be under construction and hence in a temporarily
+      invalid state. Avoid using :func:`get_referrers` for any purpose other than
+      debugging.
+
+   .. audit-event:: gc.get_referrers objs gc.get_referrers
 
 
 .. function:: get_referents(*objs)
@@ -151,6 +156,7 @@ The :mod:`gc` module provides the following functions:
    be involved in a cycle.  So, for example, if an integer is directly reachable
    from an argument, that integer object may or may not appear in the result list.
 
+   .. audit-event:: gc.get_referents objs gc.get_referents
 
 .. function:: is_tracked(obj)
 
@@ -175,6 +181,27 @@ The :mod:`gc` module provides the following functions:
       True
 
    .. versionadded:: 3.1
+
+
+.. function:: is_finalized(obj)
+
+   Returns ``True`` if the given object has been finalized by the
+   garbage collector, ``False`` otherwise. ::
+
+      >>> x = None
+      >>> class Lazarus:
+      ...     def __del__(self):
+      ...         global x
+      ...         x = self
+      ...
+      >>> lazarus = Lazarus()
+      >>> gc.is_finalized(lazarus)
+      False
+      >>> del lazarus
+      >>> gc.is_finalized(x)
+      True
+
+   .. versionadded:: 3.9
 
 
 .. function:: freeze()

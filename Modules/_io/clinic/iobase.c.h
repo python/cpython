@@ -174,7 +174,7 @@ PyDoc_STRVAR(_io__IOBase_readline__doc__,
 "terminator(s) recognized.");
 
 #define _IO__IOBASE_READLINE_METHODDEF    \
-    {"readline", (PyCFunction)(void(*)(void))_io__IOBase_readline, METH_FASTCALL, _io__IOBase_readline__doc__},
+    {"readline", _PyCFunction_CAST(_io__IOBase_readline), METH_FASTCALL, _io__IOBase_readline__doc__},
 
 static PyObject *
 _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit);
@@ -212,7 +212,7 @@ PyDoc_STRVAR(_io__IOBase_readlines__doc__,
 "lines so far exceeds hint.");
 
 #define _IO__IOBASE_READLINES_METHODDEF    \
-    {"readlines", (PyCFunction)(void(*)(void))_io__IOBase_readlines, METH_FASTCALL, _io__IOBase_readlines__doc__},
+    {"readlines", _PyCFunction_CAST(_io__IOBase_readlines), METH_FASTCALL, _io__IOBase_readlines__doc__},
 
 static PyObject *
 _io__IOBase_readlines_impl(PyObject *self, Py_ssize_t hint);
@@ -257,7 +257,7 @@ PyDoc_STRVAR(_io__RawIOBase_read__doc__,
 "\n");
 
 #define _IO__RAWIOBASE_READ_METHODDEF    \
-    {"read", (PyCFunction)(void(*)(void))_io__RawIOBase_read, METH_FASTCALL, _io__RawIOBase_read__doc__},
+    {"read", _PyCFunction_CAST(_io__RawIOBase_read), METH_FASTCALL, _io__RawIOBase_read__doc__},
 
 static PyObject *
 _io__RawIOBase_read_impl(PyObject *self, Py_ssize_t n);
@@ -274,14 +274,9 @@ _io__RawIOBase_read(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[0]);
+        PyObject *iobj = _PyNumber_Index(args[0]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -315,4 +310,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=61b6ea7153ef9940 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0362e134da2d8641 input=a9049054013a1b77]*/

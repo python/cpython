@@ -9,7 +9,7 @@ typedef struct {
 static PyTypeObject CustomType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "custom.Custom",
-    .tp_doc = "Custom objects",
+    .tp_doc = PyDoc_STR("Custom objects"),
     .tp_basicsize = sizeof(CustomObject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT,
@@ -37,7 +37,7 @@ PyInit_custom(void)
     Py_INCREF(&CustomType);
     if (PyModule_AddObject(m, "Custom", (PyObject *) &CustomType) < 0) {
         Py_DECREF(&CustomType);
-        PY_DECREF(m);
+        Py_DECREF(m);
         return NULL;
     }
 

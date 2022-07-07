@@ -1,7 +1,182 @@
+What's New in IDLE 3.11.0
+(since 3.10.0)
+Released on 2022-10-03
+=========================
+
+
+bpo-28950: Apply IDLE syntax highlighting to `.pyi` files.  Add util.py
+for common components.  Patch by Alex Waygood and Terry Jan Reedy.
+
+bpo-46630: Make query dialogs on Windows start with a cursor in the
+entry box.
+
+bpo-46591: Make the IDLE doc URL on the About IDLE dialog clickable.
+
+bpo-45296: Clarify close, quit, and exit in IDLE.  In the File menu,
+'Close' and 'Exit' are now 'Close Window' (the current one) and 'Exit'
+is now 'Exit IDLE' (by closing all windows).  In Shell, 'quit()' and
+'exit()' mean 'close Shell'.  If there are no other windows,
+this also exits IDLE.
+
+bpo-45495: Add context keywords 'case' and 'match' to completions list.
+
+bpo-45296: On Windows, change exit/quit message to suggest Ctrl-D, which
+works, instead of <Ctrl-Z Return>, which does not work in IDLE.
+
+
+What's New in IDLE 3.10.0
+(since 3.9.0)
+Released on 2021-10-04
+=========================
+
+
+bpo-40128: Mostly fix completions on macOS when not using tcl/tk 8.6.11
+(as with 3.9).
+
+bpo-33962: Move the indent space setting from the Font tab to the new Windows
+tab. Patch by Mark Roseman and Terry Jan Reedy.
+
+bpo-40468: Split the settings dialog General tab into Windows and Shell/Ed
+tabs. Move help sources, which extend the Help menu, to the Extensions tab.
+Make space for new options and shorten the dialog. The latter makes the
+dialog better fit small screens.
+
+bpo-44010: Highlight the new match statement's soft keywords: match, case,
+and _. This highlighting is not perfect and will be incorrect in some rare
+cases, especially for some _s in case patterns.
+
+bpo-44026: Include interpreter's typo fix suggestions in message line
+for NameErrors and AttributeErrors.  Patch by E. Paine.
+
+bpo-41611: Avoid occasional uncaught exceptions and freezing when using
+completions on macOS.
+
+bpo-37903: Add mouse actions to the shell sidebar.  Left click and
+optional drag selects one or more lines of text, as with the
+editor line number sidebar.  Right click after selecting text lines
+displays a context menu with 'copy with prompts'.  This zips together
+prompts from the sidebar with lines from the selected text.  This option
+also appears on the context menu for the text.
+
+bpo-43981: Fix reference leaks in test_sidebar and test_squeezer.
+Patches by Terry Jan Reedy and Pablo Galindo
+
+bpo-37892: Change Shell input indents from tabs to spaces.  Shell input
+now 'looks right'.  Making this feasible motivated the shell sidebar.
+
+bpo-37903: Move the Shell input prompt to a side bar.
+
+bpo-43655: Make window managers on macOS and X Window recognize
+IDLE dialog windows as dialogs.
+
+bpo-42225: Document that IDLE can fail on Unix either from misconfigured IP
+masquerade rules or failure displaying complex colored (non-ascii) characters.
+
+bpo-43283: Document why printing to IDLE's Shell is often slower than
+printing to a system terminal and that it can be made faster by
+pre-formatting a single string before printing.
+
+bpo-23544: Disable Debug=>Stack Viewer when user code is running or
+Debugger is active, to prevent hang or crash.  Patch by Zackery Spytz.
+
+bpo-43008: Make IDLE invoke :func:`sys.excepthook` in normal,
+2-process mode.  User hooks were previously ignored.
+Patch by Ken Hilton.
+
+bpo-33065: Fix problem debugging user classes with __repr__ method.
+
+bpo-32631: Finish zzdummy example extension module: make menu entries
+work; add docstrings and tests with 100% coverage.
+
+bpo-42508: Keep IDLE running on macOS.  Remove obsolete workaround
+that prevented running files with shortcuts when using new universal2
+installers built on macOS 11.
+
+bpo-42426: Fix reporting offset of the RE error in searchengine.
+
+bpo-42416: Display docstrings in IDLE calltips in more cases,
+by using inspect.getdoc.
+
+bpo-33987: Mostly finish using ttk widgets, mainly for editor,
+settings, and searches.  Some patches by Mark Roseman.
+
+bpo-40511: Stop unnecessary "flashing" when typing opening and closing
+parentheses inside the parentheses of a function call.
+
+bpo-38439: Add a 256x256 pixel IDLE icon to the Windows .ico file. Created by
+Andrew Clover. Remove the low-color gif variations from the .ico file.
+
+bpo-41775: Make 'IDLE Shell' the shell title.
+
+bpo-35764: Rewrite the Calltips doc section.
+
+bpo-40181: In calltips, stop reminding that '/' marks the end of
+positional-only arguments.
+
+
 What's New in IDLE 3.9.0 (since 3.8.0)
 Released on 2020-10-05?
 ======================================
 
+bpo-41468: Improve IDLE run crash error message (which users should
+never see).
+
+bpo-41373: Save files loaded with no line ending, as when blank, or
+different line endings, by setting its line ending to the system
+default. Fix regression in 3.8.4 and 3.9.0b4.
+
+bpo-41300: Save files with non-ascii chars.  Fix regression in
+3.9.0b4 and 3.8.4.
+
+bpo-37765: Add keywords to module name completion list.  Rewrite
+Completions section of IDLE doc.
+
+bpo-41152: The encoding of ``stdin``, ``stdout`` and ``stderr`` in IDLE
+is now always UTF-8.
+
+bpo-41144: Make Open Module open a special module such as os.path.
+
+bpo-40723: Make test_idle pass when run after import.
+Patch by Florian Dahlitz.
+
+bpo-38689: IDLE will no longer freeze when inspect.signature fails
+when fetching a calltip.
+
+bpo-27115: For 'Go to Line', use a Query entry box subclass with
+IDLE standard behavior and improved error checking.
+
+bpo-39885: When a context menu is invoked by right-clicking outside
+of a selection, clear the selection and move the cursor.  Cut and
+Copy require that the click be within the selection.
+
+bpo-39852: Edit "Go to line" now clears any selection, preventing
+accidental deletion.  It also updates Ln and Col on the status bar.
+
+bpo-39781: Selecting code context lines no longer causes a jump.
+
+bpo-39663: Add tests for pyparse find_good_parse_start().
+
+bpo-39600: Remove duplicate font names from configuration list.
+
+bpo-38792: Close a shell calltip if a :exc:`KeyboardInterrupt`
+or shell restart occurs.  Patch by Zackery Spytz.
+
+bpo-30780: Add remaining configdialog tests for buttons and
+highlights and keys tabs.
+
+bpo-39388: Settings dialog Cancel button cancels pending changes.
+
+bpo-39050: Settings dialog Help button again displays help text.
+
+bpo-32989: Add tests for editor newline_and_indent_event method.
+Remove unneeded arguments and dead code from pyparse
+find_good_parse_start method.
+
+bpo-38943: Fix autocomplete windows not always appearing on some
+systems.  Patch by Johnny Najera.
+
+bpo-38944: Escape key now closes IDLE completion windows.  Patch by
+Johnny Najera.
 
 bpo-38862: 'Strip Trailing Whitespace' on the Format menu removes extra
 newlines at the end of non-shell files.
@@ -10,9 +185,9 @@ bpo-38636: Fix IDLE Format menu tab toggle and file indent width. These
 functions (default shortcuts Alt-T and Alt-U) were mistakenly disabled
 in 3.7.5 and 3.8.0.
 
-bpo-4360: Add an option to toggle IDLE's cursor blink for shell,
+bpo-4630: Add an option to toggle IDLE's cursor blink for shell,
 editor, and output windows.  See Settings, General, Window Preferences,
-Cursor Blink.  Patch by Zachary Spytz.
+Cursor Blink.  Patch by Zackery Spytz.
 
 bpo-26353: Stop adding newline when saving an IDLE shell window.
 

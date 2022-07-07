@@ -18,7 +18,7 @@ write one file see :func:`open`.
 The typical use is::
 
    import fileinput
-   for line in fileinput.input():
+   for line in fileinput.input(encoding="utf-8"):
        process(line)
 
 This iterates over the lines of all files listed in ``sys.argv[1:]``, defaulting
@@ -49,13 +49,14 @@ a file may not have one.
 You can control how files are opened by providing an opening hook via the
 *openhook* parameter to :func:`fileinput.input` or :class:`FileInput()`. The
 hook must be a function that takes two arguments, *filename* and *mode*, and
-returns an accordingly opened file-like object. Two useful hooks are already
-provided by this module.
+returns an accordingly opened file-like object. If *encoding* and/or *errors*
+are specified, they will be passed to the hook as additional keyword arguments.
+This module provides a :func:`hook_compressed` to support compressed files.
 
 The following function is the primary interface of this module:
 
 
-.. function:: input(files=None, inplace=False, backup='', *, mode='r', openhook=None)
+.. function:: input(files=None, inplace=False, backup='', *, mode='r', openhook=None, encoding=None, errors=None)
 
    Create an instance of the :class:`FileInput` class.  The instance will be used
    as global state for the functions of this module, and is also returned to use
@@ -66,7 +67,7 @@ The following function is the primary interface of this module:
    :keyword:`with` statement.  In this example, *input* is closed after the
    :keyword:`!with` statement is exited, even if an exception occurs::
 
-      with fileinput.input(files=('spam.txt', 'eggs.txt')) as f:
+      with fileinput.input(files=('spam.txt', 'eggs.txt'), encoding="utf-8") as f:
           for line in f:
               process(line)
 
@@ -75,6 +76,9 @@ The following function is the primary interface of this module:
 
    .. versionchanged:: 3.8
       The keyword parameters *mode* and *openhook* are now keyword-only.
+
+   .. versionchanged:: 3.10
+      The keyword-only parameter *encoding* and *errors* are added.
 
 
 The following functions use the global state created by :func:`fileinput.input`;
@@ -137,23 +141,24 @@ The class which implements the sequence behavior provided by the module is
 available for subclassing as well:
 
 
-.. class:: FileInput(files=None, inplace=False, backup='', *, mode='r', openhook=None)
+.. class:: FileInput(files=None, inplace=False, backup='', *, mode='r', openhook=None, encoding=None, errors=None)
 
    Class :class:`FileInput` is the implementation; its methods :meth:`filename`,
    :meth:`fileno`, :meth:`lineno`, :meth:`filelineno`, :meth:`isfirstline`,
    :meth:`isstdin`, :meth:`nextfile` and :meth:`close` correspond to the
-   functions of the same name in the module. In addition it has a
-   :meth:`~io.TextIOBase.readline` method which returns the next input line,
-   and a :meth:`__getitem__` method which implements the sequence behavior.
-   The sequence must be accessed in strictly sequential order; random access
-   and :meth:`~io.TextIOBase.readline` cannot be mixed.
+   functions of the same name in the module. In addition it is :term:`iterable`
+   and has a :meth:`~io.TextIOBase.readline` method which returns the next
+   input line. The sequence must be accessed in strictly sequential order;
+   random access and :meth:`~io.TextIOBase.readline` cannot be mixed.
 
-   With *mode* you can specify which file mode will be passed to :func:`open`.
-   It must be ``'r'`` or ``'rb'``.
+   With *mode* you can specify which file mode will be passed to :func:`open`. It
+   must be one of ``'r'`` and ``'rb'``.
 
    The *openhook*, when given, must be a function that takes two arguments,
    *filename* and *mode*, and returns an accordingly opened file-like object. You
    cannot use *inplace* and *openhook* together.
+
+   You can specify *encoding* and *errors* that is passed to :func:`open` or *openhook*.
 
    A :class:`FileInput` instance can be used as a context manager in the
    :keyword:`with` statement.  In this example, *input* is closed after the
@@ -162,18 +167,18 @@ available for subclassing as well:
       with FileInput(files=('spam.txt', 'eggs.txt')) as input:
           process(input)
 
-
    .. versionchanged:: 3.2
       Can be used as a context manager.
-
-   .. deprecated:: 3.8
-      Support for :meth:`__getitem__` method is deprecated.
 
    .. versionchanged:: 3.8
       The keyword parameter *mode* and *openhook* are now keyword-only.
 
-   .. versionchanged:: 3.9
-      The ``'rU'`` and ``'U'`` modes have been removed.
+   .. versionchanged:: 3.10
+      The keyword-only parameter *encoding* and *errors* are added.
+
+   .. versionchanged:: 3.11
+      The ``'rU'`` and ``'U'`` modes and the :meth:`__getitem__` method have
+      been removed.
 
 
 **Optional in-place filtering:** if the keyword argument ``inplace=True`` is
@@ -190,14 +195,20 @@ when standard input is read.
 
 The two following opening hooks are provided by this module:
 
-.. function:: hook_compressed(filename, mode)
+.. function:: hook_compressed(filename, mode, *, encoding=None, errors=None)
 
    Transparently opens files compressed with gzip and bzip2 (recognized by the
    extensions ``'.gz'`` and ``'.bz2'``) using the :mod:`gzip` and :mod:`bz2`
    modules.  If the filename extension is not ``'.gz'`` or ``'.bz2'``, the file is
    opened normally (ie, using :func:`open` without any decompression).
 
-   Usage example:  ``fi = fileinput.FileInput(openhook=fileinput.hook_compressed)``
+   The *encoding* and *errors* values are passed to :class:`io.TextIOWrapper`
+   for compressed files and open for normal files.
+
+   Usage example:  ``fi = fileinput.FileInput(openhook=fileinput.hook_compressed, encoding="utf-8")``
+
+   .. versionchanged:: 3.10
+      The keyword-only parameter *encoding* and *errors* are added.
 
 
 .. function:: hook_encoded(encoding, errors=None)
@@ -211,3 +222,7 @@ The two following opening hooks are provided by this module:
 
    .. versionchanged:: 3.6
       Added the optional *errors* parameter.
+
+   .. deprecated:: 3.10
+      This function is deprecated since :func:`fileinput.input` and :class:`FileInput`
+      now have *encoding* and *errors* parameters.

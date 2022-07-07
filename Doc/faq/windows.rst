@@ -26,8 +26,8 @@ with running programs from the Windows command line then everything will seem
 obvious; otherwise, you might need a little more guidance.
 
 Unless you use some sort of integrated development environment, you will end up
-*typing* Windows commands into what is variously referred to as a "DOS window"
-or "Command prompt window".  Usually you can create such a window from your
+*typing* Windows commands into what is referred to as a
+"Command prompt window".  Usually you can create such a window from your
 search bar by searching for ``cmd``.  You should be able to recognize
 when you have started such a window because you will see a Windows "command
 prompt", which usually looks like this:
@@ -140,11 +140,8 @@ offender.
 How do I make an executable from a Python script?
 -------------------------------------------------
 
-See `cx_Freeze <https://anthony-tuininga.github.io/cx_Freeze/>`_ for a distutils extension
-that allows you to create console and GUI executables from Python code.
-`py2exe <http://www.py2exe.org/>`_, the most popular extension for building
-Python 2.x-based executables, does not yet support Python 3 but a version that
-does is in development.
+See :ref:`faq-create-standalone-binary` for a list of tools that can be used to
+make executables.
 
 
 Is a ``*.pyd`` file the same as a DLL?
@@ -189,9 +186,6 @@ Embedding the Python interpreter in a Windows app can be summarized as follows:
    by the Windows ``GetProcAddress()`` routine.  Macros can make using these
    pointers transparent to any C code that calls routines in Python's C API.
 
-   Borland note: convert :file:`python{NN}.lib` to OMF format using Coff2Omf.exe
-   first.
-
    .. XXX what about static linking?
 
 2. If you use SWIG, it is easy to create a Python "extension module" that will
@@ -215,7 +209,7 @@ Embedding the Python interpreter in a Windows app can be summarized as follows:
 
    .. code-block:: c
 
-      #include "python.h"
+      #include <Python.h>
       ...
       Py_Initialize();  // Initialize Python.
       initmyAppc();  // Initialize (import) the helper class.
@@ -279,7 +273,6 @@ in batch mode.
 How do I check for a keypress without blocking?
 -----------------------------------------------
 
-Use the msvcrt module.  This is a standard Windows-specific extension module.
+Use the :mod:`msvcrt` module.  This is a standard Windows-specific extension module.
 It defines a function ``kbhit()`` which checks whether a keyboard hit is
 present, and ``getch()`` which gets one character without echoing it.
-

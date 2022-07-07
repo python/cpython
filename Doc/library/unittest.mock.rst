@@ -30,7 +30,7 @@ module and class level attributes within the scope of a test, along with
 some examples of how to use :class:`Mock`, :class:`MagicMock` and
 :func:`patch`.
 
-Mock is very easy to use and is designed for use with :mod:`unittest`. Mock
+Mock is designed for use with :mod:`unittest` and
 is based on the 'action -> assertion' pattern instead of 'record -> replay'
 used by many mocking frameworks.
 
@@ -262,9 +262,10 @@ the *new_callable* argument to :func:`patch`.
       this is a new Mock (created on first access). See the
       :attr:`return_value` attribute.
 
-    * *unsafe*: By default if any attribute starts with *assert* or
-      *assret* will raise an :exc:`AttributeError`. Passing ``unsafe=True``
-      will allow access to these attributes.
+    * *unsafe*: By default, accessing any attribute whose name starts with
+      *assert*, *assret*, *asert*, *aseert* or *assrt* will raise an
+      :exc:`AttributeError`. Passing ``unsafe=True`` will allow access to
+      these attributes.
 
       .. versionadded:: 3.5
 
@@ -327,8 +328,8 @@ the *new_callable* argument to :func:`patch`.
 
     .. method:: assert_called_once_with(*args, **kwargs)
 
-       Assert that the mock was called exactly once and that that call was
-       with the specified arguments.
+       Assert that the mock was called exactly once and that call was with the
+       specified arguments.
 
             >>> mock = Mock(return_value=None)
             >>> mock('foo', bar='baz')
@@ -647,6 +648,9 @@ the *new_callable* argument to :func:`patch`.
         arguments and make more complex assertions. See
         :ref:`calls as tuples <calls-as-tuples>`.
 
+        .. versionchanged:: 3.8
+           Added ``args`` and ``kwargs`` properties.
+
 
     .. attribute:: call_args_list
 
@@ -854,7 +858,7 @@ object::
 
 .. class:: AsyncMock(spec=None, side_effect=None, return_value=DEFAULT, wraps=None, name=None, spec_set=None, unsafe=False, **kwargs)
 
-  An asynchronous version of :class:`Mock`. The :class:`AsyncMock` object will
+  An asynchronous version of :class:`MagicMock`. The :class:`AsyncMock` object will
   behave so the object is recognized as an async function, and the result of a
   call is an awaitable.
 
@@ -1327,8 +1331,7 @@ patch
 
 .. note::
 
-    :func:`patch` is straightforward to use. The key is to do the patching in the
-    right namespace. See the section `where to patch`_.
+    The key is to do the patching in the right namespace. See the section `where to patch`_.
 
 .. function:: patch(target, new=DEFAULT, spec=None, create=False, spec_set=None, autospec=None, new_callable=None, **kwargs)
 
@@ -1401,7 +1404,8 @@ patch
     "as"; very useful if :func:`patch` is creating a mock object for you.
 
     :func:`patch` takes arbitrary keyword arguments. These will be passed to
-    the :class:`Mock` (or *new_callable*) on construction.
+    :class:`AsyncMock` if the patched object is asynchronous, to
+    :class:`MagicMock` otherwise or to *new_callable* if specified.
 
     ``patch.dict(...)``, ``patch.multiple(...)`` and ``patch.object(...)`` are
     available for alternate use-cases.
@@ -1512,7 +1516,7 @@ attribute in a class) that does not exist will fail with :exc:`AttributeError`::
     >>> test()
     Traceback (most recent call last):
       ...
-    AttributeError: <module 'sys' (built-in)> does not have the attribute 'non_existing'
+    AttributeError: <module 'sys' (built-in)> does not have the attribute 'non_existing_attribute'
 
 but adding ``create=True`` in the call to :func:`patch` will make the previous example
 work as expected::
@@ -1940,7 +1944,7 @@ Both patch_ and patch.object_ correctly patch and restore descriptors: class
 methods, static methods and properties. You should patch these on the *class*
 rather than an instance. They also work with *some* objects
 that proxy attribute access, like the `django settings object
-<http://www.voidspace.org.uk/python/weblog/arch_d7_2010_12_04.shtml#e1198>`_.
+<https://web.archive.org/web/20200603181648/http://www.voidspace.org.uk/python/weblog/arch_d7_2010_12_04.shtml#e1198>`_.
 
 
 MagicMock and magic method support
@@ -2016,7 +2020,7 @@ The full list of supported magic methods is:
 * Context manager: ``__enter__``, ``__exit__``, ``__aenter__`` and ``__aexit__``
 * Unary numeric methods: ``__neg__``, ``__pos__`` and ``__invert__``
 * The numeric methods (including right hand and in-place variants):
-  ``__add__``, ``__sub__``, ``__mul__``, ``__matmul__``, ``__div__``, ``__truediv__``,
+  ``__add__``, ``__sub__``, ``__mul__``, ``__matmul__``, ``__truediv__``,
   ``__floordiv__``, ``__mod__``, ``__divmod__``, ``__lshift__``,
   ``__rshift__``, ``__and__``, ``__xor__``, ``__or__``, and ``__pow__``
 * Numeric conversion methods: ``__complex__``, ``__int__``, ``__float__``
@@ -2161,7 +2165,7 @@ Magic methods that are supported but not setup by default in ``MagicMock`` are:
 * ``__reversed__`` and ``__missing__``
 * ``__reduce__``, ``__reduce_ex__``, ``__getinitargs__``, ``__getnewargs__``,
   ``__getstate__`` and ``__setstate__``
-* ``__getformat__`` and ``__setformat__``
+* ``__getformat__``
 
 
 
@@ -2204,7 +2208,7 @@ In this example we monkey patch ``method`` to return ``sentinel.some_object``:
     >>> real.method.return_value = sentinel.some_object
     >>> result = real.method()
     >>> assert result is sentinel.some_object
-    >>> sentinel.some_object
+    >>> result
     sentinel.some_object
 
 
@@ -2377,7 +2381,7 @@ FILTER_DIR
 .. data:: FILTER_DIR
 
 :data:`FILTER_DIR` is a module level variable that controls the way mock objects
-respond to :func:`dir` (only for Python 2.6 or more recent). The default is ``True``,
+respond to :func:`dir`. The default is ``True``,
 which uses the filtering described below, to only show useful members. If you
 dislike this filtering, or need to switch it off for diagnostic purposes, then
 set ``mock.FILTER_DIR = False``.
@@ -2546,7 +2550,7 @@ your assertion is gone:
 
     >>> mock = Mock(name='Thing', return_value=None)
     >>> mock(1, 2, 3)
-    >>> mock.assret_called_once_with(4, 5, 6)
+    >>> mock.assret_called_once_with(4, 5, 6)  # Intentional typo!
 
 Your tests can pass silently and incorrectly because of the typo.
 
@@ -2566,7 +2570,7 @@ attributes on the mock that exist on the real class:
 
     >>> from urllib import request
     >>> mock = Mock(spec=request.Request)
-    >>> mock.assret_called_with
+    >>> mock.assret_called_with  # Intentional typo!
     Traceback (most recent call last):
      ...
     AttributeError: Mock object has no attribute 'assret_called_with'
@@ -2578,7 +2582,7 @@ with any methods on the mock:
 
     >>> mock.has_data()
     <mock.Mock object at 0x...>
-    >>> mock.has_data.assret_called_with()
+    >>> mock.has_data.assret_called_with()  # Intentional typo!
 
 Auto-speccing solves this problem. You can either pass ``autospec=True`` to
 :func:`patch` / :func:`patch.object` or use the :func:`create_autospec` function to create a
@@ -2621,7 +2625,7 @@ any typos in our asserts will raise the correct error::
 
     >>> req.add_header('spam', 'eggs')
     <MagicMock name='request.Request().add_header()' id='...'>
-    >>> req.add_header.assret_called_with
+    >>> req.add_header.assret_called_with  # Intentional typo!
     Traceback (most recent call last):
      ...
     AttributeError: Mock object has no attribute 'assret_called_with'

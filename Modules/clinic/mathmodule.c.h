@@ -2,36 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-PyDoc_STRVAR(math_gcd__doc__,
-"gcd($module, x, y, /)\n"
-"--\n"
-"\n"
-"greatest common divisor of x and y");
-
-#define MATH_GCD_METHODDEF    \
-    {"gcd", (PyCFunction)(void(*)(void))math_gcd, METH_FASTCALL, math_gcd__doc__},
-
-static PyObject *
-math_gcd_impl(PyObject *module, PyObject *a, PyObject *b);
-
-static PyObject *
-math_gcd(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject *a;
-    PyObject *b;
-
-    if (!_PyArg_CheckPositional("gcd", nargs, 2, 2)) {
-        goto exit;
-    }
-    a = args[0];
-    b = args[1];
-    return_value = math_gcd_impl(module, a, b);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(math_ceil__doc__,
 "ceil($module, x, /)\n"
 "--\n"
@@ -75,10 +45,10 @@ PyDoc_STRVAR(math_isqrt__doc__,
     {"isqrt", (PyCFunction)math_isqrt, METH_O, math_isqrt__doc__},
 
 PyDoc_STRVAR(math_factorial__doc__,
-"factorial($module, x, /)\n"
+"factorial($module, n, /)\n"
 "--\n"
 "\n"
-"Find x!.\n"
+"Find n!.\n"
 "\n"
 "Raise a ValueError if x is negative or non-integral.");
 
@@ -142,7 +112,7 @@ PyDoc_STRVAR(math_ldexp__doc__,
 "This is essentially the inverse of frexp().");
 
 #define MATH_LDEXP_METHODDEF    \
-    {"ldexp", (PyCFunction)(void(*)(void))math_ldexp, METH_FASTCALL, math_ldexp__doc__},
+    {"ldexp", _PyCFunction_CAST(math_ldexp), METH_FASTCALL, math_ldexp__doc__},
 
 static PyObject *
 math_ldexp_impl(PyObject *module, double x, PyObject *i);
@@ -280,7 +250,7 @@ PyDoc_STRVAR(math_fmod__doc__,
 "x % y may differ.");
 
 #define MATH_FMOD_METHODDEF    \
-    {"fmod", (PyCFunction)(void(*)(void))math_fmod, METH_FASTCALL, math_fmod__doc__},
+    {"fmod", _PyCFunction_CAST(math_fmod), METH_FASTCALL, math_fmod__doc__},
 
 static PyObject *
 math_fmod_impl(PyObject *module, double x, double y);
@@ -334,7 +304,7 @@ PyDoc_STRVAR(math_dist__doc__,
 "    sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))");
 
 #define MATH_DIST_METHODDEF    \
-    {"dist", (PyCFunction)(void(*)(void))math_dist, METH_FASTCALL, math_dist__doc__},
+    {"dist", _PyCFunction_CAST(math_dist), METH_FASTCALL, math_dist__doc__},
 
 static PyObject *
 math_dist_impl(PyObject *module, PyObject *p, PyObject *q);
@@ -364,7 +334,7 @@ PyDoc_STRVAR(math_pow__doc__,
 "Return x**y (x to the power of y).");
 
 #define MATH_POW_METHODDEF    \
-    {"pow", (PyCFunction)(void(*)(void))math_pow, METH_FASTCALL, math_pow__doc__},
+    {"pow", _PyCFunction_CAST(math_pow), METH_FASTCALL, math_pow__doc__},
 
 static PyObject *
 math_pow_impl(PyObject *module, double x, double y);
@@ -598,7 +568,7 @@ PyDoc_STRVAR(math_isclose__doc__,
 "only close to themselves.");
 
 #define MATH_ISCLOSE_METHODDEF    \
-    {"isclose", (PyCFunction)(void(*)(void))math_isclose, METH_FASTCALL|METH_KEYWORDS, math_isclose__doc__},
+    {"isclose", _PyCFunction_CAST(math_isclose), METH_FASTCALL|METH_KEYWORDS, math_isclose__doc__},
 
 static int
 math_isclose_impl(PyObject *module, double a, double b, double rel_tol,
@@ -694,7 +664,7 @@ PyDoc_STRVAR(math_prod__doc__,
 "non-numeric types.");
 
 #define MATH_PROD_METHODDEF    \
-    {"prod", (PyCFunction)(void(*)(void))math_prod, METH_FASTCALL|METH_KEYWORDS, math_prod__doc__},
+    {"prod", _PyCFunction_CAST(math_prod), METH_FASTCALL|METH_KEYWORDS, math_prod__doc__},
 
 static PyObject *
 math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start);
@@ -742,7 +712,7 @@ PyDoc_STRVAR(math_perm__doc__,
 "Raises ValueError if either of the arguments are negative.");
 
 #define MATH_PERM_METHODDEF    \
-    {"perm", (PyCFunction)(void(*)(void))math_perm, METH_FASTCALL, math_perm__doc__},
+    {"perm", _PyCFunction_CAST(math_perm), METH_FASTCALL, math_perm__doc__},
 
 static PyObject *
 math_perm_impl(PyObject *module, PyObject *n, PyObject *k);
@@ -786,7 +756,7 @@ PyDoc_STRVAR(math_comb__doc__,
 "Raises ValueError if either of the arguments are negative.");
 
 #define MATH_COMB_METHODDEF    \
-    {"comb", (PyCFunction)(void(*)(void))math_comb, METH_FASTCALL, math_comb__doc__},
+    {"comb", _PyCFunction_CAST(math_comb), METH_FASTCALL, math_comb__doc__},
 
 static PyObject *
 math_comb_impl(PyObject *module, PyObject *n, PyObject *k);
@@ -808,4 +778,91 @@ math_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9a2b3dc91eb9aadd input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(math_nextafter__doc__,
+"nextafter($module, x, y, /)\n"
+"--\n"
+"\n"
+"Return the next floating-point value after x towards y.");
+
+#define MATH_NEXTAFTER_METHODDEF    \
+    {"nextafter", _PyCFunction_CAST(math_nextafter), METH_FASTCALL, math_nextafter__doc__},
+
+static PyObject *
+math_nextafter_impl(PyObject *module, double x, double y);
+
+static PyObject *
+math_nextafter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    double x;
+    double y;
+
+    if (!_PyArg_CheckPositional("nextafter", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_CheckExact(args[0])) {
+        x = PyFloat_AS_DOUBLE(args[0]);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(args[0]);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[1])) {
+        y = PyFloat_AS_DOUBLE(args[1]);
+    }
+    else
+    {
+        y = PyFloat_AsDouble(args[1]);
+        if (y == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    return_value = math_nextafter_impl(module, x, y);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(math_ulp__doc__,
+"ulp($module, x, /)\n"
+"--\n"
+"\n"
+"Return the value of the least significant bit of the float x.");
+
+#define MATH_ULP_METHODDEF    \
+    {"ulp", (PyCFunction)math_ulp, METH_O, math_ulp__doc__},
+
+static double
+math_ulp_impl(PyObject *module, double x);
+
+static PyObject *
+math_ulp(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    double x;
+    double _return_value;
+
+    if (PyFloat_CheckExact(arg)) {
+        x = PyFloat_AS_DOUBLE(arg);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(arg);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    _return_value = math_ulp_impl(module, x);
+    if ((_return_value == -1.0) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyFloat_FromDouble(_return_value);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=965f99dabaa72165 input=a9049054013a1b77]*/

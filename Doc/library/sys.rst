@@ -26,22 +26,33 @@ always available.
 .. function:: addaudithook(hook)
 
    Append the callable *hook* to the list of active auditing hooks for the
-   current interpreter.
+   current (sub)interpreter.
 
    When an auditing event is raised through the :func:`sys.audit` function, each
    hook will be called in the order it was added with the event name and the
    tuple of arguments. Native hooks added by :c:func:`PySys_AddAuditHook` are
-   called first, followed by hooks added in the current interpreter.
+   called first, followed by hooks added in the current (sub)interpreter.  Hooks
+   can then log the event, raise an exception to abort the operation,
+   or terminate the process entirely.
 
    .. audit-event:: sys.addaudithook "" sys.addaudithook
 
-      Raise an auditing event ``sys.addaudithook`` with no arguments. If any
-      existing hooks raise an exception derived from :class:`Exception`, the
+      Calling :func:`sys.addaudithook` will itself raise an auditing event
+      named ``sys.addaudithook`` with no arguments. If any
+      existing hooks raise an exception derived from :class:`RuntimeError`, the
       new hook will not be added and the exception suppressed. As a result,
       callers cannot assume that their hook has been added unless they control
       all existing hooks.
 
+   See the :ref:`audit events table <audit-events>` for all events raised by
+   CPython, and :pep:`578` for the original design discussion.
+
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.8.1
+
+      Exceptions derived from :class:`Exception` but not :class:`RuntimeError`
+      are no longer suppressed.
 
    .. impl-detail::
 
@@ -61,6 +72,8 @@ always available.
    To loop over the standard input, or the list of files given on the
    command line, see the :mod:`fileinput` module.
 
+   See also :data:`sys.orig_argv`.
+
    .. note::
       On Unix, command line arguments are passed by bytes from OS.  Python decodes
       them with filesystem encoding and "surrogateescape" error handler.
@@ -74,14 +87,23 @@ always available.
 
    .. index:: single: auditing
 
-   Raise an auditing event with any active hooks. The event name is a string
-   identifying the event and its associated schema, which is the number and
-   types of arguments. The schema for a given event is considered public and
-   stable API and should not be modified between releases.
+   Raise an auditing event and trigger any active auditing hooks.
+   *event* is a string identifying the event, and *args* may contain
+   optional arguments with more information about the event.  The
+   number and types of arguments for a given event are considered a
+   public and stable API and should not be modified between releases.
 
-   This function will raise the first exception raised by any hook. In general,
-   these errors should not be handled and should terminate the process as
-   quickly as possible.
+   For example, one auditing event is named ``os.chdir``. This event has
+   one argument called *path* that will contain the requested new
+   working directory.
+
+   :func:`sys.audit` will call the existing auditing hooks, passing
+   the event name and arguments, and will re-raise the first exception
+   from any hook. In general, if an exception is raised, it should not
+   be handled and the process should be terminated as quickly as
+   possible. This allows hook implementations to decide how to respond
+   to particular events: they can merely log the event or abort the
+   operation by raising an exception.
 
    Hooks are added using the :func:`sys.addaudithook` or
    :c:func:`PySys_AddAuditHook` functions.
@@ -131,9 +153,11 @@ always available.
 
 .. data:: builtin_module_names
 
-   A tuple of strings giving the names of all modules that are compiled into this
+   A tuple of strings containing the names of all modules that are compiled into this
    Python interpreter.  (This information is not available in any other way ---
    ``modules.keys()`` only lists the imported modules.)
+
+   See also the :attr:`sys.stdlib_module_names` list.
 
 
 .. function:: call_tracing(func, args)
@@ -174,6 +198,18 @@ always available.
 
    .. audit-event:: sys._current_frames "" sys._current_frames
 
+.. function:: _current_exceptions()
+
+   Return a dictionary mapping each thread's identifier to the topmost exception
+   currently active in that thread at the time the function is called.
+   If a thread is not currently handling an exception, it is not included in
+   the result dictionary.
+
+   This is most useful for statistical profiling.
+
+   This function should be used for internal and specialized purposes only.
+
+   .. audit-event:: sys._current_exceptions "" sys._current_exceptions
 
 .. function:: breakpointhook()
 
@@ -214,7 +250,8 @@ always available.
    Print low-level information to stderr about the state of CPython's memory
    allocator.
 
-   If Python is configured --with-pydebug, it also performs some expensive
+   If Python is `built in debug mode <debug-build>` (:option:`configure
+   --with-pydebug option <--with-pydebug>`), it also performs some expensive
    internal consistency checks.
 
    .. versionadded:: 3.3
@@ -277,6 +314,35 @@ always available.
    yourself to control bytecode file generation.
 
 
+.. data:: _emscripten_info
+
+   A :term:`named tuple` holding information about the environment on the
+   *wasm32-emscripten* platform. The named tuple is provisional and may change
+   in the future.
+
+   .. tabularcolumns:: |l|L|
+
+   +-----------------------------+----------------------------------------------+
+   | Attribute                   | Explanation                                  |
+   +=============================+==============================================+
+   | :const:`emscripten_version` | Emscripten version as tuple of ints          |
+   |                             | (major, minor, micro), e.g. ``(3, 1, 8)``.   |
+   +-----------------------------+----------------------------------------------+
+   | :const:`runtime`            | Runtime string, e.g. browser user agent,     |
+   |                             | ``'Node.js v14.18.2'``, or ``'UNKNOWN'``.    |
+   +-----------------------------+----------------------------------------------+
+   | :const:`pthreads`           | ``True`` if Python is compiled with          |
+   |                             | Emscripten pthreads support.                 |
+   +-----------------------------+----------------------------------------------+
+   | :const:`shared_memory`      | ``True`` if Python is compiled with shared   |
+   |                             | memory support.                              |
+   +-----------------------------+----------------------------------------------+
+
+   .. availability:: WebAssembly Emscripten platform (*wasm32-emscripten*).
+
+   .. versionadded:: 3.11
+
+
 .. data:: pycache_prefix
 
    If this is set (not ``None``), Python will write bytecode-cache ``.pyc``
@@ -308,6 +374,15 @@ always available.
    before the program exits.  The handling of such top-level exceptions can be
    customized by assigning another three-argument function to ``sys.excepthook``.
 
+   .. audit-event:: sys.excepthook hook,type,value,traceback sys.excepthook
+
+      Raise an auditing event ``sys.excepthook`` with arguments ``hook``,
+      ``type``, ``value``, ``traceback`` when an uncaught exception occurs.
+      If no hook has been set, ``hook`` may be ``None``. If any hook raises
+      an exception derived from :class:`RuntimeError` the call to the hook will
+      be suppressed. Otherwise, the audit hook exception will be reported as
+      unraisable and ``sys.excepthook`` will be called.
+
    .. seealso::
 
       The :func:`sys.unraisablehook` function handles unraisable exceptions
@@ -329,28 +404,43 @@ always available.
    .. versionadded:: 3.7
       __breakpointhook__
 
+   .. versionadded:: 3.8
+      __unraisablehook__
+
+
+.. function:: exception()
+
+   This function, when called while an exception handler is executing (such as
+   an ``except`` or ``except*`` clause), returns the exception instance that
+   was caught by this handler. When exception handlers are nested within one
+   another, only the exception handled by the innermost handler is accessible.
+
+   If no exception handler is executing, this function returns ``None``.
+
+   .. versionadded:: 3.11
+
 
 .. function:: exc_info()
 
-   This function returns a tuple of three values that give information about the
-   exception that is currently being handled.  The information returned is specific
-   both to the current thread and to the current stack frame.  If the current stack
-   frame is not handling an exception, the information is taken from the calling
-   stack frame, or its caller, and so on until a stack frame is found that is
-   handling an exception.  Here, "handling an exception" is defined as "executing
-   an except clause."  For any stack frame, only information about the exception
-   being currently handled is accessible.
+   This function returns the old-style representation of the handled
+   exception. If an exception ``e`` is currently handled (so
+   :func:`exception` would return ``e``), :func:`exc_info` returns the
+   tuple ``(type(e), e, e.__traceback__)``.
+   That is, a tuple containing the type of the exception (a subclass of
+   :exc:`BaseException`), the exception itself, and a :ref:`traceback
+   object <traceback-objects>` which typically encapsulates the call
+   stack at the point where the exception last occurred.
 
    .. index:: object: traceback
 
-   If no exception is being handled anywhere on the stack, a tuple containing
-   three ``None`` values is returned.  Otherwise, the values returned are
-   ``(type, value, traceback)``.  Their meaning is: *type* gets the type of the
-   exception being handled (a subclass of :exc:`BaseException`); *value* gets
-   the exception instance (an instance of the exception type); *traceback* gets
-   a :ref:`traceback object <traceback-objects>` which encapsulates the call
-   stack at the point where the exception originally occurred.
+   If no exception is being handled anywhere on the stack, this function
+   return a tuple containing three ``None`` values.
 
+   .. versionchanged:: 3.11
+      The ``type`` and ``traceback`` fields are now derived from the ``value``
+      (the exception instance), so when an exception is modified while it is
+      being handled, the changes are reflected in the results of subsequent
+      calls to :func:`exc_info`.
 
 .. data:: exec_prefix
 
@@ -381,10 +471,7 @@ always available.
 
 .. function:: exit([arg])
 
-   Exit from Python.  This is implemented by raising the :exc:`SystemExit`
-   exception, so cleanup actions specified by finally clauses of :keyword:`try`
-   statements are honored, and it is possible to intercept the exit attempt at
-   an outer level.
+   Raise a :exc:`SystemExit` exception, signaling an intention to exit the interpreter.
 
    The optional argument *arg* can be an integer giving the exit status
    (defaulting to zero), or another type of object.  If it is an integer, zero
@@ -401,7 +488,8 @@ always available.
 
    Since :func:`exit` ultimately "only" raises an exception, it will only exit
    the process when called from the main thread, and the exception is not
-   intercepted.
+   intercepted. Cleanup actions specified by finally clauses of :keyword:`try` statements
+   are honored, and it is possible to intercept the exit attempt at an outer level.
 
    .. versionchanged:: 3.6
       If an error occurs in the cleanup after the Python interpreter
@@ -414,9 +502,9 @@ always available.
    The :term:`named tuple` *flags* exposes the status of command line
    flags. The attributes are read only.
 
-   ============================= =============================
+   ============================= ================================================================
    attribute                     flag
-   ============================= =============================
+   ============================= ================================================================
    :const:`debug`                :option:`-d`
    :const:`inspect`              :option:`-i`
    :const:`interactive`          :option:`-i`
@@ -430,9 +518,10 @@ always available.
    :const:`bytes_warning`        :option:`-b`
    :const:`quiet`                :option:`-q`
    :const:`hash_randomization`   :option:`-R`
-   :const:`dev_mode`             :option:`-X` ``dev``
-   :const:`utf8_mode`            :option:`-X` ``utf8``
-   ============================= =============================
+   :const:`dev_mode`             :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
+   :const:`utf8_mode`            :option:`-X utf8 <-X>`
+   :const:`safe_path`            :option:`-P`
+   ============================= ================================================================
 
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
@@ -447,8 +536,12 @@ always available.
       Added ``isolated`` attribute for :option:`-I` ``isolated`` flag.
 
    .. versionchanged:: 3.7
-      Added ``dev_mode`` attribute for the new :option:`-X` ``dev`` flag
-      and ``utf8_mode`` attribute for the new  :option:`-X` ``utf8`` flag.
+      Added the ``dev_mode`` attribute for the new :ref:`Python Development
+      Mode <devmode>` and the ``utf8_mode`` attribute for the new  :option:`-X`
+      ``utf8`` flag.
+
+   .. versionchanged:: 3.11
+      Added the ``safe_path`` attribute for :option:`-P` option.
 
 
 .. data:: float_info
@@ -465,8 +558,10 @@ always available.
    +---------------------+----------------+--------------------------------------------------+
    | attribute           | float.h macro  | explanation                                      |
    +=====================+================+==================================================+
-   | :const:`epsilon`    | DBL_EPSILON    | difference between 1 and the least value greater |
-   |                     |                | than 1 that is representable as a float          |
+   | :const:`epsilon`    | DBL_EPSILON    | difference between 1.0 and the least value       |
+   |                     |                | greater than 1.0 that is representable as a float|
+   |                     |                |                                                  |
+   |                     |                | See also :func:`math.ulp`.                       |
    +---------------------+----------------+--------------------------------------------------+
    | :const:`dig`        | DBL_DIG        | maximum number of decimal digits that can be     |
    |                     |                | faithfully represented in a float;  see below    |
@@ -474,20 +569,24 @@ always available.
    | :const:`mant_dig`   | DBL_MANT_DIG   | float precision: the number of base-``radix``    |
    |                     |                | digits in the significand of a float             |
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`max`        | DBL_MAX        | maximum representable finite float               |
+   | :const:`max`        | DBL_MAX        | maximum representable positive finite float      |
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`max_exp`    | DBL_MAX_EXP    | maximum integer e such that ``radix**(e-1)`` is  |
+   | :const:`max_exp`    | DBL_MAX_EXP    | maximum integer *e* such that ``radix**(e-1)`` is|
    |                     |                | a representable finite float                     |
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`max_10_exp` | DBL_MAX_10_EXP | maximum integer e such that ``10**e`` is in the  |
+   | :const:`max_10_exp` | DBL_MAX_10_EXP | maximum integer *e* such that ``10**e`` is in the|
    |                     |                | range of representable finite floats             |
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`min`        | DBL_MIN        | minimum positive normalized float                |
+   | :const:`min`        | DBL_MIN        | minimum representable positive *normalized* float|
+   |                     |                |                                                  |
+   |                     |                | Use :func:`math.ulp(0.0) <math.ulp>` to get the  |
+   |                     |                | smallest positive *denormalized* representable   |
+   |                     |                | float.                                           |
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`min_exp`    | DBL_MIN_EXP    | minimum integer e such that ``radix**(e-1)`` is  |
+   | :const:`min_exp`    | DBL_MIN_EXP    | minimum integer *e* such that ``radix**(e-1)`` is|
    |                     |                | a normalized float                               |
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`min_10_exp` | DBL_MIN_10_EXP | minimum integer e such that ``10**e`` is a       |
+   | :const:`min_10_exp` | DBL_MIN_10_EXP | minimum integer *e* such that ``10**e`` is a     |
    |                     |                | normalized float                                 |
    +---------------------+----------------+--------------------------------------------------+
    | :const:`radix`      | FLT_RADIX      | radix of exponent representation                 |
@@ -575,30 +674,24 @@ always available.
 
 .. function:: getfilesystemencoding()
 
-   Return the name of the encoding used to convert between Unicode
-   filenames and bytes filenames. For best compatibility, str should be
-   used for filenames in all cases, although representing filenames as bytes
-   is also supported. Functions accepting or returning filenames should support
-   either str or bytes and internally convert to the system's preferred
-   representation.
+   Get the :term:`filesystem encoding <filesystem encoding and error handler>`:
+   the encoding used with the :term:`filesystem error handler <filesystem
+   encoding and error handler>` to convert between Unicode filenames and bytes
+   filenames. The filesystem error handler is returned from
+   :func:`getfilesystemencoding`.
 
-   This encoding is always ASCII-compatible.
+   For best compatibility, str should be used for filenames in all cases,
+   although representing filenames as bytes is also supported. Functions
+   accepting or returning filenames should support either str or bytes and
+   internally convert to the system's preferred representation.
 
    :func:`os.fsencode` and :func:`os.fsdecode` should be used to ensure that
    the correct encoding and errors mode are used.
 
-   * In the UTF-8 mode, the encoding is ``utf-8`` on any platform.
-
-   * On macOS, the encoding is ``'utf-8'``.
-
-   * On Unix, the encoding is the locale encoding.
-
-   * On Windows, the encoding may be ``'utf-8'`` or ``'mbcs'``, depending
-     on user configuration.
-
-   * On Android, the encoding is ``'utf-8'``.
-
-   * On VxWorks, the encoding is ``'utf-8'``.
+   The :term:`filesystem encoding and error handler` are configured at Python
+   startup by the :c:func:`PyConfig_Read` function: see
+   :c:member:`~PyConfig.filesystem_encoding` and
+   :c:member:`~PyConfig.filesystem_errors` members of :c:type:`PyConfig`.
 
    .. versionchanged:: 3.2
       :func:`getfilesystemencoding` result cannot be ``None`` anymore.
@@ -608,17 +701,25 @@ always available.
       and :func:`_enablelegacywindowsfsencoding` for more information.
 
    .. versionchanged:: 3.7
-      Return 'utf-8' in the UTF-8 mode.
+      Return ``'utf-8'`` if the :ref:`Python UTF-8 Mode <utf8-mode>` is
+      enabled.
 
 
 .. function:: getfilesystemencodeerrors()
 
-   Return the name of the error mode used to convert between Unicode filenames
-   and bytes filenames. The encoding name is returned from
+   Get the :term:`filesystem error handler <filesystem encoding and error
+   handler>`: the error handler used with the :term:`filesystem encoding
+   <filesystem encoding and error handler>` to convert between Unicode
+   filenames and bytes filenames. The filesystem encoding is returned from
    :func:`getfilesystemencoding`.
 
    :func:`os.fsencode` and :func:`os.fsdecode` should be used to ensure that
    the correct encoding and errors mode are used.
+
+   The :term:`filesystem encoding and error handler` are configured at Python
+   startup by the :c:func:`PyConfig_Read` function: see
+   :c:member:`~PyConfig.filesystem_encoding` and
+   :c:member:`~PyConfig.filesystem_errors` members of :c:type:`PyConfig`.
 
    .. versionadded:: 3.6
 
@@ -739,10 +840,15 @@ always available.
    Microsoft documentation on :c:func:`OSVERSIONINFOEX` for more information
    about these fields.
 
-   *platform_version* returns the accurate major version, minor version and
+   *platform_version* returns the major version, minor version and
    build number of the current operating system, rather than the version that
    is being emulated for the process. It is intended for use in logging rather
    than for feature detection.
+
+   .. note::
+      *platform_version* derives the version from kernel32.dll which can be of a different
+      version than the OS version. Please use :mod:`platform` module for achieving accurate
+      OS version.
 
    .. availability:: Windows.
 
@@ -798,7 +904,7 @@ always available.
    +---------------------+--------------------------------------------------+
    | :const:`inf`        | hash value returned for a positive infinity      |
    +---------------------+--------------------------------------------------+
-   | :const:`nan`        | hash value returned for a nan                    |
+   | :const:`nan`        | (this attribute is no longer used)               |
    +---------------------+--------------------------------------------------+
    | :const:`imag`       | multiplier used for the imaginary part of a      |
    |                     | complex number                                   |
@@ -981,7 +1087,8 @@ always available.
 
     A list of :term:`meta path finder` objects that have their
     :meth:`~importlib.abc.MetaPathFinder.find_spec` methods called to see if one
-    of the objects can find the module to be imported. The
+    of the objects can find the module to be imported. By default, it holds entries
+    that implement Python's default import semantics. The
     :meth:`~importlib.abc.MetaPathFinder.find_spec` method is called with at
     least the absolute name of the module being imported. If the module to be
     imported is contained in a package, then the parent package's :attr:`__path__`
@@ -1011,7 +1118,21 @@ always available.
    This is a dictionary that maps module names to modules which have already been
    loaded.  This can be manipulated to force reloading of modules and other tricks.
    However, replacing the dictionary will not necessarily work as expected and
-   deleting essential items from the dictionary may cause Python to fail.
+   deleting essential items from the dictionary may cause Python to fail.  If
+   you want to iterate over this global dictionary always use
+   ``sys.modules.copy()`` or ``tuple(sys.modules)`` to avoid exceptions as its
+   size may change during iteration as a side effect of code or activity in
+   other threads.
+
+
+.. data:: orig_argv
+
+   The list of the original command line arguments passed to the Python
+   executable.
+
+   See also :data:`sys.argv`.
+
+   .. versionadded:: 3.10
 
 
 .. data:: path
@@ -1022,13 +1143,19 @@ always available.
    the environment variable :envvar:`PYTHONPATH`, plus an installation-dependent
    default.
 
-   As initialized upon program startup, the first item of this list, ``path[0]``,
-   is the directory containing the script that was used to invoke the Python
-   interpreter.  If the script directory is not available (e.g.  if the interpreter
-   is invoked interactively or if the script is read from standard input),
-   ``path[0]`` is the empty string, which directs Python to search modules in the
-   current directory first.  Notice that the script directory is inserted *before*
-   the entries inserted as a result of :envvar:`PYTHONPATH`.
+   By default, as initialized upon program startup, a potentially unsafe path
+   is prepended to :data:`sys.path` (*before* the entries inserted as a result
+   of :envvar:`PYTHONPATH`):
+
+   * ``python -m module`` command line: prepend the current working
+     directory.
+   * ``python script.py`` command line: prepend the script's directory.
+     If it's a symbolic link, resolve symbolic links.
+   * ``python -c code`` and ``python`` (REPL) command lines: prepend an empty
+     string, which means the current working directory.
+
+   To not prepend this potentially unsafe path, use the :option:`-P` command
+   line option or the :envvar:`PYTHONSAFEPATH` environment variable?
 
    A program is free to modify this list for its own purposes.  Only strings
    and bytes should be added to :data:`sys.path`; all other data types are
@@ -1036,9 +1163,8 @@ always available.
 
 
    .. seealso::
-      Module :mod:`site` This describes how to use .pth files to extend
-      :data:`sys.path`.
-
+      * Module :mod:`site` This describes how to use .pth files to
+        extend :data:`sys.path`.
 
 .. data:: path_hooks
 
@@ -1088,7 +1214,9 @@ always available.
    System           ``platform`` value
    ================ ===========================
    AIX              ``'aix'``
+   Emscripten       ``'emscripten'``
    Linux            ``'linux'``
+   WASI             ``'wasi'``
    Windows          ``'win32'``
    Windows/Cygwin   ``'cygwin'``
    macOS            ``'darwin'``
@@ -1115,16 +1243,35 @@ always available.
       system's identity.
 
 
+.. data:: platlibdir
+
+   Name of the platform-specific library directory. It is used to build the
+   path of standard library and the paths of installed extension modules.
+
+   It is equal to ``"lib"`` on most platforms. On Fedora and SuSE, it is equal
+   to ``"lib64"`` on 64-bit platforms which gives the following ``sys.path``
+   paths (where ``X.Y`` is the Python ``major.minor`` version):
+
+   * ``/usr/lib64/pythonX.Y/``:
+     Standard library (like ``os.py`` of the :mod:`os` module)
+   * ``/usr/lib64/pythonX.Y/lib-dynload/``:
+     C extension modules of the standard library (like the :mod:`errno` module,
+     the exact filename is platform specific)
+   * ``/usr/lib/pythonX.Y/site-packages/`` (always use ``lib``, not
+     :data:`sys.platlibdir`): Third-party modules
+   * ``/usr/lib64/pythonX.Y/site-packages/``:
+     C extension modules of third-party packages
+
+   .. versionadded:: 3.9
+
+
 .. data:: prefix
 
    A string giving the site-specific directory prefix where the platform
-   independent Python files are installed; by default, this is the string
+   independent Python files are installed; on Unix, the default is
    ``'/usr/local'``.  This can be set at build time with the ``--prefix``
-   argument to the :program:`configure` script.  The main collection of Python
-   library modules is installed in the directory :file:`{prefix}/lib/python{X.Y}`
-   while the platform independent header files (all except :file:`pyconfig.h`) are
-   stored in :file:`{prefix}/include/python{X.Y}`, where *X.Y* is the version
-   number of Python, for example ``3.2``.
+   argument to the :program:`configure` script.  See
+   :ref:`installation_paths` for derived paths.
 
    .. note:: If a :ref:`virtual environment <venv-def>` is in effect, this
       value will be changed in ``site.py`` to point to the virtual
@@ -1379,11 +1526,15 @@ always available.
 
 .. function:: _enablelegacywindowsfsencoding()
 
-   Changes the default filesystem encoding and errors mode to 'mbcs' and
-   'replace' respectively, for consistency with versions of Python prior to 3.6.
+   Changes the :term:`filesystem encoding and error handler` to 'mbcs' and
+   'replace' respectively, for consistency with versions of Python prior to
+   3.6.
 
    This is equivalent to defining the :envvar:`PYTHONLEGACYWINDOWSFSENCODING`
    environment variable before launching Python.
+
+   See also :func:`sys.getfilesystemencoding` and
+   :func:`sys.getfilesystemencodeerrors`.
 
    .. availability:: Windows.
 
@@ -1407,9 +1558,8 @@ always available.
    returned by the :func:`open` function.  Their parameters are chosen as
    follows:
 
-   * The character encoding is platform-dependent.  Non-Windows
-     platforms use the locale encoding (see
-     :meth:`locale.getpreferredencoding()`).
+   * The encoding and error handling are is initialized from
+     :c:member:`PyConfig.stdio_encoding` and :c:member:`PyConfig.stdio_errors`.
 
      On Windows, UTF-8 is used for the console device.  Non-character
      devices such as disk files and pipes use the system locale
@@ -1417,7 +1567,7 @@ always available.
      devices such as NUL (i.e. where ``isatty()`` returns ``True``) use the
      value of the console input and output codepages at startup,
      respectively for stdin and stdout/stderr. This defaults to the
-     system locale encoding if the process is not initially attached
+     system :term:`locale encoding` if the process is not initially attached
      to a console.
 
      The special behaviour of the console can be overridden
@@ -1432,9 +1582,15 @@ always available.
      for the Windows console, this only applies when
      :envvar:`PYTHONLEGACYWINDOWSSTDIO` is also set.
 
-   * When interactive, ``stdout`` and ``stderr`` streams are line-buffered.
-     Otherwise, they are block-buffered like regular text files.  You can
-     override this value with the :option:`-u` command-line option.
+   * When interactive, the ``stdout`` stream is line-buffered. Otherwise,
+     it is block-buffered like regular text files.  The ``stderr`` stream
+     is line-buffered in both cases.  You can make both streams unbuffered
+     by passing the :option:`-u` command-line option or setting the
+     :envvar:`PYTHONUNBUFFERED` environment variable.
+
+   .. versionchanged:: 3.9
+      Non-interactive ``stderr`` is now line-buffered instead of fully
+      buffered.
 
    .. note::
 
@@ -1467,6 +1623,25 @@ always available.
        original values ``__stdin__``, ``__stdout__`` and ``__stderr__`` can be
        ``None``. It is usually the case for Windows GUI apps that aren't connected
        to a console and Python apps started with :program:`pythonw`.
+
+
+.. data:: stdlib_module_names
+
+   A frozenset of strings containing the names of standard library modules.
+
+   It is the same on all platforms. Modules which are not available on
+   some platforms and modules disabled at Python build are also listed.
+   All module kinds are listed: pure Python, built-in, frozen and extension
+   modules. Test modules are excluded.
+
+   For packages, only the main package is listed: sub-packages and sub-modules
+   are not listed. For example, the ``email`` package is listed, but the
+   ``email.mime`` sub-package and the ``email.message`` sub-module are not
+   listed.
+
+   See also the :attr:`sys.builtin_module_names` list.
+
+   .. versionadded:: 3.10
 
 
 .. data:: thread_info
@@ -1540,6 +1715,13 @@ always available.
 
    See also :func:`excepthook` which handles uncaught exceptions.
 
+   .. audit-event:: sys.unraisablehook hook,unraisable sys.unraisablehook
+
+      Raise an auditing event ``sys.unraisablehook`` with arguments
+      ``hook``, ``unraisable`` when an exception that cannot be handled occurs.
+      The ``unraisable`` object is the same as what will be passed to the hook.
+      If no hook has been set, ``hook`` may be ``None``.
+
    .. versionadded:: 3.8
 
 .. data:: version
@@ -1596,13 +1778,13 @@ always available.
 
    .. code-block:: shell-session
 
-      $ ./python -Xa=b -Xc
+      $ ./python -Xpycache_prefix=some_path -Xdev
       Python 3.2a3+ (py3k, Oct 16 2010, 20:14:50)
       [GCC 4.4.3] on linux2
       Type "help", "copyright", "credits" or "license" for more information.
       >>> import sys
       >>> sys._xoptions
-      {'a': 'b', 'c': True}
+      {'pycache_prefix': 'some_path', 'dev': True}
 
    .. impl-detail::
 

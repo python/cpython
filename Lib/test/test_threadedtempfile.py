@@ -15,12 +15,13 @@ provoking a 2.0 failure under Linux.
 
 import tempfile
 
-from test.support import start_threads
+from test.support import threading_helper
 import unittest
 import io
 import threading
 from traceback import print_exc
 
+threading_helper.requires_working_threading(module=True)
 
 NUM_THREADS = 20
 FILES_PER_THREAD = 50
@@ -50,7 +51,7 @@ class TempFileGreedy(threading.Thread):
 class ThreadedTempFileTest(unittest.TestCase):
     def test_main(self):
         threads = [TempFileGreedy() for i in range(NUM_THREADS)]
-        with start_threads(threads, startEvent.set):
+        with threading_helper.start_threads(threads, startEvent.set):
             pass
         ok = sum(t.ok_count for t in threads)
         errors = [str(t.name) + str(t.errors.getvalue())

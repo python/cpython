@@ -14,7 +14,8 @@ Introduction
 :mod:`multiprocessing` is a package that supports spawning processes using an
 API similar to the :mod:`threading` module.  The :mod:`multiprocessing` package
 offers both local and remote concurrency, effectively side-stepping the
-:term:`Global Interpreter Lock` by using subprocesses instead of threads.  Due
+:term:`Global Interpreter Lock <global interpreter lock>` by using
+subprocesses instead of threads.  Due
 to this, the :mod:`multiprocessing` module allows the programmer to fully
 leverage multiple processors on a given machine.  It runs on both Unix and
 Windows.
@@ -95,9 +96,9 @@ Depending on the platform, :mod:`multiprocessing` supports three ways
 to start a process.  These *start methods* are
 
   *spawn*
-    The parent process starts a fresh python interpreter process.  The
+    The parent process starts a fresh Python interpreter process.  The
     child process will only inherit those resources necessary to run
-    the process objects :meth:`~Process.run` method.  In particular,
+    the process object's :meth:`~Process.run` method.  In particular,
     unnecessary file descriptors and handles from the parent process
     will not be inherited.  Starting a process using this method is
     rather slow compared to using *fork* or *forkserver*.
@@ -411,7 +412,7 @@ For example::
            multiple_results = [pool.apply_async(os.getpid, ()) for i in range(4)]
            print([res.get(timeout=1) for res in multiple_results])
 
-           # make a single worker sleep for 10 secs
+           # make a single worker sleep for 10 seconds
            res = pool.apply_async(time.sleep, (10,))
            try:
                print(res.get(timeout=1))
@@ -439,7 +440,8 @@ process which created it.
       >>> def f(x):
       ...     return x*x
       ...
-      >>> p.map(f, [1,2,3])
+      >>> with p:
+      ...   p.map(f, [1,2,3])
       Process PoolWorker-1:
       Process PoolWorker-2:
       Process PoolWorker-3:
@@ -483,7 +485,9 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    to ``True`` or ``False``.  If ``None`` (the default), this flag will be
    inherited from the creating process.
 
-   By default, no arguments are passed to *target*.
+   By default, no arguments are passed to *target*. The *args* argument,
+   which defaults to ``()``, can be used to specify a list or tuple of the arguments
+   to pass to *target*.
 
    If a subclass overrides the constructor, it must make sure it invokes the
    base class constructor (:meth:`Process.__init__`) before doing anything else
@@ -500,6 +504,19 @@ The :mod:`multiprocessing` package mostly replicates the API of the
       method invokes the callable object passed to the object's constructor as
       the target argument, if any, with sequential and keyword arguments taken
       from the *args* and *kwargs* arguments, respectively.
+
+      Using a list or tuple as the *args* argument passed to :class:`Process`
+      achieves the same effect.
+
+      Example::
+
+         >>> from multiprocessing import Process
+         >>> p = Process(target=print, args=[1])
+         >>> p.run()
+         1
+         >>> p = Process(target=print, args=(1,))
+         >>> p.run()
+         1
 
    .. method:: start()
 
@@ -567,8 +584,15 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    .. attribute:: exitcode
 
       The child's exit code.  This will be ``None`` if the process has not yet
-      terminated.  A negative value *-N* indicates that the child was terminated
-      by signal *N*.
+      terminated.
+
+      If the child's :meth:`run` method returned normally, the exit code
+      will be 0.  If it terminated via :func:`sys.exit` with an integer
+      argument *N*, the exit code will be *N*.
+
+      If the child terminated due to an exception not caught within
+      :meth:`run`, the exit code will be 1.  If it was terminated by
+      signal *N*, the exit code will be the negative value *-N*.
 
    .. attribute:: authkey
 
@@ -781,7 +805,7 @@ For an example of the usage of queues for interprocess communication see
       multithreading/multiprocessing semantics, this number is not reliable.
 
       Note that this may raise :exc:`NotImplementedError` on Unix platforms like
-      Mac OS X where ``sem_getvalue()`` is not implemented.
+      macOS where ``sem_getvalue()`` is not implemented.
 
    .. method:: empty()
 
@@ -859,7 +883,7 @@ For an example of the usage of queues for interprocess communication see
 
       A better name for this method might be
       ``allow_exit_without_flush()``.  It is likely to cause enqueued
-      data to lost, and you almost certainly will not need to use it.
+      data to be lost, and you almost certainly will not need to use it.
       It is really only there if you need the current process to exit
       immediately without waiting to flush enqueued data to the
       underlying pipe, and you don't care about lost data.
@@ -876,6 +900,16 @@ For an example of the usage of queues for interprocess communication see
 .. class:: SimpleQueue()
 
    It is a simplified :class:`Queue` type, very close to a locked :class:`Pipe`.
+
+   .. method:: close()
+
+      Close the queue: release internal resources.
+
+      A queue must not be used anymore after it is closed. For example,
+      :meth:`get`, :meth:`put` and :meth:`empty` methods must no longer be
+      called.
+
+      .. versionadded:: 3.9
 
    .. method:: empty()
 
@@ -939,7 +973,8 @@ Miscellaneous
    use.  The number of usable CPUs can be obtained with
    ``len(os.sched_getaffinity(0))``
 
-   May raise :exc:`NotImplementedError`.
+   When the number of CPUs cannot be determined a :exc:`NotImplementedError`
+   is raised.
 
    .. seealso::
       :func:`os.cpu_count`
@@ -1017,13 +1052,19 @@ Miscellaneous
 
    The return value can be ``'fork'``, ``'spawn'``, ``'forkserver'``
    or ``None``.  ``'fork'`` is the default on Unix, while ``'spawn'`` is
-   the default on Windows.
+   the default on Windows and macOS.
+
+.. versionchanged:: 3.8
+
+   On macOS, the *spawn* start method is now the default.  The *fork* start
+   method should be considered unsafe as it can lead to crashes of the
+   subprocess. See :issue:`33725`.
 
    .. versionadded:: 3.4
 
-.. function:: set_executable()
+.. function:: set_executable(executable)
 
-   Sets the path of the Python interpreter to use when starting a child process.
+   Set the path of the Python interpreter to use when starting a child process.
    (By default :data:`sys.executable` is used).  Embedders will probably need to
    do some thing like ::
 
@@ -1033,6 +1074,9 @@ Miscellaneous
 
    .. versionchanged:: 3.4
       Now supported on Unix when the ``'spawn'`` start method is used.
+
+   .. versionchanged:: 3.11
+      Accepts a :term:`path-like object`.
 
 .. function:: set_start_method(method)
 
@@ -1175,6 +1219,7 @@ For example:
     >>> arr2
     array('i', [0, 1, 2, 3, 4, 0, 0, 0, 0, 0])
 
+.. _multiprocessing-recv-pickle-security:
 
 .. warning::
 
@@ -1221,7 +1266,7 @@ object -- see :ref:`multiprocessing-managers`.
    first argument is named *block*, as is consistent with :meth:`Lock.acquire`.
 
    .. note::
-      On Mac OS X, this is indistinguishable from :class:`Semaphore` because
+      On macOS, this is indistinguishable from :class:`Semaphore` because
       ``sem_getvalue()`` is not implemented on that platform.
 
 .. class:: Condition([lock])
@@ -1360,7 +1405,7 @@ object -- see :ref:`multiprocessing-managers`.
 
 .. note::
 
-   On Mac OS X, ``sem_timedwait`` is unsupported, so calling ``acquire()`` with
+   On macOS, ``sem_timedwait`` is unsupported, so calling ``acquire()`` with
    a timeout will emulate that function's behavior using a sleeping loop.
 
 .. note::
@@ -1621,6 +1666,7 @@ different machines. A manager object controls a server process which manages
 proxies.
 
 .. function:: multiprocessing.Manager()
+   :module:
 
    Returns a started :class:`~multiprocessing.managers.SyncManager` object which
    can be used for sharing objects between processes.  The returned manager
@@ -1634,7 +1680,7 @@ Manager processes will be shutdown as soon as they are garbage collected or
 their parent process exits.  The manager classes are defined in the
 :mod:`multiprocessing.managers` module:
 
-.. class:: BaseManager([address[, authkey]])
+.. class:: BaseManager(address=None, authkey=None, serializer='pickle', ctx=None, *, shutdown_timeout=1.0)
 
    Create a BaseManager object.
 
@@ -1648,6 +1694,20 @@ their parent process exits.  The manager classes are defined in the
    validity of incoming connections to the server process.  If
    *authkey* is ``None`` then ``current_process().authkey`` is used.
    Otherwise *authkey* is used and it must be a byte string.
+
+   *serializer* must be ``'pickle'`` (use :mod:`pickle` serialization) or
+   ``'xmlrpclib'`` (use :mod:`xmlrpc.client` serialization).
+
+   *ctx* is a context object, or ``None`` (use the current context). See the
+   :func:`get_context` function.
+
+   *shutdown_timeout* is a timeout in seconds used to wait until the process
+   used by the manager completes in the :meth:`shutdown` method. If the
+   shutdown times out, the process is terminated. If terminating the process
+   also times out, the process is killed.
+
+   .. versionchanged: 3.11
+      Added the *shutdown_timeout* parameter.
 
    .. method:: start([initializer[, initargs]])
 
@@ -1914,7 +1974,7 @@ client to access it remotely::
     >>> class Worker(Process):
     ...     def __init__(self, q):
     ...         self.q = q
-    ...         super(Worker, self).__init__()
+    ...         super().__init__()
     ...     def run(self):
     ...         self.q.put('local hello')
     ...
@@ -2127,6 +2187,16 @@ with the :class:`Pool` class.
    Note that the methods of the pool object should only be called by
    the process which created the pool.
 
+   .. warning::
+      :class:`multiprocessing.pool` objects have internal resources that need to be
+      properly managed (like any other resource) by using the pool as a context manager
+      or by calling :meth:`close` and :meth:`terminate` manually. Failure to do this
+      can lead to the process hanging on finalization.
+
+      Note that it is **not correct** to rely on the garbage collector to destroy the pool
+      as CPython does not assure that the finalizer of the pool will be called
+      (see :meth:`object.__del__` for more information).
+
    .. versionadded:: 3.2
       *maxtasksperchild*
 
@@ -2152,7 +2222,8 @@ with the :class:`Pool` class.
 
    .. method:: apply_async(func[, args[, kwds[, callback[, error_callback]]]])
 
-      A variant of the :meth:`apply` method which returns a result object.
+      A variant of the :meth:`apply` method which returns a
+      :class:`~multiprocessing.pool.AsyncResult` object.
 
       If *callback* is specified then it should be a callable which accepts a
       single argument.  When the result becomes ready *callback* is applied to
@@ -2169,7 +2240,8 @@ with the :class:`Pool` class.
    .. method:: map(func, iterable[, chunksize])
 
       A parallel equivalent of the :func:`map` built-in function (it supports only
-      one *iterable* argument though).  It blocks until the result is ready.
+      one *iterable* argument though, for multiple iterables see :meth:`starmap`).
+      It blocks until the result is ready.
 
       This method chops the iterable into a number of chunks which it submits to
       the process pool as separate tasks.  The (approximate) size of these
@@ -2181,7 +2253,8 @@ with the :class:`Pool` class.
 
    .. method:: map_async(func, iterable[, chunksize[, callback[, error_callback]]])
 
-      A variant of the :meth:`.map` method which returns a result object.
+      A variant of the :meth:`.map` method which returns a
+      :class:`~multiprocessing.pool.AsyncResult` object.
 
       If *callback* is specified then it should be a callable which accepts a
       single argument.  When the result becomes ready *callback* is applied to
@@ -2217,8 +2290,9 @@ with the :class:`Pool` class.
 
    .. method:: starmap(func, iterable[, chunksize])
 
-      Like :meth:`map` except that the elements of the *iterable* are expected
-      to be iterables that are unpacked as arguments.
+      Like :meth:`~multiprocessing.pool.Pool.map` except that the
+      elements of the *iterable* are expected to be iterables that are
+      unpacked as arguments.
 
       Hence an *iterable* of ``[(1,2), (3, 4)]`` results in ``[func(1,2),
       func(3,4)]``.
@@ -2278,7 +2352,7 @@ with the :class:`Pool` class.
    .. method:: successful()
 
       Return whether the call completed without raising an exception.  Will
-      raise :exc:`AssertionError` if the result is not ready.
+      raise :exc:`ValueError` if the result is not ready.
 
       .. versionchanged:: 3.7
          If the result is not ready, :exc:`ValueError` is raised instead of
@@ -2544,9 +2618,9 @@ Address Formats
   filesystem.
 
 * An ``'AF_PIPE'`` address is a string of the form
-   :samp:`r'\\\\.\\pipe\\{PipeName}'`.  To use :func:`Client` to connect to a named
-   pipe on a remote computer called *ServerName* one should use an address of the
-   form :samp:`r'\\\\{ServerName}\\pipe\\{PipeName}'` instead.
+  :samp:`r'\\\\.\\pipe\\{PipeName}'`.  To use :func:`Client` to connect to a named
+  pipe on a remote computer called *ServerName* one should use an address of the
+  form :samp:`r'\\\\{ServerName}\\pipe\\{PipeName}'` instead.
 
 Note that any string beginning with two backslashes is assumed by default to be
 an ``'AF_PIPE'`` address rather than an ``'AF_UNIX'`` address.
@@ -2602,12 +2676,13 @@ handler type) for messages from different processes to get mixed up.
    inherited.
 
 .. currentmodule:: multiprocessing
-.. function:: log_to_stderr()
+.. function:: log_to_stderr(level=None)
 
    This function performs a call to :func:`get_logger` but in addition to
    returning the logger created by get_logger, it adds a handler which sends
    output to :data:`sys.stderr` using format
    ``'[%(levelname)s/%(processName)s] %(message)s'``.
+   You can modify ``levelname`` of the logger by passing a ``level`` argument.
 
 Below is an example session with logging turned on::
 
@@ -2635,6 +2710,46 @@ The :mod:`multiprocessing.dummy` module
 
 :mod:`multiprocessing.dummy` replicates the API of :mod:`multiprocessing` but is
 no more than a wrapper around the :mod:`threading` module.
+
+.. currentmodule:: multiprocessing.pool
+
+In particular, the ``Pool`` function provided by :mod:`multiprocessing.dummy`
+returns an instance of :class:`ThreadPool`, which is a subclass of
+:class:`Pool` that supports all the same method calls but uses a pool of
+worker threads rather than worker processes.
+
+
+.. class:: ThreadPool([processes[, initializer[, initargs]]])
+
+   A thread pool object which controls a pool of worker threads to which jobs
+   can be submitted.  :class:`ThreadPool` instances are fully interface
+   compatible with :class:`Pool` instances, and their resources must also be
+   properly managed, either by using the pool as a context manager or by
+   calling :meth:`~multiprocessing.pool.Pool.close` and
+   :meth:`~multiprocessing.pool.Pool.terminate` manually.
+
+   *processes* is the number of worker threads to use.  If *processes* is
+   ``None`` then the number returned by :func:`os.cpu_count` is used.
+
+   If *initializer* is not ``None`` then each worker process will call
+   ``initializer(*initargs)`` when it starts.
+
+   Unlike :class:`Pool`, *maxtasksperchild* and *context* cannot be provided.
+
+    .. note::
+
+        A :class:`ThreadPool` shares the same interface as :class:`Pool`, which
+        is designed around a pool of processes and predates the introduction of
+        the :class:`concurrent.futures` module.  As such, it inherits some
+        operations that don't make sense for a pool backed by threads, and it
+        has its own type for representing the status of asynchronous jobs,
+        :class:`AsyncResult`, that is not understood by any other libraries.
+
+        Users should generally prefer to use
+        :class:`concurrent.futures.ThreadPoolExecutor`, which has a simpler
+        interface that was designed around threads from the start, and which
+        returns :class:`concurrent.futures.Future` instances that are
+        compatible with many other libraries, including :mod:`asyncio`.
 
 
 .. _multiprocessing-programming:

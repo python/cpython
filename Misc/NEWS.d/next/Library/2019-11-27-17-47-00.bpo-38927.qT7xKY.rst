@@ -1,1 +1,0 @@
-Use ``python -m pip`` instead of ``pip`` to upgrade dependencies in venv.

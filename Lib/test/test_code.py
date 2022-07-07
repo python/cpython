@@ -17,7 +17,7 @@ cellvars: ('x',)
 freevars: ()
 nlocals: 2
 flags: 3
-consts: ('None', '<code object g>', "'f.<locals>.g'")
+consts: ('None', '<code object g>')
 
 >>> dump(f(4).__code__)
 name: g
@@ -49,7 +49,7 @@ varnames: ('x', 'y', 'a', 'b', 'c')
 cellvars: ()
 freevars: ()
 nlocals: 5
-flags: 67
+flags: 3
 consts: ('None',)
 
 >>> def attrs(obj):
@@ -67,7 +67,7 @@ varnames: ('obj',)
 cellvars: ()
 freevars: ()
 nlocals: 1
-flags: 67
+flags: 3
 consts: ('None',)
 
 >>> def optimize_away():
@@ -86,7 +86,7 @@ varnames: ()
 cellvars: ()
 freevars: ()
 nlocals: 0
-flags: 67
+flags: 3
 consts: ("'doc string'", 'None')
 
 >>> def keywordonly_args(a,b,*,k1):
@@ -103,7 +103,7 @@ varnames: ('a', 'b', 'k1')
 cellvars: ()
 freevars: ()
 nlocals: 3
-flags: 67
+flags: 3
 consts: ('None',)
 
 >>> def posonly_args(a,b,/,c):
@@ -120,7 +120,7 @@ varnames: ('a', 'b', 'c')
 cellvars: ()
 freevars: ()
 nlocals: 3
-flags: 67
+flags: 3
 consts: ('None',)
 
 """
@@ -128,15 +128,22 @@ consts: ('None',)
 import inspect
 import sys
 import threading
+import doctest
 import unittest
+import textwrap
 import weakref
-import opcode
+
 try:
     import ctypes
 except ImportError:
     ctypes = None
-from test.support import (run_doctest, run_unittest, cpython_only,
-                          check_impl_detail)
+from test.support import (cpython_only,
+                          check_impl_detail, requires_debug_ranges,
+                          gc_collect)
+from test.support.script_helper import assert_python_ok
+from test.support import threading_helper
+from opcode import opmap
+COPY_FREE_VARS = opmap['COPY_FREE_VARS']
 
 
 def consts(t):
@@ -170,6 +177,9 @@ class CodeTest(unittest.TestCase):
         self.assertEqual(co.co_filename, "filename")
         self.assertEqual(co.co_name, "funcname")
         self.assertEqual(co.co_firstlineno, 15)
+        #Empty code object should raise, but not crash the VM
+        with self.assertRaises(Exception):
+            exec(co)
 
     @cpython_only
     def test_closure_injection(self):
@@ -181,7 +191,7 @@ class CodeTest(unittest.TestCase):
 
         def new_code(c):
             '''A new code object with a __class__ cell added to freevars'''
-            return c.replace(co_freevars=c.co_freevars + ('__class__',))
+            return c.replace(co_freevars=c.co_freevars + ('__class__',), co_code=bytes([COPY_FREE_VARS, 1])+c.co_code)
 
         def add_foreign_method(cls, name, f):
             code = new_code(f.__code__)
@@ -200,10 +210,6 @@ class CodeTest(unittest.TestCase):
         class_ref = function.__closure__[0].cell_contents
         self.assertIs(class_ref, List)
 
-        # Ensure the code correctly indicates it accesses a free variable
-        self.assertFalse(function.__code__.co_flags & inspect.CO_NOFREE,
-                         hex(function.__code__.co_flags))
-
         # Ensure the zero-arg super() call in the injected method works
         obj = List([1, 2, 3])
         self.assertEqual(obj[0], "Foreign getitem: 1")
@@ -214,7 +220,7 @@ class CodeTest(unittest.TestCase):
         CodeType = type(co)
 
         # test code constructor
-        return CodeType(co.co_argcount,
+        CodeType(co.co_argcount,
                         co.co_posonlyargcount,
                         co.co_kwonlyargcount,
                         co.co_nlocals,
@@ -226,10 +232,18 @@ class CodeTest(unittest.TestCase):
                         co.co_varnames,
                         co.co_filename,
                         co.co_name,
+                        co.co_qualname,
                         co.co_firstlineno,
-                        co.co_lnotab,
+                        co.co_linetable,
+                        co.co_exceptiontable,
                         co.co_freevars,
                         co.co_cellvars)
+
+    def test_qualname(self):
+        self.assertEqual(
+            CodeTest.test_qualname.__code__.co_qualname,
+            CodeTest.test_qualname.__qualname__
+        )
 
     def test_replace(self):
         def func():
@@ -240,6 +254,7 @@ class CodeTest(unittest.TestCase):
         # different co_name, co_varnames, co_consts
         def func2():
             y = 2
+            z = 3
             return y
         code2 = func2.__code__
 
@@ -247,23 +262,171 @@ class CodeTest(unittest.TestCase):
             ("co_argcount", 0),
             ("co_posonlyargcount", 0),
             ("co_kwonlyargcount", 0),
-            ("co_nlocals", 0),
+            ("co_nlocals", 1),
             ("co_stacksize", 0),
             ("co_flags", code.co_flags | inspect.CO_COROUTINE),
             ("co_firstlineno", 100),
             ("co_code", code2.co_code),
             ("co_consts", code2.co_consts),
             ("co_names", ("myname",)),
-            ("co_varnames", code2.co_varnames),
+            ("co_varnames", ('spam',)),
             ("co_freevars", ("freevar",)),
             ("co_cellvars", ("cellvar",)),
             ("co_filename", "newfilename"),
             ("co_name", "newname"),
-            ("co_lnotab", code2.co_lnotab),
+            ("co_linetable", code2.co_linetable),
         ):
             with self.subTest(attr=attr, value=value):
                 new_code = code.replace(**{attr: value})
                 self.assertEqual(getattr(new_code, attr), value)
+
+        new_code = code.replace(co_varnames=code2.co_varnames,
+                                co_nlocals=code2.co_nlocals)
+        self.assertEqual(new_code.co_varnames, code2.co_varnames)
+        self.assertEqual(new_code.co_nlocals, code2.co_nlocals)
+
+    def test_nlocals_mismatch(self):
+        def func():
+            x = 1
+            return x
+        co = func.__code__
+        assert co.co_nlocals > 0;
+
+        # First we try the constructor.
+        CodeType = type(co)
+        for diff in (-1, 1):
+            with self.assertRaises(ValueError):
+                CodeType(co.co_argcount,
+                         co.co_posonlyargcount,
+                         co.co_kwonlyargcount,
+                         # This is the only change.
+                         co.co_nlocals + diff,
+                         co.co_stacksize,
+                         co.co_flags,
+                         co.co_code,
+                         co.co_consts,
+                         co.co_names,
+                         co.co_varnames,
+                         co.co_filename,
+                         co.co_name,
+                         co.co_qualname,
+                         co.co_firstlineno,
+                         co.co_linetable,
+                         co.co_exceptiontable,
+                         co.co_freevars,
+                         co.co_cellvars,
+                         )
+        # Then we try the replace method.
+        with self.assertRaises(ValueError):
+            co.replace(co_nlocals=co.co_nlocals - 1)
+        with self.assertRaises(ValueError):
+            co.replace(co_nlocals=co.co_nlocals + 1)
+
+    def test_shrinking_localsplus(self):
+        # Check that PyCode_NewWithPosOnlyArgs resizes both
+        # localsplusnames and localspluskinds, if an argument is a cell.
+        def func(arg):
+            return lambda: arg
+        code = func.__code__
+        newcode = code.replace(co_name="func")  # Should not raise SystemError
+        self.assertEqual(code, newcode)
+
+    def test_empty_linetable(self):
+        def func():
+            pass
+        new_code = code = func.__code__.replace(co_linetable=b'')
+        self.assertEqual(list(new_code.co_lines()), [])
+
+    @requires_debug_ranges()
+    def test_co_positions_artificial_instructions(self):
+        import dis
+
+        namespace = {}
+        exec(textwrap.dedent("""\
+        try:
+            1/0
+        except Exception as e:
+            exc = e
+        """), namespace)
+
+        exc = namespace['exc']
+        traceback = exc.__traceback__
+        code = traceback.tb_frame.f_code
+
+        artificial_instructions = []
+        for instr, positions in zip(
+            dis.get_instructions(code, show_caches=True),
+            code.co_positions(),
+            strict=True
+        ):
+            # If any of the positions is None, then all have to
+            # be None as well for the case above. There are still
+            # some places in the compiler, where the artificial instructions
+            # get assigned the first_lineno but they don't have other positions.
+            # There is no easy way of inferring them at that stage, so for now
+            # we don't support it.
+            self.assertIn(positions.count(None), [0, 3, 4])
+
+            if not any(positions):
+                artificial_instructions.append(instr)
+
+        self.assertEqual(
+            [
+                (instruction.opname, instruction.argval)
+                for instruction in artificial_instructions
+            ],
+            [
+                ("PUSH_EXC_INFO", None),
+                ("LOAD_CONST", None), # artificial 'None'
+                ("STORE_NAME", "e"),  # XX: we know the location for this
+                ("DELETE_NAME", "e"),
+                ("RERAISE", 1),
+                ("COPY", 3),
+                ("POP_EXCEPT", None),
+                ("RERAISE", 1)
+            ]
+        )
+
+    def test_endline_and_columntable_none_when_no_debug_ranges(self):
+        # Make sure that if `-X no_debug_ranges` is used, there is
+        # minimal debug info
+        code = textwrap.dedent("""
+            def f():
+                pass
+
+            positions = f.__code__.co_positions()
+            for line, end_line, column, end_column in positions:
+                assert line == end_line
+                assert column is None
+                assert end_column is None
+            """)
+        assert_python_ok('-X', 'no_debug_ranges', '-c', code)
+
+    def test_endline_and_columntable_none_when_no_debug_ranges_env(self):
+        # Same as above but using the environment variable opt out.
+        code = textwrap.dedent("""
+            def f():
+                pass
+
+            positions = f.__code__.co_positions()
+            for line, end_line, column, end_column in positions:
+                assert line == end_line
+                assert column is None
+                assert end_column is None
+            """)
+        assert_python_ok('-c', code, PYTHONNODEBUGRANGES='1')
+
+    # co_positions behavior when info is missing.
+
+    @requires_debug_ranges()
+    def test_co_positions_empty_linetable(self):
+        def func():
+            x = 1
+        new_code = func.__code__.replace(co_linetable=b'')
+        positions = new_code.co_positions()
+        for line, end_line, column, end_column in positions:
+            self.assertIsNone(line)
+            self.assertEqual(end_line, new_code.co_firstlineno + 1)
 
 
 def isinterned(s):
@@ -338,8 +501,154 @@ class CodeWeakRefTest(unittest.TestCase):
         coderef = weakref.ref(f.__code__, callback)
         self.assertTrue(bool(coderef()))
         del f
+        gc_collect()  # For PyPy or other GCs.
         self.assertFalse(bool(coderef()))
         self.assertTrue(self.called)
+
+# Python implementation of location table parsing algorithm
+def read(it):
+    return next(it)
+
+def read_varint(it):
+    b = read(it)
+    val = b & 63;
+    shift = 0;
+    while b & 64:
+        b = read(it)
+        shift += 6
+        val |= (b&63) << shift
+    return val
+
+def read_signed_varint(it):
+    uval = read_varint(it)
+    if uval & 1:
+        return -(uval >> 1)
+    else:
+        return uval >> 1
+
+def parse_location_table(code):
+    line = code.co_firstlineno
+    it = iter(code.co_linetable)
+    while True:
+        try:
+            first_byte = read(it)
+        except StopIteration:
+            return
+        code = (first_byte >> 3) & 15
+        length = (first_byte & 7) + 1
+        if code == 15:
+            yield (code, length, None, None, None, None)
+        elif code == 14:
+            line_delta = read_signed_varint(it)
+            line += line_delta
+            end_line = line + read_varint(it)
+            col = read_varint(it)
+            if col == 0:
+                col = None
+            else:
+                col -= 1
+            end_col = read_varint(it)
+            if end_col == 0:
+                end_col = None
+            else:
+                end_col -= 1
+            yield (code, length, line, end_line, col, end_col)
+        elif code == 13: # No column
+            line_delta = read_signed_varint(it)
+            line += line_delta
+            yield (code, length, line, line, None, None)
+        elif code in (10, 11, 12): # new line
+            line_delta = code - 10
+            line += line_delta
+            column = read(it)
+            end_column = read(it)
+            yield (code, length, line, line, column, end_column)
+        else:
+            assert (0 <= code < 10)
+            second_byte = read(it)
+            column = code << 3 | (second_byte >> 4)
+            yield (code, length, line, line, column, column + (second_byte & 15))
+
+def positions_from_location_table(code):
+    for _, length, line, end_line, col, end_col in parse_location_table(code):
+        for _ in range(length):
+            yield (line, end_line, col, end_col)
+
+def dedup(lst, prev=object()):
+    for item in lst:
+        if item != prev:
+            yield item
+            prev = item
+
+def lines_from_postions(positions):
+    return dedup(l for (l, _, _, _) in positions)
+
+def misshappen():
+    """
+
+
+
+
+
+    """
+    x = (
+
+
+        4
+
+        +
+
+        y
+
+    )
+    y = (
+        a
+        +
+            b
+                +
+
+                d
+        )
+    return q if (
+
+        x
+
+        ) else p
+
+def bug93662():
+    example_report_generation_message= (
+            """
+            """
+    ).strip()
+    raise ValueError()
+
+
+class CodeLocationTest(unittest.TestCase):
+
+    def check_positions(self, func):
+        pos1 = list(func.__code__.co_positions())
+        pos2 = list(positions_from_location_table(func.__code__))
+        for l1, l2 in zip(pos1, pos2):
+            self.assertEqual(l1, l2)
+        self.assertEqual(len(pos1), len(pos2))
+
+    def test_positions(self):
+        self.check_positions(parse_location_table)
+        self.check_positions(misshappen)
+        self.check_positions(bug93662)
+
+    def check_lines(self, func):
+        co = func.__code__
+        lines1 = list(dedup(l for (_, _, l) in co.co_lines()))
+        lines2 = list(lines_from_postions(positions_from_location_table(co)))
+        for l1, l2 in zip(lines1, lines2):
+            self.assertEqual(l1, l2)
+        self.assertEqual(len(lines1), len(lines2))
+
+    def test_lines(self):
+        self.check_lines(parse_location_table)
+        self.check_lines(misshappen)
+        self.check_lines(bug93662)
 
 
 if check_impl_detail(cpython=True) and ctypes is not None:
@@ -414,6 +723,7 @@ if check_impl_detail(cpython=True) and ctypes is not None:
             self.assertEqual(extra.value, 300)
             del f
 
+        @threading_helper.requires_working_threading()
         def test_free_different_thread(self):
             # Freeing a code object on a different thread then
             # where the co_extra was set should be safe.
@@ -434,50 +744,11 @@ if check_impl_detail(cpython=True) and ctypes is not None:
             tt.join()
             self.assertEqual(LAST_FREED, 500)
 
-        @cpython_only
-        def test_clean_stack_on_return(self):
 
-            def f(x):
-                return x
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
-            code = f.__code__
-            ct = type(f.__code__)
-
-            # Insert an extra LOAD_FAST, this duplicates the value of
-            # 'x' in the stack, leaking it if the frame is not properly
-            # cleaned up upon exit.
-
-            bytecode = list(code.co_code)
-            bytecode.insert(-2, opcode.opmap['LOAD_FAST'])
-            bytecode.insert(-2, 0)
-
-            c = ct(code.co_argcount, code.co_posonlyargcount,
-                   code.co_kwonlyargcount, code.co_nlocals, code.co_stacksize+1,
-                   code.co_flags, bytes(bytecode),
-                   code.co_consts, code.co_names, code.co_varnames,
-                   code.co_filename, code.co_name, code.co_firstlineno,
-                   code.co_lnotab, code.co_freevars, code.co_cellvars)
-            new_function = type(f)(c, f.__globals__, 'nf', f.__defaults__, f.__closure__)
-
-            class Var:
-                pass
-            the_object = Var()
-            var = weakref.ref(the_object)
-
-            new_function(the_object)
-
-            # Check if the_object is leaked
-            del the_object
-            assert var() is None
-
-
-def test_main(verbose=None):
-    from test import test_code
-    run_doctest(test_code, verbose)
-    tests = [CodeTest, CodeConstsTest, CodeWeakRefTest]
-    if check_impl_detail(cpython=True) and ctypes is not None:
-        tests.append(CoExtra)
-    run_unittest(*tests)
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

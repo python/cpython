@@ -47,7 +47,7 @@ between conformable Python objects and XML on the wire.
    The following parameters govern the use of the returned proxy instance.
    If *allow_none* is true,  the Python constant ``None`` will be translated into
    XML; the default behaviour is for ``None`` to raise a :exc:`TypeError`. This is
-   a commonly-used extension to the XML-RPC specification, but isn't supported by
+   a commonly used extension to the XML-RPC specification, but isn't supported by
    all clients and servers; see `http://ontosys.com/xml-rpc/extensions.php
    <https://web.archive.org/web/20130120074804/http://ontosys.com/xml-rpc/extensions.php>`_
    for a description.
@@ -168,12 +168,6 @@ between conformable Python objects and XML on the wire.
 
    `XML-RPC Specification <http://xmlrpc.scripting.com/spec.html>`_
       The official specification.
-
-   `Unofficial XML-RPC Errata <http://effbot.org/zone/xmlrpc-errata.htm>`_
-      Fredrik Lundh's "unofficial errata, intended to clarify certain
-      details in the XML-RPC specification, as well as hint at
-      'best practices' to use when designing your own XML-RPC
-      implementations."
 
 .. _serverproxy-objects:
 
@@ -378,7 +372,7 @@ Fault Objects
 
    .. attribute:: faultCode
 
-      A string indicating the fault type.
+      An int indicating the fault type.
 
 
    .. attribute:: faultString

@@ -2,9 +2,9 @@
 
 import logging
 import socket
-import sys
 import unittest
 import weakref
+from test import support
 from unittest import mock
 try:
     import ssl
@@ -43,16 +43,13 @@ class SslProtoHandshakeTests(test_utils.TestCase):
 
     def connection_made(self, ssl_proto, *, do_handshake=None):
         transport = mock.Mock()
-        sslpipe = mock.Mock()
-        sslpipe.shutdown.return_value = b''
-        if do_handshake:
-            sslpipe.do_handshake.side_effect = do_handshake
-        else:
-            def mock_handshake(callback):
-                return []
-            sslpipe.do_handshake.side_effect = mock_handshake
-        with mock.patch('asyncio.sslproto._SSLPipe', return_value=sslpipe):
-            ssl_proto.connection_made(transport)
+        sslobj = mock.Mock()
+        # emulate reading decompressed data
+        sslobj.read.side_effect = ssl.SSLWantReadError
+        if do_handshake is not None:
+            sslobj.do_handshake = do_handshake
+        ssl_proto._sslobj = sslobj
+        ssl_proto.connection_made(transport)
         return transport
 
     def test_handshake_timeout_zero(self):
@@ -74,7 +71,10 @@ class SslProtoHandshakeTests(test_utils.TestCase):
     def test_eof_received_waiter(self):
         waiter = self.loop.create_future()
         ssl_proto = self.ssl_protocol(waiter=waiter)
-        self.connection_made(ssl_proto)
+        self.connection_made(
+            ssl_proto,
+            do_handshake=mock.Mock(side_effect=ssl.SSLWantReadError)
+        )
         ssl_proto.eof_received()
         test_utils.run_briefly(self.loop)
         self.assertIsInstance(waiter.exception(), ConnectionResetError)
@@ -99,7 +99,10 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         # yield from waiter hang if lost_connection was called.
         waiter = self.loop.create_future()
         ssl_proto = self.ssl_protocol(waiter=waiter)
-        self.connection_made(ssl_proto)
+        self.connection_made(
+            ssl_proto,
+            do_handshake=mock.Mock(side_effect=ssl.SSLWantReadError)
+        )
         ssl_proto.connection_lost(ConnectionAbortedError)
         test_utils.run_briefly(self.loop)
         self.assertIsInstance(waiter.exception(), ConnectionAbortedError)
@@ -109,7 +112,10 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         waiter = self.loop.create_future()
         ssl_proto = self.ssl_protocol(waiter=waiter)
 
-        transport = self.connection_made(ssl_proto)
+        transport = self.connection_made(
+            ssl_proto,
+            do_handshake=mock.Mock(side_effect=ssl.SSLWantReadError)
+        )
         test_utils.run_briefly(self.loop)
 
         ssl_proto._app_transport.close()
@@ -142,7 +148,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         transp.close()
 
         # should not raise
-        self.assertIsNone(ssl_proto.data_received(b'data'))
+        self.assertIsNone(ssl_proto.buffer_updated(5))
 
     def test_write_after_closing(self):
         ssl_proto = self.ssl_protocol()
@@ -162,7 +168,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
 class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
     PAYLOAD_SIZE = 1024 * 100
-    TIMEOUT = 60
+    TIMEOUT = support.LONG_TIMEOUT
 
     def new_loop(self):
         raise NotImplementedError
@@ -272,10 +278,12 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
-                asyncio.wait_for(client(srv.addr), timeout=10))
+                asyncio.wait_for(client(srv.addr),
+                                 timeout=support.SHORT_TIMEOUT))
 
         # No garbage is left if SSL is closed uncleanly
         client_context = weakref.ref(client_context)
+        support.gc_collect()
         self.assertIsNone(client_context())
 
     def test_create_connection_memory_leak(self):
@@ -333,11 +341,13 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
-                asyncio.wait_for(client(srv.addr), timeout=10))
+                asyncio.wait_for(client(srv.addr),
+                                 timeout=support.SHORT_TIMEOUT))
 
         # No garbage is left for SSL client from loop.create_connection, even
         # if user stores the SSLTransport in corresponding protocol instance
         client_context = weakref.ref(client_context)
+        support.gc_collect()
         self.assertIsNone(client_context())
 
     def test_start_tls_client_buf_proto_1(self):
@@ -378,9 +388,9 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
             def get_buffer(self, sizehint):
                 return self.buf
 
-            def buffer_updated(self, nsize):
-                assert nsize == 1
-                self.on_data.set_result(bytes(self.buf[:nsize]))
+            def buffer_updated(slf, nsize):
+                self.assertEqual(nsize, 1)
+                slf.on_data.set_result(bytes(slf.buf[:nsize]))
 
         class ClientProtoSecond(asyncio.Protocol):
             def __init__(self, on_data, on_eof):
@@ -489,7 +499,8 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
-                asyncio.wait_for(client(srv.addr), timeout=10))
+                asyncio.wait_for(client(srv.addr),
+                                 timeout=support.SHORT_TIMEOUT))
 
     def test_start_tls_server_1(self):
         HELLO_MSG = b'1' * self.PAYLOAD_SIZE
@@ -617,7 +628,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                     *addr,
                     ssl=client_sslctx,
                     server_hostname='',
-                    ssl_handshake_timeout=10.0),
+                    ssl_handshake_timeout=support.SHORT_TIMEOUT),
                 0.5)
 
         with self.tcp_server(server,
@@ -636,6 +647,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
         # The 10s handshake timeout should be cancelled to free related
         # objects without really waiting for 10s
         client_sslctx = weakref.ref(client_sslctx)
+        support.gc_collect()
         self.assertIsNone(client_sslctx())
 
     def test_create_connection_ssl_slow_handshake(self):
@@ -653,13 +665,11 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 sock.close()
 
         async def client(addr):
-            with self.assertWarns(DeprecationWarning):
-                reader, writer = await asyncio.open_connection(
-                    *addr,
-                    ssl=client_sslctx,
-                    server_hostname='',
-                    loop=self.loop,
-                    ssl_handshake_timeout=1.0)
+            reader, writer = await asyncio.open_connection(
+                *addr,
+                ssl=client_sslctx,
+                server_hostname='',
+                ssl_handshake_timeout=1.0)
 
         with self.tcp_server(server,
                              max_clients=1,
@@ -693,13 +703,11 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 sock.close()
 
         async def client(addr):
-            with self.assertWarns(DeprecationWarning):
-                reader, writer = await asyncio.open_connection(
-                    *addr,
-                    ssl=client_sslctx,
-                    server_hostname='',
-                    loop=self.loop,
-                    ssl_handshake_timeout=1.0)
+            reader, writer = await asyncio.open_connection(
+                *addr,
+                ssl=client_sslctx,
+                server_hostname='',
+                ssl_handshake_timeout=support.LOOPBACK_TIMEOUT)
 
         with self.tcp_server(server,
                              max_clients=1,
@@ -730,12 +738,10 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 sock.close()
 
         async def client(addr):
-            with self.assertWarns(DeprecationWarning):
-                reader, writer = await asyncio.open_connection(
-                    *addr,
-                    ssl=client_sslctx,
-                    server_hostname='',
-                    loop=self.loop)
+            reader, writer = await asyncio.open_connection(
+                *addr,
+                ssl=client_sslctx,
+                server_hostname='')
 
             self.assertEqual(await reader.readline(), b'A\n')
             writer.write(b'B')

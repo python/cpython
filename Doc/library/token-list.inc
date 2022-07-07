@@ -211,6 +211,8 @@
 
 .. data:: TYPE_COMMENT
 
+.. data:: SOFT_KEYWORD
+
 .. data:: ERRORTOKEN
 
 .. data:: N_TOKENS

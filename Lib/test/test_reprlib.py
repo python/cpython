@@ -10,7 +10,8 @@ import importlib
 import importlib.util
 import unittest
 
-from test.support import create_empty_file, verbose
+from test.support import verbose
+from test.support.os_helper import create_empty_file
 from reprlib import repr as r # Don't shadow builtin repr
 from reprlib import Repr
 from reprlib import recursive_repr
@@ -23,6 +24,28 @@ def nestedTuple(nesting):
     return t
 
 class ReprTests(unittest.TestCase):
+
+    def test_init_kwargs(self):
+        example_kwargs = {
+            "maxlevel": 101,
+            "maxtuple": 102,
+            "maxlist": 103,
+            "maxarray": 104,
+            "maxdict": 105,
+            "maxset": 106,
+            "maxfrozenset": 107,
+            "maxdeque": 108,
+            "maxstring": 109,
+            "maxlong": 110,
+            "maxother": 111,
+            "fillvalue": "x" * 112,
+        }
+        r1 = Repr()
+        for attr, val in example_kwargs.items():
+            setattr(r1, attr, val)
+        r2 = Repr(**example_kwargs)
+        for attr in example_kwargs:
+            self.assertEqual(getattr(r1, attr), getattr(r2, attr), msg=attr)
 
     def test_string(self):
         eq = self.assertEqual
@@ -49,6 +72,13 @@ class ReprTests(unittest.TestCase):
         r2.maxtuple = 2
         expected = repr(t3)[:-2] + "...)"
         eq(r2.repr(t3), expected)
+
+        # modified fillvalue:
+        r3 = Repr()
+        r3.fillvalue = '+++'
+        r3.maxtuple = 2
+        expected = repr(t3)[:-2] + "+++)"
+        eq(r3.repr(t3), expected)
 
     def test_container(self):
         from array import array
@@ -202,9 +232,9 @@ class ReprTests(unittest.TestCase):
         class C:
             def foo(cls): pass
         x = staticmethod(C.foo)
-        self.assertTrue(repr(x).startswith('<staticmethod object at 0x'))
+        self.assertEqual(repr(x), f'<staticmethod({C.foo!r})>')
         x = classmethod(C.foo)
-        self.assertTrue(repr(x).startswith('<classmethod object at 0x'))
+        self.assertEqual(repr(x), f'<classmethod({C.foo!r})>')
 
     def test_unsortable(self):
         # Repr.repr() used to call sorted() on sets, frozensets and dicts

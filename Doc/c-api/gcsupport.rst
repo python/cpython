@@ -33,6 +33,26 @@ Constructors for container types must conform to two rules:
 #. Once all the fields which may contain references to other containers are
    initialized, it must call :c:func:`PyObject_GC_Track`.
 
+Similarly, the deallocator for the object must conform to a similar pair of
+rules:
+
+#. Before fields which refer to other containers are invalidated,
+   :c:func:`PyObject_GC_UnTrack` must be called.
+
+#. The object's memory must be deallocated using :c:func:`PyObject_GC_Del`.
+
+   .. warning::
+      If a type adds the Py_TPFLAGS_HAVE_GC, then it *must* implement at least
+      a :c:member:`~PyTypeObject.tp_traverse` handler or explicitly use one
+      from its subclass or subclasses.
+
+      When calling :c:func:`PyType_Ready` or some of the APIs that indirectly
+      call it like :c:func:`PyType_FromSpecWithBases` or
+      :c:func:`PyType_FromSpec` the interpreter will automatically populate the
+      :c:member:`~PyTypeObject.tp_flags`, :c:member:`~PyTypeObject.tp_traverse`
+      and :c:member:`~PyTypeObject.tp_clear` fields if the type inherits from a
+      class that implements the garbage collector protocol and the child class
+      does *not* include the :const:`Py_TPFLAGS_HAVE_GC` flag.
 
 .. c:function:: TYPE* PyObject_GC_New(TYPE, PyTypeObject *type)
 
@@ -61,13 +81,32 @@ Constructors for container types must conform to two rules:
    end of the constructor.
 
 
-Similarly, the deallocator for the object must conform to a similar pair of
-rules:
+.. c:function:: int PyObject_IS_GC(PyObject *obj)
 
-#. Before fields which refer to other containers are invalidated,
-   :c:func:`PyObject_GC_UnTrack` must be called.
+   Returns non-zero if the object implements the garbage collector protocol,
+   otherwise returns 0.
 
-#. The object's memory must be deallocated using :c:func:`PyObject_GC_Del`.
+   The object cannot be tracked by the garbage collector if this function returns 0.
+
+
+.. c:function:: int PyObject_GC_IsTracked(PyObject *op)
+
+   Returns 1 if the object type of *op* implements the GC protocol and *op* is being
+   currently tracked by the garbage collector and 0 otherwise.
+
+   This is analogous to the Python function :func:`gc.is_tracked`.
+
+   .. versionadded:: 3.9
+
+
+.. c:function:: int PyObject_GC_IsFinalized(PyObject *op)
+
+   Returns 1 if the object type of *op* implements the GC protocol and *op* has been
+   already finalized by the garbage collector and 0 otherwise.
+
+   This is analogous to the Python function :func:`gc.is_finalized`.
+
+   .. versionadded:: 3.9
 
 
 .. c:function:: void PyObject_GC_Del(void *op)
@@ -146,3 +185,46 @@ if the object is immutable.
    this method (don't just call :c:func:`Py_DECREF` on a reference).  The
    collector will call this method if it detects that this object is involved
    in a reference cycle.
+
+
+Controlling the Garbage Collector State
+---------------------------------------
+
+The C-API provides the following functions for controlling
+garbage collection runs.
+
+.. c:function:: Py_ssize_t PyGC_Collect(void)
+
+   Perform a full garbage collection, if the garbage collector is enabled.
+   (Note that :func:`gc.collect` runs it unconditionally.)
+
+   Returns the number of collected + unreachable objects which cannot
+   be collected.
+   If the garbage collector is disabled or already collecting,
+   returns ``0`` immediately.
+   Errors during garbage collection are passed to :data:`sys.unraisablehook`.
+   This function does not raise exceptions.
+
+
+.. c:function:: int PyGC_Enable(void)
+
+   Enable the garbage collector: similar to :func:`gc.enable`.
+   Returns the previous state, 0 for disabled and 1 for enabled.
+
+   .. versionadded:: 3.10
+
+
+.. c:function:: int PyGC_Disable(void)
+
+   Disable the garbage collector: similar to :func:`gc.disable`.
+   Returns the previous state, 0 for disabled and 1 for enabled.
+
+   .. versionadded:: 3.10
+
+
+.. c:function:: int PyGC_IsEnabled(void)
+
+   Query the state of the garbage collector: similar to :func:`gc.isenabled`.
+   Returns the current state, 0 for disabled and 1 for enabled.
+
+   .. versionadded:: 3.10

@@ -1,1 +1,0 @@
-Fix some unused functions in tests. Patch by Adam Johnson.

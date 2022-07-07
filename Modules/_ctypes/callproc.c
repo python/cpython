@@ -54,14 +54,25 @@
 
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+#define NEEDS_PY_IDENTIFIER
+
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
+
+#include <stdbool.h>
 
 #ifdef MS_WIN32
 #include <windows.h>
 #include <tchar.h>
 #else
 #include "ctypes_dlfcn.h"
+#endif
+
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
 #endif
 
 #ifdef MS_WIN32
@@ -156,10 +167,9 @@ _ctypes_get_errobj(int **pspace)
         Py_INCREF(errobj);
     }
     else if (!PyErr_Occurred()) {
-        void *space = PyMem_Malloc(sizeof(int) * 2);
+        void *space = PyMem_Calloc(2, sizeof(int));
         if (space == NULL)
             return NULL;
-        memset(space, 0, sizeof(int) * 2);
         errobj = PyCapsule_New(space, CTYPES_CAPSULE_NAME_PYMEM, pymem_destructor);
         if (errobj == NULL) {
             PyMem_Free(space);
@@ -248,8 +258,6 @@ set_last_error(PyObject *self, PyObject *args)
     }
     return set_error_internal(self, args, 1);
 }
-
-PyObject *ComError;
 
 static WCHAR *FormatError(DWORD code)
 {
@@ -472,7 +480,7 @@ static void
 PyCArg_dealloc(PyCArgObject *self)
 {
     Py_XDECREF(self->obj);
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 static int
@@ -484,82 +492,69 @@ is_literal_char(unsigned char c)
 static PyObject *
 PyCArg_repr(PyCArgObject *self)
 {
-    char buffer[256];
     switch(self->tag) {
     case 'b':
     case 'B':
-        sprintf(buffer, "<cparam '%c' (%d)>",
+        return PyUnicode_FromFormat("<cparam '%c' (%d)>",
             self->tag, self->value.b);
-        break;
     case 'h':
     case 'H':
-        sprintf(buffer, "<cparam '%c' (%d)>",
+        return PyUnicode_FromFormat("<cparam '%c' (%d)>",
             self->tag, self->value.h);
-        break;
     case 'i':
     case 'I':
-        sprintf(buffer, "<cparam '%c' (%d)>",
+        return PyUnicode_FromFormat("<cparam '%c' (%d)>",
             self->tag, self->value.i);
-        break;
     case 'l':
     case 'L':
-        sprintf(buffer, "<cparam '%c' (%ld)>",
+        return PyUnicode_FromFormat("<cparam '%c' (%ld)>",
             self->tag, self->value.l);
-        break;
 
     case 'q':
     case 'Q':
-        sprintf(buffer,
-#ifdef MS_WIN32
-            "<cparam '%c' (%I64d)>",
-#else
-            "<cparam '%c' (%lld)>",
-#endif
+        return PyUnicode_FromFormat("<cparam '%c' (%lld)>",
             self->tag, self->value.q);
-        break;
     case 'd':
-        sprintf(buffer, "<cparam '%c' (%f)>",
-            self->tag, self->value.d);
-        break;
-    case 'f':
-        sprintf(buffer, "<cparam '%c' (%f)>",
-            self->tag, self->value.f);
-        break;
-
+    case 'f': {
+        PyObject *f = PyFloat_FromDouble((self->tag == 'f') ? self->value.f : self->value.d);
+        if (f == NULL) {
+            return NULL;
+        }
+        PyObject *result = PyUnicode_FromFormat("<cparam '%c' (%R)>", self->tag, f);
+        Py_DECREF(f);
+        return result;
+    }
     case 'c':
         if (is_literal_char((unsigned char)self->value.c)) {
-            sprintf(buffer, "<cparam '%c' ('%c')>",
+            return PyUnicode_FromFormat("<cparam '%c' ('%c')>",
                 self->tag, self->value.c);
         }
         else {
-            sprintf(buffer, "<cparam '%c' ('\\x%02x')>",
+            return PyUnicode_FromFormat("<cparam '%c' ('\\x%02x')>",
                 self->tag, (unsigned char)self->value.c);
         }
-        break;
 
 /* Hm, are these 'z' and 'Z' codes useful at all?
-   Shouldn't they be replaced by the functionality of c_string
-   and c_wstring ?
+   Shouldn't they be replaced by the functionality of create_string_buffer()
+   and c_wstring() ?
 */
     case 'z':
     case 'Z':
     case 'P':
-        sprintf(buffer, "<cparam '%c' (%p)>",
+        return PyUnicode_FromFormat("<cparam '%c' (%p)>",
             self->tag, self->value.p);
         break;
 
     default:
         if (is_literal_char((unsigned char)self->tag)) {
-            sprintf(buffer, "<cparam '%c' at %p>",
+            return PyUnicode_FromFormat("<cparam '%c' at %p>",
                 (unsigned char)self->tag, (void *)self);
         }
         else {
-            sprintf(buffer, "<cparam 0x%02x at %p>",
+            return PyUnicode_FromFormat("<cparam 0x%02x at %p>",
                 (unsigned char)self->tag, (void *)self);
         }
-        break;
     }
-    return PyUnicode_FromString(buffer);
 }
 
 static PyMemberDef PyCArgType_members[] = {
@@ -710,7 +705,6 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
         return 0;
     }
 
-#ifdef CTYPES_UNICODE
     if (PyUnicode_Check(obj)) {
         pa->ffi_type = &ffi_type_pointer;
         pa->value.p = PyUnicode_AsWideCharString(obj, NULL);
@@ -723,7 +717,6 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
         }
         return 0;
     }
-#endif
 
     {
         _Py_IDENTIFIER(_as_parameter_);
@@ -752,7 +745,7 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
 #if defined(MS_WIN32) && !defined(_WIN32_WCE)
 /*
 Per: https://msdn.microsoft.com/en-us/library/7572ztz4.aspx
-To be returned by value in RAX, user-defined types must have a length 
+To be returned by value in RAX, user-defined types must have a length
 of 1, 2, 4, 8, 16, 32, or 64 bits
 */
 int can_return_struct_as_int(size_t s)
@@ -813,7 +806,8 @@ static int _call_function_pointer(int flags,
                                   ffi_type **atypes,
                                   ffi_type *restype,
                                   void *resmem,
-                                  int argcount)
+                                  int argcount,
+                                  int argtypecount)
 {
     PyThreadState *_save = NULL; /* For Py_BLOCK_THREADS and Py_UNBLOCK_THREADS */
     PyObject *error_object = NULL;
@@ -836,14 +830,70 @@ static int _call_function_pointer(int flags,
     if ((flags & FUNCFLAG_CDECL) == 0)
         cc = FFI_STDCALL;
 #endif
-    if (FFI_OK != ffi_prep_cif(&cif,
-                               cc,
-                               argcount,
-                               restype,
-                               atypes)) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "ffi_prep_cif failed");
-        return -1;
+
+#   ifdef USING_APPLE_OS_LIBFFI
+#      define HAVE_FFI_PREP_CIF_VAR_RUNTIME __builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)
+#   elif HAVE_FFI_PREP_CIF_VAR
+#      define HAVE_FFI_PREP_CIF_VAR_RUNTIME true
+#   else
+#      define HAVE_FFI_PREP_CIF_VAR_RUNTIME false
+#   endif
+
+    /* Even on Apple-arm64 the calling convention for variadic functions coincides
+     * with the standard calling convention in the case that the function called
+     * only with its fixed arguments.   Thus, we do not need a special flag to be
+     * set on variadic functions.   We treat a function as variadic if it is called
+     * with a nonzero number of variadic arguments */
+    bool is_variadic = (argtypecount != 0 && argcount > argtypecount);
+    (void) is_variadic;
+
+#if defined(__APPLE__) && defined(__arm64__)
+    if (is_variadic) {
+        if (HAVE_FFI_PREP_CIF_VAR_RUNTIME) {
+        } else {
+            PyErr_SetString(PyExc_NotImplementedError, "ffi_prep_cif_var() is missing");
+            return -1;
+        }
+    }
+#endif
+
+#if HAVE_FFI_PREP_CIF_VAR
+    if (is_variadic) {
+        if (HAVE_FFI_PREP_CIF_VAR_RUNTIME) {
+            if (FFI_OK != ffi_prep_cif_var(&cif,
+                                        cc,
+                                        argtypecount,
+                                        argcount,
+                                        restype,
+                                        atypes)) {
+                PyErr_SetString(PyExc_RuntimeError,
+                                "ffi_prep_cif_var failed");
+                return -1;
+            }
+        } else {
+            if (FFI_OK != ffi_prep_cif(&cif,
+                                       cc,
+                                       argcount,
+                                       restype,
+                                       atypes)) {
+                PyErr_SetString(PyExc_RuntimeError,
+                                "ffi_prep_cif failed");
+                return -1;
+            }
+        }
+    } else
+#endif
+
+    {
+        if (FFI_OK != ffi_prep_cif(&cif,
+                                   cc,
+                                   argcount,
+                                   restype,
+                                   atypes)) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "ffi_prep_cif failed");
+            return -1;
+        }
     }
 
     if (flags & (FUNCFLAG_USE_ERRNO | FUNCFLAG_USE_LASTERROR)) {
@@ -945,7 +995,7 @@ static PyObject *GetResult(PyObject *restype, void *result, PyObject *checker)
     if (!checker || !retval)
         return retval;
 
-    v = _PyObject_CallOneArg(checker, retval);
+    v = PyObject_CallOneArg(checker, retval);
     if (v == NULL)
         _PyTraceback_Add("GetResult", "_ctypes/callproc.c", __LINE__-2);
     Py_DECREF(retval);
@@ -1108,11 +1158,14 @@ PyObject *_ctypes_callproc(PPROC pProc,
         ++argcount;
 #endif
 
-    args = (struct argument *)alloca(sizeof(struct argument) * argcount);
-    if (!args) {
-        PyErr_NoMemory();
+    if (argcount > CTYPES_MAX_ARGCOUNT)
+    {
+        PyErr_Format(PyExc_ArgError, "too many arguments (%zi), maximum is %i",
+                     argcount, CTYPES_MAX_ARGCOUNT);
         return NULL;
     }
+
+    args = alloca(sizeof(struct argument) * argcount);
     memset(args, 0, sizeof(struct argument) * argcount);
     argtype_count = argtypes ? PyTuple_GET_SIZE(argtypes) : 0;
 #ifdef MS_WIN32
@@ -1138,7 +1191,7 @@ PyObject *_ctypes_callproc(PPROC pProc,
         if (argtypes && argtype_count > i) {
             PyObject *v;
             converter = PyTuple_GET_ITEM(argtypes, i);
-            v = _PyObject_CallOneArg(converter, arg);
+            v = PyObject_CallOneArg(converter, arg);
             if (v == NULL) {
                 _ctypes_extend_error(PyExc_ArgError, "argument %zd: ", i+1);
                 goto cleanup;
@@ -1159,7 +1212,12 @@ PyObject *_ctypes_callproc(PPROC pProc,
         }
     }
 
-    rtype = _ctypes_get_ffi_type(restype);
+    if (restype == Py_None) {
+        rtype = &ffi_type_void;
+    } else {
+        rtype = _ctypes_get_ffi_type(restype);
+    }
+
     resbuf = alloca(max(rtype->size, sizeof(ffi_arg)));
 
 #ifdef _Py_MEMORY_SANITIZER
@@ -1198,9 +1256,8 @@ PyObject *_ctypes_callproc(PPROC pProc,
 
     if (-1 == _call_function_pointer(flags, pProc, avalues, atypes,
                                      rtype, resbuf,
-                                     Py_SAFE_DOWNCAST(argcount,
-                                                      Py_ssize_t,
-                                                      int)))
+                                     Py_SAFE_DOWNCAST(argcount, Py_ssize_t, int),
+                                     Py_SAFE_DOWNCAST(argtype_count, Py_ssize_t, int)))
         goto cleanup;
 
 #ifdef WORDS_BIGENDIAN
@@ -1217,7 +1274,9 @@ PyObject *_ctypes_callproc(PPROC pProc,
     if (rtype->type != FFI_TYPE_FLOAT
         && rtype->type != FFI_TYPE_STRUCT
         && rtype->size < sizeof(ffi_arg))
+    {
         resbuf = (char *)resbuf + sizeof(ffi_arg) - rtype->size;
+    }
 #endif
 
 #ifdef MS_WIN32
@@ -1251,11 +1310,11 @@ _parse_voidp(PyObject *obj, void **address)
 
 #ifdef MS_WIN32
 
-static const char format_error_doc[] =
+PyDoc_STRVAR(format_error_doc,
 "FormatError([integer]) -> string\n\
 \n\
 Convert a win32 error code into a string. If the error code is not\n\
-given, the return value of a call to GetLastError() is used.\n";
+given, the return value of a call to GetLastError() is used.\n");
 static PyObject *format_error(PyObject *self, PyObject *args)
 {
     PyObject *result;
@@ -1275,16 +1334,15 @@ static PyObject *format_error(PyObject *self, PyObject *args)
     return result;
 }
 
-static const char load_library_doc[] =
+PyDoc_STRVAR(load_library_doc,
 "LoadLibrary(name, load_flags) -> handle\n\
 \n\
 Load an executable (usually a DLL), and return a handle to it.\n\
 The handle may be used to locate exported functions in this\n\
 module. load_flags are as defined for LoadLibraryEx in the\n\
-Windows API.\n";
+Windows API.\n");
 static PyObject *load_library(PyObject *self, PyObject *args)
 {
-    const WCHAR *name;
     PyObject *nameobj;
     int load_flags = 0;
     HMODULE hMod;
@@ -1293,13 +1351,13 @@ static PyObject *load_library(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "U|i:LoadLibrary", &nameobj, &load_flags))
         return NULL;
 
-    name = _PyUnicode_AsUnicode(nameobj);
-    if (!name)
-        return NULL;
-
     if (PySys_Audit("ctypes.dlopen", "O", nameobj) < 0) {
         return NULL;
     }
+
+    WCHAR *name = PyUnicode_AsWideCharString(nameobj, NULL);
+    if (!name)
+        return NULL;
 
     Py_BEGIN_ALLOW_THREADS
     /* bpo-36085: Limit DLL search directories to avoid pre-loading
@@ -1309,10 +1367,12 @@ static PyObject *load_library(PyObject *self, PyObject *args)
     err = hMod ? 0 : GetLastError();
     Py_END_ALLOW_THREADS
 
+    PyMem_Free(name);
     if (err == ERROR_MOD_NOT_FOUND) {
         PyErr_Format(PyExc_FileNotFoundError,
-                     ("Could not find module '%.500S'. Try using "
-                      "the full path with constructor syntax."),
+                     ("Could not find module '%.500S' (or one of its "
+                      "dependencies). Try using the full path with "
+                      "constructor syntax."),
                      nameobj);
         return NULL;
     } else if (err) {
@@ -1325,10 +1385,10 @@ static PyObject *load_library(PyObject *self, PyObject *args)
 #endif
 }
 
-static const char free_library_doc[] =
+PyDoc_STRVAR(free_library_doc,
 "FreeLibrary(handle) -> void\n\
 \n\
-Free the handle of an executable previously loaded by LoadLibrary.\n";
+Free the handle of an executable previously loaded by LoadLibrary.\n");
 static PyObject *free_library(PyObject *self, PyObject *args)
 {
     void *hMod;
@@ -1348,8 +1408,8 @@ static PyObject *free_library(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static const char copy_com_pointer_doc[] =
-"CopyComPointer(src, dst) -> HRESULT value\n";
+PyDoc_STRVAR(copy_com_pointer_doc,
+"CopyComPointer(src, dst) -> HRESULT value\n");
 
 static PyObject *
 copy_com_pointer(PyObject *self, PyObject *args)
@@ -1380,11 +1440,70 @@ copy_com_pointer(PyObject *self, PyObject *args)
     return r;
 }
 #else
+#ifdef __APPLE__
+#ifdef HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH
+#define HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH_RUNTIME \
+    __builtin_available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
+#else
+// Support the deprecated case of compiling on an older macOS version
+static void *libsystem_b_handle;
+static bool (*_dyld_shared_cache_contains_path)(const char *path);
+
+__attribute__((constructor)) void load_dyld_shared_cache_contains_path(void) {
+    libsystem_b_handle = dlopen("/usr/lib/libSystem.B.dylib", RTLD_LAZY);
+    if (libsystem_b_handle != NULL) {
+        _dyld_shared_cache_contains_path = dlsym(libsystem_b_handle, "_dyld_shared_cache_contains_path");
+    }
+}
+
+__attribute__((destructor)) void unload_dyld_shared_cache_contains_path(void) {
+    if (libsystem_b_handle != NULL) {
+        dlclose(libsystem_b_handle);
+    }
+}
+#define HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH_RUNTIME \
+    _dyld_shared_cache_contains_path != NULL
+#endif
+
+static PyObject *py_dyld_shared_cache_contains_path(PyObject *self, PyObject *args)
+{
+     PyObject *name, *name2;
+     char *name_str;
+
+     if (HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH_RUNTIME) {
+         int r;
+
+         if (!PyArg_ParseTuple(args, "O", &name))
+             return NULL;
+
+         if (name == Py_None)
+             Py_RETURN_FALSE;
+
+         if (PyUnicode_FSConverter(name, &name2) == 0)
+             return NULL;
+         name_str = PyBytes_AS_STRING(name2);
+
+         r = _dyld_shared_cache_contains_path(name_str);
+         Py_DECREF(name2);
+
+         if (r) {
+             Py_RETURN_TRUE;
+         } else {
+             Py_RETURN_FALSE;
+         }
+
+     } else {
+         PyErr_SetString(PyExc_NotImplementedError, "_dyld_shared_cache_contains_path symbol is missing");
+         return NULL;
+     }
+
+ }
+#endif
 
 static PyObject *py_dl_open(PyObject *self, PyObject *args)
 {
     PyObject *name, *name2;
-    char *name_str;
+    const char *name_str;
     void * handle;
 #if HAVE_DECL_RTLD_LOCAL
     int mode = RTLD_NOW | RTLD_LOCAL;
@@ -1398,15 +1517,12 @@ static PyObject *py_dl_open(PyObject *self, PyObject *args)
     if (name != Py_None) {
         if (PyUnicode_FSConverter(name, &name2) == 0)
             return NULL;
-        if (PyBytes_Check(name2))
-            name_str = PyBytes_AS_STRING(name2);
-        else
-            name_str = PyByteArray_AS_STRING(name2);
+        name_str = PyBytes_AS_STRING(name2);
     } else {
         name_str = NULL;
         name2 = NULL;
     }
-    if (PySys_Audit("ctypes.dlopen", "s", name_str) < 0) {
+    if (PySys_Audit("ctypes.dlopen", "O", name) < 0) {
         return NULL;
     }
     handle = ctypes_dlopen(name_str, mode);
@@ -1531,10 +1647,10 @@ call_cdeclfunction(PyObject *self, PyObject *args)
 /*****************************************************************
  * functions
  */
-static const char sizeof_doc[] =
+PyDoc_STRVAR(sizeof_doc,
 "sizeof(C type) -> integer\n"
 "sizeof(C instance) -> integer\n"
-"Return the size in bytes of a C instance";
+"Return the size in bytes of a C instance");
 
 static PyObject *
 sizeof_func(PyObject *self, PyObject *obj)
@@ -1552,10 +1668,10 @@ sizeof_func(PyObject *self, PyObject *obj)
     return NULL;
 }
 
-static const char alignment_doc[] =
+PyDoc_STRVAR(alignment_doc,
 "alignment(C type) -> integer\n"
 "alignment(C instance) -> integer\n"
-"Return the alignment requirements of a C instance";
+"Return the alignment requirements of a C instance");
 
 static PyObject *
 align_func(PyObject *self, PyObject *obj)
@@ -1575,10 +1691,10 @@ align_func(PyObject *self, PyObject *obj)
     return NULL;
 }
 
-static const char byref_doc[] =
+PyDoc_STRVAR(byref_doc,
 "byref(C instance[, offset=0]) -> byref-object\n"
 "Return a pointer lookalike to a C instance, only usable\n"
-"as function argument";
+"as function argument");
 
 /*
  * We must return something which can be converted to a parameter,
@@ -1619,9 +1735,9 @@ byref(PyObject *self, PyObject *args)
     return (PyObject *)parg;
 }
 
-static const char addressof_doc[] =
+PyDoc_STRVAR(addressof_doc,
 "addressof(C instance) -> integer\n"
-"Return the address of the C instance internal buffer";
+"Return the address of the C instance internal buffer");
 
 static PyObject *
 addressof(PyObject *self, PyObject *obj)
@@ -1711,10 +1827,9 @@ resize(PyObject *self, PyObject *args)
     if (!_CDataObject_HasExternalBuffer(obj)) {
         /* We are currently using the objects default buffer, but it
            isn't large enough any more. */
-        void *ptr = PyMem_Malloc(size);
+        void *ptr = PyMem_Calloc(1, size);
         if (ptr == NULL)
             return PyErr_NoMemory();
-        memset(ptr, 0, size);
         memmove(ptr, obj->b_ptr, obj->b_size);
         obj->b_ptr = ptr;
         obj->b_size = size;
@@ -1834,7 +1949,7 @@ pointer(PyObject *self, PyObject *arg)
 
     typ = PyDict_GetItemWithError(_ctypes_ptrtype_cache, (PyObject *)Py_TYPE(arg));
     if (typ) {
-        return _PyObject_CallOneArg(typ, arg);
+        return PyObject_CallOneArg(typ, arg);
     }
     else if (PyErr_Occurred()) {
         return NULL;
@@ -1842,7 +1957,7 @@ pointer(PyObject *self, PyObject *arg)
     typ = POINTER(NULL, (PyObject *)Py_TYPE(arg));
     if (typ == NULL)
         return NULL;
-    result = _PyObject_CallOneArg(typ, arg);
+    result = PyObject_CallOneArg(typ, arg);
     Py_DECREF(typ);
     return result;
 }
@@ -1874,6 +1989,8 @@ buffer_info(PyObject *self, PyObject *arg)
     return Py_BuildValue("siN", dict->format, dict->ndim, shape);
 }
 
+
+
 PyMethodDef _ctypes_module_methods[] = {
     {"get_errno", get_errno, METH_NOARGS},
     {"set_errno", set_errno, METH_VARARGS},
@@ -1895,6 +2012,9 @@ PyMethodDef _ctypes_module_methods[] = {
      "dlopen(name, flag={RTLD_GLOBAL|RTLD_LOCAL}) open a shared library"},
     {"dlclose", py_dl_close, METH_VARARGS, "dlclose a library"},
     {"dlsym", py_dl_sym, METH_VARARGS, "find symbol in shared library"},
+#endif
+#ifdef __APPLE__
+     {"_dyld_shared_cache_contains_path", py_dyld_shared_cache_contains_path, METH_VARARGS, "check if path is in the shared cache"},
 #endif
     {"alignment", align_func, METH_O, alignment_doc},
     {"sizeof", sizeof_func, METH_O, sizeof_doc},

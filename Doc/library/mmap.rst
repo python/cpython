@@ -81,7 +81,9 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    private copy-on-write mapping, so changes to the contents of the mmap
    object will be private to this process, and :const:`MAP_SHARED` creates a
    mapping that's shared with all other processes mapping the same areas of
-   the file.  The default value is :const:`MAP_SHARED`.
+   the file.  The default value is :const:`MAP_SHARED`. Some systems have
+   additional possible flags with the full list specified in
+   :ref:`MAP_* constants <map-constants>`.
 
    *prot*, if specified, gives the desired memory protection; the two most
    useful values are :const:`PROT_READ` and :const:`PROT_WRITE`, to specify
@@ -100,7 +102,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
    To ensure validity of the created memory mapping the file specified
    by the descriptor *fileno* is internally automatically synchronized
-   with physical backing store on Mac OS X and OpenVMS.
+   with the physical backing store on macOS.
 
    This example shows a simple way of using :class:`~mmap.mmap`::
 
@@ -244,7 +246,8 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    .. method:: readline()
 
       Returns a single line, starting at the current file position and up to the
-      next newline.
+      next newline. The file position is updated to point after the bytes that were
+      returned.
 
 
    .. method:: resize(newsize)
@@ -253,6 +256,14 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       with :const:`ACCESS_READ` or :const:`ACCESS_COPY`, resizing the map will
       raise a :exc:`TypeError` exception.
 
+      **On Windows**: Resizing the map will raise an :exc:`OSError` if there are other
+      maps against the same named file. Resizing an anonymous map (ie against the
+      pagefile) will silently create a new map with the original data copied over
+      up to the length of the new size.
+
+      .. versionchanged:: 3.11
+         Correctly fails if attempting to resize when another map is held
+         Allows resize against an anonymous map on Windows
 
    .. method:: rfind(sub[, start[, end]])
 
@@ -334,6 +345,8 @@ MADV_* Constants
           MADV_NOCORE
           MADV_CORE
           MADV_PROTECT
+          MADV_FREE_REUSABLE
+          MADV_FREE_REUSE
 
    These options can be passed to :meth:`mmap.madvise`.  Not every option will
    be present on every system.
@@ -341,3 +354,25 @@ MADV_* Constants
    Availability: Systems with the madvise() system call.
 
    .. versionadded:: 3.8
+
+.. _map-constants:
+
+MAP_* Constants
++++++++++++++++
+
+.. data:: MAP_SHARED
+          MAP_PRIVATE
+          MAP_DENYWRITE
+          MAP_EXECUTABLE
+          MAP_ANON
+          MAP_ANONYMOUS
+          MAP_POPULATE
+          MAP_STACK
+
+    These are the various flags that can be passed to :meth:`mmap.mmap`. Note that some options might not be present on some systems.
+
+    .. versionchanged:: 3.10
+       Added MAP_POPULATE constant.
+
+    .. versionadded:: 3.11
+       Added MAP_STACK constant.

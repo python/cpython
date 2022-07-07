@@ -55,11 +55,7 @@ everything, though.
 
 The Windows version of Python doesn't include the :mod:`curses`
 module.  A ported version called `UniCurses
-<https://pypi.org/project/UniCurses>`_ is available.  You could
-also try `the Console module <http://effbot.org/zone/console-index.htm>`_
-written by Fredrik Lundh, which doesn't
-use the same API as curses but provides cursor-addressable text output
-and full support for mouse and keyboard input.
+<https://pypi.org/project/UniCurses>`_ is available.
 
 
 The Python curses module
@@ -303,8 +299,7 @@ The :meth:`~curses.window.addstr` method takes a Python string or
 bytestring as the value to be displayed.  The contents of bytestrings
 are sent to the terminal as-is.  Strings are encoded to bytes using
 the value of the window's :attr:`encoding` attribute; this defaults to
-the default system encoding as returned by
-:func:`locale.getpreferredencoding`.
+the default system encoding as returned by :func:`locale.getencoding`.
 
 The :meth:`~curses.window.addch` methods take a character, which can be
 either a string of length 1, a bytestring of length 1, or an integer.
