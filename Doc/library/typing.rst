@@ -2216,7 +2216,7 @@ Corresponding to other types in :mod:`collections.abc`
    An alias to :class:`collections.abc.Hashable`.
 
    .. deprecated:: 3.12
-      :class:`collections.abc.Hashable` should be directly imported from the :class:`collections.abc`.
+      Use :class:`collections.abc.Hashable` directly instead.
 
 .. class:: Reversible(Iterable[T_co])
 
@@ -2231,7 +2231,7 @@ Corresponding to other types in :mod:`collections.abc`
    An alias to :class:`collections.abc.Sized`.
 
    .. deprecated:: 3.12
-      :class:`collections.abc.Sized` should be directly imported from the :class:`collections.abc`.
+      Use :class:`collections.abc.Sized` directly instead.
 
 Asynchronous programming
 """"""""""""""""""""""""
@@ -2854,4 +2854,7 @@ convenience. This is subject to change, and not all deprecations are listed.
 |  collections                     |               |                   |                |
 +----------------------------------+---------------+-------------------+----------------+
 |  ``typing.Text``                 | 3.11          | Undecided         | :gh:`92332`    |
++----------------------------------+---------------+-------------------+----------------+
+|  ``typing.Hashable`` and         | 3.12          | Undecided         | :gh:`94309`    |
+|  ``typing.Sized``                |               |                   |                |
 +----------------------------------+---------------+-------------------+----------------+
