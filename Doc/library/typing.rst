@@ -1142,7 +1142,7 @@ These are not used in annotations. They are building blocks for creating generic
 
     Bound type variables are particularly useful for annotating
     :func:`classmethods <classmethod>` that serve as alternative constructors.
-    In the following example (©
+    In the following example (by
     `Raymond Hettinger <https://www.youtube.com/watch?v=HTLu2DFOdTg>`_), the
     type variable ``C`` is bound to the ``Circle`` class through the use of a
     forward reference. Using this type variable to annotate the
