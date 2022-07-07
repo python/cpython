@@ -318,10 +318,9 @@ class Server:
                 # OSError is caused by read()/write() on a socket unexpectedly
                 # closed by a client. However, important exceprions like
                 # ssl.SSLError subclass OSError so we need a separate logic
-                # to split them away. Fortunately, they always set errno to 0.
+                # to split them away.
                 except OSError as e:
-                    print('***************************************', e.errno, e)
-                    if not client_fails or e.errno != 0:
+                    if not client_fails or type(e) is not OSError:
                         raise
             return results
 
