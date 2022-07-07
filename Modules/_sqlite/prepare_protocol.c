@@ -46,7 +46,7 @@ pysqlite_prepare_protocol_dealloc(pysqlite_PrepareProtocol *self)
     Py_DECREF(tp);
 }
 
-PyDoc_STRVAR(doc, "PEP-246 style object adaption protocol type.");
+PyDoc_STRVAR(doc, "PEP 246 style object adaption protocol type.");
 
 static PyType_Slot type_slots[] = {
     {Py_tp_dealloc, pysqlite_prepare_protocol_dealloc},
