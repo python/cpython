@@ -366,14 +366,12 @@ dis_traceback = """\
            LOAD_CONST               2 (0)
     -->    BINARY_OP               11 (/)
            POP_TOP
-
-%3d     >> LOAD_FAST_CHECK          1 (tb)
-           RETURN_VALUE
+           JUMP_FORWARD            30 (to 76)
         >> PUSH_EXC_INFO
 
 %3d        LOAD_GLOBAL              0 (Exception)
            CHECK_EXC_MATCH
-           POP_JUMP_FORWARD_IF_FALSE    22 (to 80)
+           POP_JUMP_FORWARD_IF_FALSE    17 (to 68)
            STORE_FAST               0 (e)
 
 %3d        LOAD_FAST                0 (e)
@@ -383,7 +381,7 @@ dis_traceback = """\
            LOAD_CONST               0 (None)
            STORE_FAST               0 (e)
            DELETE_FAST              0 (e)
-           JUMP_BACKWARD           29 (to 14)
+           JUMP_FORWARD             8 (to 76)
         >> LOAD_CONST               0 (None)
            STORE_FAST               0 (e)
            DELETE_FAST              0 (e)
@@ -393,14 +391,17 @@ dis_traceback = """\
         >> COPY                     3
            POP_EXCEPT
            RERAISE                  1
+
+%3d     >> LOAD_FAST                1 (tb)
+           RETURN_VALUE
 ExceptionTable:
 """ % (TRACEBACK_CODE.co_firstlineno,
        TRACEBACK_CODE.co_firstlineno + 1,
        TRACEBACK_CODE.co_firstlineno + 2,
-       TRACEBACK_CODE.co_firstlineno + 5,
        TRACEBACK_CODE.co_firstlineno + 3,
        TRACEBACK_CODE.co_firstlineno + 4,
-       TRACEBACK_CODE.co_firstlineno + 3)
+       TRACEBACK_CODE.co_firstlineno + 3,
+       TRACEBACK_CODE.co_firstlineno + 5)
 
 def _fstring(a, b, c, d):
     return f'{a} {b:4} {c!r} {d!r:4}'
