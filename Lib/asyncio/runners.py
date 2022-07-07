@@ -5,7 +5,6 @@ import enum
 import functools
 import threading
 import signal
-import sys
 from . import coroutines
 from . import events
 from . import exceptions
@@ -53,6 +52,7 @@ class Runner:
         self._loop = None
         self._context = None
         self._interrupt_count = 0
+        self._set_event_loop = False
 
     def __enter__(self):
         self._lazy_init()
@@ -71,6 +71,8 @@ class Runner:
             loop.run_until_complete(loop.shutdown_asyncgens())
             loop.run_until_complete(loop.shutdown_default_executor())
         finally:
+            if self._set_event_loop:
+                events.set_event_loop(None)
             loop.close()
             self._loop = None
             self._state = _State.CLOSED
@@ -112,6 +114,8 @@ class Runner:
 
         self._interrupt_count = 0
         try:
+            if self._set_event_loop:
+                events.set_event_loop(self._loop)
             return self._loop.run_until_complete(task)
         except exceptions.CancelledError:
             if self._interrupt_count > 0 and task.uncancel() == 0:
@@ -131,6 +135,7 @@ class Runner:
             return
         if self._loop_factory is None:
             self._loop = events.new_event_loop()
+            self._set_event_loop = True
         else:
             self._loop = self._loop_factory()
         if self._debug is not None:

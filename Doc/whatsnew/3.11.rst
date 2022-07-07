@@ -75,7 +75,7 @@ New syntax features:
 New typing features:
 
 * :pep:`646`: Variadic generics.
-* :pep:`655`: Marking individual TypedDict items as required or potentially-missing.
+* :pep:`655`: Marking individual TypedDict items as required or potentially missing.
 * :pep:`673`: ``Self`` type.
 * :pep:`675`: Arbitrary literal string type.
 
@@ -336,6 +336,13 @@ See :pep:`681` for more details.
 (Contributed by Jelle Zijlstra in :gh:`91860`. PEP written by
 Erik De Bonte and Eric Traut.)
 
+PEP 563 May Not Be the Future
+-----------------------------
+
+* :pep:`563` Postponed Evaluation of Annotations, ``__future__.annotations``
+  that was planned for this release has been indefinitely postponed.
+  See `this message <https://mail.python.org/archives/list/python-dev@python.org/message/VIZEBX5EYMSYIJNDBF6DMUMZOCWHARSO/>`_ for more information.
+
 Other Language Changes
 ======================
 
@@ -373,6 +380,9 @@ Other Language Changes
   the current directory, the script's directory or an empty string.
   (Contributed by Victor Stinner in :gh:`57684`.)
 
+* A ``"z"`` option was added to the format specification mini-language that
+  coerces negative zero to zero after rounding to the format precision.  See
+  :pep:`682` for more details.  (Contributed by John Belmonte in :gh:`90153`.)
 
 Other CPython Implementation Changes
 ====================================
@@ -439,6 +449,11 @@ asyncio
 * Add :class:`~asyncio.Barrier` class to the synchronization primitives of
   the asyncio library. (Contributed by Yves Duprat and Andrew Svetlov in
   :gh:`87518`.)
+
+* Add :class:`~asyncio.TaskGroup` class,
+  an :ref:`asynchronous context manager <async-context-managers>`
+  holding a group of tasks that will wait for all of them upon exit.
+  (Contributed by Yury Seliganov and others.)
 
 datetime
 --------
@@ -736,7 +751,7 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
   (Contributed by Jelle Zijlstra in :gh:`90638`.)
 
 * :data:`typing.TypedDict` types can now be generic. (Contributed by
-  Samodya Abey in :gh:`89026`.)
+  Samodya Abeysiriwardane in :gh:`89026`.)
 
 * :class:`~typing.NamedTuple` types can now be generic.
   (Contributed by Serhiy Storchaka in :issue:`43923`.)
@@ -1749,6 +1764,21 @@ Porting to Python 3.11
   which are not available in the limited C API.
   (Contributed by Victor Stinner in :issue:`46007`.)
 
+* The following frame functions and type are now directly available with
+  ``#include <Python.h>``, it's no longer needed to add
+  ``#include <frameobject.h>``:
+
+  * :c:func:`PyFrame_Check`
+  * :c:func:`PyFrame_GetBack`
+  * :c:func:`PyFrame_GetBuiltins`
+  * :c:func:`PyFrame_GetGenerator`
+  * :c:func:`PyFrame_GetGlobals`
+  * :c:func:`PyFrame_GetLasti`
+  * :c:func:`PyFrame_GetLocals`
+  * :c:type:`PyFrame_Type`
+
+  (Contributed by Victor Stinner in :gh:`93937`.)
+
 .. _pyframeobject-3.11-hiding:
 
 * The :c:type:`PyFrameObject` structure members have been removed from the
@@ -1884,7 +1914,6 @@ Porting to Python 3.11
   fill any values into :c:member:`PyConfig.module_search_paths`. To calculate default
   paths and then modify them, finish initialization and use :c:func:`PySys_GetObject`
   to retrieve :data:`sys.path` as a Python list object and modify it directly.
-
 
 Deprecated
 ----------

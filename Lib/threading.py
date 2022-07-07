@@ -7,7 +7,7 @@ import functools
 
 from time import monotonic as _time
 from _weakrefset import WeakSet
-from itertools import islice as _islice, count as _count
+from itertools import count as _count
 try:
     from _collections import deque as _deque
 except ImportError:

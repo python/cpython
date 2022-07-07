@@ -44,7 +44,7 @@ randomness that your operating system provides.
 
 .. function:: choice(sequence)
 
-   Return a randomly-chosen element from a non-empty sequence.
+   Return a randomly chosen element from a non-empty sequence.
 
 .. function:: randbelow(n)
 
@@ -129,7 +129,7 @@ Other functions
 .. function:: compare_digest(a, b)
 
    Return ``True`` if strings *a* and *b* are equal, otherwise ``False``,
-   in such a way as to reduce the risk of
+   using a "constant-time compare" to reduce the risk of
    `timing attacks <https://codahale.com/a-lesson-in-timing-attacks/>`_.
    See :func:`hmac.compare_digest` for additional details.
 
@@ -155,7 +155,7 @@ Generate an eight-character alphanumeric password:
    Applications should not
    `store passwords in a recoverable format <http://cwe.mitre.org/data/definitions/257.html>`_,
    whether plain text or encrypted.  They should be salted and hashed
-   using a cryptographically-strong one-way (irreversible) hash function.
+   using a cryptographically strong one-way (irreversible) hash function.
 
 
 Generate a ten-character alphanumeric password with at least one

@@ -11,11 +11,11 @@
 
 This article explains the new features in Python 2.5.  The final release of
 Python 2.5 is scheduled for August 2006; :pep:`356` describes the planned
-release schedule.
+release schedule.  Python 2.5 was released on September 19, 2006.
 
 The changes in Python 2.5 are an interesting mix of language and library
 improvements. The library enhancements will be more important to Python's user
-community, I think, because several widely-useful packages were added.  New
+community, I think, because several widely useful packages were added.  New
 modules include ElementTree for XML processing (:mod:`xml.etree`),
 the SQLite database module (:mod:`sqlite`), and the :mod:`ctypes`
 module for calling C functions.
@@ -551,7 +551,7 @@ exhausted.
    https://en.wikipedia.org/wiki/Coroutine
       The Wikipedia entry for  coroutines.
 
-   http://www.sidhe.org/~dan/blog/archives/000178.html
+   https://web.archive.org/web/20160321211320/http://www.sidhe.org/~dan/blog/archives/000178.html
       An explanation of coroutines from a Perl point of view, written by Dan Sugalski.
 
 .. ======================================================================
@@ -1293,7 +1293,7 @@ complete list of changes, or look through the SVN logs for all the details.
   received several enhancements and a number of bugfixes.  You can now set the
   maximum size in bytes of a field by calling the
   ``csv.field_size_limit(new_limit)`` function; omitting the *new_limit*
-  argument will return the currently-set limit.  The :class:`reader` class now has
+  argument will return the currently set limit.  The :class:`reader` class now has
   a :attr:`line_num` attribute that counts the number of physical lines read from
   the source; records can span multiple physical lines, so :attr:`line_num` is not
   the same as the number of records read.
@@ -1746,8 +1746,8 @@ modules, now that :mod:`ctypes` is included with core Python.
 
 .. seealso::
 
-   http://starship.python.net/crew/theller/ctypes/
-      The ctypes web page, with a tutorial, reference, and FAQ.
+   https://web.archive.org/web/20180410025338/http://starship.python.net/crew/theller/ctypes/
+      The pre-stdlib ctypes web page, with a tutorial, reference, and FAQ.
 
    The documentation  for the :mod:`ctypes` module.
 
@@ -2065,7 +2065,7 @@ up a server takes only a few lines of code::
 
 .. seealso::
 
-   http://www.wsgi.org
+   https://web.archive.org/web/20160331090247/http://wsgi.readthedocs.org/en/latest/
       A central web site for WSGI-related resources.
 
    :pep:`333` - Python Web Server Gateway Interface v1.0

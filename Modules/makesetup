@@ -1,4 +1,5 @@
 #! /bin/sh
+set -e
 
 # Convert templates into Makefile and config.c, based on the module
 # definitions found in the file Setup.
@@ -259,13 +260,14 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			\$*) ;;
 			*) src='$(srcdir)/'"$srcdir/$src";;
 			esac
+			# custom flags first, PY_STDMODULE_CFLAGS may contain -I with system libmpdec
 			case $doconfig in
-			no)	cc="$cc \$(CCSHARED) \$(PY_CFLAGS_NODIST) \$(PY_CPPFLAGS)";;
+			no)	cc="$cc $cpps \$(PY_STDMODULE_CFLAGS) \$(CCSHARED)";;
 			*)
-				cc="$cc \$(PY_BUILTIN_MODULE_CFLAGS)";;
+				cc="$cc $cpps \$(PY_BUILTIN_MODULE_CFLAGS)";;
 			esac
 			# force rebuild when header file or module build flavor (static/shared) is changed
-			rule="$obj: $src \$(MODULE_${mods_upper}_DEPS) \$(PYTHON_HEADERS) Modules/config.c; $cc $cpps -c $src -o $obj"
+			rule="$obj: $src \$(MODULE_${mods_upper}_DEPS) \$(PYTHON_HEADERS) Modules/config.c; $cc -c $src -o $obj"
 			echo "$rule" >>$rulesf
 		done
 		case $doconfig in
@@ -322,8 +324,13 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 
 	case $makepre in
 	-)	;;
-	*)	sedf="@sed.in.$$"
-		trap 'rm -f $sedf' 0 1 2 3
+	*)
+		# macOS' sed has issues with 'a' command. Use 'r' command with an
+		# external replacement file instead.
+		sedf="@sed.in.$$"
+		sedr="@sed.replace.$$"
+		trap 'rm -f $sedf $sedr' 0 1 2 3
+		echo "$NL$NL$DEFS" | sed 's/\\$//' > $sedr
 		echo "1i\\" >$sedf
 		str="# Generated automatically from $makepre by makesetup."
 		echo "$str" >>$sedf
@@ -332,10 +339,10 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		echo "s%_MODDISABLED_NAMES_%$DISABLED%" >>$sedf
 		echo "s%_MODOBJS_%$OBJS%" >>$sedf
 		echo "s%_MODLIBS_%$LIBS%" >>$sedf
-		echo "/Definitions added by makesetup/a$NL$NL$DEFS" >>$sedf
+		echo "/Definitions added by makesetup/r $sedr" >>$sedf
 		sed -f $sedf $makepre >Makefile
 		cat $rulesf >>Makefile
-		rm -f $sedf
+		rm -f $sedf $sedr
 	    ;;
 	esac
 
