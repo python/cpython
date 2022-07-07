@@ -367,13 +367,13 @@ dis_traceback = """\
     -->    BINARY_OP               11 (/)
            POP_TOP
 
-%3d        LOAD_FAST                1 (tb)
+%3d     >> LOAD_FAST_CHECK          1 (tb)
            RETURN_VALUE
         >> PUSH_EXC_INFO
 
 %3d        LOAD_GLOBAL              0 (Exception)
            CHECK_EXC_MATCH
-           POP_JUMP_FORWARD_IF_FALSE    18 (to 72)
+           POP_JUMP_FORWARD_IF_FALSE    22 (to 80)
            STORE_FAST               0 (e)
 
 %3d        LOAD_FAST                0 (e)
@@ -383,9 +383,7 @@ dis_traceback = """\
            LOAD_CONST               0 (None)
            STORE_FAST               0 (e)
            DELETE_FAST              0 (e)
-
-%3d        LOAD_FAST                1 (tb)
-           RETURN_VALUE
+           JUMP_BACKWARD           29 (to 14)
         >> LOAD_CONST               0 (None)
            STORE_FAST               0 (e)
            DELETE_FAST              0 (e)
@@ -402,7 +400,6 @@ ExceptionTable:
        TRACEBACK_CODE.co_firstlineno + 5,
        TRACEBACK_CODE.co_firstlineno + 3,
        TRACEBACK_CODE.co_firstlineno + 4,
-       TRACEBACK_CODE.co_firstlineno + 5,
        TRACEBACK_CODE.co_firstlineno + 3)
 
 def _fstring(a, b, c, d):
@@ -427,6 +424,123 @@ dis_fstring = """\
            BUILD_STRING             7
            RETURN_VALUE
 """ % (_fstring.__code__.co_firstlineno, _fstring.__code__.co_firstlineno + 1)
+
+def _with(c):
+    with c:
+        x = 1
+    y = 2
+
+dis_with = """\
+%3d        RESUME                   0
+
+%3d        LOAD_FAST                0 (c)
+           BEFORE_WITH
+           POP_TOP
+
+%3d        LOAD_CONST               1 (1)
+           STORE_FAST               1 (x)
+
+%3d        LOAD_CONST               0 (None)
+           LOAD_CONST               0 (None)
+           LOAD_CONST               0 (None)
+           CALL                     2
+           POP_TOP
+
+%3d     >> LOAD_CONST               2 (2)
+           STORE_FAST               2 (y)
+           LOAD_CONST               0 (None)
+           RETURN_VALUE
+
+%3d     >> PUSH_EXC_INFO
+           WITH_EXCEPT_START
+           POP_JUMP_FORWARD_IF_TRUE     1 (to 46)
+           RERAISE                  2
+        >> POP_TOP
+           POP_EXCEPT
+           POP_TOP
+           POP_TOP
+           JUMP_BACKWARD           13 (to 30)
+        >> COPY                     3
+           POP_EXCEPT
+           RERAISE                  1
+ExceptionTable:
+2 rows
+""" % (_with.__code__.co_firstlineno,
+       _with.__code__.co_firstlineno + 1,
+       _with.__code__.co_firstlineno + 2,
+       _with.__code__.co_firstlineno + 1,
+       _with.__code__.co_firstlineno + 3,
+       _with.__code__.co_firstlineno + 1,
+       )
+
+async def _asyncwith(c):
+    async with c:
+        x = 1
+    y = 2
+
+dis_asyncwith = """\
+%3d        RETURN_GENERATOR
+           POP_TOP
+           RESUME                   0
+
+%3d        LOAD_FAST                0 (c)
+           BEFORE_ASYNC_WITH
+           GET_AWAITABLE            1
+           LOAD_CONST               0 (None)
+        >> SEND                     3 (to 22)
+           YIELD_VALUE              3
+           RESUME                   3
+           JUMP_BACKWARD_NO_INTERRUPT     4 (to 14)
+        >> POP_TOP
+
+%3d        LOAD_CONST               1 (1)
+           STORE_FAST               1 (x)
+
+%3d        LOAD_CONST               0 (None)
+           LOAD_CONST               0 (None)
+           LOAD_CONST               0 (None)
+           CALL                     2
+           GET_AWAITABLE            2
+           LOAD_CONST               0 (None)
+        >> SEND                     3 (to 56)
+           YIELD_VALUE              2
+           RESUME                   3
+           JUMP_BACKWARD_NO_INTERRUPT     4 (to 48)
+        >> POP_TOP
+
+%3d     >> LOAD_CONST               2 (2)
+           STORE_FAST               2 (y)
+           LOAD_CONST               0 (None)
+           RETURN_VALUE
+
+%3d     >> PUSH_EXC_INFO
+           WITH_EXCEPT_START
+           GET_AWAITABLE            2
+           LOAD_CONST               0 (None)
+        >> SEND                     3 (to 82)
+           YIELD_VALUE              6
+           RESUME                   3
+           JUMP_BACKWARD_NO_INTERRUPT     4 (to 74)
+        >> POP_JUMP_FORWARD_IF_TRUE     1 (to 86)
+           RERAISE                  2
+        >> POP_TOP
+           POP_EXCEPT
+           POP_TOP
+           POP_TOP
+           JUMP_BACKWARD           19 (to 58)
+        >> COPY                     3
+           POP_EXCEPT
+           RERAISE                  1
+ExceptionTable:
+2 rows
+""" % (_asyncwith.__code__.co_firstlineno,
+       _asyncwith.__code__.co_firstlineno + 1,
+       _asyncwith.__code__.co_firstlineno + 2,
+       _asyncwith.__code__.co_firstlineno + 1,
+       _asyncwith.__code__.co_firstlineno + 3,
+       _asyncwith.__code__.co_firstlineno + 1,
+       )
+
 
 def _tryfinally(a, b):
     try:
