@@ -1,1 +1,0 @@
-Add docstring to pathlib
