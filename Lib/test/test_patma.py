@@ -2665,7 +2665,7 @@ class TestPatma(unittest.TestCase):
                     case C(__attr=y):
                         return y
         c = C()
-        c.__attr = "__attr"
+        setattr(c, "__attr", "__attr")  # setattr is needed because we're in a class scope
         self.assertEqual(Outer().f(c), "__attr")
 
 
