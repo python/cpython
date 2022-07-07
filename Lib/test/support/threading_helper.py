@@ -264,7 +264,8 @@ class Server:
     The server listens on an address returned from the ``with`` statement.
     """
 
-    def __init__(self, client_func, *args, client_count=1, results=[], **kwargs):
+    def __init__(self, client_func, *args, client_count=1, results=[],
+                 client_fails=False, **kwargs):
         """Create and run the server.
 
         The method blocks until a server is ready to accept clients.
@@ -282,6 +283,10 @@ class Server:
             results: a reference to a list for collecting client_func
                 return values. Populated after execution leaves a ``with``
                 blocks associated with the Server context manager.
+            client_fails: if True, a client is expected to cause
+                connection-related exceptions by reasons asserted on its side.
+                As a result, a server should swallow these exceptions and
+                proceed to the next client instead. 
             kwargs: keyword arguments passed to client_func.
 
         Throws:
@@ -301,10 +306,14 @@ class Server:
         with server_socket:
             results = []
             for i in range(client_count):
-                client, peer_address = server_socket.accept()
-                with client:
-                    results.append(client_func(client, peer_address,
-                                               *args, **kwargs))
+                try:
+                    client, peer_address = server_socket.accept()
+                    with client:
+                        results.append(client_func(client, peer_address,
+                                                   *args, **kwargs))
+                except (ConnectionAbortedError, ConnectionResetError):
+                    if not client_fails:
+                        raise
             return results
 
     def __enter__(self):

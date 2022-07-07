@@ -3020,7 +3020,7 @@ class ThreadedTests(unittest.TestCase):
         client_context, server_context, hostname = testing_context()
 
         with self.assertRaisesRegex(ssl.SSLError, 'SSL: SSLV3_ALERT_BAD_CERTIFICATE'):
-            with Server(context=server_context) as address:
+            with Server(context=server_context, client_fails=True) as address:
                 with client_context.wrap_socket(socket.socket(),
                                                 server_hostname="invalid") as s:
                     with self.assertRaisesRegex(
