@@ -621,10 +621,10 @@
     <ClInclude Include="..\Include\internal\pycore_runtime.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\pycore_runtime_generated.h">
+    <ClInclude Include="..\Include\internal\pycore_runtime_init.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\pycore_runtime_init.h">
+    <ClInclude Include="..\Include\internal\pycore_runtime_init_generated.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_signal.h">

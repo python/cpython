@@ -239,8 +239,8 @@
     <ClInclude Include="..\Include\internal\pycore_pymem.h" />
     <ClInclude Include="..\Include\internal\pycore_pystate.h" />
     <ClInclude Include="..\Include\internal\pycore_runtime.h" />
-    <ClInclude Include="..\Include\internal\pycore_runtime_generated.h" />
     <ClInclude Include="..\Include\internal\pycore_runtime_init.h" />
+    <ClInclude Include="..\Include\internal\pycore_runtime_init_generated.h" />
     <ClInclude Include="..\Include\internal\pycore_signal.h" />
     <ClInclude Include="..\Include\internal\pycore_sliceobject.h" />
     <ClInclude Include="..\Include\internal\pycore_strhex.h" />

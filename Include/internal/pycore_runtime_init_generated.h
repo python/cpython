@@ -1,5 +1,5 @@
-#ifndef Py_INTERNAL_RUNTIME_GENERATED_H
-#define Py_INTERNAL_RUNTIME_GENERATED_H
+#ifndef Py_INTERNAL_RUNTIME_INIT_GENERATED_H
+#define Py_INTERNAL_RUNTIME_INIT_GENERATED_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1135,4 +1135,4 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_INTERNAL_RUNTIME_GENERATED_H */
+#endif /* !Py_INTERNAL_RUNTIME_INIT_GENERATED_H */
