@@ -2879,6 +2879,15 @@ class TestCachedProperty(unittest.TestCase):
     def test_doc(self):
         self.assertEqual(CachedCostItem.cost.__doc__, "The cost of the item.")
 
+    def test_annotations(self):
+        class Foo:
+            attr: int = 1
+
+            @property
+            def cached_prop(self) -> int:
+                return 2
+
+        self.assertEqual(Foo.__annotations__['attr'], Foo.__annotations__['cached_prop'])
 
 if __name__ == '__main__':
     unittest.main()
