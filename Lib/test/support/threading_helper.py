@@ -312,7 +312,9 @@ class Server:
                     with client:
                         results.append(client_func(client, peer_address,
                                                    *args, **kwargs))
-                except (ConnectionAbortedError, ConnectionResetError):
+                # OSError is caused by read()/write() on a socket unexpectedly
+                # closed by a client.
+                except (ConnectionAbortedError, ConnectionResetError, OSError):
                     if not client_fails:
                         raise
             return results
