@@ -326,7 +326,8 @@ class Server:
         wait([self._result])
         if etype is ConnectionAbortedError or etype is ConnectionResetError:
             if self._result.exception() is not None:
-                raise RuntimeError("server-side error") from self._result.exception()
+                generic = RuntimeError('server-side error')
+                raise generic from self._result.exception()
             return False
         self._result_out = self._result.result()
         return False
