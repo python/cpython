@@ -2656,18 +2656,17 @@ class TestPatma(unittest.TestCase):
 
     def test_patma_249(self):
         class C:
-            pass
+            __attr = "_C__attr"
         class Outer:
+            __attr = "_Outer__attr"
             def f(self, x):
                 match x:
                     # looks up __attr, not _C__attr or _Outer__attr
                     case C(__attr=y):
                         return y
         c = C()
-        setattr(c, "__attr", 1)
-        setattr(c, "_Outer__attr", 2)
-        setattr(c, "_C__attr", 3)
-        self.assertEqual(Outer().f(c), 1)
+        c.__attr = "__attr"
+        self.assertEqual(Outer().f(c), "__attr")
 
 
 class TestSyntaxErrors(unittest.TestCase):
