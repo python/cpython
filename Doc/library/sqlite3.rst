@@ -115,7 +115,7 @@ both styles:
 
 .. _sqlite3-module-contents:
 
-Module functions and constants
+Module Functions and Constants
 ------------------------------
 
 
@@ -1241,7 +1241,7 @@ The exception hierarchy is defined by the DB-API 2.0 (:pep:`249`).
 
 .. _sqlite3-types:
 
-SQLite and Python types
+SQLite and Python Types
 -----------------------
 
 
@@ -1291,8 +1291,8 @@ you can let the :mod:`sqlite3` module convert SQLite types to different Python
 types via converters.
 
 
-Using adapters to store custom Python types in SQLite databases
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+How to Adapt Custom Python Types to SQLite Values
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 SQLite supports only a limited set of data types natively.
 To store custom Python types in SQLite databases, *adapt* them to one of the
@@ -1309,8 +1309,8 @@ registering custom adapter functions.
 
 .. _sqlite3-conform:
 
-Letting your object adapt itself
-""""""""""""""""""""""""""""""""
+Let your object adapt itself
+""""""""""""""""""""""""""""
 
 Suppose we have a ``Point`` class that represents a pair of coordinates,
 ``x`` and ``y``, in a Cartesian coordinate system.
@@ -1323,8 +1323,8 @@ The object passed to *protocol* will be of type :class:`PrepareProtocol`.
 .. literalinclude:: ../includes/sqlite3/adapter_point_1.py
 
 
-Registering an adapter callable
-"""""""""""""""""""""""""""""""
+Use an adapter callable
+"""""""""""""""""""""""
 
 The other possibility is to create a function that converts the Python object
 to an SQLite-compatible type.
@@ -1333,8 +1333,8 @@ This function can then be registered using :func:`register_adapter`.
 .. literalinclude:: ../includes/sqlite3/adapter_point_2.py
 
 
-Converting SQLite values to custom Python types
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+How to Convert SQLite Values to Custom Python Types
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Writing an adapter lets you convert *from* custom Python types *to* SQLite
 values.
@@ -1373,7 +1373,7 @@ The following example illustrates the implicit and explicit approaches:
 .. literalinclude:: ../includes/sqlite3/converter_point.py
 
 
-Default adapters and converters
+Default Adapters and Converters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 There are default adapters for the date and datetime types in the datetime
@@ -1450,8 +1450,8 @@ This section shows recipes for common adapters and converters.
 
 .. _sqlite3-controlling-transactions:
 
-Controlling Transactions
-------------------------
+Transaction Control
+-------------------
 
 The ``sqlite3`` module does not adhere to the transaction handling recommended
 by :pep:`249`.
@@ -1493,7 +1493,7 @@ regardless of the value of :attr:`~Connection.isolation_level`.
 
 .. _sqlite3-uri-tricks:
 
-SQLite URI tricks
+SQLite URI Tricks
 -----------------
 
 Some useful URI tricks include:
@@ -1521,12 +1521,13 @@ can be found in the `SQLite URI documentation`_.
 
 .. _SQLite URI documentation: https://www.sqlite.org/uri.html
 
-Using :mod:`sqlite3` efficiently
---------------------------------
+
+How to Use ``sqlite3`` Efficiently
+----------------------------------
 
 
-Using shortcut methods
-^^^^^^^^^^^^^^^^^^^^^^
+How to Use Shortcut Methods
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Using the nonstandard :meth:`execute`, :meth:`executemany` and
 :meth:`executescript` methods of the :class:`Connection` object, your code can
@@ -1539,8 +1540,8 @@ directly using only a single call on the :class:`Connection` object.
 .. literalinclude:: ../includes/sqlite3/shortcut_methods.py
 
 
-Accessing columns by name instead of by index
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+How to Access Columns by Name
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 One useful feature of the :mod:`sqlite3` module is the built-in
 :class:`sqlite3.Row` class designed to be used as a row factory.
@@ -1553,8 +1554,8 @@ case-insensitively by name:
 
 .. _sqlite3-connection-context-manager:
 
-Using the connection as a context manager
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+How to Use a Connection as a Context Manager
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A :class:`Connection` object can be used as a context manager that
 automatically commits or rolls back open transactions when leaving the body of
