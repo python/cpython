@@ -966,9 +966,6 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
 
     if (groups_list != Py_None) {
 #ifdef HAVE_SETGROUPS
-        Py_ssize_t i;
-        gid_t gid;
-
         if (!PyList_Check(groups_list)) {
             PyErr_SetString(PyExc_TypeError,
                     "setgroups argument must be a list");
@@ -990,7 +987,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
             goto cleanup;
         }
 
-        for (i = 0; i < num_groups; i++) {
+        for (Py_ssize_t i = 0; i < num_groups; i++) {
             PyObject *elem;
             elem = PySequence_GetItem(groups_list, i);
             if (!elem)
