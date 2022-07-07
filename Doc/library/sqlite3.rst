@@ -394,8 +394,6 @@ Module functions and constants
       <sqlite3.Cursor object at 0x10b1fe840>
 
 
-.. _sqlite3-connection-objects:
-
 Connection Objects
 ------------------
 
@@ -863,8 +861,6 @@ Connection Objects
       .. versionadded:: 3.11
 
 
-.. _sqlite3-cursor-objects:
-
 Cursor Objects
 --------------
 
@@ -1019,8 +1015,6 @@ Cursor Objects
          >>> cur.connection == con
          True
 
-.. _sqlite3-row-objects:
-
 Row Objects
 -----------
 
@@ -1084,8 +1078,6 @@ Now we plug :class:`Row` in::
    100.0
    35.14
 
-
-.. _sqlite3-blob-objects:
 
 Blob Objects
 ------------
