@@ -79,7 +79,7 @@ PyDoc_STRVAR(gc_collect__doc__,
 "The number of unreachable objects is returned.");
 
 #define GC_COLLECT_METHODDEF    \
-    {"collect", (PyCFunction)(void(*)(void))gc_collect, METH_FASTCALL|METH_KEYWORDS, gc_collect__doc__},
+    {"collect", _PyCFunction_CAST(gc_collect), METH_FASTCALL|METH_KEYWORDS, gc_collect__doc__},
 
 static Py_ssize_t
 gc_collect_impl(PyObject *module, int generation);
@@ -101,11 +101,6 @@ gc_collect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     }
     if (!noptargs) {
         goto skip_optional_pos;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     generation = _PyLong_AsInt(args[0]);
     if (generation == -1 && PyErr_Occurred()) {
@@ -151,11 +146,6 @@ gc_set_debug(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flags;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     flags = _PyLong_AsInt(arg);
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
@@ -243,7 +233,7 @@ PyDoc_STRVAR(gc_get_objects__doc__,
 "that are in that generation.");
 
 #define GC_GET_OBJECTS_METHODDEF    \
-    {"get_objects", (PyCFunction)(void(*)(void))gc_get_objects, METH_FASTCALL|METH_KEYWORDS, gc_get_objects__doc__},
+    {"get_objects", _PyCFunction_CAST(gc_get_objects), METH_FASTCALL|METH_KEYWORDS, gc_get_objects__doc__},
 
 static PyObject *
 gc_get_objects_impl(PyObject *module, Py_ssize_t generation);
@@ -382,4 +372,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bd6a8056989e2e69 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=71f7136d6e3f2323 input=a9049054013a1b77]*/

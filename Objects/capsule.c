@@ -50,7 +50,7 @@ PyCapsule_New(void *pointer, const char *name, PyCapsule_Destructor destructor)
         return NULL;
     }
 
-    capsule = PyObject_NEW(PyCapsule, &PyCapsule_Type);
+    capsule = PyObject_New(PyCapsule, &PyCapsule_Type);
     if (capsule == NULL) {
         return NULL;
     }
@@ -198,7 +198,7 @@ PyCapsule_Import(const char *name, int no_block)
     void *return_value = NULL;
     char *trace;
     size_t name_length = (strlen(name) + 1) * sizeof(char);
-    char *name_dup = (char *)PyMem_MALLOC(name_length);
+    char *name_dup = (char *)PyMem_Malloc(name_length);
 
     if (!name_dup) {
         return PyErr_NoMemory();
@@ -214,13 +214,9 @@ PyCapsule_Import(const char *name, int no_block)
         }
 
         if (object == NULL) {
-            if (no_block) {
-                object = PyImport_ImportModuleNoBlock(trace);
-            } else {
-                object = PyImport_ImportModule(trace);
-                if (!object) {
-                    PyErr_Format(PyExc_ImportError, "PyCapsule_Import could not import module \"%s\"", trace);
-                }
+            object = PyImport_ImportModule(trace);
+            if (!object) {
+                PyErr_Format(PyExc_ImportError, "PyCapsule_Import could not import module \"%s\"", trace);
             }
         } else {
             PyObject *object2 = PyObject_GetAttrString(object, trace);
@@ -247,7 +243,7 @@ PyCapsule_Import(const char *name, int no_block)
 EXIT:
     Py_XDECREF(object);
     if (name_dup) {
-        PyMem_FREE(name_dup);
+        PyMem_Free(name_dup);
     }
     return return_value;
 }
@@ -260,7 +256,7 @@ capsule_dealloc(PyObject *o)
     if (capsule->destructor) {
         capsule->destructor(o);
     }
-    PyObject_DEL(o);
+    PyObject_Free(o);
 }
 
 

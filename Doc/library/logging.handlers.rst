@@ -117,6 +117,9 @@ sends logging output to a disk file.  It inherits the output functionality from
 
       Outputs the record to the file.
 
+      Note that if the file was closed due to logging shutdown at exit and the file
+      mode is 'w', the record will not be emitted (see :issue:`42378`).
+
 
 .. _null-handler:
 
@@ -230,6 +233,19 @@ need to override.
          so it should be as simple and as fast as possible. It should also
          return the same output every time for a given input, otherwise the
          rollover behaviour may not work as expected.
+
+         It's also worth noting that care should be taken when using a namer to
+         preserve certain attributes in the filename which are used during rotation.
+         For example, :class:`RotatingFileHandler` expects to have a set of log files
+         whose names contain successive integers, so that rotation works as expected,
+         and :class:`TimedRotatingFileHandler` deletes old log files (based on the
+         ``backupCount`` parameter passed to the handler's initializer) by determining
+         the oldest files to delete. For this to happen, the filenames should be
+         sortable using the date/time portion of the filename, and a namer needs to
+         respect this. (If a namer is wanted that doesn't respect this scheme, it will
+         need to be used in a subclass of :class:`TimedRotatingFileHandler` which
+         overrides the :meth:`~TimedRotatingFileHandler.getFilesToDelete` method to
+         fit in with the custom naming scheme.)
 
       .. versionadded:: 3.3
 
@@ -440,6 +456,10 @@ timed intervals.
 
       Outputs the record to the file, catering for rollover as described above.
 
+   .. method:: getFilesToDelete()
+
+      Returns a list of filenames which should be deleted as part of rollover. These
+      are the absolute paths of the oldest backup log files written by the handler.
 
 .. _socket-handler:
 
@@ -927,7 +947,7 @@ HTTPHandler
 ^^^^^^^^^^^
 
 The :class:`HTTPHandler` class, located in the :mod:`logging.handlers` module,
-supports sending logging messages to a Web server, using either ``GET`` or
+supports sending logging messages to a web server, using either ``GET`` or
 ``POST`` semantics.
 
 
@@ -957,17 +977,17 @@ supports sending logging messages to a Web server, using either ``GET`` or
 
    .. method:: emit(record)
 
-      Sends the record to the Web server as a URL-encoded dictionary. The
+      Sends the record to the web server as a URL-encoded dictionary. The
       :meth:`mapLogRecord` method is used to convert the record to the
       dictionary to be sent.
 
-   .. note:: Since preparing a record for sending it to a Web server is not
+   .. note:: Since preparing a record for sending it to a web server is not
       the same as a generic formatting operation, using
       :meth:`~logging.Handler.setFormatter` to specify a
       :class:`~logging.Formatter` for a :class:`HTTPHandler` has no effect.
       Instead of calling :meth:`~logging.Handler.format`, this handler calls
       :meth:`mapLogRecord` and then :func:`urllib.parse.urlencode` to encode the
-      dictionary in a form suitable for sending to a Web server.
+      dictionary in a form suitable for sending to a web server.
 
 
 .. _queue-handler:
@@ -984,7 +1004,7 @@ supports sending logging messages to a queue, such as those implemented in the
 
 Along with the :class:`QueueListener` class, :class:`QueueHandler` can be used
 to let handlers do their work on a separate thread from the one which does the
-logging. This is important in Web applications and also other service
+logging. This is important in web applications and also other service
 applications where threads servicing clients need to respond as quickly as
 possible, while any potentially slow operations (such as sending an email via
 :class:`SMTPHandler`) are done on a separate thread.
@@ -1014,8 +1034,12 @@ possible, while any potentially slow operations (such as sending an email via
       method is enqueued.
 
       The base implementation formats the record to merge the message,
-      arguments, and exception information, if present.  It also
-      removes unpickleable items from the record in-place.
+      arguments, exception and stack information, if present.  It also removes
+      unpickleable items from the record in-place. Specifically, it overwrites
+      the record's :attr:`msg` and :attr:`message` attributes with the merged
+      message (obtained by calling the handler's :meth:`format` method), and
+      sets the :attr:`args`, :attr:`exc_info` and :attr:`exc_text` attributes
+      to ``None``.
 
       You might want to override this method if you want to convert
       the record to a dict or JSON string, or send a modified copy
@@ -1027,7 +1051,13 @@ possible, while any potentially slow operations (such as sending an email via
       want to override this if you want to use blocking behaviour, or a
       timeout, or a customized queue implementation.
 
+   .. attribute:: listener
 
+      When created via configuration using :func:`~logging.config.dictConfig`, this
+      attribute will contain a :class:`QueueListener` instance for use with this
+      handler. Otherwise, it will be ``None``.
+
+      .. versionadded:: 3.12
 
 .. _queue-listener:
 
@@ -1046,7 +1076,7 @@ because it works hand-in-hand with :class:`QueueHandler`.
 
 Along with the :class:`QueueHandler` class, :class:`QueueListener` can be used
 to let handlers do their work on a separate thread from the one which does the
-logging. This is important in Web applications and also other service
+logging. This is important in web applications and also other service
 applications where threads servicing clients need to respond as quickly as
 possible, while any potentially slow operations (such as sending an email via
 :class:`SMTPHandler`) are done on a separate thread.

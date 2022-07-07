@@ -61,9 +61,8 @@ See also the `Examples`_ subsection.
 Creating Subprocesses
 =====================
 
-.. coroutinefunction:: create_subprocess_exec(program, \*args, stdin=None, \
-                          stdout=None, stderr=None, loop=None, \
-                          limit=None, \*\*kwds)
+.. coroutinefunction:: create_subprocess_exec(program, *args, stdin=None, \
+                          stdout=None, stderr=None, limit=None, **kwds)
 
    Create a subprocess.
 
@@ -76,13 +75,12 @@ Creating Subprocesses
    See the documentation of :meth:`loop.subprocess_exec` for other
    parameters.
 
-   .. deprecated-removed:: 3.8 3.10
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
-      The *loop* parameter.
 
 .. coroutinefunction:: create_subprocess_shell(cmd, stdin=None, \
-                          stdout=None, stderr=None, loop=None, \
-                          limit=None, \*\*kwds)
+                          stdout=None, stderr=None, limit=None, **kwds)
 
    Run the *cmd* shell command.
 
@@ -95,25 +93,22 @@ Creating Subprocesses
    See the documentation of :meth:`loop.subprocess_shell` for other
    parameters.
 
-.. important::
+   .. important::
 
-   It is the application's responsibility to ensure that all whitespace and
-   special characters are quoted appropriately to avoid `shell injection
-   <https://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
-   vulnerabilities. The :func:`shlex.quote` function can be used to properly
-   escape whitespace and special shell characters in strings that are going
-   to be used to construct shell commands.
+      It is the application's responsibility to ensure that all whitespace and
+      special characters are quoted appropriately to avoid `shell injection
+      <https://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
+      vulnerabilities. The :func:`shlex.quote` function can be used to properly
+      escape whitespace and special shell characters in strings that are going
+      to be used to construct shell commands.
 
-   .. deprecated-removed:: 3.8 3.10
-
-      The *loop* parameter.
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
 .. note::
 
-   The default asyncio event loop implementation on **Windows** does not
-   support subprocesses. Subprocesses are available for Windows if a
-   :class:`ProactorEventLoop` is used.
-   See :ref:`Subprocess Support on Windows <asyncio-windows-subprocess>`
+   Subprocesses are available for Windows if a :class:`ProactorEventLoop` is
+   used. See :ref:`Subprocess Support on Windows <asyncio-windows-subprocess>`
    for details.
 
 .. seealso::
@@ -129,6 +124,7 @@ Constants
 =========
 
 .. data:: asyncio.subprocess.PIPE
+   :module:
 
    Can be passed to the *stdin*, *stdout* or *stderr* parameters.
 
@@ -142,11 +138,13 @@ Constants
    attributes will point to :class:`StreamReader` instances.
 
 .. data:: asyncio.subprocess.STDOUT
+   :module:
 
    Special value that can be used as the *stderr* argument and indicates
    that standard error should be redirected into standard output.
 
 .. data:: asyncio.subprocess.DEVNULL
+   :module:
 
    Special value that can be used as the *stdin*, *stdout* or *stderr* argument
    to process creation functions.  It indicates that the special file
@@ -162,6 +160,7 @@ wrapper that allows communicating with subprocesses and watching for
 their completion.
 
 .. class:: asyncio.subprocess.Process
+   :module:
 
    An object that wraps OS processes created by the
    :func:`create_subprocess_exec` and :func:`create_subprocess_shell`
@@ -253,7 +252,7 @@ their completion.
 
    .. method:: kill()
 
-      Kill the child.
+      Kill the child process.
 
       On POSIX systems this method sends :py:data:`SIGKILL` to the child
       process.
@@ -280,7 +279,7 @@ their completion.
       Use the :meth:`communicate` method rather than
       :attr:`process.stdin.write() <stdin>`,
       :attr:`await process.stdout.read() <stdout>` or
-      :attr:`await process.stderr.read <stderr>`.
+      :attr:`await process.stderr.read() <stderr>`.
       This avoids deadlocks due to streams pausing reading or writing
       and blocking the child process.
 

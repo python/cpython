@@ -28,13 +28,15 @@ import stat as st
 
 from _collections_abc import _check_methods
 
+GenericAlias = type(list[int])
+
 _names = sys.builtin_module_names
 
 # Note:  more names are added to __all__ later.
 __all__ = ["altsep", "curdir", "pardir", "sep", "pathsep", "linesep",
            "defpath", "name", "path", "devnull", "SEEK_SET", "SEEK_CUR",
            "SEEK_END", "fsencode", "fsdecode", "get_exec_path", "fdopen",
-           "popen", "extsep"]
+           "extsep"]
 
 def _exists(name):
     return name in globals()
@@ -329,14 +331,17 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     import os
     from os.path import join, getsize
     for root, dirs, files in os.walk('python/Lib/email'):
-        print(root, "consumes", end="")
-        print(sum(getsize(join(root, name)) for name in files), end="")
+        print(root, "consumes ")
+        print(sum(getsize(join(root, name)) for name in files), end=" ")
         print("bytes in", len(files), "non-directory files")
         if 'CVS' in dirs:
             dirs.remove('CVS')  # don't visit CVS directories
 
     """
-    top = fspath(top)
+    sys.audit("os.walk", top, topdown, onerror, followlinks)
+    return _walk(fspath(top), topdown, onerror, followlinks)
+
+def _walk(top, topdown, onerror, followlinks):
     dirs = []
     nondirs = []
     walk_dirs = []
@@ -410,11 +415,11 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
             # the caller can replace the directory entry during the "yield"
             # above.
             if followlinks or not islink(new_path):
-                yield from walk(new_path, topdown, onerror, followlinks)
+                yield from _walk(new_path, topdown, onerror, followlinks)
     else:
         # Recurse into sub-directories
         for new_path in walk_dirs:
-            yield from walk(new_path, topdown, onerror, followlinks)
+            yield from _walk(new_path, topdown, onerror, followlinks)
         # Yield after recursion if going bottom up
         yield top, dirs, nondirs
 
@@ -455,8 +460,8 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
             if 'CVS' in dirs:
                 dirs.remove('CVS')  # don't visit CVS directories
         """
-        if not isinstance(top, int) or not hasattr(top, '__index__'):
-            top = fspath(top)
+        sys.audit("os.fwalk", top, topdown, onerror, follow_symlinks, dir_fd)
+        top = fspath(top)
         # Note: To guard against symlink races, we use the standard
         # lstat()/open()/fstat() trick.
         if not follow_symlinks:
@@ -655,7 +660,7 @@ def get_exec_path(env=None):
 
 
 # Change environ to automatically call putenv() and unsetenv()
-from _collections_abc import MutableMapping
+from _collections_abc import MutableMapping, Mapping
 
 class _Environ(MutableMapping):
     def __init__(self, data, encodekey, decodekey, encodevalue, decodevalue):
@@ -698,9 +703,11 @@ class _Environ(MutableMapping):
         return len(self._data)
 
     def __repr__(self):
-        return 'environ({{{}}})'.format(', '.join(
-            ('{!r}: {!r}'.format(self.decodekey(key), self.decodevalue(value))
-            for key, value in self._data.items())))
+        formatted_items = ", ".join(
+            f"{self.decodekey(key)!r}: {self.decodevalue(value)!r}"
+            for key, value in self._data.items()
+        )
+        return f"environ({{{formatted_items}}})"
 
     def copy(self):
         return dict(self)
@@ -709,6 +716,24 @@ class _Environ(MutableMapping):
         if key not in self:
             self[key] = value
         return self[key]
+
+    def __ior__(self, other):
+        self.update(other)
+        return self
+
+    def __or__(self, other):
+        if not isinstance(other, Mapping):
+            return NotImplemented
+        new = dict(self)
+        new.update(other)
+        return new
+
+    def __ror__(self, other):
+        if not isinstance(other, Mapping):
+            return NotImplemented
+        new = dict(other)
+        new.update(self)
+        return new
 
 def _createenviron():
     if name == 'nt':
@@ -842,12 +867,8 @@ if _exists("fork") and not _exists("spawnv") and _exists("execv"):
                 wpid, sts = waitpid(pid, 0)
                 if WIFSTOPPED(sts):
                     continue
-                elif WIFSIGNALED(sts):
-                    return -WTERMSIG(sts)
-                elif WIFEXITED(sts):
-                    return WEXITSTATUS(sts)
-                else:
-                    raise OSError("Not stopped, signaled or exited???")
+
+                return waitstatus_to_exitcode(sts)
 
     def spawnv(mode, file, args):
         """spawnv(mode, file, args) -> integer
@@ -949,58 +970,64 @@ otherwise return -SIG, where SIG is the signal that killed it. """
 
     __all__.extend(["spawnlp", "spawnlpe"])
 
-
-# Supply os.popen()
-def popen(cmd, mode="r", buffering=-1):
-    if not isinstance(cmd, str):
-        raise TypeError("invalid cmd type (%s, expected string)" % type(cmd))
-    if mode not in ("r", "w"):
-        raise ValueError("invalid mode %r" % mode)
-    if buffering == 0 or buffering is None:
-        raise ValueError("popen() does not support unbuffered streams")
-    import subprocess, io
-    if mode == "r":
-        proc = subprocess.Popen(cmd,
-                                shell=True,
-                                stdout=subprocess.PIPE,
-                                bufsize=buffering)
-        return _wrap_close(io.TextIOWrapper(proc.stdout), proc)
-    else:
-        proc = subprocess.Popen(cmd,
-                                shell=True,
-                                stdin=subprocess.PIPE,
-                                bufsize=buffering)
-        return _wrap_close(io.TextIOWrapper(proc.stdin), proc)
-
-# Helper for popen() -- a proxy for a file whose close waits for the process
-class _wrap_close:
-    def __init__(self, stream, proc):
-        self._stream = stream
-        self._proc = proc
-    def close(self):
-        self._stream.close()
-        returncode = self._proc.wait()
-        if returncode == 0:
-            return None
-        if name == 'nt':
-            return returncode
+# VxWorks has no user space shell provided. As a result, running
+# command in a shell can't be supported.
+if sys.platform != 'vxworks':
+    # Supply os.popen()
+    def popen(cmd, mode="r", buffering=-1):
+        if not isinstance(cmd, str):
+            raise TypeError("invalid cmd type (%s, expected string)" % type(cmd))
+        if mode not in ("r", "w"):
+            raise ValueError("invalid mode %r" % mode)
+        if buffering == 0 or buffering is None:
+            raise ValueError("popen() does not support unbuffered streams")
+        import subprocess
+        if mode == "r":
+            proc = subprocess.Popen(cmd,
+                                    shell=True, text=True,
+                                    stdout=subprocess.PIPE,
+                                    bufsize=buffering)
+            return _wrap_close(proc.stdout, proc)
         else:
-            return returncode << 8  # Shift left to match old behavior
-    def __enter__(self):
-        return self
-    def __exit__(self, *args):
-        self.close()
-    def __getattr__(self, name):
-        return getattr(self._stream, name)
-    def __iter__(self):
-        return iter(self._stream)
+            proc = subprocess.Popen(cmd,
+                                    shell=True, text=True,
+                                    stdin=subprocess.PIPE,
+                                    bufsize=buffering)
+            return _wrap_close(proc.stdin, proc)
+
+    # Helper for popen() -- a proxy for a file whose close waits for the process
+    class _wrap_close:
+        def __init__(self, stream, proc):
+            self._stream = stream
+            self._proc = proc
+        def close(self):
+            self._stream.close()
+            returncode = self._proc.wait()
+            if returncode == 0:
+                return None
+            if name == 'nt':
+                return returncode
+            else:
+                return returncode << 8  # Shift left to match old behavior
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            self.close()
+        def __getattr__(self, name):
+            return getattr(self._stream, name)
+        def __iter__(self):
+            return iter(self._stream)
+
+    __all__.append("popen")
 
 # Supply os.fdopen()
-def fdopen(fd, *args, **kwargs):
+def fdopen(fd, mode="r", buffering=-1, encoding=None, *args, **kwargs):
     if not isinstance(fd, int):
         raise TypeError("invalid fd type (%s, expected integer)" % type(fd))
     import io
-    return io.open(fd, *args, **kwargs)
+    if "b" not in mode:
+        encoding = io.text_encoding(encoding)
+    return io.open(fd, mode, buffering, encoding, *args, **kwargs)
 
 
 # For testing purposes, make sure the function is available when the C
@@ -1056,8 +1083,7 @@ class PathLike(abc.ABC):
             return _check_methods(subclass, '__fspath__')
         return NotImplemented
 
-    def __class_getitem__(cls, type):
-        return cls
+    __class_getitem__ = classmethod(GenericAlias)
 
 
 if name == 'nt':

@@ -1,7 +1,0 @@
-In the limited C API, ``PyObject_INIT()`` and ``PyObject_INIT_VAR()`` are
-now defined as aliases to :c:func:`PyObject_Init` and
-:c:func:`PyObject_InitVar` to make their implementation opaque. It avoids to
-leak implementation details in the limited C API. Exclude the following
-functions from the limited C API: ``_Py_NewReference()``,
-``_Py_ForgetReference()``, ``_PyTraceMalloc_NewReference()`` and
-``_Py_GetRefTotal()``.

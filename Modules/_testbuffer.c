@@ -24,7 +24,7 @@ static PyObject *simple_format = NULL;
 /**************************************************************************/
 
 static PyTypeObject NDArray_Type;
-#define NDArray_Check(v) (Py_TYPE(v) == &NDArray_Type)
+#define NDArray_Check(v) Py_IS_TYPE(v, &NDArray_Type)
 
 #define CHECK_LIST_OR_TUPLE(v) \
     if (!PyList_Check(v) && !PyTuple_Check(v)) { \
@@ -236,7 +236,7 @@ ndarray_dealloc(NDArrayObject *self)
                 ndbuf_pop(self);
         }
     }
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 static int
@@ -2050,7 +2050,7 @@ static PyObject *
 ndarray_get_format(NDArrayObject *self, void *closure)
 {
     Py_buffer *base = &self->head->base;
-    char *fmt = base->format ? base->format : "";
+    const char *fmt = base->format ? base->format : "";
     return PyUnicode_FromString(fmt);
 }
 
@@ -2633,7 +2633,7 @@ static PyMethodDef ndarray_methods [] =
 {
     { "tolist", ndarray_tolist, METH_NOARGS, NULL },
     { "tobytes", ndarray_tobytes, METH_NOARGS, NULL },
-    { "push", (PyCFunction)(void(*)(void))ndarray_push, METH_VARARGS|METH_KEYWORDS, NULL },
+    { "push", _PyCFunction_CAST(ndarray_push), METH_VARARGS|METH_KEYWORDS, NULL },
     { "pop", ndarray_pop, METH_NOARGS, NULL },
     { "add_suboffsets", ndarray_add_suboffsets, METH_NOARGS, NULL },
     { "memoryview_from_buffer", ndarray_memoryview_from_buffer, METH_NOARGS, NULL },
@@ -2734,7 +2734,7 @@ staticarray_init(PyObject *self, PyObject *args, PyObject *kwds)
 static void
 staticarray_dealloc(StaticArrayObject *self)
 {
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 /* Return a buffer for a PyBUF_FULL_RO request. Flags are not checked,

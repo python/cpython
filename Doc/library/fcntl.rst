@@ -37,7 +37,24 @@ descriptor.
    On macOS, the fcntl module exposes the ``F_GETPATH`` constant, which obtains
    the path of a file from a file descriptor.
    On Linux(>=3.15), the fcntl module exposes the ``F_OFD_GETLK``, ``F_OFD_SETLK``
-   and ``F_OFD_SETLKW`` constants, which working with open file description locks.
+   and ``F_OFD_SETLKW`` constants, which are used when working with open file
+   description locks.
+
+.. versionchanged:: 3.10
+   On Linux >= 2.6.11, the fcntl module exposes the ``F_GETPIPE_SZ`` and
+   ``F_SETPIPE_SZ`` constants, which allow to check and modify a pipe's size
+   respectively.
+
+.. versionchanged:: 3.11
+   On FreeBSD, the fcntl module exposes the ``F_DUP2FD`` and ``F_DUP2FD_CLOEXEC``
+   constants, which allow to duplicate a file descriptor, the latter setting
+   ``FD_CLOEXEC`` flag in addition.
+
+.. versionchanged:: 3.12
+   On Linux >= 4.5, the :mod:`fcntl` module exposes the ``FICLONE`` and
+   ``FICLONERANGE`` constants, which allow to share some data of one file with
+   another file by reflinking on some filesystems (e.g., btrfs, OCFS2, and
+   XFS). This behavior is commonly referred to as "copy-on-write".
 
 The module defines the following functions:
 
@@ -62,6 +79,8 @@ The module defines the following functions:
    corruption.
 
    If the :c:func:`fcntl` fails, an :exc:`OSError` is raised.
+
+   .. audit-event:: fcntl.fcntl fd,cmd,arg fcntl.fcntl
 
 
 .. function:: ioctl(fd, request, arg=0, mutate_flag=True)
@@ -112,6 +131,8 @@ The module defines the following functions:
       >>> buf
       array('h', [13341])
 
+   .. audit-event:: fcntl.ioctl fd,request,arg fcntl.ioctl
+
 
 .. function:: flock(fd, operation)
 
@@ -121,6 +142,8 @@ The module defines the following functions:
    using :c:func:`fcntl`.)
 
    If the :c:func:`flock` fails, an :exc:`OSError` exception is raised.
+
+   .. audit-event:: fcntl.flock fd,operation fcntl.flock
 
 
 .. function:: lockf(fd, cmd, len=0, start=0, whence=0)
@@ -154,6 +177,8 @@ The module defines the following functions:
    The default for *start* is 0, which means to start at the beginning of the file.
    The default for *len* is 0 which means to lock to the end of the file.  The
    default for *whence* is also 0.
+
+   .. audit-event:: fcntl.lockf fd,cmd,len,start,whence fcntl.lockf
 
 Examples (all on a SVR4 compliant system)::
 

@@ -20,7 +20,7 @@ library and will be able to skip this step.)
 
 For third-party packages, search the `Python Package Index
 <https://pypi.org>`_ or try `Google <https://www.google.com>`_ or
-another Web search engine.  Searching for "Python" plus a keyword or two for
+another web search engine.  Searching for "Python" plus a keyword or two for
 your topic of interest will usually find something helpful.
 
 
@@ -105,9 +105,6 @@ functions from ncurses and SYSV curses such as colour, alternative character set
 support, pads, and mouse support. This means the module isn't compatible with
 operating systems that only have BSD curses, but there don't seem to be any
 currently maintained OSes that fall into this category.
-
-For Windows: use `the consolelib module
-<http://effbot.org/zone/console-index.htm>`_.
 
 
 Is there an equivalent to C's onexit() in Python?
@@ -243,9 +240,6 @@ Be sure to use the :mod:`threading` module and not the :mod:`_thread` module.
 The :mod:`threading` module builds convenient abstractions on top of the
 low-level primitives provided by the :mod:`_thread` module.
 
-Aahz has a set of slides from his threading tutorial that are helpful; see
-http://www.pythoncraft.com/OSCON2001/.
-
 
 None of my threads seem to run: why?
 ------------------------------------
@@ -319,11 +313,11 @@ Here's a trivial example::
            try:
                arg = q.get(block=False)
            except queue.Empty:
-               print('Worker', threading.currentThread(), end=' ')
+               print('Worker', threading.current_thread(), end=' ')
                print('queue empty')
                break
            else:
-               print('Worker', threading.currentThread(), end=' ')
+               print('Worker', threading.current_thread(), end=' ')
                print('running with argument', arg)
                time.sleep(0.5)
 
@@ -489,8 +483,14 @@ including :func:`~shutil.copyfile`, :func:`~shutil.copytree`, and
 How do I copy a file?
 ---------------------
 
-The :mod:`shutil` module contains a :func:`~shutil.copyfile` function.  Note
-that on MacOS 9 it doesn't copy the resource fork and Finder info.
+The :mod:`shutil` module contains a :func:`~shutil.copyfile` function.
+Note that on Windows NTFS volumes, it does not copy
+`alternate data streams
+<https://en.wikipedia.org/wiki/NTFS#Alternate_data_stream_(ADS)>`_
+nor `resource forks <https://en.wikipedia.org/wiki/Resource_fork>`__
+on macOS HFS+ volumes, though both are now rarely used.
+It also doesn't copy file permissions and metadata, though using
+:func:`shutil.copy2` instead will preserve most (though not all) of it.
 
 
 How do I read (or write) binary data?
@@ -617,9 +617,9 @@ use ``p.read(n)``.
 How do I access the serial (RS232) port?
 ----------------------------------------
 
-For Win32, POSIX (Linux, BSD, etc.), Jython:
+For Win32, OSX, Linux, BSD, Jython, IronPython:
 
-   http://pyserial.sourceforge.net
+   https://pypi.org/project/pyserial/
 
 For Unix, see a Usenet post by Mitch Chapman:
 
@@ -670,7 +670,7 @@ A summary of available frameworks is maintained by Paul Boddie at
 https://wiki.python.org/moin/WebProgramming\ .
 
 Cameron Laird maintains a useful set of pages about Python web technologies at
-http://phaseit.net/claird/comp.lang.python/web_python.
+https://web.archive.org/web/20210224183619/http://phaseit.net/claird/comp.lang.python/web_python.
 
 
 How can I mimic CGI form submission (METHOD=POST)?

@@ -22,9 +22,9 @@ PyDoc_STRVAR(_io_open__doc__,
 "\'a\' for appending (which on some Unix systems, means that all writes\n"
 "append to the end of the file regardless of the current seek position).\n"
 "In text mode, if encoding is not specified the encoding used is platform\n"
-"dependent: locale.getpreferredencoding(False) is called to get the\n"
-"current locale encoding. (For reading and writing raw bytes use binary\n"
-"mode and leave encoding unspecified.) The available modes are:\n"
+"dependent: locale.getencoding() is called to get the current locale encoding.\n"
+"(For reading and writing raw bytes use binary mode and leave encoding\n"
+"unspecified.) The available modes are:\n"
 "\n"
 "========= ===============================================================\n"
 "Character Meaning\n"
@@ -122,7 +122,7 @@ PyDoc_STRVAR(_io_open__doc__,
 "opened in a binary mode.");
 
 #define _IO_OPEN_METHODDEF    \
-    {"open", (PyCFunction)(void(*)(void))_io_open, METH_FASTCALL|METH_KEYWORDS, _io_open__doc__},
+    {"open", _PyCFunction_CAST(_io_open), METH_FASTCALL|METH_KEYWORDS, _io_open__doc__},
 
 static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
@@ -173,11 +173,6 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         }
     }
     if (args[2]) {
-        if (PyFloat_Check(args[2])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         buffering = _PyLong_AsInt(args[2]);
         if (buffering == -1 && PyErr_Occurred()) {
             goto exit;
@@ -256,11 +251,6 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         }
     }
     if (args[6]) {
-        if (PyFloat_Check(args[6])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         closefd = _PyLong_AsInt(args[6]);
         if (closefd == -1 && PyErr_Occurred()) {
             goto exit;
@@ -277,6 +267,53 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_io_text_encoding__doc__,
+"text_encoding($module, encoding, stacklevel=2, /)\n"
+"--\n"
+"\n"
+"A helper function to choose the text encoding.\n"
+"\n"
+"When encoding is not None, this function returns it.\n"
+"Otherwise, this function returns the default text encoding\n"
+"(i.e. \"locale\" or \"utf-8\" depends on UTF-8 mode).\n"
+"\n"
+"This function emits an EncodingWarning if encoding is None and\n"
+"sys.flags.warn_default_encoding is true.\n"
+"\n"
+"This can be used in APIs with an encoding=None parameter.\n"
+"However, please consider using encoding=\"utf-8\" for new APIs.");
+
+#define _IO_TEXT_ENCODING_METHODDEF    \
+    {"text_encoding", _PyCFunction_CAST(_io_text_encoding), METH_FASTCALL, _io_text_encoding__doc__},
+
+static PyObject *
+_io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel);
+
+static PyObject *
+_io_text_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *encoding;
+    int stacklevel = 2;
+
+    if (!_PyArg_CheckPositional("text_encoding", nargs, 1, 2)) {
+        goto exit;
+    }
+    encoding = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    stacklevel = _PyLong_AsInt(args[1]);
+    if (stacklevel == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _io_text_encoding_impl(module, encoding, stacklevel);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_io_open_code__doc__,
 "open_code($module, /, path)\n"
 "--\n"
@@ -287,7 +324,7 @@ PyDoc_STRVAR(_io_open_code__doc__,
 "with calling open(path, \'rb\').");
 
 #define _IO_OPEN_CODE_METHODDEF    \
-    {"open_code", (PyCFunction)(void(*)(void))_io_open_code, METH_FASTCALL|METH_KEYWORDS, _io_open_code__doc__},
+    {"open_code", _PyCFunction_CAST(_io_open_code), METH_FASTCALL|METH_KEYWORDS, _io_open_code__doc__},
 
 static PyObject *
 _io_open_code_impl(PyObject *module, PyObject *path);
@@ -318,4 +355,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=680e4b488c7da8a1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c4d7e4ef878985f8 input=a9049054013a1b77]*/

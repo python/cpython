@@ -1,7 +1,8 @@
 // namespace object implementation
 
 #include "Python.h"
-#include "structmember.h"
+#include "pycore_namespace.h"     // _PyNamespace_Type
+#include "structmember.h"         // PyMemberDef
 
 
 typedef struct {
@@ -72,7 +73,7 @@ namespace_repr(PyObject *ns)
     PyObject *separator, *pairsrepr, *repr = NULL;
     const char * name;
 
-    name = (Py_TYPE(ns) == &_PyNamespace_Type) ? "namespace"
+    name = Py_IS_TYPE(ns, &_PyNamespace_Type) ? "namespace"
                                                : Py_TYPE(ns)->tp_name;
 
     i = Py_ReprEnter(ns);
@@ -90,8 +91,6 @@ namespace_repr(PyObject *ns)
 
     keys = PyDict_Keys(d);
     if (keys == NULL)
-        goto error;
-    if (PyList_Sort(keys) != 0)
         goto error;
 
     keys_iter = PyObject_GetIter(keys);

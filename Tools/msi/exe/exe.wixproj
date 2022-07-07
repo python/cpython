@@ -11,6 +11,9 @@
         <SuppressICEs>ICE43</SuppressICEs>
     </PropertyGroup>
     <Import Project="..\msi.props" />
+    <PropertyGroup Condition="exists('$(BuildPath)vcruntime140_1.dll')">
+        <DefineConstants>$(DefineConstants);Include_Vcruntime140_1_dll=1</DefineConstants>
+    </PropertyGroup>
     <ItemGroup>
         <Compile Include="exe.wxs" />
         <Compile Include="exe_files.wxs" />
@@ -29,18 +32,9 @@
         <Exec Command="$(Blurb) merge -f &quot;$(BuildPath)NEWS.txt&quot;" WorkingDirectory="$(PCbuild)" />
     </Target>
     
-    <Target Name="_MergeMiscNewsWithPython" AfterTargets="PrepareForBuild" Condition="$(Blurb) == '' and !Exists('$(PySourcePath)Misc\NEWS')">
-        <ItemGroup>
-            <HostPython Include="$(ExternalsDir)python*\tools\python.exe" />
-            <HostPython Include="@(HostPython)" Condition="Exists(%(FullPath))" />
-            <HostPython Include="py" Condition="@(HostPython) == ''" />
-        </ItemGroup>
-        <PropertyGroup>
-            <HostPython>@(HostPython)</HostPython>
-            <HostPython Condition="$(HostPython.Contains(';'))">$(HostPython.Remove($(HostPython.IndexOf(';'))))</HostPython>
-        </PropertyGroup>
-        <Exec Command="&quot;$(HostPython)&quot; -m pip install -U blurb" WorkingDirectory="$(PCbuild)" />
-        <Exec Command="&quot;$(HostPython)&quot; -m blurb merge -f &quot;$(BuildPath)NEWS.txt&quot;" WorkingDirectory="$(PCbuild)" />
+    <Target Name="_MergeMiscNewsWithPython" AfterTargets="PrepareForBuild" Condition="$(Blurb) == '' and !Exists('$(PySourcePath)Misc\NEWS')" DependsOnTargets="FindPythonForBuild">
+        <Exec Command="$(PythonForBuild) -m pip install -U blurb" WorkingDirectory="$(PCbuild)" />
+        <Exec Command="$(PythonForBuild) -m blurb merge -f &quot;$(BuildPath)NEWS.txt&quot;" WorkingDirectory="$(PCbuild)" />
     </Target>
     
     <Import Project="..\msi.targets" />

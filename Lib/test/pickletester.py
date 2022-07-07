@@ -21,18 +21,28 @@ try:
 except ImportError:
     _testbuffer = None
 
+from test import support
+from test.support import os_helper
+from test.support import (
+    TestFailed, run_with_locale, no_tracing,
+    _2G, _4G, bigmemtest
+    )
+from test.support.import_helper import forget
+from test.support.os_helper import TESTFN
+from test.support import threading_helper
+from test.support.warnings_helper import save_restore_warnings_filters
+
+from pickle import bytes_types
+
+
+# bpo-41003: Save/restore warnings filters to leave them unchanged.
+# Ignore filters installed by numpy.
 try:
-    import numpy as np
+    with save_restore_warnings_filters():
+        import numpy as np
 except ImportError:
     np = None
 
-from test import support
-from test.support import (
-    TestFailed, TESTFN, run_with_locale, no_tracing,
-    _2G, _4G, bigmemtest, reap_threads, forget,
-    )
-
-from pickle import bytes_types
 
 requires_32b = unittest.skipUnless(sys.maxsize < 2**32,
                                    "test is only meaningful on 32-bit builds")
@@ -59,6 +69,10 @@ def count_opcode(code, pickle):
     return n
 
 
+def identity(x):
+    return x
+
+
 class UnseekableIO(io.BytesIO):
     def peek(self, *args):
         raise NotImplementedError
@@ -71,6 +85,18 @@ class UnseekableIO(io.BytesIO):
 
     def tell(self):
         raise io.UnsupportedOperation
+
+
+class MinimalIO(object):
+    """
+    A file-like object that doesn't support readinto().
+    """
+    def __init__(self, *args):
+        self._bio = io.BytesIO(*args)
+        self.getvalue = self._bio.getvalue
+        self.read = self._bio.read
+        self.readline = self._bio.readline
+        self.write = self._bio.write
 
 
 # We can't very well test the extension registry without putting known stuff
@@ -116,11 +142,12 @@ class E(C):
     def __getinitargs__(self):
         return ()
 
-class H(object):
+# Simple mutable object.
+class Object:
     pass
 
-# Hashable mutable key
-class K(object):
+# Hashable immutable key object containing unheshable mutable data.
+class K:
     def __init__(self, value):
         self.value = value
 
@@ -135,10 +162,6 @@ __main__.D = D
 D.__module__ = "__main__"
 __main__.E = E
 E.__module__ = "__main__"
-__main__.H = H
-H.__module__ = "__main__"
-__main__.K = K
-K.__module__ = "__main__"
 
 class myint(int):
     def __init__(self, x):
@@ -805,7 +828,7 @@ def create_data():
     return x
 
 
-class AbstractUnpickleTests(unittest.TestCase):
+class AbstractUnpickleTests:
     # Subclass must define self.loads.
 
     _testdata = create_data()
@@ -1154,6 +1177,24 @@ class AbstractUnpickleTests(unittest.TestCase):
             self.assertIs(type(unpickled), collections.UserDict)
             self.assertEqual(unpickled, collections.UserDict({1: 2}))
 
+    def test_bad_reduce(self):
+        self.assertEqual(self.loads(b'cbuiltins\nint\n)R.'), 0)
+        self.check_unpickling_error(TypeError, b'N)R.')
+        self.check_unpickling_error(TypeError, b'cbuiltins\nint\nNR.')
+
+    def test_bad_newobj(self):
+        error = (pickle.UnpicklingError, TypeError)
+        self.assertEqual(self.loads(b'cbuiltins\nint\n)\x81.'), 0)
+        self.check_unpickling_error(error, b'cbuiltins\nlen\n)\x81.')
+        self.check_unpickling_error(error, b'cbuiltins\nint\nN\x81.')
+
+    def test_bad_newobj_ex(self):
+        error = (pickle.UnpicklingError, TypeError)
+        self.assertEqual(self.loads(b'cbuiltins\nint\n)}\x92.'), 0)
+        self.check_unpickling_error(error, b'cbuiltins\nlen\n)}\x92.')
+        self.check_unpickling_error(error, b'cbuiltins\nint\nN}\x92.')
+        self.check_unpickling_error(error, b'cbuiltins\nint\n)N\x92.')
+
     def test_bad_stack(self):
         badpickles = [
             b'.',                       # STOP
@@ -1338,7 +1379,8 @@ class AbstractUnpickleTests(unittest.TestCase):
         for p in badpickles:
             self.check_unpickling_error(self.truncated_errors, p)
 
-    @reap_threads
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_unpickle_module_race(self):
         # https://bugs.python.org/issue34572
         locker_module = dedent("""
@@ -1400,7 +1442,7 @@ class AbstractUnpickleTests(unittest.TestCase):
 
 
 
-class AbstractPickleTests(unittest.TestCase):
+class AbstractPickleTests:
     # Subclass must define self.dumps, self.loads.
 
     optimized = False
@@ -1456,54 +1498,182 @@ class AbstractPickleTests(unittest.TestCase):
             got = filelike.getvalue()
             self.assertEqual(expected, got)
 
-    def test_recursive_list(self):
-        l = []
+    def _test_recursive_list(self, cls, aslist=identity, minprotocol=0):
+        # List containing itself.
+        l = cls()
         l.append(l)
-        for proto in protocols:
+        for proto in range(minprotocol, pickle.HIGHEST_PROTOCOL + 1):
             s = self.dumps(l, proto)
             x = self.loads(s)
-            self.assertIsInstance(x, list)
-            self.assertEqual(len(x), 1)
-            self.assertIs(x[0], x)
+            self.assertIsInstance(x, cls)
+            y = aslist(x)
+            self.assertEqual(len(y), 1)
+            self.assertIs(y[0], x)
 
-    def test_recursive_tuple_and_list(self):
-        t = ([],)
+    def test_recursive_list(self):
+        self._test_recursive_list(list)
+
+    def test_recursive_list_subclass(self):
+        self._test_recursive_list(MyList, minprotocol=2)
+
+    def test_recursive_list_like(self):
+        self._test_recursive_list(REX_six, aslist=lambda x: x.items)
+
+    def _test_recursive_tuple_and_list(self, cls, aslist=identity, minprotocol=0):
+        # Tuple containing a list containing the original tuple.
+        t = (cls(),)
         t[0].append(t)
-        for proto in protocols:
+        for proto in range(minprotocol, pickle.HIGHEST_PROTOCOL + 1):
             s = self.dumps(t, proto)
             x = self.loads(s)
             self.assertIsInstance(x, tuple)
             self.assertEqual(len(x), 1)
-            self.assertIsInstance(x[0], list)
-            self.assertEqual(len(x[0]), 1)
-            self.assertIs(x[0][0], x)
+            self.assertIsInstance(x[0], cls)
+            y = aslist(x[0])
+            self.assertEqual(len(y), 1)
+            self.assertIs(y[0], x)
+
+        # List containing a tuple containing the original list.
+        t, = t
+        for proto in range(minprotocol, pickle.HIGHEST_PROTOCOL + 1):
+            s = self.dumps(t, proto)
+            x = self.loads(s)
+            self.assertIsInstance(x, cls)
+            y = aslist(x)
+            self.assertEqual(len(y), 1)
+            self.assertIsInstance(y[0], tuple)
+            self.assertEqual(len(y[0]), 1)
+            self.assertIs(y[0][0], x)
+
+    def test_recursive_tuple_and_list(self):
+        self._test_recursive_tuple_and_list(list)
+
+    def test_recursive_tuple_and_list_subclass(self):
+        self._test_recursive_tuple_and_list(MyList, minprotocol=2)
+
+    def test_recursive_tuple_and_list_like(self):
+        self._test_recursive_tuple_and_list(REX_six, aslist=lambda x: x.items)
+
+    def _test_recursive_dict(self, cls, asdict=identity, minprotocol=0):
+        # Dict containing itself.
+        d = cls()
+        d[1] = d
+        for proto in range(minprotocol, pickle.HIGHEST_PROTOCOL + 1):
+            s = self.dumps(d, proto)
+            x = self.loads(s)
+            self.assertIsInstance(x, cls)
+            y = asdict(x)
+            self.assertEqual(list(y.keys()), [1])
+            self.assertIs(y[1], x)
 
     def test_recursive_dict(self):
-        d = {}
-        d[1] = d
-        for proto in protocols:
+        self._test_recursive_dict(dict)
+
+    def test_recursive_dict_subclass(self):
+        self._test_recursive_dict(MyDict, minprotocol=2)
+
+    def test_recursive_dict_like(self):
+        self._test_recursive_dict(REX_seven, asdict=lambda x: x.table)
+
+    def _test_recursive_tuple_and_dict(self, cls, asdict=identity, minprotocol=0):
+        # Tuple containing a dict containing the original tuple.
+        t = (cls(),)
+        t[0][1] = t
+        for proto in range(minprotocol, pickle.HIGHEST_PROTOCOL + 1):
+            s = self.dumps(t, proto)
+            x = self.loads(s)
+            self.assertIsInstance(x, tuple)
+            self.assertEqual(len(x), 1)
+            self.assertIsInstance(x[0], cls)
+            y = asdict(x[0])
+            self.assertEqual(list(y), [1])
+            self.assertIs(y[1], x)
+
+        # Dict containing a tuple containing the original dict.
+        t, = t
+        for proto in range(minprotocol, pickle.HIGHEST_PROTOCOL + 1):
+            s = self.dumps(t, proto)
+            x = self.loads(s)
+            self.assertIsInstance(x, cls)
+            y = asdict(x)
+            self.assertEqual(list(y), [1])
+            self.assertIsInstance(y[1], tuple)
+            self.assertEqual(len(y[1]), 1)
+            self.assertIs(y[1][0], x)
+
+    def test_recursive_tuple_and_dict(self):
+        self._test_recursive_tuple_and_dict(dict)
+
+    def test_recursive_tuple_and_dict_subclass(self):
+        self._test_recursive_tuple_and_dict(MyDict, minprotocol=2)
+
+    def test_recursive_tuple_and_dict_like(self):
+        self._test_recursive_tuple_and_dict(REX_seven, asdict=lambda x: x.table)
+
+    def _test_recursive_dict_key(self, cls, asdict=identity, minprotocol=0):
+        # Dict containing an immutable object (as key) containing the original
+        # dict.
+        d = cls()
+        d[K(d)] = 1
+        for proto in range(minprotocol, pickle.HIGHEST_PROTOCOL + 1):
             s = self.dumps(d, proto)
             x = self.loads(s)
-            self.assertIsInstance(x, dict)
-            self.assertEqual(list(x.keys()), [1])
-            self.assertIs(x[1], x)
+            self.assertIsInstance(x, cls)
+            y = asdict(x)
+            self.assertEqual(len(y.keys()), 1)
+            self.assertIsInstance(list(y.keys())[0], K)
+            self.assertIs(list(y.keys())[0].value, x)
 
     def test_recursive_dict_key(self):
-        d = {}
-        k = K(d)
-        d[k] = 1
-        for proto in protocols:
-            s = self.dumps(d, proto)
+        self._test_recursive_dict_key(dict)
+
+    def test_recursive_dict_subclass_key(self):
+        self._test_recursive_dict_key(MyDict, minprotocol=2)
+
+    def test_recursive_dict_like_key(self):
+        self._test_recursive_dict_key(REX_seven, asdict=lambda x: x.table)
+
+    def _test_recursive_tuple_and_dict_key(self, cls, asdict=identity, minprotocol=0):
+        # Tuple containing a dict containing an immutable object (as key)
+        # containing the original tuple.
+        t = (cls(),)
+        t[0][K(t)] = 1
+        for proto in range(minprotocol, pickle.HIGHEST_PROTOCOL + 1):
+            s = self.dumps(t, proto)
             x = self.loads(s)
-            self.assertIsInstance(x, dict)
-            self.assertEqual(len(x.keys()), 1)
-            self.assertIsInstance(list(x.keys())[0], K)
-            self.assertIs(list(x.keys())[0].value, x)
+            self.assertIsInstance(x, tuple)
+            self.assertEqual(len(x), 1)
+            self.assertIsInstance(x[0], cls)
+            y = asdict(x[0])
+            self.assertEqual(len(y), 1)
+            self.assertIsInstance(list(y.keys())[0], K)
+            self.assertIs(list(y.keys())[0].value, x)
+
+        # Dict containing an immutable object (as key) containing a tuple
+        # containing the original dict.
+        t, = t
+        for proto in range(minprotocol, pickle.HIGHEST_PROTOCOL + 1):
+            s = self.dumps(t, proto)
+            x = self.loads(s)
+            self.assertIsInstance(x, cls)
+            y = asdict(x)
+            self.assertEqual(len(y), 1)
+            self.assertIsInstance(list(y.keys())[0], K)
+            self.assertIs(list(y.keys())[0].value[0], x)
+
+    def test_recursive_tuple_and_dict_key(self):
+        self._test_recursive_tuple_and_dict_key(dict)
+
+    def test_recursive_tuple_and_dict_subclass_key(self):
+        self._test_recursive_tuple_and_dict_key(MyDict, minprotocol=2)
+
+    def test_recursive_tuple_and_dict_like_key(self):
+        self._test_recursive_tuple_and_dict_key(REX_seven, asdict=lambda x: x.table)
 
     def test_recursive_set(self):
+        # Set containing an immutable object containing the original set.
         y = set()
-        k = K(y)
-        y.add(k)
+        y.add(K(y))
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
             s = self.dumps(y, proto)
             x = self.loads(s)
@@ -1512,52 +1682,31 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertIsInstance(list(x)[0], K)
             self.assertIs(list(x)[0].value, x)
 
-    def test_recursive_list_subclass(self):
-        y = MyList()
-        y.append(y)
-        for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
+        # Immutable object containing a set containing the original object.
+        y, = y
+        for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
             s = self.dumps(y, proto)
             x = self.loads(s)
-            self.assertIsInstance(x, MyList)
-            self.assertEqual(len(x), 1)
-            self.assertIs(x[0], x)
-
-    def test_recursive_dict_subclass(self):
-        d = MyDict()
-        d[1] = d
-        for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
-            s = self.dumps(d, proto)
-            x = self.loads(s)
-            self.assertIsInstance(x, MyDict)
-            self.assertEqual(list(x.keys()), [1])
-            self.assertIs(x[1], x)
-
-    def test_recursive_dict_subclass_key(self):
-        d = MyDict()
-        k = K(d)
-        d[k] = 1
-        for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
-            s = self.dumps(d, proto)
-            x = self.loads(s)
-            self.assertIsInstance(x, MyDict)
-            self.assertEqual(len(list(x.keys())), 1)
-            self.assertIsInstance(list(x.keys())[0], K)
-            self.assertIs(list(x.keys())[0].value, x)
+            self.assertIsInstance(x, K)
+            self.assertIsInstance(x.value, set)
+            self.assertEqual(len(x.value), 1)
+            self.assertIs(list(x.value)[0], x)
 
     def test_recursive_inst(self):
-        i = C()
+        # Mutable object containing itself.
+        i = Object()
         i.attr = i
         for proto in protocols:
             s = self.dumps(i, proto)
             x = self.loads(s)
-            self.assertIsInstance(x, C)
+            self.assertIsInstance(x, Object)
             self.assertEqual(dir(x), dir(i))
             self.assertIs(x.attr, x)
 
     def test_recursive_multi(self):
         l = []
         d = {1:l}
-        i = C()
+        i = Object()
         i.attr = d
         l.append(i)
         for proto in protocols:
@@ -1567,49 +1716,94 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertEqual(len(x), 1)
             self.assertEqual(dir(x[0]), dir(i))
             self.assertEqual(list(x[0].attr.keys()), [1])
-            self.assertTrue(x[0].attr[1] is x)
+            self.assertIs(x[0].attr[1], x)
 
-    def check_recursive_collection_and_inst(self, factory):
-        h = H()
-        y = factory([h])
-        h.attr = y
+    def _test_recursive_collection_and_inst(self, factory):
+        # Mutable object containing a collection containing the original
+        # object.
+        o = Object()
+        o.attr = factory([o])
+        t = type(o.attr)
         for proto in protocols:
-            s = self.dumps(y, proto)
+            s = self.dumps(o, proto)
             x = self.loads(s)
-            self.assertIsInstance(x, type(y))
+            self.assertIsInstance(x.attr, t)
+            self.assertEqual(len(x.attr), 1)
+            self.assertIsInstance(list(x.attr)[0], Object)
+            self.assertIs(list(x.attr)[0], x)
+
+        # Collection containing a mutable object containing the original
+        # collection.
+        o = o.attr
+        for proto in protocols:
+            s = self.dumps(o, proto)
+            x = self.loads(s)
+            self.assertIsInstance(x, t)
             self.assertEqual(len(x), 1)
-            self.assertIsInstance(list(x)[0], H)
+            self.assertIsInstance(list(x)[0], Object)
             self.assertIs(list(x)[0].attr, x)
 
     def test_recursive_list_and_inst(self):
-        self.check_recursive_collection_and_inst(list)
+        self._test_recursive_collection_and_inst(list)
 
     def test_recursive_tuple_and_inst(self):
-        self.check_recursive_collection_and_inst(tuple)
+        self._test_recursive_collection_and_inst(tuple)
 
     def test_recursive_dict_and_inst(self):
-        self.check_recursive_collection_and_inst(dict.fromkeys)
+        self._test_recursive_collection_and_inst(dict.fromkeys)
 
     def test_recursive_set_and_inst(self):
-        self.check_recursive_collection_and_inst(set)
+        self._test_recursive_collection_and_inst(set)
 
     def test_recursive_frozenset_and_inst(self):
-        self.check_recursive_collection_and_inst(frozenset)
+        self._test_recursive_collection_and_inst(frozenset)
 
     def test_recursive_list_subclass_and_inst(self):
-        self.check_recursive_collection_and_inst(MyList)
+        self._test_recursive_collection_and_inst(MyList)
 
     def test_recursive_tuple_subclass_and_inst(self):
-        self.check_recursive_collection_and_inst(MyTuple)
+        self._test_recursive_collection_and_inst(MyTuple)
 
     def test_recursive_dict_subclass_and_inst(self):
-        self.check_recursive_collection_and_inst(MyDict.fromkeys)
+        self._test_recursive_collection_and_inst(MyDict.fromkeys)
 
     def test_recursive_set_subclass_and_inst(self):
-        self.check_recursive_collection_and_inst(MySet)
+        self._test_recursive_collection_and_inst(MySet)
 
     def test_recursive_frozenset_subclass_and_inst(self):
-        self.check_recursive_collection_and_inst(MyFrozenSet)
+        self._test_recursive_collection_and_inst(MyFrozenSet)
+
+    def test_recursive_inst_state(self):
+        # Mutable object containing itself.
+        y = REX_state()
+        y.state = y
+        for proto in protocols:
+            s = self.dumps(y, proto)
+            x = self.loads(s)
+            self.assertIsInstance(x, REX_state)
+            self.assertIs(x.state, x)
+
+    def test_recursive_tuple_and_inst_state(self):
+        # Tuple containing a mutable object containing the original tuple.
+        t = (REX_state(),)
+        t[0].state = t
+        for proto in protocols:
+            s = self.dumps(t, proto)
+            x = self.loads(s)
+            self.assertIsInstance(x, tuple)
+            self.assertEqual(len(x), 1)
+            self.assertIsInstance(x[0], REX_state)
+            self.assertIs(x[0].state, x)
+
+        # Mutable object containing a tuple containing the object.
+        t, = t
+        for proto in protocols:
+            s = self.dumps(t, proto)
+            x = self.loads(s)
+            self.assertIsInstance(x, REX_state)
+            self.assertIsInstance(x.state, tuple)
+            self.assertEqual(len(x.state), 1)
+            self.assertIs(x.state[0], x)
 
     def test_unicode(self):
         endcases = ['', '<\\u>', '<\\\u1234>', '<\n>',
@@ -1659,6 +1853,14 @@ class AbstractPickleTests(unittest.TestCase):
                 elif proto == 5:
                     self.assertNotIn(b'bytearray', p)
                     self.assertTrue(opcode_in_pickle(pickle.BYTEARRAY8, p))
+
+    def test_bytearray_memoization_bug(self):
+        for proto in protocols:
+            for s in b'', b'xyz', b'xyz'*100:
+                b = bytearray(s)
+                p = self.dumps((b, b), proto)
+                b1, b2 = self.loads(p)
+                self.assertIs(b1, b2)
 
     def test_ints(self):
         for proto in protocols:
@@ -1929,6 +2131,17 @@ class AbstractPickleTests(unittest.TestCase):
                 self.assertEqual(B(x), B(y), detail)
                 self.assertEqual(x.__dict__, y.__dict__, detail)
 
+    def test_newobj_overridden_new(self):
+        # Test that Python class with C implemented __new__ is pickleable
+        for proto in protocols:
+            x = MyIntWithNew2(1)
+            x.foo = 42
+            s = self.dumps(x, proto)
+            y = self.loads(s)
+            self.assertIs(type(y), MyIntWithNew2)
+            self.assertEqual(int(y), 1)
+            self.assertEqual(y.foo, 42)
+
     def test_newobj_not_class(self):
         # Issue 24552
         global SimpleNewObj
@@ -2170,8 +2383,11 @@ class AbstractPickleTests(unittest.TestCase):
     def test_bad_getattr(self):
         # Issue #3514: crash when there is an infinite loop in __getattr__
         x = BadGetattr()
-        for proto in protocols:
-            self.assertRaises(RuntimeError, self.dumps, x, proto)
+        for proto in range(2):
+            with support.infinite_recursion():
+                self.assertRaises(RuntimeError, self.dumps, x, proto)
+        for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
+            s = self.dumps(x, proto)
 
     def test_reduce_bad_iterator(self):
         # Issue4176: crash when 4th and 5th items of __reduce__()
@@ -2819,8 +3035,69 @@ class AbstractPickleTests(unittest.TestCase):
         # 2-D, non-contiguous
         check_array(arr[::2])
 
+    def test_evil_class_mutating_dict(self):
+        # https://github.com/python/cpython/issues/92930
+        from random import getrandbits
 
-class BigmemPickleTests(unittest.TestCase):
+        global Bad
+        class Bad:
+            def __eq__(self, other):
+                return ENABLED
+            def __hash__(self):
+                return 42
+            def __reduce__(self):
+                if getrandbits(6) == 0:
+                    collection.clear()
+                return (Bad, ())
+
+        for proto in protocols:
+            for _ in range(20):
+                ENABLED = False
+                collection = {Bad(): Bad() for _ in range(20)}
+                for bad in collection:
+                    bad.bad = bad
+                    bad.collection = collection
+                ENABLED = True
+                try:
+                    data = self.dumps(collection, proto)
+                    self.loads(data)
+                except RuntimeError as e:
+                    expected = "changed size during iteration"
+                    self.assertIn(expected, str(e))
+
+    def test_evil_pickler_mutating_collection(self):
+        # https://github.com/python/cpython/issues/92930
+        if not hasattr(self, "pickler"):
+            raise self.skipTest(f"{type(self)} has no associated pickler type")
+
+        global Clearer
+        class Clearer:
+            pass
+
+        def check(collection):
+            class EvilPickler(self.pickler):
+                def persistent_id(self, obj):
+                    if isinstance(obj, Clearer):
+                        collection.clear()
+                    return None
+            pickler = EvilPickler(io.BytesIO(), proto)
+            try:
+                pickler.dump(collection)
+            except RuntimeError as e:
+                expected = "changed size during iteration"
+                self.assertIn(expected, str(e))
+
+        for proto in protocols:
+            check([Clearer()])
+            check([Clearer(), Clearer()])
+            check({Clearer()})
+            check({Clearer(), Clearer()})
+            check({Clearer(): 1})
+            check({Clearer(): 1, Clearer(): 2})
+            check({1: Clearer(), 2: Clearer()})
+
+
+class BigmemPickleTests:
 
     # Binary protocols can serialize longs of up to 2 GiB-1
 
@@ -3011,6 +3288,19 @@ class REX_seven(object):
     def __reduce__(self):
         return type(self), (), None, None, iter(self.table.items())
 
+class REX_state(object):
+    """This class is used to check the 3th argument (state) of
+    the reduce protocol.
+    """
+    def __init__(self, state=None):
+        self.state = state
+    def __eq__(self, other):
+        return type(self) is type(other) and self.state == other.state
+    def __setstate__(self, state):
+        self.state = state
+    def __reduce__(self):
+        return type(self), (), self.state
+
 
 # Test classes for newobj
 
@@ -3049,6 +3339,13 @@ myclasses = [MyInt, MyFloat,
              MyStr, MyUnicode,
              MyTuple, MyList, MyDict, MySet, MyFrozenSet]
 
+class MyIntWithNew(int):
+    def __new__(cls, value):
+        raise AssertionError
+
+class MyIntWithNew2(MyIntWithNew):
+    __new__ = int.__new__
+
 
 class SlotList(MyList):
     __slots__ = ["foo"]
@@ -3073,7 +3370,7 @@ class BadGetattr:
         self.foo
 
 
-class AbstractPickleModuleTests(unittest.TestCase):
+class AbstractPickleModuleTests:
 
     def test_dump_closed_file(self):
         f = open(TESTFN, "wb")
@@ -3081,7 +3378,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
             f.close()
             self.assertRaises(ValueError, self.dump, 123, f)
         finally:
-            support.unlink(TESTFN)
+            os_helper.unlink(TESTFN)
 
     def test_load_closed_file(self):
         f = open(TESTFN, "wb")
@@ -3089,7 +3386,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
             f.close()
             self.assertRaises(ValueError, self.dump, 123, f)
         finally:
-            support.unlink(TESTFN)
+            os_helper.unlink(TESTFN)
 
     def test_load_from_and_dump_to_file(self):
         stream = io.BytesIO()
@@ -3120,7 +3417,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
                 self.assertRaises(TypeError, self.dump, 123, f, proto)
         finally:
             f.close()
-            support.unlink(TESTFN)
+            os_helper.unlink(TESTFN)
 
     def test_incomplete_input(self):
         s = io.BytesIO(b"X''.")
@@ -3180,7 +3477,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
         self.check_dumps_loads_oob_buffers(dumps, loads)
 
 
-class AbstractPersistentPicklerTests(unittest.TestCase):
+class AbstractPersistentPicklerTests:
 
     # This class defines persistent_id() and persistent_load()
     # functions that should be used by the pickler.  All even integers
@@ -3220,7 +3517,7 @@ class AbstractPersistentPicklerTests(unittest.TestCase):
             self.assertEqual(self.load_false_count, 1)
 
 
-class AbstractIdentityPersistentPicklerTests(unittest.TestCase):
+class AbstractIdentityPersistentPicklerTests:
 
     def persistent_id(self, obj):
         return obj
@@ -3249,7 +3546,7 @@ class AbstractIdentityPersistentPicklerTests(unittest.TestCase):
         self.assertRaises(pickle.UnpicklingError, self.loads, pickled)
 
 
-class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
+class AbstractPicklerUnpicklerObjectTests:
 
     pickler_class = None
     unpickler_class = None
@@ -3363,7 +3660,7 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
         f.seek(0)
         self.assertEqual(unpickler.load(), data2)
 
-    def _check_multiple_unpicklings(self, ioclass):
+    def _check_multiple_unpicklings(self, ioclass, *, seekable=True):
         for proto in protocols:
             with self.subTest(proto=proto):
                 data1 = [(x, str(x)) for x in range(2000)] + [b"abcde", len]
@@ -3376,10 +3673,10 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
                 f = ioclass(pickled * N)
                 unpickler = self.unpickler_class(f)
                 for i in range(N):
-                    if f.seekable():
+                    if seekable:
                         pos = f.tell()
                     self.assertEqual(unpickler.load(), data1)
-                    if f.seekable():
+                    if seekable:
                         self.assertEqual(f.tell(), pos + len(pickled))
                 self.assertRaises(EOFError, unpickler.load)
 
@@ -3387,7 +3684,12 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
         self._check_multiple_unpicklings(io.BytesIO)
 
     def test_multiple_unpicklings_unseekable(self):
-        self._check_multiple_unpicklings(UnseekableIO)
+        self._check_multiple_unpicklings(UnseekableIO, seekable=False)
+
+    def test_multiple_unpicklings_minimal(self):
+        # File-like object that doesn't support peek() and readinto()
+        # (bpo-39681)
+        self._check_multiple_unpicklings(MinimalIO, seekable=False)
 
     def test_unpickling_buffering_readline(self):
         # Issue #12687: the unpickler's buffering logic could fail with
@@ -3458,7 +3760,7 @@ class AbstractCustomPicklerClass:
 
         return NotImplemented
 
-class AbstractHookTests(unittest.TestCase):
+class AbstractHookTests:
     def test_pickler_hook(self):
         # test the ability of a custom, user-defined CPickler subclass to
         # override the default reducing routines of any type using the method
@@ -3486,7 +3788,7 @@ class AbstractHookTests(unittest.TestCase):
 
                 self.assertEqual(new_f, 5)
                 self.assertEqual(some_str, 'some str')
-                # math.log does not have its usual reducer overriden, so the
+                # math.log does not have its usual reducer overridden, so the
                 # custom reduction callback should silently direct the pickler
                 # to the default pickling by attribute, by returning
                 # NotImplemented
@@ -3503,7 +3805,7 @@ class AbstractHookTests(unittest.TestCase):
     def test_reducer_override_no_reference_cycle(self):
         # bpo-39492: reducer_override used to induce a spurious reference cycle
         # inside the Pickler object, that could prevent all serialized objects
-        # from being garbage-collected without explicity invoking gc.collect.
+        # from being garbage-collected without explicitly invoking gc.collect.
 
         for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
             with self.subTest(proto=proto):
@@ -3524,7 +3826,7 @@ class AbstractHookTests(unittest.TestCase):
                 self.assertIsNone(wr())
 
 
-class AbstractDispatchTableTests(unittest.TestCase):
+class AbstractDispatchTableTests:
 
     def test_default_dispatch_table(self):
         # No dispatch_table attribute by default

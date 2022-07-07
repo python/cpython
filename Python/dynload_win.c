@@ -2,6 +2,8 @@
 /* Support for dynamic loading of extension modules */
 
 #include "Python.h"
+#include "pycore_fileutils.h"     // _Py_add_relfile()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 #ifdef HAVE_DIRECT_H
 #include <direct.h>
@@ -160,19 +162,70 @@ static char *GetPythonImport (HINSTANCE hModule)
     return NULL;
 }
 
+/* Load python3.dll before loading any extension module that might refer
+   to it. That way, we can be sure that always the python3.dll corresponding
+   to this python DLL is loaded, not a python3.dll that might be on the path
+   by chance.
+   Return whether the DLL was found.
+*/
+extern HMODULE PyWin_DLLhModule;
+static int
+_Py_CheckPython3(void)
+{
+    static int python3_checked = 0;
+    static HANDLE hPython3;
+    #define MAXPATHLEN 512
+    wchar_t py3path[MAXPATHLEN+1];
+    if (python3_checked) {
+        return hPython3 != NULL;
+    }
+    python3_checked = 1;
+
+    /* If there is a python3.dll next to the python3y.dll,
+       use that DLL */
+    if (PyWin_DLLhModule && GetModuleFileNameW(PyWin_DLLhModule, py3path, MAXPATHLEN)) {
+        wchar_t *p = wcsrchr(py3path, L'\\');
+        if (p) {
+            wcscpy(p + 1, PY3_DLLNAME);
+            hPython3 = LoadLibraryExW(py3path, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+            if (hPython3 != NULL) {
+                return 1;
+            }
+        }
+    }
+
+    /* If we can locate python3.dll in our application dir,
+       use that DLL */
+    hPython3 = LoadLibraryExW(PY3_DLLNAME, NULL, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);
+    if (hPython3 != NULL) {
+        return 1;
+    }
+
+    /* For back-compat, also search {sys.prefix}\DLLs, though
+       that has not been a normal install layout for a while */
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyConfig *config = (PyConfig*)_PyInterpreterState_GetConfig(interp);
+    assert(config->prefix);
+    if (config->prefix) {
+        wcscpy_s(py3path, MAXPATHLEN, config->prefix);
+        if (py3path[0] && _Py_add_relfile(py3path, L"DLLs\\" PY3_DLLNAME, MAXPATHLEN) >= 0) {
+            hPython3 = LoadLibraryExW(py3path, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+        }
+    }
+    return hPython3 != NULL;
+    #undef MAXPATHLEN
+}
+
 dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
                                               const char *shortname,
                                               PyObject *pathname, FILE *fp)
 {
     dl_funcptr p;
     char funcname[258], *import_python;
-    const wchar_t *wpathname;
 
-#ifndef _DEBUG
     _Py_CheckPython3();
-#endif
 
-    wpathname = _PyUnicode_AsUnicode(pathname);
+    wchar_t *wpathname = PyUnicode_AsWideCharString(pathname, NULL);
     if (wpathname == NULL)
         return NULL;
 
@@ -194,6 +247,7 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
                               LOAD_LIBRARY_SEARCH_DEFAULT_DIRS |
                               LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
         Py_END_ALLOW_THREADS
+        PyMem_Free(wpathname);
 
         /* restore old error mode settings */
         SetErrorMode(old_mode);

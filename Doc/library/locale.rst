@@ -301,6 +301,8 @@ The :mod:`locale` module defines the following exception and functions:
    *language code* and *encoding* may be ``None`` if their values cannot be
    determined.
 
+   .. deprecated:: 3.11 3.13
+
 
 .. function:: getlocale(category=LC_CTYPE)
 
@@ -315,21 +317,45 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. function:: getpreferredencoding(do_setlocale=True)
 
-   Return the encoding used for text data, according to user preferences.  User
-   preferences are expressed differently on different systems, and might not be
-   available programmatically on some systems, so this function only returns a
-   guess.
+   Return the :term:`locale encoding` used for text data, according to user
+   preferences.  User preferences are expressed differently on different
+   systems, and might not be available programmatically on some systems, so
+   this function only returns a guess.
 
-   On some systems, it is necessary to invoke :func:`setlocale` to obtain the user
-   preferences, so this function is not thread-safe. If invoking setlocale is not
-   necessary or desired, *do_setlocale* should be set to ``False``.
+   On some systems, it is necessary to invoke :func:`setlocale` to obtain the
+   user preferences, so this function is not thread-safe. If invoking setlocale
+   is not necessary or desired, *do_setlocale* should be set to ``False``.
 
-   On Android or in the UTF-8 mode (:option:`-X` ``utf8`` option), always
-   return ``'UTF-8'``, the locale and the *do_setlocale* argument are ignored.
+   On Android or if the :ref:`Python UTF-8 Mode <utf8-mode>` is enabled, always
+   return ``'utf-8'``, the :term:`locale encoding` and the *do_setlocale*
+   argument are ignored.
+
+   The :ref:`Python preinitialization <c-preinit>` configures the LC_CTYPE
+   locale. See also the :term:`filesystem encoding and error handler`.
 
    .. versionchanged:: 3.7
-      The function now always returns ``UTF-8`` on Android or if the UTF-8 mode
-      is enabled.
+      The function now always returns ``"utf-8"`` on Android or if the
+      :ref:`Python UTF-8 Mode <utf8-mode>` is enabled.
+
+
+.. function:: getencoding()
+
+   Get the current :term:`locale encoding`:
+
+   * On Android and VxWorks, return ``"utf-8"``.
+   * On Unix, return the encoding of the current :data:`LC_CTYPE` locale.
+     Return ``"utf-8"`` if ``nl_langinfo(CODESET)`` returns an empty string:
+     for example, if the current LC_CTYPE locale is not supported.
+   * On Windows, return the ANSI code page.
+
+   The :ref:`Python preinitialization <c-preinit>` configures the LC_CTYPE
+   locale. See also the :term:`filesystem encoding and error handler`.
+
+   This function is similar to
+   :func:`getpreferredencoding(False) <getpreferredencoding>` except this
+   function ignores the :ref:`Python UTF-8 Mode <utf8-mode>`.
+
+   .. versionadded:: 3.11
 
 
 .. function:: normalize(localename)
@@ -348,6 +374,8 @@ The :mod:`locale` module defines the following exception and functions:
 
    The default setting is determined by calling :func:`getdefaultlocale`.
    *category* defaults to :const:`LC_ALL`.
+
+   .. deprecated:: 3.11 3.13
 
 
 .. function:: strcoll(string1, string2)
@@ -384,18 +412,6 @@ The :mod:`locale` module defines the following exception and functions:
       The *monetary* keyword parameter was added.
 
 
-.. function:: format(format, val, grouping=False, monetary=False)
-
-   Please note that this function works like :meth:`format_string` but will
-   only work for exactly one ``%char`` specifier.  For example, ``'%f'`` and
-   ``'%.0f'`` are both valid specifiers, but ``'%f KiB'`` is not.
-
-   For whole format strings, use :func:`format_string`.
-
-   .. deprecated:: 3.7
-      Use :meth:`format_string` instead.
-
-
 .. function:: currency(val, symbol=True, grouping=False, international=False)
 
    Formats a number *val* according to the current :const:`LC_MONETARY` settings.
@@ -423,10 +439,18 @@ The :mod:`locale` module defines the following exception and functions:
     .. versionadded:: 3.5
 
 
-.. function:: atof(string)
+.. function:: localize(string, grouping=False, monetary=False)
 
-   Converts a string to a floating point number, following the :const:`LC_NUMERIC`
-   settings.
+    Converts a normalized number string into a formatted string following the
+    :const:`LC_NUMERIC` settings.
+
+    .. versionadded:: 3.10
+
+
+.. function:: atof(string, func=float)
+
+   Converts a string to a number, following the :const:`LC_NUMERIC` settings,
+   by calling *func* on the result of calling :func:`delocalize` on *string*.
 
 
 .. function:: atoi(string)
@@ -471,7 +495,7 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. data:: LC_NUMERIC
 
-   Locale category for formatting numbers.  The functions :func:`.format`,
+   Locale category for formatting numbers.  The functions :func:`format_string`,
    :func:`atoi`, :func:`atof` and :func:`.str` of the :mod:`locale` module are
    affected by that category.  All other numeric formatting operations are not
    affected.
@@ -508,7 +532,7 @@ Background, details, hints, tips and caveats
 --------------------------------------------
 
 The C standard defines the locale as a program-wide property that may be
-relatively expensive to change.  On top of that, some implementation are broken
+relatively expensive to change.  On top of that, some implementations are broken
 in such a way that frequent locale changes may cause core dumps.  This makes the
 locale somewhat painful to use correctly.
 
@@ -533,7 +557,7 @@ document that your module is not compatible with non-\ ``C`` locale settings.
 
 The only way to perform numeric operations according to the locale is to use the
 special functions defined by this module: :func:`atof`, :func:`atoi`,
-:func:`.format`, :func:`.str`.
+:func:`format_string`, :func:`.str`.
 
 There is no way to perform case conversions and character classifications
 according to the locale.  For (Unicode) text strings these are done according

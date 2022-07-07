@@ -101,20 +101,15 @@ Context object management functions:
    current context for the current thread.  Returns ``0`` on success,
    and ``-1`` on error.
 
-.. c:function:: int PyContext_ClearFreeList()
-
-   Clear the context variable free list. Return the total number of
-   freed items.  This function always succeeds.
-
 
 Context variable functions:
 
 .. c:function:: PyObject *PyContextVar_New(const char *name, PyObject *def)
 
    Create a new ``ContextVar`` object.  The *name* parameter is used
-   for introspection and debug purposes.  The *def* parameter may optionally
-   specify the default value for the context variable.  If an error has
-   occurred, this function returns ``NULL``.
+   for introspection and debug purposes.  The *def* parameter specifies
+   a default value for the context variable, or ``NULL`` for no default.
+   If an error has occurred, this function returns ``NULL``.
 
 .. c:function:: int PyContextVar_Get(PyObject *var, PyObject *default_value, PyObject **value)
 
@@ -129,13 +124,12 @@ Context variable functions:
    - the default value of *var*, if not ``NULL``;
    - ``NULL``
 
-   If the value was found, the function will create a new reference to it.
+   Except for ``NULL``, the function returns a new reference.
 
 .. c:function:: PyObject *PyContextVar_Set(PyObject *var, PyObject *value)
 
-   Set the value of *var* to *value* in the current context.  Returns a
-   pointer to a :c:type:`PyObject` object, or ``NULL`` if an error
-   has occurred.
+   Set the value of *var* to *value* in the current context.  Returns
+   a new token object for this change, or ``NULL`` if an error has occurred.
 
 .. c:function:: int PyContextVar_Reset(PyObject *var, PyObject *token)
 

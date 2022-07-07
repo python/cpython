@@ -13,7 +13,7 @@ socket() -- create a new socket object
 socketpair() -- create a pair of new socket objects [*]
 fromfd() -- create a socket object from an open file descriptor [*]
 send_fds() -- Send file descriptor to the socket.
-recv_fds() -- Recieve file descriptors from the socket.
+recv_fds() -- Receive file descriptors from the socket.
 fromshare() -- create a socket object from data received from socket.share() [*]
 gethostname() -- return the current hostname
 gethostbyname() -- map a hostname to its IP number
@@ -28,6 +28,7 @@ socket.getdefaulttimeout() -- get the default timeout value
 socket.setdefaulttimeout() -- set the default timeout value
 create_connection() -- connects to an address, with an optional timeout and
                        optional source address.
+create_server() -- create a TCP socket and bind it to a specified address.
 
  [*] not available on all platforms!
 
@@ -122,7 +123,7 @@ if sys.platform.lower().startswith("win"):
     errorTab[10014] = "A fault occurred on the network??"  # WSAEFAULT
     errorTab[10022] = "An invalid operation was attempted."
     errorTab[10024] = "Too many open files."
-    errorTab[10035] = "The socket operation would block"
+    errorTab[10035] = "The socket operation would block."
     errorTab[10036] = "A blocking operation is already in progress."
     errorTab[10037] = "Operation already in progress."
     errorTab[10038] = "Socket operation on nonsocket."
@@ -337,6 +338,7 @@ class socket(_socket.socket):
             buffer = io.BufferedWriter(raw, buffering)
         if binary:
             return buffer
+        encoding = io.text_encoding(encoding)
         text = io.TextIOWrapper(buffer, encoding, errors, newline)
         text.mode = mode
         return text
@@ -377,7 +379,7 @@ class socket(_socket.socket):
             try:
                 while True:
                     if timeout and not selector_select(timeout):
-                        raise _socket.timeout('timed out')
+                        raise TimeoutError('timed out')
                     if count:
                         blocksize = count - total_sent
                         if blocksize <= 0:
@@ -706,7 +708,7 @@ class SocketIO(io.RawIOBase):
                 self._timeout_occurred = True
                 raise
             except error as e:
-                if e.args[0] in _blocking_errnos:
+                if e.errno in _blocking_errnos:
                     return None
                 raise
 
@@ -722,7 +724,7 @@ class SocketIO(io.RawIOBase):
             return self._sock.send(b)
         except error as e:
             # XXX what about EINTR?
-            if e.args[0] in _blocking_errnos:
+            if e.errno in _blocking_errnos:
                 return None
             raise
 
@@ -781,8 +783,9 @@ def getfqdn(name=''):
     An empty argument is interpreted as meaning the local host.
 
     First the hostname returned by gethostbyaddr() is checked, then
-    possibly existing aliases. In case no FQDN is available, hostname
-    from gethostname() is returned.
+    possibly existing aliases. In case no FQDN is available and `name`
+    was given, it is returned unchanged. If `name` was empty or '0.0.0.0',
+    hostname from gethostname() is returned.
     """
     name = name.strip()
     if not name or name == '0.0.0.0':
@@ -804,7 +807,7 @@ def getfqdn(name=''):
 _GLOBAL_DEFAULT_TIMEOUT = object()
 
 def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
-                      source_address=None):
+                      source_address=None, *, all_errors=False):
     """Connect to *address* and return the socket object.
 
     Convenience function.  Connect to *address* (a 2-tuple ``(host,
@@ -814,11 +817,13 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
     global default timeout setting returned by :func:`getdefaulttimeout`
     is used.  If *source_address* is set it must be a tuple of (host, port)
     for the socket to bind as a source address before making the connection.
-    A host of '' or port 0 tells the OS to use the default.
+    A host of '' or port 0 tells the OS to use the default. When a connection
+    cannot be created, raises the last error if *all_errors* is False,
+    and an ExceptionGroup of all errors if *all_errors* is True.
     """
 
     host, port = address
-    err = None
+    exceptions = []
     for res in getaddrinfo(host, port, 0, SOCK_STREAM):
         af, socktype, proto, canonname, sa = res
         sock = None
@@ -830,20 +835,24 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
                 sock.bind(source_address)
             sock.connect(sa)
             # Break explicitly a reference cycle
-            err = None
+            exceptions.clear()
             return sock
 
-        except error as _:
-            err = _
+        except error as exc:
+            if not all_errors:
+                exceptions.clear()  # raise only the last error
+            exceptions.append(exc)
             if sock is not None:
                 sock.close()
 
-    if err is not None:
+    if len(exceptions):
         try:
-            raise err
+            if not all_errors:
+                raise exceptions[0]
+            raise ExceptionGroup("create_connection failed", exceptions)
         finally:
             # Break explicitly a reference cycle
-            err = None
+            exceptions.clear()
     else:
         raise error("getaddrinfo returns an empty list")
 

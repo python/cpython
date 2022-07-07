@@ -1,7 +1,10 @@
 import ast
+import builtins
 import dis
+import enum
 import os
 import sys
+import types
 import unittest
 import warnings
 import weakref
@@ -10,7 +13,7 @@ from textwrap import dedent
 from test import support
 
 def to_tuple(t):
-    if t is None or isinstance(t, (str, int, complex)):
+    if t is None or isinstance(t, (str, int, complex)) or t is Ellipsis:
         return t
     elif isinstance(t, list):
         return [to_tuple(e) for e in t]
@@ -43,10 +46,20 @@ exec_tests = [
     "def f(a=0): pass",
     # FunctionDef with varargs
     "def f(*args): pass",
+    # FunctionDef with varargs as TypeVarTuple
+    "def f(*args: *Ts): pass",
+    # FunctionDef with varargs as unpacked Tuple
+    "def f(*args: *tuple[int, ...]): pass",
+    # FunctionDef with varargs as unpacked Tuple *and* TypeVarTuple
+    "def f(*args: *tuple[int, *Ts]): pass",
     # FunctionDef with kwargs
     "def f(**kwargs): pass",
     # FunctionDef with all kind of args and docstring
     "def f(a, b=1, c=None, d=[], e={}, *args, f=42, **kwargs): 'doc for f()'",
+    # FunctionDef with type annotation on return involving unpacking
+    "def f() -> tuple[*Ts]: pass",
+    "def f() -> tuple[int, *Ts]: pass",
+    "def f() -> tuple[int, *tuple[int, ...]]: pass",
     # ClassDef
     "class C:pass",
     # ClassDef with docstring
@@ -62,6 +75,10 @@ exec_tests = [
     "a,b = c",
     "(a,b) = c",
     "[a,b] = c",
+    # AnnAssign with unpacked types
+    "x: tuple[*Ts]",
+    "x: tuple[int, *Ts]",
+    "x: tuple[int, *tuple[str, ...]]",
     # AugAssign
     "v += 1",
     # For
@@ -83,6 +100,8 @@ exec_tests = [
     "try:\n  pass\nexcept Exception:\n  pass",
     # TryFinally
     "try:\n  pass\nfinally:\n  pass",
+    # TryStarExcept
+    "try:\n  pass\nexcept* Exception:\n  pass",
     # Assert
     "assert v",
     # Import
@@ -247,6 +266,13 @@ eval_tests = [
 
 class AST_Tests(unittest.TestCase):
 
+    def _is_ast_node(self, name, node):
+        if not isinstance(node, type):
+            return False
+        if "ast" not in node.__module__:
+            return False
+        return name != 'AST' and name[0].isupper()
+
     def _assertTrueorder(self, ast_node, parent_pos):
         if not isinstance(ast_node, ast.AST) or ast_node._fields is None:
             return
@@ -264,6 +290,7 @@ class AST_Tests(unittest.TestCase):
                     self._assertTrueorder(child, first_pos)
             elif value is not None:
                 self._assertTrueorder(value, parent_pos)
+        self.assertEqual(ast_node._fields, ast_node.__match_args__)
 
     def test_AST_objects(self):
         x = ast.AST()
@@ -276,7 +303,7 @@ class AST_Tests(unittest.TestCase):
             x.vararg
 
         with self.assertRaises(TypeError):
-            # "_ast.AST constructor takes 0 positional arguments"
+            # "ast.AST constructor takes 0 positional arguments"
             ast.AST(2)
 
     def test_AST_garbage_collection(self):
@@ -309,6 +336,41 @@ class AST_Tests(unittest.TestCase):
             tree = ast.parse(snippet)
             compile(tree, '<string>', 'exec')
 
+    def test_invalid_position_information(self):
+        invalid_linenos = [
+            (10, 1), (-10, -11), (10, -11), (-5, -2), (-5, 1)
+        ]
+
+        for lineno, end_lineno in invalid_linenos:
+            with self.subTest(f"Check invalid linenos {lineno}:{end_lineno}"):
+                snippet = "a = 1"
+                tree = ast.parse(snippet)
+                tree.body[0].lineno = lineno
+                tree.body[0].end_lineno = end_lineno
+                with self.assertRaises(ValueError):
+                    compile(tree, '<string>', 'exec')
+
+        invalid_col_offsets = [
+            (10, 1), (-10, -11), (10, -11), (-5, -2), (-5, 1)
+        ]
+        for col_offset, end_col_offset in invalid_col_offsets:
+            with self.subTest(f"Check invalid col_offset {col_offset}:{end_col_offset}"):
+                snippet = "a = 1"
+                tree = ast.parse(snippet)
+                tree.body[0].col_offset = col_offset
+                tree.body[0].end_col_offset = end_col_offset
+                with self.assertRaises(ValueError):
+                    compile(tree, '<string>', 'exec')
+
+    def test_compilation_of_ast_nodes_with_default_end_position_values(self):
+        tree = ast.Module(body=[
+            ast.Import(names=[ast.alias(name='builtins', lineno=1, col_offset=0)], lineno=1, col_offset=0),
+            ast.Import(names=[ast.alias(name='traceback', lineno=0, col_offset=0)], lineno=0, col_offset=1)
+        ], type_ignores=[])
+
+        # Check that compilation doesn't crash. Note: this may crash explicitly only on debug mode.
+        compile(tree, "<string>", "exec")
+
     def test_slice(self):
         slc = ast.parse("x[::]").body[0].value.slice
         self.assertIsNone(slc.upper)
@@ -325,6 +387,26 @@ class AST_Tests(unittest.TestCase):
         mod.body[0].module = " __future__ ".strip()
         compile(mod, "<test>", "exec")
 
+    def test_alias(self):
+        im = ast.parse("from bar import y").body[0]
+        self.assertEqual(len(im.names), 1)
+        alias = im.names[0]
+        self.assertEqual(alias.name, 'y')
+        self.assertIsNone(alias.asname)
+        self.assertEqual(alias.lineno, 1)
+        self.assertEqual(alias.end_lineno, 1)
+        self.assertEqual(alias.col_offset, 16)
+        self.assertEqual(alias.end_col_offset, 17)
+
+        im = ast.parse("from bar import *").body[0]
+        alias = im.names[0]
+        self.assertEqual(alias.name, '*')
+        self.assertIsNone(alias.asname)
+        self.assertEqual(alias.lineno, 1)
+        self.assertEqual(alias.end_lineno, 1)
+        self.assertEqual(alias.col_offset, 16)
+        self.assertEqual(alias.end_col_offset, 17)
+
     def test_base_classes(self):
         self.assertTrue(issubclass(ast.For, ast.stmt))
         self.assertTrue(issubclass(ast.Name, ast.expr))
@@ -335,7 +417,11 @@ class AST_Tests(unittest.TestCase):
 
     def test_field_attr_existence(self):
         for name, item in ast.__dict__.items():
-            if isinstance(item, type) and name != 'AST' and name[0].isupper():
+            if self._is_ast_node(name, item):
+                if name == 'Index':
+                    # Index(value) just returns value now.
+                    # The argument is required.
+                    continue
                 x = item()
                 if isinstance(x, ast.AST):
                     self.assertEqual(type(x._fields), tuple)
@@ -346,9 +432,11 @@ class AST_Tests(unittest.TestCase):
                                      'kw_defaults', 'kwarg', 'defaults'))
 
         with self.assertRaises(AttributeError):
-            x.vararg
+            x.args
+        self.assertIsNone(x.vararg)
 
         x = ast.arguments(*range(1, 8))
+        self.assertEqual(x.args, 2)
         self.assertEqual(x.vararg, 3)
 
     def test_field_attr_writable(self):
@@ -388,6 +476,15 @@ class AST_Tests(unittest.TestCase):
 
         self.assertRaises(TypeError, ast.Num, 1, None, 2)
         self.assertRaises(TypeError, ast.Num, 1, None, 2, lineno=0)
+
+        # Arbitrary keyword arguments are supported
+        self.assertEqual(ast.Constant(1, foo='bar').foo, 'bar')
+        self.assertEqual(ast.Num(1, foo='bar').foo, 'bar')
+
+        with self.assertRaisesRegex(TypeError, "Num got multiple values for argument 'n'"):
+            ast.Num(1, n=2)
+        with self.assertRaisesRegex(TypeError, "Constant got multiple values for argument 'value'"):
+            ast.Constant(1, value=2)
 
         self.assertEqual(ast.Num(42).n, 42)
         self.assertEqual(ast.Num(4.25).n, 4.25)
@@ -560,7 +657,7 @@ class AST_Tests(unittest.TestCase):
         m = ast.Module([ast.Expr(ast.expr(**pos), **pos)], [])
         with self.assertRaises(TypeError) as cm:
             compile(m, "<test>", "exec")
-        self.assertIn("but got <_ast.expr", str(cm.exception))
+        self.assertIn("but got <ast.expr", str(cm.exception))
 
     def test_invalid_identifier(self):
         m = ast.Module([ast.Expr(ast.Name(42, ast.Load()))], [])
@@ -569,13 +666,22 @@ class AST_Tests(unittest.TestCase):
             compile(m, "<test>", "exec")
         self.assertIn("identifier must be of type str", str(cm.exception))
 
+    def test_invalid_constant(self):
+        for invalid_constant in int, (1, 2, int), frozenset((1, 2, int)):
+            e = ast.Expression(body=ast.Constant(invalid_constant))
+            ast.fix_missing_locations(e)
+            with self.assertRaisesRegex(
+                TypeError, "invalid type in Constant: type"
+            ):
+                compile(e, "<test>", "eval")
+
     def test_empty_yield_from(self):
         # Issue 16546: yield from value is not optional.
         empty_yield_from = ast.parse("def f():\n yield from g()")
         empty_yield_from.body[0].body[0].value.value = None
         with self.assertRaises(ValueError) as cm:
             compile(empty_yield_from, "<test>", "exec")
-        self.assertIn("field value is required", str(cm.exception))
+        self.assertIn("field 'value' is required", str(cm.exception))
 
     @support.cpython_only
     def test_issue31592(self):
@@ -623,6 +729,58 @@ class AST_Tests(unittest.TestCase):
         attr_b = tree.body[0].decorator_list[0].value
         self.assertEqual(attr_b.end_col_offset, 4)
 
+    def test_ast_asdl_signature(self):
+        self.assertEqual(ast.withitem.__doc__, "withitem(expr context_expr, expr? optional_vars)")
+        self.assertEqual(ast.GtE.__doc__, "GtE")
+        self.assertEqual(ast.Name.__doc__, "Name(identifier id, expr_context ctx)")
+        self.assertEqual(ast.cmpop.__doc__, "cmpop = Eq | NotEq | Lt | LtE | Gt | GtE | Is | IsNot | In | NotIn")
+        expressions = [f"     | {node.__doc__}" for node in ast.expr.__subclasses__()]
+        expressions[0] = f"expr = {ast.expr.__subclasses__()[0].__doc__}"
+        self.assertCountEqual(ast.expr.__doc__.split("\n"), expressions)
+
+    def test_issue40614_feature_version(self):
+        ast.parse('f"{x=}"', feature_version=(3, 8))
+        with self.assertRaises(SyntaxError):
+            ast.parse('f"{x=}"', feature_version=(3, 7))
+
+    def test_constant_as_name(self):
+        for constant in "True", "False", "None":
+            expr = ast.Expression(ast.Name(constant, ast.Load()))
+            ast.fix_missing_locations(expr)
+            with self.assertRaisesRegex(ValueError, f"identifier field can't represent '{constant}' constant"):
+                compile(expr, "<test>", "eval")
+
+    def test_precedence_enum(self):
+        class _Precedence(enum.IntEnum):
+            """Precedence table that originated from python grammar."""
+            NAMED_EXPR = enum.auto()      # <target> := <expr1>
+            TUPLE = enum.auto()           # <expr1>, <expr2>
+            YIELD = enum.auto()           # 'yield', 'yield from'
+            TEST = enum.auto()            # 'if'-'else', 'lambda'
+            OR = enum.auto()              # 'or'
+            AND = enum.auto()             # 'and'
+            NOT = enum.auto()             # 'not'
+            CMP = enum.auto()             # '<', '>', '==', '>=', '<=', '!=',
+                                          # 'in', 'not in', 'is', 'is not'
+            EXPR = enum.auto()
+            BOR = EXPR                    # '|'
+            BXOR = enum.auto()            # '^'
+            BAND = enum.auto()            # '&'
+            SHIFT = enum.auto()           # '<<', '>>'
+            ARITH = enum.auto()           # '+', '-'
+            TERM = enum.auto()            # '*', '@', '/', '%', '//'
+            FACTOR = enum.auto()          # unary '+', '-', '~'
+            POWER = enum.auto()           # '**'
+            AWAIT = enum.auto()           # 'await'
+            ATOM = enum.auto()
+            def next(self):
+                try:
+                    return self.__class__(self + 1)
+                except ValueError:
+                    return self
+        enum._test_simple_enum(_Precedence, ast._Precedence)
+
+
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
 
@@ -643,18 +801,18 @@ class ASTHelpers_Test(unittest.TestCase):
         node = ast.parse('spam(eggs, "and cheese")')
         self.assertEqual(ast.dump(node),
             "Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load()), "
-            "args=[Name(id='eggs', ctx=Load()), Constant(value='and cheese', kind=None)], "
+            "args=[Name(id='eggs', ctx=Load()), Constant(value='and cheese')], "
             "keywords=[]))], type_ignores=[])"
         )
         self.assertEqual(ast.dump(node, annotate_fields=False),
             "Module([Expr(Call(Name('spam', Load()), [Name('eggs', Load()), "
-            "Constant('and cheese', None)], []))], [])"
+            "Constant('and cheese')], []))], [])"
         )
         self.assertEqual(ast.dump(node, include_attributes=True),
             "Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load(), "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=4), "
             "args=[Name(id='eggs', ctx=Load(), lineno=1, col_offset=5, "
-            "end_lineno=1, end_col_offset=9), Constant(value='and cheese', kind=None, "
+            "end_lineno=1, end_col_offset=9), Constant(value='and cheese', "
             "lineno=1, col_offset=11, end_lineno=1, end_col_offset=23)], keywords=[], "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=24), "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=24)], type_ignores=[])"
@@ -670,7 +828,7 @@ Module(
             func=Name(id='spam', ctx=Load()),
             args=[
                Name(id='eggs', ctx=Load()),
-               Constant(value='and cheese', kind=None)],
+               Constant(value='and cheese')],
             keywords=[]))],
    type_ignores=[])""")
         self.assertEqual(ast.dump(node, annotate_fields=False, indent='\t'), """\
@@ -681,7 +839,7 @@ Module(
 \t\t\t\tName('spam', Load()),
 \t\t\t\t[
 \t\t\t\t\tName('eggs', Load()),
-\t\t\t\t\tConstant('and cheese', None)],
+\t\t\t\t\tConstant('and cheese')],
 \t\t\t\t[]))],
 \t[])""")
         self.assertEqual(ast.dump(node, include_attributes=True, indent=3), """\
@@ -706,7 +864,6 @@ Module(
                   end_col_offset=9),
                Constant(
                   value='and cheese',
-                  kind=None,
                   lineno=1,
                   col_offset=11,
                   end_lineno=1,
@@ -755,11 +912,17 @@ Module(
         src = ast.parse('1 + 1', mode='eval')
         src.body.right = ast.copy_location(ast.Num(2), src.body.right)
         self.assertEqual(ast.dump(src, include_attributes=True),
-            'Expression(body=BinOp(left=Constant(value=1, kind=None, lineno=1, col_offset=0, '
+            'Expression(body=BinOp(left=Constant(value=1, lineno=1, col_offset=0, '
             'end_lineno=1, end_col_offset=1), op=Add(), right=Constant(value=2, '
             'lineno=1, col_offset=4, end_lineno=1, end_col_offset=5), lineno=1, '
             'col_offset=0, end_lineno=1, end_col_offset=5))'
         )
+        src = ast.Call(col_offset=1, lineno=1, end_lineno=1, end_col_offset=1)
+        new = ast.copy_location(src, ast.Call(col_offset=None, lineno=None))
+        self.assertIsNone(new.end_lineno)
+        self.assertIsNone(new.end_col_offset)
+        self.assertEqual(new.lineno, 1)
+        self.assertEqual(new.col_offset, 1)
 
     def test_fix_missing_locations(self):
         src = ast.parse('write("spam")')
@@ -770,7 +933,7 @@ Module(
         self.assertEqual(ast.dump(src, include_attributes=True),
             "Module(body=[Expr(value=Call(func=Name(id='write', ctx=Load(), "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=5), "
-            "args=[Constant(value='spam', kind=None, lineno=1, col_offset=6, end_lineno=1, "
+            "args=[Constant(value='spam', lineno=1, col_offset=6, end_lineno=1, "
             "end_col_offset=12)], keywords=[], lineno=1, col_offset=0, end_lineno=1, "
             "end_col_offset=13), lineno=1, col_offset=0, end_lineno=1, "
             "end_col_offset=13), Expr(value=Call(func=Name(id='spam', ctx=Load(), "
@@ -785,8 +948,8 @@ Module(
         src = ast.parse('1 + 1', mode='eval')
         self.assertEqual(ast.increment_lineno(src, n=3), src)
         self.assertEqual(ast.dump(src, include_attributes=True),
-            'Expression(body=BinOp(left=Constant(value=1, kind=None, lineno=4, col_offset=0, '
-            'end_lineno=4, end_col_offset=1), op=Add(), right=Constant(value=1, kind=None, '
+            'Expression(body=BinOp(left=Constant(value=1, lineno=4, col_offset=0, '
+            'end_lineno=4, end_col_offset=1), op=Add(), right=Constant(value=1, '
             'lineno=4, col_offset=4, end_lineno=4, end_col_offset=5), lineno=4, '
             'col_offset=0, end_lineno=4, end_col_offset=5))'
         )
@@ -794,11 +957,16 @@ Module(
         src = ast.parse('1 + 1', mode='eval')
         self.assertEqual(ast.increment_lineno(src.body, n=3), src.body)
         self.assertEqual(ast.dump(src, include_attributes=True),
-            'Expression(body=BinOp(left=Constant(value=1, kind=None, lineno=4, col_offset=0, '
-            'end_lineno=4, end_col_offset=1), op=Add(), right=Constant(value=1, kind=None, '
+            'Expression(body=BinOp(left=Constant(value=1, lineno=4, col_offset=0, '
+            'end_lineno=4, end_col_offset=1), op=Add(), right=Constant(value=1, '
             'lineno=4, col_offset=4, end_lineno=4, end_col_offset=5), lineno=4, '
             'col_offset=0, end_lineno=4, end_col_offset=5))'
         )
+        src = ast.Call(
+            func=ast.Name("test", ast.Load()), args=[], keywords=[], lineno=1
+        )
+        self.assertEqual(ast.increment_lineno(src).lineno, 2)
+        self.assertIsNone(ast.increment_lineno(src).end_lineno)
 
     def test_iter_fields(self):
         node = ast.parse('foo()', mode='eval')
@@ -814,7 +982,7 @@ Module(
         self.assertEqual(next(iterator).value, 23)
         self.assertEqual(next(iterator).value, 42)
         self.assertEqual(ast.dump(next(iterator)),
-            "keyword(arg='eggs', value=Constant(value='leek', kind=None))"
+            "keyword(arg='eggs', value=Constant(value='leek'))"
         )
 
     def test_get_docstring(self):
@@ -934,6 +1102,37 @@ Module(
         self.assertRaises(ValueError, ast.literal_eval, '3+(0+6j)')
         self.assertRaises(ValueError, ast.literal_eval, '-(3+6j)')
 
+    def test_literal_eval_malformed_dict_nodes(self):
+        malformed = ast.Dict(keys=[ast.Constant(1), ast.Constant(2)], values=[ast.Constant(3)])
+        self.assertRaises(ValueError, ast.literal_eval, malformed)
+        malformed = ast.Dict(keys=[ast.Constant(1)], values=[ast.Constant(2), ast.Constant(3)])
+        self.assertRaises(ValueError, ast.literal_eval, malformed)
+
+    def test_literal_eval_trailing_ws(self):
+        self.assertEqual(ast.literal_eval("    -1"), -1)
+        self.assertEqual(ast.literal_eval("\t\t-1"), -1)
+        self.assertEqual(ast.literal_eval(" \t -1"), -1)
+        self.assertRaises(IndentationError, ast.literal_eval, "\n -1")
+
+    def test_literal_eval_malformed_lineno(self):
+        msg = r'malformed node or string on line 3:'
+        with self.assertRaisesRegex(ValueError, msg):
+            ast.literal_eval("{'a': 1,\n'b':2,\n'c':++3,\n'd':4}")
+
+        node = ast.UnaryOp(
+            ast.UAdd(), ast.UnaryOp(ast.UAdd(), ast.Constant(6)))
+        self.assertIsNone(getattr(node, 'lineno', None))
+        msg = r'malformed node or string:'
+        with self.assertRaisesRegex(ValueError, msg):
+            ast.literal_eval(node)
+
+    def test_literal_eval_syntax_errors(self):
+        with self.assertRaisesRegex(SyntaxError, "unexpected indent"):
+            ast.literal_eval(r'''
+                \
+                (\
+            \ ''')
+
     def test_bad_integer(self):
         # issue13436: Bad error message with invalid numeric values
         body = [ast.ImportFrom(module='time',
@@ -947,7 +1146,8 @@ Module(
 
     def test_level_as_none(self):
         body = [ast.ImportFrom(module='time',
-                               names=[ast.alias(name='sleep')],
+                               names=[ast.alias(name='sleep',
+                                                lineno=0, col_offset=0)],
                                level=None,
                                lineno=0, col_offset=0)]
         mod = ast.Module(body, [])
@@ -955,6 +1155,22 @@ Module(
         ns = {}
         exec(code, ns)
         self.assertIn('sleep', ns)
+
+    def test_recursion_direct(self):
+        e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0)
+        e.operand = e
+        with self.assertRaises(RecursionError):
+            with support.infinite_recursion():
+                compile(ast.Expression(e), "<test>", "eval")
+
+    def test_recursion_indirect(self):
+        e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0)
+        f = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0)
+        e.operand = f
+        f.operand = e
+        with self.assertRaises(RecursionError):
+            with support.infinite_recursion():
+                compile(ast.Expression(e), "<test>", "eval")
 
 
 class ASTValidatorTests(unittest.TestCase):
@@ -1144,6 +1360,26 @@ class ASTValidatorTests(unittest.TestCase):
         t = ast.Try([p], e, [p], [ast.Expr(ast.Name("x", ast.Store()))])
         self.stmt(t, "must have Load context")
 
+    def test_try_star(self):
+        p = ast.Pass()
+        t = ast.TryStar([], [], [], [p])
+        self.stmt(t, "empty body on TryStar")
+        t = ast.TryStar([ast.Expr(ast.Name("x", ast.Store()))], [], [], [p])
+        self.stmt(t, "must have Load context")
+        t = ast.TryStar([p], [], [], [])
+        self.stmt(t, "TryStar has neither except handlers nor finalbody")
+        t = ast.TryStar([p], [], [p], [p])
+        self.stmt(t, "TryStar has orelse but no except handlers")
+        t = ast.TryStar([p], [ast.ExceptHandler(None, "x", [])], [], [])
+        self.stmt(t, "empty body on ExceptHandler")
+        e = [ast.ExceptHandler(ast.Name("x", ast.Store()), "y", [p])]
+        self.stmt(ast.TryStar([p], e, [], []), "must have Load context")
+        e = [ast.ExceptHandler(None, "x", [p])]
+        t = ast.TryStar([p], e, [ast.Expr(ast.Name("x", ast.Store()))], [p])
+        self.stmt(t, "must have Load context")
+        t = ast.TryStar([p], e, [p], [ast.Expr(ast.Name("x", ast.Store()))])
+        self.stmt(t, "must have Load context")
+
     def test_assert(self):
         self.stmt(ast.Assert(ast.Name("x", ast.Store()), None),
                   "must have Load context")
@@ -1300,11 +1536,11 @@ class ASTValidatorTests(unittest.TestCase):
         self.expr(attr, "must have Load context")
 
     def test_subscript(self):
-        sub = ast.Subscript(ast.Name("x", ast.Store()), ast.Index(ast.Num(3)),
+        sub = ast.Subscript(ast.Name("x", ast.Store()), ast.Num(3),
                             ast.Load())
         self.expr(sub, "must have Load context")
         x = ast.Name("x", ast.Load())
-        sub = ast.Subscript(x, ast.Index(ast.Name("y", ast.Store())),
+        sub = ast.Subscript(x, ast.Name("y", ast.Store()),
                             ast.Load())
         self.expr(sub, "must have Load context")
         s = ast.Name("x", ast.Store())
@@ -1312,9 +1548,9 @@ class ASTValidatorTests(unittest.TestCase):
             sl = ast.Slice(*args)
             self.expr(ast.Subscript(x, sl, ast.Load()),
                       "must have Load context")
-        sl = ast.ExtSlice([])
-        self.expr(ast.Subscript(x, sl, ast.Load()), "empty dims on ExtSlice")
-        sl = ast.ExtSlice([ast.Index(s)])
+        sl = ast.Tuple([], ast.Load())
+        self.expr(ast.Subscript(x, sl, ast.Load()))
+        sl = ast.Tuple([s], ast.Load())
         self.expr(ast.Subscript(x, sl, ast.Load()), "must have Load context")
 
     def test_starred(self):
@@ -1348,6 +1584,151 @@ class ASTValidatorTests(unittest.TestCase):
                     source = fp.read()
                 mod = ast.parse(source, fn)
                 compile(mod, fn, "exec")
+
+    constant_1 = ast.Constant(1)
+    pattern_1 = ast.MatchValue(constant_1)
+
+    constant_x = ast.Constant('x')
+    pattern_x = ast.MatchValue(constant_x)
+
+    constant_true = ast.Constant(True)
+    pattern_true = ast.MatchSingleton(True)
+
+    name_carter = ast.Name('carter', ast.Load())
+
+    _MATCH_PATTERNS = [
+        ast.MatchValue(
+            ast.Attribute(
+                ast.Attribute(
+                    ast.Name('x', ast.Store()),
+                    'y', ast.Load()
+                ),
+                'z', ast.Load()
+            )
+        ),
+        ast.MatchValue(
+            ast.Attribute(
+                ast.Attribute(
+                    ast.Name('x', ast.Load()),
+                    'y', ast.Store()
+                ),
+                'z', ast.Load()
+            )
+        ),
+        ast.MatchValue(
+            ast.Constant(...)
+        ),
+        ast.MatchValue(
+            ast.Constant(True)
+        ),
+        ast.MatchValue(
+            ast.Constant((1,2,3))
+        ),
+        ast.MatchSingleton('string'),
+        ast.MatchSequence([
+          ast.MatchSingleton('string')
+        ]),
+        ast.MatchSequence(
+            [
+                ast.MatchSequence(
+                    [
+                        ast.MatchSingleton('string')
+                    ]
+                )
+            ]
+        ),
+        ast.MatchMapping(
+            [constant_1, constant_true],
+            [pattern_x]
+        ),
+        ast.MatchMapping(
+            [constant_true, constant_1],
+            [pattern_x, pattern_1],
+            rest='True'
+        ),
+        ast.MatchMapping(
+            [constant_true, ast.Starred(ast.Name('lol', ast.Load()), ast.Load())],
+            [pattern_x, pattern_1],
+            rest='legit'
+        ),
+        ast.MatchClass(
+            ast.Attribute(
+                ast.Attribute(
+                    constant_x,
+                    'y', ast.Load()),
+                'z', ast.Load()),
+            patterns=[], kwd_attrs=[], kwd_patterns=[]
+        ),
+        ast.MatchClass(
+            name_carter,
+            patterns=[],
+            kwd_attrs=['True'],
+            kwd_patterns=[pattern_1]
+        ),
+        ast.MatchClass(
+            name_carter,
+            patterns=[],
+            kwd_attrs=[],
+            kwd_patterns=[pattern_1]
+        ),
+        ast.MatchClass(
+            name_carter,
+            patterns=[ast.MatchSingleton('string')],
+            kwd_attrs=[],
+            kwd_patterns=[]
+        ),
+        ast.MatchClass(
+            name_carter,
+            patterns=[ast.MatchStar()],
+            kwd_attrs=[],
+            kwd_patterns=[]
+        ),
+        ast.MatchClass(
+            name_carter,
+            patterns=[],
+            kwd_attrs=[],
+            kwd_patterns=[ast.MatchStar()]
+        ),
+        ast.MatchSequence(
+            [
+                ast.MatchStar("True")
+            ]
+        ),
+        ast.MatchAs(
+            name='False'
+        ),
+        ast.MatchOr(
+            []
+        ),
+        ast.MatchOr(
+            [pattern_1]
+        ),
+        ast.MatchOr(
+            [pattern_1, pattern_x, ast.MatchSingleton('xxx')]
+        ),
+        ast.MatchAs(name="_"),
+        ast.MatchStar(name="x"),
+        ast.MatchSequence([ast.MatchStar("_")]),
+        ast.MatchMapping([], [], rest="_"),
+    ]
+
+    def test_match_validation_pattern(self):
+        name_x = ast.Name('x', ast.Load())
+        for pattern in self._MATCH_PATTERNS:
+            with self.subTest(ast.dump(pattern, indent=4)):
+                node = ast.Match(
+                    subject=name_x,
+                    cases = [
+                        ast.match_case(
+                            pattern=pattern,
+                            body = [ast.Pass()]
+                        )
+                    ]
+                )
+                node = ast.fix_missing_locations(node)
+                module = ast.Module([node], [])
+                with self.assertRaises(ValueError):
+                    compile(module, "<test>", "exec")
 
 
 class ConstantTests(unittest.TestCase):
@@ -1645,6 +2026,7 @@ class EndPositionTests(unittest.TestCase):
         ''').strip()
         imp = ast.parse(s).body[0]
         self._check_end_pos(imp, 3, 1)
+        self._check_end_pos(imp.names[2], 2, 16)
 
     def test_slices(self):
         s1 = 'f()[1, 2] [0]'
@@ -1656,11 +2038,11 @@ class EndPositionTests(unittest.TestCase):
         ''').strip()
         i1, i2, im = map(self._parse_value, (s1, s2, sm))
         self._check_content(s1, i1.value, 'f()[1, 2]')
-        self._check_content(s1, i1.value.slice.value, '1, 2')
+        self._check_content(s1, i1.value.slice, '1, 2')
         self._check_content(s2, i2.slice.lower, 'a.b')
         self._check_content(s2, i2.slice.upper, 'c.d')
-        self._check_content(sm, im.slice.dims[0].upper, 'f ()')
-        self._check_content(sm, im.slice.dims[1].lower, 'g ()')
+        self._check_content(sm, im.slice.elts[0].upper, 'f ()')
+        self._check_content(sm, im.slice.elts[1].lower, 'g ()')
         self._check_end_pos(im, 3, 3)
 
     def test_binop(self):
@@ -1706,6 +2088,33 @@ class EndPositionTests(unittest.TestCase):
         call = self._parse_value(s)
         self._check_content(s, call, s)
         self._check_content(s, call.args[0], 'x. y .z')
+
+    def test_redundant_parenthesis(self):
+        s = '( ( ( a + b ) ) )'
+        v = ast.parse(s).body[0].value
+        self.assertEqual(type(v).__name__, 'BinOp')
+        self._check_content(s, v, 'a + b')
+        s2 = 'await ' + s
+        v = ast.parse(s2).body[0].value.value
+        self.assertEqual(type(v).__name__, 'BinOp')
+        self._check_content(s2, v, 'a + b')
+
+    def test_trailers_with_redundant_parenthesis(self):
+        tests = (
+            ('( ( ( a ) ) ) ( )', 'Call'),
+            ('( ( ( a ) ) ) ( b )', 'Call'),
+            ('( ( ( a ) ) ) [ b ]', 'Subscript'),
+            ('( ( ( a ) ) ) . b', 'Attribute'),
+        )
+        for s, t in tests:
+            with self.subTest(s):
+                v = ast.parse(s).body[0].value
+                self.assertEqual(type(v).__name__, t)
+                self._check_content(s, v, s)
+                s2 = 'await ' + s
+                v = ast.parse(s2).body[0].value.value
+                self.assertEqual(type(v).__name__, t)
+                self._check_content(s2, v, s)
 
     def test_displays(self):
         s1 = '[{}, {1, }, {1, 2,} ]'
@@ -1787,6 +2196,17 @@ class EndPositionTests(unittest.TestCase):
         cdef = ast.parse(s).body[0]
         self.assertEqual(ast.get_source_segment(s, cdef.body[0], padded=True), s_method)
 
+    def test_source_segment_missing_info(self):
+        s = 'v = 1\r\nw = 1\nx = 1\n\ry = 1\r\n'
+        v, w, x, y = ast.parse(s).body
+        del v.lineno
+        del w.end_lineno
+        del x.col_offset
+        del y.end_col_offset
+        self.assertIsNone(ast.get_source_segment(s, v))
+        self.assertIsNone(ast.get_source_segment(s, w))
+        self.assertIsNone(ast.get_source_segment(s, x))
+        self.assertIsNone(ast.get_source_segment(s, y))
 
 class NodeVisitorTests(unittest.TestCase):
     def test_old_constant_nodes(self):
@@ -1838,6 +2258,88 @@ class NodeVisitorTests(unittest.TestCase):
         ])
 
 
+@support.cpython_only
+class ModuleStateTests(unittest.TestCase):
+    # bpo-41194, bpo-41261, bpo-41631: The _ast module uses a global state.
+
+    def check_ast_module(self):
+        # Check that the _ast module still works as expected
+        code = 'x + 1'
+        filename = '<string>'
+        mode = 'eval'
+
+        # Create _ast.AST subclasses instances
+        ast_tree = compile(code, filename, mode, flags=ast.PyCF_ONLY_AST)
+
+        # Call PyAST_Check()
+        code = compile(ast_tree, filename, mode)
+        self.assertIsInstance(code, types.CodeType)
+
+    def test_reload_module(self):
+        # bpo-41194: Importing the _ast module twice must not crash.
+        with support.swap_item(sys.modules, '_ast', None):
+            del sys.modules['_ast']
+            import _ast as ast1
+
+            del sys.modules['_ast']
+            import _ast as ast2
+
+            self.check_ast_module()
+
+        # Unloading the two _ast module instances must not crash.
+        del ast1
+        del ast2
+        support.gc_collect()
+
+        self.check_ast_module()
+
+    def test_sys_modules(self):
+        # bpo-41631: Test reproducing a Mercurial crash when PyAST_Check()
+        # imported the _ast module internally.
+        lazy_mod = object()
+
+        def my_import(name, *args, **kw):
+            sys.modules[name] = lazy_mod
+            return lazy_mod
+
+        with support.swap_item(sys.modules, '_ast', None):
+            del sys.modules['_ast']
+
+            with support.swap_attr(builtins, '__import__', my_import):
+                # Test that compile() does not import the _ast module
+                self.check_ast_module()
+                self.assertNotIn('_ast', sys.modules)
+
+                # Sanity check of the test itself
+                import _ast
+                self.assertIs(_ast, lazy_mod)
+
+    def test_subinterpreter(self):
+        # bpo-41631: Importing and using the _ast module in a subinterpreter
+        # must not crash.
+        code = dedent('''
+            import _ast
+            import ast
+            import gc
+            import sys
+            import types
+
+            # Create _ast.AST subclasses instances and call PyAST_Check()
+            ast_tree = compile('x+1', '<string>', 'eval',
+                               flags=ast.PyCF_ONLY_AST)
+            code = compile(ast_tree, 'string', 'eval')
+            if not isinstance(code, types.CodeType):
+                raise AssertionError
+
+            # Unloading the _ast module must not crash.
+            del ast, _ast
+            del sys.modules['ast'], sys.modules['_ast']
+            gc.collect()
+        ''')
+        res = support.run_in_subinterp(code)
+        self.assertEqual(res, 0)
+
+
 def main():
     if __name__ != '__main__':
         return
@@ -1862,8 +2364,14 @@ exec_results = [
 ('Module', [('FunctionDef', (1, 0, 1, 14), 'f', ('arguments', [], [('arg', (1, 6, 1, 7), 'a', None, None)], None, [], [], None, []), [('Pass', (1, 10, 1, 14))], [], None, None)], []),
 ('Module', [('FunctionDef', (1, 0, 1, 16), 'f', ('arguments', [], [('arg', (1, 6, 1, 7), 'a', None, None)], None, [], [], None, [('Constant', (1, 8, 1, 9), 0, None)]), [('Pass', (1, 12, 1, 16))], [], None, None)], []),
 ('Module', [('FunctionDef', (1, 0, 1, 18), 'f', ('arguments', [], [], ('arg', (1, 7, 1, 11), 'args', None, None), [], [], None, []), [('Pass', (1, 14, 1, 18))], [], None, None)], []),
+('Module', [('FunctionDef', (1, 0, 1, 23), 'f', ('arguments', [], [], ('arg', (1, 7, 1, 16), 'args', ('Starred', (1, 13, 1, 16), ('Name', (1, 14, 1, 16), 'Ts', ('Load',)), ('Load',)), None), [], [], None, []), [('Pass', (1, 19, 1, 23))], [], None, None)], []),
+('Module', [('FunctionDef', (1, 0, 1, 36), 'f', ('arguments', [], [], ('arg', (1, 7, 1, 29), 'args', ('Starred', (1, 13, 1, 29), ('Subscript', (1, 14, 1, 29), ('Name', (1, 14, 1, 19), 'tuple', ('Load',)), ('Tuple', (1, 20, 1, 28), [('Name', (1, 20, 1, 23), 'int', ('Load',)), ('Constant', (1, 25, 1, 28), Ellipsis, None)], ('Load',)), ('Load',)), ('Load',)), None), [], [], None, []), [('Pass', (1, 32, 1, 36))], [], None, None)], []),
+('Module', [('FunctionDef', (1, 0, 1, 36), 'f', ('arguments', [], [], ('arg', (1, 7, 1, 29), 'args', ('Starred', (1, 13, 1, 29), ('Subscript', (1, 14, 1, 29), ('Name', (1, 14, 1, 19), 'tuple', ('Load',)), ('Tuple', (1, 20, 1, 28), [('Name', (1, 20, 1, 23), 'int', ('Load',)), ('Starred', (1, 25, 1, 28), ('Name', (1, 26, 1, 28), 'Ts', ('Load',)), ('Load',))], ('Load',)), ('Load',)), ('Load',)), None), [], [], None, []), [('Pass', (1, 32, 1, 36))], [], None, None)], []),
 ('Module', [('FunctionDef', (1, 0, 1, 21), 'f', ('arguments', [], [], None, [], [], ('arg', (1, 8, 1, 14), 'kwargs', None, None), []), [('Pass', (1, 17, 1, 21))], [], None, None)], []),
 ('Module', [('FunctionDef', (1, 0, 1, 71), 'f', ('arguments', [], [('arg', (1, 6, 1, 7), 'a', None, None), ('arg', (1, 9, 1, 10), 'b', None, None), ('arg', (1, 14, 1, 15), 'c', None, None), ('arg', (1, 22, 1, 23), 'd', None, None), ('arg', (1, 28, 1, 29), 'e', None, None)], ('arg', (1, 35, 1, 39), 'args', None, None), [('arg', (1, 41, 1, 42), 'f', None, None)], [('Constant', (1, 43, 1, 45), 42, None)], ('arg', (1, 49, 1, 55), 'kwargs', None, None), [('Constant', (1, 11, 1, 12), 1, None), ('Constant', (1, 16, 1, 20), None, None), ('List', (1, 24, 1, 26), [], ('Load',)), ('Dict', (1, 30, 1, 32), [], [])]), [('Expr', (1, 58, 1, 71), ('Constant', (1, 58, 1, 71), 'doc for f()', None))], [], None, None)], []),
+('Module', [('FunctionDef', (1, 0, 1, 27), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (1, 23, 1, 27))], [], ('Subscript', (1, 11, 1, 21), ('Name', (1, 11, 1, 16), 'tuple', ('Load',)), ('Tuple', (1, 17, 1, 20), [('Starred', (1, 17, 1, 20), ('Name', (1, 18, 1, 20), 'Ts', ('Load',)), ('Load',))], ('Load',)), ('Load',)), None)], []),
+('Module', [('FunctionDef', (1, 0, 1, 32), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (1, 28, 1, 32))], [], ('Subscript', (1, 11, 1, 26), ('Name', (1, 11, 1, 16), 'tuple', ('Load',)), ('Tuple', (1, 17, 1, 25), [('Name', (1, 17, 1, 20), 'int', ('Load',)), ('Starred', (1, 22, 1, 25), ('Name', (1, 23, 1, 25), 'Ts', ('Load',)), ('Load',))], ('Load',)), ('Load',)), None)], []),
+('Module', [('FunctionDef', (1, 0, 1, 45), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (1, 41, 1, 45))], [], ('Subscript', (1, 11, 1, 39), ('Name', (1, 11, 1, 16), 'tuple', ('Load',)), ('Tuple', (1, 17, 1, 38), [('Name', (1, 17, 1, 20), 'int', ('Load',)), ('Starred', (1, 22, 1, 38), ('Subscript', (1, 23, 1, 38), ('Name', (1, 23, 1, 28), 'tuple', ('Load',)), ('Tuple', (1, 29, 1, 37), [('Name', (1, 29, 1, 32), 'int', ('Load',)), ('Constant', (1, 34, 1, 37), Ellipsis, None)], ('Load',)), ('Load',)), ('Load',))], ('Load',)), ('Load',)), None)], []),
 ('Module', [('ClassDef', (1, 0, 1, 12), 'C', [], [], [('Pass', (1, 8, 1, 12))], [])], []),
 ('Module', [('ClassDef', (1, 0, 1, 32), 'C', [], [], [('Expr', (1, 9, 1, 32), ('Constant', (1, 9, 1, 32), 'docstring for class C', None))], [])], []),
 ('Module', [('ClassDef', (1, 0, 1, 21), 'C', [('Name', (1, 8, 1, 14), 'object', ('Load',))], [], [('Pass', (1, 17, 1, 21))], [])], []),
@@ -1873,6 +2381,9 @@ exec_results = [
 ('Module', [('Assign', (1, 0, 1, 7), [('Tuple', (1, 0, 1, 3), [('Name', (1, 0, 1, 1), 'a', ('Store',)), ('Name', (1, 2, 1, 3), 'b', ('Store',))], ('Store',))], ('Name', (1, 6, 1, 7), 'c', ('Load',)), None)], []),
 ('Module', [('Assign', (1, 0, 1, 9), [('Tuple', (1, 0, 1, 5), [('Name', (1, 1, 1, 2), 'a', ('Store',)), ('Name', (1, 3, 1, 4), 'b', ('Store',))], ('Store',))], ('Name', (1, 8, 1, 9), 'c', ('Load',)), None)], []),
 ('Module', [('Assign', (1, 0, 1, 9), [('List', (1, 0, 1, 5), [('Name', (1, 1, 1, 2), 'a', ('Store',)), ('Name', (1, 3, 1, 4), 'b', ('Store',))], ('Store',))], ('Name', (1, 8, 1, 9), 'c', ('Load',)), None)], []),
+('Module', [('AnnAssign', (1, 0, 1, 13), ('Name', (1, 0, 1, 1), 'x', ('Store',)), ('Subscript', (1, 3, 1, 13), ('Name', (1, 3, 1, 8), 'tuple', ('Load',)), ('Tuple', (1, 9, 1, 12), [('Starred', (1, 9, 1, 12), ('Name', (1, 10, 1, 12), 'Ts', ('Load',)), ('Load',))], ('Load',)), ('Load',)), None, 1)], []),
+('Module', [('AnnAssign', (1, 0, 1, 18), ('Name', (1, 0, 1, 1), 'x', ('Store',)), ('Subscript', (1, 3, 1, 18), ('Name', (1, 3, 1, 8), 'tuple', ('Load',)), ('Tuple', (1, 9, 1, 17), [('Name', (1, 9, 1, 12), 'int', ('Load',)), ('Starred', (1, 14, 1, 17), ('Name', (1, 15, 1, 17), 'Ts', ('Load',)), ('Load',))], ('Load',)), ('Load',)), None, 1)], []),
+('Module', [('AnnAssign', (1, 0, 1, 31), ('Name', (1, 0, 1, 1), 'x', ('Store',)), ('Subscript', (1, 3, 1, 31), ('Name', (1, 3, 1, 8), 'tuple', ('Load',)), ('Tuple', (1, 9, 1, 30), [('Name', (1, 9, 1, 12), 'int', ('Load',)), ('Starred', (1, 14, 1, 30), ('Subscript', (1, 15, 1, 30), ('Name', (1, 15, 1, 20), 'tuple', ('Load',)), ('Tuple', (1, 21, 1, 29), [('Name', (1, 21, 1, 24), 'str', ('Load',)), ('Constant', (1, 26, 1, 29), Ellipsis, None)], ('Load',)), ('Load',)), ('Load',))], ('Load',)), ('Load',)), None, 1)], []),
 ('Module', [('AugAssign', (1, 0, 1, 6), ('Name', (1, 0, 1, 1), 'v', ('Store',)), ('Add',), ('Constant', (1, 5, 1, 6), 1, None))], []),
 ('Module', [('For', (1, 0, 1, 15), ('Name', (1, 4, 1, 5), 'v', ('Store',)), ('Name', (1, 9, 1, 10), 'v', ('Load',)), [('Pass', (1, 11, 1, 15))], [], None)], []),
 ('Module', [('While', (1, 0, 1, 12), ('Name', (1, 6, 1, 7), 'v', ('Load',)), [('Pass', (1, 8, 1, 12))], [])], []),
@@ -1884,9 +2395,10 @@ exec_results = [
 ('Module', [('Raise', (1, 0, 1, 25), ('Call', (1, 6, 1, 25), ('Name', (1, 6, 1, 15), 'Exception', ('Load',)), [('Constant', (1, 16, 1, 24), 'string', None)], []), None)], []),
 ('Module', [('Try', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [('ExceptHandler', (3, 0, 4, 6), ('Name', (3, 7, 3, 16), 'Exception', ('Load',)), None, [('Pass', (4, 2, 4, 6))])], [], [])], []),
 ('Module', [('Try', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [], [], [('Pass', (4, 2, 4, 6))])], []),
+('Module', [('TryStar', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [('ExceptHandler', (3, 0, 4, 6), ('Name', (3, 8, 3, 17), 'Exception', ('Load',)), None, [('Pass', (4, 2, 4, 6))])], [], [])], []),
 ('Module', [('Assert', (1, 0, 1, 8), ('Name', (1, 7, 1, 8), 'v', ('Load',)), None)], []),
-('Module', [('Import', (1, 0, 1, 10), [('alias', 'sys', None)])], []),
-('Module', [('ImportFrom', (1, 0, 1, 17), 'sys', [('alias', 'v', None)], 0)], []),
+('Module', [('Import', (1, 0, 1, 10), [('alias', (1, 7, 1, 10), 'sys', None)])], []),
+('Module', [('ImportFrom', (1, 0, 1, 17), 'sys', [('alias', (1, 16, 1, 17), 'v', None)], 0)], []),
 ('Module', [('Global', (1, 0, 1, 8), ['v'])], []),
 ('Module', [('Expr', (1, 0, 1, 1), ('Constant', (1, 0, 1, 1), 1, None))], []),
 ('Module', [('Pass', (1, 0, 1, 4))], []),
@@ -1948,19 +2460,19 @@ eval_results = [
 ('Expression', ('GeneratorExp', (1, 0, 1, 22), ('Tuple', (1, 1, 1, 6), [('Name', (1, 2, 1, 3), 'a', ('Load',)), ('Name', (1, 4, 1, 5), 'b', ('Load',))], ('Load',)), [('comprehension', ('Tuple', (1, 11, 1, 16), [('Name', (1, 12, 1, 13), 'a', ('Store',)), ('Name', (1, 14, 1, 15), 'b', ('Store',))], ('Store',)), ('Name', (1, 20, 1, 21), 'c', ('Load',)), [], 0)])),
 ('Expression', ('GeneratorExp', (1, 0, 1, 22), ('Tuple', (1, 1, 1, 6), [('Name', (1, 2, 1, 3), 'a', ('Load',)), ('Name', (1, 4, 1, 5), 'b', ('Load',))], ('Load',)), [('comprehension', ('List', (1, 11, 1, 16), [('Name', (1, 12, 1, 13), 'a', ('Store',)), ('Name', (1, 14, 1, 15), 'b', ('Store',))], ('Store',)), ('Name', (1, 20, 1, 21), 'c', ('Load',)), [], 0)])),
 ('Expression', ('Compare', (1, 0, 1, 9), ('Constant', (1, 0, 1, 1), 1, None), [('Lt',), ('Lt',)], [('Constant', (1, 4, 1, 5), 2, None), ('Constant', (1, 8, 1, 9), 3, None)])),
-('Expression', ('Call', (1, 0, 1, 17), ('Name', (1, 0, 1, 1), 'f', ('Load',)), [('Constant', (1, 2, 1, 3), 1, None), ('Constant', (1, 4, 1, 5), 2, None), ('Starred', (1, 10, 1, 12), ('Name', (1, 11, 1, 12), 'd', ('Load',)), ('Load',))], [('keyword', 'c', ('Constant', (1, 8, 1, 9), 3, None)), ('keyword', None, ('Name', (1, 15, 1, 16), 'e', ('Load',)))])),
+('Expression', ('Call', (1, 0, 1, 17), ('Name', (1, 0, 1, 1), 'f', ('Load',)), [('Constant', (1, 2, 1, 3), 1, None), ('Constant', (1, 4, 1, 5), 2, None), ('Starred', (1, 10, 1, 12), ('Name', (1, 11, 1, 12), 'd', ('Load',)), ('Load',))], [('keyword', (1, 6, 1, 9), 'c', ('Constant', (1, 8, 1, 9), 3, None)), ('keyword', (1, 13, 1, 16), None, ('Name', (1, 15, 1, 16), 'e', ('Load',)))])),
 ('Expression', ('Call', (1, 0, 1, 10), ('Name', (1, 0, 1, 1), 'f', ('Load',)), [('Starred', (1, 2, 1, 9), ('List', (1, 3, 1, 9), [('Constant', (1, 4, 1, 5), 0, None), ('Constant', (1, 7, 1, 8), 1, None)], ('Load',)), ('Load',))], [])),
 ('Expression', ('Call', (1, 0, 1, 15), ('Name', (1, 0, 1, 1), 'f', ('Load',)), [('GeneratorExp', (1, 1, 1, 15), ('Name', (1, 2, 1, 3), 'a', ('Load',)), [('comprehension', ('Name', (1, 8, 1, 9), 'a', ('Store',)), ('Name', (1, 13, 1, 14), 'b', ('Load',)), [], 0)])], [])),
 ('Expression', ('Constant', (1, 0, 1, 2), 10, None)),
 ('Expression', ('Constant', (1, 0, 1, 8), 'string', None)),
 ('Expression', ('Attribute', (1, 0, 1, 3), ('Name', (1, 0, 1, 1), 'a', ('Load',)), 'b', ('Load',))),
-('Expression', ('Subscript', (1, 0, 1, 6), ('Name', (1, 0, 1, 1), 'a', ('Load',)), ('Slice', ('Name', (1, 2, 1, 3), 'b', ('Load',)), ('Name', (1, 4, 1, 5), 'c', ('Load',)), None), ('Load',))),
+('Expression', ('Subscript', (1, 0, 1, 6), ('Name', (1, 0, 1, 1), 'a', ('Load',)), ('Slice', (1, 2, 1, 5), ('Name', (1, 2, 1, 3), 'b', ('Load',)), ('Name', (1, 4, 1, 5), 'c', ('Load',)), None), ('Load',))),
 ('Expression', ('Name', (1, 0, 1, 1), 'v', ('Load',))),
 ('Expression', ('List', (1, 0, 1, 7), [('Constant', (1, 1, 1, 2), 1, None), ('Constant', (1, 3, 1, 4), 2, None), ('Constant', (1, 5, 1, 6), 3, None)], ('Load',))),
 ('Expression', ('List', (1, 0, 1, 2), [], ('Load',))),
 ('Expression', ('Tuple', (1, 0, 1, 5), [('Constant', (1, 0, 1, 1), 1, None), ('Constant', (1, 2, 1, 3), 2, None), ('Constant', (1, 4, 1, 5), 3, None)], ('Load',))),
 ('Expression', ('Tuple', (1, 0, 1, 7), [('Constant', (1, 1, 1, 2), 1, None), ('Constant', (1, 3, 1, 4), 2, None), ('Constant', (1, 5, 1, 6), 3, None)], ('Load',))),
 ('Expression', ('Tuple', (1, 0, 1, 2), [], ('Load',))),
-('Expression', ('Call', (1, 0, 1, 17), ('Attribute', (1, 0, 1, 7), ('Attribute', (1, 0, 1, 5), ('Attribute', (1, 0, 1, 3), ('Name', (1, 0, 1, 1), 'a', ('Load',)), 'b', ('Load',)), 'c', ('Load',)), 'd', ('Load',)), [('Subscript', (1, 8, 1, 16), ('Attribute', (1, 8, 1, 11), ('Name', (1, 8, 1, 9), 'a', ('Load',)), 'b', ('Load',)), ('Slice', ('Constant', (1, 12, 1, 13), 1, None), ('Constant', (1, 14, 1, 15), 2, None), None), ('Load',))], [])),
+('Expression', ('Call', (1, 0, 1, 17), ('Attribute', (1, 0, 1, 7), ('Attribute', (1, 0, 1, 5), ('Attribute', (1, 0, 1, 3), ('Name', (1, 0, 1, 1), 'a', ('Load',)), 'b', ('Load',)), 'c', ('Load',)), 'd', ('Load',)), [('Subscript', (1, 8, 1, 16), ('Attribute', (1, 8, 1, 11), ('Name', (1, 8, 1, 9), 'a', ('Load',)), 'b', ('Load',)), ('Slice', (1, 12, 1, 15), ('Constant', (1, 12, 1, 13), 1, None), ('Constant', (1, 14, 1, 15), 2, None), None), ('Load',))], [])),
 ]
 main()

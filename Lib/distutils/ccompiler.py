@@ -8,7 +8,7 @@ from distutils.errors import *
 from distutils.spawn import spawn
 from distutils.file_util import move_file
 from distutils.dir_util import mkpath
-from distutils.dep_util import newer_pairwise, newer_group
+from distutils.dep_util import newer_group
 from distutils.util import split_quoted, execute
 from distutils import log
 
@@ -392,7 +392,7 @@ class CCompiler:
         return output_dir, macros, include_dirs
 
     def _prep_compile(self, sources, output_dir, depends=None):
-        """Decide which souce files must be recompiled.
+        """Decide which source files must be recompiled.
 
         Determine the list of object files corresponding to 'sources',
         and figure out which ones really need to be recompiled.

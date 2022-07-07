@@ -32,8 +32,8 @@ Number-theoretic and representation functions
 .. function:: ceil(x)
 
    Return the ceiling of *x*, the smallest integer greater than or equal to *x*.
-   If *x* is not a float, delegates to ``x.__ceil__()``, which should return an
-   :class:`~numbers.Integral` value.
+   If *x* is not a float, delegates to :meth:`x.__ceil__ <object.__ceil__>`,
+   which should return an :class:`~numbers.Integral` value.
 
 
 .. function:: comb(n, k)
@@ -66,9 +66,9 @@ Number-theoretic and representation functions
    Return the absolute value of *x*.
 
 
-.. function:: factorial(x)
+.. function:: factorial(n)
 
-   Return *x* factorial as an integer.  Raises :exc:`ValueError` if *x* is not integral or
+   Return *n* factorial as an integer.  Raises :exc:`ValueError` if *n* is not integral or
    is negative.
 
    .. deprecated:: 3.9
@@ -77,9 +77,9 @@ Number-theoretic and representation functions
 
 .. function:: floor(x)
 
-   Return the floor of *x*, the largest integer less than or equal to *x*.
-   If *x* is not a float, delegates to ``x.__floor__()``, which should return an
-   :class:`~numbers.Integral` value.
+   Return the floor of *x*, the largest integer less than or equal to *x*.  If
+   *x* is not a float, delegates to :meth:`x.__floor__ <object.__floor__>`, which
+   should return an :class:`~numbers.Integral` value.
 
 
 .. function:: fmod(x, y)
@@ -126,14 +126,19 @@ Number-theoretic and representation functions
    <https://code.activestate.com/recipes/393090/>`_\.
 
 
-.. function:: gcd(a, b)
+.. function:: gcd(*integers)
 
-   Return the greatest common divisor of the integers *a* and *b*.  If either
-   *a* or *b* is nonzero, then the value of ``gcd(a, b)`` is the largest
-   positive integer that divides both *a* and *b*.  ``gcd(0, 0)`` returns
-   ``0``.
+   Return the greatest common divisor of the specified integer arguments.
+   If any of the arguments is nonzero, then the returned value is the largest
+   positive integer that is a divisor of all arguments.  If all arguments
+   are zero, then the returned value is ``0``.  ``gcd()`` without arguments
+   returns ``0``.
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.9
+      Added support for an arbitrary number of arguments. Formerly, only two
+      arguments were supported.
 
 
 .. function:: isclose(a, b, *, rel_tol=1e-09, abs_tol=0.0)
@@ -199,6 +204,17 @@ Number-theoretic and representation functions
    ``a = 1 + isqrt(n - 1)``.
 
    .. versionadded:: 3.8
+
+
+.. function:: lcm(*integers)
+
+   Return the least common multiple of the specified integer arguments.
+   If all arguments are nonzero, then the returned value is the smallest
+   positive integer that is a multiple of all arguments.  If any of the arguments
+   is zero, then the returned value is ``0``.  ``lcm()`` without arguments
+   returns ``1``.
+
+   .. versionadded:: 3.9
 
 
 .. function:: ldexp(x, i)
@@ -282,9 +298,11 @@ Number-theoretic and representation functions
 
 .. function:: trunc(x)
 
-   Return the :class:`~numbers.Real` value *x* truncated to an
-   :class:`~numbers.Integral` (usually an integer). Delegates to
-   :meth:`x.__trunc__() <object.__trunc__>`.
+   Return *x* with the fractional part
+   removed, leaving the integer part.  This rounds toward 0: ``trunc()`` is
+   equivalent to :func:`floor` for positive *x*, and equivalent to :func:`ceil`
+   for negative *x*. If *x* is not a float, delegates to :meth:`x.__trunc__
+   <object.__trunc__>`, which should return an :class:`~numbers.Integral` value.
 
 .. function:: ulp(x)
 
@@ -326,11 +344,25 @@ necessarily has no fractional bits.
 Power and logarithmic functions
 -------------------------------
 
+.. function:: cbrt(x)
+
+   Return the cube root of *x*.
+
+   .. versionadded:: 3.11
+
+
 .. function:: exp(x)
 
    Return *e* raised to the power *x*, where *e* = 2.718281... is the base
    of natural logarithms.  This is usually more accurate than ``math.e ** x``
    or ``pow(math.e, x)``.
+
+
+.. function:: exp2(x)
+
+   Return *2* raised to the power *x*.
+
+   .. versionadded:: 3.11
 
 
 .. function:: expm1(x)
@@ -386,7 +418,7 @@ Power and logarithmic functions
 .. function:: pow(x, y)
 
    Return ``x`` raised to the power ``y``.  Exceptional cases follow
-   Annex 'F' of the C99 standard as far as possible.  In particular,
+   the IEEE 754 standard as far as possible.  In particular,
    ``pow(1.0, x)`` and ``pow(x, 0.0)`` always return ``1.0``, even
    when ``x`` is a zero or a NaN.  If both ``x`` and ``y`` are finite,
    ``x`` is negative, and ``y`` is not an integer then ``pow(x, y)``
@@ -395,6 +427,11 @@ Power and logarithmic functions
    Unlike the built-in ``**`` operator, :func:`math.pow` converts both
    its arguments to type :class:`float`.  Use ``**`` or the built-in
    :func:`pow` function for computing exact integer powers.
+
+   .. versionchanged:: 3.11
+      The special cases ``pow(0.0, -inf)`` and ``pow(-0.0, -inf)`` were
+      changed to return ``inf`` instead of raising :exc:`ValueError`,
+      for consistency with IEEE 754.
 
 
 .. function:: sqrt(x)
@@ -464,6 +501,11 @@ Trigonometric functions
    .. versionchanged:: 3.8
       Added support for n-dimensional points. Formerly, only the two
       dimensional case was supported.
+
+   .. versionchanged:: 3.10
+      Improved the algorithm's accuracy so that the maximum error is
+      under 1 ulp (unit in the last place).  More typically, the result
+      is almost always correctly rounded to within 1/2 ulp.
 
 
 .. function:: sin(x)
@@ -536,7 +578,7 @@ Special functions
 
    The :func:`erf` function can be used to compute traditional statistical
    functions such as the `cumulative standard normal distribution
-   <https://en.wikipedia.org/wiki/Normal_distribution#Cumulative_distribution_function>`_::
+   <https://en.wikipedia.org/wiki/Normal_distribution#Cumulative_distribution_functions>`_::
 
      def phi(x):
          'Cumulative distribution function for the standard normal distribution'
@@ -606,8 +648,26 @@ Constants
 
 .. data:: nan
 
-   A floating-point "not a number" (NaN) value.  Equivalent to the output of
-   ``float('nan')``.
+   A floating-point "not a number" (NaN) value. Equivalent to the output of
+   ``float('nan')``. Due to the requirements of the `IEEE-754 standard
+   <https://en.wikipedia.org/wiki/IEEE_754>`_, ``math.nan`` and ``float('nan')`` are
+   not considered to equal to any other numeric value, including themselves. To check
+   whether a number is a NaN, use the :func:`isnan` function to test
+   for NaNs instead of ``is`` or ``==``.
+   Example::
+
+      >>> import math
+      >>> math.nan == math.nan
+      False
+      >>> float('nan') == float('nan')
+      False
+      >>> math.isnan(math.nan)
+      True
+      >>> math.isnan(float('nan'))
+      True
+
+   .. versionchanged:: 3.11
+      It is now always available.
 
    .. versionadded:: 3.5
 

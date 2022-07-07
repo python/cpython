@@ -2,7 +2,7 @@
 import io
 import struct
 from test import support
-from test.support import import_fresh_module
+from test.support.import_helper import import_fresh_module
 import types
 import unittest
 
@@ -118,6 +118,21 @@ class MiscTests(unittest.TestCase):
         elem.tail = X()
         elem.__setstate__({'tag': 42})  # shouldn't cause an assertion failure
 
+    @support.cpython_only
+    def test_uninitialized_parser(self):
+        # The interpreter shouldn't crash in case of calling methods or
+        # accessing attributes of uninitialized XMLParser objects.
+        parser = cET.XMLParser.__new__(cET.XMLParser)
+        self.assertRaises(ValueError, parser.close)
+        self.assertRaises(ValueError, parser.feed, 'foo')
+        class MockFile:
+            def read(*args):
+                return ''
+        self.assertRaises(ValueError, parser._parse_whole, MockFile())
+        self.assertRaises(ValueError, parser._setevents, None)
+        self.assertIsNone(parser.entity)
+        self.assertIsNone(parser.target)
+
     def test_setstate_leaks(self):
         # Test reference leaks
         elem = cET.Element.__new__(cET.Element)
@@ -153,6 +168,18 @@ class MiscTests(unittest.TestCase):
         parser.feed(XML)
         del parser
         support.gc_collect()
+
+    def test_dict_disappearing_during_get_item(self):
+        # test fix for seg fault reported in issue 27946
+        class X:
+            def __hash__(self):
+                e.attrib = {} # this frees e->extra->attrib
+                [{i: i} for i in range(1000)] # exhaust the dict keys cache
+                return 13
+
+        e = cET.Element("elem", {1: 2})
+        r = e.get(X())
+        self.assertIsNone(r)
 
 
 @unittest.skipUnless(cET, 'requires _elementtree')

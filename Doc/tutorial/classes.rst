@@ -114,8 +114,8 @@ accessible.  "Directly accessible" here means that an unqualified reference to a
 name attempts to find the name in the namespace.
 
 Although scopes are determined statically, they are used dynamically. At any
-time during execution, there are at least three nested scopes whose namespaces
-are directly accessible:
+time during execution, there are 3 or 4 nested scopes whose namespaces are
+directly accessible:
 
 * the innermost scope, which is searched first, contains the local names
 * the scopes of any enclosing functions, which are searched starting with the
@@ -297,7 +297,7 @@ initial state. Therefore a class may define a special method named
        self.data = []
 
 When a class defines an :meth:`__init__` method, class instantiation
-automatically invokes :meth:`__init__` for the newly-created class instance.  So
+automatically invokes :meth:`__init__` for the newly created class instance.  So
 in this example, a new, initialized instance can be obtained by::
 
    x = MyClass()
@@ -323,7 +323,7 @@ Instance Objects
 
 Now what can we do with instance objects?  The only operations understood by
 instance objects are attribute references.  There are two kinds of valid
-attribute names, data attributes and methods.
+attribute names: data attributes and methods.
 
 *data attributes* correspond to "instance variables" in Smalltalk, and to "data
 members" in C++.  Data attributes need not be declared; like local variables,
@@ -479,9 +479,9 @@ If the same attribute name occurs in both an instance and in a class,
 then attribute lookup prioritizes the instance::
 
     >>> class Warehouse:
-            purpose = 'storage'
-            region = 'west'
-
+    ...    purpose = 'storage'
+    ...    region = 'west'
+    ...
     >>> w1 = Warehouse()
     >>> print(w1.purpose, w1.region)
     storage west
@@ -797,7 +797,7 @@ using the :func:`next` built-in function; this example shows how it all works::
    >>> s = 'abc'
    >>> it = iter(s)
    >>> it
-   <iterator object at 0x00A1DB50>
+   <str_iterator object at 0x10c90e650>
    >>> next(it)
    'a'
    >>> next(it)
@@ -849,7 +849,7 @@ defines :meth:`__next__`, then :meth:`__iter__` can just return ``self``::
 Generators
 ==========
 
-:term:`Generator`\s are a simple and powerful tool for creating iterators.  They
+:term:`Generators <generator>` are a simple and powerful tool for creating iterators.  They
 are written like regular functions but use the :keyword:`yield` statement
 whenever they want to return data.  Each time :func:`next` is called on it, the
 generator resumes where it left off (it remembers all the data values and which

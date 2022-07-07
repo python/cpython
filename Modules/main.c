@@ -1,22 +1,23 @@
 /* Python interpreter main program */
 
 #include "Python.h"
-#include "pycore_initconfig.h"
-#include "pycore_pathconfig.h"
-#include "pycore_pylifecycle.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_initconfig.h"    // _PyArgv
+#include "pycore_interp.h"        // _PyInterpreterState.sysdict
+#include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
+#include "pycore_pylifecycle.h"   // _Py_PreInitializeFromPyArgv()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 /* Includes for exit_sigint() */
-#include <stdio.h>      /* perror() */
+#include <stdio.h>                // perror()
 #ifdef HAVE_SIGNAL_H
-#  include <signal.h>   /* SIGINT */
+#  include <signal.h>             // SIGINT
 #endif
 #if defined(HAVE_GETPID) && defined(HAVE_UNISTD_H)
-#  include <unistd.h>   /* getpid() */
+#  include <unistd.h>             // getpid()
 #endif
 #ifdef MS_WINDOWS
-#  include <windows.h>  /* STATUS_CONTROL_C_EXIT */
+#  include <windows.h>            // STATUS_CONTROL_C_EXIT
 #endif
 /* End of includes for exit_sigint() */
 
@@ -87,7 +88,7 @@ static inline int config_run_code(const PyConfig *config)
 }
 
 
-/* Return non-zero is stdin is a TTY or if -i command line option is used */
+/* Return non-zero if stdin is a TTY or if -i command line option is used */
 static int
 stdin_is_interactive(const PyConfig *config)
 {
@@ -157,11 +158,10 @@ error:
 static int
 pymain_sys_path_add_path0(PyInterpreterState *interp, PyObject *path0)
 {
-    _Py_IDENTIFIER(path);
     PyObject *sys_path;
     PyObject *sysdict = interp->sysdict;
     if (sysdict != NULL) {
-        sys_path = _PyDict_GetItemIdWithError(sysdict, &PyId_path);
+        sys_path = PyDict_GetItemWithError(sysdict, &_Py_ID(path));
         if (sys_path == NULL && PyErr_Occurred()) {
             return -1;
         }
@@ -219,11 +219,18 @@ pymain_import_readline(const PyConfig *config)
     else {
         Py_DECREF(mod);
     }
+    mod = PyImport_ImportModule("rlcompleter");
+    if (mod == NULL) {
+        PyErr_Clear();
+    }
+    else {
+        Py_DECREF(mod);
+    }
 }
 
 
 static int
-pymain_run_command(wchar_t *command, PyCompilerFlags *cf)
+pymain_run_command(wchar_t *command)
 {
     PyObject *unicode, *bytes;
     int ret;
@@ -243,7 +250,9 @@ pymain_run_command(wchar_t *command, PyCompilerFlags *cf)
         goto error;
     }
 
-    ret = PyRun_SimpleStringFlags(PyBytes_AsString(bytes), cf);
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
+    cf.cf_flags |= PyCF_IGNORE_COOKIE;
+    ret = PyRun_SimpleStringFlags(PyBytes_AsString(bytes), &cf);
     Py_DECREF(bytes);
     return (ret != 0);
 
@@ -287,7 +296,11 @@ pymain_run_module(const wchar_t *modname, int set_argv0)
         Py_DECREF(module);
         return pymain_exit_err_print();
     }
+    _Py_UnhandledKeyboardInterrupt = 0;
     result = PyObject_Call(runmodule, runargs, NULL);
+    if (!result && PyErr_Occurred() == PyExc_KeyboardInterrupt) {
+        _Py_UnhandledKeyboardInterrupt = 1;
+    }
     Py_DECREF(runpy);
     Py_DECREF(runmodule);
     Py_DECREF(module);
@@ -301,29 +314,23 @@ pymain_run_module(const wchar_t *modname, int set_argv0)
 
 
 static int
-pymain_run_file(PyConfig *config, PyCompilerFlags *cf)
+pymain_run_file_obj(PyObject *program_name, PyObject *filename,
+                    int skip_source_first_line)
 {
-    const wchar_t *filename = config->run_filename;
-    if (PySys_Audit("cpython.run_file", "u", filename) < 0) {
+    if (PySys_Audit("cpython.run_file", "O", filename) < 0) {
         return pymain_exit_err_print();
     }
-    FILE *fp = _Py_wfopen(filename, L"rb");
+
+    FILE *fp = _Py_fopen_obj(filename, "rb");
     if (fp == NULL) {
-        char *cfilename_buffer;
-        const char *cfilename;
-        int err = errno;
-        cfilename_buffer = _Py_EncodeLocaleRaw(filename, NULL);
-        if (cfilename_buffer != NULL)
-            cfilename = cfilename_buffer;
-        else
-            cfilename = "<unprintable file name>";
-        fprintf(stderr, "%ls: can't open file '%s': [Errno %d] %s\n",
-                config->program_name, cfilename, err, strerror(err));
-        PyMem_RawFree(cfilename_buffer);
+        // Ignore the OSError
+        PyErr_Clear();
+        PySys_FormatStderr("%S: can't open file %R: [Errno %d] %s\n",
+                           program_name, filename, errno, strerror(errno));
         return 2;
     }
 
-    if (config->skip_source_first_line) {
+    if (skip_source_first_line) {
         int ch;
         /* Push back first newline so line numbers remain the same */
         while ((ch = getc(fp)) != EOF) {
@@ -336,68 +343,102 @@ pymain_run_file(PyConfig *config, PyCompilerFlags *cf)
 
     struct _Py_stat_struct sb;
     if (_Py_fstat_noraise(fileno(fp), &sb) == 0 && S_ISDIR(sb.st_mode)) {
-        fprintf(stderr,
-                "%ls: '%ls' is a directory, cannot continue\n",
-                config->program_name, filename);
+        PySys_FormatStderr("%S: %R is a directory, cannot continue\n",
+                           program_name, filename);
         fclose(fp);
         return 1;
     }
 
-    /* call pending calls like signal handlers (SIGINT) */
+    // Call pending calls like signal handlers (SIGINT)
     if (Py_MakePendingCalls() == -1) {
         fclose(fp);
         return pymain_exit_err_print();
     }
 
-    PyObject *unicode, *bytes = NULL;
-    const char *filename_str;
-
-    unicode = PyUnicode_FromWideChar(filename, wcslen(filename));
-    if (unicode != NULL) {
-        bytes = PyUnicode_EncodeFSDefault(unicode);
-        Py_DECREF(unicode);
-    }
-    if (bytes != NULL) {
-        filename_str = PyBytes_AsString(bytes);
-    }
-    else {
-        PyErr_Clear();
-        filename_str = "<filename encoding error>";
-    }
-
     /* PyRun_AnyFileExFlags(closeit=1) calls fclose(fp) before running code */
-    int run = PyRun_AnyFileExFlags(fp, filename_str, 1, cf);
-    Py_XDECREF(bytes);
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
+    int run = _PyRun_AnyFileObject(fp, filename, 1, &cf);
     return (run != 0);
+}
+
+static int
+pymain_run_file(const PyConfig *config)
+{
+    PyObject *filename = PyUnicode_FromWideChar(config->run_filename, -1);
+    if (filename == NULL) {
+        PyErr_Print();
+        return -1;
+    }
+    PyObject *program_name = PyUnicode_FromWideChar(config->program_name, -1);
+    if (program_name == NULL) {
+        Py_DECREF(filename);
+        PyErr_Print();
+        return -1;
+    }
+
+    int res = pymain_run_file_obj(program_name, filename,
+                                  config->skip_source_first_line);
+    Py_DECREF(filename);
+    Py_DECREF(program_name);
+    return res;
 }
 
 
 static int
-pymain_run_startup(PyConfig *config, PyCompilerFlags *cf, int *exitcode)
+pymain_run_startup(PyConfig *config, int *exitcode)
 {
-    const char *startup = _Py_GetEnv(config->use_environment, "PYTHONSTARTUP");
-    if (startup == NULL) {
+    int ret;
+    if (!config->use_environment) {
         return 0;
     }
-    if (PySys_Audit("cpython.run_startup", "s", startup) < 0) {
-        return pymain_err_print(exitcode);
+    PyObject *startup = NULL;
+#ifdef MS_WINDOWS
+    const wchar_t *env = _wgetenv(L"PYTHONSTARTUP");
+    if (env == NULL || env[0] == L'\0') {
+        return 0;
+    }
+    startup = PyUnicode_FromWideChar(env, wcslen(env));
+    if (startup == NULL) {
+        goto error;
+    }
+#else
+    const char *env = _Py_GetEnv(config->use_environment, "PYTHONSTARTUP");
+    if (env == NULL) {
+        return 0;
+    }
+    startup = PyUnicode_DecodeFSDefault(env);
+    if (startup == NULL) {
+        goto error;
+    }
+#endif
+    if (PySys_Audit("cpython.run_startup", "O", startup) < 0) {
+        goto error;
     }
 
-    FILE *fp = _Py_fopen(startup, "r");
+    FILE *fp = _Py_fopen_obj(startup, "r");
     if (fp == NULL) {
         int save_errno = errno;
+        PyErr_Clear();
         PySys_WriteStderr("Could not open PYTHONSTARTUP\n");
 
         errno = save_errno;
-        PyErr_SetFromErrnoWithFilename(PyExc_OSError, startup);
-
-        return pymain_err_print(exitcode);
+        PyErr_SetFromErrnoWithFilenameObjects(PyExc_OSError, startup, NULL);
+        goto error;
     }
 
-    (void) PyRun_SimpleFileExFlags(fp, startup, 0, cf);
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
+    (void) _PyRun_SimpleFileObject(fp, startup, 0, &cf);
     PyErr_Clear();
     fclose(fp);
-    return 0;
+    ret = 0;
+
+done:
+    Py_XDECREF(startup);
+    return ret;
+
+error:
+    ret = pymain_err_print(exitcode);
+    goto done;
 }
 
 
@@ -423,7 +464,7 @@ pymain_run_interactive_hook(int *exitcode)
         goto error;
     }
 
-    result = _PyObject_CallNoArg(hook);
+    result = _PyObject_CallNoArgs(hook);
     Py_DECREF(hook);
     if (result == NULL) {
         goto error;
@@ -438,15 +479,26 @@ error:
 }
 
 
+static void
+pymain_set_inspect(PyConfig *config, int inspect)
+{
+    config->inspect = inspect;
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+    Py_InspectFlag = inspect;
+_Py_COMP_DIAG_POP
+}
+
+
 static int
-pymain_run_stdin(PyConfig *config, PyCompilerFlags *cf)
+pymain_run_stdin(PyConfig *config)
 {
     if (stdin_is_interactive(config)) {
-        config->inspect = 0;
-        Py_InspectFlag = 0; /* do exit on SystemExit */
+        // do exit on SystemExit
+        pymain_set_inspect(config, 0);
 
         int exitcode;
-        if (pymain_run_startup(config, cf, &exitcode)) {
+        if (pymain_run_startup(config, &exitcode)) {
             return exitcode;
         }
 
@@ -464,32 +516,32 @@ pymain_run_stdin(PyConfig *config, PyCompilerFlags *cf)
         return pymain_exit_err_print();
     }
 
-    int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, cf);
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
+    int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
     return (run != 0);
 }
 
 
 static void
-pymain_repl(PyConfig *config, PyCompilerFlags *cf, int *exitcode)
+pymain_repl(PyConfig *config, int *exitcode)
 {
     /* Check this environment variable at the end, to give programs the
        opportunity to set it from Python. */
     if (!config->inspect && _Py_GetEnv(config->use_environment, "PYTHONINSPECT")) {
-        config->inspect = 1;
-        Py_InspectFlag = 1;
+        pymain_set_inspect(config, 1);
     }
 
     if (!(config->inspect && stdin_is_interactive(config) && config_run_code(config))) {
         return;
     }
 
-    config->inspect = 0;
-    Py_InspectFlag = 0;
+    pymain_set_inspect(config, 0);
     if (pymain_run_interactive_hook(exitcode)) {
         return;
     }
 
-    int res = PyRun_AnyFileFlags(stdin, "<stdin>", cf);
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
+    int res = PyRun_AnyFileFlags(stdin, "<stdin>", &cf);
     *exitcode = (res != 0);
 }
 
@@ -497,11 +549,16 @@ pymain_repl(PyConfig *config, PyCompilerFlags *cf, int *exitcode)
 static void
 pymain_run_python(int *exitcode)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    /* pymain_run_stdin() modify the config */
-    PyConfig *config = &interp->config;
-
     PyObject *main_importer_path = NULL;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    /* pymain_run_stdin() modify the config */
+    PyConfig *config = (PyConfig*)_PyInterpreterState_GetConfig(interp);
+
+    /* ensure path config is written into global variables */
+    if (_PyStatus_EXCEPTION(_PyPathConfig_UpdateGlobal(config))) {
+        goto error;
+    }
+
     if (config->run_filename != NULL) {
         /* If filename is a package (ex: directory or ZIP file) which contains
            __main__.py, main_importer_path is set to filename and will be
@@ -514,12 +571,15 @@ pymain_run_python(int *exitcode)
         }
     }
 
+    // import readline and rlcompleter before script dir is added to sys.path
+    pymain_import_readline(config);
+
     if (main_importer_path != NULL) {
         if (pymain_sys_path_add_path0(interp, main_importer_path) < 0) {
             goto error;
         }
     }
-    else if (!config->isolated) {
+    else if (!config->safe_path) {
         PyObject *path0 = NULL;
         int res = _PyPathConfig_ComputeSysPath0(&config->argv, &path0);
         if (res < 0) {
@@ -535,13 +595,10 @@ pymain_run_python(int *exitcode)
         }
     }
 
-    PyCompilerFlags cf = _PyCompilerFlags_INIT;
-
     pymain_header(config);
-    pymain_import_readline(config);
 
     if (config->run_command) {
-        *exitcode = pymain_run_command(config->run_command, &cf);
+        *exitcode = pymain_run_command(config->run_command);
     }
     else if (config->run_module) {
         *exitcode = pymain_run_module(config->run_module, 1);
@@ -550,13 +607,13 @@ pymain_run_python(int *exitcode)
         *exitcode = pymain_run_module(L"__main__", 0);
     }
     else if (config->run_filename != NULL) {
-        *exitcode = pymain_run_file(config, &cf);
+        *exitcode = pymain_run_file(config);
     }
     else {
-        *exitcode = pymain_run_stdin(config, &cf);
+        *exitcode = pymain_run_stdin(config);
     }
 
-    pymain_repl(config, &cf, exitcode);
+    pymain_repl(config, exitcode);
     goto done;
 
 error:

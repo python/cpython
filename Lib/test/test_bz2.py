@@ -1,6 +1,7 @@
 from test import support
 from test.support import bigmemtest, _4G
 
+import array
 import unittest
 from io import BytesIO, DEFAULT_BUFFER_SIZE
 import os
@@ -12,13 +13,15 @@ import random
 import shutil
 import subprocess
 import threading
-from test.support import unlink
+from test.support import import_helper
+from test.support import threading_helper
+from test.support.os_helper import unlink
 import _compression
 import sys
 
 
 # Skip tests if the bz2 module doesn't exist.
-bz2 = support.import_module('bz2')
+bz2 = import_helper.import_module('bz2')
 from bz2 import BZ2File, BZ2Compressor, BZ2Decompressor
 
 has_cmdline_bunzip2 = None
@@ -69,7 +72,7 @@ class BaseTest(unittest.TestCase):
     # simply use the bigger test data for all tests.
     test_size = 0
     BIG_TEXT = bytearray(128*1024)
-    for fname in glob.glob(os.path.join(os.path.dirname(__file__), '*.py')):
+    for fname in glob.glob(os.path.join(glob.escape(os.path.dirname(__file__)), '*.py')):
         with open(fname, 'rb') as fh:
             test_size += fh.readinto(memoryview(BIG_TEXT)[test_size:])
         if test_size > 128*1024:
@@ -493,6 +496,7 @@ class BZ2FileTest(BaseTest):
         else:
             self.fail("1/0 didn't raise an exception")
 
+    @threading_helper.requires_working_threading()
     def testThreading(self):
         # Issue #7205: Using a BZ2File from several threads shouldn't deadlock.
         data = b"1" * 2**20
@@ -502,7 +506,7 @@ class BZ2FileTest(BaseTest):
                 for i in range(5):
                     f.write(data)
             threads = [threading.Thread(target=comp) for i in range(nthreads)]
-            with support.start_threads(threads):
+            with threading_helper.start_threads(threads):
                 pass
 
     def testMixedIterationAndReads(self):
@@ -618,6 +622,14 @@ class BZ2FileTest(BaseTest):
             with BZ2File(BytesIO(truncated[:i])) as f:
                 self.assertRaises(EOFError, f.read, 1)
 
+    def test_issue44439(self):
+        q = array.array('Q', [1, 2, 3, 4, 5])
+        LENGTH = len(q) * q.itemsize
+
+        with BZ2File(BytesIO(), 'w') as f:
+            self.assertEqual(f.write(q), LENGTH)
+            self.assertEqual(f.tell(), LENGTH)
+
 
 class BZ2CompressorTest(BaseTest):
     def testCompress(self):
@@ -710,7 +722,7 @@ class BZ2DecompressorTest(BaseTest):
     def testDecompress4G(self, size):
         # "Test BZ2Decompressor.decompress() with >4GiB input"
         blocksize = 10 * 1024 * 1024
-        block = random.getrandbits(blocksize * 8).to_bytes(blocksize, 'little')
+        block = random.randbytes(blocksize)
         try:
             data = block * (size // blocksize + 1)
             compressed = bz2.compress(data)
@@ -920,14 +932,14 @@ class OpenTest(BaseTest):
         for mode in ("wt", "xt"):
             if mode == "xt":
                 unlink(self.filename)
-            with self.open(self.filename, mode) as f:
+            with self.open(self.filename, mode, encoding="ascii") as f:
                 f.write(text)
             with open(self.filename, "rb") as f:
                 file_data = ext_decompress(f.read()).decode("ascii")
                 self.assertEqual(file_data, text_native_eol)
-            with self.open(self.filename, "rt") as f:
+            with self.open(self.filename, "rt", encoding="ascii") as f:
                 self.assertEqual(f.read(), text)
-            with self.open(self.filename, "at") as f:
+            with self.open(self.filename, "at", encoding="ascii") as f:
                 f.write(text)
             with open(self.filename, "rb") as f:
                 file_data = ext_decompress(f.read()).decode("ascii")
@@ -936,7 +948,8 @@ class OpenTest(BaseTest):
     def test_x_mode(self):
         for mode in ("x", "xb", "xt"):
             unlink(self.filename)
-            with self.open(self.filename, mode) as f:
+            encoding = "utf-8" if "t" in mode else None
+            with self.open(self.filename, mode, encoding=encoding) as f:
                 pass
             with self.assertRaises(FileExistsError):
                 with self.open(self.filename, mode) as f:
@@ -948,7 +961,7 @@ class OpenTest(BaseTest):
         with self.open(BytesIO(self.DATA), "rb") as f:
             self.assertEqual(f.read(), self.TEXT)
         text = self.TEXT.decode("ascii")
-        with self.open(BytesIO(self.DATA), "rt") as f:
+        with self.open(BytesIO(self.DATA), "rt", encoding="utf-8") as f:
             self.assertEqual(f.read(), text)
 
     def test_bad_params(self):
@@ -987,21 +1000,15 @@ class OpenTest(BaseTest):
     def test_newline(self):
         # Test with explicit newline (universal newline mode disabled).
         text = self.TEXT.decode("ascii")
-        with self.open(self.filename, "wt", newline="\n") as f:
+        with self.open(self.filename, "wt", encoding="utf-8", newline="\n") as f:
             f.write(text)
-        with self.open(self.filename, "rt", newline="\r") as f:
+        with self.open(self.filename, "rt", encoding="utf-8", newline="\r") as f:
             self.assertEqual(f.readlines(), [text])
 
 
-def test_main():
-    support.run_unittest(
-        BZ2FileTest,
-        BZ2CompressorTest,
-        BZ2DecompressorTest,
-        CompressDecompressTest,
-        OpenTest,
-    )
+def tearDownModule():
     support.reap_children()
 
+
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

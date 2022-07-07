@@ -20,7 +20,7 @@ PyDoc_STRVAR(marshal_dump__doc__,
 "to the file. The object will not be properly read back by load().");
 
 #define MARSHAL_DUMP_METHODDEF    \
-    {"dump", (PyCFunction)(void(*)(void))marshal_dump, METH_FASTCALL, marshal_dump__doc__},
+    {"dump", _PyCFunction_CAST(marshal_dump), METH_FASTCALL, marshal_dump__doc__},
 
 static PyObject *
 marshal_dump_impl(PyObject *module, PyObject *value, PyObject *file,
@@ -41,11 +41,6 @@ marshal_dump(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     file = args[1];
     if (nargs < 3) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     version = _PyLong_AsInt(args[2]);
     if (version == -1 && PyErr_Occurred()) {
@@ -92,7 +87,7 @@ PyDoc_STRVAR(marshal_dumps__doc__,
 "unsupported type.");
 
 #define MARSHAL_DUMPS_METHODDEF    \
-    {"dumps", (PyCFunction)(void(*)(void))marshal_dumps, METH_FASTCALL, marshal_dumps__doc__},
+    {"dumps", _PyCFunction_CAST(marshal_dumps), METH_FASTCALL, marshal_dumps__doc__},
 
 static PyObject *
 marshal_dumps_impl(PyObject *module, PyObject *value, int version);
@@ -110,11 +105,6 @@ marshal_dumps(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     value = args[0];
     if (nargs < 2) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     version = _PyLong_AsInt(args[1]);
     if (version == -1 && PyErr_Occurred()) {
@@ -165,4 +155,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=a859dabe8b0afeb6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b9e838edee43fe87 input=a9049054013a1b77]*/

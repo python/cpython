@@ -2,20 +2,12 @@
 #  error "this header file must not be included directly"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 PyAPI_FUNC(void) _Py_NewReference(PyObject *op);
 
 #ifdef Py_TRACE_REFS
 /* Py_TRACE_REFS is such major surgery that we call external routines. */
 PyAPI_FUNC(void) _Py_ForgetReference(PyObject *);
 #endif
-
-/* Update the Python traceback of an object. This function must be called
-   when a memory block is reused from a free list. */
-PyAPI_FUNC(int) _PyTraceMalloc_NewReference(PyObject *op);
 
 #ifdef Py_REF_DEBUG
 PyAPI_FUNC(Py_ssize_t) _Py_GetRefTotal(void);
@@ -36,76 +28,34 @@ PyAPI_FUNC(Py_ssize_t) _Py_GetRefTotal(void);
 
    PyId_foo is a static variable, either on block level or file level. On first
    usage, the string "foo" is interned, and the structures are linked. On interpreter
-   shutdown, all strings are released (through _PyUnicode_ClearStaticStrings).
+   shutdown, all strings are released.
 
    Alternatively, _Py_static_string allows choosing the variable name.
    _PyUnicode_FromId returns a borrowed reference to the interned string.
    _PyObject_{Get,Set,Has}AttrId are __getattr__ versions using _Py_Identifier*.
 */
 typedef struct _Py_Identifier {
-    struct _Py_Identifier *next;
     const char* string;
-    PyObject *object;
+    // Index in PyInterpreterState.unicode.ids.array. It is process-wide
+    // unique and must be initialized to -1.
+    Py_ssize_t index;
 } _Py_Identifier;
 
-#define _Py_static_string_init(value) { .next = NULL, .string = value, .object = NULL }
+#if defined(NEEDS_PY_IDENTIFIER) || !defined(Py_BUILD_CORE)
+// For now we are keeping _Py_IDENTIFIER for continued use
+// in non-builtin extensions (and naughty PyPI modules).
+
+#define _Py_static_string_init(value) { .string = (value), .index = -1 }
 #define _Py_static_string(varname, value)  static _Py_Identifier varname = _Py_static_string_init(value)
 #define _Py_IDENTIFIER(varname) _Py_static_string(PyId_##varname, #varname)
 
-/* buffer interface */
-typedef struct bufferinfo {
-    void *buf;
-    PyObject *obj;        /* owned reference */
-    Py_ssize_t len;
-    Py_ssize_t itemsize;  /* This is Py_ssize_t so it can be
-                             pointed to by strides in simple case.*/
-    int readonly;
-    int ndim;
-    char *format;
-    Py_ssize_t *shape;
-    Py_ssize_t *strides;
-    Py_ssize_t *suboffsets;
-    void *internal;
-} Py_buffer;
+#endif  /* NEEDS_PY_IDENTIFIER */
 
 typedef int (*getbufferproc)(PyObject *, Py_buffer *, int);
 typedef void (*releasebufferproc)(PyObject *, Py_buffer *);
 
 typedef PyObject *(*vectorcallfunc)(PyObject *callable, PyObject *const *args,
                                     size_t nargsf, PyObject *kwnames);
-
-/* Maximum number of dimensions */
-#define PyBUF_MAX_NDIM 64
-
-/* Flags for getting buffers */
-#define PyBUF_SIMPLE 0
-#define PyBUF_WRITABLE 0x0001
-/*  we used to include an E, backwards compatible alias  */
-#define PyBUF_WRITEABLE PyBUF_WRITABLE
-#define PyBUF_FORMAT 0x0004
-#define PyBUF_ND 0x0008
-#define PyBUF_STRIDES (0x0010 | PyBUF_ND)
-#define PyBUF_C_CONTIGUOUS (0x0020 | PyBUF_STRIDES)
-#define PyBUF_F_CONTIGUOUS (0x0040 | PyBUF_STRIDES)
-#define PyBUF_ANY_CONTIGUOUS (0x0080 | PyBUF_STRIDES)
-#define PyBUF_INDIRECT (0x0100 | PyBUF_STRIDES)
-
-#define PyBUF_CONTIG (PyBUF_ND | PyBUF_WRITABLE)
-#define PyBUF_CONTIG_RO (PyBUF_ND)
-
-#define PyBUF_STRIDED (PyBUF_STRIDES | PyBUF_WRITABLE)
-#define PyBUF_STRIDED_RO (PyBUF_STRIDES)
-
-#define PyBUF_RECORDS (PyBUF_STRIDES | PyBUF_WRITABLE | PyBUF_FORMAT)
-#define PyBUF_RECORDS_RO (PyBUF_STRIDES | PyBUF_FORMAT)
-
-#define PyBUF_FULL (PyBUF_INDIRECT | PyBUF_WRITABLE | PyBUF_FORMAT)
-#define PyBUF_FULL_RO (PyBUF_INDIRECT | PyBUF_FORMAT)
-
-
-#define PyBUF_READ  0x100
-#define PyBUF_WRITE 0x200
-/* End buffer interface */
 
 
 typedef struct {
@@ -175,10 +125,13 @@ typedef struct {
     objobjargproc mp_ass_subscript;
 } PyMappingMethods;
 
+typedef PySendResult (*sendfunc)(PyObject *iter, PyObject *value, PyObject **result);
+
 typedef struct {
     unaryfunc am_await;
     unaryfunc am_aiter;
     unaryfunc am_anext;
+    sendfunc am_send;
 } PyAsyncMethods;
 
 typedef struct {
@@ -190,6 +143,8 @@ typedef struct {
  * backwards-compatibility */
 typedef Py_ssize_t printfunc;
 
+// If this structure is modified, Doc/includes/typestruct.h should be updated
+// as well.
 struct _typeobject {
     PyObject_VAR_HEAD
     const char *tp_name; /* For printing, in format "<module>.<name>" */
@@ -246,10 +201,11 @@ struct _typeobject {
     iternextfunc tp_iternext;
 
     /* Attribute descriptor and subclassing stuff */
-    struct PyMethodDef *tp_methods;
-    struct PyMemberDef *tp_members;
-    struct PyGetSetDef *tp_getset;
-    struct _typeobject *tp_base;
+    PyMethodDef *tp_methods;
+    PyMemberDef *tp_members;
+    PyGetSetDef *tp_getset;
+    // Strong reference on a heap type, borrowed reference on a static type
+    PyTypeObject *tp_base;
     PyObject *tp_dict;
     descrgetfunc tp_descr_get;
     descrsetfunc tp_descr_set;
@@ -273,6 +229,13 @@ struct _typeobject {
     vectorcallfunc tp_vectorcall;
 };
 
+/* This struct is used by the specializer
+ * It should should be treated as an opaque blob
+ * by code other than the specializer and interpreter. */
+struct _specialization_cache {
+    PyObject *getitem;
+};
+
 /* The *real* layout of a type object when allocated on the heap */
 typedef struct _heaptypeobject {
     /* Note: there's a dependency on the order of these members
@@ -289,31 +252,34 @@ typedef struct _heaptypeobject {
     PyBufferProcs as_buffer;
     PyObject *ht_name, *ht_slots, *ht_qualname;
     struct _dictkeysobject *ht_cached_keys;
+    PyObject *ht_module;
+    char *_ht_tpname;  // Storage for "tp_name"; see PyType_FromModuleAndSpec
+    struct _specialization_cache _spec_cache; // For use by the specializer.
     /* here are optional user slots, followed by the members. */
 } PyHeapTypeObject;
-
-/* access macro to the members which are floating "behind" the object */
-#define PyHeapType_GET_MEMBERS(etype) \
-    ((PyMemberDef *)(((char *)etype) + Py_TYPE(etype)->tp_basicsize))
 
 PyAPI_FUNC(const char *) _PyType_Name(PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyType_Lookup(PyTypeObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyType_LookupId(PyTypeObject *, _Py_Identifier *);
-PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, _Py_Identifier *);
+PyAPI_FUNC(PyObject *) _PyObject_LookupSpecialId(PyObject *, _Py_Identifier *);
+#ifndef Py_BUILD_CORE
+// Backward compatibility for 3rd-party extensions
+// that may be using the old name.
+#define _PyObject_LookupSpecial _PyObject_LookupSpecialId
+#endif
 PyAPI_FUNC(PyTypeObject *) _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyType_GetDocFromInternalDoc(const char *, const char *);
 PyAPI_FUNC(PyObject *) _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);
+PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, PyModuleDef *);
 
-struct _Py_Identifier;
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
 PyAPI_FUNC(void) _Py_BreakPoint(void);
 PyAPI_FUNC(void) _PyObject_Dump(PyObject *);
 PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 
 PyAPI_FUNC(int) _PyObject_IsAbstract(PyObject *);
-PyAPI_FUNC(PyObject *) _PyObject_GetAttrId(PyObject *, struct _Py_Identifier *);
-PyAPI_FUNC(int) _PyObject_SetAttrId(PyObject *, struct _Py_Identifier *, PyObject *);
-PyAPI_FUNC(int) _PyObject_HasAttrId(PyObject *, struct _Py_Identifier *);
+PyAPI_FUNC(PyObject *) _PyObject_GetAttrId(PyObject *, _Py_Identifier *);
+PyAPI_FUNC(int) _PyObject_SetAttrId(PyObject *, _Py_Identifier *, PyObject *);
 /* Replacements of PyObject_GetAttr() and _PyObject_GetAttrId() which
    don't raise AttributeError.
 
@@ -324,7 +290,7 @@ PyAPI_FUNC(int) _PyObject_HasAttrId(PyObject *, struct _Py_Identifier *);
    is raised.
 */
 PyAPI_FUNC(int) _PyObject_LookupAttr(PyObject *, PyObject *, PyObject **);
-PyAPI_FUNC(int) _PyObject_LookupAttrId(PyObject *, struct _Py_Identifier *, PyObject **);
+PyAPI_FUNC(int) _PyObject_LookupAttrId(PyObject *, _Py_Identifier *, PyObject **);
 
 PyAPI_FUNC(int) _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
 
@@ -385,11 +351,6 @@ PyAPI_DATA(PyTypeObject) _PyNotImplemented_Type;
  */
 PyAPI_DATA(int) _Py_SwappedOp[];
 
-/* This is the old private API, invoked by the macros before 3.2.4.
-   Kept for binary compatibility of extensions using the stable ABI. */
-PyAPI_FUNC(void) _PyTrash_deposit_object(PyObject*);
-PyAPI_FUNC(void) _PyTrash_destroy_chain(void);
-
 PyAPI_FUNC(void)
 _PyDebugAllocatorStats(FILE *out, const char *block_name, int num_blocks,
                        size_t sizeof_block);
@@ -424,9 +385,9 @@ _PyObject_DebugTypeStats(FILE *out);
 #endif
 
 #define _PyObject_ASSERT_WITH_MSG(obj, expr, msg) \
-    _PyObject_ASSERT_FROM(obj, expr, msg, __FILE__, __LINE__, __func__)
+    _PyObject_ASSERT_FROM((obj), expr, (msg), __FILE__, __LINE__, __func__)
 #define _PyObject_ASSERT(obj, expr) \
-    _PyObject_ASSERT_WITH_MSG(obj, expr, NULL)
+    _PyObject_ASSERT_WITH_MSG((obj), expr, NULL)
 
 #define _PyObject_ASSERT_FAILED_MSG(obj, msg) \
     _PyObject_AssertFailed((obj), NULL, (msg), __FILE__, __LINE__, __func__)
@@ -497,8 +458,8 @@ without deallocating anything (and so unbounded call-stack depth is avoided).
 When the call stack finishes unwinding again, code generated by the END macro
 notices this, and calls another routine to deallocate all the objects that
 may have been added to the list of deferred deallocations.  In effect, a
-chain of N deallocations is broken into (N-1)/(PyTrash_UNWIND_LEVEL-1) pieces,
-with the call stack never exceeding a depth of PyTrash_UNWIND_LEVEL.
+chain of N deallocations is broken into (N-1)/(_PyTrash_UNWIND_LEVEL-1) pieces,
+with the call stack never exceeding a depth of _PyTrash_UNWIND_LEVEL.
 
 Since the tp_dealloc of a subclass typically calls the tp_dealloc of the base
 class, we need to ensure that the trashcan is only triggered on the tp_dealloc
@@ -507,11 +468,11 @@ partially-deallocated object. To check this, the tp_dealloc function must be
 passed as second argument to Py_TRASHCAN_BEGIN().
 */
 
-/* The new thread-safe private API, invoked by the macros below. */
-PyAPI_FUNC(void) _PyTrash_thread_deposit_object(PyObject*);
-PyAPI_FUNC(void) _PyTrash_thread_destroy_chain(void);
-
-#define PyTrash_UNWIND_LEVEL 50
+/* Python 3.9 private API, invoked by the macros below. */
+PyAPI_FUNC(int) _PyTrash_begin(PyThreadState *tstate, PyObject *op);
+PyAPI_FUNC(void) _PyTrash_end(PyThreadState *tstate);
+/* Python 3.10 private API, invoked by the Py_TRASHCAN_BEGIN(). */
+PyAPI_FUNC(int) _PyTrash_cond(PyObject *op, destructor dealloc);
 
 #define Py_TRASHCAN_BEGIN_CONDITION(op, cond) \
     do { \
@@ -519,32 +480,32 @@ PyAPI_FUNC(void) _PyTrash_thread_destroy_chain(void);
         /* If "cond" is false, then _tstate remains NULL and the deallocator \
          * is run normally without involving the trashcan */ \
         if (cond) { \
-            _tstate = PyThreadState_GET(); \
-            if (_tstate->trash_delete_nesting >= PyTrash_UNWIND_LEVEL) { \
-                /* Store the object (to be deallocated later) and jump past \
-                 * Py_TRASHCAN_END, skipping the body of the deallocator */ \
-                _PyTrash_thread_deposit_object(_PyObject_CAST(op)); \
+            _tstate = PyThreadState_Get(); \
+            if (_PyTrash_begin(_tstate, _PyObject_CAST(op))) { \
                 break; \
             } \
-            ++_tstate->trash_delete_nesting; \
         }
         /* The body of the deallocator is here. */
 #define Py_TRASHCAN_END \
         if (_tstate) { \
-            --_tstate->trash_delete_nesting; \
-            if (_tstate->trash_delete_later && _tstate->trash_delete_nesting <= 0) \
-                _PyTrash_thread_destroy_chain(); \
+            _PyTrash_end(_tstate); \
         } \
     } while (0);
 
-#define Py_TRASHCAN_BEGIN(op, dealloc) Py_TRASHCAN_BEGIN_CONDITION(op, \
-        Py_TYPE(op)->tp_dealloc == (destructor)(dealloc))
+#define Py_TRASHCAN_BEGIN(op, dealloc) \
+    Py_TRASHCAN_BEGIN_CONDITION((op), \
+        _PyTrash_cond(_PyObject_CAST(op), (destructor)(dealloc)))
 
-/* For backwards compatibility, these macros enable the trashcan
- * unconditionally */
-#define Py_TRASHCAN_SAFE_BEGIN(op) Py_TRASHCAN_BEGIN_CONDITION(op, 1)
-#define Py_TRASHCAN_SAFE_END(op) Py_TRASHCAN_END
-
-#ifdef __cplusplus
-}
-#endif
+/* The following two macros, Py_TRASHCAN_SAFE_BEGIN and
+ * Py_TRASHCAN_SAFE_END, are deprecated since version 3.11 and
+ * will be removed in the future.
+ * Use Py_TRASHCAN_BEGIN and Py_TRASHCAN_END instead.
+ */
+Py_DEPRECATED(3.11) typedef int UsingDeprecatedTrashcanMacro;
+#define Py_TRASHCAN_SAFE_BEGIN(op) \
+    do { \
+        UsingDeprecatedTrashcanMacro cond=1; \
+        Py_TRASHCAN_BEGIN_CONDITION((op), cond);
+#define Py_TRASHCAN_SAFE_END(op) \
+        Py_TRASHCAN_END; \
+    } while(0);

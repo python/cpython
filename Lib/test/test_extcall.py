@@ -8,6 +8,7 @@ We're going the use these types for extra testing
 
 We're defining four helper functions
 
+    >>> from test import support
     >>> def e(a,b):
     ...     print(a, b)
 
@@ -78,6 +79,24 @@ Here we add keyword arguments
     (1, 2, 3, 6, 7) {'a': 8, 'b': 9, 'x': 4, 'y': 5}
     >>> f(1, 2, 3, *(4, 5), x=6, y=7, **UserDict(a=8, b=9))
     (1, 2, 3, 4, 5) {'a': 8, 'b': 9, 'x': 6, 'y': 7}
+
+Mix keyword arguments and dict unpacking
+
+    >>> d1 = {'a':1}
+
+    >>> d2 = {'c':3}
+
+    >>> f(b=2, **d1, **d2)
+    () {'a': 1, 'b': 2, 'c': 3}
+
+    >>> f(**d1, b=2, **d2)
+    () {'a': 1, 'b': 2, 'c': 3}
+
+    >>> f(**d1, **d2, b=2)
+    () {'a': 1, 'b': 2, 'c': 3}
+
+    >>> f(**d1, b=2, **d2, d=4)
+    () {'a': 1, 'b': 2, 'c': 3, 'd': 4}
 
 Examples with invalid arguments (TypeErrors). We're also testing the function
 names in the exception messages.
@@ -502,11 +521,13 @@ Same with keyword only args:
 
 """
 
-import sys
-from test import support
+import doctest
+import unittest
 
-def test_main():
-    support.run_doctest(sys.modules[__name__], True)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
+
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

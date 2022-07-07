@@ -121,6 +121,13 @@ A :class:`Cmd` instance has the following methods:
    :meth:`complete_\*` method is available.  By default, it returns an empty list.
 
 
+.. method:: Cmd.columnize(list, displaywidth=80)
+
+   Method called to display a list of strings as a compact set of columns.
+   Each column is only as wide as necessary.
+   Columns are separated by two spaces for readability.
+
+
 .. method:: Cmd.precmd(line)
 
    Hook method executed just before the command line *line* is interpreted, but

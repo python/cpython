@@ -15,8 +15,8 @@
 This module provides a simple way to time small bits of Python code. It has both
 a :ref:`timeit-command-line-interface` as well as a :ref:`callable <python-interface>`
 one.  It avoids a number of common traps for measuring execution times.
-See also Tim Peters' introduction to the "Algorithms" chapter in the *Python
-Cookbook*, published by O'Reilly.
+See also Tim Peters' introduction to the "Algorithms" chapter in the second
+edition of *Python Cookbook*, published by O'Reilly.
 
 
 Basic Examples
@@ -233,7 +233,7 @@ Where the following options are understood:
 
 .. cmdoption:: -u, --unit=U
 
-    specify a time unit for timer output; can select nsec, usec, msec, or sec
+   specify a time unit for timer output; can select ``nsec``, ``usec``, ``msec``, or ``sec``
 
    .. versionadded:: 3.5
 
@@ -251,7 +251,8 @@ quotes and using leading spaces.  Multiple :option:`-s` options are treated
 similarly.
 
 If :option:`-n` is not given, a suitable number of loops is calculated by trying
-successive powers of 10 until the total time is at least 0.2 seconds.
+increasing numbers from the sequence 1, 2, 5, 10, 20, 50, ... until the total
+time is at least 0.2 seconds.
 
 :func:`default_timer` measurements can be affected by other programs running on
 the same machine, so the best thing to do when accurate timing is necessary is
@@ -280,6 +281,13 @@ It is possible to provide a setup statement that is executed only once at the be
    5000000 loops, best of 5: 0.0877 usec per loop
    $ python -m timeit -s 'text = "sample string"; char = "g"'  'text.find(char)'
    1000000 loops, best of 5: 0.342 usec per loop
+
+In the output, there are three fields. The loop count, which tells you how many
+times the statement body was run per timing loop repetition. The repetition
+count ('best of 5') which tells you how many times the timing loop was
+repeated, and finally the time the statement body took on average within the
+best repetition of the timing loop. That is, the time the fastest repetition
+took divided by the loop count.
 
 ::
 
