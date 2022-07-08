@@ -5683,16 +5683,25 @@ handle_eval_breaker:
                     err = maybe_call_line_trace(tstate->c_tracefunc,
                                                 tstate->c_traceobj,
                                                 tstate, frame, instr_prev);
+                    // Reload possibly changed frame fields:
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    frame->stacktop = -1;
+                    // next_instr is only reloaded if tracing *does not* raise.
+                    // This is consistent with the behavior of older Python
+                    // versions. If a trace function sets a new f_lineno and
+                    // *then* raises, we use the *old* location when searching
+                    // for an exception handler, displaying the traceback, and
+                    // so on:
                     if (err) {
-                        /* trace function raised an exception */
+                        // next_instr wasn't incremented at the start of this
+                        // instruction. Increment it before handling the error,
+                        // so that it looks the same as a "normal" instruction:
                         next_instr++;
                         goto error;
                     }
-                    /* Reload possibly changed frame fields */
+                    // Reload next_instr. Don't increment it, though, since
+                    // we're going to re-dispatch to the "true" instruction now:
                     next_instr = frame->prev_instr;
-
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
-                    frame->stacktop = -1;
                 }
             }
         }
