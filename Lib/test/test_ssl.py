@@ -3013,25 +3013,26 @@ class ThreadedTests(unittest.TestCase):
                 cert = s.getpeercert()
                 self.assertTrue(cert, "Can't get peer certificate.")
 
-    def test_check_hostname_incorrect(self):
+    def _do_test_check_hostname_incorrect(self):
         if support.verbose:
             sys.stdout.write("\n")
 
         client_context, server_context, hostname = testing_context()
 
-        #with self.assertRaisesRegex(ssl.SSLError, 'SSLV3_ALERT_BAD_CERTIFICATE'):
-            #try:
         with Server(context=server_context, client_fails=True) as address:
-            with client_context.wrap_socket(socket.socket(),
-                                            server_hostname="invalid") as s:
+             with client_context.wrap_socket(socket.socket(),
+                                             server_hostname="invalid") as s:
                 with self.assertRaisesRegex(
                         ssl.CertificateError,
                         "Hostname mismatch, certificate is not valid for 'invalid'."):
                     s.connect(address)
-            #except Exception as e:
-            #    print('**************************************************')
-            #    print(e)
-            #    raise
+
+    def test_check_hostname_incorrect(self):
+        if sys.platform == 'darwin':
+            self._do_test_check_hostname_incorrect()
+        else:
+            with self.assertRaisesRegex(ssl.SSLError, 'SSLV3_ALERT_BAD_CERTIFICATE'):
+                self._do_test_check_hostname_incorrect()
 
     def test_check_hostname_missing(self):
         if support.verbose:
