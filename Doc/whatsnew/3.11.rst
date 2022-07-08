@@ -75,7 +75,7 @@ New syntax features:
 New typing features:
 
 * :pep:`646`: Variadic generics.
-* :pep:`655`: Marking individual TypedDict items as required or potentially-missing.
+* :pep:`655`: Marking individual TypedDict items as required or potentially missing.
 * :pep:`673`: ``Self`` type.
 * :pep:`675`: Arbitrary literal string type.
 
@@ -336,6 +336,13 @@ See :pep:`681` for more details.
 (Contributed by Jelle Zijlstra in :gh:`91860`. PEP written by
 Erik De Bonte and Eric Traut.)
 
+PEP 563 May Not Be the Future
+-----------------------------
+
+* :pep:`563` Postponed Evaluation of Annotations, ``__future__.annotations``
+  that was planned for this release has been indefinitely postponed.
+  See `this message <https://mail.python.org/archives/list/python-dev@python.org/message/VIZEBX5EYMSYIJNDBF6DMUMZOCWHARSO/>`_ for more information.
+
 Other Language Changes
 ======================
 
@@ -442,6 +449,11 @@ asyncio
 * Add :class:`~asyncio.Barrier` class to the synchronization primitives of
   the asyncio library. (Contributed by Yves Duprat and Andrew Svetlov in
   :gh:`87518`.)
+
+* Add :class:`~asyncio.TaskGroup` class,
+  an :ref:`asynchronous context manager <async-context-managers>`
+  holding a group of tasks that will wait for all of them upon exit.
+  (Contributed by Yury Seliganov and others.)
 
 datetime
 --------
