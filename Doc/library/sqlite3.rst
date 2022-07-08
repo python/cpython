@@ -496,8 +496,8 @@ Connection Objects
       SQLite 3.8.3 or higher, :exc:`NotSupportedError` will be raised if used
       with older versions.
 
-      The function can return any of the types
-      :ref:`natively supported by SQLite <sqlite3-types>`.
+      The function can return any of
+      :ref:`the types natively supported by SQLite <sqlite3-types>`.
 
       .. versionchanged:: 3.8
          The *deterministic* parameter was added.
@@ -516,8 +516,8 @@ Connection Objects
       any number of arguments), and a ``finalize`` method which will return the
       final result of the aggregate.
 
-      The ``finalize`` method can return any of the types
-      :ref:`natively supported by SQLite <sqlite3-types>`.
+      The ``finalize`` method can return any of
+      :ref:`the types natively supported by SQLite <sqlite3-types>`.
 
       Example:
 
@@ -538,8 +538,8 @@ Connection Objects
       ``step`` and ``value`` accept *num_params* number of parameters,
       unless *num_params* is ``-1``, in which case they may take any number of
       arguments.
-      ``finalize`` and ``value`` can return any of the types
-      :ref:`natively supported by SQLite <sqlite3-types>`.
+      ``finalize`` and ``value`` can return any of
+      :ref:`the types natively supported by SQLite <sqlite3-types>`.
       Call :meth:`create_window_function` with
       *aggregate_class* set to :const:`None` to clear window function *name*.
 
