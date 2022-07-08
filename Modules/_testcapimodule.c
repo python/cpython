@@ -7729,7 +7729,7 @@ PyInit__testcapi(void)
         return NULL;
 
     /* Include tests from the _testcapi/ directory */
-    if(_PyTestCapi_Init_Vectorcall(m) < 0) {
+    if (_PyTestCapi_Init_Vectorcall(m) < 0) {
         return NULL;
     }
 
