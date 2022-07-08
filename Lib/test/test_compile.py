@@ -1182,7 +1182,8 @@ f(
             line=1, end_line=1, column=0, end_column=27, occurrence=4)
 
     def test_multiline_assert_rewritten_as_method_call(self):
-        # GH-94694
+        # GH-94694: Copying location information from a "real" node to a
+        # handwritten one should always be valid!
         tree = ast.parse("assert (\n42\n)")
         old_node = tree.body[0]
         new_node = ast.Expr(
