@@ -347,8 +347,6 @@ class Server:
     def __exit__(self, etype, evalue, traceback):
         if etype is ConnectionAbortedError or etype is ConnectionResetError:
             if self._result.exception() is not None:
-                print('*******************************************')
-                print(etype, evalue)
                 generic = RuntimeError('server-side error')
                 raise generic from self._result.exception()
             return False
