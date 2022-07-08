@@ -7969,6 +7969,18 @@ slot_tp_repr(PyObject *self)
 
 SLOT0(slot_tp_str, __str__)
 
+
+static inline PyObject *
+lookup___hash__(PyObject *self, int *unbound)
+{
+    PyObject *func = lookup_maybe_method(self, &_Py_ID(__hash__), unbound);
+    if (func == Py_None) {
+        Py_DECREF(func);
+        func = NULL;
+    }
+    return func;
+}
+
 static Py_hash_t
 slot_tp_hash(PyObject *self)
 {
@@ -7976,14 +7988,11 @@ slot_tp_hash(PyObject *self)
     Py_ssize_t h;
     int unbound;
 
-    func = lookup_maybe_method(self, &_Py_ID(__hash__), &unbound);
-
-    if (func == Py_None) {
-        Py_DECREF(func);
-        func = NULL;
-    }
-
+    func = lookup___hash__(self, &unbound);
     if (func == NULL) {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
         return PyObject_HashNotImplemented(self);
     }
 
