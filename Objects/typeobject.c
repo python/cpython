@@ -149,6 +149,31 @@ static_builtin_state_clear(PyTypeObject *self)
 /* end static builtin helpers */
 
 
+static Py_hash_t slot_tp_hash(PyObject *self);
+static inline PyObject * lookup___hash__(PyObject *self, int *unbound);
+
+static int
+is_hashable(PyObject *obj)
+{
+    PyTypeObject *cls = Py_TYPE(obj);
+    if (cls->tp_hash != NULL &&
+        cls->tp_hash != PyObject_HashNotImplemented)
+    {
+        if (cls->tp_hash != slot_tp_hash) {
+            return 1;
+        }
+        int unbound;
+        if (lookup___hash__((PyObject *)cls, &unbound) != NULL) {
+            return 1;
+        }
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+
 /*
  * finds the beginning of the docstring's introspection signature.
  * if present, returns a pointer pointing to the first '('.
@@ -4431,7 +4456,17 @@ lookup_subclasses(PyTypeObject *self)
     if (interp->types.subclasses == NULL) {
         return NULL;
     }
-    return PyDict_GetItemWithError(interp->types.subclasses, (PyObject *)self);
+    PyObject *subclasses = PyDict_GetItemWithError(interp->types.subclasses,
+                                                   (PyObject *)self);
+    // We must handle the rare case where the metaclass
+    // of the given type makes it unhashable.
+    if (subclasses == NULL && PyErr_Occurred() &&
+        PyErr_ExceptionMatches(PyExc_TypeError) &&
+        !is_hashable((PyObject *)self))
+    {
+        PyErr_Clear();
+    }
+    return subclasses;
 }
 
 int
