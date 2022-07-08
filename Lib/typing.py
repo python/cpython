@@ -250,7 +250,7 @@ def _collect_parameters(args):
     """
     parameters = []
     for t in args:
-        # A bare Python class isn't generic.
+        # We don't want __parameters__ descriptor of a bare Python class.
         if isinstance(t, type):
             continue
         if hasattr(t, '__typing_subst__'):
