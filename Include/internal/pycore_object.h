@@ -287,6 +287,7 @@ extern int _PyObject_VisitInstanceAttributes(PyObject *self, visitproc visit, vo
 extern void _PyObject_ClearInstanceAttributes(PyObject *self);
 extern void _PyObject_FreeInstanceAttributes(PyObject *self);
 extern int _PyObject_IsInstanceDictEmpty(PyObject *);
+extern int _PyType_HasSubclasses(PyTypeObject *);
 extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
 
 // Access macro to the members which are floating "behind" the object

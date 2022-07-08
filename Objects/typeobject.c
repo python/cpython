@@ -370,6 +370,8 @@ _PyTypes_Fini(PyInterpreterState *interp)
 }
 
 
+static PyObject * lookup_subclasses(PyTypeObject *);
+
 void
 PyType_Modified(PyTypeObject *type)
 {
@@ -392,7 +394,7 @@ PyType_Modified(PyTypeObject *type)
         return;
     }
 
-    PyObject *subclasses = type->tp_subclasses;
+    PyObject *subclasses = lookup_subclasses(type);
     if (subclasses != NULL) {
         assert(PyDict_CheckExact(subclasses));
 
@@ -778,7 +780,7 @@ mro_hierarchy(PyTypeObject *type, PyObject *temp)
     Py_XDECREF(old_mro);
 
     // Avoid creating an empty list if there is no subclass
-    if (type->tp_subclasses != NULL) {
+    if (_PyType_HasSubclasses(type)) {
         /* Obtain a copy of subclasses list to iterate over.
 
            Otherwise type->tp_subclasses might be altered
@@ -4303,7 +4305,7 @@ type_dealloc_common(PyTypeObject *type)
 static void
 clear_static_tp_subclasses(PyTypeObject *type)
 {
-    if (type->tp_subclasses == NULL) {
+    if (!_PyType_HasSubclasses(type)) {
         return;
     }
 
@@ -4359,6 +4361,8 @@ _PyStaticType_Dealloc(PyTypeObject *type)
 }
 
 
+static void clear_subclasses(PyTypeObject *self);
+
 static void
 type_dealloc(PyTypeObject *type)
 {
@@ -4378,7 +4382,7 @@ type_dealloc(PyTypeObject *type)
     Py_XDECREF(type->tp_bases);
     Py_XDECREF(type->tp_mro);
     Py_XDECREF(type->tp_cache);
-    Py_XDECREF(type->tp_subclasses);
+    clear_subclasses(type);
 
     /* A type's tp_doc is heap allocated, unlike the tp_doc slots
      * of most other objects.  It's okay to cast it to char *.
@@ -4398,6 +4402,18 @@ type_dealloc(PyTypeObject *type)
 }
 
 
+static PyObject *
+lookup_subclasses(PyTypeObject *self)
+{
+    return self->tp_subclasses;
+}
+
+int
+_PyType_HasSubclasses(PyTypeObject *self)
+{
+    return lookup_subclasses(self) != NULL;
+}
+
 PyObject*
 _PyType_GetSubclasses(PyTypeObject *self)
 {
@@ -4406,7 +4422,7 @@ _PyType_GetSubclasses(PyTypeObject *self)
         return NULL;
     }
 
-    PyObject *subclasses = self->tp_subclasses;  // borrowed ref
+    PyObject *subclasses = lookup_subclasses(self);  // borrowed ref
     if (subclasses == NULL) {
         return list;
     }
@@ -6784,6 +6800,22 @@ _PyStaticType_InitBuiltin(PyTypeObject *self)
 }
 
 
+static PyObject *
+init_subclasses(PyTypeObject *self)
+{
+    self->tp_subclasses = PyDict_New();
+    return self->tp_subclasses;
+}
+
+static void
+clear_subclasses(PyTypeObject *self)
+{
+    // Delete the dictionary to save memory. _PyStaticType_Dealloc()
+    // callers also test if tp_subclasses is NULL to check if a static type
+    // has no subclass.
+    Py_CLEAR(self->tp_subclasses);
+}
+
 static int
 add_subclass(PyTypeObject *base, PyTypeObject *type)
 {
@@ -6800,9 +6832,9 @@ add_subclass(PyTypeObject *base, PyTypeObject *type)
     // Only get tp_subclasses after creating the key and value.
     // PyWeakref_NewRef() can trigger a garbage collection which can execute
     // arbitrary Python code and so modify base->tp_subclasses.
-    PyObject *subclasses = base->tp_subclasses;
+    PyObject *subclasses = lookup_subclasses(base);
     if (subclasses == NULL) {
-        base->tp_subclasses = subclasses = PyDict_New();
+        subclasses = init_subclasses(base);
         if (subclasses == NULL) {
             Py_DECREF(key);
             Py_DECREF(ref);
@@ -6872,7 +6904,7 @@ get_subclasses_key(PyTypeObject *type, PyTypeObject *base)
 static void
 remove_subclass(PyTypeObject *base, PyTypeObject *type)
 {
-    PyObject *subclasses = base->tp_subclasses;  // borrowed ref
+    PyObject *subclasses = lookup_subclasses(base);  // borrowed ref
     if (subclasses == NULL) {
         return;
     }
@@ -6888,10 +6920,7 @@ remove_subclass(PyTypeObject *base, PyTypeObject *type)
     Py_XDECREF(key);
 
     if (PyDict_Size(subclasses) == 0) {
-        // Delete the dictionary to save memory. _PyStaticType_Dealloc()
-        // callers also test if tp_subclasses is NULL to check if a static type
-        // has no subclass.
-        Py_CLEAR(base->tp_subclasses);
+        clear_subclasses(base);
     }
 }
 
@@ -8963,7 +8992,7 @@ recurse_down_subclasses(PyTypeObject *type, PyObject *attr_name,
     // It is safe to use a borrowed reference because update_subclasses() is
     // only used with update_slots_callback() which doesn't modify
     // tp_subclasses.
-    PyObject *subclasses = type->tp_subclasses;  // borrowed ref
+    PyObject *subclasses = lookup_subclasses(type);  // borrowed ref
     if (subclasses == NULL) {
         return 0;
     }
