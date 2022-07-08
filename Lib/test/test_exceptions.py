@@ -625,7 +625,7 @@ class ExceptionTests(unittest.TestCase):
         else:
             self.fail("No exception raised")
 
-    def test_invalid_set_attr(self):
+    def test_invalid_setattr(self):
         TE = TypeError
         exc = Exception()
         msg = "'int' object is not iterable"
@@ -637,7 +637,7 @@ class ExceptionTests(unittest.TestCase):
         msg = "exception context must be None or derive from BaseException"
         self.assertRaisesRegex(TE, msg, setattr, exc, '__context__', 1)
 
-    def test_invalid_del_attr(self):
+    def test_invalid_delattr(self):
         TE = TypeError
         try:
             raise IndexError(4)
