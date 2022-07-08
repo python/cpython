@@ -4738,7 +4738,7 @@ update_location_to_match_attr(struct compiler *c, expr_ty meth)
         // Make start location match attribute
         c->u->u_loc.lineno = meth->end_lineno;
         int len = (int)PyUnicode_GET_LENGTH(meth->v.Attribute.attr);
-        // The dot may or not be on this line. Don't try to include it in the
+        // We have no idea where the dot is. Don't try to include it in the
         // column span, it's more trouble than it's worth:
         if (len <= meth->end_col_offset) {
             //        |---- end_col_offset
