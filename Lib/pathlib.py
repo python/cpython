@@ -1,3 +1,10 @@
+"""Object-oriented filesystem paths.
+
+This module provides classes to represent abstract paths and concrete
+paths with operations that have semantics appropriate for different
+operating systems.
+"""
+
 import fnmatch
 import functools
 import io

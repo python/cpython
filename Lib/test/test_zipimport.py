@@ -460,12 +460,6 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         # PEP 302
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
-            find_mod = zi.find_module('spam')
-            self.assertIsNotNone(find_mod)
-            self.assertIsInstance(find_mod, zipimport.zipimporter)
-            self.assertFalse(find_mod.is_package('spam'))
-            load_mod = find_mod.load_module('spam')
-            self.assertEqual(find_mod.get_filename('spam'), load_mod.__file__)
 
             mod = zi.load_module(TESTPACK)
             self.assertEqual(zi.get_filename(TESTPACK), mod.__file__)
@@ -586,16 +580,6 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
         pkg_path = TEMP_ZIP + os.sep + packdir + TESTPACK2
         zi2 = zipimport.zipimporter(pkg_path)
-        # PEP 302
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            find_mod_dotted = zi2.find_module(TESTMOD)
-            self.assertIsNotNone(find_mod_dotted)
-            self.assertIsInstance(find_mod_dotted, zipimport.zipimporter)
-            self.assertFalse(zi2.is_package(TESTMOD))
-            load_mod = find_mod_dotted.load_module(TESTMOD)
-            self.assertEqual(
-                find_mod_dotted.get_filename(TESTMOD), load_mod.__file__)
 
         # PEP 451
         spec = zi2.find_spec(TESTMOD)

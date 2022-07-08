@@ -1456,7 +1456,7 @@ class QueueHandler(logging.Handler):
         # (if there's exception data), and also returns the formatted
         # message. We can then use this to replace the original
         # msg + args, as these might be unpickleable. We also zap the
-        # exc_info and exc_text attributes, as they are no longer
+        # exc_info, exc_text and stack_info attributes, as they are no longer
         # needed and, if not None, will typically not be pickleable.
         msg = self.format(record)
         # bpo-35726: make copy of record to avoid affecting other handlers in the chain.
@@ -1466,6 +1466,7 @@ class QueueHandler(logging.Handler):
         record.args = None
         record.exc_info = None
         record.exc_text = None
+        record.stack_info = None
         return record
 
     def emit(self, record):
