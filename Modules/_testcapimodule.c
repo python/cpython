@@ -45,7 +45,7 @@
 
 // Several parts of this module are broken out into files in _testcapi/.
 // Include definitions from there.
-#include "_testcapi/testcapimodule_parts.h"
+#include "_testcapi/parts.h"
 
 // Forward declarations
 static struct PyModuleDef _testcapimodule;

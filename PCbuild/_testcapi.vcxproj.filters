@@ -12,7 +12,7 @@
     <ClCompile Include="..\Modules\_testcapimodule.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_testcapi\test_vectorcall.c">
+    <ClCompile Include="..\Modules\_testcapi\vectorcall.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

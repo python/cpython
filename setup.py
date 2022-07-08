@@ -994,7 +994,7 @@ class PyBuildExt(build_ext):
 
     def detect_test_extensions(self):
         # Python C API test module
-        self.addext(Extension('_testcapi', ['_testcapimodule.c', '_testcapi/test_vectorcall.c']))
+        self.addext(Extension('_testcapi', ['_testcapimodule.c', '_testcapi/vectorcall.c']))
 
         # Python Internal C API test module
         self.addext(Extension('_testinternalcapi', ['_testinternalcapi.c']))
