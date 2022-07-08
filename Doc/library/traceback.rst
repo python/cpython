@@ -339,7 +339,9 @@ capture data for later printing in a lightweight fashion.
       creating the :class:`StackSummary` cheaper (which may be valuable if it
       may not actually get formatted). If *capture_locals* is ``True`` the
       local variables in each :class:`FrameSummary` are captured as object
-      representations.
+      representations. If, for some reason, a representation can not be
+      created (i.e. :func:`repr` fails), it is replaced with a placeholder
+      (``'<local repr() failed>'``).
 
    .. classmethod:: from_list(a_list)
 

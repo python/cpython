@@ -279,7 +279,8 @@ class FrameSummary:
         self._line = line
         if lookup_line:
             self.line
-        self.locals = {k: repr(v) for k, v in locals.items()} if locals else None
+        self.locals = {k: _safe_string(v, 'local', func=repr)
+            for k, v in locals.items()} if locals else None
         self.end_lineno = end_lineno
         self.colno = colno
         self.end_colno = end_colno
