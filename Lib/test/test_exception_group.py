@@ -758,6 +758,19 @@ class NestedExceptionGroupSplitTest(ExceptionGroupSplitTestBase):
         self.assertFalse(hasattr(match, '__notes__'))
         self.assertFalse(hasattr(rest, '__notes__'))
 
+    def test_drive_invalid_return_value(self):
+        class MyEg(ExceptionGroup):
+            def derive(self, excs):
+                return 42
+
+        excs = [TypeError(1), ValueError(2)]
+        eg = MyEg('eg', excs)
+        msg = "derive must return an instance of BaseExceptionGroup"
+        with self.assertRaisesRegex(TypeError, msg):
+            eg.split(TypeError)
+        with self.assertRaisesRegex(TypeError, msg):
+            eg.subgroup(TypeError)
+
 
 class NestedExceptionGroupSubclassSplitTest(ExceptionGroupSplitTestBase):
 
