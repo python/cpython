@@ -161,7 +161,7 @@ if 1:
         co = compile(s256, 'fn', 'exec')
         self.assertEqual(co.co_firstlineno, 1)
         lines = list(co.co_lines())
-        self.assertEqual(lines[0][2], None)
+        self.assertEqual(lines[0][2], 0)
         self.assertEqual(lines[1][2], 257)
 
     def test_literals_with_leading_zeroes(self):
@@ -1032,8 +1032,8 @@ if 1:
         def check_op_count(func, op, expected):
             actual = 0
             for instr in dis.Bytecode(func):
-                 if instr.opname == op:
-                     actual += 1
+                if instr.opname == op:
+                    actual += 1
             self.assertEqual(actual, expected)
 
         def load():
@@ -1090,6 +1090,8 @@ class TestSourcePositions(unittest.TestCase):
 
         # Check against the positions in the code object.
         for (line, end_line, col, end_col) in code.co_positions():
+            if line == 0:
+                continue # This is an artificial module-start line
             # If the offset is not None (indicating missing data), ensure that
             # it was part of one of the AST nodes.
             if line is not None:
@@ -1242,6 +1244,12 @@ class TestExpressionStackSize(unittest.TestCase):
         code = "def f(x):\n"
         code += "   x and x\n" * self.N
         self.check_stack_size(code)
+
+    def test_stack_3050(self):
+        M = 3050
+        code = "x," * M + "=t"
+        # This raised on 3.10.0 to 3.10.5
+        compile(code, "<foo>", "single")
 
 
 class TestStackSizeStability(unittest.TestCase):

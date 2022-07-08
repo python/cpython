@@ -1,0 +1,1 @@
+``_dbm`` module dependencies are now detected by configure.

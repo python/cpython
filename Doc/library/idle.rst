@@ -594,7 +594,7 @@ One may edit pasted code first.
 If one pastes more than one statement into Shell, the result will be a
 :exc:`SyntaxError` when multiple statements are compiled as if they were one.
 
-Lines containing`'RESTART'` mean that the user execution process has been
+Lines containing ``RESTART`` mean that the user execution process has been
 re-started.  This occurs when the user execution process has crashed,
 when one requests a restart on the Shell menu, or when one runs code
 in an editor window.
@@ -775,7 +775,9 @@ IDLE's standard stream replacements are not inherited by subprocesses
 created in the execution process, whether directly by user code or by
 modules such as multiprocessing.  If such subprocess use ``input`` from
 sys.stdin or ``print`` or ``write`` to sys.stdout or sys.stderr,
-IDLE should be started in a command line window.  The secondary subprocess
+IDLE should be started in a command line window.  (On Windows,
+use ``python`` or ``py`` rather than ``pythonw`` or ``pyw``.)
+The secondary subprocess
 will then be attached to that window for input and output.
 
 If ``sys`` is reset by user code, such as with ``importlib.reload(sys)``,
