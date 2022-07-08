@@ -398,7 +398,6 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     Py_ssize_t field_size = 0;
     int bitofs;
     PyObject *tmp;
-    int isPacked;
     int pack;
     Py_ssize_t ffi_ofs;
     int big_endian;
@@ -443,7 +442,6 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         return -1;
     }
     if (tmp) {
-        isPacked = 1;
         pack = _PyLong_AsInt(tmp);
         Py_DECREF(tmp);
         if (pack < 0) {
@@ -458,7 +456,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         }
     }
     else {
-        isPacked = 0;
+        /* Setting `_pack_ = 0` amounts to using the default alignment */
         pack = 0;
     }
 

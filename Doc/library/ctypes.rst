@@ -2481,6 +2481,7 @@ fields, or any other data types containing pointer type fields.
       An optional small integer that allows overriding the alignment of
       structure fields in the instance.  :attr:`_pack_` must already be defined
       when :attr:`_fields_` is assigned, otherwise it will have no effect.
+      Setting this attribute to 0 is the same as not setting it at all.
 
 
    .. attribute:: _anonymous_
