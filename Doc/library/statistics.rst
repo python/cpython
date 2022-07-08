@@ -38,8 +38,9 @@ example: ``map(float, input_data)``.
 Some datasets use ``NaN`` (not a number) values to represent missing data.
 Since NaNs have unusual comparison semantics, they cause surprising or
 undefined behaviors in the statistics functions that sort data or that count
-occurrences.  The functions affected are median, median_low, median_high,
-median_grouped, mode, multimode, and quantiles.  The NaN values should be
+occurrences.  The functions affected are ``median()``, ``median_low()``,                     
+``median_high()``, ``median_grouped()``, ``mode()``, ``multimode()``,                                                     
+and ``quantiles()``.  The ``NaN`` values should be
 stripped before calling these functions::
 
     >>> from statistics import median
