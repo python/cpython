@@ -763,8 +763,7 @@ class NestedExceptionGroupSplitTest(ExceptionGroupSplitTestBase):
             def derive(self, excs):
                 return 42
 
-        excs = [TypeError(1), ValueError(2)]
-        eg = MyEg('eg', excs)
+        eg = MyEg('eg', [TypeError(1), ValueError(2)])
         msg = "derive must return an instance of BaseExceptionGroup"
         with self.assertRaisesRegex(TypeError, msg):
             eg.split(TypeError)
