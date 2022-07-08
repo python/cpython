@@ -15,12 +15,12 @@ _thread_pool = None
 
 
 def _release():
-    nonlocal _thread_pool
+    global _thread_pool
     _thread_pool = None
 
 
 def init():
-    nonlocal _thread_pool
+    global _thread_pool
     _thread_pool = ThreadPoolExecutor()
     unittest.addModuleCleanup(_release)
 
