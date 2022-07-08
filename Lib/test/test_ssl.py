@@ -3020,8 +3020,8 @@ class ThreadedTests(unittest.TestCase):
         client_context, server_context, hostname = testing_context()
 
         with Server(context=server_context, client_fails=True) as address:
-             with client_context.wrap_socket(socket.socket(),
-                                             server_hostname="invalid") as s:
+            with client_context.wrap_socket(socket.socket(),
+                                            server_hostname="invalid") as s:
                 with self.assertRaisesRegex(
                         ssl.CertificateError,
                         "Hostname mismatch, certificate is not valid for 'invalid'."):

@@ -15,12 +15,12 @@ _thread_pool = None
 
 
 def _release():
-    global _thread_pool
+    nonlocal _thread_pool
     _thread_pool = None
 
 
 def init():
-    global _thread_pool
+    nonlocal _thread_pool
     _thread_pool = ThreadPoolExecutor()
     unittest.addModuleCleanup(_release)
 
@@ -277,12 +277,19 @@ class Server:
 
         The method blocks until a server is ready to accept clients.
 
-        When client_func raises an exception, all server-side sockets are
-        closed.
+        The server:
 
-        If a client_func returns a value, it got stored as a ``Server.result``
-        field. Since ``with ... as`` section keeps its parameter alive, the
-        field can be accessed outside of the section.
+        1. consequently waits for client_count clients
+        2. Calls client_func for each of them
+        3. Closes client connection when the function returns
+        4. Collects returned values into Server.result list
+        5. Terminates a server
+        6. Allows a context manager to exit
+        7. Since ``with ... as`` section keeps its parameter alive, the field
+           can be accessed outside of the section.
+
+        If client_func raises an exception, the server is stopped, all pending
+        clients are discarded and the context manager raises an exception.
 
         Args:
             client_func: a function called in a dedicated thread for each new
@@ -302,7 +309,7 @@ class Server:
 
         Throws:
             When client_func throws, this method catches the exception, wraps
-            it into RuntimeError("server-side error") and rethrows.
+            it into RuntimeError('server-side error') and rethrows.
         """
         server_socket = socket()
         self._port = bind_port(server_socket)
