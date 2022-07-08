@@ -173,6 +173,24 @@ is_hashable(PyObject *obj)
     return 0;
 }
 
+static inline Py_hash_t
+get_hash_with_fallback(PyObject *obj)
+{
+    Py_hash_t hash = PyObject_Hash(obj);
+    if (hash < 0) {
+        if (!PyErr_ExceptionMatches(PyExc_TypeError) ||
+            is_hashable((PyObject *)obj))
+        {
+            PyErr_WarnEx(PyExc_RuntimeWarning, "failed to hash object", 1);
+        }
+        // Fall back to object.__hash__().
+        PyErr_Clear();
+        hash = _Py_HashPointer(obj);
+        assert(!PyErr_Occurred());
+    }
+    return hash;
+}
+
 
 /*
  * finds the beginning of the docstring's introspection signature.
@@ -4456,17 +4474,11 @@ lookup_subclasses(PyTypeObject *self)
     if (interp->types.subclasses == NULL) {
         return NULL;
     }
-    PyObject *subclasses = PyDict_GetItemWithError(interp->types.subclasses,
-                                                   (PyObject *)self);
-    // We must handle the rare case where the metaclass
-    // of the given type makes it unhashable.
-    if (subclasses == NULL && PyErr_Occurred() &&
-        PyErr_ExceptionMatches(PyExc_TypeError) &&
-        !is_hashable((PyObject *)self))
-    {
-        PyErr_Clear();
-    }
-    return subclasses;
+    /* We must handle the rare case where the metaclass
+       of the given type makes it unhashable. */
+    Py_hash_t hash = get_hash_with_fallback((PyObject *)self);
+    return _PyDict_GetItem_KnownHash(interp->types.subclasses,
+                                     (PyObject *)self, hash);
 }
 
 int
@@ -6890,8 +6902,11 @@ init_subclasses(PyTypeObject *self)
             return NULL;
         }
     }
-    int res = PyDict_SetItem(interp->types.subclasses,
-                             (PyObject *)self, subclasses);
+    /* We must handle the rare case where the metaclass
+       of the given type makes it unhashable. */
+    Py_hash_t hash = get_hash_with_fallback((PyObject *)self);
+    int res = _PyDict_SetItem_KnownHash(interp->types.subclasses,
+                                        (PyObject *)self, subclasses, hash);
     Py_DECREF(subclasses);
     return res == 0 ? subclasses : NULL;
 }
@@ -6899,6 +6914,9 @@ init_subclasses(PyTypeObject *self)
 static void
 clear_subclasses(PyTypeObject *self)
 {
+    /* Delete the dictionary to save memory. _PyStaticType_Dealloc()
+       callers also test if tp_subclasses is NULL to check if a static type
+       has no subclass. */
     // Heap types are guaranteed to be per-interpreter.
     if (self->tp_flags & Py_TPFLAGS_HEAPTYPE) {
         Py_CLEAR(self->tp_subclasses);
@@ -6908,10 +6926,12 @@ clear_subclasses(PyTypeObject *self)
     if (interp->types.subclasses == NULL) {
         return;
     }
-    // Delete the dictionary to save memory. _PyStaticType_Dealloc()
-    // callers also test if tp_subclasses is NULL to check if a static type
-    // has no subclass.
-    if (PyDict_DelItem(interp->types.subclasses, (PyObject *)self) != 0) {
+    /* We must handle the rare case where the metaclass
+       of the given type makes it unhashable. */
+    Py_hash_t hash = get_hash_with_fallback((PyObject *)self);
+    int res = _PyDict_DelItem_KnownHash(interp->types.subclasses,
+                                        (PyObject *)self, hash);
+    if (res != 0) {
         PyErr_Clear();
         return;
     }
