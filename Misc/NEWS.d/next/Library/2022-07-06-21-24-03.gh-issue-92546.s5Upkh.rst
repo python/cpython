@@ -1,2 +1,2 @@
 An undocumented ``python -m pprint`` benchmark is moved into ``from_stdlib``
-suit of pyperformance. Patch by Oleg Iarygin.
+suite of pyperformance. Patch by Oleg Iarygin.
