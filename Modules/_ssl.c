@@ -190,7 +190,6 @@ enum py_ssl_cert_requirements {
 };
 
 enum py_ssl_version {
-    PY_SSL_VERSION_TLS=2, /* deprecated */
     PY_SSL_VERSION_TLS_CLIENT=0x10,
     PY_SSL_VERSION_TLS_SERVER,
 };
@@ -3055,7 +3054,6 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     }
 #ifdef PY_SSL_MIN_PROTOCOL
     switch(proto_version) {
-    case PY_SSL_VERSION_TLS:
     case PY_SSL_VERSION_TLS_CLIENT:
     case PY_SSL_VERSION_TLS_SERVER:
         result = SSL_CTX_set_min_proto_version(ctx, PY_SSL_MIN_PROTOCOL);
@@ -3356,9 +3354,8 @@ set_min_max_proto_version(PySSLContext *self, PyObject *arg, int what)
     }
 
     switch(self->protocol) {
-    case PY_SSL_VERSION_TLS_CLIENT:  /* fall through */
+    case PY_SSL_VERSION_TLS_CLIENT:
     case PY_SSL_VERSION_TLS_SERVER:  /* fall through */
-    case PY_SSL_VERSION_TLS:
         break;
     default:
         PyErr_SetString(
