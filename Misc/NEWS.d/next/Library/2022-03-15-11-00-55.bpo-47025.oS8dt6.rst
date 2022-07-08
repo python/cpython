@@ -1,1 +1,1 @@
-support bytes on sys.path in FileFinder
+support bytes on sys.path in FileFinder. Patch by Thomas Grainger.
