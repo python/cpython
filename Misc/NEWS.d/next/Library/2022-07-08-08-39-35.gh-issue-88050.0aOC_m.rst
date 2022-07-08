@@ -1,0 +1,1 @@
+Fix :mod:`asyncio` subprocess to kill process cleanly when process is blocked and avoid ``RuntimeError`` when loop is closed. Patch by Kumar Aditya.
