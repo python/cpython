@@ -3003,7 +3003,6 @@ class ThreadedTests(unittest.TestCase):
                         ssl.CertificateError,
                         "Hostname mismatch, certificate is not valid for 'invalid'."):
                     s.connect(address)
-                    self.wait_connection(s)
 
     def test_check_hostname_incorrect(self):
         if sys.platform == 'darwin':
