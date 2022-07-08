@@ -581,6 +581,7 @@ _PyStructSequence_FiniType(PyTypeObject *type)
 
     // Cannot delete a type if it still has subclasses
     if (_PyType_HasSubclasses(type)) {
+        PyErr_Clear();
         return;
     }
 

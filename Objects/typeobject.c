@@ -408,6 +408,9 @@ PyType_Modified(PyTypeObject *type)
             PyType_Modified(subclass);
         }
     }
+    else if (PyErr_Occurred()) {
+        PyErr_Clear();
+    }
 
     type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
     type->tp_version_tag = 0; /* 0 is not a valid version tag */
@@ -780,7 +783,8 @@ mro_hierarchy(PyTypeObject *type, PyObject *temp)
     Py_XDECREF(old_mro);
 
     // Avoid creating an empty list if there is no subclass
-    if (_PyType_HasSubclasses(type)) {
+    res = _PyType_HasSubclasses(type);
+    if (res > 0) {
         /* Obtain a copy of subclasses list to iterate over.
 
            Otherwise type->tp_subclasses might be altered
@@ -4309,6 +4313,7 @@ clear_static_tp_subclasses(PyTypeObject *type)
 {
     PyObject *subclasses = lookup_subclasses(type);
     if (subclasses == NULL) {
+        PyErr_Clear();
         return;
     }
 
@@ -4426,14 +4431,17 @@ lookup_subclasses(PyTypeObject *self)
     if (interp->types.subclasses == NULL) {
         return NULL;
     }
-    // XXX Use PyDict_GetItemWithError()?
-    return PyDict_GetItem(interp->types.subclasses, (PyObject *)self);
+    return PyDict_GetItemWithError(interp->types.subclasses, (PyObject *)self);
 }
 
 int
 _PyType_HasSubclasses(PyTypeObject *self)
 {
-    return lookup_subclasses(self) != NULL;
+    PyObject *subclasses = lookup_subclasses(self);
+    if (subclasses == NULL) {
+        return PyErr_Occurred() ? -1 : 0;
+    }
+    return 1;
 }
 
 PyObject*
@@ -4446,6 +4454,9 @@ _PyType_GetSubclasses(PyTypeObject *self)
 
     PyObject *subclasses = lookup_subclasses(self);  // borrowed ref
     if (subclasses == NULL) {
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
         return list;
     }
     assert(PyDict_CheckExact(subclasses));
@@ -6892,6 +6903,9 @@ add_subclass(PyTypeObject *base, PyTypeObject *type)
     // arbitrary Python code and so modify base->tp_subclasses.
     PyObject *subclasses = lookup_subclasses(base);
     if (subclasses == NULL) {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
         subclasses = init_subclasses(base);
         if (subclasses == NULL) {
             Py_DECREF(key);
@@ -6967,6 +6981,7 @@ remove_subclass(PyTypeObject *base, PyTypeObject *type)
 {
     PyObject *subclasses = lookup_subclasses(base);  // borrowed ref
     if (subclasses == NULL) {
+        PyErr_Clear();
         return;
     }
     assert(PyDict_CheckExact(subclasses));
@@ -9055,7 +9070,7 @@ recurse_down_subclasses(PyTypeObject *type, PyObject *attr_name,
     // tp_subclasses.
     PyObject *subclasses = lookup_subclasses(type);  // borrowed ref
     if (subclasses == NULL) {
-        return 0;
+        return PyErr_Occurred() ? -1 : 0;
     }
     assert(PyDict_CheckExact(subclasses));
 
