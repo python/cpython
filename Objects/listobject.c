@@ -1052,8 +1052,9 @@ list_pop_impl(PyListObject *self, Py_ssize_t index)
             memmove(&items[index], &items[index+1], (Py_SIZE(self)-1-index)* sizeof(PyObject *));
         status = list_resize(self, Py_SIZE(self) - 1);
     }
-    if (status >= 0)
-        return v; /* and v now owns the reference the list had */
+    if (status >= 0) {
+        return v; // and v now owns the reference the list had 
+    }
     else {
         // list resize failed, need to restore
         memmove(&items[index+1], &items[index], (Py_SIZE(self)-1-index)* sizeof(PyObject *));
