@@ -51,6 +51,7 @@ struct types_state {
     struct type_cache type_cache;
     size_t num_builtins_initialized;
     static_builtin_state builtins[_Py_MAX_STATIC_BUILTIN_TYPES];
+    PyObject *subclasses;
 };
 
 

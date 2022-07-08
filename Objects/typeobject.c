@@ -4302,10 +4302,13 @@ type_dealloc_common(PyTypeObject *type)
 }
 
 
+static void clear_subclasses(PyTypeObject *self);
+
 static void
 clear_static_tp_subclasses(PyTypeObject *type)
 {
-    if (!_PyType_HasSubclasses(type)) {
+    PyObject *subclasses = lookup_subclasses(type);
+    if (subclasses == NULL) {
         return;
     }
 
@@ -4329,9 +4332,19 @@ clear_static_tp_subclasses(PyTypeObject *type)
        going to leak.  This mostly only affects embedding scenarios.
      */
 
-    // For now we just clear tp_subclasses.
+    // For now we just do a sanity check and then clear tp_subclasses.
+    Py_ssize_t i = 0;
+    PyObject *key, *ref;  // borrowed ref
+    while (PyDict_Next(subclasses, &i, &key, &ref)) {
+        PyTypeObject *subclass = subclass_from_ref(ref);  // borrowed
+        if (subclass == NULL) {
+            continue;
+        }
+        // All static builtin subtypes should have been finalized already.
+        assert(!(subclass->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
+    }
 
-    Py_CLEAR(type->tp_subclasses);
+    clear_subclasses(type);
 }
 
 void
@@ -4360,8 +4373,6 @@ _PyStaticType_Dealloc(PyTypeObject *type)
     }
 }
 
-
-static void clear_subclasses(PyTypeObject *self);
 
 static void
 type_dealloc(PyTypeObject *type)
@@ -4405,11 +4416,17 @@ type_dealloc(PyTypeObject *type)
 static PyObject *
 lookup_subclasses(PyTypeObject *self)
 {
+    // XXX Drop tp_subclasses?
     if (self->tp_flags & Py_TPFLAGS_HEAPTYPE) {
         return self->tp_subclasses;
     }
     // For static types we store them per-interpreter.
-    return self->tp_subclasses;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->types.subclasses == NULL) {
+        return NULL;
+    }
+    // XXX Use PyDict_GetItemWithError()?
+    return PyDict_GetItem(interp->types.subclasses, (PyObject *)self);
 }
 
 int
@@ -6811,8 +6828,24 @@ init_subclasses(PyTypeObject *self)
         self->tp_subclasses = PyDict_New();
         return self->tp_subclasses;
     }
-    self->tp_subclasses = PyDict_New();
-    return self->tp_subclasses;
+    /* Each interpreter has a dict mapping types to __subclasses__.
+       We initialize that dict (if necessary), as well as the type's dict. */
+    PyObject *subclasses = PyDict_New();
+    if (subclasses == NULL) {
+        return NULL;
+    }
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->types.subclasses == NULL) {
+        interp->types.subclasses = PyDict_New();
+        if (interp->types.subclasses == NULL) {
+            Py_DECREF(subclasses);
+            return NULL;
+        }
+    }
+    int res = PyDict_SetItem(interp->types.subclasses,
+                             (PyObject *)self, subclasses);
+    Py_DECREF(subclasses);
+    return res == 0 ? subclasses : NULL;
 }
 
 static void
@@ -6825,7 +6858,17 @@ clear_subclasses(PyTypeObject *self)
         Py_CLEAR(self->tp_subclasses);
         return;
     }
-    Py_CLEAR(self->tp_subclasses);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->types.subclasses == NULL) {
+        return;
+    }
+    if (PyDict_DelItem(interp->types.subclasses, (PyObject *)self) != 0) {
+        PyErr_Clear();
+        return;
+    }
+    if (PyDict_GET_SIZE(interp->types.subclasses) == 0) {
+        Py_CLEAR(interp->types.subclasses);
+    }
 }
 
 static int
@@ -6903,10 +6946,13 @@ get_subclasses_key(PyTypeObject *type, PyTypeObject *base)
        We fall back to manually traversing the values. */
     Py_ssize_t i = 0;
     PyObject *ref;  // borrowed ref
-    while (PyDict_Next((PyObject *)base->tp_subclasses, &i, &key, &ref)) {
-        PyTypeObject *subclass = subclass_from_ref(ref);  // borrowed
-        if (subclass == type) {
-            return Py_NewRef(key);
+    PyObject *subclasses = lookup_subclasses(base);
+    if (subclasses != NULL) {
+        while (PyDict_Next(subclasses, &i, &key, &ref)) {
+            PyTypeObject *subclass = subclass_from_ref(ref);  // borrowed
+            if (subclass == type) {
+                return Py_NewRef(key);
+            }
         }
     }
     /* It wasn't found. */
