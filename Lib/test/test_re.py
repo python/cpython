@@ -2407,6 +2407,21 @@ class ReTests(unittest.TestCase):
         self.assertTrue(template_re1.match('ahoy'))
         self.assertFalse(template_re1.match('nope'))
 
+    def test_regression_gh94675(self):
+        start = time.perf_counter()
+        pattern = re.compile(r'(?<=[({}])(((//[^\n]*)?[\n])([\000-\040])*)*'
+                             r'((/[^/\[\n]*(([^\n]|(\[\n]*(]*)*\]))'
+                             r'[^/\[]*)*/))((((//[^\n]*)?[\n])'
+                             r'([\000-\040]|(/\*[^*]*\*+'
+                             r'([^/*]\*+)*/))*)+(?=[^\000-\040);\]}]))')
+        input_js = '''a(function() {
+            ///////////////////////////////////////////////////////////////////
+        });'''
+        _ = pattern.sub('', input_js)
+        t = time.perf_counter() - start
+        # Without optimization it takes 0.017 second on my computer.
+        self.assertLess(t, 0.5)
+
 
 def get_debug_out(pat):
     with captured_stdout() as out:

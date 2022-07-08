@@ -1,0 +1,1 @@
+Add a regreesion test for :mod:`re` exponencional slowdon when using rjsmin.
