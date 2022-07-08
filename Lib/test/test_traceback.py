@@ -2522,7 +2522,8 @@ class TestTracebackException(unittest.TestCase):
         exc = traceback.TracebackException(
             Exception, e, tb, capture_locals=True)
         self.assertEqual(
-            exc.stack[0].locals, {'something': '1', 'other': "'string'", 'unrepresentable': '<local repr() failed>'})
+            exc.stack[0].locals,
+            {'something': '1', 'other': "'string'", 'unrepresentable': '<local repr() failed>'})
 
     def test_no_locals(self):
         linecache.updatecache('/foo.py', globals())
