@@ -48,7 +48,7 @@ stripped before calling these functions::
 
     >>> data = [20.7, float('NaN'),19.2, 18.3, float('NaN'), 14.4]
     >>> sorted(data)  # This has surprising behavior
-    >>> [20.7, nan, 14.4, 18.3, 19.2, nan]
+    [20.7, nan, 14.4, 18.3, 19.2, nan]
     >>> median(data)  # This result is unexpected
     16.35
 
