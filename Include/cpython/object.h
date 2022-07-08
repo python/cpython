@@ -218,7 +218,7 @@ struct _typeobject {
     PyObject *tp_bases;
     PyObject *tp_mro; /* method resolution order */
     PyObject *tp_cache; /* no longer used */
-    PyObject *tp_subclasses;  /* not used for static types */
+    PyObject *tp_subclasses;  /* no longer used */
     PyObject *tp_weaklist;
     destructor tp_del;
 
