@@ -1053,12 +1053,8 @@ class BasicSocketTests(unittest.TestCase):
                 s.connect(address)
                 self.assertEqual(s.recv(0), b"")
                 self.assertEqual(s.send(b""), 0)
-                # A temporary workaround for delayed tlsv1.3 session ticket
-                # eachange; the proper fix will be merges after this PR because
-                # it hangs test_session_handling.
-                #
-                # This problem manufested before as well but was just logged
-                # andsilenced by a server thread.
+                # The same motivalion as behind self.wait_connection but
+                # without sending any data.
                 s.unwrap().close()
 
 
@@ -2849,6 +2845,16 @@ def try_protocol_combo(server_protocol, client_protocol, expect_success,
 
 class ThreadedTests(unittest.TestCase):
 
+    def wait_connection(self, socket):
+        """Force a socket to immediately initiate and process a TLS handshake.
+
+        TLS 1.3 delays session ticket exchange until some data are sent. So we
+        need to dend some data to avoid ConnectionAbortedError ("An established
+        connection was aborted by the software in your host machine") caused
+        by closing half-open TLS connection.
+        """
+        socket.write(b'')
+
     def test_echo(self):
         """Basic test of an SSL client connecting to a server"""
         if support.verbose:
@@ -2980,6 +2986,7 @@ class ThreadedTests(unittest.TestCase):
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
                 s.connect(address)
+                self.wait_connection(s)
                 cert = s.getpeercert()
                 self.assertTrue(cert, "Can't get peer certificate.")
 
@@ -2996,6 +3003,7 @@ class ThreadedTests(unittest.TestCase):
                         ssl.CertificateError,
                         "Hostname mismatch, certificate is not valid for 'invalid'."):
                     s.connect(address)
+                    self.wait_connection(s)
 
     def test_check_hostname_incorrect(self):
         if sys.platform == 'darwin':
@@ -3054,6 +3062,7 @@ class ThreadedTests(unittest.TestCase):
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
                 s.connect(address)
+                self.wait_connection(s)
                 cert = s.getpeercert()
                 self.assertTrue(cert, "Can't get peer certificate.")
                 cipher = s.cipher()[0].split('-')
@@ -3079,6 +3088,7 @@ class ThreadedTests(unittest.TestCase):
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
                 s.connect(address)
+                self.wait_connection(s)
                 cert = s.getpeercert()
                 self.assertTrue(cert, "Can't get peer certificate.")
                 cipher = s.cipher()[0].split('-')
@@ -3911,6 +3921,7 @@ class ThreadedTests(unittest.TestCase):
                     socket.socket(),
                     server_hostname=hostname) as s:
                 s.connect(address)
+                self.wait_connection(s)
                 # get the data
                 cb_data = s.get_channel_binding("tls-unique")
                 if support.verbose:
@@ -4296,6 +4307,7 @@ class ThreadedTests(unittest.TestCase):
                 self.assertEqual(s.session, None)
                 self.assertEqual(s.session_reused, None)
                 s.connect(address)
+                self.wait_connection(s)
                 session = s.session
                 self.assertTrue(session)
                 with self.assertRaises(TypeError) as e:
@@ -4305,6 +4317,7 @@ class ThreadedTests(unittest.TestCase):
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
                 s.connect(address)
+                self.wait_connection(s)
                 # cannot set session after handshake
                 with self.assertRaises(ValueError) as e:
                     s.session = session
@@ -4317,6 +4330,7 @@ class ThreadedTests(unittest.TestCase):
                 # connection was established
                 s.session = session
                 s.connect(address)
+                self.wait_connection(s)
                 self.assertEqual(s.session.id, session.id)
                 self.assertEqual(s.session, session)
                 self.assertEqual(s.session_reused, True)

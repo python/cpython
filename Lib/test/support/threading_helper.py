@@ -279,7 +279,7 @@ class Server:
 
         The server:
 
-        1. consequently waits for client_count clients
+        1. Consequently waits for client_count clients
         2. Calls client_func for each of them
         3. Closes client connection when the function returns
         4. Collects returned values into Server.result list
