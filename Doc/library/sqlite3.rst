@@ -496,8 +496,8 @@ Connection Objects
       SQLite 3.8.3 or higher, :exc:`NotSupportedError` will be raised if used
       with older versions.
 
-      The function can return any of the types supported by SQLite: bytes, str, int,
-      float and ``None``.
+      The function can return any of
+      :ref:`the types natively supported by SQLite <sqlite3-types>`.
 
       .. versionchanged:: 3.8
          The *deterministic* parameter was added.
@@ -516,8 +516,8 @@ Connection Objects
       any number of arguments), and a ``finalize`` method which will return the
       final result of the aggregate.
 
-      The ``finalize`` method can return any of the types supported by SQLite:
-      bytes, str, int, float and ``None``.
+      The ``finalize`` method can return any of
+      :ref:`the types natively supported by SQLite <sqlite3-types>`.
 
       Example:
 
@@ -537,10 +537,10 @@ Connection Objects
 
       ``step`` and ``value`` accept *num_params* number of parameters,
       unless *num_params* is ``-1``, in which case they may take any number of
-      arguments.  ``finalize`` and ``value`` can return any of the types
-      supported by SQLite:
-      :class:`bytes`, :class:`str`, :class:`int`, :class:`float`, and
-      :const:`None`.  Call :meth:`create_window_function` with
+      arguments.
+      ``finalize`` and ``value`` can return any of
+      :ref:`the types natively supported by SQLite <sqlite3-types>`.
+      Call :meth:`create_window_function` with
       *aggregate_class* set to :const:`None` to clear window function *name*.
 
       Aggregate window functions are supported by SQLite 3.25.0 and higher.
@@ -1139,6 +1139,16 @@ Blob Objects
       end).
 
 
+PrepareProtocol Objects
+-----------------------
+
+.. class:: PrepareProtocol
+
+   The PrepareProtocol type's single purpose is to act as a :pep:`246` style
+   adaption protocol for objects that can :ref:`adapt themselves
+   <sqlite3-conform>` to :ref:`native SQLite types <sqlite3-types>`.
+
+
 .. _sqlite3-exceptions:
 
 Exceptions
@@ -1296,6 +1306,8 @@ it may make sense to enable that type to adapt itself.
 As an application developer, it may make more sense to take direct control by
 registering custom adapter functions.
 
+
+.. _sqlite3-conform:
 
 Letting your object adapt itself
 """"""""""""""""""""""""""""""""
