@@ -6432,10 +6432,10 @@ fail:
 static void
 _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
-    PyObject **base = (PyObject **)frame;
     // Make sure that this is, indeed, the top frame. We can't check this in
     // _PyThreadState_PopFrame, since f_code is already cleared at that point:
-    assert(base + frame->f_code->co_framesize == tstate->datastack_top);
+    assert((PyObject **)frame + frame->f_code->co_framesize ==
+           tstate->datastack_top);
     tstate->recursion_remaining--;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     assert(frame->owner == FRAME_OWNED_BY_THREAD);
