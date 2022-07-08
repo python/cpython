@@ -4464,6 +4464,12 @@ type_dealloc(PyTypeObject *type)
 static PyObject *
 lookup_subclasses(PyTypeObject *self)
 {
+    // XXX Drop tp_subclasses?
+    // Heap types are guaranteed to be per-interpreter.
+    if (self->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+        return self->tp_subclasses;
+    }
+    // For static types we store them per-interpreter.
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->types.subclasses == NULL) {
         return NULL;
@@ -6877,6 +6883,11 @@ _PyStaticType_InitBuiltin(PyTypeObject *self)
 static PyObject *
 init_subclasses(PyTypeObject *self)
 {
+    // Heap types are guaranteed to be per-interpreter.
+    if (self->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+        self->tp_subclasses = PyDict_New();
+        return self->tp_subclasses;
+    }
     PyObject *subclasses = PyDict_New();
     if (subclasses == NULL) {
         return NULL;
@@ -6904,6 +6915,11 @@ clear_subclasses(PyTypeObject *self)
     /* Delete the dictionary to save memory. _PyStaticType_Dealloc()
        callers also test if tp_subclasses is NULL to check if a static type
        has no subclass. */
+    // Heap types are guaranteed to be per-interpreter.
+    if (self->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+        Py_CLEAR(self->tp_subclasses);
+        return;
+    }
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->types.subclasses == NULL) {
         return;
