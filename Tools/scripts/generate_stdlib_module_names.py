@@ -7,10 +7,11 @@ import subprocess
 import sys
 import sysconfig
 
+from check_extension_modules import ModuleChecker
+
 
 SRC_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 STDLIB_PATH = os.path.join(SRC_DIR, 'Lib')
-MODULES_SETUP = os.path.join(SRC_DIR, 'Modules', 'Setup')
 SETUP_PY = os.path.join(SRC_DIR, 'setup.py')
 
 IGNORE = {
@@ -40,23 +41,6 @@ IGNORE = {
     'xxlimited_35',
     'xxsubtype',
 }
-
-# Windows extension modules
-WINDOWS_MODULES = (
-    '_msi',
-    '_overlapped',
-    '_testconsole',
-    '_winapi',
-    'msvcrt',
-    'nt',
-    'winreg',
-    'winsound'
-)
-
-# macOS extension modules
-MACOS_MODULES = (
-    '_scproxy',
-)
 
 # Pure Python modules (Lib/*.py)
 def list_python_modules(names):
@@ -89,28 +73,11 @@ def list_setup_extensions(names):
     names |= set(extensions)
 
 
-# Built-in and extension modules built by Modules/Setup
+# Built-in and extension modules built by Modules/Setup*
+# includes Windows and macOS extensions.
 def list_modules_setup_extensions(names):
-    assign_var = re.compile("^[A-Z]+=")
-
-    with open(MODULES_SETUP, encoding="utf-8") as modules_fp:
-        for line in modules_fp:
-            # Strip comment
-            line = line.partition("#")[0]
-            line = line.rstrip()
-            if not line:
-                continue
-            if assign_var.match(line):
-                # Ignore "VAR=VALUE"
-                continue
-            if line in ("*disabled*", "*shared*"):
-                continue
-            parts = line.split()
-            if len(parts) < 2:
-                continue
-            # "errno errnomodule.c" => write "errno"
-            name = parts[0]
-            names.add(name)
+    checker = ModuleChecker()
+    names.update(checker.list_module_names(all=True))
 
 
 # List frozen modules of the PyImport_FrozenModules list (Python/frozen.c).
@@ -134,7 +101,7 @@ def list_frozen(names):
 
 
 def list_modules():
-    names = set(sys.builtin_module_names) | set(WINDOWS_MODULES) | set(MACOS_MODULES)
+    names = set(sys.builtin_module_names)
     list_modules_setup_extensions(names)
     list_setup_extensions(names)
     list_packages(names)
