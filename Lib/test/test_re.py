@@ -1,6 +1,8 @@
 from test.support import (gc_collect, bigmemtest, _2G,
                           cpython_only, captured_stdout,
-                          check_disallow_instantiation, is_emscripten, is_wasi)
+                          check_disallow_instantiation, is_emscripten, is_wasi,
+                          SHORT_TIMEOUT)
+import multiprocessing
 import locale
 import re
 import string
@@ -2408,7 +2410,6 @@ class ReTests(unittest.TestCase):
         self.assertFalse(template_re1.match('nope'))
 
     def test_regression_gh94675(self):
-        start = time.perf_counter()
         pattern = re.compile(r'(?<=[({}])(((//[^\n]*)?[\n])([\000-\040])*)*'
                              r'((/[^/\[\n]*(([^\n]|(\[\n]*(]*)*\]))'
                              r'[^/\[]*)*/))((((//[^\n]*)?[\n])'
@@ -2417,10 +2418,15 @@ class ReTests(unittest.TestCase):
         input_js = '''a(function() {
             ///////////////////////////////////////////////////////////////////
         });'''
-        _ = pattern.sub('', input_js)
-        t = time.perf_counter() - start
-        # Without optimization it takes 0.017 second on my computer.
-        self.assertLess(t, 0.5)
+        p = multiprocessing.Process(target=pattern.sub, args=('', input_js))
+        p.start()
+        p.join(SHORT_TIMEOUT)
+        try:
+            self.assertFalse(p.is_alive(), 'pattern.sub() timed out')
+        finally:
+            if p.is_alive():
+                p.terminate()
+                p.join()
 
 
 def get_debug_out(pat):
