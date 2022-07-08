@@ -1,0 +1,1 @@
+Make FrameSummary robust to unrepresentable values.
