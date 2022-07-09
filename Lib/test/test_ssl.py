@@ -2857,11 +2857,7 @@ class ThreadedTests(unittest.TestCase):
         <https://www.thesslstore.com/blog/tls-1-3-handshake-tls-1-2/>.
         """
         echo_message = b'hi'
-        print('******************* forcing the handshake')
         socket.write(echo_message)
-        print('******************* sent')
-        socket.read(len(echo_message))
-        print('******************* received')
 
     def test_echo(self):
         """Basic test of an SSL client connecting to a server"""
