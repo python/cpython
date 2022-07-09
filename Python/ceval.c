@@ -6370,7 +6370,7 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
     }
     if (initialize_locals(tstate, func, localsarray, args, argcount, kwnames)) {
         assert(frame->owner != FRAME_OWNED_BY_GENERATOR);
-        _PyFrame_Clear(frame);
+        _PyEvalFrameClearAndPop(tstate, frame);
         return NULL;
     }
     return frame;
@@ -6392,6 +6392,10 @@ fail:
 static void
 _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
+    // Make sure that this is, indeed, the top frame. We can't check this in
+    // _PyThreadState_PopFrame, since f_code is already cleared at that point:
+    assert((PyObject **)frame + frame->f_code->co_nlocalsplus +
+        frame->f_code->co_stacksize + FRAME_SPECIALS_SIZE == tstate->datastack_top);
     tstate->recursion_remaining--;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     assert(frame->owner == FRAME_OWNED_BY_THREAD);
