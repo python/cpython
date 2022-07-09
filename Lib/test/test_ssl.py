@@ -2856,8 +2856,9 @@ class ThreadedTests(unittest.TestCase):
         For more details on how TLS 1.3 changed the handshake, see
         <https://www.thesslstore.com/blog/tls-1-3-handshake-tls-1-2/>.
         """
-        socket.write(b'ECHO hi')
-        socket.read(100)
+        echo_message = b'hi'
+        socket.write(echo_message)
+        socket.read(len(echo_message))
 
     def test_echo(self):
         """Basic test of an SSL client connecting to a server"""
