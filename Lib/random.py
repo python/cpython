@@ -737,7 +737,9 @@ class Random(_random.Random):
         """Binomial random variable.
 
         Gives the number of successes for *n* Bernoulli trials
-        with the probability of success in each trial being *p*.
+        with the probability of success in each trial being *p*:
+
+            sum(random() < p for i in range(n))
 
         Returns an integer in the range:   0 <= X <= n
 
@@ -802,16 +804,21 @@ class Random(_random.Random):
             us = 0.5 - _fabs(u)
             k = _floor((2.0 * a / us + b) * u + c)
 
-            # Step 2: Skip over invalid k due to numeric issues.
-            # Then make the bounding box test.
+            # Step 2: Skip over invalid k arising due to numeric issues.
             if k < 0 or k > n:
                 continue
+
+            # This early-out "squeeze" test substantially reduces the
+            # number of acceptance condition evaluations.  Checks to see
+            # whether *us* and *vr* lie in the large rectangle between
+            # the u-axis and the curve.
             if us >= 0.07 and v <= vr:
                 return k
 
-            # Step 3.1: Acceptance-rejection test
-            # Original paper errorneously omits the call to log(v) which
-            # is needed because we're comparing to the log factorials.
+            # Step 3.1: Acceptance-rejection test.
+            # N.B. The original paper errorneously omits the call to
+            # log(v) which is needed because we're comparing to the log
+            # of the rescaled binomial distribution.
             v *= alpha / (a / (us * us) + b)
             if _log(v) <= h - _logfact(k) - _logfact(n - k) + (k - m) * lpq:
                 return k
