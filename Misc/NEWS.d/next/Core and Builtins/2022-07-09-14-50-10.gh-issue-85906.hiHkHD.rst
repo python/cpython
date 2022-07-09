@@ -1,0 +1,1 @@
+The function :c:func:`sum` prints a more indicative error for string inputs, in cases where the start parameter is not specified
