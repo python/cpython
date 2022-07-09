@@ -561,7 +561,7 @@ def _platform(*args):
     platform = platform.replace('unknown', '')
 
     # Fold '--'s and remove trailing '-'
-    while 1:
+    while True:
         cleaned = platform.replace('--', '-')
         if cleaned == platform:
             break
@@ -1034,9 +1034,7 @@ def _sys_version(sys_version=None):
             match = _ironpython26_sys_version_parser.match(sys_version)
 
         if match is None:
-            raise ValueError(
-                'failed to parse IronPython sys.version: %s' %
-                repr(sys_version))
+            raise ValueError(f'failed to parse IronPython sys.version: {sys_version!r}')
 
         version, alt_version, compiler = match.groups()
         buildno = ''
@@ -1047,9 +1045,7 @@ def _sys_version(sys_version=None):
         name = 'Jython'
         match = _sys_version_parser.match(sys_version)
         if match is None:
-            raise ValueError(
-                'failed to parse Jython sys.version: %s' %
-                repr(sys_version))
+            raise ValueError(f'failed to parse Jython sys.version: {sys_version!r}')
         version, buildno, builddate, buildtime, _ = match.groups()
         if builddate is None:
             builddate = ''
@@ -1060,8 +1056,7 @@ def _sys_version(sys_version=None):
         name = "PyPy"
         match = _pypy_sys_version_parser.match(sys_version)
         if match is None:
-            raise ValueError("failed to parse PyPy sys.version: %s" %
-                             repr(sys_version))
+            raise ValueError(f"failed to parse PyPy sys.version: {sys_version!r}")
         version, buildno, builddate, buildtime = match.groups()
         compiler = ""
 
@@ -1069,16 +1064,14 @@ def _sys_version(sys_version=None):
         # CPython
         match = _sys_version_parser.match(sys_version)
         if match is None:
-            raise ValueError(
-                'failed to parse CPython sys.version: %s' %
-                repr(sys_version))
+            raise ValueError(f'failed to parse CPython sys.version: {sys_version!r}')
         version, buildno, builddate, buildtime, compiler = \
               match.groups()
         name = 'CPython'
         if builddate is None:
             builddate = ''
         elif buildtime:
-            builddate = builddate + ' ' + buildtime
+            builddate = f'{builddate} {buildtime}'
 
     if hasattr(sys, '_git'):
         _, branch, revision = sys._git
