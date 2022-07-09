@@ -321,12 +321,12 @@ class Server:
     def _thread_func(self, server_socket, client_func, client_count,
                      client_fails, args, kwargs):
         server_socket.settimeout(support.LOOPBACK_TIMEOUT)
-        with server_socket:
+        with contextlib.closing(server_socket):
             results = []
             for i in range(client_count):
                 try:
                     client, peer_address = server_socket.accept()
-                    with client:
+                    with contextlib.closing(client):
                         r = client_func(client, peer_address, *args, **kwargs)
                         results.append(r)
                 except (ConnectionAbortedError, ConnectionResetError):

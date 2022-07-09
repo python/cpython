@@ -2858,11 +2858,6 @@ class ThreadedTests(unittest.TestCase):
         For more details on how TLS 1.3 changed the handshake, see
         <https://www.thesslstore.com/blog/tls-1-3-handshake-tls-1-2/>.
         """
-
-        # If server throws, it may continue to keep a living client connection.
-        # So we need to disconnect client on timeout.
-        socket.settimeout(support.LOOPBACK_TIMEOUT)
-
         echo_message = b'hi'
         socket.write(echo_message)
         socket.read(len(echo_message))
