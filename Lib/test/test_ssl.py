@@ -2858,6 +2858,8 @@ class ThreadedTests(unittest.TestCase):
         In some testing sequences the function can block in indefinite waiting
         of server response. In such a case, set wait_response argument to False.
         """
+        socket.settimeout(support.LOOPBACK_TIMEOUT)
+
         echo_message = b'hi'
         socket.write(echo_message)
         if wait_response:
