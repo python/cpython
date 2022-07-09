@@ -771,7 +771,7 @@ class Random(_random.Random):
                 return x
             while True:
                 y += _floor(_log(random()) / c) + 1
-                if y >= n:
+                if y > n:
                     return x
                 x += 1
 
