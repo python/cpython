@@ -6677,6 +6677,11 @@ PyType_Ready(PyTypeObject *type)
 int
 _PyStaticType_InitBuiltin(PyTypeObject *self)
 {
+    /* For static types we store them in an array on each interpreter. */
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    interp->types.num_builtins_initialized++;
+    assert(interp->types.num_builtins_initialized < _Py_MAX_STATIC_BUILTIN_TYPES);
+
     self->tp_flags = self->tp_flags | _Py_TPFLAGS_STATIC_BUILTIN;
 
     return PyType_Ready(self);

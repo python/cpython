@@ -39,8 +39,11 @@ struct type_cache {
 #endif
 };
 
+#define _Py_MAX_STATIC_BUILTIN_TYPES 1000
+
 struct types_state {
     struct type_cache type_cache;
+    ssize_t num_builtins_initialized;
 };
 
 
