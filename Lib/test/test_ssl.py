@@ -2845,7 +2845,7 @@ def try_protocol_combo(server_protocol, client_protocol, expect_success,
 
 class ThreadedTests(unittest.TestCase):
 
-    def wait_connection(self, socket):
+    def wait_connection(self, socket, *, wait_response=True):
         """Force a socket to immediately initiate and process a TLS handshake.
 
         TLS 1.3 delays session ticket exchange until some data are sent. So we
@@ -2855,9 +2855,14 @@ class ThreadedTests(unittest.TestCase):
 
         For more details on how TLS 1.3 changed the handshake, see
         <https://www.thesslstore.com/blog/tls-1-3-handshake-tls-1-2/>.
+
+        In some testing sequences the function can block in indefinite waiting
+        of server response. In such a case, set wait_response argument to False.
         """
         echo_message = b'hi'
         socket.write(echo_message)
+        if wait_response:
+            socket.read(len(echo_message))
 
     def test_echo(self):
         """Basic test of an SSL client connecting to a server"""
@@ -2985,12 +2990,11 @@ class ThreadedTests(unittest.TestCase):
 
         client_context, server_context, hostname = testing_context()
 
-        # correct hostname should verify
         with Server(context=server_context) as address:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
                 s.connect(address)
-                self.wait_connection(s)
+                self.wait_connection(s, wait_response=False)
                 cert = s.getpeercert()
                 self.assertTrue(cert, "Can't get peer certificate.")
 
