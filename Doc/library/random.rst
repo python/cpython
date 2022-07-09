@@ -258,6 +258,26 @@ Functions for sequences
       The *population* must be a sequence.  Automatic conversion of sets
       to lists is no longer supported.
 
+Discrete distributions
+----------------------
+
+The following function generates a discrete distribution.
+
+.. function:: binomial(n=1, p=0.5)
+
+   Return the number of successes for *n* independent trials with the
+   probability of success in each trial being *p*:
+
+   Roughly equivalent to::
+
+       sum(random() < p for i in range(n))
+
+   The number of trials *n* should be a non-negative integer.
+   The probability of success *p* should be between ``0.0 <= p <= 1.0``.
+   The result is an integer in the range ``0 <= X <= n``.
+
+   .. versionadded:: 3.12
+
 
 .. _real-valued-distributions:
 
