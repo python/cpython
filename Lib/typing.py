@@ -250,6 +250,9 @@ def _collect_parameters(args):
     """
     parameters = []
     for t in args:
+        # We don't want __parameters__ descriptor of a bare Python class.
+        if isinstance(t, type):
+            continue
         if hasattr(t, '__typing_subst__'):
             if t not in parameters:
                 parameters.append(t)
