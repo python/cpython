@@ -704,9 +704,11 @@ def uuid1(node=None, clock_seq=None):
 
 def uuid3(namespace, name):
     """Generate a UUID from the MD5 hash of a namespace UUID and a name."""
+    if isinstance(name, str):
+        name = bytes(name, "utf-8")
     from hashlib import md5
     digest = md5(
-        namespace.bytes + bytes(name, "utf-8"),
+        namespace.bytes + name,
         usedforsecurity=False
     ).digest()
     return UUID(bytes=digest[:16], version=3)
@@ -717,8 +719,10 @@ def uuid4():
 
 def uuid5(namespace, name):
     """Generate a UUID from the SHA-1 hash of a namespace UUID and a name."""
+    if isinstance(name, str):
+        name = bytes(name, "utf-8")
     from hashlib import sha1
-    hash = sha1(namespace.bytes + bytes(name, "utf-8")).digest()
+    hash = sha1(namespace.bytes + name).digest()
     return UUID(bytes=hash[:16], version=5)
 
 # The following standard UUIDs are for use with uuid3() or uuid5().
