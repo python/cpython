@@ -785,6 +785,10 @@ class Random(_random.Random):
         a = -0.0873 + 0.0248 * b + 0.01 * p
         c = n * p + 0.5
         vr = 0.92 - 4.2 / b
+        alpha = (2.83 + 5.1 / b) * spq
+        lpq = _log(p / (1.0 - p))
+        m = _floor((n + 1) * p)
+        h = _logfact(m) + _logfact(n - m)
 
         while True:
 
@@ -798,11 +802,6 @@ class Random(_random.Random):
                 continue
             if us >= 0.07 and v <= vr:
                 return k
-
-            alpha = (2.83 + 5.1 / b) * spq
-            lpq = _log(p / (1.0 - p))
-            m = _floor((n + 1) * p)
-            h = _logfact(m) + _logfact(n - m)
 
             # Original paper errorneously omits the call to log()
             v = _log(v * alpha / (a / (us * us) + b))
