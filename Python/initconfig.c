@@ -543,8 +543,11 @@ Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
     }
 #ifdef MS_WINDOWS
     if (_Py_StandardStreamEncoding) {
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
         /* Overriding the stream encoding implies legacy streams */
         Py_LegacyWindowsStdioFlag = 1;
+_Py_COMP_DIAG_POP
     }
 #endif
 

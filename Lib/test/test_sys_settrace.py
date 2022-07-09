@@ -2,6 +2,7 @@
 
 from test import support
 import unittest
+from unittest.mock import MagicMock
 import sys
 import difflib
 import gc
@@ -2041,6 +2042,15 @@ class JumpTestCase(unittest.TestCase):
             output.append(6)
         output.append(7)
 
+    @jump_test(6, 1, [1, 5, 1, 5])
+    def test_jump_over_try_except(output):
+        output.append(1)
+        try:
+            1 / 0
+        except ZeroDivisionError as e:
+            output.append(5)
+        x = 42  # has to be a two-instruction block
+
     @jump_test(2, 4, [1, 4, 5, -4])
     def test_jump_across_with(output):
         output.append(1)
@@ -2264,25 +2274,25 @@ class JumpTestCase(unittest.TestCase):
             output.append(2)
         output.append(3)
 
-    @jump_test(1, 3, [], (ValueError, 'depth'))
+    @jump_test(1, 3, [], (ValueError, 'stack'))
     def test_no_jump_forwards_into_with_block(output):
         output.append(1)
         with tracecontext(output, 2):
             output.append(3)
 
-    @async_jump_test(1, 3, [], (ValueError, 'depth'))
+    @async_jump_test(1, 3, [], (ValueError, 'stack'))
     async def test_no_jump_forwards_into_async_with_block(output):
         output.append(1)
         async with asynctracecontext(output, 2):
             output.append(3)
 
-    @jump_test(3, 2, [1, 2, -1], (ValueError, 'depth'))
+    @jump_test(3, 2, [1, 2, -1], (ValueError, 'stack'))
     def test_no_jump_backwards_into_with_block(output):
         with tracecontext(output, 1):
             output.append(2)
         output.append(3)
 
-    @async_jump_test(3, 2, [1, 2, -1], (ValueError, 'depth'))
+    @async_jump_test(3, 2, [1, 2, -1], (ValueError, 'stack'))
     async def test_no_jump_backwards_into_async_with_block(output):
         async with asynctracecontext(output, 1):
             output.append(2)
@@ -2584,6 +2594,63 @@ output.append(4)
         output.append(7)
         output.append(8)
 
+    # checking for segfaults.
+    @jump_test(3, 7, [], error=(ValueError, "stack"))
+    def test_jump_with_null_on_stack_load_global(output):
+        a = 1
+        print(
+            output.append(3)
+        )
+        output.append(5)
+        (
+            ( # 7
+                a
+                +
+                10
+            )
+            +
+            13
+        )
+        output.append(15)
+
+    # checking for segfaults.
+    @jump_test(4, 8, [], error=(ValueError, "stack"))
+    def test_jump_with_null_on_stack_push_null(output):
+        a = 1
+        f = print
+        f(
+            output.append(4)
+        )
+        output.append(6)
+        (
+            ( # 8
+                a
+                +
+                11
+            )
+            +
+            14
+        )
+        output.append(16)
+
+    # checking for segfaults.
+    @jump_test(3, 7, [], error=(ValueError, "stack"))
+    def test_jump_with_null_on_stack_load_attr(output):
+        a = 1
+        list.append(
+            output, 3
+        )
+        output.append(5)
+        (
+            ( # 7
+                a
+                +
+                10
+            )
+            +
+            13
+        )
+        output.append(15)
 
 class TestExtendedArgs(unittest.TestCase):
 
@@ -2625,6 +2692,44 @@ class TestExtendedArgs(unittest.TestCase):
         exec(code, ns)
         counts = self.count_traces(ns["f"])
         self.assertEqual(counts, {'call': 1, 'line': 2000, 'return': 1})
+
+
+class TestEdgeCases(unittest.TestCase):
+
+    def setUp(self):
+        self.addCleanup(sys.settrace, sys.gettrace())
+        sys.settrace(None)
+
+    def test_reentrancy(self):
+        def foo(*args):
+            ...
+
+        def bar(*args):
+            ...
+
+        class A:
+            def __call__(self, *args):
+                pass
+
+            def __del__(self):
+                sys.settrace(bar)
+
+        sys.settrace(A())
+        with support.catch_unraisable_exception() as cm:
+            sys.settrace(foo)
+            self.assertEqual(cm.unraisable.object, A.__del__)
+            self.assertIsInstance(cm.unraisable.exc_value, RuntimeError)
+
+        self.assertEqual(sys.gettrace(), foo)
+
+
+    def test_same_object(self):
+        def foo(*args):
+            ...
+
+        sys.settrace(foo)
+        del foo
+        sys.settrace(sys.gettrace())
 
 
 if __name__ == "__main__":

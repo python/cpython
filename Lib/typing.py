@@ -250,6 +250,9 @@ def _collect_parameters(args):
     """
     parameters = []
     for t in args:
+        # We don't want __parameters__ descriptor of a bare Python class.
+        if isinstance(t, type):
+            continue
         if hasattr(t, '__typing_subst__'):
             if t not in parameters:
                 parameters.append(t)
@@ -954,6 +957,9 @@ class _BoundVarianceMixin:
             prefix = '~'
         return prefix + self.__name__
 
+    def __mro_entries__(self, bases):
+        raise TypeError(f"Cannot subclass an instance of {type(self).__name__}")
+
 
 class TypeVar(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
               _root=True):
@@ -1079,7 +1085,7 @@ class TypeVarTuple(_Final, _Immutable, _PickleUsingNameMixin, _root=True):
         var_tuple_index = None
         fillarg = None
         for k, arg in enumerate(args):
-            if not (isinstance(arg, type) and not isinstance(arg, GenericAlias)):
+            if not isinstance(arg, type):
                 subargs = getattr(arg, '__typing_unpacked_tuple_args__', None)
                 if subargs and len(subargs) == 2 and subargs[-1] is ...:
                     if var_tuple_index is not None:
@@ -1100,6 +1106,9 @@ class TypeVarTuple(_Final, _Immutable, _PickleUsingNameMixin, _root=True):
             *([fillarg]*(plen - right - left - typevartuple_index - 1)),
             *args[alen - right:],
         )
+
+    def __mro_entries__(self, bases):
+        raise TypeError(f"Cannot subclass an instance of {type(self).__name__}")
 
 
 class ParamSpecArgs(_Final, _Immutable, _root=True):
@@ -1125,6 +1134,9 @@ class ParamSpecArgs(_Final, _Immutable, _root=True):
             return NotImplemented
         return self.__origin__ == other.__origin__
 
+    def __mro_entries__(self, bases):
+        raise TypeError(f"Cannot subclass an instance of {type(self).__name__}")
+
 
 class ParamSpecKwargs(_Final, _Immutable, _root=True):
     """The kwargs for a ParamSpec object.
@@ -1148,6 +1160,9 @@ class ParamSpecKwargs(_Final, _Immutable, _root=True):
         if not isinstance(other, ParamSpecKwargs):
             return NotImplemented
         return self.__origin__ == other.__origin__
+
+    def __mro_entries__(self, bases):
+        raise TypeError(f"Cannot subclass an instance of {type(self).__name__}")
 
 
 class ParamSpec(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,

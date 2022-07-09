@@ -125,7 +125,7 @@ created.  Socket addresses are represented as follows:
 
 - A string or a tuple ``(id, unit)`` is used for the :const:`SYSPROTO_CONTROL`
   protocol of the :const:`PF_SYSTEM` family. The string is the name of a
-  kernel control using a dynamically-assigned ID. The tuple can be used if ID
+  kernel control using a dynamically assigned ID. The tuple can be used if ID
   and unit number of the kernel control are known or if a registered ID is
   used.
 
@@ -242,7 +242,7 @@ created.  Socket addresses are represented as follows:
     child partitions.
   - ``HV_GUID_LOOPBACK`` - Used as a target to itself.
   - ``HV_GUID_PARENT`` - When used as a bind accepts connection from the parent
-    partition. When used as an address target it will connect to the parent parition.
+    partition. When used as an address target it will connect to the parent partition.
 
   The ``service_id`` is the service identifier of the registered service.
 
@@ -616,7 +616,6 @@ Constants
           HV_PROTOCOL_RAW
           HVSOCKET_CONNECT_TIMEOUT
           HVSOCKET_CONNECT_TIMEOUT_MAX
-          HVSOCKET_CONTAINER_PASSTHRU
           HVSOCKET_CONNECTED_SUSPEND
           HVSOCKET_ADDRESS_FLAG_PASSTHRU
           HV_GUID_ZERO
@@ -957,7 +956,7 @@ The :mod:`socket` module also offers various network-related services:
 .. function:: getnameinfo(sockaddr, flags)
 
    Translate a socket address *sockaddr* into a 2-tuple ``(host, port)``. Depending
-   on the settings of *flags*, the result can contain a fully-qualified domain name
+   on the settings of *flags*, the result can contain a fully qualified domain name
    or numeric address representation in *host*.  Similarly, *port* can contain a
    string port name or a numeric port number.
 
