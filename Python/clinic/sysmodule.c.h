@@ -965,6 +965,94 @@ sys_is_finalizing(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys_is_finalizing_impl(module);
 }
 
+#if defined(Py_STATS)
+
+PyDoc_STRVAR(sys__stats_on__doc__,
+"_stats_on($module, /)\n"
+"--\n"
+"\n"
+"Turns on stats gathering (stats gathering is on by default).");
+
+#define SYS__STATS_ON_METHODDEF    \
+    {"_stats_on", (PyCFunction)sys__stats_on, METH_NOARGS, sys__stats_on__doc__},
+
+static PyObject *
+sys__stats_on_impl(PyObject *module);
+
+static PyObject *
+sys__stats_on(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__stats_on_impl(module);
+}
+
+#endif /* defined(Py_STATS) */
+
+#if defined(Py_STATS)
+
+PyDoc_STRVAR(sys__stats_off__doc__,
+"_stats_off($module, /)\n"
+"--\n"
+"\n"
+"Turns off stats gathering (stats gathering is on by default).");
+
+#define SYS__STATS_OFF_METHODDEF    \
+    {"_stats_off", (PyCFunction)sys__stats_off, METH_NOARGS, sys__stats_off__doc__},
+
+static PyObject *
+sys__stats_off_impl(PyObject *module);
+
+static PyObject *
+sys__stats_off(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__stats_off_impl(module);
+}
+
+#endif /* defined(Py_STATS) */
+
+#if defined(Py_STATS)
+
+PyDoc_STRVAR(sys__stats_clear__doc__,
+"_stats_clear($module, /)\n"
+"--\n"
+"\n"
+"Clears the stats.");
+
+#define SYS__STATS_CLEAR_METHODDEF    \
+    {"_stats_clear", (PyCFunction)sys__stats_clear, METH_NOARGS, sys__stats_clear__doc__},
+
+static PyObject *
+sys__stats_clear_impl(PyObject *module);
+
+static PyObject *
+sys__stats_clear(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__stats_clear_impl(module);
+}
+
+#endif /* defined(Py_STATS) */
+
+#if defined(Py_STATS)
+
+PyDoc_STRVAR(sys__stats_dump__doc__,
+"_stats_dump($module, /)\n"
+"--\n"
+"\n"
+"Dump stats to file, and clears the stats.");
+
+#define SYS__STATS_DUMP_METHODDEF    \
+    {"_stats_dump", (PyCFunction)sys__stats_dump, METH_NOARGS, sys__stats_dump__doc__},
+
+static PyObject *
+sys__stats_dump_impl(PyObject *module);
+
+static PyObject *
+sys__stats_dump(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__stats_dump_impl(module);
+}
+
+#endif /* defined(Py_STATS) */
+
 #if defined(ANDROID_API_LEVEL)
 
 PyDoc_STRVAR(sys_getandroidapilevel__doc__,
@@ -1011,7 +1099,23 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define SYS_GETTOTALREFCOUNT_METHODDEF
 #endif /* !defined(SYS_GETTOTALREFCOUNT_METHODDEF) */
 
+#ifndef SYS__STATS_ON_METHODDEF
+    #define SYS__STATS_ON_METHODDEF
+#endif /* !defined(SYS__STATS_ON_METHODDEF) */
+
+#ifndef SYS__STATS_OFF_METHODDEF
+    #define SYS__STATS_OFF_METHODDEF
+#endif /* !defined(SYS__STATS_OFF_METHODDEF) */
+
+#ifndef SYS__STATS_CLEAR_METHODDEF
+    #define SYS__STATS_CLEAR_METHODDEF
+#endif /* !defined(SYS__STATS_CLEAR_METHODDEF) */
+
+#ifndef SYS__STATS_DUMP_METHODDEF
+    #define SYS__STATS_DUMP_METHODDEF
+#endif /* !defined(SYS__STATS_DUMP_METHODDEF) */
+
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=98efd34fd9b9b6ab input=a9049054013a1b77]*/
+/*[clinic end generated code: output=41122dae1bb7158c input=a9049054013a1b77]*/

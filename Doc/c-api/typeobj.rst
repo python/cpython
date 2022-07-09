@@ -43,13 +43,13 @@ Quick Reference
    +================================================+===================================+===================+===+===+===+===+
    | <R> :c:member:`~PyTypeObject.tp_name`          | const char *                      | __name__          | X | X |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_basicsize`         | Py_ssize_t                        |                   | X | X |   | X |
+   | :c:member:`~PyTypeObject.tp_basicsize`         | :c:type:`Py_ssize_t`              |                   | X | X |   | X |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_itemsize`          | Py_ssize_t                        |                   |   | X |   | X |
+   | :c:member:`~PyTypeObject.tp_itemsize`          | :c:type:`Py_ssize_t`              |                   |   | X |   | X |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_dealloc`           | :c:type:`destructor`              |                   | X | X |   | X |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_vectorcall_offset` | Py_ssize_t                        |                   |   | X |   | X |
+   | :c:member:`~PyTypeObject.tp_vectorcall_offset` | :c:type:`Py_ssize_t`              |                   |   | X |   | X |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | (:c:member:`~PyTypeObject.tp_getattr`)         | :c:type:`getattrfunc`             | __getattribute__, |   |   |   | G |
    |                                                |                                   | __getattr__       |   |   |   |   |
@@ -96,7 +96,7 @@ Quick Reference
    |                                                |                                   | __gt__,           |   |   |   |   |
    |                                                |                                   | __ge__            |   |   |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_weaklistoffset`    | Py_ssize_t                        |                   |   | X |   | ? |
+   | :c:member:`~PyTypeObject.tp_weaklistoffset`    | :c:type:`Py_ssize_t`              |                   |   | X |   | ? |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_iter`              | :c:type:`getiterfunc`             | __iter__          |   |   |   | X |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
@@ -117,7 +117,7 @@ Quick Reference
    | :c:member:`~PyTypeObject.tp_descr_set`         | :c:type:`descrsetfunc`            | __set__,          |   |   |   | X |
    |                                                |                                   | __delete__        |   |   |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_dictoffset`        | Py_ssize_t                        |                   |   | X |   | ? |
+   | :c:member:`~PyTypeObject.tp_dictoffset`        | :c:type:`Py_ssize_t`              |                   |   | X |   | ? |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_init`              | :c:type:`initproc`                | __init__          | X | X |   | X |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
@@ -333,7 +333,7 @@ slot typedefs
 | :c:type:`allocfunc`         | .. line-block::             | :c:type:`PyObject` * |
 |                             |                             |                      |
 |                             |    :c:type:`PyTypeObject` * |                      |
-|                             |    Py_ssize_t               |                      |
+|                             |    :c:type:`Py_ssize_t`     |                      |
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`destructor`        | void *                      | void                 |
 +-----------------------------+-----------------------------+----------------------+
@@ -405,7 +405,7 @@ slot typedefs
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`iternextfunc`      | :c:type:`PyObject` *        | :c:type:`PyObject` * |
 +-----------------------------+-----------------------------+----------------------+
-| :c:type:`lenfunc`           | :c:type:`PyObject` *        | Py_ssize_t           |
+| :c:type:`lenfunc`           | :c:type:`PyObject` *        | :c:type:`Py_ssize_t` |
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`getbufferproc`     | .. line-block::             | int                  |
 |                             |                             |                      |
@@ -438,12 +438,12 @@ slot typedefs
 | :c:type:`ssizeargfunc`      | .. line-block::             | :c:type:`PyObject` * |
 |                             |                             |                      |
 |                             |    :c:type:`PyObject` *     |                      |
-|                             |    Py_ssize_t               |                      |
+|                             |    :c:type:`Py_ssize_t`     |                      |
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`ssizeobjargproc`   | .. line-block::             | int                  |
 |                             |                             |                      |
 |                             |    :c:type:`PyObject` *     |                      |
-|                             |    Py_ssize_t               |                      |
+|                             |    :c:type:`Py_ssize_t`     |                      |
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`objobjproc`        | .. line-block::             | int                  |
 |                             |                             |                      |
@@ -529,7 +529,7 @@ type objects) *must* have the :attr:`ob_size` field.
    ``PyObject_HEAD_INIT`` macro.  For :ref:`statically allocated objects
    <static-types>`, these fields always remain ``NULL``.  For :ref:`dynamically
    allocated objects <heap-types>`, these two fields are used to link the
-   object into a doubly-linked list of *all* live objects on the heap.
+   object into a doubly linked list of *all* live objects on the heap.
 
    This could be used for various debugging purposes; currently the only uses
    are the :func:`sys.getobjects` function and to print the objects that are
@@ -726,12 +726,6 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       the vectorcall protocol.
       When a user sets :attr:`__call__` in Python code, only *tp_call* is updated,
       likely making it inconsistent with the vectorcall function.
-
-   .. note::
-
-      The semantics of the ``tp_vectorcall_offset`` slot are provisional and
-      expected to be finalized in Python 3.9.
-      If you use vectorcall, plan for updating your code for Python 3.9.
 
    .. versionchanged:: 3.8
 
@@ -2071,7 +2065,7 @@ flag set.
 
 This is done by filling a :c:type:`PyType_Spec` structure and calling
 :c:func:`PyType_FromSpec`, :c:func:`PyType_FromSpecWithBases`,
-or :c:func:`PyType_FromModuleAndSpec`.
+:c:func:`PyType_FromModuleAndSpec`, or :c:func:`PyType_FromMetaclass`.
 
 
 .. _number-structs:
@@ -2529,11 +2523,11 @@ Slot Type typedefs
 
 .. c:type:: PyObject *(*descrgetfunc)(PyObject *, PyObject *, PyObject *)
 
-   See :c:member:`~PyTypeObject.tp_descrget`.
+   See :c:member:`~PyTypeObject.tp_descr_get`.
 
 .. c:type:: int (*descrsetfunc)(PyObject *, PyObject *, PyObject *)
 
-   See :c:member:`~PyTypeObject.tp_descrset`.
+   See :c:member:`~PyTypeObject.tp_descr_set`.
 
 .. c:type:: Py_hash_t (*hashfunc)(PyObject *)
 

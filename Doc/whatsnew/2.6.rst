@@ -49,7 +49,7 @@
    This saves the maintainer some effort going through the SVN logs
    when researching a change.
 
-This article explains the new features in Python 2.6, released on October 1
+This article explains the new features in Python 2.6, released on October 1,
 2008.  The release schedule is described in :pep:`361`.
 
 The major theme of Python 2.6 is preparing the migration path to
@@ -176,7 +176,7 @@ Hosting of the Python bug tracker is kindly provided by
 of Stellenbosch, South Africa.  Martin von Löwis put a
 lot of effort into importing existing bugs and patches from
 SourceForge; his scripts for this import operation are at
-http://svn.python.org/view/tracker/importer/ and may be useful to
+``http://svn.python.org/view/tracker/importer/`` and may be useful to
 other projects wishing to move from SourceForge to Roundup.
 
 .. seealso::
@@ -523,7 +523,7 @@ PEP 370: Per-user ``site-packages`` Directory
 
 When you run Python, the module search path ``sys.path`` usually
 includes a directory whose path ends in ``"site-packages"``.  This
-directory is intended to hold locally-installed packages available to
+directory is intended to hold locally installed packages available to
 all users using a machine or a particular site installation.
 
 Python 2.6 introduces a convention for user-specific site directories.
@@ -2460,7 +2460,7 @@ changes, or look through the Subversion logs for all the details.
   The function must take a filename and return true if the file
   should be excluded or false if it should be archived.
   The function is applied to both the name initially passed to :meth:`add`
-  and to the names of files in recursively-added directories.
+  and to the names of files in recursively added directories.
 
   (All changes contributed by Lars Gustäbel).
 
@@ -2513,7 +2513,7 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Brett Cannon.)
 
 * The :mod:`textwrap` module can now preserve existing whitespace
-  at the beginnings and ends of the newly-created lines
+  at the beginnings and ends of the newly created lines
   by specifying ``drop_whitespace=False``
   as an argument::
 

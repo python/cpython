@@ -90,13 +90,9 @@ class BaseTestCase(unittest.TestCase):
     b_check = re.compile(br"^[a-z0-9_-]{8}$")
 
     def setUp(self):
-        self._warnings_manager = warnings_helper.check_warnings()
-        self._warnings_manager.__enter__()
+        self.enterContext(warnings_helper.check_warnings())
         warnings.filterwarnings("ignore", category=RuntimeWarning,
                                 message="mktemp", module=__name__)
-
-    def tearDown(self):
-        self._warnings_manager.__exit__(None, None, None)
 
     def nameCheck(self, name, dir, pre, suf):
         (ndir, nbase) = os.path.split(name)
@@ -289,19 +285,14 @@ class TestGetDefaultTempdir(BaseTestCase):
                 def raise_OSError(*args, **kwargs):
                     raise OSError()
 
-                with support.swap_attr(io, "open", raise_OSError):
-                    # test again with failing io.open()
+                with support.swap_attr(os, "open", raise_OSError):
+                    # test again with failing os.open()
                     with self.assertRaises(FileNotFoundError):
                         tempfile._get_default_tempdir()
                     self.assertEqual(os.listdir(our_temp_directory), [])
 
-                def bad_writer(*args, **kwargs):
-                    fp = orig_open(*args, **kwargs)
-                    fp.write = raise_OSError
-                    return fp
-
-                with support.swap_attr(io, "open", bad_writer) as orig_open:
-                    # test again with failing write()
+                with support.swap_attr(os, "write", raise_OSError):
+                    # test again with failing os.write()
                     with self.assertRaises(FileNotFoundError):
                         tempfile._get_default_tempdir()
                     self.assertEqual(os.listdir(our_temp_directory), [])
@@ -454,6 +445,7 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
             support.gc_collect()  # For PyPy or other GCs.
             os.rmdir(dir)
 
+    @os_helper.skip_unless_working_chmod
     def test_file_mode(self):
         # _mkstemp_inner creates files with the proper mode
 
@@ -791,6 +783,7 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         finally:
             os.rmdir(dir)
 
+    @os_helper.skip_unless_working_chmod
     def test_mode(self):
         # mkdtemp creates directories with the proper mode
 
@@ -980,6 +973,7 @@ class TestNamedTemporaryFile(BaseTestCase):
         try:
             with tempfile.NamedTemporaryFile(dir=dir) as f:
                 f.write(b'blat')
+            self.assertEqual(os.listdir(dir), [])
             self.assertFalse(os.path.exists(f.name),
                         "NamedTemporaryFile %s exists after close" % f.name)
         finally:
@@ -1019,19 +1013,6 @@ class TestNamedTemporaryFile(BaseTestCase):
                 pass
         self.assertRaises(ValueError, use_closed)
 
-    def test_no_leak_fd(self):
-        # Issue #21058: don't leak file descriptor when io.open() fails
-        closed = []
-        os_close = os.close
-        def close(fd):
-            closed.append(fd)
-            os_close(fd)
-
-        with mock.patch('os.close', side_effect=close):
-            with mock.patch('io.open', side_effect=ValueError):
-                self.assertRaises(ValueError, tempfile.NamedTemporaryFile)
-                self.assertEqual(len(closed), 1)
-
     def test_bad_mode(self):
         dir = tempfile.mkdtemp()
         self.addCleanup(os_helper.rmtree, dir)
@@ -1039,6 +1020,24 @@ class TestNamedTemporaryFile(BaseTestCase):
             tempfile.NamedTemporaryFile(mode='wr', dir=dir)
         with self.assertRaises(TypeError):
             tempfile.NamedTemporaryFile(mode=2, dir=dir)
+        self.assertEqual(os.listdir(dir), [])
+
+    def test_bad_encoding(self):
+        dir = tempfile.mkdtemp()
+        self.addCleanup(os_helper.rmtree, dir)
+        with self.assertRaises(LookupError):
+            tempfile.NamedTemporaryFile('w', encoding='bad-encoding', dir=dir)
+        self.assertEqual(os.listdir(dir), [])
+
+    def test_unexpected_error(self):
+        dir = tempfile.mkdtemp()
+        self.addCleanup(os_helper.rmtree, dir)
+        with mock.patch('tempfile._TemporaryFileWrapper') as mock_ntf, \
+             mock.patch('io.open', mock.mock_open()) as mock_open:
+            mock_ntf.side_effect = KeyboardInterrupt()
+            with self.assertRaises(KeyboardInterrupt):
+                tempfile.NamedTemporaryFile(dir=dir)
+        mock_open().close.assert_called()
         self.assertEqual(os.listdir(dir), [])
 
     # How to test the mode and bufsize parameters?
@@ -1095,8 +1094,10 @@ class TestSpooledTemporaryFile(BaseTestCase):
             self.assertTrue(f._rolled)
             filename = f.name
             f.close()
-            self.assertFalse(isinstance(filename, str) and os.path.exists(filename),
-                        "SpooledTemporaryFile %s exists after close" % filename)
+            self.assertEqual(os.listdir(dir), [])
+            if not isinstance(filename, int):
+                self.assertFalse(os.path.exists(filename),
+                    "SpooledTemporaryFile %s exists after close" % filename)
         finally:
             os.rmdir(dir)
 
@@ -1109,6 +1110,9 @@ class TestSpooledTemporaryFile(BaseTestCase):
         with self.assertWarns(ResourceWarning):
             f.__del__()
 
+    @unittest.skipIf(
+        support.is_emscripten, "Emscripten cannot fstat renamed files."
+    )
     def test_del_rolled_file(self):
         # The rolled file should be deleted when the SpooledTemporaryFile
         # object is deleted. This should raise a ResourceWarning since the file
@@ -1410,19 +1414,34 @@ if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
             roundtrip("\u039B", "w+", encoding="utf-16")
             roundtrip("foo\r\n", "w+", newline="")
 
-        def test_no_leak_fd(self):
-            # Issue #21058: don't leak file descriptor when io.open() fails
-            closed = []
-            os_close = os.close
-            def close(fd):
-                closed.append(fd)
-                os_close(fd)
+        def test_bad_mode(self):
+            dir = tempfile.mkdtemp()
+            self.addCleanup(os_helper.rmtree, dir)
+            with self.assertRaises(ValueError):
+                tempfile.TemporaryFile(mode='wr', dir=dir)
+            with self.assertRaises(TypeError):
+                tempfile.TemporaryFile(mode=2, dir=dir)
+            self.assertEqual(os.listdir(dir), [])
 
-            with mock.patch('os.close', side_effect=close):
-                with mock.patch('io.open', side_effect=ValueError):
-                    self.assertRaises(ValueError, tempfile.TemporaryFile)
-                    self.assertEqual(len(closed), 1)
+        def test_bad_encoding(self):
+            dir = tempfile.mkdtemp()
+            self.addCleanup(os_helper.rmtree, dir)
+            with self.assertRaises(LookupError):
+                tempfile.TemporaryFile('w', encoding='bad-encoding', dir=dir)
+            self.assertEqual(os.listdir(dir), [])
 
+        def test_unexpected_error(self):
+            dir = tempfile.mkdtemp()
+            self.addCleanup(os_helper.rmtree, dir)
+            with mock.patch('tempfile._O_TMPFILE_WORKS', False), \
+                 mock.patch('os.unlink') as mock_unlink, \
+                 mock.patch('os.open') as mock_open, \
+                 mock.patch('os.close') as mock_close:
+                mock_unlink.side_effect = KeyboardInterrupt()
+                with self.assertRaises(KeyboardInterrupt):
+                    tempfile.TemporaryFile(dir=dir)
+            mock_close.assert_called()
+            self.assertEqual(os.listdir(dir), [])
 
 
 # Helper for test_del_on_shutdown

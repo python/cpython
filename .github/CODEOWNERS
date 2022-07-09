@@ -53,6 +53,7 @@ Python/pythonrun.c            @iritkatriel
 /Lib/html/                    @ezio-melotti
 /Lib/_markupbase.py           @ezio-melotti
 /Lib/test/test_html*.py       @ezio-melotti
+/Tools/scripts/*html5*        @ezio-melotti
 
 # Import (including importlib).
 # Ignoring importlib.h so as to not get flagged on
@@ -60,6 +61,8 @@ Python/pythonrun.c            @iritkatriel
 # bytecode.
 **/*import*.c                 @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
 **/*import*.py                @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
+**/importlib/resources/*      @jaraco @warsaw @brettcannon
+**/importlib/metadata/*       @jaraco @warsaw
 
 # Dates and times
 **/*datetime*                 @pganssle @abalkin
@@ -95,10 +98,10 @@ Lib/ast.py                    @isidentical
 
 # Mock
 /Lib/unittest/mock.py         @cjw296
-/Lib/unittest/test/testmock/* @cjw296
+/Lib/test/test_unittest/testmock/* @cjw296
 
 # SQLite 3
-**/*sqlite*                   @berkerpeksag
+**/*sqlite*                   @berkerpeksag @erlend-aasland
 
 # subprocess
 /Lib/subprocess.py            @gpshead

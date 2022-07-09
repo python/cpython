@@ -1,3 +1,10 @@
+"""Object-oriented filesystem paths.
+
+This module provides classes to represent abstract paths and concrete
+paths with operations that have semantics appropriate for different
+operating systems.
+"""
+
 import fnmatch
 import functools
 import io
@@ -120,68 +127,18 @@ class _WindowsFlavour(_Flavour):
 
     is_supported = (os.name == 'nt')
 
-    drive_letters = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
-    ext_namespace_prefix = '\\\\?\\'
-
     reserved_names = (
         {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
         {'COM%s' % c for c in '123456789\xb9\xb2\xb3'} |
         {'LPT%s' % c for c in '123456789\xb9\xb2\xb3'}
         )
 
-    # Interesting findings about extended paths:
-    # * '\\?\c:\a' is an extended path, which bypasses normal Windows API
-    #   path processing. Thus relative paths are not resolved and slash is not
-    #   translated to backslash. It has the native NT path limit of 32767
-    #   characters, but a bit less after resolving device symbolic links,
-    #   such as '\??\C:' => '\Device\HarddiskVolume2'.
-    # * '\\?\c:/a' looks for a device named 'C:/a' because slash is a
-    #   regular name character in the object namespace.
-    # * '\\?\c:\foo/bar' is invalid because '/' is illegal in NT filesystems.
-    #   The only path separator at the filesystem level is backslash.
-    # * '//?/c:\a' and '//?/c:/a' are effectively equivalent to '\\.\c:\a' and
-    #   thus limited to MAX_PATH.
-    # * Prior to Windows 8, ANSI API bytes paths are limited to MAX_PATH,
-    #   even with the '\\?\' prefix.
-
     def splitroot(self, part, sep=sep):
-        first = part[0:1]
-        second = part[1:2]
-        if (second == sep and first == sep):
-            # XXX extended paths should also disable the collapsing of "."
-            # components (according to MSDN docs).
-            prefix, part = self._split_extended_path(part)
-            first = part[0:1]
-            second = part[1:2]
+        drv, rest = self.pathmod.splitdrive(part)
+        if drv[:1] == sep or rest[:1] == sep:
+            return drv, sep, rest.lstrip(sep)
         else:
-            prefix = ''
-        third = part[2:3]
-        if (second == sep and first == sep and third != sep):
-            # is a UNC path:
-            # vvvvvvvvvvvvvvvvvvvvv root
-            # \\machine\mountpoint\directory\etc\...
-            #            directory ^^^^^^^^^^^^^^
-            index = part.find(sep, 2)
-            if index != -1:
-                index2 = part.find(sep, index + 1)
-                # a UNC path can't have two slashes in a row
-                # (after the initial two)
-                if index2 != index + 1:
-                    if index2 == -1:
-                        index2 = len(part)
-                    if prefix:
-                        return prefix + part[1:index2], sep, part[index2+1:]
-                    else:
-                        return part[:index2], sep, part[index2+1:]
-        drv = root = ''
-        if second == ':' and first in self.drive_letters:
-            drv = part[:2]
-            part = part[2:]
-            first = third
-        if first == sep:
-            root = first
-            part = part.lstrip(sep)
-        return prefix + drv, root, part
+            return drv, '', rest
 
     def casefold(self, s):
         return s.lower()
@@ -191,16 +148,6 @@ class _WindowsFlavour(_Flavour):
 
     def compile_pattern(self, pattern):
         return re.compile(fnmatch.translate(pattern), re.IGNORECASE).fullmatch
-
-    def _split_extended_path(self, s, ext_prefix=ext_namespace_prefix):
-        prefix = ''
-        if s.startswith(ext_prefix):
-            prefix = s[:4]
-            s = s[4:]
-            if s.startswith('UNC\\'):
-                prefix += s[:3]
-                s = '\\' + s[3:]
-        return prefix, s
 
     def is_reserved(self, parts):
         # NOTE: the rules for reserved names seem somewhat complicated
@@ -443,6 +390,8 @@ class _PathParents(Sequence):
 
         if idx >= len(self) or idx < -len(self):
             raise IndexError(idx)
+        if idx < 0:
+            idx += len(self)
         return self._pathcls._from_parsed_parts(self._drv, self._root,
                                                 self._parts[:-idx - 1])
 
@@ -960,7 +909,7 @@ class Path(PurePath):
         drv, root, pattern_parts = self._flavour.parse_parts((pattern,))
         if drv or root:
             raise NotImplementedError("Non-relative patterns are unsupported")
-        if pattern[-1] in (self._flavour.sep, self._flavour.altsep):
+        if pattern and pattern[-1] in (self._flavour.sep, self._flavour.altsep):
             pattern_parts.append('')
         selector = _make_selector(("**",) + tuple(pattern_parts), self._flavour)
         for p in selector.select_from(self):
@@ -1205,23 +1154,6 @@ class Path(PurePath):
             raise NotImplementedError("os.link() not available on this system")
         os.link(target, self)
 
-    def link_to(self, target):
-        """
-        Make the target path a hard link pointing to this path.
-
-        Note this function does not make this path a hard link to *target*,
-        despite the implication of the function and argument names. The order
-        of arguments (target, link) is the reverse of Path.symlink_to, but
-        matches that of os.link.
-
-        Deprecated since Python 3.10 and scheduled for removal in Python 3.12.
-        Use `hardlink_to()` instead.
-        """
-        warnings.warn("pathlib.Path.link_to() is deprecated and is scheduled "
-                      "for removal in Python 3.12. "
-                      "Use pathlib.Path.hardlink_to() instead.",
-                      DeprecationWarning, stacklevel=2)
-        self.__class__(target).hardlink_to(self)
 
     # Convenience functions for querying the stat results
 

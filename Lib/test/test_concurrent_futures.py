@@ -256,12 +256,13 @@ class FailingInitializerMixin(ExecutorMixin):
             else:
                 with self.assertRaises(BrokenExecutor):
                     future.result()
+
             # At some point, the executor should break
-            t1 = time.monotonic()
-            while not self.executor._broken:
-                if time.monotonic() - t1 > 5:
-                    self.fail("executor not broken after 5 s.")
-                time.sleep(0.01)
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT,
+                                            "executor not broken"):
+                if self.executor._broken:
+                    break
+
             # ... and from this point submit() is guaranteed to fail
             with self.assertRaises(BrokenExecutor):
                 self.executor.submit(get_init_status)
@@ -497,10 +498,16 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
             lock.acquire()
 
         mp_context = self.get_context()
+        if mp_context.get_start_method(allow_none=False) == "fork":
+            # fork pre-spawns, not on demand.
+            expected_num_processes = self.worker_count
+        else:
+            expected_num_processes = 3
+
         sem = mp_context.Semaphore(0)
         for _ in range(3):
             self.executor.submit(acquire_lock, sem)
-        self.assertEqual(len(self.executor._processes), 3)
+        self.assertEqual(len(self.executor._processes), expected_num_processes)
         for _ in range(3):
             sem.release()
         processes = self.executor._processes
@@ -1021,6 +1028,8 @@ class ProcessPoolExecutorTest(ExecutorTest):
     def test_idle_process_reuse_one(self):
         executor = self.executor
         assert executor._max_workers >= 4
+        if self.get_context().get_start_method(allow_none=False) == "fork":
+            raise unittest.SkipTest("Incompatible with the fork start method.")
         executor.submit(mul, 21, 2).result()
         executor.submit(mul, 6, 7).result()
         executor.submit(mul, 3, 14).result()
@@ -1029,6 +1038,8 @@ class ProcessPoolExecutorTest(ExecutorTest):
     def test_idle_process_reuse_multiple(self):
         executor = self.executor
         assert executor._max_workers <= 5
+        if self.get_context().get_start_method(allow_none=False) == "fork":
+            raise unittest.SkipTest("Incompatible with the fork start method.")
         executor.submit(mul, 12, 7).result()
         executor.submit(mul, 33, 25)
         executor.submit(mul, 25, 26).result()
@@ -1039,10 +1050,15 @@ class ProcessPoolExecutorTest(ExecutorTest):
         executor.shutdown()
 
     def test_max_tasks_per_child(self):
+        context = self.get_context()
+        if context.get_start_method(allow_none=False) == "fork":
+            with self.assertRaises(ValueError):
+                self.executor_type(1, mp_context=context, max_tasks_per_child=3)
+            return
         # not using self.executor as we need to control construction.
         # arguably this could go in another class w/o that mixin.
         executor = self.executor_type(
-                1, mp_context=self.get_context(), max_tasks_per_child=3)
+                1, mp_context=context, max_tasks_per_child=3)
         f1 = executor.submit(os.getpid)
         original_pid = f1.result()
         # The worker pid remains the same as the worker could be reused
@@ -1061,11 +1077,20 @@ class ProcessPoolExecutorTest(ExecutorTest):
 
         executor.shutdown()
 
+    def test_max_tasks_per_child_defaults_to_spawn_context(self):
+        # not using self.executor as we need to control construction.
+        # arguably this could go in another class w/o that mixin.
+        executor = self.executor_type(1, max_tasks_per_child=3)
+        self.assertEqual(executor._mp_context.get_start_method(), "spawn")
+
     def test_max_tasks_early_shutdown(self):
+        context = self.get_context()
+        if context.get_start_method(allow_none=False) == "fork":
+            raise unittest.SkipTest("Incompatible with the fork start method.")
         # not using self.executor as we need to control construction.
         # arguably this could go in another class w/o that mixin.
         executor = self.executor_type(
-                3, mp_context=self.get_context(), max_tasks_per_child=1)
+                3, mp_context=context, max_tasks_per_child=1)
         futures = []
         for i in range(6):
             futures.append(executor.submit(mul, i, i))

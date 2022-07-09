@@ -321,8 +321,6 @@ There are these calling conventions:
    or possibly ``NULL`` if there are no keywords.  The values of the keyword
    arguments are stored in the *args* array, after the positional arguments.
 
-   This is not part of the :ref:`limited API <stable>`.
-
    .. versionadded:: 3.7
 
 

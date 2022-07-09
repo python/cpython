@@ -91,8 +91,8 @@ library that Python uses on your platform. On most platforms the
 
    Hashlib now uses SHA3 and SHAKE from OpenSSL 1.1.1 and newer.
 
-For example, to obtain the digest of the byte string ``b'Nobody inspects the
-spammish repetition'``::
+For example, to obtain the digest of the byte string ``b"Nobody inspects the
+spammish repetition"``::
 
    >>> import hashlib
    >>> m = hashlib.sha256()
@@ -100,15 +100,13 @@ spammish repetition'``::
    >>> m.update(b" the spammish repetition")
    >>> m.digest()
    b'\x03\x1e\xdd}Ae\x15\x93\xc5\xfe\\\x00o\xa5u+7\xfd\xdf\xf7\xbcN\x84:\xa6\xaf\x0c\x95\x0fK\x94\x06'
-   >>> m.digest_size
-   32
-   >>> m.block_size
-   64
+   >>> m.hexdigest()
+   '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
 
 More condensed:
 
-   >>> hashlib.sha224(b"Nobody inspects the spammish repetition").hexdigest()
-   'a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2'
+   >>> hashlib.sha256(b"Nobody inspects the spammish repetition").hexdigest()
+   '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
 
 .. function:: new(name[, data], *, usedforsecurity=True)
 
@@ -302,23 +300,17 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
 
    >>> from hashlib import pbkdf2_hmac
    >>> our_app_iters = 500_000  # Application specific, read above.
-   >>> dk = pbkdf2_hmac('sha256', b'password', b'bad salt'*2, our_app_iters)
+   >>> dk = pbkdf2_hmac('sha256', b'password', b'bad salt' * 2, our_app_iters)
    >>> dk.hex()
    '15530bba69924174860db778f2c6f8104d3aaf9d26241840c8c4a641c8d000a9'
 
+   Function only available when Python is compiled with OpenSSL.
+
    .. versionadded:: 3.4
 
-   .. note::
-
-      A fast implementation of *pbkdf2_hmac* is available with OpenSSL.  The
-      Python implementation uses an inline version of :mod:`hmac`. It is about
-      three times slower and doesn't release the GIL.
-
-   .. deprecated:: 3.10
-
-      Slow Python implementation of *pbkdf2_hmac* is deprecated. In the
-      future the function will only be available when Python is compiled
-      with OpenSSL.
+   .. versionchanged:: 3.12
+      Function now only available when Python is built with OpenSSL. The slow
+      pure Python implementation has been removed.
 
 .. function:: scrypt(password, *, salt, n, r, p, maxmem=0, dklen=64)
 
@@ -670,7 +662,7 @@ function:
     hash function used in the protocol summarily stops this type of attack.
 
     (`The Skein Hash Function Family
-    <http://www.skein-hash.info/sites/default/files/skein1.3.pdf>`_,
+    <https://www.schneier.com/wp-content/uploads/2016/02/skein.pdf>`_,
     p. 21)
 
 BLAKE2 can be personalized by passing bytes to the *person* argument::

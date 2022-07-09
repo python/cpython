@@ -10,7 +10,6 @@ import functools
 import html
 import io
 import itertools
-import locale
 import operator
 import os
 import pickle
@@ -978,15 +977,13 @@ class ElementTreeTest(unittest.TestCase):
 
     def test_tostring_xml_declaration_unicode_encoding(self):
         elem = ET.XML('<body><tag/></body>')
-        preferredencoding = locale.getpreferredencoding()
         self.assertEqual(
-            f"<?xml version='1.0' encoding='{preferredencoding}'?>\n<body><tag /></body>",
-            ET.tostring(elem, encoding='unicode', xml_declaration=True)
+            ET.tostring(elem, encoding='unicode', xml_declaration=True),
+            "<?xml version='1.0' encoding='utf-8'?>\n<body><tag /></body>"
         )
 
     def test_tostring_xml_declaration_cases(self):
         elem = ET.XML('<body><tag>ø</tag></body>')
-        preferredencoding = locale.getpreferredencoding()
         TESTCASES = [
         #   (expected_retval,                  encoding, xml_declaration)
             # ... xml_declaration = None
@@ -1013,7 +1010,7 @@ class ElementTreeTest(unittest.TestCase):
              b"<body><tag>&#248;</tag></body>", 'US-ASCII', True),
             (b"<?xml version='1.0' encoding='ISO-8859-1'?>\n"
              b"<body><tag>\xf8</tag></body>", 'ISO-8859-1', True),
-            (f"<?xml version='1.0' encoding='{preferredencoding}'?>\n"
+            ("<?xml version='1.0' encoding='utf-8'?>\n"
              "<body><tag>ø</tag></body>", 'unicode', True),
 
         ]
@@ -1051,11 +1048,10 @@ class ElementTreeTest(unittest.TestCase):
             b"<?xml version='1.0' encoding='us-ascii'?>\n<body><tag /></body>"
         )
 
-        preferredencoding = locale.getpreferredencoding()
         stringlist = ET.tostringlist(elem, encoding='unicode', xml_declaration=True)
         self.assertEqual(
             ''.join(stringlist),
-            f"<?xml version='1.0' encoding='{preferredencoding}'?>\n<body><tag /></body>"
+            "<?xml version='1.0' encoding='utf-8'?>\n<body><tag /></body>"
         )
         self.assertRegex(stringlist[0], r"^<\?xml version='1.0' encoding='.+'?>")
         self.assertEqual(['<body', '>', '<tag', ' />', '</body>'], stringlist[1:])
@@ -2336,35 +2332,6 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
         attrib["bar"] = "baz"
         self.assertIsNot(element_foo.attrib, attrib)
         self.assertNotEqual(element_foo.attrib, attrib)
-
-    def test_copy(self):
-        # Only run this test if Element.copy() is defined.
-        if "copy" not in dir(ET.Element):
-            raise unittest.SkipTest("Element.copy() not present")
-
-        element_foo = ET.Element("foo", { "zix": "wyp" })
-        element_foo.append(ET.Element("bar", { "baz": "qix" }))
-
-        with self.assertWarns(DeprecationWarning):
-            element_foo2 = element_foo.copy()
-
-        # elements are not the same
-        self.assertIsNot(element_foo2, element_foo)
-
-        # string attributes are equal
-        self.assertEqual(element_foo2.tag, element_foo.tag)
-        self.assertEqual(element_foo2.text, element_foo.text)
-        self.assertEqual(element_foo2.tail, element_foo.tail)
-
-        # number of children is the same
-        self.assertEqual(len(element_foo2), len(element_foo))
-
-        # children are the same
-        for (child1, child2) in itertools.zip_longest(element_foo, element_foo2):
-            self.assertIs(child1, child2)
-
-        # attrib is a copy
-        self.assertEqual(element_foo2.attrib, element_foo.attrib)
 
     def test___copy__(self):
         element_foo = ET.Element("foo", { "zix": "wyp" })
@@ -3740,17 +3707,10 @@ class IOTest(unittest.TestCase):
             encoding = f.encoding
         os_helper.unlink(TESTFN)
 
-        try:
-            '\xf8'.encode(encoding)
-        except UnicodeEncodeError:
-            self.skipTest(f'default file encoding {encoding} not supported')
-
         tree = ET.ElementTree(ET.XML('''<site>\xf8</site>'''))
         tree.write(TESTFN, encoding='unicode')
         with open(TESTFN, 'rb') as f:
-            data = f.read()
-            expected = "<site>\xf8</site>".encode(encoding, 'xmlcharrefreplace')
-            self.assertEqual(data, expected)
+            self.assertEqual(f.read(), b"<site>\xc3\xb8</site>")
 
     def test_write_to_text_file(self):
         self.addCleanup(os_helper.unlink, TESTFN)
@@ -3765,7 +3725,7 @@ class IOTest(unittest.TestCase):
             tree.write(f, encoding='unicode')
             self.assertFalse(f.closed)
         with open(TESTFN, 'rb') as f:
-            self.assertEqual(f.read(), b'''<site>&#248;</site>''')
+            self.assertEqual(f.read(),  b'''<site>&#248;</site>''')
 
         with open(TESTFN, 'w', encoding='ISO-8859-1') as f:
             tree.write(f, encoding='unicode')

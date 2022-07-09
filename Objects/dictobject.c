@@ -624,6 +624,7 @@ new_keys_object(uint8_t log2_size, bool unicode)
 #endif
     if (log2_size == PyDict_LOG_MINSIZE && unicode && state->keys_numfree > 0) {
         dk = state->keys_free_list[--state->keys_numfree];
+        OBJECT_STAT_INC(from_freelist);
     }
     else
 #endif
@@ -681,6 +682,7 @@ free_keys_object(PyDictKeysObject *keys)
             && state->keys_numfree < PyDict_MAXFREELIST
             && DK_IS_UNICODE(keys)) {
         state->keys_free_list[state->keys_numfree++] = keys;
+        OBJECT_STAT_INC(to_freelist);
         return;
     }
 #endif
@@ -726,6 +728,7 @@ new_dict(PyDictKeysObject *keys, PyDictValues *values, Py_ssize_t used, int free
         mp = state->free_list[--state->numfree];
         assert (mp != NULL);
         assert (Py_IS_TYPE(mp, &PyDict_Type));
+        OBJECT_STAT_INC(from_freelist);
         _Py_NewReference((PyObject *)mp);
     }
     else
@@ -1544,6 +1547,7 @@ dictresize(PyDictObject *mp, uint8_t log2_newsize, int unicode)
                     state->keys_numfree < PyDict_MAXFREELIST)
             {
                 state->keys_free_list[state->keys_numfree++] = oldkeys;
+                OBJECT_STAT_INC(to_freelist);
             }
             else
 #endif
@@ -2381,6 +2385,7 @@ dict_dealloc(PyDictObject *mp)
 #endif
     if (state->numfree < PyDict_MAXFREELIST && Py_IS_TYPE(mp, &PyDict_Type)) {
         state->free_list[state->numfree++] = mp;
+        OBJECT_STAT_INC(to_freelist);
     }
     else
 #endif
@@ -5467,7 +5472,9 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
     values->values[ix] = value;
     if (old_value == NULL) {
         if (value == NULL) {
-            PyErr_SetObject(PyExc_AttributeError, name);
+            PyErr_Format(PyExc_AttributeError,
+                         "'%.100s' object has no attribute '%U'",
+                         Py_TYPE(obj)->tp_name, name);
             return -1;
         }
         _PyDictValues_AddToInsertionOrder(values, ix);

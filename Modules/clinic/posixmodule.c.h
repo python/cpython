@@ -1760,11 +1760,7 @@ os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
         _PyArg_BadArgument("system", "argument 'command'", "str", args[0]);
         goto exit;
     }
-    #if USE_UNICODE_WCHAR_CACHE
-    command = _PyUnicode_AsUnicode(args[0]);
-    #else /* USE_UNICODE_WCHAR_CACHE */
     command = PyUnicode_AsWideCharString(args[0], NULL);
-    #endif /* USE_UNICODE_WCHAR_CACHE */
     if (command == NULL) {
         goto exit;
     }
@@ -1776,9 +1772,7 @@ os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 
 exit:
     /* Cleanup for command */
-    #if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free((void *)command);
-    #endif /* USE_UNICODE_WCHAR_CACHE */
 
     return return_value;
 }
@@ -3105,6 +3099,41 @@ os_openpty(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 #endif /* (defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX)) */
+
+#if (defined(HAVE_LOGIN_TTY) || defined(HAVE_FALLBACK_LOGIN_TTY))
+
+PyDoc_STRVAR(os_login_tty__doc__,
+"login_tty($module, fd, /)\n"
+"--\n"
+"\n"
+"Prepare the tty of which fd is a file descriptor for a new login session.\n"
+"\n"
+"Make the calling process a session leader; make the tty the\n"
+"controlling tty, the stdin, the stdout, and the stderr of the\n"
+"calling process; close fd.");
+
+#define OS_LOGIN_TTY_METHODDEF    \
+    {"login_tty", (PyCFunction)os_login_tty, METH_O, os_login_tty__doc__},
+
+static PyObject *
+os_login_tty_impl(PyObject *module, int fd);
+
+static PyObject *
+os_login_tty(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int fd;
+
+    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
+        goto exit;
+    }
+    return_value = os_login_tty_impl(module, fd);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(HAVE_LOGIN_TTY) || defined(HAVE_FALLBACK_LOGIN_TTY)) */
 
 #if defined(HAVE_FORKPTY)
 
@@ -7229,11 +7258,7 @@ os_startfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
             _PyArg_BadArgument("startfile", "argument 'operation'", "str", args[1]);
             goto exit;
         }
-        #if USE_UNICODE_WCHAR_CACHE
-        operation = _PyUnicode_AsUnicode(args[1]);
-        #else /* USE_UNICODE_WCHAR_CACHE */
         operation = PyUnicode_AsWideCharString(args[1], NULL);
-        #endif /* USE_UNICODE_WCHAR_CACHE */
         if (operation == NULL) {
             goto exit;
         }
@@ -7246,11 +7271,7 @@ os_startfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
             _PyArg_BadArgument("startfile", "argument 'arguments'", "str", args[2]);
             goto exit;
         }
-        #if USE_UNICODE_WCHAR_CACHE
-        arguments = _PyUnicode_AsUnicode(args[2]);
-        #else /* USE_UNICODE_WCHAR_CACHE */
         arguments = PyUnicode_AsWideCharString(args[2], NULL);
-        #endif /* USE_UNICODE_WCHAR_CACHE */
         if (arguments == NULL) {
             goto exit;
         }
@@ -7277,13 +7298,9 @@ exit:
     /* Cleanup for filepath */
     path_cleanup(&filepath);
     /* Cleanup for operation */
-    #if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free((void *)operation);
-    #endif /* USE_UNICODE_WCHAR_CACHE */
     /* Cleanup for arguments */
-    #if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free((void *)arguments);
-    #endif /* USE_UNICODE_WCHAR_CACHE */
     /* Cleanup for cwd */
     path_cleanup(&cwd);
 
@@ -8932,6 +8949,10 @@ exit:
     #define OS_OPENPTY_METHODDEF
 #endif /* !defined(OS_OPENPTY_METHODDEF) */
 
+#ifndef OS_LOGIN_TTY_METHODDEF
+    #define OS_LOGIN_TTY_METHODDEF
+#endif /* !defined(OS_LOGIN_TTY_METHODDEF) */
+
 #ifndef OS_FORKPTY_METHODDEF
     #define OS_FORKPTY_METHODDEF
 #endif /* !defined(OS_FORKPTY_METHODDEF) */
@@ -9331,4 +9352,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=3b5a56add047ee1d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bae15f09a1b3d2e7 input=a9049054013a1b77]*/
