@@ -329,7 +329,8 @@ def _on_ssl_client(socket, peer_address, certificate=None,
     # that we can test the STARTTLS functionality.
 
     def log(message):
-        sys.stdout.write(f' server: {message}\n')
+        if support.verbose and chatty:
+            sys.stdout.write(f' server: {message}\n')
 
     if context is None:
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -458,8 +459,10 @@ def _on_ssl_client(socket, peer_address, certificate=None,
 
         else:
             ctype = 'encrypted' if sslconn else 'unencrypted'
-            log(f'read {msg} ({ctype}), sending back {msg.lower()} ({ctype})')
-            write(msg.lower())
+            in_str = msg.decode() 
+            out_str = in_str.lower()
+            log(f'read {in_str} ({ctype}), sending back {out_str} ({ctype})')
+            write(out_str.encode())
 
     try:
         socket = sslconn.unwrap()
@@ -2844,7 +2847,7 @@ def try_protocol_combo(server_protocol, client_protocol, expect_success,
 
 class ThreadedTests(unittest.TestCase):
 
-    def wait_connection(self, socket, *, wait_response=True):
+    def wait_connection(self, socket):
         """Force a socket to immediately initiate and process a TLS handshake.
 
         TLS 1.3 delays session ticket exchange until some data are sent. So we
@@ -2854,16 +2857,15 @@ class ThreadedTests(unittest.TestCase):
 
         For more details on how TLS 1.3 changed the handshake, see
         <https://www.thesslstore.com/blog/tls-1-3-handshake-tls-1-2/>.
-
-        In some testing sequences the function can block in indefinite waiting
-        of server response. In such a case, set wait_response argument to False.
         """
+
+        # If server throws, it may continue to keep a living client connection.
+        # So we need to disconnect client on timeout.
         socket.settimeout(support.LOOPBACK_TIMEOUT)
 
         echo_message = b'hi'
         socket.write(echo_message)
-        if wait_response:
-            socket.read(len(echo_message))
+        socket.read(len(echo_message))
 
     def test_echo(self):
         """Basic test of an SSL client connecting to a server"""
@@ -2995,7 +2997,7 @@ class ThreadedTests(unittest.TestCase):
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
                 s.connect(address)
-                self.wait_connection(s, wait_response=False)
+                self.wait_connection(s)
                 cert = s.getpeercert()
                 self.assertTrue(cert, "Can't get peer certificate.")
 
