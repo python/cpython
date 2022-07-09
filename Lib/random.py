@@ -24,6 +24,7 @@
            negative exponential
            gamma
            beta
+           binomial
            pareto
            Weibull
 
@@ -49,6 +50,7 @@ from warnings import warn as _warn
 from math import log as _log, exp as _exp, pi as _pi, e as _e, ceil as _ceil
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
 from math import tau as TWOPI, floor as _floor, isfinite as _isfinite
+from math import lgamma as _lgamma, fabs as _fabs
 from os import urandom as _urandom
 from _collections_abc import Sequence as _Sequence
 from operator import index as _index
@@ -68,6 +70,7 @@ __all__ = [
     "Random",
     "SystemRandom",
     "betavariate",
+    "binomialvariate",
     "choice",
     "choices",
     "expovariate",
@@ -98,6 +101,10 @@ SG_MAGICCONST = 1.0 + _log(4.5)
 BPF = 53        # Number of bits in a float
 RECIP_BPF = 2 ** -BPF
 _ONE = 1
+
+def _logfact(n):
+    "Return log(n!)"
+    return _lgamma(n + 1)
 
 
 class Random(_random.Random):
@@ -725,6 +732,83 @@ class Random(_random.Random):
             return y / (y + self.gammavariate(beta, 1.0))
         return 0.0
 
+
+    def binomialvariate(self, n=1, p=0.5):
+        """Binomial random variable.
+
+        Gives the number of successes for *n* Bernoulli trials
+        with the probability of success in each trial being *p*.
+
+        Returns an integer in the range:   0 <= X <= n
+
+        """
+        # Error check inputs and handle edge cases
+        if n < 0:
+            raise ValueError("n must be non-negative")
+        if p <= 0.0 or p >= 1.0:
+            if p == 0.0:
+                return 0
+            if p == 1.0:
+                return n
+            raise ValueError("p must be in the range 0.0 <= p <= 1.0")
+
+        random = self.random
+
+        # Fast path for a common case
+        if n == 1:
+            return _index(random() < p)
+
+        # Exploit symmetry to establish:  p <= 0.5
+        if p > 0.5:
+            return n - self.binomialvariate(n, 1.0 - p)
+
+        if n * p < 10.0:
+            # BG: Geometric method by Devroye with running time of O(np).
+            # https://dl.acm.org/doi/pdf/10.1145/42372.42381
+            x = y = 0
+            c = _log(1.0 - p)
+            if not c:
+                return x
+            while True:
+                y += _floor(_log(random()) / c) + 1
+                if y >= n:
+                    return x
+                x += 1
+
+        # BTRS: Transformed rejection with squeeze method
+        # See "The Generation of Binomial Random Variates" by Wolfgang Hörmann
+        # https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.47.8407&rep=rep1&type=pdf
+        # Assumes n*p >= 10 and p <= 0.5
+
+        spq = _sqrt(n * p * (1.0 - p))
+        b = 1.15 + 2.53 * spq
+        a = -0.0873 + 0.0248 * b + 0.01 * p
+        c = n * p + 0.5
+        vr = 0.92 - 4.2 / b
+
+        while True:
+
+            u = random()
+            v = random()
+            u -= 0.5
+            us = 0.5 - _fabs(u)
+            k = _floor((2.0 * a / us + b) * u + c)
+
+            if us >= 0.07 and v <= vr:
+                return k
+            if k < 0 or k > n:
+                continue
+
+            alpha = (2.83 + 5.1 / b) * spq
+            lpq = _log(p / (1.0 - p))
+            m = _floor((n + 1) * p)
+            h = _logfact(m) + _logfact(n - m)
+
+            v *= alpha / (a / (us * us) + b)
+            if v <= h - _logfact(k) - _logfact(n - k) + (k - m) * lpq:
+                return k
+
+
     def paretovariate(self, alpha):
         """Pareto distribution.  alpha is the shape parameter."""
         # Jain, pg. 495
@@ -810,6 +894,7 @@ vonmisesvariate = _inst.vonmisesvariate
 gammavariate = _inst.gammavariate
 gauss = _inst.gauss
 betavariate = _inst.betavariate
+binomialvariate = _inst.binomialvariate
 paretovariate = _inst.paretovariate
 weibullvariate = _inst.weibullvariate
 getstate = _inst.getstate
