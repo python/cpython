@@ -23261,6 +23261,7 @@ SRCDIRS="\
   Modules/_sha3 \
   Modules/_sqlite \
   Modules/_sre \
+  Modules/_testcapi \
   Modules/_xxtestfuzz \
   Modules/cjkcodecs \
   Modules/expat \
