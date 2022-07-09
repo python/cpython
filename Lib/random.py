@@ -778,7 +778,7 @@ class Random(_random.Random):
         # BTRS: Transformed rejection with squeeze method
         # See "The Generation of Binomial Random Variates" by Wolfgang Hörmann
         # https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.47.8407&rep=rep1&type=pdf
-        # Assumes n*p >= 10 and p <= 0.5
+        assert n*p >= 10.0 and p <= 0.5
 
         spq = _sqrt(n * p * (1.0 - p))
         b = 1.15 + 2.53 * spq
@@ -794,17 +794,18 @@ class Random(_random.Random):
             us = 0.5 - _fabs(u)
             k = _floor((2.0 * a / us + b) * u + c)
 
-            if us >= 0.07 and v <= vr:
-                return k
             if k < 0 or k > n:
                 continue
+            if us >= 0.07 and v <= vr:
+                return k
 
             alpha = (2.83 + 5.1 / b) * spq
             lpq = _log(p / (1.0 - p))
             m = _floor((n + 1) * p)
             h = _logfact(m) + _logfact(n - m)
 
-            v *= alpha / (a / (us * us) + b)
+            # Original paper errorneously omits the call to log()
+            v = _log(v * alpha / (a / (us * us) + b))
             if v <= h - _logfact(k) - _logfact(n - k) + (k - m) * lpq:
                 return k
 
