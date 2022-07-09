@@ -2,6 +2,7 @@ __all__ = (
     'StreamReader', 'StreamWriter', 'StreamReaderProtocol',
     'open_connection', 'start_server')
 
+import collections
 import socket
 import sys
 import weakref
@@ -128,7 +129,7 @@ class FlowControlMixin(protocols.Protocol):
         else:
             self._loop = loop
         self._paused = False
-        self._drain_waiter = None
+        self._drain_waiters = collections.deque()
         self._connection_lost = False
 
     def pause_writing(self):
@@ -143,9 +144,8 @@ class FlowControlMixin(protocols.Protocol):
         if self._loop.get_debug():
             logger.debug("%r resumes writing", self)
 
-        waiter = self._drain_waiter
-        if waiter is not None:
-            self._drain_waiter = None
+        while self._drain_waiters:
+            waiter = self._drain_waiters.popleft()
             if not waiter.done():
                 waiter.set_result(None)
 
@@ -154,27 +154,26 @@ class FlowControlMixin(protocols.Protocol):
         # Wake up the writer if currently paused.
         if not self._paused:
             return
-        waiter = self._drain_waiter
-        if waiter is None:
-            return
-        self._drain_waiter = None
-        if waiter.done():
-            return
-        if exc is None:
-            waiter.set_result(None)
-        else:
-            waiter.set_exception(exc)
+
+        while self._drain_waiters:
+            waiter = self._drain_waiters.popleft()
+            if not waiter.done():
+                if exc is None:
+                    waiter.set_result(None)
+                else:
+                    waiter.set_exception(exc)
 
     async def _drain_helper(self):
         if self._connection_lost:
             raise ConnectionResetError('Connection lost')
         if not self._paused:
             return
-        waiter = self._drain_waiter
-        assert waiter is None or waiter.cancelled()
         waiter = self._loop.create_future()
-        self._drain_waiter = waiter
-        await waiter
+        self._drain_waiters.append(waiter)
+        try:
+            await waiter
+        finally:
+            self._drain_waiters.remove(waiter)
 
     def _get_close_waiter(self, stream):
         raise NotImplementedError
