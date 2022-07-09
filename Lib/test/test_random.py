@@ -1103,6 +1103,12 @@ class TestDistributions(unittest.TestCase):
         self.assertTrue(set(c) <= set(range(101)))
         self.assertEqual(c.total(), 100_000)
 
+        # Demonstrate the BTRS works for huge values of n
+        X = bv(100_000_000, 0.2)
+        self.assertTrue(19_000_000 <= X <= 21_000_000)
+        X = bv(100_000_000, 0.9)
+        self.assertTrue(89_000_000 <= X <= 91_000_000)
+
 
     def test_von_mises_range(self):
         # Issue 17149: von mises variates were not consistently in the
