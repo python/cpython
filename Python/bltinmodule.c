@@ -2429,6 +2429,30 @@ Without arguments, equivalent to locals().\n\
 With an argument, equivalent to object.__dict__.");
 
 
+static int
+validate_not_string(PyObject *obj)
+{
+    if (obj == NULL) {
+        return 0;
+    }
+    if (PyUnicode_Check(obj)) {
+        PyErr_SetString(PyExc_TypeError,
+            "sum() can't sum strings [use ''.join(seq) instead]");
+        return -1;
+    }
+    if (PyBytes_Check(obj)) {
+        PyErr_SetString(PyExc_TypeError,
+            "sum() can't sum bytes [use b''.join(seq) instead]");
+        return -1;
+    }
+    if (PyByteArray_Check(obj)) {
+        PyErr_SetString(PyExc_TypeError,
+            "sum() can't sum bytearray [use b''.join(seq) instead]");
+        return -1;
+    }
+    return 0;
+}
+
 /*[clinic input]
 sum as builtin_sum
 
@@ -2449,6 +2473,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
 {
     PyObject *result = start;
     PyObject *temp, *item, *iter;
+    int is_first_iteration = TRUE;
 
     iter = PyObject_GetIter(iterable);
     if (iter == NULL)
@@ -2462,21 +2487,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
         }
     } else {
         /* reject string values for 'start' parameter */
-        if (PyUnicode_Check(result)) {
-            PyErr_SetString(PyExc_TypeError,
-                "sum() can't sum strings [use ''.join(seq) instead]");
-            Py_DECREF(iter);
-            return NULL;
-        }
-        if (PyBytes_Check(result)) {
-            PyErr_SetString(PyExc_TypeError,
-                "sum() can't sum bytes [use b''.join(seq) instead]");
-            Py_DECREF(iter);
-            return NULL;
-        }
-        if (PyByteArray_Check(result)) {
-            PyErr_SetString(PyExc_TypeError,
-                "sum() can't sum bytearray [use b''.join(seq) instead]");
+        if (validate_not_string(result) < 0) {
             Py_DECREF(iter);
             return NULL;
         }
@@ -2503,6 +2514,14 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 if (PyErr_Occurred())
                     return NULL;
                 return PyLong_FromLong(i_result);
+            }
+            if (is_first_iteration) {
+                if (validate_not_string(item) < 0) {
+                    Py_DECREF(item);
+                    Py_DECREF(iter);
+                    return NULL;
+                }
+                is_first_iteration = FALSE;
             }
             if (PyLong_CheckExact(item) || PyBool_Check(item)) {
                 long b;
@@ -2554,6 +2573,14 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                     return NULL;
                 return PyFloat_FromDouble(f_result);
             }
+            if (is_first_iteration) {
+                if (validate_not_string(item) < 0) {
+                    Py_DECREF(item);
+                    Py_DECREF(iter);
+                    return NULL;
+                }
+                is_first_iteration = FALSE;
+            }
             if (PyFloat_CheckExact(item)) {
                 f_result += PyFloat_AS_DOUBLE(item);
                 _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
@@ -2596,6 +2623,15 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 result = NULL;
             }
             break;
+        }
+        if (is_first_iteration) {
+            if (validate_not_string(item) < 0) {
+                Py_DECREF(result);
+                Py_DECREF(item);
+                Py_DECREF(iter);
+                return NULL;
+            }
+            is_first_iteration = FALSE;
         }
         /* It's tempting to use PyNumber_InPlaceAdd instead of
            PyNumber_Add here, to avoid quadratic running time
