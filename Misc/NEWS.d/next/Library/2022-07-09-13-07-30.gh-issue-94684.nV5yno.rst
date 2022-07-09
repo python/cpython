@@ -1,0 +1,1 @@
+Now uuid.uuid3 and uuid.uuid5 functions support also the name argument given as a byte sequence (i.e. bytes object)
