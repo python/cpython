@@ -44,10 +44,10 @@ Example::
    ...     print(time.time())
    ...     s.enter(10, 1, print_time)
    ...     s.enter(5, 2, print_time, argument=('positional',))
-   ...     # this runs after 'positional' as enter() is relative
+   ...     # despite having higher priority, 'keyword' runs after 'positional' as enter() is relative
    ...     s.enter(5, 1, print_time, kwargs={'a': 'keyword'})
-   ...     s.enterabs(3, 10, print_time, argument=("first enterabs",))
-   ...     s.enterabs(3, 5, print_time, argument=("second enterabs",))
+   ...     s.enterabs(1_650_000_000, 10, print_time, argument=("first enterabs",))
+   ...     s.enterabs(1_650_000_000, 5, print_time, argument=("second enterabs",))
    ...     s.run()
    ...     print(time.time())
    ...
