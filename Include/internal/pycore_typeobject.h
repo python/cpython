@@ -39,13 +39,17 @@ struct type_cache {
 #endif
 };
 
+#define _Py_MAX_STATIC_BUILTIN_TYPES 1000
+
 struct types_state {
     struct type_cache type_cache;
+    ssize_t num_builtins_initialized;
 };
 
 
 extern PyStatus _PyTypes_InitSlotDefs(void);
 
+extern int _PyStaticType_InitBuiltin(PyTypeObject *type);
 extern void _PyStaticType_Dealloc(PyTypeObject *type);
 
 
