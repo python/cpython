@@ -502,6 +502,10 @@ Pure paths provide the following methods and properties:
 
    .. versionadded:: 3.9
 
+   .. deprecated:: 3.12
+
+      Support for supplying additional arguments is deprecated; if supplied,
+      they are joined with *other*.
 
 .. method:: PurePath.is_reserved()
 
@@ -581,8 +585,15 @@ Pure paths provide the following methods and properties:
           .format(str(self), str(formatted)))
       ValueError: '/etc/passwd' is not in the subpath of '/usr' OR one path is relative and the other absolute.
 
-   NOTE: This function is part of :class:`PurePath` and works with strings. It does not check or access the underlying file structure.
+   .. note:
 
+      This function is part of :class:`PurePath` and works with strings. It
+      does not access the filesystem.
+
+   .. deprecated:: 3.12
+
+      Passing additional arguments is deprecated; if supplied, they are joined
+      with *other*.
 
 .. method:: PurePath.with_name(name)
 
