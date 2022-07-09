@@ -282,6 +282,23 @@ Creating Tasks
       Added the *context* parameter.
 
 
+Task Cancellation
+=================
+
+Tasks can easily and safely be cancelled.
+When a task is cancelled, asyncio will raise a :exc:`asyncio.CancelledError`
+into the task at the next opportunity.
+
+Coroutines should only catch :exc:`asyncio.CancelledError` if they
+need to perform clean-up logic when they are cancelled, and even in
+that case the :exc:`asyncio.CancelledError` should be propagated when
+clean-up is complete. Most code can safely ignore `CancelledError`.
+
+Important asyncio components, like :class:`asyncio.TaskGroup` and the
+:func:`asyncio.timeout` context manager, are implemented using cancellation
+internally.
+
+
 Task Groups
 ===========
 
@@ -536,6 +553,56 @@ Shielding From Cancellation
 
 Timeouts
 ========
+
+A convenient way to limit the amount of time spent waiting on
+something is to use the :func:`asyncio.timeout` and
+:func:`asyncio.timeout_at`
+:ref:`asynchronous context manager <async-context-managers>`.
+
+Example::
+
+    async def main():
+        async with asyncio.timeout(10):
+            await long_running_task()
+
+If ``long_running_task`` takes more than 10 seconds to complete,
+the context manager will cancel the current task and handle
+the resulting :exc:`asyncio.CancelledError` internally, transforming it
+into a :exc:`asyncio.TimeoutError`, which can be caught and handled.
+
+Example::
+
+    async def main():
+        try:
+            async with asyncio.timeout_at(deadline):
+                await long_running_task()
+        except TimeoutError:
+            print("The long operation timed out, but we've handled it.")
+
+        print("This statement will run regardless.")
+
+The context manager produced by :func:`asyncio.timeout` can be
+rescheduled to a different deadline and inspected.
+
+Example::
+
+    async def main():
+        try:
+            async with asyncio.timeout(10) as cm:
+                # We changed our mind, giving it more time.
+                new_deadline = cm.when + 10
+                cm.reschedule(new_deadline)
+
+                await long_running_task()
+        except TimeoutError:
+            pass
+
+        if cm.expired:
+            print("Looks like we haven't finished on time.")
+
+The timeout context managers can be safely nested.
+
+.. versionadded:: 3.7
 
 .. coroutinefunction:: wait_for(aw, timeout)
 
