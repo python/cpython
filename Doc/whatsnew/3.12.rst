@@ -299,6 +299,20 @@ Removed
   has no ``copy()`` method, only a ``__copy__()`` method.
   (Contributed by Victor Stinner in :gh:`94383`.)
 
+* :mod:`zipimport`: Remove ``find_loader()`` and ``find_module()`` methods,
+  deprecated in Python 3.10: use the ``find_spec()`` method instead.  See
+  :pep:`451` for the rationale.
+  (Contributed by Victor Stinner in :gh:`94379`.)
+
+* Remove the :func:`ssl.wrap_socket` function, deprecated in Python 3.7:
+  instead, create a :class:`ssl.SSLContext` object and call its
+  :class:`ssl.SSLContext.wrap_socket` method. Any package that still uses
+  :func:`ssl.wrap_socket` is broken and insecure. The function neither sends a
+  SNI TLS extension nor validates server hostname. Code is subject to `CWE-295
+  <https://cwe.mitre.org/data/definitions/295.html>`_: Improper Certificate
+  Validation.
+  (Contributed by Victor Stinner in :gh:`94199`.)
+
 
 Porting to Python 3.12
 ======================
