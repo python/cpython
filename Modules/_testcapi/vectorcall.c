@@ -229,7 +229,7 @@ static PyTypeObject MethodDescriptor2_Type = {
 };
 
 
-PyAPI_FUNC(int) 
+int
 _PyTestCapi_Init_Vectorcall(PyObject *m) {
     if (PyModule_AddFunctions(m, TestMethods) < 0) {
         return -1;
