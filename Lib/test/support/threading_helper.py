@@ -1,13 +1,13 @@
 import _thread
-from concurrent.futures import ThreadPoolExecutor
 import contextlib
 import functools
 import sys
-from test.support.socket_helper import bind_port, HOST
 import threading
 from socket import socket
 import time
 import unittest
+from concurrent.futures import ThreadPoolExecutor
+from test.support.socket_helper import bind_port, HOST
 
 from test import support
 
