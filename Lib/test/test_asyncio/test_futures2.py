@@ -1,21 +1,22 @@
 # IsolatedAsyncioTestCase based tests
 import asyncio
-import unittest
 import traceback
+import unittest
+from asyncio import tasks
 
 
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
 
 
-class FutureTests(unittest.IsolatedAsyncioTestCase):
+class FutureTests:
 
     async def test_future_traceback(self):
 
         async def raise_exc():
             raise TypeError(42)
 
-        future = asyncio.create_task(raise_exc())
+        future = self.cls(raise_exc())
 
         for _ in range(5):
             try:
@@ -39,6 +40,13 @@ class FutureTests(unittest.IsolatedAsyncioTestCase):
         # exact comparison for the whole string is even weaker.
         self.assertIn('...', repr(await asyncio.wait_for(func(), timeout=10)))
 
+@unittest.skipUnless(hasattr(tasks, '_CTask'),
+                     'requires the C _asyncio module')
+class CFutureTests(FutureTests, unittest.IsolatedAsyncioTestCase):
+    cls = tasks._CTask
+
+class PyFutureTests(FutureTests, unittest.IsolatedAsyncioTestCase):
+    cls = tasks._PyTask
 
 if __name__ == '__main__':
     unittest.main()
