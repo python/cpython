@@ -329,8 +329,7 @@ def _on_ssl_client(socket, peer_address, certificate=None,
     # that we can test the STARTTLS functionality.
 
     def log(message):
-        if support.verbose and chatty:
-            sys.stdout.write(f' server: {message}\n')
+        sys.stdout.write(f' server: {message}\n')
 
     if context is None:
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
