@@ -138,6 +138,7 @@ static_builtin_state_clear(PyTypeObject *self)
 
     static_builtin_state *state = static_builtin_state_get(interp, self);
     state->type = NULL;
+    /* state->subclasses is left NULL until init_subclasses() sets it. */
     static_builtin_index_clear(self);
 
     assert(interp->types.num_builtins_initialized > 0);
@@ -147,49 +148,6 @@ static_builtin_state_clear(PyTypeObject *self)
 // Also see _PyStaticType_InitBuiltin() and _PyStaticType_Dealloc().
 
 /* end static builtin helpers */
-
-
-static Py_hash_t slot_tp_hash(PyObject *self);
-static inline PyObject * lookup___hash__(PyObject *self, int *unbound);
-
-static int
-is_hashable(PyObject *obj)
-{
-    PyTypeObject *cls = Py_TYPE(obj);
-    if (cls->tp_hash != NULL &&
-        cls->tp_hash != PyObject_HashNotImplemented)
-    {
-        if (cls->tp_hash != slot_tp_hash) {
-            return 1;
-        }
-        int unbound;
-        if (lookup___hash__((PyObject *)cls, &unbound) != NULL) {
-            return 1;
-        }
-        if (PyErr_Occurred()) {
-            return -1;
-        }
-    }
-    return 0;
-}
-
-static inline Py_hash_t
-get_hash_with_fallback(PyObject *obj)
-{
-    Py_hash_t hash = PyObject_Hash(obj);
-    if (hash < 0) {
-        if (!PyErr_ExceptionMatches(PyExc_TypeError) ||
-            is_hashable((PyObject *)obj))
-        {
-            PyErr_WarnEx(PyExc_RuntimeWarning, "failed to hash object", 1);
-        }
-        // Fall back to object.__hash__().
-        PyErr_Clear();
-        hash = _Py_HashPointer(obj);
-        assert(!PyErr_Occurred());
-    }
-    return hash;
-}
 
 
 /*
@@ -4464,28 +4422,22 @@ type_dealloc(PyTypeObject *type)
 static PyObject *
 lookup_subclasses(PyTypeObject *self)
 {
-    // XXX Drop tp_subclasses?
-    // Heap types are guaranteed to be per-interpreter.
-    if (self->tp_flags & Py_TPFLAGS_HEAPTYPE) {
-        return self->tp_subclasses;
+    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        static_builtin_state *state = _PyStaticType_GetState(self);
+        assert(state != NULL);
+        return state->subclasses;
     }
-    // For static types we store them per-interpreter.
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->types.subclasses == NULL) {
-        return NULL;
-    }
-    /* We must handle the rare case where the metaclass
-       of the given type makes it unhashable. */
-    Py_hash_t hash = get_hash_with_fallback((PyObject *)self);
-    return _PyDict_GetItem_KnownHash(interp->types.subclasses,
-                                     (PyObject *)self, hash);
+    return self->tp_subclasses;
 }
 
 int
 _PyType_HasSubclasses(PyTypeObject *self)
 {
-    PyObject *subclasses = lookup_subclasses(self);
-    if (subclasses == NULL) {
+    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN &&
+            _PyStaticType_GetState(self) == NULL) {
+        return 0;
+    }
+    if (lookup_subclasses(self) == NULL) {
         return PyErr_Occurred() ? -1 : 0;
     }
     return 1;
@@ -6883,30 +6835,16 @@ _PyStaticType_InitBuiltin(PyTypeObject *self)
 static PyObject *
 init_subclasses(PyTypeObject *self)
 {
-    // Heap types are guaranteed to be per-interpreter.
-    if (self->tp_flags & Py_TPFLAGS_HEAPTYPE) {
-        self->tp_subclasses = PyDict_New();
-        return self->tp_subclasses;
-    }
     PyObject *subclasses = PyDict_New();
     if (subclasses == NULL) {
         return NULL;
     }
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->types.subclasses == NULL) {
-        interp->types.subclasses = PyDict_New();
-        if (interp->types.subclasses == NULL) {
-            Py_DECREF(subclasses);
-            return NULL;
-        }
+    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        static_builtin_state *state = _PyStaticType_GetState(self);
+        state->subclasses = subclasses;
     }
-    /* We must handle the rare case where the metaclass
-       of the given type makes it unhashable. */
-    Py_hash_t hash = get_hash_with_fallback((PyObject *)self);
-    int res = _PyDict_SetItem_KnownHash(interp->types.subclasses,
-                                        (PyObject *)self, subclasses, hash);
-    Py_DECREF(subclasses);
-    return res == 0 ? subclasses : NULL;
+    self->tp_subclasses = subclasses;
+    return subclasses;
 }
 
 static void
@@ -6915,27 +6853,12 @@ clear_subclasses(PyTypeObject *self)
     /* Delete the dictionary to save memory. _PyStaticType_Dealloc()
        callers also test if tp_subclasses is NULL to check if a static type
        has no subclass. */
-    // Heap types are guaranteed to be per-interpreter.
-    if (self->tp_flags & Py_TPFLAGS_HEAPTYPE) {
-        Py_CLEAR(self->tp_subclasses);
+    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        static_builtin_state *state = _PyStaticType_GetState(self);
+        Py_CLEAR(state->subclasses);
         return;
     }
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->types.subclasses == NULL) {
-        return;
-    }
-    /* We must handle the rare case where the metaclass
-       of the given type makes it unhashable. */
-    Py_hash_t hash = get_hash_with_fallback((PyObject *)self);
-    int res = _PyDict_DelItem_KnownHash(interp->types.subclasses,
-                                        (PyObject *)self, hash);
-    if (res != 0) {
-        PyErr_Clear();
-        return;
-    }
-    if (PyDict_GET_SIZE(interp->types.subclasses) == 0) {
-        Py_CLEAR(interp->types.subclasses);
-    }
+    Py_CLEAR(self->tp_subclasses);
 }
 
 static int
@@ -8022,18 +7945,6 @@ slot_tp_repr(PyObject *self)
 
 SLOT0(slot_tp_str, __str__)
 
-
-static inline PyObject *
-lookup___hash__(PyObject *self, int *unbound)
-{
-    PyObject *func = lookup_maybe_method(self, &_Py_ID(__hash__), unbound);
-    if (func == Py_None) {
-        Py_DECREF(func);
-        func = NULL;
-    }
-    return func;
-}
-
 static Py_hash_t
 slot_tp_hash(PyObject *self)
 {
@@ -8041,11 +7952,14 @@ slot_tp_hash(PyObject *self)
     Py_ssize_t h;
     int unbound;
 
-    func = lookup___hash__(self, &unbound);
+    func = lookup_maybe_method(self, &_Py_ID(__hash__), &unbound);
+
+    if (func == Py_None) {
+        Py_DECREF(func);
+        func = NULL;
+    }
+
     if (func == NULL) {
-        if (PyErr_Occurred()) {
-            return -1;
-        }
         return PyObject_HashNotImplemented(self);
     }
 
