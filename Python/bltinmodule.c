@@ -2473,7 +2473,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
 {
     PyObject *result = start;
     PyObject *temp, *item, *iter;
-    int is_first_iteration = TRUE;
+    int is_first_iteration = 1;
 
     iter = PyObject_GetIter(iterable);
     if (iter == NULL)
@@ -2521,7 +2521,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                     Py_DECREF(iter);
                     return NULL;
                 }
-                is_first_iteration = FALSE;
+                is_first_iteration = 0;
             }
             if (PyLong_CheckExact(item) || PyBool_Check(item)) {
                 long b;
@@ -2579,7 +2579,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                     Py_DECREF(iter);
                     return NULL;
                 }
-                is_first_iteration = FALSE;
+                is_first_iteration = 0;
             }
             if (PyFloat_CheckExact(item)) {
                 f_result += PyFloat_AS_DOUBLE(item);
@@ -2631,7 +2631,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 Py_DECREF(iter);
                 return NULL;
             }
-            is_first_iteration = FALSE;
+            is_first_iteration = 0;
         }
         /* It's tempting to use PyNumber_InPlaceAdd instead of
            PyNumber_Add here, to avoid quadratic running time
