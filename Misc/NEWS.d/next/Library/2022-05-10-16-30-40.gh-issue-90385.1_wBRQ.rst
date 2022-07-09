@@ -1,1 +1,1 @@
-Added method walk to :class:`pathlib.Path` objects as a pathlib alternative for :func:`os.walk`
+Add :meth:`pathlib.Path.walk` as an alternative to :func:`os.walk`.

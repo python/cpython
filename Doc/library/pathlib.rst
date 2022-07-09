@@ -967,7 +967,7 @@ call fails (for example because the path doesn't exist).
    directory is generated before the triples for any of its subdirectories
    (directories are walked top-down).  If *top_down* is ``False``, the triple
    for a directory is generated after the triples for all of its subdirectories
-   (directories are generated bottom-up). No matter the value of *top_down*, the
+   (directories are walked bottom-up). No matter the value of *top_down*, the
    list of subdirectories is retrieved before the tuples for the directory and
    its subdirectories are walked.
 
