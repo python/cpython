@@ -374,7 +374,7 @@ def _on_ssl_client(socket, peer_address, certificate=None,
         try:
             sslconn = context.wrap_socket(socket, server_side=True)
             nonlocal read, write, close
-            read = lambda: sslconn.read()
+            read = lambda: sslconn.recv(1024)
             write = sslconn.write
             close = sslconn.close
 
@@ -2849,11 +2849,15 @@ class ThreadedTests(unittest.TestCase):
         """Force a socket to immediately initiate and process a TLS handshake.
 
         TLS 1.3 delays session ticket exchange until some data are sent. So we
-        need to dend some data to avoid ConnectionAbortedError ("An established
-        connection was aborted by the software in your host machine") caused
-        by closing half-open TLS connection.
+        need to send some data to avoid server-side ConnectionAbortedError
+        ("An established connection was aborted by the software in your host
+        machine") caused by closing half-open TLS connection.
+
+        For more details on how TLS 1.3 changed the handshake, see
+        <https://www.thesslstore.com/blog/tls-1-3-handshake-tls-1-2/>.
         """
-        socket.write(b'')
+        socket.write(b'ECHO hi')
+        socket.read(100)
 
     def test_echo(self):
         """Basic test of an SSL client connecting to a server"""

@@ -327,8 +327,8 @@ class Server:
                 try:
                     client, peer_address = server_socket.accept()
                     with client:
-                        results.append(client_func(client, peer_address,
-                                                   *args, **kwargs))
+                        r = client_func(client, peer_address, *args, **kwargs)
+                        results.append(r)
                 except (ConnectionAbortedError, ConnectionResetError):
                     if not client_fails:
                         raise
