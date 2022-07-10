@@ -3001,26 +3001,27 @@ class ThreadedTests(unittest.TestCase):
                 cert = s.getpeercert()
                 self.assertTrue(cert, "Can't get peer certificate.")
 
-    def _do_test_check_hostname_incorrect(self):
+    def test_check_hostname_incorrect(self):
         if support.verbose:
             sys.stdout.write("\n")
 
-        client_context, server_context, hostname = testing_context()
-
-        with Server(context=server_context) as address:
-            with client_context.wrap_socket(socket.socket(),
-                                            server_hostname="invalid") as s:
-                with self.assertRaisesRegex(
-                        ssl.CertificateError,
-                        "Hostname mismatch, certificate is not valid for 'invalid'."):
-                    s.connect(address)
-
-    def test_check_hostname_incorrect(self):
         if sys.platform == 'darwin':
-            self._do_test_check_hostname_incorrect()
+            server_exc_type = OSError
+            server_exc_msg = '[Errno 9]'
         else:
-            with self.assertRaisesRegex(ssl.SSLError, 'SSLV3_ALERT_BAD_CERTIFICATE'):
-                self._do_test_check_hostname_incorrect()
+            server_exc_type = ssl.SSLError
+            server_exc_msg = 'SSLV3_ALERT_BAD_CERTIFICATE'
+
+        with self.assertRaisesRegex(server_exc_type, server_exc_msg):
+            client_context, server_context, hostname = testing_context()
+
+            with Server(context=server_context) as address:
+                with client_context.wrap_socket(socket.socket(),
+                                                server_hostname="invalid") as s:
+                    with self.assertRaisesRegex(
+                            ssl.CertificateError,
+                            "Hostname mismatch, certificate is not valid for 'invalid'."):
+                        s.connect(address)
 
     def test_check_hostname_missing(self):
         if support.verbose:
