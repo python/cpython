@@ -319,6 +319,7 @@ class Server:
 
     def _thread_func(self, server_socket, client_func, client_count,
                      args, kwargs):
+        server_socket.settimeout(support.LOOPBACK_TIMEOUT)
         with contextlib.closing(server_socket):
             results = []
             for i in range(client_count):
