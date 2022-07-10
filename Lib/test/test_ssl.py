@@ -2857,8 +2857,8 @@ class ThreadedTests(unittest.TestCase):
         """Force a socket to immediately initiate and process a TLS handshake.
 
         OpenSSL delays TLS 1.3 session ticket exchange until a socket user
-        attempts to send some data. As a result, we need to write al least
-        an empty message to force the handshake and avoid server-side
+        attempts to send some data. As a result, we need to write some
+        non-empty string to force the handshake and avoid server-side
         ConnectionAbortedError ("An established connection was aborted by the
         software in your host machine") when some test has nothing to send so
         closes a half-open TLS connection.
