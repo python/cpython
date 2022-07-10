@@ -459,7 +459,7 @@ def _on_ssl_client(socket, peer_address, certificate=None,
 
         else:
             ctype = 'encrypted' if sslconn else 'unencrypted'
-            in_str = msg.decode() 
+            in_str = msg.decode()
             out_str = in_str.lower()
             log(f'read {in_str} ({ctype}), sending back {out_str} ({ctype})')
             write(out_str.encode())
