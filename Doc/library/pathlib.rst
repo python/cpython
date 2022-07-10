@@ -999,7 +999,7 @@ call fails (for example because the path doesn't exist).
       does not keep track of the directories it has already visited.
 
    .. note::
-      This method assumes that the current working directory does not change while
+      :meth:`Path.walk` assumes that the current working directory does not change while
       walking relative paths.
 
    .. note::
@@ -1012,10 +1012,10 @@ call fails (for example because the path doesn't exist).
    .. note::
 
       Unlike :func:`os.walk`, :meth:`Path.walk` lists symlinks to directories into
-      *filenames* if *follow_symlinks* is ``True``.
+      *filenames* if *follow_symlinks* is ``False``.
 
    This example displays the number of bytes used by all files in each directory,
-   while ignoring `__pycache__` directories.
+   while ignoring ``__pycache__`` directories.
    :file:`__pycache__` subdirectory::
 
       from pathlib import Path
@@ -1031,7 +1031,7 @@ call fails (for example because the path doesn't exist).
         if '__pycache__' in dirs:
               dirs.remove('__pycache__')
 
-   This next example is asimple implementation of :func:`shutil.rmtree`.
+   This next example is a simple implementation of :func:`shutil.rmtree`.
    Walking the tree bottom-up is essential as :func:`rmdir` doesn't allow
    deleting a directory before it is empty::
 

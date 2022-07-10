@@ -2480,11 +2480,11 @@ class _BasePathTest(object):
 
 class WalkTests(unittest.TestCase):
     """Tests for Path.walk()
-    
+
     They are mostly just copies of os.walk tests converted to use Paths
     because os.walk tests are already mature and cover many edge cases
     that we could miss writing new tests.
-    
+
     It is not combined with Path* tests because its setup is aimed at
     testing a bit more complex cases than Path's setup.
     """
@@ -2510,7 +2510,7 @@ class WalkTests(unittest.TestCase):
         #           tmp3
         #           SUB21/          not readable
         #             tmp5
-        #           link/           a symlink to TESTFN.2
+        #           link/           a symlink to TEST2
         #           broken_link
         #           broken_link2
         #           broken_link3
@@ -2519,22 +2519,22 @@ class WalkTests(unittest.TestCase):
         self.walk_path = P(os_helper.TESTFN, "TEST1")
         self.sub1_path = self.walk_path / "SUB1"
         self.sub11_path = self.sub1_path / "SUB11"
-        sub2_path = self.walk_path / "SUB2"
-        sub21_path= sub2_path / "SUB21"
+        self.sub2_path = self.walk_path / "SUB2"
+        sub21_path= self.sub2_path / "SUB21"
         tmp1_path = self.walk_path / "tmp1"
         tmp2_path = self.sub1_path / "tmp2"
-        tmp3_path = sub2_path / "tmp3"
+        tmp3_path = self.sub2_path / "tmp3"
         tmp5_path = sub21_path / "tmp3"
-        self.link_path = sub2_path / "link"
+        self.link_path = self.sub2_path / "link"
         t2_path = P(os_helper.TESTFN, "TEST2")
         tmp4_path = P(os_helper.TESTFN, "TEST2", "tmp4")
-        broken_link_path = sub2_path / "broken_link"
-        broken_link2_path = sub2_path / "broken_link2"
-        broken_link3_path = sub2_path / "broken_link3"
+        broken_link_path = self.sub2_path / "broken_link"
+        broken_link2_path = self.sub2_path / "broken_link2"
+        broken_link3_path = self.sub2_path / "broken_link3"
 
         # Create stuff.
         os.makedirs(self.sub11_path)
-        os.makedirs(sub2_path)
+        os.makedirs(self.sub2_path)
         os.makedirs(sub21_path)
         os.makedirs(t2_path)
 
@@ -2547,11 +2547,11 @@ class WalkTests(unittest.TestCase):
             os.symlink('broken', broken_link_path, True)
             os.symlink(join('tmp3', 'broken'), broken_link2_path, True)
             os.symlink(join('SUB21', 'tmp5'), broken_link3_path, True)
-            self.sub2_tree = (sub2_path, ["SUB21"],
+            self.sub2_tree = (self.sub2_path, ["SUB21"],
                               ["broken_link", "broken_link2", "broken_link3",
                                "link", "tmp3"])
         else:
-            self.sub2_tree = (sub2_path, ["SUB21"], ["tmp3"])
+            self.sub2_tree = (self.sub2_path, ["SUB21"], ["tmp3"])
 
         if not is_emscripten:
             # Emscripten fails with inaccessible directory
@@ -2628,7 +2628,7 @@ class WalkTests(unittest.TestCase):
                          self.sub2_tree)
 
     @os_helper.skip_unless_symlink
-    def test_walk_symlink(self):
+    def test_walk_follow_symlinks(self):
         # Walk, following symlinks.
         walk_it = self.walk(self.walk_path, follow_symlinks=True)
         for root, dirs, files in walk_it:
@@ -2638,6 +2638,22 @@ class WalkTests(unittest.TestCase):
                 break
         else:
             self.fail("Didn't follow symlink with follow_symlinks=True")
+
+    def test_walk_symlink_location(self):
+        """ Tests whether symlinks end up in filenames or dirnames depending
+        on the `follow_symlinks` argument
+        """
+        walk_it = self.walk(self.walk_path, follow_symlinks=False)
+        for root, dirs, files in walk_it:
+            if root == self.sub2_path:
+                self.assertIn("link", files)
+                break
+
+        walk_it = self.walk(self.walk_path, follow_symlinks=True)
+        for root, dirs, files in walk_it:
+            if root == self.sub2_path:
+                self.assertIn("link", dirs)
+                break
 
     def test_walk_bad_dir(self):
         # Walk top-down.
