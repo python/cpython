@@ -16,7 +16,6 @@ _thread_pool = None
 
 def _release():
     global _thread_pool
-    _thread_pool.shutdown(cancel_futures=True)
     _thread_pool = None
 
 
