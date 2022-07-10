@@ -1055,8 +1055,8 @@ class BasicSocketTests(unittest.TestCase):
                 s.connect(address)
                 self.assertEqual(s.recv(0), b"")
                 self.assertEqual(s.send(b""), 0)
-                # The same motivalion as behind self.wait_connection but
-                # without sending any data.
+                # OpenSSL postpones the handshake until some data are sent so
+                # force it by queuing explicit shutdown.
                 s.unwrap().close()
 
 
@@ -2856,13 +2856,12 @@ class ThreadedTests(unittest.TestCase):
     def wait_connection(self, socket):
         """Force a socket to immediately initiate and process a TLS handshake.
 
-        TLS 1.3 delays session ticket exchange until some data are sent. So we
-        need to send some data to avoid server-side ConnectionAbortedError
-        ("An established connection was aborted by the software in your host
-        machine") caused by closing half-open TLS connection.
-
-        For more details on how TLS 1.3 changed the handshake, see
-        <https://www.thesslstore.com/blog/tls-1-3-handshake-tls-1-2/>.
+        OpenSSL delays TLS 1.3 session ticket exchange until a socket user
+        attempts to send some data. As a result, we need to write al least
+        an empty message to force the handshake and avoid server-side
+        ConnectionAbortedError ("An established connection was aborted by the
+        software in your host machine") when some test has nothing to send so
+        closes a half-open TLS connection.
         """
         echo_message = b'hi'
         socket.write(echo_message)
