@@ -554,55 +554,83 @@ Shielding From Cancellation
 Timeouts
 ========
 
-A convenient way to limit the amount of time spent waiting on
-something is to use the :func:`asyncio.timeout` and
-:func:`asyncio.timeout_at`
-:ref:`asynchronous context manager <async-context-managers>`.
+.. coroutinefunction:: timeout(delay)
 
-Example::
+    A convenient way to limit the amount of time spent waiting on
+    something is to use the :func:`asyncio.timeout` and
+    :func:`asyncio.timeout_at`
+    :ref:`asynchronous context manager <async-context-managers>`.
 
-    async def main():
-        async with asyncio.timeout(10):
-            await long_running_task()
+    *delay* can either be ``None`` or a float or int number of
+    seconds to wait. If *delay* is ``None``, no time limit will
+    be applied. In either case, the context manager can be
+    rescheduled after creation.
 
-If ``long_running_task`` takes more than 10 seconds to complete,
-the context manager will cancel the current task and handle
-the resulting :exc:`asyncio.CancelledError` internally, transforming it
-into a :exc:`asyncio.TimeoutError`, which can be caught and handled.
+    Example::
 
-Example::
-
-    async def main():
-        try:
-            async with asyncio.timeout_at(deadline):
+        async def main():
+            async with asyncio.timeout(10):
                 await long_running_task()
-        except TimeoutError:
-            print("The long operation timed out, but we've handled it.")
 
-        print("This statement will run regardless.")
+    If ``long_running_task`` takes more than 10 seconds to complete,
+    the context manager will cancel the current task and handle
+    the resulting :exc:`asyncio.CancelledError` internally, transforming it
+    into a :exc:`asyncio.TimeoutError` which can be caught and handled.
 
-The context manager produced by :func:`asyncio.timeout` can be
-rescheduled to a different deadline and inspected.
+    Example::
 
-Example::
+        async def main():
+            try:
+                async with asyncio.timeout(10):
+                    await long_running_task()
+            except TimeoutError:
+                print("The long operation timed out, but we've handled it.")
 
-    async def main():
-        try:
-            async with asyncio.timeout(10) as cm:
-                # We changed our mind, giving it more time.
-                new_deadline = cm.when + 10
-                cm.reschedule(new_deadline)
+            print("This statement will run regardless.")
 
-                await long_running_task()
-        except TimeoutError:
-            pass
+    The context manager produced by :func:`asyncio.timeout` can be
+    rescheduled to a different deadline and inspected.
 
-        if cm.expired:
-            print("Looks like we haven't finished on time.")
+    Example::
 
-The timeout context managers can be safely nested.
+        async def main():
+            try:
+                # We do not know the timeout when starting, so we pass ``None``.
+                async with asyncio.timeout(None) as cm:
+                    # We know the timeout now, so we reschedule it.
+                    new_deadline = get_running_loop().time() + 10
+                    cm.reschedule(new_deadline)
 
-.. versionadded:: 3.7
+                    await long_running_task()
+            except TimeoutError:
+                pass
+
+            if cm.expired:
+                print("Looks like we haven't finished on time.")
+
+    The timeout context managers can be safely nested.
+
+    .. versionadded:: 3.11
+
+.. coroutinefunction:: timeout_at(when)
+
+   Similar to :ref:`asyncio.timeout`, except *when* is the absolute time
+   to stop waiting, or ``None``.
+
+   Example::
+
+      async def main():
+          loop = get_running_loop()
+          deadline = loop.time() + 20
+          try:
+              async with asyncio.timeout_at(deadline):
+                  await long_running_task()
+          except TimeoutError:
+              print("The long operation timed out, but we've handled it.")
+
+          print("This statement will run regardless.")
+
+   .. versionadded:: 3.11
 
 .. coroutinefunction:: wait_for(aw, timeout)
 
