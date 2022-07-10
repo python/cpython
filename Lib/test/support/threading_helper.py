@@ -269,24 +269,32 @@ class Server:
     - to be used where asyncio has no application
 
     The server listens on an address returned from the ``with`` statement.
+
+    For each client connected, the server calls a user-supplied function and
+    preserves whatever the function returns or throws to pass it to a client
+    later.
+
+    When a client attempt to exit the context manager, it blocks until a server
+    stops processing all clients and exits.
     """
 
     def __init__(self, client_func, *args, client_count=1,
                  client_fails=False, **kwargs):
         """Create and run the server.
 
-        The method blocks until a server is ready to accept clients.
+        The method blocks until the server is ready to accept clients.
 
-        The server:
+        After this constructor returns, the server:
 
         1. Consequently waits for client_count clients
-        2. Calls client_func for each of them
-        3. Closes client connection when the function returns
-        4. Collects returned values into Server.result list
+        1. For each client:
+           a. Calls client_func for each of them
+           b. Closes client connection when the function returns
+           c. Collects returned values into Server.result list
         5. Terminates a server
         6. Allows a context manager to exit
-        7. Since ``with ... as`` section keeps its parameter alive, the field
-           can be accessed outside of the section.
+        7. Since ``with ... as`` section keeps its parameter alive,
+           Server.result field can be accessed outside of the section.
 
         If client_func raises an exception, the server is stopped, all pending
         clients are discarded and the context manager raises an exception.
@@ -306,10 +314,6 @@ class Server:
                 As a result, a server should swallow these exceptions and
                 proceed to the next client instead.
             kwargs: keyword arguments passed to client_func.
-
-        Throws:
-            When client_func throws, this method catches the exception, wraps
-            it into RuntimeError('server-side error') and rethrows.
         """
         server_socket = socket()
         self._port = bind_port(server_socket)
