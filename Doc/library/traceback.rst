@@ -342,8 +342,8 @@ capture data for later printing in a lightweight fashion.
       representations.
 
       .. versionchanged:: 3.12
-         Exceptions raised from :func:`repr` on a local variable are no longer
-         propagated to the caller.
+         Exceptions raised from :func:`repr` on a local variable (when
+         *capture_locals* is ``True``) are no longer propagated to the caller.
 
    .. classmethod:: from_list(a_list)
 
