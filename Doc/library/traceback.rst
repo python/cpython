@@ -343,7 +343,7 @@ capture data for later printing in a lightweight fashion.
 
       .. versionchanged:: 3.12
          Exceptions raised from :func:`repr` on a local variable are no longer
-         propagated to the caller and a placeholder is stored instead.
+         propagated to the caller.
 
    .. classmethod:: from_list(a_list)
 
