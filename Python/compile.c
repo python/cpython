@@ -4788,8 +4788,15 @@ update_location_to_match_attr(struct compiler *c, expr_ty meth)
 {
     if (meth->lineno != meth->end_lineno) {
         // Make start location match attribute
-        c->u->u_lineno = meth->end_lineno;
-        c->u->u_col_offset = meth->end_col_offset - (int)PyUnicode_GetLength(meth->v.Attribute.attr)-1;
+        c->u->u_lineno = c->u->u_end_lineno = meth->end_lineno;
+        int len = (int)PyUnicode_GET_LENGTH(meth->v.Attribute.attr);
+        if (len <= meth->end_col_offset) {
+            c->u->u_col_offset = meth->end_col_offset - len;
+        }
+        else {
+            // GH-94694: Somebody's compiling weird ASTs. Just drop the columns:
+            c->u->u_col_offset = c->u->u_end_col_offset = -1;
+        }
     }
 }
 
