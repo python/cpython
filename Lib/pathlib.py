@@ -1353,9 +1353,9 @@ class Path(PurePath):
         if top_down:
             yield self, dirnames, filenames
 
-        for dir_name in dirnames:
-            new_path = self._make_child_relpath(dir_name)
-            yield from new_path._walk(top_down, on_error, follow_symlinks)
+        for dirname in dirnames:
+            dirpath = self._make_child_relpath(dirname)
+            yield from dirpath._walk(top_down, on_error, follow_symlinks)
 
         if not top_down:
             yield self, dirnames, filenames
