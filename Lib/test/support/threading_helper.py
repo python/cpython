@@ -319,11 +319,11 @@ class Server:
 
     def _thread_func(self, server_socket, client_func, client_count,
                      args, kwargs):
-        with contextlib.closing(server_socket):
+        with server_socket:
             results = []
             for i in range(client_count):
                 client, peer_address = server_socket.accept()
-                with contextlib.closing(client):
+                with client:
                     r = client_func(client, peer_address, *args, **kwargs)
                     results.append(r)
             return results
