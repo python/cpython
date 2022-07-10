@@ -278,8 +278,7 @@ class Server:
     stops processing all clients and exits.
     """
 
-    def __init__(self, client_func, *args, client_count=1,
-                 client_fails=False, **kwargs):
+    def __init__(self, client_func, *args, client_count=1, **kwargs):
         """Create and run the server.
 
         The method blocks until the server is ready to accept clients.
@@ -309,10 +308,6 @@ class Server:
             results: a reference to a list for collecting client_func
                 return values. Populated after execution leaves a ``with``
                 blocks associated with the Server context manager.
-            client_fails: if True, a client is expected to cause
-                connection-related exceptions by reasons asserted on its side.
-                As a result, a server should swallow these exceptions and
-                proceed to the next client instead.
             kwargs: keyword arguments passed to client_func.
         """
         server_socket = socket()
@@ -320,35 +315,27 @@ class Server:
         server_socket.listen()
         self._result = _thread_pool.submit(self._thread_func, server_socket,
                                            client_func, client_count,
-                                           client_fails, args, kwargs)
+                                           args, kwargs)
 
     def _thread_func(self, server_socket, client_func, client_count,
-                     client_fails, args, kwargs):
+                     args, kwargs):
         with contextlib.closing(server_socket):
             results = []
             for i in range(client_count):
-                try:
-                    client, peer_address = server_socket.accept()
-                    with contextlib.closing(client):
-                        r = client_func(client, peer_address, *args, **kwargs)
-                        results.append(r)
-                except (ConnectionAbortedError, ConnectionResetError):
-                    if not client_fails:
-                        raise
-                # OSError is caused by read()/write() on a socket unexpectedly
-                # closed by a client. However, important exceprions like
-                # ssl.SSLError subclass OSError so we need a separate logic
-                # to split them away.
-                except OSError as e:
-                    if not client_fails or type(e) is not OSError:
-                        raise
+                client, peer_address = server_socket.accept()
+                with contextlib.closing(client):
+                    r = client_func(client, peer_address, *args, **kwargs)
+                    results.append(r)
             return results
 
     def __enter__(self):
         return HOST, self._port
 
     def __exit__(self, etype, evalue, traceback):
-        if etype is ConnectionAbortedError or etype is ConnectionResetError:
+        peer_willingly_closed = isinstance(etype, ConnectionError)
+        # We find our client disappeared when our socket read() fails.
+        peer_disappeared = etype is OSError
+        if peer_willingly_closed or peer_disappeared:
             if self._result.exception() is not None:
                 generic = RuntimeError('server-side error')
                 raise generic from self._result.exception()
