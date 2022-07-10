@@ -1,3 +1,3 @@
 Added a unified :class:`test.support.threading_helper.Server` context manager
 to create, wait, destroy and communicate with a blocking TCP server both
-in-bound and out-of-bound. Patch by Oleg Iarygin.
+in-band and out-of-band. Patch by Oleg Iarygin.
