@@ -781,6 +781,7 @@ class Random(_random.Random):
         # See "The Generation of Binomial Random Variates" by Wolfgang Hörmann
         # https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.47.8407&rep=rep1&type=pdf
         assert n*p >= 10.0 and p <= 0.5
+        step_three_setup = False
 
         # Step 0: Setup for step 1
         spq = _sqrt(n * p * (1.0 - p))  # Standard deviation of the distribution
@@ -788,12 +789,6 @@ class Random(_random.Random):
         a = -0.0873 + 0.0248 * b + 0.01 * p
         c = n * p + 0.5
         vr = 0.92 - 4.2 / b
-
-        # Step 3.0: Setup for step 3.1
-        alpha = (2.83 + 5.1 / b) * spq
-        lpq = _log(p / (1.0 - p))       # Log of p / q ratio
-        m = _floor((n + 1) * p)         # Mode of the distribution
-        h = _logfact(m) + _logfact(n - m)
 
         while True:
 
@@ -814,6 +809,14 @@ class Random(_random.Random):
             # the u-axis and the curve.
             if us >= 0.07 and v <= vr:
                 return k
+
+            if not step_three_setup:
+                # Step 3.0: Compute constants for step 3.1
+                alpha = (2.83 + 5.1 / b) * spq
+                lpq = _log(p / (1.0 - p))       # Log of p / q ratio
+                m = _floor((n + 1) * p)         # Mode of the distribution
+                h = _logfact(m) + _logfact(n - m)
+                step_three_setup = True         # Only needs to be done once
 
             # Step 3.1: Acceptance-rejection test.
             # N.B. The original paper errorneously omits the call to
