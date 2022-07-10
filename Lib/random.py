@@ -937,15 +937,17 @@ def _test_generator(n, func, args):
     low = min(data)
     high = max(data)
 
-    print(f'{t1 - t0:.3f} sec, {n} times {func.__name__}')
+    print(f'{t1 - t0:.3f} sec, {n} times {func.__name__}{args!r}')
     print('avg %g, stddev %g, min %g, max %g\n' % (xbar, sigma, low, high))
 
 
-def _test(N=2000):
+def _test(N=10_000):
     _test_generator(N, random, ())
     _test_generator(N, normalvariate, (0.0, 1.0))
     _test_generator(N, lognormvariate, (0.0, 1.0))
     _test_generator(N, vonmisesvariate, (0.0, 1.0))
+    _test_generator(N, binomialvariate, (15, 0.60))
+    _test_generator(N, binomialvariate, (100, 0.75))
     _test_generator(N, gammavariate, (0.01, 1.0))
     _test_generator(N, gammavariate, (0.1, 1.0))
     _test_generator(N, gammavariate, (0.1, 2.0))
