@@ -263,12 +263,14 @@ Discrete distributions
 
 The following function generates a discrete distribution.
 
-.. function:: binomial(n=1, p=0.5)
+.. function:: binomialvariate(n=1, p=0.5)
 
+   `Binomial distribution
+   <http://mathworld.wolfram.com/BinomialDistribution.html>`_.
    Return the number of successes for *n* independent trials with the
    probability of success in each trial being *p*:
 
-   Roughly equivalent to::
+   Mathematically equivalent to::
 
        sum(random() < p for i in range(n))
 
