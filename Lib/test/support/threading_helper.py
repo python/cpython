@@ -258,8 +258,6 @@ def requires_working_threading(*, module=False):
         return unittest.skipUnless(can_start_thread, msg)
 
 
-global_thread_count = 0
-
 class Server:
     """A context manager for a blocking server in a thread pool.
 
@@ -321,22 +319,14 @@ class Server:
 
     def _thread_func(self, server_socket, client_func, client_count,
                      args, kwargs):
-        global global_thread_count
-        thread_pass = global_thread_count
-        global_thread_count = global_thread_count + 1
-        sys.stdout.write(f'thread {thread_pass} started')
-        try:
-            server_socket.settimeout(support.LOOPBACK_TIMEOUT)
-            with contextlib.closing(server_socket):
-                results = []
-                for i in range(client_count):
-                    client, peer_address = server_socket.accept()
-                    with contextlib.closing(client):
-                        r = client_func(client, peer_address, *args, **kwargs)
-                        results.append(r)
-                return results
-        finally:
-            sys.stdout.write(f'thread {thread_pass} exited')
+        with contextlib.closing(server_socket):
+            results = []
+            for i in range(client_count):
+                client, peer_address = server_socket.accept()
+                with contextlib.closing(client):
+                    r = client_func(client, peer_address, *args, **kwargs)
+                    results.append(r)
+            return results
 
     def __enter__(self):
         return HOST, self._port
