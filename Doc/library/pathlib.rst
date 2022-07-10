@@ -998,10 +998,6 @@ call fails (for example because the path doesn't exist).
       does not keep track of the directories it has already visited.
 
    .. note::
-      :meth:`Path.walk` assumes that the current working directory does not change while
-      walking relative paths.
-
-   .. note::
       :meth:`Path.walk` assumes the directories it walks are not been modified during
       execution. For example, if a directory from *dirnames* has been replaced
       with a symlink and *follow_symlinks* = ``False``, :meth:`Path.walk` will
@@ -1034,9 +1030,8 @@ call fails (for example because the path doesn't exist).
    Walking the tree bottom-up is essential as :func:`rmdir` doesn't allow
    deleting a directory before it is empty::
 
-      # Delete everything reachable from the directory "top",
-      # assuming there are no symbolic links.
-      # CAUTION:  This is dangerous!  For example, if top == Path('/'),
+      # Delete everything reachable from the directory "top".
+      # CAUTION:  This is dangerous! For example, if top == Path('/'),
       # it could delete all of your files.
       for root, dirs, files in top.walk(topdown=False):
           for name in files:
