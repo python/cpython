@@ -785,7 +785,7 @@ class Random(_random.Random):
 
         # Step 0: Setup for step 1
         spq = _sqrt(n * p * (1.0 - p))  # Standard deviation of the distribution
-        b = 1.15 + 2.53 * spq           # Dominating density function parameters
+        b = 1.15 + 2.53 * spq
         a = -0.0873 + 0.0248 * b + 0.01 * p
         c = n * p + 0.5
         vr = 0.92 - 4.2 / b
@@ -798,30 +798,27 @@ class Random(_random.Random):
             u -= 0.5
             us = 0.5 - _fabs(u)
             k = _floor((2.0 * a / us + b) * u + c)
-
-            # Step 2: Skip over invalid k arising due to numeric issues.
             if k < 0 or k > n:
                 continue
 
-            # This early-out "squeeze" test substantially reduces the
-            # number of acceptance condition evaluations.  Checks to see
-            # whether *us* and *vr* lie in the large rectangle between
+            # Step 2: This early-out "squeeze" test substantially reduces
+            # the number of acceptance condition evaluations.  Checks to
+            # see whether *us* and *vr* lie in the large rectangle between
             # the u-axis and the curve.
             if us >= 0.07 and v <= vr:
                 return k
 
             if not step_three_setup:
-                # Step 3.0: Compute constants for step 3.1
+                # Step 3.0: Set up constants for step 3.1
                 alpha = (2.83 + 5.1 / b) * spq
-                lpq = _log(p / (1.0 - p))       # Log of p / q ratio
+                lpq = _log(p / (1.0 - p))
                 m = _floor((n + 1) * p)         # Mode of the distribution
                 h = _logfact(m) + _logfact(n - m)
                 step_three_setup = True         # Only needs to be done once
 
             # Step 3.1: Acceptance-rejection test.
-            # N.B. The original paper errorneously omits the call to
-            # log(v) which is needed because we're comparing to the log
-            # of the rescaled binomial distribution.
+            # N.B. The original paper errorneously omits the call to log(v)
+            # when comparing to the log of the rescaled binomial distribution.
             v *= alpha / (a / (us * us) + b)
             if _log(v) <= h - _logfact(k) - _logfact(n - k) + (k - m) * lpq:
                 return k
