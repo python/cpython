@@ -306,7 +306,7 @@ class Server:
             client_count: count of clients the server processes one by one
                 before stopping.
             results: a reference to a list for collecting client_func
-                return values. Populated after execution leaves a ``with``
+                return values. Populated after the execution leaves a ``with``
                 blocks associated with the Server context manager.
             kwargs: keyword arguments passed to client_func.
         """

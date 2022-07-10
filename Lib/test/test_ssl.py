@@ -2860,7 +2860,7 @@ class ThreadedTests(unittest.TestCase):
         attempts to send some data. As a result, we need to write some
         non-empty string to force the handshake and avoid server-side
         ConnectionAbortedError ("An established connection was aborted by the
-        software in your host machine") when some test has nothing to send so
+        software in your host machine") when some test has nothing to send and
         closes a half-open TLS connection.
         """
         echo_message = b'hi'
