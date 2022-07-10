@@ -340,7 +340,7 @@ capture data for later printing in a lightweight fashion.
       may not actually get formatted). If *capture_locals* is ``True`` the
       local variables in each :class:`FrameSummary` are captured as object
       representations.
-      
+
       .. versionchanged:: 3.12
          Exceptions raised from :func:`repr` on a local variable are no longer
          propagated to the caller and a placeholder is stored instead.
