@@ -1921,11 +1921,17 @@ class SimpleBackgroundTests(unittest.TestCase):
     """Tests that connect to a simple server running in the background"""
 
     def setUp(self):
+        self._old_socket_timeout = socket.getdefaulttimeout()
+        socket.setdefaulttimeout(support.LOOPBACK_TIMEOUT)
+
         self.server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         self.server_context.load_cert_chain(SIGNED_CERTFILE)
         server = ThreadedEchoServer(context=self.server_context)
         self.enterContext(server)
         self.server_addr = (HOST, server.port)
+
+    def tearDown(self):
+        socket.setdefaulttimeout(self._old_socket_timeout)
 
     def test_connect(self):
         with test_wrap_socket(socket.socket(socket.AF_INET),
