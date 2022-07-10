@@ -27,6 +27,8 @@ class FutureTests:
             else:
                 self.fail('TypeError was not raised')
 
+class FutureReprTests(unittest.IsolatedAsyncioTestCase):
+
     async def test_recursive_repr_for_pending_tasks(self):
         # The call crashes if the guard for recursive call
         # in base_futures:_future_repr_info is absent
