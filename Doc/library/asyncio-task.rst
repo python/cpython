@@ -614,7 +614,7 @@ Timeouts
 
 .. coroutinefunction:: timeout_at(when)
 
-   Similar to :ref:`asyncio.timeout`, except *when* is the absolute time
+   Similar to :func:`asyncio.timeout`, except *when* is the absolute time
    to stop waiting, or ``None``.
 
    Example::
