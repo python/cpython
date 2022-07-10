@@ -1,2 +1,2 @@
-Added a unified client-side context for managing a TCP server in its own thread
-(:class:`test.support.threading_helper.Server`). Patch by Oleg Iarygin.
+Added a unified :class:`test.support.threading_helper.Server` context for
+management of a blocking TCP server. Patch by Oleg Iarygin.
