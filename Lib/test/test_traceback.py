@@ -702,6 +702,57 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
         )
         self.assertEqual(result_lines, expected_error.splitlines())
 
+    def test_multiline_method_call_a(self):
+        def f():
+            (None
+                .method
+            )()
+        actual = self.get_exception(f)
+        expected = [
+            f"Traceback (most recent call last):",
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            f"    callable()",
+            f"    ^^^^^^^^^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 2}, in f",
+            f"    .method",
+            f"     ^^^^^^",
+        ]
+        self.assertEqual(actual, expected)
+
+    def test_multiline_method_call_b(self):
+        def f():
+            (None.
+                method
+            )()
+        actual = self.get_exception(f)
+        expected = [
+            f"Traceback (most recent call last):",
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            f"    callable()",
+            f"    ^^^^^^^^^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 2}, in f",
+            f"    method",
+            f"    ^^^^^^",
+        ]
+        self.assertEqual(actual, expected)
+
+    def test_multiline_method_call_c(self):
+        def f():
+            (None
+                . method
+            )()
+        actual = self.get_exception(f)
+        expected = [
+            f"Traceback (most recent call last):",
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            f"    callable()",
+            f"    ^^^^^^^^^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 2}, in f",
+            f"    . method",
+            f"      ^^^^^^",
+        ]
+        self.assertEqual(actual, expected)
+
 @cpython_only
 @requires_debug_ranges()
 class CPythonTracebackErrorCaretTests(TracebackErrorLocationCaretTests):
