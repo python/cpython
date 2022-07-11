@@ -341,6 +341,10 @@ capture data for later printing in a lightweight fashion.
       local variables in each :class:`FrameSummary` are captured as object
       representations.
 
+      .. versionchanged:: 3.12
+         Exceptions raised from :func:`repr` on a local variable (when
+         *capture_locals* is ``True``) are no longer propagated to the caller.
+
    .. classmethod:: from_list(a_list)
 
       Construct a :class:`StackSummary` object from a supplied list of
