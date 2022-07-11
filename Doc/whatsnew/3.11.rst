@@ -117,7 +117,6 @@ when dealing with deeply nested dictionary objects and multiple function calls,
     Traceback (most recent call last):
       File "query.py", line 37, in <module>
         magic_arithmetic('foo')
-        ^^^^^^^^^^^^^^^^^^^^^^^
       File "query.py", line 18, in magic_arithmetic
         return add_counts(x) / 25
                ^^^^^^^^^^^^^

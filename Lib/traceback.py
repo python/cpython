@@ -465,7 +465,8 @@ class StackSummary(list):
         row.append('  File "{}", line {}, in {}\n'.format(
             frame_summary.filename, frame_summary.lineno, frame_summary.name))
         if frame_summary.line:
-            row.append('    {}\n'.format(frame_summary.line.strip()))
+            stripped_line = frame_summary.line.strip()
+            row.append('    {}\n'.format(stripped_line))
 
             orig_line_len = len(frame_summary._original_line)
             frame_line_len = len(frame_summary.line.lstrip())
@@ -486,19 +487,22 @@ class StackSummary(list):
                             frame_summary._original_line[colno - 1:end_colno - 1]
                         )
                 else:
-                    end_colno = stripped_characters + len(frame_summary.line.strip())
+                    end_colno = stripped_characters + len(stripped_line)
 
-                row.append('    ')
-                row.append(' ' * (colno - stripped_characters))
+                # show indicators if primary char doesn't span the frame line
+                if end_colno - colno < len(stripped_line) or (
+                        anchors and anchors.right_start_offset - anchors.left_end_offset > 0):
+                    row.append('    ')
+                    row.append(' ' * (colno - stripped_characters))
 
-                if anchors:
-                    row.append(anchors.primary_char * (anchors.left_end_offset))
-                    row.append(anchors.secondary_char * (anchors.right_start_offset - anchors.left_end_offset))
-                    row.append(anchors.primary_char * (end_colno - colno - anchors.right_start_offset))
-                else:
-                    row.append('^' * (end_colno - colno))
+                    if anchors:
+                        row.append(anchors.primary_char * (anchors.left_end_offset))
+                        row.append(anchors.secondary_char * (anchors.right_start_offset - anchors.left_end_offset))
+                        row.append(anchors.primary_char * (end_colno - colno - anchors.right_start_offset))
+                    else:
+                        row.append('^' * (end_colno - colno))
 
-                row.append('\n')
+                    row.append('\n')
 
         if frame_summary.locals:
             for name, value in sorted(frame_summary.locals.items()):
