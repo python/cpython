@@ -778,7 +778,6 @@ PyTypeObject _PyMp_SemLockType = {
     /* tp_init           */ 0,
     /* tp_alloc          */ 0,
     /* tp_new            */ _multiprocessing_SemLock,
-    .tp_free = PyObject_Free,
 };
 
 /*
