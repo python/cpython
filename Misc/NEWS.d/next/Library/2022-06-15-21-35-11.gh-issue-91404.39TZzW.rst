@@ -1,3 +1,0 @@
-Revert the :mod:`re` memory leak when a match is terminated by a signal or
-memory allocation failure as the implemented fix caused a major performance
-regression.

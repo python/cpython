@@ -1,1 +1,0 @@
-Fix :func:`asyncio.run` and :class:`unittest.IsolatedAsyncioTestCase` to always the set event loop as it was done in Python 3.10 and earlier. Patch by Kumar Aditya.

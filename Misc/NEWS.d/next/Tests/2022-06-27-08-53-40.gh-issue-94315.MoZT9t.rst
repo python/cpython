@@ -1,2 +1,0 @@
-Tests now check for DAC override capability instead of relying on
-:func:`os.geteuid`.

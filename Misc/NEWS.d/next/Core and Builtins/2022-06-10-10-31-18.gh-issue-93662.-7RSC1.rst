@@ -1,2 +1,0 @@
-Make sure that the end column offsets are correct in multi-line method
-calls. Previously, the end column could precede the column offset.
