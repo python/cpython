@@ -78,8 +78,20 @@ class TestCPPExt(unittest.TestCase):
                SETUP_TESTCPPEXT, 'install']
         run_cmd('Install', cmd)
 
+        # Do a reference run. Until we test that running python
+        # doesn't leak references (gh-94755), run it so one can manually check
+        # -X showrefcount results against this baseline.
+        cmd = [python,
+               '-X', 'dev',
+               '-X', 'showrefcount',
+               '-c', 'pass']
+        run_cmd('Reference run', cmd)
+
         # Import the C++ extension
-        cmd = [python, '-X', 'dev', '-c', f"import {extension_name}"]
+        cmd = [python,
+               '-X', 'dev',
+               '-X', 'showrefcount',
+               '-c', f"import {extension_name}"]
         run_cmd('Import', cmd)
 
 

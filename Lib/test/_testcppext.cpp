@@ -143,10 +143,14 @@ _testcppext_exec(PyObject *module)
     }
 
     PyObject *result;
+
     result = PyObject_CallMethod(module, "test_api_casts", "");
     if (!result) return -1;
+    Py_DECREF(result);
+
     result = PyObject_CallMethod(module, "test_unicode", "");
     if (!result) return -1;
+    Py_DECREF(result);
 
     return 0;
 }
