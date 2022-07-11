@@ -741,7 +741,6 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
             f"Traceback (most recent call last):",
             f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
             f"    callable()",
-            f"    ^^^^^^^^^^",
             f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 2}, in f",
             f"    .method",
             f"     ^^^^^^",
@@ -758,10 +757,8 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
             f"Traceback (most recent call last):",
             f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
             f"    callable()",
-            f"    ^^^^^^^^^^",
             f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 2}, in f",
             f"    method",
-            f"    ^^^^^^",
         ]
         self.assertEqual(actual, expected)
 
@@ -775,7 +772,6 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
             f"Traceback (most recent call last):",
             f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
             f"    callable()",
-            f"    ^^^^^^^^^^",
             f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 2}, in f",
             f"    . method",
             f"      ^^^^^^",
