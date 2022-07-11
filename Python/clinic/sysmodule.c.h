@@ -9,7 +9,7 @@ PyDoc_STRVAR(sys_addaudithook__doc__,
 "Adds a new audit hook callback.");
 
 #define SYS_ADDAUDITHOOK_METHODDEF    \
-    {"addaudithook", (PyCFunction)(void(*)(void))sys_addaudithook, METH_FASTCALL|METH_KEYWORDS, sys_addaudithook__doc__},
+    {"addaudithook", _PyCFunction_CAST(sys_addaudithook), METH_FASTCALL|METH_KEYWORDS, sys_addaudithook__doc__},
 
 static PyObject *
 sys_addaudithook_impl(PyObject *module, PyObject *hook);
@@ -50,7 +50,7 @@ PyDoc_STRVAR(sys_excepthook__doc__,
 "Handle an exception by displaying it with a traceback on sys.stderr.");
 
 #define SYS_EXCEPTHOOK_METHODDEF    \
-    {"excepthook", (PyCFunction)(void(*)(void))sys_excepthook, METH_FASTCALL, sys_excepthook__doc__},
+    {"excepthook", _PyCFunction_CAST(sys_excepthook), METH_FASTCALL, sys_excepthook__doc__},
 
 static PyObject *
 sys_excepthook_impl(PyObject *module, PyObject *exctype, PyObject *value,
@@ -74,6 +74,28 @@ sys_excepthook(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 
 exit:
     return return_value;
+}
+
+PyDoc_STRVAR(sys_exception__doc__,
+"exception($module, /)\n"
+"--\n"
+"\n"
+"Return the current exception.\n"
+"\n"
+"Return the most recent exception caught by an except clause\n"
+"in the current stack frame or in an older stack frame, or None\n"
+"if no such exception exists.");
+
+#define SYS_EXCEPTION_METHODDEF    \
+    {"exception", (PyCFunction)sys_exception, METH_NOARGS, sys_exception__doc__},
+
+static PyObject *
+sys_exception_impl(PyObject *module);
+
+static PyObject *
+sys_exception(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys_exception_impl(module);
 }
 
 PyDoc_STRVAR(sys_exc_info__doc__,
@@ -126,7 +148,7 @@ PyDoc_STRVAR(sys_exit__doc__,
 "exit status will be one (i.e., failure).");
 
 #define SYS_EXIT_METHODDEF    \
-    {"exit", (PyCFunction)(void(*)(void))sys_exit, METH_FASTCALL, sys_exit__doc__},
+    {"exit", _PyCFunction_CAST(sys_exit), METH_FASTCALL, sys_exit__doc__},
 
 static PyObject *
 sys_exit_impl(PyObject *module, PyObject *status);
@@ -394,7 +416,7 @@ PyDoc_STRVAR(sys_set_coroutine_origin_tracking_depth__doc__,
 "Set a depth of 0 to disable.");
 
 #define SYS_SET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF    \
-    {"set_coroutine_origin_tracking_depth", (PyCFunction)(void(*)(void))sys_set_coroutine_origin_tracking_depth, METH_FASTCALL|METH_KEYWORDS, sys_set_coroutine_origin_tracking_depth__doc__},
+    {"set_coroutine_origin_tracking_depth", _PyCFunction_CAST(sys_set_coroutine_origin_tracking_depth), METH_FASTCALL|METH_KEYWORDS, sys_set_coroutine_origin_tracking_depth__doc__},
 
 static PyObject *
 sys_set_coroutine_origin_tracking_depth_impl(PyObject *module, int depth);
@@ -710,6 +732,33 @@ exit:
 
 #endif /* defined(Py_REF_DEBUG) */
 
+PyDoc_STRVAR(sys__getquickenedcount__doc__,
+"_getquickenedcount($module, /)\n"
+"--\n"
+"\n");
+
+#define SYS__GETQUICKENEDCOUNT_METHODDEF    \
+    {"_getquickenedcount", (PyCFunction)sys__getquickenedcount, METH_NOARGS, sys__getquickenedcount__doc__},
+
+static Py_ssize_t
+sys__getquickenedcount_impl(PyObject *module);
+
+static PyObject *
+sys__getquickenedcount(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t _return_value;
+
+    _return_value = sys__getquickenedcount_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(sys_getallocatedblocks__doc__,
 "getallocatedblocks($module, /)\n"
 "--\n"
@@ -753,7 +802,7 @@ PyDoc_STRVAR(sys__getframe__doc__,
 "only.");
 
 #define SYS__GETFRAME_METHODDEF    \
-    {"_getframe", (PyCFunction)(void(*)(void))sys__getframe, METH_FASTCALL, sys__getframe__doc__},
+    {"_getframe", _PyCFunction_CAST(sys__getframe), METH_FASTCALL, sys__getframe__doc__},
 
 static PyObject *
 sys__getframe_impl(PyObject *module, int depth);
@@ -801,6 +850,26 @@ sys__current_frames(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys__current_frames_impl(module);
 }
 
+PyDoc_STRVAR(sys__current_exceptions__doc__,
+"_current_exceptions($module, /)\n"
+"--\n"
+"\n"
+"Return a dict mapping each thread\'s identifier to its current raised exception.\n"
+"\n"
+"This function should be used for specialized purposes only.");
+
+#define SYS__CURRENT_EXCEPTIONS_METHODDEF    \
+    {"_current_exceptions", (PyCFunction)sys__current_exceptions, METH_NOARGS, sys__current_exceptions__doc__},
+
+static PyObject *
+sys__current_exceptions_impl(PyObject *module);
+
+static PyObject *
+sys__current_exceptions(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__current_exceptions_impl(module);
+}
+
 PyDoc_STRVAR(sys_call_tracing__doc__,
 "call_tracing($module, func, args, /)\n"
 "--\n"
@@ -812,7 +881,7 @@ PyDoc_STRVAR(sys_call_tracing__doc__,
 "some other code.");
 
 #define SYS_CALL_TRACING_METHODDEF    \
-    {"call_tracing", (PyCFunction)(void(*)(void))sys_call_tracing, METH_FASTCALL, sys_call_tracing__doc__},
+    {"call_tracing", _PyCFunction_CAST(sys_call_tracing), METH_FASTCALL, sys_call_tracing__doc__},
 
 static PyObject *
 sys_call_tracing_impl(PyObject *module, PyObject *func, PyObject *funcargs);
@@ -896,6 +965,94 @@ sys_is_finalizing(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys_is_finalizing_impl(module);
 }
 
+#if defined(Py_STATS)
+
+PyDoc_STRVAR(sys__stats_on__doc__,
+"_stats_on($module, /)\n"
+"--\n"
+"\n"
+"Turns on stats gathering (stats gathering is on by default).");
+
+#define SYS__STATS_ON_METHODDEF    \
+    {"_stats_on", (PyCFunction)sys__stats_on, METH_NOARGS, sys__stats_on__doc__},
+
+static PyObject *
+sys__stats_on_impl(PyObject *module);
+
+static PyObject *
+sys__stats_on(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__stats_on_impl(module);
+}
+
+#endif /* defined(Py_STATS) */
+
+#if defined(Py_STATS)
+
+PyDoc_STRVAR(sys__stats_off__doc__,
+"_stats_off($module, /)\n"
+"--\n"
+"\n"
+"Turns off stats gathering (stats gathering is on by default).");
+
+#define SYS__STATS_OFF_METHODDEF    \
+    {"_stats_off", (PyCFunction)sys__stats_off, METH_NOARGS, sys__stats_off__doc__},
+
+static PyObject *
+sys__stats_off_impl(PyObject *module);
+
+static PyObject *
+sys__stats_off(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__stats_off_impl(module);
+}
+
+#endif /* defined(Py_STATS) */
+
+#if defined(Py_STATS)
+
+PyDoc_STRVAR(sys__stats_clear__doc__,
+"_stats_clear($module, /)\n"
+"--\n"
+"\n"
+"Clears the stats.");
+
+#define SYS__STATS_CLEAR_METHODDEF    \
+    {"_stats_clear", (PyCFunction)sys__stats_clear, METH_NOARGS, sys__stats_clear__doc__},
+
+static PyObject *
+sys__stats_clear_impl(PyObject *module);
+
+static PyObject *
+sys__stats_clear(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__stats_clear_impl(module);
+}
+
+#endif /* defined(Py_STATS) */
+
+#if defined(Py_STATS)
+
+PyDoc_STRVAR(sys__stats_dump__doc__,
+"_stats_dump($module, /)\n"
+"--\n"
+"\n"
+"Dump stats to file, and clears the stats.");
+
+#define SYS__STATS_DUMP_METHODDEF    \
+    {"_stats_dump", (PyCFunction)sys__stats_dump, METH_NOARGS, sys__stats_dump__doc__},
+
+static PyObject *
+sys__stats_dump_impl(PyObject *module);
+
+static PyObject *
+sys__stats_dump(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__stats_dump_impl(module);
+}
+
+#endif /* defined(Py_STATS) */
+
 #if defined(ANDROID_API_LEVEL)
 
 PyDoc_STRVAR(sys_getandroidapilevel__doc__,
@@ -942,7 +1099,23 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define SYS_GETTOTALREFCOUNT_METHODDEF
 #endif /* !defined(SYS_GETTOTALREFCOUNT_METHODDEF) */
 
+#ifndef SYS__STATS_ON_METHODDEF
+    #define SYS__STATS_ON_METHODDEF
+#endif /* !defined(SYS__STATS_ON_METHODDEF) */
+
+#ifndef SYS__STATS_OFF_METHODDEF
+    #define SYS__STATS_OFF_METHODDEF
+#endif /* !defined(SYS__STATS_OFF_METHODDEF) */
+
+#ifndef SYS__STATS_CLEAR_METHODDEF
+    #define SYS__STATS_CLEAR_METHODDEF
+#endif /* !defined(SYS__STATS_CLEAR_METHODDEF) */
+
+#ifndef SYS__STATS_DUMP_METHODDEF
+    #define SYS__STATS_DUMP_METHODDEF
+#endif /* !defined(SYS__STATS_DUMP_METHODDEF) */
+
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=87baa3357293ea65 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=41122dae1bb7158c input=a9049054013a1b77]*/

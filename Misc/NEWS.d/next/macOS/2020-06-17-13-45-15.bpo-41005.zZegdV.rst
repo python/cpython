@@ -1,1 +1,0 @@
-fixed an XDG settings issue not allowing macos to open browser in webbrowser.py

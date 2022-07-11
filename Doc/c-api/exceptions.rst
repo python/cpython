@@ -100,7 +100,7 @@ For convenience, some of these functions will always return a
    This is the most common way to set the error indicator.  The first argument
    specifies the exception type; it is normally one of the standard exceptions,
    e.g. :c:data:`PyExc_RuntimeError`.  You need not increment its reference count.
-   The second argument is an error message; it is decoded from ``'utf-8``'.
+   The second argument is an error message; it is decoded from ``'utf-8'``.
 
 
 .. c:function:: void PyErr_SetObject(PyObject *type, PyObject *value)
@@ -182,8 +182,8 @@ For convenience, some of these functions will always return a
 .. c:function:: PyObject* PyErr_SetFromErrnoWithFilename(PyObject *type, const char *filename)
 
    Similar to :c:func:`PyErr_SetFromErrnoWithFilenameObject`, but the filename
-   is given as a C string.  *filename* is decoded from the filesystem encoding
-   (:func:`os.fsdecode`).
+   is given as a C string.  *filename* is decoded from the :term:`filesystem
+   encoding and error handler`.
 
 
 .. c:function:: PyObject* PyErr_SetFromWindowsErr(int ierr)
@@ -253,6 +253,14 @@ For convenience, some of these functions will always return a
    .. versionadded:: 3.3
 
 
+.. c:function:: PyObject* PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg, PyObject *name, PyObject *path)
+
+   Much like :c:func:`PyErr_SetImportError` but this function allows for
+   specifying a subclass of :exc:`ImportError` to raise.
+
+   .. versionadded:: 3.6
+
+
 .. c:function:: void PyErr_SyntaxLocationObject(PyObject *filename, int lineno, int col_offset)
 
    Set file, line, and offset information for the current exception.  If the
@@ -266,14 +274,14 @@ For convenience, some of these functions will always return a
 .. c:function:: void PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
 
    Like :c:func:`PyErr_SyntaxLocationObject`, but *filename* is a byte string
-   decoded from the filesystem encoding (:func:`os.fsdecode`).
+   decoded from the :term:`filesystem encoding and error handler`.
 
    .. versionadded:: 3.2
 
 
 .. c:function:: void PyErr_SyntaxLocation(const char *filename, int lineno)
 
-   Like :c:func:`PyErr_SyntaxLocationEx`, but the col_offset parameter is
+   Like :c:func:`PyErr_SyntaxLocationEx`, but the *col_offset* parameter is
    omitted.
 
 
@@ -320,19 +328,12 @@ an error value).
    :mod:`warnings` module and the :option:`-W` option in the command line
    documentation.  There is no C API for warning control.
 
-.. c:function:: PyObject* PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg, PyObject *name, PyObject *path)
-
-   Much like :c:func:`PyErr_SetImportError` but this function allows for
-   specifying a subclass of :exc:`ImportError` to raise.
-
-   .. versionadded:: 3.6
-
 
 .. c:function:: int PyErr_WarnExplicitObject(PyObject *category, PyObject *message, PyObject *filename, int lineno, PyObject *module, PyObject *registry)
 
    Issue a warning message with explicit control over all warning attributes.  This
    is a straightforward wrapper around the Python function
-   :func:`warnings.warn_explicit`, see there for more information.  The *module*
+   :func:`warnings.warn_explicit`; see there for more information.  The *module*
    and *registry* arguments may be set to ``NULL`` to get the default effect
    described there.
 
@@ -343,7 +344,7 @@ an error value).
 
    Similar to :c:func:`PyErr_WarnExplicitObject` except that *message* and
    *module* are UTF-8 encoded strings, and *filename* is decoded from the
-   filesystem encoding (:func:`os.fsdecode`).
+   :term:`filesystem encoding and error handler`.
 
 
 .. c:function:: int PyErr_WarnFormat(PyObject *category, Py_ssize_t stack_level, const char *format, ...)
@@ -440,7 +441,7 @@ Querying the error indicator
       error indicator.
 
 
-.. c:function:: void PyErr_NormalizeException(PyObject**exc, PyObject**val, PyObject**tb)
+.. c:function:: void PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
 
    Under certain circumstances, the values returned by :c:func:`PyErr_Fetch` below
    can be "unnormalized", meaning that ``*exc`` is a class object but ``*val`` is
@@ -459,12 +460,46 @@ Querying the error indicator
          }
 
 
+.. c:function:: PyObject* PyErr_GetHandledException(void)
+
+   Retrieve the active exception instance, as would be returned by :func:`sys.exception`.
+   This refers to an exception that was *already caught*, not to an exception that was
+   freshly raised. Returns a new reference to the exception or ``NULL``.
+   Does not modify the interpreter's exception state.
+
+   .. note::
+
+      This function is not normally used by code that wants to handle exceptions.
+      Rather, it can be used when code needs to save and restore the exception
+      state temporarily.  Use :c:func:`PyErr_SetHandledException` to restore or
+      clear the exception state.
+
+   .. versionadded:: 3.11
+
+.. c:function:: void PyErr_SetHandledException(PyObject *exc)
+
+   Set the active exception, as known from ``sys.exception()``.  This refers
+   to an exception that was *already caught*, not to an exception that was
+   freshly raised.
+   To clear the exception state, pass ``NULL``.
+
+   .. note::
+
+      This function is not normally used by code that wants to handle exceptions.
+      Rather, it can be used when code needs to save and restore the exception
+      state temporarily.  Use :c:func:`PyErr_GetHandledException` to get the exception
+      state.
+
+   .. versionadded:: 3.11
+
 .. c:function:: void PyErr_GetExcInfo(PyObject **ptype, PyObject **pvalue, PyObject **ptraceback)
 
-   Retrieve the exception info, as known from ``sys.exc_info()``.  This refers
-   to an exception that was *already caught*, not to an exception that was
-   freshly raised.  Returns new references for the three objects, any of which
-   may be ``NULL``.  Does not modify the exception info state.
+   Retrieve the old-style representation of the exception info, as known from
+   :func:`sys.exc_info`.  This refers to an exception that was *already caught*,
+   not to an exception that was freshly raised.  Returns new references for the
+   three objects, any of which may be ``NULL``.  Does not modify the exception
+   info state.  This function is kept for backwards compatibility. Prefer using
+   :c:func:`PyErr_GetHandledException`.
 
    .. note::
 
@@ -482,7 +517,8 @@ Querying the error indicator
    to an exception that was *already caught*, not to an exception that was
    freshly raised.  This function steals the references of the arguments.
    To clear the exception state, pass ``NULL`` for all three arguments.
-   For general rules about the three arguments, see :c:func:`PyErr_Restore`.
+   This function is kept for backwards compatibility. Prefer using
+   :c:func:`PyErr_SetHandledException`.
 
    .. note::
 
@@ -492,6 +528,12 @@ Querying the error indicator
       state.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.11
+      The ``type`` and ``traceback`` arguments are no longer used and
+      can be NULL. The interpreter now derives them from the exception
+      instance (the ``value`` argument). The function still steals
+      references of all three arguments.
 
 
 Signal Handling
@@ -505,29 +547,73 @@ Signal Handling
       single: SIGINT
       single: KeyboardInterrupt (built-in exception)
 
-   This function interacts with Python's signal handling.  It checks whether a
-   signal has been sent to the processes and if so, invokes the corresponding
-   signal handler.  If the :mod:`signal` module is supported, this can invoke a
-   signal handler written in Python.  In all cases, the default effect for
-   :const:`SIGINT` is to raise the  :exc:`KeyboardInterrupt` exception.  If an
-   exception is raised the error indicator is set and the function returns ``-1``;
-   otherwise the function returns ``0``.  The error indicator may or may not be
-   cleared if it was previously set.
+   This function interacts with Python's signal handling.
+
+   If the function is called from the main thread and under the main Python
+   interpreter, it checks whether a signal has been sent to the processes
+   and if so, invokes the corresponding signal handler.  If the :mod:`signal`
+   module is supported, this can invoke a signal handler written in Python.
+
+   The function attempts to handle all pending signals, and then returns ``0``.
+   However, if a Python signal handler raises an exception, the error
+   indicator is set and the function returns ``-1`` immediately (such that
+   other pending signals may not have been handled yet: they will be on the
+   next :c:func:`PyErr_CheckSignals()` invocation).
+
+   If the function is called from a non-main thread, or under a non-main
+   Python interpreter, it does nothing and returns ``0``.
+
+   This function can be called by long-running C code that wants to
+   be interruptible by user requests (such as by pressing Ctrl-C).
+
+   .. note::
+      The default Python signal handler for :const:`SIGINT` raises the
+      :exc:`KeyboardInterrupt` exception.
 
 
 .. c:function:: void PyErr_SetInterrupt()
 
    .. index::
+      module: signal
       single: SIGINT
       single: KeyboardInterrupt (built-in exception)
 
-   Simulate the effect of a :const:`SIGINT` signal arriving. The next time
-   :c:func:`PyErr_CheckSignals` is called,  the Python signal handler for
-   :const:`SIGINT` will be called.
+   Simulate the effect of a :const:`SIGINT` signal arriving.
+   This is equivalent to ``PyErr_SetInterruptEx(SIGINT)``.
 
-   If :const:`SIGINT` isn't handled by Python (it was set to
-   :data:`signal.SIG_DFL` or :data:`signal.SIG_IGN`), this function does
-   nothing.
+   .. note::
+      This function is async-signal-safe.  It can be called without
+      the :term:`GIL` and from a C signal handler.
+
+
+.. c:function:: int PyErr_SetInterruptEx(int signum)
+
+   .. index::
+      module: signal
+      single: KeyboardInterrupt (built-in exception)
+
+   Simulate the effect of a signal arriving. The next time
+   :c:func:`PyErr_CheckSignals` is called,  the Python signal handler for
+   the given signal number will be called.
+
+   This function can be called by C code that sets up its own signal handling
+   and wants Python signal handlers to be invoked as expected when an
+   interruption is requested (for example when the user presses Ctrl-C
+   to interrupt an operation).
+
+   If the given signal isn't handled by Python (it was set to
+   :data:`signal.SIG_DFL` or :data:`signal.SIG_IGN`), it will be ignored.
+
+   If *signum* is outside of the allowed range of signal numbers, ``-1``
+   is returned.  Otherwise, ``0`` is returned.  The error indicator is
+   never changed by this function.
+
+   .. note::
+      This function is async-signal-safe.  It can be called without
+      the :term:`GIL` and from a C signal handler.
+
+   .. versionadded:: 3.10
+
 
 .. c:function:: int PySignal_SetWakeupFd(int fd)
 
@@ -630,27 +716,6 @@ The following functions are used to create and modify Unicode exceptions from C.
    Create a :class:`UnicodeDecodeError` object with the attributes *encoding*,
    *object*, *length*, *start*, *end* and *reason*. *encoding* and *reason* are
    UTF-8 encoded strings.
-
-.. c:function:: PyObject* PyUnicodeEncodeError_Create(const char *encoding, const Py_UNICODE *object, Py_ssize_t length, Py_ssize_t start, Py_ssize_t end, const char *reason)
-
-   Create a :class:`UnicodeEncodeError` object with the attributes *encoding*,
-   *object*, *length*, *start*, *end* and *reason*. *encoding* and *reason* are
-   UTF-8 encoded strings.
-
-   .. deprecated:: 3.3 3.11
-
-      ``Py_UNICODE`` is deprecated since Python 3.3. Please migrate to
-      ``PyObject_CallFunction(PyExc_UnicodeEncodeError, "sOnns", ...)``.
-
-.. c:function:: PyObject* PyUnicodeTranslateError_Create(const Py_UNICODE *object, Py_ssize_t length, Py_ssize_t start, Py_ssize_t end, const char *reason)
-
-   Create a :class:`UnicodeTranslateError` object with the attributes *object*,
-   *length*, *start*, *end* and *reason*. *reason* is a UTF-8 encoded string.
-
-   .. deprecated:: 3.3 3.11
-
-      ``Py_UNICODE`` is deprecated since Python 3.3. Please migrate to
-      ``PyObject_CallFunction(PyExc_UnicodeTranslateError, "Onns", ...)``.
 
 .. c:function:: PyObject* PyUnicodeDecodeError_GetEncoding(PyObject *exc)
                 PyObject* PyUnicodeEncodeError_GetEncoding(PyObject *exc)
@@ -783,7 +848,7 @@ Standard Exceptions
 
 All standard Python exceptions are available as global variables whose names are
 ``PyExc_`` followed by the Python exception name.  These have the type
-:c:type:`PyObject\*`; they are all class objects.  For completeness, here are all
+:c:type:`PyObject*`; they are all class objects.  For completeness, here are all
 the variables:
 
 .. index::
@@ -844,11 +909,11 @@ the variables:
 +-----------------------------------------+---------------------------------+----------+
 | C Name                                  | Python Name                     | Notes    |
 +=========================================+=================================+==========+
-| :c:data:`PyExc_BaseException`           | :exc:`BaseException`            | \(1)     |
+| :c:data:`PyExc_BaseException`           | :exc:`BaseException`            | [1]_     |
 +-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_Exception`               | :exc:`Exception`                | \(1)     |
+| :c:data:`PyExc_Exception`               | :exc:`Exception`                | [1]_     |
 +-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_ArithmeticError`         | :exc:`ArithmeticError`          | \(1)     |
+| :c:data:`PyExc_ArithmeticError`         | :exc:`ArithmeticError`          | [1]_     |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_AssertionError`          | :exc:`AssertionError`           |          |
 +-----------------------------------------+---------------------------------+----------+
@@ -894,7 +959,7 @@ the variables:
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_KeyboardInterrupt`       | :exc:`KeyboardInterrupt`        |          |
 +-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_LookupError`             | :exc:`LookupError`              | \(1)     |
+| :c:data:`PyExc_LookupError`             | :exc:`LookupError`              | [1]_     |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_MemoryError`             | :exc:`MemoryError`              |          |
 +-----------------------------------------+---------------------------------+----------+
@@ -906,7 +971,7 @@ the variables:
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_NotImplementedError`     | :exc:`NotImplementedError`      |          |
 +-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_OSError`                 | :exc:`OSError`                  | \(1)     |
+| :c:data:`PyExc_OSError`                 | :exc:`OSError`                  | [1]_     |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_OverflowError`           | :exc:`OverflowError`            |          |
 +-----------------------------------------+---------------------------------+----------+
@@ -916,7 +981,7 @@ the variables:
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_RecursionError`          | :exc:`RecursionError`           |          |
 +-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_ReferenceError`          | :exc:`ReferenceError`           | \(2)     |
+| :c:data:`PyExc_ReferenceError`          | :exc:`ReferenceError`           |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_RuntimeError`            | :exc:`RuntimeError`             |          |
 +-----------------------------------------+---------------------------------+----------+
@@ -981,7 +1046,7 @@ These are compatibility aliases to :c:data:`PyExc_OSError`:
 +-------------------------------------+----------+
 | :c:data:`PyExc_IOError`             |          |
 +-------------------------------------+----------+
-| :c:data:`PyExc_WindowsError`        | \(3)     |
+| :c:data:`PyExc_WindowsError`        | [2]_     |
 +-------------------------------------+----------+
 
 .. versionchanged:: 3.3
@@ -989,10 +1054,10 @@ These are compatibility aliases to :c:data:`PyExc_OSError`:
 
 Notes:
 
-(1)
+.. [1]
    This is a base class for other standard exceptions.
 
-(2)
+.. [2]
    Only defined on Windows; protect code that uses this by testing that the
    preprocessor macro ``MS_WINDOWS`` is defined.
 
@@ -1003,7 +1068,7 @@ Standard Warning Categories
 
 All standard Python warning categories are available as global variables whose
 names are ``PyExc_`` followed by the Python exception name. These have the type
-:c:type:`PyObject\*`; they are all class objects. For completeness, here are all
+:c:type:`PyObject*`; they are all class objects. For completeness, here are all
 the variables:
 
 .. index::
@@ -1022,7 +1087,7 @@ the variables:
 +------------------------------------------+---------------------------------+----------+
 | C Name                                   | Python Name                     | Notes    |
 +==========================================+=================================+==========+
-| :c:data:`PyExc_Warning`                  | :exc:`Warning`                  | \(1)     |
+| :c:data:`PyExc_Warning`                  | :exc:`Warning`                  | [3]_     |
 +------------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_BytesWarning`             | :exc:`BytesWarning`             |          |
 +------------------------------------------+---------------------------------+----------+
@@ -1050,5 +1115,5 @@ the variables:
 
 Notes:
 
-(1)
+.. [3]
    This is a base class for other standard warning categories.

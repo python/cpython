@@ -1,1 +1,0 @@
-Fix the error handling in :meth:`ssl.SSLContext.load_dh_params`.

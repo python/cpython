@@ -1,24 +1,47 @@
 /*
- * This file includes functions to transform a concrete syntax tree (CST) to
- * an abstract syntax tree (AST). The main function is PyAST_FromNode().
- *
+ * This file exposes PyAST_Validate interface to check the integrity
+ * of the given abstract syntax tree (potentially constructed manually).
  */
 #include "Python.h"
-#include "Python-ast.h"
-#include "ast.h"
-#include "token.h"
-#include "pythonrun.h"
+#include "pycore_ast.h"           // asdl_stmt_seq
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 
 #include <assert.h>
 #include <stdbool.h>
 
-#define MAXLEVEL 200    /* Max parentheses level */
+struct validator {
+    int recursion_depth;            /* current recursion depth */
+    int recursion_limit;            /* recursion limit */
+};
 
-static int validate_stmts(asdl_seq *);
-static int validate_exprs(asdl_seq *, expr_context_ty, int);
-static int validate_nonempty_seq(asdl_seq *, const char *, const char *);
-static int validate_stmt(stmt_ty);
-static int validate_expr(expr_ty, expr_context_ty);
+static int validate_stmts(struct validator *, asdl_stmt_seq *);
+static int validate_exprs(struct validator *, asdl_expr_seq *, expr_context_ty, int);
+static int validate_patterns(struct validator *, asdl_pattern_seq *, int);
+static int _validate_nonempty_seq(asdl_seq *, const char *, const char *);
+static int validate_stmt(struct validator *, stmt_ty);
+static int validate_expr(struct validator *, expr_ty, expr_context_ty);
+static int validate_pattern(struct validator *, pattern_ty, int);
+
+#define VALIDATE_POSITIONS(node) \
+    if (node->lineno > node->end_lineno) { \
+        PyErr_Format(PyExc_ValueError, \
+                     "AST node line range (%d, %d) is not valid", \
+                     node->lineno, node->end_lineno); \
+        return 0; \
+    } \
+    if ((node->lineno < 0 && node->end_lineno != node->lineno) || \
+        (node->col_offset < 0 && node->col_offset != node->end_col_offset)) { \
+        PyErr_Format(PyExc_ValueError, \
+                     "AST node column range (%d, %d) for line range (%d, %d) is not valid", \
+                     node->col_offset, node->end_col_offset, node->lineno, node->end_lineno); \
+        return 0; \
+    } \
+    if (node->lineno == node->end_lineno && node->col_offset > node->end_col_offset) { \
+        PyErr_Format(PyExc_ValueError, \
+                     "line %d, column %d-%d is not a valid range", \
+                     node->lineno, node->col_offset, node->end_col_offset); \
+        return 0; \
+    }
 
 static int
 validate_name(PyObject *name)
@@ -32,7 +55,7 @@ validate_name(PyObject *name)
     };
     for (int i = 0; forbidden[i] != NULL; i++) {
         if (_PyUnicode_EqualToASCIIString(name, forbidden[i])) {
-            PyErr_Format(PyExc_ValueError, "Name node can't be used with '%s' constant", forbidden[i]);
+            PyErr_Format(PyExc_ValueError, "identifier field can't represent '%s' constant", forbidden[i]);
             return 0;
         }
     }
@@ -40,7 +63,7 @@ validate_name(PyObject *name)
 }
 
 static int
-validate_comprehension(asdl_seq *gens)
+validate_comprehension(struct validator *state, asdl_comprehension_seq *gens)
 {
     Py_ssize_t i;
     if (!asdl_seq_LEN(gens)) {
@@ -49,31 +72,32 @@ validate_comprehension(asdl_seq *gens)
     }
     for (i = 0; i < asdl_seq_LEN(gens); i++) {
         comprehension_ty comp = asdl_seq_GET(gens, i);
-        if (!validate_expr(comp->target, Store) ||
-            !validate_expr(comp->iter, Load) ||
-            !validate_exprs(comp->ifs, Load, 0))
+        if (!validate_expr(state, comp->target, Store) ||
+            !validate_expr(state, comp->iter, Load) ||
+            !validate_exprs(state, comp->ifs, Load, 0))
             return 0;
     }
     return 1;
 }
 
 static int
-validate_keywords(asdl_seq *keywords)
+validate_keywords(struct validator *state, asdl_keyword_seq *keywords)
 {
     Py_ssize_t i;
     for (i = 0; i < asdl_seq_LEN(keywords); i++)
-        if (!validate_expr(((keyword_ty)asdl_seq_GET(keywords, i))->value, Load))
+        if (!validate_expr(state, (asdl_seq_GET(keywords, i))->value, Load))
             return 0;
     return 1;
 }
 
 static int
-validate_args(asdl_seq *args)
+validate_args(struct validator *state, asdl_arg_seq *args)
 {
     Py_ssize_t i;
     for (i = 0; i < asdl_seq_LEN(args); i++) {
         arg_ty arg = asdl_seq_GET(args, i);
-        if (arg->annotation && !validate_expr(arg->annotation, Load))
+        VALIDATE_POSITIONS(arg);
+        if (arg->annotation && !validate_expr(state, arg->annotation, Load))
             return 0;
     }
     return 1;
@@ -89,25 +113,25 @@ expr_context_name(expr_context_ty ctx)
         return "Store";
     case Del:
         return "Del";
-    default:
-        Py_UNREACHABLE();
+    // No default case so compiler emits warning for unhandled cases
     }
+    Py_UNREACHABLE();
 }
 
 static int
-validate_arguments(arguments_ty args)
+validate_arguments(struct validator *state, arguments_ty args)
 {
-    if (!validate_args(args->posonlyargs) || !validate_args(args->args)) {
+    if (!validate_args(state, args->posonlyargs) || !validate_args(state, args->args)) {
         return 0;
     }
     if (args->vararg && args->vararg->annotation
-        && !validate_expr(args->vararg->annotation, Load)) {
+        && !validate_expr(state, args->vararg->annotation, Load)) {
             return 0;
     }
-    if (!validate_args(args->kwonlyargs))
+    if (!validate_args(state, args->kwonlyargs))
         return 0;
     if (args->kwarg && args->kwarg->annotation
-        && !validate_expr(args->kwarg->annotation, Load)) {
+        && !validate_expr(state, args->kwarg->annotation, Load)) {
             return 0;
     }
     if (asdl_seq_LEN(args->defaults) > asdl_seq_LEN(args->posonlyargs) + asdl_seq_LEN(args->args)) {
@@ -119,11 +143,11 @@ validate_arguments(arguments_ty args)
                         "kw_defaults on arguments");
         return 0;
     }
-    return validate_exprs(args->defaults, Load, 0) && validate_exprs(args->kw_defaults, Load, 1);
+    return validate_exprs(state, args->defaults, Load, 0) && validate_exprs(state, args->kw_defaults, Load, 1);
 }
 
 static int
-validate_constant(PyObject *value)
+validate_constant(struct validator *state, PyObject *value)
 {
     if (value == Py_None || value == Py_Ellipsis)
         return 1;
@@ -137,9 +161,13 @@ validate_constant(PyObject *value)
         return 1;
 
     if (PyTuple_CheckExact(value) || PyFrozenSet_CheckExact(value)) {
-        PyObject *it;
+        if (++state->recursion_depth > state->recursion_limit) {
+            PyErr_SetString(PyExc_RecursionError,
+                            "maximum recursion depth exceeded during compilation");
+            return 0;
+        }
 
-        it = PyObject_GetIter(value);
+        PyObject *it = PyObject_GetIter(value);
         if (it == NULL)
             return 0;
 
@@ -153,7 +181,7 @@ validate_constant(PyObject *value)
                 break;
             }
 
-            if (!validate_constant(item)) {
+            if (!validate_constant(state, item)) {
                 Py_DECREF(it);
                 Py_DECREF(item);
                 return 0;
@@ -162,6 +190,7 @@ validate_constant(PyObject *value)
         }
 
         Py_DECREF(it);
+        --state->recursion_depth;
         return 1;
     }
 
@@ -174,8 +203,15 @@ validate_constant(PyObject *value)
 }
 
 static int
-validate_expr(expr_ty exp, expr_context_ty ctx)
+validate_expr(struct validator *state, expr_ty exp, expr_context_ty ctx)
 {
+    VALIDATE_POSITIONS(exp);
+    int ret = -1;
+    if (++state->recursion_depth > state->recursion_limit) {
+        PyErr_SetString(PyExc_RecursionError,
+                        "maximum recursion depth exceeded during compilation");
+        return 0;
+    }
     int check_ctx = 1;
     expr_context_ty actual_ctx;
 
@@ -225,19 +261,24 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
             PyErr_SetString(PyExc_ValueError, "BoolOp with less than 2 values");
             return 0;
         }
-        return validate_exprs(exp->v.BoolOp.values, Load, 0);
+        ret = validate_exprs(state, exp->v.BoolOp.values, Load, 0);
+        break;
     case BinOp_kind:
-        return validate_expr(exp->v.BinOp.left, Load) &&
-            validate_expr(exp->v.BinOp.right, Load);
+        ret = validate_expr(state, exp->v.BinOp.left, Load) &&
+            validate_expr(state, exp->v.BinOp.right, Load);
+        break;
     case UnaryOp_kind:
-        return validate_expr(exp->v.UnaryOp.operand, Load);
+        ret = validate_expr(state, exp->v.UnaryOp.operand, Load);
+        break;
     case Lambda_kind:
-        return validate_arguments(exp->v.Lambda.args) &&
-            validate_expr(exp->v.Lambda.body, Load);
+        ret = validate_arguments(state, exp->v.Lambda.args) &&
+            validate_expr(state, exp->v.Lambda.body, Load);
+        break;
     case IfExp_kind:
-        return validate_expr(exp->v.IfExp.test, Load) &&
-            validate_expr(exp->v.IfExp.body, Load) &&
-            validate_expr(exp->v.IfExp.orelse, Load);
+        ret = validate_expr(state, exp->v.IfExp.test, Load) &&
+            validate_expr(state, exp->v.IfExp.body, Load) &&
+            validate_expr(state, exp->v.IfExp.orelse, Load);
+        break;
     case Dict_kind:
         if (asdl_seq_LEN(exp->v.Dict.keys) != asdl_seq_LEN(exp->v.Dict.values)) {
             PyErr_SetString(PyExc_ValueError,
@@ -246,28 +287,35 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
         }
         /* null_ok=1 for keys expressions to allow dict unpacking to work in
            dict literals, i.e. ``{**{a:b}}`` */
-        return validate_exprs(exp->v.Dict.keys, Load, /*null_ok=*/ 1) &&
-            validate_exprs(exp->v.Dict.values, Load, /*null_ok=*/ 0);
+        ret = validate_exprs(state, exp->v.Dict.keys, Load, /*null_ok=*/ 1) &&
+            validate_exprs(state, exp->v.Dict.values, Load, /*null_ok=*/ 0);
+        break;
     case Set_kind:
-        return validate_exprs(exp->v.Set.elts, Load, 0);
+        ret = validate_exprs(state, exp->v.Set.elts, Load, 0);
+        break;
 #define COMP(NAME) \
         case NAME ## _kind: \
-            return validate_comprehension(exp->v.NAME.generators) && \
-                validate_expr(exp->v.NAME.elt, Load);
+            ret = validate_comprehension(state, exp->v.NAME.generators) && \
+                validate_expr(state, exp->v.NAME.elt, Load); \
+            break;
     COMP(ListComp)
     COMP(SetComp)
     COMP(GeneratorExp)
 #undef COMP
     case DictComp_kind:
-        return validate_comprehension(exp->v.DictComp.generators) &&
-            validate_expr(exp->v.DictComp.key, Load) &&
-            validate_expr(exp->v.DictComp.value, Load);
+        ret = validate_comprehension(state, exp->v.DictComp.generators) &&
+            validate_expr(state, exp->v.DictComp.key, Load) &&
+            validate_expr(state, exp->v.DictComp.value, Load);
+        break;
     case Yield_kind:
-        return !exp->v.Yield.value || validate_expr(exp->v.Yield.value, Load);
+        ret = !exp->v.Yield.value || validate_expr(state, exp->v.Yield.value, Load);
+        break;
     case YieldFrom_kind:
-        return validate_expr(exp->v.YieldFrom.value, Load);
+        ret = validate_expr(state, exp->v.YieldFrom.value, Load);
+        break;
     case Await_kind:
-        return validate_expr(exp->v.Await.value, Load);
+        ret = validate_expr(state, exp->v.Await.value, Load);
+        break;
     case Compare_kind:
         if (!asdl_seq_LEN(exp->v.Compare.comparators)) {
             PyErr_SetString(PyExc_ValueError, "Compare with no comparators");
@@ -279,98 +327,413 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
                             "of comparators and operands");
             return 0;
         }
-        return validate_exprs(exp->v.Compare.comparators, Load, 0) &&
-            validate_expr(exp->v.Compare.left, Load);
+        ret = validate_exprs(state, exp->v.Compare.comparators, Load, 0) &&
+            validate_expr(state, exp->v.Compare.left, Load);
+        break;
     case Call_kind:
-        return validate_expr(exp->v.Call.func, Load) &&
-            validate_exprs(exp->v.Call.args, Load, 0) &&
-            validate_keywords(exp->v.Call.keywords);
+        ret = validate_expr(state, exp->v.Call.func, Load) &&
+            validate_exprs(state, exp->v.Call.args, Load, 0) &&
+            validate_keywords(state, exp->v.Call.keywords);
+        break;
     case Constant_kind:
-        if (!validate_constant(exp->v.Constant.value)) {
+        if (!validate_constant(state, exp->v.Constant.value)) {
             return 0;
         }
-        return 1;
+        ret = 1;
+        break;
     case JoinedStr_kind:
-        return validate_exprs(exp->v.JoinedStr.values, Load, 0);
+        ret = validate_exprs(state, exp->v.JoinedStr.values, Load, 0);
+        break;
     case FormattedValue_kind:
-        if (validate_expr(exp->v.FormattedValue.value, Load) == 0)
+        if (validate_expr(state, exp->v.FormattedValue.value, Load) == 0)
             return 0;
-        if (exp->v.FormattedValue.format_spec)
-            return validate_expr(exp->v.FormattedValue.format_spec, Load);
-        return 1;
+        if (exp->v.FormattedValue.format_spec) {
+            ret = validate_expr(state, exp->v.FormattedValue.format_spec, Load);
+            break;
+        }
+        ret = 1;
+        break;
     case Attribute_kind:
-        return validate_expr(exp->v.Attribute.value, Load);
+        ret = validate_expr(state, exp->v.Attribute.value, Load);
+        break;
     case Subscript_kind:
-        return validate_expr(exp->v.Subscript.slice, Load) &&
-            validate_expr(exp->v.Subscript.value, Load);
+        ret = validate_expr(state, exp->v.Subscript.slice, Load) &&
+            validate_expr(state, exp->v.Subscript.value, Load);
+        break;
     case Starred_kind:
-        return validate_expr(exp->v.Starred.value, ctx);
+        ret = validate_expr(state, exp->v.Starred.value, ctx);
+        break;
     case Slice_kind:
-        return (!exp->v.Slice.lower || validate_expr(exp->v.Slice.lower, Load)) &&
-            (!exp->v.Slice.upper || validate_expr(exp->v.Slice.upper, Load)) &&
-            (!exp->v.Slice.step || validate_expr(exp->v.Slice.step, Load));
+        ret = (!exp->v.Slice.lower || validate_expr(state, exp->v.Slice.lower, Load)) &&
+            (!exp->v.Slice.upper || validate_expr(state, exp->v.Slice.upper, Load)) &&
+            (!exp->v.Slice.step || validate_expr(state, exp->v.Slice.step, Load));
+        break;
     case List_kind:
-        return validate_exprs(exp->v.List.elts, ctx, 0);
+        ret = validate_exprs(state, exp->v.List.elts, ctx, 0);
+        break;
     case Tuple_kind:
-        return validate_exprs(exp->v.Tuple.elts, ctx, 0);
+        ret = validate_exprs(state, exp->v.Tuple.elts, ctx, 0);
+        break;
     case NamedExpr_kind:
-        return validate_expr(exp->v.NamedExpr.value, Load);
+        ret = validate_expr(state, exp->v.NamedExpr.value, Load);
+        break;
     /* This last case doesn't have any checking. */
     case Name_kind:
-        return 1;
+        ret = 1;
+        break;
+    // No default case so compiler emits warning for unhandled cases
     }
-    PyErr_SetString(PyExc_SystemError, "unexpected expression");
+    if (ret < 0) {
+        PyErr_SetString(PyExc_SystemError, "unexpected expression");
+        ret = 0;
+    }
+    state->recursion_depth--;
+    return ret;
+}
+
+
+// Note: the ensure_literal_* functions are only used to validate a restricted
+//       set of non-recursive literals that have already been checked with
+//       validate_expr, so they don't accept the validator state
+static int
+ensure_literal_number(expr_ty exp, bool allow_real, bool allow_imaginary)
+{
+    assert(exp->kind == Constant_kind);
+    PyObject *value = exp->v.Constant.value;
+    return (allow_real && PyFloat_CheckExact(value)) ||
+           (allow_real && PyLong_CheckExact(value)) ||
+           (allow_imaginary && PyComplex_CheckExact(value));
+}
+
+static int
+ensure_literal_negative(expr_ty exp, bool allow_real, bool allow_imaginary)
+{
+    assert(exp->kind == UnaryOp_kind);
+    // Must be negation ...
+    if (exp->v.UnaryOp.op != USub) {
+        return 0;
+    }
+    // ... of a constant ...
+    expr_ty operand = exp->v.UnaryOp.operand;
+    if (operand->kind != Constant_kind) {
+        return 0;
+    }
+    // ... number
+    return ensure_literal_number(operand, allow_real, allow_imaginary);
+}
+
+static int
+ensure_literal_complex(expr_ty exp)
+{
+    assert(exp->kind == BinOp_kind);
+    expr_ty left = exp->v.BinOp.left;
+    expr_ty right = exp->v.BinOp.right;
+    // Ensure op is addition or subtraction
+    if (exp->v.BinOp.op != Add && exp->v.BinOp.op != Sub) {
+        return 0;
+    }
+    // Check LHS is a real number (potentially signed)
+    switch (left->kind)
+    {
+        case Constant_kind:
+            if (!ensure_literal_number(left, /*real=*/true, /*imaginary=*/false)) {
+                return 0;
+            }
+            break;
+        case UnaryOp_kind:
+            if (!ensure_literal_negative(left, /*real=*/true, /*imaginary=*/false)) {
+                return 0;
+            }
+            break;
+        default:
+            return 0;
+    }
+    // Check RHS is an imaginary number (no separate sign allowed)
+    switch (right->kind)
+    {
+        case Constant_kind:
+            if (!ensure_literal_number(right, /*real=*/false, /*imaginary=*/true)) {
+                return 0;
+            }
+            break;
+        default:
+            return 0;
+    }
+    return 1;
+}
+
+static int
+validate_pattern_match_value(struct validator *state, expr_ty exp)
+{
+    if (!validate_expr(state, exp, Load)) {
+        return 0;
+    }
+
+    switch (exp->kind)
+    {
+        case Constant_kind:
+            /* Ellipsis and immutable sequences are not allowed.
+               For True, False and None, MatchSingleton() should
+               be used */
+            if (!validate_expr(state, exp, Load)) {
+                return 0;
+            }
+            PyObject *literal = exp->v.Constant.value;
+            if (PyLong_CheckExact(literal) || PyFloat_CheckExact(literal) ||
+                PyBytes_CheckExact(literal) || PyComplex_CheckExact(literal) ||
+                PyUnicode_CheckExact(literal)) {
+                return 1;
+            }
+            PyErr_SetString(PyExc_ValueError,
+                            "unexpected constant inside of a literal pattern");
+            return 0;
+        case Attribute_kind:
+            // Constants and attribute lookups are always permitted
+            return 1;
+        case UnaryOp_kind:
+            // Negated numbers are permitted (whether real or imaginary)
+            // Compiler will complain if AST folding doesn't create a constant
+            if (ensure_literal_negative(exp, /*real=*/true, /*imaginary=*/true)) {
+                return 1;
+            }
+            break;
+        case BinOp_kind:
+            // Complex literals are permitted
+            // Compiler will complain if AST folding doesn't create a constant
+            if (ensure_literal_complex(exp)) {
+                return 1;
+            }
+            break;
+        case JoinedStr_kind:
+            // Handled in the later stages
+            return 1;
+        default:
+            break;
+    }
+    PyErr_SetString(PyExc_ValueError,
+                    "patterns may only match literals and attribute lookups");
     return 0;
 }
 
 static int
-validate_nonempty_seq(asdl_seq *seq, const char *what, const char *owner)
+validate_capture(PyObject *name)
+{
+    if (_PyUnicode_EqualToASCIIString(name, "_")) {
+        PyErr_Format(PyExc_ValueError, "can't capture name '_' in patterns");
+        return 0;
+    }
+    return validate_name(name);
+}
+
+static int
+validate_pattern(struct validator *state, pattern_ty p, int star_ok)
+{
+    VALIDATE_POSITIONS(p);
+    int ret = -1;
+    if (++state->recursion_depth > state->recursion_limit) {
+        PyErr_SetString(PyExc_RecursionError,
+                        "maximum recursion depth exceeded during compilation");
+        return 0;
+    }
+    switch (p->kind) {
+        case MatchValue_kind:
+            ret = validate_pattern_match_value(state, p->v.MatchValue.value);
+            break;
+        case MatchSingleton_kind:
+            ret = p->v.MatchSingleton.value == Py_None || PyBool_Check(p->v.MatchSingleton.value);
+            if (!ret) {
+                PyErr_SetString(PyExc_ValueError,
+                                "MatchSingleton can only contain True, False and None");
+            }
+            break;
+        case MatchSequence_kind:
+            ret = validate_patterns(state, p->v.MatchSequence.patterns, /*star_ok=*/1);
+            break;
+        case MatchMapping_kind:
+            if (asdl_seq_LEN(p->v.MatchMapping.keys) != asdl_seq_LEN(p->v.MatchMapping.patterns)) {
+                PyErr_SetString(PyExc_ValueError,
+                                "MatchMapping doesn't have the same number of keys as patterns");
+                ret = 0;
+                break;
+            }
+
+            if (p->v.MatchMapping.rest && !validate_capture(p->v.MatchMapping.rest)) {
+                ret = 0;
+                break;
+            }
+
+            asdl_expr_seq *keys = p->v.MatchMapping.keys;
+            for (Py_ssize_t i = 0; i < asdl_seq_LEN(keys); i++) {
+                expr_ty key = asdl_seq_GET(keys, i);
+                if (key->kind == Constant_kind) {
+                    PyObject *literal = key->v.Constant.value;
+                    if (literal == Py_None || PyBool_Check(literal)) {
+                        /* validate_pattern_match_value will ensure the key
+                           doesn't contain True, False and None but it is
+                           syntactically valid, so we will pass those on in
+                           a special case. */
+                        continue;
+                    }
+                }
+                if (!validate_pattern_match_value(state, key)) {
+                    ret = 0;
+                    break;
+                }
+            }
+
+            ret = validate_patterns(state, p->v.MatchMapping.patterns, /*star_ok=*/0);
+            break;
+        case MatchClass_kind:
+            if (asdl_seq_LEN(p->v.MatchClass.kwd_attrs) != asdl_seq_LEN(p->v.MatchClass.kwd_patterns)) {
+                PyErr_SetString(PyExc_ValueError,
+                                "MatchClass doesn't have the same number of keyword attributes as patterns");
+                ret = 0;
+                break;
+            }
+            if (!validate_expr(state, p->v.MatchClass.cls, Load)) {
+                ret = 0;
+                break;
+            }
+
+            expr_ty cls = p->v.MatchClass.cls;
+            while (1) {
+                if (cls->kind == Name_kind) {
+                    break;
+                }
+                else if (cls->kind == Attribute_kind) {
+                    cls = cls->v.Attribute.value;
+                    continue;
+                }
+                else {
+                    PyErr_SetString(PyExc_ValueError,
+                                    "MatchClass cls field can only contain Name or Attribute nodes.");
+                    ret = 0;
+                    break;
+                }
+            }
+
+            for (Py_ssize_t i = 0; i < asdl_seq_LEN(p->v.MatchClass.kwd_attrs); i++) {
+                PyObject *identifier = asdl_seq_GET(p->v.MatchClass.kwd_attrs, i);
+                if (!validate_name(identifier)) {
+                    ret = 0;
+                    break;
+                }
+            }
+
+            if (!validate_patterns(state, p->v.MatchClass.patterns, /*star_ok=*/0)) {
+                ret = 0;
+                break;
+            }
+
+            ret = validate_patterns(state, p->v.MatchClass.kwd_patterns, /*star_ok=*/0);
+            break;
+        case MatchStar_kind:
+            if (!star_ok) {
+                PyErr_SetString(PyExc_ValueError, "can't use MatchStar here");
+                ret = 0;
+                break;
+            }
+            ret = p->v.MatchStar.name == NULL || validate_capture(p->v.MatchStar.name);
+            break;
+        case MatchAs_kind:
+            if (p->v.MatchAs.name && !validate_capture(p->v.MatchAs.name)) {
+                ret = 0;
+                break;
+            }
+            if (p->v.MatchAs.pattern == NULL) {
+                ret = 1;
+            }
+            else if (p->v.MatchAs.name == NULL) {
+                PyErr_SetString(PyExc_ValueError,
+                                "MatchAs must specify a target name if a pattern is given");
+                ret = 0;
+            }
+            else {
+                ret = validate_pattern(state, p->v.MatchAs.pattern, /*star_ok=*/0);
+            }
+            break;
+        case MatchOr_kind:
+            if (asdl_seq_LEN(p->v.MatchOr.patterns) < 2) {
+                PyErr_SetString(PyExc_ValueError,
+                                "MatchOr requires at least 2 patterns");
+                ret = 0;
+                break;
+            }
+            ret = validate_patterns(state, p->v.MatchOr.patterns, /*star_ok=*/0);
+            break;
+    // No default case, so the compiler will emit a warning if new pattern
+    // kinds are added without being handled here
+    }
+    if (ret < 0) {
+        PyErr_SetString(PyExc_SystemError, "unexpected pattern");
+        ret = 0;
+    }
+    state->recursion_depth--;
+    return ret;
+}
+
+static int
+_validate_nonempty_seq(asdl_seq *seq, const char *what, const char *owner)
 {
     if (asdl_seq_LEN(seq))
         return 1;
     PyErr_Format(PyExc_ValueError, "empty %s on %s", what, owner);
     return 0;
 }
+#define validate_nonempty_seq(seq, what, owner) _validate_nonempty_seq((asdl_seq*)seq, what, owner)
 
 static int
-validate_assignlist(asdl_seq *targets, expr_context_ty ctx)
+validate_assignlist(struct validator *state, asdl_expr_seq *targets, expr_context_ty ctx)
 {
     return validate_nonempty_seq(targets, "targets", ctx == Del ? "Delete" : "Assign") &&
-        validate_exprs(targets, ctx, 0);
+        validate_exprs(state, targets, ctx, 0);
 }
 
 static int
-validate_body(asdl_seq *body, const char *owner)
+validate_body(struct validator *state, asdl_stmt_seq *body, const char *owner)
 {
-    return validate_nonempty_seq(body, "body", owner) && validate_stmts(body);
+    return validate_nonempty_seq(body, "body", owner) && validate_stmts(state, body);
 }
 
 static int
-validate_stmt(stmt_ty stmt)
+validate_stmt(struct validator *state, stmt_ty stmt)
 {
+    VALIDATE_POSITIONS(stmt);
+    int ret = -1;
     Py_ssize_t i;
+    if (++state->recursion_depth > state->recursion_limit) {
+        PyErr_SetString(PyExc_RecursionError,
+                        "maximum recursion depth exceeded during compilation");
+        return 0;
+    }
     switch (stmt->kind) {
     case FunctionDef_kind:
-        return validate_body(stmt->v.FunctionDef.body, "FunctionDef") &&
-            validate_arguments(stmt->v.FunctionDef.args) &&
-            validate_exprs(stmt->v.FunctionDef.decorator_list, Load, 0) &&
+        ret = validate_body(state, stmt->v.FunctionDef.body, "FunctionDef") &&
+            validate_arguments(state, stmt->v.FunctionDef.args) &&
+            validate_exprs(state, stmt->v.FunctionDef.decorator_list, Load, 0) &&
             (!stmt->v.FunctionDef.returns ||
-             validate_expr(stmt->v.FunctionDef.returns, Load));
+             validate_expr(state, stmt->v.FunctionDef.returns, Load));
+        break;
     case ClassDef_kind:
-        return validate_body(stmt->v.ClassDef.body, "ClassDef") &&
-            validate_exprs(stmt->v.ClassDef.bases, Load, 0) &&
-            validate_keywords(stmt->v.ClassDef.keywords) &&
-            validate_exprs(stmt->v.ClassDef.decorator_list, Load, 0);
+        ret = validate_body(state, stmt->v.ClassDef.body, "ClassDef") &&
+            validate_exprs(state, stmt->v.ClassDef.bases, Load, 0) &&
+            validate_keywords(state, stmt->v.ClassDef.keywords) &&
+            validate_exprs(state, stmt->v.ClassDef.decorator_list, Load, 0);
+        break;
     case Return_kind:
-        return !stmt->v.Return.value || validate_expr(stmt->v.Return.value, Load);
+        ret = !stmt->v.Return.value || validate_expr(state, stmt->v.Return.value, Load);
+        break;
     case Delete_kind:
-        return validate_assignlist(stmt->v.Delete.targets, Del);
+        ret = validate_assignlist(state, stmt->v.Delete.targets, Del);
+        break;
     case Assign_kind:
-        return validate_assignlist(stmt->v.Assign.targets, Store) &&
-            validate_expr(stmt->v.Assign.value, Load);
+        ret = validate_assignlist(state, stmt->v.Assign.targets, Store) &&
+            validate_expr(state, stmt->v.Assign.value, Load);
+        break;
     case AugAssign_kind:
-        return validate_expr(stmt->v.AugAssign.target, Store) &&
-            validate_expr(stmt->v.AugAssign.value, Load);
+        ret = validate_expr(state, stmt->v.AugAssign.target, Store) &&
+            validate_expr(state, stmt->v.AugAssign.value, Load);
+        break;
     case AnnAssign_kind:
         if (stmt->v.AnnAssign.target->kind != Name_kind &&
             stmt->v.AnnAssign.simple) {
@@ -378,60 +741,84 @@ validate_stmt(stmt_ty stmt)
                             "AnnAssign with simple non-Name target");
             return 0;
         }
-        return validate_expr(stmt->v.AnnAssign.target, Store) &&
+        ret = validate_expr(state, stmt->v.AnnAssign.target, Store) &&
                (!stmt->v.AnnAssign.value ||
-                validate_expr(stmt->v.AnnAssign.value, Load)) &&
-               validate_expr(stmt->v.AnnAssign.annotation, Load);
+                validate_expr(state, stmt->v.AnnAssign.value, Load)) &&
+               validate_expr(state, stmt->v.AnnAssign.annotation, Load);
+        break;
     case For_kind:
-        return validate_expr(stmt->v.For.target, Store) &&
-            validate_expr(stmt->v.For.iter, Load) &&
-            validate_body(stmt->v.For.body, "For") &&
-            validate_stmts(stmt->v.For.orelse);
+        ret = validate_expr(state, stmt->v.For.target, Store) &&
+            validate_expr(state, stmt->v.For.iter, Load) &&
+            validate_body(state, stmt->v.For.body, "For") &&
+            validate_stmts(state, stmt->v.For.orelse);
+        break;
     case AsyncFor_kind:
-        return validate_expr(stmt->v.AsyncFor.target, Store) &&
-            validate_expr(stmt->v.AsyncFor.iter, Load) &&
-            validate_body(stmt->v.AsyncFor.body, "AsyncFor") &&
-            validate_stmts(stmt->v.AsyncFor.orelse);
+        ret = validate_expr(state, stmt->v.AsyncFor.target, Store) &&
+            validate_expr(state, stmt->v.AsyncFor.iter, Load) &&
+            validate_body(state, stmt->v.AsyncFor.body, "AsyncFor") &&
+            validate_stmts(state, stmt->v.AsyncFor.orelse);
+        break;
     case While_kind:
-        return validate_expr(stmt->v.While.test, Load) &&
-            validate_body(stmt->v.While.body, "While") &&
-            validate_stmts(stmt->v.While.orelse);
+        ret = validate_expr(state, stmt->v.While.test, Load) &&
+            validate_body(state, stmt->v.While.body, "While") &&
+            validate_stmts(state, stmt->v.While.orelse);
+        break;
     case If_kind:
-        return validate_expr(stmt->v.If.test, Load) &&
-            validate_body(stmt->v.If.body, "If") &&
-            validate_stmts(stmt->v.If.orelse);
+        ret = validate_expr(state, stmt->v.If.test, Load) &&
+            validate_body(state, stmt->v.If.body, "If") &&
+            validate_stmts(state, stmt->v.If.orelse);
+        break;
     case With_kind:
         if (!validate_nonempty_seq(stmt->v.With.items, "items", "With"))
             return 0;
         for (i = 0; i < asdl_seq_LEN(stmt->v.With.items); i++) {
             withitem_ty item = asdl_seq_GET(stmt->v.With.items, i);
-            if (!validate_expr(item->context_expr, Load) ||
-                (item->optional_vars && !validate_expr(item->optional_vars, Store)))
+            if (!validate_expr(state, item->context_expr, Load) ||
+                (item->optional_vars && !validate_expr(state, item->optional_vars, Store)))
                 return 0;
         }
-        return validate_body(stmt->v.With.body, "With");
+        ret = validate_body(state, stmt->v.With.body, "With");
+        break;
     case AsyncWith_kind:
         if (!validate_nonempty_seq(stmt->v.AsyncWith.items, "items", "AsyncWith"))
             return 0;
         for (i = 0; i < asdl_seq_LEN(stmt->v.AsyncWith.items); i++) {
             withitem_ty item = asdl_seq_GET(stmt->v.AsyncWith.items, i);
-            if (!validate_expr(item->context_expr, Load) ||
-                (item->optional_vars && !validate_expr(item->optional_vars, Store)))
+            if (!validate_expr(state, item->context_expr, Load) ||
+                (item->optional_vars && !validate_expr(state, item->optional_vars, Store)))
                 return 0;
         }
-        return validate_body(stmt->v.AsyncWith.body, "AsyncWith");
+        ret = validate_body(state, stmt->v.AsyncWith.body, "AsyncWith");
+        break;
+    case Match_kind:
+        if (!validate_expr(state, stmt->v.Match.subject, Load)
+            || !validate_nonempty_seq(stmt->v.Match.cases, "cases", "Match")) {
+            return 0;
+        }
+        for (i = 0; i < asdl_seq_LEN(stmt->v.Match.cases); i++) {
+            match_case_ty m = asdl_seq_GET(stmt->v.Match.cases, i);
+            if (!validate_pattern(state, m->pattern, /*star_ok=*/0)
+                || (m->guard && !validate_expr(state, m->guard, Load))
+                || !validate_body(state, m->body, "match_case")) {
+                return 0;
+            }
+        }
+        ret = 1;
+        break;
     case Raise_kind:
         if (stmt->v.Raise.exc) {
-            return validate_expr(stmt->v.Raise.exc, Load) &&
-                (!stmt->v.Raise.cause || validate_expr(stmt->v.Raise.cause, Load));
+            ret = validate_expr(state, stmt->v.Raise.exc, Load) &&
+                (!stmt->v.Raise.cause || validate_expr(state, stmt->v.Raise.cause, Load));
+            break;
         }
         if (stmt->v.Raise.cause) {
             PyErr_SetString(PyExc_ValueError, "Raise with cause but no exception");
             return 0;
         }
-        return 1;
+        ret = 1;
+        break;
     case Try_kind:
-        if (!validate_body(stmt->v.Try.body, "Try"))
+        if (!validate_body(state, stmt->v.Try.body, "Try"))
             return 0;
         if (!asdl_seq_LEN(stmt->v.Try.handlers) &&
             !asdl_seq_LEN(stmt->v.Try.finalbody)) {
@@ -445,56 +832,95 @@ validate_stmt(stmt_ty stmt)
         }
         for (i = 0; i < asdl_seq_LEN(stmt->v.Try.handlers); i++) {
             excepthandler_ty handler = asdl_seq_GET(stmt->v.Try.handlers, i);
+            VALIDATE_POSITIONS(handler);
             if ((handler->v.ExceptHandler.type &&
-                 !validate_expr(handler->v.ExceptHandler.type, Load)) ||
-                !validate_body(handler->v.ExceptHandler.body, "ExceptHandler"))
+                 !validate_expr(state, handler->v.ExceptHandler.type, Load)) ||
+                !validate_body(state, handler->v.ExceptHandler.body, "ExceptHandler"))
                 return 0;
         }
-        return (!asdl_seq_LEN(stmt->v.Try.finalbody) ||
-                validate_stmts(stmt->v.Try.finalbody)) &&
+        ret = (!asdl_seq_LEN(stmt->v.Try.finalbody) ||
+                validate_stmts(state, stmt->v.Try.finalbody)) &&
             (!asdl_seq_LEN(stmt->v.Try.orelse) ||
-             validate_stmts(stmt->v.Try.orelse));
+             validate_stmts(state, stmt->v.Try.orelse));
+        break;
+    case TryStar_kind:
+        if (!validate_body(state, stmt->v.TryStar.body, "TryStar"))
+            return 0;
+        if (!asdl_seq_LEN(stmt->v.TryStar.handlers) &&
+            !asdl_seq_LEN(stmt->v.TryStar.finalbody)) {
+            PyErr_SetString(PyExc_ValueError, "TryStar has neither except handlers nor finalbody");
+            return 0;
+        }
+        if (!asdl_seq_LEN(stmt->v.TryStar.handlers) &&
+            asdl_seq_LEN(stmt->v.TryStar.orelse)) {
+            PyErr_SetString(PyExc_ValueError, "TryStar has orelse but no except handlers");
+            return 0;
+        }
+        for (i = 0; i < asdl_seq_LEN(stmt->v.TryStar.handlers); i++) {
+            excepthandler_ty handler = asdl_seq_GET(stmt->v.TryStar.handlers, i);
+            if ((handler->v.ExceptHandler.type &&
+                 !validate_expr(state, handler->v.ExceptHandler.type, Load)) ||
+                !validate_body(state, handler->v.ExceptHandler.body, "ExceptHandler"))
+                return 0;
+        }
+        ret = (!asdl_seq_LEN(stmt->v.TryStar.finalbody) ||
+                validate_stmts(state, stmt->v.TryStar.finalbody)) &&
+            (!asdl_seq_LEN(stmt->v.TryStar.orelse) ||
+             validate_stmts(state, stmt->v.TryStar.orelse));
+        break;
     case Assert_kind:
-        return validate_expr(stmt->v.Assert.test, Load) &&
-            (!stmt->v.Assert.msg || validate_expr(stmt->v.Assert.msg, Load));
+        ret = validate_expr(state, stmt->v.Assert.test, Load) &&
+            (!stmt->v.Assert.msg || validate_expr(state, stmt->v.Assert.msg, Load));
+        break;
     case Import_kind:
-        return validate_nonempty_seq(stmt->v.Import.names, "names", "Import");
+        ret = validate_nonempty_seq(stmt->v.Import.names, "names", "Import");
+        break;
     case ImportFrom_kind:
         if (stmt->v.ImportFrom.level < 0) {
             PyErr_SetString(PyExc_ValueError, "Negative ImportFrom level");
             return 0;
         }
-        return validate_nonempty_seq(stmt->v.ImportFrom.names, "names", "ImportFrom");
+        ret = validate_nonempty_seq(stmt->v.ImportFrom.names, "names", "ImportFrom");
+        break;
     case Global_kind:
-        return validate_nonempty_seq(stmt->v.Global.names, "names", "Global");
+        ret = validate_nonempty_seq(stmt->v.Global.names, "names", "Global");
+        break;
     case Nonlocal_kind:
-        return validate_nonempty_seq(stmt->v.Nonlocal.names, "names", "Nonlocal");
+        ret = validate_nonempty_seq(stmt->v.Nonlocal.names, "names", "Nonlocal");
+        break;
     case Expr_kind:
-        return validate_expr(stmt->v.Expr.value, Load);
+        ret = validate_expr(state, stmt->v.Expr.value, Load);
+        break;
     case AsyncFunctionDef_kind:
-        return validate_body(stmt->v.AsyncFunctionDef.body, "AsyncFunctionDef") &&
-            validate_arguments(stmt->v.AsyncFunctionDef.args) &&
-            validate_exprs(stmt->v.AsyncFunctionDef.decorator_list, Load, 0) &&
+        ret = validate_body(state, stmt->v.AsyncFunctionDef.body, "AsyncFunctionDef") &&
+            validate_arguments(state, stmt->v.AsyncFunctionDef.args) &&
+            validate_exprs(state, stmt->v.AsyncFunctionDef.decorator_list, Load, 0) &&
             (!stmt->v.AsyncFunctionDef.returns ||
-             validate_expr(stmt->v.AsyncFunctionDef.returns, Load));
+             validate_expr(state, stmt->v.AsyncFunctionDef.returns, Load));
+        break;
     case Pass_kind:
     case Break_kind:
     case Continue_kind:
-        return 1;
-    default:
-        PyErr_SetString(PyExc_SystemError, "unexpected statement");
-        return 0;
+        ret = 1;
+        break;
+    // No default case so compiler emits warning for unhandled cases
     }
+    if (ret < 0) {
+        PyErr_SetString(PyExc_SystemError, "unexpected statement");
+        ret = 0;
+    }
+    state->recursion_depth--;
+    return ret;
 }
 
 static int
-validate_stmts(asdl_seq *seq)
+validate_stmts(struct validator *state, asdl_stmt_seq *seq)
 {
     Py_ssize_t i;
     for (i = 0; i < asdl_seq_LEN(seq); i++) {
         stmt_ty stmt = asdl_seq_GET(seq, i);
         if (stmt) {
-            if (!validate_stmt(stmt))
+            if (!validate_stmt(state, stmt))
                 return 0;
         }
         else {
@@ -507,13 +933,13 @@ validate_stmts(asdl_seq *seq)
 }
 
 static int
-validate_exprs(asdl_seq *exprs, expr_context_ty ctx, int null_ok)
+validate_exprs(struct validator *state, asdl_expr_seq *exprs, expr_context_ty ctx, int null_ok)
 {
     Py_ssize_t i;
     for (i = 0; i < asdl_seq_LEN(exprs); i++) {
         expr_ty expr = asdl_seq_GET(exprs, i);
         if (expr) {
-            if (!validate_expr(expr, ctx))
+            if (!validate_expr(state, expr, ctx))
                 return 0;
         }
         else if (!null_ok) {
@@ -526,36 +952,84 @@ validate_exprs(asdl_seq *exprs, expr_context_ty ctx, int null_ok)
     return 1;
 }
 
-int
-PyAST_Validate(mod_ty mod)
+static int
+validate_patterns(struct validator *state, asdl_pattern_seq *patterns, int star_ok)
 {
-    int res = 0;
+    Py_ssize_t i;
+    for (i = 0; i < asdl_seq_LEN(patterns); i++) {
+        pattern_ty pattern = asdl_seq_GET(patterns, i);
+        if (!validate_pattern(state, pattern, star_ok)) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+
+/* See comments in symtable.c. */
+#define COMPILER_STACK_FRAME_SCALE 3
+
+int
+_PyAST_Validate(mod_ty mod)
+{
+    int res = -1;
+    struct validator state;
+    PyThreadState *tstate;
+    int recursion_limit = Py_GetRecursionLimit();
+    int starting_recursion_depth;
+
+    /* Setup recursion depth check counters */
+    tstate = _PyThreadState_GET();
+    if (!tstate) {
+        return 0;
+    }
+    /* Be careful here to prevent overflow. */
+    int recursion_depth = tstate->recursion_limit - tstate->recursion_remaining;
+    starting_recursion_depth = (recursion_depth< INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
+        recursion_depth * COMPILER_STACK_FRAME_SCALE : recursion_depth;
+    state.recursion_depth = starting_recursion_depth;
+    state.recursion_limit = (recursion_limit < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
+        recursion_limit * COMPILER_STACK_FRAME_SCALE : recursion_limit;
 
     switch (mod->kind) {
     case Module_kind:
-        res = validate_stmts(mod->v.Module.body);
+        res = validate_stmts(&state, mod->v.Module.body);
         break;
     case Interactive_kind:
-        res = validate_stmts(mod->v.Interactive.body);
+        res = validate_stmts(&state, mod->v.Interactive.body);
         break;
     case Expression_kind:
-        res = validate_expr(mod->v.Expression.body, Load);
+        res = validate_expr(&state, mod->v.Expression.body, Load);
         break;
-    default:
+    case FunctionType_kind:
+        res = validate_exprs(&state, mod->v.FunctionType.argtypes, Load, /*null_ok=*/0) &&
+              validate_expr(&state, mod->v.FunctionType.returns, Load);
+        break;
+    // No default case so compiler emits warning for unhandled cases
+    }
+
+    if (res < 0) {
         PyErr_SetString(PyExc_SystemError, "impossible module node");
-        res = 0;
-        break;
+        return 0;
+    }
+
+    /* Check that the recursion depth counting balanced correctly */
+    if (res && state.recursion_depth != starting_recursion_depth) {
+        PyErr_Format(PyExc_SystemError,
+            "AST validator recursion depth mismatch (before=%d, after=%d)",
+            starting_recursion_depth, state.recursion_depth);
+        return 0;
     }
     return res;
 }
 
 PyObject *
-_PyAST_GetDocString(asdl_seq *body)
+_PyAST_GetDocString(asdl_stmt_seq *body)
 {
     if (!asdl_seq_LEN(body)) {
         return NULL;
     }
-    stmt_ty st = (stmt_ty)asdl_seq_GET(body, 0);
+    stmt_ty st = asdl_seq_GET(body, 0);
     if (st->kind != Expr_kind) {
         return NULL;
     }

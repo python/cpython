@@ -541,7 +541,7 @@ Let's dive in!
 
 16. Compile, then run the relevant portions of the regression-test suite.
     This change should not introduce any new compile-time warnings or errors,
-    and there should be no externally-visible change to Python's behavior.
+    and there should be no externally visible change to Python's behavior.
 
     Well, except for one difference: ``inspect.signature()`` run on your function
     should now provide a valid signature!
@@ -566,9 +566,6 @@ expression.  Currently the following are explicitly supported:
 * ``True``, ``False``, and ``None``
 * Simple symbolic constants like ``sys.maxsize``, which must
   start with the name of the module
-
-In case you're curious, this is implemented in  ``from_builtin()``
-in ``Lib/inspect.py``.
 
 (In the future, this may need to get even more elaborate,
 to allow full expressions like ``CONSTANT - 1``.)
@@ -851,15 +848,15 @@ on the right is the text you'd replace it with.
 ``'s#'``    ``str(zeroes=True)``
 ``'s*'``    ``Py_buffer(accept={buffer, str})``
 ``'U'``     ``unicode``
-``'u'``     ``Py_UNICODE``
-``'u#'``    ``Py_UNICODE(zeroes=True)``
+``'u'``     ``wchar_t``
+``'u#'``    ``wchar_t(zeroes=True)``
 ``'w*'``    ``Py_buffer(accept={rwbuffer})``
 ``'Y'``     ``PyByteArrayObject``
 ``'y'``     ``str(accept={bytes})``
 ``'y#'``    ``str(accept={robuffer}, zeroes=True)``
 ``'y*'``    ``Py_buffer``
-``'Z'``     ``Py_UNICODE(accept={str, NoneType})``
-``'Z#'``    ``Py_UNICODE(accept={str, NoneType}, zeroes=True)``
+``'Z'``     ``wchar_t(accept={str, NoneType})``
+``'Z#'``    ``wchar_t(accept={str, NoneType}, zeroes=True)``
 ``'z'``     ``str(accept={str, NoneType})``
 ``'z#'``    ``str(accept={str, NoneType}, zeroes=True)``
 ``'z*'``    ``Py_buffer(accept={buffer, str, NoneType})``
@@ -1120,7 +1117,7 @@ Here's the syntax for cloning a function::
 ``module.class`` in the sample just to illustrate that you must
 use the full path to *both* functions.)
 
-Sorry, there's no syntax for partially-cloning a function, or cloning a function
+Sorry, there's no syntax for partially cloning a function, or cloning a function
 then modifying it.  Cloning is an all-or nothing proposition.
 
 Also, the function you are cloning from must have been previously defined
@@ -1206,6 +1203,68 @@ type for ``self``, it's best to create your own converter, subclassing
     [clinic start generated code]*/
 
 
+Using a "defining class" converter
+----------------------------------
+
+Argument Clinic facilitates gaining access to the defining class of a method.
+This is useful for :ref:`heap type <heap-types>` methods that need to fetch
+module level state.  Use :c:func:`PyType_FromModuleAndSpec` to associate a new
+heap type with a module.  You can now use :c:func:`PyType_GetModuleState` on
+the defining class to fetch the module state, for example from a module method.
+
+Example from ``Modules/zlibmodule.c``.  First, ``defining_class`` is added to
+the clinic input::
+
+    /*[clinic input]
+    zlib.Compress.compress
+
+      cls: defining_class
+      data: Py_buffer
+        Binary data to be compressed.
+      /
+
+
+After running the Argument Clinic tool, the following function signature is
+generated::
+
+    /*[clinic start generated code]*/
+    static PyObject *
+    zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
+                                Py_buffer *data)
+    /*[clinic end generated code: output=6731b3f0ff357ca6 input=04d00f65ab01d260]*/
+
+
+The following code can now use ``PyType_GetModuleState(cls)`` to fetch the
+module state::
+
+    zlibstate *state = PyType_GetModuleState(cls);
+
+
+Each method may only have one argument using this converter, and it must appear
+after ``self``, or, if ``self`` is not used, as the first argument.  The argument
+will be of type ``PyTypeObject *``.  The argument will not appear in the
+``__text_signature__``.
+
+The ``defining_class`` converter is not compatible with ``__init__`` and ``__new__``
+methods, which cannot use the ``METH_METHOD`` convention.
+
+It is not possible to use ``defining_class`` with slot methods.  In order to
+fetch the module state from such methods, use :c:func:`PyType_GetModuleByDef`
+to look up the module and then :c:func:`PyModule_GetState` to fetch the module
+state.  Example from the ``setattro`` slot method in
+``Modules/_threadmodule.c``::
+
+    static int
+    local_setattro(localobject *self, PyObject *name, PyObject *v)
+    {
+        PyObject *module = PyType_GetModuleByDef(Py_TYPE(self), &thread_module);
+        thread_module_state *state = get_thread_state(module);
+        ...
+    }
+
+
+See also :pep:`573`.
+
 
 Writing a custom converter
 --------------------------
@@ -1256,7 +1315,7 @@ to specify in your subclass.  Here's the current list:
     there is no default, but not specifying a default may
     result in an "uninitialized variable" warning.  This can
     easily happen when using option groups—although
-    properly-written code will never actually use this value,
+    properly written code will never actually use this value,
     the variable does get passed in to the impl, and the
     C compiler will complain about the "use" of the
     uninitialized value.  This value should always be a
@@ -1288,7 +1347,7 @@ Here's the simplest example of a custom converter, from ``Modules/zlibmodule.c``
     /*[python end generated code: output=da39a3ee5e6b4b0d input=35521e4e733823c7]*/
 
 This block adds a converter to Argument Clinic named ``ssize_t``.  Parameters
-declared as ``ssize_t`` will be declared as type ``Py_ssize_t``, and will
+declared as ``ssize_t`` will be declared as type :c:type:`Py_ssize_t`, and will
 be parsed by the ``'O&'`` format unit, which will call the
 ``ssize_t_converter`` converter function.  ``ssize_t`` variables
 automatically support default values.

@@ -15,6 +15,9 @@ from test.support import os_helper
 if sys.platform != 'win32':
     from asyncio import unix_events
 
+if support.check_sanitizer(address=True):
+    raise unittest.SkipTest("Exposes ASAN flakiness in GitHub CI")
+
 # Program blocking
 PROGRAM_BLOCKED = [sys.executable, '-c', 'import time; time.sleep(3600)']
 
@@ -228,7 +231,7 @@ class SubprocessMixin:
         # buffer large enough to feed the whole pipe buffer
         large_data = b'x' * support.PIPE_MAX_SIZE
 
-        # the program ends before the stdin can be feeded
+        # the program ends before the stdin can be fed
         proc = self.loop.run_until_complete(
             asyncio.create_subprocess_exec(
                 sys.executable, '-c', 'pass',
@@ -635,26 +638,6 @@ class SubprocessMixin:
 
         self.assertIsNone(self.loop.run_until_complete(execute()))
 
-    def test_exec_loop_deprecated(self):
-        async def go():
-            with self.assertWarns(DeprecationWarning):
-                proc = await asyncio.create_subprocess_exec(
-                    sys.executable, '-c', 'pass',
-                    loop=self.loop,
-                )
-            await proc.wait()
-        self.loop.run_until_complete(go())
-
-    def test_shell_loop_deprecated(self):
-        async def go():
-            with self.assertWarns(DeprecationWarning):
-                proc = await asyncio.create_subprocess_shell(
-                    "exit 0",
-                    loop=self.loop,
-                )
-            await proc.wait()
-        self.loop.run_until_complete(go())
-
 
 if sys.platform != 'win32':
     # Unix
@@ -685,6 +668,8 @@ if sys.platform != 'win32':
 
         Watcher = unix_events.ThreadedChildWatcher
 
+    @unittest.skip("bpo-38323: MultiLoopChildWatcher has a race condition \
+                    and these tests can hang the test suite")
     class SubprocessMultiLoopWatcherTests(SubprocessWatcherMixin,
                                           test_utils.TestCase):
 

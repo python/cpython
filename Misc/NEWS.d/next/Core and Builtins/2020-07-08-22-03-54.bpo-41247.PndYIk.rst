@@ -1,2 +1,0 @@
-Always cache the running loop holder when running
-``asyncio.set_running_loop``.

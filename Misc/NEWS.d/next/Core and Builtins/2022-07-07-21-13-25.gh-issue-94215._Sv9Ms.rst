@@ -1,0 +1,3 @@
+Fix an issue where exceptions raised by line-tracing events would cause
+frames to be left in an invalid state, possibly resulting in a hard crash of
+the interpreter.

@@ -1,1 +1,0 @@
-Fix default-value signatures of several functions in the :mod:`select` module - by Anthony Sottile.

@@ -1,3 +1,7 @@
+import doctest
+import unittest
+
+
 doctests = """
 ########### Tests borrowed from or inspired by test_genexps.py ############
 
@@ -144,21 +148,10 @@ We also repeat each of the above scoping tests inside a function
 
 __test__ = {'doctests' : doctests}
 
-def test_main(verbose=None):
-    import sys
-    from test import support
-    from test import test_listcomps
-    support.run_doctest(test_listcomps, verbose)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
-    # verify reference counting
-    if verbose and hasattr(sys, "gettotalrefcount"):
-        import gc
-        counts = [None] * 5
-        for i in range(len(counts)):
-            support.run_doctest(test_listcomps, verbose)
-            gc.collect()
-            counts[i] = sys.gettotalrefcount()
-        print(counts)
 
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

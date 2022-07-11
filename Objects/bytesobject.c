@@ -4,12 +4,17 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_bytesobject.h"   // _PyBytes_Find(), _PyBytes_Repeat()
 #include "pycore_bytes_methods.h" // _Py_bytes_startswith()
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_format.h"        // F_LJUST
+#include "pycore_global_objects.h"  // _Py_GET_GLOBAL_OBJECT()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_long.h"          // _PyLong_DigitValue
 #include "pycore_object.h"        // _PyObject_GC_TRACK
 #include "pycore_pymem.h"         // PYMEM_CLEANBYTE
+#include "pycore_strhex.h"        // _Py_strhex_with_sep()
 
-#include "pystrhex.h"
 #include <stddef.h>
 
 /*[clinic input]
@@ -19,13 +24,11 @@ class bytes "PyBytesObject *" "&PyBytes_Type"
 
 #include "clinic/bytesobject.c.h"
 
-_Py_IDENTIFIER(__bytes__);
-
-/* PyBytesObject_SIZE gives the basic size of a string; any memory allocation
-   for a string of length n should request PyBytesObject_SIZE + n bytes.
+/* PyBytesObject_SIZE gives the basic size of a bytes object; any memory allocation
+   for a bytes object of length n should request PyBytesObject_SIZE + n bytes.
 
    Using PyBytesObject_SIZE instead of sizeof(PyBytesObject) saves
-   3 bytes per string allocation on a typical system.
+   3 or 7 bytes per bytes object allocation on a typical system.
 */
 #define PyBytesObject_SIZE (offsetof(PyBytesObject, ob_sval) + 1)
 
@@ -34,49 +37,24 @@ Py_LOCAL_INLINE(Py_ssize_t) _PyBytesWriter_GetSize(_PyBytesWriter *writer,
                                                    char *str);
 
 
-static struct _Py_bytes_state*
-get_bytes_state(void)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return &interp->bytes;
-}
+#define CHARACTERS _Py_SINGLETON(bytes_characters)
+#define CHARACTER(ch) \
+     ((PyBytesObject *)&(CHARACTERS[ch]));
+#define EMPTY (&_Py_SINGLETON(bytes_empty))
 
 
 // Return a borrowed reference to the empty bytes string singleton.
 static inline PyObject* bytes_get_empty(void)
 {
-    struct _Py_bytes_state *state = get_bytes_state();
-    // bytes_get_empty() must not be called before _PyBytes_Init()
-    // or after _PyBytes_Fini()
-    assert(state->empty_string != NULL);
-    return state->empty_string;
+    return &EMPTY->ob_base.ob_base;
 }
 
 
 // Return a strong reference to the empty bytes string singleton.
 static inline PyObject* bytes_new_empty(void)
 {
-    PyObject *empty = bytes_get_empty();
-    Py_INCREF(empty);
-    return (PyObject *)empty;
-}
-
-
-static int
-bytes_create_empty_string_singleton(struct _Py_bytes_state *state)
-{
-    // Create the empty bytes string singleton
-    PyBytesObject *op = (PyBytesObject *)PyObject_Malloc(PyBytesObject_SIZE);
-    if (op == NULL) {
-        return -1;
-    }
-    _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, 0);
-    op->ob_shash = -1;
-    op->ob_sval[0] = '\0';
-
-    assert(state->empty_string == NULL);
-    state->empty_string = (PyObject *)op;
-    return 0;
+    Py_INCREF(EMPTY);
+    return (PyObject *)EMPTY;
 }
 
 
@@ -127,7 +105,10 @@ _PyBytes_FromSize(Py_ssize_t size, int use_calloc)
         return PyErr_NoMemory();
     }
     _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     op->ob_shash = -1;
+_Py_COMP_DIAG_POP
     if (!use_calloc) {
         op->ob_sval[size] = '\0';
     }
@@ -144,12 +125,9 @@ PyBytes_FromStringAndSize(const char *str, Py_ssize_t size)
         return NULL;
     }
     if (size == 1 && str != NULL) {
-        struct _Py_bytes_state *state = get_bytes_state();
-        op = state->characters[*str & UCHAR_MAX];
-        if (op != NULL) {
-            Py_INCREF(op);
-            return (PyObject *)op;
-        }
+        op = CHARACTER(*str & 255);
+        Py_INCREF(op);
+        return (PyObject *)op;
     }
     if (size == 0) {
         return bytes_new_empty();
@@ -162,12 +140,6 @@ PyBytes_FromStringAndSize(const char *str, Py_ssize_t size)
         return (PyObject *) op;
 
     memcpy(op->ob_sval, str, size);
-    /* share short strings */
-    if (size == 1) {
-        struct _Py_bytes_state *state = get_bytes_state();
-        Py_INCREF(op);
-        state->characters[*str & UCHAR_MAX] = op;
-    }
     return (PyObject *) op;
 }
 
@@ -185,32 +157,26 @@ PyBytes_FromString(const char *str)
         return NULL;
     }
 
-    struct _Py_bytes_state *state = get_bytes_state();
     if (size == 0) {
         return bytes_new_empty();
     }
     else if (size == 1) {
-        op = state->characters[*str & UCHAR_MAX];
-        if (op != NULL) {
-            Py_INCREF(op);
-            return (PyObject *)op;
-        }
+        op = CHARACTER(*str & 255);
+        Py_INCREF(op);
+        return (PyObject *)op;
     }
 
     /* Inline PyObject_NewVar */
-    op = (PyBytesObject *)PyObject_MALLOC(PyBytesObject_SIZE + size);
+    op = (PyBytesObject *)PyObject_Malloc(PyBytesObject_SIZE + size);
     if (op == NULL) {
         return PyErr_NoMemory();
     }
     _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     op->ob_shash = -1;
+_Py_COMP_DIAG_POP
     memcpy(op->ob_sval, str, size+1);
-    /* share short strings */
-    if (size == 1) {
-        assert(state->characters[*str & UCHAR_MAX] == NULL);
-        Py_INCREF(op);
-        state->characters[*str & UCHAR_MAX] = op;
-    }
     return (PyObject *) op;
 }
 
@@ -411,11 +377,7 @@ PyBytes_FromFormat(const char *format, ...)
     PyObject* ret;
     va_list vargs;
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     ret = PyBytes_FromFormatV(format, vargs);
     va_end(vargs);
     return ret;
@@ -439,19 +401,6 @@ getnextarg(PyObject *args, Py_ssize_t arglen, Py_ssize_t *p_argidx)
     return NULL;
 }
 
-/* Format codes
- * F_LJUST      '-'
- * F_SIGN       '+'
- * F_BLANK      ' '
- * F_ALT        '#'
- * F_ZERO       '0'
- */
-#define F_LJUST (1<<0)
-#define F_SIGN  (1<<1)
-#define F_BLANK (1<<2)
-#define F_ALT   (1<<3)
-#define F_ZERO  (1<<4)
-
 /* Returns a new reference to a PyBytes object, or NULL on failure. */
 
 static char*
@@ -462,6 +411,7 @@ formatfloat(PyObject *v, int flags, int prec, int type,
     PyObject *result;
     double x;
     size_t len;
+    int dtoa_flags = 0;
 
     x = PyFloat_AsDouble(v);
     if (x == -1.0 && PyErr_Occurred()) {
@@ -473,8 +423,13 @@ formatfloat(PyObject *v, int flags, int prec, int type,
     if (prec < 0)
         prec = 6;
 
-    p = PyOS_double_to_string(x, type, prec,
-                              (flags & F_ALT) ? Py_DTSF_ALT : 0, NULL);
+    if (flags & F_ALT) {
+        dtoa_flags |= Py_DTSF_ALT;
+    }
+    if (flags & F_NO_NEG_0) {
+        dtoa_flags |= Py_DTSF_NO_NEG_0;
+    }
+    p = PyOS_double_to_string(x, type, prec, dtoa_flags, NULL);
 
     if (p == NULL)
         return NULL;
@@ -522,7 +477,7 @@ formatlong(PyObject *v, int flags, int prec, int type)
     PyErr_Format(PyExc_TypeError,
         "%%%c format: %s is required, not %.200s", type,
         (type == 'o' || type == 'x' || type == 'X') ? "an integer"
-                                                    : "a number",
+                                                    : "a real number",
         Py_TYPE(v)->tp_name);
     return NULL;
 }
@@ -582,9 +537,9 @@ format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
         return v;
     }
     /* does it support __bytes__? */
-    func = _PyObject_LookupSpecial(v, &PyId___bytes__);
+    func = _PyObject_LookupSpecial(v, &_Py_ID(__bytes__));
     if (func != NULL) {
-        result = _PyObject_CallNoArg(func);
+        result = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
         if (result == NULL)
             return NULL;
@@ -753,6 +708,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 case ' ': flags |= F_BLANK; continue;
                 case '#': flags |= F_ALT; continue;
                 case '0': flags |= F_ZERO; continue;
+                case 'z': flags |= F_NO_NEG_0; continue;
                 }
                 break;
             }
@@ -1153,6 +1109,12 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
                 if (s < end && '0' <= *s && *s <= '7')
                     c = (c<<3) + *s++ - '0';
             }
+            if (c > 0377) {
+                if (*first_invalid_escape == NULL) {
+                    *first_invalid_escape = s-3; /* Back up 3 chars, since we've
+                                                    already incremented s. */
+                }
+            }
             *p++ = c;
             break;
         case 'x':
@@ -1219,11 +1181,24 @@ PyObject *PyBytes_DecodeEscape(const char *s,
     if (result == NULL)
         return NULL;
     if (first_invalid_escape != NULL) {
-        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                             "invalid escape sequence '\\%c'",
-                             (unsigned char)*first_invalid_escape) < 0) {
-            Py_DECREF(result);
-            return NULL;
+        unsigned char c = *first_invalid_escape;
+        if ('4' <= c && c <= '7') {
+            if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                                 "invalid octal escape sequence '\\%.3s'",
+                                 first_invalid_escape) < 0)
+            {
+                Py_DECREF(result);
+                return NULL;
+            }
+        }
+        else {
+            if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                                 "invalid escape sequence '\\%c'",
+                                 c) < 0)
+            {
+                Py_DECREF(result);
+                return NULL;
+            }
         }
     }
     return result;
@@ -1287,6 +1262,7 @@ PyBytes_AsStringAndSize(PyObject *obj,
 #define STRINGLIB_GET_EMPTY() bytes_get_empty()
 
 #include "stringlib/stringdefs.h"
+#define STRINGLIB_MUTABLE 0
 
 #include "stringlib/fastsearch.h"
 #include "stringlib/count.h"
@@ -1299,6 +1275,24 @@ PyBytes_AsStringAndSize(PyObject *obj,
 #include "stringlib/transmogrify.h"
 
 #undef STRINGLIB_GET_EMPTY
+
+Py_ssize_t
+_PyBytes_Find(const char *haystack, Py_ssize_t len_haystack,
+              const char *needle, Py_ssize_t len_needle,
+              Py_ssize_t offset)
+{
+    return stringlib_find(haystack, len_haystack,
+                          needle, len_needle, offset);
+}
+
+Py_ssize_t
+_PyBytes_ReverseFind(const char *haystack, Py_ssize_t len_haystack,
+                     const char *needle, Py_ssize_t len_needle,
+                     Py_ssize_t offset)
+{
+    return stringlib_rfind(haystack, len_haystack,
+                           needle, len_needle, offset);
+}
 
 PyObject *
 PyBytes_Repr(PyObject *obj, int smartquotes)
@@ -1449,8 +1443,6 @@ bytes_concat(PyObject *a, PyObject *b)
 static PyObject *
 bytes_repeat(PyBytesObject *a, Py_ssize_t n)
 {
-    Py_ssize_t i;
-    Py_ssize_t j;
     Py_ssize_t size;
     PyBytesObject *op;
     size_t nbytes;
@@ -1475,27 +1467,19 @@ bytes_repeat(PyBytesObject *a, Py_ssize_t n)
             "repeated bytes are too long");
         return NULL;
     }
-    op = (PyBytesObject *)PyObject_MALLOC(PyBytesObject_SIZE + nbytes);
+    op = (PyBytesObject *)PyObject_Malloc(PyBytesObject_SIZE + nbytes);
     if (op == NULL) {
         return PyErr_NoMemory();
     }
     _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     op->ob_shash = -1;
+_Py_COMP_DIAG_POP
     op->ob_sval[size] = '\0';
-    if (Py_SIZE(a) == 1 && n > 0) {
-        memset(op->ob_sval, a->ob_sval[0] , n);
-        return (PyObject *) op;
-    }
-    i = 0;
-    if (i < size) {
-        memcpy(op->ob_sval, a->ob_sval, Py_SIZE(a));
-        i = Py_SIZE(a);
-    }
-    while (i < size) {
-        j = (i <= size-i)  ?  i  :  size-i;
-        memcpy(op->ob_sval+i, op->ob_sval, j);
-        i += j;
-    }
+
+    _PyBytes_Repeat(op->ob_sval, size, a->ob_sval, Py_SIZE(a));
+
     return (PyObject *) op;
 }
 
@@ -1512,7 +1496,7 @@ bytes_item(PyBytesObject *a, Py_ssize_t i)
         PyErr_SetString(PyExc_IndexError, "index out of range");
         return NULL;
     }
-    return PyLong_FromLong((unsigned char)a->ob_sval[i]);
+    return _PyLong_FromUnsignedChar((unsigned char)a->ob_sval[i]);
 }
 
 static int
@@ -1538,36 +1522,19 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
     int c;
     Py_ssize_t len_a, len_b;
     Py_ssize_t min_len;
-    int rc;
 
     /* Make sure both arguments are strings. */
     if (!(PyBytes_Check(a) && PyBytes_Check(b))) {
         if (_Py_GetConfig()->bytes_warning && (op == Py_EQ || op == Py_NE)) {
-            rc = PyObject_IsInstance((PyObject*)a,
-                                     (PyObject*)&PyUnicode_Type);
-            if (!rc)
-                rc = PyObject_IsInstance((PyObject*)b,
-                                         (PyObject*)&PyUnicode_Type);
-            if (rc < 0)
-                return NULL;
-            if (rc) {
+            if (PyUnicode_Check(a) || PyUnicode_Check(b)) {
                 if (PyErr_WarnEx(PyExc_BytesWarning,
                                  "Comparison between bytes and string", 1))
                     return NULL;
             }
-            else {
-                rc = PyObject_IsInstance((PyObject*)a,
-                                         (PyObject*)&PyLong_Type);
-                if (!rc)
-                    rc = PyObject_IsInstance((PyObject*)b,
-                                             (PyObject*)&PyLong_Type);
-                if (rc < 0)
+            if (PyLong_Check(a) || PyLong_Check(b)) {
+                if (PyErr_WarnEx(PyExc_BytesWarning,
+                                 "Comparison between bytes and int", 1))
                     return NULL;
-                if (rc) {
-                    if (PyErr_WarnEx(PyExc_BytesWarning,
-                                     "Comparison between bytes and int", 1))
-                        return NULL;
-                }
             }
         }
         Py_RETURN_NOTIMPLEMENTED;
@@ -1577,7 +1544,7 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
         case Py_EQ:
         case Py_LE:
         case Py_GE:
-            /* a string is equal to itself */
+            /* a byte string is equal to itself */
             Py_RETURN_TRUE;
         case Py_NE:
         case Py_LT:
@@ -1613,11 +1580,14 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
 static Py_hash_t
 bytes_hash(PyBytesObject *a)
 {
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     if (a->ob_shash == -1) {
         /* Can't fail */
         a->ob_shash = _Py_HashBytes(a->ob_sval, Py_SIZE(a));
     }
     return a->ob_shash;
+_Py_COMP_DIAG_POP
 }
 
 static PyObject*
@@ -1634,7 +1604,7 @@ bytes_subscript(PyBytesObject* self, PyObject* item)
                             "index out of range");
             return NULL;
         }
-        return PyLong_FromLong((unsigned char)self->ob_sval[i]);
+        return _PyLong_FromUnsignedChar((unsigned char)self->ob_sval[i]);
     }
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelength, i;
@@ -1714,6 +1684,25 @@ static PyBufferProcs bytes_as_buffer = {
     (getbufferproc)bytes_buffer_getbuffer,
     NULL,
 };
+
+
+/*[clinic input]
+bytes.__bytes__
+Convert this value to exact type bytes.
+[clinic start generated code]*/
+
+static PyObject *
+bytes___bytes___impl(PyBytesObject *self)
+/*[clinic end generated code: output=63a306a9bc0caac5 input=34ec5ddba98bd6bb]*/
+{
+    if (PyBytes_CheckExact(self)) {
+        Py_INCREF(self);
+        return (PyObject *)self;
+    }
+    else {
+        return PyBytes_FromStringAndSize(self->ob_sval, Py_SIZE(self));
+    }
+}
 
 
 #define LEFTSTRIP 0
@@ -2166,7 +2155,7 @@ bytes_translate_impl(PyBytesObject *self, PyObject *table,
         Py_INCREF(input_obj);
         return input_obj;
     }
-    /* Fix the size of the resulting string */
+    /* Fix the size of the resulting byte string */
     if (inlen > 0)
         _PyBytes_Resize(&result, output - output_start);
     return result;
@@ -2403,7 +2392,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
 
     if (!PyUnicode_IS_ASCII(string)) {
         const void *data = PyUnicode_DATA(string);
-        unsigned int kind = PyUnicode_KIND(string);
+        int kind = PyUnicode_KIND(string);
         Py_ssize_t i;
 
         /* search for the first non-ASCII character */
@@ -2470,7 +2459,7 @@ bytes.hex
         How many bytes between separators.  Positive values count from the
         right, negative values count from the left.
 
-Create a str of hexadecimal numbers from a bytes object.
+Create a string of hexadecimal numbers from a bytes object.
 
 Example:
 >>> value = b'\xb9\x01\xef'
@@ -2486,7 +2475,7 @@ Example:
 
 static PyObject *
 bytes_hex_impl(PyBytesObject *self, PyObject *sep, int bytes_per_sep)
-/*[clinic end generated code: output=1f134da504064139 input=f1238d3455990218]*/
+/*[clinic end generated code: output=1f134da504064139 input=1a21282b1f1ae595]*/
 {
     const char *argbuf = PyBytes_AS_STRING(self);
     Py_ssize_t arglen = PyBytes_GET_SIZE(self);
@@ -2503,6 +2492,7 @@ bytes_getnewargs(PyBytesObject *v, PyObject *Py_UNUSED(ignored))
 static PyMethodDef
 bytes_methods[] = {
     {"__getnewargs__",          (PyCFunction)bytes_getnewargs,  METH_NOARGS},
+    BYTES___BYTES___METHODDEF
     {"capitalize", stringlib_capitalize, METH_NOARGS,
      _Py_capitalize__doc__},
     STRINGLIB_CENTER_METHODDEF
@@ -2630,8 +2620,8 @@ bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
     /* We'd like to call PyObject_Bytes here, but we need to check for an
        integer argument before deferring to PyBytes_FromObject, something
        PyObject_Bytes doesn't do. */
-    else if ((func = _PyObject_LookupSpecial(x, &PyId___bytes__)) != NULL) {
-        bytes = _PyObject_CallNoArg(func);
+    else if ((func = _PyObject_LookupSpecial(x, &_Py_ID(__bytes__))) != NULL) {
+        bytes = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
         if (bytes == NULL)
             return NULL;
@@ -2788,7 +2778,7 @@ _PyBytes_FromIterator(PyObject *it, PyObject *x)
     Py_ssize_t i, size;
     _PyBytesWriter writer;
 
-    /* For iterator version, create a string object and resize as needed */
+    /* For iterator version, create a bytes object and resize as needed */
     size = PyObject_LengthHint(x, 64);
     if (size == -1 && PyErr_Occurred())
         return NULL;
@@ -2886,6 +2876,25 @@ PyBytes_FromObject(PyObject *x)
     return NULL;
 }
 
+/* This allocator is needed for subclasses don't want to use __new__.
+ * See https://github.com/python/cpython/issues/91020#issuecomment-1096793239
+ *
+ * This allocator will be removed when ob_shash is removed.
+ */
+static PyObject *
+bytes_alloc(PyTypeObject *self, Py_ssize_t nitems)
+{
+    PyBytesObject *obj = (PyBytesObject*)PyType_GenericAlloc(self, nitems);
+    if (obj == NULL) {
+        return NULL;
+    }
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+    obj->ob_shash = -1;
+_Py_COMP_DIAG_POP
+    return (PyObject*)obj;
+}
+
 static PyObject *
 bytes_subtype_new(PyTypeObject *type, PyObject *tmp)
 {
@@ -2899,8 +2908,11 @@ bytes_subtype_new(PyTypeObject *type, PyObject *tmp)
     if (pnew != NULL) {
         memcpy(PyBytes_AS_STRING(pnew),
                   PyBytes_AS_STRING(tmp), n+1);
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
         ((PyBytesObject *)pnew)->ob_shash =
             ((PyBytesObject *)tmp)->ob_shash;
+_Py_COMP_DIAG_POP
     }
     return pnew;
 }
@@ -2941,7 +2953,8 @@ PyTypeObject PyBytes_Type = {
     0,                                          /* tp_setattro */
     &bytes_as_buffer,                           /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-        Py_TPFLAGS_BYTES_SUBCLASS,              /* tp_flags */
+        Py_TPFLAGS_BYTES_SUBCLASS |
+        _Py_TPFLAGS_MATCH_SELF,               /* tp_flags */
     bytes_doc,                                  /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
@@ -2952,13 +2965,13 @@ PyTypeObject PyBytes_Type = {
     bytes_methods,                              /* tp_methods */
     0,                                          /* tp_members */
     0,                                          /* tp_getset */
-    &PyBaseObject_Type,                         /* tp_base */
+    0,                                          /* tp_base */
     0,                                          /* tp_dict */
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
     0,                                          /* tp_dictoffset */
     0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
+    bytes_alloc,                                /* tp_alloc */
     bytes_new,                                  /* tp_new */
     PyObject_Del,                               /* tp_free */
 };
@@ -3071,9 +3084,9 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
     _Py_ForgetReference(v);
 #endif
     *pv = (PyObject *)
-        PyObject_REALLOC(v, PyBytesObject_SIZE + newsize);
+        PyObject_Realloc(v, PyBytesObject_SIZE + newsize);
     if (*pv == NULL) {
-        PyObject_Del(v);
+        PyObject_Free(v);
         PyErr_NoMemory();
         return -1;
     }
@@ -3081,7 +3094,10 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
     sv = (PyBytesObject *) *pv;
     Py_SET_SIZE(sv, newsize);
     sv->ob_sval[newsize] = '\0';
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     sv->ob_shash = -1;          /* invalidate cached hash value */
+_Py_COMP_DIAG_POP
     return 0;
 error:
     *pv = 0;
@@ -3092,25 +3108,23 @@ error:
 
 
 PyStatus
-_PyBytes_Init(PyThreadState *tstate)
+_PyBytes_InitTypes(PyInterpreterState *interp)
 {
-    struct _Py_bytes_state *state = &tstate->interp->bytes;
-    if (bytes_create_empty_string_singleton(state) < 0) {
-        return _PyStatus_NO_MEMORY();
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
     }
+
+    if (PyType_Ready(&PyBytes_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize bytes type");
+    }
+
+    if (PyType_Ready(&PyBytesIter_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize bytes iterator type");
+    }
+
     return _PyStatus_OK();
 }
 
-
-void
-_PyBytes_Fini(PyThreadState *tstate)
-{
-    struct _Py_bytes_state* state = &tstate->interp->bytes;
-    for (int i = 0; i < UCHAR_MAX + 1; i++) {
-        Py_CLEAR(state->characters[i]);
-    }
-    Py_CLEAR(state->empty_string);
-}
 
 /*********************** Bytes Iterator ****************************/
 
@@ -3147,7 +3161,7 @@ striter_next(striterobject *it)
     assert(PyBytes_Check(seq));
 
     if (it->it_index < PyBytes_GET_SIZE(seq)) {
-        return PyLong_FromLong(
+        return _PyLong_FromUnsignedChar(
             (unsigned char)seq->ob_sval[it->it_index++]);
     }
 
@@ -3171,12 +3185,11 @@ PyDoc_STRVAR(length_hint_doc,
 static PyObject *
 striter_reduce(striterobject *it, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     if (it->it_seq != NULL) {
-        return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_iter),
+        return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
                              it->it_seq, it->it_index);
     } else {
-        return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
+        return Py_BuildValue("N(())", _PyEval_GetBuiltin(&_Py_ID(iter)));
     }
 }
 
@@ -3472,7 +3485,7 @@ _PyBytesWriter_Alloc(_PyBytesWriter *writer, Py_ssize_t size)
        Don't modify the _PyBytesWriter structure (use a shorter small buffer)
        in debug mode to also be able to detect stack overflow when running
        tests in debug mode. The _PyBytesWriter is large (more than 512 bytes),
-       if Py_EnterRecursiveCall() is not used in deep C callback, we may hit a
+       if _Py_EnterRecursiveCall() is not used in deep C callback, we may hit a
        stack overflow. */
     writer->allocated = Py_MIN(writer->allocated, 10);
     /* _PyBytesWriter_CheckConsistency() requires the last byte to be 0,
@@ -3543,3 +3556,28 @@ _PyBytesWriter_WriteBytes(_PyBytesWriter *writer, void *ptr,
 
     return str;
 }
+
+
+void
+_PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
+    const char* src, Py_ssize_t len_src)
+{
+    if (len_dest == 0) {
+        return;
+    }
+    if (len_src == 1) {
+        memset(dest, src[0], len_dest);
+    }
+    else {
+        if (src != dest) {
+            memcpy(dest, src, len_src);
+        }
+        Py_ssize_t copied = len_src;
+        while (copied < len_dest) {
+            Py_ssize_t bytes_to_copy = Py_MIN(copied, len_dest - copied);
+            memcpy(dest + copied, dest, bytes_to_copy);
+            copied += bytes_to_copy;
+        }
+    }
+}
+

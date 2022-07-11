@@ -10,6 +10,13 @@
 
 .. TODO: Fill in XXX comments
 
+.. note::
+
+   The entire ``distutils`` package has been deprecated and will be
+   removed in Python 3.12. This documentation is retained as a
+   reference only, and will be removed with the package. See the
+   :ref:`What's New <distutils-deprecated>` entry for more information.
+
 .. seealso::
 
    :ref:`installing-index`
@@ -58,7 +65,7 @@ If you download a module source distribution, you can tell pretty quickly if it
 was packaged and distributed in the standard way, i.e. using the Distutils.
 First, the distribution's name and version number will be featured prominently
 in the name of the downloaded archive, e.g. :file:`foo-1.0.tar.gz` or
-:file:`widget-0.9.7.zip`.  Next, the archive will unpack into a similarly-named
+:file:`widget-0.9.7.zip`.  Next, the archive will unpack into a similarly named
 directory: :file:`foo-1.0` or :file:`widget-0.9.7`.  Additionally, the
 distribution will contain a setup script :file:`setup.py`, and a file named
 :file:`README.txt` or possibly just :file:`README`, which should explain that
@@ -199,7 +206,7 @@ directory.
 If you don't choose an installation directory---i.e., if you just run ``setup.py
 install``\ ---then the :command:`install` command installs to the standard
 location for third-party Python modules.  This location varies by platform and
-by how you built/installed Python itself.  On Unix (and Mac OS X, which is also
+by how you built/installed Python itself.  On Unix (and macOS, which is also
 Unix-based), it also depends on whether the module distribution being installed
 is pure Python or contains extensions ("non-pure"):
 
@@ -229,7 +236,7 @@ Notes:
 
 :file:`{prefix}` and :file:`{exec-prefix}` stand for the directories that Python
 is installed to, and where it finds its libraries at run-time.  They are always
-the same under Windows, and very often the same under Unix and Mac OS X.  You
+the same under Windows, and very often the same under Unix and macOS.  You
 can find out what your Python installation uses for :file:`{prefix}` and
 :file:`{exec-prefix}` by running Python in interactive mode and typing a few
 simple commands. Under Unix, just type ``python`` at the shell prompt.  Under
@@ -305,7 +312,7 @@ install into it.  It is enabled with a simple option::
 Files will be installed into subdirectories of :data:`site.USER_BASE` (written
 as :file:`{userbase}` hereafter).  This scheme installs pure Python modules and
 extension modules in the same location (also known as :data:`site.USER_SITE`).
-Here are the values for UNIX, including Mac OS X:
+Here are the values for UNIX, including macOS:
 
 =============== ===========================================================
 Type of file    Installation directory
@@ -728,7 +735,7 @@ Location and names of config files
 ----------------------------------
 
 The names and locations of the configuration files vary slightly across
-platforms.  On Unix and Mac OS X, the three configuration files (in the order
+platforms.  On Unix and macOS, the three configuration files (in the order
 they are processed) are:
 
 +--------------+----------------------------------------------------------+-------+
@@ -946,7 +953,7 @@ Borland/CodeGear C++
 This subsection describes the necessary steps to use Distutils with the Borland
 C++ compiler version 5.5.  First you have to know that Borland's object file
 format (OMF) is different from the format used by the Python version you can
-download from the Python or ActiveState Web site.  (Python is built with
+download from the Python or ActiveState web site.  (Python is built with
 Microsoft Visual C++, which uses COFF as the object file format.) For this
 reason you have to convert Python's library :file:`python25.lib` into the
 Borland format.  You can do this as follows:
@@ -1064,8 +1071,7 @@ normal libraries do.
 .. [#] This also means you could replace all existing COFF-libraries with OMF-libraries
    of the same name.
 
-.. [#] Check https://www.sourceware.org/cygwin/ and http://www.mingw.org/ for more
-   information
+.. [#] Check https://www.sourceware.org/cygwin/ for more information
 
 .. [#] Then you have no POSIX emulation available, but you also don't need
    :file:`cygwin1.dll`.

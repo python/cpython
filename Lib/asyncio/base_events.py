@@ -49,7 +49,7 @@ from . import trsock
 from .log import logger
 
 
-__all__ = 'BaseEventLoop',
+__all__ = 'BaseEventLoop','Server',
 
 
 # Minimum number of _scheduled timer handles before cleanup of
@@ -65,10 +65,6 @@ _HAS_IPv6 = hasattr(socket, 'AF_INET6')
 
 # Maximum timeout passed to select to avoid OS limitations
 MAXIMUM_SELECT_TIMEOUT = 24 * 3600
-
-# Used for deprecation and removal of `loop.create_datagram_endpoint()`'s
-# *reuse_address* parameter
-_unset = object()
 
 
 def _format_handle(handle):
@@ -202,6 +198,11 @@ else:
         pass
 
 
+def _check_ssl_socket(sock):
+    if ssl is not None and isinstance(sock, ssl.SSLSocket):
+        raise TypeError("Socket cannot be of type SSLSocket")
+
+
 class _SendfileFallbackProtocol(protocols.Protocol):
     def __init__(self, transp):
         if not isinstance(transp, transports._FlowControlMixin):
@@ -273,7 +274,7 @@ class _SendfileFallbackProtocol(protocols.Protocol):
 class Server(events.AbstractServer):
 
     def __init__(self, loop, sockets, protocol_factory, ssl_context, backlog,
-                 ssl_handshake_timeout):
+                 ssl_handshake_timeout, ssl_shutdown_timeout=None):
         self._loop = loop
         self._sockets = sockets
         self._active_count = 0
@@ -282,6 +283,7 @@ class Server(events.AbstractServer):
         self._backlog = backlog
         self._ssl_context = ssl_context
         self._ssl_handshake_timeout = ssl_handshake_timeout
+        self._ssl_shutdown_timeout = ssl_shutdown_timeout
         self._serving = False
         self._serving_forever_fut = None
 
@@ -313,7 +315,8 @@ class Server(events.AbstractServer):
             sock.listen(self._backlog)
             self._loop._start_serving(
                 self._protocol_factory, sock, self._ssl_context,
-                self, self._backlog, self._ssl_handshake_timeout)
+                self, self._backlog, self._ssl_handshake_timeout,
+                self._ssl_shutdown_timeout)
 
     def get_loop(self):
         return self._loop
@@ -350,7 +353,7 @@ class Server(events.AbstractServer):
         self._start_serving()
         # Skip one loop iteration so that all 'loop.add_reader'
         # go through.
-        await tasks.sleep(0, loop=self._loop)
+        await tasks.sleep(0)
 
     async def serve_forever(self):
         if self._serving_forever_fut is not None:
@@ -423,18 +426,23 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Create a Future object attached to the loop."""
         return futures.Future(loop=self)
 
-    def create_task(self, coro, *, name=None):
+    def create_task(self, coro, *, name=None, context=None):
         """Schedule a coroutine object.
 
         Return a task object.
         """
         self._check_closed()
         if self._task_factory is None:
-            task = tasks.Task(coro, loop=self, name=name)
+            task = tasks.Task(coro, loop=self, name=name, context=context)
             if task._source_traceback:
                 del task._source_traceback[-1]
         else:
-            task = self._task_factory(self, coro)
+            if context is None:
+                # Use legacy API if context is not needed
+                task = self._task_factory(self, coro)
+            else:
+                task = self._task_factory(self, coro, context=context)
+
             tasks._set_task_name(task, name)
 
         return task
@@ -467,6 +475,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             *, server_side=False, server_hostname=None,
             extra=None, server=None,
             ssl_handshake_timeout=None,
+            ssl_shutdown_timeout=None,
             call_connection_made=True):
         """Create SSL transport."""
         raise NotImplementedError
@@ -541,8 +550,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         results = await tasks.gather(
             *[ag.aclose() for ag in closing_agens],
-            return_exceptions=True,
-            loop=self)
+            return_exceptions=True)
 
         for result, agen in zip(results, closing_agens):
             if isinstance(result, Exception):
@@ -711,6 +719,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         Any positional arguments after the callback will be passed to
         the callback when it is called.
         """
+        if delay is None:
+            raise TypeError('delay must not be None')
         timer = self.call_at(self.time() + delay, callback, *args,
                              context=context)
         if timer._source_traceback:
@@ -722,6 +732,8 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         Absolute time corresponds to the event loop's time() method.
         """
+        if when is None:
+            raise TypeError("when cannot be None")
         self._check_closed()
         if self._debug:
             self._check_thread()
@@ -815,11 +827,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
     def set_default_executor(self, executor):
         if not isinstance(executor, concurrent.futures.ThreadPoolExecutor):
-            warnings.warn(
-                'Using the default executor that is not an instance of '
-                'ThreadPoolExecutor is deprecated and will be prohibited '
-                'in Python 3.9',
-                DeprecationWarning, 2)
+            raise TypeError('executor must be ThreadPoolExecutor instance')
         self._default_executor = executor
 
     def _getaddrinfo_debug(self, host, port, family, type, proto, flags):
@@ -864,6 +872,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                             *, fallback=True):
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
+        _check_ssl_socket(sock)
         self._check_sendfile_params(sock, file, offset, count)
         try:
             return await self._sock_sendfile_native(sock, file,
@@ -879,7 +888,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         # non-mmap files even if sendfile is supported by OS
         raise exceptions.SendfileNotAvailableError(
             f"syscall sendfile is not available for socket {sock!r} "
-            "and file {file!r} combination")
+            f"and file {file!r} combination")
 
     async def _sock_sendfile_fallback(self, sock, file, offset, count):
         if offset:
@@ -970,10 +979,11 @@ class BaseEventLoop(events.AbstractEventLoop):
             proto=0, flags=0, sock=None,
             local_addr=None, server_hostname=None,
             ssl_handshake_timeout=None,
+            ssl_shutdown_timeout=None,
             happy_eyeballs_delay=None, interleave=None):
         """Connect to a TCP server.
 
-        Create a streaming transport connection to a given Internet host and
+        Create a streaming transport connection to a given internet host and
         port: socket family AF_INET or socket.AF_INET6 depending on host (or
         family if specified), socket type SOCK_STREAM. protocol_factory must be
         a callable returning a protocol instance.
@@ -1004,6 +1014,13 @@ class BaseEventLoop(events.AbstractEventLoop):
         if ssl_handshake_timeout is not None and not ssl:
             raise ValueError(
                 'ssl_handshake_timeout is only meaningful with ssl')
+
+        if ssl_shutdown_timeout is not None and not ssl:
+            raise ValueError(
+                'ssl_shutdown_timeout is only meaningful with ssl')
+
+        if sock is not None:
+            _check_ssl_socket(sock)
 
         if happy_eyeballs_delay is not None and interleave is None:
             # If using happy eyeballs, default to interleave addresses by family
@@ -1080,7 +1097,8 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         transport, protocol = await self._create_connection_transport(
             sock, protocol_factory, ssl, server_hostname,
-            ssl_handshake_timeout=ssl_handshake_timeout)
+            ssl_handshake_timeout=ssl_handshake_timeout,
+            ssl_shutdown_timeout=ssl_shutdown_timeout)
         if self._debug:
             # Get the socket from the transport because SSL transport closes
             # the old socket and creates a new SSL socket
@@ -1092,7 +1110,8 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def _create_connection_transport(
             self, sock, protocol_factory, ssl,
             server_hostname, server_side=False,
-            ssl_handshake_timeout=None):
+            ssl_handshake_timeout=None,
+            ssl_shutdown_timeout=None):
 
         sock.setblocking(False)
 
@@ -1103,7 +1122,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             transport = self._make_ssl_transport(
                 sock, protocol, sslcontext, waiter,
                 server_side=server_side, server_hostname=server_hostname,
-                ssl_handshake_timeout=ssl_handshake_timeout)
+                ssl_handshake_timeout=ssl_handshake_timeout,
+                ssl_shutdown_timeout=ssl_shutdown_timeout)
         else:
             transport = self._make_socket_transport(sock, protocol, waiter)
 
@@ -1194,7 +1214,8 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def start_tls(self, transport, protocol, sslcontext, *,
                         server_side=False,
                         server_hostname=None,
-                        ssl_handshake_timeout=None):
+                        ssl_handshake_timeout=None,
+                        ssl_shutdown_timeout=None):
         """Upgrade transport to TLS.
 
         Return a new transport that *protocol* should start using
@@ -1217,6 +1238,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             self, protocol, sslcontext, waiter,
             server_side, server_hostname,
             ssl_handshake_timeout=ssl_handshake_timeout,
+            ssl_shutdown_timeout=ssl_shutdown_timeout,
             call_connection_made=False)
 
         # Pause early so that "ssl_protocol.data_received()" doesn't
@@ -1240,7 +1262,7 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def create_datagram_endpoint(self, protocol_factory,
                                        local_addr=None, remote_addr=None, *,
                                        family=0, proto=0, flags=0,
-                                       reuse_address=_unset, reuse_port=None,
+                                       reuse_port=None,
                                        allow_broadcast=None, sock=None):
         """Create datagram connection."""
         if sock is not None:
@@ -1253,7 +1275,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 # show the problematic kwargs in exception msg
                 opts = dict(local_addr=local_addr, remote_addr=remote_addr,
                             family=family, proto=proto, flags=flags,
-                            reuse_address=reuse_address, reuse_port=reuse_port,
+                            reuse_port=reuse_port,
                             allow_broadcast=allow_broadcast)
                 problems = ', '.join(f'{k}={v}' for k, v in opts.items() if v)
                 raise ValueError(
@@ -1290,8 +1312,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                 addr_infos = {}  # Using order preserving dict
                 for idx, addr in ((0, local_addr), (1, remote_addr)):
                     if addr is not None:
-                        assert isinstance(addr, tuple) and len(addr) == 2, (
-                            '2-tuple is expected')
+                        if not (isinstance(addr, tuple) and len(addr) == 2):
+                            raise TypeError('2-tuple is expected')
 
                         infos = await self._ensure_resolved(
                             addr, family=family, type=socket.SOCK_DGRAM,
@@ -1315,19 +1337,6 @@ class BaseEventLoop(events.AbstractEventLoop):
                     raise ValueError('can not get address information')
 
             exceptions = []
-
-            # bpo-37228
-            if reuse_address is not _unset:
-                if reuse_address:
-                    raise ValueError("Passing `reuse_address=True` is no "
-                                     "longer supported, as the usage of "
-                                     "SO_REUSEPORT in UDP poses a significant "
-                                     "security concern.")
-                else:
-                    warnings.warn("The *reuse_address* parameter has been "
-                                  "deprecated as of 3.5.10 and is scheduled "
-                                  "for removal in 3.11.", DeprecationWarning,
-                                  stacklevel=2)
 
             for ((family, proto),
                  (local_address, remote_address)) in addr_pairs_info:
@@ -1415,6 +1424,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             reuse_address=None,
             reuse_port=None,
             ssl_handshake_timeout=None,
+            ssl_shutdown_timeout=None,
             start_serving=True):
         """Create a TCP server.
 
@@ -1438,13 +1448,20 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise ValueError(
                 'ssl_handshake_timeout is only meaningful with ssl')
 
+        if ssl_shutdown_timeout is not None and ssl is None:
+            raise ValueError(
+                'ssl_shutdown_timeout is only meaningful with ssl')
+
+        if sock is not None:
+            _check_ssl_socket(sock)
+
         if host is not None or port is not None:
             if sock is not None:
                 raise ValueError(
                     'host/port and sock can not be specified at the same time')
 
             if reuse_address is None:
-                reuse_address = os.name == 'posix' and sys.platform != 'cygwin'
+                reuse_address = os.name == "posix" and sys.platform != "cygwin"
             sockets = []
             if host == '':
                 hosts = [None]
@@ -1457,7 +1474,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             fs = [self._create_server_getaddrinfo(host, port, family=family,
                                                   flags=flags)
                   for host in hosts]
-            infos = await tasks.gather(*fs, loop=self)
+            infos = await tasks.gather(*fs)
             infos = set(itertools.chain.from_iterable(infos))
 
             completed = False
@@ -1510,12 +1527,13 @@ class BaseEventLoop(events.AbstractEventLoop):
             sock.setblocking(False)
 
         server = Server(self, sockets, protocol_factory,
-                        ssl, backlog, ssl_handshake_timeout)
+                        ssl, backlog, ssl_handshake_timeout,
+                        ssl_shutdown_timeout)
         if start_serving:
             server._start_serving()
             # Skip one loop iteration so that all 'loop.add_reader'
             # go through.
-            await tasks.sleep(0, loop=self)
+            await tasks.sleep(0)
 
         if self._debug:
             logger.info("%r is serving", server)
@@ -1524,15 +1542,8 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def connect_accepted_socket(
             self, protocol_factory, sock,
             *, ssl=None,
-            ssl_handshake_timeout=None):
-        """Handle an accepted connection.
-
-        This is used by servers that accept connections outside of
-        asyncio but that use asyncio to handle connections.
-
-        This method is a coroutine.  When completed, the coroutine
-        returns a (transport, protocol) pair.
-        """
+            ssl_handshake_timeout=None,
+            ssl_shutdown_timeout=None):
         if sock.type != socket.SOCK_STREAM:
             raise ValueError(f'A Stream Socket was expected, got {sock!r}')
 
@@ -1540,9 +1551,17 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise ValueError(
                 'ssl_handshake_timeout is only meaningful with ssl')
 
+        if ssl_shutdown_timeout is not None and not ssl:
+            raise ValueError(
+                'ssl_shutdown_timeout is only meaningful with ssl')
+
+        if sock is not None:
+            _check_ssl_socket(sock)
+
         transport, protocol = await self._create_connection_transport(
             sock, protocol_factory, ssl, '', server_side=True,
-            ssl_handshake_timeout=ssl_handshake_timeout)
+            ssl_handshake_timeout=ssl_handshake_timeout,
+            ssl_shutdown_timeout=ssl_shutdown_timeout)
         if self._debug:
             # Get the socket from the transport because SSL transport closes
             # the old socket and creates a new SSL socket

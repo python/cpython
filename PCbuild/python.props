@@ -11,7 +11,8 @@
 
     We set BasePlatformToolset for ICC's benefit, it's otherwise ignored.
     -->
-    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and ('$(MSBuildToolsVersion)' == '16.0' or '$(VisualStudioVersion)' == '16.0')">v142</BasePlatformToolset>
+    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VisualStudioVersion)' == '17.0'">v143</BasePlatformToolset>
+    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VisualStudioVersion)' == '16.0'">v142</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and ('$(MSBuildToolsVersion)' == '15.0' or '$(VisualStudioVersion)' == '15.0')">v141</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath14)' != ''">v140</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath12)' != ''">v120</BasePlatformToolset>
@@ -52,21 +53,25 @@
     <BuildPath Condition="!HasTrailingSlash($(BuildPath))">$(BuildPath)\</BuildPath>
     <BuildPath Condition="$(Configuration) == 'PGInstrument'">$(BuildPath)instrumented\</BuildPath>
     
+    <!-- VPATH definition (escaped) -->
+    <PyVPath Condition="$(Configuration) != 'PGInstrument'">..\\..</PyVPath>
+    <PyVPath Condition="$(Configuration) == 'PGInstrument'">..\\..\\..</PyVPath>
+
     <!-- Directories of external projects. tcltk is handled in tcltk.props -->
     <ExternalsDir>$(EXTERNALS_DIR)</ExternalsDir>
     <ExternalsDir Condition="$(ExternalsDir) == ''">$([System.IO.Path]::GetFullPath(`$(PySourcePath)externals`))</ExternalsDir>
     <ExternalsDir Condition="!HasTrailingSlash($(ExternalsDir))">$(ExternalsDir)\</ExternalsDir>
-    <sqlite3Dir>$(ExternalsDir)sqlite-3.32.3.0\</sqlite3Dir>
-    <bz2Dir>$(ExternalsDir)bzip2-1.0.6\</bz2Dir>
-    <lzmaDir>$(ExternalsDir)xz-5.2.2\</lzmaDir>
-    <libffiDir>$(ExternalsDir)libffi\</libffiDir>
-    <libffiOutDir>$(ExternalsDir)libffi\$(ArchName)\</libffiOutDir>
+    <sqlite3Dir>$(ExternalsDir)sqlite-3.38.4.0\</sqlite3Dir>
+    <bz2Dir>$(ExternalsDir)bzip2-1.0.8\</bz2Dir>
+    <lzmaDir>$(ExternalsDir)xz-5.2.5\</lzmaDir>
+    <libffiDir>$(ExternalsDir)libffi-3.4.2\</libffiDir>
+    <libffiOutDir>$(ExternalsDir)libffi-3.4.2\$(ArchName)\</libffiOutDir>
     <libffiIncludeDir>$(libffiOutDir)include</libffiIncludeDir>
-    <opensslDir>$(ExternalsDir)openssl-1.1.1g\</opensslDir>
-    <opensslOutDir>$(ExternalsDir)openssl-bin-1.1.1g\$(ArchName)\</opensslOutDir>
+    <opensslDir>$(ExternalsDir)openssl-1.1.1n\</opensslDir>
+    <opensslOutDir>$(ExternalsDir)openssl-bin-1.1.1n\$(ArchName)\</opensslOutDir>
     <opensslIncludeDir>$(opensslOutDir)include</opensslIncludeDir>
     <nasmDir>$(ExternalsDir)\nasm-2.11.06\</nasmDir>
-    <zlibDir>$(ExternalsDir)\zlib-1.2.11\</zlibDir>
+    <zlibDir>$(ExternalsDir)\zlib-1.2.12\</zlibDir>
     
     <!-- Suffix for all binaries when building for debug -->
     <PyDebugExt Condition="'$(PyDebugExt)' == '' and $(Configuration) == 'Debug'">_d</PyDebugExt>
@@ -108,9 +113,18 @@
 
     <!-- The minimum allowed SDK version to use for building -->
     <DefaultWindowsSDKVersion>10.0.10586.0</DefaultWindowsSDKVersion>
-    <DefaultWindowsSDKVersion Condition="$([System.Version]::Parse($(_RegistryVersion))) > $([System.Version]::Parse($(DefaultWindowsSDKVersion)))">$(_RegistryVersion)</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(_RegistryVersion) != '' and $([System.Version]::Parse($(_RegistryVersion))) > $([System.Version]::Parse($(DefaultWindowsSDKVersion)))">$(_RegistryVersion)</DefaultWindowsSDKVersion>
   </PropertyGroup>
-  
+
+  <Target Name="_CheckWindowsSDKFound" BeforeTargets="_CheckWindowsSDKInstalled" Condition="$(_RegistryVersion) == ''">
+    <PropertyGroup>
+      <_Message>Failed to locate a Windows SDK installation.</_Message>
+      <_Message>$(_Message) If the build fails, please use the Visual Studio Installer to install the Windows SDK.</_Message>
+      <_Message>$(_Message) (Ignore the version number specified in the error message and select the latest.)</_Message>
+    </PropertyGroup>
+    <Warning Text="$(_Message)" />
+  </Target>
+
   <PropertyGroup Condition="$(WindowsTargetPlatformVersion) == ''">
     <WindowsTargetPlatformVersion>$(DefaultWindowsSDKVersion)</WindowsTargetPlatformVersion>
   </PropertyGroup>
@@ -175,7 +189,7 @@
     <ReleaseLevelNumber Condition="$(_ReleaseLevel) == 'b'">11</ReleaseLevelNumber>
     <ReleaseLevelNumber Condition="$(_ReleaseLevel) == 'rc'">12</ReleaseLevelNumber>
   </PropertyGroup>
-  
+
   <PropertyGroup>
     <PythonVersionNumber>$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber)</PythonVersionNumber>
     <PythonVersion>$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber)$(ReleaseLevelName)</PythonVersion>

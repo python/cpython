@@ -1,6 +1,12 @@
 /* ABCMeta implementation */
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object.h"        // _PyType_GetSubclasses()
+#include "pycore_runtime.h"       // _Py_ID()
 #include "clinic/_abc.c.h"
 
 /*[clinic input]
@@ -11,14 +17,6 @@ module _abc
 PyDoc_STRVAR(_abc__doc__,
 "Module contains faster C implementation of abc.ABCMeta");
 
-_Py_IDENTIFIER(__abstractmethods__);
-_Py_IDENTIFIER(__class__);
-_Py_IDENTIFIER(__dict__);
-_Py_IDENTIFIER(__bases__);
-_Py_IDENTIFIER(_abc_impl);
-_Py_IDENTIFIER(__subclasscheck__);
-_Py_IDENTIFIER(__subclasshook__);
-
 typedef struct {
     PyTypeObject *_abc_data_type;
     unsigned long long abc_invalidation_counter;
@@ -27,7 +25,7 @@ typedef struct {
 static inline _abcmodule_state*
 get_abc_state(PyObject *module)
 {
-    void *state = PyModule_GetState(module);
+    void *state = _PyModule_GetState(module);
     assert(state != NULL);
     return (_abcmodule_state *)state;
 }
@@ -116,7 +114,7 @@ static _abc_data *
 _get_impl(PyObject *module, PyObject *self)
 {
     _abcmodule_state *state = get_abc_state(module);
-    PyObject *impl = _PyObject_GetAttrId(self, &PyId__abc_impl);
+    PyObject *impl = PyObject_GetAttr(self, &_Py_ID(_abc_impl));
     if (impl == NULL) {
         return NULL;
     }
@@ -305,7 +303,7 @@ compute_abstract_methods(PyObject *self)
     PyObject *ns = NULL, *items = NULL, *bases = NULL;  // Py_XDECREF()ed on error.
 
     /* Stage 1: direct abstract methods. */
-    ns = _PyObject_GetAttrId(self, &PyId___dict__);
+    ns = PyObject_GetAttr(self, &_Py_ID(__dict__));
     if (!ns) {
         goto error;
     }
@@ -349,7 +347,7 @@ compute_abstract_methods(PyObject *self)
     }
 
     /* Stage 2: inherited abstract methods. */
-    bases = _PyObject_GetAttrId(self, &PyId___bases__);
+    bases = PyObject_GetAttr(self, &_Py_ID(__bases__));
     if (!bases) {
         goto error;
     }
@@ -362,8 +360,8 @@ compute_abstract_methods(PyObject *self)
         PyObject *item = PyTuple_GET_ITEM(bases, pos);  // borrowed
         PyObject *base_abstracts, *iter;
 
-        if (_PyObject_LookupAttrId(item, &PyId___abstractmethods__,
-                                   &base_abstracts) < 0) {
+        if (_PyObject_LookupAttr(item, &_Py_ID(__abstractmethods__),
+                                 &base_abstracts) < 0) {
             goto error;
         }
         if (base_abstracts == NULL) {
@@ -403,7 +401,7 @@ compute_abstract_methods(PyObject *self)
         }
     }
 
-    if (_PyObject_SetAttrId(self, &PyId___abstractmethods__, abstracts) < 0) {
+    if (PyObject_SetAttr(self, &_Py_ID(__abstractmethods__), abstracts) < 0) {
         goto error;
     }
 
@@ -415,6 +413,8 @@ error:
     Py_XDECREF(bases);
     return ret;
 }
+
+#define COLLECTION_FLAGS (Py_TPFLAGS_SEQUENCE | Py_TPFLAGS_MAPPING)
 
 /*[clinic input]
 _abc._abc_init
@@ -440,12 +440,67 @@ _abc__abc_init(PyObject *module, PyObject *self)
     if (data == NULL) {
         return NULL;
     }
-    if (_PyObject_SetAttrId(self, &PyId__abc_impl, data) < 0) {
+    if (PyObject_SetAttr(self, &_Py_ID(_abc_impl), data) < 0) {
         Py_DECREF(data);
         return NULL;
     }
     Py_DECREF(data);
+    /* If __abc_tpflags__ & COLLECTION_FLAGS is set, then set the corresponding bit(s)
+     * in the new class.
+     * Used by collections.abc.Sequence and collections.abc.Mapping to indicate
+     * their special status w.r.t. pattern matching. */
+    if (PyType_Check(self)) {
+        PyTypeObject *cls = (PyTypeObject *)self;
+        PyObject *flags = PyDict_GetItemWithError(cls->tp_dict,
+                                                  &_Py_ID(__abc_tpflags__));
+        if (flags == NULL) {
+            if (PyErr_Occurred()) {
+                return NULL;
+            }
+        }
+        else {
+            if (PyLong_CheckExact(flags)) {
+                long val = PyLong_AsLong(flags);
+                if (val == -1 && PyErr_Occurred()) {
+                    return NULL;
+                }
+                if ((val & COLLECTION_FLAGS) == COLLECTION_FLAGS) {
+                    PyErr_SetString(PyExc_TypeError, "__abc_tpflags__ cannot be both Py_TPFLAGS_SEQUENCE and Py_TPFLAGS_MAPPING");
+                    return NULL;
+                }
+                ((PyTypeObject *)self)->tp_flags |= (val & COLLECTION_FLAGS);
+            }
+            if (PyDict_DelItem(cls->tp_dict, &_Py_ID(__abc_tpflags__)) < 0) {
+                return NULL;
+            }
+        }
+    }
     Py_RETURN_NONE;
+}
+
+static void
+set_collection_flag_recursive(PyTypeObject *child, unsigned long flag)
+{
+    assert(flag == Py_TPFLAGS_MAPPING || flag == Py_TPFLAGS_SEQUENCE);
+    if (PyType_HasFeature(child, Py_TPFLAGS_IMMUTABLETYPE) ||
+        (child->tp_flags & COLLECTION_FLAGS) == flag)
+    {
+        return;
+    }
+
+    child->tp_flags &= ~COLLECTION_FLAGS;
+    child->tp_flags |= flag;
+
+    PyObject *grandchildren = _PyType_GetSubclasses(child);
+    if (grandchildren == NULL) {
+        return;
+    }
+
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(grandchildren); i++) {
+        PyObject *grandchild = PyList_GET_ITEM(grandchildren, i);
+        set_collection_flag_recursive((PyTypeObject *)grandchild, flag);
+    }
+    Py_DECREF(grandchildren);
 }
 
 /*[clinic input]
@@ -498,6 +553,13 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
     /* Invalidate negative cache */
     get_abc_state(module)->abc_invalidation_counter++;
 
+    /* Set Py_TPFLAGS_SEQUENCE  or Py_TPFLAGS_MAPPING flag */
+    if (PyType_Check(self)) {
+        unsigned long collection_flag = ((PyTypeObject *)self)->tp_flags & COLLECTION_FLAGS;
+        if (collection_flag) {
+            set_collection_flag_recursive((PyTypeObject *)subclass, collection_flag);
+        }
+    }
     Py_INCREF(subclass);
     return subclass;
 }
@@ -524,7 +586,7 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
         return NULL;
     }
 
-    subclass = _PyObject_GetAttrId(instance, &PyId___class__);
+    subclass = PyObject_GetAttr(instance, &_Py_ID(__class__));
     if (subclass == NULL) {
         Py_DECREF(impl);
         return NULL;
@@ -553,12 +615,12 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
             }
         }
         /* Fall back to the subclass check. */
-        result = _PyObject_CallMethodIdOneArg(self, &PyId___subclasscheck__,
-                                              subclass);
+        result = PyObject_CallMethodOneArg(self, &_Py_ID(__subclasscheck__),
+                                           subclass);
         goto end;
     }
-    result = _PyObject_CallMethodIdOneArg(self, &PyId___subclasscheck__,
-                                          subclass);
+    result = PyObject_CallMethodOneArg(self, &_Py_ID(__subclasscheck__),
+                                       subclass);
     if (result == NULL) {
         goto end;
     }
@@ -570,8 +632,8 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
         break;
     case 0:
         Py_DECREF(result);
-        result = _PyObject_CallMethodIdOneArg(self, &PyId___subclasscheck__,
-                                              subtype);
+        result = PyObject_CallMethodOneArg(self, &_Py_ID(__subclasscheck__),
+                                           subtype);
         break;
     case 1:  // Nothing to do.
         break;
@@ -654,8 +716,8 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     }
 
     /* 3. Check the subclass hook. */
-    ok = _PyObject_CallMethodIdOneArg((PyObject *)self, &PyId___subclasshook__,
-                                      subclass);
+    ok = PyObject_CallMethodOneArg(
+            (PyObject *)self, &_Py_ID(__subclasshook__), subclass);
     if (ok == NULL) {
         goto end;
     }
@@ -891,14 +953,14 @@ static PyModuleDef_Slot _abcmodule_slots[] = {
 
 static struct PyModuleDef _abcmodule = {
     PyModuleDef_HEAD_INIT,
-    "_abc",
-    _abc__doc__,
-    sizeof(_abcmodule_state),
-    _abcmodule_methods,
-    _abcmodule_slots,
-    _abcmodule_traverse,
-    _abcmodule_clear,
-    _abcmodule_free,
+    .m_name = "_abc",
+    .m_doc = _abc__doc__,
+    .m_size = sizeof(_abcmodule_state),
+    .m_methods = _abcmodule_methods,
+    .m_slots = _abcmodule_slots,
+    .m_traverse = _abcmodule_traverse,
+    .m_clear = _abcmodule_clear,
+    .m_free = _abcmodule_free,
 };
 
 PyMODINIT_FUNC

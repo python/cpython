@@ -1,0 +1,2 @@
+Allow adjustable compression level for tarfile streams in
+:func:`tarfile.open`.

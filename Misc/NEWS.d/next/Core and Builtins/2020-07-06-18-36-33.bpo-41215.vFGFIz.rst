@@ -1,2 +1,0 @@
-Use non-NULL default values in the PEG parser keyword list to overcome a bug that was preventing
-Python from being properly compiled when using the XLC compiler. Patch by Pablo Galindo.

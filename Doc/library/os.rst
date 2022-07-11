@@ -32,7 +32,7 @@ Notes on the availability of these functions:
   objects, and result in an object of the same type, if a path or file name is
   returned.
 
-* On VxWorks, os.fork, os.execv and os.spawn*p* are not supported.
+* On VxWorks, os.popen, os.fork, os.execv and os.spawn*p* are not supported.
 
 .. note::
 
@@ -68,8 +68,13 @@ File Names, Command Line Arguments, and Environment Variables
 In Python, file names, command line arguments, and environment variables are
 represented using the string type. On some systems, decoding these strings to
 and from bytes is necessary before passing them to the operating system. Python
-uses the file system encoding to perform this conversion (see
-:func:`sys.getfilesystemencoding`).
+uses the :term:`filesystem encoding and error handler` to perform this
+conversion (see :func:`sys.getfilesystemencoding`).
+
+The :term:`filesystem encoding and error handler` are configured at Python
+startup by the :c:func:`PyConfig_Read` function: see
+:c:member:`~PyConfig.filesystem_encoding` and
+:c:member:`~PyConfig.filesystem_errors` members of :c:type:`PyConfig`.
 
 .. versionchanged:: 3.1
    On some systems, conversion using the file system encoding may fail. In this
@@ -79,9 +84,72 @@ uses the file system encoding to perform this conversion (see
    original byte on encoding.
 
 
-The file system encoding must guarantee to successfully decode all bytes
-below 128. If the file system encoding fails to provide this guarantee, API
-functions may raise UnicodeErrors.
+The :term:`file system encoding <filesystem encoding and error handler>` must
+guarantee to successfully decode all bytes below 128. If the file system
+encoding fails to provide this guarantee, API functions can raise
+:exc:`UnicodeError`.
+
+See also the :term:`locale encoding`.
+
+
+.. _utf8-mode:
+
+Python UTF-8 Mode
+-----------------
+
+.. versionadded:: 3.7
+   See :pep:`540` for more details.
+
+The Python UTF-8 Mode ignores the :term:`locale encoding` and forces the usage
+of the UTF-8 encoding:
+
+* Use UTF-8 as the :term:`filesystem encoding <filesystem encoding and error
+  handler>`.
+* :func:`sys.getfilesystemencoding()` returns ``'utf-8'``.
+* :func:`locale.getpreferredencoding()` returns ``'utf-8'`` (the *do_setlocale*
+  argument has no effect).
+* :data:`sys.stdin`, :data:`sys.stdout`, and :data:`sys.stderr` all use
+  UTF-8 as their text encoding, with the ``surrogateescape``
+  :ref:`error handler <error-handlers>` being enabled for :data:`sys.stdin`
+  and :data:`sys.stdout` (:data:`sys.stderr` continues to use
+  ``backslashreplace`` as it does in the default locale-aware mode)
+* On Unix, :func:`os.device_encoding` returns ``'utf-8'`` rather than the
+  device encoding.
+
+Note that the standard stream settings in UTF-8 mode can be overridden by
+:envvar:`PYTHONIOENCODING` (just as they can be in the default locale-aware
+mode).
+
+As a consequence of the changes in those lower level APIs, other higher
+level APIs also exhibit different default behaviours:
+
+* Command line arguments, environment variables and filenames are decoded
+  to text using the UTF-8 encoding.
+* :func:`os.fsdecode()` and :func:`os.fsencode()` use the UTF-8 encoding.
+* :func:`open()`, :func:`io.open()`, and :func:`codecs.open()` use the UTF-8
+  encoding by default. However, they still use the strict error handler by
+  default so that attempting to open a binary file in text mode is likely
+  to raise an exception rather than producing nonsense data.
+
+The :ref:`Python UTF-8 Mode <utf8-mode>` is enabled if the LC_CTYPE locale is
+``C`` or ``POSIX`` at Python startup (see the :c:func:`PyConfig_Read`
+function).
+
+It can be enabled or disabled using the :option:`-X utf8 <-X>` command line
+option and the :envvar:`PYTHONUTF8` environment variable.
+
+If the :envvar:`PYTHONUTF8` environment variable is not set at all, then the
+interpreter defaults to using the current locale settings, *unless* the current
+locale is identified as a legacy ASCII-based locale (as described for
+:envvar:`PYTHONCOERCECLOCALE`), and locale coercion is either disabled or
+fails. In such legacy locales, the interpreter will default to enabling UTF-8
+mode unless explicitly instructed not to do so.
+
+The Python UTF-8 Mode can only be enabled at the Python startup. Its value
+can be read from :data:`sys.flags.utf8_mode <sys.flags>`.
+
+See also the :ref:`UTF-8 mode on Windows <win-utf8-mode>`
+and the :term:`filesystem encoding and error handler`.
 
 
 .. _os-procinfo:
@@ -102,14 +170,15 @@ process and user.
 
 .. data:: environ
 
-   A :term:`mapping` object representing the string environment. For example,
-   ``environ['HOME']`` is the pathname of your home directory (on some platforms),
-   and is equivalent to ``getenv("HOME")`` in C.
+   A :term:`mapping` object where keys and values are strings that represent
+   the process environment.  For example, ``environ['HOME']`` is the pathname
+   of your home directory (on some platforms), and is equivalent to
+   ``getenv("HOME")`` in C.
 
    This mapping is captured the first time the :mod:`os` module is imported,
    typically during Python startup as part of processing :file:`site.py`.  Changes
-   to the environment made after this time are not reflected in ``os.environ``,
-   except for changes made by modifying ``os.environ`` directly.
+   to the environment made after this time are not reflected in :data:`os.environ`,
+   except for changes made by modifying :data:`os.environ` directly.
 
    This mapping may be used to modify the environment as well as query the
    environment.  :func:`putenv` will be called automatically when the mapping
@@ -121,18 +190,18 @@ process and user.
 
    .. note::
 
-      Calling :func:`putenv` directly does not change ``os.environ``, so it's better
-      to modify ``os.environ``.
+      Calling :func:`putenv` directly does not change :data:`os.environ`, so it's better
+      to modify :data:`os.environ`.
 
    .. note::
 
-      On some platforms, including FreeBSD and Mac OS X, setting ``environ`` may
+      On some platforms, including FreeBSD and macOS, setting ``environ`` may
       cause memory leaks.  Refer to the system documentation for
       :c:func:`putenv`.
 
    You can delete items in this mapping to unset environment variables.
    :func:`unsetenv` will be called automatically when an item is deleted from
-   ``os.environ``, and when one of the :meth:`pop` or :meth:`clear` methods is
+   :data:`os.environ`, and when one of the :meth:`pop` or :meth:`clear` methods is
    called.
 
    .. versionchanged:: 3.9
@@ -141,10 +210,10 @@ process and user.
 
 .. data:: environb
 
-   Bytes version of :data:`environ`: a :term:`mapping` object representing the
-   environment as byte strings. :data:`environ` and :data:`environb` are
-   synchronized (modify :data:`environb` updates :data:`environ`, and vice
-   versa).
+   Bytes version of :data:`environ`: a :term:`mapping` object where both keys
+   and values are :class:`bytes` objects representing the process environment.
+   :data:`environ` and :data:`environb` are synchronized (modifying
+   :data:`environb` updates :data:`environ`, and vice versa).
 
    :data:`environb` is only available if :data:`supports_bytes_environ` is
    ``True``.
@@ -165,9 +234,9 @@ process and user.
 
 .. function:: fsencode(filename)
 
-   Encode :term:`path-like <path-like object>` *filename* to the filesystem
-   encoding with ``'surrogateescape'`` error handler, or ``'strict'`` on
-   Windows; return :class:`bytes` unchanged.
+   Encode :term:`path-like <path-like object>` *filename* to the
+   :term:`filesystem encoding and error handler`; return :class:`bytes`
+   unchanged.
 
    :func:`fsdecode` is the reverse function.
 
@@ -181,8 +250,8 @@ process and user.
 .. function:: fsdecode(filename)
 
    Decode the :term:`path-like <path-like object>` *filename* from the
-   filesystem encoding with ``'surrogateescape'`` error handler, or ``'strict'``
-   on Windows; return :class:`str` unchanged.
+   :term:`filesystem encoding and error handler`; return :class:`str`
+   unchanged.
 
    :func:`fsencode` is the reverse function.
 
@@ -223,7 +292,10 @@ process and user.
 .. function:: getenv(key, default=None)
 
    Return the value of the environment variable *key* if it exists, or
-   *default* if it doesn't. *key*, *default* and the result are str.
+   *default* if it doesn't. *key*, *default* and the result are str. Note that
+   since :func:`getenv` uses :data:`os.environ`, the mapping of :func:`getenv` is
+   similarly also captured on import, and the function may not reflect
+   future environment changes.
 
    On Unix, keys and values are decoded with :func:`sys.getfilesystemencoding`
    and ``'surrogateescape'`` error handler. Use :func:`os.getenvb` if you
@@ -235,7 +307,11 @@ process and user.
 .. function:: getenvb(key, default=None)
 
    Return the value of the environment variable *key* if it exists, or
-   *default* if it doesn't. *key*, *default* and the result are bytes.
+   *default* if it doesn't. *key*, *default* and the result are bytes. Note that
+   since :func:`getenvb` uses :data:`os.environb`, the mapping of :func:`getenvb` is
+   similarly also captured on import, and the function may not reflect
+   future environment changes.
+
 
    :func:`getenvb` is only available if :data:`supports_bytes_environ`
    is ``True``.
@@ -286,7 +362,8 @@ process and user.
 
    Return list of group ids that *user* belongs to. If *group* is not in the
    list, it is included; typically, *group* is specified as the group ID
-   field from the password record for *user*.
+   field from the password record for *user*, because that group ID will
+   otherwise be potentially omitted.
 
    .. availability:: Unix.
 
@@ -301,7 +378,7 @@ process and user.
 
    .. note::
 
-      On Mac OS X, :func:`getgroups` behavior differs somewhat from
+      On macOS, :func:`getgroups` behavior differs somewhat from
       other Unix platforms. If the Python interpreter was built with a
       deployment target of :const:`10.5` or earlier, :func:`getgroups` returns
       the list of effective group ids associated with the current user process;
@@ -441,14 +518,15 @@ process and user.
    changes to the environment affect subprocesses started with :func:`os.system`,
    :func:`popen` or :func:`fork` and :func:`execv`.
 
-   Assignments to items in ``os.environ`` are automatically translated into
+   Assignments to items in :data:`os.environ` are automatically translated into
    corresponding calls to :func:`putenv`; however, calls to :func:`putenv`
-   don't update ``os.environ``, so it is actually preferable to assign to items
-   of ``os.environ``.
+   don't update :data:`os.environ`, so it is actually preferable to assign to items
+   of :data:`os.environ`. This also applies to :func:`getenv` and :func:`getenvb`, which
+   respectively use :data:`os.environ` and :data:`os.environb` in their implementations.
 
    .. note::
 
-      On some platforms, including FreeBSD and Mac OS X, setting ``environ`` may
+      On some platforms, including FreeBSD and macOS, setting ``environ`` may
       cause memory leaks. Refer to the system documentation for :c:func:`putenv`.
 
    .. audit-event:: os.putenv key,value os.putenv
@@ -486,7 +564,7 @@ process and user.
 
    .. availability:: Unix.
 
-   .. note:: On Mac OS X, the length of *groups* may not exceed the
+   .. note:: On macOS, the length of *groups* may not exceed the
       system-defined maximum number of effective group ids, typically 16.
       See the documentation for :func:`getgroups` for cases where it may not
       return the same group list set by calling setgroups().
@@ -643,10 +721,10 @@ process and user.
    environment affect subprocesses started with :func:`os.system`, :func:`popen` or
    :func:`fork` and :func:`execv`.
 
-   Deletion of items in ``os.environ`` is automatically translated into a
+   Deletion of items in :data:`os.environ` is automatically translated into a
    corresponding call to :func:`unsetenv`; however, calls to :func:`unsetenv`
-   don't update ``os.environ``, so it is actually preferable to delete items of
-   ``os.environ``.
+   don't update :data:`os.environ`, so it is actually preferable to delete items of
+   :data:`os.environ`.
 
    .. audit-event:: os.unsetenv key os.unsetenv
 
@@ -720,17 +798,31 @@ as internal buffering of data.
    Copy *count* bytes from file descriptor *src*, starting from offset
    *offset_src*, to file descriptor *dst*, starting from offset *offset_dst*.
    If *offset_src* is None, then *src* is read from the current position;
-   respectively for *offset_dst*. The files pointed by *src* and *dst*
+   respectively for *offset_dst*.
+
+   In Linux kernel older than 5.3, the files pointed by *src* and *dst*
    must reside in the same filesystem, otherwise an :exc:`OSError` is
    raised with :attr:`~OSError.errno` set to :data:`errno.EXDEV`.
 
    This copy is done without the additional cost of transferring data
    from the kernel to user space and then back into the kernel. Additionally,
-   some filesystems could implement extra optimizations. The copy is done as if
-   both files are opened as binary.
+   some filesystems could implement extra optimizations, such as the use of
+   reflinks (i.e., two or more inodes that share pointers to the same
+   copy-on-write disk blocks; supported file systems include btrfs and XFS)
+   and server-side copy (in the case of NFS).
+
+   The function copies bytes between two file descriptors. Text options, like
+   the encoding and the line ending, are ignored.
 
    The return value is the amount of bytes copied. This could be less than the
    amount requested.
+
+   .. note::
+
+      On Linux, :func:`os.copy_file_range` should not be used for copying a
+      range of a pseudo file from a special filesystem like procfs and sysfs.
+      It will always copy no bytes and return 0 as if the file was empty
+      because of a known Linux kernel issue.
 
    .. availability:: Linux kernel >= 4.5 or glibc >= 2.27.
 
@@ -741,6 +833,12 @@ as internal buffering of data.
 
    Return a string describing the encoding of the device associated with *fd*
    if it is connected to a terminal; else return :const:`None`.
+
+   On Unix, if the :ref:`Python UTF-8 Mode <utf8-mode>` is enabled, return
+   ``'UTF-8'`` rather than the device encoding.
+
+   .. versionchanged:: 3.10
+      On Unix, the function now implements the Python UTF-8 Mode.
 
 
 .. function:: dup(fd)
@@ -916,6 +1014,17 @@ as internal buffering of data.
    .. versionadded:: 3.3
 
 
+.. function:: login_tty(fd)
+
+   Prepare the tty of which fd is a file descriptor for a new login session.
+   Make the calling process a session leader; make the tty the controlling tty,
+   the stdin, the stdout, and the stderr of the calling process; close fd.
+
+   .. availability:: Unix.
+
+   .. versionadded:: 3.11
+
+
 .. function:: lseek(fd, pos, how)
 
    Set the current position of file descriptor *fd* to position *pos*, modified
@@ -1016,6 +1125,16 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    The above constants are only available on Windows.
 
+.. data:: O_EVTONLY
+          O_FSYNC
+          O_SYMLINK
+          O_NOFOLLOW_ANY
+
+   The above constants are only available on macOS.
+
+   .. versionchanged:: 3.10
+      Add :data:`O_EVTONLY`, :data:`O_FSYNC`, :data:`O_SYMLINK`
+      and :data:`O_NOFOLLOW_ANY` constants.
 
 .. data:: O_ASYNC
           O_DIRECT
@@ -1249,12 +1368,12 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. data:: RWF_APPEND
 
-    Provide a per-write equivalent of the :data:`O_APPEND` :func:`os.open`
-    flag. This flag is meaningful only for :func:`os.pwritev`, and its
-    effect applies only to the data range written by the system call. The
-    *offset* argument does not affect the write operation; the data is always
-    appended to the end of the file. However, if the *offset* argument is
-    ``-1``, the current file *offset* is updated.
+   Provide a per-write equivalent of the :data:`O_APPEND` :func:`os.open`
+   flag. This flag is meaningful only for :func:`os.pwritev`, and its
+   effect applies only to the data range written by the system call. The
+   *offset* argument does not affect the write operation; the data is always
+   appended to the end of the file. However, if the *offset* argument is
+   ``-1``, the current file *offset* is updated.
 
    .. availability:: Linux 4.16 and newer.
 
@@ -1295,11 +1414,11 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    On Linux, if *offset* is given as ``None``, the bytes are read from the
    current position of *in_fd* and the position of *in_fd* is updated.
 
-   The second case may be used on Mac OS X and FreeBSD where *headers* and
+   The second case may be used on macOS and FreeBSD where *headers* and
    *trailers* are arbitrary sequences of buffers that are written before and
    after the data from *in_fd* is written. It returns the same as the first case.
 
-   On Mac OS X and FreeBSD, a value of ``0`` for *count* specifies to send until
+   On macOS and FreeBSD, a value of ``0`` for *count* specifies to send until
    the end of *in_fd* is reached.
 
    All platforms support sockets as *out_fd* file descriptor, and some platforms
@@ -1344,6 +1463,48 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    .. versionadded:: 3.3
 
+.. data:: SF_NOCACHE
+
+   Parameter to the :func:`sendfile` function, if the implementation supports
+   it. The data won't be cached in the virtual memory and will be freed afterwards.
+
+   .. availability:: Unix.
+
+   .. versionadded:: 3.11
+
+
+.. function:: splice(src, dst, count, offset_src=None, offset_dst=None)
+
+   Transfer *count* bytes from file descriptor *src*, starting from offset
+   *offset_src*, to file descriptor *dst*, starting from offset *offset_dst*.
+   At least one of the file descriptors must refer to a pipe. If *offset_src*
+   is None, then *src* is read from the current position; respectively for
+   *offset_dst*. The offset associated to the file descriptor that refers to a
+   pipe must be ``None``. The files pointed by *src* and *dst* must reside in
+   the same filesystem, otherwise an :exc:`OSError` is raised with
+   :attr:`~OSError.errno` set to :data:`errno.EXDEV`.
+
+   This copy is done without the additional cost of transferring data
+   from the kernel to user space and then back into the kernel. Additionally,
+   some filesystems could implement extra optimizations. The copy is done as if
+   both files are opened as binary.
+
+   Upon successful completion, returns the number of bytes spliced to or from
+   the pipe. A return value of 0 means end of input. If *src* refers to a
+   pipe, then this means that there was no data to transfer, and it would not
+   make sense to block because there are no writers connected to the write end
+   of the pipe.
+
+   .. availability:: Linux kernel >= 2.6.17 and glibc >= 2.5
+
+   .. versionadded:: 3.10
+
+
+.. data:: SPLICE_F_MOVE
+          SPLICE_F_NONBLOCK
+          SPLICE_F_MORE
+
+   .. versionadded:: 3.10
 
 .. function:: readv(fd, buffers)
 
@@ -1852,6 +2013,8 @@ features:
    Return a list containing the names of the entries in the directory given by
    *path*.  The list is in arbitrary order, and does not include the special
    entries ``'.'`` and ``'..'`` even if they are present in the directory.
+   If a file is removed from or added to the directory during the call of
+   this function, whether a name for that file be included is unspecified.
 
    *path* may be a :term:`path-like object`.  If *path* is of type ``bytes``
    (directly or indirectly through the :class:`PathLike` interface),
@@ -1882,7 +2045,7 @@ features:
       Accepts a :term:`path-like object`.
 
 
-.. function:: lstat(path, \*, dir_fd=None)
+.. function:: lstat(path, *, dir_fd=None)
 
    Perform the equivalent of an :c:func:`lstat` system call on the given path.
    Similar to :func:`~os.stat`, but does not follow symbolic links. Return a
@@ -1908,7 +2071,7 @@ features:
       Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
-      Accepts a :term:`path-like object` for *src* and *dst*.
+      Accepts a :term:`path-like object`.
 
    .. versionchanged:: 3.8
       On Windows, now opens reparse points that represent another path
@@ -1921,7 +2084,8 @@ features:
 
    Create a directory named *path* with numeric mode *mode*.
 
-   If the directory already exists, :exc:`FileExistsError` is raised.
+   If the directory already exists, :exc:`FileExistsError` is raised. If a parent
+   directory in the path does not exist, :exc:`FileNotFoundError` is raised.
 
    .. _mkdir_modebits:
 
@@ -1957,11 +2121,11 @@ features:
 
    The *mode* parameter is passed to :func:`mkdir` for creating the leaf
    directory; see :ref:`the mkdir() description <mkdir_modebits>` for how it
-   is interpreted.  To set the file permission bits of any newly-created parent
+   is interpreted.  To set the file permission bits of any newly created parent
    directories you can set the umask before invoking :func:`makedirs`.  The
    file permission bits of existing parent directories are not changed.
 
-   If *exist_ok* is ``False`` (the default), an :exc:`FileExistsError` is
+   If *exist_ok* is ``False`` (the default), a :exc:`FileExistsError` is
    raised if the target directory already exists.
 
    .. note::
@@ -1988,7 +2152,7 @@ features:
 
    .. versionchanged:: 3.7
       The *mode* argument no longer affects the file permission bits of
-      newly-created intermediate-level directories.
+      newly created intermediate-level directories.
 
 
 .. function:: mkfifo(path, mode=0o666, *, dir_fd=None)
@@ -2128,6 +2292,7 @@ features:
 
    Remove (delete) the file *path*.  If *path* is a directory, an
    :exc:`IsADirectoryError` is raised.  Use :func:`rmdir` to remove directories.
+   If the file does not exist, a :exc:`FileNotFoundError` is raised.
 
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>`.
@@ -2177,7 +2342,7 @@ features:
    :exc:`IsADirectoryError` or a :exc:`NotADirectoryError` will be raised
    respectively.  If both are directories and *dst* is empty, *dst* will be
    silently replaced.  If *dst* is a non-empty directory, an :exc:`OSError`
-   is raised. If both are files, *dst* it will be replaced silently if the user
+   is raised. If both are files, *dst* will be replaced silently if the user
    has permission.  The operation may fail on some Unix flavors if *src* and
    *dst* are on different filesystems.  If successful, the renaming will be an
    atomic operation (this is a POSIX requirement).
@@ -2216,7 +2381,7 @@ features:
 
 .. function:: replace(src, dst, *, src_dir_fd=None, dst_dir_fd=None)
 
-   Rename the file or directory *src* to *dst*.  If *dst* is a directory,
+   Rename the file or directory *src* to *dst*.  If *dst* is a non-empty directory,
    :exc:`OSError` will be raised.  If *dst* exists and is a file, it will
    be replaced silently if the user has permission.  The operation may fail
    if *src* and *dst* are on different filesystems.  If successful,
@@ -2236,7 +2401,7 @@ features:
 .. function:: rmdir(path, *, dir_fd=None)
 
    Remove (delete) the directory *path*.  If the directory does not exist or is
-   not empty, an :exc:`FileNotFoundError` or an :exc:`OSError` is raised
+   not empty, a :exc:`FileNotFoundError` or an :exc:`OSError` is raised
    respectively.  In order to remove whole directory trees,
    :func:`shutil.rmtree` can be used.
 
@@ -2257,7 +2422,9 @@ features:
    Return an iterator of :class:`os.DirEntry` objects corresponding to the
    entries in the directory given by *path*. The entries are yielded in
    arbitrary order, and the special entries ``'.'`` and ``'..'`` are not
-   included.
+   included.  If a file is removed from or added to the directory after
+   creating the iterator, whether an entry for that file be included is
+   unspecified.
 
    Using :func:`scandir` instead of :func:`listdir` can significantly
    increase the performance of code that also needs file type or file
@@ -2387,7 +2554,7 @@ features:
       On the first, uncached call, a system call is required on Windows but
       not on Unix.
 
-   .. method:: is_dir(\*, follow_symlinks=True)
+   .. method:: is_dir(*, follow_symlinks=True)
 
       Return ``True`` if this entry is a directory or a symbolic link pointing
       to a directory; return ``False`` if the entry is or points to any other
@@ -2411,7 +2578,7 @@ features:
       This method can raise :exc:`OSError`, such as :exc:`PermissionError`,
       but :exc:`FileNotFoundError` is caught and not raised.
 
-   .. method:: is_file(\*, follow_symlinks=True)
+   .. method:: is_file(*, follow_symlinks=True)
 
       Return ``True`` if this entry is a file or a symbolic link pointing to a
       file; return ``False`` if the entry is or points to a directory or other
@@ -2441,7 +2608,7 @@ features:
       This method can raise :exc:`OSError`, such as :exc:`PermissionError`,
       but :exc:`FileNotFoundError` is caught and not raised.
 
-   .. method:: stat(\*, follow_symlinks=True)
+   .. method:: stat(*, follow_symlinks=True)
 
       Return a :class:`stat_result` object for this entry. This method
       follows symbolic links by default; to stat a symbolic link add the
@@ -2473,7 +2640,7 @@ features:
       for :class:`bytes` paths on Windows.
 
 
-.. function:: stat(path, \*, dir_fd=None, follow_symlinks=True)
+.. function:: stat(path, *, dir_fd=None, follow_symlinks=True)
 
    Get the status of a file or a file descriptor. Perform the equivalent of a
    :c:func:`stat` system call on the given path. *path* may be specified as
@@ -2667,7 +2834,7 @@ features:
       String that uniquely identifies the type of the filesystem that
       contains the file.
 
-   On Mac OS systems, the following attributes may also be available:
+   On macOS systems, the following attributes may also be available:
 
    .. attribute:: st_rsize
 
@@ -3007,7 +3174,10 @@ features:
    *filenames* is a list of the names of the non-directory files in *dirpath*.
    Note that the names in the lists contain no path components.  To get a full path
    (which begins with *top*) to a file or directory in *dirpath*, do
-   ``os.path.join(dirpath, name)``.
+   ``os.path.join(dirpath, name)``.  Whether or not the lists are sorted
+   depends on the file system.  If a file is removed from or added to the
+   *dirpath* directory during generating the lists, whether a name for that
+   file be included is unspecified.
 
    If optional argument *topdown* is ``True`` or not specified, the triple for a
    directory is generated before the triples for any of its subdirectories
@@ -3195,6 +3365,102 @@ features:
    .. versionadded:: 3.8
 
 
+.. function:: eventfd(initval[, flags=os.EFD_CLOEXEC])
+
+   Create and return an event file descriptor. The file descriptors supports
+   raw :func:`read` and :func:`write` with a buffer size of 8,
+   :func:`~select.select`, :func:`~select.poll` and similar. See man page
+   :manpage:`eventfd(2)` for more information.  By default, the
+   new file descriptor is :ref:`non-inheritable <fd_inheritance>`.
+
+   *initval* is the initial value of the event counter. The initial value
+   must be an 32 bit unsigned integer. Please note that the initial value is
+   limited to a 32 bit unsigned int although the event counter is an unsigned
+   64 bit integer with a maximum value of 2\ :sup:`64`\ -\ 2.
+
+   *flags* can be constructed from :const:`EFD_CLOEXEC`,
+   :const:`EFD_NONBLOCK`, and :const:`EFD_SEMAPHORE`.
+
+   If :const:`EFD_SEMAPHORE` is specified and the event counter is non-zero,
+   :func:`eventfd_read` returns 1 and decrements the counter by one.
+
+   If :const:`EFD_SEMAPHORE` is not specified and the event counter is
+   non-zero, :func:`eventfd_read` returns the current event counter value and
+   resets the counter to zero.
+
+   If the event counter is zero and :const:`EFD_NONBLOCK` is not
+   specified, :func:`eventfd_read` blocks.
+
+   :func:`eventfd_write` increments the event counter. Write blocks if the
+   write operation would increment the counter to a value larger than
+   2\ :sup:`64`\ -\ 2.
+
+   Example::
+
+       import os
+
+       # semaphore with start value '1'
+       fd = os.eventfd(1, os.EFD_SEMAPHORE | os.EFC_CLOEXEC)
+       try:
+           # acquire semaphore
+           v = os.eventfd_read(fd)
+           try:
+               do_work()
+           finally:
+               # release semaphore
+               os.eventfd_write(fd, v)
+       finally:
+           os.close(fd)
+
+   .. availability:: Linux 2.6.27 or newer with glibc 2.8 or newer.
+
+   .. versionadded:: 3.10
+
+.. function:: eventfd_read(fd)
+
+   Read value from an :func:`eventfd` file descriptor and return a 64 bit
+   unsigned int. The function does not verify that *fd* is an :func:`eventfd`.
+
+   .. availability:: See :func:`eventfd`
+
+   .. versionadded:: 3.10
+
+.. function:: eventfd_write(fd, value)
+
+   Add value to an :func:`eventfd` file descriptor. *value* must be a 64 bit
+   unsigned int. The function does not verify that *fd* is an :func:`eventfd`.
+
+   .. availability:: See :func:`eventfd`
+
+   .. versionadded:: 3.10
+
+.. data:: EFD_CLOEXEC
+
+   Set close-on-exec flag for new :func:`eventfd` file descriptor.
+
+   .. availability:: See :func:`eventfd`
+
+   .. versionadded:: 3.10
+
+.. data:: EFD_NONBLOCK
+
+   Set :const:`O_NONBLOCK` status flag for new :func:`eventfd` file
+   descriptor.
+
+   .. availability:: See :func:`eventfd`
+
+   .. versionadded:: 3.10
+
+.. data:: EFD_SEMAPHORE
+
+   Provide semaphore-like semantics for reads from a :func:`eventfd` file
+   descriptor. On read the internal counter is decremented by one.
+
+   .. availability:: Linux 2.6.30 or newer with glibc 2.8 or newer.
+
+   .. versionadded:: 3.10
+
+
 Linux extended attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -3239,7 +3505,7 @@ These functions are all available on Linux only.
    Removes the extended filesystem attribute *attribute* from *path*.
    *attribute* should be bytes or str (directly or indirectly through the
    :class:`PathLike` interface). If it is a string, it is encoded
-   with the filesystem encoding.
+   with the :term:`filesystem encoding and error handler`.
 
    This function can support :ref:`specifying a file descriptor <path_fd>` and
    :ref:`not following symlinks <follow_symlinks>`.
@@ -3255,11 +3521,11 @@ These functions are all available on Linux only.
    Set the extended filesystem attribute *attribute* on *path* to *value*.
    *attribute* must be a bytes or str with no embedded NULs (directly or
    indirectly through the :class:`PathLike` interface). If it is a str,
-   it is encoded with the filesystem encoding.  *flags* may be
+   it is encoded with the :term:`filesystem encoding and error handler`.  *flags* may be
    :data:`XATTR_REPLACE` or :data:`XATTR_CREATE`. If :data:`XATTR_REPLACE` is
-   given and the attribute does not exist, ``EEXISTS`` will be raised.
+   given and the attribute does not exist, ``ENODATA`` will be raised.
    If :data:`XATTR_CREATE` is given and the attribute already exists, the
-   attribute will not be created and ``ENODATA`` will be raised.
+   attribute will not be created and ``EEXISTS`` will be raised.
 
    This function can support :ref:`specifying a file descriptor <path_fd>` and
    :ref:`not following symlinks <follow_symlinks>`.
@@ -3323,8 +3589,8 @@ to be ignored.
    Add a path to the DLL search path.
 
    This search path is used when resolving dependencies for imported
-   extension modules (the module itself is resolved through sys.path),
-   and also by :mod:`ctypes`.
+   extension modules (the module itself is resolved through
+   :data:`sys.path`), and also by :mod:`ctypes`.
 
    Remove the directory by calling **close()** on the returned object
    or using it in a :keyword:`with` statement.
@@ -3435,9 +3701,10 @@ written in Python, such as a mail server's external command delivery program.
 
 .. data:: EX_OK
 
-   Exit code that means no error occurred.
+   Exit code that means no error occurred. May be taken from the defined value of
+   ``EXIT_SUCCESS`` on some platforms. Generally has a value of zero.
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
 
 .. data:: EX_USAGE
@@ -3644,15 +3911,24 @@ written in Python, such as a mail server's external command delivery program.
 
 .. function:: pidfd_open(pid, flags=0)
 
-   Return a file descriptor referring to the process *pid*.  This descriptor can
-   be used to perform process management without races and signals.  The *flags*
-   argument is provided for future extensions; no flag values are currently
-   defined.
+   Return a file descriptor referring to the process *pid* with *flags* set.
+   This descriptor can be used to perform process management without races
+   and signals.
 
    See the :manpage:`pidfd_open(2)` man page for more details.
 
    .. availability:: Linux 5.3+
    .. versionadded:: 3.9
+
+   .. data:: PIDFD_NONBLOCK
+
+      This flag indicates that the file descriptor will be non-blocking.
+      If the process referred to by the file descriptor has not yet terminated,
+      then an attempt to wait on the file descriptor using :manpage:`waitid(2)`
+      will immediately return the error :data:`~errno.EAGAIN` rather than blocking.
+
+   .. availability:: Linux 5.10+
+   .. versionadded:: 3.12
 
 
 .. function:: plock(op)
@@ -3668,7 +3944,8 @@ written in Python, such as a mail server's external command delivery program.
    Open a pipe to or from command *cmd*.
    The return value is an open file object
    connected to the pipe, which can be read or written depending on whether *mode*
-   is ``'r'`` (default) or ``'w'``. The *buffering* argument has the same meaning as
+   is ``'r'`` (default) or ``'w'``.
+   The *buffering* argument have the same meaning as
    the corresponding argument to the built-in :func:`open` function. The
    returned file object reads or writes text strings rather than bytes.
 
@@ -3691,6 +3968,14 @@ written in Python, such as a mail server's external command delivery program.
    documentation for more powerful ways to manage and communicate with
    subprocesses.
 
+   .. note::
+      The :ref:`Python UTF-8 Mode <utf8-mode>` affects encodings used
+      for *cmd* and pipe contents.
+
+      :func:`popen` is a simple wrapper around :class:`subprocess.Popen`.
+      Use :class:`subprocess.Popen` or :func:`subprocess.run` to
+      control options like encodings.
+
 
 .. function:: posix_spawn(path, argv, env, *, file_actions=None, \
                           setpgroup=None, resetids=False, setsid=False, setsigmask=(), \
@@ -3703,8 +3988,8 @@ written in Python, such as a mail server's external command delivery program.
    The positional-only arguments *path*, *args*, and *env* are similar to
    :func:`execve`.
 
-   The *path* parameter is the path to the executable file.The *path* should
-   contain a directory.Use :func:`posix_spawnp` to pass an executable file
+   The *path* parameter is the path to the executable file.  The *path* should
+   contain a directory.  Use :func:`posix_spawnp` to pass an executable file
    without directory.
 
    The *file_actions* argument may be a sequence of tuples describing actions
@@ -3935,7 +4220,7 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Windows.
 
 
-.. function:: startfile(path[, operation])
+.. function:: startfile(path, [operation], [arguments], [cwd], [show_cmd])
 
    Start a file with its associated application.
 
@@ -3949,13 +4234,25 @@ written in Python, such as a mail server's external command delivery program.
    ``'print'`` and  ``'edit'`` (to be used on files) as well as ``'explore'`` and
    ``'find'`` (to be used on directories).
 
+   When launching an application, specify *arguments* to be passed as a single
+   string. This argument may have no effect when using this function to launch a
+   document.
+
+   The default working directory is inherited, but may be overridden by the *cwd*
+   argument. This should be an absolute path. A relative *path* will be resolved
+   against this argument.
+
+   Use *show_cmd* to override the default window style. Whether this has any
+   effect will depend on the application being launched. Values are integers as
+   supported by the Win32 :c:func:`ShellExecute` function.
+
    :func:`startfile` returns as soon as the associated application is launched.
    There is no option to wait for the application to close, and no way to retrieve
    the application's exit status.  The *path* parameter is relative to the current
-   directory.  If you want to use an absolute path, make sure the first character
-   is not a slash (``'/'``); the underlying Win32 :c:func:`ShellExecute` function
-   doesn't work if it is.  Use the :func:`os.path.normpath` function to ensure that
-   the path is properly encoded for Win32.
+   directory or *cwd*.  If you want to use an absolute path, make sure the first
+   character is not a slash (``'/'``)  Use :mod:`pathlib` or the
+   :func:`os.path.normpath` function to ensure that paths are properly encoded for
+   Win32.
 
    To reduce interpreter startup overhead, the Win32 :c:func:`ShellExecute`
    function is not resolved until this function is first called.  If the function
@@ -3963,7 +4260,13 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.startfile path,operation os.startfile
 
+   .. audit-event:: os.startfile/2 path,operation,arguments,cwd,show_cmd os.startfile
+
    .. availability:: Windows.
+
+   .. versionchanged:: 3.10
+      Added the *arguments*, *cwd* and *show_cmd* arguments, and the
+      ``os.startfile/2`` audit event.
 
 
 .. function:: system(command)
@@ -3972,12 +4275,12 @@ written in Python, such as a mail server's external command delivery program.
    the Standard C function :c:func:`system`, and has the same limitations.
    Changes to :data:`sys.stdin`, etc. are not reflected in the environment of
    the executed command. If *command* generates any output, it will be sent to
-   the interpreter standard output stream.
+   the interpreter standard output stream. The C standard does not
+   specify the meaning of the return value of the C function, so the return
+   value of the Python function is system-dependent.
 
    On Unix, the return value is the exit status of the process encoded in the
-   format specified for :func:`wait`.  Note that POSIX does not specify the
-   meaning of the return value of the C :c:func:`system` function, so the return
-   value of the Python function is system-dependent.
+   format specified for :func:`wait`.
 
    On Windows, the return value is that returned by the system shell after
    running *command*.  The shell is given by the Windows environment variable
@@ -4004,20 +4307,20 @@ written in Python, such as a mail server's external command delivery program.
    Returns the current global process times.
    The return value is an object with five attributes:
 
-   * :attr:`user` - user time
-   * :attr:`system` - system time
-   * :attr:`children_user` - user time of all child processes
-   * :attr:`children_system` - system time of all child processes
-   * :attr:`elapsed` - elapsed real time since a fixed point in the past
+   * :attr:`!user` - user time
+   * :attr:`!system` - system time
+   * :attr:`!children_user` - user time of all child processes
+   * :attr:`!children_system` - system time of all child processes
+   * :attr:`!elapsed` - elapsed real time since a fixed point in the past
 
    For backwards compatibility, this object also behaves like a five-tuple
-   containing :attr:`user`, :attr:`system`, :attr:`children_user`,
-   :attr:`children_system`, and :attr:`elapsed` in that order.
+   containing :attr:`!user`, :attr:`!system`, :attr:`!children_user`,
+   :attr:`!children_system`, and :attr:`!elapsed` in that order.
 
    See the Unix manual page
-   :manpage:`times(2)` and :manpage:`times(3)` manual page on Unix or `the GetProcessTimes MSDN
+   :manpage:`times(2)` and `times(3) <https://www.freebsd.org/cgi/man.cgi?time(3)>`_ manual page on Unix or `the GetProcessTimes MSDN
    <https://docs.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes>`_
-   on Windows. On Windows, only :attr:`user` and :attr:`system` are known; the other attributes are zero.
+   on Windows. On Windows, only :attr:`!user` and :attr:`!system` are known; the other attributes are zero.
 
    .. availability:: Unix, Windows.
 
@@ -4396,7 +4699,7 @@ operating system.
 
 .. function:: sched_setparam(pid, param)
 
-   Set a scheduling parameters for the process with PID *pid*. A *pid* of 0 means
+   Set the scheduling parameters for the process with PID *pid*. A *pid* of 0 means
    the calling process. *param* is a :class:`sched_param` instance.
 
 
@@ -4504,6 +4807,9 @@ Miscellaneous System Information
    determine the set of names known to the system.
 
    .. availability:: Unix.
+
+   .. versionchanged:: 3.11
+      Add ``'SC_MINSIGSTKSZ'`` name.
 
 The following data values are used to support path manipulation operations.  These
 are defined for all platforms.
@@ -4629,7 +4935,7 @@ Random numbers
 
 .. function:: urandom(size)
 
-   Return a string of *size* random bytes suitable for cryptographic use.
+   Return a bytestring of *size* random bytes suitable for cryptographic use.
 
    This function returns random bytes from an OS-specific randomness source.  The
    returned data should be unpredictable enough for cryptographic applications,
@@ -4646,7 +4952,7 @@ Random numbers
    device. If the ``/dev/urandom`` device is not available or not readable, the
    :exc:`NotImplementedError` exception is raised.
 
-   On Windows, it will use ``CryptGenRandom()``.
+   On Windows, it will use ``BCryptGenRandom()``.
 
    .. seealso::
       The :mod:`secrets` module provides higher level functions. For an
@@ -4666,6 +4972,10 @@ Random numbers
       when available.  On OpenBSD 5.6 and newer, the C ``getentropy()``
       function is now used. These functions avoid the usage of an internal file
       descriptor.
+
+   .. versionchanged:: 3.11
+      On Windows, ``BCryptGenRandom()`` is used instead of ``CryptGenRandom()``
+      which is deprecated.
 
 .. data:: GRND_NONBLOCK
 

@@ -171,7 +171,7 @@ on a per-module basis in Python 3.7 using a :mod:`__future__` import::
 
     from __future__ import annotations
 
-It will become the default in Python 4.0.
+It will become the default in Python 3.10.
 
 .. seealso::
 
@@ -232,7 +232,8 @@ PEP 540: Forced UTF-8 Runtime Mode
 -----------------------------------
 
 The new :option:`-X` ``utf8`` command line option and :envvar:`PYTHONUTF8`
-environment variable can be used to enable the CPython *UTF-8 mode*.
+environment variable can be used to enable the :ref:`Python UTF-8 Mode
+<utf8-mode>`.
 
 When in UTF-8 mode, CPython ignores the locale settings, and uses the
 UTF-8 encoding by default.  The error handlers for :data:`sys.stdin` and
@@ -290,7 +291,7 @@ PEP 539: New C API for Thread-Local Storage
 While Python provides a C API for thread-local storage support; the existing
 :ref:`Thread Local Storage (TLS) API <thread-local-storage-api>` has used
 :c:type:`int` to represent TLS keys across all platforms.  This has not
-generally been a problem for officially-support platforms, but that is neither
+generally been a problem for officially support platforms, but that is neither
 POSIX-compliant, nor portable in any practical sense.
 
 :pep:`539` changes this by providing a new :ref:`Thread Specific Storage (TSS)
@@ -352,7 +353,7 @@ module:
 
 The new functions return the number of nanoseconds as an integer value.
 
-`Measurements <https://www.python.org/dev/peps/pep-0564/#annex-clocks-resolution-in-python>`_
+`Measurements <https://peps.python.org/pep-0564/#annex-clocks-resolution-in-python>`_
 show that on Linux and Windows the resolution of :func:`time.time_ns` is
 approximately 3 times better than that of :func:`time.time`.
 
@@ -537,7 +538,7 @@ Other Language Changes
 * The new :option:`-X` ``importtime`` option or the
   :envvar:`PYTHONPROFILEIMPORTTIME` environment variable can be used to show
   the timing of each module import.
-  (Contributed by Victor Stinner in :issue:`31415`.)
+  (Contributed by Inada Naoki in :issue:`31415`.)
 
 
 New Modules
@@ -636,7 +637,7 @@ The :mod:`asyncio` module has received many new features, usability and
 :ref:`performance improvements <whatsnew37-asyncio-perf>`.  Notable changes
 include:
 
-* The new :term:`provisional <provisional api>` :func:`asyncio.run` function can
+* The new :term:`provisional <provisional API>` :func:`asyncio.run` function can
   be used to run a coroutine from synchronous code by automatically creating and
   destroying the event loop.
   (Contributed by Yury Selivanov in :issue:`32314`.)
@@ -1174,7 +1175,7 @@ of :func:`os.writev` and :func:`os.pwrite`). (Contributed by Pablo Galindo in
 :issue:`31368`.)
 
 The mode argument of :func:`os.makedirs` no longer affects the file
-permission bits of newly-created intermediate-level directories.
+permission bits of newly created intermediate-level directories.
 (Contributed by Serhiy Storchaka in :issue:`19930`.)
 
 :func:`os.dup2` now returns the new file descriptor.  Previously, ``None``
@@ -1587,8 +1588,8 @@ The initialization of the default warnings filters has changed as follows:
        for the new ``-X dev`` mode)
      * any implicit filters defined directly by the warnings machinery
 
-* in CPython debug builds, all warnings are now displayed by default (the
-  implicit filter list is empty)
+* in :ref:`CPython debug builds <debug-build>`, all warnings are now displayed
+  by default (the implicit filter list is empty)
 
 (Contributed by Nick Coghlan and Victor Stinner in :issue:`20361`,
 :issue:`32043`, and :issue:`32230`.)
@@ -2119,7 +2120,8 @@ Platform Support Removals
   of other LTS Linux releases (e.g. RHEL/CentOS 7.5, SLES 12-SP3), use OpenSSL
   1.0.2 or later, and remain supported in the default build configuration.
 
-  CPython's own :source:`CI configuration file <.travis.yml>` provides an
+  CPython's own `CI configuration file
+  <https://github.com/python/cpython/blob/v3.7.13/.travis.yml>`_ provides an
   example of using the SSL
   :source:`compatibility testing infrastructure <Tools/ssl/multissltests.py>` in
   CPython's test suite to build and link against OpenSSL 1.1.0 rather than an
@@ -2294,7 +2296,7 @@ Changes in the Python API
   (Contributed by Serhiy Storchaka in :issue:`29192`.)
 
 * The *mode* argument of :func:`os.makedirs` no longer affects the file
-  permission bits of newly-created intermediate-level directories.
+  permission bits of newly created intermediate-level directories.
   To set their file permission bits you can set the umask before invoking
   ``makedirs()``.
   (Contributed by Serhiy Storchaka in :issue:`19930`.)
@@ -2473,7 +2475,7 @@ Windows-only Changes
 
 The file used to override :data:`sys.path` is now called
 ``<python-executable>._pth`` instead of ``'sys.path'``.
-See :ref:`finding_modules` for more information.
+See :ref:`windows_finding_modules` for more information.
 (Contributed by Steve Dower in :issue:`28137`.)
 
 
@@ -2556,3 +2558,16 @@ because of the behavior of the socket option ``SO_REUSEADDR`` in UDP. For more
 details, see the documentation for ``loop.create_datagram_endpoint()``.
 (Contributed by Kyle Stanley, Antoine Pitrou, and Yury Selivanov in
 :issue:`37228`.)
+
+Notable changes in Python 3.7.10
+================================
+
+Earlier Python versions allowed using both ``;`` and ``&`` as
+query parameter separators in :func:`urllib.parse.parse_qs` and
+:func:`urllib.parse.parse_qsl`.  Due to security concerns, and to conform with
+newer W3C recommendations, this has been changed to allow only a single
+separator key, with ``&`` as the default.  This change also affects
+:func:`cgi.parse` and :func:`cgi.parse_multipart` as they use the affected
+functions internally. For more details, please see their respective
+documentation.
+(Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)

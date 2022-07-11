@@ -42,7 +42,8 @@ another rational number, or from a string.
 
    where the optional ``sign`` may be either '+' or '-' and
    ``numerator`` and ``denominator`` (if present) are strings of
-   decimal digits.  In addition, any string that represents a finite
+   decimal digits (underscores may be used to delimit digits as with
+   integral literals in code).  In addition, any string that represents a finite
    value and is accepted by the :class:`float` constructor is also
    accepted by the :class:`Fraction` constructor.  In either form the
    input string may also have leading and/or trailing whitespace.
@@ -89,6 +90,14 @@ another rational number, or from a string.
       and *denominator*. :func:`math.gcd` always return a :class:`int` type.
       Previously, the GCD type depended on *numerator* and *denominator*.
 
+   .. versionchanged:: 3.11
+      Underscores are now permitted when creating a :class:`Fraction` instance
+      from a string, following :PEP:`515` rules.
+
+   .. versionchanged:: 3.11
+      :class:`Fraction` implements ``__int__`` now to satisfy
+      ``typing.SupportsInt`` instance checks.
+
    .. attribute:: numerator
 
       Numerator of the Fraction in lowest term.
@@ -105,10 +114,10 @@ another rational number, or from a string.
 
       .. versionadded:: 3.8
 
-   .. method:: from_float(flt)
+   .. classmethod:: from_float(flt)
 
-      This class method constructs a :class:`Fraction` representing the exact
-      value of *flt*, which must be a :class:`float`. Beware that
+      Alternative constructor which only accepts instances of
+      :class:`float` or :class:`numbers.Integral`. Beware that
       ``Fraction.from_float(0.3)`` is not the same value as ``Fraction(3, 10)``.
 
       .. note::
@@ -117,10 +126,10 @@ another rational number, or from a string.
          :class:`Fraction` instance directly from a :class:`float`.
 
 
-   .. method:: from_decimal(dec)
+   .. classmethod:: from_decimal(dec)
 
-      This class method constructs a :class:`Fraction` representing the exact
-      value of *dec*, which must be a :class:`decimal.Decimal` instance.
+      Alternative constructor which only accepts instances of
+      :class:`decimal.Decimal` or :class:`numbers.Integral`.
 
       .. note::
 

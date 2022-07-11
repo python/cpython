@@ -30,16 +30,21 @@ from sphinx.locale import translators
 from sphinx.util import status_iterator, logging
 from sphinx.util.nodes import split_explicit_title
 from sphinx.writers.text import TextWriter, TextTranslator
-from sphinx.writers.latex import LaTeXTranslator
-from sphinx.domains.python import PyModulelevel, PyClassmember
+
+try:
+    from sphinx.domains.python import PyFunction, PyMethod
+except ImportError:
+    from sphinx.domains.python import PyClassmember as PyMethod
+    from sphinx.domains.python import PyModulelevel as PyFunction
 
 # Support for checking for suspicious markup
 
 import suspicious
 
 
-ISSUE_URI = 'https://bugs.python.org/issue%s'
-SOURCE_URI = 'https://github.com/python/cpython/tree/master/%s'
+ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
+GH_ISSUE_URI = 'https://github.com/python/cpython/issues/%s'
+SOURCE_URI = 'https://github.com/python/cpython/tree/main/%s'
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
 from docutils.parsers.rst.states import Body
@@ -53,8 +58,30 @@ Body.enum.converters['loweralpha'] = \
 
 def issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
     issue = utils.unescape(text)
+    # sanity check: there are no bpo issues within these two values
+    if 47261 < int(issue) < 400000:
+        msg = inliner.reporter.error(f'The BPO ID {text!r} seems too high -- '
+                                     'use :gh:`...` for GitHub IDs', line=lineno)
+        prb = inliner.problematic(rawtext, rawtext, msg)
+        return [prb], [msg]
     text = 'bpo-' + issue
     refnode = nodes.reference(text, text, refuri=ISSUE_URI % issue)
+    return [refnode], []
+
+
+# Support for marking up and linking to GitHub issues
+
+def gh_issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
+    issue = utils.unescape(text)
+    # sanity check: all GitHub issues have ID >= 32426
+    # even though some of them are also valid BPO IDs
+    if int(issue) < 32426:
+        msg = inliner.reporter.error(f'The GitHub ID {text!r} seems too low -- '
+                                     'use :issue:`...` for BPO IDs', line=lineno)
+        prb = inliner.problematic(rawtext, rawtext, msg)
+        return [prb], [msg]
+    text = 'gh-' + issue
+    refnode = nodes.reference(text, text, refuri=GH_ISSUE_URI % issue)
     return [refnode], []
 
 
@@ -219,6 +246,7 @@ class AuditEvent(Directive):
         info['source'].append((env.docname, target))
 
         pnode = nodes.paragraph(text, classes=["audit-hook"], ids=ids)
+        pnode.line = self.lineno
         if self.content:
             self.state.nested_parse(self.content, self.content_offset, pnode)
         else:
@@ -271,17 +299,18 @@ class PyDecoratorMixin(object):
         return False
 
 
-class PyDecoratorFunction(PyDecoratorMixin, PyModulelevel):
+class PyDecoratorFunction(PyDecoratorMixin, PyFunction):
     def run(self):
         # a decorator function is a function after all
         self.name = 'py:function'
-        return PyModulelevel.run(self)
+        return PyFunction.run(self)
 
 
-class PyDecoratorMethod(PyDecoratorMixin, PyClassmember):
+# TODO: Use sphinx.domains.python.PyDecoratorMethod when possible
+class PyDecoratorMethod(PyDecoratorMixin, PyMethod):
     def run(self):
         self.name = 'py:method'
-        return PyClassmember.run(self)
+        return PyMethod.run(self)
 
 
 class PyCoroutineMixin(object):
@@ -298,31 +327,31 @@ class PyAwaitableMixin(object):
         return ret
 
 
-class PyCoroutineFunction(PyCoroutineMixin, PyModulelevel):
+class PyCoroutineFunction(PyCoroutineMixin, PyFunction):
     def run(self):
         self.name = 'py:function'
-        return PyModulelevel.run(self)
+        return PyFunction.run(self)
 
 
-class PyCoroutineMethod(PyCoroutineMixin, PyClassmember):
+class PyCoroutineMethod(PyCoroutineMixin, PyMethod):
     def run(self):
         self.name = 'py:method'
-        return PyClassmember.run(self)
+        return PyMethod.run(self)
 
 
-class PyAwaitableFunction(PyAwaitableMixin, PyClassmember):
+class PyAwaitableFunction(PyAwaitableMixin, PyFunction):
     def run(self):
         self.name = 'py:function'
-        return PyClassmember.run(self)
+        return PyFunction.run(self)
 
 
-class PyAwaitableMethod(PyAwaitableMixin, PyClassmember):
+class PyAwaitableMethod(PyAwaitableMixin, PyMethod):
     def run(self):
         self.name = 'py:method'
-        return PyClassmember.run(self)
+        return PyMethod.run(self)
 
 
-class PyAbstractMethod(PyClassmember):
+class PyAbstractMethod(PyMethod):
 
     def handle_signature(self, sig, signode):
         ret = super(PyAbstractMethod, self).handle_signature(sig, signode)
@@ -332,7 +361,7 @@ class PyAbstractMethod(PyClassmember):
 
     def run(self):
         self.name = 'py:method'
-        return PyClassmember.run(self)
+        return PyMethod.run(self)
 
 
 # Support for documenting version of removal in deprecations
@@ -394,7 +423,8 @@ class DeprecatedRemoved(Directive):
 
 # Support for including Misc/NEWS
 
-issue_re = re.compile('(?:[Ii]ssue #|bpo-)([0-9]+)')
+issue_re = re.compile('(?:[Ii]ssue #|bpo-)([0-9]+)', re.I)
+gh_issue_re = re.compile('(?:gh-issue-|gh-)([0-9]+)', re.I)
 whatsnew_re = re.compile(r"(?im)^what's new in (.*?)\??$")
 
 
@@ -421,8 +451,9 @@ class MiscNews(Directive):
             text = 'The NEWS file is not available.'
             node = nodes.strong(text, text)
             return [node]
-        content = issue_re.sub(r'`bpo-\1 <https://bugs.python.org/issue\1>`__',
-                               content)
+        content = issue_re.sub(r':issue:`\1`', content)
+        # Fallback handling for the GitHub issue
+        content = gh_issue_re.sub(r':gh:`\1`', content)
         content = whatsnew_re.sub(r'\1', content)
         # remove first 3 lines as they are the main heading
         lines = ['.. default-role:: obj', ''] + content.splitlines()[3:]
@@ -602,6 +633,7 @@ def process_audit_events(app, doctree, fromdocname):
 
 def setup(app):
     app.add_role('issue', issue_role)
+    app.add_role('gh', gh_issue_role)
     app.add_role('source', source_role)
     app.add_directive('impl-detail', ImplementationDetail)
     app.add_directive('availability', Availability)

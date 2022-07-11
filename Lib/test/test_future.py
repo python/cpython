@@ -3,7 +3,6 @@
 import __future__
 import ast
 import unittest
-from test import support
 from test.support import import_helper
 from textwrap import dedent
 import os
@@ -134,8 +133,12 @@ class AnnotationsFutureTestCase(unittest.TestCase):
             ...
         async def g2(arg: {ann}) -> None:
             ...
+        class H:
+            var: {ann}
+            object.attr: {ann}
         var: {ann}
         var2: {ann} = None
+        object.attr: {ann}
         """
     )
 
@@ -166,6 +169,14 @@ class AnnotationsFutureTestCase(unittest.TestCase):
             actual = actual.replace("(", "").replace(")", "")
 
         self.assertEqual(actual, expected)
+
+    def _exec_future(self, code):
+        scope = {}
+        exec(
+            "from __future__ import annotations\n"
+            + code, scope
+        )
+        return scope
 
     def test_annotations(self):
         eq = self.assertAnnotationEqual
@@ -275,10 +286,11 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq("list[str]")
         eq("dict[str, int]")
         eq("set[str,]")
+        eq("tuple[()]")
         eq("tuple[str, ...]")
-        eq("tuple[(str, *types)]")
+        eq("tuple[str, *types]")
         eq("tuple[str, int, (str, int)]")
-        eq("tuple[(*int, str, str, (str, int))]")
+        eq("tuple[*int, str, str, (str, int)]")
         eq("tuple[str, int, float, dict[str, int]]")
         eq("slice[0]")
         eq("slice[0:1]")
@@ -293,6 +305,21 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq("slice[1:2, 1]")
         eq("slice[1:2, 2, 3]")
         eq("slice[()]")
+        # Note that `slice[*Ts]`, `slice[*Ts,]`, and `slice[(*Ts,)]` all have
+        # the same AST, but only `slice[*Ts,]` passes this test, because that's
+        # what the unparser produces.
+        eq("slice[*Ts,]")
+        eq("slice[1, *Ts]")
+        eq("slice[*Ts, 2]")
+        eq("slice[1, *Ts, 2]")
+        eq("slice[*Ts, *Ts]")
+        eq("slice[1, *Ts, *Ts]")
+        eq("slice[*Ts, 1, *Ts]")
+        eq("slice[*Ts, *Ts, 1]")
+        eq("slice[1, *Ts, *Ts, 2]")
+        eq("slice[1:2, *Ts]")
+        eq("slice[*Ts, 1:2]")
+        eq("slice[1:2, *Ts, 3:4]")
         eq("slice[a, b:c, d:e:f]")
         eq("slice[(x for x in a)]")
         eq('str or None if sys.version_info[0] > (3,) else str or bytes or None')
@@ -306,10 +333,6 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq("f'{x}'")
         eq("f'{x!r}'")
         eq("f'{x!a}'")
-        eq('(yield from outside_of_generator)')
-        eq('(yield)')
-        eq('(yield a + b)')
-        eq('await some.complicated[0].call(with_args=True or 1 is not 1)')
         eq('[x for x in (a if b else c)]')
         eq('[x for x in a if (b if c else d)]')
         eq('f(x for x in a)')
@@ -317,13 +340,11 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq('f((x for x in a), 2)')
         eq('(((a)))', 'a')
         eq('(((a, b)))', '(a, b)')
-        eq("(x := 10)")
-        eq("f'{(x := 10):=10}'")
         eq("1 + 2 + 3")
 
     def test_fstring_debug_annotations(self):
         # f-strings with '=' don't round trip very well, so set the expected
-        # result explicitely.
+        # result explicitly.
         self.assertAnnotationEqual("f'{x=!r}'", expected="f'x={x!r}'")
         self.assertAnnotationEqual("f'{x=:}'", expected="f'x={x:}'")
         self.assertAnnotationEqual("f'{x=:.2f}'", expected="f'x={x:.2f}'")
@@ -342,6 +363,79 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         self.assertAnnotationEqual("'inf'")
         self.assertAnnotationEqual("('inf', 1e1000, 'infxxx', 1e1000j)", expected=f"('inf', {inf}, 'infxxx', {infj})")
         self.assertAnnotationEqual("(1e1000, (1e1000j,))", expected=f"({inf}, ({infj},))")
+
+    def test_annotation_with_complex_target(self):
+        with self.assertRaises(SyntaxError):
+            exec(
+                "from __future__ import annotations\n"
+                "object.__debug__: int"
+            )
+
+    def test_annotations_symbol_table_pass(self):
+        namespace = self._exec_future(dedent("""
+        from __future__ import annotations
+
+        def foo():
+            outer = 1
+            def bar():
+                inner: outer = 1
+            return bar
+        """))
+
+        foo = namespace.pop("foo")
+        self.assertIsNone(foo().__closure__)
+        self.assertEqual(foo.__code__.co_cellvars, ())
+        self.assertEqual(foo().__code__.co_freevars, ())
+
+    def test_annotations_forbidden(self):
+        with self.assertRaises(SyntaxError):
+            self._exec_future("test: (yield)")
+
+        with self.assertRaises(SyntaxError):
+            self._exec_future("test.test: (yield a + b)")
+
+        with self.assertRaises(SyntaxError):
+            self._exec_future("test[something]: (yield from x)")
+
+        with self.assertRaises(SyntaxError):
+            self._exec_future("def func(test: (yield from outside_of_generator)): pass")
+
+        with self.assertRaises(SyntaxError):
+            self._exec_future("def test() -> (await y): pass")
+
+        with self.assertRaises(SyntaxError):
+            self._exec_future("async def test() -> something((a := b)): pass")
+
+        with self.assertRaises(SyntaxError):
+            self._exec_future("test: await some.complicated[0].call(with_args=True or 1 is not 1)")
+
+        with self.assertRaises(SyntaxError):
+            self._exec_future("test: f'{(x := 10):=10}'")
+
+        with self.assertRaises(SyntaxError):
+            self._exec_future(dedent("""\
+            def foo():
+                def bar(arg: (yield)): pass
+            """))
+
+    def test_get_type_hints_on_func_with_variadic_arg(self):
+        # `typing.get_type_hints` might break on a function with a variadic
+        # annotation (e.g. `f(*args: *Ts)`) if `from __future__ import
+        # annotations`, because it could try to evaluate `*Ts` as an expression,
+        # which on its own isn't value syntax.
+        namespace = self._exec_future(dedent("""\
+        class StarredC: pass
+        class C:
+          def __iter__(self):
+            yield StarredC()
+        c = C()
+        def f(*args: *c): pass
+        import typing
+        hints = typing.get_type_hints(f)
+        """))
+
+        hints = namespace.pop('hints')
+        self.assertIsInstance(hints['args'], namespace['StarredC'])
 
 
 if __name__ == "__main__":

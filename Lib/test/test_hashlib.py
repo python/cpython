@@ -10,6 +10,7 @@ import array
 from binascii import unhexlify
 import hashlib
 import importlib
+import io
 import itertools
 import os
 import sys
@@ -20,29 +21,41 @@ import warnings
 from test import support
 from test.support import _4G, bigmemtest
 from test.support.import_helper import import_fresh_module
+from test.support import os_helper
 from test.support import threading_helper
+from test.support import warnings_helper
 from http.client import HTTPException
 
-# Were we compiled --with-pydebug or with #define Py_DEBUG?
-COMPILED_WITH_PYDEBUG = hasattr(sys, 'gettotalrefcount')
 
-c_hashlib = import_fresh_module('hashlib', fresh=['_hashlib'])
-py_hashlib = import_fresh_module('hashlib', blocked=['_hashlib'])
-
+# default builtin hash module
+default_builtin_hashes = {'md5', 'sha1', 'sha256', 'sha512', 'sha3', 'blake2'}
+# --with-builtin-hashlib-hashes override
 builtin_hashes = sysconfig.get_config_var("PY_BUILTIN_HASHLIB_HASHES")
 if builtin_hashes is None:
-    builtin_hashes = {'md5', 'sha1', 'sha256', 'sha512', 'sha3', 'blake2'}
+    builtin_hashes = default_builtin_hashes
 else:
     builtin_hashes = {
         m.strip() for m in builtin_hashes.strip('"').lower().split(",")
     }
 
+# hashlib with and without OpenSSL backend for PBKDF2
+# only import builtin_hashlib when all builtin hashes are available.
+# Otherwise import prints noise on stderr
+openssl_hashlib = import_fresh_module('hashlib', fresh=['_hashlib'])
+if builtin_hashes == default_builtin_hashes:
+    builtin_hashlib = import_fresh_module('hashlib', blocked=['_hashlib'])
+else:
+    builtin_hashlib = None
+
 try:
-    from _hashlib import HASH, HASHXOF, openssl_md_meth_names
+    from _hashlib import HASH, HASHXOF, openssl_md_meth_names, get_fips_mode
 except ImportError:
     HASH = None
     HASHXOF = None
     openssl_md_meth_names = frozenset()
+
+    def get_fips_mode():
+        return 0
 
 try:
     import _blake2
@@ -51,12 +64,9 @@ except ImportError:
 
 requires_blake2 = unittest.skipUnless(_blake2, 'requires _blake2')
 
-try:
-    import _sha3
-except ImportError:
-    _sha3 = None
-
-requires_sha3 = unittest.skipUnless(_sha3, 'requires _sha3')
+# bpo-46913: Don't test the _sha3 extension on a Python UBSAN build
+SKIP_SHA3 = support.check_sanitizer(ub=True)
+requires_sha3 = unittest.skipUnless(not SKIP_SHA3, 'requires _sha3')
 
 
 def hexstr(s):
@@ -73,7 +83,7 @@ URL = "http://www.pythontest.net/hashlib/{}.txt"
 def read_vectors(hash_name):
     url = URL.format(hash_name)
     try:
-        testdata = support.open_urlresource(url)
+        testdata = support.open_urlresource(url, encoding="utf-8")
     except (OSError, HTTPException):
         raise unittest.SkipTest("Could not retrieve {}".format(url))
     with testdata:
@@ -97,7 +107,7 @@ class HashLibTestCase(unittest.TestCase):
     shakes = {'shake_128', 'shake_256'}
 
     # Issue #14693: fallback modules are always compiled under POSIX
-    _warn_on_extension_import = os.name == 'posix' or COMPILED_WITH_PYDEBUG
+    _warn_on_extension_import = (os.name == 'posix' or support.Py_DEBUG)
 
     def _conditional_import_module(self, module_name):
         """Import a module and return a reference to it or None on failure."""
@@ -119,6 +129,8 @@ class HashLibTestCase(unittest.TestCase):
 
         self.constructors_to_test = {}
         for algorithm in algorithms:
+            if SKIP_SHA3 and algorithm.startswith('sha3_'):
+                continue
             self.constructors_to_test[algorithm] = set()
 
         # For each algorithm, test the direct constructor and the use
@@ -171,14 +183,15 @@ class HashLibTestCase(unittest.TestCase):
             add_builtin_constructor('blake2s')
             add_builtin_constructor('blake2b')
 
-        _sha3 = self._conditional_import_module('_sha3')
-        if _sha3:
-            add_builtin_constructor('sha3_224')
-            add_builtin_constructor('sha3_256')
-            add_builtin_constructor('sha3_384')
-            add_builtin_constructor('sha3_512')
-            add_builtin_constructor('shake_128')
-            add_builtin_constructor('shake_256')
+        if not SKIP_SHA3:
+            _sha3 = self._conditional_import_module('_sha3')
+            if _sha3:
+                add_builtin_constructor('sha3_224')
+                add_builtin_constructor('sha3_256')
+                add_builtin_constructor('sha3_384')
+                add_builtin_constructor('sha3_512')
+                add_builtin_constructor('shake_128')
+                add_builtin_constructor('shake_256')
 
         super(HashLibTestCase, self).__init__(*args, **kwargs)
 
@@ -189,10 +202,7 @@ class HashLibTestCase(unittest.TestCase):
 
     @property
     def is_fips_mode(self):
-        if hasattr(self._hashlib, "get_fips_mode"):
-            return self._hashlib.get_fips_mode()
-        else:
-            return None
+        return get_fips_mode()
 
     def test_hash_array(self):
         a = array.array("b", range(10))
@@ -211,6 +221,10 @@ class HashLibTestCase(unittest.TestCase):
     def test_algorithms_available(self):
         self.assertTrue(set(hashlib.algorithms_guaranteed).
                             issubset(hashlib.algorithms_available))
+        # all available algorithms must be loadable, bpo-47101
+        self.assertNotIn("undefined", hashlib.algorithms_available)
+        for name in hashlib.algorithms_available:
+            digest = hashlib.new(name, usedforsecurity=False)
 
     def test_usedforsecurity_true(self):
         hashlib.new("sha256", usedforsecurity=True)
@@ -360,6 +374,36 @@ class HashLibTestCase(unittest.TestCase):
             self.assertEqual(computed, digest)
             if not shake:
                 self.assertEqual(len(digest), m.digest_size)
+
+        if not shake and kwargs.get("key") is None:
+            # skip shake and blake2 extended parameter tests
+            self.check_file_digest(name, data, hexdigest)
+
+    def check_file_digest(self, name, data, hexdigest):
+        hexdigest = hexdigest.lower()
+        try:
+            hashlib.new(name)
+        except ValueError:
+            # skip, algorithm is blocked by security policy.
+            return
+        digests = [name]
+        digests.extend(self.constructors_to_test[name])
+
+        with open(os_helper.TESTFN, "wb") as f:
+            f.write(data)
+
+        try:
+            for digest in digests:
+                buf = io.BytesIO(data)
+                buf.seek(0)
+                self.assertEqual(
+                    hashlib.file_digest(buf, digest).hexdigest(), hexdigest
+                )
+                with open(os_helper.TESTFN, "rb") as f:
+                    digestobj = hashlib.file_digest(f, digest)
+                self.assertEqual(digestobj.hexdigest(), hexdigest)
+        finally:
+            os.unlink(os_helper.TESTFN)
 
     def check_no_unicode(self, algorithm_name):
         # Unicode objects are not allowed as input.
@@ -819,26 +863,22 @@ class HashLibTestCase(unittest.TestCase):
         for msg, md in read_vectors('sha3_512'):
             self.check('sha3_512', msg, md)
 
-    @requires_sha3
     def test_case_shake_128_0(self):
         self.check('shake_128', b"",
           "7f9c2ba4e88f827d616045507605853ed73b8093f6efbc88eb1a6eacfa66ef26",
           True)
         self.check('shake_128', b"", "7f9c", True)
 
-    @requires_sha3
     def test_case_shake128_vector(self):
         for msg, md in read_vectors('shake_128'):
             self.check('shake_128', msg, md, True)
 
-    @requires_sha3
     def test_case_shake_256_0(self):
         self.check('shake_256', b"",
           "46b9dd2b0ba88d13233b3feb743eeb243fcd52ea62b81b82b50c27646ed5762f",
           True)
         self.check('shake_256', b"", "46b9", True)
 
-    @requires_sha3
     def test_case_shake256_vector(self):
         for msg, md in read_vectors('shake_256'):
             self.check('shake_256', msg, md, True)
@@ -873,6 +913,7 @@ class HashLibTestCase(unittest.TestCase):
         )
 
     @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_threaded_hashing(self):
         # Updating the same hash object from several threads at once
         # using data chunk sizes containing the same byte sequences.
@@ -913,17 +954,40 @@ class HashLibTestCase(unittest.TestCase):
         if fips_mode is not None:
             self.assertIsInstance(fips_mode, int)
 
+    @support.cpython_only
+    def test_disallow_instantiation(self):
+        for algorithm, constructors in self.constructors_to_test.items():
+            if algorithm.startswith(("sha3_", "shake", "blake")):
+                # _sha3 and _blake types can be instantiated
+                continue
+            # all other types have DISALLOW_INSTANTIATION
+            for constructor in constructors:
+                # In FIPS mode some algorithms are not available raising ValueError
+                try:
+                    h = constructor()
+                except ValueError:
+                    continue
+                with self.subTest(constructor=constructor):
+                    support.check_disallow_instantiation(self, type(h))
+
     @unittest.skipUnless(HASH is not None, 'need _hashlib')
-    def test_internal_types(self):
+    def test_hash_disallow_instantiation(self):
         # internal types like _hashlib.HASH are not constructable
-        with self.assertRaisesRegex(
-            TypeError, "cannot create 'HASH' instance"
-        ):
-            HASH()
-        with self.assertRaisesRegex(
-            TypeError, "cannot create 'HASHXOF' instance"
-        ):
-            HASHXOF()
+        support.check_disallow_instantiation(self, HASH)
+        support.check_disallow_instantiation(self, HASHXOF)
+
+    def test_readonly_types(self):
+        for algorithm, constructors in self.constructors_to_test.items():
+            # all other types have DISALLOW_INSTANTIATION
+            for constructor in constructors:
+                # In FIPS mode some algorithms are not available raising ValueError
+                try:
+                    hash_type = type(constructor())
+                except ValueError:
+                    continue
+                with self.subTest(hash_type=hash_type):
+                    with self.assertRaisesRegex(TypeError, "immutable type"):
+                        hash_type.value = False
 
 
 class KDFTests(unittest.TestCase):
@@ -1006,7 +1070,7 @@ class KDFTests(unittest.TestCase):
                     self.assertEqual(out, expected,
                                      (digest_name, password, salt, rounds))
 
-        with self.assertRaisesRegex(ValueError, 'unsupported hash type'):
+        with self.assertRaisesRegex(ValueError, '.*unsupported.*'):
             pbkdf2('unknown', b'pass', b'salt', 1)
 
         if 'sha1' in supported:
@@ -1032,17 +1096,13 @@ class KDFTests(unittest.TestCase):
                 iterations=1, dklen=None)
             self.assertEqual(out, self.pbkdf2_results['sha1'][0][0])
 
-    def test_pbkdf2_hmac_py(self):
-        self._test_pbkdf2_hmac(py_hashlib.pbkdf2_hmac, builtin_hashes)
-
-    @unittest.skipUnless(hasattr(c_hashlib, 'pbkdf2_hmac'),
-                     '   test requires OpenSSL > 1.0')
+    @unittest.skipIf(openssl_hashlib is None, "requires OpenSSL bindings")
     def test_pbkdf2_hmac_c(self):
-        self._test_pbkdf2_hmac(c_hashlib.pbkdf2_hmac, openssl_md_meth_names)
+        self._test_pbkdf2_hmac(openssl_hashlib.pbkdf2_hmac, openssl_md_meth_names)
 
-
-    @unittest.skipUnless(hasattr(c_hashlib, 'scrypt'),
+    @unittest.skipUnless(hasattr(hashlib, 'scrypt'),
                      '   test requires OpenSSL > 1.1')
+    @unittest.skipIf(get_fips_mode(), reason="scrypt is blocked in FIPS mode")
     def test_scrypt(self):
         for password, salt, n, r, p, expected in self.scrypt_test_vectors:
             result = hashlib.scrypt(password, salt=salt, n=n, r=r, p=p)
@@ -1083,6 +1143,33 @@ class KDFTests(unittest.TestCase):
     def test_normalized_name(self):
         self.assertNotIn("blake2b512", hashlib.algorithms_available)
         self.assertNotIn("sha3-512", hashlib.algorithms_available)
+
+    def test_file_digest(self):
+        data = b'a' * 65536
+        d1 = hashlib.sha256()
+        self.addCleanup(os.unlink, os_helper.TESTFN)
+        with open(os_helper.TESTFN, "wb") as f:
+            for _ in range(10):
+                d1.update(data)
+                f.write(data)
+
+        with open(os_helper.TESTFN, "rb") as f:
+            d2 = hashlib.file_digest(f, hashlib.sha256)
+
+        self.assertEqual(d1.hexdigest(), d2.hexdigest())
+        self.assertEqual(d1.name, d2.name)
+        self.assertIs(type(d1), type(d2))
+
+        with self.assertRaises(ValueError):
+            hashlib.file_digest(None, "sha256")
+
+        with self.assertRaises(ValueError):
+            with open(os_helper.TESTFN, "r") as f:
+                hashlib.file_digest(f, "sha256")
+
+        with self.assertRaises(ValueError):
+            with open(os_helper.TESTFN, "wb") as f:
+                hashlib.file_digest(f, "sha256")
 
 
 if __name__ == "__main__":

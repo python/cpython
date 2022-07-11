@@ -179,7 +179,7 @@ square brackets ``'[]'`` to access the keys. ::
    ...       'Dcab: {0[Dcab]:d}'.format(table))
    Jack: 4098; Sjoerd: 4127; Dcab: 8637678
 
-This could also be done by passing the table as keyword arguments with the '**'
+This could also be done by passing the ``table`` dictionary as keyword arguments with the ``**``
 notation. ::
 
    >>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 8637678}
@@ -189,7 +189,7 @@ notation. ::
 This is particularly useful in combination with the built-in function
 :func:`vars`, which returns a dictionary containing all local variables.
 
-As an example, the following lines produce a tidily-aligned
+As an example, the following lines produce a tidily aligned
 set of columns giving integers and their squares and cubes::
 
    >>> for x in range(1, 11):
@@ -279,11 +279,12 @@ Reading and Writing Files
    object: file
 
 :func:`open` returns a :term:`file object`, and is most commonly used with
-two arguments: ``open(filename, mode)``.
+two positional arguments and one keyword argument:
+``open(filename, mode, encoding=None)``
 
 ::
 
-   >>> f = open('workfile', 'w')
+   >>> f = open('workfile', 'w', encoding="utf-8")
 
 .. XXX str(f) is <io.TextIOWrapper object at 0x82e8dc4>
 
@@ -300,11 +301,14 @@ writing. The *mode* argument is optional; ``'r'`` will be assumed if it's
 omitted.
 
 Normally, files are opened in :dfn:`text mode`, that means, you read and write
-strings from and to the file, which are encoded in a specific encoding. If
-encoding is not specified, the default is platform dependent (see
-:func:`open`). ``'b'`` appended to the mode opens the file in
-:dfn:`binary mode`: now the data is read and written in the form of bytes
-objects.  This mode should be used for all files that don't contain text.
+strings from and to the file, which are encoded in a specific *encoding*.
+If *encoding* is not specified, the default is platform dependent
+(see :func:`open`).
+Because UTF-8 is the modern de-facto standard, ``encoding="utf-8"`` is
+recommended unless you know that you need to use a different encoding.
+Appending a ``'b'`` to the mode opens the file in :dfn:`binary mode`.
+Binary mode data is read and written as :class:`bytes` objects.
+You can not specify *encoding* when opening file in binary mode.
 
 In text mode, the default when reading is to convert platform-specific line
 endings (``\n`` on Unix, ``\r\n`` on Windows) to just ``\n``.  When writing in
@@ -320,7 +324,7 @@ after its suite finishes, even if an exception is raised at some
 point.  Using :keyword:`!with` is also much shorter than writing
 equivalent :keyword:`try`\ -\ :keyword:`finally` blocks::
 
-    >>> with open('workfile') as f:
+    >>> with open('workfile', encoding="utf-8") as f:
     ...     read_data = f.read()
 
     >>> # We can check that the file has been automatically closed.
@@ -329,11 +333,16 @@ equivalent :keyword:`try`\ -\ :keyword:`finally` blocks::
 
 If you're not using the :keyword:`with` keyword, then you should call
 ``f.close()`` to close the file and immediately free up any system
-resources used by it. If you don't explicitly close a file, Python's
-garbage collector will eventually destroy the object and close the
-open file for you, but the file may stay open for a while.  Another
-risk is that different Python implementations will do this clean-up at
-different times.
+resources used by it.
+
+.. warning::
+   Calling ``f.write()`` without using the :keyword:`!with` keyword or calling
+   ``f.close()`` **might** result in the arguments
+   of ``f.write()`` not being completely written to the disk, even if the
+   program exits successfully.
+
+..
+   See also https://bugs.python.org/issue17852
 
 After a file object is closed, either by a :keyword:`with` statement
 or by calling ``f.close()``, attempts to use the file object will
@@ -475,7 +484,8 @@ If you have an object ``x``, you can view its JSON string representation with a
 simple line of code::
 
    >>> import json
-   >>> json.dumps([1, 'simple', 'list'])
+   >>> x = [1, 'simple', 'list']
+   >>> json.dumps(x)
    '[1, "simple", "list"]'
 
 Another variant of the :func:`~json.dumps` function, called :func:`~json.dump`,
@@ -484,10 +494,14 @@ simply serializes the object to a :term:`text file`.  So if ``f`` is a
 
    json.dump(x, f)
 
-To decode the object again, if ``f`` is a :term:`text file` object which has
-been opened for reading::
+To decode the object again, if ``f`` is a :term:`binary file` or
+:term:`text file` object which has been opened for reading::
 
    x = json.load(f)
+
+.. note::
+   JSON files must be encoded in UTF-8. Use ``encoding="utf-8"`` when opening
+   JSON file as a :term:`text file` for both of reading and writing.
 
 This simple serialization technique can handle lists and dictionaries, but
 serializing arbitrary class instances in JSON requires a bit of extra effort.

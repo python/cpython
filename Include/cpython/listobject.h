@@ -24,11 +24,24 @@ typedef struct {
 PyAPI_FUNC(PyObject *) _PyList_Extend(PyListObject *, PyObject *);
 PyAPI_FUNC(void) _PyList_DebugMallocStats(FILE *out);
 
-/* Macro, trading safety for speed */
+/* Cast argument to PyListObject* type. */
+#define _PyList_CAST(op) \
+    (assert(PyList_Check(op)), _Py_CAST(PyListObject*, (op)))
 
-/* Cast argument to PyTupleObject* type. */
-#define _PyList_CAST(op) (assert(PyList_Check(op)), (PyListObject *)(op))
+// Macros and static inline functions, trading safety for speed
 
-#define PyList_GET_ITEM(op, i) (_PyList_CAST(op)->ob_item[i])
-#define PyList_SET_ITEM(op, i, v) (_PyList_CAST(op)->ob_item[i] = (v))
-#define PyList_GET_SIZE(op)    Py_SIZE(_PyList_CAST(op))
+static inline Py_ssize_t PyList_GET_SIZE(PyObject *op) {
+    PyListObject *list = _PyList_CAST(op);
+    return Py_SIZE(list);
+}
+#define PyList_GET_SIZE(op) PyList_GET_SIZE(_PyObject_CAST(op))
+
+#define PyList_GET_ITEM(op, index) (_PyList_CAST(op)->ob_item[(index)])
+
+static inline void
+PyList_SET_ITEM(PyObject *op, Py_ssize_t index, PyObject *value) {
+    PyListObject *list = _PyList_CAST(op);
+    list->ob_item[index] = value;
+}
+#define PyList_SET_ITEM(op, index, value) \
+    PyList_SET_ITEM(_PyObject_CAST(op), (index), _PyObject_CAST(value))

@@ -75,5 +75,6 @@ def dec_with_args_and_return_types(func):
     @wraps(func)
     def wrapper(self, custom_arg: int, *args, **kwargs) -> bool:
         return bool(func(self, custom_arg, *args, **kwargs))
-
     return wrapper
+
+u: int | float

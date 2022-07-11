@@ -12,7 +12,7 @@ This section aims to give a quick fly-by on the various type methods you can
 implement and what they do.
 
 Here is the definition of :c:type:`PyTypeObject`, with some fields only used in
-debug builds omitted:
+:ref:`debug builds <debug-build>` omitted:
 
 .. literalinclude:: ../includes/typestruct.h
 
@@ -73,7 +73,19 @@ function::
    newdatatype_dealloc(newdatatypeobject *obj)
    {
        free(obj->obj_UnderlyingDatatypePtr);
-       Py_TYPE(obj)->tp_free(obj);
+       Py_TYPE(obj)->tp_free((PyObject *)obj);
+   }
+
+If your type supports garbage collection, the destructor should call
+:c:func:`PyObject_GC_UnTrack` before clearing any member fields::
+
+   static void
+   newdatatype_dealloc(newdatatypeobject *obj)
+   {
+       PyObject_GC_UnTrack(obj);
+       Py_CLEAR(obj->other_obj);
+       ...
+       Py_TYPE(obj)->tp_free((PyObject *)obj);
    }
 
 .. index::
@@ -163,7 +175,7 @@ example::
    }
 
 If no :c:member:`~PyTypeObject.tp_repr` handler is specified, the interpreter will supply a
-representation that uses the type's :c:member:`~PyTypeObject.tp_name` and a uniquely-identifying
+representation that uses the type's :c:member:`~PyTypeObject.tp_name` and a uniquely identifying
 value for the object.
 
 The :c:member:`~PyTypeObject.tp_str` handler is to :func:`str` what the :c:member:`~PyTypeObject.tp_repr` handler
@@ -287,18 +299,23 @@ combined using bitwise-OR.
 +===========================+==============================================+
 | :const:`READONLY`         | Never writable.                              |
 +---------------------------+----------------------------------------------+
-| :const:`READ_RESTRICTED`  | Not readable in restricted mode.             |
+| :const:`PY_AUDIT_READ`    | Emit an ``object.__getattr__``               |
+|                           | :ref:`audit events <audit-events>` before    |
+|                           | reading.                                     |
 +---------------------------+----------------------------------------------+
-| :const:`WRITE_RESTRICTED` | Not writable in restricted mode.             |
-+---------------------------+----------------------------------------------+
-| :const:`RESTRICTED`       | Not readable or writable in restricted mode. |
-+---------------------------+----------------------------------------------+
+
+.. versionchanged:: 3.10
+   :const:`RESTRICTED`, :const:`READ_RESTRICTED` and :const:`WRITE_RESTRICTED`
+   are deprecated. However, :const:`READ_RESTRICTED` is an alias for
+   :const:`PY_AUDIT_READ`, so fields that specify either :const:`RESTRICTED`
+   or :const:`READ_RESTRICTED` will also raise an audit event.
 
 .. index::
    single: READONLY
    single: READ_RESTRICTED
    single: WRITE_RESTRICTED
    single: RESTRICTED
+   single: PY_AUDIT_READ
 
 An interesting advantage of using the :c:member:`~PyTypeObject.tp_members` table to build
 descriptors that are used at runtime is that any attribute defined this way can
@@ -376,7 +393,7 @@ analogous to the :ref:`rich comparison methods <richcmpfuncs>`, like
 :c:func:`PyObject_RichCompareBool`.
 
 This function is called with two Python objects and the operator as arguments,
-where the operator is one of ``Py_EQ``, ``Py_NE``, ``Py_LE``, ``Py_GT``,
+where the operator is one of ``Py_EQ``, ``Py_NE``, ``Py_LE``, ``Py_GE``,
 ``Py_LT`` or ``Py_GT``.  It should compare the two objects with respect to the
 specified operator and return ``Py_True`` or ``Py_False`` if the comparison is
 successful, ``Py_NotImplemented`` to indicate that comparison is not
@@ -572,7 +589,7 @@ with the required field::
        PyObject *weakreflist;  /* List of weak references */
    } TrivialObject;
 
-And the corresponding member in the statically-declared type object::
+And the corresponding member in the statically declared type object::
 
    static PyTypeObject TrivialType = {
        PyVarObject_HEAD_INIT(NULL, 0)

@@ -2,6 +2,7 @@
 # This just tests whether the parser accepts them all.
 
 from test.support import check_syntax_error
+from test.support import import_helper
 from test.support.warnings_helper import check_syntax_warning
 import inspect
 import unittest
@@ -103,6 +104,7 @@ INVALID_UNDERSCORE_LITERALS = [
 class TokenTests(unittest.TestCase):
 
     from test.support import check_syntax_error
+    from test.support.warnings_helper import check_syntax_warning
 
     def test_backslash(self):
         # Backslash means line continuation:
@@ -176,8 +178,10 @@ class TokenTests(unittest.TestCase):
 
     def test_float_exponent_tokenization(self):
         # See issue 21642.
-        self.assertEqual(1 if 1else 0, 1)
-        self.assertEqual(1 if 0else 0, 0)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', SyntaxWarning)
+            self.assertEqual(eval("1 if 1else 0"), 1)
+            self.assertEqual(eval("1 if 0else 0"), 0)
         self.assertRaises(SyntaxError, eval, "0 if 1Else 0")
 
     def test_underscore_literals(self):
@@ -209,6 +213,45 @@ class TokenTests(unittest.TestCase):
         check("1.2_", "invalid decimal literal")
         check("1e2_", "invalid decimal literal")
         check("1e+", "invalid decimal literal")
+
+    def test_end_of_numerical_literals(self):
+        def check(test, error=False):
+            with self.subTest(expr=test):
+                if error:
+                    with warnings.catch_warnings(record=True) as w:
+                        with self.assertRaisesRegex(SyntaxError,
+                                    r'invalid \w+ literal'):
+                            compile(test, "<testcase>", "eval")
+                    self.assertEqual(w,  [])
+                else:
+                    self.check_syntax_warning(test,
+                            errtext=r'invalid \w+ literal')
+
+        for num in "0xf", "0o7", "0b1", "9", "0", "1.", "1e3", "1j":
+            compile(num, "<testcase>", "eval")
+            check(f"{num}and x", error=(num == "0xf"))
+            check(f"{num}or x", error=(num == "0"))
+            check(f"{num}in x")
+            check(f"{num}not in x")
+            check(f"{num}if x else y")
+            check(f"x if {num}else y", error=(num == "0xf"))
+            check(f"[{num}for x in ()]")
+            check(f"{num}spam", error=True)
+
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore', '"is" with a literal',
+                                        SyntaxWarning)
+                with self.assertWarnsRegex(SyntaxWarning,
+                            r'invalid \w+ literal'):
+                    compile(f"{num}is x", "<testcase>", "eval")
+                warnings.simplefilter('error', SyntaxWarning)
+                with self.assertRaisesRegex(SyntaxError,
+                            r'invalid \w+ literal'):
+                    compile(f"{num}is x", "<testcase>", "eval")
+
+        check("[0x1ffor x in ()]")
+        check("[0x1for x in ()]")
+        check("[0xfor x in ()]")
 
     def test_string_literals(self):
         x = ''; y = ""; self.assertTrue(len(x) == 0 and x == y)
@@ -260,7 +303,7 @@ the \'lazy\' dog.\n\
         for s in samples:
             with self.assertRaises(SyntaxError) as cm:
                 compile(s, "<test>", "exec")
-            self.assertIn("unexpected EOF", str(cm.exception))
+            self.assertIn("was never closed", str(cm.exception))
 
 var_annot_global: int # a global annotated is necessary for test_var_annot
 
@@ -279,6 +322,7 @@ class GrammarTests(unittest.TestCase):
 
     from test.support import check_syntax_error
     from test.support.warnings_helper import check_syntax_warning
+    from test.support.warnings_helper import check_no_warnings
 
     # single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
     # XXX can't test in a script -- this rule is only used when interactive
@@ -381,10 +425,9 @@ class GrammarTests(unittest.TestCase):
         self.assertEqual(CC.__annotations__['xx'], 'ANNOT')
 
     def test_var_annot_module_semantics(self):
-        with self.assertRaises(AttributeError):
-            print(test.__annotations__)
+        self.assertEqual(test.__annotations__, {})
         self.assertEqual(ann_module.__annotations__,
-                     {1: 2, 'x': int, 'y': str, 'f': typing.Tuple[int, int]})
+                     {1: 2, 'x': int, 'y': str, 'f': typing.Tuple[int, int], 'u': int | float})
         self.assertEqual(ann_module.M.__annotations__,
                               {'123': 123, 'o': type})
         self.assertEqual(ann_module2.__annotations__, {})
@@ -392,13 +435,13 @@ class GrammarTests(unittest.TestCase):
     def test_var_annot_in_module(self):
         # check that functions fail the same way when executed
         # outside of module where they were defined
-        from test.ann_module3 import f_bad_ann, g_bad_ann, D_bad_ann
+        ann_module3 = import_helper.import_fresh_module("test.ann_module3")
         with self.assertRaises(NameError):
-            f_bad_ann()
+            ann_module3.f_bad_ann()
         with self.assertRaises(NameError):
-            g_bad_ann()
+            ann_module3.g_bad_ann()
         with self.assertRaises(NameError):
-            D_bad_ann(5)
+            ann_module3.D_bad_ann(5)
 
     def test_var_annot_simple_exec(self):
         gns = {}; lns= {}
@@ -1200,7 +1243,7 @@ class GrammarTests(unittest.TestCase):
 
     # these tests fail if python is run with -O, so check __debug__
     @unittest.skipUnless(__debug__, "Won't work if __debug__ is False")
-    def testAssert2(self):
+    def test_assert_failures(self):
         try:
             assert 0, "msg"
         except AssertionError as e:
@@ -1215,11 +1258,36 @@ class GrammarTests(unittest.TestCase):
         else:
             self.fail("AssertionError not raised by 'assert False'")
 
+    def test_assert_syntax_warnings(self):
+        # Ensure that we warn users if they provide a non-zero length tuple as
+        # the assertion test.
         self.check_syntax_warning('assert(x, "msg")',
                                   'assertion is always true')
+        self.check_syntax_warning('assert(False, "msg")',
+                                  'assertion is always true')
+        self.check_syntax_warning('assert(False,)',
+                                  'assertion is always true')
+
+        with self.check_no_warnings(category=SyntaxWarning):
+            compile('assert x, "msg"', '<testcase>', 'exec')
+            compile('assert False, "msg"', '<testcase>', 'exec')
+
+    def test_assert_warning_promotes_to_syntax_error(self):
+        # If SyntaxWarning is configured to be an error, it actually raises a
+        # SyntaxError.
+        # https://bugs.python.org/issue35029
         with warnings.catch_warnings():
             warnings.simplefilter('error', SyntaxWarning)
-            compile('assert x, "msg"', '<testcase>', 'exec')
+            try:
+                compile('assert x, "msg" ', '<testcase>', 'exec')
+            except SyntaxError:
+                self.fail('SyntaxError incorrectly raised for \'assert x, "msg"\'')
+            with self.assertRaises(SyntaxError):
+                compile('assert(x, "msg")', '<testcase>', 'exec')
+            with self.assertRaises(SyntaxError):
+                compile('assert(False, "msg")', '<testcase>', 'exec')
+            with self.assertRaises(SyntaxError):
+                compile('assert(False,)', '<testcase>', 'exec')
 
 
     ### compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
@@ -1280,6 +1348,12 @@ class GrammarTests(unittest.TestCase):
             result.append(x)
         self.assertEqual(result, [1, 2, 3])
 
+        result = []
+        a = b = c = [1, 2, 3]
+        for x in *a, *b, *c:
+            result.append(x)
+        self.assertEqual(result, 3 * a)
+
     def test_try(self):
         ### try_stmt: 'try' ':' suite (except_clause ':' suite)+ ['else' ':' suite]
         ###         | 'try' ':' suite 'finally' ':' suite
@@ -1304,6 +1378,30 @@ class GrammarTests(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             compile("try:\n    pass\nexcept Exception as a.b:\n    pass", "?", "exec")
             compile("try:\n    pass\nexcept Exception as a[b]:\n    pass", "?", "exec")
+
+    def test_try_star(self):
+        ### try_stmt: 'try': suite (except_star_clause : suite) + ['else' ':' suite]
+        ### except_star_clause: 'except*' expr ['as' NAME]
+        try:
+            1/0
+        except* ZeroDivisionError:
+            pass
+        else:
+            pass
+        try: 1/0
+        except* EOFError: pass
+        except* ZeroDivisionError as msg: pass
+        else: pass
+        try: 1/0
+        except* (EOFError, TypeError, ZeroDivisionError): pass
+        try: 1/0
+        except* (EOFError, TypeError, ZeroDivisionError) as msg: pass
+        try: pass
+        finally: pass
+        with self.assertRaises(SyntaxError):
+            compile("try:\n    pass\nexcept* Exception as a.b:\n    pass", "?", "exec")
+            compile("try:\n    pass\nexcept* Exception as a[b]:\n    pass", "?", "exec")
+            compile("try:\n    pass\nexcept*:\n    pass", "?", "exec")
 
     def test_suite(self):
         # simple_stmt | NEWLINE INDENT NEWLINE* (stmt NEWLINE*)+ DEDENT

@@ -19,6 +19,37 @@ work. One should use importlib as the public-facing version of this module.
 # reference any injected objects! This includes not only global code but also
 # anything specified at the class level.
 
+# Module injected manually by _set_bootstrap_module()
+_bootstrap = None
+
+# Import builtin modules
+import _imp
+import _io
+import sys
+import _warnings
+import marshal
+
+
+_MS_WINDOWS = (sys.platform == 'win32')
+if _MS_WINDOWS:
+    import nt as _os
+    import winreg
+else:
+    import posix as _os
+
+
+if _MS_WINDOWS:
+    path_separators = ['\\', '/']
+else:
+    path_separators = ['/']
+# Assumption made in _path_join()
+assert all(len(sep) == 1 for sep in path_separators)
+path_sep = path_separators[0]
+path_sep_tuple = tuple(path_separators)
+path_separators = ''.join(path_separators)
+_pathseps_with_colon = {f':{s}' for s in path_separators}
+
+
 # Bootstrap-related code ######################################################
 _CASE_INSENSITIVE_PLATFORMS_STR_KEY = 'win',
 _CASE_INSENSITIVE_PLATFORMS_BYTES_KEY = 'cygwin', 'darwin'
@@ -42,6 +73,8 @@ def _make_relax_case():
             return False
     return _relax_case
 
+_relax_case = _make_relax_case()
+
 
 def _pack_uint32(x):
     """Convert a 32-bit integer to little-endian."""
@@ -59,22 +92,49 @@ def _unpack_uint16(data):
     return int.from_bytes(data, 'little')
 
 
-def _path_join(*path_parts):
-    """Replacement for os.path.join()."""
-    return path_sep.join([part.rstrip(path_separators)
-                          for part in path_parts if part])
+if _MS_WINDOWS:
+    def _path_join(*path_parts):
+        """Replacement for os.path.join()."""
+        if not path_parts:
+            return ""
+        if len(path_parts) == 1:
+            return path_parts[0]
+        root = ""
+        path = []
+        for new_root, tail in map(_os._path_splitroot, path_parts):
+            if new_root.startswith(path_sep_tuple) or new_root.endswith(path_sep_tuple):
+                root = new_root.rstrip(path_separators) or root
+                path = [path_sep + tail]
+            elif new_root.endswith(':'):
+                if root.casefold() != new_root.casefold():
+                    # Drive relative paths have to be resolved by the OS, so we reset the
+                    # tail but do not add a path_sep prefix.
+                    root = new_root
+                    path = [tail]
+                else:
+                    path.append(tail)
+            else:
+                root = new_root or root
+                path.append(tail)
+        path = [p.rstrip(path_separators) for p in path if p]
+        if len(path) == 1 and not path[0]:
+            # Avoid losing the root's trailing separator when joining with nothing
+            return root + path_sep
+        return root + path_sep.join(path)
+
+else:
+    def _path_join(*path_parts):
+        """Replacement for os.path.join()."""
+        return path_sep.join([part.rstrip(path_separators)
+                              for part in path_parts if part])
 
 
 def _path_split(path):
     """Replacement for os.path.split()."""
-    if len(path_separators) == 1:
-        front, _, tail = path.rpartition(path_sep)
-        return front, tail
-    for x in reversed(path):
-        if x in path_separators:
-            front, tail = path.rsplit(x, maxsplit=1)
-            return front, tail
-    return '', path
+    i = max(path.rfind(p) for p in path_separators)
+    if i < 0:
+        return '', path
+    return path[:i], path[i + 1:]
 
 
 def _path_stat(path):
@@ -108,13 +168,18 @@ def _path_isdir(path):
     return _path_is_mode_type(path, 0o040000)
 
 
-def _path_isabs(path):
-    """Replacement for os.path.isabs.
+if _MS_WINDOWS:
+    def _path_isabs(path):
+        """Replacement for os.path.isabs."""
+        if not path:
+            return False
+        root = _os._path_splitroot(path)[0].replace('/', '\\')
+        return len(root) > 1 and (root.startswith('\\\\') or root.endswith('\\'))
 
-    Considers a Windows drive-relative path (no drive, but starts with slash) to
-    still be "absolute".
-    """
-    return path.startswith(path_separators) or path[1:3] in _pathseps_with_colon
+else:
+    def _path_isabs(path):
+        """Replacement for os.path.isabs."""
+        return path.startswith(path_separators)
 
 
 def _write_atomic(path, data, mode=0o666):
@@ -277,22 +342,100 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.9a2  3423 (add IS_OP, CONTAINS_OP and JUMP_IF_NOT_EXC_MATCH bytecodes #39156)
 #     Python 3.9a2  3424 (simplify bytecodes for *value unpacking)
 #     Python 3.9a2  3425 (simplify bytecodes for **value unpacking)
+#     Python 3.10a1 3430 (Make 'annotations' future by default)
+#     Python 3.10a1 3431 (New line number table format -- PEP 626)
+#     Python 3.10a2 3432 (Function annotation for MAKE_FUNCTION is changed from dict to tuple bpo-42202)
+#     Python 3.10a2 3433 (RERAISE restores f_lasti if oparg != 0)
+#     Python 3.10a6 3434 (PEP 634: Structural Pattern Matching)
+#     Python 3.10a7 3435 Use instruction offsets (as opposed to byte offsets).
+#     Python 3.10b1 3436 (Add GEN_START bytecode #43683)
+#     Python 3.10b1 3437 (Undo making 'annotations' future by default - We like to dance among core devs!)
+#     Python 3.10b1 3438 Safer line number table handling.
+#     Python 3.10b1 3439 (Add ROT_N)
+#     Python 3.11a1 3450 Use exception table for unwinding ("zero cost" exception handling)
+#     Python 3.11a1 3451 (Add CALL_METHOD_KW)
+#     Python 3.11a1 3452 (drop nlocals from marshaled code objects)
+#     Python 3.11a1 3453 (add co_fastlocalnames and co_fastlocalkinds)
+#     Python 3.11a1 3454 (compute cell offsets relative to locals bpo-43693)
+#     Python 3.11a1 3455 (add MAKE_CELL bpo-43693)
+#     Python 3.11a1 3456 (interleave cell args bpo-43693)
+#     Python 3.11a1 3457 (Change localsplus to a bytes object bpo-43693)
+#     Python 3.11a1 3458 (imported objects now don't use LOAD_METHOD/CALL_METHOD)
+#     Python 3.11a1 3459 (PEP 657: add end line numbers and column offsets for instructions)
+#     Python 3.11a1 3460 (Add co_qualname field to PyCodeObject bpo-44530)
+#     Python 3.11a1 3461 (JUMP_ABSOLUTE must jump backwards)
+#     Python 3.11a2 3462 (bpo-44511: remove COPY_DICT_WITHOUT_KEYS, change
+#                         MATCH_CLASS and MATCH_KEYS, and add COPY)
+#     Python 3.11a3 3463 (bpo-45711: JUMP_IF_NOT_EXC_MATCH no longer pops the
+#                         active exception)
+#     Python 3.11a3 3464 (bpo-45636: Merge numeric BINARY_*/INPLACE_* into
+#                         BINARY_OP)
+#     Python 3.11a3 3465 (Add COPY_FREE_VARS opcode)
+#     Python 3.11a4 3466 (bpo-45292: PEP-654 except*)
+#     Python 3.11a4 3467 (Change CALL_xxx opcodes)
+#     Python 3.11a4 3468 (Add SEND opcode)
+#     Python 3.11a4 3469 (bpo-45711: remove type, traceback from exc_info)
+#     Python 3.11a4 3470 (bpo-46221: PREP_RERAISE_STAR no longer pushes lasti)
+#     Python 3.11a4 3471 (bpo-46202: remove pop POP_EXCEPT_AND_RERAISE)
+#     Python 3.11a4 3472 (bpo-46009: replace GEN_START with POP_TOP)
+#     Python 3.11a4 3473 (Add POP_JUMP_IF_NOT_NONE/POP_JUMP_IF_NONE opcodes)
+#     Python 3.11a4 3474 (Add RESUME opcode)
+#     Python 3.11a5 3475 (Add RETURN_GENERATOR opcode)
+#     Python 3.11a5 3476 (Add ASYNC_GEN_WRAP opcode)
+#     Python 3.11a5 3477 (Replace DUP_TOP/DUP_TOP_TWO with COPY and
+#                         ROT_TWO/ROT_THREE/ROT_FOUR/ROT_N with SWAP)
+#     Python 3.11a5 3478 (New CALL opcodes)
+#     Python 3.11a5 3479 (Add PUSH_NULL opcode)
+#     Python 3.11a5 3480 (New CALL opcodes, second iteration)
+#     Python 3.11a5 3481 (Use inline cache for BINARY_OP)
+#     Python 3.11a5 3482 (Use inline caching for UNPACK_SEQUENCE and LOAD_GLOBAL)
+#     Python 3.11a5 3483 (Use inline caching for COMPARE_OP and BINARY_SUBSCR)
+#     Python 3.11a5 3484 (Use inline caching for LOAD_ATTR, LOAD_METHOD, and
+#                         STORE_ATTR)
+#     Python 3.11a5 3485 (Add an oparg to GET_AWAITABLE)
+#     Python 3.11a6 3486 (Use inline caching for PRECALL and CALL)
+#     Python 3.11a6 3487 (Remove the adaptive "oparg counter" mechanism)
+#     Python 3.11a6 3488 (LOAD_GLOBAL can push additional NULL)
+#     Python 3.11a6 3489 (Add JUMP_BACKWARD, remove JUMP_ABSOLUTE)
+#     Python 3.11a6 3490 (remove JUMP_IF_NOT_EXC_MATCH, add CHECK_EXC_MATCH)
+#     Python 3.11a6 3491 (remove JUMP_IF_NOT_EG_MATCH, add CHECK_EG_MATCH,
+#                         add JUMP_BACKWARD_NO_INTERRUPT, make JUMP_NO_INTERRUPT virtual)
+#     Python 3.11a7 3492 (make POP_JUMP_IF_NONE/NOT_NONE/TRUE/FALSE relative)
+#     Python 3.11a7 3493 (Make JUMP_IF_TRUE_OR_POP/JUMP_IF_FALSE_OR_POP relative)
+#     Python 3.11a7 3494 (New location info table)
+#     Python 3.12a1 3500 (Remove PRECALL opcode)
+#     Python 3.12a1 3501 (YIELD_VALUE oparg == stack_depth)
+#     Python 3.12a1 3502 (LOAD_FAST_CHECK, no NULL-check in LOAD_FAST)
+#     Python 3.12a1 3503 (Shrink LOAD_METHOD cache)
+#     Python 3.12a1 3504 (Merge LOAD_METHOD back into LOAD_ATTR)
+#     Python 3.12a1 3505 (Specialization/Cache for FOR_ITER)
+#     Python 3.12a1 3506 (Add BINARY_SLICE and STORE_SLICE instructions)
+#     Python 3.12a1 3507 (Set lineno of module's RESUME to 0)
+
+#     Python 3.13 will start with 3550
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
 # due to the addition of new opcodes).
 #
+# Starting with Python 3.11, Python 3.n starts with magic number 2900+50n.
+#
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3425).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3507).to_bytes(2, 'little') + b'\r\n'
+
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
 _OPT = 'opt-'
 
-SOURCE_SUFFIXES = ['.py']  # _setup() adds .pyw as needed.
+SOURCE_SUFFIXES = ['.py']
+if _MS_WINDOWS:
+    SOURCE_SUFFIXES.append('.pyw')
+
+EXTENSION_SUFFIXES = _imp.extension_suffixes()
 
 BYTECODE_SUFFIXES = ['.pyc']
 # Deprecated.
@@ -467,15 +610,18 @@ def _check_name(method):
             raise ImportError('loader for %s cannot handle %s' %
                                 (self.name, name), name=name)
         return method(self, name, *args, **kwargs)
-    try:
+
+    # FIXME: @_check_name is used to define class methods before the
+    # _bootstrap module is set by _set_bootstrap_module().
+    if _bootstrap is not None:
         _wrap = _bootstrap._wrap
-    except NameError:
-        # XXX yuck
+    else:
         def _wrap(new, old):
             for replace in ['__module__', '__name__', '__qualname__', '__doc__']:
                 if hasattr(old, replace):
                     setattr(new, replace, getattr(old, replace))
             new.__dict__.update(old.__dict__)
+
     _wrap(_check_name_wrapper, method)
     return _check_name_wrapper
 
@@ -487,6 +633,9 @@ def _find_module_shim(self, fullname):
     This method is deprecated in favor of finder.find_spec().
 
     """
+    _warnings.warn("find_module() is deprecated and "
+                   "slated for removal in Python 3.12; use find_spec() instead",
+                   DeprecationWarning)
     # Call find_loader(). If it returns a string (indicating this
     # is a namespace package portion), generate a warning and
     # return None.
@@ -658,6 +807,11 @@ def spec_from_file_location(name, location=None, *, loader=None,
                 pass
     else:
         location = _os.fspath(location)
+        if not _path_isabs(location):
+            try:
+                location = _path_join(_os.getcwd(), location)
+            except OSError:
+                pass
 
     # If the location is on the filesystem, but doesn't actually exist,
     # we could return None here, indicating that the location is not
@@ -711,10 +865,10 @@ class WindowsRegistryFinder:
     REGISTRY_KEY_DEBUG = (
         'Software\\Python\\PythonCore\\{sys_version}'
         '\\Modules\\{fullname}\\Debug')
-    DEBUG_BUILD = False  # Changed in _setup()
+    DEBUG_BUILD = (_MS_WINDOWS and '_d.pyd' in EXTENSION_SUFFIXES)
 
-    @classmethod
-    def _open_registry(cls, key):
+    @staticmethod
+    def _open_registry(key):
         try:
             return winreg.OpenKey(winreg.HKEY_CURRENT_USER, key)
         except OSError:
@@ -755,9 +909,12 @@ class WindowsRegistryFinder:
     def find_module(cls, fullname, path=None):
         """Find module named in the registry.
 
-        This method is deprecated.  Use exec_module() instead.
+        This method is deprecated.  Use find_spec() instead.
 
         """
+        _warnings.warn("WindowsRegistryFinder.find_module() is deprecated and "
+                       "slated for removal in Python 3.12; use find_spec() instead",
+                       DeprecationWarning)
         spec = cls.find_spec(fullname, path)
         if spec is not None:
             return spec.loader
@@ -790,7 +947,8 @@ class _LoaderBasics:
         _bootstrap._call_with_frames_removed(exec, code, module.__dict__)
 
     def load_module(self, fullname):
-        """This module is deprecated."""
+        """This method is deprecated."""
+        # Warning implemented in _load_module_shim().
         return _bootstrap._load_module_shim(self, fullname)
 
 
@@ -965,7 +1123,7 @@ class FileLoader:
         """
         # The only reason for this method is for the name check.
         # Issue #14857: Avoid the zero-argument form of super so the implementation
-        # of that form can be updated without breaking the frozen module
+        # of that form can be updated without breaking the frozen module.
         return super(FileLoader, self).load_module(fullname)
 
     @_check_name
@@ -1058,10 +1216,6 @@ class SourcelessFileLoader(FileLoader, _LoaderBasics):
         return None
 
 
-# Filled in by _setup().
-EXTENSION_SUFFIXES = []
-
-
 class ExtensionFileLoader(FileLoader, _LoaderBasics):
 
     """Loader for extension modules.
@@ -1082,7 +1236,7 @@ class ExtensionFileLoader(FileLoader, _LoaderBasics):
         return hash(self.name) ^ hash(self.path)
 
     def create_module(self, spec):
-        """Create an unitialized extension module"""
+        """Create an uninitialized extension module"""
         module = _bootstrap._call_with_frames_removed(
             _imp.create_dynamic, spec)
         _bootstrap._verbose_message('extension module {!r} loaded from {!r}',
@@ -1122,10 +1276,15 @@ class _NamespacePath:
     using path_finder.  For top-level modules, the parent module's path
     is sys.path."""
 
+    # When invalidate_caches() is called, this epoch is incremented
+    # https://bugs.python.org/issue45703
+    _epoch = 0
+
     def __init__(self, name, path, path_finder):
         self._name = name
         self._path = path
         self._last_parent_path = tuple(self._get_parent_path())
+        self._last_epoch = self._epoch
         self._path_finder = path_finder
 
     def _find_parent_path_names(self):
@@ -1145,7 +1304,7 @@ class _NamespacePath:
     def _recalculate(self):
         # If the parent's path has changed, recalculate _path
         parent_path = tuple(self._get_parent_path()) # Make a copy
-        if parent_path != self._last_parent_path:
+        if parent_path != self._last_parent_path or self._epoch != self._last_epoch:
             spec = self._path_finder(self._name, parent_path)
             # Note that no changes are made if a loader is returned, but we
             #  do remember the new parent path
@@ -1153,6 +1312,7 @@ class _NamespacePath:
                 if spec.submodule_search_locations:
                     self._path = spec.submodule_search_locations
             self._last_parent_path = parent_path     # Save the copy
+            self._last_epoch = self._epoch
         return self._path
 
     def __iter__(self):
@@ -1177,18 +1337,22 @@ class _NamespacePath:
         self._path.append(item)
 
 
-# We use this exclusively in module_from_spec() for backward-compatibility.
-class _NamespaceLoader:
+# This class is actually exposed publicly in a namespace package's __loader__
+# attribute, so it should be available through a non-private name.
+# https://bugs.python.org/issue35673
+class NamespaceLoader:
     def __init__(self, name, path, path_finder):
         self._path = _NamespacePath(name, path, path_finder)
 
-    @classmethod
-    def module_repr(cls, module):
+    @staticmethod
+    def module_repr(module):
         """Return repr for the module.
 
         The method is deprecated.  The import machinery does the job itself.
 
         """
+        _warnings.warn("NamespaceLoader.module_repr() is deprecated and "
+                       "slated for removal in Python 3.12", DeprecationWarning)
         return '<module {!r} (namespace)>'.format(module.__name__)
 
     def is_package(self, fullname):
@@ -1215,7 +1379,16 @@ class _NamespaceLoader:
         # The import system never calls this method.
         _bootstrap._verbose_message('namespace module loaded with path {!r}',
                                     self._path)
+        # Warning implemented in _load_module_shim().
         return _bootstrap._load_module_shim(self, fullname)
+
+    def get_resource_reader(self, module):
+        from importlib.readers import NamespaceReader
+        return NamespaceReader(self._path)
+
+
+# We use this exclusively in module_from_spec() for backward-compatibility.
+_NamespaceLoader = NamespaceLoader
 
 
 # Finders #####################################################################
@@ -1224,18 +1397,23 @@ class PathFinder:
 
     """Meta path finder for sys.path and package __path__ attributes."""
 
-    @classmethod
-    def invalidate_caches(cls):
+    @staticmethod
+    def invalidate_caches():
         """Call the invalidate_caches() method on all path entry finders
         stored in sys.path_importer_caches (where implemented)."""
         for name, finder in list(sys.path_importer_cache.items()):
-            if finder is None:
+            # Drop entry if finder name is a relative path. The current
+            # working directory may have changed.
+            if finder is None or not _path_isabs(name):
                 del sys.path_importer_cache[name]
             elif hasattr(finder, 'invalidate_caches'):
                 finder.invalidate_caches()
+        # Also invalidate the caches of _NamespacePaths
+        # https://bugs.python.org/issue45703
+        _NamespacePath._epoch += 1
 
-    @classmethod
-    def _path_hooks(cls, path):
+    @staticmethod
+    def _path_hooks(path):
         """Search sys.path_hooks for a finder for 'path'."""
         if sys.path_hooks is not None and not sys.path_hooks:
             _warnings.warn('sys.path_hooks is empty', ImportWarning)
@@ -1274,8 +1452,14 @@ class PathFinder:
         # This would be a good place for a DeprecationWarning if
         # we ended up going that route.
         if hasattr(finder, 'find_loader'):
+            msg = (f"{_bootstrap._object_name(finder)}.find_spec() not found; "
+                    "falling back to find_loader()")
+            _warnings.warn(msg, ImportWarning)
             loader, portions = finder.find_loader(fullname)
         else:
+            msg = (f"{_bootstrap._object_name(finder)}.find_spec() not found; "
+                    "falling back to find_module()")
+            _warnings.warn(msg, ImportWarning)
             loader = finder.find_module(fullname)
             portions = []
         if loader is not None:
@@ -1348,13 +1532,16 @@ class PathFinder:
         This method is deprecated.  Use find_spec() instead.
 
         """
+        _warnings.warn("PathFinder.find_module() is deprecated and "
+                       "slated for removal in Python 3.12; use find_spec() instead",
+                       DeprecationWarning)
         spec = cls.find_spec(fullname, path)
         if spec is None:
             return None
         return spec.loader
 
-    @classmethod
-    def find_distributions(cls, *args, **kwargs):
+    @staticmethod
+    def find_distributions(*args, **kwargs):
         """
         Find distributions.
 
@@ -1385,7 +1572,12 @@ class FileFinder:
             loaders.extend((suffix, loader) for suffix in suffixes)
         self._loaders = loaders
         # Base (directory) path
-        self.path = path or '.'
+        if not path or path == '.':
+            self.path = _os.getcwd()
+        elif not _path_isabs(path):
+            self.path = _path_join(_os.getcwd(), path)
+        else:
+            self.path = path
         self._path_mtime = -1
         self._path_cache = set()
         self._relaxed_path_cache = set()
@@ -1403,6 +1595,9 @@ class FileFinder:
         This method is deprecated.  Use find_spec() instead.
 
         """
+        _warnings.warn("FileFinder.find_loader() is deprecated and "
+                       "slated for removal in Python 3.12; use find_spec() instead",
+                       DeprecationWarning)
         spec = self.find_spec(fullname)
         if spec is None:
             return None, []
@@ -1448,7 +1643,10 @@ class FileFinder:
                 is_namespace = _path_isdir(base_path)
         # Check for a file w/ a proper suffix exists.
         for suffix, loader_class in self._loaders:
-            full_path = _path_join(self.path, tail_module + suffix)
+            try:
+                full_path = _path_join(self.path, tail_module + suffix)
+            except ValueError:
+                return None
             _bootstrap._verbose_message('trying {}', full_path, verbosity=2)
             if cache_module + suffix in cache:
                 if _path_isfile(full_path):
@@ -1550,66 +1748,14 @@ def _get_supported_file_loaders():
     return [extensions, source, bytecode]
 
 
-def _setup(_bootstrap_module):
-    """Setup the path-based importers for importlib by importing needed
-    built-in modules and injecting them into the global namespace.
-
-    Other components are extracted from the core bootstrap module.
-
-    """
-    global sys, _imp, _bootstrap
+def _set_bootstrap_module(_bootstrap_module):
+    global _bootstrap
     _bootstrap = _bootstrap_module
-    sys = _bootstrap.sys
-    _imp = _bootstrap._imp
-
-    self_module = sys.modules[__name__]
-
-    # Directly load the os module (needed during bootstrap).
-    os_details = ('posix', ['/']), ('nt', ['\\', '/'])
-    for builtin_os, path_separators in os_details:
-        # Assumption made in _path_join()
-        assert all(len(sep) == 1 for sep in path_separators)
-        path_sep = path_separators[0]
-        if builtin_os in sys.modules:
-            os_module = sys.modules[builtin_os]
-            break
-        else:
-            try:
-                os_module = _bootstrap._builtin_from_name(builtin_os)
-                break
-            except ImportError:
-                continue
-    else:
-        raise ImportError('importlib requires posix or nt')
-
-    setattr(self_module, '_os', os_module)
-    setattr(self_module, 'path_sep', path_sep)
-    setattr(self_module, 'path_separators', ''.join(path_separators))
-    setattr(self_module, '_pathseps_with_colon', {f':{s}' for s in path_separators})
-
-    # Directly load built-in modules needed during bootstrap.
-    builtin_names = ['_io', '_warnings', 'marshal']
-    if builtin_os == 'nt':
-        builtin_names.append('winreg')
-    for builtin_name in builtin_names:
-        if builtin_name not in sys.modules:
-            builtin_module = _bootstrap._builtin_from_name(builtin_name)
-        else:
-            builtin_module = sys.modules[builtin_name]
-        setattr(self_module, builtin_name, builtin_module)
-
-    # Constants
-    setattr(self_module, '_relax_case', _make_relax_case())
-    EXTENSION_SUFFIXES.extend(_imp.extension_suffixes())
-    if builtin_os == 'nt':
-        SOURCE_SUFFIXES.append('.pyw')
-        if '_d.pyd' in EXTENSION_SUFFIXES:
-            WindowsRegistryFinder.DEBUG_BUILD = True
 
 
 def _install(_bootstrap_module):
     """Install the path-based import components."""
-    _setup(_bootstrap_module)
+    _set_bootstrap_module(_bootstrap_module)
     supported_loaders = _get_supported_file_loaders()
     sys.path_hooks.extend([FileFinder.path_hook(*supported_loaders)])
     sys.meta_path.append(PathFinder)

@@ -26,7 +26,7 @@ This convention is not only used by *tp_call*:
 :c:member:`~PyTypeObject.tp_new` and :c:member:`~PyTypeObject.tp_init`
 also pass arguments this way.
 
-To call an object, use :c:func:`PyObject_Call` or other
+To call an object, use :c:func:`PyObject_Call` or another
 :ref:`call API <capi-call>`.
 
 
@@ -84,7 +84,7 @@ This is a pointer to a function with the following signature:
    and they must be unique.
    If there are no keyword arguments, then *kwnames* can instead be *NULL*.
 
-.. c:var:: PY_VECTORCALL_ARGUMENTS_OFFSET
+.. c:macro:: PY_VECTORCALL_ARGUMENTS_OFFSET
 
    If this flag is set in a vectorcall *nargsf* argument, the callee is allowed
    to temporarily change ``args[-1]``. In other words, *args* points to
@@ -144,8 +144,6 @@ Vectorcall Support API
    However, the function ``PyVectorcall_NARGS`` should be used to allow
    for future extensions.
 
-   This function is not part of the :ref:`limited API <stable>`.
-
    .. versionadded:: 3.8
 
 .. c:function:: vectorcallfunc PyVectorcall_Function(PyObject *op)
@@ -157,8 +155,6 @@ Vectorcall Support API
 
    This is mostly useful to check whether or not *op* supports vectorcall,
    which can be done by checking ``PyVectorcall_Function(op) != NULL``.
-
-   This function is not part of the :ref:`limited API <stable>`.
 
    .. versionadded:: 3.8
 
@@ -172,8 +168,6 @@ Vectorcall Support API
    It does not check the :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag
    and it does not fall back to ``tp_call``.
 
-   This function is not part of the :ref:`limited API <stable>`.
-
    .. versionadded:: 3.8
 
 
@@ -185,7 +179,7 @@ Object Calling API
 Various functions are available for calling a Python object.
 Each converts its arguments to a convention supported by the called object –
 either *tp_call* or vectorcall.
-In order to do as litle conversion as possible, pick one that best fits
+In order to do as little conversion as possible, pick one that best fits
 the format of data you have available.
 
 The following table summarizes the available functions;
@@ -256,8 +250,6 @@ please see individual documentation for details.
    Return the result of the call on success, or raise an exception and return
    *NULL* on failure.
 
-   This function is not part of the :ref:`limited API <stable>`.
-
    .. versionadded:: 3.9
 
 
@@ -283,7 +275,7 @@ please see individual documentation for details.
 
    This is the equivalent of the Python expression: ``callable(*args)``.
 
-   Note that if you only pass :c:type:`PyObject \*` args,
+   Note that if you only pass :c:type:`PyObject *` args,
    :c:func:`PyObject_CallFunctionObjArgs` is a faster alternative.
 
    .. versionchanged:: 3.4
@@ -304,17 +296,17 @@ please see individual documentation for details.
    This is the equivalent of the Python expression:
    ``obj.name(arg1, arg2, ...)``.
 
-   Note that if you only pass :c:type:`PyObject \*` args,
+   Note that if you only pass :c:type:`PyObject *` args,
    :c:func:`PyObject_CallMethodObjArgs` is a faster alternative.
 
    .. versionchanged:: 3.4
       The types of *name* and *format* were changed from ``char *``.
 
 
-.. c:function:: PyObject* PyObject_CallFunctionObjArgs(PyObject *callable, ..., NULL)
+.. c:function:: PyObject* PyObject_CallFunctionObjArgs(PyObject *callable, ...)
 
    Call a callable Python object *callable*, with a variable number of
-   :c:type:`PyObject \*` arguments.  The arguments are provided as a variable number
+   :c:type:`PyObject *` arguments.  The arguments are provided as a variable number
    of parameters followed by *NULL*.
 
    Return the result of the call on success, or raise an exception and return
@@ -324,11 +316,11 @@ please see individual documentation for details.
    ``callable(arg1, arg2, ...)``.
 
 
-.. c:function:: PyObject* PyObject_CallMethodObjArgs(PyObject *obj, PyObject *name, ..., NULL)
+.. c:function:: PyObject* PyObject_CallMethodObjArgs(PyObject *obj, PyObject *name, ...)
 
    Call a method of the Python object *obj*, where the name of the method is given as a
    Python string object in *name*.  It is called with a variable number of
-   :c:type:`PyObject \*` arguments.  The arguments are provided as a variable number
+   :c:type:`PyObject *` arguments.  The arguments are provided as a variable number
    of parameters followed by *NULL*.
 
    Return the result of the call on success, or raise an exception and return
@@ -343,8 +335,6 @@ please see individual documentation for details.
    Return the result of the call on success, or raise an exception and return
    *NULL* on failure.
 
-   This function is not part of the :ref:`limited API <stable>`.
-
    .. versionadded:: 3.9
 
 
@@ -356,8 +346,6 @@ please see individual documentation for details.
 
    Return the result of the call on success, or raise an exception and return
    *NULL* on failure.
-
-   This function is not part of the :ref:`limited API <stable>`.
 
    .. versionadded:: 3.9
 
@@ -372,8 +360,6 @@ please see individual documentation for details.
    Return the result of the call on success, or raise an exception and return
    *NULL* on failure.
 
-   This function is not part of the :ref:`limited API <stable>`.
-
    .. versionadded:: 3.9
 
 .. c:function:: PyObject* PyObject_VectorcallDict(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwdict)
@@ -387,8 +373,6 @@ please see individual documentation for details.
    Therefore, this function should only be used if the caller
    already has a dictionary ready to use for the keyword arguments,
    but not a tuple for the positional arguments.
-
-   This function is not part of the :ref:`limited API <stable>`.
 
    .. versionadded:: 3.9
 
@@ -409,8 +393,6 @@ please see individual documentation for details.
 
    Return the result of the call on success, or raise an exception and return
    *NULL* on failure.
-
-   This function is not part of the :ref:`limited API <stable>`.
 
    .. versionadded:: 3.9
 

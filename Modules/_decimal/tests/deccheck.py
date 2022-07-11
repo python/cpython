@@ -30,10 +30,14 @@
 #
 
 
+import random
+import time
+
+RANDSEED = int(time.time())
+random.seed(RANDSEED)
+
 import sys
 import os
-import time
-import random
 from copy import copy
 from collections import defaultdict
 
@@ -43,7 +47,7 @@ from subprocess import PIPE, STDOUT
 from queue import Queue, Empty
 from threading import Thread, Event, Lock
 
-from test.support import import_fresh_module
+from test.support.import_helper import import_fresh_module
 from randdec import randfloat, all_unary, all_binary, all_ternary
 from randdec import unary_optarg, binary_optarg, ternary_optarg
 from formathelper import rand_format, rand_locale
@@ -1160,10 +1164,6 @@ if __name__ == '__main__':
         args.single = args.single[0]
 
 
-    randseed = int(time.time())
-    random.seed(randseed)
-
-
     # Set up the testspecs list. A testspec is simply a dictionary
     # that determines the amount of different contexts that 'test_method'
     # will generate.
@@ -1231,9 +1231,9 @@ if __name__ == '__main__':
     if args.multicore:
         q = Queue()
     elif args.single:
-        log("Random seed: %d", randseed)
+        log("Random seed: %d", RANDSEED)
     else:
-        log("\n\nRandom seed: %d\n\n", randseed)
+        log("\n\nRandom seed: %d\n\n", RANDSEED)
 
 
     FOUND_METHOD = False

@@ -16,18 +16,18 @@ skip_if_missing()
 
 class TestSundryScripts(unittest.TestCase):
     # At least make sure the rest don't have syntax errors.  When tests are
-    # added for a script it should be added to the whitelist below.
+    # added for a script it should be added to the allowlist below.
 
     # scripts that have independent tests.
-    whitelist = ['reindent', 'pdeps', 'gprof2html', 'md5sum']
+    allowlist = ['reindent', 'pdeps', 'gprof2html', 'md5sum']
     # scripts that can't be imported without running
-    blacklist = ['make_ctype']
+    denylist = ['make_ctype']
     # scripts that use windows-only modules
     windows_only = ['win_add2path']
-    # blacklisted for other reasons
+    # denylisted for other reasons
     other = ['analyze_dxp', '2to3']
 
-    skiplist = blacklist + whitelist + windows_only + other
+    skiplist = denylist + allowlist + windows_only + other
 
     def test_sundry(self):
         old_modules = import_helper.modules_setup()

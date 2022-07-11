@@ -1,6 +1,8 @@
 import unittest
+from test.support import warnings_helper
 
-import xdrlib
+xdrlib = warnings_helper.import_deprecated("xdrlib")
+
 
 class XDRTest(unittest.TestCase):
 

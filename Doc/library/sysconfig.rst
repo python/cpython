@@ -32,7 +32,7 @@ can be accessed using :func:`get_config_vars` or :func:`get_config_var`.
 
 Notice that on Windows, it's a much smaller set.
 
-.. function:: get_config_vars(\*args)
+.. function:: get_config_vars(*args)
 
    With no arguments, return a dictionary of all configuration variables
    relevant for the current platform.
@@ -60,6 +60,7 @@ Example of usage::
    >>> sysconfig.get_config_vars('AR', 'CXX')
    ['ar', 'g++']
 
+.. _installation_paths:
 
 Installation paths
 ------------------
@@ -72,9 +73,9 @@ Every new component that is installed using :mod:`distutils` or a
 Distutils-based system will follow the same scheme to copy its file in the right
 places.
 
-Python currently supports seven schemes:
+Python currently supports nine schemes:
 
-- *posix_prefix*: scheme for POSIX platforms like Linux or Mac OS X.  This is
+- *posix_prefix*: scheme for POSIX platforms like Linux or macOS.  This is
   the default scheme used when Python or a component is installed.
 - *posix_home*: scheme for POSIX platforms used when a *home* option is used
   upon installation.  This scheme is used when a component is installed through
@@ -82,8 +83,15 @@ Python currently supports seven schemes:
 - *posix_user*: scheme for POSIX platforms used when a component is installed
   through Distutils and the *user* option is used.  This scheme defines paths
   located under the user home directory.
+- *posix_venv*: scheme for :mod:`Python virtual environments <venv>` on POSIX
+  platforms; by default it is the same as *posix_prefix* .
 - *nt*: scheme for NT platforms like Windows.
 - *nt_user*: scheme for NT platforms, when the *user* option is used.
+- *nt_venv*: scheme for :mod:`Python virtual environments <venv>` on NT
+  platforms; by default it is the same as *nt* .
+- *venv*: a scheme with values from ether *posix_venv* or *nt_venv* depending
+  on the platform Python runs on
+- *osx_framework_user*: scheme for macOS, when the *user* option is used.
 
 Each scheme is itself composed of a series of paths and each path has a unique
 identifier.  Python currently uses eight paths:
@@ -94,8 +102,10 @@ identifier.  Python currently uses eight paths:
   platform-specific.
 - *platlib*: directory for site-specific, platform-specific files.
 - *purelib*: directory for site-specific, non-platform-specific files.
-- *include*: directory for non-platform-specific header files.
-- *platinclude*: directory for platform-specific header files.
+- *include*: directory for non-platform-specific header files for
+  the Python C-API.
+- *platinclude*: directory for platform-specific header files for
+  the Python C-API.
 - *scripts*: directory for script files.
 - *data*: directory for data files.
 
@@ -105,6 +115,50 @@ identifier.  Python currently uses eight paths:
 
    Return a tuple containing all schemes currently supported in
    :mod:`sysconfig`.
+
+
+.. function:: get_default_scheme()
+
+   Return the default scheme name for the current platform.
+
+   .. versionchanged:: 3.10
+      This function was previously named ``_get_default_scheme()`` and
+      considered an implementation detail.
+
+   .. versionchanged:: 3.11
+      When Python runs from a virtual environment,
+      the *venv* scheme is returned.
+
+.. function:: get_preferred_scheme(key)
+
+   Return a preferred scheme name for an installation layout specified by *key*.
+
+   *key* must be either ``"prefix"``, ``"home"``, or ``"user"``.
+
+   The return value is a scheme name listed in :func:`get_scheme_names`. It
+   can be passed to :mod:`sysconfig` functions that take a *scheme* argument,
+   such as :func:`get_paths`.
+
+   .. versionadded:: 3.10
+
+   .. versionchanged:: 3.11
+      When Python runs from a virtual environment and ``key="prefix"``,
+      the *venv* scheme is returned.
+
+
+.. function:: _get_preferred_schemes()
+
+   Return a dict containing preferred scheme names on the current platform.
+   Python implementers and redistributors may add their preferred schemes to
+   the ``_INSTALL_SCHEMES`` module-level global value, and modify this function
+   to return those scheme names, to e.g. provide different schemes for system
+   and language package managers to use, so packages installed by either do not
+   mix with those by the other.
+
+   End users should not use this function, but :func:`get_default_scheme` and
+   :func:`get_preferred_scheme()` instead.
+
+   .. versionadded:: 3.10
 
 
 .. function:: get_path_names()
@@ -138,7 +192,7 @@ identifier.  Python currently uses eight paths:
    If *expand* is set to ``False``, the path will not be expanded using the
    variables.
 
-   If *name* is not found, return ``None``.
+   If *name* is not found, raise a :exc:`KeyError`.
 
 
 .. function:: get_paths([scheme, [vars, [expand]]])
@@ -188,7 +242,7 @@ Other functions
    - win-amd64 (64bit Windows on AMD64, aka x86_64, Intel64, and EM64T)
    - win32 (all others - specifically, sys.platform is returned)
 
-   Mac OS X can return:
+   macOS can return:
 
    - macosx-10.6-ppc
    - macosx-10.4-ppc64
@@ -223,6 +277,7 @@ Other functions
 .. function:: get_makefile_filename()
 
    Return the path of :file:`Makefile`.
+
 
 Using :mod:`sysconfig` as a script
 ----------------------------------

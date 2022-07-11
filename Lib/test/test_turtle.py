@@ -130,6 +130,14 @@ class VectorComparisonMixin:
             self.assertAlmostEqual(
                 i, j, msg='values at index {} do not match'.format(idx))
 
+class Multiplier:
+
+    def __mul__(self, other):
+        return f'M*{other}'
+
+    def __rmul__(self, other):
+        return f'{other}*M'
+
 
 class TestVec2D(VectorComparisonMixin, unittest.TestCase):
 
@@ -211,9 +219,15 @@ class TestVec2D(VectorComparisonMixin, unittest.TestCase):
         self.assertAlmostEqual(answer, expected)
 
         vec = Vec2D(0.5, 3)
-        answer = vec * 10
         expected = Vec2D(5, 30)
-        self.assertVectorsAlmostEqual(answer, expected)
+        self.assertVectorsAlmostEqual(vec * 10, expected)
+        self.assertVectorsAlmostEqual(10 * vec, expected)
+        self.assertVectorsAlmostEqual(vec * 10.0, expected)
+        self.assertVectorsAlmostEqual(10.0 * vec, expected)
+
+        M = Multiplier()
+        self.assertEqual(vec * M, Vec2D(f"{vec[0]}*M", f"{vec[1]}*M"))
+        self.assertEqual(M * vec, f'M*{vec}')
 
     def test_vector_negative(self):
         vec = Vec2D(10, -10)
@@ -221,17 +235,9 @@ class TestVec2D(VectorComparisonMixin, unittest.TestCase):
         self.assertVectorsAlmostEqual(-vec, expected)
 
     def test_distance(self):
-        vec = Vec2D(6, 8)
-        expected = 10
-        self.assertEqual(abs(vec), expected)
-
-        vec = Vec2D(0, 0)
-        expected = 0
-        self.assertEqual(abs(vec), expected)
-
-        vec = Vec2D(2.5, 6)
-        expected = 6.5
-        self.assertEqual(abs(vec), expected)
+        self.assertAlmostEqual(abs(Vec2D(6, 8)), 10)
+        self.assertEqual(abs(Vec2D(0, 0)), 0)
+        self.assertAlmostEqual(abs(Vec2D(2.5, 6)), 6.5)
 
     def test_rotate(self):
 

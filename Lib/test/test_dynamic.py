@@ -133,6 +133,18 @@ class RebindBuiltinsTests(unittest.TestCase):
 
         self.assertEqual(foo(), 7)
 
+    def test_load_global_specialization_failure_keeps_oparg(self):
+        # https://github.com/python/cpython/issues/91625
+        class MyGlobals(dict):
+            def __missing__(self, key):
+                return int(key.removeprefix("_number_"))
+
+        code = "lambda: " + "+".join(f"_number_{i}" for i in range(1000))
+        sum_1000 = eval(code, MyGlobals())
+        expected = sum(range(1000))
+        # Warm up the the function for quickening (PEP 659)
+        for _ in range(30):
+            self.assertEqual(sum_1000(), expected)
 
 if __name__ == "__main__":
     unittest.main()

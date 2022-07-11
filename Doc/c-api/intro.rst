@@ -105,6 +105,93 @@ defined closer to where they are useful (e.g. :c:macro:`Py_RETURN_NONE`).
 Others of a more general utility are defined here.  This is not necessarily a
 complete listing.
 
+.. c:macro:: Py_ABS(x)
+
+   Return the absolute value of ``x``.
+
+   .. versionadded:: 3.3
+
+.. c:macro:: Py_ALWAYS_INLINE
+
+   Ask the compiler to always inline a static inline function. The compiler can
+   ignore it and decides to not inline the function.
+
+   It can be used to inline performance critical static inline functions when
+   building Python in debug mode with function inlining disabled. For example,
+   MSC disables function inlining when building in debug mode.
+
+   Marking blindly a static inline function with Py_ALWAYS_INLINE can result in
+   worse performances (due to increased code size for example). The compiler is
+   usually smarter than the developer for the cost/benefit analysis.
+
+   If Python is :ref:`built in debug mode <debug-build>` (if the ``Py_DEBUG``
+   macro is defined), the :c:macro:`Py_ALWAYS_INLINE` macro does nothing.
+
+   It must be specified before the function return type. Usage::
+
+       static inline Py_ALWAYS_INLINE int random(void) { return 4; }
+
+   .. versionadded:: 3.11
+
+.. c:macro:: Py_CHARMASK(c)
+
+   Argument must be a character or an integer in the range [-128, 127] or [0,
+   255].  This macro returns ``c`` cast to an ``unsigned char``.
+
+.. c:macro:: Py_DEPRECATED(version)
+
+   Use this for deprecated declarations.  The macro must be placed before the
+   symbol name.
+
+   Example::
+
+      Py_DEPRECATED(3.8) PyAPI_FUNC(int) Py_OldFunction(void);
+
+   .. versionchanged:: 3.8
+      MSVC support was added.
+
+.. c:macro:: Py_GETENV(s)
+
+   Like ``getenv(s)``, but returns ``NULL`` if :option:`-E` was passed on the
+   command line (i.e. if ``Py_IgnoreEnvironmentFlag`` is set).
+
+.. c:macro:: Py_MAX(x, y)
+
+   Return the maximum value between ``x`` and ``y``.
+
+   .. versionadded:: 3.3
+
+.. c:macro:: Py_MEMBER_SIZE(type, member)
+
+   Return the size of a structure (``type``) ``member`` in bytes.
+
+   .. versionadded:: 3.6
+
+.. c:macro:: Py_MIN(x, y)
+
+   Return the minimum value between ``x`` and ``y``.
+
+   .. versionadded:: 3.3
+
+.. c:macro:: Py_NO_INLINE
+
+   Disable inlining on a function. For example, it reduces the C stack
+   consumption: useful on LTO+PGO builds which heavily inline code (see
+   :issue:`33720`).
+
+   Usage::
+
+       Py_NO_INLINE static int random(void) { return 4; }
+
+   .. versionadded:: 3.11
+
+.. c:macro:: Py_STRINGIFY(x)
+
+   Convert ``x`` to a C string.  E.g. ``Py_STRINGIFY(123)`` returns
+   ``"123"``.
+
+   .. versionadded:: 3.4
+
 .. c:macro:: Py_UNREACHABLE()
 
    Use this when you have a code path that cannot be reached by design.
@@ -127,65 +214,12 @@ complete listing.
 
    .. versionadded:: 3.7
 
-.. c:macro:: Py_ABS(x)
-
-   Return the absolute value of ``x``.
-
-   .. versionadded:: 3.3
-
-.. c:macro:: Py_MIN(x, y)
-
-   Return the minimum value between ``x`` and ``y``.
-
-   .. versionadded:: 3.3
-
-.. c:macro:: Py_MAX(x, y)
-
-   Return the maximum value between ``x`` and ``y``.
-
-   .. versionadded:: 3.3
-
-.. c:macro:: Py_STRINGIFY(x)
-
-   Convert ``x`` to a C string.  E.g. ``Py_STRINGIFY(123)`` returns
-   ``"123"``.
-
-   .. versionadded:: 3.4
-
-.. c:macro:: Py_MEMBER_SIZE(type, member)
-
-   Return the size of a structure (``type``) ``member`` in bytes.
-
-   .. versionadded:: 3.6
-
-.. c:macro:: Py_CHARMASK(c)
-
-   Argument must be a character or an integer in the range [-128, 127] or [0,
-   255].  This macro returns ``c`` cast to an ``unsigned char``.
-
-.. c:macro:: Py_GETENV(s)
-
-   Like ``getenv(s)``, but returns ``NULL`` if :option:`-E` was passed on the
-   command line (i.e. if ``Py_IgnoreEnvironmentFlag`` is set).
-
 .. c:macro:: Py_UNUSED(arg)
 
    Use this for unused arguments in a function definition to silence compiler
    warnings. Example: ``int func(int a, int Py_UNUSED(b)) { return a; }``.
 
    .. versionadded:: 3.4
-
-.. c:macro:: Py_DEPRECATED(version)
-
-   Use this for deprecated declarations.  The macro must be placed before the
-   symbol name.
-
-   Example::
-
-      Py_DEPRECATED(3.8) PyAPI_FUNC(int) Py_OldFunction(void);
-
-   .. versionchanged:: 3.8
-      MSVC support was added.
 
 .. c:macro:: PyDoc_STRVAR(name, str)
 
@@ -221,6 +255,7 @@ complete listing.
           {NULL, NULL}
       };
 
+
 .. _api-objects:
 
 Objects, Types and Reference Counts
@@ -229,13 +264,13 @@ Objects, Types and Reference Counts
 .. index:: object: type
 
 Most Python/C API functions have one or more arguments as well as a return value
-of type :c:type:`PyObject\*`.  This type is a pointer to an opaque data type
+of type :c:type:`PyObject*`.  This type is a pointer to an opaque data type
 representing an arbitrary Python object.  Since all Python object types are
 treated the same way by the Python language in most situations (e.g.,
 assignments, scope rules, and argument passing), it is only fitting that they
 should be represented by a single C type.  Almost all Python objects live on the
 heap: you never declare an automatic or static variable of type
-:c:type:`PyObject`, only pointer variables of type :c:type:`PyObject\*` can  be
+:c:type:`PyObject`, only pointer variables of type :c:type:`PyObject*` can  be
 declared.  The sole exception are the type objects; since these must never be
 deallocated, they are typically static :c:type:`PyTypeObject` objects.
 
@@ -326,7 +361,7 @@ when it's no longer needed---or passing on this responsibility (usually to its
 caller). When a function passes ownership of a reference on to its caller, the
 caller is said to receive a *new* reference.  When no ownership is transferred,
 the caller is said to *borrow* the reference. Nothing needs to be done for a
-borrowed reference.
+:term:`borrowed reference`.
 
 Conversely, when a calling function passes in a reference to an  object, there
 are two possibilities: the function *steals* a  reference to the object, or it
@@ -496,11 +531,18 @@ Types
 
 There are few other data types that play a significant role in  the Python/C
 API; most are simple C types such as :c:type:`int`,  :c:type:`long`,
-:c:type:`double` and :c:type:`char\*`.  A few structure types  are used to
+:c:type:`double` and :c:type:`char*`.  A few structure types  are used to
 describe static tables used to list the functions exported  by a module or the
 data attributes of a new object type, and another is used to describe the value
 of a complex number.  These will  be discussed together with the functions that
 use them.
+
+.. c:type:: Py_ssize_t
+
+   A signed integral type such that ``sizeof(Py_ssize_t) == sizeof(size_t)``.
+   C99 doesn't define such a thing directly (size_t is an unsigned integral type).
+   See :pep:`353` for details. ``PY_SSIZE_T_MAX`` is the largest positive value
+   of type :c:type:`Py_ssize_t`.
 
 
 .. _api-exceptions:
@@ -674,12 +716,10 @@ the table of loaded modules, and creates the fundamental modules
 :mod:`builtins`, :mod:`__main__`, and :mod:`sys`.  It also
 initializes the module search path (``sys.path``).
 
-.. index:: single: PySys_SetArgvEx()
-
 :c:func:`Py_Initialize` does not set the "script argument list"  (``sys.argv``).
-If this variable is needed by Python code that will be executed later, it must
-be set explicitly with a call to  ``PySys_SetArgvEx(argc, argv, updatepath)``
-after the call to :c:func:`Py_Initialize`.
+If this variable is needed by Python code that will be executed later, setting
+:c:member:`PyConfig.argv` and :c:member:`PyConfig.parse_argv` must be set: see
+:ref:`Python Initialization Configuration <init-config>`.
 
 On most systems (in particular, on Unix and Windows, although the details are
 slightly different), :c:func:`Py_Initialize` calculates the module search path
@@ -739,46 +779,25 @@ A full list of the various types of debugging builds is in the file
 :file:`Misc/SpecialBuilds.txt` in the Python source distribution. Builds are
 available that support tracing of reference counts, debugging the memory
 allocator, or low-level profiling of the main interpreter loop.  Only the most
-frequently-used builds will be described in the remainder of this section.
+frequently used builds will be described in the remainder of this section.
 
 Compiling the interpreter with the :c:macro:`Py_DEBUG` macro defined produces
-what is generally meant by "a debug build" of Python. :c:macro:`Py_DEBUG` is
-enabled in the Unix build by adding ``--with-pydebug`` to the
-:file:`./configure` command.  It is also implied by the presence of the
+what is generally meant by :ref:`a debug build of Python <debug-build>`.
+:c:macro:`Py_DEBUG` is enabled in the Unix build by adding
+:option:`--with-pydebug` to the :file:`./configure` command.
+It is also implied by the presence of the
 not-Python-specific :c:macro:`_DEBUG` macro.  When :c:macro:`Py_DEBUG` is enabled
 in the Unix build, compiler optimization is disabled.
 
-In addition to the reference count debugging described below, the following
-extra checks are performed:
+In addition to the reference count debugging described below, extra checks are
+performed, see :ref:`Python Debug Build <debug-build>`.
 
-* Extra checks are added to the object allocator.
-
-* Extra checks are added to the parser and compiler.
-
-* Downcasts from wide types to narrow types are checked for loss of information.
-
-* A number of assertions are added to the dictionary and set implementations.
-  In addition, the set object acquires a :meth:`test_c_api` method.
-
-* Sanity checks of the input arguments are added to frame creation.
-
-* The storage for ints is initialized with a known invalid pattern to catch
-  reference to uninitialized digits.
-
-* Low-level tracing and extra exception checking are added to the runtime
-  virtual machine.
-
-* Extra checks are added to the memory arena implementation.
-
-* Extra debugging is added to the thread module.
-
-There may be additional checks not mentioned here.
-
-Defining :c:macro:`Py_TRACE_REFS` enables reference tracing.  When defined, a
-circular doubly linked list of active objects is maintained by adding two extra
+Defining :c:macro:`Py_TRACE_REFS` enables reference tracing
+(see the :option:`configure --with-trace-refs option <--with-trace-refs>`).
+When defined, a circular doubly linked list of active objects is maintained by adding two extra
 fields to every :c:type:`PyObject`.  Total allocations are tracked as well.  Upon
 exit, all existing references are printed.  (In interactive mode this happens
-after every statement run by the interpreter.)  Implied by :c:macro:`Py_DEBUG`.
+after every statement run by the interpreter.)
 
 Please refer to :file:`Misc/SpecialBuilds.txt` in the Python source distribution
 for more detailed information.

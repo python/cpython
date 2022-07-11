@@ -27,20 +27,6 @@ Linux and the BSD variants of Unix.
    Whenever the documentation mentions a *character string* it can be specified
    as a Unicode string or a byte string.
 
-.. note::
-
-   Since version 5.4, the ncurses library decides how to interpret non-ASCII data
-   using the ``nl_langinfo`` function.  That means that you have to call
-   :func:`locale.setlocale` in the application and encode Unicode strings
-   using one of the system's available encodings.  This example uses the
-   system's default encoding::
-
-      import locale
-      locale.setlocale(locale.LC_ALL, '')
-      code = locale.getpreferredencoding()
-
-   Then use *code* as the encoding for :meth:`str.encode` calls.
-
 .. seealso::
 
    Module :mod:`curses.ascii`
@@ -112,14 +98,15 @@ The module :mod:`curses` defines the following functions:
 .. function:: color_content(color_number)
 
    Return the intensity of the red, green, and blue (RGB) components in the color
-   *color_number*, which must be between ``0`` and :const:`COLORS`.  Return a 3-tuple,
+   *color_number*, which must be between ``0`` and ``COLORS - 1``.  Return a 3-tuple,
    containing the R,G,B values for the given color, which will be between
    ``0`` (no component) and ``1000`` (maximum amount of component).
 
 
-.. function:: color_pair(color_number)
+.. function:: color_pair(pair_number)
 
-   Return the attribute value for displaying text in the specified color.  This
+   Return the attribute value for displaying text in the specified color pair.
+   Only the first 256 color pairs are supported. This
    attribute value can be combined with :const:`A_STANDOUT`, :const:`A_REVERSE`,
    and the other :const:`A_\*` attributes.  :func:`pair_number` is the counterpart
    to this function.
@@ -219,10 +206,14 @@ The module :mod:`curses` defines the following functions:
    multiple devices, and *x*, *y*, *z* are the event's coordinates.  (*z* is
    currently unused.)  *bstate* is an integer value whose bits will be set to
    indicate the type of event, and will be the bitwise OR of one or more of the
-   following constants, where *n* is the button number from 1 to 4:
+   following constants, where *n* is the button number from 1 to 5:
    :const:`BUTTONn_PRESSED`, :const:`BUTTONn_RELEASED`, :const:`BUTTONn_CLICKED`,
    :const:`BUTTONn_DOUBLE_CLICKED`, :const:`BUTTONn_TRIPLE_CLICKED`,
    :const:`BUTTON_SHIFT`, :const:`BUTTON_CTRL`, :const:`BUTTON_ALT`.
+
+   .. versionchanged:: 3.10
+      The ``BUTTON5_*`` constants are now exposed if they are provided by the
+      underlying curses library.
 
 
 .. function:: getsyx()
@@ -287,7 +278,7 @@ The module :mod:`curses` defines the following functions:
    Change the definition of a color, taking the number of the color to be changed
    followed by three RGB values (for the amounts of red, green, and blue
    components).  The value of *color_number* must be between ``0`` and
-   :const:`COLORS`.  Each of *r*, *g*, *b*, must be a value between ``0`` and
+   `COLORS - 1`.  Each of *r*, *g*, *b*, must be a value between ``0`` and
    ``1000``.  When :func:`init_color` is used, all occurrences of that color on the
    screen immediately change to the new definition.  This function is a no-op on
    most terminals; it is active only if :func:`can_change_color` returns ``True``.
@@ -300,7 +291,8 @@ The module :mod:`curses` defines the following functions:
    color number.  The value of *pair_number* must be between ``1`` and
    ``COLOR_PAIRS - 1`` (the ``0`` color pair is wired to white on black and cannot
    be changed).  The value of *fg* and *bg* arguments must be between ``0`` and
-   :const:`COLORS`.  If the color-pair was previously initialized, the screen is
+   ``COLORS - 1``, or, after calling :func:`use_default_colors`, ``-1``.
+   If the color-pair was previously initialized, the screen is
    refreshed and all occurrences of that color-pair are changed to the new
    definition.
 
@@ -362,7 +354,7 @@ The module :mod:`curses` defines the following functions:
 
    Set the maximum time in milliseconds that can elapse between press and release
    events in order for them to be recognized as a click, and return the previous
-   interval value.  The default value is 200 msec, or one fifth of a second.
+   interval value.  The default value is 200 milliseconds, or one fifth of a second.
 
 
 .. function:: mousemask(mousemask)
@@ -450,7 +442,7 @@ The module :mod:`curses` defines the following functions:
 .. function:: pair_content(pair_number)
 
    Return a tuple ``(fg, bg)`` containing the colors for the requested color pair.
-   The value of *pair_number* must be between ``1`` and ``COLOR_PAIRS - 1``.
+   The value of *pair_number* must be between ``0`` and ``COLOR_PAIRS - 1``.
 
 
 .. function:: pair_number(attr)
@@ -717,7 +709,7 @@ the following methods and attributes:
             window.addch(y, x, ch[, attr])
 
    Paint character *ch* at ``(y, x)`` with attributes *attr*, overwriting any
-   character previously painter at that location.  By default, the character
+   character previously painted at that location.  By default, the character
    position and attributes are the current settings for the window object.
 
    .. note::
@@ -909,13 +901,16 @@ the following methods and attributes:
    determining what subset of the screen windows enclose the location of a mouse
    event.
 
+   .. versionchanged:: 3.10
+      Previously it returned ``1`` or ``0`` instead of ``True`` or ``False``.
+
 
 .. attribute:: window.encoding
 
    Encoding used to encode method arguments (Unicode strings and characters).
    The encoding attribute is inherited from the parent window when a subwindow
-   is created, for example with :meth:`window.subwin`. By default, the locale
-   encoding is used (see :func:`locale.getpreferredencoding`).
+   is created, for example with :meth:`window.subwin`.
+   By default, current locale encoding is used (see :func:`locale.getencoding`).
 
    .. versionadded:: 3.3
 

@@ -30,7 +30,7 @@ PyDoc_STRVAR(_random_Random_seed__doc__,
 "of the current time and the process identifier.");
 
 #define _RANDOM_RANDOM_SEED_METHODDEF    \
-    {"seed", (PyCFunction)(void(*)(void))_random_Random_seed, METH_FASTCALL, _random_Random_seed__doc__},
+    {"seed", _PyCFunction_CAST(_random_Random_seed), METH_FASTCALL, _random_Random_seed__doc__},
 
 static PyObject *
 _random_Random_seed_impl(RandomObject *self, PyObject *n);
@@ -109,21 +109,4 @@ _random_Random_getrandbits(RandomObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-
-PyDoc_STRVAR(_random_Random___reduce____doc__,
-"__reduce__($self, /)\n"
-"--\n"
-"\n");
-
-#define _RANDOM_RANDOM___REDUCE___METHODDEF    \
-    {"__reduce__", (PyCFunction)_random_Random___reduce__, METH_NOARGS, _random_Random___reduce____doc__},
-
-static PyObject *
-_random_Random___reduce___impl(RandomObject *self);
-
-static PyObject *
-_random_Random___reduce__(RandomObject *self, PyObject *Py_UNUSED(ignored))
-{
-    return _random_Random___reduce___impl(self);
-}
-/*[clinic end generated code: output=450f0961c2c92389 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d144826cde89e605 input=a9049054013a1b77]*/

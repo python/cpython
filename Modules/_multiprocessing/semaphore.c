@@ -9,6 +9,8 @@
 
 #include "multiprocessing.h"
 
+#ifdef HAVE_MP_SEMAPHORE
+
 enum { RECURSIVE_MUTEX, SEMAPHORE };
 
 typedef struct {
@@ -452,9 +454,7 @@ static PyObject *
 newsemlockobject(PyTypeObject *type, SEM_HANDLE handle, int kind, int maxvalue,
                  char *name)
 {
-    SemLockObject *self;
-
-    self = PyObject_New(SemLockObject, type);
+    SemLockObject *self = (SemLockObject *)type->tp_alloc(type, 0);
     if (!self)
         return NULL;
     self->handle = handle;
@@ -571,7 +571,7 @@ semlock_dealloc(SemLockObject* self)
     if (self->handle != SEM_FAILED)
         SEM_CLOSE(self->handle);
     PyMem_Free(self->name);
-    PyObject_Del(self);
+    Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 /*[clinic input]
@@ -794,3 +794,5 @@ _PyMp_sem_unlink(const char *name)
 
     Py_RETURN_NONE;
 }
+
+#endif // HAVE_MP_SEMAPHORE

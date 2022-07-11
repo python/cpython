@@ -1,1 +1,0 @@
-Each dictionary view now has a ``mapping`` attribute that provides a :class:`types.MappingProxyType` wrapping the original dictionary.  Patch contributed by Dennis Sweeney.

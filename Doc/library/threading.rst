@@ -16,9 +16,22 @@ level :mod:`_thread` module.  See also the :mod:`queue` module.
 
 .. note::
 
-   While they are not listed below, the ``camelCase`` names used for some
-   methods and functions in this module in the Python 2.x series are still
-   supported by this module.
+   In the Python 2.x series, this module contained ``camelCase`` names
+   for some methods and functions. These are deprecated as of Python 3.10,
+   but they are still supported for compatibility with Python 2.5 and lower.
+
+
+.. impl-detail::
+
+   In CPython, due to the :term:`Global Interpreter Lock
+   <global interpreter lock>`, only one thread
+   can execute Python code at once (even though certain performance-oriented
+   libraries might overcome this limitation).
+   If you want your application to make better use of the computational
+   resources of multi-core machines, you are advised to use
+   :mod:`multiprocessing` or :class:`concurrent.futures.ProcessPoolExecutor`.
+   However, threading is still an appropriate model if you want to run
+   multiple I/O-bound tasks simultaneously.
 
 
 This module defines the following functions:
@@ -29,6 +42,8 @@ This module defines the following functions:
    Return the number of :class:`Thread` objects currently alive.  The returned
    count is equal to the length of the list returned by :func:`.enumerate`.
 
+   The function ``activeCount`` is a deprecated alias for this function.
+
 
 .. function:: current_thread()
 
@@ -36,6 +51,8 @@ This module defines the following functions:
    of control.  If the caller's thread of control was not created through the
    :mod:`threading` module, a dummy thread object with limited functionality is
    returned.
+
+   The function ``currentThread`` is a deprecated alias for this function.
 
 
 .. function:: excepthook(args, /)
@@ -71,6 +88,13 @@ This module defines the following functions:
 
    .. versionadded:: 3.8
 
+.. data:: __excepthook__
+
+   Holds the original value of :func:`threading.excepthook`. It is saved so that the
+   original value can be restored in case they happen to get replaced with
+   broken or alternative objects.
+
+   .. versionadded:: 3.10
 
 .. function:: get_ident()
 
@@ -90,17 +114,18 @@ This module defines the following functions:
    Its value may be used to uniquely identify this particular thread system-wide
    (until the thread terminates, after which the value may be recycled by the OS).
 
-   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX.
+   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD.
 
    .. versionadded:: 3.8
 
 
 .. function:: enumerate()
 
-   Return a list of all :class:`Thread` objects currently alive.  The list
-   includes daemonic threads, dummy thread objects created by
-   :func:`current_thread`, and the main thread.  It excludes terminated threads
-   and threads that have not yet been started.
+   Return a list of all :class:`Thread` objects currently active.  The list
+   includes daemonic threads and dummy thread objects created by
+   :func:`current_thread`.  It excludes terminated threads and threads
+   that have not yet been started.  However, the main thread is always part
+   of the result, even when terminated.
 
 
 .. function:: main_thread()
@@ -121,6 +146,17 @@ This module defines the following functions:
    :meth:`~Thread.run` method is called.
 
 
+.. function:: gettrace()
+
+   .. index::
+      single: trace function
+      single: debugger
+
+   Get the trace function as set by :func:`settrace`.
+
+   .. versionadded:: 3.10
+
+
 .. function:: setprofile(func)
 
    .. index:: single: profile function
@@ -128,6 +164,15 @@ This module defines the following functions:
    Set a profile function for all threads started from the :mod:`threading` module.
    The *func* will be passed to  :func:`sys.setprofile` for each thread, before its
    :meth:`~Thread.run` method is called.
+
+
+.. function:: getprofile()
+
+   .. index:: single: profile function
+
+   Get the profiler function as set by :func:`setprofile`.
+
+   .. versionadded:: 3.10
 
 
 .. function:: stack_size([size])
@@ -248,7 +293,7 @@ There is the possibility that "dummy thread objects" are created. These are
 thread objects corresponding to "alien threads", which are threads of control
 started outside the threading module, such as directly from C code.  Dummy
 thread objects have limited functionality; they are always considered alive and
-daemonic, and cannot be :meth:`~Thread.join`\ ed.  They are never deleted,
+daemonic, and cannot be :ref:`joined <meth-thread-join>`.  They are never deleted,
 since it is impossible to detect the termination of alien threads.
 
 
@@ -264,10 +309,12 @@ since it is impossible to detect the termination of alien threads.
    *target* is the callable object to be invoked by the :meth:`run` method.
    Defaults to ``None``, meaning nothing is called.
 
-   *name* is the thread name.  By default, a unique name is constructed of the
-   form "Thread-*N*" where *N* is a small decimal number.
+   *name* is the thread name. By default, a unique name is constructed
+   of the form "Thread-*N*" where *N* is a small decimal number,
+   or "Thread-*N* (target)" where "target" is ``target.__name__`` if the
+   *target* argument is specified.
 
-   *args* is the argument tuple for the target invocation.  Defaults to ``()``.
+   *args* is a list or tuple of arguments for the target invocation.  Defaults to ``()``.
 
    *kwargs* is a dictionary of keyword arguments for the target invocation.
    Defaults to ``{}``.
@@ -279,6 +326,9 @@ since it is impossible to detect the termination of alien threads.
    If the subclass overrides the constructor, it must make sure to invoke the
    base class constructor (``Thread.__init__()``) before doing anything else to
    the thread.
+
+   .. versionchanged:: 3.10
+      Use the *target* name if *name* argument is omitted.
 
    .. versionchanged:: 3.3
       Added the *daemon* argument.
@@ -303,6 +353,21 @@ since it is impossible to detect the termination of alien threads.
       the *target* argument, if any, with positional and keyword arguments taken
       from the *args* and *kwargs* arguments, respectively.
 
+      Using list or tuple as the *args* argument which passed to the :class:`Thread`
+      could achieve the same effect.
+
+      Example::
+
+         >>> from threading import Thread
+         >>> t = Thread(target=print, args=[1])
+         >>> t.run()
+         1
+         >>> t = Thread(target=print, args=(1,))
+         >>> t.run()
+         1
+
+   .. _meth-thread-join:
+
    .. method:: join(timeout=None)
 
       Wait until the thread terminates. This blocks the calling thread until
@@ -320,7 +385,7 @@ since it is impossible to detect the termination of alien threads.
       When the *timeout* argument is not present or ``None``, the operation will
       block until the thread terminates.
 
-      A thread can be :meth:`~Thread.join`\ ed many times.
+      A thread can be joined many times.
 
       :meth:`~Thread.join` raises a :exc:`RuntimeError` if an attempt is made
       to join the current thread as that would cause a deadlock. It is also
@@ -336,8 +401,10 @@ since it is impossible to detect the termination of alien threads.
    .. method:: getName()
                setName()
 
-      Old getter/setter API for :attr:`~Thread.name`; use it directly as a
+      Deprecated getter/setter API for :attr:`~Thread.name`; use it directly as a
       property instead.
+
+      .. deprecated:: 3.10
 
    .. attribute:: ident
 
@@ -376,8 +443,8 @@ since it is impossible to detect the termination of alien threads.
 
    .. attribute:: daemon
 
-      A boolean value indicating whether this thread is a daemon thread (True)
-      or not (False).  This must be set before :meth:`~Thread.start` is called,
+      A boolean value indicating whether this thread is a daemon thread (``True``)
+      or not (``False``).  This must be set before :meth:`~Thread.start` is called,
       otherwise :exc:`RuntimeError` is raised.  Its initial value is inherited
       from the creating thread; the main thread is not a daemon thread and
       therefore all threads created in the main thread default to
@@ -388,20 +455,10 @@ since it is impossible to detect the termination of alien threads.
    .. method:: isDaemon()
                setDaemon()
 
-      Old getter/setter API for :attr:`~Thread.daemon`; use it directly as a
+      Deprecated getter/setter API for :attr:`~Thread.daemon`; use it directly as a
       property instead.
 
-
-.. impl-detail::
-
-   In CPython, due to the :term:`Global Interpreter Lock`, only one thread
-   can execute Python code at once (even though certain performance-oriented
-   libraries might overcome this limitation).
-   If you want your application to make better use of the computational
-   resources of multi-core machines, you are advised to use
-   :mod:`multiprocessing` or :class:`concurrent.futures.ProcessPoolExecutor`.
-   However, threading is still an appropriate model if you want to run
-   multiple I/O-bound tasks simultaneously.
+      .. deprecated:: 3.10
 
 
 .. _lock-objects:
@@ -461,7 +518,7 @@ All methods are executed atomically.
       value, block for at most the number of seconds specified by *timeout*
       and as long as the lock cannot be acquired.  A *timeout* argument of ``-1``
       specifies an unbounded wait.  It is forbidden to specify a *timeout*
-      when *blocking* is false.
+      when *blocking* is ``False``.
 
       The return value is ``True`` if the lock is acquired successfully,
       ``False`` if not (for example if the *timeout* expired).
@@ -489,7 +546,7 @@ All methods are executed atomically.
 
    .. method:: locked()
 
-      Return true if the lock is acquired.
+      Return ``True`` if the lock is acquired.
 
 
 
@@ -538,17 +595,17 @@ Reentrant locks also support the :ref:`context management protocol <with-locks>`
       is unlocked, only one at a time will be able to grab ownership of the lock.
       There is no return value in this case.
 
-      When invoked with the *blocking* argument set to true, do the same thing as when
+      When invoked with the *blocking* argument set to ``True``, do the same thing as when
       called without arguments, and return ``True``.
 
-      When invoked with the *blocking* argument set to false, do not block.  If a call
+      When invoked with the *blocking* argument set to ``False``, do not block.  If a call
       without an argument would block, return ``False`` immediately; otherwise, do the
       same thing as when called without arguments, and return ``True``.
 
       When invoked with the floating-point *timeout* argument set to a positive
       value, block for at most the number of seconds specified by *timeout*
       and as long as the lock cannot be acquired.  Return ``True`` if the lock has
-      been acquired, false if the timeout has elapsed.
+      been acquired, ``False`` if the timeout has elapsed.
 
       .. versionchanged:: 3.2
          The *timeout* parameter is new.
@@ -738,6 +795,8 @@ item to the buffer only needs to wake up one consumer thread.
       calling thread has not acquired the lock when this method is called, a
       :exc:`RuntimeError` is raised.
 
+      The method ``notifyAll`` is a deprecated alias for this method.
+
 
 .. _semaphore-objects:
 
@@ -787,7 +846,7 @@ Semaphores also support the :ref:`context management protocol <with-locks>`.
         thread will be awoken by each call to :meth:`~Semaphore.release`.  The
         order in which threads are awoken should not be relied on.
 
-      When invoked with *blocking* set to false, do not block.  If a call
+      When invoked with *blocking* set to ``False``, do not block.  If a call
       without an argument would block, return ``False`` immediately; otherwise, do
       the same thing as when called without arguments, and return ``True``.
 
@@ -874,6 +933,8 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
    .. method:: is_set()
 
       Return ``True`` if and only if the internal flag is true.
+
+      The method ``isSet`` is a deprecated alias for this method.
 
    .. method:: set()
 

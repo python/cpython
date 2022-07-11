@@ -145,7 +145,7 @@ PyHKEY_deallocFunc(PyObject *ob)
     PyHKEYObject *obkey = (PyHKEYObject *)ob;
     if (obkey->hkey)
         RegCloseKey((HKEY)obkey->hkey);
-    PyObject_DEL(ob);
+    PyObject_Free(ob);
 }
 
 static int
@@ -217,13 +217,11 @@ class winreg.HKEYType "PyHKEYObject *" "&PyHKEY_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=4c964eba3bf914d6]*/
 
 /*[python input]
-class REGSAM_converter(CConverter):
+class REGSAM_converter(int_converter):
     type = 'REGSAM'
-    format_unit = 'i'
 
-class DWORD_converter(CConverter):
+class DWORD_converter(unsigned_long_converter):
     type = 'DWORD'
-    format_unit = 'k'
 
 class HKEY_converter(CConverter):
     type = 'HKEY'
@@ -249,7 +247,7 @@ class self_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = (PyObject *)_return_value;\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=22f7aedc6d68e80e]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=2ebb7a4922d408d6]*/
 
 #include "clinic/winreg.c.h"
 
@@ -459,7 +457,7 @@ PyObject *
 PyHKEY_FromHKEY(HKEY h)
 {
     /* Inline PyObject_New */
-    PyHKEYObject *op = (PyHKEYObject *) PyObject_MALLOC(sizeof(PyHKEYObject));
+    PyHKEYObject *op = (PyHKEYObject *) PyObject_Malloc(sizeof(PyHKEYObject));
     if (op == NULL) {
         return PyErr_NoMemory();
     }
@@ -645,19 +643,9 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
                     t = PyList_GET_ITEM(value, j);
                     if (!PyUnicode_Check(t))
                         return FALSE;
-#if USE_UNICODE_WCHAR_CACHE
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-                    len = PyUnicode_GetSize(t);
-                    if (len < 0)
-                        return FALSE;
-                    len++;
-_Py_COMP_DIAG_POP
-#else /* USE_UNICODE_WCHAR_CACHE */
                     len = PyUnicode_AsWideChar(t, NULL, 0);
                     if (len < 0)
                         return FALSE;
-#endif /* USE_UNICODE_WCHAR_CACHE */
                     size += Py_SAFE_DOWNCAST(len * sizeof(wchar_t),
                                              size_t, DWORD);
                 }
@@ -680,7 +668,7 @@ _Py_COMP_DIAG_POP
                     assert(size > 0);
                     len = PyUnicode_AsWideChar(t, P, size);
                     assert(len >= 0);
-                    assert(len < size);
+                    assert((unsigned)len < size);
                     size -= (DWORD)len + 1;
                     P += len + 1;
                 }
@@ -1709,40 +1697,27 @@ winreg_SetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
         return NULL;
     }
 
-#if USE_UNICODE_WCHAR_CACHE
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    const wchar_t *value = PyUnicode_AsUnicodeAndSize(value_obj, &value_length);
-_Py_COMP_DIAG_POP
-#else /* USE_UNICODE_WCHAR_CACHE */
     wchar_t *value = PyUnicode_AsWideCharString(value_obj, &value_length);
-#endif /* USE_UNICODE_WCHAR_CACHE */
     if (value == NULL) {
         return NULL;
     }
     if ((Py_ssize_t)(DWORD)value_length != value_length) {
         PyErr_SetString(PyExc_OverflowError, "value is too long");
-#if !USE_UNICODE_WCHAR_CACHE
         PyMem_Free(value);
-#endif /* USE_UNICODE_WCHAR_CACHE */
         return NULL;
     }
 
     if (PySys_Audit("winreg.SetValue", "nunu#",
                     (Py_ssize_t)key, sub_key, (Py_ssize_t)type,
                     value, value_length) < 0) {
-#if !USE_UNICODE_WCHAR_CACHE
         PyMem_Free(value);
-#endif /* USE_UNICODE_WCHAR_CACHE */
         return NULL;
     }
 
     Py_BEGIN_ALLOW_THREADS
     rc = RegSetValueW(key, sub_key, REG_SZ, value, (DWORD)(value_length + 1));
     Py_END_ALLOW_THREADS
-#if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free(value);
-#endif /* USE_UNICODE_WCHAR_CACHE */
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegSetValue");
     Py_RETURN_NONE;
@@ -1813,12 +1788,13 @@ winreg_SetValueEx_impl(PyObject *module, HKEY key,
     if (PySys_Audit("winreg.SetValue", "nunO",
                     (Py_ssize_t)key, value_name, (Py_ssize_t)type,
                     value) < 0) {
+        PyMem_Free(data);
         return NULL;
     }
     Py_BEGIN_ALLOW_THREADS
     rc = RegSetValueExW(key, value_name, 0, type, data, len);
     Py_END_ALLOW_THREADS
-    PyMem_DEL(data);
+    PyMem_Free(data);
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc,
                                                    "RegSetValueEx");
@@ -2045,11 +2021,9 @@ PyMODINIT_FUNC PyInit_winreg(void)
     PyHKEY_Type.tp_doc = PyHKEY_doc;
     if (PyType_Ready(&PyHKEY_Type) < 0)
         return NULL;
-    Py_INCREF(&PyHKEY_Type);
     if (PyDict_SetItemString(d, "HKEYType",
                              (PyObject *)&PyHKEY_Type) != 0)
         return NULL;
-    Py_INCREF(PyExc_OSError);
     if (PyDict_SetItemString(d, "error",
                              PyExc_OSError) != 0)
         return NULL;
@@ -2115,5 +2089,3 @@ PyMODINIT_FUNC PyInit_winreg(void)
     ADD_INT(REG_RESOURCE_REQUIREMENTS_LIST);
     return m;
 }
-
-
