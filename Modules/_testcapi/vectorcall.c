@@ -1,5 +1,8 @@
 #include "parts.h"
-#include <stddef.h>  // offsetof
+#include "clinic/vectorcall.c.h"
+
+#include "structmember.h"           // PyMemberDef
+#include <stddef.h>                 // offsetof
 
 
 /* Test PEP 590 - Vectorcall */
@@ -122,11 +125,82 @@ test_pyvectorcall_call(PyObject *self, PyObject *args)
     return PyVectorcall_Call(func, argstuple, kwargs);
 }
 
+PyObject *
+VectorCallClass_vectorcall(PyObject *callable,
+                            PyObject *const *args,
+                            size_t nargsf,
+                            PyObject *kwnames) {
+    return PyUnicode_FromString("vectorcall");
+}
+
+PyObject *
+VectorCallClass_tpcall(PyObject *self, PyObject *args, PyObject *kwargs) {
+    return PyUnicode_FromString("tp_call");
+}
+
+PyObject *
+VectorCallClass_set_vectorcall(PyObject *self,
+                                PyTypeObject *defining_class,
+                                PyObject *const *Py_UNUSED(args),
+                                Py_ssize_t Py_UNUSED(nargs),
+                                PyObject *Py_UNUSED(kwnames)) {
+    *(vectorcallfunc*)((char*)self + defining_class->tp_vectorcall_offset) = (
+        VectorCallClass_vectorcall);
+    Py_RETURN_NONE;
+}
+
+PyMethodDef VectorCallClass_methods[] = {
+    {"set_vectorcall", _PyCFunction_CAST(VectorCallClass_set_vectorcall),
+        METH_METHOD | METH_FASTCALL | METH_KEYWORDS},
+    {},
+};
+
+/*[clinic input]
+module _testcapi
+_testcapi.make_vectorcall_class
+
+    base: object(subclass_of="&PyType_Type", type="PyTypeObject *") = NULL
+    /
+
+Create a class whose instances return "tpcall" when called.
+
+When the "set_vectorcall" method is called on an instance, a vectorcall
+function that returns "vectorcall" will be installed.
+[clinic start generated code]*/
+
+static PyObject *
+_testcapi_make_vectorcall_class_impl(PyObject *module, PyTypeObject *base)
+/*[clinic end generated code: output=16dcfc3062ddf968 input=24017b5a7cc15f66]*/
+{
+    if (!base) {
+        base = (PyTypeObject *)&PyBaseObject_Type;
+    }
+    PyMemberDef members[] = {
+        {"__vectorcalloffset__", T_PYSSIZET, base->tp_basicsize, READONLY},
+        {},
+    };
+    PyType_Slot slots[] = {
+        {Py_tp_call, VectorCallClass_tpcall},
+        {Py_tp_members, members},
+        {Py_tp_methods, VectorCallClass_methods},
+        {},
+    };
+    PyType_Spec spec = {
+        .name = "_testcapi.VectorcallClass",
+        .basicsize = base->tp_basicsize + sizeof(vectorcallfunc),
+        .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_VECTORCALL,
+        .slots = slots,
+    };
+
+    return PyType_FromSpecWithBases(&spec, (PyObject *)base);
+}
+
 static PyMethodDef TestMethods[] = {
     {"pyobject_fastcall", test_pyobject_fastcall, METH_VARARGS},
     {"pyobject_fastcalldict", test_pyobject_fastcalldict, METH_VARARGS},
     {"pyobject_vectorcall", test_pyobject_vectorcall, METH_VARARGS},
     {"pyvectorcall_call", test_pyvectorcall_call, METH_VARARGS},
+    _TESTCAPI_MAKE_VECTORCALL_CLASS_METHODDEF
     {NULL},
 };
 

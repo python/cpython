@@ -626,6 +626,16 @@ class TestPEP590(unittest.TestCase):
         f = _testcapi.MethodDescriptorNopGet()
         self.assertIs(f(*args), args)
 
+    def test_vectorcall_override_on_mutable_class(self):
+        """Setting __call__ should disable vectorcall"""
+        TestType = _testcapi.make_vectorcall_class()
+        instance = TestType()
+        self.assertEqual(instance(), "tp_call")
+        instance.set_vectorcall()
+        self.assertEqual(instance(), "vectorcall")  # assume vectorcall is used
+        TestType.__call__ = lambda self: "custom"
+        self.assertEqual(instance(), "custom")
+
     def test_vectorcall(self):
         # Test a bunch of different ways to call objects:
         # 1. vectorcall using PyVectorcall_Call()
