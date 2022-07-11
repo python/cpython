@@ -6023,6 +6023,7 @@ def install_tests_in_module_dict(remote_globs, start_method):
 
 
 @unittest.skipIf(not hasattr(_multiprocessing, 'SemLock'), 'SemLock not available')
+@unittest.skipIf(sys.platform != "linux", "Linux only")
 class SemLockTests(unittest.TestCase):
 
     def test_semlock_subclass(self):
