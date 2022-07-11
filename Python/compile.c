@@ -4736,8 +4736,15 @@ update_location_to_match_attr(struct compiler *c, expr_ty meth)
 {
     if (meth->lineno != meth->end_lineno) {
         // Make start location match attribute
-        c->u->u_loc.lineno = meth->end_lineno;
-        c->u->u_loc.col_offset = meth->end_col_offset - (int)PyUnicode_GetLength(meth->v.Attribute.attr)-1;
+        c->u->u_loc.lineno = c->u->u_loc.end_lineno = meth->end_lineno;
+        int len = (int)PyUnicode_GET_LENGTH(meth->v.Attribute.attr);
+        if (len <= meth->end_col_offset) {
+            c->u->u_loc.col_offset = meth->end_col_offset - len;
+        }
+        else {
+            // GH-94694: Somebody's compiling weird ASTs. Just drop the columns:
+            c->u->u_loc.col_offset = c->u->u_loc.end_col_offset = -1;
+        }
     }
 }
 
@@ -9224,6 +9231,16 @@ error:
     return -1;
 }
 
+static bool
+basicblock_has_lineno(const basicblock *bb) {
+    for (int i = 0; i < bb->b_iused; i++) {
+        if (bb->b_instr[i].i_loc.lineno > 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /* If this block ends with an unconditional jump to an exit block,
  * then remove the jump and extend this block with the target.
  */
@@ -9240,6 +9257,10 @@ extend_block(basicblock *bb) {
     }
     if (basicblock_exits_scope(last->i_target) && last->i_target->b_iused <= MAX_COPY_SIZE) {
         basicblock *to_copy = last->i_target;
+        if (basicblock_has_lineno(to_copy)) {
+            /* copy only blocks without line number (like implicit 'return None's) */
+            return 0;
+        }
         last->i_opcode = NOP;
         for (int i = 0; i < to_copy->b_iused; i++) {
             int index = basicblock_next_instr(bb);

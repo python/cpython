@@ -5850,6 +5850,8 @@ AS_VAR_IF([with_readline], [edit], [
   ])
 ])
 
+dnl pyconfig.h defines _XOPEN_SOURCE=700
+READLINE_CFLAGS=$(echo $READLINE_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
 AC_MSG_CHECKING([how to link readline])
 AS_VAR_IF([with_readline], [no], [
@@ -6112,6 +6114,7 @@ AS_VAR_IF([ac_cv_header_ncurses_h], [yes], [
   if test "$ac_sys_system" != "Darwin"; then
     dnl On macOS, there is no separate /usr/lib/libncursesw nor libpanelw.
     PKG_CHECK_MODULES([CURSES], [ncursesw], [
+      AC_DEFINE([HAVE_NCURSESW], [1])
       have_curses=ncursesw
     ], [
       WITH_SAVE_ENV([
@@ -6143,7 +6146,7 @@ AS_VAR_IF([ac_cv_header_ncurses_h], [yes], [
 
 dnl remove _XOPEN_SOURCE macro from curses cflags. pyconfig.h sets
 dnl the macro to 700.
-CURSES_CFLAGS=$(echo $CURSES_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//')
+CURSES_CFLAGS=$(echo $CURSES_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
 if test "$have_curses" = no -a "$ac_sys_system" = "Darwin"; then
   dnl On macOS, there is no separate /usr/lib/libncursesw nor libpanelw.
@@ -6202,6 +6205,9 @@ AS_VAR_IF([ac_cv_header_panel_h], [yes], [
   ])
 
 ])dnl ac_cv_header_panel_h = yes
+
+dnl pyconfig.h defines _XOPEN_SOURCE=700
+PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
 AC_MSG_CHECKING([panel flags])
 AS_VAR_IF([have_panel], [no], [
@@ -6433,6 +6439,7 @@ SRCDIRS="\
   Modules/_sha3 \
   Modules/_sqlite \
   Modules/_sre \
+  Modules/_testcapi \
   Modules/_xxtestfuzz \
   Modules/cjkcodecs \
   Modules/expat \
