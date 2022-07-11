@@ -29,11 +29,12 @@ class FutureTests:
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
                        'requires the C _asyncio module')
-  class CFutureTests(FutureTests, unittest.IsolatedAsyncioTestCase):
-      cls = tasks._CTask
- 
-  class PyFutureTests(FutureTests, unittest.IsolatedAsyncioTestCase):
-      cls = tasks._PyTask
+class CFutureTests(FutureTests, unittest.IsolatedAsyncioTestCase):
+    cls = tasks._CTask
+
+class PyFutureTests(FutureTests, unittest.IsolatedAsyncioTestCase):
+    cls = tasks._PyTask
+
 class FutureReprTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_recursive_repr_for_pending_tasks(self):
