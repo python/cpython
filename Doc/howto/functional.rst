@@ -1218,6 +1218,8 @@ https://en.wikipedia.org/wiki/Coroutine: Entry for coroutines.
 
 https://en.wikipedia.org/wiki/Partial_application: Entry for the concept of partial function application.
 
+https://en.wikipedia.org/wiki/Currying: Entry for the concept of currying.
+
 Python-specific
 ---------------
 
