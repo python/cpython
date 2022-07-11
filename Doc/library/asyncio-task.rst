@@ -289,10 +289,10 @@ Tasks can easily and safely be cancelled.
 When a task is cancelled, asyncio will raise a :exc:`asyncio.CancelledError`
 into the task at the next opportunity.
 
-Coroutines should only catch :exc:`asyncio.CancelledError` if they
-need to perform clean-up logic when they are cancelled, and even in
-that case the :exc:`asyncio.CancelledError` should be propagated when
-clean-up is complete. Most code can safely ignore `CancelledError`.
+Coroutines are recommended to use ``try/finally`` blocks to robustly
+perform clean-up logic. In the case the :exc:`asyncio.CancelledError`
+is explicitly caught, it should generally be propagated when
+clean-up is complete. Most code can safely ignore :exc:`asyncio.CancelledError`.
 
 Important asyncio components, like :class:`asyncio.TaskGroup` and the
 :func:`asyncio.timeout` context manager, are implemented using cancellation
@@ -557,8 +557,7 @@ Timeouts
 .. coroutinefunction:: timeout(delay)
 
     A convenient way to limit the amount of time spent waiting on
-    something is to use the :func:`asyncio.timeout` and
-    :func:`asyncio.timeout_at`
+    something is to use the :func:`asyncio.timeout`
     :ref:`asynchronous context manager <async-context-managers>`.
 
     *delay* can either be ``None`` or a float or int number of
@@ -577,7 +576,14 @@ Timeouts
     the resulting :exc:`asyncio.CancelledError` internally, transforming it
     into a :exc:`asyncio.TimeoutError` which can be caught and handled.
 
-    Example::
+    .. note::
+
+      The :func:`asyncio.timeout` context manager is what transforms
+      the :exc:`asyncio.CancelledError` into an :exc:`asyncio.TimeoutError`,
+      which means the :exc:`asyncio.TimeoutError` can only be caught
+      *outside* of the context manager.
+
+    Example of catching :exc:`asyncio.TimeoutError`::
 
         async def main():
             try:
@@ -608,7 +614,7 @@ Timeouts
             if cm.expired:
                 print("Looks like we haven't finished on time.")
 
-    The timeout context managers can be safely nested.
+    Timeout context managers can be safely nested.
 
     .. versionadded:: 3.11
 
