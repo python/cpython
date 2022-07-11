@@ -49,13 +49,6 @@ class FutureReprTests(unittest.IsolatedAsyncioTestCase):
         # exact comparison for the whole string is even weaker.
         self.assertIn('...', repr(await asyncio.wait_for(func(), timeout=10)))
 
-@unittest.skipUnless(hasattr(tasks, '_CTask'),
-                     'requires the C _asyncio module')
-class CFutureTests(FutureTests, unittest.IsolatedAsyncioTestCase):
-    cls = tasks._CTask
-
-class PyFutureTests(FutureTests, unittest.IsolatedAsyncioTestCase):
-    cls = tasks._PyTask
 
 if __name__ == '__main__':
     unittest.main()
