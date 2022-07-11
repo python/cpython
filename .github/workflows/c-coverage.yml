@@ -1,0 +1,65 @@
+name: C coverage
+
+on:
+  schedule:
+    # Run this daily at 2400 UTC
+    - cron: '0 0 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  c-coverage:
+    name: 'C-level coverage (using llvm-cov)'
+    runs-on: ubuntu-20.04
+    env:
+      OPENSSL_VER: 1.1.1n
+      PYTHONSTRICTEXTENSIONBUILD: 1
+    steps:
+    - name: Install Dependencies
+      run: |
+        sudo ./.github/workflows/posix-deps-apt.sh
+    - name: Configure OpenSSL env vars
+      run: |
+        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> $GITHUB_ENV
+        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
+    - name: 'Restore OpenSSL build'
+      id: cache-openssl
+      uses: actions/cache@v3
+      with:
+        path: ./multissl/openssl/${{ env.OPENSSL_VER }}
+        key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
+    - name: Install OpenSSL
+      if: steps.cache-openssl.outputs.cache-hit != 'true'
+      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $MULTISSL_DIR --openssl $OPENSSL_VER --system Linux
+    - name: Add ccache to PATH
+      run: |
+        echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
+    - name: Configure ccache action
+      uses: hendrikmuhs/ccache-action@v1
+    - name: Configure clang (with coverage)
+      run: |
+        echo "CC=/usr/lib/ccache/clang-12 -fprofile-instr-generate -fcoverage-mapping" >> $GITHUB_ENV
+        echo "CXX=/usr/lib/ccache/clang++-12 -fprofile-instr-generate -fcoverage-mapping" >> $GITHUB_ENV
+    - name: Configure CPython
+      run: ./configure --with-pydebug --with-openssl=$OPENSSL_DIR
+    - name: Build CPython
+      run: make -j4
+    - name: Collect coverage data
+      # Specify the LLVM_PROFILE_FILE using %m so multiple shared objects can write
+      # in parallel. Set the full path to the directory so results aren't written
+      # into temporary directories created by tests.
+      # Using "-j 1" is important, or the Github Action runs out of memory
+      run: LLVM_PROFILE_FILE=${PWD}/python%m.profraw xvfb-run ./python -m test -j 1
+    - name: Generate coverage report
+      run: |
+        llvm-profdata-12 merge -sparse python*.profraw -o python.profdata
+        llvm-cov-12 show -format=html -output-dir=cpython-coverage -instr-profile=python.profdata -show-branches=count -show-regions python .
+    - name: Publish coverage-report
+      uses: JamesIves/github-pages-deploy-action@v4
+      with:
+        folder: cpython-coverage
+        repository-name: '' # TODO Destination
+        token: ${{ secrets.COVERAGE_DEPLOY_TOKEN }} # TODO: Use an organization-level token
+        single-commit: true

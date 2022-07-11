@@ -797,9 +797,11 @@ class ProcessTestCase(BaseTestCase):
             # This excludes some __CF_* and VERSIONER_* keys MacOS insists
             # on adding even when the environment in exec is empty.
             # Gentoo sandboxes also force LD_PRELOAD and SANDBOX_* to exist.
+            # LLVM coverage adds __LLVM_PROFILE_RT_INIT_ONCE variable.
             return ('VERSIONER' in n or '__CF' in n or  # MacOS
                     n == 'LD_PRELOAD' or n.startswith('SANDBOX') or # Gentoo
-                    n == 'LC_CTYPE') # Locale coercion triggered
+                    n == 'LC_CTYPE' or # Locale coercion triggered
+                    n == '__LLVM_PROFILE_RT_INIT_ONCE')
 
         with subprocess.Popen([sys.executable, "-c",
                                'import os; print(list(os.environ.keys()))'],
