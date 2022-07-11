@@ -6020,3 +6020,14 @@ def install_tests_in_module_dict(remote_globs, start_method):
 
     remote_globs['setUpModule'] = setUpModule
     remote_globs['tearDownModule'] = tearDownModule
+
+
+@unittest.skipIf(not hasattr(_multiprocessing, 'SemLock'), 'SemLock not available')
+class SemLockTests(unittest.TestCase):
+
+    def test_semlock_subclass(self):
+        class SemLock(_multiprocessing.SemLock):
+            pass
+        name = f'test_semlock_subclass-{os.getpid()}'
+        s = SemLock(1, 0, 10, name, 0)
+        _multiprocessing.sem_unlink(name)
