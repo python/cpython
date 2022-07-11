@@ -177,6 +177,9 @@ Pending Removal in Future Versions
 The following APIs were deprecated in earlier Python versions and will be removed,
 although there is currently no date scheduled for their removal.
 
+* :class:`typing.Hashable` and :class:`typing.Sized` aliases for :class:`collections.abc.Hashable`
+  and :class:`collections.abc.Sized`. (:gh:`94309`)
+
 * :class:`typing.Text` (:gh:`92332`)
 
 * Currently Python accepts numeric literals immediately followed by keywords,
@@ -187,8 +190,7 @@ although there is currently no date scheduled for their removal.
   immediately followed by one of keywords :keyword:`and`, :keyword:`else`,
   :keyword:`for`, :keyword:`if`, :keyword:`in`, :keyword:`is` and :keyword:`or`.
   In a future release it will be changed to a syntax error. (:gh:`87999`)
-* :class:`typing.Hashable` and :class:`typing.Sized` aliases for :class:`collections.abc.Hashable`
-  and :class:`collections.abc.Sized`. (:gh:`94309`)
+
 
 
 Removed
