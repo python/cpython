@@ -55,13 +55,14 @@ raised for division by zero and mod by zero.
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
-#define NEEDS_PY_IDENTIFIER
 
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_bit_length()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_dtoa.h"          // _Py_dg_infinity()
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object.h"        // _PyObject_LookupSpecial()
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 /* For DBL_EPSILON in _math.h */
 #include <float.h>
@@ -75,6 +76,20 @@ module math
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=76bc7002685dd942]*/
 
+
+typedef struct {
+    PyObject *str___ceil__;
+    PyObject *str___floor__;
+    PyObject *str___trunc__;
+} math_module_state;
+
+static inline math_module_state*
+get_math_module_state(PyObject *module)
+{
+    void *state = _PyModule_GetState(module);
+    assert(state != NULL);
+    return (math_module_state *)state;
+}
 
 /*
    sin(pi*x), giving accurate results for all finite x (especially x
@@ -1215,10 +1230,10 @@ static PyObject *
 math_ceil(PyObject *module, PyObject *number)
 /*[clinic end generated code: output=6c3b8a78bc201c67 input=2725352806399cab]*/
 {
-    _Py_IDENTIFIER(__ceil__);
 
     if (!PyFloat_CheckExact(number)) {
-        PyObject *method = _PyObject_LookupSpecialId(number, &PyId___ceil__);
+        math_module_state *state = get_math_module_state(module);
+        PyObject *method = _PyObject_LookupSpecial(number, state->str___ceil__);
         if (method != NULL) {
             PyObject *result = _PyObject_CallNoArgs(method);
             Py_DECREF(method);
@@ -1283,14 +1298,13 @@ math_floor(PyObject *module, PyObject *number)
 {
     double x;
 
-    _Py_IDENTIFIER(__floor__);
-
     if (PyFloat_CheckExact(number)) {
         x = PyFloat_AS_DOUBLE(number);
     }
     else
     {
-        PyObject *method = _PyObject_LookupSpecialId(number, &PyId___floor__);
+        math_module_state *state = get_math_module_state(module);
+        PyObject *method = _PyObject_LookupSpecial(number, state->str___floor__);
         if (method != NULL) {
             PyObject *result = _PyObject_CallNoArgs(method);
             Py_DECREF(method);
@@ -2156,7 +2170,6 @@ static PyObject *
 math_trunc(PyObject *module, PyObject *x)
 /*[clinic end generated code: output=34b9697b707e1031 input=2168b34e0a09134d]*/
 {
-    _Py_IDENTIFIER(__trunc__);
     PyObject *trunc, *result;
 
     if (PyFloat_CheckExact(x)) {
@@ -2168,7 +2181,8 @@ math_trunc(PyObject *module, PyObject *x)
             return NULL;
     }
 
-    trunc = _PyObject_LookupSpecialId(x, &PyId___trunc__);
+    math_module_state *state = get_math_module_state(module);
+    trunc = _PyObject_LookupSpecial(x, state->str___trunc__);
     if (trunc == NULL) {
         if (!PyErr_Occurred())
             PyErr_Format(PyExc_TypeError,
@@ -2312,7 +2326,7 @@ math_modf_impl(PyObject *module, double x)
    in that int is larger than PY_SSIZE_T_MAX. */
 
 static PyObject*
-loghelper(PyObject* arg, double (*func)(double), const char *funcname)
+loghelper(PyObject* arg, double (*func)(double))
 {
     /* If it is int, do it ourselves. */
     if (PyLong_Check(arg)) {
@@ -2372,11 +2386,11 @@ math_log_impl(PyObject *module, PyObject *x, int group_right_1,
     PyObject *num, *den;
     PyObject *ans;
 
-    num = loghelper(x, m_log, "log");
+    num = loghelper(x, m_log);
     if (num == NULL || base == NULL)
         return num;
 
-    den = loghelper(base, m_log, "log");
+    den = loghelper(base, m_log);
     if (den == NULL) {
         Py_DECREF(num);
         return NULL;
@@ -2402,7 +2416,7 @@ static PyObject *
 math_log2(PyObject *module, PyObject *x)
 /*[clinic end generated code: output=5425899a4d5d6acb input=08321262bae4f39b]*/
 {
-    return loghelper(x, m_log2, "log2");
+    return loghelper(x, m_log2);
 }
 
 
@@ -2419,7 +2433,7 @@ static PyObject *
 math_log10(PyObject *module, PyObject *x)
 /*[clinic end generated code: output=be72a64617df9c6f input=b2469d02c6469e53]*/
 {
-    return loghelper(x, m_log10, "log10");
+    return loghelper(x, m_log10);
 }
 
 
@@ -3825,6 +3839,20 @@ math_ulp_impl(PyObject *module, double x)
 static int
 math_exec(PyObject *module)
 {
+
+    math_module_state *state = get_math_module_state(module);
+    state->str___ceil__ = PyUnicode_InternFromString("__ceil__");
+    if (state->str___ceil__ == NULL) {
+        return -1;
+    }
+    state->str___floor__ = PyUnicode_InternFromString("__floor__");
+    if (state->str___floor__ == NULL) {
+        return -1;
+    }
+    state->str___trunc__ = PyUnicode_InternFromString("__trunc__");
+    if (state->str___trunc__ == NULL) {
+        return -1;
+    }
     if (PyModule_AddObject(module, "pi", PyFloat_FromDouble(Py_MATH_PI)) < 0) {
         return -1;
     }
@@ -3844,6 +3872,22 @@ math_exec(PyObject *module)
     }
 #endif
     return 0;
+}
+
+static int
+math_clear(PyObject *module)
+{
+    math_module_state *state = get_math_module_state(module);
+    Py_CLEAR(state->str___ceil__);
+    Py_CLEAR(state->str___floor__);
+    Py_CLEAR(state->str___trunc__);
+    return 0;
+}
+
+static void
+math_free(void *module)
+{
+    math_clear((PyObject *)module);
 }
 
 static PyMethodDef math_methods[] = {
@@ -3918,9 +3962,11 @@ static struct PyModuleDef mathmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "math",
     .m_doc = module_doc,
-    .m_size = 0,
+    .m_size = sizeof(math_module_state),
     .m_methods = math_methods,
     .m_slots = math_slots,
+    .m_clear = math_clear,
+    .m_free = math_free,
 };
 
 PyMODINIT_FUNC

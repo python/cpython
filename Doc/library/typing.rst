@@ -78,12 +78,14 @@ annotations. These include:
      *Introducing* :data:`TypeVarTuple`
 * :pep:`647`: User-Defined Type Guards
      *Introducing* :data:`TypeGuard`
-* :pep:`655`: Marking individual TypedDict items as required or potentially-missing
+* :pep:`655`: Marking individual TypedDict items as required or potentially missing
      *Introducing* :data:`Required` and :data:`NotRequired`
 * :pep:`673`: Self type
     *Introducing* :data:`Self`
 * :pep:`675`: Arbitrary Literal String Type
     *Introducing* :data:`LiteralString`
+* :pep:`681`: Data Class Transforms
+    *Introducing* the :func:`@dataclass_transform<dataclass_transform>` decorator
 
 .. _type-aliases:
 
@@ -1032,7 +1034,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    as either required or non-required respectively.
 
    For more information, see :class:`TypedDict` and
-   :pep:`655` ("Marking individual TypedDict items as required or potentially-missing").
+   :pep:`655` ("Marking individual TypedDict items as required or potentially missing").
 
    .. versionadded:: 3.11
 
@@ -2213,6 +2215,9 @@ Corresponding to other types in :mod:`collections.abc`
 
    An alias to :class:`collections.abc.Hashable`.
 
+   .. deprecated:: 3.12
+      Use :class:`collections.abc.Hashable` directly instead.
+
 .. class:: Reversible(Iterable[T_co])
 
    A generic version of :class:`collections.abc.Reversible`.
@@ -2224,6 +2229,9 @@ Corresponding to other types in :mod:`collections.abc`
 .. class:: Sized
 
    An alias to :class:`collections.abc.Sized`.
+
+   .. deprecated:: 3.12
+      Use :class:`collections.abc.Sized` directly instead.
 
 Asynchronous programming
 """"""""""""""""""""""""
@@ -2528,7 +2536,17 @@ Functions and decorators
    For example, type checkers will assume these classes have
    ``__init__`` methods that accept ``id`` and ``name``.
 
-   The arguments to this decorator can be used to customize this behavior:
+   The decorated class, metaclass, or function may accept the following bool
+   arguments which type checkers will assume have the same effect as they
+   would have on the
+   :func:`@dataclasses.dataclass<dataclasses.dataclass>` decorator: ``init``,
+   ``eq``, ``order``, ``unsafe_hash``, ``frozen``, ``match_args``,
+   ``kw_only``, and ``slots``. It must be possible for the value of these
+   arguments (``True`` or ``False``) to be statically evaluated.
+
+   The arguments to the ``dataclass_transform`` decorator can be used to
+   customize the default behaviors of the decorated class, metaclass, or
+   function:
 
    * ``eq_default`` indicates whether the ``eq`` parameter is assumed to be
      ``True`` or ``False`` if it is omitted by the caller.
@@ -2540,6 +2558,28 @@ Functions and decorators
      or functions that describe fields, similar to ``dataclasses.field()``.
    * Arbitrary other keyword arguments are accepted in order to allow for
      possible future extensions.
+
+   Type checkers recognize the following optional arguments on field
+   specifiers:
+
+   * ``init`` indicates whether the field should be included in the
+     synthesized ``__init__`` method. If unspecified, ``init`` defaults to
+     ``True``.
+   * ``default`` provides the default value for the field.
+   * ``default_factory`` provides a runtime callback that returns the
+     default value for the field. If neither ``default`` nor
+     ``default_factory`` are specified, the field is assumed to have no
+     default value and must be provided a value when the class is
+     instantiated.
+   * ``factory`` is an alias for ``default_factory``.
+   * ``kw_only`` indicates whether the field should be marked as
+     keyword-only. If ``True``, the field will be keyword-only. If
+     ``False``, it will not be keyword-only. If unspecified, the value of
+     the ``kw_only`` parameter on the object decorated with
+     ``dataclass_transform`` will be used, or if that is unspecified, the
+     value of ``kw_only_default`` on ``dataclass_transform`` will be used.
+   * ``alias`` provides an alternative name for the field. This alternative
+     name is used in the synthesized ``__init__`` method.
 
    At runtime, this decorator records its arguments in the
    ``__dataclass_transform__`` attribute on the decorated object.
@@ -2814,4 +2854,7 @@ convenience. This is subject to change, and not all deprecations are listed.
 |  collections                     |               |                   |                |
 +----------------------------------+---------------+-------------------+----------------+
 |  ``typing.Text``                 | 3.11          | Undecided         | :gh:`92332`    |
++----------------------------------+---------------+-------------------+----------------+
+|  ``typing.Hashable`` and         | 3.12          | Undecided         | :gh:`94309`    |
+|  ``typing.Sized``                |               |                   |                |
 +----------------------------------+---------------+-------------------+----------------+

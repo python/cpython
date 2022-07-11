@@ -25,16 +25,47 @@ def _kill_python_and_exit_code(p):
     returncode = p.wait()
     return data, returncode
 
+
 class CmdLineTest(unittest.TestCase):
     def test_directories(self):
         assert_python_failure('.')
         assert_python_failure('< .')
 
     def verify_valid_flag(self, cmd_line):
-        rc, out, err = assert_python_ok(*cmd_line)
+        rc, out, err = assert_python_ok(cmd_line)
         self.assertTrue(out == b'' or out.endswith(b'\n'))
         self.assertNotIn(b'Traceback', out)
         self.assertNotIn(b'Traceback', err)
+        return out
+
+    def test_help(self):
+        self.verify_valid_flag('-h')
+        self.verify_valid_flag('-?')
+        out = self.verify_valid_flag('--help')
+        lines = out.splitlines()
+        self.assertIn(b'usage', lines[0])
+        self.assertNotIn(b'PYTHONHOME', out)
+        self.assertNotIn(b'-X dev', out)
+        self.assertLess(len(lines), 50)
+
+    def test_help_env(self):
+        out = self.verify_valid_flag('--help-env')
+        self.assertIn(b'PYTHONHOME', out)
+
+    def test_help_xoptions(self):
+        out = self.verify_valid_flag('--help-xoptions')
+        self.assertIn(b'-X dev', out)
+
+    def test_help_all(self):
+        out = self.verify_valid_flag('--help-all')
+        lines = out.splitlines()
+        self.assertIn(b'usage', lines[0])
+        self.assertIn(b'PYTHONHOME', out)
+        self.assertIn(b'-X dev', out)
+
+        # The first line contains the program name,
+        # but the rest should be ASCII-only
+        b''.join(lines[1:]).decode('ascii')
 
     def test_optimize(self):
         self.verify_valid_flag('-O')
@@ -42,14 +73,6 @@ class CmdLineTest(unittest.TestCase):
 
     def test_site_flag(self):
         self.verify_valid_flag('-S')
-
-    def test_usage(self):
-        rc, out, err = assert_python_ok('-h')
-        lines = out.splitlines()
-        self.assertIn(b'usage', lines[0])
-        # The first line contains the program name,
-        # but the rest should be ASCII-only
-        b''.join(lines[1:]).decode('ascii')
 
     def test_version(self):
         version = ('Python %d.%d' % sys.version_info[:2]).encode("ascii")
@@ -90,7 +113,7 @@ class CmdLineTest(unittest.TestCase):
     def test_unknown_xoptions(self):
         rc, out, err = assert_python_failure('-X', 'blech')
         self.assertIn(b'Unknown value for option -X', err)
-        msg = b'Fatal Python error: Unknown value for option -X'
+        msg = b'Fatal Python error: Unknown value for option -X (see --help-xoptions)'
         self.assertEqual(err.splitlines().count(msg), 1)
         self.assertEqual(b'', out)
 
@@ -134,7 +157,6 @@ class CmdLineTest(unittest.TestCase):
         }
         for raw, expected in tests:
             cmd = ['-X', f'frozen_modules{raw}',
-                   #'-c', 'import os; print(os.__spec__.loader.__name__, end="")']
                    '-c', 'import os; print(os.__spec__.loader, end="")']
             with self.subTest(raw):
                 res = assert_python_ok(*cmd)
@@ -167,7 +189,6 @@ class CmdLineTest(unittest.TestCase):
         # Test `python -m unittest` with a relative directory beginning with ./
         # Note: We have to switch to the project's top module's directory, as per
         # the python unittest wiki. We will switch back when we are done.
-        defaultwd = os.getcwd()
         projectlibpath = os.path.dirname(__file__).removesuffix("test")
         with os_helper.change_cwd(projectlibpath):
             # Testing with and without ./
@@ -247,7 +268,6 @@ class CmdLineTest(unittest.TestCase):
         #
         # Test with default config, in the C locale, in the Python UTF-8 Mode.
         code = 'import sys, os; s=os.fsencode(sys.argv[1]); print(ascii(s))'
-        base_cmd = [sys.executable, '-c', code]
 
         def run_default(arg):
             cmd = [sys.executable, '-c', code, arg]
@@ -891,6 +911,7 @@ class IgnoreEnvironmentTest(unittest.TestCase):
             PYTHONVERBOSE="1",
             PYTHONSAFEPATH="1",
         )
+
 
 class SyntaxErrorTests(unittest.TestCase):
     def check_string(self, code):

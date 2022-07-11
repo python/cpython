@@ -2333,35 +2333,6 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
         self.assertIsNot(element_foo.attrib, attrib)
         self.assertNotEqual(element_foo.attrib, attrib)
 
-    def test_copy(self):
-        # Only run this test if Element.copy() is defined.
-        if "copy" not in dir(ET.Element):
-            raise unittest.SkipTest("Element.copy() not present")
-
-        element_foo = ET.Element("foo", { "zix": "wyp" })
-        element_foo.append(ET.Element("bar", { "baz": "qix" }))
-
-        with self.assertWarns(DeprecationWarning):
-            element_foo2 = element_foo.copy()
-
-        # elements are not the same
-        self.assertIsNot(element_foo2, element_foo)
-
-        # string attributes are equal
-        self.assertEqual(element_foo2.tag, element_foo.tag)
-        self.assertEqual(element_foo2.text, element_foo.text)
-        self.assertEqual(element_foo2.tail, element_foo.tail)
-
-        # number of children is the same
-        self.assertEqual(len(element_foo2), len(element_foo))
-
-        # children are the same
-        for (child1, child2) in itertools.zip_longest(element_foo, element_foo2):
-            self.assertIs(child1, child2)
-
-        # attrib is a copy
-        self.assertEqual(element_foo2.attrib, element_foo.attrib)
-
     def test___copy__(self):
         element_foo = ET.Element("foo", { "zix": "wyp" })
         element_foo.append(ET.Element("bar", { "baz": "qix" }))
@@ -3739,13 +3710,7 @@ class IOTest(unittest.TestCase):
         tree = ET.ElementTree(ET.XML('''<site>\xf8</site>'''))
         tree.write(TESTFN, encoding='unicode')
         with open(TESTFN, 'rb') as f:
-            data = f.read()
-            expected = "<site>\xf8</site>".encode(encoding, 'xmlcharrefreplace')
-            if encoding.lower() in ('utf-8', 'ascii'):
-                self.assertEqual(data, expected)
-            else:
-                self.assertIn(b"<?xml version='1.0' encoding=", data)
-                self.assertIn(expected, data)
+            self.assertEqual(f.read(), b"<site>\xc3\xb8</site>")
 
     def test_write_to_text_file(self):
         self.addCleanup(os_helper.unlink, TESTFN)
@@ -3760,17 +3725,13 @@ class IOTest(unittest.TestCase):
             tree.write(f, encoding='unicode')
             self.assertFalse(f.closed)
         with open(TESTFN, 'rb') as f:
-            self.assertEqual(f.read(),  convlinesep(
-                             b'''<?xml version='1.0' encoding='ascii'?>\n'''
-                             b'''<site>&#248;</site>'''))
+            self.assertEqual(f.read(),  b'''<site>&#248;</site>''')
 
         with open(TESTFN, 'w', encoding='ISO-8859-1') as f:
             tree.write(f, encoding='unicode')
             self.assertFalse(f.closed)
         with open(TESTFN, 'rb') as f:
-            self.assertEqual(f.read(),  convlinesep(
-                             b'''<?xml version='1.0' encoding='ISO-8859-1'?>\n'''
-                             b'''<site>\xf8</site>'''))
+            self.assertEqual(f.read(), b'''<site>\xf8</site>''')
 
     def test_write_to_binary_file(self):
         self.addCleanup(os_helper.unlink, TESTFN)
