@@ -191,6 +191,7 @@ although there is currently no date scheduled for their removal.
   :keyword:`for`, :keyword:`if`, :keyword:`in`, :keyword:`is` and :keyword:`or`.
   In a future release it will be changed to a syntax error. (:gh:`87999`)
 
+
 Removed
 =======
 
