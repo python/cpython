@@ -2540,13 +2540,13 @@ class WalkTests(unittest.TestCase):
 
         for path in tmp1_path, tmp2_path, tmp3_path, tmp4_path, tmp5_path:
             with open(path, "x", encoding='utf-8') as f:
-                f.write(f"I'm {path} and proud of it.  Blame test_os.\n")
+                f.write(f"I'm {path} and proud of it.  Blame test_pathlib.\n")
 
         if os_helper.can_symlink():
             os.symlink(os.path.abspath(t2_path), self.link_path)
             os.symlink('broken', broken_link_path, True)
-            os.symlink(join('tmp3', 'broken'), broken_link2_path, True)
-            os.symlink(join('SUB21', 'tmp5'), broken_link3_path, True)
+            os.symlink(P('tmp3', 'broken'), broken_link2_path, True)
+            os.symlink(P('SUB21', 'tmp5'), broken_link3_path, True)
             self.sub2_tree = (self.sub2_path, ["SUB21"],
                               ["broken_link", "broken_link2", "broken_link3",
                                "link", "tmp3"])
