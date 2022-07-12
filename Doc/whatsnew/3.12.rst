@@ -134,7 +134,7 @@ Deprecated
 
 
 Pending Removal in Python 3.13
-==============================
+------------------------------
 
 The following modules and APIs have been deprecated in earlier Python releases,
 and will be removed in Python 3.13.
@@ -172,7 +172,7 @@ APIs:
 * :class:`webbrowser.MacOSX` (:gh:`86421`)
 
 Pending Removal in Future Versions
-==================================
+----------------------------------
 
 The following APIs were deprecated in earlier Python versions and will be removed,
 although there is currently no date scheduled for their removal.
