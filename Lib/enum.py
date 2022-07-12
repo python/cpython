@@ -309,16 +309,17 @@ class _proto_member:
         if descriptor and not need_override:
             # previous enum.property found, no further action needed
             pass
-        else:
+        elif descriptor and need_override:
             redirect = property()
             redirect.__set_name__(enum_class, member_name)
-            if descriptor and need_override:
-                # previous enum.property found, but some other inherited attribute
-                # is in the way; copy fget, fset, fdel to this one
-                redirect.fget = descriptor.fget
-                redirect.fset = descriptor.fset
-                redirect.fdel = descriptor.fdel
+            # Previous enum.property found, but some other inherited attribute
+            # is in the way; copy fget, fset, fdel to this one.
+            redirect.fget = descriptor.fget
+            redirect.fset = descriptor.fset
+            redirect.fdel = descriptor.fdel
             setattr(enum_class, member_name, redirect)
+        else:
+            setattr(enum_class, member_name, enum_member)
         # now add to _member_map_ (even aliases)
         enum_class._member_map_[member_name] = enum_member
         try:
@@ -647,7 +648,7 @@ class EnumType(type):
                         'member order does not match _order_:\n  %r\n  %r'
                         % (enum_class._member_names_, _order_)
                         )
-        #
+
         return enum_class
 
     def __bool__(cls):
@@ -1273,7 +1274,21 @@ class Flag(Enum, boundary=STRICT):
     """
 
     def __reduce_ex__(self, proto):
-        return self.__class__, (self._value_, )
+        cls = self.__class__
+        unknown = self._value_ & ~cls._flag_mask_
+        member_value = self._value_ & cls._flag_mask_
+        if unknown and member_value:
+            return _or_, (cls(member_value), unknown)
+        for val in _iter_bits_lsb(member_value):
+            rest = member_value & ~val
+            if rest:
+                return _or_, (cls(rest), cls._value2member_map_.get(val))
+            else:
+                break
+        if self._name_ is None:
+            return cls, (self._value_,)
+        else:
+            return getattr, (cls, self._name_)
 
     _numeric_repr_ = repr
 
