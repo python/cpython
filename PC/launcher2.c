@@ -874,7 +874,9 @@ checkShebang(SearchInfo *search)
     while (--bytesRead > 0 && *++b != '\r' && *b != '\n') { }
     wchar_t *shebang;
     int shebangLength;
-    int exitCode = _decodeShebang(search, start, (int)(b - start), onlyUtf8, &shebang, &shebangLength);
+    // We add 1 when bytesRead==0, as in that case we hit EOF and b points
+    // to the last character in the file, not the newline
+    int exitCode = _decodeShebang(search, start, (int)(b - start + (bytesRead == 0)), onlyUtf8, &shebang, &shebangLength);
     if (exitCode) {
         return exitCode;
     }
