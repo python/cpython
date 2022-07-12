@@ -369,7 +369,12 @@ class Printer:
         return f"&{name}.ob_base"
 
     def generate_frozenset(self, name: str, fs: FrozenSet[object]) -> str:
-        ret = self.generate_tuple(name, tuple(sorted(fs)))
+        try:
+            fs = sorted(fs)
+        except TypeError:
+            # frozen set with incompatible types, fallback to repr()
+            fs = sorted(fs, key=repr)
+        ret = self.generate_tuple(name, tuple(fs))
         self.write("// TODO: The above tuple should be a frozenset")
         return ret
 
