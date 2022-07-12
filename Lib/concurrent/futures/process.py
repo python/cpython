@@ -182,6 +182,12 @@ class _SafeQueue(Queue):
         else:
             super()._on_queue_feeder_error(e, obj)
 
+    def drain(self):
+        self._closed = True
+        self._buffer.clear()
+        while self._poll(timeout=0.1):
+            self._recv_bytes()
+
 
 def _get_chunks(*iterables, chunksize):
     """ Iterates over zip()ed iterables in chunks. """
@@ -492,7 +498,7 @@ class _ExecutorManagerThread(threading.Thread):
         for p in self.processes.values():
             p.terminate()
 
-        self.drain_call_queue()
+        self.call_queue.drain()
 
         # clean up resources
         self.join_executor_internals()
@@ -552,13 +558,6 @@ class _ExecutorManagerThread(threading.Thread):
     def get_n_children_alive(self):
         # This is an upper bound on the number of children alive.
         return sum(p.is_alive() for p in self.processes.values())
-
-    def drain_call_queue(self):
-        while True:
-            try:
-                self.call_queue.get(timeout=0.1)
-            except queue.Empty:
-                return
 
 
 _system_limits_checked = False
