@@ -182,12 +182,6 @@ class _SafeQueue(Queue):
         else:
             super()._on_queue_feeder_error(e, obj)
 
-    def drain(self):
-        self._closed = True
-        self._buffer.clear()
-        while self._poll(timeout=0.1):
-            self._recv_bytes()
-
 
 def _get_chunks(*iterables, chunksize):
     """ Iterates over zip()ed iterables in chunks. """
@@ -498,7 +492,8 @@ class _ExecutorManagerThread(threading.Thread):
         for p in self.processes.values():
             p.terminate()
 
-        self.call_queue.drain()
+        # Prevent queue writing to a pipe which is no longer read.
+        self.call_queue._reader.close()
 
         # clean up resources
         self.join_executor_internals()
