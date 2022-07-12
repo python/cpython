@@ -2489,14 +2489,8 @@ class WalkTests(unittest.TestCase):
     testing a bit more complex cases than Path's setup.
     """
 
-    # Wrapper to hide minor differences between different implementations
-    # of Path.walk (for example, Path.fwalk)
-    def walk(self, top, **kwargs):
-        return top.walk(**kwargs)
-
     def setUp(self):
         P = pathlib.Path
-        join = os.path.join
         self.addCleanup(os_helper.rmtree, os_helper.TESTFN)
 
         # Build:
@@ -2569,7 +2563,7 @@ class WalkTests(unittest.TestCase):
     def test_walk_topdown(self):
         # Walk top-down.
         P = pathlib.Path
-        all = list(self.walk(self.walk_path))
+        all = list(self.walk_path.walk())
 
         self.assertEqual(len(all), 4)
         # We can't know which order SUB1 and SUB2 will appear in.
@@ -2589,7 +2583,7 @@ class WalkTests(unittest.TestCase):
             walk_path = self.walk_path
         # Prune the search.
         all = []
-        for root, dirs, files in self.walk(walk_path):
+        for root, dirs, files in walk_path.walk():
             all.append((root, dirs, files))
             # Don't descend into SUB1.
             if 'SUB1' in dirs:
@@ -2608,7 +2602,7 @@ class WalkTests(unittest.TestCase):
 
     def test_walk_bottom_up(self):
         # Walk bottom-up.
-        all = list(self.walk(self.walk_path, top_down=False))
+        all = list(self.walk_path.walk( top_down=False))
 
         self.assertEqual(len(all), 4, all)
         # We can't know which order SUB1 and SUB2 will appear in.
@@ -2630,7 +2624,7 @@ class WalkTests(unittest.TestCase):
     @os_helper.skip_unless_symlink
     def test_walk_follow_symlinks(self):
         # Walk, following symlinks.
-        walk_it = self.walk(self.walk_path, follow_symlinks=True)
+        walk_it = self.walk_path.walk(follow_symlinks=True)
         for root, dirs, files in walk_it:
             if root == self.link_path:
                 self.assertEqual(dirs, [])
@@ -2643,13 +2637,13 @@ class WalkTests(unittest.TestCase):
         """ Tests whether symlinks end up in filenames or dirnames depending
         on the `follow_symlinks` argument
         """
-        walk_it = self.walk(self.walk_path, follow_symlinks=False)
+        walk_it = self.walk_path.walk(follow_symlinks=False)
         for root, dirs, files in walk_it:
             if root == self.sub2_path:
                 self.assertIn("link", files)
                 break
 
-        walk_it = self.walk(self.walk_path, follow_symlinks=True)
+        walk_it = self.walk_path.walk(follow_symlinks=True)
         for root, dirs, files in walk_it:
             if root == self.sub2_path:
                 self.assertIn("link", dirs)
@@ -2658,7 +2652,7 @@ class WalkTests(unittest.TestCase):
     def test_walk_bad_dir(self):
         # Walk top-down.
         errors = []
-        walk_it = self.walk(self.walk_path, on_error=errors.append)
+        walk_it = self.walk_path.walk(on_error=errors.append)
         root, dirs, files = next(walk_it)
         self.assertEqual(errors, [])
         dir1 = 'SUB1'
@@ -2683,14 +2677,14 @@ class WalkTests(unittest.TestCase):
         p = P(base, *(['d']*depth))
         p.mkdir(parents=True)
 
-        iters = [self.walk(base, top_down=False) for _ in range(100)]
+        iters = [base.walk(top_down=False) for _ in range(100)]
         for i in range(depth + 1):
             expected = (p, ['d'] if i else [], [])
             for it in iters:
                 self.assertEqual(next(it), expected)
             p = p.parent
 
-        iters = [self.walk(base, top_down=True) for _ in range(100)]
+        iters = [base.walk(top_down=True) for _ in range(100)]
         p = base
         for i in range(depth + 1):
             expected = (p, ['d'] if i < depth else [], [])

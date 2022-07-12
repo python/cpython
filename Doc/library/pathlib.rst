@@ -963,7 +963,7 @@ call fails (for example because the path doesn't exist).
    ``dirpath / name``. Whether or not the lists are sorted is file
    system-dependent.
 
-   If optional argument *top_down* is ``True`` or not specified, the triple for a
+   If optional argument *top_down* is true or not specified, the triple for a
    directory is generated before the triples for any of its subdirectories
    (directories are walked top-down).  If *top_down* is ``False``, the triple
    for a directory is generated after the triples for all of its subdirectories
@@ -971,7 +971,7 @@ call fails (for example because the path doesn't exist).
    list of subdirectories is retrieved before the tuples for the directory and
    its subdirectories are walked.
 
-   When *top_down* is ``True``, the caller can modify the *dirnames* list in-place
+   When *top_down* is true, the caller can modify the *dirnames* list in-place
    (For example, using :keyword:`del` or slice assignment), and :meth:`Path.walk`
    will only recurse into the subdirectories whose names remain in *dirnames*;
    this can be used to prune the search, or to impose a specific order of visiting,
@@ -988,13 +988,13 @@ call fails (for example because the path doesn't exist).
    filename is available as the ``filename`` attribute of the exception object.
 
    By default, :meth:`Path.walk` does not follow symbolic links, and instead adds them
-   to the *filenames* list. Set *follow_symlinks* to ``True`` to resolve symlinks
+   to the *filenames* list. Set *follow_symlinks* to true to resolve symlinks
    and place them in *dirnames* and *filenames* as appropriate for their targets, and
    consequently visit directories pointed to by symlinks (where supported).
 
    .. note::
 
-      Be aware that setting *follow_symlinks* to ``True`` can lead to infinite
+      Be aware that setting *follow_symlinks* to true can lead to infinite
       recursion if a link points to a parent directory of itself. :meth:`Path.walk`
       does not keep track of the directories it has already visited.
 
