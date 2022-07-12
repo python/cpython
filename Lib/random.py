@@ -102,10 +102,6 @@ BPF = 53        # Number of bits in a float
 RECIP_BPF = 2 ** -BPF
 _ONE = 1
 
-def _logfact(n):
-    "Return log(n!)"
-    return _lgamma(n + 1)
-
 
 class Random(_random.Random):
     """Random number generator base class used by bound module functions.
@@ -810,10 +806,10 @@ class Random(_random.Random):
                 alpha = (2.83 + 5.1 / b) * spq
                 lpq = _log(p / (1.0 - p))
                 m = _floor((n + 1) * p)         # Mode of the distribution
-                h = _logfact(m) + _logfact(n - m)
+                h = _lgamma(m + 1) + _lgamma(n - m + 1)
                 setup_complete = True           # Only needs to be done once
             v *= alpha / (a / (us * us) + b)
-            if _log(v) <= h - _logfact(k) - _logfact(n - k) + (k - m) * lpq:
+            if _log(v) <= h - _lgamma(k + 1) - _lgamma(n - k + 1) + (k - m) * lpq:
                 return k
 
 
