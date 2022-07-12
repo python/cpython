@@ -576,9 +576,9 @@ LIBEXPAT_HEADERS= \
 
 # Default target
 all:		@DEF_MAKE_ALL_RULE@
-build_all:	check-clean-src $(BUILDPYTHON) platform oldsharedmods \
+build_all:	check-clean-src $(BUILDPYTHON) platform sharedmods \
 		gdbhooks Programs/_testembed scripts checksharedmods
-build_wasm: check-clean-src $(BUILDPYTHON) platform oldsharedmods \
+build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
 		python-config checksharedmods
 
 # Check that the source is clean when building out of source.
@@ -881,7 +881,7 @@ $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
 # create relative links from build/lib.platform/egg.so to Modules/egg.so
 # pybuilddir.txt is created too late. We cannot use it in Makefile
 # targets. ln --relative is not portable.
-oldsharedmods: $(SHAREDMODS) pybuilddir.txt
+sharedmods: $(SHAREDMODS) pybuilddir.txt
 	@target=`cat pybuilddir.txt`; \
 	$(MKDIR_P) $$target; \
 	for mod in X $(SHAREDMODS); do \
@@ -891,7 +891,7 @@ oldsharedmods: $(SHAREDMODS) pybuilddir.txt
 	done
 
 # dependency on BUILDPYTHON ensures that the target is run last
-checksharedmods: oldsharedmods $(PYTHON_FOR_BUILD_DEPS) $(BUILDPYTHON)
+checksharedmods: sharedmods $(PYTHON_FOR_BUILD_DEPS) $(BUILDPYTHON)
 	@$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/scripts/check_extension_modules.py
 
 Modules/Setup.local:
@@ -1734,13 +1734,13 @@ altinstall: commoninstall
 
 commoninstall:  check-clean-src @FRAMEWORKALTINSTALLFIRST@ \
 		altbininstall libinstall inclinstall libainstall \
-		oldsharedinstall altmaninstall \
+		sharedinstall altmaninstall \
 		@FRAMEWORKALTINSTALLLAST@
 
 # Install shared libraries enabled by Setup
 DESTDIRS=	$(exec_prefix) $(LIBDIR) $(BINLIBDEST) $(DESTSHARED)
 
-oldsharedinstall: $(DESTSHARED) all
+sharedinstall: $(DESTSHARED) all
 		@for i in X $(SHAREDMODS); do \
 		  if test $$i != X; then \
 		    echo $(INSTALL_SHARED) $$i $(DESTSHARED)/`basename $$i`; \
@@ -2498,8 +2498,8 @@ Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
 
 # Declare targets that aren't real files
 .PHONY: all build_all build_wasm check-clean-src
-.PHONY: oldsharedmods checksharedmods test quicktest
-.PHONY: install altinstall oldsharedinstall bininstall altbininstall
+.PHONY: sharedmods checksharedmods test quicktest
+.PHONY: install altinstall sharedinstall bininstall altbininstall
 .PHONY: maninstall libinstall inclinstall libainstall
 .PHONY: frameworkinstall frameworkinstallframework frameworkinstallstructure
 .PHONY: frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools
