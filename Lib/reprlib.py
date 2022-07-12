@@ -35,19 +35,23 @@ def recursive_repr(fillvalue='...'):
 
 class Repr:
 
-    def __init__(self):
-        self.fillvalue = '...'
-        self.maxlevel = 6
-        self.maxtuple = 6
-        self.maxlist = 6
-        self.maxarray = 5
-        self.maxdict = 4
-        self.maxset = 6
-        self.maxfrozenset = 6
-        self.maxdeque = 6
-        self.maxstring = 30
-        self.maxlong = 40
-        self.maxother = 30
+    def __init__(
+        self, *, maxlevel=6, maxtuple=6, maxlist=6, maxarray=5, maxdict=4,
+        maxset=6, maxfrozenset=6, maxdeque=6, maxstring=30, maxlong=40,
+        maxother=30, fillvalue='...',
+    ):
+        self.maxlevel = maxlevel
+        self.maxtuple = maxtuple
+        self.maxlist = maxlist
+        self.maxarray = maxarray
+        self.maxdict = maxdict
+        self.maxset = maxset
+        self.maxfrozenset = maxfrozenset
+        self.maxdeque = maxdeque
+        self.maxstring = maxstring
+        self.maxlong = maxlong
+        self.maxother = maxother
+        self.fillvalue = fillvalue
 
     def repr(self, x):
         return self.repr1(x, self.maxlevel)

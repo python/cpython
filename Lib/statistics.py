@@ -1193,7 +1193,7 @@ class NormalDist:
         "Generate *n* samples for a given mean and standard deviation."
         gauss = random.gauss if seed is None else random.Random(seed).gauss
         mu, sigma = self._mu, self._sigma
-        return [gauss(mu, sigma) for i in range(n)]
+        return [gauss(mu, sigma) for _ in repeat(None, n)]
 
     def pdf(self, x):
         "Probability density function.  P(x <= X < x+dx) / dx"

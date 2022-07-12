@@ -290,6 +290,9 @@
 /* Defined when any dynamic module loading is enabled. */
 #undef HAVE_DYNAMIC_LOADING
 
+/* Define to 1 if you have the <editline/readline.h> header file. */
+#undef HAVE_EDITLINE_READLINE_H
+
 /* Define to 1 if you have the <endian.h> header file. */
 #undef HAVE_ENDIAN_H
 
@@ -646,9 +649,6 @@
 /* Define to 1 if you have the <libintl.h> header file. */
 #undef HAVE_LIBINTL_H
 
-/* Define to build the readline module. */
-#undef HAVE_LIBREADLINE
-
 /* Define to 1 if you have the `resolv' library (-lresolv). */
 #undef HAVE_LIBRESOLV
 
@@ -784,6 +784,9 @@
 /* Define to 1 if you have the `nanosleep' function. */
 #undef HAVE_NANOSLEEP
 
+/* Define to 1 if you have the `ncursesw' library. */
+#undef HAVE_NCURSESW
+
 /* Define to 1 if you have the <ncurses.h> header file. */
 #undef HAVE_NCURSES_H
 
@@ -820,6 +823,9 @@
 
 /* Define to 1 if you have the `openpty' function. */
 #undef HAVE_OPENPTY
+
+/* Define to 1 if you have the <panel.h> header file. */
+#undef HAVE_PANEL_H
 
 /* Define to 1 if you have the `pathconf' function. */
 #undef HAVE_PATHCONF
@@ -904,6 +910,9 @@
 
 /* Define to 1 if you have the `pwritev2' function. */
 #undef HAVE_PWRITEV2
+
+/* Define to 1 if you have the <readline/readline.h> header file. */
+#undef HAVE_READLINE_READLINE_H
 
 /* Define to 1 if you have the `readlink' function. */
 #undef HAVE_READLINK
@@ -1662,7 +1671,7 @@
    Dyld is necessary to support frameworks. */
 #undef WITH_DYLD
 
-/* Define to build the readline module against Editline. */
+/* Define to build the readline module against libedit. */
 #undef WITH_EDITLINE
 
 /* Define if you want to compile in object freelists optimization */
