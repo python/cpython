@@ -683,7 +683,7 @@ These can be used as types in annotations and do not support ``[]``.
       from typing import Self
 
       class Foo:
-         def returns_self(self) -> Self:
+         def return_self(self) -> Self:
             ...
             return self
 
@@ -696,7 +696,7 @@ These can be used as types in annotations and do not support ``[]``.
       Self = TypeVar("Self", bound="Foo")
 
       class Foo:
-         def returns_self(self: Self) -> Self:
+         def return_self(self: Self) -> Self:
             ...
             return self
 
@@ -707,7 +707,7 @@ These can be used as types in annotations and do not support ``[]``.
             ...
             return self
 
-   You should use :data:`Self` as calls to ``SubclassOfFoo.returns_self`` would have
+   You should use :data:`Self` as calls to ``SubclassOfFoo.return_self`` would have
    ``Foo`` as the return type and not ``SubclassOfFoo``.
 
    Other common use cases include:
