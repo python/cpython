@@ -289,14 +289,15 @@ Tasks can easily and safely be cancelled.
 When a task is cancelled, asyncio will raise a :exc:`asyncio.CancelledError`
 into the task at the next opportunity.
 
-Coroutines are recommended to use ``try/finally`` blocks to robustly
+It is recommended that coroutines use ``try/finally`` blocks to robustly
 perform clean-up logic. In the case the :exc:`asyncio.CancelledError`
 is explicitly caught, it should generally be propagated when
 clean-up is complete. Most code can safely ignore :exc:`asyncio.CancelledError`.
 
 Important asyncio components, like :class:`asyncio.TaskGroup` and the
 :func:`asyncio.timeout` context manager, are implemented using cancellation
-internally.
+internally and might misbehave if a coroutine swallows
+:exc:`asyncio.CancelledError`.
 
 
 Task Groups
@@ -560,10 +561,13 @@ Timeouts
     something is to use the :func:`asyncio.timeout`
     :ref:`asynchronous context manager <async-context-managers>`.
 
-    *delay* can either be ``None`` or a float or int number of
+    *delay* can either be ``None``, or a float/int number of
     seconds to wait. If *delay* is ``None``, no time limit will
-    be applied. In either case, the context manager can be
-    rescheduled after creation.
+    be applied; this can be useful if the delay is unknown when
+    the context manager is created.
+
+    In either case, the context manager can be rescheduled after
+    creation using :meth:`asyncio.Timeout.reschedule`.
 
     Example::
 
@@ -574,7 +578,7 @@ Timeouts
     If ``long_running_task`` takes more than 10 seconds to complete,
     the context manager will cancel the current task and handle
     the resulting :exc:`asyncio.CancelledError` internally, transforming it
-    into a :exc:`asyncio.TimeoutError` which can be caught and handled.
+    into an :exc:`asyncio.TimeoutError` which can be caught and handled.
 
     .. note::
 
