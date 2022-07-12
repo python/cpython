@@ -46,7 +46,7 @@ def main():
         sources=[SOURCE],
         language='c++',
         extra_compile_args=cppflags)
-    setup(name=name, ext_modules=[cpp_ext])
+    setup(name='internal' + name, version='0.0', ext_modules=[cpp_ext])
 
 
 if __name__ == "__main__":
