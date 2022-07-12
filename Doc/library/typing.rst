@@ -707,7 +707,7 @@ These can be used as types in annotations and do not support ``[]``.
             ...
             return self
 
-   You should use use :data:`Self` as calls to ``SubclassOfFoo.returns_self`` would have
+   You should use :data:`Self` as calls to ``SubclassOfFoo.returns_self`` would have
    ``Foo`` as the return type and not ``SubclassOfFoo``.
 
    Other common use cases include:
