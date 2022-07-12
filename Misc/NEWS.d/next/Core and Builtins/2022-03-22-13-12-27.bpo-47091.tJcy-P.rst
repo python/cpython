@@ -1,1 +1,1 @@
-Improve performance of ``list_repeat`` and ``tuplerepeat`` by using ``memcpy`` to copy data and performing the reference increments in one step.
+Improve performance of repetition of :class:`list` and :class:`tuple` by using ``memcpy`` to copy data and performing the reference increments in one step.
