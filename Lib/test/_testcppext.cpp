@@ -128,6 +128,9 @@ static PyMethodDef _testcppext_methods[] = {
     {"add", _testcppext_add, METH_VARARGS, _testcppext_add_doc},
     {"test_api_casts", test_api_casts, METH_NOARGS, _Py_NULL},
     {"test_unicode", test_unicode, METH_NOARGS, _Py_NULL},
+    // Note: _testcppext_exec currently runs all test functions directly.
+    // When adding a new one, add a call there.
+
     {_Py_NULL, _Py_NULL, 0, _Py_NULL}  /* sentinel */
 };
 
@@ -138,6 +141,17 @@ _testcppext_exec(PyObject *module)
     if (PyModule_AddIntMacro(module, __cplusplus) < 0) {
         return -1;
     }
+
+    PyObject *result;
+
+    result = PyObject_CallMethod(module, "test_api_casts", "");
+    if (!result) return -1;
+    Py_DECREF(result);
+
+    result = PyObject_CallMethod(module, "test_unicode", "");
+    if (!result) return -1;
+    Py_DECREF(result);
+
     return 0;
 }
 
