@@ -17,22 +17,22 @@ SETUP_TESTCPPEXT = support.findfile('setup_testcppext.py')
 @support.requires_subprocess()
 class TestCPPExt(unittest.TestCase):
     def test_build_cpp11(self):
-        self.check_build(False)
+        self.check_build(False, '_testcpp11ext')
 
     def test_build_cpp03(self):
-        self.check_build(True)
+        self.check_build(True, '_testcpp03ext')
 
     # With MSVC, the linker fails with: cannot open file 'python311.lib'
     # https://github.com/python/cpython/pull/32175#issuecomment-1111175897
     @unittest.skipIf(MS_WINDOWS, 'test fails on Windows')
     # the test uses venv+pip: skip if it's not available
     @support.requires_venv_with_pip()
-    def check_build(self, std_cpp03):
+    def check_build(self, std_cpp03, extension_name):
         # Build in a temporary directory
         with os_helper.temp_cwd():
-            self._check_build(std_cpp03)
+            self._check_build(std_cpp03, extension_name)
 
-    def _check_build(self, std_cpp03):
+    def _check_build(self, std_cpp03, extension_name):
         venv_dir = 'env'
         verbose = support.verbose
 
@@ -52,22 +52,47 @@ class TestCPPExt(unittest.TestCase):
         else:
             python = os.path.join(venv_dir, 'bin', python_exe)
 
+        def run_cmd(operation, cmd):
+            if verbose:
+                print('Run:', ' '.join(cmd))
+                subprocess.run(cmd, check=True)
+            else:
+                proc = subprocess.run(cmd,
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.STDOUT,
+                                      text=True)
+                if proc.returncode:
+                    print(proc.stdout, end='')
+                    self.fail(
+                        f"{operation} failed with exit code {proc.returncode}")
+
         # Build the C++ extension
         cmd = [python, '-X', 'dev',
                SETUP_TESTCPPEXT, 'build_ext', '--verbose']
         if std_cpp03:
             cmd.append('-std=c++03')
-        if verbose:
-            print('Run:', ' '.join(cmd))
-            subprocess.run(cmd, check=True)
-        else:
-            proc = subprocess.run(cmd,
-                                  stdout=subprocess.PIPE,
-                                  stderr=subprocess.STDOUT,
-                                  text=True)
-            if proc.returncode:
-                print(proc.stdout, end='')
-                self.fail(f"Build failed with exit code {proc.returncode}")
+        run_cmd('Build', cmd)
+
+        # Install the C++ extension
+        cmd = [python, '-X', 'dev',
+               SETUP_TESTCPPEXT, 'install']
+        run_cmd('Install', cmd)
+
+        # Do a reference run. Until we test that running python
+        # doesn't leak references (gh-94755), run it so one can manually check
+        # -X showrefcount results against this baseline.
+        cmd = [python,
+               '-X', 'dev',
+               '-X', 'showrefcount',
+               '-c', 'pass']
+        run_cmd('Reference run', cmd)
+
+        # Import the C++ extension
+        cmd = [python,
+               '-X', 'dev',
+               '-X', 'showrefcount',
+               '-c', f"import {extension_name}"]
+        run_cmd('Import', cmd)
 
 
 if __name__ == "__main__":
