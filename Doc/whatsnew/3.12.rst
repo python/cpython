@@ -132,6 +132,9 @@ CPython bytecode changes
 Deprecated
 ==========
 
+* :class:`typing.Hashable` and :class:`typing.Sized` aliases for :class:`collections.abc.Hashable`
+  and :class:`collections.abc.Sized`. (:gh:`94309`)
+
 
 Pending Removal in Python 3.13
 ==============================
@@ -176,9 +179,6 @@ Pending Removal in Future Versions
 
 The following APIs were deprecated in earlier Python versions and will be removed,
 although there is currently no date scheduled for their removal.
-
-* :class:`typing.Hashable` and :class:`typing.Sized` aliases for :class:`collections.abc.Hashable`
-  and :class:`collections.abc.Sized`. (:gh:`94309`)
 
 * :class:`typing.Text` (:gh:`92332`)
 
