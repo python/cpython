@@ -874,7 +874,7 @@ checkShebang(SearchInfo *search)
     while (--bytesRead > 0 && *++b != '\r' && *b != '\n') { }
     wchar_t *shebang;
     int shebangLength;
-    int exitCode = _decodeShebang(search, start, (int)(b - start + 1), onlyUtf8, &shebang, &shebangLength);
+    int exitCode = _decodeShebang(search, start, (int)(b - start), onlyUtf8, &shebang, &shebangLength);
     if (exitCode) {
         return exitCode;
     }
