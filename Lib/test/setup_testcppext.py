@@ -35,9 +35,6 @@ def main():
         name = '_testcpp11ext'
 
     cppflags = [*CPPFLAGS, f'-std={std}']
-    if std == 'c++11':
-        # Warn when using NULL rather than _Py_NULL in static inline functions
-        cppflags.append('-Wzero-as-null-pointer-constant')
 
     cpp_ext = Extension(
         name,
