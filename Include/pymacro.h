@@ -3,20 +3,18 @@
 
 // gh-91782: On FreeBSD 12, if the _POSIX_C_SOURCE and _XOPEN_SOURCE macros are
 // defined, <sys/cdefs.h> disables C11 support and <assert.h> does not define
-// the static_assert() macro. Define the static_assert() macro in Python until
-// <sys/cdefs.h> suports C11:
+// the static_assert() macro.
 // https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=255290
-#if defined(__FreeBSD__) && !defined(static_assert)
-#  define static_assert _Static_assert
-#endif
 
-// static_assert is defined in glibc from version 2.16. Before it requires
-// compiler support (gcc >= 4.6) and is called _Static_assert.
+// macOS <= 10.10 doesn't define static_assert in assert.h at all despite
+// having C11 compiler support.
+
+// static_assert is defined in glibc from version 2.16. Compiler support for
+// the C11 _Static_assert keyword is in gcc >= 4.6.
+
 // In C++ 11 static_assert is a keyword, redefining is undefined behaviour.
-#if (defined(__GLIBC__) \
-     && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ <= 16)) \
-     && !(defined(__cplusplus) && __cplusplus >= 201103L) \
-     && !defined(static_assert))
+#if !defined(static_assert) \
+     && !(defined(__cplusplus) && __cplusplus >= 201103L)
 #  define static_assert _Static_assert
 #endif
 
