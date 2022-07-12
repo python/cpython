@@ -552,9 +552,9 @@ static PyObject *
 list_repeat(PyListObject *a, Py_ssize_t n)
 {
     const Py_ssize_t input_size = Py_SIZE(a);
-    if (input_size == 0 || n<=0)
+    if (input_size == 0 || n <= 0)
         return PyList_New(0);
-    assert(n>0);
+    assert(n > 0);
 
     if (input_size > PY_SSIZE_T_MAX / n)
         return PyErr_NoMemory();
