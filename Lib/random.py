@@ -736,7 +736,7 @@ class Random(_random.Random):
     def binomialvariate(self, n=1, p=0.5):
         """Binomial random variable.
 
-        Gives the number of successes for *n* Bernoulli trials
+        Gives the number of successes for *n* independent trials
         with the probability of success in each trial being *p*:
 
             sum(random() < p for i in range(n))
@@ -777,13 +777,11 @@ class Random(_random.Random):
                     return x
                 x += 1
 
-        # BTRS: Transformed rejection with squeeze method
-        # See "The Generation of Binomial Random Variates" by Wolfgang Hörmann
+        # BTRS: Transformed rejection with squeeze method by Wolfgang Hörmann
         # https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.47.8407&rep=rep1&type=pdf
         assert n*p >= 10.0 and p <= 0.5
-        step_three_setup = False
+        setup_complete = False
 
-        # Step 0: Setup for step 1
         spq = _sqrt(n * p * (1.0 - p))  # Standard deviation of the distribution
         b = 1.15 + 2.53 * spq
         a = -0.0873 + 0.0248 * b + 0.01 * p
@@ -792,7 +790,6 @@ class Random(_random.Random):
 
         while True:
 
-            # Step 1: Generate two uniform random numbers
             u = random()
             v = random()
             u -= 0.5
@@ -801,24 +798,20 @@ class Random(_random.Random):
             if k < 0 or k > n:
                 continue
 
-            # Step 2: This early-out "squeeze" test substantially reduces
-            # the number of acceptance condition evaluations.  Checks to
-            # see whether *us* and *vr* lie in the large rectangle between
-            # the u-axis and the curve.
+            # The early-out "squeeze" test substantially reduces
+            # the number of acceptance condition evaluations.
             if us >= 0.07 and v <= vr:
                 return k
 
-            if not step_three_setup:
-                # Step 3.0: Set up constants for step 3.1
+            # Acceptance-rejection test.
+            # Note, the original paper errorneously omits the call to log(v)
+            # when comparing to the log of the rescaled binomial distribution.
+            if not setup_complete:
                 alpha = (2.83 + 5.1 / b) * spq
                 lpq = _log(p / (1.0 - p))
                 m = _floor((n + 1) * p)         # Mode of the distribution
                 h = _logfact(m) + _logfact(n - m)
-                step_three_setup = True         # Only needs to be done once
-
-            # Step 3.1: Acceptance-rejection test.
-            # N.B. The original paper errorneously omits the call to log(v)
-            # when comparing to the log of the rescaled binomial distribution.
+                setup_complete = True           # Only needs to be done once
             v *= alpha / (a / (us * us) + b)
             if _log(v) <= h - _logfact(k) - _logfact(n - k) + (k - m) * lpq:
                 return k
