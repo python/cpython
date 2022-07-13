@@ -158,10 +158,11 @@ PyType_Slot VirtualPyObject_Slots[] = {
 };
 
 PyType_Spec VirtualPyObject_Spec = {
-    .name = STR(NAME) ".VirtualPyObject",
-    .basicsize = sizeof(VirtualPyObject),
-    .flags = Py_TPFLAGS_DEFAULT,
-    .slots = VirtualPyObject_Slots,
+    /* .name */ STR(NAME) ".VirtualPyObject",
+    /* .basicsize */ sizeof(VirtualPyObject),
+    /* .itemsize */ 0,
+    /* .flags */ Py_TPFLAGS_DEFAULT,
+    /* .slots */ VirtualPyObject_Slots,
 };
 
 VirtualPyObject::VirtualPyObject() {
