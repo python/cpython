@@ -474,16 +474,13 @@ Simulations::
    >>> # Deal 20 cards without replacement from a deck
    >>> # of 52 playing cards, and determine the proportion of cards
    >>> # with a ten-value:  ten, jack, queen, or king.
-   >>> dealt = sample(['tens', 'low cards'], counts=[16, 36], k=20)
-   >>> dealt.count('tens') / 20
+   >>> deal = sample(['tens', 'low cards'], counts=[16, 36], k=20)
+   >>> deal.count('tens') / 20
    0.15
 
    >>> # Estimate the probability of getting 5 or more heads from 7 spins
    >>> # of a biased coin that settles on heads 60% of the time.
-   >>> def trial():
-   ...     return choices('HT', cum_weights=(0.60, 1.00), k=7).count('H') >= 5
-   ...
-   >>> sum(trial() for i in range(10_000)) / 10_000
+   >>> sum(binomialvariate(n=7, p=0.6) >= 5 for i in range(10_000)) / 10_000
    0.4169
 
    >>> # Probability of the median of 5 samples being in middle two quartiles
