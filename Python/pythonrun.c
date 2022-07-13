@@ -37,10 +37,6 @@
 #endif
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Forward */
 static void flush_io(void);
 static PyObject *run_mod(mod_ty, PyObject *, PyObject *, PyObject *,
@@ -2005,7 +2001,3 @@ PyRun_InteractiveLoop(FILE *f, const char *p)
 {
     return PyRun_InteractiveLoopFlags(f, p, NULL);
 }
-
-#ifdef __cplusplus
-}
-#endif

@@ -14,10 +14,6 @@
 #  include <shlwapi.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 
 /* External interface */
 
@@ -511,8 +507,3 @@ _PyPathConfig_ComputeSysPath0(const PyWideStringList *argv, PyObject **path0_p)
     *path0_p = path0_obj;
     return 1;
 }
-
-
-#ifdef __cplusplus
-}
-#endif

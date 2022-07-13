@@ -177,11 +177,6 @@
 #  define HAVE_PWRITEV_RUNTIME 1
 #endif
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 PyDoc_STRVAR(posix__doc__,
 "This module provides access to operating system functionality that is\n\
 standardized by the C Standard and the POSIX standard (a thinly\n\
@@ -15900,7 +15895,3 @@ INITFUNC(void)
 {
     return PyModuleDef_Init(&posixmodule);
 }
-
-#ifdef __cplusplus
-}
-#endif

@@ -14,10 +14,6 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif /* HAVE_SYS_TYPES_H */
@@ -631,7 +627,3 @@ PyInit__stat(void)
 {
     return PyModuleDef_Init(&statmodule);
 }
-
-#ifdef __cplusplus
-}
-#endif

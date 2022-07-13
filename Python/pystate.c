@@ -33,10 +33,6 @@ to avoid the expense of doing their own locking).
 #endif
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define _PyRuntimeGILState_GetThreadState(gilstate) \
     ((PyThreadState*)_Py_atomic_load_relaxed(&(gilstate)->tstate_current))
 #define _PyRuntimeGILState_SetThreadState(gilstate, value) \
@@ -2203,8 +2199,3 @@ _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame * frame)
         tstate->datastack_top = base;
     }
 }
-
-
-#ifdef __cplusplus
-}
-#endif

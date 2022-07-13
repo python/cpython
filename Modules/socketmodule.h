@@ -219,9 +219,6 @@ typedef int socklen_t;
 
 #ifndef Py__SOCKET_H
 #define Py__SOCKET_H
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* Python module and C API name */
 #define PySocket_MODULE_NAME    "_socket"
@@ -384,7 +381,4 @@ typedef struct {
 
 #define PySocketModule_ImportModuleAndAPI() PyCapsule_Import(PySocket_CAPSULE_NAME, 1)
 
-#ifdef __cplusplus
-}
-#endif
 #endif /* !Py__SOCKET_H */

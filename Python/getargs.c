@@ -8,10 +8,6 @@
 #include <ctype.h>
 #include <float.h>
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 int PyArg_Parse(PyObject *, const char *, ...);
 int PyArg_ParseTuple(PyObject *, const char *, ...);
 int PyArg_VaParse(PyObject *, const char *, va_list);
@@ -2886,7 +2882,3 @@ _PyArg_Fini(void)
     }
     static_arg_parsers = NULL;
 }
-
-#ifdef __cplusplus
-};
-#endif

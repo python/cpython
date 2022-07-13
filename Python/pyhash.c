@@ -13,10 +13,6 @@
 #  include <sys/endian.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 _Py_HashSecret_t _Py_HashSecret = {{0}};
 
 #if Py_HASH_ALGORITHM == Py_HASH_EXTERNAL
@@ -501,8 +497,4 @@ pysiphash(const void *src, Py_ssize_t src_sz) {
 }
 
 static PyHash_FuncDef PyHash_Func = {pysiphash, "siphash24", 64, 128};
-#endif
-
-#ifdef __cplusplus
-}
 #endif

@@ -1847,11 +1847,6 @@ sys_call_tracing_impl(PyObject *module, PyObject *func, PyObject *funcargs)
     return _PyEval_CallTracing(func, funcargs);
 }
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /*[clinic input]
 sys._debugmallocstats
 
@@ -1884,11 +1879,6 @@ extern PyObject *_Py_GetObjects(PyObject *, PyObject *);
 /* Defined in ceval.c because it uses static globals in that file */
 extern PyObject *_Py_GetDXProfile(PyObject *,  PyObject *);
 #endif
-
-#ifdef __cplusplus
-}
-#endif
-
 
 /*[clinic input]
 sys._clear_type_cache

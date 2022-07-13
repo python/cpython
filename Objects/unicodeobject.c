@@ -97,11 +97,6 @@ NOTE: In the interpreter's initialization phase, some globals are currently
 
 */
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 // Maximum code point of Unicode 6.0: 0x10ffff (1,114,111).
 // The value must be the same in fileutils.c.
 #define MAX_UNICODE 0x10ffff
@@ -15234,8 +15229,3 @@ PyInit__string(void)
 {
     return PyModuleDef_Init(&_string_module);
 }
-
-
-#ifdef __cplusplus
-}
-#endif

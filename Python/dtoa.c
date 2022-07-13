@@ -177,10 +177,6 @@ typedef uint64_t ULLong;
 #define PRIVATE_mem ((PRIVATE_MEM+sizeof(double)-1)/sizeof(double))
 static double private_mem[PRIVATE_mem], *pmem_next = private_mem;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef union { double d; ULong L[2]; } U;
 
 #ifdef IEEE_8087
@@ -2853,8 +2849,5 @@ _Py_dg_dtoa(double dd, int mode, int ndigits,
         _Py_dg_freedtoa(s0);
     return NULL;
 }
-#ifdef __cplusplus
-}
-#endif
 
 #endif  // _PY_SHORT_FLOAT_REPR == 1

@@ -20,9 +20,6 @@
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* Forward references */
 static PyObject *import_add_module(PyThreadState *tstate, PyObject *name);
@@ -2652,7 +2649,3 @@ _PyImport_GetModuleAttrString(const char *modname, const char *attrname)
     Py_DECREF(pmodname);
     return result;
 }
-
-#ifdef __cplusplus
-}
-#endif

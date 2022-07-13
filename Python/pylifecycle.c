@@ -62,11 +62,6 @@ extern void _PyIO_Fini(void);
 #define PUTS(fd, str) _Py_write_noraise(fd, str, (int)strlen(str))
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
 /* Forward declarations */
 static PyStatus add_main_module(PyInterpreterState *interp);
 static PyStatus init_import_site(void);
@@ -3033,7 +3028,3 @@ PyOS_setsig(int sig, PyOS_sighandler_t handler)
     return oldhandler;
 #endif
 }
-
-#ifdef __cplusplus
-}
-#endif

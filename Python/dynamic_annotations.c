@@ -31,10 +31,6 @@
 # include <windows.h>
 #endif
 
-#ifdef __cplusplus
-# error "This file should be built as pure C to avoid name mangling"
-#endif
-
 #include <stdlib.h>
 #include <string.h>
 

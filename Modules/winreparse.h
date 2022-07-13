@@ -4,10 +4,6 @@
 #ifdef MS_WINDOWS
 #include <windows.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* The following structure was copied from
    http://msdn.microsoft.com/en-us/library/ff552012.aspx as the required
    include km\ntifs.h isn't present in the Windows SDK (at least as included
@@ -48,10 +44,6 @@ typedef struct {
 // Defined in WinBase.h in 'recent' versions of Windows 10 SDK
 #ifndef SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE
 #define SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE 0x2
-#endif
-
-#ifdef __cplusplus
-}
 #endif
 
 #endif /* MS_WINDOWS */
