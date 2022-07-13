@@ -37,6 +37,7 @@ abs_builddir=	@abs_builddir@
 CC=		@CC@
 CXX=		@CXX@
 LINKCC=		@LINKCC@
+CC_NAME=@CC_NAME@
 AR=		@AR@
 READELF=	@READELF@
 SOABI=		@SOABI@
@@ -661,9 +662,20 @@ bolt-opt: @PREBOLT_RULE@
 	rm -f $(BUILDPYTHON).bolt_inst
 	mv $(BUILDPYTHON).bolt $(BUILDPYTHON)
 
+.PHONY=coverage-report
+coverage-report:
+	@if [ $(CC_NAME) = "gcc" ]; then \
+		$(MAKE) coverage-report-lcov; \
+	elif [ $(CC_NAME) = "clang" ]; then \
+		$(MAKE) coverage-report-llvm; \
+	else \
+		echo "Coverage is not supported with the $(CC_NAME) compiler"; \
+		exit 1; \
+	fi
+
 # Compile and run with gcov
-.PHONY=coverage coverage-lcov coverage-report
-coverage:
+.PHONY=coverage-gcc coverage-lcov coverage-report-lcov
+coverage-gcc:
 	@echo "Building with support for coverage checking:"
 	$(MAKE) clean
 	$(MAKE) @DEF_MAKE_RULE@ CFLAGS="$(CFLAGS) -O0 -pg --coverage" LDFLAGS="$(LDFLAGS) --coverage"
@@ -699,7 +711,7 @@ coverage-lcov:
 	@echo
 
 # Force regeneration of parser and frozen modules
-coverage-report: regen-token regen-frozen
+coverage-report-lcov: regen-token regen-frozen
 	@ # build with coverage info
 	$(MAKE) coverage
 	@ # run tests, ignore failures
@@ -708,14 +720,9 @@ coverage-report: regen-token regen-frozen
 	$(MAKE) coverage-lcov
 
 # Compile and calculate coverage with llvm-cov
-.PHONY=check-clang coverage-llvm coverage-profdata coverage-report-llvm
+.PHONY=coverage-clang coverage-profdata coverage-report-llvm
 
-# Check whether the compiler is clang, and if not, error out.
-check-clang:
-	($(CC) --version | grep clang) || \
-	(echo "LLVM coverage only works with clang. Set CC=clang and CXX=clang++ and re-run ./configure"; exit 1)
-
-coverage-llvm: check-clang
+coverage-clang: 
 	@echo "Building with support for coverage checking:"
 	$(MAKE) clean
 	@ # Override CC rather than CFLAGS since these flags must come first
@@ -739,7 +746,7 @@ coverage-profdata:
 # into temporary directories created by tests.
 coverage-report-llvm: regen-token regen-importlib
 	@ # build with coverage info
-	$(MAKE) coverage-llvm
+	$(MAKE) coverage-clang
 	@ # run tests, ignore failures
 	LLVM_PROFILE_FILE=${PWD}/python%m.profraw $(TESTRUNNER) $(TESTOPTS) || true
 	@ # build llvm-cov report

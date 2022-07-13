@@ -46,7 +46,7 @@ jobs:
       run: ./configure --with-pydebug --with-openssl=$OPENSSL_DIR
     - name: Generate coverage report
       # Using "-j1" is important, or the Github Action runs out of memory
-      run: EXTRATESTOPTS=-j1 xvfb-run make coverage-report-llvm
+      run: EXTRATESTOPTS=-j1 xvfb-run make coverage-report
     - name: Publish coverage-report
       uses: JamesIves/github-pages-deploy-action@v4
       with:
