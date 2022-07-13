@@ -3672,7 +3672,9 @@ handle_eval_breaker:
             DEOPT_IF(((PyTypeObject *)cls)->tp_version_tag != type_version,
                 LOAD_ATTR);
             assert(type_version != 0);
-
+            uint32_t meta_version = read_u32(cache->keys_version);
+            DEOPT_IF(Py_TYPE(cls)->tp_version_tag != meta_version, LOAD_ATTR);
+            assert(meta_version != 0);
             STAT_INC(LOAD_ATTR, hit);
             PyObject *res = read_obj(cache->descr);
             assert(res != NULL);
