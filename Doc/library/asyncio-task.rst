@@ -286,7 +286,7 @@ Task Cancellation
 =================
 
 Tasks can easily and safely be cancelled.
-When a task is cancelled, asyncio will raise :exc:`asyncio.CancelledError`
+When a task is cancelled, :exc:`asyncio.CancelledError` will be raised
 in the task at the next opportunity.
 
 It is recommended that coroutines use ``try/finally`` blocks to robustly
