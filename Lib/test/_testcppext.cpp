@@ -167,12 +167,12 @@ PyType_Spec VirtualPyObject_Spec = {
 
 VirtualPyObject::VirtualPyObject() {
     // Create a temporary type (just so we don't need to store it)
-    PyObject *ipotype = PyType_FromSpec(&VirtualPyObject_Spec);
+    PyObject *type = PyType_FromSpec(&VirtualPyObject_Spec);
     // no good way to signal failure from a C++ constructor, so use assert
     // for error handling
-    assert(ipotype);
-    assert(PyObject_Init(this, (PyTypeObject *)ipotype));
-    Py_DECREF(ipotype);
+    assert(type);
+    assert(PyObject_Init(this, (PyTypeObject *)type));
+    Py_DECREF(type);
     internal_data = new int[50];
     ++instance_count;
 }
