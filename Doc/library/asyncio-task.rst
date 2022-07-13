@@ -290,7 +290,7 @@ When a task is cancelled, asyncio will raise a :exc:`asyncio.CancelledError`
 into the task at the next opportunity.
 
 It is recommended that coroutines use ``try/finally`` blocks to robustly
-perform clean-up logic. In the case the :exc:`asyncio.CancelledError`
+perform clean-up logic. In case :exc:`asyncio.CancelledError`
 is explicitly caught, it should generally be propagated when
 clean-up is complete. Most code can safely ignore :exc:`asyncio.CancelledError`.
 
