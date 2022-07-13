@@ -1300,7 +1300,7 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 :func:`os.path.basename`               :data:`PurePath.name`
 :func:`os.path.dirname`                :data:`PurePath.parent`
 :func:`os.path.samefile`               :meth:`Path.samefile`
-:func:`os.path.splitext`               :data:`PurePath.suffix`
+:func:`os.path.splitext`               :data:`PurePath.stem` and :data:`PurePath.suffix`
 ====================================   ==============================
 
 .. rubric:: Footnotes
