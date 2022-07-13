@@ -567,7 +567,7 @@ Timeouts
     the context manager is created.
 
     In either case, the context manager can be rescheduled after
-    creation using :meth:`asyncio.Timeout.reschedule`.
+    creation using :meth:`Timeout.reschedule`.
 
     Example::
 
@@ -600,6 +600,35 @@ Timeouts
 
     The context manager produced by :func:`asyncio.timeout` can be
     rescheduled to a different deadline and inspected.
+
+    .. class:: Timeout()
+
+       An :ref:`asynchronous context manager <async-context-managers>`
+       that limits time spent inside of it.
+
+        .. versionadded:: 3.11
+
+        .. method:: when() -> float | None
+
+           Return the current deadline, or `None` if the current
+           deadline is not set.
+
+           The deadline is a float, consistent with the time returned by
+           :meth:`loop.time`.
+
+        .. method:: reschedule(when: float | None)
+
+            Change the time the timeout will trigger.
+
+            If *when* is `None`, any current deadline will be removed, and the
+            context manager will wait indefinitely.
+
+            If *when* is a float, it is set as the new deadline.
+
+        .. method:: expired() -> bool
+
+           Return whether the context manager has exceeded its deadline
+           (expired).
 
     Example::
 
