@@ -286,8 +286,8 @@ Task Cancellation
 =================
 
 Tasks can easily and safely be cancelled.
-When a task is cancelled, asyncio will raise a :exc:`asyncio.CancelledError`
-into the task at the next opportunity.
+When a task is cancelled, asyncio will raise :exc:`asyncio.CancelledError`
+in the task at the next opportunity.
 
 It is recommended that coroutines use ``try/finally`` blocks to robustly
 perform clean-up logic. In case :exc:`asyncio.CancelledError`
@@ -557,9 +557,9 @@ Timeouts
 
 .. coroutinefunction:: timeout(delay)
 
-    A convenient way to limit the amount of time spent waiting on
-    something is to use the :func:`asyncio.timeout`
-    :ref:`asynchronous context manager <async-context-managers>`.
+    An :ref:`asynchronous context manager <async-context-managers>`
+    that can be used to limit the amount of time spent waiting on
+    something.
 
     *delay* can either be ``None``, or a float/int number of
     seconds to wait. If *delay* is ``None``, no time limit will
