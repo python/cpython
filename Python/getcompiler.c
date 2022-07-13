@@ -11,10 +11,8 @@
 #define COMPILER "[Clang " __clang_version__ "]"
 #elif defined(__GNUC__)
 #define COMPILER "[GCC " __VERSION__ "]"
-// Generic fallbacks.
-#elif defined(__cplusplus)
-#define COMPILER "[C++]"
 #else
+// Generic fallback.
 #define COMPILER "[C]"
 #endif
 
