@@ -17,7 +17,6 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #include "Python.h"
 
-
 /* -- ADDMODULE MARKER 1 -- */
 
 extern PyObject* PyMarshal_Init(void);

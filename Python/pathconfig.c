@@ -14,7 +14,6 @@
 #  include <shlwapi.h>
 #endif
 
-
 /* External interface */
 
 /* Stored values set by C API functions */
