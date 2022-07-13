@@ -1,2 +1,0 @@
-Add :c:func:`Py_Finalize` to an embedded interpreter test case,
-so that the PGO profiler on Windows can avoid generating broken data.
