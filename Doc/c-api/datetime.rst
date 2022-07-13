@@ -190,6 +190,12 @@ must not be ``NULL``, and the type is not checked:
 
    Return the microsecond, as an int from 0 through 999999.
 
+.. c:function:: int PyDateTime_DATE_GET_FOLD(PyDateTime_DateTime *o)
+
+   Return the fold, as an int from 0 through 1.
+
+   .. versionadded:: 3.6
+
 .. c:function:: PyObject* PyDateTime_DATE_GET_TZINFO(PyDateTime_DateTime *o)
 
    Return the tzinfo (which may be ``None``).
@@ -218,6 +224,12 @@ and the type is not checked:
 .. c:function:: int PyDateTime_TIME_GET_MICROSECOND(PyDateTime_Time *o)
 
    Return the microsecond, as an int from 0 through 999999.
+
+.. c:function:: int PyDateTime_TIME_GET_FOLD(PyDateTime_Time *o)
+
+   Return the fold, as an int from 0 through 1.
+
+   .. versionadded:: 3.6
 
 .. c:function:: PyObject* PyDateTime_TIME_GET_TZINFO(PyDateTime_Time *o)
 
