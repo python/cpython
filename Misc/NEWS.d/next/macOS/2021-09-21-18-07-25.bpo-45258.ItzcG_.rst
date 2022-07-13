@@ -1,0 +1,1 @@
+search for -isysroot in addition to --sysroot when building python to support using different SDK root for macOS.
