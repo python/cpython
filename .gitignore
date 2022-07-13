@@ -23,6 +23,7 @@
 *.gc??
 *.profclang?
 *.profraw
+*.profdata
 *.dyn
 .gdb_history
 .purify

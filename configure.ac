@@ -2055,6 +2055,8 @@ case $CC in
     LLVM_PROF_FILE=""
     ;;
 esac
+AC_SUBST(LLVM_COV)
+AC_PATH_TOOL(LLVM_COV, llvm-cov, '', ${llvm_path})
 
 # XXX Shouldn't the code above that fiddles with BASECFLAGS and OPT be
 # merged with this chunk of code?

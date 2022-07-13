@@ -50,6 +50,8 @@ PGO_PROF_USE_FLAG=@PGO_PROF_USE_FLAG@
 LLVM_PROF_MERGER=@LLVM_PROF_MERGER@
 LLVM_PROF_FILE=@LLVM_PROF_FILE@
 LLVM_PROF_ERR=@LLVM_PROF_ERR@
+LLVM_PROFDATA=@LLVM_PROFDATA@
+LLVM_COV=@LLVM_COV@
 DTRACE=         @DTRACE@
 DFLAGS=         @DFLAGS@
 DTRACE_HEADERS= @DTRACE_HEADERS@
@@ -316,6 +318,10 @@ COVERAGE_REPORT=$(abs_builddir)/lcov-report
 COVERAGE_LCOV_OPTIONS=--rc lcov_branch_coverage=1
 COVERAGE_REPORT_OPTIONS=--rc lcov_branch_coverage=1 --branch-coverage --title "CPython $(VERSION) LCOV report [commit $(shell $(GITVERSION))]"
 
+# report files for llvm-cov coverage report
+COVERAGE_INFO_LLVM=	$(abs_builddir)/coverage.profdata
+COVERAGE_REPORT_LLVM=$(abs_builddir)/llvm-cov-report
+COVERAGE_REPORT_OPTIONS_LLVM=-show-branches=count -show-regions
 
 # === Definitions added by makesetup ===
 
@@ -700,6 +706,44 @@ coverage-report: regen-token regen-frozen
 	$(TESTRUNNER) $(TESTOPTS) || true
 	@ # build lcov report
 	$(MAKE) coverage-lcov
+
+# Compile and calculate coverage with llvm-cov
+.PHONY=check-clang coverage-llvm coverage-profdata coverage-report-llvm
+
+# Check whether the compiler is clang, and if not, error out.
+check-clang:
+	($(CC) --version | grep clang) || \
+	(echo "LLVM coverage only works with clang. Set CC=clang and CXX=clang++ and re-run ./configure"; exit 1)
+
+coverage-llvm: check-clang
+	@echo "Building with support for coverage checking:"
+	$(MAKE) clean
+	@ # Override CC rather than CFLAGS since these flags must come first
+	$(MAKE) @DEF_MAKE_RULE@ CC="$(CC) -fprofile-instr-generate -fcoverage-mapping"
+
+coverage-profdata:
+	@echo "Creating Coverage HTML report with llvm-profdata/llvm-cov:"
+	@rm -f $(COVERAGE_INFO_LLVM)
+	@rm -rf $(COVERAGE_REPORT_LLVM)
+	@ # Merge coverage results
+	$(LLVM_PROFDATA) merge -sparse python*.profraw -o $(COVERAGE_INFO_LLVM)
+	@ # Generate HTML
+	$(LLVM_COV) show -format=html -output-dir=$(COVERAGE_REPORT_LLVM) -instr-profile=$(COVERAGE_INFO_LLVM) $(COVERAGE_REPORT_OPTIONS_LLVM) python .
+	@echo
+	@echo "llvm-cov report at $(COVERAGE_REPORT_LLVM)/index.html"
+	@echo
+
+# Force regeneration of parser and importlib
+# Specify the LLVM_PROFILE_FILE using %m so multiple shared objects can write
+# in parallel. Set the full path to the directory so results aren't written
+# into temporary directories created by tests.
+coverage-report-llvm: regen-token regen-importlib
+	@ # build with coverage info
+	$(MAKE) coverage-llvm
+	@ # run tests, ignore failures
+	LLVM_PROFILE_FILE=${PWD}/python%m.profraw $(TESTRUNNER) $(TESTOPTS) || true
+	@ # build llvm-cov report
+	$(MAKE) coverage-profdata
 
 # Run "Argument Clinic" over all source files
 .PHONY=clinic
