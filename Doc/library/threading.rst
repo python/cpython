@@ -274,8 +274,10 @@ If the :meth:`~Thread.run` method raises an exception,
 :func:`threading.excepthook` is called to handle it. By default,
 :func:`threading.excepthook` ignores silently :exc:`SystemExit`.
 
-A thread can be flagged as a "daemon thread".  The significance of this flag is
-that the entire Python program exits when only daemon threads are left.  The
+A thread can be flagged as a "daemon thread". A thread with this flag is shut
+down when the main thread and all others non-daemon threads end.
+This means a Python program runs as long as non-daemon threads (such as the main
+thread) are running, and exits when only daemon threads are left. The
 initial value is inherited from the creating thread.  The flag can be set
 through the :attr:`~Thread.daemon` property or the *daemon* constructor
 argument.
