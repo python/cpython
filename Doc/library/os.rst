@@ -3170,7 +3170,8 @@ features:
    filenames)``.
 
    *dirpath* is a string, the path to the directory.  *dirnames* is a list of the
-   names of the subdirectories in *dirpath* (excluding ``'.'`` and ``'..'``).
+   names of the subdirectories in *dirpath* (including symlinks to directories,
+   and excluding ``'.'`` and ``'..'``).
    *filenames* is a list of the names of the non-directory files in *dirpath*.
    Note that the names in the lists contain no path components.  To get a full path
    (which begins with *top*) to a file or directory in *dirpath*, do
