@@ -2656,17 +2656,17 @@ class TestPatma(unittest.TestCase):
 
     def test_patma_249(self):
         class C:
-            __attr = "_C__attr"
+            __attr = "eggs"  # mangled to _C__attr
+            _Outer__attr = "bacon"
         class Outer:
-            __attr = "_Outer__attr"
             def f(self, x):
                 match x:
                     # looks up __attr, not _C__attr or _Outer__attr
                     case C(__attr=y):
                         return y
         c = C()
-        setattr(c, "__attr", "__attr")  # setattr is needed because we're in a class scope
-        self.assertEqual(Outer().f(c), "__attr")
+        setattr(c, "__attr", "spam")  # setattr is needed because we're in a class scope
+        self.assertEqual(Outer().f(c), "spam")
 
 
 class TestSyntaxErrors(unittest.TestCase):
