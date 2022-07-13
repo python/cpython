@@ -29,7 +29,7 @@ class TestCPPExt(unittest.TestCase):
     # Building and running an extension in clang sanitizing mode is not
     # straightforward
     @unittest.skipIf(
-        '-fsanitize' in sysconfig.get_config_var('PY_CFLAGS'),
+        '-fsanitize' in (sysconfig.get_config_var('PY_CFLAGS') or ''),
         'test does not work with analyzing builds')
     # the test uses venv+pip: skip if it's not available
     @support.requires_venv_with_pip()
