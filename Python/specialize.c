@@ -945,18 +945,28 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
                              PyObject *name)
 {
     _PyLoadMethodCache *cache = (_PyLoadMethodCache *)(instr + 1);
-    PyObject *descr = NULL;
-    DescriptorClassification kind = 0;
-    if (_PyType_Lookup(Py_TYPE(owner), name)) {
+    PyTypeObject *metaclass = Py_TYPE(owner);
+    if (_PyType_Lookup(metaclass, name)) {
+        // The metaclass has the named attribute. This breaks LOAD_ATTR_CLASS
+        // when the attribute *also* exists on the class... but it also means we
+        // can't specialize for things like Class.__doc__, Class.__name__, etc.
+        // Perhaps LOAD_ATTR_METACLASS may be worth adding in the future?
         SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_METACLASS_ATTRIBUTE);
         return -1;
     }
+    if (metaclass->tp_getattro != PyType_Type.tp_getattro) {
+        // The metaclass defines __getattribute__. All bets are off:
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OVERRIDDEN);
+        return -1;
+    }
+    PyObject *descr = NULL;
+    DescriptorClassification kind = 0;
     kind = analyze_descriptor((PyTypeObject *)owner, name, &descr, 0);
     switch (kind) {
         case METHOD:
         case NON_DESCRIPTOR:
             write_u32(cache->type_version, ((PyTypeObject *)owner)->tp_version_tag);
-            write_u32(cache->keys_version, Py_TYPE(owner)->tp_version_tag);
+            write_u32(cache->keys_version, metaclass->tp_version_tag);
             write_obj(cache->descr, descr);
             _Py_SET_OPCODE(*instr, LOAD_ATTR_CLASS);
             return 0;
