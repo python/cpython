@@ -132,6 +132,9 @@ CPython bytecode changes
 Deprecated
 ==========
 
+* :class:`typing.Hashable` and :class:`typing.Sized` aliases for :class:`collections.abc.Hashable`
+  and :class:`collections.abc.Sized`. (:gh:`94309`)
+
 
 Pending Removal in Python 3.13
 ------------------------------
