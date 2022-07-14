@@ -927,7 +927,7 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
     import tarfile  # late import for breaking circular dependency
 
     compress_ext = '.' + tar_compression if compress else ''
-    archive_name = base_name + '.tar' + compress_ext
+    archive_name = f'{base_name}.tar{compress_ext}'
     archive_dir = os.path.dirname(archive_name)
 
     if archive_dir and not os.path.exists(archive_dir):
