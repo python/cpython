@@ -927,7 +927,6 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
     import tarfile  # late import for breaking circular dependency
 
     compress_ext = '.' + tar_compression if compress else ''
-    base_name = os.fspath(base_name)
     archive_name = f'{base_name}.tar{compress_ext}'
     archive_dir = os.path.dirname(archive_name)
 
@@ -976,7 +975,6 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0,
     """
     import zipfile  # late import for breaking circular dependency
 
-    base_name = os.fspath(base_name)
     zip_filename = f'{base_name}.zip'
     archive_dir = os.path.dirname(base_name)
 
@@ -1129,6 +1127,7 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
             if not dry_run:
                 os.chdir(root_dir)
 
+    base_name = os.fspath(base_name)
     try:
         filename = func(base_name, base_dir, **kwargs)
     finally:
