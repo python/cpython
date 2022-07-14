@@ -1,5 +1,6 @@
 import unittest
 
+
 class TestLoadAttrCache(unittest.TestCase):
     def test_descriptor_added_after_optimization(self):
         class Descriptor:
@@ -32,16 +33,23 @@ class TestLoadAttrCache(unittest.TestCase):
         class Class(metaclass=Metaclass):
             attribute = True
 
+        def __get__(self, instance, owner):
+            return False
+        
+        def __set__(self, instance, value):
+            return None
+
         def f():
             return Class.attribute
 
         for _ in range(1025):
             self.assertTrue(f())
 
-        Descriptor.__get__ = lambda self, instance, value: False
-        Descriptor.__set__ = lambda *args: None
+        Descriptor.__get__ = __get__
+        Descriptor.__set__ = __set__
 
-        self.assertFalse(f())
+        for _ in range(1025):
+            self.assertFalse(f())
 
     def test_metaclass_descriptor_shadows_class_attribute(self):
         class Metaclass(type):
@@ -76,7 +84,9 @@ class TestLoadAttrCache(unittest.TestCase):
             self.assertTrue(f())
 
         Metaclass.attribute = attribute
-        self.assertFalse(f())
+
+        for _ in range(1025):
+            self.assertFalse(f())
 
     def test_metaclass_del_descriptor_after_optimization(self):
         class Metaclass(type):
@@ -94,17 +104,9 @@ class TestLoadAttrCache(unittest.TestCase):
             self.assertTrue(f())
         
         del Metaclass.attribute
-        self.assertFalse(f())
-
-    def test_type_descriptor_shadows_attribute(self):
-        class Class:
-            __name__ = "Spam"
-
-        def f():
-            return Class.__name__
-
+        
         for _ in range(1025):
-            self.assertEqual(f(), "Class")
+            self.assertFalse(f())
 
     def test_type_descriptor_shadows_attribute_method(self):
         class Class:
@@ -136,7 +138,6 @@ class TestLoadAttrCache(unittest.TestCase):
         for _ in range(1025):
             self.assertEqual(f(), "Class")
 
-    @unittest.skip("Not fixed yet!")
     def test_metaclass_getattribute(self):
         class Metaclass(type):
             def __getattribute__(self, name):
@@ -151,27 +152,38 @@ class TestLoadAttrCache(unittest.TestCase):
         for _ in range(1025):
             self.assertTrue(f())
 
+
 class TestLoadMethodCache(unittest.TestCase):
     def test_descriptor_added_after_optimization(self):
         class Descriptor:
             pass
 
-        class C:
-            def __init__(self):
-                self.x = lambda: 1
-            x = Descriptor()
+        class Class:
+            attribute = Descriptor()
 
-        def f(o):
-            return o.x()
+        def __get__(self, instance, owner):
+            return lambda: False
+        
+        def __set__(self, instance, value):
+            return None
 
-        o = C()
-        for i in range(1025):
-            assert f(o) == 1
+        def attribute():
+            return True
 
-        Descriptor.__get__ = lambda self, instance, value: lambda: 2
-        Descriptor.__set__ = lambda *args: None
+        instance = Class()
+        instance.attribute = attribute
 
-        self.assertEqual(f(o), 2)
+        def f():
+            return instance.attribute()
+
+        for _ in range(1025):
+            self.assertTrue(f())
+
+        Descriptor.__get__ = __get__
+        Descriptor.__set__ = __set__
+
+        for _ in range(1025):
+            self.assertFalse(f())
 
     def test_metaclass_descriptor_added_after_optimization(self):
         class Descriptor:
@@ -181,7 +193,14 @@ class TestLoadMethodCache(unittest.TestCase):
             attribute = Descriptor()
 
         class Class(metaclass=Metaclass):
-            attribute = lambda: True
+            def attribute():
+                return True
+
+        def __get__(self, instance, owner):
+            return lambda: False
+        
+        def __set__(self, instance, value):
+            return None
 
         def f():
             return Class.attribute()
@@ -189,10 +208,11 @@ class TestLoadMethodCache(unittest.TestCase):
         for _ in range(1025):
             self.assertTrue(f())
 
-        Descriptor.__get__ = lambda self, instance, value: lambda: False
-        Descriptor.__set__ = lambda *args: None
+        Descriptor.__get__ = __get__
+        Descriptor.__set__ = __set__
 
-        self.assertFalse(f())
+        for _ in range(1025):
+            self.assertFalse(f())
 
     def test_metaclass_descriptor_shadows_class_attribute(self):
         class Metaclass(type):
@@ -201,7 +221,8 @@ class TestLoadMethodCache(unittest.TestCase):
                 return lambda: True
 
         class Class(metaclass=Metaclass):
-            attribute = lambda: False
+            def attribute():
+                return False
 
         def f():
             return Class.attribute()
@@ -214,7 +235,8 @@ class TestLoadMethodCache(unittest.TestCase):
             pass
 
         class Class(metaclass=Metaclass):
-            attribute = lambda: True
+            def attribute():
+                return True
 
         @property
         def attribute(self):
@@ -227,7 +249,9 @@ class TestLoadMethodCache(unittest.TestCase):
             self.assertTrue(f())
 
         Metaclass.attribute = attribute
-        self.assertFalse(f())
+        
+        for _ in range(1025):
+            self.assertFalse(f())
 
     def test_metaclass_del_descriptor_after_optimization(self):
         class Metaclass(type):
@@ -236,7 +260,8 @@ class TestLoadMethodCache(unittest.TestCase):
                 return lambda: True
 
         class Class(metaclass=Metaclass):
-            attribute = lambda: False
+            def attribute():
+                return False
 
         def f():
             return Class.attribute()
@@ -245,11 +270,14 @@ class TestLoadMethodCache(unittest.TestCase):
             self.assertTrue(f())
         
         del Metaclass.attribute
-        self.assertFalse(f())
+        
+        for _ in range(1025):
+            self.assertFalse(f())
 
     def test_type_descriptor_shadows_attribute_method(self):
         class Class:
-            mro = lambda: ["Spam", "eggs"]
+            def mro():
+                return ["Spam", "eggs"]
 
         def f():
             return Class.mro()
@@ -259,7 +287,8 @@ class TestLoadMethodCache(unittest.TestCase):
 
     def test_type_descriptor_shadows_attribute_member(self):
         class Class:
-            __base__ = lambda: "Spam"
+            def __base__():
+                return "Spam"
 
         def f():
             return Class.__base__()
@@ -267,20 +296,21 @@ class TestLoadMethodCache(unittest.TestCase):
         for _ in range(1025):
             self.assertNotEqual(f(), "Spam")
 
-    @unittest.skip("Not fixed yet!")
     def test_metaclass_getattribute(self):
         class Metaclass(type):
             def __getattribute__(self, name):
                 return lambda: True
 
         class Class(metaclass=Metaclass):
-            attribute = lambda: False
+            def attribute():
+                return False
 
         def f():
             return Class.attribute()
 
         for _ in range(1025):
             self.assertTrue(f())
+
 
 if __name__ == "__main__":
     import unittest
