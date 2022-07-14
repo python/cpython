@@ -1697,8 +1697,11 @@ class _ArchiveTests(BaseTest):
 
 
 class TestStrPathArchives(_ArchiveTests, unittest.TestCase):
-    
-    _make_archive = make_archive
+
+    def _make_archive_with_path(self, *args, **kwargs):
+        return make_archive(*args, **kwargs)
+
+    _make_archive = _make_archive_with_path
 
 
 class TestPathlibPathArchives(_ArchiveTests, unittest.TestCase):
