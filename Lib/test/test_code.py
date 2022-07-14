@@ -17,6 +17,7 @@ cellvars: ('x',)
 freevars: ()
 nlocals: 2
 flags: 3
+lnotab: b'\\x04\\x01\\n\\x02'
 consts: ('None', '<code object g>')
 
 >>> dump(f(4).__code__)
@@ -30,6 +31,7 @@ cellvars: ()
 freevars: ('x',)
 nlocals: 1
 flags: 19
+lnotab: b'\\x04\\x01'
 consts: ('None',)
 
 >>> def h(x, y):
@@ -50,6 +52,7 @@ cellvars: ()
 freevars: ()
 nlocals: 5
 flags: 3
+lnotab: b'\\x02\\x01\\n\\x01\\n\\x01\\n\\x01'
 consts: ('None',)
 
 >>> def attrs(obj):
@@ -68,6 +71,7 @@ cellvars: ()
 freevars: ()
 nlocals: 1
 flags: 3
+lnotab: b'\\x02\\x01.\\x01.\\x01'
 consts: ('None',)
 
 >>> def optimize_away():
@@ -87,6 +91,7 @@ cellvars: ()
 freevars: ()
 nlocals: 0
 flags: 3
+lnotab: b'\\x02\\x02\\x02\\x01\\x02\\x01'
 consts: ("'doc string'", 'None')
 
 >>> def keywordonly_args(a,b,*,k1):
@@ -104,6 +109,7 @@ cellvars: ()
 freevars: ()
 nlocals: 3
 flags: 3
+lnotab: b'\\x02\\x01'
 consts: ('None',)
 
 >>> def posonly_args(a,b,/,c):
@@ -121,6 +127,7 @@ cellvars: ()
 freevars: ()
 nlocals: 3
 flags: 3
+lnotab: b'\\x02\\x01'
 consts: ('None',)
 
 """
@@ -159,7 +166,8 @@ def dump(co):
     """Print out a text representation of a code object."""
     for attr in ["name", "argcount", "posonlyargcount",
                  "kwonlyargcount", "names", "varnames",
-                 "cellvars", "freevars", "nlocals", "flags"]:
+                 "cellvars", "freevars", "nlocals", "flags",
+                 "lnotab"]:
         print("%s: %s" % (attr, getattr(co, "co_" + attr)))
     print("consts:", tuple(consts(co.co_consts)))
 
@@ -427,6 +435,21 @@ class CodeTest(unittest.TestCase):
         for line, end_line, column, end_column in positions:
             self.assertIsNone(line)
             self.assertEqual(end_line, new_code.co_firstlineno + 1)
+
+    def test_large_lnotab(self):
+        d = {}
+        lines = (
+            ["def f():"] +
+            ['    """'] +
+            ['    .'] * (1 << 17) +
+            ['    """'] +
+            ["    x = 1"] * (1 << 17)
+        )
+        source = "\n".join(lines)
+        exec(source, d)
+        code = d["f"].__code__
+
+        self.assertEqual(len(code.co_lnotab), 264208)
 
 
 def isinterned(s):
