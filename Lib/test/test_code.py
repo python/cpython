@@ -447,7 +447,9 @@ class CodeTest(unittest.TestCase):
         exec(source, d)
         code = d["f"].__code__
 
-        self.assertEqual(len(code.co_lnotab), 264208)
+        expected = 1032 * [0, 127] + [0, 9] + ((1 << 17) - 1) * [2, 1]
+        expected[0] = 2
+        self.assertEqual(list(code.co_lnotab), expected)
 
 
 def isinterned(s):
