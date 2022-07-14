@@ -4,6 +4,7 @@ import os.path
 import sys
 import unittest
 import subprocess
+import sysconfig
 from test import support
 from test.support import os_helper
 
@@ -25,6 +26,11 @@ class TestCPPExt(unittest.TestCase):
     # With MSVC, the linker fails with: cannot open file 'python311.lib'
     # https://github.com/python/cpython/pull/32175#issuecomment-1111175897
     @unittest.skipIf(MS_WINDOWS, 'test fails on Windows')
+    # Building and running an extension in clang sanitizing mode is not
+    # straightforward
+    @unittest.skipIf(
+        '-fsanitize' in (sysconfig.get_config_var('PY_CFLAGS') or ''),
+        'test does not work with analyzing builds')
     # the test uses venv+pip: skip if it's not available
     @support.requires_venv_with_pip()
     def check_build(self, std_cpp03, extension_name):
