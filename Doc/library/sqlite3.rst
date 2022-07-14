@@ -1124,7 +1124,7 @@ of :func:`connect`. There are three options:
 * Explicit: set *detect_types* to :const:`PARSE_COLNAMES`
 * Both: set *detect_types* to
   ``sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES``.
-  Colum names take precedence over declared types.
+  Column names take precedence over declared types.
 
 The following example illustrates the implicit and explicit approaches:
 
