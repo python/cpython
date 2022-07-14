@@ -35,7 +35,7 @@ class TestLoadAttrCache(unittest.TestCase):
 
         def __get__(self, instance, owner):
             return False
-        
+
         def __set__(self, instance, value):
             return None
 
@@ -102,9 +102,9 @@ class TestLoadAttrCache(unittest.TestCase):
 
         for _ in range(1025):
             self.assertTrue(f())
-        
+
         del Metaclass.attribute
-        
+
         for _ in range(1025):
             self.assertFalse(f())
 
@@ -163,7 +163,7 @@ class TestLoadMethodCache(unittest.TestCase):
 
         def __get__(self, instance, owner):
             return lambda: False
-        
+
         def __set__(self, instance, value):
             return None
 
@@ -198,7 +198,7 @@ class TestLoadMethodCache(unittest.TestCase):
 
         def __get__(self, instance, owner):
             return lambda: False
-        
+
         def __set__(self, instance, value):
             return None
 
@@ -249,7 +249,7 @@ class TestLoadMethodCache(unittest.TestCase):
             self.assertTrue(f())
 
         Metaclass.attribute = attribute
-        
+
         for _ in range(1025):
             self.assertFalse(f())
 
@@ -268,9 +268,9 @@ class TestLoadMethodCache(unittest.TestCase):
 
         for _ in range(1025):
             self.assertTrue(f())
-        
+
         del Metaclass.attribute
-        
+
         for _ in range(1025):
             self.assertFalse(f())
 
