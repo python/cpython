@@ -1445,7 +1445,7 @@ static arena_map_bot_t arena_map_root;
 
 /* Return a pointer to a bottom tree node, return NULL if it doesn't exist or
  * it cannot be created */
-static arena_map_bot_t *
+static Py_ALWAYS_INLINE arena_map_bot_t *
 arena_map_get(block *p, int create)
 {
 #ifdef USE_INTERIOR_NODES
