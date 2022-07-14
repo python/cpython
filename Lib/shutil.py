@@ -975,7 +975,7 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0,
     """
     import zipfile  # late import for breaking circular dependency
 
-    zip_filename = base_name + ".zip"
+    zip_filename = f'{base_name}.zip'
     archive_dir = os.path.dirname(base_name)
 
     if archive_dir and not os.path.exists(archive_dir):

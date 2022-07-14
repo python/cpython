@@ -1,0 +1,2 @@
+:meth:`shutil.make_archive` now accepts any :class:`os.PathLike`. Patch by
+Oleg Iarygin.
