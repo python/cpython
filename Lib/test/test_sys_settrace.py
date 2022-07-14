@@ -1577,9 +1577,7 @@ class TraceTestCase(unittest.TestCase):
         exec("""def f():              # line 0
             x = 0                     # line 1
             y = 1                     # line 2
-            '''                       # line 3
-            %s                        # lines 4 through (1 << 16)
-            '''                       #
+            %s                        # lines 3 through (1 << 16)
             x += 1                    #
             return""" % ('\n' * (1 << 16),), d)
         f = d['f']
@@ -1588,10 +1586,9 @@ class TraceTestCase(unittest.TestCase):
             (0, 'call'),
             (1, 'line'),
             (2, 'line'),
-            (3, 'line'),
-            (65542, 'line'),
-            (65543, 'line'),
-            (65543, 'return'),
+            (65540, 'line'),
+            (65541, 'line'),
+            (65541, 'return'),
         ]
 
         self.run_and_compare(f, EXPECTED_EVENTS)
