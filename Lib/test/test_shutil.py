@@ -1327,9 +1327,9 @@ class TestCopy(BaseTest, unittest.TestCase):
         self.assertRaises(err, shutil.copyfile, dir2, src_dir)
 
 
-class _ArchiveTests(BaseTest):
+class TestArchives(BaseTest, unittest.TestCase):
 
-    ### shutil.make_archive with str, pathlib, and probably something else
+    ### shutil.make_archive
 
     @support.requires_zlib()
     def test_make_tarball(self):
@@ -1345,7 +1345,7 @@ class _ArchiveTests(BaseTest):
 
         with os_helper.change_cwd(work_dir), no_chdir:
             base_name = os.path.abspath(rel_base_name)
-            tarball = self._make_archive(rel_base_name, 'gztar', root_dir, '.')
+            tarball = make_archive(rel_base_name, 'gztar', root_dir, '.')
 
         # check if the compressed tarball was created
         self.assertEqual(tarball, base_name + '.tar.gz')
@@ -1358,7 +1358,7 @@ class _ArchiveTests(BaseTest):
 
         # trying an uncompressed one
         with os_helper.change_cwd(work_dir), no_chdir:
-            tarball = self._make_archive(rel_base_name, 'tar', root_dir, '.')
+            tarball = make_archive(rel_base_name, 'tar', root_dir, '.')
         self.assertEqual(tarball, base_name + '.tar')
         self.assertTrue(os.path.isfile(tarball))
         self.assertTrue(tarfile.is_tarfile(tarball))
@@ -1394,7 +1394,7 @@ class _ArchiveTests(BaseTest):
         root_dir, base_dir = self._create_files()
         base_name = os.path.join(self.mkdtemp(), 'archive')
         with no_chdir:
-            tarball = self._make_archive(base_name, 'gztar', root_dir, base_dir)
+            tarball = make_archive(base_name, 'gztar', root_dir, base_dir)
 
         # check if the compressed tarball was created
         self.assertEqual(tarball, base_name + '.tar.gz')
@@ -1412,13 +1412,13 @@ class _ArchiveTests(BaseTest):
 
         # trying an uncompressed one
         with no_chdir:
-            tarball = self._make_archive(base_name, 'tar', root_dir, base_dir)
+            tarball = make_archive(base_name, 'tar', root_dir, base_dir)
         self.assertEqual(tarball, base_name + '.tar')
         self.assertTrue(os.path.isfile(tarball))
 
         # now for a dry_run
         with no_chdir:
-            tarball = self._make_archive(base_name, 'tar', root_dir, base_dir,
+            tarball = make_archive(base_name, 'tar', root_dir, base_dir,
                                    dry_run=True)
         self.assertEqual(tarball, base_name + '.tar')
         self.assertTrue(os.path.isfile(tarball))
@@ -1437,7 +1437,7 @@ class _ArchiveTests(BaseTest):
 
         with os_helper.change_cwd(work_dir), no_chdir:
             base_name = os.path.abspath(rel_base_name)
-            res = self._make_archive(rel_base_name, 'zip', root_dir)
+            res = make_archive(rel_base_name, 'zip', root_dir)
 
         self.assertEqual(res, base_name + '.zip')
         self.assertTrue(os.path.isfile(res))
@@ -1450,7 +1450,7 @@ class _ArchiveTests(BaseTest):
 
         with os_helper.change_cwd(work_dir), no_chdir:
             base_name = os.path.abspath(rel_base_name)
-            res = self._make_archive(rel_base_name, 'zip', root_dir, base_dir)
+            res = make_archive(rel_base_name, 'zip', root_dir, base_dir)
 
         self.assertEqual(res, base_name + '.zip')
         self.assertTrue(os.path.isfile(res))
@@ -1467,7 +1467,7 @@ class _ArchiveTests(BaseTest):
         root_dir, base_dir = self._create_files()
         base_name = os.path.join(self.mkdtemp(), 'archive')
         with no_chdir:
-            archive = self._make_archive(base_name, 'zip', root_dir, base_dir)
+            archive = make_archive(base_name, 'zip', root_dir, base_dir)
 
         # check if ZIP file  was created
         self.assertEqual(archive, base_name + '.zip')
@@ -1494,7 +1494,7 @@ class _ArchiveTests(BaseTest):
         root_dir, base_dir = self._create_files()
         base_name = os.path.join(self.mkdtemp(), 'archive')
         with no_chdir:
-            archive = self._make_archive(base_name, 'zip', root_dir, base_dir)
+            archive = make_archive(base_name, 'zip', root_dir, base_dir)
 
         # check if ZIP file  was created
         self.assertEqual(archive, base_name + '.zip')
@@ -1515,7 +1515,7 @@ class _ArchiveTests(BaseTest):
     def test_make_archive(self):
         tmpdir = self.mkdtemp()
         base_name = os.path.join(tmpdir, 'archive')
-        self.assertRaises(ValueError, self._make_archive, base_name, 'xxx')
+        self.assertRaises(ValueError, make_archive, base_name, 'xxx')
 
     @support.requires_zlib()
     def test_make_archive_owner_group(self):
@@ -1529,18 +1529,18 @@ class _ArchiveTests(BaseTest):
 
         root_dir, base_dir = self._create_files()
         base_name = os.path.join(self.mkdtemp(), 'archive')
-        res = self._make_archive(base_name, 'zip', root_dir, base_dir, owner=owner,
+        res = make_archive(base_name, 'zip', root_dir, base_dir, owner=owner,
                            group=group)
         self.assertTrue(os.path.isfile(res))
 
-        res = self._make_archive(base_name, 'zip', root_dir, base_dir)
+        res = make_archive(base_name, 'zip', root_dir, base_dir)
         self.assertTrue(os.path.isfile(res))
 
-        res = self._make_archive(base_name, 'tar', root_dir, base_dir,
+        res = make_archive(base_name, 'tar', root_dir, base_dir,
                            owner=owner, group=group)
         self.assertTrue(os.path.isfile(res))
 
-        res = self._make_archive(base_name, 'tar', root_dir, base_dir,
+        res = make_archive(base_name, 'tar', root_dir, base_dir,
                            owner='kjhkjhkjg', group='oihohoh')
         self.assertTrue(os.path.isfile(res))
 
@@ -1553,7 +1553,7 @@ class _ArchiveTests(BaseTest):
         group = grp.getgrgid(0)[0]
         owner = pwd.getpwuid(0)[0]
         with os_helper.change_cwd(root_dir), no_chdir:
-            archive_name = self._make_archive(base_name, 'gztar', root_dir, 'dist',
+            archive_name = make_archive(base_name, 'gztar', root_dir, 'dist',
                                         owner=owner, group=group)
 
         # check if the compressed tarball was created
@@ -1582,7 +1582,7 @@ class _ArchiveTests(BaseTest):
         try:
             with support.swap_attr(os, 'chdir', _chdir) as orig_chdir:
                 try:
-                    self._make_archive('xxx', 'xxx', root_dir=root_dir)
+                    make_archive('xxx', 'xxx', root_dir=root_dir)
                 except Exception:
                     pass
             self.assertEqual(os.getcwd(), current_dir)
@@ -1594,7 +1594,7 @@ class _ArchiveTests(BaseTest):
         # Issue #21280
         root_dir = self.mkdtemp()
         with os_helper.change_cwd(root_dir), no_chdir:
-            self.assertEqual(self._make_archive('test', 'tar'), 'test.tar')
+            self.assertEqual(make_archive('test', 'tar'), 'test.tar')
             self.assertTrue(os.path.isfile('test.tar'))
 
     @support.requires_zlib()
@@ -1602,7 +1602,7 @@ class _ArchiveTests(BaseTest):
         # Issue #21280
         root_dir = self.mkdtemp()
         with os_helper.change_cwd(root_dir), no_chdir:
-            self.assertEqual(self._make_archive('test', 'zip'), 'test.zip')
+            self.assertEqual(make_archive('test', 'zip'), 'test.zip')
             self.assertTrue(os.path.isfile('test.zip'))
 
     def test_register_archive_format(self):
@@ -1634,7 +1634,7 @@ class _ArchiveTests(BaseTest):
         expected.remove('outer')
 
         base_name = os.path.join(self.mkdtemp(), 'archive')
-        filename = self._make_archive(base_name, format, root_dir, base_dir)
+        filename = make_archive(base_name, format, root_dir, base_dir)
 
         # let's try to unpack it now
         tmpdir2 = self.mkdtemp()
@@ -1694,22 +1694,6 @@ class _ArchiveTests(BaseTest):
         # let's leave a clean state
         unregister_unpack_format('Boo2')
         self.assertEqual(get_unpack_formats(), formats)
-
-
-class TestStrPathArchives(_ArchiveTests, unittest.TestCase):
-
-    def _make_archive_with_path(self, *args, **kwargs):
-        return make_archive(*args, **kwargs)
-
-    _make_archive = _make_archive_with_path
-
-
-class TestPathlibPathArchives(_ArchiveTests, unittest.TestCase):
-
-    def _make_archive_with_path(self, path, /, *args, **kwargs):
-        return make_archive(pathlib.Path(path), *args, **kwargs)
-
-    _make_archive = _make_archive_with_path
 
 
 class TestMisc(BaseTest, unittest.TestCase):
