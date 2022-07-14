@@ -3569,7 +3569,6 @@ AS_VAR_IF([with_system_expat], [yes], [
 ])
 
 AC_SUBST([LIBEXPAT_CFLAGS])
-AC_SUBST([LIBEXPAT_LDFLAGS])
 AC_SUBST([LIBEXPAT_INTERNAL])
 
 # Check for use of the system libffi library
@@ -3676,7 +3675,6 @@ AS_VAR_IF([with_system_libmpdec], [yes], [
 ])
 
 AC_SUBST([LIBMPDEC_CFLAGS])
-AC_SUBST([LIBMPDEC_LDFLAGS])
 AC_SUBST([LIBMPDEC_INTERNAL])
 
 # Check whether _decimal should use a coroutine-local or thread-local context
@@ -6736,7 +6734,6 @@ AS_CASE($with_openssl_rpath,
     ]
 )
 AC_MSG_RESULT($OPENSSL_RPATH)
-AC_SUBST([OPENSSL_RPATH])
 
 # This static linking is NOT OFFICIALLY SUPPORTED and not advertised.
 # Requires static OpenSSL build with position-independent code. Some features
@@ -6983,17 +6980,6 @@ AS_CASE([$host_cpu],
 )
 AC_SUBST([MODULE_BUILDTYPE])
 
-dnl Use Modules/Setup.stdlib as additional provider?
-AC_MSG_CHECKING([for additional Modules/Setup files])
-AS_CASE([$ac_sys_system],
-    [Emscripten], [MODULES_SETUP_STDLIB=Modules/Setup.stdlib],
-    [WASI], [MODULES_SETUP_STDLIB=Modules/Setup.stdlib],
-    [MODULES_SETUP_STDLIB=]
-)
-AC_MSG_RESULT([$MODULES_SETUP_STDLIB])
-AC_SUBST([MODULES_SETUP_STDLIB])
-
-
 dnl _MODULE_BLOCK_ADD([VAR], [VALUE])
 dnl internal: adds $1=quote($2) to MODULE_BLOCK
 AC_DEFUN([_MODULE_BLOCK_ADD], [AS_VAR_APPEND([MODULE_BLOCK], ["$1=_AS_QUOTE([$2])$as_nl"])])
@@ -7198,6 +7184,7 @@ PY_STDLIB_MOD([_testinternalcapi], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
+PY_STDLIB_MOD([xxsubtype], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_ctypes_test],
   [test "$TEST_MODULES" = yes], [test "$have_libffi" = yes -a "$ac_cv_func_dlopen" = yes],
@@ -7227,7 +7214,11 @@ fi
 AC_MSG_NOTICE([creating Makefile])
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local $MODULES_SETUP_STDLIB Modules/Setup.bootstrap $srcdir/Modules/Setup
+			Modules/Setup.local Modules/Setup.stdlib Modules/Setup.bootstrap $srcdir/Modules/Setup
+if test $? -ne 0; then
+  AC_MSG_ERROR([makesetup failed])
+fi
+
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then
