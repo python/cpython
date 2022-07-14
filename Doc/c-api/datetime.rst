@@ -191,6 +191,13 @@ must not be ``NULL``, and the type is not checked:
    Return the microsecond, as an int from 0 through 999999.
 
 
+.. c:function:: int PyDateTime_DATE_GET_FOLD(PyDateTime_DateTime *o)
+
+   Return the fold, as an int from 0 through 1.
+
+   .. versionadded:: 3.6
+
+
 Macros to extract fields from time objects.  The argument must be an instance of
 :c:data:`PyDateTime_Time`, including subclasses. The argument must not be ``NULL``,
 and the type is not checked:
@@ -213,6 +220,13 @@ and the type is not checked:
 .. c:function:: int PyDateTime_TIME_GET_MICROSECOND(PyDateTime_Time *o)
 
    Return the microsecond, as an int from 0 through 999999.
+
+
+.. c:function:: int PyDateTime_TIME_GET_FOLD(PyDateTime_Time *o)
+
+   Return the fold, as an int from 0 through 1.
+
+   .. versionadded:: 3.6
 
 
 Macros to extract fields from time delta objects.  The argument must be an
