@@ -17,7 +17,7 @@ cellvars: ('x',)
 freevars: ()
 nlocals: 2
 flags: 3
-lnotab: b'\\x04\\x01\\n\\x02'
+lnotab: [4, 1, 10, 2]
 consts: ('None', '<code object g>')
 
 >>> dump(f(4).__code__)
@@ -31,7 +31,7 @@ cellvars: ()
 freevars: ('x',)
 nlocals: 1
 flags: 19
-lnotab: b'\\x04\\x01'
+lnotab: [4, 1]
 consts: ('None',)
 
 >>> def h(x, y):
@@ -52,7 +52,7 @@ cellvars: ()
 freevars: ()
 nlocals: 5
 flags: 3
-lnotab: b'\\x02\\x01\\n\\x01\\n\\x01\\n\\x01'
+lnotab: [2, 1, 10, 1, 10, 1, 10, 1]
 consts: ('None',)
 
 >>> def attrs(obj):
@@ -71,7 +71,7 @@ cellvars: ()
 freevars: ()
 nlocals: 1
 flags: 3
-lnotab: b'\\x02\\x01.\\x01.\\x01'
+lnotab: [2, 1, 46, 1, 46, 1]
 consts: ('None',)
 
 >>> def optimize_away():
@@ -91,7 +91,7 @@ cellvars: ()
 freevars: ()
 nlocals: 0
 flags: 3
-lnotab: b'\\x02\\x02\\x02\\x01\\x02\\x01'
+lnotab: [2, 2, 2, 1, 2, 1]
 consts: ("'doc string'", 'None')
 
 >>> def keywordonly_args(a,b,*,k1):
@@ -109,7 +109,7 @@ cellvars: ()
 freevars: ()
 nlocals: 3
 flags: 3
-lnotab: b'\\x02\\x01'
+lnotab: [2, 1]
 consts: ('None',)
 
 >>> def posonly_args(a,b,/,c):
@@ -127,7 +127,7 @@ cellvars: ()
 freevars: ()
 nlocals: 3
 flags: 3
-lnotab: b'\\x02\\x01'
+lnotab: [2, 1]
 consts: ('None',)
 
 """
@@ -168,7 +168,7 @@ def dump(co):
                  "kwonlyargcount", "names", "varnames",
                  "cellvars", "freevars", "nlocals", "flags"]:
         print("%s: %s" % (attr, getattr(co, "co_" + attr)))
-    print("lnotab:", repr(co.co_lnotab))
+    print("lnotab:", list(co.co_lnotab))
     print("consts:", tuple(consts(co.co_consts)))
 
 # Needed for test_closure_injection below
@@ -440,10 +440,8 @@ class CodeTest(unittest.TestCase):
         d = {}
         lines = (
             ["def f():"] +
-            ['    """'] +
-            ['    .'] * (1 << 17) +
-            ['    """'] +
-            ["    x = 1"] * (1 << 17)
+            [""] * (1 << 17) +
+            ["    pass"] * (1 << 17)
         )
         source = "\n".join(lines)
         exec(source, d)
