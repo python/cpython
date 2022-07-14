@@ -166,9 +166,9 @@ def dump(co):
     """Print out a text representation of a code object."""
     for attr in ["name", "argcount", "posonlyargcount",
                  "kwonlyargcount", "names", "varnames",
-                 "cellvars", "freevars", "nlocals", "flags",
-                 "lnotab"]:
+                 "cellvars", "freevars", "nlocals", "flags"]:
         print("%s: %s" % (attr, getattr(co, "co_" + attr)))
+    print("lnotab:", repr(co.co_lnotab))
     print("consts:", tuple(consts(co.co_consts)))
 
 # Needed for test_closure_injection below
