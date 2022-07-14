@@ -370,11 +370,11 @@ class BoolTest(unittest.TestCase):
         self.assertGreaterEqual(x.count, 1)
 
     def test_bool_new(self):
-        assert bool.__new__(bool) is False
-        assert bool.__new__(bool, 1) is True
-        assert bool.__new__(bool, 0) is False
-        assert bool.__new__(bool, False) is False
-        assert bool.__new__(bool, True) is True
+        self.assertIs(bool.__new__(bool), False)
+        self.assertIs(bool.__new__(bool, 1), True)
+        self.assertIs(bool.__new__(bool, 0), False)
+        self.assertIs(bool.__new__(bool, False), False)
+        self.assertIs(bool.__new__(bool, True), True)
 
 
 if __name__ == "__main__":
