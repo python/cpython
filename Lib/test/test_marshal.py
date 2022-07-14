@@ -129,18 +129,18 @@ class CodeTestCase(unittest.TestCase):
         self.assertEqual(co2.co_filename, "f2")
 
     @requires_debug_ranges()
-    def test_no_columntable_and_endlinetable_with_no_debug_ranges(self):
+    def test_minimal_linetable_with_no_debug_ranges(self):
         # Make sure when demarshalling objects with `-X no_debug_ranges`
-        # that the columntable and endlinetable are None.
+        # that the columns are None.
         co = ExceptionTestCase.test_exceptions.__code__
         code = textwrap.dedent("""
         import sys
         import marshal
         with open(sys.argv[1], 'rb') as f:
             co = marshal.load(f)
-
-            assert co.co_endlinetable is None
-            assert co.co_columntable is None
+            positions = list(co.co_positions())
+            assert positions[0][2] is None
+            assert positions[0][3] is None
         """)
 
         try:
@@ -148,8 +148,7 @@ class CodeTestCase(unittest.TestCase):
                 marshal.dump(co, f)
 
             assert_python_ok('-X', 'no_debug_ranges',
-                             '-c', code, os_helper.TESTFN,
-                             __cleanenv=True)
+                             '-c', code, os_helper.TESTFN)
         finally:
             os_helper.unlink(os_helper.TESTFN)
 
@@ -257,7 +256,7 @@ class BugsTestCase(unittest.TestCase):
         # The max stack depth should match the value in Python/marshal.c.
         # BUG: https://bugs.python.org/issue33720
         # Windows always limits the maximum depth on release and debug builds
-        #if os.name == 'nt' and hasattr(sys, 'gettotalrefcount'):
+        #if os.name == 'nt' and support.Py_DEBUG:
         if os.name == 'nt':
             MAX_MARSHAL_STACK_DEPTH = 1000
         else:
@@ -344,6 +343,34 @@ class BugsTestCase(unittest.TestCase):
         data = marshal.dumps(("hello", "dolly", None))
         for i in range(len(data)):
             self.assertRaises(EOFError, marshal.loads, data[0: i])
+
+    def test_deterministic_sets(self):
+        # bpo-37596: To support reproducible builds, sets and frozensets need to
+        # have their elements serialized in a consistent order (even when they
+        # have been scrambled by hash randomization):
+        for kind in ("set", "frozenset"):
+            for elements in (
+                "float('nan'), b'a', b'b', b'c', 'x', 'y', 'z'",
+                # Also test for bad interactions with backreferencing:
+                "('Spam', 0), ('Spam', 1), ('Spam', 2)",
+            ):
+                s = f"{kind}([{elements}])"
+                with self.subTest(s):
+                    # First, make sure that our test case still has different
+                    # orders under hash seeds 0 and 1. If this check fails, we
+                    # need to update this test with different elements. Skip
+                    # this part if we are configured to use any other hash
+                    # algorithm (for example, using Py_HASH_EXTERNAL):
+                    if sys.hash_info.algorithm in {"fnv", "siphash24"}:
+                        args = ["-c", f"print({s})"]
+                        _, repr_0, _ = assert_python_ok(*args, PYTHONHASHSEED="0")
+                        _, repr_1, _ = assert_python_ok(*args, PYTHONHASHSEED="1")
+                        self.assertNotEqual(repr_0, repr_1)
+                    # Then, perform the actual test:
+                    args = ["-c", f"import marshal; print(marshal.dumps({s}))"]
+                    _, dump_0, _ = assert_python_ok(*args, PYTHONHASHSEED="0")
+                    _, dump_1, _ = assert_python_ok(*args, PYTHONHASHSEED="1")
+                    self.assertEqual(dump_0, dump_1)
 
 LARGE_SIZE = 2**31
 pointer_size = 8 if sys.maxsize > 0xFFFFFFFF else 4

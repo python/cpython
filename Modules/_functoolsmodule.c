@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_GC_TRACK
@@ -50,7 +51,7 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs);
 static inline _functools_state *
 get_functools_state_by_type(PyTypeObject *type)
 {
-    PyObject *module = _PyType_GetModuleByDef(type, &_functools_module);
+    PyObject *module = PyType_GetModuleByDef(type, &_functools_module);
     if (module == NULL) {
         return NULL;
     }
@@ -186,7 +187,7 @@ partial_dealloc(partialobject *pto)
 /* Merging keyword arguments using the vectorcall convention is messy, so
  * if we would need to do that, we stop using vectorcall and fall back
  * to using partial_call() instead. */
-_Py_NO_INLINE static PyObject *
+Py_NO_INLINE static PyObject *
 partial_vectorcall_fallback(PyThreadState *tstate, partialobject *pto,
                             PyObject *const *args, size_t nargsf,
                             PyObject *kwnames)
@@ -268,7 +269,7 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
 static void
 partial_setvectorcall(partialobject *pto)
 {
-    if (PyVectorcall_Function(pto->fn) == NULL) {
+    if (_PyVectorcall_Function(pto->fn) == NULL) {
         /* Don't use vectorcall if the underlying function doesn't support it */
         pto->vectorcall = NULL;
     }
@@ -465,7 +466,7 @@ partial_setstate(partialobject *pto, PyObject *state)
 static PyMethodDef partial_methods[] = {
     {"__reduce__", (PyCFunction)partial_reduce, METH_NOARGS},
     {"__setstate__", (PyCFunction)partial_setstate, METH_O},
-    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
 };
@@ -1431,7 +1432,7 @@ PyDoc_STRVAR(_functools_doc,
 
 static PyMethodDef _functools_methods[] = {
     {"reduce",          functools_reduce,     METH_VARARGS, functools_reduce_doc},
-    {"cmp_to_key",      (PyCFunction)(void(*)(void))functools_cmp_to_key,
+    {"cmp_to_key",      _PyCFunction_CAST(functools_cmp_to_key),
      METH_VARARGS | METH_KEYWORDS, functools_cmp_to_key_doc},
     {NULL,              NULL}           /* sentinel */
 };
@@ -1440,7 +1441,7 @@ static int
 _functools_exec(PyObject *module)
 {
     _functools_state *state = get_functools_state(module);
-    state->kwd_mark = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
+    state->kwd_mark = _PyObject_CallNoArgs((PyObject *)&PyBaseObject_Type);
     if (state->kwd_mark == NULL) {
         return -1;
     }

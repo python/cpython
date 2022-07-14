@@ -1,8 +1,24 @@
 import dis
 from itertools import combinations, product
+import sys
+import textwrap
 import unittest
 
 from test.support.bytecode_helper import BytecodeTestCase
+
+
+def compile_pattern_with_fast_locals(pattern):
+    source = textwrap.dedent(
+        f"""
+        def f(x):
+            match x:
+                case {pattern}:
+                    pass
+        """
+    )
+    namespace = {}
+    exec(source, namespace)
+    return namespace["f"].__code__
 
 
 def count_instr_recursively(f, opname):
@@ -28,11 +44,11 @@ class TestTranforms(BytecodeTestCase):
                 continue
             tgt = targets[instr.argval]
             # jump to unconditional jump
-            if tgt.opname in ('JUMP_ABSOLUTE', 'JUMP_FORWARD'):
+            if tgt.opname in ('JUMP_BACKWARD', 'JUMP_FORWARD'):
                 self.fail(f'{instr.opname} at {instr.offset} '
                           f'jumps to {tgt.opname} at {tgt.offset}')
             # unconditional jump to RETURN_VALUE
-            if (instr.opname in ('JUMP_ABSOLUTE', 'JUMP_FORWARD') and
+            if (instr.opname in ('JUMP_BACKWARD', 'JUMP_FORWARD') and
                 tgt.opname == 'RETURN_VALUE'):
                 self.fail(f'{instr.opname} at {instr.offset} '
                           f'jumps to {tgt.opname} at {tgt.offset}')
@@ -61,8 +77,9 @@ class TestTranforms(BytecodeTestCase):
             if not x == 2:
                 del x
         self.assertNotInBytecode(unot, 'UNARY_NOT')
-        self.assertNotInBytecode(unot, 'POP_JUMP_IF_FALSE')
-        self.assertInBytecode(unot, 'POP_JUMP_IF_TRUE')
+        self.assertNotInBytecode(unot, 'POP_JUMP_FORWARD_IF_FALSE')
+        self.assertNotInBytecode(unot, 'POP_JUMP_BACKWARD_IF_FALSE')
+        self.assertInBytecode(unot, 'POP_JUMP_FORWARD_IF_TRUE')
         self.check_lnotab(unot)
 
     def test_elim_inversion_of_is_or_in(self):
@@ -72,9 +89,10 @@ class TestTranforms(BytecodeTestCase):
             ('not a in b', 'CONTAINS_OP', 1,),
             ('not a not in b', 'CONTAINS_OP', 0,),
             ):
-            code = compile(line, '', 'single')
-            self.assertInBytecode(code, cmp_op, invert)
-            self.check_lnotab(code)
+            with self.subTest(line=line):
+                code = compile(line, '', 'single')
+                self.assertInBytecode(code, cmp_op, invert)
+                self.check_lnotab(code)
 
     def test_global_as_constant(self):
         # LOAD_GLOBAL None/True/False  -->  LOAD_CONST None/True/False
@@ -90,9 +108,10 @@ class TestTranforms(BytecodeTestCase):
             return x
 
         for func, elem in ((f, None), (g, True), (h, False)):
-            self.assertNotInBytecode(func, 'LOAD_GLOBAL')
-            self.assertInBytecode(func, 'LOAD_CONST', elem)
-            self.check_lnotab(func)
+            with self.subTest(func=func):
+                self.assertNotInBytecode(func, 'LOAD_GLOBAL')
+                self.assertInBytecode(func, 'LOAD_CONST', elem)
+                self.check_lnotab(func)
 
         def f():
             'Adding a docstring made this test fail in Py2.5.0'
@@ -110,21 +129,22 @@ class TestTranforms(BytecodeTestCase):
             return list
         for elem in ('LOAD_CONST', 'POP_JUMP_IF_FALSE'):
             self.assertNotInBytecode(f, elem)
-        for elem in ('JUMP_ABSOLUTE',):
+        for elem in ('JUMP_BACKWARD',):
             self.assertInBytecode(f, elem)
         self.check_lnotab(f)
 
     def test_pack_unpack(self):
         for line, elem in (
             ('a, = a,', 'LOAD_CONST',),
-            ('a, b = a, b', 'ROT_TWO',),
-            ('a, b, c = a, b, c', 'ROT_THREE',),
+            ('a, b = a, b', 'SWAP',),
+            ('a, b, c = a, b, c', 'SWAP',),
             ):
-            code = compile(line,'','single')
-            self.assertInBytecode(code, elem)
-            self.assertNotInBytecode(code, 'BUILD_TUPLE')
-            self.assertNotInBytecode(code, 'UNPACK_TUPLE')
-            self.check_lnotab(code)
+            with self.subTest(line=line):
+                code = compile(line,'','single')
+                self.assertInBytecode(code, elem)
+                self.assertNotInBytecode(code, 'BUILD_TUPLE')
+                self.assertNotInBytecode(code, 'UNPACK_SEQUENCE')
+                self.check_lnotab(code)
 
     def test_folding_of_tuples_of_constants(self):
         for line, elem in (
@@ -134,10 +154,11 @@ class TestTranforms(BytecodeTestCase):
             ('(None, 1, None)', (None, 1, None)),
             ('((1, 2), 3, 4)', ((1, 2), 3, 4)),
             ):
-            code = compile(line,'','single')
-            self.assertInBytecode(code, 'LOAD_CONST', elem)
-            self.assertNotInBytecode(code, 'BUILD_TUPLE')
-            self.check_lnotab(code)
+            with self.subTest(line=line):
+                code = compile(line,'','single')
+                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                self.assertNotInBytecode(code, 'BUILD_TUPLE')
+                self.check_lnotab(code)
 
         # Long tuples should be folded too.
         code = compile(repr(tuple(range(10000))),'','single')
@@ -174,10 +195,11 @@ class TestTranforms(BytecodeTestCase):
             ('a in [None, 1, None]', (None, 1, None)),
             ('a not in [(1, 2), 3, 4]', ((1, 2), 3, 4)),
             ):
-            code = compile(line, '', 'single')
-            self.assertInBytecode(code, 'LOAD_CONST', elem)
-            self.assertNotInBytecode(code, 'BUILD_LIST')
-            self.check_lnotab(code)
+            with self.subTest(line=line):
+                code = compile(line, '', 'single')
+                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                self.assertNotInBytecode(code, 'BUILD_LIST')
+                self.check_lnotab(code)
 
     def test_folding_of_sets_of_constants(self):
         for line, elem in (
@@ -188,10 +210,11 @@ class TestTranforms(BytecodeTestCase):
             ('a not in {(1, 2), 3, 4}', frozenset({(1, 2), 3, 4})),
             ('a in {1, 2, 3, 3, 2, 1}', frozenset({1, 2, 3})),
             ):
-            code = compile(line, '', 'single')
-            self.assertNotInBytecode(code, 'BUILD_SET')
-            self.assertInBytecode(code, 'LOAD_CONST', elem)
-            self.check_lnotab(code)
+            with self.subTest(line=line):
+                code = compile(line, '', 'single')
+                self.assertNotInBytecode(code, 'BUILD_SET')
+                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                self.check_lnotab(code)
 
         # Ensure that the resulting code actually works:
         def f(a):
@@ -227,11 +250,12 @@ class TestTranforms(BytecodeTestCase):
             ('a = 13 ^ 7', 10),                 # binary xor
             ('a = 13 | 7', 15),                 # binary or
             ):
-            code = compile(line, '', 'single')
-            self.assertInBytecode(code, 'LOAD_CONST', elem)
-            for instr in dis.get_instructions(code):
-                self.assertFalse(instr.opname.startswith('BINARY_'))
-            self.check_lnotab(code)
+            with self.subTest(line=line):
+                code = compile(line, '', 'single')
+                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                for instr in dis.get_instructions(code):
+                    self.assertFalse(instr.opname.startswith('BINARY_'))
+                self.check_lnotab(code)
 
         # Verify that unfoldables are skipped
         code = compile('a=2+"b"', '', 'single')
@@ -285,11 +309,12 @@ class TestTranforms(BytecodeTestCase):
             ('~-2', 1),                         # unary invert
             ('+1', 1),                          # unary positive
         ):
-            code = compile(line, '', 'single')
-            self.assertInBytecode(code, 'LOAD_CONST', elem)
-            for instr in dis.get_instructions(code):
-                self.assertFalse(instr.opname.startswith('UNARY_'))
-            self.check_lnotab(code)
+            with self.subTest(line=line):
+                code = compile(line, '', 'single')
+                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                for instr in dis.get_instructions(code):
+                    self.assertFalse(instr.opname.startswith('UNARY_'))
+                self.check_lnotab(code)
 
         # Check that -0.0 works after marshaling
         def negzero():
@@ -304,10 +329,11 @@ class TestTranforms(BytecodeTestCase):
             ('-"abc"', 'abc', 'UNARY_NEGATIVE'),
             ('~"abc"', 'abc', 'UNARY_INVERT'),
         ):
-            code = compile(line, '', 'single')
-            self.assertInBytecode(code, 'LOAD_CONST', elem)
-            self.assertInBytecode(code, opname)
-            self.check_lnotab(code)
+            with self.subTest(line=line):
+                code = compile(line, '', 'single')
+                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                self.assertInBytecode(code, opname)
+                self.check_lnotab(code)
 
     def test_elim_extra_return(self):
         # RETURN LOAD_CONST None RETURN  -->  RETURN
@@ -319,6 +345,8 @@ class TestTranforms(BytecodeTestCase):
         self.assertEqual(len(returns), 1)
         self.check_lnotab(f)
 
+    @unittest.skip("Following gh-92228 the return has two predecessors "
+                   "and that prevents jump elimination.")
     def test_elim_jump_to_return(self):
         # JUMP_FORWARD to RETURN -->  RETURN
         def f(cond, true_value, false_value):
@@ -327,7 +355,7 @@ class TestTranforms(BytecodeTestCase):
                     else false_value)
         self.check_jump_targets(f)
         self.assertNotInBytecode(f, 'JUMP_FORWARD')
-        self.assertNotInBytecode(f, 'JUMP_ABSOLUTE')
+        self.assertNotInBytecode(f, 'JUMP_BACKWARD')
         returns = [instr for instr in dis.get_instructions(f)
                           if instr.opname == 'RETURN_VALUE']
         self.assertEqual(len(returns), 2)
@@ -347,7 +375,7 @@ class TestTranforms(BytecodeTestCase):
         self.check_lnotab(f)
 
     def test_elim_jump_to_uncond_jump2(self):
-        # POP_JUMP_IF_FALSE to JUMP_ABSOLUTE --> POP_JUMP_IF_FALSE to non-jump
+        # POP_JUMP_IF_FALSE to JUMP_BACKWARD --> POP_JUMP_IF_FALSE to non-jump
         def f():
             while a:
                 # Intentionally use two-line expression to test issue37213.
@@ -381,7 +409,7 @@ class TestTranforms(BytecodeTestCase):
         self.check_lnotab(f)
         self.assertNotInBytecode(f, 'JUMP_IF_FALSE_OR_POP')
         self.assertInBytecode(f, 'JUMP_IF_TRUE_OR_POP')
-        self.assertInBytecode(f, 'POP_JUMP_IF_FALSE')
+        self.assertInBytecode(f, 'POP_JUMP_FORWARD_IF_FALSE')
         # JUMP_IF_TRUE_OR_POP to JUMP_IF_FALSE_OR_POP --> POP_JUMP_IF_TRUE to non-jump
         def f(a, b, c):
             return ((a or b)
@@ -390,7 +418,14 @@ class TestTranforms(BytecodeTestCase):
         self.check_lnotab(f)
         self.assertNotInBytecode(f, 'JUMP_IF_TRUE_OR_POP')
         self.assertInBytecode(f, 'JUMP_IF_FALSE_OR_POP')
-        self.assertInBytecode(f, 'POP_JUMP_IF_TRUE')
+        self.assertInBytecode(f, 'POP_JUMP_FORWARD_IF_TRUE')
+
+    def test_elim_jump_to_uncond_jump4(self):
+        def f():
+            for i in range(5):
+                if i > 3:
+                    print(i)
+        self.check_jump_targets(f)
 
     def test_elim_jump_after_return1(self):
         # Eliminate dead code: jumps immediately after returns can't be reached
@@ -404,7 +439,7 @@ class TestTranforms(BytecodeTestCase):
                 return 5
             return 6
         self.assertNotInBytecode(f, 'JUMP_FORWARD')
-        self.assertNotInBytecode(f, 'JUMP_ABSOLUTE')
+        self.assertNotInBytecode(f, 'JUMP_BACKWARD')
         returns = [instr for instr in dis.get_instructions(f)
                           if instr.opname == 'RETURN_VALUE']
         self.assertLessEqual(len(returns), 6)
@@ -415,7 +450,7 @@ class TestTranforms(BytecodeTestCase):
             def g()->1+1:
                 pass
             return g
-        self.assertNotInBytecode(f, 'BINARY_ADD')
+        self.assertNotInBytecode(f, 'BINARY_OP')
         self.check_lnotab(f)
 
     def test_constant_folding(self):
@@ -432,12 +467,13 @@ class TestTranforms(BytecodeTestCase):
             'lambda x: x in {(3 * -5) + (-1 - 6), (1, -2, 3) * 2, None}',
         ]
         for e in exprs:
-            code = compile(e, '', 'single')
-            for instr in dis.get_instructions(code):
-                self.assertFalse(instr.opname.startswith('UNARY_'))
-                self.assertFalse(instr.opname.startswith('BINARY_'))
-                self.assertFalse(instr.opname.startswith('BUILD_'))
-            self.check_lnotab(code)
+            with self.subTest(e=e):
+                code = compile(e, '', 'single')
+                for instr in dis.get_instructions(code):
+                    self.assertFalse(instr.opname.startswith('UNARY_'))
+                    self.assertFalse(instr.opname.startswith('BINARY_'))
+                    self.assertFalse(instr.opname.startswith('BUILD_'))
+                self.check_lnotab(code)
 
     def test_in_literal_list(self):
         def containtest():
@@ -570,6 +606,58 @@ class TestTranforms(BytecodeTestCase):
                     'not all arguments converted during string formatting'):
             eval("'%s, %s' % (x, *y)", {'x': 1, 'y': [2, 3]})
 
+    def test_static_swaps_unpack_two(self):
+        def f(a, b):
+            a, b = a, b
+            b, a = a, b
+        self.assertNotInBytecode(f, "SWAP")
+
+    def test_static_swaps_unpack_three(self):
+        def f(a, b, c):
+            a, b, c = a, b, c
+            a, c, b = a, b, c
+            b, a, c = a, b, c
+            b, c, a = a, b, c
+            c, a, b = a, b, c
+            c, b, a = a, b, c
+        self.assertNotInBytecode(f, "SWAP")
+
+    def test_static_swaps_match_mapping(self):
+        for a, b, c in product("_a", "_b", "_c"):
+            pattern = f"{{'a': {a}, 'b': {b}, 'c': {c}}}"
+            with self.subTest(pattern):
+                code = compile_pattern_with_fast_locals(pattern)
+                self.assertNotInBytecode(code, "SWAP")
+
+    def test_static_swaps_match_class(self):
+        forms = [
+            "C({}, {}, {})",
+            "C({}, {}, c={})",
+            "C({}, b={}, c={})",
+            "C(a={}, b={}, c={})"
+        ]
+        for a, b, c in product("_a", "_b", "_c"):
+            for form in forms:
+                pattern = form.format(a, b, c)
+                with self.subTest(pattern):
+                    code = compile_pattern_with_fast_locals(pattern)
+                    self.assertNotInBytecode(code, "SWAP")
+
+    def test_static_swaps_match_sequence(self):
+        swaps = {"*_, b, c", "a, *_, c", "a, b, *_"}
+        forms = ["{}, {}, {}", "{}, {}, *{}", "{}, *{}, {}", "*{}, {}, {}"]
+        for a, b, c in product("_a", "_b", "_c"):
+            for form in forms:
+                pattern = form.format(a, b, c)
+                with self.subTest(pattern):
+                    code = compile_pattern_with_fast_locals(pattern)
+                    if pattern in swaps:
+                        # If this fails... great! Remove this pattern from swaps
+                        # to prevent regressing on any improvement:
+                        self.assertInBytecode(code, "SWAP")
+                    else:
+                        self.assertNotInBytecode(code, "SWAP")
+
 
 class TestBuglets(unittest.TestCase):
 
@@ -589,6 +677,192 @@ class TestBuglets(unittest.TestCase):
                 raise Exception
             except Exception or Exception:
                 pass
+
+    def test_bpo_45773_pop_jump_if_true(self):
+        compile("while True or spam: pass", "<test>", "exec")
+
+    def test_bpo_45773_pop_jump_if_false(self):
+        compile("while True or not spam: pass", "<test>", "exec")
+
+
+class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
+
+    def setUp(self):
+        self.addCleanup(sys.settrace, sys.gettrace())
+        sys.settrace(None)
+
+    def test_load_fast_known_simple(self):
+        def f():
+            x = 1
+            y = x + x
+        self.assertInBytecode(f, 'LOAD_FAST')
+
+    def test_load_fast_unknown_simple(self):
+        def f():
+            if condition():
+                x = 1
+            print(x)
+        self.assertInBytecode(f, 'LOAD_FAST_CHECK')
+        self.assertNotInBytecode(f, 'LOAD_FAST')
+
+    def test_load_fast_unknown_because_del(self):
+        def f():
+            x = 1
+            del x
+            print(x)
+        self.assertInBytecode(f, 'LOAD_FAST_CHECK')
+        self.assertNotInBytecode(f, 'LOAD_FAST')
+
+    def test_load_fast_known_because_parameter(self):
+        def f1(x):
+            print(x)
+        self.assertInBytecode(f1, 'LOAD_FAST')
+        self.assertNotInBytecode(f1, 'LOAD_FAST_CHECK')
+
+        def f2(*, x):
+            print(x)
+        self.assertInBytecode(f2, 'LOAD_FAST')
+        self.assertNotInBytecode(f2, 'LOAD_FAST_CHECK')
+
+        def f3(*args):
+            print(args)
+        self.assertInBytecode(f3, 'LOAD_FAST')
+        self.assertNotInBytecode(f3, 'LOAD_FAST_CHECK')
+
+        def f4(**kwargs):
+            print(kwargs)
+        self.assertInBytecode(f4, 'LOAD_FAST')
+        self.assertNotInBytecode(f4, 'LOAD_FAST_CHECK')
+
+        def f5(x=0):
+            print(x)
+        self.assertInBytecode(f5, 'LOAD_FAST')
+        self.assertNotInBytecode(f5, 'LOAD_FAST_CHECK')
+
+    def test_load_fast_known_because_already_loaded(self):
+        def f():
+            if condition():
+                x = 1
+            print(x)
+            print(x)
+        self.assertInBytecode(f, 'LOAD_FAST_CHECK')
+        self.assertInBytecode(f, 'LOAD_FAST')
+
+    def test_load_fast_known_multiple_branches(self):
+        def f():
+            if condition():
+                x = 1
+            else:
+                x = 2
+            print(x)
+        self.assertInBytecode(f, 'LOAD_FAST')
+        self.assertNotInBytecode(f, 'LOAD_FAST_CHECK')
+
+    def test_load_fast_unknown_after_error(self):
+        def f():
+            try:
+                res = 1 / 0
+            except ZeroDivisionError:
+                pass
+            return res
+        # LOAD_FAST (known) still occurs in the no-exception branch.
+        # Assert that it doesn't occur in the LOAD_FAST_CHECK branch.
+        self.assertInBytecode(f, 'LOAD_FAST_CHECK')
+
+    def test_load_fast_unknown_after_error_2(self):
+        def f():
+            try:
+                1 / 0
+            except:
+                print(a, b, c, d, e, f, g)
+            a = b = c = d = e = f = g = 1
+        self.assertInBytecode(f, 'LOAD_FAST_CHECK')
+        self.assertNotInBytecode(f, 'LOAD_FAST')
+
+    def test_setting_lineno_adds_check(self):
+        code = textwrap.dedent("""\
+            def f():
+                x = 2
+                L = 3
+                L = 4
+                for i in range(55):
+                    x + 6
+                del x
+                L = 8
+                L = 9
+                L = 10
+        """)
+        ns = {}
+        exec(code, ns)
+        f = ns['f']
+        self.assertInBytecode(f, "LOAD_FAST")
+        def trace(frame, event, arg):
+            if event == 'line' and frame.f_lineno == 9:
+                frame.f_lineno = 2
+                sys.settrace(None)
+                return None
+            return trace
+        sys.settrace(trace)
+        f()
+        self.assertNotInBytecode(f, "LOAD_FAST")
+
+    def make_function_with_no_checks(self):
+        code = textwrap.dedent("""\
+            def f():
+                x = 2
+                L = 3
+                L = 4
+                L = 5
+                if not L:
+                    x + 7
+                    y = 2
+        """)
+        ns = {}
+        exec(code, ns)
+        f = ns['f']
+        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+        return f
+
+    def test_deleting_local_adds_check(self):
+        f = self.make_function_with_no_checks()
+        def trace(frame, event, arg):
+            if event == 'line' and frame.f_lineno == 4:
+                del frame.f_locals["x"]
+                sys.settrace(None)
+                return None
+            return trace
+        sys.settrace(trace)
+        f()
+        self.assertNotInBytecode(f, "LOAD_FAST")
+        self.assertInBytecode(f, "LOAD_FAST_CHECK")
+
+    def test_modifying_local_does_not_add_check(self):
+        f = self.make_function_with_no_checks()
+        def trace(frame, event, arg):
+            if event == 'line' and frame.f_lineno == 4:
+                frame.f_locals["x"] = 42
+                sys.settrace(None)
+                return None
+            return trace
+        sys.settrace(trace)
+        f()
+        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+
+    def test_initializing_local_does_not_add_check(self):
+        f = self.make_function_with_no_checks()
+        def trace(frame, event, arg):
+            if event == 'line' and frame.f_lineno == 4:
+                frame.f_locals["y"] = 42
+                sys.settrace(None)
+                return None
+            return trace
+        sys.settrace(trace)
+        f()
+        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+
 
 if __name__ == "__main__":
     unittest.main()

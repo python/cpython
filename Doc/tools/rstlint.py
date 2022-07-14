@@ -43,10 +43,10 @@ directives = [
 ]
 
 roles = [
-    ":class:",
-    ":func:",
-    ":meth:",
-    ":mod:",
+    "(?<!py):class:",
+    "(?<!:c|py):func:",
+    "(?<!py):meth:",
+    "(?<!:py):mod:",
     ":exc:",
     ":issue:",
     ":attr:",
@@ -54,7 +54,7 @@ roles = [
     ":ref:",
     ":const:",
     ":term:",
-    ":data:",
+    "(?<!:c|py):data:",
     ":keyword:",
     ":file:",
     ":pep:",
@@ -90,7 +90,6 @@ roles = [
     ":newsgroup:",
     ":code:",
     ":py:func:",
-    ":memory:",
     ":makevar:",
     ":guilabel:",
     ":title-reference:",
@@ -122,6 +121,18 @@ three_dot_directive_re = re.compile(r"\.\.\. %s::" % all_directives)
 # :const:`None`
 double_backtick_role = re.compile(r"(?<!``)%s``" % all_roles)
 
+
+# Find role used with no backticks instead of simple backticks like:
+# :const:None
+# instead of:
+# :const:`None`
+role_with_no_backticks = re.compile(r"%s[^` ]" % all_roles)
+
+# Find role glued with another word like:
+# the:c:func:`PyThreadState_LeaveTracing` function.
+# instead of:
+# the :c:func:`PyThreadState_LeaveTracing` function.
+role_glued_with_word = re.compile(r"[a-zA-Z]%s" % all_roles)
 
 default_role_re = re.compile(r"(^| )`\w([^`]*?\w)?`($| )")
 leaked_markup_re = re.compile(r"[a-z]::\s|`|\.\.\s*\w+:")
@@ -168,6 +179,10 @@ def check_suspicious_constructs(fn, lines):
             yield lno, "directive should start with two dots, not three."
         if double_backtick_role.search(line):
             yield lno, "role use a single backtick, double backtick found."
+        if role_with_no_backticks.search(line):
+            yield lno, "role use a single backtick, no backtick found."
+        if role_glued_with_word.search(line):
+            yield lno, "missing space before role"
         if ".. productionlist::" in line:
             inprod = True
         elif not inprod and default_role_re.search(line):
@@ -248,7 +263,7 @@ def hide_comments(lines):
     """Tool to remove comments from given lines.
 
     It yields empty lines in place of comments, so line numbers are
-    still meaningfull.
+    still meaningful.
     """
     in_multiline_comment = False
     for line in lines:
@@ -329,6 +344,11 @@ Options:  -v       verbose (print all checked file names)
         return 2
 
     count = defaultdict(int)
+
+    print("""⚠ rstlint.py is no longer maintained here and will be removed
+⚠ in a future release.
+⚠ Please use https://pypi.org/p/sphinx-lint instead.
+""")
 
     for root, dirs, files in os.walk(path):
         # ignore subdirs in ignore list

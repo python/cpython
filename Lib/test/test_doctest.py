@@ -4,7 +4,6 @@ Test script for doctest.
 
 from test import support
 from test.support import import_helper
-from test.support import os_helper
 import doctest
 import functools
 import os
@@ -14,12 +13,17 @@ import importlib.abc
 import importlib.util
 import unittest
 import tempfile
-import shutil
 import types
 import contextlib
 
+
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test_CLI requires subprocess support.")
+
+
 # NOTE: There are some additional tests relating to interaction with
 #       zipimport in the test_zipimport_support test module.
+# There are also related tests in `test_doctest2` module.
 
 ######################################################################
 ## Sample Objects (used by test cases)
@@ -95,6 +99,17 @@ class SampleClass:
         >>> print(SampleClass(22).a_property)
         22
         """)
+
+    a_class_attribute = 42
+
+    @classmethod
+    @property
+    def a_classmethod_property(cls):
+        """
+        >>> print(SampleClass.a_classmethod_property)
+        42
+        """
+        return cls.a_class_attribute
 
     class NestedClass:
         """
@@ -444,7 +459,7 @@ We'll simulate a __file__ attr that ends in pyc:
     >>> tests = finder.find(sample_func)
 
     >>> print(tests)  # doctest: +ELLIPSIS
-    [<DocTest sample_func from test_doctest.py:28 (1 example)>]
+    [<DocTest sample_func from test_doctest.py:32 (1 example)>]
 
 The exact name depends on how test_doctest was invoked, so allow for
 leading path components.
@@ -501,6 +516,7 @@ methods, classmethods, staticmethods, properties, and nested classes.
      1  SampleClass.NestedClass.__init__
      1  SampleClass.__init__
      2  SampleClass.a_classmethod
+     1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
      1  SampleClass.a_staticmethod
      1  SampleClass.double
@@ -556,6 +572,7 @@ functions, classes, and the `__test__` dictionary, if it exists:
      1  some_module.SampleClass.NestedClass.__init__
      1  some_module.SampleClass.__init__
      2  some_module.SampleClass.a_classmethod
+     1  some_module.SampleClass.a_classmethod_property
      1  some_module.SampleClass.a_property
      1  some_module.SampleClass.a_staticmethod
      1  some_module.SampleClass.double
@@ -597,6 +614,7 @@ By default, an object with no doctests doesn't create any tests:
      1  SampleClass.NestedClass.__init__
      1  SampleClass.__init__
      2  SampleClass.a_classmethod
+     1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
      1  SampleClass.a_staticmethod
      1  SampleClass.double
@@ -617,10 +635,31 @@ displays.
      0  SampleClass.NestedClass.square
      1  SampleClass.__init__
      2  SampleClass.a_classmethod
+     1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
      1  SampleClass.a_staticmethod
      1  SampleClass.double
      1  SampleClass.get
+
+When used with `exclude_empty=False` we are also interested in line numbers
+of doctests that are empty.
+It used to be broken for quite some time until `bpo-28249`.
+
+    >>> from test import doctest_lineno
+    >>> tests = doctest.DocTestFinder(exclude_empty=False).find(doctest_lineno)
+    >>> for t in tests:
+    ...     print('%5s  %s' % (t.lineno, t.name))
+     None  test.doctest_lineno
+       22  test.doctest_lineno.ClassWithDocstring
+       30  test.doctest_lineno.ClassWithDoctest
+     None  test.doctest_lineno.ClassWithoutDocstring
+     None  test.doctest_lineno.MethodWrapper
+       39  test.doctest_lineno.MethodWrapper.method_with_docstring
+       45  test.doctest_lineno.MethodWrapper.method_with_doctest
+     None  test.doctest_lineno.MethodWrapper.method_without_docstring
+        4  test.doctest_lineno.func_with_docstring
+       12  test.doctest_lineno.func_with_doctest
+     None  test.doctest_lineno.func_without_docstring
 
 Turning off Recursion
 ~~~~~~~~~~~~~~~~~~~~~
@@ -668,7 +707,7 @@ plain ol' Python and is guaranteed to be available.
 
     >>> import builtins
     >>> tests = doctest.DocTestFinder().find(builtins)
-    >>> 816 < len(tests) < 836 # approximate number of objects with docstrings
+    >>> 825 < len(tests) < 845 # approximate number of objects with docstrings
     True
     >>> real_tests = [t for t in tests if len(t.examples) > 0]
     >>> len(real_tests) # objects that actually have doctests
@@ -2770,6 +2809,8 @@ in it, and use a package hook to install a custom loader; on any platform,
 at least one of the line endings will raise a ValueError for inconsistent
 whitespace if doctest does not correctly do the newline conversion.
 
+    >>> from test.support import os_helper
+    >>> import shutil
     >>> dn = tempfile.mkdtemp()
     >>> pkg = os.path.join(dn, "doctest_testpkg")
     >>> os.mkdir(pkg)
@@ -2813,7 +2854,7 @@ except UnicodeEncodeError:
     # Skip the test: the filesystem encoding is unable to encode the filename
     supports_unicode = False
 
-if supports_unicode and not support.has_no_debug_ranges():
+if supports_unicode:
     def test_unicode(): """
 Check doctest with a non-ascii filename:
 
@@ -2837,7 +2878,6 @@ Check doctest with a non-ascii filename:
             exec(compile(example.source, filename, "single",
           File "<doctest foo-bär@baz[0]>", line 1, in <module>
             raise Exception('clé')
-            ^^^^^^^^^^^^^^^^^^^^^^
         Exception: clé
     TestResults(failed=1, attempted=1)
     """
@@ -3113,20 +3153,27 @@ def test_no_trailing_whitespace_stripping():
     patches that contain trailing whitespace. More info on Issue 24746.
     """
 
-######################################################################
-## Main
-######################################################################
 
-def test_main():
-    # Check the doctest cases in doctest itself:
-    ret = support.run_doctest(doctest, verbosity=True)
+def test_run_doctestsuite_multiple_times():
+    """
+    It was not possible to run the same DocTestSuite multiple times
+    http://bugs.python.org/issue2604
+    http://bugs.python.org/issue9736
 
-    # Check the doctest cases defined here:
-    from test import test_doctest
-    support.run_doctest(test_doctest, verbosity=True)
+    >>> import unittest
+    >>> import test.sample_doctest
+    >>> suite = doctest.DocTestSuite(test.sample_doctest)
+    >>> suite.run(unittest.TestResult())
+    <unittest.result.TestResult run=9 errors=0 failures=4>
+    >>> suite.run(unittest.TestResult())
+    <unittest.result.TestResult run=9 errors=0 failures=4>
+    """
 
-    # Run unittests
-    support.run_unittest(__name__)
+
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite(doctest))
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
 
 def test_coverage(coverdir):
@@ -3139,8 +3186,9 @@ def test_coverage(coverdir):
     r.write_results(show_missing=True, summary=True,
                     coverdir=coverdir)
 
+
 if __name__ == '__main__':
     if '-c' in sys.argv:
         test_coverage('/tmp/doctest.cover')
     else:
-        test_main()
+        unittest.main()

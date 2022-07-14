@@ -81,7 +81,7 @@ class VersionTestCase(unittest.TestCase):
                           (v1, v2, res))
 
 def test_suite():
-    return unittest.makeSuite(VersionTestCase)
+    return unittest.TestLoader().loadTestsFromTestCase(VersionTestCase)
 
 if __name__ == "__main__":
     run_unittest(test_suite())

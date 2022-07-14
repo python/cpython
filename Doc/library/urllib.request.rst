@@ -169,8 +169,8 @@ The :mod:`urllib.request` module defines the following functions:
    This helper function returns a dictionary of scheme to proxy server URL
    mappings. It scans the environment for variables named ``<scheme>_proxy``,
    in a case insensitive approach, for all operating systems first, and when it
-   cannot find it, looks for proxy information from Mac OSX System
-   Configuration for Mac OS X and Windows Systems Registry for Windows.
+   cannot find it, looks for proxy information from System
+   Configuration for macOS and Windows Systems Registry for Windows.
    If both lowercase and uppercase environment variables exist (and disagree),
    lowercase is preferred.
 
@@ -218,6 +218,7 @@ The following classes are provided:
    (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11"``, while
    :mod:`urllib`'s default user agent string is
    ``"Python-urllib/2.6"`` (on Python 2.6).
+   All header keys are sent in camel case.
 
    An appropriate ``Content-Type`` header should be included if the *data*
    argument is present.  If this header has not been provided and *data*
@@ -303,8 +304,8 @@ The following classes are provided:
    the list of proxies from the environment variables
    ``<protocol>_proxy``.  If no proxy environment variables are set, then
    in a Windows environment proxy settings are obtained from the registry's
-   Internet Settings section, and in a Mac OS X environment proxy information
-   is retrieved from the OS X System Configuration Framework.
+   Internet Settings section, and in a macOS environment proxy information
+   is retrieved from the System Configuration Framework.
 
    To disable autodetected proxy pass an empty dictionary.
 
@@ -546,7 +547,8 @@ request.
    name, and later calls will overwrite previous calls in case the *key* collides.
    Currently, this is no loss of HTTP functionality, since all headers which have
    meaning when used more than once have a (header-specific) way of gaining the
-   same functionality using only one header.
+   same functionality using only one header.  Note that headers added using
+   this method are also added to redirected requests.
 
 
 .. method:: Request.add_unredirected_header(key, header)
@@ -655,7 +657,7 @@ OpenerDirector Objects
    optional *timeout* parameter specifies a timeout in seconds for blocking
    operations like the connection attempt (if not specified, the global default
    timeout setting will be used). The timeout feature actually works only for
-   HTTP, HTTPS and FTP connections).
+   HTTP, HTTPS and FTP connections.
 
 
 .. method:: OpenerDirector.error(proto, *args)
@@ -737,7 +739,7 @@ The following attribute and methods should only be used by classes derived from
 
    This method, if implemented, will be called by the parent
    :class:`OpenerDirector`.  It should return a file-like object as described in
-   the return value of the :meth:`open` of :class:`OpenerDirector`, or ``None``.
+   the return value of the :meth:`~OpenerDirector.open` method of :class:`OpenerDirector`, or ``None``.
    It should raise :exc:`~urllib.error.URLError`, unless a truly exceptional
    thing happens (for example, :exc:`MemoryError` should not be mapped to
    :exc:`URLError`).
@@ -876,7 +878,17 @@ HTTPRedirectHandler Objects
 .. method:: HTTPRedirectHandler.http_error_307(req, fp, code, msg, hdrs)
 
    The same as :meth:`http_error_301`, but called for the 'temporary redirect'
-   response.
+   response. It does not allow changing the request method from ``POST``
+   to ``GET``.
+
+
+.. method:: HTTPRedirectHandler.http_error_308(req, fp, code, msg, hdrs)
+
+   The same as :meth:`http_error_301`, but called for the 'permanent redirect'
+   response. It does not allow changing the request method from ``POST``
+   to ``GET``.
+
+   .. versionadded:: 3.11
 
 
 .. _http-cookie-processor:
@@ -1267,7 +1279,7 @@ involved.  For example, the :envvar:`http_proxy` environment variable is read to
 obtain the HTTP proxy's URL.
 
 This example replaces the default :class:`ProxyHandler` with one that uses
-programmatically-supplied proxy URLs, and adds proxy authorization support with
+programmatically supplied proxy URLs, and adds proxy authorization support with
 :class:`ProxyBasicAuthHandler`. ::
 
    proxy_handler = urllib.request.ProxyHandler({'http': 'http://www.example.com:3128/'})
@@ -1543,7 +1555,7 @@ some point in the future.
 
 * The :func:`urlopen` and :func:`urlretrieve` functions can cause arbitrarily
   long delays while waiting for a network connection to be set up.  This means
-  that it is difficult to build an interactive Web client using these functions
+  that it is difficult to build an interactive web client using these functions
   without using threads.
 
   .. index::

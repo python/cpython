@@ -35,7 +35,7 @@
 
   A number of SysV or ncurses functions don't have wrappers yet; if you
   need a given function, add it and send a patch.  See
-  http://www.python.org/dev/patches/ for instructions on how to submit
+  https://www.python.org/dev/patches/ for instructions on how to submit
   patches to Python.
 
   Here's a list of currently unsupported functions:
@@ -100,11 +100,16 @@ static const char PyCursesVersion[] = "2.2";
 
 /* Includes */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+#define NEEDS_PY_IDENTIFIER
+
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_structseq.h"     // PyStructSequence_InitType()
+#include "pycore_structseq.h"     // _PyStructSequence_NewType()
 
 #ifdef __hpux
 #define STRICT_SYSV_CURSES
@@ -135,11 +140,11 @@ typedef chtype attr_t;           /* No attr_t type is available */
 #define STRICT_SYSV_CURSES
 #endif
 
-#if NCURSES_EXT_COLORS+0 && NCURSES_EXT_FUNCS+0
+#if NCURSES_EXT_FUNCS+0 >= 20170401 && NCURSES_EXT_COLORS+0 >= 20170401
 #define _NCURSES_EXTENDED_COLOR_FUNCS   1
 #else
 #define _NCURSES_EXTENDED_COLOR_FUNCS   0
-#endif  /* defined(NCURSES_EXT_COLORS) && defined(NCURSES_EXT_FUNCS)  */
+#endif
 
 #if _NCURSES_EXTENDED_COLOR_FUNCS
 #define _CURSES_COLOR_VAL_TYPE          int
@@ -378,6 +383,7 @@ PyCurses_ConvertToString(PyCursesWindowObject *win, PyObject *obj,
             return 0;
         /* check for embedded null bytes */
         if (PyBytes_AsStringAndSize(*bytes, &str, NULL) < 0) {
+            Py_CLEAR(*bytes);
             return 0;
         }
         return 1;
@@ -1226,8 +1232,8 @@ PyCursesWindow_ChgAt(PyCursesWindowObject *self, PyObject *args)
         return NULL;
     }
 
-    color = (short)((attr >> 8) & 0xff);
-    attr = attr - (color << 8);
+    color = (short) PAIR_NUMBER(attr);
+    attr = attr & A_ATTRIBUTES;
 
     if (use_xy) {
         rtn = mvwchgat(self->win,y,x,num,attr,color,NULL);
@@ -3955,7 +3961,7 @@ static int
 update_lines_cols(void)
 {
     PyObject *o;
-    PyObject *m = PyImport_ImportModuleNoBlock("curses");
+    PyObject *m = PyImport_ImportModule("curses");
     _Py_IDENTIFIER(LINES);
     _Py_IDENTIFIER(COLS);
 
@@ -4565,8 +4571,6 @@ PyDoc_STRVAR(ncurses_version__doc__,
 \n\
 Ncurses version information as a named tuple.");
 
-static PyTypeObject NcursesVersionType;
-
 static PyStructSequence_Field ncurses_version_fields[] = {
     {"major", "Major release number"},
     {"minor", "Minor release number"},
@@ -4582,12 +4586,12 @@ static PyStructSequence_Desc ncurses_version_desc = {
 };
 
 static PyObject *
-make_ncurses_version(void)
+make_ncurses_version(PyTypeObject *type)
 {
     PyObject *ncurses_version;
     int pos = 0;
 
-    ncurses_version = PyStructSequence_New(&NcursesVersionType);
+    ncurses_version = PyStructSequence_New(type);
     if (ncurses_version == NULL) {
         return NULL;
     }
@@ -4792,14 +4796,14 @@ PyInit__curses(void)
 
 #ifdef NCURSES_VERSION
     /* ncurses_version */
-    if (NcursesVersionType.tp_name == NULL) {
-        if (_PyStructSequence_InitType(&NcursesVersionType,
-                                       &ncurses_version_desc,
-                                       Py_TPFLAGS_DISALLOW_INSTANTIATION) < 0) {
-            return NULL;
-        }
+    PyTypeObject *version_type;
+    version_type = _PyStructSequence_NewType(&ncurses_version_desc,
+                                             Py_TPFLAGS_DISALLOW_INSTANTIATION);
+    if (version_type == NULL) {
+        return NULL;
     }
-    v = make_ncurses_version();
+    v = make_ncurses_version(version_type);
+    Py_DECREF(version_type);
     if (v == NULL) {
         return NULL;
     }

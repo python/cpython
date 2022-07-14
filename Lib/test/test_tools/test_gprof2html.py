@@ -25,7 +25,7 @@ class Gprof2htmlTests(unittest.TestCase):
         with mock.patch.object(self.gprof, 'webbrowser') as wmock, \
                 tempfile.TemporaryDirectory() as tmpdir:
             fn = os.path.join(tmpdir, 'abc')
-            open(fn, 'w').close()
+            open(fn, 'wb').close()
             sys.argv = ['gprof2html', fn]
             self.gprof.main()
         self.assertTrue(wmock.open.called)

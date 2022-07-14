@@ -80,8 +80,11 @@ import pprint
 import signal
 import inspect
 import tokenize
+import functools
 import traceback
 import linecache
+
+from typing import Union
 
 
 class Restart(Exception):
@@ -128,6 +131,81 @@ class _rstr(str):
         return self
 
 
+class ScriptTarget(str):
+    def __new__(cls, val):
+        # Mutate self to be the "real path".
+        res = super().__new__(cls, os.path.realpath(val))
+
+        # Store the original path for error reporting.
+        res.orig = val
+
+        return res
+
+    def check(self):
+        if not os.path.exists(self):
+            print('Error:', self.orig, 'does not exist')
+            sys.exit(1)
+
+        # Replace pdb's dir with script's dir in front of module search path.
+        sys.path[0] = os.path.dirname(self)
+
+    @property
+    def filename(self):
+        return self
+
+    @property
+    def namespace(self):
+        return dict(
+            __name__='__main__',
+            __file__=self,
+            __builtins__=__builtins__,
+        )
+
+    @property
+    def code(self):
+        with io.open(self) as fp:
+            return f"exec(compile({fp.read()!r}, {self!r}, 'exec'))"
+
+
+class ModuleTarget(str):
+    def check(self):
+        try:
+            self._details
+        except Exception:
+            traceback.print_exc()
+            sys.exit(1)
+
+    @functools.cached_property
+    def _details(self):
+        import runpy
+        return runpy._get_module_details(self)
+
+    @property
+    def filename(self):
+        return self.code.co_filename
+
+    @property
+    def code(self):
+        name, spec, code = self._details
+        return code
+
+    @property
+    def _spec(self):
+        name, spec, code = self._details
+        return spec
+
+    @property
+    def namespace(self):
+        return dict(
+            __name__='__main__',
+            __file__=os.path.normcase(os.path.abspath(self.filename)),
+            __package__=self._spec.parent,
+            __loader__=self._spec.loader,
+            __spec__=self._spec,
+            __builtins__=__builtins__,
+        )
+
+
 # Interaction prompt line will separate file and call info from code
 # text using value of line_prefix string.  A newline and arrow may
 # be to your liking.  You can set it once pdb is imported using the
@@ -166,12 +244,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.rcLines = []
         if readrc:
             try:
-                with open(os.path.expanduser('~/.pdbrc')) as rcFile:
+                with open(os.path.expanduser('~/.pdbrc'), encoding='utf-8') as rcFile:
                     self.rcLines.extend(rcFile)
             except OSError:
                 pass
             try:
-                with open(".pdbrc") as rcFile:
+                with open(".pdbrc", encoding='utf-8') as rcFile:
                     self.rcLines.extend(rcFile)
             except OSError:
                 pass
@@ -562,6 +640,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             except:
                 self.error("Usage: commands [bnum]\n        ...\n        end")
                 return
+        try:
+            self.get_bpbynumber(bnum)
+        except ValueError as err:
+            self.error('cannot set commands: %s' % err)
+            return
+
         self.commands_bnum = bnum
         # Save old definitions for the case of a keyboard interrupt.
         if bnum in self.commands:
@@ -1493,6 +1577,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self.error('No help for %r; please do not run Python with -OO '
                            'if you need command help' % arg)
                 return
+            if command.__doc__ is None:
+                self.error('No help for %r; __doc__ string missing' % arg)
+                return
             self.message(command.__doc__.rstrip())
 
     do_h = do_help
@@ -1538,49 +1625,26 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 return fullname
         return None
 
-    def _runmodule(self, module_name):
-        self._wait_for_mainpyfile = True
-        self._user_requested_quit = False
-        import runpy
-        mod_name, mod_spec, code = runpy._get_module_details(module_name)
-        self.mainpyfile = self.canonic(code.co_filename)
-        import __main__
-        __main__.__dict__.clear()
-        __main__.__dict__.update({
-            "__name__": "__main__",
-            "__file__": self.mainpyfile,
-            "__package__": mod_spec.parent,
-            "__loader__": mod_spec.loader,
-            "__spec__": mod_spec,
-            "__builtins__": __builtins__,
-        })
-        self.run(code)
-
-    def _runscript(self, filename):
-        # The script has to run in __main__ namespace (or imports from
-        # __main__ will break).
-        #
-        # So we clear up the __main__ and set several special variables
-        # (this gets rid of pdb's globals and cleans old variables on restarts).
-        import __main__
-        __main__.__dict__.clear()
-        __main__.__dict__.update({"__name__"    : "__main__",
-                                  "__file__"    : filename,
-                                  "__builtins__": __builtins__,
-                                 })
-
-        # When bdb sets tracing, a number of call and line events happens
+    def _run(self, target: Union[ModuleTarget, ScriptTarget]):
+        # When bdb sets tracing, a number of call and line events happen
         # BEFORE debugger even reaches user's code (and the exact sequence of
-        # events depends on python version). So we take special measures to
-        # avoid stopping before we reach the main script (see user_line and
+        # events depends on python version). Take special measures to
+        # avoid stopping before reaching the main script (see user_line and
         # user_call for details).
         self._wait_for_mainpyfile = True
-        self.mainpyfile = self.canonic(filename)
         self._user_requested_quit = False
-        with io.open_code(filename) as fp:
-            statement = "exec(compile(%r, %r, 'exec'))" % \
-                        (fp.read(), self.mainpyfile)
-        self.run(statement)
+
+        self.mainpyfile = self.canonic(target.filename)
+
+        # The target has to run in __main__ namespace (or imports from
+        # __main__ will break). Clear __main__ and replace with
+        # the target namespace.
+        import __main__
+        __main__.__dict__.clear()
+        __main__.__dict__.update(target.namespace)
+
+        self.run(target.code)
+
 
 # Collect all command help into docstring, if not run with -OO
 
@@ -1604,9 +1668,27 @@ if __doc__ is not None:
 # Simplified interface
 
 def run(statement, globals=None, locals=None):
+    """Execute the *statement* (given as a string or a code object)
+    under debugger control.
+
+    The debugger prompt appears before any code is executed; you can set
+    breakpoints and type continue, or you can step through the statement
+    using step or next.
+
+    The optional *globals* and *locals* arguments specify the
+    environment in which the code is executed; by default the
+    dictionary of the module __main__ is used (see the explanation of
+    the built-in exec() or eval() functions.).
+    """
     Pdb().run(statement, globals, locals)
 
 def runeval(expression, globals=None, locals=None):
+    """Evaluate the *expression* (given as a string or a code object)
+    under debugger control.
+
+    When runeval() returns, it returns the value of the expression.
+    Otherwise this function is similar to run().
+    """
     return Pdb().runeval(expression, globals, locals)
 
 def runctx(statement, globals, locals):
@@ -1614,9 +1696,23 @@ def runctx(statement, globals, locals):
     run(statement, globals, locals)
 
 def runcall(*args, **kwds):
+    """Call the function (a function or method object, not a string)
+    with the given arguments.
+
+    When runcall() returns, it returns whatever the function call
+    returned. The debugger prompt appears as soon as the function is
+    entered.
+    """
     return Pdb().runcall(*args, **kwds)
 
 def set_trace(*, header=None):
+    """Enter the debugger at the calling stack frame.
+
+    This is useful to hard-code a breakpoint at a given point in a
+    program, even if the code is not otherwise being debugged (e.g. when
+    an assertion fails). If given, *header* is printed to the console
+    just before debugging begins.
+    """
     pdb = Pdb()
     if header is not None:
         pdb.message(header)
@@ -1625,6 +1721,12 @@ def set_trace(*, header=None):
 # Post-Mortem interface
 
 def post_mortem(t=None):
+    """Enter post-mortem debugging of the given *traceback* object.
+
+    If no traceback is given, it uses the one of the exception that is
+    currently being handled (an exception must be being handled if the
+    default is to be used).
+    """
     # handling the default
     if t is None:
         # sys.exc_info() returns (type, value, traceback) if an exception is
@@ -1639,6 +1741,7 @@ def post_mortem(t=None):
     p.interaction(None, t)
 
 def pm():
+    """Enter post-mortem debugging of the traceback found in sys.last_traceback."""
     post_mortem(sys.last_traceback)
 
 
@@ -1669,6 +1772,7 @@ To let the script run until an exception occurs, use "-c continue".
 To let the script run up to a given line X in the debugged file, use
 "-c 'until X'"."""
 
+
 def main():
     import getopt
 
@@ -1678,28 +1782,19 @@ def main():
         print(_usage)
         sys.exit(2)
 
-    commands = []
-    run_as_module = False
-    for opt, optarg in opts:
-        if opt in ['-h', '--help']:
-            print(_usage)
-            sys.exit()
-        elif opt in ['-c', '--command']:
-            commands.append(optarg)
-        elif opt in ['-m']:
-            run_as_module = True
+    if any(opt in ['-h', '--help'] for opt, optarg in opts):
+        print(_usage)
+        sys.exit()
 
-    mainpyfile = args[0]     # Get script filename
-    if not run_as_module and not os.path.exists(mainpyfile):
-        print('Error:', mainpyfile, 'does not exist')
-        sys.exit(1)
+    commands = [optarg for opt, optarg in opts if opt in ['-c', '--command']]
+
+    module_indicated = any(opt in ['-m'] for opt, optarg in opts)
+    cls = ModuleTarget if module_indicated else ScriptTarget
+    target = cls(args[0])
+
+    target.check()
 
     sys.argv[:] = args      # Hide "pdb.py" and pdb options from argument list
-
-    if not run_as_module:
-        mainpyfile = os.path.realpath(mainpyfile)
-        # Replace pdb's dir with script's dir in front of module search path.
-        sys.path[0] = os.path.dirname(mainpyfile)
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
     # modified by the script being debugged. It's a bad idea when it was
@@ -1709,15 +1804,12 @@ def main():
     pdb.rcLines.extend(commands)
     while True:
         try:
-            if run_as_module:
-                pdb._runmodule(mainpyfile)
-            else:
-                pdb._runscript(mainpyfile)
+            pdb._run(target)
             if pdb._user_requested_quit:
                 break
             print("The program finished and will be restarted")
         except Restart:
-            print("Restarting", mainpyfile, "with arguments:")
+            print("Restarting", target, "with arguments:")
             print("\t" + " ".join(sys.argv[1:]))
         except SystemExit:
             # In most cases SystemExit does not warrant a post-mortem session.
@@ -1732,7 +1824,7 @@ def main():
             print("Running 'cont' or 'step' will restart the program")
             t = sys.exc_info()[2]
             pdb.interaction(None, t)
-            print("Post mortem debugger finished. The " + mainpyfile +
+            print("Post mortem debugger finished. The " + target +
                   " will be restarted")
 
 

@@ -1,5 +1,5 @@
 import difflib
-from test.support import run_unittest, findfile
+from test.support import findfile
 import unittest
 import doctest
 import sys
@@ -547,12 +547,14 @@ class TestFindLongest(unittest.TestCase):
         self.assertFalse(self.longer_match_exists(a, b, match.size))
 
 
-def test_main():
+def setUpModule():
     difflib.HtmlDiff._default_prefix = 0
-    Doctests = doctest.DocTestSuite(difflib)
-    run_unittest(
-        TestWithAscii, TestAutojunk, TestSFpatches, TestSFbugs,
-        TestOutputFormat, TestBytes, TestJunkAPIs, TestFindLongest, Doctests)
+
+
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite(difflib))
+    return tests
+
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

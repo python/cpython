@@ -2,14 +2,9 @@
 Enum HOWTO
 ==========
 
-:Author: Ethan Furman <ethan at stoneleaf dot us>
-
 .. _enum-basic-tutorial:
 
 .. currentmodule:: enum
-
-Basic Enum Tutorial
--------------------
 
 An :class:`Enum` is a set of symbolic names bound to unique values.  They are
 similar to global variables, but they offer a more useful :func:`repr()`,
@@ -28,6 +23,14 @@ selection of values.  For example, the days of the week::
     ...     SATURDAY = 6
     ...     SUNDAY = 7
 
+Or perhaps the RGB primary colors::
+
+    >>> from enum import Enum
+    >>> class Color(Enum):
+    ...     RED = 1
+    ...     GREEN = 2
+    ...     BLUE = 3
+
 As you can see, creating an :class:`Enum` is as simple as writing a class that
 inherits from :class:`Enum` itself.
 
@@ -41,13 +44,14 @@ important, but either way that value can be used to get the corresponding
 member::
 
     >>> Weekday(3)
-    Weekday.WEDNESDAY
+    <Weekday.WEDNESDAY: 3>
 
-As you can see, the ``repr()`` of a member shows the enum name and the
-member name.  The ``str()`` on a member shows only its name::
+As you can see, the ``repr()`` of a member shows the enum name, the member name,
+and the value.  The ``str()`` of a member shows only the enum name and member
+name::
 
     >>> print(Weekday.THURSDAY)
-    THURSDAY
+    Weekday.THURSDAY
 
 The *type* of an enumeration member is the enum it belongs to::
 
@@ -97,8 +101,8 @@ The complete :class:`Weekday` enum now looks like this::
 Now we can find out what today is!  Observe::
 
     >>> from datetime import date
-    >>> Weekday.from_date(date.today())
-    Weekday.TUESDAY
+    >>> Weekday.from_date(date.today())     # doctest: +SKIP
+    <Weekday.TUESDAY: 2>
 
 Of course, if you're reading this on some other day, you'll see that day instead.
 
@@ -124,21 +128,21 @@ Just like the original :class:`Weekday` enum above, we can have a single selecti
 
     >>> first_week_day = Weekday.MONDAY
     >>> first_week_day
-    Weekday.MONDAY
+    <Weekday.MONDAY: 1>
 
 But :class:`Flag` also allows us to combine several members into a single
 variable::
 
     >>> weekend = Weekday.SATURDAY | Weekday.SUNDAY
     >>> weekend
-    Weekday.SATURDAY|Weekday.SUNDAY
+    <Weekday.SATURDAY|SUNDAY: 96>
 
 You can even iterate over a :class:`Flag` variable::
 
     >>> for day in weekend:
     ...     print(day)
-    SATURDAY
-    SUNDAY
+    Weekday.SATURDAY
+    Weekday.SUNDAY
 
 Okay, let's get some chores set up::
 
@@ -173,6 +177,7 @@ yourself some work and use :func:`auto()` for the values::
 
 .. _enum-advanced-tutorial:
 
+
 Programmatic access to enumeration members and their attributes
 ---------------------------------------------------------------
 
@@ -181,16 +186,16 @@ situations where ``Color.RED`` won't do because the exact color is not known
 at program-writing time).  ``Enum`` allows such access::
 
     >>> Color(1)
-    Color.RED
+    <Color.RED: 1>
     >>> Color(3)
-    Color.BLUE
+    <Color.BLUE: 3>
 
 If you want to access enum members by *name*, use item access::
 
     >>> Color['RED']
-    Color.RED
+    <Color.RED: 1>
     >>> Color['GREEN']
-    Color.GREEN
+    <Color.GREEN: 2>
 
 If you have an enum member and need its :attr:`name` or :attr:`value`::
 
@@ -212,7 +217,7 @@ Having two enum members with the same name is invalid::
     ...
     Traceback (most recent call last):
     ...
-    TypeError: 'SQUARE' already defined as: 2
+    TypeError: 'SQUARE' already defined as 2
 
 However, an enum member can have other names associated with it.  Given two
 entries ``A`` and ``B`` with the same value (and ``A`` defined first), ``B``
@@ -227,11 +232,11 @@ By-name lookup of ``B`` will also return the member ``A``::
     ...     ALIAS_FOR_SQUARE = 2
     ...
     >>> Shape.SQUARE
-    Shape.SQUARE
+    <Shape.SQUARE: 2>
     >>> Shape.ALIAS_FOR_SQUARE
-    Shape.SQUARE
+    <Shape.SQUARE: 2>
     >>> Shape(2)
-    Shape.SQUARE
+    <Shape.SQUARE: 2>
 
 .. note::
 
@@ -299,7 +304,7 @@ Iteration
 Iterating over the members of an enum does not provide the aliases::
 
     >>> list(Shape)
-    [Shape.SQUARE, Shape.DIAMOND, Shape.CIRCLE]
+    [<Shape.SQUARE: 2>, <Shape.DIAMOND: 1>, <Shape.CIRCLE: 3>]
 
 The special attribute ``__members__`` is a read-only ordered mapping of names
 to members.  It includes all names defined in the enumeration, including the
@@ -308,10 +313,10 @@ aliases::
     >>> for name, member in Shape.__members__.items():
     ...     name, member
     ...
-    ('SQUARE', Shape.SQUARE)
-    ('DIAMOND', Shape.DIAMOND)
-    ('CIRCLE', Shape.CIRCLE)
-    ('ALIAS_FOR_SQUARE', Shape.SQUARE)
+    ('SQUARE', <Shape.SQUARE: 2>)
+    ('DIAMOND', <Shape.DIAMOND: 1>)
+    ('CIRCLE', <Shape.CIRCLE: 3>)
+    ('ALIAS_FOR_SQUARE', <Shape.SQUARE: 2>)
 
 The ``__members__`` attribute can be used for detailed programmatic access to
 the enumeration members.  For example, finding all the aliases::
@@ -360,8 +365,8 @@ below)::
 Allowed members and attributes of enumerations
 ----------------------------------------------
 
-Most of the examples above use integers for enumeration values.  Using integers is
-short and handy (and provided by default by the `Functional API`_), but not
+Most of the examples above use integers for enumeration values.  Using integers
+is short and handy (and provided by default by the `Functional API`_), but not
 strictly enforced.  In the vast majority of use-cases, one doesn't care what
 the actual value of an enumeration is.  But if the value *is* important,
 enumerations can have arbitrary values.
@@ -389,7 +394,7 @@ usual.  If we have this enumeration::
 Then::
 
     >>> Mood.favorite_mood()
-    Mood.HAPPY
+    <Mood.HAPPY: 3>
     >>> Mood.HAPPY.describe()
     ('HAPPY', 3)
     >>> str(Mood.FUNKY)
@@ -425,7 +430,7 @@ any members.  So this is forbidden::
     ...
     Traceback (most recent call last):
     ...
-    TypeError: MoreColor: cannot extend enumeration 'Color'
+    TypeError: <enum 'MoreColor'> cannot extend <enum 'Color'>
 
 But this is allowed::
 
@@ -476,11 +481,9 @@ The :class:`Enum` class is callable, providing the following functional API::
     >>> Animal
     <enum 'Animal'>
     >>> Animal.ANT
-    Animal.ANT
-    >>> Animal.ANT.value
-    1
+    <Animal.ANT: 1>
     >>> list(Animal)
-    [Animal.ANT, Animal.BEE, Animal.CAT, Animal.DOG]
+    [<Animal.ANT: 1>, <Animal.BEE: 2>, <Animal.CAT: 3>, <Animal.DOG: 4>]
 
 The semantics of this API resemble :class:`~collections.namedtuple`. The first
 argument of the call to :class:`Enum` is the name of the enumeration.
@@ -508,7 +511,7 @@ evaluate to ``True``.
 Pickling enums created with the functional API can be tricky as frame stack
 implementation details are used to try and figure out which module the
 enumeration is being created in (e.g. it will fail if you use a utility
-function in separate module, and also may not work on IronPython or Jython).
+function in a separate module, and also may not work on IronPython or Jython).
 The solution is to specify the module name explicitly as follows::
 
     >>> Animal = Enum('Animal', 'ANT BEE CAT DOG', module=__name__)
@@ -540,7 +543,7 @@ The complete signature is::
 
 :value: What the new enum class will record as its name.
 
-:names: The enum members.  This can be a whitespace or comma separated string
+:names: The enum members.  This can be a whitespace- or comma-separated string
   (values will start at 1 unless otherwise specified)::
 
     'RED GREEN BLUE' | 'RED,GREEN,BLUE' | 'RED, GREEN, BLUE'
@@ -625,18 +628,9 @@ StrEnum
 The second variation of :class:`Enum` that is provided is also a subclass of
 :class:`str`.  Members of a :class:`StrEnum` can be compared to strings;
 by extension, string enumerations of different types can also be compared
-to each other.  :class:`StrEnum` exists to help avoid the problem of getting
-an incorrect member::
+to each other.
 
-    >>> from enum import StrEnum
-    >>> class Directions(StrEnum):
-    ...     NORTH = 'north',    # notice the trailing comma
-    ...     SOUTH = 'south'
-
-Before :class:`StrEnum`, ``Directions.NORTH`` would have been the :class:`tuple`
-``('north',)``.
-
-.. versionadded:: 3.10
+.. versionadded:: 3.11
 
 
 IntFlag
@@ -645,9 +639,8 @@ IntFlag
 The next variation of :class:`Enum` provided, :class:`IntFlag`, is also based
 on :class:`int`.  The difference being :class:`IntFlag` members can be combined
 using the bitwise operators (&, \|, ^, ~) and the result is still an
-:class:`IntFlag` member, if possible.  However, as the name implies, :class:`IntFlag`
-members also subclass :class:`int` and can be used wherever an :class:`int` is
-used.
+:class:`IntFlag` member, if possible.  Like :class:`IntEnum`, :class:`IntFlag`
+members are also integers and can be used wherever an :class:`int` is used.
 
 .. note::
 
@@ -659,7 +652,7 @@ used.
     details.
 
 .. versionadded:: 3.6
-.. versionchanged:: 3.10
+.. versionchanged:: 3.11
 
 Sample :class:`IntFlag` class::
 
@@ -670,7 +663,7 @@ Sample :class:`IntFlag` class::
     ...     X = 1
     ...
     >>> Perm.R | Perm.W
-    Perm.R|Perm.W
+    <Perm.R|W: 6>
     >>> Perm.R + Perm.W
     6
     >>> RW = Perm.R | Perm.W
@@ -685,24 +678,24 @@ It is also possible to name the combinations::
     ...     X = 1
     ...     RWX = 7
     >>> Perm.RWX
-    Perm.RWX
+    <Perm.RWX: 7>
     >>> ~Perm.RWX
-    Perm(0)
+    <Perm: 0>
     >>> Perm(7)
-    Perm.RWX
+    <Perm.RWX: 7>
 
 .. note::
 
     Named combinations are considered aliases.  Aliases do not show up during
     iteration, but can be returned from by-value lookups.
 
-.. versionchanged:: 3.10
+.. versionchanged:: 3.11
 
 Another important difference between :class:`IntFlag` and :class:`Enum` is that
 if no flags are set (the value is 0), its boolean evaluation is :data:`False`::
 
     >>> Perm.R & Perm.X
-    Perm(0)
+    <Perm: 0>
     >>> bool(Perm.R & Perm.X)
     False
 
@@ -710,7 +703,7 @@ Because :class:`IntFlag` members are also subclasses of :class:`int` they can
 be combined with them (but may lose :class:`IntFlag` membership::
 
     >>> Perm.X | 4
-    Perm.R|Perm.X
+    <Perm.R|X: 5>
 
     >>> Perm.X | 8
     9
@@ -726,9 +719,9 @@ be combined with them (but may lose :class:`IntFlag` membership::
 :class:`IntFlag` members can also be iterated over::
 
     >>> list(RW)
-    [Perm.R, Perm.W]
+    [<Perm.R: 4>, <Perm.W: 2>]
 
-.. versionadded:: 3.10
+.. versionadded:: 3.11
 
 
 Flag
@@ -753,7 +746,7 @@ flags being set, the boolean evaluation is :data:`False`::
     ...     GREEN = auto()
     ...
     >>> Color.RED & Color.GREEN
-    Color(0)
+    <Color: 0>
     >>> bool(Color.RED & Color.GREEN)
     False
 
@@ -767,7 +760,7 @@ while combinations of flags won't::
     ...     WHITE = RED | BLUE | GREEN
     ...
     >>> Color.WHITE
-    Color.WHITE
+    <Color.WHITE: 7>
 
 Giving a name to the "no flags set" condition does not change its boolean
 value::
@@ -779,7 +772,7 @@ value::
     ...     GREEN = auto()
     ...
     >>> Color.BLACK
-    Color.BLACK
+    <Color.BLACK: 0>
     >>> bool(Color.BLACK)
     False
 
@@ -787,9 +780,9 @@ value::
 
     >>> purple = Color.RED | Color.BLUE
     >>> list(purple)
-    [Color.RED, Color.BLUE]
+    [<Color.RED: 1>, <Color.BLUE: 2>]
 
-.. versionadded:: 3.10
+.. versionadded:: 3.11
 
 .. note::
 
@@ -812,29 +805,35 @@ simple to implement independently::
         pass
 
 This demonstrates how similar derived enumerations can be defined; for example
-a :class:`StrEnum` that mixes in :class:`str` instead of :class:`int`.
+a :class:`FloatEnum` that mixes in :class:`float` instead of :class:`int`.
 
 Some rules:
 
 1. When subclassing :class:`Enum`, mix-in types must appear before
    :class:`Enum` itself in the sequence of bases, as in the :class:`IntEnum`
    example above.
-2. While :class:`Enum` can have members of any type, once you mix in an
+2. Mix-in types must be subclassable. For example, :class:`bool` and
+   :class:`range` are not subclassable and will throw an error during Enum
+   creation if used as the mix-in type.
+3. While :class:`Enum` can have members of any type, once you mix in an
    additional type, all the members must have values of that type, e.g.
    :class:`int` above.  This restriction does not apply to mix-ins which only
    add methods and don't specify another type.
-3. When another data type is mixed in, the :attr:`value` attribute is *not the
+4. When another data type is mixed in, the :attr:`value` attribute is *not the
    same* as the enum member itself, although it is equivalent and will compare
    equal.
-4. %-style formatting:  `%s` and `%r` call the :class:`Enum` class's
+5. %-style formatting:  ``%s`` and ``%r`` call the :class:`Enum` class's
    :meth:`__str__` and :meth:`__repr__` respectively; other codes (such as
-   `%i` or `%h` for IntEnum) treat the enum member as its mixed-in type.
-5. :ref:`Formatted string literals <f-strings>`, :meth:`str.format`,
-   and :func:`format` will use the mixed-in type's :meth:`__format__`
-   unless :meth:`__str__` or :meth:`__format__` is overridden in the subclass,
-   in which case the overridden methods or :class:`Enum` methods will be used.
-   Use the !s and !r format codes to force usage of the :class:`Enum` class's
-   :meth:`__str__` and :meth:`__repr__` methods.
+   ``%i`` or ``%h`` for IntEnum) treat the enum member as its mixed-in type.
+6. :ref:`Formatted string literals <f-strings>`, :meth:`str.format`,
+   and :func:`format` will use the enum's :meth:`__str__` method.
+
+.. note::
+
+   Because :class:`IntEnum`, :class:`IntFlag`, and :class:`StrEnum` are
+   designed to be drop-in replacements for existing constants, their
+   :meth:`__str__` method has been reset to their data types
+   :meth:`__str__` method.
 
 When to use :meth:`__new__` vs. :meth:`__init__`
 ------------------------------------------------
@@ -863,10 +862,10 @@ want one of them to be the value::
     ...
 
     >>> print(Coordinate['PY'])
-    PY
+    Coordinate.PY
 
     >>> print(Coordinate(3))
-    VY
+    Coordinate.VY
 
 
 Finer Points
@@ -924,8 +923,8 @@ and raise an error if the two do not match::
     Traceback (most recent call last):
     ...
     TypeError: member order does not match _order_:
-    ['RED', 'BLUE', 'GREEN']
-    ['RED', 'GREEN', 'BLUE']
+      ['RED', 'BLUE', 'GREEN']
+      ['RED', 'GREEN', 'BLUE']
 
 .. note::
 
@@ -936,45 +935,46 @@ and raise an error if the two do not match::
 _Private__names
 """""""""""""""
 
-Private names are not converted to enum members, but remain normal attributes.
+:ref:`Private names <private-name-mangling>` are not converted to enum members,
+but remain normal attributes.
 
-.. versionchanged:: 3.10
+.. versionchanged:: 3.11
 
 
 ``Enum`` member type
 """"""""""""""""""""
 
 Enum members are instances of their enum class, and are normally accessed as
-``EnumClass.member``.  In Python versions ``3.5`` to ``3.9`` you could access
-members from other members -- this practice was discouraged, and in ``3.12``
-:class:`Enum` will return to not allowing it, while in ``3.10`` and ``3.11``
-it will raise a :exc:`DeprecationWarning`::
+``EnumClass.member``.  In Python versions ``3.5`` to ``3.10`` you could access
+members from other members -- this practice was discouraged, and in ``3.11``
+:class:`Enum` returns to not allowing it::
 
     >>> class FieldTypes(Enum):
     ...     name = 0
     ...     value = 1
     ...     size = 2
     ...
-    >>> FieldTypes.value.size       # doctest: +SKIP
-    DeprecationWarning: accessing one member from another is not supported,
-      and will be disabled in 3.12
-    <FieldTypes.size: 2>
+    >>> FieldTypes.value.size
+    Traceback (most recent call last):
+    ...
+    AttributeError: <enum 'FieldTypes'> member has no attribute 'size'
+
 
 .. versionchanged:: 3.5
-.. versionchanged:: 3.10
+.. versionchanged:: 3.11
 
 
 Creating members that are mixed with other data types
 """""""""""""""""""""""""""""""""""""""""""""""""""""
 
 When subclassing other data types, such as :class:`int` or :class:`str`, with
-an :class:`Enum`, all values after the `=` are passed to that data type's
+an :class:`Enum`, all values after the ``=`` are passed to that data type's
 constructor.  For example::
 
-    >>> class MyEnum(IntEnum):
-    ...     example = '11', 16      # '11' will be interpreted as a hexadecimal
-    ...                             # number
-    >>> MyEnum.example.value
+    >>> class MyEnum(IntEnum):      # help(int) -> int(x, base=10) -> integer
+    ...     example = '11', 16      # so x='11' and base=16
+    ...
+    >>> MyEnum.example.value        # and hex(11) is...
     17
 
 
@@ -997,12 +997,12 @@ Plain :class:`Enum` classes always evaluate as :data:`True`.
 """""""""""""""""""""""""""""
 
 If you give your enum subclass extra methods, like the `Planet`_
-class above, those methods will show up in a :func:`dir` of the member,
+class below, those methods will show up in a :func:`dir` of the member,
 but not of the class::
 
-    >>> dir(Planet)
+    >>> dir(Planet)                         # doctest: +SKIP
     ['EARTH', 'JUPITER', 'MARS', 'MERCURY', 'NEPTUNE', 'SATURN', 'URANUS', 'VENUS', '__class__', '__doc__', '__members__', '__module__']
-    >>> dir(Planet.EARTH)
+    >>> dir(Planet.EARTH)                   # doctest: +SKIP
     ['__class__', '__doc__', '__module__', 'mass', 'name', 'radius', 'surface_gravity', 'value']
 
 
@@ -1021,19 +1021,10 @@ are comprised of a single bit::
     ...     CYAN = GREEN | BLUE
     ...
     >>> Color(3)  # named combination
-    Color.YELLOW
+    <Color.YELLOW: 3>
     >>> Color(7)      # not named combination
-    Color.RED|Color.GREEN|Color.BLUE
+    <Color.RED|GREEN|BLUE: 7>
 
-``StrEnum`` and :meth:`str.__str__`
-"""""""""""""""""""""""""""""""""""
-
-An important difference between :class:`StrEnum` and other Enums is the
-:meth:`__str__` method; because :class:`StrEnum` members are strings, some
-parts of Python will read the string data directly, while others will call
-:meth:`str()`. To make those two operations have the same result,
-:meth:`StrEnum.__str__` will be the same as :meth:`str.__str__` so that
-``str(StrEnum.member) == StrEnum.member`` is true.
 
 ``Flag`` and ``IntFlag`` minutia
 """"""""""""""""""""""""""""""""
@@ -1056,16 +1047,16 @@ the following are true:
 - only canonical flags are returned during iteration::
 
     >>> list(Color.WHITE)
-    [Color.RED, Color.GREEN, Color.BLUE]
+    [<Color.RED: 1>, <Color.GREEN: 2>, <Color.BLUE: 4>]
 
 - negating a flag or flag set returns a new flag/flag set with the
   corresponding positive integer value::
 
     >>> Color.BLUE
-    Color.BLUE
+    <Color.BLUE: 4>
 
     >>> ~Color.BLUE
-    Color.RED|Color.GREEN
+    <Color.RED|GREEN: 3>
 
 - names of pseudo-flags are constructed from their members' names::
 
@@ -1075,24 +1066,28 @@ the following are true:
 - multi-bit flags, aka aliases, can be returned from operations::
 
     >>> Color.RED | Color.BLUE
-    Color.PURPLE
+    <Color.PURPLE: 5>
 
     >>> Color(7)  # or Color(-1)
-    Color.WHITE
+    <Color.WHITE: 7>
 
     >>> Color(0)
-    Color.BLACK
+    <Color.BLACK: 0>
 
-- membership / containment checking has changed slightly -- zero valued flags
-  are never considered to be contained::
+- membership / containment checking: zero-valued flags are always considered
+  to be contained::
 
     >>> Color.BLACK in Color.WHITE
-    False
+    True
 
-  otherwise, if all bits of one flag are in the other flag, True is returned::
+  otherwise, only if all bits of one flag are in the other flag will True
+  be returned::
 
     >>> Color.PURPLE in Color.WHITE
     True
+
+    >>> Color.GREEN in Color.PURPLE
+    False
 
 There is a new boundary mechanism that controls how out-of-range / invalid
 bits are handled: ``STRICT``, ``CONFORM``, ``EJECT``, and ``KEEP``:
@@ -1152,7 +1147,7 @@ that can be used directly, or as examples for creating one's own.
 Omitting values
 ^^^^^^^^^^^^^^^
 
-In many use-cases one doesn't care what the actual value of an enumeration
+In many use-cases, one doesn't care what the actual value of an enumeration
 is. There are several ways to define this type of simple enumeration:
 
 - use instances of :class:`auto` for the value
@@ -1177,7 +1172,7 @@ Using :class:`auto` would look like::
     ...     GREEN = auto()
     ...
     >>> Color.GREEN
-    <Color.GREEN>
+    <Color.GREEN: 3>
 
 
 Using :class:`object`
@@ -1190,8 +1185,22 @@ Using :class:`object` would look like::
     ...     GREEN = object()
     ...     BLUE = object()
     ...
+    >>> Color.GREEN                         # doctest: +SKIP
+    <Color.GREEN: <object object at 0x...>>
+
+This is also a good example of why you might want to write your own
+:meth:`__repr__`::
+
+    >>> class Color(Enum):
+    ...     RED = object()
+    ...     GREEN = object()
+    ...     BLUE = object()
+    ...     def __repr__(self):
+    ...         return "<%s.%s>" % (self.__class__.__name__, self._name_)
+    ...
     >>> Color.GREEN
     <Color.GREEN>
+
 
 
 Using a descriptive string
@@ -1205,9 +1214,7 @@ Using a string as the value would look like::
     ...     BLUE = 'too fast!'
     ...
     >>> Color.GREEN
-    <Color.GREEN>
-    >>> Color.GREEN.value
-    'go'
+    <Color.GREEN: 'go'>
 
 
 Using a custom :meth:`__new__`
@@ -1228,9 +1235,7 @@ Using an auto-numbering :meth:`__new__` would look like::
     ...     BLUE = ()
     ...
     >>> Color.GREEN
-    <Color.GREEN>
-    >>> Color.GREEN.value
-    2
+    <Color.GREEN: 2>
 
 To make a more general purpose ``AutoNumber``, add ``*args`` to the signature::
 
@@ -1253,7 +1258,7 @@ to handle any extra arguments::
     ...     BLEACHED_CORAL = () # New color, no Pantone code yet!
     ...
     >>> Swatch.SEA_GREEN
-    <Swatch.SEA_GREEN>
+    <Swatch.SEA_GREEN: 2>
     >>> Swatch.SEA_GREEN.pantone
     '1246'
     >>> Swatch.BLEACHED_CORAL.pantone
@@ -1338,7 +1343,7 @@ alias::
 Planet
 ^^^^^^
 
-If :meth:`__new__` or :meth:`__init__` is defined the value of the enum member
+If :meth:`__new__` or :meth:`__init__` is defined, the value of the enum member
 will be passed to those methods::
 
     >>> class Planet(Enum):
@@ -1380,29 +1385,9 @@ An example to show the :attr:`_ignore_` attribute in use::
     ...         Period['day_%d' % i] = i
     ...
     >>> list(Period)[:2]
-    [Period.day_0, Period.day_1]
+    [<Period.day_0: datetime.timedelta(0)>, <Period.day_1: datetime.timedelta(days=1)>]
     >>> list(Period)[-2:]
-    [Period.day_365, Period.day_366]
-
-
-Conforming input to Flag
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-Creating a :class:`Flag` enum that is more resilient out-of-bounds results to
-mathematical operations, you can use the :attr:`FlagBoundary.CONFORM` setting::
-
-    >>> from enum import Flag, CONFORM, auto
-    >>> class Weekday(Flag, boundary=CONFORM):
-    ...     MONDAY = auto()
-    ...     TUESDAY = auto()
-    ...     WEDNESDAY = auto()
-    ...     THURSDAY = auto()
-    ...     FRIDAY = auto()
-    ...     SATURDAY = auto()
-    ...     SUNDAY = auto()
-    >>> today = Weekday.TUESDAY
-    >>> Weekday(today + 22)  # what day is three weeks from tomorrow?
-    >>> Weekday.WEDNESDAY
+    [<Period.day_365: datetime.timedelta(days=365)>, <Period.day_366: datetime.timedelta(days=366)>]
 
 
 .. _enumtype-examples:
@@ -1413,4 +1398,3 @@ Subclassing EnumType
 While most enum needs can be met by customizing :class:`Enum` subclasses,
 either with class decorators or custom functions, :class:`EnumType` can be
 subclassed to provide a different Enum experience.
-

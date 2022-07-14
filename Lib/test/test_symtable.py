@@ -159,6 +159,10 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(len(ns_test.get_namespaces()), 2)
         self.assertRaises(ValueError, ns_test.get_namespace)
 
+        ns_test_2 = self.top.lookup("glob")
+        self.assertEqual(len(ns_test_2.get_namespaces()), 0)
+        self.assertRaises(ValueError, ns_test_2.get_namespace)
+
     def test_assigned(self):
         self.assertTrue(self.spam.lookup("x").is_assigned())
         self.assertTrue(self.spam.lookup("bar").is_assigned())

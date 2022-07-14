@@ -183,7 +183,7 @@ syslog_syslog(PyObject * self, PyObject * args)
         PyObject *openargs;
 
         /* Continue even if PyTuple_New fails, because openlog(3) is optional.
-         * So, we can still do loggin in the unlikely event things are so hosed
+         * So, we can still do logging in the unlikely event things are so hosed
          * that we can't do this tuple.
          */
         if ((openargs = PyTuple_New(0))) {
@@ -252,7 +252,7 @@ syslog_log_upto(PyObject *self, PyObject *args)
 /* List of functions defined in the module */
 
 static PyMethodDef syslog_methods[] = {
-    {"openlog",         (PyCFunction)(void(*)(void)) syslog_openlog,           METH_VARARGS | METH_KEYWORDS},
+    {"openlog",         _PyCFunction_CAST(syslog_openlog),           METH_VARARGS | METH_KEYWORDS},
     {"closelog",        syslog_closelog,        METH_NOARGS},
     {"syslog",          syslog_syslog,          METH_VARARGS},
     {"setlogmask",      syslog_setlogmask,      METH_VARARGS},

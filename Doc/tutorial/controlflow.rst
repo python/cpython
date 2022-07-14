@@ -250,11 +250,13 @@ at a more abstract level.  The :keyword:`!pass` is silently ignored::
 :keyword:`!match` Statements
 ============================
 
-A match statement takes an expression and compares its value to successive
+A :keyword:`match` statement takes an expression and compares its value to successive
 patterns given as one or more case blocks.  This is superficially
 similar to a switch statement in C, Java or JavaScript (and many
-other languages), but it can also extract components (sequence elements or
-object attributes) from the value into variables.
+other languages), but it's more similar to pattern matching in
+languages like Rust or Haskell. Only the first pattern that matches
+gets executed and it can also extract components (sequence elements
+or object attributes) from the value into variables.
 
 The simplest form compares a subject value against one or more literals::
 
@@ -267,7 +269,7 @@ The simplest form compares a subject value against one or more literals::
             case 418:
                 return "I'm a teapot"
             case _:
-                return "Something's wrong with the Internet"
+                return "Something's wrong with the internet"
 
 Note the last block: the "variable name" ``_`` acts as a *wildcard* and
 never fails to match. If no case matches, none of the branches is executed.
@@ -378,7 +380,7 @@ Several other key features of this statement:
 - Mapping patterns: ``{"bandwidth": b, "latency": l}`` captures the
   ``"bandwidth"`` and ``"latency"`` values from a dictionary.  Unlike sequence
   patterns, extra keys are ignored.  An unpacking like ``**rest`` is also
-  supported.  (But ``**_`` would be redundant, so it not allowed.)
+  supported.  (But ``**_`` would be redundant, so it is not allowed.)
 
 - Subpatterns may be captured using the ``as`` keyword::
 
@@ -395,9 +397,11 @@ Several other key features of this statement:
 
       from enum import Enum
       class Color(Enum):
-          RED = 0
-          GREEN = 1
-          BLUE = 2
+          RED = 'red'
+          GREEN = 'green'
+          BLUE = 'blue'
+
+      color = Color(input("Enter your choice of 'red', 'blue' or 'green': "))
 
       match color:
           case Color.RED:
@@ -651,7 +655,7 @@ Here's an example that fails due to this restriction::
    >>> function(0, a=0)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: function() got multiple values for keyword argument 'a'
+   TypeError: function() got multiple values for argument 'a'
 
 When a final formal parameter of the form ``**name`` is present, it receives a
 dictionary (see :ref:`typesmapping`) containing all keyword arguments except for
@@ -787,7 +791,7 @@ parameters as there is a ``/`` in the function definition::
    >>> pos_only_arg(arg=1)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: pos_only_arg() got an unexpected keyword argument 'arg'
+   TypeError: pos_only_arg() got some positional-only arguments passed as keyword arguments: 'arg'
 
 The third function ``kwd_only_args`` only allows keyword arguments as indicated
 by a ``*`` in the function definition::
@@ -817,7 +821,7 @@ definition::
    >>> combined_example(pos_only=1, standard=2, kwd_only=3)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: combined_example() got an unexpected keyword argument 'pos_only'
+   TypeError: combined_example() got some positional-only arguments passed as keyword arguments: 'pos_only'
 
 
 Finally, consider this function definition which has a potential collision between the positional argument ``name``  and ``**kwds`` which has ``name`` as a key::
@@ -882,7 +886,7 @@ zero or more normal arguments may occur. ::
        file.write(separator.join(args))
 
 
-Normally, these ``variadic`` arguments will be last in the list of formal
+Normally, these *variadic* arguments will be last in the list of formal
 parameters, because they scoop up all remaining input arguments that are
 passed to the function. Any formal parameters which occur after the ``*args``
 parameter are 'keyword-only' arguments, meaning that they can only be used as

@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 """Generate C code from an ASDL description."""
 
-import os
 import sys
 import textwrap
 import types
@@ -145,7 +144,7 @@ class MetadataVisitor(asdl.VisitorBase):
         #                   names where all the constructors
         #                   belonging to that type lack of any
         #                   fields.
-        #    - identifiers: All identifiers used in the AST decclarations
+        #    - identifiers: All identifiers used in the AST declarations
         #    - singletons:  List of all constructors that originates from
         #                   simple sums.
         #    - types:       List of all top level type names
@@ -488,13 +487,19 @@ class Obj2ModPrototypeVisitor(PickleVisitor):
 
 
 class Obj2ModVisitor(PickleVisitor):
+
+    attribute_special_defaults = {
+        "end_lineno": "lineno",
+        "end_col_offset": "col_offset",
+    }
+
     @contextmanager
     def recursive_call(self, node, level):
-        self.emit('if (Py_EnterRecursiveCall(" while traversing \'%s\' node")) {' % node, level, reflow=False)
+        self.emit('if (_Py_EnterRecursiveCall(" while traversing \'%s\' node")) {' % node, level, reflow=False)
         self.emit('goto failed;', level + 1)
         self.emit('}', level)
         yield
-        self.emit('Py_LeaveRecursiveCall();', level)
+        self.emit('_Py_LeaveRecursiveCall();', level)
 
     def funcHeader(self, name):
         ctype = get_c_type(name)
@@ -637,7 +642,13 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("if (tmp == NULL || tmp == Py_None) {", depth)
             self.emit("Py_CLEAR(tmp);", depth+1)
             if self.isNumeric(field):
-                self.emit("%s = 0;" % field.name, depth+1)
+                if field.name in self.attribute_special_defaults:
+                    self.emit(
+                        "%s = %s;" % (field.name, self.attribute_special_defaults[field.name]),
+                        depth+1,
+                    )
+                else:
+                    self.emit("%s = 0;" % field.name, depth+1)
             elif not self.isSimpleType(field):
                 self.emit("%s = NULL;" % field.name, depth+1)
             else:
@@ -1482,9 +1493,10 @@ def generate_module_def(mod, metadata, f, internal_h):
     print(textwrap.dedent("""
         #include "Python.h"
         #include "pycore_ast.h"
-        #include "pycore_ast_state.h"       // struct ast_state
-        #include "pycore_interp.h"          // _PyInterpreterState.ast
-        #include "pycore_pystate.h"         // _PyInterpreterState_GET()
+        #include "pycore_ast_state.h"     // struct ast_state
+        #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
+        #include "pycore_interp.h"        // _PyInterpreterState.ast
+        #include "pycore_pystate.h"       // _PyInterpreterState_GET()
         #include "structmember.h"
         #include <stddef.h>
 

@@ -33,6 +33,106 @@ Here are some of the useful functions provided by this module:
 __author__ = ('Ka-Ping Yee <ping@lfw.org>',
               'Yury Selivanov <yselivanov@sprymix.com>')
 
+__all__ = [
+    "ArgInfo",
+    "Arguments",
+    "Attribute",
+    "BlockFinder",
+    "BoundArguments",
+    "CORO_CLOSED",
+    "CORO_CREATED",
+    "CORO_RUNNING",
+    "CORO_SUSPENDED",
+    "CO_ASYNC_GENERATOR",
+    "CO_COROUTINE",
+    "CO_GENERATOR",
+    "CO_ITERABLE_COROUTINE",
+    "CO_NESTED",
+    "CO_NEWLOCALS",
+    "CO_NOFREE",
+    "CO_OPTIMIZED",
+    "CO_VARARGS",
+    "CO_VARKEYWORDS",
+    "ClassFoundException",
+    "ClosureVars",
+    "EndOfBlock",
+    "FrameInfo",
+    "FullArgSpec",
+    "GEN_CLOSED",
+    "GEN_CREATED",
+    "GEN_RUNNING",
+    "GEN_SUSPENDED",
+    "Parameter",
+    "Signature",
+    "TPFLAGS_IS_ABSTRACT",
+    "Traceback",
+    "classify_class_attrs",
+    "cleandoc",
+    "currentframe",
+    "findsource",
+    "formatannotation",
+    "formatannotationrelativeto",
+    "formatargvalues",
+    "get_annotations",
+    "getabsfile",
+    "getargs",
+    "getargvalues",
+    "getattr_static",
+    "getblock",
+    "getcallargs",
+    "getclasstree",
+    "getclosurevars",
+    "getcomments",
+    "getcoroutinelocals",
+    "getcoroutinestate",
+    "getdoc",
+    "getfile",
+    "getframeinfo",
+    "getfullargspec",
+    "getgeneratorlocals",
+    "getgeneratorstate",
+    "getinnerframes",
+    "getlineno",
+    "getmembers",
+    "getmembers_static",
+    "getmodule",
+    "getmodulename",
+    "getmro",
+    "getouterframes",
+    "getsource",
+    "getsourcefile",
+    "getsourcelines",
+    "indentsize",
+    "isabstract",
+    "isasyncgen",
+    "isasyncgenfunction",
+    "isawaitable",
+    "isbuiltin",
+    "isclass",
+    "iscode",
+    "iscoroutine",
+    "iscoroutinefunction",
+    "isdatadescriptor",
+    "isframe",
+    "isfunction",
+    "isgenerator",
+    "isgeneratorfunction",
+    "isgetsetdescriptor",
+    "ismemberdescriptor",
+    "ismethod",
+    "ismethoddescriptor",
+    "ismethodwrapper",
+    "ismodule",
+    "isroutine",
+    "istraceback",
+    "signature",
+    "stack",
+    "trace",
+    "unwrap",
+    "walktree",
+]
+
+
 import abc
 import ast
 import dis
@@ -47,9 +147,9 @@ import sys
 import tokenize
 import token
 import types
-import warnings
 import functools
 import builtins
+from keyword import iskeyword
 from operator import attrgetter
 from collections import namedtuple, OrderedDict
 
@@ -58,6 +158,7 @@ from collections import namedtuple, OrderedDict
 mod_dict = globals()
 for k, v in dis.COMPILER_FLAG_NAMES.items():
     mod_dict["CO_" + v] = k
+del k, v, mod_dict
 
 # See Include/object.h
 TPFLAGS_IS_ABSTRACT = 1 << 20
@@ -294,7 +395,7 @@ def _has_code_flag(f, flag):
     while ismethod(f):
         f = f.__func__
     f = functools._unwrap_partial(f)
-    if not isfunction(f):
+    if not (isfunction(f) or _signature_is_functionlike(f)):
         return False
     return bool(f.__code__.co_flags & flag)
 
@@ -395,7 +496,7 @@ def iscode(object):
         co_kwonlyargcount   number of keyword only arguments (not including ** arg)
         co_lnotab           encoded mapping of line numbers to bytecode indices
         co_name             name with which this code object was defined
-        co_names            tuple of names of local variables
+        co_names            tuple of names other than arguments and function locals
         co_nlocals          number of local variables
         co_stacksize        virtual machine stack space required
         co_varnames         tuple of names of arguments and local variables"""
@@ -410,12 +511,17 @@ def isbuiltin(object):
         __self__        instance to which a method is bound, or None"""
     return isinstance(object, types.BuiltinFunctionType)
 
+def ismethodwrapper(object):
+    """Return true if the object is a method wrapper."""
+    return isinstance(object, types.MethodWrapperType)
+
 def isroutine(object):
     """Return true if the object is any kind of function or method."""
     return (isbuiltin(object)
             or isfunction(object)
             or ismethod(object)
-            or ismethoddescriptor(object))
+            or ismethoddescriptor(object)
+            or ismethodwrapper(object))
 
 def isabstract(object):
     """Return true if the object is an abstract base class (ABC)."""
@@ -441,32 +547,30 @@ def isabstract(object):
                 return True
     return False
 
-def getmembers(object, predicate=None):
-    """Return all members of an object as (name, value) pairs sorted by name.
-    Optionally, only return members that satisfy a given predicate."""
-    if isclass(object):
-        mro = (object,) + getmro(object)
-    else:
-        mro = ()
+def _getmembers(object, predicate, getter):
     results = []
     processed = set()
     names = dir(object)
-    # :dd any DynamicClassAttributes to the list of names if object is a class;
-    # this may result in duplicate entries if, for example, a virtual
-    # attribute with the same name as a DynamicClassAttribute exists
-    try:
-        for base in object.__bases__:
-            for k, v in base.__dict__.items():
-                if isinstance(v, types.DynamicClassAttribute):
-                    names.append(k)
-    except AttributeError:
-        pass
+    if isclass(object):
+        mro = (object,) + getmro(object)
+        # add any DynamicClassAttributes to the list of names if object is a class;
+        # this may result in duplicate entries if, for example, a virtual
+        # attribute with the same name as a DynamicClassAttribute exists
+        try:
+            for base in object.__bases__:
+                for k, v in base.__dict__.items():
+                    if isinstance(v, types.DynamicClassAttribute):
+                        names.append(k)
+        except AttributeError:
+            pass
+    else:
+        mro = ()
     for key in names:
         # First try to get the value via getattr.  Some descriptors don't
         # like calling their __get__ (see bug #1785), so fall back to
         # looking in the __dict__.
         try:
-            value = getattr(object, key)
+            value = getter(object, key)
             # handle the duplicate key
             if key in processed:
                 raise AttributeError
@@ -484,6 +588,25 @@ def getmembers(object, predicate=None):
         processed.add(key)
     results.sort(key=lambda pair: pair[0])
     return results
+
+def getmembers(object, predicate=None):
+    """Return all members of an object as (name, value) pairs sorted by name.
+    Optionally, only return members that satisfy a given predicate."""
+    return _getmembers(object, predicate, getattr)
+
+def getmembers_static(object, predicate=None):
+    """Return all members of an object as (name, value) pairs sorted by name
+    without triggering dynamic lookup via the descriptor protocol,
+    __getattr__ or __getattribute__. Optionally, only return members that
+    satisfy a given predicate.
+
+    Note: this function may not be able to retrieve all members
+       that getmembers can fetch (like dynamically created attributes)
+       and may find members that getmembers can't (like descriptors
+       that raise AttributeError). It can also return descriptor objects
+       instead of instance members in some cases.
+    """
+    return _getmembers(object, predicate, getattr_static)
 
 Attribute = namedtuple('Attribute', 'name kind defining_class object')
 
@@ -781,6 +904,8 @@ def getfile(object):
             module = sys.modules.get(object.__module__)
             if getattr(module, '__file__', None):
                 return module.__file__
+            if object.__module__ == '__main__':
+                raise OSError('source code not available')
         raise TypeError('{!r} is a built-in class'.format(object))
     if ismethod(object):
         object = object.__func__
@@ -857,7 +982,7 @@ def getmodule(object, _filename=None):
     # Try the cache again with the absolute file name
     try:
         file = getabsfile(object, _filename)
-    except TypeError:
+    except (TypeError, FileNotFoundError):
         return None
     if file in modulesbyfile:
         return sys.modules.get(modulesbyfile[file])
@@ -1212,37 +1337,6 @@ def getargs(co):
         varkw = co.co_varnames[nargs]
     return Arguments(args + kwonlyargs, varargs, varkw)
 
-ArgSpec = namedtuple('ArgSpec', 'args varargs keywords defaults')
-
-def getargspec(func):
-    """Get the names and default values of a function's parameters.
-
-    A tuple of four things is returned: (args, varargs, keywords, defaults).
-    'args' is a list of the argument names, including keyword-only argument names.
-    'varargs' and 'keywords' are the names of the * and ** parameters or None.
-    'defaults' is an n-tuple of the default values of the last n parameters.
-
-    This function is deprecated, as it does not support annotations or
-    keyword-only parameters and will raise ValueError if either is present
-    on the supplied callable.
-
-    For a more structured introspection API, use inspect.signature() instead.
-
-    Alternatively, use getfullargspec() for an API with a similar namedtuple
-    based interface, but full support for annotations and keyword-only
-    parameters.
-
-    Deprecated since Python 3.5, use `inspect.getfullargspec()`.
-    """
-    warnings.warn("inspect.getargspec() is deprecated since Python 3.0, "
-                  "use inspect.signature() or inspect.getfullargspec()",
-                  DeprecationWarning, stacklevel=2)
-    args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = \
-        getfullargspec(func)
-    if kwonlyargs or ann:
-        raise ValueError("Function has keyword-only parameters or annotations"
-                         ", use inspect.signature() API which can support them")
-    return ArgSpec(args, varargs, varkw, defaults)
 
 FullArgSpec = namedtuple('FullArgSpec',
     'args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations')
@@ -1355,6 +1449,8 @@ def getargvalues(frame):
 def formatannotation(annotation, base_module=None):
     if getattr(annotation, '__module__', None) == 'typing':
         return repr(annotation).replace('typing.', '')
+    if isinstance(annotation, types.GenericAlias):
+        return str(annotation)
     if isinstance(annotation, type):
         if annotation.__module__ in ('builtins', base_module):
             return annotation.__qualname__
@@ -1367,63 +1463,6 @@ def formatannotationrelativeto(object):
         return formatannotation(annotation, module)
     return _formatannotation
 
-def formatargspec(args, varargs=None, varkw=None, defaults=None,
-                  kwonlyargs=(), kwonlydefaults={}, annotations={},
-                  formatarg=str,
-                  formatvarargs=lambda name: '*' + name,
-                  formatvarkw=lambda name: '**' + name,
-                  formatvalue=lambda value: '=' + repr(value),
-                  formatreturns=lambda text: ' -> ' + text,
-                  formatannotation=formatannotation):
-    """Format an argument spec from the values returned by getfullargspec.
-
-    The first seven arguments are (args, varargs, varkw, defaults,
-    kwonlyargs, kwonlydefaults, annotations).  The other five arguments
-    are the corresponding optional formatting functions that are called to
-    turn names and values into strings.  The last argument is an optional
-    function to format the sequence of arguments.
-
-    Deprecated since Python 3.5: use the `signature` function and `Signature`
-    objects.
-    """
-
-    from warnings import warn
-
-    warn("`formatargspec` is deprecated since Python 3.5. Use `signature` and "
-         "the `Signature` object directly",
-         DeprecationWarning,
-         stacklevel=2)
-
-    def formatargandannotation(arg):
-        result = formatarg(arg)
-        if arg in annotations:
-            result += ': ' + formatannotation(annotations[arg])
-        return result
-    specs = []
-    if defaults:
-        firstdefault = len(args) - len(defaults)
-    for i, arg in enumerate(args):
-        spec = formatargandannotation(arg)
-        if defaults and i >= firstdefault:
-            spec = spec + formatvalue(defaults[i - firstdefault])
-        specs.append(spec)
-    if varargs is not None:
-        specs.append(formatvarargs(formatargandannotation(varargs)))
-    else:
-        if kwonlyargs:
-            specs.append('*')
-    if kwonlyargs:
-        for kwonlyarg in kwonlyargs:
-            spec = formatargandannotation(kwonlyarg)
-            if kwonlydefaults and kwonlyarg in kwonlydefaults:
-                spec += formatvalue(kwonlydefaults[kwonlyarg])
-            specs.append(spec)
-    if varkw is not None:
-        specs.append(formatvarkw(formatargandannotation(varkw)))
-    result = '(' + ', '.join(specs) + ')'
-    if 'return' in annotations:
-        result += formatreturns(formatannotation(annotations['return']))
-    return result
 
 def formatargvalues(args, varargs, varkw, locals,
                     formatarg=str,
@@ -1600,7 +1639,30 @@ def getclosurevars(func):
 
 # -------------------------------------------------- stack frame extraction
 
-Traceback = namedtuple('Traceback', 'filename lineno function code_context index')
+_Traceback = namedtuple('_Traceback', 'filename lineno function code_context index')
+
+class Traceback(_Traceback):
+    def __new__(cls, filename, lineno, function, code_context, index, *, positions=None):
+        instance = super().__new__(cls, filename, lineno, function, code_context, index)
+        instance.positions = positions
+        return instance
+
+    def __repr__(self):
+        return ('Traceback(filename={!r}, lineno={!r}, function={!r}, '
+               'code_context={!r}, index={!r}, positions={!r})'.format(
+                self.filename, self.lineno, self.function, self.code_context,
+                self.index, self.positions))
+
+def _get_code_position_from_tb(tb):
+    code, instruction_index = tb.tb_frame.f_code, tb.tb_lasti
+    return _get_code_position(code, instruction_index)
+
+def _get_code_position(code, instruction_index):
+    if instruction_index < 0:
+        return (None, None, None, None)
+    positions_gen = code.co_positions()
+    # The nth entry in code.co_positions() corresponds to instruction (2*n)th since Python 3.10+
+    return next(itertools.islice(positions_gen, instruction_index // 2, None))
 
 def getframeinfo(frame, context=1):
     """Get information about a frame or traceback object.
@@ -1611,10 +1673,20 @@ def getframeinfo(frame, context=1):
     The optional second argument specifies the number of lines of context
     to return, which are centered around the current line."""
     if istraceback(frame):
+        positions = _get_code_position_from_tb(frame)
         lineno = frame.tb_lineno
         frame = frame.tb_frame
     else:
         lineno = frame.f_lineno
+        positions = _get_code_position(frame.f_code, frame.f_lasti)
+
+    if positions[0] is None:
+        frame, *positions = (frame, lineno, *positions[1:])
+    else:
+        frame, *positions = (frame, *positions)
+
+    lineno = positions[0]
+
     if not isframe(frame):
         raise TypeError('{!r} is not a frame or traceback object'.format(frame))
 
@@ -1632,14 +1704,26 @@ def getframeinfo(frame, context=1):
     else:
         lines = index = None
 
-    return Traceback(filename, lineno, frame.f_code.co_name, lines, index)
+    return Traceback(filename, lineno, frame.f_code.co_name, lines,
+                     index, positions=dis.Positions(*positions))
 
 def getlineno(frame):
     """Get the line number from a frame object, allowing for optimization."""
     # FrameType.f_lineno is now a descriptor that grovels co_lnotab
     return frame.f_lineno
 
-FrameInfo = namedtuple('FrameInfo', ('frame',) + Traceback._fields)
+_FrameInfo = namedtuple('_FrameInfo', ('frame',) + Traceback._fields)
+class FrameInfo(_FrameInfo):
+    def __new__(cls, frame, filename, lineno, function, code_context, index, *, positions=None):
+        instance = super().__new__(cls, frame, filename, lineno, function, code_context, index)
+        instance.positions = positions
+        return instance
+
+    def __repr__(self):
+        return ('FrameInfo(frame={!r}, filename={!r}, lineno={!r}, function={!r}, '
+               'code_context={!r}, index={!r}, positions={!r})'.format(
+                self.frame, self.filename, self.lineno, self.function,
+                self.code_context, self.index, self.positions))
 
 def getouterframes(frame, context=1):
     """Get a list of records for a frame and all higher (calling) frames.
@@ -1648,8 +1732,9 @@ def getouterframes(frame, context=1):
     name, a list of lines of context, and index within the context."""
     framelist = []
     while frame:
-        frameinfo = (frame,) + getframeinfo(frame, context)
-        framelist.append(FrameInfo(*frameinfo))
+        traceback_info = getframeinfo(frame, context)
+        frameinfo = (frame,) + traceback_info
+        framelist.append(FrameInfo(*frameinfo, positions=traceback_info.positions))
         frame = frame.f_back
     return framelist
 
@@ -1660,8 +1745,9 @@ def getinnerframes(tb, context=1):
     name, a list of lines of context, and index within the context."""
     framelist = []
     while tb:
-        frameinfo = (tb.tb_frame,) + getframeinfo(tb, context)
-        framelist.append(FrameInfo(*frameinfo))
+        traceback_info = getframeinfo(tb, context)
+        frameinfo = (tb.tb_frame,) + traceback_info
+        framelist.append(FrameInfo(*frameinfo, positions=traceback_info.positions))
         tb = tb.tb_next
     return framelist
 
@@ -1788,11 +1874,11 @@ def getgeneratorstate(generator):
     """
     if generator.gi_running:
         return GEN_RUNNING
+    if generator.gi_suspended:
+        return GEN_SUSPENDED
     if generator.gi_frame is None:
         return GEN_CLOSED
-    if generator.gi_frame.f_lasti == -1:
-        return GEN_CREATED
-    return GEN_SUSPENDED
+    return GEN_CREATED
 
 
 def getgeneratorlocals(generator):
@@ -1830,11 +1916,11 @@ def getcoroutinestate(coroutine):
     """
     if coroutine.cr_running:
         return CORO_RUNNING
+    if coroutine.cr_suspended:
+        return CORO_SUSPENDED
     if coroutine.cr_frame is None:
         return CORO_CLOSED
-    if coroutine.cr_frame.f_lasti == -1:
-        return CORO_CREATED
-    return CORO_SUSPENDED
+    return CORO_CREATED
 
 
 def getcoroutinelocals(coroutine):
@@ -1855,13 +1941,9 @@ def getcoroutinelocals(coroutine):
 ###############################################################################
 
 
-_WrapperDescriptor = type(type.__call__)
-_MethodWrapper = type(all.__call__)
-_ClassMethodWrapper = type(int.__dict__['from_bytes'])
-
-_NonUserDefinedCallables = (_WrapperDescriptor,
-                            _MethodWrapper,
-                            _ClassMethodWrapper,
+_NonUserDefinedCallables = (types.WrapperDescriptorType,
+                            types.MethodWrapperType,
+                            types.ClassMethodDescriptorType,
                             types.BuiltinFunctionType)
 
 
@@ -2096,10 +2178,6 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
     """Private helper to parse content of '__text_signature__'
     and return a Signature based on it.
     """
-    # Lazy import ast because it's relatively heavy and
-    # it's not used for other than this function.
-    import ast
-
     Parameter = cls._parameter_cls
 
     clean_signature, self_parameter, last_positional_only = \
@@ -2448,15 +2526,23 @@ def _signature_from_callable(obj, *,
         if call is not None:
             sig = _get_signature_of(call)
         else:
-            # Now we check if the 'obj' class has a '__new__' method
+            factory_method = None
             new = _signature_get_user_defined_method(obj, '__new__')
-            if new is not None:
-                sig = _get_signature_of(new)
-            else:
-                # Finally, we should have at least __init__ implemented
-                init = _signature_get_user_defined_method(obj, '__init__')
-                if init is not None:
-                    sig = _get_signature_of(init)
+            init = _signature_get_user_defined_method(obj, '__init__')
+            # Now we check if the 'obj' class has an own '__new__' method
+            if '__new__' in obj.__dict__:
+                factory_method = new
+            # or an own '__init__' method
+            elif '__init__' in obj.__dict__:
+                factory_method = init
+            # If not, we take inherited '__new__' or '__init__', if present
+            elif new is not None:
+                factory_method = new
+            elif init is not None:
+                factory_method = init
+
+            if factory_method is not None:
+                sig = _get_signature_of(factory_method)
 
         if sig is None:
             # At this point we know, that `obj` is a class, with no user-
@@ -2476,9 +2562,9 @@ def _signature_from_callable(obj, *,
                     pass
                 else:
                     if text_sig:
-                        # If 'obj' class has a __text_signature__ attribute:
+                        # If 'base' class has a __text_signature__ attribute:
                         # return a signature based on it
-                        return _signature_fromstr(sigcls, obj, text_sig)
+                        return _signature_fromstr(sigcls, base, text_sig)
 
             # No '__text_signature__' was found for the 'obj' class.
             # Last option is to check if its '__init__' is
@@ -2497,7 +2583,7 @@ def _signature_from_callable(obj, *,
     elif not isinstance(obj, _NonUserDefinedCallables):
         # An object with __call__
         # We also check that the 'obj' is not an instance of
-        # _WrapperDescriptor or _MethodWrapper to avoid
+        # types.WrapperDescriptorType or types.MethodWrapperType to avoid
         # infinite recursion (and even potential segfault)
         call = _signature_get_user_defined_method(type(obj), '__call__')
         if call is not None:
@@ -2532,29 +2618,27 @@ class _empty:
 
 
 class _ParameterKind(enum.IntEnum):
-    POSITIONAL_ONLY = 0
-    POSITIONAL_OR_KEYWORD = 1
-    VAR_POSITIONAL = 2
-    KEYWORD_ONLY = 3
-    VAR_KEYWORD = 4
+    POSITIONAL_ONLY = 'positional-only'
+    POSITIONAL_OR_KEYWORD = 'positional or keyword'
+    VAR_POSITIONAL = 'variadic positional'
+    KEYWORD_ONLY = 'keyword-only'
+    VAR_KEYWORD = 'variadic keyword'
 
-    @property
-    def description(self):
-        return _PARAM_NAME_MAPPING[self]
+    def __new__(cls, description):
+        value = len(cls.__members__)
+        member = int.__new__(cls, value)
+        member._value_ = value
+        member.description = description
+        return member
+
+    def __str__(self):
+        return self.name
 
 _POSITIONAL_ONLY         = _ParameterKind.POSITIONAL_ONLY
 _POSITIONAL_OR_KEYWORD   = _ParameterKind.POSITIONAL_OR_KEYWORD
 _VAR_POSITIONAL          = _ParameterKind.VAR_POSITIONAL
 _KEYWORD_ONLY            = _ParameterKind.KEYWORD_ONLY
 _VAR_KEYWORD             = _ParameterKind.VAR_KEYWORD
-
-_PARAM_NAME_MAPPING = {
-    _POSITIONAL_ONLY: 'positional-only',
-    _POSITIONAL_OR_KEYWORD: 'positional or keyword',
-    _VAR_POSITIONAL: 'variadic positional',
-    _KEYWORD_ONLY: 'keyword-only',
-    _VAR_KEYWORD: 'variadic keyword'
-}
 
 
 class Parameter:
@@ -2624,7 +2708,10 @@ class Parameter:
             self._kind = _POSITIONAL_ONLY
             name = 'implicit{}'.format(name[1:])
 
-        if not name.isidentifier():
+        # It's possible for C functions to have a positional-only parameter
+        # where the name is a keyword, so for compatibility we'll allow it.
+        is_keyword = iskeyword(name) and self._kind is not _POSITIONAL_ONLY
+        if is_keyword or not name.isidentifier():
             raise ValueError('{!r} is not a valid parameter name'.format(name))
 
         self._name = name
@@ -2925,30 +3012,6 @@ class Signature:
 
         self._parameters = types.MappingProxyType(params)
         self._return_annotation = return_annotation
-
-    @classmethod
-    def from_function(cls, func):
-        """Constructs Signature for the given python function.
-
-        Deprecated since Python 3.5, use `Signature.from_callable()`.
-        """
-
-        warnings.warn("inspect.Signature.from_function() is deprecated since "
-                      "Python 3.5, use Signature.from_callable()",
-                      DeprecationWarning, stacklevel=2)
-        return _signature_from_function(cls, func)
-
-    @classmethod
-    def from_builtin(cls, func):
-        """Constructs Signature for the given builtin function.
-
-        Deprecated since Python 3.5, use `Signature.from_callable()`.
-        """
-
-        warnings.warn("inspect.Signature.from_builtin() is deprecated since "
-                      "Python 3.5, use Signature.from_callable()",
-                      DeprecationWarning, stacklevel=2)
-        return _signature_from_builtin(cls, func)
 
     @classmethod
     def from_callable(cls, obj, *,

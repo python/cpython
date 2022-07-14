@@ -35,7 +35,7 @@
 
 #---------------------------------------------------------------------
 # Licensed to PSF under a Contributor Agreement.
-# See http://www.python.org/psf/license for licensing details.
+# See https://www.python.org/psf/license for licensing details.
 #
 # ElementTree
 # Copyright (c) 1999-2008 by Fredrik Lundh.  All rights reserved.
@@ -187,19 +187,6 @@ class Element:
 
         """
         return self.__class__(tag, attrib)
-
-    def copy(self):
-        """Return copy of current element.
-
-        This creates a shallow copy. Subelements will be shared with the
-        original tree.
-
-        """
-        warnings.warn(
-            "elem.copy() is deprecated. Use copy.copy(elem) instead.",
-            DeprecationWarning
-            )
-        return self.__copy__()
 
     def __copy__(self):
         elem = self.makeelement(self.tag, self.attrib)
@@ -728,16 +715,11 @@ class ElementTree:
                 encoding = "utf-8"
             else:
                 encoding = "us-ascii"
-        enc_lower = encoding.lower()
-        with _get_writer(file_or_filename, enc_lower) as write:
+        with _get_writer(file_or_filename, encoding) as (write, declared_encoding):
             if method == "xml" and (xml_declaration or
                     (xml_declaration is None and
-                     enc_lower not in ("utf-8", "us-ascii", "unicode"))):
-                declared_encoding = encoding
-                if enc_lower == "unicode":
-                    # Retrieve the default encoding for the xml declaration
-                    import locale
-                    declared_encoding = locale.getpreferredencoding()
+                     encoding.lower() != "unicode" and
+                     declared_encoding.lower() not in ("utf-8", "us-ascii"))):
                 write("<?xml version='1.0' encoding='%s'?>\n" % (
                     declared_encoding,))
             if method == "text":
@@ -762,19 +744,17 @@ def _get_writer(file_or_filename, encoding):
         write = file_or_filename.write
     except AttributeError:
         # file_or_filename is a file name
-        if encoding == "unicode":
-            file = open(file_or_filename, "w")
-        else:
-            file = open(file_or_filename, "w", encoding=encoding,
-                        errors="xmlcharrefreplace")
-        with file:
-            yield file.write
+        if encoding.lower() == "unicode":
+            encoding="utf-8"
+        with open(file_or_filename, "w", encoding=encoding,
+                  errors="xmlcharrefreplace") as file:
+            yield file.write, encoding
     else:
         # file_or_filename is a file-like object
         # encoding determines if it is a text or binary writer
-        if encoding == "unicode":
+        if encoding.lower() == "unicode":
             # use a text writer as is
-            yield write
+            yield write, getattr(file_or_filename, "encoding", None) or "utf-8"
         else:
             # wrap a binary writer with TextIOWrapper
             with contextlib.ExitStack() as stack:
@@ -805,7 +785,7 @@ def _get_writer(file_or_filename, encoding):
                 # Keep the original file open when the TextIOWrapper is
                 # destroyed
                 stack.callback(file.detach)
-                yield file.write
+                yield file.write, encoding
 
 def _namespaces(elem, default_namespace=None):
     # identify namespaces used in this tree
@@ -918,13 +898,9 @@ def _serialize_xml(write, elem, qnames, namespaces,
     if elem.tail:
         write(_escape_cdata(elem.tail))
 
-HTML_EMPTY = ("area", "base", "basefont", "br", "col", "frame", "hr",
-              "img", "input", "isindex", "link", "meta", "param")
-
-try:
-    HTML_EMPTY = set(HTML_EMPTY)
-except NameError:
-    pass
+HTML_EMPTY = {"area", "base", "basefont", "br", "col", "embed", "frame", "hr",
+              "img", "input", "isindex", "link", "meta", "param", "source",
+              "track", "wbr"}
 
 def _serialize_html(write, elem, qnames, namespaces, **kwargs):
     tag = elem.tag
@@ -1248,8 +1224,14 @@ def iterparse(source, events=None, parser=None):
     # Use the internal, undocumented _parser argument for now; When the
     # parser argument of iterparse is removed, this can be killed.
     pullparser = XMLPullParser(events=events, _parser=parser)
-    def iterator():
+
+    def iterator(source):
+        close_source = False
         try:
+            if not hasattr(source, "read"):
+                source = open(source, "rb")
+                close_source = True
+            yield None
             while True:
                 yield from pullparser.read_events()
                 # load event buffer
@@ -1265,16 +1247,12 @@ def iterparse(source, events=None, parser=None):
                 source.close()
 
     class IterParseIterator(collections.abc.Iterator):
-        __next__ = iterator().__next__
+        __next__ = iterator(source).__next__
     it = IterParseIterator()
     it.root = None
     del iterator, IterParseIterator
 
-    close_source = False
-    if not hasattr(source, "read"):
-        source = open(source, "rb")
-        close_source = True
-
+    next(it)
     return it
 
 
@@ -1283,7 +1261,7 @@ class XMLPullParser:
     def __init__(self, events=None, *, _parser=None):
         # The _parser argument is for internal use only and must not be relied
         # upon in user code. It will be removed in a future release.
-        # See http://bugs.python.org/issue17741 for more details.
+        # See https://bugs.python.org/issue17741 for more details.
 
         self._events_queue = collections.deque()
         self._parser = _parser or XMLParser(target=TreeBuilder())

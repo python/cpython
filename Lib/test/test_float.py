@@ -11,15 +11,17 @@ from test import support
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
 from math import isinf, isnan, copysign, ldexp
+import math
 
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
+
+HAVE_IEEE_754 = float.__getformat__("double").startswith("IEEE")
 INF = float("inf")
 NAN = float("nan")
 
-have_getformat = hasattr(float, "__getformat__")
-requires_getformat = unittest.skipUnless(have_getformat,
-                                         "requires __getformat__")
-requires_setformat = unittest.skipUnless(hasattr(float, "__setformat__"),
-                                         "requires __setformat__")
 
 #locate file with float format test values
 test_dir = os.path.dirname(__file__) or os.curdir
@@ -244,6 +246,33 @@ class GeneralFloatCases(unittest.TestCase):
     def test_keyword_args(self):
         with self.assertRaisesRegex(TypeError, 'keyword argument'):
             float(x='3.14')
+
+    def test_keywords_in_subclass(self):
+        class subclass(float):
+            pass
+        u = subclass(2.5)
+        self.assertIs(type(u), subclass)
+        self.assertEqual(float(u), 2.5)
+        with self.assertRaises(TypeError):
+            subclass(x=0)
+
+        class subclass_with_init(float):
+            def __init__(self, arg, newarg=None):
+                self.newarg = newarg
+        u = subclass_with_init(2.5, newarg=3)
+        self.assertIs(type(u), subclass_with_init)
+        self.assertEqual(float(u), 2.5)
+        self.assertEqual(u.newarg, 3)
+
+        class subclass_with_new(float):
+            def __new__(cls, arg, newarg=None):
+                self = super().__new__(cls, arg)
+                self.newarg = newarg
+                return self
+        u = subclass_with_new(2.5, newarg=3)
+        self.assertIs(type(u), subclass_with_new)
+        self.assertEqual(float(u), 2.5)
+        self.assertEqual(u.newarg, 3)
 
     def test_is_integer(self):
         self.assertFalse((1.1).is_integer())
@@ -584,17 +613,8 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertEqual(hash(value), object.__hash__(value))
 
 
-@requires_setformat
+@unittest.skipUnless(hasattr(float, "__getformat__"), "requires __getformat__")
 class FormatFunctionsTestCase(unittest.TestCase):
-
-    def setUp(self):
-        self.save_formats = {'double':float.__getformat__('double'),
-                             'float':float.__getformat__('float')}
-
-    def tearDown(self):
-        float.__setformat__('double', self.save_formats['double'])
-        float.__setformat__('float', self.save_formats['float'])
-
     def test_getformat(self):
         self.assertIn(float.__getformat__('double'),
                       ['unknown', 'IEEE, big-endian', 'IEEE, little-endian'])
@@ -603,24 +623,6 @@ class FormatFunctionsTestCase(unittest.TestCase):
         self.assertRaises(ValueError, float.__getformat__, 'chicken')
         self.assertRaises(TypeError, float.__getformat__, 1)
 
-    def test_setformat(self):
-        for t in 'double', 'float':
-            float.__setformat__(t, 'unknown')
-            if self.save_formats[t] == 'IEEE, big-endian':
-                self.assertRaises(ValueError, float.__setformat__,
-                                  t, 'IEEE, little-endian')
-            elif self.save_formats[t] == 'IEEE, little-endian':
-                self.assertRaises(ValueError, float.__setformat__,
-                                  t, 'IEEE, big-endian')
-            else:
-                self.assertRaises(ValueError, float.__setformat__,
-                                  t, 'IEEE, big-endian')
-                self.assertRaises(ValueError, float.__setformat__,
-                                  t, 'IEEE, little-endian')
-            self.assertRaises(ValueError, float.__setformat__,
-                              t, 'chicken')
-        self.assertRaises(ValueError, float.__setformat__,
-                          'chicken', 'unknown')
 
 BE_DOUBLE_INF = b'\x7f\xf0\x00\x00\x00\x00\x00\x00'
 LE_DOUBLE_INF = bytes(reversed(BE_DOUBLE_INF))
@@ -631,36 +633,6 @@ BE_FLOAT_INF = b'\x7f\x80\x00\x00'
 LE_FLOAT_INF = bytes(reversed(BE_FLOAT_INF))
 BE_FLOAT_NAN = b'\x7f\xc0\x00\x00'
 LE_FLOAT_NAN = bytes(reversed(BE_FLOAT_NAN))
-
-# on non-IEEE platforms, attempting to unpack a bit pattern
-# representing an infinity or a NaN should raise an exception.
-
-@requires_setformat
-class UnknownFormatTestCase(unittest.TestCase):
-    def setUp(self):
-        self.save_formats = {'double':float.__getformat__('double'),
-                             'float':float.__getformat__('float')}
-        float.__setformat__('double', 'unknown')
-        float.__setformat__('float', 'unknown')
-
-    def tearDown(self):
-        float.__setformat__('double', self.save_formats['double'])
-        float.__setformat__('float', self.save_formats['float'])
-
-    def test_double_specials_dont_unpack(self):
-        for fmt, data in [('>d', BE_DOUBLE_INF),
-                          ('>d', BE_DOUBLE_NAN),
-                          ('<d', LE_DOUBLE_INF),
-                          ('<d', LE_DOUBLE_NAN)]:
-            self.assertRaises(ValueError, struct.unpack, fmt, data)
-
-    def test_float_specials_dont_unpack(self):
-        for fmt, data in [('>f', BE_FLOAT_INF),
-                          ('>f', BE_FLOAT_NAN),
-                          ('<f', LE_FLOAT_INF),
-                          ('<f', LE_FLOAT_NAN)]:
-            self.assertRaises(ValueError, struct.unpack, fmt, data)
-
 
 # on an IEEE platform, all we guarantee is that bit patterns
 # representing infinities or NaNs do not raise an exception; all else
@@ -686,8 +658,9 @@ class IEEEFormatTestCase(unittest.TestCase):
             struct.unpack(fmt, data)
 
     @support.requires_IEEE_754
+    @unittest.skipIf(_testcapi is None, 'needs _testcapi')
     def test_serialized_float_rounding(self):
-        from _testcapi import FLT_MAX
+        FLT_MAX = _testcapi.FLT_MAX
         self.assertEqual(struct.pack("<f", 3.40282356e38), struct.pack("<f", FLT_MAX))
         self.assertEqual(struct.pack("<f", -3.40282356e38), struct.pack("<f", -FLT_MAX))
 
@@ -727,18 +700,16 @@ class FormatTestCase(unittest.TestCase):
         # conversion to string should fail
         self.assertRaises(ValueError, format, 3.0, "s")
 
-        # other format specifiers shouldn't work on floats,
-        #  in particular int specifiers
-        for format_spec in ([chr(x) for x in range(ord('a'), ord('z')+1)] +
-                            [chr(x) for x in range(ord('A'), ord('Z')+1)]):
-            if not format_spec in 'eEfFgGn%':
-                self.assertRaises(ValueError, format, 0.0, format_spec)
-                self.assertRaises(ValueError, format, 1.0, format_spec)
-                self.assertRaises(ValueError, format, -1.0, format_spec)
-                self.assertRaises(ValueError, format, 1e100, format_spec)
-                self.assertRaises(ValueError, format, -1e100, format_spec)
-                self.assertRaises(ValueError, format, 1e-100, format_spec)
-                self.assertRaises(ValueError, format, -1e-100, format_spec)
+        # confirm format options expected to fail on floats, such as integer
+        # presentation types
+        for format_spec in 'sbcdoxX':
+            self.assertRaises(ValueError, format, 0.0, format_spec)
+            self.assertRaises(ValueError, format, 1.0, format_spec)
+            self.assertRaises(ValueError, format, -1.0, format_spec)
+            self.assertRaises(ValueError, format, 1e100, format_spec)
+            self.assertRaises(ValueError, format, -1e100, format_spec)
+            self.assertRaises(ValueError, format, 1e-100, format_spec)
+            self.assertRaises(ValueError, format, -1e-100, format_spec)
 
         # issue 3382
         self.assertEqual(format(NAN, 'f'), 'nan')
@@ -1468,6 +1439,20 @@ class HexFloatTestCase(unittest.TestCase):
         self.identical(fromHex('0X1.0000000000001fp0'), 1.0+2*EPS)
         self.identical(fromHex('0x1.00000000000020p0'), 1.0+2*EPS)
 
+        # Regression test for a corner-case bug reported in b.p.o. 44954
+        self.identical(fromHex('0x.8p-1074'), 0.0)
+        self.identical(fromHex('0x.80p-1074'), 0.0)
+        self.identical(fromHex('0x.81p-1074'), TINY)
+        self.identical(fromHex('0x8p-1078'), 0.0)
+        self.identical(fromHex('0x8.0p-1078'), 0.0)
+        self.identical(fromHex('0x8.1p-1078'), TINY)
+        self.identical(fromHex('0x80p-1082'), 0.0)
+        self.identical(fromHex('0x81p-1082'), TINY)
+        self.identical(fromHex('.8p-1074'), 0.0)
+        self.identical(fromHex('8p-1078'), 0.0)
+        self.identical(fromHex('-.8p-1074'), -0.0)
+        self.identical(fromHex('+8p-1078'), 0.0)
+
     def test_roundtrip(self):
         def roundtrip(x):
             return fromHex(toHex(x))
@@ -1506,6 +1491,70 @@ class HexFloatTestCase(unittest.TestCase):
         self.assertIs(type(f), F2)
         self.assertEqual(f, 1.5)
         self.assertEqual(getattr(f, 'foo', 'none'), 'bar')
+
+
+# Test PyFloat_Pack2(), PyFloat_Pack4() and PyFloat_Pack8()
+# Test PyFloat_Unpack2(), PyFloat_Unpack4() and PyFloat_Unpack8()
+BIG_ENDIAN = 0
+LITTLE_ENDIAN = 1
+EPSILON = {
+    2: 2.0 ** -11,  # binary16
+    4: 2.0 ** -24,  # binary32
+    8: 2.0 ** -53,  # binary64
+}
+
+@unittest.skipIf(_testcapi is None, 'needs _testcapi')
+class PackTests(unittest.TestCase):
+    def test_pack(self):
+        self.assertEqual(_testcapi.float_pack(2, 1.5, BIG_ENDIAN),
+                         b'>\x00')
+        self.assertEqual(_testcapi.float_pack(4, 1.5, BIG_ENDIAN),
+                         b'?\xc0\x00\x00')
+        self.assertEqual(_testcapi.float_pack(8, 1.5, BIG_ENDIAN),
+                         b'?\xf8\x00\x00\x00\x00\x00\x00')
+        self.assertEqual(_testcapi.float_pack(2, 1.5, LITTLE_ENDIAN),
+                         b'\x00>')
+        self.assertEqual(_testcapi.float_pack(4, 1.5, LITTLE_ENDIAN),
+                         b'\x00\x00\xc0?')
+        self.assertEqual(_testcapi.float_pack(8, 1.5, LITTLE_ENDIAN),
+                         b'\x00\x00\x00\x00\x00\x00\xf8?')
+
+    def test_unpack(self):
+        self.assertEqual(_testcapi.float_unpack(b'>\x00', BIG_ENDIAN),
+                         1.5)
+        self.assertEqual(_testcapi.float_unpack(b'?\xc0\x00\x00', BIG_ENDIAN),
+                         1.5)
+        self.assertEqual(_testcapi.float_unpack(b'?\xf8\x00\x00\x00\x00\x00\x00', BIG_ENDIAN),
+                         1.5)
+        self.assertEqual(_testcapi.float_unpack(b'\x00>', LITTLE_ENDIAN),
+                         1.5)
+        self.assertEqual(_testcapi.float_unpack(b'\x00\x00\xc0?', LITTLE_ENDIAN),
+                         1.5)
+        self.assertEqual(_testcapi.float_unpack(b'\x00\x00\x00\x00\x00\x00\xf8?', LITTLE_ENDIAN),
+                         1.5)
+
+    def test_roundtrip(self):
+        large = 2.0 ** 100
+        values = [1.0, 1.5, large, 1.0/7, math.pi]
+        if HAVE_IEEE_754:
+            values.extend((INF, NAN))
+        for value in values:
+            for size in (2, 4, 8,):
+                if size == 2 and value == large:
+                    # too large for 16-bit float
+                    continue
+                rel_tol = EPSILON[size]
+                for endian in (BIG_ENDIAN, LITTLE_ENDIAN):
+                    with self.subTest(value=value, size=size, endian=endian):
+                        data = _testcapi.float_pack(size, value, endian)
+                        value2 = _testcapi.float_unpack(data, endian)
+                        if isnan(value):
+                            self.assertTrue(isnan(value2), (value, value2))
+                        elif size < 8:
+                            self.assertTrue(math.isclose(value2, value, rel_tol=rel_tol),
+                                            (value, value2))
+                        else:
+                            self.assertEqual(value2, value)
 
 
 if __name__ == '__main__':

@@ -1,2 +1,0 @@
-Add the remark to :mod:`dataclasses` documentation that the :meth:`__init__` of any base class
-has to be called in :meth:`__post_init__`, along with a code example.

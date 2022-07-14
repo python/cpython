@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import collections
+import contextlib
 import dataclasses
 import io
 import itertools
@@ -159,6 +160,13 @@ class QueryTestCase(unittest.TestCase):
             self.assertTrue(pp.isreadable(safe),
                             "expected isreadable for %r" % (safe,))
 
+    def test_stdout_is_None(self):
+        with contextlib.redirect_stdout(None):
+            # smoke test - there is no output to check
+            value = 'this should not fail'
+            pprint.pprint(value)
+            pprint.PrettyPrinter().pprint(value)
+
     def test_knotted(self):
         # Verify .isrecursive() and .isreadable() w/ recursion
         # Tie a knot.
@@ -195,7 +203,7 @@ class QueryTestCase(unittest.TestCase):
     def test_unreadable(self):
         # Not recursive but not readable anyway
         pp = pprint.PrettyPrinter()
-        for unreadable in type(3), pprint, pprint.isrecursive:
+        for unreadable in object(), int, pprint, pprint.isrecursive:
             # module-level convenience functions
             self.assertFalse(pprint.isrecursive(unreadable),
                              "expected not isrecursive for %r" % (unreadable,))

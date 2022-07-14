@@ -9,8 +9,8 @@ Copyright (C) 1994 Steen Lumholt.
 
 /* TCL/TK VERSION INFO:
 
-    Only Tcl/Tk 8.4 and later are supported.  Older versions are not
-    supported. Use Python 3.4 or older if you cannot upgrade your
+    Only Tcl/Tk 8.5.12 and later are supported.  Older versions are not
+    supported. Use Python 3.10 or older if you cannot upgrade your
     Tcl/Tk libraries.
 */
 
@@ -22,9 +22,15 @@ Copyright (C) 1994 Steen Lumholt.
 */
 
 #define PY_SSIZE_T_CLEAN
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
 #include <ctype.h>
+#ifdef MS_WINDOWS
+#  include "pycore_fileutils.h"   // _Py_stat()
+#endif
 
 #ifdef MS_WINDOWS
 #include <windows.h>
@@ -48,15 +54,11 @@ Copyright (C) 1994 Steen Lumholt.
 
 #include "tkinter.h"
 
-#if TK_HEX_VERSION < 0x08040200
-#error "Tk older than 8.4 not supported"
+#if TK_HEX_VERSION < 0x0805020c
+#error "Tk older than 8.5.12 not supported"
 #endif
 
-#if TK_HEX_VERSION >= 0x08050208 && TK_HEX_VERSION < 0x08060000 || \
-    TK_HEX_VERSION >= 0x08060200
-#define HAVE_LIBTOMMATH
 #include <tclTomMath.h>
-#endif
 
 #if !(defined(MS_WINDOWS) || defined(__CYGWIN__))
 #define HAVE_CREATEFILEHANDLER
@@ -312,10 +314,6 @@ typedef struct {
 
 #define Tkapp_Interp(v) (((TkappObject *) (v))->interp)
 
-#define DEBUG_REFCNT(v) (printf("DEBUG: id=%p, refcnt=%i\n", \
-(void *) v, Py_REFCNT(v)))
-
-
 
 /**** Error Handling ****/
 
@@ -505,145 +503,6 @@ unicodeFromTclObj(Tcl_Obj *value)
     return unicodeFromTclStringAndSize(s, len);
 #endif
 }
-
-
-static PyObject *
-Split(const char *list)
-{
-    int argc;
-    const char **argv;
-    PyObject *v;
-
-    if (list == NULL) {
-        Py_RETURN_NONE;
-    }
-
-    if (Tcl_SplitList((Tcl_Interp *)NULL, list, &argc, &argv) != TCL_OK) {
-        /* Not a list.
-         * Could be a quoted string containing funnies, e.g. {"}.
-         * Return the string itself.
-         */
-        return unicodeFromTclString(list);
-    }
-
-    if (argc == 0)
-        v = PyUnicode_FromString("");
-    else if (argc == 1)
-        v = unicodeFromTclString(argv[0]);
-    else if ((v = PyTuple_New(argc)) != NULL) {
-        int i;
-        PyObject *w;
-
-        for (i = 0; i < argc; i++) {
-            if ((w = Split(argv[i])) == NULL) {
-                Py_DECREF(v);
-                v = NULL;
-                break;
-            }
-            PyTuple_SET_ITEM(v, i, w);
-        }
-    }
-    Tcl_Free(FREECAST argv);
-    return v;
-}
-
-/* In some cases, Tcl will still return strings that are supposed to
-   be lists. SplitObj walks through a nested tuple, finding string
-   objects that need to be split. */
-
-static PyObject *
-SplitObj(PyObject *arg)
-{
-    if (PyTuple_Check(arg)) {
-        Py_ssize_t i, size;
-        PyObject *elem, *newelem, *result;
-
-        size = PyTuple_GET_SIZE(arg);
-        result = NULL;
-        /* Recursively invoke SplitObj for all tuple items.
-           If this does not return a new object, no action is
-           needed. */
-        for(i = 0; i < size; i++) {
-            elem = PyTuple_GET_ITEM(arg, i);
-            newelem = SplitObj(elem);
-            if (!newelem) {
-                Py_XDECREF(result);
-                return NULL;
-            }
-            if (!result) {
-                Py_ssize_t k;
-                if (newelem == elem) {
-                    Py_DECREF(newelem);
-                    continue;
-                }
-                result = PyTuple_New(size);
-                if (!result)
-                    return NULL;
-                for(k = 0; k < i; k++) {
-                    elem = PyTuple_GET_ITEM(arg, k);
-                    Py_INCREF(elem);
-                    PyTuple_SET_ITEM(result, k, elem);
-                }
-            }
-            PyTuple_SET_ITEM(result, i, newelem);
-        }
-        if (result)
-            return result;
-        /* Fall through, returning arg. */
-    }
-    else if (PyList_Check(arg)) {
-        Py_ssize_t i, size;
-        PyObject *elem, *newelem, *result;
-
-        size = PyList_GET_SIZE(arg);
-        result = PyTuple_New(size);
-        if (!result)
-            return NULL;
-        /* Recursively invoke SplitObj for all list items. */
-        for(i = 0; i < size; i++) {
-            elem = PyList_GET_ITEM(arg, i);
-            newelem = SplitObj(elem);
-            if (!newelem) {
-                Py_XDECREF(result);
-                return NULL;
-            }
-            PyTuple_SET_ITEM(result, i, newelem);
-        }
-        return result;
-    }
-    else if (PyUnicode_Check(arg)) {
-        int argc;
-        const char **argv;
-        const char *list = PyUnicode_AsUTF8(arg);
-
-        if (list == NULL ||
-            Tcl_SplitList((Tcl_Interp *)NULL, list, &argc, &argv) != TCL_OK) {
-            Py_INCREF(arg);
-            return arg;
-        }
-        Tcl_Free(FREECAST argv);
-        if (argc > 1)
-            return Split(list);
-        /* Fall through, returning arg. */
-    }
-    else if (PyBytes_Check(arg)) {
-        int argc;
-        const char **argv;
-        const char *list = PyBytes_AS_STRING(arg);
-
-        if (Tcl_SplitList((Tcl_Interp *)NULL, (char *)list, &argc, &argv) != TCL_OK) {
-            Py_INCREF(arg);
-            return arg;
-        }
-        Tcl_Free(FREECAST argv);
-        if (argc > 1)
-            return Split(PyBytes_AS_STRING(arg));
-        /* Fall through, returning arg. */
-    }
-    Py_INCREF(arg);
-    return arg;
-}
-
 
 /*[clinic input]
 module _tkinter
@@ -936,7 +795,7 @@ PyTclObject_str(PyTclObject *self)
         Py_INCREF(self->string);
         return self->string;
     }
-    /* XXX Could chache result if it is non-ASCII. */
+    /* XXX Could cache result if it is non-ASCII. */
     return unicodeFromTclObj(self->value);
 }
 
@@ -1022,7 +881,6 @@ static PyType_Spec PyTclObject_Type_spec = {
 #define CHECK_STRING_LENGTH(s)
 #endif
 
-#ifdef HAVE_LIBTOMMATH
 static Tcl_Obj*
 asBignumObj(PyObject *value)
 {
@@ -1059,7 +917,6 @@ asBignumObj(PyObject *value)
     }
     return result;
 }
-#endif
 
 static Tcl_Obj*
 AsObj(PyObject *value)
@@ -1102,9 +959,7 @@ AsObj(PyObject *value)
 #endif
         /* If there is an overflow in the wideInt conversion,
            fall through to bignum handling. */
-#ifdef HAVE_LIBTOMMATH
         return asBignumObj(value);
-#endif
         /* If there is no wideInt or bignum support,
            fall through to default object handling. */
     }
@@ -1224,7 +1079,6 @@ fromWideIntObj(TkappObject *tkapp, Tcl_Obj *value)
         return NULL;
 }
 
-#ifdef HAVE_LIBTOMMATH
 static PyObject*
 fromBignumObj(TkappObject *tkapp, Tcl_Obj *value)
 {
@@ -1259,7 +1113,6 @@ fromBignumObj(TkappObject *tkapp, Tcl_Obj *value)
     mp_clear(&bigValue);
     return res;
 }
-#endif
 
 static PyObject*
 FromObj(TkappObject *tkapp, Tcl_Obj *value)
@@ -1304,13 +1157,11 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
            fall through to bignum handling. */
     }
 
-#ifdef HAVE_LIBTOMMATH
     if (value->typePtr == tkapp->IntType ||
         value->typePtr == tkapp->WideIntType ||
         value->typePtr == tkapp->BignumType) {
         return fromBignumObj(tkapp, value);
     }
-#endif
 
     if (value->typePtr == tkapp->ListType) {
         int size;
@@ -1348,23 +1199,19 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
         return unicodeFromTclObj(value);
     }
 
-#if TK_HEX_VERSION >= 0x08050000
     if (tkapp->BooleanType == NULL &&
         strcmp(value->typePtr->name, "booleanString") == 0) {
         /* booleanString type is not registered in Tcl */
         tkapp->BooleanType = value->typePtr;
         return fromBoolean(tkapp, value);
     }
-#endif
 
-#ifdef HAVE_LIBTOMMATH
     if (tkapp->BignumType == NULL &&
         strcmp(value->typePtr->name, "bignum") == 0) {
         /* bignum type is not registered in Tcl */
         tkapp->BignumType = value->typePtr;
         return fromBignumObj(tkapp, value);
     }
-#endif
 
     return newPyTclObject(value);
 }
@@ -2058,11 +1905,7 @@ _tkinter_tkapp_getint(TkappObject *self, PyObject *arg)
        Prefer bignum because Tcl_GetWideIntFromObj returns ambiguous result for
        value in ranges -2**64..-2**63-1 and 2**63..2**64-1 (on 32-bit platform).
      */
-#ifdef HAVE_LIBTOMMATH
     result = fromBignumObj(self, value);
-#else
-    result = fromWideIntObj(self, value);
-#endif
     Tcl_DecrRefCount(value);
     if (result != NULL || PyErr_Occurred())
         return result;
@@ -2341,68 +2184,6 @@ _tkinter_tkapp_splitlist(TkappObject *self, PyObject *arg)
     PyMem_Free(list);
     return v;
 }
-
-/*[clinic input]
-_tkinter.tkapp.split
-
-    arg: object
-    /
-
-[clinic start generated code]*/
-
-static PyObject *
-_tkinter_tkapp_split(TkappObject *self, PyObject *arg)
-/*[clinic end generated code: output=e08ad832363facfd input=a1c78349eacaa140]*/
-{
-    PyObject *v;
-    char *list;
-
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-            "split() is deprecated; consider using splitlist() instead", 1))
-    {
-        return NULL;
-    }
-
-    if (PyTclObject_Check(arg)) {
-        Tcl_Obj *value = ((PyTclObject*)arg)->value;
-        int objc;
-        Tcl_Obj **objv;
-        int i;
-        if (Tcl_ListObjGetElements(Tkapp_Interp(self), value,
-                                   &objc, &objv) == TCL_ERROR) {
-            return FromObj(self, value);
-        }
-        if (objc == 0)
-            return PyUnicode_FromString("");
-        if (objc == 1)
-            return FromObj(self, objv[0]);
-        if (!(v = PyTuple_New(objc)))
-            return NULL;
-        for (i = 0; i < objc; i++) {
-            PyObject *s = FromObj(self, objv[i]);
-            if (!s) {
-                Py_DECREF(v);
-                return NULL;
-            }
-            PyTuple_SET_ITEM(v, i, s);
-        }
-        return v;
-    }
-    if (PyTuple_Check(arg) || PyList_Check(arg))
-        return SplitObj(arg);
-
-    if (!PyArg_Parse(arg, "et:split", "utf-8", &list))
-        return NULL;
-    if (strlen(list) >= INT_MAX) {
-        PyErr_SetString(PyExc_OverflowError, "string is too long");
-        PyMem_Free(list);
-        return NULL;
-    }
-    v = Split(list);
-    PyMem_Free(list);
-    return v;
-}
-
 
 
 /** Tcl Command **/
@@ -3197,8 +2978,10 @@ _tkinter__flatten(PyObject *module, PyObject *item)
 
     context.size = 0;
 
-    if (!_flatten1(&context, item,0))
+    if (!_flatten1(&context, item, 0)) {
+        Py_XDECREF(context.tuple);
         return NULL;
+    }
 
     if (_PyTuple_Resize(&context.tuple, context.size))
         return NULL;
@@ -3329,7 +3112,6 @@ static PyMethodDef Tkapp_methods[] =
     _TKINTER_TKAPP_EXPRDOUBLE_METHODDEF
     _TKINTER_TKAPP_EXPRBOOLEAN_METHODDEF
     _TKINTER_TKAPP_SPLITLIST_METHODDEF
-    _TKINTER_TKAPP_SPLIT_METHODDEF
     _TKINTER_TKAPP_CREATECOMMAND_METHODDEF
     _TKINTER_TKAPP_DELETECOMMAND_METHODDEF
     _TKINTER_TKAPP_CREATEFILEHANDLER_METHODDEF
@@ -3638,11 +3420,5 @@ PyInit__tkinter(void)
         return NULL;
     }
 
-#if 0
-    /* This was not a good idea; through <Destroy> bindings,
-       Tcl_Finalize() may invoke Python code but at that point the
-       interpreter and thread state have already been destroyed! */
-    Py_AtExit(Tcl_Finalize);
-#endif
     return m;
 }
