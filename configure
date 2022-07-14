@@ -632,6 +632,8 @@ MODULE__CTYPES_TEST_FALSE
 MODULE__CTYPES_TEST_TRUE
 MODULE__XXTESTFUZZ_FALSE
 MODULE__XXTESTFUZZ_TRUE
+MODULE_XXSUBTYPE_FALSE
+MODULE_XXSUBTYPE_TRUE
 MODULE__TESTMULTIPHASE_FALSE
 MODULE__TESTMULTIPHASE_TRUE
 MODULE__TESTIMPORTMULTIPLE_FALSE
@@ -786,12 +788,10 @@ MODULE_TIME_FALSE
 MODULE_TIME_TRUE
 MODULE__IO_FALSE
 MODULE__IO_TRUE
-MODULES_SETUP_STDLIB
 MODULE_BUILDTYPE
 TEST_MODULES
 LIBB2_LIBS
 LIBB2_CFLAGS
-OPENSSL_RPATH
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
 OPENSSL_INCLUDES
@@ -852,13 +852,11 @@ LIBSQLITE3_CFLAGS
 LIBNSL_LIBS
 LIBNSL_CFLAGS
 LIBMPDEC_INTERNAL
-LIBMPDEC_LDFLAGS
 LIBMPDEC_CFLAGS
 MODULE__CTYPES_MALLOC_CLOSURE
 LIBFFI_LIBS
 LIBFFI_CFLAGS
 LIBEXPAT_INTERNAL
-LIBEXPAT_LDFLAGS
 LIBEXPAT_CFLAGS
 TZPATH
 LIBUUID_LIBS
@@ -12026,7 +12024,6 @@ fi
 
 
 
-
 # Check for use of the system libffi library
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-system-ffi" >&5
 $as_echo_n "checking for --with-system-ffi... " >&6; }
@@ -12526,7 +12523,6 @@ else
   LIBMPDEC_INTERNAL="\$(LIBMPDEC_A)"
 
 fi
-
 
 
 
@@ -24024,7 +24020,6 @@ esac
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OPENSSL_RPATH" >&5
 $as_echo "$OPENSSL_RPATH" >&6; }
 
-
 # This static linking is NOT OFFICIALLY SUPPORTED and not advertised.
 # Requires static OpenSSL build with position-independent code. Some features
 # like DSO engines or external OSSL providers don't work. Only tested with GCC
@@ -24501,22 +24496,6 @@ case $host_cpu in #(
     MODULE_BUILDTYPE=${MODULE_BUILDTYPE:-shared}
  ;;
 esac
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for additional Modules/Setup files" >&5
-$as_echo_n "checking for additional Modules/Setup files... " >&6; }
-case $ac_sys_system in #(
-  Emscripten) :
-    MODULES_SETUP_STDLIB=Modules/Setup.stdlib ;; #(
-  WASI) :
-    MODULES_SETUP_STDLIB=Modules/Setup.stdlib ;; #(
-  *) :
-    MODULES_SETUP_STDLIB=
- ;;
-esac
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $MODULES_SETUP_STDLIB" >&5
-$as_echo "$MODULES_SETUP_STDLIB" >&6; }
-
 
 
 
@@ -26683,6 +26662,40 @@ fi
 $as_echo "$py_cv_module__testmultiphase" >&6; }
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module xxsubtype" >&5
+$as_echo_n "checking for stdlib extension module xxsubtype... " >&6; }
+        if test "$py_cv_module_xxsubtype" != "n/a"; then :
+
+    if test "$TEST_MODULES" = yes; then :
+  if true; then :
+  py_cv_module_xxsubtype=yes
+else
+  py_cv_module_xxsubtype=missing
+fi
+else
+  py_cv_module_xxsubtype=disabled
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE_XXSUBTYPE_STATE=$py_cv_module_xxsubtype$as_nl"
+  if test "x$py_cv_module_xxsubtype" = xyes; then :
+
+
+
+
+fi
+   if test "$py_cv_module_xxsubtype" = yes; then
+  MODULE_XXSUBTYPE_TRUE=
+  MODULE_XXSUBTYPE_FALSE='#'
+else
+  MODULE_XXSUBTYPE_TRUE='#'
+  MODULE_XXSUBTYPE_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_xxsubtype" >&5
+$as_echo "$py_cv_module_xxsubtype" >&6; }
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _xxtestfuzz" >&5
 $as_echo_n "checking for stdlib extension module _xxtestfuzz... " >&6; }
         if test "$py_cv_module__xxtestfuzz" != "n/a"; then :
@@ -27246,6 +27259,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTMULTIPHASE_TRUE}" && test -z "${MODULE__TESTMULTIPHASE_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__TESTMULTIPHASE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_XXSUBTYPE_TRUE}" && test -z "${MODULE_XXSUBTYPE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_XXSUBTYPE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__XXTESTFUZZ_TRUE}" && test -z "${MODULE__XXTESTFUZZ_FALSE}"; then
@@ -28467,7 +28484,11 @@ fi
 $as_echo "$as_me: creating Makefile" >&6;}
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local $MODULES_SETUP_STDLIB Modules/Setup.bootstrap $srcdir/Modules/Setup
+			Modules/Setup.local Modules/Setup.stdlib Modules/Setup.bootstrap $srcdir/Modules/Setup
+if test $? -ne 0; then
+  as_fn_error $? "makesetup failed" "$LINENO" 5
+fi
+
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then
