@@ -5545,13 +5545,16 @@ class TestLinuxAbstractNamespace(unittest.TestCase):
 
     def testAutobind(self):
         # Check that binding to an empty string binds to an available address
-        # in the abstract namespace.
+        # in the abstract namespace as specified in unix(7) "Autobind feature".
+        abstract_address = b"^\0[0-9a-f]{5}"
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s1:
             s1.bind("")
-            self.assertTrue(s1.getsockname().startswith(b"\x00"))
+            self.assertRegex(s1.getsockname(), abstract_address)
+            # Each socket is bound to a different abstract address.
             with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s2:
                 s2.bind("")
-                self.assertTrue(s2.getsockname().startswith(b"\x00"))
+                self.assertRegex(s2.getsockname(), abstract_address)
+                self.assertNotEqual(s1.getsockname(), s2.getsockname())
 
 
 @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'test needs socket.AF_UNIX')

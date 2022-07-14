@@ -1724,7 +1724,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 
         struct sockaddr_un* addr = &addrbuf->un;
 #ifdef __linux__
-        if (path.len == 0 || (path.len > 0 && *(const char *)path.buf == 0)) {
+        if (path.len == 0 || *(const char *)path.buf == 0) {
             /* Linux abstract namespace extension:
                - Empty address auto-binding to an abstract address
                - Address that starts with null byte */
