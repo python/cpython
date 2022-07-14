@@ -831,6 +831,11 @@ class RoundTestCase(unittest.TestCase):
         self.assertRaises(TypeError, round, NAN, "ceci n'est pas un integer")
         self.assertRaises(TypeError, round, -0.0, 1j)
 
+    def test_inf_nan_ndigits(self):
+        self.assertEqual(round(INF, 0), INF)
+        self.assertEqual(round(-INF, 0), -INF)
+        self.assertTrue(math.isnan(round(NAN, 0)))
+
     def test_large_n(self):
         for n in [324, 325, 400, 2**31-1, 2**31, 2**32, 2**100]:
             self.assertEqual(round(123.456, n), 123.456)
