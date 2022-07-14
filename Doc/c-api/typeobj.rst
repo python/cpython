@@ -1178,9 +1178,8 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       **Inheritance:**
 
-      This bit is inherited for types with the
-      :const:`Py_TPFLAGS_IMMUTABLETYPE` flag set, if
-      :c:member:`~PyTypeObject.tp_call` is also inherited.
+      This bit is inherited if :c:member:`~PyTypeObject.tp_call` is also
+      inherited.
 
       .. versionadded:: 3.9
 
@@ -1188,6 +1187,8 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
          This flag is now removed from a class when the class's
          :py:meth:`~object.__call__` method is reassigned.
+
+         This flag can now be inherited by mutable classes.
 
    .. data:: Py_TPFLAGS_IMMUTABLETYPE
 

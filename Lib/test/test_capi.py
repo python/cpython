@@ -1175,7 +1175,6 @@ class Test_FrameAPI(unittest.TestCase):
         self.assertIs(gen, _testcapi.frame_getgenerator(frame))
 
 
-
 SUFFICIENT_TO_DEOPT_AND_SPECIALIZE = 100
 
 class Test_Pep523API(unittest.TestCase):

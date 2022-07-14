@@ -6252,11 +6252,9 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
          * won't be used automatically. */
         COPYSLOT(tp_vectorcall_offset);
 
-        /* Inherit Py_TPFLAGS_HAVE_VECTORCALL for non-heap types
-        * if tp_call is not overridden */
+        /* Inherit Py_TPFLAGS_HAVE_VECTORCALL if tp_call is not overridden */
         if (!type->tp_call &&
-            _PyType_HasFeature(base, Py_TPFLAGS_HAVE_VECTORCALL) &&
-            _PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE))
+            _PyType_HasFeature(base, Py_TPFLAGS_HAVE_VECTORCALL))
         {
             type->tp_flags |= Py_TPFLAGS_HAVE_VECTORCALL;
         }

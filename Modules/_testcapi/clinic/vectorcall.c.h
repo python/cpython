@@ -2,6 +2,36 @@
 preserve
 [clinic start generated code]*/
 
+PyDoc_STRVAR(_testcapi_VectorCallClass_set_vectorcall__doc__,
+"set_vectorcall($self, type, /)\n"
+"--\n"
+"\n"
+"Set self\'s vectorcall function for `type` to one that returns \"vectorcall\"");
+
+#define _TESTCAPI_VECTORCALLCLASS_SET_VECTORCALL_METHODDEF    \
+    {"set_vectorcall", (PyCFunction)_testcapi_VectorCallClass_set_vectorcall, METH_O, _testcapi_VectorCallClass_set_vectorcall__doc__},
+
+static PyObject *
+_testcapi_VectorCallClass_set_vectorcall_impl(PyObject *self,
+                                              PyTypeObject *type);
+
+static PyObject *
+_testcapi_VectorCallClass_set_vectorcall(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *type;
+
+    if (!PyObject_TypeCheck(arg, &PyType_Type)) {
+        _PyArg_BadArgument("set_vectorcall", "argument", (&PyType_Type)->tp_name, arg);
+        goto exit;
+    }
+    type = (PyTypeObject *)arg;
+    return_value = _testcapi_VectorCallClass_set_vectorcall_impl(self, type);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_testcapi_make_vectorcall_class__doc__,
 "make_vectorcall_class($module, base=<unrepresentable>, /)\n"
 "--\n"
@@ -40,4 +70,38 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c2836830bee23928 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_testcapi_has_vectorcall_flag__doc__,
+"has_vectorcall_flag($module, type, /)\n"
+"--\n"
+"\n"
+"Return true iff Py_TPFLAGS_HAVE_VECTORCALL is set on the class.");
+
+#define _TESTCAPI_HAS_VECTORCALL_FLAG_METHODDEF    \
+    {"has_vectorcall_flag", (PyCFunction)_testcapi_has_vectorcall_flag, METH_O, _testcapi_has_vectorcall_flag__doc__},
+
+static int
+_testcapi_has_vectorcall_flag_impl(PyObject *module, PyTypeObject *type);
+
+static PyObject *
+_testcapi_has_vectorcall_flag(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *type;
+    int _return_value;
+
+    if (!PyObject_TypeCheck(arg, &PyType_Type)) {
+        _PyArg_BadArgument("has_vectorcall_flag", "argument", (&PyType_Type)->tp_name, arg);
+        goto exit;
+    }
+    type = (PyTypeObject *)arg;
+    _return_value = _testcapi_has_vectorcall_flag_impl(module, type);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=cf39927be151aebd input=a9049054013a1b77]*/
