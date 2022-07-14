@@ -132,12 +132,14 @@ Macros to create objects:
    resulting number of microseconds and seconds lie in the ranges documented for
    :class:`datetime.timedelta` objects.
 
+
 .. c:function:: PyObject* PyTimeZone_FromOffset(PyDateTime_DeltaType* offset)
 
    Return a :class:`datetime.timezone` object with an unnamed fixed offset
    represented by the *offset* argument.
 
    .. versionadded:: 3.7
+
 
 .. c:function:: PyObject* PyTimeZone_FromOffsetAndName(PyDateTime_DeltaType* offset, PyUnicode* name)
 
@@ -190,17 +192,20 @@ must not be ``NULL``, and the type is not checked:
 
    Return the microsecond, as an int from 0 through 999999.
 
+
 .. c:function:: int PyDateTime_DATE_GET_FOLD(PyDateTime_DateTime *o)
 
    Return the fold, as an int from 0 through 1.
 
    .. versionadded:: 3.6
 
+
 .. c:function:: PyObject* PyDateTime_DATE_GET_TZINFO(PyDateTime_DateTime *o)
 
    Return the tzinfo (which may be ``None``).
 
    .. versionadded:: 3.10
+
 
 Macros to extract fields from time objects.  The argument must be an instance of
 :c:data:`PyDateTime_Time`, including subclasses. The argument must not be ``NULL``,
@@ -225,11 +230,13 @@ and the type is not checked:
 
    Return the microsecond, as an int from 0 through 999999.
 
+
 .. c:function:: int PyDateTime_TIME_GET_FOLD(PyDateTime_Time *o)
 
    Return the fold, as an int from 0 through 1.
 
    .. versionadded:: 3.6
+
 
 .. c:function:: PyObject* PyDateTime_TIME_GET_TZINFO(PyDateTime_Time *o)
 
