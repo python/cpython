@@ -33,9 +33,6 @@ The recommended approach to invoking subprocesses is to use the :func:`run`
 function for all use cases it can handle. For more advanced use cases, the
 underlying :class:`Popen` interface can be used directly.
 
-The :func:`run` function was added in Python 3.5; if you need to retain
-compatibility with older versions, see the :ref:`call-function-trio` section.
-
 
 .. function:: run(args, *, stdin=None, input=None, stdout=None, stderr=None,\
                   capture_output=False, shell=False, cwd=None, timeout=None, \
@@ -362,7 +359,7 @@ functions.
 
    .. warning::
 
-      For maximum reliability, use a fully-qualified path for the executable.
+      For maximum reliability, use a fully qualified path for the executable.
       To search for an unqualified name on :envvar:`PATH`, use
       :meth:`shutil.which`. On all platforms, passing :data:`sys.executable`
       is the recommended way to launch the current Python interpreter again,
@@ -1556,7 +1553,7 @@ On Linux, :mod:`subprocess` defaults to using the ``vfork()`` system call
 internally when it is safe to do so rather than ``fork()``. This greatly
 improves performance.
 
-If you ever encounter a presumed highly-unusual situation where you need to
+If you ever encounter a presumed highly unusual situation where you need to
 prevent ``vfork()`` from being used by Python, you can set the
 :attr:`subprocess._USE_VFORK` attribute to a false value.
 

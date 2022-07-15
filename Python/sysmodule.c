@@ -31,7 +31,7 @@ Data members:
 #include "pycore_structseq.h"     // _PyStructSequence_InitType()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 
-#include "frameobject.h"          // PyFrame_GetBack()
+#include "frameobject.h"          // PyFrame_FastToLocalsWithError()
 #include "pydtrace.h"
 #include "osdefs.h"               // DELIM
 #include "stdlib_module_names.h"  // _Py_stdlib_module_names
@@ -292,11 +292,7 @@ _PySys_Audit(PyThreadState *tstate, const char *event,
              const char *argFormat, ...)
 {
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, argFormat);
-#else
-    va_start(vargs);
-#endif
     int res = sys_audit_tstate(tstate, event, argFormat, vargs);
     va_end(vargs);
     return res;
@@ -307,11 +303,7 @@ PySys_Audit(const char *event, const char *argFormat, ...)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, argFormat);
-#else
-    va_start(vargs);
-#endif
     int res = sys_audit_tstate(tstate, event, argFormat, vargs);
     va_end(vargs);
     return res;
@@ -1784,9 +1776,17 @@ sys__getframe_impl(PyObject *module, int depth)
         return NULL;
     }
 
-    while (depth > 0 && frame != NULL) {
-        frame = frame->previous;
-        --depth;
+    if (frame != NULL) {
+        while (depth > 0) {
+            frame = frame->previous;
+            if (frame == NULL) {
+                break;
+            }
+            if (_PyFrame_IsIncomplete(frame)) {
+                continue;
+            }
+            --depth;
+        }
     }
     if (frame == NULL) {
         _PyErr_SetString(tstate, PyExc_ValueError,
@@ -1917,6 +1917,66 @@ sys_is_finalizing_impl(PyObject *module)
     return PyBool_FromLong(_Py_IsFinalizing());
 }
 
+#ifdef Py_STATS
+/*[clinic input]
+sys._stats_on
+
+Turns on stats gathering (stats gathering is on by default).
+[clinic start generated code]*/
+
+static PyObject *
+sys__stats_on_impl(PyObject *module)
+/*[clinic end generated code: output=aca53eafcbb4d9fe input=8ddc6df94e484f3a]*/
+{
+    _py_stats = &_py_stats_struct;
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+sys._stats_off
+
+Turns off stats gathering (stats gathering is on by default).
+[clinic start generated code]*/
+
+static PyObject *
+sys__stats_off_impl(PyObject *module)
+/*[clinic end generated code: output=1534c1ee63812214 input=b3e50e71ecf29f66]*/
+{
+    _py_stats = NULL;
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+sys._stats_clear
+
+Clears the stats.
+[clinic start generated code]*/
+
+static PyObject *
+sys__stats_clear_impl(PyObject *module)
+/*[clinic end generated code: output=fb65a2525ee50604 input=3e03f2654f44da96]*/
+{
+    _Py_StatsClear();
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+sys._stats_dump
+
+Dump stats to file, and clears the stats.
+[clinic start generated code]*/
+
+static PyObject *
+sys__stats_dump_impl(PyObject *module)
+/*[clinic end generated code: output=79f796fb2b4ddf05 input=92346f16d64f6f95]*/
+{
+    _Py_PrintSpecializationStats(1);
+    _Py_StatsClear();
+    Py_RETURN_NONE;
+}
+
+#endif
+
 #ifdef ANDROID_API_LEVEL
 /*[clinic input]
 sys.getandroidapilevel
@@ -1986,6 +2046,12 @@ static PyMethodDef sys_methods[] = {
     SYS_GET_ASYNCGEN_HOOKS_METHODDEF
     SYS_GETANDROIDAPILEVEL_METHODDEF
     SYS_UNRAISABLEHOOK_METHODDEF
+#ifdef Py_STATS
+    SYS__STATS_ON_METHODDEF
+    SYS__STATS_OFF_METHODDEF
+    SYS__STATS_CLEAR_METHODDEF
+    SYS__STATS_DUMP_METHODDEF
+#endif
     {NULL, NULL}  // sentinel
 };
 

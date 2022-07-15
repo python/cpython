@@ -10,8 +10,8 @@
 
 **Source code:** :source:`Lib/asynchat.py`
 
-.. deprecated:: 3.6
-   :mod:`asynchat` will be removed in Python 3.12
+.. deprecated-removed:: 3.6 3.12
+   The :mod:`asynchat` module is deprecated
    (see :pep:`PEP 594 <594#asynchat>` for details).
    Please use :mod:`asyncio` instead.
 
@@ -125,7 +125,7 @@ connection requests.
 .. method:: async_chat.push_with_producer(producer)
 
    Takes a producer object and adds it to the producer queue associated with
-   the channel.  When all currently-pushed producers have been exhausted the
+   the channel.  When all currently pushed producers have been exhausted the
    channel will consume this producer's data by calling its :meth:`more`
    method and send the data to the remote endpoint.
 

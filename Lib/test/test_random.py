@@ -1045,12 +1045,68 @@ class TestDistributions(unittest.TestCase):
                 (g.lognormvariate, (0.0, 0.0), 1.0),
                 (g.lognormvariate, (-float('inf'), 0.0), 0.0),
                 (g.normalvariate, (10.0, 0.0), 10.0),
+                (g.binomialvariate, (0, 0.5), 0),
+                (g.binomialvariate, (10, 0.0), 0),
+                (g.binomialvariate, (10, 1.0), 10),
                 (g.paretovariate, (float('inf'),), 1.0),
                 (g.weibullvariate, (10.0, float('inf')), 10.0),
                 (g.weibullvariate, (0.0, 10.0), 0.0),
             ]:
             for i in range(N):
                 self.assertEqual(variate(*args), expected)
+
+    def test_binomialvariate(self):
+        B = random.binomialvariate
+
+        # Cover all the code paths
+        with self.assertRaises(ValueError):
+            B(n=-1)                            # Negative n
+        with self.assertRaises(ValueError):
+            B(n=1, p=-0.5)                     # Negative p
+        with self.assertRaises(ValueError):
+            B(n=1, p=1.5)                      # p > 1.0
+        self.assertEqual(B(10, 0.0), 0)        # p == 0.0
+        self.assertEqual(B(10, 1.0), 10)       # p == 1.0
+        self.assertTrue(B(1, 0.3) in {0, 1})   # n == 1 fast path
+        self.assertTrue(B(1, 0.9) in {0, 1})   # n == 1 fast path
+        self.assertTrue(B(1, 0.0) in {0})      # n == 1 fast path
+        self.assertTrue(B(1, 1.0) in {1})      # n == 1 fast path
+
+        # BG method p <= 0.5 and n*p=1.25
+        self.assertTrue(B(5, 0.25) in set(range(6)))
+
+        # BG method p >= 0.5 and n*(1-p)=1.25
+        self.assertTrue(B(5, 0.75) in set(range(6)))
+
+        # BTRS method p <= 0.5 and n*p=25
+        self.assertTrue(B(100, 0.25) in set(range(101)))
+
+        # BTRS method p > 0.5 and n*(1-p)=25
+        self.assertTrue(B(100, 0.75) in set(range(101)))
+
+        # Statistical tests chosen such that they are
+        # exceedingly unlikely to ever fail for correct code.
+
+        # BG code path
+        # Expected dist: [31641, 42188, 21094, 4688, 391]
+        c = Counter(B(4, 0.25) for i in range(100_000))
+        self.assertTrue(29_641 <= c[0] <= 33_641, c)
+        self.assertTrue(40_188 <= c[1] <= 44_188)
+        self.assertTrue(19_094 <= c[2] <= 23_094)
+        self.assertTrue(2_688  <= c[3] <= 6_688)
+        self.assertEqual(set(c), {0, 1, 2, 3, 4})
+
+        # BTRS code path
+        # Sum of c[20], c[21], c[22], c[23], c[24] expected to be 36,214
+        c = Counter(B(100, 0.25) for i in range(100_000))
+        self.assertTrue(34_214 <= c[20]+c[21]+c[22]+c[23]+c[24] <= 38_214)
+        self.assertTrue(set(c) <= set(range(101)))
+        self.assertEqual(c.total(), 100_000)
+
+        # Demonstrate the BTRS works for huge values of n
+        self.assertTrue(19_000_000 <= B(100_000_000, 0.2) <= 21_000_000)
+        self.assertTrue(89_000_000 <= B(100_000_000, 0.9) <= 91_000_000)
+
 
     def test_von_mises_range(self):
         # Issue 17149: von mises variates were not consistently in the

@@ -109,7 +109,7 @@ methods are called only on objects of the correct type.
 .. nonce: 2PpaIN
 .. section: Core and Builtins
 
-Deoptimize statically-allocated code objects during ``Py_FINALIZE()`` so
+Deoptimize statically allocated code objects during ``Py_FINALIZE()`` so
 that future ``_PyCode_Quicken`` calls always start with unquickened code.
 
 ..
@@ -1373,6 +1373,7 @@ Suppress expression chaining for more :mod:`re` parsing errors.
 
 Remove undocumented and never working function ``re.template()`` and flag
 ``re.TEMPLATE``.
+This was later reverted in 3.11.0b2 and deprecated instead.
 
 ..
 

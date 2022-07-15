@@ -179,7 +179,7 @@ square brackets ``'[]'`` to access the keys. ::
    ...       'Dcab: {0[Dcab]:d}'.format(table))
    Jack: 4098; Sjoerd: 4127; Dcab: 8637678
 
-This could also be done by passing the table as keyword arguments with the '**'
+This could also be done by passing the ``table`` dictionary as keyword arguments with the ``**``
 notation. ::
 
    >>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 8637678}
@@ -189,7 +189,7 @@ notation. ::
 This is particularly useful in combination with the built-in function
 :func:`vars`, which returns a dictionary containing all local variables.
 
-As an example, the following lines produce a tidily-aligned
+As an example, the following lines produce a tidily aligned
 set of columns giving integers and their squares and cubes::
 
    >>> for x in range(1, 11):

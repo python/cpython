@@ -102,64 +102,6 @@ class zipimporter(_bootstrap_external._LoaderBasics):
             self.prefix += path_sep
 
 
-    # Check whether we can satisfy the import of the module named by
-    # 'fullname', or whether it could be a portion of a namespace
-    # package. Return self if we can load it, a string containing the
-    # full path if it's a possible namespace portion, None if we
-    # can't load it.
-    def find_loader(self, fullname, path=None):
-        """find_loader(fullname, path=None) -> self, str or None.
-
-        Search for a module specified by 'fullname'. 'fullname' must be the
-        fully qualified (dotted) module name. It returns the zipimporter
-        instance itself if the module was found, a string containing the
-        full path name if it's possibly a portion of a namespace package,
-        or None otherwise. The optional 'path' argument is ignored -- it's
-        there for compatibility with the importer protocol.
-
-        Deprecated since Python 3.10. Use find_spec() instead.
-        """
-        _warnings.warn("zipimporter.find_loader() is deprecated and slated for "
-                       "removal in Python 3.12; use find_spec() instead",
-                       DeprecationWarning)
-        mi = _get_module_info(self, fullname)
-        if mi is not None:
-            # This is a module or package.
-            return self, []
-
-        # Not a module or regular package. See if this is a directory, and
-        # therefore possibly a portion of a namespace package.
-
-        # We're only interested in the last path component of fullname
-        # earlier components are recorded in self.prefix.
-        modpath = _get_module_path(self, fullname)
-        if _is_dir(self, modpath):
-            # This is possibly a portion of a namespace
-            # package. Return the string representing its path,
-            # without a trailing separator.
-            return None, [f'{self.archive}{path_sep}{modpath}']
-
-        return None, []
-
-
-    # Check whether we can satisfy the import of the module named by
-    # 'fullname'. Return self if we can, None if we can't.
-    def find_module(self, fullname, path=None):
-        """find_module(fullname, path=None) -> self or None.
-
-        Search for a module specified by 'fullname'. 'fullname' must be the
-        fully qualified (dotted) module name. It returns the zipimporter
-        instance itself if the module was found, or None if it wasn't.
-        The optional 'path' argument is ignored -- it's there for compatibility
-        with the importer protocol.
-
-        Deprecated since Python 3.10. Use find_spec() instead.
-        """
-        _warnings.warn("zipimporter.find_module() is deprecated and slated for "
-                       "removal in Python 3.12; use find_spec() instead",
-                       DeprecationWarning)
-        return self.find_loader(fullname, path)[0]
-
     def find_spec(self, fullname, target=None):
         """Create a ModuleSpec for the specified module.
 
