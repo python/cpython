@@ -1720,13 +1720,13 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             b = bytearray(b'Now you see me...')
             with self.assertRaises(IndexError):
                 b[0] = Boom()
-        
+
         with self.subTest("tp_as_sequence"):
             _testcapi = import_helper.import_module('_testcapi')
             b = bytearray(b'Now you see me...')
             with self.assertRaises(IndexError):
                 _testcapi.sequence_setitem(b, 0, Boom())
-                
+
 
 class AssortedBytesTest(unittest.TestCase):
     #
