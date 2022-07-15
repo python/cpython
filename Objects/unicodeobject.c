@@ -14604,13 +14604,13 @@ _PyUnicode_InitTypes(PyInterpreterState *interp)
         return _PyStatus_OK();
     }
 
-    if (PyType_Ready(&EncodingMapType) < 0) {
+    if (_PyStaticType_InitBuiltin(&EncodingMapType) < 0) {
         goto error;
     }
-    if (PyType_Ready(&PyFieldNameIter_Type) < 0) {
+    if (_PyStaticType_InitBuiltin(&PyFieldNameIter_Type) < 0) {
         goto error;
     }
-    if (PyType_Ready(&PyFormatterIter_Type) < 0) {
+    if (_PyStaticType_InitBuiltin(&PyFormatterIter_Type) < 0) {
         goto error;
     }
     return _PyStatus_OK();

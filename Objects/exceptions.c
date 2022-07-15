@@ -3556,8 +3556,7 @@ _PyExc_InitTypes(PyInterpreterState *interp)
 
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_exceptions); i++) {
         PyTypeObject *exc = static_exceptions[i].exc;
-
-        if (PyType_Ready(exc) < 0) {
+        if (_PyStaticType_InitBuiltin(exc) < 0) {
             return -1;
         }
     }

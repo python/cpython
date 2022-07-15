@@ -6657,7 +6657,8 @@ _PyStaticType_InitBuiltin(PyTypeObject *self)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     interp->types.num_builtins_initialized++;
     assert(interp->types.num_builtins_initialized < _Py_MAX_STATIC_BUILTIN_TYPES);
-    return 0;
+
+    return PyType_Ready(self);
 }
 
 
