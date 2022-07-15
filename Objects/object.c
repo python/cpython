@@ -1978,9 +1978,6 @@ _PyTypes_InitTypes(PyInterpreterState *interp)
         if (_PyStaticType_InitBuiltin(type) < 0) {
             return _PyStatus_ERR("Can't initialize builtin type");
         }
-        if (PyType_Ready(type) < 0) {
-            return _PyStatus_ERR("Can't initialize types");
-        }
         if (type == &PyType_Type) {
             // Sanitify checks of the two most important types
             assert(PyBaseObject_Type.tp_base == NULL);

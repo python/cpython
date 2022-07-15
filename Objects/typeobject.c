@@ -6653,7 +6653,7 @@ PyType_Ready(PyTypeObject *type)
 int
 _PyStaticType_InitBuiltin(PyTypeObject *self)
 {
-    return 0;
+    return PyType_Ready(self);
 }
 
 
