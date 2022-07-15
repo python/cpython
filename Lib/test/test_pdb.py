@@ -2104,7 +2104,7 @@ def bœr():
         stdout, stderr = self.run_pdb_script(script, commands)
         self.assertFalse(stderr)
 
-    def test_frozen_list(self):
+    def test_gh_93696_frozen_list(self):
         frozen_src = """
         def func():
             x = "Sentinel string for gh-93696"
