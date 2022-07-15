@@ -368,6 +368,8 @@ static int test_bpo20891(void)
 
     PyThread_free_lock(lock);
 
+    Py_Finalize();
+
     return 0;
 }
 
