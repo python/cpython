@@ -645,21 +645,6 @@ Constants
 
       Use :data:`PROTOCOL_TLS` instead.
 
-.. data:: PROTOCOL_SSLv2
-
-   Selects SSL version 2 as the channel encryption protocol.
-
-   This protocol is not available if OpenSSL is compiled with the
-   ``no-ssl2`` option.
-
-   .. warning::
-
-      SSL version 2 is insecure.  Its use is highly discouraged.
-
-   .. deprecated:: 3.6
-
-      OpenSSL has removed support for SSLv2.
-
 .. data:: PROTOCOL_SSLv3
 
    Selects SSL version 3 as the channel encryption protocol.
@@ -1438,11 +1423,10 @@ to speed up repeated connections from the same clients.
       The context is created with secure default values. The options
       :data:`OP_NO_COMPRESSION`, :data:`OP_CIPHER_SERVER_PREFERENCE`,
       :data:`OP_SINGLE_DH_USE`, :data:`OP_SINGLE_ECDH_USE`,
-      :data:`OP_NO_SSLv2` (except for :data:`PROTOCOL_SSLv2`),
+      :data:`OP_NO_SSLv2`,
       and :data:`OP_NO_SSLv3` (except for :data:`PROTOCOL_SSLv3`) are
       set by default. The initial cipher suite list contains only ``HIGH``
-      ciphers, no ``NULL`` ciphers and no ``MD5`` ciphers (except for
-      :data:`PROTOCOL_SSLv2`).
+      ciphers, no ``NULL`` ciphers and no ``MD5`` ciphers.
 
    .. deprecated:: 3.10
 

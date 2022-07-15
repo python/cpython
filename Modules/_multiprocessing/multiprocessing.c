@@ -14,8 +14,16 @@ class HANDLE_converter(CConverter):
     type = "HANDLE"
     format_unit = '"F_HANDLE"'
 
+    def parse_arg(self, argname, displayname):
+        return """
+            {paramname} = PyLong_AsVoidPtr({argname});
+            if (!{paramname} && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """.format(argname=argname, paramname=self.parser_name)
+
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=9fad6080b79ace91]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=3e537d244034affb]*/
 
 /*[clinic input]
 module _multiprocessing
