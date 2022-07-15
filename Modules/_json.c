@@ -4,26 +4,15 @@
  * and as an extension module (Py_BUILD_CORE_MODULE define) on other
  * platforms. */
 
-#if !defined(Py_BUILD_CORE_BUILTIN) && !defined(Py_BUILD_CORE_MODULE)
-#  error "Py_BUILD_CORE_BUILTIN or Py_BUILD_CORE_MODULE must be defined"
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
 #endif
+#define NEEDS_PY_IDENTIFIER
 
 #include "Python.h"
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "structmember.h"         // PyMemberDef
 #include "pycore_accu.h"
-
-typedef struct {
-    PyObject *PyScannerType;
-    PyObject *PyEncoderType;
-} _jsonmodulestate;
-
-static inline _jsonmodulestate*
-get_json_state(PyObject *module)
-{
-    void *state = PyModule_GetState(module);
-    assert(state != NULL);
-    return (_jsonmodulestate *)state;
-}
 
 
 typedef struct _PyScannerObject {
@@ -321,7 +310,7 @@ raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end)
     if (decoder == NULL) {
         return;
     }
-    
+
     _Py_IDENTIFIER(JSONDecodeError);
     PyObject *JSONDecodeError = _PyObject_GetAttrId(decoder, &PyId_JSONDecodeError);
     Py_DECREF(decoder);
@@ -1058,19 +1047,19 @@ scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
             return scanstring_unicode(pystr, idx + 1, s->strict, next_idx_ptr);
         case '{':
             /* object */
-            if (Py_EnterRecursiveCall(" while decoding a JSON object "
-                                      "from a unicode string"))
+            if (_Py_EnterRecursiveCall(" while decoding a JSON object "
+                                       "from a unicode string"))
                 return NULL;
             res = _parse_object_unicode(s, pystr, idx + 1, next_idx_ptr);
-            Py_LeaveRecursiveCall();
+            _Py_LeaveRecursiveCall();
             return res;
         case '[':
             /* array */
-            if (Py_EnterRecursiveCall(" while decoding a JSON array "
-                                      "from a unicode string"))
+            if (_Py_EnterRecursiveCall(" while decoding a JSON array "
+                                       "from a unicode string"))
                 return NULL;
             res = _parse_array_unicode(s, pystr, idx + 1, next_idx_ptr);
-            Py_LeaveRecursiveCall();
+            _Py_LeaveRecursiveCall();
             return res;
         case 'n':
             /* null */
@@ -1429,17 +1418,17 @@ encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
         return _steal_accumulate(acc, encoded);
     }
     else if (PyList_Check(obj) || PyTuple_Check(obj)) {
-        if (Py_EnterRecursiveCall(" while encoding a JSON object"))
+        if (_Py_EnterRecursiveCall(" while encoding a JSON object"))
             return -1;
         rv = encoder_listencode_list(s, acc, obj, indent_level);
-        Py_LeaveRecursiveCall();
+        _Py_LeaveRecursiveCall();
         return rv;
     }
     else if (PyDict_Check(obj)) {
-        if (Py_EnterRecursiveCall(" while encoding a JSON object"))
+        if (_Py_EnterRecursiveCall(" while encoding a JSON object"))
             return -1;
         rv = encoder_listencode_dict(s, acc, obj, indent_level);
-        Py_LeaveRecursiveCall();
+        _Py_LeaveRecursiveCall();
         return rv;
     }
     else {
@@ -1467,13 +1456,13 @@ encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
             return -1;
         }
 
-        if (Py_EnterRecursiveCall(" while encoding a JSON object")) {
+        if (_Py_EnterRecursiveCall(" while encoding a JSON object")) {
             Py_DECREF(newobj);
             Py_XDECREF(ident);
             return -1;
         }
         rv = encoder_listencode_obj(s, acc, newobj, indent_level);
-        Py_LeaveRecursiveCall();
+        _Py_LeaveRecursiveCall();
 
         Py_DECREF(newobj);
         if (rv) {
@@ -1813,53 +1802,27 @@ PyDoc_STRVAR(module_doc,
 static int
 _json_exec(PyObject *module)
 {
-    _jsonmodulestate *state = get_json_state(module);
-
-    state->PyScannerType = PyType_FromSpec(&PyScannerType_spec);
-    if (state->PyScannerType == NULL) {
+    PyObject *PyScannerType = PyType_FromSpec(&PyScannerType_spec);
+    if (PyScannerType == NULL) {
         return -1;
     }
-    Py_INCREF(state->PyScannerType);
-    if (PyModule_AddObject(module, "make_scanner", state->PyScannerType) < 0) {
-        Py_DECREF(state->PyScannerType);
+    int rc = PyModule_AddObjectRef(module, "make_scanner", PyScannerType);
+    Py_DECREF(PyScannerType);
+    if (rc < 0) {
         return -1;
     }
 
-    state->PyEncoderType = PyType_FromSpec(&PyEncoderType_spec);
-    if (state->PyEncoderType == NULL) {
+    PyObject *PyEncoderType = PyType_FromSpec(&PyEncoderType_spec);
+    if (PyEncoderType == NULL) {
         return -1;
     }
-    Py_INCREF(state->PyEncoderType);
-    if (PyModule_AddObject(module, "make_encoder", state->PyEncoderType) < 0) {
-        Py_DECREF(state->PyEncoderType);
+    rc = PyModule_AddObjectRef(module, "make_encoder", PyEncoderType);
+    Py_DECREF(PyEncoderType);
+    if (rc < 0) {
         return -1;
     }
 
     return 0;
-}
-
-static int
-_jsonmodule_traverse(PyObject *module, visitproc visit, void *arg)
-{
-    _jsonmodulestate *state = get_json_state(module);
-    Py_VISIT(state->PyScannerType);
-    Py_VISIT(state->PyEncoderType);
-    return 0;
-}
-
-static int
-_jsonmodule_clear(PyObject *module)
-{
-    _jsonmodulestate *state = get_json_state(module);
-    Py_CLEAR(state->PyScannerType);
-    Py_CLEAR(state->PyEncoderType);
-    return 0;
-}
-
-static void
-_jsonmodule_free(void *module)
-{
-    _jsonmodule_clear((PyObject *)module);
 }
 
 static PyModuleDef_Slot _json_slots[] = {
@@ -1868,15 +1831,11 @@ static PyModuleDef_Slot _json_slots[] = {
 };
 
 static struct PyModuleDef jsonmodule = {
-        PyModuleDef_HEAD_INIT,
-        "_json",
-        module_doc,
-        sizeof(_jsonmodulestate),
-        speedups_methods,
-        _json_slots,
-        _jsonmodule_traverse,
-        _jsonmodule_clear,
-        _jsonmodule_free,
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_json",
+    .m_doc = module_doc,
+    .m_methods = speedups_methods,
+    .m_slots = _json_slots,
 };
 
 PyMODINIT_FUNC

@@ -20,7 +20,7 @@ strings up in components (addressing scheme, network location, path etc.), to
 combine the components back into a URL string, and to convert a "relative URL"
 to an absolute URL given a "base URL."
 
-The module has been designed to match the Internet RFC on Relative Uniform
+The module has been designed to match the internet RFC on Relative Uniform
 Resource Locators. It supports the following URL schemes: ``file``, ``ftp``,
 ``gopher``, ``hdl``, ``http``, ``https``, ``imap``, ``mailto``, ``mms``,
 ``news``, ``nntp``, ``prospero``, ``rsync``, ``rtsp``, ``rtspu``, ``sftp``,
@@ -48,17 +48,29 @@ or on combining URL components into a URL string.
    result, except for a leading slash in the *path* component, which is retained if
    present.  For example:
 
+   .. doctest::
+      :options: +NORMALIZE_WHITESPACE
+
       >>> from urllib.parse import urlparse
-      >>> o = urlparse('http://www.cwi.nl:80/%7Eguido/Python.html')
-      >>> o   # doctest: +NORMALIZE_WHITESPACE
-      ParseResult(scheme='http', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
-                  params='', query='', fragment='')
+      >>> urlparse("scheme://netloc/path;parameters?query#fragment")
+      ParseResult(scheme='scheme', netloc='netloc', path='/path;parameters', params='',
+                  query='query', fragment='fragment')
+      >>> o = urlparse("http://docs.python.org:80/3/library/urllib.parse.html?"
+      ...              "highlight=params#url-parsing")
+      >>> o
+      ParseResult(scheme='http', netloc='docs.python.org:80',
+                  path='/3/library/urllib.parse.html', params='',
+                  query='highlight=params', fragment='url-parsing')
       >>> o.scheme
       'http'
+      >>> o.netloc
+      'docs.python.org:80'
+      >>> o.hostname
+      'docs.python.org'
       >>> o.port
       80
-      >>> o.geturl()
-      'http://www.cwi.nl:80/%7Eguido/Python.html'
+      >>> o._replace(fragment="").geturl()
+      'http://docs.python.org:80/3/library/urllib.parse.html?highlight=params'
 
    Following the syntax specifications in :rfc:`1808`, urlparse recognizes
    a netloc only if it is properly introduced by '//'.  Otherwise the
@@ -92,31 +104,30 @@ or on combining URL components into a URL string.
    The return value is a :term:`named tuple`, which means that its items can
    be accessed by index or as named attributes, which are:
 
-   +------------------+-------+--------------------------+----------------------+
-   | Attribute        | Index | Value                    | Value if not present |
-   +==================+=======+==========================+======================+
-   | :attr:`scheme`   | 0     | URL scheme specifier     | *scheme* parameter   |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`netloc`   | 1     | Network location part    | empty string         |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`path`     | 2     | Hierarchical path        | empty string         |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`params`   | 3     | Parameters for last path | empty string         |
-   |                  |       | element                  |                      |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`query`    | 4     | Query component          | empty string         |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`fragment` | 5     | Fragment identifier      | empty string         |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`username` |       | User name                | :const:`None`        |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`password` |       | Password                 | :const:`None`        |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`hostname` |       | Host name (lower case)   | :const:`None`        |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`port`     |       | Port number as integer,  | :const:`None`        |
-   |                  |       | if present               |                      |
-   +------------------+-------+--------------------------+----------------------+
+   +------------------+-------+-------------------------+------------------------+
+   | Attribute        | Index | Value                   | Value if not present   |
+   +==================+=======+=========================+========================+
+   | :attr:`scheme`   | 0     | URL scheme specifier    | *scheme* parameter     |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`netloc`   | 1     | Network location part   | empty string           |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`path`     | 2     | Hierarchical path       | empty string           |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`params`   | 3     | No longer used          | always an empty string |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`query`    | 4     | Query component         | empty string           |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`fragment` | 5     | Fragment identifier     | empty string           |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`username` |       | User name               | :const:`None`          |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`password` |       | Password                | :const:`None`          |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`hostname` |       | Host name (lower case)  | :const:`None`          |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`port`     |       | Port number as integer, | :const:`None`          |
+   |                  |       | if present              |                        |
+   +------------------+-------+-------------------------+------------------------+
 
    Reading the :attr:`port` attribute will raise a :exc:`ValueError` if
    an invalid port is specified in the URL.  See section

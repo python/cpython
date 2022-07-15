@@ -3,27 +3,13 @@
 #include "Python.h"
 #include <ctype.h>
 #include "pycore_ast.h"           // _PyAST_Validate()
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_compile.h"       // _PyAST_Compile()
 #include "pycore_object.h"        // _Py_AddToAllObjects()
 #include "pycore_pyerrors.h"      // _PyErr_NoMemory()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_ceval.h"         // _PyEval_Vector()
-
-_Py_IDENTIFIER(__builtins__);
-_Py_IDENTIFIER(__dict__);
-_Py_IDENTIFIER(__prepare__);
-_Py_IDENTIFIER(__round__);
-_Py_IDENTIFIER(__mro_entries__);
-_Py_IDENTIFIER(encoding);
-_Py_IDENTIFIER(errors);
-_Py_IDENTIFIER(fileno);
-_Py_IDENTIFIER(flush);
-_Py_IDENTIFIER(metaclass);
-_Py_IDENTIFIER(sort);
-_Py_IDENTIFIER(stdin);
-_Py_IDENTIFIER(stdout);
-_Py_IDENTIFIER(stderr);
 
 #include "clinic/bltinmodule.c.h"
 
@@ -46,7 +32,7 @@ update_bases(PyObject *bases, PyObject *const *args, Py_ssize_t nargs)
             }
             continue;
         }
-        if (_PyObject_LookupAttrId(base, &PyId___mro_entries__, &meth) < 0) {
+        if (_PyObject_LookupAttr(base, &_Py_ID(__mro_entries__), &meth) < 0) {
             goto error;
         }
         if (!meth) {
@@ -72,6 +58,7 @@ update_bases(PyObject *bases, PyObject *const *args, Py_ssize_t nargs)
             /* If this is a first successful replacement, create new_bases list and
                copy previously encountered bases. */
             if (!(new_bases = PyList_New(i))) {
+                Py_DECREF(new_base);
                 goto error;
             }
             for (j = 0; j < i; j++) {
@@ -82,6 +69,7 @@ update_bases(PyObject *bases, PyObject *const *args, Py_ssize_t nargs)
         }
         j = PyList_GET_SIZE(new_bases);
         if (PyList_SetSlice(new_bases, j, j, new_base) < 0) {
+            Py_DECREF(new_base);
             goto error;
         }
         Py_DECREF(new_base);
@@ -103,8 +91,9 @@ static PyObject *
 builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
                         PyObject *kwnames)
 {
-    PyObject *func, *name, *bases, *mkw, *meta, *winner, *prep, *ns, *orig_bases;
-    PyObject *cls = NULL, *cell = NULL;
+    PyObject *func, *name, *winner, *prep;
+    PyObject *cls = NULL, *cell = NULL, *ns = NULL, *meta = NULL, *orig_bases = NULL;
+    PyObject *mkw = NULL, *bases = NULL;
     int isclass = 0;   /* initialize to prevent gcc warning */
 
     if (nargs < 2) {
@@ -141,26 +130,20 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     else {
         mkw = _PyStack_AsDict(args + nargs, kwnames);
         if (mkw == NULL) {
-            Py_DECREF(bases);
-            return NULL;
+            goto error;
         }
 
-        meta = _PyDict_GetItemIdWithError(mkw, &PyId_metaclass);
+        meta = _PyDict_GetItemWithError(mkw, &_Py_ID(metaclass));
         if (meta != NULL) {
             Py_INCREF(meta);
-            if (_PyDict_DelItemId(mkw, &PyId_metaclass) < 0) {
-                Py_DECREF(meta);
-                Py_DECREF(mkw);
-                Py_DECREF(bases);
-                return NULL;
+            if (PyDict_DelItem(mkw, &_Py_ID(metaclass)) < 0) {
+                goto error;
             }
             /* metaclass is explicitly given, check if it's indeed a class */
             isclass = PyType_Check(meta);
         }
         else if (PyErr_Occurred()) {
-            Py_DECREF(mkw);
-            Py_DECREF(bases);
-            return NULL;
+            goto error;
         }
     }
     if (meta == NULL) {
@@ -183,10 +166,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
         winner = (PyObject *)_PyType_CalculateMetaclass((PyTypeObject *)meta,
                                                         bases);
         if (winner == NULL) {
-            Py_DECREF(meta);
-            Py_XDECREF(mkw);
-            Py_DECREF(bases);
-            return NULL;
+            goto error;
         }
         if (winner != meta) {
             Py_DECREF(meta);
@@ -196,7 +176,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     }
     /* else: meta is not a class, so we cannot do the metaclass
        calculation, so we will use the explicitly given object as it is */
-    if (_PyObject_LookupAttrId(meta, &PyId___prepare__, &prep) < 0) {
+    if (_PyObject_LookupAttr(meta, &_Py_ID(__prepare__), &prep) < 0) {
         ns = NULL;
     }
     else if (prep == NULL) {
@@ -208,10 +188,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
         Py_DECREF(prep);
     }
     if (ns == NULL) {
-        Py_DECREF(meta);
-        Py_XDECREF(mkw);
-        Py_DECREF(bases);
-        return NULL;
+        goto error;
     }
     if (!PyMapping_Check(ns)) {
         PyErr_Format(PyExc_TypeError,
@@ -220,9 +197,9 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
                      Py_TYPE(ns)->tp_name);
         goto error;
     }
-    PyFrameConstructor *f =  PyFunction_AS_FRAME_CONSTRUCTOR(func);
-    PyThreadState *tstate = PyThreadState_GET();
-    cell = _PyEval_Vector(tstate, f, ns, NULL, 0, NULL);
+    PyThreadState *tstate = _PyThreadState_GET();
+    EVAL_CALL_STAT_INC(EVAL_CALL_BUILD_CLASS);
+    cell = _PyEval_Vector(tstate, (PyFunctionObject *)func, ns, NULL, 0, NULL);
     if (cell != NULL) {
         if (bases != orig_bases) {
             if (PyMapping_SetItemString(ns, "__orig_bases__", orig_bases) < 0) {
@@ -252,13 +229,13 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     }
 error:
     Py_XDECREF(cell);
-    Py_DECREF(ns);
-    Py_DECREF(meta);
+    Py_XDECREF(ns);
+    Py_XDECREF(meta);
     Py_XDECREF(mkw);
-    Py_DECREF(bases);
     if (bases != orig_bases) {
         Py_DECREF(orig_bases);
     }
+    Py_DECREF(bases);
     return cls;
 }
 
@@ -267,37 +244,40 @@ PyDoc_STRVAR(build_class_doc,
 \n\
 Internal helper function used by the class statement.");
 
-static PyObject *
-builtin___import__(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    static char *kwlist[] = {"name", "globals", "locals", "fromlist",
-                             "level", 0};
-    PyObject *name, *globals = NULL, *locals = NULL, *fromlist = NULL;
-    int level = 0;
+/*[clinic input]
+__import__ as builtin___import__
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "U|OOOi:__import__",
-                    kwlist, &name, &globals, &locals, &fromlist, &level))
-        return NULL;
+    name: object
+    globals: object(c_default="NULL") = None
+    locals: object(c_default="NULL") = None
+    fromlist: object(c_default="NULL") = ()
+    level: int = 0
+
+Import a module.
+
+Because this function is meant for use by the Python
+interpreter and not for general use, it is better to use
+importlib.import_module() to programmatically import a module.
+
+The globals argument is only used to determine the context;
+they are not modified.  The locals argument is unused.  The fromlist
+should be a list of names to emulate ``from name import ...'', or an
+empty list to emulate ``import name''.
+When importing a module from a package, note that __import__('A.B', ...)
+returns package A when fromlist is empty, but its submodule B when
+fromlist is not empty.  The level argument is used to determine whether to
+perform absolute or relative imports: 0 is absolute, while a positive number
+is the number of parent directories to search relative to the current module.
+[clinic start generated code]*/
+
+static PyObject *
+builtin___import___impl(PyObject *module, PyObject *name, PyObject *globals,
+                        PyObject *locals, PyObject *fromlist, int level)
+/*[clinic end generated code: output=4febeda88a0cd245 input=35e9a6460412430f]*/
+{
     return PyImport_ImportModuleLevelObject(name, globals, locals,
                                             fromlist, level);
 }
-
-PyDoc_STRVAR(import_doc,
-"__import__(name, globals=None, locals=None, fromlist=(), level=0) -> module\n\
-\n\
-Import a module. Because this function is meant for use by the Python\n\
-interpreter and not for general use, it is better to use\n\
-importlib.import_module() to programmatically import a module.\n\
-\n\
-The globals argument is only used to determine the context;\n\
-they are not modified.  The locals argument is unused.  The fromlist\n\
-should be a list of names to emulate ``from name import ...'', or an\n\
-empty list to emulate ``import name''.\n\
-When importing a module from a package, note that __import__('A.B', ...)\n\
-returns package A when fromlist is empty, but its submodule B when\n\
-fromlist is not empty.  The level argument is used to determine whether to\n\
-perform absolute or relative imports: 0 is absolute, while a positive number\n\
-is the number of parent directories to search relative to the current module.");
 
 
 /*[clinic input]
@@ -516,7 +496,8 @@ filter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *it;
     filterobject *lz;
 
-    if (type == &PyFilter_Type && !_PyArg_NoKeywords("filter", kwds))
+    if ((type == &PyFilter_Type || type->tp_init == PyFilter_Type.tp_init) &&
+        !_PyArg_NoKeywords("filter", kwds))
         return NULL;
 
     if (!PyArg_UnpackTuple(args, "filter", 2, 2, &func, &seq))
@@ -544,7 +525,7 @@ static PyObject *
 filter_vectorcall(PyObject *type, PyObject * const*args,
                 size_t nargsf, PyObject *kwnames)
 {
-    PyTypeObject *tp = (PyTypeObject *)type;
+    PyTypeObject *tp = _PyType_CAST(type);
     if (tp == &PyFilter_Type && !_PyArg_NoKwnames("filter", kwnames)) {
         return NULL;
     }
@@ -633,7 +614,7 @@ filter_reduce(filterobject *lz, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyMethodDef filter_methods[] = {
-    {"__reduce__",   (PyCFunction)filter_reduce,   METH_NOARGS, reduce_doc},
+    {"__reduce__", _PyCFunction_CAST(filter_reduce), METH_NOARGS, reduce_doc},
     {NULL,           NULL}           /* sentinel */
 };
 
@@ -954,10 +935,9 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
         return NULL;
     }
 
-    int r = _PyDict_ContainsId(globals, &PyId___builtins__);
+    int r = PyDict_Contains(globals, &_Py_ID(__builtins__));
     if (r == 0) {
-        r = _PyDict_SetItemId(globals, &PyId___builtins__,
-                              PyEval_GetBuiltins());
+        r = PyDict_SetItem(globals, &_Py_ID(__builtins__), PyEval_GetBuiltins());
     }
     if (r < 0) {
         return NULL;
@@ -998,6 +978,8 @@ exec as builtin_exec
     globals: object = None
     locals: object = None
     /
+    *
+    closure: object(c_default="NULL") = None
 
 Execute the given source in the context of globals and locals.
 
@@ -1006,12 +988,14 @@ or a code object as returned by compile().
 The globals must be a dictionary and locals can be any mapping,
 defaulting to the current globals and locals.
 If only globals is given, locals defaults to it.
+The closure must be a tuple of cellvars, and can only be used
+when source is a code object requiring exactly that many cellvars.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
-                  PyObject *locals)
-/*[clinic end generated code: output=3c90efc6ab68ef5d input=01ca3e1c01692829]*/
+                  PyObject *locals, PyObject *closure)
+/*[clinic end generated code: output=7579eb4e7646743d input=f13a7e2b503d1d9a]*/
 {
     PyObject *v;
 
@@ -1042,29 +1026,68 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
             Py_TYPE(locals)->tp_name);
         return NULL;
     }
-    int r = _PyDict_ContainsId(globals, &PyId___builtins__);
+    int r = PyDict_Contains(globals, &_Py_ID(__builtins__));
     if (r == 0) {
-        r = _PyDict_SetItemId(globals, &PyId___builtins__,
-                              PyEval_GetBuiltins());
+        r = PyDict_SetItem(globals, &_Py_ID(__builtins__), PyEval_GetBuiltins());
     }
     if (r < 0) {
         return NULL;
     }
 
+    if (closure == Py_None) {
+        closure = NULL;
+    }
+
     if (PyCode_Check(source)) {
+        Py_ssize_t num_free = PyCode_GetNumFree((PyCodeObject *)source);
+        if (num_free == 0) {
+            if (closure) {
+                PyErr_SetString(PyExc_TypeError,
+                    "cannot use a closure with this code object");
+                return NULL;
+            }
+        } else {
+            int closure_is_ok =
+                closure
+                && PyTuple_CheckExact(closure)
+                && (PyTuple_GET_SIZE(closure) == num_free);
+            if (closure_is_ok) {
+                for (Py_ssize_t i = 0; i < num_free; i++) {
+                    PyObject *cell = PyTuple_GET_ITEM(closure, i);
+                    if (!PyCell_Check(cell)) {
+                        closure_is_ok = 0;
+                        break;
+                    }
+                }
+            }
+            if (!closure_is_ok) {
+                PyErr_Format(PyExc_TypeError,
+                    "code object requires a closure of exactly length %zd",
+                    num_free);
+                return NULL;
+            }
+        }
+
         if (PySys_Audit("exec", "O", source) < 0) {
             return NULL;
         }
 
-        if (PyCode_GetNumFree((PyCodeObject *)source) > 0) {
-            PyErr_SetString(PyExc_TypeError,
-                "code object passed to exec() may not "
-                "contain free variables");
-            return NULL;
+        if (!closure) {
+            v = PyEval_EvalCode(source, globals, locals);
+        } else {
+            v = PyEval_EvalCodeEx(source, globals, locals,
+                NULL, 0,
+                NULL, 0,
+                NULL, 0,
+                NULL,
+                closure);
         }
-        v = PyEval_EvalCode(source, globals, locals);
     }
     else {
+        if (closure != NULL) {
+            PyErr_SetString(PyExc_TypeError,
+                "closure can only be used when source is a code object");
+        }
         PyObject *source_copy;
         const char *str;
         PyCompilerFlags cf = _PyCompilerFlags_INIT;
@@ -1099,11 +1122,6 @@ builtin_getattr(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 
     v = args[0];
     name = args[1];
-    if (!PyUnicode_Check(name)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "getattr(): attribute name must be string");
-        return NULL;
-    }
     if (nargs > 2) {
         if (_PyObject_LookupAttr(v, name, &result) == 0) {
             PyObject *dflt = args[2];
@@ -1164,11 +1182,6 @@ builtin_hasattr_impl(PyObject *module, PyObject *obj, PyObject *name)
 {
     PyObject *v;
 
-    if (!PyUnicode_Check(name)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "hasattr(): attribute name must be string");
-        return NULL;
-    }
     if (_PyObject_LookupAttr(obj, name, &v) < 0) {
         return NULL;
     }
@@ -1227,7 +1240,8 @@ map_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     mapobject *lz;
     Py_ssize_t numargs, i;
 
-    if (type == &PyMap_Type && !_PyArg_NoKeywords("map", kwds))
+    if ((type == &PyMap_Type || type->tp_init == PyMap_Type.tp_init) &&
+        !_PyArg_NoKeywords("map", kwds))
         return NULL;
 
     numargs = PyTuple_Size(args);
@@ -1268,7 +1282,7 @@ static PyObject *
 map_vectorcall(PyObject *type, PyObject * const*args,
                 size_t nargsf, PyObject *kwnames)
 {
-    PyTypeObject *tp = (PyTypeObject *)type;
+    PyTypeObject *tp = _PyType_CAST(type);
     if (tp == &PyMap_Type && !_PyArg_NoKwnames("map", kwnames)) {
         return NULL;
     }
@@ -1385,7 +1399,7 @@ map_reduce(mapobject *lz, PyObject *Py_UNUSED(ignored))
 }
 
 static PyMethodDef map_methods[] = {
-    {"__reduce__",   (PyCFunction)map_reduce,   METH_NOARGS, reduce_doc},
+    {"__reduce__", _PyCFunction_CAST(map_reduce), METH_NOARGS, reduce_doc},
     {NULL,           NULL}           /* sentinel */
 };
 
@@ -1619,7 +1633,7 @@ static PyObject *
 builtin_aiter(PyObject *module, PyObject *async_iterable)
 /*[clinic end generated code: output=1bae108d86f7960e input=473993d0cacc7d23]*/
 {
-    return PyObject_GetAiter(async_iterable);
+    return PyObject_GetAIter(async_iterable);
 }
 
 PyObject *PyAnextAwaitable_New(PyObject *, PyObject *);
@@ -1977,7 +1991,8 @@ builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
     int i, err;
 
     if (file == Py_None) {
-        file = _PySys_GetObjectId(&PyId_stdout);
+        PyThreadState *tstate = _PyThreadState_GET();
+        file = _PySys_GetAttr(tstate, &_Py_ID(stdout));
         if (file == NULL) {
             PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
             return NULL;
@@ -2037,7 +2052,7 @@ builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
     }
 
     if (flush) {
-        PyObject *tmp = _PyObject_CallMethodIdNoArgs(file, &PyId_flush);
+        PyObject *tmp = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
         if (tmp == NULL) {
             return NULL;
         }
@@ -2067,9 +2082,13 @@ static PyObject *
 builtin_input_impl(PyObject *module, PyObject *prompt)
 /*[clinic end generated code: output=83db5a191e7a0d60 input=5e8bb70c2908fe3c]*/
 {
-    PyObject *fin = _PySys_GetObjectId(&PyId_stdin);
-    PyObject *fout = _PySys_GetObjectId(&PyId_stdout);
-    PyObject *ferr = _PySys_GetObjectId(&PyId_stderr);
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *fin = _PySys_GetAttr(
+        tstate, &_Py_ID(stdin));
+    PyObject *fout = _PySys_GetAttr(
+        tstate, &_Py_ID(stdout));
+    PyObject *ferr = _PySys_GetAttr(
+        tstate, &_Py_ID(stderr));
     PyObject *tmp;
     long fd;
     int tty;
@@ -2096,7 +2115,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
     }
 
     /* First of all, flush stderr */
-    tmp = _PyObject_CallMethodIdNoArgs(ferr, &PyId_flush);
+    tmp = PyObject_CallMethodNoArgs(ferr, &_Py_ID(flush));
     if (tmp == NULL)
         PyErr_Clear();
     else
@@ -2105,7 +2124,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
     /* We should only use (GNU) readline if Python's sys.stdin and
        sys.stdout are the same as C's stdin and stdout, because we
        need to pass it those. */
-    tmp = _PyObject_CallMethodIdNoArgs(fin, &PyId_fileno);
+    tmp = PyObject_CallMethodNoArgs(fin, &_Py_ID(fileno));
     if (tmp == NULL) {
         PyErr_Clear();
         tty = 0;
@@ -2118,7 +2137,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         tty = fd == fileno(stdin) && isatty(fd);
     }
     if (tty) {
-        tmp = _PyObject_CallMethodIdNoArgs(fout, &PyId_fileno);
+        tmp = PyObject_CallMethodNoArgs(fout, &_Py_ID(fileno));
         if (tmp == NULL) {
             PyErr_Clear();
             tty = 0;
@@ -2144,8 +2163,8 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         size_t len;
 
         /* stdin is a text stream, so it must have an encoding. */
-        stdin_encoding = _PyObject_GetAttrId(fin, &PyId_encoding);
-        stdin_errors = _PyObject_GetAttrId(fin, &PyId_errors);
+        stdin_encoding = PyObject_GetAttr(fin, &_Py_ID(encoding));
+        stdin_errors = PyObject_GetAttr(fin, &_Py_ID(errors));
         if (!stdin_encoding || !stdin_errors ||
                 !PyUnicode_Check(stdin_encoding) ||
                 !PyUnicode_Check(stdin_errors)) {
@@ -2156,7 +2175,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         stdin_errors_str = PyUnicode_AsUTF8(stdin_errors);
         if (!stdin_encoding_str || !stdin_errors_str)
             goto _readline_errors;
-        tmp = _PyObject_CallMethodIdNoArgs(fout, &PyId_flush);
+        tmp = PyObject_CallMethodNoArgs(fout, &_Py_ID(flush));
         if (tmp == NULL)
             PyErr_Clear();
         else
@@ -2165,8 +2184,8 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
             /* We have a prompt, encode it as stdout would */
             const char *stdout_encoding_str, *stdout_errors_str;
             PyObject *stringpo;
-            stdout_encoding = _PyObject_GetAttrId(fout, &PyId_encoding);
-            stdout_errors = _PyObject_GetAttrId(fout, &PyId_errors);
+            stdout_encoding = PyObject_GetAttr(fout, &_Py_ID(encoding));
+            stdout_errors = PyObject_GetAttr(fout, &_Py_ID(errors));
             if (!stdout_encoding || !stdout_errors ||
                     !PyUnicode_Check(stdout_encoding) ||
                     !PyUnicode_Check(stdout_errors)) {
@@ -2251,7 +2270,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         if (PyFile_WriteObject(prompt, fout, Py_PRINT_RAW) != 0)
             return NULL;
     }
-    tmp = _PyObject_CallMethodIdNoArgs(fout, &PyId_flush);
+    tmp = PyObject_CallMethodNoArgs(fout, &_Py_ID(flush));
     if (tmp == NULL)
         PyErr_Clear();
     else
@@ -2302,7 +2321,7 @@ builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits)
             return NULL;
     }
 
-    round = _PyObject_LookupSpecial(number, &PyId___round__);
+    round = _PyObject_LookupSpecial(number, &_Py_ID(__round__));
     if (round == NULL) {
         if (!PyErr_Occurred())
             PyErr_Format(PyExc_TypeError,
@@ -2312,7 +2331,7 @@ builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits)
     }
 
     if (ndigits == Py_None)
-        result = _PyObject_CallNoArg(round);
+        result = _PyObject_CallNoArgs(round);
     else
         result = PyObject_CallOneArg(round, ndigits);
     Py_DECREF(round);
@@ -2347,7 +2366,7 @@ PyDoc_STRVAR(builtin_sorted__doc__,
 "reverse flag can be set to request the result in descending order.");
 
 #define BUILTIN_SORTED_METHODDEF    \
-    {"sorted", (PyCFunction)(void(*)(void))builtin_sorted, METH_FASTCALL | METH_KEYWORDS, builtin_sorted__doc__},
+    {"sorted", _PyCFunction_CAST(builtin_sorted), METH_FASTCALL | METH_KEYWORDS, builtin_sorted__doc__},
 
 static PyObject *
 builtin_sorted(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -2363,7 +2382,7 @@ builtin_sorted(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
     if (newlist == NULL)
         return NULL;
 
-    callable = _PyObject_GetAttrId(newlist, &PyId_sort);
+    callable = PyObject_GetAttr(newlist, &_Py_ID(sort));
     if (callable == NULL) {
         Py_DECREF(newlist);
         return NULL;
@@ -2395,7 +2414,7 @@ builtin_vars(PyObject *self, PyObject *args)
         Py_XINCREF(d);
     }
     else {
-        if (_PyObject_LookupAttrId(v, &PyId___dict__, &d) == 0) {
+        if (_PyObject_LookupAttr(v, &_Py_ID(__dict__), &d) == 0) {
             PyErr_SetString(PyExc_TypeError,
                 "vars() argument must have __dict__ attribute");
         }
@@ -2486,7 +2505,16 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 return PyLong_FromLong(i_result);
             }
             if (PyLong_CheckExact(item) || PyBool_Check(item)) {
-                long b = PyLong_AsLongAndOverflow(item, &overflow);
+                long b;
+                overflow = 0;
+                /* Single digits are common, fast, and cannot overflow on unpacking. */
+                switch (Py_SIZE(item)) {
+                    case -1: b = -(sdigit) ((PyLongObject*)item)->ob_digit[0]; break;
+                    // Note: the continue goes to the top of the "while" loop that iterates over the elements
+                    case  0: Py_DECREF(item); continue;
+                    case  1: b = ((PyLongObject*)item)->ob_digit[0]; break;
+                    default: b = PyLong_AsLongAndOverflow(item, &overflow); break;
+                }
                 if (overflow == 0 &&
                     (i_result >= 0 ? (b <= LONG_MAX - i_result)
                                    : (b >= LONG_MIN - i_result)))
@@ -2528,7 +2556,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
             }
             if (PyFloat_CheckExact(item)) {
                 f_result += PyFloat_AS_DOUBLE(item);
-                Py_DECREF(item);
+                _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
                 continue;
             }
             if (PyLong_Check(item)) {
@@ -2856,8 +2884,8 @@ zip_setstate(zipobject *lz, PyObject *state)
 }
 
 static PyMethodDef zip_methods[] = {
-    {"__reduce__",   (PyCFunction)zip_reduce,   METH_NOARGS, reduce_doc},
-    {"__setstate__", (PyCFunction)zip_setstate, METH_O,      setstate_doc},
+    {"__reduce__", _PyCFunction_CAST(zip_reduce), METH_NOARGS, reduce_doc},
+    {"__setstate__", _PyCFunction_CAST(zip_setstate), METH_O, setstate_doc},
     {NULL}  /* sentinel */
 };
 
@@ -2921,25 +2949,25 @@ PyTypeObject PyZip_Type = {
 
 
 static PyMethodDef builtin_methods[] = {
-    {"__build_class__", (PyCFunction)(void(*)(void))builtin___build_class__,
+    {"__build_class__", _PyCFunction_CAST(builtin___build_class__),
      METH_FASTCALL | METH_KEYWORDS, build_class_doc},
-    {"__import__",      (PyCFunction)(void(*)(void))builtin___import__, METH_VARARGS | METH_KEYWORDS, import_doc},
+    BUILTIN___IMPORT___METHODDEF
     BUILTIN_ABS_METHODDEF
     BUILTIN_ALL_METHODDEF
     BUILTIN_ANY_METHODDEF
     BUILTIN_ASCII_METHODDEF
     BUILTIN_BIN_METHODDEF
-    {"breakpoint",      (PyCFunction)(void(*)(void))builtin_breakpoint, METH_FASTCALL | METH_KEYWORDS, breakpoint_doc},
+    {"breakpoint", _PyCFunction_CAST(builtin_breakpoint), METH_FASTCALL | METH_KEYWORDS, breakpoint_doc},
     BUILTIN_CALLABLE_METHODDEF
     BUILTIN_CHR_METHODDEF
     BUILTIN_COMPILE_METHODDEF
     BUILTIN_DELATTR_METHODDEF
-    {"dir",             builtin_dir,        METH_VARARGS, dir_doc},
+    {"dir", builtin_dir, METH_VARARGS, dir_doc},
     BUILTIN_DIVMOD_METHODDEF
     BUILTIN_EVAL_METHODDEF
     BUILTIN_EXEC_METHODDEF
     BUILTIN_FORMAT_METHODDEF
-    {"getattr",         (PyCFunction)(void(*)(void))builtin_getattr, METH_FASTCALL, getattr_doc},
+    {"getattr", _PyCFunction_CAST(builtin_getattr), METH_FASTCALL, getattr_doc},
     BUILTIN_GLOBALS_METHODDEF
     BUILTIN_HASATTR_METHODDEF
     BUILTIN_HASH_METHODDEF
@@ -2948,13 +2976,13 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_INPUT_METHODDEF
     BUILTIN_ISINSTANCE_METHODDEF
     BUILTIN_ISSUBCLASS_METHODDEF
-    {"iter",            (PyCFunction)(void(*)(void))builtin_iter,       METH_FASTCALL, iter_doc},
+    {"iter", _PyCFunction_CAST(builtin_iter), METH_FASTCALL, iter_doc},
     BUILTIN_AITER_METHODDEF
     BUILTIN_LEN_METHODDEF
     BUILTIN_LOCALS_METHODDEF
-    {"max",             (PyCFunction)(void(*)(void))builtin_max,        METH_VARARGS | METH_KEYWORDS, max_doc},
-    {"min",             (PyCFunction)(void(*)(void))builtin_min,        METH_VARARGS | METH_KEYWORDS, min_doc},
-    {"next",            (PyCFunction)(void(*)(void))builtin_next,       METH_FASTCALL, next_doc},
+    {"max", _PyCFunction_CAST(builtin_max), METH_VARARGS | METH_KEYWORDS, max_doc},
+    {"min", _PyCFunction_CAST(builtin_min), METH_VARARGS | METH_KEYWORDS, min_doc},
+    {"next", _PyCFunction_CAST(builtin_next), METH_FASTCALL, next_doc},
     BUILTIN_ANEXT_METHODDEF
     BUILTIN_OCT_METHODDEF
     BUILTIN_ORD_METHODDEF
@@ -2993,11 +3021,6 @@ _PyBuiltin_Init(PyInterpreterState *interp)
     PyObject *mod, *dict, *debug;
 
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
-
-    if (PyType_Ready(&PyFilter_Type) < 0 ||
-        PyType_Ready(&PyMap_Type) < 0 ||
-        PyType_Ready(&PyZip_Type) < 0)
-        return NULL;
 
     mod = _PyModule_CreateInitialized(&builtinsmodule, PYTHON_API_VERSION);
     if (mod == NULL)

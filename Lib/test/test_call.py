@@ -26,6 +26,18 @@ class FunctionCalls(unittest.TestCase):
         self.assertIsInstance(res, dict)
         self.assertEqual(list(res.items()), expected)
 
+    def test_frames_are_popped_after_failed_calls(self):
+        # GH-93252: stuff blows up if we don't pop the new frame after
+        # recovering from failed calls:
+        def f():
+            pass
+        for _ in range(1000):
+            try:
+                f(None)
+            except TypeError:
+                pass
+        # BOOM!
+
 
 @cpython_only
 class CFunctionCallsErrorMessages(unittest.TestCase):
@@ -39,7 +51,7 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, {}.__contains__, 0, 1)
 
     def test_varargs3(self):
-        msg = r"^from_bytes\(\) takes exactly 2 positional arguments \(3 given\)"
+        msg = r"^from_bytes\(\) takes at most 2 positional arguments \(3 given\)"
         self.assertRaisesRegex(TypeError, msg, int.from_bytes, b'a', 'little', False)
 
     def test_varargs1min(self):

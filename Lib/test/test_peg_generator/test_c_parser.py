@@ -11,8 +11,8 @@ from test import support
 from test.support import os_helper
 from test.support.script_helper import assert_python_ok
 
-_py_cflags_nodist = sysconfig.get_config_var('PY_CFLAGS_NODIST')
-_pgo_flag = sysconfig.get_config_var('PGO_PROF_USE_FLAG')
+_py_cflags_nodist = sysconfig.get_config_var("PY_CFLAGS_NODIST")
+_pgo_flag = sysconfig.get_config_var("PGO_PROF_USE_FLAG")
 if _pgo_flag and _py_cflags_nodist and _pgo_flag in _py_cflags_nodist:
     raise unittest.SkipTest("peg_generator test disabled under PGO build")
 
@@ -70,17 +70,33 @@ unittest.main()
 """
 
 
+@support.requires_subprocess()
 class TestCParser(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        # When running under regtest, a separate tempdir is used
+        # as the current directory and watched for left-overs.
+        # Reusing that as the base for temporary directories
+        # ensures everything is cleaned up properly and
+        # cleans up afterwards if not (with warnings).
+        cls.tmp_base = os.getcwd()
+        if os.path.samefile(cls.tmp_base, os_helper.SAVEDCWD):
+            cls.tmp_base = None
+        # Create a directory for the reuseable static library part of
+        # the pegen extension build process.  This greatly reduces the
+        # runtime overhead of spawning compiler processes.
+        cls.library_dir = tempfile.mkdtemp(dir=cls.tmp_base)
+        cls.addClassCleanup(shutil.rmtree, cls.library_dir)
+
     def setUp(self):
         self._backup_config_vars = dict(sysconfig._CONFIG_VARS)
         cmd = support.missing_compiler_executable()
         if cmd is not None:
             self.skipTest("The %r command is not found" % cmd)
         self.old_cwd = os.getcwd()
-        self.tmp_path = tempfile.mkdtemp()
-        change_cwd = os_helper.change_cwd(self.tmp_path)
-        change_cwd.__enter__()
-        self.addCleanup(change_cwd.__exit__, None, None, None)
+        self.tmp_path = tempfile.mkdtemp(dir=self.tmp_base)
+        self.enterContext(os_helper.change_cwd(self.tmp_path))
 
     def tearDown(self):
         os.chdir(self.old_cwd)
@@ -90,7 +106,10 @@ class TestCParser(unittest.TestCase):
 
     def build_extension(self, grammar_source):
         grammar = parse_string(grammar_source, GrammarParser)
-        generate_parser_c_extension(grammar, Path(self.tmp_path))
+        # Because setUp() already changes the current directory to the
+        # temporary path, use a relative path here to prevent excessive
+        # path lengths when compiling.
+        generate_parser_c_extension(grammar, Path('.'), library_dir=self.library_dir)
 
     def run_test(self, grammar_source, test_source):
         self.build_extension(grammar_source)
@@ -456,5 +475,30 @@ class TestCParser(unittest.TestCase):
         valid_cases = ["if if + if"]
         invalid_cases = ["if if"]
         self.check_input_strings_for_grammar(valid_cases, invalid_cases)
+        """
+        self.run_test(grammar_source, test_source)
+
+    def test_forced(self) -> None:
+        grammar_source = """
+        start: NAME &&':' | NAME
+        """
+        test_source = """
+        self.assertEqual(parse.parse_string("number :", mode=0), None)
+        with self.assertRaises(SyntaxError) as e:
+            parse.parse_string("a", mode=0)
+        self.assertIn("expected ':'", str(e.exception))
+        """
+        self.run_test(grammar_source, test_source)
+
+    def test_forced_with_group(self) -> None:
+        grammar_source = """
+        start: NAME &&(':' | ';') | NAME
+        """
+        test_source = """
+        self.assertEqual(parse.parse_string("number :", mode=0), None)
+        self.assertEqual(parse.parse_string("number ;", mode=0), None)
+        with self.assertRaises(SyntaxError) as e:
+            parse.parse_string("a", mode=0)
+        self.assertIn("expected (':' | ';')", e.exception.args[0])
         """
         self.run_test(grammar_source, test_source)

@@ -236,6 +236,14 @@ capture data for later printing in a lightweight fashion.
 
       The ``__suppress_context__`` value from the original exception.
 
+   .. attribute:: __notes__
+
+      The ``__notes__`` value from the original exception, or ``None``
+      if the exception does not have any notes. If it is not ``None``
+      is it formatted in the traceback after the exception string.
+
+      .. versionadded:: 3.11
+
    .. attribute:: stack
 
       A :class:`StackSummary` representing the traceback.
@@ -333,6 +341,10 @@ capture data for later printing in a lightweight fashion.
       local variables in each :class:`FrameSummary` are captured as object
       representations.
 
+      .. versionchanged:: 3.12
+         Exceptions raised from :func:`repr` on a local variable (when
+         *capture_locals* is ``True``) are no longer propagated to the caller.
+
    .. classmethod:: from_list(a_list)
 
       Construct a :class:`StackSummary` object from a supplied list of
@@ -353,11 +365,12 @@ capture data for later printing in a lightweight fashion.
       .. versionchanged:: 3.6
          Long sequences of repeated frames are now abbreviated.
 
-   .. method:: format_frame(frame)
+   .. method:: format_frame_summary(frame_summary)
 
       Returns a string for printing one of the frames involved in the stack.
-      This method gets called for each frame object to be printed in the
-      :class:`StackSummary`.
+      This method is called for each :class:`FrameSummary` object to be
+      printed by :meth:`StackSummary.format`. If it returns ``None``, the
+      frame is omitted from the output.
 
       .. versionadded:: 3.11
 
@@ -367,7 +380,7 @@ capture data for later printing in a lightweight fashion.
 
 .. versionadded:: 3.5
 
-:class:`FrameSummary` objects represent a single frame in a traceback.
+A :class:`FrameSummary` object represents a single frame in a traceback.
 
 .. class:: FrameSummary(filename, lineno, name, lookup_line=True, locals=None, line=None)
 
@@ -455,32 +468,27 @@ The output for the example would look similar to this:
    *** print_tb:
      File "<doctest...>", line 10, in <module>
        lumberjack()
-       ^^^^^^^^^^^^
    *** print_exception:
    Traceback (most recent call last):
      File "<doctest...>", line 10, in <module>
        lumberjack()
-       ^^^^^^^^^^^^
      File "<doctest...>", line 4, in lumberjack
        bright_side_of_death()
-       ^^^^^^^^^^^^^^^^^^^^^^
    IndexError: tuple index out of range
    *** print_exc:
    Traceback (most recent call last):
      File "<doctest...>", line 10, in <module>
        lumberjack()
-       ^^^^^^^^^^^^
      File "<doctest...>", line 4, in lumberjack
        bright_side_of_death()
-       ^^^^^^^^^^^^^^^^^^^^^^
    IndexError: tuple index out of range
    *** format_exc, first and last line:
    Traceback (most recent call last):
    IndexError: tuple index out of range
    *** format_exception:
    ['Traceback (most recent call last):\n',
-    '  File "<doctest default[0]>", line 10, in <module>\n    lumberjack()\n    ^^^^^^^^^^^^\n',
-    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_death()\n    ^^^^^^^^^^^^^^^^^^^^^^\n',
+    '  File "<doctest default[0]>", line 10, in <module>\n    lumberjack()\n',
+    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_death()\n',
     '  File "<doctest default[0]>", line 7, in bright_side_of_death\n    return tuple()[0]\n           ~~~~~~~^^^\n',
     'IndexError: tuple index out of range\n']
    *** extract_tb:
@@ -488,8 +496,8 @@ The output for the example would look similar to this:
     <FrameSummary file <doctest...>, line 4 in lumberjack>,
     <FrameSummary file <doctest...>, line 7 in bright_side_of_death>]
    *** format_tb:
-   ['  File "<doctest default[0]>", line 10, in <module>\n    lumberjack()\n    ^^^^^^^^^^^^\n',
-    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_death()\n    ^^^^^^^^^^^^^^^^^^^^^^\n',
+   ['  File "<doctest default[0]>", line 10, in <module>\n    lumberjack()\n',
+    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_death()\n',
     '  File "<doctest default[0]>", line 7, in bright_side_of_death\n    return tuple()[0]\n           ~~~~~~~^^^\n']
    *** tb_lineno: 10
 

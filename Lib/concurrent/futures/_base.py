@@ -51,9 +51,7 @@ class CancelledError(Error):
     """The Future was cancelled."""
     pass
 
-class TimeoutError(Error):
-    """The operation exceeded the given deadline."""
-    pass
+TimeoutError = TimeoutError  # make local alias for the standard exception
 
 class InvalidStateError(Error):
     """The operation is not allowed in this state."""
@@ -285,13 +283,14 @@ def wait(fs, timeout=None, return_when=ALL_COMPLETED):
         A named 2-tuple of sets. The first set, named 'done', contains the
         futures that completed (is finished or cancelled) before the wait
         completed. The second set, named 'not_done', contains uncompleted
-        futures.
+        futures. Duplicate futures given to *fs* are removed and will be
+        returned only once.
     """
+    fs = set(fs)
     with _AcquireFutures(fs):
-        done = set(f for f in fs
-                   if f._state in [CANCELLED_AND_NOTIFIED, FINISHED])
-        not_done = set(fs) - done
-
+        done = {f for f in fs
+                   if f._state in [CANCELLED_AND_NOTIFIED, FINISHED]}
+        not_done = fs - done
         if (return_when == FIRST_COMPLETED) and done:
             return DoneAndNotDoneFutures(done, not_done)
         elif (return_when == FIRST_EXCEPTION) and done:
@@ -310,7 +309,7 @@ def wait(fs, timeout=None, return_when=ALL_COMPLETED):
             f._waiters.remove(waiter)
 
     done.update(waiter.finished_futures)
-    return DoneAndNotDoneFutures(done, set(fs) - done)
+    return DoneAndNotDoneFutures(done, fs - done)
 
 class Future(object):
     """Represents the result of an asynchronous computation."""
@@ -381,7 +380,7 @@ class Future(object):
             return self._state == RUNNING
 
     def done(self):
-        """Return True of the future was cancelled or finished executing."""
+        """Return True if the future was cancelled or finished executing."""
         with self._condition:
             return self._state in [CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED]
 

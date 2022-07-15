@@ -276,7 +276,7 @@ cause any runtime effects with ``from __future__ import annotations``.
 .. nonce: 0Ik1AM
 .. section: Core and Builtins
 
-:exc:`SyntaxError` exceptions raised by the intepreter will highlight the
+:exc:`SyntaxError` exceptions raised by the interpreter will highlight the
 full error range of the expression that consistutes the syntax error itself,
 instead of just where the problem is detected. Patch by Pablo Galindo.
 
@@ -547,7 +547,7 @@ enum or one of its members' value.
 .. nonce: ejjsyR
 .. section: Library
 
-For backwards compatbility with previous minor versions of Python, if
+For backwards compatibility with previous minor versions of Python, if
 :func:`typing.get_type_hints` receives no namespace dictionary arguments,
 :func:`typing.get_type_hints` will search through the global then local
 namespaces during evaluation of stringized type annotations (string forward
@@ -720,9 +720,9 @@ now raise ``TypeError`` during substitution.
 .. nonce: xT9QjF
 .. section: Library
 
-The :mod:`multiprocessing` ``Server`` class now explicitly catchs
+The :mod:`multiprocessing` ``Server`` class now explicitly catches
 :exc:`SystemExit` and closes the client connection in this case. It happens
-when the ``Server.serve_client()`` method reachs the end of file (EOF).
+when the ``Server.serve_client()`` method reaches the end of file (EOF).
 
 ..
 
@@ -941,7 +941,7 @@ result from ``entry_points()`` as deprecated.
 
 ..
 
-.. bpo: 47383
+.. gh: 47383
 .. date: 2021-04-08-19-32-26
 .. nonce: YI1hdL
 .. section: Library
@@ -1001,7 +1001,7 @@ some :mod:`dataclasses`.
 
 Fix :mod:`sqlite3` regression for zero-sized blobs with converters, where
 ``b""`` was returned instead of ``None``. The regression was introduced by
-GH-24723. Patch by Erlend E. Aasland.
+PR 24723. Patch by Erlend E. Aasland.
 
 ..
 
@@ -1132,7 +1132,7 @@ preferred "user", "home", and "prefix" (default) scheme names.
 .. section: Library
 
 Improve :meth:`sqlite3.Connection.backup` error handling. The error message
-for non-existant target database names is now ``unknown database <database
+for non-existent target database names is now ``unknown database <database
 name>`` instead of ``SQL logic error``. Patch by Erlend E. Aasland.
 
 ..
@@ -1673,7 +1673,8 @@ zips together prompts from the sidebar with lines from the selected text.
 .. nonce: 3EFl1H
 .. section: IDLE
 
-Fix reference leak in test_squeezer. Patch by Pablo Galindo
+Fix reference leak in test_sidebar and test_squeezer.
+Patches by Terry Jan Reedy and Pablo Galindo
 
 ..
 

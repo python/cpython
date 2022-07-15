@@ -1,8 +1,22 @@
+import _thread
 import asyncio
+import contextvars
+import re
+import signal
+import threading
 import unittest
 
 from unittest import mock
-from . import utils as test_utils
+from unittest.mock import patch
+from test.test_asyncio import utils as test_utils
+
+
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
+def interrupt_self():
+    _thread.interrupt_main()
 
 
 class TestPolicy(asyncio.AbstractEventLoopPolicy):
@@ -30,6 +44,9 @@ class BaseTest(unittest.TestCase):
     def new_loop(self):
         loop = asyncio.BaseEventLoop()
         loop._process_events = mock.Mock()
+        # Mock waking event loop from select
+        loop._write_to_self = mock.Mock()
+        loop._write_to_self.return_value = None
         loop._selector = mock.Mock()
         loop._selector.select.return_value = ()
         loop.shutdown_ag_run = False
@@ -180,3 +197,217 @@ class RunTests(BaseTest):
 
         self.assertIsNone(spinner.ag_frame)
         self.assertFalse(spinner.ag_running)
+
+    def test_asyncio_run_set_event_loop(self):
+        #See https://github.com/python/cpython/issues/93896
+
+        async def main():
+            await asyncio.sleep(0)
+            return 42
+
+        policy = asyncio.get_event_loop_policy()
+        policy.set_event_loop = mock.Mock()
+        asyncio.run(main())
+        self.assertTrue(policy.set_event_loop.called)
+
+
+class RunnerTests(BaseTest):
+
+    def test_non_debug(self):
+        with asyncio.Runner(debug=False) as runner:
+            self.assertFalse(runner.get_loop().get_debug())
+
+    def test_debug(self):
+        with asyncio.Runner(debug=True) as runner:
+            self.assertTrue(runner.get_loop().get_debug())
+
+    def test_custom_factory(self):
+        loop = mock.Mock()
+        with asyncio.Runner(loop_factory=lambda: loop) as runner:
+            self.assertIs(runner.get_loop(), loop)
+
+    def test_run(self):
+        async def f():
+            await asyncio.sleep(0)
+            return 'done'
+
+        with asyncio.Runner() as runner:
+            self.assertEqual('done', runner.run(f()))
+            loop = runner.get_loop()
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "Runner is closed"
+        ):
+            runner.get_loop()
+
+        self.assertTrue(loop.is_closed())
+
+    def test_run_non_coro(self):
+        with asyncio.Runner() as runner:
+            with self.assertRaisesRegex(
+                ValueError,
+                "a coroutine was expected"
+            ):
+                runner.run(123)
+
+    def test_run_future(self):
+        with asyncio.Runner() as runner:
+            with self.assertRaisesRegex(
+                ValueError,
+                "a coroutine was expected"
+            ):
+                fut = runner.get_loop().create_future()
+                runner.run(fut)
+
+    def test_explicit_close(self):
+        runner = asyncio.Runner()
+        loop = runner.get_loop()
+        runner.close()
+        with self.assertRaisesRegex(
+                RuntimeError,
+                "Runner is closed"
+        ):
+            runner.get_loop()
+
+        self.assertTrue(loop.is_closed())
+
+    def test_double_close(self):
+        runner = asyncio.Runner()
+        loop = runner.get_loop()
+
+        runner.close()
+        self.assertTrue(loop.is_closed())
+
+        # the second call is no-op
+        runner.close()
+        self.assertTrue(loop.is_closed())
+
+    def test_second_with_block_raises(self):
+        ret = []
+
+        async def f(arg):
+            ret.append(arg)
+
+        runner = asyncio.Runner()
+        with runner:
+            runner.run(f(1))
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "Runner is closed"
+        ):
+            with runner:
+                runner.run(f(2))
+
+        self.assertEqual([1], ret)
+
+    def test_run_keeps_context(self):
+        cvar = contextvars.ContextVar("cvar", default=-1)
+
+        async def f(val):
+            old = cvar.get()
+            await asyncio.sleep(0)
+            cvar.set(val)
+            return old
+
+        async def get_context():
+            return contextvars.copy_context()
+
+        with asyncio.Runner() as runner:
+            self.assertEqual(-1, runner.run(f(1)))
+            self.assertEqual(1, runner.run(f(2)))
+
+            self.assertEqual(2, runner.run(get_context()).get(cvar))
+
+    def test_recursive_run(self):
+        async def g():
+            pass
+
+        async def f():
+            runner.run(g())
+
+        with asyncio.Runner() as runner:
+            with self.assertWarnsRegex(
+                RuntimeWarning,
+                "coroutine .+ was never awaited",
+            ):
+                with self.assertRaisesRegex(
+                    RuntimeError,
+                    re.escape(
+                        "Runner.run() cannot be called from a running event loop"
+                    ),
+                ):
+                    runner.run(f())
+
+    def test_interrupt_call_soon(self):
+        # The only case when task is not suspended by waiting a future
+        # or another task
+        assert threading.current_thread() is threading.main_thread()
+
+        async def coro():
+            with self.assertRaises(asyncio.CancelledError):
+                while True:
+                    await asyncio.sleep(0)
+            raise asyncio.CancelledError()
+
+        with asyncio.Runner() as runner:
+            runner.get_loop().call_later(0.1, interrupt_self)
+            with self.assertRaises(KeyboardInterrupt):
+                runner.run(coro())
+
+    def test_interrupt_wait(self):
+        # interrupting when waiting a future cancels both future and main task
+        assert threading.current_thread() is threading.main_thread()
+
+        async def coro(fut):
+            with self.assertRaises(asyncio.CancelledError):
+                await fut
+            raise asyncio.CancelledError()
+
+        with asyncio.Runner() as runner:
+            fut = runner.get_loop().create_future()
+            runner.get_loop().call_later(0.1, interrupt_self)
+
+            with self.assertRaises(KeyboardInterrupt):
+                runner.run(coro(fut))
+
+            self.assertTrue(fut.cancelled())
+
+    def test_interrupt_cancelled_task(self):
+        # interrupting cancelled main task doesn't raise KeyboardInterrupt
+        assert threading.current_thread() is threading.main_thread()
+
+        async def subtask(task):
+            await asyncio.sleep(0)
+            task.cancel()
+            interrupt_self()
+
+        async def coro():
+            asyncio.create_task(subtask(asyncio.current_task()))
+            await asyncio.sleep(10)
+
+        with asyncio.Runner() as runner:
+            with self.assertRaises(asyncio.CancelledError):
+                runner.run(coro())
+
+    def test_signal_install_not_supported_ok(self):
+        # signal.signal() can throw if the "main thread" doesn't have signals enabled
+        assert threading.current_thread() is threading.main_thread()
+
+        async def coro():
+            pass
+
+        with asyncio.Runner() as runner:
+            with patch.object(
+                signal,
+                "signal",
+                side_effect=ValueError(
+                    "signal only works in main thread of the main interpreter"
+                )
+            ):
+                runner.run(coro())
+
+
+if __name__ == '__main__':
+    unittest.main()

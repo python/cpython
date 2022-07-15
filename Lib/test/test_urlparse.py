@@ -1079,7 +1079,8 @@ class UrlParseTestCase(unittest.TestCase):
         hex_chars = {'{:04X}'.format(ord(c)) for c in illegal_chars}
         denorm_chars = [
             c for c in map(chr, range(128, sys.maxunicode))
-            if (hex_chars & set(unicodedata.decomposition(c).split()))
+            if unicodedata.decomposition(c)
+            and (hex_chars & set(unicodedata.decomposition(c).split()))
             and c not in illegal_chars
         ]
         # Sanity check that we found at least one such character

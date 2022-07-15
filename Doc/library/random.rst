@@ -123,27 +123,26 @@ Functions for integers
 .. function:: randrange(stop)
               randrange(start, stop[, step])
 
-   Return a randomly selected element from ``range(start, stop, step)``.  This is
-   equivalent to ``choice(range(start, stop, step))``, but doesn't actually build a
-   range object.
+   Return a randomly selected element from ``range(start, stop, step)``.
 
-   The positional argument pattern matches that of :func:`range`.  Keyword arguments
-   should not be used because the function may use them in unexpected ways.
+   This is roughly equivalent to ``choice(range(start, stop, step))`` but
+   supports arbitrarily large ranges and is optimized for common cases.
+
+   The positional argument pattern matches the :func:`range` function.
+
+   Keyword arguments should not be used because they can interpreted
+   in unexpected ways. For example ``range(start=100)`` is interpreted
+   as ``range(0, 100, 1)``.
 
    .. versionchanged:: 3.2
       :meth:`randrange` is more sophisticated about producing equally distributed
       values.  Formerly it used a style like ``int(random()*n)`` which could produce
       slightly uneven distributions.
 
-   .. deprecated:: 3.10
-      The automatic conversion of non-integer types to equivalent integers is
-      deprecated.  Currently ``randrange(10.0)`` is losslessly converted to
-      ``randrange(10)``.  In the future, this will raise a :exc:`TypeError`.
-
-   .. deprecated:: 3.10
-      The exception raised for non-integral values such as ``randrange(10.5)``
-      or ``randrange('10')`` will be changed from :exc:`ValueError` to
-      :exc:`TypeError`.
+   .. versionchanged:: 3.12
+      Automatic conversion of non-integer types is no longer supported.
+      Calls such as ``randrange(10.0)`` and ``randrange(Fraction(10, 1))``
+      now raise a :exc:`TypeError`.
 
 .. function:: randint(a, b)
 
@@ -257,7 +256,29 @@ Functions for sequences
    .. versionchanged:: 3.11
 
       The *population* must be a sequence.  Automatic conversion of sets
-      to lists is longer supported.
+      to lists is no longer supported.
+
+Discrete distributions
+----------------------
+
+The following function generates a discrete distribution.
+
+.. function:: binomialvariate(n=1, p=0.5)
+
+   `Binomial distribution
+   <http://mathworld.wolfram.com/BinomialDistribution.html>`_.
+   Return the number of successes for *n* independent trials with the
+   probability of success in each trial being *p*:
+
+   Mathematically equivalent to::
+
+       sum(random() < p for i in range(n))
+
+   The number of trials *n* should be a non-negative integer.
+   The probability of success *p* should be between ``0.0 <= p <= 1.0``.
+   The result is an integer in the range ``0 <= X <= n``.
+
+   .. versionadded:: 3.12
 
 
 .. _real-valued-distributions:
@@ -320,7 +341,7 @@ be found in any statistics text.
                    math.gamma(alpha) * beta ** alpha
 
 
-.. function:: gauss(mu, sigma)
+.. function:: gauss(mu=0.0, sigma=1.0)
 
    Normal distribution, also called the Gaussian distribution.  *mu* is the mean,
    and *sigma* is the standard deviation.  This is slightly faster than
@@ -333,6 +354,9 @@ be found in any statistics text.
    number generator. 2) Put locks around all calls. 3) Use the
    slower, but thread-safe :func:`normalvariate` function instead.
 
+   .. versionchanged:: 3.11
+      *mu* and *sigma* now have default arguments.
+
 
 .. function:: lognormvariate(mu, sigma)
 
@@ -342,9 +366,12 @@ be found in any statistics text.
    zero.
 
 
-.. function:: normalvariate(mu, sigma)
+.. function:: normalvariate(mu=0.0, sigma=1.0)
 
    Normal distribution.  *mu* is the mean, and *sigma* is the standard deviation.
+
+   .. versionchanged:: 3.11
+      *mu* and *sigma* now have default arguments.
 
 
 .. function:: vonmisesvariate(mu, kappa)
@@ -447,16 +474,13 @@ Simulations::
    >>> # Deal 20 cards without replacement from a deck
    >>> # of 52 playing cards, and determine the proportion of cards
    >>> # with a ten-value:  ten, jack, queen, or king.
-   >>> dealt = sample(['tens', 'low cards'], counts=[16, 36], k=20)
-   >>> dealt.count('tens') / 20
+   >>> deal = sample(['tens', 'low cards'], counts=[16, 36], k=20)
+   >>> deal.count('tens') / 20
    0.15
 
    >>> # Estimate the probability of getting 5 or more heads from 7 spins
    >>> # of a biased coin that settles on heads 60% of the time.
-   >>> def trial():
-   ...     return choices('HT', cum_weights=(0.60, 1.00), k=7).count('H') >= 5
-   ...
-   >>> sum(trial() for i in range(10_000)) / 10_000
+   >>> sum(binomialvariate(n=7, p=0.6) >= 5 for i in range(10_000)) / 10_000
    0.4169
 
    >>> # Probability of the median of 5 samples being in middle two quartiles
@@ -508,7 +532,7 @@ between the effects of a drug versus a placebo::
 
 Simulation of arrival times and service deliveries for a multiserver queue::
 
-    from heapq import heappush, heappop
+    from heapq import heapify, heapreplace
     from random import expovariate, gauss
     from statistics import mean, quantiles
 
@@ -520,14 +544,15 @@ Simulation of arrival times and service deliveries for a multiserver queue::
     waits = []
     arrival_time = 0.0
     servers = [0.0] * num_servers  # time when each server becomes available
-    for i in range(100_000):
+    heapify(servers)
+    for i in range(1_000_000):
         arrival_time += expovariate(1.0 / average_arrival_interval)
-        next_server_available = heappop(servers)
+        next_server_available = servers[0]
         wait = max(0.0, next_server_available - arrival_time)
         waits.append(wait)
-        service_duration = gauss(average_service_time, stdev_service_time)
+        service_duration = max(0.0, gauss(average_service_time, stdev_service_time))
         service_completed = arrival_time + wait + service_duration
-        heappush(servers, service_completed)
+        heapreplace(servers, service_completed)
 
     print(f'Mean wait: {mean(waits):.1f}   Max wait: {max(waits):.1f}')
     print('Quartiles:', [round(q, 1) for q in quantiles(waits)])

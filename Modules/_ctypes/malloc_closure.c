@@ -1,3 +1,6 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 #include <Python.h>
 #include <ffi.h>
 #ifdef MS_WIN32
@@ -91,13 +94,13 @@ static void more_core(void)
 /* put the item back into the free list */
 void Py_ffi_closure_free(void *p)
 {
-#if HAVE_FFI_CLOSURE_ALLOC
-#if USING_APPLE_OS_LIBFFI
+#ifdef HAVE_FFI_CLOSURE_ALLOC
+#ifdef USING_APPLE_OS_LIBFFI
     if (__builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)) {
 #endif
         ffi_closure_free(p);
         return;
-#if USING_APPLE_OS_LIBFFI
+#ifdef USING_APPLE_OS_LIBFFI
     }
 #endif
 #endif
@@ -109,12 +112,12 @@ void Py_ffi_closure_free(void *p)
 /* return one item from the free list, allocating more if needed */
 void *Py_ffi_closure_alloc(size_t size, void** codeloc)
 {
-#if HAVE_FFI_CLOSURE_ALLOC
-#if USING_APPLE_OS_LIBFFI
+#ifdef HAVE_FFI_CLOSURE_ALLOC
+#ifdef USING_APPLE_OS_LIBFFI
     if (__builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)) {
 #endif
         return ffi_closure_alloc(size, codeloc);
-#if USING_APPLE_OS_LIBFFI
+#ifdef USING_APPLE_OS_LIBFFI
     }
 #endif
 #endif

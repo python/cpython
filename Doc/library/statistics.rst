@@ -35,6 +35,35 @@ and implementation-dependent.  If your input data consists of mixed types,
 you may be able to use :func:`map` to ensure a consistent result, for
 example: ``map(float, input_data)``.
 
+Some datasets use ``NaN`` (not a number) values to represent missing data.
+Since NaNs have unusual comparison semantics, they cause surprising or
+undefined behaviors in the statistics functions that sort data or that count
+occurrences.  The functions affected are ``median()``, ``median_low()``,
+``median_high()``, ``median_grouped()``, ``mode()``, ``multimode()``, and
+``quantiles()``.  The ``NaN`` values should be stripped before calling these
+functions::
+
+    >>> from statistics import median
+    >>> from math import isnan
+    >>> from itertools import filterfalse
+
+    >>> data = [20.7, float('NaN'),19.2, 18.3, float('NaN'), 14.4]
+    >>> sorted(data)  # This has surprising behavior
+    [20.7, nan, 14.4, 18.3, 19.2, nan]
+    >>> median(data)  # This result is unexpected
+    16.35
+
+    >>> sum(map(isnan, data))    # Number of missing values
+    2
+    >>> clean = list(filterfalse(isnan, data))  # Strip NaN values
+    >>> clean
+    [20.7, 19.2, 18.3, 14.4]
+    >>> sorted(clean)  # Sorting now works as expected
+    [14.4, 18.3, 19.2, 20.7]
+    >>> median(clean)       # This result is now well defined
+    18.75
+
+
 Averages and measures of central location
 -----------------------------------------
 
@@ -116,10 +145,11 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    .. note::
 
-      The mean is strongly affected by outliers and is not a robust estimator
-      for central location: the mean is not necessarily a typical example of
-      the data points.  For more robust measures of central location, see
-      :func:`median` and :func:`mode`.
+      The mean is strongly affected by `outliers
+      <https://en.wikipedia.org/wiki/Outlier>`_ and is not necessarily a
+      typical example of the data points. For a more robust, although less
+      efficient, measure of `central tendency
+      <https://en.wikipedia.org/wiki/Central_tendency>`_, see :func:`median`.
 
       The sample mean gives an unbiased estimate of the true population mean,
       so that when taken on average over all the possible samples,
@@ -643,7 +673,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    .. versionadded:: 3.10
 
-.. function:: linear_regression(x, y, /)
+.. function:: linear_regression(x, y, /, *, proportional=False)
 
    Return the slope and intercept of `simple linear regression
    <https://en.wikipedia.org/wiki/Simple_linear_regression>`_
@@ -677,8 +707,18 @@ However, for reading convenience, most of the examples show sorted sequences.
       >>> round(slope * 2019 + intercept)
       16
 
+   If *proportional* is true, the independent variable *x* and the
+   dependent variable *y* are assumed to be directly proportional.
+   The data is fit to a line passing through the origin.
+   Since the *intercept* will always be 0.0, the underlying linear
+   function simplifies to:
+
+      *y = slope \* x + noise*
+
    .. versionadded:: 3.10
 
+   .. versionchanged:: 3.11
+      Added support for *proportional*.
 
 Exceptions
 ----------
@@ -787,7 +827,7 @@ of applications in statistics.
        Compute the inverse cumulative distribution function, also known as the
        `quantile function <https://en.wikipedia.org/wiki/Quantile_function>`_
        or the `percent-point
-       <https://www.statisticshowto.datasciencecentral.com/inverse-distribution-function/>`_
+       <https://web.archive.org/web/20190203145224/https://www.statisticshowto.datasciencecentral.com/inverse-distribution-function/>`_
        function.  Mathematically, it is written ``x : P(X <= x) = p``.
 
        Finds the value *x* of the random variable *X* such that the
@@ -936,7 +976,7 @@ probability that the Python room will stay within its capacity limits?
 Normal distributions commonly arise in machine learning problems.
 
 Wikipedia has a `nice example of a Naive Bayesian Classifier
-<https://en.wikipedia.org/wiki/Naive_Bayes_classifier#Sex_classification>`_.
+<https://en.wikipedia.org/wiki/Naive_Bayes_classifier#Person_classification>`_.
 The challenge is to predict a person's gender from measurements of normally
 distributed features including height, weight, and foot size.
 

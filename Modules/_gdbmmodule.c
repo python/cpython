@@ -5,11 +5,12 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include "gdbm.h"
+
+#include <fcntl.h>
+#include <stdlib.h>               // free()
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #if defined(WIN32) && !defined(__CYGWIN__)
 #include "gdbmerrno.h"
@@ -450,7 +451,7 @@ The following code prints every key in the database db, without having
 to create a list in memory that contains them all:
 
       k = db.firstkey()
-      while k != None:
+      while k is not None:
           print(k)
           k = db.nextkey(k)
 [clinic start generated code]*/
@@ -458,7 +459,7 @@ to create a list in memory that contains them all:
 static PyObject *
 _gdbm_gdbm_nextkey_impl(gdbmobject *self, PyTypeObject *cls, const char *key,
                         Py_ssize_t key_length)
-/*[clinic end generated code: output=c81a69300ef41766 input=fcf6a51a96ce0172]*/
+/*[clinic end generated code: output=c81a69300ef41766 input=365e297bc0b3db48]*/
 {
     PyObject *v;
     datum dbm_key, nextkey;
@@ -543,8 +544,7 @@ gdbm__enter__(PyObject *self, PyObject *args)
 static PyObject *
 gdbm__exit__(PyObject *self, PyObject *args)
 {
-    _Py_IDENTIFIER(close);
-    return _PyObject_CallMethodIdNoArgs(self, &PyId_close);
+    return _gdbm_gdbm_close_impl((gdbmobject *)self);
 }
 
 static PyMethodDef gdbm_methods[] = {
@@ -590,7 +590,7 @@ static PyType_Spec gdbmtype_spec = {
 /*[clinic input]
 _gdbm.open as dbmopen
 
-    filename: unicode
+    filename: object
     flags: str="r"
     mode: int(py_default="0o666") = 0o666
     /
@@ -622,7 +622,7 @@ when the database has to be created.  It defaults to octal 0o666.
 static PyObject *
 dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
              int mode)
-/*[clinic end generated code: output=9527750f5df90764 input=812b7d74399ceb0e]*/
+/*[clinic end generated code: output=9527750f5df90764 input=bca6ec81dc49292c]*/
 {
     int iflags;
     _gdbm_state *state = get_gdbm_state(module);
@@ -672,10 +672,11 @@ dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
         }
     }
 
-    PyObject *filenamebytes = PyUnicode_EncodeFSDefault(filename);
-    if (filenamebytes == NULL) {
+    PyObject *filenamebytes;
+    if (!PyUnicode_FSConverter(filename, &filenamebytes)) {
         return NULL;
     }
+
     const char *name = PyBytes_AS_STRING(filenamebytes);
     if (strlen(name) != (size_t)PyBytes_GET_SIZE(filenamebytes)) {
         Py_DECREF(filenamebytes);

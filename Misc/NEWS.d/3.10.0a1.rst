@@ -178,7 +178,7 @@ Convert the :mod:`_sha256` extension module types to heap types.
 .. section: Core and Builtins
 
 Fix a possible stack overflow in the parser when parsing functions and
-classes with a huge ammount of arguments. Patch by Pablo Galindo.
+classes with a huge amount of arguments. Patch by Pablo Galindo.
 
 ..
 

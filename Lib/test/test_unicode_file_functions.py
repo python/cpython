@@ -5,7 +5,6 @@ import sys
 import unittest
 import warnings
 from unicodedata import normalize
-from test import support
 from test.support import os_helper
 
 
@@ -185,15 +184,5 @@ class UnicodeNFKDFileTests(UnicodeFileTests):
     normal_form = 'NFKD'
 
 
-def test_main():
-    support.run_unittest(
-        UnicodeFileTests,
-        UnicodeNFCFileTests,
-        UnicodeNFDFileTests,
-        UnicodeNFKCFileTests,
-        UnicodeNFKDFileTests,
-    )
-
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

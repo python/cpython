@@ -22,7 +22,6 @@ import re
 import shlex
 import string
 import sys
-import tempfile
 import textwrap
 import traceback
 import types
@@ -639,6 +638,10 @@ class CLanguage(Language):
         assert parameters
         assert isinstance(parameters[0].converter, self_converter)
         del parameters[0]
+        requires_defining_class = False
+        if parameters and isinstance(parameters[0].converter, defining_class_converter):
+            requires_defining_class = True
+            del parameters[0]
         converters = [p.converter for p in parameters]
 
         has_option_groups = parameters and (parameters[0].group or parameters[-1].group)
@@ -667,10 +670,6 @@ class CLanguage(Language):
                 if not p.is_optional():
                     min_pos = i
 
-        requires_defining_class = any(
-            isinstance(p.converter, defining_class_converter)
-            for p in parameters)
-
         meth_o = (len(parameters) == 1 and
               parameters[0].is_positional_only() and
               not converters[0].is_optional() and
@@ -694,7 +693,7 @@ class CLanguage(Language):
 
         methoddef_define = normalize_snippet("""
             #define {methoddef_name}    \\
-                {{"{name}", {methoddef_cast}{c_basename}, {methoddef_flags}, {c_basename}__doc__}},
+                {{"{name}", {methoddef_cast}{c_basename}{methoddef_cast_end}, {methoddef_flags}, {c_basename}__doc__}},
             """)
         if new_or_init and not f.docstring:
             docstring_prototype = docstring_definition = ''
@@ -773,24 +772,40 @@ class CLanguage(Language):
             return linear_format(output(), parser_declarations=declarations)
 
         if not parameters:
-            # no parameters, METH_NOARGS
+            if not requires_defining_class:
+                # no parameters, METH_NOARGS
+                flags = "METH_NOARGS"
 
-            flags = "METH_NOARGS"
+                parser_prototype = normalize_snippet("""
+                    static PyObject *
+                    {c_basename}({self_type}{self_name}, PyObject *Py_UNUSED(ignored))
+                    """)
+                parser_code = []
 
-            parser_prototype = normalize_snippet("""
-                static PyObject *
-                {c_basename}({self_type}{self_name}, PyObject *Py_UNUSED(ignored))
-                """)
-            parser_definition = parser_prototype
+            else:
+                assert not new_or_init
+
+                flags = "METH_METHOD|METH_FASTCALL|METH_KEYWORDS"
+
+                parser_prototype = parser_prototype_def_class
+                return_error = ('return NULL;' if default_return_converter
+                                else 'goto exit;')
+                parser_code = [normalize_snippet("""
+                    if (nargs) {{
+                        PyErr_SetString(PyExc_TypeError, "{name}() takes no arguments");
+                        %s
+                    }}
+                    """ % return_error, indent=4)]
 
             if default_return_converter:
-                parser_definition = parser_prototype + '\n' + normalize_snippet("""
-                    {{
-                        return {c_basename}_impl({impl_arguments});
-                    }}
-                    """)
+                parser_definition = '\n'.join([
+                    parser_prototype,
+                    '{{',
+                    *parser_code,
+                    '    return {c_basename}_impl({impl_arguments});',
+                    '}}'])
             else:
-                parser_definition = parser_body(parser_prototype)
+                parser_definition = parser_body(parser_prototype, *parser_code)
 
         elif meth_o:
             flags = "METH_O"
@@ -993,6 +1008,9 @@ class CLanguage(Language):
 
             add_label = None
             for i, p in enumerate(parameters):
+                if isinstance(p.converter, defining_class_converter):
+                    raise ValueError("defining_class should be the first "
+                                     "parameter (after self)")
                 displayname = p.get_displayname(i+1)
                 parsearg = p.converter.parse_arg(argname_fmt % i, displayname)
                 if parsearg is None:
@@ -1112,14 +1130,17 @@ class CLanguage(Language):
 
         if flags in ('METH_NOARGS', 'METH_O', 'METH_VARARGS'):
             methoddef_cast = "(PyCFunction)"
+            methoddef_cast_end = ""
         else:
-            methoddef_cast = "(PyCFunction)(void(*)(void))"
+            methoddef_cast = "_PyCFunction_CAST("
+            methoddef_cast_end = ")"
 
         if f.methoddef_flags:
             flags += '|' + f.methoddef_flags
 
         methoddef_define = methoddef_define.replace('{methoddef_flags}', flags)
         methoddef_define = methoddef_define.replace('{methoddef_cast}', methoddef_cast)
+        methoddef_define = methoddef_define.replace('{methoddef_cast_end}', methoddef_cast_end)
 
         methoddef_ifndef = ''
         conditional = self.cpp.condition()
@@ -1606,10 +1627,16 @@ class BlockParser:
         def is_stop_line(line):
             # make sure to recognize stop line even if it
             # doesn't end with EOL (it could be the very end of the file)
-            if not line.startswith(stop_line):
+            if line.startswith(stop_line):
+                remainder = line[len(stop_line):]
+                if remainder and not remainder.isspace():
+                    fail(f"Garbage after stop line: {remainder!r}")
+                return True
+            else:
+                # gh-92256: don't allow incorrectly formatted stop lines
+                if line.lstrip().startswith(stop_line):
+                    fail(f"Whitespace is not allowed before the stop line: {line!r}")
                 return False
-            remainder = line[len(stop_line):]
-            return (not remainder) or remainder.isspace()
 
         # consume body of program
         while self.input:
@@ -1691,7 +1718,7 @@ class BlockPrinter:
         dsl_name = block.dsl_name
         write = self.f.write
 
-        assert not ((dsl_name == None) ^ (output == None)), "you must specify dsl_name and output together, dsl_name " + repr(dsl_name)
+        assert not ((dsl_name is None) ^ (output is None)), "you must specify dsl_name and output together, dsl_name " + repr(dsl_name)
 
         if not dsl_name:
             write(input)
@@ -2179,9 +2206,7 @@ unsupported_special_methods = set("""
 __abs__
 __add__
 __and__
-__bytes__
 __call__
-__complex__
 __delitem__
 __divmod__
 __eq__
@@ -2822,8 +2847,6 @@ class bool_converter(CConverter):
 
     def parse_arg(self, argname, displayname):
         if self.format_unit == 'i':
-            # XXX PyFloat_Check can be removed after the end of the
-            # deprecation in _PyLong_FromNbIndexOrNbInt.
             return """
                 {paramname} = _PyLong_AsInt({argname});
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
@@ -3005,7 +3028,7 @@ class int_converter(CConverter):
             self.format_unit = 'C'
         elif accept != {int}:
             fail("int_converter: illegal 'accept' argument " + repr(accept))
-        if type != None:
+        if type is not None:
             self.type = type
 
     def parse_arg(self, argname, displayname):
@@ -3502,9 +3525,7 @@ class Py_UNICODE_converter(CConverter):
     def cleanup(self):
         if not self.length:
             return """\
-#if !USE_UNICODE_WCHAR_CACHE
 PyMem_Free((void *){name});
-#endif /* USE_UNICODE_WCHAR_CACHE */
 """.format(name=self.name)
 
     def parse_arg(self, argname, argnum):
@@ -3515,11 +3536,7 @@ PyMem_Free((void *){name});
                         _PyArg_BadArgument("{{name}}", {argnum}, "str", {argname});
                         goto exit;
                     }}}}
-                    #if USE_UNICODE_WCHAR_CACHE
-                    {paramname} = _PyUnicode_AsUnicode({argname});
-                    #else /* USE_UNICODE_WCHAR_CACHE */
                     {paramname} = PyUnicode_AsWideCharString({argname}, NULL);
-                    #endif /* USE_UNICODE_WCHAR_CACHE */
                     if ({paramname} == NULL) {{{{
                         goto exit;
                     }}}}
@@ -3530,11 +3547,7 @@ PyMem_Free((void *){name});
                         {paramname} = NULL;
                     }}}}
                     else if (PyUnicode_Check({argname})) {{{{
-                        #if USE_UNICODE_WCHAR_CACHE
-                        {paramname} = _PyUnicode_AsUnicode({argname});
-                        #else /* USE_UNICODE_WCHAR_CACHE */
                         {paramname} = PyUnicode_AsWideCharString({argname}, NULL);
-                        #endif /* USE_UNICODE_WCHAR_CACHE */
                         if ({paramname} == NULL) {{{{
                             goto exit;
                         }}}}
@@ -3669,8 +3682,7 @@ class self_converter(CConverter):
             self.show_in_signature = False
 
     # tp_new (METHOD_NEW) functions are of type newfunc:
-    #     typedef PyObject *(*newfunc)(struct _typeobject *, PyObject *, PyObject *);
-    # PyTypeObject is a typedef for struct _typeobject.
+    #     typedef PyObject *(*newfunc)(PyTypeObject *, PyObject *, PyObject *);
     #
     # tp_init (METHOD_INIT) functions are of type initproc:
     #     typedef int (*initproc)(PyObject *, PyObject *, PyObject *);
@@ -3737,10 +3749,16 @@ class self_converter(CConverter):
 
         if ((kind in (METHOD_NEW, METHOD_INIT)) and cls and cls.typedef):
             type_object = self.function.cls.type_object
+            prefix = (type_object[1:] + '.' if type_object[0] == '&' else
+                      type_object + '->')
             if kind == METHOD_NEW:
-                type_check = '({} == {})'.format(self.name, type_object)
+                type_check = ('({0} == {1} ||\n        '
+                              ' {0}->tp_init == {2}tp_init)'
+                             ).format(self.name, type_object, prefix)
             else:
-                type_check = 'Py_IS_TYPE({}, {})'.format(self.name, type_object)
+                type_check = ('(Py_IS_TYPE({0}, {1}) ||\n        '
+                              ' Py_TYPE({0})->tp_new == {2}tp_new)'
+                             ).format(self.name, type_object, prefix)
 
             line = '{} &&\n        '.format(type_check)
             template_dict['self_type_check'] = line
@@ -4102,7 +4120,7 @@ class DSLParser:
             self.block.output.append('\n')
             return
 
-        d = self.clinic.get_destination(destination)
+        d = self.clinic.get_destination_buffer(destination)
 
         if command_or_name == "everything":
             for name in list(fd):
@@ -4692,9 +4710,14 @@ class DSLParser:
 
         p = Parameter(parameter_name, kind, function=self.function, converter=converter, default=value, group=self.group)
 
-        if parameter_name in self.function.parameters:
+        names = [k.name for k in self.function.parameters.values()]
+        if parameter_name in names[1:]:
             fail("You can't have two parameters named " + repr(parameter_name) + "!")
-        self.function.parameters[parameter_name] = p
+        elif names and parameter_name == names[0] and c_name is None:
+            fail(f"Parameter '{parameter_name}' requires a custom C name")
+
+        key = f"{parameter_name}_as_{c_name}" if c_name else parameter_name
+        self.function.parameters[key] = p
 
     def parse_converter(self, annotation):
         if (hasattr(ast, 'Constant') and

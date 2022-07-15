@@ -1,7 +1,6 @@
-
-
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
@@ -504,9 +503,8 @@ _grouper_next(_grouperobject *igo)
 static PyObject *
 _grouper_reduce(_grouperobject *lz, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     if (((groupbyobject *)lz->parent)->currgrouper != lz) {
-        return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
+        return Py_BuildValue("N(())", _PyEval_GetBuiltin(&_Py_ID(iter)));
     }
     return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->parent, lz->tgtkey);
 }
@@ -1016,7 +1014,6 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
 {
     Py_ssize_t i;
     PyObject *it, *copyable, *copyfunc, *result;
-    _Py_IDENTIFIER(__copy__);
 
     if (n < 0) {
         PyErr_SetString(PyExc_ValueError, "n must be >= 0");
@@ -1033,7 +1030,7 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
         return NULL;
     }
 
-    if (_PyObject_LookupAttrId(it, &PyId___copy__, &copyfunc) < 0) {
+    if (_PyObject_LookupAttr(it, &_Py_ID(__copy__), &copyfunc) < 0) {
         Py_DECREF(it);
         Py_DECREF(result);
         return NULL;
@@ -1048,7 +1045,7 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
             Py_DECREF(result);
             return NULL;
         }
-        copyfunc = _PyObject_GetAttrId(copyable, &PyId___copy__);
+        copyfunc = PyObject_GetAttr(copyable, &_Py_ID(__copy__));
         if (copyfunc == NULL) {
             Py_DECREF(copyable);
             Py_DECREF(result);
@@ -1058,7 +1055,7 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
 
     PyTuple_SET_ITEM(result, 0, copyable);
     for (i = 1; i < n; i++) {
-        copyable = _PyObject_CallNoArg(copyfunc);
+        copyable = _PyObject_CallNoArgs(copyfunc);
         if (copyable == NULL) {
             Py_DECREF(copyfunc);
             Py_DECREF(result);
@@ -1180,9 +1177,8 @@ cycle_reduce(cycleobject *lz, PyObject *Py_UNUSED(ignored))
         if (it == NULL)
             return NULL;
         if (lz->index != 0) {
-            _Py_IDENTIFIER(__setstate__);
-            PyObject *res = _PyObject_CallMethodId(it, &PyId___setstate__,
-                                                   "n", lz->index);
+            PyObject *res = _PyObject_CallMethod(it, &_Py_ID(__setstate__),
+                                                 "n", lz->index);
             if (res == NULL) {
                 Py_DECREF(it);
                 return NULL;
@@ -1614,7 +1610,8 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_ssize_t numargs;
     isliceobject *lz;
 
-    if (type == &islice_type && !_PyArg_NoKeywords("islice", kwds))
+    if ((type == &islice_type || type->tp_init == islice_type.tp_init) &&
+        !_PyArg_NoKeywords("islice", kwds))
         return NULL;
 
     if (!PyArg_UnpackTuple(args, "islice", 2, 4, &seq, &a1, &a2, &a3))
@@ -2021,7 +2018,8 @@ chain_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *source;
 
-    if (type == &chain_type && !_PyArg_NoKeywords("chain", kwds))
+    if ((type == &chain_type || type->tp_init == chain_type.tp_init) &&
+        !_PyArg_NoKeywords("chain", kwds))
         return NULL;
 
     source = PyObject_GetIter(args);
@@ -2163,7 +2161,7 @@ static PyMethodDef chain_methods[] = {
      reduce_doc},
     {"__setstate__",    (PyCFunction)chain_setstate,    METH_O,
      setstate_doc},
-    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
 };
@@ -2926,14 +2924,14 @@ itertools.combinations_with_replacement.__new__
     r: Py_ssize_t
 Return successive r-length combinations of elements in the iterable allowing individual elements to have successive repeats.
 
-combinations_with_replacement('ABC', 2) --> AA AB AC BB BC CC"
+combinations_with_replacement('ABC', 2) --> ('A','A'), ('A','B'), ('A','C'), ('B','B'), ('B','C'), ('C','C')
 [clinic start generated code]*/
 
 static PyObject *
 itertools_combinations_with_replacement_impl(PyTypeObject *type,
                                              PyObject *iterable,
                                              Py_ssize_t r)
-/*[clinic end generated code: output=48b26856d4e659ca input=dc2a8c7ba785fad7]*/
+/*[clinic end generated code: output=48b26856d4e659ca input=1dc58e82a0878fdc]*/
 {
     cwrobject *co;
     Py_ssize_t n;
@@ -4544,7 +4542,6 @@ static PyTypeObject ziplongest_type;
 static PyObject *
 zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    _Py_IDENTIFIER(fillvalue);
     ziplongestobject *lz;
     Py_ssize_t i;
     PyObject *ittuple;  /* tuple of iterators */
@@ -4555,7 +4552,7 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (kwds != NULL && PyDict_CheckExact(kwds) && PyDict_GET_SIZE(kwds) > 0) {
         fillvalue = NULL;
         if (PyDict_GET_SIZE(kwds) == 1) {
-            fillvalue = _PyDict_GetItemIdWithError(kwds, &PyId_fillvalue);
+            fillvalue = PyDict_GetItemWithError(kwds, &_Py_ID(fillvalue));
         }
         if (fillvalue == NULL) {
             if (!PyErr_Occurred()) {

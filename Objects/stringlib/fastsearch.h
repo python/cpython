@@ -39,7 +39,7 @@
 #define STRINGLIB_BLOOM(mask, ch)     \
     ((mask &  (1UL << ((ch) & (STRINGLIB_BLOOM_WIDTH -1)))))
 
-#if STRINGLIB_SIZEOF_CHAR == 1
+#ifdef STRINGLIB_FAST_MEMCHR
 #  define MEMCHR_CUT_OFF 15
 #else
 #  define MEMCHR_CUT_OFF 40
@@ -53,8 +53,8 @@ STRINGLIB(find_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
     p = s;
     e = s + n;
     if (n > MEMCHR_CUT_OFF) {
-#if STRINGLIB_SIZEOF_CHAR == 1
-        p = memchr(s, ch, n);
+#ifdef STRINGLIB_FAST_MEMCHR
+        p = STRINGLIB_FAST_MEMCHR(s, ch, n);
         if (p != NULL)
             return (p - s);
         return -1;
@@ -102,16 +102,26 @@ STRINGLIB(find_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
     return -1;
 }
 
+#undef MEMCHR_CUT_OFF
+
+#if STRINGLIB_SIZEOF_CHAR == 1
+#  define MEMRCHR_CUT_OFF 15
+#else
+#  define MEMRCHR_CUT_OFF 40
+#endif
+
+
 Py_LOCAL_INLINE(Py_ssize_t)
 STRINGLIB(rfind_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
 {
     const STRINGLIB_CHAR *p;
 #ifdef HAVE_MEMRCHR
-    /* memrchr() is a GNU extension, available since glibc 2.1.91.
-       it doesn't seem as optimized as memchr(), but is still quite
-       faster than our hand-written loop below */
+    /* memrchr() is a GNU extension, available since glibc 2.1.91.  it
+       doesn't seem as optimized as memchr(), but is still quite
+       faster than our hand-written loop below. There is no wmemrchr
+       for 4-byte chars. */
 
-    if (n > MEMCHR_CUT_OFF) {
+    if (n > MEMRCHR_CUT_OFF) {
 #if STRINGLIB_SIZEOF_CHAR == 1
         p = memrchr(s, ch, n);
         if (p != NULL)
@@ -139,11 +149,11 @@ STRINGLIB(rfind_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
                 if (*p == ch)
                     return n;
                 /* False positive */
-                if (n1 - n > MEMCHR_CUT_OFF)
+                if (n1 - n > MEMRCHR_CUT_OFF)
                     continue;
-                if (n <= MEMCHR_CUT_OFF)
+                if (n <= MEMRCHR_CUT_OFF)
                     break;
-                s1 = p - MEMCHR_CUT_OFF;
+                s1 = p - MEMRCHR_CUT_OFF;
                 while (p > s1) {
                     p--;
                     if (*p == ch)
@@ -151,7 +161,7 @@ STRINGLIB(rfind_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
                 }
                 n = p - s;
             }
-            while (n > MEMCHR_CUT_OFF);
+            while (n > MEMRCHR_CUT_OFF);
         }
 #endif
     }
@@ -165,7 +175,7 @@ STRINGLIB(rfind_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
     return -1;
 }
 
-#undef MEMCHR_CUT_OFF
+#undef MEMRCHR_CUT_OFF
 
 /* Change to a 1 to see logging comments walk through the algorithm. */
 #if 0 && STRINGLIB_SIZEOF_CHAR == 1
@@ -345,7 +355,7 @@ STRINGLIB(_preprocess)(const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
     }
     // Fill up a compressed Boyer-Moore "Bad Character" table
     Py_ssize_t not_found_shift = Py_MIN(len_needle, MAX_SHIFT);
-    for (Py_ssize_t i = 0; i < TABLE_SIZE; i++) {
+    for (Py_ssize_t i = 0; i < (Py_ssize_t)TABLE_SIZE; i++) {
         p->table[i] = Py_SAFE_DOWNCAST(not_found_shift,
                                        Py_ssize_t, SHIFT_TYPE);
     }

@@ -3,6 +3,7 @@
 from test.support import run_with_locale, cpython_only
 import collections.abc
 from collections import namedtuple
+import copy
 import gc
 import inspect
 import pickle
@@ -12,6 +13,9 @@ import types
 import unittest.mock
 import weakref
 import typing
+
+
+T = typing.TypeVar("T")
 
 class Example:
     pass
@@ -520,18 +524,16 @@ class TypesTests(unittest.TestCase):
         self.assertRaises(TypeError, 3.0.__format__, None)
         self.assertRaises(TypeError, 3.0.__format__, 0)
 
-        # other format specifiers shouldn't work on floats,
-        #  in particular int specifiers
-        for format_spec in ([chr(x) for x in range(ord('a'), ord('z')+1)] +
-                            [chr(x) for x in range(ord('A'), ord('Z')+1)]):
-            if not format_spec in 'eEfFgGn%':
-                self.assertRaises(ValueError, format, 0.0, format_spec)
-                self.assertRaises(ValueError, format, 1.0, format_spec)
-                self.assertRaises(ValueError, format, -1.0, format_spec)
-                self.assertRaises(ValueError, format, 1e100, format_spec)
-                self.assertRaises(ValueError, format, -1e100, format_spec)
-                self.assertRaises(ValueError, format, 1e-100, format_spec)
-                self.assertRaises(ValueError, format, -1e-100, format_spec)
+        # confirm format options expected to fail on floats, such as integer
+        # presentation types
+        for format_spec in 'sbcdoxX':
+            self.assertRaises(ValueError, format, 0.0, format_spec)
+            self.assertRaises(ValueError, format, 1.0, format_spec)
+            self.assertRaises(ValueError, format, -1.0, format_spec)
+            self.assertRaises(ValueError, format, 1e100, format_spec)
+            self.assertRaises(ValueError, format, -1e100, format_spec)
+            self.assertRaises(ValueError, format, 1e-100, format_spec)
+            self.assertRaises(ValueError, format, -1e-100, format_spec)
 
         # Alternate float formatting
         test(1.0, '.0e', '1e+00')
@@ -595,6 +597,12 @@ class TypesTests(unittest.TestCase):
         self.assertIsInstance(object.__lt__, types.WrapperDescriptorType)
         self.assertIsInstance(int.__lt__, types.WrapperDescriptorType)
 
+    def test_dunder_get_signature(self):
+        sig = inspect.signature(object.__init__.__get__)
+        self.assertEqual(list(sig.parameters), ["instance", "owner"])
+        # gh-93021: Second parameter is optional
+        self.assertIs(sig.parameters["owner"].default, None)
+
     def test_method_wrapper_types(self):
         self.assertIsInstance(object().__init__, types.MethodWrapperType)
         self.assertIsInstance(object().__str__, types.MethodWrapperType)
@@ -619,6 +627,14 @@ class TypesTests(unittest.TestCase):
 
     def test_none_type(self):
         self.assertIsInstance(None, types.NoneType)
+
+    def test_traceback_and_frame_types(self):
+        try:
+            raise OSError
+        except OSError as e:
+            exc = e
+        self.assertIsInstance(exc.__traceback__, types.TracebackType)
+        self.assertIsInstance(exc.__traceback__.tb_frame, types.FrameType)
 
 
 class UnionTests(unittest.TestCase):
@@ -691,22 +707,62 @@ class UnionTests(unittest.TestCase):
         self.assertEqual(hash(int | str), hash(str | int))
         self.assertEqual(hash(int | str), hash(typing.Union[int, str]))
 
-    def test_instancecheck(self):
-        x = int | str
-        self.assertIsInstance(1, x)
-        self.assertIsInstance(True, x)
-        self.assertIsInstance('a', x)
-        self.assertNotIsInstance(None, x)
-        self.assertTrue(issubclass(int, x))
-        self.assertTrue(issubclass(bool, x))
-        self.assertTrue(issubclass(str, x))
-        self.assertFalse(issubclass(type(None), x))
-        x = int | None
-        self.assertIsInstance(None, x)
-        self.assertTrue(issubclass(type(None), x))
-        x = int | collections.abc.Mapping
-        self.assertIsInstance({}, x)
-        self.assertTrue(issubclass(dict, x))
+    def test_instancecheck_and_subclasscheck(self):
+        for x in (int | str, typing.Union[int, str]):
+            with self.subTest(x=x):
+                self.assertIsInstance(1, x)
+                self.assertIsInstance(True, x)
+                self.assertIsInstance('a', x)
+                self.assertNotIsInstance(None, x)
+                self.assertTrue(issubclass(int, x))
+                self.assertTrue(issubclass(bool, x))
+                self.assertTrue(issubclass(str, x))
+                self.assertFalse(issubclass(type(None), x))
+
+        for x in (int | None, typing.Union[int, None]):
+            with self.subTest(x=x):
+                self.assertIsInstance(None, x)
+                self.assertTrue(issubclass(type(None), x))
+
+        for x in (
+            int | collections.abc.Mapping,
+            typing.Union[int, collections.abc.Mapping],
+        ):
+            with self.subTest(x=x):
+                self.assertIsInstance({}, x)
+                self.assertNotIsInstance((), x)
+                self.assertTrue(issubclass(dict, x))
+                self.assertFalse(issubclass(list, x))
+
+    def test_instancecheck_and_subclasscheck_order(self):
+        T = typing.TypeVar('T')
+
+        will_resolve = (
+            int | T,
+            typing.Union[int, T],
+        )
+        for x in will_resolve:
+            with self.subTest(x=x):
+                self.assertIsInstance(1, x)
+                self.assertTrue(issubclass(int, x))
+
+        wont_resolve = (
+            T | int,
+            typing.Union[T, int],
+        )
+        for x in wont_resolve:
+            with self.subTest(x=x):
+                with self.assertRaises(TypeError):
+                    issubclass(int, x)
+                with self.assertRaises(TypeError):
+                    isinstance(1, x)
+
+        for x in (*will_resolve, *wont_resolve):
+            with self.subTest(x=x):
+                with self.assertRaises(TypeError):
+                    issubclass(object, x)
+                with self.assertRaises(TypeError):
+                    isinstance(object(), x)
 
     def test_bad_instancecheck(self):
         class BadMeta(type):
@@ -772,11 +828,58 @@ class UnionTests(unittest.TestCase):
         self.assertEqual((list[T] | list[S])[int, T], list[int] | list[T])
         self.assertEqual((list[T] | list[S])[int, int], list[int])
 
+    def test_union_parameter_substitution(self):
+        def eq(actual, expected, typed=True):
+            self.assertEqual(actual, expected)
+            if typed:
+                self.assertIs(type(actual), type(expected))
+
+        T = typing.TypeVar('T')
+        S = typing.TypeVar('S')
+        NT = typing.NewType('NT', str)
+        x = int | T | bytes
+
+        eq(x[str], int | str | bytes, typed=False)
+        eq(x[list[int]], int | list[int] | bytes, typed=False)
+        eq(x[typing.List], int | typing.List | bytes)
+        eq(x[typing.List[int]], int | typing.List[int] | bytes)
+        eq(x[typing.Hashable], int | typing.Hashable | bytes)
+        eq(x[collections.abc.Hashable],
+           int | collections.abc.Hashable | bytes, typed=False)
+        eq(x[typing.Callable[[int], str]],
+           int | typing.Callable[[int], str] | bytes)
+        eq(x[collections.abc.Callable[[int], str]],
+           int | collections.abc.Callable[[int], str] | bytes, typed=False)
+        eq(x[typing.Tuple[int, str]], int | typing.Tuple[int, str] | bytes)
+        eq(x[typing.Literal['none']], int | typing.Literal['none'] | bytes)
+        eq(x[str | list], int | str | list | bytes, typed=False)
+        eq(x[typing.Union[str, list]], typing.Union[int, str, list, bytes])
+        eq(x[str | int], int | str | bytes, typed=False)
+        eq(x[typing.Union[str, int]], typing.Union[int, str, bytes])
+        eq(x[NT], int | NT | bytes)
+        eq(x[S], int | S | bytes)
+
+    def test_union_pickle(self):
+        orig = list[T] | int
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            s = pickle.dumps(orig, proto)
+            loaded = pickle.loads(s)
+            self.assertEqual(loaded, orig)
+            self.assertEqual(loaded.__args__, orig.__args__)
+            self.assertEqual(loaded.__parameters__, orig.__parameters__)
+
+    def test_union_copy(self):
+        orig = list[T] | int
+        for copied in (copy.copy(orig), copy.deepcopy(orig)):
+            self.assertEqual(copied, orig)
+            self.assertEqual(copied.__args__, orig.__args__)
+            self.assertEqual(copied.__parameters__, orig.__parameters__)
+
     def test_union_parameter_substitution_errors(self):
         T = typing.TypeVar("T")
         x = int | T
         with self.assertRaises(TypeError):
-            x[42]
+            x[int, str]
 
     def test_or_type_operator_with_forward(self):
         T = typing.TypeVar('T')
@@ -829,7 +932,6 @@ class UnionTests(unittest.TestCase):
         assert repr(int | None) == "int | None"
         assert repr(int | type(None)) == "int | None"
         assert repr(int | typing.GenericAlias(list, int)) == "int | list[int]"
-        assert repr(int | typing.TypeVar('T')) == "int | ~T"
 
     def test_or_type_operator_with_genericalias(self):
         a = list[int]
@@ -855,9 +957,9 @@ class UnionTests(unittest.TestCase):
         with self.assertRaises(ZeroDivisionError):
             list[int] | list[bt]
 
-        union_ga = (int | list[str], int | collections.abc.Callable[..., str],
-                    int | d)
-        # Raise error when isinstance(type, type | genericalias)
+        union_ga = (list[str] | int, collections.abc.Callable[..., str] | int,
+                    d | int)
+        # Raise error when isinstance(type, genericalias | type)
         for type_ in union_ga:
             with self.subTest(f"check isinstance/issubclass is invalid for {type_}"):
                 with self.assertRaises(TypeError):
@@ -874,9 +976,9 @@ class UnionTests(unittest.TestCase):
         TypeVar = BadMeta('TypeVar', (), {})
         _SpecialForm = BadMeta('_SpecialForm', (), {})
         # Crashes in Issue44483
-        with self.assertRaises(ZeroDivisionError):
+        with self.assertRaises((TypeError, ZeroDivisionError)):
             str | TypeVar()
-        with self.assertRaises(ZeroDivisionError):
+        with self.assertRaises((TypeError, ZeroDivisionError)):
             str | _SpecialForm()
 
     @cpython_only
@@ -1101,6 +1203,16 @@ class MappingProxyTests(unittest.TestCase):
         self.assertDictEqual(mapping, {'a': 0, 'b': 1, 'c': 2})
         self.assertDictEqual(other, {'c': 3, 'p': 0})
 
+    def test_hash(self):
+        class HashableDict(dict):
+            def __hash__(self):
+                return 3844817361
+        view = self.mappingproxy({'a': 1, 'b': 2})
+        self.assertRaises(TypeError, hash, view)
+        mapping = HashableDict({'a': 1, 'b': 2})
+        view = self.mappingproxy(mapping)
+        self.assertEqual(hash(view), hash(mapping))
+
 
 class ClassCreationTests(unittest.TestCase):
 
@@ -1185,6 +1297,17 @@ class ClassCreationTests(unittest.TestCase):
         self.assertEqual(D.__bases__, (A,))
         self.assertEqual(D.__orig_bases__, (c,))
         self.assertEqual(D.__mro__, (D, A, object))
+
+    def test_new_class_with_mro_entry_genericalias(self):
+        L1 = types.new_class('L1', (typing.List[int],), {})
+        self.assertEqual(L1.__bases__, (list, typing.Generic))
+        self.assertEqual(L1.__orig_bases__, (typing.List[int],))
+        self.assertEqual(L1.__mro__, (L1, list, typing.Generic, object))
+
+        L2 = types.new_class('L2', (list[int],), {})
+        self.assertEqual(L2.__bases__, (list,))
+        self.assertEqual(L2.__orig_bases__, (list[int],))
+        self.assertEqual(L2.__mro__, (L2, list, object))
 
     def test_new_class_with_mro_entry_none(self):
         class A: pass
@@ -1300,6 +1423,11 @@ class ClassCreationTests(unittest.TestCase):
         t = (A, C, B)
         for bases in [x, y, z, t]:
             self.assertIs(types.resolve_bases(bases), bases)
+
+    def test_resolve_bases_with_mro_entry(self):
+        self.assertEqual(types.resolve_bases((typing.List[int],)),
+                         (list, typing.Generic))
+        self.assertEqual(types.resolve_bases((list[int],)), (list,))
 
     def test_metaclass_derivation(self):
         # issue1294232: correct metaclass calculation
