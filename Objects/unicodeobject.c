@@ -52,6 +52,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_pathconfig.h"    // _Py_DumpPathConfig()
 #include "pycore_pylifecycle.h"   // _Py_SetFileSystemEncoding()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_runtime_init.h"  // _PyUnicode_InitStaticStrings()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "stringlib/eq.h"         // unicode_eq()
@@ -14575,6 +14576,14 @@ _PyUnicode_InitGlobalObjects(PyInterpreterState *interp)
     if (!_Py_IsMainInterpreter(interp)) {
         return _PyStatus_OK();
     }
+
+    /* Intern statically allocated string identifiers and deepfreeze strings.
+     * This must be done before any module initialization so that statically
+     * allocated string identifiers are used instead of heap allocated strings.
+     * Deepfreeze uses the interned identifiers if present to save space
+     * else generates them and they are interned to speed up dict lookups.
+    */
+    _PyUnicode_InitStaticStrings();
 
 #ifdef Py_DEBUG
     assert(_PyUnicode_CheckConsistency(&_Py_STR(empty), 1));

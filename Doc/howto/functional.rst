@@ -315,9 +315,15 @@ line of a file like this::
 Sets can take their contents from an iterable and let you iterate over the set's
 elements::
 
-    S = {2, 3, 5, 7, 11, 13}
-    for i in S:
-        print(i)
+    >>> S = {2, 3, 5, 7, 11, 13}
+    >>> for i in S:
+    ...     print(i)
+    2
+    3
+    5
+    7
+    11
+    13
 
 
 
@@ -335,18 +341,18 @@ List comprehensions and generator expressions (short form: "listcomps" and
 functional programming language Haskell (https://www.haskell.org/).  You can strip
 all the whitespace from a stream of strings with the following code::
 
-    line_list = ['  line 1\n', 'line 2  \n', ...]
+    >>> line_list = ['  line 1\n', 'line 2  \n', ' \n', '']
 
-    # Generator expression -- returns iterator
-    stripped_iter = (line.strip() for line in line_list)
+    >>> # Generator expression -- returns iterator
+    >>> stripped_iter = (line.strip() for line in line_list)
 
-    # List comprehension -- returns list
-    stripped_list = [line.strip() for line in line_list]
+    >>> # List comprehension -- returns list
+    >>> stripped_list = [line.strip() for line in line_list]
 
 You can select only certain elements by adding an ``"if"`` condition::
 
-    stripped_list = [line.strip() for line in line_list
-                     if line != ""]
+    >>> stripped_list = [line.strip() for line in line_list
+    ...                  if line != ""]
 
 With a list comprehension, you get back a Python list; ``stripped_list`` is a
 list containing the resulting lines, not an iterator.  Generator expressions
@@ -363,7 +369,8 @@ have the form::
                  if condition1
                  for expr2 in sequence2
                  if condition2
-                 for expr3 in sequence3 ...
+                 for expr3 in sequence3
+                 ...
                  if condition3
                  for exprN in sequenceN
                  if conditionN )
@@ -734,7 +741,7 @@ further because you risk skipping a discarded element.
 The itertools module
 ====================
 
-The :mod:`itertools` module contains a number of commonly-used iterators as well
+The :mod:`itertools` module contains a number of commonly used iterators as well
 as functions for combining several iterators.  This section will introduce the
 module's contents by showing small examples.
 
