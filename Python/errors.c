@@ -1229,8 +1229,8 @@ _PyErr_InitTypes(PyInterpreterState *interp)
     }
 
     if (UnraisableHookArgsType.tp_name == NULL) {
-        if (PyStructSequence_InitType2(&UnraisableHookArgsType,
-                                       &UnraisableHookArgs_desc) < 0) {
+        if (_PyStructSequence_InitBuiltin(&UnraisableHookArgsType,
+                                          &UnraisableHookArgs_desc) < 0) {
             return _PyStatus_ERR("failed to initialize UnraisableHookArgs type");
         }
     }
