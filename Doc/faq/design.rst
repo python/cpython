@@ -313,7 +313,7 @@ you're too lazy to define a function.
 
 Functions are already first class objects in Python, and can be declared in a
 local scope.  Therefore the only advantage of using a lambda instead of a
-locally-defined function is that you don't need to invent a name for the
+locally defined function is that you don't need to invent a name for the
 function -- but that's just a local variable to which the function object (which
 is exactly the same type of object that a lambda expression yields) is assigned!
 
@@ -324,8 +324,7 @@ Can Python be compiled to machine code, C or some other language?
 `Cython <http://cython.org/>`_ compiles a modified version of Python with
 optional annotations into C extensions.  `Nuitka <http://www.nuitka.net/>`_ is
 an up-and-coming compiler of Python into C++ code, aiming to support the full
-Python language. For compiling to Java you can consider
-`VOC <https://voc.readthedocs.io>`_.
+Python language.
 
 
 How does Python manage memory?

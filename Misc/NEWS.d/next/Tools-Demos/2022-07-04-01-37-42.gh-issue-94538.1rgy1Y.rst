@@ -1,0 +1,2 @@
+Fix Argument Clinic output to custom file destinations. Patch by Erlend E.
+Aasland.

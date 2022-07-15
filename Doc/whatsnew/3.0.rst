@@ -663,7 +663,7 @@ Some other changes to standard library modules, not covered by
   :data:`string.ascii_letters` etc. instead.  (The reason for the
   removal is that :data:`string.letters` and friends had
   locale-specific behavior, which is a bad idea for such
-  attractively-named global "constants".)
+  attractively named global "constants".)
 
 * Renamed module :mod:`__builtin__` to :mod:`builtins` (removing the
   underscores, adding an 's').  The :data:`__builtins__` variable
