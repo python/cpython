@@ -208,10 +208,6 @@ def has_tls_version(version):
     :param version: TLS version name or ssl.TLSVersion member
     :return: bool
     """
-    if version == "SSLv2":
-        # never supported and not even in TLSVersion enum
-        return False
-
     if isinstance(version, str):
         version = ssl.TLSVersion.__members__[version]
 
@@ -610,6 +606,8 @@ class BasicSocketTests(unittest.TestCase):
                 )
 
         for protocol in protocols:
+            if not has_tls_protocol(protocol):
+                continue
             with self.subTest(protocol=protocol):
                 with self.assertWarns(DeprecationWarning) as cm:
                     ssl.SSLContext(protocol)
@@ -619,6 +617,8 @@ class BasicSocketTests(unittest.TestCase):
                 )
 
         for version in versions:
+            if not has_tls_version(version):
+                continue
             with self.subTest(version=version):
                 ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
                 with self.assertWarns(DeprecationWarning) as cm:
@@ -628,36 +628,6 @@ class BasicSocketTests(unittest.TestCase):
                     f'ssl.{version_text} is deprecated',
                     str(cm.warning)
                 )
-
-    @ignore_deprecation
-    def test_errors_sslwrap(self):
-        sock = socket.socket()
-        self.assertRaisesRegex(ValueError,
-                        "certfile must be specified",
-                        ssl.wrap_socket, sock, keyfile=CERTFILE)
-        self.assertRaisesRegex(ValueError,
-                        "certfile must be specified for server-side operations",
-                        ssl.wrap_socket, sock, server_side=True)
-        self.assertRaisesRegex(ValueError,
-                        "certfile must be specified for server-side operations",
-                         ssl.wrap_socket, sock, server_side=True, certfile="")
-        with ssl.wrap_socket(sock, server_side=True, certfile=CERTFILE) as s:
-            self.assertRaisesRegex(ValueError, "can't connect in server-side mode",
-                                     s.connect, (HOST, 8080))
-        with self.assertRaises(OSError) as cm:
-            with socket.socket() as sock:
-                ssl.wrap_socket(sock, certfile=NONEXISTINGCERT)
-        self.assertEqual(cm.exception.errno, errno.ENOENT)
-        with self.assertRaises(OSError) as cm:
-            with socket.socket() as sock:
-                ssl.wrap_socket(sock,
-                    certfile=CERTFILE, keyfile=NONEXISTINGCERT)
-        self.assertEqual(cm.exception.errno, errno.ENOENT)
-        with self.assertRaises(OSError) as cm:
-            with socket.socket() as sock:
-                ssl.wrap_socket(sock,
-                    certfile=NONEXISTINGCERT, keyfile=NONEXISTINGCERT)
-        self.assertEqual(cm.exception.errno, errno.ENOENT)
 
     def bad_cert_test(self, certfile):
         """Check that trying to use the given client certificate fails"""
@@ -934,9 +904,10 @@ class ContextTests(unittest.TestCase):
 
     def test_constructor(self):
         for protocol in PROTOCOLS:
-            with warnings_helper.check_warnings():
-                ctx = ssl.SSLContext(protocol)
-            self.assertEqual(ctx.protocol, protocol)
+            if has_tls_protocol(protocol):
+                with warnings_helper.check_warnings():
+                    ctx = ssl.SSLContext(protocol)
+                self.assertEqual(ctx.protocol, protocol)
         with warnings_helper.check_warnings():
             ctx = ssl.SSLContext()
         self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLS)
@@ -1081,7 +1052,7 @@ class ContextTests(unittest.TestCase):
         ctx.maximum_version = ssl.TLSVersion.MINIMUM_SUPPORTED
         self.assertIn(
             ctx.maximum_version,
-            {ssl.TLSVersion.TLSv1, ssl.TLSVersion.SSLv3}
+            {ssl.TLSVersion.TLSv1, ssl.TLSVersion.TLSv1_1, ssl.TLSVersion.SSLv3}
         )
 
         ctx.minimum_version = ssl.TLSVersion.MAXIMUM_SUPPORTED
@@ -1093,19 +1064,19 @@ class ContextTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             ctx.minimum_version = 42
 
-        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1_1)
+        if has_tls_protocol(ssl.PROTOCOL_TLSv1_1):
+            ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1_1)
 
-        self.assertIn(
-            ctx.minimum_version, minimum_range
-        )
-        self.assertEqual(
-            ctx.maximum_version, ssl.TLSVersion.MAXIMUM_SUPPORTED
-        )
-        with self.assertRaises(ValueError):
-            ctx.minimum_version = ssl.TLSVersion.MINIMUM_SUPPORTED
-        with self.assertRaises(ValueError):
-            ctx.maximum_version = ssl.TLSVersion.TLSv1
-
+            self.assertIn(
+                ctx.minimum_version, minimum_range
+            )
+            self.assertEqual(
+                ctx.maximum_version, ssl.TLSVersion.MAXIMUM_SUPPORTED
+            )
+            with self.assertRaises(ValueError):
+                ctx.minimum_version = ssl.TLSVersion.MINIMUM_SUPPORTED
+            with self.assertRaises(ValueError):
+                ctx.maximum_version = ssl.TLSVersion.TLSv1
 
     @unittest.skipUnless(
         hasattr(ssl.SSLContext, 'security_level'),
@@ -1502,8 +1473,6 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
         self._assert_context_options(ctx)
 
-
-
     def test__create_stdlib_context(self):
         ctx = ssl._create_stdlib_context()
         self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLS_CLIENT)
@@ -1511,11 +1480,12 @@ class ContextTests(unittest.TestCase):
         self.assertFalse(ctx.check_hostname)
         self._assert_context_options(ctx)
 
-        with warnings_helper.check_warnings():
-            ctx = ssl._create_stdlib_context(ssl.PROTOCOL_TLSv1)
-        self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1)
-        self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
-        self._assert_context_options(ctx)
+        if has_tls_protocol(ssl.PROTOCOL_TLSv1):
+            with warnings_helper.check_warnings():
+                ctx = ssl._create_stdlib_context(ssl.PROTOCOL_TLSv1)
+            self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1)
+            self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
+            self._assert_context_options(ctx)
 
         with warnings_helper.check_warnings():
             ctx = ssl._create_stdlib_context(
@@ -3125,37 +3095,10 @@ class ThreadedTests(unittest.TestCase):
                     self.assertIn(msg, repr(e))
                     self.assertIn('certificate verify failed', repr(e))
 
-    @requires_tls_version('SSLv2')
-    def test_protocol_sslv2(self):
-        """Connecting to an SSLv2 server with various client options"""
-        if support.verbose:
-            sys.stdout.write("\n")
-        try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv2, True)
-        try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv2, True, ssl.CERT_OPTIONAL)
-        try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv2, True, ssl.CERT_REQUIRED)
-        try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_TLS, False)
-        if has_tls_version('SSLv3'):
-            try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv3, False)
-        try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_TLSv1, False)
-        # SSLv23 client with specific SSL options
-        try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_TLS, False,
-                           client_options=ssl.OP_NO_SSLv3)
-        try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_TLS, False,
-                           client_options=ssl.OP_NO_TLSv1)
-
     def test_PROTOCOL_TLS(self):
         """Connecting to an SSLv23 server with various client options"""
         if support.verbose:
             sys.stdout.write("\n")
-        if has_tls_version('SSLv2'):
-            try:
-                try_protocol_combo(ssl.PROTOCOL_TLS, ssl.PROTOCOL_SSLv2, True)
-            except OSError as x:
-                # this fails on some older versions of OpenSSL (0.9.7l, for instance)
-                if support.verbose:
-                    sys.stdout.write(
-                        " SSL2 client to SSL23 server test unexpectedly failed:\n %s\n"
-                        % str(x))
         if has_tls_version('SSLv3'):
             try_protocol_combo(ssl.PROTOCOL_TLS, ssl.PROTOCOL_SSLv3, False)
         try_protocol_combo(ssl.PROTOCOL_TLS, ssl.PROTOCOL_TLS, True)
@@ -3193,8 +3136,6 @@ class ThreadedTests(unittest.TestCase):
         try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv3, 'SSLv3')
         try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv3, 'SSLv3', ssl.CERT_OPTIONAL)
         try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv3, 'SSLv3', ssl.CERT_REQUIRED)
-        if has_tls_version('SSLv2'):
-            try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv2, False)
         try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_TLS, False,
                            client_options=ssl.OP_NO_SSLv3)
         try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_TLSv1, False)
@@ -3207,8 +3148,6 @@ class ThreadedTests(unittest.TestCase):
         try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1, 'TLSv1')
         try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1, 'TLSv1', ssl.CERT_OPTIONAL)
         try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1, 'TLSv1', ssl.CERT_REQUIRED)
-        if has_tls_version('SSLv2'):
-            try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_SSLv2, False)
         if has_tls_version('SSLv3'):
             try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_SSLv3, False)
         try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLS, False,
@@ -3221,8 +3160,6 @@ class ThreadedTests(unittest.TestCase):
         if support.verbose:
             sys.stdout.write("\n")
         try_protocol_combo(ssl.PROTOCOL_TLSv1_1, ssl.PROTOCOL_TLSv1_1, 'TLSv1.1')
-        if has_tls_version('SSLv2'):
-            try_protocol_combo(ssl.PROTOCOL_TLSv1_1, ssl.PROTOCOL_SSLv2, False)
         if has_tls_version('SSLv3'):
             try_protocol_combo(ssl.PROTOCOL_TLSv1_1, ssl.PROTOCOL_SSLv3, False)
         try_protocol_combo(ssl.PROTOCOL_TLSv1_1, ssl.PROTOCOL_TLS, False,
@@ -3241,18 +3178,18 @@ class ThreadedTests(unittest.TestCase):
         try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLSv1_2, 'TLSv1.2',
                            server_options=ssl.OP_NO_SSLv3|ssl.OP_NO_SSLv2,
                            client_options=ssl.OP_NO_SSLv3|ssl.OP_NO_SSLv2,)
-        if has_tls_version('SSLv2'):
-            try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_SSLv2, False)
         if has_tls_version('SSLv3'):
             try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_SSLv3, False)
         try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLS, False,
                            client_options=ssl.OP_NO_TLSv1_2)
 
         try_protocol_combo(ssl.PROTOCOL_TLS, ssl.PROTOCOL_TLSv1_2, 'TLSv1.2')
-        try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLSv1, False)
-        try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1_2, False)
-        try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLSv1_1, False)
-        try_protocol_combo(ssl.PROTOCOL_TLSv1_1, ssl.PROTOCOL_TLSv1_2, False)
+        if has_tls_protocol(ssl.PROTOCOL_TLSv1):
+            try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLSv1, False)
+            try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1_2, False)
+        if has_tls_protocol(ssl.PROTOCOL_TLSv1_1):
+            try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLSv1_1, False)
+            try_protocol_combo(ssl.PROTOCOL_TLSv1_1, ssl.PROTOCOL_TLSv1_2, False)
 
     def test_starttls(self):
         """Switching from clear text to encrypted and back again."""

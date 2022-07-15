@@ -79,6 +79,9 @@ New Features
 Other Language Changes
 ======================
 
+* :class:`types.MappingProxyType` instances are now hashable if the underlying
+  mapping is hashable.
+  (Contributed by Serhiy Storchaka in :gh:`87995`.)
 
 
 New Modules
@@ -89,6 +92,17 @@ New Modules
 
 Improved Modules
 ================
+
+dis
+---
+
+* Pseudo instruction opcodes (which are used by the compiler but
+  do not appear in executable bytecode) are now exposed in the
+  :mod:`dis` module.
+  :data:`~dis.HAVE_ARGUMENT` is still relevant to real opcodes,
+  but it is not useful for pseudo instrcutions. Use the new
+  :data:`~dis.hasarg` collection instead.
+  (Contributed by Irit Katriel in :gh:`94216`.)
 
 os
 --
@@ -273,6 +287,32 @@ Removed
   use :func:`locale.format_string` instead.
   (Contributed by Victor Stinner in :gh:`94226`.)
 
+* :mod:`hashlib`: Remove the pure Python implementation of
+  :func:`hashlib.pbkdf2_hmac()`, deprecated in Python 3.10. Python 3.10 and
+  newer requires OpenSSL 1.1.1 (:pep:`644`): this OpenSSL version provides
+  a C implementation of :func:`~hashlib.pbkdf2_hmac()` which is faster.
+  (Contributed by Victor Stinner in :gh:`94199`.)
+
+* :mod:`xml.etree`: Remove the ``ElementTree.Element.copy()`` method of the
+  pure Python implementation, deprecated in Python 3.10, use the
+  :func:`copy.copy` function instead.  The C implementation of :mod:`xml.etree`
+  has no ``copy()`` method, only a ``__copy__()`` method.
+  (Contributed by Victor Stinner in :gh:`94383`.)
+
+* :mod:`zipimport`: Remove ``find_loader()`` and ``find_module()`` methods,
+  deprecated in Python 3.10: use the ``find_spec()`` method instead.  See
+  :pep:`451` for the rationale.
+  (Contributed by Victor Stinner in :gh:`94379`.)
+
+* Remove the :func:`ssl.wrap_socket` function, deprecated in Python 3.7:
+  instead, create a :class:`ssl.SSLContext` object and call its
+  :class:`ssl.SSLContext.wrap_socket` method. Any package that still uses
+  :func:`ssl.wrap_socket` is broken and insecure. The function neither sends a
+  SNI TLS extension nor validates server hostname. Code is subject to `CWE-295
+  <https://cwe.mitre.org/data/definitions/295.html>`_: Improper Certificate
+  Validation.
+  (Contributed by Victor Stinner in :gh:`94199`.)
+
 
 Porting to Python 3.12
 ======================
@@ -303,6 +343,11 @@ Changes in the Python API
   from default text encoding (e.g. :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>`)
   to :term:`filesystem encoding and error handler`.
   Argument files should be encoded in UTF-8 instead of ANSI Codepage on Windows.
+
+* :func:`shlex.split`: Passing ``None`` for *s* argument now raises an
+  exception, rather than reading :data:`sys.stdin`. The feature was deprecated
+  in Python 3.9.
+  (Contributed by Victor Stinner in :gh:`94352`.)
 
 
 Build Changes

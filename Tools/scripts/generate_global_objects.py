@@ -237,7 +237,7 @@ def generate_runtime_init(identifiers, strings):
     assert nsmallposints and nsmallnegints
 
     # Then target the runtime initializer.
-    filename = os.path.join(INTERNAL, 'pycore_runtime_init.h')
+    filename = os.path.join(INTERNAL, 'pycore_runtime_init_generated.h')
 
     # Read the non-generated part of the file.
     with open(filename) as infile:

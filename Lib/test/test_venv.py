@@ -15,6 +15,7 @@ import shutil
 import struct
 import subprocess
 import sys
+import sysconfig
 import tempfile
 from test.support import (captured_stdout, captured_stderr,
                           skip_if_broken_multiprocessing_synchronize, verbose,
@@ -254,18 +255,49 @@ class BasicTest(BaseTest):
             self.assertEqual(out.strip(), expected.encode(), prefix)
 
     @requireVenvCreate
-    def test_sysconfig_preferred_and_default_scheme(self):
+    def test_sysconfig(self):
         """
-        Test that the sysconfig preferred(prefix) and default scheme is venv.
+        Test that the sysconfig functions work in a virtual environment.
         """
         rmtree(self.env_dir)
-        self.run_with_capture(venv.create, self.env_dir)
+        self.run_with_capture(venv.create, self.env_dir, symlinks=False)
         envpy = os.path.join(self.env_dir, self.bindir, self.exe)
         cmd = [envpy, '-c', None]
-        for call in ('get_preferred_scheme("prefix")', 'get_default_scheme()'):
-            cmd[2] = 'import sysconfig; print(sysconfig.%s)' % call
-            out, err = check_output(cmd)
-            self.assertEqual(out.strip(), b'venv', err)
+        for call, expected in (
+            # installation scheme
+            ('get_preferred_scheme("prefix")', 'venv'),
+            ('get_default_scheme()', 'venv'),
+            # build environment
+            ('is_python_build()', str(sysconfig.is_python_build())),
+            ('get_makefile_filename()', sysconfig.get_makefile_filename()),
+            ('get_config_h_filename()', sysconfig.get_config_h_filename())):
+            with self.subTest(call):
+                cmd[2] = 'import sysconfig; print(sysconfig.%s)' % call
+                out, err = check_output(cmd)
+                self.assertEqual(out.strip(), expected.encode(), err)
+
+    @requireVenvCreate
+    @unittest.skipUnless(can_symlink(), 'Needs symlinks')
+    def test_sysconfig_symlinks(self):
+        """
+        Test that the sysconfig functions work in a virtual environment.
+        """
+        rmtree(self.env_dir)
+        self.run_with_capture(venv.create, self.env_dir, symlinks=True)
+        envpy = os.path.join(self.env_dir, self.bindir, self.exe)
+        cmd = [envpy, '-c', None]
+        for call, expected in (
+            # installation scheme
+            ('get_preferred_scheme("prefix")', 'venv'),
+            ('get_default_scheme()', 'venv'),
+            # build environment
+            ('is_python_build()', str(sysconfig.is_python_build())),
+            ('get_makefile_filename()', sysconfig.get_makefile_filename()),
+            ('get_config_h_filename()', sysconfig.get_config_h_filename())):
+            with self.subTest(call):
+                cmd[2] = 'import sysconfig; print(sysconfig.%s)' % call
+                out, err = check_output(cmd)
+                self.assertEqual(out.strip(), expected.encode(), err)
 
     if sys.platform == 'win32':
         ENV_SUBDIRS = (

@@ -47,7 +47,6 @@ with warnings.catch_warnings():
     )
 
     from distutils.command.build_ext import build_ext
-    from distutils.command.build_scripts import build_scripts
     from distutils.command.install import install
     from distutils.command.install_lib import install_lib
     from distutils.core import Extension, setup
@@ -407,10 +406,6 @@ class PyBuildExt(build_ext):
             # files relative to build base, e.g. libmpdec.a, libexpat.a
             os.getcwd()
         ]
-
-        # Fix up the paths for scripts, too
-        self.distribution.scripts = [os.path.join(self.srcdir, filename)
-                                     for filename in self.distribution.scripts]
 
         # Python header files
         include_dir = escape(sysconfig.get_path('include'))
@@ -999,7 +994,7 @@ class PyBuildExt(build_ext):
 
     def detect_test_extensions(self):
         # Python C API test module
-        self.addext(Extension('_testcapi', ['_testcapimodule.c']))
+        self.addext(Extension('_testcapi', ['_testcapimodule.c', '_testcapi/vectorcall.c']))
 
         # Python Internal C API test module
         self.addext(Extension('_testinternalcapi', ['_testinternalcapi.c']))
@@ -1020,225 +1015,15 @@ class PyBuildExt(build_ext):
         ))
 
     def detect_readline_curses(self):
-        # readline
-        readline_termcap_library = ""
-        curses_library = ""
-        # Cannot use os.popen here in py3k.
-        tmpfile = os.path.join(self.build_temp, 'readline_termcap_lib')
-        if not os.path.exists(self.build_temp):
-            os.makedirs(self.build_temp)
-        # Determine if readline is already linked against curses or tinfo.
-        if sysconfig.get_config_var('HAVE_LIBREADLINE'):
-            if sysconfig.get_config_var('WITH_EDITLINE'):
-                readline_lib = 'edit'
-            else:
-                readline_lib = 'readline'
-            do_readline = self.compiler.find_library_file(self.lib_dirs,
-                readline_lib)
-            if CROSS_COMPILING:
-                ret = run_command("%s -d %s | grep '(NEEDED)' > %s"
-                                % (sysconfig.get_config_var('READELF'),
-                                   do_readline, tmpfile))
-            elif find_executable('ldd'):
-                ret = run_command("ldd %s > %s" % (do_readline, tmpfile))
-            else:
-                ret = 1
-            if ret == 0:
-                with open(tmpfile) as fp:
-                    for ln in fp:
-                        if 'curses' in ln:
-                            readline_termcap_library = re.sub(
-                                r'.*lib(n?cursesw?)\.so.*', r'\1', ln
-                            ).rstrip()
-                            break
-                        # termcap interface split out from ncurses
-                        if 'tinfo' in ln:
-                            readline_termcap_library = 'tinfo'
-                            break
-            if os.path.exists(tmpfile):
-                os.unlink(tmpfile)
-        else:
-            do_readline = False
-        # Issue 7384: If readline is already linked against curses,
-        # use the same library for the readline and curses modules.
-        if 'curses' in readline_termcap_library:
-            curses_library = readline_termcap_library
-        elif self.compiler.find_library_file(self.lib_dirs, 'ncursesw'):
-            curses_library = 'ncursesw'
-        # Issue 36210: OSS provided ncurses does not link on AIX
-        # Use IBM supplied 'curses' for successful build of _curses
-        elif AIX and self.compiler.find_library_file(self.lib_dirs, 'curses'):
-            curses_library = 'curses'
-        elif self.compiler.find_library_file(self.lib_dirs, 'ncurses'):
-            curses_library = 'ncurses'
-        elif self.compiler.find_library_file(self.lib_dirs, 'curses'):
-            curses_library = 'curses'
-
-        if MACOS:
-            os_release = int(os.uname()[2].split('.')[0])
-            dep_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
-            if (dep_target and
-                    (tuple(int(n) for n in dep_target.split('.')[0:2])
-                        < (10, 5) ) ):
-                os_release = 8
-            if os_release < 9:
-                # MacOSX 10.4 has a broken readline. Don't try to build
-                # the readline module unless the user has installed a fixed
-                # readline package
-                if find_file('readline/rlconf.h', self.inc_dirs, []) is None:
-                    do_readline = False
-        if do_readline:
-            readline_libs = [readline_lib]
-            if readline_termcap_library:
-                pass # Issue 7384: Already linked against curses or tinfo.
-            elif curses_library:
-                readline_libs.append(curses_library)
-            elif self.compiler.find_library_file(self.lib_dirs +
-                                                     ['/usr/lib/termcap'],
-                                                     'termcap'):
-                readline_libs.append('termcap')
-            self.add(Extension('readline', ['readline.c'],
-                               library_dirs=['/usr/lib/termcap'],
-                               libraries=readline_libs))
-        else:
-            self.missing.append('readline')
-
-        # Curses support, requiring the System V version of curses, often
-        # provided by the ncurses library.
-        curses_defines = []
-        curses_includes = []
-        panel_library = 'panel'
-        if curses_library == 'ncursesw':
-            curses_defines.append(('HAVE_NCURSESW', '1'))
-            if not CROSS_COMPILING:
-                curses_includes.append('/usr/include/ncursesw')
-            # Bug 1464056: If _curses.so links with ncursesw,
-            # _curses_panel.so must link with panelw.
-            panel_library = 'panelw'
-            if MACOS:
-                # On OS X, there is no separate /usr/lib/libncursesw nor
-                # libpanelw.  If we are here, we found a locally-supplied
-                # version of libncursesw.  There should also be a
-                # libpanelw.  _XOPEN_SOURCE defines are usually excluded
-                # for OS X but we need _XOPEN_SOURCE_EXTENDED here for
-                # ncurses wide char support
-                curses_defines.append(('_XOPEN_SOURCE_EXTENDED', '1'))
-        elif MACOS and curses_library == 'ncurses':
-            # Building with the system-suppied combined libncurses/libpanel
-            curses_defines.append(('HAVE_NCURSESW', '1'))
-            curses_defines.append(('_XOPEN_SOURCE_EXTENDED', '1'))
-
-        curses_enabled = True
-        if curses_library.startswith('ncurses'):
-            curses_libs = [curses_library]
-            self.add(Extension('_curses', ['_cursesmodule.c'],
-                               include_dirs=curses_includes,
-                               define_macros=curses_defines,
-                               libraries=curses_libs))
-        elif curses_library == 'curses' and not MACOS:
-                # OSX has an old Berkeley curses, not good enough for
-                # the _curses module.
-            if (self.compiler.find_library_file(self.lib_dirs, 'terminfo')):
-                curses_libs = ['curses', 'terminfo']
-            elif (self.compiler.find_library_file(self.lib_dirs, 'termcap')):
-                curses_libs = ['curses', 'termcap']
-            else:
-                curses_libs = ['curses']
-
-            self.add(Extension('_curses', ['_cursesmodule.c'],
-                               define_macros=curses_defines,
-                               libraries=curses_libs))
-        else:
-            curses_enabled = False
-            self.missing.append('_curses')
-
-        # If the curses module is enabled, check for the panel module
-        # _curses_panel needs some form of ncurses
-        skip_curses_panel = True if AIX else False
-        if (curses_enabled and not skip_curses_panel and
-                self.compiler.find_library_file(self.lib_dirs, panel_library)):
-            self.add(Extension('_curses_panel', ['_curses_panel.c'],
-                           include_dirs=curses_includes,
-                           define_macros=curses_defines,
-                           libraries=[panel_library, *curses_libs]))
-        elif not skip_curses_panel:
-            self.missing.append('_curses_panel')
+        self.addext(Extension('readline', ['readline.c']))
+        self.addext(Extension('_curses', ['_cursesmodule.c']))
+        self.addext(Extension('_curses_panel', ['_curses_panel.c']))
 
     def detect_crypt(self):
         self.addext(Extension('_crypt', ['_cryptmodule.c']))
 
     def detect_dbm_gdbm(self):
-        # Modules that provide persistent dictionary-like semantics.  You will
-        # probably want to arrange for at least one of them to be available on
-        # your machine, though none are defined by default because of library
-        # dependencies.  The Python module dbm/__init__.py provides an
-        # implementation independent wrapper for these; dbm/dumb.py provides
-        # similar functionality (but slower of course) implemented in Python.
-
-        dbm_setup_debug = False   # verbose debug prints from this script?
-        dbm_order = ['gdbm']
-
-        # libdb, gdbm and ndbm headers and libraries
-        have_ndbm_h = sysconfig.get_config_var("HAVE_NDBM_H")
-        have_gdbm_ndbm_h = sysconfig.get_config_var("HAVE_GDBM_NDBM_H")
-        have_gdbm_dash_ndbm_h = sysconfig.get_config_var("HAVE_GDBM_DASH_NDBM_H")
-        have_libndbm = sysconfig.get_config_var("HAVE_LIBNDBM")
-        have_libgdbm_compat = sysconfig.get_config_var("HAVE_LIBGDBM_COMPAT")
-        have_libdb = sysconfig.get_config_var("HAVE_LIBDB")
-
-        # The standard Unix dbm module:
-        if not CYGWIN:
-            config_args = [arg.strip("'")
-                           for arg in sysconfig.get_config_var("CONFIG_ARGS").split()]
-            dbm_args = [arg for arg in config_args
-                        if arg.startswith('--with-dbmliborder=')]
-            if dbm_args:
-                dbm_order = [arg.split('=')[-1] for arg in dbm_args][-1].split(":")
-            else:
-                dbm_order = "gdbm:ndbm:bdb".split(":")
-            dbmext = None
-            for cand in dbm_order:
-                if cand == "ndbm":
-                    if have_ndbm_h:
-                        # Some systems have -lndbm, others have -lgdbm_compat,
-                        # others don't have either
-                        if have_libndbm:
-                            ndbm_libs = ['ndbm']
-                        elif have_libgdbm_compat:
-                            ndbm_libs = ['gdbm_compat']
-                        else:
-                            ndbm_libs = []
-                        if dbm_setup_debug: print("building dbm using ndbm")
-                        dbmext = Extension(
-                            '_dbm', ['_dbmmodule.c'],
-                            define_macros=[('USE_NDBM', None)],
-                            libraries=ndbm_libs
-                        )
-                        break
-                elif cand == "gdbm":
-                    # dbm_open() is provided by libgdbm_compat, which wraps libgdbm
-                    if have_libgdbm_compat and (have_gdbm_ndbm_h or have_gdbm_dash_ndbm_h):
-                        if dbm_setup_debug: print("building dbm using gdbm")
-                        dbmext = Extension(
-                            '_dbm', ['_dbmmodule.c'],
-                            define_macros=[('USE_GDBM_COMPAT', None)],
-                            libraries=['gdbm_compat']
-                        )
-                        break
-                elif cand == "bdb":
-                    if have_libdb:
-                        if dbm_setup_debug: print("building dbm using bdb")
-                        dbmext = Extension(
-                            '_dbm', ['_dbmmodule.c'],
-                            define_macros=[('USE_BERKDB', None)],
-                            libraries=['db']
-                        )
-                        break
-            if dbmext is not None:
-                self.add(dbmext)
-            else:
-                self.missing.append('_dbm')
-
+        self.addext(Extension('_dbm', ['_dbmmodule.c']))
         # Anthony Baxter's gdbm module.  GNU dbm(3) will require -lgdbm:
         self.addext(Extension('_gdbm', ['_gdbmmodule.c']))
 
@@ -1463,26 +1248,6 @@ class PyBuildInstallLib(install_lib):
             if not self.dry_run: os.chmod(dirpath, mode)
 
 
-class PyBuildScripts(build_scripts):
-    def copy_scripts(self):
-        outfiles, updated_files = build_scripts.copy_scripts(self)
-        fullversion = '-{0[0]}.{0[1]}'.format(sys.version_info)
-        minoronly = '.{0[1]}'.format(sys.version_info)
-        newoutfiles = []
-        newupdated_files = []
-        for filename in outfiles:
-            if filename.endswith('2to3'):
-                newfilename = filename + fullversion
-            else:
-                newfilename = filename + minoronly
-            log.info(f'renaming {filename} to {newfilename}')
-            os.rename(filename, newfilename)
-            newoutfiles.append(newfilename)
-            if filename in updated_files:
-                newupdated_files.append(newfilename)
-        return newoutfiles, newupdated_files
-
-
 def main():
     global LIST_MODULE_NAMES
 
@@ -1517,18 +1282,11 @@ def main():
 
           # Build info
           cmdclass = {'build_ext': PyBuildExt,
-                      'build_scripts': PyBuildScripts,
                       'install': PyBuildInstall,
                       'install_lib': PyBuildInstallLib},
           # A dummy module is defined here, because build_ext won't be
           # called unless there's at least one extension module defined.
           ext_modules=[Extension('_dummy', ['_dummy.c'])],
-
-          # If you change the scripts installed here, you also need to
-          # check the PyBuildScripts command above, and change the links
-          # created by the bininstall target in Makefile.pre.in
-          scripts = ["Tools/scripts/pydoc3", "Tools/scripts/idle3",
-                     "Tools/scripts/2to3"]
         )
 
 # --install-platlib
