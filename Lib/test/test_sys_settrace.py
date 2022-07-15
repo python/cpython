@@ -1571,6 +1571,28 @@ class TraceTestCase(unittest.TestCase):
 
         self.run_and_compare(func, EXPECTED_EVENTS)
 
+    def test_very_large_function(self):
+        # There is a separate code path when the number of lines > (1 << 15).
+        d = {}
+        exec("""def f():              # line 0
+            x = 0                     # line 1
+            y = 1                     # line 2
+            %s                        # lines 3 through (1 << 16)
+            x += 1                    #
+            return""" % ('\n' * (1 << 16),), d)
+        f = d['f']
+
+        EXPECTED_EVENTS = [
+            (0, 'call'),
+            (1, 'line'),
+            (2, 'line'),
+            (65540, 'line'),
+            (65541, 'line'),
+            (65541, 'return'),
+        ]
+
+        self.run_and_compare(f, EXPECTED_EVENTS)
+
 
 EVENT_NAMES = [
     'call',
