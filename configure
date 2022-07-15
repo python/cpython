@@ -3042,6 +3042,12 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
+
+
+
+
+
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
     # resources get picked up before their $srcdir counterparts.
@@ -11164,7 +11170,15 @@ fi
 	echo "$LIBUUID_PKG_ERRORS" >&5
 
 
-      for ac_header in uuid/uuid.h
+      save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+        CPPFLAGS="$CFLAGS $LIBUUID_CFLAGS"
+        LDFLAGS="$LDFLAGS $LIBUUID_LIBS"
+        for ac_header in uuid/uuid.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
 if test "x$ac_cv_header_uuid_uuid_h" = xyes; then :
@@ -11172,11 +11186,7 @@ if test "x$ac_cv_header_uuid_uuid_h" = xyes; then :
 #define HAVE_UUID_UUID_H 1
 _ACEOF
 
-        save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
+          py_check_lib_save_LIBS=$LIBS
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time in -luuid" >&5
 $as_echo_n "checking for uuid_generate_time in -luuid... " >&6; }
 if ${ac_cv_lib_uuid_uuid_generate_time+:} false; then :
@@ -11217,20 +11227,10 @@ if test "x$ac_cv_lib_uuid_uuid_generate_time" = xyes; then :
   have_uuid=yes
 fi
 
+LIBS=$py_check_lib_save_LIBS
 
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
-
-        save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time_safe in -luuid" >&5
+          py_check_lib_save_LIBS=$LIBS
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time_safe in -luuid" >&5
 $as_echo_n "checking for uuid_generate_time_safe in -luuid... " >&6; }
 if ${ac_cv_lib_uuid_uuid_generate_time_safe+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -11267,19 +11267,18 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_uuid_uuid_generate_time_safe" >&5
 $as_echo "$ac_cv_lib_uuid_uuid_generate_time_safe" >&6; }
 if test "x$ac_cv_lib_uuid_uuid_generate_time_safe" = xyes; then :
-
-            have_uuid=yes
+  have_uuid=yes
             $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
 
 
 fi
 
+LIBS=$py_check_lib_save_LIBS
 
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
 
+fi
+
+done
 
         if test "x$have_uuid" = xyes; then :
 
@@ -11288,9 +11287,11 @@ LIBS=$save_LIBS
 
 fi
 
-fi
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
 
-done
 
 
 
@@ -11298,7 +11299,15 @@ elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-      for ac_header in uuid/uuid.h
+      save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+        CPPFLAGS="$CFLAGS $LIBUUID_CFLAGS"
+        LDFLAGS="$LDFLAGS $LIBUUID_LIBS"
+        for ac_header in uuid/uuid.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
 if test "x$ac_cv_header_uuid_uuid_h" = xyes; then :
@@ -11306,11 +11315,7 @@ if test "x$ac_cv_header_uuid_uuid_h" = xyes; then :
 #define HAVE_UUID_UUID_H 1
 _ACEOF
 
-        save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
+          py_check_lib_save_LIBS=$LIBS
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time in -luuid" >&5
 $as_echo_n "checking for uuid_generate_time in -luuid... " >&6; }
 if ${ac_cv_lib_uuid_uuid_generate_time+:} false; then :
@@ -11351,20 +11356,10 @@ if test "x$ac_cv_lib_uuid_uuid_generate_time" = xyes; then :
   have_uuid=yes
 fi
 
+LIBS=$py_check_lib_save_LIBS
 
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
-
-        save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time_safe in -luuid" >&5
+          py_check_lib_save_LIBS=$LIBS
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time_safe in -luuid" >&5
 $as_echo_n "checking for uuid_generate_time_safe in -luuid... " >&6; }
 if ${ac_cv_lib_uuid_uuid_generate_time_safe+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -11401,19 +11396,18 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_uuid_uuid_generate_time_safe" >&5
 $as_echo "$ac_cv_lib_uuid_uuid_generate_time_safe" >&6; }
 if test "x$ac_cv_lib_uuid_uuid_generate_time_safe" = xyes; then :
-
-            have_uuid=yes
+  have_uuid=yes
             $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
 
 
 fi
 
+LIBS=$py_check_lib_save_LIBS
 
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
 
+fi
+
+done
 
         if test "x$have_uuid" = xyes; then :
 
@@ -11422,9 +11416,11 @@ LIBS=$save_LIBS
 
 fi
 
-fi
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
 
-done
 
 
 
@@ -12376,6 +12372,19 @@ case $ac_sys_system in #(
     OSSAUDIODEV_LIBS=""
  ;;
 esac
+
+
+
+
+  if test "$ac_sys_system" = "Emscripten" -a -z "$LIBSQLITE3_CFLAGS" -a -z "$LIBSQLITE3_LIBS"; then :
+
+    LIBSQLITE3_CFLAGS="-sUSE_SQLITE3"
+    LIBSQLITE3_LIBS="-sUSE_SQLITE3"
+
+fi
+
+
+
 
 
 pkg_failed=no
@@ -15923,6 +15932,19 @@ fi
 
 
 
+
+
+  if test "$ac_sys_system" = "Emscripten" -a -z "$ZLIB_CFLAGS" -a -z "$ZLIB_LIBS"; then :
+
+    ZLIB_CFLAGS="-sUSE_ZLIB"
+    ZLIB_LIBS="-sUSE_ZLIB"
+
+fi
+
+
+
+
+
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ZLIB" >&5
 $as_echo_n "checking for ZLIB... " >&6; }
@@ -15982,7 +16004,15 @@ fi
 	echo "$ZLIB_PKG_ERRORS" >&5
 
 
-  for ac_header in zlib.h
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CPPFLAGS="$CFLAGS $ZLIB_CFLAGS"
+    LDFLAGS="$LDFLAGS $ZLIB_LIBS"
+    for ac_header in zlib.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
 if test "x$ac_cv_header_zlib_h" = xyes; then :
@@ -15990,13 +16020,8 @@ if test "x$ac_cv_header_zlib_h" = xyes; then :
 #define HAVE_ZLIB_H 1
 _ACEOF
 
-    save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
+      py_check_lib_save_LIBS=$LIBS
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
 $as_echo_n "checking for gzread in -lz... " >&6; }
 if ${ac_cv_lib_z_gzread+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -16033,11 +16058,26 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_gzread" >&5
 $as_echo "$ac_cv_lib_z_gzread" >&6; }
 if test "x$ac_cv_lib_z_gzread" = xyes; then :
+  have_zlib=yes
+else
+  have_zlib=no
+fi
 
-        have_zlib=yes
-        ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
-        ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
+LIBS=$py_check_lib_save_LIBS
+
+
+else
+  have_zlib=no
+fi
+
+done
+
+    if test "x$have_zlib" = xyes; then :
+
+      ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
+      ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
+      py_check_lib_save_LIBS=$LIBS
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
 $as_echo_n "checking for inflateCopy in -lz... " >&6; }
 if ${ac_cv_lib_z_inflateCopy+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -16078,33 +16118,31 @@ if test "x$ac_cv_lib_z_inflateCopy" = xyes; then :
 
 fi
 
+LIBS=$py_check_lib_save_LIBS
 
-else
-
-        have_zlib=no
 
 fi
-
 
 CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
 
-
-
-else
-  have_zlib=no
-fi
-
-done
 
 
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-  for ac_header in zlib.h
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CPPFLAGS="$CFLAGS $ZLIB_CFLAGS"
+    LDFLAGS="$LDFLAGS $ZLIB_LIBS"
+    for ac_header in zlib.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
 if test "x$ac_cv_header_zlib_h" = xyes; then :
@@ -16112,13 +16150,8 @@ if test "x$ac_cv_header_zlib_h" = xyes; then :
 #define HAVE_ZLIB_H 1
 _ACEOF
 
-    save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
+      py_check_lib_save_LIBS=$LIBS
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
 $as_echo_n "checking for gzread in -lz... " >&6; }
 if ${ac_cv_lib_z_gzread+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -16155,11 +16188,26 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_gzread" >&5
 $as_echo "$ac_cv_lib_z_gzread" >&6; }
 if test "x$ac_cv_lib_z_gzread" = xyes; then :
+  have_zlib=yes
+else
+  have_zlib=no
+fi
 
-        have_zlib=yes
-        ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
-        ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
+LIBS=$py_check_lib_save_LIBS
+
+
+else
+  have_zlib=no
+fi
+
+done
+
+    if test "x$have_zlib" = xyes; then :
+
+      ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
+      ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
+      py_check_lib_save_LIBS=$LIBS
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
 $as_echo_n "checking for inflateCopy in -lz... " >&6; }
 if ${ac_cv_lib_z_inflateCopy+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -16200,26 +16248,16 @@ if test "x$ac_cv_lib_z_inflateCopy" = xyes; then :
 
 fi
 
+LIBS=$py_check_lib_save_LIBS
 
-else
-
-        have_zlib=no
 
 fi
-
 
 CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
 
-
-
-else
-  have_zlib=no
-fi
-
-done
 
 
 else
@@ -16234,17 +16272,25 @@ $as_echo "yes" >&6; }
 
 fi
 
-if test "$have_zlib" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$ZLIB_LIBS" = "-lz"; then
-  ZLIB_CFLAGS="-sUSE_ZLIB"
-  ZLIB_LIBS="-sUSE_ZLIB"
-fi
-
 if test "x$have_zlib" = xyes; then :
 
   BINASCII_CFLAGS="-DUSE_ZLIB_CRC32 $ZLIB_CFLAGS"
   BINASCII_LIBS="$ZLIB_LIBS"
 
 fi
+
+
+
+
+  if test "$ac_sys_system" = "Emscripten" -a -z "$BZIP2_CFLAGS" -a -z "$BZIP2_LIBS"; then :
+
+    BZIP2_CFLAGS="-sUSE_BZIP2"
+    BZIP2_LIBS="-sUSE_BZIP2"
+
+fi
+
+
+
 
 
 pkg_failed=no
@@ -16306,19 +16352,21 @@ fi
 	echo "$BZIP2_PKG_ERRORS" >&5
 
 
-  for ac_header in bzlib.h
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CPPFLAGS="$CFLAGS $BZIP2_CFLAGS"
+    LDFLAGS="$LDFLAGS $BZIP2_LIBS"
+    for ac_header in bzlib.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "bzlib.h" "ac_cv_header_bzlib_h" "$ac_includes_default"
 if test "x$ac_cv_header_bzlib_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_BZLIB_H 1
 _ACEOF
-
-    save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BZ2_bzCompress in -lbz2" >&5
 $as_echo_n "checking for BZ2_bzCompress in -lbz2... " >&6; }
@@ -16357,21 +16405,10 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_bz2_BZ2_bzCompress" >&5
 $as_echo "$ac_cv_lib_bz2_BZ2_bzCompress" >&6; }
 if test "x$ac_cv_lib_bz2_BZ2_bzCompress" = xyes; then :
-
-        have_bzip2=yes
-        BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
-        BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
-
+  have_bzip2=yes
 else
   have_bzip2=no
 fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
 
 
 else
@@ -16379,25 +16416,40 @@ else
 fi
 
 done
+
+    if test "x$have_bzip2" = xyes; then :
+
+      BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
+      BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
+
+fi
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
 
 
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-  for ac_header in bzlib.h
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CPPFLAGS="$CFLAGS $BZIP2_CFLAGS"
+    LDFLAGS="$LDFLAGS $BZIP2_LIBS"
+    for ac_header in bzlib.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "bzlib.h" "ac_cv_header_bzlib_h" "$ac_includes_default"
 if test "x$ac_cv_header_bzlib_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_BZLIB_H 1
 _ACEOF
-
-    save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BZ2_bzCompress in -lbz2" >&5
 $as_echo_n "checking for BZ2_bzCompress in -lbz2... " >&6; }
@@ -16436,21 +16488,10 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_bz2_BZ2_bzCompress" >&5
 $as_echo "$ac_cv_lib_bz2_BZ2_bzCompress" >&6; }
 if test "x$ac_cv_lib_bz2_BZ2_bzCompress" = xyes; then :
-
-        have_bzip2=yes
-        BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
-        BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
-
+  have_bzip2=yes
 else
   have_bzip2=no
 fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
 
 
 else
@@ -16458,6 +16499,19 @@ else
 fi
 
 done
+
+    if test "x$have_bzip2" = xyes; then :
+
+      BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
+      BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
+
+fi
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
 
 
 else
@@ -16467,12 +16521,6 @@ else
 $as_echo "yes" >&6; }
 	have_bzip2=yes
 fi
-
-if test "$have_bzip2" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$BZIP2_LIBS" = "-lbz2"; then
-  BZIP2_CFLAGS="-sUSE_BZIP2"
-  BZIP2_LIBS="-sUSE_BZIP2"
-fi
-
 
 
 pkg_failed=no
@@ -16534,19 +16582,21 @@ fi
 	echo "$LIBLZMA_PKG_ERRORS" >&5
 
 
-  for ac_header in lzma.h
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CPPFLAGS="$CFLAGS $LIBLZMA_CFLAGS"
+    LDFLAGS="$LDFLAGS $LIBLZMA_LIBS"
+    for ac_header in lzma.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "lzma.h" "ac_cv_header_lzma_h" "$ac_includes_default"
 if test "x$ac_cv_header_lzma_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_LZMA_H 1
 _ACEOF
-
-    save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for lzma_easy_encoder in -llzma" >&5
 $as_echo_n "checking for lzma_easy_encoder in -llzma... " >&6; }
@@ -16585,21 +16635,10 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_lzma_lzma_easy_encoder" >&5
 $as_echo "$ac_cv_lib_lzma_lzma_easy_encoder" >&6; }
 if test "x$ac_cv_lib_lzma_lzma_easy_encoder" = xyes; then :
-
-        have_liblzma=yes
-        LIBLZMA_CFLAGS=${LIBLZMA_CFLAGS-""}
-        LIBLZMA_LIBS=${LIBLZMA_LIBS-"-llzma"}
-
+  have_liblzma=yes
 else
   have_liblzma=no
 fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
 
 
 else
@@ -16607,25 +16646,40 @@ else
 fi
 
 done
+
+    if test "x$have_liblzma" = xyes; then :
+
+      LIBLZMA_CFLAGS=${LIBLZMA_CFLAGS-""}
+      LIBLZMA_LIBS=${LIBLZMA_LIBS-"-llzma"}
+
+fi
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
 
 
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-  for ac_header in lzma.h
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CPPFLAGS="$CFLAGS $LIBLZMA_CFLAGS"
+    LDFLAGS="$LDFLAGS $LIBLZMA_LIBS"
+    for ac_header in lzma.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "lzma.h" "ac_cv_header_lzma_h" "$ac_includes_default"
 if test "x$ac_cv_header_lzma_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_LZMA_H 1
 _ACEOF
-
-    save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for lzma_easy_encoder in -llzma" >&5
 $as_echo_n "checking for lzma_easy_encoder in -llzma... " >&6; }
@@ -16664,21 +16718,10 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_lzma_lzma_easy_encoder" >&5
 $as_echo "$ac_cv_lib_lzma_lzma_easy_encoder" >&6; }
 if test "x$ac_cv_lib_lzma_lzma_easy_encoder" = xyes; then :
-
-        have_liblzma=yes
-        LIBLZMA_CFLAGS=${LIBLZMA_CFLAGS-""}
-        LIBLZMA_LIBS=${LIBLZMA_LIBS-"-llzma"}
-
+  have_liblzma=yes
 else
   have_liblzma=no
 fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
 
 
 else
@@ -16686,6 +16729,19 @@ else
 fi
 
 done
+
+    if test "x$have_liblzma" = xyes; then :
+
+      LIBLZMA_CFLAGS=${LIBLZMA_CFLAGS-""}
+      LIBLZMA_LIBS=${LIBLZMA_LIBS-"-llzma"}
+
+fi
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
 
 
 else
