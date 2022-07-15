@@ -1256,6 +1256,7 @@ textiowrapper_change_encoding(textio *self, PyObject *encoding,
                 return -1;
             }
         }
+        Py_INCREF(encoding);
         if (errors == Py_None) {
             errors = &_Py_ID(strict);
         }
