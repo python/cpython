@@ -5498,6 +5498,7 @@ sequence_setitem(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+
 /* Functions for testing C calling conventions (METH_*) are named meth_*,
  * e.g. "meth_varargs" for METH_VARARGS.
  *
