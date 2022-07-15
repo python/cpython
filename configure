@@ -3092,6 +3092,8 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
+
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
     # resources get picked up before their $srcdir counterparts.
@@ -11271,7 +11273,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-        CFLAGS="$CFLAGS $LIBUUID_CFLAGS"
+        CPPFLAGS="$CFLAGS $LIBUUID_CFLAGS"
         LDFLAGS="$LDFLAGS $LIBUUID_LIBS"
         for ac_header in uuid/uuid.h
 do :
@@ -11400,7 +11402,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-        CFLAGS="$CFLAGS $LIBUUID_CFLAGS"
+        CPPFLAGS="$CFLAGS $LIBUUID_CFLAGS"
         LDFLAGS="$LDFLAGS $LIBUUID_LIBS"
         for ac_header in uuid/uuid.h
 do :
@@ -12120,7 +12122,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-      CFLAGS="$CFLAGS $LIBFFI_CFLAGS"
+      CPPFLAGS="$CFLAGS $LIBFFI_CFLAGS"
       LDFLAGS="$LDFLAGS $LIBFFI_LIBS"
       ac_fn_c_check_header_mongrel "$LINENO" "ffi.h" "ac_cv_header_ffi_h" "$ac_includes_default"
 if test "x$ac_cv_header_ffi_h" = xyes; then :
@@ -12193,7 +12195,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-      CFLAGS="$CFLAGS $LIBFFI_CFLAGS"
+      CPPFLAGS="$CFLAGS $LIBFFI_CFLAGS"
       LDFLAGS="$LDFLAGS $LIBFFI_LIBS"
       ac_fn_c_check_header_mongrel "$LINENO" "ffi.h" "ac_cv_header_ffi_h" "$ac_includes_default"
 if test "x$ac_cv_header_ffi_h" = xyes; then :
@@ -12902,10 +12904,18 @@ case $ac_sys_system in #(
  ;;
 esac
 
-if test "$ac_sys_system" = "Emscripten" -a -z "$LIBSQLITE3_CFLAGS" -a -z "$LIBSQLITE3_LIBS"; then
-  LIBSQLITE3_CFLAGS="-sUSE_SQLITE3"
-  LIBSQLITE3_LIBS="-sUSE_SQLITE3"
+
+
+
+  if test "$ac_sys_system" = "Emscripten" -a -z "$LIBSQLITE3_CFLAGS" -a -z "$LIBSQLITE3_LIBS"; then :
+
+    LIBSQLITE3_CFLAGS="-sUSE_SQLITE3"
+    LIBSQLITE3_LIBS="-sUSE_SQLITE3"
+
 fi
+
+
+
 
 
 pkg_failed=no
@@ -16515,10 +16525,18 @@ fi
 
 
 
-if test "$ac_sys_system" = "Emscripten" -a -z "$ZLIB_CFLAGS" -a -z "$ZLIB_LIBS"; then
-  ZLIB_CFLAGS="-sUSE_ZLIB"
-  ZLIB_LIBS="-sUSE_ZLIB"
+
+
+
+  if test "$ac_sys_system" = "Emscripten" -a -z "$ZLIB_CFLAGS" -a -z "$ZLIB_LIBS"; then :
+
+    ZLIB_CFLAGS="-sUSE_ZLIB"
+    ZLIB_LIBS="-sUSE_ZLIB"
+
 fi
+
+
+
 
 
 pkg_failed=no
@@ -16586,7 +16604,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-    CFLAGS="$CFLAGS $ZLIB_CFLAGS"
+    CPPFLAGS="$CFLAGS $ZLIB_CFLAGS"
     LDFLAGS="$LDFLAGS $ZLIB_LIBS"
     for ac_header in zlib.h
 do :
@@ -16716,7 +16734,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-    CFLAGS="$CFLAGS $ZLIB_CFLAGS"
+    CPPFLAGS="$CFLAGS $ZLIB_CFLAGS"
     LDFLAGS="$LDFLAGS $ZLIB_LIBS"
     for ac_header in zlib.h
 do :
@@ -16855,10 +16873,18 @@ if test "x$have_zlib" = xyes; then :
 
 fi
 
-if test "$ac_sys_system" = "Emscripten" -a -z "$BZIP2_CFLAGS" -a -z "$BZIP2_LIBS"; then
-  BZIP2_CFLAGS="-sUSE_BZIP2"
-  BZIP2_LIBS="-sUSE_BZIP2"
+
+
+
+  if test "$ac_sys_system" = "Emscripten" -a -z "$BZIP2_CFLAGS" -a -z "$BZIP2_LIBS"; then :
+
+    BZIP2_CFLAGS="-sUSE_BZIP2"
+    BZIP2_LIBS="-sUSE_BZIP2"
+
 fi
+
+
+
 
 
 pkg_failed=no
@@ -16926,7 +16952,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-    CFLAGS="$CFLAGS $BZIP2_CFLAGS"
+    CPPFLAGS="$CFLAGS $BZIP2_CFLAGS"
     LDFLAGS="$LDFLAGS $BZIP2_LIBS"
     for ac_header in bzlib.h
 do :
@@ -17009,7 +17035,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-    CFLAGS="$CFLAGS $BZIP2_CFLAGS"
+    CPPFLAGS="$CFLAGS $BZIP2_CFLAGS"
     LDFLAGS="$LDFLAGS $BZIP2_LIBS"
     for ac_header in bzlib.h
 do :
@@ -17156,7 +17182,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-    CFLAGS="$CFLAGS $LIBLZMA_CFLAGS"
+    CPPFLAGS="$CFLAGS $LIBLZMA_CFLAGS"
     LDFLAGS="$LDFLAGS $LIBLZMA_LIBS"
     for ac_header in lzma.h
 do :
@@ -17239,7 +17265,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-    CFLAGS="$CFLAGS $LIBLZMA_CFLAGS"
+    CPPFLAGS="$CFLAGS $LIBLZMA_CFLAGS"
     LDFLAGS="$LDFLAGS $LIBLZMA_LIBS"
     for ac_header in lzma.h
 do :
@@ -20655,7 +20681,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-      CFLAGS="$CFLAGS $LIBREADLINE_CFLAGS"
+      CPPFLAGS="$CFLAGS $LIBREADLINE_CFLAGS"
       LDFLAGS="$LDFLAGS $LIBREADLINE_LIBS"
       for ac_header in readline/readline.h
 do :
@@ -20736,7 +20762,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-      CFLAGS="$CFLAGS $LIBREADLINE_CFLAGS"
+      CPPFLAGS="$CFLAGS $LIBREADLINE_CFLAGS"
       LDFLAGS="$LDFLAGS $LIBREADLINE_LIBS"
       for ac_header in readline/readline.h
 do :
@@ -20889,7 +20915,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-      CFLAGS="$CFLAGS $LIBEDIT_CFLAGS"
+      CPPFLAGS="$CFLAGS $LIBEDIT_CFLAGS"
       LDFLAGS="$LDFLAGS $LIBEDIT_LIBS"
       for ac_header in editline/readline.h
 do :
@@ -20972,7 +20998,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-      CFLAGS="$CFLAGS $LIBEDIT_CFLAGS"
+      CPPFLAGS="$CFLAGS $LIBEDIT_CFLAGS"
       LDFLAGS="$LDFLAGS $LIBEDIT_LIBS"
       for ac_header in editline/readline.h
 do :
