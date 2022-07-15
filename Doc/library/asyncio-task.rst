@@ -610,7 +610,7 @@ Timeouts
 
         .. method:: when() -> float | None
 
-           Return the current deadline, or `None` if the current
+           Return the current deadline, or ``None`` if the current
            deadline is not set.
 
            The deadline is a float, consistent with the time returned by
