@@ -1227,6 +1227,7 @@ class TestBasicOps(unittest.TestCase):
             c = starmap(operator.pow, zip(range(3), range(1,7)))
             self.pickletest(proto, c)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_islice(self):
         for args in [          # islice(args) should agree with range(args)
                 (10, 20, 3),
@@ -1300,13 +1301,16 @@ class TestBasicOps(unittest.TestCase):
 
         # Issue #21321: check source iterator is not referenced
         # from islice() after the latter has been exhausted
-        it = (x for x in (1, 2))
-        wr = weakref.ref(it)
-        it = islice(it, 1)
-        self.assertIsNotNone(wr())
-        list(it) # exhaust the iterator
+        refs = []
+        for _ in range(3):
+            it = (x for x in (1, 2))
+            wr = weakref.ref(it)
+            it = islice(it, 1)
+            self.assertIsNotNone(wr())
+            list(it) # exhaust the iterator
+            refs.append(wr)
         support.gc_collect()
-        self.assertIsNone(wr())
+        self.assertTrue(all(r() is None for r in refs[:-1]))
 
         # Issue #30537: islice can accept integer-like objects as
         # arguments

@@ -79,7 +79,7 @@ _PyGen_Finalize(PyObject *self)
        issue a RuntimeWarning. */
     if (gen->gi_code != NULL &&
         ((PyCodeObject *)gen->gi_code)->co_flags & CO_COROUTINE &&
-        gen->gi_frame->f_lasti == -1)
+        !frame_has_executed(gen->gi_frame))
     {
         _PyErr_WarnUnawaitedCoroutine((PyObject *)gen);
     }
@@ -176,12 +176,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     }
 
     assert(_PyFrame_IsRunnable(f));
-    assert(f->f_lasti >= 0 || ((unsigned char *)PyBytes_AS_STRING(f->f_code->co_code))[0] == GEN_START);
-    /* Push arg onto the frame's value stack */
-    result = arg ? arg : Py_None;
-    Py_INCREF(result);
-    gen->gi_frame->f_valuestack[gen->gi_frame->f_stackdepth] = result;
-    gen->gi_frame->f_stackdepth++;
+    assert(frame_has_executed(f) || _Py_OPCODE(*frame_first_instr(f)) == GEN_START);
 
     /* Generators always return to their most recent caller, not
      * necessarily their creator. */
@@ -197,6 +192,11 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
         _PyErr_ChainStackItem(NULL);
     }
 
+    /* For the just-started time,  gi_arg points to itself.
+     * For the other times, gi_arg point to a register. */
+    arg = arg ? arg : Py_None;
+    Py_INCREF(arg);
+    *gen->gi_arg = arg;
     result = _PyEval_EvalFrame(tstate, f, exc);
     tstate->exc_info = gen->gi_exc_state.previous_item;
     gen->gi_exc_state.previous_item = NULL;
@@ -221,6 +221,12 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
         }
     }
     else {
+        /* When the frame exits abnormally before GEN_START,
+         * the value in gi_arg will never be Py_DECREF except we deal with it here.
+         * This happens rarely, but we better not let go of any memory leaks */
+        if ((PyObject *)gen->gi_arg == arg) {
+            Py_DECREF(arg);
+        }
         if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
             const char *msg = "generator raised StopIteration";
             if (PyCoro_CheckExact(gen)) {
@@ -327,29 +333,25 @@ gen_close_iter(PyObject *yf)
 PyObject *
 _PyGen_yf(PyGenObject *gen)
 {
-    PyObject *yf = NULL;
     PyFrameObject *f = gen->gi_frame;
-
     if (f) {
-        PyObject *bytecode = f->f_code->co_code;
-        unsigned char *code = (unsigned char *)PyBytes_AS_STRING(bytecode);
-
-        if (f->f_lasti < 0) {
-            /* Return immediately if the frame didn't start yet. YIELD_FROM
-               always come after LOAD_CONST: a code object should not start
-               with YIELD_FROM */
-            assert(code[0] != YIELD_FROM);
-            return NULL;
+        /* If the frame didn't start yet,
+         * f->f_last_instr[1] is the first instruction of code object,
+         * which is never YIELD_FROM (since it should be GEN_START). */
+        _Py_CODEUNIT *last_instr = f->f_last_instr;
+        _Py_CODEUNIT cur_instr;
+        _Py_OPARG oparg1 = 0;
+        do {
+            cur_instr = *++last_instr;
+            oparg1 = oparg1 << 8 | _Py_OPARG1(cur_instr);
+        } while (_Py_OPCODE(cur_instr) == EXTENDED_ARG);
+        if (_Py_OPCODE(cur_instr) == YIELD_FROM) {
+            PyObject *yf = f->f_localsplus[oparg1];
+            Py_INCREF(yf);
+            return yf;
         }
-
-        if (code[(f->f_lasti+1)*sizeof(_Py_CODEUNIT)] != YIELD_FROM)
-            return NULL;
-        assert(f->f_stackdepth > 0);
-        yf = f->f_valuestack[f->f_stackdepth-1];
-        Py_INCREF(yf);
     }
-
-    return yf;
+    return NULL;
 }
 
 static PyObject *
@@ -457,16 +459,18 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
         }
         Py_DECREF(yf);
         if (!ret) {
+            /* Termination repetition of YIELD_FROM and set the returned value */
+            _Py_CODEUNIT cur_instr;
+            _Py_OPARG oparg3 = 0;
+            do {
+                cur_instr = *++gen->gi_frame->f_last_instr;
+                oparg3 = oparg3 << 8 | _Py_OPARG3(cur_instr);
+            } while (_Py_OPCODE(cur_instr) == EXTENDED_ARG);
+            assert(_Py_OPCODE(cur_instr) == YIELD_FROM);
+            gen->gi_arg = &gen->gi_frame->f_localsplus[oparg3];
+            Py_CLEAR(*gen->gi_arg);
             PyObject *val;
-            /* Pop subiterator from stack */
-            assert(gen->gi_frame->f_stackdepth > 0);
-            gen->gi_frame->f_stackdepth--;
-            ret = gen->gi_frame->f_valuestack[gen->gi_frame->f_stackdepth];
-            assert(ret == yf);
-            Py_DECREF(ret);
-            /* Termination repetition of YIELD_FROM */
-            assert(gen->gi_frame->f_lasti >= 0);
-            gen->gi_frame->f_lasti += 1;
+            assert(frame_has_executed(gen->gi_frame));
             if (_PyGen_FetchStopIterationValue(&val) == 0) {
                 ret = gen_send(gen, val);
                 Py_DECREF(val);
@@ -842,6 +846,8 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
     else
         gen->gi_qualname = gen->gi_name;
     Py_INCREF(gen->gi_qualname);
+    /* Set gi_arg as a pointer to itself so it can hold the first arg. */
+    gen->gi_arg = (PyObject **)&gen->gi_arg;
     _PyObject_GC_TRACK(gen);
     return (PyObject *)gen;
 }

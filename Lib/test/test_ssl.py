@@ -514,6 +514,7 @@ class BasicSocketTests(unittest.TestCase):
         if not p2.endswith('\n' + ssl.PEM_FOOTER + '\n'):
             self.fail("DER-to-PEM didn't include correct footer:\n%r\n" % p2)
 
+    @unittest.skip
     def test_openssl_version(self):
         n = ssl.OPENSSL_VERSION_NUMBER
         t = ssl.OPENSSL_VERSION_INFO
@@ -1573,6 +1574,7 @@ class ContextTests(unittest.TestCase):
         ctx.set_servername_callback(None)
         ctx.set_servername_callback(dummycallback)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_sni_callback_refcycle(self):
         # Reference cycles through the servername callback are detected
         # and cleared.
@@ -1581,6 +1583,7 @@ class ContextTests(unittest.TestCase):
             pass
         ctx.set_servername_callback(dummycallback)
         wr = weakref.ref(ctx)
+        _ = [wr, wr, wr]
         del ctx, dummycallback
         gc.collect()
         self.assertIs(wr(), None)

@@ -281,12 +281,14 @@ class AsyncSpecTest(unittest.TestCase):
         self.assertIsInstance(mock.async_method, AsyncMock)
         self.assertIsInstance(mock.normal_method, Mock)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_spec_mock_type_kw(self):
         def inner_test(mock_type):
             async_mock = mock_type(spec=async_func)
             self.assertIsInstance(async_mock, mock_type)
             with assertNeverAwaited(self):
-                self.assertTrue(inspect.isawaitable(async_mock()))
+                x = async_mock()
+                del x
 
             sync_mock = mock_type(spec=normal_func)
             self.assertIsInstance(sync_mock, mock_type)
@@ -295,12 +297,14 @@ class AsyncSpecTest(unittest.TestCase):
             with self.subTest(f"test spec kwarg with {mock_type}"):
                 inner_test(mock_type)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_spec_mock_type_positional(self):
         def inner_test(mock_type):
             async_mock = mock_type(async_func)
             self.assertIsInstance(async_mock, mock_type)
             with assertNeverAwaited(self):
-                self.assertTrue(inspect.isawaitable(async_mock()))
+                x = async_mock()
+                del x
 
             sync_mock = mock_type(normal_func)
             self.assertIsInstance(sync_mock, mock_type)
@@ -742,10 +746,12 @@ class AsyncMockAssert(unittest.TestCase):
     async def _await_coroutine(self, coroutine):
         return await coroutine
 
+    @unittest.modifiedBecauseRegisterBased
     def test_assert_called_but_not_awaited(self):
         mock = AsyncMock(AsyncClass)
         with assertNeverAwaited(self):
             mock.async_method()
+            mock.async_method
         self.assertTrue(iscoroutinefunction(mock.async_method))
         mock.async_method.assert_called()
         mock.async_method.assert_called_once()
@@ -782,6 +788,7 @@ class AsyncMockAssert(unittest.TestCase):
         self.mock.assert_called_once()
         self.mock.assert_awaited_once()
 
+    @unittest.modifiedBecauseRegisterBased
     def test_assert_called_twice_and_awaited_once(self):
         mock = AsyncMock(AsyncClass)
         coroutine = mock.async_method()
@@ -789,6 +796,7 @@ class AsyncMockAssert(unittest.TestCase):
         # But this call will never get awaited, so it will warn here
         with assertNeverAwaited(self):
             mock.async_method()
+            mock.async_method
         with self.assertRaises(AssertionError):
             mock.async_method.assert_awaited()
         mock.async_method.assert_called()
@@ -820,47 +828,59 @@ class AsyncMockAssert(unittest.TestCase):
         with self.assertRaises(AssertionError):
             self.mock.assert_called()
 
+    @unittest.modifiedBecauseRegisterBased
     def test_assert_has_calls_not_awaits(self):
         kalls = [call('foo')]
         with assertNeverAwaited(self):
             self.mock('foo')
+            self.mock
         self.mock.assert_has_calls(kalls)
         with self.assertRaises(AssertionError):
             self.mock.assert_has_awaits(kalls)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_assert_has_mock_calls_on_async_mock_no_spec(self):
         with assertNeverAwaited(self):
             self.mock()
+            self.mock
         kalls_empty = [('', (), {})]
         self.assertEqual(self.mock.mock_calls, kalls_empty)
 
         with assertNeverAwaited(self):
             self.mock('foo')
+            self.mock
         with assertNeverAwaited(self):
             self.mock('baz')
+            self.mock
         mock_kalls = ([call(), call('foo'), call('baz')])
         self.assertEqual(self.mock.mock_calls, mock_kalls)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_assert_has_mock_calls_on_async_mock_with_spec(self):
         a_class_mock = AsyncMock(AsyncClass)
         with assertNeverAwaited(self):
             a_class_mock.async_method()
+            a_class_mock.async_method
         kalls_empty = [('', (), {})]
         self.assertEqual(a_class_mock.async_method.mock_calls, kalls_empty)
         self.assertEqual(a_class_mock.mock_calls, [call.async_method()])
 
         with assertNeverAwaited(self):
             a_class_mock.async_method(1, 2, 3, a=4, b=5)
+            a_class_mock.async_method
         method_kalls = [call(), call(1, 2, 3, a=4, b=5)]
         mock_kalls = [call.async_method(), call.async_method(1, 2, 3, a=4, b=5)]
         self.assertEqual(a_class_mock.async_method.mock_calls, method_kalls)
         self.assertEqual(a_class_mock.mock_calls, mock_kalls)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_async_method_calls_recorded(self):
         with assertNeverAwaited(self):
             self.mock.something(3, fish=None)
+            self.mock.something
         with assertNeverAwaited(self):
             self.mock.something_else.something(6, cake=sentinel.Cake)
+            self.mock.something_else.something
 
         self.assertEqual(self.mock.method_calls, [
             ("something", (3,), {'fish': None}),
@@ -871,6 +891,7 @@ class AsyncMockAssert(unittest.TestCase):
                          [("something", (6,), {'cake': sentinel.Cake})],
                          "method calls not recorded correctly")
 
+    @unittest.modifiedBecauseRegisterBased
     def test_async_arg_lists(self):
         def assert_attrs(mock):
             names = ('call_args_list', 'method_calls', 'mock_calls')
@@ -883,10 +904,13 @@ class AsyncMockAssert(unittest.TestCase):
         assert_attrs(self.mock)
         with assertNeverAwaited(self):
             self.mock()
+            self.mock
         with assertNeverAwaited(self):
             self.mock(1, 2)
+            self.mock
         with assertNeverAwaited(self):
             self.mock(a=3)
+            self.mock
 
         self.mock.reset_mock()
         assert_attrs(self.mock)
@@ -894,8 +918,10 @@ class AsyncMockAssert(unittest.TestCase):
         a_mock = AsyncMock(AsyncClass)
         with assertNeverAwaited(self):
             a_mock.async_method()
+            a_mock.async_method
         with assertNeverAwaited(self):
             a_mock.async_method(1, a=3)
+            a_mock.async_method
 
         a_mock.reset_mock()
         assert_attrs(a_mock)

@@ -128,6 +128,12 @@ def skip(reason):
         return decorator(test_item)
     return decorator
 
+
+skipBecauseRegisterBased = skip('not applicable for register-based implementation')
+# Do nothing, but can be used to count how many testcases we have modified
+modifiedBecauseRegisterBased = _id
+
+
 def skipIf(condition, reason):
     """
     Skip a test if the condition is true.

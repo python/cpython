@@ -181,15 +181,18 @@ class BaseLocalTest:
             """To test that subclasses behave properly."""
         self._test_dict_attribute(LocalSubclass)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_cycle_collection(self):
         class X:
             pass
 
-        x = X()
-        x.local = self._local()
-        x.local.x = x
-        wr = weakref.ref(x)
-        del x
+        def wrapper():
+            x = X()
+            x.local = self._local()
+            x.local.x = x
+            wr = weakref.ref(x)
+            return wr
+        wr = wrapper()
         support.gc_collect()  # For PyPy or other GCs.
         self.assertIsNone(wr())
 

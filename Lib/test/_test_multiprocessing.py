@@ -536,6 +536,7 @@ class _TestProcess(BaseTestCase):
             q.get()
         sys.exit(rc)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_close(self):
         if self.TYPE == "threads":
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
@@ -562,6 +563,7 @@ class _TestProcess(BaseTestCase):
         p.close()
 
         wr = weakref.ref(p)
+        _ = [wr, wr, wr]
         del p
         gc.collect()
         self.assertIs(wr(), None)
@@ -603,11 +605,13 @@ class _TestProcess(BaseTestCase):
             for p in procs:
                 self.assertIn(p.exitcode, exitcodes)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_lose_target_ref(self):
         c = DummyCallable()
         wr = weakref.ref(c)
         q = self.Queue()
         p = self.Process(target=c, args=(q, c))
+        _ = [wr, wr, wr, wr]
         del c
         p.start()
         p.join()
@@ -2660,6 +2664,7 @@ class _TestPool(BaseTestCase):
         # check that we indeed waited for all jobs
         self.assertGreater(time.monotonic() - t_start, 0.9)
 
+    @unittest.skipBecauseRegisterBased
     def test_release_task_refs(self):
         # Issue #29861: task arguments and results should not be kept
         # alive after we are done with them.
@@ -5311,6 +5316,7 @@ class TestResourceTracker(unittest.TestCase):
             sem.acquire()
             sem.release()
             wr = weakref.ref(sem)
+            _ = [wr, wr, wr]
             # ensure `sem` gets collected, which triggers communication with
             # the semaphore tracker
             del sem

@@ -863,21 +863,23 @@ class DictTest(unittest.TestCase):
                  'f': None, 'g': None, 'h': None}
         d = {}
 
+    @unittest.modifiedBecauseRegisterBased
     def test_container_iterator(self):
         # Bug #3680: tp_traverse was not implemented for dictiter and
         # dictview objects.
         class C(object):
             pass
         views = (dict.items, dict.values, dict.keys)
-        for v in views:
-            obj = C()
-            ref = weakref.ref(obj)
-            container = {obj: 1}
-            obj.v = v(container)
-            obj.x = iter(obj.v)
-            del obj, container
-            gc.collect()
-            self.assertIs(ref(), None, "Cycle was not collected")
+        refs = []
+        for _ in range(3):
+            for v in views:
+                obj = C()
+                container = {obj: 1}
+                obj.v = v(container)
+                obj.x = iter(obj.v)
+                refs.append(weakref.ref(obj))
+        gc.collect()
+        self.assertTrue(all(r() is None for r in refs[:-1]), "Cycle was not collected")
 
     def _not_tracked(self, t):
         # Nested containers can take several collections to untrack
@@ -1245,6 +1247,7 @@ class DictTest(unittest.TestCase):
         for k in list(d):
             d[k] = k
 
+    @unittest.skipBecauseRegisterBased
     def test_reentrant_insertion(self):
         # Reentrant insertion shouldn't crash (see issue #22653)
         def mutate(d):

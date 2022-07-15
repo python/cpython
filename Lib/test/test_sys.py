@@ -826,6 +826,7 @@ class SysModuleTest(unittest.TestCase):
         # The function has no parameter
         self.assertRaises(TypeError, sys._debugmallocstats, True)
 
+    @unittest.skipBecauseRegisterBased
     @unittest.skipUnless(hasattr(sys, "getallocatedblocks"),
                          "sys.getallocatedblocks unavailable on this build")
     def test_getallocatedblocks(self):
@@ -1185,6 +1186,7 @@ class SizeofTest(unittest.TestCase):
         self.assertEqual(sys.getsizeof(True), size('') + self.longdigit)
         self.assertEqual(sys.getsizeof(True, -1), size('') + self.longdigit)
 
+    @unittest.skipBecauseRegisterBased
     def test_objecttypes(self):
         # check all types defined in Objects/
         calcsize = struct.calcsize

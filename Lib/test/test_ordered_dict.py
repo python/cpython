@@ -640,16 +640,18 @@ class OrderedDictTests:
         dict.update(od, [('spam', 1)])
         self.assertNotIn('NULL', repr(od))
 
+    @unittest.skipBecauseRegisterBased
     def test_reference_loop(self):
         # Issue 25935
-        OrderedDict = self.OrderedDict
-        class A:
-            od = OrderedDict()
-        A.od[A] = None
-        r = weakref.ref(A)
-        del A
+        refs = []
+        for _ in range(3):
+            OrderedDict = self.OrderedDict
+            class A:
+                od = OrderedDict()
+            A.od[A] = None
+            refs.append(weakref.ref(A))
         gc.collect()
-        self.assertIsNone(r())
+        self.assertTrue(all(r() is None for r in refs[:-2]))
 
     def test_free_after_iterating(self):
         support.check_free_after_iterating(self, iter, self.OrderedDict)

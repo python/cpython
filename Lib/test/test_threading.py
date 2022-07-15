@@ -94,6 +94,7 @@ class BaseTestCase(unittest.TestCase):
         test.support.reap_children()
 
 
+@unittest.skipBecauseRegisterBased
 class ThreadTests(BaseTestCase):
 
     @cpython_only
@@ -427,6 +428,7 @@ class ThreadTests(BaseTestCase):
         finally:
             sys.setswitchinterval(old_interval)
 
+    @unittest.skipBecauseRegisterBased
     def test_no_refcycle_through_target(self):
         class RunSelfFunction(object):
             def __init__(self, should_raise):
@@ -1170,6 +1172,7 @@ class SubinterpThreadingTests(BaseTestCase):
         # The thread was joined properly.
         self.assertEqual(os.read(r, 1), b"x")
 
+    @unittest.skipBecauseRegisterBased
     def test_threads_join_2(self):
         # Same as above, but a delay gets introduced after the thread's
         # Python code returned but before the thread state is deleted.

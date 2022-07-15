@@ -961,8 +961,8 @@ class PyBuildExt(build_ext):
         self.add(Extension('unicodedata', ['unicodedata.c'],
                            depends=['unicodedata_db.h', 'unicodename_db.h'],
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
-        # _opcode module
-        self.add(Extension('_opcode', ['_opcode.c']))
+        # opcode module
+        self.add(Extension('opcode', ['opcode.c']))
         # asyncio speedups
         self.add(Extension("_asyncio", ["_asynciomodule.c"],
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))

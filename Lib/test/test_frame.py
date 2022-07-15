@@ -30,17 +30,21 @@ class ClearTest(unittest.TestCase):
             tb.tb_frame.clear()
             tb = tb.tb_next
 
+    @unittest.modifiedBecauseRegisterBased
     def test_clear_locals(self):
         class C:
             pass
-        c = C()
-        wr = weakref.ref(c)
-        exc = self.outer(c=c)
-        del c
-        support.gc_collect()
-        # A reference to c is held through the frames
-        self.assertIsNot(None, wr())
-        self.clear_traceback_frames(exc.__traceback__)
+        def wrapper():
+            c = C()
+            wr = weakref.ref(c)
+            exc = self.outer(c=c)
+            del c
+            support.gc_collect()
+            # A reference to c is held through the frames
+            self.assertIsNot(None, wr())
+            self.clear_traceback_frames(exc.__traceback__)
+            return wr
+        wr = wrapper()
         support.gc_collect()
         # The reference was released by .clear()
         self.assertIs(None, wr())
@@ -115,19 +119,22 @@ class ClearTest(unittest.TestCase):
         test(True)
         self.assertEqual(lines, expected_lines)
 
+    @unittest.modifiedBecauseRegisterBased
     @support.cpython_only
     def test_clear_refcycles(self):
         # .clear() doesn't leave any refcycle behind
         with support.disable_gc():
             class C:
                 pass
-            c = C()
-            wr = weakref.ref(c)
-            exc = self.outer(c=c)
-            del c
-            self.assertIsNot(None, wr())
-            self.clear_traceback_frames(exc.__traceback__)
-            self.assertIs(None, wr())
+            def wrapper():
+                c = C()
+                wr = weakref.ref(c)
+                exc = self.outer(c=c)
+                del c
+                self.assertIsNot(None, wr())
+                self.clear_traceback_frames(exc.__traceback__)
+                return wr
+            self.assertIs(None, wrapper()())
 
 
 class FrameAttrsTest(unittest.TestCase):

@@ -728,6 +728,7 @@ if 1:
 
     # Multiple users rely on the fact that CPython does not generate
     # bytecode for dead code blocks. See bpo-37500 for more context.
+    @unittest.modifiedBecauseRegisterBased
     @support.cpython_only
     def test_dead_blocks_do_not_generate_bytecode(self):
         def unused_block_if():
@@ -755,11 +756,11 @@ if 1:
 
         for func in funcs:
             opcodes = list(dis.get_instructions(func))
-            self.assertLessEqual(len(opcodes), 3)
-            self.assertEqual('LOAD_CONST', opcodes[-2].opname)
-            self.assertEqual(None, opcodes[-2].argval)
+            self.assertLessEqual(len(opcodes), 2)
             self.assertEqual('RETURN_VALUE', opcodes[-1].opname)
+            self.assertEqual('None', opcodes[-1].opargs_repr[0])
 
+    @unittest.modifiedBecauseRegisterBased
     def test_false_while_loop(self):
         def break_in_while():
             while False:
@@ -774,11 +775,11 @@ if 1:
         # Check that we did not raise but we also don't generate bytecode
         for func in funcs:
             opcodes = list(dis.get_instructions(func))
-            self.assertEqual(2, len(opcodes))
-            self.assertEqual('LOAD_CONST', opcodes[0].opname)
-            self.assertEqual(None, opcodes[0].argval)
-            self.assertEqual('RETURN_VALUE', opcodes[1].opname)
+            self.assertEqual(1, len(opcodes))
+            self.assertEqual('RETURN_VALUE', opcodes[0].opname)
+            self.assertEqual('None', opcodes[0].opargs_repr[0])
 
+    @unittest.modifiedBecauseRegisterBased
     def test_consts_in_conditionals(self):
         def and_true(x):
             return True and x
@@ -799,7 +800,7 @@ if 1:
             with self.subTest(func=func):
                 opcodes = list(dis.get_instructions(func))
                 self.assertEqual(2, len(opcodes))
-                self.assertIn('LOAD_', opcodes[0].opname)
+                self.assertEqual('MOVE_FAST', opcodes[0].opname)
                 self.assertEqual('RETURN_VALUE', opcodes[1].opname)
 
     def test_lineno_procedure_call(self):
@@ -851,7 +852,10 @@ if 1:
         def no_code2():
             a: int
 
-        for func in (no_code1, no_code2):
+        # CPython may have a bug.
+        # if docstring does not have a lineno,
+        # then python -OO ... will give different result
+        for offset_line, func in ((1, no_code1), (0, no_code2)):
             with self.subTest(func=func):
                 code = func.__code__
                 lines = list(code.co_lines())
@@ -859,7 +863,7 @@ if 1:
                 start, end, line = lines[0]
                 self.assertEqual(start, 0)
                 self.assertEqual(end, len(code.co_code))
-                self.assertEqual(line, code.co_firstlineno)
+                self.assertEqual(line, code.co_firstlineno + offset_line)
 
     def test_lineno_attribute(self):
         def load_attr():
@@ -916,7 +920,7 @@ if 1:
                     y)
         genexp_lines = [None, 1, 3, 1]
 
-        genexp_code = return_genexp.__code__.co_consts[1]
+        genexp_code = return_genexp.__code__.co_consts[-1]
         code_lines = [ None if line is None else line-return_genexp.__code__.co_firstlineno
                       for (_, _, line) in genexp_code.co_lines() ]
         self.assertEqual(genexp_lines, code_lines)
@@ -971,74 +975,83 @@ if 1:
 
 
 class TestExpressionStackSize(unittest.TestCase):
-    # These tests check that the computed stack size for a code object
+    # These tests check that the temporary register number for a code object
     # stays within reasonable bounds (see issue #21523 for an example
     # dysfunction).
-    N = 100
 
-    def check_stack_size(self, code):
-        # To assert that the alleged stack size is not O(N), we
-        # check that it is smaller than log(N).
-        if isinstance(code, str):
-            code = compile(code, "<foo>", "single")
-        max_size = math.ceil(math.log(len(code.co_code)))
-        self.assertLessEqual(code.co_stacksize, max_size)
+    def check_ntmps(self, code_maker):
+        # the number should stop to grow after n becomes greater than some value,
+        # here the value is 60, double the size of our STACK_USE_GUIDELINE,
+        code1 = compile(code_maker(60), "<foo1>", "single")
+        code2 = compile(code_maker(600), "<foo2>", "single")
+        self.assertEqual(code1.co_ntmps, code2.co_ntmps)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_and(self):
-        self.check_stack_size("x and " * self.N + "x")
+        self.check_ntmps(lambda n: "x and " * n + "x")
 
+    @unittest.modifiedBecauseRegisterBased
     def test_or(self):
-        self.check_stack_size("x or " * self.N + "x")
+        self.check_ntmps(lambda n: "x or " * n + "x")
 
+    @unittest.modifiedBecauseRegisterBased
     def test_and_or(self):
-        self.check_stack_size("x and x or " * self.N + "x")
+        self.check_ntmps(lambda n: "x and x or " * n + "x")
 
+    @unittest.modifiedBecauseRegisterBased
     def test_chained_comparison(self):
-        self.check_stack_size("x < " * self.N + "x")
+        self.check_ntmps(lambda n: "x < " * n + "x")
 
+    @unittest.modifiedBecauseRegisterBased
     def test_if_else(self):
-        self.check_stack_size("x if x else " * self.N + "x")
+        self.check_ntmps(lambda n: "x if x else " * n + "x")
 
+    @unittest.modifiedBecauseRegisterBased
     def test_binop(self):
-        self.check_stack_size("x + " * self.N + "x")
+        self.check_ntmps(lambda n: "x + " * n + "x")
 
+    @unittest.modifiedBecauseRegisterBased
     def test_list(self):
-        self.check_stack_size("[" + "x, " * self.N + "x]")
+        self.check_ntmps(lambda n: "[" + "x, " * n + "x]")
 
+    @unittest.modifiedBecauseRegisterBased
     def test_tuple(self):
-        self.check_stack_size("(" + "x, " * self.N + "x)")
+        self.check_ntmps(lambda n: "(" + "x, " * n + "x)")
 
+    @unittest.modifiedBecauseRegisterBased
     def test_set(self):
-        self.check_stack_size("{" + "x, " * self.N + "x}")
+        self.check_ntmps(lambda n: "{" + "x, " * n + "x}")
 
+    @unittest.modifiedBecauseRegisterBased
     def test_dict(self):
-        self.check_stack_size("{" + "x:x, " * self.N + "x:x}")
+        self.check_ntmps(lambda n: "{" + "x:x, " * n + "x:x}")
 
+    @unittest.modifiedBecauseRegisterBased
     def test_func_args(self):
-        self.check_stack_size("f(" + "x, " * self.N + ")")
+        self.check_ntmps(lambda n: "f(" + "x, " * n + ")")
 
+    @unittest.modifiedBecauseRegisterBased
     def test_func_kwargs(self):
-        kwargs = (f'a{i}=x' for i in range(self.N))
-        self.check_stack_size("f(" +  ", ".join(kwargs) + ")")
+        self.check_ntmps(lambda n: "f(" +  ", ".join(f'a{i}=x' for i in range(n)) + ")")
 
+    @unittest.modifiedBecauseRegisterBased
     def test_func_args(self):
-        self.check_stack_size("o.m(" + "x, " * self.N + ")")
+        self.check_ntmps(lambda n: "o.m(" + "x, " * n + ")")
 
+    @unittest.modifiedBecauseRegisterBased
     def test_meth_kwargs(self):
-        kwargs = (f'a{i}=x' for i in range(self.N))
-        self.check_stack_size("o.m(" +  ", ".join(kwargs) + ")")
+        self.check_ntmps(lambda n: "o.m(" +  ", ".join(f'a{i}=x' for i in range(n)) + ")")
 
+    @unittest.modifiedBecauseRegisterBased
     def test_func_and(self):
-        code = "def f(x):\n"
-        code += "   x and x\n" * self.N
-        self.check_stack_size(code)
+        self.check_ntmps(lambda n: "def f(x):\n" + "   x and x\n" * n)
 
 
 class TestStackSizeStability(unittest.TestCase):
-    # Check that repeating certain snippets doesn't increase the stack size
+    # Check that repeating certain snippets doesn't increase the temporary register number
     # beyond what a single snippet requires.
 
-    def check_stack_size(self, snippet, async_=False):
+    def check_ntmps(self, snippet, async_=False):
         def compile_snippet(i):
             ns = {}
             script = """def func():\n""" + i * snippet
@@ -1048,7 +1061,7 @@ class TestStackSizeStability(unittest.TestCase):
             exec(code, ns, ns)
             return ns['func'].__code__
 
-        sizes = [compile_snippet(i).co_stacksize for i in range(2, 5)]
+        sizes = [compile_snippet(i).co_ntmps for i in range(2, 5)]
         if len(set(sizes)) != 1:
             import dis, io
             out = io.StringIO()
@@ -1056,13 +1069,15 @@ class TestStackSizeStability(unittest.TestCase):
             self.fail("stack sizes diverge with # of consecutive snippets: "
                       "%s\n%s\n%s" % (sizes, snippet, out.getvalue()))
 
+    @unittest.modifiedBecauseRegisterBased
     def test_if(self):
         snippet = """
             if x:
                 a
             """
-        self.check_stack_size(snippet)
+        self.check_ntmps(snippet)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_if_else(self):
         snippet = """
             if x:
@@ -1072,8 +1087,9 @@ class TestStackSizeStability(unittest.TestCase):
             else:
                 c
             """
-        self.check_stack_size(snippet)
+        self.check_ntmps(snippet)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_try_except_bare(self):
         snippet = """
             try:
@@ -1081,8 +1097,9 @@ class TestStackSizeStability(unittest.TestCase):
             except:
                 b
             """
-        self.check_stack_size(snippet)
+        self.check_ntmps(snippet)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_try_except_qualified(self):
         snippet = """
             try:
@@ -1094,8 +1111,9 @@ class TestStackSizeStability(unittest.TestCase):
             else:
                 d
             """
-        self.check_stack_size(snippet)
+        self.check_ntmps(snippet)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_try_except_as(self):
         snippet = """
             try:
@@ -1107,8 +1125,9 @@ class TestStackSizeStability(unittest.TestCase):
             else:
                 d
             """
-        self.check_stack_size(snippet)
+        self.check_ntmps(snippet)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_try_finally(self):
         snippet = """
                 try:
@@ -1116,15 +1135,17 @@ class TestStackSizeStability(unittest.TestCase):
                 finally:
                     b
             """
-        self.check_stack_size(snippet)
+        self.check_ntmps(snippet)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_with(self):
         snippet = """
             with x as y:
                 a
             """
-        self.check_stack_size(snippet)
+        self.check_ntmps(snippet)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_while_else(self):
         snippet = """
             while x:
@@ -1132,15 +1153,17 @@ class TestStackSizeStability(unittest.TestCase):
             else:
                 b
             """
-        self.check_stack_size(snippet)
+        self.check_ntmps(snippet)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_for(self):
         snippet = """
             for x in y:
                 a
             """
-        self.check_stack_size(snippet)
+        self.check_ntmps(snippet)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_for_else(self):
         snippet = """
             for x in y:
@@ -1148,8 +1171,9 @@ class TestStackSizeStability(unittest.TestCase):
             else:
                 b
             """
-        self.check_stack_size(snippet)
+        self.check_ntmps(snippet)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_for_break_continue(self):
         snippet = """
             for x in y:
@@ -1162,8 +1186,9 @@ class TestStackSizeStability(unittest.TestCase):
             else:
                 b
             """
-        self.check_stack_size(snippet)
+        self.check_ntmps(snippet)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_for_break_continue_inside_try_finally_block(self):
         snippet = """
             for x in y:
@@ -1179,8 +1204,9 @@ class TestStackSizeStability(unittest.TestCase):
             else:
                 b
             """
-        self.check_stack_size(snippet)
+        self.check_ntmps(snippet)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_for_break_continue_inside_finally_block(self):
         snippet = """
             for x in y:
@@ -1196,8 +1222,9 @@ class TestStackSizeStability(unittest.TestCase):
             else:
                 b
             """
-        self.check_stack_size(snippet)
+        self.check_ntmps(snippet)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_for_break_continue_inside_except_block(self):
         snippet = """
             for x in y:
@@ -1213,8 +1240,9 @@ class TestStackSizeStability(unittest.TestCase):
             else:
                 b
             """
-        self.check_stack_size(snippet)
+        self.check_ntmps(snippet)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_for_break_continue_inside_with_block(self):
         snippet = """
             for x in y:
@@ -1228,8 +1256,9 @@ class TestStackSizeStability(unittest.TestCase):
             else:
                 b
             """
-        self.check_stack_size(snippet)
+        self.check_ntmps(snippet)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_return_inside_try_finally_block(self):
         snippet = """
             try:
@@ -1240,8 +1269,9 @@ class TestStackSizeStability(unittest.TestCase):
             finally:
                 f
             """
-        self.check_stack_size(snippet)
+        self.check_ntmps(snippet)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_return_inside_finally_block(self):
         snippet = """
             try:
@@ -1252,8 +1282,9 @@ class TestStackSizeStability(unittest.TestCase):
                 else:
                     a
             """
-        self.check_stack_size(snippet)
+        self.check_ntmps(snippet)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_return_inside_except_block(self):
         snippet = """
             try:
@@ -1264,8 +1295,9 @@ class TestStackSizeStability(unittest.TestCase):
                 else:
                     a
             """
-        self.check_stack_size(snippet)
+        self.check_ntmps(snippet)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_return_inside_with_block(self):
         snippet = """
             with c:
@@ -1274,22 +1306,25 @@ class TestStackSizeStability(unittest.TestCase):
                 else:
                     a
             """
-        self.check_stack_size(snippet)
+        self.check_ntmps(snippet)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_async_with(self):
         snippet = """
             async with x as y:
                 a
             """
-        self.check_stack_size(snippet, async_=True)
+        self.check_ntmps(snippet, async_=True)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_async_for(self):
         snippet = """
             async for x in y:
                 a
             """
-        self.check_stack_size(snippet, async_=True)
+        self.check_ntmps(snippet, async_=True)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_async_for_else(self):
         snippet = """
             async for x in y:
@@ -1297,8 +1332,9 @@ class TestStackSizeStability(unittest.TestCase):
             else:
                 b
             """
-        self.check_stack_size(snippet, async_=True)
+        self.check_ntmps(snippet, async_=True)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_for_break_continue_inside_async_with_block(self):
         snippet = """
             for x in y:
@@ -1312,8 +1348,9 @@ class TestStackSizeStability(unittest.TestCase):
             else:
                 b
             """
-        self.check_stack_size(snippet, async_=True)
+        self.check_ntmps(snippet, async_=True)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_return_inside_async_with_block(self):
         snippet = """
             async with c:
@@ -1322,7 +1359,7 @@ class TestStackSizeStability(unittest.TestCase):
                 else:
                     a
             """
-        self.check_stack_size(snippet, async_=True)
+        self.check_ntmps(snippet, async_=True)
 
 
 if __name__ == "__main__":

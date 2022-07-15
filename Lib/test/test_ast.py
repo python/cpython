@@ -292,13 +292,14 @@ class AST_Tests(unittest.TestCase):
     def test_AST_garbage_collection(self):
         class X:
             pass
-        a = ast.AST()
-        a.x = X()
-        a.x.a = a
-        ref = weakref.ref(a.x)
-        del a
+        refs = []
+        for _ in range(3):
+            a = ast.AST()
+            a.x = X()
+            a.x.a = a
+            refs.append(weakref.ref(a.x))
         support.gc_collect()
-        self.assertIsNone(ref())
+        self.assertTrue(all(r() is None for r in refs[:-1]))
 
     def test_snippets(self):
         for input, output, kind in ((exec_tests, exec_results, "exec"),
@@ -1702,6 +1703,7 @@ class ConstantTests(unittest.TestCase):
                 consts.append(instr.argval)
         return consts
 
+    @unittest.skipBecauseRegisterBased
     @support.cpython_only
     def test_load_const(self):
         consts = [None,

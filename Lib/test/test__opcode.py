@@ -1,13 +1,10 @@
 import dis
-from test.support.import_helper import import_module
 import unittest
-
-_opcode = import_module("_opcode")
-from _opcode import stack_effect
 
 
 class OpcodeTests(unittest.TestCase):
 
+    @unittest.skipBecauseRegisterBased
     def test_stack_effect(self):
         self.assertEqual(stack_effect(dis.opmap['POP_TOP']), -1)
         self.assertEqual(stack_effect(dis.opmap['DUP_TOP_TWO']), 2)
@@ -32,6 +29,7 @@ class OpcodeTests(unittest.TestCase):
                 self.assertRaises(ValueError, stack_effect, code)
                 self.assertRaises(ValueError, stack_effect, code, 0)
 
+    @unittest.skipBecauseRegisterBased
     def test_stack_effect_jump(self):
         JUMP_IF_TRUE_OR_POP = dis.opmap['JUMP_IF_TRUE_OR_POP']
         self.assertEqual(stack_effect(JUMP_IF_TRUE_OR_POP, 0), 0)

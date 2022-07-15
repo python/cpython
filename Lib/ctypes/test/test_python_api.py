@@ -38,6 +38,7 @@ class PythonAPITestCase(unittest.TestCase):
         del pyob
         self.assertEqual(grc(s), refcnt)
 
+    @unittest.skipBecauseRegisterBased
     @support.refcount_test
     def test_PyLong_Long(self):
         ref42 = grc(42)

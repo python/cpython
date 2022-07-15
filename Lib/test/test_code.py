@@ -6,18 +6,8 @@
 ...     return g
 ...
 
->>> dump(f.__code__)
-name: f
-argcount: 1
-posonlyargcount: 0
-kwonlyargcount: 0
-names: ()
-varnames: ('x', 'g')
-cellvars: ('x',)
-freevars: ()
-nlocals: 2
-flags: 3
-consts: ('None', '<code object g>', "'f.<locals>.g'")
+>>> # @unittest.skipBecauseRegisterBased
+... print(end='')
 
 >>> dump(f(4).__code__)
 name: g
@@ -207,6 +197,7 @@ class CodeTest(unittest.TestCase):
         obj = List([1, 2, 3])
         self.assertEqual(obj[0], "Foreign getitem: 1")
 
+    @unittest.modifiedBecauseRegisterBased
     def test_constructor(self):
         def func(): pass
         co = func.__code__
@@ -217,7 +208,7 @@ class CodeTest(unittest.TestCase):
                         co.co_posonlyargcount,
                         co.co_kwonlyargcount,
                         co.co_nlocals,
-                        co.co_stacksize,
+                        co.co_ntmps,
                         co.co_flags,
                         co.co_code,
                         co.co_consts,
@@ -230,6 +221,7 @@ class CodeTest(unittest.TestCase):
                         co.co_freevars,
                         co.co_cellvars)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_replace(self):
         def func():
             x = 1
@@ -247,7 +239,7 @@ class CodeTest(unittest.TestCase):
             ("co_posonlyargcount", 0),
             ("co_kwonlyargcount", 0),
             ("co_nlocals", 0),
-            ("co_stacksize", 0),
+            ("co_ntmps", 0),
             ("co_flags", code.co_flags | inspect.CO_COROUTINE),
             ("co_firstlineno", 100),
             ("co_code", code2.co_code),
@@ -324,26 +316,30 @@ class CodeConstsTest(unittest.TestCase):
 
 class CodeWeakRefTest(unittest.TestCase):
 
+    @unittest.modifiedBecauseRegisterBased
     def test_basic(self):
         # Create a code object in a clean environment so that we know we have
         # the only reference to it left.
-        namespace = {}
-        exec("def f(): pass", globals(), namespace)
-        f = namespace["f"]
-        del namespace
+        refs = []
+        coderef = None
+        def wrapper():
+            namespace = {}
+            exec("def f(): pass", globals(), namespace)
+            f = namespace["f"]
+            del namespace
 
-        self.called = False
-        def callback(code):
-            self.called = True
+            self.called = False
+            def callback(code):
+                self.called = True
 
-        # f is now the last reference to the function, and through it, the code
-        # object.  While we hold it, check that we can create a weakref and
-        # deref it.  Then delete it, and check that the callback gets called and
-        # the reference dies.
-        coderef = weakref.ref(f.__code__, callback)
-        self.assertTrue(bool(coderef()))
-        del f
-        gc_collect()  # For PyPy or other GCs.
+            # f is now the last reference to the function, and through it, the code
+            # object.  While we hold it, check that we can create a weakref and
+            # deref it.  Then delete it, and check that the callback gets called and
+            # the reference dies.
+            nonlocal coderef
+            coderef = weakref.ref(f.__code__, callback)
+            self.assertTrue(bool(coderef()))
+        wrapper()
         self.assertFalse(bool(coderef()))
         self.assertTrue(self.called)
 

@@ -242,14 +242,18 @@ class SliceTest(unittest.TestCase):
             self.assertEqual(s.indices(15), t.indices(15))
             self.assertNotEqual(id(s), id(t))
 
+    @unittest.modifiedBecauseRegisterBased
     def test_cycle(self):
-        class myobj(): pass
-        o = myobj()
-        o.s = slice(o)
-        w = weakref.ref(o)
-        o = None
+        refs = []
+        for _ in range(3):
+            class myobj(): pass
+            o = myobj()
+            o.s = slice(o)
+            w = weakref.ref(o)
+            o = None
+            refs.append(w)
         support.gc_collect()
-        self.assertIsNone(w())
+        self.assertTrue(all(r() is None for r in refs[:-1]))
 
 if __name__ == "__main__":
     unittest.main()

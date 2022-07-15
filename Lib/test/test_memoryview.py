@@ -216,6 +216,7 @@ class AbstractMemoryTests:
             m = None
             self.assertEqual(sys.getrefcount(b), oldrefcount)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_gc(self):
         for tp in self._types:
             if not isinstance(tp, type):
@@ -232,27 +233,27 @@ class AbstractMemoryTests:
 
             # Create a reference cycle through a memoryview object.
             # This exercises mbuf_clear().
-            b = MySource(tp(b'abc'))
-            m = self._view(b)
-            o = MyObject()
-            b.m = m
-            b.o = o
-            wr = weakref.ref(o)
-            b = m = o = None
-            # The cycle must be broken
+            refs = []
+            for _ in range(3):
+                b = MySource(tp(b'abc'))
+                m = self._view(b)
+                o = MyObject()
+                b.m = m
+                b.o = o
+                refs.append(weakref.ref(o))
             gc.collect()
-            self.assertTrue(wr() is None, wr())
+            self.assertTrue(all(r() is None for r in refs[:-2]))
 
             # This exercises memory_clear().
-            m = MyView(tp(b'abc'))
-            o = MyObject()
-            m.x = m
-            m.o = o
-            wr = weakref.ref(o)
-            m = o = None
-            # The cycle must be broken
+            refs = []
+            for _ in range(3):
+                m = MyView(tp(b'abc'))
+                o = MyObject()
+                m.x = m
+                m.o = o
+                refs.append(weakref.ref(o))
             gc.collect()
-            self.assertTrue(wr() is None, wr())
+            self.assertTrue(all(r() is None for r in refs[:-2]))
 
     def _check_released(self, m, tp):
         check = self.assertRaisesRegex(ValueError, "released")
@@ -341,16 +342,20 @@ class AbstractMemoryTests:
         m = self._view(b)
         self.assertRaises(ValueError, hash, m)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_weakref(self):
         # Check memoryviews are weakrefable
         for tp in self._types:
             b = tp(self._source)
             m = self._view(b)
+            m2 = self._view(b)
             L = []
             def callback(wr, b=b):
                 L.append(b)
             wr = weakref.ref(m, callback)
+            wr2 = weakref.ref(m2, callback)
             self.assertIs(wr(), m)
+            self.assertIs(wr2(), m2)
             del m
             test.support.gc_collect()
             self.assertIs(wr(), None)

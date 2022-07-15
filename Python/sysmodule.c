@@ -2659,7 +2659,7 @@ make_version_info(PyThreadState *tstate)
 const char *_PySys_ImplName = NAME;
 #define MAJOR Py_STRINGIFY(PY_MAJOR_VERSION)
 #define MINOR Py_STRINGIFY(PY_MINOR_VERSION)
-#define TAG NAME "-" MAJOR MINOR
+#define TAG "regcpython-" MAJOR MINOR
 const char *_PySys_ImplCacheTag = TAG;
 #undef NAME
 #undef MAJOR

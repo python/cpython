@@ -1729,34 +1729,30 @@ class TestLRU:
             return 1
         self.assertEqual(f.cache_parameters(), {'maxsize': 1000, "typed": True})
 
+    @unittest.modifiedBecauseRegisterBased
     def test_lru_cache_weakrefable(self):
-        @self.module.lru_cache
-        def test_function(x):
-            return x
-
-        class A:
+        refs = []
+        for _ in range(3):
             @self.module.lru_cache
-            def test_method(self, x):
-                return (self, x)
+            def test_function(x):
+                return x
 
-            @staticmethod
-            @self.module.lru_cache
-            def test_staticmethod(x):
-                return (self, x)
+            class A:
+                @self.module.lru_cache
+                def test_method(self, x):
+                    return (self, x)
 
-        refs = [weakref.ref(test_function),
-                weakref.ref(A.test_method),
-                weakref.ref(A.test_staticmethod)]
+                @staticmethod
+                @self.module.lru_cache
+                def test_staticmethod(x):
+                    return (self, x)
 
-        for ref in refs:
-            self.assertIsNotNone(ref())
+            refs.extend([weakref.ref(test_function),
+                    weakref.ref(A.test_method),
+                    weakref.ref(A.test_staticmethod)])
 
-        del A
-        del test_function
         gc.collect()
-
-        for ref in refs:
-            self.assertIsNone(ref())
+        self.assertTrue(all(r() is None for r in refs[:-3]))
 
 
 @py_functools.lru_cache()

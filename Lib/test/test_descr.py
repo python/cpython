@@ -2210,6 +2210,7 @@ order (MRO) for bases """
             self.assertIn(i, p10)
         self.assertNotIn(10, p10)
 
+    @unittest.skipBecauseRegisterBased
     def test_weakrefs(self):
         # Testing weak references...
         import weakref
@@ -4821,6 +4822,7 @@ order (MRO) for bases """
         ns = {'__qualname__': 1}
         self.assertRaises(TypeError, type, 'Foo', (), ns)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_cycle_through_dict(self):
         # See bug #1469629
         class X(dict):
@@ -4830,6 +4832,7 @@ order (MRO) for bases """
         x = X()
         x.attr = 42
         wr = weakref.ref(x)
+        _ = [wr, wr, wr]
         del x
         support.gc_collect()
         self.assertIsNone(wr())

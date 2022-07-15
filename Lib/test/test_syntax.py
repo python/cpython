@@ -618,7 +618,7 @@ A continue outside loop should not be allowed.
     ...         continue
     Traceback (most recent call last):
       ...
-    SyntaxError: 'continue' not properly in loop
+    SyntaxError: 'continue' outside loop
 
 There is one test for a break that is not in a loop.  The compiler
 uses a single data structure to keep track of try-finally and loops,
@@ -1411,12 +1411,12 @@ class SyntaxTestCase(unittest.TestCase):
                           "outside loop")
 
     def test_continue_outside_loop(self):
-        self._check_error("if 0: continue",             "not properly in loop")
-        self._check_error("if 0: continue\nelse:  x=1", "not properly in loop")
-        self._check_error("if 1: pass\nelse: continue", "not properly in loop")
-        self._check_error("class C:\n  if 0: continue", "not properly in loop")
+        self._check_error("if 0: continue",             "outside loop")
+        self._check_error("if 0: continue\nelse:  x=1", "outside loop")
+        self._check_error("if 1: pass\nelse: continue", "outside loop")
+        self._check_error("class C:\n  if 0: continue", "outside loop")
         self._check_error("class C:\n  if 1: pass\n  else: continue",
-                          "not properly in loop")
+                          "outside loop")
 
     def test_unexpected_indent(self):
         self._check_error("foo()\n bar()\n", "unexpected indent",

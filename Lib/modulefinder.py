@@ -9,12 +9,13 @@ import io
 import sys
 
 
-LOAD_CONST = dis.opmap['LOAD_CONST']
-IMPORT_NAME = dis.opmap['IMPORT_NAME']
-STORE_NAME = dis.opmap['STORE_NAME']
-STORE_GLOBAL = dis.opmap['STORE_GLOBAL']
-STORE_OPS = STORE_NAME, STORE_GLOBAL
-EXTENDED_ARG = dis.EXTENDED_ARG
+# Not applicable for our register-based implementation
+# LOAD_CONST = dis.opmap['LOAD_CONST']
+# IMPORT_NAME = dis.opmap['IMPORT_NAME']
+# STORE_NAME = dis.opmap['STORE_NAME']
+# STORE_GLOBAL = dis.opmap['STORE_GLOBAL']
+# STORE_OPS = STORE_NAME, STORE_GLOBAL
+# EXTENDED_ARG = dis.EXTENDED_ARG
 
 # Old imp constants:
 

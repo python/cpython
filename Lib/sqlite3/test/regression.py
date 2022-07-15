@@ -159,6 +159,7 @@ class RegressionTests(unittest.TestCase):
         """
         self.assertRaises(TypeError, sqlite.register_adapter, {}, None)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_set_isolation_level(self):
         # See issue 27881.
         class CustomStr(str):
@@ -175,6 +176,9 @@ class RegressionTests(unittest.TestCase):
                 con.isolation_level = level.lower()
                 con.isolation_level = level.capitalize()
                 con.isolation_level = CustomStr(level)
+                # for register-based implementation
+                # do something to override the value on temporary register
+                str(level)
 
         # setting isolation_level failure should not alter previous state
         con.isolation_level = None

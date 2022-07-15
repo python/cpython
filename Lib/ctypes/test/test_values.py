@@ -38,6 +38,7 @@ class PythonValuesTestCase(unittest.TestCase):
         opt = c_int.in_dll(pythonapi, "Py_OptimizeFlag").value
         self.assertEqual(opt, sys.flags.optimize)
 
+    @unittest.skipBecauseRegisterBased
     def test_frozentable(self):
         # Python exports a PyImport_FrozenModules symbol. This is a
         # pointer to an array of struct _frozen entries.  The end of the

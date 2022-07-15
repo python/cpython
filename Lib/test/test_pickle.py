@@ -123,19 +123,21 @@ class PyIdPersPicklerTests(AbstractIdentityPersistentPicklerTests,
     pickler = pickle._Pickler
     unpickler = pickle._Unpickler
 
+    @unittest.modifiedBecauseRegisterBased
     @support.cpython_only
     def test_pickler_reference_cycle(self):
         def check(Pickler):
-            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                f = io.BytesIO()
-                pickler = Pickler(f, proto)
-                pickler.dump('abc')
-                self.assertEqual(self.loads(f.getvalue()), 'abc')
-            pickler = Pickler(io.BytesIO())
-            self.assertEqual(pickler.persistent_id('def'), 'def')
-            r = weakref.ref(pickler)
-            del pickler
-            self.assertIsNone(r())
+            refs = []
+            for _ in range(3):
+                for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                    f = io.BytesIO()
+                    pickler = Pickler(f, proto)
+                    pickler.dump('abc')
+                    self.assertEqual(self.loads(f.getvalue()), 'abc')
+                pickler = Pickler(io.BytesIO())
+                self.assertEqual(pickler.persistent_id('def'), 'def')
+                refs.append(weakref.ref(pickler))
+            self.assertTrue(all(r() is None for r in refs[:-1]))
 
         class PersPickler(self.pickler):
             def persistent_id(subself, obj):
@@ -154,17 +156,19 @@ class PyIdPersPicklerTests(AbstractIdentityPersistentPicklerTests,
                 return obj
         check(PersPickler)
 
+    @unittest.modifiedBecauseRegisterBased
     @support.cpython_only
     def test_unpickler_reference_cycle(self):
         def check(Unpickler):
-            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                unpickler = Unpickler(io.BytesIO(self.dumps('abc', proto)))
-                self.assertEqual(unpickler.load(), 'abc')
-            unpickler = Unpickler(io.BytesIO())
-            self.assertEqual(unpickler.persistent_load('def'), 'def')
-            r = weakref.ref(unpickler)
-            del unpickler
-            self.assertIsNone(r())
+            refs = []
+            for _ in range(3):
+                for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                    unpickler = Unpickler(io.BytesIO(self.dumps('abc', proto)))
+                    self.assertEqual(unpickler.load(), 'abc')
+                unpickler = Unpickler(io.BytesIO())
+                self.assertEqual(unpickler.persistent_load('def'), 'def')
+                refs.append(weakref.ref(unpickler))
+            self.assertTrue(all(r() is None for r in refs[:-1]))
 
         class PersUnpickler(self.unpickler):
             def persistent_load(subself, pid):

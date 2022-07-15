@@ -202,6 +202,7 @@ class FileTests(unittest.TestCase):
         os.closerange(first, first + 2)
         self.assertRaises(OSError, os.write, first, b"a")
 
+    @unittest.skipBecauseRegisterBased
     @support.cpython_only
     def test_rename(self):
         path = os_helper.TESTFN

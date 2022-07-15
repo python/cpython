@@ -750,6 +750,7 @@ class AsCompletedTests:
         ]
         self.assertEqual(len(completed), 1)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_free_reference_yielded_future(self):
         # Issue #14406: Generator should not keep references
         # to finished futures.
@@ -761,6 +762,7 @@ class AsCompletedTests:
             for future in futures.as_completed(futures_list, timeout=0):
                 futures_list.remove(future)
                 wr = weakref.ref(future)
+                _ = [wr, wr, wr]
                 del future
                 support.gc_collect()  # For PyPy or other GCs.
                 self.assertIsNone(wr())
@@ -769,6 +771,7 @@ class AsCompletedTests:
         for future in futures.as_completed(futures_list):
             futures_list.remove(future)
             wr = weakref.ref(future)
+            _ = [wr, wr, wr]
             del future
             support.gc_collect()  # For PyPy or other GCs.
             self.assertIsNone(wr())
@@ -864,14 +867,17 @@ class ExecutorTest:
                                         "than 0"):
                 self.executor_type(max_workers=number)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_free_reference(self):
         # Issue #14406: Result iterator should not keep an internal
         # reference to result objects.
+        old_wr = weakref.ref(make_dummy_object(-1))
         for obj in self.executor.map(make_dummy_object, range(10)):
             wr = weakref.ref(obj)
             del obj
             support.gc_collect()  # For PyPy or other GCs.
-            self.assertIsNone(wr())
+            self.assertIsNone(old_wr())
+            old_wr = wr
 
 
 class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):

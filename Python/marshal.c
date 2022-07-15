@@ -513,7 +513,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_long(co->co_posonlyargcount, p);
         w_long(co->co_kwonlyargcount, p);
         w_long(co->co_nlocals, p);
-        w_long(co->co_stacksize, p);
+        w_long(co->co_ntmps, p);
         w_long(co->co_flags, p);
         w_object(co->co_code, p);
         w_object(co->co_consts, p);

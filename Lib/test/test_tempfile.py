@@ -442,6 +442,7 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
         for i in extant:
             extant[i] = self.do_create(pre="aa")
 
+    @unittest.skipBecauseRegisterBased
     def test_choose_directory(self):
         # _mkstemp_inner can create files in a user-selected directory
         dir = tempfile.mkdtemp()

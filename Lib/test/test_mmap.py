@@ -691,11 +691,14 @@ class MmapTests(unittest.TestCase):
                               "wrong exception raised in context manager")
         self.assertTrue(m.closed, "context manager failed")
 
+    @unittest.modifiedBecauseRegisterBased
     def test_weakref(self):
         # Check mmap objects are weakrefable
         mm = mmap.mmap(-1, 16)
         wr = weakref.ref(mm)
+        dummy = weakref.ref(self)
         self.assertIs(wr(), mm)
+        self.assertIs(dummy(), self)
         del mm
         gc_collect()
         self.assertIs(wr(), None)

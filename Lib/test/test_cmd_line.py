@@ -86,6 +86,7 @@ class CmdLineTest(unittest.TestCase):
         opts = get_xoptions('-Xa', '-Xb=c,d=e')
         self.assertEqual(opts, {'a': True, 'b': 'c,d=e'})
 
+    @unittest.skipBecauseRegisterBased
     def test_showrefcount(self):
         def run_python(*args):
             # this is similar to assert_python_ok but doesn't strip

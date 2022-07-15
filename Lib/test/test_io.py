@@ -766,6 +766,7 @@ class IOTest(unittest.TestCase):
             file = self.open(f.fileno(), "r", encoding="utf-8", closefd=False)
             self.assertEqual(file.buffer.raw.closefd, False)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_garbage_collection(self):
         # FileIO objects are collected, and collecting them flushes
         # all data to disk.
@@ -774,6 +775,7 @@ class IOTest(unittest.TestCase):
             f.write(b"abcxxx")
             f.f = f
             wr = weakref.ref(f)
+            _ = [wr, wr, wr]
             del f
             support.gc_collect()
         self.assertIsNone(wr(), wr)
@@ -1019,6 +1021,7 @@ class IOTest(unittest.TestCase):
 
 class CIOTest(IOTest):
 
+    @unittest.modifiedBecauseRegisterBased
     def test_IOBase_finalize(self):
         # Issue #12149: segmentation fault on _PyIOBase_finalize when both a
         # class which inherits IOBase and an object of this class are caught
@@ -1032,6 +1035,7 @@ class CIOTest(IOTest):
         obj = MyIO()
         obj.obj = obj
         wr = weakref.ref(obj)
+        _ = [wr, wr, wr]
         del MyIO
         del obj
         support.gc_collect()
@@ -1579,6 +1583,7 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
         # checking this is not so easy.
         self.assertRaises(OSError, bufio.read, 10)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_garbage_collection(self):
         # C BufferedReader objects are collected.
         # The Python version has __del__, so it ends into gc.garbage instead
@@ -1588,6 +1593,7 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
             f = self.tp(rawio)
             f.f = f
             wr = weakref.ref(f)
+            _ = [wr, wr, wr]
             del f
             support.gc_collect()
         self.assertIsNone(wr(), wr)
@@ -1937,6 +1943,7 @@ class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
         self.assertRaises(ValueError, bufio.__init__, rawio, buffer_size=-1)
         self.assertRaises(ValueError, bufio.write, b"def")
 
+    @unittest.modifiedBecauseRegisterBased
     def test_garbage_collection(self):
         # C BufferedWriter objects are collected, and collecting them flushes
         # all data to disk.
@@ -1948,6 +1955,7 @@ class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
             f.write(b"123xxx")
             f.x = f
             wr = weakref.ref(f)
+            _ = [wr, wr, wr]
             del f
             support.gc_collect()
         self.assertIsNone(wr(), wr)
@@ -3742,6 +3750,7 @@ class CTextIOWrapperTest(TextIOWrapperTest):
         t = self.TextIOWrapper.__new__(self.TextIOWrapper)
         self.assertRaises(Exception, repr, t)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_garbage_collection(self):
         # C TextIOWrapper objects are collected, and collecting them flushes
         # all data to disk.
@@ -3753,6 +3762,7 @@ class CTextIOWrapperTest(TextIOWrapperTest):
             t.write("456def")
             t.x = t
             wr = weakref.ref(t)
+            _ = [wr, wr, wr]
             del t
             support.gc_collect()
         self.assertIsNone(wr(), wr)
@@ -4041,6 +4051,7 @@ class MiscIOTest(unittest.TestCase):
             self.assertRaises(ValueError, f.writelines, [])
             self.assertRaises(ValueError, next, f)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_blockingioerror(self):
         # Various BlockingIOError issues
         class C(str):
@@ -4050,6 +4061,7 @@ class MiscIOTest(unittest.TestCase):
         c.b = b
         b.c = c
         wr = weakref.ref(c)
+        _ = [wr, wr, wr, wr]
         del c, b
         support.gc_collect()
         self.assertIsNone(wr(), wr)

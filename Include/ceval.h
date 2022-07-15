@@ -137,15 +137,6 @@ PyAPI_FUNC(void) PyEval_ReleaseThread(PyThreadState *tstate);
 #define Py_END_ALLOW_THREADS    PyEval_RestoreThread(_save); \
                  }
 
-/* Masks and values used by FORMAT_VALUE opcode. */
-#define FVC_MASK      0x3
-#define FVC_NONE      0x0
-#define FVC_STR       0x1
-#define FVC_REPR      0x2
-#define FVC_ASCII     0x3
-#define FVS_MASK      0x4
-#define FVS_HAVE_SPEC 0x4
-
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_CEVAL_H
 #  include  "cpython/ceval.h"

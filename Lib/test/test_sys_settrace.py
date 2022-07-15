@@ -407,11 +407,13 @@ class TraceTestCase(unittest.TestCase):
         self.run_test2(settrace_and_raise)
     def test_10_ireturn(self):
         self.run_test(ireturn_example)
+    @unittest.skipBecauseRegisterBased
     def test_11_tightloop(self):
         self.run_test(tightloop_example)
     def test_12_tighterloop(self):
         self.run_test(tighterloop_example)
 
+    @unittest.skipBecauseRegisterBased
     def test_13_genexp(self):
         self.run_test(generator_example)
         # issue1265: if the trace function contains a generator,
@@ -703,6 +705,7 @@ class TraceTestCase(unittest.TestCase):
              (8, 'line'),
              (8, 'return')])
 
+    @unittest.skipBecauseRegisterBased
     def test_break_through_finally(self):
 
         def func():
@@ -739,6 +742,7 @@ class TraceTestCase(unittest.TestCase):
              (13, 'line'),
              (13, 'return')])
 
+    @unittest.skipBecauseRegisterBased
     def test_continue_through_finally(self):
 
         def func():
@@ -776,6 +780,7 @@ class TraceTestCase(unittest.TestCase):
              (13, 'line'),
              (13, 'return')])
 
+    @unittest.skipBecauseRegisterBased
     def test_return_through_finally(self):
 
         def func():
@@ -1033,6 +1038,7 @@ class TraceTestCase(unittest.TestCase):
              (2, 'line'),
              (2, 'return')])
 
+    @unittest.skipBecauseRegisterBased
     def test_early_exit_with(self):
 
         class C:
@@ -1483,6 +1489,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(11)
         output.append(12)
 
+    @unittest.skipBecauseRegisterBased
     @jump_test(5, 11, [2, 4], (ValueError, 'after'))
     def test_no_jump_over_return_try_finally_in_finally_block(output):
         try:
@@ -1829,6 +1836,7 @@ class JumpTestCase(unittest.TestCase):
         with tracecontext(output, 2):
             output.append(3)
 
+    @unittest.skipBecauseRegisterBased
     @async_jump_test(1, 3, [], (ValueError, 'into'))
     async def test_no_jump_forwards_into_async_with_block(output):
         output.append(1)
@@ -1847,6 +1855,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(2)
         output.append(3)
 
+    @unittest.skipBecauseRegisterBased
     @jump_test(1, 3, [], (ValueError, 'into'))
     def test_no_jump_forwards_into_try_finally_block(output):
         output.append(1)
@@ -1893,6 +1902,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(7)
         output.append(8)
 
+    @unittest.skipBecauseRegisterBased
     @jump_test(1, 5, [5])
     def test_jump_into_finally_block(output):
         output.append(1)
@@ -1901,6 +1911,7 @@ class JumpTestCase(unittest.TestCase):
         finally:
             output.append(5)
 
+    @unittest.skipBecauseRegisterBased
     @jump_test(3, 6, [2, 6, 7])
     def test_jump_into_finally_block_from_try_block(output):
         try:
@@ -1911,6 +1922,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(6)
         output.append(7)
 
+    @unittest.skipBecauseRegisterBased
     @jump_test(5, 1, [1, 3, 1, 3, 5])
     def test_jump_out_of_finally_block(output):
         output.append(1)
@@ -1993,6 +2005,7 @@ class JumpTestCase(unittest.TestCase):
         async with asynctracecontext(output, 4):
             output.append(5)
 
+    @unittest.skipBecauseRegisterBased
     @jump_test(5, 7, [2, 4], (ValueError, "after"))
     def test_no_jump_over_return_out_of_finally_block(output):
         try:

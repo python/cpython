@@ -2433,53 +2433,59 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
             e[:] = [E('bar')]
             self.assertRaises(TypeError, copy.deepcopy, e)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_cyclic_gc(self):
         class Dummy:
             pass
 
         # Test the shortest cycle: d->element->d
-        d = Dummy()
-        d.dummyref = ET.Element('joe', attr=d)
-        wref = weakref.ref(d)
-        del d
+        refs = []
+        for _ in range(3):
+            d = Dummy()
+            d.dummyref = ET.Element('joe', attr=d)
+            refs.append(weakref.ref(d))
         gc_collect()
-        self.assertIsNone(wref())
+        self.assertTrue(all(r() is None for r in refs[:-1]))
 
         # A longer cycle: d->e->e2->d
-        e = ET.Element('joe')
-        d = Dummy()
-        d.dummyref = e
-        wref = weakref.ref(d)
-        e2 = ET.SubElement(e, 'foo', attr=d)
-        del d, e, e2
+        refs = []
+        for _ in range(3):
+            e = ET.Element('joe')
+            d = Dummy()
+            d.dummyref = e
+            refs.append(weakref.ref(d))
+            e2 = ET.SubElement(e, 'foo', attr=d)
         gc_collect()
-        self.assertIsNone(wref())
+        self.assertTrue(all(r() is None for r in refs[:-1]))
 
         # A cycle between Element objects as children of one another
         # e1->e2->e3->e1
-        e1 = ET.Element('e1')
-        e2 = ET.Element('e2')
-        e3 = ET.Element('e3')
-        e3.append(e1)
-        e2.append(e3)
-        e1.append(e2)
-        wref = weakref.ref(e1)
-        del e1, e2, e3
+        refs = []
+        for _ in range(3):
+            e1 = ET.Element('e1')
+            e2 = ET.Element('e2')
+            e3 = ET.Element('e3')
+            e3.append(e1)
+            e2.append(e3)
+            e1.append(e2)
+            refs.append(weakref.ref(e1))
         gc_collect()
-        self.assertIsNone(wref())
+        self.assertTrue(all(r() is None for r in refs[:-1]))
 
+    @unittest.modifiedBecauseRegisterBased
     def test_weakref(self):
-        flag = False
-        def wref_cb(w):
-            nonlocal flag
-            flag = True
-        e = ET.Element('e')
-        wref = weakref.ref(e, wref_cb)
-        self.assertEqual(wref().tag, 'e')
-        del e
-        gc_collect()  # For PyPy or other GCs.
-        self.assertEqual(flag, True)
-        self.assertEqual(wref(), None)
+        refs = []
+        flag = 0
+        for _ in range(3):
+            def wref_cb(w):
+                nonlocal flag
+                flag += 1
+            e = ET.Element('e')
+            wref = weakref.ref(e, wref_cb)
+            refs.append(wref)
+            self.assertEqual(wref().tag, 'e')
+        self.assertGreaterEqual(flag, 3 - 1)
+        self.assertTrue(all(r() is None for r in refs[:-1]))
 
     def test_get_keyword_args(self):
         e1 = ET.Element('foo' , x=1, y=2, z=3)

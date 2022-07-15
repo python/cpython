@@ -25,6 +25,8 @@ extern "C" {
     PyObject *prefix##_name;                                                \
     /* Qualified name of the generator. */                                  \
     PyObject *prefix##_qualname;                                            \
+    /* Pointer to the location where the sent argument is stored */         \
+    PyObject **prefix##_arg;                                                \
     _PyErr_StackItem prefix##_exc_state;
 
 typedef struct {

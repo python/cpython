@@ -218,9 +218,11 @@ class BaseLockTests(BaseTestCase):
         ref = weakref.ref(lock)
         self.assertIsNotNone(ref())
 
+    @unittest.modifiedBecauseRegisterBased
     def test_weakref_deleted(self):
         lock = self.locktype()
         ref = weakref.ref(lock)
+        weakref.ref(self)
         del lock
         gc.collect()  # For PyPy or other GCs.
         self.assertIsNone(ref())

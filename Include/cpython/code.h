@@ -2,14 +2,26 @@
 #  error "this header file must not be included directly"
 #endif
 
-typedef uint16_t _Py_CODEUNIT;
+typedef uint32_t _Py_CODEUNIT;
+typedef int_fast32_t _Py_OPARG;
+#define _Py_OPARG_PRI PRIiFAST32
 
 #ifdef WORDS_BIGENDIAN
-#  define _Py_OPCODE(word) ((word) >> 8)
-#  define _Py_OPARG(word) ((word) & 255)
+#  define PACKOPARG(C, A1, A2, A3) ((_Py_CODEUNIT) \
+        (((C) & 0xff) << 24 | ((A1) & 0xff) << 16 | ((A2) & 0xff) << 8 | ((A3) & 0xff)))
+#  define _Py_OPCODE(X) ((X) >> 24 & 0xff)
+#  define _Py_OPARG1(X) ((X) >> 16 & 0xff)
+#  define _Py_OPARG2(X) ((X) >> 8 & 0xff)
+#  define _Py_OPARG3(X) ((X) & 0xff)
+#  define _Py_OPARGI(X, I) ((X) >> 24 - (I) * 8 & 0xff)
 #else
-#  define _Py_OPCODE(word) ((word) & 255)
-#  define _Py_OPARG(word) ((word) >> 8)
+#  define PACKOPARG(C, A1, A2, A3) ((_Py_CODEUNIT) \
+        (((A3) & 0xff) << 24 | ((A2) & 0xff) << 16 | ((A1) & 0xff) << 8 | ((C) & 0xff)))
+#  define _Py_OPCODE(X) ((X) & 0xff)
+#  define _Py_OPARG1(X) ((X) >> 8 & 0xff)
+#  define _Py_OPARG2(X) ((X) >> 16 & 0xff)
+#  define _Py_OPARG3(X) ((X) >> 24 & 0xff)
+#  define _Py_OPARGI(X, I) ((X) >> (I) * 8 & 0xff)
 #endif
 
 typedef struct _PyOpcache _PyOpcache;
@@ -21,7 +33,7 @@ struct PyCodeObject {
     int co_posonlyargcount;     /* #positional only arguments */
     int co_kwonlyargcount;      /* #keyword only arguments */
     int co_nlocals;             /* #local variables */
-    int co_stacksize;           /* #entries needed for evaluation stack */
+    int co_ntmps;               /* #entries temporary registers */
     int co_flags;               /* CO_..., see below */
     int co_firstlineno;         /* first source line number */
     PyObject *co_code;          /* instruction opcodes */
@@ -83,6 +95,10 @@ struct PyCodeObject {
 #define CO_ITERABLE_COROUTINE   0x0100
 #define CO_ASYNC_GENERATOR      0x0200
 
+/* The 10th-16th bits indicates the try blocks needed,
+ * Note we did not fully utilize these bits, but 20 is enough */
+#define CO_MAXBLOCKS 20
+
 /* bpo-39562: These constant values are changed in Python 3.9
    to prevent collision with compiler flags. CO_FUTURE_ and PyCF_
    constants must be kept unique. PyCF_ constants can use bits from
@@ -105,8 +121,6 @@ struct PyCodeObject {
    For example, when a keyword is added.
 */
 #define PY_PARSER_REQUIRES_FUTURE_KEYWORD
-
-#define CO_MAXBLOCKS 20 /* Max static block nesting within a function */
 
 PyAPI_DATA(PyTypeObject) PyCode_Type;
 
@@ -161,10 +175,6 @@ PyAPI_FUNC(int) _PyCode_CheckLineNumber(int lasti, PyCodeAddressRange *bounds);
  * depending on the type and the value. The type is the first item to not
  * compare bytes and str which can raise a BytesWarning exception. */
 PyAPI_FUNC(PyObject*) _PyCode_ConstantKey(PyObject *obj);
-
-PyAPI_FUNC(PyObject*) PyCode_Optimize(PyObject *code, PyObject* consts,
-                                      PyObject *names, PyObject *lnotab);
-
 
 PyAPI_FUNC(int) _PyCode_GetExtra(PyObject *code, Py_ssize_t index,
                                  void **extra);

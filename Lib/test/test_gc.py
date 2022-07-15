@@ -132,6 +132,7 @@ class GCTests(unittest.TestCase):
         del a
         self.assertNotEqual(gc.collect(), 0)
 
+    @unittest.skipBecauseRegisterBased
     def test_newinstance(self):
         class A(object):
             pass
@@ -586,6 +587,7 @@ class GCTests(unittest.TestCase):
         self.assertTrue(gc.is_tracked(UserFloatSlots()))
         self.assertTrue(gc.is_tracked(UserIntSlots()))
 
+    @unittest.skipBecauseRegisterBased
     def test_is_finalized(self):
         # Objects not tracked by the always gc return false
         self.assertFalse(gc.is_finalized(3))
@@ -980,6 +982,7 @@ class GCTests(unittest.TestCase):
 
         gc.enable()
 
+    @unittest.skipBecauseRegisterBased
     @unittest.skipIf(ContainerNoGC is None,
                      'requires ContainerNoGC extension type')
     def test_trash_weakref_clear(self):

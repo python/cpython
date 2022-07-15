@@ -3961,12 +3961,13 @@ class TestSignatureBind(unittest.TestCase):
         ba = sig.bind(args=1)
         self.assertEqual(ba.arguments, {'kwargs': {'args': 1}})
 
+    @unittest.modifiedBecauseRegisterBased
     @cpython_only
     def test_signature_bind_implicit_arg(self):
         # Issue #19611: getcallargs should work with set comprehensions
         def make_set():
             return {z * z for z in range(5)}
-        setcomp_code = make_set.__code__.co_consts[1]
+        setcomp_code = make_set.__code__.co_consts[2]
         setcomp_func = types.FunctionType(setcomp_code, {})
 
         iterator = iter(range(5))

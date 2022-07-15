@@ -274,6 +274,7 @@ class TestSysConfig(unittest.TestCase):
             cmd = "-c", "import sysconfig; print(sysconfig.get_platform())"
             self.assertEqual(py.call_real(*cmd), py.call_link(*cmd))
 
+    @unittest.skip("BAD TESTCASE")
     def test_user_similar(self):
         # Issue #8759: make sure the posix scheme for the users
         # is similar to the global posix_prefix one

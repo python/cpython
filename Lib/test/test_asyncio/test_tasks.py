@@ -2970,6 +2970,7 @@ class CTask_CFuture_Tests(BaseTaskTests, SetMethodsTest,
     Task = getattr(tasks, '_CTask', None)
     Future = getattr(futures, '_CFuture', None)
 
+    @unittest.skipBecauseRegisterBased
     @support.refcount_test
     def test_refleaks_in_task___init__(self):
         gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')

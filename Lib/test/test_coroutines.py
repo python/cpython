@@ -1280,8 +1280,7 @@ class CoroutineTest(unittest.TestCase):
 
         with self.assertRaisesRegex(
                 TypeError,
-                "'async with' received an object from __aenter__ "
-                "that does not implement __await__: int"):
+                "object int can't be used in 'await' expression"):
             # it's important that __aexit__ wasn't called
             run_async(foo())
 
@@ -1303,8 +1302,7 @@ class CoroutineTest(unittest.TestCase):
         except TypeError as exc:
             self.assertRegex(
                 exc.args[0],
-                "'async with' received an object from __aexit__ "
-                "that does not implement __await__: int")
+                "object int can't be used in 'await' expression")
             self.assertTrue(exc.__context__ is not None)
             self.assertTrue(isinstance(exc.__context__, ZeroDivisionError))
         else:
@@ -1328,8 +1326,7 @@ class CoroutineTest(unittest.TestCase):
                 CNT += 1
         with self.assertRaisesRegex(
                 TypeError,
-                "'async with' received an object from __aexit__ "
-                "that does not implement __await__: int"):
+                "object int can't be used in 'await' expression"):
             run_async(foo())
         self.assertEqual(CNT, 1)
 
@@ -1342,8 +1339,7 @@ class CoroutineTest(unittest.TestCase):
                     break
         with self.assertRaisesRegex(
                 TypeError,
-                "'async with' received an object from __aexit__ "
-                "that does not implement __await__: int"):
+                "object int can't be used in 'await' expression"):
             run_async(foo())
         self.assertEqual(CNT, 2)
 
@@ -1356,8 +1352,7 @@ class CoroutineTest(unittest.TestCase):
                     continue
         with self.assertRaisesRegex(
                 TypeError,
-                "'async with' received an object from __aexit__ "
-                "that does not implement __await__: int"):
+                "object int can't be used in 'await' expression"):
             run_async(foo())
         self.assertEqual(CNT, 3)
 
@@ -1369,8 +1364,7 @@ class CoroutineTest(unittest.TestCase):
                 return
         with self.assertRaisesRegex(
                 TypeError,
-                "'async with' received an object from __aexit__ "
-                "that does not implement __await__: int"):
+                "object int can't be used in 'await' expression"):
             run_async(foo())
         self.assertEqual(CNT, 4)
 
@@ -1583,7 +1577,7 @@ class CoroutineTest(unittest.TestCase):
 
         with self.assertRaisesRegex(
                 TypeError,
-                r"that does not implement __anext__"):
+                r"'async for' requires an iterator with __anext__ method, got I"):
 
             run_async(foo())
 

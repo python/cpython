@@ -102,28 +102,34 @@ class ModuleTests(unittest.TestCase):
         gc_collect()
         self.assertEqual(f().__dict__["bar"], 4)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_clear_dict_in_ref_cycle(self):
         destroyed = []
-        m = ModuleType("foo")
-        m.destroyed = destroyed
-        s = """class A:
+        def wrapper():
+            m = ModuleType("foo")
+            m.destroyed = destroyed
+            s = """class A:
     def __init__(self, l):
         self.l = l
     def __del__(self):
         self.l.append(1)
 a = A(destroyed)"""
-        exec(s, m.__dict__)
-        del m
+            exec(s, m.__dict__)
+            del m
+        wrapper()
         gc_collect()
         self.assertEqual(destroyed, [1])
 
+    @unittest.modifiedBecauseRegisterBased
     def test_weakref(self):
-        m = ModuleType("foo")
-        wr = weakref.ref(m)
-        self.assertIs(wr(), m)
-        del m
+        refs = []
+        for _ in range(3):
+            m = ModuleType("foo")
+            wr = weakref.ref(m)
+            self.assertIs(wr(), m)
+            refs.append(wr)
         gc_collect()
-        self.assertIs(wr(), None)
+        self.assertTrue(all(r() is None for r in refs[:-1]))
 
     def test_module_getattr(self):
         import test.good_getattr as gga

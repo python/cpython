@@ -805,6 +805,7 @@ class TestCopy(unittest.TestCase):
         self.assertEqual(v[a], b)
         self.assertEqual(v[c], d)
         self.assertEqual(len(v), 2)
+        _ = [v, v, v, v, v]
         del c, d
         support.gc_collect()  # For PyPy or other GCs.
         self.assertEqual(len(v), 1)
@@ -813,9 +814,11 @@ class TestCopy(unittest.TestCase):
         v[x] = y
         self.assertNotIn(x, u)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_copy_weakkeydict(self):
         self._check_copy_weakdict(weakref.WeakKeyDictionary)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_copy_weakvaluedict(self):
         self._check_copy_weakdict(weakref.WeakValueDictionary)
 
@@ -839,6 +842,7 @@ class TestCopy(unittest.TestCase):
         support.gc_collect()  # For PyPy or other GCs.
         self.assertEqual(len(v), 1)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_deepcopy_weakvaluedict(self):
         class C(object):
             def __init__(self, i):
@@ -858,6 +862,7 @@ class TestCopy(unittest.TestCase):
         self.assertIsNot(z, c)
         self.assertEqual(z.i, c.i)
         self.assertIs(t, d)
+        _ = [v, v, v, v, v]
         del x, y, z, t
         del d
         support.gc_collect()  # For PyPy or other GCs.

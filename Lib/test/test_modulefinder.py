@@ -318,6 +318,7 @@ def create_package(source):
         if ofi:
             ofi.close()
 
+@unittest.skipBecauseRegisterBased
 class ModuleFinderTest(unittest.TestCase):
     def _do_test(self, info, report=False, debug=0, replace_paths=[], modulefinder_class=modulefinder.ModuleFinder):
         import_this, modules, missing, maybe_missing, source = info

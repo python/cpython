@@ -867,7 +867,10 @@ class PyFrameObjectPtr(PyObjectPtr):
             self.co_filename = self.co.pyop_field('co_filename')
 
             self.f_lineno = int_from_int(self.field('f_lineno'))
-            self.f_lasti = int_from_int(self.field('f_lasti'))
+            co_code = PyBytesObjectPtr.from_pyobject_ptr(self.co.field('co_code'))
+            first_instr = co_code.field('ob_sval').address.cast(_type_unsigned_char_ptr())
+            last_instr = self.field('f_last_instr').cast(_type_unsigned_char_ptr())
+            self.f_lasti = int_from_int(last_instr - first_instr)
             self.co_nlocals = int_from_int(self.co.field('co_nlocals'))
             self.co_varnames = PyTupleObjectPtr.from_pyobject_ptr(self.co.field('co_varnames'))
 
@@ -879,10 +882,11 @@ class PyFrameObjectPtr(PyObjectPtr):
         if self.is_optimized_out():
             return
 
+        Py_Undefined = long(gdb.lookup_global_symbol('_Py_UndefinedStruct').value().address)
         f_localsplus = self.field('f_localsplus')
         for i in safe_range(self.co_nlocals):
             pyop_value = PyObjectPtr.from_pyobject_ptr(f_localsplus[i])
-            if not pyop_value.is_null():
+            if long(pyop_value._gdbval) != Py_Undefined:
                 pyop_name = PyObjectPtr.from_pyobject_ptr(self.co_varnames[i])
                 yield (pyop_name, pyop_value)
 
@@ -947,7 +951,7 @@ class PyFrameObjectPtr(PyObjectPtr):
             return self.f_lineno
 
         try:
-            return self.co.addr2line(self.f_lasti*2)
+            return self.co.addr2line(self.f_lasti)
         except Exception:
             # bpo-34989: addr2line() is a complex function, it can fail in many
             # ways. For example, it fails with a TypeError on "FakeRepr" if

@@ -64,14 +64,18 @@ class PickleBufferTest(unittest.TestCase):
         # Idempotency
         pb.release()
 
+    @unittest.modifiedBecauseRegisterBased
     def test_cycle(self):
-        b = B(b"foo")
-        pb = PickleBuffer(b)
-        b.cycle = pb
-        wpb = weakref.ref(pb)
-        del b, pb
+        refs = []
+        for _ in range(3):
+            b = B(b"foo")
+            pb = PickleBuffer(b)
+            b.cycle = pb
+            wpb = weakref.ref(pb)
+            del b, pb
+            refs.append(wpb)
         gc.collect()
-        self.assertIsNone(wpb())
+        self.assertTrue(all(r() is None for r in refs[:-1]))
 
     def test_ndarray_2d(self):
         # C-contiguous

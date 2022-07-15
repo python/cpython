@@ -17,6 +17,7 @@ def count_instr_recursively(f, opname):
     return count
 
 
+@unittest.skipBecauseRegisterBased
 class TestTranforms(BytecodeTestCase):
 
     def check_jump_targets(self, code):

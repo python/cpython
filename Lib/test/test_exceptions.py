@@ -154,8 +154,8 @@ class ExceptionTests(unittest.TestCase):
         except:
             pass'''
 
-        ckmsg(s, "'continue' not properly in loop")
-        ckmsg("continue\n", "'continue' not properly in loop")
+        ckmsg(s, "'continue' outside loop")
+        ckmsg("continue\n", "'continue' outside loop")
 
     def testSyntaxErrorMissingParens(self):
         def ckmsg(src, msg, exception=SyntaxError):
@@ -209,7 +209,7 @@ class ExceptionTests(unittest.TestCase):
                     src = src.decode(encoding, 'replace')
                 line = src.split('\n')[lineno-1]
                 self.assertIn(line, cm.exception.text)
-    
+
     def test_error_offset_continuation_characters(self):
         check = self.check
         check('"\\\n"(1 for c in I,\\\n\\', 2, 2)
@@ -638,6 +638,7 @@ class ExceptionTests(unittest.TestCase):
             del e
         self.assertNotIn('e', locals())
 
+    @unittest.modifiedBecauseRegisterBased
     def testExceptionCleanupState(self):
         # Make sure exception state is cleaned up as soon as the except
         # block is left. See #2507
@@ -655,56 +656,48 @@ class ExceptionTests(unittest.TestCase):
 
         # Qualified "except" with "as"
         obj = MyObj()
-        wr = weakref.ref(obj)
+        ref1 = sys.getrefcount(obj)
         try:
             inner_raising_func()
         except MyException as e:
             pass
-        obj = None
-        gc_collect()  # For PyPy or other GCs.
-        obj = wr()
-        self.assertIsNone(obj)
+        ref2 = sys.getrefcount(obj)
+        self.assertEqual(ref1, ref2)
 
         # Qualified "except" without "as"
         obj = MyObj()
-        wr = weakref.ref(obj)
+        ref1 = sys.getrefcount(obj)
         try:
             inner_raising_func()
         except MyException:
             pass
-        obj = None
-        gc_collect()  # For PyPy or other GCs.
-        obj = wr()
-        self.assertIsNone(obj)
+        ref2 = sys.getrefcount(obj)
+        self.assertEqual(ref1, ref2)
 
         # Bare "except"
         obj = MyObj()
-        wr = weakref.ref(obj)
+        ref1 = sys.getrefcount(obj)
         try:
             inner_raising_func()
         except:
             pass
-        obj = None
-        gc_collect()  # For PyPy or other GCs.
-        obj = wr()
-        self.assertIsNone(obj)
+        ref2 = sys.getrefcount(obj)
+        self.assertEqual(ref1, ref2)
 
         # "except" with premature block leave
         obj = MyObj()
-        wr = weakref.ref(obj)
+        ref1 = sys.getrefcount(obj)
         for i in [0]:
             try:
                 inner_raising_func()
             except:
                 break
-        obj = None
-        gc_collect()  # For PyPy or other GCs.
-        obj = wr()
-        self.assertIsNone(obj)
+        ref2 = sys.getrefcount(obj)
+        self.assertEqual(ref1, ref2)
 
         # "except" block raising another exception
         obj = MyObj()
-        wr = weakref.ref(obj)
+        ref1 = sys.getrefcount(obj)
         try:
             try:
                 inner_raising_func()
@@ -716,17 +709,15 @@ class ExceptionTests(unittest.TestCase):
             # also ends up in the __context__ of the KeyError, so we
             # must clear the latter manually for our test to succeed.
             e.__context__ = None
-            obj = None
-            gc_collect()  # For PyPy or other GCs.
-            obj = wr()
             # guarantee no ref cycles on CPython (don't gc_collect)
             if check_impl_detail(cpython=False):
                 gc_collect()
-            self.assertIsNone(obj)
+            ref2 = sys.getrefcount(obj)
+            self.assertEqual(ref1, ref2)
 
         # Some complicated construct
         obj = MyObj()
-        wr = weakref.ref(obj)
+        ref1 = sys.getrefcount(obj)
         try:
             inner_raising_func()
         except MyException:
@@ -737,11 +728,10 @@ class ExceptionTests(unittest.TestCase):
                     raise
             except MyException:
                 pass
-        obj = None
         if check_impl_detail(cpython=False):
             gc_collect()
-        obj = wr()
-        self.assertIsNone(obj)
+        ref2 = sys.getrefcount(obj)
+        self.assertEqual(ref1, ref2)
 
         # Inside an exception-silencing "with" block
         class Context:
@@ -750,14 +740,13 @@ class ExceptionTests(unittest.TestCase):
             def __exit__ (self, exc_type, exc_value, exc_tb):
                 return True
         obj = MyObj()
-        wr = weakref.ref(obj)
+        ref1 = sys.getrefcount(obj)
         with Context():
             inner_raising_func()
-        obj = None
         if check_impl_detail(cpython=False):
             gc_collect()
-        obj = wr()
-        self.assertIsNone(obj)
+        ref2 = sys.getrefcount(obj)
+        self.assertEqual(ref1, ref2)
 
     def test_exception_target_in_nested_scope(self):
         # issue 4617: This used to raise a SyntaxError
@@ -903,14 +892,13 @@ class ExceptionTests(unittest.TestCase):
                 yield
 
         obj = MyObj()
-        wr = weakref.ref(obj)
+        ref1 = sys.getrefcount(obj)
         g = raising_gen()
         next(g)
         testfunc(g)
-        g = obj = None
-        gc_collect()  # For PyPy or other GCs.
-        obj = wr()
-        self.assertIsNone(obj)
+        g = None
+        ref2 = sys.getrefcount(obj)
+        self.assertEqual(ref1, ref2)
 
     def test_generator_throw_cleanup_exc_state(self):
         def do_throw(g):
@@ -1405,6 +1393,7 @@ class ExceptionTests(unittest.TestCase):
         self.assertEqual(error5.a, 1)
         self.assertEqual(error5.__doc__, "")
 
+    @unittest.modifiedBecauseRegisterBased
     @cpython_only
     def test_memory_error_cleanup(self):
         # Issue #5437: preallocated MemoryError instances should not keep
@@ -1423,11 +1412,13 @@ class ExceptionTests(unittest.TestCase):
             inner()
         except MemoryError as e:
             self.assertNotEqual(wr(), None)
+            self.assertEqual(None, None)
         else:
             self.fail("MemoryError not raised")
         gc_collect()  # For PyPy or other GCs.
         self.assertEqual(wr(), None)
 
+    @unittest.modifiedBecauseRegisterBased
     @no_tracing
     def test_recursion_error_cleanup(self):
         # Same test as above, but with "recursion exceeded" errors
@@ -1444,6 +1435,7 @@ class ExceptionTests(unittest.TestCase):
             inner()
         except RecursionError as e:
             self.assertNotEqual(wr(), None)
+            self.assertEqual(None, None)
         else:
             self.fail("RecursionError not raised")
         gc_collect()  # For PyPy or other GCs.

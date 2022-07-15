@@ -881,6 +881,7 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests('--forever', test, exitcode=2)
         self.check_executed_tests(output, [test]*3, failed=test)
 
+    @unittest.skipBecauseRegisterBased
     def check_leak(self, code, what):
         test = self.create_test('huntrleaks', code=code)
 
@@ -1300,6 +1301,7 @@ class ArgsTestCase(BaseTestCase):
         self.assertIn("Warning -- Uncaught thread exception", output)
         self.assertIn("Exception: bug in thread", output)
 
+    @unittest.skip("BAD TESTCASE")
     def test_unicode_guard_env(self):
         guard = os.environ.get(setup.UNICODE_GUARD_ENV)
         self.assertIsNotNone(guard, f"{setup.UNICODE_GUARD_ENV} not set")

@@ -359,6 +359,7 @@ class TestWeakSet(unittest.TestCase):
         # The removal has been committed
         self.assertEqual(len(s), len(items))
 
+    @unittest.skipBecauseRegisterBased
     def test_weak_destroy_and_mutate_while_iterating(self):
         # Issue #7105: iterators shouldn't crash when a key is implicitly removed
         items = [ustr(c) for c in string.ascii_letters]

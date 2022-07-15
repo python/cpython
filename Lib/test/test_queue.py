@@ -579,6 +579,7 @@ class BaseSimpleQueueTest:
 
         self.assertEqual(sorted(results), inputs)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_references(self):
         # The queue should lose references to each item as soon as
         # it leaves the queue.
@@ -591,6 +592,7 @@ class BaseSimpleQueueTest:
             q.put(C())
         for i in range(N):
             wr = weakref.ref(q.get())
+            _ = [wr, wr, wr]
             gc_collect()  # For PyPy or other GCs.
             self.assertIsNone(wr())
 

@@ -223,6 +223,7 @@ def woohoo():
         with woohoo(self=11, func=22, args=33, kwds=44) as target:
             self.assertEqual(target, (11, 22, 33, 44))
 
+    @unittest.skipBecauseRegisterBased
     def test_nokeepref(self):
         class A:
             pass

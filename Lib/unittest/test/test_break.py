@@ -153,17 +153,18 @@ class TestBreak(unittest.TestCase):
         result = runner.run(unittest.TestSuite())
         self.assertIn(result, unittest.signals._results)
 
+    @unittest.modifiedBecauseRegisterBased
     def testWeakReferences(self):
         # Calling registerResult on a result should not keep it alive
-        result = unittest.TestResult()
-        unittest.registerResult(result)
-
-        ref = weakref.ref(result)
-        del result
+        refs = []
+        for _ in range(3):
+            result = unittest.TestResult()
+            unittest.registerResult(result)
+            refs.append(weakref.ref(result))
 
         # For non-reference counting implementations
-        gc.collect();gc.collect()
-        self.assertIsNone(ref())
+        gc.collect()
+        self.assertTrue(all(r() is None for r in refs[:-1]))
 
 
     def testRemoveResult(self):

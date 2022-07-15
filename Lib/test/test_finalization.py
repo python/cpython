@@ -160,6 +160,7 @@ class TestBase:
         SimpleBase.survivors.clear()
 
 
+@unittest.skipBecauseRegisterBased
 class SimpleFinalizationTest(TestBase, unittest.TestCase):
     """
     Test finalization without refcycles.
@@ -250,6 +251,7 @@ class SuicidalSelfCycle(SelfCycleBase, Simple):
         self.ref = None
 
 
+@unittest.skipBecauseRegisterBased
 class SelfCycleFinalizationTest(TestBase, unittest.TestCase):
     """
     Test finalization of an object having a single cyclic reference to
@@ -349,6 +351,7 @@ class SuicidalChained(ChainedBase, Simple):
         self.right = None
 
 
+@unittest.skipBecauseRegisterBased
 class CycleChainFinalizationTest(TestBase, unittest.TestCase):
     """
     Test finalization of a cyclic chain.  These tests are similar in
@@ -468,6 +471,7 @@ class LegacySelfCycle(SelfCycleBase, LegacyBase):
     pass
 
 
+@unittest.skipBecauseRegisterBased
 @support.cpython_only
 class LegacyFinalizationTest(TestBase, unittest.TestCase):
     """

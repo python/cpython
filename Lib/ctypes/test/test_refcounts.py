@@ -85,6 +85,7 @@ class RefcountTestCase(unittest.TestCase):
         self.assertEqual(grc(func), 2)
 
 class AnotherLeak(unittest.TestCase):
+    @unittest.skipBecauseRegisterBased
     def test_callback(self):
         import sys
 

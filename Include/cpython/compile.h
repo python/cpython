@@ -46,7 +46,3 @@ typedef struct {
 #define FUTURE_BARRY_AS_BDFL "barry_as_FLUFL"
 #define FUTURE_GENERATOR_STOP "generator_stop"
 #define FUTURE_ANNOTATIONS "annotations"
-
-#define PY_INVALID_STACK_EFFECT INT_MAX
-PyAPI_FUNC(int) PyCompile_OpcodeStackEffect(int opcode, int oparg);
-PyAPI_FUNC(int) PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int jump);

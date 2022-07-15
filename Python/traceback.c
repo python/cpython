@@ -234,7 +234,7 @@ _PyTraceBack_FromFrame(PyObject *tb_next, PyFrameObject *frame)
     assert(tb_next == NULL || PyTraceBack_Check(tb_next));
     assert(frame != NULL);
 
-    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_lasti*sizeof(_Py_CODEUNIT),
+    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame_instr_offset(frame),
                          PyFrame_GetLineNumber(frame));
 }
 
@@ -948,4 +948,3 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
 
     return NULL;
 }
-

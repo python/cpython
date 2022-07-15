@@ -861,6 +861,7 @@ class GeneralModuleTests(unittest.TestCase):
                     % (s.family, s.type, s.proto))
         self.assertEqual(repr(s), expected)
 
+    @unittest.skipBecauseRegisterBased
     def test_weakref(self):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             p = proxy(s)

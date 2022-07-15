@@ -46,46 +46,46 @@ class SignalAndYieldFromTest(unittest.TestCase):
 
 class FinalizationTest(unittest.TestCase):
 
+    @unittest.modifiedBecauseRegisterBased
     def test_frame_resurrect(self):
-        # A generator frame can be resurrected by a generator's finalization.
-        def gen():
-            nonlocal frame
-            try:
-                yield
-            finally:
-                frame = sys._getframe()
+        refs = []
+        frames = []
+        for _ in range(3):
+            # A generator frame can be resurrected by a generator's finalization.
+            def gen():
+                try:
+                    yield
+                finally:
+                    frames.append(sys._getframe())
 
-        g = gen()
-        wr = weakref.ref(g)
-        next(g)
-        del g
+            g = gen()
+            refs.append(weakref.ref(g))
+            next(g)
         support.gc_collect()
-        self.assertIs(wr(), None)
-        self.assertTrue(frame)
-        del frame
-        support.gc_collect()
+        self.assertTrue(all(r() is None for r in refs[:-1]))
+        self.assertGreaterEqual(len(frames), len(refs) - 1)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_refcycle(self):
         # A generator caught in a refcycle gets finalized anyway.
-        old_garbage = gc.garbage[:]
-        finalized = False
-        def gen():
-            nonlocal finalized
-            try:
-                g = yield
-                yield 1
-            finally:
-                finalized = True
+        finalized = 0
+        for i in range(3):
+            old_garbage = gc.garbage[:]
+            def gen():
+                nonlocal finalized
+                try:
+                    g = yield
+                    yield 1
+                finally:
+                    finalized += 1
 
-        g = gen()
-        next(g)
-        g.send(g)
-        self.assertGreater(sys.getrefcount(g), 2)
-        self.assertFalse(finalized)
-        del g
-        support.gc_collect()
-        self.assertTrue(finalized)
-        self.assertEqual(gc.garbage, old_garbage)
+            g = gen()
+            next(g)
+            g.send(g)
+            self.assertGreater(sys.getrefcount(g), 2)
+            self.assertTrue(finalized == 0 or finalized == i - 1)
+            support.gc_collect()
+            self.assertEqual(gc.garbage, old_garbage)
 
     def test_lambda_generator(self):
         # Issue #23192: Test that a lambda returning a generator behaves
@@ -2228,6 +2228,9 @@ RuntimeError: generator ignored GeneratorExit
 Our ill-behaved code should be invoked during GC:
 
 >>> with support.catch_unraisable_exception() as cm:
+...     g = f()
+...     next(g)
+...     # @unittest.modifiedBecauseRegisterBased
 ...     g = f()
 ...     next(g)
 ...     del g

@@ -730,6 +730,7 @@ class ScopeTests(unittest.TestCase):
         self.assertFalse(hasattr(X, "x"))
         self.assertEqual(x, 42)
 
+    @unittest.modifiedBecauseRegisterBased
     @cpython_only
     def testCellLeak(self):
         # Issue 17927.
@@ -752,12 +753,14 @@ class ScopeTests(unittest.TestCase):
                 except Exception as exc:
                     self.exc = exc
                 self = None  # Break the cycle
-        tester = Tester()
-        tester.dig()
-        ref = weakref.ref(tester)
-        del tester
+        refs = []
+        for _ in range(3):
+            tester = Tester()
+            tester.dig()
+            ref = weakref.ref(tester)
+            refs.append(ref)
         gc_collect()  # For PyPy or other GCs.
-        self.assertIsNone(ref())
+        self.assertTrue(all(r() is None for r in refs[:-1]))
 
 
 if __name__ == '__main__':

@@ -976,47 +976,43 @@ class HamtTest(unittest.TestCase):
             h1 != h2
 
     def test_hamt_gc_1(self):
-        A = HashKey(100, 'A')
+        refs = []
+        for _ in range(3):
+            A = HashKey(100, 'A')
 
-        h = hamt()
-        h = h.set(0, 0)  # empty HAMT node is memoized in hamt.c
-        ref = weakref.ref(h)
+            h = hamt()
+            h = h.set(0, 0)  # empty HAMT node is memoized in hamt.c
+            ref = weakref.ref(h)
+            refs.append(ref)
 
-        a = []
-        a.append(a)
-        a.append(h)
-        b = []
-        a.append(b)
-        b.append(a)
-        h = h.set(A, b)
-
-        del h, a, b
+            a = []
+            a.append(a)
+            a.append(h)
+            b = []
+            a.append(b)
+            b.append(a)
+            h = h.set(A, b)
 
         gc.collect()
-        gc.collect()
-        gc.collect()
-
-        self.assertIsNone(ref())
+        self.assertTrue(all(r() is None for r in refs[:-1]))
 
     def test_hamt_gc_2(self):
-        A = HashKey(100, 'A')
-        B = HashKey(101, 'B')
+        refs = []
+        for _ in range(3):
+            A = HashKey(100, 'A')
+            B = HashKey(101, 'B')
 
-        h = hamt()
-        h = h.set(A, 'a')
-        h = h.set(A, h)
+            h = hamt()
+            h = h.set(A, 'a')
+            h = h.set(A, h)
 
-        ref = weakref.ref(h)
-        hi = h.items()
-        next(hi)
-
-        del h, hi
+            ref = weakref.ref(h)
+            refs.append(ref)
+            hi = h.items()
+            next(hi)
 
         gc.collect()
-        gc.collect()
-        gc.collect()
-
-        self.assertIsNone(ref())
+        self.assertTrue(all(r() is None for r in refs[:-1]))
 
     def test_hamt_in_1(self):
         A = HashKey(100, 'A')

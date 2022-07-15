@@ -119,6 +119,7 @@ class ReferencesTestCase(TestBase):
         self.check_basic_callback(create_function)
         self.check_basic_callback(create_bound_method)
 
+    @unittest.modifiedBecauseRegisterBased
     @support.cpython_only
     def test_cfunction(self):
         import _testcapi
@@ -127,14 +128,17 @@ class ReferencesTestCase(TestBase):
         wr = weakref.ref(f)
         self.assertIs(wr(), f)
         del f
+        _ = [wr, wr, wr, wr]
         self.assertIsNone(wr())
         self.check_basic_ref(create_cfunction)
         self.check_basic_callback(create_cfunction)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_multiple_callbacks(self):
         o = C()
         ref1 = weakref.ref(o, self.callback)
         ref2 = weakref.ref(o, self.callback)
+        _ = [ref2, ref2, ref2]
         del o
         gc_collect()  # For PyPy or other GCs.
         self.assertIsNone(ref1(), "expected reference to be invalidated")
@@ -191,10 +195,12 @@ class ReferencesTestCase(TestBase):
         self.assertIs(o, o2,
                      "<ref>() should return original object if live")
 
+    @unittest.modifiedBecauseRegisterBased
     def check_basic_callback(self, factory):
         self.cbcalled = 0
         o = factory()
         ref = weakref.ref(o, self.callback)
+        _ = [ref, ref, ref]
         del o
         gc_collect()  # For PyPy or other GCs.
         self.assertEqual(self.cbcalled, 1,
@@ -851,6 +857,7 @@ class ReferencesTestCase(TestBase):
         # No exception should be raised here
         gc.collect()
 
+    @unittest.modifiedBecauseRegisterBased
     def test_classes(self):
         # Check that classes are weakrefable.
         class A(object):
@@ -858,6 +865,7 @@ class ReferencesTestCase(TestBase):
         l = []
         weakref.ref(int)
         a = weakref.ref(A, l.append)
+        _ = [a, a, a]
         A = None
         gc.collect()
         self.assertEqual(a(), None)
@@ -1106,17 +1114,21 @@ class WeakMethodTestCase(unittest.TestCase):
         self.assertIs(r().__func__, o.some_method.__func__)
         self.assertEqual(r()(), 4)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_object_dead(self):
         o = Object(1)
         r = weakref.WeakMethod(o.some_method)
+        _ = [r, r, r]
         del o
         gc.collect()
         self.assertIs(r(), None)
 
+    @unittest.modifiedBecauseRegisterBased
     def test_method_dead(self):
         C = self._subclass()
         o = C(1)
         r = weakref.WeakMethod(o.some_method)
+        _ = [r, r, r]
         del C.some_method
         gc.collect()
         self.assertIs(r(), None)
@@ -1153,6 +1165,7 @@ class WeakMethodTestCase(unittest.TestCase):
         gc.collect()
         self.assertEqual(calls, [r])
 
+    @unittest.modifiedBecauseRegisterBased
     @support.cpython_only
     def test_no_cycles(self):
         # A WeakMethod doesn't create any reference cycle to itself.
@@ -1161,6 +1174,7 @@ class WeakMethodTestCase(unittest.TestCase):
             pass
         r = weakref.WeakMethod(o.some_method, cb)
         wr = weakref.ref(r)
+        _ = [wr, wr, wr]
         del r
         self.assertIs(wr(), None)
 
@@ -1992,6 +2006,7 @@ class FinalizeTestCase(unittest.TestCase):
         if sys.implementation.name != 'cpython':
             support.gc_collect()
 
+    @unittest.modifiedBecauseRegisterBased
     def test_finalize(self):
         def add(x,y,z):
             res.append(x + y + z)
@@ -2024,6 +2039,7 @@ class FinalizeTestCase(unittest.TestCase):
 
         res = []
         f = weakref.finalize(a, add, x=67, y=43, z=89)
+        _ = [f, f, f]
         del a
         self._collect_if_necessary()
         self.assertEqual(f(), None)
