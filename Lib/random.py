@@ -761,17 +761,19 @@ class Random(_random.Random):
             return n - self.binomialvariate(n, 1.0 - p)
 
         if n * p < 10.0:
-            # BG: Geometric method by Devroye with running time of O(np).
+            # BINV: Inverse transform method with running time of O(np).
             # https://dl.acm.org/doi/pdf/10.1145/42372.42381
-            x = y = 0
-            c = _log(1.0 - p)
-            if not c:
-                return x
-            while True:
-                y += _floor(_log(random()) / c) + 1
-                if y > n:
-                    return x
-                x += 1
+            q = 1.0 - p
+            s = p / q
+            a = (n + 1) * s
+            u = random()
+            k = 0
+            sum_r = r = q ** n
+            while u >= sum_r and k < n:
+                k += 1
+                r *= (a / k) - s  # r ← comb(n, k) * p**k * q**(n-k)
+                sum_r += r
+            return k
 
         # BTRS: Transformed rejection with squeeze method by Wolfgang Hörmann
         # https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.47.8407&rep=rep1&type=pdf
