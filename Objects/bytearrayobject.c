@@ -563,7 +563,7 @@ bytearray_setslice(PyByteArrayObject *self, Py_ssize_t lo, Py_ssize_t hi,
 static int
 bytearray_setitem(PyByteArrayObject *self, Py_ssize_t i, PyObject *value)
 {
-    int ival;
+    int ival = -1;
 
     // GH-91153: We need to do this *before* the size check, in case value has a
     // nasty __index__ method that changes the size of the bytearray:
@@ -584,6 +584,7 @@ bytearray_setitem(PyByteArrayObject *self, Py_ssize_t i, PyObject *value)
         return bytearray_setslice(self, i, i+1, NULL);
     }
 
+    assert(0 <= ival && ival < 256);
     PyByteArray_AS_STRING(self)[i] = ival;
     return 0;
 }
@@ -602,7 +603,7 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
             return -1;
         }
 
-        int ival;
+        int ival = -1;
 
         // GH-91153: We need to do this *before* the size check, in case values
         // has a nasty __index__ method that changes the size of the bytearray:
@@ -627,6 +628,7 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
             slicelen = 1;
         }
         else {
+            assert(0 <= ival && ival < 256);
             buf[i] = (char)ival;
             return 0;
         }
