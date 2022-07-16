@@ -763,13 +763,22 @@ class Random(_random.Random):
         if n * p < 10.0:
             # BINV: Inverse transform method with running time of O(np).
             # https://dl.acm.org/doi/pdf/10.1145/42372.42381
+
+            # This algorithm is susceptible to round-off errors in the
+            # calculation of q**n, in the incremental calculation of r,
+            # and the deaccumulation of u.  Accordingly, we add a guard
+            # to prevent returning k > n and another guard to exit when
+            # u stops decreasing.
+
             q = 1.0 - p
             s = p / q
             a = (n + 1) * s
+            last_u = 1.0
             u = random()
             k = 0
             r = q ** n
-            while r < u:
+            while r < u and k < n and u != last_u:
+                last_u = u
                 u -= r
                 k += 1
                 r *= (a / k) - s  # r ← comb(n, k) * p**k * q**(n-k)

@@ -1,11 +1,13 @@
 import unittest
 import unittest.mock
+import test.support
 import random
+
+import math
 import os
 import time
 import pickle
 import warnings
-import test.support
 
 from functools import partial
 from math import log, exp, pi, fsum, sin, factorial
@@ -1107,6 +1109,24 @@ class TestDistributions(unittest.TestCase):
         self.assertTrue(19_000_000 <= B(100_000_000, 0.2) <= 21_000_000)
         self.assertTrue(89_000_000 <= B(100_000_000, 0.9) <= 91_000_000)
 
+    def test_binomialvariate_binv_numeric_issues(self):
+        # The algorithm is very sensitive to numerical issues.
+        # Verify that guards are in place to prevent out-of-range
+        # results, infinite loops, or looping when no progress can
+        # be made.
+        B = random.binomialvariate
+        smallest_u = 0.0
+        largest_u = math.nextafter(1.0, -math.inf)
+        with unittest.mock.patch('random._inst.random', return_value=smallest_u):
+            self.assertEqual(B(n=15, p=0.5), 0)
+        with unittest.mock.patch('random._inst.random', return_value=largest_u):
+            # Make sure that k is in bounds.
+            self.assertTrue(0 <= B(n=100, p=0.01) <= 100)
+        with unittest.mock.patch('random._inst.random', return_value=largest_u):
+            # The k < 1000 checks for an early exit when u stops
+            # decreasing.  Without the early exit, it would hit
+            # the other guard and return k=1000.
+            self.assertTrue(B(n=1000, p=0.001) < 1000)
 
     def test_von_mises_range(self):
         # Issue 17149: von mises variates were not consistently in the
