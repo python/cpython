@@ -5769,4 +5769,4 @@ Convert posixmodule.c statically allocated types ``DirEntryType`` and
 .. section: C API
 
 Use singular/plural noun in error message when instantiating an abstract
-class with non-overriden abstract method(s).
+class with non-overridden abstract method(s).
