@@ -1656,7 +1656,7 @@ class BaseTaskTests:
         async def async_fn():
             pass
 
-        self.assertTrue(asyncio.iscoroutinefunction(afn2))
+        self.assertTrue(asyncio.iscoroutinefunction(async_fn))
 
         def sync_fn():
             pass
