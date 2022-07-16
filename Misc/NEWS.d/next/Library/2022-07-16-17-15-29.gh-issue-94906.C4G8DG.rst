@@ -1,0 +1,1 @@
+Support multiple steps in :func:`math.nextafter`. Patch by Shantanu Jain.
