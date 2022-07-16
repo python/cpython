@@ -1127,7 +1127,9 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
             if not dry_run:
                 os.chdir(root_dir)
 
-    base_name = os.fspath(base_name)
+    if root_dir is not None and support_root_dir:
+        base_name = os.fspath(base_name)
+
     try:
         filename = func(base_name, base_dir, **kwargs)
     finally:
