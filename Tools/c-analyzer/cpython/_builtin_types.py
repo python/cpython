@@ -17,29 +17,47 @@ REGEX = re.compile(textwrap.dedent(rf'''
         (?:
             (?:
                 (?:
-                    ( static )  # <static>
-                    \s+
+                    (?:
+                        (?:
+                            ( static )  # <static>
+                            \s+
+                            |
+                            ( extern )  # <extern>
+                            \s+
+                         )?
+                        PyTypeObject \s+
+                     )
                     |
-                    ( extern )  # <extern>
-                    \s+
-                 )?
-                PyTypeObject \s+
+                    (?:
+                        ( PyAPI_DATA )  # <capi>
+                        \s* [(] \s* PyTypeObject \s* [)] \s*
+                     )
+                 )
+                (\w+)  # <name>
+                \s*
+                (?:
+                    (?:
+                        ( = \s* {{ )  # <def>
+                        $
+                     )
+                    |
+                    ( ; )  # <decl>
+                 )
              )
             |
             (?:
-                ( PyAPI_DATA )  # <capi>
-                \s* [(] \s* PyTypeObject \s* [)] \s*
+                # These are specific to Objects/exceptions.c:
+                (?:
+                    SimpleExtendsException
+                    |
+                    MiddlingExtendsException
+                    |
+                    ComplexExtendsException
+                 )
+                \( \w+ \s* , \s*
+                ( \w+ )  # <excname>
+                \s* ,
              )
-         )
-        (\w+)  # <name>
-        \s*
-        (?:
-            (?:
-                ( = \s* {{ )  # <def>
-                $
-             )
-            |
-            ( ; )  # <decl>
          )
     )
 '''), re.VERBOSE)
@@ -52,12 +70,17 @@ def _parse_line(line):
     (static, extern, capi,
      name,
      def_, decl,
+     excname,
      ) = m.groups()
     if def_:
         isdecl = False
         if extern or capi:
             raise NotImplementedError(line)
         kind = 'static' if static else None
+    elif excname:
+        name = f'_PyExc_{excname}'
+        isdecl = False
+        kind = 'static'
     else:
         isdecl = True
         if static:
