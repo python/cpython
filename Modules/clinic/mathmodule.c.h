@@ -783,7 +783,7 @@ PyDoc_STRVAR(math_nextafter__doc__,
 "nextafter($module, x, y, /, *, steps=1)\n"
 "--\n"
 "\n"
-"Return the next floating-point value after x towards y.");
+"Return the floating-point value the given number of steps after x towards y.");
 
 #define MATH_NEXTAFTER_METHODDEF    \
     {"nextafter", _PyCFunction_CAST(math_nextafter), METH_FASTCALL|METH_KEYWORDS, math_nextafter__doc__},
@@ -879,4 +879,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=19d32518e62960a5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=72bf69446859d847 input=a9049054013a1b77]*/

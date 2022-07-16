@@ -3789,7 +3789,7 @@ Return the floating-point value the given number of steps after x towards y.
 
 static PyObject *
 math_nextafter_impl(PyObject *module, double x, double y, int steps)
-/*[clinic end generated code: output=14190eb869199e5a input=e87d3b26a7611ff4]*/
+/*[clinic end generated code: output=14190eb869199e5a input=a794e7a79768ee25]*/
 {
     int i;
 #if defined(_AIX)
