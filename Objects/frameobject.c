@@ -493,7 +493,8 @@ add_load_fast_null_checks(PyCodeObject *co)
     int changed = 0;
     _Py_CODEUNIT *instructions = _PyCode_CODE(co);
     for (Py_ssize_t i = 0; i < Py_SIZE(co); i++) {
-        switch (_Py_OPCODE(instructions[i])) {
+        int opcode = _Py_OPCODE(instructions[i]);
+        switch (opcode) {
             case LOAD_FAST:
             case LOAD_FAST__LOAD_FAST:
             case LOAD_FAST__LOAD_CONST:
@@ -509,6 +510,7 @@ add_load_fast_null_checks(PyCodeObject *co)
                 _Py_SET_OPCODE(instructions[i], STORE_FAST);
                 break;
         }
+        i += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
     }
     if (changed) {
         // invalidate cached co_code object
