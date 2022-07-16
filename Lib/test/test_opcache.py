@@ -157,7 +157,7 @@ class TestLoadAttrCache(unittest.TestCase):
             @property
             def attribute(self):
                 return True
-        
+
         class NewMetaclass(type):
             @property
             def attribute(self):
@@ -341,7 +341,7 @@ class TestLoadMethodCache(unittest.TestCase):
             @property
             def attribute(self):
                 return lambda: True
-        
+
         class NewMetaclass(type):
             @property
             def attribute(self):
