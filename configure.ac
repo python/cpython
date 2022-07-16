@@ -69,6 +69,28 @@ AC_DEFUN([PY_CHECK_FUNC],
   AS_VAR_POPDEF([py_define])
 ])
 
+dnl PY_CHECK_LIB(LIBRARY, FUNCTION, [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND], [OTHER-LIBRARIES])
+dnl Like AC_CHECK_LIB() but does not modify LIBS
+AC_DEFUN([PY_CHECK_LIB],
+[AS_VAR_COPY([py_check_lib_save_LIBS], [LIBS])]
+[AC_CHECK_LIB($1, $2, $3, $4, $5)]
+[AS_VAR_COPY([LIBS], [py_check_lib_save_LIBS])]
+)
+
+dnl PY_CHECK_EMSCRIPTEN_PORT(PKG_VAR, [EMPORT_ARGS])
+dnl Use Emscripten port unless user passes ${PKG_VAR}_CFLAGS
+dnl or ${PKG_VAR}_LIBS to configure.
+AC_DEFUN([PY_CHECK_EMSCRIPTEN_PORT], [
+  AS_VAR_PUSHDEF([py_cflags], [$1_CFLAGS])
+  AS_VAR_PUSHDEF([py_libs], [$1_LIBS])
+  AS_IF([test "$ac_sys_system" = "Emscripten" -a -z "$py_cflags" -a -z "$py_libs"], [
+    py_cflags="$2"
+    py_libs="$2"
+  ])
+  AS_VAR_POPDEF([py_cflags])
+  AS_VAR_POPDEF([py_libs])
+])
+
 AC_SUBST(BASECPPFLAGS)
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
@@ -3371,12 +3393,12 @@ AS_VAR_IF([have_uuid], [missing], [
       AC_DEFINE([HAVE_UUID_H], [1])
       AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE], [1])
     ], [
-      AC_CHECK_HEADERS([uuid/uuid.h], [
-        WITH_SAVE_ENV(
-          [AC_CHECK_LIB([uuid], [uuid_generate_time], [have_uuid=yes])
-        ])
-        WITH_SAVE_ENV([
-          AC_CHECK_LIB([uuid], [uuid_generate_time_safe], [
+      WITH_SAVE_ENV([
+        CPPFLAGS="$CFLAGS $LIBUUID_CFLAGS"
+        LDFLAGS="$LDFLAGS $LIBUUID_LIBS"
+        AC_CHECK_HEADERS([uuid/uuid.h], [
+          PY_CHECK_LIB([uuid], [uuid_generate_time], [have_uuid=yes])
+          PY_CHECK_LIB([uuid], [uuid_generate_time_safe], [
             have_uuid=yes
             AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE], [1])
           ])
@@ -3602,11 +3624,14 @@ dnl detect libffi
 have_libffi=missing
 AS_VAR_IF([with_system_ffi], [yes], [
   PKG_CHECK_MODULES([LIBFFI], [libffi], [have_libffi=yes], [
-    AC_CHECK_HEADER([ffi.h], [
-      WITH_SAVE_ENV([
+    WITH_SAVE_ENV([
+      CPPFLAGS="$CFLAGS $LIBFFI_CFLAGS"
+      LDFLAGS="$LDFLAGS $LIBFFI_LIBS"
+      AC_CHECK_HEADER([ffi.h], [
         AC_CHECK_LIB([ffi], [ffi_call], [
           have_libffi=yes
-          LIBFFI_LIBS="-lffi"
+          LIBFFI_CFLAGS=${LIBFFI_CFLAGS-""}
+          LIBFFI_LIBS=${LIBFFI_LIBS-"-lffi"}
         ], [have_libffi=no])
       ])
     ])
@@ -3778,6 +3803,9 @@ AS_CASE([$ac_sys_system],
   [NetBSD*], [OSSAUDIODEV_LIBS="-lossaudio"],
   [OSSAUDIODEV_LIBS=""]
 )
+
+dnl detect sqlite3 from Emscripten emport
+PY_CHECK_EMSCRIPTEN_PORT([LIBSQLITE3], [-sUSE_SQLITE3])
 
 dnl Check for SQLite library. Use pkg-config if available.
 PKG_CHECK_MODULES(
@@ -4788,29 +4816,27 @@ fi
 dnl Check for compression libraries
 AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy])
 
+dnl detect zlib from Emscripten emport
+PY_CHECK_EMSCRIPTEN_PORT([ZLIB], [-sUSE_ZLIB])
+
 PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
   have_zlib=yes
   dnl zlib 1.2.0 (2003) added inflateCopy
   AC_DEFINE([HAVE_ZLIB_COPY], [1])
 ], [
-  AC_CHECK_HEADERS([zlib.h], [
-    WITH_SAVE_ENV([
-      AC_CHECK_LIB([z], [gzread], [
-        have_zlib=yes
-        ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
-        ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
-        AC_CHECK_LIB([z], [inflateCopy], [AC_DEFINE([HAVE_ZLIB_COPY], [1])])
-      ], [
-        have_zlib=no
-      ])
+  WITH_SAVE_ENV([
+    CPPFLAGS="$CFLAGS $ZLIB_CFLAGS"
+    LDFLAGS="$LDFLAGS $ZLIB_LIBS"
+    AC_CHECK_HEADERS([zlib.h], [
+      PY_CHECK_LIB([z], [gzread], [have_zlib=yes], [have_zlib=no])
+    ], [have_zlib=no])
+    AS_VAR_IF([have_zlib], [yes], [
+      ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
+      ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
+      PY_CHECK_LIB([z], [inflateCopy], [AC_DEFINE([HAVE_ZLIB_COPY], [1])])
     ])
-  ], [have_zlib=no])
+  ])
 ])
-
-if test "$have_zlib" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$ZLIB_LIBS" = "-lz"; then
-  ZLIB_CFLAGS="-sUSE_ZLIB"
-  ZLIB_LIBS="-sUSE_ZLIB"
-fi
 
 dnl binascii can use zlib for optimized crc32.
 AS_VAR_IF([have_zlib], [yes], [
@@ -4818,34 +4844,35 @@ AS_VAR_IF([have_zlib], [yes], [
   BINASCII_LIBS="$ZLIB_LIBS"
 ])
 
+dnl detect bzip2 from Emscripten emport
+PY_CHECK_EMSCRIPTEN_PORT([BZIP2], [-sUSE_BZIP2])
+
 PKG_CHECK_MODULES([BZIP2], [bzip2], [have_bzip2=yes], [
-  AC_CHECK_HEADERS([bzlib.h], [
-    WITH_SAVE_ENV([
-      AC_CHECK_LIB([bz2], [BZ2_bzCompress], [
-        have_bzip2=yes
-        BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
-        BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
-      ], [have_bzip2=no])
+  WITH_SAVE_ENV([
+    CPPFLAGS="$CFLAGS $BZIP2_CFLAGS"
+    LDFLAGS="$LDFLAGS $BZIP2_LIBS"
+    AC_CHECK_HEADERS([bzlib.h], [
+      AC_CHECK_LIB([bz2], [BZ2_bzCompress], [have_bzip2=yes], [have_bzip2=no])
+    ], [have_bzip2=no])
+    AS_VAR_IF([have_bzip2], [yes], [
+      BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
+      BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
     ])
-  ], [have_bzip2=no])
+  ])
 ])
 
-if test "$have_bzip2" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$BZIP2_LIBS" = "-lbz2"; then
-  BZIP2_CFLAGS="-sUSE_BZIP2"
-  BZIP2_LIBS="-sUSE_BZIP2"
-fi
-
-
 PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
-  AC_CHECK_HEADERS([lzma.h], [
-    WITH_SAVE_ENV([
-      AC_CHECK_LIB([lzma], [lzma_easy_encoder], [
-        have_liblzma=yes
-        LIBLZMA_CFLAGS=${LIBLZMA_CFLAGS-""}
-        LIBLZMA_LIBS=${LIBLZMA_LIBS-"-llzma"}
-      ], [have_liblzma=no])
+  WITH_SAVE_ENV([
+    CPPFLAGS="$CFLAGS $LIBLZMA_CFLAGS"
+    LDFLAGS="$LDFLAGS $LIBLZMA_LIBS"
+    AC_CHECK_HEADERS([lzma.h], [
+      AC_CHECK_LIB([lzma], [lzma_easy_encoder], [have_liblzma=yes], [have_liblzma=no])
+    ], [have_liblzma=no])
+    AS_VAR_IF([have_liblzma], [yes], [
+      LIBLZMA_CFLAGS=${LIBLZMA_CFLAGS-""}
+      LIBLZMA_LIBS=${LIBLZMA_LIBS-"-llzma"}
     ])
-  ], [have_liblzma=no])
+  ])
 ])
 
 PY_CHECK_FUNC([hstrerror], [#include <netdb.h>])
@@ -5812,17 +5839,17 @@ AS_VAR_IF([with_readline], [readline], [
     READLINE_CFLAGS=$LIBREADLINE_CFLAGS
     READLINE_LIBS=$LIBREADLINE_LIBS
   ], [
-    AC_CHECK_HEADERS([readline/readline.h], [
-      WITH_SAVE_ENV([
+    WITH_SAVE_ENV([
+      CPPFLAGS="$CFLAGS $LIBREADLINE_CFLAGS"
+      LDFLAGS="$LDFLAGS $LIBREADLINE_LIBS"
+      AC_CHECK_HEADERS([readline/readline.h], [
         AC_CHECK_LIB([readline], [readline], [
           LIBREADLINE=readline
           READLINE_CFLAGS=${LIBREADLINE_CFLAGS-""}
           READLINE_LIBS=${LIBREADLINE_LIBS-"-lreadline"}
-        ], [
-          with_readline=no
-        ])
-      ])
-    ], [with_readline=no])
+        ], [with_readline=no])
+      ], [with_readline=no])
+    ])
   ])
 ])
 
@@ -5833,18 +5860,18 @@ AS_VAR_IF([with_readline], [edit], [
     READLINE_CFLAGS=$LIBEDIT_CFLAGS
     READLINE_LIBS=$LIBEDIT_LIBS
   ], [
-    AC_CHECK_HEADERS([editline/readline.h], [
-      WITH_SAVE_ENV([
+    WITH_SAVE_ENV([
+      CPPFLAGS="$CFLAGS $LIBEDIT_CFLAGS"
+      LDFLAGS="$LDFLAGS $LIBEDIT_LIBS"
+      AC_CHECK_HEADERS([editline/readline.h], [
         AC_CHECK_LIB([edit], [readline], [
           LIBREADLINE=edit
           AC_DEFINE([WITH_EDITLINE], [1])
           READLINE_CFLAGS=${LIBEDIT_CFLAGS-""}
           READLINE_LIBS=${LIBEDIT_LIBS-"-ledit"}
-        ], [
-          with_readline=no
-        ])
-      ])
-    ], [with_readline=no])
+        ], [with_readline=no])
+      ], [with_readline=no])
+    ])
   ])
 ])
 
