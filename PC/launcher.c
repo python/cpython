@@ -1923,27 +1923,35 @@ process(int argc, wchar_t ** argv)
         if (!cch) {
             error(0, L"Cannot determine memory for home path");
         }
-        cch += (DWORD)wcslen(PYTHON_EXECUTABLE) + 1 + 1; /* include sep and null */
+        cch += (DWORD)wcslen(PYTHON_EXECUTABLE) + 4; /* include sep, null and quotes */
         executable = (wchar_t *)malloc(cch * sizeof(wchar_t));
         if (executable == NULL) {
             error(RC_NO_MEMORY, L"A memory allocation failed");
         }
-        cch_actual = MultiByteToWideChar(CP_UTF8, 0, start, len, executable, cch);
+        /* start with a quote - we'll skip this ahead, but want it for the final string */
+        executable[0] = L'"';
+        cch_actual = MultiByteToWideChar(CP_UTF8, 0, start, len, &executable[1], cch - 1);
         if (!cch_actual) {
             error(RC_BAD_VENV_CFG, L"Cannot decode home path in '%ls'",
                   venv_cfg_path);
         }
+        cch_actual += 1; /* account for the first quote */
+        executable[cch_actual] = L'\0';
         if (executable[cch_actual - 1] != L'\\') {
             executable[cch_actual++] = L'\\';
             executable[cch_actual] = L'\0';
         }
-        if (wcscat_s(executable, cch, PYTHON_EXECUTABLE)) {
+        if (wcscat_s(&executable[1], cch - 1, PYTHON_EXECUTABLE)) {
             error(RC_BAD_VENV_CFG, L"Cannot create executable path from '%ls'",
                   venv_cfg_path);
         }
-        if (GetFileAttributesW(executable) == INVALID_FILE_ATTRIBUTES) {
+        /* there's no trailing quote, so we only have to skip one character for the test */
+        if (GetFileAttributesW(&executable[1]) == INVALID_FILE_ATTRIBUTES) {
             error(RC_NO_PYTHON, L"No Python at '%ls'", executable);
         }
+        /* now append the final quote */
+        wcscat_s(executable, cch, L"\"");
+        /* smuggle our original path through */
         if (!SetEnvironmentVariableW(L"__PYVENV_LAUNCHER__", argv0)) {
             error(0, L"Failed to set launcher environment");
         }
