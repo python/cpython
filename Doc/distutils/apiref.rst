@@ -1198,7 +1198,7 @@ other utility module.
    it contains certain values: see :func:`check_environ`.  Raise :exc:`ValueError`
    for any variables not found in either *local_vars* or ``os.environ``.
 
-   Note that this is not a fully-fledged string interpolation function. A valid
+   Note that this is not a full-fledged string interpolation function. A valid
    ``$variable`` can consist only of upper and lower case letters, numbers and an
    underscore. No { } or ( ) style quoting is available.
 
