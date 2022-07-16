@@ -1,0 +1,3 @@
+The venv launcher executables are generalised to launch an executable by the
+same name in the base environment. This allows them to be used for more
+executables than just :file:`python.exe` and :file:`pythonw.exe`.

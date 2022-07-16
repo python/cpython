@@ -1910,6 +1910,7 @@ process(int argc, wchar_t ** argv)
         char *start;
         DWORD len, cch, cch_actual;
         size_t cb;
+        wchar_t *python_exe;
         if (_wfopen_s(&f, venv_cfg_path, L"r")) {
             error(RC_BAD_VENV_CFG, L"Cannot read '%ls'", venv_cfg_path);
         }
@@ -1926,7 +1927,13 @@ process(int argc, wchar_t ** argv)
         if (!cch) {
             error(0, L"Cannot determine memory for home path");
         }
-        cch += (DWORD)wcslen(PYTHON_EXECUTABLE) + 1 + 1; /* include sep and null */
+        python_exe = wcsrchr(argv0, L'\\');
+        if (python_exe) {
+            python_exe += 1;
+        } else {
+            python_exe = argv0;
+        }
+        cch += (DWORD)wcslen(python_exe) + 1 + 1; /* include sep and null */
         executable = (wchar_t *)malloc(cch * sizeof(wchar_t));
         if (executable == NULL) {
             error(RC_NO_MEMORY, L"A memory allocation failed");
@@ -1940,7 +1947,7 @@ process(int argc, wchar_t ** argv)
             executable[cch_actual++] = L'\\';
             executable[cch_actual] = L'\0';
         }
-        if (wcscat_s(executable, cch, PYTHON_EXECUTABLE)) {
+        if (wcscat_s(executable, cch, python_exe)) {
             error(RC_BAD_VENV_CFG, L"Cannot create executable path from '%ls'",
                   venv_cfg_path);
         }

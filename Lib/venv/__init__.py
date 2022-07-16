@@ -4,6 +4,7 @@ Virtual environment (venv) package for Python. Based on PEP 405.
 Copyright (C) 2011-2014 Vinay Sajip.
 Licensed to the PSF under a contributor agreement.
 """
+import fnmatch
 import logging
 import os
 import shutil
@@ -245,32 +246,6 @@ class EnvBuilder:
                     return
                 except Exception:   # may need to use a more specific exception
                     logger.warning('Unable to symlink %r to %r', src, dst)
-
-            # On Windows, we rewrite symlinks to our base python.exe into
-            # copies of venvlauncher.exe
-            basename, ext = os.path.splitext(os.path.basename(src))
-            srcfn = os.path.join(os.path.dirname(__file__),
-                                 "scripts",
-                                 "nt",
-                                 basename + ext)
-            # Builds or venv's from builds need to remap source file
-            # locations, as we do not put them into Lib/venv/scripts
-            if sysconfig.is_python_build(True) or not os.path.isfile(srcfn):
-                if basename.endswith('_d'):
-                    ext = '_d' + ext
-                    basename = basename[:-2]
-                if basename == 'python':
-                    basename = 'venvlauncher'
-                elif basename == 'pythonw':
-                    basename = 'venvwlauncher'
-                src = os.path.join(os.path.dirname(src), basename + ext)
-            else:
-                src = srcfn
-            if not os.path.exists(src):
-                if not bad_src:
-                    logger.warning('Unable to copy %r', src)
-                return
-
             shutil.copyfile(src, dst)
 
     def setup_python(self, context):
@@ -297,42 +272,76 @@ class EnvBuilder:
                     if not os.path.islink(path):
                         os.chmod(path, 0o755)
         else:
+            # Create a 'scripts' dict of {"target path": "source path"} for either
+            # symlinking or copying.
+            suffixes = os.scandir(dirname)
             if self.symlinks:
                 # For symlinking, we need a complete copy of the root directory
                 # If symlinks fail, you'll get unnecessary copies of files, but
                 # we assume that if you've opted into symlinks on Windows then
                 # you know what you're doing.
-                suffixes = [
-                    f for f in os.listdir(dirname) if
-                    os.path.normcase(os.path.splitext(f)[1]) in ('.exe', '.dll')
-                ]
-                if sysconfig.is_python_build(True):
-                    suffixes = [
-                        f for f in suffixes if
-                        os.path.normcase(f).startswith(('python', 'vcruntime'))
-                    ]
+                scripts = {
+                    os.path.join(binpath, f.name): f.path
+                    for f in suffixes
+                    if f.is_file()
+                }
             else:
-                suffixes = {'python.exe', 'python_d.exe', 'pythonw.exe', 'pythonw_d.exe'}
-                base_exe = os.path.basename(context.env_exe)
-                suffixes.add(base_exe)
-
-            for suffix in suffixes:
-                src = os.path.join(dirname, suffix)
-                if os.path.lexists(src):
-                    copier(src, os.path.join(binpath, suffix))
+                # For copies, we only need executable files because we will
+                # substitute our launcher.
+                scripts = {
+                    os.path.join(binpath, f.name): self._select_venvlauncher(context, f.name)
+                    for f in suffixes
+                    if f.is_file() and fnmatch.fnmatch(f.name, '*.exe')
+                }
 
             if sysconfig.is_python_build(True):
-                # copy init.tcl
+                # do not copy the launchers themselves
+                for dst in fnmatch.filter(scripts, r'*\venvlauncher*.exe'):
+                    del scripts[dst]
+                for dst in fnmatch.filter(scripts, r'*\venvwlauncher*.exe'):
+                    del scripts[dst]
+                # also copy init.tcl
                 for root, dirs, files in os.walk(context.python_dir):
                     if 'init.tcl' in files:
-                        tcldir = os.path.basename(root)
-                        tcldir = os.path.join(context.env_dir, 'Lib', tcldir)
-                        if not os.path.exists(tcldir):
-                            os.makedirs(tcldir)
                         src = os.path.join(root, 'init.tcl')
-                        dst = os.path.join(tcldir, 'init.tcl')
-                        shutil.copyfile(src, dst)
+                        dst = os.path.join(context.env_dir, 'Lib', 'init.tcl')
+                        scripts[dst] = src
                         break
+
+            for dst, src in scripts.items():
+                if os.path.lexists(src):
+                    if not os.path.exists(os.path.dirname(dst)):
+                        os.makedirs(os.path.dirname(dst))
+                    copier(src, dst)
+
+    def _select_venvlauncher(self, context, filename):
+        exename = 'venvlauncher'
+
+        # Files matching "*pythonw*.exe" get the windowed launcher, which
+        # handles all of our standard executables and any custom ones that
+        # may be specially prefixed.
+        if fnmatch.fnmatch(filename, '*pythonw*.exe'):
+            exename = 'venvwlauncher'
+
+        # Any custom patches for other name should be inserted here
+
+        if fnmatch.fnmatch(context.executable, '*_d.exe'):
+            exename += '_d.exe'
+        else:
+            exename += '.exe'
+
+        if sysconfig.is_python_build(True):
+            # In the build tree, assume the executable is in our binaries directory
+            exe = os.path.join(os.path.dirname(context.executable), exename)
+        else:
+            # Otherwise, it is in our scripts directory
+            exe = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), "scripts", os.name, exename
+            )
+
+        if not os.path.isfile(exe):
+            raise FileNotFoundError(exe)
+        return exe
 
     def _setup_pip(self, context):
         """Installs or upgrades pip in a virtual environment"""
@@ -408,7 +417,7 @@ class EnvBuilder:
                         dirs.remove(d)
                 continue # ignore files in top level
             for f in files:
-                if (os.name == 'nt' and f.startswith('python')
+                if (os.name == 'nt' and f.startswith('venvlauncher')
                         and f.endswith(('.exe', '.pdb'))):
                     continue
                 srcfile = os.path.join(root, f)
