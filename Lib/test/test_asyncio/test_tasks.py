@@ -1644,9 +1644,27 @@ class BaseTaskTests:
             yield
         self.assertFalse(asyncio.iscoroutinefunction(fn1))
 
-        async def fn2():
+        def fn2():
             pass
+
+        fn2._is_coroutine = asyncio.coroutines._is_coroutine
+
         self.assertTrue(asyncio.iscoroutinefunction(fn2))
+        self.assertTrue(asyncio.iscoroutinefunction(functools.partial(fn2)))
+        self.assertTrue(asyncio.iscoroutinefunction(functools.partial(functools.partial(fn2))))
+
+        async def async_fn():
+            pass
+
+        self.assertTrue(asyncio.iscoroutinefunction(afn2))
+
+        def sync_fn():
+            pass
+
+        partial_sync_fn = functools.partial(sync_fn)
+        partial_sync_fn._is_coroutine = asyncio.coroutines._is_coroutine
+
+        self.assertTrue(asyncio.iscoroutinefunction(partial_sync_fn))
 
         self.assertFalse(asyncio.iscoroutinefunction(mock.Mock()))
         self.assertTrue(asyncio.iscoroutinefunction(mock.AsyncMock()))
