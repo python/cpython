@@ -1,0 +1,1 @@
+Fix incorrect handling of shebang lines in py.exe launcher
