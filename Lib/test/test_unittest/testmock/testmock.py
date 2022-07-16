@@ -2214,6 +2214,7 @@ class MockTest(unittest.TestCase):
     def test_misspelled_arguments(self):
         class Foo():
             one = 'one'
+            assret_testing = False
         # patch, patch.object and create_autospec need to check for misspelled
         # arguments explicitly and throw a RuntimeError if found.
         with self.assertRaises(RuntimeError):
@@ -2246,35 +2247,35 @@ class MockTest(unittest.TestCase):
         with patch(
             f'{__name__}.Something.meth', unsafe=True, autospect=True
         ) as patched_object:
-            self.assertEqual(patched_object._mock_unsafe, True)
+            patched_object.assret_called_once()
 
         with patch.object(
             Foo, 'one', unsafe=True, autospect=True
         ) as patched_object:
-            self.assertEqual(patched_object._mock_unsafe, True)
+            patched_object.assret_called_once()
 
         with patch(
             f'{__name__}.Something.meth', unsafe=True, auto_spec=True
         ) as patched_object:
-            self.assertEqual(patched_object._mock_unsafe, True)
+            patched_object.assret_called_once()
 
         with patch.object(
             Foo, 'one', unsafe=True, auto_spec=True
         ) as patched_object:
-            self.assertEqual(patched_object._mock_unsafe, True)
+            patched_object.assret_called_once()
 
         with patch(
             f'{__name__}.Something.meth', unsafe=True, set_spec=True
         ) as patched_object:
-            self.assertEqual(patched_object._mock_unsafe, True)
+            patched_object.assret_called_once()
 
         with patch.object(
             Foo, 'one', unsafe=True, set_spec=True
         ) as patched_object:
-            self.assertEqual(patched_object._mock_unsafe, True)
+            patched_object.assret_called_once()
 
         m = create_autospec(Foo, set_spec=True, unsafe=True)
-        self.assertEqual(m._mock_unsafe, True)
+        m.assret_testing = True
 
         with patch.multiple(
             f'{__name__}.Typos', autospect=True, set_spec=True, auto_spec=True):
