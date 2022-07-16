@@ -768,11 +768,11 @@ class Random(_random.Random):
             a = (n + 1) * s
             u = random()
             k = 0
-            sum_r = r = q ** n
-            while u >= sum_r and k < n:
+            r = q ** n
+            while r < u:
+                u -= r
                 k += 1
                 r *= (a / k) - s  # r ← comb(n, k) * p**k * q**(n-k)
-                sum_r += r
             return k
 
         # BTRS: Transformed rejection with squeeze method by Wolfgang Hörmann
