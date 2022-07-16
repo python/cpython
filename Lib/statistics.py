@@ -298,7 +298,7 @@ def _exact_ratio(x):
 
     # The integer ratios for binary floats can have numerators or
     # denominators with over 300 decimal digits.  The problem is more
-    # acute with decimal floats where the the default decimal context
+    # acute with decimal floats where the default decimal context
     # supports a huge range of exponents from Emin=-999999 to
     # Emax=999999.  When expanded with as_integer_ratio(), numbers like
     # Decimal('3.14E+5000') and Decimal('3.14E-5000') have large
@@ -1193,7 +1193,7 @@ class NormalDist:
         "Generate *n* samples for a given mean and standard deviation."
         gauss = random.gauss if seed is None else random.Random(seed).gauss
         mu, sigma = self._mu, self._sigma
-        return [gauss(mu, sigma) for i in range(n)]
+        return [gauss(mu, sigma) for _ in repeat(None, n)]
 
     def pdf(self, x):
         "Probability density function.  P(x <= X < x+dx) / dx"

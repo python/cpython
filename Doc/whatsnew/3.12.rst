@@ -132,9 +132,12 @@ CPython bytecode changes
 Deprecated
 ==========
 
+* :class:`typing.Hashable` and :class:`typing.Sized` aliases for :class:`collections.abc.Hashable`
+  and :class:`collections.abc.Sized`. (:gh:`94309`)
+
 
 Pending Removal in Python 3.13
-==============================
+------------------------------
 
 The following modules and APIs have been deprecated in earlier Python releases,
 and will be removed in Python 3.13.
@@ -172,7 +175,7 @@ APIs:
 * :class:`webbrowser.MacOSX` (:gh:`86421`)
 
 Pending Removal in Future Versions
-==================================
+----------------------------------
 
 The following APIs were deprecated in earlier Python versions and will be removed,
 although there is currently no date scheduled for their removal.
@@ -293,6 +296,26 @@ Removed
   a C implementation of :func:`~hashlib.pbkdf2_hmac()` which is faster.
   (Contributed by Victor Stinner in :gh:`94199`.)
 
+* :mod:`xml.etree`: Remove the ``ElementTree.Element.copy()`` method of the
+  pure Python implementation, deprecated in Python 3.10, use the
+  :func:`copy.copy` function instead.  The C implementation of :mod:`xml.etree`
+  has no ``copy()`` method, only a ``__copy__()`` method.
+  (Contributed by Victor Stinner in :gh:`94383`.)
+
+* :mod:`zipimport`: Remove ``find_loader()`` and ``find_module()`` methods,
+  deprecated in Python 3.10: use the ``find_spec()`` method instead.  See
+  :pep:`451` for the rationale.
+  (Contributed by Victor Stinner in :gh:`94379`.)
+
+* Remove the :func:`ssl.wrap_socket` function, deprecated in Python 3.7:
+  instead, create a :class:`ssl.SSLContext` object and call its
+  :class:`ssl.SSLContext.wrap_socket` method. Any package that still uses
+  :func:`ssl.wrap_socket` is broken and insecure. The function neither sends a
+  SNI TLS extension nor validates server hostname. Code is subject to `CWE-295
+  <https://cwe.mitre.org/data/definitions/295.html>`_: Improper Certificate
+  Validation.
+  (Contributed by Victor Stinner in :gh:`94199`.)
+
 
 Porting to Python 3.12
 ======================
@@ -324,9 +347,20 @@ Changes in the Python API
   to :term:`filesystem encoding and error handler`.
   Argument files should be encoded in UTF-8 instead of ANSI Codepage on Windows.
 
+* :func:`shlex.split`: Passing ``None`` for *s* argument now raises an
+  exception, rather than reading :data:`sys.stdin`. The feature was deprecated
+  in Python 3.9.
+  (Contributed by Victor Stinner in :gh:`94352`.)
+
 
 Build Changes
 =============
+
+* Python no longer uses ``setup.py`` to build shared C extension modules.
+  Build parameters like headers and libraries are detected in ``configure``
+  script. Extensions are built by ``Makefile``. Most extensions use
+  ``pkg-config`` and fall back to manual detection.
+  (Contributed by Christian Heimes in :gh:`93939`.)
 
 * ``va_start()`` with two parameters, like ``va_start(args, format),``
   is now required to build Python.
