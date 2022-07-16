@@ -1,0 +1,1 @@
+support partials of asyncio coroutine marked functions in asyncio.iscoroutinefunction
