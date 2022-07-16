@@ -3781,14 +3781,17 @@ math.nextafter
     x: double
     y: double
     /
+    *
+    steps: int = 1
 
-Return the next floating-point value after x towards y.
+Return the floating-point value the given number of steps after x towards y.
 [clinic start generated code]*/
 
 static PyObject *
-math_nextafter_impl(PyObject *module, double x, double y)
-/*[clinic end generated code: output=750c8266c1c540ce input=02b2d50cd1d9f9b6]*/
+math_nextafter_impl(PyObject *module, double x, double y, int steps)
+/*[clinic end generated code: output=14190eb869199e5a input=e87d3b26a7611ff4]*/
 {
+    int i;
 #if defined(_AIX)
     if (x == y) {
         /* On AIX 7.1, libm nextafter(-0.0, +0.0) returns -0.0.
@@ -3802,7 +3805,14 @@ math_nextafter_impl(PyObject *module, double x, double y)
         return PyFloat_FromDouble(y);
     }
 #endif
-    return PyFloat_FromDouble(nextafter(x, y));
+    if (steps < 1) {
+        PyErr_SetString(PyExc_ValueError, "steps must be >= 1");
+        return NULL;
+    }
+    for (i = 0; i < steps; i++) {
+        x = nextafter(x, y);
+    }
+    return PyFloat_FromDouble(x);
 }
 
 

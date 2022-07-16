@@ -780,25 +780,31 @@ exit:
 }
 
 PyDoc_STRVAR(math_nextafter__doc__,
-"nextafter($module, x, y, /)\n"
+"nextafter($module, x, y, /, *, steps=1)\n"
 "--\n"
 "\n"
 "Return the next floating-point value after x towards y.");
 
 #define MATH_NEXTAFTER_METHODDEF    \
-    {"nextafter", _PyCFunction_CAST(math_nextafter), METH_FASTCALL, math_nextafter__doc__},
+    {"nextafter", _PyCFunction_CAST(math_nextafter), METH_FASTCALL|METH_KEYWORDS, math_nextafter__doc__},
 
 static PyObject *
-math_nextafter_impl(PyObject *module, double x, double y);
+math_nextafter_impl(PyObject *module, double x, double y, int steps);
 
 static PyObject *
-math_nextafter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+math_nextafter(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "", "steps", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "nextafter", 0};
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     double x;
     double y;
+    int steps = 1;
 
-    if (!_PyArg_CheckPositional("nextafter", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     if (PyFloat_CheckExact(args[0])) {
@@ -821,7 +827,15 @@ math_nextafter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
             goto exit;
         }
     }
-    return_value = math_nextafter_impl(module, x, y);
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    steps = _PyLong_AsInt(args[2]);
+    if (steps == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = math_nextafter_impl(module, x, y, steps);
 
 exit:
     return return_value;
@@ -865,4 +879,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=965f99dabaa72165 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=19d32518e62960a5 input=a9049054013a1b77]*/
