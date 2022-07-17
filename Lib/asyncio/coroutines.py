@@ -13,14 +13,9 @@ def _is_debug_mode():
                                   bool(os.environ.get('PYTHONASYNCIODEBUG')))
 
 
-# A marker for iscoroutinefunction.
-_is_coroutine = object()
-
-
 def iscoroutinefunction(func):
-    """Return True if func is a decorated coroutine function."""
-    return (inspect.iscoroutinefunction(func) or
-            getattr(func, '_is_coroutine', None) is _is_coroutine)
+    """Alias for inspect.iscoroutinefunction."""
+    return inspect.iscoroutinefunction(func)
 
 
 # Prioritize native coroutine check to speed-up
