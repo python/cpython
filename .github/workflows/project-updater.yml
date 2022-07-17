@@ -7,7 +7,7 @@ on:
       - labeled
 
 jobs:
-  add-to-project:
+  add-to-blockers:
     name: Add to the Release and Deferred Blocker project
     runs-on: ubuntu-latest
     steps:
@@ -17,3 +17,13 @@ jobs:
           github-token: ${{ secrets.ADD_TO_PROJECT_PAT }}
           labeled: release-blocker, deferred-blocker
           label-operator: OR
+
+  add-to-asyncio:
+    name: Add to the asyncio project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/add-to-project@v0.1.0
+        with:
+          project-url: https://github.com/orgs/python/projects/29
+          github-token: ${{ secrets.ADD_TO_PROJECT_PAT }}
+          labeled: expert-asyncio
