@@ -1,6 +1,6 @@
 """Tests for tasks.py."""
 
-import collections
+import collections.abc
 import contextvars
 import gc
 import io
@@ -285,6 +285,21 @@ class BaseTaskTests:
         fut = asyncio.ensure_future(Aw(coro()), loop=loop)
         loop.run_until_complete(fut)
         self.assertEqual(fut.result(), 'ok')
+
+    def test_ensure_future_virtual_awaitable(self):
+        @collections.abc.Awaitable.register
+        class Aw:
+            def __init__(self, coro):
+                self.__await__ = coro.__await__
+
+        async def coro():
+            return 'ok'
+
+        loop = asyncio.new_event_loop()
+        self.set_event_loop(loop)
+        fut = asyncio.ensure_future(Aw(coro()), loop=loop)
+        with self.assertRaises(TypeError):
+            loop.run_until_complete(fut)
 
     def test_ensure_future_neither(self):
         with self.assertRaises(TypeError):
