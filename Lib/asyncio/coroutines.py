@@ -1,6 +1,7 @@
 __all__ = 'iscoroutinefunction', 'iscoroutine'
 
 import collections.abc
+import functools
 import inspect
 import os
 import sys
