@@ -25,7 +25,7 @@ typedef struct {
                              pointed to by strides in simple case.*/
     int readonly;
     int ndim;
-    char *format;
+    const char *format;
     Py_ssize_t *shape;
     Py_ssize_t *strides;
     Py_ssize_t *suboffsets;
