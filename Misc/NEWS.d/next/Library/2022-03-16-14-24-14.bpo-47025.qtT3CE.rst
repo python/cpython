@@ -1,1 +1,1 @@
-drop support for bytes on sys.path
+Drop support for :class:`bytes` on :attr:`sys.path`.
