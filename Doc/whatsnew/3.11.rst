@@ -388,7 +388,7 @@ Other Language Changes
   was released. Bringing back support would also be problematic due to
   interactions between :option:`-b` and :attr:`sys.path_importer_cache` when
   there is a mixture of strings and bytes keys.
-  (Contributed by Thomas Grainger in :gh:`91181`.)
+  (Contributed by Thomas Grainger in :gh:`94914`.)
 
 Other CPython Implementation Changes
 ====================================
