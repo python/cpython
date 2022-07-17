@@ -217,13 +217,11 @@ class winreg.HKEYType "PyHKEYObject *" "&PyHKEY_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=4c964eba3bf914d6]*/
 
 /*[python input]
-class REGSAM_converter(CConverter):
+class REGSAM_converter(int_converter):
     type = 'REGSAM'
-    format_unit = 'i'
 
-class DWORD_converter(CConverter):
+class DWORD_converter(unsigned_long_converter):
     type = 'DWORD'
-    format_unit = 'k'
 
 class HKEY_converter(CConverter):
     type = 'HKEY'
@@ -249,7 +247,7 @@ class self_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = (PyObject *)_return_value;\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=22f7aedc6d68e80e]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=2ebb7a4922d408d6]*/
 
 #include "clinic/winreg.c.h"
 

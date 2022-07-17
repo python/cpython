@@ -1,0 +1,2 @@
+Document the :pep:`246` style protocol type
+:class:`sqlite3.PrepareProtocol`.
