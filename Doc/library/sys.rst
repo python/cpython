@@ -1158,7 +1158,7 @@ always available.
    line option or the :envvar:`PYTHONSAFEPATH` environment variable?
 
    A program is free to modify this list for its own purposes.  Only strings
-   and bytes should be added to :data:`sys.path`; all other data types are
+   should be added to :data:`sys.path`; all other data types are
    ignored during import.
 
 
