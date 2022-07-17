@@ -1102,11 +1102,11 @@ class Enum(metaclass=EnumType):
         pass
 
     def __getattribute__(self, name):
-        self_dict = super().__getattribute__('__dict__')
-        cls = super().__getattribute__('__class__')
-        value = super().__getattribute__(name)
-        if isinstance(value, cls) and name not in self_dict and name in self._member_names_:
-            raise AttributeError("<enum '%s'> member has no attribute %r" % (cls.__name__, name))
+        if name in super().__getattribute__('_member_names_'):
+            value = super().__getattribute__(name)
+            cls = super().__getattribute__('__class__')
+            if isinstance(value, cls) and name not in super().__getattribute__('__dict__'):
+                raise AttributeError("<enum '%s'> member has no attribute %r" % (cls.__name__, name))
         return super().__getattribute__(name)
 
     def _generate_next_value_(name, start, count, last_values):
