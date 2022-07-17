@@ -63,8 +63,7 @@ class zipimporter(_bootstrap_external._LoaderBasics):
     # if found, or else read it from the archive.
     def __init__(self, path):
         if not isinstance(path, str):
-            import os
-            path = os.fsdecode(path)
+            raise TypeError(f"expected str, not {type(path)!r}")
         if not path:
             raise ZipImportError('archive path is empty', path=path)
         if alt_path_sep:
