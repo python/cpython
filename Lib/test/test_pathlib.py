@@ -2479,15 +2479,6 @@ class _BasePathTest(object):
         self._check_complex_symlinks(os.path.join('dirA', '..'))
 
 class WalkTests(unittest.TestCase):
-    """Tests for Path.walk()
-
-    They are mostly just copies of os.walk tests converted to use Paths
-    because os.walk tests are already mature and cover many edge cases
-    that we could miss writing new tests.
-
-    It is not combined with Path* tests because its setup is aimed at
-    testing a bit more complex cases than Path's setup.
-    """
 
     def setUp(self):
         P = pathlib.Path
@@ -2526,7 +2517,6 @@ class WalkTests(unittest.TestCase):
         broken_link2_path = self.sub2_path / "broken_link2"
         broken_link3_path = self.sub2_path / "broken_link3"
 
-        # Create stuff.
         os.makedirs(self.sub11_path)
         os.makedirs(self.sub2_path)
         os.makedirs(sub21_path)
@@ -2548,7 +2538,7 @@ class WalkTests(unittest.TestCase):
             self.sub2_tree = (self.sub2_path, ["SUB21"], ["tmp3"])
 
         if not is_emscripten:
-            # Emscripten fails with inaccessible directory
+            # Emscripten fails with inaccessible directories.
             os.chmod(sub21_path, 0)
         try:
             os.listdir(sub21_path)
@@ -2561,7 +2551,6 @@ class WalkTests(unittest.TestCase):
             del self.sub2_tree[1][:1]
 
     def test_walk_topdown(self):
-        # Walk top-down.
         P = pathlib.Path
         all = list(self.walk_path.walk())
 
@@ -2585,7 +2574,6 @@ class WalkTests(unittest.TestCase):
         all = []
         for root, dirs, files in walk_path.walk():
             all.append((root, dirs, files))
-            # Don't descend into SUB1.
             if 'SUB1' in dirs:
                 # Note that this also mutates the dirs we appended to all!
                 dirs.remove('SUB1')
@@ -2601,7 +2589,6 @@ class WalkTests(unittest.TestCase):
         self.test_walk_prune(FakePath(self.walk_path).__fspath__())
 
     def test_walk_bottom_up(self):
-        # Walk bottom-up.
         all = list(self.walk_path.walk( top_down=False))
 
         self.assertEqual(len(all), 4, all)
@@ -2623,7 +2610,6 @@ class WalkTests(unittest.TestCase):
 
     @os_helper.skip_unless_symlink
     def test_walk_follow_symlinks(self):
-        # Walk, following symlinks.
         walk_it = self.walk_path.walk(follow_symlinks=True)
         for root, dirs, files in walk_it:
             if root == self.link_path:
@@ -2634,14 +2620,15 @@ class WalkTests(unittest.TestCase):
             self.fail("Didn't follow symlink with follow_symlinks=True")
 
     def test_walk_symlink_location(self):
-        """ Tests whether symlinks end up in filenames or dirnames depending
-        on the `follow_symlinks` argument
-        """
+        # Tests whether symlinks end up in filenames or dirnames depending
+        # on the `follow_symlinks` argument.
         walk_it = self.walk_path.walk(follow_symlinks=False)
         for root, dirs, files in walk_it:
             if root == self.sub2_path:
                 self.assertIn("link", files)
                 break
+        else:
+            self.fail("symlink not found")
 
         walk_it = self.walk_path.walk(follow_symlinks=True)
         for root, dirs, files in walk_it:
@@ -2650,7 +2637,6 @@ class WalkTests(unittest.TestCase):
                 break
 
     def test_walk_bad_dir(self):
-        # Walk top-down.
         errors = []
         walk_it = self.walk_path.walk(on_error=errors.append)
         root, dirs, files = next(walk_it)
