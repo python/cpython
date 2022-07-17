@@ -966,18 +966,11 @@ Cursor Objects
 
    .. attribute:: rowcount
 
-      Although the :class:`Cursor` class of the :mod:`sqlite3` module implements this
-      attribute, the database engine's own support for the determination of "rows
-      affected"/"rows selected" is quirky.
-
-      For :meth:`executemany` statements, the number of modifications are summed up
-      into :attr:`rowcount`.
-
-      As required by the Python DB API Spec, the :attr:`rowcount` attribute "is -1 in
-      case no ``executeXX()`` has been performed on the cursor or the rowcount of the
-      last operation is not determinable by the interface". This includes ``SELECT``
-      statements because we cannot determine the number of rows a query produced
-      until all rows were fetched.
+      This read-only attribute provides the number of modified rows for
+      ``INSERT``, ``UPDATE``, ``DELETE``, and ``REPLACE`` statements;
+      ``-1`` for other statements,
+      including :abbr:`CTE queries (Common Table Expression)`.
+      It is only updated by the :meth:`execute` and :meth:`executemany` methods.
 
    .. attribute:: lastrowid
 
