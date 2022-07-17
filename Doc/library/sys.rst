@@ -774,7 +774,7 @@ always available.
    that is deeper than the call stack, :exc:`ValueError` is raised.  The default
    for *depth* is zero, returning the frame at the top of the call stack.
 
-   .. audit-event:: sys._getframe "" sys._getframe
+   .. audit-event:: sys._getframe frame sys._getframe
 
    .. impl-detail::
 
