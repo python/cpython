@@ -383,6 +383,13 @@ Other Language Changes
   coerces negative zero to zero after rounding to the format precision.  See
   :pep:`682` for more details.  (Contributed by John Belmonte in :gh:`90153`.)
 
+* Bytes are no longer accepted on :attr:`sys.path`.  Support broke sometime
+  between Python 3.2 and 3.6 with no one noticing until after Python 3.10.0
+  was released. Bringing back support would also be problematic due to
+  interactions between :option:`-b` and :attr:`sys.path_importer_cache` when
+  there is a mixture of strings and bytes keys.
+  (Contributed by Thomas Grainger in :gh:`31934`.)
+
 Other CPython Implementation Changes
 ====================================
 
