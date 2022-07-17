@@ -1780,10 +1780,6 @@ sys__getframe_impl(PyObject *module, int depth)
     PyThreadState *tstate = _PyThreadState_GET();
     _PyInterpreterFrame *frame = tstate->cframe->current_frame;
 
-    if (_PySys_Audit(tstate, "sys._getframe", NULL) < 0) {
-        return NULL;
-    }
-
     if (frame != NULL) {
         while (depth > 0) {
             frame = frame->previous;
@@ -1801,7 +1797,13 @@ sys__getframe_impl(PyObject *module, int depth)
                          "call stack is not deep enough");
         return NULL;
     }
-    return _Py_XNewRef((PyObject *)_PyFrame_GetFrameObject(frame));
+
+    PyObject *pyFrame = Py_XNewRef((PyObject *)_PyFrame_GetFrameObject(frame));
+    if (pyFrame && _PySys_Audit(tstate, "sys._getframe", "(O)", pyFrame) < 0) {
+        Py_DECREF(pyFrame);
+        return NULL;
+    }
+    return pyFrame;
 }
 
 /*[clinic input]
