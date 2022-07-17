@@ -1,0 +1,1 @@
+make ``asyncio.iscoroutinefunction`` a deprecated alias of ``inspect.iscoroutinefunction`` and remove ``asyncio.coroutines._is_coroutine``
