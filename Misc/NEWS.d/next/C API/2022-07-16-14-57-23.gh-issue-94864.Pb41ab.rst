@@ -1,0 +1,2 @@
+Fix ``PyArg_Parse*`` with deprecated format units "u" and "Z". It returned 1
+(success) when warnings are turned into exceptions.

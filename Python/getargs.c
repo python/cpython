@@ -1016,7 +1016,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     {
         if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
                 "getargs: The '%c' format is deprecated. Use 'U' instead.", c)) {
-            return NULL;
+            RETURN_ERR_OCCURRED;
         }
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
