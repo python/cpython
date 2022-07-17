@@ -2,6 +2,7 @@
 
 import errno
 import io
+import inspect
 import itertools
 import os
 import selectors
@@ -92,7 +93,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         Raise RuntimeError if there is a problem setting up the handler.
         """
         if (coroutines.iscoroutine(callback) or
-                coroutines.iscoroutinefunction(callback)):
+                inspect.iscoroutinefunction(callback)):
             raise TypeError("coroutines cannot be used "
                             "with add_signal_handler()")
         self._check_signal(sig)
