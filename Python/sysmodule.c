@@ -1792,7 +1792,7 @@ sys__getframe_impl(PyObject *module, int depth)
 
     PyObject *pyFrame = _Py_XNewRef((PyObject *)_PyFrame_GetFrameObject(frame));
     if (_PySys_Audit(tstate, "sys._getframe", "(O)", pyFrame) < 0) {
-        Py_DECREF(pyFrame);
+        Py_XDECREF(pyFrame);
         return NULL;
     }
     return pyFrame;
