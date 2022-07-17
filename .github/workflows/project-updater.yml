@@ -7,23 +7,21 @@ on:
       - labeled
 
 jobs:
-  add-to-blockers:
-    name: Add to the Release and Deferred Blocker project
-    runs-on: ubuntu-latest
+  add-to-project:
+    name: Add issues to projects
+    runs-on: ubuntu-latest    
+    strategy:
+      matrix:
+        include:
+          # if an issue has any of these labels, it will be added
+          # to the corresponding project
+          - { project:  2, label: "release-blocker, deferred-blocker" }
+          - { project:  3, label: expert-subinterpreters }
+          - { project: 29, label: expert-asyncio }
+    
     steps:
       - uses: actions/add-to-project@v0.1.0
         with:
-          project-url: https://github.com/orgs/python/projects/2
+          project-url: https://github.com/orgs/python/projects/${{ matrix.project }}
           github-token: ${{ secrets.ADD_TO_PROJECT_PAT }}
-          labeled: release-blocker, deferred-blocker
-          label-operator: OR
-
-  add-to-asyncio:
-    name: Add to the asyncio project
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/add-to-project@v0.1.0
-        with:
-          project-url: https://github.com/orgs/python/projects/29
-          github-token: ${{ secrets.ADD_TO_PROJECT_PAT }}
-          labeled: expert-asyncio
+          labeled: ${{ matrix.label }}
