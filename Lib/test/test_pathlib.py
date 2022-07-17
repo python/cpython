@@ -2479,9 +2479,10 @@ class _BasePathTest(object):
         self._check_complex_symlinks(os.path.join('dirA', '..'))
 
 class WalkTests(unittest.TestCase):
+    cls = pathlib.Path
 
     def setUp(self):
-        P = pathlib.Path
+        P = self.cls
         self.addCleanup(os_helper.rmtree, os_helper.TESTFN)
 
         # Build:
@@ -2551,7 +2552,7 @@ class WalkTests(unittest.TestCase):
             del self.sub2_tree[1][:1]
 
     def test_walk_topdown(self):
-        P = pathlib.Path
+        P = self.cls
         all = list(self.walk_path.walk())
 
         self.assertEqual(len(all), 4)
@@ -2657,7 +2658,7 @@ class WalkTests(unittest.TestCase):
             path1new.rename(path1)
 
     def test_walk_many_open_files(self):
-        P = pathlib.Path
+        P = self.cls
         depth = 30
         base = P(os_helper.TESTFN, 'deep')
         p = P(base, *(['d']*depth))
