@@ -9,7 +9,7 @@ on:
 jobs:
   add-to-project:
     name: Add issues to projects
-    runs-on: ubuntu-latest    
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
