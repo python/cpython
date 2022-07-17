@@ -2,6 +2,7 @@ import unittest
 import math
 import string
 import sys
+import warnings
 from test import support
 from test.support import import_helper
 from test.support import warnings_helper
@@ -999,6 +1000,9 @@ class String_TestCase(unittest.TestCase):
             self.assertRaises(TypeError, getargs_u, memoryview(b'memoryview'))
         with self.assertWarns(DeprecationWarning):
             self.assertRaises(TypeError, getargs_u, None)
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', DeprecationWarning)
+            self.assertRaises(DeprecationWarning, getargs_u, 'abc\xe9')
 
     @support.requires_legacy_unicode_capi
     def test_u_hash(self):
@@ -1015,6 +1019,9 @@ class String_TestCase(unittest.TestCase):
             self.assertRaises(TypeError, getargs_u_hash, memoryview(b'memoryview'))
         with self.assertWarns(DeprecationWarning):
             self.assertRaises(TypeError, getargs_u_hash, None)
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', DeprecationWarning)
+            self.assertRaises(DeprecationWarning, getargs_u_hash, 'abc\xe9')
 
     @support.requires_legacy_unicode_capi
     def test_Z(self):
@@ -1031,6 +1038,9 @@ class String_TestCase(unittest.TestCase):
             self.assertRaises(TypeError, getargs_Z, memoryview(b'memoryview'))
         with self.assertWarns(DeprecationWarning):
             self.assertIsNone(getargs_Z(None))
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', DeprecationWarning)
+            self.assertRaises(DeprecationWarning, getargs_Z, 'abc\xe9')
 
     @support.requires_legacy_unicode_capi
     def test_Z_hash(self):
@@ -1047,6 +1057,9 @@ class String_TestCase(unittest.TestCase):
             self.assertRaises(TypeError, getargs_Z_hash, memoryview(b'memoryview'))
         with self.assertWarns(DeprecationWarning):
             self.assertIsNone(getargs_Z_hash(None))
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', DeprecationWarning)
+            self.assertRaises(DeprecationWarning, getargs_Z_hash, 'abc\xe9')
 
 
 class Object_TestCase(unittest.TestCase):
