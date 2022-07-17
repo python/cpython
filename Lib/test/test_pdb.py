@@ -2148,7 +2148,7 @@ def bœr():
         self.addCleanup(os_helper.unlink, 'gh93696_host.py')
         stdout, stderr = self._run_pdb(["gh93696_host.py"], commands)
         # verify that pdb found the source of the "frozen" function
-        self.assertTrue('x = "Sentinel string for gh-93696"' in stdout, "Sentinel statement not found")
+        self.assertIn('x = "Sentinel string for gh-93696"', stdout, "Sentinel statement not found")
 
 class ChecklineTests(unittest.TestCase):
     def setUp(self):
