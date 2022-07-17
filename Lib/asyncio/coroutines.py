@@ -5,6 +5,7 @@ import inspect
 import os
 import sys
 import types
+import warnings
 
 
 def _is_debug_mode():
@@ -15,6 +16,7 @@ def _is_debug_mode():
 
 def iscoroutinefunction(func):
     """Alias for inspect.iscoroutinefunction."""
+    warnings._deprecated("asyncio.iscoroutinefunction", remove=(3, 14))
     return inspect.iscoroutinefunction(func)
 
 
