@@ -107,25 +107,6 @@ frame_getback(PyFrameObject *f, void *closure)
     return res;
 }
 
-// Given the index of the effective opcode, scan back to construct the oparg
-// with EXTENDED_ARG. This only works correctly with *unquickened* code,
-// obtained via a call to _PyCode_GetCode!
-static unsigned int
-get_arg(const _Py_CODEUNIT *codestr, Py_ssize_t i)
-{
-    _Py_CODEUNIT word;
-    unsigned int oparg = _Py_OPARG(codestr[i]);
-    if (i >= 1 && _Py_OPCODE(word = codestr[i-1]) == EXTENDED_ARG) {
-        oparg |= _Py_OPARG(word) << 8;
-        if (i >= 2 && _Py_OPCODE(word = codestr[i-2]) == EXTENDED_ARG) {
-            oparg |= _Py_OPARG(word) << 16;
-            if (i >= 3 && _Py_OPCODE(word = codestr[i-3]) == EXTENDED_ARG) {
-                oparg |= _Py_OPARG(word) << 24;
-            }
-        }
-    }
-    return oparg;
-}
 
 /* Model the evaluation stack, to determine which jumps
  * are safe and how many values needs to be popped.
@@ -176,6 +157,7 @@ push_value(int64_t stack, Kind kind)
 static inline int64_t
 pop_value(int64_t stack)
 {
+    assert(stack);
     return Py_ARITHMETIC_RIGHT_SHIFT(int64_t, stack, BITS_PER_BLOCK);
 }
 
@@ -183,6 +165,13 @@ static inline Kind
 top_of_stack(int64_t stack)
 {
     return stack & ((1<<BITS_PER_BLOCK)-1);
+}
+
+static inline void
+set_stack(int64_t *stacks, int i, int64_t stack)
+{
+    assert(stacks[i] == UNINITIALIZED || stacks[i] == stack);
+    stacks[i] = stack;
 }
 
 static int64_t *
@@ -194,7 +183,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
     }
     _Py_CODEUNIT *code = (_Py_CODEUNIT *)PyBytes_AS_STRING(co_code);
     int64_t *stacks = PyMem_New(int64_t, len+1);
-    int i, j, opcode;
+    int i, j, opcode, oparg;
 
     if (stacks == NULL) {
         PyErr_NoMemory();
@@ -212,14 +201,25 @@ mark_stacks(PyCodeObject *code_obj, int len)
     }
     int todo = 1;
     while (todo) {
+        oparg = 0;
         todo = 0;
         for (i = 0; i < len; i++) {
             int64_t next_stack = stacks[i];
             if (next_stack == UNINITIALIZED) {
+                oparg = 0;
                 continue;
             }
             opcode = _Py_OPCODE(code[i]);
+            oparg |= _Py_OPARG(code[i]);
+            assert(opcode == _PyOpcode_Original[opcode]);
+            assert(oparg <= 0xFF || _Py_OPCODE(code[i - 1]) == EXTENDED_ARG_QUICK);
             switch (opcode) {
+                case EXTENDED_ARG_QUICK:
+                    oparg <<= 8;
+                    set_stack(stacks, i + 1, next_stack);
+                    continue;
+                case EXTENDED_ARG:
+                    Py_UNREACHABLE();
                 case JUMP_IF_FALSE_OR_POP:
                 case JUMP_IF_TRUE_OR_POP:
                 case POP_JUMP_FORWARD_IF_FALSE:
@@ -228,7 +228,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 case POP_JUMP_BACKWARD_IF_TRUE:
                 {
                     int64_t target_stack;
-                    int j = get_arg(code, i);
+                    int j = oparg;
                     if (opcode == POP_JUMP_FORWARD_IF_FALSE ||
                         opcode == POP_JUMP_FORWARD_IF_TRUE) {
                         j += i + 1;
@@ -251,53 +251,48 @@ mark_stacks(PyCodeObject *code_obj, int len)
                         next_stack = pop_value(next_stack);
                         target_stack = next_stack;
                     }
-                    assert(stacks[j] == UNINITIALIZED || stacks[j] == target_stack);
-                    stacks[j] = target_stack;
-                    stacks[i+1] = next_stack;
+                    set_stack(stacks, j, target_stack);
+                    set_stack(stacks, i + 1, next_stack);
                     break;
                 }
                 case SEND:
-                    j = get_arg(code, i) + i + 1;
+                    j = oparg + i + 1;
                     assert(j < len);
-                    assert(stacks[j] == UNINITIALIZED || stacks[j] == pop_value(next_stack));
-                    stacks[j] = pop_value(next_stack);
-                    stacks[i+1] = next_stack;
+                    set_stack(stacks, j, pop_value(next_stack));
+                    set_stack(stacks, i + 1, next_stack);
                     break;
                 case JUMP_FORWARD:
-                    j = get_arg(code, i) + i + 1;
+                    j = oparg + i + 1;
                     assert(j < len);
-                    assert(stacks[j] == UNINITIALIZED || stacks[j] == next_stack);
-                    stacks[j] = next_stack;
+                    set_stack(stacks, j, next_stack);
                     break;
                 case JUMP_BACKWARD:
                 case JUMP_BACKWARD_NO_INTERRUPT:
-                    j = i + 1 - get_arg(code, i);
+                    j = i + 1 - oparg;
                     assert(j >= 0);
                     assert(j < len);
                     if (stacks[j] == UNINITIALIZED && j < i) {
                         todo = 1;
                     }
-                    assert(stacks[j] == UNINITIALIZED || stacks[j] == next_stack);
-                    stacks[j] = next_stack;
+                    set_stack(stacks, j, next_stack);
                     break;
                 case GET_ITER:
                 case GET_AITER:
                     next_stack = push_value(pop_value(next_stack), Iterator);
-                    stacks[i+1] = next_stack;
+                    set_stack(stacks, i + 1, next_stack);
                     break;
                 case FOR_ITER:
                 {
                     int64_t target_stack = pop_value(next_stack);
-                    stacks[i+1] = push_value(next_stack, Object);
-                    j = get_arg(code, i) + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + i;
+                    set_stack(stacks, i + 1, push_value(next_stack, Object));
+                    j = oparg + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + i;
                     assert(j < len);
-                    assert(stacks[j] == UNINITIALIZED || stacks[j] == target_stack);
-                    stacks[j] = target_stack;
+                    set_stack(stacks, j, target_stack);
                     break;
                 }
                 case END_ASYNC_FOR:
                     next_stack = pop_value(pop_value(pop_value(next_stack)));
-                    stacks[i+1] = next_stack;
+                    set_stack(stacks, i + 1, next_stack);
                     break;
                 case PUSH_EXC_INFO:
                 case POP_EXCEPT:
@@ -317,32 +312,33 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     break;
                 case PUSH_NULL:
                     next_stack = push_value(next_stack, Null);
-                    stacks[i+1] = next_stack;
+                    set_stack(stacks, i + 1, next_stack);
                     break;
                 case LOAD_GLOBAL:
                 {
-                    int j = get_arg(code, i);
+                    int j = oparg;
                     if (j & 1) {
                         next_stack = push_value(next_stack, Null);
                     }
                     next_stack = push_value(next_stack, Object);
-                    stacks[i+1] = next_stack;
+                    set_stack(stacks, i + 1, next_stack);
                     break;
                 }
                 case LOAD_ATTR:
                 {
-                    int j = get_arg(code, i);
+                    int j = oparg;
                     if (j & 1) {
                         next_stack = pop_value(next_stack);
                         next_stack = push_value(next_stack, Null);
                         next_stack = push_value(next_stack, Object);
                     }
-                    stacks[i+1] = next_stack;
+                    set_stack(stacks, i + 1, next_stack);
                     break;
                 }
                 default:
                 {
-                    int delta = PyCompile_OpcodeStackEffect(opcode, _Py_OPARG(code[i]));
+                    int delta = PyCompile_OpcodeStackEffect(opcode, oparg);
+                    assert(delta != PY_INVALID_STACK_EFFECT);
                     while (delta < 0) {
                         next_stack = pop_value(next_stack);
                         delta++;
@@ -351,9 +347,10 @@ mark_stacks(PyCodeObject *code_obj, int len)
                         next_stack = push_value(next_stack, Object);
                         delta--;
                     }
-                    stacks[i+1] = next_stack;
+                    set_stack(stacks, i + 1, next_stack);
                 }
             }
+            oparg = 0;
         }
     }
     Py_DECREF(co_code);
