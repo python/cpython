@@ -3628,6 +3628,11 @@ AS_VAR_IF([with_system_libmpdec], [yes], [
   LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
   LIBMPDEC_LDFLAGS="-lm \$(LIBMPDEC_A)"
   LIBMPDEC_INTERNAL="\$(LIBMPDEC_A)"
+
+  dnl Disable forced inlining in debug builds, see GH-94847
+  AS_VAR_IF([with_pydebug], [yes], [
+    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DTEST_COVERAGE"])
+  ])
 ])
 
 AC_SUBST([LIBMPDEC_CFLAGS])
