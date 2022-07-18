@@ -1,1 +1,1 @@
-deprecate the ``asyncio.MultiLoopChildWatcher``
+Deprecate :class:`asyncio.MultiLoopChildWatcher` to be removed in Python 3.14.
