@@ -396,9 +396,9 @@ def _has_code_flag(f, flag):
         f = f.__func__
     f = functools._unwrap_partial(f)
     if not (isfunction(f) or _signature_is_functionlike(f)):
-        # If it's not a pure Python function, and not a duck type
-        # of pure function (Cython and Mock functions, for instance), then:
         return False
+    # If it's a pure Python function, or an object that is duck type
+    # of a Python function (Cython and Mock functions, for instance), then:
     return bool(f.__code__.co_flags & flag)
 
 def isgeneratorfunction(obj):
