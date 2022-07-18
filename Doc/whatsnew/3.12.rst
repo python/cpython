@@ -178,7 +178,6 @@ APIs:
 * :func:`unittest.getTestCaseNames` (:gh:`50096`)
 * :class:`webbrowser.MacOSX` (:gh:`86421`)
 
-
 Pending Removal in Future Versions
 ==================================
 
