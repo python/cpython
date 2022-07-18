@@ -171,6 +171,18 @@ APIs:
 * :func:`unittest.getTestCaseNames` (:gh:`50096`)
 * :class:`webbrowser.MacOSX` (:gh:`86421`)
 
+
+Pending Removal in Python 3.14
+==============================
+
+The following modules and APIs have been deprecated in earlier Python releases,
+and will be removed in Python 3.14.
+
+APIs:
+
+* :class:`asyncio.MultiLoopChildWatcher` (:gh:`94648`)
+
+
 Pending Removal in Future Versions
 ==================================
 
