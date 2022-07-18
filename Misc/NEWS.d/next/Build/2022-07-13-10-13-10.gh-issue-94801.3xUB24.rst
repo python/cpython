@@ -1,0 +1,2 @@
+``configure`` now uses custom flags like ``ZLIB_CFLAGS`` and ``ZLIB_LIBS``
+when searching for headers and libraries.
