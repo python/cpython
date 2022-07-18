@@ -863,7 +863,7 @@ object::
   call is an awaitable.
 
     >>> mock = AsyncMock()
-    >>> asyncio.iscoroutinefunction(mock)
+    >>> inspect.iscoroutinefunction(mock)
     True
     >>> inspect.isawaitable(mock())  # doctest: +SKIP
     True
