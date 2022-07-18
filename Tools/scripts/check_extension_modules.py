@@ -130,10 +130,11 @@ class ModuleChecker:
     pybuilddir_txt = "pybuilddir.txt"
 
     setup_files = (
-        SRC_DIR / "Modules/Setup",
+        # see end of configure.ac
         "Modules/Setup.local",
-        "Modules/Setup.bootstrap",
         "Modules/Setup.stdlib",
+        "Modules/Setup.bootstrap",
+        SRC_DIR / "Modules/Setup",
     )
 
     def __init__(self, cross_compiling: bool = False, strict: bool = False):
@@ -308,12 +309,6 @@ class ModuleChecker:
         MODBUILT_NAMES: modules in *static* block
         MODSHARED_NAMES: modules in *shared* block
         MODDISABLED_NAMES: modules in *disabled* block
-
-        Modules built by setup.py addext() have a MODULE_{modname}_STATE entry,
-        but are not listed in MODSHARED_NAMES.
-
-        Modules built by old-style setup.py add() have neither a  MODULE_{modname}
-        entry nor an entry in MODSHARED_NAMES.
         """
         moddisabled = set(sysconfig.get_config_var("MODDISABLED_NAMES").split())
         if self.cross_compiling:

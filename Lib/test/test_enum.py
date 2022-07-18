@@ -2646,7 +2646,6 @@ class TestSpecial(unittest.TestCase):
         self.assertEqual(Private._Private__corporal, 'Radar')
         self.assertEqual(Private._Private__major_, 'Hoolihan')
 
-    @unittest.skip("Accessing all values retained for performance reasons, see GH-93910")
     def test_exception_for_member_from_member_access(self):
         with self.assertRaisesRegex(AttributeError, "<enum .Di.> member has no attribute .NO."):
             class Di(Enum):
@@ -2654,6 +2653,12 @@ class TestSpecial(unittest.TestCase):
                 NO = 0
             nope = Di.YES.NO
 
+    def test_no_exception_for_overridden_member_from_member_access(self):
+        class Di(Enum):
+            YES = 1
+            NO = 0
+        Di.YES.NO = Di.NO
+        nope = Di.YES.NO
 
     def test_dynamic_members_with_static_methods(self):
         #
@@ -2688,12 +2693,15 @@ class TestSpecial(unittest.TestCase):
         @dataclass
         class Foo:
             __qualname__ = 'Foo'
-            a: int = 0
+            a: int
         class Entries(Foo, Enum):
-            ENTRY1 = Foo(1)
+            ENTRY1 = 1
+        self.assertTrue(isinstance(Entries.ENTRY1, Foo))
+        self.assertTrue(Entries._member_type_ is Foo, Entries._member_type_)
+        self.assertTrue(Entries.ENTRY1.value == Foo(1), Entries.ENTRY1.value)
         self.assertEqual(repr(Entries.ENTRY1), '<Entries.ENTRY1: Foo(a=1)>')
 
-    def test_repr_with_non_data_type_mixin(self):
+    def test_repr_with_init_data_type_mixin(self):
         # non-data_type is a mixin that doesn't define __new__
         class Foo:
             def __init__(self, a):
@@ -2701,9 +2709,22 @@ class TestSpecial(unittest.TestCase):
             def __repr__(self):
                 return f'Foo(a={self.a!r})'
         class Entries(Foo, Enum):
-            ENTRY1 = Foo(1)
-
+            ENTRY1 = 1
+        #
         self.assertEqual(repr(Entries.ENTRY1), '<Entries.ENTRY1: Foo(a=1)>')
+
+    def test_repr_and_str_with_non_data_type_mixin(self):
+        # non-data_type is a mixin that doesn't define __new__
+        class Foo:
+            def __repr__(self):
+                return 'Foo'
+            def __str__(self):
+                return 'ooF'
+        class Entries(Foo, Enum):
+            ENTRY1 = 1
+        #
+        self.assertEqual(repr(Entries.ENTRY1), 'Foo')
+        self.assertEqual(str(Entries.ENTRY1), 'ooF')
 
     def test_value_backup_assign(self):
         # check that enum will add missing values when custom __new__ does not
