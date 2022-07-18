@@ -404,10 +404,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     break;
                 case CALL:
                 {
-                    int args = get_arg(code, i);
-                    for (int j = 0; j < args+2; j++) {
-                        next_stack = pop_value(next_stack);
-                    }
+                    next_stack = pop_value(pop_value(next_stack));
                     next_stack = push_value(next_stack, Object);
                     stacks[i+1] = next_stack;
                     break;
