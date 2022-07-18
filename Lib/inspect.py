@@ -396,6 +396,8 @@ def _has_code_flag(f, flag):
         f = f.__func__
     f = functools._unwrap_partial(f)
     if not (isfunction(f) or _signature_is_functionlike(f)):
+        # If it's not a pure Python function, and not a duck type
+        # of pure function (Cython and Mock functions, for instance), then:
         return False
     return bool(f.__code__.co_flags & flag)
 
@@ -2334,7 +2336,7 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
             is_duck_function = True
         else:
             # If it's not a pure Python function, and not a duck type
-            # of pure function:
+            # of pure function (Cython and Mock functions, for instance), then:
             raise TypeError('{!r} is not a Python function'.format(func))
 
     s = getattr(func, "__text_signature__", None)
@@ -2503,7 +2505,7 @@ def _signature_from_callable(obj, *,
 
     if isfunction(obj) or _signature_is_functionlike(obj):
         # If it's a pure Python function, or an object that is duck type
-        # of a Python function (Cython functions, for instance), then:
+        # of a Python function (Cython and Mock functions, for instance), then:
         return _signature_from_function(sigcls, obj,
                                         skip_bound_arg=skip_bound_arg,
                                         globals=globals, locals=locals, eval_str=eval_str)
