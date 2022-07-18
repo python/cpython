@@ -1,0 +1,3 @@
+Document that :func:`inspect.iscoroutinefunction`, :func:`inspect.isgeneratorfunction`,
+and :func:`inspect.isasyncgenfunction` now properly return ``True`` for
+duck-typed function-like objects so that Cython functions can support them
