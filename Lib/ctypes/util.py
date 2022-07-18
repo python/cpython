@@ -205,7 +205,7 @@ elif os.name == "posix":
 
         def find_library(name):
             ename = re.escape(name)
-            expr = r':-l%s\.\S+ => \S*/(lib%s\.\S+)' % (ename, ename)
+            expr = r':-l%s\.\S+ => (\S*/lib%s\.\S+)' % (ename, ename)
             expr = os.fsencode(expr)
 
             try:
