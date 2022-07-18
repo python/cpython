@@ -301,7 +301,7 @@ The :mod:`locale` module defines the following exception and functions:
    *language code* and *encoding* may be ``None`` if their values cannot be
    determined.
 
-   .. deprecated:: 3.11 3.13
+   .. deprecated-removed:: 3.11 3.13
 
 
 .. function:: getlocale(category=LC_CTYPE)
@@ -375,7 +375,7 @@ The :mod:`locale` module defines the following exception and functions:
    The default setting is determined by calling :func:`getdefaultlocale`.
    *category* defaults to :const:`LC_ALL`.
 
-   .. deprecated:: 3.11 3.13
+   .. deprecated-removed:: 3.11 3.13
 
 
 .. function:: strcoll(string1, string2)
