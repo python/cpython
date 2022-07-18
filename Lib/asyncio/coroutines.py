@@ -13,11 +13,16 @@ def _is_debug_mode():
     return sys.flags.dev_mode or (not sys.flags.ignore_environment and
                                   bool(os.environ.get('PYTHONASYNCIODEBUG')))
 
+# A marker for iscoroutinefunction.
+# slated for removal in 3.14 see https://github.com/python/cpython/pull/94923/
+_is_coroutine = object()
+
 
 def iscoroutinefunction(func):
-    """Alias for inspect.iscoroutinefunction."""
+    """Return True if func is a decorated coroutine function."""
     warnings._deprecated("asyncio.iscoroutinefunction", remove=(3, 14))
-    return inspect.iscoroutinefunction(func)
+    return (inspect.iscoroutinefunction(func) or
+            getattr(func, '_is_coroutine', None) is _is_coroutine)
 
 
 # Prioritize native coroutine check to speed-up
