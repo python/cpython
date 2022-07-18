@@ -442,8 +442,11 @@ mark_stacks(PyCodeObject *code_obj, int len)
         while (scan < end) {
             int start_offset, size, handler;
             scan = parse_varint(scan, &start_offset);
+            assert(start_offset >= 0 && start_offset < len);
             scan = parse_varint(scan, &size);
+            assert(size >= 0 && start_offset+size <= len);
             scan = parse_varint(scan, &handler);
+            assert(handler >= 0 && handler < len);
             int depth_and_lasti;
             scan = parse_varint(scan, &depth_and_lasti);
             int level = depth_and_lasti >> 1;
