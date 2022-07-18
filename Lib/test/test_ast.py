@@ -743,6 +743,11 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             ast.parse('f"{x=}"', feature_version=(3, 7))
 
+    def test_assignment_expression_feature_version(self):
+        ast.parse('(x := 0)', feature_version=(3, 8))
+        with self.assertRaises(SyntaxError):
+            ast.parse('(x := 0)', feature_version=(3, 7))
+
     def test_constant_as_name(self):
         for constant in "True", "False", "None":
             expr = ast.Expression(ast.Name(constant, ast.Load()))

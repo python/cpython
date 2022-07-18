@@ -660,7 +660,9 @@ star_named_expression[expr_ty]:
     | named_expression
 
 assignment_expression[expr_ty]:
-    | a=NAME ':=' ~ b=expression { _PyAST_NamedExpr(CHECK(expr_ty, _PyPegen_set_expr_context(p, a, Store)), b, EXTRA) }
+    | a=NAME ':=' ~ b=expression {
+        CHECK_VERSION(expr_ty, 8, "Assignment expressions are",
+        _PyAST_NamedExpr(CHECK(expr_ty, _PyPegen_set_expr_context(p, a, Store)), b, EXTRA)) }
 
 named_expression[expr_ty]:
     | assignment_expression
