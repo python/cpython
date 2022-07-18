@@ -274,6 +274,7 @@ class Printer:
             self.write(f".co_name = {co_name},")
             self.write(f".co_qualname = {co_qualname},")
             self.write(f".co_linetable = {co_linetable},")
+            self.write(f"._co_code = NULL,")
             self.write("._co_linearray = NULL,")
             self.write(f".co_code_adaptive = {co_code_adaptive},")
             for i, op in enumerate(code.co_code[::2]):
@@ -358,7 +359,12 @@ class Printer:
         return f"&{name}.ob_base"
 
     def generate_frozenset(self, name: str, fs: FrozenSet[object]) -> str:
-        ret = self.generate_tuple(name, tuple(sorted(fs)))
+        try:
+            fs = sorted(fs)
+        except TypeError:
+            # frozen set with incompatible types, fallback to repr()
+            fs = sorted(fs, key=repr)
+        ret = self.generate_tuple(name, tuple(fs))
         self.write("// TODO: The above tuple should be a frozenset")
         return ret
 

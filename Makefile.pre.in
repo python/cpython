@@ -150,6 +150,8 @@ CONFINCLUDEDIR=	$(exec_prefix)/include
 PLATLIBDIR=	@PLATLIBDIR@
 SCRIPTDIR=	$(prefix)/$(PLATLIBDIR)
 ABIFLAGS=	@ABIFLAGS@
+# executable name for shebangs
+EXENAME=	$(BINDIR)/python$(LDVERSION)$(EXE)
 # Variable used by ensurepip
 WHEEL_PKG_DIR=	@WHEEL_PKG_DIR@
 
@@ -209,12 +211,6 @@ ENSUREPIP=      @ENSUREPIP@
 LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
 LIBEXPAT_A= Modules/expat/libexpat.a
 
-# OpenSSL options for setup.py so sysconfig can pick up AC_SUBST() vars.
-OPENSSL_INCLUDES=@OPENSSL_INCLUDES@
-OPENSSL_LIBS=@OPENSSL_LIBS@
-OPENSSL_LDFLAGS=@OPENSSL_LDFLAGS@
-OPENSSL_RPATH=@OPENSSL_RPATH@
-
 # Module state, compiler flags and linker flags
 # Empty CFLAGS and LDFLAGS are omitted.
 # states:
@@ -222,7 +218,7 @@ OPENSSL_RPATH=@OPENSSL_RPATH@
 #   * missing: build dependency is missing
 #   * disabled: module is disabled
 #   * n/a: module is not available on the current platform
-# MODULE_EGG=yes  # yes, missing, disabled, n/a
+# MODULE_EGG_STATE=yes  # yes, missing, disabled, n/a
 # MODULE_EGG_CFLAGS=
 # MODULE_EGG_LDFLAGS=
 @MODULE_BLOCK@
@@ -316,7 +312,8 @@ PROFILE_TASK=	@PROFILE_TASK@
 # report files for gcov / lcov coverage report
 COVERAGE_INFO=	$(abs_builddir)/coverage.info
 COVERAGE_REPORT=$(abs_builddir)/lcov-report
-COVERAGE_REPORT_OPTIONS=--no-branch-coverage --title "CPython lcov report"
+COVERAGE_LCOV_OPTIONS=--rc lcov_branch_coverage=1
+COVERAGE_REPORT_OPTIONS=--rc lcov_branch_coverage=1 --branch-coverage --title "CPython $(VERSION) LCOV report [commit $(shell $(GITVERSION))]"
 
 
 # === Definitions added by makesetup ===
@@ -339,10 +336,6 @@ IO_OBJS=	\
 		Modules/_io/textio.o \
 		Modules/_io/bytesio.o \
 		Modules/_io/stringio.o
-
-##########################################################################
-
-LIBFFI_INCLUDEDIR=	@LIBFFI_INCLUDEDIR@
 
 ##########################################################################
 # Parser
@@ -583,9 +576,10 @@ LIBEXPAT_HEADERS= \
 
 # Default target
 all:		@DEF_MAKE_ALL_RULE@
-build_all:	check-clean-src $(BUILDPYTHON) platform oldsharedmods sharedmods \
-		gdbhooks Programs/_testembed python-config
-build_wasm: check-clean-src $(BUILDPYTHON) platform oldsharedmods python-config
+build_all:	check-clean-src $(BUILDPYTHON) platform sharedmods \
+		gdbhooks Programs/_testembed scripts checksharedmods
+build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
+		python-config checksharedmods
 
 # Check that the source is clean when building out of source.
 check-clean-src:
@@ -653,25 +647,24 @@ profile-opt: profile-run-stamp
 coverage:
 	@echo "Building with support for coverage checking:"
 	$(MAKE) clean
-	$(MAKE) @DEF_MAKE_RULE@ CFLAGS="$(CFLAGS) -O0 -pg --coverage" LIBS="$(LIBS) --coverage"
+	$(MAKE) @DEF_MAKE_RULE@ CFLAGS="$(CFLAGS) -O0 -pg --coverage" LDFLAGS="$(LDFLAGS) --coverage"
 
 coverage-lcov:
 	@echo "Creating Coverage HTML report with LCOV:"
 	@rm -f $(COVERAGE_INFO)
 	@rm -rf $(COVERAGE_REPORT)
-	@lcov --capture --directory $(abs_builddir) \
+	@lcov $(COVERAGE_LCOV_OPTIONS) --capture \
+	    --directory $(abs_builddir) \
 	    --base-directory $(realpath $(abs_builddir)) \
 	    --path $(realpath $(abs_srcdir)) \
 	    --output-file $(COVERAGE_INFO)
 	@ # remove 3rd party modules, system headers and internal files with
 	@ # debug, test or dummy functions.
-	@lcov --remove $(COVERAGE_INFO) \
+	@lcov $(COVERAGE_LCOV_OPTIONS) --remove $(COVERAGE_INFO) \
 	    '*/Modules/_blake2/impl/*' \
 	    '*/Modules/_ctypes/libffi*/*' \
 	    '*/Modules/_decimal/libmpdec/*' \
 	    '*/Modules/expat/*' \
-	    '*/Modules/zlib/*' \
-	    '*/Include/*' \
 	    '*/Modules/xx*.c' \
 	    '*/Python/pyfpe.c' \
 	    '*/Python/pystrcmp.c' \
@@ -679,7 +672,8 @@ coverage-lcov:
 	    '/usr/local/include/*' \
 	    '/usr/lib/gcc/*' \
 	    --output-file $(COVERAGE_INFO)
-	@genhtml $(COVERAGE_INFO) --output-directory $(COVERAGE_REPORT) \
+	@genhtml $(COVERAGE_INFO) \
+	    --output-directory $(COVERAGE_REPORT) \
 	    $(COVERAGE_REPORT_OPTIONS)
 	@echo
 	@echo "lcov report at $(COVERAGE_REPORT)/index.html"
@@ -726,22 +720,6 @@ pybuilddir.txt: $(PYTHON_FOR_BUILD_DEPS)
 $(srcdir)/Modules/_blake2/blake2s_impl.c: $(srcdir)/Modules/_blake2/blake2b_impl.c $(srcdir)/Modules/_blake2/blake2b2s.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Modules/_blake2/blake2b2s.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py -f $@
-
-# Build the shared modules
-# Under GNU make, MAKEFLAGS are sorted and normalized; the 's' for
-# -s, --silent or --quiet is always the first char.
-# Under BSD make, MAKEFLAGS might be " -s -v x=y".
-# Ignore macros passed by GNU make, passed after --
-sharedmods: $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt @LIBMPDEC_INTERNAL@ @LIBEXPAT_INTERNAL@
-	@case "`echo X $$MAKEFLAGS | sed 's/^X //;s/ -- .*//'`" in \
-	    *\ -s*|s*) quiet="-q";; \
-	    *) quiet="";; \
-	esac; \
-	echo "$(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' \
-		$(PYTHON_FOR_BUILD) $(srcdir)/setup.py $$quiet build"; \
-	$(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' \
-		$(PYTHON_FOR_BUILD) $(srcdir)/setup.py $$quiet build
-
 
 # Build static library
 $(LIBRARY): $(LIBRARY_OBJS)
@@ -831,11 +809,7 @@ python.worker.js: $(srcdir)/Tools/wasm/python.worker.js
 
 ##########################################################################
 # Build static libmpdec.a
-LIBMPDEC_CFLAGS=$(PY_STDMODULE_CFLAGS) $(CCSHARED) @LIBMPDEC_CFLAGS@
-
-# for setup.py
-DECIMAL_CFLAGS=@LIBMPDEC_CFLAGS@
-DECIMAL_LDFLAGS=@LIBMPDEC_LDFLAGS@
+LIBMPDEC_CFLAGS=@LIBMPDEC_CFLAGS@ $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
 # "%.o: %c" is not portable
 Modules/_decimal/libmpdec/basearith.o: $(srcdir)/Modules/_decimal/libmpdec/basearith.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
@@ -889,11 +863,7 @@ $(LIBMPDEC_A): $(LIBMPDEC_OBJS)
 
 ##########################################################################
 # Build static libexpat.a
-LIBEXPAT_CFLAGS=$(PY_STDMODULE_CFLAGS) $(CCSHARED) @LIBEXPAT_CFLAGS@
-
-# for setup.py
-EXPAT_CFLAGS=@LIBEXPAT_CFLAGS@
-EXPAT_LDFLAGS=@LIBEXPAT_LDFLAGS@
+LIBEXPAT_CFLAGS=@LIBEXPAT_CFLAGS@ $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
 Modules/expat/xmlparse.o: $(srcdir)/Modules/expat/xmlparse.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
 	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmlparse.c
@@ -911,7 +881,7 @@ $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
 # create relative links from build/lib.platform/egg.so to Modules/egg.so
 # pybuilddir.txt is created too late. We cannot use it in Makefile
 # targets. ln --relative is not portable.
-oldsharedmods: $(SHAREDMODS) pybuilddir.txt
+sharedmods: $(SHAREDMODS) pybuilddir.txt
 	@target=`cat pybuilddir.txt`; \
 	$(MKDIR_P) $$target; \
 	for mod in X $(SHAREDMODS); do \
@@ -919,6 +889,10 @@ oldsharedmods: $(SHAREDMODS) pybuilddir.txt
 			$(LN) -sf ../../$$mod $$target/`basename $$mod`; \
 		fi; \
 	done
+
+# dependency on BUILDPYTHON ensures that the target is run last
+checksharedmods: sharedmods $(PYTHON_FOR_BUILD_DEPS) $(BUILDPYTHON)
+	@$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/scripts/check_extension_modules.py
 
 Modules/Setup.local:
 	@# Create empty Setup.local when file was deleted by user
@@ -940,7 +914,7 @@ Makefile Modules/config.c: Makefile.pre \
 	$(SHELL) $(MAKESETUP) -c $(srcdir)/Modules/config.c.in \
 				-s Modules \
 				Modules/Setup.local \
-				@MODULES_SETUP_STDLIB@ \
+				Modules/Setup.stdlib \
 				Modules/Setup.bootstrap \
 				$(srcdir)/Modules/Setup
 	@mv config.c Modules
@@ -1638,6 +1612,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_pystate.h \
 		$(srcdir)/Include/internal/pycore_range.h \
 		$(srcdir)/Include/internal/pycore_runtime.h \
+		$(srcdir)/Include/internal/pycore_runtime_init_generated.h \
 		$(srcdir)/Include/internal/pycore_runtime_init.h \
 		$(srcdir)/Include/internal/pycore_signal.h \
 		$(srcdir)/Include/internal/pycore_sliceobject.h \
@@ -1759,13 +1734,13 @@ altinstall: commoninstall
 
 commoninstall:  check-clean-src @FRAMEWORKALTINSTALLFIRST@ \
 		altbininstall libinstall inclinstall libainstall \
-		sharedinstall oldsharedinstall altmaninstall \
+		sharedinstall altmaninstall \
 		@FRAMEWORKALTINSTALLLAST@
 
 # Install shared libraries enabled by Setup
 DESTDIRS=	$(exec_prefix) $(LIBDIR) $(BINLIBDEST) $(DESTSHARED)
 
-oldsharedinstall: $(DESTSHARED) all
+sharedinstall: $(DESTSHARED) all
 		@for i in X $(SHAREDMODS); do \
 		  if test $$i != X; then \
 		    echo $(INSTALL_SHARED) $$i $(DESTSHARED)/`basename $$i`; \
@@ -2115,7 +2090,7 @@ libinstall:	all $(srcdir)/Modules/xxmodule.c
 python-config: $(srcdir)/Misc/python-config.in Misc/python-config.sh
 	@ # Substitution happens here, as the completely-expanded BINDIR
 	@ # is not available in configure
-	sed -e "s,@EXENAME@,$(BINDIR)/python$(LDVERSION)$(EXE)," < $(srcdir)/Misc/python-config.in >python-config.py
+	sed -e "s,@EXENAME@,$(EXENAME)," < $(srcdir)/Misc/python-config.in >python-config.py
 	@ # Replace makefile compat. variable references with shell script compat. ones; $(VAR) -> ${VAR}
 	LC_ALL=C sed -e 's,\$$(\([A-Za-z0-9_]*\)),\$$\{\1\},g' < Misc/python-config.sh >python-config
 	@ # On Darwin, always use the python version of the script, the shell
@@ -2125,6 +2100,29 @@ python-config: $(srcdir)/Misc/python-config.in Misc/python-config.sh
 		cp python-config.py python-config; \
 	fi
 
+# macOS' make seems to ignore a dependency on a
+# "$(BUILD_SCRIPTS_DIR): $(MKDIR_P) $@" rule.
+BUILD_SCRIPTS_DIR=build/scripts-$(VERSION)
+SCRIPT_2TO3=$(BUILD_SCRIPTS_DIR)/2to3-$(VERSION)
+SCRIPT_IDLE=$(BUILD_SCRIPTS_DIR)/idle$(VERSION)
+SCRIPT_PYDOC=$(BUILD_SCRIPTS_DIR)/pydoc$(VERSION)
+
+$(SCRIPT_2TO3): $(srcdir)/Tools/scripts/2to3
+	@$(MKDIR_P) $(BUILD_SCRIPTS_DIR)
+	sed -e "s,/usr/bin/env python3,$(EXENAME)," < $(srcdir)/Tools/scripts/2to3 > $@
+	@chmod +x $@
+
+$(SCRIPT_IDLE): $(srcdir)/Tools/scripts/idle3
+	@$(MKDIR_P) $(BUILD_SCRIPTS_DIR)
+	sed -e "s,/usr/bin/env python3,$(EXENAME)," < $(srcdir)/Tools/scripts/idle3 > $@
+	@chmod +x $@
+
+$(SCRIPT_PYDOC): $(srcdir)/Tools/scripts/pydoc3
+	@$(MKDIR_P) $(BUILD_SCRIPTS_DIR)
+	sed -e "s,/usr/bin/env python3,$(EXENAME)," < $(srcdir)/Tools/scripts/pydoc3 > $@
+	@chmod +x $@
+
+scripts: $(SCRIPT_2TO3) $(SCRIPT_IDLE) $(SCRIPT_PYDOC) python-config
 
 # Install the include files
 INCLDIRSTOMAKE=$(INCLUDEDIR) $(CONFINCLUDEDIR) $(INCLUDEPY) $(CONFINCLUDEPY)
@@ -2171,7 +2169,7 @@ LIBPL=		@LIBPL@
 # pkgconfig directory
 LIBPC=		$(LIBDIR)/pkgconfig
 
-libainstall: all python-config
+libainstall: all scripts
 	@for i in $(LIBDIR) $(LIBPL) $(LIBPC) $(BINDIR); \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
@@ -2207,6 +2205,9 @@ libainstall: all python-config
 	$(INSTALL_SCRIPT) $(srcdir)/install-sh $(DESTDIR)$(LIBPL)/install-sh
 	$(INSTALL_SCRIPT) python-config.py $(DESTDIR)$(LIBPL)/python-config.py
 	$(INSTALL_SCRIPT) python-config $(DESTDIR)$(BINDIR)/python$(LDVERSION)-config
+	$(INSTALL_SCRIPT) $(SCRIPT_2TO3) $(DESTDIR)$(BINDIR)/2to3-$(VERSION)
+	$(INSTALL_SCRIPT) $(SCRIPT_IDLE) $(DESTDIR)$(BINDIR)/idle$(VERSION)
+	$(INSTALL_SCRIPT) $(SCRIPT_PYDOC) $(DESTDIR)$(BINDIR)/pydoc$(VERSION)
 	@if [ -s Modules/python.exp -a \
 		"`echo $(MACHDEP) | sed 's/^\(...\).*/\1/'`" = "aix" ]; then \
 		echo; echo "Installing support files for building shared extension modules on AIX:"; \
@@ -2222,17 +2223,6 @@ libainstall: all python-config
 		echo; echo "See Misc/README.AIX for details.";	\
 	else true; \
 	fi
-
-# Install the dynamically loadable modules
-# This goes into $(exec_prefix)
-sharedinstall: all
-	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/setup.py install \
-	   	--prefix=$(prefix) \
-		--install-scripts=$(BINDIR) \
-		--install-platlib=$(DESTSHARED) \
-		--root=$(DESTDIR)/
-	-rm $(DESTDIR)$(DESTSHARED)/_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH).py
-	-rm -r $(DESTDIR)$(DESTSHARED)/__pycache__
 
 # Here are a couple of targets for MacOSX again, to install a full
 # framework-based Python. frameworkinstall installs everything, the
@@ -2507,26 +2497,28 @@ update-config:
 Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
 
 # Declare targets that aren't real files
-.PHONY: all build_all build_wasm sharedmods check-clean-src oldsharedmods test quicktest
-.PHONY: install altinstall oldsharedinstall bininstall altbininstall
-.PHONY: maninstall libinstall inclinstall libainstall sharedinstall
+.PHONY: all build_all build_wasm check-clean-src
+.PHONY: sharedmods checksharedmods test quicktest
+.PHONY: install altinstall sharedinstall bininstall altbininstall
+.PHONY: maninstall libinstall inclinstall libainstall
 .PHONY: frameworkinstall frameworkinstallframework frameworkinstallstructure
 .PHONY: frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools
 .PHONY: frameworkaltinstallunixtools recheck clean clobber distclean
 .PHONY: smelly funny patchcheck touch altmaninstall commoninstall
 .PHONY: clean-retain-profile profile-removal run_profile_task
 .PHONY: build_all_generate_profile build_all_merge_profile
-.PHONY: gdbhooks
+.PHONY: gdbhooks scripts
 
 ##########################################################################
-# Module dependencies
+# Module dependencies and platform-specific files
 
 MODULE_CMATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_MATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_PYEXPAT_DEPS=$(LIBEXPAT_HEADERS) @LIBEXPAT_INTERNAL@
 MODULE_UNICODEDATA_DEPS=$(srcdir)/Modules/unicodedata_db.h $(srcdir)/Modules/unicodename_db.h
 MODULE__BLAKE2_DEPS=$(srcdir)/Modules/_blake2/impl/blake2-config.h $(srcdir)/Modules/_blake2/impl/blake2-impl.h $(srcdir)/Modules/_blake2/impl/blake2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2b-ref.c $(srcdir)/Modules/_blake2/impl/blake2b-round.h $(srcdir)/Modules/_blake2/impl/blake2b.c $(srcdir)/Modules/_blake2/impl/blake2s-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2s-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2s-load-xop.h $(srcdir)/Modules/_blake2/impl/blake2s-ref.c $(srcdir)/Modules/_blake2/impl/blake2s-round.h $(srcdir)/Modules/_blake2/impl/blake2s.c $(srcdir)/Modules/_blake2/blake2module.h $(srcdir)/Modules/hashlib.h
-MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h
+MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h $(srcdir)/Modules/_ctypes/darwin/dlfcn.h
+MODULE__CTYPES_MALLOC_CLOSURE=@MODULE__CTYPES_MALLOC_CLOSURE@
 MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h $(LIBMPDEC_HEADERS) @LIBMPDEC_INTERNAL@
 MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c $(LIBEXPAT_HEADERS) @LIBEXPAT_INTERNAL@
 MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
@@ -2538,7 +2530,7 @@ MODULE__SHA3_DEPS=$(srcdir)/Modules/_sha3/sha3.c $(srcdir)/Modules/_sha3/sha3.h 
 MODULE__SHA512_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h
 MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl_data.h $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h
-MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/testcapi_long.h
+MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/testcapi_long.h $(srcdir)/Modules/_testcapi/parts.h
 MODULE__SQLITE3_DEPS=$(srcdir)/Modules/_sqlite/connection.h $(srcdir)/Modules/_sqlite/cursor.h $(srcdir)/Modules/_sqlite/microprotocols.h $(srcdir)/Modules/_sqlite/module.h $(srcdir)/Modules/_sqlite/prepare_protocol.h $(srcdir)/Modules/_sqlite/row.h $(srcdir)/Modules/_sqlite/util.h
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY

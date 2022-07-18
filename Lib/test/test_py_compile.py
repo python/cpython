@@ -115,8 +115,7 @@ class PyCompileTestsBase:
         self.assertTrue(os.path.exists(self.pyc_path))
         self.assertFalse(os.path.exists(self.cache_path))
 
-    @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
-                     'non-root user required')
+    @os_helper.skip_if_dac_override
     @unittest.skipIf(os.name == 'nt',
                      'cannot control directory permissions on Windows')
     @os_helper.skip_unless_working_chmod

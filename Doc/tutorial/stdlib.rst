@@ -65,11 +65,15 @@ Command Line Arguments
 
 Common utility scripts often need to process command line arguments. These
 arguments are stored in the :mod:`sys` module's *argv* attribute as a list.  For
-instance the following output results from running ``python demo.py one two
-three`` at the command line::
+instance, let's take the following :file:`demo.py` file::
 
-   >>> import sys
-   >>> print(sys.argv)
+   # File demo.py
+   import sys
+   print(sys.argv)
+
+Here is the output from running ``python demo.py one two three`` at the command
+line::
+
    ['demo.py', 'one', 'two', 'three']
 
 The :mod:`argparse` module provides a more sophisticated mechanism to process

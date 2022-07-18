@@ -1028,10 +1028,11 @@ Control flow
 .. class:: For(target, iter, body, orelse, type_comment)
 
    A ``for`` loop. ``target`` holds the variable(s) the loop assigns to, as a
-   single :class:`Name`, :class:`Tuple` or :class:`List` node. ``iter`` holds
-   the item to be looped over, again as a single node. ``body`` and ``orelse``
-   contain lists of nodes to execute. Those in ``orelse`` are executed if the
-   loop finishes normally, rather than via a ``break`` statement.
+   single :class:`Name`, :class:`Tuple`, :class:`List`, :class:`Attribute` or
+   :class:`Subscript` node. ``iter`` holds the item to be looped over, again
+   as a single node. ``body`` and ``orelse`` contain lists of nodes to execute.
+   Those in ``orelse`` are executed if the loop finishes normally, rather than
+   via a ``break`` statement.
 
    .. attribute:: type_comment
 

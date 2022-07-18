@@ -2121,7 +2121,7 @@ features:
 
    The *mode* parameter is passed to :func:`mkdir` for creating the leaf
    directory; see :ref:`the mkdir() description <mkdir_modebits>` for how it
-   is interpreted.  To set the file permission bits of any newly-created parent
+   is interpreted.  To set the file permission bits of any newly created parent
    directories you can set the umask before invoking :func:`makedirs`.  The
    file permission bits of existing parent directories are not changed.
 
@@ -2152,7 +2152,7 @@ features:
 
    .. versionchanged:: 3.7
       The *mode* argument no longer affects the file permission bits of
-      newly-created intermediate-level directories.
+      newly created intermediate-level directories.
 
 
 .. function:: mkfifo(path, mode=0o666, *, dir_fd=None)

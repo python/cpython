@@ -68,12 +68,12 @@
 
 # dbm/gdbm
 # dbm needs either libndbm, libgdbm_compat, or libdb 5.x
-#@MODULE__DBM_TRUE@_dbm _dbmmodule.c
+@MODULE__DBM_TRUE@_dbm _dbmmodule.c
 # gdbm module needs -lgdbm
 @MODULE__GDBM_TRUE@_gdbm _gdbmmodule.c
 
-# needs -lreadline or -leditline, sometimes termcap, termlib, or tinfo
-#@MODULE_READLINE_TRUE@readline readline.c
+# needs -lreadline or -ledit, sometimes termcap, termlib, or tinfo
+@MODULE_READLINE_TRUE@readline readline.c
 
 # hashing builtins, can be disabled with --without-builtin-hashlib-hashes
 @MODULE__MD5_TRUE@_md5 md5module.c
@@ -136,12 +136,12 @@
 #
 
 # needs -lffi and -ldl
-#@MODULE__CTYPES_TRUE@_ctypes _ctypes/_ctypes.c _ctypes/callbacks.c _ctypes/callproc.c _ctypes/stgdict.c _ctypes/cfield.c
+@MODULE__CTYPES_TRUE@_ctypes _ctypes/_ctypes.c _ctypes/callbacks.c _ctypes/callproc.c _ctypes/stgdict.c _ctypes/cfield.c @MODULE__CTYPES_MALLOC_CLOSURE@
 
-# needs -lncurses, -lncursesw or -lcurses, sometimes -ltermcap
-#@MODULE__CURSES_TRUE@_curses _cursesmodule.c
-# needs -lncurses and -lpanel
-#@MODULE__CURSES_PANEL_TRUE@_curses_panel _curses_panel.c
+# needs -lncurses[w], sometimes -ltermcap/tinfo
+@MODULE__CURSES_TRUE@_curses _cursesmodule.c
+# needs -lncurses[w] and -lpanel[w]
+@MODULE__CURSES_PANEL_TRUE@_curses_panel _curses_panel.c
 
 @MODULE__SQLITE3_TRUE@_sqlite3 _sqlite/blob.c _sqlite/connection.c _sqlite/cursor.c _sqlite/microprotocols.c _sqlite/module.c _sqlite/prepare_protocol.c _sqlite/row.c _sqlite/statement.c _sqlite/util.c
 
@@ -165,10 +165,11 @@
 ############################################################################
 # Test modules
 
+@MODULE_XXSUBTYPE_TRUE@xxsubtype xxsubtype.c
 @MODULE__XXTESTFUZZ_TRUE@_xxtestfuzz _xxtestfuzz/_xxtestfuzz.c _xxtestfuzz/fuzzer.c
 @MODULE__TESTBUFFER_TRUE@_testbuffer _testbuffer.c
 @MODULE__TESTINTERNALCAPI_TRUE@_testinternalcapi _testinternalcapi.c
-@MODULE__TESTCAPI_TRUE@_testcapi _testcapimodule.c
+@MODULE__TESTCAPI_TRUE@_testcapi _testcapimodule.c _testcapi/vectorcall.c
 
 # Some testing modules MUST be built as shared libraries.
 *shared*
