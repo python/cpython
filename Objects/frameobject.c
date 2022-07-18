@@ -437,9 +437,8 @@ mark_stacks(PyCodeObject *code_obj, int len)
         unsigned char *start = (unsigned char *)PyBytes_AS_STRING(code_obj->co_exceptiontable);
         unsigned char *end = start + PyBytes_GET_SIZE(code_obj->co_exceptiontable);
         unsigned char *scan = start;
-        int handler;
         while (scan < end) {
-            int start_offset, size;
+            int start_offset, size, handler;
             scan = parse_varint(scan, &start_offset);
             scan = parse_varint(scan, &size);
             scan = parse_varint(scan, &handler);
