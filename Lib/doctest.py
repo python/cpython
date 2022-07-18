@@ -1085,19 +1085,21 @@ class DocTestFinder:
 
     def _find_lineno(self, obj, source_lines):
         """
-        Return a line number of the given object's docstring.  Note:
-        this method assumes that the object has a docstring.
+        Return a line number of the given object's docstring.
+
+        Returns `None` if the given object does not have a docstring.
         """
         lineno = None
+        docstring = getattr(obj, '__doc__', None)
 
         # Find the line number for modules.
-        if inspect.ismodule(obj):
+        if inspect.ismodule(obj) and docstring is not None:
             lineno = 0
 
         # Find the line number for classes.
         # Note: this could be fooled if a class is defined multiple
         # times in a single file.
-        if inspect.isclass(obj):
+        if inspect.isclass(obj) and docstring is not None:
             if source_lines is None:
                 return None
             pat = re.compile(r'^\s*class\s*%s\b' %
@@ -1109,7 +1111,9 @@ class DocTestFinder:
 
         # Find the line number for functions & methods.
         if inspect.ismethod(obj): obj = obj.__func__
-        if inspect.isfunction(obj): obj = obj.__code__
+        if inspect.isfunction(obj) and getattr(obj, '__doc__', None):
+            # We don't use `docstring` var here, because `obj` can be changed.
+            obj = obj.__code__
         if inspect.istraceback(obj): obj = obj.tb_frame
         if inspect.isframe(obj): obj = obj.f_code
         if inspect.iscode(obj):
@@ -2171,6 +2175,7 @@ class DocTestCase(unittest.TestCase):
         unittest.TestCase.__init__(self)
         self._dt_optionflags = optionflags
         self._dt_checker = checker
+        self._dt_globs = test.globs.copy()
         self._dt_test = test
         self._dt_setUp = setUp
         self._dt_tearDown = tearDown
@@ -2187,7 +2192,9 @@ class DocTestCase(unittest.TestCase):
         if self._dt_tearDown is not None:
             self._dt_tearDown(test)
 
+        # restore the original globs
         test.globs.clear()
+        test.globs.update(self._dt_globs)
 
     def runTest(self):
         test = self._dt_test

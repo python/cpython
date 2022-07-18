@@ -351,6 +351,7 @@ _context_alloc(void)
         state->numfree--;
         ctx = state->freelist;
         state->freelist = (PyContext *)ctx->ctx_weakreflist;
+        OBJECT_STAT_INC(from_freelist);
         ctx->ctx_weakreflist = NULL;
         _Py_NewReference((PyObject *)ctx);
     }
@@ -482,6 +483,7 @@ context_tp_dealloc(PyContext *self)
         state->numfree++;
         self->ctx_weakreflist = (PyObject *)state->freelist;
         state->freelist = self;
+        OBJECT_STAT_INC(to_freelist);
     }
     else
 #endif
@@ -685,7 +687,7 @@ static PyMethodDef PyContext_methods[] = {
     _CONTEXTVARS_CONTEXT_KEYS_METHODDEF
     _CONTEXTVARS_CONTEXT_VALUES_METHODDEF
     _CONTEXTVARS_CONTEXT_COPY_METHODDEF
-    {"run", (PyCFunction)(void(*)(void))context_run, METH_FASTCALL | METH_KEYWORDS, NULL},
+    {"run", _PyCFunction_CAST(context_run), METH_FASTCALL | METH_KEYWORDS, NULL},
     {NULL, NULL}
 };
 

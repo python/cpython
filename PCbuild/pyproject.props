@@ -18,6 +18,7 @@
     <SupportSigning Condition="'$(SupportSigning)' == ''">true</SupportSigning>
     <SupportSigning Condition="'$(Configuration)' == 'Debug'">false</SupportSigning>
     <SupportSigning Condition="'$(ConfigurationType)' == 'StaticLibrary'">false</SupportSigning>
+    <LinkIncremental Condition="$(Configuration) != 'Debug'">false</LinkIncremental>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -228,7 +229,7 @@ public override bool Execute() {
   </Target>
 
   <Target Name="FindPythonForBuild" Condition="$(PythonForBuild) == ''">
-    <Exec Command="$(MSBuildThisFileDirectory)\find_python.bat -q"
+    <Exec Command="&quot;$(MSBuildThisFileDirectory)\find_python.bat&quot; -q"
           EchoOff="true"
           ConsoleToMsBuild="true">
         <Output TaskParameter="ConsoleOutput" ItemName="_CmdExeLines" />

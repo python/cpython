@@ -1,1 +1,0 @@
-:meth:`~unittest.TestProgram.usageExit` is marked deprecated, to be removed in 3.13.

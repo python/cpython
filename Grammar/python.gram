@@ -249,7 +249,7 @@ class_def[stmt_ty]:
 
 class_def_raw[stmt_ty]:
     | invalid_class_def_raw
-    | 'class' a=NAME b=['(' z=[arguments] ')' { z }] &&':' c=block {
+    | 'class' a=NAME b=['(' z=[arguments] ')' { z }] ':' c=block {
         _PyAST_ClassDef(a->v.Name.id,
                      (b) ? ((expr_ty) b)->v.Call.args : NULL,
                      (b) ? ((expr_ty) b)->v.Call.keywords : NULL,
@@ -306,14 +306,18 @@ slash_with_default[SlashWithDefault*]:
     | a=param_no_default* b=param_with_default+ '/' &')' { _PyPegen_slash_with_default(p, (asdl_arg_seq *)a, b) }
 
 star_etc[StarEtc*]:
+    | invalid_star_etc
     | '*' a=param_no_default b=param_maybe_default* c=[kwds] {
+        _PyPegen_star_etc(p, a, b, c) }
+    | '*' a=param_no_default_star_annotation b=param_maybe_default* c=[kwds] {
         _PyPegen_star_etc(p, a, b, c) }
     | '*' ',' b=param_maybe_default+ c=[kwds] {
         _PyPegen_star_etc(p, NULL, b, c) }
     | a=kwds { _PyPegen_star_etc(p, NULL, NULL, a) }
-    | invalid_star_etc
 
-kwds[arg_ty]: '**' a=param_no_default { a }
+kwds[arg_ty]:
+    | invalid_kwds
+    | '**' a=param_no_default { a }
 
 # One parameter.  This *includes* a following comma and type comment.
 #
@@ -331,6 +335,9 @@ kwds[arg_ty]: '**' a=param_no_default { a }
 param_no_default[arg_ty]:
     | a=param ',' tc=TYPE_COMMENT? { _PyPegen_add_type_comment_to_arg(p, a, tc) }
     | a=param tc=TYPE_COMMENT? &')' { _PyPegen_add_type_comment_to_arg(p, a, tc) }
+param_no_default_star_annotation[arg_ty]:
+    | a=param_star_annotation ',' tc=TYPE_COMMENT? { _PyPegen_add_type_comment_to_arg(p, a, tc) }
+    | a=param_star_annotation tc=TYPE_COMMENT? &')' { _PyPegen_add_type_comment_to_arg(p, a, tc) }
 param_with_default[NameDefaultPair*]:
     | a=param c=default ',' tc=TYPE_COMMENT? { _PyPegen_name_default_pair(p, a, c, tc) }
     | a=param c=default tc=TYPE_COMMENT? &')' { _PyPegen_name_default_pair(p, a, c, tc) }
@@ -338,8 +345,10 @@ param_maybe_default[NameDefaultPair*]:
     | a=param c=default? ',' tc=TYPE_COMMENT? { _PyPegen_name_default_pair(p, a, c, tc) }
     | a=param c=default? tc=TYPE_COMMENT? &')' { _PyPegen_name_default_pair(p, a, c, tc) }
 param[arg_ty]: a=NAME b=annotation? { _PyAST_arg(a->v.Name.id, b, NULL, EXTRA) }
+param_star_annotation[arg_ty]: a=NAME b=star_annotation { _PyAST_arg(a->v.Name.id, b, NULL, EXTRA) }
 annotation[expr_ty]: ':' a=expression { a }
-default[expr_ty]: '=' a=expression { a }
+star_annotation[expr_ty]: ':' a=star_expression { a }
+default[expr_ty]: '=' a=expression { a } | invalid_default
 
 # If statement
 # ------------
@@ -370,9 +379,9 @@ while_stmt[stmt_ty]:
 
 for_stmt[stmt_ty]:
     | invalid_for_stmt
-    | 'for' t=star_targets 'in' ~ ex=star_expressions &&':' tc=[TYPE_COMMENT] b=block el=[else_block] {
+    | 'for' t=star_targets 'in' ~ ex=star_expressions ':' tc=[TYPE_COMMENT] b=block el=[else_block] {
         _PyAST_For(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA) }
-    | ASYNC 'for' t=star_targets 'in' ~ ex=star_expressions &&':' tc=[TYPE_COMMENT] b=block el=[else_block] {
+    | ASYNC 'for' t=star_targets 'in' ~ ex=star_expressions ':' tc=[TYPE_COMMENT] b=block el=[else_block] {
         CHECK_VERSION(stmt_ty, 5, "Async for loops are", _PyAST_AsyncFor(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
     | invalid_for_target
 
@@ -462,7 +471,7 @@ or_pattern[pattern_ty]:
     | patterns[asdl_pattern_seq*]='|'.closed_pattern+ {
         asdl_seq_LEN(patterns) == 1 ? asdl_seq_GET(patterns, 0) : _PyAST_MatchOr(patterns, EXTRA) }
 
-closed_pattern[pattern_ty]:
+closed_pattern[pattern_ty] (memo):
     | literal_pattern
     | capture_pattern
     | wildcard_pattern
@@ -549,7 +558,7 @@ maybe_star_pattern[pattern_ty]:
     | star_pattern
     | pattern
 
-star_pattern[pattern_ty]:
+star_pattern[pattern_ty] (memo):
     | '*' target=pattern_capture_target {
         _PyAST_MatchStar(target->v.Name.id, EXTRA) }
     | '*' wildcard_pattern {
@@ -651,7 +660,9 @@ star_named_expression[expr_ty]:
     | named_expression
 
 assignment_expression[expr_ty]:
-    | a=NAME ':=' ~ b=expression { _PyAST_NamedExpr(CHECK(expr_ty, _PyPegen_set_expr_context(p, a, Store)), b, EXTRA) }
+    | a=NAME ':=' ~ b=expression {
+        CHECK_VERSION(expr_ty, 8, "Assignment expressions are",
+        _PyAST_NamedExpr(CHECK(expr_ty, _PyPegen_set_expr_context(p, a, Store)), b, EXTRA)) }
 
 named_expression[expr_ty]:
     | assignment_expression
@@ -780,7 +791,7 @@ primary[expr_ty]:
 
 slices[expr_ty]:
     | a=slice !',' { a }
-    | a[asdl_expr_seq*]=','.slice+ [','] { _PyAST_Tuple(a, Load, EXTRA) }
+    | a[asdl_expr_seq*]=','.(slice | starred_expression)+ [','] { _PyAST_Tuple(a, Load, EXTRA) }
 
 slice[expr_ty]:
     | a=[expression] ':' b=[expression] c=[':' d=[expression] { d }] { _PyAST_Slice(a, b, c, EXTRA) }
@@ -836,14 +847,16 @@ lambda_slash_with_default[SlashWithDefault*]:
     | a=lambda_param_no_default* b=lambda_param_with_default+ '/' &':' { _PyPegen_slash_with_default(p, (asdl_arg_seq *)a, b) }
 
 lambda_star_etc[StarEtc*]:
+    | invalid_lambda_star_etc
     | '*' a=lambda_param_no_default b=lambda_param_maybe_default* c=[lambda_kwds] {
         _PyPegen_star_etc(p, a, b, c) }
     | '*' ',' b=lambda_param_maybe_default+ c=[lambda_kwds] {
         _PyPegen_star_etc(p, NULL, b, c) }
     | a=lambda_kwds { _PyPegen_star_etc(p, NULL, NULL, a) }
-    | invalid_lambda_star_etc
 
-lambda_kwds[arg_ty]: '**' a=lambda_param_no_default { a }
+lambda_kwds[arg_ty]:
+    | invalid_lambda_kwds
+    | '**' a=lambda_param_no_default { a }
 
 lambda_param_no_default[arg_ty]:
     | a=lambda_param ',' { a }
@@ -1062,12 +1075,12 @@ func_type_comment[Token*]:
 invalid_arguments:
     | a=args ',' '*' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "iterable argument unpacking follows keyword argument unpacking") }
     | a=expression b=for_if_clauses ',' [args | expression for_if_clauses] {
-        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, PyPegen_last_item(b, comprehension_ty)->target, "Generator expression must be parenthesized") }
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, _PyPegen_get_last_comprehension_item(PyPegen_last_item(b, comprehension_ty)), "Generator expression must be parenthesized") }
     | a=NAME b='=' expression for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?")}
     | a=args b=for_if_clauses { _PyPegen_nonparen_genexp_in_call(p, a, b) }
     | args ',' a=expression b=for_if_clauses {
-        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, asdl_seq_GET(b, b->size-1)->target, "Generator expression must be parenthesized") }
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, _PyPegen_get_last_comprehension_item(PyPegen_last_item(b, comprehension_ty)), "Generator expression must be parenthesized") }
     | a=args ',' args { _PyPegen_arguments_parsing_error(p, a) }
 invalid_kwarg:
     | a[Token*]=('True'|'False'|'None') b='=' {
@@ -1151,6 +1164,26 @@ invalid_parameters:
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "non-default argument follows default argument") }
     | param_no_default* a='(' param_no_default+ ','? b=')' {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "Function parameters cannot be parenthesized") }
+    | a="/" ',' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "at least one argument must precede /") }
+    | (slash_no_default | slash_with_default) param_maybe_default* a='/' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "/ may appear only once") }
+    | (slash_no_default | slash_with_default)? param_maybe_default* '*' (',' | param_no_default) param_maybe_default* a='/' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "/ must be ahead of *") }
+    | param_maybe_default+ '/' a='*' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expected comma between / and *") }
+invalid_default:
+    | a='=' &(')'|',') { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expected default value expression") }
+invalid_star_etc:
+    | a='*' (')' | ',' (')' | '**')) { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "named arguments must follow bare *") }
+    | '*' ',' TYPE_COMMENT { RAISE_SYNTAX_ERROR("bare * has associated type comment") }
+    | '*' param a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "var-positional argument cannot have default value") }
+    | '*' (param_no_default | ',') param_maybe_default* a='*' (param_no_default | ',') {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "* argument may appear only once") }
+invalid_kwds:
+    | '**' param a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "var-keyword argument cannot have default value") }
+    | '**' param ',' a=param { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "arguments cannot follow var-keyword argument") }
+    | '**' param ',' a[Token*]=('*'|'**'|'/') { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "arguments cannot follow var-keyword argument") }
 invalid_parameters_helper: # This is only there to avoid type errors
     | a=slash_with_default { _PyPegen_singleton_seq(p, a) }
     | param_with_default+
@@ -1159,14 +1192,26 @@ invalid_lambda_parameters:
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "non-default argument follows default argument") }
     | lambda_param_no_default* a='(' ','.lambda_param+ ','? b=')' {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "Lambda expression parameters cannot be parenthesized") }
+    | a="/" ',' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "at least one argument must precede /") }
+    | (lambda_slash_no_default | lambda_slash_with_default) lambda_param_maybe_default* a='/' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "/ may appear only once") }
+    | (lambda_slash_no_default | lambda_slash_with_default)? lambda_param_maybe_default* '*' (',' | lambda_param_no_default) lambda_param_maybe_default* a='/' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "/ must be ahead of *") }
+    | lambda_param_maybe_default+ '/' a='*' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expected comma between / and *") }
 invalid_lambda_parameters_helper:
     | a=lambda_slash_with_default { _PyPegen_singleton_seq(p, a) }
     | lambda_param_with_default+
-invalid_star_etc:
-    | a='*' (')' | ',' (')' | '**')) { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "named arguments must follow bare *") }
-    | '*' ',' TYPE_COMMENT { RAISE_SYNTAX_ERROR("bare * has associated type comment") }
 invalid_lambda_star_etc:
     | '*' (':' | ',' (':' | '**')) { RAISE_SYNTAX_ERROR("named arguments must follow bare *") }
+    | '*' lambda_param a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "var-positional argument cannot have default value") }
+    | '*' (lambda_param_no_default | ',') lambda_param_maybe_default* a='*' (lambda_param_no_default | ',') {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "* argument may appear only once") }
+invalid_lambda_kwds:
+    | '**' lambda_param a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "var-keyword argument cannot have default value") }
+    | '**' lambda_param ',' a=lambda_param { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "arguments cannot follow var-keyword argument") }
+    | '**' lambda_param ',' a[Token*]=('*'|'**'|'/') { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "arguments cannot follow var-keyword argument") }
 invalid_double_type_comments:
     | TYPE_COMMENT NEWLINE TYPE_COMMENT NEWLINE INDENT {
         RAISE_SYNTAX_ERROR("Cannot have two type comments on def") }
@@ -1188,8 +1233,8 @@ invalid_import_from_targets:
         RAISE_SYNTAX_ERROR("trailing comma not allowed without surrounding parentheses") }
 
 invalid_with_stmt:
-    | [ASYNC] 'with' ','.(expression ['as' star_target])+ &&':'
-    | [ASYNC] 'with' '(' ','.(expressions ['as' star_target])+ ','? ')' &&':'
+    | [ASYNC] 'with' ','.(expression ['as' star_target])+ NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | [ASYNC] 'with' '(' ','.(expressions ['as' star_target])+ ','? ')' NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
 invalid_with_stmt_indent:
     | [ASYNC] a='with' ','.(expression ['as' star_target])+ ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'with' statement on line %d", a->lineno) }
@@ -1214,16 +1259,16 @@ invalid_finally_stmt:
 invalid_except_stmt_indent:
     | a='except' expression ['as' NAME ] ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'except' statement on line %d", a->lineno) }
-    | a='except' ':' NEWLINE !INDENT { RAISE_SYNTAX_ERROR("expected an indented block after except statement on line %d", a->lineno) }
+    | a='except' ':' NEWLINE !INDENT { RAISE_INDENTATION_ERROR("expected an indented block after 'except' statement on line %d", a->lineno) }
 invalid_except_star_stmt_indent:
     | a='except' '*' expression ['as' NAME ] ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'except*' statement on line %d", a->lineno) }
 invalid_match_stmt:
-    | "match" subject_expr !':' { CHECK_VERSION(void*, 10, "Pattern matching is", RAISE_SYNTAX_ERROR("expected ':'") ) }
+    | "match" subject_expr NEWLINE { CHECK_VERSION(void*, 10, "Pattern matching is", RAISE_SYNTAX_ERROR("expected ':'") ) }
     | a="match" subject=subject_expr ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'match' statement on line %d", a->lineno) }
 invalid_case_block:
-    | "case" patterns guard? !':' { RAISE_SYNTAX_ERROR("expected ':'") }
+    | "case" patterns guard? NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a="case" patterns guard? ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'case' statement on line %d", a->lineno) }
 invalid_as_pattern:
@@ -1252,13 +1297,15 @@ invalid_while_stmt:
     | a='while' named_expression ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'while' statement on line %d", a->lineno) }
 invalid_for_stmt:
+    | [ASYNC] 'for' star_targets 'in' star_expressions NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | [ASYNC] a='for' star_targets 'in' star_expressions ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'for' statement on line %d", a->lineno) }
 invalid_def_raw:
     | [ASYNC] a='def' NAME '(' [params] ')' ['->' expression] ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after function definition on line %d", a->lineno) }
 invalid_class_def_raw:
-    | a='class' NAME ['('[arguments] ')'] ':' NEWLINE !INDENT {
+    | 'class' NAME ['(' [arguments] ')'] NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | a='class' NAME ['(' [arguments] ')'] ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after class definition on line %d", a->lineno) }
 
 invalid_double_starred_kvpairs:
@@ -1269,4 +1316,4 @@ invalid_kvpair:
     | a=expression !(':') {
         RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, a->lineno, a->end_col_offset - 1, a->end_lineno, -1, "':' expected after dictionary key") }
     | expression ':' a='*' bitwise_or { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "cannot use a starred expression in a dictionary value") }
-    | expression a=':' {RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expression expected after dictionary key and ':'") }
+    | expression a=':' &('}'|',') {RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expression expected after dictionary key and ':'") }

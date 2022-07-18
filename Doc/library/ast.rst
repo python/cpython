@@ -1028,10 +1028,11 @@ Control flow
 .. class:: For(target, iter, body, orelse, type_comment)
 
    A ``for`` loop. ``target`` holds the variable(s) the loop assigns to, as a
-   single :class:`Name`, :class:`Tuple` or :class:`List` node. ``iter`` holds
-   the item to be looped over, again as a single node. ``body`` and ``orelse``
-   contain lists of nodes to execute. Those in ``orelse`` are executed if the
-   loop finishes normally, rather than via a ``break`` statement.
+   single :class:`Name`, :class:`Tuple`, :class:`List`, :class:`Attribute` or
+   :class:`Subscript` node. ``iter`` holds the item to be looped over, again
+   as a single node. ``body`` and ``orelse`` contain lists of nodes to execute.
+   Those in ``orelse`` are executed if the loop finishes normally, rather than
+   via a ``break`` statement.
 
    .. attribute:: type_comment
 
@@ -1826,7 +1827,7 @@ Function and class definitions
    * ``bases`` is a list of nodes for explicitly specified base classes.
    * ``keywords`` is a list of :class:`keyword` nodes, principally for 'metaclass'.
      Other keywords will be passed to the metaclass, as per `PEP-3115
-     <https://www.python.org/dev/peps/pep-3115/>`_.
+     <https://peps.python.org/pep-3115/>`_.
    * ``starargs`` and ``kwargs`` are each a single node, as in a function call.
      starargs will be expanded to join the list of base classes, and kwargs will
      be passed to the metaclass.

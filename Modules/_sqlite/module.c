@@ -27,6 +27,7 @@
 #include "prepare_protocol.h"
 #include "microprotocols.h"
 #include "row.h"
+#include "blob.h"
 
 #if SQLITE_VERSION_NUMBER < 3007015
 #error "SQLite 3.7.15 or higher required"
@@ -45,7 +46,7 @@ module _sqlite3
 /*[clinic input]
 _sqlite3.connect as pysqlite_connect
 
-    database: object(converter='PyUnicode_FSConverter')
+    database: object
     timeout: double = 5.0
     detect_types: int = 0
     isolation_level: object = NULL
@@ -65,7 +66,7 @@ pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
                       int detect_types, PyObject *isolation_level,
                       int check_same_thread, PyObject *factory,
                       int cached_statements, int uri)
-/*[clinic end generated code: output=450ac9078b4868bb input=ea6355ba55a78e12]*/
+/*[clinic end generated code: output=450ac9078b4868bb input=e16914663ddf93ce]*/
 {
     if (isolation_level == NULL) {
         isolation_level = PyUnicode_FromString("");
@@ -80,7 +81,6 @@ pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
                                           timeout, detect_types,
                                           isolation_level, check_same_thread,
                                           factory, cached_statements, uri);
-    Py_DECREF(database);  // needed bco. the AC FSConverter
     Py_DECREF(isolation_level);
     return res;
 }
@@ -105,49 +105,19 @@ pysqlite_complete_statement_impl(PyObject *module, const char *statement)
 }
 
 /*[clinic input]
-_sqlite3.enable_shared_cache as pysqlite_enable_shared_cache
-
-    do_enable: int
-
-Enable or disable shared cache mode for the calling thread.
-
-This method is deprecated and will be removed in Python 3.12.
-Shared cache is strongly discouraged by the SQLite 3 documentation.
-If shared cache must be used, open the database in URI mode using
-the cache=shared query parameter.
-[clinic start generated code]*/
-
-static PyObject *
-pysqlite_enable_shared_cache_impl(PyObject *module, int do_enable)
-/*[clinic end generated code: output=259c74eedee1516b input=26e40d5971d3487d]*/
-{
-    int rc;
-
-    rc = sqlite3_enable_shared_cache(do_enable);
-
-    if (rc != SQLITE_OK) {
-        pysqlite_state *state = pysqlite_get_state(module);
-        PyErr_SetString(state->OperationalError, "Changing the shared_cache flag failed");
-        return NULL;
-    } else {
-        Py_RETURN_NONE;
-    }
-}
-
-/*[clinic input]
 _sqlite3.register_adapter as pysqlite_register_adapter
 
     type: object(type='PyTypeObject *')
-    caster: object
+    adapter as caster: object
     /
 
-Registers an adapter with sqlite3's adapter registry.
+Register a function to adapt Python objects to SQLite values.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_register_adapter_impl(PyObject *module, PyTypeObject *type,
                                PyObject *caster)
-/*[clinic end generated code: output=a287e8db18e8af23 input=b4bd87afcadc535d]*/
+/*[clinic end generated code: output=a287e8db18e8af23 input=29a5e0f213030242]*/
 {
     int rc;
 
@@ -172,17 +142,17 @@ pysqlite_register_adapter_impl(PyObject *module, PyTypeObject *type,
 /*[clinic input]
 _sqlite3.register_converter as pysqlite_register_converter
 
-    name as orig_name: unicode
+    typename as orig_name: unicode
     converter as callable: object
     /
 
-Registers a converter with sqlite3.
+Register a function to convert SQLite values to Python objects.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_register_converter_impl(PyObject *module, PyObject *orig_name,
                                  PyObject *callable)
-/*[clinic end generated code: output=a2f2bfeed7230062 input=90f645419425d6c4]*/
+/*[clinic end generated code: output=a2f2bfeed7230062 input=159a444971b40378]*/
 {
     PyObject* name = NULL;
     PyObject* retval = NULL;
@@ -257,14 +227,8 @@ static int converters_init(PyObject* module)
 static int
 load_functools_lru_cache(PyObject *module)
 {
-    PyObject *functools = PyImport_ImportModule("functools");
-    if (functools == NULL) {
-        return -1;
-    }
-
     pysqlite_state *state = pysqlite_get_state(module);
-    state->lru_cache = PyObject_GetAttrString(functools, "lru_cache");
-    Py_DECREF(functools);
+    state->lru_cache = _PyImport_GetModuleAttrString("functools", "lru_cache");
     if (state->lru_cache == NULL) {
         return -1;
     }
@@ -276,7 +240,6 @@ static PyMethodDef module_methods[] = {
     PYSQLITE_COMPLETE_STATEMENT_METHODDEF
     PYSQLITE_CONNECT_METHODDEF
     PYSQLITE_ENABLE_CALLBACK_TRACE_METHODDEF
-    PYSQLITE_ENABLE_SHARED_CACHE_METHODDEF
     PYSQLITE_REGISTER_ADAPTER_METHODDEF
     PYSQLITE_REGISTER_CONVERTER_METHODDEF
     {NULL, NULL}
@@ -582,6 +545,7 @@ module_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->Warning);
 
     // Types
+    Py_VISIT(state->BlobType);
     Py_VISIT(state->ConnectionType);
     Py_VISIT(state->CursorType);
     Py_VISIT(state->PrepareProtocolType);
@@ -614,6 +578,7 @@ module_clear(PyObject *module)
     Py_CLEAR(state->Warning);
 
     // Types
+    Py_CLEAR(state->BlobType);
     Py_CLEAR(state->ConnectionType);
     Py_CLEAR(state->CursorType);
     Py_CLEAR(state->PrepareProtocolType);
@@ -630,8 +595,10 @@ module_clear(PyObject *module)
     Py_CLEAR(state->str___conform__);
     Py_CLEAR(state->str_executescript);
     Py_CLEAR(state->str_finalize);
+    Py_CLEAR(state->str_inverse);
     Py_CLEAR(state->str_step);
     Py_CLEAR(state->str_upper);
+    Py_CLEAR(state->str_value);
 
     return 0;
 }
@@ -685,12 +652,14 @@ module_exec(PyObject *module)
         (pysqlite_cursor_setup_types(module) < 0) ||
         (pysqlite_connection_setup_types(module) < 0) ||
         (pysqlite_statement_setup_types(module) < 0) ||
-        (pysqlite_prepare_protocol_setup_types(module) < 0)
+        (pysqlite_prepare_protocol_setup_types(module) < 0) ||
+        (pysqlite_blob_setup_types(module) < 0)
        ) {
         goto error;
     }
 
     pysqlite_state *state = pysqlite_get_state(module);
+    ADD_TYPE(module, state->BlobType);
     ADD_TYPE(module, state->ConnectionType);
     ADD_TYPE(module, state->CursorType);
     ADD_TYPE(module, state->PrepareProtocolType);
@@ -717,8 +686,10 @@ module_exec(PyObject *module)
     ADD_INTERNED(state, __conform__);
     ADD_INTERNED(state, executescript);
     ADD_INTERNED(state, finalize);
+    ADD_INTERNED(state, inverse);
     ADD_INTERNED(state, step);
     ADD_INTERNED(state, upper);
+    ADD_INTERNED(state, value);
 
     /* Set error constants */
     if (add_error_constants(module) < 0) {
@@ -730,7 +701,7 @@ module_exec(PyObject *module)
         goto error;
     }
 
-    if (PyModule_AddStringConstant(module, "version", PYSQLITE_VERSION) < 0) {
+    if (PyModule_AddStringConstant(module, "_deprecated_version", PYSQLITE_VERSION) < 0) {
         goto error;
     }
 

@@ -129,18 +129,18 @@ class CodeTestCase(unittest.TestCase):
         self.assertEqual(co2.co_filename, "f2")
 
     @requires_debug_ranges()
-    def test_no_columntable_and_endlinetable_with_no_debug_ranges(self):
+    def test_minimal_linetable_with_no_debug_ranges(self):
         # Make sure when demarshalling objects with `-X no_debug_ranges`
-        # that the columntable and endlinetable are None.
+        # that the columns are None.
         co = ExceptionTestCase.test_exceptions.__code__
         code = textwrap.dedent("""
         import sys
         import marshal
         with open(sys.argv[1], 'rb') as f:
             co = marshal.load(f)
-
-            assert co.co_endlinetable is None
-            assert co.co_columntable is None
+            positions = list(co.co_positions())
+            assert positions[0][2] is None
+            assert positions[0][3] is None
         """)
 
         try:
@@ -256,7 +256,7 @@ class BugsTestCase(unittest.TestCase):
         # The max stack depth should match the value in Python/marshal.c.
         # BUG: https://bugs.python.org/issue33720
         # Windows always limits the maximum depth on release and debug builds
-        #if os.name == 'nt' and hasattr(sys, 'gettotalrefcount'):
+        #if os.name == 'nt' and support.Py_DEBUG:
         if os.name == 'nt':
             MAX_MARSHAL_STACK_DEPTH = 1000
         else:

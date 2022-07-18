@@ -18,8 +18,8 @@ Objects/capsule.c	-	PyCapsule_Type	-
 Objects/cellobject.c	-	PyCell_Type	-
 Objects/classobject.c	-	PyInstanceMethod_Type	-
 Objects/classobject.c	-	PyMethod_Type	-
-Objects/codeobject.c	-	LineIterator	-
-Objects/codeobject.c	-	PositionsIterator	-
+Objects/codeobject.c	-	_PyLineIterator	-
+Objects/codeobject.c	-	_PyPositionsIterator	-
 Objects/codeobject.c	-	PyCode_Type	-
 Objects/complexobject.c	-	PyComplex_Type	-
 Objects/descrobject.c	-	PyClassMethodDescr_Type	-
@@ -51,6 +51,7 @@ Objects/frameobject.c	-	PyFrame_Type	-
 Objects/funcobject.c	-	PyClassMethod_Type	-
 Objects/funcobject.c	-	PyFunction_Type	-
 Objects/funcobject.c	-	PyStaticMethod_Type	-
+Objects/genericaliasobject.c	-	_Py_GenericAliasIterType	-
 Objects/genericaliasobject.c	-	Py_GenericAliasType	-
 Objects/genobject.c	-	PyAsyncGen_Type	-
 Objects/genobject.c	-	PyCoro_Type	-
@@ -68,7 +69,7 @@ Objects/listobject.c	-	PyListRevIter_Type	-
 Objects/listobject.c	-	PyList_Type	-
 Objects/longobject.c	-	Int_InfoType	-
 Objects/longobject.c	-	PyLong_Type	-
-Objects/memoryobject.c	-	PyMemoryIter_Type	-
+Objects/memoryobject.c	-	_PyMemoryIter_Type	-
 Objects/memoryobject.c	-	PyMemoryView_Type	-
 Objects/memoryobject.c	-	_PyManagedBuffer_Type	-
 Objects/methodobject.c	-	PyCFunction_Type	-

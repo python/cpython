@@ -750,7 +750,7 @@ profiler_dealloc(ProfilerObject *op)
     if (op->flags & POF_ENABLED) {
         PyThreadState *tstate = _PyThreadState_GET();
         if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
-            PyErr_WriteUnraisable((PyObject *)op);
+            _PyErr_WriteUnraisableMsg("When destroying _lsprof profiler", NULL);
         }
     }
 
@@ -787,7 +787,7 @@ profiler_init(ProfilerObject *pObj, PyObject *args, PyObject *kw)
 
 static PyMethodDef profiler_methods[] = {
     _LSPROF_PROFILER_GETSTATS_METHODDEF
-    {"enable",          (PyCFunction)(void(*)(void))profiler_enable,
+    {"enable",          _PyCFunction_CAST(profiler_enable),
                     METH_VARARGS | METH_KEYWORDS,       enable_doc},
     {"disable",         (PyCFunction)profiler_disable,
                     METH_NOARGS,                        disable_doc},

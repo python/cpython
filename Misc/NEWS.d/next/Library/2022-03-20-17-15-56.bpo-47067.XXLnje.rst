@@ -1,1 +1,0 @@
-Optimize calling ``GenericAlias`` objects by using :pep:`590` ``vectorcall`` and by replacing ``PyObject_SetAttrString`` with ``PyObject_SetAttr``.

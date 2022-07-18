@@ -1,6 +1,6 @@
 """Extract, format and print information about Python stack traces."""
 
-import collections
+import collections.abc
 import itertools
 import linecache
 import sys
@@ -163,18 +163,18 @@ def format_exception_only(exc, /, value=_sentinel):
 # -- not official API but folk probably use these two functions.
 
 def _format_final_exc_line(etype, value):
-    valuestr = _some_str(value)
+    valuestr = _safe_string(value, 'exception')
     if value is None or not valuestr:
         line = "%s\n" % etype
     else:
         line = "%s: %s\n" % (etype, valuestr)
     return line
 
-def _some_str(value):
+def _safe_string(value, what, func=str):
     try:
-        return str(value)
+        return func(value)
     except:
-        return '<exception str() failed>'
+        return f'<{what} {func.__name__}() failed>'
 
 # --
 
@@ -279,7 +279,8 @@ class FrameSummary:
         self._line = line
         if lookup_line:
             self.line
-        self.locals = {k: repr(v) for k, v in locals.items()} if locals else None
+        self.locals = {k: _safe_string(v, 'local', func=repr)
+            for k, v in locals.items()} if locals else None
         self.end_lineno = end_lineno
         self.colno = colno
         self.end_colno = end_colno
@@ -465,7 +466,8 @@ class StackSummary(list):
         row.append('  File "{}", line {}, in {}\n'.format(
             frame_summary.filename, frame_summary.lineno, frame_summary.name))
         if frame_summary.line:
-            row.append('    {}\n'.format(frame_summary.line.strip()))
+            stripped_line = frame_summary.line.strip()
+            row.append('    {}\n'.format(stripped_line))
 
             orig_line_len = len(frame_summary._original_line)
             frame_line_len = len(frame_summary.line.lstrip())
@@ -486,19 +488,22 @@ class StackSummary(list):
                             frame_summary._original_line[colno - 1:end_colno - 1]
                         )
                 else:
-                    end_colno = stripped_characters + len(frame_summary.line.strip())
+                    end_colno = stripped_characters + len(stripped_line)
 
-                row.append('    ')
-                row.append(' ' * (colno - stripped_characters))
+                # show indicators if primary char doesn't span the frame line
+                if end_colno - colno < len(stripped_line) or (
+                        anchors and anchors.right_start_offset - anchors.left_end_offset > 0):
+                    row.append('    ')
+                    row.append(' ' * (colno - stripped_characters))
 
-                if anchors:
-                    row.append(anchors.primary_char * (anchors.left_end_offset))
-                    row.append(anchors.secondary_char * (anchors.right_start_offset - anchors.left_end_offset))
-                    row.append(anchors.primary_char * (end_colno - colno - anchors.right_start_offset))
-                else:
-                    row.append('^' * (end_colno - colno))
+                    if anchors:
+                        row.append(anchors.primary_char * (anchors.left_end_offset))
+                        row.append(anchors.secondary_char * (anchors.right_start_offset - anchors.left_end_offset))
+                        row.append(anchors.primary_char * (end_colno - colno - anchors.right_start_offset))
+                    else:
+                        row.append('^' * (end_colno - colno))
 
-                row.append('\n')
+                    row.append('\n')
 
         if frame_summary.locals:
             for name, value in sorted(frame_summary.locals.items()):
@@ -688,8 +693,8 @@ class TracebackException:
         self.exc_type = exc_type
         # Capture now to permit freeing resources: only complication is in the
         # unofficial API _format_final_exc_line
-        self._str = _some_str(exc_value)
-        self.__note__ = exc_value.__note__ if exc_value else None
+        self._str = _safe_string(exc_value, 'exception')
+        self.__notes__ = getattr(exc_value, '__notes__', None)
 
         if exc_type and issubclass(exc_type, SyntaxError):
             # Handle SyntaxError's specially
@@ -822,8 +827,12 @@ class TracebackException:
             yield _format_final_exc_line(stype, self._str)
         else:
             yield from self._format_syntax_error(stype)
-        if self.__note__ is not None:
-            yield from [l + '\n' for l in self.__note__.split('\n')]
+        if isinstance(self.__notes__, collections.abc.Sequence):
+            for note in self.__notes__:
+                note = _safe_string(note, 'note')
+                yield from [l + '\n' for l in note.split('\n')]
+        elif self.__notes__ is not None:
+            yield _safe_string(self.__notes__, '__notes__', func=repr)
 
     def _format_syntax_error(self, stype):
         """Format SyntaxError exceptions (internal helper)."""
@@ -913,7 +922,7 @@ class TracebackException:
                 # format exception group
                 is_toplevel = (_ctx.exception_group_depth == 0)
                 if is_toplevel:
-                     _ctx.exception_group_depth += 1
+                    _ctx.exception_group_depth += 1
 
                 if exc.stack:
                     yield from _ctx.emit(

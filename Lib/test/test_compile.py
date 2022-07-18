@@ -109,7 +109,9 @@ class TestSpecifics(unittest.TestCase):
         self.assertEqual(d['z'], 12)
 
     def test_extended_arg(self):
-        longexpr = 'x = x or ' + '-x' * 2500
+        # default: 1000 * 2.5 = 2500 repetitions
+        repeat = int(sys.getrecursionlimit() * 2.5)
+        longexpr = 'x = x or ' + '-x' * repeat
         g = {}
         code = '''
 def f(x):
@@ -158,7 +160,9 @@ if 1:
         s256 = "".join(["\n"] * 256 + ["spam"])
         co = compile(s256, 'fn', 'exec')
         self.assertEqual(co.co_firstlineno, 1)
-        self.assertEqual(list(co.co_lines()), [(0, 2, None), (2, 10, 257)])
+        lines = list(co.co_lines())
+        self.assertEqual(lines[0][2], 0)
+        self.assertEqual(lines[1][2], 257)
 
     def test_literals_with_leading_zeroes(self):
         for arg in ["077787", "0xj", "0x.", "0e",  "090000000000000",
@@ -837,7 +841,7 @@ if 1:
                 instructions = [opcode.opname for opcode in opcodes]
                 self.assertNotIn('LOAD_METHOD', instructions)
                 self.assertIn('LOAD_ATTR', instructions)
-                self.assertIn('PRECALL', instructions)
+                self.assertIn('CALL', instructions)
 
     def test_lineno_procedure_call(self):
         def call():
@@ -892,11 +896,18 @@ if 1:
             with self.subTest(func=func):
                 code = func.__code__
                 lines = list(code.co_lines())
-                self.assertEqual(len(lines), 1)
                 start, end, line = lines[0]
                 self.assertEqual(start, 0)
-                self.assertEqual(end, len(code.co_code))
                 self.assertEqual(line, code.co_firstlineno)
+
+    def get_code_lines(self, code):
+        last_line = -2
+        res = []
+        for _, _, line in code.co_lines():
+            if line is not None and line != last_line:
+                res.append(line - code.co_firstlineno)
+                last_line = line
+        return res
 
     def test_lineno_attribute(self):
         def load_attr():
@@ -939,9 +950,7 @@ if 1:
 
         for func, lines in zip(funcs, func_lines, strict=True):
             with self.subTest(func=func):
-                code_lines = [ line-func.__code__.co_firstlineno
-                              for (_, _, line) in func.__code__.co_lines()
-                              if line is not None ]
+                code_lines = self.get_code_lines(func.__code__)
                 self.assertEqual(lines, code_lines)
 
     def test_line_number_genexp(self):
@@ -952,11 +961,10 @@ if 1:
                     x
                     in
                     y)
-        genexp_lines = [1, 3, 1]
+        genexp_lines = [0, 2, 0]
 
         genexp_code = return_genexp.__code__.co_consts[1]
-        code_lines = [ None if line is None else line-return_genexp.__code__.co_firstlineno
-                      for (_, _, line) in genexp_code.co_lines() ]
+        code_lines = self.get_code_lines(genexp_code)
         self.assertEqual(genexp_lines, code_lines)
 
     def test_line_number_implicit_return_after_async_for(self):
@@ -966,8 +974,7 @@ if 1:
                 body
 
         expected_lines = [0, 1, 2, 1]
-        code_lines = [ None if line is None else line-test.__code__.co_firstlineno
-                      for (_, _, line) in test.__code__.co_lines() ]
+        code_lines = self.get_code_lines(test.__code__)
         self.assertEqual(expected_lines, code_lines)
 
     def test_big_dict_literal(self):
@@ -1019,6 +1026,42 @@ if 1:
         for instr in dis.Bytecode(while_not_chained):
             self.assertNotEqual(instr.opname, "EXTENDED_ARG")
 
+    @support.cpython_only
+    def test_uses_slice_instructions(self):
+
+        def check_op_count(func, op, expected):
+            actual = 0
+            for instr in dis.Bytecode(func):
+                if instr.opname == op:
+                    actual += 1
+            self.assertEqual(actual, expected)
+
+        def load():
+            return x[a:b] + x [a:] + x[:b] + x[:]
+
+        def store():
+            x[a:b] = y
+            x [a:] = y
+            x[:b] = y
+            x[:] = y
+
+        def long_slice():
+            return x[a:b:c]
+
+        def aug():
+            x[a:b] += y
+
+        check_op_count(load, "BINARY_SLICE", 4)
+        check_op_count(load, "BUILD_SLICE", 0)
+        check_op_count(store, "STORE_SLICE", 4)
+        check_op_count(store, "BUILD_SLICE", 0)
+        check_op_count(long_slice, "BUILD_SLICE", 1)
+        check_op_count(long_slice, "BINARY_SLICE", 0)
+        check_op_count(aug, "BINARY_SLICE", 1)
+        check_op_count(aug, "STORE_SLICE", 1)
+        check_op_count(aug, "BUILD_SLICE", 0)
+
+
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
     # Ensure that compiled code snippets have correct line and column numbers
@@ -1047,6 +1090,8 @@ class TestSourcePositions(unittest.TestCase):
 
         # Check against the positions in the code object.
         for (line, end_line, col, end_col) in code.co_positions():
+            if line == 0:
+                continue # This is an artificial module-start line
             # If the offset is not None (indicating missing data), ensure that
             # it was part of one of the AST nodes.
             if line is not None:
@@ -1112,14 +1157,14 @@ f(
             line=1, end_line=3, column=0, end_column=1)
 
     def test_very_long_line_end_offset(self):
-        # Make sure we get None for when the column offset is too large to
-        # store in a byte.
+        # Make sure we get the correct column offset for offsets
+        # too large to store in a byte.
         long_string = "a" * 1000
         snippet = f"g('{long_string}')"
 
         compiled_code, _ = self.check_positions_against_ast(snippet)
         self.assertOpcodeSourcePositionIs(compiled_code, 'CALL',
-            line=1, end_line=1, column=None, end_column=None)
+            line=1, end_line=1, column=0, end_column=1005)
 
     def test_complex_single_line_expression(self):
         snippet = "a - b @ (c * x['key'] + 23)"
@@ -1135,6 +1180,27 @@ f(
             line=1, end_line=1, column=4, end_column=27, occurrence=3)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
             line=1, end_line=1, column=0, end_column=27, occurrence=4)
+
+    def test_multiline_assert_rewritten_as_method_call(self):
+        # GH-94694: Don't crash if pytest rewrites a multiline assert as a
+        # method call with the same location information:
+        tree = ast.parse("assert (\n42\n)")
+        old_node = tree.body[0]
+        new_node = ast.Expr(
+            ast.Call(
+                ast.Attribute(
+                    ast.Name("spam", ast.Load()),
+                    "eggs",
+                    ast.Load(),
+                ),
+                [],
+                [],
+            )
+        )
+        ast.copy_location(new_node, old_node)
+        ast.fix_missing_locations(new_node)
+        tree.body[0] = new_node
+        compile(tree, "<test>", "exec")
 
 
 class TestExpressionStackSize(unittest.TestCase):
@@ -1199,6 +1265,12 @@ class TestExpressionStackSize(unittest.TestCase):
         code = "def f(x):\n"
         code += "   x and x\n" * self.N
         self.check_stack_size(code)
+
+    def test_stack_3050(self):
+        M = 3050
+        code = "x," * M + "=t"
+        # This raised on 3.10.0 to 3.10.5
+        compile(code, "<foo>", "single")
 
 
 class TestStackSizeStability(unittest.TestCase):

@@ -51,6 +51,9 @@ managing aspects of Python packages:
     The :func:`.__import__` function
         The :keyword:`import` statement is syntactic sugar for this function.
 
+    :ref:`sys-path-init`
+        The initialization of :data:`sys.path`.
+
     :pep:`235`
         Import on Case-Insensitive Platforms
 
@@ -245,8 +248,8 @@ ABC hierarchy::
 
     object
      +-- Finder (deprecated)
-     |    +-- MetaPathFinder
-     |    +-- PathEntryFinder
+     +-- MetaPathFinder
+     +-- PathEntryFinder
      +-- Loader
           +-- ResourceLoader --------+
           +-- InspectLoader          |
@@ -279,8 +282,7 @@ ABC hierarchy::
 
 .. class:: MetaPathFinder
 
-   An abstract base class representing a :term:`meta path finder`. For
-   compatibility, this is a subclass of :class:`Finder`.
+   An abstract base class representing a :term:`meta path finder`.
 
    .. versionadded:: 3.3
 
@@ -412,8 +414,8 @@ ABC hierarchy::
 
        .. versionadded:: 3.4
 
-       .. versionchanged:: 3.5
-          Starting in Python 3.6, this method will not be optional when
+       .. versionchanged:: 3.6
+          This method is no longer optional when
           :meth:`exec_module` is defined.
 
     .. method:: exec_module(module)
@@ -448,7 +450,7 @@ ABC hierarchy::
         reloaded):
 
         - :attr:`__name__`
-            The module's fully-qualified name.
+            The module's fully qualified name.
             It is ``'__main__'`` for an executed module.
 
         - :attr:`__file__`
@@ -469,7 +471,7 @@ ABC hierarchy::
             as an indicator that the module is a package.
 
         - :attr:`__package__`
-            The fully-qualified name of the package the module is in (or the
+            The fully qualified name of the package the module is in (or the
             empty string for a top-level module).
             If the module is a package then this is the same as :attr:`__name__`.
 
@@ -897,7 +899,7 @@ find and load modules.
 
    (:attr:`__name__`)
 
-   The module's fully-qualified name.
+   The module's fully qualified name.
    The :term:`finder` should always set this attribute to a non-empty string.
 
    .. attribute:: loader
@@ -946,7 +948,7 @@ find and load modules.
 
    (:attr:`__package__`)
 
-   (Read-only) The fully-qualified name of the package the module is in (or the
+   (Read-only) The fully qualified name of the package the module is in (or the
    empty string for a top-level module).
    If the module is a package then this is the same as :attr:`name`.
 
@@ -1248,6 +1250,9 @@ Checking if a module can be imported
 
 If you need to find out if a module can be imported without actually doing the
 import, then you should use :func:`importlib.util.find_spec`.
+
+Note that if ``name`` is a submodule (contains a dot),
+:func:`importlib.util.find_spec` will import the parent module.
 ::
 
   import importlib.util
@@ -1271,8 +1276,7 @@ import, then you should use :func:`importlib.util.find_spec`.
 Importing a source file directly
 ''''''''''''''''''''''''''''''''
 
-To import a Python source file directly, use the following recipe
-(Python 3.5 and newer only)::
+To import a Python source file directly, use the following recipe::
 
   import importlib.util
   import sys
@@ -1353,9 +1357,7 @@ Import itself is implemented in Python code, making it possible to
 expose most of the import machinery through importlib. The following
 helps illustrate the various APIs that importlib exposes by providing an
 approximate implementation of
-:func:`importlib.import_module` (Python 3.4 and newer for the importlib usage,
-Python 3.6 and newer for other parts of the code).
-::
+:func:`importlib.import_module`::
 
   import importlib.util
   import sys

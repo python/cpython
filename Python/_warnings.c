@@ -4,7 +4,6 @@
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "frameobject.h"          // PyFrame_GetBack()
 #include "pycore_frame.h"
 #include "clinic/_warnings.c.h"
 
@@ -1078,7 +1077,7 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
-warnings_filters_mutated(PyObject *self, PyObject *args)
+warnings_filters_mutated(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyInterpreterState *interp = get_current_interp();
     if (interp == NULL) {
@@ -1136,11 +1135,7 @@ PyErr_WarnFormat(PyObject *category, Py_ssize_t stack_level,
     int res;
     va_list vargs;
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     res = _PyErr_WarnFormatV(NULL, category, stack_level, format, vargs);
     va_end(vargs);
     return res;
@@ -1153,11 +1148,7 @@ _PyErr_WarnFormat(PyObject *source, PyObject *category, Py_ssize_t stack_level,
     int res;
     va_list vargs;
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     res = _PyErr_WarnFormatV(source, category, stack_level, format, vargs);
     va_end(vargs);
     return res;
@@ -1170,11 +1161,7 @@ PyErr_ResourceWarning(PyObject *source, Py_ssize_t stack_level,
     int res;
     va_list vargs;
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     res = _PyErr_WarnFormatV(source, PyExc_ResourceWarning,
                              stack_level, format, vargs);
     va_end(vargs);
@@ -1274,11 +1261,7 @@ PyErr_WarnExplicitFormat(PyObject *category,
             goto exit;
     }
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     message = PyUnicode_FromFormatV(format, vargs);
     if (message != NULL) {
         PyObject *res;
@@ -1353,9 +1336,9 @@ PyDoc_STRVAR(warn_explicit_doc,
 
 static PyMethodDef warnings_functions[] = {
     WARNINGS_WARN_METHODDEF
-    {"warn_explicit", (PyCFunction)(void(*)(void))warnings_warn_explicit,
+    {"warn_explicit", _PyCFunction_CAST(warnings_warn_explicit),
         METH_VARARGS | METH_KEYWORDS, warn_explicit_doc},
-    {"_filters_mutated", (PyCFunction)warnings_filters_mutated, METH_NOARGS,
+    {"_filters_mutated", _PyCFunction_CAST(warnings_filters_mutated), METH_NOARGS,
         NULL},
     /* XXX(brett.cannon): add showwarning? */
     /* XXX(brett.cannon): Reasonable to add formatwarning? */

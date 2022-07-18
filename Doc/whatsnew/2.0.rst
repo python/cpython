@@ -21,7 +21,7 @@ Python's development never completely stops between releases, and a steady flow
 of bug fixes and improvements are always being submitted. A host of minor fixes,
 a few optimizations, additional docstrings, and better error messages went into
 2.0; to list them all would be impossible, but they're certainly significant.
-Consult the publicly-available CVS logs if you want to see the full list.  This
+Consult the publicly available CVS logs if you want to see the full list.  This
 progress is due to the five developers working for  PythonLabs are now getting
 paid to spend their days fixing bugs, and also due to the improved communication
 resulting  from moving to SourceForge.
@@ -130,7 +130,7 @@ Guidelines":
 Read the rest of :pep:`1` for the details of the PEP editorial process, style, and
 format.  PEPs are kept in the Python CVS tree on SourceForge, though they're not
 part of the Python 2.0 distribution, and are also available in HTML form from
-https://www.python.org/dev/peps/.  As of September 2000, there are 25 PEPS, ranging
+https://peps.python.org/.  As of September 2000, there are 25 PEPS, ranging
 from :pep:`201`, "Lockstep Iteration", to PEP 225, "Elementwise/Objectwise
 Operators".
 

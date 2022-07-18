@@ -368,6 +368,8 @@ static int test_bpo20891(void)
 
     PyThread_free_lock(lock);
 
+    Py_Finalize();
+
     return 0;
 }
 
@@ -676,6 +678,8 @@ static int test_init_from_config(void)
     Py_FrozenFlag = 0;
     config.pathconfig_warnings = 0;
 
+    config.safe_path = 1;
+
     config._isolated_interpreter = 1;
 
     init_from_config_clear(&config);
@@ -742,6 +746,7 @@ static void set_most_env_vars(void)
     putenv("PYTHONFAULTHANDLER=1");
     putenv("PYTHONIOENCODING=iso8859-1:replace");
     putenv("PYTHONPLATLIBDIR=env_platlibdir");
+    putenv("PYTHONSAFEPATH=1");
 }
 
 
@@ -823,6 +828,10 @@ static int test_init_isolated_flag(void)
 
     Py_IsolatedFlag = 0;
     config.isolated = 1;
+    // These options are set to 1 by isolated=1
+    config.safe_path = 0;
+    config.use_environment = 1;
+    config.user_site_directory = 1;
 
     config_set_program_name(&config);
     set_all_env_vars();
@@ -901,6 +910,7 @@ static int test_preinit_dont_parse_argv(void)
     wchar_t *argv[] = {L"python3",
                        L"-E",
                        L"-I",
+                       L"-P",
                        L"-X", L"dev",
                        L"-X", L"utf8",
                        L"script.py"};
@@ -934,7 +944,7 @@ static int test_preinit_parse_argv(void)
 
     /* Pre-initialize implicitly using argv: make sure that -X dev
        is used to configure the allocation in preinitialization */
-    wchar_t *argv[] = {L"python3", L"-X", L"dev", L"script.py"};
+    wchar_t *argv[] = {L"python3", L"-X", L"dev", L"-P", L"script.py"};
     config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
     config_set_program_name(&config);
     init_from_config_clear(&config);
@@ -1542,6 +1552,46 @@ static int test_init_setpythonhome(void)
 }
 
 
+static int test_init_is_python_build(void)
+{
+    // gh-91985: in-tree builds fail to check for build directory landmarks
+    // under the effect of 'home' or PYTHONHOME environment variable.
+    char *env = getenv("TESTHOME");
+    if (!env) {
+        error("missing TESTHOME env var");
+        return 1;
+    }
+    wchar_t *home = Py_DecodeLocale(env, NULL);
+    if (home == NULL) {
+        error("failed to decode TESTHOME");
+        return 1;
+    }
+
+    PyConfig config;
+    _PyConfig_InitCompatConfig(&config);
+    config_set_program_name(&config);
+    config_set_string(&config, &config.home, home);
+    PyMem_RawFree(home);
+    putenv("TESTHOME=");
+
+    // Use an impossible value so we can detect whether it isn't updated
+    // during initialization.
+    config._is_python_build = INT_MAX;
+    env = getenv("NEGATIVE_ISPYTHONBUILD");
+    if (env && strcmp(env, "0") != 0) {
+        config._is_python_build++;
+    }
+    init_from_config_clear(&config);
+    Py_Finalize();
+    // Second initialization
+    config._is_python_build = -1;
+    init_from_config_clear(&config);
+    dump_config();  // home and _is_python_build are cached in _Py_path_config
+    Py_Finalize();
+    return 0;
+}
+
+
 static int test_init_warnoptions(void)
 {
     putenv("PYTHONWARNINGS=ignore:::env1,ignore:::env2");
@@ -1957,6 +2007,7 @@ static struct TestCase TestCases[] = {
     {"test_init_setpath", test_init_setpath},
     {"test_init_setpath_config", test_init_setpath_config},
     {"test_init_setpythonhome", test_init_setpythonhome},
+    {"test_init_is_python_build", test_init_is_python_build},
     {"test_init_warnoptions", test_init_warnoptions},
     {"test_init_set_config", test_init_set_config},
     {"test_run_main", test_run_main},

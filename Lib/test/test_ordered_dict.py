@@ -287,6 +287,8 @@ class OrderedDictTests:
         # and have a repr/eval round-trip
         pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
         od = OrderedDict(pairs)
+        od.x = ['x']
+        od.z = ['z']
         def check(dup):
             msg = "\ncopy: %s\nod: %s" % (dup, od)
             self.assertIsNot(dup, od, msg)
@@ -295,13 +297,27 @@ class OrderedDictTests:
             self.assertEqual(len(dup), len(od))
             self.assertEqual(type(dup), type(od))
         check(od.copy())
-        check(copy.copy(od))
-        check(copy.deepcopy(od))
+        dup = copy.copy(od)
+        check(dup)
+        self.assertIs(dup.x, od.x)
+        self.assertIs(dup.z, od.z)
+        self.assertFalse(hasattr(dup, 'y'))
+        dup = copy.deepcopy(od)
+        check(dup)
+        self.assertEqual(dup.x, od.x)
+        self.assertIsNot(dup.x, od.x)
+        self.assertEqual(dup.z, od.z)
+        self.assertIsNot(dup.z, od.z)
+        self.assertFalse(hasattr(dup, 'y'))
         # pickle directly pulls the module, so we have to fake it
         with replaced_module('collections', self.module):
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                 with self.subTest(proto=proto):
-                    check(pickle.loads(pickle.dumps(od, proto)))
+                    dup = pickle.loads(pickle.dumps(od, proto))
+                    check(dup)
+                    self.assertEqual(dup.x, od.x)
+                    self.assertEqual(dup.z, od.z)
+                    self.assertFalse(hasattr(dup, 'y'))
         check(eval(repr(od)))
         update_test = OrderedDict()
         update_test.update(od)
@@ -844,6 +860,23 @@ class CPythonOrderedDictSubclassTests(CPythonOrderedDictTests):
     module = c_coll
     class OrderedDict(c_coll.OrderedDict):
         pass
+
+
+class PurePythonOrderedDictWithSlotsCopyingTests(unittest.TestCase):
+
+    module = py_coll
+    class OrderedDict(py_coll.OrderedDict):
+        __slots__ = ('x', 'y')
+    test_copying = OrderedDictTests.test_copying
+
+
+@unittest.skipUnless(c_coll, 'requires the C version of the collections module')
+class CPythonOrderedDictWithSlotsCopyingTests(unittest.TestCase):
+
+    module = c_coll
+    class OrderedDict(c_coll.OrderedDict):
+        __slots__ = ('x', 'y')
+    test_copying = OrderedDictTests.test_copying
 
 
 class PurePythonGeneralMappingTests(mapping_tests.BasicTestMappingProtocol):

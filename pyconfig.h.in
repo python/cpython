@@ -44,9 +44,6 @@
 /* Define if --enable-ipv6 is specified */
 #undef ENABLE_IPV6
 
-/* Better isolate subinterpreters, experimental build mode. */
-#undef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-
 /* Define to 1 if your system stores words within floats with the most
    significant word first */
 #undef FLOAT_WORDS_BIGENDIAN
@@ -293,6 +290,9 @@
 /* Defined when any dynamic module loading is enabled. */
 #undef HAVE_DYNAMIC_LOADING
 
+/* Define to 1 if you have the <editline/readline.h> header file. */
+#undef HAVE_EDITLINE_READLINE_H
+
 /* Define to 1 if you have the <endian.h> header file. */
 #undef HAVE_ENDIAN_H
 
@@ -358,6 +358,15 @@
 
 /* Define to 1 if you have the `fexecve' function. */
 #undef HAVE_FEXECVE
+
+/* Define if you have the 'ffi_closure_alloc' function. */
+#undef HAVE_FFI_CLOSURE_ALLOC
+
+/* Define if you have the 'ffi_prep_cif_var' function. */
+#undef HAVE_FFI_PREP_CIF_VAR
+
+/* Define if you have the 'ffi_prep_closure_loc' function. */
+#undef HAVE_FFI_PREP_CLOSURE_LOC
 
 /* Define to 1 if you have the `flock' function. */
 #undef HAVE_FLOCK
@@ -622,6 +631,9 @@
 /* Define to 1 if you have the `lchown' function. */
 #undef HAVE_LCHOWN
 
+/* Define to 1 if you want to build _blake2 module with libb2 */
+#undef HAVE_LIBB2
+
 /* Define to 1 if you have the `db' library (-ldb). */
 #undef HAVE_LIBDB
 
@@ -631,26 +643,20 @@
 /* Define to 1 if you have the `dld' library (-ldld). */
 #undef HAVE_LIBDLD
 
-/* Define to 1 if you have the `gdbm_compat' library (-lgdbm_compat). */
-#undef HAVE_LIBGDBM_COMPAT
-
 /* Define to 1 if you have the `ieee' library (-lieee). */
 #undef HAVE_LIBIEEE
 
 /* Define to 1 if you have the <libintl.h> header file. */
 #undef HAVE_LIBINTL_H
 
-/* Define to 1 if you have the `ndbm' library (-lndbm). */
-#undef HAVE_LIBNDBM
-
-/* Define to build the readline module. */
-#undef HAVE_LIBREADLINE
-
 /* Define to 1 if you have the `resolv' library (-lresolv). */
 #undef HAVE_LIBRESOLV
 
 /* Define to 1 if you have the `sendfile' library (-lsendfile). */
 #undef HAVE_LIBSENDFILE
+
+/* Define to 1 if you have the `sqlite3' library (-lsqlite3). */
+#undef HAVE_LIBSQLITE3
 
 /* Define to 1 if you have the <libutil.h> header file. */
 #undef HAVE_LIBUTIL_H
@@ -681,6 +687,9 @@
 
 /* Define if compiling using Linux 4.1 or later. */
 #undef HAVE_LINUX_CAN_RAW_JOIN_FILTERS
+
+/* Define to 1 if you have the <linux/fs.h> header file. */
+#undef HAVE_LINUX_FS_H
 
 /* Define to 1 if you have the <linux/memfd.h> header file. */
 #undef HAVE_LINUX_MEMFD_H
@@ -714,6 +723,9 @@
 
 /* Define to 1 if you have the `log2' function. */
 #undef HAVE_LOG2
+
+/* Define to 1 if you have the `login_tty' function. */
+#undef HAVE_LOGIN_TTY
 
 /* Define to 1 if the system has the type `long double'. */
 #undef HAVE_LONG_DOUBLE
@@ -772,6 +784,9 @@
 /* Define to 1 if you have the `nanosleep' function. */
 #undef HAVE_NANOSLEEP
 
+/* Define to 1 if you have the `ncursesw' library. */
+#undef HAVE_NCURSESW
+
 /* Define to 1 if you have the <ncurses.h> header file. */
 #undef HAVE_NCURSES_H
 
@@ -808,6 +823,9 @@
 
 /* Define to 1 if you have the `openpty' function. */
 #undef HAVE_OPENPTY
+
+/* Define to 1 if you have the <panel.h> header file. */
+#undef HAVE_PANEL_H
 
 /* Define to 1 if you have the `pathconf' function. */
 #undef HAVE_PATHCONF
@@ -892,6 +910,9 @@
 
 /* Define to 1 if you have the `pwritev2' function. */
 #undef HAVE_PWRITEV2
+
+/* Define to 1 if you have the <readline/readline.h> header file. */
+#undef HAVE_READLINE_READLINE_H
 
 /* Define to 1 if you have the `readlink' function. */
 #undef HAVE_READLINK
@@ -1105,10 +1126,6 @@
 
 /* Define if you have struct stat.st_mtimensec */
 #undef HAVE_STAT_TV_NSEC2
-
-/* Define if your compiler supports variable length function prototypes (e.g.
-   void fprintf(FILE *, char *, ...);) *and* <stdarg.h> */
-#undef HAVE_STDARG_PROTOTYPES
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
@@ -1354,9 +1371,6 @@
    `tzname'. */
 #undef HAVE_TZNAME
 
-/* Define this if you have tcl and TCL_UTF_MAX==6 */
-#undef HAVE_UCS4_TCL
-
 /* Define to 1 if you have the `umask' function. */
 #undef HAVE_UMASK
 
@@ -1385,6 +1399,9 @@
 
 /* Define to 1 if you have the <utime.h> header file. */
 #undef HAVE_UTIME_H
+
+/* Define to 1 if you have the <utmp.h> header file. */
+#undef HAVE_UTMP_H
 
 /* Define to 1 if you have the `uuid_create' function. */
 #undef HAVE_UUID_CREATE
@@ -1497,11 +1514,11 @@
 /* Define if you want to coerce the C locale to a UTF-8 based locale */
 #undef PY_COERCE_C_LOCALE
 
-/* Define to printf format modifier for Py_ssize_t */
-#undef PY_FORMAT_SIZE_T
-
 /* Define to 1 to build the sqlite module with loadable extensions support. */
 #undef PY_SQLITE_ENABLE_LOAD_EXTENSION
+
+/* Define if SQLite was compiled with the serialize API */
+#undef PY_SQLITE_HAVE_SERIALIZE
 
 /* Default cipher suites list for ssl module. 1: Python's preferred selection,
    2: leave OpenSSL defaults untouched, 0: custom string */
@@ -1509,6 +1526,9 @@
 
 /* Cipher suite string for PY_SSL_DEFAULT_CIPHERS=0 */
 #undef PY_SSL_DEFAULT_CIPHER_STRING
+
+/* PEP 11 Support tier (1, 2, 3 or 0 for unsupported) */
+#undef PY_SUPPORT_TIER
 
 /* Define if you want to build an interpreter with many run-time checks. */
 #undef Py_DEBUG
@@ -1651,7 +1671,7 @@
    Dyld is necessary to support frameworks. */
 #undef WITH_DYLD
 
-/* Define to build the readline module against Editline. */
+/* Define to build the readline module against libedit. */
 #undef WITH_EDITLINE
 
 /* Define if you want to compile in object freelists optimization */
@@ -1727,6 +1747,12 @@
 
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT
+
+/* Define to 1 if you want to emulate getpid() on WASI */
+#undef _WASI_EMULATED_GETPID
+
+/* Define to 1 if you want to emulate process clocks on WASI */
+#undef _WASI_EMULATED_PROCESS_CLOCKS
 
 /* Define to 1 if you want to emulate signals on WASI */
 #undef _WASI_EMULATED_SIGNAL
