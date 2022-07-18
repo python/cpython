@@ -138,6 +138,7 @@ typedef enum kind {
     Except = 2,
     Object = 3,
     Null = 4,
+    Lasti = 5,
 } Kind;
 
 static int
@@ -185,6 +186,85 @@ top_of_stack(int64_t stack)
     return stack & ((1<<BITS_PER_BLOCK)-1);
 }
 
+static int64_t
+pop_to_level(int64_t stack, int level) {
+    if (level == 0) {
+        return 0;
+    }
+    int64_t max_item = (1<<BITS_PER_BLOCK) - 1;
+    int64_t level_max_stack = max_item << ((level-1) * BITS_PER_BLOCK);
+    while (stack > level_max_stack) {
+        stack = pop_value(stack);
+    }
+    return stack;
+}
+
+#if 0
+/* These functions are useful for debugging the stack marking code */
+
+static char
+tos_char(int64_t stack) {
+    switch(top_of_stack(stack)) {
+        case Iterator:
+            return 'I';
+        case Except:
+            return 'E';
+        case Object:
+            return 'O';
+        case Lasti:
+            return 'L';
+        case Null:
+            return 'N';
+    }
+}
+
+static void
+print_stack(int64_t stack) {
+    if (stack < 0) {
+        if (stack == UNINITIALIZED) {
+            printf("---");
+        }
+        else if (stack == OVERFLOWED) {
+            printf("OVERFLOWED");
+        }
+        else {
+            printf("??");
+        }
+        return;
+    }
+    while (stack) {
+        printf("%c", tos_char(stack));
+        stack = pop_value(stack);
+    }
+}
+
+static void
+print_stacks(int64_t *stacks, int n) {
+    for (int i = 0; i < n; i++) {
+        printf("%d: ", i);
+        print_stack(stacks[i]);
+        printf("\n");
+    }
+}
+
+#endif
+
+/* Exception table parsing helpers.
+ * See Objects/exception_table_notes.txt for details.
+ */
+
+static inline unsigned char *
+parse_varint(unsigned char *p, int *result) {
+    int val = p[0] & 63;
+    while (p[0] & 64) {
+        p++;
+        val = (val << 6) | (p[0] & 63);
+    }
+    *result = val;
+    return p+1;
+}
+
+
 static int64_t *
 mark_stacks(PyCodeObject *code_obj, int len)
 {
@@ -213,6 +293,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
     int todo = 1;
     while (todo) {
         todo = 0;
+        /* Scan instructions */
         for (i = 0; i < len; i++) {
             int64_t next_stack = stacks[i];
             if (next_stack == UNINITIALIZED) {
@@ -296,23 +377,25 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     break;
                 }
                 case END_ASYNC_FOR:
-                    next_stack = pop_value(pop_value(pop_value(next_stack)));
+                    next_stack = pop_value(pop_value(next_stack));
                     stacks[i+1] = next_stack;
                     break;
                 case PUSH_EXC_INFO:
+                    next_stack = push_value(next_stack, Except);
+                    stacks[i+1] = next_stack;
+                    break;
                 case POP_EXCEPT:
-                    /* These instructions only appear in exception handlers, which
-                     * skip this switch ever since the move to zero-cost exceptions
-                     * (their stack remains UNINITIALIZED because nothing sets it).
-                     *
-                     * Note that explain_incompatible_stack interprets an
-                     * UNINITIALIZED stack as belonging to an exception handler.
-                     */
-                    Py_UNREACHABLE();
+                    next_stack = pop_value(next_stack);
+                    stacks[i+1] = next_stack;
                     break;
                 case RETURN_VALUE:
+                    assert(pop_value(next_stack) == 0);
+                    assert(top_of_stack(next_stack) == Object);
+                    break;
                 case RAISE_VARARGS:
+                    break;
                 case RERAISE:
+                    assert(top_of_stack(next_stack) == Except);
                     /* End of block */
                     break;
                 case PUSH_NULL:
@@ -331,12 +414,23 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 }
                 case LOAD_ATTR:
                 {
+                    assert(top_of_stack(next_stack) == Object);
                     int j = get_arg(code, i);
                     if (j & 1) {
                         next_stack = pop_value(next_stack);
                         next_stack = push_value(next_stack, Null);
                         next_stack = push_value(next_stack, Object);
                     }
+                    stacks[i+1] = next_stack;
+                    break;
+                }
+                case CALL:
+                {
+                    int args = get_arg(code, i);
+                    for (int j = 0; j < args+2; j++) {
+                        next_stack = pop_value(next_stack);
+                    }
+                    next_stack = push_value(next_stack, Object);
                     stacks[i+1] = next_stack;
                     break;
                 }
@@ -352,6 +446,32 @@ mark_stacks(PyCodeObject *code_obj, int len)
                         delta--;
                     }
                     stacks[i+1] = next_stack;
+                }
+            }
+        }
+        /* Scan exception table */
+        unsigned char *start = (unsigned char *)PyBytes_AS_STRING(code_obj->co_exceptiontable);
+        unsigned char *end = start + PyBytes_GET_SIZE(code_obj->co_exceptiontable);
+        unsigned char *scan = start;
+        int handler;
+        while (scan < end) {
+            int start_offset, size;
+            scan = parse_varint(scan, &start_offset);
+            scan = parse_varint(scan, &size);
+            scan = parse_varint(scan, &handler);
+            int depth_and_lasti;
+            scan = parse_varint(scan, &depth_and_lasti);
+            int level = depth_and_lasti >> 1;
+            int lasti = depth_and_lasti & 1;
+            if (stacks[start_offset] != UNINITIALIZED) {
+                if (stacks[handler] == UNINITIALIZED) {
+                    todo = 1;
+                    uint64_t target_stack = pop_to_level(stacks[start_offset], level);
+                    if (lasti) {
+                        target_stack = push_value(target_stack, Lasti);
+                    }
+                    target_stack = push_value(target_stack, Except);
+                    stacks[handler] = target_stack;
                 }
             }
         }
@@ -395,6 +515,8 @@ explain_incompatible_stack(int64_t to_stack)
     switch(target_kind) {
         case Except:
             return "can't jump into an 'except' block as there's no exception";
+        case Lasti:
+            return "can't jump into a re-raising block as there's no location";
         case Object:
         case Null:
             return "incompatible stacks";
@@ -650,7 +772,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
                     msg = "stack to deep to analyze";
                 }
                 else if (start_stack == UNINITIALIZED) {
-                    msg = "can't jump from within an exception handler";
+                    msg = "can't jump from unreachable code";
                 }
                 else {
                     msg = explain_incompatible_stack(target_stack);
