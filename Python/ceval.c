@@ -6048,20 +6048,6 @@ fail:
 
 }
 
-/* Exception table parsing code.
- * See Objects/exception_table_notes.txt for details.
- */
-
-static inline unsigned char *
-parse_varint(unsigned char *p, int *result) {
-    int val = p[0] & 63;
-    while (p[0] & 64) {
-        p++;
-        val = (val << 6) | (p[0] & 63);
-    }
-    *result = val;
-    return p+1;
-}
 
 static inline unsigned char *
 scan_back_to_entry_start(unsigned char *p) {

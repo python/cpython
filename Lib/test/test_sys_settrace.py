@@ -1879,7 +1879,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(6)
         output.append(7)
 
-    @async_jump_test(4, 5, [3], (ValueError, 'into'))
+    @async_jump_test(4, 5, [3, 5])
     async def test_jump_out_of_async_for_block_forwards(output):
         for i in [1]:
             async for i in asynciter([1, 2]):
@@ -1921,7 +1921,7 @@ class JumpTestCase(unittest.TestCase):
                 output.append(8)
             output.append(9)
 
-    @jump_test(6, 7, [2], (ValueError, 'within'))
+    @jump_test(6, 7, [2, 7], (ZeroDivisionError, ''))
     def test_jump_in_nested_finally_2(output):
         try:
             output.append(2)
@@ -1932,7 +1932,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(7)
         output.append(8)
 
-    @jump_test(6, 11, [2], (ValueError, 'within'))
+    @jump_test(6, 11, [2, 11], (ZeroDivisionError, ''))
     def test_jump_in_nested_finally_3(output):
         try:
             output.append(2)
@@ -2043,8 +2043,8 @@ class JumpTestCase(unittest.TestCase):
             output.append(5)
             raise
 
-    @jump_test(5, 7, [4], (ValueError, 'within'))
-    def test_no_jump_between_except_blocks(output):
+    @jump_test(5, 7, [4, 7, 8])
+    def test_jump_between_except_blocks(output):
         try:
             1/0
         except ZeroDivisionError:
@@ -2054,8 +2054,19 @@ class JumpTestCase(unittest.TestCase):
             output.append(7)
         output.append(8)
 
-    @jump_test(5, 6, [4], (ValueError, 'within'))
-    def test_no_jump_within_except_block(output):
+    @jump_test(5, 7, [4, 7, 8])
+    def test_jump_from_except_to_finally(output):
+        try:
+            1/0
+        except ZeroDivisionError:
+            output.append(4)
+            output.append(5)
+        finally:
+            output.append(7)
+        output.append(8)
+
+    @jump_test(5, 6, [4, 6, 7])
+    def test_jump_within_except_block(output):
         try:
             1/0
         except:
@@ -2290,7 +2301,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(2)
         output.append(3)
 
-    @async_jump_test(3, 2, [2, 2], (ValueError, 'within'))
+    @async_jump_test(3, 2, [2, 2], (ValueError, "can't jump into the body of a for loop"))
     async def test_no_jump_backwards_into_async_for_block(output):
         async for i in asynciter([1, 2]):
             output.append(2)
@@ -2355,8 +2366,8 @@ class JumpTestCase(unittest.TestCase):
         output.append(6)
 
     # 'except' with a variable creates an implicit finally block
-    @jump_test(5, 7, [4], (ValueError, 'within'))
-    def test_no_jump_between_except_blocks_2(output):
+    @jump_test(5, 7, [4, 7, 8])
+    def test_jump_between_except_blocks_2(output):
         try:
             1/0
         except ZeroDivisionError:
@@ -2392,7 +2403,7 @@ class JumpTestCase(unittest.TestCase):
         finally:
             output.append(5)
 
-    @jump_test(1, 5, [], (ValueError, "into an exception"))
+    @jump_test(1, 5, [], (ValueError, "can't jump into an 'except' block as there's no exception"))
     def test_no_jump_into_bare_except_block(output):
         output.append(1)
         try:
@@ -2400,7 +2411,7 @@ class JumpTestCase(unittest.TestCase):
         except:
             output.append(5)
 
-    @jump_test(1, 5, [], (ValueError, "into an exception"))
+    @jump_test(1, 5, [], (ValueError, "can't jump into an 'except' block as there's no exception"))
     def test_no_jump_into_qualified_except_block(output):
         output.append(1)
         try:
@@ -2408,7 +2419,7 @@ class JumpTestCase(unittest.TestCase):
         except Exception:
             output.append(5)
 
-    @jump_test(3, 6, [2, 5, 6], (ValueError, "into an exception"))
+    @jump_test(3, 6, [2, 5, 6], (ValueError, "can't jump into an 'except' block as there's no exception"))
     def test_no_jump_into_bare_except_block_from_try_block(output):
         try:
             output.append(2)
@@ -2419,7 +2430,7 @@ class JumpTestCase(unittest.TestCase):
             raise
         output.append(8)
 
-    @jump_test(3, 6, [2], (ValueError, "into an exception"))
+    @jump_test(3, 6, [2], (ValueError, "can't jump into an 'except' block as there's no exception"))
     def test_no_jump_into_qualified_except_block_from_try_block(output):
         try:
             output.append(2)
@@ -2430,8 +2441,8 @@ class JumpTestCase(unittest.TestCase):
             raise
         output.append(8)
 
-    @jump_test(7, 1, [1, 3, 6], (ValueError, "within"))
-    def test_no_jump_out_of_bare_except_block(output):
+    @jump_test(7, 1, [1, 3, 6, 1, 3, 6, 7])
+    def test_jump_out_of_bare_except_block(output):
         output.append(1)
         try:
             output.append(3)
@@ -2440,8 +2451,8 @@ class JumpTestCase(unittest.TestCase):
             output.append(6)
             output.append(7)
 
-    @jump_test(7, 1, [1, 3, 6], (ValueError, "within"))
-    def test_no_jump_out_of_qualified_except_block(output):
+    @jump_test(7, 1, [1, 3, 6, 1, 3, 6, 7])
+    def test_jump_out_of_qualified_except_block(output):
         output.append(1)
         try:
             output.append(3)
