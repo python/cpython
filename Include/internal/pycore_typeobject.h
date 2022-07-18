@@ -39,7 +39,9 @@ struct type_cache {
 #endif
 };
 
-#define _Py_MAX_STATIC_BUILTIN_TYPES 1000
+/* For now we hard-code this to a value for which we are confident
+   all the static builtin types will fit (for all builds). */
+#define _Py_MAX_STATIC_BUILTIN_TYPES 200
 
 struct types_state {
     struct type_cache type_cache;
