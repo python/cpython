@@ -6090,7 +6090,7 @@ fail:
 }
 
 /* Exception table parsing code.
- * See Objects/exception_table_notes.txt for details.
+ * See Objects/exception_handling_notes.txt for details.
  */
 
 static inline unsigned char *

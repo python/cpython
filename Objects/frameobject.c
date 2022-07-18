@@ -250,7 +250,7 @@ print_stacks(int64_t *stacks, int n) {
 #endif
 
 /* Exception table parsing helpers.
- * See Objects/exception_table_notes.txt for details.
+ * See Objects/exception_handling_notes.txt for details.
  */
 
 static inline unsigned char *
