@@ -520,7 +520,10 @@ Shielding From Cancellation
 
    The statement::
 
-       res = await shield(something())
+       task = asyncio.create_task(something())
+       background_tasks.add(task)
+       task.add_done_callback(background_tasks.discard)
+       res = await shield(task)
 
    is equivalent to::
 
@@ -539,10 +542,22 @@ Shielding From Cancellation
    the ``shield()`` function should be combined with a try/except
    clause, as follows::
 
+       task = asyncio.create_task(something())
+       background_tasks.add(task)
+       task.add_done_callback(background_tasks.discard)
        try:
-           res = await shield(something())
+           res = await shield(task)
        except CancelledError:
            res = None
+
+   .. important::
+
+      Save a reference to tasks passed to this function, to avoid
+      a task disappearing mid execution. The event loop only keeps
+      weak references to tasks. A task that isn't referenced elsewhere
+      may get garbage-collected at any time, even before it's done.
+      For reliable "fire-and-forget" background tasks, gather them in
+      a collection.
 
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
