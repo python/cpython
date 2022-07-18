@@ -163,6 +163,8 @@ compatible_kind(Kind from, Kind to) {
 #define MAX_STACK_ENTRIES (63/BITS_PER_BLOCK)
 #define WILL_OVERFLOW (1ULL<<((MAX_STACK_ENTRIES-1)*BITS_PER_BLOCK))
 
+#define EMPTY_STACK 0
+
 static inline int64_t
 push_value(int64_t stack, Kind kind)
 {
@@ -189,7 +191,7 @@ top_of_stack(int64_t stack)
 static int64_t
 pop_to_level(int64_t stack, int level) {
     if (level == 0) {
-        return 0;
+        return EMPTY_STACK;
     }
     int64_t max_item = (1<<BITS_PER_BLOCK) - 1;
     int64_t level_max_stack = max_item << ((level-1) * BITS_PER_BLOCK);
@@ -268,7 +270,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
     for (int i = 1; i <= len; i++) {
         stacks[i] = UNINITIALIZED;
     }
-    stacks[0] = 0;
+    stacks[0] = EMPTY_STACK;
     if (code_obj->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR))
     {
         // Generators get sent None while starting:
@@ -373,7 +375,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     stacks[i+1] = next_stack;
                     break;
                 case RETURN_VALUE:
-                    assert(pop_value(next_stack) == 0);
+                    assert(pop_value(next_stack) == EMPTY_STACK);
                     assert(top_of_stack(next_stack) == Object);
                     break;
                 case RAISE_VARARGS:
