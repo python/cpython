@@ -364,7 +364,6 @@ attributes:
       Duck-type functions now return ``True`` if their code object has the CO_COROUTINE
       flag
 
-
 .. function:: iscoroutine(object)
 
    Return ``True`` if the object is a :term:`coroutine` created by an
