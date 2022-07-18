@@ -132,6 +132,13 @@ CPython bytecode changes
 Deprecated
 ==========
 
+The following modules and APIs have been deprecated in this Python release,
+and will be removed in Python 3.14.
+
+APIs:
+
+* :class:`asyncio.MultiLoopChildWatcher` (:gh:`94648`)
+
 
 Pending Removal in Python 3.13
 ==============================
@@ -170,17 +177,6 @@ APIs:
 * :func:`unittest.makeSuite` (:gh:`50096`)
 * :func:`unittest.getTestCaseNames` (:gh:`50096`)
 * :class:`webbrowser.MacOSX` (:gh:`86421`)
-
-
-Pending Removal in Python 3.14
-==============================
-
-The following modules and APIs have been deprecated in earlier Python releases,
-and will be removed in Python 3.14.
-
-APIs:
-
-* :class:`asyncio.MultiLoopChildWatcher` (:gh:`94648`)
 
 
 Pending Removal in Future Versions
