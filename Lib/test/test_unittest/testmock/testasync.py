@@ -233,6 +233,25 @@ class AsyncAutospecTest(unittest.TestCase):
         with self.assertRaises(AssertionError):
             spec.assert_any_await(e=1)
 
+    def test_autospec_checks_signature(self):
+        spec = create_autospec(async_func_args)
+        # signature is not checked when called
+        awaitable = spec()
+        self.assertListEqual(spec.mock_calls, [])
+
+        async def main():
+            await awaitable
+
+        # but it is checked when awaited
+        with self.assertRaises(TypeError):
+            run(main())
+
+        # _checksig_ raises before running or awaiting the mock
+        self.assertListEqual(spec.mock_calls, [])
+        self.assertEqual(spec.await_count, 0)
+        self.assertIsNone(spec.await_args)
+        self.assertEqual(spec.await_args_list, [])
+        spec.assert_not_awaited()
 
     def test_patch_with_autospec(self):
 
