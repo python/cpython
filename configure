@@ -12552,6 +12552,12 @@ else
 
     have_supported_sqlite3=no
 
+    if test "x$with_pydebug" = xyes; then :
+
+    as_fn_append LIBMPDEC_CFLAGS " -DTEST_COVERAGE"
+
+fi
+
 fi
 
 
