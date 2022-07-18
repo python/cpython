@@ -71,7 +71,7 @@ Executor Objects
        .. versionchanged:: 3.5
           Added the *chunksize* argument.
           
-       .. versionchanged:: 3.11
+       .. versionchanged:: 3.12
           Added the *prefetch* argument.
 
     .. method:: shutdown(wait=True, *, cancel_futures=False)
