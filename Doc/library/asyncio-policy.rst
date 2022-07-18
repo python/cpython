@@ -232,7 +232,7 @@ implementation used by the asyncio event loop:
    :py:data:`SIGCHLD` is received).
 
    .. versionadded:: 3.8
-   .. deprecated-remove:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.14
 
 .. class:: SafeChildWatcher
 
