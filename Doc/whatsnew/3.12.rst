@@ -138,6 +138,12 @@ and will be removed in Python 3.14.
 APIs:
 
 * :class:`asyncio.MultiLoopChildWatcher` (:gh:`94648`)
+
+The following APIs were deprecated in this Python release and will be removed,
+although there is currently no date scheduled for their removal.
+
+APIs:
+
 * :class:`typing.Hashable` and :class:`typing.Sized` aliases for :class:`collections.abc.Hashable`
   and :class:`collections.abc.Sized`. (:gh:`94309`)
 
