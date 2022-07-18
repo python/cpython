@@ -45,7 +45,7 @@ Node classes
 
    This is the base of all AST node classes.  The actual node classes are
    derived from the :file:`Parser/Python.asdl` file, which is reproduced
-   :ref:`below <abstract-grammar>`.  They are defined in the :mod:`_ast` C
+   :ref:`above <abstract-grammar>`.  They are defined in the :mod:`_ast` C
    module and re-exported in :mod:`ast`.
 
    There is one class defined for each left-hand side symbol in the abstract
