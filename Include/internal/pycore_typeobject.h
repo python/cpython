@@ -45,7 +45,7 @@ struct type_cache {
 
 typedef struct {
     PyTypeObject *type;
-    PyObject *subclasses;
+    PyObject *tp_subclasses;
 } static_builtin_state;
 
 struct types_state {

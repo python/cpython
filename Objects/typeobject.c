@@ -127,6 +127,7 @@ static_builtin_state_init(PyTypeObject *self)
 
     static_builtin_state *state = static_builtin_state_get(interp, self);
     state->type = self;
+    /* state->tp_subclasses is left NULL until init_subclasses() sets it. */
 }
 
 static void
@@ -138,7 +139,6 @@ static_builtin_state_clear(PyTypeObject *self)
 
     static_builtin_state *state = static_builtin_state_get(interp, self);
     state->type = NULL;
-    /* state->subclasses is left NULL until init_subclasses() sets it. */
     static_builtin_index_clear(self);
 
     assert(interp->types.num_builtins_initialized > 0);
@@ -4425,7 +4425,7 @@ lookup_subclasses(PyTypeObject *self)
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         static_builtin_state *state = _PyStaticType_GetState(self);
         assert(state != NULL);
-        return state->subclasses;
+        return state->tp_subclasses;
     }
     return self->tp_subclasses;
 }
@@ -6841,7 +6841,7 @@ init_subclasses(PyTypeObject *self)
     }
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         static_builtin_state *state = _PyStaticType_GetState(self);
-        state->subclasses = subclasses;
+        state->tp_subclasses = subclasses;
     }
     self->tp_subclasses = subclasses;
     return subclasses;
@@ -6855,7 +6855,7 @@ clear_subclasses(PyTypeObject *self)
        has no subclass. */
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         static_builtin_state *state = _PyStaticType_GetState(self);
-        Py_CLEAR(state->subclasses);
+        Py_CLEAR(state->tp_subclasses);
         return;
     }
     Py_CLEAR(self->tp_subclasses);
