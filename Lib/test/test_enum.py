@@ -2646,6 +2646,7 @@ class TestSpecial(unittest.TestCase):
         self.assertEqual(Private._Private__corporal, 'Radar')
         self.assertEqual(Private._Private__major_, 'Hoolihan')
 
+    @unittest.skip("Accessing all values retained for performance reasons, see GH-93910")
     def test_exception_for_member_from_member_access(self):
         with self.assertRaisesRegex(AttributeError, "<enum .Di.> member has no attribute .NO."):
             class Di(Enum):
@@ -2653,12 +2654,6 @@ class TestSpecial(unittest.TestCase):
                 NO = 0
             nope = Di.YES.NO
 
-    def test_no_exception_for_overridden_member_from_member_access(self):
-        class Di(Enum):
-            YES = 1
-            NO = 0
-        Di.YES.NO = Di.NO
-        nope = Di.YES.NO
 
     def test_dynamic_members_with_static_methods(self):
         #
