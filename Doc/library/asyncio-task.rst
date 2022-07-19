@@ -254,7 +254,7 @@ Creating Tasks
    .. important::
 
       Save a reference to the result of this function, to avoid
-      a task disappearing mid execution. The event loop only keeps
+      a task disappearing mid-execution. The event loop only keeps
       weak references to tasks. A task that isn't referenced elsewhere
       may get garbage collected at any time, even before it's done.
       For reliable "fire-and-forget" background tasks, gather them in
@@ -553,7 +553,7 @@ Shielding From Cancellation
    .. important::
 
       Save a reference to tasks passed to this function, to avoid
-      a task disappearing mid execution. The event loop only keeps
+      a task disappearing mid-execution. The event loop only keeps
       weak references to tasks. A task that isn't referenced elsewhere
       may get garbage collected at any time, even before it's done.
       For reliable "fire-and-forget" background tasks, gather them in
