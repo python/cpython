@@ -178,16 +178,24 @@ The :mod:`email.header` module also provides the following convenient functions.
    Decode a message header value without converting the character set. The header
    value is in *header*.
 
-   This function returns a list of ``(decoded_string, charset)`` pairs containing
-   each of the decoded parts of the header.  *charset* is ``None`` for non-encoded
-   parts of the header, otherwise a lower case string containing the name of the
-   character set specified in the encoded string.
+   In case the original header is unencoded, this returns a list with one
+   element with a ``(original_header, None)`` pair, where the first element
+   is a ``str``.  In case at least one element is encoded, this function
+   returns a list of ``(decoded_string, charset)`` pairs containing each of
+   the decoded parts of the header.  *decoded_string* is a ``bytes``.
+   *charset* is ``None`` for non-encoded parts of the header, otherwise a
+   lower case ``str`` containing the name of the character set specified in
+   the encoded string.
 
    Here's an example::
 
       >>> from email.header import decode_header
-      >>> decode_header('=?iso-8859-1?q?p=F6stal?=')
-      [(b'p\xf6stal', 'iso-8859-1')]
+      >>> decode_header('Eierloffel')
+      [('Eierloffel', None)]
+      >>> decode_header('=?utf-8?q?Eierl=C3=B6ffel?=')
+      [(b'Eierl\xc3\xb6ffel', 'utf-8')]
+      >>> decode_header('Eier=?utf-8?q?l=C3=B6ffel?=')
+      [(b'Eier', None), (b'l\xc3\xb6ffel', 'utf-8')]
 
 
 .. function:: make_header(decoded_seq, maxlinelen=None, header_name=None, continuation_ws=' ')
