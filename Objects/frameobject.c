@@ -182,10 +182,31 @@ pop_value(int64_t stack)
     return Py_ARITHMETIC_RIGHT_SHIFT(int64_t, stack, BITS_PER_BLOCK);
 }
 
+#define MASK ((1<<BITS_PER_BLOCK)-1)
+
 static inline Kind
 top_of_stack(int64_t stack)
 {
-    return stack & ((1<<BITS_PER_BLOCK)-1);
+    return stack & MASK;
+}
+
+static inline Kind
+peek(int64_t stack, int n)
+{
+    assert(n >= 1);
+    return (stack>>(BITS_PER_BLOCK*(n-1))) & MASK;
+}
+
+static Kind
+stack_swap(int64_t stack, int n)
+{
+    assert(n >= 1);
+    Kind to_swap = peek(stack, n);
+    Kind top = top_of_stack(stack);
+    int shift = BITS_PER_BLOCK*(n-1);
+    int64_t replaced_low = (stack & ~(MASK << shift)) | (top << shift);
+    int64_t replaced_top = (replaced_low & ~MASK) | to_swap;
+    return replaced_top;
 }
 
 static int64_t
@@ -218,6 +239,7 @@ tos_char(int64_t stack) {
         case Null:
             return 'N';
     }
+    return '?';
 }
 
 static void
@@ -371,6 +393,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     stacks[i+1] = next_stack;
                     break;
                 case POP_EXCEPT:
+                    assert(top_of_stack(next_stack) == Except);
                     next_stack = pop_value(next_stack);
                     stacks[i+1] = next_stack;
                     break;
@@ -417,6 +440,20 @@ mark_stacks(PyCodeObject *code_obj, int len)
                         next_stack = pop_value(next_stack);
                     }
                     next_stack = push_value(next_stack, Object);
+                    stacks[i+1] = next_stack;
+                    break;
+                }
+                case SWAP:
+                {
+                    int n = get_arg(code, i);
+                    next_stack = stack_swap(next_stack, n);
+                    stacks[i+1] = next_stack;
+                    break;
+                }
+                case COPY:
+                {
+                    int n = get_arg(code, i);
+                    next_stack = push_value(next_stack, peek(next_stack, n));
                     stacks[i+1] = next_stack;
                     break;
                 }
@@ -554,13 +591,6 @@ first_line_not_before(int *lines, int len, int line)
         return -1;
     }
     return result;
-}
-
-static void
-frame_stack_pop(PyFrameObject *f)
-{
-    PyObject *v = _PyFrame_StackPop(f->f_frame);
-    Py_XDECREF(v);
 }
 
 static PyFrameState
@@ -782,7 +812,18 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         start_stack = pop_value(start_stack);
     }
     while (start_stack > best_stack) {
-        frame_stack_pop(f);
+        if (top_of_stack(start_stack) == Except) {
+            /* Pop exception stack as well as the evaluation stack */
+            PyThreadState *tstate = _PyThreadState_GET();
+            _PyErr_StackItem *exc_info = tstate->exc_info;
+            PyObject *value = exc_info->exc_value;
+            exc_info->exc_value = _PyFrame_StackPop(f->f_frame);
+            Py_XDECREF(value);
+        }
+        else {
+            PyObject *v = _PyFrame_StackPop(f->f_frame);
+            Py_XDECREF(v);
+        }
         start_stack = pop_value(start_stack);
     }
     /* Finally set the new lasti and return OK. */
