@@ -85,7 +85,8 @@
          (opcode) == SETUP_WITH || \
          (opcode) == SETUP_CLEANUP)
 
-#define IS_END_OF_BASICBLOCK_OPCODE(opcode) \
+/* opcodes that must be last in the basicblock */
+#define IS_TERMINTATOR_OPCODE(opcode) \
         (IS_JUMP_OPCODE(opcode) || IS_SCOPE_EXIT_OPCODE(opcode))
 
 /* opcodes which are not emitted in codegen stage, only by the assembler */
@@ -1251,7 +1252,7 @@ compiler_use_new_implicit_block_if_needed(struct compiler *c)
 {
     basicblock *b = c->u->u_curblock;
     struct instr *last = basicblock_last_instr(b);
-    if (last && IS_END_OF_BASICBLOCK_OPCODE(last->i_opcode)) {
+    if (last && IS_TERMINTATOR_OPCODE(last->i_opcode)) {
         basicblock *b = compiler_new_block(c);
         if (b == NULL) {
             return -1;
