@@ -746,6 +746,33 @@ class KeywordOnly_TestCase(unittest.TestCase):
             "'\udc80' is an invalid keyword argument for this function"):
             getargs_keyword_only(1, 2, **{'\uDC80': 10})
 
+    def test_weird_str_subclass(self):
+        class BadStr(str):
+            def __eq__(self, other):
+                return True
+            def __hash__(self):
+                # Guaranteed different hash
+                return str.__hash__(self) ^ 3
+        with self.assertRaisesRegex(TypeError,
+            "invalid keyword argument for this function"):
+            getargs_keyword_only(1, 2, **{BadStr("keyword_only"): 3})
+        with self.assertRaisesRegex(TypeError,
+            "invalid keyword argument for this function"):
+            getargs_keyword_only(1, 2, **{BadStr("monster"): 666})
+
+    def test_weird_str_subclass2(self):
+        class BadStr(str):
+            def __eq__(self, other):
+                return False
+            def __hash__(self):
+                return str.__hash__(self)
+        with self.assertRaisesRegex(TypeError,
+            "invalid keyword argument for this function"):
+            getargs_keyword_only(1, 2, **{BadStr("keyword_only"): 3})
+        with self.assertRaisesRegex(TypeError,
+            "invalid keyword argument for this function"):
+            getargs_keyword_only(1, 2, **{BadStr("monster"): 666})
+
 
 class PositionalOnlyAndKeywords_TestCase(unittest.TestCase):
     from _testcapi import getargs_positional_only_and_keywords as getargs
