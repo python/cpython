@@ -88,6 +88,7 @@ _array_fmts = None, 'b', 'h', None, 'i'
 
 wave_params = namedtuple('wave_params',
                     'nchannels sampwidth framerate nframes comptype compname')
+_wave_params = wave_params  # alias to keep compatibility
 
 def _byteswap(data, width):
     swapped_data = bytearray(len(data))
