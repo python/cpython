@@ -21,6 +21,11 @@ try:
 except ImportError:
     _testcapi = None
 
+try:
+    import xxsubtype
+except ImportError:
+    xxsubtype = None
+
 
 class OperatorsTest(unittest.TestCase):
 
@@ -299,6 +304,7 @@ class OperatorsTest(unittest.TestCase):
         self.assertEqual(float.__rsub__(3.0, 1), -2.0)
 
     @support.impl_detail("the module 'xxsubtype' is internal")
+    @unittest.skipIf(xxsubtype is None, "requires xxsubtype module")
     def test_spam_lists(self):
         # Testing spamlist operations...
         import copy, xxsubtype as spam
@@ -343,6 +349,7 @@ class OperatorsTest(unittest.TestCase):
         self.assertEqual(a.getstate(), 42)
 
     @support.impl_detail("the module 'xxsubtype' is internal")
+    @unittest.skipIf(xxsubtype is None, "requires xxsubtype module")
     def test_spam_dicts(self):
         # Testing spamdict operations...
         import copy, xxsubtype as spam
@@ -1600,6 +1607,7 @@ order (MRO) for bases """
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
     @support.impl_detail("the module 'xxsubtype' is internal")
+    @unittest.skipIf(xxsubtype is None, "requires xxsubtype module")
     def test_classmethods_in_c(self):
         # Testing C-based class methods...
         import xxsubtype as spam
@@ -1683,6 +1691,7 @@ order (MRO) for bases """
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
     @support.impl_detail("the module 'xxsubtype' is internal")
+    @unittest.skipIf(xxsubtype is None, "requires xxsubtype module")
     def test_staticmethods_in_c(self):
         # Testing C-based static methods...
         import xxsubtype as spam

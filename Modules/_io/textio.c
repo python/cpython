@@ -1247,6 +1247,7 @@ textiowrapper_change_encoding(textio *self, PyObject *encoding,
         if (errors == Py_None) {
             errors = self->errors;
         }
+        Py_INCREF(encoding);
     }
     else {
         if (_PyUnicode_EqualToASCIIString(encoding, "locale")) {
@@ -1254,6 +1255,8 @@ textiowrapper_change_encoding(textio *self, PyObject *encoding,
             if (encoding == NULL) {
                 return -1;
             }
+        } else {
+            Py_INCREF(encoding);
         }
         if (errors == Py_None) {
             errors = &_Py_ID(strict);
@@ -1262,6 +1265,7 @@ textiowrapper_change_encoding(textio *self, PyObject *encoding,
 
     const char *c_errors = PyUnicode_AsUTF8(errors);
     if (c_errors == NULL) {
+        Py_DECREF(encoding);
         return -1;
     }
 
@@ -1269,16 +1273,17 @@ textiowrapper_change_encoding(textio *self, PyObject *encoding,
     PyObject *codec_info = _PyCodec_LookupTextEncoding(
         PyUnicode_AsUTF8(encoding), "codecs.open()");
     if (codec_info == NULL) {
+        Py_DECREF(encoding);
         return -1;
     }
     if (_textiowrapper_set_decoder(self, codec_info, c_errors) != 0 ||
             _textiowrapper_set_encoder(self, codec_info, c_errors) != 0) {
         Py_DECREF(codec_info);
+        Py_DECREF(encoding);
         return -1;
     }
     Py_DECREF(codec_info);
 
-    Py_INCREF(encoding);
     Py_INCREF(errors);
     Py_SETREF(self->encoding, encoding);
     Py_SETREF(self->errors, errors);
