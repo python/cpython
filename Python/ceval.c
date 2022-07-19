@@ -5854,9 +5854,11 @@ error:
 #endif
 
         /* Log traceback info. */
-        PyFrameObject *f = _PyFrame_GetFrameObject(frame);
-        if (f != NULL) {
-            PyTraceBack_Here(f);
+        if (!_PyFrame_IsIncomplete(frame)) {
+            PyFrameObject *f = _PyFrame_GetFrameObject(frame);
+            if (f != NULL) {
+                PyTraceBack_Here(f);
+            }
         }
 
         if (tstate->c_tracefunc != NULL) {
