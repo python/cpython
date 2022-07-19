@@ -1211,21 +1211,21 @@ f(
         self.assertOpcodeSourcePositionIs(
             code, "STORE_ATTR", line=4, end_line=4, column=5, end_column=8
         )
-    
+
     def test_attribute_del(self):
         source = "del (\n lhs  \n   .    \n     rhs      \n       )"
         code = compile(source, "<test>", "exec")
         self.assertOpcodeSourcePositionIs(
             code, "DELETE_ATTR", line=4, end_line=4, column=5, end_column=8
         )
-    
+
     def test_attribute_load(self):
         source = "(\n lhs  \n   .    \n     rhs      \n       )"
         code = compile(source, "<test>", "exec")
         self.assertOpcodeSourcePositionIs(
             code, "LOAD_ATTR", line=4, end_line=4, column=5, end_column=8
         )
-    
+
     def test_attribute_store(self):
         source = "(\n lhs  \n   .    \n     rhs      \n       ) = 42"
         code = compile(source, "<test>", "exec")
@@ -1242,7 +1242,7 @@ f(
         self.assertOpcodeSourcePositionIs(
             code, "CALL", line=4, end_line=5, column=5, end_column=10
         )
-    
+
     def test_weird_attribute_position_regressions(self):
         def f():
             (bar.
