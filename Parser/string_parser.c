@@ -326,6 +326,9 @@ fstring_find_expr_location(Token *parent, const char* expr_start, char *expr_str
                 start--;
             }
             *p_cols += (int)(expr_start - start);
+            if (*start == '\n') {
+                *p_cols -= 1;
+            }
         }
         /* adjust the start based on the number of newlines encountered
            before the f-string expression */
@@ -416,7 +419,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
                                      NULL, p->arena);
 
     p2->starting_lineno = t->lineno + lines;
-    p2->starting_col_offset = t->col_offset + cols;
+    p2->starting_col_offset = lines != 0 ? cols : t->col_offset + cols;
 
     expr = _PyPegen_run_parser(p2);
 
