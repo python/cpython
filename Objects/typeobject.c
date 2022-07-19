@@ -67,8 +67,8 @@ slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value);
 
 static inline PyTypeObject * subclass_from_ref(PyObject *ref);
 
-static inline struct builtin_static_type_state *
-lookup_static_builtin_type(PyTypeObject *self)
+static_builtin_type_state *
+_PyStaticType_GetState(PyTypeObject *self)
 {
     if (self->tp_static_builtin_index == 0) {
         return NULL;
@@ -4258,7 +4258,7 @@ clear_static_tp_subclasses(PyTypeObject *type)
 void
 _PyStaticType_Dealloc(PyTypeObject *type)
 {
-    struct builtin_static_type_state *state = lookup_static_builtin_type(type);
+    static_builtin_type_state *state = _PyStaticType_GetState(type);
     if (state != NULL) {
         state->type = NULL;
     }
@@ -6705,7 +6705,7 @@ _PyStaticType_InitBuiltin(PyTypeObject *self)
     self->tp_static_builtin_index = interp->types.num_builtins_initialized;
 
     /* Now we initialize the type's per-interpreter state. */
-    struct builtin_static_type_state *state = lookup_static_builtin_type(self);
+    static_builtin_type_state *state = _PyStaticType_GetState(self);
     assert(state != NULL);
     state->type = self;
 
