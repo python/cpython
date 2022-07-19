@@ -77,7 +77,7 @@ import struct
 import sys
 
 
-__all__ = ["open", "Error", "Wave_read", "Wave_write"]
+__all__ = ["open", "Error", "Wave_read", "Wave_write", "wave_params"]
 
 class Error(Exception):
     pass
