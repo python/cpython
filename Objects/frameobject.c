@@ -817,7 +817,9 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
             PyThreadState *tstate = _PyThreadState_GET();
             _PyErr_StackItem *exc_info = tstate->exc_info;
             PyObject *value = exc_info->exc_value;
-            exc_info->exc_value = _PyFrame_StackPop(f->f_frame);
+            PyObject *exc = _PyFrame_StackPop(f->f_frame);
+            assert(PyExceptionInstance_Check(exc) || exc == Py_None);
+            exc_info->exc_value = exc;
             Py_XDECREF(value);
         }
         else {
