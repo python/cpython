@@ -1269,7 +1269,7 @@ class TestExpressionStackSize(unittest.TestCase):
     N = 100
 
     def check_stack_size(self, code):
-        # To assert that the alleged stack size is not O(N), wevvvvvvvvvvvvvvvv
+        # To assert that the alleged stack size is not O(N), we
         # check that it is smaller than log(N).
         if isinstance(code, str):
             code = compile(code, "<foo>", "single")
