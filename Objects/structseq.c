@@ -465,7 +465,7 @@ initialize_members(PyStructSequence_Desc *desc,
     members[k].name = NULL;
 
     *pn_members = n_members;
-    *pn_unnamed_members = n_members;
+    *pn_unnamed_members = n_unnamed_members;
     return members;
 }
 
