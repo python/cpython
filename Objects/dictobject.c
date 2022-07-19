@@ -3706,6 +3706,23 @@ PyDict_Contains(PyObject *op, PyObject *key)
     return (ix != DKIX_EMPTY && value != NULL);
 }
 
+int
+PyDict_ContainsString(PyObject *op, const char *key)
+{
+    PyObject *unicode, *rv;
+
+    unicode = PyUnicode_FromString(key);
+    if (unicode == NULL) {
+        PyErr_Clear();
+        return NULL;
+    }
+
+    rv = PyDict_Contains(op, unicode);
+    Py_DECREF(unicode);
+
+    return rv;
+}
+
 /* Internal version of PyDict_Contains used when the hash value is already known */
 int
 _PyDict_Contains_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
