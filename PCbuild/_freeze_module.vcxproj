@@ -120,7 +120,6 @@
     <ClCompile Include="..\Modules\_io\textio.c" />
     <ClCompile Include="..\Modules\_io\winconsoleio.c" />
     <ClCompile Include="..\Objects\abstract.c" />
-    <ClCompile Include="..\Objects\accu.c" />
     <ClCompile Include="..\Objects\boolobject.c" />
     <ClCompile Include="..\Objects\bytearrayobject.c" />
     <ClCompile Include="..\Objects\bytes_methods.c" />

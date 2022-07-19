@@ -12,7 +12,6 @@
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "structmember.h"         // PyMemberDef
-#include "pycore_accu.h"
 
 
 typedef struct _PyScannerObject {
@@ -85,11 +84,11 @@ encoder_dealloc(PyObject *self);
 static int
 encoder_clear(PyEncoderObject *self);
 static int
-encoder_listencode_list(PyEncoderObject *s, _PyAccu *acc, PyObject *seq, Py_ssize_t indent_level);
+encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer, PyObject *seq, Py_ssize_t indent_level);
 static int
-encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc, PyObject *obj, Py_ssize_t indent_level);
+encoder_listencode_obj(PyEncoderObject *s, _PyUnicodeWriter *writer, PyObject *obj, Py_ssize_t indent_level);
 static int
-encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc, PyObject *dct, Py_ssize_t indent_level);
+encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer, PyObject *dct, Py_ssize_t indent_level);
 static PyObject *
 _encoded_const(PyObject *obj);
 static void
@@ -1280,19 +1279,29 @@ encoder_call(PyEncoderObject *self, PyObject *args, PyObject *kwds)
 {
     /* Python callable interface to encode_listencode_obj */
     static char *kwlist[] = {"obj", "_current_indent_level", NULL};
-    PyObject *obj;
+    PyObject *obj, *result;
     Py_ssize_t indent_level;
-    _PyAccu acc;
+    _PyUnicodeWriter writer;
+
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "On:_iterencode", kwlist,
         &obj, &indent_level))
         return NULL;
-    if (_PyAccu_Init(&acc))
-        return NULL;
-    if (encoder_listencode_obj(self, &acc, obj, indent_level)) {
-        _PyAccu_Destroy(&acc);
+
+    _PyUnicodeWriter_Init(&writer);
+    writer.overallocate = 1;
+
+    if (encoder_listencode_obj(self, &writer, obj, indent_level)) {
+        _PyUnicodeWriter_Dealloc(&writer);
         return NULL;
     }
-    return _PyAccu_FinishAsList(&acc);
+
+    result = PyTuple_New(1);
+    if (result == NULL ||
+            PyTuple_SetItem(result, 0, _PyUnicodeWriter_Finish(&writer))) {
+        Py_XDECREF(result);
+        return NULL;
+    }
+    return result;
 }
 
 static PyObject *
@@ -1376,58 +1385,60 @@ encoder_encode_string(PyEncoderObject *s, PyObject *obj)
 }
 
 static int
-_steal_accumulate(_PyAccu *acc, PyObject *stolen)
+_steal_accumulate(_PyUnicodeWriter *writer, PyObject *stolen)
 {
     /* Append stolen and then decrement its reference count */
-    int rval = _PyAccu_Accumulate(acc, stolen);
+    int rval = _PyUnicodeWriter_WriteStr(writer, stolen);
     Py_DECREF(stolen);
     return rval;
 }
 
 static int
-encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
+encoder_listencode_obj(PyEncoderObject *s, _PyUnicodeWriter *writer,
                        PyObject *obj, Py_ssize_t indent_level)
 {
     /* Encode Python object obj to a JSON term */
     PyObject *newobj;
     int rv;
 
-    if (obj == Py_None || obj == Py_True || obj == Py_False) {
-        PyObject *cstr = _encoded_const(obj);
-        if (cstr == NULL)
-            return -1;
-        return _steal_accumulate(acc, cstr);
+    if (obj == Py_None) {
+      return _PyUnicodeWriter_WriteASCIIString(writer, "null", 4);
     }
-    else if (PyUnicode_Check(obj))
-    {
+    else if (obj == Py_True) {
+      return _PyUnicodeWriter_WriteASCIIString(writer, "true", 4);
+    }
+    else if (obj == Py_False) {
+      return _PyUnicodeWriter_WriteASCIIString(writer, "false", 5);
+    }
+    else if (PyUnicode_Check(obj)) {
         PyObject *encoded = encoder_encode_string(s, obj);
         if (encoded == NULL)
             return -1;
-        return _steal_accumulate(acc, encoded);
+        return _steal_accumulate(writer, encoded);
     }
     else if (PyLong_Check(obj)) {
         PyObject *encoded = PyLong_Type.tp_repr(obj);
         if (encoded == NULL)
             return -1;
-        return _steal_accumulate(acc, encoded);
+        return _steal_accumulate(writer, encoded);
     }
     else if (PyFloat_Check(obj)) {
         PyObject *encoded = encoder_encode_float(s, obj);
         if (encoded == NULL)
             return -1;
-        return _steal_accumulate(acc, encoded);
+        return _steal_accumulate(writer, encoded);
     }
     else if (PyList_Check(obj) || PyTuple_Check(obj)) {
         if (_Py_EnterRecursiveCall(" while encoding a JSON object"))
             return -1;
-        rv = encoder_listencode_list(s, acc, obj, indent_level);
+        rv = encoder_listencode_list(s, writer, obj, indent_level);
         _Py_LeaveRecursiveCall();
         return rv;
     }
     else if (PyDict_Check(obj)) {
         if (_Py_EnterRecursiveCall(" while encoding a JSON object"))
             return -1;
-        rv = encoder_listencode_dict(s, acc, obj, indent_level);
+        rv = encoder_listencode_dict(s, writer, obj, indent_level);
         _Py_LeaveRecursiveCall();
         return rv;
     }
@@ -1461,7 +1472,7 @@ encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
             Py_XDECREF(ident);
             return -1;
         }
-        rv = encoder_listencode_obj(s, acc, newobj, indent_level);
+        rv = encoder_listencode_obj(s, writer, newobj, indent_level);
         _Py_LeaveRecursiveCall();
 
         Py_DECREF(newobj);
@@ -1481,16 +1492,10 @@ encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
 }
 
 static int
-encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
+encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
                         PyObject *dct, Py_ssize_t indent_level)
 {
     /* Encode Python dict dct a JSON term */
-    _Py_static_string(PyId_open_dict, "{");
-    _Py_static_string(PyId_close_dict, "}");
-    _Py_static_string(PyId_empty_dict, "{}");
-    PyObject *open_dict = _PyUnicode_FromId(&PyId_open_dict);    // borrowed ref
-    PyObject *close_dict = _PyUnicode_FromId(&PyId_close_dict);  // borrowed ref
-    PyObject *empty_dict = _PyUnicode_FromId(&PyId_empty_dict);  // borrowed ref
     PyObject *kstr = NULL;
     PyObject *ident = NULL;
     PyObject *it = NULL;
@@ -1498,11 +1503,8 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
     PyObject *item = NULL;
     Py_ssize_t idx;
 
-    if (open_dict == NULL || close_dict == NULL || empty_dict == NULL) {
-        return -1;
-    }
     if (PyDict_GET_SIZE(dct) == 0)  /* Fast path */
-        return _PyAccu_Accumulate(acc, empty_dict);
+        return _PyUnicodeWriter_WriteASCIIString(writer, "{}", 2);
 
     if (s->markers != Py_None) {
         int has_key;
@@ -1520,7 +1522,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
         }
     }
 
-    if (_PyAccu_Accumulate(acc, open_dict))
+    if (_PyUnicodeWriter_WriteChar(writer, '{'))
         goto bail;
 
     if (s->indent != Py_None) {
@@ -1586,7 +1588,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
         }
 
         if (idx) {
-            if (_PyAccu_Accumulate(acc, s->item_separator))
+            if (_PyUnicodeWriter_WriteStr(writer, s->item_separator))
                 goto bail;
         }
 
@@ -1594,16 +1596,16 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
         Py_CLEAR(kstr);
         if (encoded == NULL)
             goto bail;
-        if (_PyAccu_Accumulate(acc, encoded)) {
+        if (_PyUnicodeWriter_WriteStr(writer, encoded)) {
             Py_DECREF(encoded);
             goto bail;
         }
         Py_DECREF(encoded);
-        if (_PyAccu_Accumulate(acc, s->key_separator))
+        if (_PyUnicodeWriter_WriteStr(writer, s->key_separator))
             goto bail;
 
         value = PyTuple_GET_ITEM(item, 1);
-        if (encoder_listencode_obj(s, acc, value, indent_level))
+        if (encoder_listencode_obj(s, writer, value, indent_level))
             goto bail;
         idx += 1;
         Py_DECREF(item);
@@ -1623,7 +1625,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
 
         yield '\n' + (' ' * (_indent * _current_indent_level))
     }*/
-    if (_PyAccu_Accumulate(acc, close_dict))
+    if (_PyUnicodeWriter_WriteChar(writer, '}'))
         goto bail;
     return 0;
 
@@ -1637,30 +1639,20 @@ bail:
 
 
 static int
-encoder_listencode_list(PyEncoderObject *s, _PyAccu *acc,
+encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer,
                         PyObject *seq, Py_ssize_t indent_level)
 {
-    /* Encode Python list seq to a JSON term */
-    _Py_static_string(PyId_open_array, "[");
-    _Py_static_string(PyId_close_array, "]");
-    _Py_static_string(PyId_empty_array, "[]");
-    PyObject *open_array = _PyUnicode_FromId(&PyId_open_array);   // borrowed ref
-    PyObject *close_array = _PyUnicode_FromId(&PyId_close_array); // borrowed ref
-    PyObject *empty_array = _PyUnicode_FromId(&PyId_empty_array); // borrowed ref
     PyObject *ident = NULL;
     PyObject *s_fast = NULL;
     Py_ssize_t i;
 
-    if (open_array == NULL || close_array == NULL || empty_array == NULL) {
-        return -1;
-    }
     ident = NULL;
     s_fast = PySequence_Fast(seq, "_iterencode_list needs a sequence");
     if (s_fast == NULL)
         return -1;
     if (PySequence_Fast_GET_SIZE(s_fast) == 0) {
         Py_DECREF(s_fast);
-        return _PyAccu_Accumulate(acc, empty_array);
+        return _PyUnicodeWriter_WriteASCIIString(writer, "[]", 2);
     }
 
     if (s->markers != Py_None) {
@@ -1679,7 +1671,7 @@ encoder_listencode_list(PyEncoderObject *s, _PyAccu *acc,
         }
     }
 
-    if (_PyAccu_Accumulate(acc, open_array))
+    if (_PyUnicodeWriter_WriteChar(writer, '['))
         goto bail;
     if (s->indent != Py_None) {
         /* TODO: DOES NOT RUN */
@@ -1693,10 +1685,10 @@ encoder_listencode_list(PyEncoderObject *s, _PyAccu *acc,
     for (i = 0; i < PySequence_Fast_GET_SIZE(s_fast); i++) {
         PyObject *obj = PySequence_Fast_GET_ITEM(s_fast, i);
         if (i) {
-            if (_PyAccu_Accumulate(acc, s->item_separator))
+            if (_PyUnicodeWriter_WriteStr(writer, s->item_separator))
                 goto bail;
         }
-        if (encoder_listencode_obj(s, acc, obj, indent_level))
+        if (encoder_listencode_obj(s, writer, obj, indent_level))
             goto bail;
     }
     if (ident != NULL) {
@@ -1711,7 +1703,7 @@ encoder_listencode_list(PyEncoderObject *s, _PyAccu *acc,
 
         yield '\n' + (' ' * (_indent * _current_indent_level))
     }*/
-    if (_PyAccu_Accumulate(acc, close_array))
+    if (_PyUnicodeWriter_WriteChar(writer, ']'))
         goto bail;
     Py_DECREF(s_fast);
     return 0;

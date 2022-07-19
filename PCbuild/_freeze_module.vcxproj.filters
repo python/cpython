@@ -25,9 +25,6 @@
     <ClCompile Include="..\Objects\abstract.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Objects\accu.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\Python\asdl.c">
       <Filter>Source Files</Filter>
     </ClCompile>
