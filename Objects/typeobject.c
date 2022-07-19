@@ -66,17 +66,6 @@ static int
 slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value);
 
 
-static_builtin_type_state *
-_PyStaticType_GetState(PyTypeObject *self)
-{
-    if (self->tp_static_builtin_index == 0) {
-        return NULL;
-    }
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return &(interp->types.builtins[self->tp_static_builtin_index - 1]);
-}
-
-
 /*
  * finds the beginning of the docstring's introspection signature.
  * if present, returns a pointer pointing to the first '('.
@@ -6687,6 +6676,16 @@ _PyStaticType_InitBuiltin(PyTypeObject *self)
     state->type = self;
 
     return PyType_Ready(self);
+}
+
+static_builtin_type_state *
+_PyStaticType_GetState(PyTypeObject *self)
+{
+    if (self->tp_static_builtin_index == 0) {
+        return NULL;
+    }
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return &(interp->types.builtins[self->tp_static_builtin_index - 1]);
 }
 
 
