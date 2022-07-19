@@ -8769,6 +8769,88 @@ exit:
 
 #endif /* (defined(WIFEXITED) || defined(MS_WINDOWS)) */
 
+#if defined(HAVE_SETNS)
+
+PyDoc_STRVAR(os_setns__doc__,
+"setns($module, /, fd, nstype)\n"
+"--\n"
+"\n"
+"Reassociate thread with a namespace");
+
+#define OS_SETNS_METHODDEF    \
+    {"setns", _PyCFunction_CAST(os_setns), METH_FASTCALL|METH_KEYWORDS, os_setns__doc__},
+
+static PyObject *
+os_setns_impl(PyObject *module, int fd, int nstype);
+
+static PyObject *
+os_setns(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"fd", "nstype", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "setns", 0};
+    PyObject *argsbuf[2];
+    int fd;
+    int nstype;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+        goto exit;
+    }
+    nstype = _PyLong_AsInt(args[1]);
+    if (nstype == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = os_setns_impl(module, fd, nstype);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_SETNS) */
+
+#if defined(HAVE_UNSHARE)
+
+PyDoc_STRVAR(os_unshare__doc__,
+"unshare($module, /, flags)\n"
+"--\n"
+"\n"
+"Disassociate parts of the process execution context");
+
+#define OS_UNSHARE_METHODDEF    \
+    {"unshare", _PyCFunction_CAST(os_unshare), METH_FASTCALL|METH_KEYWORDS, os_unshare__doc__},
+
+static PyObject *
+os_unshare_impl(PyObject *module, int flags);
+
+static PyObject *
+os_unshare(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"flags", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "unshare", 0};
+    PyObject *argsbuf[1];
+    int flags;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    flags = _PyLong_AsInt(args[0]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = os_unshare_impl(module, flags);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_UNSHARE) */
+
 #ifndef OS_TTYNAME_METHODDEF
     #define OS_TTYNAME_METHODDEF
 #endif /* !defined(OS_TTYNAME_METHODDEF) */
@@ -9352,4 +9434,12 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=bae15f09a1b3d2e7 input=a9049054013a1b77]*/
+
+#ifndef OS_SETNS_METHODDEF
+    #define OS_SETNS_METHODDEF
+#endif /* !defined(OS_SETNS_METHODDEF) */
+
+#ifndef OS_UNSHARE_METHODDEF
+    #define OS_UNSHARE_METHODDEF
+#endif /* !defined(OS_UNSHARE_METHODDEF) */
+/*[clinic end generated code: output=fe2b3db627e561ad input=a9049054013a1b77]*/
