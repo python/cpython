@@ -3706,6 +3706,7 @@ PyDict_Contains(PyObject *op, PyObject *key)
     return (ix != DKIX_EMPTY && value != NULL);
 }
 
+/* Return 1 if `key` is in the dict `op`, 0 if not, and -1 on error. */
 int
 PyDict_ContainsString(PyObject *op, const char *key)
 {
