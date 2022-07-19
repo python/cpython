@@ -42,14 +42,14 @@ def memory_database(*args, **kwargs):
     return contextlib.closing(cx)
 
 
-# Temporarily limit a database connection parameter
-@contextlib.contextmanager
-def cx_limit(cx, category=sqlite.SQLITE_LIMIT_SQL_LENGTH, limit=128):
-    try:
-        _prev = cx.setlimit(category, limit)
-        yield limit
-    finally:
-        cx.setlimit(category, _prev)
+### Temporarily limit a database connection parameter
+##@contextlib.contextmanager
+##def cx_limit(cx, category=sqlite.SQLITE_LIMIT_SQL_LENGTH, limit=128):
+##    try:
+##        _prev = cx.setlimit(category, limit)
+##        yield limit
+##    finally:
+##        cx.setlimit(category, _prev)
 
 
 class ModuleTests(unittest.TestCase):
@@ -1889,4 +1889,4 @@ class MultiprocessTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(verbosity=2)
