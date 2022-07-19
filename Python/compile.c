@@ -4731,19 +4731,29 @@ is_import_originated(struct compiler *c, expr_ty e)
     return flags & DEF_IMPORT;
 }
 
+// If an attribute access spans multiple lines, update the current start
+// location to point to the attribute name.
 static void
-update_location_to_match_attr(struct compiler *c, expr_ty meth)
+update_start_location_to_match_attr(struct compiler *c, expr_ty attr)
 {
-    if (meth->lineno != meth->end_lineno) {
-        // Make start location match attribute
-        c->u->u_loc.lineno = c->u->u_loc.end_lineno = meth->end_lineno;
-        int len = (int)PyUnicode_GET_LENGTH(meth->v.Attribute.attr);
-        if (len <= meth->end_col_offset) {
-            c->u->u_loc.col_offset = meth->end_col_offset - len;
+    assert(attr->kind == Attribute_kind);
+    struct location *loc = &c->u->u_loc;
+    if (loc->lineno != attr->end_lineno) {
+        loc->lineno = attr->end_lineno;
+        int len = (int)PyUnicode_GET_LENGTH(attr->v.Attribute.attr);
+        if (len <= attr->end_col_offset) {
+            loc->col_offset = attr->end_col_offset - len;
         }
         else {
             // GH-94694: Somebody's compiling weird ASTs. Just drop the columns:
-            c->u->u_loc.col_offset = c->u->u_loc.end_col_offset = -1;
+            loc->col_offset = -1;
+            loc->end_col_offset = -1;
+        }
+        // Make sure the end position still follows the start position, even for
+        // weird ASTs:
+        loc->end_lineno = Py_MAX(loc->lineno, loc->end_lineno);
+        if (loc->lineno == loc->end_lineno) {
+            loc->end_col_offset = Py_MAX(loc->col_offset, loc->end_col_offset);
         }
     }
 }
@@ -4790,7 +4800,7 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
     /* Alright, we can optimize the code. */
     VISIT(c, expr, meth->v.Attribute.value);
     SET_LOC(c, meth);
-    update_location_to_match_attr(c, meth);
+    update_start_location_to_match_attr(c, meth);
     ADDOP_NAME(c, LOAD_METHOD, meth->v.Attribute.attr, names);
     VISIT_SEQ(c, expr, e->v.Call.args);
 
@@ -4801,7 +4811,7 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
         };
     }
     SET_LOC(c, e);
-    update_location_to_match_attr(c, meth);
+    update_start_location_to_match_attr(c, meth);
     ADDOP_I(c, CALL, argsl + kwdsl);
     return 1;
 }
@@ -5813,23 +5823,18 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
         VISIT(c, expr, e->v.Attribute.value);
+        update_start_location_to_match_attr(c, e);
         switch (e->v.Attribute.ctx) {
         case Load:
         {
-            int old_lineno = c->u->u_loc.lineno;
-            c->u->u_loc.lineno = e->end_lineno;
             ADDOP_NAME(c, LOAD_ATTR, e->v.Attribute.attr, names);
-            c->u->u_loc.lineno = old_lineno;
             break;
         }
         case Store:
             if (forbidden_name(c, e->v.Attribute.attr, e->v.Attribute.ctx)) {
                 return 0;
             }
-            int old_lineno = c->u->u_loc.lineno;
-            c->u->u_loc.lineno = e->end_lineno;
             ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
-            c->u->u_loc.lineno = old_lineno;
             break;
         case Del:
             ADDOP_NAME(c, DELETE_ATTR, e->v.Attribute.attr, names);
@@ -5900,10 +5905,8 @@ compiler_augassign(struct compiler *c, stmt_ty s)
     case Attribute_kind:
         VISIT(c, expr, e->v.Attribute.value);
         ADDOP_I(c, COPY, 1);
-        int old_lineno = c->u->u_loc.lineno;
-        c->u->u_loc.lineno = e->end_lineno;
+        update_start_location_to_match_attr(c, e);
         ADDOP_NAME(c, LOAD_ATTR, e->v.Attribute.attr, names);
-        c->u->u_loc.lineno = old_lineno;
         break;
     case Subscript_kind:
         VISIT(c, expr, e->v.Subscript.value);
@@ -5943,7 +5946,7 @@ compiler_augassign(struct compiler *c, stmt_ty s)
 
     switch (e->kind) {
     case Attribute_kind:
-        c->u->u_loc.lineno = e->end_lineno;
+        update_start_location_to_match_attr(c, e);
         ADDOP_I(c, SWAP, 2);
         ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
         break;
