@@ -54,6 +54,13 @@ Revision history:
 
 #include <syslog.h>
 
+/*[clinic input]
+module syslog
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=478f4ac94a1d4cae]*/
+
+#include "clinic/syslogmodule.c.h"
+
 /*  only one instance, only one syslog, so globals should be ok  */
 static PyObject *S_ident_o = NULL;                      /*  identifier, held by openlog()  */
 static char S_log_open = 0;
@@ -109,18 +116,22 @@ syslog_get_argv(void)
 }
 
 
-static PyObject *
-syslog_openlog(PyObject * self, PyObject * args, PyObject *kwds)
-{
-    long logopt = 0;
-    long facility = LOG_USER;
-    PyObject *new_S_ident_o = NULL;
-    static char *keywords[] = {"ident", "logoption", "facility", 0};
-    const char *ident = NULL;
+/*[clinic input]
+syslog.openlog
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                          "|Ull:openlog", keywords, &new_S_ident_o, &logopt, &facility))
-        return NULL;
+    ident as new_S_ident_o: unicode = NULL
+    logoption as logopt: long = 0
+    facility: long(c_default="LOG_USER") = LOG_USER
+
+Set logging options of subsequent syslog() calls.
+[clinic start generated code]*/
+
+static PyObject *
+syslog_openlog_impl(PyObject *module, PyObject *new_S_ident_o, long logopt,
+                    long facility)
+/*[clinic end generated code: output=f1539844405f613e input=c36e977098346f67]*/
+{
+    const char *ident = NULL;
 
     if (new_S_ident_o) {
         Py_INCREF(new_S_ident_o);
@@ -155,20 +166,27 @@ syslog_openlog(PyObject * self, PyObject * args, PyObject *kwds)
 }
 
 
-static PyObject *
-syslog_syslog(PyObject * self, PyObject * args)
-{
-    PyObject *message_object;
-    const char *message;
-    int   priority = LOG_INFO;
 
-    if (!PyArg_ParseTuple(args, "iU;[priority,] message string",
-                          &priority, &message_object)) {
-        PyErr_Clear();
-        if (!PyArg_ParseTuple(args, "U;[priority,] message string",
-                              &message_object))
-            return NULL;
-    }
+/*[clinic input]
+syslog.syslog
+
+    [
+    priority: int(c_default="LOG_INFO") = LOG_INFO
+    ]
+
+    message as message_object: unicode
+
+    /
+
+Send the string message to the system logger.
+[clinic start generated code]*/
+
+static PyObject *
+syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
+                   PyObject *message_object)
+/*[clinic end generated code: output=3361dc7f2e863377 input=02500dddce0095df]*/
+{
+    const char *message;
 
     message = PyUnicode_AsUTF8(message_object);
     if (message == NULL)
@@ -180,27 +198,26 @@ syslog_syslog(PyObject * self, PyObject * args)
 
     /*  if log is not opened, open it now  */
     if (!S_log_open) {
-        PyObject *openargs;
-
-        /* Continue even if PyTuple_New fails, because openlog(3) is optional.
-         * So, we can still do logging in the unlikely event things are so hosed
-         * that we can't do this tuple.
-         */
-        if ((openargs = PyTuple_New(0))) {
-            PyObject *openlog_ret = syslog_openlog(self, openargs, NULL);
-            Py_XDECREF(openlog_ret);
-            Py_DECREF(openargs);
-        }
+        syslog_openlog_impl(module, NULL, 0, LOG_USER);
     }
 
     Py_BEGIN_ALLOW_THREADS;
     syslog(priority, "%s", message);
     Py_END_ALLOW_THREADS;
+
     Py_RETURN_NONE;
 }
 
+
+/*[clinic input]
+syslog.closelog
+
+Reset the syslog module values and call the system library closelog().
+[clinic start generated code]*/
+
 static PyObject *
-syslog_closelog(PyObject *self, PyObject *unused)
+syslog_closelog_impl(PyObject *module)
+/*[clinic end generated code: output=97890a80a24b1b84 input=fb77a54d447acf07]*/
 {
     if (PySys_Audit("syslog.closelog", NULL) < 0) {
         return NULL;
@@ -210,54 +227,71 @@ syslog_closelog(PyObject *self, PyObject *unused)
         Py_CLEAR(S_ident_o);
         S_log_open = 0;
     }
+
     Py_RETURN_NONE;
 }
 
-static PyObject *
-syslog_setlogmask(PyObject *self, PyObject *args)
-{
-    long maskpri, omaskpri;
+/*[clinic input]
+syslog.setlogmask -> long
 
-    if (!PyArg_ParseTuple(args, "l;mask for priority", &maskpri))
-        return NULL;
-    if (PySys_Audit("syslog.setlogmask", "(O)", args ? args : Py_None) < 0) {
-        return NULL;
+    maskpri: long
+    /
+
+Set the priority mask to maskpri and return the previous mask value.
+[clinic start generated code]*/
+
+static long
+syslog_setlogmask_impl(PyObject *module, long maskpri)
+/*[clinic end generated code: output=d6ed163917b434bf input=adff2c2b76c7629c]*/
+{
+    if (PySys_Audit("syslog.setlogmask", "(l)", maskpri) < 0) {
+        return -1;
     }
-    omaskpri = setlogmask(maskpri);
-    return PyLong_FromLong(omaskpri);
+
+    return setlogmask(maskpri);
 }
 
-static PyObject *
-syslog_log_mask(PyObject *self, PyObject *args)
+/*[clinic input]
+syslog.LOG_MASK -> long
+
+    pri: long
+    /
+
+calculates the mask for the individual priority pri.
+[clinic start generated code]*/
+
+static long
+syslog_LOG_MASK_impl(PyObject *module, long pri)
+/*[clinic end generated code: output=c4a5bbfcc74c7c94 input=25d2453cfd964871]*/
 {
-    long mask;
-    long pri;
-    if (!PyArg_ParseTuple(args, "l:LOG_MASK", &pri))
-        return NULL;
-    mask = LOG_MASK(pri);
-    return PyLong_FromLong(mask);
+    return LOG_MASK(pri);
 }
 
-static PyObject *
-syslog_log_upto(PyObject *self, PyObject *args)
+/*[clinic input]
+syslog.LOG_UPTO -> long
+
+    pri: long
+    /
+
+calculates the mask for all priorities up to and including pri.
+[clinic start generated code]*/
+
+static long
+syslog_LOG_UPTO_impl(PyObject *module, long pri)
+/*[clinic end generated code: output=9eab083c90601d7e input=6e2cb9d73da6e397]*/
 {
-    long mask;
-    long pri;
-    if (!PyArg_ParseTuple(args, "l:LOG_UPTO", &pri))
-        return NULL;
-    mask = LOG_UPTO(pri);
-    return PyLong_FromLong(mask);
+    return LOG_UPTO(pri);
 }
 
 /* List of functions defined in the module */
 
 static PyMethodDef syslog_methods[] = {
-    {"openlog",         _PyCFunction_CAST(syslog_openlog),           METH_VARARGS | METH_KEYWORDS},
-    {"closelog",        syslog_closelog,        METH_NOARGS},
-    {"syslog",          syslog_syslog,          METH_VARARGS},
-    {"setlogmask",      syslog_setlogmask,      METH_VARARGS},
-    {"LOG_MASK",        syslog_log_mask,        METH_VARARGS},
-    {"LOG_UPTO",        syslog_log_upto,        METH_VARARGS},
+    SYSLOG_OPENLOG_METHODDEF
+    SYSLOG_CLOSELOG_METHODDEF
+    SYSLOG_SYSLOG_METHODDEF
+    SYSLOG_SETLOGMASK_METHODDEF
+    SYSLOG_LOG_MASK_METHODDEF
+    SYSLOG_LOG_UPTO_METHODDEF
     {NULL,              NULL,                   0}
 };
 

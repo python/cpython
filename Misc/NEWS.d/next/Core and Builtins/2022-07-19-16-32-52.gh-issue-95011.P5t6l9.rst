@@ -1,0 +1,1 @@
+Migrated :mod:`syslog` to Argument Clinic. Patch by Noam Cohen.
