@@ -6842,6 +6842,7 @@ init_subclasses(PyTypeObject *self)
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         static_builtin_state *state = _PyStaticType_GetState(self);
         state->tp_subclasses = subclasses;
+        return subclasses;
     }
     self->tp_subclasses = subclasses;
     return subclasses;
