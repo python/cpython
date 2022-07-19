@@ -2,6 +2,7 @@
 
 from test import support
 import unittest
+from unittest.mock import MagicMock
 import sys
 import difflib
 import gc
@@ -1592,6 +1593,28 @@ class TraceTestCase(unittest.TestCase):
         for _ in range(100):
             func()
         self.run_and_compare(func, EXPECTED_EVENTS)
+    def test_very_large_function(self):
+        # There is a separate code path when the number of lines > (1 << 15).
+        d = {}
+        exec("""def f():              # line 0
+            x = 0                     # line 1
+            y = 1                     # line 2
+            %s                        # lines 3 through (1 << 16)
+            x += 1                    #
+            return""" % ('\n' * (1 << 16),), d)
+        f = d['f']
+
+        EXPECTED_EVENTS = [
+            (0, 'call'),
+            (1, 'line'),
+            (2, 'line'),
+            (65540, 'line'),
+            (65541, 'line'),
+            (65541, 'return'),
+        ]
+
+        self.run_and_compare(f, EXPECTED_EVENTS)
+
 
 EVENT_NAMES = [
     'call',
@@ -1878,7 +1901,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(6)
         output.append(7)
 
-    @async_jump_test(4, 5, [3], (ValueError, 'into'))
+    @async_jump_test(4, 5, [3, 5])
     async def test_jump_out_of_async_for_block_forwards(output):
         for i in [1]:
             async for i in asynciter([1, 2]):
@@ -1920,7 +1943,7 @@ class JumpTestCase(unittest.TestCase):
                 output.append(8)
             output.append(9)
 
-    @jump_test(6, 7, [2], (ValueError, 'within'))
+    @jump_test(6, 7, [2, 7], (ZeroDivisionError, ''))
     def test_jump_in_nested_finally_2(output):
         try:
             output.append(2)
@@ -1931,7 +1954,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(7)
         output.append(8)
 
-    @jump_test(6, 11, [2], (ValueError, 'within'))
+    @jump_test(6, 11, [2, 11], (ZeroDivisionError, ''))
     def test_jump_in_nested_finally_3(output):
         try:
             output.append(2)
@@ -2042,8 +2065,8 @@ class JumpTestCase(unittest.TestCase):
             output.append(5)
             raise
 
-    @jump_test(5, 7, [4], (ValueError, 'within'))
-    def test_no_jump_between_except_blocks(output):
+    @jump_test(5, 7, [4, 7, 8])
+    def test_jump_between_except_blocks(output):
         try:
             1/0
         except ZeroDivisionError:
@@ -2053,8 +2076,19 @@ class JumpTestCase(unittest.TestCase):
             output.append(7)
         output.append(8)
 
-    @jump_test(5, 6, [4], (ValueError, 'within'))
-    def test_no_jump_within_except_block(output):
+    @jump_test(5, 7, [4, 7, 8])
+    def test_jump_from_except_to_finally(output):
+        try:
+            1/0
+        except ZeroDivisionError:
+            output.append(4)
+            output.append(5)
+        finally:
+            output.append(7)
+        output.append(8)
+
+    @jump_test(5, 6, [4, 6, 7])
+    def test_jump_within_except_block(output):
         try:
             1/0
         except:
@@ -2062,6 +2096,15 @@ class JumpTestCase(unittest.TestCase):
             output.append(5)
             output.append(6)
         output.append(7)
+
+    @jump_test(6, 1, [1, 5, 1, 5])
+    def test_jump_over_try_except(output):
+        output.append(1)
+        try:
+            1 / 0
+        except ZeroDivisionError as e:
+            output.append(5)
+        x = 42  # has to be a two-instruction block
 
     @jump_test(2, 4, [1, 4, 5, -4])
     def test_jump_across_with(output):
@@ -2280,31 +2323,31 @@ class JumpTestCase(unittest.TestCase):
             output.append(2)
         output.append(3)
 
-    @async_jump_test(3, 2, [2, 2], (ValueError, 'within'))
+    @async_jump_test(3, 2, [2, 2], (ValueError, "can't jump into the body of a for loop"))
     async def test_no_jump_backwards_into_async_for_block(output):
         async for i in asynciter([1, 2]):
             output.append(2)
         output.append(3)
 
-    @jump_test(1, 3, [], (ValueError, 'depth'))
+    @jump_test(1, 3, [], (ValueError, 'stack'))
     def test_no_jump_forwards_into_with_block(output):
         output.append(1)
         with tracecontext(output, 2):
             output.append(3)
 
-    @async_jump_test(1, 3, [], (ValueError, 'depth'))
+    @async_jump_test(1, 3, [], (ValueError, 'stack'))
     async def test_no_jump_forwards_into_async_with_block(output):
         output.append(1)
         async with asynctracecontext(output, 2):
             output.append(3)
 
-    @jump_test(3, 2, [1, 2, -1], (ValueError, 'depth'))
+    @jump_test(3, 2, [1, 2, -1], (ValueError, 'stack'))
     def test_no_jump_backwards_into_with_block(output):
         with tracecontext(output, 1):
             output.append(2)
         output.append(3)
 
-    @async_jump_test(3, 2, [1, 2, -1], (ValueError, 'depth'))
+    @async_jump_test(3, 2, [1, 2, -1], (ValueError, 'stack'))
     async def test_no_jump_backwards_into_async_with_block(output):
         async with asynctracecontext(output, 1):
             output.append(2)
@@ -2345,8 +2388,8 @@ class JumpTestCase(unittest.TestCase):
         output.append(6)
 
     # 'except' with a variable creates an implicit finally block
-    @jump_test(5, 7, [4], (ValueError, 'within'))
-    def test_no_jump_between_except_blocks_2(output):
+    @jump_test(5, 7, [4, 7, 8])
+    def test_jump_between_except_blocks_2(output):
         try:
             1/0
         except ZeroDivisionError:
@@ -2382,7 +2425,7 @@ class JumpTestCase(unittest.TestCase):
         finally:
             output.append(5)
 
-    @jump_test(1, 5, [], (ValueError, "into an exception"))
+    @jump_test(1, 5, [], (ValueError, "can't jump into an 'except' block as there's no exception"))
     def test_no_jump_into_bare_except_block(output):
         output.append(1)
         try:
@@ -2390,7 +2433,7 @@ class JumpTestCase(unittest.TestCase):
         except:
             output.append(5)
 
-    @jump_test(1, 5, [], (ValueError, "into an exception"))
+    @jump_test(1, 5, [], (ValueError, "can't jump into an 'except' block as there's no exception"))
     def test_no_jump_into_qualified_except_block(output):
         output.append(1)
         try:
@@ -2398,7 +2441,7 @@ class JumpTestCase(unittest.TestCase):
         except Exception:
             output.append(5)
 
-    @jump_test(3, 6, [2, 5, 6], (ValueError, "into an exception"))
+    @jump_test(3, 6, [2, 5, 6], (ValueError, "can't jump into an 'except' block as there's no exception"))
     def test_no_jump_into_bare_except_block_from_try_block(output):
         try:
             output.append(2)
@@ -2409,7 +2452,7 @@ class JumpTestCase(unittest.TestCase):
             raise
         output.append(8)
 
-    @jump_test(3, 6, [2], (ValueError, "into an exception"))
+    @jump_test(3, 6, [2], (ValueError, "can't jump into an 'except' block as there's no exception"))
     def test_no_jump_into_qualified_except_block_from_try_block(output):
         try:
             output.append(2)
@@ -2420,8 +2463,8 @@ class JumpTestCase(unittest.TestCase):
             raise
         output.append(8)
 
-    @jump_test(7, 1, [1, 3, 6], (ValueError, "within"))
-    def test_no_jump_out_of_bare_except_block(output):
+    @jump_test(7, 1, [1, 3, 6, 1, 3, 6, 7])
+    def test_jump_out_of_bare_except_block(output):
         output.append(1)
         try:
             output.append(3)
@@ -2430,8 +2473,8 @@ class JumpTestCase(unittest.TestCase):
             output.append(6)
             output.append(7)
 
-    @jump_test(7, 1, [1, 3, 6], (ValueError, "within"))
-    def test_no_jump_out_of_qualified_except_block(output):
+    @jump_test(7, 1, [1, 3, 6, 1, 3, 6, 7])
+    def test_jump_out_of_qualified_except_block(output):
         output.append(1)
         try:
             output.append(3)
@@ -2606,6 +2649,63 @@ output.append(4)
         output.append(7)
         output.append(8)
 
+    # checking for segfaults.
+    @jump_test(3, 7, [], error=(ValueError, "stack"))
+    def test_jump_with_null_on_stack_load_global(output):
+        a = 1
+        print(
+            output.append(3)
+        )
+        output.append(5)
+        (
+            ( # 7
+                a
+                +
+                10
+            )
+            +
+            13
+        )
+        output.append(15)
+
+    # checking for segfaults.
+    @jump_test(4, 8, [], error=(ValueError, "stack"))
+    def test_jump_with_null_on_stack_push_null(output):
+        a = 1
+        f = print
+        f(
+            output.append(4)
+        )
+        output.append(6)
+        (
+            ( # 8
+                a
+                +
+                11
+            )
+            +
+            14
+        )
+        output.append(16)
+
+    # checking for segfaults.
+    @jump_test(3, 7, [], error=(ValueError, "stack"))
+    def test_jump_with_null_on_stack_load_attr(output):
+        a = 1
+        list.append(
+            output, 3
+        )
+        output.append(5)
+        (
+            ( # 7
+                a
+                +
+                10
+            )
+            +
+            13
+        )
+        output.append(15)
 
 class TestExtendedArgs(unittest.TestCase):
 
@@ -2647,6 +2747,44 @@ class TestExtendedArgs(unittest.TestCase):
         exec(code, ns)
         counts = self.count_traces(ns["f"])
         self.assertEqual(counts, {'call': 1, 'line': 2000, 'return': 1})
+
+
+class TestEdgeCases(unittest.TestCase):
+
+    def setUp(self):
+        self.addCleanup(sys.settrace, sys.gettrace())
+        sys.settrace(None)
+
+    def test_reentrancy(self):
+        def foo(*args):
+            ...
+
+        def bar(*args):
+            ...
+
+        class A:
+            def __call__(self, *args):
+                pass
+
+            def __del__(self):
+                sys.settrace(bar)
+
+        sys.settrace(A())
+        with support.catch_unraisable_exception() as cm:
+            sys.settrace(foo)
+            self.assertEqual(cm.unraisable.object, A.__del__)
+            self.assertIsInstance(cm.unraisable.exc_value, RuntimeError)
+
+        self.assertEqual(sys.gettrace(), foo)
+
+
+    def test_same_object(self):
+        def foo(*args):
+            ...
+
+        sys.settrace(foo)
+        del foo
+        sys.settrace(sys.gettrace())
 
 
 if __name__ == "__main__":

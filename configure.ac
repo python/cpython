@@ -69,6 +69,28 @@ AC_DEFUN([PY_CHECK_FUNC],
   AS_VAR_POPDEF([py_define])
 ])
 
+dnl PY_CHECK_LIB(LIBRARY, FUNCTION, [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND], [OTHER-LIBRARIES])
+dnl Like AC_CHECK_LIB() but does not modify LIBS
+AC_DEFUN([PY_CHECK_LIB],
+[AS_VAR_COPY([py_check_lib_save_LIBS], [LIBS])]
+[AC_CHECK_LIB($1, $2, $3, $4, $5)]
+[AS_VAR_COPY([LIBS], [py_check_lib_save_LIBS])]
+)
+
+dnl PY_CHECK_EMSCRIPTEN_PORT(PKG_VAR, [EMPORT_ARGS])
+dnl Use Emscripten port unless user passes ${PKG_VAR}_CFLAGS
+dnl or ${PKG_VAR}_LIBS to configure.
+AC_DEFUN([PY_CHECK_EMSCRIPTEN_PORT], [
+  AS_VAR_PUSHDEF([py_cflags], [$1_CFLAGS])
+  AS_VAR_PUSHDEF([py_libs], [$1_LIBS])
+  AS_IF([test "$ac_sys_system" = "Emscripten" -a -z "$py_cflags" -a -z "$py_libs"], [
+    py_cflags="$2"
+    py_libs="$2"
+  ])
+  AS_VAR_POPDEF([py_cflags])
+  AS_VAR_POPDEF([py_libs])
+])
+
 AC_SUBST(BASECPPFLAGS)
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
@@ -1121,7 +1143,7 @@ AS_CASE([$host/$ac_cv_cc_name],
   [s390x-*-linux-gnu/gcc],           [PY_SUPPORT_TIER=3], dnl Linux on 64bit s390x (big endian), glibc, gcc
   dnl [wasm32-unknown-emscripten/clang], [PY_SUPPORT_TIER=3], dnl WebAssembly Emscripten
   dnl [wasm32-unknown-wasi/clang],       [PY_SUPPORT_TIER=3], dnl WebAssembly System Interface
-  [x86_64-*-freebsd/clang],          [PY_SUPPORT_TIER=3], dnl FreeBSD on AMD64
+  [x86_64-*-freebsd*/clang],         [PY_SUPPORT_TIER=3], dnl FreeBSD on AMD64
   [PY_SUPPORT_TIER=0]
 )
 
@@ -3371,12 +3393,12 @@ AS_VAR_IF([have_uuid], [missing], [
       AC_DEFINE([HAVE_UUID_H], [1])
       AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE], [1])
     ], [
-      AC_CHECK_HEADERS([uuid/uuid.h], [
-        WITH_SAVE_ENV(
-          [AC_CHECK_LIB([uuid], [uuid_generate_time], [have_uuid=yes])
-        ])
-        WITH_SAVE_ENV([
-          AC_CHECK_LIB([uuid], [uuid_generate_time_safe], [
+      WITH_SAVE_ENV([
+        CPPFLAGS="$CFLAGS $LIBUUID_CFLAGS"
+        LDFLAGS="$LDFLAGS $LIBUUID_LIBS"
+        AC_CHECK_HEADERS([uuid/uuid.h], [
+          PY_CHECK_LIB([uuid], [uuid_generate_time], [have_uuid=yes])
+          PY_CHECK_LIB([uuid], [uuid_generate_time_safe], [
             have_uuid=yes
             AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE], [1])
           ])
@@ -3569,7 +3591,6 @@ AS_VAR_IF([with_system_expat], [yes], [
 ])
 
 AC_SUBST([LIBEXPAT_CFLAGS])
-AC_SUBST([LIBEXPAT_LDFLAGS])
 AC_SUBST([LIBEXPAT_INTERNAL])
 
 # Check for use of the system libffi library
@@ -3603,9 +3624,15 @@ dnl detect libffi
 have_libffi=missing
 AS_VAR_IF([with_system_ffi], [yes], [
   PKG_CHECK_MODULES([LIBFFI], [libffi], [have_libffi=yes], [
-    AC_CHECK_HEADER([ffi.h], [
-      WITH_SAVE_ENV([
-        AC_CHECK_LIB([ffi], [ffi_call], [have_libffi=yes], [have_libffi=no])
+    WITH_SAVE_ENV([
+      CPPFLAGS="$CFLAGS $LIBFFI_CFLAGS"
+      LDFLAGS="$LDFLAGS $LIBFFI_LIBS"
+      AC_CHECK_HEADER([ffi.h], [
+        AC_CHECK_LIB([ffi], [ffi_call], [
+          have_libffi=yes
+          LIBFFI_CFLAGS=${LIBFFI_CFLAGS-""}
+          LIBFFI_LIBS=${LIBFFI_LIBS-"-lffi"}
+        ], [have_libffi=no])
       ])
     ])
   ])
@@ -3670,10 +3697,14 @@ AS_VAR_IF([with_system_libmpdec], [yes], [
   LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
   LIBMPDEC_LDFLAGS="-lm \$(LIBMPDEC_A)"
   LIBMPDEC_INTERNAL="\$(LIBMPDEC_A)"
+
+  dnl Disable forced inlining in debug builds, see GH-94847
+  AS_VAR_IF([with_pydebug], [yes], [
+    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DTEST_COVERAGE"])
+  ])
 ])
 
 AC_SUBST([LIBMPDEC_CFLAGS])
-AC_SUBST([LIBMPDEC_LDFLAGS])
 AC_SUBST([LIBMPDEC_INTERNAL])
 
 # Check whether _decimal should use a coroutine-local or thread-local context
@@ -3777,6 +3808,9 @@ AS_CASE([$ac_sys_system],
   [NetBSD*], [OSSAUDIODEV_LIBS="-lossaudio"],
   [OSSAUDIODEV_LIBS=""]
 )
+
+dnl detect sqlite3 from Emscripten emport
+PY_CHECK_EMSCRIPTEN_PORT([LIBSQLITE3], [-sUSE_SQLITE3])
 
 dnl Check for SQLite library. Use pkg-config if available.
 PKG_CHECK_MODULES(
@@ -3953,17 +3987,30 @@ WITH_SAVE_ENV([
   ], [have_gdbm=no])
 ])
 
-# check for _dbmmodule.c dependencies
+dnl check for _dbmmodule.c dependencies
+dnl ndbm, gdbm_compat, libdb
 AC_CHECK_HEADERS([ndbm.h], [
-  LIBS_SAVE="$LIBS"
-  AC_CHECK_LIB([ndbm], [dbm_open])
-  LIBS="$LIBS_SAVE"
-  AC_CHECK_LIB([gdbm_compat], [dbm_open])
-  LIBS="$LIBS_SAVE"
+  WITH_SAVE_ENV([
+    AC_SEARCH_LIBS([dbm_open], [ndbm gdbm_compat])
+  ])
 ])
 
-# "gdbm-ndbm.h" and "gdbm/ndbm.h" are both normalized to "gdbm_ndbm_h"
-# unset ac_cv_header_gdbm_ndbm_h to prevent false positive cache hits.
+AC_MSG_CHECKING([for ndbm presence and linker args])
+AS_CASE([$ac_cv_search_dbm_open],
+  [*ndbm*|*gdbm_compat*], [
+    dbm_ndbm="$ac_cv_search_dbm_open"
+    have_ndbm=yes
+  ],
+  [none*], [
+    dbm_ndbm=""
+    have_ndbm=yes
+  ],
+  [no], [have_ndbm=no]
+)
+AC_MSG_RESULT([$have_ndbm ($dbm_ndbm)])
+
+dnl "gdbm-ndbm.h" and "gdbm/ndbm.h" are both normalized to "gdbm_ndbm_h"
+dnl unset ac_cv_header_gdbm_ndbm_h to prevent false positive cache hits.
 AS_UNSET([ac_cv_header_gdbm_ndbm_h])
 AC_CACHE_VAL([ac_cv_header_gdbm_slash_ndbm_h], [
   AC_CHECK_HEADER(
@@ -3988,26 +4035,26 @@ AS_VAR_IF([ac_cv_header_gdbm_dash_ndbm_h], [yes], [
 AS_UNSET([ac_cv_header_gdbm_ndbm_h])
 
 if test "$ac_cv_header_gdbm_slash_ndbm_h" = yes -o "$ac_cv_header_gdbm_dash_ndbm_h" = yes; then
-  LIBS_SAVE="$LIBS"
-  AC_CHECK_LIB([gdbm_compat], [dbm_open])
-  LIBS="$LIBS_SAVE"
+  WITH_SAVE_ENV([
+    AC_SEARCH_LIBS([dbm_open], [gdbm_compat])
+  ])
 fi
 
 # Check for libdb >= 5 with dbm_open()
 # db.h re-defines the name of the function
 AC_CHECK_HEADERS([db.h], [
   AC_CACHE_CHECK([for libdb], [ac_cv_have_libdb], [
-    LIBS_SAVE="$LIBS"
-    LIBS="$LIBS -ldb"
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([
-      #define DB_DBM_HSEARCH 1
-      #include <db.h>
-      #if DB_VERSION_MAJOR < 5
-        #error "dh.h: DB_VERSION_MAJOR < 5 is not supported."
-      #endif
-      ], [DBM *dbm = dbm_open(NULL, 0, 0)])
-    ], [ac_cv_have_libdb=yes], [ac_cv_have_libdb=no])
-    LIBS="$LIBS_SAVE"
+    WITH_SAVE_ENV([
+      LIBS="$LIBS -ldb"
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([
+        #define DB_DBM_HSEARCH 1
+        #include <db.h>
+        #if DB_VERSION_MAJOR < 5
+          #error "dh.h: DB_VERSION_MAJOR < 5 is not supported."
+        #endif
+        ], [DBM *dbm = dbm_open(NULL, 0, 0)])
+      ], [ac_cv_have_libdb=yes], [ac_cv_have_libdb=no])
+    ])
   ])
   AS_VAR_IF([ac_cv_have_libdb], [yes], [
     AC_DEFINE([HAVE_LIBDB], [1], [Define to 1 if you have the `db' library (-ldb).])
@@ -4015,7 +4062,7 @@ AC_CHECK_HEADERS([db.h], [
 ])
 
 # Check for --with-dbmliborder
-AC_MSG_CHECKING(for --with-dbmliborder)
+AC_MSG_CHECKING([for --with-dbmliborder])
 AC_ARG_WITH(dbmliborder,
             AS_HELP_STRING([--with-dbmliborder=db1:db2:...], [override order to check db backends for dbm; a valid value is a colon separated string with the backend names `ndbm', `gdbm' and `bdb'.]),
 [], [with_dbmliborder=gdbm:ndbm:bdb])
@@ -4035,7 +4082,42 @@ IFS=$as_save_IFS
 AS_VAR_IF([with_dbmliborder], [error], [
   AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:... (gdbm:ndbm:bdb)])
 ])
-AC_MSG_RESULT($with_dbmliborder)
+AC_MSG_RESULT([$with_dbmliborder])
+
+AC_MSG_CHECKING([for _dbm module CFLAGS and LIBS])
+have_dbm=no
+as_save_IFS=$IFS
+IFS=:
+for db in $with_dbmliborder; do
+  case "$db" in
+    ndbm)
+      if test "$have_ndbm" = yes; then
+        DBM_CFLAGS="-DUSE_NDBM"
+        DBM_LIBS="$dbm_ndbm"
+        have_dbm=yes
+        break
+      fi
+      ;;
+    gdbm)
+      if test "$have_gdbm_compat" = yes; then
+        DBM_CFLAGS="-DUSE_GDBM_COMPAT"
+        DBM_LIBS="-lgdbm_compat"
+        have_dbm=yes
+        break
+      fi
+      ;;
+    bdb)
+      if test "$ac_cv_have_libdb" = yes; then
+        DBM_CFLAGS="-DUSE_BERKDB"
+        DBM_LIBS="-ldb"
+        have_dbm=yes
+        break
+      fi
+     ;;
+  esac
+done
+IFS=$as_save_IFS
+AC_MSG_RESULT([$DBM_CFLAGS $DBM_LIBS])
 
 # Templates for things AC_DEFINEd more than once.
 # For a single AC_DEFINE, no template is needed.
@@ -4739,29 +4821,27 @@ fi
 dnl Check for compression libraries
 AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy])
 
+dnl detect zlib from Emscripten emport
+PY_CHECK_EMSCRIPTEN_PORT([ZLIB], [-sUSE_ZLIB])
+
 PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
   have_zlib=yes
   dnl zlib 1.2.0 (2003) added inflateCopy
   AC_DEFINE([HAVE_ZLIB_COPY], [1])
 ], [
-  AC_CHECK_HEADERS([zlib.h], [
-    WITH_SAVE_ENV([
-      AC_CHECK_LIB([z], [gzread], [
-        have_zlib=yes
-        ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
-        ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
-        AC_CHECK_LIB([z], [inflateCopy], [AC_DEFINE([HAVE_ZLIB_COPY], [1])])
-      ], [
-        have_zlib=no
-      ])
+  WITH_SAVE_ENV([
+    CPPFLAGS="$CFLAGS $ZLIB_CFLAGS"
+    LDFLAGS="$LDFLAGS $ZLIB_LIBS"
+    AC_CHECK_HEADERS([zlib.h], [
+      PY_CHECK_LIB([z], [gzread], [have_zlib=yes], [have_zlib=no])
+    ], [have_zlib=no])
+    AS_VAR_IF([have_zlib], [yes], [
+      ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
+      ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
+      PY_CHECK_LIB([z], [inflateCopy], [AC_DEFINE([HAVE_ZLIB_COPY], [1])])
     ])
-  ], [have_zlib=no])
+  ])
 ])
-
-if test "$have_zlib" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$ZLIB_LIBS" = "-lz"; then
-  ZLIB_CFLAGS="-sUSE_ZLIB"
-  ZLIB_LIBS="-sUSE_ZLIB"
-fi
 
 dnl binascii can use zlib for optimized crc32.
 AS_VAR_IF([have_zlib], [yes], [
@@ -4769,34 +4849,35 @@ AS_VAR_IF([have_zlib], [yes], [
   BINASCII_LIBS="$ZLIB_LIBS"
 ])
 
+dnl detect bzip2 from Emscripten emport
+PY_CHECK_EMSCRIPTEN_PORT([BZIP2], [-sUSE_BZIP2])
+
 PKG_CHECK_MODULES([BZIP2], [bzip2], [have_bzip2=yes], [
-  AC_CHECK_HEADERS([bzlib.h], [
-    WITH_SAVE_ENV([
-      AC_CHECK_LIB([bz2], [BZ2_bzCompress], [
-        have_bzip2=yes
-        BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
-        BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
-      ], [have_bzip2=no])
+  WITH_SAVE_ENV([
+    CPPFLAGS="$CFLAGS $BZIP2_CFLAGS"
+    LDFLAGS="$LDFLAGS $BZIP2_LIBS"
+    AC_CHECK_HEADERS([bzlib.h], [
+      AC_CHECK_LIB([bz2], [BZ2_bzCompress], [have_bzip2=yes], [have_bzip2=no])
+    ], [have_bzip2=no])
+    AS_VAR_IF([have_bzip2], [yes], [
+      BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
+      BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
     ])
-  ], [have_bzip2=no])
+  ])
 ])
 
-if test "$have_bzip2" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$BZIP2_LIBS" = "-lbz2"; then
-  BZIP2_CFLAGS="-sUSE_BZIP2"
-  BZIP2_LIBS="-sUSE_BZIP2"
-fi
-
-
 PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
-  AC_CHECK_HEADERS([lzma.h], [
-    WITH_SAVE_ENV([
-      AC_CHECK_LIB([lzma], [lzma_easy_encoder], [
-        have_liblzma=yes
-        LIBLZMA_CFLAGS=${LIBLZMA_CFLAGS-""}
-        LIBLZMA_LIBS=${LIBLZMA_LIBS-"-llzma"}
-      ], [have_liblzma=no])
+  WITH_SAVE_ENV([
+    CPPFLAGS="$CFLAGS $LIBLZMA_CFLAGS"
+    LDFLAGS="$LDFLAGS $LIBLZMA_LIBS"
+    AC_CHECK_HEADERS([lzma.h], [
+      AC_CHECK_LIB([lzma], [lzma_easy_encoder], [have_liblzma=yes], [have_liblzma=no])
+    ], [have_liblzma=no])
+    AS_VAR_IF([have_liblzma], [yes], [
+      LIBLZMA_CFLAGS=${LIBLZMA_CFLAGS-""}
+      LIBLZMA_LIBS=${LIBLZMA_LIBS-"-llzma"}
     ])
-  ], [have_liblzma=no])
+  ])
 ])
 
 PY_CHECK_FUNC([hstrerror], [#include <netdb.h>])
@@ -5729,127 +5810,171 @@ then
   [Define this if you have flockfile(), getc_unlocked(), and funlockfile()])
 fi
 
-AC_ARG_WITH([readline],
-  [AS_HELP_STRING([--with(out)-readline@<:@=editline@:>@],
-    [use Editline for backend or disable readline module])],
-    [],
-    [with_readline=yes])
+dnl Check for libreadline and libedit
+dnl - libreadline provides "readline/readline.h" header and "libreadline"
+dnl   shared library. pkg-config file is readline.pc
+dnl - libedit provides "editline/readline.h" header and "libedit" shared
+dnl   library. pkg-config file ins libedit.pc
+dnl - editline is not supported ("readline.h" and "libeditline" shared library)
+dnl
+dnl NOTE: In the past we checked if readline needs an additional termcap
+dnl library (tinfo ncursesw ncurses termcap). We now assume that libreadline
+dnl or readline.pc provide correct linker information.
 
-# check where readline lives
-py_cv_lib_readline=no
-# save the value of LIBS so we don't actually link Python with readline
-LIBS_no_readline=$LIBS
+AH_TEMPLATE([WITH_EDITLINE], [Define to build the readline module against libedit.])
 
-if test "$with_readline" != no; then
-  case "$with_readline" in
-  editline|edit)
-    LIBREADLINE=edit
-    AC_DEFINE(WITH_EDITLINE, 1,
-      [Define to build the readline module against Editline.])
-    ;;
-  yes|readline)
+AC_ARG_WITH(
+  [readline],
+  [AS_HELP_STRING([--with(out)-readline@<:@=editline|readline|no@:>@],
+                  [use libedit for backend or disable readline module])],
+  [
+    AS_CASE([$with_readline],
+      [editline|edit], [with_readline=edit],
+      [yes|readline], [with_readline=readline],
+      [no], [],
+      [AC_MSG_ERROR([proper usage is --with(out)-readline@<:@=editline|readline|no@:>@])]
+    )
+  ],
+  [with_readline=readline]
+)
+
+AS_VAR_IF([with_readline], [readline], [
+  PKG_CHECK_MODULES([LIBREADLINE], [readline], [
     LIBREADLINE=readline
-    ;;
-  *)
-    AC_MSG_ERROR([proper usage is --with(out)-readline@<:@=editline@:>@])
-    ;;
-  esac
-
-  # On some systems we need to link readline to a termcap compatible
-  # library.  NOTE: Keep the precedence of listed libraries synchronised
-  # with setup.py.
-  AC_MSG_CHECKING([how to link readline libs])
-  for py_libtermcap in "" tinfo ncursesw ncurses curses termcap; do
-    if test -z "$py_libtermcap"; then
-      READLINE_LIBS="-l$LIBREADLINE"
-    else
-      READLINE_LIBS="-l$LIBREADLINE -l$py_libtermcap"
-    fi
-    LIBS="$READLINE_LIBS $LIBS_no_readline"
-    AC_LINK_IFELSE(
-      [AC_LANG_CALL([],[readline])],
-      [py_cv_lib_readline=yes])
-    if test $py_cv_lib_readline = yes; then
-      break
-    fi
-  done
-
-  # Uncomment this line if you want to use READLINE_LIBS in Makefile or scripts
-  #AC_SUBST([READLINE_LIBS])
-  if test $py_cv_lib_readline = no; then
-    AC_MSG_RESULT([none])
-  else
-    AC_MSG_RESULT([$READLINE_LIBS])
-    AC_DEFINE(HAVE_LIBREADLINE, 1,
-      [Define to build the readline module.])
-  fi
-fi
-
-if test "$py_cv_lib_readline" = yes; then
-  # check for readline 2.2
-  AC_CHECK_DECL(rl_completion_append_character,
-    AC_DEFINE(HAVE_RL_COMPLETION_APPEND_CHARACTER, 1,
-      [Define if you have readline 2.2]),,
-    [
-#include <stdio.h> /* Must be first for Gnu Readline */
-#ifdef WITH_EDITLINE
-# include <editline/readline.h>
-#else
-# include <readline/readline.h>
-#endif
+    READLINE_CFLAGS=$LIBREADLINE_CFLAGS
+    READLINE_LIBS=$LIBREADLINE_LIBS
+  ], [
+    WITH_SAVE_ENV([
+      CPPFLAGS="$CFLAGS $LIBREADLINE_CFLAGS"
+      LDFLAGS="$LDFLAGS $LIBREADLINE_LIBS"
+      AC_CHECK_HEADERS([readline/readline.h], [
+        AC_CHECK_LIB([readline], [readline], [
+          LIBREADLINE=readline
+          READLINE_CFLAGS=${LIBREADLINE_CFLAGS-""}
+          READLINE_LIBS=${LIBREADLINE_LIBS-"-lreadline"}
+        ], [with_readline=no])
+      ], [with_readline=no])
     ])
-  AC_CHECK_DECL(rl_completion_suppress_append,
-    AC_DEFINE(HAVE_RL_COMPLETION_SUPPRESS_APPEND, 1,
-      [Define if you have rl_completion_suppress_append]),,
-    [
-#include <stdio.h> /* Must be first for Gnu Readline */
-#ifdef WITH_EDITLINE
-# include <editline/readline.h>
-#else
-# include <readline/readline.h>
-#endif
+  ])
+])
+
+AS_VAR_IF([with_readline], [edit], [
+  PKG_CHECK_MODULES([LIBEDIT], [libedit], [
+    AC_DEFINE([WITH_EDITLINE], [1])
+    LIBREADLINE=edit
+    READLINE_CFLAGS=$LIBEDIT_CFLAGS
+    READLINE_LIBS=$LIBEDIT_LIBS
+  ], [
+    WITH_SAVE_ENV([
+      CPPFLAGS="$CFLAGS $LIBEDIT_CFLAGS"
+      LDFLAGS="$LDFLAGS $LIBEDIT_LIBS"
+      AC_CHECK_HEADERS([editline/readline.h], [
+        AC_CHECK_LIB([edit], [readline], [
+          LIBREADLINE=edit
+          AC_DEFINE([WITH_EDITLINE], [1])
+          READLINE_CFLAGS=${LIBEDIT_CFLAGS-""}
+          READLINE_LIBS=${LIBEDIT_LIBS-"-ledit"}
+        ], [with_readline=no])
+      ], [with_readline=no])
     ])
+  ])
+])
 
-  # check for readline 4.0
-  AC_CHECK_LIB($LIBREADLINE, rl_pre_input_hook,
-    AC_DEFINE(HAVE_RL_PRE_INPUT_HOOK, 1,
-      [Define if you have readline 4.0]),,$READLINE_LIBS)
+dnl pyconfig.h defines _XOPEN_SOURCE=700
+READLINE_CFLAGS=$(echo $READLINE_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
-  # also in 4.0
-  AC_CHECK_LIB($LIBREADLINE, rl_completion_display_matches_hook,
-    AC_DEFINE(HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK, 1,
-      [Define if you have readline 4.0]),,$READLINE_LIBS)
+AC_MSG_CHECKING([how to link readline])
+AS_VAR_IF([with_readline], [no], [
+  AC_MSG_RESULT([no])
+], [
+  AC_MSG_RESULT([$with_readline (CFLAGS: $READLINE_CFLAGS, LIBS: $READLINE_LIBS)])
 
-  # also in 4.0, but not in editline
-  AC_CHECK_LIB($LIBREADLINE, rl_resize_terminal,
-    AC_DEFINE(HAVE_RL_RESIZE_TERMINAL, 1,
-      [Define if you have readline 4.0]),,$READLINE_LIBS)
+  WITH_SAVE_ENV([
+    CPPFLAGS="$READLINE_CFLAGS $CFLAGS"
+    LIBS="$READLINE_LIBS $LIBS"
+    LIBS_SAVE=$LIBS
 
-  # check for readline 4.2
-  AC_CHECK_LIB($LIBREADLINE, rl_completion_matches,
-    AC_DEFINE(HAVE_RL_COMPLETION_MATCHES, 1,
-      [Define if you have readline 4.2]),,$READLINE_LIBS)
-
-  # also in readline 4.2
-  AC_CHECK_DECL(rl_catch_signals,
-    AC_DEFINE(HAVE_RL_CATCH_SIGNAL, 1,
-      [Define if you can turn off readline's signal handling.]),,
-    [
-#include <stdio.h> /* Must be first for Gnu Readline */
-#ifdef WITH_EDITLINE
-# include <editline/readline.h>
-#else
-# include <readline/readline.h>
-#endif
+    m4_define([readline_includes], [
+      #include <stdio.h> /* Must be first for Gnu Readline */
+      #ifdef WITH_EDITLINE
+      # include <editline/readline.h>
+      #else
+      # include <readline/readline.h>
+      # include <readline/history.h>
+      #endif
     ])
 
-  AC_CHECK_LIB($LIBREADLINE, append_history,
-    AC_DEFINE(HAVE_RL_APPEND_HISTORY, 1,
-      [Define if readline supports append_history]),,$READLINE_LIBS)
-fi
+    # check for readline 2.2
+    AC_CHECK_DECL([rl_completion_append_character], [
+      AC_DEFINE([HAVE_RL_COMPLETION_APPEND_CHARACTER], [1], [Define if you have readline 2.2])
+    ], [], [readline_includes])
 
-# End of readline checks: restore LIBS
-LIBS=$LIBS_no_readline
+    AC_CHECK_DECL([rl_completion_suppress_append], [
+      AC_DEFINE([HAVE_RL_COMPLETION_SUPPRESS_APPEND], [1], [Define if you have rl_completion_suppress_append])
+    ], [], [readline_includes])
+
+    # check for readline 4.0
+    AC_CACHE_CHECK([for rl_pre_input_hook in -l$LIBREADLINE], [ac_cv_readline_rl_pre_input_hook], [
+      AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([readline_includes], [void *x = rl_pre_input_hook])],
+        [ac_cv_readline_rl_pre_input_hook=yes], [ac_cv_readline_rl_pre_input_hook=no]
+      )
+    ])
+    AS_VAR_IF([ac_cv_readline_rl_pre_input_hook], [yes], [
+      AC_DEFINE([HAVE_RL_PRE_INPUT_HOOK], [1], [Define if you have readline 4.0])
+    ])
+
+    # also in 4.0
+    AC_CACHE_CHECK([for rl_completion_display_matches_hook in -l$LIBREADLINE], [ac_cv_readline_rl_completion_display_matches_hook], [
+      AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([readline_includes], [void *x = rl_completion_display_matches_hook])],
+        [ac_cv_readline_rl_completion_display_matches_hook=yes], [ac_cv_readline_rl_completion_display_matches_hook=no]
+      )
+    ])
+    AS_VAR_IF([ac_cv_readline_rl_completion_display_matches_hook], [yes], [
+      AC_DEFINE([HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK], [1], [Define if you have readline 4.0])
+    ])
+
+    # also in 4.0, but not in editline
+      AC_CACHE_CHECK([for rl_resize_terminal in -l$LIBREADLINE], [ac_cv_readline_rl_resize_terminal], [
+      AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([readline_includes], [void *x = rl_resize_terminal])],
+        [ac_cv_readline_rl_resize_terminal=yes], [ac_cv_readline_rl_resize_terminal=no]
+      )
+    ])
+    AS_VAR_IF([ac_cv_readline_rl_resize_terminal], [yes], [
+      AC_DEFINE([HAVE_RL_RESIZE_TERMINAL], [1], [Define if you have readline 4.0])
+    ])
+
+    # check for readline 4.2
+    AC_CACHE_CHECK([for rl_completion_matches in -l$LIBREADLINE], [ac_cv_readline_rl_completion_matches], [
+      AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([readline_includes], [void *x = rl_completion_matches])],
+        [ac_cv_readline_rl_completion_matches=yes], [ac_cv_readline_rl_completion_matches=no]
+      )
+    ])
+    AS_VAR_IF([ac_cv_readline_rl_completion_matches], [yes], [
+      AC_DEFINE([HAVE_RL_COMPLETION_MATCHES], [1], [Define if you have readline 4.2])
+    ])
+
+    # also in readline 4.2
+    AC_CHECK_DECL([rl_catch_signals], [
+      AC_DEFINE([HAVE_RL_CATCH_SIGNAL], [1], [Define if you can turn off readline's signal handling.])
+    ], [], [readline_includes])
+
+    AC_CACHE_CHECK([for append_history in -l$LIBREADLINE], [ac_cv_readline_append_history], [
+      AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([readline_includes], [void *x = append_history])],
+        [ac_cv_readline_append_history=yes], [ac_cv_readline_append_history=no]
+      )
+    ])
+    AS_VAR_IF([ac_cv_readline_append_history], [yes], [
+      AC_DEFINE([HAVE_RL_APPEND_HISTORY], [1], [Define if readline supports append_history])
+    ])
+
+    m4_undefine([readline_includes])
+  ])dnl WITH_SAVE_ENV()
+])
 
 AC_CACHE_CHECK([for broken nice()], [ac_cv_broken_nice], [
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
@@ -6005,13 +6130,127 @@ then
   [Define if you have struct stat.st_mtimensec])
 fi
 
+dnl check for ncurses/ncursesw and panel/panelw
+dnl NOTE: old curses is not detected.
+dnl have_curses=[no, ncursesw, ncurses]
+dnl have_panel=[no, panelw, panel]
+have_curses=no
+have_panel=no
+
+AH_TEMPLATE([HAVE_NCURSESW], [Define to 1 if you have the `ncursesw' library.])
+AC_CHECK_HEADERS([curses.h ncurses.h])
+
+AS_VAR_IF([ac_cv_header_ncurses_h], [yes], [
+  if test "$ac_sys_system" != "Darwin"; then
+    dnl On macOS, there is no separate /usr/lib/libncursesw nor libpanelw.
+    PKG_CHECK_MODULES([CURSES], [ncursesw], [
+      AC_DEFINE([HAVE_NCURSESW], [1])
+      have_curses=ncursesw
+    ], [
+      WITH_SAVE_ENV([
+        AC_CHECK_LIB([ncursesw], [initscr], [
+          AC_DEFINE([HAVE_NCURSESW], [1])
+          have_curses=ncursesw
+          CURSES_CFLAGS=${CURSES_CFLAGS-""}
+          CURSES_LIBS=${CURSES_LIBS-"-lncursesw"}
+        ])
+      ])
+    ])
+  fi
+
+  AS_VAR_IF([have_curses], [no], [
+    PKG_CHECK_MODULES([CURSES], [ncurses], [
+      have_curses=ncurses
+    ], [
+      WITH_SAVE_ENV([
+        AC_CHECK_LIB([ncurses], [initscr], [
+          have_curses=ncurses
+          CURSES_CFLAGS=${CURSES_CFLAGS-""}
+          CURSES_LIBS=${CURSES_LIBS-"-lncurses"}
+        ])
+      ])
+    ])
+  ])
+
+])dnl ac_cv_header_ncurses_h = yes
+
+dnl remove _XOPEN_SOURCE macro from curses cflags. pyconfig.h sets
+dnl the macro to 700.
+CURSES_CFLAGS=$(echo $CURSES_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
+
+if test "$have_curses" = no -a "$ac_sys_system" = "Darwin"; then
+  dnl On macOS, there is no separate /usr/lib/libncursesw nor libpanelw.
+  dnl If we are here, we found a locally-supplied version of libncursesw.
+  dnl There should also be a libpanelw.
+  dnl _XOPEN_SOURCE defines are usually excluded for macOS, but we need
+  dnl _XOPEN_SOURCE_EXTENDED here for ncurses wide char support.
+
+  AS_VAR_APPEND([CURSES_CFLAGS], [" -D_XOPEN_SOURCE_EXTENDED=1"])
+  AC_DEFINE([HAVE_NCURSESW], [1])
+fi
+
+dnl TODO: detect "curses" and special cases tinfo, terminfo, or termcap
+
+AC_MSG_CHECKING([curses module flags])
+AS_VAR_IF([have_curses], [no], [
+  AC_MSG_RESULT([no])  
+], [
+  AC_MSG_RESULT([$have_curses (CFLAGS: $CURSES_CFLAGS, LIBS: $CURSES_LIBS)])
+])
+
+dnl check for ncurses' panel/panelw library
+AC_CHECK_HEADERS([panel.h])
+
+AS_VAR_IF([ac_cv_header_panel_h], [yes], [
+
+  if test "$ac_sys_system" != "Darwin"; then
+    dnl On macOS, there is no separate /usr/lib/libncursesw nor libpanelw.
+    AS_VAR_IF([have_curses], [ncursesw], [
+      PKG_CHECK_MODULES([PANEL], [panelw], [
+        have_panel=panelw
+      ], [
+        WITH_SAVE_ENV([
+          AC_CHECK_LIB([panelw], [update_panels], [
+            have_panel=panelw
+            PANEL_CFLAGS=${PANEL_CFLAGS-""}
+            PANEL_LIBS=${PANEL_LIBS-"-lpanelw"}
+          ])
+        ])
+      ])
+    ])
+  fi
+
+  AS_VAR_IF([have_curses], [ncurses], [
+    PKG_CHECK_MODULES([PANEL], [panel], [
+      have_panel=panel
+    ], [
+      WITH_SAVE_ENV([
+        AC_CHECK_LIB([panel], [update_panels], [
+          have_panel=panel
+          PANEL_CFLAGS=${PANEL_CFLAGS-""}
+          PANEL_LIBS=${PANEL_LIBS-"-lpanel"}
+        ])
+      ])
+    ])
+  ])
+
+])dnl ac_cv_header_panel_h = yes
+
+dnl pyconfig.h defines _XOPEN_SOURCE=700
+PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
+
+AC_MSG_CHECKING([panel flags])
+AS_VAR_IF([have_panel], [no], [
+  AC_MSG_RESULT([no])  
+], [
+  AC_MSG_RESULT([$have_panel (CFLAGS: $PANEL_CFLAGS, LIBS: $PANEL_LIBS)])
+])
+
 # first curses header check
 ac_save_cppflags="$CPPFLAGS"
 if test "$cross_compiling" = no; then
   CPPFLAGS="$CPPFLAGS -I/usr/include/ncursesw"
 fi
-
-AC_CHECK_HEADERS(curses.h ncurses.h)
 
 # On Solaris, term.h requires curses.h
 AC_CHECK_HEADERS(term.h,,,[
@@ -6230,6 +6469,7 @@ SRCDIRS="\
   Modules/_sha3 \
   Modules/_sqlite \
   Modules/_sre \
+  Modules/_testcapi \
   Modules/_xxtestfuzz \
   Modules/cjkcodecs \
   Modules/expat \
@@ -6526,7 +6766,6 @@ AS_CASE($with_openssl_rpath,
     ]
 )
 AC_MSG_RESULT($OPENSSL_RPATH)
-AC_SUBST([OPENSSL_RPATH])
 
 # This static linking is NOT OFFICIALLY SUPPORTED and not advertised.
 # Requires static OpenSSL build with position-independent code. Some features
@@ -6773,17 +7012,6 @@ AS_CASE([$host_cpu],
 )
 AC_SUBST([MODULE_BUILDTYPE])
 
-dnl Use Modules/Setup.stdlib as additional provider?
-AC_MSG_CHECKING([for additional Modules/Setup files])
-AS_CASE([$ac_sys_system],
-    [Emscripten], [MODULES_SETUP_STDLIB=Modules/Setup.stdlib],
-    [WASI], [MODULES_SETUP_STDLIB=Modules/Setup.stdlib],
-    [MODULES_SETUP_STDLIB=]
-)
-AC_MSG_RESULT([$MODULES_SETUP_STDLIB])
-AC_SUBST([MODULES_SETUP_STDLIB])
-
-
 dnl _MODULE_BLOCK_ADD([VAR], [VALUE])
 dnl internal: adds $1=quote($2) to MODULE_BLOCK
 AC_DEFUN([_MODULE_BLOCK_ADD], [AS_VAR_APPEND([MODULE_BLOCK], ["$1=_AS_QUOTE([$2])$as_nl"])])
@@ -6934,17 +7162,27 @@ PY_STDLIB_MOD([_crypt],
 PY_STDLIB_MOD([_ctypes],
   [], [test "$have_libffi" = yes],
   [$LIBFFI_CFLAGS], [$LIBFFI_LIBS])
-dnl PY_STDLIB_MOD([_curses], [], [], [], [])
-dnl PY_STDLIB_MOD([_curses_panel], [], [], [], [])
+PY_STDLIB_MOD([_curses],
+  [], [test "$have_curses" != "no"],
+  [$CURSES_CFLAGS], [$CURSES_LIBS]
+)
+PY_STDLIB_MOD([_curses_panel],
+  [], [test "$have_panel" != "no"],
+  [$PANEL_CFLAGS $CURSES_CFLAGS], [$PANEL_LIBS $CURSES_LIBS]
+)
 PY_STDLIB_MOD([_decimal], [], [], [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LDFLAGS])
-dnl PY_STDLIB_MOD([_dbm], [], [], [], [])
+PY_STDLIB_MOD([_dbm],
+  [test -n "$with_dbmliborder"], [test "$have_dbm" != "no"],
+  [$DBM_CFLAGS], [$DBM_LIBS])
 PY_STDLIB_MOD([_gdbm],
   [test "$have_gdbm_dbmliborder" = yes], [test "$have_gdbm" = yes],
   [$GDBM_CFLAGS], [$GDBM_LIBS])
 PY_STDLIB_MOD([nis],
   [], [test "$have_nis" = yes -a "$ac_cv_header_rpc_rpc_h" = yes],
   [$LIBNSL_CFLAGS], [$LIBNSL_LIBS])
-dnl PY_STDLIB_MOD([readline], [], [], [], [])
+ PY_STDLIB_MOD([readline],
+  [], [test "$with_readline" != "no"],
+  [$READLINE_CFLAGS], [$READLINE_LIBS])
 PY_STDLIB_MOD([_sqlite3],
   [test "$have_sqlite3" = "yes"],
   [test "$have_supported_sqlite3" = "yes"],
@@ -6978,6 +7216,7 @@ PY_STDLIB_MOD([_testinternalcapi], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
+PY_STDLIB_MOD([xxsubtype], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_ctypes_test],
   [test "$TEST_MODULES" = yes], [test "$have_libffi" = yes -a "$ac_cv_func_dlopen" = yes],
@@ -7007,7 +7246,11 @@ fi
 AC_MSG_NOTICE([creating Makefile])
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local $MODULES_SETUP_STDLIB Modules/Setup.bootstrap $srcdir/Modules/Setup
+			Modules/Setup.local Modules/Setup.stdlib Modules/Setup.bootstrap $srcdir/Modules/Setup
+if test $? -ne 0; then
+  AC_MSG_ERROR([makesetup failed])
+fi
+
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then

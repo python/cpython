@@ -341,6 +341,10 @@ capture data for later printing in a lightweight fashion.
       local variables in each :class:`FrameSummary` are captured as object
       representations.
 
+      .. versionchanged:: 3.12
+         Exceptions raised from :func:`repr` on a local variable (when
+         *capture_locals* is ``True``) are no longer propagated to the caller.
+
    .. classmethod:: from_list(a_list)
 
       Construct a :class:`StackSummary` object from a supplied list of
@@ -464,32 +468,27 @@ The output for the example would look similar to this:
    *** print_tb:
      File "<doctest...>", line 10, in <module>
        lumberjack()
-       ^^^^^^^^^^^^
    *** print_exception:
    Traceback (most recent call last):
      File "<doctest...>", line 10, in <module>
        lumberjack()
-       ^^^^^^^^^^^^
      File "<doctest...>", line 4, in lumberjack
        bright_side_of_death()
-       ^^^^^^^^^^^^^^^^^^^^^^
    IndexError: tuple index out of range
    *** print_exc:
    Traceback (most recent call last):
      File "<doctest...>", line 10, in <module>
        lumberjack()
-       ^^^^^^^^^^^^
      File "<doctest...>", line 4, in lumberjack
        bright_side_of_death()
-       ^^^^^^^^^^^^^^^^^^^^^^
    IndexError: tuple index out of range
    *** format_exc, first and last line:
    Traceback (most recent call last):
    IndexError: tuple index out of range
    *** format_exception:
    ['Traceback (most recent call last):\n',
-    '  File "<doctest default[0]>", line 10, in <module>\n    lumberjack()\n    ^^^^^^^^^^^^\n',
-    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_death()\n    ^^^^^^^^^^^^^^^^^^^^^^\n',
+    '  File "<doctest default[0]>", line 10, in <module>\n    lumberjack()\n',
+    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_death()\n',
     '  File "<doctest default[0]>", line 7, in bright_side_of_death\n    return tuple()[0]\n           ~~~~~~~^^^\n',
     'IndexError: tuple index out of range\n']
    *** extract_tb:
@@ -497,8 +496,8 @@ The output for the example would look similar to this:
     <FrameSummary file <doctest...>, line 4 in lumberjack>,
     <FrameSummary file <doctest...>, line 7 in bright_side_of_death>]
    *** format_tb:
-   ['  File "<doctest default[0]>", line 10, in <module>\n    lumberjack()\n    ^^^^^^^^^^^^\n',
-    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_death()\n    ^^^^^^^^^^^^^^^^^^^^^^\n',
+   ['  File "<doctest default[0]>", line 10, in <module>\n    lumberjack()\n',
+    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_death()\n',
     '  File "<doctest default[0]>", line 7, in bright_side_of_death\n    return tuple()[0]\n           ~~~~~~~^^^\n']
    *** tb_lineno: 10
 

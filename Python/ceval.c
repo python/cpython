@@ -5755,16 +5755,25 @@ handle_eval_breaker:
                     err = maybe_call_line_trace(tstate->c_tracefunc,
                                                 tstate->c_traceobj,
                                                 tstate, frame, instr_prev);
+                    // Reload possibly changed frame fields:
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    frame->stacktop = -1;
+                    // next_instr is only reloaded if tracing *does not* raise.
+                    // This is consistent with the behavior of older Python
+                    // versions. If a trace function sets a new f_lineno and
+                    // *then* raises, we use the *old* location when searching
+                    // for an exception handler, displaying the traceback, and
+                    // so on:
                     if (err) {
-                        /* trace function raised an exception */
+                        // next_instr wasn't incremented at the start of this
+                        // instruction. Increment it before handling the error,
+                        // so that it looks the same as a "normal" instruction:
                         next_instr++;
                         goto error;
                     }
-                    /* Reload possibly changed frame fields */
+                    // Reload next_instr. Don't increment it, though, since
+                    // we're going to re-dispatch to the "true" instruction now:
                     next_instr = frame->prev_instr;
-
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
-                    frame->stacktop = -1;
                 }
             }
         }
@@ -5778,6 +5787,9 @@ handle_eval_breaker:
 #else
         EXTRA_CASES  // From opcode.h, a 'case' for each unused opcode
 #endif
+            /* Tell C compilers not to hold the opcode variable in the loop.
+               next_instr points the current instruction without TARGET(). */
+            opcode = _Py_OPCODE(*next_instr);
             fprintf(stderr, "XXX lineno: %d, opcode: %d\n",
                     _PyInterpreterFrame_GetLine(frame),  opcode);
             _PyErr_SetString(tstate, PyExc_SystemError, "unknown opcode");
@@ -6149,20 +6161,6 @@ fail:
 
 }
 
-/* Exception table parsing code.
- * See Objects/exception_table_notes.txt for details.
- */
-
-static inline unsigned char *
-parse_varint(unsigned char *p, int *result) {
-    int val = p[0] & 63;
-    while (p[0] & 64) {
-        p++;
-        val = (val << 6) | (p[0] & 63);
-    }
-    *result = val;
-    return p+1;
-}
 
 static inline unsigned char *
 scan_back_to_entry_start(unsigned char *p) {
@@ -6470,7 +6468,7 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
     }
     if (initialize_locals(tstate, func, localsarray, args, argcount, kwnames)) {
         assert(frame->owner != FRAME_OWNED_BY_GENERATOR);
-        _PyFrame_Clear(frame);
+        _PyEvalFrameClearAndPop(tstate, frame);
         return NULL;
     }
     return frame;
@@ -6492,6 +6490,10 @@ fail:
 static void
 _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
+    // Make sure that this is, indeed, the top frame. We can't check this in
+    // _PyThreadState_PopFrame, since f_code is already cleared at that point:
+    assert((PyObject **)frame + frame->f_code->co_framesize ==
+           tstate->datastack_top);
     tstate->recursion_remaining--;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     assert(frame->owner == FRAME_OWNED_BY_THREAD);
@@ -7042,10 +7044,20 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     /* The caller must hold the GIL */
     assert(PyGILState_Check());
 
+    static int reentrant = 0;
+    if (reentrant) {
+        _PyErr_SetString(tstate, PyExc_RuntimeError, "Cannot install a profile function "
+                         "while another profile function is being installed");
+        reentrant = 0;
+        return -1;
+    }
+    reentrant = 1;
+
     /* Call _PySys_Audit() in the context of the current thread state,
        even if tstate is not the current thread state. */
     PyThreadState *current_tstate = _PyThreadState_GET();
     if (_PySys_Audit(current_tstate, "sys.setprofile", NULL) < 0) {
+        reentrant = 0;
         return -1;
     }
 
@@ -7063,6 +7075,7 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
 
     /* Flag that tracing or profiling is turned on */
     _PyThreadState_UpdateTracingState(tstate);
+    reentrant = 0;
     return 0;
 }
 
@@ -7083,10 +7096,21 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     /* The caller must hold the GIL */
     assert(PyGILState_Check());
 
+    static int reentrant = 0;
+
+    if (reentrant) {
+        _PyErr_SetString(tstate, PyExc_RuntimeError, "Cannot install a trace function "
+                         "while another trace function is being installed");
+        reentrant = 0;
+        return -1;
+    }
+    reentrant = 1;
+
     /* Call _PySys_Audit() in the context of the current thread state,
        even if tstate is not the current thread state. */
     PyThreadState *current_tstate = _PyThreadState_GET();
     if (_PySys_Audit(current_tstate, "sys.settrace", NULL) < 0) {
+        reentrant = 0;
         return -1;
     }
 
@@ -7096,15 +7120,15 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     tstate->c_traceobj = NULL;
     /* Must make sure that profiling is not ignored if 'traceobj' is freed */
     _PyThreadState_UpdateTracingState(tstate);
-    Py_XDECREF(traceobj);
-
     Py_XINCREF(arg);
+    Py_XDECREF(traceobj);
     tstate->c_traceobj = arg;
     tstate->c_tracefunc = func;
 
     /* Flag that tracing or profiling is turned on */
     _PyThreadState_UpdateTracingState(tstate);
 
+    reentrant = 0;
     return 0;
 }
 
