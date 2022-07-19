@@ -1667,10 +1667,13 @@ Porting to Python 3.11
   To get a custom code object: create a code object using the compiler,
   then get a modified version with the ``replace`` method.
 
-* :c:type:`PyCodeObject` no longer has a ``co_code`` field.  Instead,
-  use ``PyObject_GetAttrString(code_object, "co_code")`` or
-  :c:func:`PyCode_GetCode` to get the underlying bytes object.
-  (Contributed by Brandt Bucher in :issue:`46841` and Ken Jin in :gh:`92154`.)
+* :c:type:`PyCodeObject` no longer has the ``co_code``, ``co_varnames``,
+  ``co_cellvars`` and ``co_freevars`` fields.  Instead, use
+  :c:func:`PyCode_GetCode`, :c:func:`PyCode_GetVarnames`,
+  :c:func:`PyCode_GetCellvars` and :c:func:`PyCode_GetFreevars` respectively
+  to access them via the C API.
+  (Contributed by Brandt Bucher in :issue:`46841` and Ken Jin in :gh:`92154`
+  and :gh:`94936`.)
 
 * The old trashcan macros (``Py_TRASHCAN_SAFE_BEGIN``/``Py_TRASHCAN_SAFE_END``)
   are now deprecated. They should be replaced by the new macros

@@ -1401,15 +1401,33 @@ _PyCode_GetVarnames(PyCodeObject *co)
 }
 
 PyObject *
+PyCode_GetVarnames(PyCodeObject *code)
+{
+    return _PyCode_GetVarnames(code);
+}
+
+PyObject *
 _PyCode_GetCellvars(PyCodeObject *co)
 {
     return get_localsplus_names(co, CO_FAST_CELL, co->co_ncellvars);
 }
 
 PyObject *
+PyCode_GetCellvars(PyCodeObject *code)
+{
+    return _PyCode_GetCellvars(code);
+}
+
+PyObject *
 _PyCode_GetFreevars(PyCodeObject *co)
 {
     return get_localsplus_names(co, CO_FAST_FREE, co->co_nfreevars);
+}
+
+PyObject *
+PyCode_GetFreevars(PyCodeObject *code)
+{
+    return _PyCode_GetFreevars(code);
 }
 
 static void

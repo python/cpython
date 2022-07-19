@@ -210,6 +210,12 @@ PyAPI_FUNC(int) _PyCode_SetExtra(PyObject *code, Py_ssize_t index,
 /* Equivalent to getattr(code, 'co_code') in Python.
    Returns a strong reference to a bytes object. */
 PyAPI_FUNC(PyObject *) PyCode_GetCode(PyCodeObject *code);
+/* Equivalent to getattr(code, 'co_varnames') in Python. */
+PyAPI_FUNC(PyObject *) PyCode_GetVarnames(PyCodeObject *code);
+/* Equivalent to getattr(code, 'co_cellvars') in Python. */
+PyAPI_FUNC(PyObject *) PyCode_GetCellvars(PyCodeObject *code);
+/* Equivalent to getattr(code, 'co_freevars') in Python. */
+PyAPI_FUNC(PyObject *) PyCode_GetFreevars(PyCodeObject *code);
 
 typedef enum _PyCodeLocationInfoKind {
     /* short forms are 0 to 9 */
