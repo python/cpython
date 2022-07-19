@@ -365,6 +365,8 @@ class TestBasicOps:
         self.assertRaises(TypeError, self.gen.getrandbits, 1, 2)
         self.assertRaises(ValueError, self.gen.getrandbits, -1)
         self.assertRaises(TypeError, self.gen.getrandbits, 10.1)
+        self.assertRaises(TypeError, self.gen.getrandbits, 'test')
+        self.assertRaises(TypeError, self.gen.getrandbits, None)
 
     def test_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):

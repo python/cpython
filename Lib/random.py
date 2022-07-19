@@ -851,6 +851,8 @@ class SystemRandom(Random):
 
     def getrandbits(self, k):
         """getrandbits(k) -> x.  Generates an int with k random bits."""
+        if not isinstance(k, int):
+            raise TypeError('number of bits must be integer')
         if k < 0:
             raise ValueError('number of bits must be non-negative')
         numbytes = (k + 7) // 8                       # bits / 8 and rounded up
