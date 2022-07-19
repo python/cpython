@@ -1,1 +1,1 @@
-run the PidfdChildWatcher on the running loop
+run the :class:`asyncio.PidfdChildWatcher` on the running loop
