@@ -1740,6 +1740,4408 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(write);
     PyUnicode_InternInPlace(&string);
 }
+
+#ifdef Py_DEBUG
+static inline void
+_PyStaticObjects_CheckRefcnt(void) {
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + -5]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + -5]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + -4]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + -4]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + -3]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + -3]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + -2]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + -2]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + -1]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + -1]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 0]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 0]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 1]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 1]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 2]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 2]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 3]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 3]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 4]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 4]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 5]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 5]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 6]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 6]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 7]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 7]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 8]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 8]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 9]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 9]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 10]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 10]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 11]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 11]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 12]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 12]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 13]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 13]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 14]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 14]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 15]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 15]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 16]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 16]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 17]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 17]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 18]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 18]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 19]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 19]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 20]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 20]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 21]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 21]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 22]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 22]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 23]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 23]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 24]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 24]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 25]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 25]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 26]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 26]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 27]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 27]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 28]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 28]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 29]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 29]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 30]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 30]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 31]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 31]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 32]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 32]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 33]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 33]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 34]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 34]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 35]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 35]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 36]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 36]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 37]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 37]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 38]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 38]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 39]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 39]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 40]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 40]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 41]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 41]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 42]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 42]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 43]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 43]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 44]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 44]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 45]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 45]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 46]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 46]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 47]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 47]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 48]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 48]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 49]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 49]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 50]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 50]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 51]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 51]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 52]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 52]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 53]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 53]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 54]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 54]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 55]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 55]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 56]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 56]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 57]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 57]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 58]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 58]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 59]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 59]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 60]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 60]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 61]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 61]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 62]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 62]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 63]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 63]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 64]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 64]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 65]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 65]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 66]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 66]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 67]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 67]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 68]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 68]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 69]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 69]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 70]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 70]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 71]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 71]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 72]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 72]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 73]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 73]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 74]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 74]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 75]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 75]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 76]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 76]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 77]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 77]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 78]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 78]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 79]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 79]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 80]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 80]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 81]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 81]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 82]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 82]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 83]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 83]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 84]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 84]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 85]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 85]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 86]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 86]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 87]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 87]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 88]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 88]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 89]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 89]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 90]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 90]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 91]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 91]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 92]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 92]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 93]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 93]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 94]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 94]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 95]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 95]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 96]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 96]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 97]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 97]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 98]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 98]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 99]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 99]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 100]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 100]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 101]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 101]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 102]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 102]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 103]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 103]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 104]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 104]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 105]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 105]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 106]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 106]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 107]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 107]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 108]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 108]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 109]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 109]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 110]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 110]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 111]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 111]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 112]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 112]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 113]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 113]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 114]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 114]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 115]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 115]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 116]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 116]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 117]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 117]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 118]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 118]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 119]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 119]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 120]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 120]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 121]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 121]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 122]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 122]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 123]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 123]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 124]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 124]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 125]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 125]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 126]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 126]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 127]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 127]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 129]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 129]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 130]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 130]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 131]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 131]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 132]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 132]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 133]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 133]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 134]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 134]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 135]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 135]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 136]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 136]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 137]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 137]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 138]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 138]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 139]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 139]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 140]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 140]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 141]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 141]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 142]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 142]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 143]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 143]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 144]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 144]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 145]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 145]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 146]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 146]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 147]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 147]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 148]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 148]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 149]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 149]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 150]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 150]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 151]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 151]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 152]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 152]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 153]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 153]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 154]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 154]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 155]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 155]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 156]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 156]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 157]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 157]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 158]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 158]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 159]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 159]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 160]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 160]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 161]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 161]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 162]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 162]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 163]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 163]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 164]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 164]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 165]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 165]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 166]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 166]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 167]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 167]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 168]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 168]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 169]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 169]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 170]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 170]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 171]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 171]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 172]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 172]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 173]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 173]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 174]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 174]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 175]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 175]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 176]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 176]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 177]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 177]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 178]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 178]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 179]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 179]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 180]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 180]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 181]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 181]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 182]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 182]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 183]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 183]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 184]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 184]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 185]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 185]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 186]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 186]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 187]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 187]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 188]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 188]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 189]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 189]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 190]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 190]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 191]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 191]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 192]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 192]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 193]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 193]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 194]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 194]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 195]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 195]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 196]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 196]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 197]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 197]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 198]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 198]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 199]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 199]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 200]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 200]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 201]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 201]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 202]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 202]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 203]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 203]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 204]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 204]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 205]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 205]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 206]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 206]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 207]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 207]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 208]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 208]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 209]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 209]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 210]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 210]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 211]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 211]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 212]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 212]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 213]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 213]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 214]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 214]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 215]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 215]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 216]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 216]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 217]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 217]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 218]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 218]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 219]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 219]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 220]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 220]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 221]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 221]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 222]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 222]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 223]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 223]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 224]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 224]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 225]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 225]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 226]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 226]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 227]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 227]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 228]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 228]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 229]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 229]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 230]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 230]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 231]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 231]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 232]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 232]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 233]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 233]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 234]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 234]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 235]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 235]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 236]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 236]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 237]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 237]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 238]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 238]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 239]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 239]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 240]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 240]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 241]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 241]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 242]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 242]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 243]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 243]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 244]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 244]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 245]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 245]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 246]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 246]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 247]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 247]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 248]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 248]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 249]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 249]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 250]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 250]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 251]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 251]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 252]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 252]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 253]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 253]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 254]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 254]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 255]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 255]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 256]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 256]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_empty)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_empty));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[0]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[0]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[1]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[1]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[2]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[2]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[3]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[3]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[4]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[4]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[5]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[5]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[6]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[6]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[7]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[7]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[8]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[8]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[9]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[9]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[10]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[10]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[11]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[11]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[12]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[12]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[13]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[13]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[14]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[14]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[15]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[15]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[16]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[16]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[17]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[17]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[18]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[18]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[19]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[19]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[20]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[20]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[21]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[21]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[22]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[22]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[23]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[23]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[24]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[24]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[25]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[25]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[26]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[26]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[27]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[27]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[28]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[28]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[29]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[29]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[30]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[30]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[31]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[31]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[32]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[32]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[33]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[33]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[34]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[34]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[35]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[35]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[36]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[36]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[37]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[37]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[38]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[38]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[39]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[39]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[40]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[40]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[41]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[41]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[42]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[42]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[43]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[43]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[44]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[44]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[45]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[45]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[46]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[46]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[47]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[47]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[48]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[48]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[49]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[49]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[50]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[50]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[51]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[51]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[52]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[52]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[53]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[53]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[54]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[54]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[55]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[55]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[56]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[56]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[57]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[57]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[58]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[58]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[59]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[59]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[60]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[60]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[61]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[61]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[62]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[62]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[63]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[63]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[64]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[64]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[65]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[65]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[66]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[66]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[67]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[67]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[68]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[68]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[69]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[69]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[70]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[70]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[71]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[71]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[72]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[72]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[73]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[73]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[74]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[74]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[75]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[75]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[76]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[76]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[77]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[77]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[78]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[78]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[79]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[79]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[80]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[80]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[81]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[81]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[82]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[82]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[83]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[83]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[84]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[84]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[85]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[85]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[86]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[86]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[87]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[87]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[88]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[88]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[89]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[89]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[90]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[90]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[91]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[91]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[92]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[92]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[93]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[93]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[94]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[94]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[95]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[95]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[96]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[96]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[97]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[97]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[98]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[98]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[99]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[99]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[100]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[100]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[101]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[101]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[102]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[102]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[103]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[103]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[104]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[104]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[105]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[105]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[106]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[106]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[107]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[107]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[108]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[108]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[109]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[109]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[110]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[110]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[111]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[111]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[112]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[112]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[113]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[113]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[114]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[114]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[115]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[115]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[116]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[116]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[117]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[117]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[118]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[118]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[119]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[119]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[120]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[120]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[121]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[121]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[122]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[122]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[123]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[123]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[124]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[124]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[125]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[125]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[126]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[126]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[127]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[127]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[129]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[129]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[130]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[130]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[131]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[131]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[132]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[132]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[133]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[133]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[134]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[134]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[135]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[135]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[136]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[136]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[137]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[137]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[138]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[138]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[139]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[139]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[140]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[140]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[141]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[141]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[142]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[142]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[143]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[143]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[144]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[144]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[145]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[145]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[146]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[146]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[147]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[147]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[148]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[148]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[149]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[149]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[150]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[150]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[151]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[151]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[152]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[152]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[153]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[153]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[154]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[154]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[155]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[155]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[156]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[156]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[157]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[157]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[158]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[158]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[159]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[159]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[160]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[160]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[161]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[161]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[162]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[162]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[163]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[163]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[164]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[164]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[165]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[165]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[166]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[166]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[167]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[167]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[168]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[168]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[169]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[169]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[170]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[170]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[171]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[171]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[172]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[172]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[173]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[173]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[174]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[174]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[175]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[175]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[176]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[176]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[177]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[177]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[178]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[178]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[179]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[179]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[180]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[180]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[181]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[181]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[182]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[182]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[183]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[183]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[184]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[184]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[185]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[185]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[186]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[186]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[187]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[187]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[188]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[188]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[189]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[189]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[190]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[190]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[191]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[191]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[192]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[192]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[193]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[193]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[194]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[194]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[195]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[195]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[196]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[196]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[197]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[197]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[198]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[198]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[199]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[199]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[200]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[200]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[201]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[201]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[202]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[202]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[203]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[203]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[204]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[204]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[205]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[205]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[206]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[206]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[207]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[207]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[208]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[208]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[209]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[209]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[210]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[210]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[211]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[211]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[212]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[212]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[213]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[213]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[214]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[214]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[215]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[215]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[216]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[216]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[217]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[217]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[218]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[218]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[219]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[219]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[220]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[220]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[221]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[221]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[222]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[222]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[223]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[223]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[224]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[224]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[225]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[225]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[226]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[226]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[227]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[227]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[228]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[228]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[229]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[229]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[230]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[230]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[231]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[231]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[232]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[232]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[233]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[233]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[234]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[234]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[235]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[235]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[236]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[236]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[237]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[237]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[238]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[238]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[239]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[239]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[240]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[240]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[241]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[241]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[242]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[242]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[243]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[243]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[244]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[244]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[245]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[245]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[246]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[246]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[247]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[247]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[248]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[248]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[249]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[249]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[250]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[250]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[251]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[251]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[252]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[252]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[253]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[253]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[254]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[254]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(bytes_characters)[255]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(bytes_characters)[255]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_STR(anon_dictcomp)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_STR(anon_dictcomp));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_STR(anon_genexpr)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_STR(anon_genexpr));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_STR(anon_lambda)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_STR(anon_lambda));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_STR(anon_listcomp)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_STR(anon_listcomp));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_STR(anon_module)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_STR(anon_module));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_STR(anon_setcomp)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_STR(anon_setcomp));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_STR(anon_string)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_STR(anon_string));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_STR(anon_unknown)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_STR(anon_unknown));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_STR(close_br)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_STR(close_br));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_STR(comma_sep)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_STR(comma_sep));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_STR(dbl_close_br)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_STR(dbl_close_br));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_STR(dbl_open_br)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_STR(dbl_open_br));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_STR(dbl_percent)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_STR(dbl_percent));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_STR(dot)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_STR(dot));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_STR(dot_locals)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_STR(dot_locals));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_STR(empty)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_STR(empty));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_STR(list_err)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_STR(list_err));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_STR(newline)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_STR(newline));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_STR(open_br)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_STR(open_br));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_STR(percent)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_STR(percent));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_STR(utf_8)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_STR(utf_8));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(False)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(False));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(Py_Repr)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(Py_Repr));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(TextIOWrapper)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(TextIOWrapper));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(True)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(True));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(WarningMessage)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(WarningMessage));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(_)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(_));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__IOBase_closed)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__IOBase_closed));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__abc_tpflags__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__abc_tpflags__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__abs__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__abs__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__abstractmethods__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__abstractmethods__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__add__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__add__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__aenter__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__aenter__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__aexit__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__aexit__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__aiter__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__aiter__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__all__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__all__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__and__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__and__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__anext__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__anext__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__annotations__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__annotations__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__args__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__args__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__await__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__await__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__bases__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__bases__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__bool__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__bool__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__build_class__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__build_class__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__builtins__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__builtins__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__bytes__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__bytes__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__call__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__call__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__cantrace__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__cantrace__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__class__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__class__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__class_getitem__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__class_getitem__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__classcell__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__classcell__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__complex__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__complex__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__contains__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__contains__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__copy__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__copy__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__del__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__del__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__delattr__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__delattr__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__delete__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__delete__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__delitem__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__delitem__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__dict__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__dict__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__dictoffset__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__dictoffset__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__dir__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__dir__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__divmod__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__divmod__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__doc__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__doc__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__enter__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__enter__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__eq__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__eq__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__exit__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__exit__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__file__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__file__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__float__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__float__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__floordiv__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__floordiv__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__format__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__format__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__fspath__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__fspath__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__ge__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__ge__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__get__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__get__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__getattr__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__getattr__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__getattribute__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__getattribute__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__getinitargs__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__getinitargs__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__getitem__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__getitem__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__getnewargs__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__getnewargs__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__getnewargs_ex__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__getnewargs_ex__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__getstate__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__getstate__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__gt__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__gt__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__hash__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__hash__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__iadd__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__iadd__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__iand__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__iand__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__ifloordiv__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__ifloordiv__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__ilshift__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__ilshift__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__imatmul__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__imatmul__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__imod__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__imod__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__import__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__import__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__imul__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__imul__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__index__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__index__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__init__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__init__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__init_subclass__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__init_subclass__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__instancecheck__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__instancecheck__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__int__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__int__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__invert__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__invert__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__ior__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__ior__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__ipow__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__ipow__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__irshift__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__irshift__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__isabstractmethod__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__isabstractmethod__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__isub__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__isub__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__iter__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__iter__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__itruediv__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__itruediv__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__ixor__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__ixor__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__le__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__le__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__len__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__len__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__length_hint__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__length_hint__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__lltrace__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__lltrace__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__loader__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__loader__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__lshift__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__lshift__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__lt__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__lt__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__main__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__main__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__matmul__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__matmul__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__missing__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__missing__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__mod__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__mod__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__module__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__module__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__mro_entries__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__mro_entries__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__mul__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__mul__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__name__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__name__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__ne__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__ne__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__neg__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__neg__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__new__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__new__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__newobj__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__newobj__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__newobj_ex__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__newobj_ex__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__next__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__next__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__notes__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__notes__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__or__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__or__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__orig_class__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__orig_class__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__origin__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__origin__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__package__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__package__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__parameters__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__parameters__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__path__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__path__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__pos__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__pos__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__pow__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__pow__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__prepare__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__prepare__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__qualname__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__qualname__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__radd__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__radd__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__rand__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__rand__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__rdivmod__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__rdivmod__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__reduce__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__reduce__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__reduce_ex__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__reduce_ex__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__repr__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__repr__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__reversed__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__reversed__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__rfloordiv__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__rfloordiv__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__rlshift__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__rlshift__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__rmatmul__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__rmatmul__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__rmod__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__rmod__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__rmul__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__rmul__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__ror__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__ror__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__round__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__round__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__rpow__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__rpow__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__rrshift__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__rrshift__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__rshift__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__rshift__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__rsub__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__rsub__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__rtruediv__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__rtruediv__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__rxor__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__rxor__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__set__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__set__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__set_name__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__set_name__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__setattr__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__setattr__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__setitem__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__setitem__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__setstate__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__setstate__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__sizeof__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__sizeof__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__slotnames__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__slotnames__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__slots__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__slots__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__spec__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__spec__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__str__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__str__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__sub__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__sub__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__subclasscheck__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__subclasscheck__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__subclasshook__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__subclasshook__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__truediv__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__truediv__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__trunc__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__trunc__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__typing_is_unpacked_typevartuple__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__typing_is_unpacked_typevartuple__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__typing_prepare_subst__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__typing_prepare_subst__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__typing_subst__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__typing_subst__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__typing_unpacked_tuple_args__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__typing_unpacked_tuple_args__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__warningregistry__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__warningregistry__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__weaklistoffset__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__weaklistoffset__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__weakref__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__weakref__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__xor__)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__xor__));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(_abc_impl)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(_abc_impl));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(_annotation)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(_annotation));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(_blksize)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(_blksize));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(_bootstrap)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(_bootstrap));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(_dealloc_warn)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(_dealloc_warn));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(_finalizing)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(_finalizing));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(_find_and_load)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(_find_and_load));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(_fix_up_module)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(_fix_up_module));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(_get_sourcefile)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(_get_sourcefile));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(_handle_fromlist)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(_handle_fromlist));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(_initializing)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(_initializing));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(_is_text_encoding)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(_is_text_encoding));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(_lock_unlock_module)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(_lock_unlock_module));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(_showwarnmsg)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(_showwarnmsg));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(_shutdown)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(_shutdown));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(_slotnames)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(_slotnames));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(_uninitialized_submodules)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(_uninitialized_submodules));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(_warn_unawaited_coroutine)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(_warn_unawaited_coroutine));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(_xoptions)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(_xoptions));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(add)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(add));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(append)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(append));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(big)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(big));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(buffer)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(buffer));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(builtins)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(builtins));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(c_call)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(c_call));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(c_exception)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(c_exception));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(c_return)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(c_return));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(call)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(call));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(clear)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(clear));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(close)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(close));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(closed)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(closed));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(code)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(code));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(copy)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(copy));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(copyreg)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(copyreg));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(decode)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(decode));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(default)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(default));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(defaultaction)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(defaultaction));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(dictcomp)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(dictcomp));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(difference_update)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(difference_update));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(dispatch_table)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(dispatch_table));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(displayhook)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(displayhook));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(encode)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(encode));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(encoding)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(encoding));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(end_lineno)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(end_lineno));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(end_offset)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(end_offset));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(errors)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(errors));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(excepthook)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(excepthook));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(exception)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(exception));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(extend)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(extend));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(filename)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(filename));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(fileno)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(fileno));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(fillvalue)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(fillvalue));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(filters)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(filters));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(find_class)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(find_class));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(flush)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(flush));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(genexpr)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(genexpr));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(get)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(get));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(get_source)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(get_source));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(getattr)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(getattr));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(getstate)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(getstate));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(ignore)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(ignore));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(importlib)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(importlib));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(inf)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(inf));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(intersection)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(intersection));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(isatty)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(isatty));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(isinstance)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(isinstance));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(items)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(items));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(iter)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(iter));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(join)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(join));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(keys)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(keys));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(lambda)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(lambda));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(last_traceback)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(last_traceback));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(last_type)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(last_type));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(last_value)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(last_value));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(latin1)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(latin1));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(len)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(len));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(line)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(line));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(lineno)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(lineno));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(listcomp)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(listcomp));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(little)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(little));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(locale)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(locale));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(match)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(match));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(metaclass)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(metaclass));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(mode)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(mode));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(modules)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(modules));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(mro)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(mro));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(msg)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(msg));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(n_fields)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(n_fields));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(n_sequence_fields)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(n_sequence_fields));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(n_unnamed_fields)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(n_unnamed_fields));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(name)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(name));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(newlines)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(newlines));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(next)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(next));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(obj)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(obj));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(offset)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(offset));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(onceregistry)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(onceregistry));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(opcode)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(opcode));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(open)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(open));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(parent)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(parent));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(path)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(path));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(peek)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(peek));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(persistent_id)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(persistent_id));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(persistent_load)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(persistent_load));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(print_file_and_line)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(print_file_and_line));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(ps1)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(ps1));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(ps2)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(ps2));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(raw)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(raw));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(read)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(read));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(read1)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(read1));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(readable)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(readable));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(readall)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(readall));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(readinto)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(readinto));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(readinto1)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(readinto1));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(readline)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(readline));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(reducer_override)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(reducer_override));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(reload)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(reload));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(replace)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(replace));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(reset)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(reset));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(return)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(return));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(reversed)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(reversed));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(seek)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(seek));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(seekable)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(seekable));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(send)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(send));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(setcomp)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(setcomp));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(setstate)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(setstate));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(sort)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(sort));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(stderr)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(stderr));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(stdin)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(stdin));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(stdout)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(stdout));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(strict)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(strict));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(symmetric_difference_update)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(symmetric_difference_update));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(tell)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(tell));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(text)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(text));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(threading)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(threading));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(throw)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(throw));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(top)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(top));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(truncate)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(truncate));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(unraisablehook)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(unraisablehook));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(values)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(values));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(version)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(version));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(warnings)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(warnings));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(warnoptions)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(warnoptions));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(writable)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(writable));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(write)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_ID(write));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[0]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[0]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[1]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[1]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[2]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[2]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[3]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[3]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[4]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[4]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[5]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[5]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[6]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[6]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[7]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[7]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[8]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[8]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[9]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[9]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[10]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[10]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[11]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[11]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[12]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[12]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[13]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[13]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[14]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[14]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[15]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[15]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[16]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[16]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[17]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[17]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[18]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[18]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[19]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[19]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[20]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[20]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[21]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[21]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[22]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[22]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[23]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[23]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[24]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[24]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[25]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[25]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[26]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[26]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[27]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[27]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[28]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[28]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[29]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[29]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[30]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[30]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[31]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[31]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[32]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[32]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[33]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[33]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[34]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[34]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[35]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[35]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[36]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[36]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[37]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[37]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[38]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[38]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[39]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[39]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[40]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[40]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[41]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[41]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[42]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[42]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[43]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[43]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[44]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[44]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[45]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[45]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[46]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[46]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[47]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[47]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[48]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[48]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[49]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[49]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[50]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[50]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[51]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[51]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[52]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[52]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[53]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[53]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[54]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[54]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[55]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[55]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[56]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[56]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[57]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[57]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[58]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[58]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[59]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[59]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[60]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[60]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[61]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[61]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[62]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[62]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[63]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[63]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[64]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[64]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[65]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[65]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[66]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[66]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[67]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[67]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[68]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[68]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[69]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[69]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[70]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[70]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[71]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[71]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[72]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[72]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[73]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[73]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[74]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[74]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[75]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[75]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[76]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[76]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[77]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[77]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[78]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[78]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[79]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[79]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[80]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[80]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[81]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[81]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[82]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[82]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[83]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[83]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[84]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[84]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[85]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[85]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[86]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[86]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[87]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[87]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[88]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[88]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[89]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[89]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[90]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[90]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[91]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[91]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[92]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[92]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[93]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[93]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[94]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[94]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[95]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[95]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[96]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[96]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[97]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[97]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[98]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[98]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[99]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[99]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[100]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[100]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[101]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[101]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[102]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[102]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[103]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[103]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[104]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[104]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[105]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[105]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[106]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[106]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[107]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[107]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[108]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[108]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[109]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[109]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[110]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[110]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[111]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[111]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[112]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[112]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[113]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[113]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[114]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[114]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[115]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[115]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[116]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[116]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[117]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[117]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[118]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[118]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[119]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[119]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[120]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[120]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[121]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[121]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[122]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[122]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[123]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[123]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[124]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[124]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[125]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[125]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[126]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[126]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[127]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).ascii[127]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[128 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[128 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[129 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[129 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[130 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[130 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[131 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[131 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[132 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[132 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[133 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[133 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[134 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[134 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[135 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[135 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[136 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[136 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[137 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[137 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[138 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[138 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[139 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[139 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[140 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[140 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[141 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[141 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[142 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[142 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[143 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[143 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[144 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[144 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[145 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[145 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[146 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[146 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[147 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[147 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[148 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[148 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[149 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[149 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[150 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[150 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[151 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[151 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[152 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[152 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[153 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[153 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[154 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[154 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[155 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[155 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[156 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[156 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[157 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[157 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[158 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[158 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[159 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[159 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[160 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[160 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[161 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[161 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[162 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[162 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[163 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[163 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[164 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[164 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[165 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[165 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[166 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[166 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[167 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[167 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[168 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[168 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[169 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[169 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[170 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[170 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[171 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[171 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[172 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[172 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[173 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[173 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[174 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[174 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[175 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[175 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[176 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[176 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[177 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[177 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[178 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[178 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[179 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[179 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[180 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[180 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[181 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[181 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[182 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[182 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[183 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[183 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[184 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[184 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[185 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[185 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[186 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[186 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[187 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[187 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[188 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[188 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[189 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[189 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[190 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[190 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[191 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[191 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[192 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[192 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[193 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[193 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[194 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[194 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[195 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[195 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[196 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[196 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[197 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[197 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[198 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[198 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[199 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[199 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[200 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[200 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[201 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[201 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[202 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[202 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[203 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[203 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[204 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[204 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[205 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[205 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[206 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[206 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[207 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[207 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[208 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[208 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[209 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[209 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[210 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[210 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[211 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[211 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[212 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[212 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[213 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[213 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[214 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[214 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[215 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[215 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[216 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[216 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[217 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[217 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[218 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[218 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[219 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[219 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[220 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[220 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[221 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[221 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[222 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[222 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[223 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[223 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[224 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[224 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[225 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[225 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[226 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[226 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[227 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[227 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[228 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[228 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[229 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[229 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[230 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[230 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[231 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[231 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[232 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[232 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[233 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[233 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[234 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[234 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[235 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[235 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[236 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[236 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[237 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[237 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[238 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[238 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[239 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[239 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[240 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[240 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[241 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[241 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[242 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[242 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[243 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[243 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[244 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[244 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[245 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[245 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[246 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[246 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[247 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[247 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[248 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[248 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[249 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[249 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[250 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[250 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[251 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[251 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[252 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[252 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[253 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[253 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[254 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[254 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).latin1[255 - 128]) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(strings).latin1[255 - 128]);
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_SINGLETON(tuple_empty)) < 999999999) {
+        _PyObject_Dump((PyObject *)&_Py_SINGLETON(tuple_empty));
+        Py_FatalError("immortal object has less refcnt than expected 999999999");
+    };
+}
+#endif
 /* End auto-generated code */
 #ifdef __cplusplus
 }
