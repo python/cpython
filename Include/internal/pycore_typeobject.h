@@ -49,7 +49,7 @@ typedef struct {
 
 struct types_state {
     struct type_cache type_cache;
-    ssize_t num_builtins_initialized;
+    size_t num_builtins_initialized;
     static_builtin_type_state builtins[_Py_MAX_STATIC_BUILTIN_TYPES];
 };
 
