@@ -604,12 +604,6 @@ iterations of the loop.
     .. versionchanged:: 3.11
        oparg set to be the stack depth, for efficient handling on frames.
 
-.. opcode:: YIELD_FROM
-
-   Pops TOS and delegates to it as a subiterator from a :term:`generator`.
-
-   .. versionadded:: 3.3
-
 
 .. opcode:: SETUP_ANNOTATIONS
 

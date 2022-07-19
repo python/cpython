@@ -85,6 +85,10 @@
          (opcode) == SETUP_WITH || \
          (opcode) == SETUP_CLEANUP)
 
+/* opcodes that must be last in the basicblock */
+#define IS_TERMINATOR_OPCODE(opcode) \
+        (IS_JUMP_OPCODE(opcode) || IS_SCOPE_EXIT_OPCODE(opcode))
+
 /* opcodes which are not emitted in codegen stage, only by the assembler */
 #define IS_ASSEMBLER_OPCODE(opcode) \
         ((opcode) == JUMP_FORWARD || \
@@ -262,7 +266,7 @@ typedef struct basicblock_ {
 
 
 static struct instr *
-basicblock_last_instr(basicblock *b) {
+basicblock_last_instr(const basicblock *b) {
     if (b->b_iused) {
         return &b->b_instr[b->b_iused - 1];
     }
@@ -270,19 +274,19 @@ basicblock_last_instr(basicblock *b) {
 }
 
 static inline int
-basicblock_returns(basicblock *b) {
+basicblock_returns(const basicblock *b) {
     struct instr *last = basicblock_last_instr(b);
     return last && last->i_opcode == RETURN_VALUE;
 }
 
 static inline int
-basicblock_exits_scope(basicblock *b) {
+basicblock_exits_scope(const basicblock *b) {
     struct instr *last = basicblock_last_instr(b);
     return last && IS_SCOPE_EXIT_OPCODE(last->i_opcode);
 }
 
 static inline int
-basicblock_nofallthrough(basicblock *b) {
+basicblock_nofallthrough(const basicblock *b) {
     struct instr *last = basicblock_last_instr(b);
     return (last &&
             (IS_SCOPE_EXIT_OPCODE(last->i_opcode) ||
@@ -1244,17 +1248,11 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 }
 
 static int
-is_end_of_basic_block(struct instr *instr)
-{
-    int opcode = instr->i_opcode;
-    return IS_JUMP_OPCODE(opcode) || IS_SCOPE_EXIT_OPCODE(opcode);
-}
-
-static int
 compiler_use_new_implicit_block_if_needed(struct compiler *c)
 {
     basicblock *b = c->u->u_curblock;
-    if (b->b_iused && is_end_of_basic_block(basicblock_last_instr(b))) {
+    struct instr *last = basicblock_last_instr(b);
+    if (last && IS_TERMINATOR_OPCODE(last->i_opcode)) {
         basicblock *b = compiler_new_block(c);
         if (b == NULL) {
             return -1;
@@ -4736,8 +4734,15 @@ update_location_to_match_attr(struct compiler *c, expr_ty meth)
 {
     if (meth->lineno != meth->end_lineno) {
         // Make start location match attribute
-        c->u->u_loc.lineno = meth->end_lineno;
-        c->u->u_loc.col_offset = meth->end_col_offset - (int)PyUnicode_GetLength(meth->v.Attribute.attr)-1;
+        c->u->u_loc.lineno = c->u->u_loc.end_lineno = meth->end_lineno;
+        int len = (int)PyUnicode_GET_LENGTH(meth->v.Attribute.attr);
+        if (len <= meth->end_col_offset) {
+            c->u->u_loc.col_offset = meth->end_col_offset - len;
+        }
+        else {
+            // GH-94694: Somebody's compiling weird ASTs. Just drop the columns:
+            c->u->u_loc.col_offset = c->u->u_loc.end_col_offset = -1;
+        }
     }
 }
 
@@ -8546,18 +8551,6 @@ assemble(struct compiler *c, int addNone)
         ADDOP(c, RETURN_VALUE);
     }
 
-    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
-        if (normalize_basic_block(b)) {
-            return NULL;
-        }
-    }
-
-    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
-        if (extend_block(b)) {
-            return NULL;
-        }
-    }
-
     assert(PyDict_GET_SIZE(c->u->u_varnames) < INT_MAX);
     assert(PyDict_GET_SIZE(c->u->u_cellvars) < INT_MAX);
     assert(PyDict_GET_SIZE(c->u->u_freevars) < INT_MAX);
@@ -8615,11 +8608,11 @@ assemble(struct compiler *c, int addNone)
     if (optimize_cfg(entryblock, consts, c->c_const_cache)) {
         goto error;
     }
-    if (duplicate_exits_without_lineno(entryblock)) {
-        return NULL;
-    }
     if (trim_unused_consts(entryblock, consts)) {
         goto error;
+    }
+    if (duplicate_exits_without_lineno(entryblock)) {
+        return NULL;
     }
     propagate_line_numbers(entryblock);
     guarantee_lineno_for_exits(entryblock, c->u->u_firstlineno);
@@ -9316,8 +9309,8 @@ clean_basic_block(basicblock *bb) {
 
 static int
 normalize_basic_block(basicblock *bb) {
-    /* Mark blocks as exit and/or nofallthrough.
-     Raise SystemError if CFG is malformed. */
+    /* Skip over empty blocks.
+     * Raise SystemError if jump or exit is not last instruction in the block. */
     for (int i = 0; i < bb->b_iused; i++) {
         int opcode = bb->b_instr[i].i_opcode;
         assert(!IS_ASSEMBLER_OPCODE(opcode));
@@ -9454,8 +9447,7 @@ propagate_line_numbers(basicblock *entryblock) {
    The consts object should still be in list form to allow new constants
    to be appended.
 
-   All transformations keep the code size the same or smaller.
-   For those that reduce size, the gaps are initially filled with
+   Code trasnformations that reduce code size initially fill the gaps with
    NOPs.  Later those NOPs are removed.
 */
 
@@ -9463,6 +9455,16 @@ static int
 optimize_cfg(basicblock *entryblock, PyObject *consts, PyObject *const_cache)
 {
     assert(PyDict_CheckExact(const_cache));
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        if (normalize_basic_block(b)) {
+            return -1;
+        }
+    }
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        if (extend_block(b)) {
+            return -1;
+        }
+    }
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         if (optimize_basic_block(const_cache, b, consts)) {
             return -1;
