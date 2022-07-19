@@ -287,9 +287,9 @@ params[arguments_ty]:
 
 parameters[arguments_ty]:
     | a=slash_no_default b[asdl_arg_seq*]=param_no_default* c=param_with_default* d=[star_etc] {
-        _PyPegen_make_arguments(p, a, NULL, b, c, d) }
+        CHECK_VERSION(arguments_ty, 8, "Positional-only parameters are", _PyPegen_make_arguments(p, a, NULL, b, c, d)) }
     | a=slash_with_default b=param_with_default* c=[star_etc] {
-        _PyPegen_make_arguments(p, NULL, a, NULL, b, c) }
+        CHECK_VERSION(arguments_ty, 8, "Positional-only parameters are", _PyPegen_make_arguments(p, NULL, a, NULL, b, c)) }
     | a[asdl_arg_seq*]=param_no_default+ b=param_with_default* c=[star_etc] {
         _PyPegen_make_arguments(p, NULL, NULL, a, b, c) }
     | a=param_with_default+ b=[star_etc] { _PyPegen_make_arguments(p, NULL, NULL, NULL, a, b)}
