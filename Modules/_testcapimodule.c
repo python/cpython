@@ -5731,7 +5731,7 @@ static PyMethodDef TestMethods[] = {
     {"getargs_s_hash",          getargs_s_hash,                  METH_VARARGS},
     {"getargs_s_hash_int",      (PyCFunction)(void(*)(void))getargs_s_hash_int,
       METH_VARARGS|METH_KEYWORDS},
-    {"getargs_s_hash_int2",      _PyCFunction_CAST(getargs_s_hash_int2),
+    {"getargs_s_hash_int2",      (PyCFunction)(void(*)(void))getargs_s_hash_int2,
       METH_VARARGS|METH_KEYWORDS},
     {"getargs_z",               getargs_z,                       METH_VARARGS},
     {"getargs_z_star",          getargs_z_star,                  METH_VARARGS},
