@@ -67,6 +67,17 @@ slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value);
 
 static inline PyTypeObject * subclass_from_ref(PyObject *ref);
 
+static inline struct builtin_static_type_state *
+lookup_static_builtin_type(PyTypeObject *self)
+{
+    if (self->tp_static_builtin_index == 0) {
+        return NULL;
+    }
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return &(interp->types.builtins[self->tp_static_builtin_index - 1]);
+}
+
+
 /*
  * finds the beginning of the docstring's introspection signature.
  * if present, returns a pointer pointing to the first '('.
@@ -4247,6 +4258,11 @@ clear_static_tp_subclasses(PyTypeObject *type)
 void
 _PyStaticType_Dealloc(PyTypeObject *type)
 {
+    struct builtin_static_type_state *state = lookup_static_builtin_type(type);
+    if (state != NULL) {
+        state->type = NULL;
+    }
+
     type_dealloc_common(type);
 
     Py_CLEAR(type->tp_dict);
@@ -6677,10 +6693,21 @@ PyType_Ready(PyTypeObject *type)
 int
 _PyStaticType_InitBuiltin(PyTypeObject *self)
 {
-    /* For static types we store them in an array on each interpreter. */
+    /* It should only be called once for each builtin type. */
+    assert(self->tp_static_builtin_index == 0);
+
+    /* For static types we store some state in an array on each interpreter. */
     PyInterpreterState *interp = _PyInterpreterState_GET();
     interp->types.num_builtins_initialized++;
     assert(interp->types.num_builtins_initialized < _Py_MAX_STATIC_BUILTIN_TYPES);
+
+    /* We use 1-based indexing so 0 can mean "not initialized". */
+    self->tp_static_builtin_index = interp->types.num_builtins_initialized;
+
+    /* Now we initialize the type's per-interpreter state. */
+    struct builtin_static_type_state *state = lookup_static_builtin_type(self);
+    assert(state != NULL);
+    state->type = self;
 
     self->tp_flags = self->tp_flags | _Py_TPFLAGS_STATIC_BUILTIN;
 
