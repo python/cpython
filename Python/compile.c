@@ -266,7 +266,7 @@ typedef struct basicblock_ {
 
 
 static struct instr *
-basicblock_last_instr(basicblock *b) {
+basicblock_last_instr(const basicblock *b) {
     if (b->b_iused) {
         return &b->b_instr[b->b_iused - 1];
     }
@@ -274,19 +274,19 @@ basicblock_last_instr(basicblock *b) {
 }
 
 static inline int
-basicblock_returns(basicblock *b) {
+basicblock_returns(const basicblock *b) {
     struct instr *last = basicblock_last_instr(b);
     return last && last->i_opcode == RETURN_VALUE;
 }
 
 static inline int
-basicblock_exits_scope(basicblock *b) {
+basicblock_exits_scope(const basicblock *b) {
     struct instr *last = basicblock_last_instr(b);
     return last && IS_SCOPE_EXIT_OPCODE(last->i_opcode);
 }
 
 static inline int
-basicblock_nofallthrough(basicblock *b) {
+basicblock_nofallthrough(const basicblock *b) {
     struct instr *last = basicblock_last_instr(b);
     return (last &&
             (IS_SCOPE_EXIT_OPCODE(last->i_opcode) ||
