@@ -718,7 +718,8 @@ if sys.platform != 'win32':
 
                 watcher.add_child_handler.assert_not_called()
 
-            self.assertIsNone(asyncio.run(execute()))
+            with asyncio.Runner(loop_factory=asyncio.new_event_loop) as runner:
+                self.assertIsNone(runner.run(execute()))
             self.assertListEqual(watcher.mock_calls, [
                 mock.call.__enter__(),
                 mock.call.__enter__().is_active(),
@@ -750,14 +751,15 @@ if sys.platform != 'win32':
                 return proc.returncode, stdout
 
             async def main():
-                # asyncio.run did not call asyncio.set_event_loop()
+                # asyncio.Runner did not call asyncio.set_event_loop()
                 with self.assertRaises(RuntimeError):
                     asyncio.get_event_loop_policy().get_event_loop()
                 return await asyncio.to_thread(asyncio.run, in_thread())
 
             asyncio.set_child_watcher(asyncio.PidfdChildWatcher())
             try:
-                returncode, stdout = asyncio.run(main())
+                with asyncio.Runner(loop_factory=asyncio.new_event_loop) as runner:
+                    returncode, stdout = runner.run(main())
                 self.assertEqual(returncode, 0)
                 self.assertEqual(stdout, b'some data')
             finally:
