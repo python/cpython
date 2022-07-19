@@ -4241,6 +4241,8 @@ _PyStaticType_Dealloc(PyTypeObject *type)
     }
 
     type->tp_flags &= ~Py_TPFLAGS_READY;
+    // Reset tp_static_builtin_index after each finalization.
+    type->tp_static_builtin_index = 0;
 }
 
 
