@@ -43,9 +43,14 @@ struct type_cache {
    all the static builtin types will fit (for all builds). */
 #define _Py_MAX_STATIC_BUILTIN_TYPES 200
 
+struct builtin_static_type_state {
+    PyTypeObject *type;
+};
+
 struct types_state {
     struct type_cache type_cache;
     ssize_t num_builtins_initialized;
+    struct builtin_static_type_state builtins[_Py_MAX_STATIC_BUILTIN_TYPES];
 };
 
 
