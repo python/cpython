@@ -47,6 +47,10 @@ class SqliteInteractiveConsole(InteractiveConsole):
         return keywords.get(source, self.runsql)(source)
 
 
+def dump_version():
+    print(f"SQLite version {sqlite3.sqlite_version}")
+
+
 def main():
     parser = ArgumentParser(
         description="Python sqlite3 REPL",
@@ -57,7 +61,14 @@ def main():
         type=str, dest="database", action="store", default=":memory:",
         help="Database to open (default in-memory database)",
     )
+    parser.add_argument(
+        "-v", "--version",
+        dest="show_version", action="store_true", default=False,
+        help="Print SQLite version",
+    )
     args = parser.parse_args()
+    if args.show_version:
+        return dump_version()
 
     if args.database == ":memory:":
         db_name = "a transient in-memory database"
