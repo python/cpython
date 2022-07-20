@@ -3,6 +3,7 @@ import signal
 import sys
 import unittest
 import warnings
+import functools
 from unittest import mock
 
 import asyncio
@@ -27,6 +28,19 @@ PROGRAM_CAT = [
     ';'.join(('import sys',
               'data = sys.stdin.buffer.read()',
               'sys.stdout.buffer.write(data)'))]
+
+
+@functools.cached
+def _has_pidfd_support():
+    if not hasattr(os, 'pidfd_open'):
+        return False
+
+    try:
+        os.close(os.pidfd_open(os.getpid()))
+    except OSError:
+        return False
+
+    return True
 
 
 def tearDownModule():
@@ -683,17 +697,8 @@ if sys.platform != 'win32':
 
         Watcher = unix_events.FastChildWatcher
 
-    def has_pidfd_support():
-        if not hasattr(os, 'pidfd_open'):
-            return False
-        try:
-            os.close(os.pidfd_open(os.getpid()))
-        except OSError:
-            return False
-        return True
-
     @unittest.skipUnless(
-        has_pidfd_support(),
+        _has_pidfd_support(),
         "operating system does not support pidfds",
     )
     class SubprocessPidfdWatcherTests(SubprocessWatcherMixin,
@@ -727,17 +732,8 @@ if sys.platform != 'win32':
             ])
 
 
-        def has_pidfd_support():
-            if not hasattr(os, 'pidfd_open'):
-                return False
-            try:
-                os.close(os.pidfd_open(os.getpid()))
-            except OSError:
-                return False
-            return True
-
         @unittest.skipUnless(
-            has_pidfd_support(),
+            _has_pidfd_support(),
             "operating system does not support pidfds",
         )
         def test_create_subprocess_with_pidfd(self):
