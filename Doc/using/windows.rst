@@ -359,9 +359,6 @@ full write access to shared locations such as :envvar:`TEMP` and the registry.
 Instead, it will write to a private copy. If your scripts must modify the
 shared locations, you will need to install the full installer.
 
-This behavior, called "Application Execution Aliases" is enabled by default in all Microsoft Store apps.
-It can be disabled for ``python.exe`` in Windows Settings under the ``Manage App Execution Aliases`` screen.
-
 At runtime, Python will use a private copy of well-known Windows folders and the registry.
 For example, if the environment variable :envvar:`%APPDATA%` is :file:`c:\\Users\\<user>\\AppData\\`,
 then when writing to :file:`C:\\Users\\<user>\\AppData\\Local` will write to
