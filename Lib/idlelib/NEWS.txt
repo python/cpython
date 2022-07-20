@@ -30,6 +30,8 @@ Released on 2021-10-04
 =========================
 
 
+bpo-45193: Make completion boxes appear on Ubuntu again.
+
 bpo-40128: Mostly fix completions on macOS when not using tcl/tk 8.6.11
 (as with 3.9).
 
