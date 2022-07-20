@@ -30,7 +30,7 @@ PROGRAM_CAT = [
               'sys.stdout.buffer.write(data)'))]
 
 
-@functools.cached
+@functools.cache
 def _has_pidfd_support():
     if not hasattr(os, 'pidfd_open'):
         return False
