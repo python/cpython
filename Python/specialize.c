@@ -1288,11 +1288,9 @@ function_get_version(PyObject *o, int opcode)
     uint32_t version = _PyFunction_GetVersionForCurrentState(func);
     if (version == 0) {
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_OUT_OF_VERSIONS);
-        goto fail;
+        return 0;
     }
     return version;
-fail:
-    return 0;
 }
 
 int
