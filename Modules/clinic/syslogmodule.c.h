@@ -164,7 +164,7 @@ PyDoc_STRVAR(syslog_LOG_MASK__doc__,
 "LOG_MASK($module, pri, /)\n"
 "--\n"
 "\n"
-"calculates the mask for the individual priority pri.");
+"Calculates the mask for the individual priority pri.");
 
 #define SYSLOG_LOG_MASK_METHODDEF    \
     {"LOG_MASK", (PyCFunction)syslog_LOG_MASK, METH_O, syslog_LOG_MASK__doc__},
@@ -197,7 +197,7 @@ PyDoc_STRVAR(syslog_LOG_UPTO__doc__,
 "LOG_UPTO($module, pri, /)\n"
 "--\n"
 "\n"
-"calculates the mask for all priorities up to and including pri.");
+"Calculates the mask for all priorities up to and including pri.");
 
 #define SYSLOG_LOG_UPTO_METHODDEF    \
     {"LOG_UPTO", (PyCFunction)syslog_LOG_UPTO, METH_O, syslog_LOG_UPTO__doc__},
@@ -225,4 +225,4 @@ syslog_LOG_UPTO(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f294eb609a4087c8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5aac7edfd632f512 input=a9049054013a1b77]*/

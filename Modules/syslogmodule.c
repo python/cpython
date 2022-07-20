@@ -257,12 +257,12 @@ syslog.LOG_MASK -> long
     pri: long
     /
 
-calculates the mask for the individual priority pri.
+Calculates the mask for the individual priority pri.
 [clinic start generated code]*/
 
 static long
 syslog_LOG_MASK_impl(PyObject *module, long pri)
-/*[clinic end generated code: output=c4a5bbfcc74c7c94 input=25d2453cfd964871]*/
+/*[clinic end generated code: output=c4a5bbfcc74c7c94 input=534829cb7fb5f7d2]*/
 {
     return LOG_MASK(pri);
 }
@@ -273,12 +273,12 @@ syslog.LOG_UPTO -> long
     pri: long
     /
 
-calculates the mask for all priorities up to and including pri.
+Calculates the mask for all priorities up to and including pri.
 [clinic start generated code]*/
 
 static long
 syslog_LOG_UPTO_impl(PyObject *module, long pri)
-/*[clinic end generated code: output=9eab083c90601d7e input=6e2cb9d73da6e397]*/
+/*[clinic end generated code: output=9eab083c90601d7e input=5e906d6c406b7458]*/
 {
     return LOG_UPTO(pri);
 }
