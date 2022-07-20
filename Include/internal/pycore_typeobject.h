@@ -46,7 +46,7 @@ extern void _PyStaticType_Dealloc(PyTypeObject *type);
 
 PyObject *_Py_slot_tp_getattro(PyObject *self, PyObject *name);
 PyObject *_Py_slot_tp_getattr_hook(PyObject *self, PyObject *name);
-PyObject *_Py_call_attribute(PyObject *self, PyObject *attr, PyObject *name);
+
 #ifdef __cplusplus
 }
 #endif

@@ -7784,8 +7784,8 @@ _Py_slot_tp_getattro(PyObject *self, PyObject *name)
     return vectorcall_method(&_Py_ID(__getattribute__), stack, 2);
 }
 
-PyObject *
-_Py_call_attribute(PyObject *self, PyObject *attr, PyObject *name)
+static inline PyObject *
+call_attribute(PyObject *self, PyObject *attr, PyObject *name)
 {
     PyObject *res, *descr = NULL;
 
@@ -7819,7 +7819,7 @@ _Py_slot_tp_getattr_hook(PyObject *self, PyObject *name)
        method fully for each attribute lookup for classes with
        __getattr__, even when the attribute is present. So we use
        _PyType_Lookup and create the method only when needed, with
-       _Py_call_attribute. */
+       call_attribute. */
     getattr = _PyType_Lookup(tp, &_Py_ID(__getattr__));
     if (getattr == NULL) {
         /* No __getattr__ hook: use a simpler dispatcher */
@@ -7831,7 +7831,7 @@ _Py_slot_tp_getattr_hook(PyObject *self, PyObject *name)
        method fully for each attribute lookup for classes with
        __getattr__, even when self has the default __getattribute__
        method. So we use _PyType_Lookup and create the method only when
-       needed, with _Py_call_attribute. */
+       needed, with call_attribute. */
     getattribute = _PyType_Lookup(tp, &_Py_ID(__getattribute__));
     if (getattribute == NULL ||
         (Py_IS_TYPE(getattribute, &PyWrapperDescr_Type) &&
@@ -7840,12 +7840,12 @@ _Py_slot_tp_getattr_hook(PyObject *self, PyObject *name)
         res = PyObject_GenericGetAttr(self, name);
     else {
         Py_INCREF(getattribute);
-        res = _Py_call_attribute(self, getattribute, name);
+        res = call_attribute(self, getattribute, name);
         Py_DECREF(getattribute);
     }
     if (res == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
         PyErr_Clear();
-        res = _Py_call_attribute(self, getattr, name);
+        res = call_attribute(self, getattr, name);
     }
     Py_DECREF(getattr);
     return res;
