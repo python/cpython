@@ -355,7 +355,7 @@ Redirection of local data, registry, and temporary paths
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Because of restrictions on Microsoft Store apps, Python scripts may not have
-full write access to shared locations such as ``TEMP`` and the registry.
+full write access to shared locations such as :envvar:`TEMP` and the registry.
 Instead, it will write to a private copy. If your scripts must modify the
 shared locations, you will need to install the full installer.
 
@@ -382,7 +382,7 @@ You can find the real path of any existing file using :func:`os.path.realpath`:
 
 When writing to the Windows Registry, the following behaviors exist:
 
-* Reading from ``HKLM\\Software`` is allowed and results are merged with the `registry.dat` file in the package.
+* Reading from ``HKLM\\Software`` is allowed and results are merged with the :file:`registry.dat` file in the package.
 * Writing to ``HKLM\\Software`` is not allowed if the corresponding key/value exists, i.e. modifying existing keys.
 * Writing to ``HKLM\\Software`` is allowed as long as a corresponding key/value does not exist in the package
   and the user has the correct access permissions.
