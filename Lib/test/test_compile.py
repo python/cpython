@@ -1181,6 +1181,27 @@ f(
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
             line=1, end_line=1, column=0, end_column=27, occurrence=4)
 
+    def test_multiline_assert_rewritten_as_method_call(self):
+        # GH-94694: Don't crash if pytest rewrites a multiline assert as a
+        # method call with the same location information:
+        tree = ast.parse("assert (\n42\n)")
+        old_node = tree.body[0]
+        new_node = ast.Expr(
+            ast.Call(
+                ast.Attribute(
+                    ast.Name("spam", ast.Load()),
+                    "eggs",
+                    ast.Load(),
+                ),
+                [],
+                [],
+            )
+        )
+        ast.copy_location(new_node, old_node)
+        ast.fix_missing_locations(new_node)
+        tree.body[0] = new_node
+        compile(tree, "<test>", "exec")
+
 
 class TestExpressionStackSize(unittest.TestCase):
     # These tests check that the computed stack size for a code object
