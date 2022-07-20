@@ -485,7 +485,7 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
                 t = ThreadPoolExecutor()
                 t.submit(sleep_and_print, .1, "apple")
                 t.shutdown(wait=False, cancel_futures=True)
-            """.format(executor_type=self.executor_type.__name__))
+            """)
         # Errors in atexit hooks don't change the process exit code, check
         # stderr manually.
         self.assertFalse(err)

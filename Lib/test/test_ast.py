@@ -738,6 +738,14 @@ class AST_Tests(unittest.TestCase):
         expressions[0] = f"expr = {ast.expr.__subclasses__()[0].__doc__}"
         self.assertCountEqual(ast.expr.__doc__.split("\n"), expressions)
 
+    def test_parenthesized_with_feature_version(self):
+        ast.parse('with (CtxManager() as example): ...', feature_version=(3, 10))
+        # While advertised as a feature in Python 3.10, this was allowed starting 3.9
+        ast.parse('with (CtxManager() as example): ...', feature_version=(3, 9))
+        with self.assertRaises(SyntaxError):
+            ast.parse('with (CtxManager() as example): ...', feature_version=(3, 8))
+        ast.parse('with CtxManager() as example: ...', feature_version=(3, 8))
+
     def test_issue40614_feature_version(self):
         ast.parse('f"{x=}"', feature_version=(3, 8))
         with self.assertRaises(SyntaxError):
