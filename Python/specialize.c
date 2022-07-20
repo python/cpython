@@ -568,7 +568,6 @@ static DescriptorClassification
 analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int store)
 {
     bool has_getattr = false;
-    bool has_custom_getattribute = false;
     if (store) {
         if (type->tp_setattro != PyObject_GenericSetAttr) {
             *descr = NULL;
@@ -576,37 +575,28 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int sto
         }
     }
     else {
-        if (type->tp_getattro != PyObject_GenericGetAttr) {
-            getattrofunc getattro_slot = type->tp_getattro;
-            /* The following comment is copied from typeobject.c */
-            /* There are two slot dispatch functions for tp_getattro.
-
-               - _Py_slot_tp_getattro() is used when __getattribute__ is overridden
-                 but no __getattr__ hook is present;
-
-               - _Py_slot_tp_getattr_hook() is used when a __getattr__ hook is present.
-
-               The code in update_one_slot() always installs
-               _Py_slot_tp_getattr_hook(); this detects the absence of
-               __getattr__ and then installs the simpler slot if necessary. */
-            /* Using some custom tp_getattro, like super() objects */
-            if (getattro_slot != _Py_slot_tp_getattr_hook &&
-                getattro_slot != _Py_slot_tp_getattro) {
-                *descr = NULL;
-                return GETSET_OVERRIDDEN;
-            }
+        getattrofunc getattro_slot = type->tp_getattro;
+        if (getattro_slot == PyObject_GenericGetAttr) {
+            /* Normal attribute lookup; */
+            has_getattr = false;
+        }
+        else if (getattro_slot == _Py_slot_tp_getattr_hook ||
+            getattro_slot == _Py_slot_tp_getattro) {
+            /* One or both of __getattribute__ or __getattr__ may have been
+             overridden See typeobject.c for why these functions are special. */
             PyObject *getattribute = _PyType_Lookup(type,
                 &_Py_ID(__getattribute__));
-            has_custom_getattribute = getattribute != NULL &&
-                !(Py_IS_TYPE(getattribute, &PyWrapperDescr_Type) &&
-                    ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
-                    (void *)PyObject_GenericGetAttr);
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            bool has_custom_getattribute = getattribute != NULL &&
+                getattribute != interp->callable_cache.object__getattribute__;
+            has_getattr = _PyType_Lookup(type, &_Py_ID(__getattr__)) != NULL;
             if (has_custom_getattribute) {
-                if (getattro_slot == _Py_slot_tp_getattro &&
-                    Py_IS_TYPE(getattribute, &PyFunction_Type)) {
+                if (!has_getattr && Py_IS_TYPE(getattribute, &PyFunction_Type)) {
                     *descr = getattribute;
                     return GETATTRIBUTE_IS_PYTHON_FUNCTION;
                 }
+                /* Potentially both __getattr__ and __getattribute__ are set.
+                   Too complicated */
                 *descr = NULL;
                 return GETSET_OVERRIDDEN;
             }
@@ -617,7 +607,10 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int sto
                raised. This means some specializations, e.g. specializing
                for property() isn't safe.
             */
-            has_getattr = (getattro_slot == _Py_slot_tp_getattr_hook);
+        }
+        else {
+            *descr = NULL;
+            return GETSET_OVERRIDDEN;
         }
     }
     PyObject *descriptor = _PyType_Lookup(type, name);
