@@ -4218,6 +4218,11 @@ has_lingering_subclasses(PyTypeObject *type)
     if (type->tp_subclasses == NULL) {
         return 0;
     }
+    if (!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN)) {
+        // XXX This means we'll leak the objects for which the static type
+        // owns a reference (directly or indirectly).
+        return 1;
+    }
     // We can ignore non-builtin static types.
     Py_ssize_t i = 0;
     PyObject *ref;  // borrowed ref
@@ -4265,8 +4270,12 @@ _PyStaticType_Dealloc(PyTypeObject *type)
     }
 
     type->tp_flags &= ~Py_TPFLAGS_READY;
-    // Reset tp_static_builtin_index after each finalization.
-    type->tp_static_builtin_index = 0;
+
+    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        /* Reset the type's per-interpreter state.
+           This basically undoes what _PyStaticType_InitBuiltin() did. */
+        type->tp_static_builtin_index = 0;
+    }
 }
 
 
@@ -6700,6 +6709,8 @@ _PyStaticType_InitBuiltin(PyTypeObject *self)
     static_builtin_type_state *state = _PyStaticType_GetState(self);
     assert(state != NULL);
     state->type = self;
+
+    self->tp_flags = self->tp_flags | _Py_TPFLAGS_STATIC_BUILTIN;
 
     return PyType_Ready(self);
 }
