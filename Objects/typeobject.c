@@ -4244,6 +4244,9 @@ clear_static_tp_subclasses(PyTypeObject *type)
     Py_CLEAR(type->tp_subclasses);
 }
 
+static inline size_t get_static_builtin_index(PyTypeObject *);
+static inline void set_static_builtin_index(PyTypeObject *, size_t);
+
 void
 _PyStaticType_Dealloc(PyTypeObject *type)
 {
@@ -4270,7 +4273,7 @@ _PyStaticType_Dealloc(PyTypeObject *type)
     if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         /* Reset the type's per-interpreter state.
            This basically undoes what _PyStaticType_InitBuiltin() did. */
-        type->tp_static_builtin_index = 0;
+        set_static_builtin_index(type, 0);
     }
 }
 
@@ -6685,11 +6688,24 @@ PyType_Ready(PyTypeObject *type)
     return 0;
 }
 
+
+static inline size_t
+get_static_builtin_index(PyTypeObject *self)
+{
+    return self->tp_static_builtin_index;
+}
+
+static inline void
+set_static_builtin_index(PyTypeObject *self, size_t index)
+{
+    self->tp_static_builtin_index = index;
+}
+
 int
 _PyStaticType_InitBuiltin(PyTypeObject *self)
 {
     /* It should only be called once for each builtin type. */
-    assert(self->tp_static_builtin_index == 0);
+    assert(get_static_builtin_index(self) == 0);
 
     /* For static types we store some state in an array on each interpreter. */
     PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -6697,7 +6713,7 @@ _PyStaticType_InitBuiltin(PyTypeObject *self)
     assert(interp->types.num_builtins_initialized < _Py_MAX_STATIC_BUILTIN_TYPES);
 
     /* We use 1-based indexing so 0 can mean "not initialized". */
-    self->tp_static_builtin_index = interp->types.num_builtins_initialized;
+    set_static_builtin_index(self, interp->types.num_builtins_initialized);
 
     /* Now we initialize the type's per-interpreter state. */
     static_builtin_type_state *state = _PyStaticType_GetState(self);
@@ -6712,11 +6728,11 @@ _PyStaticType_InitBuiltin(PyTypeObject *self)
 static_builtin_type_state *
 _PyStaticType_GetState(PyTypeObject *self)
 {
-    if (self->tp_static_builtin_index == 0) {
+    if (get_static_builtin_index(self) == 0) {
         return NULL;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return &(interp->types.builtins[self->tp_static_builtin_index - 1]);
+    return &(interp->types.builtins[get_static_builtin_index(self) - 1]);
 }
 
 
