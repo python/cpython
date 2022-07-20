@@ -4212,26 +4212,51 @@ type_dealloc_common(PyTypeObject *type)
 }
 
 
+static void
+clear_static_tp_subclasses(PyTypeObject *type)
+{
+    if (type->tp_subclasses == NULL) {
+        return;
+    }
+
+    /* Normally it would be a problem to finalize the type if its
+       tp_subclasses wasn't cleared first.  However, this is only
+       ever called at the end of runtime finalization, so we can be
+       more liberal in cleaning up.  If the given type still has
+       subtypes at this point then some extension module did not
+       correctly finalize its objects.
+
+       We can safely obliterate such sybtypes since the extension
+       module and its objects won't be used again, except maybe if
+       the runtime were re-initialized.  In that case the sticky
+       situation would only happen if the module were re-imported
+       then and only if the subtype were stored in a global and only
+       if that global were not overwritten during import.  We'd be
+       fine since the extension is otherwise unsafe and unsupported
+       in that situation, and likely problematic already.
+
+       In any case, this situation means at least some memory is
+       going to leak.  This mostly only affects embedding scenarios.
+     */
+
+    // For now we just do a sanity check and then drop tp_subclasses.
+    Py_ssize_t i = 0;
+    PyObject *ref;  // borrowed ref
+    while (PyDict_Next((PyObject *)type->tp_subclasses, &i, NULL, &ref)) {
+        PyTypeObject *sub = (PyTypeObject *)((struct _PyWeakReference *)ref)->wr_object;
+        // All static builtin subtypes should have been finalized already.
+        assert(!(sub->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
+    }
+
+    Py_CLEAR(type->tp_subclasses);
+}
+
 static inline size_t get_static_builtin_index(PyTypeObject *);
 static inline void set_static_builtin_index(PyTypeObject *, size_t);
 
 void
 _PyStaticType_Dealloc(PyTypeObject *type)
 {
-    /* At this point in the runtime lifecycle, if a type still has
-       subtypes then some extension module did not correctly finalize
-       its objects.  We can ignore such sybtypes since such extension
-       modules are already unsafe if the runtime is re-used after
-       finalization (or in multiple interpreters).
-
-       Unfortunately, this means we will leak the objects for which
-       the subtype owns a reference (directly or indirectly). */
-    // XXX For now we abandon finalizing the static type here and
-    // instead leak the type's objects.
-    if (type->tp_subclasses != NULL) {
-        return;
-    }
-
     static_builtin_type_state *state = _PyStaticType_GetState(type);
     if (state != NULL) {
         state->type = NULL;
@@ -4243,7 +4268,7 @@ _PyStaticType_Dealloc(PyTypeObject *type)
     Py_CLEAR(type->tp_bases);
     Py_CLEAR(type->tp_mro);
     Py_CLEAR(type->tp_cache);
-    Py_CLEAR(type->tp_subclasses);
+    clear_static_tp_subclasses(type);
 
     // PyObject_ClearWeakRefs() raises an exception if Py_REFCNT() != 0
     if (Py_REFCNT(type) == 0) {
