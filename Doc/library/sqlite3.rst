@@ -508,16 +508,18 @@ Connection Objects
    .. method:: commit()
 
       Commit any pending transaction to the database.
-      If there is no open transaction, this method is a no-op.
-
+      If :attr:`autocommit` is :const:`True`,
+      or there is no open transaction,
+      this method is a no-op.
       If :attr:`autocommit` is :const:`False`, a new transaction is implicitly
       opened if a pending transaction was committed.
 
    .. method:: rollback()
 
       Roll back to the start of any pending transaction.
-      If there is no open transaction, this method is a no-op.
-
+      If :attr:`autocommit` is :const:`True`,
+      or there is no open transaction,
+      this method is a no-op.
       If :attr:`autocommit` is :const:`False`, a new transaction is implicitly
       opened if a pending transaction was rolled back.
 
@@ -964,12 +966,6 @@ Cursor Objects
       *seq_of_parameters*.  It is also possible to use an
       :term:`iterator` yielding parameters instead of a sequence.
       Uses the same implicit transaction handling as :meth:`~Cursor.execute`.
-
-      If :attr:`autocommit` is :data:`DEPRECATED_TRANSACTION_CONTROL`,
-      :attr:`isolation_level` is not :const:`None`,
-      *sql* is an INSERT, UPDATE, DELETE, or REPLACE statement,
-      and there is no pending transaction,
-      a transaction is implicitly opened before executing *sql*.
 
       .. literalinclude:: ../includes/sqlite3/executemany_1.py
 
