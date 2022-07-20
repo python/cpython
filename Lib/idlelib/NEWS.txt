@@ -1,6 +1,6 @@
 What's New in IDLE 3.10.z
-after 3.10.0 until 3.10.?
-Released on 2022-05-16
+after 3.10.0 until 3.10.10?
+Released 2023-04-03?
 =========================
 
 
@@ -28,7 +28,6 @@ What's New in IDLE 3.10.0
 (since 3.9.0)
 Released on 2021-10-04
 =========================
-
 
 bpo-45193: Make completion boxes appear on Ubuntu again.
 
