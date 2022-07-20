@@ -115,7 +115,7 @@ both styles:
 
 .. _sqlite3-module-contents:
 
-Module Functions and Constants
+Module functions and constants
 ------------------------------
 
 
@@ -396,7 +396,7 @@ Module Functions and Constants
 
 .. _sqlite3-connection-objects:
 
-Connection Objects
+Connection objects
 ------------------
 
 .. class:: Connection
@@ -865,7 +865,7 @@ Connection Objects
 
 .. _sqlite3-cursor-objects:
 
-Cursor Objects
+Cursor objects
 --------------
 
 .. class:: Cursor
@@ -1021,7 +1021,7 @@ Cursor Objects
 
 .. _sqlite3-row-objects:
 
-Row Objects
+Row objects
 -----------
 
 .. class:: Row
@@ -1087,7 +1087,7 @@ Now we plug :class:`Row` in::
 
 .. _sqlite3-blob-objects:
 
-Blob Objects
+Blob objects
 ------------
 
 .. versionadded:: 3.11
@@ -1139,7 +1139,7 @@ Blob Objects
       end).
 
 
-PrepareProtocol Objects
+PrepareProtocol objects
 -----------------------
 
 .. class:: PrepareProtocol
@@ -1241,7 +1241,7 @@ The exception hierarchy is defined by the DB-API 2.0 (:pep:`249`).
 
 .. _sqlite3-types:
 
-SQLite and Python Types
+SQLite and Python types
 -----------------------
 
 
@@ -1291,7 +1291,7 @@ you can let the :mod:`sqlite3` module convert SQLite types to different Python
 types via converters.
 
 
-How to Adapt Custom Python Types to SQLite Values
+How to adapt custom Python types to SQLite values
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 SQLite supports only a limited set of data types natively.
@@ -1333,7 +1333,7 @@ This function can then be registered using :func:`register_adapter`.
 .. literalinclude:: ../includes/sqlite3/adapter_point_2.py
 
 
-How to Convert SQLite Values to Custom Python Types
+How to convert SQLite values to custom Python types
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Writing an adapter lets you convert *from* custom Python types *to* SQLite
@@ -1373,7 +1373,7 @@ The following example illustrates the implicit and explicit approaches:
 .. literalinclude:: ../includes/sqlite3/converter_point.py
 
 
-Default Adapters and Converters
+Default adapters and converters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 There are default adapters for the date and datetime types in the datetime
@@ -1405,7 +1405,7 @@ timestamp converter.
 
 .. _sqlite3-adapter-converter-recipes:
 
-Adapter and Converter Recipes
+Adapter and converter recipes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This section shows recipes for common adapters and converters.
@@ -1450,7 +1450,7 @@ This section shows recipes for common adapters and converters.
 
 .. _sqlite3-controlling-transactions:
 
-Transaction Control
+Transaction control
 -------------------
 
 The ``sqlite3`` module does not adhere to the transaction handling recommended
@@ -1493,7 +1493,7 @@ regardless of the value of :attr:`~Connection.isolation_level`.
 
 .. _sqlite3-uri-tricks:
 
-SQLite URI Tricks
+SQLite URI tricks
 -----------------
 
 Some useful URI tricks include:
@@ -1522,11 +1522,11 @@ can be found in the `SQLite URI documentation`_.
 .. _SQLite URI documentation: https://www.sqlite.org/uri.html
 
 
-How to Use ``sqlite3`` Efficiently
+How to use ``sqlite3`` efficiently
 ----------------------------------
 
 
-How to Use Shortcut Methods
+How to use shortcut methods
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Using the nonstandard :meth:`execute`, :meth:`executemany` and
@@ -1540,7 +1540,7 @@ directly using only a single call on the :class:`Connection` object.
 .. literalinclude:: ../includes/sqlite3/shortcut_methods.py
 
 
-How to Access Columns by Name
+How to access columns by name
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 One useful feature of the :mod:`sqlite3` module is the built-in
@@ -1554,7 +1554,7 @@ case-insensitively by name:
 
 .. _sqlite3-connection-context-manager:
 
-How to Use a Connection as a Context Manager
+How to use a connection as a context manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A :class:`Connection` object can be used as a context manager that
