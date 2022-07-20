@@ -386,9 +386,6 @@ miss_counter_start(void) {
 #define SPEC_FAIL_ATTR_HAS_MANAGED_DICT 25
 #define SPEC_FAIL_ATTR_INSTANCE_ATTRIBUTE 26
 #define SPEC_FAIL_ATTR_METACLASS_ATTRIBUTE 27
-#define SPEC_FAIL_ATTR_CUSTOM_GETATTRO 28
-#define SPEC_FAIL_ATTR_NOT_HEAP_TYPE 29
-#define SPEC_FAIL_ATTR_NOT_MATCHING_CUSTOM_GETATTRIBUTE 30
 
 /* Binary subscr and store subscr */
 
@@ -543,6 +540,7 @@ specialize_module_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
     _Py_SET_OPCODE(*instr, opcode_module);
     return 0;
 }
+
 
 
 /* Attribute specialization */
