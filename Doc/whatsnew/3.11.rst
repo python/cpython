@@ -675,7 +675,7 @@ sqlite3
 
 * Rename ``sqlite3`` tests from ``test_sqlite`` to ``test_sqlite3``,
   and relocate them to ``Lib/test/test_sqlite3``.
-  (Contributed by Erlend E. Aasland in gh:`29304`)
+  (Contributed by Erlend E. Aasland in :gh:`29304`)
 
 
 sys
