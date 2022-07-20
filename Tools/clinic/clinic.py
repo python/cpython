@@ -3826,17 +3826,6 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
 
 add_c_return_converter(CReturnConverter, 'object')
 
-class NoneType_return_converter(CReturnConverter):
-    def render(self, function, data):
-        self.declare(data)
-        data.return_conversion.append('''
-if (_return_value != Py_None) {
-    goto exit;
-}
-return_value = Py_None;
-Py_INCREF(Py_None);
-'''.strip())
-
 class bool_return_converter(CReturnConverter):
     type = 'int'
 
