@@ -244,7 +244,7 @@ static long
 syslog_setlogmask_impl(PyObject *module, long maskpri)
 /*[clinic end generated code: output=d6ed163917b434bf input=adff2c2b76c7629c]*/
 {
-    if (PySys_Audit("syslog.setlogmask", "(l)", maskpri) < 0) {
+    if (PySys_Audit("syslog.setlogmask", "l", maskpri) < 0) {
         return -1;
     }
 
