@@ -114,10 +114,8 @@ static void _PySSLFixErrno(void) {
 /* Include generated data (error codes) */
 #if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
 #include "_ssl_data_300.h"
-#elif (OPENSSL_VERSION_NUMBER >= 0x10101000L) && !defined(LIBRESSL_VERSION_NUMBER)
-#include "_ssl_data_111.h"
 #else
-#include "_ssl_data.h"
+#include "_ssl_data_111.h"
 #endif
 
 #ifndef INVALID_SOCKET /* MS defines this */
@@ -777,7 +775,7 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
         return NULL;
     }
     /* bpo43522 and OpenSSL < 1.1.1l: copy hostflags manually */
-#if !defined(LIBRESSL_VERSION_NUMBER) && OPENSSL_VERSION < 0x101010cf
+#if OPENSSL_VERSION < 0x101010cf
     X509_VERIFY_PARAM *ssl_params = SSL_get0_param(self->ssl);
     X509_VERIFY_PARAM_set_hostflags(ssl_params, sslctx->hostflags);
 #endif
