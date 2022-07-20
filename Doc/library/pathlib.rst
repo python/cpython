@@ -1302,7 +1302,6 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 :func:`os.path.samefile`               :meth:`Path.samefile`
 :func:`os.path.splitext`               :data:`PurePath.stem` and
                                        :data:`PurePath.suffix`
-:func:`os.walk`                        :meth:`Path.glob` and :meth:`Path.rglob`
 ====================================   ==============================
 
 .. rubric:: Footnotes
