@@ -185,11 +185,13 @@ class property(DynamicClassAttribute):
     a corresponding enum member.
     """
 
+    member = None
+
     def __get__(self, instance, ownerclass=None):
         if instance is None:
-            try:
-                return ownerclass._member_map_[self.name]
-            except KeyError:
+            if self.member is not None:
+                return self.member
+            else:
                 raise AttributeError(
                         '%r has no attribute %r' % (ownerclass, self.name)
                         )
@@ -309,20 +311,14 @@ class _proto_member:
                 else:
                     need_override = True
                     # keep looking for an enum.property
-        if descriptor and not need_override:
-            # previous enum.property found, no further action needed
-            pass
-        elif descriptor and need_override:
-            redirect = property()
-            redirect.__set_name__(enum_class, member_name)
-            # Previous enum.property found, but some other inherited attribute
-            # is in the way; copy fget, fset, fdel to this one.
+        redirect = property()
+        redirect.member = enum_member
+        redirect.__set_name__(enum_class, member_name)
+        if descriptor:
             redirect.fget = descriptor.fget
             redirect.fset = descriptor.fset
             redirect.fdel = descriptor.fdel
-            setattr(enum_class, member_name, redirect)
-        else:
-            setattr(enum_class, member_name, enum_member)
+        setattr(enum_class, member_name, redirect)
         # now add to _member_map_ (even aliases)
         enum_class._member_map_[member_name] = enum_member
         try:
@@ -739,22 +735,6 @@ class EnumType(type):
         else:
             # return whatever mixed-in data type has
             return sorted(set(dir(cls._member_type_)) | interesting)
-
-    def __getattr__(cls, name):
-        """
-        Return the enum member matching `name`
-
-        We use __getattr__ instead of descriptors or inserting into the enum
-        class' __dict__ in order to support `name` and `value` being both
-        properties for enum members (which live in the class' __dict__) and
-        enum members themselves.
-        """
-        if _is_dunder(name):
-            raise AttributeError(name)
-        try:
-            return cls._member_map_[name]
-        except KeyError:
-            raise AttributeError(name) from None
 
     def __getitem__(cls, name):
         """
