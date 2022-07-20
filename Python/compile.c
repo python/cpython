@@ -9278,7 +9278,10 @@ clean_basic_block(basicblock *bb) {
             /* or, if the next instruction has same line number or no line number */
             if (src < bb->b_iused - 1) {
                 int next_lineno = bb->b_instr[src+1].i_loc.lineno;
-                if (next_lineno < 0 || next_lineno == lineno) {
+                if (next_lineno == lineno) {
+                    continue;
+                }
+                if (next_lineno < 0) {
                     bb->b_instr[src+1].i_loc = bb->b_instr[src].i_loc;
                     continue;
                 }
