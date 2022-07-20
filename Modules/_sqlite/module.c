@@ -80,7 +80,7 @@ pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
         Py_INCREF(isolation_level);
     }
     if (autocommit == NULL) {
-        autocommit = PyLong_FromLong(-1);
+        autocommit = PyLong_FromLong(DEPRECATED_TRANSACTION_CONTROL);
         if (autocommit == NULL) {
             Py_DECREF(isolation_level);
             return NULL;
@@ -89,11 +89,25 @@ pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
     else {
         Py_INCREF(autocommit);
     }
-    PyObject *res = PyObject_CallFunction(factory, "OdiOiOiiO", database,
-                                          timeout, detect_types,
-                                          isolation_level, check_same_thread,
-                                          factory, cached_statements, uri,
-                                          autocommit);
+
+    PyObject *res = NULL;
+    PyObject *args = Py_BuildValue("(OdiOiOii)", database, timeout,
+                                   detect_types, isolation_level,
+                                   check_same_thread, factory,
+                                   cached_statements, uri);
+    if (args == NULL) {
+        goto exit;
+    }
+    PyObject *kwargs = Py_BuildValue("{sO}", "autocommit", autocommit);
+    if (kwargs == NULL) {
+        Py_DECREF(args);
+        goto exit;
+    }
+    res = PyObject_Call(factory, args, kwargs);
+    Py_DECREF(args);
+    Py_DECREF(kwargs);
+
+exit:
     Py_DECREF(isolation_level);
     Py_DECREF(autocommit);
     return res;
