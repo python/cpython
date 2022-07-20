@@ -569,6 +569,15 @@ process and user.
       See the documentation for :func:`getgroups` for cases where it may not
       return the same group list set by calling setgroups().
 
+.. function:: setns(fd, flags=0)
+
+   Call the system call :c:func:`setns`. See the Linux manual for the semantics.
+   For flags see the ``CLONE_NEW*`` constants.
+
+   .. availability:: Linux 3.0 or newer.
+
+   .. versionadded:: 3.12
+
 .. function:: setpgrp()
 
    Call the system call :c:func:`setpgrp` or ``setpgrp(0, 0)`` depending on
@@ -731,6 +740,27 @@ process and user.
    .. versionchanged:: 3.9
       The function is now always available and is also available on Windows.
 
+
+.. function:: unshare(flags)
+
+   Call the system call :c:func:`unshare`. See the Linux manual for the semantics.
+
+   .. availability:: Linux 2.6.16 or newer.
+
+   .. versionadded:: 3.12
+
+Parameters to the :func:`unshare` function, if the implementation supports them.
+
+.. data:: CLONE_FS
+          CLONE_FILES
+          CLONE_NEWNS
+          CLONE_NEWCGROUP
+          CLONE_NEWUTS
+          CLONE_NEWIPC
+          CLONE_NEWUSER
+          CLONE_NEWPID
+          CLONE_NEWNET
+          CLONE_NEWTIME
 
 .. _os-newstreams:
 

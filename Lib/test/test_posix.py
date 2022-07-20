@@ -2172,6 +2172,35 @@ class TestPosixWeaklinking(unittest.TestCase):
                 os.utime("path", dir_fd=0)
 
 
+class NamespacesTests(unittest.TestCase):
+    """Tests for os.unshare() and os.setns()."""
+
+    @unittest.skipUnless(hasattr(os, 'unshare'), 'needs os.unshare()')
+    @unittest.skipUnless(hasattr(os, 'setns'), 'needs os.setns()')
+    @unittest.skipUnless(hasattr(os, 'readlink'), 'needs os.readlink()')
+    @unittest.skipUnless(os.path.exists('/proc/self/ns/uts'), 'need /proc/self/ns/uts')
+    @support.requires_linux_version(3, 0, 0)
+    def test_unshare_setns(self):
+        original = os.readlink('/proc/self/ns/uts')
+        original_fd = os.open('/proc/self/ns/uts', os.O_RDONLY)
+        self.addCleanup(os.close, original_fd)
+
+        try:
+            os.unshare(os.CLONE_NEWUTS)
+        except OSError as e:
+            self.assertEqual(e.errno, errno.EPERM)
+            self.skipTest("unprivileged users cannot call unshare.")
+
+        current = os.readlink('/proc/self/ns/uts')
+        self.assertNotEqual(original, current)
+
+        self.assertRaises(OSError, os.setns, original_fd, os.CLONE_NEWNET)
+        os.setns(original_fd, os.CLONE_NEWUTS)
+
+        current = os.readlink('/proc/self/ns/uts')
+        self.assertEqual(original, current)
+
+
 def tearDownModule():
     support.reap_children()
 
