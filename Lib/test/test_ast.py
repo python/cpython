@@ -335,7 +335,7 @@ class AST_Tests(unittest.TestCase):
         for snippet in snippets_to_validate:
             tree = ast.parse(snippet)
             compile(tree, '<string>', 'exec')
-    
+
     def test_invalid_position_information(self):
         invalid_linenos = [
             (10, 1), (-10, -11), (10, -11), (-5, -2), (-5, 1)
@@ -364,7 +364,7 @@ class AST_Tests(unittest.TestCase):
 
     def test_compilation_of_ast_nodes_with_default_end_position_values(self):
         tree = ast.Module(body=[
-            ast.Import(names=[ast.alias(name='builtins', lineno=1, col_offset=0)], lineno=1, col_offset=0), 
+            ast.Import(names=[ast.alias(name='builtins', lineno=1, col_offset=0)], lineno=1, col_offset=0),
             ast.Import(names=[ast.alias(name='traceback', lineno=0, col_offset=0)], lineno=0, col_offset=1)
         ], type_ignores=[])
 
@@ -738,10 +738,23 @@ class AST_Tests(unittest.TestCase):
         expressions[0] = f"expr = {ast.expr.__subclasses__()[0].__doc__}"
         self.assertCountEqual(ast.expr.__doc__.split("\n"), expressions)
 
+    def test_parenthesized_with_feature_version(self):
+        ast.parse('with (CtxManager() as example): ...', feature_version=(3, 10))
+        # While advertised as a feature in Python 3.10, this was allowed starting 3.9
+        ast.parse('with (CtxManager() as example): ...', feature_version=(3, 9))
+        with self.assertRaises(SyntaxError):
+            ast.parse('with (CtxManager() as example): ...', feature_version=(3, 8))
+        ast.parse('with CtxManager() as example: ...', feature_version=(3, 8))
+
     def test_issue40614_feature_version(self):
         ast.parse('f"{x=}"', feature_version=(3, 8))
         with self.assertRaises(SyntaxError):
             ast.parse('f"{x=}"', feature_version=(3, 7))
+
+    def test_assignment_expression_feature_version(self):
+        ast.parse('(x := 0)', feature_version=(3, 8))
+        with self.assertRaises(SyntaxError):
+            ast.parse('(x := 0)', feature_version=(3, 7))
 
     def test_constant_as_name(self):
         for constant in "True", "False", "None":

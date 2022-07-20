@@ -127,7 +127,7 @@ Logging to a file
 ^^^^^^^^^^^^^^^^^
 
 A very common situation is that of recording logging events in a file, so let's
-look at that next. Be sure to try the following in a newly-started Python
+look at that next. Be sure to try the following in a newly started Python
 interpreter, and don't just continue from the session described above::
 
    import logging

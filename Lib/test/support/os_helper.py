@@ -263,7 +263,7 @@ def can_chmod():
             else:
                 can = stat.S_IMODE(mode1) != stat.S_IMODE(mode2)
     finally:
-        os.unlink(TESTFN)
+        unlink(TESTFN)
     _can_chmod = can
     return can
 
@@ -275,6 +275,48 @@ def skip_unless_working_chmod(test):
     """
     ok = can_chmod()
     msg = "requires working os.chmod()"
+    return test if ok else unittest.skip(msg)(test)
+
+
+# Check whether the current effective user has the capability to override
+# DAC (discretionary access control). Typically user root is able to
+# bypass file read, write, and execute permission checks. The capability
+# is independent of the effective user. See capabilities(7).
+_can_dac_override = None
+
+def can_dac_override():
+    global _can_dac_override
+
+    if not can_chmod():
+        _can_dac_override = False
+    if _can_dac_override is not None:
+        return _can_dac_override
+
+    try:
+        with open(TESTFN, "wb") as f:
+            os.chmod(TESTFN, 0o400)
+            try:
+                with open(TESTFN, "wb"):
+                    pass
+            except OSError:
+                _can_dac_override = False
+            else:
+                _can_dac_override = True
+    finally:
+        unlink(TESTFN)
+
+    return _can_dac_override
+
+
+def skip_if_dac_override(test):
+    ok = not can_dac_override()
+    msg = "incompatible with CAP_DAC_OVERRIDE"
+    return test if ok else unittest.skip(msg)(test)
+
+
+def skip_unless_dac_override(test):
+    ok = can_dac_override()
+    msg = "requires CAP_DAC_OVERRIDE"
     return test if ok else unittest.skip(msg)(test)
 
 

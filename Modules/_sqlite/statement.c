@@ -88,7 +88,6 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     }
 
     self->st = stmt;
-    self->in_use = 0;
     self->is_dml = is_dml;
 
     PyObject_GC_Track(self);
