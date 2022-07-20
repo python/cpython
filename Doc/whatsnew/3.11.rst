@@ -673,6 +673,10 @@ sqlite3
   :class:`sqlite3.Blob` allows incremental I/O operations on blobs.
   (Contributed by Aviv Palivoda and Erlend E. Aasland in :issue:`24905`)
 
+* Rename ``sqlite3`` tests from ``test_sqlite`` to ``test_sqlite3``,
+  and relocate them to ``Lib/test/test_sqlite3``.
+  (Contributed by Erlend E. Aasland in :issue:`10572`)
+
 
 sys
 ---
