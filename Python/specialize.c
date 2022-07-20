@@ -498,7 +498,8 @@ miss_counter_start(void) {
 #define SPEC_FAIL_UNPACK_SEQUENCE_SEQUENCE 9
 
 static int function_kind(PyCodeObject *code);
-static uint32_t function_get_version(PyObject *o, int expected_argcount, int opcode);
+static bool function_check_args(PyObject *o, int expected_argcount, int opcode);
+static uint32_t function_get_version(PyObject *o, int opcode);
 
 static int
 specialize_module_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
@@ -559,14 +560,15 @@ typedef enum {
     ABSENT, /* Attribute is not present on the class */
     DUNDER_CLASS, /* __class__ attribute */
     GETSET_OVERRIDDEN, /* __getattribute__ or __setattr__ has been overridden */
-    GET_CALL_GETATTRIBUTE /* Descriptor requires calling __getattribute__ */
+    GETATTRIBUTE_IS_PYTHON_FUNCTION  /* Descriptor requires calling a Python __getattribute__ */
 } DescriptorClassification;
 
 
 static DescriptorClassification
 analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int store)
 {
-    int has_getattr = 0;
+    bool has_getattr = false;
+    bool has_custom_getattribute = false;
     if (store) {
         if (type->tp_setattro != PyObject_GenericSetAttr) {
             *descr = NULL;
@@ -595,15 +597,15 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int sto
             }
             PyObject *getattribute = _PyType_Lookup(type,
                 &_Py_ID(__getattribute__));
-            bool custom_getattribute = !(getattribute == NULL ||
-                (Py_IS_TYPE(getattribute, &PyWrapperDescr_Type) &&
+            has_custom_getattribute = getattribute != NULL &&
+                !(Py_IS_TYPE(getattribute, &PyWrapperDescr_Type) &&
                     ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
-                    (void *)PyObject_GenericGetAttr));
-            if (custom_getattribute) {
+                    (void *)PyObject_GenericGetAttr);
+            if (has_custom_getattribute) {
                 if (getattro_slot == _Py_slot_tp_getattro &&
                     Py_IS_TYPE(getattribute, &PyFunction_Type)) {
                     *descr = getattribute;
-                    return GET_CALL_GETATTRIBUTE;
+                    return GETATTRIBUTE_IS_PYTHON_FUNCTION;
                 }
                 *descr = NULL;
                 return GETSET_OVERRIDDEN;
@@ -773,8 +775,12 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_EXPECTED_ERROR);
                 goto fail;
             }
-            uint32_t version = function_get_version(fget,
-                1, LOAD_ATTR);
+            if (!Py_IS_TYPE(fget, &PyFunction_Type)) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_NOT_PY_FUNCTION);
+                goto fail;
+            }
+            uint32_t version = function_check_args(fget, 1, LOAD_ATTR) &&
+                function_get_version(fget, LOAD_ATTR);
             if (version == 0) {
                 goto fail;
             }
@@ -824,19 +830,18 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
         case GETSET_OVERRIDDEN:
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OVERRIDDEN);
             goto fail;
-        case GET_CALL_GETATTRIBUTE:
+        case GETATTRIBUTE_IS_PYTHON_FUNCTION:
         {
             assert(type->tp_getattro == _Py_slot_tp_getattro);
             assert(Py_IS_TYPE(descr, &PyFunction_Type));
             _PyLoadMethodCache *lm_cache = (_PyLoadMethodCache *)(instr + 1);
-            uint32_t func_version = function_get_version(descr, 2,
-                LOAD_ATTR);
+            uint32_t func_version = function_check_args(descr, 2, LOAD_ATTR) &&
+                function_get_version(descr, LOAD_ATTR);
             if (func_version == 0) {
                 goto fail;
             }
             /* borrowed */
             write_obj(lm_cache->descr, descr);
-            write_u32(lm_cache->keys_version, func_version);
             write_u32(lm_cache->type_version, type->tp_version_tag);
             _Py_SET_OPCODE(*instr, LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN);
             goto success;
@@ -919,7 +924,7 @@ _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
         case MUTABLE:
             SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_ATTR_MUTABLE_CLASS);
             goto fail;
-        case GET_CALL_GETATTRIBUTE:
+        case GETATTRIBUTE_IS_PYTHON_FUNCTION:
         case GETSET_OVERRIDDEN:
             SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_OVERRIDDEN);
             goto fail;
@@ -1262,27 +1267,32 @@ function_kind(PyCodeObject *code) {
     return SIMPLE_FUNCTION;
 }
 
-/* Returning 0 indicates a failure. */
-static uint32_t
-function_get_version(PyObject *o, int expected_argcount, int opcode)
+/* Returning false indicates a failure. */
+static bool
+function_check_args(PyObject *o, int expected_argcount, int opcode)
 {
-    uint32_t version = 0;
-    if (!Py_IS_TYPE(o, &PyFunction_Type)) {
-        SPECIALIZATION_FAIL(opcode, SPEC_FAIL_NOT_PY_FUNCTION);
-        goto fail;
-    }
+    assert(Py_IS_TYPE(o, &PyFunction_Type));
     PyFunctionObject *func = (PyFunctionObject *)o;
     PyCodeObject *fcode = (PyCodeObject *)func->func_code;
     int kind = function_kind(fcode);
     if (kind != SIMPLE_FUNCTION) {
         SPECIALIZATION_FAIL(opcode, kind);
-        goto fail;
+        return false;
     }
     if (fcode->co_argcount != expected_argcount) {
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
-        goto fail;
+        return false;
     }
-    version = _PyFunction_GetVersionForCurrentState(func);
+    return true;
+}
+
+/* Returning 0 indicates a failure. */
+static uint32_t
+function_get_version(PyObject *o, int opcode)
+{
+    assert(Py_IS_TYPE(o, &PyFunction_Type));
+    PyFunctionObject *func = (PyFunctionObject *)o;
+    uint32_t version = _PyFunction_GetVersionForCurrentState(func);
     if (version == 0) {
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_OUT_OF_VERSIONS);
         goto fail;
