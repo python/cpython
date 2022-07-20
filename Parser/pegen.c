@@ -446,12 +446,12 @@ get_error_line(Parser *p, Py_ssize_t lineno)
     Py_ssize_t relative_lineno = p->starting_lineno ? lineno - p->starting_lineno + 1 : lineno;
 
     for (int i = 0; i < relative_lineno - 1; i++) {
-        char *new_line = strchr(cur_line, '\n') + 1;
-        assert(new_line != NULL && new_line <= buf_end);
-        if (new_line == NULL || new_line > buf_end) {
+        char *new_line = strchr(cur_line, '\n');
+        assert(new_line != NULL && new_line + 1 < buf_end);
+        if (new_line == NULL || new_line + 1 > buf_end) {
             break;
         }
-        cur_line = new_line;
+        cur_line = new_line + 1;
     }
 
     char *next_newline;

@@ -6968,13 +6968,6 @@ makecode(struct compiler *c, struct assembler *a, PyObject *consts)
         Py_DECREF(consts);
         goto error;
     }
-    if (maxdepth > MAX_ALLOWED_STACK_USE) {
-        PyErr_Format(PyExc_SystemError,
-                     "excessive stack use: stack is %d deep",
-                     maxdepth);
-        Py_DECREF(consts);
-        goto error;
-    }
     co = PyCode_NewWithPosOnlyArgs(posonlyargcount+posorkeywordargcount,
                                    posonlyargcount, kwonlyargcount, nlocals_int,
                                    maxdepth, flags, a->a_bytecode, consts, names,
@@ -7116,6 +7109,7 @@ assemble(struct compiler *c, int addNone)
     int j, nblocks;
     PyCodeObject *co = NULL;
     PyObject *consts = NULL;
+    memset(&a, 0, sizeof(struct assembler));
 
     /* Make sure every block that falls off the end returns None.
        XXX NEXT_BLOCK() isn't quite right, because if the last

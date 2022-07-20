@@ -1018,6 +1018,8 @@ possible, while any potentially slow operations (such as sending an email via
    have the task tracking API, which means that you can use
    :class:`~queue.SimpleQueue` instances for *queue*.
 
+   .. note:: If you are using :mod:`multiprocessing`, you should avoid using
+      :class:`~queue.SimpleQueue` and instead use :class:`multiprocessing.Queue`.
 
    .. method:: emit(record)
 
@@ -1034,8 +1036,12 @@ possible, while any potentially slow operations (such as sending an email via
       method is enqueued.
 
       The base implementation formats the record to merge the message,
-      arguments, and exception information, if present.  It also
-      removes unpickleable items from the record in-place.
+      arguments, exception and stack information, if present.  It also removes
+      unpickleable items from the record in-place. Specifically, it overwrites
+      the record's :attr:`msg` and :attr:`message` attributes with the merged
+      message (obtained by calling the handler's :meth:`format` method), and
+      sets the :attr:`args`, :attr:`exc_info` and :attr:`exc_text` attributes
+      to ``None``.
 
       You might want to override this method if you want to convert
       the record to a dict or JSON string, or send a modified copy
@@ -1047,7 +1053,13 @@ possible, while any potentially slow operations (such as sending an email via
       want to override this if you want to use blocking behaviour, or a
       timeout, or a customized queue implementation.
 
+   .. attribute:: listener
 
+      When created via configuration using :func:`~logging.config.dictConfig`, this
+      attribute will contain a :class:`QueueListener` instance for use with this
+      handler. Otherwise, it will be ``None``.
+
+      .. versionadded:: 3.12
 
 .. _queue-listener:
 
@@ -1080,6 +1092,9 @@ possible, while any potentially slow operations (such as sending an email via
    to know how to get messages from it. The queue is not *required* to have the
    task tracking API (though it's used if available), which means that you can
    use :class:`~queue.SimpleQueue` instances for *queue*.
+
+   .. note:: If you are using :mod:`multiprocessing`, you should avoid using
+      :class:`~queue.SimpleQueue` and instead use :class:`multiprocessing.Queue`.
 
    If ``respect_handler_level`` is ``True``, a handler's level is respected
    (compared with the level for the message) when deciding whether to pass

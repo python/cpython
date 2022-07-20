@@ -1,7 +1,7 @@
 .. _2to3-reference:
 
-2to3 - Automated Python 2 to 3 code translation
-===============================================
+2to3 --- Automated Python 2 to 3 code translation
+=================================================
 
 .. sectionauthor:: Benjamin Peterson <benjamin@python.org>
 
@@ -451,8 +451,8 @@ and off individually.  They are described here in more detail.
    ``from future_builtins import zip`` appears.
 
 
-:mod:`lib2to3` - 2to3's library
--------------------------------
+:mod:`lib2to3` --- 2to3's library
+---------------------------------
 
 .. module:: lib2to3
    :synopsis: The 2to3 library

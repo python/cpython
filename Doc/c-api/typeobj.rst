@@ -529,7 +529,7 @@ type objects) *must* have the :attr:`ob_size` field.
    ``PyObject_HEAD_INIT`` macro.  For :ref:`statically allocated objects
    <static-types>`, these fields always remain ``NULL``.  For :ref:`dynamically
    allocated objects <heap-types>`, these two fields are used to link the
-   object into a doubly-linked list of *all* live objects on the heap.
+   object into a doubly linked list of *all* live objects on the heap.
 
    This could be used for various debugging purposes; currently the only uses
    are the :func:`sys.getobjects` function and to print the objects that are

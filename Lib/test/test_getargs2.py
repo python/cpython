@@ -2,6 +2,7 @@ import unittest
 import math
 import string
 import sys
+import warnings
 from test import support
 from test.support import import_helper
 from test.support import warnings_helper
@@ -877,9 +878,19 @@ class String_TestCase(unittest.TestCase):
     def test_s_hash_int(self):
         # "s#" without PY_SSIZE_T_CLEAN defined.
         from _testcapi import getargs_s_hash_int
-        self.assertRaises(SystemError, getargs_s_hash_int, "abc")
-        self.assertRaises(SystemError, getargs_s_hash_int, x=42)
-        # getargs_s_hash_int() don't raise SystemError because skipitem() is not called.
+        from _testcapi import getargs_s_hash_int2
+        buf = bytearray([1, 2])
+        self.assertRaises(SystemError, getargs_s_hash_int, buf, "abc")
+        self.assertRaises(SystemError, getargs_s_hash_int, buf, x=42)
+        self.assertRaises(SystemError, getargs_s_hash_int, buf, x="abc")
+        self.assertRaises(SystemError, getargs_s_hash_int2, buf, ("abc",))
+        self.assertRaises(SystemError, getargs_s_hash_int2, buf, x=42)
+        self.assertRaises(SystemError, getargs_s_hash_int2, buf, x="abc")
+        buf.append(3)  # still mutable -- not locked by a buffer export
+        # getargs_s_hash_int(buf) may not raise SystemError because skipitem()
+        # is not called. But it is an implementation detail.
+        # getargs_s_hash_int(buf)
+        # getargs_s_hash_int2(buf)
 
     def test_z(self):
         from _testcapi import getargs_z
@@ -999,6 +1010,9 @@ class String_TestCase(unittest.TestCase):
             self.assertRaises(TypeError, getargs_u, memoryview(b'memoryview'))
         with self.assertWarns(DeprecationWarning):
             self.assertRaises(TypeError, getargs_u, None)
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', DeprecationWarning)
+            self.assertRaises(DeprecationWarning, getargs_u, 'abc\xe9')
 
     @support.requires_legacy_unicode_capi
     def test_u_hash(self):
@@ -1015,6 +1029,9 @@ class String_TestCase(unittest.TestCase):
             self.assertRaises(TypeError, getargs_u_hash, memoryview(b'memoryview'))
         with self.assertWarns(DeprecationWarning):
             self.assertRaises(TypeError, getargs_u_hash, None)
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', DeprecationWarning)
+            self.assertRaises(DeprecationWarning, getargs_u_hash, 'abc\xe9')
 
     @support.requires_legacy_unicode_capi
     def test_Z(self):
@@ -1031,6 +1048,9 @@ class String_TestCase(unittest.TestCase):
             self.assertRaises(TypeError, getargs_Z, memoryview(b'memoryview'))
         with self.assertWarns(DeprecationWarning):
             self.assertIsNone(getargs_Z(None))
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', DeprecationWarning)
+            self.assertRaises(DeprecationWarning, getargs_Z, 'abc\xe9')
 
     @support.requires_legacy_unicode_capi
     def test_Z_hash(self):
@@ -1047,6 +1067,9 @@ class String_TestCase(unittest.TestCase):
             self.assertRaises(TypeError, getargs_Z_hash, memoryview(b'memoryview'))
         with self.assertWarns(DeprecationWarning):
             self.assertIsNone(getargs_Z_hash(None))
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', DeprecationWarning)
+            self.assertRaises(DeprecationWarning, getargs_Z_hash, 'abc\xe9')
 
 
 class Object_TestCase(unittest.TestCase):

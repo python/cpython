@@ -378,6 +378,7 @@ PyCurses_ConvertToString(PyCursesWindowObject *win, PyObject *obj,
             return 0;
         /* check for embedded null bytes */
         if (PyBytes_AsStringAndSize(*bytes, &str, NULL) < 0) {
+            Py_CLEAR(*bytes);
             return 0;
         }
         return 1;
