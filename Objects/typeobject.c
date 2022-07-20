@@ -4214,9 +4214,16 @@ type_dealloc_common(PyTypeObject *type)
 void
 _PyStaticType_Dealloc(PyTypeObject *type)
 {
-    // If a type still has subtypes, it cannot be deallocated.
-    // A subtype can inherit attributes and methods of its parent type,
-    // and a type must no longer be used once it's deallocated.
+    /* At this point in the runtime lifecycle, if a type still has
+       subtypes then some extension module did not correctly finalize
+       its objects.  We can ignore such sybtypes since such extension
+       modules are already unsafe if the runtime is re-used after
+       finalization (or in multiple interpreters).
+
+       Unfortunately, this means we will leak the objects for which
+       the subtype owns a reference (directly or indirectly). */
+    // XXX For now we abandon finalizing the static type here and
+    // instead leak the type's objects.
     if (type->tp_subclasses != NULL) {
         return;
     }
