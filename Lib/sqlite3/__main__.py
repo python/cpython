@@ -1,6 +1,9 @@
 import sqlite3
+import sys
 
+from argparse import ArgumentParser
 from code import InteractiveConsole
+from textwrap import dedent
 
 
 class SqliteInteractiveConsole(InteractiveConsole):
@@ -44,11 +47,7 @@ class SqliteInteractiveConsole(InteractiveConsole):
         return keywords.get(source, self.runsql)(source)
 
 
-if __name__ == "__main__":
-    import sys
-    from argparse import ArgumentParser
-    from textwrap import dedent
-
+def main():
     parser = ArgumentParser(
         description="Python sqlite3 REPL",
         prog="python -m sqlite3",
@@ -77,3 +76,6 @@ if __name__ == "__main__":
 
     console = SqliteInteractiveConsole(args.database)
     console.interact(banner, exitmsg="")
+
+
+main()
