@@ -1122,8 +1122,8 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.rglob(pattern)
 
-   This is like calling :func:`Path.glob` with "``**/``" added in front of the
-   given relative *pattern*::
+   Glob the given relative *pattern* recursively.  This is like calling
+   :func:`Path.glob` with "``**/``" added in front of the *pattern*::
 
       >>> sorted(Path().rglob("*.py"))
       [PosixPath('build/lib/pathlib.py'),
