@@ -4212,13 +4212,37 @@ type_dealloc_common(PyTypeObject *type)
 }
 
 
+static int
+has_lingering_subclasses(PyTypeObject *type)
+{
+    if (type->tp_subclasses == NULL) {
+        return 0;
+    }
+    // We can ignore non-builtin static types.
+    Py_ssize_t i = 0;
+    PyObject *ref;  // borrowed ref
+    while (PyDict_Next((PyObject *)type->tp_subclasses, &i, NULL, &ref)) {
+        PyTypeObject *sub = (PyTypeObject *)((struct _PyWeakReference *)ref)->wr_object;
+        if (sub->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+            return 1;
+        }
+        // All static builtin subtypes should have been finalized already.
+        assert(sub->tp_static_builtin_index == 0);
+    }
+    /* At this point, all the subclasses are non-builtin static types.
+       We can ignore them since they only come from extension modules
+       and such extension modules are already unsafe if the runtime
+       is re-used after finalization (or in multiple interpreters). */
+    return 0;
+}
+
 void
 _PyStaticType_Dealloc(PyTypeObject *type)
 {
-    // If a type still has subtypes, it cannot be deallocated.
-    // A subtype can inherit attributes and methods of its parent type,
-    // and a type must no longer be used once it's deallocated.
-    if (type->tp_subclasses != NULL) {
+    // If a static type still has non-static subtypes, it cannot be
+    // deallocated.  A subtype can inherit attributes and methods of its
+    // parent type, and a type must no longer be used once it's deallocated.
+    if (has_lingering_subclasses(type)) {
         return;
     }
 
@@ -4233,7 +4257,7 @@ _PyStaticType_Dealloc(PyTypeObject *type)
     Py_CLEAR(type->tp_bases);
     Py_CLEAR(type->tp_mro);
     Py_CLEAR(type->tp_cache);
-    // type->tp_subclasses is NULL
+    Py_CLEAR(type->tp_subclasses);
 
     // PyObject_ClearWeakRefs() raises an exception if Py_REFCNT() != 0
     if (Py_REFCNT(type) == 0) {
