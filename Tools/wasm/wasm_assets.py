@@ -175,14 +175,13 @@ def detect_extension_modules(args: argparse.Namespace):
     loc = {}
     exec(data, globals(), loc)
 
-    for name, value in loc["build_time_vars"].items():
-        if value not in {"yes", "missing", "disabled", "n/a"}:
+    for key, value in loc["build_time_vars"].items():
+        if not key.startswith("MODULE_") or not key.endswith("_STATE"):
             continue
-        if not name.startswith("MODULE_"):
-            continue
-        if name.endswith(("_CFLAGS", "_DEPS", "_LDFLAGS")):
-            continue
-        modname = name.removeprefix("MODULE_").lower()
+        if value not in {"yes", "disabled", "missing", "n/a"}:
+            raise ValueError(f"Unsupported value '{value}' for {key}")
+
+        modname = key[7:-6].lower()
         if modname not in modules:
             modules[modname] = value == "yes"
     return modules
