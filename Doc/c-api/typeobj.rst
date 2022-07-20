@@ -1184,6 +1184,11 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       .. versionadded:: 3.9
 
+      .. versionchanged:: 3.12
+
+         This flag is now removed from a class when the class's
+         :py:meth:`~object.__call__` method is reassigned.
+
    .. data:: Py_TPFLAGS_IMMUTABLETYPE
 
       This bit is set for type objects that are immutable: type attributes cannot be set nor deleted.

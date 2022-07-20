@@ -403,6 +403,13 @@ New Features
   an additional metaclass argument.
   (Contributed by Wenzel Jakob in :gh:`93012`.)
 
+* (XXX: this should be combined with :gh:`93274` when that is done)
+  The :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag is now removed from a class
+  when the class's :py:meth:`~object.__call__` method is reassigned.
+  This makes vectorcall safe to use with mutable types (i.e. heap types
+  without the :const:`immutable <Py_TPFLAGS_IMMUTABLETYPE>` flag).
+  (Contributed by Petr Viktorin in :gh:`93012`.)
+
 Porting to Python 3.12
 ----------------------
 
