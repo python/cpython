@@ -42,7 +42,8 @@ def parse(source, filename='<unknown>', mode='exec', *,
         flags |= PyCF_TYPE_COMMENTS
     if isinstance(feature_version, tuple):
         major, minor = feature_version  # Should be a 2-tuple.
-        assert major == 3
+        if major != 3:
+            raise ValueError(f"Unsupported major version: {major}")
         feature_version = minor
     elif feature_version is None:
         feature_version = -1
