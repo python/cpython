@@ -13,6 +13,9 @@ class SqliteInteractiveConsole(InteractiveConsole):
         self._con = sqlite3.connect(database, isolation_level=None)
         self._cur = self._con.cursor()
 
+    def __del__(self):
+        self._con.close()
+
     def runsql(self, sql):
         if sqlite3.complete_statement(sql):
             try:
