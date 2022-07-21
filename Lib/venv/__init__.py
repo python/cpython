@@ -138,6 +138,7 @@ class EnvBuilder:
 
         context.inc_path = incpath
         create_if_needed(incpath)
+        context.lib_path = libpath
         create_if_needed(libpath)
         # Issue 21197: create lib64 as a symlink to lib on 64-bit non-OS X POSIX
         if ((sys.maxsize > 2**32) and (os.name == 'posix') and

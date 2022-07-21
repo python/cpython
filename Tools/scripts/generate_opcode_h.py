@@ -20,11 +20,8 @@ extern "C" {{
 """.lstrip()
 
 footer = """
-#define HAS_ARG(op) ((op) >= HAVE_ARGUMENT)
 
-/* Reserve some bytecodes for internal use in the compiler.
- * The value of 240 is arbitrary. */
-#define IS_ARTIFICIAL(op) ((op) > 240)
+#define IS_PSEUDO_OPCODE(op) (((op) >= MIN_PSEUDO_OPCODE) && ((op) <= MAX_PSEUDO_OPCODE))
 
 #ifdef __cplusplus
 }
@@ -63,8 +60,8 @@ def write_int_array_from_ops(name, ops, out):
     bits = 0
     for op in ops:
         bits |= 1<<op
-    out.write(f"static const uint32_t {name}[8] = {{\n")
-    for i in range(8):
+    out.write(f"static const uint32_t {name}[9] = {{\n")
+    for i in range(9):
         out.write(f"    {bits & UINT32_MASK}U,\n")
         bits >>= 32
     assert bits == 0
@@ -81,10 +78,19 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
     exec(code, opcode)
     opmap = opcode['opmap']
     opname = opcode['opname']
+    hasarg = opcode['hasarg']
     hasconst = opcode['hasconst']
     hasjrel = opcode['hasjrel']
     hasjabs = opcode['hasjabs']
-    used = [ False ] * 256
+    is_pseudo = opcode['is_pseudo']
+    _pseudo_ops = opcode['_pseudo_ops']
+
+    HAVE_ARGUMENT = opcode["HAVE_ARGUMENT"]
+    MIN_PSEUDO_OPCODE = opcode["MIN_PSEUDO_OPCODE"]
+    MAX_PSEUDO_OPCODE = opcode["MAX_PSEUDO_OPCODE"]
+
+    NUM_OPCODES = len(opname)
+    used = [ False ] * len(opname)
     next_op = 1
 
     for name, op in opmap.items():
@@ -108,9 +114,17 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
 
         for name in opname:
             if name in opmap:
-                fobj.write(DEFINE.format(name, opmap[name]))
-            if name == 'POP_EXCEPT': # Special entry for HAVE_ARGUMENT
-                fobj.write(DEFINE.format("HAVE_ARGUMENT", opcode["HAVE_ARGUMENT"]))
+                op = opmap[name]
+                if op == HAVE_ARGUMENT:
+                    fobj.write(DEFINE.format("HAVE_ARGUMENT", HAVE_ARGUMENT))
+                if op == MIN_PSEUDO_OPCODE:
+                    fobj.write(DEFINE.format("MIN_PSEUDO_OPCODE", MIN_PSEUDO_OPCODE))
+
+                fobj.write(DEFINE.format(name, op))
+
+                if op == MAX_PSEUDO_OPCODE:
+                    fobj.write(DEFINE.format("MAX_PSEUDO_OPCODE", MAX_PSEUDO_OPCODE))
+
 
         for name, op in specialized_opmap.items():
             fobj.write(DEFINE.format(name, op))
@@ -129,8 +143,9 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
         iobj.write("};\n")
 
         deoptcodes = {}
-        for basic in opmap:
-            deoptcodes[basic] = basic
+        for basic, op in opmap.items():
+            if not is_pseudo(op):
+                deoptcodes[basic] = basic
         for basic, family in opcode["_specializations"].items():
             for specialized in family:
                 deoptcodes[specialized] = basic
@@ -147,9 +162,16 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
         iobj.write("#endif   // NEED_OPCODE_TABLES\n")
 
         fobj.write("\n")
+        fobj.write("#define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\\")
+        for op in _pseudo_ops:
+            if opmap[op] in hasarg:
+                fobj.write(f"\n    || ((op) == {op}) \\")
+        fobj.write("\n    )\n")
+
+        fobj.write("\n")
         fobj.write("#define HAS_CONST(op) (false\\")
         for op in hasconst:
-            fobj.write(f"\n    || ((op) == {op}) \\")
+            fobj.write(f"\n    || ((op) == {opname[op]}) \\")
         fobj.write("\n    )\n")
 
         fobj.write("\n")
@@ -158,7 +180,7 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
 
         iobj.write("\n")
         iobj.write("#ifdef Py_DEBUG\n")
-        iobj.write("static const char *const _PyOpcode_OpName[256] = {\n")
+        iobj.write(f"static const char *const _PyOpcode_OpName[{NUM_OPCODES}] = {{\n")
         for op, name in enumerate(opname_including_specialized):
             if name[0] != "<":
                 op = name

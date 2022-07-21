@@ -328,13 +328,12 @@ Pure paths provide the following methods and properties:
    .. note::
 
       This behavior conforms to *The Open Group Base Specifications Issue 6*,
-      paragraph `4.11 *Pathname Resolution* <xbd_path_resolution>`_:
+      paragraph `4.11 Pathname Resolution
+      <https://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap04.html#tag_04_11>`_:
 
       *"A pathname that begins with two successive slashes may be interpreted in
       an implementation-defined manner, although more than two leading slashes
       shall be treated as a single slash."*
-
-   .. xbd_path_resolution: https://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap04.html#tag_04_11
 
 .. data:: PurePath.anchor
 
@@ -1123,8 +1122,8 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.rglob(pattern)
 
-   This is like calling :func:`Path.glob` with "``**/``" added in front of the
-   given relative *pattern*::
+   Glob the given relative *pattern* recursively.  This is like calling
+   :func:`Path.glob` with "``**/``" added in front of the *pattern*::
 
       >>> sorted(Path().rglob("*.py"))
       [PosixPath('build/lib/pathlib.py'),
@@ -1301,7 +1300,8 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 :func:`os.path.basename`               :data:`PurePath.name`
 :func:`os.path.dirname`                :data:`PurePath.parent`
 :func:`os.path.samefile`               :meth:`Path.samefile`
-:func:`os.path.splitext`               :data:`PurePath.suffix`
+:func:`os.path.splitext`               :data:`PurePath.stem` and
+                                       :data:`PurePath.suffix`
 ====================================   ==============================
 
 .. rubric:: Footnotes

@@ -1,0 +1,2 @@
+Allow virtual environments to correctly launch when they have spaces in the
+path.

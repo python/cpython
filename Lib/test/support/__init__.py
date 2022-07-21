@@ -1768,6 +1768,16 @@ def patch(test_instance, object_to_patch, attr_name, new_value):
     setattr(object_to_patch, attr_name, new_value)
 
 
+@contextlib.contextmanager
+def patch_list(orig):
+    """Like unittest.mock.patch.dict, but for lists."""
+    try:
+        saved = orig[:]
+        yield
+    finally:
+        orig[:] = saved
+
+
 def run_in_subinterp(code):
     """
     Run code in a subinterpreter. Raise unittest.SkipTest if the tracemalloc
@@ -2072,31 +2082,26 @@ def wait_process(pid, *, exitcode, timeout=None):
 
         if timeout is None:
             timeout = SHORT_TIMEOUT
-        t0 = time.monotonic()
-        sleep = 0.001
-        max_sleep = 0.1
-        while True:
+
+        start_time = time.monotonic()
+        for _ in sleeping_retry(timeout, error=False):
             pid2, status = os.waitpid(pid, os.WNOHANG)
             if pid2 != 0:
                 break
-            # process is still running
+            # rety: the process is still running
+        else:
+            try:
+                os.kill(pid, signal.SIGKILL)
+                os.waitpid(pid, 0)
+            except OSError:
+                # Ignore errors like ChildProcessError or PermissionError
+                pass
 
-            dt = time.monotonic() - t0
-            if dt > SHORT_TIMEOUT:
-                try:
-                    os.kill(pid, signal.SIGKILL)
-                    os.waitpid(pid, 0)
-                except OSError:
-                    # Ignore errors like ChildProcessError or PermissionError
-                    pass
-
-                raise AssertionError(f"process {pid} is still running "
-                                     f"after {dt:.1f} seconds")
-
-            sleep = min(sleep * 2, max_sleep)
-            time.sleep(sleep)
+            dt = time.monotonic() - start_time
+            raise AssertionError(f"process {pid} is still running "
+                                 f"after {dt:.1f} seconds")
     else:
-        # Windows implementation
+        # Windows implementation: don't support timeout :-(
         pid2, status = os.waitpid(pid, 0)
 
     exitcode2 = os.waitstatus_to_exitcode(status)
@@ -2250,3 +2255,79 @@ def late_deletion(obj):
             pass
         atfork_func.reference = ref_cycle
         os.register_at_fork(before=atfork_func)
+
+
+def busy_retry(timeout, err_msg=None, /, *, error=True):
+    """
+    Run the loop body until "break" stops the loop.
+
+    After *timeout* seconds, raise an AssertionError if *error* is true,
+    or just stop if *error is false.
+
+    Example:
+
+        for _ in support.busy_retry(support.SHORT_TIMEOUT):
+            if check():
+                break
+
+    Example of error=False usage:
+
+        for _ in support.busy_retry(support.SHORT_TIMEOUT, error=False):
+            if check():
+                break
+        else:
+            raise RuntimeError('my custom error')
+
+    """
+    if timeout <= 0:
+        raise ValueError("timeout must be greater than zero")
+
+    start_time = time.monotonic()
+    deadline = start_time + timeout
+
+    while True:
+        yield
+
+        if time.monotonic() >= deadline:
+            break
+
+    if error:
+        dt = time.monotonic() - start_time
+        msg = f"timeout ({dt:.1f} seconds)"
+        if err_msg:
+            msg = f"{msg}: {err_msg}"
+        raise AssertionError(msg)
+
+
+def sleeping_retry(timeout, err_msg=None, /,
+                     *, init_delay=0.010, max_delay=1.0, error=True):
+    """
+    Wait strategy that applies exponential backoff.
+
+    Run the loop body until "break" stops the loop. Sleep at each loop
+    iteration, but not at the first iteration. The sleep delay is doubled at
+    each iteration (up to *max_delay* seconds).
+
+    See busy_retry() documentation for the parameters usage.
+
+    Example raising an exception after SHORT_TIMEOUT seconds:
+
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+            if check():
+                break
+
+    Example of error=False usage:
+
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT, error=False):
+            if check():
+                break
+        else:
+            raise RuntimeError('my custom error')
+    """
+
+    delay = init_delay
+    for _ in busy_retry(timeout, err_msg, error=error):
+        yield
+
+        time.sleep(delay)
+        delay = min(delay * 2, max_delay)

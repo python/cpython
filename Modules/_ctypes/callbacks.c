@@ -10,7 +10,6 @@
 #endif
 
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "frameobject.h"
 
 #include <stdbool.h>
 

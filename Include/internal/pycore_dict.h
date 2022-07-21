@@ -154,9 +154,11 @@ struct _dictvalues {
             2 : sizeof(int32_t))
 #endif
 #define DK_ENTRIES(dk) \
-    (assert(dk->dk_kind == DICT_KEYS_GENERAL), (PyDictKeyEntry*)(&((int8_t*)((dk)->dk_indices))[(size_t)1 << (dk)->dk_log2_index_bytes]))
+    (assert((dk)->dk_kind == DICT_KEYS_GENERAL), \
+     (PyDictKeyEntry*)(&((int8_t*)((dk)->dk_indices))[(size_t)1 << (dk)->dk_log2_index_bytes]))
 #define DK_UNICODE_ENTRIES(dk) \
-    (assert(dk->dk_kind != DICT_KEYS_GENERAL), (PyDictUnicodeEntry*)(&((int8_t*)((dk)->dk_indices))[(size_t)1 << (dk)->dk_log2_index_bytes]))
+    (assert((dk)->dk_kind != DICT_KEYS_GENERAL), \
+     (PyDictUnicodeEntry*)(&((int8_t*)((dk)->dk_indices))[(size_t)1 << (dk)->dk_log2_index_bytes]))
 #define DK_IS_UNICODE(dk) ((dk)->dk_kind != DICT_KEYS_GENERAL)
 
 extern uint64_t _pydict_global_version;

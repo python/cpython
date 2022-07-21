@@ -461,7 +461,8 @@ if not py_setpath and not home_was_set:
 
 build_prefix = None
 
-if not home_was_set and real_executable_dir and not py_setpath:
+if ((not home_was_set and real_executable_dir and not py_setpath)
+        or config.get('_is_python_build', 0) > 0):
     # Detect a build marker and use it to infer prefix, exec_prefix,
     # stdlib_dir and the platstdlib_dir directories.
     try:

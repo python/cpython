@@ -24,6 +24,8 @@ int _Py_HasFileSystemDefaultEncodeErrors = 0;
 void
 _Py_ClearFileSystemEncoding(void)
 {
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     if (!Py_HasFileSystemDefaultEncoding && Py_FileSystemDefaultEncoding) {
         PyMem_RawFree((char*)Py_FileSystemDefaultEncoding);
         Py_FileSystemDefaultEncoding = NULL;
@@ -32,6 +34,7 @@ _Py_ClearFileSystemEncoding(void)
         PyMem_RawFree((char*)Py_FileSystemDefaultEncodeErrors);
         Py_FileSystemDefaultEncodeErrors = NULL;
     }
+_Py_COMP_DIAG_POP
 }
 
 
@@ -56,11 +59,14 @@ _Py_SetFileSystemEncoding(const char *encoding, const char *errors)
 
     _Py_ClearFileSystemEncoding();
 
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     Py_FileSystemDefaultEncoding = encoding2;
     Py_HasFileSystemDefaultEncoding = 0;
 
     Py_FileSystemDefaultEncodeErrors = errors2;
     _Py_HasFileSystemDefaultEncodeErrors = 0;
+_Py_COMP_DIAG_POP
     return 0;
 }
 
@@ -472,6 +478,8 @@ preconfig_get_global_vars(PyPreConfig *config)
         config->ATTR = !(VALUE); \
     }
 
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     COPY_FLAG(isolated, Py_IsolatedFlag);
     COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
     if (Py_UTF8Mode > 0) {
@@ -480,6 +488,7 @@ preconfig_get_global_vars(PyPreConfig *config)
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
 #endif
+_Py_COMP_DIAG_POP
 
 #undef COPY_FLAG
 #undef COPY_NOT_FLAG
@@ -498,12 +507,15 @@ preconfig_set_global_vars(const PyPreConfig *config)
         VAR = !config->ATTR; \
     }
 
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     COPY_FLAG(isolated, Py_IsolatedFlag);
     COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
 #endif
     COPY_FLAG(utf8_mode, Py_UTF8Mode);
+_Py_COMP_DIAG_POP
 
 #undef COPY_FLAG
 #undef COPY_NOT_FLAG

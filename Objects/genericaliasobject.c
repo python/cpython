@@ -219,6 +219,10 @@ _Py_make_parameters(PyObject *args)
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *t = PyTuple_GET_ITEM(args, iarg);
         PyObject *subst;
+        // We don't want __parameters__ descriptor of a bare Python class.
+        if (PyType_Check(t)) {
+            continue;
+        }
         if (_PyObject_LookupAttr(t, &_Py_ID(__typing_subst__), &subst) < 0) {
             Py_DECREF(parameters);
             return NULL;
@@ -583,6 +587,7 @@ ga_vectorcall(PyObject *self, PyObject *const *args,
 }
 
 static const char* const attr_exceptions[] = {
+    "__class__",
     "__origin__",
     "__args__",
     "__unpacked__",
