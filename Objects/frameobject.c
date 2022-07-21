@@ -281,7 +281,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
     for (int i = 1; i <= len; i++) {
         stacks[i] = UNINITIALIZED;
     }
-    set_stack(stacks, 0, EMPTY_STACK);
+    stacks[0] = EMPTY_STACK;
     if (code_obj->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR))
     {
         // Generators get sent None while starting:
