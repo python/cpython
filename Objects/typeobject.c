@@ -4275,6 +4275,10 @@ _PyStaticType_Dealloc(PyTypeObject *type)
         assert(state != NULL);
         state->type = NULL;
         set_static_builtin_index(type, 0);
+
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        assert(interp->types.num_builtins_initialized > 0);
+        interp->types.num_builtins_initialized--;
     }
 }
 
