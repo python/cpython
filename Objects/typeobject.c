@@ -4250,6 +4250,8 @@ static inline void set_static_builtin_index(PyTypeObject *, size_t);
 void
 _PyStaticType_Dealloc(PyTypeObject *type)
 {
+    assert(!(type->tp_flags & Py_TPFLAGS_HEAPTYPE));
+
     type_dealloc_common(type);
 
     Py_CLEAR(type->tp_dict);
@@ -4268,6 +4270,7 @@ _PyStaticType_Dealloc(PyTypeObject *type)
     if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         /* Reset the type's per-interpreter state.
            This basically undoes what _PyStaticType_InitBuiltin() did. */
+        assert(get_static_builtin_index(type) > 0);
         static_builtin_type_state *state = _PyStaticType_GetState(type);
         assert(state != NULL);
         state->type = NULL;
