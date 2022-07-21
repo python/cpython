@@ -580,6 +580,12 @@ process and user.
    into one or more of the same namespaces as the thread referred to by *fd* subject
    to any constraints imposed by the *nstype* which is a bit mask specified by ORing together one or more of the ``CLONE_NEW*`` constants. the caller's memberships in unspecified namespaces are left unchanged.
 
+   This example reassociates the thread with the ``init`` process' network namespace::
+
+      fd = os.open("/proc/1/ns/net", os.O_RDONLY)
+      os.setns(fd, os.CLONE_NEWNET)
+      os.close(fd)
+
    .. availability:: Linux 3.0 or newer.
 
    .. versionadded:: 3.12
