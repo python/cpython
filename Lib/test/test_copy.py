@@ -438,6 +438,8 @@ class TestCopy(unittest.TestCase):
         self.assertIsNot(y, x)
         self.assertIsNot(y.obj, x.obj)
         self.assertEqual(y.obj, x.obj)
+        y[0] = 30
+        self.assertNotEqual(y.obj, x.obj)
 
     def test_deepcopy_keepalive(self):
         memo = {}
