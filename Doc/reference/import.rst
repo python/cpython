@@ -800,10 +800,8 @@ environment variable and various other installation- and
 implementation-specific defaults.  Entries in :data:`sys.path` can name
 directories on the file system, zip files, and potentially other "locations"
 (see the :mod:`site` module) that should be searched for modules, such as
-URLs, or database queries.  Only strings and bytes should be present on
-:data:`sys.path`; all other data types are ignored.  The encoding of bytes
-entries is determined by the individual :term:`path entry finders <path entry
-finder>`.
+URLs, or database queries.  Only strings should be present on
+:data:`sys.path`; all other data types are ignored.
 
 The :term:`path based finder` is a :term:`meta path finder`, so the import
 machinery begins the :term:`import path` search by calling the path

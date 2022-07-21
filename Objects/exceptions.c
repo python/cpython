@@ -600,17 +600,9 @@ StopIteration_traverse(PyStopIterationObject *self, visitproc visit, void *arg)
     return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
 }
 
-ComplexExtendsException(
-    PyExc_Exception,       /* base */
-    StopIteration,         /* name */
-    StopIteration,         /* prefix for *_init, etc */
-    0,                     /* new */
-    0,                     /* methods */
-    StopIteration_members, /* members */
-    0,                     /* getset */
-    0,                     /* str */
-    "Signal the end from iterator.__next__()."
-);
+ComplexExtendsException(PyExc_Exception, StopIteration, StopIteration,
+                        0, 0, StopIteration_members, 0, 0,
+                        "Signal the end from iterator.__next__().");
 
 
 /*
