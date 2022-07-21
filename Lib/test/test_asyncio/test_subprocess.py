@@ -769,5 +769,6 @@ else:
             self.loop = asyncio.ProactorEventLoop()
             self.set_event_loop(self.loop)
 
+
 if __name__ == '__main__':
     unittest.main()
