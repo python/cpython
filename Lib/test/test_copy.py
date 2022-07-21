@@ -359,7 +359,8 @@ class TestCopy(unittest.TestCase):
             pass
         tests = [None, 42, 2**100, 3.14, True, False, 1j,
                  "hello", "hello\u1234", f.__code__,
-                 NewStyle, range(10), Classic, max, property()]
+                 NewStyle, range(10), Classic, max, property(),
+                 memoryview(b'123')]
         for x in tests:
             self.assertIs(copy.deepcopy(x), x)
 
