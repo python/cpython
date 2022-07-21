@@ -12,6 +12,9 @@
 #  define NAME _testcpp03ext
 #endif
 
+#define _STR(NAME) #NAME
+#define STR(NAME) _STR(NAME)
+
 PyDoc_STRVAR(_testcppext_add_doc,
 "add(x, y)\n"
 "\n"
@@ -123,11 +126,77 @@ test_unicode(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
+/* Test a `new`-allocated object with a virtual method.
+ * (https://github.com/python/cpython/issues/94731) */
+
+class VirtualPyObject : public PyObject {
+public:
+    VirtualPyObject();
+    virtual ~VirtualPyObject() {
+        delete [] internal_data;
+        --instance_count;
+    }
+    virtual void set_internal_data() {
+        internal_data[0] = 1;
+    }
+    static void dealloc(PyObject* o) {
+        delete static_cast<VirtualPyObject*>(o);
+    }
+
+    // Number of "living" instances
+    static int instance_count;
+private:
+    // buffer that can get corrupted
+    int* internal_data;
+};
+
+int VirtualPyObject::instance_count = 0;
+
+PyType_Slot VirtualPyObject_Slots[] = {
+    {Py_tp_free, (void*)VirtualPyObject::dealloc},
+    {0, _Py_NULL},
+};
+
+PyType_Spec VirtualPyObject_Spec = {
+    /* .name */ STR(NAME) ".VirtualPyObject",
+    /* .basicsize */ sizeof(VirtualPyObject),
+    /* .itemsize */ 0,
+    /* .flags */ Py_TPFLAGS_DEFAULT,
+    /* .slots */ VirtualPyObject_Slots,
+};
+
+VirtualPyObject::VirtualPyObject() {
+    // Create a temporary type (just so we don't need to store it)
+    PyObject *type = PyType_FromSpec(&VirtualPyObject_Spec);
+    // no good way to signal failure from a C++ constructor, so use assert
+    // for error handling
+    assert(type);
+    assert(PyObject_Init(this, (PyTypeObject *)type));
+    Py_DECREF(type);
+    internal_data = new int[50];
+    ++instance_count;
+}
+
+static PyObject *
+test_virtual_object(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
+{
+    VirtualPyObject* obj = new VirtualPyObject();
+    obj->set_internal_data();
+    Py_DECREF(obj);
+    if (VirtualPyObject::instance_count != 0) {
+        return PyErr_Format(
+            PyExc_AssertionError,
+            "instance_count should be 0, got %d",
+            VirtualPyObject::instance_count);
+    }
+    Py_RETURN_NONE;
+}
 
 static PyMethodDef _testcppext_methods[] = {
     {"add", _testcppext_add, METH_VARARGS, _testcppext_add_doc},
     {"test_api_casts", test_api_casts, METH_NOARGS, _Py_NULL},
     {"test_unicode", test_unicode, METH_NOARGS, _Py_NULL},
+    {"test_virtual_object", test_virtual_object, METH_NOARGS, _Py_NULL},
     // Note: _testcppext_exec currently runs all test functions directly.
     // When adding a new one, add a call there.
 
@@ -152,6 +221,10 @@ _testcppext_exec(PyObject *module)
     if (!result) return -1;
     Py_DECREF(result);
 
+    result = PyObject_CallMethod(module, "test_virtual_object", "");
+    if (!result) return -1;
+    Py_DECREF(result);
+
     return 0;
 }
 
@@ -162,9 +235,6 @@ static PyModuleDef_Slot _testcppext_slots[] = {
 
 
 PyDoc_STRVAR(_testcppext_doc, "C++ test extension.");
-
-#define _STR(NAME) #NAME
-#define STR(NAME) _STR(NAME)
 
 static struct PyModuleDef _testcppext_module = {
     PyModuleDef_HEAD_INIT,  // m_base

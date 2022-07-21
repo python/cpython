@@ -17,8 +17,6 @@ if not MS_WINDOWS:
         # a C++ extension using the Python C API does not emit C++ compiler
         # warnings
         '-Werror',
-        # Warn on old-style cast (C cast) like: (PyObject*)op
-        '-Wold-style-cast',
     ]
 else:
     # Don't pass any compiler flag to MSVC
@@ -37,9 +35,6 @@ def main():
         name = '_testcpp11ext'
 
     cppflags = [*CPPFLAGS, f'-std={std}']
-    if std == 'c++11':
-        # Warn when using NULL rather than _Py_NULL in static inline functions
-        cppflags.append('-Wzero-as-null-pointer-constant')
 
     cpp_ext = Extension(
         name,
