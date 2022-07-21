@@ -534,11 +534,6 @@ class OtherTest(unittest.TestCase):
         m2 = m1[::-1]
         self.assertEqual(m2.hex(), '30' * 200000)
 
-    def test_copy(self):
-        m = memoryview(b'abc')
-        with self.assertRaises(TypeError):
-            copy.copy(m)
-
     def test_pickle(self):
         m = memoryview(b'abc')
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
