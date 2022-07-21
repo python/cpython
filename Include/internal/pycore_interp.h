@@ -73,7 +73,7 @@ struct atexit_state {
 /* PyInterpreterState holds the global state for one of the runtime's
    interpreters.  Typically the initial (main) interpreter is the only one.
 
-   The PyInterpreterState typedef is in Include/pystate.h.
+   The PyInterpreterState typedef is in Include/pytypedefs.h.
    */
 struct _is {
 
