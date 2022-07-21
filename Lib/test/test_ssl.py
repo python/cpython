@@ -938,8 +938,10 @@ class ContextTests(unittest.TestCase):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ctx.set_ciphers('AESGCM')
         names = set(d['name'] for d in ctx.get_ciphers())
-        self.assertIn('AES256-GCM-SHA384', names)
-        self.assertIn('AES128-GCM-SHA256', names)
+        aes128 = any('AES128-GCM-SHA256' in name for name in names)
+        aes256 = any('AES256-GCM-SHA384' in name for name in names)
+        self.assertTrue(aes128)
+        self.assertTrue(aes256)
 
     def test_options(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
