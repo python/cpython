@@ -1,0 +1,2 @@
+Add :func:`copy.copy` and :func:`copy.deepcopy` support to
+:class:`memoryview` objects. Patch by Dong-hee Na.
