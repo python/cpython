@@ -1,0 +1,1 @@
+support custom tasks with missing uncancel methods
