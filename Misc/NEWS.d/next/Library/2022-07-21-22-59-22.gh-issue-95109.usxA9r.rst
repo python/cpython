@@ -1,1 +1,1 @@
-special case asyncio.timeout(0) and timeouts in the past
+ensure that timeouts scheduled with :class:`asyncio.Timeout` that have already expired are delivered promptly
