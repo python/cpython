@@ -13,6 +13,7 @@
 import collections
 import urllib.parse
 import urllib.request
+import socket
 
 __all__ = ["RobotFileParser"]
 
@@ -56,10 +57,10 @@ class RobotFileParser:
         self.url = url
         self.host, self.path = urllib.parse.urlparse(url)[1:3]
 
-    def read(self):
+    def read(self, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
         """Reads the robots.txt URL and feeds it to the parser."""
         try:
-            f = urllib.request.urlopen(self.url)
+            f = urllib.request.urlopen(self.url, timeout=timeout)
         except urllib.error.HTTPError as err:
             if err.code in (401, 403):
                 self.disallow_all = True
