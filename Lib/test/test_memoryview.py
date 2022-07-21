@@ -11,7 +11,6 @@ import gc
 import weakref
 import array
 import io
-import copy
 import pickle
 
 from test.support import import_helper
