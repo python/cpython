@@ -325,6 +325,13 @@ enum {
     COMPILER_SCOPE_COMPREHENSION,
 };
 
+typedef struct cfg_ {
+    /* Pointer to the most recently allocated block.  By following b_list
+       members, you can reach all early allocated blocks. */
+    basicblock *block_list;
+    basicblock *curblock; /* pointer to current block */
+} cfg;
+
 /* The following items change on entry and exit of code blocks.
    They must be saved and restored when returning to a block.
 */
@@ -352,8 +359,8 @@ struct compiler_unit {
     Py_ssize_t u_kwonlyargcount; /* number of keyword only arguments for block */
     /* Pointer to the most recently allocated block.  By following b_list
        members, you can reach all early allocated blocks. */
-    basicblock *u_blocks;
-    basicblock *u_curblock; /* pointer to current block */
+
+    cfg u_cfg;  /* The control flow graph */
 
     int u_nfblocks;
     struct fblockinfo u_fblock[CO_MAXBLOCKS];
@@ -390,6 +397,9 @@ struct compiler {
     PyArena *c_arena;            /* pointer to memory allocation arena */
 };
 
+#define CFG(c) (&((c)->u->u_cfg))
+#define COMPILER_LOC(c) (&((c)->u->u_loc))
+
 typedef struct {
     // A list of strings corresponding to name captures. It is used to track:
     // - Repeated name assignments in the same pattern.
@@ -417,12 +427,9 @@ typedef struct {
 
 static int basicblock_next_instr(basicblock *);
 
-static int compiler_enter_scope(struct compiler *, identifier, int, void *, int);
+static int cfg_addop_i(cfg *g, int opcode, Py_ssize_t oparg, const struct location *loc);
+
 static void compiler_free(struct compiler *);
-static basicblock *compiler_new_block(struct compiler *);
-static int compiler_addop(struct compiler *, int, bool);
-static int compiler_addop_i(struct compiler *, int, Py_ssize_t, bool);
-static int compiler_addop_j(struct compiler *, int, basicblock *, bool);
 static int compiler_error(struct compiler *, const char *, ...);
 static int compiler_warn(struct compiler *, const char *, ...);
 static int compiler_nameop(struct compiler *, identifier, expr_context_ty);
@@ -442,7 +449,6 @@ static int are_all_items_const(asdl_expr_seq *, Py_ssize_t, Py_ssize_t);
 static int compiler_with(struct compiler *, stmt_ty, int);
 static int compiler_async_with(struct compiler *, stmt_ty, int);
 static int compiler_async_for(struct compiler *, stmt_ty);
-static int validate_keywords(struct compiler *c, asdl_keyword_seq *keywords);
 static int compiler_call_simple_kw_helper(struct compiler *c,
                                           asdl_keyword_seq *keywords,
                                           Py_ssize_t nkwelts);
@@ -714,10 +720,9 @@ dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
 }
 
 static void
-compiler_unit_check(struct compiler_unit *u)
+cfg_check(cfg *g)
 {
-    basicblock *block;
-    for (block = u->u_blocks; block != NULL; block = block->b_list) {
+    for (basicblock *block = g->block_list; block != NULL; block = block->b_list) {
         assert(!_PyMem_IsPtrFreed(block));
         if (block->b_instr != NULL) {
             assert(block->b_ialloc > 0);
@@ -732,19 +737,24 @@ compiler_unit_check(struct compiler_unit *u)
 }
 
 static void
-compiler_unit_free(struct compiler_unit *u)
+cfg_free(cfg* g)
 {
-    basicblock *b, *next;
-
-    compiler_unit_check(u);
-    b = u->u_blocks;
+    cfg_check(g);
+    basicblock *b = g->block_list;
     while (b != NULL) {
-        if (b->b_instr)
+        if (b->b_instr) {
             PyObject_Free((void *)b->b_instr);
-        next = b->b_list;
+        }
+        basicblock *next = b->b_list;
         PyObject_Free((void *)b);
         b = next;
     }
+}
+
+static void
+compiler_unit_free(struct compiler_unit *u)
+{
+    cfg_free(&u->u_cfg);
     Py_CLEAR(u->u_ste);
     Py_CLEAR(u->u_name);
     Py_CLEAR(u->u_qualname);
@@ -842,27 +852,38 @@ new_basicblock()
     return b;
 }
 
-static basicblock *
-compiler_new_block(struct compiler *c)
+basicblock *
+cfg_new_block(cfg *g)
 {
     basicblock *b = new_basicblock();
     if (b == NULL) {
         return NULL;
     }
     /* Extend the singly linked list of blocks with new block. */
-    struct compiler_unit *u = c->u;
-    b->b_list = u->u_blocks;
-    u->u_blocks = b;
+    b->b_list = g->block_list;
+    g->block_list = b;
     return b;
+}
+
+basicblock *
+cfg_use_next_block(cfg *g, basicblock *block)
+{
+    assert(block != NULL);
+    g->curblock->b_next = block;
+    g->curblock = block;
+    return block;
+}
+
+static basicblock *
+compiler_new_block(struct compiler *c)
+{
+    return cfg_new_block(CFG(c));
 }
 
 static basicblock *
 compiler_use_next_block(struct compiler *c, basicblock *block)
 {
-    assert(block != NULL);
-    c->u->u_curblock->b_next = block;
-    c->u->u_curblock = block;
-    return block;
+    return cfg_use_next_block(CFG(c), block);
 }
 
 static basicblock *
@@ -1247,21 +1268,6 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
     return stack_effect(opcode, oparg, -1);
 }
 
-static int
-compiler_use_new_implicit_block_if_needed(struct compiler *c)
-{
-    basicblock *b = c->u->u_curblock;
-    struct instr *last = basicblock_last_instr(b);
-    if (last && IS_TERMINATOR_OPCODE(last->i_opcode)) {
-        basicblock *b = compiler_new_block(c);
-        if (b == NULL) {
-            return -1;
-        }
-        compiler_use_next_block(c, b);
-    }
-    return 0;
-}
-
 /* Add an opcode with no argument.
    Returns 0 on failure, 1 on success.
 */
@@ -1293,19 +1299,29 @@ basicblock_addop(basicblock *b, int opcode, int oparg,
 }
 
 static int
-compiler_addop(struct compiler *c, int opcode, bool line)
+cfg_addop(cfg *g, int opcode, int oparg, basicblock *target,
+          const struct location *loc)
+{
+    struct instr *last = basicblock_last_instr(g->curblock);
+    if (last && IS_TERMINATOR_OPCODE(last->i_opcode)) {
+        basicblock *b = cfg_new_block(g);
+        if (b == NULL) {
+            return -1;
+        }
+        cfg_use_next_block(g, b);
+    }
+    return basicblock_addop(g->curblock, opcode, oparg, target, loc);
+}
+
+static int
+cfg_addop_noarg(cfg *g, int opcode, const struct location *loc)
 {
     assert(!HAS_ARG(opcode));
-    if (compiler_use_new_implicit_block_if_needed(c) < 0) {
-        return -1;
-    }
-
-    const struct location *loc = line ? &c->u->u_loc : NULL;
-    return basicblock_addop(c->u->u_curblock, opcode, 0, NULL, loc);
+    return cfg_addop(g, opcode, 0, NULL, loc);
 }
 
 static Py_ssize_t
-compiler_add_o(PyObject *dict, PyObject *o)
+dict_add_o(PyObject *dict, PyObject *o)
 {
     PyObject *v;
     Py_ssize_t arg;
@@ -1450,7 +1466,7 @@ compiler_add_const(struct compiler *c, PyObject *o)
         return -1;
     }
 
-    Py_ssize_t arg = compiler_add_o(c->u->u_consts, key);
+    Py_ssize_t arg = dict_add_o(c->u->u_consts, key);
     Py_DECREF(key);
     return arg;
 }
@@ -1461,17 +1477,17 @@ compiler_addop_load_const(struct compiler *c, PyObject *o)
     Py_ssize_t arg = compiler_add_const(c, o);
     if (arg < 0)
         return 0;
-    return compiler_addop_i(c, LOAD_CONST, arg, true);
+    return cfg_addop_i(CFG(c), LOAD_CONST, arg, COMPILER_LOC(c));
 }
 
 static int
 compiler_addop_o(struct compiler *c, int opcode, PyObject *dict,
                      PyObject *o)
 {
-    Py_ssize_t arg = compiler_add_o(dict, o);
+    Py_ssize_t arg = dict_add_o(dict, o);
     if (arg < 0)
         return 0;
-    return compiler_addop_i(c, opcode, arg, true);
+    return cfg_addop_i(CFG(c), opcode, arg, COMPILER_LOC(c));
 }
 
 static int
@@ -1483,7 +1499,7 @@ compiler_addop_name(struct compiler *c, int opcode, PyObject *dict,
     PyObject *mangled = _Py_Mangle(c->u->u_private, o);
     if (!mangled)
         return 0;
-    arg = compiler_add_o(dict, mangled);
+    arg = dict_add_o(dict, mangled);
     Py_DECREF(mangled);
     if (arg < 0)
         return 0;
@@ -1495,18 +1511,15 @@ compiler_addop_name(struct compiler *c, int opcode, PyObject *dict,
         arg <<= 1;
         arg |= 1;
     }
-    return compiler_addop_i(c, opcode, arg, true);
+    return cfg_addop_i(CFG(c), opcode, arg, COMPILER_LOC(c));
 }
 
 /* Add an opcode with an integer argument.
    Returns 0 on failure, 1 on success.
 */
 static int
-compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg, bool line)
+cfg_addop_i(cfg *g, int opcode, Py_ssize_t oparg, const struct location *loc)
 {
-    if (compiler_use_new_implicit_block_if_needed(c) < 0) {
-        return -1;
-    }
     /* oparg value is unsigned, but a signed C int is usually used to store
        it in the C code (like Python/ceval.c).
 
@@ -1516,35 +1529,30 @@ compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg, bool line)
        EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
 
     int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
-
-    const struct location *loc = line ? &c->u->u_loc : NULL;
-    return basicblock_addop(c->u->u_curblock, opcode, oparg_, NULL, loc);
+    return cfg_addop(g, opcode, oparg_, NULL, loc);
 }
 
 static int
-compiler_addop_j(struct compiler *c, int opcode, basicblock *target, bool line)
+cfg_addop_j(cfg *g, int opcode, basicblock *target, const struct location *loc)
 {
-    if (compiler_use_new_implicit_block_if_needed(c) < 0) {
-        return -1;
-    }
-    const struct location *loc = line ? &c->u->u_loc : NULL;
     assert(target != NULL);
     assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
-    return basicblock_addop(c->u->u_curblock, opcode, 0, target, loc);
+    return cfg_addop(g, opcode, 0, target, loc);
 }
 
+
 #define ADDOP(C, OP) { \
-    if (!compiler_addop((C), (OP), true)) \
+    if (!cfg_addop_noarg(CFG(C), (OP), COMPILER_LOC(C))) \
         return 0; \
 }
 
 #define ADDOP_NOLINE(C, OP) { \
-    if (!compiler_addop((C), (OP), false)) \
+    if (!cfg_addop_noarg(CFG(C), (OP), NULL)) \
         return 0; \
 }
 
 #define ADDOP_IN_SCOPE(C, OP) { \
-    if (!compiler_addop((C), (OP), true)) { \
+    if (!cfg_addop_noarg(CFG(C), (OP), COMPILER_LOC(C))) { \
         compiler_exit_scope(c); \
         return 0; \
     } \
@@ -1583,17 +1591,17 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *target, bool line)
 }
 
 #define ADDOP_I(C, OP, O) { \
-    if (!compiler_addop_i((C), (OP), (O), true)) \
+    if (!cfg_addop_i(CFG(C), (OP), (O), COMPILER_LOC(C))) \
         return 0; \
 }
 
 #define ADDOP_I_NOLINE(C, OP, O) { \
-    if (!compiler_addop_i((C), (OP), (O), false)) \
+    if (!cfg_addop_i(CFG(C), (OP), (O), NULL)) \
         return 0; \
 }
 
 #define ADDOP_JUMP(C, OP, O) { \
-    if (!compiler_addop_j((C), (OP), (O), true)) \
+    if (!cfg_addop_j(CFG(C), (OP), (O), COMPILER_LOC(C))) \
         return 0; \
 }
 
@@ -1601,7 +1609,7 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *target, bool line)
  * Used for artificial jumps that have no corresponding
  * token in the source code. */
 #define ADDOP_JUMP_NOLINE(C, OP, O) { \
-    if (!compiler_addop_j((C), (OP), (O), false)) \
+    if (!cfg_addop_j(CFG(C), (OP), (O), NULL)) \
         return 0; \
 }
 
@@ -1718,7 +1726,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
         return 0;
     }
 
-    u->u_blocks = NULL;
+    u->u_cfg.block_list = NULL;
     u->u_nfblocks = 0;
     u->u_firstlineno = lineno;
     u->u_loc = LOCATION(lineno, lineno, 0, 0);
@@ -1751,10 +1759,11 @@ compiler_enter_scope(struct compiler *c, identifier name,
 
     c->c_nestlevel++;
 
-    block = compiler_new_block(c);
+    cfg *g = CFG(c);
+    block = cfg_new_block(g);
     if (block == NULL)
         return 0;
-    c->u->u_curblock = block;
+    g->curblock = block;
 
     if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
         c->u->u_loc.lineno = 0;
@@ -1791,7 +1800,7 @@ compiler_exit_scope(struct compiler *c)
             _PyErr_WriteUnraisableMsg("on removing the last compiler "
                                       "stack item", NULL);
         }
-        compiler_unit_check(c->u);
+        cfg_check(CFG(c));
     }
     else {
         c->u = NULL;
@@ -4240,7 +4249,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     }
 
     assert(op);
-    arg = compiler_add_o(dict, mangled);
+    arg = dict_add_o(dict, mangled);
     Py_DECREF(mangled);
     if (arg < 0) {
         return 0;
@@ -4248,7 +4257,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     if (op == LOAD_GLOBAL) {
         arg <<= 1;
     }
-    return compiler_addop_i(c, op, arg, true);
+    return cfg_addop_i(CFG(c), op, arg, COMPILER_LOC(c));
 }
 
 static int
@@ -6288,7 +6297,7 @@ emit_and_reset_fail_pop(struct compiler *c, pattern_context *pc)
     }
     while (--pc->fail_pop_size) {
         compiler_use_next_block(c, pc->fail_pop[pc->fail_pop_size]);
-        if (!compiler_addop(c, POP_TOP, true)) {
+        if (!cfg_addop_noarg(CFG(c), POP_TOP, COMPILER_LOC(c))) {
             pc->fail_pop_size = 0;
             PyObject_Free(pc->fail_pop);
             pc->fail_pop = NULL;
@@ -6722,7 +6731,8 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
         pc->fail_pop = NULL;
         pc->fail_pop_size = 0;
         pc->on_top = 0;
-        if (!compiler_addop_i(c, COPY, 1, true) || !compiler_pattern(c, alt, pc)) {
+        if (!cfg_addop_i(CFG(c), COPY, 1, COMPILER_LOC(c)) ||
+            !compiler_pattern(c, alt, pc)) {
             goto error;
         }
         // Success!
@@ -6785,7 +6795,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
             }
         }
         assert(control);
-        if (!compiler_addop_j(c, JUMP, end, true) ||
+        if (!cfg_addop_j(CFG(c), JUMP, end, COMPILER_LOC(c)) ||
             !emit_and_reset_fail_pop(c, pc))
         {
             goto error;
@@ -6797,7 +6807,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
     // Need to NULL this for the PyObject_Free call in the error block.
     old_pc.fail_pop = NULL;
     // No match. Pop the remaining copy of the subject and fail:
-    if (!compiler_addop(c, POP_TOP, true) || !jump_to_fail_pop(c, pc, JUMP)) {
+    if (!cfg_addop_noarg(CFG(c), POP_TOP, COMPILER_LOC(c)) || !jump_to_fail_pop(c, pc, JUMP)) {
         goto error;
     }
     compiler_use_next_block(c, end);
@@ -8021,7 +8031,7 @@ consts_dict_keys_inorder(PyObject *dict)
     while (PyDict_Next(dict, &pos, &k, &v)) {
         i = PyLong_AS_LONG(v);
         /* The keys of the dictionary can be tuples wrapping a constant.
-         * (see compiler_add_o and _PyCode_ConstantKey). In that case
+         * (see dict_add_o and _PyCode_ConstantKey). In that case
          * the object we want is always second. */
         if (PyTuple_CheckExact(k)) {
             k = PyTuple_GET_ITEM(k, 1);
@@ -8544,7 +8554,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     /* Make sure every block that falls off the end returns None. */
-    if (!basicblock_returns(c->u->u_curblock)) {
+    if (!basicblock_returns(CFG(c)->curblock)) {
         UNSET_LOC(c);
         if (addNone)
             ADDOP_LOAD_CONST(c, Py_None);
@@ -8567,7 +8577,7 @@ assemble(struct compiler *c, int addNone)
 
     int nblocks = 0;
     basicblock *entryblock = NULL;
-    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+    for (basicblock *b = ((c)->u->u_cfg.block_list); b != NULL; b = b->b_list) {
         nblocks++;
         entryblock = b;
     }
