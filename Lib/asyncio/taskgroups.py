@@ -63,7 +63,7 @@ class TaskGroup:
 
         if et is not None:
             if et is exceptions.CancelledError:
-                if self._parent_cancel_requested and not self._parent_task.uncancel():
+                if self._parent_cancel_requested and tasks._uncancel(self._parent_task) == 0:
                     # Do nothing, i.e. swallow the error.
                     pass
                 else:

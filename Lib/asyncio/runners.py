@@ -118,7 +118,7 @@ class Runner:
                 events.set_event_loop(self._loop)
             return self._loop.run_until_complete(task)
         except exceptions.CancelledError:
-            if self._interrupt_count > 0 and task.uncancel() == 0:
+            if self._interrupt_count > 0 and tasks._uncancel(task) == 0:
                 raise KeyboardInterrupt()
             else:
                 raise  # CancelledError

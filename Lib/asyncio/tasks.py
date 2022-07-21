@@ -67,12 +67,28 @@ def _set_task_name(task, name):
         try:
             set_name = task.set_name
         except AttributeError:
-            warnings.warn("Task.set_name() was added in Python 3.8, "
+            warnings._deprecated(
+                name="missing asyncio.Task.set_name()",
+                message="Task.set_name() was added in Python 3.8, "
                       "the method support will be mandatory for third-party "
-                      "task implementations since 3.13.",
-                      DeprecationWarning, stacklevel=3)
+                      "task implementations since 3.13.", remove=(3, 13))
         else:
             set_name(name)
+
+
+def _uncancel(task):
+    try:
+        uncancel = task.uncancel
+    except AttributeError:
+        warnings._deprecated(
+            name="missing asyncio.Task.uncancel()",
+            message="Task.uncancel() was added in Python 3.11, "
+                  "the method support will be mandatory for third-party "
+                  "task implementations since 3.16.",
+                  remove=(3, 16))
+        return -1
+    else:
+        return uncancel()
 
 
 class Task(futures._PyFuture):  # Inherit Python Task implementation
