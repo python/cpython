@@ -569,10 +569,16 @@ process and user.
       See the documentation for :func:`getgroups` for cases where it may not
       return the same group list set by calling setgroups().
 
-.. function:: setns(fd, flags=0)
+.. function:: setns(fd, nstype=0)
 
-   Call the system call :c:func:`setns`. See the Linux manual for the semantics.
-   For flags see the ``CLONE_NEW*`` constants.
+   Reassociate thread with a namespace.
+   If *fd* refers to a ``/proc/[pid]/ns/`` link, :func:`setns` reassociates the
+   calling thread with the namespace associated with that link, subject to any
+   constraints imposed by the *nstype* argument (or any if 0).
+   Since Linux 5.8, *fd* may refer to a PID file descriptor obtained from
+   :c:func:`pidfd_open`. In this case :func:`setns` reassociates the calling thread
+   into one or more of the same namespaces as the thread referred to by *fd* subject
+   to any constraints imposed by the *nstype* which is a bit mask specified by ORing together one or more of the ``CLONE_NEW*`` constants. the caller's memberships in unspecified namespaces are left unchanged.
 
    .. availability:: Linux 3.0 or newer.
 
@@ -743,13 +749,19 @@ process and user.
 
 .. function:: unshare(flags)
 
-   Call the system call :c:func:`unshare`. See the Linux manual for the semantics.
+   Disassociate parts of the process execution context.
+   The *flags* argument is a bit mask that specifies which parts of the execution
+   context should be unshared. This argument is specified by ORing together zero
+   or more of the ``CLONE_*`` constants.
+   If *flags* is specified as zero, no changes are made to the calling process's
+   execution context.
 
    .. availability:: Linux 2.6.16 or newer.
 
    .. versionadded:: 3.12
 
-Parameters to the :func:`unshare` function, if the implementation supports them.
+Flags to the :func:`unshare` function, if the implementation supports them.
+See the Linux manual for the exact effect and availability.
 
 .. data:: CLONE_FS
           CLONE_FILES
