@@ -579,6 +579,7 @@ process and user.
    :c:func:`pidfd_open`. In this case :func:`setns` reassociates the calling thread
    into one or more of the same namespaces as the thread referred to by *fd* subject
    to any constraints imposed by the *nstype* which is a bit mask specified by ORing together one or more of the ``CLONE_NEW*`` constants. the caller's memberships in unspecified namespaces are left unchanged.
+   *fd* can be any object with a :meth:`fileno()` method, or a raw file descriptor.
 
    This example reassociates the thread with the ``init`` process' network namespace::
 
