@@ -1,0 +1,1 @@
+special case asyncio.timeout(0) and timeouts in the past
