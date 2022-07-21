@@ -2688,12 +2688,12 @@ output.append(4)
     @jump_test(2, 3, [1, 3])
     def test_jump_extended_args_unpack_ex(output):
         output.append(1)
-        _, *_, _ = spam 
+        _, *_, _ = spam
         output.append(3)
 
     def test_jump_extended_args_for_iter(self):
         # In addition to failing when extended arg handling is broken, this can
-        # also hit quadratic time complexity and hang for a *very* long time:
+        # also hang for a *very* long time:
         source = [
             "def f(output):",
             "    output.append(1)",
@@ -2705,6 +2705,7 @@ output.append(4)
         exec("\n".join(source), namespace)
         f = namespace["f"]
         self.run_test(f,  2, 100_000, [1, 100_000])
+
 
 class TestExtendedArgs(unittest.TestCase):
 
