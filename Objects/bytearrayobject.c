@@ -2270,6 +2270,18 @@ static PyNumberMethods bytearray_as_number = {
     0,              /*nb_subtract*/
     0,              /*nb_multiply*/
     bytearray_mod,  /*nb_remainder*/
+    0,              /*nb_divmod*/
+    0,              /*nb_power*/
+    0,              /*nb_negative*/
+    0,              /*nb_positive*/
+    0,              /*nb_absolute*/
+    0,              /*nb_bool*/
+    0,              /*nb_invert*/
+    0,              /*nb_lshift*/
+    0,              /*nb_rshift*/
+    _PyBytes_And,   /*nb_and*/
+    _PyBytes_Xor,   /*nb_xor*/
+    _PyBytes_Or,    /*nb_or*/
 };
 
 PyDoc_STRVAR(bytearray_doc,

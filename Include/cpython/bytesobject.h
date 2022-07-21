@@ -24,6 +24,13 @@ PyAPI_FUNC(PyObject*) _PyBytes_FromHex(
     PyObject *string,
     int use_bytearray);
 
+PyObject *
+_PyBytes_And(PyObject *obj1, PyObject *obj2);
+PyObject *
+_PyBytes_Xor(PyObject *obj1, PyObject *obj2);
+PyObject *
+_PyBytes_Or(PyObject *obj1, PyObject *obj2);
+
 /* Helper for PyBytes_DecodeEscape that detects invalid escape chars. */
 PyAPI_FUNC(PyObject *) _PyBytes_DecodeEscape(const char *, Py_ssize_t,
                                              const char *, const char **);

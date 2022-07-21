@@ -2562,11 +2562,118 @@ bytes_mod(PyObject *self, PyObject *arg)
                              arg, 0);
 }
 
+static PyObject *
+bytes_bitwise_operation(PyObject *obj1, PyObject *obj2, void (*op)(char*, char*, char*, Py_ssize_t))
+{
+    PyObject* result = NULL;
+    char* obj1_str = NULL;
+    char* obj2_str = NULL;
+    char* result_str = NULL;
+    Py_ssize_t obj1_size = 0;
+    Py_ssize_t obj2_size = 0;
+
+    if (PyBytes_Check(obj1)) {
+        obj1_str = PyBytes_AS_STRING(obj1);
+        obj1_size = PyBytes_GET_SIZE(obj1);
+    }
+    else if (PyByteArray_Check(obj1)) {
+        obj1_str = PyByteArray_AS_STRING(obj1);
+        obj1_size = PyByteArray_GET_SIZE(obj1);
+    } 
+    else {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    if (PyBytes_Check(obj2)) {
+        obj2_str = PyBytes_AS_STRING(obj2);
+        obj2_size = PyBytes_GET_SIZE(obj2);
+    }
+    else if (PyByteArray_Check(obj2)) {
+        obj2_str = PyByteArray_AS_STRING(obj2);
+        obj2_size = PyByteArray_GET_SIZE(obj2);
+    } 
+    else {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    if (obj1_size != obj2_size) {
+        PyErr_SetString(PyExc_ValueError, "operands size must be the same.");
+        return NULL;
+    }
+
+    result = PyBytes_FromStringAndSize(NULL, obj1_size);
+    if (result == NULL) {
+        return NULL;
+    }
+
+    result_str = PyBytes_AS_STRING(result);
+
+    Py_BEGIN_ALLOW_THREADS
+    op(result_str, obj1_str, obj2_str, obj1_size);
+    Py_END_ALLOW_THREADS
+
+    return result;
+}                                                             
+
+static void
+bytes_and(char* result, char* a, char* b, Py_ssize_t size)
+{
+    while (size--) {
+        result[size] = a[size] & b[size];
+    }
+}
+
+PyObject *
+_PyBytes_And(PyObject *obj1, PyObject *obj2)
+{
+    return bytes_bitwise_operation(obj1, obj2, bytes_and);
+}
+
+static void
+bytes_xor(char* result, char* a, char* b, Py_ssize_t size)
+{
+    while (size--) {
+        result[size] = a[size] ^ b[size];
+    }
+}
+
+PyObject *
+_PyBytes_Xor(PyObject *obj1, PyObject *obj2)
+{
+    return bytes_bitwise_operation(obj1, obj2, bytes_xor);
+}
+
+static void
+bytes_or(char* result, char* a, char* b, Py_ssize_t size)
+{
+    while (size--) {
+        result[size] = a[size] | b[size];
+    }
+}
+
+PyObject *
+_PyBytes_Or(PyObject *obj1, PyObject *obj2)
+{
+    return bytes_bitwise_operation(obj1, obj2, bytes_or);
+}
+
 static PyNumberMethods bytes_as_number = {
     0,              /*nb_add*/
     0,              /*nb_subtract*/
     0,              /*nb_multiply*/
     bytes_mod,      /*nb_remainder*/
+    0,              /*nb_divmod*/
+    0,              /*nb_power*/
+    0,              /*nb_negative*/
+    0,              /*nb_positive*/
+    0,              /*nb_absolute*/
+    0,              /*nb_bool*/
+    0,              /*nb_invert*/
+    0,              /*nb_lshift*/
+    0,              /*nb_rshift*/
+    _PyBytes_And,   /*nb_and*/
+    _PyBytes_Xor,   /*nb_xor*/
+    _PyBytes_Or,    /*nb_or*/
 };
 
 static PyObject *
