@@ -240,7 +240,6 @@ d[types.MethodType] = _deepcopy_method
 
 def _deepcopy_memoryview(x, memo, deepcopy=deepcopy):
     y = memoryview(deepcopy(x.obj, memo))
-    memo[id(x)] = y
     return y
 d[memoryview] = _deepcopy_memoryview
 
