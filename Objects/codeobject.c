@@ -971,6 +971,7 @@ PyCode_Addr2Location(PyCodeObject *co, int addrq,
     if (addrq < 0) {
         *start_line = *end_line = co->co_firstlineno;
         *start_column = *end_column = 0;
+        return 1;
     }
     assert(addrq >= 0 && addrq < _PyCode_NBYTES(co));
     PyCodeAddressRange bounds;
