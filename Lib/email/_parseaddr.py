@@ -110,7 +110,7 @@ def _parsedate_tz(data):
         yy, tm = tm, yy
     if yy[-1] == ',':
         yy = yy[:-1]
-    if not yy[0].isdigit():
+    if yy and not yy[0].isdigit():
         yy, tz = tz, yy
     if tm[-1] == ',':
         tm = tm[:-1]
