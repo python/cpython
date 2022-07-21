@@ -852,7 +852,7 @@ new_basicblock()
     return b;
 }
 
-basicblock *
+static basicblock *
 cfg_new_block(cfg *g)
 {
     basicblock *b = new_basicblock();
@@ -865,7 +865,7 @@ cfg_new_block(cfg *g)
     return b;
 }
 
-basicblock *
+static basicblock *
 cfg_use_next_block(cfg *g, basicblock *block)
 {
     assert(block != NULL);
