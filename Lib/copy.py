@@ -197,7 +197,6 @@ d[types.BuiltinFunctionType] = _deepcopy_atomic
 d[types.FunctionType] = _deepcopy_atomic
 d[weakref.ref] = _deepcopy_atomic
 d[property] = _deepcopy_atomic
-d[memoryview] = _deepcopy_atomic
 
 def _deepcopy_list(x, memo, deepcopy=deepcopy):
     y = []
@@ -238,6 +237,12 @@ if PyStringMap is not None:
 def _deepcopy_method(x, memo): # Copy instance methods
     return type(x)(x.__func__, deepcopy(x.__self__, memo))
 d[types.MethodType] = _deepcopy_method
+
+def _deepcopy_memoryview(x, memo, deepcopy=deepcopy):
+    y = memoryview(deepcopy(x.obj, memo))
+    memo[id(x)] = y
+    return y
+d[memoryview] = _deepcopy_memoryview
 
 del d
 

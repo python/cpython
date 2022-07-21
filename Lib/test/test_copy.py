@@ -359,8 +359,7 @@ class TestCopy(unittest.TestCase):
             pass
         tests = [None, 42, 2**100, 3.14, True, False, 1j,
                  "hello", "hello\u1234", f.__code__,
-                 NewStyle, range(10), Classic, max, property(),
-                 memoryview(b'123')]
+                 NewStyle, range(10), Classic, max, property()]
         for x in tests:
             self.assertIs(copy.deepcopy(x), x)
 
@@ -426,6 +425,18 @@ class TestCopy(unittest.TestCase):
         self.assertIsNot(y, x)
         self.assertIs(y['foo'], y)
         self.assertEqual(len(y), 1)
+
+    def test_deepcopy_memoryview_bytes(self):
+        x = memoryview(b'foo')
+        y = copy.deepcopy(x)
+        self.assertIsNot(y, x)
+        self.assertIs(y.obj, x.obj)
+
+    def test_deepcopy_memoryview_bytearray(self):
+        x = memoryview(bytearray(b'foo'))
+        y = copy.deepcopy(x)
+        self.assertIsNot(y, x)
+        self.assertIsNot(y.obj, x.obj)
 
     def test_deepcopy_keepalive(self):
         memo = {}
