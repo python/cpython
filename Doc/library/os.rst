@@ -767,6 +767,10 @@ process and user.
 
    .. versionadded:: 3.12
 
+   .. seealso::
+
+      The :func:`.setns` function.
+
 Flags to the :func:`unshare` function, if the implementation supports them.
 See the Linux manual for the exact effect and availability.
 
