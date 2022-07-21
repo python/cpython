@@ -179,7 +179,7 @@ push_value(int64_t stack, Kind kind)
 static inline int64_t
 pop_value(int64_t stack)
 {
-    assert(stack);
+    assert(stack > EMPTY_STACK || stack == OVERFLOWED);
     return Py_ARITHMETIC_RIGHT_SHIFT(int64_t, stack, BITS_PER_BLOCK);
 }
 
