@@ -127,7 +127,7 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(cm.expired())
         # 2 sec for slow CI boxes
         self.assertLess(t1-t0, 2)
-        self.assertTrue(t0 <= cm.when() <= t1)
+        self.assertTrue(t0 >= cm.when() <= t1)
 
     async def test_foreign_exception_passed(self):
         with self.assertRaises(KeyError):
