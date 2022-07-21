@@ -1462,7 +1462,7 @@ finalize_restore_builtins(PyThreadState *tstate)
     }
     PyDict_Clear(interp->builtins);
     if (PyDict_Update(interp->builtins, interp->builtins_copy)) {
-        _PyErr_Clear(tstate);
+        PyErr_WriteUnraisable(NULL);
     }
     Py_XDECREF(dict);
 }

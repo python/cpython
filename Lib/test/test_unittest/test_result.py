@@ -2,7 +2,7 @@ import io
 import sys
 import textwrap
 
-from test.support import warnings_helper, captured_stdout, captured_stderr
+from test.support import warnings_helper, captured_stdout
 
 import traceback
 import unittest

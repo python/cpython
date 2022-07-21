@@ -2333,35 +2333,6 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
         self.assertIsNot(element_foo.attrib, attrib)
         self.assertNotEqual(element_foo.attrib, attrib)
 
-    def test_copy(self):
-        # Only run this test if Element.copy() is defined.
-        if "copy" not in dir(ET.Element):
-            raise unittest.SkipTest("Element.copy() not present")
-
-        element_foo = ET.Element("foo", { "zix": "wyp" })
-        element_foo.append(ET.Element("bar", { "baz": "qix" }))
-
-        with self.assertWarns(DeprecationWarning):
-            element_foo2 = element_foo.copy()
-
-        # elements are not the same
-        self.assertIsNot(element_foo2, element_foo)
-
-        # string attributes are equal
-        self.assertEqual(element_foo2.tag, element_foo.tag)
-        self.assertEqual(element_foo2.text, element_foo.text)
-        self.assertEqual(element_foo2.tail, element_foo.tail)
-
-        # number of children is the same
-        self.assertEqual(len(element_foo2), len(element_foo))
-
-        # children are the same
-        for (child1, child2) in itertools.zip_longest(element_foo, element_foo2):
-            self.assertIs(child1, child2)
-
-        # attrib is a copy
-        self.assertEqual(element_foo2.attrib, element_foo.attrib)
-
     def test___copy__(self):
         element_foo = ET.Element("foo", { "zix": "wyp" })
         element_foo.append(ET.Element("bar", { "baz": "qix" }))

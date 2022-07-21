@@ -141,18 +141,9 @@ class BaseFormattingTest(object):
     # Utility functions for formatting tests
     #
 
-    def _test_formatfunc(self, format, value, out, func, **format_opts):
-        self.assertEqual(
-            func(format, value, **format_opts), out)
-
-    def _test_format(self, format, value, out, **format_opts):
-        with check_warnings(('', DeprecationWarning)):
-            self._test_formatfunc(format, value, out,
-                func=locale.format, **format_opts)
-
     def _test_format_string(self, format, value, out, **format_opts):
-        self._test_formatfunc(format, value, out,
-            func=locale.format_string, **format_opts)
+        self.assertEqual(
+            locale.format_string(format, value, **format_opts), out)
 
     def _test_currency(self, value, out, **format_opts):
         self.assertEqual(locale.currency(value, **format_opts), out)
@@ -166,44 +157,40 @@ class EnUSNumberFormatting(BaseFormattingTest):
         self.sep = locale.localeconv()['thousands_sep']
 
     def test_grouping(self):
-        self._test_format("%f", 1024, grouping=1, out='1%s024.000000' % self.sep)
-        self._test_format("%f", 102, grouping=1, out='102.000000')
-        self._test_format("%f", -42, grouping=1, out='-42.000000')
-        self._test_format("%+f", -42, grouping=1, out='-42.000000')
+        self._test_format_string("%f", 1024, grouping=1, out='1%s024.000000' % self.sep)
+        self._test_format_string("%f", 102, grouping=1, out='102.000000')
+        self._test_format_string("%f", -42, grouping=1, out='-42.000000')
+        self._test_format_string("%+f", -42, grouping=1, out='-42.000000')
 
     def test_grouping_and_padding(self):
-        self._test_format("%20.f", -42, grouping=1, out='-42'.rjust(20))
+        self._test_format_string("%20.f", -42, grouping=1, out='-42'.rjust(20))
         if self.sep:
-            self._test_format("%+10.f", -4200, grouping=1,
+            self._test_format_string("%+10.f", -4200, grouping=1,
                 out=('-4%s200' % self.sep).rjust(10))
-            self._test_format("%-10.f", -4200, grouping=1,
+            self._test_format_string("%-10.f", -4200, grouping=1,
                 out=('-4%s200' % self.sep).ljust(10))
 
     def test_integer_grouping(self):
-        self._test_format("%d", 4200, grouping=True, out='4%s200' % self.sep)
-        self._test_format("%+d", 4200, grouping=True, out='+4%s200' % self.sep)
-        self._test_format("%+d", -4200, grouping=True, out='-4%s200' % self.sep)
+        self._test_format_string("%d", 4200, grouping=True, out='4%s200' % self.sep)
+        self._test_format_string("%+d", 4200, grouping=True, out='+4%s200' % self.sep)
+        self._test_format_string("%+d", -4200, grouping=True, out='-4%s200' % self.sep)
 
     def test_integer_grouping_and_padding(self):
-        self._test_format("%10d", 4200, grouping=True,
+        self._test_format_string("%10d", 4200, grouping=True,
             out=('4%s200' % self.sep).rjust(10))
-        self._test_format("%-10d", -4200, grouping=True,
+        self._test_format_string("%-10d", -4200, grouping=True,
             out=('-4%s200' % self.sep).ljust(10))
 
     def test_simple(self):
-        self._test_format("%f", 1024, grouping=0, out='1024.000000')
-        self._test_format("%f", 102, grouping=0, out='102.000000')
-        self._test_format("%f", -42, grouping=0, out='-42.000000')
-        self._test_format("%+f", -42, grouping=0, out='-42.000000')
+        self._test_format_string("%f", 1024, grouping=0, out='1024.000000')
+        self._test_format_string("%f", 102, grouping=0, out='102.000000')
+        self._test_format_string("%f", -42, grouping=0, out='-42.000000')
+        self._test_format_string("%+f", -42, grouping=0, out='-42.000000')
 
     def test_padding(self):
-        self._test_format("%20.f", -42, grouping=0, out='-42'.rjust(20))
-        self._test_format("%+10.f", -4200, grouping=0, out='-4200'.rjust(10))
-        self._test_format("%-10.f", 4200, grouping=0, out='4200'.ljust(10))
-
-    def test_format_deprecation(self):
-        with self.assertWarns(DeprecationWarning):
-            locale.format("%-10.f", 4200, grouping=True)
+        self._test_format_string("%20.f", -42, grouping=0, out='-42'.rjust(20))
+        self._test_format_string("%+10.f", -4200, grouping=0, out='-4200'.rjust(10))
+        self._test_format_string("%-10.f", 4200, grouping=0, out='4200'.ljust(10))
 
     def test_complex_formatting(self):
         # Spaces in formatting string
@@ -230,20 +217,9 @@ class EnUSNumberFormatting(BaseFormattingTest):
                 out='int 1%s000 float 1%s000.00 str str' %
                 (self.sep, self.sep))
 
-
-class TestFormatPatternArg(unittest.TestCase):
-    # Test handling of pattern argument of format
-
-    def test_onlyOnePattern(self):
-        with check_warnings(('', DeprecationWarning)):
-            # Issue 2522: accept exactly one % pattern, and no extra chars.
-            self.assertRaises(ValueError, locale.format, "%f\n", 'foo')
-            self.assertRaises(ValueError, locale.format, "%f\r", 'foo')
-            self.assertRaises(ValueError, locale.format, "%f\r\n", 'foo')
-            self.assertRaises(ValueError, locale.format, " %f", 'foo')
-            self.assertRaises(ValueError, locale.format, "%fg", 'foo')
-            self.assertRaises(ValueError, locale.format, "%^g", 'foo')
-            self.assertRaises(ValueError, locale.format, "%f%%", 'foo')
+        self._test_format_string("total=%i%%", 100, out='total=100%')
+        self._test_format_string("newline: %i\n", 3, out='newline: 3\n')
+        self._test_format_string("extra: %ii", 3, out='extra: 3i')
 
 
 class TestLocaleFormatString(unittest.TestCase):
@@ -292,45 +268,45 @@ class TestCNumberFormatting(CCookedTest, BaseFormattingTest):
     # Test number formatting with a cooked "C" locale.
 
     def test_grouping(self):
-        self._test_format("%.2f", 12345.67, grouping=True, out='12345.67')
+        self._test_format_string("%.2f", 12345.67, grouping=True, out='12345.67')
 
     def test_grouping_and_padding(self):
-        self._test_format("%9.2f", 12345.67, grouping=True, out=' 12345.67')
+        self._test_format_string("%9.2f", 12345.67, grouping=True, out=' 12345.67')
 
 
 class TestFrFRNumberFormatting(FrFRCookedTest, BaseFormattingTest):
     # Test number formatting with a cooked "fr_FR" locale.
 
     def test_decimal_point(self):
-        self._test_format("%.2f", 12345.67, out='12345,67')
+        self._test_format_string("%.2f", 12345.67, out='12345,67')
 
     def test_grouping(self):
-        self._test_format("%.2f", 345.67, grouping=True, out='345,67')
-        self._test_format("%.2f", 12345.67, grouping=True, out='12 345,67')
+        self._test_format_string("%.2f", 345.67, grouping=True, out='345,67')
+        self._test_format_string("%.2f", 12345.67, grouping=True, out='12 345,67')
 
     def test_grouping_and_padding(self):
-        self._test_format("%6.2f", 345.67, grouping=True, out='345,67')
-        self._test_format("%7.2f", 345.67, grouping=True, out=' 345,67')
-        self._test_format("%8.2f", 12345.67, grouping=True, out='12 345,67')
-        self._test_format("%9.2f", 12345.67, grouping=True, out='12 345,67')
-        self._test_format("%10.2f", 12345.67, grouping=True, out=' 12 345,67')
-        self._test_format("%-6.2f", 345.67, grouping=True, out='345,67')
-        self._test_format("%-7.2f", 345.67, grouping=True, out='345,67 ')
-        self._test_format("%-8.2f", 12345.67, grouping=True, out='12 345,67')
-        self._test_format("%-9.2f", 12345.67, grouping=True, out='12 345,67')
-        self._test_format("%-10.2f", 12345.67, grouping=True, out='12 345,67 ')
+        self._test_format_string("%6.2f", 345.67, grouping=True, out='345,67')
+        self._test_format_string("%7.2f", 345.67, grouping=True, out=' 345,67')
+        self._test_format_string("%8.2f", 12345.67, grouping=True, out='12 345,67')
+        self._test_format_string("%9.2f", 12345.67, grouping=True, out='12 345,67')
+        self._test_format_string("%10.2f", 12345.67, grouping=True, out=' 12 345,67')
+        self._test_format_string("%-6.2f", 345.67, grouping=True, out='345,67')
+        self._test_format_string("%-7.2f", 345.67, grouping=True, out='345,67 ')
+        self._test_format_string("%-8.2f", 12345.67, grouping=True, out='12 345,67')
+        self._test_format_string("%-9.2f", 12345.67, grouping=True, out='12 345,67')
+        self._test_format_string("%-10.2f", 12345.67, grouping=True, out='12 345,67 ')
 
     def test_integer_grouping(self):
-        self._test_format("%d", 200, grouping=True, out='200')
-        self._test_format("%d", 4200, grouping=True, out='4 200')
+        self._test_format_string("%d", 200, grouping=True, out='200')
+        self._test_format_string("%d", 4200, grouping=True, out='4 200')
 
     def test_integer_grouping_and_padding(self):
-        self._test_format("%4d", 4200, grouping=True, out='4 200')
-        self._test_format("%5d", 4200, grouping=True, out='4 200')
-        self._test_format("%10d", 4200, grouping=True, out='4 200'.rjust(10))
-        self._test_format("%-4d", 4200, grouping=True, out='4 200')
-        self._test_format("%-5d", 4200, grouping=True, out='4 200')
-        self._test_format("%-10d", 4200, grouping=True, out='4 200'.ljust(10))
+        self._test_format_string("%4d", 4200, grouping=True, out='4 200')
+        self._test_format_string("%5d", 4200, grouping=True, out='4 200')
+        self._test_format_string("%10d", 4200, grouping=True, out='4 200'.rjust(10))
+        self._test_format_string("%-4d", 4200, grouping=True, out='4 200')
+        self._test_format_string("%-5d", 4200, grouping=True, out='4 200')
+        self._test_format_string("%-10d", 4200, grouping=True, out='4 200'.ljust(10))
 
     def test_currency(self):
         euro = '\u20ac'

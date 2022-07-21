@@ -75,7 +75,7 @@ New syntax features:
 New typing features:
 
 * :pep:`646`: Variadic generics.
-* :pep:`655`: Marking individual TypedDict items as required or potentially-missing.
+* :pep:`655`: Marking individual TypedDict items as required or potentially missing.
 * :pep:`673`: ``Self`` type.
 * :pep:`675`: Arbitrary literal string type.
 
@@ -117,7 +117,6 @@ when dealing with deeply nested dictionary objects and multiple function calls,
     Traceback (most recent call last):
       File "query.py", line 37, in <module>
         magic_arithmetic('foo')
-        ^^^^^^^^^^^^^^^^^^^^^^^
       File "query.py", line 18, in magic_arithmetic
         return add_counts(x) / 25
                ^^^^^^^^^^^^^
@@ -336,6 +335,13 @@ See :pep:`681` for more details.
 (Contributed by Jelle Zijlstra in :gh:`91860`. PEP written by
 Erik De Bonte and Eric Traut.)
 
+PEP 563 May Not Be the Future
+-----------------------------
+
+* :pep:`563` Postponed Evaluation of Annotations, ``__future__.annotations``
+  that was planned for this release has been indefinitely postponed.
+  See `this message <https://mail.python.org/archives/list/python-dev@python.org/message/VIZEBX5EYMSYIJNDBF6DMUMZOCWHARSO/>`_ for more information.
+
 Other Language Changes
 ======================
 
@@ -376,6 +382,13 @@ Other Language Changes
 * A ``"z"`` option was added to the format specification mini-language that
   coerces negative zero to zero after rounding to the format precision.  See
   :pep:`682` for more details.  (Contributed by John Belmonte in :gh:`90153`.)
+
+* Bytes are no longer accepted on :attr:`sys.path`.  Support broke sometime
+  between Python 3.2 and 3.6 with no one noticing until after Python 3.10.0
+  was released. Bringing back support would also be problematic due to
+  interactions between :option:`-b` and :attr:`sys.path_importer_cache` when
+  there is a mixture of strings and bytes keys.
+  (Contributed by Thomas Grainger in :gh:`91181`.)
 
 Other CPython Implementation Changes
 ====================================
@@ -442,6 +455,11 @@ asyncio
 * Add :class:`~asyncio.Barrier` class to the synchronization primitives of
   the asyncio library. (Contributed by Yves Duprat and Andrew Svetlov in
   :gh:`87518`.)
+
+* Add :class:`~asyncio.TaskGroup` class,
+  an :ref:`asynchronous context manager <async-context-managers>`
+  holding a group of tasks that will wait for all of them upon exit.
+  (Contributed by Yury Seliganov and others.)
 
 datetime
 --------
