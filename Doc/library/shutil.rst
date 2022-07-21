@@ -194,7 +194,7 @@ Directory and files operations
 
    When *follow_symlinks* is false, and *src* is a symbolic
    link, :func:`copy2` attempts to copy all metadata from the
-   *src* symbolic link to the newly-created *dst* symbolic link.
+   *src* symbolic link to the newly created *dst* symbolic link.
    However, this functionality is not available on all platforms.
    On platforms where some or all of this functionality is
    unavailable, :func:`copy2` will preserve all the metadata

@@ -313,7 +313,7 @@ you're too lazy to define a function.
 
 Functions are already first class objects in Python, and can be declared in a
 local scope.  Therefore the only advantage of using a lambda instead of a
-locally-defined function is that you don't need to invent a name for the
+locally defined function is that you don't need to invent a name for the
 function -- but that's just a local variable to which the function object (which
 is exactly the same type of object that a lambda expression yields) is assigned!
 

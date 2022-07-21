@@ -307,7 +307,7 @@ class SocketIO:
         self.debug("_getresponse:myseq:", myseq)
         if threading.current_thread() is self.sockthread:
             # this thread does all reading of requests or responses
-            while 1:
+            while True:
                 response = self.pollresponse(myseq, wait)
                 if response is not None:
                     return response
@@ -417,7 +417,7 @@ class SocketIO:
         self.responses and notify the owning thread.
 
         """
-        while 1:
+        while True:
             # send queued response if there is one available
             try:
                 qmsg = response_queue.get(0)

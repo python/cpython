@@ -4302,7 +4302,11 @@ static PyObject *
 _ssl__SSLContext_set_default_verify_paths_impl(PySSLContext *self)
 /*[clinic end generated code: output=0bee74e6e09deaaa input=35f3408021463d74]*/
 {
-    if (!SSL_CTX_set_default_verify_paths(self->ctx)) {
+    int rc;
+    Py_BEGIN_ALLOW_THREADS
+    rc = SSL_CTX_set_default_verify_paths(self->ctx);
+    Py_END_ALLOW_THREADS
+    if (!rc) {
         _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
         return NULL;
     }

@@ -267,7 +267,7 @@ Disassembly of g:
 expr_str = "x + 1"
 
 dis_expr_str = """\
-           RESUME                   0
+  0        RESUME                   0
 
   1        LOAD_NAME                0 (x)
            LOAD_CONST               0 (1)
@@ -278,7 +278,7 @@ dis_expr_str = """\
 simple_stmt_str = "x = x + 1"
 
 dis_simple_stmt_str = """\
-           RESUME                   0
+  0        RESUME                   0
 
   1        LOAD_NAME                0 (x)
            LOAD_CONST               0 (1)
@@ -297,7 +297,7 @@ lst[fun(0)]: int = 1
 # leading newline is for a reason (tests lineno)
 
 dis_annot_stmt_str = """\
-           RESUME                   0
+  0        RESUME                   0
 
   2        SETUP_ANNOTATIONS
            LOAD_CONST               0 (1)
@@ -335,7 +335,7 @@ while 1:
 # Trailing newline has been deliberately omitted
 
 dis_compound_stmt_str = """\
-           RESUME                   0
+  0        RESUME                   0
 
   1        LOAD_CONST               0 (0)
            STORE_NAME               0 (x)
@@ -360,13 +360,13 @@ dis_traceback = """\
     -->    BINARY_OP               11 (/)
            POP_TOP
 
-%3d        LOAD_FAST_CHECK          1 (tb)
+%3d     >> LOAD_FAST_CHECK          1 (tb)
            RETURN_VALUE
         >> PUSH_EXC_INFO
 
 %3d        LOAD_GLOBAL              0 (Exception)
            CHECK_EXC_MATCH
-           POP_JUMP_FORWARD_IF_FALSE    23 (to 82)
+           POP_JUMP_FORWARD_IF_FALSE    22 (to 80)
            STORE_FAST               0 (e)
 
 %3d        LOAD_FAST                0 (e)
@@ -376,9 +376,7 @@ dis_traceback = """\
            LOAD_CONST               0 (None)
            STORE_FAST               0 (e)
            DELETE_FAST              0 (e)
-
-%3d        LOAD_FAST                1 (tb)
-           RETURN_VALUE
+           JUMP_BACKWARD           29 (to 14)
         >> LOAD_CONST               0 (None)
            STORE_FAST               0 (e)
            DELETE_FAST              0 (e)
@@ -396,7 +394,6 @@ ExceptionTable:
        TRACEBACK_CODE.co_firstlineno + 5,
        TRACEBACK_CODE.co_firstlineno + 3,
        TRACEBACK_CODE.co_firstlineno + 4,
-       TRACEBACK_CODE.co_firstlineno + 5,
        TRACEBACK_CODE.co_firstlineno + 3)
 
 def _fstring(a, b, c, d):
@@ -443,7 +440,7 @@ dis_with = """\
            CALL                     2
            POP_TOP
 
-%3d        LOAD_CONST               2 (2)
+%3d     >> LOAD_CONST               2 (2)
            STORE_FAST               2 (y)
            LOAD_CONST               0 (None)
            RETURN_VALUE
@@ -456,11 +453,7 @@ dis_with = """\
            POP_EXCEPT
            POP_TOP
            POP_TOP
-
-%3d        LOAD_CONST               2 (2)
-           STORE_FAST               2 (y)
-           LOAD_CONST               0 (None)
-           RETURN_VALUE
+           JUMP_BACKWARD           13 (to 30)
         >> COPY                     3
            POP_EXCEPT
            RERAISE                  1
@@ -472,7 +465,6 @@ ExceptionTable:
        _with.__code__.co_firstlineno + 1,
        _with.__code__.co_firstlineno + 3,
        _with.__code__.co_firstlineno + 1,
-       _with.__code__.co_firstlineno + 3,
        )
 
 async def _asyncwith(c):
@@ -510,7 +502,7 @@ dis_asyncwith = """\
            JUMP_BACKWARD_NO_INTERRUPT     4 (to 48)
         >> POP_TOP
 
-%3d        LOAD_CONST               2 (2)
+%3d     >> LOAD_CONST               2 (2)
            STORE_FAST               2 (y)
            LOAD_CONST               0 (None)
            RETURN_VALUE
@@ -529,11 +521,7 @@ dis_asyncwith = """\
            POP_EXCEPT
            POP_TOP
            POP_TOP
-
-%3d        LOAD_CONST               2 (2)
-           STORE_FAST               2 (y)
-           LOAD_CONST               0 (None)
-           RETURN_VALUE
+           JUMP_BACKWARD           19 (to 58)
         >> COPY                     3
            POP_EXCEPT
            RERAISE                  1
@@ -545,7 +533,6 @@ ExceptionTable:
        _asyncwith.__code__.co_firstlineno + 1,
        _asyncwith.__code__.co_firstlineno + 3,
        _asyncwith.__code__.co_firstlineno + 1,
-       _asyncwith.__code__.co_firstlineno + 3,
        )
 
 
@@ -1092,7 +1079,7 @@ class DisTests(DisTestBase):
     @cpython_only
     def test_binary_specialize(self):
         binary_op_quicken = """\
-              0 RESUME_QUICK             0
+  0           0 RESUME_QUICK             0
 
   1           2 LOAD_NAME                0 (a)
               4 LOAD_NAME                1 (b)
@@ -1110,7 +1097,7 @@ class DisTests(DisTestBase):
         self.do_disassembly_compare(got, binary_op_quicken % "BINARY_OP_ADD_UNICODE     0 (+)", True)
 
         binary_subscr_quicken = """\
-              0 RESUME_QUICK             0
+  0           0 RESUME_QUICK             0
 
   1           2 LOAD_NAME                0 (a)
               4 LOAD_CONST               0 (0)
@@ -1130,7 +1117,7 @@ class DisTests(DisTestBase):
     @cpython_only
     def test_load_attr_specialize(self):
         load_attr_quicken = """\
-              0 RESUME_QUICK             0
+  0           0 RESUME_QUICK             0
 
   1           2 LOAD_CONST               0 ('a')
               4 LOAD_ATTR_SLOT           0 (__class__)
@@ -1144,7 +1131,7 @@ class DisTests(DisTestBase):
     @cpython_only
     def test_call_specialize(self):
         call_quicken = """\
-           RESUME_QUICK             0
+  0        RESUME_QUICK             0
 
   1        PUSH_NULL
            LOAD_NAME                0 (str)
@@ -1718,7 +1705,7 @@ class InstructionTests(InstructionTestCase):
             for instr in dis.get_instructions(code)
         ]
         expected = [
-            (None, None, None, None),
+            (0, 1, 0, 0),
             (1, 1, 0, 1),
             (1, 1, 0, 1),
             (2, 2, 2, 3),
