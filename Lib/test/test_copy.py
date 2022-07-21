@@ -100,7 +100,8 @@ class TestCopy(unittest.TestCase):
                  42, 2**100, 3.14, True, False, 1j,
                  "hello", "hello\u1234", f.__code__,
                  b"world", bytes(range(256)), range(10), slice(1, 10, 2),
-                 NewStyle, Classic, max, WithMetaclass, property()]
+                 NewStyle, Classic, max, WithMetaclass, property(),
+                 memoryview(b'123')]
         for x in tests:
             self.assertIs(copy.copy(x), x)
 
