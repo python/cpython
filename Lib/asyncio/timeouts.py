@@ -126,13 +126,7 @@ def timeout(delay: Optional[float]) -> Timeout:
     into TimeoutError.
     """
     loop = events.get_running_loop()
-    if delay is None:
-        return Timeout(None)
-
-    if delay <= 0:
-        return Timeout(0)
-
-    return Timeout(loop.time() + delay)
+    return Timeout(loop.time() + delay if delay is not None else None)
 
 
 def timeout_at(when: Optional[float]) -> Timeout:
