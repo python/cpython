@@ -135,6 +135,12 @@ Deprecated
 * :class:`typing.Hashable` and :class:`typing.Sized` aliases for :class:`collections.abc.Hashable`
   and :class:`collections.abc.Sized`. (:gh:`94309`)
 
+* The :mod:`sqlite3` :ref:`default adapters and converters
+  <sqlite3-default-converters>` are now deprecated.
+  Instead, use the :ref:`sqlite3-adapter-converter-recipes`
+  and tailor them to your needs.
+  (Contributed by Erlend E. Aasland in :gh:`90016`.)
+
 
 Pending Removal in Python 3.13
 ------------------------------
