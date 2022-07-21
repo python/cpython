@@ -219,7 +219,7 @@ messages should not. Here's how you can achieve this::
    logging.basicConfig(level=logging.DEBUG,
                        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                        datefmt='%m-%d %H:%M',
-                       filename='/temp/myapp.log',
+                       filename='/tmp/myapp.log',
                        filemode='w')
    # define a Handler which writes INFO messages or higher to the sys.stderr
    console = logging.StreamHandler()
@@ -269,6 +269,11 @@ are sent to both destinations.
 
 This example uses console and file handlers, but you can use any number and
 combination of handlers you choose.
+
+Note that the above choice of log filename ``/tmp/myapp.log`` implies use of a
+standard location for temporary files on POSIX systems. On Windows, you may need to
+choose a different directory name for the log - just ensure that the directory exists
+and that you have the permissions to create and update files in it.
 
 
 Configuration server example

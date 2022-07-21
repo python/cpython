@@ -496,8 +496,8 @@ Connection Objects
       SQLite 3.8.3 or higher, :exc:`NotSupportedError` will be raised if used
       with older versions.
 
-      The function can return any of the types supported by SQLite: bytes, str, int,
-      float and ``None``.
+      The function can return any of
+      :ref:`the types natively supported by SQLite <sqlite3-types>`.
 
       .. versionchanged:: 3.8
          The *deterministic* parameter was added.
@@ -516,8 +516,8 @@ Connection Objects
       any number of arguments), and a ``finalize`` method which will return the
       final result of the aggregate.
 
-      The ``finalize`` method can return any of the types supported by SQLite:
-      bytes, str, int, float and ``None``.
+      The ``finalize`` method can return any of
+      :ref:`the types natively supported by SQLite <sqlite3-types>`.
 
       Example:
 
@@ -537,10 +537,10 @@ Connection Objects
 
       ``step`` and ``value`` accept *num_params* number of parameters,
       unless *num_params* is ``-1``, in which case they may take any number of
-      arguments.  ``finalize`` and ``value`` can return any of the types
-      supported by SQLite:
-      :class:`bytes`, :class:`str`, :class:`int`, :class:`float`, and
-      :const:`None`.  Call :meth:`create_window_function` with
+      arguments.
+      ``finalize`` and ``value`` can return any of
+      :ref:`the types natively supported by SQLite <sqlite3-types>`.
+      Call :meth:`create_window_function` with
       *aggregate_class* set to :const:`None` to clear window function *name*.
 
       Aggregate window functions are supported by SQLite 3.25.0 and higher.
@@ -1139,6 +1139,16 @@ Blob Objects
       end).
 
 
+PrepareProtocol Objects
+-----------------------
+
+.. class:: PrepareProtocol
+
+   The PrepareProtocol type's single purpose is to act as a :pep:`246` style
+   adaption protocol for objects that can :ref:`adapt themselves
+   <sqlite3-conform>` to :ref:`native SQLite types <sqlite3-types>`.
+
+
 .. _sqlite3-exceptions:
 
 Exceptions
@@ -1297,6 +1307,8 @@ As an application developer, it may make more sense to take direct control by
 registering custom adapter functions.
 
 
+.. _sqlite3-conform:
+
 Letting your object adapt itself
 """"""""""""""""""""""""""""""""
 
@@ -1320,6 +1332,8 @@ This function can then be registered using :func:`register_adapter`.
 
 .. literalinclude:: ../includes/sqlite3/adapter_point_2.py
 
+
+.. _sqlite3-converters:
 
 Converting SQLite values to custom Python types
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1354,34 +1368,35 @@ of :func:`connect`. There are three options:
 * Explicit: set *detect_types* to :const:`PARSE_COLNAMES`
 * Both: set *detect_types* to
   ``sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES``.
-  Colum names take precedence over declared types.
+  Column names take precedence over declared types.
 
 The following example illustrates the implicit and explicit approaches:
 
 .. literalinclude:: ../includes/sqlite3/converter_point.py
 
 
-Default adapters and converters
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _sqlite3-default-converters:
 
-There are default adapters for the date and datetime types in the datetime
-module. They will be sent as ISO dates/ISO timestamps to SQLite.
+Default adapters and converters (deprecated)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The default converters are registered under the name "date" for
-:class:`datetime.date` and under the name "timestamp" for
-:class:`datetime.datetime`.
+.. note::
 
-This way, you can use date/timestamps from Python without any additional
-fiddling in most cases. The format of the adapters is also compatible with the
-experimental SQLite date/time functions.
+   The default adapters and converters are deprecated as of Python 3.12.
+   Instead, use the :ref:`sqlite3-adapter-converter-recipes`
+   and tailor them to your needs.
 
-The following example demonstrates this.
+The deprecated default adapters and converters consist of:
 
-.. literalinclude:: ../includes/sqlite3/pysqlite_datetime.py
-
-If a timestamp stored in SQLite has a fractional part longer than 6
-numbers, its value will be truncated to microsecond precision by the
-timestamp converter.
+* An adapter for :class:`datetime.date` objects to :class:`strings <str>` in
+  `ISO 8601`_ format.
+* An adapter for :class:`datetime.datetime` objects to strings in
+  ISO 8601 format.
+* A converter for :ref:`declared <sqlite3-converters>` "date" types to
+  :class:`datetime.date` objects.
+* A converter for declared "timestamp" types to
+  :class:`datetime.datetime` objects.
+  Fractional parts will be truncated to 6 digits (microsecond precision).
 
 .. note::
 
@@ -1389,6 +1404,10 @@ timestamp converter.
    always returns a naive :class:`datetime.datetime` object. To preserve UTC
    offsets in timestamps, either leave converters disabled, or register an
    offset-aware converter with :func:`register_converter`.
+
+.. deprecated:: 3.12
+
+.. _ISO 8601: https://en.wikipedia.org/wiki/ISO_8601
 
 
 .. _sqlite3-adapter-converter-recipes:

@@ -7,7 +7,7 @@ filename	funcname	name	reason
 # global objects to fix in core code
 
 #-----------------------
-# static types
+# exported builtin types (C-API)
 
 Objects/boolobject.c	-	PyBool_Type	-
 Objects/bytearrayobject.c	-	PyByteArrayIter_Type	-
@@ -18,8 +18,6 @@ Objects/capsule.c	-	PyCapsule_Type	-
 Objects/cellobject.c	-	PyCell_Type	-
 Objects/classobject.c	-	PyInstanceMethod_Type	-
 Objects/classobject.c	-	PyMethod_Type	-
-Objects/codeobject.c	-	_PyLineIterator	-
-Objects/codeobject.c	-	_PyPositionsIterator	-
 Objects/codeobject.c	-	PyCode_Type	-
 Objects/complexobject.c	-	PyComplex_Type	-
 Objects/descrobject.c	-	PyClassMethodDescr_Type	-
@@ -42,16 +40,12 @@ Objects/dictobject.c	-	PyDictValues_Type	-
 Objects/dictobject.c	-	PyDict_Type	-
 Objects/enumobject.c	-	PyEnum_Type	-
 Objects/enumobject.c	-	PyReversed_Type	-
-Objects/exceptions.c	-	_PyExc_BaseExceptionGroup	-
-Objects/exceptions.c	-	_PyExc_EncodingWarning	-
 Objects/fileobject.c	-	PyStdPrinter_Type	-
-Objects/floatobject.c	-	FloatInfoType	-
 Objects/floatobject.c	-	PyFloat_Type	-
 Objects/frameobject.c	-	PyFrame_Type	-
 Objects/funcobject.c	-	PyClassMethod_Type	-
 Objects/funcobject.c	-	PyFunction_Type	-
 Objects/funcobject.c	-	PyStaticMethod_Type	-
-Objects/genericaliasobject.c	-	_Py_GenericAliasIterType	-
 Objects/genericaliasobject.c	-	Py_GenericAliasType	-
 Objects/genobject.c	-	PyAsyncGen_Type	-
 Objects/genobject.c	-	PyCoro_Type	-
@@ -63,13 +57,10 @@ Objects/genobject.c	-	_PyCoroWrapper_Type	-
 Objects/interpreteridobject.c	-	_PyInterpreterID_Type	-
 Objects/iterobject.c	-	PyCallIter_Type	-
 Objects/iterobject.c	-	PySeqIter_Type	-
-Objects/iterobject.c	-	_PyAnextAwaitable_Type	-
 Objects/listobject.c	-	PyListIter_Type	-
 Objects/listobject.c	-	PyListRevIter_Type	-
 Objects/listobject.c	-	PyList_Type	-
-Objects/longobject.c	-	Int_InfoType	-
 Objects/longobject.c	-	PyLong_Type	-
-Objects/memoryobject.c	-	_PyMemoryIter_Type	-
 Objects/memoryobject.c	-	PyMemoryView_Type	-
 Objects/memoryobject.c	-	_PyManagedBuffer_Type	-
 Objects/methodobject.c	-	PyCFunction_Type	-
@@ -91,7 +82,6 @@ Objects/rangeobject.c	-	PyRange_Type	-
 Objects/setobject.c	-	PyFrozenSet_Type	-
 Objects/setobject.c	-	PySetIter_Type	-
 Objects/setobject.c	-	PySet_Type	-
-Objects/setobject.c	-	_PySetDummy_Type	-
 Objects/sliceobject.c	-	PyEllipsis_Type	-
 Objects/sliceobject.c	-	PySlice_Type	-
 Objects/tupleobject.c	-	PyTupleIter_Type	-
@@ -99,11 +89,8 @@ Objects/tupleobject.c	-	PyTuple_Type	-
 Objects/typeobject.c	-	PyBaseObject_Type	-
 Objects/typeobject.c	-	PySuper_Type	-
 Objects/typeobject.c	-	PyType_Type	-
-Objects/unicodeobject.c	-	EncodingMapType	-
 Objects/unicodeobject.c	-	PyUnicodeIter_Type	-
 Objects/unicodeobject.c	-	PyUnicode_Type	-
-Objects/unionobject.c	-	_PyUnion_Type	-
-Objects/unionobject.c	-	_Py_UnionType	-
 Objects/weakrefobject.c	-	_PyWeakref_CallableProxyType	-
 Objects/weakrefobject.c	-	_PyWeakref_ProxyType	-
 Objects/weakrefobject.c	-	_PyWeakref_RefType	-
@@ -113,8 +100,23 @@ Python/bltinmodule.c	-	PyZip_Type	-
 Python/context.c	-	PyContextToken_Type	-
 Python/context.c	-	PyContextVar_Type	-
 Python/context.c	-	PyContext_Type	-
+Python/traceback.c	-	PyTraceBack_Type	-
+
+#-----------------------
+# other exported builtin types
+
+# Not in a .h file:
+Objects/codeobject.c	-	_PyLineIterator	-
+# Not in a .h file:
+Objects/codeobject.c	-	_PyPositionsIterator	-
+Objects/genericaliasobject.c	-	_Py_GenericAliasIterType	-
+# Not in a .h file:
+Objects/iterobject.c	-	_PyAnextAwaitable_Type	-
+# Not in a .h file:
+Objects/memoryobject.c	-	_PyMemoryIter_Type	-
+#Objects/unicodeobject.c	-	_PyUnicodeASCIIIter_Type	-
+Objects/unionobject.c	-	_PyUnion_Type	-
 Python/context.c	-	_PyContextTokenMissing_Type	-
-Python/errors.c	-	UnraisableHookArgsType	-
 Python/hamt.c	-	_PyHamtItems_Type	-
 Python/hamt.c	-	_PyHamtKeys_Type	-
 Python/hamt.c	-	_PyHamtValues_Type	-
@@ -123,17 +125,32 @@ Python/hamt.c	-	_PyHamt_BitmapNode_Type	-
 Python/hamt.c	-	_PyHamt_CollisionNode_Type	-
 Python/hamt.c	-	_PyHamt_Type	-
 Python/symtable.c	-	PySTEntry_Type	-
+
+#-----------------------
+# private static builtin types
+
+Objects/setobject.c	-	_PySetDummy_Type	-
+Objects/unicodeobject.c	-	EncodingMapType	-
+#Objects/unicodeobject.c	-	PyFieldNameIter_Type	-
+#Objects/unicodeobject.c	-	PyFormatterIter_Type	-
+
+#-----------------------
+# static builtin structseq
+
+Objects/floatobject.c	-	FloatInfoType	-
+Objects/longobject.c	-	Int_InfoType	-
+Python/errors.c	-	UnraisableHookArgsType	-
 Python/sysmodule.c	-	AsyncGenHooksType	-
 Python/sysmodule.c	-	FlagsType	-
 Python/sysmodule.c	-	Hash_InfoType	-
 Python/sysmodule.c	-	VersionInfoType	-
 Python/thread.c	-	ThreadInfoType	-
-Python/traceback.c	-	PyTraceBack_Type	-
 
 #-----------------------
 # builtin exception types
 
 Objects/exceptions.c	-	_PyExc_BaseException	-
+Objects/exceptions.c	-	_PyExc_BaseExceptionGroup	-
 Objects/exceptions.c	-	_PyExc_UnicodeEncodeError	-
 Objects/exceptions.c	-	_PyExc_UnicodeDecodeError	-
 Objects/exceptions.c	-	_PyExc_UnicodeTranslateError	-
@@ -197,9 +214,11 @@ Objects/exceptions.c	-	_PyExc_ImportWarning	-
 Objects/exceptions.c	-	_PyExc_UnicodeWarning	-
 Objects/exceptions.c	-	_PyExc_BytesWarning	-
 Objects/exceptions.c	-	_PyExc_ResourceWarning	-
+Objects/exceptions.c	-	_PyExc_EncodingWarning	-
 Objects/exceptions.c	-	PyExc_EnvironmentError	-
 Objects/exceptions.c	-	PyExc_IOError	-
 Objects/exceptions.c	-	PyExc_BaseException	-
+Objects/exceptions.c	-	PyExc_BaseExceptionGroup	-
 Objects/exceptions.c	-	PyExc_Exception	-
 Objects/exceptions.c	-	PyExc_TypeError	-
 Objects/exceptions.c	-	PyExc_StopAsyncIteration	-
@@ -263,6 +282,7 @@ Objects/exceptions.c	-	PyExc_ImportWarning	-
 Objects/exceptions.c	-	PyExc_UnicodeWarning	-
 Objects/exceptions.c	-	PyExc_BytesWarning	-
 Objects/exceptions.c	-	PyExc_ResourceWarning	-
+Objects/exceptions.c	-	PyExc_EncodingWarning	-
 
 #-----------------------
 # singletons
@@ -354,8 +374,6 @@ Objects/unicodeobject.c	-	static_strings	-
 # other
 
 # initialized once
-Objects/exceptions.c	-	PyExc_BaseExceptionGroup	-
-Objects/exceptions.c	-	PyExc_EncodingWarning	-
 # XXX This should have been found by the analyzer but wasn't:
 Python/context.c	-	_token_missing	-
 # XXX This should have been found by the analyzer but wasn't:

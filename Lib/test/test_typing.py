@@ -3650,6 +3650,35 @@ class GenericTests(BaseTestCase):
                     class Foo(obj):
                         pass
 
+    def test_complex_subclasses(self):
+        T_co = TypeVar("T_co", covariant=True)
+
+        class Base(Generic[T_co]):
+            ...
+
+        T = TypeVar("T")
+
+        # see gh-94607: this fails in that bug
+        class Sub(Base, Generic[T]):
+            ...
+
+    def test_parameter_detection(self):
+        self.assertEqual(List[T].__parameters__, (T,))
+        self.assertEqual(List[List[T]].__parameters__, (T,))
+        class A:
+            __parameters__ = (T,)
+        # Bare classes should be skipped
+        for a in (List, list):
+            for b in (A, int, TypeVar, TypeVarTuple, ParamSpec, types.GenericAlias, types.UnionType):
+                with self.subTest(generic=a, sub=b):
+                    with self.assertRaisesRegex(TypeError, '.* is not a generic class'):
+                        a[b][str]
+        # Duck-typing anything that looks like it has __parameters__.
+        # These tests are optional and failure is okay.
+        self.assertEqual(List[A()].__parameters__, (T,))
+        # C version of GenericAlias
+        self.assertEqual(list[A()].__parameters__, (T,))
+
 class ClassVarTests(BaseTestCase):
 
     def test_basics(self):
