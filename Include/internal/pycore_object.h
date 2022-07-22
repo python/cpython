@@ -14,6 +14,9 @@ extern "C" {
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_runtime.h"       // _PyRuntime
 
+/* This value provides *effective* immortality, meaning the object should never
+    be deallocated (until runtime finalization).  See PEP 683 for more details about
+    immortality, as well as a proposed mechanism for proper immortality. */
 #define _PyObject_IMMORTAL_REFCNT 999999999
 
 #define _PyObject_IMMORTAL_INIT(type) \
