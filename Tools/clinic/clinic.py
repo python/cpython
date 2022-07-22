@@ -1054,7 +1054,7 @@ class CLanguage(Language):
                         parser_code.append(normalize_snippet("""
                             if (nargs == %s) {{
                                 if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                                    "Using '%s' as positional argument is deprecated", 2))
+                                    "Using '%s' as a positional argument is deprecated", 2))
                                 {{
                                     goto exit;
                                 }}

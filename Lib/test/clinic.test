@@ -3601,7 +3601,7 @@ test_deprecate_positional_use(PyObject *module, PyObject *const *args, Py_ssize_
     }
     if (nargs == 2) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
-            "Using 'optarg' as positional argument is deprecated", 2))
+            "Using 'optarg' as a positional argument is deprecated", 2))
         {
             goto exit;
         }
@@ -3620,4 +3620,4 @@ exit:
 static PyObject *
 test_deprecate_positional_use_impl(PyObject *module, PyObject *pos,
                                    int optarg)
-/*[clinic end generated code: output=fde7240aec7013a3 input=462e9741eb865665]*/
+/*[clinic end generated code: output=dc51108a995e63a0 input=462e9741eb865665]*/
