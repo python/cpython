@@ -1418,7 +1418,7 @@ deopt_code(_Py_CODEUNIT *instructions, Py_ssize_t len)
 {
     for (int i = 0; i < len; i++) {
         _Py_CODEUNIT instruction = instructions[i];
-        int opcode = _PyOpcode_Original[_Py_OPCODE(instruction)];
+        int opcode = _PyOpcode_Deopt[_Py_OPCODE(instruction)];
         int caches = _PyOpcode_Caches[opcode];
         instructions[i] = _Py_MAKECODEUNIT(opcode, _Py_OPARG(instruction));
         while (caches--) {
