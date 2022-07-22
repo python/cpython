@@ -47,7 +47,7 @@ PY_SSL_DEFAULT_CIPHERS = sysconfig.get_config_var('PY_SSL_DEFAULT_CIPHERS')
 
 PROTOCOL_TO_TLS_VERSION = {}
 for proto, ver in (
-    ("PROTOCOL_SSLv23", "SSLv3"),
+    ("PROTOCOL_SSLv3", "SSLv3"),
     ("PROTOCOL_TLSv1", "TLSv1"),
     ("PROTOCOL_TLSv1_1", "TLSv1_1"),
 ):
