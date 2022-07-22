@@ -526,7 +526,7 @@ def _arp_getnode():
     import os, socket
     try:
         ip_addr = socket.gethostbyname(socket.gethostname())
-    except OSError:
+    except (OSError, AttributeError):
         return None
 
     # Try getting the MAC addr from arp based on our IP address (Solaris).
