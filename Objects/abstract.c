@@ -2141,7 +2141,7 @@ PySequence_Fast(PyObject *v, const char *m)
    PY_ITERSEARCH_COUNT:  -1 if error, else # of times obj appears in seq.
    PY_ITERSEARCH_INDEX:  0-based index of first occurrence of obj in seq;
     set ValueError and return -1 if none found; also return -1 on error.
-   Py_ITERSEARCH_CONTAINS:  return 1 if obj in seq, else 0; -1 on error.
+   PY_ITERSEARCH_CONTAINS:  return 1 if obj in seq, else 0; -1 on error.
 */
 Py_ssize_t
 _PySequence_IterSearch(PyObject *seq, PyObject *obj, int operation)
@@ -2158,7 +2158,15 @@ _PySequence_IterSearch(PyObject *seq, PyObject *obj, int operation)
     it = PyObject_GetIter(seq);
     if (it == NULL) {
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-            type_error("argument of type '%.200s' is not iterable", seq);
+            if (operation == PY_ITERSEARCH_CONTAINS) {
+                type_error(
+                    "argument of type '%.200s' is not a container or iterable",
+                    seq
+                    );
+            }
+            else {
+                type_error("argument of type '%.200s' is not iterable", seq);
+            }
         }
         return -1;
     }
