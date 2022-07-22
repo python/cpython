@@ -1859,6 +1859,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # Command line argument parsing methods
     # =====================================
     def parse_args(self, args=None, namespace=None):
+        args = self._get_args(args, consider_reserve=True)
         args, argv = self.parse_known_args(args, namespace)
         if argv:
             msg = _('unrecognized arguments: %s')
@@ -1866,12 +1867,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         return args
 
     def parse_known_args(self, args=None, namespace=None):
-        if args is None:
-            # args default to the system args
-            args = _sys.argv[1:]
-        else:
-            # make sure that args are mutable
-            args = list(args)
+        args = self._get_args(args)
 
         # default Namespace built from parser defaults
         if namespace is None:
@@ -2178,6 +2174,26 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
     def convert_arg_line_to_args(self, arg_line):
         return [arg_line]
+
+    def _get_args(self, args=None, consider_reserve=False):
+        reserved_args = [
+            '-h',
+            '--help'
+        ]
+
+        if args is None:
+            # args default to the system args
+            args = _sys.argv[1:]
+            if self.add_help and set(args).intersection(reserved_args) and consider_reserve:
+                self.print_help()
+                self.exit()
+        else:
+            # make sure that args are mutable
+            args = list(args)
+        return [
+            arg for arg in args
+            if not self.add_help or args in reserved_args
+        ]
 
     def _match_argument(self, action, arg_strings_pattern):
         # match the pattern for this action to the arg strings
