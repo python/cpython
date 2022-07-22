@@ -54,10 +54,11 @@ class ConnectionFactoryTests(unittest.TestCase):
         # gh-95132: keyword args must not be passed as positional args
         class Factory(sqlite.Connection):
             def __init__(self, *args, **kwargs):
-                kwargs['timeout'] = 42
+                kwargs["isolation_level"] = None
                 super(Factory, self).__init__(*args, **kwargs)
 
-        sqlite.connect(":memory:", factory=Factory)
+        con = sqlite.connect(":memory:", factory=Factory)
+        self.assertIsNone(con.isolation_level)
 
 
 class CursorFactoryTests(unittest.TestCase):
