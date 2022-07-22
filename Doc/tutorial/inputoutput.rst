@@ -189,7 +189,7 @@ notation. ::
 This is particularly useful in combination with the built-in function
 :func:`vars`, which returns a dictionary containing all local variables.
 
-As an example, the following lines produce a tidily-aligned
+As an example, the following lines produce a tidily aligned
 set of columns giving integers and their squares and cubes::
 
    >>> for x in range(1, 11):

@@ -291,7 +291,7 @@ PEP 539: New C API for Thread-Local Storage
 While Python provides a C API for thread-local storage support; the existing
 :ref:`Thread Local Storage (TLS) API <thread-local-storage-api>` has used
 :c:type:`int` to represent TLS keys across all platforms.  This has not
-generally been a problem for officially-support platforms, but that is neither
+generally been a problem for officially support platforms, but that is neither
 POSIX-compliant, nor portable in any practical sense.
 
 :pep:`539` changes this by providing a new :ref:`Thread Specific Storage (TSS)
@@ -1175,7 +1175,7 @@ of :func:`os.writev` and :func:`os.pwrite`). (Contributed by Pablo Galindo in
 :issue:`31368`.)
 
 The mode argument of :func:`os.makedirs` no longer affects the file
-permission bits of newly-created intermediate-level directories.
+permission bits of newly created intermediate-level directories.
 (Contributed by Serhiy Storchaka in :issue:`19930`.)
 
 :func:`os.dup2` now returns the new file descriptor.  Previously, ``None``
@@ -2296,7 +2296,7 @@ Changes in the Python API
   (Contributed by Serhiy Storchaka in :issue:`29192`.)
 
 * The *mode* argument of :func:`os.makedirs` no longer affects the file
-  permission bits of newly-created intermediate-level directories.
+  permission bits of newly created intermediate-level directories.
   To set their file permission bits you can set the umask before invoking
   ``makedirs()``.
   (Contributed by Serhiy Storchaka in :issue:`19930`.)
