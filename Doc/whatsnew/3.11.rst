@@ -546,7 +546,7 @@ inspect
   line number, column and end column). The affected functions are:
   :func:`inspect.getframeinfo`, :func:`inspect.getouterframes`, :func:`inspect.getinnerframes`,
   :func:`inspect.stack` and :func:`inspect.trace`. (Contributed by Pablo Galindo in
-  :gh:`88116`)
+  :gh:`88116`.)
 
 locale
 ------
@@ -621,7 +621,7 @@ socket
 * :meth:`~socket.create_connection` has an option to raise, in case of
   failure to connect, an :exc:`ExceptionGroup` containing all errors
   instead of only raising the last error.
-  (Contributed by Irit Katriel in :issue:`29980`).
+  (Contributed by Irit Katriel in :issue:`29980`.)
 
 sqlite3
 -------
@@ -671,7 +671,7 @@ sqlite3
 
 * Add :meth:`~sqlite3.Connection.blobopen` to :class:`sqlite3.Connection`.
   :class:`sqlite3.Blob` allows incremental I/O operations on blobs.
-  (Contributed by Aviv Palivoda and Erlend E. Aasland in :issue:`24905`)
+  (Contributed by Aviv Palivoda and Erlend E. Aasland in :issue:`24905`.)
 
 
 sys
@@ -694,7 +694,7 @@ sys
 sysconfig
 ---------
 
-* Two new :ref:`installation schemes <installation_paths>`
+* Three new :ref:`installation schemes <installation_paths>`
   (*posix_venv*, *nt_venv* and *venv*) were added and are used when Python
   creates new virtual environments or when it is running from a virtual
   environment.
@@ -815,7 +815,7 @@ tkinter
 unicodedata
 -----------
 
-* The Unicode database has been updated to version 14.0.0. (:issue:`45190`).
+* The Unicode database has been updated to version 14.0.0. (Contributed by  Benjamin Peterson in :issue:`45190`).
 
 
 unittest
@@ -1533,7 +1533,7 @@ Build Changes
 * Freelists for object structs can now be disabled. A new :program:`configure`
   option :option:`!--without-freelists` can be used to disable all freelists
   except empty tuple singleton.
-  (Contributed by Christian Heimes in :issue:`45522`)
+  (Contributed by Christian Heimes in :issue:`45522`.)
 
 * ``Modules/Setup`` and ``Modules/makesetup`` have been improved and tied up.
   Extension modules can now be built through ``makesetup``. All except some
