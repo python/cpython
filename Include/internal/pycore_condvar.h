@@ -22,10 +22,14 @@
 
 #ifdef HAVE_PTHREAD_H
 #  include <pthread.h>
+#elif defined(HAVE_PTHREAD_STUBS)
+#  include "cpython/pthread_stubs.h"
 #endif
+
 
 #define PyMUTEX_T pthread_mutex_t
 #define PyCOND_T pthread_cond_t
+
 
 #elif defined(NT_THREADS)
 /*

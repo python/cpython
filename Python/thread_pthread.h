@@ -7,7 +7,67 @@
 #if defined(__APPLE__) || defined(HAVE_PTHREAD_DESTRUCTOR)
 #define destructor xxdestructor
 #endif
+
+#ifdef HAVE_PTHREAD_H
+#  include <pthread.h>
+#elif defined(HAVE_PTHREAD_STUBS)
+#  include "cpython/pthread_stubs.h"
+#endif
+
+#ifdef HAVE_PTHREAD_STUBS
+#include "pycore_condvar.h" // stubs
+#ifdef __wasi__
+#define __NEED_pthread_t 1
+#define __NEED_pthread_attr_t 1
+#define __NEED_pthread_key_t 1
+#include <bits/alltypes.h>
+#else
+#error "HAVE_PTHREAD_STUBS not defined for this platform"
+#endif
+
+#define PTHREAD_MAX_KEYS 256
+void* __pthread_key_values[PTHREAD_MAX_KEYS];
+size_t __pthread_key_next_slot;
+
+int
+pthread_key_create(pthread_key_t *out, void (*destructor)(void *a))
+{
+    if (destructor != NULL) {
+        errno = EAGAIN;
+        return -1;
+    }
+    if (__pthread_key_next_slot >= PTHREAD_MAX_KEYS) {
+        errno = EAGAIN;
+        return -1;
+    }
+    void** key = &__pthread_key_values[__pthread_key_next_slot++];
+    *out = (pthread_key_t)key;
+    return 0;
+}
+
+int
+pthread_key_delete(pthread_key_t key)
+{
+    return 0;
+}
+
+void*
+pthread_getspecific(pthread_key_t key)
+{
+    return *(void**)key;
+}
+
+int
+pthread_setspecific(pthread_key_t key, const void *value)
+{
+    *(void**)key = (void*)value;
+    return 0;
+}
+
+#else
 #include <pthread.h>
+#endif
+
 #if defined(__APPLE__) || defined(HAVE_PTHREAD_DESTRUCTOR)
 #undef destructor
 #endif
