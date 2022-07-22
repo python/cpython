@@ -65,6 +65,8 @@ lookup_maybe_method(PyObject *self, PyObject *attr, int *unbound);
 static int
 slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value);
 
+static inline PyTypeObject * subclass_from_ref(PyObject *ref);
+
 /*
  * finds the beginning of the docstring's introspection signature.
  * if present, returns a pointer pointing to the first '('.
@@ -309,12 +311,11 @@ PyType_Modified(PyTypeObject *type)
         Py_ssize_t i = 0;
         PyObject *ref;
         while (PyDict_Next(subclasses, &i, NULL, &ref)) {
-            assert(PyWeakref_CheckRef(ref));
-            PyObject *obj = PyWeakref_GET_OBJECT(ref);
-            if (obj == Py_None) {
+            PyTypeObject *subclass = subclass_from_ref(ref);  // borrowed
+            if (subclass == NULL) {
                 continue;
             }
-            PyType_Modified(_PyType_CAST(obj));
+            PyType_Modified(subclass);
         }
     }
 
@@ -4321,14 +4322,12 @@ _PyType_GetSubclasses(PyTypeObject *self)
     Py_ssize_t i = 0;
     PyObject *ref;  // borrowed ref
     while (PyDict_Next(subclasses, &i, NULL, &ref)) {
-        assert(PyWeakref_CheckRef(ref));
-        PyObject *obj = PyWeakref_GET_OBJECT(ref);  // borrowed ref
-        if (obj == Py_None) {
+        PyTypeObject *subclass = subclass_from_ref(ref);  // borrowed
+        if (subclass == NULL) {
             continue;
         }
-        assert(PyType_Check(obj));
 
-        if (PyList_Append(list, obj) < 0) {
+        if (PyList_Append(list, _PyObject_CAST(subclass)) < 0) {
             Py_DECREF(list);
             return NULL;
         }
@@ -6725,6 +6724,19 @@ add_all_subclasses(PyTypeObject *type, PyObject *bases)
     return res;
 }
 
+static inline PyTypeObject *
+subclass_from_ref(PyObject *ref)
+{
+    assert(PyWeakref_CheckRef(ref));
+    PyObject *obj = PyWeakref_GET_OBJECT(ref);  // borrowed ref
+    assert(obj != NULL);
+    if (obj == Py_None) {
+        return NULL;
+    }
+    assert(PyType_Check(obj));
+    return _PyType_CAST(obj);
+}
+
 static void
 remove_subclass(PyTypeObject *base, PyTypeObject *type)
 {
@@ -8828,13 +8840,10 @@ recurse_down_subclasses(PyTypeObject *type, PyObject *attr_name,
     Py_ssize_t i = 0;
     PyObject *ref;
     while (PyDict_Next(subclasses, &i, NULL, &ref)) {
-        assert(PyWeakref_CheckRef(ref));
-        PyObject *obj = PyWeakref_GET_OBJECT(ref);
-        assert(obj != NULL);
-        if (obj == Py_None) {
+        PyTypeObject *subclass = subclass_from_ref(ref);  // borrowed
+        if (subclass == NULL) {
             continue;
         }
-        PyTypeObject *subclass = _PyType_CAST(obj);
 
         /* Avoid recursing down into unaffected classes */
         PyObject *dict = subclass->tp_dict;
