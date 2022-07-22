@@ -36,9 +36,9 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
 static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 {
 #ifdef Py_REF_DEBUG
-    _Py_RefTotal+=n;
+    _Py_RefTotal += n;
 #endif
-    op->ob_refcnt+=n;
+    op->ob_refcnt += n;
 }
 #define _Py_RefcntAdd(op, n) _Py_RefcntAdd(_PyObject_CAST(op), n)
 
