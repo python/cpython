@@ -1,0 +1,2 @@
+Add Argument Clinic support for deprecating positional use of optional
+parameters. Patch by Erlend E. Aasland.
