@@ -42,7 +42,7 @@ module _sqlite3
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=81e330492d57488e]*/
 
-PyDoc_STRVAR(pysqlite_connect__doc__,
+PyDoc_STRVAR(module_connect_doc,
 "connect($module, /, database, timeout=5.0, detect_types=0,\n"
 "        isolation_level=<unrepresentable>, check_same_thread=True,\n"
 "        factory=ConnectionType, cached_statements=128, uri=False)\n"
@@ -54,40 +54,31 @@ PyDoc_STRVAR(pysqlite_connect__doc__,
 "in RAM instead of on disk.");
 
 #define PYSQLITE_CONNECT_METHODDEF    \
-    {"connect", _PyCFunction_CAST(module_connect), METH_VARARGS|METH_KEYWORDS, pysqlite_connect__doc__},
+    {"connect", _PyCFunction_CAST(module_connect), METH_FASTCALL|METH_KEYWORDS, module_connect_doc},
 
 static PyObject *
-module_connect(PyObject *self, PyObject *args, PyObject *kwargs)
+module_connect(PyObject *module, PyObject *const *args, Py_ssize_t nargsf,
+               PyObject *kwnames)
 {
-    /* Python seems to have no way of extracting a single keyword-arg at
-     * C-level, so this code is redundant with the one in connection_init in
-     * connection.c and must always be copied from there ... */
-    static char *kwlist[] = {
-        "database", "timeout", "detect_types", "isolation_level",
-        "check_same_thread", "factory", "cached_statements", "uri",
-        NULL
-    };
-    PyObject *database;
-    int detect_types = 0;
-    PyObject *isolation_level;
-    PyObject *factory = NULL;
-    int check_same_thread = 1;
-    int cached_statements;
-    int uri = 0;
-    double timeout = 5.0;
+    pysqlite_state *state = pysqlite_get_state(module);
+    PyObject *factory = (PyObject *)state->ConnectionType;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|diOiOip", kwlist,
-                                     &database, &timeout, &detect_types,
-                                     &isolation_level, &check_same_thread,
-                                     &factory, &cached_statements, &uri))
-    {
-        return NULL;
+    static const int FACTORY_POS = 5;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (nargs > FACTORY_POS) {
+        factory = args[FACTORY_POS];
     }
-    if (factory == NULL) {
-        pysqlite_state *state = pysqlite_get_state(self);
-        factory = (PyObject *)state->ConnectionType;
+    else if (kwnames != NULL) {
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(kwnames); i++) {
+            PyObject *item = PyTuple_GET_ITEM(kwnames, i);  // borrowed ref.
+            if (PyUnicode_CompareWithASCIIString(item, "factory") == 0) {
+                factory = args[nargs + i];
+                break;
+            }
+        }
     }
-    return PyObject_Call(factory, args, kwargs);
+
+    return PyObject_Vectorcall(factory, args, nargsf, kwnames);
 }
 
 /*[clinic input]
