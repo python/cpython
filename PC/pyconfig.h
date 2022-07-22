@@ -687,6 +687,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define if you have the 'gethostbyaddr' function. */
 #define HAVE_GETHOSTBYADDR 1
 
+/* Define if you have the 'gethostbyname' function. */
+#define HAVE_GETHOSTBYNAME 1
+
 /* Define if you have the 'getprotobyname' function. */
 #define HAVE_GETPROTOBYNAME 1
 
@@ -722,6 +725,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Define if you have the 'socket' function. */
 #define HAVE_SOCKET 1
+
+/* Define to 1 if you have the `dup2' function. */
+#define HAVE_DUP2 1
 
 /* framework name */
 #define _PYTHONFRAMEWORK ""
