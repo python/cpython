@@ -50,6 +50,15 @@ class ConnectionFactoryTests(unittest.TestCase):
                 con = sqlite.connect(":memory:", factory=factory)
                 self.assertIsInstance(con, factory)
 
+    def test_connection_factory_relayed_call(self):
+        # gh-95132: keyword args must not be passed as positional args
+        class Factory(sqlite.Connection):
+            def __init__(self, *args, **kwargs):
+                kwargs['timeout'] = 42
+                super(Factory, self).__init__(*args, **kwargs)
+
+        sqlite.connect(":memory:", factory=Factory)
+
 
 class CursorFactoryTests(unittest.TestCase):
     def setUp(self):
