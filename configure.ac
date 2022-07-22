@@ -4714,8 +4714,8 @@ PY_CHECK_FUNC([prlimit], [
 #include <sys/time.h>
 #include <sys/resource.h>
 ])
-PY_CHECK_FUNC([wait], [#include <sys/wait.h])
-PY_CHECK_FUNC([waitpid], [#include <sys/wait.h])
+PY_CHECK_FUNC([wait], [#include <sys/wait.h>])
+PY_CHECK_FUNC([waitpid], [#include <sys/wait.h>])
 
 PY_CHECK_FUNC([_dyld_shared_cache_contains_path], [#include <mach-o/dyld.h>], [HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH])
 

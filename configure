@@ -15997,7 +15997,7 @@ if ${ac_cv_func_wait+:} false; then :
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <sys/wait.h
+#include <sys/wait.h>
 int
 main ()
 {
@@ -16033,7 +16033,7 @@ if ${ac_cv_func_waitpid+:} false; then :
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <sys/wait.h
+#include <sys/wait.h>
 int
 main ()
 {
