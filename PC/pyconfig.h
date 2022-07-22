@@ -678,6 +678,21 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define if you have the 'inet_pton' function. */
 #define HAVE_INET_PTON 1
 
+/* Define if you have the 'gethostbyaddr' function. */
+#define HAVE_GETHOSTBYADDR 1
+
+/* Define if you have the 'getprotobyname' function. */
+#define HAVE_GETPROTOBYNAME 1
+
+/* Define if you have the 'getservbyname' function. */
+#define HAVE_GETSERVBYNAME 1
+
+/* Define if you have the 'getservbyport' function. */
+#define HAVE_GETSERVBYPORT 1
+
+/* Define if you have the 'inet_ntoa' function. */
+#define HAVE_INET_NTOA 1
+
 /* framework name */
 #define _PYTHONFRAMEWORK ""
 
@@ -685,3 +700,4 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #define HAVE_X509_VERIFY_PARAM_SET1_HOST 1
 
 #endif /* !Py_CONFIG_H */
+

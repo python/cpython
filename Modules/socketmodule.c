@@ -5954,7 +5954,7 @@ PyDoc_STRVAR(gethostbyaddr_doc,
 Return the true host name, a list of aliases, and a list of IP addresses,\n\
 for a host.  The host argument is a string giving a host name or IP number.");
 
-
+#ifdef HAVE_GETSERVBYNAME
 /* Python interface to getservbyname(name).
    This only returns the port number, since the other info is already
    known or not useful (like the list of aliases). */
@@ -5988,8 +5988,9 @@ PyDoc_STRVAR(getservbyname_doc,
 Return a port number from a service name and protocol name.\n\
 The optional protocol name, if given, should be 'tcp' or 'udp',\n\
 otherwise any protocol will match.");
+#endif
 
-
+#ifdef HAVE_GETSERVBYPORT
 /* Python interface to getservbyport(port).
    This only returns the service name, since the other info is already
    known or not useful (like the list of aliases). */
@@ -6030,7 +6031,9 @@ PyDoc_STRVAR(getservbyport_doc,
 Return the service name from a port number and protocol name.\n\
 The optional protocol name, if given, should be 'tcp' or 'udp',\n\
 otherwise any protocol will match.");
+#endif
 
+#ifdef HAVE_GETPROTOBYNAME
 /* Python interface to getprotobyname(name).
    This only returns the protocol number, since the other info is
    already known or not useful (like the list of aliases). */
@@ -6057,6 +6060,7 @@ PyDoc_STRVAR(getprotobyname_doc,
 "getprotobyname(name) -> integer\n\
 \n\
 Return the protocol number for the named protocol.  (Rarely used.)");
+#endif
 
 static PyObject *
 socket_close(PyObject *self, PyObject *fdobj)
@@ -6426,6 +6430,7 @@ socket_inet_aton(PyObject *self, PyObject *args)
 #endif
 }
 
+#ifdef HAVE_INET_NTOA
 PyDoc_STRVAR(inet_ntoa_doc,
 "inet_ntoa(packed_ip) -> ip_address_string\n\
 \n\
@@ -6454,6 +6459,7 @@ socket_inet_ntoa(PyObject *self, PyObject *args)
     SUPPRESS_DEPRECATED_CALL
     return PyUnicode_FromString(inet_ntoa(packed_addr));
 }
+#endif // HAVE_INET_NTOA
 
 #ifdef HAVE_INET_PTON
 
@@ -7053,20 +7059,28 @@ static PyMethodDef socket_methods[] = {
      METH_VARARGS, gethostbyname_doc},
     {"gethostbyname_ex",        socket_gethostbyname_ex,
      METH_VARARGS, ghbn_ex_doc},
+#ifdef HAVE_GETHOSTBYADDR
     {"gethostbyaddr",           socket_gethostbyaddr,
      METH_VARARGS, gethostbyaddr_doc},
+#endif
     {"gethostname",             socket_gethostname,
      METH_NOARGS,  gethostname_doc},
 #ifdef HAVE_SETHOSTNAME
     {"sethostname",             socket_sethostname,
      METH_VARARGS,  sethostname_doc},
 #endif
+#ifdef HAVE_GETSERVBYNAME
     {"getservbyname",           socket_getservbyname,
      METH_VARARGS, getservbyname_doc},
+#endif
+#ifdef HAVE_GETSERVBYPORT
     {"getservbyport",           socket_getservbyport,
      METH_VARARGS, getservbyport_doc},
+#endif
+#ifdef HAVE_GETPROTOBYNAME
     {"getprotobyname",          socket_getprotobyname,
      METH_VARARGS, getprotobyname_doc},
+#endif
     {"close",                   socket_close,
      METH_O, close_doc},
 #ifndef NO_DUP
@@ -7087,8 +7101,10 @@ static PyMethodDef socket_methods[] = {
      METH_O, htonl_doc},
     {"inet_aton",               socket_inet_aton,
      METH_VARARGS, inet_aton_doc},
+#ifdef HAVE_INET_NTOA
     {"inet_ntoa",               socket_inet_ntoa,
      METH_VARARGS, inet_ntoa_doc},
+#endif
 #ifdef HAVE_INET_PTON
     {"inet_pton",               socket_inet_pton,
      METH_VARARGS, inet_pton_doc},

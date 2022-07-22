@@ -17433,6 +17433,48 @@ fi
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inet_ntoa" >&5
+$as_echo_n "checking for inet_ntoa... " >&6; }
+if ${ac_cv_func_inet_ntoa+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=inet_ntoa
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_inet_ntoa=yes
+else
+  ac_cv_func_inet_ntoa=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_inet_ntoa" >&5
+$as_echo "$ac_cv_func_inet_ntoa" >&6; }
+  if test "x$ac_cv_func_inet_ntoa" = xyes; then :
+
+$as_echo "#define HAVE_INET_NTOA 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inet_pton" >&5
 $as_echo_n "checking for inet_pton... " >&6; }
 if ${ac_cv_func_inet_pton+:} false; then :
@@ -17467,6 +17509,367 @@ $as_echo "$ac_cv_func_inet_pton" >&6; }
   if test "x$ac_cv_func_inet_pton" = xyes; then :
 
 $as_echo "#define HAVE_INET_PTON 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getservbyname" >&5
+$as_echo_n "checking for getservbyname... " >&6; }
+if ${ac_cv_func_getservbyname+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netdb.h>
+int
+main ()
+{
+void *x=getservbyname
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_getservbyname=yes
+else
+  ac_cv_func_getservbyname=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_getservbyname" >&5
+$as_echo "$ac_cv_func_getservbyname" >&6; }
+  if test "x$ac_cv_func_getservbyname" = xyes; then :
+
+$as_echo "#define HAVE_GETSERVBYNAME 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gethostbyname" >&5
+$as_echo_n "checking for gethostbyname... " >&6; }
+if ${ac_cv_func_gethostbyname+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netdb.h>
+int
+main ()
+{
+void *x=gethostbyname
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_gethostbyname=yes
+else
+  ac_cv_func_gethostbyname=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_gethostbyname" >&5
+$as_echo "$ac_cv_func_gethostbyname" >&6; }
+  if test "x$ac_cv_func_gethostbyname" = xyes; then :
+
+$as_echo "#define HAVE_GETHOSTBYNAME 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gethostbyaddr" >&5
+$as_echo_n "checking for gethostbyaddr... " >&6; }
+if ${ac_cv_func_gethostbyaddr+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netdb.h>
+int
+main ()
+{
+void *x=gethostbyaddr
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_gethostbyaddr=yes
+else
+  ac_cv_func_gethostbyaddr=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_gethostbyaddr" >&5
+$as_echo "$ac_cv_func_gethostbyaddr" >&6; }
+  if test "x$ac_cv_func_gethostbyaddr" = xyes; then :
+
+$as_echo "#define HAVE_GETHOSTBYADDR 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getservbyport" >&5
+$as_echo_n "checking for getservbyport... " >&6; }
+if ${ac_cv_func_getservbyport+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netdb.h>
+int
+main ()
+{
+void *x=getservbyport
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_getservbyport=yes
+else
+  ac_cv_func_getservbyport=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_getservbyport" >&5
+$as_echo "$ac_cv_func_getservbyport" >&6; }
+  if test "x$ac_cv_func_getservbyport" = xyes; then :
+
+$as_echo "#define HAVE_GETSERVBYPORT 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gethostbyaddr" >&5
+$as_echo_n "checking for gethostbyaddr... " >&6; }
+if ${ac_cv_func_gethostbyaddr+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netdb.h>
+int
+main ()
+{
+void *x=gethostbyaddr
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_gethostbyaddr=yes
+else
+  ac_cv_func_gethostbyaddr=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_gethostbyaddr" >&5
+$as_echo "$ac_cv_func_gethostbyaddr" >&6; }
+  if test "x$ac_cv_func_gethostbyaddr" = xyes; then :
+
+$as_echo "#define HAVE_GETHOSTBYADDR 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gethostbyname" >&5
+$as_echo_n "checking for gethostbyname... " >&6; }
+if ${ac_cv_func_gethostbyname+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netdb.h>
+int
+main ()
+{
+void *x=gethostbyname
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_gethostbyname=yes
+else
+  ac_cv_func_gethostbyname=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_gethostbyname" >&5
+$as_echo "$ac_cv_func_gethostbyname" >&6; }
+  if test "x$ac_cv_func_gethostbyname" = xyes; then :
+
+$as_echo "#define HAVE_GETHOSTBYNAME 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gethostbyaddr" >&5
+$as_echo_n "checking for gethostbyaddr... " >&6; }
+if ${ac_cv_func_gethostbyaddr+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netdb.h>
+int
+main ()
+{
+void *x=gethostbyaddr
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_gethostbyaddr=yes
+else
+  ac_cv_func_gethostbyaddr=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_gethostbyaddr" >&5
+$as_echo "$ac_cv_func_gethostbyaddr" >&6; }
+  if test "x$ac_cv_func_gethostbyaddr" = xyes; then :
+
+$as_echo "#define HAVE_GETHOSTBYADDR 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getservbyname" >&5
+$as_echo_n "checking for getservbyname... " >&6; }
+if ${ac_cv_func_getservbyname+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netdb.h>
+int
+main ()
+{
+void *x=getservbyname
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_getservbyname=yes
+else
+  ac_cv_func_getservbyname=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_getservbyname" >&5
+$as_echo "$ac_cv_func_getservbyname" >&6; }
+  if test "x$ac_cv_func_getservbyname" = xyes; then :
+
+$as_echo "#define HAVE_GETSERVBYNAME 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getservbyport" >&5
+$as_echo_n "checking for getservbyport... " >&6; }
+if ${ac_cv_func_getservbyport+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netdb.h>
+int
+main ()
+{
+void *x=getservbyport
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_getservbyport=yes
+else
+  ac_cv_func_getservbyport=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_getservbyport" >&5
+$as_echo "$ac_cv_func_getservbyport" >&6; }
+  if test "x$ac_cv_func_getservbyport" = xyes; then :
+
+$as_echo "#define HAVE_GETSERVBYPORT 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getprotobyname" >&5
+$as_echo_n "checking for getprotobyname... " >&6; }
+if ${ac_cv_func_getprotobyname+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netdb.h>
+int
+main ()
+{
+void *x=getprotobyname
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_getprotobyname=yes
+else
+  ac_cv_func_getprotobyname=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_getprotobyname" >&5
+$as_echo "$ac_cv_func_getprotobyname" >&6; }
+  if test "x$ac_cv_func_getprotobyname" = xyes; then :
+
+$as_echo "#define HAVE_GETPROTOBYNAME 1" >>confdefs.h
 
 fi
 

@@ -4889,12 +4889,25 @@ PY_CHECK_FUNC([inet_aton], [
 #include <arpa/inet.h>
 ])
 
+PY_CHECK_FUNC([inet_ntoa], [
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+])
+
 PY_CHECK_FUNC([inet_pton], [
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 ])
+
+PY_CHECK_FUNC([getservbyname], [#include <netdb.h>])
+PY_CHECK_FUNC([getservbyport], [#include <netdb.h>])
+PY_CHECK_FUNC([gethostbyname], [#include <netdb.h>])
+PY_CHECK_FUNC([gethostbyaddr], [#include <netdb.h>])
+PY_CHECK_FUNC([getprotobyname], [#include <netdb.h>])
 
 # On some systems, setgroups is in unistd.h, on others, in grp.h
 PY_CHECK_FUNC([setgroups], [

@@ -477,6 +477,9 @@
 /* Define to 1 if you have the `getgroups' function. */
 #undef HAVE_GETGROUPS
 
+/* Define if you have the 'gethostbyaddr' function. */
+#undef HAVE_GETHOSTBYADDR
+
 /* Define to 1 if you have the `gethostbyname' function. */
 #undef HAVE_GETHOSTBYNAME
 
@@ -525,6 +528,9 @@
 /* Define to 1 if you have the `getpriority' function. */
 #undef HAVE_GETPRIORITY
 
+/* Define if you have the 'getprotobyname' function. */
+#undef HAVE_GETPROTOBYNAME
+
 /* Define to 1 if you have the `getpwent' function. */
 #undef HAVE_GETPWENT
 
@@ -551,6 +557,12 @@
 
 /* Define to 1 if you have the `getrusage' function. */
 #undef HAVE_GETRUSAGE
+
+/* Define if you have the 'getservbyname' function. */
+#undef HAVE_GETSERVBYNAME
+
+/* Define if you have the 'getservbyport' function. */
+#undef HAVE_GETSERVBYPORT
 
 /* Define to 1 if you have the `getsid' function. */
 #undef HAVE_GETSID
@@ -588,6 +600,9 @@
 
 /* Define if you have the 'inet_aton' function. */
 #undef HAVE_INET_ATON
+
+/* Define if you have the 'inet_ntoa' function. */
+#undef HAVE_INET_NTOA
 
 /* Define if you have the 'inet_pton' function. */
 #undef HAVE_INET_PTON
