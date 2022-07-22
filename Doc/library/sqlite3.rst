@@ -966,10 +966,10 @@ Cursor Objects
 
    .. attribute:: rowcount
 
-      This read-only attribute provides the number of modified rows for
+      Read-only attribute that provides the number of modified rows for
       ``INSERT``, ``UPDATE``, ``DELETE``, and ``REPLACE`` statements;
-      ``-1`` for other statements,
-      including :abbr:`CTE queries (Common Table Expression)`.
+      is ``-1`` for other statements,
+      including :abbr:`CTE (Common Table Expression)` queries.
       It is only updated by the :meth:`execute` and :meth:`executemany` methods.
 
    .. attribute:: lastrowid
