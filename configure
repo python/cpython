@@ -14911,6 +14911,13 @@ done
 
 fi
 
+if test "x$posix_threads" = xstub; then :
+
+
+$as_echo "#define HAVE_PTHREAD_STUB 1" >>confdefs.h
+
+
+fi
 
 # Check for enable-ipv6
 
@@ -17431,6 +17438,10 @@ fi
 
 
 
+
+
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for hstrerror" >&5
 $as_echo_n "checking for hstrerror... " >&6; }
 if ${ac_cv_func_hstrerror+:} false; then :
@@ -17462,133 +17473,6 @@ $as_echo "$ac_cv_func_hstrerror" >&6; }
 $as_echo "#define HAVE_HSTRERROR 1" >>confdefs.h
 
 fi
-
-
-
-
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inet_aton" >&5
-$as_echo_n "checking for inet_aton... " >&6; }
-if ${ac_cv_func_inet_aton+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
-int
-main ()
-{
-void *x=inet_aton
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ac_cv_func_inet_aton=yes
-else
-  ac_cv_func_inet_aton=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_inet_aton" >&5
-$as_echo "$ac_cv_func_inet_aton" >&6; }
-  if test "x$ac_cv_func_inet_aton" = xyes; then :
-
-$as_echo "#define HAVE_INET_ATON 1" >>confdefs.h
-
-fi
-
-
-
-
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inet_ntoa" >&5
-$as_echo_n "checking for inet_ntoa... " >&6; }
-if ${ac_cv_func_inet_ntoa+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
-int
-main ()
-{
-void *x=inet_ntoa
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ac_cv_func_inet_ntoa=yes
-else
-  ac_cv_func_inet_ntoa=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_inet_ntoa" >&5
-$as_echo "$ac_cv_func_inet_ntoa" >&6; }
-  if test "x$ac_cv_func_inet_ntoa" = xyes; then :
-
-$as_echo "#define HAVE_INET_NTOA 1" >>confdefs.h
-
-fi
-
-
-
-
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inet_pton" >&5
-$as_echo_n "checking for inet_pton... " >&6; }
-if ${ac_cv_func_inet_pton+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
-int
-main ()
-{
-void *x=inet_pton
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ac_cv_func_inet_pton=yes
-else
-  ac_cv_func_inet_pton=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_inet_pton" >&5
-$as_echo "$ac_cv_func_inet_pton" >&6; }
-  if test "x$ac_cv_func_inet_pton" = xyes; then :
-
-$as_echo "#define HAVE_INET_PTON 1" >>confdefs.h
-
-fi
-
 
 
 
@@ -17775,6 +17659,130 @@ fi
 
 
 
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inet_aton" >&5
+$as_echo_n "checking for inet_aton... " >&6; }
+if ${ac_cv_func_inet_aton+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=inet_aton
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_inet_aton=yes
+else
+  ac_cv_func_inet_aton=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_inet_aton" >&5
+$as_echo "$ac_cv_func_inet_aton" >&6; }
+  if test "x$ac_cv_func_inet_aton" = xyes; then :
+
+$as_echo "#define HAVE_INET_ATON 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inet_ntoa" >&5
+$as_echo_n "checking for inet_ntoa... " >&6; }
+if ${ac_cv_func_inet_ntoa+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=inet_ntoa
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_inet_ntoa=yes
+else
+  ac_cv_func_inet_ntoa=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_inet_ntoa" >&5
+$as_echo "$ac_cv_func_inet_ntoa" >&6; }
+  if test "x$ac_cv_func_inet_ntoa" = xyes; then :
+
+$as_echo "#define HAVE_INET_NTOA 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inet_pton" >&5
+$as_echo_n "checking for inet_pton... " >&6; }
+if ${ac_cv_func_inet_pton+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=inet_pton
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_inet_pton=yes
+else
+  ac_cv_func_inet_pton=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_inet_pton" >&5
+$as_echo "$ac_cv_func_inet_pton" >&6; }
+  if test "x$ac_cv_func_inet_pton" = xyes; then :
+
+$as_echo "#define HAVE_INET_PTON 1" >>confdefs.h
+
+fi
+
+
+
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getpeername" >&5
 $as_echo_n "checking for getpeername... " >&6; }
 if ${ac_cv_func_getpeername+:} false; then :
@@ -17785,6 +17793,8 @@ else
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 int
 main ()
@@ -17814,7 +17824,6 @@ fi
 
 
 
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getsockname" >&5
 $as_echo_n "checking for getsockname... " >&6; }
 if ${ac_cv_func_getsockname+:} false; then :
@@ -17825,6 +17834,8 @@ else
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 int
 main ()
@@ -17854,7 +17865,6 @@ fi
 
 
 
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for bind" >&5
 $as_echo_n "checking for bind... " >&6; }
 if ${ac_cv_func_bind+:} false; then :
@@ -17865,6 +17875,8 @@ else
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 int
 main ()
@@ -17894,7 +17906,6 @@ fi
 
 
 
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for connect" >&5
 $as_echo_n "checking for connect... " >&6; }
 if ${ac_cv_func_connect+:} false; then :
@@ -17905,6 +17916,8 @@ else
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 int
 main ()
@@ -17934,7 +17947,6 @@ fi
 
 
 
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for listen" >&5
 $as_echo_n "checking for listen... " >&6; }
 if ${ac_cv_func_listen+:} false; then :
@@ -17945,6 +17957,8 @@ else
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 int
 main ()
@@ -17974,7 +17988,6 @@ fi
 
 
 
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for recvfrom" >&5
 $as_echo_n "checking for recvfrom... " >&6; }
 if ${ac_cv_func_recvfrom+:} false; then :
@@ -17985,6 +17998,8 @@ else
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 int
 main ()
@@ -18014,7 +18029,6 @@ fi
 
 
 
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sendto" >&5
 $as_echo_n "checking for sendto... " >&6; }
 if ${ac_cv_func_sendto+:} false; then :
@@ -18025,6 +18039,8 @@ else
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 int
 main ()
@@ -18054,7 +18070,6 @@ fi
 
 
 
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for setsockopt" >&5
 $as_echo_n "checking for setsockopt... " >&6; }
 if ${ac_cv_func_setsockopt+:} false; then :
@@ -18065,6 +18080,8 @@ else
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 int
 main ()
@@ -18094,7 +18111,6 @@ fi
 
 
 
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for socket" >&5
 $as_echo_n "checking for socket... " >&6; }
 if ${ac_cv_func_socket+:} false; then :
@@ -18105,6 +18121,8 @@ else
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 int
 main ()
