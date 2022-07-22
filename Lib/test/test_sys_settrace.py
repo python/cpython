@@ -2717,7 +2717,7 @@ output.append(4)
     @jump_test(2, 3, [1, 3])
     def test_jump_or_pop(output):
         output.append(1)
-        output.append(2) or "Spam"
+        _ = output.append(2) and "Spam"
         output.append(3)
 
 
