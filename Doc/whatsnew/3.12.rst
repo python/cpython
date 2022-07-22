@@ -133,7 +133,7 @@ Deprecated
 ==========
 
 * :class:`typing.Hashable` and :class:`typing.Sized` aliases for :class:`collections.abc.Hashable`
-  and :class:`collections.abc.Sized`. (:gh:`94309`)
+  and :class:`collections.abc.Sized`. (:gh:`94309`.)
 
 * The :mod:`sqlite3` :ref:`default adapters and converters
   <sqlite3-default-converters>` are now deprecated.
@@ -264,7 +264,7 @@ Removed
   ``OptimizedUnicode`` can either use ``str`` explicitly, or rely on the
   default value which is also ``str``.
 
-  (Contributed by Erlend E. Aasland in :gh:`92548`)
+  (Contributed by Erlend E. Aasland in :gh:`92548`.)
 
 * The ``--experimental-isolated-subinterpreters`` configure flag
   (and corresponding ``EXPERIMENTAL_ISOLATED_SUBINTERPRETERS``)
