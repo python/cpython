@@ -332,10 +332,9 @@ class FileInputTests(BaseTests, unittest.TestCase):
                        encoding="ascii", errors="replace") as fobj:
             line = fobj.readline()
             self.assertEqual(line, 'Initial text \ufffd')
-            #print("New line \x88")
-            sys.stdout.write("New line \x88\n")
+            print("New line \x88")
         with open(temp_file, 'rb') as f:
-            self.assertEqual(f.read(), b'New line ?\n')
+            self.assertEqual(f.read().rstrip(b'\r\n'), b'New line ?')
 
     def test_file_hook_backward_compatibility(self):
         def old_hook(filename, mode):
