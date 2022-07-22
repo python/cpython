@@ -2643,7 +2643,7 @@ AC_CHECK_HEADERS([ \
   alloca.h asm/types.h bluetooth.h conio.h crypt.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
   ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/memfd.h \
   linux/random.h linux/soundcard.h \
-  linux/tipc.h linux/wait.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
+  linux/tipc.h linux/wait.h netdb.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
   sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/poll.h \
@@ -4675,7 +4675,7 @@ AC_CHECK_FUNCS([ \
   sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
   sysconf system tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
   tmpnam tmpnam_r truncate ttyname umask uname unlinkat utimensat utimes vfork \
-  wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
+  wait3 wait4 waitid wcscoll wcsftime wcsxfrm wmemcmp writev \
 ])
 
 # Force lchmod off for Linux. Linux disallows changing the mode of symbolic
@@ -4709,6 +4709,8 @@ PY_CHECK_FUNC([prlimit], [
 #include <sys/time.h>
 #include <sys/resource.h>
 ])
+PY_CHECK_FUNC([wait], [#include <sys/wait.h])
+PY_CHECK_FUNC([waitpid], [#include <sys/wait.h])
 
 PY_CHECK_FUNC([_dyld_shared_cache_contains_path], [#include <mach-o/dyld.h>], [HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH])
 
@@ -4903,11 +4905,57 @@ PY_CHECK_FUNC([inet_pton], [
 #include <arpa/inet.h>
 ])
 
+dnl socket function that are not available on WASI
 PY_CHECK_FUNC([getservbyname], [#include <netdb.h>])
 PY_CHECK_FUNC([getservbyport], [#include <netdb.h>])
 PY_CHECK_FUNC([gethostbyname], [#include <netdb.h>])
 PY_CHECK_FUNC([gethostbyaddr], [#include <netdb.h>])
 PY_CHECK_FUNC([getprotobyname], [#include <netdb.h>])
+
+PY_CHECK_FUNC([getpeername], [
+#include <sys/types.h>
+#include <sys/socket.h>
+])
+
+PY_CHECK_FUNC([getsockname], [
+#include <sys/types.h>
+#include <sys/socket.h>
+])
+
+PY_CHECK_FUNC([bind], [
+#include <sys/types.h>
+#include <sys/socket.h>
+])
+
+PY_CHECK_FUNC([connect], [
+#include <sys/types.h>
+#include <sys/socket.h>
+])
+
+PY_CHECK_FUNC([listen], [
+#include <sys/types.h>
+#include <sys/socket.h>
+])
+
+PY_CHECK_FUNC([recvfrom], [
+#include <sys/types.h>
+#include <sys/socket.h>
+])
+
+PY_CHECK_FUNC([sendto], [
+#include <sys/types.h>
+#include <sys/socket.h>
+])
+
+PY_CHECK_FUNC([setsockopt], [
+#include <sys/types.h>
+#include <sys/socket.h>
+])
+
+PY_CHECK_FUNC([socket], [
+#include <sys/types.h>
+#include <sys/socket.h>
+])
 
 # On some systems, setgroups is in unistd.h, on others, in grp.h
 PY_CHECK_FUNC([setgroups], [

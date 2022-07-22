@@ -81,6 +81,9 @@
 /* Define to 1 if you have the `atanh' function. */
 #undef HAVE_ATANH
 
+/* Define if you have the 'bind' function. */
+#undef HAVE_BIND
+
 /* Define to 1 if you have the `bind_textdomain_codeset' function. */
 #undef HAVE_BIND_TEXTDOMAIN_CODESET
 
@@ -159,6 +162,9 @@
 
 /* Define to 1 if you have the <conio.h> header file. */
 #undef HAVE_CONIO_H
+
+/* Define if you have the 'connect' function. */
+#undef HAVE_CONNECT
 
 /* Define to 1 if you have the `copy_file_range' function. */
 #undef HAVE_COPY_FILE_RANGE
@@ -510,7 +516,7 @@
 /* Define if you have the 'getpagesize' function. */
 #undef HAVE_GETPAGESIZE
 
-/* Define to 1 if you have the `getpeername' function. */
+/* Define if you have the 'getpeername' function. */
 #undef HAVE_GETPEERNAME
 
 /* Define to 1 if you have the `getpgid' function. */
@@ -566,6 +572,9 @@
 
 /* Define to 1 if you have the `getsid' function. */
 #undef HAVE_GETSID
+
+/* Define if you have the 'getsockname' function. */
+#undef HAVE_GETSOCKNAME
 
 /* Define to 1 if you have the `getspent' function. */
 #undef HAVE_GETSPENT
@@ -730,6 +739,9 @@
 /* Define to 1 if you have the <linux/wait.h> header file. */
 #undef HAVE_LINUX_WAIT_H
 
+/* Define if you have the 'listen' function. */
+#undef HAVE_LISTEN
+
 /* Define to 1 if you have the `lockf' function. */
 #undef HAVE_LOCKF
 
@@ -813,6 +825,9 @@
 
 /* Define to 1 if you have the <netcan/can.h> header file. */
 #undef HAVE_NETCAN_CAN_H
+
+/* Define to 1 if you have the <netdb.h> header file. */
+#undef HAVE_NETDB_H
 
 /* Define to 1 if you have the <netinet/in.h> header file. */
 #undef HAVE_NETINET_IN_H
@@ -941,6 +956,9 @@
 /* Define to 1 if you have the `realpath' function. */
 #undef HAVE_REALPATH
 
+/* Define if you have the 'recvfrom' function. */
+#undef HAVE_RECVFROM
+
 /* Define to 1 if you have the `renameat' function. */
 #undef HAVE_RENAMEAT
 
@@ -1010,6 +1028,9 @@
 /* Define to 1 if you have the `sendfile' function. */
 #undef HAVE_SENDFILE
 
+/* Define if you have the 'sendto' function. */
+#undef HAVE_SENDTO
+
 /* Define to 1 if you have the `setegid' function. */
 #undef HAVE_SETEGID
 
@@ -1057,6 +1078,9 @@
 
 /* Define to 1 if you have the `setsid' function. */
 #undef HAVE_SETSID
+
+/* Define if you have the 'setsockopt' function. */
+#undef HAVE_SETSOCKOPT
 
 /* Define to 1 if you have the `setuid' function. */
 #undef HAVE_SETUID
@@ -1120,6 +1144,9 @@
 
 /* struct sockaddr_storage (sys/socket.h) */
 #undef HAVE_SOCKADDR_STORAGE
+
+/* Define if you have the 'socket' function. */
+#undef HAVE_SOCKET
 
 /* Define if you have the 'socketpair' function. */
 #undef HAVE_SOCKETPAIR
@@ -1436,7 +1463,7 @@
 /* Define to 1 if you have the `vfork' function. */
 #undef HAVE_VFORK
 
-/* Define to 1 if you have the `wait' function. */
+/* Define if you have the 'wait' function. */
 #undef HAVE_WAIT
 
 /* Define to 1 if you have the `wait3' function. */
@@ -1448,7 +1475,7 @@
 /* Define to 1 if you have the `waitid' function. */
 #undef HAVE_WAITID
 
-/* Define to 1 if you have the `waitpid' function. */
+/* Define if you have the 'waitpid' function. */
 #undef HAVE_WAITPID
 
 /* Define if the compiler provides a wchar.h header file. */

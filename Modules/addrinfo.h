@@ -159,6 +159,31 @@ struct sockaddr_storage {
 };
 #endif /* !HAVE_SOCKADDR_STORAGE */
 
+#ifndef HAVE_NETDB_H
+static int h_errno = 0;
+
+#define HOST_NOT_FOUND 1
+#define TRY_AGAIN      2
+#define NO_RECOVERY    3
+#define NO_DATA        4
+
+struct hostent {
+    char *h_name;
+    char **h_aliases;
+    int h_addrtype;
+    int h_length;
+    char **h_addr_list;
+};
+
+struct servent {
+    char *s_name;
+    char **s_aliases;
+    int s_port;
+    char *s_proto;
+};
+
+#endif // HAVE_NETDB_H
+
 #ifdef __cplusplus
 extern "C" {
 #endif

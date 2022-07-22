@@ -63,6 +63,10 @@ extern void bzero(void *, int);
 #  define SOCKET int
 #endif
 
+#if defined(__wasi__) && !defined(POLLPRI)
+#  define POLLPRI 0
+#endif
+
 typedef struct {
     PyObject *close;
     PyTypeObject *poll_Type;
