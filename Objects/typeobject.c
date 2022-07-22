@@ -279,6 +279,12 @@ _PyTypes_Fini(PyInterpreterState *interp)
     if (_Py_IsMainInterpreter(interp)) {
         clear_slotdefs();
     }
+
+    assert(interp->types.num_builtins_initialized == 0);
+    // All the static builtin types should have been finalized already.
+    for (size_t i = 0; i < _Py_MAX_STATIC_BUILTIN_TYPES; i++) {
+        assert(interp->types.builtins[i].type == NULL);
+    }
 }
 
 
