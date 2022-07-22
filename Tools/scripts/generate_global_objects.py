@@ -307,9 +307,9 @@ def generate_runtime_init(identifiers, strings):
         printer.write("static inline void")
         with printer.block("_PyStaticObjects_CheckRefcnt(void)"):
             for i in immortal_objects:
-                with printer.block(f'if (Py_REFCNT({i}) < 999999999)', ';'):
+                with printer.block(f'if (Py_REFCNT({i}) < _PyObject_IMMORTAL_REFCNT)', ';'):
                     printer.write(f'_PyObject_Dump({i});')
-                    printer.write(f'Py_FatalError("immortal object has less refcnt than expected 999999999");')
+                    printer.write(f'Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");')
         printer.write('#endif')
         printer.write(END)
         printer.write(after)

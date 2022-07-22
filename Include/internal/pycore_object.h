@@ -14,9 +14,11 @@ extern "C" {
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_runtime.h"       // _PyRuntime
 
+#define _PyObject_IMMORTAL_REFCNT 999999999
+
 #define _PyObject_IMMORTAL_INIT(type) \
     { \
-        .ob_refcnt = 999999999, \
+        .ob_refcnt = _PyObject_IMMORTAL_REFCNT, \
         .ob_type = (type), \
     }
 #define _PyVarObject_IMMORTAL_INIT(type, size) \
