@@ -258,6 +258,28 @@ Functions for sequences
       The *population* must be a sequence.  Automatic conversion of sets
       to lists is no longer supported.
 
+Discrete distributions
+----------------------
+
+The following function generates a discrete distribution.
+
+.. function:: binomialvariate(n=1, p=0.5)
+
+   `Binomial distribution
+   <http://mathworld.wolfram.com/BinomialDistribution.html>`_.
+   Return the number of successes for *n* independent trials with the
+   probability of success in each trial being *p*:
+
+   Mathematically equivalent to::
+
+       sum(random() < p for i in range(n))
+
+   The number of trials *n* should be a non-negative integer.
+   The probability of success *p* should be between ``0.0 <= p <= 1.0``.
+   The result is an integer in the range ``0 <= X <= n``.
+
+   .. versionadded:: 3.12
+
 
 .. _real-valued-distributions:
 
@@ -452,16 +474,13 @@ Simulations::
    >>> # Deal 20 cards without replacement from a deck
    >>> # of 52 playing cards, and determine the proportion of cards
    >>> # with a ten-value:  ten, jack, queen, or king.
-   >>> dealt = sample(['tens', 'low cards'], counts=[16, 36], k=20)
-   >>> dealt.count('tens') / 20
+   >>> deal = sample(['tens', 'low cards'], counts=[16, 36], k=20)
+   >>> deal.count('tens') / 20
    0.15
 
    >>> # Estimate the probability of getting 5 or more heads from 7 spins
    >>> # of a biased coin that settles on heads 60% of the time.
-   >>> def trial():
-   ...     return choices('HT', cum_weights=(0.60, 1.00), k=7).count('H') >= 5
-   ...
-   >>> sum(trial() for i in range(10_000)) / 10_000
+   >>> sum(binomialvariate(n=7, p=0.6) >= 5 for i in range(10_000)) / 10_000
    0.4169
 
    >>> # Probability of the median of 5 samples being in middle two quartiles
