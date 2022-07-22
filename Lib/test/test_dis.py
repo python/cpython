@@ -744,7 +744,7 @@ dis_extended_arg_quick_code = """\
 %3d           0 RESUME                   0
 
 %3d           2 LOAD_CONST               1 (Ellipsis)
-              4 EXTENDED_ARG_QUICK       1
+              4 EXTENDED_ARG             1
               6 UNPACK_EX              256
               8 STORE_FAST               0 (_)
              10 STORE_FAST               0 (_)

@@ -966,18 +966,11 @@ Cursor Objects
 
    .. attribute:: rowcount
 
-      Although the :class:`Cursor` class of the :mod:`sqlite3` module implements this
-      attribute, the database engine's own support for the determination of "rows
-      affected"/"rows selected" is quirky.
-
-      For :meth:`executemany` statements, the number of modifications are summed up
-      into :attr:`rowcount`.
-
-      As required by the Python DB API Spec, the :attr:`rowcount` attribute "is -1 in
-      case no ``executeXX()`` has been performed on the cursor or the rowcount of the
-      last operation is not determinable by the interface". This includes ``SELECT``
-      statements because we cannot determine the number of rows a query produced
-      until all rows were fetched.
+      Read-only attribute that provides the number of modified rows for
+      ``INSERT``, ``UPDATE``, ``DELETE``, and ``REPLACE`` statements;
+      is ``-1`` for other statements,
+      including :abbr:`CTE (Common Table Expression)` queries.
+      It is only updated by the :meth:`execute` and :meth:`executemany` methods.
 
    .. attribute:: lastrowid
 
@@ -1333,6 +1326,8 @@ This function can then be registered using :func:`register_adapter`.
 .. literalinclude:: ../includes/sqlite3/adapter_point_2.py
 
 
+.. _sqlite3-converters:
+
 Converting SQLite values to custom Python types
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1366,34 +1361,35 @@ of :func:`connect`. There are three options:
 * Explicit: set *detect_types* to :const:`PARSE_COLNAMES`
 * Both: set *detect_types* to
   ``sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES``.
-  Colum names take precedence over declared types.
+  Column names take precedence over declared types.
 
 The following example illustrates the implicit and explicit approaches:
 
 .. literalinclude:: ../includes/sqlite3/converter_point.py
 
 
-Default adapters and converters
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _sqlite3-default-converters:
 
-There are default adapters for the date and datetime types in the datetime
-module. They will be sent as ISO dates/ISO timestamps to SQLite.
+Default adapters and converters (deprecated)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The default converters are registered under the name "date" for
-:class:`datetime.date` and under the name "timestamp" for
-:class:`datetime.datetime`.
+.. note::
 
-This way, you can use date/timestamps from Python without any additional
-fiddling in most cases. The format of the adapters is also compatible with the
-experimental SQLite date/time functions.
+   The default adapters and converters are deprecated as of Python 3.12.
+   Instead, use the :ref:`sqlite3-adapter-converter-recipes`
+   and tailor them to your needs.
 
-The following example demonstrates this.
+The deprecated default adapters and converters consist of:
 
-.. literalinclude:: ../includes/sqlite3/pysqlite_datetime.py
-
-If a timestamp stored in SQLite has a fractional part longer than 6
-numbers, its value will be truncated to microsecond precision by the
-timestamp converter.
+* An adapter for :class:`datetime.date` objects to :class:`strings <str>` in
+  `ISO 8601`_ format.
+* An adapter for :class:`datetime.datetime` objects to strings in
+  ISO 8601 format.
+* A converter for :ref:`declared <sqlite3-converters>` "date" types to
+  :class:`datetime.date` objects.
+* A converter for declared "timestamp" types to
+  :class:`datetime.datetime` objects.
+  Fractional parts will be truncated to 6 digits (microsecond precision).
 
 .. note::
 
@@ -1401,6 +1397,10 @@ timestamp converter.
    always returns a naive :class:`datetime.datetime` object. To preserve UTC
    offsets in timestamps, either leave converters disabled, or register an
    offset-aware converter with :func:`register_converter`.
+
+.. deprecated:: 3.12
+
+.. _ISO 8601: https://en.wikipedia.org/wiki/ISO_8601
 
 
 .. _sqlite3-adapter-converter-recipes:

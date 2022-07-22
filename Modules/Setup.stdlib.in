@@ -165,6 +165,7 @@
 ############################################################################
 # Test modules
 
+@MODULE_XXSUBTYPE_TRUE@xxsubtype xxsubtype.c
 @MODULE__XXTESTFUZZ_TRUE@_xxtestfuzz _xxtestfuzz/_xxtestfuzz.c _xxtestfuzz/fuzzer.c
 @MODULE__TESTBUFFER_TRUE@_testbuffer _testbuffer.c
 @MODULE__TESTINTERNALCAPI_TRUE@_testinternalcapi _testinternalcapi.c
