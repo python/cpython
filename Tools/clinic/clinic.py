@@ -2382,7 +2382,7 @@ class Parameter:
 
     def __init__(self, name, kind, *, default=inspect.Parameter.empty,
                  function, converter, annotation=inspect.Parameter.empty,
-                 docstring=None, group=0):
+                 docstring=None, group=0, deprecated_positional=False):
         self.name = name
         self.kind = kind
         self.default = default
@@ -2391,6 +2391,7 @@ class Parameter:
         self.annotation = annotation
         self.docstring = docstring or ''
         self.group = group
+        self.deprecated_positional = deprecated_positional
 
     def __repr__(self):
         return '<clinic.Parameter ' + self.name + '>'
@@ -4708,8 +4709,9 @@ class DSLParser:
                 fail("A 'defining_class' parameter, if specified, must either be the first thing in the parameter block, or come just after 'self'.")
 
 
-        p = Parameter(parameter_name, kind, function=self.function, converter=converter, default=value, group=self.group)
-        p.deprecated_positional = self.deprecated_positional
+        p = Parameter(parameter_name, kind, function=self.function,
+                      converter=converter, default=value, group=self.group,
+                      deprecated_positional=self.deprecated_positional)
 
         names = [k.name for k in self.function.parameters.values()]
         if parameter_name in names[1:]:
@@ -5103,17 +5105,21 @@ class DSLParser:
         if not self.function:
             return
 
-        if self.keyword_only:
+        def check_remaining_params(symbol, condition):
             values = self.function.parameters.values()
             if not values:
-                no_parameter_after_star = True
+                no_param_after_symbol = True
             else:
                 last_parameter = next(reversed(list(values)))
-                no_parameter_after_star = last_parameter.kind != inspect.Parameter.KEYWORD_ONLY
-            if no_parameter_after_star:
-                fail("Function " + self.function.name + " specifies '*' without any parameters afterwards.")
+                no_param_after_symbol = condition(last_parameter)
+            if no_param_after_symbol:
+                fail(f"Function {self.function.name} specifies {symbol} without any parameters afterwards.")
 
-        # EAA: Add check here
+        if self.keyword_only:
+            check_remaining_params("*", lambda p: p.kind != inspect.Parameter.KEYWORD_ONLY)
+
+        if self.deprecated_positional:
+            check_remaining_params("+", lambda p: not p.deprecated_positional)
 
         # remove trailing whitespace from all parameter docstrings
         for name, value in self.function.parameters.items():

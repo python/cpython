@@ -703,6 +703,25 @@ foo.bar
 Docstring.
 """)
 
+    def test_parameters_required_after_cross(self):
+        self.parse_function_should_fail("""
+module foo
+foo.bar
+    this: int
+    x
+Docstring.
+""")
+
+    def test_cross_must_come_before_star(self):
+        self.parse_function_should_fail("""
+module foo
+foo.bar
+    this: int
+    *
+    x
+Docstring.
+""")
+
     def test_single_slash(self):
         self.parse_function_should_fail("""
 module foo

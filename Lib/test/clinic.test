@@ -3559,3 +3559,65 @@ exit:
 static PyObject *
 test_paramname_module_impl(PyObject *module, PyObject *mod)
 /*[clinic end generated code: output=23379a7ffa65c514 input=afefe259667f13ba]*/
+
+/*[clinic input]
+test_deprecate_positional_use
+
+    pos: object
+    x
+    optarg: int = 5
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_deprecate_positional_use__doc__,
+"test_deprecate_positional_use($module, /, pos, optarg=5)\n"
+"--\n"
+"\n");
+
+#define TEST_DEPRECATE_POSITIONAL_USE_METHODDEF    \
+    {"test_deprecate_positional_use", _PyCFunction_CAST(test_deprecate_positional_use), METH_FASTCALL|METH_KEYWORDS, test_deprecate_positional_use__doc__},
+
+static PyObject *
+test_deprecate_positional_use_impl(PyObject *module, PyObject *pos,
+                                   int optarg);
+
+static PyObject *
+test_deprecate_positional_use(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"pos", "optarg", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "test_deprecate_positional_use", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *pos;
+    int optarg = 5;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    pos = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (nargs == 2) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+            "Using 'optarg' as positional argument is deprecated", 2))
+        {
+            goto exit;
+        }
+    }
+    optarg = _PyLong_AsInt(args[1]);
+    if (optarg == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = test_deprecate_positional_use_impl(module, pos, optarg);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_deprecate_positional_use_impl(PyObject *module, PyObject *pos,
+                                   int optarg)
+/*[clinic end generated code: output=fde7240aec7013a3 input=462e9741eb865665]*/
