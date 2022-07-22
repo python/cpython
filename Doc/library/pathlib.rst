@@ -958,7 +958,7 @@ call fails (for example because the path doesn't exist).
    the symbolic link's information rather than its target's.
 
 
-.. method:: Path.mkdir(mode=0o777, parents=False, exist_ok=False)
+.. method:: Path.mkdir(mode=0o755, parents=False, exist_ok=False)
 
    Create a new directory at this given path.  If *mode* is given, it is
    combined with the process' ``umask`` value to determine the file mode
