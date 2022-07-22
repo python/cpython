@@ -1332,7 +1332,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if last is None:
             last = first + 10
         filename = self.curframe.f_code.co_filename
-        # gh-93696: stdlib frozen modules provide a useful __file__ (see also gh-89815)
+        # gh-93696: stdlib frozen modules provide a useful __file__
+        # this workaround can be removed with the closure of gh-89815
         if filename.startswith("<frozen"):
             if "__file__" in self.curframe.f_globals:
                 filename = self.curframe.f_globals["__file__"]
