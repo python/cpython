@@ -179,7 +179,6 @@ push_value(int64_t stack, Kind kind)
 static inline int64_t
 pop_value(int64_t stack)
 {
-    assert(stack > EMPTY_STACK || stack == OVERFLOWED);
     return Py_ARITHMETIC_RIGHT_SHIFT(int64_t, stack, BITS_PER_BLOCK);
 }
 
@@ -221,13 +220,6 @@ pop_to_level(int64_t stack, int level) {
         stack = pop_value(stack);
     }
     return stack;
-}
-
-static inline void
-set_stack(int64_t *stacks, int i, int64_t stack)
-{
-    assert(stacks[i] == UNINITIALIZED || stacks[i] == stack);
-    stacks[i] = stack;
 }
 
 #if 0
@@ -316,7 +308,6 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 continue;
             }
             opcode = _Py_OPCODE(code[i]);
-            assert(opcode == _PyOpcode_Deopt[opcode]);
             switch (opcode) {
                 case JUMP_IF_FALSE_OR_POP:
                 case JUMP_IF_TRUE_OR_POP:
@@ -328,7 +319,10 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     int64_t target_stack;
                     int j = get_arg(code, i);
                     if (opcode == POP_JUMP_FORWARD_IF_FALSE ||
-                        opcode == POP_JUMP_FORWARD_IF_TRUE) {
+                        opcode == POP_JUMP_FORWARD_IF_TRUE ||
+                        opcode == JUMP_IF_FALSE_OR_POP ||
+                        opcode == JUMP_IF_TRUE_OR_POP)
+                    {
                         j += i + 1;
                     }
                     else if (opcode == POP_JUMP_BACKWARD_IF_FALSE ||
@@ -349,20 +343,23 @@ mark_stacks(PyCodeObject *code_obj, int len)
                         next_stack = pop_value(next_stack);
                         target_stack = next_stack;
                     }
-                    set_stack(stacks, j, target_stack);
-                    set_stack(stacks, i + 1, next_stack);
+                    assert(stacks[j] == UNINITIALIZED || stacks[j] == target_stack);
+                    stacks[j] = target_stack;
+                    stacks[i+1] = next_stack;
                     break;
                 }
                 case SEND:
                     j = get_arg(code, i) + i + 1;
                     assert(j < len);
-                    set_stack(stacks, j, pop_value(next_stack));
-                    set_stack(stacks, i + 1, next_stack);
+                    assert(stacks[j] == UNINITIALIZED || stacks[j] == pop_value(next_stack));
+                    stacks[j] = pop_value(next_stack);
+                    stacks[i+1] = next_stack;
                     break;
                 case JUMP_FORWARD:
                     j = get_arg(code, i) + i + 1;
                     assert(j < len);
-                    set_stack(stacks, j, next_stack);
+                    assert(stacks[j] == UNINITIALIZED || stacks[j] == next_stack);
+                    stacks[j] = next_stack;
                     break;
                 case JUMP_BACKWARD:
                 case JUMP_BACKWARD_NO_INTERRUPT:
@@ -372,34 +369,36 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     if (stacks[j] == UNINITIALIZED && j < i) {
                         todo = 1;
                     }
-                    set_stack(stacks, j, next_stack);
+                    assert(stacks[j] == UNINITIALIZED || stacks[j] == next_stack);
+                    stacks[j] = next_stack;
                     break;
                 case GET_ITER:
                 case GET_AITER:
                     next_stack = push_value(pop_value(next_stack), Iterator);
-                    set_stack(stacks, i + 1, next_stack);
+                    stacks[i+1] = next_stack;
                     break;
                 case FOR_ITER:
                 {
                     int64_t target_stack = pop_value(next_stack);
-                    set_stack(stacks, i + 1, push_value(next_stack, Object));
+                    stacks[i+1] = push_value(next_stack, Object);
                     j = get_arg(code, i) + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + i;
                     assert(j < len);
-                    set_stack(stacks, j, target_stack);
+                    assert(stacks[j] == UNINITIALIZED || stacks[j] == target_stack);
+                    stacks[j] = target_stack;
                     break;
                 }
                 case END_ASYNC_FOR:
                     next_stack = pop_value(pop_value(next_stack));
-                    set_stack(stacks, i + 1, next_stack);
+                    stacks[i+1] = next_stack;
                     break;
                 case PUSH_EXC_INFO:
                     next_stack = push_value(next_stack, Except);
-                    set_stack(stacks, i + 1, next_stack);
+                    stacks[i+1] = next_stack;
                     break;
                 case POP_EXCEPT:
                     assert(top_of_stack(next_stack) == Except);
                     next_stack = pop_value(next_stack);
-                    set_stack(stacks, i + 1, next_stack);
+                    stacks[i+1] = next_stack;
                     break;
                 case RETURN_VALUE:
                     assert(pop_value(next_stack) == EMPTY_STACK);
@@ -413,7 +412,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     break;
                 case PUSH_NULL:
                     next_stack = push_value(next_stack, Null);
-                    set_stack(stacks, i + 1, next_stack);
+                    stacks[i+1] = next_stack;
                     break;
                 case LOAD_GLOBAL:
                 {
@@ -422,7 +421,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                         next_stack = push_value(next_stack, Null);
                     }
                     next_stack = push_value(next_stack, Object);
-                    set_stack(stacks, i + 1, next_stack);
+                    stacks[i+1] = next_stack;
                     break;
                 }
                 case LOAD_ATTR:
@@ -434,7 +433,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                         next_stack = push_value(next_stack, Null);
                         next_stack = push_value(next_stack, Object);
                     }
-                    set_stack(stacks, i + 1, next_stack);
+                    stacks[i+1] = next_stack;
                     break;
                 }
                 case CALL:
@@ -444,21 +443,21 @@ mark_stacks(PyCodeObject *code_obj, int len)
                         next_stack = pop_value(next_stack);
                     }
                     next_stack = push_value(next_stack, Object);
-                    set_stack(stacks, i + 1, next_stack);
+                    stacks[i+1] = next_stack;
                     break;
                 }
                 case SWAP:
                 {
                     int n = get_arg(code, i);
                     next_stack = stack_swap(next_stack, n);
-                    set_stack(stacks, i + 1, next_stack);
+                    stacks[i+1] = next_stack;
                     break;
                 }
                 case COPY:
                 {
                     int n = get_arg(code, i);
                     next_stack = push_value(next_stack, peek(next_stack, n));
-                    set_stack(stacks, i + 1, next_stack);
+                    stacks[i+1] = next_stack;
                     break;
                 }
                 default:
@@ -473,7 +472,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                         next_stack = push_value(next_stack, Object);
                         delta--;
                     }
-                    set_stack(stacks, i + 1, next_stack);
+                    stacks[i+1] = next_stack;
                 }
             }
         }
@@ -501,7 +500,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                         target_stack = push_value(target_stack, Lasti);
                     }
                     target_stack = push_value(target_stack, Except);
-                    set_stack(stacks, handler, target_stack);
+                    stacks[handler] = target_stack;
                 }
             }
         }
