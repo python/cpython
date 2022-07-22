@@ -19,9 +19,9 @@
 /*[clinic input]
 module _io
 class _io.IncrementalNewlineDecoder "nldecoder_object *" "&PyIncrementalNewlineDecoder_Type"
-class _io.TextIOWrapper "textio *" "&TextIOWrapper_TYpe"
+class _io.TextIOWrapper "textio *" "&TextIOWrapper_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=2097a4fc85670c26]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ed072384f8aada2c]*/
 
 /* TextIOBase */
 
@@ -1247,13 +1247,25 @@ textiowrapper_change_encoding(textio *self, PyObject *encoding,
         if (errors == Py_None) {
             errors = self->errors;
         }
+        Py_INCREF(encoding);
     }
-    else if (errors == Py_None) {
-        errors = &_Py_ID(strict);
+    else {
+        if (_PyUnicode_EqualToASCIIString(encoding, "locale")) {
+            encoding = _Py_GetLocaleEncodingObject();
+            if (encoding == NULL) {
+                return -1;
+            }
+        } else {
+            Py_INCREF(encoding);
+        }
+        if (errors == Py_None) {
+            errors = &_Py_ID(strict);
+        }
     }
 
     const char *c_errors = PyUnicode_AsUTF8(errors);
     if (c_errors == NULL) {
+        Py_DECREF(encoding);
         return -1;
     }
 
@@ -1261,16 +1273,17 @@ textiowrapper_change_encoding(textio *self, PyObject *encoding,
     PyObject *codec_info = _PyCodec_LookupTextEncoding(
         PyUnicode_AsUTF8(encoding), "codecs.open()");
     if (codec_info == NULL) {
+        Py_DECREF(encoding);
         return -1;
     }
     if (_textiowrapper_set_decoder(self, codec_info, c_errors) != 0 ||
             _textiowrapper_set_encoder(self, codec_info, c_errors) != 0) {
         Py_DECREF(codec_info);
+        Py_DECREF(encoding);
         return -1;
     }
     Py_DECREF(codec_info);
 
-    Py_INCREF(encoding);
     Py_INCREF(errors);
     Py_SETREF(self->encoding, encoding);
     Py_SETREF(self->errors, errors);
@@ -2231,7 +2244,7 @@ _textiowrapper_readline(textio *self, Py_ssize_t limit)
         Py_CLEAR(chunks);
     }
     if (line == NULL) {
-        line = &_Py_STR(empty);
+        line = Py_NewRef(&_Py_STR(empty));
     }
 
     return line;

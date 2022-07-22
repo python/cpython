@@ -228,6 +228,7 @@ ENV_PYTHONPATH = config['pythonpath_env']
 use_environment = config.get('use_environment', 1)
 
 pythonpath = config.get('module_search_paths')
+pythonpath_was_set = config.get('module_search_paths_set')
 
 real_executable_dir = None
 stdlib_dir = None
@@ -460,7 +461,8 @@ if not py_setpath and not home_was_set:
 
 build_prefix = None
 
-if not home_was_set and real_executable_dir and not py_setpath:
+if ((not home_was_set and real_executable_dir and not py_setpath)
+        or config.get('_is_python_build', 0) > 0):
     # Detect a build marker and use it to infer prefix, exec_prefix,
     # stdlib_dir and the platstdlib_dir directories.
     try:
@@ -626,8 +628,8 @@ if py_setpath:
     config['module_search_paths'] = py_setpath.split(DELIM)
     config['module_search_paths_set'] = 1
 
-elif not pythonpath:
-    # If pythonpath was already set, we leave it alone.
+elif not pythonpath_was_set:
+    # If pythonpath was already explicitly set or calculated, we leave it alone.
     # This won't matter in normal use, but if an embedded host is trying to
     # recalculate paths while running then we do not want to change it.
     pythonpath = []
@@ -717,6 +719,7 @@ if pth:
     config['isolated'] = 1
     config['use_environment'] = 0
     config['site_import'] = 0
+    config['safe_path'] = 1
     pythonpath = []
     for line in pth:
         line = line.partition('#')[0].strip()

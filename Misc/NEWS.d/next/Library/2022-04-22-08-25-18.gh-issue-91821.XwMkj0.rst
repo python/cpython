@@ -1,1 +1,0 @@
-Fix unstable ``test_from_tuple`` test in ``test_decimal.py``.

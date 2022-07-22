@@ -985,6 +985,10 @@ class LongTest(unittest.TestCase):
         self.assertEqual((-1122) >> 9, -3)
         self.assertEqual(2**128 >> 9, 2**119)
         self.assertEqual(-2**128 >> 9, -2**119)
+        # Exercise corner case of the current algorithm, where the result of
+        # shifting a two-limb int by the limb size still has two limbs.
+        self.assertEqual((1 - BASE*BASE) >> SHIFT, -BASE)
+        self.assertEqual((BASE - 1 - BASE*BASE) >> SHIFT, -BASE)
 
     def test_big_rshift(self):
         self.assertEqual(42 >> 32, 0)

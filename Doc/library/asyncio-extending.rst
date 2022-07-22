@@ -63,7 +63,7 @@ For this purpose the following, *private* constructors are listed:
 
       *context* argument is added.
 
-.. method:: Tasl._check_future(future)
+.. method:: Task._check_future(future)
 
    Return ``True`` if *future* is attached to the same loop as the task, ``False``
    otherwise.

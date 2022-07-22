@@ -254,8 +254,11 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
 
    *max_tasks_per_child* is an optional argument that specifies the maximum
    number of tasks a single process can execute before it will exit and be
-   replaced with a fresh worker process. The default *max_tasks_per_child* is
-   ``None`` which means worker processes will live as long as the pool.
+   replaced with a fresh worker process. By default *max_tasks_per_child* is
+   ``None`` which means worker processes will live as long as the pool. When
+   a max is specified, the "spawn" multiprocessing start method will be used by
+   default in absence of a *mp_context* parameter. This feature is incompatible
+   with the "fork" start method.
 
    .. versionchanged:: 3.3
       When one of the worker processes terminates abruptly, a

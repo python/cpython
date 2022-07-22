@@ -377,11 +377,7 @@ PyBytes_FromFormat(const char *format, ...)
     PyObject* ret;
     va_list vargs;
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     ret = PyBytes_FromFormatV(format, vargs);
     va_end(vargs);
     return ret;
@@ -1113,6 +1109,12 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
                 if (s < end && '0' <= *s && *s <= '7')
                     c = (c<<3) + *s++ - '0';
             }
+            if (c > 0377) {
+                if (*first_invalid_escape == NULL) {
+                    *first_invalid_escape = s-3; /* Back up 3 chars, since we've
+                                                    already incremented s. */
+                }
+            }
             *p++ = c;
             break;
         case 'x':
@@ -1179,11 +1181,24 @@ PyObject *PyBytes_DecodeEscape(const char *s,
     if (result == NULL)
         return NULL;
     if (first_invalid_escape != NULL) {
-        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                             "invalid escape sequence '\\%c'",
-                             (unsigned char)*first_invalid_escape) < 0) {
-            Py_DECREF(result);
-            return NULL;
+        unsigned char c = *first_invalid_escape;
+        if ('4' <= c && c <= '7') {
+            if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                                 "invalid octal escape sequence '\\%.3s'",
+                                 first_invalid_escape) < 0)
+            {
+                Py_DECREF(result);
+                return NULL;
+            }
+        }
+        else {
+            if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                                 "invalid escape sequence '\\%c'",
+                                 c) < 0)
+            {
+                Py_DECREF(result);
+                return NULL;
+            }
         }
     }
     return result;
@@ -2377,7 +2392,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
 
     if (!PyUnicode_IS_ASCII(string)) {
         const void *data = PyUnicode_DATA(string);
-        unsigned int kind = PyUnicode_KIND(string);
+        int kind = PyUnicode_KIND(string);
         Py_ssize_t i;
 
         /* search for the first non-ASCII character */
@@ -3470,7 +3485,7 @@ _PyBytesWriter_Alloc(_PyBytesWriter *writer, Py_ssize_t size)
        Don't modify the _PyBytesWriter structure (use a shorter small buffer)
        in debug mode to also be able to detect stack overflow when running
        tests in debug mode. The _PyBytesWriter is large (more than 512 bytes),
-       if Py_EnterRecursiveCall() is not used in deep C callback, we may hit a
+       if _Py_EnterRecursiveCall() is not used in deep C callback, we may hit a
        stack overflow. */
     writer->allocated = Py_MIN(writer->allocated, 10);
     /* _PyBytesWriter_CheckConsistency() requires the last byte to be 0,

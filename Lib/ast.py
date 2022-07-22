@@ -1335,7 +1335,11 @@ class _Unparser(NodeVisitor):
             )
 
     def visit_Tuple(self, node):
-        with self.require_parens(_Precedence.TUPLE, node):
+        with self.delimit_if(
+            "(",
+            ")",
+            len(node.elts) == 0 or self.get_precedence(node) > _Precedence.TUPLE
+        ):
             self.items_view(self.traverse, node.elts)
 
     unop = {"Invert": "~", "Not": "not", "UAdd": "+", "USub": "-"}

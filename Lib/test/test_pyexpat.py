@@ -12,7 +12,7 @@ import traceback
 from xml.parsers import expat
 from xml.parsers.expat import errors
 
-from test.support import sortdict, is_emscripten
+from test.support import sortdict, is_emscripten, is_wasi
 
 
 class SetAttributeTest(unittest.TestCase):
@@ -469,6 +469,7 @@ class HandlerExceptionTest(unittest.TestCase):
             if (sysconfig.is_python_build()
                 and not (sys.platform == 'win32' and platform.machine() == 'ARM')
                 and not is_emscripten
+                and not is_wasi
             ):
                 self.assertIn('call_with_frame("StartElement"', entries[1][3])
 

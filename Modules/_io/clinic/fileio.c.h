@@ -245,7 +245,7 @@ PyDoc_STRVAR(_io_FileIO_read__doc__,
 "Return an empty bytes object at EOF.");
 
 #define _IO_FILEIO_READ_METHODDEF    \
-    {"read", (PyCFunction)(void(*)(void))_io_FileIO_read, METH_FASTCALL, _io_FileIO_read__doc__},
+    {"read", _PyCFunction_CAST(_io_FileIO_read), METH_FASTCALL, _io_FileIO_read__doc__},
 
 static PyObject *
 _io_FileIO_read_impl(fileio *self, Py_ssize_t size);
@@ -327,7 +327,7 @@ PyDoc_STRVAR(_io_FileIO_seek__doc__,
 "Note that not all file objects are seekable.");
 
 #define _IO_FILEIO_SEEK_METHODDEF    \
-    {"seek", (PyCFunction)(void(*)(void))_io_FileIO_seek, METH_FASTCALL, _io_FileIO_seek__doc__},
+    {"seek", _PyCFunction_CAST(_io_FileIO_seek), METH_FASTCALL, _io_FileIO_seek__doc__},
 
 static PyObject *
 _io_FileIO_seek_impl(fileio *self, PyObject *pos, int whence);
@@ -389,7 +389,7 @@ PyDoc_STRVAR(_io_FileIO_truncate__doc__,
 "The current file position is changed to the value of size.");
 
 #define _IO_FILEIO_TRUNCATE_METHODDEF    \
-    {"truncate", (PyCFunction)(void(*)(void))_io_FileIO_truncate, METH_FASTCALL, _io_FileIO_truncate__doc__},
+    {"truncate", _PyCFunction_CAST(_io_FileIO_truncate), METH_FASTCALL, _io_FileIO_truncate__doc__},
 
 static PyObject *
 _io_FileIO_truncate_impl(fileio *self, PyObject *posobj);
@@ -437,4 +437,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=3479912ec0f7e029 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fdcf0f9277d44415 input=a9049054013a1b77]*/

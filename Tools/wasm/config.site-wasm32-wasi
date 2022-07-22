@@ -17,3 +17,30 @@ ac_cv_header_sys_resource_h=no
 
 # undefined symbols / unsupported features
 ac_cv_func_eventfd=no
+
+# WASI SDK 15.0 has no pipe syscall.
+ac_cv_func_pipe=no
+
+# WASI SDK 15.0 cannot create fifos and special files.
+ac_cv_func_mkfifo=no
+ac_cv_func_mkfifoat=no
+ac_cv_func_mknod=no
+ac_cv_func_mknodat=no
+ac_cv_func_makedev=no
+
+# fdopendir() fails on SDK 15.0,
+# OSError: [Errno 28] Invalid argument: '.'
+ac_cv_func_fdopendir=no
+
+# WASIX stubs we don't want to use.
+ac_cv_func_kill=no
+
+# WASI SDK 15.0 does not have chmod.
+# Ignore WASIX stubs for now.
+ac_cv_func_chmod=no
+ac_cv_func_fchmod=no
+
+# WASI sockets are limited to operations on given socket fd and inet sockets.
+# Disable AF_UNIX and AF_PACKET support, see socketmodule.h.
+ac_cv_header_sys_un_h=no
+ac_cv_header_netpacket_packet_h=no

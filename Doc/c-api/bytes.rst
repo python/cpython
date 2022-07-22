@@ -58,9 +58,6 @@ called with a non-bytes parameter.
 
    .. % XXX: This should be exactly the same as the table in PyErr_Format.
    .. % One should just refer to the other.
-   .. % XXX: The descriptions for %zd and %zu are wrong, but the truth is complicated
-   .. % because not all compilers support the %z width modifier -- we fake it
-   .. % when necessary via interpolating PY_FORMAT_SIZE_T.
 
    .. tabularcolumns:: |l|l|L|
 
@@ -84,8 +81,8 @@ called with a non-bytes parameter.
    | :attr:`%lu`       | unsigned long | Equivalent to                  |
    |                   |               | ``printf("%lu")``. [1]_        |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%zd`       | Py_ssize_t    | Equivalent to                  |
-   |                   |               | ``printf("%zd")``. [1]_        |
+   | :attr:`%zd`       | :c:type:`\    | Equivalent to                  |
+   |                   | Py_ssize_t`   | ``printf("%zd")``. [1]_        |
    +-------------------+---------------+--------------------------------+
    | :attr:`%zu`       | size_t        | Equivalent to                  |
    |                   |               | ``printf("%zu")``. [1]_        |
@@ -134,7 +131,7 @@ called with a non-bytes parameter.
 
 .. c:function:: Py_ssize_t PyBytes_GET_SIZE(PyObject *o)
 
-   Macro form of :c:func:`PyBytes_Size` but without error checking.
+   Similar to :c:func:`PyBytes_Size`, but without error checking.
 
 
 .. c:function:: char* PyBytes_AsString(PyObject *o)
@@ -151,7 +148,7 @@ called with a non-bytes parameter.
 
 .. c:function:: char* PyBytes_AS_STRING(PyObject *string)
 
-   Macro form of :c:func:`PyBytes_AsString` but without error checking.
+   Similar to :c:func:`PyBytes_AsString`, but without error checking.
 
 
 .. c:function:: int PyBytes_AsStringAndSize(PyObject *obj, char **buffer, Py_ssize_t *length)

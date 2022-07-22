@@ -2,7 +2,6 @@
 #include <ctype.h>
 
 #include "structmember.h"         // PyMemberDef
-#include "frameobject.h"
 #include "expat.h"
 
 #include "pyexpat.h"
@@ -1088,7 +1087,7 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
     PyObject* u;
     int i;
     const void *data;
-    unsigned int kind;
+    int kind;
 
     if (PyErr_Occurred())
         return XML_STATUS_ERROR;

@@ -739,7 +739,7 @@ The following attribute and methods should only be used by classes derived from
 
    This method, if implemented, will be called by the parent
    :class:`OpenerDirector`.  It should return a file-like object as described in
-   the return value of the :meth:`open` of :class:`OpenerDirector`, or ``None``.
+   the return value of the :meth:`~OpenerDirector.open` method of :class:`OpenerDirector`, or ``None``.
    It should raise :exc:`~urllib.error.URLError`, unless a truly exceptional
    thing happens (for example, :exc:`MemoryError` should not be mapped to
    :exc:`URLError`).
@@ -1279,7 +1279,7 @@ involved.  For example, the :envvar:`http_proxy` environment variable is read to
 obtain the HTTP proxy's URL.
 
 This example replaces the default :class:`ProxyHandler` with one that uses
-programmatically-supplied proxy URLs, and adds proxy authorization support with
+programmatically supplied proxy URLs, and adds proxy authorization support with
 :class:`ProxyBasicAuthHandler`. ::
 
    proxy_handler = urllib.request.ProxyHandler({'http': 'http://www.example.com:3128/'})

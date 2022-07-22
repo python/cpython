@@ -9,7 +9,7 @@ PyDoc_STRVAR(_locale_setlocale__doc__,
 "Activates/queries locale processing.");
 
 #define _LOCALE_SETLOCALE_METHODDEF    \
-    {"setlocale", (PyCFunction)(void(*)(void))_locale_setlocale, METH_FASTCALL, _locale_setlocale__doc__},
+    {"setlocale", _PyCFunction_CAST(_locale_setlocale), METH_FASTCALL, _locale_setlocale__doc__},
 
 static PyObject *
 _locale_setlocale_impl(PyObject *module, int category, const char *locale);
@@ -83,7 +83,7 @@ PyDoc_STRVAR(_locale_strcoll__doc__,
 "Compares two strings according to the locale.");
 
 #define _LOCALE_STRCOLL_METHODDEF    \
-    {"strcoll", (PyCFunction)(void(*)(void))_locale_strcoll, METH_FASTCALL, _locale_strcoll__doc__},
+    {"strcoll", _PyCFunction_CAST(_locale_strcoll), METH_FASTCALL, _locale_strcoll__doc__},
 
 static PyObject *
 _locale_strcoll_impl(PyObject *module, PyObject *os1, PyObject *os2);
@@ -265,7 +265,7 @@ PyDoc_STRVAR(_locale_dgettext__doc__,
 "Return translation of msg in domain.");
 
 #define _LOCALE_DGETTEXT_METHODDEF    \
-    {"dgettext", (PyCFunction)(void(*)(void))_locale_dgettext, METH_FASTCALL, _locale_dgettext__doc__},
+    {"dgettext", _PyCFunction_CAST(_locale_dgettext), METH_FASTCALL, _locale_dgettext__doc__},
 
 static PyObject *
 _locale_dgettext_impl(PyObject *module, const char *domain, const char *in);
@@ -328,7 +328,7 @@ PyDoc_STRVAR(_locale_dcgettext__doc__,
 "Return translation of msg in domain and category.");
 
 #define _LOCALE_DCGETTEXT_METHODDEF    \
-    {"dcgettext", (PyCFunction)(void(*)(void))_locale_dcgettext, METH_FASTCALL, _locale_dcgettext__doc__},
+    {"dcgettext", _PyCFunction_CAST(_locale_dcgettext), METH_FASTCALL, _locale_dcgettext__doc__},
 
 static PyObject *
 _locale_dcgettext_impl(PyObject *module, const char *domain,
@@ -443,7 +443,7 @@ PyDoc_STRVAR(_locale_bindtextdomain__doc__,
 "Bind the C library\'s domain to dir.");
 
 #define _LOCALE_BINDTEXTDOMAIN_METHODDEF    \
-    {"bindtextdomain", (PyCFunction)(void(*)(void))_locale_bindtextdomain, METH_FASTCALL, _locale_bindtextdomain__doc__},
+    {"bindtextdomain", _PyCFunction_CAST(_locale_bindtextdomain), METH_FASTCALL, _locale_bindtextdomain__doc__},
 
 static PyObject *
 _locale_bindtextdomain_impl(PyObject *module, const char *domain,
@@ -490,7 +490,7 @@ PyDoc_STRVAR(_locale_bind_textdomain_codeset__doc__,
 "Bind the C library\'s domain to codeset.");
 
 #define _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF    \
-    {"bind_textdomain_codeset", (PyCFunction)(void(*)(void))_locale_bind_textdomain_codeset, METH_FASTCALL, _locale_bind_textdomain_codeset__doc__},
+    {"bind_textdomain_codeset", _PyCFunction_CAST(_locale_bind_textdomain_codeset), METH_FASTCALL, _locale_bind_textdomain_codeset__doc__},
 
 static PyObject *
 _locale_bind_textdomain_codeset_impl(PyObject *module, const char *domain,
@@ -602,4 +602,4 @@ _locale_getencoding(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
     #define _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
 #endif /* !defined(_LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF) */
-/*[clinic end generated code: output=ea71e9b94bdaa47d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cfde12e987960245 input=a9049054013a1b77]*/

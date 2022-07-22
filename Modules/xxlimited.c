@@ -224,7 +224,7 @@ Xxo_demo(XxoObject *self, PyTypeObject *defining_class,
 }
 
 static PyMethodDef Xxo_methods[] = {
-    {"demo",            (PyCFunction)(void(*)(void))Xxo_demo,
+    {"demo",            _PyCFunction_CAST(Xxo_demo),
      METH_METHOD | METH_FASTCALL | METH_KEYWORDS, PyDoc_STR("demo(o) -> o")},
     {NULL,              NULL}           /* sentinel */
 };

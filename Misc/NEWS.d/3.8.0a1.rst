@@ -361,7 +361,7 @@ the "n" formatter.
 .. nonce: gjm1LO
 .. section: Core and Builtins
 
-Fix a possible segfault involving a newly-created coroutine.  Patch by
+Fix a possible segfault involving a newly created coroutine.  Patch by
 Zackery Spytz.
 
 ..
@@ -4617,7 +4617,7 @@ Based on patch by c-fos.
 .. section: Library
 
 Remove HMAC default to md5 marked for removal in 3.8 (removal originally
-planned in 3.6, bump to 3.8 in gh-7062).
+planned in 3.6, bump to 3.8 in PR 7062).
 
 ..
 

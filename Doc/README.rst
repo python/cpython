@@ -130,7 +130,7 @@ Contributing
 ============
 
 Bugs in the content should be reported to the
-`Python bug tracker <https://bugs.python.org>`_.
+`Python bug tracker <https://github.com/python/cpython/issues>`_.
 
 Bugs in the toolset should be reported to the tools themselves.
 

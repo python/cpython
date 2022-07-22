@@ -77,13 +77,7 @@ init_normalization(Parser *p)
     if (p->normalize) {
         return 1;
     }
-    PyObject *m = PyImport_ImportModule("unicodedata");
-    if (!m)
-    {
-        return 0;
-    }
-    p->normalize = PyObject_GetAttrString(m, "normalize");
-    Py_DECREF(m);
+    p->normalize = _PyImport_GetModuleAttrString("unicodedata", "normalize");
     if (!p->normalize)
     {
         return 0;
@@ -774,6 +768,9 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->known_err_token = NULL;
     p->level = 0;
     p->call_invalid_rules = 0;
+#ifdef Py_DEBUG
+    p->debug = _Py_GetConfig()->parser_debug;
+#endif
     return p;
 }
 

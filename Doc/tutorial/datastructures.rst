@@ -268,10 +268,10 @@ it must be parenthesized. ::
    [(0, 0), (1, 1), (2, 4), (3, 9), (4, 16), (5, 25)]
    >>> # the tuple must be parenthesized, otherwise an error is raised
    >>> [x, x**2 for x in range(6)]
-     File "<stdin>", line 1, in <module>
+     File "<stdin>", line 1
        [x, x**2 for x in range(6)]
-                  ^
-   SyntaxError: invalid syntax
+        ^^^^^^^
+   SyntaxError: did you forget parentheses around the comprehension target?
    >>> # flatten a list using a listcomp with two 'for'
    >>> vec = [[1,2,3], [4,5,6], [7,8,9]]
    >>> [num for elem in vec for num in elem]
@@ -303,7 +303,7 @@ The following list comprehension will transpose rows and columns::
    >>> [[row[i] for row in matrix] for i in range(4)]
    [[1, 5, 9], [2, 6, 10], [3, 7, 11], [4, 8, 12]]
 
-As we saw in the previous section, the nested listcomp is evaluated in
+As we saw in the previous section, the inner list comprehension is evaluated in
 the context of the :keyword:`for` that follows it, so this example is
 equivalent to::
 

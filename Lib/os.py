@@ -981,7 +981,7 @@ if sys.platform != 'vxworks':
             raise ValueError("invalid mode %r" % mode)
         if buffering == 0 or buffering is None:
             raise ValueError("popen() does not support unbuffered streams")
-        import subprocess, io
+        import subprocess
         if mode == "r":
             proc = subprocess.Popen(cmd,
                                     shell=True, text=True,

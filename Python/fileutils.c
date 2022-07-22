@@ -603,9 +603,9 @@ _Py_DecodeLocaleEx(const char* arg, wchar_t **wstr, size_t *wlen,
     return _Py_DecodeUTF8Ex(arg, strlen(arg), wstr, wlen, reason,
                             errors);
 #else
-    int use_utf8 = (Py_UTF8Mode == 1);
+    int use_utf8 = (_PyRuntime.preconfig.utf8_mode >= 1);
 #ifdef MS_WINDOWS
-    use_utf8 |= !Py_LegacyWindowsFSEncodingFlag;
+    use_utf8 |= (_PyRuntime.preconfig.legacy_windows_fs_encoding == 0);
 #endif
     if (use_utf8) {
         return _Py_DecodeUTF8Ex(arg, strlen(arg), wstr, wlen, reason,
@@ -795,9 +795,9 @@ encode_locale_ex(const wchar_t *text, char **str, size_t *error_pos,
     return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
                             raw_malloc, errors);
 #else
-    int use_utf8 = (Py_UTF8Mode == 1);
+    int use_utf8 = (_PyRuntime.preconfig.utf8_mode >= 1);
 #ifdef MS_WINDOWS
-    use_utf8 |= !Py_LegacyWindowsFSEncodingFlag;
+    use_utf8 |= (_PyRuntime.preconfig.legacy_windows_fs_encoding == 0);
 #endif
     if (use_utf8) {
         return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
@@ -1244,18 +1244,12 @@ _Py_stat(PyObject *path, struct stat *statbuf)
 #ifdef MS_WINDOWS
     int err;
 
-#if USE_UNICODE_WCHAR_CACHE
-    const wchar_t *wpath = _PyUnicode_AsUnicode(path);
-#else /* USE_UNICODE_WCHAR_CACHE */
     wchar_t *wpath = PyUnicode_AsWideCharString(path, NULL);
-#endif /* USE_UNICODE_WCHAR_CACHE */
     if (wpath == NULL)
         return -2;
 
     err = _Py_wstat(wpath, statbuf);
-#if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free(wpath);
-#endif /* USE_UNICODE_WCHAR_CACHE */
     return err;
 #else
     int ret;
@@ -1663,11 +1657,8 @@ _Py_fopen_obj(PyObject *path, const char *mode)
                      Py_TYPE(path));
         return NULL;
     }
-#if USE_UNICODE_WCHAR_CACHE
-    const wchar_t *wpath = _PyUnicode_AsUnicode(path);
-#else /* USE_UNICODE_WCHAR_CACHE */
+
     wchar_t *wpath = PyUnicode_AsWideCharString(path, NULL);
-#endif /* USE_UNICODE_WCHAR_CACHE */
     if (wpath == NULL)
         return NULL;
 
@@ -1675,9 +1666,7 @@ _Py_fopen_obj(PyObject *path, const char *mode)
                                 wmode, Py_ARRAY_LENGTH(wmode));
     if (usize == 0) {
         PyErr_SetFromWindowsErr(0);
-#if !USE_UNICODE_WCHAR_CACHE
         PyMem_Free(wpath);
-#endif /* USE_UNICODE_WCHAR_CACHE */
         return NULL;
     }
 
@@ -1687,9 +1676,7 @@ _Py_fopen_obj(PyObject *path, const char *mode)
         Py_END_ALLOW_THREADS
     } while (f == NULL
              && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-#if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free(wpath);
-#endif /* USE_UNICODE_WCHAR_CACHE */
 #else
     PyObject *bytes;
     const char *path_bytes;

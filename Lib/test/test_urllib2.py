@@ -1,7 +1,6 @@
 import unittest
 from test import support
 from test.support import os_helper
-from test.support import socket_helper
 from test.support import warnings_helper
 from test import test_urllib
 

@@ -30,7 +30,6 @@ from sphinx.locale import translators
 from sphinx.util import status_iterator, logging
 from sphinx.util.nodes import split_explicit_title
 from sphinx.writers.text import TextWriter, TextTranslator
-from sphinx.writers.latex import LaTeXTranslator
 
 try:
     from sphinx.domains.python import PyFunction, PyMethod
@@ -418,18 +417,14 @@ class DeprecatedRemoved(Directive):
                                    translatable=False)
             node.append(para)
         env = self.state.document.settings.env
-        # deprecated pre-Sphinx-2 method
-        if hasattr(env, 'note_versionchange'):
-            env.note_versionchange('deprecated', version[0], node, self.lineno)
-        # new method
-        else:
-            env.get_domain('changeset').note_changeset(node)
+        env.get_domain('changeset').note_changeset(node)
         return [node] + messages
 
 
 # Support for including Misc/NEWS
 
-issue_re = re.compile('(?:[Ii]ssue #|bpo-)([0-9]+)')
+issue_re = re.compile('(?:[Ii]ssue #|bpo-)([0-9]+)', re.I)
+gh_issue_re = re.compile('(?:gh-issue-|gh-)([0-9]+)', re.I)
 whatsnew_re = re.compile(r"(?im)^what's new in (.*?)\??$")
 
 
@@ -456,9 +451,9 @@ class MiscNews(Directive):
             text = 'The NEWS file is not available.'
             node = nodes.strong(text, text)
             return [node]
-        content = issue_re.sub(r'`bpo-\1 <https://bugs.python.org/'
-                               r'issue?@action=redirect&bpo=\1>`__',
-                               content)
+        content = issue_re.sub(r':issue:`\1`', content)
+        # Fallback handling for the GitHub issue
+        content = gh_issue_re.sub(r':gh:`\1`', content)
         content = whatsnew_re.sub(r'\1', content)
         # remove first 3 lines as they are the main heading
         lines = ['.. default-role:: obj', ''] + content.splitlines()[3:]
