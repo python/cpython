@@ -108,18 +108,18 @@ frame_getback(PyFrameObject *f, void *closure)
 }
 
 // Given the index of the effective opcode, scan back to construct the oparg
-// with EXTENDED_ARG_QUICK. This only works correctly with *unquickened* code,
+// with EXTENDED_ARG. This only works correctly with *unquickened* code,
 // obtained via a call to _PyCode_GetCode!
 static unsigned int
 get_arg(const _Py_CODEUNIT *codestr, Py_ssize_t i)
 {
     _Py_CODEUNIT word;
     unsigned int oparg = _Py_OPARG(codestr[i]);
-    if (i >= 1 && _Py_OPCODE(word = codestr[i-1]) == EXTENDED_ARG_QUICK) {
+    if (i >= 1 && _Py_OPCODE(word = codestr[i-1]) == EXTENDED_ARG) {
         oparg |= _Py_OPARG(word) << 8;
-        if (i >= 2 && _Py_OPCODE(word = codestr[i-2]) == EXTENDED_ARG_QUICK) {
+        if (i >= 2 && _Py_OPCODE(word = codestr[i-2]) == EXTENDED_ARG) {
             oparg |= _Py_OPARG(word) << 16;
-            if (i >= 3 && _Py_OPCODE(word = codestr[i-3]) == EXTENDED_ARG_QUICK) {
+            if (i >= 3 && _Py_OPCODE(word = codestr[i-3]) == EXTENDED_ARG) {
                 oparg |= _Py_OPARG(word) << 24;
             }
         }
@@ -316,7 +316,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 continue;
             }
             opcode = _Py_OPCODE(code[i]);
-            assert(opcode == _PyOpcode_Original[opcode]);
+            assert(opcode == _PyOpcode_Deopt[opcode]);
             switch (opcode) {
                 case JUMP_IF_FALSE_OR_POP:
                 case JUMP_IF_TRUE_OR_POP:
@@ -461,9 +461,6 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     set_stack(stacks, i + 1, next_stack);
                     break;
                 }
-                case EXTENDED_ARG_QUICK:
-                    set_stack(stacks, i + 1, next_stack);
-                    break;
                 default:
                 {
                     int delta = PyCompile_OpcodeStackEffect(opcode, get_arg(code, i));
