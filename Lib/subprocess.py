@@ -40,6 +40,7 @@ getstatusoutput(...): Runs a command in the shell, waits for it to complete,
     then returns a (exitcode, output) tuple
 """
 
+from builtins import NotImplementedError
 import builtins
 import errno
 import io
@@ -107,6 +108,15 @@ else:
     import select
     import selectors
 
+    # WASI does not provide these function.
+    def _notimplemented(*args):
+        raise NotImplementedError
+
+    _waitstatus_to_exitcode = getattr(os, "waitstatus_to_exitcode", _notimplemented)
+    _waitpid = getattr(os, "waitpid", _notimplemented)
+    _WIFSTOPPED = getattr(os, "WIFSTOPPED", _notimplemented)
+    _WSTOPSIG = getattr(os, "WSTOPSIG", _notimplemented)
+    _WNOHANG = getattr(os, "WNOHANG", None)
 
 # Exception classes used by this module.
 class SubprocessError(Exception): pass
@@ -1890,9 +1900,9 @@ class Popen:
 
 
         def _handle_exitstatus(self, sts,
-                               waitstatus_to_exitcode=os.waitstatus_to_exitcode,
-                               _WIFSTOPPED=os.WIFSTOPPED,
-                               _WSTOPSIG=os.WSTOPSIG):
+                               waitstatus_to_exitcode=_waitstatus_to_exitcode,
+                               _WIFSTOPPED=_WIFSTOPPED,
+                               _WSTOPSIG=_WSTOPSIG):
             """All callers to this function MUST hold self._waitpid_lock."""
             # This method is called (indirectly) by __del__, so it cannot
             # refer to anything outside of its local scope.
@@ -1901,8 +1911,8 @@ class Popen:
             else:
                 self.returncode = waitstatus_to_exitcode(sts)
 
-        def _internal_poll(self, _deadstate=None, _waitpid=os.waitpid,
-                _WNOHANG=os.WNOHANG, _ECHILD=errno.ECHILD):
+        def _internal_poll(self, _deadstate=None, _waitpid=_waitpid,
+                _WNOHANG=_WNOHANG, _ECHILD=errno.ECHILD):
             """Check if child process has terminated.  Returns returncode
             attribute.
 
