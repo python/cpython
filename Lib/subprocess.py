@@ -40,7 +40,6 @@ getstatusoutput(...): Runs a command in the shell, waits for it to complete,
     then returns a (exitcode, output) tuple
 """
 
-from builtins import NotImplementedError
 import builtins
 import errno
 import io
