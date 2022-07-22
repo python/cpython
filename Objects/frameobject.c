@@ -325,8 +325,9 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     {
                         j += i + 1;
                     }
-                    else if (opcode == POP_JUMP_BACKWARD_IF_FALSE ||
-                             opcode == POP_JUMP_BACKWARD_IF_TRUE) {
+                    else {
+                        assert(opcode == POP_JUMP_BACKWARD_IF_FALSE ||
+                               opcode == POP_JUMP_BACKWARD_IF_TRUE);
                         j = i + 1 - j;
                     }
                     assert(j < len);
