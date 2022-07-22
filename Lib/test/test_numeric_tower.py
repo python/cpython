@@ -147,7 +147,7 @@ class HashTest(unittest.TestCase):
         # Rational.__float__() method has required type conversions.
         x = F(DummyIntegral(1), DummyIntegral(2), _normalize=False)
         self.assertRaises(TypeError, lambda: x.numerator/x.denominator)
-        self.assertEquals(float(x), 0.5)
+        self.assertEqual(float(x), 0.5)
 
     def test_hash_normalization(self):
         # Test for a bug encountered while changing long_hash.
