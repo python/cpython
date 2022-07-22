@@ -1201,7 +1201,7 @@ f(
         ast.fix_missing_locations(new_node)
         tree.body[0] = new_node
         compile(tree, "<test>", "exec")
-        
+
     def test_push_null_load_global_positions(self):
         source_template = """
         import abc, dis
@@ -1299,6 +1299,7 @@ f(
             self.assertIsNotNone(column)
             self.assertIsNotNone(end_column)
             self.assertLessEqual((line, column), (end_line, end_column))
+
 
 class TestExpressionStackSize(unittest.TestCase):
     # These tests check that the computed stack size for a code object
