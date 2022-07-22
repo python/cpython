@@ -42,6 +42,7 @@ module _sqlite3
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=81e330492d57488e]*/
 
+// NB: This needs to be in sync with the Connection.__init__ docstring.
 PyDoc_STRVAR(module_connect_doc,
 "connect($module, /, database, timeout=5.0, detect_types=0,\n"
 "        isolation_level=<unrepresentable>, check_same_thread=True,\n"
