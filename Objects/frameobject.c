@@ -230,11 +230,15 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     int64_t target_stack;
                     int j = get_arg(code, i);
                     if (opcode == POP_JUMP_FORWARD_IF_FALSE ||
-                        opcode == POP_JUMP_FORWARD_IF_TRUE) {
+                        opcode == POP_JUMP_FORWARD_IF_TRUE ||
+                        opcode == JUMP_IF_FALSE_OR_POP ||
+                        opcode == JUMP_IF_TRUE_OR_POP)
+                    {
                         j += i + 1;
                     }
-                    else if (opcode == POP_JUMP_BACKWARD_IF_FALSE ||
-                             opcode == POP_JUMP_BACKWARD_IF_TRUE) {
+                    else {
+                        assert(opcode == POP_JUMP_BACKWARD_IF_FALSE ||
+                               opcode == POP_JUMP_BACKWARD_IF_TRUE);
                         j = i + 1 - j;
                     }
                     assert(j < len);
@@ -334,7 +338,8 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     break;
                 default:
                 {
-                    int delta = PyCompile_OpcodeStackEffect(opcode, _Py_OPARG(code[i]));
+                    int delta = PyCompile_OpcodeStackEffect(opcode, get_arg(code, i));
+                    assert(delta != PY_INVALID_STACK_EFFECT);
                     while (delta < 0) {
                         next_stack = pop_value(next_stack);
                         delta++;
