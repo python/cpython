@@ -681,6 +681,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define to 1 if you have the <netdb.h> header file. */
 #define HAVE_NETDB_H 1
 
+/* Define if you have the 'gethostname' function. */
+#define HAVE_GETHOSTNAME 1
+
 /* Define if you have the 'gethostbyaddr' function. */
 #define HAVE_GETHOSTBYADDR 1
 

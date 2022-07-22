@@ -7373,7 +7373,7 @@ error:
 #define HAVE_FALLBACK_LOGIN_TTY 1
 #endif /* defined(HAVE_SETSID) && defined(TIOCSCTTY) */
 
-#if defined(HAVE_LOGIN_TTY) || defined(HAVE_FALLBACK_LOGIN_TTY)
+#if (defined(HAVE_LOGIN_TTY) || defined(HAVE_FALLBACK_LOGIN_TTY)) && defined(HAVE_DUP2)
 /*[clinic input]
 os.login_tty
 
@@ -9316,7 +9316,7 @@ os_dup_impl(PyObject *module, int fd)
     return _Py_dup(fd);
 }
 
-
+#if defined(HAVE_DUP2) || defined(HAVE_DUP3)
 /*[clinic input]
 os.dup2 -> int
     fd: int
@@ -9416,6 +9416,7 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
 
     return res;
 }
+#endif
 
 
 #ifdef HAVE_LOCKF

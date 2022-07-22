@@ -3100,7 +3100,7 @@ os_openpty(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* (defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX)) */
 
-#if (defined(HAVE_LOGIN_TTY) || defined(HAVE_FALLBACK_LOGIN_TTY))
+#if ((defined(HAVE_LOGIN_TTY) || defined(HAVE_FALLBACK_LOGIN_TTY)) && defined(HAVE_DUP2))
 
 PyDoc_STRVAR(os_login_tty__doc__,
 "login_tty($module, fd, /)\n"
@@ -3133,7 +3133,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_LOGIN_TTY) || defined(HAVE_FALLBACK_LOGIN_TTY)) */
+#endif /* ((defined(HAVE_LOGIN_TTY) || defined(HAVE_FALLBACK_LOGIN_TTY)) && defined(HAVE_DUP2)) */
 
 #if defined(HAVE_FORKPTY)
 
@@ -4685,6 +4685,8 @@ exit:
     return return_value;
 }
 
+#if (defined(HAVE_DUP2) || defined(HAVE_DUP3))
+
 PyDoc_STRVAR(os_dup2__doc__,
 "dup2($module, /, fd, fd2, inheritable=True)\n"
 "--\n"
@@ -4739,6 +4741,8 @@ skip_optional_pos:
 exit:
     return return_value;
 }
+
+#endif /* (defined(HAVE_DUP2) || defined(HAVE_DUP3)) */
 
 #if defined(HAVE_LOCKF)
 
@@ -9105,6 +9109,10 @@ exit:
     #define OS_TCSETPGRP_METHODDEF
 #endif /* !defined(OS_TCSETPGRP_METHODDEF) */
 
+#ifndef OS_DUP2_METHODDEF
+    #define OS_DUP2_METHODDEF
+#endif /* !defined(OS_DUP2_METHODDEF) */
+
 #ifndef OS_LOCKF_METHODDEF
     #define OS_LOCKF_METHODDEF
 #endif /* !defined(OS_LOCKF_METHODDEF) */
@@ -9352,4 +9360,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=bae15f09a1b3d2e7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=562202bcd6567446 input=a9049054013a1b77]*/

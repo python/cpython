@@ -1721,6 +1721,7 @@ idna_converter(PyObject *obj, struct maybe_idna *data)
     return Py_CLEANUP_SUPPORTED;
 }
 
+#if defined(HAVE_BIND) || defined(HAVE_CONNECTTO) || defined(CMSG_LEN)
 /* Parse a socket address argument according to the socket object's
    address family.  Return 1 if the address was in the proper format,
    0 of not.  The address is returned through addr_ret, its length
@@ -2520,6 +2521,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 
     }
 }
+#endif // defined(HAVE_BIND) || defined(HAVE_CONNECTTO) || defined(CMSG_LEN)
 
 
 /* Get the address length according to the socket object's address family.
@@ -5575,6 +5577,7 @@ static PyTypeObject sock_type = {
 };
 
 
+#ifdef HAVE_GETHOSTNAME
 /* Python interface to gethostname(). */
 
 /*ARGSUSED*/
@@ -5638,6 +5641,7 @@ PyDoc_STRVAR(gethostname_doc,
 "gethostname() -> string\n\
 \n\
 Return the current host name.");
+#endif
 
 #ifdef HAVE_SETHOSTNAME
 PyDoc_STRVAR(sethostname_doc,
@@ -7137,8 +7141,10 @@ static PyMethodDef socket_methods[] = {
     {"gethostbyaddr",           socket_gethostbyaddr,
      METH_VARARGS, gethostbyaddr_doc},
 #endif
+#ifdef HAVE_GETHOSTNAME
     {"gethostname",             socket_gethostname,
      METH_NOARGS,  gethostname_doc},
+#endif
 #ifdef HAVE_SETHOSTNAME
     {"sethostname",             socket_sethostname,
      METH_VARARGS,  sethostname_doc},
