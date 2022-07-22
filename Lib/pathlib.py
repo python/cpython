@@ -1318,7 +1318,7 @@ class Path(PurePath):
         return self
 
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):
-        """Generate a top-down directory tree from this directory, similar to os.walk()"""
+        """Walk the directory tree from this directory, similar to os.walk()."""
         sys.audit("pathlib.Path.walk", self, on_error, follow_symlinks)
         return self._walk(top_down, on_error, follow_symlinks)
 
@@ -1342,7 +1342,7 @@ class Path(PurePath):
                 try:
                     is_dir = entry.is_dir(follow_symlinks=follow_symlinks)
                 except OSError:
-                    # same behavior as os.path.isdir()
+                    # Carried over from os.path.isdir().
                     is_dir = False
 
                 if is_dir:

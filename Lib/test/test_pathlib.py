@@ -2479,10 +2479,8 @@ class _BasePathTest(object):
         self._check_complex_symlinks(os.path.join('dirA', '..'))
 
 class WalkTests(unittest.TestCase):
-    cls = pathlib.Path
 
     def setUp(self):
-        P = self.cls
         self.addCleanup(os_helper.rmtree, os_helper.TESTFN)
 
         # Build:
@@ -2502,7 +2500,7 @@ class WalkTests(unittest.TestCase):
         #           broken_link3
         #       TEST2/
         #         tmp4              a lone file
-        self.walk_path = P(os_helper.TESTFN, "TEST1")
+        self.walk_path = pathlib.Path(os_helper.TESTFN, "TEST1")
         self.sub1_path = self.walk_path / "SUB1"
         self.sub11_path = self.sub1_path / "SUB11"
         self.sub2_path = self.walk_path / "SUB2"
@@ -2512,8 +2510,8 @@ class WalkTests(unittest.TestCase):
         tmp3_path = self.sub2_path / "tmp3"
         tmp5_path = sub21_path / "tmp3"
         self.link_path = self.sub2_path / "link"
-        t2_path = P(os_helper.TESTFN, "TEST2")
-        tmp4_path = P(os_helper.TESTFN, "TEST2", "tmp4")
+        t2_path = pathlib.Path(os_helper.TESTFN, "TEST2")
+        tmp4_path = pathlib.Path(os_helper.TESTFN, "TEST2", "tmp4")
         broken_link_path = self.sub2_path / "broken_link"
         broken_link2_path = self.sub2_path / "broken_link2"
         broken_link3_path = self.sub2_path / "broken_link3"
@@ -2530,8 +2528,8 @@ class WalkTests(unittest.TestCase):
         if os_helper.can_symlink():
             os.symlink(os.path.abspath(t2_path), self.link_path)
             os.symlink('broken', broken_link_path, True)
-            os.symlink(P('tmp3', 'broken'), broken_link2_path, True)
-            os.symlink(P('SUB21', 'tmp5'), broken_link3_path, True)
+            os.symlink(pathlib.Path('tmp3', 'broken'), broken_link2_path, True)
+            os.symlink(pathlib.Path('SUB21', 'tmp5'), broken_link3_path, True)
             self.sub2_tree = (self.sub2_path, ["SUB21"],
                               ["broken_link", "broken_link2", "broken_link3",
                                "link", "tmp3"])
@@ -2552,7 +2550,6 @@ class WalkTests(unittest.TestCase):
             del self.sub2_tree[1][:1]
 
     def test_walk_topdown(self):
-        P = self.cls
         all = list(self.walk_path.walk())
 
         self.assertEqual(len(all), 4)
@@ -2658,26 +2655,25 @@ class WalkTests(unittest.TestCase):
             path1new.rename(path1)
 
     def test_walk_many_open_files(self):
-        P = self.cls
         depth = 30
-        base = P(os_helper.TESTFN, 'deep')
-        p = P(base, *(['d']*depth))
-        p.mkdir(parents=True)
+        base = pathlib.Path(os_helper.TESTFN, 'deep')
+        path = pathlib.Path(base, *(['d']*depth))
+        path.mkdir(parents=True)
 
         iters = [base.walk(top_down=False) for _ in range(100)]
         for i in range(depth + 1):
-            expected = (p, ['d'] if i else [], [])
+            expected = (path, ['d'] if i else [], [])
             for it in iters:
                 self.assertEqual(next(it), expected)
-            p = p.parent
+            path = path.parent
 
         iters = [base.walk(top_down=True) for _ in range(100)]
-        p = base
+        path = base
         for i in range(depth + 1):
-            expected = (p, ['d'] if i < depth else [], [])
+            expected = (path, ['d'] if i < depth else [], [])
             for it in iters:
                 self.assertEqual(next(it), expected)
-            p = p / 'd'
+            path = path / 'd'
 
 
 class PathTest(_BasePathTest, unittest.TestCase):
