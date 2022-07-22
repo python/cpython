@@ -230,7 +230,7 @@ have been incorporated. Some of the most notable ones are as follows:
                                               ^
         SyntaxError: expected ':'
 
-    (Contributed by Pablo Galindo in :issue:`42997`)
+    (Contributed by Pablo Galindo in :issue:`42997`.)
 
 * Unparenthesised tuples in comprehensions targets:
 
@@ -242,7 +242,7 @@ have been incorporated. Some of the most notable ones are as follows:
              ^
         SyntaxError: did you forget parentheses around the comprehension target?
 
-    (Contributed by Pablo Galindo in :issue:`43017`)
+    (Contributed by Pablo Galindo in :issue:`43017`.)
 
 * Missing commas in collection literals and between expressions:
 
@@ -257,7 +257,7 @@ have been incorporated. Some of the most notable ones are as follows:
                ^
         SyntaxError: invalid syntax. Perhaps you forgot a comma?
 
-    (Contributed by Pablo Galindo in :issue:`43822`)
+    (Contributed by Pablo Galindo in :issue:`43822`.)
 
 * Multiple Exception types without parentheses:
 
@@ -271,7 +271,7 @@ have been incorporated. Some of the most notable ones are as follows:
                    ^
         SyntaxError: multiple exception types must be parenthesized
 
-    (Contributed by Pablo Galindo in :issue:`43149`)
+    (Contributed by Pablo Galindo in :issue:`43149`.)
 
 * Missing ``:`` and values in dictionary literals:
 
@@ -293,7 +293,7 @@ have been incorporated. Some of the most notable ones are as follows:
                                 ^
         SyntaxError: ':' expected after dictionary key
 
-    (Contributed by Pablo Galindo in :issue:`43823`)
+    (Contributed by Pablo Galindo in :issue:`43823`.)
 
 * ``try`` blocks without ``except`` or ``finally`` blocks:
 
@@ -307,7 +307,7 @@ have been incorporated. Some of the most notable ones are as follows:
             ^^^^^^^^^
         SyntaxError: expected 'except' or 'finally' block
 
-    (Contributed by Pablo Galindo in :issue:`44305`)
+    (Contributed by Pablo Galindo in :issue:`44305`.)
 
 * Usage of ``=`` instead of ``==`` in comparisons:
 
@@ -319,7 +319,7 @@ have been incorporated. Some of the most notable ones are as follows:
                                ^
         SyntaxError: cannot assign to attribute here. Maybe you meant '==' instead of '='?
 
-    (Contributed by Pablo Galindo in :issue:`43797`)
+    (Contributed by Pablo Galindo in :issue:`43797`.)
 
 * Usage of ``*`` in f-strings:
 
@@ -331,7 +331,7 @@ have been incorporated. Some of the most notable ones are as follows:
              ^
         SyntaxError: f-string: cannot use starred expression here
 
-    (Contributed by Pablo Galindo in :issue:`41064`)
+    (Contributed by Pablo Galindo in :issue:`41064`.)
 
 IndentationErrors
 ~~~~~~~~~~~~~~~~~
@@ -1048,7 +1048,7 @@ keyword-only.  This will probably be the most common usage:
 
 Here, ``z`` and ``t`` are keyword-only parameters, while ``x`` and
 ``y`` are not.
-(Contributed by Eric V. Smith in :issue:`43532`)
+(Contributed by Eric V. Smith in :issue:`43532`.)
 
 .. _distutils-deprecated:
 
@@ -1266,11 +1266,11 @@ pathlib
 -------
 
 Add slice support to :attr:`PurePath.parents <pathlib.PurePath.parents>`.
-(Contributed by Joshua Cannon in :issue:`35498`)
+(Contributed by Joshua Cannon in :issue:`35498`.)
 
 Add negative indexing support to :attr:`PurePath.parents
 <pathlib.PurePath.parents>`.
-(Contributed by Yaroslav Pankovych in :issue:`21041`)
+(Contributed by Yaroslav Pankovych in :issue:`21041`.)
 
 Add :meth:`Path.hardlink_to <pathlib.Path.hardlink_to>` method that
 supersedes :meth:`~pathlib.Path.link_to`. The new method has the same argument
@@ -1288,7 +1288,7 @@ platform
 Add :func:`platform.freedesktop_os_release()` to retrieve operation system
 identification from `freedesktop.org os-release
 <https://www.freedesktop.org/software/systemd/man/os-release.html>`_ standard file.
-(Contributed by Christian Heimes in :issue:`28468`)
+(Contributed by Christian Heimes in :issue:`28468`.)
 
 pprint
 ------
@@ -1473,7 +1473,7 @@ and to match the behavior of static type checkers specified in the PEP.
 
 Add new function :func:`typing.is_typeddict` to introspect if an annotation
 is a :class:`typing.TypedDict`.
-(Contributed by Patrick Reader in :issue:`41792`)
+(Contributed by Patrick Reader in :issue:`41792`.)
 
 Subclasses of ``typing.Protocol`` which only have data variables declared
 will now raise a ``TypeError`` when checked with ``isinstance`` unless they
@@ -1481,14 +1481,14 @@ are decorated with :func:`runtime_checkable`.  Previously, these checks
 passed silently.  Users should decorate their
 subclasses with the :func:`runtime_checkable` decorator
 if they want runtime protocols.
-(Contributed by Yurii Karabas in :issue:`38908`)
+(Contributed by Yurii Karabas in :issue:`38908`.)
 
 Importing from the ``typing.io`` and ``typing.re`` submodules will now emit
 :exc:`DeprecationWarning`.  These submodules have been deprecated since
 Python 3.8 and will be removed in a future version of Python.  Anything
 belonging to those submodules should be imported directly from
 :mod:`typing` instead.
-(Contributed by Sebastian Rittau in :issue:`38291`)
+(Contributed by Sebastian Rittau in :issue:`38291`.)
 
 unittest
 --------
@@ -1566,7 +1566,7 @@ Optimizations
   strings, and the function object lazily converts this into the annotations dict
   on demand.  This optimization cuts the CPU time needed to define an annotated
   function by half.
-  (Contributed by Yurii Karabas and Inada Naoki in :issue:`42202`)
+  (Contributed by Yurii Karabas and Inada Naoki in :issue:`42202`.)
 
 * Substring search functions such as ``str1 in str2`` and ``str2.find(str1)``
   now sometimes use Crochemore & Perrin's "Two-Way" string searching
@@ -1575,16 +1575,16 @@ Optimizations
 
 * Add micro-optimizations to ``_PyType_Lookup()`` to improve type attribute cache lookup
   performance in the common case of cache hits. This makes the interpreter 1.04 times faster
-  on average. (Contributed by Dino Viehland in :issue:`43452`)
+  on average. (Contributed by Dino Viehland in :issue:`43452`.)
 
 * The following built-in functions now support the faster :pep:`590` vectorcall calling convention:
   :func:`map`, :func:`filter`, :func:`reversed`, :func:`bool` and :func:`float`.
-  (Contributed by Dong-hee Na and Jeroen Demeyer in :issue:`43575`, :issue:`43287`, :issue:`41922`, :issue:`41873` and :issue:`41870`)
+  (Contributed by Dong-hee Na and Jeroen Demeyer in :issue:`43575`, :issue:`43287`, :issue:`41922`, :issue:`41873` and :issue:`41870`.)
 
 * :class:`BZ2File` performance is improved by removing internal ``RLock``.
   This makes :class:`BZ2File` thread unsafe in the face of multiple simultaneous
   readers or writers, just like its equivalent classes in :mod:`gzip` and
-  :mod:`lzma` have always been.  (Contributed by Inada Naoki in :issue:`43785`).
+  :mod:`lzma` have always been.  (Contributed by Inada Naoki in :issue:`43785`.)
 
 .. _whatsnew310-deprecated:
 
@@ -1600,7 +1600,7 @@ Deprecated
   :keyword:`for`, :keyword:`if`, :keyword:`in`, :keyword:`is` and :keyword:`or`.
   In future releases it will be changed to syntax warning, and finally to
   syntax error.
-  (Contributed by Serhiy Storchaka in :issue:`43833`).
+  (Contributed by Serhiy Storchaka in :issue:`43833`.)
 
 * Starting in this release, there will be a concerted effort to begin
   cleaning up old import semantics that were kept for Python 2.7
@@ -1788,7 +1788,7 @@ Deprecated
   :exc:`DeprecationWarning`.  These submodules will be removed in a future version
   of Python.  Anything belonging to these submodules should be imported directly
   from :mod:`typing` instead.
-  (Contributed by Sebastian Rittau in :issue:`38291`)
+  (Contributed by Sebastian Rittau in :issue:`38291`.)
 
 .. _whatsnew310-removed:
 
@@ -1871,7 +1871,7 @@ Changes in the Python syntax
   syntax error.  To get rid of the warning and make the code compatible with
   future releases just add a space between the numeric literal and the
   following keyword.
-  (Contributed by Serhiy Storchaka in :issue:`43833`).
+  (Contributed by Serhiy Storchaka in :issue:`43833`.)
 
 .. _changes-python-api:
 
@@ -1981,7 +1981,7 @@ CPython bytecode changes
 
 * The ``MAKE_FUNCTION`` instruction now accepts either a dict or a tuple of
   strings as the function's annotations.
-  (Contributed by Yurii Karabas and Inada Naoki in :issue:`42202`)
+  (Contributed by Yurii Karabas and Inada Naoki in :issue:`42202`.)
 
 Build Changes
 =============
@@ -2197,7 +2197,7 @@ Porting to Python 3.10
   directory. These files must not be included directly, as they are already
   included in ``Python.h``: :ref:`Include Files <api-includes>`. If they have
   been included directly, consider including ``Python.h`` instead.
-  (Contributed by Nicholas Sim in :issue:`35134`)
+  (Contributed by Nicholas Sim in :issue:`35134`.)
 
 * Use the :c:data:`Py_TPFLAGS_IMMUTABLETYPE` type flag to create immutable type
   objects. Do not rely on :c:data:`Py_TPFLAGS_HEAPTYPE` to decide if a type
@@ -2207,7 +2207,7 @@ Porting to Python 3.10
 
 * The undocumented function ``Py_FrozenMain`` has been removed from the
   limited API. The function is mainly useful for custom builds of Python.
-  (Contributed by Petr Viktorin in :issue:`26241`)
+  (Contributed by Petr Viktorin in :issue:`26241`.)
 
 Deprecated
 ----------
