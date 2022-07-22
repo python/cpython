@@ -42,47 +42,52 @@ module _sqlite3
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=81e330492d57488e]*/
 
-// NOTE: This must equal sqlite3.Connection.__init__ argument spec!
-/*[clinic input]
-_sqlite3.connect as pysqlite_connect
+PyDoc_STRVAR(pysqlite_connect__doc__,
+"connect($module, /, database, timeout=5.0, detect_types=0,\n"
+"        isolation_level=<unrepresentable>, check_same_thread=True,\n"
+"        factory=ConnectionType, cached_statements=128, uri=False)\n"
+"--\n"
+"\n"
+"Opens a connection to the SQLite database file database.\n"
+"\n"
+"You can use \":memory:\" to open a database connection to a database that resides\n"
+"in RAM instead of on disk.");
 
-    database: object
-    timeout: double = 5.0
-    detect_types: int = 0
-    isolation_level: object = NULL
-    check_same_thread: bool(accept={int}) = True
-    factory: object(c_default='(PyObject*)clinic_state()->ConnectionType') = ConnectionType
-    cached_statements: int = 128
-    uri: bool = False
-
-Opens a connection to the SQLite database file database.
-
-You can use ":memory:" to open a database connection to a database that resides
-in RAM instead of on disk.
-[clinic start generated code]*/
+#define PYSQLITE_CONNECT_METHODDEF    \
+    {"connect", _PyCFunction_CAST(module_connect), METH_VARARGS|METH_KEYWORDS, pysqlite_connect__doc__},
 
 static PyObject *
-pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
-                      int detect_types, PyObject *isolation_level,
-                      int check_same_thread, PyObject *factory,
-                      int cached_statements, int uri)
-/*[clinic end generated code: output=450ac9078b4868bb input=e16914663ddf93ce]*/
+module_connect(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    if (isolation_level == NULL) {
-        isolation_level = PyUnicode_FromString("");
-        if (isolation_level == NULL) {
-            return NULL;
-        }
+    /* Python seems to have no way of extracting a single keyword-arg at
+     * C-level, so this code is redundant with the one in connection_init in
+     * connection.c and must always be copied from there ... */
+    static char *kwlist[] = {
+        "database", "timeout", "detect_types", "isolation_level",
+        "check_same_thread", "factory", "cached_statements", "uri",
+        NULL
+    };
+    PyObject *database;
+    int detect_types = 0;
+    PyObject *isolation_level;
+    PyObject *factory = NULL;
+    int check_same_thread = 1;
+    int cached_statements;
+    int uri = 0;
+    double timeout = 5.0;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|diOiOip", kwlist,
+                                     &database, &timeout, &detect_types,
+                                     &isolation_level, &check_same_thread,
+                                     &factory, &cached_statements, &uri))
+    {
+        return NULL;
     }
-    else {
-        Py_INCREF(isolation_level);
+    if (factory == NULL) {
+        pysqlite_state *state = pysqlite_get_state(self);
+        factory = (PyObject *)state->ConnectionType;
     }
-    PyObject *res = PyObject_CallFunction(factory, "OdiOiOii", database,
-                                          timeout, detect_types,
-                                          isolation_level, check_same_thread,
-                                          factory, cached_statements, uri);
-    Py_DECREF(isolation_level);
-    return res;
+    return PyObject_Call(factory, args, kwargs);
 }
 
 /*[clinic input]
