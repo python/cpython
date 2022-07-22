@@ -59,6 +59,16 @@ class ConnectionFactoryTests(unittest.TestCase):
 
         con = sqlite.connect(":memory:", factory=Factory)
         self.assertIsNone(con.isolation_level)
+        self.assertIsInstance(con, Factory)
+
+    def test_connection_factory_as_positional_arg(self):
+        class Factory(sqlite.Connection):
+            def __init__(self, *args, **kwargs):
+                super(Factory, self).__init__(*args, **kwargs)
+
+        con = sqlite.connect(":memory:", 5.0, 0, None, True, Factory)
+        self.assertIsNone(con.isolation_level)
+        self.assertIsInstance(con, Factory)
 
 
 class CursorFactoryTests(unittest.TestCase):
