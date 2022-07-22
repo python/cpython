@@ -98,8 +98,10 @@ popd
 ```
 
 ```shell
-node --experimental-wasm-threads --experimental-wasm-bulk-memory builddir/emscripten-node/python.js
+node --experimental-wasm-threads --experimental-wasm-bulk-memory --experimental-wasm-bigint builddir/emscripten-node/python.js
 ```
+
+(``--experimental-wasm-bigint`` is not needed with recent NodeJS versions)
 
 # wasm32-emscripten limitations and issues
 
@@ -173,6 +175,8 @@ functions.
   [bpo-46390](https://bugs.python.org/issue46390).
 - Python's object allocator ``obmalloc`` is disabled by default.
 - ``ensurepip`` is not available.
+- Some ``ctypes`` features like ``c_longlong`` and ``c_longdouble`` may need
+   NodeJS option ``--experimental-wasm-bigint``.
 
 ## wasm32-emscripten in browsers
 
