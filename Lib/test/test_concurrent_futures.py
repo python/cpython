@@ -947,15 +947,14 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
             fut = pool.submit(log_n_wait, ident="first")
             try:
                 with contextlib.closing(
-                    pool.map(print_n_wait, ["second", "third"], timeout=0)
+                    pool.map(log_n_wait, ["second", "third"], timeout=0)
                 ) as gen:
                     with self.assertRaises(TimeoutError):
                         next(gen)
             finally:
                 stop_event.set()
-
+            fut.result()
         self.assertListEqual(log, ["ident='first started'", "ident='first' stopped"])
-        fut.result()
 
 
 class ProcessPoolExecutorTest(ExecutorTest):
