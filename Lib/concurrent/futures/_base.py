@@ -612,12 +612,9 @@ class Executor(object):
             try:
                 while fs:
                     if timeout is None:
-                        res = [fs[0].result()]
+                        res = fs.popleft().result()
                     else:
-                        res = [fs[0].result(end_time - time.monotonic())]
-
-                    # Got a result, future needn't be cancelled
-                    del fs[0]
+                        res = fs.popleft().result(end_time - time.monotonic())]
 
                     # Dispatch next task before yielding to keep
                     # pipeline full
@@ -629,7 +626,7 @@ class Executor(object):
                         else:
                             fs.append(self.submit(fn, *args))
 
-                    yield res.pop()
+                    yield res
             finally:
                 for future in fs:
                     future.cancel()
