@@ -955,7 +955,7 @@ Cursor Objects
       :data:`DEPRECATED_TRANSACTION_CONTROL`,
       :attr:`~Connection.isolation_level` is not :const:`None`,
       *sql* is an ``INSERT``, ``UPDATE``, ``DELETE``, or ``REPLACE`` statement,
-      and there is no pending transaction,
+      and there is no open transaction,
       a transaction is implicitly opened before executing *sql*.
 
 
@@ -1665,6 +1665,7 @@ Rows wrapped with this class can be accessed both by index (like tuples) and
 case-insensitively by name:
 
 .. literalinclude:: ../includes/sqlite3/rowclass.py
+
 
 .. _sqlite3-connection-context-manager:
 
