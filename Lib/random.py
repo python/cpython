@@ -787,7 +787,6 @@ class Random(_random.Random):
         while True:
 
             u = random()
-            v = random()
             u -= 0.5
             us = 0.5 - _fabs(u)
             k = _floor((2.0 * a / us + b) * u + c)
@@ -796,6 +795,7 @@ class Random(_random.Random):
 
             # The early-out "squeeze" test substantially reduces
             # the number of acceptance condition evaluations.
+            v = random()
             if us >= 0.07 and v <= vr:
                 return k
 
