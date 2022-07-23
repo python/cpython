@@ -653,6 +653,11 @@ if hasattr(os, "umask"):
             yield
         finally:
             os.umask(oldmask)
+else:
+    @contextlib.contextmanager
+    def temp_umask(umask):
+        """no-op on platforms without umask()"""
+        yield
 
 
 class EnvironmentVarGuard(collections.abc.MutableMapping):
