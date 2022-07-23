@@ -957,7 +957,7 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
             fut.result()
         # ident='second' is cancelled as a result of raising a TimeoutError
         # ident='third' is cancelled because it remained in the collection of futures
-        self.assertListEqual(log, ["ident='first started", "ident='first' stopped"])
+        self.assertListEqual(log, ["ident='first' started", "ident='first' stopped"])
 
 
 class ProcessPoolExecutorTest(ExecutorTest):
