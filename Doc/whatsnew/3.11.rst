@@ -1473,13 +1473,6 @@ Changes in the Python API
   the ``'utf-8'`` encoding.
   (Contributed by Srinivas Reddy Thatiparthy (శ్రీనివాస్  రెడ్డి తాటిపర్తి) in :issue:`41137`.)
 
-* When sorting using tuples as keys, the order of the result may differ
-  from earlier releases if the tuple elements don't define a total
-  ordering (see :ref:`expressions-value-comparisons` for
-  information on total ordering).  It's generally true that the result
-  of sorting simply isn't well-defined in the absence of a total ordering
-  on list elements.
-
 * :mod:`calendar`: The :class:`calendar.LocaleTextCalendar` and
   :class:`calendar.LocaleHTMLCalendar` classes now use
   :func:`locale.getlocale`, instead of using :func:`locale.getdefaultlocale`,
