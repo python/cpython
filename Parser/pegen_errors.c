@@ -245,7 +245,7 @@ get_error_line_from_tokenizer_buffers(Parser *p, Py_ssize_t lineno)
      * (multi-line) statement are stored in p->tok->interactive_src_start.
      * If not, we're parsing from a string, which means that the whole source
      * is stored in p->tok->str. */
-    assert((p->tok->fp == NULL && p->tok->str != NULL) || p->tok->fp == stdin);
+    assert((p->tok->fp == NULL && p->tok->str != NULL) || p->tok->fp != NULL);
 
     char *cur_line = p->tok->fp_interactive ? p->tok->interactive_src_start : p->tok->str;
     if (cur_line == NULL) {
@@ -259,15 +259,15 @@ get_error_line_from_tokenizer_buffers(Parser *p, Py_ssize_t lineno)
     const char* buf_end = p->tok->fp_interactive ? p->tok->interactive_src_end : p->tok->inp;
 
     for (int i = 0; i < relative_lineno - 1; i++) {
-        char *new_line = strchr(cur_line, '\n') + 1;
+        char *new_line = strchr(cur_line, '\n');
         // The assert is here for debug builds but the conditional that
         // follows is there so in release builds we do not crash at the cost
         // to report a potentially wrong line.
-        assert(new_line != NULL && new_line <= buf_end);
-        if (new_line == NULL || new_line > buf_end) {
+        assert(new_line != NULL && new_line + 1 < buf_end);
+        if (new_line == NULL || new_line + 1 > buf_end) {
             break;
         }
-        cur_line = new_line;
+        cur_line = new_line + 1;
     }
 
     char *next_newline;
