@@ -625,6 +625,9 @@ Timeouts
 
             If *when* is a float, it is set as the new deadline.
 
+            if *when* is in the past, the timeout will trigger on the next
+            iteration of the event loop.
+
         .. method:: expired() -> bool
 
            Return whether the context manager has exceeded its deadline
