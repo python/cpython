@@ -181,7 +181,6 @@ def lexists(path):
 
 
 # Is a path a mount point?
-# (Does this work for all UNIXes?  Is it even guaranteed to work by Posix?)
 
 def ismount(path):
     """Test whether a path is a mount point"""
