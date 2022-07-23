@@ -46,7 +46,8 @@ module _sqlite3
 PyDoc_STRVAR(module_connect_doc,
 "connect($module, /, database, timeout=5.0, detect_types=0,\n"
 "        isolation_level='', check_same_thread=True,\n"
-"        factory=ConnectionType, cached_statements=128, uri=False)\n"
+"        factory=ConnectionType, cached_statements=128, uri=False, *,\n"
+"        autocommit=sqlite3.DEPRECATED_TRANSACTION_CONTROL)\n"
 "--\n"
 "\n"
 "Opens a connection to the SQLite database file database.\n"
