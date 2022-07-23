@@ -954,7 +954,7 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
             finally:
                 stop_event.set()
             fut.result()
-        self.assertListEqual(log, ["ident='first started'", "ident='first' stopped"])
+        self.assertListEqual(log, ["ident='first started", "ident='first' stopped"])
 
 
 class ProcessPoolExecutorTest(ExecutorTest):
