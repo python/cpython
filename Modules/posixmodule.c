@@ -15463,9 +15463,15 @@ all_ins(PyObject *m)
 #endif /* HAVE_MEMFD_CREATE */
 
 #ifdef HAVE_EVENTFD
+#ifdef EFD_CLOEXEC
     if (PyModule_AddIntMacro(m, EFD_CLOEXEC)) return -1;
+#endif
+#ifdef EFD_NONBLOCK
     if (PyModule_AddIntMacro(m, EFD_NONBLOCK)) return -1;
+#endif
+#ifdef EFD_SEMAPHORE
     if (PyModule_AddIntMacro(m, EFD_SEMAPHORE)) return -1;
+#endif
 #endif
 
 #if defined(__APPLE__)
