@@ -933,7 +933,7 @@
 #undef HAVE_PTHREAD_SIGMASK
 
 /* Define if platform requires stubbed pthread */
-#undef HAVE_PTHREAD_STUB
+#undef HAVE_PTHREAD_STUBS
 
 /* Define to 1 if you have the <pty.h> header file. */
 #undef HAVE_PTY_H

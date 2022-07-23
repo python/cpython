@@ -4275,7 +4275,7 @@ if test "$posix_threads" = "yes"; then
 fi
 
 AS_VAR_IF([posix_threads], [stub], [
-  AC_DEFINE([HAVE_PTHREAD_STUB], [1], [Define if platform requires stubbed pthread])
+  AC_DEFINE([HAVE_PTHREAD_STUBS], [1], [Define if platform requires stubbed pthread])
 ])
 
 # Check for enable-ipv6

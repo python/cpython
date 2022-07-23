@@ -14914,7 +14914,7 @@ fi
 if test "x$posix_threads" = xstub; then :
 
 
-$as_echo "#define HAVE_PTHREAD_STUB 1" >>confdefs.h
+$as_echo "#define HAVE_PTHREAD_STUBS 1" >>confdefs.h
 
 
 fi
