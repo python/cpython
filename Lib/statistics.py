@@ -1221,8 +1221,6 @@ class NormalDist:
         """
         if p <= 0.0 or p >= 1.0:
             raise StatisticsError('p must be in the range 0.0 < p < 1.0')
-        if self._sigma <= 0.0:
-            raise StatisticsError('cdf() not defined when sigma at or below zero')
         return _normal_dist_inv_cdf(p, self._mu, self._sigma)
 
     def quantiles(self, n=4):
