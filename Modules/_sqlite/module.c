@@ -42,75 +42,44 @@ module _sqlite3
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=81e330492d57488e]*/
 
-// NOTE: This must equal sqlite3.Connection.__init__ argument spec!
-/*[clinic input]
-_sqlite3.connect as pysqlite_connect
+// NB: This needs to be in sync with the Connection.__init__ docstring.
+PyDoc_STRVAR(module_connect_doc,
+"connect($module, /, database, timeout=5.0, detect_types=0,\n"
+"        isolation_level='', check_same_thread=True,\n"
+"        factory=ConnectionType, cached_statements=128, uri=False)\n"
+"--\n"
+"\n"
+"Opens a connection to the SQLite database file database.\n"
+"\n"
+"You can use \":memory:\" to open a database connection to a database that resides\n"
+"in RAM instead of on disk.");
 
-    database: object
-    timeout: double = 5.0
-    detect_types: int = 0
-    isolation_level: object = NULL
-    check_same_thread: bool(accept={int}) = True
-    factory: object(c_default='(PyObject*)clinic_state()->ConnectionType') = ConnectionType
-    cached_statements: int = 128
-    uri: bool = False
-    *
-    autocommit: object = NULL
-
-Opens a connection to the SQLite database file database.
-
-You can use ":memory:" to open a database connection to a database that resides
-in RAM instead of on disk.
-[clinic start generated code]*/
+#define PYSQLITE_CONNECT_METHODDEF    \
+    {"connect", _PyCFunction_CAST(module_connect), METH_FASTCALL|METH_KEYWORDS, module_connect_doc},
 
 static PyObject *
-pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
-                      int detect_types, PyObject *isolation_level,
-                      int check_same_thread, PyObject *factory,
-                      int cached_statements, int uri, PyObject *autocommit)
-/*[clinic end generated code: output=4b77f986d8f15727 input=9b4c4440b0f881c5]*/
+module_connect(PyObject *module, PyObject *const *args, Py_ssize_t nargsf,
+               PyObject *kwnames)
 {
-    if (isolation_level == NULL) {
-        isolation_level = PyUnicode_FromString("");
-        if (isolation_level == NULL) {
-            return NULL;
+    pysqlite_state *state = pysqlite_get_state(module);
+    PyObject *factory = (PyObject *)state->ConnectionType;
+
+    static const int FACTORY_POS = 5;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (nargs > FACTORY_POS) {
+        factory = args[FACTORY_POS];
+    }
+    else if (kwnames != NULL) {
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(kwnames); i++) {
+            PyObject *item = PyTuple_GET_ITEM(kwnames, i);  // borrowed ref.
+            if (PyUnicode_CompareWithASCIIString(item, "factory") == 0) {
+                factory = args[nargs + i];
+                break;
+            }
         }
     }
-    else {
-        Py_INCREF(isolation_level);
-    }
-    if (autocommit == NULL) {
-        autocommit = PyLong_FromLong(DEPRECATED_TRANSACTION_CONTROL);
-        if (autocommit == NULL) {
-            Py_DECREF(isolation_level);
-            return NULL;
-        }
-    }
-    else {
-        Py_INCREF(autocommit);
-    }
 
-    PyObject *res = NULL;
-    PyObject *args = Py_BuildValue("(OdiOiOii)", database, timeout,
-                                   detect_types, isolation_level,
-                                   check_same_thread, factory,
-                                   cached_statements, uri);
-    if (args == NULL) {
-        goto exit;
-    }
-    PyObject *kwargs = Py_BuildValue("{sO}", "autocommit", autocommit);
-    if (kwargs == NULL) {
-        Py_DECREF(args);
-        goto exit;
-    }
-    res = PyObject_Call(factory, args, kwargs);
-    Py_DECREF(args);
-    Py_DECREF(kwargs);
-
-exit:
-    Py_DECREF(isolation_level);
-    Py_DECREF(autocommit);
-    return res;
+    return PyObject_Vectorcall(factory, args, nargsf, kwnames);
 }
 
 /*[clinic input]

@@ -295,6 +295,9 @@ _PyCode_Quicken(PyCodeObject *code)
         else {
             assert(!_PyOpcode_Caches[opcode]);
             switch (opcode) {
+                case EXTENDED_ARG:
+                    _Py_SET_OPCODE(instructions[i], EXTENDED_ARG_QUICK);
+                    break;
                 case JUMP_BACKWARD:
                     _Py_SET_OPCODE(instructions[i], JUMP_BACKWARD_QUICK);
                     break;
