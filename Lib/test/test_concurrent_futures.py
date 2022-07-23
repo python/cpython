@@ -944,6 +944,7 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
                 log.append(f"{ident=} stopped")
 
         with self.executor_type(max_workers=1) as pool:
+            # submit work to saturate the pool
             fut = pool.submit(log_n_wait, ident="first")
             try:
                 with contextlib.closing(
@@ -954,6 +955,8 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
             finally:
                 stop_event.set()
             fut.result()
+        # ident='second' is cancelled as a result of raising a TimeoutError
+        # ident='third' is cancelled because it remained in the collection of futures
         self.assertListEqual(log, ["ident='first started", "ident='first' stopped"])
 
 
