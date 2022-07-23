@@ -1501,6 +1501,10 @@ Changes in the Python API
   is larger than the population size, a :exc:`ValueError` is raised.
   (Contributed by Raymond Hettinger in :issue:`40465`.)
 
+* :class:`ast.AST` node positions are now validated when provided to
+  :func:`compile` and other related functions. If invalid positions are detected,
+  a :exc:`ValueError` will be raised. (Contributed by Pablo Galindo in :gh:`93351`)
+
 
 Build Changes
 =============
