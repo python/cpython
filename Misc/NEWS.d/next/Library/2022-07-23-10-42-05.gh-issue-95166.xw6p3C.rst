@@ -1,0 +1,1 @@
+:meth:`concurrent.futures.Executor.map` now cancels the currently waiting on future on an error - eg TimeoutError or KeyboardInterrupt
