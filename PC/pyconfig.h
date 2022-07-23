@@ -675,55 +675,24 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define to 1 if you have the `erfc' function. */
 #define HAVE_ERFC 1
 
-/* Define if you have the 'inet_pton' function. */
-#define HAVE_INET_PTON 1
-
-/* Define to 1 if you have the <netdb.h> header file. */
+// netdb.h functions
 #define HAVE_NETDB_H 1
-
-/* Define if you have the 'gethostname' function. */
 #define HAVE_GETHOSTNAME 1
-
-/* Define if you have the 'gethostbyaddr' function. */
 #define HAVE_GETHOSTBYADDR 1
-
-/* Define if you have the 'gethostbyname' function. */
 #define HAVE_GETHOSTBYNAME 1
-
-/* Define if you have the 'getprotobyname' function. */
 #define HAVE_GETPROTOBYNAME 1
-
-/* Define if you have the 'getservbyname' function. */
 #define HAVE_GETSERVBYNAME 1
-
-/* Define if you have the 'getservbyport' function. */
 #define HAVE_GETSERVBYPORT 1
-
-/* Define if you have the 'inet_ntoa' function. */
+// sys/socket.h functions
+#define HAVE_INET_PTON 1
 #define HAVE_INET_NTOA 1
-
-/* Define if you have the 'bind' function. */
 #define HAVE_BIND 1
-
-/* Define if you have the 'connect' function. */
 #define HAVE_CONNECT 1
-
-/* Define if you have the 'getsockname' function. */
 #define HAVE_GETSOCKNAME 1
-
-/* Define if you have the 'listen' function. */
 #define HAVE_LISTEN 1
-
-/* Define if you have the 'recvfrom' function. */
 #define HAVE_RECVFROM 1
-
-/* Define if you have the 'sendto' function. */
 #define HAVE_SENDTO 1
-
-/* Define if you have the 'setsockopt' function. */
 #define HAVE_SETSOCKOPT 1
-
-/* Define if you have the 'socket' function. */
 #define HAVE_SOCKET 1
 
 /* Define to 1 if you have the `dup2' function. */

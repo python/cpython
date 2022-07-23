@@ -4887,39 +4887,14 @@ PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
   ])
 ])
 
-dnl PY_CHECK_NETDB_FUNC(FUNCTION)
-AC_DEFUN([PY_CHECK_NETDB_FUNC], [PY_CHECK_FUNC([$1], [#include <netdb.h>])])
-
-dnl PY_CHECK_SOCKET_FUNC(FUNCTION)
-AC_DEFUN([PY_CHECK_SOCKET_FUNC], [PY_CHECK_FUNC([$1], [
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-])])
-
-PY_CHECK_NETDB_FUNC([hstrerror])
-dnl not available in WASI yet
-PY_CHECK_NETDB_FUNC([getservbyname])
-PY_CHECK_NETDB_FUNC([getservbyport])
-PY_CHECK_NETDB_FUNC([gethostbyname])
-PY_CHECK_NETDB_FUNC([gethostbyaddr])
-PY_CHECK_NETDB_FUNC([getprotobyname])
-
-
-PY_CHECK_SOCKET_FUNC([inet_aton])
-PY_CHECK_SOCKET_FUNC([inet_ntoa])
-PY_CHECK_SOCKET_FUNC([inet_pton])
-dnl not available in WASI yet
-PY_CHECK_SOCKET_FUNC([getpeername])
-PY_CHECK_SOCKET_FUNC([getsockname])
-PY_CHECK_SOCKET_FUNC([bind])
-PY_CHECK_SOCKET_FUNC([connect])
-PY_CHECK_SOCKET_FUNC([listen])
-PY_CHECK_SOCKET_FUNC([recvfrom])
-PY_CHECK_SOCKET_FUNC([sendto])
-PY_CHECK_SOCKET_FUNC([setsockopt])
-PY_CHECK_SOCKET_FUNC([socket])
+dnl WASI does not implement most socket APIs yet.
+dnl netdb.h function
+AC_CHECK_FUNCS([hstrerror getservbyname getservbyport gethostbyname gethostaddr getprotobyname])
+dnl sys/socket.h functions
+AC_CHECK_FUNCS([ \
+  inet_aton inet_ntoa inet_pton getpeername getsockname bind connect \
+  listen recvfrom sendto setsockopt socket \
+])
 
 # On some systems, setgroups is in unistd.h, on others, in grp.h
 PY_CHECK_FUNC([setgroups], [
