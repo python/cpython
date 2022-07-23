@@ -1,4 +1,4 @@
-Executor.map no longer creates all futures eagerly prior to yielding any
-results. This allows it to work with huge or infinite iterables without
+:meth:`concurrent.futures.Executor.map` no longer eagerly creates all futures prior to yielding any
+results. This allows it to work with huge or infinite :term:`iterable` without
 consuming excessive resources or crashing, making it more suitable as a drop
-in replacement for the built-in map. Patch by Josh Rosenberg.
+in replacement for the built-in :func:`map`. Patch by Josh Rosenberg.
