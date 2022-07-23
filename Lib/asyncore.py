@@ -46,7 +46,6 @@ many of the difficult problems for you, making the task of building
 sophisticated high-performance network servers and clients a snap.
 """
 
-from builtins import frozenset
 import select
 import socket
 import sys
@@ -55,23 +54,15 @@ import warnings
 
 import os
 from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, EINVAL, \
-     ENOTCONN, EISCONN, EBADF, ECONNABORTED, EPIPE, EAGAIN, \
+     ENOTCONN, ESHUTDOWN, EISCONN, EBADF, ECONNABORTED, EPIPE, EAGAIN, \
      errorcode
 
 _DEPRECATION_MSG = ('The {name} module is deprecated and will be removed in '
                     'Python {remove}. The recommended replacement is asyncio')
 warnings._deprecated(__name__, _DEPRECATION_MSG, remove=(3, 12))
 
-_DISCONNECTED = {ECONNRESET, ENOTCONN, ECONNABORTED, EPIPE, EBADF}
-
-try:
-    from errno import ESHUTDOWN
-except ImportError:
-    pass
-else:
-    _DISCONNECTED.add(ESHUTDOWN)
-
-_DISCONNECTED = frozenset(_DISCONNECTED)
+_DISCONNECTED = frozenset({ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED, EPIPE,
+                           EBADF})
 
 try:
     socket_map
