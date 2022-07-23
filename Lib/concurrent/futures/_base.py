@@ -614,7 +614,7 @@ class Executor(object):
                     if timeout is None:
                         res = fs.popleft().result()
                     else:
-                        res = fs.popleft().result(end_time - time.monotonic())]
+                        res = fs.popleft().result(end_time - time.monotonic())
 
                     # Dispatch next task before yielding to keep
                     # pipeline full
