@@ -2617,6 +2617,7 @@ class WalkTests(unittest.TestCase):
         else:
             self.fail("Didn't follow symlink with follow_symlinks=True")
 
+    @os_helper.skip_unless_symlink
     def test_walk_symlink_location(self):
         # Tests whether symlinks end up in filenames or dirnames depending
         # on the `follow_symlinks` argument.
