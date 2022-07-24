@@ -44,7 +44,7 @@ From within the container, run the following commands:
 ```shell
 mkdir -p builddir/build
 pushd builddir/build
-../../cpython/configure -C
+../../cpython/configure
 make -j$(nproc)
 popd
 ```
@@ -62,7 +62,7 @@ mkdir -p builddir/emscripten-browser
 pushd builddir/emscripten-browser
 
 CONFIG_SITE=../../cpython/Tools/wasm/config.site-wasm32-emscripten \
-  emconfigure ../../cpython/configure -C \
+  emconfigure ../../cpython/configure \
     --host=wasm32-unknown-emscripten \
     --build=$(../../cpython/config.guess) \
     --with-emscripten-target=browser \
@@ -95,7 +95,7 @@ mkdir -p builddir/emscripten-node
 pushd builddir/emscripten-node
 
 CONFIG_SITE=../../cpython/Tools/wasm/config.site-wasm32-emscripten \
-  emconfigure ../../cpython/configure -C \
+  emconfigure ../../cpython/configure \
     --host=wasm32-unknown-emscripten \
     --build=$(../../cpython/config.guess) \
     --with-emscripten-target=node \
