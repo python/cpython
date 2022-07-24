@@ -371,7 +371,7 @@ static PyMethodDef weakref_methods[] = {
 PyTypeObject
 _PyWeakref_RefType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    .tp_name = "weakref",
+    .tp_name = "weakref.ReferenceType",
     .tp_basicsize = sizeof(PyWeakReference),
     .tp_dealloc = weakref_dealloc,
     .tp_vectorcall_offset = offsetof(PyWeakReference, vectorcall),
@@ -719,7 +719,7 @@ static PyMappingMethods proxy_as_mapping = {
 PyTypeObject
 _PyWeakref_ProxyType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "weakproxy",
+    "weakref.ProxyType",
     sizeof(PyWeakReference),
     0,
     /* methods */
@@ -754,7 +754,7 @@ _PyWeakref_ProxyType = {
 PyTypeObject
 _PyWeakref_CallableProxyType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "weakcallableproxy",
+    "weakref.CallableProxyType",
     sizeof(PyWeakReference),
     0,
     /* methods */

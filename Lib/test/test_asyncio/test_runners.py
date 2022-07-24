@@ -1,7 +1,6 @@
 import _thread
 import asyncio
 import contextvars
-import gc
 import re
 import signal
 import threading
@@ -45,6 +44,9 @@ class BaseTest(unittest.TestCase):
     def new_loop(self):
         loop = asyncio.BaseEventLoop()
         loop._process_events = mock.Mock()
+        # Mock waking event loop from select
+        loop._write_to_self = mock.Mock()
+        loop._write_to_self.return_value = None
         loop._selector = mock.Mock()
         loop._selector.select.return_value = ()
         loop.shutdown_ag_run = False
@@ -195,6 +197,18 @@ class RunTests(BaseTest):
 
         self.assertIsNone(spinner.ag_frame)
         self.assertFalse(spinner.ag_running)
+
+    def test_asyncio_run_set_event_loop(self):
+        #See https://github.com/python/cpython/issues/93896
+
+        async def main():
+            await asyncio.sleep(0)
+            return 42
+
+        policy = asyncio.get_event_loop_policy()
+        policy.set_event_loop = mock.Mock()
+        asyncio.run(main())
+        self.assertTrue(policy.set_event_loop.called)
 
 
 class RunnerTests(BaseTest):

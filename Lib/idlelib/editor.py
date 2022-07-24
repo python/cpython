@@ -1307,7 +1307,7 @@ class EditorWindow:
         want = ((have - 1) // self.indentwidth) * self.indentwidth
         # Debug prompt is multilined....
         ncharsdeleted = 0
-        while 1:
+        while True:
             chars = chars[:-1]
             ncharsdeleted = ncharsdeleted + 1
             have = len(chars.expandtabs(tabwidth))

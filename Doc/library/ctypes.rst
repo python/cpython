@@ -148,15 +148,14 @@ Calling functions
 ^^^^^^^^^^^^^^^^^
 
 You can call these functions like any other Python callable. This example uses
-the ``time()`` function, which returns system time in seconds since the Unix
-epoch, and the ``GetModuleHandleA()`` function, which returns a win32 module
-handle.
+the ``rand()`` function, which takes no arguments and returns a pseudo-random integer::
 
-This example calls both functions with a ``NULL`` pointer (``None`` should be used
-as the ``NULL`` pointer)::
+   >>> print(libc.rand())  # doctest: +SKIP
+   1804289383
 
-   >>> print(libc.time(None))  # doctest: +SKIP
-   1150640792
+On Windows, you can call the ``GetModuleHandleA()`` function, which returns a win32 module
+handle (passing ``None`` as single argument to call it with a ``NULL`` pointer)::
+
    >>> print(hex(windll.kernel32.GetModuleHandleA(None)))  # doctest: +WINDOWS
    0x1d000000
    >>>
@@ -246,6 +245,8 @@ Fundamental data types
 +----------------------+------------------------------------------+----------------------------+
 | :class:`c_ssize_t`   | :c:type:`ssize_t` or                     | int                        |
 |                      | :c:type:`Py_ssize_t`                     |                            |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_time_t`    | :c:type:`time_t`                         | int                        |
 +----------------------+------------------------------------------+----------------------------+
 | :class:`c_float`     | :c:type:`float`                          | float                      |
 +----------------------+------------------------------------------+----------------------------+
@@ -446,6 +447,21 @@ Return types
 By default functions are assumed to return the C :c:type:`int` type.  Other
 return types can be specified by setting the :attr:`restype` attribute of the
 function object.
+
+The C prototype of ``time()`` is ``time_t time(time_t *)``. Because ``time_t``
+might be of a different type than the default return type ``int``, you should
+specify the ``restype``::
+
+   >>> libc.time.restype = c_time_t
+
+The argument types can be specified using ``argtypes``::
+
+   >>> libc.time.argtypes = (POINTER(c_time_t),)
+
+To call the function with a ``NULL`` pointer as first argument, use ``None``::
+
+   >>> print(libc.time(None))  # doctest: +SKIP
+   1150640792
 
 Here is a more advanced example, it uses the ``strchr`` function, which expects
 a string pointer and a char, and returns a pointer to a string::
@@ -2273,6 +2289,13 @@ These are the fundamental ctypes data types:
    Represents the C :c:type:`ssize_t` datatype.
 
    .. versionadded:: 3.2
+
+
+.. class:: c_time_t
+
+   Represents the C :c:type:`time_t` datatype.
+
+   .. versionadded:: 3.12
 
 
 .. class:: c_ubyte

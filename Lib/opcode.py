@@ -4,9 +4,9 @@ opcode module - potentially shared between dis and other modules which
 operate on bytecodes (e.g. peephole optimizers).
 """
 
-__all__ = ["cmp_op", "hasconst", "hasname", "hasjrel", "hasjabs",
-           "haslocal", "hascompare", "hasfree", "opname", "opmap",
-           "HAVE_ARGUMENT", "EXTENDED_ARG", "hasnargs"]
+__all__ = ["cmp_op", "hasarg", "hasconst", "hasname", "hasjrel", "hasjabs",
+           "haslocal", "hascompare", "hasfree", "hasexc", "opname", "opmap",
+           "HAVE_ARGUMENT", "EXTENDED_ARG"]
 
 # It's a chicken-and-egg I'm afraid:
 # We're imported before _opcode's made.
@@ -23,6 +23,7 @@ except ImportError:
 
 cmp_op = ('<', '<=', '==', '!=', '>', '>=')
 
+hasarg = []
 hasconst = []
 hasname = []
 hasjrel = []
@@ -30,13 +31,21 @@ hasjabs = []
 haslocal = []
 hascompare = []
 hasfree = []
-hasnargs = [] # unused
+hasexc = []
+
+def is_pseudo(op):
+    return op >= MIN_PSEUDO_OPCODE and op <= MAX_PSEUDO_OPCODE
+
+oplists = [hasarg, hasconst, hasname, hasjrel, hasjabs,
+           haslocal, hascompare, hasfree, hasexc]
 
 opmap = {}
-opname = ['<%r>' % (op,) for op in range(256)]
+
+## pseudo opcodes (used in the compiler) mapped to the values
+## they can become in the actual code.
+_pseudo_ops = {}
 
 def def_op(name, op):
-    opname[op] = name
     opmap[name] = op
 
 def name_op(name, op):
@@ -50,6 +59,17 @@ def jrel_op(name, op):
 def jabs_op(name, op):
     def_op(name, op)
     hasjabs.append(op)
+
+def pseudo_op(name, op, real_ops):
+    def_op(name, op)
+    _pseudo_ops[name] = real_ops
+    # add the pseudo opcode to the lists its targets are in
+    for oplist in oplists:
+        res = [opmap[rop] in oplist for rop in real_ops]
+        if any(res):
+            assert all(res)
+            oplist.append(op)
+
 
 # Instruction opcodes for compiled code
 # Blank lines correspond to available opcodes
@@ -66,6 +86,8 @@ def_op('UNARY_NOT', 12)
 def_op('UNARY_INVERT', 15)
 
 def_op('BINARY_SUBSCR', 25)
+def_op('BINARY_SLICE', 26)
+def_op('STORE_SLICE', 27)
 
 def_op('GET_LEN', 30)
 def_op('MATCH_MAPPING', 31)
@@ -103,7 +125,7 @@ def_op('ASYNC_GEN_WRAP', 87)
 def_op('PREP_RERAISE_STAR', 88)
 def_op('POP_EXCEPT', 89)
 
-HAVE_ARGUMENT = 90              # Opcodes from here have an argument:
+HAVE_ARGUMENT = 90             # real opcodes from here have an argument:
 
 name_op('STORE_NAME', 90)       # Index in name list
 name_op('DELETE_NAME', 91)      # ""
@@ -139,12 +161,14 @@ def_op('RERAISE', 119)
 def_op('COPY', 120)
 def_op('BINARY_OP', 122)
 jrel_op('SEND', 123) # Number of bytes to skip
-def_op('LOAD_FAST', 124)        # Local variable number
+def_op('LOAD_FAST', 124)        # Local variable number, no null check
 haslocal.append(124)
 def_op('STORE_FAST', 125)       # Local variable number
 haslocal.append(125)
 def_op('DELETE_FAST', 126)      # Local variable number
 haslocal.append(126)
+def_op('LOAD_FAST_CHECK', 127)  # Local variable number
+haslocal.append(127)
 jrel_op('POP_JUMP_FORWARD_IF_NOT_NONE', 128)
 jrel_op('POP_JUMP_FORWARD_IF_NONE', 129)
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
@@ -175,14 +199,12 @@ def_op('LOAD_CLASSDEREF', 148)
 hasfree.append(148)
 def_op('COPY_FREE_VARS', 149)
 def_op('YIELD_VALUE', 150)
-def_op('RESUME', 151)
+def_op('RESUME', 151)   # This must be kept in sync with deepfreeze.py
 def_op('MATCH_CLASS', 152)
 
 def_op('FORMAT_VALUE', 155)
 def_op('BUILD_CONST_KEY_MAP', 156)
 def_op('BUILD_STRING', 157)
-
-name_op('LOAD_METHOD', 160)
 
 def_op('LIST_EXTEND', 162)
 def_op('SET_UPDATE', 163)
@@ -198,8 +220,34 @@ jrel_op('POP_JUMP_BACKWARD_IF_NONE', 174)
 jrel_op('POP_JUMP_BACKWARD_IF_FALSE', 175)
 jrel_op('POP_JUMP_BACKWARD_IF_TRUE', 176)
 
+hasarg.extend([op for op in opmap.values() if op >= HAVE_ARGUMENT])
 
-del def_op, name_op, jrel_op, jabs_op
+MIN_PSEUDO_OPCODE = 256
+
+pseudo_op('SETUP_FINALLY', 256, ['NOP'])
+hasexc.append(256)
+pseudo_op('SETUP_CLEANUP', 257, ['NOP'])
+hasexc.append(257)
+pseudo_op('SETUP_WITH', 258, ['NOP'])
+hasexc.append(258)
+pseudo_op('POP_BLOCK', 259, ['NOP'])
+
+pseudo_op('JUMP', 260, ['JUMP_FORWARD', 'JUMP_BACKWARD'])
+pseudo_op('JUMP_NO_INTERRUPT', 261, ['JUMP_FORWARD', 'JUMP_BACKWARD_NO_INTERRUPT'])
+pseudo_op('POP_JUMP_IF_FALSE', 262, ['POP_JUMP_FORWARD_IF_FALSE', 'POP_JUMP_BACKWARD_IF_FALSE'])
+pseudo_op('POP_JUMP_IF_TRUE', 263, ['POP_JUMP_FORWARD_IF_TRUE', 'POP_JUMP_BACKWARD_IF_TRUE'])
+pseudo_op('POP_JUMP_IF_NONE', 264, ['POP_JUMP_FORWARD_IF_NONE', 'POP_JUMP_BACKWARD_IF_NONE'])
+pseudo_op('POP_JUMP_IF_NOT_NONE', 265, ['POP_JUMP_FORWARD_IF_NOT_NONE', 'POP_JUMP_BACKWARD_IF_NOT_NONE'])
+pseudo_op('LOAD_METHOD', 266, ['LOAD_ATTR'])
+
+MAX_PSEUDO_OPCODE = MIN_PSEUDO_OPCODE + len(_pseudo_ops) - 1
+
+del def_op, name_op, jrel_op, jabs_op, pseudo_op
+
+opname = ['<%r>' % (op,) for op in range(MAX_PSEUDO_OPCODE + 1)]
+for op, i in opmap.items():
+    opname[i] = op
+
 
 _nb_ops = [
     ("NB_ADD", "+"),
@@ -278,15 +326,28 @@ _specializations = {
     "EXTENDED_ARG": [
         "EXTENDED_ARG_QUICK",
     ],
+    "FOR_ITER": [
+        "FOR_ITER_ADAPTIVE",
+        "FOR_ITER_LIST",
+        "FOR_ITER_RANGE",
+    ],
     "JUMP_BACKWARD": [
         "JUMP_BACKWARD_QUICK",
     ],
     "LOAD_ATTR": [
         "LOAD_ATTR_ADAPTIVE",
+        # These potentially push [NULL, bound method] onto the stack.
+        "LOAD_ATTR_CLASS",
         "LOAD_ATTR_INSTANCE_VALUE",
         "LOAD_ATTR_MODULE",
+        "LOAD_ATTR_PROPERTY",
         "LOAD_ATTR_SLOT",
         "LOAD_ATTR_WITH_HINT",
+        # These will always push [unbound method, self] onto the stack.
+        "LOAD_ATTR_METHOD_LAZY_DICT",
+        "LOAD_ATTR_METHOD_NO_DICT",
+        "LOAD_ATTR_METHOD_WITH_DICT",
+        "LOAD_ATTR_METHOD_WITH_VALUES",
     ],
     "LOAD_CONST": [
         "LOAD_CONST__LOAD_FAST",
@@ -299,15 +360,6 @@ _specializations = {
         "LOAD_GLOBAL_ADAPTIVE",
         "LOAD_GLOBAL_BUILTIN",
         "LOAD_GLOBAL_MODULE",
-    ],
-    "LOAD_METHOD": [
-        "LOAD_METHOD_ADAPTIVE",
-        "LOAD_METHOD_CLASS",
-        "LOAD_METHOD_LAZY_DICT",
-        "LOAD_METHOD_MODULE",
-        "LOAD_METHOD_NO_DICT",
-        "LOAD_METHOD_WITH_DICT",
-        "LOAD_METHOD_WITH_VALUES",
     ],
     "RESUME": [
         "RESUME_QUICK",
@@ -368,22 +420,19 @@ _cache_format = {
         "type_version": 2,
         "func_version": 1,
     },
+    "FOR_ITER": {
+        "counter": 1,
+    },
     "LOAD_ATTR": {
         "counter": 1,
         "version": 2,
-        "index": 1,
+        "keys_version": 2,
+        "descr": 4,
     },
     "STORE_ATTR": {
         "counter": 1,
         "version": 2,
         "index": 1,
-    },
-    "LOAD_METHOD": {
-        "counter": 1,
-        "type_version": 2,
-        "dict_offset": 1,
-        "keys_version": 2,
-        "descr": 4,
     },
     "CALL": {
         "counter": 1,

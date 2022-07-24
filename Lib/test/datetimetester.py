@@ -7,7 +7,6 @@ import itertools
 import bisect
 import copy
 import decimal
-import functools
 import sys
 import os
 import pickle

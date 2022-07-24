@@ -50,6 +50,12 @@ descriptor.
    constants, which allow to duplicate a file descriptor, the latter setting
    ``FD_CLOEXEC`` flag in addition.
 
+.. versionchanged:: 3.12
+   On Linux >= 4.5, the :mod:`fcntl` module exposes the ``FICLONE`` and
+   ``FICLONERANGE`` constants, which allow to share some data of one file with
+   another file by reflinking on some filesystems (e.g., btrfs, OCFS2, and
+   XFS). This behavior is commonly referred to as "copy-on-write".
+
 The module defines the following functions:
 
 

@@ -7,7 +7,6 @@ import time
 import base64
 import unittest
 import textwrap
-import warnings
 
 from io import StringIO, BytesIO
 from itertools import chain
@@ -45,7 +44,7 @@ from test.test_email import openfile, TestEmailBase
 
 # These imports are documented to work, but we are testing them using a
 # different path, so we import them here just to make sure they are importable.
-from email.parser import FeedParser, BytesFeedParser
+from email.parser import FeedParser
 
 NL = '\n'
 EMPTYSTRING = ''

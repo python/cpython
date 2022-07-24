@@ -56,6 +56,12 @@ _PyList_AppendTakeRef(PyListObject *self, PyObject *newitem)
     return _PyList_AppendTakeRefListResize(self, newitem);
 }
 
+typedef struct {
+    PyObject_HEAD
+    Py_ssize_t it_index;
+    PyListObject *it_seq; /* Set to NULL when iterator is exhausted */
+} _PyListIterObject;
+
 #ifdef __cplusplus
 }
 #endif

@@ -3518,3 +3518,44 @@ static PyObject *
 test_vararg_with_only_defaults_impl(PyObject *module, PyObject *args, int b,
                                     PyObject *c)
 /*[clinic end generated code: output=7e393689e6ce61a3 input=fa56a709a035666e]*/
+
+/*[clinic input]
+test_paramname_module
+
+    module as mod: object
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_paramname_module__doc__,
+"test_paramname_module($module, /, module)\n"
+"--\n"
+"\n");
+
+#define TEST_PARAMNAME_MODULE_METHODDEF    \
+    {"test_paramname_module", _PyCFunction_CAST(test_paramname_module), METH_FASTCALL|METH_KEYWORDS, test_paramname_module__doc__},
+
+static PyObject *
+test_paramname_module_impl(PyObject *module, PyObject *mod);
+
+static PyObject *
+test_paramname_module(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"module", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "test_paramname_module", 0};
+    PyObject *argsbuf[1];
+    PyObject *mod;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    mod = args[0];
+    return_value = test_paramname_module_impl(module, mod);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_paramname_module_impl(PyObject *module, PyObject *mod)
+/*[clinic end generated code: output=23379a7ffa65c514 input=afefe259667f13ba]*/

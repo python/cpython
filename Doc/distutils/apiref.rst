@@ -11,7 +11,7 @@ API Reference
       and other APIs, makes the API consistent across different Python versions,
       and is hence recommended over using ``distutils`` directly.
 
-.. _New and changed setup.py arguments in setuptools: https://setuptools.readthedocs.io/en/latest/setuptools.html#new-and-changed-setup-keywords
+.. _New and changed setup.py arguments in setuptools: https://web.archive.org/web/20210614192516/https://setuptools.pypa.io/en/stable/userguide/keywords.html
 
 .. include:: ./_setuptools_disclaimer.rst
 
@@ -1198,7 +1198,7 @@ other utility module.
    it contains certain values: see :func:`check_environ`.  Raise :exc:`ValueError`
    for any variables not found in either *local_vars* or ``os.environ``.
 
-   Note that this is not a fully-fledged string interpolation function. A valid
+   Note that this is not a full-fledged string interpolation function. A valid
    ``$variable`` can consist only of upper and lower case letters, numbers and an
    underscore. No { } or ( ) style quoting is available.
 

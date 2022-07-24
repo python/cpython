@@ -653,6 +653,7 @@ function,PyTuple_Size,3.2,,
 var,PyTuple_Type,3.2,,
 type,PyTypeObject,3.2,,opaque
 function,PyType_ClearCache,3.2,,
+function,PyType_FromMetaclass,3.12,,
 function,PyType_FromModuleAndSpec,3.10,,
 function,PyType_FromSpec,3.2,,
 function,PyType_FromSpecWithBases,3.3,,

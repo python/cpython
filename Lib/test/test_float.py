@@ -8,7 +8,6 @@ import time
 import unittest
 
 from test import support
-from test.support import import_helper
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
 from math import isinf, isnan, copysign, ldexp
@@ -831,6 +830,11 @@ class RoundTestCase(unittest.TestCase):
         self.assertRaises(TypeError, round, -INF, 1.0)
         self.assertRaises(TypeError, round, NAN, "ceci n'est pas un integer")
         self.assertRaises(TypeError, round, -0.0, 1j)
+
+    def test_inf_nan_ndigits(self):
+        self.assertEqual(round(INF, 0), INF)
+        self.assertEqual(round(-INF, 0), -INF)
+        self.assertTrue(math.isnan(round(NAN, 0)))
 
     def test_large_n(self):
         for n in [324, 325, 400, 2**31-1, 2**31, 2**32, 2**100]:

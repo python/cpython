@@ -1765,12 +1765,9 @@ class ReTests(unittest.TestCase):
         long_overflow = 2**128
         self.assertRaises(TypeError, re.finditer, "a", {})
         with self.assertRaises(OverflowError):
-            _sre.compile("abc", 0, [long_overflow], 0, {}, (), 0)
+            _sre.compile("abc", 0, [long_overflow], 0, {}, ())
         with self.assertRaises(TypeError):
-            _sre.compile({}, 0, [], 0, [], [], 0)
-        with self.assertRaises(RuntimeError):
-            # invalid repeat_count -1
-            _sre.compile("abc", 0, [1], 0, {}, (), -1)
+            _sre.compile({}, 0, [], 0, [], [])
 
     def test_search_dot_unicode(self):
         self.assertTrue(re.search("123.*-", '123abc-'))
@@ -2507,27 +2504,6 @@ POSSESSIVE_REPEAT 0 1
 11.   LITERAL 0x62 ('b')
 13: SUCCESS
 14. SUCCESS
-''')
-
-    def test_repeat_index(self):
-        self.assertEqual(get_debug_out(r'(?:ab)*?(?:cd)*'), '''\
-MIN_REPEAT 0 MAXREPEAT
-  LITERAL 97
-  LITERAL 98
-MAX_REPEAT 0 MAXREPEAT
-  LITERAL 99
-  LITERAL 100
-
- 0. INFO 4 0b0 0 MAXREPEAT (to 5)
- 5: REPEAT 8 0 MAXREPEAT 0 (to 14)
-10.   LITERAL 0x61 ('a')
-12.   LITERAL 0x62 ('b')
-14: MIN_UNTIL
-15. REPEAT 8 0 MAXREPEAT 1 (to 24)
-20.   LITERAL 0x63 ('c')
-22.   LITERAL 0x64 ('d')
-24: MAX_UNTIL
-25. SUCCESS
 ''')
 
 

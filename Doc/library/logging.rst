@@ -30,9 +30,17 @@ is that all Python modules can participate in logging, so your application log
 can include your own messages integrated with messages from third-party
 modules.
 
+The simplest example:
+
+.. code-block:: none
+
+    >>> import logging
+    >>> logging.warning('Watch out!')
+    WARNING:root:Watch out!
+
 The module provides a lot of functionality and flexibility.  If you are
-unfamiliar with logging, the best way to get to grips with it is to see the
-tutorials (see the links on the right).
+unfamiliar with logging, the best way to get to grips with it is to view the
+tutorials (**see the links above and on the right**).
 
 The basic classes defined by the module, together with their functions, are
 listed below.
@@ -225,7 +233,7 @@ is the module's name in the Python package namespace.
          2006-02-08 22:20:02,165 192.168.0.1 fbloggs  Protocol problem: connection reset
 
       The keys in the dictionary passed in *extra* should not clash with the keys used
-      by the logging system. (See the :class:`Formatter` documentation for more
+      by the logging system. (See the section on :ref:`logrecord-attributes` for more
       information on which keys are used by the logging system.)
 
       If you choose to use these attributes in logged messages, you need to exercise
@@ -523,55 +531,53 @@ Formatter Objects
 
 .. currentmodule:: logging
 
-:class:`Formatter` objects have the following attributes and methods. They are
-responsible for converting a :class:`LogRecord` to (usually) a string which can
-be interpreted by either a human or an external system. The base
-:class:`Formatter` allows a formatting string to be specified. If none is
-supplied, the default value of ``'%(message)s'`` is used, which just includes
-the message in the logging call. To have additional items of information in the
-formatted output (such as a timestamp), keep reading.
-
-A Formatter can be initialized with a format string which makes use of knowledge
-of the :class:`LogRecord` attributes - such as the default value mentioned above
-making use of the fact that the user's message and arguments are pre-formatted
-into a :class:`LogRecord`'s *message* attribute.  This format string contains
-standard Python %-style mapping keys. See section :ref:`old-string-formatting`
-for more information on string formatting.
-
-The useful mapping keys in a :class:`LogRecord` are given in the section on
-:ref:`logrecord-attributes`.
-
-
 .. class:: Formatter(fmt=None, datefmt=None, style='%', validate=True, *, defaults=None)
 
-   Returns a new instance of the :class:`Formatter` class.  The instance is
-   initialized with a format string for the message as a whole, as well as a
-   format string for the date/time portion of a message.  If no *fmt* is
-   specified, ``'%(message)s'`` is used.  If no *datefmt* is specified, a format
-   is used which is described in the :meth:`formatTime` documentation.
+   Responsible for converting a :class:`LogRecord` to an output string
+   to be interpreted by a human or external system.
 
-   The *style* parameter can be one of '%', '{' or '$' and determines how
-   the format string will be merged with its data: using one of %-formatting,
-   :meth:`str.format` or :class:`string.Template`. This only applies to the
-   format string *fmt* (e.g. ``'%(message)s'`` or ``{message}``), not to the
-   actual log messages passed to ``Logger.debug`` etc; see
-   :ref:`formatting-styles` for more information on using {- and $-formatting
-   for log messages.
+   :param fmt: A format string in the given *style* for
+       the logged output as a whole.
+       The possible mapping keys are drawn from the :class:`LogRecord` object's
+       :ref:`logrecord-attributes`.
+       If not specified, ``'%(message)s'`` is used,
+       which is just the logged message.
+   :type fmt: str
 
-   The *defaults* parameter can be a dictionary with default values to use in
-   custom fields. For example:
-   ``logging.Formatter('%(ip)s %(message)s', defaults={"ip": None})``
+   :param datefmt: A format string in the given *style* for
+       the date/time portion of the logged output.
+       If not specified, the default described in :meth:`formatTime` is used.
+   :type datefmt: str
 
-   .. versionchanged:: 3.2
-      The *style* parameter was added.
+   :param style: Can be one of ``'%'``, ``'{'`` or ``'$'`` and determines
+       how the format string will be merged with its data: using one of
+       :ref:`old-string-formatting` (``%``), :meth:`str.format` (``{``)
+       or :class:`string.Template` (``$``). This only applies to
+       *fmt* and *datefmt* (e.g. ``'%(message)s'`` versus ``'{message}'``),
+       not to the actual log messages passed to the logging methods.
+       However, there are :ref:`other ways <formatting-styles>`
+       to use ``{``- and ``$``-formatting for log messages.
+   :type style: str
 
-   .. versionchanged:: 3.8
-      The *validate* parameter was added. Incorrect or mismatched style and fmt
-      will raise a ``ValueError``.
-      For example: ``logging.Formatter('%(asctime)s - %(message)s', style='{')``.
+   :param validate: If ``True`` (the default), incorrect or mismatched
+       *fmt* and *style* will raise a :exc:`ValueError`; for example,
+       ``logging.Formatter('%(asctime)s - %(message)s', style='{')``.
+   :type validate: bool
 
-   .. versionchanged:: 3.10
-      The *defaults* parameter was added.
+   :param defaults: A dictionary with default values to use in custom fields.
+       For example,
+       ``logging.Formatter('%(ip)s %(message)s', defaults={"ip": None})``
+   :type defaults: dict[str, Any]
+
+   .. versionadded:: 3.2
+      The *style* parameter.
+
+   .. versionadded:: 3.8
+      The *validate* parameter.
+
+   .. versionadded:: 3.10
+      The *defaults* parameter.
+
 
    .. method:: format(record)
 
@@ -666,9 +672,10 @@ empty string, all events are passed.
 
    .. method:: filter(record)
 
-      Is the specified record to be logged? Returns zero for no, nonzero for
-      yes. If deemed appropriate, the record may be modified in-place by this
-      method.
+      Is the specified record to be logged? Returns falsy for no, truthy for
+      yes. Filters can either modify log records in-place or return a completely
+      different record instance which will replace the original
+      log record in any future processing of the event.
 
 Note that filters attached to handlers are consulted before an event is
 emitted by the handler, whereas filters attached to loggers are consulted
@@ -689,6 +696,12 @@ which has a ``filter`` method with the same semantics.
    assumed to be a callable and called with the record as the single
    parameter. The returned value should conform to that returned by
    :meth:`~Filter.filter`.
+
+.. versionchanged:: 3.12
+   You can now return a :class:`LogRecord` instance from filters to replace
+   the log record rather than modifying it in place. This allows filters attached to
+   a :class:`Handler` to modify the log record before it is emitted, without
+   having side effects on other handlers.
 
 Although filters are used primarily to filter records based on more
 sophisticated criteria than levels, they get to see every record which is
@@ -1163,6 +1176,19 @@ functions.
       text level, and would return the corresponding numeric value of the level.
       This undocumented behaviour was considered a mistake, and was removed in
       Python 3.4, but reinstated in 3.4.2 due to retain backward compatibility.
+
+.. function:: getHandlerByName(name)
+
+   Returns a handler with the specified *name*, or ``None`` if there is no handler
+   with that name.
+
+   .. versionadded:: 3.12
+
+.. function:: getHandlerNames()
+
+   Returns an immutable set of all known handler names.
+
+   .. versionadded:: 3.12
 
 .. function:: makeLogRecord(attrdict)
 
