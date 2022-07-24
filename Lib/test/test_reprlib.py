@@ -25,6 +25,28 @@ def nestedTuple(nesting):
 
 class ReprTests(unittest.TestCase):
 
+    def test_init_kwargs(self):
+        example_kwargs = {
+            "maxlevel": 101,
+            "maxtuple": 102,
+            "maxlist": 103,
+            "maxarray": 104,
+            "maxdict": 105,
+            "maxset": 106,
+            "maxfrozenset": 107,
+            "maxdeque": 108,
+            "maxstring": 109,
+            "maxlong": 110,
+            "maxother": 111,
+            "fillvalue": "x" * 112,
+        }
+        r1 = Repr()
+        for attr, val in example_kwargs.items():
+            setattr(r1, attr, val)
+        r2 = Repr(**example_kwargs)
+        for attr in example_kwargs:
+            self.assertEqual(getattr(r1, attr), getattr(r2, attr), msg=attr)
+
     def test_string(self):
         eq = self.assertEqual
         eq(r("abc"), "'abc'")

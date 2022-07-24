@@ -638,11 +638,10 @@ PyCode_New(int argcount, int kwonlyargcount,
                                      exceptiontable);
 }
 
-static const char assert0[4] = {
-    LOAD_ASSERTION_ERROR,
-    0,
-    RAISE_VARARGS,
-    1
+static const char assert0[6] = {
+    RESUME, 0,
+    LOAD_ASSERTION_ERROR, 0,
+    RAISE_VARARGS, 1
 };
 
 PyCodeObject *
@@ -666,7 +665,7 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
     if (filename_ob == NULL) {
         goto failed;
     }
-    code_ob = PyBytes_FromStringAndSize(assert0, 4);
+    code_ob = PyBytes_FromStringAndSize(assert0, 6);
     if (code_ob == NULL) {
         goto failed;
     }
@@ -972,6 +971,7 @@ PyCode_Addr2Location(PyCodeObject *co, int addrq,
     if (addrq < 0) {
         *start_line = *end_line = co->co_firstlineno;
         *start_column = *end_column = 0;
+        return 1;
     }
     assert(addrq >= 0 && addrq < _PyCode_NBYTES(co));
     PyCodeAddressRange bounds;
@@ -1418,7 +1418,7 @@ deopt_code(_Py_CODEUNIT *instructions, Py_ssize_t len)
 {
     for (int i = 0; i < len; i++) {
         _Py_CODEUNIT instruction = instructions[i];
-        int opcode = _PyOpcode_Original[_Py_OPCODE(instruction)];
+        int opcode = _PyOpcode_Deopt[_Py_OPCODE(instruction)];
         int caches = _PyOpcode_Caches[opcode];
         instructions[i] = _Py_MAKECODEUNIT(opcode, _Py_OPARG(instruction));
         while (caches--) {

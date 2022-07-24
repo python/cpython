@@ -4,9 +4,9 @@ opcode module - potentially shared between dis and other modules which
 operate on bytecodes (e.g. peephole optimizers).
 """
 
-__all__ = ["cmp_op", "hasconst", "hasname", "hasjrel", "hasjabs",
-           "haslocal", "hascompare", "hasfree", "opname", "opmap",
-           "HAVE_ARGUMENT", "EXTENDED_ARG", "hasnargs"]
+__all__ = ["cmp_op", "hasarg", "hasconst", "hasname", "hasjrel", "hasjabs",
+           "haslocal", "hascompare", "hasfree", "hasexc", "opname", "opmap",
+           "HAVE_ARGUMENT", "EXTENDED_ARG"]
 
 # It's a chicken-and-egg I'm afraid:
 # We're imported before _opcode's made.
@@ -23,6 +23,7 @@ except ImportError:
 
 cmp_op = ('<', '<=', '==', '!=', '>', '>=')
 
+hasarg = []
 hasconst = []
 hasname = []
 hasjrel = []
@@ -30,13 +31,21 @@ hasjabs = []
 haslocal = []
 hascompare = []
 hasfree = []
-hasnargs = [] # unused
+hasexc = []
+
+def is_pseudo(op):
+    return op >= MIN_PSEUDO_OPCODE and op <= MAX_PSEUDO_OPCODE
+
+oplists = [hasarg, hasconst, hasname, hasjrel, hasjabs,
+           haslocal, hascompare, hasfree, hasexc]
 
 opmap = {}
-opname = ['<%r>' % (op,) for op in range(256)]
+
+## pseudo opcodes (used in the compiler) mapped to the values
+## they can become in the actual code.
+_pseudo_ops = {}
 
 def def_op(name, op):
-    opname[op] = name
     opmap[name] = op
 
 def name_op(name, op):
@@ -50,6 +59,17 @@ def jrel_op(name, op):
 def jabs_op(name, op):
     def_op(name, op)
     hasjabs.append(op)
+
+def pseudo_op(name, op, real_ops):
+    def_op(name, op)
+    _pseudo_ops[name] = real_ops
+    # add the pseudo opcode to the lists its targets are in
+    for oplist in oplists:
+        res = [opmap[rop] in oplist for rop in real_ops]
+        if any(res):
+            assert all(res)
+            oplist.append(op)
+
 
 # Instruction opcodes for compiled code
 # Blank lines correspond to available opcodes
@@ -105,7 +125,7 @@ def_op('ASYNC_GEN_WRAP', 87)
 def_op('PREP_RERAISE_STAR', 88)
 def_op('POP_EXCEPT', 89)
 
-HAVE_ARGUMENT = 90              # Opcodes from here have an argument:
+HAVE_ARGUMENT = 90             # real opcodes from here have an argument:
 
 name_op('STORE_NAME', 90)       # Index in name list
 name_op('DELETE_NAME', 91)      # ""
@@ -200,8 +220,34 @@ jrel_op('POP_JUMP_BACKWARD_IF_NONE', 174)
 jrel_op('POP_JUMP_BACKWARD_IF_FALSE', 175)
 jrel_op('POP_JUMP_BACKWARD_IF_TRUE', 176)
 
+hasarg.extend([op for op in opmap.values() if op >= HAVE_ARGUMENT])
 
-del def_op, name_op, jrel_op, jabs_op
+MIN_PSEUDO_OPCODE = 256
+
+pseudo_op('SETUP_FINALLY', 256, ['NOP'])
+hasexc.append(256)
+pseudo_op('SETUP_CLEANUP', 257, ['NOP'])
+hasexc.append(257)
+pseudo_op('SETUP_WITH', 258, ['NOP'])
+hasexc.append(258)
+pseudo_op('POP_BLOCK', 259, ['NOP'])
+
+pseudo_op('JUMP', 260, ['JUMP_FORWARD', 'JUMP_BACKWARD'])
+pseudo_op('JUMP_NO_INTERRUPT', 261, ['JUMP_FORWARD', 'JUMP_BACKWARD_NO_INTERRUPT'])
+pseudo_op('POP_JUMP_IF_FALSE', 262, ['POP_JUMP_FORWARD_IF_FALSE', 'POP_JUMP_BACKWARD_IF_FALSE'])
+pseudo_op('POP_JUMP_IF_TRUE', 263, ['POP_JUMP_FORWARD_IF_TRUE', 'POP_JUMP_BACKWARD_IF_TRUE'])
+pseudo_op('POP_JUMP_IF_NONE', 264, ['POP_JUMP_FORWARD_IF_NONE', 'POP_JUMP_BACKWARD_IF_NONE'])
+pseudo_op('POP_JUMP_IF_NOT_NONE', 265, ['POP_JUMP_FORWARD_IF_NOT_NONE', 'POP_JUMP_BACKWARD_IF_NOT_NONE'])
+pseudo_op('LOAD_METHOD', 266, ['LOAD_ATTR'])
+
+MAX_PSEUDO_OPCODE = MIN_PSEUDO_OPCODE + len(_pseudo_ops) - 1
+
+del def_op, name_op, jrel_op, jabs_op, pseudo_op
+
+opname = ['<%r>' % (op,) for op in range(MAX_PSEUDO_OPCODE + 1)]
+for op, i in opmap.items():
+    opname[i] = op
+
 
 _nb_ops = [
     ("NB_ADD", "+"),

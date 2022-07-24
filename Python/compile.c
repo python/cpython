@@ -71,45 +71,23 @@
 #define MAX_ALLOWED_STACK_USE (STACK_USE_GUIDELINE * 100)
 
 
-/* Pseudo-instructions used in the compiler,
- * but turned into NOPs or other instructions
- * by the assembler. */
-#define SETUP_FINALLY -1
-#define SETUP_CLEANUP -2
-#define SETUP_WITH -3
-#define POP_BLOCK -4
-#define JUMP -5
-#define JUMP_NO_INTERRUPT -6
-#define POP_JUMP_IF_FALSE -7
-#define POP_JUMP_IF_TRUE -8
-#define POP_JUMP_IF_NONE -9
-#define POP_JUMP_IF_NOT_NONE -10
-#define LOAD_METHOD -11
-
-#define MIN_VIRTUAL_OPCODE -11
-#define MAX_ALLOWED_OPCODE 254
+#define MAX_REAL_OPCODE 254
 
 #define IS_WITHIN_OPCODE_RANGE(opcode) \
-        ((opcode) >= MIN_VIRTUAL_OPCODE && (opcode) <= MAX_ALLOWED_OPCODE)
-
-#define IS_VIRTUAL_OPCODE(opcode) ((opcode) < 0)
-
-#define IS_VIRTUAL_JUMP_OPCODE(opcode) \
-        ((opcode) == JUMP || \
-         (opcode) == JUMP_NO_INTERRUPT || \
-         (opcode) == POP_JUMP_IF_NONE || \
-         (opcode) == POP_JUMP_IF_NOT_NONE || \
-         (opcode) == POP_JUMP_IF_FALSE || \
-         (opcode) == POP_JUMP_IF_TRUE)
+        (((opcode) >= 0 && (opcode) <= MAX_REAL_OPCODE) || \
+         IS_PSEUDO_OPCODE(opcode))
 
 #define IS_JUMP_OPCODE(opcode) \
-        (IS_VIRTUAL_JUMP_OPCODE(opcode) || \
-         is_bit_set_in_table(_PyOpcode_Jump, opcode))
+         is_bit_set_in_table(_PyOpcode_Jump, opcode)
 
 #define IS_BLOCK_PUSH_OPCODE(opcode) \
         ((opcode) == SETUP_FINALLY || \
          (opcode) == SETUP_WITH || \
          (opcode) == SETUP_CLEANUP)
+
+/* opcodes that must be last in the basicblock */
+#define IS_TERMINATOR_OPCODE(opcode) \
+        (IS_JUMP_OPCODE(opcode) || IS_SCOPE_EXIT_OPCODE(opcode))
 
 /* opcodes which are not emitted in codegen stage, only by the assembler */
 #define IS_ASSEMBLER_OPCODE(opcode) \
@@ -124,7 +102,6 @@
          (opcode) == POP_JUMP_BACKWARD_IF_TRUE || \
          (opcode) == POP_JUMP_FORWARD_IF_FALSE || \
          (opcode) == POP_JUMP_BACKWARD_IF_FALSE)
-
 
 #define IS_BACKWARDS_JUMP_OPCODE(opcode) \
         ((opcode) == JUMP_BACKWARD || \
@@ -183,11 +160,11 @@ typedef struct exceptstack {
 static inline int
 is_bit_set_in_table(const uint32_t *table, int bitindex) {
     /* Is the relevant bit set in the relevant word? */
-    /* 256 bits fit into 8 32-bits words.
+    /* 512 bits fit into 9 32-bits words.
      * Word is indexed by (bitindex>>ln(size of int in bits)).
      * Bit within word is the low bits of bitindex.
      */
-    if (bitindex >= 0 && bitindex < 256) {
+    if (bitindex >= 0 && bitindex < 512) {
         uint32_t word = table[bitindex >> LOG_BITS_PER_INT];
         return (word >> (bitindex & MASK_LOW_LOG_BITS)) & 1;
     }
@@ -218,7 +195,7 @@ static int
 instr_size(struct instr *instruction)
 {
     int opcode = instruction->i_opcode;
-    assert(!IS_VIRTUAL_OPCODE(opcode));
+    assert(!IS_PSEUDO_OPCODE(opcode));
     int oparg = HAS_ARG(opcode) ? instruction->i_oparg : 0;
     int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
     int caches = _PyOpcode_Caches[opcode];
@@ -229,18 +206,18 @@ static void
 write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
 {
     int opcode = instruction->i_opcode;
-    assert(!IS_VIRTUAL_OPCODE(opcode));
+    assert(!IS_PSEUDO_OPCODE(opcode));
     int oparg = HAS_ARG(opcode) ? instruction->i_oparg : 0;
     int caches = _PyOpcode_Caches[opcode];
     switch (ilen - caches) {
         case 4:
-            *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG_QUICK, (oparg >> 24) & 0xFF);
+            *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG, (oparg >> 24) & 0xFF);
             /* fall through */
         case 3:
-            *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG_QUICK, (oparg >> 16) & 0xFF);
+            *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG, (oparg >> 16) & 0xFF);
             /* fall through */
         case 2:
-            *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG_QUICK, (oparg >> 8) & 0xFF);
+            *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG, (oparg >> 8) & 0xFF);
             /* fall through */
         case 1:
             *codestr++ = _Py_MAKECODEUNIT(opcode, oparg & 0xFF);
@@ -289,7 +266,7 @@ typedef struct basicblock_ {
 
 
 static struct instr *
-basicblock_last_instr(basicblock *b) {
+basicblock_last_instr(const basicblock *b) {
     if (b->b_iused) {
         return &b->b_instr[b->b_iused - 1];
     }
@@ -297,19 +274,19 @@ basicblock_last_instr(basicblock *b) {
 }
 
 static inline int
-basicblock_returns(basicblock *b) {
+basicblock_returns(const basicblock *b) {
     struct instr *last = basicblock_last_instr(b);
     return last && last->i_opcode == RETURN_VALUE;
 }
 
 static inline int
-basicblock_exits_scope(basicblock *b) {
+basicblock_exits_scope(const basicblock *b) {
     struct instr *last = basicblock_last_instr(b);
     return last && IS_SCOPE_EXIT_OPCODE(last->i_opcode);
 }
 
 static inline int
-basicblock_nofallthrough(basicblock *b) {
+basicblock_nofallthrough(const basicblock *b) {
     struct instr *last = basicblock_last_instr(b);
     return (last &&
             (IS_SCOPE_EXIT_OPCODE(last->i_opcode) ||
@@ -1271,17 +1248,11 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 }
 
 static int
-is_end_of_basic_block(struct instr *instr)
-{
-    int opcode = instr->i_opcode;
-    return is_jump(instr) || IS_SCOPE_EXIT_OPCODE(opcode);
-}
-
-static int
 compiler_use_new_implicit_block_if_needed(struct compiler *c)
 {
     basicblock *b = c->u->u_curblock;
-    if (b->b_iused && is_end_of_basic_block(basicblock_last_instr(b))) {
+    struct instr *last = basicblock_last_instr(b);
+    if (last && IS_TERMINATOR_OPCODE(last->i_opcode)) {
         basicblock *b = compiler_new_block(c);
         if (b == NULL) {
             return -1;
@@ -1324,7 +1295,7 @@ basicblock_addop(basicblock *b, int opcode, int oparg,
 static int
 compiler_addop(struct compiler *c, int opcode, bool line)
 {
-    assert(!HAS_ARG(opcode) || IS_ARTIFICIAL(opcode));
+    assert(!HAS_ARG(opcode));
     if (compiler_use_new_implicit_block_if_needed(c) < 0) {
         return -1;
     }
@@ -1786,7 +1757,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     c->u->u_curblock = block;
 
     if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
-        c->u->u_loc.lineno = -1;
+        c->u->u_loc.lineno = 0;
     }
     else {
         if (!compiler_set_qualname(c))
@@ -1794,6 +1765,9 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
     ADDOP_I(c, RESUME, 0);
 
+    if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
+        c->u->u_loc.lineno = -1;
+    }
     return 1;
 }
 
@@ -4755,13 +4729,30 @@ is_import_originated(struct compiler *c, expr_ty e)
     return flags & DEF_IMPORT;
 }
 
+// If an attribute access spans multiple lines, update the current start
+// location to point to the attribute name.
 static void
-update_location_to_match_attr(struct compiler *c, expr_ty meth)
+update_start_location_to_match_attr(struct compiler *c, expr_ty attr)
 {
-    if (meth->lineno != meth->end_lineno) {
-        // Make start location match attribute
-        c->u->u_loc.lineno = meth->end_lineno;
-        c->u->u_loc.col_offset = meth->end_col_offset - (int)PyUnicode_GetLength(meth->v.Attribute.attr)-1;
+    assert(attr->kind == Attribute_kind);
+    struct location *loc = &c->u->u_loc;
+    if (loc->lineno != attr->end_lineno) {
+        loc->lineno = attr->end_lineno;
+        int len = (int)PyUnicode_GET_LENGTH(attr->v.Attribute.attr);
+        if (len <= attr->end_col_offset) {
+            loc->col_offset = attr->end_col_offset - len;
+        }
+        else {
+            // GH-94694: Somebody's compiling weird ASTs. Just drop the columns:
+            loc->col_offset = -1;
+            loc->end_col_offset = -1;
+        }
+        // Make sure the end position still follows the start position, even for
+        // weird ASTs:
+        loc->end_lineno = Py_MAX(loc->lineno, loc->end_lineno);
+        if (loc->lineno == loc->end_lineno) {
+            loc->end_col_offset = Py_MAX(loc->col_offset, loc->end_col_offset);
+        }
     }
 }
 
@@ -4807,7 +4798,7 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
     /* Alright, we can optimize the code. */
     VISIT(c, expr, meth->v.Attribute.value);
     SET_LOC(c, meth);
-    update_location_to_match_attr(c, meth);
+    update_start_location_to_match_attr(c, meth);
     ADDOP_NAME(c, LOAD_METHOD, meth->v.Attribute.attr, names);
     VISIT_SEQ(c, expr, e->v.Call.args);
 
@@ -4818,7 +4809,7 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
         };
     }
     SET_LOC(c, e);
-    update_location_to_match_attr(c, meth);
+    update_start_location_to_match_attr(c, meth);
     ADDOP_I(c, CALL, argsl + kwdsl);
     return 1;
 }
@@ -4876,7 +4867,7 @@ compiler_joined_str(struct compiler *c, expr_ty e)
     Py_ssize_t value_count = asdl_seq_LEN(e->v.JoinedStr.values);
     if (value_count > STACK_USE_GUIDELINE) {
         _Py_DECLARE_STR(empty, "");
-        ADDOP_LOAD_CONST_NEW(c, &_Py_STR(empty));
+        ADDOP_LOAD_CONST_NEW(c, Py_NewRef(&_Py_STR(empty)));
         ADDOP_NAME(c, LOAD_METHOD, &_Py_ID(join), names);
         ADDOP_I(c, BUILD_LIST, 0);
         for (Py_ssize_t i = 0; i < asdl_seq_LEN(e->v.JoinedStr.values); i++) {
@@ -5830,23 +5821,18 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
         VISIT(c, expr, e->v.Attribute.value);
+        update_start_location_to_match_attr(c, e);
         switch (e->v.Attribute.ctx) {
         case Load:
         {
-            int old_lineno = c->u->u_loc.lineno;
-            c->u->u_loc.lineno = e->end_lineno;
             ADDOP_NAME(c, LOAD_ATTR, e->v.Attribute.attr, names);
-            c->u->u_loc.lineno = old_lineno;
             break;
         }
         case Store:
             if (forbidden_name(c, e->v.Attribute.attr, e->v.Attribute.ctx)) {
                 return 0;
             }
-            int old_lineno = c->u->u_loc.lineno;
-            c->u->u_loc.lineno = e->end_lineno;
             ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
-            c->u->u_loc.lineno = old_lineno;
             break;
         case Del:
             ADDOP_NAME(c, DELETE_ATTR, e->v.Attribute.attr, names);
@@ -5917,10 +5903,8 @@ compiler_augassign(struct compiler *c, stmt_ty s)
     case Attribute_kind:
         VISIT(c, expr, e->v.Attribute.value);
         ADDOP_I(c, COPY, 1);
-        int old_lineno = c->u->u_loc.lineno;
-        c->u->u_loc.lineno = e->end_lineno;
+        update_start_location_to_match_attr(c, e);
         ADDOP_NAME(c, LOAD_ATTR, e->v.Attribute.attr, names);
-        c->u->u_loc.lineno = old_lineno;
         break;
     case Subscript_kind:
         VISIT(c, expr, e->v.Subscript.value);
@@ -5960,7 +5944,7 @@ compiler_augassign(struct compiler *c, stmt_ty s)
 
     switch (e->kind) {
     case Attribute_kind:
-        c->u->u_loc.lineno = e->end_lineno;
+        update_start_location_to_match_attr(c, e);
         ADDOP_I(c, SWAP, 2);
         ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
         break;
@@ -8554,6 +8538,8 @@ assemble(struct compiler *c, int addNone)
 {
     PyCodeObject *co = NULL;
     PyObject *consts = NULL;
+    struct assembler a;
+    memset(&a, 0, sizeof(struct assembler));
 
     int code_flags = compute_code_flags(c);
     if (code_flags < 0) {
@@ -8566,18 +8552,6 @@ assemble(struct compiler *c, int addNone)
         if (addNone)
             ADDOP_LOAD_CONST(c, Py_None);
         ADDOP(c, RETURN_VALUE);
-    }
-
-    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
-        if (normalize_basic_block(b)) {
-            return NULL;
-        }
-    }
-
-    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
-        if (extend_block(b)) {
-            return NULL;
-        }
     }
 
     assert(PyDict_GET_SIZE(c->u->u_varnames) < INT_MAX);
@@ -8637,11 +8611,11 @@ assemble(struct compiler *c, int addNone)
     if (optimize_cfg(entryblock, consts, c->c_const_cache)) {
         goto error;
     }
-    if (duplicate_exits_without_lineno(entryblock)) {
-        return NULL;
-    }
     if (trim_unused_consts(entryblock, consts)) {
         goto error;
+    }
+    if (duplicate_exits_without_lineno(entryblock)) {
+        return NULL;
     }
     propagate_line_numbers(entryblock);
     guarantee_lineno_for_exits(entryblock, c->u->u_firstlineno);
@@ -8650,12 +8624,7 @@ assemble(struct compiler *c, int addNone)
     if (maxdepth < 0) {
         goto error;
     }
-    if (maxdepth > MAX_ALLOWED_STACK_USE) {
-        PyErr_Format(PyExc_SystemError,
-                     "excessive stack use: stack is %d deep",
-                     maxdepth);
-        goto error;
-    }
+    /* TO DO -- For 3.12, make sure that `maxdepth <= MAX_ALLOWED_STACK_USE` */
 
     if (label_exception_targets(entryblock)) {
         goto error;
@@ -8683,7 +8652,6 @@ assemble(struct compiler *c, int addNone)
 
 
     /* Create assembler */
-    struct assembler a;
     if (!assemble_init(&a, c->u->u_firstlineno))
         goto error;
 
@@ -8994,7 +8962,6 @@ apply_static_swaps(basicblock *block, int i)
 static bool
 jump_thread(struct instr *inst, struct instr *target, int opcode)
 {
-    assert(!IS_VIRTUAL_OPCODE(opcode) || IS_VIRTUAL_JUMP_OPCODE(opcode));
     assert(is_jump(inst));
     assert(is_jump(target));
     // bpo-45773: If inst->i_target == target->i_target, then nothing actually
@@ -9253,6 +9220,16 @@ error:
     return -1;
 }
 
+static bool
+basicblock_has_lineno(const basicblock *bb) {
+    for (int i = 0; i < bb->b_iused; i++) {
+        if (bb->b_instr[i].i_loc.lineno > 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /* If this block ends with an unconditional jump to an exit block,
  * then remove the jump and extend this block with the target.
  */
@@ -9269,6 +9246,10 @@ extend_block(basicblock *bb) {
     }
     if (basicblock_exits_scope(last->i_target) && last->i_target->b_iused <= MAX_COPY_SIZE) {
         basicblock *to_copy = last->i_target;
+        if (basicblock_has_lineno(to_copy)) {
+            /* copy only blocks without line number (like implicit 'return None's) */
+            return 0;
+        }
         last->i_opcode = NOP;
         for (int i = 0; i < to_copy->b_iused; i++) {
             int index = basicblock_next_instr(bb);
@@ -9300,7 +9281,10 @@ clean_basic_block(basicblock *bb) {
             /* or, if the next instruction has same line number or no line number */
             if (src < bb->b_iused - 1) {
                 int next_lineno = bb->b_instr[src+1].i_loc.lineno;
-                if (next_lineno < 0 || next_lineno == lineno) {
+                if (next_lineno == lineno) {
+                    continue;
+                }
+                if (next_lineno < 0) {
                     bb->b_instr[src+1].i_loc = bb->b_instr[src].i_loc;
                     continue;
                 }
@@ -9331,8 +9315,8 @@ clean_basic_block(basicblock *bb) {
 
 static int
 normalize_basic_block(basicblock *bb) {
-    /* Mark blocks as exit and/or nofallthrough.
-     Raise SystemError if CFG is malformed. */
+    /* Skip over empty blocks.
+     * Raise SystemError if jump or exit is not last instruction in the block. */
     for (int i = 0; i < bb->b_iused; i++) {
         int opcode = bb->b_instr[i].i_opcode;
         assert(!IS_ASSEMBLER_OPCODE(opcode));
@@ -9469,8 +9453,7 @@ propagate_line_numbers(basicblock *entryblock) {
    The consts object should still be in list form to allow new constants
    to be appended.
 
-   All transformations keep the code size the same or smaller.
-   For those that reduce size, the gaps are initially filled with
+   Code trasnformations that reduce code size initially fill the gaps with
    NOPs.  Later those NOPs are removed.
 */
 
@@ -9478,6 +9461,16 @@ static int
 optimize_cfg(basicblock *entryblock, PyObject *consts, PyObject *const_cache)
 {
     assert(PyDict_CheckExact(const_cache));
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        if (normalize_basic_block(b)) {
+            return -1;
+        }
+    }
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        if (extend_block(b)) {
+            return -1;
+        }
+    }
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         if (optimize_basic_block(const_cache, b, consts)) {
             return -1;

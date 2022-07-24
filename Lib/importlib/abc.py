@@ -15,18 +15,27 @@ from ._abc import Loader
 import abc
 import warnings
 
-# for compatibility with Python 3.10
-from .resources.abc import ResourceReader, Traversable, TraversableResources
+from .resources import abc as _resources_abc
 
 
 __all__ = [
     'Loader', 'Finder', 'MetaPathFinder', 'PathEntryFinder',
     'ResourceLoader', 'InspectLoader', 'ExecutionLoader',
     'FileLoader', 'SourceLoader',
-
-    # for compatibility with Python 3.10
-    'ResourceReader', 'Traversable', 'TraversableResources',
 ]
+
+
+def __getattr__(name):
+    """
+    For backwards compatibility, continue to make names
+    from _resources_abc available through this module. #93963
+    """
+    if name in _resources_abc.__all__:
+        obj = getattr(_resources_abc, name)
+        warnings._deprecated(f"{__name__}.{name}", remove=(3, 14))
+        globals()[name] = obj
+        return obj
+    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
 
 
 def _register(abstract_cls, *classes):
