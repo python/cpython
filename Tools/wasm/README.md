@@ -35,6 +35,8 @@ docker run --rm -ti -v $(pwd):/python-wasm/cpython quay.io/tiran/cpythonbuild:em
 
 ### Compile a build Python interpreter
 
+From within the container, run the following commands:
+
 ```shell
 mkdir -p builddir/build
 pushd builddir/build
