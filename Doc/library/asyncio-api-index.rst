@@ -48,6 +48,12 @@ await on multiple things with timeouts.
     * - :class:`Task`
       - Task object.
 
+    * - :class:`TaskGroup`
+      - Holds a group of tasks.
+
+    * - :class:`Runner`
+      - Manages multiple function calls.
+
     * - :func:`to_thread`
       - Asynchronously run a function in a separate OS thread.
 
