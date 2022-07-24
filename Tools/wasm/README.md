@@ -33,11 +33,6 @@ podman run --rm -ti -v $(pwd):/python-wasm/cpython:Z -w /python-wasm/cpython qua
 docker run --rm -ti -v $(pwd):/python-wasm/cpython -w /python-wasm/cpython quay.io/tiran/cpythonbuild:emsdk3
 ```
 
-Note that when you exit the container, all work outside the mounted cpython
-directory will be lost.
-See the `podman` or `docker` docs for how to preserve the container environment
-across runs.
-
 ### Compile a build Python interpreter
 
 From within the container, run the following commands:
