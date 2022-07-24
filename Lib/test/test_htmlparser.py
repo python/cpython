@@ -415,7 +415,7 @@ text
                     ('endtag', 'a')]
         self._run_check('<a href="https://example.com?foo&cent;=123"></a>', expected, collector=collector())
 
-        # do unescape char refs at begging and end of text attributes
+        # do unescape char refs at beginning and end of text attributes
         charrefs = ['&quot;', '&#34;', '&#x22;', '&quot', '&#34', '&#x22']
         expected = [('starttag', 'a', [('x', '"'), ('y', '"-X'), ('z', 'X-"')]), ('endtag', 'a')]
         for charref in charrefs:
