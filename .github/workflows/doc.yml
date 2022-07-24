@@ -24,6 +24,7 @@ on:
     - 'Doc/**'
     - 'Misc/**'
     - '.github/workflows/doc.yml'
+    - '!**/*.md'
 
 permissions:
   contents: read

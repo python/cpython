@@ -21,6 +21,8 @@ on:
     - '3.9'
     - '3.8'
     - '3.7'
+  paths:
+    - '!**/*.md'
 
 permissions:
   contents: read
