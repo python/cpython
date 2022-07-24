@@ -435,11 +435,8 @@ class EditorWindow:
         line, column = self.text.index(INSERT).split('.')
         self.status_bar.set_label('column', 'Col: %s' % column)
         self.status_bar.set_label('line', 'Ln: %s' % line)
-        
-        selected = len(self.text.get(SEL_FIRST, SEL_LAST))
-        self.status_bar.set_label('selected',
-                                f"({selected} selected)" if selected else '',
-                                side=RIGHT)
+        chars = len(self.text.get(SEL_FIRST, SEL_LAST))
+        self.status_bar.set_label('selected', '%d selected' % chars if chars else '')
 
     menu_specs = [
         ("file", "_File"),
