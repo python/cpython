@@ -1,1 +1,0 @@
-Added :class:`TaskGroup` and :class:`Runner` to AsyncIO API Index
