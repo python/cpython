@@ -327,8 +327,8 @@ enum {
 
 typedef struct cfg_ {
     basicblock *entryblock; /* Where control flow begins */
-    /* Pointer to the most recently allocated block.  By following b_list
-       members, you can reach all early allocated blocks. */
+    /* Pointer to the most recently allocated block.  By following
+       b_list links, you can reach all allocated blocks. */
     basicblock *block_list;
     basicblock *curblock; /* pointer to current block */
 } cfg;
@@ -888,25 +888,13 @@ compiler_use_next_block(struct compiler *c, basicblock *block)
 }
 
 static basicblock *
-basicblock_new_b_list_successor(basicblock *prev)
-{
-    basicblock *result = new_basicblock();
-    if (result == NULL) {
-        return NULL;
-    }
-    result->b_list = prev->b_list;
-    prev->b_list = result;
-    return result;
-}
-
-static basicblock *
-copy_basicblock(basicblock *block)
+copy_basicblock(cfg *g, basicblock *block)
 {
     /* Cannot copy a block if it has a fallthrough, since
      * a block can only have one fallthrough predecessor.
      */
     assert(BB_NO_FALLTHROUGH(block));
-    basicblock *result = basicblock_new_b_list_successor(block);
+    basicblock *result = cfg_new_block(g);
     if (result == NULL) {
         return NULL;
     }
@@ -7438,7 +7426,8 @@ mark_cold(basicblock *entryblock) {
 }
 
 static int
-push_cold_blocks_to_end(basicblock *entryblock, int code_flags) {
+push_cold_blocks_to_end(cfg *g, int code_flags) {
+    basicblock *entryblock = g->entryblock;
     if (entryblock->b_next == NULL) {
         /* single basicblock, no need to reorder */
         return 0;
@@ -7451,7 +7440,7 @@ push_cold_blocks_to_end(basicblock *entryblock, int code_flags) {
     /* an explicit jump instead of fallthrough */
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         if (b->b_cold && BB_HAS_FALLTHROUGH(b) && b->b_next && b->b_next->b_warm) {
-            basicblock *explicit_jump = basicblock_new_b_list_successor(b);
+            basicblock *explicit_jump = cfg_new_block(g);
             if (explicit_jump == NULL) {
                 return -1;
             }
@@ -8304,7 +8293,7 @@ trim_unused_consts(basicblock *entryblock, PyObject *consts);
 
 /* Duplicates exit BBs, so that line numbers can be propagated to them */
 static int
-duplicate_exits_without_lineno(basicblock *entryblock);
+duplicate_exits_without_lineno(cfg *g);
 
 static int
 extend_block(basicblock *bb);
@@ -8585,7 +8574,8 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
-    basicblock *entryblock = CFG(c)->entryblock;
+    cfg *g = CFG(c);
+    basicblock *entryblock = g->entryblock;
     assert(entryblock != NULL);
 
     /* Set firstlineno if it wasn't explicitly set. */
@@ -8622,7 +8612,7 @@ assemble(struct compiler *c, int addNone)
     if (trim_unused_consts(entryblock, consts)) {
         goto error;
     }
-    if (duplicate_exits_without_lineno(entryblock)) {
+    if (duplicate_exits_without_lineno(g)) {
         return NULL;
     }
     propagate_line_numbers(entryblock);
@@ -8639,7 +8629,7 @@ assemble(struct compiler *c, int addNone)
     }
     convert_exception_handlers_to_nops(entryblock);
 
-    if (push_cold_blocks_to_end(entryblock, code_flags) < 0) {
+    if (push_cold_blocks_to_end(g, code_flags) < 0) {
         goto error;
     }
 
@@ -9558,15 +9548,16 @@ is_exit_without_lineno(basicblock *b) {
  * copy the line number from the sole predecessor block.
  */
 static int
-duplicate_exits_without_lineno(basicblock *entryblock)
+duplicate_exits_without_lineno(cfg *g)
 {
     /* Copy all exit blocks without line number that are targets of a jump.
      */
+    basicblock *entryblock = g->entryblock;
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         if (b->b_iused > 0 && is_jump(&b->b_instr[b->b_iused-1])) {
             basicblock *target = b->b_instr[b->b_iused-1].i_target;
             if (is_exit_without_lineno(target) && target->b_predecessors > 1) {
-                basicblock *new_target = copy_basicblock(target);
+                basicblock *new_target = copy_basicblock(g, target);
                 if (new_target == NULL) {
                     return -1;
                 }
