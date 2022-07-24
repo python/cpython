@@ -524,6 +524,8 @@ def _ip_getnode():
 def _arp_getnode():
     """Get the hardware address on Unix by running arp."""
     import os, socket
+    if not hasattr(socket, "gethostbyname"):
+        return None
     try:
         ip_addr = socket.gethostbyname(socket.gethostname())
     except OSError:
