@@ -1391,7 +1391,7 @@ PyObject* PyAST_mod2obj(mod_ty t)
     state->recursion_limit = (recursion_limit < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
         recursion_limit * COMPILER_STACK_FRAME_SCALE : recursion_limit;
     int recursion_depth = tstate->recursion_limit - tstate->recursion_remaining;
-    starting_recursion_depth = (recursion_depth< INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
+    starting_recursion_depth = (recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
         recursion_depth * COMPILER_STACK_FRAME_SCALE : recursion_depth;
     state->recursion_depth = starting_recursion_depth;
 
