@@ -741,7 +741,7 @@ further because you risk skipping a discarded element.
 The itertools module
 ====================
 
-The :mod:`itertools` module contains a number of commonly-used iterators as well
+The :mod:`itertools` module contains a number of commonly used iterators as well
 as functions for combining several iterators.  This section will introduce the
 module's contents by showing small examples.
 

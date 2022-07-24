@@ -345,6 +345,8 @@ class TestTranforms(BytecodeTestCase):
         self.assertEqual(len(returns), 1)
         self.check_lnotab(f)
 
+    @unittest.skip("Following gh-92228 the return has two predecessors "
+                   "and that prevents jump elimination.")
     def test_elim_jump_to_return(self):
         # JUMP_FORWARD to RETURN -->  RETURN
         def f(cond, true_value, false_value):
