@@ -508,7 +508,6 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
         return tuple_get_empty();
     }
     assert(n>0);
-    assert(input_size > 0);
 
     if (input_size > PY_SSIZE_T_MAX / n)
         return PyErr_NoMemory();
