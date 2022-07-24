@@ -581,7 +581,8 @@ list_repeat(PyListObject *a, Py_ssize_t n)
             *dest++ = *src++;
         }
 
-        _Py_memory_repeat((char *)np->ob_item, sizeof(PyObject *)*output_size, sizeof(PyObject *)*input_size);
+        _Py_memory_repeat((char *)np->ob_item, sizeof(PyObject *)*output_size,
+                                        sizeof(PyObject *)*input_size);
     }
 
     Py_SET_SIZE(np, output_size);
@@ -760,7 +761,8 @@ list_inplace_repeat(PyListObject *self, Py_ssize_t n)
     for (Py_ssize_t j = 0; j < input_size; j++) {
         _Py_RefcntAdd(items[j], n-1);
     }
-    _Py_memory_repeat((char *)items, sizeof(PyObject *)*output_size, sizeof(PyObject *)*input_size);
+    _Py_memory_repeat((char *)items, sizeof(PyObject *)*output_size,
+                      sizeof(PyObject *)*input_size);
 
     Py_INCREF(self);
     return (PyObject *)self;

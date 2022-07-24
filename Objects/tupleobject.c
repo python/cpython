@@ -535,7 +535,8 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
             *dest++ = *src++;
         }
 
-        _Py_memory_repeat((char *)np->ob_item, sizeof(PyObject *)*output_size, sizeof(PyObject *)*input_size);
+        _Py_memory_repeat((char *)np->ob_item, sizeof(PyObject *)*output_size,
+                          sizeof(PyObject *)*input_size);
     }
     _PyObject_GC_TRACK(np);
     return (PyObject *) np;
