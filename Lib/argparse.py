@@ -1775,8 +1775,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # (using explicit default to override global argument_default)
         default_prefix = '-' if '-' in prefix_chars else prefix_chars[0]
         if self.add_help:
+            self.reserved_args = [
+                default_prefix + 'h', default_prefix * 2 + 'help',
+            ]
             self.add_argument(
-                default_prefix+'h', default_prefix*2+'help',
+                *self.reserved_args,
                 action='help', default=SUPPRESS,
                 help=_('show this help message and exit'))
 
@@ -1866,7 +1869,19 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         return args
 
     def parse_known_args(self, args=None, namespace=None):
-        args = self._get_args(args)
+        if args is None:
+            # args default to the system args
+            args = _sys.argv[1:]
+        else:
+            # make sure that args are mutable
+            args = list(args)
+
+        if self.add_help and len(set(args).intersection(self.reserved_args)) >= 1 and not self.exit_on_error:
+            args = [
+                arg for arg in args
+                if not self.add_help or args in self.reserved_args
+            ]
+            self.print_help()
 
         # default Namespace built from parser defaults
         if namespace is None:
@@ -2173,31 +2188,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
     def convert_arg_line_to_args(self, arg_line):
         return [arg_line]
-
-    def _get_args(self, args=None):
-        reserved_args = [
-            '-h',
-            '--help'
-        ]
-
-        if args is None:
-            # args default to the system args
-            args = _sys.argv[1:]
-        else:
-            # make sure that args are mutable
-            args = list(args)
-
-        if self.add_help and set(args).intersection(reserved_args):
-            msg = _('Reserved arguments: %s. You can set the value ArgumentParser(add_help=False)')
-            args = [
-                arg for arg in args
-                if not self.add_help or args in reserved_args
-            ]
-            self.print_help()
-            if self.exit_on_error:
-                self.error(msg % reserved_args)
-
-        return args
 
     def _match_argument(self, action, arg_strings_pattern):
         # match the pattern for this action to the arg strings
