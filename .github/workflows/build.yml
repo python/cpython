@@ -13,6 +13,8 @@ on:
     - '3.9'
     - '3.8'
     - '3.7'
+    paths:
+    - '!**/*.md'
   pull_request:
     branches:
     - 'main'
@@ -21,7 +23,7 @@ on:
     - '3.9'
     - '3.8'
     - '3.7'
-  paths:
+    paths:
     - '!**/*.md'
 
 permissions:
