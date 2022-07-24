@@ -30,7 +30,7 @@
 
 --------------
 
-The :mod:`decimal` module provides support for fast correctly-rounded
+The :mod:`decimal` module provides support for fast correctly rounded
 decimal floating point arithmetic. It offers several advantages over the
 :class:`float` datatype:
 
@@ -1371,16 +1371,16 @@ In addition to the three supplied contexts, new contexts can be created with the
       With two arguments, compute ``x**y``.  If ``x`` is negative then ``y``
       must be integral.  The result will be inexact unless ``y`` is integral and
       the result is finite and can be expressed exactly in 'precision' digits.
-      The rounding mode of the context is used. Results are always correctly-rounded
+      The rounding mode of the context is used. Results are always correctly rounded
       in the Python version.
 
       ``Decimal(0) ** Decimal(0)`` results in ``InvalidOperation``, and if ``InvalidOperation``
       is not trapped, then results in ``Decimal('NaN')``.
 
       .. versionchanged:: 3.3
-         The C module computes :meth:`power` in terms of the correctly-rounded
+         The C module computes :meth:`power` in terms of the correctly rounded
          :meth:`exp` and :meth:`ln` functions. The result is well-defined but
-         only "almost always correctly-rounded".
+         only "almost always correctly rounded".
 
       With three arguments, compute ``(x**y) % modulo``.  For the three argument
       form, the following restrictions on the arguments hold:
@@ -2151,7 +2151,7 @@ Q. Is the CPython implementation fast for large numbers?
 A. Yes.  In the CPython and PyPy3 implementations, the C/CFFI versions of
 the decimal module integrate the high speed `libmpdec
 <https://www.bytereef.org/mpdecimal/doc/libmpdec/index.html>`_ library for
-arbitrary precision correctly-rounded decimal floating point arithmetic [#]_.
+arbitrary precision correctly rounded decimal floating point arithmetic [#]_.
 ``libmpdec`` uses `Karatsuba multiplication
 <https://en.wikipedia.org/wiki/Karatsuba_algorithm>`_
 for medium-sized numbers and the `Number Theoretic Transform

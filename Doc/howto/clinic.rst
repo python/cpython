@@ -541,7 +541,7 @@ Let's dive in!
 
 16. Compile, then run the relevant portions of the regression-test suite.
     This change should not introduce any new compile-time warnings or errors,
-    and there should be no externally-visible change to Python's behavior.
+    and there should be no externally visible change to Python's behavior.
 
     Well, except for one difference: ``inspect.signature()`` run on your function
     should now provide a valid signature!
@@ -1117,7 +1117,7 @@ Here's the syntax for cloning a function::
 ``module.class`` in the sample just to illustrate that you must
 use the full path to *both* functions.)
 
-Sorry, there's no syntax for partially-cloning a function, or cloning a function
+Sorry, there's no syntax for partially cloning a function, or cloning a function
 then modifying it.  Cloning is an all-or nothing proposition.
 
 Also, the function you are cloning from must have been previously defined
@@ -1315,7 +1315,7 @@ to specify in your subclass.  Here's the current list:
     there is no default, but not specifying a default may
     result in an "uninitialized variable" warning.  This can
     easily happen when using option groups—although
-    properly-written code will never actually use this value,
+    properly written code will never actually use this value,
     the variable does get passed in to the impl, and the
     C compiler will complain about the "use" of the
     uninitialized value.  This value should always be a

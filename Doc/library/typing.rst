@@ -78,7 +78,7 @@ annotations. These include:
      *Introducing* :data:`TypeVarTuple`
 * :pep:`647`: User-Defined Type Guards
      *Introducing* :data:`TypeGuard`
-* :pep:`655`: Marking individual TypedDict items as required or potentially-missing
+* :pep:`655`: Marking individual TypedDict items as required or potentially missing
      *Introducing* :data:`Required` and :data:`NotRequired`
 * :pep:`673`: Self type
     *Introducing* :data:`Self`
@@ -683,7 +683,7 @@ These can be used as types in annotations and do not support ``[]``.
       from typing import Self
 
       class Foo:
-         def returns_self(self) -> Self:
+         def return_self(self) -> Self:
             ...
             return self
 
@@ -696,7 +696,7 @@ These can be used as types in annotations and do not support ``[]``.
       Self = TypeVar("Self", bound="Foo")
 
       class Foo:
-         def returns_self(self: Self) -> Self:
+         def return_self(self: Self) -> Self:
             ...
             return self
 
@@ -707,7 +707,7 @@ These can be used as types in annotations and do not support ``[]``.
             ...
             return self
 
-   You should use use :data:`Self` as calls to ``SubclassOfFoo.returns_self`` would have
+   You should use :data:`Self` as calls to ``SubclassOfFoo.return_self`` would have
    ``Foo`` as the return type and not ``SubclassOfFoo``.
 
    Other common use cases include:
@@ -1034,7 +1034,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    as either required or non-required respectively.
 
    For more information, see :class:`TypedDict` and
-   :pep:`655` ("Marking individual TypedDict items as required or potentially-missing").
+   :pep:`655` ("Marking individual TypedDict items as required or potentially missing").
 
    .. versionadded:: 3.11
 
@@ -2215,6 +2215,9 @@ Corresponding to other types in :mod:`collections.abc`
 
    An alias to :class:`collections.abc.Hashable`.
 
+   .. deprecated:: 3.12
+      Use :class:`collections.abc.Hashable` directly instead.
+
 .. class:: Reversible(Iterable[T_co])
 
    A generic version of :class:`collections.abc.Reversible`.
@@ -2226,6 +2229,9 @@ Corresponding to other types in :mod:`collections.abc`
 .. class:: Sized
 
    An alias to :class:`collections.abc.Sized`.
+
+   .. deprecated:: 3.12
+      Use :class:`collections.abc.Sized` directly instead.
 
 Asynchronous programming
 """"""""""""""""""""""""
@@ -2848,4 +2854,7 @@ convenience. This is subject to change, and not all deprecations are listed.
 |  collections                     |               |                   |                |
 +----------------------------------+---------------+-------------------+----------------+
 |  ``typing.Text``                 | 3.11          | Undecided         | :gh:`92332`    |
++----------------------------------+---------------+-------------------+----------------+
+|  ``typing.Hashable`` and         | 3.12          | Undecided         | :gh:`94309`    |
+|  ``typing.Sized``                |               |                   |                |
 +----------------------------------+---------------+-------------------+----------------+
