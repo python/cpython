@@ -27,10 +27,10 @@ From within your local CPython repo clone, run one of the following commands:
 
 ```
 # Fedora, RHEL, CentOS
-podman run --rm -ti -v $(pwd):/python-wasm/cpython:Z quay.io/tiran/cpythonbuild:emsdk3
+podman run --rm -ti -v $(pwd):/python-wasm/cpython:Z -w /python-wasm/cpython quay.io/tiran/cpythonbuild:emsdk3
 
 # other
-docker run --rm -ti -v $(pwd):/python-wasm/cpython quay.io/tiran/cpythonbuild:emsdk3
+docker run --rm -ti -v $(pwd):/python-wasm/cpython -w /python-wasm/cpython quay.io/tiran/cpythonbuild:emsdk3
 ```
 
 Note that when you exit the container, all work will be lost.
@@ -44,7 +44,7 @@ From within the container, run the following commands:
 ```shell
 mkdir -p builddir/build
 pushd builddir/build
-../../cpython/configure -C
+../../configure -C
 make -j$(nproc)
 popd
 ```
@@ -61,10 +61,10 @@ embuilder build zlib bzip2
 mkdir -p builddir/emscripten-browser
 pushd builddir/emscripten-browser
 
-CONFIG_SITE=../../cpython/Tools/wasm/config.site-wasm32-emscripten \
-  emconfigure ../../cpython/configure -C \
+CONFIG_SITE=../../Tools/wasm/config.site-wasm32-emscripten \
+  emconfigure ../../configure -C \
     --host=wasm32-unknown-emscripten \
-    --build=$(../../cpython/config.guess) \
+    --build=$(../../config.guess) \
     --with-emscripten-target=browser \
     --with-build-python=$(pwd)/../build/python
 
@@ -94,10 +94,10 @@ and header files with debug builds.
 mkdir -p builddir/emscripten-node
 pushd builddir/emscripten-node
 
-CONFIG_SITE=../../cpython/Tools/wasm/config.site-wasm32-emscripten \
-  emconfigure ../../cpython/configure -C \
+CONFIG_SITE=../../Tools/wasm/config.site-wasm32-emscripten \
+  emconfigure ../../configure -C \
     --host=wasm32-unknown-emscripten \
-    --build=$(../../cpython/config.guess) \
+    --build=$(../../config.guess) \
     --with-emscripten-target=node \
     --with-build-python=$(pwd)/../build/python
 
