@@ -5,6 +5,8 @@ import enum
 import functools
 import threading
 import signal
+import warnings
+
 from . import coroutines
 from . import events
 from . import exceptions
@@ -118,7 +120,14 @@ class Runner:
                 events.set_event_loop(self._loop)
             return self._loop.run_until_complete(task)
         except exceptions.CancelledError:
-            if self._interrupt_count > 0 and task.uncancel() == 0:
+            uncancel = getattr(task, "uncancel", None)
+            if uncancel is None:
+                def uncancel():
+                    warnings._deprecated('missing asyncio.Task.uncancel',
+                        "Task.uncancel method will be mandatory for task "
+                        "implementations in 3.15", remove=(3, 15))
+                    return 0
+            if self._interrupt_count > 0 and uncancel() == 0:
                 raise KeyboardInterrupt()
             else:
                 raise  # CancelledError
