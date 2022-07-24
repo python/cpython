@@ -3614,7 +3614,7 @@ ast2obj_mod(struct ast_state *state, void* _o)
     }
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
-        "maximum recursion depth exceeded during ast construction");
+            "maximum recursion depth exceeded during ast construction");
         return 0;
     }
     switch (o->kind) {
@@ -3691,7 +3691,7 @@ ast2obj_stmt(struct ast_state *state, void* _o)
     }
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
-        "maximum recursion depth exceeded during ast construction");
+            "maximum recursion depth exceeded during ast construction");
         return 0;
     }
     switch (o->kind) {
@@ -4256,7 +4256,7 @@ ast2obj_expr(struct ast_state *state, void* _o)
     }
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
-        "maximum recursion depth exceeded during ast construction");
+            "maximum recursion depth exceeded during ast construction");
         return 0;
     }
     switch (o->kind) {
@@ -4865,7 +4865,7 @@ ast2obj_comprehension(struct ast_state *state, void* _o)
     }
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
-        "maximum recursion depth exceeded during ast construction");
+            "maximum recursion depth exceeded during ast construction");
         return 0;
     }
     tp = (PyTypeObject *)state->comprehension_type;
@@ -4910,7 +4910,7 @@ ast2obj_excepthandler(struct ast_state *state, void* _o)
     }
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
-        "maximum recursion depth exceeded during ast construction");
+            "maximum recursion depth exceeded during ast construction");
         return 0;
     }
     switch (o->kind) {
@@ -4975,7 +4975,7 @@ ast2obj_arguments(struct ast_state *state, void* _o)
     }
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
-        "maximum recursion depth exceeded during ast construction");
+            "maximum recursion depth exceeded during ast construction");
         return 0;
     }
     tp = (PyTypeObject *)state->arguments_type;
@@ -5035,7 +5035,7 @@ ast2obj_arg(struct ast_state *state, void* _o)
     }
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
-        "maximum recursion depth exceeded during ast construction");
+            "maximum recursion depth exceeded during ast construction");
         return 0;
     }
     tp = (PyTypeObject *)state->arg_type;
@@ -5095,7 +5095,7 @@ ast2obj_keyword(struct ast_state *state, void* _o)
     }
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
-        "maximum recursion depth exceeded during ast construction");
+            "maximum recursion depth exceeded during ast construction");
         return 0;
     }
     tp = (PyTypeObject *)state->keyword_type;
@@ -5150,7 +5150,7 @@ ast2obj_alias(struct ast_state *state, void* _o)
     }
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
-        "maximum recursion depth exceeded during ast construction");
+            "maximum recursion depth exceeded during ast construction");
         return 0;
     }
     tp = (PyTypeObject *)state->alias_type;
@@ -5205,7 +5205,7 @@ ast2obj_withitem(struct ast_state *state, void* _o)
     }
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
-        "maximum recursion depth exceeded during ast construction");
+            "maximum recursion depth exceeded during ast construction");
         return 0;
     }
     tp = (PyTypeObject *)state->withitem_type;
@@ -5240,7 +5240,7 @@ ast2obj_match_case(struct ast_state *state, void* _o)
     }
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
-        "maximum recursion depth exceeded during ast construction");
+            "maximum recursion depth exceeded during ast construction");
         return 0;
     }
     tp = (PyTypeObject *)state->match_case_type;
@@ -5280,7 +5280,7 @@ ast2obj_pattern(struct ast_state *state, void* _o)
     }
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
-        "maximum recursion depth exceeded during ast construction");
+            "maximum recursion depth exceeded during ast construction");
         return 0;
     }
     switch (o->kind) {
@@ -5441,7 +5441,7 @@ ast2obj_type_ignore(struct ast_state *state, void* _o)
     }
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
-        "maximum recursion depth exceeded during ast construction");
+            "maximum recursion depth exceeded during ast construction");
         return 0;
     }
     switch (o->kind) {
@@ -12326,7 +12326,7 @@ PyObject* PyAST_mod2obj(mod_ty t)
     state->recursion_limit = (recursion_limit < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
         recursion_limit * COMPILER_STACK_FRAME_SCALE : recursion_limit;
     int recursion_depth = tstate->recursion_limit - tstate->recursion_remaining;
-    starting_recursion_depth = (recursion_depth< INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
+    starting_recursion_depth = (recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
         recursion_depth * COMPILER_STACK_FRAME_SCALE : recursion_depth;
     state->recursion_depth = starting_recursion_depth;
 

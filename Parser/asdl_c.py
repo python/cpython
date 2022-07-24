@@ -1263,7 +1263,7 @@ class ObjVisitor(PickleVisitor):
         self.emit("}", 1)
         self.emit("if (++state->recursion_depth > state->recursion_limit) {", 1)
         self.emit("PyErr_SetString(PyExc_RecursionError,", 2)
-        self.emit('"maximum recursion depth exceeded during ast construction");', 2)
+        self.emit('"maximum recursion depth exceeded during ast construction");', 3)
         self.emit("return 0;", 2)
         self.emit("}", 1)
 
