@@ -326,6 +326,7 @@ enum {
 };
 
 typedef struct cfg_ {
+    basicblock *entryblock; /* Where control flow begins */
     /* Pointer to the most recently allocated block.  By following b_list
        members, you can reach all early allocated blocks. */
     basicblock *block_list;
@@ -1726,7 +1727,6 @@ compiler_enter_scope(struct compiler *c, identifier name,
         return 0;
     }
 
-    u->u_cfg.block_list = NULL;
     u->u_nfblocks = 0;
     u->u_firstlineno = lineno;
     u->u_loc = LOCATION(lineno, lineno, 0, 0);
@@ -1760,10 +1760,11 @@ compiler_enter_scope(struct compiler *c, identifier name,
     c->c_nestlevel++;
 
     cfg *g = CFG(c);
+    g->block_list = NULL;
     block = cfg_new_block(g);
     if (block == NULL)
         return 0;
-    g->curblock = block;
+    g->curblock = g->entryblock = block;
 
     if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
         c->u->u_loc.lineno = 0;
@@ -8576,16 +8577,16 @@ assemble(struct compiler *c, int addNone)
     }
 
     int nblocks = 0;
-    basicblock *entryblock = NULL;
-    for (basicblock *b = ((c)->u->u_cfg.block_list); b != NULL; b = b->b_list) {
+    for (basicblock *b = CFG(c)->block_list; b != NULL; b = b->b_list) {
         nblocks++;
-        entryblock = b;
     }
-    assert(entryblock != NULL);
     if ((size_t)nblocks > SIZE_MAX / sizeof(basicblock *)) {
         PyErr_NoMemory();
         goto error;
     }
+
+    basicblock *entryblock = CFG(c)->entryblock;
+    assert(entryblock != NULL);
 
     /* Set firstlineno if it wasn't explicitly set. */
     if (!c->u->u_firstlineno) {
