@@ -1,3 +1,0 @@
-The types of compiled regular objects and match objects are now exposed as
-`re.Pattern` and `re.Match`.  This adds information in pydoc output for the
-re module.

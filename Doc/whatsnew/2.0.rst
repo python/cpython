@@ -21,7 +21,7 @@ Python's development never completely stops between releases, and a steady flow
 of bug fixes and improvements are always being submitted. A host of minor fixes,
 a few optimizations, additional docstrings, and better error messages went into
 2.0; to list them all would be impossible, but they're certainly significant.
-Consult the publicly-available CVS logs if you want to see the full list.  This
+Consult the publicly available CVS logs if you want to see the full list.  This
 progress is due to the five developers working for  PythonLabs are now getting
 paid to spend their days fixing bugs, and also due to the improved communication
 resulting  from moving to SourceForge.
@@ -108,10 +108,10 @@ usually easy compared to the earlier task of coming up with a good design.
 Discussions of new features can often explode into lengthy mailing list threads,
 making the discussion hard to follow, and no one can read every posting to
 python-dev.  Therefore, a relatively formal process has been set up to write
-Python Enhancement Proposals (PEPs), modelled on the Internet RFC process.  PEPs
+Python Enhancement Proposals (PEPs), modelled on the internet RFC process.  PEPs
 are draft documents that describe a proposed new feature, and are continually
 revised until the community reaches a consensus, either accepting or rejecting
-the proposal.  Quoting from the introduction to PEP 1, "PEP Purpose and
+the proposal.  Quoting from the introduction to :pep:`1`, "PEP Purpose and
 Guidelines":
 
 
@@ -127,11 +127,11 @@ Guidelines":
    that have gone into Python.  The PEP author is responsible for building
    consensus within the community and documenting dissenting opinions.
 
-Read the rest of PEP 1 for the details of the PEP editorial process, style, and
+Read the rest of :pep:`1` for the details of the PEP editorial process, style, and
 format.  PEPs are kept in the Python CVS tree on SourceForge, though they're not
 part of the Python 2.0 distribution, and are also available in HTML form from
-https://www.python.org/dev/peps/.  As of September 2000, there are 25 PEPS, ranging
-from PEP 201, "Lockstep Iteration", to PEP 225, "Elementwise/Objectwise
+https://peps.python.org/.  As of September 2000, there are 25 PEPS, ranging
+from :pep:`201`, "Lockstep Iteration", to PEP 225, "Elementwise/Objectwise
 Operators".
 
 .. ======================================================================
@@ -284,7 +284,7 @@ write the following to do it::
                      L)
 
 Because of Python's scoping rules, a default argument is used so that the
-anonymous function created by the :keyword:`lambda` statement knows what
+anonymous function created by the :keyword:`lambda` expression knows what
 substring is being searched for.  List comprehensions make this cleaner::
 
    sublist = [ s for s in L if string.find(s, S) != -1 ]
@@ -296,11 +296,11 @@ List comprehensions have the form::
                 for exprN in sequenceN
                 if condition ]
 
-The :keyword:`for`...\ :keyword:`in` clauses contain the sequences to be
+The :keyword:`!for`...\ :keyword:`!in` clauses contain the sequences to be
 iterated over.  The sequences do not have to be the same length, because they
 are *not* iterated over in parallel, but from left to right; this is explained
 more clearly in the following paragraphs.  The elements of the generated list
-will be the successive values of *expression*.  The final :keyword:`if` clause
+will be the successive values of *expression*.  The final :keyword:`!if` clause
 is optional; if present, *expression* is only evaluated and added to the result
 if *condition* is true.
 
@@ -316,7 +316,7 @@ following Python code::
                      # the expression to the
                      # resulting list.
 
-This means that when there are multiple :keyword:`for`...\ :keyword:`in`
+This means that when there are multiple :keyword:`!for`...\ :keyword:`!in`
 clauses, the resulting list will be equal to the product of the lengths of all
 the sequences.  If you have two lists of length 3, the output list is 9 elements
 long::
@@ -541,8 +541,8 @@ true if *obj* is present in the sequence *seq*; Python computes this by simply
 trying every index of the sequence until either *obj* is found or an
 :exc:`IndexError` is encountered.  Moshe Zadka contributed a patch which adds a
 :meth:`__contains__` magic method for providing a custom implementation for
-:keyword:`in`. Additionally, new built-in objects written in C can define what
-:keyword:`in` means for them via a new slot in the sequence protocol.
+:keyword:`!in`. Additionally, new built-in objects written in C can define what
+:keyword:`!in` means for them via a new slot in the sequence protocol.
 
 Earlier versions of Python used a recursive algorithm for deleting objects.
 Deeply nested data structures could cause the interpreter to fill up the C stack
@@ -768,7 +768,7 @@ Vladimir Marangozov's long-awaited malloc restructuring was completed, to make
 it easy to have the Python interpreter use a custom allocator instead of C's
 standard :func:`malloc`.  For documentation, read the comments in
 :file:`Include/pymem.h` and :file:`Include/objimpl.h`.  For the lengthy
-discussions during which the interface was hammered out, see the Web archives of
+discussions during which the interface was hammered out, see the web archives of
 the 'patches' and 'python-dev' lists at python.org.
 
 Recent versions of the GUSI development environment for MacOS support POSIX
@@ -791,7 +791,7 @@ Previously the Python virtual machine used 16-bit numbers in its bytecode,
 limiting the size of source files.  In particular, this affected the maximum
 size of literal lists and dictionaries in Python source; occasionally people who
 are generating Python code would run into this limit.  A patch by Charles G.
-Waldman raises the limit from ``2^16`` to ``2^{32}``.
+Waldman raises the limit from ``2**16`` to ``2**32``.
 
 Three new convenience functions intended for adding constants to a module's
 dictionary at module initialization time were added: :func:`PyModule_AddObject`,
@@ -1002,7 +1002,7 @@ Relationship to PyXML
 ---------------------
 
 The XML Special Interest Group has been working on XML-related Python code for a
-while.  Its code distribution, called PyXML, is available from the SIG's Web
+while.  Its code distribution, called PyXML, is available from the SIG's web
 pages at https://www.python.org/community/sigs/current/xml-sig. The PyXML distribution also used
 the package name ``xml``.  If you've written programs that used PyXML, you're
 probably wondering about its compatibility with the 2.0 :mod:`xml` package.
@@ -1109,7 +1109,7 @@ module.
   Prescod.)
 
 * :mod:`robotparser`: Parse a :file:`robots.txt` file, which is used for writing
-  Web spiders that politely avoid certain areas of a Web site.  The parser accepts
+  web spiders that politely avoid certain areas of a web site.  The parser accepts
   the contents of a :file:`robots.txt` file, builds a set of rules from it, and
   can then answer questions about the fetchability of a given URL.  (Contributed
   by Skip Montanaro.)

@@ -4,6 +4,7 @@ import sys
 import unittest
 from copy import copy
 from test.support import run_unittest
+from unittest import mock
 
 from distutils.errors import DistutilsPlatformError, DistutilsByteCompileError
 from distutils.util import (get_platform, convert_path, change_root,
@@ -53,7 +54,8 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
             os.uname = self.uname
         else:
             del os.uname
-        sysconfig._config_vars = copy(self._config_vars)
+        sysconfig._config_vars.clear()
+        sysconfig._config_vars.update(self._config_vars)
         super(UtilTestCase, self).tearDown()
 
     def _set_uname(self, uname):
@@ -234,19 +236,37 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
 
     def test_check_environ(self):
         util._environ_checked = 0
-        if 'HOME' in os.environ:
-            del os.environ['HOME']
+        os.environ.pop('HOME', None)
 
-        # posix without HOME
-        if os.name == 'posix':  # this test won't run on windows
-            check_environ()
-            import pwd
-            self.assertEqual(os.environ['HOME'], pwd.getpwuid(os.getuid())[5])
-        else:
-            check_environ()
+        check_environ()
 
         self.assertEqual(os.environ['PLAT'], get_platform())
         self.assertEqual(util._environ_checked, 1)
+
+    @unittest.skipUnless(os.name == 'posix', 'specific to posix')
+    def test_check_environ_getpwuid(self):
+        util._environ_checked = 0
+        os.environ.pop('HOME', None)
+
+        try:
+            import pwd
+        except ImportError:
+            raise unittest.SkipTest("Test requires pwd module.")
+
+        # only set pw_dir field, other fields are not used
+        result = pwd.struct_passwd((None, None, None, None, None,
+                                    '/home/distutils', None))
+        with mock.patch.object(pwd, 'getpwuid', return_value=result):
+            check_environ()
+            self.assertEqual(os.environ['HOME'], '/home/distutils')
+
+        util._environ_checked = 0
+        os.environ.pop('HOME', None)
+
+        # bpo-10496: Catch pwd.getpwuid() error
+        with mock.patch.object(pwd, 'getpwuid', side_effect=KeyError):
+            check_environ()
+            self.assertNotIn('HOME', os.environ)
 
     def test_split_quoted(self):
         self.assertEqual(split_quoted('""one"" "two" \'three\' \\four'),
@@ -287,7 +307,7 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
 
 
 def test_suite():
-    return unittest.makeSuite(UtilTestCase)
+    return unittest.TestLoader().loadTestsFromTestCase(UtilTestCase)
 
 if __name__ == "__main__":
     run_unittest(test_suite())

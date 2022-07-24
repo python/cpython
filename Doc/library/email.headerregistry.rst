@@ -107,7 +107,7 @@ headers.
    method if it wishes to set additional attributes beyond those provided by
    ``BaseHeader`` itself.  Such an ``init`` method should look like this::
 
-       def init(self, *args, **kw):
+       def init(self, /, *args, **kw):
            self._myattr = kw.pop('myattr')
            super().init(*args, **kw)
 
@@ -206,7 +206,7 @@ headers.
 
    The ``decoded`` value of the header will have all encoded words decoded to
    unicode.  :class:`~encodings.idna` encoded domain names are also decoded to
-   unicode.  The ``decoded`` value is set by :attr:`~str.join`\ ing the
+   unicode.  The ``decoded`` value is set by :ref:`joining <meth-str-join>` the
    :class:`str` value of the elements of the ``groups`` attribute with ``',
    '``.
 
@@ -289,7 +289,7 @@ variant, :attr:`~.BaseHeader.max_count` is set to 1.
     A :class:`ParameterizedMIMEHeader` class that handles the
     :mailheader:`Content-Disposition` header.
 
-    .. attribute:: content-disposition
+    .. attribute:: content_disposition
 
        ``inline`` and ``attachment`` are the only valid values in common use.
 
@@ -321,19 +321,26 @@ variant, :attr:`~.BaseHeader.max_count` is set to 1.
 
     The default mappings are:
 
-      :subject:         UniqueUnstructuredHeader
-      :date:            UniqueDateHeader
-      :resent-date:     DateHeader
-      :orig-date:       UniqueDateHeader
-      :sender:          UniqueSingleAddressHeader
-      :resent-sender:   SingleAddressHeader
-      :to:              UniqueAddressHeader
-      :resent-to:       AddressHeader
-      :cc:              UniqueAddressHeader
-      :resent-cc:       AddressHeader
-      :from:            UniqueAddressHeader
-      :resent-from:     AddressHeader
-      :reply-to:        UniqueAddressHeader
+      :subject:                   UniqueUnstructuredHeader
+      :date:                      UniqueDateHeader
+      :resent-date:               DateHeader
+      :orig-date:                 UniqueDateHeader
+      :sender:                    UniqueSingleAddressHeader
+      :resent-sender:             SingleAddressHeader
+      :to:                        UniqueAddressHeader
+      :resent-to:                 AddressHeader
+      :cc:                        UniqueAddressHeader
+      :resent-cc:                 AddressHeader
+      :bcc:                       UniqueAddressHeader
+      :resent-bcc:                AddressHeader
+      :from:                      UniqueAddressHeader
+      :resent-from:               AddressHeader
+      :reply-to:                  UniqueAddressHeader
+      :mime-version:              MIMEVersionHeader
+      :content-type:              ContentTypeHeader
+      :content-disposition:       ContentDispositionHeader
+      :content-transfer-encoding: ContentTransferEncodingHeader
+      :message-id:                MessageIDHeader
 
     ``HeaderRegistry`` has the following methods:
 

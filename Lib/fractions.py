@@ -1,7 +1,7 @@
 # Originally contributed by Sjoerd Mullender.
 # Significantly modified by Jeffrey Yasskin <jyasskin at gmail.com>.
 
-"""Fraction, infinite-precision, real numbers."""
+"""Fraction, infinite-precision, rational numbers."""
 
 from decimal import Decimal
 import math
@@ -10,30 +10,8 @@ import operator
 import re
 import sys
 
-__all__ = ['Fraction', 'gcd']
+__all__ = ['Fraction']
 
-
-
-def gcd(a, b):
-    """Calculate the Greatest Common Divisor of a and b.
-
-    Unless b==0, the result will have the same sign as b (so that when
-    b is divided by it, the result comes out positive).
-    """
-    import warnings
-    warnings.warn('fractions.gcd() is deprecated. Use math.gcd() instead.',
-                  DeprecationWarning, 2)
-    if type(a) is int is type(b):
-        if (b or a) < 0:
-            return -math.gcd(a, b)
-        return math.gcd(a, b)
-    return _gcd(a, b)
-
-def _gcd(a, b):
-    # Supports non-integers for backward compatibility.
-    while b:
-        a, b = b, a%b
-    return a
 
 # Constants related to the hash implementation;  hash(x) is based
 # on the reduction of x modulo the prime _PyHASH_MODULUS.
@@ -43,17 +21,17 @@ _PyHASH_MODULUS = sys.hash_info.modulus
 _PyHASH_INF = sys.hash_info.inf
 
 _RATIONAL_FORMAT = re.compile(r"""
-    \A\s*                      # optional whitespace at the start, then
-    (?P<sign>[-+]?)            # an optional sign, then
-    (?=\d|\.\d)                # lookahead for digit or .digit
-    (?P<num>\d*)               # numerator (possibly empty)
-    (?:                        # followed by
-       (?:/(?P<denom>\d+))?    # an optional denominator
-    |                          # or
-       (?:\.(?P<decimal>\d*))? # an optional fractional part
-       (?:E(?P<exp>[-+]?\d+))? # and optional exponent
+    \A\s*                                 # optional whitespace at the start,
+    (?P<sign>[-+]?)                       # an optional sign, then
+    (?=\d|\.\d)                           # lookahead for digit or .digit
+    (?P<num>\d*|\d+(_\d+)*)               # numerator (possibly empty)
+    (?:                                   # followed by
+       (?:/(?P<denom>\d+(_\d+)*))?        # an optional denominator
+    |                                     # or
+       (?:\.(?P<decimal>d*|\d+(_\d+)*))?  # an optional fractional part
+       (?:E(?P<exp>[-+]?\d+(_\d+)*))?     # and optional exponent
     )
-    \s*\Z                      # and optional whitespace to finish
+    \s*\Z                                 # and optional whitespace to finish
 """, re.VERBOSE | re.IGNORECASE)
 
 
@@ -144,6 +122,7 @@ class Fraction(numbers.Rational):
                     denominator = 1
                     decimal = m.group('decimal')
                     if decimal:
+                        decimal = decimal.replace('_', '')
                         scale = 10**len(decimal)
                         numerator = numerator * scale + int(decimal)
                         denominator *= scale
@@ -177,13 +156,9 @@ class Fraction(numbers.Rational):
         if denominator == 0:
             raise ZeroDivisionError('Fraction(%s, 0)' % numerator)
         if _normalize:
-            if type(numerator) is int is type(denominator):
-                # *very* normal case
-                g = math.gcd(numerator, denominator)
-                if denominator < 0:
-                    g = -g
-            else:
-                g = _gcd(numerator, denominator)
+            g = math.gcd(numerator, denominator)
+            if denominator < 0:
+                g = -g
             numerator //= g
             denominator //= g
         self._numerator = numerator
@@ -215,6 +190,14 @@ class Fraction(numbers.Rational):
                 "%s.from_decimal() only takes Decimals, not %r (%s)" %
                 (cls.__name__, dec, type(dec).__name__))
         return cls(*dec.as_integer_ratio())
+
+    def as_integer_ratio(self):
+        """Return the integer ratio as a tuple.
+
+        Return a tuple of two integers, whose ratio is equal to the
+        Fraction and with a positive denominator.
+        """
+        return (self._numerator, self._denominator)
 
     def limit_denominator(self, max_denominator=1000000):
         """Closest Fraction to self with denominator at most max_denominator.
@@ -262,14 +245,16 @@ class Fraction(numbers.Rational):
                 break
             p0, q0, p1, q1 = p1, q1, p0+a*p1, q2
             n, d = d, n-a*d
-
         k = (max_denominator-q0)//q1
-        bound1 = Fraction(p0+k*p1, q0+k*q1)
-        bound2 = Fraction(p1, q1)
-        if abs(bound2 - self) <= abs(bound1-self):
-            return bound2
+
+        # Determine which of the candidates (p0+k*p1)/(q0+k*q1) and p1/q1 is
+        # closer to self. The distance between them is 1/(q1*(q0+k*q1)), while
+        # the distance from p1/q1 to self is d/(q1*self._denominator). So we
+        # need to compare 2*(q0+k*q1) with self._denominator/d.
+        if 2*d*(q0+k*q1) <= self._denominator:
+            return Fraction(p1, q1, _normalize=False)
         else:
-            return bound1
+            return Fraction(p0+k*p1, q0+k*q1, _normalize=False)
 
     @property
     def numerator(a):
@@ -398,52 +383,162 @@ class Fraction(numbers.Rational):
 
         return forward, reverse
 
+    # Rational arithmetic algorithms: Knuth, TAOCP, Volume 2, 4.5.1.
+    #
+    # Assume input fractions a and b are normalized.
+    #
+    # 1) Consider addition/subtraction.
+    #
+    # Let g = gcd(da, db). Then
+    #
+    #              na   nb    na*db ± nb*da
+    #     a ± b == -- ± -- == ------------- ==
+    #              da   db        da*db
+    #
+    #              na*(db//g) ± nb*(da//g)    t
+    #           == ----------------------- == -
+    #                      (da*db)//g         d
+    #
+    # Now, if g > 1, we're working with smaller integers.
+    #
+    # Note, that t, (da//g) and (db//g) are pairwise coprime.
+    #
+    # Indeed, (da//g) and (db//g) share no common factors (they were
+    # removed) and da is coprime with na (since input fractions are
+    # normalized), hence (da//g) and na are coprime.  By symmetry,
+    # (db//g) and nb are coprime too.  Then,
+    #
+    #     gcd(t, da//g) == gcd(na*(db//g), da//g) == 1
+    #     gcd(t, db//g) == gcd(nb*(da//g), db//g) == 1
+    #
+    # Above allows us optimize reduction of the result to lowest
+    # terms.  Indeed,
+    #
+    #     g2 = gcd(t, d) == gcd(t, (da//g)*(db//g)*g) == gcd(t, g)
+    #
+    #                       t//g2                   t//g2
+    #     a ± b == ----------------------- == ----------------
+    #              (da//g)*(db//g)*(g//g2)    (da//g)*(db//g2)
+    #
+    # is a normalized fraction.  This is useful because the unnormalized
+    # denominator d could be much larger than g.
+    #
+    # We should special-case g == 1 (and g2 == 1), since 60.8% of
+    # randomly-chosen integers are coprime:
+    # https://en.wikipedia.org/wiki/Coprime_integers#Probability_of_coprimality
+    # Note, that g2 == 1 always for fractions, obtained from floats: here
+    # g is a power of 2 and the unnormalized numerator t is an odd integer.
+    #
+    # 2) Consider multiplication
+    #
+    # Let g1 = gcd(na, db) and g2 = gcd(nb, da), then
+    #
+    #            na*nb    na*nb    (na//g1)*(nb//g2)
+    #     a*b == ----- == ----- == -----------------
+    #            da*db    db*da    (db//g1)*(da//g2)
+    #
+    # Note, that after divisions we're multiplying smaller integers.
+    #
+    # Also, the resulting fraction is normalized, because each of
+    # two factors in the numerator is coprime to each of the two factors
+    # in the denominator.
+    #
+    # Indeed, pick (na//g1).  It's coprime with (da//g2), because input
+    # fractions are normalized.  It's also coprime with (db//g1), because
+    # common factors are removed by g1 == gcd(na, db).
+    #
+    # As for addition/subtraction, we should special-case g1 == 1
+    # and g2 == 1 for same reason.  That happens also for multiplying
+    # rationals, obtained from floats.
+
     def _add(a, b):
         """a + b"""
-        da, db = a.denominator, b.denominator
-        return Fraction(a.numerator * db + b.numerator * da,
-                        da * db)
+        na, da = a.numerator, a.denominator
+        nb, db = b.numerator, b.denominator
+        g = math.gcd(da, db)
+        if g == 1:
+            return Fraction(na * db + da * nb, da * db, _normalize=False)
+        s = da // g
+        t = na * (db // g) + nb * s
+        g2 = math.gcd(t, g)
+        if g2 == 1:
+            return Fraction(t, s * db, _normalize=False)
+        return Fraction(t // g2, s * (db // g2), _normalize=False)
 
     __add__, __radd__ = _operator_fallbacks(_add, operator.add)
 
     def _sub(a, b):
         """a - b"""
-        da, db = a.denominator, b.denominator
-        return Fraction(a.numerator * db - b.numerator * da,
-                        da * db)
+        na, da = a.numerator, a.denominator
+        nb, db = b.numerator, b.denominator
+        g = math.gcd(da, db)
+        if g == 1:
+            return Fraction(na * db - da * nb, da * db, _normalize=False)
+        s = da // g
+        t = na * (db // g) - nb * s
+        g2 = math.gcd(t, g)
+        if g2 == 1:
+            return Fraction(t, s * db, _normalize=False)
+        return Fraction(t // g2, s * (db // g2), _normalize=False)
 
     __sub__, __rsub__ = _operator_fallbacks(_sub, operator.sub)
 
     def _mul(a, b):
         """a * b"""
-        return Fraction(a.numerator * b.numerator, a.denominator * b.denominator)
+        na, da = a.numerator, a.denominator
+        nb, db = b.numerator, b.denominator
+        g1 = math.gcd(na, db)
+        if g1 > 1:
+            na //= g1
+            db //= g1
+        g2 = math.gcd(nb, da)
+        if g2 > 1:
+            nb //= g2
+            da //= g2
+        return Fraction(na * nb, db * da, _normalize=False)
 
     __mul__, __rmul__ = _operator_fallbacks(_mul, operator.mul)
 
     def _div(a, b):
         """a / b"""
-        return Fraction(a.numerator * b.denominator,
-                        a.denominator * b.numerator)
+        # Same as _mul(), with inversed b.
+        na, da = a.numerator, a.denominator
+        nb, db = b.numerator, b.denominator
+        g1 = math.gcd(na, nb)
+        if g1 > 1:
+            na //= g1
+            nb //= g1
+        g2 = math.gcd(db, da)
+        if g2 > 1:
+            da //= g2
+            db //= g2
+        n, d = na * db, nb * da
+        if d < 0:
+            n, d = -n, -d
+        return Fraction(n, d, _normalize=False)
 
     __truediv__, __rtruediv__ = _operator_fallbacks(_div, operator.truediv)
 
-    def __floordiv__(a, b):
+    def _floordiv(a, b):
         """a // b"""
-        return math.floor(a / b)
+        return (a.numerator * b.denominator) // (a.denominator * b.numerator)
 
-    def __rfloordiv__(b, a):
-        """a // b"""
-        return math.floor(a / b)
+    __floordiv__, __rfloordiv__ = _operator_fallbacks(_floordiv, operator.floordiv)
 
-    def __mod__(a, b):
+    def _divmod(a, b):
+        """(a // b, a % b)"""
+        da, db = a.denominator, b.denominator
+        div, n_mod = divmod(a.numerator * db, da * b.numerator)
+        return div, Fraction(n_mod, da * db)
+
+    __divmod__, __rdivmod__ = _operator_fallbacks(_divmod, divmod)
+
+    def _mod(a, b):
         """a % b"""
-        div = a // b
-        return a - b * div
+        da, db = a.denominator, b.denominator
+        return Fraction((a.numerator * db) % (b.numerator * da), da * db)
 
-    def __rmod__(b, a):
-        """a % b"""
-        div = a // b
-        return a - b * div
+    __mod__, __rmod__ = _operator_fallbacks(_mod, operator.mod)
 
     def __pow__(a, b):
         """a ** b
@@ -501,24 +596,31 @@ class Fraction(numbers.Rational):
         """abs(a)"""
         return Fraction(abs(a._numerator), a._denominator, _normalize=False)
 
+    def __int__(a, _index=operator.index):
+        """int(a)"""
+        if a._numerator < 0:
+            return _index(-(-a._numerator // a._denominator))
+        else:
+            return _index(a._numerator // a._denominator)
+
     def __trunc__(a):
-        """trunc(a)"""
+        """math.trunc(a)"""
         if a._numerator < 0:
             return -(-a._numerator // a._denominator)
         else:
             return a._numerator // a._denominator
 
     def __floor__(a):
-        """Will be math.floor(a) in 3.0."""
+        """math.floor(a)"""
         return a.numerator // a.denominator
 
     def __ceil__(a):
-        """Will be math.ceil(a) in 3.0."""
+        """math.ceil(a)"""
         # The negations cleverly convince floordiv to return the ceiling.
         return -(-a.numerator // a.denominator)
 
     def __round__(self, ndigits=None):
-        """Will be round(self, ndigits) in 3.0.
+        """round(self, ndigits)
 
         Rounds half toward even.
         """
@@ -545,23 +647,34 @@ class Fraction(numbers.Rational):
     def __hash__(self):
         """hash(self)"""
 
-        # XXX since this method is expensive, consider caching the result
+        # To make sure that the hash of a Fraction agrees with the hash
+        # of a numerically equal integer, float or Decimal instance, we
+        # follow the rules for numeric hashes outlined in the
+        # documentation.  (See library docs, 'Built-in Types').
 
-        # In order to make sure that the hash of a Fraction agrees
-        # with the hash of a numerically equal integer, float or
-        # Decimal instance, we follow the rules for numeric hashes
-        # outlined in the documentation.  (See library docs, 'Built-in
-        # Types').
-
-        # dinv is the inverse of self._denominator modulo the prime
-        # _PyHASH_MODULUS, or 0 if self._denominator is divisible by
-        # _PyHASH_MODULUS.
-        dinv = pow(self._denominator, _PyHASH_MODULUS - 2, _PyHASH_MODULUS)
-        if not dinv:
+        try:
+            dinv = pow(self._denominator, -1, _PyHASH_MODULUS)
+        except ValueError:
+            # ValueError means there is no modular inverse.
             hash_ = _PyHASH_INF
         else:
-            hash_ = abs(self._numerator) * dinv % _PyHASH_MODULUS
-        result = hash_ if self >= 0 else -hash_
+            # The general algorithm now specifies that the absolute value of
+            # the hash is
+            #    (|N| * dinv) % P
+            # where N is self._numerator and P is _PyHASH_MODULUS.  That's
+            # optimized here in two ways:  first, for a non-negative int i,
+            # hash(i) == i % P, but the int hash implementation doesn't need
+            # to divide, and is faster than doing % P explicitly.  So we do
+            #    hash(|N| * dinv)
+            # instead.  Second, N is unbounded, so its product with dinv may
+            # be arbitrarily expensive to compute.  The final answer is the
+            # same if we use the bounded |N| % P instead, which can again
+            # be done with an int hash() call.  If 0 <= i < P, hash(i) == i,
+            # so this nested hash() call wastes a bit of time making a
+            # redundant copy when |N| < P, but can save an arbitrarily large
+            # amount of computation for large |N|.
+            hash_ = hash(hash(abs(self._numerator)) * dinv)
+        result = hash_ if self._numerator >= 0 else -hash_
         return -2 if result == -1 else result
 
     def __eq__(a, b):
@@ -625,12 +738,14 @@ class Fraction(numbers.Rational):
 
     def __bool__(a):
         """a != 0"""
-        return a._numerator != 0
+        # bpo-39274: Use bool() because (a._numerator != 0) can return an
+        # object which is not a bool.
+        return bool(a._numerator)
 
     # support for pickling, copy, and deepcopy
 
     def __reduce__(self):
-        return (self.__class__, (str(self),))
+        return (self.__class__, (self._numerator, self._denominator))
 
     def __copy__(self):
         if type(self) == Fraction:

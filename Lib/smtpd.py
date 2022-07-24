@@ -60,13 +60,6 @@ and if remoteport is not given, then 25 is used.
 #   SMTP errors from the backend server at all.  This should be fixed
 #   (contributions are welcome!).
 #
-#   MailmanProxy - An experimental hack to work with GNU Mailman
-#   <www.list.org>.  Using this server as your real incoming smtpd, your
-#   mailhost will automatically recognize and accept mail destined to Mailman
-#   lists when those lists are created.  Every message not destined for a list
-#   gets forwarded to a real backend smtpd, as with PureProxy.  Again, errors
-#   are not handled correctly yet.
-#
 #
 # Author: Barry Warsaw <barry@python.org>
 #
@@ -83,16 +76,26 @@ import errno
 import getopt
 import time
 import socket
-import asyncore
-import asynchat
 import collections
-from warnings import warn
+from warnings import _deprecated, warn
 from email._header_value_parser import get_addr_spec, get_angle_addr
 
 __all__ = [
     "SMTPChannel", "SMTPServer", "DebuggingServer", "PureProxy",
-    "MailmanProxy",
 ]
+
+_DEPRECATION_MSG = ('The {name} module is deprecated and unmaintained and will '
+                    'be removed in Python {remove}.  Please see aiosmtpd '
+                    '(https://aiosmtpd.readthedocs.io/) for the recommended '
+                    'replacement.')
+_deprecated(__name__, _DEPRECATION_MSG, remove=(3, 12))
+
+
+# These are imported after the above warning so that users get the correct
+# deprecation warning.
+import asyncore
+import asynchat
+
 
 program = sys.argv[0]
 __version__ = 'Python SMTP proxy version 0.3'
@@ -163,7 +166,7 @@ class SMTPChannel(asynchat.async_chat):
             # a race condition  may occur if the other end is closing
             # before we can get the peername
             self.close()
-            if err.args[0] != errno.ENOTCONN:
+            if err.errno != errno.ENOTCONN:
                 raise
             return
         print('Peer:', repr(self.peer), file=DEBUGSTREAM)
@@ -775,89 +778,6 @@ class PureProxy(SMTPServer):
             for r in rcpttos:
                 refused[r] = (errcode, errmsg)
         return refused
-
-
-class MailmanProxy(PureProxy):
-    def __init__(self, *args, **kwargs):
-        if 'enable_SMTPUTF8' in kwargs and kwargs['enable_SMTPUTF8']:
-            raise ValueError("MailmanProxy does not support SMTPUTF8.")
-        super(PureProxy, self).__init__(*args, **kwargs)
-
-    def process_message(self, peer, mailfrom, rcpttos, data):
-        from io import StringIO
-        from Mailman import Utils
-        from Mailman import Message
-        from Mailman import MailList
-        # If the message is to a Mailman mailing list, then we'll invoke the
-        # Mailman script directly, without going through the real smtpd.
-        # Otherwise we'll forward it to the local proxy for disposition.
-        listnames = []
-        for rcpt in rcpttos:
-            local = rcpt.lower().split('@')[0]
-            # We allow the following variations on the theme
-            #   listname
-            #   listname-admin
-            #   listname-owner
-            #   listname-request
-            #   listname-join
-            #   listname-leave
-            parts = local.split('-')
-            if len(parts) > 2:
-                continue
-            listname = parts[0]
-            if len(parts) == 2:
-                command = parts[1]
-            else:
-                command = ''
-            if not Utils.list_exists(listname) or command not in (
-                    '', 'admin', 'owner', 'request', 'join', 'leave'):
-                continue
-            listnames.append((rcpt, listname, command))
-        # Remove all list recipients from rcpttos and forward what we're not
-        # going to take care of ourselves.  Linear removal should be fine
-        # since we don't expect a large number of recipients.
-        for rcpt, listname, command in listnames:
-            rcpttos.remove(rcpt)
-        # If there's any non-list destined recipients left,
-        print('forwarding recips:', ' '.join(rcpttos), file=DEBUGSTREAM)
-        if rcpttos:
-            refused = self._deliver(mailfrom, rcpttos, data)
-            # TBD: what to do with refused addresses?
-            print('we got refusals:', refused, file=DEBUGSTREAM)
-        # Now deliver directly to the list commands
-        mlists = {}
-        s = StringIO(data)
-        msg = Message.Message(s)
-        # These headers are required for the proper execution of Mailman.  All
-        # MTAs in existence seem to add these if the original message doesn't
-        # have them.
-        if not msg.get('from'):
-            msg['From'] = mailfrom
-        if not msg.get('date'):
-            msg['Date'] = time.ctime(time.time())
-        for rcpt, listname, command in listnames:
-            print('sending message to', rcpt, file=DEBUGSTREAM)
-            mlist = mlists.get(listname)
-            if not mlist:
-                mlist = MailList.MailList(listname, lock=0)
-                mlists[listname] = mlist
-            # dispatch on the type of command
-            if command == '':
-                # post
-                msg.Enqueue(mlist, tolist=1)
-            elif command == 'admin':
-                msg.Enqueue(mlist, toadmin=1)
-            elif command == 'owner':
-                msg.Enqueue(mlist, toowner=1)
-            elif command == 'request':
-                msg.Enqueue(mlist, torequest=1)
-            elif command in ('join', 'leave'):
-                # TBD: this is a hack!
-                if command == 'join':
-                    msg['Subject'] = 'subscribe'
-                else:
-                    msg['Subject'] = 'unsubscribe'
-                msg.Enqueue(mlist, torequest=1)
 
 
 class Options:

@@ -205,6 +205,7 @@ static struct { LPCWSTR regName; LPCWSTR variableName; } OPTIONAL_FEATURES[] = {
     { L"exe", L"Include_exe" },
     { L"lib", L"Include_lib" },
     { L"path", L"PrependPath" },
+    { L"appendpath", L"AppendPath" },
     { L"pip", L"Include_pip" },
     { L"tcltk", L"Include_tcltk" },
     { L"test", L"Include_test" },
@@ -281,10 +282,6 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
         case ID_INSTALL_BUTTON:
             SavePageSettings();
 
-            if (!WillElevate() && !QueryElevateForCrtInstall()) {
-                break;
-            }
-
             hr = BalGetNumericVariable(L"InstallAllUsers", &installAllUsers);
             ExitOnFailure(hr, L"Failed to get install scope");
 
@@ -330,10 +327,6 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
             if (SUCCEEDED(hr)) {
                 // TODO: Check whether directory exists and contains another installation
                 ReleaseStr(targetDir);
-            }
-
-            if (!WillElevate() && !QueryElevateForCrtInstall()) {
-                break;
             }
 
             OnPlan(_command.action);
@@ -735,9 +728,13 @@ public: // IBootstrapperApplication
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Failed to load AssociateFiles state: error code 0x%08X", hr);
             }
 
-            _engine->SetVariableNumeric(L"Include_launcher", 1);
+            LONGLONG includeLauncher;
+            if (FAILED(BalGetNumericVariable(L"Include_launcher", &includeLauncher))
+                || includeLauncher == -1) {
+                _engine->SetVariableNumeric(L"Include_launcher", 1);
+                _engine->SetVariableNumeric(L"InstallLauncherAllUsers", fPerMachine ? 1 : 0);
+            }
             _engine->SetVariableNumeric(L"DetectedOldLauncher", 1);
-            _engine->SetVariableNumeric(L"InstallLauncherAllUsers", fPerMachine ? 1 : 0);
         }
         return CheckCanceled() ? IDCANCEL : IDNOACTION;
     }
@@ -804,6 +801,12 @@ public: // IBootstrapperApplication
             }
         }
 
+        LONGLONG includeLauncher;
+        if (SUCCEEDED(BalGetNumericVariable(L"Include_launcher", &includeLauncher))
+            && includeLauncher != -1) {
+            detectedLauncher = FALSE;
+        }
+
         if (detectedLauncher) {
             /* When we detect the current version of the launcher. */
             _engine->SetVariableNumeric(L"Include_launcher", 1);
@@ -825,6 +828,14 @@ public: // IBootstrapperApplication
         if (SUCCEEDED(hrStatus) && _baFunction) {
             BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Running detect complete BA function");
             _baFunction->OnDetectComplete();
+        }
+
+        if (SUCCEEDED(hrStatus)) {
+            LONGLONG includeLauncher;
+            if (SUCCEEDED(BalGetNumericVariable(L"Include_launcher", &includeLauncher))
+                && includeLauncher == -1) {
+                _engine->SetVariableNumeric(L"Include_launcher", 1);
+            }
         }
 
         if (SUCCEEDED(hrStatus)) {
@@ -1459,6 +1470,10 @@ private:
         hr = ParseOverridableVariablesFromXml(pixdManifest);
         BalExitOnFailure(hr, "Failed to read overridable variables.");
 
+        if (_command.action == BOOTSTRAPPER_ACTION_MODIFY) {
+            LoadOptionalFeatureStates(_engine);
+        }
+
         hr = ParseVariablesFromUnattendXml();
         ExitOnFailure(hr, "Failed to read unattend.ini file.");
 
@@ -1485,10 +1500,6 @@ private:
 
         hr = UpdateUIStrings(_command.action);
         BalExitOnFailure(hr, "Failed to load UI strings.");
-
-        if (_command.action == BOOTSTRAPPER_ACTION_MODIFY) {
-            LoadOptionalFeatureStates(_engine);
-        }
 
         GetBundleFileVersion();
         // don't fail if we couldn't get the version info; best-effort only
@@ -2642,30 +2653,6 @@ private:
         return result;
     }
 
-    BOOL QueryElevateForCrtInstall() {
-        // Called to prompt the user that even though they think they won't need
-        // to elevate, they actually will because of the CRT install.
-        if (IsCrtInstalled()) {
-            // CRT is already installed - no need to prompt
-            return TRUE;
-        }
-        
-        LONGLONG elevated;
-        HRESULT hr = BalGetNumericVariable(L"WixBundleElevated", &elevated);
-        if (SUCCEEDED(hr) && elevated) {
-            // Already elevated - no need to prompt
-            return TRUE;
-        }
-
-        LOC_STRING *locStr;
-        hr = LocGetString(_wixLoc, L"#(loc.ElevateForCRTInstall)", &locStr);
-        if (FAILED(hr)) {
-            BalLogError(hr, "Failed to get ElevateForCRTInstall string");
-            return FALSE;
-        }
-        return ::MessageBoxW(_hWnd, locStr->wzText, _theme->sczCaption, MB_YESNO) != IDNO;
-    }
-
     HRESULT EvaluateConditions() {
         HRESULT hr = S_OK;
         BOOL result = FALSE;
@@ -3021,47 +3008,39 @@ private:
         LOC_STRING *pLocString = nullptr;
         
         if (IsWindowsServer()) {
-            if (IsWindowsVersionOrGreater(6, 1, 1)) {
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows Server 2008 R2 or later");
+            if (IsWindowsVersionOrGreater(6, 2, 0)) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows Server 2012 or later");
                 return;
+            } else if (IsWindowsVersionOrGreater(6, 1, 1)) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Detected Windows Server 2008 R2");
             } else if (IsWindowsVersionOrGreater(6, 1, 0)) {
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Server 2008 R2");
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Service Pack 1 is required to continue installation");
-                LocGetString(_wixLoc, L"#(loc.FailureWS2K8R2MissingSP1)", &pLocString);
-            } else if (IsWindowsVersionOrGreater(6, 0, 2)) {
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Target OS is Windows Server 2008 SP2 or later");
-                return;
             } else if (IsWindowsVersionOrGreater(6, 0, 0)) {
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Server 2008");
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Service Pack 2 is required to continue installation");
-                LocGetString(_wixLoc, L"#(loc.FailureWS2K8MissingSP2)", &pLocString);
             } else {
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Server 2003 or earlier");
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Windows Server 2008 SP2 or later is required to continue installation");
-                LocGetString(_wixLoc, L"#(loc.FailureWS2K3OrEarlier)", &pLocString);
             }
+            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Windows Server 2012 or later is required to continue installation");
         } else {
-            if (IsWindows7SP1OrGreater()) {
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows 7 SP1 or later");
+            if (IsWindows10OrGreater()) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows 10 or later");
                 return;
+            } else if (IsWindows8Point1OrGreater()) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows 8.1");
+                return;
+            } else if (IsWindows8OrGreater()) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows 8");
             } else if (IsWindows7OrGreater()) {
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows 7 RTM");
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Service Pack 1 is required to continue installation");
-                LocGetString(_wixLoc, L"#(loc.FailureWin7MissingSP1)", &pLocString);
-            } else if (IsWindowsVistaSP2OrGreater()) {
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Target OS is Windows Vista SP2");
-                return;
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows 7");
             } else if (IsWindowsVistaOrGreater()) {
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Vista RTM or SP1");
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Service Pack 2 is required to continue installation");
-                LocGetString(_wixLoc, L"#(loc.FailureVistaMissingSP2)", &pLocString);
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Vista");
             } else { 
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows XP or earlier");
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Windows Vista SP2 or later is required to continue installation");
-                LocGetString(_wixLoc, L"#(loc.FailureXPOrEarlier)", &pLocString);
             }
+            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Windows 8.1 or later is required to continue installation");
         }
 
+        LocGetString(_wixLoc, L"#(loc.FailureOldOS)", &pLocString);
         if (pLocString && pLocString->wzText) {
             BalFormatString(pLocString->wzText, &_failedMessage);
         }

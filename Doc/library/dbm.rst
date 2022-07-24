@@ -33,6 +33,8 @@ the Oracle Berkeley DB.
    file's format can't be guessed; or a string containing the required module
    name, such as ``'dbm.ndbm'`` or ``'dbm.gnu'``.
 
+.. versionchanged:: 3.11
+   Accepts :term:`path-like object` for filename.
 
 .. function:: open(file, flag='r', mode=0o666)
 
@@ -72,6 +74,13 @@ available, as well as :meth:`get` and :meth:`setdefault`.
 
 .. versionchanged:: 3.2
    :meth:`get` and :meth:`setdefault` are now available in all database modules.
+
+.. versionchanged:: 3.8
+   Deleting a key from a read-only database raises database module specific error
+   instead of :exc:`KeyError`.
+
+.. versionchanged:: 3.11
+   Accepts :term:`path-like object` for file.
 
 Key and values are always stored as bytes. This means that when
 strings are used they are implicitly converted to the default encoding before
@@ -198,6 +207,9 @@ supported.
    In addition to the dictionary-like methods, ``gdbm`` objects have the
    following methods:
 
+   .. versionchanged:: 3.11
+      Accepts :term:`path-like object` for filename.
+
    .. method:: gdbm.firstkey()
 
       It's possible to loop over every key in the database using this method  and the
@@ -212,7 +224,7 @@ supported.
       contains them all::
 
          k = db.firstkey()
-         while k != None:
+         while k is not None:
              print(k)
              k = db.nextkey(k)
 
@@ -294,6 +306,9 @@ to locate the appropriate header file to simplify building this module.
    In addition to the dictionary-like methods, ``ndbm`` objects
    provide the following method:
 
+   .. versionchanged:: 3.11
+      Accepts :term:`path-like object` for filename.
+
    .. method:: ndbm.close()
 
       Close the ``ndbm`` database.
@@ -339,21 +354,44 @@ The module defines the following:
    dumbdbm database is created, files with :file:`.dat` and :file:`.dir` extensions
    are created.
 
-   The optional *flag* argument supports only the semantics of ``'c'``
-   and ``'n'`` values.  Other values will default to database being always
-   opened for update, and will be created if it does not exist.
+   The optional *flag* argument can be:
+
+   +---------+-------------------------------------------+
+   | Value   | Meaning                                   |
+   +=========+===========================================+
+   | ``'r'`` | Open existing database for reading only   |
+   |         | (default)                                 |
+   +---------+-------------------------------------------+
+   | ``'w'`` | Open existing database for reading and    |
+   |         | writing                                   |
+   +---------+-------------------------------------------+
+   | ``'c'`` | Open database for reading and writing,    |
+   |         | creating it if it doesn't exist           |
+   +---------+-------------------------------------------+
+   | ``'n'`` | Always create a new, empty database, open |
+   |         | for reading and writing                   |
+   +---------+-------------------------------------------+
 
    The optional *mode* argument is the Unix mode of the file, used only when the
    database has to be created.  It defaults to octal ``0o666`` (and will be modified
    by the prevailing umask).
 
+   .. warning::
+      It is possible to crash the Python interpreter when loading a database
+      with a sufficiently large/complex entry due to stack depth limitations in
+      Python's AST compiler.
+
    .. versionchanged:: 3.5
       :func:`.open` always creates a new database when the flag has the value
       ``'n'``.
 
-   .. deprecated-removed:: 3.6 3.8
-      Creating database in ``'r'`` and ``'w'`` modes.  Modifying database in
-      ``'r'`` mode.
+   .. versionchanged:: 3.8
+      A database opened with flags ``'r'`` is now read-only.  Opening with
+      flags ``'r'`` and ``'w'`` no longer creates a database if it does not
+      exist.
+
+   .. versionchanged:: 3.11
+      Accepts :term:`path-like object` for filename.
 
    In addition to the methods provided by the
    :class:`collections.abc.MutableMapping` class, :class:`dumbdbm` objects

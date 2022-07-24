@@ -4,6 +4,7 @@
 .. module:: crypt
    :platform: Unix
    :synopsis: The crypt() function used to check Unix passwords.
+   :deprecated:
 
 .. moduleauthor:: Steven D. Majewski <sdm7g@virginia.edu>
 .. sectionauthor:: Steven D. Majewski <sdm7g@virginia.edu>
@@ -14,6 +15,11 @@
 .. index::
    single: crypt(3)
    pair: cipher; DES
+
+.. deprecated-removed:: 3.11 3.13
+   The :mod:`crypt` module is deprecated
+   (see :pep:`PEP 594 <594#crypt>` for details and alternatives).
+   The :mod:`hashlib` module is a potential replacement for certain use cases.
 
 --------------
 
@@ -30,6 +36,8 @@ the :manpage:`crypt(3)` routine in the running system.  Therefore, any
 extensions available on the current implementation will also  be available on
 this module.
 
+.. availability:: Unix. Not available on VxWorks.
+
 Hashing Methods
 ---------------
 
@@ -41,17 +49,24 @@ are available on all platforms):
 .. data:: METHOD_SHA512
 
    A Modular Crypt Format method with 16 character salt and 86 character
-   hash.  This is the strongest method.
+   hash based on the SHA-512 hash function.  This is the strongest method.
 
 .. data:: METHOD_SHA256
 
    Another Modular Crypt Format method with 16 character salt and 43
-   character hash.
+   character hash based on the SHA-256 hash function.
+
+.. data:: METHOD_BLOWFISH
+
+   Another Modular Crypt Format method with 22 character salt and 31
+   character hash based on the Blowfish cipher.
+
+   .. versionadded:: 3.7
 
 .. data:: METHOD_MD5
 
    Another Modular Crypt Format method with 8 character salt and 22
-   character hash.
+   character hash based on the MD5 hash function.
 
 .. data:: METHOD_CRYPT
 
@@ -83,8 +98,7 @@ The :mod:`crypt` module defines the following functions:
    :func:`mksalt`, one of the ``crypt.METHOD_*`` values (though not all
    may be available on all platforms), or a full encrypted password
    including salt, as returned by this function.  If *salt* is not
-   provided, the strongest method will be used (as returned by
-   :func:`methods`.
+   provided, the strongest method available in :attr:`methods` will be used.
 
    Checking a password is usually done by passing the plain-text password
    as *word* and the full results of a previous :func:`crypt` call,
@@ -109,18 +123,28 @@ The :mod:`crypt` module defines the following functions:
       Accept ``crypt.METHOD_*`` values in addition to strings for *salt*.
 
 
-.. function:: mksalt(method=None)
+.. function:: mksalt(method=None, *, rounds=None)
 
    Return a randomly generated salt of the specified method.  If no
-   *method* is given, the strongest method available as returned by
-   :func:`methods` is used.
+   *method* is given, the strongest method available in :attr:`methods` is
+   used.
 
-   The return value is a string either of 2 characters in length for
-   ``crypt.METHOD_CRYPT``, or 19 characters starting with ``$digit$`` and
-   16 random characters from the set ``[./a-zA-Z0-9]``, suitable for
-   passing as the *salt* argument to :func:`crypt`.
+   The return value is a string suitable for passing as the *salt* argument
+   to :func:`crypt`.
+
+   *rounds* specifies the number of rounds for ``METHOD_SHA256``,
+   ``METHOD_SHA512`` and ``METHOD_BLOWFISH``.
+   For ``METHOD_SHA256`` and ``METHOD_SHA512`` it must be an integer between
+   ``1000`` and ``999_999_999``, the default is ``5000``.  For
+   ``METHOD_BLOWFISH`` it must be a power of two between ``16`` (2\ :sup:`4`)
+   and ``2_147_483_648`` (2\ :sup:`31`), the default is ``4096``
+   (2\ :sup:`12`).
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.7
+      Added the *rounds* parameter.
+
 
 Examples
 --------

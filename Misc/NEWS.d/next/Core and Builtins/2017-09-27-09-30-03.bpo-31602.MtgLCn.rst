@@ -1,2 +1,0 @@
-Fix an assertion failure in `zipimporter.get_source()` in case of a bad
-`zlib.decompress()`. Patch by Oren Milman.

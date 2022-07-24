@@ -18,6 +18,7 @@ import email.message
 import email.generator
 import io
 import contextlib
+from types import GenericAlias
 try:
     import fcntl
 except ImportError:
@@ -259,6 +260,8 @@ class Mailbox:
                 target.write(linesep)
         else:
             raise TypeError('Invalid message type: %s' % type(message))
+
+    __class_getitem__ = classmethod(GenericAlias)
 
 
 class Maildir(Mailbox):
@@ -784,7 +787,7 @@ class _mboxMMDF(_singlefileMailbox):
     def get_string(self, key, from_=False):
         """Return a string representation or raise a KeyError."""
         return email.message_from_bytes(
-            self.get_bytes(key)).as_string(unixfrom=from_)
+            self.get_bytes(key, from_)).as_string(unixfrom=from_)
 
     def get_bytes(self, key, from_=False):
         """Return a string representation or raise a KeyError."""
@@ -2014,6 +2017,8 @@ class _ProxyFile:
         if not hasattr(self._file, 'closed'):
             return False
         return self._file.closed
+
+    __class_getitem__ = classmethod(GenericAlias)
 
 
 class _PartialFile(_ProxyFile):

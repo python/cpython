@@ -30,29 +30,30 @@ def main():
         f = open(filename)
     except IOError as msg:
         usage("can't open %r: %s" % (filename, msg), 1)
-    f.seek(0, 2)
-    pos = f.tell()
-    leftover = None
-    while pos > 0:
-        size = min(pos, bufsize)
-        pos = pos - size
-        f.seek(pos)
-        buffer = f.read(size)
-        lines = buffer.split("\n")
-        del buffer
-        if leftover is None:
-            if not lines[-1]:
-                del lines[-1]
-        else:
-            lines[-1] = lines[-1] + leftover
-        if pos > 0:
-            leftover = lines[0]
-            del lines[0]
-        else:
-            leftover = None
-        for line in reversed(lines):
-            if prog.search(line):
-                print(line)
+    with f:
+        f.seek(0, 2)
+        pos = f.tell()
+        leftover = None
+        while pos > 0:
+            size = min(pos, bufsize)
+            pos = pos - size
+            f.seek(pos)
+            buffer = f.read(size)
+            lines = buffer.split("\n")
+            del buffer
+            if leftover is None:
+                if not lines[-1]:
+                    del lines[-1]
+            else:
+                lines[-1] = lines[-1] + leftover
+            if pos > 0:
+                leftover = lines[0]
+                del lines[0]
+            else:
+                leftover = None
+            for line in reversed(lines):
+                if prog.search(line):
+                    print(line)
 
 
 def usage(msg, code=2):

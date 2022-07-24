@@ -44,21 +44,14 @@ def status(message, modal=False, info=None):
     return decorated_fxn
 
 
-def mq_patches_applied():
-    """Check if there are any applied MQ patches."""
-    cmd = 'hg qapplied'
-    with subprocess.Popen(cmd.split(),
-                          stdout=subprocess.PIPE,
-                          stderr=subprocess.PIPE) as st:
-        bstdout, _ = st.communicate()
-        return st.returncode == 0 and bstdout
-
-
 def get_git_branch():
     """Get the symbolic name for the current git branch"""
     cmd = "git rev-parse --abbrev-ref HEAD".split()
     try:
-        return subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
+        return subprocess.check_output(cmd,
+                                       stderr=subprocess.DEVNULL,
+                                       cwd=SRCDIR,
+                                       encoding='UTF-8')
     except subprocess.CalledProcessError:
         return None
 
@@ -70,10 +63,36 @@ def get_git_upstream_remote():
     """
     cmd = "git remote get-url upstream".split()
     try:
-        subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
+        subprocess.check_output(cmd,
+                                stderr=subprocess.DEVNULL,
+                                cwd=SRCDIR,
+                                encoding='UTF-8')
     except subprocess.CalledProcessError:
         return "origin"
     return "upstream"
+
+
+def get_git_remote_default_branch(remote_name):
+    """Get the name of the default branch for the given remote
+
+    It is typically called 'main', but may differ
+    """
+    cmd = "git remote show {}".format(remote_name).split()
+    env = os.environ.copy()
+    env['LANG'] = 'C'
+    try:
+        remote_info = subprocess.check_output(cmd,
+                                              stderr=subprocess.DEVNULL,
+                                              cwd=SRCDIR,
+                                              encoding='UTF-8',
+                                              env=env)
+    except subprocess.CalledProcessError:
+        return None
+    for line in remote_info.splitlines():
+        if "HEAD branch:" in line:
+            base_branch = line.split(":")[1].strip()
+            return base_branch
+    return None
 
 
 @status("Getting base branch for PR",
@@ -82,32 +101,24 @@ def get_base_branch():
     if not os.path.exists(os.path.join(SRCDIR, '.git')):
         # Not a git checkout, so there's no base branch
         return None
+    upstream_remote = get_git_upstream_remote()
     version = sys.version_info
     if version.releaselevel == 'alpha':
-        base_branch = "master"
+        base_branch = get_git_remote_default_branch(upstream_remote)
     else:
         base_branch = "{0.major}.{0.minor}".format(version)
     this_branch = get_git_branch()
     if this_branch is None or this_branch == base_branch:
         # Not on a git PR branch, so there's no base branch
         return None
-    upstream_remote = get_git_upstream_remote()
     return upstream_remote + "/" + base_branch
 
 
 @status("Getting the list of files that have been added/changed",
         info=lambda x: n_files_str(len(x)))
 def changed_files(base_branch=None):
-    """Get the list of changed or added files from Mercurial or git."""
-    if os.path.isdir(os.path.join(SRCDIR, '.hg')):
-        if base_branch is not None:
-            sys.exit('need a git checkout to check PR status')
-        cmd = 'hg status --added --modified --no-status'
-        if mq_patches_applied():
-            cmd += ' --rev qparent'
-        with subprocess.Popen(cmd.split(), stdout=subprocess.PIPE) as st:
-            filenames = [x.decode().rstrip() for x in st.stdout]
-    elif os.path.exists(os.path.join(SRCDIR, '.git')):
+    """Get the list of changed or added files from git."""
+    if os.path.exists(os.path.join(SRCDIR, '.git')):
         # We just use an existence check here as:
         #  directory = normal git checkout/clone
         #  file = git worktree directory
@@ -116,7 +127,11 @@ def changed_files(base_branch=None):
         else:
             cmd = 'git status --porcelain'
         filenames = []
-        with subprocess.Popen(cmd.split(), stdout=subprocess.PIPE) as st:
+        with subprocess.Popen(cmd.split(),
+                              stdout=subprocess.PIPE,
+                              cwd=SRCDIR) as st:
+            if st.wait() != 0:
+                sys.exit(f'error running {cmd}')
             for line in st.stdout:
                 line = line.decode().rstrip()
                 status_text, filename = line.split(maxsplit=1)
@@ -129,7 +144,7 @@ def changed_files(base_branch=None):
                     filename = filename.split(' -> ', 2)[1].strip()
                 filenames.append(filename)
     else:
-        sys.exit('need a Mercurial or git checkout to get modified files')
+        sys.exit('need a git checkout to get modified files')
 
     filenames2 = []
     for filename in filenames:
@@ -232,7 +247,7 @@ def regenerated_pyconfig_h_in(file_paths):
     else:
         return "not needed"
 
-def travis(pull_request):
+def ci(pull_request):
     if pull_request == 'false':
         print('Not a pull request; skipping')
         return
@@ -288,10 +303,10 @@ def main():
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--travis',
+    parser.add_argument('--ci',
                         help='Perform pass/fail checks')
     args = parser.parse_args()
-    if args.travis:
-        travis(args.travis)
+    if args.ci:
+        ci(args.ci)
     else:
         main()

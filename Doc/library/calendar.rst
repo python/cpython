@@ -19,17 +19,19 @@ the week to Sunday (6) or to any other weekday.  Parameters that specify dates
 are given as integers. For related
 functionality, see also the :mod:`datetime` and :mod:`time` modules.
 
-Most of these functions and classes rely on the :mod:`datetime` module which
-uses an idealized calendar, the current Gregorian calendar extended
+The functions and classes defined in this module
+use an idealized calendar, the current Gregorian calendar extended indefinitely
 in both directions.  This matches the definition of the "proleptic Gregorian"
 calendar in Dershowitz and Reingold's book "Calendrical Calculations", where
-it's the base calendar for all computations.
+it's the base calendar for all computations.  Zero and negative years are
+interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
+2 BC, and so on.
 
 
 .. class:: Calendar(firstweekday=0)
 
    Creates a :class:`Calendar` object. *firstweekday* is an integer specifying the
-   first day of the week. ``0`` is Monday (the default), ``6`` is Sunday.
+   first day of the week. :const:`MONDAY` is ``0`` (the default), :const:`SUNDAY` is ``6``.
 
    A :class:`Calendar` object provides several methods that can be used for
    preparing the calendar data for formatting. This class doesn't do any formatting
@@ -53,17 +55,40 @@ it's the base calendar for all computations.
       month that are required to get a complete week.
 
 
-   .. method:: itermonthdays2(year, month)
-
-      Return an iterator for the month *month* in the year *year* similar to
-      :meth:`itermonthdates`. Days returned will be tuples consisting of a day
-      number and a week day number.
-
-
    .. method:: itermonthdays(year, month)
 
       Return an iterator for the month *month* in the year *year* similar to
-      :meth:`itermonthdates`. Days returned will simply be day numbers.
+      :meth:`itermonthdates`, but not restricted by the :class:`datetime.date`
+      range. Days returned will simply be day of the month numbers.  For the
+      days outside of the specified month, the day number is ``0``.
+
+
+   .. method:: itermonthdays2(year, month)
+
+      Return an iterator for the month *month* in the year *year* similar to
+      :meth:`itermonthdates`, but not restricted by the :class:`datetime.date`
+      range. Days returned will be tuples consisting of a day of the month
+      number and a week day number.
+
+
+   .. method:: itermonthdays3(year, month)
+
+      Return an iterator for the month *month* in the year *year* similar to
+      :meth:`itermonthdates`, but not restricted by the :class:`datetime.date`
+      range. Days returned will be tuples consisting of a year, a month and a day
+      of the month numbers.
+
+      .. versionadded:: 3.7
+
+
+   .. method:: itermonthdays4(year, month)
+
+      Return an iterator for the month *month* in the year *year* similar to
+      :meth:`itermonthdates`, but not restricted by the :class:`datetime.date`
+      range. Days returned will be tuples consisting of a year, a month, a day
+      of the month, and a day of the week numbers.
+
+      .. versionadded:: 3.7
 
 
    .. method:: monthdatescalendar(year, month)
@@ -254,22 +279,20 @@ it's the base calendar for all computations.
 
    This subclass of :class:`TextCalendar` can be passed a locale name in the
    constructor and will return month and weekday names in the specified locale.
-   If this locale includes an encoding all strings containing month and weekday
-   names will be returned as unicode.
 
 
 .. class:: LocaleHTMLCalendar(firstweekday=0, locale=None)
 
    This subclass of :class:`HTMLCalendar` can be passed a locale name in the
    constructor and will return month and weekday names in the specified
-   locale. If this locale includes an encoding all strings containing month and
-   weekday names will be returned as unicode.
+   locale.
 
 .. note::
 
-   The :meth:`formatweekday` and :meth:`formatmonthname` methods of these two
-   classes temporarily change the current locale to the given *locale*.  Because
-   the current locale is a process-wide setting, they are not thread-safe.
+   The constructor, :meth:`formatweekday` and :meth:`formatmonthname` methods
+   of these two classes temporarily change the ``LC_TIME`` locale to the given
+   *locale*. Because the current locale is a process-wide setting, they are
+   not thread-safe.
 
 
 For simple text calendars this module provides the following functions.
@@ -324,7 +347,7 @@ For simple text calendars this module provides the following functions.
 .. function:: monthcalendar(year, month)
 
    Returns a matrix representing a month's calendar.  Each row represents a week;
-   days outside of the month a represented by zeros. Each week begins with Monday
+   days outside of the month are represented by zeros. Each week begins with Monday
    unless set by :func:`setfirstweekday`.
 
 
@@ -384,6 +407,15 @@ The :mod:`calendar` module exports the following data attributes:
    locale.  This follows normal convention of January being month number 1, so it
    has a length of 13 and  ``month_abbr[0]`` is the empty string.
 
+.. data:: MONDAY
+          TUESDAY
+          WEDNESDAY
+          THURSDAY
+          FRIDAY
+          SATURDAY
+          SUNDAY
+
+   Aliases for day numbers, where ``MONDAY`` is ``0`` and ``SUNDAY`` is ``6``.
 
 .. seealso::
 

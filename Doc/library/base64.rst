@@ -2,7 +2,7 @@
 ===============================================================
 
 .. module:: base64
-   :synopsis: RFC 3548: Base16, Base32, Base64 Data Encodings;
+   :synopsis: RFC 4648: Base16, Base32, Base64 Data Encodings;
               Base85 and Ascii85
 
 **Source code:** :source:`Lib/base64.py`
@@ -16,10 +16,10 @@
 This module provides functions for encoding binary data to printable
 ASCII characters and decoding such encodings back to binary data.
 It provides encoding and decoding functions for the encodings specified in
-:rfc:`3548`, which defines the Base16, Base32, and Base64 algorithms,
+:rfc:`4648`, which defines the Base16, Base32, and Base64 algorithms,
 and for the de-facto standard Ascii85 and Base85 encodings.
 
-The :rfc:`3548` encodings are suitable for encoding binary data so that it can
+The :rfc:`4648` encodings are suitable for encoding binary data so that it can be
 safely sent by email, used as parts of URLs, or included as part of an HTTP
 POST request.  The encoding algorithm is not the same as the
 :program:`uuencode` program.
@@ -28,7 +28,7 @@ There are two interfaces provided by this module.  The modern interface
 supports encoding :term:`bytes-like objects <bytes-like object>` to ASCII
 :class:`bytes`, and decoding :term:`bytes-like objects <bytes-like object>` or
 strings containing ASCII to :class:`bytes`.  Both base-64 alphabets
-defined in :rfc:`3548` (normal, and URL- and filesystem-safe) are supported.
+defined in :rfc:`4648` (normal, and URL- and filesystem-safe) are supported.
 
 The legacy interface does not support decoding from strings, but it does
 provide functions for encoding and decoding to and from :term:`file objects
@@ -78,6 +78,8 @@ The modern interface provides:
    these non-alphabet characters in the input result in a
    :exc:`binascii.Error`.
 
+   For more information about the strict base64 check, see :func:`binascii.a2b_base64`
+
 
 .. function:: standard_b64encode(s)
 
@@ -124,7 +126,7 @@ The modern interface provides:
    whether a lowercase alphabet is acceptable as input.  For security purposes,
    the default is ``False``.
 
-   :rfc:`3548` allows for optional mapping of the digit 0 (zero) to the letter O
+   :rfc:`4648` allows for optional mapping of the digit 0 (zero) to the letter O
    (oh), and for optional mapping of the digit 1 (one) to either the letter I (eye)
    or letter L (el).  The optional argument *map01* when not ``None``, specifies
    which letter the digit 1 should be mapped to (when *map01* is not ``None``, the
@@ -134,6 +136,27 @@ The modern interface provides:
    A :exc:`binascii.Error` is raised if *s* is
    incorrectly padded or if there are non-alphabet characters present in the
    input.
+
+
+.. function:: b32hexencode(s)
+
+   Similar to :func:`b32encode` but uses the Extended Hex Alphabet, as defined in
+   :rfc:`4648`.
+
+   .. versionadded:: 3.10
+
+
+.. function:: b32hexdecode(s, casefold=False)
+
+   Similar to :func:`b32decode` but uses the Extended Hex Alphabet, as defined in
+   :rfc:`4648`.
+
+   This version does not allow the digit 0 (zero) to the letter O (oh) and digit
+   1 (one) to either the letter I (eye) or letter L (el) mappings, all these
+   characters are included in the Extended Hex Alphabet and are not
+   interchangeable.
+
+   .. versionadded:: 3.10
 
 
 .. function:: b16encode(s)
@@ -178,7 +201,7 @@ The modern interface provides:
    .. versionadded:: 3.4
 
 
-.. function:: a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \\t\\n\\r\\v')
+.. function:: a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v')
 
    Decode the Ascii85 encoded :term:`bytes-like object` or ASCII string *b* and
    return the decoded :class:`bytes`.
@@ -218,14 +241,6 @@ The modern interface provides:
    .. versionadded:: 3.4
 
 
-.. note::
-   Both Base85 and Ascii85 have an expansion factor of 5 to 4 (5 Base85 or
-   Ascii85 characters can encode 4 binary bytes), while the better-known
-   Base64 has an expansion factor of 6 to 4.  They are therefore more
-   efficient when space expensive.  They differ by details such as the
-   character map used for encoding.
-
-
 The legacy interface:
 
 .. function:: decode(input, output)
@@ -242,12 +257,6 @@ The legacy interface:
    lines of base64 encoded data, and return the decoded :class:`bytes`.
 
    .. versionadded:: 3.1
-
-.. function:: decodestring(s)
-
-   Deprecated alias of :func:`decodebytes`.
-
-   .. deprecated:: 3.1
 
 
 .. function:: encode(input, output)
@@ -269,12 +278,6 @@ The legacy interface:
 
    .. versionadded:: 3.1
 
-.. function:: encodestring(s)
-
-   Deprecated alias of :func:`encodebytes`.
-
-   .. deprecated:: 3.1
-
 
 An example usage of the module:
 
@@ -286,6 +289,13 @@ An example usage of the module:
    >>> data
    b'data to be encoded'
 
+.. _base64-security:
+
+Security Considerations
+-----------------------
+
+A new security considerations section was added to :rfc:`4648` (section 12); it's
+recommended to review the security section for any code deployed to production.
 
 .. seealso::
 

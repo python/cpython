@@ -1,2 +1,0 @@
-An iterator produced by itertools.groupby() iterator now becames exhausted
-after advancing the groupby iterator.

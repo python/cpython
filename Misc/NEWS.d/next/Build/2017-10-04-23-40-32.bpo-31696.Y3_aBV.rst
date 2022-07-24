@@ -1,2 +1,0 @@
-Improve compiler version information in :data:`sys.version` when Python is
-built with Clang.

@@ -1,26 +1,16 @@
 /* Boolean type, a subtype of int */
 
 #include "Python.h"
-#include "longintrepr.h"
+#include "pycore_object.h"      // _Py_FatalRefcountError()
+#include "pycore_runtime.h"       // _Py_ID()
 
 /* We define bool_repr to return "False" or "True" */
-
-static PyObject *false_str = NULL;
-static PyObject *true_str = NULL;
 
 static PyObject *
 bool_repr(PyObject *self)
 {
-    PyObject *s;
-
-    if (self == Py_True)
-        s = true_str ? true_str :
-            (true_str = PyUnicode_InternFromString("True"));
-    else
-        s = false_str ? false_str :
-            (false_str = PyUnicode_InternFromString("False"));
-    Py_XINCREF(s);
-    return s;
+    PyObject *res = self == Py_True ? &_Py_ID(True) : &_Py_ID(False);
+    return Py_NewRef(res);
 }
 
 /* Function to return a bool from a C long */
@@ -52,6 +42,30 @@ bool_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     ok = PyObject_IsTrue(x);
     if (ok < 0)
         return NULL;
+    return PyBool_FromLong(ok);
+}
+
+static PyObject *
+bool_vectorcall(PyObject *type, PyObject * const*args,
+                size_t nargsf, PyObject *kwnames)
+{
+    long ok = 0;
+    if (!_PyArg_NoKwnames("bool", kwnames)) {
+        return NULL;
+    }
+
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("bool", nargs, 0, 1)) {
+        return NULL;
+    }
+
+    assert(PyType_Check(type));
+    if (nargs) {
+        ok = PyObject_IsTrue(args[0]);
+        if (ok < 0) {
+            return NULL;
+        }
+    }
     return PyBool_FromLong(ok);
 }
 
@@ -129,6 +143,12 @@ static PyNumberMethods bool_as_number = {
     0,                          /* nb_index */
 };
 
+static void _Py_NO_RETURN
+bool_dealloc(PyObject* Py_UNUSED(ignore))
+{
+    _Py_FatalRefcountError("deallocating True or False");
+}
+
 /* The type object for bool.  Note that this cannot be subclassed! */
 
 PyTypeObject PyBool_Type = {
@@ -136,18 +156,18 @@ PyTypeObject PyBool_Type = {
     "bool",
     sizeof(struct _longobject),
     0,
-    0,                                          /* tp_dealloc */
-    0,                                          /* tp_print */
+    bool_dealloc,                               /* tp_dealloc */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     bool_repr,                                  /* tp_repr */
     &bool_as_number,                            /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     0,                                          /* tp_hash */
     0,                                          /* tp_call */
-    bool_repr,                                  /* tp_str */
+    0,                                          /* tp_str */
     0,                                          /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
@@ -170,6 +190,7 @@ PyTypeObject PyBool_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     bool_new,                                   /* tp_new */
+    .tp_vectorcall = bool_vectorcall,
 };
 
 /* The objects representing bool values False and True */

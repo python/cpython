@@ -9,6 +9,56 @@ import sys
 import datetime
 import os
 
+# From https://en.wikipedia.org/wiki/Leap_year_starting_on_Saturday
+result_0_02_text = """\
+     February 0
+Mo Tu We Th Fr Sa Su
+    1  2  3  4  5  6
+ 7  8  9 10 11 12 13
+14 15 16 17 18 19 20
+21 22 23 24 25 26 27
+28 29
+"""
+
+result_0_text = """\
+                                   0
+
+      January                   February                   March
+Mo Tu We Th Fr Sa Su      Mo Tu We Th Fr Sa Su      Mo Tu We Th Fr Sa Su
+                1  2          1  2  3  4  5  6             1  2  3  4  5
+ 3  4  5  6  7  8  9       7  8  9 10 11 12 13       6  7  8  9 10 11 12
+10 11 12 13 14 15 16      14 15 16 17 18 19 20      13 14 15 16 17 18 19
+17 18 19 20 21 22 23      21 22 23 24 25 26 27      20 21 22 23 24 25 26
+24 25 26 27 28 29 30      28 29                     27 28 29 30 31
+31
+
+       April                      May                       June
+Mo Tu We Th Fr Sa Su      Mo Tu We Th Fr Sa Su      Mo Tu We Th Fr Sa Su
+                1  2       1  2  3  4  5  6  7                1  2  3  4
+ 3  4  5  6  7  8  9       8  9 10 11 12 13 14       5  6  7  8  9 10 11
+10 11 12 13 14 15 16      15 16 17 18 19 20 21      12 13 14 15 16 17 18
+17 18 19 20 21 22 23      22 23 24 25 26 27 28      19 20 21 22 23 24 25
+24 25 26 27 28 29 30      29 30 31                  26 27 28 29 30
+
+        July                     August                  September
+Mo Tu We Th Fr Sa Su      Mo Tu We Th Fr Sa Su      Mo Tu We Th Fr Sa Su
+                1  2          1  2  3  4  5  6                   1  2  3
+ 3  4  5  6  7  8  9       7  8  9 10 11 12 13       4  5  6  7  8  9 10
+10 11 12 13 14 15 16      14 15 16 17 18 19 20      11 12 13 14 15 16 17
+17 18 19 20 21 22 23      21 22 23 24 25 26 27      18 19 20 21 22 23 24
+24 25 26 27 28 29 30      28 29 30 31               25 26 27 28 29 30
+31
+
+      October                   November                  December
+Mo Tu We Th Fr Sa Su      Mo Tu We Th Fr Sa Su      Mo Tu We Th Fr Sa Su
+                   1             1  2  3  4  5                   1  2  3
+ 2  3  4  5  6  7  8       6  7  8  9 10 11 12       4  5  6  7  8  9 10
+ 9 10 11 12 13 14 15      13 14 15 16 17 18 19      11 12 13 14 15 16 17
+16 17 18 19 20 21 22      20 21 22 23 24 25 26      18 19 20 21 22 23 24
+23 24 25 26 27 28 29      27 28 29 30               25 26 27 28 29 30 31
+30 31
+"""
+
 result_2004_01_text = """\
     January 2004
 Mo Tu We Th Fr Sa Su
@@ -343,11 +393,19 @@ class OutputTestCase(unittest.TestCase):
             self.normalize_calendar(calendar.calendar(2004)),
             self.normalize_calendar(result_2004_text)
         )
+        self.assertEqual(
+            self.normalize_calendar(calendar.calendar(0)),
+            self.normalize_calendar(result_0_text)
+        )
 
     def test_output_textcalendar(self):
         self.assertEqual(
             calendar.TextCalendar().formatyear(2004),
             result_2004_text
+        )
+        self.assertEqual(
+            calendar.TextCalendar().formatyear(0),
+            result_0_text
         )
 
     def test_output_htmlcalendar_encoding_ascii(self):
@@ -392,6 +450,10 @@ class OutputTestCase(unittest.TestCase):
         self.assertEqual(
             calendar.TextCalendar().formatmonth(2004, 1),
             result_2004_01_text
+        )
+        self.assertEqual(
+            calendar.TextCalendar().formatmonth(0, 2),
+            result_0_02_text
         )
 
     def test_formatmonthname_with_year(self):
@@ -502,10 +564,52 @@ class CalendarTestCase(unittest.TestCase):
         new_october = calendar.TextCalendar().formatmonthname(2010, 10, 10)
         self.assertEqual(old_october, new_october)
 
-    def test_itermonthdates(self):
-        # ensure itermonthdates doesn't overflow after datetime.MAXYEAR
-        # see #15421
-        list(calendar.Calendar().itermonthdates(datetime.MAXYEAR, 12))
+    def test_locale_calendar_formatweekday(self):
+        try:
+            # formatweekday uses different day names based on the available width.
+            cal = calendar.LocaleTextCalendar(locale='en_US')
+            # For short widths, a centered, abbreviated name is used.
+            self.assertEqual(cal.formatweekday(0, 5), " Mon ")
+            # For really short widths, even the abbreviated name is truncated.
+            self.assertEqual(cal.formatweekday(0, 2), "Mo")
+            # For long widths, the full day name is used.
+            self.assertEqual(cal.formatweekday(0, 10), "  Monday  ")
+        except locale.Error:
+            raise unittest.SkipTest('cannot set the en_US locale')
+
+    def test_locale_html_calendar_custom_css_class_month_name(self):
+        try:
+            cal = calendar.LocaleHTMLCalendar(locale='')
+            local_month = cal.formatmonthname(2010, 10, 10)
+        except locale.Error:
+            # cannot set the system default locale -- skip rest of test
+            raise unittest.SkipTest('cannot set the system default locale')
+        self.assertIn('class="month"', local_month)
+        cal.cssclass_month_head = "text-center month"
+        local_month = cal.formatmonthname(2010, 10, 10)
+        self.assertIn('class="text-center month"', local_month)
+
+    def test_locale_html_calendar_custom_css_class_weekday(self):
+        try:
+            cal = calendar.LocaleHTMLCalendar(locale='')
+            local_weekday = cal.formatweekday(6)
+        except locale.Error:
+            # cannot set the system default locale -- skip rest of test
+            raise unittest.SkipTest('cannot set the system default locale')
+        self.assertIn('class="sun"', local_weekday)
+        cal.cssclasses_weekday_head = ["mon2", "tue2", "wed2", "thu2", "fri2", "sat2", "sun2"]
+        local_weekday = cal.formatweekday(6)
+        self.assertIn('class="sun2"', local_weekday)
+
+    def test_itermonthdays3(self):
+        # ensure itermonthdays3 doesn't overflow after datetime.MAXYEAR
+        list(calendar.Calendar().itermonthdays3(datetime.MAXYEAR, 12))
+
+    def test_itermonthdays4(self):
+        cal = calendar.Calendar(firstweekday=3)
+        days = list(cal.itermonthdays4(2001, 2))
+        self.assertEqual(days[0], (2001, 2, 1, 3))
+        self.assertEqual(days[-1], (2001, 2, 28, 2))
 
     def test_itermonthdays(self):
         for firstweekday in range(7):
@@ -527,6 +631,14 @@ class CalendarTestCase(unittest.TestCase):
                 days = list(cal.itermonthdays2(y, m))
                 self.assertEqual(days[0][1], firstweekday)
                 self.assertEqual(days[-1][1], (firstweekday - 1) % 7)
+
+    def test_iterweekdays(self):
+        week0 = list(range(7))
+        for firstweekday in range(7):
+            cal = calendar.Calendar(firstweekday)
+            week = list(cal.iterweekdays())
+            expected = week0[firstweekday:] + week0[:firstweekday]
+            self.assertEqual(week, expected)
 
 
 class MonthCalendarTestCase(unittest.TestCase):
@@ -768,7 +880,8 @@ class CommandLineTestCase(unittest.TestCase):
         self.assertFailure('-L')
         self.assertFailure('--locale')
         self.assertFailure('-L', 'en')
-        lang, enc = locale.getdefaultlocale()
+
+        lang, enc = locale.getlocale()
         lang = lang or 'C'
         enc = enc or 'UTF-8'
         try:
@@ -843,11 +956,11 @@ class CommandLineTestCase(unittest.TestCase):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        blacklist = {'mdays', 'January', 'February', 'EPOCH',
-                     'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY',
-                     'SATURDAY', 'SUNDAY', 'different_locale', 'c',
-                     'prweek', 'week', 'format', 'formatstring', 'main'}
-        support.check__all__(self, calendar, blacklist=blacklist)
+        not_exported = {
+            'mdays', 'January', 'February', 'EPOCH',
+            'different_locale', 'c', 'prweek', 'week', 'format',
+            'formatstring', 'main', 'monthlen', 'prevmonth', 'nextmonth'}
+        support.check__all__(self, calendar, not_exported=not_exported)
 
 
 class TestSubClassingCase(unittest.TestCase):
