@@ -31,7 +31,7 @@ podman run --rm -ti -v $(pwd):/python-wasm/cpython:Z quay.io/tiran/cpythonbuild:
 docker run --rm -ti -v $(pwd):/python-wasm/cpython quay.io/tiran/cpythonbuild:emsdk3
 ```
 
-### Compile a build Python interpreter
+### Compile and build Python interpreter
 
 ```shell
 mkdir -p builddir/build
