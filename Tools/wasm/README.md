@@ -33,6 +33,10 @@ podman run --rm -ti -v $(pwd):/python-wasm/cpython:Z quay.io/tiran/cpythonbuild:
 docker run --rm -ti -v $(pwd):/python-wasm/cpython quay.io/tiran/cpythonbuild:emsdk3
 ```
 
+Note that when you exit the container, all work will be lost.
+See the `podman` or `docker` docs for how to preserve the container environment
+across runs.
+
 ### Compile a build Python interpreter
 
 From within the container, run the following commands:
@@ -57,10 +61,10 @@ embuilder build zlib bzip2
 mkdir -p builddir/emscripten-browser
 pushd builddir/emscripten-browser
 
-CONFIG_SITE=../../Tools/wasm/config.site-wasm32-emscripten \
-  emconfigure ../../configure -C \
+CONFIG_SITE=../../cpython/Tools/wasm/config.site-wasm32-emscripten \
+  emconfigure ../../cpython/configure -C \
     --host=wasm32-unknown-emscripten \
-    --build=$(../../config.guess) \
+    --build=$(../../cpython/config.guess) \
     --with-emscripten-target=browser \
     --with-build-python=$(pwd)/../build/python
 
@@ -90,10 +94,10 @@ and header files with debug builds.
 mkdir -p builddir/emscripten-node
 pushd builddir/emscripten-node
 
-CONFIG_SITE=../../Tools/wasm/config.site-wasm32-emscripten \
-  emconfigure ../../configure -C \
+CONFIG_SITE=../../cpython/Tools/wasm/config.site-wasm32-emscripten \
+  emconfigure ../../cpython/configure -C \
     --host=wasm32-unknown-emscripten \
-    --build=$(../../config.guess) \
+    --build=$(../../cpython/config.guess) \
     --with-emscripten-target=node \
     --with-build-python=$(pwd)/../build/python
 
