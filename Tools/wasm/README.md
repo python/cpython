@@ -23,7 +23,7 @@ to a repository checkout.
 Christian Heimes maintains a container image with Emscripten SDK, Python
 build dependencies, WASI-SDK, wasmtime, and several additional tools.
 
-From within your local CPython repo fork, run one of the following commands:
+From within your local CPython repo clone, run one of the following commands:
 
 ```
 # Fedora, RHEL, CentOS
