@@ -56,7 +56,7 @@ _PyList_AppendTakeRef(PyListObject *self, PyObject *newitem)
     return _PyList_AppendTakeRefListResize(self, newitem);
 }
 
-// Method to copy objects for specified number of times inside a buffer
+// Repeat the bytes of a buffer in place
 static inline void
 _Py_memory_repeat(char* dest, Py_ssize_t len_dest, Py_ssize_t len_src)
 {
