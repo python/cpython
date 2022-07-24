@@ -23,6 +23,8 @@ to a repository checkout.
 Christian Heimes maintains a container image with Emscripten SDK, Python
 build dependencies, WASI-SDK, wasmtime, and several additional tools.
 
+From within your local CPython repo fork, run one of the following commands:
+
 ```
 # Fedora, RHEL, CentOS
 podman run --rm -ti -v $(pwd):/python-wasm/cpython:Z quay.io/tiran/cpythonbuild:emsdk3
@@ -36,7 +38,7 @@ docker run --rm -ti -v $(pwd):/python-wasm/cpython quay.io/tiran/cpythonbuild:em
 ```shell
 mkdir -p builddir/build
 pushd builddir/build
-../../configure -C
+../../cpython/configure -C
 make -j$(nproc)
 popd
 ```
