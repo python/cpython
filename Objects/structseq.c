@@ -520,6 +520,7 @@ _PyStructSequence_InitBuiltinWithFlags(PyTypeObject *type,
     }
     initialize_static_fields(type, desc, members, tp_flags);
     if (_PyStaticType_InitBuiltin(type) < 0) {
+        PyMem_Free(members);
         PyErr_Format(PyExc_RuntimeError,
                      "Can't initialize builtin type %s",
                      desc->name);
