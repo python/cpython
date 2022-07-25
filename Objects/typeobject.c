@@ -6650,6 +6650,14 @@ PyType_Ready(PyTypeObject *type)
     return 0;
 }
 
+int
+_PyStaticType_InitBuiltin(PyTypeObject *self)
+{
+    self->tp_flags = self->tp_flags | _Py_TPFLAGS_STATIC_BUILTIN;
+
+    return PyType_Ready(self);
+}
+
 
 static int
 add_subclass(PyTypeObject *base, PyTypeObject *type)
