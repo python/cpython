@@ -218,7 +218,7 @@ struct _typeobject {
     PyObject *tp_bases;
     PyObject *tp_mro; /* method resolution order */
     PyObject *tp_cache; /* no longer used */
-    PyObject *tp_subclasses;  /* not used for static types (see gh-94673) */
+    PyObject *tp_subclasses;  /* for static builtin types this is an index */
     PyObject *tp_weaklist;
     destructor tp_del;
 
@@ -227,7 +227,6 @@ struct _typeobject {
 
     destructor tp_finalize;
     vectorcallfunc tp_vectorcall;
-    size_t tp_static_builtin_index;  /* 0 means "not initialized" */
 };
 
 /* This struct is used by the specializer

@@ -73,7 +73,7 @@ static inline PyTypeObject * subclass_from_ref(PyObject *ref);
 static inline int
 static_builtin_index_is_set(PyTypeObject *self)
 {
-    return self->tp_static_builtin_index > 0;
+    return self->tp_subclasses != NULL;
 }
 
 static inline size_t
@@ -81,7 +81,7 @@ static_builtin_index_get(PyTypeObject *self)
 {
     assert(static_builtin_index_is_set(self));
     /* We store a 1-based index so 0 can mean "not initialized". */
-    return self->tp_static_builtin_index - 1;
+    return (size_t)self->tp_subclasses - 1;
 }
 
 static inline void
@@ -89,13 +89,13 @@ static_builtin_index_set(PyTypeObject *self, size_t index)
 {
     assert(index < _Py_MAX_STATIC_BUILTIN_TYPES);
     /* We store a 1-based index so 0 can mean "not initialized". */
-    self->tp_static_builtin_index = index + 1;
+    self->tp_subclasses = (PyObject *)(index + 1);
 }
 
 static inline void
 static_builtin_index_clear(PyTypeObject *self)
 {
-    self->tp_static_builtin_index = 0;
+    self->tp_subclasses = NULL;
 }
 
 static inline static_builtin_state *
