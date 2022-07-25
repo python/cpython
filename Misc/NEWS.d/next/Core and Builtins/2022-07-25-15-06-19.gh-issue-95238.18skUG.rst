@@ -1,0 +1,1 @@
+Lazily compute line number for traceback objects speeding up exception handling. Patch by Kumar Aditya.
