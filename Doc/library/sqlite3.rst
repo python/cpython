@@ -609,7 +609,7 @@ Connection Objects
 
    .. method:: set_progress_handler(progress_handler, n)
 
-      Register callback *progress_handler* to be invoked for every *n*
+      Register callable *progress_handler* to be invoked for every *n*
       instructions of the SQLite virtual machine. This is useful if you want to
       get called from SQLite during long-running operations, for example to update
       a GUI.
@@ -624,7 +624,7 @@ Connection Objects
 
    .. method:: set_trace_callback(trace_callback)
 
-      Register callback *trace_callback* to be invoked for each SQL statement
+      Register callable *trace_callback* to be invoked for each SQL statement
       that is actually executed by the SQLite backend.
 
       The only argument passed to the callback is the statement (as
