@@ -4226,7 +4226,7 @@ clear_static_tp_subclasses(PyTypeObject *type)
        subtypes at this point then some extension module did not
        correctly finalize its objects.
 
-       We can safely obliterate such sybtypes since the extension
+       We can safely obliterate such subtypes since the extension
        module and its objects won't be used again, except maybe if
        the runtime were re-initialized.  In that case the sticky
        situation would only happen if the module were re-imported
