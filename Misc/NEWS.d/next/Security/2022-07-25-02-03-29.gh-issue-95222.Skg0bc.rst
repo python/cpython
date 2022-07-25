@@ -1,0 +1,1 @@
+Disallow out-of-bounds indexes of :opcode:`LOAD_CONST`, :opcode:`LOAD_NAME`, and :opcode:`LOAD_GLOBAL`. Patch by Jeremiah Gabriel Pascual.
