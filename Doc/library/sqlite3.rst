@@ -583,10 +583,10 @@ Connection Objects
           The name of the SQL aggregate window function.
       :type name: str
 
-      :param narg:
+      :param num_params:
           The number of parameters the SQL aggregate window function can accept.
           If ``-1``, it may take any number of arguments.
-      :type narg: int
+      :type num_params: int
 
       :param aggregate_class:
           A class that implements the following methods:
