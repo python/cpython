@@ -669,8 +669,8 @@ Connection Objects
    .. method:: load_extension(path, /)
 
       Load an SQLite extension from a shared library located at *path*.
-      Enable extension loading with :meth:`enable_load_extension` before using
-      this API.
+      Enable extension loading with :meth:`enable_load_extension` before
+      calling this method.
 
       Loadable extensions are disabled by default. See [#f1]_.
 
