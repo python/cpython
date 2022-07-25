@@ -232,8 +232,9 @@ write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
 
 typedef struct basicblock_ {
     /* Each basicblock in a compilation unit is linked via b_list in the
-       reverse order that the block are allocated.  b_list points to the next
-       block, not to be confused with b_next, which is next by control flow. */
+       reverse order that blocks are allocated.  b_list points to the previously
+       allocated block, not to be confused with b_next, which is next by control
+       flow. */
     struct basicblock_ *b_list;
     /* Exception stack at start of block, used by assembler to create the exception handling table */
     ExceptStack *b_exceptstack;
@@ -351,7 +352,7 @@ struct compiler_unit {
     Py_ssize_t u_posonlyargcount;        /* number of positional only arguments for block */
     Py_ssize_t u_kwonlyargcount; /* number of keyword only arguments for block */
     /* Pointer to the most recently allocated block.  By following b_list
-       members, you can reach all early allocated blocks. */
+       members, you can reach all previously allocated blocks. */
     basicblock *u_blocks;
     basicblock *u_curblock; /* pointer to current block */
 
