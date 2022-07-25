@@ -534,14 +534,32 @@ class BaseTaskTests:
         try:
             t = self.new_task(loop, task())
             loop.run_until_complete(asyncio.sleep(0.01))
-            self.assertTrue(t.cancel())  # Cancel first sleep
-            self.assertIn(" cancelling ", repr(t))
-            loop.run_until_complete(asyncio.sleep(0.01))
-            self.assertNotIn(" cancelling ", repr(t))  # after .uncancel()
-            self.assertTrue(t.cancel())  # Cancel second sleep
 
+            # Cancel first sleep
+            self.assertTrue(t.cancel())
+            self.assertIn(" cancelling ", repr(t))
+            self.assertEqual(t.cancelling(), 1)
+            self.assertFalse(t.cancelled())  # Task is still not complete
+            loop.run_until_complete(asyncio.sleep(0.01))
+
+            # after .uncancel()
+            self.assertNotIn(" cancelling ", repr(t))
+            self.assertEqual(t.cancelling(), 0)
+            self.assertFalse(t.cancelled())  # Task is still not complete
+
+            # Cancel second sleep
+            self.assertTrue(t.cancel())
+            self.assertEqual(t.cancelling(), 1)
+            self.assertFalse(t.cancelled())  # Task is still not complete
             with self.assertRaises(asyncio.CancelledError):
                 loop.run_until_complete(t)
+            self.assertTrue(t.cancelled())  # Finally, task complete
+            self.assertTrue(t.done())
+
+            # uncancel is no longer effective after the task is complete
+            t.uncancel()
+            self.assertTrue(t.cancelled())
+            self.assertTrue(t.done())
         finally:
             loop.close()
 

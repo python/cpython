@@ -293,6 +293,8 @@ It is recommended that coroutines use ``try/finally`` blocks to robustly
 perform clean-up logic. In case :exc:`asyncio.CancelledError`
 is explicitly caught, it should generally be propagated when
 clean-up is complete. Most code can safely ignore :exc:`asyncio.CancelledError`.
+If a task needs to continue despite receiving an :exc:`asyncio.CancelledError`,
+it should :func:`uncancel itself <asyncio.Task.uncancel>`.
 
 Important asyncio components, like :class:`asyncio.TaskGroup` and the
 :func:`asyncio.timeout` context manager, are implemented using cancellation
@@ -1063,6 +1065,36 @@ Task Object
       The Task is *cancelled* when the cancellation was requested with
       :meth:`cancel` and the wrapped coroutine propagated the
       :exc:`CancelledError` exception thrown into it.
+
+   .. method:: cancelling()
+
+      Return the number of cancellation requests to this Task, i.e.,
+      the number of calls to :meth:`cancel`.
+
+      Note that if this number is greater than zero but the Task is
+      still executing, :meth:`cancelled` will still return ``False``.
+      It's because this number can be lowered by calling :meth:`uncancel`,
+      which can lead to the task not being cancelled after all if the
+      cancellation requests go down to zero.
+
+   .. method:: uncancel()
+
+      Decrement the count of cancellation requests to this Task.
+
+      Returns the remaining number of cancellation requests.
+
+      This should be used by tasks that catch :exc:`CancelledError`
+      and wish to continue indefinitely until they are cancelled again::
+
+        async def resilient_task():
+            try:
+                await do_work()
+            except asyncio.CancelledError:
+                asyncio.current_task().uncancel()
+                await do_work()
+
+      Note that once execution of a cancelled task completed, further
+      calls to :meth:`uncancel` are ineffective.
 
    .. method:: done()
 
