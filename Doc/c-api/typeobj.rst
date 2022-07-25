@@ -147,6 +147,8 @@ Quick Reference
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_vectorcall`        | :c:type:`vectorcallfunc`          |                   |   |   |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | [:c:member:`~PyTypeObject.tp_static_builtin_index`] | size_t                          |                   |   |   |       |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
 
 .. [#slots]
    A slot name in parentheses indicates it is (effectively) deprecated.
@@ -2027,6 +2029,17 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    This field is never inherited.
 
    .. versionadded:: 3.9 (the field exists since 3.8 but it's only used since 3.9)
+
+.. c:member:: PyObject* PyTypeObject.tp_static_builtin_index
+
+   A static builtin type's index into the per-interpreter array of type state.
+   Internal use only.
+
+   **Inheritance:**
+
+   This field is not inherited.
+
+   .. versionadded:: 3.12
 
 
 .. _static-types:
