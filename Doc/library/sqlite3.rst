@@ -460,10 +460,10 @@ Connection Objects
           Defaults to ``"main"``.
       :type name: str
 
-      :rtype: sqlite3.Blob
+      :raises OperationalError:
+          When trying to open a blob in a ``WITHOUT ROWID`` table.
 
-      Trying to open a blob in a ``WITHOUT ROWID`` table will raise
-      :exc:`OperationalError`.
+      :rtype: sqlite3.Blob
 
       .. note::
 
@@ -509,14 +509,14 @@ Connection Objects
 
    .. method:: create_function(name, narg, func, *, deterministic=False)
 
-      Create a user-defined SQL function.
+      Create or remove a user-defined SQL function.
 
       :param name:
           The name of the SQL function.
       :type name: str
 
       :param narg:
-          The number of parameters the SQL function can accept.
+          The number of arguments the SQL function can accept.
           If ``-1``, it may take any number of arguments.
       :type narg: int
 
@@ -524,19 +524,19 @@ Connection Objects
           A callable that is called when the SQL function is invoked.
           The callable must return :ref:`a type natively supported by SQLite
           <sqlite3-types>`.
-          Set to :const:`None` to remove the SQL function.
+          Set to :const:`None` to remove an existing SQL function.
       :type func: :term:`callback` | :const:`None`
 
       :param deterministic:
           If :const:`True`, the created SQL function is marked as
           `deterministic <https://sqlite.org/deterministic.html>`_,
           which allows SQLite to perform additional optimizations.
-          This flag is supported by SQLite 3.8.3 or higher,
+          This flag is supported by SQLite 3.8.3 or higher;
           :exc:`NotSupportedError` will be raised if used with older versions.
       :type deterministic: bool
 
-      .. versionchanged:: 3.8
-         The *deterministic* parameter was added.
+      .. versionadded:: 3.8
+         The *deterministic* parameter.
 
       Example:
 
@@ -545,7 +545,7 @@ Connection Objects
 
    .. method:: create_aggregate(name, /, n_arg, aggregate_class)
 
-      Create a user-defined SQL aggregate function.
+      Create or remove a user-defined SQL aggregate function.
 
       :param name:
           The name of the SQL aggregate function.
@@ -554,20 +554,19 @@ Connection Objects
       :param n_arg:
           The number of parameters the SQL aggregate function can accept.
           If ``-1``, it may take any number of arguments.
-      :type na_rg: int
+      :type n_arg: int
 
       :param aggregate_class:
-          A class that implements the following methods:
+          A class must implement the following methods:
 
           * ``step()``: Add a row to the aggregate.
           * ``finalize()``: Return the final result of the aggregate as
             :ref:`a type natively supported by SQLite <sqlite3-types>`.
 
-          The ``step()`` method accept *n_arg* number of parameters,
-          unless *n_arg* is ``-1``,
-          in which case it may take any number of arguments.
+          The number of arguments that the ``step()`` method must accept
+          is controlled by *n_arg*.
 
-          Set to :const:`None` to remove the SQL aggregate function.
+          Set to :const:`None` to remove an existing SQL aggregate function.
       :type aggregate_class: :term:`class` | :const:`None`
 
       Example:
@@ -577,19 +576,19 @@ Connection Objects
 
    .. method:: create_window_function(name, num_params, aggregate_class, /)
 
-      Create a user-defined aggregate window function.
+      Create or remove a user-defined aggregate window function.
 
       :param name:
-          The name of the SQL aggregate window function.
+          The name of the SQL aggregate window function to create or remove.
       :type name: str
 
       :param num_params:
-          The number of parameters the SQL aggregate window function can accept.
+          The number of arguments the SQL aggregate window function can accept.
           If ``-1``, it may take any number of arguments.
       :type num_params: int
 
       :param aggregate_class:
-          A class that implements the following methods:
+          A class that must implement the following methods:
 
           * ``step()``: Add a row to the current window.
           * ``value()``: Return the current value of the aggregate.
@@ -597,16 +596,16 @@ Connection Objects
           * ``finalize()``: Return the final result of the aggregate as
             :ref:`a type natively supported by SQLite <sqlite3-types>`.
 
-          The ``step()`` and ``value()`` methods accept *num_params* number of
-          parameters, unless *num_params* is ``-1``,
-          in which case they may take any number of arguments.
+          The number of arguments that the ``step()`` and ``value()`` methods
+          must accept is controlled by *num_params*.
 
-          Set to :const:`None` to remove the SQL aggregate window function.
+          Set to :const:`None` to remove an existing SQL aggregate window function.
+
+      :raises NotSupportedError:
+          If used with a version of SQLite older than 3.25.0,
+          which does not support aggregate window functions.
 
       :type aggregate_class: :term:`class` | :const:`None`
-
-      Aggregate window functions are supported by SQLite 3.25.0 and higher.
-      :exc:`NotSupportedError` will be raised if used with older versions.
 
       .. versionadded:: 3.11
 
@@ -805,20 +804,23 @@ Connection Objects
    .. method:: backup(target, *, pages=-1, progress=None, name="main", sleep=0.250)
 
       Create a backup of an SQLite database.
+      
+      Works even if the database is being accessed by other clients
+      or concurrently by the same connection.
 
       :param target:
           The database connection to save the backup to.
-      :type target: sqlite3.Connection
+      :type target: Connection
 
       :param pages:
+          The number of pages to copy at a time.
           If equal to or less than ``0``,
-          the entire database is copied in a single step;
-          otherwise the backup is performed *pages* pages at a time.
+          the entire database is copied in a single step.
           Defaults to ``-1``.
       :type pages: int
 
       :param progress:
-          If set to a callable, it is invoked with three integer argument for
+          If set to a callable, it is invoked with three integer arguments for
           every backup iteration:
           the *status* of the last iteration,
           the *remaining* number of pages still to be copied,
@@ -827,7 +829,7 @@ Connection Objects
       :type progress: :term:`callback` | :const:`None`
 
       :param name:
-          The name of the database to backup.
+          The name of the database to back up.
           Either ``"main"`` (the default) for the main database,
           ``"temp"`` for the temporary database,
           or the name of a custom database as attached using the
@@ -835,9 +837,9 @@ Connection Objects
       :type name: str
 
       :param sleep:
-          The number of seconds to sleep between successive attempts to backup
-          remaining pages.
-      :type sleep: int | float
+          The number of seconds to sleep between successive attempts
+          to back up remaining pages.
+      :type sleep: float
 
       Example 1, copy an existing database into another::
 
