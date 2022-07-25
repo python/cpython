@@ -552,7 +552,7 @@ Connection Objects
       :type name: str
 
       :param n_arg:
-          The number of parameters the SQL aggregate function can accept.
+          The number of arguments the SQL aggregate function can accept.
           If ``-1``, it may take any number of arguments.
       :type n_arg: int
 
