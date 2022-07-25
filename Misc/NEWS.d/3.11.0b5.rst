@@ -1,0 +1,349 @@
+.. date: 2022-07-23-19-16-25
+.. gh-issue: 93351
+.. nonce: 0Jyvu-
+.. release date: 2022-07-25
+.. section: Core and Builtins
+
+:class:`ast.AST` node positions are now validated when provided to
+:func:`compile` and other related functions. If invalid positions are
+detected, a :exc:`ValueError` will be raised.
+
+..
+
+.. date: 2022-07-22-12-53-34
+.. gh-issue: 94438
+.. nonce: hNqACc
+.. section: Core and Builtins
+
+Fix an issue that caused extended opcode arguments and some conditional pops
+to be ignored when calculating valid jump targets for assignments to the
+``f_lineno`` attribute of frame objects. In some cases, this could cause
+inconsistent internal state, resulting in a hard crash of the interpreter.
+
+..
+
+.. date: 2022-07-21-19-19-20
+.. gh-issue: 95060
+.. nonce: 4xdT1f
+.. section: Core and Builtins
+
+Undocumented ``PyCode_Addr2Location`` function now properly returns when
+``addrq`` argument is less than zero.
+
+..
+
+.. date: 2022-07-21-17-54-52
+.. gh-issue: 95113
+.. nonce: NnSLpT
+.. section: Core and Builtins
+
+Replace all ``EXTENDED_ARG_QUICK`` instructions with basic
+:opcode:`EXTENDED_ARG` instructions in unquickened code. Consumers of
+non-adaptive bytecode should be able to handle extended arguments the same
+way they were handled in CPython 3.10 and older.
+
+..
+
+.. date: 2022-07-20-13-46-01
+.. gh-issue: 91409
+.. nonce: dhL8Zo
+.. section: Core and Builtins
+
+Fix incorrect source location info caused by certain optimizations in the
+bytecode compiler.
+
+..
+
+.. date: 2022-07-19-16-30-59
+.. gh-issue: 94036
+.. nonce: _6Utkm
+.. section: Core and Builtins
+
+Fix incorrect source location info for some multi-line attribute accesses
+and method calls.
+
+..
+
+.. date: 2022-07-18-14-19-21
+.. gh-issue: 94739
+.. nonce: NQJQi7
+.. section: Core and Builtins
+
+Allow jumping within, out of, and across exception handlers in the debugger.
+
+..
+
+.. date: 2022-07-18-05-10-29
+.. gh-issue: 94949
+.. nonce: OsZ7_s
+.. section: Core and Builtins
+
+:func:`ast.parse` will no longer parse parenthesized context managers when
+passed ``feature_version`` less than ``(3, 9)``. Patch by Shantanu Jain.
+
+..
+
+.. date: 2022-07-18-04-48-34
+.. gh-issue: 94947
+.. nonce: df9gUw
+.. section: Core and Builtins
+
+:func:`ast.parse` will no longer parse assignment expressions when passed
+``feature_version`` less than ``(3, 8)``. Patch by Shantanu Jain.
+
+..
+
+.. date: 2022-07-17-15-54-29
+.. gh-issue: 91256
+.. nonce: z7i7Q5
+.. section: Core and Builtins
+
+Ensures the program name is known for help text during interpreter startup.
+
+..
+
+.. date: 2022-07-16-08-14-17
+.. gh-issue: 94869
+.. nonce: eRwMsX
+.. section: Core and Builtins
+
+Fix the column offsets for some expressions in multi-line f-strings
+:mod:`ast` nodes. Patch by Pablo Galindo.
+
+..
+
+.. date: 2022-07-15-22-16-08
+.. gh-issue: 94822
+.. nonce: zRRzBN
+.. section: Core and Builtins
+
+Fix an issue where lookups of metaclass descriptors may be ignored when an
+identically-named attribute also exists on the class itself.
+
+..
+
+.. date: 2022-07-15-16-15-04
+.. gh-issue: 91153
+.. nonce: HiBmtt
+.. section: Core and Builtins
+
+Fix an issue where a :class:`bytearray` item assignment could crash if it's
+resized by the new value's :meth:`__index__` method.
+
+..
+
+.. date: 2022-07-14-10-07-53
+.. gh-issue: 90699
+.. nonce: x3aG9m
+.. section: Core and Builtins
+
+Fix reference counting bug in :meth:`bool.__repr__`. Patch by Kumar Aditya.
+
+..
+
+.. date: 2022-07-24-12-59-02
+.. gh-issue: 95087
+.. nonce: VvqXkN
+.. section: Library
+
+Fix IndexError in parsing invalid date in the :mod:`email` module.
+
+..
+
+.. date: 2022-07-24-12-00-06
+.. gh-issue: 95199
+.. nonce: -5A64k
+.. section: Library
+
+Upgrade bundled setuptools to 63.2.0.
+
+..
+
+.. date: 2022-07-24-09-15-35
+.. gh-issue: 95194
+.. nonce: ERVmqG
+.. section: Library
+
+Upgrade bundled pip to 22.2.
+
+..
+
+.. date: 2022-07-22-21-18-17
+.. gh-issue: 95132
+.. nonce: n9anlw
+.. section: Library
+
+Fix a :mod:`sqlite3` regression where ``*args`` and ``**kwds`` were
+incorrectly relayed from :py:func:`~sqlite3.connect` to the
+:class:`~sqlite3.Connection` factory. The regression was introduced in
+3.11a1 with PR 24421 (:gh:`85128`). Patch by Erlend E. Aasland.`
+
+..
+
+.. date: 2022-07-22-17-19-57
+.. gh-issue: 93157
+.. nonce: RXByAk
+.. section: Library
+
+Fix :mod:`fileinput` module didn't support ``errors`` option when
+``inplace`` is true.
+
+..
+
+.. date: 2022-07-21-19-55-49
+.. gh-issue: 95105
+.. nonce: BIX2Km
+.. section: Library
+
+:meth:`wsgiref.types.InputStream.__iter__` should return
+``Iterator[bytes]``, not ``Iterable[bytes]``. Patch by Shantanu Jain.
+
+..
+
+.. date: 2022-07-15-08-13-51
+.. gh-issue: 94857
+.. nonce: 9_KvZJ
+.. section: Library
+
+Fix refleak in ``_io.TextIOWrapper.reconfigure``. Patch by Kumar Aditya.
+
+..
+
+.. date: 2022-07-14-00-43-52
+.. gh-issue: 94821
+.. nonce: e17ghU
+.. section: Library
+
+Fix binding of unix socket to empty address on Linux to use an available
+address from the abstract namespace, instead of "\0".
+
+..
+
+.. date: 2022-06-26-10-59-15
+.. gh-issue: 89988
+.. nonce: K8rnmt
+.. section: Library
+
+Fix memory leak in :class:`pickle.Pickler` when looking up
+:attr:`dispatch_table`. Patch by Kumar Aditya.
+
+..
+
+.. bpo: 47025
+.. date: 2022-03-16-14-24-14
+.. nonce: qtT3CE
+.. section: Library
+
+Drop support for :class:`bytes` on :attr:`sys.path`.
+
+..
+
+.. date: 2022-07-24-20-19-05
+.. gh-issue: 95212
+.. nonce: fHiU4e
+.. section: Tests
+
+Make multiprocessing test case ``test_shared_memory_recreate``
+parallel-safe.
+
+..
+
+.. date: 2022-07-14-11-13-26
+.. gh-issue: 94847
+.. nonce: s3Kr5p
+.. section: Build
+
+Fixed ``_decimal`` module build issue on GCC when compiling with LTO and
+pydebug. Debug builds no longer force inlining of functions.
+
+..
+
+.. date: 2022-07-14-02-45-44
+.. gh-issue: 94841
+.. nonce: lLRTdf
+.. section: Build
+
+Fix the possible performance regression of :c:func:`PyObject_Free` compiled
+with MSVC version 1932.
+
+..
+
+.. date: 2022-07-13-10-13-10
+.. gh-issue: 94801
+.. nonce: 3xUB24
+.. section: Build
+
+``configure`` now uses custom flags like ``ZLIB_CFLAGS`` and ``ZLIB_LIBS``
+when searching for headers and libraries.
+
+..
+
+.. date: 2022-07-12-13-39-18
+.. gh-issue: 94773
+.. nonce: koHKm5
+.. section: Build
+
+``deepfreeze.py`` now supports code object with frozensets that contain
+incompatible, unsortable types.
+
+..
+
+.. date: 2022-07-16-16-18-32
+.. gh-issue: 90844
+.. nonce: vwITT3
+.. section: Windows
+
+Allow virtual environments to correctly launch when they have spaces in the
+path.
+
+..
+
+.. date: 2022-07-12-20-45-43
+.. gh-issue: 94772
+.. nonce: uNMmdG
+.. section: Windows
+
+Fix incorrect handling of shebang lines in py.exe launcher
+
+..
+
+.. date: 2022-07-25-15-54-27
+.. gh-issue: 92678
+.. nonce: ziZpxz
+.. section: C API
+
+Adds unstable C-API functions ``_PyObject_VisitManagedDict`` and
+``_PyObject_ClearManagedDict`` to allow C extensions to allow the VM to
+manage their object's dictionaries.
+
+..
+
+.. date: 2022-07-17-18-21-40
+.. gh-issue: 94930
+.. nonce: gPFGDL
+.. section: C API
+
+Fix ``SystemError`` raised when :c:func:`PyArg_ParseTupleAndKeywords` is
+used with ``#`` in ``(...)`` but without ``PY_SSIZE_T_CLEAN`` defined.
+
+..
+
+.. date: 2022-07-16-14-57-23
+.. gh-issue: 94864
+.. nonce: Pb41ab
+.. section: C API
+
+Fix ``PyArg_Parse*`` with deprecated format units "u" and "Z". It returned 1
+(success) when warnings are turned into exceptions.
+
+..
+
+.. date: 2022-07-12-17-39-32
+.. gh-issue: 94731
+.. nonce: 9CPJNU
+.. section: C API
+
+Python again uses C-style casts for most casting operations when compiled
+with C++. This may trigger compiler warnings, if they are enabled with e.g.
+``-Wold-style-cast `` or ``-Wzero-as-null-pointer-constant`` options for
+``g++``.
