@@ -266,8 +266,8 @@ class CodeTest(unittest.TestCase):
             ("co_stacksize", 0),
             ("co_flags", code.co_flags | inspect.CO_COROUTINE),
             ("co_firstlineno", 100),
-            ("co_consts", code2.co_consts),
             ("co_code", code2.co_code),
+            ("co_consts", code2.co_consts),
             ("co_names", ("myname",)),
             ("co_varnames", ('spam',)),
             ("co_freevars", ("freevar",)),
@@ -277,7 +277,13 @@ class CodeTest(unittest.TestCase):
             ("co_linetable", code2.co_linetable),
         ):
             with self.subTest(attr=attr, value=value):
-                new_code = code.replace(**{attr: value})
+                if attr == "co_code":
+                    # gh-95222 doesn't allow having a LOAD_CONST index
+                    # greater than len(code.co_consts), so we'll
+                    # temporary replace co_consts
+                    new_code = code.replace(co_consts=code2.co_consts, co_code=value)
+                else:
+                    new_code = code.replace(**{attr: value})
                 self.assertEqual(getattr(new_code, attr), value)
 
         new_code = code.replace(co_varnames=code2.co_varnames,
