@@ -911,7 +911,7 @@ Cursor Objects
 
    .. method:: executescript(sql_script, /)
 
-      Execute the multiple SQL statements in *sql_script*.
+      Execute the SQL statements in *sql_script*.
       If there is a pending transaciton,
       an implicit ``COMMIT`` statement is executed first.
       No other implicit transaction control is performed;
