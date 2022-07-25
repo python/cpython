@@ -266,8 +266,8 @@ class CodeTest(unittest.TestCase):
             ("co_stacksize", 0),
             ("co_flags", code.co_flags | inspect.CO_COROUTINE),
             ("co_firstlineno", 100),
-            ("co_code", code2.co_code),
             ("co_consts", code2.co_consts),
+            ("co_code", code2.co_code),
             ("co_names", ("myname",)),
             ("co_varnames", ('spam',)),
             ("co_freevars", ("freevar",)),
@@ -330,6 +330,26 @@ class CodeTest(unittest.TestCase):
         code = func.__code__
         newcode = code.replace(co_name="func")  # Should not raise SystemError
         self.assertEqual(code, newcode)
+
+    def test_out_of_bounds_consts_names(self):
+        code = compile("0, a", "<string>", "eval")
+        # Test co_consts
+        with self.assertRaises(ValueError):
+            code.replace(co_consts=())
+        # Test co_names
+        with self.assertRaises(ValueError):
+            code.replace(co_names=())
+        # Test things that shouldn't raise ValueError
+        try:
+            code.replace(co_consts=(7,))
+            code.replace(co_consts=(0, 1))
+        except ValueError:
+            self.fail("co_consts index in-bounds but failed")
+        try:
+            code.replace(co_names=("A",))
+            code.replace(co_names=("a", "b"))
+        except ValueError:
+            self.fail("co_names index in-bounds but failed")
 
     def test_empty_linetable(self):
         def func():
