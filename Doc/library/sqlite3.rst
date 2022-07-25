@@ -624,8 +624,8 @@ Connection Objects
 
    .. method:: set_trace_callback(trace_callback)
 
-      Register *trace_callback* to be called for each SQL statement that is
-      actually executed by the SQLite backend.
+      Register callback *trace_callback* to be invoked for each SQL statement
+      that is actually executed by the SQLite backend.
 
       The only argument passed to the callback is the statement (as
       :class:`str`) that is being executed. The return value of the callback is
