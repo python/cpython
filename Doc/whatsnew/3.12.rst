@@ -133,7 +133,13 @@ Deprecated
 ==========
 
 * :class:`typing.Hashable` and :class:`typing.Sized` aliases for :class:`collections.abc.Hashable`
-  and :class:`collections.abc.Sized`. (:gh:`94309`)
+  and :class:`collections.abc.Sized`. (:gh:`94309`.)
+
+* The :mod:`sqlite3` :ref:`default adapters and converters
+  <sqlite3-default-converters>` are now deprecated.
+  Instead, use the :ref:`sqlite3-adapter-converter-recipes`
+  and tailor them to your needs.
+  (Contributed by Erlend E. Aasland in :gh:`90016`.)
 
 
 Pending Removal in Python 3.13
@@ -173,6 +179,24 @@ APIs:
 * :func:`unittest.makeSuite` (:gh:`50096`)
 * :func:`unittest.getTestCaseNames` (:gh:`50096`)
 * :class:`webbrowser.MacOSX` (:gh:`86421`)
+
+Pending Removal in Python 3.14
+==============================
+
+* Deprecated the following :mod:`importlib.abc` classes, scheduled for removal in
+  Python 3.14:
+
+  * :class:`importlib.abc.ResourceReader`
+  * :class:`importlib.abc.Traversable`
+  * :class:`importlib.abc.TraversableResources`
+
+  Use :mod:`importlib.resources.abc` classes instead:
+
+  * :class:`importlib.resources.abc.TraversableResources`
+  * :class:`importlib.resources.abc.Traversable`
+  * :class:`importlib.resources.abc.TraversableResources`
+
+  (Contributed by Jason R. Coombs and Hugo van Kemenade in :gh:`93963`.)
 
 Pending Removal in Future Versions
 ----------------------------------
@@ -258,7 +282,7 @@ Removed
   ``OptimizedUnicode`` can either use ``str`` explicitly, or rely on the
   default value which is also ``str``.
 
-  (Contributed by Erlend E. Aasland in :gh:`92548`)
+  (Contributed by Erlend E. Aasland in :gh:`92548`.)
 
 * The ``--experimental-isolated-subinterpreters`` configure flag
   (and corresponding ``EXPERIMENTAL_ISOLATED_SUBINTERPRETERS``)
