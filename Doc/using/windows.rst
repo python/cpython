@@ -1187,11 +1187,10 @@ shipped with PyWin32.  It is an embeddable IDE with a built-in debugger.
 cx_Freeze
 ---------
 
-`cx_Freeze <https://cx-freeze.readthedocs.io/en/latest/>`_ is a :mod:`distutils`
-extension (see :ref:`extending-distutils`) which wraps Python scripts into
-executable Windows programs (:file:`{*}.exe` files).  When you have done this,
-you can distribute your application without requiring your users to install
-Python.
+`cx_Freeze <https://cx-freeze.readthedocs.io/en/latest/>`_ is a ``distutils``
+extension which wraps Python scripts into executable Windows programs
+(:file:`{*}.exe` files).  When you have done this, you can distribute your
+application without requiring your users to install Python.
 
 
 Compiling Python on Windows

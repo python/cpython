@@ -64,7 +64,7 @@ Creating virtual environments
    Python installation).
 
    When a virtual environment is active, any options that change the
-   installation path will be ignored from all :mod:`distutils` configuration
+   installation path will be ignored from all ``setuptools`` configuration
    files to prevent projects being inadvertently installed outside of the
    virtual environment.
 
