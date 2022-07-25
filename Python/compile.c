@@ -325,13 +325,16 @@ enum {
     COMPILER_SCOPE_COMPREHENSION,
 };
 
-typedef struct cfg_ {
-    basicblock *entryblock; /* Where control flow begins */
+typedef struct cfg_builder_ {
+    /* The entryblock, at which control flow begins. All blocks of the
+       CFG are reachable through the b_next links */
+    basicblock *cfg;
     /* Pointer to the most recently allocated block.  By following
        b_list links, you can reach all allocated blocks. */
     basicblock *block_list;
-    basicblock *curblock; /* pointer to current block */
-} cfg;
+    /* pointer to the block currently being constructed */
+    basicblock *curblock;
+} cfg_builder;
 
 /* The following items change on entry and exit of code blocks.
    They must be saved and restored when returning to a block.
@@ -361,7 +364,7 @@ struct compiler_unit {
     /* Pointer to the most recently allocated block.  By following b_list
        members, you can reach all early allocated blocks. */
 
-    cfg u_cfg;  /* The control flow graph */
+    cfg_builder u_cfg_builder;  /* The control flow graph */
 
     int u_nfblocks;
     struct fblockinfo u_fblock[CO_MAXBLOCKS];
@@ -398,7 +401,7 @@ struct compiler {
     PyArena *c_arena;            /* pointer to memory allocation arena */
 };
 
-#define CFG(c) (&((c)->u->u_cfg))
+#define CFG_BUILDER(c) (&((c)->u->u_cfg_builder))
 #define COMPILER_LOC(c) (&((c)->u->u_loc))
 
 typedef struct {
@@ -428,7 +431,7 @@ typedef struct {
 
 static int basicblock_next_instr(basicblock *);
 
-static int cfg_addop_i(cfg *g, int opcode, Py_ssize_t oparg, const struct location *loc);
+static int cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, const struct location *loc);
 
 static void compiler_free(struct compiler *);
 static int compiler_error(struct compiler *, const char *, ...);
@@ -721,7 +724,7 @@ dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
 }
 
 static void
-cfg_check(cfg *g)
+cfg_builder_check(cfg_builder *g)
 {
     for (basicblock *block = g->block_list; block != NULL; block = block->b_list) {
         assert(!_PyMem_IsPtrFreed(block));
@@ -738,9 +741,9 @@ cfg_check(cfg *g)
 }
 
 static void
-cfg_free(cfg* g)
+cfg_builder_free(cfg_builder* g)
 {
-    cfg_check(g);
+    cfg_builder_check(g);
     basicblock *b = g->block_list;
     while (b != NULL) {
         if (b->b_instr) {
@@ -755,7 +758,7 @@ cfg_free(cfg* g)
 static void
 compiler_unit_free(struct compiler_unit *u)
 {
-    cfg_free(&u->u_cfg);
+    cfg_builder_free(&u->u_cfg_builder);
     Py_CLEAR(u->u_ste);
     Py_CLEAR(u->u_name);
     Py_CLEAR(u->u_qualname);
@@ -843,7 +846,7 @@ compiler_set_qualname(struct compiler *c)
    Returns NULL on error.
 */
 static basicblock *
-cfg_new_block(cfg *g)
+cfg_builder_new_block(cfg_builder *g)
 {
     basicblock *b = (basicblock *)PyObject_Calloc(1, sizeof(basicblock));
     if (b == NULL) {
@@ -857,7 +860,7 @@ cfg_new_block(cfg *g)
 }
 
 static basicblock *
-cfg_use_next_block(cfg *g, basicblock *block)
+cfg_builder_use_next_block(cfg_builder *g, basicblock *block)
 {
     assert(block != NULL);
     g->curblock->b_next = block;
@@ -868,23 +871,23 @@ cfg_use_next_block(cfg *g, basicblock *block)
 static basicblock *
 compiler_new_block(struct compiler *c)
 {
-    return cfg_new_block(CFG(c));
+    return cfg_builder_new_block(CFG_BUILDER(c));
 }
 
 static basicblock *
 compiler_use_next_block(struct compiler *c, basicblock *block)
 {
-    return cfg_use_next_block(CFG(c), block);
+    return cfg_builder_use_next_block(CFG_BUILDER(c), block);
 }
 
 static basicblock *
-copy_basicblock(cfg *g, basicblock *block)
+copy_basicblock(cfg_builder *g, basicblock *block)
 {
     /* Cannot copy a block if it has a fallthrough, since
      * a block can only have one fallthrough predecessor.
      */
     assert(BB_NO_FALLTHROUGH(block));
-    basicblock *result = cfg_new_block(g);
+    basicblock *result = cfg_builder_new_block(g);
     if (result == NULL) {
         return NULL;
     }
@@ -1278,25 +1281,25 @@ basicblock_addop(basicblock *b, int opcode, int oparg,
 }
 
 static int
-cfg_addop(cfg *g, int opcode, int oparg, basicblock *target,
+cfg_builder_addop(cfg_builder *g, int opcode, int oparg, basicblock *target,
           const struct location *loc)
 {
     struct instr *last = basicblock_last_instr(g->curblock);
     if (last && IS_TERMINATOR_OPCODE(last->i_opcode)) {
-        basicblock *b = cfg_new_block(g);
+        basicblock *b = cfg_builder_new_block(g);
         if (b == NULL) {
             return -1;
         }
-        cfg_use_next_block(g, b);
+        cfg_builder_use_next_block(g, b);
     }
     return basicblock_addop(g->curblock, opcode, oparg, target, loc);
 }
 
 static int
-cfg_addop_noarg(cfg *g, int opcode, const struct location *loc)
+cfg_builder_addop_noarg(cfg_builder *g, int opcode, const struct location *loc)
 {
     assert(!HAS_ARG(opcode));
-    return cfg_addop(g, opcode, 0, NULL, loc);
+    return cfg_builder_addop(g, opcode, 0, NULL, loc);
 }
 
 static Py_ssize_t
@@ -1456,7 +1459,7 @@ compiler_addop_load_const(struct compiler *c, PyObject *o)
     Py_ssize_t arg = compiler_add_const(c, o);
     if (arg < 0)
         return 0;
-    return cfg_addop_i(CFG(c), LOAD_CONST, arg, COMPILER_LOC(c));
+    return cfg_builder_addop_i(CFG_BUILDER(c), LOAD_CONST, arg, COMPILER_LOC(c));
 }
 
 static int
@@ -1466,7 +1469,7 @@ compiler_addop_o(struct compiler *c, int opcode, PyObject *dict,
     Py_ssize_t arg = dict_add_o(dict, o);
     if (arg < 0)
         return 0;
-    return cfg_addop_i(CFG(c), opcode, arg, COMPILER_LOC(c));
+    return cfg_builder_addop_i(CFG_BUILDER(c), opcode, arg, COMPILER_LOC(c));
 }
 
 static int
@@ -1490,14 +1493,14 @@ compiler_addop_name(struct compiler *c, int opcode, PyObject *dict,
         arg <<= 1;
         arg |= 1;
     }
-    return cfg_addop_i(CFG(c), opcode, arg, COMPILER_LOC(c));
+    return cfg_builder_addop_i(CFG_BUILDER(c), opcode, arg, COMPILER_LOC(c));
 }
 
 /* Add an opcode with an integer argument.
    Returns 0 on failure, 1 on success.
 */
 static int
-cfg_addop_i(cfg *g, int opcode, Py_ssize_t oparg, const struct location *loc)
+cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, const struct location *loc)
 {
     /* oparg value is unsigned, but a signed C int is usually used to store
        it in the C code (like Python/ceval.c).
@@ -1508,30 +1511,30 @@ cfg_addop_i(cfg *g, int opcode, Py_ssize_t oparg, const struct location *loc)
        EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
 
     int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
-    return cfg_addop(g, opcode, oparg_, NULL, loc);
+    return cfg_builder_addop(g, opcode, oparg_, NULL, loc);
 }
 
 static int
-cfg_addop_j(cfg *g, int opcode, basicblock *target, const struct location *loc)
+cfg_builder_addop_j(cfg_builder *g, int opcode, basicblock *target, const struct location *loc)
 {
     assert(target != NULL);
     assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
-    return cfg_addop(g, opcode, 0, target, loc);
+    return cfg_builder_addop(g, opcode, 0, target, loc);
 }
 
 
 #define ADDOP(C, OP) { \
-    if (!cfg_addop_noarg(CFG(C), (OP), COMPILER_LOC(C))) \
+    if (!cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), COMPILER_LOC(C))) \
         return 0; \
 }
 
 #define ADDOP_NOLINE(C, OP) { \
-    if (!cfg_addop_noarg(CFG(C), (OP), NULL)) \
+    if (!cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), NULL)) \
         return 0; \
 }
 
 #define ADDOP_IN_SCOPE(C, OP) { \
-    if (!cfg_addop_noarg(CFG(C), (OP), COMPILER_LOC(C))) { \
+    if (!cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), COMPILER_LOC(C))) { \
         compiler_exit_scope(c); \
         return 0; \
     } \
@@ -1570,17 +1573,17 @@ cfg_addop_j(cfg *g, int opcode, basicblock *target, const struct location *loc)
 }
 
 #define ADDOP_I(C, OP, O) { \
-    if (!cfg_addop_i(CFG(C), (OP), (O), COMPILER_LOC(C))) \
+    if (!cfg_builder_addop_i(CFG_BUILDER(C), (OP), (O), COMPILER_LOC(C))) \
         return 0; \
 }
 
 #define ADDOP_I_NOLINE(C, OP, O) { \
-    if (!cfg_addop_i(CFG(C), (OP), (O), NULL)) \
+    if (!cfg_builder_addop_i(CFG_BUILDER(C), (OP), (O), NULL)) \
         return 0; \
 }
 
 #define ADDOP_JUMP(C, OP, O) { \
-    if (!cfg_addop_j(CFG(C), (OP), (O), COMPILER_LOC(C))) \
+    if (!cfg_builder_addop_j(CFG_BUILDER(C), (OP), (O), COMPILER_LOC(C))) \
         return 0; \
 }
 
@@ -1588,7 +1591,7 @@ cfg_addop_j(cfg *g, int opcode, basicblock *target, const struct location *loc)
  * Used for artificial jumps that have no corresponding
  * token in the source code. */
 #define ADDOP_JUMP_NOLINE(C, OP, O) { \
-    if (!cfg_addop_j(CFG(C), (OP), (O), NULL)) \
+    if (!cfg_builder_addop_j(CFG_BUILDER(C), (OP), (O), NULL)) \
         return 0; \
 }
 
@@ -1737,12 +1740,12 @@ compiler_enter_scope(struct compiler *c, identifier name,
 
     c->c_nestlevel++;
 
-    cfg *g = CFG(c);
+    cfg_builder *g = CFG_BUILDER(c);
     g->block_list = NULL;
-    block = cfg_new_block(g);
+    block = cfg_builder_new_block(g);
     if (block == NULL)
         return 0;
-    g->curblock = g->entryblock = block;
+    g->curblock = g->cfg = block;
 
     if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
         c->u->u_loc.lineno = 0;
@@ -1779,7 +1782,7 @@ compiler_exit_scope(struct compiler *c)
             _PyErr_WriteUnraisableMsg("on removing the last compiler "
                                       "stack item", NULL);
         }
-        cfg_check(CFG(c));
+        cfg_builder_check(CFG_BUILDER(c));
     }
     else {
         c->u = NULL;
@@ -4236,7 +4239,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     if (op == LOAD_GLOBAL) {
         arg <<= 1;
     }
-    return cfg_addop_i(CFG(c), op, arg, COMPILER_LOC(c));
+    return cfg_builder_addop_i(CFG_BUILDER(c), op, arg, COMPILER_LOC(c));
 }
 
 static int
@@ -6276,7 +6279,7 @@ emit_and_reset_fail_pop(struct compiler *c, pattern_context *pc)
     }
     while (--pc->fail_pop_size) {
         compiler_use_next_block(c, pc->fail_pop[pc->fail_pop_size]);
-        if (!cfg_addop_noarg(CFG(c), POP_TOP, COMPILER_LOC(c))) {
+        if (!cfg_builder_addop_noarg(CFG_BUILDER(c), POP_TOP, COMPILER_LOC(c))) {
             pc->fail_pop_size = 0;
             PyObject_Free(pc->fail_pop);
             pc->fail_pop = NULL;
@@ -6710,7 +6713,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
         pc->fail_pop = NULL;
         pc->fail_pop_size = 0;
         pc->on_top = 0;
-        if (!cfg_addop_i(CFG(c), COPY, 1, COMPILER_LOC(c)) ||
+        if (!cfg_builder_addop_i(CFG_BUILDER(c), COPY, 1, COMPILER_LOC(c)) ||
             !compiler_pattern(c, alt, pc)) {
             goto error;
         }
@@ -6774,7 +6777,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
             }
         }
         assert(control);
-        if (!cfg_addop_j(CFG(c), JUMP, end, COMPILER_LOC(c)) ||
+        if (!cfg_builder_addop_j(CFG_BUILDER(c), JUMP, end, COMPILER_LOC(c)) ||
             !emit_and_reset_fail_pop(c, pc))
         {
             goto error;
@@ -6786,7 +6789,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
     // Need to NULL this for the PyObject_Free call in the error block.
     old_pc.fail_pop = NULL;
     // No match. Pop the remaining copy of the subject and fail:
-    if (!cfg_addop_noarg(CFG(c), POP_TOP, COMPILER_LOC(c)) || !jump_to_fail_pop(c, pc, JUMP)) {
+    if (!cfg_builder_addop_noarg(CFG_BUILDER(c), POP_TOP, COMPILER_LOC(c)) || !jump_to_fail_pop(c, pc, JUMP)) {
         goto error;
     }
     compiler_use_next_block(c, end);
@@ -7416,8 +7419,8 @@ mark_cold(basicblock *entryblock) {
 }
 
 static int
-push_cold_blocks_to_end(cfg *g, int code_flags) {
-    basicblock *entryblock = g->entryblock;
+push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
+    basicblock *entryblock = g->cfg;
     if (entryblock->b_next == NULL) {
         /* single basicblock, no need to reorder */
         return 0;
@@ -7430,7 +7433,7 @@ push_cold_blocks_to_end(cfg *g, int code_flags) {
     /* an explicit jump instead of fallthrough */
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         if (b->b_cold && BB_HAS_FALLTHROUGH(b) && b->b_next && b->b_next->b_warm) {
-            basicblock *explicit_jump = cfg_new_block(g);
+            basicblock *explicit_jump = cfg_builder_new_block(g);
             if (explicit_jump == NULL) {
                 return -1;
             }
@@ -8283,7 +8286,7 @@ trim_unused_consts(basicblock *entryblock, PyObject *consts);
 
 /* Duplicates exit BBs, so that line numbers can be propagated to them */
 static int
-duplicate_exits_without_lineno(cfg *g);
+duplicate_exits_without_lineno(cfg_builder *g);
 
 static int
 extend_block(basicblock *bb);
@@ -8534,7 +8537,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     /* Make sure every block that falls off the end returns None. */
-    if (!basicblock_returns(CFG(c)->curblock)) {
+    if (!basicblock_returns(CFG_BUILDER(c)->curblock)) {
         UNSET_LOC(c);
         if (addNone)
             ADDOP_LOAD_CONST(c, Py_None);
@@ -8556,7 +8559,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     int nblocks = 0;
-    for (basicblock *b = CFG(c)->block_list; b != NULL; b = b->b_list) {
+    for (basicblock *b = CFG_BUILDER(c)->block_list; b != NULL; b = b->b_list) {
         nblocks++;
     }
     if ((size_t)nblocks > SIZE_MAX / sizeof(basicblock *)) {
@@ -8564,8 +8567,8 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
-    cfg *g = CFG(c);
-    basicblock *entryblock = g->entryblock;
+    cfg_builder *g = CFG_BUILDER(c);
+    basicblock *entryblock = g->cfg;
     assert(entryblock != NULL);
 
     /* Set firstlineno if it wasn't explicitly set. */
@@ -9538,11 +9541,11 @@ is_exit_without_lineno(basicblock *b) {
  * copy the line number from the sole predecessor block.
  */
 static int
-duplicate_exits_without_lineno(cfg *g)
+duplicate_exits_without_lineno(cfg_builder *g)
 {
     /* Copy all exit blocks without line number that are targets of a jump.
      */
-    basicblock *entryblock = g->entryblock;
+    basicblock *entryblock = g->cfg;
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         if (b->b_iused > 0 && is_jump(&b->b_instr[b->b_iused-1])) {
             basicblock *target = b->b_instr[b->b_iused-1].i_target;
