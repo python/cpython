@@ -2,7 +2,6 @@
 #include <ctype.h>
 
 #include "structmember.h"         // PyMemberDef
-#include "frameobject.h"
 #include "expat.h"
 
 #include "pyexpat.h"

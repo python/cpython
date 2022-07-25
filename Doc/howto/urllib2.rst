@@ -4,13 +4,13 @@
   HOWTO Fetch Internet Resources Using The urllib Package
 ***********************************************************
 
-:Author: `Michael Foord <http://www.voidspace.org.uk/python/index.shtml>`_
+:Author: `Michael Foord <https://agileabstractions.com/>`_
 
 .. note::
 
     There is a French translation of an earlier revision of this
     HOWTO, available at `urllib2 - Le Manuel manquant
-    <http://www.voidspace.org.uk/python/articles/urllib2_francais.shtml>`_.
+    <https://web.archive.org/web/20200910051922/http://www.voidspace.org.uk/python/articles/urllib2_francais.shtml>`_.
 
 
 
@@ -22,7 +22,7 @@ Introduction
     You may also find useful the following article on fetching web resources
     with Python:
 
-    * `Basic Authentication <http://www.voidspace.org.uk/python/articles/authentication.shtml>`_
+    * `Basic Authentication <https://web.archive.org/web/20201215133350/http://www.voidspace.org.uk/python/articles/authentication.shtml>`_
 
         A tutorial on *Basic Authentication*, with examples in Python.
 
@@ -420,7 +420,7 @@ Openers and Handlers
 ====================
 
 When you fetch a URL you use an opener (an instance of the perhaps
-confusingly-named :class:`urllib.request.OpenerDirector`). Normally we have been using
+confusingly named :class:`urllib.request.OpenerDirector`). Normally we have been using
 the default opener - via ``urlopen`` - but you can create custom
 openers. Openers use handlers. All the "heavy lifting" is done by the
 handlers. Each handler knows how to open URLs for a particular URL scheme (http,

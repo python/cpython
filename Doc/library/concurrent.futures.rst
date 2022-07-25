@@ -257,7 +257,7 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    replaced with a fresh worker process. By default *max_tasks_per_child* is
    ``None`` which means worker processes will live as long as the pool. When
    a max is specified, the "spawn" multiprocessing start method will be used by
-   default in absense of a *mp_context* parameter. This feature is incompatible
+   default in absence of a *mp_context* parameter. This feature is incompatible
    with the "fork" start method.
 
    .. versionchanged:: 3.3

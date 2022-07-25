@@ -3,7 +3,6 @@
 
 #include "Python.h"
 
-#include "frameobject.h"          // PyFrame_GetBack()
 #include "pycore_ast.h"           // asdl_seq_*
 #include "pycore_call.h"          // _PyObject_CallMethodFormat()
 #include "pycore_compile.h"       // _PyAST_Optimize
@@ -15,7 +14,9 @@
 #include "pycore_pyerrors.h"      // _PyErr_Fetch()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_traceback.h"     // EXCEPTION_TB_HEADER
+
 #include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
+#include "frameobject.h"          // PyFrame_New()
 #include "structmember.h"         // PyMemberDef
 #include "osdefs.h"               // SEP
 #ifdef HAVE_FCNTL_H
@@ -591,7 +592,6 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent,
  *  Traceback (most recent call last):
  *    File "/home/isidentical/cpython/cpython/t.py", line 10, in <module>
  *      add_values(1, 2, 'x', 3, 4)
- *      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
  *    File "/home/isidentical/cpython/cpython/t.py", line 2, in add_values
  *      return a + b + c + d + e
  *             ~~~~~~^~~
@@ -735,7 +735,7 @@ print_error_location_carets(PyObject *f, int offset, Py_ssize_t start_offset, Py
     int special_chars = (left_end_offset != -1 || right_start_offset != -1);
     const char *str;
     while (++offset <= end_offset) {
-        if (offset <= start_offset || offset > end_offset) {
+        if (offset <= start_offset) {
             str = " ";
         } else if (special_chars && left_end_offset < offset && offset <= right_start_offset) {
             str = secondary;
@@ -791,6 +791,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
 
     int code_offset = tb->tb_lasti;
     PyCodeObject* code = frame->f_frame->f_code;
+    const Py_ssize_t source_line_len = PyUnicode_GET_LENGTH(source_line);
 
     int start_line;
     int end_line;
@@ -812,7 +813,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     //
     //  ERROR LINE ERROR LINE ERROR LINE ERROR LINE ERROR LINE ERROR LINE ERROR LINE
     //        ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^~~~~~~~~~~~~~~~~~~~
-    //        |              |-> left_end_offset     |                  |-> left_offset
+    //        |              |-> left_end_offset     |                  |-> end_offset
     //        |-> start_offset                       |-> right_start_offset
     //
     // In general we will only have (start_offset, end_offset) but we can gather more information
@@ -821,6 +822,9 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     // the different ranges (primary_error_char and secondary_error_char). If we cannot obtain the
     // AST information or we cannot identify special ranges within it, then left_end_offset and
     // right_end_offset will be set to -1.
+    //
+    // To keep the column indicators pertinent, they are not shown when the primary character
+    // spans the whole line.
 
     // Convert the utf-8 byte offset to the actual character offset so we print the right number of carets.
     assert(source_line);
@@ -858,7 +862,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
             goto done;
         }
 
-        Py_ssize_t i = PyUnicode_GET_LENGTH(source_line);
+        Py_ssize_t i = source_line_len;
         while (--i >= 0) {
             if (!IS_WHITESPACE(source_line_str[i])) {
                 break;
@@ -866,6 +870,13 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
         }
 
         end_offset = i + 1;
+    }
+
+    // Elide indicators if primary char spans the frame line
+    Py_ssize_t stripped_line_len = source_line_len - truncation - _TRACEBACK_SOURCE_LINE_INDENT;
+    bool has_secondary_ranges = (left_end_offset != -1 || right_start_offset != -1);
+    if (end_offset - start_offset == stripped_line_len && !has_secondary_ranges) {
+        goto done;
     }
 
     if (_Py_WriteIndentedMargin(margin_indent, margin, f) < 0) {

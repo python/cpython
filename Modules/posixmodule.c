@@ -8279,11 +8279,7 @@ wait_helper(PyObject *module, pid_t pid, int status, struct rusage *ru)
         memset(ru, 0, sizeof(*ru));
     }
 
-    PyObject *m = PyImport_ImportModule("resource");
-    if (m == NULL)
-        return NULL;
-    struct_rusage = PyObject_GetAttr(m, get_posix_state(module)->struct_rusage);
-    Py_DECREF(m);
+    struct_rusage = _PyImport_GetModuleAttrString("resource", "struct_rusage");
     if (struct_rusage == NULL)
         return NULL;
 

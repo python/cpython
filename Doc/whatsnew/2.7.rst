@@ -279,7 +279,7 @@ Comparing an :class:`~collections.OrderedDict` with a regular dictionary
 ignores the insertion order and just compares the keys and values.
 
 How does the :class:`~collections.OrderedDict` work?  It maintains a
-doubly-linked list of keys, appending new keys to the list as they're inserted.
+doubly linked list of keys, appending new keys to the list as they're inserted.
 A secondary dictionary maps keys to their corresponding list node, so
 deletion doesn't have to traverse the entire linked list and therefore
 remains O(1).
@@ -1545,7 +1545,7 @@ changes, or look through the Subversion logs for all the details.
   *ciphers* argument that's a string listing the encryption algorithms
   to be allowed; the format of the string is described
   `in the OpenSSL documentation
-  <https://www.openssl.org/docs/manmaster/man1/ciphers.html#CIPHER-LIST-FORMAT>`__.
+  <https://www.openssl.org/docs/man1.0.2/man1/ciphers.html>`__.
   (Added by Antoine Pitrou; :issue:`8322`.)
 
   Another change makes the extension load all of OpenSSL's ciphers and
@@ -1968,7 +1968,7 @@ GvR worked on merging them into Python's version of :mod:`unittest`.
 
 * :meth:`~unittest.TestCase.assertAlmostEqual` and :meth:`~unittest.TestCase.assertNotAlmostEqual` test
   whether *first* and *second* are approximately equal.  This method
-  can either round their difference to an optionally-specified number
+  can either round their difference to an optionally specified number
   of *places* (the default is 7) and compare it to zero, or require
   the difference to be smaller than a supplied *delta* value.
 
@@ -2001,7 +2001,7 @@ module is imported or used.
 
 .. seealso::
 
-  http://www.voidspace.org.uk/python/articles/unittest2.shtml
+  https://web.archive.org/web/20210619163128/http://www.voidspace.org.uk/python/articles/unittest2.shtml
     Describes the new features, how to use them, and the
     rationale for various design decisions.  (By Michael Foord.)
 
@@ -2333,7 +2333,7 @@ Port-Specific Changes: Windows
 
 * The :mod:`_winreg` module for accessing the registry now implements
   the :func:`~_winreg.CreateKeyEx` and :func:`~_winreg.DeleteKeyEx`
-  functions, extended versions of previously-supported functions that
+  functions, extended versions of previously supported functions that
   take several extra arguments.  The :func:`~_winreg.DisableReflectionKey`,
   :func:`~_winreg.EnableReflectionKey`, and :func:`~_winreg.QueryReflectionKey`
   were also tested and documented.
@@ -2697,7 +2697,7 @@ projects.
 
 However, as this migration is currently still incomplete, the legacy
 versions of those guides remaining available as :ref:`install-index`
-and :ref:`distutils-index`.
+and :ref:`setuptools-index`.
 
 .. seealso::
 

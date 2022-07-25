@@ -619,7 +619,7 @@ class _Pickler:
                     "persistent IDs in protocol 0 must be ASCII strings")
 
     def save_reduce(self, func, args, state=None, listitems=None,
-                    dictitems=None, state_setter=None, obj=None):
+                    dictitems=None, state_setter=None, *, obj=None):
         # This API is called by some subclasses
 
         if not isinstance(args, tuple):

@@ -96,7 +96,7 @@ Depending on the platform, :mod:`multiprocessing` supports three ways
 to start a process.  These *start methods* are
 
   *spawn*
-    The parent process starts a fresh python interpreter process.  The
+    The parent process starts a fresh Python interpreter process.  The
     child process will only inherit those resources necessary to run
     the process object's :meth:`~Process.run` method.  In particular,
     unnecessary file descriptors and handles from the parent process
@@ -1706,7 +1706,7 @@ their parent process exits.  The manager classes are defined in the
    shutdown times out, the process is terminated. If terminating the process
    also times out, the process is killed.
 
-   .. versionchanged: 3.11
+   .. versionchanged:: 3.11
       Added the *shutdown_timeout* parameter.
 
    .. method:: start([initializer[, initargs]])
