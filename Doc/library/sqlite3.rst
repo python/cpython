@@ -551,10 +551,10 @@ Connection Objects
           The name of the SQL aggregate function.
       :type name: str
 
-      :param narg:
+      :param n_arg:
           The number of parameters the SQL aggregate function can accept.
           If ``-1``, it may take any number of arguments.
-      :type narg: int
+      :type na_rg: int
 
       :param aggregate_class:
           A class that implements the following methods:
