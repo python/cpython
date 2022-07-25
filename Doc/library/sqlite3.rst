@@ -531,9 +531,10 @@ Connection Objects
           If :const:`True`, the created SQL function is marked as
           `deterministic <https://sqlite.org/deterministic.html>`_,
           which allows SQLite to perform additional optimizations.
-          This flag is supported by SQLite 3.8.3 or higher;
-          :exc:`NotSupportedError` will be raised if used with older versions.
       :type deterministic: bool
+
+      :raises NotSupportedError:
+          If *deterministic* is used with SQLite versions older than 3.8.3.
 
       .. versionadded:: 3.8
          The *deterministic* parameter.
