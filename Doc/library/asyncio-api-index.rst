@@ -28,7 +28,7 @@ await on multiple things with timeouts.
       - Task object.
 
     * - :class:`TaskGroup`
-      - A context manager that holds a group of tasks. Provides a way with
+      - A context manager that holds a group of tasks. Provides
         a convenient and reliable way to wait for all tasks in the group to
         finish.
 
