@@ -83,3 +83,6 @@ typedef struct {
 
 PyAPI_FUNC(PyObject *) _PyDictView_New(PyObject *, PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyDictView_Intersect(PyObject* self, PyObject *other);
+
+PyAPI_FUNC(int) _PyObject_VisitManagedDict(PyObject *self, visitproc visit, void *arg);
+PyAPI_FUNC(void) _PyObject_ClearManagedDict(PyObject *self);
