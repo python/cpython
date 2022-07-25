@@ -43,13 +43,12 @@ for example, a package and its resources can be imported from a zip file using
 
 .. data:: Package
 
-    Where a function is described as accepting a ``Package``, you can pass in
-    either a module name (as a string) or a module object. Module objects must
-    have a resolvable ``__spec__.submodule_search_locations`` that is
-    not ``None``.
+    Whenever a function accepts a ``Package`` argument, you can pass in
+    either a :class:`module object <types.ModuleType>` or a module name
+    as a string.  You can only pass module objects whose
+    ``__spec__.submodule_search_locations`` is not ``None``.
 
     The ``Package`` type is defined as ``Union[str, ModuleType]``.
-
 
 .. function:: files(package)
 
