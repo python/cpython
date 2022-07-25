@@ -6014,6 +6014,14 @@ settrace_to_record(PyObject *self, PyObject *list)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+clear_managed_dict(PyObject *self, PyObject *obj)
+{
+    _PyObject_ClearManagedDict(obj);
+    Py_RETURN_NONE;
+}
+
+
 static PyObject *negative_dictoffset(PyObject *, PyObject *);
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 static PyObject *getargs_s_hash_int(PyObject *, PyObject *, PyObject*);
@@ -6315,6 +6323,7 @@ static PyMethodDef TestMethods[] = {
     {"get_feature_macros", get_feature_macros, METH_NOARGS, NULL},
     {"test_code_api", test_code_api, METH_NOARGS, NULL},
     {"settrace_to_record", settrace_to_record, METH_O, NULL},
+    {"clear_managed_dict", clear_managed_dict, METH_O, NULL},
     {NULL, NULL} /* sentinel */
 };
 
