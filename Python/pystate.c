@@ -435,6 +435,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     PyDict_Clear(interp->builtins);
     Py_CLEAR(interp->sysdict);
     Py_CLEAR(interp->builtins);
+    Py_CLEAR(interp->callable_cache.init_cleanup);
 
     // XXX Once we have one allocator per interpreter (i.e.
     // per-interpreter GC) we must ensure that all of the interpreter's

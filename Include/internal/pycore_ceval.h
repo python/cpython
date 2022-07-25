@@ -133,8 +133,6 @@ extern struct _PyInterpreterFrame* _PyEval_GetFrame(void);
 
 extern PyObject* _Py_MakeCoro(PyFunctionObject *func);
 
-extern PyFunctionObject *_Py_InitCleanupFunc;
-
 #ifdef __cplusplus
 }
 #endif

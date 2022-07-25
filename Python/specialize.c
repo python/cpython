@@ -2053,11 +2053,10 @@ char INIT_CLEANUP_CODE[10] = {
     RESUME, 0
 };
 
-PyFunctionObject *_Py_InitCleanupFunc = NULL;
-
 static int
 setup_init_cleanup_func(void) {
-    if (_Py_InitCleanupFunc != NULL) {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->callable_cache.init_cleanup != NULL) {
         return 0;
     }
     PyObject *name = NULL;
@@ -2122,7 +2121,7 @@ setup_init_cleanup_func(void) {
         .fc_kwdefaults = NULL,
         .fc_closure = NULL
     };
-    _Py_InitCleanupFunc = _PyFunction_FromConstructor(&desc);
+    interp->callable_cache.init_cleanup = _PyFunction_FromConstructor(&desc);
 cleanup:
     PyErr_Clear();
     Py_XDECREF(codeobj);
@@ -2130,7 +2129,7 @@ cleanup:
     Py_XDECREF(name);
     Py_XDECREF(code);
     Py_XDECREF(lines);
-    return _Py_InitCleanupFunc == NULL ? -1 : 0;
+    return interp->callable_cache.init_cleanup == NULL ? -1 : 0;
 }
 
 #ifdef Py_STATS

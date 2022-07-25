@@ -418,7 +418,6 @@ PyEval_InitThreads(void)
 void
 _PyEval_Fini(void)
 {
-    Py_CLEAR(_Py_InitCleanupFunc);
 #ifdef Py_STATS
     _Py_PrintSpecializationStats(1);
 #endif
@@ -5041,8 +5040,10 @@ handle_eval_breaker:
             }
             PEEK(oparg+1) = self;
             Py_DECREF(tp);
-            Py_INCREF(_Py_InitCleanupFunc);
-            _PyInterpreterFrame *shim = _PyFrame_PushUnchecked(tstate, _Py_InitCleanupFunc);
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            PyFunctionObject *init_cleanup = interp->callable_cache.init_cleanup;
+            Py_INCREF(init_cleanup);
+            _PyInterpreterFrame *shim = _PyFrame_PushUnchecked(tstate, init_cleanup);
             CALL_STAT_INC(inlined_py_calls);
             shim->previous = frame;
             shim->prev_instr = _PyCode_CODE(shim->f_code) + 1;

@@ -787,6 +787,7 @@ pycore_init_builtins(PyThreadState *tstate)
     PyObject *list_append = _PyType_Lookup(&PyList_Type, &_Py_ID(append));
     assert(list_append);
     interp->callable_cache.list_append = list_append;
+    interp->callable_cache.init_cleanup = NULL;
 
     if (_PyBuiltins_AddExceptions(bimod) < 0) {
         return _PyStatus_ERR("failed to add exceptions to builtins");
