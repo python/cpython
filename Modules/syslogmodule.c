@@ -196,9 +196,15 @@ syslog_syslog(PyObject * self, PyObject * args)
         }
     }
 
+    /* Incref ident, because it can be decrefed if syslog.openlog() is
+     * called when the GIL is released.
+     */
+    PyObject *ident = S_ident_o;
+    Py_XINCREF(ident);
     Py_BEGIN_ALLOW_THREADS;
     syslog(priority, "%s", message);
     Py_END_ALLOW_THREADS;
+    Py_XDECREF(ident);
     Py_RETURN_NONE;
 }
 
