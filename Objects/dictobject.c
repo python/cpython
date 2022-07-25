@@ -5595,7 +5595,7 @@ _PyObject_VisitManagedDict(PyObject *self, visitproc visit, void *arg)
     if (err) {
         return err;
     }
-    Py_VISIT(*_PyObject_DictPointer(self));
+    Py_VISIT(*_PyObject_ManagedDictPointer(self));
     return 0;
 }
 
@@ -5609,7 +5609,7 @@ _PyObject_ClearManagedDict(PyObject *self)
     }
     _PyObject_FreeInstanceAttributes(self);
     *_PyObject_ValuesPointer(self) = NULL;
-    Py_CLEAR(*_PyObject_DictPointer(self));
+    Py_CLEAR(*_PyObject_ManagedDictPointer(self));
 }
 
 PyObject *
