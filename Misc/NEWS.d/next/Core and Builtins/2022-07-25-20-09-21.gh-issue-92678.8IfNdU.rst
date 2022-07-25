@@ -1,0 +1,2 @@
+Fix MRO calculation issue which caused C extension types manually managing
+their own ``__dict__`` to fail in Python 3.11.

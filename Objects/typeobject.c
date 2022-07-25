@@ -2241,6 +2241,12 @@ extra_ivars(PyTypeObject *type, PyTypeObject *base)
         type->tp_weaklistoffset + sizeof(PyObject *) == t_size &&
         type->tp_flags & Py_TPFLAGS_HEAPTYPE)
         t_size -= sizeof(PyObject *);
+    if (!(type->tp_flags & Py_TPFLAGS_MANAGED_DICT) &&
+        type->tp_dictoffset && base->tp_dictoffset == 0 &&
+        type->tp_dictoffset + sizeof(PyObject *) == t_size &&
+        type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+        t_size -= sizeof(PyObject *);
+    }
     return t_size != b_size;
 }
 
