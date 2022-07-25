@@ -1593,6 +1593,7 @@ class TraceTestCase(unittest.TestCase):
         for _ in range(100):
             func()
         self.run_and_compare(func, EXPECTED_EVENTS)
+
     def test_very_large_function(self):
         # There is a separate code path when the number of lines > (1 << 15).
         d = {}
