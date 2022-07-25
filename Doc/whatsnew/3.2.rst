@@ -2056,7 +2056,7 @@ information:
   such as "3.2".
 
 It also provides access to the paths and variables corresponding to one of
-seven named schemes used by :mod:`distutils`.  Those include *posix_prefix*,
+seven named schemes used by ``distutils``.  Those include *posix_prefix*,
 *posix_home*, *posix_user*, *nt*, *nt_user*, *os2*, *os2_home*:
 
 * :func:`~sysconfig.get_paths` makes a dictionary containing installation paths
