@@ -325,7 +325,6 @@ The following functions and structs are used to create
       * :c:member:`~PyTypeObject.tp_cache`
       * :c:member:`~PyTypeObject.tp_subclasses`
       * :c:member:`~PyTypeObject.tp_weaklist`
-      * :c:member:`~PyTypeObject.tp_tp_static_builtin_index`
       * :c:member:`~PyTypeObject.tp_vectorcall`
       * :c:member:`~PyTypeObject.tp_weaklistoffset`
         (see :ref:`PyMemberDef <pymemberdef-offsets>`)

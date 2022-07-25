@@ -80,6 +80,4 @@ typedef struct _typeobject {
 
     destructor tp_finalize;
     vectorcallfunc tp_vectorcall;
-
-    size_t tp_static_builtin_index;
 } PyTypeObject;
