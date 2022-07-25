@@ -463,7 +463,7 @@ Connection Objects
       :raises OperationalError:
           When trying to open a blob in a ``WITHOUT ROWID`` table.
 
-      :rtype: sqlite3.Blob
+      :rtype: Blob
 
       .. note::
 
