@@ -4285,6 +4285,8 @@ _PyStaticType_Dealloc(PyTypeObject *type)
         PyInterpreterState *interp = _PyInterpreterState_GET();
         assert(interp->types.num_builtins_initialized > 0);
         interp->types.num_builtins_initialized--;
+
+        /* We leave tp_flags with _Py_TPFLAGS_STATIC_BUILTIN set. */
     }
 }
 
@@ -6715,6 +6717,8 @@ set_static_builtin_index(PyTypeObject *self, size_t index)
 int
 _PyStaticType_InitBuiltin(PyTypeObject *self)
 {
+    self->tp_flags = self->tp_flags | _Py_TPFLAGS_STATIC_BUILTIN;
+
     /* It should only be called once for each builtin type. */
     assert(get_static_builtin_index(self) == 0);
 
@@ -6730,8 +6734,6 @@ _PyStaticType_InitBuiltin(PyTypeObject *self)
     static_builtin_type_state *state = _PyStaticType_GetState(self);
     assert(state != NULL);
     state->type = self;
-
-    self->tp_flags = self->tp_flags | _Py_TPFLAGS_STATIC_BUILTIN;
 
     return PyType_Ready(self);
 }
