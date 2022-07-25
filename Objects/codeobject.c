@@ -228,6 +228,23 @@ get_localsplus_names(PyCodeObject *co, _PyLocals_Kind kind, int num)
     return names;
 }
 
+static unsigned int
+get_arg(const _Py_CODEUNIT *codestr, int i)
+{
+    _Py_CODEUNIT word;
+    unsigned int oparg = _Py_OPARG(codestr[i]);
+    if (i >= 1 && _Py_OPCODE(word = codestr[i-1]) == EXTENDED_ARG) {
+        oparg |= _Py_OPARG(word) << 8;
+        if (i >= 2 && _Py_OPCODE(word = codestr[i-2]) == EXTENDED_ARG) {
+            oparg |= _Py_OPARG(word) << 16;
+            if (i >= 3 && _Py_OPCODE(word = codestr[i-3]) == EXTENDED_ARG) {
+                oparg |= _Py_OPARG(word) << 24;
+            }
+        }
+    }
+    return oparg;
+}
+
 int
 _PyCode_Validate(struct _PyCodeConstructor *con)
 {
@@ -281,6 +298,28 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
     if (nplainlocals < 0) {
         PyErr_SetString(PyExc_ValueError, "code: co_varnames is too small");
         return -1;
+    }
+
+    /* Ensure that any LOAD_CONST/LOAD_NAME/LOAD_GLOBAL instruction does not
+       have an oparg that will cause an out-of-bounds tuple access. */
+    const _Py_CODEUNIT *codestr = (_Py_CODEUNIT *)PyBytes_AS_STRING(con->code);
+    const int nconsts = (int)PyTuple_GET_SIZE(con->consts);
+    const int nnames = (int)PyTuple_GET_SIZE(con->names);
+    const int ninstr = (int)PyBytes_GET_SIZE(con->code) / sizeof(_Py_CODEUNIT);
+    for (int i = 0; i < ninstr; i++) {
+        _Py_CODEUNIT instr = codestr[i];
+        unsigned int opcode = _Py_OPCODE(instr);
+        unsigned int oparg = get_arg(codestr, i);
+        if (opcode == LOAD_CONST && oparg >= nconsts) {
+            PyErr_SetString(PyExc_ValueError, "code: co_consts is too small");
+            return -1;
+        }
+        else if (opcode == LOAD_NAME && oparg >= nnames ||
+                 opcode == LOAD_GLOBAL && (oparg >> 1) >= nnames)
+        {
+            PyErr_SetString(PyExc_ValueError, "code: co_names is too small");
+            return -1;
+        }
     }
 
     return 0;
