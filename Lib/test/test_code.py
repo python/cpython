@@ -279,8 +279,8 @@ class CodeTest(unittest.TestCase):
             with self.subTest(attr=attr, value=value):
                 if attr == "co_code":
                     # gh-95222 doesn't allow having a LOAD_CONST index
-                    # greater than len(code.co_consts), so we'll
-                    # temporary replace co_consts
+                    # greater than len(code.co_consts), so also replace
+                    # co_consts with code2.co_consts
                     new_code = code.replace(co_consts=code2.co_consts, co_code=value)
                 else:
                     new_code = code.replace(**{attr: value})
