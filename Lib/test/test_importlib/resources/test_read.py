@@ -2,7 +2,7 @@ import unittest
 
 from importlib import import_module, resources
 from . import data01
-from .resources import util
+from . import util
 
 
 class CommonBinaryTests(util.CommonTests, unittest.TestCase):

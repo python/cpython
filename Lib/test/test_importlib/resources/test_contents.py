@@ -2,7 +2,7 @@ import unittest
 from importlib import resources
 
 from . import data01
-from .resources import util
+from . import util
 
 
 class ContentsTests:
