@@ -5583,6 +5583,35 @@ _PyObject_FreeInstanceAttributes(PyObject *self)
     free_values(*values_ptr);
 }
 
+int
+_PyObject_VisitManagedDict(PyObject *self, visitproc visit, void *arg)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    if((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
+        return 0;
+    }
+    assert(tp->tp_dictoffset);
+    int err = _PyObject_VisitInstanceAttributes(self, visit, arg);
+    if (err) {
+        return err;
+    }
+    Py_VISIT(*_PyObject_ManagedDictPointer(self));
+    return 0;
+}
+
+
+void
+_PyObject_ClearManagedDict(PyObject *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    if((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
+        return;
+    }
+    _PyObject_FreeInstanceAttributes(self);
+    *_PyObject_ValuesPointer(self) = NULL;
+    Py_CLEAR(*_PyObject_ManagedDictPointer(self));
+}
+
 PyObject *
 PyObject_GenericGetDict(PyObject *obj, void *context)
 {
