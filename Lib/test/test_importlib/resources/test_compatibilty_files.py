@@ -8,7 +8,7 @@ from importlib.resources._adapters import (
     wrap_spec,
 )
 
-from .resources import util
+from . import util
 
 
 class CompatibilityFilesTests(unittest.TestCase):

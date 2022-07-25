@@ -1926,15 +1926,6 @@ TESTSUBDIRS=	distutils/tests \
 		test/test_importlib \
 		test/test_importlib/builtin \
 		test/test_importlib/data \
-		test/test_importlib/data01 \
-		test/test_importlib/data01/subdirectory \
-		test/test_importlib/data02 \
-		test/test_importlib/data02/one \
-		test/test_importlib/data02/two \
-		test/test_importlib/data03 \
-		test/test_importlib/data03/namespace \
-		test/test_importlib/data03/namespace/portion1 \
-		test/test_importlib/data03/namespace/portion2 \
 		test/test_importlib/extension \
 		test/test_importlib/frozen \
 		test/test_importlib/import_ \
@@ -1958,12 +1949,21 @@ TESTSUBDIRS=	distutils/tests \
 		test/test_importlib/namespace_pkgs/project3 \
 		test/test_importlib/namespace_pkgs/project3/parent \
 		test/test_importlib/namespace_pkgs/project3/parent/child \
-		test/test_importlib/namespacedata01 \
 		test/test_importlib/partial \
 		test/test_importlib/resources \
+		test/test_importlib/resources/data01 \
+		test/test_importlib/resources/data01/subdirectory \
+		test/test_importlib/resources/data02 \
+		test/test_importlib/resources/data02/one \
+		test/test_importlib/resources/data02/two \
+		test/test_importlib/resources/data03 \
+		test/test_importlib/resources/data03/namespace \
+		test/test_importlib/resources/data03/namespace/portion1 \
+		test/test_importlib/resources/data03/namespace/portion2 \
+		test/test_importlib/resources/namespacedata01 \
+		test/test_importlib/resources/zipdata01 \
+		test/test_importlib/resources/zipdata02 \
 		test/test_importlib/source \
-		test/test_importlib/zipdata01 \
-		test/test_importlib/zipdata02 \
 		test/test_json \
 		test/test_lib2to3 \
 		test/test_lib2to3/data \
