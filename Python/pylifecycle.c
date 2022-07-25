@@ -1687,6 +1687,9 @@ finalize_interp_types(PyInterpreterState *interp)
 
     _PyUnicode_Fini(interp);
     _PyFloat_Fini(interp);
+#ifdef Py_DEBUG
+    _PyStaticObjects_CheckRefcnt();
+#endif
 }
 
 
