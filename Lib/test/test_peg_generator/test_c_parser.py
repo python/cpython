@@ -8,6 +8,7 @@ from pathlib import Path
 
 from test import test_tools
 from test import support
+from test.support import import_helper
 from test.support import os_helper
 from test.support.script_helper import assert_python_ok
 
@@ -88,10 +89,11 @@ class TestCParser(unittest.TestCase):
         # runtime overhead of spawning compiler processes.
         cls.library_dir = tempfile.mkdtemp(dir=cls.tmp_base)
         cls.addClassCleanup(shutil.rmtree, cls.library_dir)
+        cls.enterClassContext(import_helper.inject_setuptools())
 
     def setUp(self):
         self._backup_config_vars = dict(sysconfig._CONFIG_VARS)
-        cmd = support.missing_compiler_executable()
+        cmd = self.missing_compiler_executable()
         if cmd is not None:
             self.skipTest("The %r command is not found" % cmd)
         self.old_cwd = os.getcwd()
@@ -103,6 +105,38 @@ class TestCParser(unittest.TestCase):
         shutil.rmtree(self.tmp_path)
         sysconfig._CONFIG_VARS.clear()
         sysconfig._CONFIG_VARS.update(self._backup_config_vars)
+
+    def missing_compiler_executable(self, cmd_names=()):
+        """Check if the compiler components used to build the interpreter exist.
+
+        Check for the existence of the compiler executables whose names are listed
+        in 'cmd_names' or all the compiler executables when 'cmd_names' is empty
+        and return the first missing executable or None when none is found
+        missing.
+
+        """
+        # TODO (PEP 632): alternate check without using distutils
+        # uses distutils from setuptools
+        from distutils import ccompiler, sysconfig, spawn, errors
+        compiler = ccompiler.new_compiler()
+        sysconfig.customize_compiler(compiler)
+        if compiler.compiler_type == "msvc":
+            # MSVC has no executables, so check whether initialization succeeds
+            try:
+                compiler.initialize()
+            except errors.DistutilsPlatformError:
+                return "msvc"
+        for name in compiler.executables:
+            if cmd_names and name not in cmd_names:
+                continue
+            cmd = getattr(compiler, name)
+            if cmd_names:
+                assert cmd is not None, \
+                        "the '%s' executable is not configured" % name
+            elif not cmd:
+                continue
+            if spawn.find_executable(cmd[0]) is None:
+                return cmd[0]
 
     def build_extension(self, grammar_source):
         grammar = parse_string(grammar_source, GrammarParser)

@@ -1,14 +1,20 @@
+import tempfile
 import contextlib
+import ensurepip
 import _imp
 import importlib
 import importlib.util
+import importlib.resources
 import os
+import site
 import shutil
 import sys
 import unittest
 import warnings
+import zipfile
 
 from .os_helper import unlink
+from . import requires_zlib
 
 
 @contextlib.contextmanager
@@ -246,3 +252,40 @@ def modules_cleanup(oldmodules):
     # do currently). Implicitly imported *real* modules should be left alone
     # (see issue 10556).
     sys.modules.update(oldmodules)
+
+
+@requires_zlib()
+@contextlib.contextmanager
+def inject_setuptools():
+    sud = "SETUPTOOLS_USE_DISTUTILS"
+    package = ensurepip._get_packages()["setuptools"]
+    if package.wheel_name:
+        # Use bundled wheel package
+        ensurepip_res = importlib.resources.files("ensurepip")
+        wheel_path = ensurepip_res / "_bundled" / package.wheel_name
+    else:
+        wheel_path = package.wheel_path
+    orig_path = sys.path[:]
+    if sud in os.environ:
+        orig_sud = os.environ[sud]
+    else:
+        orig_sud = None
+    os.environ[sud] = "local"
+    tmpdir = tempfile.mkdtemp()
+    try:
+        zf = zipfile.ZipFile(wheel_path)
+        zf.extractall(tmpdir)
+        site.addsitedir(tmpdir)
+        import setuptools._distutils
+        sys.modules["distutils"] = setuptools._distutils
+        yield
+    finally:
+        sys.path[:] = orig_path
+        if orig_sud is not None:
+            os.environ[sud] = orig_sud
+        else:
+            os.environ.pop(sud)
+        shutil.rmtree(tmpdir)
+        for name in list(sys.modules):
+            if name.startswith(("setuptools", "distutils", "pkg_resources")):
+                forget(name)
