@@ -881,7 +881,8 @@ Cursor Objects
 
       Execute SQL statement *sql*.
       Bind values to the statement using :ref:`placeholders
-      <sqlite3-placeholders>` that map to the parameters in *parameters*.
+      <sqlite3-placeholders>` that map to the :term:`sequence` or :class:`dict`
+      *parameters*.
 
       :meth:`execute` will only execute a single SQL statement. If you try to execute
       more than one statement with it, it will raise a :exc:`ProgrammingError`. Use
