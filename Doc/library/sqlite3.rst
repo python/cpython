@@ -316,7 +316,7 @@ Module functions and constants
        enabling various :ref:`sqlite3-uri-tricks`.
    :type uri: bool
 
-   :rtype: sqlite3.Connection
+   :rtype: Connection
 
    .. audit-event:: sqlite3.connect database sqlite3.connect
    .. audit-event:: sqlite3.connect/handle connection_handle sqlite3.connect
@@ -804,7 +804,7 @@ Connection Objects
    .. method:: backup(target, *, pages=-1, progress=None, name="main", sleep=0.250)
 
       Create a backup of an SQLite database.
-      
+
       Works even if the database is being accessed by other clients
       or concurrently by the same connection.
 
