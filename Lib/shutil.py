@@ -1118,6 +1118,8 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
     save_cwd = None
     if root_dir is not None:
         if support_root_dir:
+            # Support path-like base_name here for backwards-compatibility.
+            base_name = os.fspath(base_name)
             kwargs['root_dir'] = root_dir
         else:
             save_cwd = os.getcwd()
