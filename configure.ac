@@ -4904,6 +4904,7 @@ PY_CHECK_SOCKET_FUNC([inet_pton])
 dnl not available in WASI yet
 PY_CHECK_SOCKET_FUNC([getpeername])
 PY_CHECK_SOCKET_FUNC([getsockname])
+PY_CHECK_SOCKET_FUNC([accept])
 PY_CHECK_SOCKET_FUNC([bind])
 PY_CHECK_SOCKET_FUNC([connect])
 PY_CHECK_SOCKET_FUNC([listen])

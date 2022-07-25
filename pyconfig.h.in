@@ -51,6 +51,9 @@
 /* Define if getpgrp() must be called as getpgrp(0). */
 #undef GETPGRP_HAVE_ARG
 
+/* Define if you have the 'accept' function. */
+#undef HAVE_ACCEPT
+
 /* Define to 1 if you have the `accept4' function. */
 #undef HAVE_ACCEPT4
 

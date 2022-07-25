@@ -970,9 +970,9 @@ class GeneralModuleTests(unittest.TestCase):
         # socket methods that depend on a configure HAVE_ check. They should
         # be present on all platforms except WASI.
         names = [
-            "bind", "connect", "connect_ex", "getpeername", "getsockname",
-            "listen", "recvfrom", "recvfrom_into", "sendto", "setsockopt",
-            "shutdown"
+            "_accept", "bind", "connect", "connect_ex", "getpeername",
+            "getsockname", "listen", "recvfrom", "recvfrom_into", "sendto",
+            "setsockopt", "shutdown"
         ]
         for name in names:
             if not hasattr(socket.socket, name):

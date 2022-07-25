@@ -2797,6 +2797,7 @@ struct sock_accept {
     SOCKET_T result;
 };
 
+#if defined(HAVE_ACCEPT) || defined(HAVE_ACCEPT4)
 #if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
 /* accept4() is available on Linux 2.6.28+ and glibc 2.10 */
 static int accept4_works = -1;
@@ -2910,6 +2911,8 @@ PyDoc_STRVAR(accept_doc,
 Wait for an incoming connection.  Return a new socket file descriptor\n\
 representing the connection, and the address of the client.\n\
 For IP sockets, the address info is a pair (hostaddr, port).");
+#endif // defined(HAVE_ACCEPT) || defined(HAVE_ACCEPT4)
+
 
 /* s.setblocking(flag) method.  Argument:
    False -- non-blocking mode; same as settimeout(0)
@@ -5057,8 +5060,10 @@ socket.fromshare().");
 /* List of methods for socket objects */
 
 static PyMethodDef sock_methods[] = {
+#if defined(HAVE_ACCEPT) || defined(HAVE_ACCEPT4)
     {"_accept",           (PyCFunction)sock_accept, METH_NOARGS,
                       accept_doc},
+#endif
 #ifdef HAVE_BIND
     {"bind",              (PyCFunction)sock_bind, METH_O,
                       bind_doc},
