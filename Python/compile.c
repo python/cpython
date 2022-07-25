@@ -843,21 +843,11 @@ compiler_set_qualname(struct compiler *c)
    Returns NULL on error.
 */
 static basicblock *
-new_basicblock()
+cfg_new_block(cfg *g)
 {
     basicblock *b = (basicblock *)PyObject_Calloc(1, sizeof(basicblock));
     if (b == NULL) {
         PyErr_NoMemory();
-        return NULL;
-    }
-    return b;
-}
-
-static basicblock *
-cfg_new_block(cfg *g)
-{
-    basicblock *b = new_basicblock();
-    if (b == NULL) {
         return NULL;
     }
     /* Extend the singly linked list of blocks with new block. */
