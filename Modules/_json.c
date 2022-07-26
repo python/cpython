@@ -1297,7 +1297,7 @@ encoder_call(PyEncoderObject *self, PyObject *args, PyObject *kwds)
 
     result = PyTuple_New(1);
     if (result == NULL ||
-            PyTuple_SetItem(result, 0, _PyUnicodeWriter_Finish(&writer))) {
+            PyTuple_SetItem(result, 0, _PyUnicodeWriter_Finish(&writer)) < 0) {
         Py_XDECREF(result);
         return NULL;
     }
