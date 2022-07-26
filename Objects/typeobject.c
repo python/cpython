@@ -98,6 +98,7 @@ static_builtin_index_clear(PyTypeObject *self)
     self->tp_static_builtin_index = 0;
 }
 
+/* For static types we store some state in an array on each interpreter. */
 static_builtin_type_state *
 _PyStaticType_GetState(PyTypeObject *self)
 {
@@ -107,6 +108,38 @@ _PyStaticType_GetState(PyTypeObject *self)
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
     return &(interp->types.builtins[static_builtin_index_get(self)]);
+}
+
+static void
+static_builtin_state_init(PyTypeObject *self)
+{
+    /* It should only be called once for each builtin type. */
+    assert(!static_builtin_index_is_set(self));
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    static_builtin_index_set(self, interp->types.num_builtins_initialized);
+    interp->types.num_builtins_initialized++;
+
+    /* Now we initialize the type's per-interpreter state. */
+    static_builtin_type_state *state = _PyStaticType_GetState(self);
+    assert(state != NULL);
+    state->type = self;
+}
+
+static void
+static_builtin_state_clear(PyTypeObject *self)
+{
+    /* Reset the type's per-interpreter state.
+       This basically undoes what static_builtin_state_init() did. */
+    static_builtin_type_state *state = _PyStaticType_GetState(self);
+    assert(state != NULL);
+    state->type = NULL;
+    static_builtin_index_clear(self);
+    /* We leave _Py_TPFLAGS_STATIC_BUILTIN set on tp_flags. */
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp->types.num_builtins_initialized > 0);
+    interp->types.num_builtins_initialized--;
 }
 
 // Also see _PyStaticType_InitBuiltin() and _PyStaticType_Dealloc().
@@ -4297,7 +4330,6 @@ clear_static_tp_subclasses(PyTypeObject *type)
     Py_CLEAR(type->tp_subclasses);
 }
 
-
 void
 _PyStaticType_Dealloc(PyTypeObject *type)
 {
@@ -4319,17 +4351,7 @@ _PyStaticType_Dealloc(PyTypeObject *type)
     type->tp_flags &= ~Py_TPFLAGS_READY;
 
     if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        /* Reset the type's per-interpreter state.
-           This basically undoes what _PyStaticType_InitBuiltin() did. */
-        static_builtin_type_state *state = _PyStaticType_GetState(type);
-        assert(state != NULL);
-        state->type = NULL;
-        static_builtin_index_clear(type);
-        /* We leave _Py_TPFLAGS_STATIC_BUILTIN set on tp_flags. */
-
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        assert(interp->types.num_builtins_initialized > 0);
-        interp->types.num_builtins_initialized--;
+        static_builtin_state_clear(type);
     }
 }
 
@@ -6750,18 +6772,7 @@ _PyStaticType_InitBuiltin(PyTypeObject *self)
 {
     self->tp_flags = self->tp_flags | _Py_TPFLAGS_STATIC_BUILTIN;
 
-    /* It should only be called once for each builtin type. */
-    assert(!static_builtin_index_is_set(self));
-
-    /* For static types we store some state in an array on each interpreter. */
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    static_builtin_index_set(self, interp->types.num_builtins_initialized);
-    interp->types.num_builtins_initialized++;
-
-    /* Now we initialize the type's per-interpreter state. */
-    static_builtin_type_state *state = _PyStaticType_GetState(self);
-    assert(state != NULL);
-    state->type = self;
+    static_builtin_state_init(self);
 
     return PyType_Ready(self);
 }
