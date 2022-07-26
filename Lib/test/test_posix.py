@@ -2195,21 +2195,21 @@ class NamespacesTests(unittest.TestCase):
     @unittest.skipUnless(os.path.exists('/proc/self/ns/uts'), 'need /proc/self/ns/uts')
     @support.requires_linux_version(3, 0, 0)
     def test_unshare_setns(self):
-        rc, out, err = self.subprocess("""
-import os
-import sys
-fd = os.open('/proc/self/ns/uts', os.O_RDONLY)
-try:
-    print(os.readlink('/proc/self/ns/uts'))
-    os.unshare(os.CLONE_NEWUTS)
-    print(os.readlink('/proc/self/ns/uts'))
-    os.setns(fd, os.CLONE_NEWUTS)
-    print(os.readlink('/proc/self/ns/uts'))
-except OSError as e:
-    sys.stderr.write(str(e.errno))
-    sys.exit(2)
-finally:
-    os.close(fd)
+        rc, out, err = self.subprocess("""if 1:
+            import os
+            import sys
+            fd = os.open('/proc/self/ns/uts', os.O_RDONLY)
+            try:
+                print(os.readlink('/proc/self/ns/uts'))
+                os.unshare(os.CLONE_NEWUTS)
+                print(os.readlink('/proc/self/ns/uts'))
+                os.setns(fd, os.CLONE_NEWUTS)
+                print(os.readlink('/proc/self/ns/uts'))
+            except OSError as e:
+                sys.stderr.write(str(e.errno))
+                sys.exit(2)
+            finally:
+                os.close(fd)
             """)
 
         if rc == 2:
