@@ -570,6 +570,8 @@ class _pthFileTests(unittest.TestCase):
             dll_file = os.path.join(temp_dir, os.path.split(dll_src_file)[1])
             shutil.copy(sys.executable, exe_file)
             shutil.copy(dll_src_file, dll_file)
+            for fn in glob.glob(os.path.join(os.path.split(dll_src_file)[0], "vcruntime*.dll")):
+                shutil.copy(fn, os.path.join(temp_dir, os.path.split(fn)[1]))
             if exe_pth:
                 _pth_file = os.path.splitext(exe_file)[0] + '._pth'
             else:

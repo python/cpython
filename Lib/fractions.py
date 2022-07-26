@@ -245,14 +245,16 @@ class Fraction(numbers.Rational):
                 break
             p0, q0, p1, q1 = p1, q1, p0+a*p1, q2
             n, d = d, n-a*d
-
         k = (max_denominator-q0)//q1
-        bound1 = Fraction(p0+k*p1, q0+k*q1)
-        bound2 = Fraction(p1, q1)
-        if abs(bound2 - self) <= abs(bound1-self):
-            return bound2
+
+        # Determine which of the candidates (p0+k*p1)/(q0+k*q1) and p1/q1 is
+        # closer to self. The distance between them is 1/(q1*(q0+k*q1)), while
+        # the distance from p1/q1 to self is d/(q1*self._denominator). So we
+        # need to compare 2*(q0+k*q1) with self._denominator/d.
+        if 2*d*(q0+k*q1) <= self._denominator:
+            return Fraction(p1, q1, _normalize=False)
         else:
-            return bound1
+            return Fraction(p0+k*p1, q0+k*q1, _normalize=False)
 
     @property
     def numerator(a):

@@ -1171,8 +1171,7 @@ class TextDoc(Doc):
     def indent(self, text, prefix='    '):
         """Indent text by prepending a given prefix to each line."""
         if not text: return ''
-        lines = [prefix + line for line in text.split('\n')]
-        if lines: lines[-1] = lines[-1].rstrip()
+        lines = [(prefix + line).rstrip() for line in text.split('\n')]
         return '\n'.join(lines)
 
     def section(self, title, contents):

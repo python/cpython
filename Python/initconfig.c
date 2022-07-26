@@ -543,8 +543,11 @@ Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
     }
 #ifdef MS_WINDOWS
     if (_Py_StandardStreamEncoding) {
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
         /* Overriding the stream encoding implies legacy streams */
         Py_LegacyWindowsStdioFlag = 1;
+_Py_COMP_DIAG_POP
     }
 #endif
 
@@ -2307,6 +2310,9 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
     const PyWideStringList *argv = &config->argv;
     int print_version = 0;
     const wchar_t* program = config->program_name;
+    if (!program && argv->length >= 1) {
+        program = argv->items[0];
+    }
 
     _PyOS_ResetGetOpt();
     do {

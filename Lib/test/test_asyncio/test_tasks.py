@@ -1649,6 +1649,7 @@ class BaseTaskTests:
         self.assertTrue(asyncio.iscoroutinefunction(fn2))
 
         self.assertFalse(asyncio.iscoroutinefunction(mock.Mock()))
+        self.assertTrue(asyncio.iscoroutinefunction(mock.AsyncMock()))
 
     def test_coroutine_non_gen_function(self):
         async def func():

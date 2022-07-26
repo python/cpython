@@ -45,7 +45,7 @@ typedef struct _Py_Identifier {
 // For now we are keeping _Py_IDENTIFIER for continued use
 // in non-builtin extensions (and naughty PyPI modules).
 
-#define _Py_static_string_init(value) { .string = value, .index = -1 }
+#define _Py_static_string_init(value) { .string = (value), .index = -1 }
 #define _Py_static_string(varname, value)  static _Py_Identifier varname = _Py_static_string_init(value)
 #define _Py_IDENTIFIER(varname) _Py_static_string(PyId_##varname, #varname)
 
@@ -385,9 +385,9 @@ _PyObject_DebugTypeStats(FILE *out);
 #endif
 
 #define _PyObject_ASSERT_WITH_MSG(obj, expr, msg) \
-    _PyObject_ASSERT_FROM(obj, expr, msg, __FILE__, __LINE__, __func__)
+    _PyObject_ASSERT_FROM((obj), expr, (msg), __FILE__, __LINE__, __func__)
 #define _PyObject_ASSERT(obj, expr) \
-    _PyObject_ASSERT_WITH_MSG(obj, expr, NULL)
+    _PyObject_ASSERT_WITH_MSG((obj), expr, NULL)
 
 #define _PyObject_ASSERT_FAILED_MSG(obj, msg) \
     _PyObject_AssertFailed((obj), NULL, (msg), __FILE__, __LINE__, __func__)
@@ -493,8 +493,8 @@ PyAPI_FUNC(int) _PyTrash_cond(PyObject *op, destructor dealloc);
     } while (0);
 
 #define Py_TRASHCAN_BEGIN(op, dealloc) \
-    Py_TRASHCAN_BEGIN_CONDITION(op, \
-        _PyTrash_cond(_PyObject_CAST(op), (destructor)dealloc))
+    Py_TRASHCAN_BEGIN_CONDITION((op), \
+        _PyTrash_cond(_PyObject_CAST(op), (destructor)(dealloc)))
 
 /* The following two macros, Py_TRASHCAN_SAFE_BEGIN and
  * Py_TRASHCAN_SAFE_END, are deprecated since version 3.11 and
@@ -505,7 +505,7 @@ Py_DEPRECATED(3.11) typedef int UsingDeprecatedTrashcanMacro;
 #define Py_TRASHCAN_SAFE_BEGIN(op) \
     do { \
         UsingDeprecatedTrashcanMacro cond=1; \
-        Py_TRASHCAN_BEGIN_CONDITION(op, cond);
+        Py_TRASHCAN_BEGIN_CONDITION((op), cond);
 #define Py_TRASHCAN_SAFE_END(op) \
         Py_TRASHCAN_END; \
     } while(0);

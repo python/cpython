@@ -75,7 +75,7 @@ New syntax features:
 New typing features:
 
 * :pep:`646`: Variadic generics.
-* :pep:`655`: Marking individual TypedDict items as required or potentially-missing.
+* :pep:`655`: Marking individual TypedDict items as required or potentially missing.
 * :pep:`673`: ``Self`` type.
 * :pep:`675`: Arbitrary literal string type.
 
@@ -117,7 +117,6 @@ when dealing with deeply nested dictionary objects and multiple function calls,
     Traceback (most recent call last):
       File "query.py", line 37, in <module>
         magic_arithmetic('foo')
-        ^^^^^^^^^^^^^^^^^^^^^^^
       File "query.py", line 18, in magic_arithmetic
         return add_counts(x) / 25
                ^^^^^^^^^^^^^
@@ -336,6 +335,13 @@ See :pep:`681` for more details.
 (Contributed by Jelle Zijlstra in :gh:`91860`. PEP written by
 Erik De Bonte and Eric Traut.)
 
+PEP 563 May Not Be the Future
+-----------------------------
+
+* :pep:`563` Postponed Evaluation of Annotations, ``__future__.annotations``
+  that was planned for this release has been indefinitely postponed.
+  See `this message <https://mail.python.org/archives/list/python-dev@python.org/message/VIZEBX5EYMSYIJNDBF6DMUMZOCWHARSO/>`_ for more information.
+
 Other Language Changes
 ======================
 
@@ -376,6 +382,13 @@ Other Language Changes
 * A ``"z"`` option was added to the format specification mini-language that
   coerces negative zero to zero after rounding to the format precision.  See
   :pep:`682` for more details.  (Contributed by John Belmonte in :gh:`90153`.)
+
+* Bytes are no longer accepted on :attr:`sys.path`.  Support broke sometime
+  between Python 3.2 and 3.6 with no one noticing until after Python 3.10.0
+  was released. Bringing back support would also be problematic due to
+  interactions between :option:`-b` and :attr:`sys.path_importer_cache` when
+  there is a mixture of strings and bytes keys.
+  (Contributed by Thomas Grainger in :gh:`91181`.)
 
 Other CPython Implementation Changes
 ====================================
@@ -442,6 +455,11 @@ asyncio
 * Add :class:`~asyncio.Barrier` class to the synchronization primitives of
   the asyncio library. (Contributed by Yves Duprat and Andrew Svetlov in
   :gh:`87518`.)
+
+* Add :class:`~asyncio.TaskGroup` class,
+  an :ref:`asynchronous context manager <async-context-managers>`
+  holding a group of tasks that will wait for all of them upon exit.
+  (Contributed by Yury Seliganov and others.)
 
 datetime
 --------
@@ -528,7 +546,7 @@ inspect
   line number, column and end column). The affected functions are:
   :func:`inspect.getframeinfo`, :func:`inspect.getouterframes`, :func:`inspect.getinnerframes`,
   :func:`inspect.stack` and :func:`inspect.trace`. (Contributed by Pablo Galindo in
-  :gh:`88116`)
+  :gh:`88116`.)
 
 locale
 ------
@@ -603,7 +621,7 @@ socket
 * :meth:`~socket.create_connection` has an option to raise, in case of
   failure to connect, an :exc:`ExceptionGroup` containing all errors
   instead of only raising the last error.
-  (Contributed by Irit Katriel in :issue:`29980`).
+  (Contributed by Irit Katriel in :issue:`29980`.)
 
 sqlite3
 -------
@@ -653,7 +671,7 @@ sqlite3
 
 * Add :meth:`~sqlite3.Connection.blobopen` to :class:`sqlite3.Connection`.
   :class:`sqlite3.Blob` allows incremental I/O operations on blobs.
-  (Contributed by Aviv Palivoda and Erlend E. Aasland in :issue:`24905`)
+  (Contributed by Aviv Palivoda and Erlend E. Aasland in :issue:`24905`.)
 
 
 sys
@@ -676,7 +694,7 @@ sys
 sysconfig
 ---------
 
-* Two new :ref:`installation schemes <installation_paths>`
+* Three new :ref:`installation schemes <installation_paths>`
   (*posix_venv*, *nt_venv* and *venv*) were added and are used when Python
   creates new virtual environments or when it is running from a virtual
   environment.
@@ -797,7 +815,7 @@ tkinter
 unicodedata
 -----------
 
-* The Unicode database has been updated to version 14.0.0. (:issue:`45190`).
+* The Unicode database has been updated to version 14.0.0. (Contributed by  Benjamin Peterson in :issue:`45190`).
 
 
 unittest
@@ -1455,13 +1473,6 @@ Changes in the Python API
   the ``'utf-8'`` encoding.
   (Contributed by Srinivas Reddy Thatiparthy (శ్రీనివాస్  రెడ్డి తాటిపర్తి) in :issue:`41137`.)
 
-* When sorting using tuples as keys, the order of the result may differ
-  from earlier releases if the tuple elements don't define a total
-  ordering (see :ref:`expressions-value-comparisons` for
-  information on total ordering).  It's generally true that the result
-  of sorting simply isn't well-defined in the absence of a total ordering
-  on list elements.
-
 * :mod:`calendar`: The :class:`calendar.LocaleTextCalendar` and
   :class:`calendar.LocaleHTMLCalendar` classes now use
   :func:`locale.getlocale`, instead of using :func:`locale.getdefaultlocale`,
@@ -1482,6 +1493,10 @@ Changes in the Python API
   Automatic conversion of sets to lists is no longer supported. If the sample size
   is larger than the population size, a :exc:`ValueError` is raised.
   (Contributed by Raymond Hettinger in :issue:`40465`.)
+
+* :class:`ast.AST` node positions are now validated when provided to
+  :func:`compile` and other related functions. If invalid positions are detected,
+  a :exc:`ValueError` will be raised. (Contributed by Pablo Galindo in :gh:`93351`)
 
 
 Build Changes
@@ -1515,7 +1530,7 @@ Build Changes
 * Freelists for object structs can now be disabled. A new :program:`configure`
   option :option:`!--without-freelists` can be used to disable all freelists
   except empty tuple singleton.
-  (Contributed by Christian Heimes in :issue:`45522`)
+  (Contributed by Christian Heimes in :issue:`45522`.)
 
 * ``Modules/Setup`` and ``Modules/makesetup`` have been improved and tied up.
   Extension modules can now be built through ``makesetup``. All except some

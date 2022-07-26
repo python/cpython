@@ -23,15 +23,19 @@ to a repository checkout.
 Christian Heimes maintains a container image with Emscripten SDK, Python
 build dependencies, WASI-SDK, wasmtime, and several additional tools.
 
+From within your local CPython repo clone, run one of the following commands:
+
 ```
 # Fedora, RHEL, CentOS
-podman run --rm -ti -v $(pwd):/python-wasm/cpython:Z quay.io/tiran/cpythonbuild:emsdk3
+podman run --rm -ti -v $(pwd):/python-wasm/cpython:Z -w /python-wasm/cpython quay.io/tiran/cpythonbuild:emsdk3
 
 # other
-docker run --rm -ti -v $(pwd):/python-wasm/cpython quay.io/tiran/cpythonbuild:emsdk3
+docker run --rm -ti -v $(pwd):/python-wasm/cpython -w /python-wasm/cpython quay.io/tiran/cpythonbuild:emsdk3
 ```
 
 ### Compile a build Python interpreter
+
+From within the container, run the following commands:
 
 ```shell
 mkdir -p builddir/build
@@ -98,8 +102,10 @@ popd
 ```
 
 ```shell
-node --experimental-wasm-threads --experimental-wasm-bulk-memory builddir/emscripten-node/python.js
+node --experimental-wasm-threads --experimental-wasm-bulk-memory --experimental-wasm-bigint builddir/emscripten-node/python.js
 ```
+
+(``--experimental-wasm-bigint`` is not needed with recent NodeJS versions)
 
 # wasm32-emscripten limitations and issues
 
@@ -173,6 +179,8 @@ functions.
   [bpo-46390](https://bugs.python.org/issue46390).
 - Python's object allocator ``obmalloc`` is disabled by default.
 - ``ensurepip`` is not available.
+- Some ``ctypes`` features like ``c_longlong`` and ``c_longdouble`` may need
+   NodeJS option ``--experimental-wasm-bigint``.
 
 ## wasm32-emscripten in browsers
 

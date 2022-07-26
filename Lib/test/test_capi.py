@@ -722,6 +722,20 @@ class CAPITest(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertTrue(hasattr(ctypes.pythonapi, name))
 
+    def test_clear_managed_dict(self):
+
+        class C:
+            def __init__(self):
+                self.a = 1
+
+        c = C()
+        _testcapi.clear_managed_dict(c)
+        self.assertEqual(c.__dict__, {})
+        c = C()
+        self.assertEqual(c.__dict__, {'a':1})
+        _testcapi.clear_managed_dict(c)
+        self.assertEqual(c.__dict__, {})
+
 
 class TestPendingCalls(unittest.TestCase):
 

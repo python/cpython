@@ -233,7 +233,7 @@ is the module's name in the Python package namespace.
          2006-02-08 22:20:02,165 192.168.0.1 fbloggs  Protocol problem: connection reset
 
       The keys in the dictionary passed in *extra* should not clash with the keys used
-      by the logging system. (See the :class:`Formatter` documentation for more
+      by the logging system. (See the section on :ref:`logrecord-attributes` for more
       information on which keys are used by the logging system.)
 
       If you choose to use these attributes in logged messages, you need to exercise
@@ -531,55 +531,53 @@ Formatter Objects
 
 .. currentmodule:: logging
 
-:class:`Formatter` objects have the following attributes and methods. They are
-responsible for converting a :class:`LogRecord` to (usually) a string which can
-be interpreted by either a human or an external system. The base
-:class:`Formatter` allows a formatting string to be specified. If none is
-supplied, the default value of ``'%(message)s'`` is used, which just includes
-the message in the logging call. To have additional items of information in the
-formatted output (such as a timestamp), keep reading.
-
-A Formatter can be initialized with a format string which makes use of knowledge
-of the :class:`LogRecord` attributes - such as the default value mentioned above
-making use of the fact that the user's message and arguments are pre-formatted
-into a :class:`LogRecord`'s *message* attribute.  This format string contains
-standard Python %-style mapping keys. See section :ref:`old-string-formatting`
-for more information on string formatting.
-
-The useful mapping keys in a :class:`LogRecord` are given in the section on
-:ref:`logrecord-attributes`.
-
-
 .. class:: Formatter(fmt=None, datefmt=None, style='%', validate=True, *, defaults=None)
 
-   Returns a new instance of the :class:`Formatter` class.  The instance is
-   initialized with a format string for the message as a whole, as well as a
-   format string for the date/time portion of a message.  If no *fmt* is
-   specified, ``'%(message)s'`` is used.  If no *datefmt* is specified, a format
-   is used which is described in the :meth:`formatTime` documentation.
+   Responsible for converting a :class:`LogRecord` to an output string
+   to be interpreted by a human or external system.
 
-   The *style* parameter can be one of '%', '{' or '$' and determines how
-   the format string will be merged with its data: using one of %-formatting,
-   :meth:`str.format` or :class:`string.Template`. This only applies to the
-   format string *fmt* (e.g. ``'%(message)s'`` or ``{message}``), not to the
-   actual log messages passed to ``Logger.debug`` etc; see
-   :ref:`formatting-styles` for more information on using {- and $-formatting
-   for log messages.
+   :param fmt: A format string in the given *style* for
+       the logged output as a whole.
+       The possible mapping keys are drawn from the :class:`LogRecord` object's
+       :ref:`logrecord-attributes`.
+       If not specified, ``'%(message)s'`` is used,
+       which is just the logged message.
+   :type fmt: str
 
-   The *defaults* parameter can be a dictionary with default values to use in
-   custom fields. For example:
-   ``logging.Formatter('%(ip)s %(message)s', defaults={"ip": None})``
+   :param datefmt: A format string in the given *style* for
+       the date/time portion of the logged output.
+       If not specified, the default described in :meth:`formatTime` is used.
+   :type datefmt: str
 
-   .. versionchanged:: 3.2
-      The *style* parameter was added.
+   :param style: Can be one of ``'%'``, ``'{'`` or ``'$'`` and determines
+       how the format string will be merged with its data: using one of
+       :ref:`old-string-formatting` (``%``), :meth:`str.format` (``{``)
+       or :class:`string.Template` (``$``). This only applies to
+       *fmt* and *datefmt* (e.g. ``'%(message)s'`` versus ``'{message}'``),
+       not to the actual log messages passed to the logging methods.
+       However, there are :ref:`other ways <formatting-styles>`
+       to use ``{``- and ``$``-formatting for log messages.
+   :type style: str
 
-   .. versionchanged:: 3.8
-      The *validate* parameter was added. Incorrect or mismatched style and fmt
-      will raise a ``ValueError``.
-      For example: ``logging.Formatter('%(asctime)s - %(message)s', style='{')``.
+   :param validate: If ``True`` (the default), incorrect or mismatched
+       *fmt* and *style* will raise a :exc:`ValueError`; for example,
+       ``logging.Formatter('%(asctime)s - %(message)s', style='{')``.
+   :type validate: bool
 
-   .. versionchanged:: 3.10
-      The *defaults* parameter was added.
+   :param defaults: A dictionary with default values to use in custom fields.
+       For example,
+       ``logging.Formatter('%(ip)s %(message)s', defaults={"ip": None})``
+   :type defaults: dict[str, Any]
+
+   .. versionadded:: 3.2
+      The *style* parameter.
+
+   .. versionadded:: 3.8
+      The *validate* parameter.
+
+   .. versionadded:: 3.10
+      The *defaults* parameter.
+
 
    .. method:: format(record)
 

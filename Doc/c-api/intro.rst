@@ -779,7 +779,7 @@ A full list of the various types of debugging builds is in the file
 :file:`Misc/SpecialBuilds.txt` in the Python source distribution. Builds are
 available that support tracing of reference counts, debugging the memory
 allocator, or low-level profiling of the main interpreter loop.  Only the most
-frequently-used builds will be described in the remainder of this section.
+frequently used builds will be described in the remainder of this section.
 
 Compiling the interpreter with the :c:macro:`Py_DEBUG` macro defined produces
 what is generally meant by :ref:`a debug build of Python <debug-build>`.
