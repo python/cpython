@@ -79,7 +79,7 @@ static_builtin_index_is_set(PyTypeObject *self)
 static inline size_t
 static_builtin_index_get(PyTypeObject *self)
 {
-    assert(self->tp_static_builtin_index > 0);
+    assert(static_builtin_index_is_set(self));
     /* We store a 1-based index so 0 can mean "not initialized". */
     return self->tp_static_builtin_index - 1;
 }
