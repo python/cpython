@@ -572,14 +572,17 @@ process and user.
 .. function:: setns(fd, nstype=0)
 
    Reassociate thread with a namespace.
-   If *fd* refers to a ``/proc/[pid]/ns/`` link, :func:`setns` reassociates the
+   If *fd* refers to a ``/proc/[pid]/ns/`` link, ``setns()`` reassociates the
    calling thread with the namespace associated with that link, subject to any
-   constraints imposed by the *nstype* argument (or any if 0).
+   constraints imposed by the *nstype* argument (or any if ``0``).
    Since Linux 5.8, *fd* may refer to a PID file descriptor obtained from
-   :c:func:`pidfd_open`. In this case :func:`setns` reassociates the calling thread
-   into one or more of the same namespaces as the thread referred to by *fd* subject
-   to any constraints imposed by the *nstype* which is a bit mask specified by ORing together one or more of the ``CLONE_NEW*`` constants. the caller's memberships in unspecified namespaces are left unchanged.
-   *fd* can be any object with a :meth:`fileno()` method, or a raw file descriptor.
+   :manpage:`pidfd_open(2)`. In this case ``setns()`` reassociates the calling thread
+   into one or more of the same namespaces as the thread referred to by *fd*
+   subject to any constraints imposed by the *nstype*, which is
+   a bit mask specified by combining one or more of the ``CLONE_NEW*`` constants
+   using ``|`` (bitwise or).
+   the caller's memberships in unspecified namespaces are left unchanged.
+   *fd* can be any object with a :meth:`fileno` method, or a raw file descriptor.
 
    This example reassociates the thread with the ``init`` process' network namespace::
 
@@ -757,10 +760,9 @@ process and user.
 .. function:: unshare(flags)
 
    Disassociate parts of the process execution context.
-   The *flags* argument is a bit mask that specifies which parts of the execution
-   context should be unshared. This argument is specified by ORing together zero
-   or more of the ``CLONE_*`` constants.
-   If *flags* is specified as zero, no changes are made to the calling process's
+   The *flags* argument is a bit mask combining zero or more of the ``CLONE_*`` constants using ``|`` (bitwise or), that specifies which parts of the execution
+   context should be unshared.
+   If *flags* is specified as zero, no changes are made to the calling process'
    execution context.
 
    .. availability:: Linux 2.6.16 or newer.

@@ -4198,7 +4198,12 @@ PyDoc_STRVAR(os_setns__doc__,
 "setns($module, /, fd, nstype=0)\n"
 "--\n"
 "\n"
-"Allows the calling thread to move into different namespaces.");
+"Move the calling thread into different namespaces.\n"
+"\n"
+"  fd\n"
+"    A file descriptor to a namespace.\n"
+"  nstype\n"
+"    Type of namespace.");
 
 #define OS_SETNS_METHODDEF    \
     {"setns", _PyCFunction_CAST(os_setns), METH_FASTCALL|METH_KEYWORDS, os_setns__doc__},
@@ -4246,7 +4251,10 @@ PyDoc_STRVAR(os_unshare__doc__,
 "unshare($module, /, flags)\n"
 "--\n"
 "\n"
-"Allows a process (or thread) to disassociate parts of its execution context.");
+"Disassociate parts of a process (or thread) execution context.\n"
+"\n"
+"  flags\n"
+"    Namespaces to be unshared.");
 
 #define OS_UNSHARE_METHODDEF    \
     {"unshare", _PyCFunction_CAST(os_unshare), METH_FASTCALL|METH_KEYWORDS, os_unshare__doc__},
@@ -9447,4 +9455,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=c0971c07f439dcba input=a9049054013a1b77]*/
+/*[clinic end generated code: output=78d14ea4616fdc42 input=a9049054013a1b77]*/

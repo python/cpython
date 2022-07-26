@@ -8592,14 +8592,16 @@ os_pidfd_open_impl(PyObject *module, pid_t pid, unsigned int flags)
 /*[clinic input]
 os.setns
   fd: fildes
+    A file descriptor to a namespace.
   nstype: int = 0
+    Type of namespace.
 
-Allows the calling thread to move into different namespaces.
+Move the calling thread into different namespaces.
 [clinic start generated code]*/
 
 static PyObject *
 os_setns_impl(PyObject *module, int fd, int nstype)
-/*[clinic end generated code: output=5dbd055bfb66ecd0 input=c097c9aa123c43ce]*/
+/*[clinic end generated code: output=5dbd055bfb66ecd0 input=42787871226bf3ee]*/
 {
     int res;
 
@@ -8620,13 +8622,14 @@ os_setns_impl(PyObject *module, int fd, int nstype)
 /*[clinic input]
 os.unshare
   flags: int
+    Namespaces to be unshared.
 
-Allows a process (or thread) to disassociate parts of its execution context.
+Disassociate parts of a process (or thread) execution context.
 [clinic start generated code]*/
 
 static PyObject *
 os_unshare_impl(PyObject *module, int flags)
-/*[clinic end generated code: output=1b3177906dd237ee input=f8d7bd2c69325537]*/
+/*[clinic end generated code: output=1b3177906dd237ee input=9e065db3232b8b1b]*/
 {
     int res;
 
