@@ -323,8 +323,6 @@ _PyDictOrValues_SetValues(PyDictOrValues *ptr, PyDictValues *values)
 #define MANAGED_DICT_OFFSET (((int)sizeof(PyObject *))*-3)
 
 extern PyObject ** _PyObject_DictPointer(PyObject *);
-extern int _PyObject_VisitManagedDict(PyObject *self, visitproc visit, void *arg);
-extern void _PyObject_ClearManagedDict(PyObject *self);
 extern void _PyObject_FreeInstanceAttributes(PyObject *self);
 extern int _PyObject_IsInstanceDictEmpty(PyObject *);
 extern PyObject* _PyType_GetSubclasses(PyTypeObject *);

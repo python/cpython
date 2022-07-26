@@ -5544,51 +5544,6 @@ _PyDictValues_Visit(PyDictValues *values, visitproc visit, void *arg)
     return 0;
 }
 
-int
-_PyObject_VisitManagedDict(PyObject *self, visitproc visit, void *arg)
-{
-    PyTypeObject *tp = Py_TYPE(self);
-    assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-    assert(tp->tp_dictoffset);
-    PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(self);
-    if (_PyDictOrValues_IsValues(dorv)) {
-        PyDictValues *values = _PyDictOrValues_GetValues(dorv);
-        PyDictKeysObject *keys = CACHED_KEYS(tp);
-        for (Py_ssize_t i = 0; i < keys->dk_nentries; i++) {
-            Py_VISIT(values->values[i]);
-        }
-    }
-    else {
-        PyObject *dict = _PyDictOrValues_GetDict(dorv);
-        Py_VISIT(dict);
-    }
-    return 0;
-}
-
-
-void
-_PyObject_ClearManagedDict(PyObject *self)
-{
-    PyTypeObject *tp = Py_TYPE(self);
-    assert(Py_TYPE(self)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-    PyDictOrValues *dorv_ptr = _PyObject_DictOrValuesPointer(self);
-    if (_PyDictOrValues_IsValues(*dorv_ptr)) {
-        PyDictValues *values = _PyDictOrValues_GetValues(*dorv_ptr);
-        PyDictKeysObject *keys = CACHED_KEYS(tp);
-        for (Py_ssize_t i = 0; i < keys->dk_nentries; i++) {
-            Py_CLEAR(values->values[i]);
-        }
-    }
-    else {
-        PyObject **dictptr = _PyDictOrValues_GetDictPtr(dorv_ptr);
-        PyObject *dict = *dictptr;
-        if (dict) {
-            *dictptr = NULL;
-            Py_DECREF(dict);
-        }
-    }
-}
-
 void
 _PyObject_FreeInstanceAttributes(PyObject *self)
 {
@@ -5614,14 +5569,17 @@ _PyObject_VisitManagedDict(PyObject *self, visitproc visit, void *arg)
         return 0;
     }
     assert(tp->tp_dictoffset);
-    int err = _PyObject_VisitInstanceAttributes(self, visit, arg);
-    if (err) {
-        return err;
+    PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(self);
+    if (_PyDictOrValues_IsValues(dorv)) {
+        PyDictValues *values = _PyDictOrValues_GetValues(dorv);
+        return _PyDictValues_Visit(values, visit, arg);
     }
-    Py_VISIT(*_PyObject_ManagedDictPointer(self));
+    else {
+        PyObject *dict = _PyDictOrValues_GetDict(dorv);
+        Py_VISIT(dict);
+    }
     return 0;
 }
-
 
 void
 _PyObject_ClearManagedDict(PyObject *self)
@@ -5630,9 +5588,22 @@ _PyObject_ClearManagedDict(PyObject *self)
     if((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
         return;
     }
-    _PyObject_FreeInstanceAttributes(self);
-    *_PyObject_ValuesPointer(self) = NULL;
-    Py_CLEAR(*_PyObject_ManagedDictPointer(self));
+    PyDictOrValues *dorv_ptr = _PyObject_DictOrValuesPointer(self);
+    if (_PyDictOrValues_IsValues(*dorv_ptr)) {
+        PyDictValues *values = _PyDictOrValues_GetValues(*dorv_ptr);
+        PyDictKeysObject *keys = CACHED_KEYS(tp);
+        for (Py_ssize_t i = 0; i < keys->dk_nentries; i++) {
+            Py_CLEAR(values->values[i]);
+        }
+    }
+    else {
+        PyObject **dictptr = _PyDictOrValues_GetDictPtr(dorv_ptr);
+        PyObject *dict = *dictptr;
+        if (dict) {
+            *dictptr = NULL;
+            Py_DECREF(dict);
+        }
+    }
 }
 
 PyObject *
