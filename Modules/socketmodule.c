@@ -1724,8 +1724,10 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 
         struct sockaddr_un* addr = &addrbuf->un;
 #ifdef __linux__
-        if (path.len > 0 && *(const char *)path.buf == 0) {
-            /* Linux abstract namespace extension */
+        if (path.len == 0 || *(const char *)path.buf == 0) {
+            /* Linux abstract namespace extension:
+               - Empty address auto-binding to an abstract address
+               - Address that starts with null byte */
             if ((size_t)path.len > sizeof addr->sun_path) {
                 PyErr_SetString(PyExc_OSError,
                                 "AF_UNIX path too long");
@@ -7784,6 +7786,10 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, MSG_EOR);
 #endif
 #ifdef  MSG_TRUNC
+    // workaround for https://github.com/WebAssembly/wasi-libc/issues/305
+    #if defined(__wasi__) && !defined(__WASI_RIFLAGS_RECV_DATA_TRUNCATED)
+    #  define __WASI_RIFLAGS_RECV_DATA_TRUNCATED 2
+    #endif
     PyModule_AddIntMacro(m, MSG_TRUNC);
 #endif
 #ifdef  MSG_CTRUNC

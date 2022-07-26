@@ -515,6 +515,30 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertEqual("3.100-arm64", data["SearchInfo.tag"])
         self.assertEqual(f"X.Y-arm64.exe -X fake_arg_for_test -prearg {script} -postarg", data["stdout"].strip())
 
+    def test_py_shebang_nl(self):
+        with self.py_ini(TEST_PY_COMMANDS):
+            with self.script("#! /usr/bin/env python -prearg\n") as script:
+                data = self.run_py([script, "-postarg"])
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100", data["SearchInfo.tag"])
+        self.assertEqual(f"X.Y.exe -prearg {script} -postarg", data["stdout"].strip())
+
+    def test_py2_shebang_nl(self):
+        with self.py_ini(TEST_PY_COMMANDS):
+            with self.script("#! /usr/bin/env python2 -prearg\n") as script:
+                data = self.run_py([script, "-postarg"])
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100-32", data["SearchInfo.tag"])
+        self.assertEqual(f"X.Y-32.exe -prearg {script} -postarg", data["stdout"].strip())
+
+    def test_py3_shebang_nl(self):
+        with self.py_ini(TEST_PY_COMMANDS):
+            with self.script("#! /usr/bin/env python3 -prearg\n") as script:
+                data = self.run_py([script, "-postarg"])
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100-arm64", data["SearchInfo.tag"])
+        self.assertEqual(f"X.Y-arm64.exe -X fake_arg_for_test -prearg {script} -postarg", data["stdout"].strip())
+
     def test_install(self):
         data = self.run_py(["-V:3.10"], env={"PYLAUNCHER_ALWAYS_INSTALL": "1"}, expect_returncode=111)
         cmd = data["stdout"].strip()

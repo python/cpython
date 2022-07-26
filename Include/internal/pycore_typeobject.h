@@ -41,6 +41,7 @@ struct type_cache {
 
 extern PyStatus _PyTypes_InitSlotDefs(void);
 
+extern int _PyStaticType_InitBuiltin(PyTypeObject *type);
 extern void _PyStaticType_Dealloc(PyTypeObject *type);
 
 
