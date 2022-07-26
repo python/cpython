@@ -2483,8 +2483,9 @@ subtype_getweakref(PyObject *obj, void *context)
         return NULL;
     }
     _PyObject_ASSERT((PyObject *)type,
-                     type->tp_weaklistoffset > 0);
+                     type->tp_weaklistoffset != 0);
     _PyObject_ASSERT((PyObject *)type,
+                     (type->tp_weaklistoffset == -4 * ((int)sizeof(PyObject *))) ||
                      ((type->tp_weaklistoffset + sizeof(PyObject *))
                       <= (size_t)(type->tp_basicsize)));
     weaklistptr = (PyObject **)((char *)obj + type->tp_weaklistoffset);
@@ -3078,19 +3079,28 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type)
         }
     }
 
-    if (ctx->add_dict && ctx->base->tp_itemsize) {
-        type->tp_dictoffset = -(long)sizeof(PyObject *);
-        slotoffset += sizeof(PyObject *);
+    if (ctx->add_dict) {
+        if (ctx->base->tp_itemsize) {
+            type->tp_dictoffset = -(long)sizeof(PyObject *);
+            slotoffset += sizeof(PyObject *);
+        }
+        else {
+            assert((type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
+            type->tp_flags |= Py_TPFLAGS_MANAGED_DICT;
+        }
     }
 
     if (ctx->add_weak) {
         assert(!ctx->base->tp_itemsize);
-        type->tp_weaklistoffset = slotoffset;
-        slotoffset += sizeof(PyObject *);
+        if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
+            type->tp_weaklistoffset = -4 * sizeof(PyObject *);
+        }
+        else {
+            type->tp_weaklistoffset = slotoffset;
+            slotoffset += sizeof(PyObject *);
+        }
     }
-    if (ctx->add_dict && ctx->base->tp_itemsize == 0) {
-        assert((type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
-        type->tp_flags |= Py_TPFLAGS_MANAGED_DICT;
+    if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
         type->tp_dictoffset = -slotoffset - sizeof(PyObject *)*3;
     }
 
@@ -5070,11 +5080,13 @@ compatible_for_assignment(PyTypeObject* oldto, PyTypeObject* newto, const char* 
          !same_slots_added(newbase, oldbase))) {
         goto differs;
     }
-    /* The above does not check for managed __dicts__ */
+    /* The above does not check for managed __dict__ or __weakref__ */
     if ((oldto->tp_flags & Py_TPFLAGS_MANAGED_DICT) ==
         ((newto->tp_flags & Py_TPFLAGS_MANAGED_DICT)))
     {
-        return 1;
+        if (oldto->tp_weaklistoffset == newto->tp_weaklistoffset) {
+            return 1;
+        }
     }
 differs:
     PyErr_Format(PyExc_TypeError,

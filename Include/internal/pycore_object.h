@@ -263,7 +263,7 @@ extern int _Py_CheckSlotResult(
 
 // Test if a type supports weak references
 static inline int _PyType_SUPPORTS_WEAKREFS(PyTypeObject *type) {
-    return (type->tp_weaklistoffset > 0);
+    return (type->tp_weaklistoffset != 0);
 }
 
 extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
