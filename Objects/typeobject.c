@@ -99,9 +99,9 @@ static_builtin_index_clear(PyTypeObject *self)
 }
 
 static inline static_builtin_state *
-static_builtin_state_get(PyInterpreterState *interp, size_t index)
+static_builtin_state_get(PyInterpreterState *interp, PyTypeObject *self)
 {
-    return &(interp->types.builtins[index]);
+    return &(interp->types.builtins[static_builtin_index_get(self)]);
 }
 
 /* For static types we store some state in an array on each interpreter. */
@@ -113,23 +113,22 @@ _PyStaticType_GetState(PyTypeObject *self)
         return NULL;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return static_builtin_state_get(interp, static_builtin_index_get(self));
+    return static_builtin_state_get(interp, self);
 }
 
 static void
 static_builtin_state_init(PyTypeObject *self)
 {
+    /* Set the type's per-interpreter state. */
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+
     /* It should only be called once for each builtin type. */
     assert(!static_builtin_index_is_set(self));
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    size_t index = interp->types.num_builtins_initialized;
+    static_builtin_index_set(self, interp->types.num_builtins_initialized);
     interp->types.num_builtins_initialized++;
-    static_builtin_index_set(self, index);
 
-    /* Now we initialize the type's per-interpreter state. */
-    static_builtin_state *state = static_builtin_state_get(interp, index);
-    assert(state != NULL);
+    static_builtin_state *state = static_builtin_state_get(interp, self);
     state->type = self;
 }
 
@@ -140,9 +139,7 @@ static_builtin_state_clear(PyTypeObject *self)
        This basically undoes what static_builtin_state_init() did. */
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
-    size_t index = static_builtin_index_get(self);
-    static_builtin_state *state = static_builtin_state_get(interp, index);
-    assert(state != NULL);
+    static_builtin_state *state = static_builtin_state_get(interp, self);
     state->type = NULL;
     static_builtin_index_clear(self);
 
