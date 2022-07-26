@@ -3394,7 +3394,7 @@ AS_VAR_IF([have_uuid], [missing], [
       AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE], [1])
     ], [
       WITH_SAVE_ENV([
-        CPPFLAGS="$CFLAGS $LIBUUID_CFLAGS"
+        CPPFLAGS="$CPPFLAGS $LIBUUID_CFLAGS"
         LDFLAGS="$LDFLAGS $LIBUUID_LIBS"
         AC_CHECK_HEADERS([uuid/uuid.h], [
           PY_CHECK_LIB([uuid], [uuid_generate_time], [have_uuid=yes])
@@ -3625,7 +3625,7 @@ have_libffi=missing
 AS_VAR_IF([with_system_ffi], [yes], [
   PKG_CHECK_MODULES([LIBFFI], [libffi], [have_libffi=yes], [
     WITH_SAVE_ENV([
-      CPPFLAGS="$CFLAGS $LIBFFI_CFLAGS"
+      CPPFLAGS="$CPPFLAGS $LIBFFI_CFLAGS"
       LDFLAGS="$LDFLAGS $LIBFFI_LIBS"
       AC_CHECK_HEADER([ffi.h], [
         AC_CHECK_LIB([ffi], [ffi_call], [
@@ -3798,7 +3798,7 @@ PKG_CHECK_MODULES([LIBNSL], [libnsl], [have_nis=yes], [
 
 AS_VAR_IF([have_nis], [yes], [
   WITH_SAVE_ENV([
-    CPPFLAGS="$LIBNSL_CFLAGS $CFLAGS"
+    CPPFLAGS="$CPPFLAGS $LIBNSL_CFLAGS"
     AC_CHECK_HEADERS([rpc/rpc.h])
   ])
 ])
@@ -3831,7 +3831,7 @@ AC_DEFUN([PY_CHECK_SQLITE_FUNC], [
 WITH_SAVE_ENV([
 dnl bpo-45774/GH-29507: The CPP check in AC_CHECK_HEADER can fail on FreeBSD,
 dnl hence CPPFLAGS instead of CFLAGS.
-  CPPFLAGS="$LIBSQLITE3_CFLAGS $CFLAGS"
+  CPPFLAGS="$CPPFLAGS $LIBSQLITE3_CFLAGS"
   LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
 
   AC_CHECK_HEADER([sqlite3.h], [
@@ -3935,7 +3935,7 @@ AS_CASE([$ac_sys_system],
 )
 
 WITH_SAVE_ENV([
-  CPPFLAGS="$TCLTK_CFLAGS $CFLAGS"
+  CPPFLAGS="$CPPFLAGS $TCLTK_CFLAGS"
   LIBS="$TCLTK_LIBS $LDFLAGS"
 
   AC_LINK_IFELSE([
@@ -3977,7 +3977,7 @@ dnl NOTE: gdbm does not provide a pkgconf file.
 AC_ARG_VAR([GDBM_CFLAGS], [C compiler flags for gdbm])
 AC_ARG_VAR([GDBM_LIBS], [additional linker flags for gdbm])
 WITH_SAVE_ENV([
-  CPPFLAGS="$GDBM_CFLAGS $CFLAGS"
+  CPPFLAGS="$CPPFLAGS $GDBM_CFLAGS"
   LDFLAGS="$GDBM_LIBS $LDFLAGS"
   AC_CHECK_HEADERS([gdbm.h], [
     AC_CHECK_LIB([gdbm], [gdbm_open], [
@@ -4830,7 +4830,7 @@ PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
   AC_DEFINE([HAVE_ZLIB_COPY], [1])
 ], [
   WITH_SAVE_ENV([
-    CPPFLAGS="$CFLAGS $ZLIB_CFLAGS"
+    CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
     LDFLAGS="$LDFLAGS $ZLIB_LIBS"
     AC_CHECK_HEADERS([zlib.h], [
       PY_CHECK_LIB([z], [gzread], [have_zlib=yes], [have_zlib=no])
@@ -4854,7 +4854,7 @@ PY_CHECK_EMSCRIPTEN_PORT([BZIP2], [-sUSE_BZIP2])
 
 PKG_CHECK_MODULES([BZIP2], [bzip2], [have_bzip2=yes], [
   WITH_SAVE_ENV([
-    CPPFLAGS="$CFLAGS $BZIP2_CFLAGS"
+    CPPFLAGS="$CPPFLAGS $BZIP2_CFLAGS"
     LDFLAGS="$LDFLAGS $BZIP2_LIBS"
     AC_CHECK_HEADERS([bzlib.h], [
       AC_CHECK_LIB([bz2], [BZ2_bzCompress], [have_bzip2=yes], [have_bzip2=no])
@@ -4868,7 +4868,7 @@ PKG_CHECK_MODULES([BZIP2], [bzip2], [have_bzip2=yes], [
 
 PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
   WITH_SAVE_ENV([
-    CPPFLAGS="$CFLAGS $LIBLZMA_CFLAGS"
+    CPPFLAGS="$CPPFLAGS $LIBLZMA_CFLAGS"
     LDFLAGS="$LDFLAGS $LIBLZMA_LIBS"
     AC_CHECK_HEADERS([lzma.h], [
       AC_CHECK_LIB([lzma], [lzma_easy_encoder], [have_liblzma=yes], [have_liblzma=no])
@@ -4960,7 +4960,7 @@ PKG_CHECK_MODULES([LIBCRYPT], [libxcrypt >= 3.1.1], [
 ])
 
 WITH_SAVE_ENV([
-  CPPFLAGS="$LIBCRYPT_CFLAGS $CFLAGS"
+  CPPFLAGS="$CPPFLAGS $LIBCRYPT_CFLAGS"
   LIBS="$LIBCRYPT_LIBS $LIBS"
   AC_CACHE_CHECK([for crypt or crypt_r], [ac_cv_crypt_crypt], [
     AC_LINK_IFELSE([AC_LANG_PROGRAM([
@@ -5845,7 +5845,7 @@ AS_VAR_IF([with_readline], [readline], [
     READLINE_LIBS=$LIBREADLINE_LIBS
   ], [
     WITH_SAVE_ENV([
-      CPPFLAGS="$CFLAGS $LIBREADLINE_CFLAGS"
+      CPPFLAGS="$CPPFLAGS $LIBREADLINE_CFLAGS"
       LDFLAGS="$LDFLAGS $LIBREADLINE_LIBS"
       AC_CHECK_HEADERS([readline/readline.h], [
         AC_CHECK_LIB([readline], [readline], [
@@ -5866,7 +5866,7 @@ AS_VAR_IF([with_readline], [edit], [
     READLINE_LIBS=$LIBEDIT_LIBS
   ], [
     WITH_SAVE_ENV([
-      CPPFLAGS="$CFLAGS $LIBEDIT_CFLAGS"
+      CPPFLAGS="$CPPFLAGS $LIBEDIT_CFLAGS"
       LDFLAGS="$LDFLAGS $LIBEDIT_LIBS"
       AC_CHECK_HEADERS([editline/readline.h], [
         AC_CHECK_LIB([edit], [readline], [
@@ -5890,7 +5890,7 @@ AS_VAR_IF([with_readline], [no], [
   AC_MSG_RESULT([$with_readline (CFLAGS: $READLINE_CFLAGS, LIBS: $READLINE_LIBS)])
 
   WITH_SAVE_ENV([
-    CPPFLAGS="$READLINE_CFLAGS $CFLAGS"
+    CPPFLAGS="$CPPFLAGS $READLINE_CFLAGS"
     LIBS="$READLINE_LIBS $LIBS"
     LIBS_SAVE=$LIBS
 
