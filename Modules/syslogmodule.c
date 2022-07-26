@@ -139,7 +139,8 @@ syslog_openlog_impl(PyObject *module, PyObject *ident, long logopt,
 
     if (ident) {
         Py_INCREF(ident);
-    } else {
+    }
+    else {
         /* get sys.argv[0] or NULL if we can't for some reason  */
         ident = syslog_get_argv();
     }
