@@ -776,16 +776,20 @@ process and user.
 Flags to the :func:`unshare` function, if the implementation supports them.
 See the Linux manual for the exact effect and availability.
 
-.. data:: CLONE_FS
-          CLONE_FILES
-          CLONE_NEWNS
+.. data:: CLONE_FILES
           CLONE_NEWCGROUP
-          CLONE_NEWUTS
           CLONE_NEWIPC
-          CLONE_NEWUSER
-          CLONE_NEWPID
           CLONE_NEWNET
+          CLONE_NEWNS
+          CLONE_NEWPID
           CLONE_NEWTIME
+          CLONE_NEWUSER
+          CLONE_NEWUTS
+          CLONE_SIGHAND
+          CLONE_SYSVSEM
+          CLONE_THREAD
+          CLONE_VM
+          CLONE_FS
 
 .. _os-newstreams:
 

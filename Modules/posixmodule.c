@@ -15468,6 +15468,18 @@ all_ins(PyObject *m)
 #ifdef CLONE_NEWTIME
     if (PyModule_AddIntMacro(m, CLONE_NEWTIME)) return -1;
 #endif
+#ifdef CLONE_SYSVSEM
+    if (PyModule_AddIntMacro(m, CLONE_SYSVSEM)) return -1;
+#endif
+#ifdef CLONE_THREAD
+    if (PyModule_AddIntMacro(m, CLONE_THREAD)) return -1;
+#endif
+#ifdef CLONE_SIGHAND
+    if (PyModule_AddIntMacro(m, CLONE_SIGHAND)) return -1;
+#endif
+#ifdef CLONE_VM
+    if (PyModule_AddIntMacro(m, CLONE_VM)) return -1;
+#endif
 #endif
 
 #endif
