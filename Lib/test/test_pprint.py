@@ -395,6 +395,14 @@ class QueryTestCase(unittest.TestCase):
         self.assertEqual(pprint.pformat(1234567), '1234567')
         self.assertEqual(pprint.pformat(1234567, underscore_numbers=True), '1_234_567')
 
+        stream = io.StringIO()
+        pprint.pprint(1234567, stream=stream)
+        self.assertEqual(stream.getvalue(), '1234567\n')
+
+        stream = io.StringIO()
+        pprint.pprint(1234567, stream=stream, underscore_numbers=True)
+        self.assertEqual(stream.getvalue(), '1_234_567\n')
+
         class Temperature(int):
             def __new__(cls, celsius_degrees):
                 return super().__new__(Temperature, celsius_degrees)
@@ -402,6 +410,10 @@ class QueryTestCase(unittest.TestCase):
                 kelvin_degrees = self + 273.15
                 return f"{kelvin_degrees}°K"
         self.assertEqual(pprint.pformat(Temperature(1000)), '1273.15°K')
+
+        stream = io.StringIO()
+        pprint.pprint(Temperature(1000), stream=stream)
+        self.assertEqual(stream.getvalue(), '1273.15°K\n')
 
     def test_sorted_dict(self):
         # Starting in Python 2.5, pprint sorts dict displays by key regardless
@@ -423,9 +435,20 @@ class QueryTestCase(unittest.TestCase):
 
     def test_sort_dict(self):
         d = dict.fromkeys('cba')
-        self.assertEqual(pprint.pformat(d, sort_dicts=False), "{'c': None, 'b': None, 'a': None}")
+
+        expected_unsorted = "{'c': None, 'b': None, 'a': None}"
+        expected_unsorted_list = "[{'c': None, 'b': None, 'a': None}, {'c': None, 'b': None, 'a': None}]"
+        self.assertEqual(pprint.pformat(d, sort_dicts=False), expected_unsorted)
         self.assertEqual(pprint.pformat([d, d], sort_dicts=False),
-            "[{'c': None, 'b': None, 'a': None}, {'c': None, 'b': None, 'a': None}]")
+            expected_unsorted_list)
+
+        stream = io.StringIO()
+        pprint.pprint(d, stream=stream, sort_dicts=False)
+        self.assertEqual(stream.getvalue(), expected_unsorted + "\n")
+
+        stream = io.StringIO()
+        pprint.pprint([d, d], stream=stream, sort_dicts=False)
+        self.assertEqual(stream.getvalue(), expected_unsorted_list + "\n")
 
     def test_ordered_dict(self):
         d = collections.OrderedDict()
@@ -1017,6 +1040,11 @@ frozenset2({0,
  [], [0], [0, 1], [0, 1, 2], [0, 1, 2, 3],
  [0, 1, 2, 3, 4]]"""
         self.assertEqual(pprint.pformat(o, width=47, compact=True), expected)
+
+        stream = io.StringIO()
+        pprint.pprint(o, stream=stream, width=47, compact=True)
+        expected_pprint = expected + "\n"
+        self.assertEqual(stream.getvalue(), expected_pprint)
 
     def test_compact_width(self):
         levels = 20
