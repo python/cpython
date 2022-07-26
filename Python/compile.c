@@ -328,7 +328,7 @@ enum {
 typedef struct cfg_builder_ {
     /* The entryblock, at which control flow begins. All blocks of the
        CFG are reachable through the b_next links */
-    basicblock *cfg;
+    basicblock *cfg_entryblock;
     /* Pointer to the most recently allocated block.  By following
        b_list links, you can reach all allocated blocks. */
     basicblock *block_list;
@@ -1745,7 +1745,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     block = cfg_builder_new_block(g);
     if (block == NULL)
         return 0;
-    g->curblock = g->cfg = block;
+    g->curblock = g->cfg_entryblock = block;
 
     if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
         c->u->u_loc.lineno = 0;
@@ -7423,7 +7423,7 @@ mark_cold(basicblock *entryblock) {
 
 static int
 push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
-    basicblock *entryblock = g->cfg;
+    basicblock *entryblock = g->cfg_entryblock;
     if (entryblock->b_next == NULL) {
         /* single basicblock, no need to reorder */
         return 0;
@@ -8571,7 +8571,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     cfg_builder *g = CFG_BUILDER(c);
-    basicblock *entryblock = g->cfg;
+    basicblock *entryblock = g->cfg_entryblock;
     assert(entryblock != NULL);
 
     /* Set firstlineno if it wasn't explicitly set. */
@@ -9548,7 +9548,7 @@ duplicate_exits_without_lineno(cfg_builder *g)
 {
     /* Copy all exit blocks without line number that are targets of a jump.
      */
-    basicblock *entryblock = g->cfg;
+    basicblock *entryblock = g->cfg_entryblock;
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         if (b->b_iused > 0 && is_jump(&b->b_instr[b->b_iused-1])) {
             basicblock *target = b->b_instr[b->b_iused-1].i_target;
