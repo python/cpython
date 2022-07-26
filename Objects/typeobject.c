@@ -6774,7 +6774,11 @@ _PyStaticType_InitBuiltin(PyTypeObject *self)
 
     static_builtin_state_init(self);
 
-    return PyType_Ready(self);
+    int res = PyType_Ready(self);
+    if (res < 0) {
+        static_builtin_state_clear(self);
+    }
+    return res;
 }
 
 
