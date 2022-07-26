@@ -196,7 +196,8 @@ syslog_syslog(PyObject * self, PyObject * args)
                 return NULL;
             }
             Py_DECREF(openlog_ret);
-        } else {
+        }
+        else {
             return NULL;
         }
     }
