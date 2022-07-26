@@ -7558,7 +7558,7 @@ bytes_make_room(PyObject **bytes, Py_ssize_t unitsize,
             PyErr_SetString(PyExc_OverflowError, overflow_msg);
             return 0;
         }
-        if (_PyBytes_Resize(bytes, PyBytes_GET_SIZE(*bytes) * 2) < 0) {
+        if (_PyBytes_Resize(bytes, b_len * 2) < 0) {
             return 0;
         }
         assert(PyBytes_GET_SIZE(*bytes) / unitsize <= INT_MAX);
