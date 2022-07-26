@@ -18,6 +18,11 @@ class Test(unittest.TestCase):
         syslog.syslog('test message from python test_syslog')
         syslog.syslog(syslog.LOG_ERR, 'test error from python test_syslog')
 
+    def test_syslog_implicit_open(self):
+        syslog.closelog() # Make sure log is closed
+        syslog.syslog('test message from python test_syslog')
+        syslog.syslog(syslog.LOG_ERR, 'test error from python test_syslog')
+
     def test_closelog(self):
         syslog.openlog('python')
         syslog.closelog()
