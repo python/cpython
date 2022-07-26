@@ -193,7 +193,7 @@ class AuditTest(unittest.TestCase):
             import syslog
         except ImportError:
             return
-            
+
         returncode, events, stderr = self.run_python("test_syslog")
         if returncode:
             self.fail(stderr)
@@ -202,10 +202,10 @@ class AuditTest(unittest.TestCase):
             print(*events, sep='\n')
 
         self.assertSequenceEqual(
-            [('syslog.openlog', ' ', f'python 0 {syslog.LOG_USER}'), 
-            ('syslog.syslog', ' ', f'{syslog.LOG_INFO} test'), 
-            ('syslog.setlogmask', ' ', f'{syslog.LOG_DEBUG}'), 
-            ('syslog.closelog', '', '')], 
+            [('syslog.openlog', ' ', f'python 0 {syslog.LOG_USER}'),
+            ('syslog.syslog', ' ', f'{syslog.LOG_INFO} test'),
+            ('syslog.setlogmask', ' ', f'{syslog.LOG_DEBUG}'),
+            ('syslog.closelog', '', '')],
             events
         )
 
