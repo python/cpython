@@ -572,7 +572,7 @@ process and user.
 .. function:: setns(fd, nstype=0)
 
    Reassociate thread with a namespace, see the :manpage:`setns(2)` man page for more details.
-   
+
    If *fd* refers to a ``/proc/[pid]/ns/`` link, ``setns()`` reassociates the
    calling thread with the namespace associated with that link, subject to any
    constraints imposed by the *nstype* argument (or any if ``0``).
