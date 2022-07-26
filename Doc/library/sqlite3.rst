@@ -167,7 +167,7 @@ Module functions and constants
 .. data:: sqlite_version_info
 
    Version number of the run-time SQLite library as a :class:`tuple` of
-   :class`integers <int>`.
+   :class:`integers <int>`.
 
 
 .. data:: threadsafety
