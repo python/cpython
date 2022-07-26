@@ -71,7 +71,7 @@ popd
 Serve `python.html` with a local webserver and open the file in a browser.
 Python comes with a minimal web server script that sets necessary HTTP
 headers like COOP, COEP, and mimetypes. Run the script outside the container
-and from the root of the CPython checkout
+and from the root of the CPython checkout.
 
 ```shell
 ./Tools/wasm/wasm_webserver.py
