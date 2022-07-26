@@ -278,6 +278,9 @@
 /* Define to 1 if you have the `dlopen' function. */
 #undef HAVE_DLOPEN
 
+/* Define to 1 if you have the `dup' function. */
+#undef HAVE_DUP
+
 /* Define to 1 if you have the `dup2' function. */
 #undef HAVE_DUP2
 

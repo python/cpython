@@ -2685,6 +2685,42 @@ output.append(4)
         )
         output.append(15)
 
+    @jump_test(2, 3, [1, 3])
+    def test_jump_extended_args_unpack_ex_simple(output):
+        output.append(1)
+        _, *_, _ = output.append(2) or "Spam"
+        output.append(3)
+
+    @jump_test(3, 4, [1, 4, 4, 5])
+    def test_jump_extended_args_unpack_ex_tricky(output):
+        output.append(1)
+        (
+            _, *_, _
+        ) = output.append(4) or "Spam"
+        output.append(5)
+
+    def test_jump_extended_args_for_iter(self):
+        # In addition to failing when extended arg handling is broken, this can
+        # also hang for a *very* long time:
+        source = [
+            "def f(output):",
+            "    output.append(1)",
+            "    for _ in spam:",
+            *(f"        output.append({i})" for i in range(3, 100_000)),
+            f"    output.append(100_000)",
+        ]
+        namespace = {}
+        exec("\n".join(source), namespace)
+        f = namespace["f"]
+        self.run_test(f,  2, 100_000, [1, 100_000])
+
+    @jump_test(2, 3, [1, 3])
+    def test_jump_or_pop(output):
+        output.append(1)
+        _ = output.append(2) and "Spam"
+        output.append(3)
+
+
 class TestExtendedArgs(unittest.TestCase):
 
     def setUp(self):

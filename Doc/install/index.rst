@@ -23,7 +23,11 @@
       The up to date module installation documentation. For regular Python
       usage, you almost certainly want that document rather than this one.
 
-.. include:: ../distutils/_setuptools_disclaimer.rst
+.. note::
+
+   This document is being retained solely until the ``setuptools`` documentation
+   at https://setuptools.readthedocs.io/en/latest/setuptools.html
+   independently covers all of the relevant information currently included here.
 
 .. note::
 
