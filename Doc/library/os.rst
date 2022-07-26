@@ -576,7 +576,7 @@ process and user.
 
    If *fd* refers to a ``/proc/[pid]/ns/`` link, ``setns()`` reassociates the
    calling thread with the namespace associated with that link, subject to any
-   constraints imposed by the *nstype* argument (a *nstype* of ``0`` means no 
+   constraints imposed by the *nstype* argument (a *nstype* of ``0`` means no
    constraints).
    Since Linux 5.8, *fd* may refer to a PID file descriptor obtained from
    :func:`~os.pidfd_open`. In this case ``setns()`` reassociates the calling thread
