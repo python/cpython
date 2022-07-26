@@ -189,10 +189,7 @@ class AuditTest(unittest.TestCase):
         self.assertEqual(actual, expected)
 
     def test_syslog(self):
-        try:
-            import syslog
-        except ImportError:
-            return
+        syslog = import_helper.import_module("syslog") 
 
         returncode, events, stderr = self.run_python("test_syslog")
         if returncode:
