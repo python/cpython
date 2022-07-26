@@ -2177,7 +2177,6 @@ class NamespacesTests(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'unshare'), 'needs os.unshare()')
     @unittest.skipUnless(hasattr(os, 'setns'), 'needs os.setns()')
-    @unittest.skipUnless(hasattr(os, 'readlink'), 'needs os.readlink()')
     @unittest.skipUnless(os.path.exists('/proc/self/ns/uts'), 'need /proc/self/ns/uts')
     @support.requires_linux_version(3, 0, 0)
     def test_unshare_setns(self):
