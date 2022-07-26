@@ -191,8 +191,11 @@ syslog_syslog(PyObject * self, PyObject * args)
          */
         if ((openargs = PyTuple_New(0))) {
             PyObject *openlog_ret = syslog_openlog(self, openargs, NULL);
-            Py_XDECREF(openlog_ret);
             Py_DECREF(openargs);
+            Py_XDECREF(openlog_ret);
+            if (openlog_ret == NULL) {
+                return NULL;
+            }
         }
     }
 
