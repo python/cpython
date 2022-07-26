@@ -135,7 +135,6 @@ static_builtin_state_clear(PyTypeObject *self)
     assert(state != NULL);
     state->type = NULL;
     static_builtin_index_clear(self);
-    /* We leave _Py_TPFLAGS_STATIC_BUILTIN set on tp_flags. */
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(interp->types.num_builtins_initialized > 0);
@@ -4352,6 +4351,7 @@ _PyStaticType_Dealloc(PyTypeObject *type)
 
     if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         static_builtin_state_clear(type);
+        /* We leave _Py_TPFLAGS_STATIC_BUILTIN set on tp_flags. */
     }
 }
 
