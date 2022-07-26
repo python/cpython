@@ -571,7 +571,8 @@ process and user.
 
 .. function:: setns(fd, nstype=0)
 
-   Reassociate thread with a namespace.
+   Reassociate thread with a namespace, see the :manpage:`setns(2)` man page for more details.
+   
    If *fd* refers to a ``/proc/[pid]/ns/`` link, ``setns()`` reassociates the
    calling thread with the namespace associated with that link, subject to any
    constraints imposed by the *nstype* argument (or any if ``0``).
@@ -579,8 +580,8 @@ process and user.
    :manpage:`pidfd_open(2)`. In this case ``setns()`` reassociates the calling thread
    into one or more of the same namespaces as the thread referred to by *fd*
    subject to any constraints imposed by the *nstype*, which is
-   a bit mask specified by combining one or more of the ``CLONE_NEW*`` constants
-   using ``|`` (bitwise or).
+   a bit mask specified by combining one or more of the ``CLONE_NEW*`` constants,
+   e.g. ``setns(fd, os.CLONE_NEWUTS | os.CLONE_NEWPID)``.
    The callers memberships in unspecified namespaces are left unchanged.
    *fd* can be any object with a :meth:`fileno` method, or a raw file descriptor.
 
@@ -772,7 +773,7 @@ process and user.
 
    .. seealso::
 
-      The :func:`.setns` function.
+      The :func:`~os.setns` function.
 
 Flags to the :func:`unshare` function, if the implementation supports them.
 See the Linux manual for the exact effect and availability.
