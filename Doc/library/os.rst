@@ -571,21 +571,23 @@ process and user.
 
 .. function:: setns(fd, nstype=0)
 
-   Reassociate thread with a namespace, see the :manpage:`setns(2)` man page for more details.
+   Reassociate the current with a namespace.
+   See the :manpage:`setns(2)` man page for more details.
 
    If *fd* refers to a ``/proc/[pid]/ns/`` link, ``setns()`` reassociates the
    calling thread with the namespace associated with that link, subject to any
-   constraints imposed by the *nstype* argument (or any if ``0``).
+   constraints imposed by the *nstype* argument (a *nstype* of ``0`` means no 
+   constraints).
    Since Linux 5.8, *fd* may refer to a PID file descriptor obtained from
    :func:`~os.pidfd_open`. In this case ``setns()`` reassociates the calling thread
    into one or more of the same namespaces as the thread referred to by *fd*
-   subject to any constraints imposed by the *nstype*, which is
-   a bit mask specified by combining one or more of the ``CLONE_NEW*`` constants,
-   e.g. ``setns(fd, os.CLONE_NEWUTS | os.CLONE_NEWPID)``.
-   The callers memberships in unspecified namespaces are left unchanged.
+   subject to any constraints imposed by *nstype*, which is a bit mask specified
+   by combining one or more of the ``CLONE_NEW*`` constants,
+   e.g., as ``setns(fd, os.CLONE_NEWUTS | os.CLONE_NEWPID)``.
+   The caller's memberships in unspecified namespaces are left unchanged.
    *fd* can be any object with a :meth:`fileno` method, or a raw file descriptor.
 
-   This example reassociates the thread with the ``init`` process' network namespace::
+   This example reassociates the thread with the ``init`` process's network namespace::
 
       fd = os.open("/proc/1/ns/net", os.O_RDONLY)
       os.setns(fd, os.CLONE_NEWNET)
@@ -594,6 +596,10 @@ process and user.
    .. availability:: Linux 3.0 or newer with glibc 2.14 or newer.
 
    .. versionadded:: 3.12
+
+   .. seealso::
+
+      The :func:`~os.unshare` function.
 
 .. function:: setpgrp()
 
@@ -760,12 +766,15 @@ process and user.
 
 .. function:: unshare(flags)
 
-   Disassociate parts of the process execution context, see the :manpage:`unshare(2)`
+   Disassociate parts of the process execution context, and move them into a
+   newly created namespace.
+   See the :manpage:`unshare(2)`
    man page for more details.
    The *flags* argument is a bit mask combining zero or more of the ``CLONE_*``
    constants using ``|`` (bitwise or), that specifies which parts of the execution
-   context should be unshared.
-   If *flags* is specified as zero, no changes are made to the calling process'
+   context should be unshared from their existing associations and moved to a
+   new namespace..
+   If *flags* is specified as zero, no changes are made to the calling process's
    execution context.
 
    .. availability:: Linux 2.6.16 or newer.
