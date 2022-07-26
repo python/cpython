@@ -80,14 +80,16 @@ static inline size_t
 static_builtin_index_get(PyTypeObject *self)
 {
     assert(self->tp_static_builtin_index > 0);
-    return self->tp_static_builtin_index;
+    /* We store a 1-based index so 0 can mean "not initialized". */
+    return self->tp_static_builtin_index - 1;
 }
 
 static inline void
 static_builtin_index_set(PyTypeObject *self, size_t index)
 {
     assert(index < _Py_MAX_STATIC_BUILTIN_TYPES);
-    self->tp_static_builtin_index = index;
+    /* We store a 1-based index so 0 can mean "not initialized". */
+    self->tp_static_builtin_index = index + 1;
 }
 
 static inline void
@@ -104,7 +106,7 @@ _PyStaticType_GetState(PyTypeObject *self)
         return NULL;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return &(interp->types.builtins[static_builtin_index_get(self) - 1]);
+    return &(interp->types.builtins[static_builtin_index_get(self)]);
 }
 
 // Also see _PyStaticType_InitBuiltin() and _PyStaticType_Dealloc().
@@ -6754,11 +6756,8 @@ _PyStaticType_InitBuiltin(PyTypeObject *self)
 
     /* For static types we store some state in an array on each interpreter. */
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    interp->types.num_builtins_initialized++;
-    assert(interp->types.num_builtins_initialized < _Py_MAX_STATIC_BUILTIN_TYPES);
-
-    /* We use 1-based indexing so 0 can mean "not initialized". */
     static_builtin_index_set(self, interp->types.num_builtins_initialized);
+    interp->types.num_builtins_initialized++;
 
     /* Now we initialize the type's per-interpreter state. */
     static_builtin_type_state *state = _PyStaticType_GetState(self);
