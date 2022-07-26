@@ -121,7 +121,7 @@ class Runner:
             return self._loop.run_until_complete(task)
         except exceptions.CancelledError:
             uncancel = getattr(task, "uncancel", None)
-            if self._interrupt_count > 0 and uncancel and uncancel() == 0:
+            if self._interrupt_count > 0 and uncancel is not None and uncancel() == 0:
                 raise KeyboardInterrupt()
             else:
                 raise  # CancelledError
