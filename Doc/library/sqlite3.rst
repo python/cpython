@@ -749,7 +749,7 @@ Connection Objects
    .. attribute:: row_factory
 
       A callable that accepts two arguments,
-      a :class`Cursor` object and the raw row results as a :class:`tuple`,
+      a :class:`Cursor` object and the raw row results as a :class:`tuple`,
       and return any object that fit the application programmers need.
 
       Example:
