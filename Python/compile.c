@@ -361,8 +361,6 @@ struct compiler_unit {
     Py_ssize_t u_argcount;        /* number of arguments for block */
     Py_ssize_t u_posonlyargcount;        /* number of positional only arguments for block */
     Py_ssize_t u_kwonlyargcount; /* number of keyword only arguments for block */
-    /* Pointer to the most recently allocated block.  By following b_list
-       members, you can reach all early allocated blocks. */
 
     cfg_builder u_cfg_builder;  /* The control flow graph */
 
