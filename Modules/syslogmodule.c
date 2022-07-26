@@ -201,7 +201,10 @@ syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
     /*  if log is not opened, open it now  */
     if (!S_log_open) {
         PyObject *openlog_ret = syslog_openlog_impl(module, NULL, 0, LOG_USER);
-        Py_XDECREF(openlog_ret);
+        if (openlog_ret == NULL) {
+            return NULL;
+        }
+        Py_DECREF(openlog_ret);
     }
 
     /* Incref ident, because it can be decrefed if syslog.openlog() is
