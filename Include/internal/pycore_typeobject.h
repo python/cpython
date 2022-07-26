@@ -70,6 +70,7 @@ extern PyStatus _PyTypes_InitSlotDefs(void);
 
 extern int _PyStaticType_InitBuiltin(PyTypeObject *type);
 extern static_builtin_state * _PyStaticType_GetState(PyTypeObject *);
+extern void _PyStaticType_ClearWeakRefs(PyTypeObject *type);
 extern void _PyStaticType_Dealloc(PyTypeObject *type);
 
 

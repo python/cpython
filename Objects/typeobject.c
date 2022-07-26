@@ -140,7 +140,7 @@ static_builtin_state_clear(PyTypeObject *self)
 
     static_builtin_state *state = static_builtin_state_get(interp, self);
     state->type = NULL;
-    /* state->tp_weaklist should already have been cleared out. */
+    assert(state->tp_weaklist == NULL);  // It was already cleared out.
     static_builtin_index_clear(self);
 
     assert(interp->types.num_builtins_initialized > 0);
@@ -4358,6 +4358,7 @@ _PyStaticType_Dealloc(PyTypeObject *type)
     type->tp_flags &= ~Py_TPFLAGS_READY;
 
     if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        _PyStaticType_ClearWeakRefs(type);
         static_builtin_state_clear(type);
         /* We leave _Py_TPFLAGS_STATIC_BUILTIN set on tp_flags. */
     }
