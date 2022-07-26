@@ -204,7 +204,6 @@ syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
     Py_BEGIN_ALLOW_THREADS;
     syslog(priority, "%s", message);
     Py_END_ALLOW_THREADS;
-
     Py_RETURN_NONE;
 }
 
