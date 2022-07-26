@@ -108,12 +108,7 @@ static_builtin_state_get(PyInterpreterState *interp, PyTypeObject *self)
 static_builtin_state *
 _PyStaticType_GetState(PyTypeObject *self)
 {
-    if (!(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN)) {
-        return NULL;
-    }
-    if (!static_builtin_index_is_set(self)) {
-        return NULL;
-    }
+    assert(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
     PyInterpreterState *interp = _PyInterpreterState_GET();
     return static_builtin_state_get(interp, self);
 }
