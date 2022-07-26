@@ -17,7 +17,8 @@ the IDE and the Package Manager that are worth pointing out.
 Getting and Installing MacPython
 ================================
 
-macOS since version 10.8 comes with Python 2.7 pre-installed by Apple.  If you wish, you
+macOS since version 10.8 comes with Python 2.7 pre-installed by Apple.
+And Python 2.7 has been removed since version 12.3, but Python 3 remains. If you wish, you
 are invited to install the most recent version of Python 3 from the Python
 website (https://www.python.org).  A current "universal binary" build of Python,
 which runs natively on the Mac's new Intel and legacy PPC CPU's, is available
