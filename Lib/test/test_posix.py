@@ -2175,29 +2175,53 @@ class TestPosixWeaklinking(unittest.TestCase):
 class NamespacesTests(unittest.TestCase):
     """Tests for os.unshare() and os.setns()."""
 
+    @support.requires_subprocess()
+    def subprocess(self, code):
+        import subprocess
+        with subprocess.Popen((sys.executable, '-c', code),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            encoding="utf-8"
+        ) as p:
+            p.wait()
+            return (
+                p.returncode,
+                tuple(p.stdout),
+                tuple(p.stderr),
+            )
+
     @unittest.skipUnless(hasattr(os, 'unshare'), 'needs os.unshare()')
     @unittest.skipUnless(hasattr(os, 'setns'), 'needs os.setns()')
     @unittest.skipUnless(os.path.exists('/proc/self/ns/uts'), 'need /proc/self/ns/uts')
     @support.requires_linux_version(3, 0, 0)
     def test_unshare_setns(self):
-        original = os.readlink('/proc/self/ns/uts')
-        original_fd = os.open('/proc/self/ns/uts', os.O_RDONLY)
-        self.addCleanup(os.close, original_fd)
+        rc, out, err = self.subprocess("""
+import os
+import sys
+fd = os.open('/proc/self/ns/uts', os.O_RDONLY)
+try:
+    print(os.readlink('/proc/self/ns/uts'))
+    os.unshare(os.CLONE_NEWUTS)
+    print(os.readlink('/proc/self/ns/uts'))
+    os.setns(fd, os.CLONE_NEWUTS)
+    print(os.readlink('/proc/self/ns/uts'))
+except OSError as e:
+    sys.stderr.write(str(e.errno))
+    sys.exit(2)
+finally:
+    os.close(fd)
+            """)
 
-        try:
-            os.unshare(os.CLONE_NEWUTS)
-        except OSError as e:
-            self.assertEqual(e.errno, errno.EPERM)
-            self.skipTest("unprivileged users cannot call unshare.")
+        if rc == 2:
+            e = int(err[0])
+            self.assertIn(e, (errno.EPERM, errno.EINVAL, errno.ENOSPC, errno.ENOSYS))
+            self.skipTest(f"could not call os.unshare / os.setns [Errno {e}].")
 
-        current = os.readlink('/proc/self/ns/uts')
-        self.assertNotEqual(original, current)
-
-        self.assertRaises(OSError, os.setns, original_fd, os.CLONE_NEWNET)
-        os.setns(original_fd, os.CLONE_NEWUTS)
-
-        current = os.readlink('/proc/self/ns/uts')
-        self.assertEqual(original, current)
+        self.assertEqual(rc, 0)
+        self.assertEqual(err, ())
+        original, new, back = out
+        self.assertNotEqual(original, new)
+        self.assertEqual(original, back)
 
 
 def tearDownModule():
