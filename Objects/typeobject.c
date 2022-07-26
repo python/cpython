@@ -70,9 +70,16 @@ static inline PyTypeObject * subclass_from_ref(PyObject *ref);
 
 /* helpers for for static builtin types */
 
+static inline int
+static_builtin_index_is_set(PyTypeObject *self)
+{
+    return self->tp_static_builtin_index > 0;
+}
+
 static inline size_t
 static_builtin_index_get(PyTypeObject *self)
 {
+    assert(self->tp_static_builtin_index > 0);
     return self->tp_static_builtin_index;
 }
 
@@ -83,10 +90,17 @@ static_builtin_index_set(PyTypeObject *self, size_t index)
     self->tp_static_builtin_index = index;
 }
 
+static inline void
+static_builtin_index_clear(PyTypeObject *self)
+{
+    self->tp_static_builtin_index = 0;
+}
+
 static_builtin_type_state *
 _PyStaticType_GetState(PyTypeObject *self)
 {
-    if (static_builtin_index_get(self) == 0) {
+    assert(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
+    if (!static_builtin_index_is_set(self)) {
         return NULL;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -4305,11 +4319,10 @@ _PyStaticType_Dealloc(PyTypeObject *type)
     if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         /* Reset the type's per-interpreter state.
            This basically undoes what _PyStaticType_InitBuiltin() did. */
-        assert(static_builtin_index_get(type) > 0);
         static_builtin_type_state *state = _PyStaticType_GetState(type);
         assert(state != NULL);
         state->type = NULL;
-        static_builtin_index_set(type, 0);
+        static_builtin_index_clear(type);
 
         PyInterpreterState *interp = _PyInterpreterState_GET();
         assert(interp->types.num_builtins_initialized > 0);
@@ -6737,7 +6750,7 @@ _PyStaticType_InitBuiltin(PyTypeObject *self)
     self->tp_flags = self->tp_flags | _Py_TPFLAGS_STATIC_BUILTIN;
 
     /* It should only be called once for each builtin type. */
-    assert(static_builtin_index_get(self) == 0);
+    assert(!static_builtin_index_is_set(self));
 
     /* For static types we store some state in an array on each interpreter. */
     PyInterpreterState *interp = _PyInterpreterState_GET();
