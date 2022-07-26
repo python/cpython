@@ -591,7 +591,7 @@ process and user.
       os.setns(fd, os.CLONE_NEWNET)
       os.close(fd)
 
-   .. availability:: Linux 3.0 or newer.
+   .. availability:: Linux 3.0 or newer with glibc 2.14 or newer.
 
    .. versionadded:: 3.12
 
