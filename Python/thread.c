@@ -155,7 +155,8 @@ PyThread_GetInfo(void)
 #endif
 
     if (ThreadInfoType.tp_name == 0) {
-        if (PyStructSequence_InitType2(&ThreadInfoType, &threadinfo_desc) < 0)
+        if (_PyStructSequence_InitBuiltin(&ThreadInfoType,
+                                          &threadinfo_desc) < 0)
             return NULL;
     }
 

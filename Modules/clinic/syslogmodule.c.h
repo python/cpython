@@ -13,7 +13,7 @@ PyDoc_STRVAR(syslog_openlog__doc__,
     {"openlog", _PyCFunction_CAST(syslog_openlog), METH_FASTCALL|METH_KEYWORDS, syslog_openlog__doc__},
 
 static PyObject *
-syslog_openlog_impl(PyObject *module, PyObject *new_S_ident_o, long logopt,
+syslog_openlog_impl(PyObject *module, PyObject *ident, long logopt,
                     long facility);
 
 static PyObject *
@@ -24,7 +24,7 @@ syslog_openlog(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     static _PyArg_Parser _parser = {NULL, _keywords, "openlog", 0};
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *new_S_ident_o = NULL;
+    PyObject *ident = NULL;
     long logopt = 0;
     long facility = LOG_USER;
 
@@ -43,7 +43,7 @@ syslog_openlog(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         if (PyUnicode_READY(args[0]) == -1) {
             goto exit;
         }
-        new_S_ident_o = args[0];
+        ident = args[0];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -62,7 +62,7 @@ syslog_openlog(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         goto exit;
     }
 skip_optional_pos:
-    return_value = syslog_openlog_impl(module, new_S_ident_o, logopt, facility);
+    return_value = syslog_openlog_impl(module, ident, logopt, facility);
 
 exit:
     return return_value;
@@ -225,4 +225,4 @@ syslog_LOG_UPTO(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5aac7edfd632f512 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ac4ea57479c292c9 input=a9049054013a1b77]*/

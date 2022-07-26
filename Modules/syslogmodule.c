@@ -94,6 +94,10 @@ syslog_get_argv(void)
     }
 
     scriptobj = PyList_GetItem(argv, 0);
+    if (scriptobj == NULL) {
+        PyErr_Clear();
+        return NULL;
+    }
     if (!PyUnicode_Check(scriptobj)) {
         return(NULL);
     }
@@ -103,23 +107,23 @@ syslog_get_argv(void)
     }
 
     slash = PyUnicode_FindChar(scriptobj, SEP, 0, scriptlen, -1);
-    if (slash == -2)
+    if (slash == -2) {
+        PyErr_Clear();
         return NULL;
+    }
     if (slash != -1) {
         return PyUnicode_Substring(scriptobj, slash + 1, scriptlen);
     } else {
         Py_INCREF(scriptobj);
         return(scriptobj);
     }
-
-    return(NULL);
 }
 
 
 /*[clinic input]
 syslog.openlog
 
-    ident as new_S_ident_o: unicode = NULL
+    ident: unicode = NULL
     logoption as logopt: long = 0
     facility: long(c_default="LOG_USER") = LOG_USER
 
@@ -127,40 +131,38 @@ Set logging options of subsequent syslog() calls.
 [clinic start generated code]*/
 
 static PyObject *
-syslog_openlog_impl(PyObject *module, PyObject *new_S_ident_o, long logopt,
+syslog_openlog_impl(PyObject *module, PyObject *ident, long logopt,
                     long facility)
-/*[clinic end generated code: output=f1539844405f613e input=c36e977098346f67]*/
+/*[clinic end generated code: output=5476c12829b6eb75 input=8a987a96a586eee7]*/
 {
-    const char *ident = NULL;
+    const char *ident_str = NULL;
 
-    if (new_S_ident_o) {
-        Py_INCREF(new_S_ident_o);
+    if (ident) {
+        Py_INCREF(ident);
+    } else {
+        /* get sys.argv[0] or NULL if we can't for some reason  */
+        ident = syslog_get_argv();
     }
 
-    /*  get sys.argv[0] or NULL if we can't for some reason  */
-    if (!new_S_ident_o) {
-        new_S_ident_o = syslog_get_argv();
-    }
-
-    Py_XDECREF(S_ident_o);
-    S_ident_o = new_S_ident_o;
-
-    /* At this point, S_ident_o should be INCREF()ed.  openlog(3) does not
-     * make a copy, and syslog(3) later uses it.  We can't garbagecollect it
+    /* At this point, ident should be INCREF()ed.  openlog(3) does not
+     * make a copy, and syslog(3) later uses it.  We can't garbagecollect it.
      * If NULL, just let openlog figure it out (probably using C argv[0]).
      */
-    if (S_ident_o) {
-        ident = PyUnicode_AsUTF8(S_ident_o);
-        if (ident == NULL)
+    if (ident) {
+        ident_str = PyUnicode_AsUTF8(ident);
+        if (ident_str == NULL) {
+            Py_DECREF(ident);
             return NULL;
+        }
     }
-
-    if (PySys_Audit("syslog.openlog", "sll", ident, logopt, facility) < 0) {
+    if (PySys_Audit("syslog.openlog", "Oll", ident ? ident : Py_None, logopt, facility) < 0) {
+        Py_DECREF(ident);
         return NULL;
     }
 
-    openlog(ident, logopt, facility);
+    openlog(ident_str, logopt, facility);
     S_log_open = 1;
+    Py_XSETREF(S_ident_o, ident);
 
     Py_RETURN_NONE;
 }
@@ -202,9 +204,15 @@ syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
         Py_XDECREF(openlog_ret);
     }
 
+    /* Incref ident, because it can be decrefed if syslog.openlog() is
+     * called when the GIL is released.
+     */
+    PyObject *ident = S_ident_o;
+    Py_XINCREF(ident);
     Py_BEGIN_ALLOW_THREADS;
     syslog(priority, "%s", message);
     Py_END_ALLOW_THREADS;
+    Py_XDECREF(ident);
     Py_RETURN_NONE;
 }
 
