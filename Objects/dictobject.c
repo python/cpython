@@ -5394,7 +5394,7 @@ _PyObject_InitializeDict(PyObject *obj)
     if (dict == NULL) {
         return -1;
     }
-    PyObject **dictptr = _PyObject_DictPointer(obj);
+    PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
     *dictptr = dict;
     return 0;
 }
@@ -5422,7 +5422,6 @@ make_dict_from_instance_attributes(PyDictKeysObject *keys, PyDictValues *values)
 PyObject *
 _PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values)
 {
-    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
     PyDictKeysObject *keys = CACHED_KEYS(Py_TYPE(obj));
     OBJECT_STAT_INC(dict_materialized_on_request);
     return make_dict_from_instance_attributes(keys, values);
@@ -5458,7 +5457,7 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
         if (dict == NULL) {
             return -1;
         }
-        _PyDictOrValues_SetDict(_PyObject_DictOrValuesPointer(obj), dict);
+        _PyObject_DictOrValuesPointer(obj)->dict = dict;
         if (value == NULL) {
             return PyDict_DelItem(dict, name);
         }
@@ -5486,6 +5485,37 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
     }
     return 0;
 }
+
+/* Sanity check for managed dicts */
+#if 0
+#define CHECK(val) assert(val); if (!(val)) { return 0; }
+
+int
+_PyObject_ManagedDictValidityCheck(PyObject *obj)
+{
+    PyTypeObject *tp = Py_TYPE(obj);
+    CHECK(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    PyDictOrValues *dorv_ptr = _PyObject_DictOrValuesPointer(obj);
+    if (_PyDictOrValues_IsValues(*dorv_ptr)) {
+        PyDictValues *values = _PyDictOrValues_GetValues(*dorv_ptr);
+        int size = ((uint8_t *)values)[-2];
+        int count = 0;
+        PyDictKeysObject *keys = CACHED_KEYS(tp);
+        for (Py_ssize_t i = 0; i < keys->dk_nentries; i++) {
+            if (values->values[i] != NULL) {
+                count++;
+            }
+        }
+        CHECK(size == count);
+    }
+    else {
+        if (dorv_ptr->dict != NULL) {
+            CHECK(PyDict_Check(dorv_ptr->dict));
+        }
+    }
+    return 1;
+}
+#endif
 
 PyObject *
 _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
@@ -5525,23 +5555,13 @@ _PyObject_IsInstanceDictEmpty(PyObject *obj)
         dict = _PyDictOrValues_GetDict(dorv);
     }
     else {
-        PyObject **dictptr = _PyObject_DictPointer(obj);
+        PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
         dict = *dictptr;
     }
     if (dict == NULL) {
         return 1;
     }
     return ((PyDictObject *)dict)->ma_used == 0;
-}
-
-int
-_PyDictValues_Visit(PyDictValues *values, visitproc visit, void *arg)
-{
-    int size = ((uint8_t *)values)[-2];
-    for (int i = 0; i < size; i++) {
-        Py_VISIT(values->values[i]);
-    }
-    return 0;
 }
 
 void
@@ -5562,17 +5582,20 @@ _PyObject_FreeInstanceAttributes(PyObject *self)
 }
 
 int
-_PyObject_VisitManagedDict(PyObject *self, visitproc visit, void *arg)
+_PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg)
 {
-    PyTypeObject *tp = Py_TYPE(self);
+    PyTypeObject *tp = Py_TYPE(obj);
     if((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
         return 0;
     }
     assert(tp->tp_dictoffset);
-    PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(self);
+    PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(obj);
     if (_PyDictOrValues_IsValues(dorv)) {
         PyDictValues *values = _PyDictOrValues_GetValues(dorv);
-        return _PyDictValues_Visit(values, visit, arg);
+        PyDictKeysObject *keys = CACHED_KEYS(tp);
+        for (Py_ssize_t i = 0; i < keys->dk_nentries; i++) {
+            Py_VISIT(values->values[i]);
+        }
     }
     else {
         PyObject *dict = _PyDictOrValues_GetDict(dorv);
@@ -5582,25 +5605,26 @@ _PyObject_VisitManagedDict(PyObject *self, visitproc visit, void *arg)
 }
 
 void
-_PyObject_ClearManagedDict(PyObject *self)
+_PyObject_ClearManagedDict(PyObject *obj)
 {
-    PyTypeObject *tp = Py_TYPE(self);
+    PyTypeObject *tp = Py_TYPE(obj);
     if((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
         return;
     }
-    PyDictOrValues *dorv_ptr = _PyObject_DictOrValuesPointer(self);
+    PyDictOrValues *dorv_ptr = _PyObject_DictOrValuesPointer(obj);
     if (_PyDictOrValues_IsValues(*dorv_ptr)) {
         PyDictValues *values = _PyDictOrValues_GetValues(*dorv_ptr);
         PyDictKeysObject *keys = CACHED_KEYS(tp);
         for (Py_ssize_t i = 0; i < keys->dk_nentries; i++) {
             Py_CLEAR(values->values[i]);
         }
+        dorv_ptr->dict = NULL;
+        free_values(values);
     }
     else {
-        PyObject **dictptr = _PyDictOrValues_GetDictPtr(dorv_ptr);
-        PyObject *dict = *dictptr;
+        PyObject *dict = dorv_ptr->dict;
         if (dict) {
-            *dictptr = NULL;
+            dorv_ptr->dict = NULL;
             Py_DECREF(dict);
         }
     }
@@ -5618,7 +5642,7 @@ PyObject_GenericGetDict(PyObject *obj, void *context)
             OBJECT_STAT_INC(dict_materialized_on_request);
             dict = make_dict_from_instance_attributes(CACHED_KEYS(tp), values);
             if (dict != NULL) {
-                _PyDictOrValues_SetDict(dorv_ptr, dict);
+                dorv_ptr->dict = dict;
             }
         }
         else {
@@ -5626,12 +5650,12 @@ PyObject_GenericGetDict(PyObject *obj, void *context)
             if (dict == NULL) {
                 dictkeys_incref(CACHED_KEYS(tp));
                 dict = new_dict_with_shared_keys(CACHED_KEYS(tp));
-                _PyDictOrValues_SetDict(dorv_ptr, dict);
+                dorv_ptr->dict = dict;
             }
         }
     }
     else {
-        PyObject **dictptr = _PyObject_DictPointer(obj);
+        PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
         if (dictptr == NULL) {
             PyErr_SetString(PyExc_AttributeError,
                             "This object has no __dict__");

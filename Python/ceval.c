@@ -5636,7 +5636,7 @@ handle_eval_breaker:
             assert(oparg);
             oparg <<= 8;
             oparg |= _Py_OPARG(*next_instr);
-            // We might be tracing. To avoid breaking tracing guarantees in 
+            // We might be tracing. To avoid breaking tracing guarantees in
             // quickened instructions, always deoptimize the next opcode:
             opcode = _PyOpcode_Deopt[_Py_OPCODE(*next_instr)];
             PRE_DISPATCH_GOTO();

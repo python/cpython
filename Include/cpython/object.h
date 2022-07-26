@@ -511,5 +511,5 @@ Py_DEPRECATED(3.11) typedef int UsingDeprecatedTrashcanMacro;
     } while(0);
 
 
-PyAPI_FUNC(int) _PyObject_VisitManagedDict(PyObject *self, visitproc visit, void *arg);
-PyAPI_FUNC(void) _PyObject_ClearManagedDict(PyObject *self);
+PyAPI_FUNC(int) _PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg);
+PyAPI_FUNC(void) _PyObject_ClearManagedDict(PyObject *obj);

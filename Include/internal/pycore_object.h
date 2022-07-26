@@ -270,6 +270,7 @@ PyObject * _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
 
 typedef union {
     PyObject *dict;
+    /* Use a char* to generate a warning if directly assigning a PyDictValues */
     char *values;
 } PyDictOrValues;
 
@@ -300,20 +301,6 @@ _PyDictOrValues_GetDict(PyDictOrValues dorv)
     return dorv.dict;
 }
 
-static inline PyObject **
-_PyDictOrValues_GetDictPtr(PyDictOrValues *ptr)
-{
-    assert(!_PyDictOrValues_IsValues(*ptr));
-    return &ptr->dict;
-}
-
-static inline void
-_PyDictOrValues_SetDict(PyDictOrValues *ptr, PyObject *dict)
-{
-    assert(ptr->dict == NULL || _PyDictOrValues_IsValues(*ptr));
-    ptr->dict = dict;
-}
-
 static inline void
 _PyDictOrValues_SetValues(PyDictOrValues *ptr, PyDictValues *values)
 {
@@ -322,8 +309,8 @@ _PyDictOrValues_SetValues(PyDictOrValues *ptr, PyDictValues *values)
 
 #define MANAGED_DICT_OFFSET (((int)sizeof(PyObject *))*-3)
 
-extern PyObject ** _PyObject_DictPointer(PyObject *);
-extern void _PyObject_FreeInstanceAttributes(PyObject *self);
+extern PyObject ** _PyObject_ComputedDictPointer(PyObject *);
+extern void _PyObject_FreeInstanceAttributes(PyObject *obj);
 extern int _PyObject_IsInstanceDictEmpty(PyObject *);
 extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
 

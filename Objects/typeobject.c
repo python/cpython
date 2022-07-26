@@ -1223,7 +1223,7 @@ subtype_traverse(PyObject *self, visitproc visit, void *arg)
         }
     }
     else if (type->tp_dictoffset != base->tp_dictoffset) {
-        PyObject **dictptr = _PyObject_DictPointer(self);
+        PyObject **dictptr = _PyObject_ComputedDictPointer(self);
         if (dictptr && *dictptr)
             Py_VISIT(*dictptr);
     }
@@ -1287,7 +1287,7 @@ subtype_clear(PyObject *self)
         _PyObject_ClearManagedDict(self);
     }
     else if (type->tp_dictoffset != base->tp_dictoffset) {
-        PyObject **dictptr = _PyObject_DictPointer(self);
+        PyObject **dictptr = _PyObject_ComputedDictPointer(self);
         if (dictptr && *dictptr)
             Py_CLEAR(*dictptr);
     }
@@ -1441,7 +1441,7 @@ subtype_dealloc(PyObject *self)
         dorv_ptr->values = NULL;
     }
     else if (type->tp_dictoffset && !base->tp_dictoffset) {
-        PyObject **dictptr = _PyObject_DictPointer(self);
+        PyObject **dictptr = _PyObject_ComputedDictPointer(self);
         if (dictptr != NULL) {
             PyObject *dict = *dictptr;
             if (dict != NULL) {
