@@ -770,7 +770,7 @@ Connection Objects
 
       A callable that accept a :class:`bytes` parameter and return a text
       representation of it.
-      The callable is invoked for SQLite values with the ``TEXT``data type.
+      The callable is invoked for SQLite values with the ``TEXT`` data type.
       By default, this attribute is set to :class:`str`.
       If you want to return ``bytes`` instead, set *text_factory* to ``bytes``.
 
