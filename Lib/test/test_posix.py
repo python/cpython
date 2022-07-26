@@ -2176,9 +2176,9 @@ class NamespacesTests(unittest.TestCase):
     """Tests for os.unshare() and os.setns()."""
 
     @support.requires_subprocess()
-    def subprocess(self, file_path):
+    def subprocess(self, code):
         import subprocess
-        with subprocess.Popen((sys.executable, file_path),
+        with subprocess.Popen((sys.executable, '-c', code),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             encoding="utf-8"
@@ -2195,7 +2195,22 @@ class NamespacesTests(unittest.TestCase):
     @unittest.skipUnless(os.path.exists('/proc/self/ns/uts'), 'need /proc/self/ns/uts')
     @support.requires_linux_version(3, 0, 0)
     def test_unshare_setns(self):
-        rc, out, err = self.subprocess(support.findfile("namespaces-test.py"))
+        rc, out, err = self.subprocess("""if 1:
+            import os
+            import sys
+            fd = os.open('/proc/self/ns/uts', os.O_RDONLY)
+            try:
+                print(os.readlink('/proc/self/ns/uts'))
+                os.unshare(os.CLONE_NEWUTS)
+                print(os.readlink('/proc/self/ns/uts'))
+                os.setns(fd, os.CLONE_NEWUTS)
+                print(os.readlink('/proc/self/ns/uts'))
+            except OSError as e:
+                sys.stderr.write(str(e.errno))
+                sys.exit(2)
+            finally:
+                os.close(fd)
+            """)
 
         if rc == 2:
             e = int(err[0])
