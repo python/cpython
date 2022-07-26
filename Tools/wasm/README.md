@@ -69,12 +69,9 @@ popd
 ```
 
 Serve `python.html` with a local webserver and open the file in a browser.
-
-```shell
-emrun builddir/emscripten-browser/python.html
-```
-
-or
+Python comes with a minimal web server script that sets necessary HTTP
+headers like COOP, COEP, and mimetypes. Run the script outside the container
+and from the root of the CPython checkout.
 
 ```shell
 ./Tools/wasm/wasm_webserver.py
@@ -83,6 +80,7 @@ or
 and open http://localhost:8000/builddir/emscripten-browser/python.html . This
 directory structure enables the *C/C++ DevTools Support (DWARF)* to load C
 and header files with debug builds.
+
 
 ### Cross compile to wasm32-emscripten for node
 
@@ -232,6 +230,28 @@ WASI builds require [WASI SDK](https://github.com/WebAssembly/wasi-sdk) 15.0+
 and currently [wasix](https://github.com/singlestore-labs/wasix) for POSIX
 compatibility stubs.
 
+## Cross-compile to wasm32-wasi
+
+The script ``wasi-env`` sets necessary compiler and linker flags as well as
+``pkg-config`` overrides. The script assumes that WASI-SDK is installed in
+``/opt/wasi-sdk`` or ``$WASI_SDK_PATH``.
+
+```shell
+mkdir -p builddir/wasi
+pushd builddir/wasi
+
+CONFIG_SITE=../../Tools/wasm/config.site-wasm32-wasi \
+  CFLAGS="-isystem /opt/wasix/include" \
+  LDFLAGS="-L/opt/wasix/lib -lwasix" \
+  ../../Tools/wasm/wasi-env ../../configure -C \
+    --host=wasm32-unknown-wasi \
+    --build=$(../../config.guess) \
+    --with-build-python=$(pwd)/../build/python
+
+make -j$(nproc)
+popd
+```
+
 ## WASI limitations and issues (WASI SDK 15.0)
 
 A lot of Emscripten limitations also apply to WASI. Noticable restrictions
@@ -376,6 +396,16 @@ git clone https://github.com/emscripten-core/emsdk.git /opt/emsdk
 /opt/emsdk/emsdk activate latest
 ```
 
+### Optionally: enable ccache for EMSDK
+
+The ``EM_COMPILER_WRAPPER`` must be set after the EMSDK environment is
+sourced. Otherwise the source script removes the environment variable.
+
+```
+. /opt/emsdk/emsdk_env.sh
+EM_COMPILER_WRAPPER=ccache
+```
+
 ### Optionally: pre-build and cache static libraries
 
 Emscripten SDK provides static builds of core libraries without PIC
@@ -384,12 +414,8 @@ PIC. To populate the build cache, run:
 
 ```shell
 . /opt/emsdk/emsdk_env.sh
-embuilder build --force zlib bzip2
-embuilder build --force --pic \
-    zlib bzip2 libc-mt libdlmalloc-mt libsockets-mt \
-    libstubs libcompiler_rt libcompiler_rt-mt crtbegin libhtml5 \
-    libc++-mt-noexcept libc++abi-mt-noexcept \
-    libal libGL-mt libstubs-debug libc-mt-debug
+embuilder build zlib bzip2 MINIMAL_PIC
+embuilder build --pic zlib bzip2 MINIMAL_PIC
 ```
 
 ### Install [WASI-SDK](https://github.com/WebAssembly/wasi-sdk)
@@ -424,3 +450,9 @@ ln -srf -t /usr/local/bin/ ~/.wasmtime/bin/wasmtime
 git clone https://github.com/singlestore-labs/wasix.git ~/wasix
 make install -C ~/wasix
 ```
+
+### WASI debugging
+
+* ``wasmtime run -g`` generates debugging symbols for gdb and lldb.
+* The environment variable ``RUST_LOG=wasi_common`` enables debug and
+  trace logging.
