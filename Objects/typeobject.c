@@ -65,6 +65,8 @@ lookup_maybe_method(PyObject *self, PyObject *attr, int *unbound);
 static int
 slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value);
 
+static inline PyTypeObject * subclass_from_ref(PyObject *ref);
+
 /*
  * finds the beginning of the docstring's introspection signature.
  * if present, returns a pointer pointing to the first '('.
@@ -309,12 +311,11 @@ PyType_Modified(PyTypeObject *type)
         Py_ssize_t i = 0;
         PyObject *ref;
         while (PyDict_Next(subclasses, &i, NULL, &ref)) {
-            assert(PyWeakref_CheckRef(ref));
-            PyObject *obj = PyWeakref_GET_OBJECT(ref);
-            if (obj == Py_None) {
+            PyTypeObject *subclass = subclass_from_ref(ref);  // borrowed
+            if (subclass == NULL) {
                 continue;
             }
-            PyType_Modified(_PyType_CAST(obj));
+            PyType_Modified(subclass);
         }
     }
 
@@ -4211,23 +4212,48 @@ type_dealloc_common(PyTypeObject *type)
 }
 
 
-void
-_PyStaticType_Dealloc(PyTypeObject *type)
+static void
+clear_static_tp_subclasses(PyTypeObject *type)
 {
-    // If a type still has subtypes, it cannot be deallocated.
-    // A subtype can inherit attributes and methods of its parent type,
-    // and a type must no longer be used once it's deallocated.
-    if (type->tp_subclasses != NULL) {
+    if (type->tp_subclasses == NULL) {
         return;
     }
 
+    /* Normally it would be a problem to finalize the type if its
+       tp_subclasses wasn't cleared first.  However, this is only
+       ever called at the end of runtime finalization, so we can be
+       more liberal in cleaning up.  If the given type still has
+       subtypes at this point then some extension module did not
+       correctly finalize its objects.
+
+       We can safely obliterate such subtypes since the extension
+       module and its objects won't be used again, except maybe if
+       the runtime were re-initialized.  In that case the sticky
+       situation would only happen if the module were re-imported
+       then and only if the subtype were stored in a global and only
+       if that global were not overwritten during import.  We'd be
+       fine since the extension is otherwise unsafe and unsupported
+       in that situation, and likely problematic already.
+
+       In any case, this situation means at least some memory is
+       going to leak.  This mostly only affects embedding scenarios.
+     */
+
+    // For now we just clear tp_subclasses.
+
+    Py_CLEAR(type->tp_subclasses);
+}
+
+void
+_PyStaticType_Dealloc(PyTypeObject *type)
+{
     type_dealloc_common(type);
 
     Py_CLEAR(type->tp_dict);
     Py_CLEAR(type->tp_bases);
     Py_CLEAR(type->tp_mro);
     Py_CLEAR(type->tp_cache);
-    // type->tp_subclasses is NULL
+    clear_static_tp_subclasses(type);
 
     // PyObject_ClearWeakRefs() raises an exception if Py_REFCNT() != 0
     if (Py_REFCNT(type) == 0) {
@@ -4296,14 +4322,12 @@ _PyType_GetSubclasses(PyTypeObject *self)
     Py_ssize_t i = 0;
     PyObject *ref;  // borrowed ref
     while (PyDict_Next(subclasses, &i, NULL, &ref)) {
-        assert(PyWeakref_CheckRef(ref));
-        PyObject *obj = PyWeakref_GET_OBJECT(ref);  // borrowed ref
-        if (obj == Py_None) {
+        PyTypeObject *subclass = subclass_from_ref(ref);  // borrowed
+        if (subclass == NULL) {
             continue;
         }
-        assert(PyType_Check(obj));
 
-        if (PyList_Append(list, obj) < 0) {
+        if (PyList_Append(list, _PyObject_CAST(subclass)) < 0) {
             Py_DECREF(list);
             return NULL;
         }
@@ -6650,6 +6674,14 @@ PyType_Ready(PyTypeObject *type)
     return 0;
 }
 
+int
+_PyStaticType_InitBuiltin(PyTypeObject *self)
+{
+    self->tp_flags = self->tp_flags | _Py_TPFLAGS_STATIC_BUILTIN;
+
+    return PyType_Ready(self);
+}
+
 
 static int
 add_subclass(PyTypeObject *base, PyTypeObject *type)
@@ -6700,6 +6732,42 @@ add_all_subclasses(PyTypeObject *type, PyObject *bases)
     return res;
 }
 
+static inline PyTypeObject *
+subclass_from_ref(PyObject *ref)
+{
+    assert(PyWeakref_CheckRef(ref));
+    PyObject *obj = PyWeakref_GET_OBJECT(ref);  // borrowed ref
+    assert(obj != NULL);
+    if (obj == Py_None) {
+        return NULL;
+    }
+    assert(PyType_Check(obj));
+    return _PyType_CAST(obj);
+}
+
+static PyObject *
+get_subclasses_key(PyTypeObject *type, PyTypeObject *base)
+{
+    PyObject *key = PyLong_FromVoidPtr((void *) type);
+    if (key != NULL) {
+        return key;
+    }
+    PyErr_Clear();
+
+    /* This basically means we're out of memory.
+       We fall back to manually traversing the values. */
+    Py_ssize_t i = 0;
+    PyObject *ref;  // borrowed ref
+    while (PyDict_Next((PyObject *)base->tp_subclasses, &i, &key, &ref)) {
+        PyTypeObject *subclass = subclass_from_ref(ref);  // borrowed
+        if (subclass == type) {
+            return Py_NewRef(key);
+        }
+    }
+    /* It wasn't found. */
+    return NULL;
+}
+
 static void
 remove_subclass(PyTypeObject *base, PyTypeObject *type)
 {
@@ -6709,8 +6777,8 @@ remove_subclass(PyTypeObject *base, PyTypeObject *type)
     }
     assert(PyDict_CheckExact(subclasses));
 
-    PyObject *key = PyLong_FromVoidPtr((void *) type);
-    if (key == NULL || PyDict_DelItem(subclasses, key)) {
+    PyObject *key = get_subclasses_key(type, base);
+    if (key != NULL && PyDict_DelItem(subclasses, key)) {
         /* This can happen if the type initialization errored out before
            the base subclasses were updated (e.g. a non-str __qualname__
            was passed in the type dict). */
@@ -8803,13 +8871,10 @@ recurse_down_subclasses(PyTypeObject *type, PyObject *attr_name,
     Py_ssize_t i = 0;
     PyObject *ref;
     while (PyDict_Next(subclasses, &i, NULL, &ref)) {
-        assert(PyWeakref_CheckRef(ref));
-        PyObject *obj = PyWeakref_GET_OBJECT(ref);
-        assert(obj != NULL);
-        if (obj == Py_None) {
+        PyTypeObject *subclass = subclass_from_ref(ref);  // borrowed
+        if (subclass == NULL) {
             continue;
         }
-        PyTypeObject *subclass = _PyType_CAST(obj);
 
         /* Avoid recursing down into unaffected classes */
         PyObject *dict = subclass->tp_dict;
