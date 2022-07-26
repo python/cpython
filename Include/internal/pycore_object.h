@@ -224,7 +224,7 @@ _PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
             ((PyTypeObject *)op)->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         static_builtin_state *state = _PyStaticType_GetState(
                                                         (PyTypeObject *)op);
-        return &state->tp_weaklist;
+        return _PyStaticType_GET_WEAKREFS_LISTPTR(state);
     }
     Py_ssize_t offset = Py_TYPE(op)->tp_weaklistoffset;
     return (PyObject **)((char *)op + offset);

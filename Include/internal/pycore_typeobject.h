@@ -52,6 +52,13 @@ typedef struct {
     PyObject *tp_weaklist;
 } static_builtin_state;
 
+static inline PyObject **
+_PyStaticType_GET_WEAKREFS_LISTPTR(static_builtin_state *state)
+{
+    assert(state != NULL);
+    return &state->tp_weaklist;
+}
+
 struct types_state {
     struct type_cache type_cache;
     size_t num_builtins_initialized;
