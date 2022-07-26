@@ -400,7 +400,7 @@ struct compiler {
 };
 
 #define CFG_BUILDER(c) (&((c)->u->u_cfg_builder))
-#define COMPILER_LOC(c) (&((c)->u->u_loc))
+#define COMPILER_LOC(c) ((c)->u->u_loc)
 
 typedef struct {
     // A list of strings corresponding to name captures. It is used to track:
@@ -429,7 +429,7 @@ typedef struct {
 
 static int basicblock_next_instr(basicblock *);
 
-static int cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, const struct location *loc);
+static int cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, struct location loc);
 
 static void compiler_free(struct compiler *);
 static int compiler_error(struct compiler *, const char *, ...);
@@ -1254,7 +1254,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 
 static int
 basicblock_addop(basicblock *b, int opcode, int oparg,
-                 basicblock *target, const struct location *loc)
+                 basicblock *target, struct location loc)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
@@ -1273,14 +1273,14 @@ basicblock_addop(basicblock *b, int opcode, int oparg,
     i->i_opcode = opcode;
     i->i_oparg = oparg;
     i->i_target = target;
-    i->i_loc = loc ? *loc : NO_LOCATION;
+    i->i_loc = loc;
 
     return 1;
 }
 
 static int
 cfg_builder_addop(cfg_builder *g, int opcode, int oparg, basicblock *target,
-          const struct location *loc)
+                  struct location loc)
 {
     struct instr *last = basicblock_last_instr(g->curblock);
     if (last && IS_TERMINATOR_OPCODE(last->i_opcode)) {
@@ -1294,7 +1294,7 @@ cfg_builder_addop(cfg_builder *g, int opcode, int oparg, basicblock *target,
 }
 
 static int
-cfg_builder_addop_noarg(cfg_builder *g, int opcode, const struct location *loc)
+cfg_builder_addop_noarg(cfg_builder *g, int opcode, struct location loc)
 {
     assert(!HAS_ARG(opcode));
     return cfg_builder_addop(g, opcode, 0, NULL, loc);
@@ -1498,7 +1498,7 @@ compiler_addop_name(struct compiler *c, int opcode, PyObject *dict,
    Returns 0 on failure, 1 on success.
 */
 static int
-cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, const struct location *loc)
+cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, struct location loc)
 {
     /* oparg value is unsigned, but a signed C int is usually used to store
        it in the C code (like Python/ceval.c).
@@ -1513,7 +1513,7 @@ cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, const struct l
 }
 
 static int
-cfg_builder_addop_j(cfg_builder *g, int opcode, basicblock *target, const struct location *loc)
+cfg_builder_addop_j(cfg_builder *g, int opcode, basicblock *target, struct location loc)
 {
     assert(target != NULL);
     assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
@@ -1527,7 +1527,7 @@ cfg_builder_addop_j(cfg_builder *g, int opcode, basicblock *target, const struct
 }
 
 #define ADDOP_NOLINE(C, OP) { \
-    if (!cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), NULL)) \
+    if (!cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), NO_LOCATION)) \
         return 0; \
 }
 
@@ -1576,7 +1576,7 @@ cfg_builder_addop_j(cfg_builder *g, int opcode, basicblock *target, const struct
 }
 
 #define ADDOP_I_NOLINE(C, OP, O) { \
-    if (!cfg_builder_addop_i(CFG_BUILDER(C), (OP), (O), NULL)) \
+    if (!cfg_builder_addop_i(CFG_BUILDER(C), (OP), (O), NO_LOCATION)) \
         return 0; \
 }
 
@@ -1589,7 +1589,7 @@ cfg_builder_addop_j(cfg_builder *g, int opcode, basicblock *target, const struct
  * Used for artificial jumps that have no corresponding
  * token in the source code. */
 #define ADDOP_JUMP_NOLINE(C, OP, O) { \
-    if (!cfg_builder_addop_j(CFG_BUILDER(C), (OP), (O), NULL)) \
+    if (!cfg_builder_addop_j(CFG_BUILDER(C), (OP), (O), NO_LOCATION)) \
         return 0; \
 }
 
@@ -7438,7 +7438,7 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
             if (explicit_jump == NULL) {
                 return -1;
             }
-            basicblock_addop(explicit_jump, JUMP, 0, b->b_next, &NO_LOCATION);
+            basicblock_addop(explicit_jump, JUMP, 0, b->b_next, NO_LOCATION);
 
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
