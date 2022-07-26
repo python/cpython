@@ -187,7 +187,7 @@ class RunPyMixin:
             )
         return py_exe
 
-    def run_py(self, args, env=None, allow_fail=False, expect_returncode=0):
+    def run_py(self, args, env=None, allow_fail=False, expect_returncode=0, short_argv0=False):
         if not self.py_exe:
             self.py_exe = self.find_py()
 
@@ -198,9 +198,14 @@ class RunPyMixin:
             "PYLAUNCHER_DEBUG": "1",
             "PYLAUNCHER_DRYRUN": "1",
         }
+        cwd, py_exe = None, self.py_exe
+        if short_argv0:
+            cwd, py_exe = str(py_exe.parent), f'"{py_exe.name}"'
         with subprocess.Popen(
-            [self.py_exe, *args],
+            [py_exe, *args],
             env=env,
+            cwd=cwd,
+            executable=self.py_exe,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -538,6 +543,14 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
         self.assertEqual("3.100-arm64", data["SearchInfo.tag"])
         self.assertEqual(f"X.Y-arm64.exe -X fake_arg_for_test -prearg {script} -postarg", data["stdout"].strip())
+
+    def test_py_shebang_short_argv0(self):
+        with self.py_ini(TEST_PY_COMMANDS):
+            with self.script("#! /usr/bin/env python -prearg") as script:
+                data = self.run_py([script, "-postarg"], short_argv0=True)
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100", data["SearchInfo.tag"])
+        self.assertEqual(f"X.Y.exe -prearg {script} -postarg", data["stdout"].strip())
 
     def test_install(self):
         data = self.run_py(["-V:3.10"], env={"PYLAUNCHER_ALWAYS_INSTALL": "1"}, expect_returncode=111)
