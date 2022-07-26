@@ -678,6 +678,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define if you have the 'inet_pton' function. */
 #define HAVE_INET_PTON 1
 
+/* Define to 1 if you have the `dup' function. */
+#define HAVE_DUP 1
+
 /* framework name */
 #define _PYTHONFRAMEWORK ""
 

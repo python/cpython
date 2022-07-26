@@ -5631,8 +5631,16 @@ handle_eval_breaker:
             assert(oparg);
             oparg <<= 8;
             oparg |= _Py_OPARG(*next_instr);
+            // We might be tracing. To avoid breaking tracing guarantees in 
+            // quickened instructions, always deoptimize the next opcode:
             opcode = _PyOpcode_Deopt[_Py_OPCODE(*next_instr)];
             PRE_DISPATCH_GOTO();
+            // CPython hasn't traced the following instruction historically
+            // (DO_TRACING would clobber our extended oparg anyways), so just
+            // skip our usual cframe.use_tracing check before dispatch. Also,
+            // make sure the next instruction isn't a RESUME, since that needs
+            // to trace properly (and shouldn't have an extended arg anyways):
+            assert(opcode != RESUME);
             DISPATCH_GOTO();
         }
 
@@ -6089,20 +6097,6 @@ fail:
 
 }
 
-/* Exception table parsing code.
- * See Objects/exception_table_notes.txt for details.
- */
-
-static inline unsigned char *
-parse_varint(unsigned char *p, int *result) {
-    int val = p[0] & 63;
-    while (p[0] & 64) {
-        p++;
-        val = (val << 6) | (p[0] & 63);
-    }
-    *result = val;
-    return p+1;
-}
 
 static inline unsigned char *
 scan_back_to_entry_start(unsigned char *p) {
