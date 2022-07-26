@@ -581,7 +581,7 @@ process and user.
    subject to any constraints imposed by the *nstype*, which is
    a bit mask specified by combining one or more of the ``CLONE_NEW*`` constants
    using ``|`` (bitwise or).
-   the caller's memberships in unspecified namespaces are left unchanged.
+   The callers memberships in unspecified namespaces are left unchanged.
    *fd* can be any object with a :meth:`fileno` method, or a raw file descriptor.
 
    This example reassociates the thread with the ``init`` process' network namespace::
@@ -760,7 +760,8 @@ process and user.
 .. function:: unshare(flags)
 
    Disassociate parts of the process execution context.
-   The *flags* argument is a bit mask combining zero or more of the ``CLONE_*`` constants using ``|`` (bitwise or), that specifies which parts of the execution
+   The *flags* argument is a bit mask combining zero or more of the ``CLONE_*``
+   constants using ``|`` (bitwise or), that specifies which parts of the execution
    context should be unshared.
    If *flags* is specified as zero, no changes are made to the calling process'
    execution context.
@@ -777,6 +778,7 @@ Flags to the :func:`unshare` function, if the implementation supports them.
 See the Linux manual for the exact effect and availability.
 
 .. data:: CLONE_FILES
+          CLONE_FS
           CLONE_NEWCGROUP
           CLONE_NEWIPC
           CLONE_NEWNET
@@ -789,7 +791,6 @@ See the Linux manual for the exact effect and availability.
           CLONE_SYSVSEM
           CLONE_THREAD
           CLONE_VM
-          CLONE_FS
 
 .. _os-newstreams:
 
