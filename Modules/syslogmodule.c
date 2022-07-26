@@ -226,7 +226,6 @@ syslog_closelog_impl(PyObject *module)
         Py_CLEAR(S_ident_o);
         S_log_open = 0;
     }
-
     Py_RETURN_NONE;
 }
 
