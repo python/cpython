@@ -196,6 +196,8 @@ syslog_syslog(PyObject * self, PyObject * args)
             if (openlog_ret == NULL) {
                 return NULL;
             }
+        } else {
+            return NULL;
         }
     }
 
