@@ -577,7 +577,7 @@ process and user.
    calling thread with the namespace associated with that link, subject to any
    constraints imposed by the *nstype* argument (or any if ``0``).
    Since Linux 5.8, *fd* may refer to a PID file descriptor obtained from
-   :manpage:`pidfd_open(2)`. In this case ``setns()`` reassociates the calling thread
+   :func:`~os.pidfd_open`. In this case ``setns()`` reassociates the calling thread
    into one or more of the same namespaces as the thread referred to by *fd*
    subject to any constraints imposed by the *nstype*, which is
    a bit mask specified by combining one or more of the ``CLONE_NEW*`` constants,
@@ -760,7 +760,8 @@ process and user.
 
 .. function:: unshare(flags)
 
-   Disassociate parts of the process execution context.
+   Disassociate parts of the process execution context, see the :manpage:`unshare(2)`
+   man page for more details.
    The *flags* argument is a bit mask combining zero or more of the ``CLONE_*``
    constants using ``|`` (bitwise or), that specifies which parts of the execution
    context should be unshared.
