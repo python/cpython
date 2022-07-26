@@ -476,10 +476,6 @@ reset_signal_handlers(const sigset_t *child_sigmask)
 #endif /* VFORK_USABLE */
 
 
-/* To avoid signeness churn on platforms where gid and uid are unsigned. */
-#define RESERVED_GID (gid_t)-1
-#define RESERVED_UID (uid_t)-1
-
 /*
  * This function is code executed in the child process immediately after
  * (v)fork to set things up and call exec().
@@ -628,12 +624,12 @@ child_exec(char *const exec_array[],
 #endif /* HAVE_SETGROUPS */
 
 #ifdef HAVE_SETREGID
-    if (gid != RESERVED_GID)
+    if (gid != (gid_t)-1)
         POSIX_CALL(setregid(gid, gid));
 #endif /* HAVE_SETREGID */
 
 #ifdef HAVE_SETREUID
-    if (uid != RESERVED_UID)
+    if (uid != (uid_t)-1)
         POSIX_CALL(setreuid(uid, uid));
 #endif /* HAVE_SETREUID */
 
@@ -957,7 +953,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
 #endif /* HAVE_SETGROUPS */
     }
 
-    gid_t gid = RESERVED_GID;
+    gid_t gid = (gid_t)-1;
     if (gid_object != Py_None) {
 #ifdef HAVE_SETREGID
         if (!_Py_Gid_Converter(gid_object, &gid))
@@ -969,7 +965,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
 #endif /* HAVE_SETREUID */
     }
 
-    uid_t uid = RESERVED_UID;
+    uid_t uid = (uid_t)-1;
     if (uid_object != Py_None) {
 #ifdef HAVE_SETREUID
         if (!_Py_Uid_Converter(uid_object, &uid))
@@ -998,7 +994,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
     /* Use vfork() only if it's safe. See the comment above child_exec(). */
     sigset_t old_sigs;
     if (preexec_fn == Py_None && allow_vfork &&
-        uid == RESERVED_UID && gid == RESERVED_GID && groups_list == Py_None) {
+        uid == (uid_t)-1 && gid == (gid_t)-1 && groups_list == Py_None) {
         /* Block all signals to ensure that no signal handlers are run in the
          * child process while it shares memory with us. Note that signals
          * used internally by C libraries won't be blocked by
