@@ -498,10 +498,6 @@ reset_signal_handlers(const sigset_t *child_sigmask)
 #endif /* VFORK_USABLE */
 
 
-#define RESERVED_GID (gid_t)-1
-#define RESERVED_PID (pid_t)-1
-#define RESERVED_UID (uid_t)-1
-
 /*
  * This function is code executed in the child process immediately after
  * (v)fork to set things up and call exec().
@@ -650,12 +646,12 @@ child_exec(char *const exec_array[],
 #endif /* HAVE_SETGROUPS */
 
 #ifdef HAVE_SETREGID
-    if (gid != RESERVED_GID)
+    if (gid != (gid_t)-1)
         POSIX_CALL(setregid(gid, gid));
 #endif /* HAVE_SETREGID */
 
 #ifdef HAVE_SETREUID
-    if (uid != RESERVED_UID)
+    if (uid != (uid_t)-1)
         POSIX_CALL(setreuid(uid, uid));
 #endif /* HAVE_SETREUID */
 
@@ -770,7 +766,7 @@ do_fork_exec(char *const exec_array[],
         assert(preexec_fn == Py_None);
 
         pid = vfork();
-        if (pid == RESERVED_PID) {
+        if (pid == (pid_t)-1) {
             /* If vfork() fails, fall back to using fork(). When it isn't
              * allowed in a process by the kernel, vfork can return -1
              * with errno EINVAL. https://bugs.python.org/issue47151. */
@@ -1016,7 +1012,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
 #endif /* HAVE_SETGROUPS */
     }
 
-    gid_t gid = RESERVED_GID;
+    gid_t gid = (gid_t)-1;
     if (gid_object != Py_None) {
 #ifdef HAVE_SETREGID
         if (!_Py_Gid_Converter(gid_object, &gid))
@@ -1030,7 +1026,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
 #endif /* HAVE_SETREUID */
     }
 
-    uid_t uid = RESERVED_UID;
+    uid_t uid = (uid_t)-1;
     if (uid_object != Py_None) {
 #ifdef HAVE_SETREUID
         if (!_Py_Uid_Converter(uid_object, &uid))
@@ -1089,7 +1085,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
                        py_fds_to_keep, preexec_fn, preexec_fn_args_tuple);
 
     /* Parent (original) process */
-    if (pid == RESERVED_PID) {
+    if (pid == (pid_t)-1) {
         /* Capture errno for the exception. */
         saved_errno = errno;
     }
