@@ -924,7 +924,7 @@ Connection Objects
    .. method:: deserialize(data, /, *, name="main")
 
       Deserialize a :meth:`serialized <serialize>` database into a
-      :class`Connection`.
+      :class:`Connection`.
       This method causes the database connection to disconnect from database
       *name*, and reopen *name* as an in-memory database based on the
       serialization contained in *data*.  Deserialization will raise
