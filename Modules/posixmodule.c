@@ -8601,7 +8601,13 @@ static PyObject *
 os_setns_impl(PyObject *module, int fd, int nstype)
 /*[clinic end generated code: output=5dbd055bfb66ecd0 input=c097c9aa123c43ce]*/
 {
-    if (setns(fd, nstype) != 0) {
+    int res;
+
+    Py_BEGIN_ALLOW_THREADS
+    res = setns(fd, nstype);
+    Py_END_ALLOW_THREADS
+
+    if (res != 0) {
         return posix_error();
     }
 
@@ -8622,7 +8628,13 @@ static PyObject *
 os_unshare_impl(PyObject *module, int flags)
 /*[clinic end generated code: output=1b3177906dd237ee input=f8d7bd2c69325537]*/
 {
-    if (unshare(flags) != 0) {
+    int res;
+
+    Py_BEGIN_ALLOW_THREADS
+    res = unshare(flags);
+    Py_END_ALLOW_THREADS
+
+    if (res != 0) {
         return posix_error();
     }
     
