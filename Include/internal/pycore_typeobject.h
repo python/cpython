@@ -45,19 +45,19 @@ struct type_cache {
 
 typedef struct {
     PyTypeObject *type;
-} static_builtin_type_state;
+} static_builtin_state;
 
 struct types_state {
     struct type_cache type_cache;
     size_t num_builtins_initialized;
-    static_builtin_type_state builtins[_Py_MAX_STATIC_BUILTIN_TYPES];
+    static_builtin_state builtins[_Py_MAX_STATIC_BUILTIN_TYPES];
 };
 
 
 extern PyStatus _PyTypes_InitSlotDefs(void);
 
 extern int _PyStaticType_InitBuiltin(PyTypeObject *type);
-extern static_builtin_type_state * _PyStaticType_GetState(PyTypeObject *);
+extern static_builtin_state * _PyStaticType_GetState(PyTypeObject *);
 extern void _PyStaticType_Dealloc(PyTypeObject *type);
 
 
