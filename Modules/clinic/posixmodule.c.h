@@ -4192,7 +4192,7 @@ exit:
 
 #endif /* (defined(__linux__) && defined(__NR_pidfd_open)) */
 
-#if (defined(__linux__) && defined(HAVE_SETNS))
+#if defined(HAVE_SETNS)
 
 PyDoc_STRVAR(os_setns__doc__,
 "setns($module, /, fd, nstype=0)\n"
@@ -4243,9 +4243,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(__linux__) && defined(HAVE_SETNS)) */
+#endif /* defined(HAVE_SETNS) */
 
-#if (defined(__linux__) && defined(HAVE_UNSHARE))
+#if defined(HAVE_UNSHARE)
 
 PyDoc_STRVAR(os_unshare__doc__,
 "unshare($module, /, flags)\n"
@@ -4285,7 +4285,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(__linux__) && defined(HAVE_UNSHARE)) */
+#endif /* defined(HAVE_UNSHARE) */
 
 #if (defined(HAVE_READLINK) || defined(MS_WINDOWS))
 
@@ -9455,4 +9455,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=78d14ea4616fdc42 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8340ed29593534d2 input=a9049054013a1b77]*/

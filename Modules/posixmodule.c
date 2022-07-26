@@ -8588,7 +8588,7 @@ os_pidfd_open_impl(PyObject *module, pid_t pid, unsigned int flags)
 #endif
 
 
-#if defined(__linux__) && defined(HAVE_SETNS)
+#ifdef HAVE_SETNS
 /*[clinic input]
 os.setns
   fd: fildes
@@ -8618,7 +8618,7 @@ os_setns_impl(PyObject *module, int fd, int nstype)
 #endif
 
 
-#if defined(__linux__) && defined(HAVE_UNSHARE)
+#ifdef HAVE_UNSHARE
 /*[clinic input]
 os.unshare
   flags: int
@@ -15437,7 +15437,7 @@ all_ins(PyObject *m)
 #endif
 
 /* constants for namespaces */
-#if defined(__linux__) && (defined(HAVE_SETNS) || defined(HAVE_UNSHARE))
+#if defined(HAVE_SETNS) || defined(HAVE_UNSHARE)
 #ifdef CLONE_FS
     if (PyModule_AddIntMacro(m, CLONE_FS)) return -1;
 #endif
