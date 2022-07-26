@@ -352,6 +352,9 @@ given type object has a specified feature.
 
 #ifndef Py_LIMITED_API
 
+/* Track types initialized using _PyStaticType_InitBuiltin(). */
+#define _Py_TPFLAGS_STATIC_BUILTIN (1 << 1)
+
 /* Placement of dict (and values) pointers are managed by the VM, not by the type.
  * The VM will automatically set tp_dictoffset. Should not be used for variable sized
  * classes, such as classes that extend tuple.

@@ -7786,6 +7786,10 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, MSG_EOR);
 #endif
 #ifdef  MSG_TRUNC
+    // workaround for https://github.com/WebAssembly/wasi-libc/issues/305
+    #if defined(__wasi__) && !defined(__WASI_RIFLAGS_RECV_DATA_TRUNCATED)
+    #  define __WASI_RIFLAGS_RECV_DATA_TRUNCATED 2
+    #endif
     PyModule_AddIntMacro(m, MSG_TRUNC);
 #endif
 #ifdef  MSG_CTRUNC
