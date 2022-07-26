@@ -4685,6 +4685,8 @@ exit:
     return return_value;
 }
 
+#if ((defined(HAVE_DUP3) || defined(F_DUPFD) || defined(MS_WINDOWS)))
+
 PyDoc_STRVAR(os_dup2__doc__,
 "dup2($module, /, fd, fd2, inheritable=True)\n"
 "--\n"
@@ -4739,6 +4741,8 @@ skip_optional_pos:
 exit:
     return return_value;
 }
+
+#endif /* ((defined(HAVE_DUP3) || defined(F_DUPFD) || defined(MS_WINDOWS))) */
 
 #if defined(HAVE_LOCKF)
 
@@ -9105,6 +9109,10 @@ exit:
     #define OS_TCSETPGRP_METHODDEF
 #endif /* !defined(OS_TCSETPGRP_METHODDEF) */
 
+#ifndef OS_DUP2_METHODDEF
+    #define OS_DUP2_METHODDEF
+#endif /* !defined(OS_DUP2_METHODDEF) */
+
 #ifndef OS_LOCKF_METHODDEF
     #define OS_LOCKF_METHODDEF
 #endif /* !defined(OS_LOCKF_METHODDEF) */
@@ -9352,4 +9360,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=bae15f09a1b3d2e7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9ff792e207a18392 input=a9049054013a1b77]*/
