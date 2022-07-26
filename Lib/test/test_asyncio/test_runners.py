@@ -254,9 +254,8 @@ class RunTests(BaseTest):
             return loop
 
         asyncio.set_event_loop_policy(TestPolicy(new_event_loop))
-        with self.assertWarns(DeprecationWarning):
-            with self.assertRaises(KeyboardInterrupt):
-                asyncio.run(main())
+        with self.assertRaises(asyncio.CancelledError):
+            asyncio.run(main())
 
 
 class RunnerTests(BaseTest):

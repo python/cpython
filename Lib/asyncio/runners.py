@@ -121,13 +121,7 @@ class Runner:
             return self._loop.run_until_complete(task)
         except exceptions.CancelledError:
             uncancel = getattr(task, "uncancel", None)
-            if uncancel is None:
-                def uncancel():
-                    warnings._deprecated('missing asyncio.Task.uncancel',
-                        "Task.uncancel method will be mandatory for task "
-                        "implementations in 3.15", remove=(3, 15))
-                    return 0
-            if self._interrupt_count > 0 and uncancel() == 0:
+            if self._interrupt_count > 0 and uncancel and uncancel() == 0:
                 raise KeyboardInterrupt()
             else:
                 raise  # CancelledError
