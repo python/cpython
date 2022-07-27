@@ -571,8 +571,9 @@ process and user.
 
 .. function:: setns(fd, nstype=0)
 
-   Reassociate the current with a namespace.
-   See the :manpage:`setns(2)` man page for more details.
+   Reassociate the current thread with a Linux namespace.
+   See the :manpage:`setns(2)` and :manpage:`namespaces(7)` man pages for more
+   details.
 
    If *fd* refers to a :file:`/proc/{pid}/ns/` link, ``setns()`` reassociates the
    calling thread with the namespace associated with that link, subject to any
@@ -585,7 +586,7 @@ process and user.
    by combining one or more of the ``CLONE_NEW*`` constants,
    e.g., as ``setns(fd, os.CLONE_NEWUTS | os.CLONE_NEWPID)``.
    The caller's memberships in unspecified namespaces are left unchanged.
-   *fd* can be any object with a :meth:`~io.~IOBase.fileno` method, or a raw file descriptor.
+   *fd* can be any object with a :meth:`~io.IOBase.fileno` method, or a raw file descriptor.
 
    This example reassociates the thread with the ``init`` process's network namespace::
 
@@ -771,7 +772,7 @@ process and user.
    See the :manpage:`unshare(2)`
    man page for more details.
    The *flags* argument is a bit mask, combining zero or more of the ``CLONE_*``
-   constants using ``|`` (bitwise or), that specifies which parts of the execution
+   constants using ``|`` (:func:`bitwise or <operator.or_>`), that specifies which parts of the execution
    context should be unshared from their existing associations and moved to a
    new namespace.
    If the *flags* argument is ``0``, no changes are made to the calling process's
@@ -786,7 +787,8 @@ process and user.
       The :func:`~os.setns` function.
 
 Flags to the :func:`unshare` function, if the implementation supports them.
-See the Linux manual for the exact effect and availability.
+See :manpage:`unshare(2)` in the Linux manual
+for their exact effect and availability.
 
 .. data:: CLONE_FILES
           CLONE_FS
