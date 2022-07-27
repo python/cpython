@@ -65,6 +65,90 @@ lookup_maybe_method(PyObject *self, PyObject *attr, int *unbound);
 static int
 slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value);
 
+static inline PyTypeObject * subclass_from_ref(PyObject *ref);
+
+
+/* helpers for for static builtin types */
+
+static inline int
+static_builtin_index_is_set(PyTypeObject *self)
+{
+    return self->tp_static_builtin_index > 0;
+}
+
+static inline size_t
+static_builtin_index_get(PyTypeObject *self)
+{
+    assert(static_builtin_index_is_set(self));
+    /* We store a 1-based index so 0 can mean "not initialized". */
+    return self->tp_static_builtin_index - 1;
+}
+
+static inline void
+static_builtin_index_set(PyTypeObject *self, size_t index)
+{
+    assert(index < _Py_MAX_STATIC_BUILTIN_TYPES);
+    /* We store a 1-based index so 0 can mean "not initialized". */
+    self->tp_static_builtin_index = index + 1;
+}
+
+static inline void
+static_builtin_index_clear(PyTypeObject *self)
+{
+    self->tp_static_builtin_index = 0;
+}
+
+static inline static_builtin_state *
+static_builtin_state_get(PyInterpreterState *interp, PyTypeObject *self)
+{
+    return &(interp->types.builtins[static_builtin_index_get(self)]);
+}
+
+/* For static types we store some state in an array on each interpreter. */
+static_builtin_state *
+_PyStaticType_GetState(PyTypeObject *self)
+{
+    assert(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return static_builtin_state_get(interp, self);
+}
+
+static void
+static_builtin_state_init(PyTypeObject *self)
+{
+    /* Set the type's per-interpreter state. */
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+
+    /* It should only be called once for each builtin type. */
+    assert(!static_builtin_index_is_set(self));
+
+    static_builtin_index_set(self, interp->types.num_builtins_initialized);
+    interp->types.num_builtins_initialized++;
+
+    static_builtin_state *state = static_builtin_state_get(interp, self);
+    state->type = self;
+}
+
+static void
+static_builtin_state_clear(PyTypeObject *self)
+{
+    /* Reset the type's per-interpreter state.
+       This basically undoes what static_builtin_state_init() did. */
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+
+    static_builtin_state *state = static_builtin_state_get(interp, self);
+    state->type = NULL;
+    static_builtin_index_clear(self);
+
+    assert(interp->types.num_builtins_initialized > 0);
+    interp->types.num_builtins_initialized--;
+}
+
+// Also see _PyStaticType_InitBuiltin() and _PyStaticType_Dealloc().
+
+/* end static builtin helpers */
+
+
 /*
  * finds the beginning of the docstring's introspection signature.
  * if present, returns a pointer pointing to the first '('.
@@ -204,7 +288,7 @@ static struct type_cache*
 get_type_cache(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return &interp->type_cache;
+    return &interp->types.type_cache;
 }
 
 
@@ -223,7 +307,7 @@ type_cache_clear(struct type_cache *cache, PyObject *value)
 void
 _PyType_InitCache(PyInterpreterState *interp)
 {
-    struct type_cache *cache = &interp->type_cache;
+    struct type_cache *cache = &interp->types.type_cache;
     for (Py_ssize_t i = 0; i < (1 << MCACHE_SIZE_EXP); i++) {
         struct type_cache_entry *entry = &cache->hashtable[i];
         assert(entry->name == NULL);
@@ -240,7 +324,7 @@ _PyType_InitCache(PyInterpreterState *interp)
 static unsigned int
 _PyType_ClearCache(PyInterpreterState *interp)
 {
-    struct type_cache *cache = &interp->type_cache;
+    struct type_cache *cache = &interp->types.type_cache;
 #if MCACHE_STATS
     size_t total = cache->hits + cache->collisions + cache->misses;
     fprintf(stderr, "-- Method cache hits        = %zd (%d%%)\n",
@@ -272,10 +356,16 @@ PyType_ClearCache(void)
 void
 _PyTypes_Fini(PyInterpreterState *interp)
 {
-    struct type_cache *cache = &interp->type_cache;
+    struct type_cache *cache = &interp->types.type_cache;
     type_cache_clear(cache, NULL);
     if (_Py_IsMainInterpreter(interp)) {
         clear_slotdefs();
+    }
+
+    assert(interp->types.num_builtins_initialized == 0);
+    // All the static builtin types should have been finalized already.
+    for (size_t i = 0; i < _Py_MAX_STATIC_BUILTIN_TYPES; i++) {
+        assert(interp->types.builtins[i].type == NULL);
     }
 }
 
@@ -309,12 +399,11 @@ PyType_Modified(PyTypeObject *type)
         Py_ssize_t i = 0;
         PyObject *ref;
         while (PyDict_Next(subclasses, &i, NULL, &ref)) {
-            assert(PyWeakref_CheckRef(ref));
-            PyObject *obj = PyWeakref_GET_OBJECT(ref);
-            if (obj == Py_None) {
+            PyTypeObject *subclass = subclass_from_ref(ref);  // borrowed
+            if (subclass == NULL) {
                 continue;
             }
-            PyType_Modified(_PyType_CAST(obj));
+            PyType_Modified(subclass);
         }
     }
 
@@ -4211,15 +4300,42 @@ type_dealloc_common(PyTypeObject *type)
 }
 
 
+static void
+clear_static_tp_subclasses(PyTypeObject *type)
+{
+    if (type->tp_subclasses == NULL) {
+        return;
+    }
+
+    /* Normally it would be a problem to finalize the type if its
+       tp_subclasses wasn't cleared first.  However, this is only
+       ever called at the end of runtime finalization, so we can be
+       more liberal in cleaning up.  If the given type still has
+       subtypes at this point then some extension module did not
+       correctly finalize its objects.
+
+       We can safely obliterate such subtypes since the extension
+       module and its objects won't be used again, except maybe if
+       the runtime were re-initialized.  In that case the sticky
+       situation would only happen if the module were re-imported
+       then and only if the subtype were stored in a global and only
+       if that global were not overwritten during import.  We'd be
+       fine since the extension is otherwise unsafe and unsupported
+       in that situation, and likely problematic already.
+
+       In any case, this situation means at least some memory is
+       going to leak.  This mostly only affects embedding scenarios.
+     */
+
+    // For now we just clear tp_subclasses.
+
+    Py_CLEAR(type->tp_subclasses);
+}
+
 void
 _PyStaticType_Dealloc(PyTypeObject *type)
 {
-    // If a type still has subtypes, it cannot be deallocated.
-    // A subtype can inherit attributes and methods of its parent type,
-    // and a type must no longer be used once it's deallocated.
-    if (type->tp_subclasses != NULL) {
-        return;
-    }
+    assert(!(type->tp_flags & Py_TPFLAGS_HEAPTYPE));
 
     type_dealloc_common(type);
 
@@ -4227,7 +4343,7 @@ _PyStaticType_Dealloc(PyTypeObject *type)
     Py_CLEAR(type->tp_bases);
     Py_CLEAR(type->tp_mro);
     Py_CLEAR(type->tp_cache);
-    // type->tp_subclasses is NULL
+    clear_static_tp_subclasses(type);
 
     // PyObject_ClearWeakRefs() raises an exception if Py_REFCNT() != 0
     if (Py_REFCNT(type) == 0) {
@@ -4235,6 +4351,11 @@ _PyStaticType_Dealloc(PyTypeObject *type)
     }
 
     type->tp_flags &= ~Py_TPFLAGS_READY;
+
+    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        static_builtin_state_clear(type);
+        /* We leave _Py_TPFLAGS_STATIC_BUILTIN set on tp_flags. */
+    }
 }
 
 
@@ -4296,14 +4417,12 @@ _PyType_GetSubclasses(PyTypeObject *self)
     Py_ssize_t i = 0;
     PyObject *ref;  // borrowed ref
     while (PyDict_Next(subclasses, &i, NULL, &ref)) {
-        assert(PyWeakref_CheckRef(ref));
-        PyObject *obj = PyWeakref_GET_OBJECT(ref);  // borrowed ref
-        if (obj == Py_None) {
+        PyTypeObject *subclass = subclass_from_ref(ref);  // borrowed
+        if (subclass == NULL) {
             continue;
         }
-        assert(PyType_Check(obj));
 
-        if (PyList_Append(list, obj) < 0) {
+        if (PyList_Append(list, _PyObject_CAST(subclass)) < 0) {
             Py_DECREF(list);
             return NULL;
         }
@@ -6650,6 +6769,20 @@ PyType_Ready(PyTypeObject *type)
     return 0;
 }
 
+int
+_PyStaticType_InitBuiltin(PyTypeObject *self)
+{
+    self->tp_flags = self->tp_flags | _Py_TPFLAGS_STATIC_BUILTIN;
+
+    static_builtin_state_init(self);
+
+    int res = PyType_Ready(self);
+    if (res < 0) {
+        static_builtin_state_clear(self);
+    }
+    return res;
+}
+
 
 static int
 add_subclass(PyTypeObject *base, PyTypeObject *type)
@@ -6700,6 +6833,42 @@ add_all_subclasses(PyTypeObject *type, PyObject *bases)
     return res;
 }
 
+static inline PyTypeObject *
+subclass_from_ref(PyObject *ref)
+{
+    assert(PyWeakref_CheckRef(ref));
+    PyObject *obj = PyWeakref_GET_OBJECT(ref);  // borrowed ref
+    assert(obj != NULL);
+    if (obj == Py_None) {
+        return NULL;
+    }
+    assert(PyType_Check(obj));
+    return _PyType_CAST(obj);
+}
+
+static PyObject *
+get_subclasses_key(PyTypeObject *type, PyTypeObject *base)
+{
+    PyObject *key = PyLong_FromVoidPtr((void *) type);
+    if (key != NULL) {
+        return key;
+    }
+    PyErr_Clear();
+
+    /* This basically means we're out of memory.
+       We fall back to manually traversing the values. */
+    Py_ssize_t i = 0;
+    PyObject *ref;  // borrowed ref
+    while (PyDict_Next((PyObject *)base->tp_subclasses, &i, &key, &ref)) {
+        PyTypeObject *subclass = subclass_from_ref(ref);  // borrowed
+        if (subclass == type) {
+            return Py_NewRef(key);
+        }
+    }
+    /* It wasn't found. */
+    return NULL;
+}
+
 static void
 remove_subclass(PyTypeObject *base, PyTypeObject *type)
 {
@@ -6709,8 +6878,8 @@ remove_subclass(PyTypeObject *base, PyTypeObject *type)
     }
     assert(PyDict_CheckExact(subclasses));
 
-    PyObject *key = PyLong_FromVoidPtr((void *) type);
-    if (key == NULL || PyDict_DelItem(subclasses, key)) {
+    PyObject *key = get_subclasses_key(type, base);
+    if (key != NULL && PyDict_DelItem(subclasses, key)) {
         /* This can happen if the type initialization errored out before
            the base subclasses were updated (e.g. a non-str __qualname__
            was passed in the type dict). */
@@ -8803,13 +8972,10 @@ recurse_down_subclasses(PyTypeObject *type, PyObject *attr_name,
     Py_ssize_t i = 0;
     PyObject *ref;
     while (PyDict_Next(subclasses, &i, NULL, &ref)) {
-        assert(PyWeakref_CheckRef(ref));
-        PyObject *obj = PyWeakref_GET_OBJECT(ref);
-        assert(obj != NULL);
-        if (obj == Py_None) {
+        PyTypeObject *subclass = subclass_from_ref(ref);  // borrowed
+        if (subclass == NULL) {
             continue;
         }
-        PyTypeObject *subclass = _PyType_CAST(obj);
 
         /* Avoid recursing down into unaffected classes */
         PyObject *dict = subclass->tp_dict;
