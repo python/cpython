@@ -134,10 +134,14 @@ struct location {
     int end_col_offset;
 };
 
+
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
     ((const struct location){(LNO), (END_LNO), (COL), (END_COL)})
 
 static struct location NO_LOCATION = {-1, -1, -1, -1};
+
+#define NO_OPARG  -1
+#define NO_TARGET NULL
 
 struct instr {
     int i_opcode;
@@ -1248,22 +1252,22 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
     return stack_effect(opcode, oparg, -1);
 }
 
-/* Add an opcode with no argument.
-   Returns 0 on failure, 1 on success.
-*/
+#define HAS_TARGET(opcode) \
+       (IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode))
 
+/* Append an instruction. Returns 0 on failure, 1 on success. */
 static inline int
 basicblock_addop(basicblock *b, int opcode, int oparg,
                  basicblock *target, struct location loc)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
-    assert(HAS_ARG(opcode) || oparg == 0);
-    assert(0 <= oparg && oparg < (1 << 30));
-    assert((target == NULL) ||
-           IS_JUMP_OPCODE(opcode) ||
-           IS_BLOCK_PUSH_OPCODE(opcode));
-    assert(oparg == 0 || target == NULL);
+    assert(oparg == NO_OPARG || (0 <= oparg && oparg < (1 << 30)));
+    assert((HAS_ARG(opcode) && !HAS_TARGET(opcode) && oparg != NO_OPARG) ||
+           (!(HAS_ARG(opcode) && !HAS_TARGET(opcode)) && oparg == NO_OPARG));
+    assert((HAS_TARGET(opcode) && target != NO_TARGET) ||
+           (!HAS_TARGET(opcode) && target == NO_TARGET));
+    assert(!(oparg != NO_OPARG && target != NO_TARGET));
 
     int off = basicblock_next_instr(b);
     if (off < 0) {
@@ -1293,12 +1297,9 @@ cfg_builder_addop(cfg_builder *g, int opcode, int oparg, basicblock *target,
     return basicblock_addop(g->curblock, opcode, oparg, target, loc);
 }
 
-static inline int
-cfg_builder_addop_noarg(cfg_builder *g, int opcode, struct location loc)
-{
-    assert(!HAS_ARG(opcode));
-    return cfg_builder_addop(g, opcode, 0, NULL, loc);
-}
+/* Add an instruction with no arg. Returns 0 on failure, 1 on success. */
+#define CFG_BUILDER_ADDOP_NOARG(G, OP, LOC) \
+        cfg_builder_addop(G, OP, NO_OPARG, NO_TARGET, LOC)
 
 static Py_ssize_t
 dict_add_o(PyObject *dict, PyObject *o)
@@ -1515,24 +1516,24 @@ cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, struct locatio
 static int
 cfg_builder_addop_j(cfg_builder *g, int opcode, basicblock *target, struct location loc)
 {
-    assert(target != NULL);
+    assert(target != NO_TARGET);
     assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
-    return cfg_builder_addop(g, opcode, 0, target, loc);
+    return cfg_builder_addop(g, opcode, NO_OPARG, target, loc);
 }
 
 
 #define ADDOP(C, OP) { \
-    if (!cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), COMPILER_LOC(C))) \
+    if (!CFG_BUILDER_ADDOP_NOARG(CFG_BUILDER(C), (OP), COMPILER_LOC(C))) \
         return 0; \
 }
 
 #define ADDOP_NOLINE(C, OP) { \
-    if (!cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), NO_LOCATION)) \
+    if (!CFG_BUILDER_ADDOP_NOARG(CFG_BUILDER(C), (OP), NO_LOCATION)) \
         return 0; \
 }
 
 #define ADDOP_IN_SCOPE(C, OP) { \
-    if (!cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), COMPILER_LOC(C))) { \
+    if (!CFG_BUILDER_ADDOP_NOARG(CFG_BUILDER(C), (OP), COMPILER_LOC(C))) { \
         compiler_exit_scope(c); \
         return 0; \
     } \
@@ -1581,6 +1582,7 @@ cfg_builder_addop_j(cfg_builder *g, int opcode, basicblock *target, struct locat
 }
 
 #define ADDOP_JUMP(C, OP, O) { \
+    assert(HAS_TARGET(OP) && (O) != NO_TARGET); \
     if (!cfg_builder_addop_j(CFG_BUILDER(C), (OP), (O), COMPILER_LOC(C))) \
         return 0; \
 }
@@ -1589,6 +1591,7 @@ cfg_builder_addop_j(cfg_builder *g, int opcode, basicblock *target, struct locat
  * Used for artificial jumps that have no corresponding
  * token in the source code. */
 #define ADDOP_JUMP_NOLINE(C, OP, O) { \
+    assert(HAS_TARGET(OP) && (O) != NO_TARGET); \
     if (!cfg_builder_addop_j(CFG_BUILDER(C), (OP), (O), NO_LOCATION)) \
         return 0; \
 }
@@ -6280,7 +6283,7 @@ emit_and_reset_fail_pop(struct compiler *c, pattern_context *pc)
     }
     while (--pc->fail_pop_size) {
         compiler_use_next_block(c, pc->fail_pop[pc->fail_pop_size]);
-        if (!cfg_builder_addop_noarg(CFG_BUILDER(c), POP_TOP, COMPILER_LOC(c))) {
+        if (!CFG_BUILDER_ADDOP_NOARG(CFG_BUILDER(c), POP_TOP, COMPILER_LOC(c))) {
             pc->fail_pop_size = 0;
             PyObject_Free(pc->fail_pop);
             pc->fail_pop = NULL;
@@ -6778,6 +6781,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
             }
         }
         assert(control);
+        assert(end);
         if (!cfg_builder_addop_j(CFG_BUILDER(c), JUMP, end, COMPILER_LOC(c)) ||
             !emit_and_reset_fail_pop(c, pc))
         {
@@ -6790,7 +6794,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
     // Need to NULL this for the PyObject_Free call in the error block.
     old_pc.fail_pop = NULL;
     // No match. Pop the remaining copy of the subject and fail:
-    if (!cfg_builder_addop_noarg(CFG_BUILDER(c), POP_TOP, COMPILER_LOC(c)) || !jump_to_fail_pop(c, pc, JUMP)) {
+    if (!CFG_BUILDER_ADDOP_NOARG(CFG_BUILDER(c), POP_TOP, COMPILER_LOC(c)) || !jump_to_fail_pop(c, pc, JUMP)) {
         goto error;
     }
     compiler_use_next_block(c, end);
@@ -7438,7 +7442,7 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
             if (explicit_jump == NULL) {
                 return -1;
             }
-            basicblock_addop(explicit_jump, JUMP, 0, b->b_next, NO_LOCATION);
+            basicblock_addop(explicit_jump, JUMP, NO_OPARG, b->b_next, NO_LOCATION);
 
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
