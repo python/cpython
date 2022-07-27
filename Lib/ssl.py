@@ -728,9 +728,11 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
     if not isinstance(purpose, _ASN1Object):
         raise TypeError(purpose)
 
-    # SSLContext sets OP_NO_SSLv2, OP_NO_SSLv3, OP_NO_COMPRESSION,
-    # OP_CIPHER_SERVER_PREFERENCE, OP_SINGLE_DH_USE and OP_SINGLE_ECDH_USE
-    # by default.
+    # SSLContext sets OP_NO_SSLv2, OP_NO_SSLv3, OP_NO_TLSv1, OP_NO_TLSv1_1,
+    # OP_NO_COMPRESSION, OP_CIPHER_SERVER_PREFERENCE, OP_SINGLE_DH_USE,
+    # and OP_SINGLE_ECDH_USE by default.
+    # PROTOCOL_TLS_CLIENT enables cert and hostname verification by
+    # default, too.
     if purpose == Purpose.SERVER_AUTH:
         # verify certs and host name in client mode
         context = SSLContext(PROTOCOL_TLS_CLIENT)
