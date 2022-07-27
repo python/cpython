@@ -1206,7 +1206,7 @@ Task Object
       This method is used by asyncio's internals and isn't expected to be
       used by end-user code.  In particular, if a Task gets successfully
       uncancelled, this allows for elements of structured concurrency like
-      :ref:`taskgroups` or and :func:`asyncio.timeout` to continue running,
+      :ref:`taskgroups` and :func:`asyncio.timeout` to continue running,
       isolating cancellation to the respective structured block.
       For example::
 
