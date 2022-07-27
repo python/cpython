@@ -67,12 +67,25 @@ after restarting the Python interpreter::
    con = sqlite3.connect('example.db')
    cur = con.cursor()
 
-To retrieve data after executing a SELECT statement, either treat the cursor as
-an :term:`iterator`, call the cursor's :meth:`~Cursor.fetchone` method to
-retrieve a single matching row, or call :meth:`~Cursor.fetchall` to get a list
-of the matching rows.
+At this point, our database only contains one row::
 
-This example uses the iterator form::
+   >>> res = cur.execute('SELECT count(rowid) FROM stocks')
+   >>> print(res.fetchone())
+   (1,)
+
+The result is a one-item :class:`tuple`;
+one row, with one column.
+Now, let us insert three more rows of data,
+using :meth:`~Cursor.executemany`::
+
+   >>> data = [
+       ('2006-03-28', 'BUY', 'IBM', 1000, 45.0),
+       ('2006-04-05', 'BUY', 'MSFT', 1000, 72.0),
+       ('2006-04-06', 'SELL', 'IBM', 500, 53.0),
+   ]
+   >>> cur.executemany('INSERT INTO stocks VALUES(?, ?, ?, ?)', data)
+
+Now, retrieve the data by iterating over the result of a SELECT statement::
 
    >>> for row in cur.execute('SELECT * FROM stocks ORDER BY price'):
            print(row)
@@ -989,12 +1002,6 @@ Cursor Objects
       *parameters*.  It is also possible to use an
       :term:`iterator` yielding parameters instead of a sequence.
       Uses the same implicit transaction handling as :meth:`~Cursor.execute`.
-
-      .. literalinclude:: ../includes/sqlite3/executemany_1.py
-
-      Here's a shorter example using a :term:`generator`:
-
-      .. literalinclude:: ../includes/sqlite3/executemany_2.py
 
 
    .. method:: executescript(sql_script, /)
