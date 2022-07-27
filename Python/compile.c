@@ -7776,7 +7776,6 @@ assemble_emit(struct assembler *a, struct instr *i)
 {
     _Py_CODEUNIT *code;
     int size = instr_size(i);
-    assert(a->a_offset <= INT_MAX / sizeof(_Py_CODEUNIT));
     if (!bytes_make_room(&a->a_bytecode, sizeof(_Py_CODEUNIT),
                          a->a_offset, size, "bytecode is too long")) {
         return 0;
