@@ -789,7 +789,7 @@ Connection Objects
 
       Return an :term:`iterator` to dump the database as SQL source code.
       Useful when saving an in-memory database for later restoration.
-      Similar to the ``.dump` command in the :program:`sqlite3` shell.
+      Similar to the ``.dump`` command in the :program:`sqlite3` shell.
 
       Example::
 
