@@ -1621,8 +1621,9 @@ Using :mod:`sqlite3` efficiently
 Using shortcut methods
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Using the nonstandard :meth:`execute`, :meth:`executemany` and
-:meth:`executescript` methods of the :class:`Connection` object, your code can
+Using the :meth:`~Connection.execute`,
+:meth:`~Connection.executemany`, and :meth:`~Connection.executescript`
+methods of the :class:`Connection` class, your code can
 be written more concisely because you don't have to create the (often
 superfluous) :class:`Cursor` objects explicitly. Instead, the :class:`Cursor`
 objects are created implicitly and these shortcut methods return the cursor
