@@ -5631,7 +5631,7 @@ handle_eval_breaker:
             assert(oparg);
             oparg <<= 8;
             oparg |= _Py_OPARG(*next_instr);
-            // We might be tracing. To avoid breaking tracing guarantees in 
+            // We might be tracing. To avoid breaking tracing guarantees in
             // quickened instructions, always deoptimize the next opcode:
             opcode = _PyOpcode_Deopt[_Py_OPCODE(*next_instr)];
             PRE_DISPATCH_GOTO();
@@ -6883,9 +6883,7 @@ PyThreadState_LeaveTracing(PyThreadState *tstate)
 {
     assert(tstate->tracing > 0 && tstate->cframe->use_tracing == 0);
     tstate->tracing--;
-    if (tstate->tracing == 0) {
-        _PyThreadState_UpdateTracingState(tstate);
-    }
+    _PyThreadState_UpdateTracingState(tstate);
 }
 
 static int
@@ -6924,7 +6922,6 @@ _PyEval_CallTracing(PyObject *func, PyObject *args)
     int save_tracing = tstate->tracing;
     int save_use_tracing = tstate->cframe->use_tracing;
     tstate->tracing = 0;
-
     // Call the tracing function
     PyObject *result = PyObject_Call(func, args, NULL);
 
