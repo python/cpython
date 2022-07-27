@@ -134,7 +134,6 @@ struct location {
     int end_col_offset;
 };
 
-
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
     ((const struct location){(LNO), (END_LNO), (COL), (END_COL)})
 
@@ -432,8 +431,6 @@ typedef struct {
 } pattern_context;
 
 static int basicblock_next_instr(basicblock *);
-
-static int cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, struct location loc);
 
 static void compiler_free(struct compiler *);
 static int compiler_error(struct compiler *, const char *, ...);
@@ -1299,7 +1296,19 @@ cfg_builder_addop(cfg_builder *g, int opcode, int oparg, basicblock *target,
 
 /* Add an instruction with no arg. Returns 0 on failure, 1 on success. */
 #define CFG_BUILDER_ADDOP_NOARG(G, OP, LOC) \
-        cfg_builder_addop(G, OP, NO_OPARG, NO_TARGET, LOC)
+    cfg_builder_addop(G, OP, NO_OPARG, NO_TARGET, LOC)
+
+/* Add an instructon with integer arg. Returns 0 on failure and 1 on success.
+ * oparg value is unsigned, but a signed C int is usually used to store
+ * it in the C code (like Python/ceval.c).
+ *
+ * Limit to 32-bit signed C int (rather than INT_MAX) for portability.
+ *
+ * The argument of a concrete bytecode instruction is limited to 8-bit.
+ * EXTENDED_ARG is used for 16, 24, and 32-bit arguments.
+ */
+#define CFG_BUILDER_ADDOP_I(G, OP, ARG, LOC) \
+    cfg_builder_addop(G, OP, Py_SAFE_DOWNCAST(ARG, Py_ssize_t, int), NULL, LOC)
 
 /* Add a jump instruction. Returns 0 on faiure, 1 on success. */
 #define CFG_BUILDER_ADDOP_J(G, OP, T, LOC) \
@@ -1462,7 +1471,7 @@ compiler_addop_load_const(struct compiler *c, PyObject *o)
     Py_ssize_t arg = compiler_add_const(c, o);
     if (arg < 0)
         return 0;
-    return cfg_builder_addop_i(CFG_BUILDER(c), LOAD_CONST, arg, COMPILER_LOC(c));
+    return CFG_BUILDER_ADDOP_I(CFG_BUILDER(c), LOAD_CONST, arg, COMPILER_LOC(c));
 }
 
 static int
@@ -1472,7 +1481,7 @@ compiler_addop_o(struct compiler *c, int opcode, PyObject *dict,
     Py_ssize_t arg = dict_add_o(dict, o);
     if (arg < 0)
         return 0;
-    return cfg_builder_addop_i(CFG_BUILDER(c), opcode, arg, COMPILER_LOC(c));
+    return CFG_BUILDER_ADDOP_I(CFG_BUILDER(c), opcode, arg, COMPILER_LOC(c));
 }
 
 static int
@@ -1496,25 +1505,7 @@ compiler_addop_name(struct compiler *c, int opcode, PyObject *dict,
         arg <<= 1;
         arg |= 1;
     }
-    return cfg_builder_addop_i(CFG_BUILDER(c), opcode, arg, COMPILER_LOC(c));
-}
-
-/* Add an opcode with an integer argument.
-   Returns 0 on failure, 1 on success.
-*/
-static int
-cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, struct location loc)
-{
-    /* oparg value is unsigned, but a signed C int is usually used to store
-       it in the C code (like Python/ceval.c).
-
-       Limit to 32-bit signed C int (rather than INT_MAX) for portability.
-
-       The argument of a concrete bytecode instruction is limited to 8-bit.
-       EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
-
-    int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
-    return cfg_builder_addop(g, opcode, oparg_, NULL, loc);
+    return CFG_BUILDER_ADDOP_I(CFG_BUILDER(c), opcode, arg, COMPILER_LOC(c));
 }
 
 
@@ -1568,12 +1559,12 @@ cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, struct locatio
 }
 
 #define ADDOP_I(C, OP, O) { \
-    if (!cfg_builder_addop_i(CFG_BUILDER(C), (OP), (O), COMPILER_LOC(C))) \
+    if (!CFG_BUILDER_ADDOP_I(CFG_BUILDER(C), (OP), (O), COMPILER_LOC(C))) \
         return 0; \
 }
 
 #define ADDOP_I_NOLINE(C, OP, O) { \
-    if (!cfg_builder_addop_i(CFG_BUILDER(C), (OP), (O), NO_LOCATION)) \
+    if (!CFG_BUILDER_ADDOP_I(CFG_BUILDER(C), (OP), (O), NO_LOCATION)) \
         return 0; \
 }
 
@@ -4236,7 +4227,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     if (op == LOAD_GLOBAL) {
         arg <<= 1;
     }
-    return cfg_builder_addop_i(CFG_BUILDER(c), op, arg, COMPILER_LOC(c));
+    return CFG_BUILDER_ADDOP_I(CFG_BUILDER(c), op, arg, COMPILER_LOC(c));
 }
 
 static int
@@ -6713,7 +6704,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
         pc->fail_pop = NULL;
         pc->fail_pop_size = 0;
         pc->on_top = 0;
-        if (!cfg_builder_addop_i(CFG_BUILDER(c), COPY, 1, COMPILER_LOC(c)) ||
+        if (!CFG_BUILDER_ADDOP_I(CFG_BUILDER(c), COPY, 1, COMPILER_LOC(c)) ||
             !compiler_pattern(c, alt, pc)) {
             goto error;
         }
