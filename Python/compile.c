@@ -1301,6 +1301,10 @@ cfg_builder_addop(cfg_builder *g, int opcode, int oparg, basicblock *target,
 #define CFG_BUILDER_ADDOP_NOARG(G, OP, LOC) \
         cfg_builder_addop(G, OP, NO_OPARG, NO_TARGET, LOC)
 
+/* Add a jump instruction. Returns 0 on faiure, 1 on success. */
+#define CFG_BUILDER_ADDOP_J(G, OP, T, LOC) \
+    cfg_builder_addop(G, OP, NO_OPARG, T, LOC)
+
 static Py_ssize_t
 dict_add_o(PyObject *dict, PyObject *o)
 {
@@ -1513,14 +1517,6 @@ cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, struct locatio
     return cfg_builder_addop(g, opcode, oparg_, NULL, loc);
 }
 
-static int
-cfg_builder_addop_j(cfg_builder *g, int opcode, basicblock *target, struct location loc)
-{
-    assert(target != NO_TARGET);
-    assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
-    return cfg_builder_addop(g, opcode, NO_OPARG, target, loc);
-}
-
 
 #define ADDOP(C, OP) { \
     if (!CFG_BUILDER_ADDOP_NOARG(CFG_BUILDER(C), (OP), COMPILER_LOC(C))) \
@@ -1583,7 +1579,7 @@ cfg_builder_addop_j(cfg_builder *g, int opcode, basicblock *target, struct locat
 
 #define ADDOP_JUMP(C, OP, O) { \
     assert(HAS_TARGET(OP) && (O) != NO_TARGET); \
-    if (!cfg_builder_addop_j(CFG_BUILDER(C), (OP), (O), COMPILER_LOC(C))) \
+    if (!CFG_BUILDER_ADDOP_J(CFG_BUILDER(C), (OP), (O), COMPILER_LOC(C))) \
         return 0; \
 }
 
@@ -1592,7 +1588,7 @@ cfg_builder_addop_j(cfg_builder *g, int opcode, basicblock *target, struct locat
  * token in the source code. */
 #define ADDOP_JUMP_NOLINE(C, OP, O) { \
     assert(HAS_TARGET(OP) && (O) != NO_TARGET); \
-    if (!cfg_builder_addop_j(CFG_BUILDER(C), (OP), (O), NO_LOCATION)) \
+    if (!CFG_BUILDER_ADDOP_J(CFG_BUILDER(C), (OP), (O), NO_LOCATION)) \
         return 0; \
 }
 
@@ -6782,7 +6778,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
         }
         assert(control);
         assert(end);
-        if (!cfg_builder_addop_j(CFG_BUILDER(c), JUMP, end, COMPILER_LOC(c)) ||
+        if (!CFG_BUILDER_ADDOP_J(CFG_BUILDER(c), JUMP, end, COMPILER_LOC(c)) ||
             !emit_and_reset_fail_pop(c, pc))
         {
             goto error;
