@@ -737,7 +737,10 @@ do_fork_exec(char *const exec_array[],
 
 #ifdef VFORK_USABLE
     if (child_sigmask) {
-        /* Checked by our caller; verify this in debug builds. */
+        /* These are checked by our caller; verify them in debug builds. */
+        assert(uid == (uid_t)-1);
+        assert(gid == (gid_t)-1);
+        assert(groups_size < 0);
         assert(preexec_fn == Py_None);
 
         pid = vfork();
