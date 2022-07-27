@@ -26,11 +26,12 @@ compliant with the DB-API 2.0 specification described by :pep:`249`, and
 requires SQLite 3.7.15 or newer.
 
 This document includes four main sections:
+
 * :ref:`sqlite3-tutorial`: teaches how to use the sqlite3 module
 * :ref:`sqlite3-reference`: describes the classes and methods defined in the
   module
 * :ref:`sqlite3-howtos`: explains how to solve specific problems
-* :ref:`sqlites-concepts`: provides more background and insights about the
+* :ref:`sqlite3-concepts`: provides more background and insights about the
   design of the module
 
 
