@@ -772,9 +772,8 @@ process and user.
    See the :manpage:`unshare(2)`
    man page for more details.
    The *flags* argument is a bit mask, combining zero or more of the ``CLONE_*``
-   constants using ``|`` (:func:`bitwise or <operator.or_>`), that specifies which parts of the execution
-   context should be unshared from their existing associations and moved to a
-   new namespace.
+   constants, that specifies which parts of the execution context should be
+   unshared from their existing associations and moved to a new namespace.
    If the *flags* argument is ``0``, no changes are made to the calling process's
    execution context.
 
