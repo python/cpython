@@ -123,8 +123,7 @@ class Runner:
                 uncancel = getattr(task, "uncancel", None)
                 if uncancel is not None and uncancel() == 0:
                     raise KeyboardInterrupt()
-            else:
-                raise  # CancelledError
+            raise  # CancelledError
         finally:
             if (sigint_handler is not None
                 and signal.getsignal(signal.SIGINT) is sigint_handler
