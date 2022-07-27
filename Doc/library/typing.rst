@@ -1302,21 +1302,20 @@ These are not used in annotations. They are building blocks for creating generic
     *arbitrary* number of types by acting like an *arbitrary* number of type
     variables wrapped in a tuple. For example::
 
-        T = TypeVar('T')
         Ts = TypeVarTuple('Ts')
 
-        def remove_first_element(tup: tuple[T, *Ts]) -> tuple[*Ts]:
+        def remove_first_element(tup: tuple[Any, *Ts]) -> tuple[*Ts]:
             return tup[1:]
 
-        # T is bound to int, Ts is bound to ()
+        # Ts is bound to ()
         # Return value is (), which has type tuple[()]
         remove_first_element(tup=(1,))
 
-        # T is bound to int, Ts is bound to (str,)
+        # Ts is bound to (str,)
         # Return value is ('spam',), which has type tuple[str]
         remove_first_element(tup=(1, 'spam'))
 
-        # T is bound to int, Ts is bound to (str, float)
+        # Ts is bound to (str, float)
         # Return value is ('spam', 3.0), which has type tuple[str, float]
         remove_first_element(tup=(1, 'spam', 3.0))
 
