@@ -499,19 +499,19 @@ Connection Objects
       make sure to :meth:`commit` before closing
       to avoid losing pending changes.
 
-   .. method:: execute(sql[, parameters])
+   .. method:: execute(sql, parameters=(), /)
 
       Create a new :class:`Cursor` object and call
       :meth:`~Cursor.execute` on it with the given *sql* and *parameters*.
       Return the new cursor object.
 
-   .. method:: executemany(sql[, parameters])
+   .. method:: executemany(sql, parameters, /)
 
       Create a new :class:`Cursor` object and call
       :meth:`~Cursor.executemany` on it with the given *sql* and *parameters*.
       Return the new cursor object.
 
-   .. method:: executescript(sql_script)
+   .. method:: executescript(sql_script, /)
 
       Create a new :class:`Cursor` object and call
       :meth:`~Cursor.executescript` on it with the given *sql_script*.
@@ -981,11 +981,11 @@ Cursor Objects
       a transaction is implicitly opened before executing *sql*.
 
 
-   .. method:: executemany(sql, seq_of_parameters, /)
+   .. method:: executemany(sql, parameters, /)
 
       Execute :ref:`parameterized <sqlite3-placeholders>` SQL statement *sql*
       against all parameter sequences or mappings found in the sequence
-      *seq_of_parameters*.  It is also possible to use an
+      *parameters*.  It is also possible to use an
       :term:`iterator` yielding parameters instead of a sequence.
       Uses the same implicit transaction handling as :meth:`~Cursor.execute`.
 
