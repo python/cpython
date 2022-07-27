@@ -866,13 +866,13 @@ cfg_builder_use_next_block(cfg_builder *g, basicblock *block)
     return block;
 }
 
-static basicblock *
+static inline basicblock *
 compiler_new_block(struct compiler *c)
 {
     return cfg_builder_new_block(CFG_BUILDER(c));
 }
 
-static basicblock *
+static inline basicblock *
 compiler_use_next_block(struct compiler *c, basicblock *block)
 {
     return cfg_builder_use_next_block(CFG_BUILDER(c), block);
@@ -1252,7 +1252,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
    Returns 0 on failure, 1 on success.
 */
 
-static int
+static inline int
 basicblock_addop(basicblock *b, int opcode, int oparg,
                  basicblock *target, struct location loc)
 {
@@ -1278,7 +1278,7 @@ basicblock_addop(basicblock *b, int opcode, int oparg,
     return 1;
 }
 
-static int
+static inline int
 cfg_builder_addop(cfg_builder *g, int opcode, int oparg, basicblock *target,
                   struct location loc)
 {
@@ -1293,7 +1293,7 @@ cfg_builder_addop(cfg_builder *g, int opcode, int oparg, basicblock *target,
     return basicblock_addop(g->curblock, opcode, oparg, target, loc);
 }
 
-static int
+static inline int
 cfg_builder_addop_noarg(cfg_builder *g, int opcode, struct location loc)
 {
     assert(!HAS_ARG(opcode));
