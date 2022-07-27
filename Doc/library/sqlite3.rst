@@ -161,12 +161,12 @@ Module functions and constants
 
 .. data:: sqlite_version
 
-   Version number of the run-time SQLite library as a :class:`string <str>`.
+   Version number of the runtime SQLite library as a :class:`string <str>`.
 
 
 .. data:: sqlite_version_info
 
-   Version number of the run-time SQLite library as a :class:`tuple` of
+   Version number of the runtime SQLite library as a :class:`tuple` of
    :class:`integers <int>`.
 
 
@@ -870,7 +870,7 @@ Connection Objects
 
    .. method:: getlimit(category, /)
 
-      Get a connection run-time limit. *category* is the limit category to be
+      Get a connection runtime limit. *category* is the limit category to be
       queried.
 
       Example, query the maximum length of an SQL statement::
@@ -885,7 +885,7 @@ Connection Objects
 
    .. method:: setlimit(category, limit, /)
 
-      Set a connection run-time limit. *category* is the limit category to be
+      Set a connection runtime limit. *category* is the limit category to be
       set. *limit* is the new limit. If the new limit is a negative number, the
       limit is unchanged.
 
@@ -1011,12 +1011,13 @@ Cursor Objects
    .. method:: fetchmany(size=cursor.arraysize)
 
       Fetch the next set of rows of a query result as a :class:`list`.
-      Return an empty list when no more rows are available.
+      Return an empty list if no more rows are available.
 
       The number of rows to fetch per call is specified by the *size* parameter.
       If *size* is not given, :attr:`arraysize` determines the number of rows
       to be fetched.
-      If fewer than *size* rows are available, fewer rows are returned.
+      If fewer than *size* rows are available,
+      as many rows as are available are returned.
 
       Note there are performance considerations involved with the *size* parameter.
       For optimal performance, it is usually best to use the arraysize attribute.
@@ -1026,7 +1027,7 @@ Cursor Objects
    .. method:: fetchall()
 
       Fetch all (remaining) rows of a query result as a :class:`list`.
-      Return an empty list when no rows are available.
+      Return an empty list if no rows are available.
       Note that the :attr:`arraysize` attribute can affect the performance of
       this operation.
 
