@@ -905,9 +905,6 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
 
     if (groups_list != Py_None) {
 #ifdef HAVE_SETGROUPS
-        Py_ssize_t i;
-        gid_t gid;
-
         if (!PyList_Check(groups_list)) {
             PyErr_SetString(PyExc_TypeError,
                     "setgroups argument must be a list");
@@ -933,7 +930,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
             }
         }
 
-        for (i = 0; i < num_groups; i++) {
+        for (Py_ssize_t i = 0; i < num_groups; i++) {
             PyObject *elem;
             elem = PySequence_GetItem(groups_list, i);
             if (!elem)
@@ -944,6 +941,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
                 Py_DECREF(elem);
                 goto cleanup;
             } else {
+                gid_t gid;
                 if (!_Py_Gid_Converter(elem, &gid)) {
                     Py_DECREF(elem);
                     PyErr_SetString(PyExc_ValueError, "invalid group id");
