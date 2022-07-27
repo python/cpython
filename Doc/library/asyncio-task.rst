@@ -294,12 +294,10 @@ perform clean-up logic. In case :exc:`asyncio.CancelledError`
 is explicitly caught, it should generally be propagated when
 clean-up is complete. Most code can safely ignore :exc:`asyncio.CancelledError`.
 
-asyncio components that enable structured concurrency, like
+The asyncio components that enable structured concurrency, like
 :class:`asyncio.TaskGroup` and the :func:`asyncio.timeout` context manager,
 are implemented using cancellation internally and might misbehave if
-a coroutine swallows :exc:`asyncio.CancelledError`.  In particular,
-they might :func:`uncancel <asyncio.Task.uncancel>` a task to properly
-isolate cancelling only a given structured block within the task's body.
+a coroutine swallows :exc:`asyncio.CancelledError`.
 
 .. _taskgroups:
 
@@ -1188,7 +1186,7 @@ Task Object
 
       Note that if this number is greater than zero but the Task is
       still executing, :meth:`cancelled` will still return ``False``.
-      It's because this number can be lowered by calling :meth:`uncancel`,
+      This is because this number can be lowered by calling :meth:`uncancel`,
       which can lead to the task not being cancelled after all if the
       cancellation requests go down to zero.
 
