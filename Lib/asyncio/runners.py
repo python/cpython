@@ -5,7 +5,6 @@ import enum
 import functools
 import threading
 import signal
-import warnings
 
 from . import coroutines
 from . import events
@@ -120,9 +119,10 @@ class Runner:
                 events.set_event_loop(self._loop)
             return self._loop.run_until_complete(task)
         except exceptions.CancelledError:
-            uncancel = getattr(task, "uncancel", None)
-            if self._interrupt_count > 0 and uncancel is not None and uncancel() == 0:
-                raise KeyboardInterrupt()
+            if self._interrupt_count > 0:
+                uncancel = getattr(task, "uncancel", None)
+                if uncancel is not None and uncancel() == 0:
+                    raise KeyboardInterrupt()
             else:
                 raise  # CancelledError
         finally:
