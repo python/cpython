@@ -2643,7 +2643,7 @@ AC_CHECK_HEADERS([ \
   alloca.h asm/types.h bluetooth.h conio.h crypt.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
   ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/memfd.h \
   linux/random.h linux/soundcard.h \
-  linux/tipc.h linux/wait.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
+  linux/tipc.h linux/wait.h netdb.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
   sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/poll.h \
@@ -4272,7 +4272,6 @@ if test "$posix_threads" = "yes"; then
       AC_CHECK_FUNCS(pthread_getcpuclockid)
 fi
 
-
 # Check for enable-ipv6
 AH_TEMPLATE(ENABLE_IPV6, [Define if --enable-ipv6 is specified])
 AC_MSG_CHECKING([if --enable-ipv6 is specified])
@@ -4657,7 +4656,7 @@ AC_CHECK_FUNCS([ \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
   gai_strerror getegid getentropy geteuid getgid getgrgid getgrgid_r \
-  getgrnam_r getgrouplist getgroups getitimer getloadavg getlogin \
+  getgrnam_r getgrouplist getgroups gethostname getitimer getloadavg getlogin \
   getpeername getpgid getpid getppid getpriority _getpty \
   getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid getspent \
   getspnam getuid getwd if_nameindex initgroups kill killpg lchown linkat \
@@ -4880,21 +4879,39 @@ PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
   ])
 ])
 
-PY_CHECK_FUNC([hstrerror], [#include <netdb.h>])
+dnl PY_CHECK_NETDB_FUNC(FUNCTION)
+AC_DEFUN([PY_CHECK_NETDB_FUNC], [PY_CHECK_FUNC([$1], [#include <netdb.h>])])
 
-PY_CHECK_FUNC([inet_aton], [
+PY_CHECK_NETDB_FUNC([hstrerror])
+dnl not available in WASI yet
+PY_CHECK_NETDB_FUNC([getservbyname])
+PY_CHECK_NETDB_FUNC([getservbyport])
+PY_CHECK_NETDB_FUNC([gethostbyname])
+PY_CHECK_NETDB_FUNC([gethostbyaddr])
+PY_CHECK_NETDB_FUNC([getprotobyname])
+
+dnl PY_CHECK_SOCKET_FUNC(FUNCTION)
+AC_DEFUN([PY_CHECK_SOCKET_FUNC], [PY_CHECK_FUNC([$1], [
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-])
+])])
 
-PY_CHECK_FUNC([inet_pton], [
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-])
+PY_CHECK_SOCKET_FUNC([inet_aton])
+PY_CHECK_SOCKET_FUNC([inet_ntoa])
+PY_CHECK_SOCKET_FUNC([inet_pton])
+dnl not available in WASI yet
+PY_CHECK_SOCKET_FUNC([getpeername])
+PY_CHECK_SOCKET_FUNC([getsockname])
+PY_CHECK_SOCKET_FUNC([accept])
+PY_CHECK_SOCKET_FUNC([bind])
+PY_CHECK_SOCKET_FUNC([connect])
+PY_CHECK_SOCKET_FUNC([listen])
+PY_CHECK_SOCKET_FUNC([recvfrom])
+PY_CHECK_SOCKET_FUNC([sendto])
+PY_CHECK_SOCKET_FUNC([setsockopt])
+PY_CHECK_SOCKET_FUNC([socket])
 
 # On some systems, setgroups is in unistd.h, on others, in grp.h
 PY_CHECK_FUNC([setgroups], [
