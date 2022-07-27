@@ -11,7 +11,7 @@
 
 /* Minimal pthread stubs for CPython
  *
- * The stubs implement a bare minimum pthread API for CPython.
+ * The stubs implement the minimum pthread API for CPython.
  * - pthread_create() fails.
  * - pthread_exit() calls exit(0).
  * - pthread_key_*() functions implement minimal TSS without destructor.
