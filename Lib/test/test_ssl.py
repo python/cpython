@@ -4467,6 +4467,24 @@ class TestEnumerations(unittest.TestCase):
                 )
         enum._test_simple_enum(CheckedVerifyMode, ssl.VerifyMode)
 
+    def test_removed_options(self):
+        for removed_option in ssl._REMOVED_OPTIONS:
+            with warnings_helper.check_warnings() as w:
+                value = getattr(ssl, removed_option)
+            self.assertIn(value, ssl.Options)
+            self.assertTrue(w.warnings)
+            msg = str(w.warnings[0].message)
+            self.assertIn("minimum_version", msg)
+
+    def test_removed_protocols(self):
+        for removed_option in ssl._REMOVED_PROTOCOLS:
+            with warnings_helper.check_warnings() as w:
+                value = getattr(ssl, removed_option)
+            self.assertIs(value, NotImplemented)
+            self.assertTrue(w.warnings)
+            msg = str(w.warnings[0].message)
+            self.assertIn("PROTOCOL_TLS_CLIENT", msg)
+
 
 def setUpModule():
     if support.verbose:

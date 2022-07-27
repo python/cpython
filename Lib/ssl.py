@@ -271,6 +271,39 @@ class _TLSMessageType:
     CHANGE_CIPHER_SPEC = 0x0101
 
 
+_REMOVED_PROTOCOLS = frozenset({
+    "PROTOCOL_SSLv2", "PROTOCOL_SSLv3", "PROTOCOL_SSLv23",  "PROTOCOL_TLS",
+})
+_REMOVED_OPTIONS = frozenset({
+    "OP_NO_SSLv2", "OP_NO_SSLv3", "OP_NO_TLSv1", "OP_NO_TLSv1_1",
+    "OP_NO_TLSv1_2", "OP_NO_TLSv1_3",
+})
+
+def __getattr__(name):
+    """Warn about removed PROTOCOL and OP_NO constants"""
+    # The module __getattr__ hook does not polute the module namespaces with
+    # deprecated constants.
+    if name in _REMOVED_OPTIONS:
+        msg = (
+            "ssl.{name} is no longer supported. The constants will "
+            "be removed in {remove}. Use SSLContext's 'minimum_version' "
+            "and 'maximum_version' properties instead."
+        )
+        warnings._deprecated(name, message=msg, remove=(3, 13))
+        return getattr(Options, name)
+
+    if name in _REMOVED_PROTOCOLS:
+        msg = (
+            "ssl.{name} is no longer supported. The constants will "
+            "be removed in {remove}. Use ssl.PROTOCOL_TLS_CLIENT or "
+            "ssl.PROTOCOL_TLS_SERVER instead."
+        )
+        warnings._deprecated(name, message=msg, remove=(3, 13))
+        return NotImplemented
+
+    raise AttributeError(f'module {__name__!r} has no attribute {name!r}') 
+
+
 if sys.platform == "win32":
     from _ssl import enum_certificates, enum_crls
 
