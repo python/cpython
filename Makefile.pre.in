@@ -1544,6 +1544,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/objimpl.h \
 		$(srcdir)/Include/cpython/odictobject.h \
 		$(srcdir)/Include/cpython/picklebufobject.h \
+		$(srcdir)/Include/cpython/pthread_stubs.h \
 		$(srcdir)/Include/cpython/pyctype.h \
 		$(srcdir)/Include/cpython/pydebug.h \
 		$(srcdir)/Include/cpython/pyerrors.h \
