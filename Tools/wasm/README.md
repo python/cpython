@@ -226,16 +226,13 @@ AddType application/wasm wasm
 
 # WASI (wasm32-wasi)
 
-WASI builds require [WASI SDK](https://github.com/WebAssembly/wasi-sdk) 15.0+
-and currently [wasix](https://github.com/singlestore-labs/wasix) for POSIX
-compatibility stubs.
+WASI builds require [WASI SDK](https://github.com/WebAssembly/wasi-sdk) 16.0+.
 
 ## Cross-compile to wasm32-wasi
 
 The script ``wasi-env`` sets necessary compiler and linker flags as well as
 ``pkg-config`` overrides. The script assumes that WASI-SDK is installed in
-``/opt/wasi-sdk`` or ``$WASI_SDK_PATH`` and WASIX is installed in
-``/opt/wasix`` or ``$WASIX_PATH``.
+``/opt/wasi-sdk`` or ``$WASI_SDK_PATH``.
 
 ```shell
 mkdir -p builddir/wasi
@@ -434,21 +431,15 @@ rm -f wasi-sdk-${WASI_VERSION_FULL}-linux.tar.gz
 
 ### Install [wasmtime](https://github.com/bytecodealliance/wasmtime) WASI runtime
 
-**NOTE**: wasmtime 0.37 has a bug. Newer versions should be fine again.
+wasmtime 0.38 or newer is required.
 
 ```shell
 curl -sSf -L -o ~/install-wasmtime.sh https://wasmtime.dev/install.sh
 chmod +x ~/install-wasmtime.sh
-~/install-wasmtime.sh --version v0.36.0
+~/install-wasmtime.sh --version v0.38.0
 ln -srf -t /usr/local/bin/ ~/.wasmtime/bin/wasmtime
 ```
 
-### Install [WASIX](https://github.com/singlestore-labs/wasix)
-
-```shell
-git clone https://github.com/singlestore-labs/wasix.git ~/wasix
-make install -C ~/wasix
-```
 
 ### WASI debugging
 
