@@ -1005,7 +1005,7 @@ Cursor Objects
    .. method:: fetchone()
 
       Fetch the next row of a query result set as a :class:`tuple`.
-      Return :const:`None` when no more data is available.
+      Return :const:`None` if no more data is available.
 
 
    .. method:: fetchmany(size=cursor.arraysize)
