@@ -519,7 +519,7 @@ child_exec(char *const exec_array[],
            int close_fds, int restore_signals,
            int call_setsid, pid_t pgid_to_set,
            gid_t gid,
-           size_t groups_size, const gid_t *groups,
+           Py_ssize_t groups_size, const gid_t *groups,
            uid_t uid, int child_umask,
            const void *child_sigmask,
            PyObject *py_fds_to_keep,
@@ -619,7 +619,7 @@ child_exec(char *const exec_array[],
 #endif
 
 #ifdef HAVE_SETGROUPS
-    if (groups)
+    if (groups_size >= 0)
         POSIX_CALL(setgroups(groups_size, groups));
 #endif /* HAVE_SETGROUPS */
 
@@ -725,7 +725,7 @@ do_fork_exec(char *const exec_array[],
              int close_fds, int restore_signals,
              int call_setsid, pid_t pgid_to_set,
              gid_t gid,
-             size_t groups_size, const gid_t *groups,
+             Py_ssize_t groups_size, const gid_t *groups,
              uid_t uid, int child_umask,
              const void *child_sigmask,
              PyObject *py_fds_to_keep,
@@ -920,10 +920,14 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
             goto cleanup;
         }
 
-        if ((groups = PyMem_RawMalloc(num_groups * sizeof(gid_t))) == NULL) {
-            PyErr_SetString(PyExc_MemoryError,
-                    "failed to allocate memory for group list");
-            goto cleanup;
+        /* Deliberately keep groups == NULL for num_groups == 0 */
+        if (num_groups > 0) {
+            groups = PyMem_RawMalloc(num_groups * sizeof(gid_t));
+            if (groups == NULL) {
+                PyErr_SetString(PyExc_MemoryError,
+                        "failed to allocate memory for group list");
+                goto cleanup;
+            }
         }
 
         for (i = 0; i < num_groups; i++) {
