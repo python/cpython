@@ -234,15 +234,14 @@ compatibility stubs.
 
 The script ``wasi-env`` sets necessary compiler and linker flags as well as
 ``pkg-config`` overrides. The script assumes that WASI-SDK is installed in
-``/opt/wasi-sdk`` or ``$WASI_SDK_PATH``.
+``/opt/wasi-sdk`` or ``$WASI_SDK_PATH`` and WASIX is installed in
+``/opt/wasix`` or ``$WASIX_PATH``.
 
 ```shell
 mkdir -p builddir/wasi
 pushd builddir/wasi
 
 CONFIG_SITE=../../Tools/wasm/config.site-wasm32-wasi \
-  CFLAGS="-isystem /opt/wasix/include" \
-  LDFLAGS="-L/opt/wasix/lib -lwasix" \
   ../../Tools/wasm/wasi-env ../../configure -C \
     --host=wasm32-unknown-wasi \
     --build=$(../../config.guess) \
