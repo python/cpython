@@ -167,7 +167,7 @@ functions.
 - Heap memory and stack size are limited. Recursion or extensive memory
   consumption can crash Python.
 - Most stdlib modules with a dependency on external libraries are missing,
-  e.g. ``ctypes``, ``readline``, ``sqlite3``, ``ssl``, and more.
+  e.g. ``ctypes``, ``readline``, ``ssl``, and more.
 - Shared extension modules are not implemented yet. All extension modules
   are statically linked into the main binary. The experimental configure
   option ``--enable-wasm-dynamic-linking`` enables dynamic extensions
