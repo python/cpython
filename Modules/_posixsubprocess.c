@@ -998,7 +998,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
     /* Use vfork() only if it's safe. See the comment above child_exec(). */
     sigset_t old_sigs;
     if (preexec_fn == Py_None && allow_vfork &&
-        uid == (uid_t)-1 && gid == (gid_t)-1 && groups_list == Py_None) {
+        uid == (uid_t)-1 && gid == (gid_t)-1 && num_groups < 0) {
         /* Block all signals to ensure that no signal handlers are run in the
          * child process while it shares memory with us. Note that signals
          * used internally by C libraries won't be blocked by
@@ -1021,7 +1021,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
                        p2cread, p2cwrite, c2pread, c2pwrite,
                        errread, errwrite, errpipe_read, errpipe_write,
                        close_fds, restore_signals, call_setsid, pgid_to_set,
-                       gid, num_groups, groups_list != Py_None ? groups : NULL,
+                       gid, num_groups, groups,
                        uid, child_umask, old_sigmask,
                        py_fds_to_keep, preexec_fn, preexec_fn_args_tuple);
 
