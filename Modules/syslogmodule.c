@@ -177,7 +177,7 @@ syslog.syslog
     priority: int(c_default="LOG_INFO") = LOG_INFO
     ]
 
-    message as message_object: unicode
+    message: str
 
     /
 
@@ -186,15 +186,9 @@ Send the string message to the system logger.
 
 static PyObject *
 syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
-                   PyObject *message_object)
-/*[clinic end generated code: output=3361dc7f2e863377 input=02500dddce0095df]*/
+                   const char *message)
+/*[clinic end generated code: output=c3dbc73445a0e078 input=ac83d92b12ea3d4e]*/
 {
-    const char *message;
-
-    message = PyUnicode_AsUTF8(message_object);
-    if (message == NULL)
-        return NULL;
-
     if (PySys_Audit("syslog.syslog", "is", priority, message) < 0) {
         return NULL;
     }

@@ -77,7 +77,7 @@ PyDoc_STRVAR(syslog_syslog__doc__,
 
 static PyObject *
 syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
-                   PyObject *message_object);
+                   const char *message);
 
 static PyObject *
 syslog_syslog(PyObject *module, PyObject *args)
@@ -85,16 +85,16 @@ syslog_syslog(PyObject *module, PyObject *args)
     PyObject *return_value = NULL;
     int group_left_1 = 0;
     int priority = LOG_INFO;
-    PyObject *message_object;
+    const char *message;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
-            if (!PyArg_ParseTuple(args, "U:syslog", &message_object)) {
+            if (!PyArg_ParseTuple(args, "s:syslog", &message)) {
                 goto exit;
             }
             break;
         case 2:
-            if (!PyArg_ParseTuple(args, "iU:syslog", &priority, &message_object)) {
+            if (!PyArg_ParseTuple(args, "is:syslog", &priority, &message)) {
                 goto exit;
             }
             group_left_1 = 1;
@@ -103,7 +103,7 @@ syslog_syslog(PyObject *module, PyObject *args)
             PyErr_SetString(PyExc_TypeError, "syslog.syslog requires 1 to 2 arguments");
             goto exit;
     }
-    return_value = syslog_syslog_impl(module, group_left_1, priority, message_object);
+    return_value = syslog_syslog_impl(module, group_left_1, priority, message);
 
 exit:
     return return_value;
@@ -225,4 +225,4 @@ syslog_LOG_UPTO(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ac4ea57479c292c9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=23b0c39420c43124 input=a9049054013a1b77]*/
