@@ -619,7 +619,7 @@ child_exec(char *const exec_array[],
 #endif
 
 #ifdef HAVE_SETGROUPS
-    if (groups_size >= 0)
+    if (groups_size > 0)
         POSIX_CALL(setgroups(groups_size, groups));
 #endif /* HAVE_SETGROUPS */
 
