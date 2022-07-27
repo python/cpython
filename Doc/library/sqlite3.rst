@@ -768,7 +768,7 @@ Connection Objects
 
    .. attribute:: text_factory
 
-      A callable that accept a :class:`bytes` parameter and return a text
+      A callable that accepts a :class:`bytes` parameter and returns a text
       representation of it.
       The callable is invoked for SQLite values with the ``TEXT`` data type.
       By default, this attribute is set to :class:`str`.
@@ -789,7 +789,7 @@ Connection Objects
 
       Return an :term:`iterator` to dump the database as SQL source code.
       Useful when saving an in-memory database for later restoration.
-      Similar to the :kbd:`.dump` command in the :program:`sqlite3` shell.
+      Similar to the ``.dump` command in the :program:`sqlite3` shell.
 
       Example::
 
@@ -1011,7 +1011,7 @@ Cursor Objects
    .. method:: fetchmany(size=cursor.arraysize)
 
       Fetch the next set of rows of a query result as a :class:`list`.
-      Return an empty list is when no more rows are available.
+      Return an empty list when no more rows are available.
 
       The number of rows to fetch per call is specified by the *size* parameter.
       If *size* is not given, :attr:`arraysize` determines the number of rows
