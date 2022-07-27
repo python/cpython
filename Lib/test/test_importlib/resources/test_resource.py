@@ -5,7 +5,7 @@ import pathlib
 
 from . import data01
 from . import zipdata01, zipdata02
-from .resources import util
+from . import util
 from importlib import resources, import_module
 from test.support import import_helper
 from test.support.os_helper import unlink
