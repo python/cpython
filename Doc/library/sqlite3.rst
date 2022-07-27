@@ -1387,8 +1387,8 @@ Python types via :ref:`converters <sqlite3-converters>`.
 
 .. _sqlite3-howtos:
 
-Guides
-------
+How-to guides
+-------------
 
 .. _sqlite3-adapters:
 
