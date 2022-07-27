@@ -1658,6 +1658,8 @@ always available.
    |                  |                                                         |
    |                  |  * ``'nt'``: Windows threads                            |
    |                  |  * ``'pthread'``: POSIX threads                         |
+   |                  |  * ``'pthread-stubs'``: stub POSIX threads              |
+   |                  |    (on WebAssembly platforms without threading support) |
    |                  |  * ``'solaris'``: Solaris threads                       |
    +------------------+---------------------------------------------------------+
    | :const:`lock`    | Name of the lock implementation:                        |

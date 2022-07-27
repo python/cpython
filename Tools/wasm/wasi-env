@@ -31,7 +31,6 @@ fi
 
 WASI_SDK_PATH="${WASI_SDK_PATH:-/opt/wasi-sdk}"
 WASI_SYSROOT="${WASI_SDK_PATH}/share/wasi-sysroot"
-WASIX_PATH="${WASIX_PATH:-/opt/wasix}"
 
 if ! test -x "${WASI_SDK_PATH}/bin/clang"; then
     echo "Error: ${WASI_SDK_PATH}/bin/clang does not exist." >&2
@@ -64,12 +63,6 @@ RANLIB="${WASI_SDK_PATH}/bin/ranlib"
 PKG_CONFIG_PATH=""
 PKG_CONFIG_LIBDIR="${WASI_SYSROOT}/lib/pkgconfig:${WASI_SYSROOT}/share/pkgconfig"
 PKG_CONFIG_SYSROOT_DIR="${WASI_SYSROOT}"
-
-# add WASIX (POSIX stubs for WASI) if WASIX is installed
-if test -f "${WASIX_PATH}/lib/libwasix.a"; then
-    CFLAGS="${CFLAGS} -isystem ${WASIX_PATH}/include"
-    LDFLAGS="${LDFLAGS} -L${WASIX_PATH}/lib -lwasix"
-fi
 
 PATH="${WASI_SDK_PATH}/bin:${PATH}"
 
