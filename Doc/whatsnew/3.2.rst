@@ -1817,8 +1817,7 @@ names.
    ===============================   ==============================
 
   Likewise, the ``TestCase.fail*`` methods deprecated in Python 3.1 are expected
-  to be removed in Python 3.3.  Also see the :ref:`deprecated-aliases` section in
-  the :mod:`unittest` documentation.
+  to be removed in Python 3.3.
 
   (Contributed by Ezio Melotti; :issue:`9424`.)
 
@@ -2057,7 +2056,7 @@ information:
   such as "3.2".
 
 It also provides access to the paths and variables corresponding to one of
-seven named schemes used by :mod:`distutils`.  Those include *posix_prefix*,
+seven named schemes used by ``distutils``.  Those include *posix_prefix*,
 *posix_home*, *posix_user*, *nt*, *nt_user*, *os2*, *os2_home*:
 
 * :func:`~sysconfig.get_paths` makes a dictionary containing installation paths

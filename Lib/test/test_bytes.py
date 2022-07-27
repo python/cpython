@@ -1710,6 +1710,23 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertEqual(b1, b)
         self.assertEqual(b3, b'xcxcxc')
 
+    def test_mutating_index(self):
+        class Boom:
+            def __index__(self):
+                b.clear()
+                return 0
+
+        with self.subTest("tp_as_mapping"):
+            b = bytearray(b'Now you see me...')
+            with self.assertRaises(IndexError):
+                b[0] = Boom()
+
+        with self.subTest("tp_as_sequence"):
+            _testcapi = import_helper.import_module('_testcapi')
+            b = bytearray(b'Now you see me...')
+            with self.assertRaises(IndexError):
+                _testcapi.sequence_setitem(b, 0, Boom())
+
 
 class AssortedBytesTest(unittest.TestCase):
     #

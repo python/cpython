@@ -60,12 +60,13 @@ def print_specialization_stats(name, family_stats, defines):
         for key in ("specialization.success",  "specialization.failure"):
             total_attempts += family_stats.get(key, 0)
         rows = []
-        for key in ("specialization.success",  "specialization.failure"):
-            label = key[len("specialization."):]
-            label = label[0].upper() + label[1:]
-            val = family_stats.get(key, 0)
-            rows.append((label, val, f"{100*val/total_attempts:0.1f}%"))
-        emit_table(("", "Count:", "Ratio:"), rows)
+        if total_attempts:
+            for key in ("specialization.success",  "specialization.failure"):
+                label = key[len("specialization."):]
+                label = label[0].upper() + label[1:]
+                val = family_stats.get(key, 0)
+                rows.append((label, val, f"{100*val/total_attempts:0.1f}%"))
+            emit_table(("", "Count:", "Ratio:"), rows)
         total_failures = family_stats.get("specialization.failure", 0)
         failure_kinds = [ 0 ] * 30
         for key in family_stats:

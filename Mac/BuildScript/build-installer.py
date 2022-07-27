@@ -203,7 +203,7 @@ def internalTk():
 
 # Do we use 8.6.8 when building our own copy
 # of Tcl/Tk or a modern version.
-#   We use the old version when buildin on
+#   We use the old version when building on
 #   old versions of macOS due to build issues.
 def useOldTk():
     return getBuildTuple() < (10, 15)

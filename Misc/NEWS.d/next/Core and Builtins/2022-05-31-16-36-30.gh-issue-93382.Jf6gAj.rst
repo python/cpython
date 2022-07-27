@@ -1,1 +1,2 @@
-Speed up the :c:func:`PyCode_GetCode` function which also improves accessing the :attr:`~types.CodeType.co_code` attribute in Python.
+Cache the result of :c:func:`PyCode_GetCode` function to restore the O(1)
+lookup of the :attr:`~types.CodeType.co_code` attribute.

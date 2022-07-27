@@ -308,6 +308,10 @@ tok_concatenate_interactive_new_line(struct tok_state *tok, const char *line) {
 
     Py_ssize_t current_size = tok->interactive_src_end - tok->interactive_src_start;
     Py_ssize_t line_size = strlen(line);
+    char last_char = line[line_size > 0 ? line_size - 1 : line_size];
+    if (last_char != '\n') {
+        line_size += 1;
+    }
     char* new_str = tok->interactive_src_start;
 
     new_str = PyMem_Realloc(new_str, current_size + line_size + 1);
@@ -321,7 +325,11 @@ tok_concatenate_interactive_new_line(struct tok_state *tok, const char *line) {
         return -1;
     }
     strcpy(new_str + current_size, line);
-
+    if (last_char != '\n') {
+        /* Last line does not end in \n, fake one */
+        new_str[current_size + line_size - 1] = '\n';
+        new_str[current_size + line_size] = '\0';
+    }
     tok->interactive_src_start = new_str;
     tok->interactive_src_end = new_str + current_size + line_size;
     return 0;

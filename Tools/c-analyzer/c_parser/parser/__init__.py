@@ -42,7 +42,7 @@ separators:
    + (stmt) case:  between expression and stmt
    + (stmt) default:  between "default" and stmt
 * "="
-   + (decl) delaration:  between decl and initializer
+   + (decl) declaration:  between decl and initializer
    + (decl) enumerator:  between identifier and "initializer"
    + (expr) assignment:  between "var" and expr
 
@@ -92,7 +92,7 @@ Here are the cases where we've taken shortcuts or made assumptions:
 * no "inline" type decls in function return types
 * no superfluous parentheses in declarators
 * var decls in for loops are always "simple" (e.g. no inline types)
-* only inline struct/union/enum decls may be anonymouns (without a name)
+* only inline struct/union/enum decls may be anonymous (without a name)
 * no function pointers in function pointer parameters
 * for loop "headers" do not have curly braces (e.g. compound init)
 * syntactically, variable decls do not overlap with stmts/exprs, except
