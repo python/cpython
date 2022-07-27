@@ -232,8 +232,7 @@ WASI builds require [WASI SDK](https://github.com/WebAssembly/wasi-sdk) 16.0+.
 
 The script ``wasi-env`` sets necessary compiler and linker flags as well as
 ``pkg-config`` overrides. The script assumes that WASI-SDK is installed in
-``/opt/wasi-sdk`` or ``$WASI_SDK_PATH`` and WASIX is installed in
-``/opt/wasix`` or ``$WASIX_PATH``.
+``/opt/wasi-sdk`` or ``$WASI_SDK_PATH``.
 
 ```shell
 mkdir -p builddir/wasi

@@ -9,7 +9,7 @@
 #  define _POSIX_THREADS 1
 #endif
 
-/* Minimal pthread stubs for CPython
+/* Minimal pthread stubs for CPython.
  *
  * The stubs implement the minimum pthread API for CPython.
  * - pthread_create() fails.
