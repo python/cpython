@@ -580,6 +580,9 @@ parseCommandLine(SearchInfo *search)
             break;
         }
     }
+    if (tail == search->originalCmdLine && tail[0] == L'"') {
+        ++tail;
+    }
     // Without special cases, we can now fill in the search struct
     int tailLen = (int)(end ? (end - tail) : wcsnlen_s(tail, MAXLEN));
     search->executableLength = -1;
