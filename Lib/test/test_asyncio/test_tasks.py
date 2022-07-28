@@ -622,7 +622,7 @@ class BaseTaskTests:
                         #    code might have been nested (think multiple timeouts). See
                         #    commit 7fce1063b6e5a366f8504e039a8ccdd6944625cd for
                         #    details.
-                        # 5. we only convert CancelledError to TimeoutError, if the user
+                        # 5. we only convert CancelledError to TimeoutError; if the user
                         #    code raised a different exception due to the cancellation
                         #    (like a ConnectionLostError from a database client), we
                         #    propagate it.
