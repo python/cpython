@@ -260,11 +260,11 @@ class ChannelBindings:
     TLS_EXPORTER = "tls-exporter"
     # TLS_SERVER_END_POINT = "tls-server-end-point"
 
-    def _get_channel_bindings(self, sslobj):
+    def _get_channel_binding(self, sslobj):
         cls = type(self)
         match self:
             case cls.TLS_UNIQUE:
-                return sslobj.get_channel_bindings(self.value)
+                return sslobj.get_channel_binding(self.value)
             case cls.TLS_EXPORTER:
                 return sslobj.export_keying_material(
                     32,
@@ -949,14 +949,16 @@ class SSLObject:
         """Get channel binding data for current connection.  Raise ValueError
         if the requested `cb_type` is not supported.  Return bytes of the data
         or None if the data is not available (e.g. before the handshake)."""
-        return ChannelBindings(cb_type)._get_channel_bindings(self._sslobj)
+        return ChannelBindings(cb_type)._get_channel_binding(self._sslobj)
 
-    def export_keying_material(self, length, label, context=None):
+    def export_keying_material(self, length, label, context=None, require_extms=True):
         """Export keying material for current connection
 
         See RFC 5705 (for TLS 1.2) and RFC 8446 (for TLS 1.3)
         """
-        return self._sslobj.export_keying_material(length, label, context)
+        return self._sslobj.export_keying_material(
+            length, label, context=context, require_extms=require_extms
+        )
 
     def version(self):
         """Return a string identifying the protocol version used by the
@@ -1368,7 +1370,7 @@ class SSLSocket(socket):
     @_sslcopydoc
     def get_channel_binding(self, cb_type="tls-unique"):
         if self._sslobj is not None:
-            return ChannelBindings(cb_type)._get_channel_bindings(self._sslobj)
+            return ChannelBindings(cb_type)._get_channel_binding(self._sslobj)
         else:
             if cb_type not in CHANNEL_BINDING_TYPES:
                 raise ValueError(
@@ -1377,9 +1379,11 @@ class SSLSocket(socket):
             return None
 
     @_sslcopydoc
-    def export_keying_material(self, length, label, context=None):
+    def export_keying_material(self, length, label, context=None, require_extms=True):
         if self._sslobj is not None:
-            return self._sslobj.export_keying_material(length, label, context)
+            return self._sslobj.export_keying_material(
+               length, label, context=context, require_extms=require_extms
+            )
         else:
             return None
 
