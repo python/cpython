@@ -88,7 +88,7 @@ using :meth:`~Cursor.executemany`::
 Then, retrieve the data by iterating over the result of a ``SELECT`` statement::
 
    >>> for row in cur.execute('SELECT * FROM stocks ORDER BY price'):
-           print(row)
+   ...     print(row)
 
    ('2006-01-05', 'BUY', 'RHAT', 100, 35.14)
    ('2006-03-28', 'BUY', 'IBM', 1000, 45.0)
