@@ -285,7 +285,7 @@ def __getattr__(name):
     # deprecated constants.
     if name in _REMOVED_OPTIONS:
         msg = (
-            "ssl.{name} is no longer supported. The constants will "
+            "ssl.{name} is no longer supported. The constant will "
             "be removed in {remove}. Use SSLContext's 'minimum_version' "
             "and 'maximum_version' properties instead."
         )
@@ -294,14 +294,14 @@ def __getattr__(name):
 
     if name in _REMOVED_PROTOCOLS:
         msg = (
-            "ssl.{name} is no longer supported. The constants will "
+            "ssl.{name} is no longer supported. The constant will "
             "be removed in {remove}. Use ssl.PROTOCOL_TLS_CLIENT or "
             "ssl.PROTOCOL_TLS_SERVER instead."
         )
         warnings._deprecated(name, message=msg, remove=(3, 13))
         return NotImplemented
 
-    raise AttributeError(f'module {__name__!r} has no attribute {name!r}') 
+    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
 
 
 if sys.platform == "win32":
