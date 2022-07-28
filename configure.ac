@@ -869,8 +869,7 @@ fi
 rm -f conftest.c conftest.out
 ])
 
-AC_SUBST(CC_NAME)
-CC_NAME=$ac_cv_cc_name
+AC_SUBST([CC_NAME], [$ac_cv_cc_name])
 
 # checks for UNIX variants that set C preprocessor variables
 # may set _GNU_SOURCE, __EXTENSIONS__, _POSIX_PTHREAD_SEMANTICS,

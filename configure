@@ -5372,8 +5372,8 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cc_name" >&5
 $as_echo "$ac_cv_cc_name" >&6; }
 
-
 CC_NAME=$ac_cv_cc_name
+
 
 # checks for UNIX variants that set C preprocessor variables
 # may set _GNU_SOURCE, __EXTENSIONS__, _POSIX_PTHREAD_SEMANTICS,
