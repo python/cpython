@@ -297,7 +297,8 @@ clean-up is complete. Most code can safely ignore :exc:`asyncio.CancelledError`.
 The asyncio components that enable structured concurrency, like
 :class:`asyncio.TaskGroup` and the :func:`asyncio.timeout` context manager,
 are implemented using cancellation internally and might misbehave if
-a coroutine swallows :exc:`asyncio.CancelledError`.
+a coroutine swallows :exc:`asyncio.CancelledError`. Similarly, user code
+should not attempt to :meth:`uncancel <asyncio.Task.uncancel>`
 
 .. _taskgroups:
 
@@ -1179,19 +1180,6 @@ Task Object
       :meth:`cancel` and the wrapped coroutine propagated the
       :exc:`CancelledError` exception thrown into it.
 
-   .. method:: cancelling()
-
-      Return the number of cancellation requests to this Task, i.e.,
-      the number of calls to :meth:`cancel`.
-
-      Note that if this number is greater than zero but the Task is
-      still executing, :meth:`cancelled` will still return ``False``.
-      This is because this number can be lowered by calling :meth:`uncancel`,
-      which can lead to the task not being cancelled after all if the
-      cancellation requests go down to zero.
-
-      .. versionadded:: 3.11
-
    .. method:: uncancel()
 
       Decrement the count of cancellation requests to this Task.
@@ -1223,38 +1211,22 @@ Task Object
 
       While the block with ``make_request()`` and ``make_another_request()``
       might get cancelled due to the timeout, ``unrelated_code()`` should
-      continue running even in case of the timeout.  This can be
-      implemented with :meth:`uncancel` as follows::
+      continue running even in case of the timeout.  This is implemented
+      with :meth:`uncancel`.  :class:`TaskGroup` context managers use
+      :func:`uncancel` in a similar fashion.
 
-        async def make_request_with_timeout():
-            task = asyncio.current_task()
-            loop = task.get_loop()
-            i_called_cancel = False
+   .. method:: cancelling()
 
-            def on_timeout():
-                nonlocal i_called_cancel
-                i_called_cancel = True
-                task.cancel()
+      Return the number of cancellation requests to this Task, i.e.,
+      the number of calls to :meth:`cancel`.
 
-            timeout_handle = loop.call_later(1, on_timeout)
-            try:
-                try:
-                    # Structured block affected by the timeout
-                    await make_request()
-                    await make_another_request()
-                finally:
-                    timeout_handle.cancel()
-                    if (
-                        i_called_cancel
-                        and task.uncancel() == 0
-                        and sys.exc_info()[0] is asyncio.CancelledError
-                    ):
-                        raise TimeoutError
-            except TimeoutError:
-                log("There was a timeout")
+      Note that if this number is greater than zero but the Task is
+      still executing, :meth:`cancelled` will still return ``False``.
+      This is because this number can be lowered by calling :meth:`uncancel`,
+      which can lead to the task not being cancelled after all if the
+      cancellation requests go down to zero.
 
-            # Outer code not affected by the timeout:
-            await unrelated_code()
+      This method is used by asyncio's internals and isn't expected to be
+      used by end-user code.  See :meth:`uncancel` for more details.
 
-      :class:`TaskGroup` context managers use :func:`uncancel` in
-      a similar fashion.
+      .. versionadded:: 3.11
