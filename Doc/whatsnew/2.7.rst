@@ -2697,7 +2697,7 @@ projects.
 
 However, as this migration is currently still incomplete, the legacy
 versions of those guides remaining available as :ref:`install-index`
-and :ref:`distutils-index`.
+and :ref:`setuptools-index`.
 
 .. seealso::
 

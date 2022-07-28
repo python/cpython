@@ -1,0 +1,1 @@
+Move tests for importlib.resources into test_importlib.resources.
