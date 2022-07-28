@@ -2699,10 +2699,9 @@ _ssl__SSLSocket_get_channel_binding_impl(PySSLSocket *self,
                                          const char *cb_type)
 /*[clinic end generated code: output=34bac9acb6a61d31 input=08b7e43b99c17d41]*/
 {
-    char buf[PySSL_CB_MAXLEN];
-    size_t len;
-
     if (strcmp(cb_type, "tls-unique") == 0) {
+        char buf[PySSL_CB_MAXLEN];
+        size_t len;
         if (SSL_session_reused(self->ssl) ^ !self->socket_type) {
             /* if session is resumed XOR we are the client */
             len = SSL_get_finished(self->ssl, buf, PySSL_CB_MAXLEN);
@@ -2711,8 +2710,45 @@ _ssl__SSLSocket_get_channel_binding_impl(PySSLSocket *self,
             /* if a new session XOR we are the server */
             len = SSL_get_peer_finished(self->ssl, buf, PySSL_CB_MAXLEN);
         }
-    }
-    else {
+        /* It cannot be negative in current OpenSSL version as of July 2011 */
+        if (len == 0)
+            Py_RETURN_NONE;
+
+        return PyBytes_FromStringAndSize(buf, len);
+    } else if (strcmp(cb_type, "tls-exporter") == 0) {
+        if (!SSL_is_init_finished(self->ssl)) {
+            Py_RETURN_NONE;
+        }
+
+        // RFC 9266 requires extended master secret for tls-exporter
+        // channel binding. EMS is always present with TLS 1.3 and an
+        // optional extension with TLS 1.2.
+        if (SSL_version(self->ssl) != TLS1_3_VERSION) {
+            long res = SSL_ctrl(self->ssl, SSL_CTRL_GET_EXTMS_SUPPORT, 0, NULL);
+            if (res == -1) {
+                return _setSSLError(get_state_sock(self), NULL, 0, __FILE__, __LINE__);
+            }
+            if (res == 0) {
+                PyErr_SetString(PyExc_ValueError, "connect has no extended master secret");
+                return NULL;
+            }
+        }
+
+        const char tls_exporter[] = "EXPORTER-Channel-Binding";
+        PyObject *km = PyBytes_FromStringAndSize(NULL, 32);
+        if (km == NULL) {
+            return NULL;
+        }
+        if (SSL_export_keying_material(
+                self->ssl,
+                (unsigned char*)PyBytes_AS_STRING(km), PyBytes_GET_SIZE(km),
+                tls_exporter, 24,
+                (unsigned char*)"", 0, 1) != 1) {
+            Py_DECREF(km);
+            return _setSSLError(get_state_sock(self), NULL, 0, __FILE__, __LINE__);
+        }
+        return km;
+    } else {
         PyErr_Format(
             PyExc_ValueError,
             "'%s' channel binding type not implemented",
@@ -2720,12 +2756,54 @@ _ssl__SSLSocket_get_channel_binding_impl(PySSLSocket *self,
         );
         return NULL;
     }
+}
 
-    /* It cannot be negative in current OpenSSL version as of July 2011 */
-    if (len == 0)
-        Py_RETURN_NONE;
+/*[clinic input]
+_ssl._SSLSocket.export_keying_material
+   length: Py_ssize_t
+   label: str(accept={str, robuffer}, zeroes=True)
+   context: str(accept={str, robuffer, NoneType}, zeroes=True) = None
+   /
 
-    return PyBytes_FromStringAndSize(buf, len);
+Get keying material for current connection.
+
+See RFC 5705 (for TLS 1.2) and RFC 8446 (for TLS 1.3)
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_export_keying_material_impl(PySSLSocket *self,
+                                            Py_ssize_t length,
+                                            const char *label,
+                                            Py_ssize_t label_length,
+                                            const char *context,
+                                            Py_ssize_t context_length)
+/*[clinic end generated code: output=be8a7315a471b85f input=f671482d6a429306]*/
+{
+    PyObject *km;
+
+    if (!SSL_is_init_finished(self->ssl)) {
+        PyErr_SetString(PyExc_ValueError,
+                        "handshake not done yet");
+        return NULL;
+    }
+    if (length < 1) {
+        PyErr_SetString(PyExc_ValueError, "invalid export length");
+        return NULL;
+    }
+    km = PyBytes_FromStringAndSize(NULL, length);
+    if (km == NULL) {
+        return NULL;
+    }
+    if (SSL_export_keying_material(
+            self->ssl,
+            (unsigned char*)PyBytes_AS_STRING(km), (size_t)length,
+            label, (size_t)label_length,
+            (const unsigned char*)context, (size_t)context_length,
+            (context != NULL)) != 1) {
+        Py_DECREF(km);
+        return _setSSLError(get_state_sock(self), NULL, 0, __FILE__, __LINE__);
+    }
+    return km;
 }
 
 /*[clinic input]
@@ -2918,6 +2996,7 @@ static PyMethodDef PySSLMethods[] = {
     _SSL__SSLSOCKET_VERIFY_CLIENT_POST_HANDSHAKE_METHODDEF
     _SSL__SSLSOCKET_GET_UNVERIFIED_CHAIN_METHODDEF
     _SSL__SSLSOCKET_GET_VERIFIED_CHAIN_METHODDEF
+    _SSL__SSLSOCKET_EXPORT_KEYING_MATERIAL_METHODDEF
     {NULL, NULL}
 };
 

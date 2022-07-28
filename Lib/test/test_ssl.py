@@ -668,17 +668,17 @@ class BasicSocketTests(unittest.TestCase):
                 ss.get_channel_binding("unknown-type")
         s.close()
 
-    @unittest.skipUnless("tls-unique" in ssl.CHANNEL_BINDING_TYPES,
-                         "'tls-unique' channel binding not available")
-    def test_tls_unique_channel_binding(self):
+    def test_tls_channel_binding(self):
         # unconnected should return None for known type
         s = socket.socket(socket.AF_INET)
         with test_wrap_socket(s) as ss:
             self.assertIsNone(ss.get_channel_binding("tls-unique"))
+            self.assertIsNone(ss.get_channel_binding("tls-exporter"))
         # the same for server-side
         s = socket.socket(socket.AF_INET)
         with test_wrap_socket(s, server_side=True, certfile=CERTFILE) as ss:
             self.assertIsNone(ss.get_channel_binding("tls-unique"))
+            self.assertIsNone(ss.get_channel_binding("tls-exporter"))
 
     def test_dealloc_warn(self):
         ss = test_wrap_socket(socket.socket(socket.AF_INET))
@@ -2086,15 +2086,15 @@ class SimpleBackgroundTests(unittest.TestCase):
         self.assertIsNone(sslobj.version())
         self.assertIsNotNone(sslobj.shared_ciphers())
         self.assertRaises(ValueError, sslobj.getpeercert)
-        if 'tls-unique' in ssl.CHANNEL_BINDING_TYPES:
-            self.assertIsNone(sslobj.get_channel_binding('tls-unique'))
+        for cb in ssl.CHANNEL_BINDING_TYPES:
+            self.assertIsNone(sslobj.get_channel_binding(cb))
         self.ssl_io_loop(sock, incoming, outgoing, sslobj.do_handshake)
         self.assertTrue(sslobj.cipher())
         self.assertIsNotNone(sslobj.shared_ciphers())
         self.assertIsNotNone(sslobj.version())
         self.assertTrue(sslobj.getpeercert())
-        if 'tls-unique' in ssl.CHANNEL_BINDING_TYPES:
-            self.assertTrue(sslobj.get_channel_binding('tls-unique'))
+        self.assertTrue(sslobj.get_channel_binding("tls-unique"))
+        self.assertTrue(sslobj.get_channel_binding("tls-exporter"))
         try:
             self.ssl_io_loop(sock, incoming, outgoing, sslobj.unwrap)
         except ssl.SSLSyscallError:
@@ -2317,6 +2317,12 @@ class ThreadedEchoServer(threading.Thread):
                             sys.stdout.write(" server: read CB tls-unique from client, sending our CB data...\n")
                         data = self.sslconn.get_channel_binding("tls-unique")
                         self.write(repr(data).encode("us-ascii") + b"\n")
+                    elif stripped == b'CB tls-exporter':
+                        if support.verbose and self.server.connectionchatty:
+                            sys.stdout.write(" server: read CB tls-exporter from client, sending our CB data...\n")
+                        data = self.sslconn.get_channel_binding("tls-exporter")
+                        self.write(repr(data).encode("us-ascii") + b"\n")
+
                     elif stripped == b'PHA':
                         if support.verbose and self.server.connectionchatty:
                             sys.stdout.write(" server: initiating post handshake auth\n")
@@ -3737,14 +3743,30 @@ class ThreadedTests(unittest.TestCase):
                 s.connect((HOST, server.port))
                 self.assertIn("ECDH", s.cipher()[0])
 
-    @unittest.skipUnless("tls-unique" in ssl.CHANNEL_BINDING_TYPES,
-                         "'tls-unique' channel binding not available")
-    def test_tls_unique_channel_binding(self):
-        """Test tls-unique channel binding."""
+    def test_tls_channel_binding_unique_tlsv1_2(self):
+        self._test_tls_channel_binding(ssl.TLSVersion.TLSv1_2, "tls-unique", 12)
+
+    def test_tls_channel_binding_unique_tlsv1_2(self):
+        self._test_tls_channel_binding(ssl.TLSVersion.TLSv1_3, "tls-unique", 48)
+
+    def test_tls_channel_binding_exporter_tlsv1_2(self):
+        self._test_tls_channel_binding(
+            ssl.TLSVersion.TLSv1_2, "tls-exporter", 32, "EXPORTER-Channel-Binding"
+        )
+
+    def test_tls_channel_binding_exporter_tlsv1_3(self):
+        self._test_tls_channel_binding(
+            ssl.TLSVersion.TLSv1_3, "tls-exporter", 32, "EXPORTER-Channel-Binding"
+        )
+
+    def _test_tls_channel_binding(self, version, cb, cb_size, ekm=None):
+        """Test tls-unique and tls-export channel binding."""
         if support.verbose:
             sys.stdout.write("\n")
 
         client_context, server_context, hostname = testing_context()
+        server_context.minimum_version = version
+        server_context.maximum_version = version
 
         server = ThreadedEchoServer(context=server_context,
                                     chatty=True,
@@ -3756,22 +3778,31 @@ class ThreadedTests(unittest.TestCase):
                     server_hostname=hostname) as s:
                 s.connect((HOST, server.port))
                 # get the data
-                cb_data = s.get_channel_binding("tls-unique")
+                cb_data = s.get_channel_binding(cb)
                 if support.verbose:
                     sys.stdout.write(
-                        " got channel binding data: {0!r}\n".format(cb_data))
+                        f" got {cb} channel binding data: {cb_data!r}\n"
+                    )
+
+                if ekm:
+                    cb_ekm = s.export_keying_material(cb_size, ekm, "")
+                    self.assertEqual(cb_ekm, cb_data)
+                    # TLS 1.3: empty and no context result in equal values
+                    # other: empty context and no context result in different values
+                    cb_ekm_no_context = s.export_keying_material(cb_size, ekm, None)
+                    if version == ssl.TLSVersion.TLSv1_3:
+                        self.assertEqual(cb_data, cb_ekm_no_context)
+                    else:
+                        self.assertNotEqual(cb_data, cb_ekm_no_context)
 
                 # check if it is sane
                 self.assertIsNotNone(cb_data)
-                if s.version() == 'TLSv1.3':
-                    self.assertEqual(len(cb_data), 48)
-                else:
-                    self.assertEqual(len(cb_data), 12)  # True for TLSv1
+                self.assertEqual(len(cb_data), cb_size)
 
                 # and compare with the peers version
-                s.write(b"CB tls-unique\n")
-                peer_data_repr = s.read().strip()
-                self.assertEqual(peer_data_repr,
+                s.write(f"CB {cb}\n".encode("ascii"))
+                peer_data = s.read().strip()
+                self.assertEqual(peer_data,
                                  repr(cb_data).encode("us-ascii"))
 
             # now, again
@@ -3779,22 +3810,19 @@ class ThreadedTests(unittest.TestCase):
                     socket.socket(),
                     server_hostname=hostname) as s:
                 s.connect((HOST, server.port))
-                new_cb_data = s.get_channel_binding("tls-unique")
+                new_cb_data = s.get_channel_binding(cb)
                 if support.verbose:
                     sys.stdout.write(
-                        "got another channel binding data: {0!r}\n".format(
-                            new_cb_data)
+                        f" got another {cb} channel binding data: {new_cb_data!r}\n"
                     )
                 # is it really unique
                 self.assertNotEqual(cb_data, new_cb_data)
-                self.assertIsNotNone(cb_data)
-                if s.version() == 'TLSv1.3':
-                    self.assertEqual(len(cb_data), 48)
-                else:
-                    self.assertEqual(len(cb_data), 12)  # True for TLSv1
-                s.write(b"CB tls-unique\n")
-                peer_data_repr = s.read().strip()
-                self.assertEqual(peer_data_repr,
+                self.assertIsNotNone(new_cb_data)
+                self.assertEqual(len(cb_data), cb_size)
+
+                s.write(f"CB {cb}\n".encode("ascii"))
+                peer_unique= s.read().strip()
+                self.assertEqual(peer_unique,
                                  repr(new_cb_data).encode("us-ascii"))
 
     def test_compression(self):

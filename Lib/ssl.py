@@ -267,7 +267,7 @@ import warnings
 
 socket_error = OSError  # keep that public name in module namespace
 
-CHANNEL_BINDING_TYPES = ['tls-unique']
+CHANNEL_BINDING_TYPES = ['tls-unique', 'tls-exporter']
 
 HAS_NEVER_CHECK_COMMON_NAME = hasattr(_ssl, 'HOSTFLAG_NEVER_CHECK_SUBJECT')
 
@@ -926,6 +926,13 @@ class SSLObject:
         or None if the data is not available (e.g. before the handshake)."""
         return self._sslobj.get_channel_binding(cb_type)
 
+    def export_keying_material(self, length, label, context=None):
+        """Export keying material for current connection
+
+        See RFC 5705 (for TLS 1.2) and RFC 8446 (for TLS 1.3)
+        """
+        return self._sslobj.export_keying_material(length, label, context)
+
     def version(self):
         """Return a string identifying the protocol version used by the
         current SSL channel. """
@@ -1342,6 +1349,13 @@ class SSLSocket(socket):
                 raise ValueError(
                     "{0} channel binding type not implemented".format(cb_type)
                 )
+            return None
+
+    @_sslcopydoc
+    def export_keying_material(self, length, label, context=None):
+        if self._sslobj is not None:
+            return self._sslobj.export_keying_material(length, label, context)
+        else:
             return None
 
     @_sslcopydoc
