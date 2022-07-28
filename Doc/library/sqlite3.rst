@@ -73,7 +73,7 @@ At this point, our database only contains one row::
    >>> print(res.fetchone())
    (1,)
 
-The result is a one-item :class:`tuple`;
+The result is a one-item :class:`tuple`:
 one row, with one column.
 Now, let us insert three more rows of data,
 using :meth:`~Cursor.executemany`::
