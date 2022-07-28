@@ -48,7 +48,7 @@ if defined BUILDARM64 (
 )
 
 if defined BUILDDOC (
-    call "%PCBUILD%..\Doc\make.bat" htmlhelp
+    call "%PCBUILD%..\Doc\make.bat" html
     if errorlevel 1 exit /B %ERRORLEVEL%
 )
 
@@ -87,8 +87,8 @@ echo build.bat [-x86] [-x64] [-arm64] [--doc] [-h] [--test-marker] [--pack] [-r]
 echo.
 echo    -x86                Build x86 installers
 echo    -x64                Build x64 installers
-echo    -ARM64                Build ARM64 installers
-echo    --doc               Build CHM documentation
+echo    -ARM64              Build ARM64 installers
+echo    --doc               Build documentation
 echo    --test-marker       Build with test markers
 echo    --no-test-marker    Build without test markers (default)
 echo    --pack              Embed core MSIs into installer

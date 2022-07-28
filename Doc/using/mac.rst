@@ -160,7 +160,7 @@ Distributing Python Applications on the Mac
 
 The standard tool for deploying standalone Python applications on the Mac is
 :program:`py2app`. More information on installing and using py2app can be found
-at http://undefined.org/python/#py2app.
+at https://pypi.org/project/py2app/.
 
 
 Other Resources

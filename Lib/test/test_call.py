@@ -11,6 +11,19 @@ import gc
 import contextlib
 
 
+class BadStr(str):
+    def __eq__(self, other):
+        return True
+    def __hash__(self):
+        # Guaranteed different hash
+        return str.__hash__(self) ^ 3
+
+    def __eq__(self, other):
+        return False
+    def __hash__(self):
+        return str.__hash__(self)
+
+
 class FunctionCalls(unittest.TestCase):
 
     def test_kwargs_order(self):
@@ -25,6 +38,18 @@ class FunctionCalls(unittest.TestCase):
         res = fn(**od)
         self.assertIsInstance(res, dict)
         self.assertEqual(list(res.items()), expected)
+
+    def test_frames_are_popped_after_failed_calls(self):
+        # GH-93252: stuff blows up if we don't pop the new frame after
+        # recovering from failed calls:
+        def f():
+            pass
+        for _ in range(1000):
+            try:
+                f(None)
+            except TypeError:
+                pass
+        # BOOM!
 
 
 @cpython_only
@@ -132,6 +157,18 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         msg = r"'foo' is an invalid keyword argument for print\(\)$"
         self.assertRaisesRegex(TypeError, msg,
                                print, 0, sep=1, end=2, file=3, flush=4, foo=5)
+
+    def test_varargs18_kw(self):
+        # _PyArg_UnpackKeywordsWithVararg()
+        msg = r"invalid keyword argument for print\(\)$"
+        with self.assertRaisesRegex(TypeError, msg):
+            print(0, 1, **{BadStr('foo'): ','})
+
+    def test_varargs19_kw(self):
+        # _PyArg_UnpackKeywords()
+        msg = r"invalid keyword argument for round\(\)$"
+        with self.assertRaisesRegex(TypeError, msg):
+            round(1.75, **{BadStr('foo'): 1})
 
     def test_oldargs0_1(self):
         msg = r"keys\(\) takes no arguments \(1 given\)"

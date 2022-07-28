@@ -41,11 +41,11 @@ class TestCase(unittest.TestCase):
         # The tests assume that line wrapping occurs at 80 columns, but this
         # behaviour can be overridden by setting the COLUMNS environment
         # variable.  To ensure that this width is used, set COLUMNS to 80.
-        env = os_helper.EnvironmentVarGuard()
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
         env['COLUMNS'] = '80'
-        self.addCleanup(env.__exit__)
 
 
+@os_helper.skip_unless_working_chmod
 class TempDirMixin(object):
 
     def setUp(self):
@@ -1505,14 +1505,15 @@ class TestArgumentsFromFile(TempDirMixin, ParserTestCase):
     def setUp(self):
         super(TestArgumentsFromFile, self).setUp()
         file_texts = [
-            ('hello', 'hello world!\n'),
-            ('recursive', '-a\n'
-                          'A\n'
-                          '@hello'),
-            ('invalid', '@no-such-path\n'),
+            ('hello', os.fsencode(self.hello) + b'\n'),
+            ('recursive', b'-a\n'
+                          b'A\n'
+                          b'@hello'),
+            ('invalid', b'@no-such-path\n'),
+            ('undecodable', self.undecodable + b'\n'),
         ]
         for path, text in file_texts:
-            with open(path, 'w', encoding="utf-8") as file:
+            with open(path, 'wb') as file:
                 file.write(text)
 
     parser_signature = Sig(fromfile_prefix_chars='@')
@@ -1522,15 +1523,25 @@ class TestArgumentsFromFile(TempDirMixin, ParserTestCase):
         Sig('y', nargs='+'),
     ]
     failures = ['', '-b', 'X', '@invalid', '@missing']
+    hello = 'hello world!' + os_helper.FS_NONASCII
     successes = [
         ('X Y', NS(a=None, x='X', y=['Y'])),
         ('X -a A Y Z', NS(a='A', x='X', y=['Y', 'Z'])),
-        ('@hello X', NS(a=None, x='hello world!', y=['X'])),
-        ('X @hello', NS(a=None, x='X', y=['hello world!'])),
-        ('-a B @recursive Y Z', NS(a='A', x='hello world!', y=['Y', 'Z'])),
-        ('X @recursive Z -a B', NS(a='B', x='X', y=['hello world!', 'Z'])),
+        ('@hello X', NS(a=None, x=hello, y=['X'])),
+        ('X @hello', NS(a=None, x='X', y=[hello])),
+        ('-a B @recursive Y Z', NS(a='A', x=hello, y=['Y', 'Z'])),
+        ('X @recursive Z -a B', NS(a='B', x='X', y=[hello, 'Z'])),
         (["-a", "", "X", "Y"], NS(a='', x='X', y=['Y'])),
     ]
+    if os_helper.TESTFN_UNDECODABLE:
+        undecodable = os_helper.TESTFN_UNDECODABLE.lstrip(b'@')
+        decoded_undecodable = os.fsdecode(undecodable)
+        successes += [
+            ('@undecodable X', NS(a=None, x=decoded_undecodable, y=['X'])),
+            ('X @undecodable', NS(a=None, x='X', y=[decoded_undecodable])),
+        ]
+    else:
+        undecodable = b''
 
 
 class TestArgumentsFromFileConverter(TempDirMixin, ParserTestCase):
@@ -1539,10 +1550,10 @@ class TestArgumentsFromFileConverter(TempDirMixin, ParserTestCase):
     def setUp(self):
         super(TestArgumentsFromFileConverter, self).setUp()
         file_texts = [
-            ('hello', 'hello world!\n'),
+            ('hello', b'hello world!\n'),
         ]
         for path, text in file_texts:
-            with open(path, 'w', encoding="utf-8") as file:
+            with open(path, 'wb') as file:
                 file.write(text)
 
     class FromFileConverterArgumentParser(ErrorRaisingArgumentParser):
@@ -1723,8 +1734,7 @@ class WFile(object):
         return self.name == other.name
 
 
-@unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
-                 "non-root user required")
+@os_helper.skip_if_dac_override
 class TestFileTypeW(TempDirMixin, ParserTestCase):
     """Test the FileType option/argument type for writing files"""
 
@@ -1746,8 +1756,8 @@ class TestFileTypeW(TempDirMixin, ParserTestCase):
         ('-x - -', NS(x=eq_stdout, spam=eq_stdout)),
     ]
 
-@unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
-                 "non-root user required")
+
+@os_helper.skip_if_dac_override
 class TestFileTypeX(TempDirMixin, ParserTestCase):
     """Test the FileType option/argument type for writing new files only"""
 
@@ -1767,8 +1777,7 @@ class TestFileTypeX(TempDirMixin, ParserTestCase):
     ]
 
 
-@unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
-                 "non-root user required")
+@os_helper.skip_if_dac_override
 class TestFileTypeWB(TempDirMixin, ParserTestCase):
     """Test the FileType option/argument type for writing binary files"""
 
@@ -1785,8 +1794,7 @@ class TestFileTypeWB(TempDirMixin, ParserTestCase):
     ]
 
 
-@unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
-                 "non-root user required")
+@os_helper.skip_if_dac_override
 class TestFileTypeXB(TestFileTypeX):
     "Test the FileType option/argument type for writing new binary files only"
 
@@ -2265,8 +2273,7 @@ class TestAddSubparsers(TestCase):
             main description
 
             positional arguments:
-              foo         
-
+              foo         \n
             options:
               -h, --help  show this help message and exit
         '''))
@@ -2282,8 +2289,7 @@ class TestAddSubparsers(TestCase):
             main description
 
             positional arguments:
-              {}          
-
+              {}          \n
             options:
               -h, --help  show this help message and exit
         '''))
@@ -3350,6 +3356,7 @@ class TestHelpFormattingMetaclass(type):
             def _test(self, tester, parser_text):
                 expected_text = getattr(tester, self.func_suffix)
                 expected_text = textwrap.dedent(expected_text)
+                tester.maxDiff = None
                 tester.assertEqual(expected_text, parser_text)
 
             def test_format(self, tester):
@@ -3429,9 +3436,8 @@ class TestShortColumns(HelpTestCase):
     but we don't want any exceptions thrown in such cases. Only ugly representation.
     '''
     def setUp(self):
-        env = os_helper.EnvironmentVarGuard()
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
         env.set("COLUMNS", '15')
-        self.addCleanup(env.__exit__)
 
     parser_signature            = TestHelpBiggerOptionals.parser_signature
     argument_signatures         = TestHelpBiggerOptionals.argument_signatures
@@ -3745,7 +3751,7 @@ class TestHelpUsage(HelpTestCase):
           -w W [W ...]          w
           -x [X ...]            x
           --foo, --no-foo       Whether to foo
-          --bar, --no-bar       Whether to bar (default: True)
+          --bar, --no-bar       Whether to bar
           -f, --foobar, --no-foobar, --barfoo, --no-barfoo
           --bazz, --no-bazz     Bazz!
 
@@ -4425,6 +4431,8 @@ class TestHelpArgumentDefaults(HelpTestCase):
         Sig('--bar', action='store_true', help='bar help'),
         Sig('--taz', action=argparse.BooleanOptionalAction,
             help='Whether to taz it', default=True),
+        Sig('--corge', action=argparse.BooleanOptionalAction,
+            help='Whether to corge it', default=argparse.SUPPRESS),
         Sig('--quux', help="Set the quux", default=42),
         Sig('spam', help='spam help'),
         Sig('badger', nargs='?', default='wooden', help='badger help'),
@@ -4434,8 +4442,8 @@ class TestHelpArgumentDefaults(HelpTestCase):
          [Sig('--baz', type=int, default=42, help='baz help')]),
     ]
     usage = '''\
-        usage: PROG [-h] [--foo FOO] [--bar] [--taz | --no-taz] [--quux QUUX]
-                    [--baz BAZ]
+        usage: PROG [-h] [--foo FOO] [--bar] [--taz | --no-taz] [--corge | --no-corge]
+                    [--quux QUUX] [--baz BAZ]
                     spam [badger]
         '''
     help = usage + '''\
@@ -4443,20 +4451,21 @@ class TestHelpArgumentDefaults(HelpTestCase):
         description
 
         positional arguments:
-          spam             spam help
-          badger           badger help (default: wooden)
+          spam                 spam help
+          badger               badger help (default: wooden)
 
         options:
-          -h, --help       show this help message and exit
-          --foo FOO        foo help - oh and by the way, None
-          --bar            bar help (default: False)
-          --taz, --no-taz  Whether to taz it (default: True)
-          --quux QUUX      Set the quux (default: 42)
+          -h, --help           show this help message and exit
+          --foo FOO            foo help - oh and by the way, None
+          --bar                bar help (default: False)
+          --taz, --no-taz      Whether to taz it (default: True)
+          --corge, --no-corge  Whether to corge it
+          --quux QUUX          Set the quux (default: 42)
 
         title:
           description
 
-          --baz BAZ        baz help (default: 42)
+          --baz BAZ            baz help (default: 42)
         '''
     version = ''
 
@@ -4806,6 +4815,19 @@ class TestConflictHandling(TestCase):
               --spam NEW_SPAM
             '''))
 
+    def test_subparser_conflict(self):
+        parser = argparse.ArgumentParser()
+        sp = parser.add_subparsers()
+        sp.add_parser('fullname', aliases=['alias'])
+        self.assertRaises(argparse.ArgumentError,
+                          sp.add_parser, 'fullname')
+        self.assertRaises(argparse.ArgumentError,
+                          sp.add_parser, 'alias')
+        self.assertRaises(argparse.ArgumentError,
+                          sp.add_parser, 'other', aliases=['fullname'])
+        self.assertRaises(argparse.ArgumentError,
+                          sp.add_parser, 'other', aliases=['alias'])
+
 
 # =============================
 # Help and Version option tests
@@ -4902,12 +4924,13 @@ class TestStrings(TestCase):
             nargs='+',
             default=42,
             choices=[1, 2, 3],
+            required=False,
             help='HELP',
             metavar='METAVAR')
         string = (
             "Action(option_strings=['--foo', '-a', '-b'], dest='b', "
             "nargs='+', const=None, default=42, type='int', "
-            "choices=[1, 2, 3], help='HELP', metavar='METAVAR')")
+            "choices=[1, 2, 3], required=False, help='HELP', metavar='METAVAR')")
         self.assertStringEqual(option, string)
 
     def test_argument(self):
@@ -4918,12 +4941,13 @@ class TestStrings(TestCase):
             nargs='?',
             default=2.5,
             choices=[0.5, 1.5, 2.5],
+            required=True,
             help='H HH H',
             metavar='MV MV MV')
         string = (
             "Action(option_strings=[], dest='x', nargs='?', "
             "const=None, default=2.5, type=%r, choices=[0.5, 1.5, 2.5], "
-            "help='H HH H', metavar='MV MV MV')" % float)
+            "required=True, help='H HH H', metavar='MV MV MV')" % float)
         self.assertStringEqual(argument, string)
 
     def test_namespace(self):

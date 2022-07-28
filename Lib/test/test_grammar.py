@@ -104,6 +104,7 @@ INVALID_UNDERSCORE_LITERALS = [
 class TokenTests(unittest.TestCase):
 
     from test.support import check_syntax_error
+    from test.support.warnings_helper import check_syntax_warning
 
     def test_backslash(self):
         # Backslash means line continuation:
@@ -178,7 +179,7 @@ class TokenTests(unittest.TestCase):
     def test_float_exponent_tokenization(self):
         # See issue 21642.
         with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
+            warnings.simplefilter('ignore', SyntaxWarning)
             self.assertEqual(eval("1 if 1else 0"), 1)
             self.assertEqual(eval("1 if 0else 0"), 0)
         self.assertRaises(SyntaxError, eval, "0 if 1Else 0")
@@ -218,12 +219,13 @@ class TokenTests(unittest.TestCase):
             with self.subTest(expr=test):
                 if error:
                     with warnings.catch_warnings(record=True) as w:
-                        with self.assertRaises(SyntaxError):
+                        with self.assertRaisesRegex(SyntaxError,
+                                    r'invalid \w+ literal'):
                             compile(test, "<testcase>", "eval")
                     self.assertEqual(w,  [])
                 else:
-                    with self.assertWarns(DeprecationWarning):
-                        compile(test, "<testcase>", "eval")
+                    self.check_syntax_warning(test,
+                            errtext=r'invalid \w+ literal')
 
         for num in "0xf", "0o7", "0b1", "9", "0", "1.", "1e3", "1j":
             compile(num, "<testcase>", "eval")
@@ -231,14 +233,21 @@ class TokenTests(unittest.TestCase):
             check(f"{num}or x", error=(num == "0"))
             check(f"{num}in x")
             check(f"{num}not in x")
-            with warnings.catch_warnings():
-                warnings.filterwarnings('ignore', '"is" with a literal',
-                                        SyntaxWarning)
-                check(f"{num}is x")
             check(f"{num}if x else y")
             check(f"x if {num}else y", error=(num == "0xf"))
             check(f"[{num}for x in ()]")
             check(f"{num}spam", error=True)
+
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore', '"is" with a literal',
+                                        SyntaxWarning)
+                with self.assertWarnsRegex(SyntaxWarning,
+                            r'invalid \w+ literal'):
+                    compile(f"{num}is x", "<testcase>", "eval")
+                warnings.simplefilter('error', SyntaxWarning)
+                with self.assertRaisesRegex(SyntaxError,
+                            r'invalid \w+ literal'):
+                    compile(f"{num}is x", "<testcase>", "eval")
 
         check("[0x1ffor x in ()]")
         check("[0x1for x in ()]")

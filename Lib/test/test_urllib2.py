@@ -1,7 +1,6 @@
 import unittest
 from test import support
 from test.support import os_helper
-from test.support import socket_helper
 from test.support import warnings_helper
 from test import test_urllib
 
@@ -23,6 +22,8 @@ from urllib.request import (Request, OpenerDirector, HTTPBasicAuthHandler,
 from urllib.parse import urlparse
 import urllib.error
 import http.client
+
+support.requires_working_socket(module=True)
 
 # XXX
 # Request

@@ -945,23 +945,12 @@ but remain normal attributes.
 """"""""""""""""""""
 
 Enum members are instances of their enum class, and are normally accessed as
-``EnumClass.member``.  In Python versions ``3.5`` to ``3.10`` you could access
-members from other members -- this practice was discouraged, and in ``3.11``
-:class:`Enum` returns to not allowing it::
-
-    >>> class FieldTypes(Enum):
-    ...     name = 0
-    ...     value = 1
-    ...     size = 2
-    ...
-    >>> FieldTypes.value.size
-    Traceback (most recent call last):
-    ...
-    AttributeError: <enum 'FieldTypes'> member has no attribute 'size'
-
+``EnumClass.member``.  In Python versions starting with ``3.5`` you could access
+members from other members -- this practice is discouraged, is deprecated
+in ``3.12``, and will be removed in ``3.14``.
 
 .. versionchanged:: 3.5
-.. versionchanged:: 3.11
+.. versionchanged:: 3.12
 
 
 Creating members that are mixed with other data types

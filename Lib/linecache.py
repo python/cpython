@@ -135,7 +135,7 @@ def updatecache(filename, module_globals=None):
     try:
         with tokenize.open(fullname) as fp:
             lines = fp.readlines()
-    except OSError:
+    except (OSError, UnicodeDecodeError, SyntaxError):
         return []
     if lines and not lines[-1].endswith('\n'):
         lines[-1] += '\n'

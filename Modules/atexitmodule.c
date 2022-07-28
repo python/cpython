@@ -251,7 +251,7 @@ atexit_unregister(PyObject *module, PyObject *func)
 
 
 static PyMethodDef atexit_methods[] = {
-    {"register", (PyCFunction)(void(*)(void)) atexit_register, METH_VARARGS|METH_KEYWORDS,
+    {"register", _PyCFunction_CAST(atexit_register), METH_VARARGS|METH_KEYWORDS,
         atexit_register__doc__},
     {"_clear", (PyCFunction) atexit_clear, METH_NOARGS,
         atexit_clear__doc__},

@@ -47,7 +47,7 @@ between conformable Python objects and XML on the wire.
    The following parameters govern the use of the returned proxy instance.
    If *allow_none* is true,  the Python constant ``None`` will be translated into
    XML; the default behaviour is for ``None`` to raise a :exc:`TypeError`. This is
-   a commonly-used extension to the XML-RPC specification, but isn't supported by
+   a commonly used extension to the XML-RPC specification, but isn't supported by
    all clients and servers; see `http://ontosys.com/xml-rpc/extensions.php
    <https://web.archive.org/web/20130120074804/http://ontosys.com/xml-rpc/extensions.php>`_
    for a description.

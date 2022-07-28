@@ -13,7 +13,6 @@ import time
 import typing
 import unittest
 import unittest.mock
-import os
 import weakref
 import gc
 from weakref import proxy
@@ -21,7 +20,6 @@ import contextlib
 
 from test.support import import_helper
 from test.support import threading_helper
-from test.support.script_helper import assert_python_ok
 
 import functools
 
@@ -1637,6 +1635,7 @@ class TestLRU:
         for attr in self.module.WRAPPER_ASSIGNMENTS:
             self.assertEqual(getattr(g, attr), getattr(f, attr))
 
+    @threading_helper.requires_working_threading()
     def test_lru_cache_threaded(self):
         n, m = 5, 11
         def orig(x, y):
@@ -1685,6 +1684,7 @@ class TestLRU:
         finally:
             sys.setswitchinterval(orig_si)
 
+    @threading_helper.requires_working_threading()
     def test_lru_cache_threaded2(self):
         # Simultaneous call with the same arguments
         n, m = 5, 7
@@ -1712,6 +1712,7 @@ class TestLRU:
                 pause.reset()
                 self.assertEqual(f.cache_info(), (0, (i+1)*n, m*n, i+1))
 
+    @threading_helper.requires_working_threading()
     def test_lru_cache_threaded3(self):
         @self.module.lru_cache(maxsize=2)
         def f(x):
@@ -2789,6 +2790,49 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(f(1), "types.UnionType")
         self.assertEqual(f(1.0), "types.UnionType")
 
+    def test_union_conflict(self):
+        @functools.singledispatch
+        def f(arg):
+            return "default"
+
+        @f.register
+        def _(arg: typing.Union[str, bytes]):
+            return "typing.Union"
+
+        @f.register
+        def _(arg: int | str):
+            return "types.UnionType"
+
+        self.assertEqual(f([]), "default")
+        self.assertEqual(f(""), "types.UnionType")  # last one wins
+        self.assertEqual(f(b""), "typing.Union")
+        self.assertEqual(f(1), "types.UnionType")
+
+    def test_union_None(self):
+        @functools.singledispatch
+        def typing_union(arg):
+            return "default"
+
+        @typing_union.register
+        def _(arg: typing.Union[str, None]):
+            return "typing.Union"
+
+        self.assertEqual(typing_union(1), "default")
+        self.assertEqual(typing_union(""), "typing.Union")
+        self.assertEqual(typing_union(None), "typing.Union")
+
+        @functools.singledispatch
+        def types_union(arg):
+            return "default"
+
+        @types_union.register
+        def _(arg: int | None):
+            return "types.UnionType"
+
+        self.assertEqual(types_union(""), "default")
+        self.assertEqual(types_union(1), "types.UnionType")
+        self.assertEqual(types_union(None), "types.UnionType")
+
     def test_register_genericalias(self):
         @functools.singledispatch
         def f(arg):
@@ -2802,8 +2846,6 @@ class TestSingleDispatch(unittest.TestCase):
             f.register(list[int] | str, lambda arg: "types.UnionTypes(types.GenericAlias)")
         with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
             f.register(typing.List[float] | bytes, lambda arg: "typing.Union[typing.GenericAlias]")
-        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
-            f.register(typing.Any, lambda arg: "typing.Any")
 
         self.assertEqual(f([1]), "default")
         self.assertEqual(f([1.0]), "default")
@@ -2823,8 +2865,6 @@ class TestSingleDispatch(unittest.TestCase):
             f.register(list[int] | str)
         with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
             f.register(typing.List[int] | str)
-        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
-            f.register(typing.Any)
 
     def test_register_genericalias_annotation(self):
         @functools.singledispatch
@@ -2847,10 +2887,6 @@ class TestSingleDispatch(unittest.TestCase):
             @f.register
             def _(arg: typing.List[float] | bytes):
                 return "typing.Union[typing.GenericAlias]"
-        with self.assertRaisesRegex(TypeError, "Invalid annotation for 'arg'"):
-            @f.register
-            def _(arg: typing.Any):
-                return "typing.Any"
 
         self.assertEqual(f([1]), "default")
         self.assertEqual(f([1.0]), "default")
@@ -2922,6 +2958,7 @@ class TestCachedProperty(unittest.TestCase):
         self.assertEqual(item.get_cost(), 4)
         self.assertEqual(item.cached_cost, 3)
 
+    @threading_helper.requires_working_threading()
     def test_threaded(self):
         go = threading.Event()
         item = CachedCostItemWait(go)

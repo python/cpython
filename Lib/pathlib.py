@@ -1,3 +1,10 @@
+"""Object-oriented filesystem paths.
+
+This module provides classes to represent abstract paths and concrete
+paths with operations that have semantics appropriate for different
+operating systems.
+"""
+
 import fnmatch
 import functools
 import io
@@ -120,68 +127,18 @@ class _WindowsFlavour(_Flavour):
 
     is_supported = (os.name == 'nt')
 
-    drive_letters = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
-    ext_namespace_prefix = '\\\\?\\'
-
     reserved_names = (
         {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
         {'COM%s' % c for c in '123456789\xb9\xb2\xb3'} |
         {'LPT%s' % c for c in '123456789\xb9\xb2\xb3'}
         )
 
-    # Interesting findings about extended paths:
-    # * '\\?\c:\a' is an extended path, which bypasses normal Windows API
-    #   path processing. Thus relative paths are not resolved and slash is not
-    #   translated to backslash. It has the native NT path limit of 32767
-    #   characters, but a bit less after resolving device symbolic links,
-    #   such as '\??\C:' => '\Device\HarddiskVolume2'.
-    # * '\\?\c:/a' looks for a device named 'C:/a' because slash is a
-    #   regular name character in the object namespace.
-    # * '\\?\c:\foo/bar' is invalid because '/' is illegal in NT filesystems.
-    #   The only path separator at the filesystem level is backslash.
-    # * '//?/c:\a' and '//?/c:/a' are effectively equivalent to '\\.\c:\a' and
-    #   thus limited to MAX_PATH.
-    # * Prior to Windows 8, ANSI API bytes paths are limited to MAX_PATH,
-    #   even with the '\\?\' prefix.
-
     def splitroot(self, part, sep=sep):
-        first = part[0:1]
-        second = part[1:2]
-        if (second == sep and first == sep):
-            # XXX extended paths should also disable the collapsing of "."
-            # components (according to MSDN docs).
-            prefix, part = self._split_extended_path(part)
-            first = part[0:1]
-            second = part[1:2]
+        drv, rest = self.pathmod.splitdrive(part)
+        if drv[:1] == sep or rest[:1] == sep:
+            return drv, sep, rest.lstrip(sep)
         else:
-            prefix = ''
-        third = part[2:3]
-        if (second == sep and first == sep and third != sep):
-            # is a UNC path:
-            # vvvvvvvvvvvvvvvvvvvvv root
-            # \\machine\mountpoint\directory\etc\...
-            #            directory ^^^^^^^^^^^^^^
-            index = part.find(sep, 2)
-            if index != -1:
-                index2 = part.find(sep, index + 1)
-                # a UNC path can't have two slashes in a row
-                # (after the initial two)
-                if index2 != index + 1:
-                    if index2 == -1:
-                        index2 = len(part)
-                    if prefix:
-                        return prefix + part[1:index2], sep, part[index2+1:]
-                    else:
-                        return part[:index2], sep, part[index2+1:]
-        drv = root = ''
-        if second == ':' and first in self.drive_letters:
-            drv = part[:2]
-            part = part[2:]
-            first = third
-        if first == sep:
-            root = first
-            part = part.lstrip(sep)
-        return prefix + drv, root, part
+            return drv, '', rest
 
     def casefold(self, s):
         return s.lower()
@@ -191,16 +148,6 @@ class _WindowsFlavour(_Flavour):
 
     def compile_pattern(self, pattern):
         return re.compile(fnmatch.translate(pattern), re.IGNORECASE).fullmatch
-
-    def _split_extended_path(self, s, ext_prefix=ext_namespace_prefix):
-        prefix = ''
-        if s.startswith(ext_prefix):
-            prefix = s[:4]
-            s = s[4:]
-            if s.startswith('UNC\\'):
-                prefix += s[:3]
-                s = '\\' + s[3:]
-        return prefix, s
 
     def is_reserved(self, parts):
         # NOTE: the rules for reserved names seem somewhat complicated
@@ -281,6 +228,8 @@ _posix_flavour = _PosixFlavour()
 def _make_selector(pattern_parts, flavour):
     pat = pattern_parts[0]
     child_parts = pattern_parts[1:]
+    if not pat:
+        return _TerminatingSelector()
     if pat == '**':
         cls = _RecursiveWildcardSelector
     elif '**' in pat:
@@ -350,6 +299,8 @@ class _WildcardSelector(_Selector):
 
     def _select_from(self, parent_path, is_dir, exists, scandir):
         try:
+            # We must close the scandir() object before proceeding to
+            # avoid exhausting file descriptors when globbing deep trees.
             with scandir(parent_path) as scandir_it:
                 entries = list(scandir_it)
             for entry in entries:
@@ -381,6 +332,8 @@ class _RecursiveWildcardSelector(_Selector):
     def _iterate_directories(self, parent_path, is_dir, scandir):
         yield parent_path
         try:
+            # We must close the scandir() object before proceeding to
+            # avoid exhausting file descriptors when globbing deep trees.
             with scandir(parent_path) as scandir_it:
                 entries = list(scandir_it)
             for entry in entries:
@@ -441,6 +394,8 @@ class _PathParents(Sequence):
 
         if idx >= len(self) or idx < -len(self):
             raise IndexError(idx)
+        if idx < 0:
+            idx += len(self)
         return self._pathcls._from_parsed_parts(self._drv, self._root,
                                                 self._parts[:-idx - 1])
 
@@ -943,6 +898,8 @@ class Path(PurePath):
         drv, root, pattern_parts = self._flavour.parse_parts((pattern,))
         if drv or root:
             raise NotImplementedError("Non-relative patterns are unsupported")
+        if pattern[-1] in (self._flavour.sep, self._flavour.altsep):
+            pattern_parts.append('')
         selector = _make_selector(tuple(pattern_parts), self._flavour)
         for p in selector.select_from(self):
             yield p
@@ -956,6 +913,8 @@ class Path(PurePath):
         drv, root, pattern_parts = self._flavour.parse_parts((pattern,))
         if drv or root:
             raise NotImplementedError("Non-relative patterns are unsupported")
+        if pattern and pattern[-1] in (self._flavour.sep, self._flavour.altsep):
+            pattern_parts.append('')
         selector = _make_selector(("**",) + tuple(pattern_parts), self._flavour)
         for p in selector.select_from(self):
             yield p
@@ -1199,23 +1158,6 @@ class Path(PurePath):
             raise NotImplementedError("os.link() not available on this system")
         os.link(target, self)
 
-    def link_to(self, target):
-        """
-        Make the target path a hard link pointing to this path.
-
-        Note this function does not make this path a hard link to *target*,
-        despite the implication of the function and argument names. The order
-        of arguments (target, link) is the reverse of Path.symlink_to, but
-        matches that of os.link.
-
-        Deprecated since Python 3.10 and scheduled for removal in Python 3.12.
-        Use `hardlink_to()` instead.
-        """
-        warnings.warn("pathlib.Path.link_to() is deprecated and is scheduled "
-                      "for removal in Python 3.12. "
-                      "Use pathlib.Path.hardlink_to() instead.",
-                      DeprecationWarning, stacklevel=2)
-        self.__class__(target).hardlink_to(self)
 
     # Convenience functions for querying the stat results
 
@@ -1378,6 +1320,49 @@ class Path(PurePath):
             return self._from_parts([homedir] + self._parts[1:])
 
         return self
+
+    def walk(self, top_down=True, on_error=None, follow_symlinks=False):
+        """Walk the directory tree from this directory, similar to os.walk()."""
+        sys.audit("pathlib.Path.walk", self, on_error, follow_symlinks)
+        return self._walk(top_down, on_error, follow_symlinks)
+
+    def _walk(self, top_down, on_error, follow_symlinks):
+        # We may not have read permission for self, in which case we can't
+        # get a list of the files the directory contains. os.walk
+        # always suppressed the exception then, rather than blow up for a
+        # minor reason when (say) a thousand readable directories are still
+        # left to visit. That logic is copied here.
+        try:
+            scandir_it = self._scandir()
+        except OSError as error:
+            if on_error is not None:
+                on_error(error)
+            return
+
+        with scandir_it:
+            dirnames = []
+            filenames = []
+            for entry in scandir_it:
+                try:
+                    is_dir = entry.is_dir(follow_symlinks=follow_symlinks)
+                except OSError:
+                    # Carried over from os.path.isdir().
+                    is_dir = False
+
+                if is_dir:
+                    dirnames.append(entry.name)
+                else:
+                    filenames.append(entry.name)
+
+        if top_down:
+            yield self, dirnames, filenames
+
+        for dirname in dirnames:
+            dirpath = self._make_child_relpath(dirname)
+            yield from dirpath._walk(top_down, on_error, follow_symlinks)
+
+        if not top_down:
+            yield self, dirnames, filenames
 
 
 class PosixPath(Path, PurePosixPath):

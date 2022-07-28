@@ -48,7 +48,7 @@ module _imp
 PyStatus
 _PyImportZip_Init(PyThreadState *tstate)
 {
-    PyObject *path_hooks, *zipimport;
+    PyObject *path_hooks;
     int err = 0;
 
     path_hooks = PySys_GetObject("path_hooks");
@@ -63,32 +63,22 @@ _PyImportZip_Init(PyThreadState *tstate)
         PySys_WriteStderr("# installing zipimport hook\n");
     }
 
-    zipimport = PyImport_ImportModule("zipimport");
-    if (zipimport == NULL) {
-        _PyErr_Clear(tstate); /* No zip import module -- okay */
+    PyObject *zipimporter = _PyImport_GetModuleAttrString("zipimport", "zipimporter");
+    if (zipimporter == NULL) {
+        _PyErr_Clear(tstate); /* No zipimporter object -- okay */
         if (verbose) {
-            PySys_WriteStderr("# can't import zipimport\n");
+            PySys_WriteStderr("# can't import zipimport.zipimporter\n");
         }
     }
     else {
-        PyObject *zipimporter = PyObject_GetAttr(zipimport, &_Py_ID(zipimporter));
-        Py_DECREF(zipimport);
-        if (zipimporter == NULL) {
-            _PyErr_Clear(tstate); /* No zipimporter object -- okay */
-            if (verbose) {
-                PySys_WriteStderr("# can't import zipimport.zipimporter\n");
-            }
+        /* sys.path_hooks.insert(0, zipimporter) */
+        err = PyList_Insert(path_hooks, 0, zipimporter);
+        Py_DECREF(zipimporter);
+        if (err < 0) {
+            goto error;
         }
-        else {
-            /* sys.path_hooks.insert(0, zipimporter) */
-            err = PyList_Insert(path_hooks, 0, zipimporter);
-            Py_DECREF(zipimporter);
-            if (err < 0) {
-                goto error;
-            }
-            if (verbose) {
-                PySys_WriteStderr("# installed zipimport hook\n");
-            }
+        if (verbose) {
+            PySys_WriteStderr("# installed zipimport hook\n");
         }
     }
 
@@ -527,7 +517,7 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
     else {
         if (def->m_base.m_init == NULL)
             return NULL;
-        mod = def->m_base.m_init();
+        mod = _PyImport_InitFunc_TrampolineCall(def->m_base.m_init);
         if (mod == NULL)
             return NULL;
         if (PyObject_SetItem(modules, name, mod) == -1) {
@@ -958,6 +948,13 @@ PyImport_GetImporter(PyObject *path)
     return get_path_importer(tstate, path_importer_cache, path_hooks, path);
 }
 
+#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
+#include <emscripten.h>
+EM_JS(PyObject*, _PyImport_InitFunc_TrampolineCall, (PyModInitFunction func), {
+    return wasmTable.get(func)();
+});
+#endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
+
 static PyObject*
 create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
 {
@@ -973,8 +970,7 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
                 /* Cannot re-init internal module ("sys" or "builtins") */
                 return PyImport_AddModuleObject(name);
             }
-
-            mod = (*p->initfunc)();
+            mod = _PyImport_InitFunc_TrampolineCall(*p->initfunc);
             if (mod == NULL) {
                 return NULL;
             }
@@ -2624,6 +2620,37 @@ PyImport_AppendInittab(const char *name, PyObject* (*initfunc)(void))
     newtab[0].initfunc = initfunc;
 
     return PyImport_ExtendInittab(newtab);
+}
+
+
+PyObject *
+_PyImport_GetModuleAttr(PyObject *modname, PyObject *attrname)
+{
+    PyObject *mod = PyImport_Import(modname);
+    if (mod == NULL) {
+        return NULL;
+    }
+    PyObject *result = PyObject_GetAttr(mod, attrname);
+    Py_DECREF(mod);
+    return result;
+}
+
+PyObject *
+_PyImport_GetModuleAttrString(const char *modname, const char *attrname)
+{
+    PyObject *pmodname = PyUnicode_FromString(modname);
+    if (pmodname == NULL) {
+        return NULL;
+    }
+    PyObject *pattrname = PyUnicode_FromString(attrname);
+    if (pattrname == NULL) {
+        Py_DECREF(pmodname);
+        return NULL;
+    }
+    PyObject *result = _PyImport_GetModuleAttr(pmodname, pattrname);
+    Py_DECREF(pattrname);
+    Py_DECREF(pmodname);
+    return result;
 }
 
 #ifdef __cplusplus

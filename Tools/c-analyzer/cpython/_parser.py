@@ -46,6 +46,7 @@ def clean_lines(text):
 @end=sh@
 '''
 
+# XXX Handle these.
 EXCLUDED = clean_lines('''
 # @begin=conf@
 
@@ -69,6 +70,7 @@ Python/dynload_aix.c            # sys/ldr.h
 Python/dynload_dl.c             # dl.h
 Python/dynload_hpux.c           # dl.h
 Python/thread_pthread.h
+Python/emscripten_signal.c
 
 # only huge constants (safe but parsing is slow)
 Modules/_blake2/impl/blake2-kat.h
@@ -148,7 +150,7 @@ Modules/_io/*.c	Py_BUILD_CORE	1
 Modules/_localemodule.c	Py_BUILD_CORE	1
 Modules/_operator.c	Py_BUILD_CORE	1
 Modules/_posixsubprocess.c	Py_BUILD_CORE	1
-Modules/_sre.c	Py_BUILD_CORE	1
+Modules/_sre/sre.c	Py_BUILD_CORE	1
 Modules/_threadmodule.c	Py_BUILD_CORE	1
 Modules/_tracemalloc.c	Py_BUILD_CORE	1
 Modules/_weakref.c	Py_BUILD_CORE	1
@@ -202,6 +204,7 @@ Include/cpython/sysmodule.h	Py_CPYTHON_SYSMODULE_H	1
 Include/cpython/traceback.h	Py_CPYTHON_TRACEBACK_H	1
 Include/cpython/tupleobject.h	Py_CPYTHON_TUPLEOBJECT_H	1
 Include/cpython/unicodeobject.h	Py_CPYTHON_UNICODEOBJECT_H	1
+Include/internal/pycore_code.h	SIZEOF_VOID_P	8
 
 # implied include of pyport.h
 Include/**/*.h	PyAPI_DATA(RTYPE)	extern RTYPE
@@ -262,8 +265,8 @@ Modules/expat/xmlparse.c	XML_POOR_ENTROPY	1
 Modules/_dbmmodule.c	HAVE_GDBM_DASH_NDBM_H	1
 
 # others
-Modules/sre_lib.h	LOCAL(type)	static inline type
-Modules/sre_lib.h	SRE(F)	sre_ucs2_##F
+Modules/_sre/sre_lib.h	LOCAL(type)	static inline type
+Modules/_sre/sre_lib.h	SRE(F)	sre_ucs2_##F
 Objects/stringlib/codecs.h	STRINGLIB_IS_UNICODE	1
 Include/internal/pycore_bitutils.h	_Py__has_builtin(B)	0
 
@@ -297,8 +300,8 @@ MAX_SIZES = {
     _abs('Objects/stringlib/unicode_format.h'): (10_000, 400),
     _abs('Objects/typeobject.c'): (20_000, 200),
     _abs('Python/compile.c'): (20_000, 500),
-    _abs('Python/pylifecycle.c'): (200_000, 5000),
-    _abs('Python/pystate.c'): (200_000, 5000),
+    _abs('Python/pylifecycle.c'): (500_000, 5000),
+    _abs('Python/pystate.c'): (500_000, 5000),
 }
 
 

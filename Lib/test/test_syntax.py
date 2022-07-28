@@ -351,6 +351,210 @@ SyntaxError: invalid syntax
 Traceback (most recent call last):
 SyntaxError: invalid syntax
 
+>>> def foo(/,a,b=,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: at least one argument must precede /
+
+>>> def foo(a,/,/,b,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: / may appear only once
+
+>>> def foo(a,/,a1,/,b,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: / may appear only once
+
+>>> def foo(a=1,/,/,*b,/,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: / may appear only once
+
+>>> def foo(a,/,a1=1,/,b,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: / may appear only once
+
+>>> def foo(a,*b,c,/,d,e):
+...    pass
+Traceback (most recent call last):
+SyntaxError: / must be ahead of *
+
+>>> def foo(a=1,*b,c=3,/,d,e):
+...    pass
+Traceback (most recent call last):
+SyntaxError: / must be ahead of *
+
+>>> def foo(a,*b=3,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: var-positional argument cannot have default value
+
+>>> def foo(a,*b: int=,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: var-positional argument cannot have default value
+
+>>> def foo(a,**b=3):
+...    pass
+Traceback (most recent call last):
+SyntaxError: var-keyword argument cannot have default value
+
+>>> def foo(a,**b: int=3):
+...    pass
+Traceback (most recent call last):
+SyntaxError: var-keyword argument cannot have default value
+
+>>> def foo(a,*a, b, **c, d):
+...    pass
+Traceback (most recent call last):
+SyntaxError: arguments cannot follow var-keyword argument
+
+>>> def foo(a,*a, b, **c, d=4):
+...    pass
+Traceback (most recent call last):
+SyntaxError: arguments cannot follow var-keyword argument
+
+>>> def foo(a,*a, b, **c, *d):
+...    pass
+Traceback (most recent call last):
+SyntaxError: arguments cannot follow var-keyword argument
+
+>>> def foo(a,*a, b, **c, **d):
+...    pass
+Traceback (most recent call last):
+SyntaxError: arguments cannot follow var-keyword argument
+
+>>> def foo(a=1,/,**b,/,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: arguments cannot follow var-keyword argument
+
+>>> def foo(*b,*d):
+...    pass
+Traceback (most recent call last):
+SyntaxError: * argument may appear only once
+
+>>> def foo(a,*b,c,*d,*e,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: * argument may appear only once
+
+>>> def foo(a,b,/,c,*b,c,*d,*e,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: * argument may appear only once
+
+>>> def foo(a,b,/,c,*b,c,*d,**e):
+...    pass
+Traceback (most recent call last):
+SyntaxError: * argument may appear only once
+
+>>> def foo(a=1,/*,b,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: expected comma between / and *
+
+>>> def foo(a=1,d=,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: expected default value expression
+
+>>> def foo(a,d=,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: expected default value expression
+
+>>> def foo(a,d: int=,c):
+...    pass
+Traceback (most recent call last):
+SyntaxError: expected default value expression
+
+>>> lambda /,a,b,c: None
+Traceback (most recent call last):
+SyntaxError: at least one argument must precede /
+
+>>> lambda a,/,/,b,c: None
+Traceback (most recent call last):
+SyntaxError: / may appear only once
+
+>>> lambda a,/,a1,/,b,c: None
+Traceback (most recent call last):
+SyntaxError: / may appear only once
+
+>>> lambda a=1,/,/,*b,/,c: None
+Traceback (most recent call last):
+SyntaxError: / may appear only once
+
+>>> lambda a,/,a1=1,/,b,c: None
+Traceback (most recent call last):
+SyntaxError: / may appear only once
+
+>>> lambda a,*b,c,/,d,e: None
+Traceback (most recent call last):
+SyntaxError: / must be ahead of *
+
+>>> lambda a=1,*b,c=3,/,d,e: None
+Traceback (most recent call last):
+SyntaxError: / must be ahead of *
+
+>>> lambda a=1,/*,b,c: None
+Traceback (most recent call last):
+SyntaxError: expected comma between / and *
+
+>>> lambda a,*b=3,c: None
+Traceback (most recent call last):
+SyntaxError: var-positional argument cannot have default value
+
+>>> lambda a,**b=3: None
+Traceback (most recent call last):
+SyntaxError: var-keyword argument cannot have default value
+
+>>> lambda a, *a, b, **c, d: None
+Traceback (most recent call last):
+SyntaxError: arguments cannot follow var-keyword argument
+
+>>> lambda a,*a, b, **c, d=4: None
+Traceback (most recent call last):
+SyntaxError: arguments cannot follow var-keyword argument
+
+>>> lambda a,*a, b, **c, *d: None
+Traceback (most recent call last):
+SyntaxError: arguments cannot follow var-keyword argument
+
+>>> lambda a,*a, b, **c, **d: None
+Traceback (most recent call last):
+SyntaxError: arguments cannot follow var-keyword argument
+
+>>> lambda a=1,/,**b,/,c: None
+Traceback (most recent call last):
+SyntaxError: arguments cannot follow var-keyword argument
+
+>>> lambda *b,*d: None
+Traceback (most recent call last):
+SyntaxError: * argument may appear only once
+
+>>> lambda a,*b,c,*d,*e,c: None
+Traceback (most recent call last):
+SyntaxError: * argument may appear only once
+
+>>> lambda a,b,/,c,*b,c,*d,*e,c: None
+Traceback (most recent call last):
+SyntaxError: * argument may appear only once
+
+>>> lambda a,b,/,c,*b,c,*d,**e: None
+Traceback (most recent call last):
+SyntaxError: * argument may appear only once
+
+>>> lambda a=1,d=,c: None
+Traceback (most recent call last):
+SyntaxError: expected default value expression
+
+>>> lambda a,d=,c: None
+Traceback (most recent call last):
+SyntaxError: expected default value expression
+
 >>> import ast; ast.parse('''
 ... def f(
 ...     *, # type: int
@@ -403,7 +607,7 @@ SyntaxError: Generator expression must be parenthesized
 >>> class C(x for x in L):
 ...     pass
 Traceback (most recent call last):
-SyntaxError: expected ':'
+SyntaxError: invalid syntax
 
 >>> def g(*args, **kwargs):
 ...     print(args, sorted(kwargs.items()))
@@ -759,17 +963,22 @@ leading to spurious errors.
      ...
    SyntaxError: cannot assign to function call here. Maybe you meant '==' instead of '='?
 
-    Missing ':' before suites:
+Missing ':' before suites:
 
-    >>> def f()
-    ...     pass
-    Traceback (most recent call last):
-    SyntaxError: expected ':'
+   >>> def f()
+   ...     pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
 
-    >>> class A
-    ...     pass
-    Traceback (most recent call last):
-    SyntaxError: expected ':'
+   >>> class A
+   ...     pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> class R&D:
+   ...     pass
+   Traceback (most recent call last):
+   SyntaxError: invalid syntax
 
    >>> if 1
    ...   pass
@@ -802,6 +1011,11 @@ leading to spurious errors.
    ...   pass
    Traceback (most recent call last):
    SyntaxError: expected ':'
+
+   >>> for x in range 10:
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: invalid syntax
 
    >>> while True
    ...   pass
@@ -848,6 +1062,11 @@ leading to spurious errors.
    Traceback (most recent call last):
    SyntaxError: expected ':'
 
+   >>> with block ad something:
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: invalid syntax
+
    >>> try
    ...   pass
    Traceback (most recent call last):
@@ -865,6 +1084,12 @@ leading to spurious errors.
    ...       pass
    Traceback (most recent call last):
    SyntaxError: expected ':'
+
+   >>> match x x:
+   ...   case list():
+   ...       pass
+   Traceback (most recent call last):
+   SyntaxError: invalid syntax
 
    >>> match x:
    ...   case list()
@@ -1040,9 +1265,19 @@ Incomplete dictionary literals
    Traceback (most recent call last):
    SyntaxError: expression expected after dictionary key and ':'
 
-   # Ensure that the error is not raise for syntax errors that happen after sets
+   # Ensure that the error is not raised for syntax errors that happen after sets
 
    >>> {1} $
+   Traceback (most recent call last):
+   SyntaxError: invalid syntax
+
+   # Ensure that the error is not raised for invalid expressions
+
+   >>> {1: 2, 3: foo(,), 4: 5}
+   Traceback (most recent call last):
+   SyntaxError: invalid syntax
+
+   >>> {1: $, 2: 3}
    Traceback (most recent call last):
    SyntaxError: invalid syntax
 
@@ -1102,6 +1337,13 @@ Specialized indentation errors:
    ... pass
    Traceback (most recent call last):
    IndentationError: expected an indented block after 'try' statement on line 1
+
+   >>> try:
+   ...     something()
+   ... except:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after 'except' statement on line 3
 
    >>> try:
    ...     something()
@@ -1418,6 +1660,149 @@ Corner-cases that used to crash:
     ...     ...
     Traceback (most recent call last):
     SyntaxError: positional patterns follow keyword patterns
+
+Uses of the star operator which should fail:
+
+A[:*b]
+
+    >>> A[:*b]
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+    >>> A[:(*b)]
+    Traceback (most recent call last):
+        ...
+    SyntaxError: cannot use starred expression here
+    >>> A[:*b] = 1
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+    >>> del A[:*b]
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+
+A[*b:]
+
+    >>> A[*b:]
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+    >>> A[(*b):]
+    Traceback (most recent call last):
+        ...
+    SyntaxError: cannot use starred expression here
+    >>> A[*b:] = 1
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+    >>> del A[*b:]
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+
+A[*b:*b]
+
+    >>> A[*b:*b]
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+    >>> A[(*b:*b)]
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+    >>> A[*b:*b] = 1
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+    >>> del A[*b:*b]
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+
+A[*(1:2)]
+
+    >>> A[*(1:2)]
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+    >>> A[*(1:2)] = 1
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+    >>> del A[*(1:2)]
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+
+A[*:] and A[:*]
+
+    >>> A[*:]
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+    >>> A[:*]
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+
+A[*]
+
+    >>> A[*]
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+
+A[**]
+
+    >>> A[**]
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+
+A[**b]
+
+    >>> A[**b]
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+    >>> A[**b] = 1
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+    >>> del A[**b]
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+
+def f(x: *b)
+
+    >>> def f6(x: *b): pass
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+    >>> def f7(x: *b = 1): pass
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+
+**kwargs: *a
+
+    >>> def f8(**kwargs: *a): pass
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+
+x: *b
+
+    >>> x: *b
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
+    >>> x: *b = 1
+    Traceback (most recent call last):
+        ...
+    SyntaxError: invalid syntax
 """
 
 import re
