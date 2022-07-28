@@ -4207,9 +4207,11 @@ pthread_create (NULL, NULL, start_routine, NULL)]])],[
     posix_threads=yes
     LIBS="$LIBS -lcma"
     ],[
-    AC_MSG_ERROR([could not find pthreads on your system])
-    ])
-    ])])])])])
+    AS_CASE([$ac_sys_system],
+      [WASI], [posix_threads=stub],
+      [AC_MSG_ERROR([could not find pthreads on your system])]
+    )
+    ])])])])])])
 
     AC_CHECK_LIB(mpc, usconfig, [
     LIBS="$LIBS -lmpc"
@@ -4271,6 +4273,10 @@ if test "$posix_threads" = "yes"; then
         esac])
       AC_CHECK_FUNCS(pthread_getcpuclockid)
 fi
+
+AS_VAR_IF([posix_threads], [stub], [
+  AC_DEFINE([HAVE_PTHREAD_STUBS], [1], [Define if platform requires stubbed pthreads support])
+])
 
 # Check for enable-ipv6
 AH_TEMPLATE(ENABLE_IPV6, [Define if --enable-ipv6 is specified])
