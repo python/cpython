@@ -1,0 +1,1 @@
+IDLE on macOS now recognise ``.pyi`` extensions.
