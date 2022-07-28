@@ -413,6 +413,17 @@ Connection Objects
 
 .. class:: Connection
 
+   Each open SQLite database is represented by a connection object.
+   A connection object is created with :func:`sqlite3.connect`.
+   The main purpose of connection objects is creating
+   :class:`cursors objects <Cursor>`,
+   and :ref:`sqlite3-controlling-transactions`.
+
+   .. seealso::
+
+      * :ref:`sqlite3-connection-shortcuts`
+      * :ref:`sqlite3-connection-context-manager`
+
    An SQLite database connection has the following attributes and methods:
 
    .. attribute:: isolation_level
@@ -957,6 +968,20 @@ Connection Objects
 Cursor Objects
 --------------
 
+   A cursor object represents a database cursor,
+   which is used to execute SQL statements,
+   and manage the context of a fetch operation.
+   Cursors are created with :meth:`Connection.cursor`,
+   or by using any of the :ref:`connection shortcut methods
+   <sqlite3-connection-shortcuts>`.
+
+   Cursors objects are :term:`iterators <iterator>`,
+   meaning that if you :meth:`execute` a ``SELECT`` query,
+   you can simply iterate over the cursor to fetch the resulting rows::
+
+      for row in cur.execute("select * from data"):
+          print(row)
+
 .. class:: Cursor
 
    A :class:`Cursor` instance has the following attributes and methods.
@@ -1111,15 +1136,13 @@ Row Objects
 
 .. class:: Row
 
-   A :class:`Row` instance serves as a highly optimized
+   A :class:`Row` instance that serves as a highly optimized
    :attr:`~Connection.row_factory` for :class:`Connection` objects.
-   It tries to mimic a tuple in most of its features.
-
-   It supports mapping access by column name and index, iteration,
+   It tries to mimic a :class:`tuple` in most of its features,
+   and supports :term:`mapping` access by column name and index, iteration,
    representation, equality testing and :func:`len`.
 
-   If two :class:`Row` objects have exactly the same columns and their
-   members are equal, they compare equal.
+   Two row objects are equal if they have equal columns and equal members.
 
    .. method:: keys
 
@@ -1618,8 +1641,10 @@ Using :mod:`sqlite3` efficiently
 --------------------------------
 
 
-Using shortcut methods
-^^^^^^^^^^^^^^^^^^^^^^
+.. _sqlite3-connection-shortcuts:
+
+Using connection shortcut methods
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Using the nonstandard :meth:`execute`, :meth:`executemany` and
 :meth:`executescript` methods of the :class:`Connection` object, your code can
