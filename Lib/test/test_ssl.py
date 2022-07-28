@@ -3785,11 +3785,13 @@ class ThreadedTests(unittest.TestCase):
                     )
 
                 if ekm:
-                    cb_ekm = s.export_keying_material(cb_size, ekm, "")
+                    cb_ekm = s.export_keying_material(
+                        cb_size, ekm, context="", require_extms=True
+                    )
                     self.assertEqual(cb_ekm, cb_data)
                     # TLS 1.3: empty and no context result in equal values
                     # other: empty context and no context result in different values
-                    cb_ekm_no_context = s.export_keying_material(cb_size, ekm, None)
+                    cb_ekm_no_context = s.export_keying_material(cb_size, ekm)
                     if version == ssl.TLSVersion.TLSv1_3:
                         self.assertEqual(cb_data, cb_ekm_no_context)
                     else:

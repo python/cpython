@@ -382,7 +382,8 @@ exit:
 }
 
 PyDoc_STRVAR(_ssl__SSLSocket_export_keying_material__doc__,
-"export_keying_material($self, length, label, context=None, /)\n"
+"export_keying_material($self, /, length, label, *, context=None,\n"
+"                       require_extms=True)\n"
 "--\n"
 "\n"
 "Get keying material for current connection.\n"
@@ -390,7 +391,7 @@ PyDoc_STRVAR(_ssl__SSLSocket_export_keying_material__doc__,
 "See RFC 5705 (for TLS 1.2) and RFC 8446 (for TLS 1.3)");
 
 #define _SSL__SSLSOCKET_EXPORT_KEYING_MATERIAL_METHODDEF    \
-    {"export_keying_material", _PyCFunction_CAST(_ssl__SSLSocket_export_keying_material), METH_FASTCALL, _ssl__SSLSocket_export_keying_material__doc__},
+    {"export_keying_material", _PyCFunction_CAST(_ssl__SSLSocket_export_keying_material), METH_FASTCALL|METH_KEYWORDS, _ssl__SSLSocket_export_keying_material__doc__},
 
 static PyObject *
 _ssl__SSLSocket_export_keying_material_impl(PySSLSocket *self,
@@ -398,23 +399,27 @@ _ssl__SSLSocket_export_keying_material_impl(PySSLSocket *self,
                                             const char *label,
                                             Py_ssize_t label_length,
                                             const char *context,
-                                            Py_ssize_t context_length);
+                                            Py_ssize_t context_length,
+                                            int require_extms);
 
 static PyObject *
-_ssl__SSLSocket_export_keying_material(PySSLSocket *self, PyObject *const *args, Py_ssize_t nargs)
+_ssl__SSLSocket_export_keying_material(PySSLSocket *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"length", "label", "context", "require_extms", NULL};
+    static _PyArg_Parser _parser = {"ns#|$z#p:export_keying_material", _keywords, 0};
     Py_ssize_t length;
     const char *label;
     Py_ssize_t label_length;
     const char *context = NULL;
     Py_ssize_t context_length;
+    int require_extms = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, "ns#|z#:export_keying_material",
-        &length, &label, &label_length, &context, &context_length)) {
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &length, &label, &label_length, &context, &context_length, &require_extms)) {
         goto exit;
     }
-    return_value = _ssl__SSLSocket_export_keying_material_impl(self, length, label, label_length, context, context_length);
+    return_value = _ssl__SSLSocket_export_keying_material_impl(self, length, label, label_length, context, context_length, require_extms);
 
 exit:
     return return_value;
@@ -1369,4 +1374,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=d6dab5ba1c9e85cc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d6d65f40541312d3 input=a9049054013a1b77]*/

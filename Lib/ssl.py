@@ -254,6 +254,31 @@ class _TLSMessageType:
     CHANGE_CIPHER_SPEC = 0x0101
 
 
+@_simple_enum(_Enum)
+class ChannelBindings:
+    TLS_UNIQUE = "tls-unique"
+    TLS_EXPORTER = "tls-exporter"
+    # TLS_SERVER_END_POINT = "tls-server-end-point"
+
+    def _get_channel_bindings(self, sslobj):
+        cls = type(self)
+        match self:
+            case cls.TLS_UNIQUE:
+                return sslobj.get_channel_bindings(self.value)
+            case cls.TLS_EXPORTER:
+                return sslobj.export_keying_material(
+                    32,
+                    "EXPORTER-Channel-Binding",
+                    context="",
+                    require_extms=True
+                )
+            # case cls.TLS_SERVER_END_POINT:
+            #     chain = sslobj.get_verified_chain()
+            #     return chain[0].get_rfc5929_endpoint_hash()
+            case _:
+                raise ValueError(f"{self!r} channel binding type not implemented")
+
+
 if sys.platform == "win32":
     from _ssl import enum_certificates, enum_crls
 
@@ -267,7 +292,7 @@ import warnings
 
 socket_error = OSError  # keep that public name in module namespace
 
-CHANNEL_BINDING_TYPES = ['tls-unique', 'tls-exporter']
+CHANNEL_BINDING_TYPES = list(cb.value for cb in ChannelBindings)
 
 HAS_NEVER_CHECK_COMMON_NAME = hasattr(_ssl, 'HOSTFLAG_NEVER_CHECK_SUBJECT')
 
@@ -924,7 +949,7 @@ class SSLObject:
         """Get channel binding data for current connection.  Raise ValueError
         if the requested `cb_type` is not supported.  Return bytes of the data
         or None if the data is not available (e.g. before the handshake)."""
-        return self._sslobj.get_channel_binding(cb_type)
+        return ChannelBindings(cb_type)._get_channel_bindings(self._sslobj)
 
     def export_keying_material(self, length, label, context=None):
         """Export keying material for current connection
@@ -1343,7 +1368,7 @@ class SSLSocket(socket):
     @_sslcopydoc
     def get_channel_binding(self, cb_type="tls-unique"):
         if self._sslobj is not None:
-            return self._sslobj.get_channel_binding(cb_type)
+            return ChannelBindings(cb_type)._get_channel_bindings(self._sslobj)
         else:
             if cb_type not in CHANNEL_BINDING_TYPES:
                 raise ValueError(
