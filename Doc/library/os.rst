@@ -576,16 +576,21 @@ process and user.
    details.
 
    If *fd* refers to a :file:`/proc/{pid}/ns/` link, ``setns()`` reassociates the
-   calling thread with the namespace associated with that link, subject to any
-   constraints imposed by the *nstype* argument (a *nstype* of ``0`` means no
-   constraints).
+   calling thread with the namespace associated with that link,
+   and *nstype* may be set to one of the
+   :ref:`CLONE_NEW* constants <os-unshare-clone-flags>`
+   to impose constraints on the operation
+   (``0`` means no constraints).
+
    Since Linux 5.8, *fd* may refer to a PID file descriptor obtained from
    :func:`~os.pidfd_open`. In this case, ``setns()`` reassociates the calling thread
-   into one or more of the same namespaces as the thread referred to by *fd*
-   subject to any constraints imposed by *nstype*, which is a bit mask specified
-   by combining one or more of the ``CLONE_NEW*`` constants,
-   e.g., as ``setns(fd, os.CLONE_NEWUTS | os.CLONE_NEWPID)``.
+   into one or more of the same namespaces as the thread referred to by *fd*.
+   This is subject to any constraints imposed by *nstype*,
+   which is is a bit mask combining one or more of the
+   :ref:`CLONE_NEW* constants <os-unshare-clone-flags>`,
+   e.g. ``setns(fd, os.CLONE_NEWUTS | os.CLONE_NEWPID)``.
    The caller's memberships in unspecified namespaces are left unchanged.
+
    *fd* can be any object with a :meth:`~io.IOBase.fileno` method, or a raw file descriptor.
 
    This example reassociates the thread with the ``init`` process's network namespace::
@@ -784,6 +789,8 @@ process and user.
    .. seealso::
 
       The :func:`~os.setns` function.
+
+.. _os-unshare-clone-flags:
 
 Flags to the :func:`unshare` function, if the implementation supports them.
 See :manpage:`unshare(2)` in the Linux manual
