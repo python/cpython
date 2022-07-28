@@ -1168,7 +1168,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
         PyDictOrValues* dorv_ptr = _PyObject_DictOrValuesPointer(obj);
         if (_PyDictOrValues_IsValues(*dorv_ptr)) {
-            PyDictValues *values = _PyDictOrValues_GetValues(*_PyObject_DictOrValuesPointer(obj));
+            PyDictValues *values = _PyDictOrValues_GetValues(*dorv_ptr);
             PyObject *attr = _PyObject_GetInstanceAttribute(obj, values, name);
             if (attr != NULL) {
                 *method = attr;

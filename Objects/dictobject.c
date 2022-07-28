@@ -5569,7 +5569,7 @@ _PyObject_FreeInstanceAttributes(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     assert(Py_TYPE(self)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-    PyDictOrValues dorv= *_PyObject_DictOrValuesPointer(self);
+    PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(self);
     if (!_PyDictOrValues_IsValues(dorv)) {
         return;
     }
