@@ -7719,6 +7719,24 @@ PyInit__socket(void)
     /* SOCK_RAW is marked as optional in the POSIX specification */
     PyModule_AddIntMacro(m, SOCK_RAW);
 #endif
+#ifdef ETH_P_IP
+    PyModule_AddIntMacro(m, ETH_P_IP);
+#endif
+#ifdef ETH_P_ARP
+    PyModule_AddIntMacro(m, ETH_P_ARP);
+#endif
+#ifdef ETH_P_IPV6
+    PyModule_AddIntMacro(m, ETH_P_IPV6);
+#endif
+#ifdef ETH_P_8021Q
+    PyModule_AddIntMacro(m, ETH_P_8021Q);
+#endif
+#ifdef ETH_P_8021AD
+    PyModule_AddIntMacro(m, ETH_P_8021AD);
+#endif
+#ifdef ETH_P_ALL
+    PyModule_AddIntMacro(m, ETH_P_ALL);
+#endif
 #ifdef SOCK_SEQPACKET
     PyModule_AddIntMacro(m, SOCK_SEQPACKET);
 #endif
