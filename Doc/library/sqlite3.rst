@@ -8,7 +8,11 @@
 
 **Source code:** :source:`Lib/sqlite3/`
 
---------------
+
+.. _sqlite3-intro:
+
+Introduction
+------------
 
 SQLite is a C library that provides a lightweight disk-based database that
 doesn't require a separate server process and allows accessing the database
@@ -20,6 +24,12 @@ PostgreSQL or Oracle.
 The sqlite3 module was written by Gerhard Häring.  It provides an SQL interface
 compliant with the DB-API 2.0 specification described by :pep:`249`, and
 requires SQLite 3.7.15 or newer.
+
+
+.. _sqlite3-tutorial:
+
+Tutorial
+--------
 
 To use the module, start by creating a :class:`Connection` object that
 represents the database.  Here the data will be stored in the
@@ -139,8 +149,8 @@ Module functions and constants
 
 .. data:: version
 
-   The version number of this module, as a string. This is not the version of
-   the SQLite library.
+   Version number of this module as a :class:`string <str>`.
+   This is not the version of the SQLite library.
 
    .. deprecated-removed:: 3.12 3.14
       This constant used to reflect the version number of the ``pysqlite``
@@ -150,8 +160,8 @@ Module functions and constants
 
 .. data:: version_info
 
-   The version number of this module, as a tuple of integers. This is not the
-   version of the SQLite library.
+   Version number of this module as a :class:`tuple` of :class:`integers <int>`.
+   This is not the version of the SQLite library.
 
    .. deprecated-removed:: 3.12 3.14
       This constant used to reflect the version number of the ``pysqlite``
@@ -161,12 +171,13 @@ Module functions and constants
 
 .. data:: sqlite_version
 
-   The version number of the run-time SQLite library, as a string.
+   Version number of the runtime SQLite library as a :class:`string <str>`.
 
 
 .. data:: sqlite_version_info
 
-   The version number of the run-time SQLite library, as a tuple of integers.
+   Version number of the runtime SQLite library as a :class:`tuple` of
+   :class:`integers <int>`.
 
 
 .. data:: threadsafety
@@ -369,6 +380,7 @@ Module functions and constants
 
 .. function:: enable_callback_tracebacks(flag, /)
 
+   Enable or disable callback tracebacks.
    By default you will not get any tracebacks in user-defined functions,
    aggregates, converters, authorizer callbacks etc. If you want to debug them,
    you can call this function with *flag* set to :const:`True`. Afterwards, you
@@ -428,6 +440,7 @@ Connection Objects
 
    .. method:: cursor(factory=Cursor)
 
+      Create and return a :class:`Cursor` object.
       The cursor method accepts a single optional parameter *factory*. If
       supplied, this must be a callable returning an instance of :class:`Cursor`
       or its subclasses.
@@ -489,19 +502,19 @@ Connection Objects
       make sure to :meth:`commit` before closing
       to avoid losing pending changes.
 
-   .. method:: execute(sql[, parameters])
+   .. method:: execute(sql, parameters=(), /)
 
       Create a new :class:`Cursor` object and call
       :meth:`~Cursor.execute` on it with the given *sql* and *parameters*.
       Return the new cursor object.
 
-   .. method:: executemany(sql[, parameters])
+   .. method:: executemany(sql, parameters, /)
 
       Create a new :class:`Cursor` object and call
       :meth:`~Cursor.executemany` on it with the given *sql* and *parameters*.
       Return the new cursor object.
 
-   .. method:: executescript(sql_script)
+   .. method:: executescript(sql_script, /)
 
       Create a new :class:`Cursor` object and call
       :meth:`~Cursor.executescript` on it with the given *sql_script*.
@@ -638,9 +651,9 @@ Connection Objects
 
    .. method:: interrupt()
 
-      You can call this method from a different thread to abort any queries that might
-      be executing on the connection. The query will then abort and the caller will
-      get an exception.
+      Call this method from a different thread to abort any queries that might
+      be executing on the connection.
+      Aborted queries will raise an exception.
 
 
    .. method:: set_authorizer(authorizer_callback)
@@ -745,10 +758,9 @@ Connection Objects
 
    .. attribute:: row_factory
 
-      You can change this attribute to a callable that accepts the cursor and the
-      original row as a tuple and will return the real result row.  This way, you can
-      implement more advanced ways of returning results, such  as returning an object
-      that can also access columns by name.
+      A callable that accepts two arguments,
+      a :class:`Cursor` object and the raw row results as a :class:`tuple`,
+      and returns a custom object representing an SQLite row.
 
       Example:
 
@@ -766,31 +778,28 @@ Connection Objects
 
    .. attribute:: text_factory
 
-      Using this attribute you can control what objects are returned for the ``TEXT``
-      data type. By default, this attribute is set to :class:`str` and the
-      :mod:`sqlite3` module will return :class:`str` objects for ``TEXT``.
-      If you want to return :class:`bytes` instead, you can set it to :class:`bytes`.
+      A callable that accepts a :class:`bytes` parameter and returns a text
+      representation of it.
+      The callable is invoked for SQLite values with the ``TEXT`` data type.
+      By default, this attribute is set to :class:`str`.
+      If you want to return ``bytes`` instead, set *text_factory* to ``bytes``.
 
-      You can also set it to any other callable that accepts a single bytestring
-      parameter and returns the resulting object.
-
-      See the following example code for illustration:
+      Example:
 
       .. literalinclude:: ../includes/sqlite3/text_factory.py
 
 
    .. attribute:: total_changes
 
-      Returns the total number of database rows that have been modified, inserted, or
+      Return the total number of database rows that have been modified, inserted, or
       deleted since the database connection was opened.
 
 
    .. method:: iterdump
 
-      Returns an iterator to dump the database in an SQL text format.  Useful when
-      saving an in-memory database for later restoration.  This function provides
-      the same capabilities as the :kbd:`.dump` command in the :program:`sqlite3`
-      shell.
+      Return an :term:`iterator` to dump the database as SQL source code.
+      Useful when saving an in-memory database for later restoration.
+      Similar to the ``.dump`` command in the :program:`sqlite3` shell.
 
       Example::
 
@@ -871,7 +880,7 @@ Connection Objects
 
    .. method:: getlimit(category, /)
 
-      Get a connection run-time limit. *category* is the limit category to be
+      Get a connection runtime limit. *category* is the limit category to be
       queried.
 
       Example, query the maximum length of an SQL statement::
@@ -886,7 +895,7 @@ Connection Objects
 
    .. method:: setlimit(category, limit, /)
 
-      Set a connection run-time limit. *category* is the limit category to be
+      Set a connection runtime limit. *category* is the limit category to be
       set. *limit* is the new limit. If the new limit is a negative number, the
       limit is unchanged.
 
@@ -905,7 +914,7 @@ Connection Objects
 
    .. method:: serialize(*, name="main")
 
-      This method serializes a database into a :class:`bytes` object.  For an
+      Serialize a database into a :class:`bytes` object.  For an
       ordinary on-disk database file, the serialization is just a copy of the
       disk file.  For an in-memory database or a "temp" database, the
       serialization is the same sequence of bytes which would be written to
@@ -924,6 +933,8 @@ Connection Objects
 
    .. method:: deserialize(data, /, *, name="main")
 
+      Deserialize a :meth:`serialized <serialize>` database into a
+      :class:`Connection`.
       This method causes the database connection to disconnect from database
       *name*, and reopen *name* as an in-memory database based on the
       serialization contained in *data*.  Deserialization will raise
@@ -971,11 +982,11 @@ Cursor Objects
       a transaction is implicitly opened before executing *sql*.
 
 
-   .. method:: executemany(sql, seq_of_parameters, /)
+   .. method:: executemany(sql, parameters, /)
 
       Execute :ref:`parameterized <sqlite3-placeholders>` SQL statement *sql*
       against all parameter sequences or mappings found in the sequence
-      *seq_of_parameters*.  It is also possible to use an
+      *parameters*.  It is also possible to use an
       :term:`iterator` yielding parameters instead of a sequence.
       Uses the same implicit transaction handling as :meth:`~Cursor.execute`.
 
@@ -1003,20 +1014,20 @@ Cursor Objects
 
    .. method:: fetchone()
 
-      Fetches the next row of a query result set, returning a single sequence,
-      or :const:`None` when no more data is available.
+      Fetch the next row of a query result set as a :class:`tuple`.
+      Return :const:`None` if no more data is available.
 
 
    .. method:: fetchmany(size=cursor.arraysize)
 
-      Fetches the next set of rows of a query result, returning a list.  An empty
-      list is returned when no more rows are available.
+      Fetch the next set of rows of a query result as a :class:`list`.
+      Return an empty list if no more rows are available.
 
       The number of rows to fetch per call is specified by the *size* parameter.
-      If it is not given, the cursor's arraysize determines the number of rows
-      to be fetched. The method should try to fetch as many rows as indicated by
-      the size parameter. If this is not possible due to the specified number of
-      rows not being available, fewer rows may be returned.
+      If *size* is not given, :attr:`arraysize` determines the number of rows
+      to be fetched.
+      If fewer than *size* rows are available,
+      as many rows as are available are returned.
 
       Note there are performance considerations involved with the *size* parameter.
       For optimal performance, it is usually best to use the arraysize attribute.
@@ -1025,9 +1036,10 @@ Cursor Objects
 
    .. method:: fetchall()
 
-      Fetches all (remaining) rows of a query result, returning a list.  Note that
-      the cursor's arraysize attribute can affect the performance of this operation.
-      An empty list is returned when no rows are available.
+      Fetch all (remaining) rows of a query result as a :class:`list`.
+      Return an empty list if no rows are available.
+      Note that the :attr:`arraysize` attribute can affect the performance of
+      this operation.
 
    .. method:: close()
 
@@ -1054,7 +1066,7 @@ Cursor Objects
 
    .. attribute:: lastrowid
 
-      This read-only attribute provides the row id of the last inserted row. It
+      Read-only attribute that provides the row id of the last inserted row. It
       is only updated after successful ``INSERT`` or ``REPLACE`` statements
       using the :meth:`execute` method.  For other statements, after
       :meth:`executemany` or :meth:`executescript`, or if the insertion failed,
@@ -1074,7 +1086,7 @@ Cursor Objects
 
    .. attribute:: description
 
-      This read-only attribute provides the column names of the last query. To
+      Read-only attribute that provides the column names of the last query. To
       remain compatible with the Python DB API, it returns a 7-tuple for each
       column where the last six items of each tuple are :const:`None`.
 
@@ -1082,8 +1094,8 @@ Cursor Objects
 
    .. attribute:: connection
 
-      This read-only attribute provides the SQLite database :class:`Connection`
-      used by the :class:`Cursor` object.  A :class:`Cursor` object created by
+      Read-only attribute that provides the SQLite database :class:`Connection`
+      belonging to the cursor.  A :class:`Cursor` object created by
       calling :meth:`con.cursor() <Connection.cursor>` will have a
       :attr:`connection` attribute that refers to *con*::
 
@@ -1111,7 +1123,8 @@ Row Objects
 
    .. method:: keys
 
-      This method returns a list of column names. Immediately after a query,
+      Return a :class:`list` of column names as :class:`strings <str>`.
+      Immediately after a query,
       it is the first member of each tuple in :attr:`Cursor.description`.
 
    .. versionchanged:: 3.5

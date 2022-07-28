@@ -1551,10 +1551,19 @@ Build Changes
      The :program:`configure` options ``--with-tcltk-includes`` and
      ``--with-tcltk-libs`` have been removed.
 
-* CPython now has experimental support for cross compiling to WebAssembly
-  platform ``wasm32-emscripten``. The effort is inspired by previous work
-  like Pyodide.
-  (Contributed by Christian Heimes and Ethan Smith in :issue:`40280`.)
+* CPython now has :pep:`11` tier 3 support for cross compiling to WebAssembly
+  platform ``wasm32-unknown-emscripten`` (Python in the browser). The effort
+  is inspired by previous work like `Pyodide <https://pyodide.org/>`_.
+  Emscripten provides a limited subset of POSIX APIs. Python standard
+  libraries features and modules related to networking, processes, threading,
+  signals, mmap, and users/groups are not available or don't work.
+  (Contributed by Christian Heimes and Ethan Smith in :gh:`84461`,
+  promoted in :gh:`95085`)
+
+* CPython now has :pep:`11` tier 3 support for cross compiling to WebAssembly
+  platform ``wasm32-unknown-wasi`` (WebAssembly System Interface). Like on
+  Emscripten, only a subset of Python's standard library is available on WASI.
+  (Contributed by Christian Heimes in :gh:`90473`, promoted in :gh:`95085`)
 
 * CPython will now use 30-bit digits by default for the Python :class:`int`
   implementation. Previously, the default was to use 30-bit digits on platforms
