@@ -1106,6 +1106,7 @@ exceptiongroup_split_recursive(PyObject *exc,
             assert(PyList_CheckExact(match_list));
             if (PyList_Append(match_list, rec_result.match) < 0) {
                 Py_DECREF(rec_result.match);
+                Py_XDECREF(rec_result.rest);
                 goto done;
             }
             Py_DECREF(rec_result.match);
