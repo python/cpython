@@ -57,29 +57,4 @@ _ssl_Certificate_get_info(PySSLCertificate *self, PyObject *Py_UNUSED(ignored))
 {
     return _ssl_Certificate_get_info_impl(self);
 }
-
-#if (0)
-
-PyDoc_STRVAR(_ssl_Certificate_get_rfc5929_endpoint_hash__doc__,
-"get_rfc5929_endpoint_hash($self, /)\n"
-"--\n"
-"\n");
-
-#define _SSL_CERTIFICATE_GET_RFC5929_ENDPOINT_HASH_METHODDEF    \
-    {"get_rfc5929_endpoint_hash", (PyCFunction)_ssl_Certificate_get_rfc5929_endpoint_hash, METH_NOARGS, _ssl_Certificate_get_rfc5929_endpoint_hash__doc__},
-
-static PyObject *
-_ssl_Certificate_get_rfc5929_endpoint_hash_impl(PySSLCertificate *self);
-
-static PyObject *
-_ssl_Certificate_get_rfc5929_endpoint_hash(PySSLCertificate *self, PyObject *Py_UNUSED(ignored))
-{
-    return _ssl_Certificate_get_rfc5929_endpoint_hash_impl(self);
-}
-
-#endif /* (0) */
-
-#ifndef _SSL_CERTIFICATE_GET_RFC5929_ENDPOINT_HASH_METHODDEF
-    #define _SSL_CERTIFICATE_GET_RFC5929_ENDPOINT_HASH_METHODDEF
-#endif /* !defined(_SSL_CERTIFICATE_GET_RFC5929_ENDPOINT_HASH_METHODDEF) */
-/*[clinic end generated code: output=904881790ad59cbd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=18885c4d167d5244 input=a9049054013a1b77]*/

@@ -149,64 +149,6 @@ _x509name_print(_sslmodulestate *state, X509_NAME *name, int indent, unsigned lo
     return res;
 }
 
-#if 0
-/*[clinic input]
-_ssl.Certificate.get_rfc5929_endpoint_hash
-
-[clinic start generated code]*/
-
-static PyObject *
-_ssl_Certificate_get_rfc5929_endpoint_hash_impl(PySSLCertificate *self)
-/*[clinic end generated code: output=cbbf76629040b21a input=1b2f00e11718c10b]*/
-{
-    int digest_nid, key_nid;
-    int sig_nid = X509_get_signature_nid(self->cert);
-    if (!OBJ_find_sigid_algs(sig_nid, &digest_nid, &key_nid)) {
-        _setSSLError(get_state_cert(self), NULL, 0, __FILE__, __LINE__);
-        return NULL;
-    }
-
-    switch (digest_nid) {
-    case NID_md5:
-    case NID_md5_sha1:
-    case NID_sha1:
-        digest_nid = NID_sha256;
-        break;
-    }
-
-    const EVP_MD *md = EVP_get_digestbynid(digest_nid);
-    if (md == NULL) {
-        _setSSLError(get_state_cert(self), NULL, 0, __FILE__, __LINE__);
-        return NULL;
-    }
-
-    BIO *bio = BIO_new(BIO_s_mem());
-    if (bio == NULL) {
-        PyErr_SetString(get_state_cert(self)->PySSLErrorObject,
-                        "failed to allocate BIO");
-        return NULL;
-    }
-    if (i2d_X509_bio(bio, self->cert) != 1) {
-        BIO_free(bio);
-        _setSSLError(get_state_cert(self), NULL, 0, __FILE__, __LINE__);
-        return NULL;
-    }
-
-    char *data;
-    long data_size = BIO_get_mem_data(bio, &data);
-
-    unsigned char digest[EVP_MAX_MD_SIZE];
-    unsigned int digest_size;
-    int result = EVP_Digest(data, data_size, digest, &digest_size, md, NULL);
-    BIO_free(bio);
-    if (result != 1) {
-        _setSSLError(get_state_cert(self), NULL, 0, __FILE__, __LINE__);
-        return NULL;
-    }
-    return PyBytes_FromStringAndSize((const char*)digest, digest_size);
-}
-#endif
-
 /* ************************************************************************
  * PySSLCertificate_Type
  */
@@ -282,7 +224,6 @@ static PyMethodDef certificate_methods[] = {
     /* methods */
     _SSL_CERTIFICATE_PUBLIC_BYTES_METHODDEF
     _SSL_CERTIFICATE_GET_INFO_METHODDEF
-    _SSL_CERTIFICATE_GET_RFC5929_ENDPOINT_HASH_METHODDEF
     {NULL, NULL}
 };
 

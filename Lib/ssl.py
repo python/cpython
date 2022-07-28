@@ -258,7 +258,6 @@ class _TLSMessageType:
 class ChannelBindings:
     TLS_UNIQUE = "tls-unique"
     TLS_EXPORTER = "tls-exporter"
-    # TLS_SERVER_END_POINT = "tls-server-end-point"
 
     def _get_channel_binding(self, sslobj):
         cls = type(self)
@@ -272,9 +271,6 @@ class ChannelBindings:
                     context="",
                     require_extms=True
                 )
-            # case cls.TLS_SERVER_END_POINT:
-            #     chain = sslobj.get_verified_chain()
-            #     return chain[0].get_rfc5929_endpoint_hash()
             case _:
                 raise ValueError(f"{self!r} channel binding type not implemented")
 
