@@ -950,7 +950,7 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
                 with contextlib.closing(
                     pool.map(log_n_wait, ["second", "third"], timeout=0)
                 ) as gen:
-                    with self.assertRaises(TimeoutError):
+                    with self.assertRaises(futures.TimeoutError):
                         next(gen)
             finally:
                 stop_event.set()
