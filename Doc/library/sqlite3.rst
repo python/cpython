@@ -27,12 +27,12 @@ requires SQLite 3.7.15 or newer.
 
 This document includes four main sections:
 
-* :ref:`sqlite3-tutorial`: teaches how to use the sqlite3 module
-* :ref:`sqlite3-reference`: describes the classes and methods defined in the
-  module
-* :ref:`sqlite3-howtos`: explains how to solve specific problems
-* :ref:`sqlite3-concepts`: provides more background and insights about the
-  design of the module
+* :ref:`sqlite3-tutorial` teaches how to use the sqlite3 module.
+* :ref:`sqlite3-reference` describes the classes and functions this module
+  defines.
+* :ref:`sqlite3-howtos` explains how to handle specific tasks.
+* :ref:`sqlite3-explanation` provides in-depth understanding of transaction
+  control.
 
 
 .. _sqlite3-tutorial:
@@ -1613,8 +1613,8 @@ the context manager is a no-op.
 
 .. _sqlite3-uri-tricks:
 
-SQLite URI tricks
-^^^^^^^^^^^^^^^^^
+Working with SQLite URIs
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 Some useful URI tricks include:
 
@@ -1642,7 +1642,7 @@ can be found in the `SQLite URI documentation`_.
 .. _SQLite URI documentation: https://www.sqlite.org/uri.html
 
 
-.. _sqlite3-concepts:
+.. _sqlite3-explanation:
 
 Concepts
 --------
