@@ -586,7 +586,7 @@ process and user.
    :func:`~os.pidfd_open`. In this case, ``setns()`` reassociates the calling thread
    into one or more of the same namespaces as the thread referred to by *fd*.
    This is subject to any constraints imposed by *nstype*,
-   which is is a bit mask combining one or more of the
+   which is a bit mask combining one or more of the
    :ref:`CLONE_NEW* constants <os-unshare-clone-flags>`,
    e.g. ``setns(fd, os.CLONE_NEWUTS | os.CLONE_NEWPID)``.
    The caller's memberships in unspecified namespaces are left unchanged.
