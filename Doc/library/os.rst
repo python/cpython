@@ -776,7 +776,7 @@ process and user.
    newly created namespace.
    See the :manpage:`unshare(2)`
    man page for more details.
-   The *flags* argument is a bit mask, combining zero or more of the 
+   The *flags* argument is a bit mask, combining zero or more of the
    :ref:`CLONE_* constants <os-unshare-clone-flags>`,
    that specifies which parts of the execution context should be
    unshared from their existing associations and moved to a new namespace.
