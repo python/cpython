@@ -1610,7 +1610,7 @@ Window control
 
 .. function:: bgpic(picname=None)
 
-   :param picname: a string, name of a gif-file or ``"nopic"``, or ``None``
+   :param picname: a string, name of an image file(PGM, PPM, GIF, and PNG) or ``"nopic"``, or ``None``
 
    Set background image or return name of current backgroundimage.  If *picname*
    is a filename, set the corresponding image as background.  If *picname* is
@@ -1998,7 +1998,16 @@ Settings and special methods
           Image shapes *do not* rotate when turning the turtle, so they do not
           display the heading of the turtle!
 
-   (2) *name* is an arbitrary string and *shape* is a tuple of pairs of
+   (2) *name* is an arbitrary string and *shape* is the name of an image file(PGM, PPM, GIF, and PNG): Install the
+       corresponding image shape. ::
+
+       >>> screen.register_shape("turtle", "turtle.gif")
+
+       .. note::
+          Image shapes *do not* rotate when turning the turtle, so they do not
+          display the heading of the turtle!
+
+   (3) *name* is an arbitrary string and *shape* is a tuple of pairs of
        coordinates: Install the corresponding polygon shape.
 
        .. doctest::
@@ -2006,7 +2015,7 @@ Settings and special methods
 
           >>> screen.register_shape("triangle", ((5,-3), (0,5), (-5,-3)))
 
-   (3) *name* is an arbitrary string and *shape* is a (compound) :class:`Shape`
+   (4) *name* is an arbitrary string and *shape* is a (compound) :class:`Shape`
        object: Install the corresponding compound shape.
 
    Add a turtle shape to TurtleScreen's shapelist.  Only thusly registered
