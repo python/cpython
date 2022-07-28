@@ -6,7 +6,6 @@ XXX TO DO:
     (or recheck on window popup)
 - add popup menu with more options (e.g. doc strings, base classes, imports)
 - add base classes to class browser tree
-- finish removing limitation to x.py files (ModuleBrowserTreeItem)
 """
 
 import os
@@ -17,6 +16,7 @@ from idlelib.config import idleConf
 from idlelib import pyshell
 from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
 from idlelib.window import ListedToplevel
+from idlelib.util import is_supported_extension
 
 
 file_open = None  # Method...Item and Class...Item use this.
@@ -76,8 +76,8 @@ class ModuleBrowser:
 
         Instance variables:
             name: Module name.
-            file: Full path and module with .py extension.  Used in
-                creating ModuleBrowserTreeItem as the rootnode for
+            file: Full path and module with supported extension.
+                Used in creating ModuleBrowserTreeItem as the rootnode for
                 the tree and subsequently in the children.
         """
         self.master = master
@@ -161,22 +161,22 @@ class ModuleBrowserTreeItem(TreeItem):
 
     def OnDoubleClick(self):
         "Open a module in an editor window when double clicked."
-        if os.path.normcase(self.file[-3:]) != ".py":
+        if not is_supported_extension(self.file):
             return
         if not os.path.exists(self.file):
             return
         file_open(self.file)
 
     def IsExpandable(self):
-        "Return True if Python (.py) file."
-        return os.path.normcase(self.file[-3:]) == ".py"
+        "Return True if Python file."
+        return is_supported_extension(self.file)
 
     def listchildren(self):
         "Return sequenced classes and functions in the module."
-        dir, base = os.path.split(self.file)
-        name, ext = os.path.splitext(base)
-        if os.path.normcase(ext) != ".py":
+        if not is_supported_extension(self.file):
             return []
+        dir, base = os.path.split(self.file)
+        name, _ = os.path.splitext(base)
         try:
             tree = pyclbr.readmodule_ex(name, [dir] + sys.path)
         except ImportError:
