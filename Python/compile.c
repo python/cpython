@@ -137,7 +137,8 @@ struct location {
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
     ((const struct location){(LNO), (END_LNO), (COL), (END_COL)})
 
-static struct location NO_LOCATION = {-1, -1, -1, -1};
+static struct location NO_LOCATION_VALUE = {-1, -1, -1, -1};
+#define NO_LOCATION NULL
 
 struct instr {
     int i_opcode;
@@ -400,7 +401,7 @@ struct compiler {
 };
 
 #define CFG_BUILDER(c) (&((c)->u->u_cfg_builder))
-#define COMPILER_LOC(c) ((c)->u->u_loc)
+#define COMPILER_LOC(c) (&((c)->u->u_loc))
 
 typedef struct {
     // A list of strings corresponding to name captures. It is used to track:
@@ -429,7 +430,7 @@ typedef struct {
 
 static int basicblock_next_instr(basicblock *);
 
-static int cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, struct location loc);
+static int cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, const struct location *loc);
 
 static void compiler_free(struct compiler *);
 static int compiler_error(struct compiler *, const char *, ...);
@@ -1254,7 +1255,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 
 static int
 basicblock_addop(basicblock *b, int opcode, int oparg,
-                 basicblock *target, struct location loc)
+                 basicblock *target, const struct location *loc)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
@@ -1273,14 +1274,14 @@ basicblock_addop(basicblock *b, int opcode, int oparg,
     i->i_opcode = opcode;
     i->i_oparg = oparg;
     i->i_target = target;
-    i->i_loc = loc;
+    i->i_loc = loc ? *loc : NO_LOCATION_VALUE;
 
     return 1;
 }
 
 static int
 cfg_builder_addop(cfg_builder *g, int opcode, int oparg, basicblock *target,
-                  struct location loc)
+                  const struct location *loc)
 {
     struct instr *last = basicblock_last_instr(g->curblock);
     if (last && IS_TERMINATOR_OPCODE(last->i_opcode)) {
@@ -1294,7 +1295,7 @@ cfg_builder_addop(cfg_builder *g, int opcode, int oparg, basicblock *target,
 }
 
 static int
-cfg_builder_addop_noarg(cfg_builder *g, int opcode, struct location loc)
+cfg_builder_addop_noarg(cfg_builder *g, int opcode, const struct location *loc)
 {
     assert(!HAS_ARG(opcode));
     return cfg_builder_addop(g, opcode, 0, NULL, loc);
@@ -1498,7 +1499,7 @@ compiler_addop_name(struct compiler *c, int opcode, PyObject *dict,
    Returns 0 on failure, 1 on success.
 */
 static int
-cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, struct location loc)
+cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, const struct location *loc)
 {
     /* oparg value is unsigned, but a signed C int is usually used to store
        it in the C code (like Python/ceval.c).
@@ -1513,7 +1514,7 @@ cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, struct locatio
 }
 
 static int
-cfg_builder_addop_j(cfg_builder *g, int opcode, basicblock *target, struct location loc)
+cfg_builder_addop_j(cfg_builder *g, int opcode, basicblock *target, const struct location *loc)
 {
     assert(target != NULL);
     assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
@@ -8357,7 +8358,7 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
         struct instr pop_top = {
             .i_opcode = POP_TOP,
             .i_oparg = 0,
-            .i_loc = NO_LOCATION,
+            .i_loc = NO_LOCATION_VALUE,
             .i_target = NULL,
         };
         if (insert_instruction(entryblock, 1, &pop_top) < 0) {
@@ -8389,7 +8390,7 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
                 .i_opcode = MAKE_CELL,
                 // This will get fixed in offset_derefs().
                 .i_oparg = oldindex,
-                .i_loc = NO_LOCATION,
+                .i_loc = NO_LOCATION_VALUE,
                 .i_target = NULL,
             };
             if (insert_instruction(entryblock, ncellsused, &make_cell) < 0) {
@@ -8404,7 +8405,7 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
         struct instr copy_frees = {
             .i_opcode = COPY_FREE_VARS,
             .i_oparg = nfreevars,
-            .i_loc = NO_LOCATION,
+            .i_loc = NO_LOCATION_VALUE,
             .i_target = NULL,
         };
         if (insert_instruction(entryblock, 0, &copy_frees) < 0) {
@@ -9415,7 +9416,7 @@ propagate_line_numbers(basicblock *entryblock) {
             continue;
         }
 
-        struct location prev_location = NO_LOCATION;
+        struct location prev_location = NO_LOCATION_VALUE;
         for (int i = 0; i < b->b_iused; i++) {
             if (b->b_instr[i].i_loc.lineno < 0) {
                 b->b_instr[i].i_loc = prev_location;
