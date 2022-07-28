@@ -3746,8 +3746,9 @@ class ThreadedTests(unittest.TestCase):
     def test_tls_channel_binding_unique_tlsv1_2(self):
         self._test_tls_channel_binding(ssl.TLSVersion.TLSv1_2, "tls-unique", 12)
 
-    def test_tls_channel_binding_unique_tlsv1_2(self):
-        self._test_tls_channel_binding(ssl.TLSVersion.TLSv1_3, "tls-unique", 48)
+    def test_tls_channel_binding_unique_tlsv1_3(self):
+        with warnings_helper.check_warnings(("tls-unique", DeprecationWarning)):
+            self._test_tls_channel_binding(ssl.TLSVersion.TLSv1_3, "tls-unique", 48)
 
     def test_tls_channel_binding_exporter_tlsv1_2(self):
         self._test_tls_channel_binding(

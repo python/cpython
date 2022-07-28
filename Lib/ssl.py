@@ -263,6 +263,12 @@ class ChannelBindings:
         cls = type(self)
         match self:
             case cls.TLS_UNIQUE:
+                if sslobj.version() == "TLSv1.3":
+                    warnings.warn(
+                        "tls-unique channel binding is not specified for TLS 1.3",
+                        DeprecationWarning,
+                        stacklevel=3
+                    )
                 return sslobj.get_channel_binding(self.value)
             case cls.TLS_EXPORTER:
                 return sslobj.export_keying_material(
