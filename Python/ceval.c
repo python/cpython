@@ -6922,6 +6922,7 @@ _PyEval_CallTracing(PyObject *func, PyObject *args)
     int save_tracing = tstate->tracing;
     int save_use_tracing = tstate->cframe->use_tracing;
     tstate->tracing = 0;
+
     // Call the tracing function
     PyObject *result = PyObject_Call(func, args, NULL);
 
