@@ -2762,7 +2762,7 @@ _ssl__SSLSocket_export_keying_material_impl(PySSLSocket *self,
         // channel binding. EMS is always present with TLS 1.3 and an
         // optional extension with TLS 1.2.
         if (SSL_version(self->ssl) != TLS1_3_VERSION) {
-            long res = SSL_ctrl(self->ssl, SSL_CTRL_GET_EXTMS_SUPPORT, 0, NULL);
+            int res = SSL_get_extms_support(self->ssl);
             if (res == -1) {
                 return _setSSLError(get_state_sock(self), NULL, 0, __FILE__, __LINE__);
             }
