@@ -18,11 +18,6 @@ class BadStr(str):
         # Guaranteed different hash
         return str.__hash__(self) ^ 3
 
-    def __eq__(self, other):
-        return False
-    def __hash__(self):
-        return str.__hash__(self)
-
 
 class FunctionCalls(unittest.TestCase):
 
