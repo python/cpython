@@ -768,14 +768,6 @@ class IocpProactor:
         f = _OverlappedFuture(ov, loop=self._loop)
         if f._source_traceback:
             del f._source_traceback[-1]
-        self._register_early_out(f, ov, callback)
-        # Register the overlapped operation for later.  Note that
-        # we only store obj to prevent it from being garbage
-        # collected too early.
-        self._cache[ov.address] = (f, ov, obj, callback)
-        return f
-
-    def _register_early_out(self, f, ov, callback):
         if not ov.pending:
             # The operation has completed, so no need to postpone the
             # work.  We cannot take this short cut if we need the
@@ -783,8 +775,6 @@ class IocpProactor:
             # PostQueuedCompletionStatus().
             try:
                 value = callback(None, None, ov)
-            except _Retry as retry:
-                return self._register_early_out(f, retry.ov, retry.callback)
             except OSError as e:
                 f.set_exception(e)
             else:
@@ -794,6 +784,12 @@ class IocpProactor:
             # Register the overlapped operation to keep a reference to the
             # OVERLAPPED object, otherwise the memory is freed and Windows may
             # read uninitialized memory.
+
+        # Register the overlapped operation for later.  Note that
+        # we only store obj to prevent it from being garbage
+        # collected too early.
+        self._cache[ov.address] = (f, ov, obj, callback)
+        return f
 
     def _unregister(self, ov):
         """Unregister an overlapped object.
