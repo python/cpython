@@ -9316,7 +9316,9 @@ os_dup_impl(PyObject *module, int fd)
     return _Py_dup(fd);
 }
 
-
+// dup2() is either provided by libc or dup2.c with AC_REPLACE_FUNCS().
+// dup2.c provides working dup2() if and only if F_DUPFD is available.
+#if (defined(HAVE_DUP3) || defined(F_DUPFD) || defined(MS_WINDOWS))
 /*[clinic input]
 os.dup2 -> int
     fd: int
@@ -9416,6 +9418,7 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
 
     return res;
 }
+#endif
 
 
 #ifdef HAVE_LOCKF
@@ -13104,7 +13107,7 @@ os_memfd_create_impl(PyObject *module, PyObject *name, unsigned int flags)
 }
 #endif
 
-#ifdef HAVE_EVENTFD
+#if defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC)
 /*[clinic input]
 os.eventfd
 
@@ -13175,7 +13178,7 @@ os_eventfd_write_impl(PyObject *module, int fd, unsigned long long value)
     }
     Py_RETURN_NONE;
 }
-#endif  /* HAVE_EVENTFD */
+#endif  /* HAVE_EVENTFD && EFD_CLOEXEC */
 
 /* Terminal size querying */
 
@@ -15462,11 +15465,15 @@ all_ins(PyObject *m)
 #endif
 #endif /* HAVE_MEMFD_CREATE */
 
-#ifdef HAVE_EVENTFD
+#if defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC)
     if (PyModule_AddIntMacro(m, EFD_CLOEXEC)) return -1;
+#ifdef EFD_NONBLOCK
     if (PyModule_AddIntMacro(m, EFD_NONBLOCK)) return -1;
+#endif
+#ifdef EFD_SEMAPHORE
     if (PyModule_AddIntMacro(m, EFD_SEMAPHORE)) return -1;
 #endif
+#endif  /* HAVE_EVENTFD && EFD_CLOEXEC */
 
 #if defined(__APPLE__)
     if (PyModule_AddIntConstant(m, "_COPYFILE_DATA", COPYFILE_DATA)) return -1;

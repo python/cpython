@@ -227,6 +227,7 @@ struct _typeobject {
 
     destructor tp_finalize;
     vectorcallfunc tp_vectorcall;
+    size_t tp_static_builtin_index;  /* 0 means "not initialized" */
 };
 
 /* This struct is used by the specializer

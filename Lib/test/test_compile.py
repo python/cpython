@@ -108,6 +108,7 @@ class TestSpecifics(unittest.TestCase):
         exec('z = a', g, d)
         self.assertEqual(d['z'], 12)
 
+    @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_extended_arg(self):
         # default: 1000 * 2.5 = 2500 repetitions
         repeat = int(sys.getrecursionlimit() * 2.5)
@@ -542,6 +543,7 @@ if 1:
         self.assertIn(b"Non-UTF-8", res.err)
 
     @support.cpython_only
+    @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_compiler_recursion_limit(self):
         # Expected limit is sys.getrecursionlimit() * the scaling factor
         # in symtable.c (currently 3)
