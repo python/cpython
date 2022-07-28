@@ -6342,7 +6342,11 @@ case $host/$ac_cv_cc_name in #(
     PY_SUPPORT_TIER=3 ;; #(
     s390x-*-linux-gnu/gcc) :
     PY_SUPPORT_TIER=3 ;; #(
-        x86_64-*-freebsd*/clang) :
+    wasm32-unknown-emscripten/clang) :
+    PY_SUPPORT_TIER=3 ;; #(
+    wasm32-unknown-wasi/clang) :
+    PY_SUPPORT_TIER=3 ;; #(
+    x86_64-*-freebsd*/clang) :
     PY_SUPPORT_TIER=3 ;; #(
   *) :
       PY_SUPPORT_TIER=0
@@ -9054,7 +9058,7 @@ for ac_header in  \
   alloca.h asm/types.h bluetooth.h conio.h crypt.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
   ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/memfd.h \
   linux/random.h linux/soundcard.h \
-  linux/tipc.h linux/wait.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
+  linux/tipc.h linux/wait.h netdb.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
   sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/poll.h \
@@ -11273,7 +11277,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-        CPPFLAGS="$CFLAGS $LIBUUID_CFLAGS"
+        CPPFLAGS="$CPPFLAGS $LIBUUID_CFLAGS"
         LDFLAGS="$LDFLAGS $LIBUUID_LIBS"
         for ac_header in uuid/uuid.h
 do :
@@ -11402,7 +11406,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-        CPPFLAGS="$CFLAGS $LIBUUID_CFLAGS"
+        CPPFLAGS="$CPPFLAGS $LIBUUID_CFLAGS"
         LDFLAGS="$LDFLAGS $LIBUUID_LIBS"
         for ac_header in uuid/uuid.h
 do :
@@ -12122,7 +12126,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-      CPPFLAGS="$CFLAGS $LIBFFI_CFLAGS"
+      CPPFLAGS="$CPPFLAGS $LIBFFI_CFLAGS"
       LDFLAGS="$LDFLAGS $LIBFFI_LIBS"
       ac_fn_c_check_header_mongrel "$LINENO" "ffi.h" "ac_cv_header_ffi_h" "$ac_includes_default"
 if test "x$ac_cv_header_ffi_h" = xyes; then :
@@ -12195,7 +12199,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-      CPPFLAGS="$CFLAGS $LIBFFI_CFLAGS"
+      CPPFLAGS="$CPPFLAGS $LIBFFI_CFLAGS"
       LDFLAGS="$LDFLAGS $LIBFFI_LIBS"
       ac_fn_c_check_header_mongrel "$LINENO" "ffi.h" "ac_cv_header_ffi_h" "$ac_includes_default"
 if test "x$ac_cv_header_ffi_h" = xyes; then :
@@ -12879,7 +12883,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-    CPPFLAGS="$LIBNSL_CFLAGS $CFLAGS"
+    CPPFLAGS="$CPPFLAGS $LIBNSL_CFLAGS"
     for ac_header in rpc/rpc.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "rpc/rpc.h" "ac_cv_header_rpc_rpc_h" "$ac_includes_default"
@@ -13012,7 +13016,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-  CPPFLAGS="$LIBSQLITE3_CFLAGS $CFLAGS"
+  CPPFLAGS="$CPPFLAGS $LIBSQLITE3_CFLAGS"
   LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
 
   ac_fn_c_check_header_mongrel "$LINENO" "sqlite3.h" "ac_cv_header_sqlite3_h" "$ac_includes_default"
@@ -13958,7 +13962,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-  CPPFLAGS="$TCLTK_CFLAGS $CFLAGS"
+  CPPFLAGS="$CPPFLAGS $TCLTK_CFLAGS"
   LIBS="$TCLTK_LIBS $LDFLAGS"
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -14023,7 +14027,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-  CPPFLAGS="$GDBM_CFLAGS $CFLAGS"
+  CPPFLAGS="$CPPFLAGS $GDBM_CFLAGS"
   LDFLAGS="$GDBM_LIBS $LDFLAGS"
   for ac_header in gdbm.h
 do :
@@ -14744,10 +14748,15 @@ if test "x$ac_cv_lib_cma_pthread_create" = xyes; then :
 
 else
 
+    case $ac_sys_system in #(
+  WASI) :
+    posix_threads=stub ;; #(
+  *) :
     as_fn_error $? "could not find pthreads on your system" "$LINENO" 5
+     ;;
+esac
 
 fi
-
 
 fi
 
@@ -14906,6 +14915,13 @@ done
 
 fi
 
+if test "x$posix_threads" = xstub; then :
+
+
+$as_echo "#define HAVE_PTHREAD_STUBS 1" >>confdefs.h
+
+
+fi
 
 # Check for enable-ipv6
 
@@ -15549,7 +15565,7 @@ for ac_func in  \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
   gai_strerror getegid getentropy geteuid getgid getgrgid getgrgid_r \
-  getgrnam_r getgrouplist getgroups getitimer getloadavg getlogin \
+  getgrnam_r getgrouplist getgroups gethostname getitimer getloadavg getlogin \
   getpeername getpgid getpid getppid getpriority _getpty \
   getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid getspent \
   getspnam getuid getwd if_nameindex initgroups kill killpg lchown linkat \
@@ -16610,7 +16626,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-    CPPFLAGS="$CFLAGS $ZLIB_CFLAGS"
+    CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
     LDFLAGS="$LDFLAGS $ZLIB_LIBS"
     for ac_header in zlib.h
 do :
@@ -16740,7 +16756,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-    CPPFLAGS="$CFLAGS $ZLIB_CFLAGS"
+    CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
     LDFLAGS="$LDFLAGS $ZLIB_LIBS"
     for ac_header in zlib.h
 do :
@@ -16958,7 +16974,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-    CPPFLAGS="$CFLAGS $BZIP2_CFLAGS"
+    CPPFLAGS="$CPPFLAGS $BZIP2_CFLAGS"
     LDFLAGS="$LDFLAGS $BZIP2_LIBS"
     for ac_header in bzlib.h
 do :
@@ -17041,7 +17057,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-    CPPFLAGS="$CFLAGS $BZIP2_CFLAGS"
+    CPPFLAGS="$CPPFLAGS $BZIP2_CFLAGS"
     LDFLAGS="$LDFLAGS $BZIP2_LIBS"
     for ac_header in bzlib.h
 do :
@@ -17188,7 +17204,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-    CPPFLAGS="$CFLAGS $LIBLZMA_CFLAGS"
+    CPPFLAGS="$CPPFLAGS $LIBLZMA_CFLAGS"
     LDFLAGS="$LDFLAGS $LIBLZMA_LIBS"
     for ac_header in lzma.h
 do :
@@ -17271,7 +17287,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-    CPPFLAGS="$CFLAGS $LIBLZMA_CFLAGS"
+    CPPFLAGS="$CPPFLAGS $LIBLZMA_CFLAGS"
     LDFLAGS="$LDFLAGS $LIBLZMA_LIBS"
     for ac_header in lzma.h
 do :
@@ -17354,6 +17370,8 @@ fi
 
 
 
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for hstrerror" >&5
 $as_echo_n "checking for hstrerror... " >&6; }
 if ${ac_cv_func_hstrerror+:} false; then :
@@ -17385,6 +17403,188 @@ $as_echo "$ac_cv_func_hstrerror" >&6; }
 $as_echo "#define HAVE_HSTRERROR 1" >>confdefs.h
 
 fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getservbyname" >&5
+$as_echo_n "checking for getservbyname... " >&6; }
+if ${ac_cv_func_getservbyname+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netdb.h>
+int
+main ()
+{
+void *x=getservbyname
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_getservbyname=yes
+else
+  ac_cv_func_getservbyname=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_getservbyname" >&5
+$as_echo "$ac_cv_func_getservbyname" >&6; }
+  if test "x$ac_cv_func_getservbyname" = xyes; then :
+
+$as_echo "#define HAVE_GETSERVBYNAME 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getservbyport" >&5
+$as_echo_n "checking for getservbyport... " >&6; }
+if ${ac_cv_func_getservbyport+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netdb.h>
+int
+main ()
+{
+void *x=getservbyport
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_getservbyport=yes
+else
+  ac_cv_func_getservbyport=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_getservbyport" >&5
+$as_echo "$ac_cv_func_getservbyport" >&6; }
+  if test "x$ac_cv_func_getservbyport" = xyes; then :
+
+$as_echo "#define HAVE_GETSERVBYPORT 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gethostbyname" >&5
+$as_echo_n "checking for gethostbyname... " >&6; }
+if ${ac_cv_func_gethostbyname+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netdb.h>
+int
+main ()
+{
+void *x=gethostbyname
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_gethostbyname=yes
+else
+  ac_cv_func_gethostbyname=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_gethostbyname" >&5
+$as_echo "$ac_cv_func_gethostbyname" >&6; }
+  if test "x$ac_cv_func_gethostbyname" = xyes; then :
+
+$as_echo "#define HAVE_GETHOSTBYNAME 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gethostbyaddr" >&5
+$as_echo_n "checking for gethostbyaddr... " >&6; }
+if ${ac_cv_func_gethostbyaddr+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netdb.h>
+int
+main ()
+{
+void *x=gethostbyaddr
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_gethostbyaddr=yes
+else
+  ac_cv_func_gethostbyaddr=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_gethostbyaddr" >&5
+$as_echo "$ac_cv_func_gethostbyaddr" >&6; }
+  if test "x$ac_cv_func_gethostbyaddr" = xyes; then :
+
+$as_echo "#define HAVE_GETHOSTBYADDR 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getprotobyname" >&5
+$as_echo_n "checking for getprotobyname... " >&6; }
+if ${ac_cv_func_getprotobyname+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netdb.h>
+int
+main ()
+{
+void *x=getprotobyname
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_getprotobyname=yes
+else
+  ac_cv_func_getprotobyname=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_getprotobyname" >&5
+$as_echo "$ac_cv_func_getprotobyname" >&6; }
+  if test "x$ac_cv_func_getprotobyname" = xyes; then :
+
+$as_echo "#define HAVE_GETPROTOBYNAME 1" >>confdefs.h
+
+fi
+
+
 
 
 
@@ -17432,6 +17632,46 @@ fi
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inet_ntoa" >&5
+$as_echo_n "checking for inet_ntoa... " >&6; }
+if ${ac_cv_func_inet_ntoa+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=inet_ntoa
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_inet_ntoa=yes
+else
+  ac_cv_func_inet_ntoa=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_inet_ntoa" >&5
+$as_echo "$ac_cv_func_inet_ntoa" >&6; }
+  if test "x$ac_cv_func_inet_ntoa" = xyes; then :
+
+$as_echo "#define HAVE_INET_NTOA 1" >>confdefs.h
+
+fi
+
+
+
+
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inet_pton" >&5
 $as_echo_n "checking for inet_pton... " >&6; }
@@ -17467,6 +17707,416 @@ $as_echo "$ac_cv_func_inet_pton" >&6; }
   if test "x$ac_cv_func_inet_pton" = xyes; then :
 
 $as_echo "#define HAVE_INET_PTON 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getpeername" >&5
+$as_echo_n "checking for getpeername... " >&6; }
+if ${ac_cv_func_getpeername+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=getpeername
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_getpeername=yes
+else
+  ac_cv_func_getpeername=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_getpeername" >&5
+$as_echo "$ac_cv_func_getpeername" >&6; }
+  if test "x$ac_cv_func_getpeername" = xyes; then :
+
+$as_echo "#define HAVE_GETPEERNAME 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getsockname" >&5
+$as_echo_n "checking for getsockname... " >&6; }
+if ${ac_cv_func_getsockname+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=getsockname
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_getsockname=yes
+else
+  ac_cv_func_getsockname=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_getsockname" >&5
+$as_echo "$ac_cv_func_getsockname" >&6; }
+  if test "x$ac_cv_func_getsockname" = xyes; then :
+
+$as_echo "#define HAVE_GETSOCKNAME 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for accept" >&5
+$as_echo_n "checking for accept... " >&6; }
+if ${ac_cv_func_accept+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=accept
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_accept=yes
+else
+  ac_cv_func_accept=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_accept" >&5
+$as_echo "$ac_cv_func_accept" >&6; }
+  if test "x$ac_cv_func_accept" = xyes; then :
+
+$as_echo "#define HAVE_ACCEPT 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for bind" >&5
+$as_echo_n "checking for bind... " >&6; }
+if ${ac_cv_func_bind+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=bind
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_bind=yes
+else
+  ac_cv_func_bind=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_bind" >&5
+$as_echo "$ac_cv_func_bind" >&6; }
+  if test "x$ac_cv_func_bind" = xyes; then :
+
+$as_echo "#define HAVE_BIND 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for connect" >&5
+$as_echo_n "checking for connect... " >&6; }
+if ${ac_cv_func_connect+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=connect
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_connect=yes
+else
+  ac_cv_func_connect=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_connect" >&5
+$as_echo "$ac_cv_func_connect" >&6; }
+  if test "x$ac_cv_func_connect" = xyes; then :
+
+$as_echo "#define HAVE_CONNECT 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for listen" >&5
+$as_echo_n "checking for listen... " >&6; }
+if ${ac_cv_func_listen+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=listen
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_listen=yes
+else
+  ac_cv_func_listen=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_listen" >&5
+$as_echo "$ac_cv_func_listen" >&6; }
+  if test "x$ac_cv_func_listen" = xyes; then :
+
+$as_echo "#define HAVE_LISTEN 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for recvfrom" >&5
+$as_echo_n "checking for recvfrom... " >&6; }
+if ${ac_cv_func_recvfrom+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=recvfrom
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_recvfrom=yes
+else
+  ac_cv_func_recvfrom=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_recvfrom" >&5
+$as_echo "$ac_cv_func_recvfrom" >&6; }
+  if test "x$ac_cv_func_recvfrom" = xyes; then :
+
+$as_echo "#define HAVE_RECVFROM 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sendto" >&5
+$as_echo_n "checking for sendto... " >&6; }
+if ${ac_cv_func_sendto+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=sendto
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_sendto=yes
+else
+  ac_cv_func_sendto=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_sendto" >&5
+$as_echo "$ac_cv_func_sendto" >&6; }
+  if test "x$ac_cv_func_sendto" = xyes; then :
+
+$as_echo "#define HAVE_SENDTO 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for setsockopt" >&5
+$as_echo_n "checking for setsockopt... " >&6; }
+if ${ac_cv_func_setsockopt+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=setsockopt
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_setsockopt=yes
+else
+  ac_cv_func_setsockopt=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_setsockopt" >&5
+$as_echo "$ac_cv_func_setsockopt" >&6; }
+  if test "x$ac_cv_func_setsockopt" = xyes; then :
+
+$as_echo "#define HAVE_SETSOCKOPT 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for socket" >&5
+$as_echo_n "checking for socket... " >&6; }
+if ${ac_cv_func_socket+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=socket
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_socket=yes
+else
+  ac_cv_func_socket=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_socket" >&5
+$as_echo "$ac_cv_func_socket" >&6; }
+  if test "x$ac_cv_func_socket" = xyes; then :
+
+$as_echo "#define HAVE_SOCKET 1" >>confdefs.h
 
 fi
 
@@ -18098,7 +18748,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-  CPPFLAGS="$LIBCRYPT_CFLAGS $CFLAGS"
+  CPPFLAGS="$CPPFLAGS $LIBCRYPT_CFLAGS"
   LIBS="$LIBCRYPT_LIBS $LIBS"
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for crypt or crypt_r" >&5
 $as_echo_n "checking for crypt or crypt_r... " >&6; }
@@ -20687,7 +21337,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-      CPPFLAGS="$CFLAGS $LIBREADLINE_CFLAGS"
+      CPPFLAGS="$CPPFLAGS $LIBREADLINE_CFLAGS"
       LDFLAGS="$LDFLAGS $LIBREADLINE_LIBS"
       for ac_header in readline/readline.h
 do :
@@ -20768,7 +21418,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-      CPPFLAGS="$CFLAGS $LIBREADLINE_CFLAGS"
+      CPPFLAGS="$CPPFLAGS $LIBREADLINE_CFLAGS"
       LDFLAGS="$LDFLAGS $LIBREADLINE_LIBS"
       for ac_header in readline/readline.h
 do :
@@ -20921,7 +21571,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-      CPPFLAGS="$CFLAGS $LIBEDIT_CFLAGS"
+      CPPFLAGS="$CPPFLAGS $LIBEDIT_CFLAGS"
       LDFLAGS="$LDFLAGS $LIBEDIT_LIBS"
       for ac_header in editline/readline.h
 do :
@@ -21004,7 +21654,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-      CPPFLAGS="$CFLAGS $LIBEDIT_CFLAGS"
+      CPPFLAGS="$CPPFLAGS $LIBEDIT_CFLAGS"
       LDFLAGS="$LDFLAGS $LIBEDIT_LIBS"
       for ac_header in editline/readline.h
 do :
@@ -21113,7 +21763,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-    CPPFLAGS="$READLINE_CFLAGS $CFLAGS"
+    CPPFLAGS="$CPPFLAGS $READLINE_CFLAGS"
     LIBS="$READLINE_LIBS $LIBS"
     LIBS_SAVE=$LIBS
 
