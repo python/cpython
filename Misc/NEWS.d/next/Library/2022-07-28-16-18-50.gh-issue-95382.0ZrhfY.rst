@@ -1,0 +1,1 @@
+Remove dead code calculating ``indent_level`` from ``json.dumps`` C encoder.
