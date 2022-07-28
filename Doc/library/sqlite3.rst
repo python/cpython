@@ -85,7 +85,7 @@ using :meth:`~Cursor.executemany`::
    ]
    >>> cur.executemany('INSERT INTO stocks VALUES(?, ?, ?, ?)', data)
 
-Now, retrieve the data by iterating over the result of a SELECT statement::
+Then, retrieve the data by iterating over the result of a ``SELECT`` statement::
 
    >>> for row in cur.execute('SELECT * FROM stocks ORDER BY price'):
            print(row)
