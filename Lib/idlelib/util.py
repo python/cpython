@@ -17,7 +17,7 @@ import os
 
 
 # .pyw is for Windows; .pyi is for stub files.
-py_extensions = ('.py', '.pyw', '.pyi')  # Order needed for open/save dialogs.
+py_extensions = {'.py', '.pyw', '.pyi'}  # Order needed for open/save dialogs.
 
 
 def is_supported_extension(path):
