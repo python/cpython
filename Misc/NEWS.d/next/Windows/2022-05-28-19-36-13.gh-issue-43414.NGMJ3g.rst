@@ -1,4 +1,2 @@
-Modified os.get_terminal_size() to use _Py_get_osfhandle(fd) instead of
-using hardcoded process standard handles in Windows. Added a Windows
-specific test in TermsizeTest in Lib/test/test_os.py
-###########################################################################
+:func:`os.get_terminal_size` now attempts to read the size from any provided
+handle, rather than only supporting file descriptors 0, 1 and 2.
