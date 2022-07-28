@@ -5,14 +5,6 @@ static struct PyModuleDef *_testcapimodule = NULL;  // set at initialization
 
 /* Tests for heap types (PyType_From*) */
 
-static PyType_Spec HeapCTypeWithNegativeDict_spec;
-
-static PyObject *
-negative_dictoffset(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    return PyType_FromSpec(&HeapCTypeWithNegativeDict_spec);
-}
-
 static PyObject *pytype_fromspec_meta(PyObject* self, PyObject *meta)
 {
     if (!PyType_Check(meta)) {
@@ -375,7 +367,6 @@ create_type_from_repeated_slots(PyObject *self, PyObject *variant_obj)
 
 static PyMethodDef TestMethods[] = {
     {"pytype_fromspec_meta",    pytype_fromspec_meta,            METH_O},
-    {"negative_dictoffset",      negative_dictoffset,            METH_NOARGS},
     {"test_type_from_ephemeral_spec", test_type_from_ephemeral_spec, METH_NOARGS},
     {"create_type_from_repeated_slots",
         create_type_from_repeated_slots, METH_O},
