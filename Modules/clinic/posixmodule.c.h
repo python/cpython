@@ -4192,6 +4192,101 @@ exit:
 
 #endif /* (defined(__linux__) && defined(__NR_pidfd_open)) */
 
+#if defined(HAVE_SETNS)
+
+PyDoc_STRVAR(os_setns__doc__,
+"setns($module, /, fd, nstype=0)\n"
+"--\n"
+"\n"
+"Move the calling thread into different namespaces.\n"
+"\n"
+"  fd\n"
+"    A file descriptor to a namespace.\n"
+"  nstype\n"
+"    Type of namespace.");
+
+#define OS_SETNS_METHODDEF    \
+    {"setns", _PyCFunction_CAST(os_setns), METH_FASTCALL|METH_KEYWORDS, os_setns__doc__},
+
+static PyObject *
+os_setns_impl(PyObject *module, int fd, int nstype);
+
+static PyObject *
+os_setns(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"fd", "nstype", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "setns", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    int fd;
+    int nstype = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    nstype = _PyLong_AsInt(args[1]);
+    if (nstype == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = os_setns_impl(module, fd, nstype);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_SETNS) */
+
+#if defined(HAVE_UNSHARE)
+
+PyDoc_STRVAR(os_unshare__doc__,
+"unshare($module, /, flags)\n"
+"--\n"
+"\n"
+"Disassociate parts of a process (or thread) execution context.\n"
+"\n"
+"  flags\n"
+"    Namespaces to be unshared.");
+
+#define OS_UNSHARE_METHODDEF    \
+    {"unshare", _PyCFunction_CAST(os_unshare), METH_FASTCALL|METH_KEYWORDS, os_unshare__doc__},
+
+static PyObject *
+os_unshare_impl(PyObject *module, int flags);
+
+static PyObject *
+os_unshare(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"flags", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "unshare", 0};
+    PyObject *argsbuf[1];
+    int flags;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    flags = _PyLong_AsInt(args[0]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = os_unshare_impl(module, flags);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_UNSHARE) */
+
 #if (defined(HAVE_READLINK) || defined(MS_WINDOWS))
 
 PyDoc_STRVAR(os_readlink__doc__,
@@ -9077,6 +9172,14 @@ exit:
     #define OS_PIDFD_OPEN_METHODDEF
 #endif /* !defined(OS_PIDFD_OPEN_METHODDEF) */
 
+#ifndef OS_SETNS_METHODDEF
+    #define OS_SETNS_METHODDEF
+#endif /* !defined(OS_SETNS_METHODDEF) */
+
+#ifndef OS_UNSHARE_METHODDEF
+    #define OS_UNSHARE_METHODDEF
+#endif /* !defined(OS_UNSHARE_METHODDEF) */
+
 #ifndef OS_READLINK_METHODDEF
     #define OS_READLINK_METHODDEF
 #endif /* !defined(OS_READLINK_METHODDEF) */
@@ -9360,4 +9463,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=c22a8b6de4a0ccb7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=47c67bd1b48a05f3 input=a9049054013a1b77]*/
