@@ -1003,6 +1003,13 @@ Cursor Objects
       :term:`iterator` yielding parameters instead of a sequence.
       Uses the same implicit transaction handling as :meth:`~Cursor.execute`.
 
+      Example::
+
+          data = [
+              ("row1",),
+              ("row2",),
+          ]
+          cur.executemany("insert into t values(?)", data)
 
    .. method:: executescript(sql_script, /)
 
