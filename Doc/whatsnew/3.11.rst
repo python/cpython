@@ -900,7 +900,7 @@ Optimizations
 Faster CPython
 ==============
 
-CPython 3.11 is on average `25% faster <https://github.com/faster-cpython/ideas/blob/main/main-vs-310.rst>`_
+CPython 3.11 is on average `25% faster <https://github.com/faster-cpython/ideas#published-results>`_
 than CPython 3.10 when measured with the
 `pyperformance <https://github.com/python/pyperformance>`_ benchmark suite,
 and compiled with GCC on Ubuntu Linux. Depending on your workload, the speedup
