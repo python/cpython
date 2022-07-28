@@ -1477,6 +1477,21 @@ class BaseExceptionReportingTests:
                 exp = "%s: %s\n" % (str_name, str_value)
                 self.assertEqual(exp, err)
 
+    def test_exception_angle_bracketed_filename(self):
+        src = textwrap.dedent("""
+            try:
+                raise ValueError(42)
+            except Exception as e:
+                exc = e
+            """)
+
+        code = compile(src, "<does not exist>", "exec")
+        g, l = {}, {}
+        exec(code, g, l)
+        err = self.get_report(l['exc'])
+        exp = '  File "<does not exist>", line 3, in <module>\nValueError: 42\n'
+        self.assertIn(exp, err)
+
     def test_exception_modulename_not_unicode(self):
         class X(Exception):
             def __str__(self):
