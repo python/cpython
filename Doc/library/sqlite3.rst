@@ -1718,6 +1718,23 @@ the context manager is a no-op.
 .. literalinclude:: ../includes/sqlite3/ctx_manager.py
 
 
+Command-line interface
+----------------------
+
+The ``sqlite3`` module can be invoked as a script
+in order to provide a simple SQLite shell.
+
+.. program:: python -m sqlite3
+
+.. cmdoption:: -f, --filename <file>
+    Database to open (defaults to ``':memory:'``).
+
+.. cmdoption:: -v, --version
+    Print underlying SQLite library version.
+
+.. versionadded:: 3.12
+
+
 .. rubric:: Footnotes
 
 .. [#f1] The sqlite3 module is not built with loadable extension support by

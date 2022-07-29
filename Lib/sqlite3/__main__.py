@@ -62,12 +62,12 @@ def main():
     parser.add_argument(
         "-f", "--filename",
         type=str, dest="database", action="store", default=":memory:",
-        help="Database to open (default in-memory database)",
+        help="Database to open (defaults to ':memory:')",
     )
     parser.add_argument(
         "-v", "--version",
         dest="show_version", action="store_true", default=False,
-        help="Print SQLite version",
+        help="Print underlying SQLite library version",
     )
     args = parser.parse_args()
     if args.show_version:
