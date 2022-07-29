@@ -1007,9 +1007,16 @@ Cursor Objects
 
       *sql_script* must be a :class:`string <str>`.
 
-      Example:
+      Example::
 
-      .. literalinclude:: ../includes/sqlite3/executescript.py
+         # cur is an sqlite3.Cursor object
+         cur.executescript("""
+             begin;
+             create table person(firstname, lastname, age);
+             create table book(title, author, published);
+             create table publisher(name, address);
+             commit;
+         """)
 
 
    .. method:: fetchone()
