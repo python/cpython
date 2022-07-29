@@ -69,7 +69,7 @@ TEST_PY_ENV = dict(
 
 TEST_PY_COMMANDS = "\n".join([
     "[defaults]",
-    *[f"{k.lower()}={v}" for k, v in TEST_PY_ENV.items()]
+    *[f"{k[3:].lower()}={v}" for k, v in TEST_PY_ENV.items()]
 ])
 
 

@@ -219,7 +219,7 @@ struct _typeobject {
     PyObject *tp_mro; /* method resolution order */
     PyObject *tp_cache; /* no longer used */
     void *tp_subclasses;  /* for static builtin types this is an index */
-    PyObject *tp_weaklist;
+    PyObject *tp_weaklist; /* not used for static builtin types */
     destructor tp_del;
 
     /* Type attribute cache version tag. Added in version 2.6 */

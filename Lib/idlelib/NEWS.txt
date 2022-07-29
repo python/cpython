@@ -3,6 +3,8 @@ What's New in IDLE 3.11.0
 Released on 2022-10-03
 =========================
 
+gh-89610: Add .pyi as a recognized extension for IDLE on macOS.  This allows
+opening stub files by double clicking on them in the Finder.
 
 bpo-28950: Apply IDLE syntax highlighting to `.pyi` files.  Add util.py
 for common components.  Patch by Alex Waygood and Terry Jan Reedy.
