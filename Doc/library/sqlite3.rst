@@ -753,7 +753,14 @@ Connection Objects
       aggregates or whole new virtual table implementations.  One well-known
       extension is the fulltext-search extension distributed with SQLite.
 
-      Loadable extensions are disabled by default. See [#f1]_.
+      .. note::
+
+         The ``sqlite3`` module is not built with loadable extension support by
+         default, because some platforms (notably macOS) have SQLite
+         libraries which are compiled without this feature.
+         To get loadable extension support,
+         you must pass the :option:`--enable-loadable-sqlite-extensions` option
+         to :program:`configure`.
 
       .. audit-event:: sqlite3.enable_load_extension connection,enabled sqlite3.Connection.enable_load_extension
 
@@ -1727,19 +1734,10 @@ Type ``quit`` or CTRL-D to exit the shell.
 
 .. program:: python -m sqlite3
 
-.. cmdoption:: -f, --filename <file>
+.. option:: -f, --filename <file>
     Database to open (defaults to ``':memory:'``).
 
-.. cmdoption:: -v, --version
+.. option:: -v, --version
     Print underlying SQLite library version.
 
 .. versionadded:: 3.12
-
-
-.. rubric:: Footnotes
-
-.. [#f1] The sqlite3 module is not built with loadable extension support by
-   default, because some platforms (notably macOS) have SQLite
-   libraries which are compiled without this feature. To get loadable
-   extension support, you must pass the
-   :option:`--enable-loadable-sqlite-extensions` option to configure.
