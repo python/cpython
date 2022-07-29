@@ -13,22 +13,8 @@ TODO:
     * warning stuff (pyshell, run).
 """
 
-import os
-
-
 # .pyw is for Windows; .pyi is for stub files.
 py_extensions = ('.py', '.pyw', '.pyi')  # Order needed for open/save dialogs.
-
-
-def get_ext(path):
-    _, ext = os.path.splitext(path)
-    return os.path.normcase(ext)
-
-
-def is_supported_extension(path):
-    ext = get_ext(path)
-    return ext in py_extensions
-
 
 if __name__ == '__main__':
     from unittest import main

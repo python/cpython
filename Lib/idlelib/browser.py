@@ -15,7 +15,7 @@ import sys
 from idlelib.config import idleConf
 from idlelib import pyshell
 from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
-from idlelib.util import py_extensions, get_ext
+from idlelib.util import py_extensions
 from idlelib.window import ListedToplevel
 
 
@@ -27,7 +27,8 @@ browseable_extension_blocklist = ('.pyi',)
 
 
 def is_browseable_extension(path):
-    ext = get_ext(path)
+    _, ext = os.path.splitext(path)
+    ext = os.path.normcase(ext)
     return ext in py_extensions and ext not in browseable_extension_blocklist
 
 
