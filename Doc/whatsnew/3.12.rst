@@ -475,6 +475,8 @@ Porting to Python 3.12
   copied as-is to the result string, and any extra arguments discarded.
   (Contributed by Serhiy Storchaka in :gh:`95781`.)
 
+* Fixed wrong sign placement in ``PyUnicode_FromFormat``.
+  (Contributed by Philip Georgi in :gh:`95504`.)
 
 Deprecated
 ----------
