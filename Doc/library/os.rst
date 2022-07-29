@@ -4229,13 +4229,13 @@ written in Python, such as a mail server's external command delivery program.
 
    Start a file with its associated application.
 
-   When *operation* is not specified or ``'open'``, this acts like double-clicking
+   When *operation* is not specified, this acts like double-clicking
    the file in Windows Explorer, or giving the file name as an argument to the
    :program:`start` command from the interactive command shell: the file is opened
    with whatever application (if any) its extension is associated.
 
    When another *operation* is given, it must be a "command verb" that specifies
-   what should be done with the file. Common verbs documented by Microsoft are
+   what should be done with the file. Common verbs documented by Microsoft are ``'open'``,
    ``'print'`` and  ``'edit'`` (to be used on files) as well as ``'explore'`` and
    ``'find'`` (to be used on directories).
 
