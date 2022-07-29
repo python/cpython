@@ -753,7 +753,14 @@ Connection Objects
       aggregates or whole new virtual table implementations.  One well-known
       extension is the fulltext-search extension distributed with SQLite.
 
-      Loadable extensions are disabled by default. See [#f1]_.
+      .. note::
+
+         The ``sqlite3`` module is not built with loadable extension support by
+         default, because some platforms (notably macOS) have SQLite
+         libraries which are compiled without this feature.
+         To get loadable extension support,
+         you must pass the :option:`--enable-loadable-sqlite-extensions` option
+         to :program:`configure`.
 
       .. audit-event:: sqlite3.enable_load_extension connection,enabled sqlite3.Connection.enable_load_extension
 
@@ -769,8 +776,6 @@ Connection Objects
       Load an SQLite extension from a shared library located at *path*.
       Enable extension loading with :meth:`enable_load_extension` before
       calling this method.
-
-      Loadable extensions are disabled by default. See [#f1]_.
 
       .. audit-event:: sqlite3.load_extension connection,path sqlite3.Connection.load_extension
 
@@ -1716,12 +1721,3 @@ the context manager is a no-op.
    nor closes the connection.
 
 .. literalinclude:: ../includes/sqlite3/ctx_manager.py
-
-
-.. rubric:: Footnotes
-
-.. [#f1] The sqlite3 module is not built with loadable extension support by
-   default, because some platforms (notably macOS) have SQLite
-   libraries which are compiled without this feature. To get loadable
-   extension support, you must pass the
-   :option:`--enable-loadable-sqlite-extensions` option to configure.
