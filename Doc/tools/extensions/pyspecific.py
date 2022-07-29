@@ -168,7 +168,7 @@ class Availability(Directive):
 
     def parse_platforms(self):
         """Parse platform information from arguments
-        
+
         Arguments is a comma-separated string of platforms. A platform may
         be prefixed with "not " to indicate that a feature is not available.
 
@@ -195,7 +195,7 @@ class Availability(Directive):
                 f"Unknown platform(s) '{' '.join(sorted(unknown))}' in "
                 f"'.. availability:: {self.arguments[0]}'."
             )
-        
+
         return platforms
 
 

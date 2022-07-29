@@ -145,7 +145,7 @@ Functions
       undefined behavior, such as segmentation fault.
 
    .. availability:: Unix
-      
+
       See the man page for :manpage:`pthread_getcpuclockid(3)` for
       further information.
 
@@ -654,7 +654,7 @@ Functions
    :class:`float` type.
 
    .. availability::  Linux, Unix, Windows.
-      
+
       Unix systems supporting ``CLOCK_THREAD_CPUTIME_ID``.
 
    .. versionadded:: 3.7
