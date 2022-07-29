@@ -3194,44 +3194,392 @@ pending_threadfunc(PyObject *self, PyObject *arg)
     Py_RETURN_TRUE;
 }
 
-/* Some tests of PyUnicode_FromFormat().  This needs more tests. */
+/* Some tests of PyUnicode_FromFormat(). */
 static PyObject *
 test_string_from_format(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *result;
-    char *msg;
+    PyObject *unicode = PyUnicode_FromString("None");
 
-#define CHECK_1_FORMAT(FORMAT, TYPE)                                \
-    result = PyUnicode_FromFormat(FORMAT, (TYPE)1);                 \
+#define CHECK_FORMAT_2(FORMAT, EXPECTED, ARG1, ARG2)                \
+    result = PyUnicode_FromFormat(FORMAT, ARG1, ARG2);              \
     if (result == NULL)                                             \
         return NULL;                                                \
-    if (!_PyUnicode_EqualToASCIIString(result, "1")) {              \
-        msg = FORMAT " failed at 1";                                \
+    if (!_PyUnicode_EqualToASCIIString(result, EXPECTED)) {         \
+        PyErr_Format(TestError,                                     \
+                     "test_string_from_format: failed at \"%s\" "   \
+                     "expected \"%s\" got \"%s\"",                  \
+                     FORMAT, EXPECTED, PyUnicode_AsUTF8(result));   \
         goto Fail;                                                  \
     }                                                               \
     Py_DECREF(result)
 
-    CHECK_1_FORMAT("%d", int);
-    CHECK_1_FORMAT("%ld", long);
-    /* The z width modifier was added in Python 2.5. */
-    CHECK_1_FORMAT("%zd", Py_ssize_t);
+#define CHECK_FORMAT_1(FORMAT, EXPECTED, ARG)                       \
+    CHECK_FORMAT_2(FORMAT, EXPECTED, ARG, 0)
 
-    /* The u type code was added in Python 2.5. */
-    CHECK_1_FORMAT("%u", unsigned int);
-    CHECK_1_FORMAT("%lu", unsigned long);
-    CHECK_1_FORMAT("%zu", size_t);
+#define CHECK_FORMAT_0(FORMAT, EXPECTED)                            \
+    CHECK_FORMAT_2(FORMAT, EXPECTED, 0, 0)
 
-    /* "%lld" and "%llu" support added in Python 2.7. */
-    CHECK_1_FORMAT("%llu", unsigned long long);
-    CHECK_1_FORMAT("%lld", long long);
+    // Unrecognized
+    CHECK_FORMAT_2("%u %? %u", "1 %? %u", 1, 2);
 
+    // "%%"
+    CHECK_FORMAT_0(  "%%", "%");
+    CHECK_FORMAT_0( "%0%", "%");
+    CHECK_FORMAT_0("%00%", "%");
+    CHECK_FORMAT_0( "%2%", "%");
+    CHECK_FORMAT_0("%02%", "%");
+    CHECK_FORMAT_0("%.0%", "%.0%");
+    CHECK_FORMAT_0("%.2%", "%.2%");
+
+    // "%c"
+    CHECK_FORMAT_1(  "%c", "c", 'c');
+    CHECK_FORMAT_1( "%0c", "c", 'c');
+    CHECK_FORMAT_1("%00c", "c", 'c');
+    CHECK_FORMAT_1( "%2c", "c", 'c');
+    CHECK_FORMAT_1("%02c", "c", 'c');
+    CHECK_FORMAT_1("%.0c", "c", 'c');
+    CHECK_FORMAT_1("%.2c", "c", 'c');
+
+    // Integers
+    CHECK_FORMAT_1("%d",             "123",                (int)123);
+    CHECK_FORMAT_1("%i",             "123",                (int)123);
+    CHECK_FORMAT_1("%u",             "123",       (unsigned int)123);
+    CHECK_FORMAT_1("%ld",            "123",               (long)123);
+    CHECK_FORMAT_1("%li",            "123",               (long)123);
+    CHECK_FORMAT_1("%lu",            "123",      (unsigned long)123);
+    CHECK_FORMAT_1("%lld",           "123",          (long long)123);
+    CHECK_FORMAT_1("%lli",           "123",          (long long)123);
+    CHECK_FORMAT_1("%llu",           "123", (unsigned long long)123);
+    CHECK_FORMAT_1("%zd",            "123",         (Py_ssize_t)123);
+    CHECK_FORMAT_1("%zi",            "123",         (Py_ssize_t)123);
+    CHECK_FORMAT_1("%zu",            "123",             (size_t)123);
+    CHECK_FORMAT_1("%x",              "7b",                (int)123);
+
+    CHECK_FORMAT_1("%d",            "-123",               (int)-123);
+    CHECK_FORMAT_1("%i",            "-123",               (int)-123);
+    CHECK_FORMAT_1("%ld",           "-123",              (long)-123);
+    CHECK_FORMAT_1("%li",           "-123",              (long)-123);
+    CHECK_FORMAT_1("%lld",          "-123",         (long long)-123);
+    CHECK_FORMAT_1("%lli",          "-123",         (long long)-123);
+    CHECK_FORMAT_1("%zd",           "-123",        (Py_ssize_t)-123);
+    CHECK_FORMAT_1("%zi",           "-123",        (Py_ssize_t)-123);
+    CHECK_FORMAT_1("%x",        "ffffff85",               (int)-123);
+
+    // Integers: width < length
+    CHECK_FORMAT_1("%1d",            "123",                (int)123);
+    CHECK_FORMAT_1("%1i",            "123",                (int)123);
+    CHECK_FORMAT_1("%1u",            "123",       (unsigned int)123);
+    CHECK_FORMAT_1("%1ld",           "123",               (long)123);
+    CHECK_FORMAT_1("%1li",           "123",               (long)123);
+    CHECK_FORMAT_1("%1lu",           "123",      (unsigned long)123);
+    CHECK_FORMAT_1("%1lld",          "123",          (long long)123);
+    CHECK_FORMAT_1("%1lli",          "123",          (long long)123);
+    CHECK_FORMAT_1("%1llu",          "123", (unsigned long long)123);
+    CHECK_FORMAT_1("%1zd",           "123",         (Py_ssize_t)123);
+    CHECK_FORMAT_1("%1zi",           "123",         (Py_ssize_t)123);
+    CHECK_FORMAT_1("%1zu",           "123",             (size_t)123);
+    CHECK_FORMAT_1("%1x",             "7b",                (int)123);
+
+    CHECK_FORMAT_1("%1d",           "-123",               (int)-123);
+    CHECK_FORMAT_1("%1i",           "-123",               (int)-123);
+    CHECK_FORMAT_1("%1ld",          "-123",              (long)-123);
+    CHECK_FORMAT_1("%1li",          "-123",              (long)-123);
+    CHECK_FORMAT_1("%1lld",         "-123",         (long long)-123);
+    CHECK_FORMAT_1("%1lli",         "-123",         (long long)-123);
+    CHECK_FORMAT_1("%1zd",          "-123",        (Py_ssize_t)-123);
+    CHECK_FORMAT_1("%1zi",          "-123",        (Py_ssize_t)-123);
+    CHECK_FORMAT_1("%1x",       "ffffff85",               (int)-123);
+
+    // Integers: width > length
+    CHECK_FORMAT_1("%5d",          "  123",                (int)123);
+    CHECK_FORMAT_1("%5i",          "  123",                (int)123);
+    CHECK_FORMAT_1("%5u",          "  123",       (unsigned int)123);
+    CHECK_FORMAT_1("%5ld",         "  123",               (long)123);
+    CHECK_FORMAT_1("%5li",         "  123",               (long)123);
+    CHECK_FORMAT_1("%5lu",         "  123",      (unsigned long)123);
+    CHECK_FORMAT_1("%5lld",        "  123",          (long long)123);
+    CHECK_FORMAT_1("%5lli",        "  123",          (long long)123);
+    CHECK_FORMAT_1("%5llu",        "  123", (unsigned long long)123);
+    CHECK_FORMAT_1("%5zd",         "  123",         (Py_ssize_t)123);
+    CHECK_FORMAT_1("%5zi",         "  123",         (Py_ssize_t)123);
+    CHECK_FORMAT_1("%5zu",         "  123",             (size_t)123);
+    CHECK_FORMAT_1("%5x",          "   7b",                (int)123);
+
+    CHECK_FORMAT_1("%5d",          " -123",               (int)-123);
+    CHECK_FORMAT_1("%5i",          " -123",               (int)-123);
+    CHECK_FORMAT_1("%5ld",         " -123",              (long)-123);
+    CHECK_FORMAT_1("%5li",         " -123",              (long)-123);
+    CHECK_FORMAT_1("%5lld",        " -123",         (long long)-123);
+    CHECK_FORMAT_1("%5lli",        " -123",         (long long)-123);
+    CHECK_FORMAT_1("%5zd",         " -123",        (Py_ssize_t)-123);
+    CHECK_FORMAT_1("%5zi",         " -123",        (Py_ssize_t)-123);
+    CHECK_FORMAT_1("%9x",      " ffffff85",               (int)-123);
+
+    // Integers: width > length, 0-flag
+    CHECK_FORMAT_1("%05d",         "00123",                (int)123);
+    CHECK_FORMAT_1("%05i",         "00123",                (int)123);
+    CHECK_FORMAT_1("%05u",         "00123",       (unsigned int)123);
+    CHECK_FORMAT_1("%05ld",        "00123",               (long)123);
+    CHECK_FORMAT_1("%05li",        "00123",               (long)123);
+    CHECK_FORMAT_1("%05lu",        "00123",      (unsigned long)123);
+    CHECK_FORMAT_1("%05lld",       "00123",          (long long)123);
+    CHECK_FORMAT_1("%05lli",       "00123",          (long long)123);
+    CHECK_FORMAT_1("%05llu",       "00123", (unsigned long long)123);
+    CHECK_FORMAT_1("%05zd",        "00123",         (Py_ssize_t)123);
+    CHECK_FORMAT_1("%05zi",        "00123",         (Py_ssize_t)123);
+    CHECK_FORMAT_1("%05zu",        "00123",             (size_t)123);
+    CHECK_FORMAT_1("%05x",         "0007b",                (int)123);
+
+    CHECK_FORMAT_1("%05d",         "0-123",               (int)-123);
+    CHECK_FORMAT_1("%05i",         "0-123",               (int)-123);
+    CHECK_FORMAT_1("%05ld",        "0-123",              (long)-123);
+    CHECK_FORMAT_1("%05li",        "0-123",              (long)-123);
+    CHECK_FORMAT_1("%05lld",       "0-123",         (long long)-123);
+    CHECK_FORMAT_1("%05lli",       "0-123",         (long long)-123);
+    CHECK_FORMAT_1("%05zd",        "0-123",        (Py_ssize_t)-123);
+    CHECK_FORMAT_1("%05zi",        "0-123",        (Py_ssize_t)-123);
+    CHECK_FORMAT_1("%09x",     "0ffffff85",               (int)-123);
+
+    // Integers: precision < length
+    CHECK_FORMAT_1("%.1d",           "123",                (int)123);
+    CHECK_FORMAT_1("%.1i",           "123",                (int)123);
+    CHECK_FORMAT_1("%.1u",           "123",       (unsigned int)123);
+    CHECK_FORMAT_1("%.1ld",          "123",               (long)123);
+    CHECK_FORMAT_1("%.1li",          "123",               (long)123);
+    CHECK_FORMAT_1("%.1lu",          "123",      (unsigned long)123);
+    CHECK_FORMAT_1("%.1lld",         "123",          (long long)123);
+    CHECK_FORMAT_1("%.1lli",         "123",          (long long)123);
+    CHECK_FORMAT_1("%.1llu",         "123", (unsigned long long)123);
+    CHECK_FORMAT_1("%.1zd",          "123",         (Py_ssize_t)123);
+    CHECK_FORMAT_1("%.1zi",          "123",         (Py_ssize_t)123);
+    CHECK_FORMAT_1("%.1zu",          "123",             (size_t)123);
+    CHECK_FORMAT_1("%.1x",            "7b",                (int)123);
+
+    CHECK_FORMAT_1("%.1d",          "-123",               (int)-123);
+    CHECK_FORMAT_1("%.1i",          "-123",               (int)-123);
+    CHECK_FORMAT_1("%.1ld",         "-123",              (long)-123);
+    CHECK_FORMAT_1("%.1li",         "-123",              (long)-123);
+    CHECK_FORMAT_1("%.1lld",        "-123",         (long long)-123);
+    CHECK_FORMAT_1("%.1lli",        "-123",         (long long)-123);
+    CHECK_FORMAT_1("%.1zd",         "-123",        (Py_ssize_t)-123);
+    CHECK_FORMAT_1("%.1zi",         "-123",        (Py_ssize_t)-123);
+    CHECK_FORMAT_1("%.1x",      "ffffff85",               (int)-123);
+
+    // Integers: precision > length
+    CHECK_FORMAT_1("%.5d",         "00123",                (int)123);
+    CHECK_FORMAT_1("%.5i",         "00123",                (int)123);
+    CHECK_FORMAT_1("%.5u",         "00123",       (unsigned int)123);
+    CHECK_FORMAT_1("%.5ld",        "00123",               (long)123);
+    CHECK_FORMAT_1("%.5li",        "00123",               (long)123);
+    CHECK_FORMAT_1("%.5lu",        "00123",      (unsigned long)123);
+    CHECK_FORMAT_1("%.5lld",       "00123",          (long long)123);
+    CHECK_FORMAT_1("%.5lli",       "00123",          (long long)123);
+    CHECK_FORMAT_1("%.5llu",       "00123", (unsigned long long)123);
+    CHECK_FORMAT_1("%.5zd",        "00123",         (Py_ssize_t)123);
+    CHECK_FORMAT_1("%.5zi",        "00123",         (Py_ssize_t)123);
+    CHECK_FORMAT_1("%.5zu",        "00123",             (size_t)123);
+    CHECK_FORMAT_1("%.5x",         "0007b",                (int)123);
+
+    CHECK_FORMAT_1("%.5d",         "0-123",               (int)-123);
+    CHECK_FORMAT_1("%.5i",         "0-123",               (int)-123);
+    CHECK_FORMAT_1("%.5ld",        "0-123",              (long)-123);
+    CHECK_FORMAT_1("%.5li",        "0-123",              (long)-123);
+    CHECK_FORMAT_1("%.5lld",       "0-123",         (long long)-123);
+    CHECK_FORMAT_1("%.5lli",       "0-123",         (long long)-123);
+    CHECK_FORMAT_1("%.5zd",        "0-123",        (Py_ssize_t)-123);
+    CHECK_FORMAT_1("%.5zi",        "0-123",        (Py_ssize_t)-123);
+    CHECK_FORMAT_1("%.9x",     "0ffffff85",               (int)-123);
+
+    // Integers: width > precision > length
+    CHECK_FORMAT_1("%7.5d",      "  00123",                (int)123);
+    CHECK_FORMAT_1("%7.5i",      "  00123",                (int)123);
+    CHECK_FORMAT_1("%7.5u",      "  00123",       (unsigned int)123);
+    CHECK_FORMAT_1("%7.5ld",     "  00123",               (long)123);
+    CHECK_FORMAT_1("%7.5li",     "  00123",               (long)123);
+    CHECK_FORMAT_1("%7.5lu",     "  00123",      (unsigned long)123);
+    CHECK_FORMAT_1("%7.5lld",    "  00123",          (long long)123);
+    CHECK_FORMAT_1("%7.5lli",    "  00123",          (long long)123);
+    CHECK_FORMAT_1("%7.5llu",    "  00123", (unsigned long long)123);
+    CHECK_FORMAT_1("%7.5zd",     "  00123",         (Py_ssize_t)123);
+    CHECK_FORMAT_1("%7.5zi",     "  00123",         (Py_ssize_t)123);
+    CHECK_FORMAT_1("%7.5zu",     "  00123",             (size_t)123);
+    CHECK_FORMAT_1("%7.5x",      "  0007b",                (int)123);
+
+    CHECK_FORMAT_1("%7.5d",      "  0-123",               (int)-123);
+    CHECK_FORMAT_1("%7.5i",      "  0-123",               (int)-123);
+    CHECK_FORMAT_1("%7.5ld",     "  0-123",              (long)-123);
+    CHECK_FORMAT_1("%7.5li",     "  0-123",              (long)-123);
+    CHECK_FORMAT_1("%7.5lld",    "  0-123",         (long long)-123);
+    CHECK_FORMAT_1("%7.5lli",    "  0-123",         (long long)-123);
+    CHECK_FORMAT_1("%7.5zd",     "  0-123",        (Py_ssize_t)-123);
+    CHECK_FORMAT_1("%7.5zi",     "  0-123",        (Py_ssize_t)-123);
+    CHECK_FORMAT_1("%10.9x",  " 0ffffff85",               (int)-123);
+
+    // Integers: width > precision > length, 0-flag
+    CHECK_FORMAT_1("%07.5d",     "0000123",                (int)123);
+    CHECK_FORMAT_1("%07.5i",     "0000123",                (int)123);
+    CHECK_FORMAT_1("%07.5u",     "0000123",       (unsigned int)123);
+    CHECK_FORMAT_1("%07.5ld",    "0000123",               (long)123);
+    CHECK_FORMAT_1("%07.5li",    "0000123",               (long)123);
+    CHECK_FORMAT_1("%07.5lu",    "0000123",      (unsigned long)123);
+    CHECK_FORMAT_1("%07.5lld",   "0000123",          (long long)123);
+    CHECK_FORMAT_1("%07.5lli",   "0000123",          (long long)123);
+    CHECK_FORMAT_1("%07.5llu",   "0000123", (unsigned long long)123);
+    CHECK_FORMAT_1("%07.5zd",    "0000123",         (Py_ssize_t)123);
+    CHECK_FORMAT_1("%07.5zi",    "0000123",         (Py_ssize_t)123);
+    CHECK_FORMAT_1("%07.5zu",    "0000123",             (size_t)123);
+    CHECK_FORMAT_1("%07.5x",     "000007b",                (int)123);
+
+    CHECK_FORMAT_1("%07.5d",     "000-123",               (int)-123);
+    CHECK_FORMAT_1("%07.5i",     "000-123",               (int)-123);
+    CHECK_FORMAT_1("%07.5ld",    "000-123",              (long)-123);
+    CHECK_FORMAT_1("%07.5li",    "000-123",              (long)-123);
+    CHECK_FORMAT_1("%07.5lld",   "000-123",         (long long)-123);
+    CHECK_FORMAT_1("%07.5lli",   "000-123",         (long long)-123);
+    CHECK_FORMAT_1("%07.5zd",    "000-123",        (Py_ssize_t)-123);
+    CHECK_FORMAT_1("%07.5zi",    "000-123",        (Py_ssize_t)-123);
+    CHECK_FORMAT_1("%010.9x", "00ffffff85",               (int)-123);
+
+    // Integers: precision > width > length
+    CHECK_FORMAT_1("%5.7d",      "0000123",                (int)123);
+    CHECK_FORMAT_1("%5.7i",      "0000123",                (int)123);
+    CHECK_FORMAT_1("%5.7u",      "0000123",       (unsigned int)123);
+    CHECK_FORMAT_1("%5.7ld",     "0000123",               (long)123);
+    CHECK_FORMAT_1("%5.7li",     "0000123",               (long)123);
+    CHECK_FORMAT_1("%5.7lu",     "0000123",      (unsigned long)123);
+    CHECK_FORMAT_1("%5.7lld",    "0000123",          (long long)123);
+    CHECK_FORMAT_1("%5.7lli",    "0000123",          (long long)123);
+    CHECK_FORMAT_1("%5.7llu",    "0000123", (unsigned long long)123);
+    CHECK_FORMAT_1("%5.7zd",     "0000123",         (Py_ssize_t)123);
+    CHECK_FORMAT_1("%5.7zi",     "0000123",         (Py_ssize_t)123);
+    CHECK_FORMAT_1("%5.7zu",     "0000123",             (size_t)123);
+    CHECK_FORMAT_1("%5.7x",      "000007b",                (int)123);
+
+    CHECK_FORMAT_1("%5.7d",      "000-123",               (int)-123);
+    CHECK_FORMAT_1("%5.7i",      "000-123",               (int)-123);
+    CHECK_FORMAT_1("%5.7ld",     "000-123",              (long)-123);
+    CHECK_FORMAT_1("%5.7li",     "000-123",              (long)-123);
+    CHECK_FORMAT_1("%5.7lld",    "000-123",         (long long)-123);
+    CHECK_FORMAT_1("%5.7lli",    "000-123",         (long long)-123);
+    CHECK_FORMAT_1("%5.7zd",     "000-123",        (Py_ssize_t)-123);
+    CHECK_FORMAT_1("%5.7zi",     "000-123",        (Py_ssize_t)-123);
+    CHECK_FORMAT_1("%9.10x",  "00ffffff85",               (int)-123);
+
+    // Integers: precision > width > length, 0-flag
+    CHECK_FORMAT_1("%05.7d",     "0000123",                (int)123);
+    CHECK_FORMAT_1("%05.7i",     "0000123",                (int)123);
+    CHECK_FORMAT_1("%05.7u",     "0000123",       (unsigned int)123);
+    CHECK_FORMAT_1("%05.7ld",    "0000123",               (long)123);
+    CHECK_FORMAT_1("%05.7li",    "0000123",               (long)123);
+    CHECK_FORMAT_1("%05.7lu",    "0000123",      (unsigned long)123);
+    CHECK_FORMAT_1("%05.7lld",   "0000123",          (long long)123);
+    CHECK_FORMAT_1("%05.7lli",   "0000123",          (long long)123);
+    CHECK_FORMAT_1("%05.7llu",   "0000123", (unsigned long long)123);
+    CHECK_FORMAT_1("%05.7zd",    "0000123",         (Py_ssize_t)123);
+    CHECK_FORMAT_1("%05.7zi",    "0000123",         (Py_ssize_t)123);
+    CHECK_FORMAT_1("%05.7zu",    "0000123",             (size_t)123);
+    CHECK_FORMAT_1("%05.7x",     "000007b",                (int)123);
+
+    CHECK_FORMAT_1("%05.7d",     "000-123",               (int)-123);
+    CHECK_FORMAT_1("%05.7i",     "000-123",               (int)-123);
+    CHECK_FORMAT_1("%05.7ld",    "000-123",              (long)-123);
+    CHECK_FORMAT_1("%05.7li",    "000-123",              (long)-123);
+    CHECK_FORMAT_1("%05.7lld",   "000-123",         (long long)-123);
+    CHECK_FORMAT_1("%05.7lli",   "000-123",         (long long)-123);
+    CHECK_FORMAT_1("%05.7zd",    "000-123",        (Py_ssize_t)-123);
+    CHECK_FORMAT_1("%05.7zi",    "000-123",        (Py_ssize_t)-123);
+    CHECK_FORMAT_1("%09.10x", "00ffffff85",               (int)-123);
+
+    // Integers: precision = 0, arg = 0 (empty string in C)
+    CHECK_FORMAT_1("%.0d",             "0",                  (int)0);
+    CHECK_FORMAT_1("%.0i",             "0",                  (int)0);
+    CHECK_FORMAT_1("%.0u",             "0",         (unsigned int)0);
+    CHECK_FORMAT_1("%.0ld",            "0",                 (long)0);
+    CHECK_FORMAT_1("%.0li",            "0",                 (long)0);
+    CHECK_FORMAT_1("%.0lu",            "0",        (unsigned long)0);
+    CHECK_FORMAT_1("%.0lld",           "0",            (long long)0);
+    CHECK_FORMAT_1("%.0lli",           "0",            (long long)0);
+    CHECK_FORMAT_1("%.0llu",           "0",   (unsigned long long)0);
+    CHECK_FORMAT_1("%.0zd",            "0",           (Py_ssize_t)0);
+    CHECK_FORMAT_1("%.0zi",            "0",           (Py_ssize_t)0);
+    CHECK_FORMAT_1("%.0zu",            "0",               (size_t)0);
+    CHECK_FORMAT_1("%.0x",             "0",                  (int)0);
+
+    // Strings
+    CHECK_FORMAT_1("%s",     "None",  "None");
+    CHECK_FORMAT_1("%U",     "None", unicode);
+    CHECK_FORMAT_1("%A",     "None", Py_None);
+    CHECK_FORMAT_1("%S",     "None", Py_None);
+    CHECK_FORMAT_1("%R",     "None", Py_None);
+    CHECK_FORMAT_2("%V",     "None", unicode, "ignored");
+    CHECK_FORMAT_2("%V",     "None",    NULL,    "None");
+
+    // Strings: width < length
+    CHECK_FORMAT_1("%1s",    "None",  "None");
+    CHECK_FORMAT_1("%1U",    "None", unicode);
+    CHECK_FORMAT_1("%1A",    "None", Py_None);
+    CHECK_FORMAT_1("%1S",    "None", Py_None);
+    CHECK_FORMAT_1("%1R",    "None", Py_None);
+    CHECK_FORMAT_2("%1V",    "None", unicode, "ignored");
+    CHECK_FORMAT_2("%1V",    "None",    NULL,    "None");
+
+    // Strings: width > length
+    CHECK_FORMAT_1("%5s",   " None",  "None");
+    CHECK_FORMAT_1("%5U",   " None", unicode);
+    CHECK_FORMAT_1("%5A",   " None", Py_None);
+    CHECK_FORMAT_1("%5S",   " None", Py_None);
+    CHECK_FORMAT_1("%5R",   " None", Py_None);
+    CHECK_FORMAT_2("%5V",   " None", unicode, "ignored");
+    CHECK_FORMAT_2("%5V",   " None",    NULL,    "None");
+
+    // Strings: precision < length
+    CHECK_FORMAT_1("%.1s",      "N",  "None");
+    CHECK_FORMAT_1("%.1U",      "N", unicode);
+    CHECK_FORMAT_1("%.1A",      "N", Py_None);
+    CHECK_FORMAT_1("%.1S",      "N", Py_None);
+    CHECK_FORMAT_1("%.1R",      "N", Py_None);
+    CHECK_FORMAT_2("%.1V",      "N", unicode, "ignored");
+    CHECK_FORMAT_2("%.1V",      "N",    NULL,    "None");
+
+    // Strings: precision > length
+    CHECK_FORMAT_1("%.5s",   "None",  "None");
+    CHECK_FORMAT_1("%.5U",   "None", unicode);
+    CHECK_FORMAT_1("%.5A",   "None", Py_None);
+    CHECK_FORMAT_1("%.5S",   "None", Py_None);
+    CHECK_FORMAT_1("%.5R",   "None", Py_None);
+    CHECK_FORMAT_2("%.5V",   "None", unicode, "ignored");
+    CHECK_FORMAT_2("%.5V",   "None",    NULL,    "None");
+
+    // Strings: precision < length, width > length
+    CHECK_FORMAT_1("%5.1s", "    N",  "None");
+    CHECK_FORMAT_1("%5.1U", "    N", unicode);
+    CHECK_FORMAT_1("%5.1A", "    N", Py_None);
+    CHECK_FORMAT_1("%5.1S", "    N", Py_None);
+    CHECK_FORMAT_1("%5.1R", "    N", Py_None);
+    CHECK_FORMAT_2("%5.1V", "    N", unicode, "ignored");
+    CHECK_FORMAT_2("%5.1V", "    N",    NULL,    "None");
+
+    // Strings: width < length, precision > length
+    CHECK_FORMAT_1("%1.5s",  "None",  "None");
+    CHECK_FORMAT_1("%1.5U",  "None", unicode);
+    CHECK_FORMAT_1("%1.5A",  "None", Py_None);
+    CHECK_FORMAT_1("%1.5S",  "None", Py_None);
+    CHECK_FORMAT_1("%1.5R",  "None", Py_None);
+    CHECK_FORMAT_2("%1.5V",  "None", unicode, "ignored");
+    CHECK_FORMAT_2("%1.5V",  "None",    NULL,    "None");
+
+    Py_XDECREF(unicode);
     Py_RETURN_NONE;
 
  Fail:
     Py_XDECREF(result);
-    return raiseTestError("test_string_from_format", msg);
+    Py_XDECREF(unicode);
+    return NULL;
 
-#undef CHECK_1_FORMAT
+#undef CHECK_FORMAT_2
+#undef CHECK_FORMAT_1
+#undef CHECK_FORMAT_0
 }
 
 
