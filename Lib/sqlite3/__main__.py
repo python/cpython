@@ -19,9 +19,7 @@ class SqliteInteractiveConsole(InteractiveConsole):
     def runsql(self, sql):
         if sqlite3.complete_statement(sql):
             try:
-                self._cur.execute(sql)
-                rows = self._cur.fetchall()
-                for row in rows:
+                for row in self._cur.execute(sql):
                     print(row)
             except sqlite3.Error as e:
                 print(f"{e.sqlite_errorname}: {e}")
