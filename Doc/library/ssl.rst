@@ -65,6 +65,7 @@ by SSL sockets created through the :meth:`SSLContext.wrap_socket` method.
 
    Use of deprecated constants and functions result in deprecation warnings.
 
+.. include:: ../includes/wasm-notavail.rst
 
 Functions, Constants, and Exceptions
 ------------------------------------

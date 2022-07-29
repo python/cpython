@@ -64,3 +64,19 @@ Notes on availability
   libc version, then both conditions must hold. For example a feature with note
   *Availability: Linux >= 3.17 with glibc >= 2.27* requires both Linux 3.17 or
   newer and glibc 2.27 or newer.
+
+.. _wasm-availability:
+
+Notes on WebAssembly platforms
+==============================
+
+The WebAssembly platforms ``wasm32-emscripten`` and ``wasm32-wasi`` provide a
+limited subset of POSIX APIs.
+
+.. TODO: update with information from Tools/wasm/README.md
+
+* Some functions are stubs that don't do anything and always return the some
+  hardcoded value.
+
+* Functions related to file permissions, file ownership, and links are limited
+  and don't support some operations.

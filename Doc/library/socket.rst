@@ -16,6 +16,8 @@ all modern Unix systems, Windows, MacOS, and probably additional platforms.
    Some behavior may be platform dependent, since calls are made to the operating
    system socket APIs.
 
+.. include:: ../includes/wasm-notavail.rst
+
 .. index:: object: socket
 
 The Python interface is a straightforward transliteration of the Unix system

@@ -32,6 +32,8 @@ between conformable Python objects and XML on the wire.
    For HTTPS URIs, :mod:`xmlrpc.client` now performs all the necessary
    certificate and hostname checks by default.
 
+.. include:: ../includes/wasm-notavail.rst
+
 .. class:: ServerProxy(uri, transport=None, encoding=None, verbose=False, \
                        allow_none=False, use_datetime=False, \
                        use_builtin_types=False, *, headers=(), context=None)

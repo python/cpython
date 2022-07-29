@@ -1,0 +1,2 @@
+Update module documentation with availability information on WebAssembly
+platforms wasm32-emscripten and wasm32-wasi.

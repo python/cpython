@@ -28,6 +28,8 @@ HTTPS protocols.  It is normally not used directly --- the module
    HTTPS support is only available if Python was compiled with SSL support
    (through the :mod:`ssl` module).
 
+.. include:: ../includes/wasm-notavail.rst
+
 The module provides the following classes:
 
 
