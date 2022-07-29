@@ -622,13 +622,18 @@ class BaseTaskTests:
                         #    code might have been nested (think multiple timeouts). See
                         #    commit 7fce1063b6e5a366f8504e039a8ccdd6944625cd for
                         #    details.
-                        # 5. we only convert CancelledError to TimeoutError; if the user
-                        #    code raised a different exception due to the cancellation
-                        #    (like a ConnectionLostError from a database client), we
-                        #    propagate it.
+                        # 5. we only convert CancelledError to TimeoutError; for other
+                        #    exceptions raised due to the cancellation (like
+                        #    a ConnectionLostError from a database client), simply
+                        #    propagate them.
                         #
                         # Those checks need to take place in this exact order to make
                         # sure the `cancelling()` counter always stays in sync.
+                        #
+                        # Additionally, the original stimulus to `cancel()` the task
+                        # needs to be unscheduled to avoid re-cancelling the task later.
+                        # Here we do it by cancelling `timeout_handle` in the `finally:`
+                        # block.
                         raise TimeoutError
             except TimeoutError:
                 self.assertTrue(timed_out)
@@ -648,6 +653,7 @@ class BaseTaskTests:
         self.assertTrue(outer_code_reached)  # task got uncancelled after leaving
                                              # the structured block and continued until
                                              # completion
+        self.assertEqual(t1.cancelling(), 0) # no pending cancellation of the outer task
 
         # Test which did not time out.
         t2 = self.new_task(loop, make_request_with_timeout(sleep=0, timeout=10.0))
@@ -657,6 +663,7 @@ class BaseTaskTests:
         self.assertFalse(timed_out)
         self.assertTrue(structured_block_finished)
         self.assertTrue(outer_code_reached)
+        self.assertEqual(t2.cancelling(), 0)
 
     def test_cancel(self):
 
