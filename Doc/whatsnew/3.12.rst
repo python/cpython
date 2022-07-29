@@ -413,6 +413,14 @@ Porting to Python 3.12
   ``Py_UNICODE*`` based format (e.g. ``u``, ``Z``) anymore. Please migrate
   to other formats for Unicode like ``s``, ``z``, ``es``, and ``U``.
 
+* ``tp_subclasses`` is no longer used for any static builtin types.
+  The subclasses are stored internally elsewhere.  However, ``tp_subclasses``
+  may still hold data that will cause a crash if used as an object pointer.
+  This internal-only ``PyTypeObject`` field should not be used.  Use the
+  exist public C-API or Python API to access ``__subclasses__`` instead.
+  We mention this in case anyone someone happens to be accessing the
+  field directly anyway.
+
 Deprecated
 ----------
 

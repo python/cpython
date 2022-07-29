@@ -1930,7 +1930,14 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: PyObject* PyTypeObject.tp_subclasses
 
-   List of weak references to subclasses.  Internal use only.
+   The collection of weak references to subclasses.  Internal use only.
+
+   .. versionchanged:: 3.12
+
+      Internals detail: For the static builtin types this field no longer
+      holds the subclasses.  Those are now stored on ``PyInterpreterState``.
+      This field is re-purposed to hold the index into the type's storage
+      on each interpreter state.
 
    **Inheritance:**
 
