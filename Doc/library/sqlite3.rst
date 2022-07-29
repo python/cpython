@@ -970,7 +970,7 @@ Cursor Objects
    A ``Cursor`` object represents a `database cursor`_
    which is used to execute SQL statements,
    and manage the context of a fetch operation.
-   Cursors are created with :meth:`Connection.cursor`,
+   Cursors are created using :meth:`Connection.cursor`,
    or by using any of the :ref:`connection shortcut methods
    <sqlite3-connection-shortcuts>`.
 
