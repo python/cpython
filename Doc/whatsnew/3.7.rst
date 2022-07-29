@@ -1906,7 +1906,7 @@ Other CPython Implementation Changes
   variables were defined.  Previously, the order was undefined.
   (Contributed by Raymond Hettinger in :issue:`32690`.)
 
-* The :mod:`distutils` ``upload`` command no longer tries to change CR
+* The ``distutils`` ``upload`` command no longer tries to change CR
   end-of-line characters to CRLF.  This fixes a corruption issue with sdists
   that ended with a byte equivalent to CR.
   (Contributed by Bo Bayles in :issue:`32304`.)
@@ -2181,7 +2181,7 @@ The following features and APIs have been removed from Python 3.7:
   :func:`ssl.wrap_socket` or :class:`ssl.SSLContext`.
   (Contributed by Christian Heimes in :issue:`32951`.)
 
-* The unused :mod:`distutils` ``install_misc`` command has been removed.
+* The unused ``distutils`` ``install_misc`` command has been removed.
   (Contributed by Eric N. Vander Weele in :issue:`29218`.)
 
 
