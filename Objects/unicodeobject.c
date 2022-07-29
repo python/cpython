@@ -2482,21 +2482,34 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         }
         assert(len >= 0);
 
-        if (precision < len)
-            precision = len;
+        int negative = buffer[0]=='-'?1:0;
+        len -= negative;
+
+        precision = Py_MAX(precision, len);
+        width = Py_MAX(width, precision + negative);
 
         arglen = Py_MAX(precision, width);
         if (_PyUnicodeWriter_Prepare(writer, arglen, 127) == -1)
             return NULL;
 
         if (width > precision) {
-            Py_UCS4 fillchar;
-            fill = width - precision;
-            fillchar = zeropad?'0':' ';
+            if (negative && zeropad) {
+                if (_PyUnicodeWriter_WriteChar(writer, '-') == -1)
+                    return NULL;
+            }
+
+            Py_UCS4 fillchar = zeropad?'0':' ';
+            fill = width - precision - negative;
             if (PyUnicode_Fill(writer->buffer, writer->pos, fill, fillchar) == -1)
                 return NULL;
             writer->pos += fill;
+
+            if (negative && !zeropad) {
+                if (_PyUnicodeWriter_WriteChar(writer, '-') == -1)
+                    return NULL;
+            }
         }
+
         if (precision > len) {
             fill = precision - len;
             if (PyUnicode_Fill(writer->buffer, writer->pos, fill, '0') == -1)
@@ -2504,7 +2517,7 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
             writer->pos += fill;
         }
 
-        if (_PyUnicodeWriter_WriteASCIIString(writer, buffer, len) < 0)
+        if (_PyUnicodeWriter_WriteASCIIString(writer, &buffer[negative], len) < 0)
             return NULL;
         break;
     }
