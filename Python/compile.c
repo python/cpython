@@ -139,17 +139,22 @@ struct location {
 
 static struct location NO_LOCATION = {-1, -1, -1, -1};
 
-typedef struct basicblock_* jump_target_label;
+typedef struct jump_target_label_ {
+    struct basicblock_ *block;
+} jump_target_label;
+
+static struct jump_target_label_ NO_LABEL = {NULL};
+
+#define SAME_LABEL(L1, L2) ((L1).block == (L2).block)
+#define IS_LABEL(L) (!SAME_LABEL((L), (NO_LABEL)))
 
 #define NEW_JUMP_TARGET_LABEL(C, NAME) \
-    jump_target_label NAME = compiler_new_block(C); \
-    if (NAME == NULL) { \
+    jump_target_label NAME = {compiler_new_block(C)}; \
+    if (!IS_LABEL(NAME)) { \
         return 0; \
     }
 
-#define USE_LABEL(C, LBL)  compiler_use_next_block(C, LBL)
-
-#define NO_LABEL NULL
+#define USE_LABEL(C, LBL)  compiler_use_next_block(C, (LBL).block)
 
 struct instr {
     int i_opcode;
@@ -1275,10 +1280,10 @@ basicblock_addop(basicblock *b, int opcode, int oparg,
     assert(!IS_ASSEMBLER_OPCODE(opcode));
     assert(HAS_ARG(opcode) || oparg == 0);
     assert(0 <= oparg && oparg < (1 << 30));
-    assert((target == NULL) ||
+    assert(!IS_LABEL(target) ||
            IS_JUMP_OPCODE(opcode) ||
            IS_BLOCK_PUSH_OPCODE(opcode));
-    assert(oparg == 0 || target == NULL);
+    assert(oparg == 0 || !IS_LABEL(target));
 
     int off = basicblock_next_instr(b);
     if (off < 0) {
@@ -1529,9 +1534,9 @@ cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, struct locatio
 }
 
 static int
-cfg_builder_addop_j(cfg_builder *g, int opcode, basicblock *target, struct location loc)
+cfg_builder_addop_j(cfg_builder *g, int opcode, jump_target_label target, struct location loc)
 {
-    assert(target != NULL);
+    assert(IS_LABEL(target));
     assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
     return cfg_builder_addop(g, opcode, 0, target, loc);
 }
@@ -1879,7 +1884,7 @@ find_ann(asdl_stmt_seq *stmts)
  */
 
 static int
-compiler_push_fblock(struct compiler *c, enum fblocktype t, jump_target_label b,
+compiler_push_fblock(struct compiler *c, enum fblocktype t, jump_target_label block_label,
                      jump_target_label exit, void *datum)
 {
     struct fblockinfo *f;
@@ -1888,20 +1893,20 @@ compiler_push_fblock(struct compiler *c, enum fblocktype t, jump_target_label b,
     }
     f = &c->u->u_fblock[c->u->u_nfblocks++];
     f->fb_type = t;
-    f->fb_block = b;
+    f->fb_block = block_label;
     f->fb_exit = exit;
     f->fb_datum = datum;
     return 1;
 }
 
 static void
-compiler_pop_fblock(struct compiler *c, enum fblocktype t, jump_target_label b)
+compiler_pop_fblock(struct compiler *c, enum fblocktype t, jump_target_label block_label)
 {
     struct compiler_unit *u = c->u;
     assert(u->u_nfblocks > 0);
     u->u_nfblocks--;
     assert(u->u_fblock[u->u_nfblocks].fb_type == t);
-    assert(u->u_fblock[u->u_nfblocks].fb_block == b);
+    assert(SAME_LABEL(u->u_fblock[u->u_nfblocks].fb_block, block_label));
 }
 
 static int
@@ -2855,7 +2860,7 @@ compiler_jump_if(struct compiler *c, expr_ty e, jump_target_label next, int cond
         }
         if (!compiler_jump_if(c, (expr_ty)asdl_seq_GET(s, n), next, cond))
             return 0;
-        if (next2 != next) {
+        if (!SAME_LABEL(next2, next)) {
             USE_LABEL(c, next2);
         }
         return 1;
@@ -5123,12 +5128,12 @@ compiler_sync_comprehension_generator(struct compiler *c,
                 start = NO_LABEL;
             }
         }
-        if (start != NO_LABEL) {
+        if (IS_LABEL(start)) {
             VISIT(c, expr, gen->iter);
             ADDOP(c, GET_ITER);
         }
     }
-    if (start != NO_LABEL) {
+    if (IS_LABEL(start)) {
         depth++;
         USE_LABEL(c, start);
         ADDOP_JUMP(c, FOR_ITER, anchor);
@@ -5179,7 +5184,7 @@ compiler_sync_comprehension_generator(struct compiler *c,
     }
 
     USE_LABEL(c, if_cleanup);
-    if (start != NO_LABEL) {
+    if (IS_LABEL(start)) {
         ADDOP_JUMP(c, JUMP, start);
 
         USE_LABEL(c, anchor);
@@ -7369,7 +7374,8 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
             if (explicit_jump == NULL) {
                 return -1;
             }
-            basicblock_addop(explicit_jump, JUMP, 0, b->b_next, NO_LOCATION);
+            jump_target_label next_label = {b->b_next};
+            basicblock_addop(explicit_jump, JUMP, 0, next_label, NO_LOCATION);
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
             b->b_next = explicit_jump;
@@ -7377,8 +7383,8 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
             /* calculate target from target_label */
             /* TODO: formalize an API for adding jumps in the backend */
             struct instr *last = basicblock_last_instr(explicit_jump);
-            last->i_target = last->i_target_label;
-            last->i_target_label = NULL;
+            last->i_target = last->i_target_label.block;
+            last->i_target_label = NO_LABEL;
         }
     }
 
@@ -9398,8 +9404,8 @@ calculate_jump_targets(basicblock *entryblock)
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             assert(instr->i_target == NULL);
-            instr->i_target = instr->i_target_label;
-            instr->i_target_label = NULL;
+            instr->i_target = instr->i_target_label.block;
+            instr->i_target_label = NO_LABEL;
             if (is_jump(instr) || is_block_push(instr)) {
                 assert(instr->i_target != NULL);
             }
