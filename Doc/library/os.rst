@@ -824,7 +824,7 @@ as internal buffering of data.
       It will always copy no bytes and return 0 as if the file was empty
       because of a known Linux kernel issue.
 
-   .. availability:: Linux >= 4.5, glibc >= 2.27.
+   .. availability:: Linux >= 4.5 with glibc >= 2.27.
 
    .. versionadded:: 3.8
 
@@ -1495,7 +1495,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    make sense to block because there are no writers connected to the write end
    of the pipe.
 
-   .. availability:: Linux >= 2.6.17, glibc >= 2.5
+   .. availability:: Linux >= 2.6.17 with glibc >= 2.5
 
    .. versionadded:: 3.10
 
@@ -3334,7 +3334,7 @@ features:
    the file descriptor, and as such multiple files can have the same name
    without any side effects.
 
-   .. availability:: Linux >= 3.17, glibc >= 2.27.
+   .. availability:: Linux >= 3.17 with glibc >= 2.27.
 
    .. versionadded:: 3.8
 
@@ -3359,7 +3359,7 @@ features:
 
    These flags can be passed to :func:`memfd_create`.
 
-   .. availability:: Linux >= 3.17, glibc >= 2.27
+   .. availability:: Linux >= 3.17 with glibc >= 2.27
 
       The ``MFD_HUGE*`` flags are only available since Linux 4.14.
 
@@ -3413,7 +3413,7 @@ features:
        finally:
            os.close(fd)
 
-   .. availability:: Linux >= 2.6.27, glibc >= 2.8
+   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
    .. versionadded:: 3.10
 

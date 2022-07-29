@@ -177,6 +177,8 @@ class Availability(Directive):
 
            .. availability:: Windows, Linux >= 4.2, not Emscripten, not WASI
 
+        Arguments like "Linux >= 3.17 with glibc >= 2.27" are currently not
+        parsed into separate tokens.
         """
         platforms = {}
         for arg in self.arguments[0].rstrip(".").split(","):

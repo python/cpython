@@ -99,7 +99,7 @@ this module for those platforms.
 
    .. audit-event:: resource.prlimit pid,resource,limits resource.prlimit
 
-   .. availability:: Linux >= 2.6.36, glibc >= 2.13.
+   .. availability:: Linux >= 2.6.36 with glibc >= 2.13.
 
    .. versionadded:: 3.4
 

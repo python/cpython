@@ -62,5 +62,5 @@ Notes on availability
 
 * If an availability note contains both a minimum Kernel version and a minimum
   libc version, then both conditions must hold. For example a feature with note
-  *Availability: Linux >= 3.17, glibc >= 2.27* requires both Linux 3.17 or newer
-  and glibc 2.27 or newer.
+  *Availability: Linux >= 3.17 with glibc >= 2.27* requires both Linux 3.17 or
+  newer and glibc 2.27 or newer.
