@@ -1928,16 +1928,17 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    This field is not inherited.
 
 
-.. c:member:: PyObject* PyTypeObject.tp_subclasses
+.. c:member:: void* PyTypeObject.tp_subclasses
 
-   The collection of weak references to subclasses.  Internal use only.
+   A collection of subclasses.  Internal use only.  May be an invalid pointer.
+
+   To get a list of subclasses, call the Python method
+   :py:meth:`~class.__subclasses__`.
 
    .. versionchanged:: 3.12
 
-      Internals detail: For the static builtin types this field no longer
-      holds the subclasses.  Those are now stored on ``PyInterpreterState``.
-      For static builtin types, this field is re-purposed to hold the index
-      into the type's storage on each interpreter state.
+      For some types, this field does not hold a valid :c:expr:`PyObject*`.
+      The type was changed to :c:expr:`void*` to indicate this.
 
    **Inheritance:**
 
