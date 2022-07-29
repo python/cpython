@@ -177,19 +177,19 @@ _testcapi_VectorCallClass_set_vectorcall_impl(PyObject *self,
 
 PyMethodDef VectorCallClass_methods[] = {
     _TESTCAPI_VECTORCALLCLASS_SET_VECTORCALL_METHODDEF
-    {},
+    {NULL, NULL}
 };
 
 PyMemberDef VectorCallClass_members[] = {
     {"__vectorcalloffset__", T_PYSSIZET, 0/* set later */, READONLY},
-    {},
+    {NULL}
 };
 
 PyType_Slot VectorCallClass_slots[] = {
     {Py_tp_call, VectorCallClass_tpcall},
     {Py_tp_members, VectorCallClass_members},
     {Py_tp_methods, VectorCallClass_methods},
-    {},
+    {0},
 };
 
 /*[clinic input]
