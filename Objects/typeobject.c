@@ -784,8 +784,7 @@ mro_hierarchy(PyTypeObject *type, PyObject *temp)
     Py_XDECREF(old_mro);
 
     // Avoid creating an empty list if there is no subclass
-    res = _PyType_HasSubclasses(type);
-    if (res > 0) {
+    if (_PyType_HasSubclasses(type)) {
         /* Obtain a copy of subclasses list to iterate over.
 
            Otherwise type->tp_subclasses might be altered
@@ -4314,7 +4313,6 @@ clear_static_tp_subclasses(PyTypeObject *type)
 {
     PyObject *subclasses = lookup_subclasses(type);
     if (subclasses == NULL) {
-        PyErr_Clear();
         return;
     }
 
@@ -4438,7 +4436,7 @@ _PyType_HasSubclasses(PyTypeObject *self)
         return 0;
     }
     if (lookup_subclasses(self) == NULL) {
-        return PyErr_Occurred() ? -1 : 0;
+        return 0;
     }
     return 1;
 }
@@ -4453,9 +4451,6 @@ _PyType_GetSubclasses(PyTypeObject *self)
 
     PyObject *subclasses = lookup_subclasses(self);  // borrowed ref
     if (subclasses == NULL) {
-        if (PyErr_Occurred()) {
-            return NULL;
-        }
         return list;
     }
     assert(PyDict_CheckExact(subclasses));
@@ -6880,9 +6875,6 @@ add_subclass(PyTypeObject *base, PyTypeObject *type)
     // arbitrary Python code and so modify base->tp_subclasses.
     PyObject *subclasses = lookup_subclasses(base);
     if (subclasses == NULL) {
-        if (PyErr_Occurred()) {
-            return -1;
-        }
         subclasses = init_subclasses(base);
         if (subclasses == NULL) {
             Py_DECREF(key);
@@ -6958,7 +6950,6 @@ remove_subclass(PyTypeObject *base, PyTypeObject *type)
 {
     PyObject *subclasses = lookup_subclasses(base);  // borrowed ref
     if (subclasses == NULL) {
-        PyErr_Clear();
         return;
     }
     assert(PyDict_CheckExact(subclasses));
@@ -9047,7 +9038,7 @@ recurse_down_subclasses(PyTypeObject *type, PyObject *attr_name,
     // tp_subclasses.
     PyObject *subclasses = lookup_subclasses(type);  // borrowed ref
     if (subclasses == NULL) {
-        return PyErr_Occurred() ? -1 : 0;
+        return 0;
     }
     assert(PyDict_CheckExact(subclasses));
 
