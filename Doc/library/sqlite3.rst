@@ -974,7 +974,7 @@ Cursor Objects
    or by using any of the :ref:`connection shortcut methods
    <sqlite3-connection-shortcuts>`.
 
-   Cursors objects are :term:`iterators <iterator>`,
+   Cursor objects are :term:`iterators <iterator>`,
    meaning that if you :meth:`~Cursor.execute` a ``SELECT`` query,
    you can simply iterate over the cursor to fetch the resulting rows::
 
