@@ -161,7 +161,7 @@ code.
 static PyObject *
 fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
                  PyObject *ob_arg, int mutate_arg)
-/*[clinic end generated code: output=7f7f5840c65991be input=967b4a4cbeceb0a8]*/
+/*[clinic end generated code: output=7f7f5840c65991be input=6b70e7e5a8df40fa]*/
 {
     /* We use the unsigned non-checked 'I' format for the 'code' parameter
        because the system expects it to be a 32bit bit field value
