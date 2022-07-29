@@ -1009,6 +1009,7 @@ Cursor Objects
 
       Example::
 
+         # cur is an sqlite3.Cursor object
          cur.executescript("""
              begin;
              create table person(firstname, lastname, age);
