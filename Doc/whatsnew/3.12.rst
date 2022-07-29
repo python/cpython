@@ -413,6 +413,13 @@ Porting to Python 3.12
   ``Py_UNICODE*`` based format (e.g. ``u``, ``Z``) anymore. Please migrate
   to other formats for Unicode like ``s``, ``z``, ``es``, and ``U``.
 
+* ``tp_weaklist`` for all static builtin types is always ``NULL``.
+  This is an internal-only field on ``PyTypeObject``
+  but we're pointing out the change in case someone happens to be
+  accessing the field directly anyway.  To avoid breakage, consider
+  using the existing public C-API instead, or, if necessary, the
+  (internal-only) ``_PyObject_GET_WEAKREFS_LISTPTR()`` macro.
+
 Deprecated
 ----------
 

@@ -220,6 +220,12 @@ extern void _Py_PrintReferenceAddresses(FILE *);
 static inline PyObject **
 _PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
 {
+    if (PyType_Check(op) &&
+            ((PyTypeObject *)op)->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        static_builtin_state *state = _PyStaticType_GetState(
+                                                        (PyTypeObject *)op);
+        return _PyStaticType_GET_WEAKREFS_LISTPTR(state);
+    }
     Py_ssize_t offset = Py_TYPE(op)->tp_weaklistoffset;
     return (PyObject **)((char *)op + offset);
 }
