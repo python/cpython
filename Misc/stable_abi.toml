@@ -924,6 +924,8 @@
     added = '3.2'
 [function.PyLong_AsUnsignedLong]
     added = '3.2'
+[function.PyLong_AsUintptr_t]
+    added = '3.12'
 [function.PyLong_AsUnsignedLongLong]
     added = '3.2'
 [function.PyLong_AsUnsignedLongLongMask]
@@ -942,6 +944,8 @@
     added = '3.2'
 [function.PyLong_FromSsize_t]
     added = '3.2'
+[function.PyLong_FromUintptr_t]
+    added = '3.12'
 [function.PyLong_FromString]
     added = '3.2'
 [function.PyLong_FromUnsignedLong]

@@ -1,0 +1,2 @@
+Added :c:func:`PyLong_AsUintptr_t` and :c:func:`PyLong_FromUintptr_t`. Patch
+by Oleg Iarygin.

@@ -1169,6 +1169,9 @@ PyLong_AsSize_t:PyObject*:pylong:0:
 PyLong_AsSsize_t:Py_ssize_t:::
 PyLong_AsSsize_t:PyObject*:pylong:0:
 
+PyLong_AsUintptr_t:uintptr_t:::
+PyLong_AsUintptr_t:PyObject*:pylong:0:
+
 PyLong_AsUnsignedLong:unsigned long:::
 PyLong_AsUnsignedLong:PyObject*:pylong:0:
 
@@ -1212,6 +1215,9 @@ PyLong_FromString:PyObject*::+1:
 PyLong_FromString:const char*:str::
 PyLong_FromString:char**:pend::
 PyLong_FromString:int:base::
+
+PyLong_FromUintptr_t:PyObject*::+1:
+PyLong_FromUintptr_t:uintptr_t:v::
 
 PyLong_FromUnicodeObject:PyObject*::+1:
 PyLong_FromUnicodeObject:PyObject*:u:0:

@@ -732,6 +732,15 @@ PyLong_AsSize_t(PyObject *vv)
     return x;
 }
 
+/* Get a C uintptr_t from an int object. Returns (uintptr_t)-1 and sets
+   an error condition if overflow occurs. */
+
+uintptr_t
+PyLong_AsUintptr_t(PyObject *vv)
+{
+    return (uintptr_t)PyLong_AsVoidPtr(vv);
+}
+
 /* Get a C unsigned long int from an int object, ignoring the high bits.
    Returns -1 and sets an error condition if an error occurs. */
 
@@ -1220,6 +1229,14 @@ PyLong_FromSsize_t(Py_ssize_t ival)
         }
     }
     return (PyObject *)v;
+}
+
+/* Create a new int object from a C uintptr_t. */
+
+PyObject *
+PyLong_FromUintptr_t(uintptr_t ival)
+{
+    return PyLong_FromVoidPtr((void *)ival);
 }
 
 /* Get a C long long int from an int object or any object that has an

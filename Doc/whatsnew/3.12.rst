@@ -403,6 +403,10 @@ New Features
   an additional metaclass argument.
   (Contributed by Wenzel Jakob in :gh:`93012`.)
 
+* Added limited C API :c:func:`PyLong_AsUintptr_t` and
+  :c:func:`PyLong_FromUintptr_t`.
+  (Contributed by Oleg Iarygin in :gh:`95417`.)
+
 Porting to Python 3.12
 ----------------------
 

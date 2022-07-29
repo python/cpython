@@ -62,6 +62,11 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Return a new :c:type:`PyLongObject` object from a C :c:type:`size_t`, or
    ``NULL`` on failure.
 
+.. c:function:: PyObject* PyLong_FromUintptr_t(uintptr_t p)
+
+   Return a new :c:type:`PyLongObject` object from a C :c:type:`uintptr_t`, or
+   ``NULL`` on failure.
+
 
 .. c:function:: PyObject* PyLong_FromLongLong(long long v)
 
@@ -239,6 +244,18 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    :c:type:`size_t`.
 
    Returns ``(size_t)-1`` on error.
+   Use :c:func:`PyErr_Occurred` to disambiguate.
+
+
+.. c:function:: uintptr_t PyLong_AsUintptr_t(PyObject *pylong)
+
+   Return a a C :c:type:`uintptr_t` representation of *pylong*.  *pylong*
+   must be an instance of :c:type:`PyLongObject`.
+
+   Raise :exc:`OverflowError` if the value of *pylong* is out of range for a
+   :c:type:`uintptr_t`.
+
+   Returns ``(uintptr_t)-1`` on error.
    Use :c:func:`PyErr_Occurred` to disambiguate.
 
 
