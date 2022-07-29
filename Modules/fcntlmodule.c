@@ -40,9 +40,8 @@ as constants in the fcntl module, using the same names as used in
 the relevant C header files.  The argument arg is optional, and
 defaults to 0; it may be an int or a string.  If arg is given as a string,
 the return value of fcntl is a string of that length, containing the
-resulting value put in the arg buffer by the operating system.  The length
-of the arg string is not allowed to exceed 1024 bytes.  If the arg given
-is an integer or if none is specified, the result value is an integer
+resulting value put in the arg buffer by the operating system. If the arg
+given is an integer or if none is specified, the result value is an integer
 corresponding to the return value of the fcntl call in the C code.
 [clinic start generated code]*/
 
@@ -54,7 +53,6 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
     int ret;
     char *str;
     Py_ssize_t len;
-    //char buf[1024];
     int async_err = 0;
 
     if (PySys_Audit("fcntl.fcntl", "iiO", fd, code, arg ? arg : Py_None) < 0) {
@@ -65,22 +63,11 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
         int parse_result;
 
         if (PyArg_Parse(arg, "s#", &str, &len)) {
-            /*if ((size_t)len > sizeof buf) {
-                PyErr_SetString(PyExc_ValueError,
-                                "fcntl string arg too long");
-                return NULL;
-            }*/
-            char* buf = malloc((size_t)len);
-            PyObject* buf_ret;
-            if(buf == NULL) {
-                PyErr_NoMemory();
-                return NULL;
-            }
-            /*PyObject *o = PyBytes_FromStringAndSize(NULL, len);
+            PyObject *o = PyBytes_FromStringAndSize(NULL, len);
             if (o == NULL) {
                 return NULL;
             }
-            char *buf = PyBytes_AS_STRING(o);*/
+            char *buf = PyBytes_AS_STRING(o);
 
             memcpy(buf, str, len);
             do {
@@ -89,13 +76,9 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
                 Py_END_ALLOW_THREADS
             } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
             if (ret < 0) {
-                free(buf);
                 return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
             }
-            //return PyBytes_FromStringAndSize(buf, len);
-            buf_ret = PyBytes_FromStringAndSize(buf, len);
-            free(buf);
-            return(buf_ret);
+            return PyBytes_FromStringAndSize(buf, len);
         }
 
         PyErr_Clear();
@@ -151,8 +134,7 @@ the behavior is as if a string had been passed.
 If the argument is an immutable buffer (most likely a string) then a copy
 of the buffer is passed to the operating system and the return value is a
 string of the same length containing whatever the operating system put in
-the buffer.  The length of the arg buffer in this case is not allowed to
-exceed 1024 bytes.
+the buffer.
 
 If the arg given is an integer or if none is specified, the result value is
 an integer corresponding to the return value of the ioctl call in the C
@@ -164,7 +146,6 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
                  PyObject *ob_arg, int mutate_arg)
 /*[clinic end generated code: output=7f7f5840c65991be input=967b4a4cbeceb0a8]*/
 {
-//#define IOCTL_BUFSZ 1024
     /* We use the unsigned non-checked 'I' format for the 'code' parameter
        because the system expects it to be a 32bit bit field value
        regardless of it being passed as an int or unsigned long on
@@ -180,7 +161,6 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
     Py_buffer pstr;
     char *str;
     Py_ssize_t len;
-    //char buf[IOCTL_BUFSZ+1];  /* argument plus NUL byte */
 
     if (PySys_Audit("fcntl.ioctl", "iIO", fd, code,
                     ob_arg ? ob_arg : Py_None) < 0) {
@@ -189,7 +169,6 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
 
     if (ob_arg != NULL) {
         if (PyArg_Parse(ob_arg, "w*:ioctl", &pstr)) {
-            char *arg;
             str = pstr.buf;
             len = pstr.len;
 
@@ -199,38 +178,13 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
             }
             char *buf = PyBytes_AS_STRING(o);
 
+            memcpy(buf, str, len);
+
+            Py_BEGIN_ALLOW_THREADS /* think array.resize() */
+            ret = ioctl(fd, code, buf);
+            Py_END_ALLOW_THREADS
+
             if (mutate_arg) {
-                /*if (len <= IOCTL_BUFSZ) */{
-                    memcpy(buf, str, len);
-                    buf[len] = '\0';
-                    arg = buf;
-                }
-                /*else {
-                    arg = str;
-                }*/
-            }
-            else {
-                /*if (len > IOCTL_BUFSZ) {
-                    PyBuffer_Release(&pstr);
-                    PyErr_SetString(PyExc_ValueError,
-                        "ioctl string arg too long");
-                    return NULL;
-                }
-                else */{
-                    memcpy(buf, str, len);
-                    buf[len] = '\0';
-                    arg = buf;
-                }
-            }
-            if (buf == arg) {
-                Py_BEGIN_ALLOW_THREADS /* think array.resize() */
-                ret = ioctl(fd, code, arg);
-                Py_END_ALLOW_THREADS
-            }
-            else {
-                ret = ioctl(fd, code, arg);
-            }
-            if (mutate_arg /*&& (len <= IOCTL_BUFSZ)*/) {
                 memcpy(str, buf, len);
             }
             PyBuffer_Release(&pstr); /* No further access to str below this point */
@@ -250,12 +204,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
         if (PyArg_Parse(ob_arg, "s*:ioctl", &pstr)) {
             str = pstr.buf;
             len = pstr.len;
-            /*if (len > IOCTL_BUFSZ) {
-                PyBuffer_Release(&pstr);
-                PyErr_SetString(PyExc_ValueError,
-                                "ioctl string arg too long");
-                return NULL;
-            }*/
+
             PyObject *o = PyBytes_FromStringAndSize(NULL, len);
             if (o == NULL) {
                 return NULL;
@@ -263,7 +212,6 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
             char *buf = PyBytes_AS_STRING(o);
 
             memcpy(buf, str, len);
-            buf[len] = '\0';
             Py_BEGIN_ALLOW_THREADS
             ret = ioctl(fd, code, buf);
             Py_END_ALLOW_THREADS
