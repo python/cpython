@@ -1,3 +1,4 @@
-Split `clear_weakref` into two functions: `clear_weakref`
-and `remove_weakref`. Abstracts `remove_weakref` with
-`remove_weakref_from_referent`. Patch by Robert O'Shea.
+Split ``clear_weakref`` into two functions: ``clear_weakref``
+and ``remove_weakref``. Abstracts ``remove_weakref`` with
+``remove_weakref_from_referent`` in weakrefobject.c.
+Patch by Robert O'Shea.
