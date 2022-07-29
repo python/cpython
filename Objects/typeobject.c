@@ -127,6 +127,8 @@ static_builtin_state_init(PyTypeObject *self)
 
     static_builtin_state *state = static_builtin_state_get(interp, self);
     state->type = self;
+    /* state->tp_weaklist is left NULL until insert_head() or insert_after()
+       (in weakrefobject.c) sets it. */
 }
 
 static void
@@ -138,6 +140,7 @@ static_builtin_state_clear(PyTypeObject *self)
 
     static_builtin_state *state = static_builtin_state_get(interp, self);
     state->type = NULL;
+    assert(state->tp_weaklist == NULL);  // It was already cleared out.
     static_builtin_index_clear(self);
 
     assert(interp->types.num_builtins_initialized > 0);
@@ -502,6 +505,8 @@ static PyMemberDef type_members[] = {
     {"__basicsize__", T_PYSSIZET, offsetof(PyTypeObject,tp_basicsize),READONLY},
     {"__itemsize__", T_PYSSIZET, offsetof(PyTypeObject, tp_itemsize), READONLY},
     {"__flags__", T_ULONG, offsetof(PyTypeObject, tp_flags), READONLY},
+    /* Note that this value is misleading for static builtin types,
+       since the memory at this offset will always be NULL. */
     {"__weakrefoffset__", T_PYSSIZET,
      offsetof(PyTypeObject, tp_weaklistoffset), READONLY},
     {"__base__", T_OBJECT, offsetof(PyTypeObject, tp_base), READONLY},
@@ -4353,6 +4358,7 @@ _PyStaticType_Dealloc(PyTypeObject *type)
     type->tp_flags &= ~Py_TPFLAGS_READY;
 
     if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        _PyStaticType_ClearWeakRefs(type);
         static_builtin_state_clear(type);
         /* We leave _Py_TPFLAGS_STATIC_BUILTIN set on tp_flags. */
     }
