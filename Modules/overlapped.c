@@ -32,27 +32,33 @@
 #define T_HANDLE T_POINTER
 
 /*[python input]
-class OVERLAPPED_converter(CConverter):
-    type = 'OVERLAPPED *'
+class pointer_converter(CConverter):
     format_unit = '"F_POINTER"'
 
-class HANDLE_converter(CConverter):
+    def parse_arg(self, argname, displayname):
+        return """
+            {paramname} = PyLong_AsVoidPtr({argname});
+            if (!{paramname} && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """.format(argname=argname, paramname=self.parser_name)
+
+class OVERLAPPED_converter(pointer_converter):
+    type = 'OVERLAPPED *'
+
+class HANDLE_converter(pointer_converter):
     type = 'HANDLE'
-    format_unit = '"F_HANDLE"'
 
-class ULONG_PTR_converter(CConverter):
+class ULONG_PTR_converter(pointer_converter):
     type = 'ULONG_PTR'
-    format_unit = '"F_ULONG_PTR"'
 
-class DWORD_converter(CConverter):
+class DWORD_converter(unsigned_long_converter):
     type = 'DWORD'
-    format_unit = 'k'
 
-class BOOL_converter(CConverter):
+class BOOL_converter(int_converter):
     type = 'BOOL'
-    format_unit = 'i'
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=83bb8c2c2514f2a8]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=a19133a9e14fae9c]*/
 
 /*[clinic input]
 module _overlapped
@@ -104,18 +110,6 @@ typedef struct {
         } read_from_into;
     };
 } OverlappedObject;
-
-typedef struct {
-    PyTypeObject *overlapped_type;
-} OverlappedState;
-
-static inline OverlappedState*
-overlapped_get_state(PyObject *module)
-{
-    void *state = PyModule_GetState(module);
-    assert(state != NULL);
-    return (OverlappedState *)state;
-}
 
 
 static inline void
@@ -1996,28 +1990,6 @@ static PyMethodDef overlapped_functions[] = {
     {NULL}
 };
 
-static int
-overlapped_traverse(PyObject *module, visitproc visit, void *arg)
-{
-    OverlappedState *state = overlapped_get_state(module);
-    Py_VISIT(state->overlapped_type);
-    return 0;
-}
-
-static int
-overlapped_clear(PyObject *module)
-{
-    OverlappedState *state = overlapped_get_state(module);
-    Py_CLEAR(state->overlapped_type);
-    return 0;
-}
-
-static void
-overlapped_free(void *module)
-{
-    overlapped_clear((PyObject *)module);
-}
-
 #define WINAPI_CONSTANT(fmt, con) \
     do { \
         PyObject *value = Py_BuildValue(fmt, con); \
@@ -2045,14 +2017,15 @@ overlapped_exec(PyObject *module)
         return -1;
     }
 
-    OverlappedState *st = overlapped_get_state(module);
-    st->overlapped_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+    PyTypeObject *overlapped_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         module, &overlapped_type_spec, NULL);
-    if (st->overlapped_type == NULL) {
+    if (overlapped_type == NULL) {
         return -1;
     }
 
-    if (PyModule_AddType(module, st->overlapped_type) < 0) {
+    int rc = PyModule_AddType(module, overlapped_type);
+    Py_DECREF(overlapped_type);
+    if (rc < 0) {
         return -1;
     }
 
@@ -2077,14 +2050,10 @@ static PyModuleDef_Slot overlapped_slots[] = {
 };
 
 static struct PyModuleDef overlapped_module = {
-    PyModuleDef_HEAD_INIT,
+    .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_overlapped",
-    .m_size = sizeof(OverlappedState),
     .m_methods = overlapped_functions,
     .m_slots = overlapped_slots,
-    .m_traverse = overlapped_traverse,
-    .m_clear = overlapped_clear,
-    .m_free = overlapped_free
 };
 
 PyMODINIT_FUNC

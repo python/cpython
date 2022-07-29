@@ -34,7 +34,7 @@ PyAPI_FUNC(int) _PyArg_NoPositional(const char *funcname, PyObject *args);
 #define _PyArg_NoPositional(funcname, args) \
     ((args) == NULL || _PyArg_NoPositional((funcname), (args)))
 
-#define _Py_ANY_VARARGS(n) (n == PY_SSIZE_T_MAX)
+#define _Py_ANY_VARARGS(n) ((n) == PY_SSIZE_T_MAX)
 
 PyAPI_FUNC(void) _PyArg_BadArgument(const char *, const char *, const char *, PyObject *);
 PyAPI_FUNC(int) _PyArg_CheckPositional(const char *, Py_ssize_t,
@@ -100,7 +100,7 @@ PyAPI_FUNC(PyObject * const *) _PyArg_UnpackKeywordsWithVararg(
 
 #define _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, parser, minpos, maxpos, minkw, buf) \
     (((minkw) == 0 && (kwargs) == NULL && (kwnames) == NULL && \
-      (minpos) <= (nargs) && (nargs) <= (maxpos) && args != NULL) ? (args) : \
+      (minpos) <= (nargs) && (nargs) <= (maxpos) && (args) != NULL) ? (args) : \
      _PyArg_UnpackKeywords((args), (nargs), (kwargs), (kwnames), (parser), \
                            (minpos), (maxpos), (minkw), (buf)))
 

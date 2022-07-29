@@ -496,38 +496,51 @@ class DateTimeTests(unittest.TestCase):
 
     def test_sqlite_date(self):
         d = sqlite.Date(2004, 2, 14)
-        self.cur.execute("insert into test(d) values (?)", (d,))
+        with self.assertWarnsRegex(DeprecationWarning, "adapter") as cm:
+            self.cur.execute("insert into test(d) values (?)", (d,))
+        self.assertEqual(cm.filename, __file__)
         self.cur.execute("select d from test")
-        d2 = self.cur.fetchone()[0]
+        with self.assertWarnsRegex(DeprecationWarning, "converter") as cm:
+            d2 = self.cur.fetchone()[0]
+        self.assertEqual(cm.filename, __file__)
         self.assertEqual(d, d2)
 
     def test_sqlite_timestamp(self):
         ts = sqlite.Timestamp(2004, 2, 14, 7, 15, 0)
-        self.cur.execute("insert into test(ts) values (?)", (ts,))
+        with self.assertWarnsRegex(DeprecationWarning, "adapter") as cm:
+            self.cur.execute("insert into test(ts) values (?)", (ts,))
+        self.assertEqual(cm.filename, __file__)
         self.cur.execute("select ts from test")
-        ts2 = self.cur.fetchone()[0]
+        with self.assertWarnsRegex(DeprecationWarning, "converter") as cm:
+            ts2 = self.cur.fetchone()[0]
+        self.assertEqual(cm.filename, __file__)
         self.assertEqual(ts, ts2)
 
     def test_sql_timestamp(self):
         now = datetime.datetime.utcnow()
         self.cur.execute("insert into test(ts) values (current_timestamp)")
         self.cur.execute("select ts from test")
-        ts = self.cur.fetchone()[0]
+        with self.assertWarnsRegex(DeprecationWarning, "converter"):
+            ts = self.cur.fetchone()[0]
         self.assertEqual(type(ts), datetime.datetime)
         self.assertEqual(ts.year, now.year)
 
     def test_date_time_sub_seconds(self):
         ts = sqlite.Timestamp(2004, 2, 14, 7, 15, 0, 500000)
-        self.cur.execute("insert into test(ts) values (?)", (ts,))
+        with self.assertWarnsRegex(DeprecationWarning, "adapter"):
+            self.cur.execute("insert into test(ts) values (?)", (ts,))
         self.cur.execute("select ts from test")
-        ts2 = self.cur.fetchone()[0]
+        with self.assertWarnsRegex(DeprecationWarning, "converter"):
+            ts2 = self.cur.fetchone()[0]
         self.assertEqual(ts, ts2)
 
     def test_date_time_sub_seconds_floating_point(self):
         ts = sqlite.Timestamp(2004, 2, 14, 7, 15, 0, 510241)
-        self.cur.execute("insert into test(ts) values (?)", (ts,))
+        with self.assertWarnsRegex(DeprecationWarning, "adapter"):
+            self.cur.execute("insert into test(ts) values (?)", (ts,))
         self.cur.execute("select ts from test")
-        ts2 = self.cur.fetchone()[0]
+        with self.assertWarnsRegex(DeprecationWarning, "converter"):
+            ts2 = self.cur.fetchone()[0]
         self.assertEqual(ts, ts2)
 
 

@@ -1992,7 +1992,8 @@ _PyFloat_InitTypes(PyInterpreterState *interp)
 
     /* Init float info */
     if (FloatInfoType.tp_name == NULL) {
-        if (PyStructSequence_InitType2(&FloatInfoType, &floatinfo_desc) < 0) {
+        if (_PyStructSequence_InitBuiltin(&FloatInfoType,
+                                          &floatinfo_desc) < 0) {
             return _PyStatus_ERR("can't init float info type");
         }
     }

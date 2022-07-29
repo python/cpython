@@ -580,6 +580,9 @@ parseCommandLine(SearchInfo *search)
             break;
         }
     }
+    if (tail == search->originalCmdLine && tail[0] == L'"') {
+        ++tail;
+    }
     // Without special cases, we can now fill in the search struct
     int tailLen = (int)(end ? (end - tail) : wcsnlen_s(tail, MAXLEN));
     search->executableLength = -1;
@@ -758,7 +761,7 @@ _readIni(const wchar_t *section, const wchar_t *settingName, wchar_t *buffer, in
         n = GetPrivateProfileStringW(section, settingName, NULL, buffer, bufferLength, iniPath);
         if (n) {
             debug(L"# Found %s in %s\n", settingName, iniPath);
-            return true;
+            return n;
         } else if (GetLastError() == ERROR_FILE_NOT_FOUND) {
             debug(L"# Did not find file %s\n", iniPath);
         } else {
@@ -874,7 +877,9 @@ checkShebang(SearchInfo *search)
     while (--bytesRead > 0 && *++b != '\r' && *b != '\n') { }
     wchar_t *shebang;
     int shebangLength;
-    int exitCode = _decodeShebang(search, start, (int)(b - start + 1), onlyUtf8, &shebang, &shebangLength);
+    // We add 1 when bytesRead==0, as in that case we hit EOF and b points
+    // to the last character in the file, not the newline
+    int exitCode = _decodeShebang(search, start, (int)(b - start + (bytesRead == 0)), onlyUtf8, &shebang, &shebangLength);
     if (exitCode) {
         return exitCode;
     }
@@ -941,13 +946,17 @@ checkDefaults(SearchInfo *search)
 
     // If tag is only a major version number, expand it from the environment
     // or an ini file
-    const wchar_t *settingName = NULL;
+    const wchar_t *iniSettingName = NULL;
+    const wchar_t *envSettingName = NULL;
     if (!search->tag || !search->tagLength) {
-        settingName = L"py_python";
+        iniSettingName = L"python";
+        envSettingName = L"py_python";
     } else if (0 == wcsncmp(search->tag, L"3", search->tagLength)) {
-        settingName = L"py_python3";
+        iniSettingName = L"python3";
+        envSettingName = L"py_python3";
     } else if (0 == wcsncmp(search->tag, L"2", search->tagLength)) {
-        settingName = L"py_python2";
+        iniSettingName = L"python2";
+        envSettingName = L"py_python2";
     } else {
         debug(L"# Cannot select defaults for tag '%.*s'\n", search->tagLength, search->tag);
         return 0;
@@ -955,11 +964,11 @@ checkDefaults(SearchInfo *search)
 
     // First, try to read an environment variable
     wchar_t buffer[MAXLEN];
-    int n = GetEnvironmentVariableW(settingName, buffer, MAXLEN);
+    int n = GetEnvironmentVariableW(envSettingName, buffer, MAXLEN);
 
     // If none found, check in our two .ini files instead
     if (!n) {
-        n = _readIni(L"defaults", settingName, buffer, MAXLEN);
+        n = _readIni(L"defaults", iniSettingName, buffer, MAXLEN);
     }
 
     if (n) {

@@ -149,6 +149,13 @@ And::
    An :class:`Executor` subclass that uses a pool of at most *max_workers*
    threads to execute calls asynchronously.
 
+   All threads enqueued to ``ThreadPoolExecutor`` will be joined before the
+   interpreter can exit. Note that the exit handler which does this is
+   executed *before* any exit handlers added using `atexit`. This means
+   exceptions in the main thread must be caught and handled in order to
+   signal threads to exit gracefully. For this reason, it is recommended
+   that ``ThreadPoolExecutor`` not be used for long-running tasks.
+
    *initializer* is an optional callable that is called at the start of
    each worker thread; *initargs* is a tuple of arguments passed to the
    initializer.  Should *initializer* raise an exception, all currently
@@ -257,7 +264,7 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    replaced with a fresh worker process. By default *max_tasks_per_child* is
    ``None`` which means worker processes will live as long as the pool. When
    a max is specified, the "spawn" multiprocessing start method will be used by
-   default in absense of a *mp_context* parameter. This feature is incompatible
+   default in absence of a *mp_context* parameter. This feature is incompatible
    with the "fork" start method.
 
    .. versionchanged:: 3.3

@@ -1383,12 +1383,16 @@ if hasattr(http.client, 'HTTPSConnection'):
 
         def __init__(self, debuglevel=0, context=None, check_hostname=None):
             AbstractHTTPHandler.__init__(self, debuglevel)
+            if context is None:
+                http_version = http.client.HTTPSConnection._http_vsn
+                context = http.client._create_https_context(http_version)
+            if check_hostname is not None:
+                context.check_hostname = check_hostname
             self._context = context
-            self._check_hostname = check_hostname
 
         def https_open(self, req):
             return self.do_open(http.client.HTTPSConnection, req,
-                context=self._context, check_hostname=self._check_hostname)
+                                context=self._context)
 
         https_request = AbstractHTTPHandler.do_request_
 
@@ -1986,9 +1990,17 @@ class URLopener:
 
     if _have_ssl:
         def _https_connection(self, host):
-            return http.client.HTTPSConnection(host,
-                                           key_file=self.key_file,
-                                           cert_file=self.cert_file)
+            if self.key_file or self.cert_file:
+                http_version = http.client.HTTPSConnection._http_vsn
+                context = http.client._create_https_context(http_version)
+                context.load_cert_chain(self.cert_file, self.key_file)
+                # cert and key file means the user wants to authenticate.
+                # enable TLS 1.3 PHA implicitly even for custom contexts.
+                if context.post_handshake_auth is not None:
+                    context.post_handshake_auth = True
+            else:
+                context = None
+            return http.client.HTTPSConnection(host, context=context)
 
         def open_https(self, url, data=None):
             """Use HTTPS protocol."""

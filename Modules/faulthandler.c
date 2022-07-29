@@ -5,8 +5,6 @@
 #include "pycore_signal.h"        // Py_NSIG
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads
 
-#include "frameobject.h"
-
 #include <object.h>
 #include <signal.h>
 #include <signal.h>

@@ -38,7 +38,7 @@ accessible via :func:`getgrnam` or :func:`getgrgid`.)
 It defines the following items:
 
 
-.. function:: getgrgid(gid)
+.. function:: getgrgid(id)
 
    Return the group database entry for the given numeric group ID. :exc:`KeyError`
    is raised if the entry asked for cannot be found.

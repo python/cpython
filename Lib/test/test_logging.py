@@ -3603,6 +3603,9 @@ class ConfigDictTest(BaseTest):
                 if qh.listener.queue.empty():
                     break
 
+            # wait until the handler completed its last task
+            qh.listener.queue.join()
+
             with open(fn, encoding='utf-8') as f:
                 data = f.read().splitlines()
             self.assertEqual(data, ['foo', 'bar', 'baz'])
@@ -3805,7 +3808,7 @@ class QueueHandlerTest(BaseTest):
     @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
                          'logging.handlers.QueueListener required for this test')
     def test_queue_listener_with_StreamHandler(self):
-        # Test that traceback only appends once (bpo-34334).
+        # Test that traceback and stack-info only appends once (bpo-34334, bpo-46755).
         listener = logging.handlers.QueueListener(self.queue, self.root_hdlr)
         listener.start()
         try:
@@ -3813,8 +3816,10 @@ class QueueHandlerTest(BaseTest):
         except ZeroDivisionError as e:
             exc = e
             self.que_logger.exception(self.next_message(), exc_info=exc)
+        self.que_logger.error(self.next_message(), stack_info=True)
         listener.stop()
         self.assertEqual(self.stream.getvalue().strip().count('Traceback'), 1)
+        self.assertEqual(self.stream.getvalue().strip().count('Stack'), 1)
 
     @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
                          'logging.handlers.QueueListener required for this test')

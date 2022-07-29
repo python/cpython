@@ -529,7 +529,7 @@ type objects) *must* have the :attr:`ob_size` field.
    ``PyObject_HEAD_INIT`` macro.  For :ref:`statically allocated objects
    <static-types>`, these fields always remain ``NULL``.  For :ref:`dynamically
    allocated objects <heap-types>`, these two fields are used to link the
-   object into a doubly-linked list of *all* live objects on the heap.
+   object into a doubly linked list of *all* live objects on the heap.
 
    This could be used for various debugging purposes; currently the only uses
    are the :func:`sys.getobjects` function and to print the objects that are
@@ -1942,6 +1942,13 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    Weak reference list head, for weak references to this type object.  Not
    inherited.  Internal use only.
 
+   .. versionchanged:: 3.12
+
+      Internals detail: For the static builtin types this is always ``NULL``,
+      even if weakrefs are added.  Instead, the weakrefs for each are stored
+      on ``PyInterpreterState``.  Use the public C-API or the internal
+      ``_PyObject_GET_WEAKREFS_LISTPTR()`` macro to avoid the distinction.
+
    **Inheritance:**
 
    This field is not inherited.
@@ -2523,11 +2530,11 @@ Slot Type typedefs
 
 .. c:type:: PyObject *(*descrgetfunc)(PyObject *, PyObject *, PyObject *)
 
-   See :c:member:`~PyTypeObject.tp_descrget`.
+   See :c:member:`~PyTypeObject.tp_descr_get`.
 
 .. c:type:: int (*descrsetfunc)(PyObject *, PyObject *, PyObject *)
 
-   See :c:member:`~PyTypeObject.tp_descrset`.
+   See :c:member:`~PyTypeObject.tp_descr_set`.
 
 .. c:type:: Py_hash_t (*hashfunc)(PyObject *)
 
