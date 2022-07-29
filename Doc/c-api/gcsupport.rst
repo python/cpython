@@ -129,6 +129,7 @@ rules:
    The :c:func:`_PyObject_GC_TRACK` and :c:func:`_PyObject_GC_UNTRACK` macros
    have been removed from the public C API.
 
+
 .. c:function:: int _PyObject_VisitManagedDict(PyObject *self, visitproc visit, void *arg)
 
    Visitor function for types with :const:`Py_TPFLAGS_MANAGED_DICT` bit set.
@@ -140,6 +141,7 @@ rules:
    .. warning:: This function is unstable and may change with time.
 
    .. versionadded:: 3.11
+
 
 .. c:function:: void _PyObject_ClearManagedDict(PyObject *self)
 
