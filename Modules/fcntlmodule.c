@@ -77,13 +77,9 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
                 Py_END_ALLOW_THREADS
             } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
             if (ret < 0) {
-                free(buf);
                 return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
             }
-            //return PyBytes_FromStringAndSize(buf, len);
-            buf_ret = PyBytes_FromStringAndSize(buf, len);
-            free(buf);
-            return(buf_ret);
+            return PyBytes_FromStringAndSize(buf, len);
         }
 
         PyErr_Clear();
