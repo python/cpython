@@ -295,6 +295,9 @@ _PyCode_Quicken(PyCodeObject *code)
         else {
             assert(!_PyOpcode_Caches[opcode]);
             switch (opcode) {
+                case EXTENDED_ARG:
+                    _Py_SET_OPCODE(instructions[i], EXTENDED_ARG_QUICK);
+                    break;
                 case JUMP_BACKWARD:
                     _Py_SET_OPCODE(instructions[i], JUMP_BACKWARD_QUICK);
                     break;
@@ -945,6 +948,10 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
                              PyObject *name)
 {
     _PyLoadMethodCache *cache = (_PyLoadMethodCache *)(instr + 1);
+    if (!PyType_CheckExact(owner) || _PyType_Lookup(Py_TYPE(owner), name)) {
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_METACLASS_ATTRIBUTE);
+        return -1;
+    }
     PyObject *descr = NULL;
     DescriptorClassification kind = 0;
     kind = analyze_descriptor((PyTypeObject *)owner, name, &descr, 0);
@@ -957,12 +964,7 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
             return 0;
 #ifdef Py_STATS
         case ABSENT:
-            if (_PyType_Lookup(Py_TYPE(owner), name) != NULL) {
-                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_METACLASS_ATTRIBUTE);
-            }
-            else {
-                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_EXPECTED_ERROR);
-            }
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_EXPECTED_ERROR);
             return -1;
 #endif
         default:

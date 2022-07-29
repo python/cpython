@@ -1142,7 +1142,7 @@ name>`` instead of ``SQL logic error``. Patch by Erlend E. Aasland.
 .. nonce: GK9a0l
 .. section: Library
 
-Install schemes in :mod:`distutils.command.install` are now loaded from
+Install schemes in ``distutils.command.install`` are now loaded from
 :mod:`sysconfig`.
 
 ..
@@ -1152,7 +1152,7 @@ Install schemes in :mod:`distutils.command.install` are now loaded from
 .. nonce: SenEje
 .. section: Library
 
-:mod:`distutils.sysconfig` has been merged to :mod:`sysconfig`.
+``distutils.sysconfig`` has been merged to :mod:`sysconfig`.
 
 ..
 

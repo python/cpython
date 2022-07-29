@@ -338,7 +338,7 @@ always available.
    |                             | memory support.                              |
    +-----------------------------+----------------------------------------------+
 
-   .. availability:: WebAssembly Emscripten platform (*wasm32-emscripten*).
+   .. availability:: Emscripten.
 
    .. versionadded:: 3.11
 
@@ -774,7 +774,7 @@ always available.
    that is deeper than the call stack, :exc:`ValueError` is raised.  The default
    for *depth* is zero, returning the frame at the top of the call stack.
 
-   .. audit-event:: sys._getframe "" sys._getframe
+   .. audit-event:: sys._getframe frame sys._getframe
 
    .. impl-detail::
 
@@ -1158,7 +1158,7 @@ always available.
    line option or the :envvar:`PYTHONSAFEPATH` environment variable?
 
    A program is free to modify this list for its own purposes.  Only strings
-   and bytes should be added to :data:`sys.path`; all other data types are
+   should be added to :data:`sys.path`; all other data types are
    ignored during import.
 
 
@@ -1658,6 +1658,8 @@ always available.
    |                  |                                                         |
    |                  |  * ``'nt'``: Windows threads                            |
    |                  |  * ``'pthread'``: POSIX threads                         |
+   |                  |  * ``'pthread-stubs'``: stub POSIX threads              |
+   |                  |    (on WebAssembly platforms without threading support) |
    |                  |  * ``'solaris'``: Solaris threads                       |
    +------------------+---------------------------------------------------------+
    | :const:`lock`    | Name of the lock implementation:                        |

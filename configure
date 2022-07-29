@@ -632,6 +632,8 @@ MODULE__CTYPES_TEST_FALSE
 MODULE__CTYPES_TEST_TRUE
 MODULE__XXTESTFUZZ_FALSE
 MODULE__XXTESTFUZZ_TRUE
+MODULE_XXSUBTYPE_FALSE
+MODULE_XXSUBTYPE_TRUE
 MODULE__TESTMULTIPHASE_FALSE
 MODULE__TESTMULTIPHASE_TRUE
 MODULE__TESTIMPORTMULTIPLE_FALSE
@@ -786,12 +788,10 @@ MODULE_TIME_FALSE
 MODULE_TIME_TRUE
 MODULE__IO_FALSE
 MODULE__IO_TRUE
-MODULES_SETUP_STDLIB
 MODULE_BUILDTYPE
 TEST_MODULES
 LIBB2_LIBS
 LIBB2_CFLAGS
-OPENSSL_RPATH
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
 OPENSSL_INCLUDES
@@ -852,13 +852,11 @@ LIBSQLITE3_CFLAGS
 LIBNSL_LIBS
 LIBNSL_CFLAGS
 LIBMPDEC_INTERNAL
-LIBMPDEC_LDFLAGS
 LIBMPDEC_CFLAGS
 MODULE__CTYPES_MALLOC_CLOSURE
 LIBFFI_LIBS
 LIBFFI_CFLAGS
 LIBEXPAT_INTERNAL
-LIBEXPAT_LDFLAGS
 LIBEXPAT_CFLAGS
 TZPATH
 LIBUUID_LIBS
@@ -3084,6 +3082,10 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
+
+
 
 
 
@@ -6340,7 +6342,11 @@ case $host/$ac_cv_cc_name in #(
     PY_SUPPORT_TIER=3 ;; #(
     s390x-*-linux-gnu/gcc) :
     PY_SUPPORT_TIER=3 ;; #(
-        x86_64-*-freebsd*/clang) :
+    wasm32-unknown-emscripten/clang) :
+    PY_SUPPORT_TIER=3 ;; #(
+    wasm32-unknown-wasi/clang) :
+    PY_SUPPORT_TIER=3 ;; #(
+    x86_64-*-freebsd*/clang) :
     PY_SUPPORT_TIER=3 ;; #(
   *) :
       PY_SUPPORT_TIER=0
@@ -9052,7 +9058,7 @@ for ac_header in  \
   alloca.h asm/types.h bluetooth.h conio.h crypt.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
   ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/memfd.h \
   linux/random.h linux/soundcard.h \
-  linux/tipc.h linux/wait.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
+  linux/tipc.h linux/wait.h netdb.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
   sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/poll.h \
@@ -11265,7 +11271,15 @@ fi
 	echo "$LIBUUID_PKG_ERRORS" >&5
 
 
-      for ac_header in uuid/uuid.h
+      save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+        CPPFLAGS="$CPPFLAGS $LIBUUID_CFLAGS"
+        LDFLAGS="$LDFLAGS $LIBUUID_LIBS"
+        for ac_header in uuid/uuid.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
 if test "x$ac_cv_header_uuid_uuid_h" = xyes; then :
@@ -11273,11 +11287,7 @@ if test "x$ac_cv_header_uuid_uuid_h" = xyes; then :
 #define HAVE_UUID_UUID_H 1
 _ACEOF
 
-        save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
+          py_check_lib_save_LIBS=$LIBS
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time in -luuid" >&5
 $as_echo_n "checking for uuid_generate_time in -luuid... " >&6; }
 if ${ac_cv_lib_uuid_uuid_generate_time+:} false; then :
@@ -11318,20 +11328,10 @@ if test "x$ac_cv_lib_uuid_uuid_generate_time" = xyes; then :
   have_uuid=yes
 fi
 
+LIBS=$py_check_lib_save_LIBS
 
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
-
-        save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time_safe in -luuid" >&5
+          py_check_lib_save_LIBS=$LIBS
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time_safe in -luuid" >&5
 $as_echo_n "checking for uuid_generate_time_safe in -luuid... " >&6; }
 if ${ac_cv_lib_uuid_uuid_generate_time_safe+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -11368,19 +11368,18 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_uuid_uuid_generate_time_safe" >&5
 $as_echo "$ac_cv_lib_uuid_uuid_generate_time_safe" >&6; }
 if test "x$ac_cv_lib_uuid_uuid_generate_time_safe" = xyes; then :
-
-            have_uuid=yes
+  have_uuid=yes
             $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
 
 
 fi
 
+LIBS=$py_check_lib_save_LIBS
 
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
 
+fi
+
+done
 
         if test "x$have_uuid" = xyes; then :
 
@@ -11389,9 +11388,11 @@ LIBS=$save_LIBS
 
 fi
 
-fi
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
 
-done
 
 
 
@@ -11399,7 +11400,15 @@ elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-      for ac_header in uuid/uuid.h
+      save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+        CPPFLAGS="$CPPFLAGS $LIBUUID_CFLAGS"
+        LDFLAGS="$LDFLAGS $LIBUUID_LIBS"
+        for ac_header in uuid/uuid.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
 if test "x$ac_cv_header_uuid_uuid_h" = xyes; then :
@@ -11407,11 +11416,7 @@ if test "x$ac_cv_header_uuid_uuid_h" = xyes; then :
 #define HAVE_UUID_UUID_H 1
 _ACEOF
 
-        save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
+          py_check_lib_save_LIBS=$LIBS
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time in -luuid" >&5
 $as_echo_n "checking for uuid_generate_time in -luuid... " >&6; }
 if ${ac_cv_lib_uuid_uuid_generate_time+:} false; then :
@@ -11452,20 +11457,10 @@ if test "x$ac_cv_lib_uuid_uuid_generate_time" = xyes; then :
   have_uuid=yes
 fi
 
+LIBS=$py_check_lib_save_LIBS
 
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
-
-        save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time_safe in -luuid" >&5
+          py_check_lib_save_LIBS=$LIBS
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time_safe in -luuid" >&5
 $as_echo_n "checking for uuid_generate_time_safe in -luuid... " >&6; }
 if ${ac_cv_lib_uuid_uuid_generate_time_safe+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -11502,19 +11497,18 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_uuid_uuid_generate_time_safe" >&5
 $as_echo "$ac_cv_lib_uuid_uuid_generate_time_safe" >&6; }
 if test "x$ac_cv_lib_uuid_uuid_generate_time_safe" = xyes; then :
-
-            have_uuid=yes
+  have_uuid=yes
             $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
 
 
 fi
 
+LIBS=$py_check_lib_save_LIBS
 
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
 
+fi
+
+done
 
         if test "x$have_uuid" = xyes; then :
 
@@ -11523,9 +11517,11 @@ LIBS=$save_LIBS
 
 fi
 
-fi
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
 
-done
 
 
 
@@ -12026,7 +12022,6 @@ fi
 
 
 
-
 # Check for use of the system libffi library
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-system-ffi" >&5
 $as_echo_n "checking for --with-system-ffi... " >&6; }
@@ -12125,14 +12120,16 @@ fi
 	echo "$LIBFFI_PKG_ERRORS" >&5
 
 
-    ac_fn_c_check_header_mongrel "$LINENO" "ffi.h" "ac_cv_header_ffi_h" "$ac_includes_default"
-if test "x$ac_cv_header_ffi_h" = xyes; then :
-
-      save_CFLAGS=$CFLAGS
+    save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
+
+      CPPFLAGS="$CPPFLAGS $LIBFFI_CFLAGS"
+      LDFLAGS="$LDFLAGS $LIBFFI_LIBS"
+      ac_fn_c_check_header_mongrel "$LINENO" "ffi.h" "ac_cv_header_ffi_h" "$ac_includes_default"
+if test "x$ac_cv_header_ffi_h" = xyes; then :
 
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ffi_call in -lffi" >&5
 $as_echo_n "checking for ffi_call in -lffi... " >&6; }
@@ -12173,21 +12170,22 @@ $as_echo "$ac_cv_lib_ffi_ffi_call" >&6; }
 if test "x$ac_cv_lib_ffi_ffi_call" = xyes; then :
 
           have_libffi=yes
-          LIBFFI_LIBS="-lffi"
+          LIBFFI_CFLAGS=${LIBFFI_CFLAGS-""}
+          LIBFFI_LIBS=${LIBFFI_LIBS-"-lffi"}
 
 else
   have_libffi=no
 fi
 
 
+fi
+
+
+
 CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
-
-
-
-fi
 
 
 
@@ -12195,14 +12193,16 @@ elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-    ac_fn_c_check_header_mongrel "$LINENO" "ffi.h" "ac_cv_header_ffi_h" "$ac_includes_default"
-if test "x$ac_cv_header_ffi_h" = xyes; then :
-
-      save_CFLAGS=$CFLAGS
+    save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
+
+      CPPFLAGS="$CPPFLAGS $LIBFFI_CFLAGS"
+      LDFLAGS="$LDFLAGS $LIBFFI_LIBS"
+      ac_fn_c_check_header_mongrel "$LINENO" "ffi.h" "ac_cv_header_ffi_h" "$ac_includes_default"
+if test "x$ac_cv_header_ffi_h" = xyes; then :
 
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ffi_call in -lffi" >&5
 $as_echo_n "checking for ffi_call in -lffi... " >&6; }
@@ -12243,21 +12243,22 @@ $as_echo "$ac_cv_lib_ffi_ffi_call" >&6; }
 if test "x$ac_cv_lib_ffi_ffi_call" = xyes; then :
 
           have_libffi=yes
-          LIBFFI_LIBS="-lffi"
+          LIBFFI_CFLAGS=${LIBFFI_CFLAGS-""}
+          LIBFFI_LIBS=${LIBFFI_LIBS-"-lffi"}
 
 else
   have_libffi=no
 fi
 
 
+fi
+
+
+
 CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
-
-
-
-fi
 
 
 
@@ -12525,8 +12526,13 @@ else
   LIBMPDEC_LDFLAGS="-lm \$(LIBMPDEC_A)"
   LIBMPDEC_INTERNAL="\$(LIBMPDEC_A)"
 
+    if test "x$with_pydebug" = xyes; then :
+
+    as_fn_append LIBMPDEC_CFLAGS " -DTEST_COVERAGE"
+
 fi
 
+fi
 
 
 
@@ -12877,7 +12883,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-    CPPFLAGS="$LIBNSL_CFLAGS $CFLAGS"
+    CPPFLAGS="$CPPFLAGS $LIBNSL_CFLAGS"
     for ac_header in rpc/rpc.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "rpc/rpc.h" "ac_cv_header_rpc_rpc_h" "$ac_includes_default"
@@ -12907,6 +12913,19 @@ case $ac_sys_system in #(
     OSSAUDIODEV_LIBS=""
  ;;
 esac
+
+
+
+
+  if test "$ac_sys_system" = "Emscripten" -a -z "$LIBSQLITE3_CFLAGS" -a -z "$LIBSQLITE3_LIBS"; then :
+
+    LIBSQLITE3_CFLAGS="-sUSE_SQLITE3"
+    LIBSQLITE3_LIBS="-sUSE_SQLITE3"
+
+fi
+
+
+
 
 
 pkg_failed=no
@@ -12997,7 +13016,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-  CPPFLAGS="$LIBSQLITE3_CFLAGS $CFLAGS"
+  CPPFLAGS="$CPPFLAGS $LIBSQLITE3_CFLAGS"
   LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
 
   ac_fn_c_check_header_mongrel "$LINENO" "sqlite3.h" "ac_cv_header_sqlite3_h" "$ac_includes_default"
@@ -13943,7 +13962,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-  CPPFLAGS="$TCLTK_CFLAGS $CFLAGS"
+  CPPFLAGS="$CPPFLAGS $TCLTK_CFLAGS"
   LIBS="$TCLTK_LIBS $LDFLAGS"
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -14008,7 +14027,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-  CPPFLAGS="$GDBM_CFLAGS $CFLAGS"
+  CPPFLAGS="$CPPFLAGS $GDBM_CFLAGS"
   LDFLAGS="$GDBM_LIBS $LDFLAGS"
   for ac_header in gdbm.h
 do :
@@ -14729,10 +14748,15 @@ if test "x$ac_cv_lib_cma_pthread_create" = xyes; then :
 
 else
 
+    case $ac_sys_system in #(
+  WASI) :
+    posix_threads=stub ;; #(
+  *) :
     as_fn_error $? "could not find pthreads on your system" "$LINENO" 5
+     ;;
+esac
 
 fi
-
 
 fi
 
@@ -14891,6 +14915,13 @@ done
 
 fi
 
+if test "x$posix_threads" = xstub; then :
+
+
+$as_echo "#define HAVE_PTHREAD_STUBS 1" >>confdefs.h
+
+
+fi
 
 # Check for enable-ipv6
 
@@ -15530,11 +15561,11 @@ fi
 # checks for library functions
 for ac_func in  \
   accept4 alarm bind_textdomain_codeset chmod chown clock close_range confstr \
-  copy_file_range ctermid dup3 execv explicit_bzero explicit_memset \
+  copy_file_range ctermid dup dup3 execv explicit_bzero explicit_memset \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
   gai_strerror getegid getentropy geteuid getgid getgrgid getgrgid_r \
-  getgrnam_r getgrouplist getgroups getitimer getloadavg getlogin \
+  getgrnam_r getgrouplist getgroups gethostname getitimer getloadavg getlogin \
   getpeername getpgid getpid getppid getpriority _getpty \
   getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid getspent \
   getspnam getuid getwd if_nameindex initgroups kill killpg lchown linkat \
@@ -16517,6 +16548,19 @@ fi
 
 
 
+
+
+  if test "$ac_sys_system" = "Emscripten" -a -z "$ZLIB_CFLAGS" -a -z "$ZLIB_LIBS"; then :
+
+    ZLIB_CFLAGS="-sUSE_ZLIB"
+    ZLIB_LIBS="-sUSE_ZLIB"
+
+fi
+
+
+
+
+
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ZLIB" >&5
 $as_echo_n "checking for ZLIB... " >&6; }
@@ -16576,7 +16620,15 @@ fi
 	echo "$ZLIB_PKG_ERRORS" >&5
 
 
-  for ac_header in zlib.h
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
+    LDFLAGS="$LDFLAGS $ZLIB_LIBS"
+    for ac_header in zlib.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
 if test "x$ac_cv_header_zlib_h" = xyes; then :
@@ -16584,13 +16636,8 @@ if test "x$ac_cv_header_zlib_h" = xyes; then :
 #define HAVE_ZLIB_H 1
 _ACEOF
 
-    save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
+      py_check_lib_save_LIBS=$LIBS
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
 $as_echo_n "checking for gzread in -lz... " >&6; }
 if ${ac_cv_lib_z_gzread+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -16627,11 +16674,26 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_gzread" >&5
 $as_echo "$ac_cv_lib_z_gzread" >&6; }
 if test "x$ac_cv_lib_z_gzread" = xyes; then :
+  have_zlib=yes
+else
+  have_zlib=no
+fi
 
-        have_zlib=yes
-        ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
-        ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
+LIBS=$py_check_lib_save_LIBS
+
+
+else
+  have_zlib=no
+fi
+
+done
+
+    if test "x$have_zlib" = xyes; then :
+
+      ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
+      ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
+      py_check_lib_save_LIBS=$LIBS
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
 $as_echo_n "checking for inflateCopy in -lz... " >&6; }
 if ${ac_cv_lib_z_inflateCopy+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -16672,33 +16734,31 @@ if test "x$ac_cv_lib_z_inflateCopy" = xyes; then :
 
 fi
 
+LIBS=$py_check_lib_save_LIBS
 
-else
-
-        have_zlib=no
 
 fi
-
 
 CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
 
-
-
-else
-  have_zlib=no
-fi
-
-done
 
 
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-  for ac_header in zlib.h
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
+    LDFLAGS="$LDFLAGS $ZLIB_LIBS"
+    for ac_header in zlib.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
 if test "x$ac_cv_header_zlib_h" = xyes; then :
@@ -16706,13 +16766,8 @@ if test "x$ac_cv_header_zlib_h" = xyes; then :
 #define HAVE_ZLIB_H 1
 _ACEOF
 
-    save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
+      py_check_lib_save_LIBS=$LIBS
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
 $as_echo_n "checking for gzread in -lz... " >&6; }
 if ${ac_cv_lib_z_gzread+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -16749,11 +16804,26 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_gzread" >&5
 $as_echo "$ac_cv_lib_z_gzread" >&6; }
 if test "x$ac_cv_lib_z_gzread" = xyes; then :
+  have_zlib=yes
+else
+  have_zlib=no
+fi
 
-        have_zlib=yes
-        ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
-        ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
+LIBS=$py_check_lib_save_LIBS
+
+
+else
+  have_zlib=no
+fi
+
+done
+
+    if test "x$have_zlib" = xyes; then :
+
+      ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
+      ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
+      py_check_lib_save_LIBS=$LIBS
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
 $as_echo_n "checking for inflateCopy in -lz... " >&6; }
 if ${ac_cv_lib_z_inflateCopy+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -16794,26 +16864,16 @@ if test "x$ac_cv_lib_z_inflateCopy" = xyes; then :
 
 fi
 
+LIBS=$py_check_lib_save_LIBS
 
-else
-
-        have_zlib=no
 
 fi
-
 
 CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
 
-
-
-else
-  have_zlib=no
-fi
-
-done
 
 
 else
@@ -16828,17 +16888,25 @@ $as_echo "yes" >&6; }
 
 fi
 
-if test "$have_zlib" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$ZLIB_LIBS" = "-lz"; then
-  ZLIB_CFLAGS="-sUSE_ZLIB"
-  ZLIB_LIBS="-sUSE_ZLIB"
-fi
-
 if test "x$have_zlib" = xyes; then :
 
   BINASCII_CFLAGS="-DUSE_ZLIB_CRC32 $ZLIB_CFLAGS"
   BINASCII_LIBS="$ZLIB_LIBS"
 
 fi
+
+
+
+
+  if test "$ac_sys_system" = "Emscripten" -a -z "$BZIP2_CFLAGS" -a -z "$BZIP2_LIBS"; then :
+
+    BZIP2_CFLAGS="-sUSE_BZIP2"
+    BZIP2_LIBS="-sUSE_BZIP2"
+
+fi
+
+
+
 
 
 pkg_failed=no
@@ -16900,19 +16968,21 @@ fi
 	echo "$BZIP2_PKG_ERRORS" >&5
 
 
-  for ac_header in bzlib.h
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CPPFLAGS="$CPPFLAGS $BZIP2_CFLAGS"
+    LDFLAGS="$LDFLAGS $BZIP2_LIBS"
+    for ac_header in bzlib.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "bzlib.h" "ac_cv_header_bzlib_h" "$ac_includes_default"
 if test "x$ac_cv_header_bzlib_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_BZLIB_H 1
 _ACEOF
-
-    save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BZ2_bzCompress in -lbz2" >&5
 $as_echo_n "checking for BZ2_bzCompress in -lbz2... " >&6; }
@@ -16951,21 +17021,10 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_bz2_BZ2_bzCompress" >&5
 $as_echo "$ac_cv_lib_bz2_BZ2_bzCompress" >&6; }
 if test "x$ac_cv_lib_bz2_BZ2_bzCompress" = xyes; then :
-
-        have_bzip2=yes
-        BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
-        BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
-
+  have_bzip2=yes
 else
   have_bzip2=no
 fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
 
 
 else
@@ -16973,25 +17032,40 @@ else
 fi
 
 done
+
+    if test "x$have_bzip2" = xyes; then :
+
+      BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
+      BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
+
+fi
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
 
 
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-  for ac_header in bzlib.h
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CPPFLAGS="$CPPFLAGS $BZIP2_CFLAGS"
+    LDFLAGS="$LDFLAGS $BZIP2_LIBS"
+    for ac_header in bzlib.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "bzlib.h" "ac_cv_header_bzlib_h" "$ac_includes_default"
 if test "x$ac_cv_header_bzlib_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_BZLIB_H 1
 _ACEOF
-
-    save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BZ2_bzCompress in -lbz2" >&5
 $as_echo_n "checking for BZ2_bzCompress in -lbz2... " >&6; }
@@ -17030,21 +17104,10 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_bz2_BZ2_bzCompress" >&5
 $as_echo "$ac_cv_lib_bz2_BZ2_bzCompress" >&6; }
 if test "x$ac_cv_lib_bz2_BZ2_bzCompress" = xyes; then :
-
-        have_bzip2=yes
-        BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
-        BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
-
+  have_bzip2=yes
 else
   have_bzip2=no
 fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
 
 
 else
@@ -17052,6 +17115,19 @@ else
 fi
 
 done
+
+    if test "x$have_bzip2" = xyes; then :
+
+      BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
+      BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
+
+fi
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
 
 
 else
@@ -17061,12 +17137,6 @@ else
 $as_echo "yes" >&6; }
 	have_bzip2=yes
 fi
-
-if test "$have_bzip2" = "yes" -a "$ac_sys_system" = "Emscripten" -a "$BZIP2_LIBS" = "-lbz2"; then
-  BZIP2_CFLAGS="-sUSE_BZIP2"
-  BZIP2_LIBS="-sUSE_BZIP2"
-fi
-
 
 
 pkg_failed=no
@@ -17128,19 +17198,21 @@ fi
 	echo "$LIBLZMA_PKG_ERRORS" >&5
 
 
-  for ac_header in lzma.h
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CPPFLAGS="$CPPFLAGS $LIBLZMA_CFLAGS"
+    LDFLAGS="$LDFLAGS $LIBLZMA_LIBS"
+    for ac_header in lzma.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "lzma.h" "ac_cv_header_lzma_h" "$ac_includes_default"
 if test "x$ac_cv_header_lzma_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_LZMA_H 1
 _ACEOF
-
-    save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for lzma_easy_encoder in -llzma" >&5
 $as_echo_n "checking for lzma_easy_encoder in -llzma... " >&6; }
@@ -17179,21 +17251,10 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_lzma_lzma_easy_encoder" >&5
 $as_echo "$ac_cv_lib_lzma_lzma_easy_encoder" >&6; }
 if test "x$ac_cv_lib_lzma_lzma_easy_encoder" = xyes; then :
-
-        have_liblzma=yes
-        LIBLZMA_CFLAGS=${LIBLZMA_CFLAGS-""}
-        LIBLZMA_LIBS=${LIBLZMA_LIBS-"-llzma"}
-
+  have_liblzma=yes
 else
   have_liblzma=no
 fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
 
 
 else
@@ -17201,25 +17262,40 @@ else
 fi
 
 done
+
+    if test "x$have_liblzma" = xyes; then :
+
+      LIBLZMA_CFLAGS=${LIBLZMA_CFLAGS-""}
+      LIBLZMA_LIBS=${LIBLZMA_LIBS-"-llzma"}
+
+fi
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
 
 
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-  for ac_header in lzma.h
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CPPFLAGS="$CPPFLAGS $LIBLZMA_CFLAGS"
+    LDFLAGS="$LDFLAGS $LIBLZMA_LIBS"
+    for ac_header in lzma.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "lzma.h" "ac_cv_header_lzma_h" "$ac_includes_default"
 if test "x$ac_cv_header_lzma_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_LZMA_H 1
 _ACEOF
-
-    save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for lzma_easy_encoder in -llzma" >&5
 $as_echo_n "checking for lzma_easy_encoder in -llzma... " >&6; }
@@ -17258,21 +17334,10 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_lzma_lzma_easy_encoder" >&5
 $as_echo "$ac_cv_lib_lzma_lzma_easy_encoder" >&6; }
 if test "x$ac_cv_lib_lzma_lzma_easy_encoder" = xyes; then :
-
-        have_liblzma=yes
-        LIBLZMA_CFLAGS=${LIBLZMA_CFLAGS-""}
-        LIBLZMA_LIBS=${LIBLZMA_LIBS-"-llzma"}
-
+  have_liblzma=yes
 else
   have_liblzma=no
 fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
 
 
 else
@@ -17280,6 +17345,19 @@ else
 fi
 
 done
+
+    if test "x$have_liblzma" = xyes; then :
+
+      LIBLZMA_CFLAGS=${LIBLZMA_CFLAGS-""}
+      LIBLZMA_LIBS=${LIBLZMA_LIBS-"-llzma"}
+
+fi
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
 
 
 else
@@ -17289,6 +17367,8 @@ else
 $as_echo "yes" >&6; }
 	have_liblzma=yes
 fi
+
+
 
 
 
@@ -17323,6 +17403,188 @@ $as_echo "$ac_cv_func_hstrerror" >&6; }
 $as_echo "#define HAVE_HSTRERROR 1" >>confdefs.h
 
 fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getservbyname" >&5
+$as_echo_n "checking for getservbyname... " >&6; }
+if ${ac_cv_func_getservbyname+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netdb.h>
+int
+main ()
+{
+void *x=getservbyname
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_getservbyname=yes
+else
+  ac_cv_func_getservbyname=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_getservbyname" >&5
+$as_echo "$ac_cv_func_getservbyname" >&6; }
+  if test "x$ac_cv_func_getservbyname" = xyes; then :
+
+$as_echo "#define HAVE_GETSERVBYNAME 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getservbyport" >&5
+$as_echo_n "checking for getservbyport... " >&6; }
+if ${ac_cv_func_getservbyport+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netdb.h>
+int
+main ()
+{
+void *x=getservbyport
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_getservbyport=yes
+else
+  ac_cv_func_getservbyport=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_getservbyport" >&5
+$as_echo "$ac_cv_func_getservbyport" >&6; }
+  if test "x$ac_cv_func_getservbyport" = xyes; then :
+
+$as_echo "#define HAVE_GETSERVBYPORT 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gethostbyname" >&5
+$as_echo_n "checking for gethostbyname... " >&6; }
+if ${ac_cv_func_gethostbyname+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netdb.h>
+int
+main ()
+{
+void *x=gethostbyname
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_gethostbyname=yes
+else
+  ac_cv_func_gethostbyname=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_gethostbyname" >&5
+$as_echo "$ac_cv_func_gethostbyname" >&6; }
+  if test "x$ac_cv_func_gethostbyname" = xyes; then :
+
+$as_echo "#define HAVE_GETHOSTBYNAME 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gethostbyaddr" >&5
+$as_echo_n "checking for gethostbyaddr... " >&6; }
+if ${ac_cv_func_gethostbyaddr+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netdb.h>
+int
+main ()
+{
+void *x=gethostbyaddr
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_gethostbyaddr=yes
+else
+  ac_cv_func_gethostbyaddr=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_gethostbyaddr" >&5
+$as_echo "$ac_cv_func_gethostbyaddr" >&6; }
+  if test "x$ac_cv_func_gethostbyaddr" = xyes; then :
+
+$as_echo "#define HAVE_GETHOSTBYADDR 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getprotobyname" >&5
+$as_echo_n "checking for getprotobyname... " >&6; }
+if ${ac_cv_func_getprotobyname+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netdb.h>
+int
+main ()
+{
+void *x=getprotobyname
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_getprotobyname=yes
+else
+  ac_cv_func_getprotobyname=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_getprotobyname" >&5
+$as_echo "$ac_cv_func_getprotobyname" >&6; }
+  if test "x$ac_cv_func_getprotobyname" = xyes; then :
+
+$as_echo "#define HAVE_GETPROTOBYNAME 1" >>confdefs.h
+
+fi
+
+
 
 
 
@@ -17370,6 +17632,46 @@ fi
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inet_ntoa" >&5
+$as_echo_n "checking for inet_ntoa... " >&6; }
+if ${ac_cv_func_inet_ntoa+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=inet_ntoa
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_inet_ntoa=yes
+else
+  ac_cv_func_inet_ntoa=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_inet_ntoa" >&5
+$as_echo "$ac_cv_func_inet_ntoa" >&6; }
+  if test "x$ac_cv_func_inet_ntoa" = xyes; then :
+
+$as_echo "#define HAVE_INET_NTOA 1" >>confdefs.h
+
+fi
+
+
+
+
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inet_pton" >&5
 $as_echo_n "checking for inet_pton... " >&6; }
@@ -17405,6 +17707,416 @@ $as_echo "$ac_cv_func_inet_pton" >&6; }
   if test "x$ac_cv_func_inet_pton" = xyes; then :
 
 $as_echo "#define HAVE_INET_PTON 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getpeername" >&5
+$as_echo_n "checking for getpeername... " >&6; }
+if ${ac_cv_func_getpeername+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=getpeername
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_getpeername=yes
+else
+  ac_cv_func_getpeername=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_getpeername" >&5
+$as_echo "$ac_cv_func_getpeername" >&6; }
+  if test "x$ac_cv_func_getpeername" = xyes; then :
+
+$as_echo "#define HAVE_GETPEERNAME 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getsockname" >&5
+$as_echo_n "checking for getsockname... " >&6; }
+if ${ac_cv_func_getsockname+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=getsockname
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_getsockname=yes
+else
+  ac_cv_func_getsockname=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_getsockname" >&5
+$as_echo "$ac_cv_func_getsockname" >&6; }
+  if test "x$ac_cv_func_getsockname" = xyes; then :
+
+$as_echo "#define HAVE_GETSOCKNAME 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for accept" >&5
+$as_echo_n "checking for accept... " >&6; }
+if ${ac_cv_func_accept+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=accept
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_accept=yes
+else
+  ac_cv_func_accept=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_accept" >&5
+$as_echo "$ac_cv_func_accept" >&6; }
+  if test "x$ac_cv_func_accept" = xyes; then :
+
+$as_echo "#define HAVE_ACCEPT 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for bind" >&5
+$as_echo_n "checking for bind... " >&6; }
+if ${ac_cv_func_bind+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=bind
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_bind=yes
+else
+  ac_cv_func_bind=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_bind" >&5
+$as_echo "$ac_cv_func_bind" >&6; }
+  if test "x$ac_cv_func_bind" = xyes; then :
+
+$as_echo "#define HAVE_BIND 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for connect" >&5
+$as_echo_n "checking for connect... " >&6; }
+if ${ac_cv_func_connect+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=connect
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_connect=yes
+else
+  ac_cv_func_connect=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_connect" >&5
+$as_echo "$ac_cv_func_connect" >&6; }
+  if test "x$ac_cv_func_connect" = xyes; then :
+
+$as_echo "#define HAVE_CONNECT 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for listen" >&5
+$as_echo_n "checking for listen... " >&6; }
+if ${ac_cv_func_listen+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=listen
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_listen=yes
+else
+  ac_cv_func_listen=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_listen" >&5
+$as_echo "$ac_cv_func_listen" >&6; }
+  if test "x$ac_cv_func_listen" = xyes; then :
+
+$as_echo "#define HAVE_LISTEN 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for recvfrom" >&5
+$as_echo_n "checking for recvfrom... " >&6; }
+if ${ac_cv_func_recvfrom+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=recvfrom
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_recvfrom=yes
+else
+  ac_cv_func_recvfrom=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_recvfrom" >&5
+$as_echo "$ac_cv_func_recvfrom" >&6; }
+  if test "x$ac_cv_func_recvfrom" = xyes; then :
+
+$as_echo "#define HAVE_RECVFROM 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sendto" >&5
+$as_echo_n "checking for sendto... " >&6; }
+if ${ac_cv_func_sendto+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=sendto
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_sendto=yes
+else
+  ac_cv_func_sendto=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_sendto" >&5
+$as_echo "$ac_cv_func_sendto" >&6; }
+  if test "x$ac_cv_func_sendto" = xyes; then :
+
+$as_echo "#define HAVE_SENDTO 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for setsockopt" >&5
+$as_echo_n "checking for setsockopt... " >&6; }
+if ${ac_cv_func_setsockopt+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=setsockopt
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_setsockopt=yes
+else
+  ac_cv_func_setsockopt=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_setsockopt" >&5
+$as_echo "$ac_cv_func_setsockopt" >&6; }
+  if test "x$ac_cv_func_setsockopt" = xyes; then :
+
+$as_echo "#define HAVE_SETSOCKOPT 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for socket" >&5
+$as_echo_n "checking for socket... " >&6; }
+if ${ac_cv_func_socket+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=socket
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_socket=yes
+else
+  ac_cv_func_socket=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_socket" >&5
+$as_echo "$ac_cv_func_socket" >&6; }
+  if test "x$ac_cv_func_socket" = xyes; then :
+
+$as_echo "#define HAVE_SOCKET 1" >>confdefs.h
 
 fi
 
@@ -18036,7 +18748,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-  CPPFLAGS="$LIBCRYPT_CFLAGS $CFLAGS"
+  CPPFLAGS="$CPPFLAGS $LIBCRYPT_CFLAGS"
   LIBS="$LIBCRYPT_LIBS $LIBS"
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for crypt or crypt_r" >&5
 $as_echo_n "checking for crypt or crypt_r... " >&6; }
@@ -20619,19 +21331,21 @@ fi
 	echo "$LIBREADLINE_PKG_ERRORS" >&5
 
 
-    for ac_header in readline/readline.h
+    save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+      CPPFLAGS="$CPPFLAGS $LIBREADLINE_CFLAGS"
+      LDFLAGS="$LDFLAGS $LIBREADLINE_LIBS"
+      for ac_header in readline/readline.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "readline/readline.h" "ac_cv_header_readline_readline_h" "$ac_includes_default"
 if test "x$ac_cv_header_readline_readline_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_READLINE_READLINE_H 1
 _ACEOF
-
-      save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
 
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for readline in -lreadline" >&5
 $as_echo_n "checking for readline in -lreadline... " >&6; }
@@ -20676,17 +21390,8 @@ if test "x$ac_cv_lib_readline_readline" = xyes; then :
           READLINE_LIBS=${LIBREADLINE_LIBS-"-lreadline"}
 
 else
-
-          with_readline=no
-
+  with_readline=no
 fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
 
 
 else
@@ -20694,25 +21399,34 @@ else
 fi
 
 done
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
 
 
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-    for ac_header in readline/readline.h
+    save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+      CPPFLAGS="$CPPFLAGS $LIBREADLINE_CFLAGS"
+      LDFLAGS="$LDFLAGS $LIBREADLINE_LIBS"
+      for ac_header in readline/readline.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "readline/readline.h" "ac_cv_header_readline_readline_h" "$ac_includes_default"
 if test "x$ac_cv_header_readline_readline_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_READLINE_READLINE_H 1
 _ACEOF
-
-      save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
 
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for readline in -lreadline" >&5
 $as_echo_n "checking for readline in -lreadline... " >&6; }
@@ -20757,17 +21471,8 @@ if test "x$ac_cv_lib_readline_readline" = xyes; then :
           READLINE_LIBS=${LIBREADLINE_LIBS-"-lreadline"}
 
 else
-
-          with_readline=no
-
+  with_readline=no
 fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
 
 
 else
@@ -20775,6 +21480,13 @@ else
 fi
 
 done
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
 
 
 else
@@ -20853,19 +21565,21 @@ fi
 	echo "$LIBEDIT_PKG_ERRORS" >&5
 
 
-    for ac_header in editline/readline.h
+    save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+      CPPFLAGS="$CPPFLAGS $LIBEDIT_CFLAGS"
+      LDFLAGS="$LDFLAGS $LIBEDIT_LIBS"
+      for ac_header in editline/readline.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "editline/readline.h" "ac_cv_header_editline_readline_h" "$ac_includes_default"
 if test "x$ac_cv_header_editline_readline_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_EDITLINE_READLINE_H 1
 _ACEOF
-
-      save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
 
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for readline in -ledit" >&5
 $as_echo_n "checking for readline in -ledit... " >&6; }
@@ -20912,17 +21626,8 @@ if test "x$ac_cv_lib_edit_readline" = xyes; then :
           READLINE_LIBS=${LIBEDIT_LIBS-"-ledit"}
 
 else
-
-          with_readline=no
-
+  with_readline=no
 fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
 
 
 else
@@ -20930,25 +21635,34 @@ else
 fi
 
 done
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
 
 
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-    for ac_header in editline/readline.h
+    save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+      CPPFLAGS="$CPPFLAGS $LIBEDIT_CFLAGS"
+      LDFLAGS="$LDFLAGS $LIBEDIT_LIBS"
+      for ac_header in editline/readline.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "editline/readline.h" "ac_cv_header_editline_readline_h" "$ac_includes_default"
 if test "x$ac_cv_header_editline_readline_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_EDITLINE_READLINE_H 1
 _ACEOF
-
-      save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
 
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for readline in -ledit" >&5
 $as_echo_n "checking for readline in -ledit... " >&6; }
@@ -20995,17 +21709,8 @@ if test "x$ac_cv_lib_edit_readline" = xyes; then :
           READLINE_LIBS=${LIBEDIT_LIBS-"-ledit"}
 
 else
-
-          with_readline=no
-
+  with_readline=no
 fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
 
 
 else
@@ -21013,6 +21718,13 @@ else
 fi
 
 done
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
 
 
 else
@@ -21051,7 +21763,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-    CPPFLAGS="$READLINE_CFLAGS $CFLAGS"
+    CPPFLAGS="$CPPFLAGS $READLINE_CFLAGS"
     LIBS="$READLINE_LIBS $LIBS"
     LIBS_SAVE=$LIBS
 
@@ -24024,7 +24736,6 @@ esac
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OPENSSL_RPATH" >&5
 $as_echo "$OPENSSL_RPATH" >&6; }
 
-
 # This static linking is NOT OFFICIALLY SUPPORTED and not advertised.
 # Requires static OpenSSL build with position-independent code. Some features
 # like DSO engines or external OSSL providers don't work. Only tested with GCC
@@ -24501,22 +25212,6 @@ case $host_cpu in #(
     MODULE_BUILDTYPE=${MODULE_BUILDTYPE:-shared}
  ;;
 esac
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for additional Modules/Setup files" >&5
-$as_echo_n "checking for additional Modules/Setup files... " >&6; }
-case $ac_sys_system in #(
-  Emscripten) :
-    MODULES_SETUP_STDLIB=Modules/Setup.stdlib ;; #(
-  WASI) :
-    MODULES_SETUP_STDLIB=Modules/Setup.stdlib ;; #(
-  *) :
-    MODULES_SETUP_STDLIB=
- ;;
-esac
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $MODULES_SETUP_STDLIB" >&5
-$as_echo "$MODULES_SETUP_STDLIB" >&6; }
-
 
 
 
@@ -26683,6 +27378,40 @@ fi
 $as_echo "$py_cv_module__testmultiphase" >&6; }
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module xxsubtype" >&5
+$as_echo_n "checking for stdlib extension module xxsubtype... " >&6; }
+        if test "$py_cv_module_xxsubtype" != "n/a"; then :
+
+    if test "$TEST_MODULES" = yes; then :
+  if true; then :
+  py_cv_module_xxsubtype=yes
+else
+  py_cv_module_xxsubtype=missing
+fi
+else
+  py_cv_module_xxsubtype=disabled
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE_XXSUBTYPE_STATE=$py_cv_module_xxsubtype$as_nl"
+  if test "x$py_cv_module_xxsubtype" = xyes; then :
+
+
+
+
+fi
+   if test "$py_cv_module_xxsubtype" = yes; then
+  MODULE_XXSUBTYPE_TRUE=
+  MODULE_XXSUBTYPE_FALSE='#'
+else
+  MODULE_XXSUBTYPE_TRUE='#'
+  MODULE_XXSUBTYPE_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_xxsubtype" >&5
+$as_echo "$py_cv_module_xxsubtype" >&6; }
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _xxtestfuzz" >&5
 $as_echo_n "checking for stdlib extension module _xxtestfuzz... " >&6; }
         if test "$py_cv_module__xxtestfuzz" != "n/a"; then :
@@ -27246,6 +27975,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTMULTIPHASE_TRUE}" && test -z "${MODULE__TESTMULTIPHASE_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__TESTMULTIPHASE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_XXSUBTYPE_TRUE}" && test -z "${MODULE_XXSUBTYPE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_XXSUBTYPE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__XXTESTFUZZ_TRUE}" && test -z "${MODULE__XXTESTFUZZ_FALSE}"; then
@@ -28467,7 +29200,11 @@ fi
 $as_echo "$as_me: creating Makefile" >&6;}
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local $MODULES_SETUP_STDLIB Modules/Setup.bootstrap $srcdir/Modules/Setup
+			Modules/Setup.local Modules/Setup.stdlib Modules/Setup.bootstrap $srcdir/Modules/Setup
+if test $? -ne 0; then
+  as_fn_error $? "makesetup failed" "$LINENO" 5
+fi
+
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then

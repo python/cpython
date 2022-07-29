@@ -108,6 +108,7 @@ class TestSpecifics(unittest.TestCase):
         exec('z = a', g, d)
         self.assertEqual(d['z'], 12)
 
+    @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_extended_arg(self):
         # default: 1000 * 2.5 = 2500 repetitions
         repeat = int(sys.getrecursionlimit() * 2.5)
@@ -542,6 +543,7 @@ if 1:
         self.assertIn(b"Non-UTF-8", res.err)
 
     @support.cpython_only
+    @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_compiler_recursion_limit(self):
         # Expected limit is sys.getrecursionlimit() * the scaling factor
         # in symtable.c (currently 3)
@@ -1180,6 +1182,125 @@ f(
             line=1, end_line=1, column=4, end_column=27, occurrence=3)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
             line=1, end_line=1, column=0, end_column=27, occurrence=4)
+
+    def test_multiline_assert_rewritten_as_method_call(self):
+        # GH-94694: Don't crash if pytest rewrites a multiline assert as a
+        # method call with the same location information:
+        tree = ast.parse("assert (\n42\n)")
+        old_node = tree.body[0]
+        new_node = ast.Expr(
+            ast.Call(
+                ast.Attribute(
+                    ast.Name("spam", ast.Load()),
+                    "eggs",
+                    ast.Load(),
+                ),
+                [],
+                [],
+            )
+        )
+        ast.copy_location(new_node, old_node)
+        ast.fix_missing_locations(new_node)
+        tree.body[0] = new_node
+        compile(tree, "<test>", "exec")
+
+    def test_push_null_load_global_positions(self):
+        source_template = """
+        import abc, dis
+        import ast as art
+
+        abc = None
+        dix = dis
+        ast = art
+
+        def f():
+        {}
+        """
+        for body in [
+            "    abc.a()",
+            "    art.a()",
+            "    ast.a()",
+            "    dis.a()",
+            "    dix.a()",
+            "    abc[...]()",
+            "    art()()",
+            "   (ast or ...)()",
+            "   [dis]()",
+            "   (dix + ...)()",
+        ]:
+            with self.subTest(body):
+                namespace = {}
+                source = textwrap.dedent(source_template.format(body))
+                exec(source, namespace)
+                code = namespace["f"].__code__
+                self.assertOpcodeSourcePositionIs(
+                    code,
+                    "LOAD_GLOBAL",
+                    line=10,
+                    end_line=10,
+                    column=4,
+                    end_column=7,
+                )
+
+    def test_attribute_augassign(self):
+        source = "(\n lhs  \n   .    \n     rhs      \n       ) += 42"
+        code = compile(source, "<test>", "exec")
+        self.assertOpcodeSourcePositionIs(
+            code, "LOAD_ATTR", line=4, end_line=4, column=5, end_column=8
+        )
+        self.assertOpcodeSourcePositionIs(
+            code, "STORE_ATTR", line=4, end_line=4, column=5, end_column=8
+        )
+
+    def test_attribute_del(self):
+        source = "del (\n lhs  \n   .    \n     rhs      \n       )"
+        code = compile(source, "<test>", "exec")
+        self.assertOpcodeSourcePositionIs(
+            code, "DELETE_ATTR", line=4, end_line=4, column=5, end_column=8
+        )
+
+    def test_attribute_load(self):
+        source = "(\n lhs  \n   .    \n     rhs      \n       )"
+        code = compile(source, "<test>", "exec")
+        self.assertOpcodeSourcePositionIs(
+            code, "LOAD_ATTR", line=4, end_line=4, column=5, end_column=8
+        )
+
+    def test_attribute_store(self):
+        source = "(\n lhs  \n   .    \n     rhs      \n       ) = 42"
+        code = compile(source, "<test>", "exec")
+        self.assertOpcodeSourcePositionIs(
+            code, "STORE_ATTR", line=4, end_line=4, column=5, end_column=8
+        )
+
+    def test_method_call(self):
+        source = "(\n lhs  \n   .    \n     rhs      \n       )()"
+        code = compile(source, "<test>", "exec")
+        self.assertOpcodeSourcePositionIs(
+            code, "LOAD_ATTR", line=4, end_line=4, column=5, end_column=8
+        )
+        self.assertOpcodeSourcePositionIs(
+            code, "CALL", line=4, end_line=5, column=5, end_column=10
+        )
+
+    def test_weird_attribute_position_regressions(self):
+        def f():
+            (bar.
+        baz)
+            (bar.
+        baz(
+        ))
+            files().setdefault(
+                0
+            ).setdefault(
+                0
+            )
+        for line, end_line, column, end_column in f.__code__.co_positions():
+            self.assertIsNotNone(line)
+            self.assertIsNotNone(end_line)
+            self.assertIsNotNone(column)
+            self.assertIsNotNone(end_column)
+            self.assertLessEqual((line, column), (end_line, end_column))
 
 
 class TestExpressionStackSize(unittest.TestCase):
