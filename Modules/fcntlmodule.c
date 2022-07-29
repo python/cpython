@@ -40,8 +40,9 @@ as constants in the fcntl module, using the same names as used in
 the relevant C header files.  The argument arg is optional, and
 defaults to 0; it may be an int or a string.  If arg is given as a string,
 the return value of fcntl is a string of that length, containing the
-resulting value put in the arg buffer by the operating system. If the arg
-given is an integer or if none is specified, the result value is an integer
+resulting value put in the arg buffer by the operating system.  The length
+of the arg string is not allowed to exceed 1024 bytes.  If the arg given
+is an integer or if none is specified, the result value is an integer
 corresponding to the return value of the fcntl call in the C code.
 [clinic start generated code]*/
 
@@ -53,6 +54,7 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
     int ret;
     char *str;
     Py_ssize_t len;
+    //char buf[1024];
     int async_err = 0;
 
     if (PySys_Audit("fcntl.fcntl", "iiO", fd, code, arg ? arg : Py_None) < 0) {
@@ -63,11 +65,22 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
         int parse_result;
 
         if (PyArg_Parse(arg, "s#", &str, &len)) {
-            PyObject *o = PyBytes_FromStringAndSize(NULL, len);
+            /*if ((size_t)len > sizeof buf) {
+                PyErr_SetString(PyExc_ValueError,
+                                "fcntl string arg too long");
+                return NULL;
+            }*/
+            char* buf = malloc((size_t)len);
+            PyObject* buf_ret;
+            if(buf == NULL) {
+                PyErr_NoMemory();
+                return NULL;
+            }
+            /*PyObject *o = PyBytes_FromStringAndSize(NULL, len);
             if (o == NULL) {
                 return NULL;
             }
-            char *buf = PyBytes_AS_STRING(o);
+            char *buf = PyBytes_AS_STRING(o);*/
 
             memcpy(buf, str, len);
             do {
@@ -76,9 +89,13 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
                 Py_END_ALLOW_THREADS
             } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
             if (ret < 0) {
+                free(buf);
                 return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
             }
-            return PyBytes_FromStringAndSize(buf, len);
+            //return PyBytes_FromStringAndSize(buf, len);
+            buf_ret = PyBytes_FromStringAndSize(buf, len);
+            free(buf);
+            return(buf_ret);
         }
 
         PyErr_Clear();
