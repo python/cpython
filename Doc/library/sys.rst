@@ -338,7 +338,7 @@ always available.
    |                             | memory support.                              |
    +-----------------------------+----------------------------------------------+
 
-   .. availability:: WebAssembly Emscripten platform (*wasm32-emscripten*).
+   .. availability:: Emscripten.
 
    .. versionadded:: 3.11
 

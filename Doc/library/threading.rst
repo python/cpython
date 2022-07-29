@@ -192,7 +192,9 @@ This module defines the following functions:
    information (4 KiB pages are common; using multiples of 4096 for the stack size is
    the suggested approach in the absence of more specific information).
 
-   .. availability:: Windows, systems with POSIX threads.
+   .. availability:: Windows, pthreads.
+
+      Unix platforms with POSIX threads support.
 
 
 This module also defines the following constant:
@@ -429,7 +431,7 @@ since it is impossible to detect the termination of alien threads.
          system-wide) from the time the thread is created until the thread
          has been terminated.
 
-      .. availability:: Requires :func:`get_native_id` function.
+      .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD.
 
       .. versionadded:: 3.8
 
