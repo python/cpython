@@ -54,7 +54,7 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
     int ret;
     char *str;
     Py_ssize_t len;
-    //char buf[1024];
+    char buf[1024];
     int async_err = 0;
 
     if (PySys_Audit("fcntl.fcntl", "iiO", fd, code, arg ? arg : Py_None) < 0) {
@@ -65,23 +65,11 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
         int parse_result;
 
         if (PyArg_Parse(arg, "s#", &str, &len)) {
-            /*if ((size_t)len > sizeof buf) {
+            if ((size_t)len > sizeof buf) {
                 PyErr_SetString(PyExc_ValueError,
                                 "fcntl string arg too long");
                 return NULL;
-            }*/
-            char* buf = malloc((size_t)len);
-            PyObject* buf_ret;
-            if(buf == NULL) {
-                PyErr_NoMemory();
-                return NULL;
             }
-            /*PyObject *o = PyBytes_FromStringAndSize(NULL, len);
-            if (o == NULL) {
-                return NULL;
-            }
-            char *buf = PyBytes_AS_STRING(o);*/
-
             memcpy(buf, str, len);
             do {
                 Py_BEGIN_ALLOW_THREADS
