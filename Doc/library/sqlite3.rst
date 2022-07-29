@@ -79,11 +79,11 @@ Now, let us insert three more rows of data,
 using :meth:`~Cursor.executemany`::
 
    >>> data = [
-       ('2006-03-28', 'BUY', 'IBM', 1000, 45.0),
-       ('2006-04-05', 'BUY', 'MSFT', 1000, 72.0),
-       ('2006-04-06', 'SELL', 'IBM', 500, 53.0),
-   ]
-   >>> cur.executemany('INSERT INTO stocks VALUES(?, ?, ?, ?)', data)
+   ...    ('2006-03-28', 'BUY', 'IBM', 1000, 45.0),
+   ...    ('2006-04-05', 'BUY', 'MSFT', 1000, 72.0),
+   ...    ('2006-04-06', 'SELL', 'IBM', 500, 53.0),
+   ... ]
+   >>> cur.executemany('INSERT INTO stocks VALUES(?, ?, ?, ?, ?)', data)
 
 Then, retrieve the data by iterating over the result of a ``SELECT`` statement::
 
@@ -776,8 +776,6 @@ Connection Objects
       Load an SQLite extension from a shared library located at *path*.
       Enable extension loading with :meth:`enable_load_extension` before
       calling this method.
-
-      Loadable extensions are disabled by default. See [#f1]_.
 
       .. audit-event:: sqlite3.load_extension connection,path sqlite3.Connection.load_extension
 
