@@ -133,8 +133,8 @@ rules:
 .. c:function:: int _PyObject_VisitManagedDict(PyObject *self, visitproc visit, void *arg)
 
    Visitor function for types with :const:`Py_TPFLAGS_MANAGED_DICT` bit set.
-   Call this function in c:member:`~PyTypeObject.tp_traverse`.  The arguments
-   share the same meaning as the arguments of c:member:`~PyTypeObject.tp_traverse`.
+   Call this function in :c:member:`~PyTypeObject.tp_traverse`.  The arguments
+   share the same meaning as the arguments of :c:member:`~PyTypeObject.tp_traverse`.
    A non-zero return value indicates an error and that returned value should be
    returned immediately.
 
@@ -146,7 +146,7 @@ rules:
 .. c:function:: void _PyObject_ClearManagedDict(PyObject *self)
 
    Inquiry function for types with :const:`Py_TPFLAGS_MANAGED_DICT` bit set.
-   Call this function in c:member:`~PyTypeObject.tp_clear`.
+   Call this function in :c:member:`~PyTypeObject.tp_clear`.
 
    .. warning:: This function is unstable and may change with time.
 
