@@ -1644,8 +1644,8 @@ can be found in the `SQLite URI documentation`_.
 
 .. _sqlite3-explanation:
 
-Concepts
---------
+Explanation
+-----------
 
 .. _sqlite3-controlling-transactions:
 
