@@ -180,6 +180,18 @@ PyMethodDef VectorCallClass_methods[] = {
     {},
 };
 
+PyMemberDef VectorCallClass_members[] = {
+    {"__vectorcalloffset__", T_PYSSIZET, 0/* set later */, READONLY},
+    {},
+};
+
+PyType_Slot VectorCallClass_slots[] = {
+    {Py_tp_call, VectorCallClass_tpcall},
+    {Py_tp_members, VectorCallClass_members},
+    {Py_tp_methods, VectorCallClass_methods},
+    {},
+};
+
 /*[clinic input]
 _testcapi.make_vectorcall_class
 
@@ -199,23 +211,14 @@ _testcapi_make_vectorcall_class_impl(PyObject *module, PyTypeObject *base)
     if (!base) {
         base = (PyTypeObject *)&PyBaseObject_Type;
     }
-    PyMemberDef members[] = {
-        {"__vectorcalloffset__", T_PYSSIZET, base->tp_basicsize, READONLY},
-        {},
-    };
-    PyType_Slot slots[] = {
-        {Py_tp_call, VectorCallClass_tpcall},
-        {Py_tp_members, members},
-        {Py_tp_methods, VectorCallClass_methods},
-        {},
-    };
+    VectorCallClass_members[0].offset = base->tp_basicsize;
     PyType_Spec spec = {
         .name = "_testcapi.VectorcallClass",
         .basicsize = base->tp_basicsize + sizeof(vectorcallfunc),
         .flags = Py_TPFLAGS_DEFAULT
             | Py_TPFLAGS_HAVE_VECTORCALL
             | Py_TPFLAGS_BASETYPE,
-        .slots = slots,
+        .slots = VectorCallClass_slots,
     };
 
     return PyType_FromSpecWithBases(&spec, (PyObject *)base);
