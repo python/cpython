@@ -1927,6 +1927,15 @@ Porting to Python 3.11
   paths and then modify them, finish initialization and use :c:func:`PySys_GetObject`
   to retrieve :data:`sys.path` as a Python list object and modify it directly.
 
+* CPython no longer assumes that a ``__dict__`` exists after an object. C extension
+  types with inheritance and ``__dict__`` may have MRO problems. To fix this, allow
+  CPython to manage the ``__dict__`` of instances of your type by setting
+  :const:`Py_TPFLAGS_MANAGED_DICT` in :c:member:`~PyTypeObject.tp_flags`.
+  You must call :c:func:`_PyObject_VisitManagedDict` and
+  :c:func:`_PyObject_ClearManagedDict` to support GC collection.  See the
+  respective functions for more information on how to use them.
+  (Contributed by Mark Shannon in :gh:`92678`.)
+
 Deprecated
 ----------
 

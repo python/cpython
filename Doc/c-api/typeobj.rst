@@ -1260,6 +1260,20 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       .. versionadded:: 3.10
 
+   .. data:: Py_TPFLAGS_MANAGED_DICT
+
+      Set this bit to allow CPython to automatically manage the ``__dict__``
+      of the instances of a type.  To tell CPython to clear the managed
+      dictionary, you must call
+      :c:func:`_PyObject_VisitManagedDict` in :c:member:`~PyTypeObject.tp_traverse`
+      and :c:func:`_PyObject_ClearManagedDict` in :c:member:`~PyTypeObject.tp_clear`
+      respectively.
+
+      **Inheritance:**
+
+      ???
+
+      .. versionadded:: 3.11
 
 .. c:member:: const char* PyTypeObject.tp_doc
 

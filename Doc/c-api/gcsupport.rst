@@ -129,6 +129,29 @@ rules:
    The :c:func:`_PyObject_GC_TRACK` and :c:func:`_PyObject_GC_UNTRACK` macros
    have been removed from the public C API.
 
+.. c:function:: int _PyObject_VisitManagedDict(PyObject *self, visitproc visit, void *arg)
+
+   Visitor function for types with :const:`Py_TPFLAGS_MANAGED_DICT` bit set.
+   Call this function in c:member:`~PyTypeObject.tp_traverse`.  The arguments
+   share the same meaning as the arguments of c:member:`~PyTypeObject.tp_traverse`.
+   A non-zero return value indicates an error and that returned value should be
+   returned immediately.
+
+   .. warning:: This function is unstable and may change with time.
+
+   .. versionadded:: 3.11
+
+.. c:function:: void _PyObject_ClearManagedDict(PyObject *self)
+
+   Inquiry function for types with :const:`Py_TPFLAGS_MANAGED_DICT` bit set.
+   Call this function in c:member:`~PyTypeObject.tp_clear`.
+
+   This is analogous to the Python function :func:`gc.is_finalized`.
+
+   .. warning:: This function is unstable and may change with time.
+
+   .. versionadded:: 3.11
+
 The :c:member:`~PyTypeObject.tp_traverse` handler accepts a function parameter of this type:
 
 
