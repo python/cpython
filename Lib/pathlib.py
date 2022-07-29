@@ -61,25 +61,16 @@ class _Flavour(object):
         self.join = self.sep.join
 
     def parse_parts(self, parts):
-        parsed = []
+        if not parts:
+            return '', '', []
         sep = self.sep
         altsep = self.altsep
-        drv = root = ''
-        if parts:
-            part = self.pathmod.join(*parts)
-            if altsep:
-                part = part.replace(altsep, sep)
-            drv, root, rel = self.splitroot(part)
-            if sep in rel:
-                for x in reversed(rel.split(sep)):
-                    if x and x != '.':
-                        parsed.append(sys.intern(x))
-            else:
-                if rel and rel != '.':
-                    parsed.append(sys.intern(rel))
-        if drv or root:
-            parsed.append(drv + root)
-        parsed.reverse()
+        path = self.pathmod.join(*parts)
+        if altsep:
+            path = path.replace(altsep, sep)
+        drv, root, rel = self.splitroot(path)
+        parsed = [drv + root] + rel.split(sep)
+        parsed = [sys.intern(x) for x in parsed if x and x != '.']
         return drv, root, parsed
 
     def join_parsed_parts(self, drv, root, parts, drv2, root2, parts2):
