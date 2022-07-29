@@ -146,8 +146,6 @@ rules:
    Inquiry function for types with :const:`Py_TPFLAGS_MANAGED_DICT` bit set.
    Call this function in c:member:`~PyTypeObject.tp_clear`.
 
-   This is analogous to the Python function :func:`gc.is_finalized`.
-
    .. warning:: This function is unstable and may change with time.
 
    .. versionadded:: 3.11
