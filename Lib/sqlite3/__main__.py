@@ -14,14 +14,14 @@ class SqliteInteractiveConsole(InteractiveConsole):
         self._cur = connection.cursor()
 
     def runsql(self, sql):
-        if sqlite3.complete_statement(sql):
-            try:
-                for row in self._cur.execute(sql):
-                    print(row)
-            except sqlite3.Error as e:
-                print(f"{e.sqlite_errorname}: {e}")
-            return False
-        return True
+        if not sqlite3.complete_statement(sql):
+            return True
+        try:
+            for row in self._cur.execute(sql):
+                print(row)
+        except sqlite3.Error as e:
+            print(f"{e.sqlite_errorname}: {e}")
+        return False
 
     def runpy(self, source, filename="<input>", symbol="single"):
         code = self.compile(source, filename, symbol)
