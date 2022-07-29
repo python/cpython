@@ -154,8 +154,11 @@ typedef struct basicblock_* jump_target_label;
 struct instr {
     int i_opcode;
     int i_oparg;
-    /* target block (if jump instruction) */
-    jump_target_label i_target;
+    /* target block (if jump instruction) -- we temporarily have both the label
+       and the block in the instr. The label is set by front end, and the block
+       is calculated by backend. */
+    jump_target_label i_target_label;
+    struct basicblock_ *i_target;
      /* target block when exception is raised, should not be set by front-end. */
     struct basicblock_ *i_except;
     struct location i_loc;
@@ -1266,7 +1269,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 
 static int
 basicblock_addop(basicblock *b, int opcode, int oparg,
-                 basicblock *target, struct location loc)
+                 jump_target_label target, struct location loc)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
@@ -1284,14 +1287,15 @@ basicblock_addop(basicblock *b, int opcode, int oparg,
     struct instr *i = &b->b_instr[off];
     i->i_opcode = opcode;
     i->i_oparg = oparg;
-    i->i_target = target;
+    i->i_target_label = target;
+    i->i_target = NULL;
     i->i_loc = loc;
 
     return 1;
 }
 
 static int
-cfg_builder_addop(cfg_builder *g, int opcode, int oparg, basicblock *target,
+cfg_builder_addop(cfg_builder *g, int opcode, int oparg, jump_target_label target,
                   struct location loc)
 {
     struct instr *last = basicblock_last_instr(g->curblock);
@@ -1309,7 +1313,7 @@ static int
 cfg_builder_addop_noarg(cfg_builder *g, int opcode, struct location loc)
 {
     assert(!HAS_ARG(opcode));
-    return cfg_builder_addop(g, opcode, 0, NULL, loc);
+    return cfg_builder_addop(g, opcode, 0, NO_LABEL, loc);
 }
 
 static Py_ssize_t
@@ -1521,7 +1525,7 @@ cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, struct locatio
        EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
 
     int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
-    return cfg_builder_addop(g, opcode, oparg_, NULL, loc);
+    return cfg_builder_addop(g, opcode, oparg_, NO_LABEL, loc);
 }
 
 static int
@@ -5116,15 +5120,15 @@ compiler_sync_comprehension_generator(struct compiler *c,
             expr_ty elt = asdl_seq_GET(elts, 0);
             if (elt->kind != Starred_kind) {
                 VISIT(c, expr, elt);
-                start = NULL;
+                start = NO_LABEL;
             }
         }
-        if (start) {
+        if (start != NO_LABEL) {
             VISIT(c, expr, gen->iter);
             ADDOP(c, GET_ITER);
         }
     }
-    if (start) {
+    if (start != NO_LABEL) {
         depth++;
         USE_LABEL(c, start);
         ADDOP_JUMP(c, FOR_ITER, anchor);
@@ -5175,7 +5179,7 @@ compiler_sync_comprehension_generator(struct compiler *c,
     }
 
     USE_LABEL(c, if_cleanup);
-    if (start) {
+    if (start != NO_LABEL) {
         ADDOP_JUMP(c, JUMP, start);
 
         USE_LABEL(c, anchor);
@@ -5195,10 +5199,6 @@ compiler_async_comprehension_generator(struct compiler *c,
     NEW_JUMP_TARGET_LABEL(c, start);
     NEW_JUMP_TARGET_LABEL(c, except);
     NEW_JUMP_TARGET_LABEL(c, if_cleanup);
-
-    if (start == NULL || if_cleanup == NULL || except == NULL) {
-        return 0;
-    }
 
     gen = (comprehension_ty)asdl_seq_GET(generators, gen_index);
 
@@ -7370,10 +7370,15 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
                 return -1;
             }
             basicblock_addop(explicit_jump, JUMP, 0, b->b_next, NO_LOCATION);
-
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
             b->b_next = explicit_jump;
+
+            /* calculate target from target_label */
+            /* TODO: formalize an API for adding jumps in the backend */
+            struct instr *last = basicblock_last_instr(explicit_jump);
+            last->i_target = last->i_target_label;
+            last->i_target_label = NULL;
         }
     }
 
@@ -8211,6 +8216,9 @@ static int
 normalize_basic_block(basicblock *bb);
 
 static int
+calculate_jump_targets(basicblock *entryblock);
+
+static int
 optimize_cfg(basicblock *entryblock, PyObject *consts, PyObject *const_cache);
 
 static int
@@ -8428,7 +8436,7 @@ static void
 eliminate_empty_basic_blocks(basicblock *entryblock);
 
 
-static void
+static int
 remove_redundant_jumps(basicblock *entryblock) {
     /* If a non-empty block ends with a jump instruction, check if the next
      * non-empty block reached through normal flow control is the target
@@ -8442,6 +8450,10 @@ remove_redundant_jumps(basicblock *entryblock) {
             assert(!IS_ASSEMBLER_OPCODE(b_last_instr->i_opcode));
             if (b_last_instr->i_opcode == JUMP ||
                 b_last_instr->i_opcode == JUMP_NO_INTERRUPT) {
+                if (b_last_instr->i_target == NULL) {
+                    PyErr_SetString(PyExc_SystemError, "jump with NULL target");
+                    return -1;
+                }
                 if (b_last_instr->i_target == b->b_next) {
                     assert(b->b_next->b_iused);
                     b_last_instr->i_opcode = NOP;
@@ -8453,6 +8465,7 @@ remove_redundant_jumps(basicblock *entryblock) {
     if (removed) {
         eliminate_empty_basic_blocks(entryblock);
     }
+    return 0;
 }
 
 static PyCodeObject *
@@ -8530,7 +8543,9 @@ assemble(struct compiler *c, int addNone)
     if (consts == NULL) {
         goto error;
     }
-
+    if (calculate_jump_targets(entryblock)) {
+        goto error;
+    }
     if (optimize_cfg(entryblock, consts, c->c_const_cache)) {
         goto error;
     }
@@ -8558,7 +8573,9 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
-    remove_redundant_jumps(entryblock);
+    if (remove_redundant_jumps(entryblock) < 0) {
+        goto error;
+    }
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         clean_basic_block(b);
     }
@@ -9370,6 +9387,25 @@ propagate_line_numbers(basicblock *entryblock) {
             }
         }
     }
+}
+
+
+/* Calculate the actual jump target from the target_label */
+static int
+calculate_jump_targets(basicblock *entryblock)
+{
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        for (int i = 0; i < b->b_iused; i++) {
+            struct instr *instr = &b->b_instr[i];
+            assert(instr->i_target == NULL);
+            instr->i_target = instr->i_target_label;
+            instr->i_target_label = NULL;
+            if (is_jump(instr) || is_block_push(instr)) {
+                assert(instr->i_target != NULL);
+            }
+        }
+    }
+    return 0;
 }
 
 /* Perform optimizations on a control flow graph.
