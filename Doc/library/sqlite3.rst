@@ -1728,7 +1728,7 @@ Command-line interface
 
 The ``sqlite3`` module can be invoked as a script
 in order to provide a simple SQLite shell.
-Type ``quit`` or CTRL-D to exit the shell.
+Type ``.quit`` or CTRL-D to exit the shell.
 
 .. program:: python -m sqlite3
 

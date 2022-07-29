@@ -33,10 +33,9 @@ class SqliteInteractiveConsole(InteractiveConsole):
 
     def runsource(self, source, filename="<input>", symbol="single"):
         keywords = {
-            "version": lambda x: print(f"{sqlite3.sqlite_version}"),
-            "help": self.printhelp,
-            "quit()": self.runpy,
-            "quit": self.runpy,
+            ".version": lambda x: print(f"{sqlite3.sqlite_version}"),
+            ".help": self.printhelp,
+            ".quit": lambda x: sys.exit(0),
         }
         return keywords.get(source, self.runsql)(source)
 
@@ -68,7 +67,7 @@ def main():
         Connected to {db_name}
 
         Each command will be run using execute() on the cursor.
-        Type "help" for more information; type "quit" or CTRL-D to quit.
+        Type ".help" for more information; type ".quit" or CTRL-D to quit.
     """).strip()
     sys.ps1 = "sqlite> "
     sys.ps2 = "    ... "
