@@ -8,13 +8,10 @@ from textwrap import dedent
 
 class SqliteInteractiveConsole(InteractiveConsole):
 
-    def __init__(self, database):
+    def __init__(self, connection):
         super().__init__()
-        self._con = sqlite3.connect(database, isolation_level=None)
-        self._cur = self._con.cursor()
-
-    def __del__(self):
-        self._con.close()
+        self._con = connection
+        self._cur = connection.cursor()
 
     def runsql(self, sql):
         if sqlite3.complete_statement(sql):
@@ -82,8 +79,10 @@ def main():
     sys.ps1 = "sqlite> "
     sys.ps2 = "    ... "
 
-    console = SqliteInteractiveConsole(args.database)
+    con = sqlite3.connect(args.database, isolation_level=None)
+    console = SqliteInteractiveConsole(con)
     console.interact(banner, exitmsg="")
+    con.close()
 
 
 main()
