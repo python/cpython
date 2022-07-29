@@ -1009,6 +1009,7 @@ Cursor Objects
               ("row1",),
               ("row2",),
           ]
+          # cur is an sqlite3.Cursor object
           cur.executemany("insert into t values(?)", data)
 
    .. method:: executescript(sql_script, /)
