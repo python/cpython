@@ -40,10 +40,6 @@ class SqliteInteractiveConsole(InteractiveConsole):
         keywords = {
             "version": lambda x: print(f"{sqlite3.sqlite_version}"),
             "help": self.printhelp,
-            "copyright": self.runpy,
-            "credits": self.runpy,
-            "license": self.runpy,
-            "license()": self.runpy,
             "quit()": self.runpy,
             "quit": self.runpy,
         }
