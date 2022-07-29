@@ -70,7 +70,7 @@ def main():
     if args.database == ":memory:":
         db_name = "a transient in-memory database"
     else:
-        db_name = f"'{args.database}'"
+        db_name = repr(args.database)
 
     banner = dedent(f"""
         sqlite3 shell, running on SQLite version {sqlite3.sqlite_version}
