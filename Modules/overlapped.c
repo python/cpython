@@ -52,13 +52,21 @@ class HANDLE_converter(pointer_converter):
 class ULONG_PTR_converter(pointer_converter):
     type = 'ULONG_PTR'
 
+    def parse_arg(self, argname, displayname):
+        return """
+            {paramname} = PyLong_AsUintptr_t({argname});
+            if (!{paramname} && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """.format(argname=argname, paramname=self.parser_name)
+
 class DWORD_converter(unsigned_long_converter):
     type = 'DWORD'
 
 class BOOL_converter(int_converter):
     type = 'BOOL'
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=a19133a9e14fae9c]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=4f13bfc8e0686699]*/
 
 /*[clinic input]
 module _overlapped
