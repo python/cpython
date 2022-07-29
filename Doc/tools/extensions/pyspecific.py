@@ -139,6 +139,7 @@ class Availability(Directive):
     optional_arguments = 0
     final_argument_whitespace = True
 
+    # known platform, libc, and threading implementations
     known_platforms = frozenset({
         "AIX", "Android", "BSD", "DragonFlyBSD", "Emscripten", "FreeBSD",
         "Linux", "NetBSD", "OpenBSD", "POSIX", "Solaris", "Unix", "VxWorks",
@@ -190,10 +191,13 @@ class Availability(Directive):
 
         unknown = set(platforms).difference(self.known_platforms)
         if unknown:
-            logger = logging.getLogger(type(self).__qualname__)
+            cls = type(self)
+            logger = logging.getLogger(cls.__qualname__)
             logger.warn(
-                f"Unknown platform(s) '{' '.join(sorted(unknown))}' in "
-                f"'.. availability:: {self.arguments[0]}'."
+                f"Unknown platform(s) or syntax '{' '.join(sorted(unknown))}' "
+                f"in '.. availability:: {self.arguments[0]}', see "
+                f"{__file__}:{cls.__qualname__}.known_platforms for a set "
+                "known platforms."
             )
 
         return platforms
