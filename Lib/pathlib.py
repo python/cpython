@@ -270,7 +270,7 @@ class PurePath(object):
         for part in it:
             if not part:
                 continue
-            if altsep:
+            elif altsep:
                 part = part.replace(altsep, sep)
             drv, rel = cls._flavour.splitdrive(part)
             # According to POSIX path resolution:
@@ -282,6 +282,7 @@ class PurePath(object):
                 root, rel = sep * 2, rel[2:]
             elif rel[:1] == sep or drv[:1] == sep:
                 root, rel = sep, rel.lstrip(sep)
+
             if sep in rel:
                 for x in reversed(rel.split(sep)):
                     if x and x != '.':
@@ -289,6 +290,7 @@ class PurePath(object):
             else:
                 if rel and rel != '.':
                     parsed.append(sys.intern(rel))
+
             if drv or root:
                 if not drv:
                     # If no drive is present, try to find one in the previous
@@ -297,11 +299,12 @@ class PurePath(object):
                     for part in it:
                         if not part:
                             continue
-                        if altsep:
+                        elif altsep:
                             part = part.replace(altsep, sep)
                         drv = cls._flavour.splitdrive(part)[0]
                         if drv:
                             break
+
                 break
         if drv or root:
             parsed.append(drv + root)
@@ -404,7 +407,7 @@ class PurePath(object):
 
     @property
     def _ncparts(self):
-        # Cached normcased parts, for hashing and comparison
+        # Cached normcased parts, for hashing and comparison.
         try:
             return self._cached_ncparts
         except AttributeError:
@@ -670,9 +673,9 @@ class PurePath(object):
         drv, root, pat_parts = self._parse_parts((path_pattern,))
         if not pat_parts:
             raise ValueError("empty pattern")
-        if drv and drv != nc(self._drv):
+        elif drv and drv != nc(self._drv):
             return False
-        if root and root != nc(self._root):
+        elif root and root != nc(self._root):
             return False
         parts = self._ncparts
         if drv or root:
