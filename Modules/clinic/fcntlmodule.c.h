@@ -13,8 +13,7 @@ PyDoc_STRVAR(fcntl_fcntl__doc__,
 "the relevant C header files.  The argument arg is optional, and\n"
 "defaults to 0; it may be an int or a string.  If arg is given as a string,\n"
 "the return value of fcntl is a string of that length, containing the\n"
-"resulting value put in the arg buffer by the operating system.  The length\n"
-"of the arg string is not allowed to exceed 1024 bytes.  If the arg given\n"
+"resulting value put in the arg buffer by the operating system.  If the arg given\n"
 "is an integer or if none is specified, the result value is an integer\n"
 "corresponding to the return value of the fcntl call in the C code.");
 
@@ -243,4 +242,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b8cb14ab35de4c6a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=aac49bd0da6cfb17 input=a9049054013a1b77]*/
