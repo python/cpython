@@ -15,12 +15,20 @@ import sys
 from idlelib.config import idleConf
 from idlelib import pyshell
 from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
-from idlelib.util import is_browseable_extension
+from idlelib.util import py_extensions, get_ext
 from idlelib.window import ListedToplevel
 
 
 file_open = None  # Method...Item and Class...Item use this.
 # Normally pyshell.flist.open, but there is no pyshell.flist for htest.
+
+# The browser depends on pyclbr and importlib which do not support .pyi files.
+browseable_extension_blocklist = ('.pyi',)
+
+
+def is_browseable_extension(path):
+    ext = get_ext(path)
+    return ext in py_extensions and ext not in browseable_extension_blocklist
 
 
 def transform_children(child_dict, modname=None):
