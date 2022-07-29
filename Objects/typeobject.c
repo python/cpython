@@ -8675,8 +8675,17 @@ update_one_slot(PyTypeObject *type, slotdef *p)
 {
     PyObject *descr;
     PyWrapperDescrObject *d;
-    void *generic = NULL, *specific = NULL;
+
+    // The correct specialized C function, like "tp_repr of str" in the
+    // example above
+    void *specific = NULL;
+
+    // A generic wrapper that uses method lookup (safe but slow)
+    void *generic = NULL;
+
+    // Set to 1 if the generic wrapper is necessary
     int use_generic = 0;
+
     int offset = p->offset;
     int error;
     void **ptr = slotptr(type, offset);
