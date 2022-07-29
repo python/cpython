@@ -1,0 +1,1 @@
+Don't hardcode supported extensions in IDLE browser.
