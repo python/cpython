@@ -19,12 +19,23 @@ import os
 # .pyw is for Windows; .pyi is for stub files.
 py_extensions = ('.py', '.pyw', '.pyi')  # Order needed for open/save dialogs.
 
+# The browser depends on pyclbr and importlib which do not support .pyi files.
+browseable_extension_blocklist = ('.pyi',)
+
+
+def _get_ext(path):
+    _, ext = os.path.splitext(path)
+    return os.path.normcase(ext)
+
 
 def is_supported_extension(path):
-    _, ext = os.path.splitext(path)
-    if not ext:
-        return False
-    return os.path.normcase(ext) in py_extensions
+    ext = _get_ext(path)
+    return ext in py_extensions
+
+
+def is_browseable_extension(path):
+    ext = _get_ext(path)
+    return ext in py_extensions and ext not in browseable_extension_blocklist
 
 
 if __name__ == '__main__':

@@ -15,7 +15,7 @@ import sys
 from idlelib.config import idleConf
 from idlelib import pyshell
 from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
-from idlelib.util import is_supported_extension
+from idlelib.util import is_browseable_extension
 from idlelib.window import ListedToplevel
 
 
@@ -161,7 +161,7 @@ class ModuleBrowserTreeItem(TreeItem):
 
     def OnDoubleClick(self):
         "Open a module in an editor window when double clicked."
-        if not is_supported_extension(self.file):
+        if not is_browseable_extension(self.file):
             return
         if not os.path.exists(self.file):
             return
@@ -169,11 +169,11 @@ class ModuleBrowserTreeItem(TreeItem):
 
     def IsExpandable(self):
         "Return True if Python file."
-        return is_supported_extension(self.file)
+        return is_browseable_extension(self.file)
 
     def listchildren(self):
         "Return sequenced classes and functions in the module."
-        if not is_supported_extension(self.file):
+        if not is_browseable_extension(self.file):
             return []
         dir, base = os.path.split(self.file)
         name, _ = os.path.splitext(base)
