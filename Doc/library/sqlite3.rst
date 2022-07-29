@@ -413,10 +413,9 @@ Connection Objects
 
 .. class:: Connection
 
-   Each open SQLite database is represented by a connection object.
-   A connection object is created with :func:`sqlite3.connect`.
-   The main purpose of connection objects is creating
-   :class:`cursors objects <Cursor>`,
+   Each open SQLite database is represented by a ``Connection`` object,
+   which is created using :func:`sqlite3.connect`.
+   Their main purpose is creating :class:`Cursor` objects,
    and :ref:`sqlite3-controlling-transactions`.
 
    .. seealso::
@@ -968,7 +967,7 @@ Connection Objects
 Cursor Objects
 --------------
 
-   A cursor object represents a database cursor,
+   A ``Cursor`` object represents a `database cursor`_
    which is used to execute SQL statements,
    and manage the context of a fetch operation.
    Cursors are created with :meth:`Connection.cursor`,
@@ -976,11 +975,13 @@ Cursor Objects
    <sqlite3-connection-shortcuts>`.
 
    Cursors objects are :term:`iterators <iterator>`,
-   meaning that if you :meth:`execute` a ``SELECT`` query,
+   meaning that if you :meth:`~Cursor.execute` a ``SELECT`` query,
    you can simply iterate over the cursor to fetch the resulting rows::
 
       for row in cur.execute("select * from data"):
           print(row)
+
+   .. _database cursor: https://en.wikipedia.org/wiki/Cursor_(databases)
 
 .. class:: Cursor
 
@@ -1136,13 +1137,13 @@ Row Objects
 
 .. class:: Row
 
-   A :class:`Row` instance that serves as a highly optimized
+   A :class:`Row` instance serves as a highly optimized
    :attr:`~Connection.row_factory` for :class:`Connection` objects.
    It tries to mimic a :class:`tuple` in most of its features,
-   and supports :term:`mapping` access by column name and index, iteration,
-   representation, equality testing and :func:`len`.
+   and supports iteration, :func:`repr`, equality testing, :func:`len`,
+   and :term:`mapping` access by column name and index.
 
-   Two row objects are equal if they have equal columns and equal members.
+   Two row objects compare equal if have equal columns and equal members.
 
    .. method:: keys
 
