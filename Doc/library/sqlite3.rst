@@ -31,8 +31,8 @@ This document includes four main sections:
 * :ref:`sqlite3-reference` describes the classes and functions this module
   defines.
 * :ref:`sqlite3-howtos` details how to handle specific tasks.
-* :ref:`sqlite3-explanation` provides in-depth understanding of transaction
-  control.
+* :ref:`sqlite3-explanation` provides in-depth background on
+  transaction control.
 
 
 .. _sqlite3-tutorial:
