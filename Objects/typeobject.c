@@ -4427,7 +4427,7 @@ lookup_subclasses(PyTypeObject *self)
         assert(state != NULL);
         return state->tp_subclasses;
     }
-    return self->tp_subclasses;
+    return (PyObject *)self->tp_subclasses;
 }
 
 int
@@ -6844,7 +6844,7 @@ init_subclasses(PyTypeObject *self)
         state->tp_subclasses = subclasses;
         return subclasses;
     }
-    self->tp_subclasses = subclasses;
+    self->tp_subclasses = (void *)subclasses;
     return subclasses;
 }
 

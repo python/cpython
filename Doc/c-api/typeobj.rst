@@ -135,7 +135,7 @@ Quick Reference
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | [:c:member:`~PyTypeObject.tp_cache`]           | :c:type:`PyObject` *              |                   |   |   |       |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | [:c:member:`~PyTypeObject.tp_subclasses`]      | :c:type:`PyObject` *              | __subclasses__    |   |   |       |
+   | [:c:member:`~PyTypeObject.tp_subclasses`]      | void *                            | __subclasses__    |   |   |       |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | [:c:member:`~PyTypeObject.tp_weaklist`]        | :c:type:`PyObject` *              |                   |   |   |       |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
@@ -1936,8 +1936,8 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       Internals detail: For the static builtin types this field no longer
       holds the subclasses.  Those are now stored on ``PyInterpreterState``.
-      This field is re-purposed to hold the index into the type's storage
-      on each interpreter state.
+      For static builtin types, this field is re-purposed to hold the index
+      into the type's storage on each interpreter state.
 
    **Inheritance:**
 
