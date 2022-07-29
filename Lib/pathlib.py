@@ -65,10 +65,8 @@ class _Flavour(object):
         sep = self.sep
         altsep = self.altsep
         drv = root = ''
-        it = reversed(parts)
-        for part in it:
-            if not part:
-                continue
+        if parts:
+            part = self.pathmod.join(*parts)
             if altsep:
                 part = part.replace(altsep, sep)
             drv, root, rel = self.splitroot(part)
@@ -79,20 +77,6 @@ class _Flavour(object):
             else:
                 if rel and rel != '.':
                     parsed.append(sys.intern(rel))
-            if drv or root:
-                if not drv:
-                    # If no drive is present, try to find one in the previous
-                    # parts. This makes the result of parsing e.g.
-                    # ("C:", "/", "a") reasonably intuitive.
-                    for part in it:
-                        if not part:
-                            continue
-                        if altsep:
-                            part = part.replace(altsep, sep)
-                        drv = self.splitroot(part)[0]
-                        if drv:
-                            break
-                break
         if drv or root:
             parsed.append(drv + root)
         parsed.reverse()
