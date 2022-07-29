@@ -241,7 +241,7 @@ class PurePath(object):
     """
     __slots__ = (
         '_drv', '_root', '_parts',
-        '_str', '_hash', '_pparts', '_cached_ncparts',
+        '_str', '_hash', '_parts_tuple', '_parts_normcase_cached',
     )
     _flavour = os.path
 
@@ -406,45 +406,45 @@ class PurePath(object):
             return 'file:' + urlquote_from_bytes(self.as_posix().encode('utf-8'))
 
     @property
-    def _ncparts(self):
-        # Cached normcased parts, for hashing and comparison.
+    def _parts_normcase(self):
+        # Cached parts with normalized case, for hashing and comparison.
         try:
-            return self._cached_ncparts
+            return self._parts_normcase_cached
         except AttributeError:
-            self._cached_ncparts = [self._flavour.normcase(p) for p in self._parts]
-            return self._cached_ncparts
+            self._parts_normcase_cached = [self._flavour.normcase(p) for p in self._parts]
+            return self._parts_normcase_cached
 
     def __eq__(self, other):
         if not isinstance(other, PurePath):
             return NotImplemented
-        return self._ncparts == other._ncparts and self._flavour is other._flavour
+        return self._parts_normcase == other._parts_normcase and self._flavour is other._flavour
 
     def __hash__(self):
         try:
             return self._hash
         except AttributeError:
-            self._hash = hash(tuple(self._ncparts))
+            self._hash = hash(tuple(self._parts_normcase))
             return self._hash
 
     def __lt__(self, other):
         if not isinstance(other, PurePath) or self._flavour is not other._flavour:
             return NotImplemented
-        return self._ncparts < other._ncparts
+        return self._parts_normcase < other._parts_normcase
 
     def __le__(self, other):
         if not isinstance(other, PurePath) or self._flavour is not other._flavour:
             return NotImplemented
-        return self._ncparts <= other._ncparts
+        return self._parts_normcase <= other._parts_normcase
 
     def __gt__(self, other):
         if not isinstance(other, PurePath) or self._flavour is not other._flavour:
             return NotImplemented
-        return self._ncparts > other._ncparts
+        return self._parts_normcase > other._parts_normcase
 
     def __ge__(self, other):
         if not isinstance(other, PurePath) or self._flavour is not other._flavour:
             return NotImplemented
-        return self._ncparts >= other._ncparts
+        return self._parts_normcase >= other._parts_normcase
 
     drive = property(attrgetter('_drv'),
                      doc="""The drive prefix (letter or UNC path), if any.""")
@@ -589,10 +589,10 @@ class PurePath(object):
         # We cache the tuple to avoid building a new one each time .parts
         # is accessed.  XXX is this necessary?
         try:
-            return self._pparts
+            return self._parts_tuple
         except AttributeError:
-            self._pparts = tuple(self._parts)
-            return self._pparts
+            self._parts_tuple = tuple(self._parts)
+            return self._parts_tuple
 
     def joinpath(self, *args):
         """Combine this path with one or several arguments, and return a
@@ -677,7 +677,7 @@ class PurePath(object):
             return False
         elif root and root != nc(self._root):
             return False
-        parts = self._ncparts
+        parts = self._parts_normcase
         if drv or root:
             if len(pat_parts) != len(parts):
                 return False
