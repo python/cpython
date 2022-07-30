@@ -1,1 +1,2 @@
-Removed truthy/falsy. Patch by Robert O'Shea
+Replaced incorrectly written true/false values
+in documentiation. Patch by Robert O'Shea
