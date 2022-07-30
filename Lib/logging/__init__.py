@@ -837,7 +837,7 @@ class Filterer(object):
         If a filter attached to a handler returns a log record instance,
         then that instance is used in place of the original log record in
         any further processing of the event by that handler.
-        If a filter returns any other truthy value, the original log record
+        If a filter returns any other true value, the original log record
         is used in any further processing of the event by that handler.
 
         If none of the filters return false values, this method returns
