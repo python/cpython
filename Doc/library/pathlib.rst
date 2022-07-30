@@ -878,11 +878,11 @@ call fails (for example because the path doesn't exist).
    i-node on the same device --- this should detect mount points for all Unix
    and POSIX variants.  On Windows, a mount point is considered to be a drive
    letter root (e.g. ``c:\``), a UNC share (e.g. ``\\server\share``), or a
-   volume mounted on a filesystem folder.
+   mounted filesystem directory.
 
    .. versionadded:: 3.7
 
-   .. versionchanged:: 3.11
+   .. versionchanged:: 3.12
       Windows support was added.
 
 
