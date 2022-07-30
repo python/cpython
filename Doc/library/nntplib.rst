@@ -14,6 +14,20 @@
 .. deprecated:: 3.11
    The :mod:`nntplib` module is deprecated (see :pep:`594` for details).
 
+.. testsetup::
+
+   import warnings
+   with warnings.catch_warnings():
+       warnings.simplefilter('ignore', category=DeprecationWarning)
+       import nntplib
+
+.. testcleanup::
+
+   try:
+       s.quit()
+   except NameError:
+       pass
+
 --------------
 
 This module defines the class :class:`NNTP` which implements the client side of
