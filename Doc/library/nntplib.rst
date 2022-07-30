@@ -27,6 +27,9 @@
        s.quit()
    except NameError:
        pass
+   import sys
+   # Force a warning if any other file imports nntplib
+   sys.modules.pop('nntplib')
 
 --------------
 
