@@ -1,0 +1,1 @@
+expose popular ``ETH_P_*`` constants in :mod:`socket`. Patch by Noam Cohen.
