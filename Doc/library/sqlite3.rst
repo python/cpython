@@ -1380,8 +1380,6 @@ The exception hierarchy is defined by the DB-API 2.0 (:pep:`249`).
    ``NotSupportedError`` is a subclass of :exc:`DatabaseError`.
 
 
-.. _sqlite3-blob-objects:
-
 .. _sqlite3-types:
 
 SQLite and Python types
@@ -1479,6 +1477,8 @@ This function can then be registered using :func:`register_adapter`.
 
 .. literalinclude:: ../includes/sqlite3/adapter_point_2.py
 
+
+.. _sqlite3-converters:
 
 Converting SQLite values to custom Python types
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
