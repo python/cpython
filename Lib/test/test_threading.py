@@ -33,9 +33,6 @@ threading_helper.requires_working_threading(module=True)
 # on platforms known to behave badly.
 platforms_to_skip = ('netbsd5', 'hp-ux11')
 
-# Is Python built with Py_DEBUG macro defined?
-Py_DEBUG = hasattr(sys, 'gettotalrefcount')
-
 
 def restore_default_excepthook(testcase):
     testcase.addCleanup(setattr, threading, 'excepthook', threading.excepthook)

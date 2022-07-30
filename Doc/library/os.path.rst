@@ -469,7 +469,7 @@ the :mod:`glob` module.)
       ("c:", "/dir")
 
    If the path contains a UNC path, drive will contain the host name
-   and share, up to but not including the fourth separator::
+   and share::
 
       >>> splitdrive("//host/computer/dir")
       ("//host/computer", "/dir")

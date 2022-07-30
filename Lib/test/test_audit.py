@@ -155,10 +155,7 @@ class AuditTest(unittest.TestCase):
 
 
     def test_sqlite3(self):
-        try:
-            import sqlite3
-        except ImportError:
-            return
+        sqlite3 = import_helper.import_module("sqlite3")
         returncode, events, stderr = self.run_python("test_sqlite3")
         if returncode:
             self.fail(stderr)
@@ -175,6 +172,18 @@ class AuditTest(unittest.TestCase):
             ]
         self.assertEqual(actual, expected)
 
+
+    def test_sys_getframe(self):
+        returncode, events, stderr = self.run_python("test_sys_getframe")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [("sys._getframe", "test_sys_getframe")]
+
+        self.assertEqual(actual, expected)
 
 if __name__ == "__main__":
     unittest.main()

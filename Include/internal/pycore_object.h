@@ -14,10 +14,15 @@ extern "C" {
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_runtime.h"       // _PyRuntime
 
+/* This value provides *effective* immortality, meaning the object should never
+    be deallocated (until runtime finalization).  See PEP 683 for more details about
+    immortality, as well as a proposed mechanism for proper immortality. */
+#define _PyObject_IMMORTAL_REFCNT 999999999
+
 #define _PyObject_IMMORTAL_INIT(type) \
     { \
-        .ob_refcnt = 999999999, \
-        .ob_type = type, \
+        .ob_refcnt = _PyObject_IMMORTAL_REFCNT, \
+        .ob_type = (type), \
     }
 #define _PyVarObject_IMMORTAL_INIT(type, size) \
     { \
@@ -29,7 +34,18 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
     const char *func,
     const char *message);
 
-#define _Py_FatalRefcountError(message) _Py_FatalRefcountErrorFunc(__func__, message)
+#define _Py_FatalRefcountError(message) \
+    _Py_FatalRefcountErrorFunc(__func__, (message))
+
+// Increment reference count by n
+static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
+{
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal += n;
+#endif
+    op->ob_refcnt += n;
+}
+#define _Py_RefcntAdd(op, n) _Py_RefcntAdd(_PyObject_CAST(op), n)
 
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
@@ -204,6 +220,12 @@ extern void _Py_PrintReferenceAddresses(FILE *);
 static inline PyObject **
 _PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
 {
+    if (PyType_Check(op) &&
+            ((PyTypeObject *)op)->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        static_builtin_state *state = _PyStaticType_GetState(
+                                                        (PyTypeObject *)op);
+        return _PyStaticType_GET_WEAKREFS_LISTPTR(state);
+    }
     Py_ssize_t offset = Py_TYPE(op)->tp_weaklistoffset;
     return (PyObject **)((char *)op + offset);
 }
@@ -275,7 +297,7 @@ extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
 
 // Access macro to the members which are floating "behind" the object
 #define _PyHeapType_GET_MEMBERS(etype) \
-    ((PyMemberDef *)(((char *)etype) + Py_TYPE(etype)->tp_basicsize))
+    ((PyMemberDef *)(((char *)(etype)) + Py_TYPE(etype)->tp_basicsize))
 
 PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
 
@@ -296,7 +318,7 @@ PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
 #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
 #define _PyCFunction_TrampolineCall(meth, self, args) \
     _PyCFunctionWithKeywords_TrampolineCall( \
-        (*(PyCFunctionWithKeywords)(void(*)(void))meth), self, args, NULL)
+        (*(PyCFunctionWithKeywords)(void(*)(void))(meth)), (self), (args), NULL)
 extern PyObject* _PyCFunctionWithKeywords_TrampolineCall(
     PyCFunctionWithKeywords meth, PyObject *, PyObject *, PyObject *);
 #else

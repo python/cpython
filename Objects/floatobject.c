@@ -71,7 +71,7 @@ static PyStructSequence_Field floatinfo_fields[] = {
     {"min_exp",         "DBL_MIN_EXP -- minimum int e such that radix**(e-1) "
                     "is a normalized float"},
     {"min_10_exp",      "DBL_MIN_10_EXP -- minimum int e such that 10**e is "
-                    "a normalized"},
+                    "a normalized float"},
     {"dig",             "DBL_DIG -- maximum number of decimal digits that "
                     "can be faithfully represented in a float"},
     {"mant_dig",        "DBL_MANT_DIG -- mantissa digits"},
@@ -1992,7 +1992,8 @@ _PyFloat_InitTypes(PyInterpreterState *interp)
 
     /* Init float info */
     if (FloatInfoType.tp_name == NULL) {
-        if (PyStructSequence_InitType2(&FloatInfoType, &floatinfo_desc) < 0) {
+        if (_PyStructSequence_InitBuiltin(&FloatInfoType,
+                                          &floatinfo_desc) < 0) {
             return _PyStatus_ERR("can't init float info type");
         }
     }

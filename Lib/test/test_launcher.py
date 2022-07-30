@@ -7,7 +7,6 @@ import subprocess
 import sys
 import sysconfig
 import tempfile
-import textwrap
 import unittest
 from pathlib import Path
 from test import support
@@ -70,7 +69,7 @@ TEST_PY_ENV = dict(
 
 TEST_PY_COMMANDS = "\n".join([
     "[defaults]",
-    *[f"{k.lower()}={v}" for k, v in TEST_PY_ENV.items()]
+    *[f"{k[3:].lower()}={v}" for k, v in TEST_PY_ENV.items()]
 ])
 
 
@@ -150,7 +149,7 @@ class RunPyMixin:
     @classmethod
     def find_py(cls):
         py_exe = None
-        if sysconfig.is_python_build(True):
+        if sysconfig.is_python_build():
             py_exe = Path(sys.executable).parent / PY_EXE
         else:
             for p in os.getenv("PATH").split(";"):
@@ -188,7 +187,7 @@ class RunPyMixin:
             )
         return py_exe
 
-    def run_py(self, args, env=None, allow_fail=False, expect_returncode=0):
+    def run_py(self, args, env=None, allow_fail=False, expect_returncode=0, argv=None):
         if not self.py_exe:
             self.py_exe = self.find_py()
 
@@ -199,9 +198,12 @@ class RunPyMixin:
             "PYLAUNCHER_DEBUG": "1",
             "PYLAUNCHER_DRYRUN": "1",
         }
+        if not argv:
+            argv = [self.py_exe, *args]
         with subprocess.Popen(
-            [self.py_exe, *args],
+            argv,
             env=env,
+            executable=self.py_exe,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -245,7 +247,7 @@ class RunPyMixin:
             file.unlink()
 
     @contextlib.contextmanager
-    def test_venv(self):
+    def fake_venv(self):
         venv = Path.cwd() / "Scripts"
         venv.mkdir(exist_ok=True, parents=True)
         venv_exe = (venv / Path(sys.executable).name)
@@ -462,7 +464,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertEqual("PythonTestSuite/3.100", default)
 
     def test_virtualenv_in_list(self):
-        with self.test_venv() as (venv_exe, env):
+        with self.fake_venv() as (venv_exe, env):
             data = self.run_py(["-0p"], env=env)
             for line in data["stdout"].splitlines():
                 m = re.match(r"\s*\*\s+(.+)$", line)
@@ -482,9 +484,9 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                 self.fail("did not find active venv entry")
 
     def test_virtualenv_with_env(self):
-        with self.test_venv() as (venv_exe, env):
-            data1 = self.run_py([], env={**env, "PY_PYTHON": "-3"})
-            data2 = self.run_py(["-3"], env={**env, "PY_PYTHON": "-3"})
+        with self.fake_venv() as (venv_exe, env):
+            data1 = self.run_py([], env={**env, "PY_PYTHON": "PythonTestSuite/3"})
+            data2 = self.run_py(["-V:PythonTestSuite/3"], env={**env, "PY_PYTHON": "PythonTestSuite/3"})
         # Compare stdout, because stderr goes via ascii
         self.assertEqual(data1["stdout"].strip(), str(venv_exe))
         self.assertEqual(data1["SearchInfo.lowPriorityTag"], "True")
@@ -515,6 +517,39 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
         self.assertEqual("3.100-arm64", data["SearchInfo.tag"])
         self.assertEqual(f"X.Y-arm64.exe -X fake_arg_for_test -prearg {script} -postarg", data["stdout"].strip())
+
+    def test_py_shebang_nl(self):
+        with self.py_ini(TEST_PY_COMMANDS):
+            with self.script("#! /usr/bin/env python -prearg\n") as script:
+                data = self.run_py([script, "-postarg"])
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100", data["SearchInfo.tag"])
+        self.assertEqual(f"X.Y.exe -prearg {script} -postarg", data["stdout"].strip())
+
+    def test_py2_shebang_nl(self):
+        with self.py_ini(TEST_PY_COMMANDS):
+            with self.script("#! /usr/bin/env python2 -prearg\n") as script:
+                data = self.run_py([script, "-postarg"])
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100-32", data["SearchInfo.tag"])
+        self.assertEqual(f"X.Y-32.exe -prearg {script} -postarg", data["stdout"].strip())
+
+    def test_py3_shebang_nl(self):
+        with self.py_ini(TEST_PY_COMMANDS):
+            with self.script("#! /usr/bin/env python3 -prearg\n") as script:
+                data = self.run_py([script, "-postarg"])
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100-arm64", data["SearchInfo.tag"])
+        self.assertEqual(f"X.Y-arm64.exe -X fake_arg_for_test -prearg {script} -postarg", data["stdout"].strip())
+
+    def test_py_shebang_short_argv0(self):
+        with self.py_ini(TEST_PY_COMMANDS):
+            with self.script("#! /usr/bin/env python -prearg") as script:
+                # Override argv to only pass "py.exe" as the command
+                data = self.run_py([script, "-postarg"], argv=f'"py.exe" "{script}" -postarg')
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100", data["SearchInfo.tag"])
+        self.assertEqual(f'X.Y.exe -prearg "{script}" -postarg', data["stdout"].strip())
 
     def test_install(self):
         data = self.run_py(["-V:3.10"], env={"PYLAUNCHER_ALWAYS_INSTALL": "1"}, expect_returncode=111)

@@ -3282,6 +3282,10 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
     {
 #ifdef HAVE_CHMOD
         result = chmod(path->narrow, mode);
+#elif defined(__wasi__)
+        // WASI SDK 15.0 does not support chmod.
+        // Ignore missing syscall for now.
+        result = 0;
 #else
         result = -1;
         errno = ENOSYS;
@@ -8275,11 +8279,7 @@ wait_helper(PyObject *module, pid_t pid, int status, struct rusage *ru)
         memset(ru, 0, sizeof(*ru));
     }
 
-    PyObject *m = PyImport_ImportModule("resource");
-    if (m == NULL)
-        return NULL;
-    struct_rusage = PyObject_GetAttr(m, get_posix_state(module)->struct_rusage);
-    Py_DECREF(m);
+    struct_rusage = _PyImport_GetModuleAttrString("resource", "struct_rusage");
     if (struct_rusage == NULL)
         return NULL;
 
@@ -9316,7 +9316,9 @@ os_dup_impl(PyObject *module, int fd)
     return _Py_dup(fd);
 }
 
-
+// dup2() is either provided by libc or dup2.c with AC_REPLACE_FUNCS().
+// dup2.c provides working dup2() if and only if F_DUPFD is available.
+#if (defined(HAVE_DUP3) || defined(F_DUPFD) || defined(MS_WINDOWS))
 /*[clinic input]
 os.dup2 -> int
     fd: int
@@ -9416,6 +9418,7 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
 
     return res;
 }
+#endif
 
 
 #ifdef HAVE_LOCKF
@@ -13104,7 +13107,7 @@ os_memfd_create_impl(PyObject *module, PyObject *name, unsigned int flags)
 }
 #endif
 
-#ifdef HAVE_EVENTFD
+#if defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC)
 /*[clinic input]
 os.eventfd
 
@@ -13175,7 +13178,7 @@ os_eventfd_write_impl(PyObject *module, int fd, unsigned long long value)
     }
     Py_RETURN_NONE;
 }
-#endif  /* HAVE_EVENTFD */
+#endif  /* HAVE_EVENTFD && EFD_CLOEXEC */
 
 /* Terminal size querying */
 
@@ -13244,24 +13247,11 @@ os_get_terminal_size_impl(PyObject *module, int fd)
 
 #ifdef TERMSIZE_USE_CONIO
     {
-        DWORD nhandle;
         HANDLE handle;
         CONSOLE_SCREEN_BUFFER_INFO csbi;
-        switch (fd) {
-        case 0: nhandle = STD_INPUT_HANDLE;
-            break;
-        case 1: nhandle = STD_OUTPUT_HANDLE;
-            break;
-        case 2: nhandle = STD_ERROR_HANDLE;
-            break;
-        default:
-            return PyErr_Format(PyExc_ValueError, "bad file descriptor");
-        }
-        handle = GetStdHandle(nhandle);
-        if (handle == NULL)
-            return PyErr_Format(PyExc_OSError, "handle cannot be retrieved");
+        handle = _Py_get_osfhandle(fd);
         if (handle == INVALID_HANDLE_VALUE)
-            return PyErr_SetFromWindowsErr(0);
+            return NULL;
 
         if (!GetConsoleScreenBufferInfo(handle, &csbi))
             return PyErr_SetFromWindowsErr(0);
@@ -15255,6 +15245,9 @@ all_ins(PyObject *m)
 #ifdef P_PIDFD
     if (PyModule_AddIntMacro(m, P_PIDFD)) return -1;
 #endif
+#ifdef PIDFD_NONBLOCK
+    if (PyModule_AddIntMacro(m, PIDFD_NONBLOCK)) return -1;
+#endif
 #endif
 #ifdef WEXITED
     if (PyModule_AddIntMacro(m, WEXITED)) return -1;
@@ -15459,11 +15452,15 @@ all_ins(PyObject *m)
 #endif
 #endif /* HAVE_MEMFD_CREATE */
 
-#ifdef HAVE_EVENTFD
+#if defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC)
     if (PyModule_AddIntMacro(m, EFD_CLOEXEC)) return -1;
+#ifdef EFD_NONBLOCK
     if (PyModule_AddIntMacro(m, EFD_NONBLOCK)) return -1;
+#endif
+#ifdef EFD_SEMAPHORE
     if (PyModule_AddIntMacro(m, EFD_SEMAPHORE)) return -1;
 #endif
+#endif  /* HAVE_EVENTFD && EFD_CLOEXEC */
 
 #if defined(__APPLE__)
     if (PyModule_AddIntConstant(m, "_COPYFILE_DATA", COPYFILE_DATA)) return -1;

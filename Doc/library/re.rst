@@ -667,40 +667,14 @@ functions are simplified versions of the full featured methods for compiled
 regular expressions.  Most non-trivial applications always use the compiled
 form.
 
+
+Flags
+^^^^^
+
 .. versionchanged:: 3.6
    Flag constants are now instances of :class:`RegexFlag`, which is a subclass of
    :class:`enum.IntFlag`.
 
-.. function:: compile(pattern, flags=0)
-
-   Compile a regular expression pattern into a :ref:`regular expression object
-   <re-objects>`, which can be used for matching using its
-   :func:`~Pattern.match`, :func:`~Pattern.search` and other methods, described
-   below.
-
-   The expression's behaviour can be modified by specifying a *flags* value.
-   Values can be any of the following variables, combined using bitwise OR (the
-   ``|`` operator).
-
-   The sequence ::
-
-      prog = re.compile(pattern)
-      result = prog.match(string)
-
-   is equivalent to ::
-
-      result = re.match(pattern, string)
-
-   but using :func:`re.compile` and saving the resulting regular expression
-   object for reuse is more efficient when the expression will be used several
-   times in a single program.
-
-   .. note::
-
-      The compiled versions of the most recent patterns passed to
-      :func:`re.compile` and the module-level matching functions are cached, so
-      programs that use only a few regular expressions at a time needn't worry
-      about compiling regular expressions.
 
 .. class:: RegexFlag
 
@@ -823,6 +797,41 @@ form.
       b = re.compile(r"\d+\.\d*")
 
    Corresponds to the inline flag ``(?x)``.
+
+
+Functions
+^^^^^^^^^
+
+.. function:: compile(pattern, flags=0)
+
+   Compile a regular expression pattern into a :ref:`regular expression object
+   <re-objects>`, which can be used for matching using its
+   :func:`~Pattern.match`, :func:`~Pattern.search` and other methods, described
+   below.
+
+   The expression's behaviour can be modified by specifying a *flags* value.
+   Values can be any of the following variables, combined using bitwise OR (the
+   ``|`` operator).
+
+   The sequence ::
+
+      prog = re.compile(pattern)
+      result = prog.match(string)
+
+   is equivalent to ::
+
+      result = re.match(pattern, string)
+
+   but using :func:`re.compile` and saving the resulting regular expression
+   object for reuse is more efficient when the expression will be used several
+   times in a single program.
+
+   .. note::
+
+      The compiled versions of the most recent patterns passed to
+      :func:`re.compile` and the module-level matching functions are cached, so
+      programs that use only a few regular expressions at a time needn't worry
+      about compiling regular expressions.
 
 
 .. function:: search(pattern, string, flags=0)
@@ -1060,6 +1069,9 @@ form.
 
    Clear the regular expression cache.
 
+
+Exceptions
+^^^^^^^^^^
 
 .. exception:: error(msg, pattern=None, pos=None)
 
@@ -1313,6 +1325,14 @@ Match objects support the following methods and attributes:
       >>> m[1]       # The first parenthesized subgroup.
       'Isaac'
       >>> m[2]       # The second parenthesized subgroup.
+      'Newton'
+
+   Named groups are supported as well::
+
+      >>> m = re.match(r"(?P<first_name>\w+) (?P<last_name>\w+)", "Isaac Newton")
+      >>> m['first_name']
+      'Isaac'
+      >>> m['last_name']
       'Newton'
 
    .. versionadded:: 3.6

@@ -735,9 +735,8 @@ PyConfig
 
       * ``"utf-8"`` if :c:member:`PyPreConfig.utf8_mode` is non-zero.
       * ``"ascii"`` if Python detects that ``nl_langinfo(CODESET)`` announces
-        the ASCII encoding (or Roman8 encoding on HP-UX), whereas the
-        ``mbstowcs()`` function decodes from a different encoding (usually
-        Latin1).
+        the ASCII encoding, whereas the ``mbstowcs()`` function
+        decodes from a different encoding (usually Latin1).
       * ``"utf-8"`` if ``nl_langinfo(CODESET)`` returns an empty string.
       * Otherwise, use the :term:`locale encoding`:
         ``nl_langinfo(CODESET)`` result.
@@ -835,8 +834,10 @@ PyConfig
 
       * Set :c:member:`~PyConfig.safe_path` to ``1``:
         don't prepend a potentially unsafe path to :data:`sys.path` at Python
-        startup.
-      * Set :c:member:`~PyConfig.use_environment` to ``0``.
+        startup, such as the current directory, the script's directory or an
+        empty string.
+      * Set :c:member:`~PyConfig.use_environment` to ``0``: ignore ``PYTHON``
+        environment variables.
       * Set :c:member:`~PyConfig.user_site_directory` to ``0``: don't add the user
         site directory to :data:`sys.path`.
       * Python REPL doesn't import :mod:`readline` nor enable default readline
@@ -846,7 +847,8 @@ PyConfig
 
       Default: ``0`` in Python mode, ``1`` in isolated mode.
 
-      See also :c:member:`PyPreConfig.isolated`.
+      See also the :ref:`Isolated Configuration <init-isolated-conf>` and
+      :c:member:`PyPreConfig.isolated`.
 
    .. c:member:: int legacy_windows_stdio
 
@@ -982,6 +984,9 @@ PyConfig
 
       Incremented by the :option:`-d` command line option. Set to the
       :envvar:`PYTHONDEBUG` environment variable value.
+
+      Need a :ref:`debug build of Python <debug-build>` (the ``Py_DEBUG`` macro
+      must be defined).
 
       Default: ``0``.
 
@@ -1177,13 +1182,13 @@ PyConfig
       imported, showing the place (filename or built-in module) from which
       it is loaded.
 
-      If greater or equal to ``2``, print a message for each file that is checked
-      for when searching for a module. Also provides information on module
-      cleanup at exit.
+      If greater than or equal to ``2``, print a message for each file that is
+      checked for when searching for a module. Also provides information on
+      module cleanup at exit.
 
       Incremented by the :option:`-v` command line option.
 
-      Set to the :envvar:`PYTHONVERBOSE` environment variable value.
+      Set by the :envvar:`PYTHONVERBOSE` environment variable value.
 
       Default: ``0``.
 
@@ -1319,9 +1324,9 @@ initialization::
         }
 
         /* Specify sys.path explicitly */
-        /* To calculate the default and then modify, finish initialization and
-           then use PySys_GetObject("path") to get the list. */
-        condig.module_search_paths_set = 1
+        /* If you want to modify the default set of paths, finish
+           initialization first and then use PySys_GetObject("path") */
+        config.module_search_paths_set = 1;
         status = PyWideStringList_Append(&config.module_search_paths,
                                          L"/path/to/stdlib");
         if (PyStatus_Exception(status)) {

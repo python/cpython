@@ -30,7 +30,6 @@ from sphinx.locale import translators
 from sphinx.util import status_iterator, logging
 from sphinx.util.nodes import split_explicit_title
 from sphinx.writers.text import TextWriter, TextTranslator
-from sphinx.writers.latex import LaTeXTranslator
 
 try:
     from sphinx.domains.python import PyFunction, PyMethod
@@ -135,10 +134,21 @@ class ImplementationDetail(Directive):
 
 class Availability(Directive):
 
-    has_content = False
+    has_content = True
     required_arguments = 1
     optional_arguments = 0
     final_argument_whitespace = True
+
+    # known platform, libc, and threading implementations
+    known_platforms = frozenset({
+        "AIX", "Android", "BSD", "DragonFlyBSD", "Emscripten", "FreeBSD",
+        "Linux", "NetBSD", "OpenBSD", "POSIX", "Solaris", "Unix", "VxWorks",
+         "WASI", "Windows", "macOS",
+         # libc
+         "BSD libc", "glibc", "musl",
+         # POSIX platforms with pthreads
+         "pthreads",
+    })
 
     def run(self):
         availability_ref = ':ref:`Availability <availability>`: '
@@ -148,7 +158,52 @@ class Availability(Directive):
         pnode.extend(n + m)
         n, m = self.state.inline_text(self.arguments[0], self.lineno)
         pnode.extend(n + m)
+        if self.content:
+            content = " " + " ".join(self.content)
+            n, m = self.state.inline_text(content, self.content_offset)
+            pnode.extend(n + m)
+
+        self.parse_platforms()
+
         return [pnode]
+
+    def parse_platforms(self):
+        """Parse platform information from arguments
+
+        Arguments is a comma-separated string of platforms. A platform may
+        be prefixed with "not " to indicate that a feature is not available.
+
+        Example::
+
+           .. availability:: Windows, Linux >= 4.2, not Emscripten, not WASI
+
+        Arguments like "Linux >= 3.17 with glibc >= 2.27" are currently not
+        parsed into separate tokens.
+        """
+        platforms = {}
+        for arg in self.arguments[0].rstrip(".").split(","):
+            arg = arg.strip()
+            platform, _, version = arg.partition(" >= ")
+            if platform.startswith("not "):
+                version = False
+                platform = platform[4:]
+            elif not version:
+                version = True
+            platforms[platform] = version
+
+        unknown = set(platforms).difference(self.known_platforms)
+        if unknown:
+            cls = type(self)
+            logger = logging.getLogger(cls.__qualname__)
+            logger.warn(
+                f"Unknown platform(s) or syntax '{' '.join(sorted(unknown))}' "
+                f"in '.. availability:: {self.arguments[0]}', see "
+                f"{__file__}:{cls.__qualname__}.known_platforms for a set "
+                "known platforms."
+            )
+
+        return platforms
+
 
 
 # Support for documenting audit event
@@ -418,12 +473,7 @@ class DeprecatedRemoved(Directive):
                                    translatable=False)
             node.append(para)
         env = self.state.document.settings.env
-        # deprecated pre-Sphinx-2 method
-        if hasattr(env, 'note_versionchange'):
-            env.note_versionchange('deprecated', version[0], node, self.lineno)
-        # new method
-        else:
-            env.get_domain('changeset').note_changeset(node)
+        env.get_domain('changeset').note_changeset(node)
         return [node] + messages
 
 

@@ -1042,7 +1042,7 @@ Text I/O
          The method supports ``encoding="locale"`` option.
 
 
-.. class:: StringIO(initial_value='', newline='\\n')
+.. class:: StringIO(initial_value='', newline='\n')
 
    A text stream using an in-memory text buffer.  It inherits
    :class:`TextIOBase`.

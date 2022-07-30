@@ -190,10 +190,16 @@ Creating Heap-Allocated Types
 The following functions and structs are used to create
 :ref:`heap types <heap-types>`.
 
-.. c:function:: PyObject* PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
+.. c:function:: PyObject* PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module, PyType_Spec *spec, PyObject *bases)
 
-   Creates and returns a :ref:`heap type <heap-types>` from the *spec*
-   (:const:`Py_TPFLAGS_HEAPTYPE`).
+   Create and return a :ref:`heap type <heap-types>` from the *spec*
+   (see :const:`Py_TPFLAGS_HEAPTYPE`).
+
+   The metaclass *metaclass* is used to construct the resulting type object.
+   When *metaclass* is ``NULL``, the metaclass is derived from *bases*
+   (or *Py_tp_base[s]* slots if *bases* is ``NULL``, see below).
+   Note that metaclasses that override
+   :c:member:`~PyTypeObject.tp_new` are not supported.
 
    The *bases* argument can be used to specify base classes; it can either
    be only one class or a tuple of classes.
@@ -210,6 +216,25 @@ The following functions and structs are used to create
 
    This function calls :c:func:`PyType_Ready` on the new type.
 
+   Note that this function does *not* fully match the behavior of
+   calling :py:class:`type() <type>` or using the :keyword:`class` statement.
+   With user-provided base types or metaclasses, prefer
+   :ref:`calling <capi-call>` :py:class:`type` (or the metaclass)
+   over ``PyType_From*`` functions.
+   Specifically:
+
+   * :py:meth:`~object.__new__` is not called on the new class
+     (and it must be set to ``type.__new__``).
+   * :py:meth:`~object.__init__` is not called on the new class.
+   * :py:meth:`~object.__init_subclass__` is not called on any bases.
+   * :py:meth:`~object.__set_name__` is not called on new descriptors.
+
+   .. versionadded:: 3.12
+
+.. c:function:: PyObject* PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
+
+   Equivalent to ``PyType_FromMetaclass(NULL, module, spec, bases)``.
+
    .. versionadded:: 3.9
 
    .. versionchanged:: 3.10
@@ -217,15 +242,32 @@ The following functions and structs are used to create
       The function now accepts a single class as the *bases* argument and
       ``NULL`` as the ``tp_doc`` slot.
 
+   .. versionchanged:: 3.12
+
+      The function now finds and uses a metaclass corresponding to the provided
+      base classes.  Previously, only :class:`type` instances were returned.
+
+
 .. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
-   Equivalent to ``PyType_FromModuleAndSpec(NULL, spec, bases)``.
+   Equivalent to ``PyType_FromMetaclass(NULL, NULL, spec, bases)``.
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.12
+
+      The function now finds and uses a metaclass corresponding to the provided
+      base classes.  Previously, only :class:`type` instances were returned.
+
 .. c:function:: PyObject* PyType_FromSpec(PyType_Spec *spec)
 
-   Equivalent to ``PyType_FromSpecWithBases(spec, NULL)``.
+   Equivalent to ``PyType_FromMetaclass(NULL, NULL, spec, NULL)``.
+
+   .. versionchanged:: 3.12
+
+      The function now finds and uses a metaclass corresponding to the
+      base classes provided in *Py_tp_base[s]* slots.
+      Previously, only :class:`type` instances were returned.
 
 .. c:type:: PyType_Spec
 
@@ -253,6 +295,8 @@ The following functions and structs are used to create
 
       Array of :c:type:`PyType_Slot` structures.
       Terminated by the special slot value ``{0, NULL}``.
+
+      Each slot ID should be specified at most once.
 
 .. c:type:: PyType_Slot
 
