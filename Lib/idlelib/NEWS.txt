@@ -3,6 +3,7 @@ What's New in IDLE 3.11.0
 Released on 2022-10-03
 =========================
 
+
 gh-95411: Enable using IDLE's module browser with .pyw files.
 
 gh-89610: Add .pyi as a recognized extension for IDLE on macOS.  This allows
