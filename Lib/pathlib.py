@@ -272,16 +272,13 @@ class PurePath(object):
                 continue
             elif altsep:
                 part = part.replace(altsep, sep)
-            drv, rel = cls._flavour.splitdrive(part)
-            # According to POSIX path resolution:
-            # http://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap04.html#tag_04_11
-            # "A pathname that begins with two successive slashes may be
-            # interpreted in an implementation-defined manner, although more
-            # than two leading slashes shall be treated as a single slash".
-            if cls._flavour is posixpath and rel[:2] == sep * 2 and rel[2:3] != sep:
-                root, rel = sep * 2, rel[2:]
-            elif rel[:1] == sep or drv[:1] == sep:
-                root, rel = sep, rel.lstrip(sep)
+            drv, rest = cls._flavour.splitdrive(part)
+            rel = rest.lstrip(sep)
+            if drv[:1] == sep:
+                root = sep
+            elif rest[:1] == sep:
+                root = rest[:len(rest) - len(rel)]
+                root = cls._flavour.normpath(root)
 
             if sep in rel:
                 for x in reversed(rel.split(sep)):
