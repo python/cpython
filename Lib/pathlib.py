@@ -563,9 +563,13 @@ class PurePath(object):
         else:
             to_abs_parts = to_parts
         n = len(to_abs_parts)
-        def nc(parts):
-            return [self._flavour.normcase(p) for p in parts]
-        if (root or drv) if n == 0 else nc(abs_parts[:n]) != nc(to_abs_parts):
+        if not n:
+            is_error = root or drv
+        else:
+            nc_abs_parts = list(map(self._flavour.normcase, abs_parts[:n]))
+            nc_to_abs_parts = list(map(self._flavour.normcase, to_abs_parts[:n]))
+            is_error = nc_abs_parts != nc_to_abs_parts
+        if is_error:
             formatted = self._format_parsed_parts(to_drv, to_root, to_parts)
             raise ValueError("{!r} is not in the subpath of {!r}"
                     " OR one path is relative and the other is absolute."
@@ -668,14 +672,13 @@ class PurePath(object):
         """
         Return True if this path matches the given pattern.
         """
-        nc = self._flavour.normcase
-        path_pattern = nc(path_pattern)
+        path_pattern = self._flavour.normcase(path_pattern)
         drv, root, pat_parts = self._parse_parts((path_pattern,))
         if not pat_parts:
             raise ValueError("empty pattern")
-        elif drv and drv != nc(self._drv):
+        elif drv and drv != self._flavour.normcase(self._drv):
             return False
-        elif root and root != nc(self._root):
+        elif root and root != self._root:
             return False
         parts = self._parts_normcase
         if drv or root:
