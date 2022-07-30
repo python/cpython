@@ -1,0 +1,3 @@
+Move `Select All` above  `Cut` as it is used with `Cut` and `Copy` but not
+`Paste`.  Add a separator between `Replace` and `Go to Line` to help IDLE
+issue triagers.
