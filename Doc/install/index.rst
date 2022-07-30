@@ -23,7 +23,11 @@
       The up to date module installation documentation. For regular Python
       usage, you almost certainly want that document rather than this one.
 
-.. include:: ../distutils/_setuptools_disclaimer.rst
+.. note::
+
+   This document is being retained solely until the ``setuptools`` documentation
+   at https://setuptools.readthedocs.io/en/latest/setuptools.html
+   independently covers all of the relevant information currently included here.
 
 .. note::
 
@@ -65,7 +69,7 @@ If you download a module source distribution, you can tell pretty quickly if it
 was packaged and distributed in the standard way, i.e. using the Distutils.
 First, the distribution's name and version number will be featured prominently
 in the name of the downloaded archive, e.g. :file:`foo-1.0.tar.gz` or
-:file:`widget-0.9.7.zip`.  Next, the archive will unpack into a similarly-named
+:file:`widget-0.9.7.zip`.  Next, the archive will unpack into a similarly named
 directory: :file:`foo-1.0` or :file:`widget-0.9.7`.  Additionally, the
 distribution will contain a setup script :file:`setup.py`, and a file named
 :file:`README.txt` or possibly just :file:`README`, which should explain that

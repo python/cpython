@@ -1,0 +1,2 @@
+Added more tests for :mod:`dataclasses` to cover behavior with data
+descriptor-based fields.

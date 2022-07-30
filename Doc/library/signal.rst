@@ -95,8 +95,10 @@ The signal module defines three enums:
 
    :class:`enum.IntEnum` collection the constants :const:`SIG_BLOCK`, :const:`SIG_UNBLOCK` and :const:`SIG_SETMASK`.
 
-   Availability: Unix. See the man page :manpage:`sigprocmask(3)` and
-   :manpage:`pthread_sigmask(3)` for further information.
+   .. availability:: Unix.
+
+      See the man page :manpage:`sigprocmask(2)` and
+      :manpage:`pthread_sigmask(3)` for further information.
 
    .. versionadded:: 3.5
 
@@ -205,7 +207,9 @@ The variables defined in the :mod:`signal` module are:
     Stack fault on coprocessor. The Linux kernel does not raise this signal: it
     can only be raised in user space.
 
-   .. availability:: Linux, on architectures where the signal is available. See
+   .. availability:: Linux.
+
+      On architectures where the signal is available. See
       the man page :manpage:`signal(7)` for further information.
 
    .. versionadded:: 3.11
@@ -337,8 +341,9 @@ The :mod:`signal` module defines the following functions:
    delivered. If *time* is zero, no alarm is scheduled, and any scheduled alarm is
    canceled.  If the return value is zero, no alarm is currently scheduled.
 
-   .. availability:: Unix.  See the man page :manpage:`alarm(2)` for further
-      information.
+   .. availability:: Unix.
+
+      See the man page :manpage:`alarm(2)` for further information.
 
 
 .. function:: getsignal(signalnum)
@@ -375,8 +380,9 @@ The :mod:`signal` module defines the following functions:
    Cause the process to sleep until a signal is received; the appropriate handler
    will then be called.  Returns nothing.
 
-   .. availability:: Unix.  See the man page :manpage:`signal(2)` for further
-      information.
+   .. availability:: Unix.
+
+      See the man page :manpage:`signal(2)` for further information.
 
    See also :func:`sigwait`, :func:`sigwaitinfo`, :func:`sigtimedwait` and
    :func:`sigpending`.
@@ -398,7 +404,7 @@ The :mod:`signal` module defines the following functions:
 
    See the :manpage:`pidfd_send_signal(2)` man page for more information.
 
-   .. availability:: Linux 5.1+
+   .. availability:: Linux >= 5.1
    .. versionadded:: 3.9
 
 
@@ -421,8 +427,9 @@ The :mod:`signal` module defines the following functions:
 
    .. audit-event:: signal.pthread_kill thread_id,signalnum signal.pthread_kill
 
-   .. availability:: Unix.  See the man page :manpage:`pthread_kill(3)` for further
-      information.
+   .. availability:: Unix.
+
+      See the man page :manpage:`pthread_kill(3)` for further  information.
 
    See also :func:`os.kill`.
 
@@ -454,7 +461,9 @@ The :mod:`signal` module defines the following functions:
 
    :data:`SIGKILL` and :data:`SIGSTOP` cannot be blocked.
 
-   .. availability:: Unix.  See the man page :manpage:`sigprocmask(2)` and
+   .. availability:: Unix.
+
+      See the man page :manpage:`sigprocmask(2)` and
       :manpage:`pthread_sigmask(3)` for further information.
 
    See also :func:`pause`, :func:`sigpending` and :func:`sigwait`.
@@ -542,8 +551,9 @@ The :mod:`signal` module defines the following functions:
    calls will be restarted when interrupted by signal *signalnum*, otherwise
    system calls will be interrupted.  Returns nothing.
 
-   .. availability:: Unix.  See the man page :manpage:`siginterrupt(3)`
-      for further information.
+   .. availability:: Unix.
+
+      See the man page :manpage:`siginterrupt(3)` for further information.
 
    Note that installing a signal handler with :func:`signal` will reset the
    restart behaviour to interruptible by implicitly calling
@@ -583,8 +593,9 @@ The :mod:`signal` module defines the following functions:
    thread (i.e., the signals which have been raised while blocked).  Return the
    set of the pending signals.
 
-   .. availability:: Unix.  See the man page :manpage:`sigpending(2)` for further
-      information.
+   .. availability:: Unix.
+
+      See the man page :manpage:`sigpending(2)` for further information.
 
    See also :func:`pause`, :func:`pthread_sigmask` and :func:`sigwait`.
 
@@ -597,8 +608,9 @@ The :mod:`signal` module defines the following functions:
    signals specified in the signal set *sigset*.  The function accepts the signal
    (removes it from the pending list of signals), and returns the signal number.
 
-   .. availability:: Unix.  See the man page :manpage:`sigwait(3)` for further
-      information.
+   .. availability:: Unix.
+
+      See the man page :manpage:`sigwait(3)` for further information.
 
    See also :func:`pause`, :func:`pthread_sigmask`, :func:`sigpending`,
    :func:`sigwaitinfo` and :func:`sigtimedwait`.
@@ -622,8 +634,9 @@ The :mod:`signal` module defines the following functions:
    :attr:`si_errno`, :attr:`si_pid`, :attr:`si_uid`, :attr:`si_status`,
    :attr:`si_band`.
 
-   .. availability:: Unix.  See the man page :manpage:`sigwaitinfo(2)` for further
-      information.
+   .. availability:: Unix.
+
+      See the man page :manpage:`sigwaitinfo(2)` for further information.
 
    See also :func:`pause`, :func:`sigwait` and :func:`sigtimedwait`.
 
@@ -641,8 +654,9 @@ The :mod:`signal` module defines the following functions:
    specifying a timeout. If *timeout* is specified as :const:`0`, a poll is
    performed. Returns :const:`None` if a timeout occurs.
 
-   .. availability:: Unix.  See the man page :manpage:`sigtimedwait(2)` for further
-      information.
+   .. availability:: Unix.
+
+      See the man page :manpage:`sigtimedwait(2)` for further information.
 
    See also :func:`pause`, :func:`sigwait` and :func:`sigwaitinfo`.
 
@@ -739,7 +753,7 @@ To illustrate this issue, consider the following code::
         def __enter__(self):
             # If KeyboardInterrupt occurs here, everything is fine
             self.lock.acquire()
-            # If KeyboardInterrupt occcurs here, __exit__ will not be called
+            # If KeyboardInterrupt occurs here, __exit__ will not be called
             ...
             # KeyboardInterrupt could occur just before the function returns
 

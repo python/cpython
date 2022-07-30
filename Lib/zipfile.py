@@ -1381,6 +1381,8 @@ class ZipFile:
             print("given, inferred, offset", offset_cd, inferred, concat)
         # self.start_dir:  Position of start of central directory
         self.start_dir = offset_cd + concat
+        if self.start_dir < 0:
+            raise BadZipFile("Bad offset for central directory")
         fp.seek(self.start_dir, 0)
         data = fp.read(size_cd)
         fp = io.BytesIO(data)
@@ -1683,8 +1685,8 @@ class ZipFile:
             table = str.maketrans(illegal, '_' * len(illegal))
             cls._windows_illegal_name_trans_table = table
         arcname = arcname.translate(table)
-        # remove trailing dots
-        arcname = (x.rstrip('.') for x in arcname.split(pathsep))
+        # remove trailing dots and spaces
+        arcname = (x.rstrip(' .') for x in arcname.split(pathsep))
         # rejoin, removing empty parts.
         arcname = pathsep.join(x for x in arcname if x)
         return arcname

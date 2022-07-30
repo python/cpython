@@ -68,7 +68,7 @@ else:
 
 # Does io.IOBase finalizer log the exception if the close() method fails?
 # The exception is ignored silently by default in release build.
-IOBASE_EMITS_UNRAISABLE = (hasattr(sys, "gettotalrefcount") or sys.flags.dev_mode)
+IOBASE_EMITS_UNRAISABLE = (support.Py_DEBUG or sys.flags.dev_mode)
 
 
 def _default_chunk_size():
@@ -3570,6 +3570,10 @@ class TextIOWrapperTest(unittest.TestCase):
         F.tell = lambda x: 0
         t = self.TextIOWrapper(F(), encoding='utf-8')
 
+    def test_reconfigure_locale(self):
+        wrapper = io.TextIOWrapper(io.BytesIO(b"test"))
+        wrapper.reconfigure(encoding="locale")
+
     def test_reconfigure_encoding_read(self):
         # latin1 -> utf8
         # (latin1 can decode utf-8 encoded string)
@@ -4296,14 +4300,6 @@ class MiscIOTest(unittest.TestCase):
 
         proc = assert_python_ok('-X', 'utf8=1', '-c', code)
         self.assertEqual(b"utf-8", proc.out.strip())
-
-    @support.cpython_only
-    # Depending if OpenWrapper was already created or not, the warning is
-    # emitted or not. For example, the attribute is already created when this
-    # test is run multiple times.
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
-    def test_openwrapper(self):
-        self.assertIs(self.io.OpenWrapper, self.io.open)
 
 
 class CMiscIOTest(MiscIOTest):

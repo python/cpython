@@ -137,15 +137,33 @@ typedef enum kind {
     Iterator = 1,
     Except = 2,
     Object = 3,
+    Null = 4,
+    Lasti = 5,
 } Kind;
 
-#define BITS_PER_BLOCK 2
+static int
+compatible_kind(Kind from, Kind to) {
+    if (to == 0) {
+        return 0;
+    }
+    if (to == Object) {
+        return from != Null;
+    }
+    if (to == Null) {
+        return 1;
+    }
+    return from == to;
+}
+
+#define BITS_PER_BLOCK 3
 
 #define UNINITIALIZED -2
 #define OVERFLOWED -1
 
 #define MAX_STACK_ENTRIES (63/BITS_PER_BLOCK)
 #define WILL_OVERFLOW (1ULL<<((MAX_STACK_ENTRIES-1)*BITS_PER_BLOCK))
+
+#define EMPTY_STACK 0
 
 static inline int64_t
 push_value(int64_t stack, Kind kind)
@@ -164,11 +182,96 @@ pop_value(int64_t stack)
     return Py_ARITHMETIC_RIGHT_SHIFT(int64_t, stack, BITS_PER_BLOCK);
 }
 
+#define MASK ((1<<BITS_PER_BLOCK)-1)
+
 static inline Kind
 top_of_stack(int64_t stack)
 {
-    return stack & ((1<<BITS_PER_BLOCK)-1);
+    return stack & MASK;
 }
+
+static inline Kind
+peek(int64_t stack, int n)
+{
+    assert(n >= 1);
+    return (stack>>(BITS_PER_BLOCK*(n-1))) & MASK;
+}
+
+static Kind
+stack_swap(int64_t stack, int n)
+{
+    assert(n >= 1);
+    Kind to_swap = peek(stack, n);
+    Kind top = top_of_stack(stack);
+    int shift = BITS_PER_BLOCK*(n-1);
+    int64_t replaced_low = (stack & ~(MASK << shift)) | (top << shift);
+    int64_t replaced_top = (replaced_low & ~MASK) | to_swap;
+    return replaced_top;
+}
+
+static int64_t
+pop_to_level(int64_t stack, int level) {
+    if (level == 0) {
+        return EMPTY_STACK;
+    }
+    int64_t max_item = (1<<BITS_PER_BLOCK) - 1;
+    int64_t level_max_stack = max_item << ((level-1) * BITS_PER_BLOCK);
+    while (stack > level_max_stack) {
+        stack = pop_value(stack);
+    }
+    return stack;
+}
+
+#if 0
+/* These functions are useful for debugging the stack marking code */
+
+static char
+tos_char(int64_t stack) {
+    switch(top_of_stack(stack)) {
+        case Iterator:
+            return 'I';
+        case Except:
+            return 'E';
+        case Object:
+            return 'O';
+        case Lasti:
+            return 'L';
+        case Null:
+            return 'N';
+    }
+    return '?';
+}
+
+static void
+print_stack(int64_t stack) {
+    if (stack < 0) {
+        if (stack == UNINITIALIZED) {
+            printf("---");
+        }
+        else if (stack == OVERFLOWED) {
+            printf("OVERFLOWED");
+        }
+        else {
+            printf("??");
+        }
+        return;
+    }
+    while (stack) {
+        printf("%c", tos_char(stack));
+        stack = pop_value(stack);
+    }
+}
+
+static void
+print_stacks(int64_t *stacks, int n) {
+    for (int i = 0; i < n; i++) {
+        printf("%d: ", i);
+        print_stack(stacks[i]);
+        printf("\n");
+    }
+}
+
+#endif
 
 static int64_t *
 mark_stacks(PyCodeObject *code_obj, int len)
@@ -189,7 +292,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
     for (int i = 1; i <= len; i++) {
         stacks[i] = UNINITIALIZED;
     }
-    stacks[0] = 0;
+    stacks[0] = EMPTY_STACK;
     if (code_obj->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR))
     {
         // Generators get sent None while starting:
@@ -198,6 +301,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
     int todo = 1;
     while (todo) {
         todo = 0;
+        /* Scan instructions */
         for (i = 0; i < len; i++) {
             int64_t next_stack = stacks[i];
             if (next_stack == UNINITIALIZED) {
@@ -215,11 +319,15 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     int64_t target_stack;
                     int j = get_arg(code, i);
                     if (opcode == POP_JUMP_FORWARD_IF_FALSE ||
-                        opcode == POP_JUMP_FORWARD_IF_TRUE) {
+                        opcode == POP_JUMP_FORWARD_IF_TRUE ||
+                        opcode == JUMP_IF_FALSE_OR_POP ||
+                        opcode == JUMP_IF_TRUE_OR_POP)
+                    {
                         j += i + 1;
                     }
-                    else if (opcode == POP_JUMP_BACKWARD_IF_FALSE ||
-                             opcode == POP_JUMP_BACKWARD_IF_TRUE) {
+                    else {
+                        assert(opcode == POP_JUMP_BACKWARD_IF_FALSE ||
+                               opcode == POP_JUMP_BACKWARD_IF_TRUE);
                         j = i + 1 - j;
                     }
                     assert(j < len);
@@ -241,10 +349,6 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     stacks[i+1] = next_stack;
                     break;
                 }
-                case POP_EXCEPT:
-                    next_stack = pop_value(pop_value(pop_value(next_stack)));
-                    stacks[i+1] = next_stack;
-                    break;
                 case SEND:
                     j = get_arg(code, i) + i + 1;
                     assert(j < len);
@@ -278,29 +382,89 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 {
                     int64_t target_stack = pop_value(next_stack);
                     stacks[i+1] = push_value(next_stack, Object);
-                    j = get_arg(code, i) + i + 1;
+                    j = get_arg(code, i) + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + i;
                     assert(j < len);
                     assert(stacks[j] == UNINITIALIZED || stacks[j] == target_stack);
                     stacks[j] = target_stack;
                     break;
                 }
                 case END_ASYNC_FOR:
-                    next_stack = pop_value(pop_value(pop_value(next_stack)));
+                    next_stack = pop_value(pop_value(next_stack));
                     stacks[i+1] = next_stack;
                     break;
                 case PUSH_EXC_INFO:
                     next_stack = push_value(next_stack, Except);
-                    next_stack = push_value(next_stack, Except);
-                    next_stack = push_value(next_stack, Except);
                     stacks[i+1] = next_stack;
+                    break;
+                case POP_EXCEPT:
+                    assert(top_of_stack(next_stack) == Except);
+                    next_stack = pop_value(next_stack);
+                    stacks[i+1] = next_stack;
+                    break;
                 case RETURN_VALUE:
+                    assert(pop_value(next_stack) == EMPTY_STACK);
+                    assert(top_of_stack(next_stack) == Object);
+                    break;
                 case RAISE_VARARGS:
+                    break;
                 case RERAISE:
+                    assert(top_of_stack(next_stack) == Except);
                     /* End of block */
                     break;
+                case PUSH_NULL:
+                    next_stack = push_value(next_stack, Null);
+                    stacks[i+1] = next_stack;
+                    break;
+                case LOAD_GLOBAL:
+                {
+                    int j = get_arg(code, i);
+                    if (j & 1) {
+                        next_stack = push_value(next_stack, Null);
+                    }
+                    next_stack = push_value(next_stack, Object);
+                    stacks[i+1] = next_stack;
+                    break;
+                }
+                case LOAD_ATTR:
+                {
+                    assert(top_of_stack(next_stack) == Object);
+                    int j = get_arg(code, i);
+                    if (j & 1) {
+                        next_stack = pop_value(next_stack);
+                        next_stack = push_value(next_stack, Null);
+                        next_stack = push_value(next_stack, Object);
+                    }
+                    stacks[i+1] = next_stack;
+                    break;
+                }
+                case CALL:
+                {
+                    int args = get_arg(code, i);
+                    for (int j = 0; j < args+2; j++) {
+                        next_stack = pop_value(next_stack);
+                    }
+                    next_stack = push_value(next_stack, Object);
+                    stacks[i+1] = next_stack;
+                    break;
+                }
+                case SWAP:
+                {
+                    int n = get_arg(code, i);
+                    next_stack = stack_swap(next_stack, n);
+                    stacks[i+1] = next_stack;
+                    break;
+                }
+                case COPY:
+                {
+                    int n = get_arg(code, i);
+                    next_stack = push_value(next_stack, peek(next_stack, n));
+                    stacks[i+1] = next_stack;
+                    break;
+                }
                 default:
                 {
-                    int delta = PyCompile_OpcodeStackEffect(opcode, _Py_OPARG(code[i]));
+                    int delta = PyCompile_OpcodeStackEffect(opcode, get_arg(code, i));
+                    assert(delta != PY_INVALID_STACK_EFFECT);
                     while (delta < 0) {
                         next_stack = pop_value(next_stack);
                         delta++;
@@ -313,20 +477,37 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 }
             }
         }
+        /* Scan exception table */
+        unsigned char *start = (unsigned char *)PyBytes_AS_STRING(code_obj->co_exceptiontable);
+        unsigned char *end = start + PyBytes_GET_SIZE(code_obj->co_exceptiontable);
+        unsigned char *scan = start;
+        while (scan < end) {
+            int start_offset, size, handler;
+            scan = parse_varint(scan, &start_offset);
+            assert(start_offset >= 0 && start_offset < len);
+            scan = parse_varint(scan, &size);
+            assert(size >= 0 && start_offset+size <= len);
+            scan = parse_varint(scan, &handler);
+            assert(handler >= 0 && handler < len);
+            int depth_and_lasti;
+            scan = parse_varint(scan, &depth_and_lasti);
+            int level = depth_and_lasti >> 1;
+            int lasti = depth_and_lasti & 1;
+            if (stacks[start_offset] != UNINITIALIZED) {
+                if (stacks[handler] == UNINITIALIZED) {
+                    todo = 1;
+                    uint64_t target_stack = pop_to_level(stacks[start_offset], level);
+                    if (lasti) {
+                        target_stack = push_value(target_stack, Lasti);
+                    }
+                    target_stack = push_value(target_stack, Except);
+                    stacks[handler] = target_stack;
+                }
+            }
+        }
     }
     Py_DECREF(co_code);
     return stacks;
-}
-
-static int
-compatible_kind(Kind from, Kind to) {
-    if (to == 0) {
-        return 0;
-    }
-    if (to == Object) {
-        return 1;
-    }
-    return from == to;
 }
 
 static int
@@ -364,8 +545,11 @@ explain_incompatible_stack(int64_t to_stack)
     switch(target_kind) {
         case Except:
             return "can't jump into an 'except' block as there's no exception";
+        case Lasti:
+            return "can't jump into a re-raising block as there's no location";
         case Object:
-            return "differing stack depth";
+        case Null:
+            return "incompatible stacks";
         case Iterator:
             return "can't jump into the body of a for loop";
         default:
@@ -414,13 +598,6 @@ first_line_not_before(int *lines, int len, int line)
     return result;
 }
 
-static void
-frame_stack_pop(PyFrameObject *f)
-{
-    PyObject *v = _PyFrame_StackPop(f->f_frame);
-    Py_DECREF(v);
-}
-
 static PyFrameState
 _PyFrame_GetState(PyFrameObject *frame)
 {
@@ -455,6 +632,36 @@ _PyFrame_GetState(PyFrameObject *frame)
     Py_UNREACHABLE();
 }
 
+static void
+add_load_fast_null_checks(PyCodeObject *co)
+{
+    int changed = 0;
+    _Py_CODEUNIT *instructions = _PyCode_CODE(co);
+    for (Py_ssize_t i = 0; i < Py_SIZE(co); i++) {
+        int opcode = _Py_OPCODE(instructions[i]);
+        switch (opcode) {
+            case LOAD_FAST:
+            case LOAD_FAST__LOAD_FAST:
+            case LOAD_FAST__LOAD_CONST:
+                changed = 1;
+                _Py_SET_OPCODE(instructions[i], LOAD_FAST_CHECK);
+                break;
+            case LOAD_CONST__LOAD_FAST:
+                changed = 1;
+                _Py_SET_OPCODE(instructions[i], LOAD_CONST);
+                break;
+            case STORE_FAST__LOAD_FAST:
+                changed = 1;
+                _Py_SET_OPCODE(instructions[i], STORE_FAST);
+                break;
+        }
+        i += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
+    }
+    if (changed) {
+        // invalidate cached co_code object
+        Py_CLEAR(co->_co_code);
+    }
+}
 
 /* Setter for f_lineno - you can set f_lineno from within a trace function in
  * order to jump to a given line of code, subject to some restrictions.  Most
@@ -545,6 +752,8 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         return -1;
     }
 
+    add_load_fast_null_checks(f->f_frame->f_code);
+
     /* PyCode_NewWithPosOnlyArgs limits co_code to be under INT_MAX so this
      * should never overflow. */
     int len = (int)Py_SIZE(f->f_frame->f_code);
@@ -588,7 +797,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
                     msg = "stack to deep to analyze";
                 }
                 else if (start_stack == UNINITIALIZED) {
-                    msg = "can't jump from within an exception handler";
+                    msg = "can't jump from unreachable code";
                 }
                 else {
                     msg = explain_incompatible_stack(target_stack);
@@ -608,7 +817,20 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         start_stack = pop_value(start_stack);
     }
     while (start_stack > best_stack) {
-        frame_stack_pop(f);
+        if (top_of_stack(start_stack) == Except) {
+            /* Pop exception stack as well as the evaluation stack */
+            PyThreadState *tstate = _PyThreadState_GET();
+            _PyErr_StackItem *exc_info = tstate->exc_info;
+            PyObject *value = exc_info->exc_value;
+            PyObject *exc = _PyFrame_StackPop(f->f_frame);
+            assert(PyExceptionInstance_Check(exc) || exc == Py_None);
+            exc_info->exc_value = exc;
+            Py_XDECREF(value);
+        }
+        else {
+            PyObject *v = _PyFrame_StackPop(f->f_frame);
+            Py_XDECREF(v);
+        }
         start_stack = pop_value(start_stack);
     }
     /* Finally set the new lasti and return OK. */
@@ -828,8 +1050,9 @@ init_frame(_PyInterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
 {
     /* _PyFrame_InitializeSpecials consumes reference to func */
     Py_INCREF(func);
+    Py_XINCREF(locals);
     PyCodeObject *code = (PyCodeObject *)func->func_code;
-    _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
+    _PyFrame_InitializeSpecials(frame, func, locals, code);
     for (Py_ssize_t i = 0; i < code->co_nlocalsplus; i++) {
         frame->localsplus[i] = NULL;
     }
@@ -1047,6 +1270,7 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
     }
     fast = _PyFrame_GetLocalsArray(frame);
     co = frame->f_code;
+    bool added_null_checks = false;
 
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
     for (int i = 0; i < co->co_nlocalsplus; i++) {
@@ -1066,6 +1290,10 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
             }
         }
         PyObject *oldvalue = fast[i];
+        if (!added_null_checks && oldvalue != NULL && value == NULL) {
+            add_load_fast_null_checks(co);
+            added_null_checks = true;
+        }
         PyObject *cell = NULL;
         if (kind == CO_FAST_FREE) {
             // The cell was set when the frame was created from
@@ -1133,8 +1361,14 @@ PyFrame_GetBack(PyFrameObject *frame)
 {
     assert(frame != NULL);
     PyFrameObject *back = frame->f_back;
-    if (back == NULL && frame->f_frame->previous != NULL) {
-        back = _PyFrame_GetFrameObject(frame->f_frame->previous);
+    if (back == NULL) {
+        _PyInterpreterFrame *prev = frame->f_frame->previous;
+        while (prev && _PyFrame_IsIncomplete(prev)) {
+            prev = prev->previous;
+        }
+        if (prev) {
+            back = _PyFrame_GetFrameObject(prev);
+        }
     }
     Py_XINCREF(back);
     return back;

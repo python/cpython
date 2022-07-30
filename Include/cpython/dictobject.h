@@ -52,9 +52,7 @@ static inline Py_ssize_t PyDict_GET_SIZE(PyObject *op) {
     mp = _Py_CAST(PyDictObject*, op);
     return mp->ma_used;
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030c0000
-#  define PyDict_GET_SIZE(op) PyDict_GET_SIZE(_PyObject_CAST(op))
-#endif
+#define PyDict_GET_SIZE(op) PyDict_GET_SIZE(_PyObject_CAST(op))
 
 PyAPI_FUNC(int) _PyDict_Contains_KnownHash(PyObject *, PyObject *, Py_hash_t);
 PyAPI_FUNC(int) _PyDict_ContainsId(PyObject *, _Py_Identifier *);
@@ -85,3 +83,6 @@ typedef struct {
 
 PyAPI_FUNC(PyObject *) _PyDictView_New(PyObject *, PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyDictView_Intersect(PyObject* self, PyObject *other);
+
+PyAPI_FUNC(int) _PyObject_VisitManagedDict(PyObject *self, visitproc visit, void *arg);
+PyAPI_FUNC(void) _PyObject_ClearManagedDict(PyObject *self);

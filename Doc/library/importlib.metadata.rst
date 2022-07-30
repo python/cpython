@@ -13,13 +13,13 @@
 
 **Source code:** :source:`Lib/importlib/metadata/__init__.py`
 
-``importlib.metadata`` is a library that provides for access to installed
-package metadata.  Built in part on Python's import system, this library
+``importlib.metadata`` is a library that provides access to installed
+package metadata, such as its entry points or its
+top-level name.  Built in part on Python's import system, this library
 intends to replace similar functionality in the `entry point
 API`_ and `metadata API`_ of ``pkg_resources``.  Along with
-:mod:`importlib.resources` (with new features backported to the
-`importlib_resources`_ package), this can eliminate the need to use the older
-and less efficient
+:mod:`importlib.resources`,
+this package can eliminate the need to use the older and less efficient
 ``pkg_resources`` package.
 
 By "installed package" we generally mean a third-party package installed into
@@ -30,6 +30,13 @@ directory, and metadata defined by :pep:`566` or its older specifications.
 By default, package metadata can live on the file system or in zip archives on
 :data:`sys.path`.  Through an extension mechanism, the metadata can live almost
 anywhere.
+
+
+.. seealso::
+
+   https://importlib-metadata.readthedocs.io/
+      The documentation for ``importlib_metadata``, which supplies a
+      backport of ``importlib.metadata``.
 
 
 Overview
@@ -54,9 +61,9 @@ You can get the version string for ``wheel`` by running the following:
     >>> version('wheel')  # doctest: +SKIP
     '0.32.3'
 
-You can also get the set of entry points keyed by group, such as
+You can also get a collection of entry points selectable by properties of the EntryPoint (typically 'group' or 'name'), such as
 ``console_scripts``, ``distutils.commands`` and others.  Each group contains a
-sequence of :ref:`EntryPoint <entry-points>` objects.
+collection of :ref:`EntryPoint <entry-points>` objects.
 
 You can get the :ref:`metadata for a distribution <metadata>`::
 
@@ -91,7 +98,7 @@ Query all entry points::
     >>> eps = entry_points()  # doctest: +SKIP
 
 The ``entry_points()`` function returns an ``EntryPoints`` object,
-a sequence of all ``EntryPoint`` objects with ``names`` and ``groups``
+a collection of all ``EntryPoint`` objects with ``names`` and ``groups``
 attributes for convenience::
 
     >>> sorted(eps.groups)  # doctest: +SKIP
@@ -136,7 +143,7 @@ Inspect the resolved entry point::
 The ``group`` and ``name`` are arbitrary values defined by the package author
 and usually a client will wish to resolve all entry points for a particular
 group.  Read `the setuptools docs
-<https://setuptools.readthedocs.io/en/latest/setuptools.html#dynamic-discovery-of-services-and-plugins>`_
+<https://setuptools.pypa.io/en/latest/userguide/entry_point.html>`_
 for more information on entry points, their definition, and usage.
 
 *Compatibility Note*
@@ -173,6 +180,13 @@ all the metadata in a JSON-compatible form per :PEP:`566`::
 
     >>> wheel_metadata.json['requires_python']
     '>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*'
+
+.. note::
+
+    The actual type of the object returned by ``metadata()`` is an
+    implementation detail and should be accessed only through the interface
+    described by the
+    `PackageMetadata protocol <https://importlib-metadata.readthedocs.io/en/latest/api.html#importlib_metadata.PackageMetadata>`.
 
 .. versionchanged:: 3.10
    The ``Description`` is now included in the metadata when presented
@@ -293,6 +307,15 @@ instance::
 
 The full set of available metadata is not described here.  See :pep:`566`
 for additional details.
+
+
+Distribution Discovery
+======================
+
+By default, this package provides built-in support for discovery of metadata for file system and zip file packages. This metadata finder search defaults to ``sys.path``, but varies slightly in how it interprets those values from how other import machinery does. In particular:
+
+- ``importlib.metadata`` does not honor :class:`bytes` objects on ``sys.path``.
+- ``importlib.metadata`` will incidentally honor :py:class:`pathlib.Path` objects on ``sys.path`` even though such values will be ignored for imports.
 
 
 Extending the search algorithm

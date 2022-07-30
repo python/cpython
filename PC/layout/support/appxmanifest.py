@@ -6,13 +6,11 @@ __author__ = "Steve Dower <steve.dower@python.org>"
 __version__ = "3.8"
 
 
-import collections
 import ctypes
 import io
 import os
-import sys
 
-from pathlib import Path, PureWindowsPath
+from pathlib import PureWindowsPath
 from xml.etree import ElementTree as ET
 
 from .constants import *

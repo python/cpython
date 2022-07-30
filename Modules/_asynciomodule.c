@@ -70,6 +70,7 @@ typedef enum {
     PyObject *prefix##_context0;                                            \
     PyObject *prefix##_callbacks;                                           \
     PyObject *prefix##_exception;                                           \
+    PyObject *prefix##_exception_tb;                                        \
     PyObject *prefix##_result;                                              \
     PyObject *prefix##_source_tb;                                           \
     PyObject *prefix##_cancel_msg;                                          \
@@ -384,7 +385,7 @@ call_soon(PyObject *loop, PyObject *func, PyObject *arg, PyObject *ctx)
             nargs++;
         }
         stack[nargs] = (PyObject *)ctx;
-
+        EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, callable);
         handle = PyObject_Vectorcall(callable, stack, nargs, context_kwname);
         Py_DECREF(callable);
     }
@@ -495,6 +496,7 @@ future_init(FutureObj *fut, PyObject *loop)
     Py_CLEAR(fut->fut_callbacks);
     Py_CLEAR(fut->fut_result);
     Py_CLEAR(fut->fut_exception);
+    Py_CLEAR(fut->fut_exception_tb);
     Py_CLEAR(fut->fut_source_tb);
     Py_CLEAR(fut->fut_cancel_msg);
     Py_CLEAR(fut->fut_cancelled_exc);
@@ -601,7 +603,9 @@ future_set_exception(FutureObj *fut, PyObject *exc)
     }
 
     assert(!fut->fut_exception);
+    assert(!fut->fut_exception_tb);
     fut->fut_exception = exc_val;
+    fut->fut_exception_tb = PyException_GetTraceback(exc_val);
     fut->fut_state = STATE_FINISHED;
 
     if (future_schedule_callbacks(fut) == -1) {
@@ -656,8 +660,16 @@ future_get_result(FutureObj *fut, PyObject **result)
 
     fut->fut_log_tb = 0;
     if (fut->fut_exception != NULL) {
+        PyObject *tb = fut->fut_exception_tb;
+        if (tb == NULL) {
+            tb = Py_None;
+        }
+        if (PyException_SetTraceback(fut->fut_exception, tb) < 0) {
+            return -1;
+        }
         Py_INCREF(fut->fut_exception);
         *result = fut->fut_exception;
+        Py_CLEAR(fut->fut_exception_tb);
         return 1;
     }
 
@@ -799,6 +811,7 @@ FutureObj_clear(FutureObj *fut)
     Py_CLEAR(fut->fut_callbacks);
     Py_CLEAR(fut->fut_result);
     Py_CLEAR(fut->fut_exception);
+    Py_CLEAR(fut->fut_exception_tb);
     Py_CLEAR(fut->fut_source_tb);
     Py_CLEAR(fut->fut_cancel_msg);
     Py_CLEAR(fut->fut_cancelled_exc);
@@ -815,6 +828,7 @@ FutureObj_traverse(FutureObj *fut, visitproc visit, void *arg)
     Py_VISIT(fut->fut_callbacks);
     Py_VISIT(fut->fut_result);
     Py_VISIT(fut->fut_exception);
+    Py_VISIT(fut->fut_exception_tb);
     Py_VISIT(fut->fut_source_tb);
     Py_VISIT(fut->fut_cancel_msg);
     Py_VISIT(fut->fut_cancelled_exc);
@@ -2643,11 +2657,7 @@ task_set_error_soon(TaskObj *task, PyObject *et, const char *format, ...)
     PyObject* msg;
 
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     msg = PyUnicode_FromFormatV(format, vargs);
     va_end(vargs);
 
@@ -2954,6 +2964,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
         PyObject *stack[2];
         stack[0] = wrapper;
         stack[1] = (PyObject *)task->task_context;
+        EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, add_cb);
         tmp = PyObject_Vectorcall(add_cb, stack, 1, context_kwname);
         Py_DECREF(add_cb);
         Py_DECREF(wrapper);

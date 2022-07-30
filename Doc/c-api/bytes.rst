@@ -58,9 +58,6 @@ called with a non-bytes parameter.
 
    .. % XXX: This should be exactly the same as the table in PyErr_Format.
    .. % One should just refer to the other.
-   .. % XXX: The descriptions for %zd and %zu are wrong, but the truth is complicated
-   .. % because not all compilers support the %z width modifier -- we fake it
-   .. % when necessary via interpolating PY_FORMAT_SIZE_T.
 
    .. tabularcolumns:: |l|l|L|
 

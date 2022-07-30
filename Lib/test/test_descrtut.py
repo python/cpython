@@ -9,7 +9,6 @@
 # deterministic.
 
 from test.support import sortdict
-import pprint
 import doctest
 import unittest
 
@@ -167,6 +166,7 @@ For instance of built-in types, x.__class__ is now the same as type(x):
 
 You can get the information from the list type:
 
+    >>> import pprint
     >>> pprint.pprint(dir(list))    # like list.__dict__.keys(), but sorted
     ['__add__',
      '__class__',
