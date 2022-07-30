@@ -105,15 +105,15 @@ of the UTF-8 encoding:
 
 * Use UTF-8 as the :term:`filesystem encoding <filesystem encoding and error
   handler>`.
-* :func:`sys.getfilesystemencoding()` returns ``'UTF-8'``.
-* :func:`locale.getpreferredencoding()` returns ``'UTF-8'`` (the *do_setlocale*
+* :func:`sys.getfilesystemencoding()` returns ``'utf-8'``.
+* :func:`locale.getpreferredencoding()` returns ``'utf-8'`` (the *do_setlocale*
   argument has no effect).
 * :data:`sys.stdin`, :data:`sys.stdout`, and :data:`sys.stderr` all use
   UTF-8 as their text encoding, with the ``surrogateescape``
   :ref:`error handler <error-handlers>` being enabled for :data:`sys.stdin`
   and :data:`sys.stdout` (:data:`sys.stderr` continues to use
   ``backslashreplace`` as it does in the default locale-aware mode)
-* On Unix, :func:`os.device_encoding` returns ``'UTF-8'``. rather than the
+* On Unix, :func:`os.device_encoding` returns ``'utf-8'`` rather than the
   device encoding.
 
 Note that the standard stream settings in UTF-8 mode can be overridden by
@@ -177,8 +177,8 @@ process and user.
 
    This mapping is captured the first time the :mod:`os` module is imported,
    typically during Python startup as part of processing :file:`site.py`.  Changes
-   to the environment made after this time are not reflected in ``os.environ``,
-   except for changes made by modifying ``os.environ`` directly.
+   to the environment made after this time are not reflected in :data:`os.environ`,
+   except for changes made by modifying :data:`os.environ` directly.
 
    This mapping may be used to modify the environment as well as query the
    environment.  :func:`putenv` will be called automatically when the mapping
@@ -190,8 +190,8 @@ process and user.
 
    .. note::
 
-      Calling :func:`putenv` directly does not change ``os.environ``, so it's better
-      to modify ``os.environ``.
+      Calling :func:`putenv` directly does not change :data:`os.environ`, so it's better
+      to modify :data:`os.environ`.
 
    .. note::
 
@@ -201,7 +201,7 @@ process and user.
 
    You can delete items in this mapping to unset environment variables.
    :func:`unsetenv` will be called automatically when an item is deleted from
-   ``os.environ``, and when one of the :meth:`pop` or :meth:`clear` methods is
+   :data:`os.environ`, and when one of the :meth:`pop` or :meth:`clear` methods is
    called.
 
    .. versionchanged:: 3.9
@@ -292,24 +292,31 @@ process and user.
 .. function:: getenv(key, default=None)
 
    Return the value of the environment variable *key* if it exists, or
-   *default* if it doesn't. *key*, *default* and the result are str.
+   *default* if it doesn't. *key*, *default* and the result are str. Note that
+   since :func:`getenv` uses :data:`os.environ`, the mapping of :func:`getenv` is
+   similarly also captured on import, and the function may not reflect
+   future environment changes.
 
    On Unix, keys and values are decoded with :func:`sys.getfilesystemencoding`
    and ``'surrogateescape'`` error handler. Use :func:`os.getenvb` if you
    would like to use a different encoding.
 
-   .. availability:: most flavors of Unix, Windows.
+   .. availability:: Unix, Windows.
 
 
 .. function:: getenvb(key, default=None)
 
    Return the value of the environment variable *key* if it exists, or
-   *default* if it doesn't. *key*, *default* and the result are bytes.
+   *default* if it doesn't. *key*, *default* and the result are bytes. Note that
+   since :func:`getenvb` uses :data:`os.environb`, the mapping of :func:`getenvb` is
+   similarly also captured on import, and the function may not reflect
+   future environment changes.
+
 
    :func:`getenvb` is only available if :data:`supports_bytes_environ`
    is ``True``.
 
-   .. availability:: most flavors of Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.2
 
@@ -355,7 +362,8 @@ process and user.
 
    Return list of group ids that *user* belongs to. If *group* is not in the
    list, it is included; typically, *group* is specified as the group ID
-   field from the password record for *user*.
+   field from the password record for *user*, because that group ID will
+   otherwise be potentially omitted.
 
    .. availability:: Unix.
 
@@ -510,10 +518,11 @@ process and user.
    changes to the environment affect subprocesses started with :func:`os.system`,
    :func:`popen` or :func:`fork` and :func:`execv`.
 
-   Assignments to items in ``os.environ`` are automatically translated into
+   Assignments to items in :data:`os.environ` are automatically translated into
    corresponding calls to :func:`putenv`; however, calls to :func:`putenv`
-   don't update ``os.environ``, so it is actually preferable to assign to items
-   of ``os.environ``.
+   don't update :data:`os.environ`, so it is actually preferable to assign to items
+   of :data:`os.environ`. This also applies to :func:`getenv` and :func:`getenvb`, which
+   respectively use :data:`os.environ` and :data:`os.environb` in their implementations.
 
    .. note::
 
@@ -697,7 +706,7 @@ process and user.
    :func:`socket.gethostname`  or even
    ``socket.gethostbyaddr(socket.gethostname())``.
 
-   .. availability:: recent flavors of Unix.
+   .. availability:: Unix.
 
    .. versionchanged:: 3.3
       Return type changed from a tuple to a tuple-like object
@@ -712,10 +721,10 @@ process and user.
    environment affect subprocesses started with :func:`os.system`, :func:`popen` or
    :func:`fork` and :func:`execv`.
 
-   Deletion of items in ``os.environ`` is automatically translated into a
+   Deletion of items in :data:`os.environ` is automatically translated into a
    corresponding call to :func:`unsetenv`; however, calls to :func:`unsetenv`
-   don't update ``os.environ``, so it is actually preferable to delete items of
-   ``os.environ``.
+   don't update :data:`os.environ`, so it is actually preferable to delete items of
+   :data:`os.environ`.
 
    .. audit-event:: os.unsetenv key os.unsetenv
 
@@ -789,19 +798,33 @@ as internal buffering of data.
    Copy *count* bytes from file descriptor *src*, starting from offset
    *offset_src*, to file descriptor *dst*, starting from offset *offset_dst*.
    If *offset_src* is None, then *src* is read from the current position;
-   respectively for *offset_dst*. The files pointed by *src* and *dst*
+   respectively for *offset_dst*.
+
+   In Linux kernel older than 5.3, the files pointed by *src* and *dst*
    must reside in the same filesystem, otherwise an :exc:`OSError` is
    raised with :attr:`~OSError.errno` set to :data:`errno.EXDEV`.
 
    This copy is done without the additional cost of transferring data
    from the kernel to user space and then back into the kernel. Additionally,
-   some filesystems could implement extra optimizations. The copy is done as if
-   both files are opened as binary.
+   some filesystems could implement extra optimizations, such as the use of
+   reflinks (i.e., two or more inodes that share pointers to the same
+   copy-on-write disk blocks; supported file systems include btrfs and XFS)
+   and server-side copy (in the case of NFS).
+
+   The function copies bytes between two file descriptors. Text options, like
+   the encoding and the line ending, are ignored.
 
    The return value is the amount of bytes copied. This could be less than the
    amount requested.
 
-   .. availability:: Linux kernel >= 4.5 or glibc >= 2.27.
+   .. note::
+
+      On Linux, :func:`os.copy_file_range` should not be used for copying a
+      range of a pseudo file from a special filesystem like procfs and sysfs.
+      It will always copy no bytes and return 0 as if the file was empty
+      because of a known Linux kernel issue.
+
+   .. availability:: Linux >= 4.5 with glibc >= 2.27.
 
    .. versionadded:: 3.8
 
@@ -991,6 +1014,17 @@ as internal buffering of data.
    .. versionadded:: 3.3
 
 
+.. function:: login_tty(fd)
+
+   Prepare the tty of which fd is a file descriptor for a new login session.
+   Make the calling process a session leader; make the tty the controlling tty,
+   the stdin, the stdout, and the stderr of the calling process; close fd.
+
+   .. availability:: Unix.
+
+   .. versionadded:: 3.11
+
+
 .. function:: lseek(fd, pos, how)
 
    Set the current position of file descriptor *fd* to position *pos*, modified
@@ -1130,7 +1164,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    descriptors are :ref:`non-inheritable <fd_inheritance>`. For a (slightly) more
    portable approach, use the :mod:`pty` module.
 
-   .. availability:: some flavors of Unix.
+   .. availability:: Unix.
 
    .. versionchanged:: 3.4
       The new file descriptors are now non-inheritable.
@@ -1156,7 +1190,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Return a pair of file descriptors ``(r, w)`` usable for reading and writing,
    respectively.
 
-   .. availability:: some flavors of Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -1235,9 +1269,9 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    Combine the functionality of :func:`os.readv` and :func:`os.pread`.
 
-   .. availability:: Linux 2.6.30 and newer, FreeBSD 6.0 and newer,
-      OpenBSD 2.7 and newer, AIX 7.1 and newer. Using flags requires
-      Linux 4.6 or newer.
+   .. availability:: Linux >= 2.6.30, FreeBSD >= 6.0, OpenBSD >= 2.7, AIX >= 7.1.
+
+      Using flags requires Linux >= 4.6.
 
    .. versionadded:: 3.7
 
@@ -1252,7 +1286,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    If no bytes were read, it will return ``-1`` and set errno to
    :data:`errno.EAGAIN`.
 
-   .. availability:: Linux 4.14 and newer.
+   .. availability:: Linux >= 4.14.
 
    .. versionadded:: 3.7
 
@@ -1266,7 +1300,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Currently, on Linux, this feature is usable only on a file descriptor opened
    using the :data:`O_DIRECT` flag.
 
-   .. availability:: Linux 4.6 and newer.
+   .. availability:: Linux >= 4.6.
 
    .. versionadded:: 3.7
 
@@ -1305,9 +1339,9 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    Combine the functionality of :func:`os.writev` and :func:`os.pwrite`.
 
-   .. availability:: Linux 2.6.30 and newer, FreeBSD 6.0 and newer,
-      OpenBSD 2.7 and newer, AIX 7.1 and newer. Using flags requires
-      Linux 4.7 or newer.
+   .. availability:: Linux >= 2.6.30, FreeBSD >= 6.0, OpenBSD >= 2.7, AIX >= 7.1.
+
+      Using flags requires Linux >= 4.6.
 
    .. versionadded:: 3.7
 
@@ -1317,7 +1351,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Provide a per-write equivalent of the :data:`O_DSYNC` :func:`os.open` flag.
    This flag effect applies only to the data range written by the system call.
 
-   .. availability:: Linux 4.7 and newer.
+   .. availability:: Linux >= 4.7.
 
    .. versionadded:: 3.7
 
@@ -1327,7 +1361,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Provide a per-write equivalent of the :data:`O_SYNC` :func:`os.open` flag.
    This flag effect applies only to the data range written by the system call.
 
-   .. availability:: Linux 4.7 and newer.
+   .. availability:: Linux >= 4.7.
 
    .. versionadded:: 3.7
 
@@ -1341,7 +1375,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    appended to the end of the file. However, if the *offset* argument is
    ``-1``, the current file *offset* is updated.
 
-   .. availability:: Linux 4.16 and newer.
+   .. availability:: Linux >= 4.16.
 
    .. versionadded:: 3.10
 
@@ -1461,7 +1495,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    make sense to block because there are no writers connected to the write end
    of the pipe.
 
-   .. availability:: Linux kernel >= 2.6.17 and glibc >= 2.5
+   .. availability:: Linux >= 2.6.17 with glibc >= 2.5
 
    .. versionadded:: 3.10
 
@@ -2050,7 +2084,8 @@ features:
 
    Create a directory named *path* with numeric mode *mode*.
 
-   If the directory already exists, :exc:`FileExistsError` is raised.
+   If the directory already exists, :exc:`FileExistsError` is raised. If a parent
+   directory in the path does not exist, :exc:`FileNotFoundError` is raised.
 
    .. _mkdir_modebits:
 
@@ -2086,7 +2121,7 @@ features:
 
    The *mode* parameter is passed to :func:`mkdir` for creating the leaf
    directory; see :ref:`the mkdir() description <mkdir_modebits>` for how it
-   is interpreted.  To set the file permission bits of any newly-created parent
+   is interpreted.  To set the file permission bits of any newly created parent
    directories you can set the umask before invoking :func:`makedirs`.  The
    file permission bits of existing parent directories are not changed.
 
@@ -2117,7 +2152,7 @@ features:
 
    .. versionchanged:: 3.7
       The *mode* argument no longer affects the file permission bits of
-      newly-created intermediate-level directories.
+      newly created intermediate-level directories.
 
 
 .. function:: mkfifo(path, mode=0o666, *, dir_fd=None)
@@ -2307,7 +2342,7 @@ features:
    :exc:`IsADirectoryError` or a :exc:`NotADirectoryError` will be raised
    respectively.  If both are directories and *dst* is empty, *dst* will be
    silently replaced.  If *dst* is a non-empty directory, an :exc:`OSError`
-   is raised. If both are files, *dst* it will be replaced silently if the user
+   is raised. If both are files, *dst* will be replaced silently if the user
    has permission.  The operation may fail on some Unix flavors if *src* and
    *dst* are on different filesystems.  If successful, the renaming will be an
    atomic operation (this is a POSIX requirement).
@@ -2346,7 +2381,7 @@ features:
 
 .. function:: replace(src, dst, *, src_dir_fd=None, dst_dir_fd=None)
 
-   Rename the file or directory *src* to *dst*.  If *dst* is a directory,
+   Rename the file or directory *src* to *dst*.  If *dst* is a non-empty directory,
    :exc:`OSError` will be raised.  If *dst* exists and is a file, it will
    be replaced silently if the user has permission.  The operation may fail
    if *src* and *dst* are on different filesystems.  If successful,
@@ -3299,7 +3334,7 @@ features:
    the file descriptor, and as such multiple files can have the same name
    without any side effects.
 
-   .. availability:: Linux 3.17 or newer with glibc 2.27 or newer.
+   .. availability:: Linux >= 3.17 with glibc >= 2.27.
 
    .. versionadded:: 3.8
 
@@ -3324,8 +3359,9 @@ features:
 
    These flags can be passed to :func:`memfd_create`.
 
-   .. availability:: Linux 3.17 or newer with glibc 2.27 or newer.  The
-      ``MFD_HUGE*`` flags are only available since Linux 4.14.
+   .. availability:: Linux >= 3.17 with glibc >= 2.27
+
+      The ``MFD_HUGE*`` flags are only available since Linux 4.14.
 
    .. versionadded:: 3.8
 
@@ -3377,7 +3413,7 @@ features:
        finally:
            os.close(fd)
 
-   .. availability:: Linux 2.6.27 or newer with glibc 2.8 or newer.
+   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
    .. versionadded:: 3.10
 
@@ -3386,7 +3422,7 @@ features:
    Read value from an :func:`eventfd` file descriptor and return a 64 bit
    unsigned int. The function does not verify that *fd* is an :func:`eventfd`.
 
-   .. availability:: See :func:`eventfd`
+   .. availability:: Linux >= 2.6.27
 
    .. versionadded:: 3.10
 
@@ -3395,7 +3431,7 @@ features:
    Add value to an :func:`eventfd` file descriptor. *value* must be a 64 bit
    unsigned int. The function does not verify that *fd* is an :func:`eventfd`.
 
-   .. availability:: See :func:`eventfd`
+   .. availability:: Linux >= 2.6.27
 
    .. versionadded:: 3.10
 
@@ -3403,7 +3439,7 @@ features:
 
    Set close-on-exec flag for new :func:`eventfd` file descriptor.
 
-   .. availability:: See :func:`eventfd`
+   .. availability:: Linux >= 2.6.27
 
    .. versionadded:: 3.10
 
@@ -3412,7 +3448,7 @@ features:
    Set :const:`O_NONBLOCK` status flag for new :func:`eventfd` file
    descriptor.
 
-   .. availability:: See :func:`eventfd`
+   .. availability:: Linux >= 2.6.27
 
    .. versionadded:: 3.10
 
@@ -3421,7 +3457,7 @@ features:
    Provide semaphore-like semantics for reads from a :func:`eventfd` file
    descriptor. On read the internal counter is decremented by one.
 
-   .. availability:: Linux 2.6.30 or newer with glibc 2.8 or newer.
+   .. availability:: Linux >= 2.6.30
 
    .. versionadded:: 3.10
 
@@ -3554,8 +3590,8 @@ to be ignored.
    Add a path to the DLL search path.
 
    This search path is used when resolving dependencies for imported
-   extension modules (the module itself is resolved through sys.path),
-   and also by :mod:`ctypes`.
+   extension modules (the module itself is resolved through
+   :data:`sys.path`), and also by :mod:`ctypes`.
 
    Remove the directory by calling **close()** on the returned object
    or using it in a :keyword:`with` statement.
@@ -3826,7 +3862,7 @@ written in Python, such as a mail server's external command delivery program.
       Calling ``forkpty()`` in a subinterpreter is no longer supported
       (:exc:`RuntimeError` is raised).
 
-   .. availability:: some flavors of Unix.
+   .. availability:: Unix.
 
 
 .. function:: kill(pid, sig)
@@ -3876,15 +3912,24 @@ written in Python, such as a mail server's external command delivery program.
 
 .. function:: pidfd_open(pid, flags=0)
 
-   Return a file descriptor referring to the process *pid*.  This descriptor can
-   be used to perform process management without races and signals.  The *flags*
-   argument is provided for future extensions; no flag values are currently
-   defined.
+   Return a file descriptor referring to the process *pid* with *flags* set.
+   This descriptor can be used to perform process management without races
+   and signals.
 
    See the :manpage:`pidfd_open(2)` man page for more details.
 
-   .. availability:: Linux 5.3+
+   .. availability:: Linux >= 5.3
    .. versionadded:: 3.9
+
+   .. data:: PIDFD_NONBLOCK
+
+      This flag indicates that the file descriptor will be non-blocking.
+      If the process referred to by the file descriptor has not yet terminated,
+      then an attempt to wait on the file descriptor using :manpage:`waitid(2)`
+      will immediately return the error :data:`~errno.EAGAIN` rather than blocking.
+
+   .. availability:: Linux >= 5.10
+   .. versionadded:: 3.12
 
 
 .. function:: plock(op)
@@ -3900,7 +3945,8 @@ written in Python, such as a mail server's external command delivery program.
    Open a pipe to or from command *cmd*.
    The return value is an open file object
    connected to the pipe, which can be read or written depending on whether *mode*
-   is ``'r'`` (default) or ``'w'``. The *buffering* argument has the same meaning as
+   is ``'r'`` (default) or ``'w'``.
+   The *buffering* argument have the same meaning as
    the corresponding argument to the built-in :func:`open` function. The
    returned file object reads or writes text strings rather than bytes.
 
@@ -3922,6 +3968,14 @@ written in Python, such as a mail server's external command delivery program.
    This is implemented using :class:`subprocess.Popen`; see that class's
    documentation for more powerful ways to manage and communicate with
    subprocesses.
+
+   .. note::
+      The :ref:`Python UTF-8 Mode <utf8-mode>` affects encodings used
+      for *cmd* and pipe contents.
+
+      :func:`popen` is a simple wrapper around :class:`subprocess.Popen`.
+      Use :class:`subprocess.Popen` or :func:`subprocess.run` to
+      control options like encodings.
 
 
 .. function:: posix_spawn(path, argv, env, *, file_actions=None, \
@@ -4024,7 +4078,9 @@ written in Python, such as a mail server's external command delivery program.
 
    .. versionadded:: 3.8
 
-   .. availability:: See :func:`posix_spawn` documentation.
+   .. availability:: POSIX
+
+      See :func:`posix_spawn` documentation.
 
 
 .. function:: register_at_fork(*, before=None, after_in_parent=None, \
@@ -4124,7 +4180,9 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.spawn mode,path,args,env os.spawnl
 
-   .. availability:: Unix, Windows.  :func:`spawnlp`, :func:`spawnlpe`, :func:`spawnvp`
+   .. availability:: Unix, Windows.
+
+      :func:`spawnlp`, :func:`spawnlpe`, :func:`spawnvp`
       and :func:`spawnvpe` are not available on Windows.  :func:`spawnle` and
       :func:`spawnve` are not thread-safe on Windows; we advise you to use the
       :mod:`subprocess` module instead.
@@ -4171,13 +4229,13 @@ written in Python, such as a mail server's external command delivery program.
 
    Start a file with its associated application.
 
-   When *operation* is not specified or ``'open'``, this acts like double-clicking
+   When *operation* is not specified, this acts like double-clicking
    the file in Windows Explorer, or giving the file name as an argument to the
    :program:`start` command from the interactive command shell: the file is opened
    with whatever application (if any) its extension is associated.
 
    When another *operation* is given, it must be a "command verb" that specifies
-   what should be done with the file. Common verbs documented by Microsoft are
+   what should be done with the file. Common verbs documented by Microsoft are ``'open'``,
    ``'print'`` and  ``'edit'`` (to be used on files) as well as ``'explore'`` and
    ``'find'`` (to be used on directories).
 
@@ -4265,7 +4323,7 @@ written in Python, such as a mail server's external command delivery program.
    :attr:`!children_system`, and :attr:`!elapsed` in that order.
 
    See the Unix manual page
-   :manpage:`times(2)` and :manpage:`times(3)` manual page on Unix or `the GetProcessTimes MSDN
+   :manpage:`times(2)` and `times(3) <https://www.freebsd.org/cgi/man.cgi?time(3)>`_ manual page on Unix or `the GetProcessTimes MSDN
    <https://docs.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes>`_
    on Windows. On Windows, only :attr:`!user` and :attr:`!system` are known; the other attributes are zero.
 
@@ -4328,7 +4386,7 @@ written in Python, such as a mail server's external command delivery program.
    This is a Linux-specific *idtype* that indicates that *id* is a file
    descriptor that refers to a process.
 
-   .. availability:: Linux 5.4+
+   .. availability:: Linux >= 5.4
 
    .. versionadded:: 3.9
 
@@ -4470,7 +4528,9 @@ written in Python, such as a mail server's external command delivery program.
    This option causes child processes to be reported if they have been continued
    from a job control stop since their status was last reported.
 
-   .. availability:: some Unix systems.
+   .. availability:: Unix.
+
+      Some Unix systems.
 
 
 .. data:: WUNTRACED
@@ -4755,6 +4815,9 @@ Miscellaneous System Information
 
    .. availability:: Unix.
 
+   .. versionchanged:: 3.11
+      Add ``'SC_MINSIGSTKSZ'`` name.
+
 The following data values are used to support path manipulation operations.  These
 are defined for all platforms.
 
@@ -4873,7 +4936,7 @@ Random numbers
    See also the `Linux getrandom() manual page
    <http://man7.org/linux/man-pages/man2/getrandom.2.html>`_.
 
-   .. availability:: Linux 3.17 and newer.
+   .. availability:: Linux >= 3.17.
 
    .. versionadded:: 3.6
 

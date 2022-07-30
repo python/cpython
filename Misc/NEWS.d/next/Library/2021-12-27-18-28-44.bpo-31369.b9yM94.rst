@@ -1,2 +1,0 @@
-Add :class:`~re.RegexFlag` to ``re.__all__`` and documented it. Add
-:data:`~re.RegexFlag.NOFLAG` to indicate no flags being set.

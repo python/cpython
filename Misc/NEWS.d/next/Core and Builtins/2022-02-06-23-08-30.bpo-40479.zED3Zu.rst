@@ -1,1 +1,0 @@
-Add a missing call to ``va_end()`` in ``Modules/_hashopenssl.c``.

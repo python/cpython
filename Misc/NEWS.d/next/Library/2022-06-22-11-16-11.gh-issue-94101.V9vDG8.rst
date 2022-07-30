@@ -1,0 +1,3 @@
+Manual instantiation of :class:`ssl.SSLSession` objects is no longer allowed
+as it lead to misconfigured instances that crashed the interpreter when
+attributes where accessed on them.

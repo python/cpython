@@ -12,7 +12,6 @@ TODO:
     * std streams (pyshell, run),
     * warning stuff (pyshell, run).
 """
-from os import path
 
 # .pyw is for Windows; .pyi is for stub files.
 py_extensions = ('.py', '.pyw', '.pyi')  # Order needed for open/save dialogs.

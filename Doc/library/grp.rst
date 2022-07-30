@@ -12,7 +12,7 @@ Unix versions.
 
 Group database entries are reported as a tuple-like object, whose attributes
 correspond to the members of the ``group`` structure (Attribute field below, see
-``<pwd.h>``):
+``<grp.h>``):
 
 +-------+-----------+---------------------------------+
 | Index | Attribute | Meaning                         |
@@ -38,7 +38,7 @@ accessible via :func:`getgrnam` or :func:`getgrgid`.)
 It defines the following items:
 
 
-.. function:: getgrgid(gid)
+.. function:: getgrgid(id)
 
    Return the group database entry for the given numeric group ID. :exc:`KeyError`
    is raised if the entry asked for cannot be found.

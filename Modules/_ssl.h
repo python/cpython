@@ -29,6 +29,11 @@ typedef struct {
     PyObject *lib_codes_to_names;
     /* socket type from module CAPI */
     PyTypeObject *Sock_Type;
+    /* Interned strings */
+    PyObject *str_library;
+    PyObject *str_reason;
+    PyObject *str_verify_code;
+    PyObject *str_verify_message;
 } _sslmodulestate;
 
 static struct PyModuleDef _sslmodule_def;

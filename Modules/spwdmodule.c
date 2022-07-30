@@ -256,5 +256,12 @@ static struct PyModuleDef spwdmodule = {
 PyMODINIT_FUNC
 PyInit_spwd(void)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "'spwd' is deprecated and slated for removal in "
+                     "Python 3.13",
+                     7)) {
+        return NULL;
+    }
+
     return PyModuleDef_Init(&spwdmodule);
 }

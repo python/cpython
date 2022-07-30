@@ -176,6 +176,7 @@ typedef struct PyConfig {
 #endif
     wchar_t *check_hash_pycs_mode;
     int use_frozen_modules;
+    int safe_path;
 
     /* --- Path configuration inputs ------------ */
     int pathconfig_warnings;

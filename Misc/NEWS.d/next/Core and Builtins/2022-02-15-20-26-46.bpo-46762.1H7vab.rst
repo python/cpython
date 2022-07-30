@@ -1,2 +1,0 @@
-Fix an assert failure in debug builds when a '<', '>', or '=' is the last
-character in an f-string that's missing a closing right brace.

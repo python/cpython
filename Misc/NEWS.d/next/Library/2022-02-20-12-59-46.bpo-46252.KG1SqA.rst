@@ -1,2 +1,0 @@
-Raise :exc:`TypeError` if :class:`ssl.SSLSocket` is passed to
-transport-based APIs.

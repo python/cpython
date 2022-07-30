@@ -2,6 +2,7 @@
 
 
 import asyncio
+import contextvars
 
 from asyncio import taskgroups
 import unittest
@@ -120,7 +121,9 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(t2_cancel)
         self.assertTrue(t2.cancelled())
 
-    async def test_taskgroup_05(self):
+    async def test_cancel_children_on_child_error(self):
+        # When a child task raises an error, the rest of the children
+        # are cancelled and the errors are gathered into an EG.
 
         NUM = 0
         t2_cancel = False
@@ -165,7 +168,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(t2_cancel)
         self.assertTrue(runner_cancel)
 
-    async def test_taskgroup_06(self):
+    async def test_cancellation(self):
 
         NUM = 0
 
@@ -187,7 +190,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         self.assertFalse(r.done())
         r.cancel()
-        with self.assertRaises(asyncio.CancelledError):
+        with self.assertRaises(asyncio.CancelledError) as cm:
             await r
 
         self.assertEqual(NUM, 5)
@@ -226,7 +229,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(NUM, 15)
 
-    async def test_taskgroup_08(self):
+    async def test_cancellation_in_body(self):
 
         async def foo():
             await asyncio.sleep(0.1)
@@ -247,7 +250,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         self.assertFalse(r.done())
         r.cancel()
-        with self.assertRaises(asyncio.CancelledError):
+        with self.assertRaises(asyncio.CancelledError) as cm:
             await r
 
     async def test_taskgroup_09(self):
@@ -699,3 +702,45 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         async with taskgroups.TaskGroup() as g:
             t = g.create_task(coro(), name="yolo")
             self.assertEqual(t.get_name(), "yolo")
+
+    async def test_taskgroup_task_context(self):
+        cvar = contextvars.ContextVar('cvar')
+
+        async def coro(val):
+            await asyncio.sleep(0)
+            cvar.set(val)
+
+        async with taskgroups.TaskGroup() as g:
+            ctx = contextvars.copy_context()
+            self.assertIsNone(ctx.get(cvar))
+            t1 = g.create_task(coro(1), context=ctx)
+            await t1
+            self.assertEqual(1, ctx.get(cvar))
+            t2 = g.create_task(coro(2), context=ctx)
+            await t2
+            self.assertEqual(2, ctx.get(cvar))
+
+    async def test_taskgroup_no_create_task_after_failure(self):
+        async def coro1():
+            await asyncio.sleep(0.001)
+            1 / 0
+        async def coro2(g):
+            try:
+                await asyncio.sleep(1)
+            except asyncio.CancelledError:
+                with self.assertRaises(RuntimeError):
+                    g.create_task(c1 := coro1())
+                # We still have to await c1 to avoid a warning
+                with self.assertRaises(ZeroDivisionError):
+                    await c1
+
+        with self.assertRaises(ExceptionGroup) as cm:
+            async with taskgroups.TaskGroup() as g:
+                g.create_task(coro1())
+                g.create_task(coro2(g))
+
+        self.assertEqual(get_error_types(cm.exception), {ZeroDivisionError})
+
+
+if __name__ == "__main__":
+    unittest.main()

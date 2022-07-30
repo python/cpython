@@ -4,7 +4,7 @@ import sys
 import unittest
 import warnings
 from test.support import os_helper
-from test.support import TestFailed
+from test.support import TestFailed, is_emscripten
 from test.support.os_helper import FakePath
 from test import test_genericpath
 from tempfile import TemporaryFile
@@ -117,6 +117,31 @@ class TestNtpath(NtpathTestCase):
         # Issue #19911: UNC part containing U+0130
         self.assertEqual(ntpath.splitdrive('//conky/MOUNTPOİNT/foo/bar'),
                          ('//conky/MOUNTPOİNT', '/foo/bar'))
+        # gh-81790: support device namespace, including UNC drives.
+        tester('ntpath.splitdrive("//?/c:")', ("//?/c:", ""))
+        tester('ntpath.splitdrive("//?/c:/")', ("//?/c:", "/"))
+        tester('ntpath.splitdrive("//?/c:/dir")', ("//?/c:", "/dir"))
+        tester('ntpath.splitdrive("//?/UNC")', ("", "//?/UNC"))
+        tester('ntpath.splitdrive("//?/UNC/")', ("", "//?/UNC/"))
+        tester('ntpath.splitdrive("//?/UNC/server/")', ("//?/UNC/server/", ""))
+        tester('ntpath.splitdrive("//?/UNC/server/share")', ("//?/UNC/server/share", ""))
+        tester('ntpath.splitdrive("//?/UNC/server/share/dir")', ("//?/UNC/server/share", "/dir"))
+        tester('ntpath.splitdrive("//?/VOLUME{00000000-0000-0000-0000-000000000000}/spam")',
+               ('//?/VOLUME{00000000-0000-0000-0000-000000000000}', '/spam'))
+        tester('ntpath.splitdrive("//?/BootPartition/")', ("//?/BootPartition", "/"))
+
+        tester('ntpath.splitdrive("\\\\?\\c:")', ("\\\\?\\c:", ""))
+        tester('ntpath.splitdrive("\\\\?\\c:\\")', ("\\\\?\\c:", "\\"))
+        tester('ntpath.splitdrive("\\\\?\\c:\\dir")', ("\\\\?\\c:", "\\dir"))
+        tester('ntpath.splitdrive("\\\\?\\UNC")', ("", "\\\\?\\UNC"))
+        tester('ntpath.splitdrive("\\\\?\\UNC\\")', ("", "\\\\?\\UNC\\"))
+        tester('ntpath.splitdrive("\\\\?\\UNC\\server\\")', ("\\\\?\\UNC\\server\\", ""))
+        tester('ntpath.splitdrive("\\\\?\\UNC\\server\\share")', ("\\\\?\\UNC\\server\\share", ""))
+        tester('ntpath.splitdrive("\\\\?\\UNC\\server\\share\\dir")',
+               ("\\\\?\\UNC\\server\\share", "\\dir"))
+        tester('ntpath.splitdrive("\\\\?\\VOLUME{00000000-0000-0000-0000-000000000000}\\spam")',
+               ('\\\\?\\VOLUME{00000000-0000-0000-0000-000000000000}', '\\spam'))
+        tester('ntpath.splitdrive("\\\\?\\BootPartition\\")', ("\\\\?\\BootPartition", "\\"))
 
     def test_split(self):
         tester('ntpath.split("c:\\foo\\bar")', ('c:\\foo', 'bar'))
@@ -747,6 +772,7 @@ class TestNtpath(NtpathTestCase):
         self.assertRaises(TypeError, ntpath.commonpath,
                           ['Program Files', b'C:\\Program Files\\Foo'])
 
+    @unittest.skipIf(is_emscripten, "Emscripten cannot fstat unnamed files.")
     def test_sameopenfile(self):
         with TemporaryFile() as tf1, TemporaryFile() as tf2:
             # Make sure the same file is really the same
@@ -851,6 +877,8 @@ class PathLikeTests(NtpathTestCase):
 
     def test_path_normcase(self):
         self._check_function(self.path.normcase)
+        if sys.platform == 'win32':
+            self.assertEqual(ntpath.normcase('\u03a9\u2126'), 'ωΩ')
 
     def test_path_isabs(self):
         self._check_function(self.path.isabs)

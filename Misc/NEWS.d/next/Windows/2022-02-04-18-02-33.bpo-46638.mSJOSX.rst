@@ -1,4 +1,0 @@
-Ensures registry virtualization is consistently disabled. For 3.10 and
-earlier, it remains enabled (some registry writes are protected), while for
-3.11 and later it is disabled (registry modifications affect all
-applications).

@@ -1,7 +1,29 @@
+.. release date: 2017-01-02
+.. bpo: 27278
+.. date: 9755
+.. nonce: y_HkGw
+.. original section: Library
+.. section: Security
+
+Fix os.urandom() implementation using getrandom() on Linux.  Truncate size
+to INT_MAX and loop until we collected enough random bytes, instead of
+casting a directly Py_ssize_t to int.
+
+..
+
+.. bpo: 22636
+.. date: 9753
+.. nonce: 3fQW_g
+.. original section: Library
+.. section: Security
+
+Avoid shell injection problems with ctypes.util.find_library().
+
+..
+
 .. bpo: 29073
 .. date: 9898
 .. nonce: EFpHQ7
-.. release date: 2017-01-02
 .. section: Core and Builtins
 
 bytearray formatting no longer truncates on first null byte.
@@ -1406,34 +1428,12 @@ issue25782.
 
 ..
 
-.. bpo: 27278
-.. date: 9755
-.. nonce: y_HkGw
-.. original section: Library
-.. section: Security
-
-Fix os.urandom() implementation using getrandom() on Linux.  Truncate size
-to INT_MAX and loop until we collected enough random bytes, instead of
-casting a directly Py_ssize_t to int.
-
-..
-
 .. bpo: 26386
 .. date: 9754
 .. nonce: 9L3Ut4
 .. section: Library
 
 Fixed ttk.TreeView selection operations with item id's containing spaces.
-
-..
-
-.. bpo: 22636
-.. date: 9753
-.. nonce: 3fQW_g
-.. original section: Library
-.. section: Security
-
-Avoid shell injection problems with ctypes.util.find_library().
 
 ..
 

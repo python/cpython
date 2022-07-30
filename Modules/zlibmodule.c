@@ -1420,7 +1420,7 @@ zlib_adler32_impl(PyObject *module, Py_buffer *data, unsigned int value)
 }
 
 /*[clinic input]
-zlib.crc32
+zlib.crc32 -> unsigned_int
 
     data: Py_buffer
     value: unsigned_int(bitwise=True) = 0
@@ -1432,12 +1432,10 @@ Compute a CRC-32 checksum of data.
 The returned checksum is an integer.
 [clinic start generated code]*/
 
-static PyObject *
+static unsigned int
 zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
-/*[clinic end generated code: output=63499fa20af7ea25 input=26c3ed430fa00b4c]*/
+/*[clinic end generated code: output=b217562e4fe6d6a6 input=1229cb2fb5ea948a]*/
 {
-    int signed_val;
-
     /* Releasing the GIL for very small buffers is inefficient
        and may lower performance */
     if (data->len > 1024*5) {
@@ -1452,12 +1450,12 @@ zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
             buf += (size_t) UINT_MAX;
             len -= (size_t) UINT_MAX;
         }
-        signed_val = crc32(value, buf, (unsigned int)len);
+        value = crc32(value, buf, (unsigned int)len);
         Py_END_ALLOW_THREADS
     } else {
-        signed_val = crc32(value, data->buf, (unsigned int)data->len);
+        value = crc32(value, data->buf, (unsigned int)data->len);
     }
-    return PyLong_FromUnsignedLong(signed_val & 0xffffffffU);
+    return value;
 }
 
 

@@ -37,17 +37,6 @@ _PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
     return size;
 }
 
-#if 0
-static const char *
-token_name(int type)
-{
-    if (0 <= type && type <= N_TOKENS) {
-        return _PyParser_TokenNames[type];
-    }
-    return "<Huh?>";
-}
-#endif
-
 // Here, mark is the start of the node, while p->mark is the end.
 // If node==NULL, they should be the same.
 int
@@ -88,13 +77,7 @@ init_normalization(Parser *p)
     if (p->normalize) {
         return 1;
     }
-    PyObject *m = PyImport_ImportModule("unicodedata");
-    if (!m)
-    {
-        return 0;
-    }
-    p->normalize = PyObject_GetAttrString(m, "normalize");
-    Py_DECREF(m);
+    p->normalize = _PyImport_GetModuleAttrString("unicodedata", "normalize");
     if (!p->normalize)
     {
         return 0;
@@ -755,7 +738,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
         return (Parser *) PyErr_NoMemory();
     }
     p->tokens[0] = PyMem_Calloc(1, sizeof(Token));
-    if (!p->tokens) {
+    if (!p->tokens[0]) {
         PyMem_Free(p->tokens);
         PyMem_Free(p);
         return (Parser *) PyErr_NoMemory();
@@ -785,6 +768,9 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->known_err_token = NULL;
     p->level = 0;
     p->call_invalid_rules = 0;
+#ifdef Py_DEBUG
+    p->debug = _Py_GetConfig()->parser_debug;
+#endif
     return p;
 }
 

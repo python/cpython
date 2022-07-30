@@ -4,7 +4,6 @@
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "frameobject.h"          // PyFrame_GetBack()
 #include "pycore_frame.h"
 #include "clinic/_warnings.c.h"
 
@@ -768,25 +767,6 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
 static int
 is_internal_frame(PyFrameObject *frame)
 {
-    static PyObject *importlib_string = NULL;
-    static PyObject *bootstrap_string = NULL;
-    int contains;
-
-    if (importlib_string == NULL) {
-        importlib_string = PyUnicode_FromString("importlib");
-        if (importlib_string == NULL) {
-            return 0;
-        }
-
-        bootstrap_string = PyUnicode_FromString("_bootstrap");
-        if (bootstrap_string == NULL) {
-            Py_DECREF(importlib_string);
-            return 0;
-        }
-        Py_INCREF(importlib_string);
-        Py_INCREF(bootstrap_string);
-    }
-
     if (frame == NULL) {
         return 0;
     }
@@ -802,12 +782,12 @@ is_internal_frame(PyFrameObject *frame)
         return 0;
     }
 
-    contains = PyUnicode_Contains(filename, importlib_string);
+    int contains = PyUnicode_Contains(filename, &_Py_ID(importlib));
     if (contains < 0) {
         return 0;
     }
     else if (contains > 0) {
-        contains = PyUnicode_Contains(filename, bootstrap_string);
+        contains = PyUnicode_Contains(filename, &_Py_ID(_bootstrap));
         if (contains < 0) {
             return 0;
         }
@@ -1050,27 +1030,30 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
     return source_line;
 }
 
+/*[clinic input]
+warn_explicit as warnings_warn_explicit
+
+    message: object
+    category: object
+    filename: unicode
+    lineno: int
+    module as mod: object = NULL
+    registry: object = None
+    module_globals: object = None
+    source as sourceobj: object = None
+
+Issue a warning, or maybe ignore it or raise an exception.
+[clinic start generated code]*/
+
 static PyObject *
-warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
+warnings_warn_explicit_impl(PyObject *module, PyObject *message,
+                            PyObject *category, PyObject *filename,
+                            int lineno, PyObject *mod, PyObject *registry,
+                            PyObject *module_globals, PyObject *sourceobj)
+/*[clinic end generated code: output=c49c62b15a49a186 input=df6eeb8b45e712f1]*/
 {
-    static char *kwd_list[] = {"message", "category", "filename", "lineno",
-                                "module", "registry", "module_globals",
-                                "source", 0};
-    PyObject *message;
-    PyObject *category;
-    PyObject *filename;
-    int lineno;
-    PyObject *module = NULL;
-    PyObject *registry = NULL;
-    PyObject *module_globals = NULL;
-    PyObject *sourceobj = NULL;
     PyObject *source_line = NULL;
     PyObject *returned;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OOUi|OOOO:warn_explicit",
-                kwd_list, &message, &category, &filename, &lineno, &module,
-                &registry, &module_globals, &sourceobj))
-        return NULL;
 
     PyThreadState *tstate = get_current_tstate();
     if (tstate == NULL) {
@@ -1090,14 +1073,14 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
             return NULL;
         }
     }
-    returned = warn_explicit(tstate, category, message, filename, lineno, module,
-                             registry, source_line, sourceobj);
+    returned = warn_explicit(tstate, category, message, filename, lineno,
+                             mod, registry, source_line, sourceobj);
     Py_XDECREF(source_line);
     return returned;
 }
 
 static PyObject *
-warnings_filters_mutated(PyObject *self, PyObject *args)
+warnings_filters_mutated(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyInterpreterState *interp = get_current_interp();
     if (interp == NULL) {
@@ -1155,11 +1138,7 @@ PyErr_WarnFormat(PyObject *category, Py_ssize_t stack_level,
     int res;
     va_list vargs;
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     res = _PyErr_WarnFormatV(NULL, category, stack_level, format, vargs);
     va_end(vargs);
     return res;
@@ -1172,11 +1151,7 @@ _PyErr_WarnFormat(PyObject *source, PyObject *category, Py_ssize_t stack_level,
     int res;
     va_list vargs;
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     res = _PyErr_WarnFormatV(source, category, stack_level, format, vargs);
     va_end(vargs);
     return res;
@@ -1189,11 +1164,7 @@ PyErr_ResourceWarning(PyObject *source, Py_ssize_t stack_level,
     int res;
     va_list vargs;
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     res = _PyErr_WarnFormatV(source, PyExc_ResourceWarning,
                              stack_level, format, vargs);
     va_end(vargs);
@@ -1293,11 +1264,7 @@ PyErr_WarnExplicitFormat(PyObject *category,
             goto exit;
     }
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     message = PyUnicode_FromFormatV(format, vargs);
     if (message != NULL) {
         PyObject *res;
@@ -1367,14 +1334,10 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
     }
 }
 
-PyDoc_STRVAR(warn_explicit_doc,
-"Low-level interface to warnings functionality.");
-
 static PyMethodDef warnings_functions[] = {
     WARNINGS_WARN_METHODDEF
-    {"warn_explicit", (PyCFunction)(void(*)(void))warnings_warn_explicit,
-        METH_VARARGS | METH_KEYWORDS, warn_explicit_doc},
-    {"_filters_mutated", (PyCFunction)warnings_filters_mutated, METH_NOARGS,
+    WARNINGS_WARN_EXPLICIT_METHODDEF
+    {"_filters_mutated", _PyCFunction_CAST(warnings_filters_mutated), METH_NOARGS,
         NULL},
     /* XXX(brett.cannon): add showwarning? */
     /* XXX(brett.cannon): Reasonable to add formatwarning? */

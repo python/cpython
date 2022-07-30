@@ -40,7 +40,6 @@ def mock_socket_module():
 
     m_socket.socket = mock.MagicMock()
     m_socket.socket.return_value = test_utils.mock_nonblocking_socket()
-    m_socket.getaddrinfo._is_coroutine = False
 
     return m_socket
 
@@ -1286,9 +1285,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         sock = m_socket.socket.return_value
 
         self.loop._add_reader = mock.Mock()
-        self.loop._add_reader._is_coroutine = False
         self.loop._add_writer = mock.Mock()
-        self.loop._add_writer._is_coroutine = False
 
         coro = self.loop.create_connection(asyncio.Protocol, '1.2.3.4', 80)
         t, p = self.loop.run_until_complete(coro)
@@ -1330,9 +1327,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         sock.family = socket.AF_INET6
 
         self.loop._add_reader = mock.Mock()
-        self.loop._add_reader._is_coroutine = False
         self.loop._add_writer = mock.Mock()
-        self.loop._add_writer._is_coroutine = False
 
         coro = self.loop.create_connection(asyncio.Protocol, 'fe80::1%1', 80)
         t, p = self.loop.run_until_complete(coro)
@@ -1359,9 +1354,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         sock = m_socket.socket.return_value
 
         self.loop._add_reader = mock.Mock()
-        self.loop._add_reader._is_coroutine = False
         self.loop._add_writer = mock.Mock()
-        self.loop._add_writer._is_coroutine = False
 
         for service, port in ('http', 80), (b'http', 80):
             coro = self.loop.create_connection(asyncio.Protocol,
@@ -1590,7 +1583,6 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
 
         m_socket.getaddrinfo.return_value = [
             (2, 1, 6, '', ('127.0.0.1', 10100))]
-        m_socket.getaddrinfo._is_coroutine = False
         m_sock = m_socket.socket.return_value = mock.Mock()
         m_sock.bind.side_effect = Err
 
@@ -1601,7 +1593,6 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
     @patch_socket
     def test_create_datagram_endpoint_no_addrinfo(self, m_socket):
         m_socket.getaddrinfo.return_value = []
-        m_socket.getaddrinfo._is_coroutine = False
 
         coro = self.loop.create_datagram_endpoint(
             MyDatagramProto, local_addr=('localhost', 0))
@@ -1835,7 +1826,6 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         m_socket.getaddrinfo = getaddrinfo
         m_socket.socket.return_value.bind = bind = mock.Mock()
         self.loop._add_reader = mock.Mock()
-        self.loop._add_reader._is_coroutine = False
 
         reuseport_supported = hasattr(socket, 'SO_REUSEPORT')
         coro = self.loop.create_datagram_endpoint(

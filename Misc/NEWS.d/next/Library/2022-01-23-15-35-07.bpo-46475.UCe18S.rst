@@ -1,2 +1,0 @@
-Add :data:`typing.Never` and :func:`typing.assert_never`. Patch by Jelle
-Zijlstra.
