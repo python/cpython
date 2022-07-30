@@ -9361,7 +9361,7 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
     res = fd2; // msvcrt dup2 returns 0 on success.
 
     /* Character files like console cannot be make non-inheritable */
-    if (!inheritable && _Py_set_inheritable(fd2, 0, NULL) < 0) {
+    if (!inheritable && fd != fd2 && _Py_set_inheritable(fd2, 0, NULL) < 0) {
         close(fd2);
         return -1;
     }
@@ -9381,7 +9381,7 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
 #else
 
 #ifdef HAVE_DUP3
-    if (!inheritable && dup3_works != 0) {
+    if (!inheritable && fd != fd2 && dup3_works != 0) {
         Py_BEGIN_ALLOW_THREADS
         res = dup3(fd, fd2, O_CLOEXEC);
         Py_END_ALLOW_THREADS
@@ -9395,7 +9395,7 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
         }
     }
 
-    if (inheritable || dup3_works == 0)
+    if (inheritable || fd == fd2 || dup3_works == 0)
     {
 #endif
         Py_BEGIN_ALLOW_THREADS
@@ -9406,7 +9406,8 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
             return -1;
         }
 
-        if (!inheritable && _Py_set_inheritable(fd2, 0, NULL) < 0) {
+        if (!inheritable && fd != fd2 && _Py_set_inheritable(fd2, 0, NULL) < 0)
+        {
             close(fd2);
             return -1;
         }

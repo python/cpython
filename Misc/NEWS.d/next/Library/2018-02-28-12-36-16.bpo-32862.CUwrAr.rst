@@ -1,0 +1,1 @@
+Make os.dup2(fd, fd) have no effect apart from validating fd.

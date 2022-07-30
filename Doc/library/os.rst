@@ -861,6 +861,9 @@ as internal buffering of data.
    <fd_inheritance>` by default or non-inheritable if *inheritable*
    is ``False``.
 
+   If *fd* is valid and equal to *fd2*, this function has no effect
+   regardless of the value of *inheritable*.
+
    .. versionchanged:: 3.4
       Add the optional *inheritable* parameter.
 
