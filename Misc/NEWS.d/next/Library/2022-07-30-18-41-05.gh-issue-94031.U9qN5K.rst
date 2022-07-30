@@ -1,0 +1,1 @@
+Avoid a race condition in :meth:`asyncio.BaseEventLoop.run_forever`
