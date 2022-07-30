@@ -1381,7 +1381,7 @@ This is how SQLite types are converted to Python types by default:
 The type system of the :mod:`sqlite3` module is extensible in two ways: you can
 store additional Python types in an SQLite database via
 :ref:`object adapters <sqlite3-adapters>`,
-and you can let the :mod:`sqlite3` module convert SQLite types to
+and you can let the ``sqlite3`` module convert SQLite types to
 Python types via :ref:`converters <sqlite3-converters>`.
 
 
