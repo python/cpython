@@ -389,21 +389,20 @@ class PurePath(object):
         if not self.is_absolute():
             raise ValueError("relative path can't be expressed as a file URI")
 
-        if self._flavour is posixpath:
-            # On POSIX we represent the path using the local filesystem encoding,
-            # for portability to other applications.
-            return 'file://' + urlquote_from_bytes(bytes(self))
-
-        # Under Windows, file URIs use the UTF-8 encoding.
         drive = self._drv
         if len(drive) == 2 and drive[1] == ':':
             # It's a path on a local drive => 'file:///c:/a/b'
-            rest = self.as_posix()[2:].lstrip('/')
-            return 'file:///%s/%s' % (
-                drive, urlquote_from_bytes(rest.encode('utf-8')))
-        else:
+            prefix = 'file:///' + drive
+            path = self.as_posix()[2:]
+        elif drive:
             # It's a path on a network drive => 'file://host/share/a/b'
-            return 'file:' + urlquote_from_bytes(self.as_posix().encode('utf-8'))
+            prefix = 'file:'
+            path = self.as_posix()
+        else:
+            # It's a posix path => 'file:///etc/hosts'
+            prefix = 'file://'
+            path = str(self)
+        return prefix + urlquote_from_bytes(os.fsencode(path))
 
     @property
     def _parts_normcase(self):
