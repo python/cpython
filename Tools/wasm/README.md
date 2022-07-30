@@ -226,9 +226,7 @@ AddType application/wasm wasm
 
 # WASI (wasm32-wasi)
 
-WASI builds require [WASI SDK](https://github.com/WebAssembly/wasi-sdk) 15.0+
-and currently [wasix](https://github.com/singlestore-labs/wasix) for POSIX
-compatibility stubs.
+WASI builds require [WASI SDK](https://github.com/WebAssembly/wasi-sdk) 16.0+.
 
 ## Cross-compile to wasm32-wasi
 
@@ -241,8 +239,6 @@ mkdir -p builddir/wasi
 pushd builddir/wasi
 
 CONFIG_SITE=../../Tools/wasm/config.site-wasm32-wasi \
-  CFLAGS="-isystem /opt/wasix/include" \
-  LDFLAGS="-L/opt/wasix/lib -lwasix" \
   ../../Tools/wasm/wasi-env ../../configure -C \
     --host=wasm32-unknown-wasi \
     --build=$(../../config.guess) \
@@ -435,21 +431,15 @@ rm -f wasi-sdk-${WASI_VERSION_FULL}-linux.tar.gz
 
 ### Install [wasmtime](https://github.com/bytecodealliance/wasmtime) WASI runtime
 
-**NOTE**: wasmtime 0.37 has a bug. Newer versions should be fine again.
+wasmtime 0.38 or newer is required.
 
 ```shell
 curl -sSf -L -o ~/install-wasmtime.sh https://wasmtime.dev/install.sh
 chmod +x ~/install-wasmtime.sh
-~/install-wasmtime.sh --version v0.36.0
+~/install-wasmtime.sh --version v0.38.0
 ln -srf -t /usr/local/bin/ ~/.wasmtime/bin/wasmtime
 ```
 
-### Install [WASIX](https://github.com/singlestore-labs/wasix)
-
-```shell
-git clone https://github.com/singlestore-labs/wasix.git ~/wasix
-make install -C ~/wasix
-```
 
 ### WASI debugging
 
