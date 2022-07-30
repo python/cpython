@@ -1,0 +1,2 @@
+Use ``adler32_z`` and ``crc32_z`` in binascii and zlib modules, if available
+at compile time.

@@ -755,7 +755,7 @@ internal_crc32(const unsigned char *bin_data, Py_ssize_t len, unsigned int crc)
 #endif  /* USE_ZLIB_CRC32 */
 
 /*[clinic input]
-binascii.crc32 -> unsigned_int
+binascii.crc32
 
     data: Py_buffer
     crc: unsigned_int(bitwise=True) = 0
@@ -764,9 +764,9 @@ binascii.crc32 -> unsigned_int
 Compute CRC-32 incrementally.
 [clinic start generated code]*/
 
-static unsigned int
+static PyObject *
 binascii_crc32_impl(PyObject *module, Py_buffer *data, unsigned int crc)
-/*[clinic end generated code: output=52cf59056a78593b input=bbe340bc99d25aa8]*/
+/*[clinic end generated code: output=bb1323b07a771ae6 input=e50981a7460e1efe]*/
 
 #ifdef USE_ZLIB_CRC32
 /* This is the same as zlibmodule.c zlib_crc32_impl. It exists in two
@@ -779,6 +779,9 @@ binascii_crc32_impl(PyObject *module, Py_buffer *data, unsigned int crc)
         Py_ssize_t len = data->len;
 
         Py_BEGIN_ALLOW_THREADS
+#if ZLIB_VERNUM >= 0x1290
+        crc = crc32_z(crc, buf, len);
+#else
         /* Avoid truncation of length for very large buffers. crc32() takes
            length as an unsigned int, which may be narrower than Py_ssize_t. */
         while ((size_t)len > UINT_MAX) {
@@ -787,11 +790,16 @@ binascii_crc32_impl(PyObject *module, Py_buffer *data, unsigned int crc)
             len -= (size_t) UINT_MAX;
         }
         crc = crc32(crc, buf, (unsigned int)len);
+#endif
         Py_END_ALLOW_THREADS
     } else {
+#if ZLIB_VERNUM >= 0x1290
+        crc = crc32_z(crc, data->buf, data->len);
+#else
         crc = crc32(crc, data->buf, (unsigned int)data->len);
+#endif
     }
-    return crc & 0xffffffff;
+    return PyLong_FromUnsignedLong(crc & 0xffffffffU);
 }
 #else  /* USE_ZLIB_CRC32 */
 {
@@ -800,15 +808,15 @@ binascii_crc32_impl(PyObject *module, Py_buffer *data, unsigned int crc)
 
     /* Releasing the GIL for very small buffers is inefficient
        and may lower performance */
+    unsigned int result;
     if (len > 1024*5) {
-        unsigned int result;
         Py_BEGIN_ALLOW_THREADS
         result = internal_crc32(bin_data, len, crc);
         Py_END_ALLOW_THREADS
-        return result;
     } else {
-        return internal_crc32(bin_data, len, crc);
+        result = internal_crc32(bin_data, len, crc);
     }
+    return PyLong_FromUnsignedLong(result & 0xffffffffU);
 }
 #endif  /* USE_ZLIB_CRC32 */
 

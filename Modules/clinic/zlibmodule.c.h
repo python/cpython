@@ -788,7 +788,7 @@ PyDoc_STRVAR(zlib_crc32__doc__,
 #define ZLIB_CRC32_METHODDEF    \
     {"crc32", _PyCFunction_CAST(zlib_crc32), METH_FASTCALL, zlib_crc32__doc__},
 
-static unsigned int
+static PyObject *
 zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value);
 
 static PyObject *
@@ -797,7 +797,6 @@ zlib_crc32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     unsigned int value = 0;
-    unsigned int _return_value;
 
     if (!_PyArg_CheckPositional("crc32", nargs, 1, 2)) {
         goto exit;
@@ -817,11 +816,7 @@ zlib_crc32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
-    _return_value = zlib_crc32_impl(module, &data, value);
-    if ((_return_value == (unsigned int)-1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
+    return_value = zlib_crc32_impl(module, &data, value);
 
 exit:
     /* Cleanup for data */
@@ -855,4 +850,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=757804b3ad33454f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7a90d2086f4717d7 input=a9049054013a1b77]*/

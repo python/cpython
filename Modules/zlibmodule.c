@@ -1404,6 +1404,9 @@ zlib_adler32_impl(PyObject *module, Py_buffer *data, unsigned int value)
         Py_ssize_t len = data->len;
 
         Py_BEGIN_ALLOW_THREADS
+#if ZLIB_VERNUM >= 0x1290
+        value = adler32_z(value, buf, len);
+#else
         /* Avoid truncation of length for very large buffers. adler32() takes
            length as an unsigned int, which may be narrower than Py_ssize_t. */
         while ((size_t)len > UINT_MAX) {
@@ -1412,15 +1415,20 @@ zlib_adler32_impl(PyObject *module, Py_buffer *data, unsigned int value)
             len -= (size_t) UINT_MAX;
         }
         value = adler32(value, buf, (unsigned int)len);
+#endif
         Py_END_ALLOW_THREADS
     } else {
+#if ZLIB_VERNUM >= 0x1290
+        value = adler32_z(value, data->buf, data->len);
+#else
         value = adler32(value, data->buf, (unsigned int)data->len);
+#endif
     }
     return PyLong_FromUnsignedLong(value & 0xffffffffU);
 }
 
 /*[clinic input]
-zlib.crc32 -> unsigned_int
+zlib.crc32
 
     data: Py_buffer
     value: unsigned_int(bitwise=True) = 0
@@ -1432,9 +1440,9 @@ Compute a CRC-32 checksum of data.
 The returned checksum is an integer.
 [clinic start generated code]*/
 
-static unsigned int
+static PyObject *
 zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
-/*[clinic end generated code: output=b217562e4fe6d6a6 input=1229cb2fb5ea948a]*/
+/*[clinic end generated code: output=63499fa20af7ea25 input=26c3ed430fa00b4c]*/
 {
     /* Releasing the GIL for very small buffers is inefficient
        and may lower performance */
@@ -1443,6 +1451,9 @@ zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
         Py_ssize_t len = data->len;
 
         Py_BEGIN_ALLOW_THREADS
+#if ZLIB_VERNUM >= 0x1290
+        value = crc32_z(value, buf, len);
+#else
         /* Avoid truncation of length for very large buffers. crc32() takes
            length as an unsigned int, which may be narrower than Py_ssize_t. */
         while ((size_t)len > UINT_MAX) {
@@ -1451,11 +1462,16 @@ zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
             len -= (size_t) UINT_MAX;
         }
         value = crc32(value, buf, (unsigned int)len);
+#endif
         Py_END_ALLOW_THREADS
     } else {
+#if ZLIB_VERNUM >= 0x1290
+        value = crc32_z(value, data->buf, data->len);
+#else
         value = crc32(value, data->buf, (unsigned int)data->len);
+#endif
     }
-    return value;
+    return PyLong_FromUnsignedLong(value & 0xffffffffU);
 }
 
 
