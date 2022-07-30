@@ -1,8 +1,8 @@
-:mod:`__future__` --- Early access to language features for future versions of Python
-=====================================================================================
+:mod:`__future__` --- Early access to future language features
+==============================================================
 
 .. module:: __future__
-   :synopsis: Early access to language features for future versions of Python
+   :synopsis: Early access to future language features
 
 **Source code:** :source:`Lib/__future__.py`
 
