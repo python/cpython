@@ -385,6 +385,9 @@ class Server(events.AbstractServer):
 
 
 class BaseEventLoop(events.AbstractEventLoop):
+    # Identifier of the thread running the event loop, or None if the
+    # event loop is not running
+    _thread_id = None
 
     def __init__(self):
         self._timer_cancelled_count = 0
@@ -394,9 +397,6 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._scheduled = []
         self._default_executor = None
         self._internal_fds = 0
-        # Identifier of the thread running the event loop, or None if the
-        # event loop is not running
-        self._thread_id = None
         self._clock_resolution = time.get_clock_info('monotonic').resolution
         self._exception_handler = None
         self.set_debug(coroutines._is_debug_mode())
@@ -592,8 +592,11 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Run until stop() is called."""
         self._check_closed()
         self._check_running()
+        my_thread_id = threading.get_ident()
+        other_thread_id = vars(self).setdefault("_thread_id", my_thread_id)
+        if my_thread_id != other_thread_id:
+            self._check_running()
         self._set_coroutine_origin_tracking(self._debug)
-        self._thread_id = threading.get_ident()
 
         old_agen_hooks = sys.get_asyncgen_hooks()
         sys.set_asyncgen_hooks(firstiter=self._asyncgen_firstiter_hook,
@@ -606,7 +609,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     break
         finally:
             self._stopping = False
-            self._thread_id = None
+            del self._thread_id
             events._set_running_loop(None)
             self._set_coroutine_origin_tracking(False)
             sys.set_asyncgen_hooks(*old_agen_hooks)
