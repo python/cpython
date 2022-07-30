@@ -501,12 +501,12 @@ Constants
    .. availability:: Linux >= 2.2.
 
 
-.. data:: ETH_P_IP
-          ETH_P_ARP
-          ETH_P_IPV6
+.. data:: ETH_P_8021AD
           ETH_P_8021Q
-          ETH_P_8021AD
           ETH_P_ALL
+          ETH_P_ARP
+          ETH_P_IP
+          ETH_P_IPV6
 
    Many constants of these forms, documented in the Linux documentation, are
    also defined in the socket module.
