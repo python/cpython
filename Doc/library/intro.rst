@@ -71,12 +71,43 @@ Notes on WebAssembly platforms
 ==============================
 
 The WebAssembly platforms ``wasm32-emscripten`` and ``wasm32-wasi`` provide a
-limited subset of POSIX APIs.
+subset of POSIX APIs. WASM runtimes and browser are sandboxed and have
+limited access to host and rest of the world. Any standard library module,
+that uses processes, threading, networking (:mod:`socket`), signals, or
+other forms of inter-process communication (IPC), is either not available
+or may not work as on other Unix-like systems. File I/O, file system, and Unix
+permission-related functions are restricted, too. Emscripten does not permit
+blocking operations like blocking network I/O and :func:`~time.sleep`.
+
+The properties and behavior of Python on WebAssembly platforms depend on the
+`Emscripten`_ or `WASI`_-SDK version, WASM runtimes (browser, NodeJS, `wasmtime`_),
+and Python build time flags. WebAssembly, Emscripten, and WASI are evolving.
+Some features like networking may be supported in the future.
+
+For Python in the browser, users should consider `Pyodide`_ or `PyScript`_.
+PyScript is built on top of Pyodide, which itself is built on top of
+CPython and Emscripten. Pyodide provides access to browsers' JavaScript and
+DOM APIs as well as limited networking capabilities with JavaScript's
+``XMLHttpRequest`` and ``Fetch`` API.
 
 .. TODO: update with information from Tools/wasm/README.md
 
-* Some functions are stubs that don't do anything and always return the some
+* Process-related APIs are not available or always fail with an error. That
+  includes APIs that spawn new processes (:func:`~os.fork`,
+  :func:`~os.execve`), wait for processes (:func:`~os.waitpid`), send signals
+  (:func:`~os.kill`), or otherwise interact with processes. The
+  :mod:`subprocess` is importable but does not work.
+
+* The :mod:`socket` module is available, but is dysfunctional.
+
+* Some functions are stubs that either don't do anything and always return some
   hardcoded value.
 
-* Functions related to file permissions, file ownership, and links are limited
-  and don't support some operations.
+* Functions related to file descriptors, file permissions, file ownership, and
+  links are limited and don't support some operations.
+
+.. _Emscripten: https://emscripten.org/
+.. _WASI: https://wasi.dev/
+.. _wasmtime: https://wasmtime.dev/
+.. _Pyodide: https://pyodide.org/
+.. _PyScript: https://pyscript.net/
