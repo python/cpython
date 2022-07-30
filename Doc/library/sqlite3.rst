@@ -1210,6 +1210,8 @@ This function can then be registered using :func:`register_adapter`.
 .. literalinclude:: ../includes/sqlite3/adapter_point_2.py
 
 
+.. _sqlite3-converters:
+
 Converting SQLite values to custom Python types
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
