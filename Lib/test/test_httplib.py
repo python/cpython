@@ -708,9 +708,9 @@ class BasicTest(TestCase):
             ((500, 599), "is_server_error"),
         )
         for member in HTTPStatus.__members__.values():
-            for category in categories:
-                category_indicator = getattr(member, category[1])
-                if category[0][0] <= member <= category[0][1]:
+            for (lower, upper), category in categories:
+                category_indicator = getattr(member, category)
+                if lower <= member <= upper:
                     self.assertTrue(category_indicator)
                 else:
                     self.assertFalse(category_indicator)
