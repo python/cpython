@@ -1500,6 +1500,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
     PyObject *ident = NULL;
     PyObject *it = NULL;
     PyObject *items;
+    PyObject *coerced_items;
     PyObject *item = NULL;
     Py_ssize_t idx;
 
@@ -1538,17 +1539,15 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
     items = PyMapping_Items(dct);
     if (items == NULL)
         goto bail;
-    if (s->sort_keys && PyList_Sort(items) < 0) {
-        Py_DECREF(items);
-        goto bail;
-    }
+
+    coerced_items = PyList_New(0);
     it = PyObject_GetIter(items);
     Py_DECREF(items);
     if (it == NULL)
         goto bail;
-    idx = 0;
+
     while ((item = PyIter_Next(it)) != NULL) {
-        PyObject *encoded, *key, *value;
+        PyObject *key, *value, *coerced_item;
         if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
             PyErr_SetString(PyExc_ValueError, "items must return 2-tuples");
             goto bail;
@@ -1564,8 +1563,8 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
                 goto bail;
         }
         else if (key == Py_True || key == Py_False || key == Py_None) {
-                        /* This must come before the PyLong_Check because
-                           True and False are also 1 and 0.*/
+            /* This must come before the PyLong_Check because
+            True and False are also 1 and 0.*/
             kstr = _encoded_const(key);
             if (kstr == NULL)
                 goto bail;
@@ -1586,6 +1585,34 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
                          "not %.100s", Py_TYPE(key)->tp_name);
             goto bail;
         }
+
+        value = PyTuple_GET_ITEM(item, 1);
+        coerced_item = PyTuple_Pack(2, kstr, value);
+        if (coerced_item == NULL) {
+            goto bail;
+        }
+        /* Append instead of set because skipkeys=True may
+           "shrink" the number of items */
+        if (-1 == PyList_Append(coerced_items, coerced_item))
+            goto bail;
+    }
+
+    if (s->sort_keys && PyList_Sort(coerced_items) < 0) {
+        Py_DECREF(coerced_items);
+        goto bail;
+    }
+    it = PyObject_GetIter(coerced_items);
+    Py_DECREF(coerced_items);
+    if (it == NULL)
+        goto bail;
+    idx = 0;
+    while ((item = PyIter_Next(it)) != NULL) {
+        PyObject *encoded, *value;
+        if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
+            PyErr_SetString(PyExc_ValueError, "items must return 2-tuples");
+            goto bail;
+        }
+        kstr = PyTuple_GET_ITEM(item, 0);
 
         if (idx) {
             if (_PyUnicodeWriter_WriteStr(writer, s->item_separator))
