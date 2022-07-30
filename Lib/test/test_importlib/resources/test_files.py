@@ -2,7 +2,7 @@ import typing
 import unittest
 
 from importlib import resources
-from importlib.abc import Traversable
+from importlib.resources.abc import Traversable
 from . import data01
 from . import util
 
