@@ -1,10 +1,12 @@
-from .. import abc
-from .. import util
+from test.test_importlib import abc, util
 
 machinery = util.import_importlib('importlib.machinery')
 
-from test.support import captured_stdout, import_helper
+from test.support import captured_stdout, import_helper, STDLIB_DIR
+import _imp
 import contextlib
+import marshal
+import os.path
 import types
 import unittest
 import warnings
@@ -28,9 +30,17 @@ def fresh(name, *, oldapi=False):
                 yield
 
 
+def resolve_stdlib_file(name, ispkg=False):
+    assert name
+    if ispkg:
+        return os.path.join(STDLIB_DIR, *name.split('.'), '__init__.py')
+    else:
+        return os.path.join(STDLIB_DIR, *name.split('.')) + '.py'
+
+
 class ExecModuleTests(abc.LoaderTests):
 
-    def exec_module(self, name):
+    def exec_module(self, name, origname=None):
         with import_helper.frozen_modules():
             is_package = self.machinery.FrozenImporter.is_package(name)
         spec = self.machinery.ModuleSpec(
@@ -38,6 +48,10 @@ class ExecModuleTests(abc.LoaderTests):
             self.machinery.FrozenImporter,
             origin='frozen',
             is_package=is_package,
+            loader_state=types.SimpleNamespace(
+                origname=origname or name,
+                filename=resolve_stdlib_file(origname or name, is_package),
+            ),
         )
         module = types.ModuleType(name)
         module.__spec__ = spec
@@ -61,6 +75,7 @@ class ExecModuleTests(abc.LoaderTests):
             self.assertEqual(getattr(module, attr), value)
         self.assertEqual(output, 'Hello world!\n')
         self.assertTrue(hasattr(module, '__spec__'))
+        self.assertEqual(module.__spec__.loader_state.origname, name)
 
     def test_package(self):
         name = '__phello__'
@@ -73,6 +88,7 @@ class ExecModuleTests(abc.LoaderTests):
                                  name=name, attr=attr, given=attr_value,
                                  expected=value))
         self.assertEqual(output, 'Hello world!\n')
+        self.assertEqual(module.__spec__.loader_state.origname, name)
 
     def test_lacking_parent(self):
         name = '__phello__.spam'
@@ -128,36 +144,41 @@ class LoaderTests(abc.LoaderTests):
 
     def test_module(self):
         module, stdout = self.load_module('__hello__')
+        filename = resolve_stdlib_file('__hello__')
         check = {'__name__': '__hello__',
                 '__package__': '',
                 '__loader__': self.machinery.FrozenImporter,
+                '__file__': filename,
                 }
         for attr, value in check.items():
-            self.assertEqual(getattr(module, attr), value)
+            self.assertEqual(getattr(module, attr, None), value)
         self.assertEqual(stdout.getvalue(), 'Hello world!\n')
-        self.assertFalse(hasattr(module, '__file__'))
 
     def test_package(self):
         module, stdout = self.load_module('__phello__')
+        filename = resolve_stdlib_file('__phello__', ispkg=True)
+        pkgdir = os.path.dirname(filename)
         check = {'__name__': '__phello__',
                  '__package__': '__phello__',
-                 '__path__': [],
+                 '__path__': [pkgdir],
                  '__loader__': self.machinery.FrozenImporter,
+                 '__file__': filename,
                  }
         for attr, value in check.items():
-            attr_value = getattr(module, attr)
+            attr_value = getattr(module, attr, None)
             self.assertEqual(attr_value, value,
                              "for __phello__.%s, %r != %r" %
                              (attr, attr_value, value))
         self.assertEqual(stdout.getvalue(), 'Hello world!\n')
-        self.assertFalse(hasattr(module, '__file__'))
 
     def test_lacking_parent(self):
         with util.uncache('__phello__'):
             module, stdout = self.load_module('__phello__.spam')
+        filename = resolve_stdlib_file('__phello__.spam')
         check = {'__name__': '__phello__.spam',
                 '__package__': '__phello__',
                 '__loader__': self.machinery.FrozenImporter,
+                '__file__': filename,
                 }
         for attr, value in check.items():
             attr_value = getattr(module, attr)
@@ -165,7 +186,6 @@ class LoaderTests(abc.LoaderTests):
                              "for __phello__.spam.%s, %r != %r" %
                              (attr, attr_value, value))
         self.assertEqual(stdout.getvalue(), 'Hello world!\n')
-        self.assertFalse(hasattr(module, '__file__'))
 
     def test_module_reuse(self):
         with fresh('__hello__', oldapi=True):

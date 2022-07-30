@@ -11,7 +11,7 @@ PyDoc_STRVAR(signal_default_int_handler__doc__,
 "It raises KeyboardInterrupt.");
 
 #define SIGNAL_DEFAULT_INT_HANDLER_METHODDEF    \
-    {"default_int_handler", (PyCFunction)(void(*)(void))signal_default_int_handler, METH_FASTCALL, signal_default_int_handler__doc__},
+    {"default_int_handler", _PyCFunction_CAST(signal_default_int_handler), METH_FASTCALL, signal_default_int_handler__doc__},
 
 static PyObject *
 signal_default_int_handler_impl(PyObject *module, int signalnum,
@@ -139,7 +139,7 @@ PyDoc_STRVAR(signal_signal__doc__,
 "the first is the signal number, the second is the interrupted stack frame.");
 
 #define SIGNAL_SIGNAL_METHODDEF    \
-    {"signal", (PyCFunction)(void(*)(void))signal_signal, METH_FASTCALL, signal_signal__doc__},
+    {"signal", _PyCFunction_CAST(signal_signal), METH_FASTCALL, signal_signal__doc__},
 
 static PyObject *
 signal_signal_impl(PyObject *module, int signalnum, PyObject *handler);
@@ -242,7 +242,7 @@ PyDoc_STRVAR(signal_siginterrupt__doc__,
 "signal sig, else system calls will be interrupted.");
 
 #define SIGNAL_SIGINTERRUPT_METHODDEF    \
-    {"siginterrupt", (PyCFunction)(void(*)(void))signal_siginterrupt, METH_FASTCALL, signal_siginterrupt__doc__},
+    {"siginterrupt", _PyCFunction_CAST(signal_siginterrupt), METH_FASTCALL, signal_siginterrupt__doc__},
 
 static PyObject *
 signal_siginterrupt_impl(PyObject *module, int signalnum, int flag);
@@ -287,7 +287,7 @@ PyDoc_STRVAR(signal_setitimer__doc__,
 "Returns old values as a tuple: (delay, interval).");
 
 #define SIGNAL_SETITIMER_METHODDEF    \
-    {"setitimer", (PyCFunction)(void(*)(void))signal_setitimer, METH_FASTCALL, signal_setitimer__doc__},
+    {"setitimer", _PyCFunction_CAST(signal_setitimer), METH_FASTCALL, signal_setitimer__doc__},
 
 static PyObject *
 signal_setitimer_impl(PyObject *module, int which, PyObject *seconds,
@@ -354,7 +354,7 @@ exit:
 
 #endif /* defined(HAVE_GETITIMER) */
 
-#if defined(PYPTHREAD_SIGMASK)
+#if defined(HAVE_SIGSET_T) && defined(PYPTHREAD_SIGMASK)
 
 PyDoc_STRVAR(signal_pthread_sigmask__doc__,
 "pthread_sigmask($module, how, mask, /)\n"
@@ -363,7 +363,7 @@ PyDoc_STRVAR(signal_pthread_sigmask__doc__,
 "Fetch and/or change the signal mask of the calling thread.");
 
 #define SIGNAL_PTHREAD_SIGMASK_METHODDEF    \
-    {"pthread_sigmask", (PyCFunction)(void(*)(void))signal_pthread_sigmask, METH_FASTCALL, signal_pthread_sigmask__doc__},
+    {"pthread_sigmask", _PyCFunction_CAST(signal_pthread_sigmask), METH_FASTCALL, signal_pthread_sigmask__doc__},
 
 static PyObject *
 signal_pthread_sigmask_impl(PyObject *module, int how, sigset_t mask);
@@ -391,9 +391,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(PYPTHREAD_SIGMASK) */
+#endif /* defined(HAVE_SIGSET_T) && defined(PYPTHREAD_SIGMASK) */
 
-#if defined(HAVE_SIGPENDING)
+#if defined(HAVE_SIGSET_T) && defined(HAVE_SIGPENDING)
 
 PyDoc_STRVAR(signal_sigpending__doc__,
 "sigpending($module, /)\n"
@@ -416,9 +416,9 @@ signal_sigpending(PyObject *module, PyObject *Py_UNUSED(ignored))
     return signal_sigpending_impl(module);
 }
 
-#endif /* defined(HAVE_SIGPENDING) */
+#endif /* defined(HAVE_SIGSET_T) && defined(HAVE_SIGPENDING) */
 
-#if defined(HAVE_SIGWAIT)
+#if defined(HAVE_SIGSET_T) && defined(HAVE_SIGWAIT)
 
 PyDoc_STRVAR(signal_sigwait__doc__,
 "sigwait($module, sigset, /)\n"
@@ -451,9 +451,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_SIGWAIT) */
+#endif /* defined(HAVE_SIGSET_T) && defined(HAVE_SIGWAIT) */
 
-#if (defined(HAVE_SIGFILLSET) || defined(MS_WINDOWS))
+#if ((defined(HAVE_SIGFILLSET) && defined(HAVE_SIGSET_T)) || defined(MS_WINDOWS))
 
 PyDoc_STRVAR(signal_valid_signals__doc__,
 "valid_signals($module, /)\n"
@@ -476,9 +476,9 @@ signal_valid_signals(PyObject *module, PyObject *Py_UNUSED(ignored))
     return signal_valid_signals_impl(module);
 }
 
-#endif /* (defined(HAVE_SIGFILLSET) || defined(MS_WINDOWS)) */
+#endif /* ((defined(HAVE_SIGFILLSET) && defined(HAVE_SIGSET_T)) || defined(MS_WINDOWS)) */
 
-#if defined(HAVE_SIGWAITINFO)
+#if defined(HAVE_SIGSET_T) && defined(HAVE_SIGWAITINFO)
 
 PyDoc_STRVAR(signal_sigwaitinfo__doc__,
 "sigwaitinfo($module, sigset, /)\n"
@@ -509,9 +509,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_SIGWAITINFO) */
+#endif /* defined(HAVE_SIGSET_T) && defined(HAVE_SIGWAITINFO) */
 
-#if defined(HAVE_SIGTIMEDWAIT)
+#if defined(HAVE_SIGSET_T) && defined(HAVE_SIGTIMEDWAIT)
 
 PyDoc_STRVAR(signal_sigtimedwait__doc__,
 "sigtimedwait($module, sigset, timeout, /)\n"
@@ -522,7 +522,7 @@ PyDoc_STRVAR(signal_sigtimedwait__doc__,
 "The timeout is specified in seconds, with floating point numbers allowed.");
 
 #define SIGNAL_SIGTIMEDWAIT_METHODDEF    \
-    {"sigtimedwait", (PyCFunction)(void(*)(void))signal_sigtimedwait, METH_FASTCALL, signal_sigtimedwait__doc__},
+    {"sigtimedwait", _PyCFunction_CAST(signal_sigtimedwait), METH_FASTCALL, signal_sigtimedwait__doc__},
 
 static PyObject *
 signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
@@ -548,7 +548,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_SIGTIMEDWAIT) */
+#endif /* defined(HAVE_SIGSET_T) && defined(HAVE_SIGTIMEDWAIT) */
 
 #if defined(HAVE_PTHREAD_KILL)
 
@@ -559,7 +559,7 @@ PyDoc_STRVAR(signal_pthread_kill__doc__,
 "Send a signal to a thread.");
 
 #define SIGNAL_PTHREAD_KILL_METHODDEF    \
-    {"pthread_kill", (PyCFunction)(void(*)(void))signal_pthread_kill, METH_FASTCALL, signal_pthread_kill__doc__},
+    {"pthread_kill", _PyCFunction_CAST(signal_pthread_kill), METH_FASTCALL, signal_pthread_kill__doc__},
 
 static PyObject *
 signal_pthread_kill_impl(PyObject *module, unsigned long thread_id,
@@ -601,7 +601,7 @@ PyDoc_STRVAR(signal_pidfd_send_signal__doc__,
 "Send a signal to a process referred to by a pid file descriptor.");
 
 #define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF    \
-    {"pidfd_send_signal", (PyCFunction)(void(*)(void))signal_pidfd_send_signal, METH_FASTCALL, signal_pidfd_send_signal__doc__},
+    {"pidfd_send_signal", _PyCFunction_CAST(signal_pidfd_send_signal), METH_FASTCALL, signal_pidfd_send_signal__doc__},
 
 static PyObject *
 signal_pidfd_send_signal_impl(PyObject *module, int pidfd, int signalnum,
@@ -698,4 +698,4 @@ exit:
 #ifndef SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
     #define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
 #endif /* !defined(SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF) */
-/*[clinic end generated code: output=59c33f0af42aebb5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6ca1b70310eecdba input=a9049054013a1b77]*/

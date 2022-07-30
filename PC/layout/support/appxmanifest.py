@@ -6,13 +6,11 @@ __author__ = "Steve Dower <steve.dower@python.org>"
 __version__ = "3.8"
 
 
-import collections
 import ctypes
 import io
 import os
-import sys
 
-from pathlib import Path, PureWindowsPath
+from pathlib import PureWindowsPath
 from xml.etree import ElementTree as ET
 
 from .constants import *
@@ -412,14 +410,22 @@ def get_appxmanifest(ns):
         if value:
             node.text = value
 
-    winver = sys.getwindowsversion()[:3]
+    try:
+        winver = tuple(int(i) for i in os.getenv("APPX_DATA_WINVER", "").split(".", maxsplit=3))
+    except (TypeError, ValueError):
+        winver = ()
+
+    # Default "known good" version is 10.0.22000, first Windows 11 release
+    winver = winver or (10, 0, 22000)
+
     if winver < (10, 0, 17763):
         winver = 10, 0, 17763
     find_or_add(xml, "m:Dependencies/m:TargetDeviceFamily").set(
-        "MaxVersionTested", "{}.{}.{}.0".format(*winver)
+        "MaxVersionTested", "{}.{}.{}.{}".format(*(winver + (0, 0, 0, 0)[:4]))
     )
 
-    if winver > (10, 0, 17763):
+    # Only for Python 3.11 and later. Older versions do not disable virtualization
+    if (VER_MAJOR, VER_MINOR) >= (3, 11) and winver > (10, 0, 17763):
         disable_registry_virtualization(xml)
 
     app = add_application(
@@ -430,7 +436,7 @@ def get_appxmanifest(ns):
         ["python", "python{}".format(VER_MAJOR), "python{}".format(VER_DOT)],
         PYTHON_VE_DATA,
         "console",
-        ("python.file", [".py"], '"%1"', "Python File", PY_PNG),
+        ("python.file", [".py"], '"%1" %*', "Python File", PY_PNG),
     )
 
     add_application(
@@ -441,7 +447,7 @@ def get_appxmanifest(ns):
         ["pythonw", "pythonw{}".format(VER_MAJOR), "pythonw{}".format(VER_DOT)],
         PYTHONW_VE_DATA,
         "windows",
-        ("python.windowedfile", [".pyw"], '"%1"', "Python File (no console)", PY_PNG),
+        ("python.windowedfile", [".pyw"], '"%1" %*', "Python File (no console)", PY_PNG),
     )
 
     if ns.include_pip and ns.include_launchers:

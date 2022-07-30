@@ -1,7 +1,0 @@
-Remove from the :mod:`configparser` module:
-the :class:`SafeConfigParser` class,
-the :attr:`filename` property of the :class:`ParsingError` class,
-the :meth:`readfp` method of the :class:`ConfigParser` class,
-deprecated since Python 3.2.
-
-Patch by Hugo van Kemenade.

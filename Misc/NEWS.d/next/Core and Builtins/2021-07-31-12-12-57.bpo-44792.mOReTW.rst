@@ -1,1 +1,0 @@
-Improve syntax errors for if expressions. Patch by Miguel Brito

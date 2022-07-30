@@ -1,2 +1,0 @@
-Tkinter documentation has been greatly expanded with new "Architecture" and
-"Threading model" sections.

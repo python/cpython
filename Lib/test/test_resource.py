@@ -98,6 +98,7 @@ class ResourceTest(unittest.TestCase):
             except (OverflowError, ValueError):
                 pass
 
+    @unittest.skipUnless(hasattr(resource, "getrusage"), "needs getrusage")
     def test_getrusage(self):
         self.assertRaises(TypeError, resource.getrusage)
         self.assertRaises(TypeError, resource.getrusage, 42, 42)

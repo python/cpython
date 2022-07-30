@@ -10,7 +10,7 @@ for convenience.
 This is the pure Python implementation of the module.
 """
 
-__all__ = ['abs', 'add', 'and_', 'attrgetter', 'concat', 'contains', 'countOf',
+__all__ = ['abs', 'add', 'and_', 'attrgetter', 'call', 'concat', 'contains', 'countOf',
            'delitem', 'eq', 'floordiv', 'ge', 'getitem', 'gt', 'iadd', 'iand',
            'iconcat', 'ifloordiv', 'ilshift', 'imatmul', 'imod', 'imul',
            'index', 'indexOf', 'inv', 'invert', 'ior', 'ipow', 'irshift',

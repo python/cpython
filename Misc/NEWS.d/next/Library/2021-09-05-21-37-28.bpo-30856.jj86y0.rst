@@ -1,6 +1,0 @@
-:class:`unittest.TestResult` methods
-:meth:`~unittest.TestResult.addFailure`,
-:meth:`~unittest.TestResult.addError`, :meth:`~unittest.TestResult.addSkip`
-and :meth:`~unittest.TestResult.addSubTest` are now called immediately after
-raising an exception in test or finishing a subtest. Previously they were
-called only after finishing the test clean up.

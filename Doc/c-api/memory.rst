@@ -75,7 +75,7 @@ memory manager. For example, this is required when the interpreter is extended
 with new object types written in C. Another reason for using the Python heap is
 the desire to *inform* the Python memory manager about the memory needs of the
 extension module. Even when the requested memory is used exclusively for
-internal, highly-specific purposes, delegating all memory requests to the Python
+internal, highly specific purposes, delegating all memory requests to the Python
 memory manager causes the interpreter to have a more accurate image of its
 memory footprint as a whole. Consequently, under certain circumstances, the
 Python memory manager may or may not trigger appropriate actions, like garbage
@@ -306,7 +306,7 @@ memory from the Python heap.
 
 .. note::
     There is no guarantee that the memory returned by these allocators can be
-    successfully casted to a Python object when intercepting the allocating
+    successfully cast to a Python object when intercepting the allocating
     functions in this domain by the methods described in
     the :ref:`Customize Memory Allocators <customize-memory-allocators>` section.
 
@@ -403,7 +403,7 @@ Customize Memory Allocators
 .. c:type:: PyMemAllocatorEx
 
    Structure used to describe a memory block allocator. The structure has
-   four fields:
+   the following fields:
 
    +----------------------------------------------------------+---------------------------------------+
    | Field                                                    | Meaning                               |

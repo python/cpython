@@ -408,7 +408,7 @@ termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
     }
     Py_XDECREF(tmp_item);
     tmp_item = PySequence_GetItem(winsz, 1);
-    winsz_1 = PyLong_AsLong(tmp_item);                             
+    winsz_1 = PyLong_AsLong(tmp_item);
     if (winsz_1 == -1 && PyErr_Occurred()) {
         Py_XDECREF(tmp_item);
         return NULL;

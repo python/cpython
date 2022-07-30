@@ -5,11 +5,12 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include "gdbm.h"
+
+#include <fcntl.h>
+#include <stdlib.h>               // free()
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #if defined(WIN32) && !defined(__CYGWIN__)
 #include "gdbmerrno.h"
@@ -543,8 +544,7 @@ gdbm__enter__(PyObject *self, PyObject *args)
 static PyObject *
 gdbm__exit__(PyObject *self, PyObject *args)
 {
-    _Py_IDENTIFIER(close);
-    return _PyObject_CallMethodIdNoArgs(self, &PyId_close);
+    return _gdbm_gdbm_close_impl((gdbmobject *)self);
 }
 
 static PyMethodDef gdbm_methods[] = {

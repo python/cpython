@@ -9,7 +9,7 @@ PyDoc_STRVAR(list_insert__doc__,
 "Insert object before index.");
 
 #define LIST_INSERT_METHODDEF    \
-    {"insert", (PyCFunction)(void(*)(void))list_insert, METH_FASTCALL, list_insert__doc__},
+    {"insert", _PyCFunction_CAST(list_insert), METH_FASTCALL, list_insert__doc__},
 
 static PyObject *
 list_insert_impl(PyListObject *self, Py_ssize_t index, PyObject *object);
@@ -106,7 +106,7 @@ PyDoc_STRVAR(list_pop__doc__,
 "Raises IndexError if list is empty or index is out of range.");
 
 #define LIST_POP_METHODDEF    \
-    {"pop", (PyCFunction)(void(*)(void))list_pop, METH_FASTCALL, list_pop__doc__},
+    {"pop", _PyCFunction_CAST(list_pop), METH_FASTCALL, list_pop__doc__},
 
 static PyObject *
 list_pop_impl(PyListObject *self, Py_ssize_t index);
@@ -157,7 +157,7 @@ PyDoc_STRVAR(list_sort__doc__,
 "The reverse flag can be set to sort in descending order.");
 
 #define LIST_SORT_METHODDEF    \
-    {"sort", (PyCFunction)(void(*)(void))list_sort, METH_FASTCALL|METH_KEYWORDS, list_sort__doc__},
+    {"sort", _PyCFunction_CAST(list_sort), METH_FASTCALL|METH_KEYWORDS, list_sort__doc__},
 
 static PyObject *
 list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse);
@@ -224,7 +224,7 @@ PyDoc_STRVAR(list_index__doc__,
 "Raises ValueError if the value is not present.");
 
 #define LIST_INDEX_METHODDEF    \
-    {"index", (PyCFunction)(void(*)(void))list_index, METH_FASTCALL, list_index__doc__},
+    {"index", _PyCFunction_CAST(list_index), METH_FASTCALL, list_index__doc__},
 
 static PyObject *
 list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
@@ -353,4 +353,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=acb2f87736311930 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eab97a76b1568a03 input=a9049054013a1b77]*/

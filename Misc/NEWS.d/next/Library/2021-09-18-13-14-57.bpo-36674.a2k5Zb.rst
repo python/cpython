@@ -1,2 +1,0 @@
-:meth:`unittest.TestCase.debug` raises now a :class:`unittest.SkipTest` if
-the class or the test method are decorated with the skipping decorator.

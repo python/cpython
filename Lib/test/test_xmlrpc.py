@@ -25,6 +25,8 @@ try:
 except ImportError:
     gzip = None
 
+support.requires_working_socket(module=True)
+
 alist = [{'astring': 'foo@bar.baz.spam',
           'afloat': 7283.43,
           'anint': 2**20,
@@ -561,7 +563,7 @@ class DateTimeTestCase(unittest.TestCase):
 
 class BinaryTestCase(unittest.TestCase):
 
-    # XXX What should str(Binary(b"\xff")) return?  I'm chosing "\xff"
+    # XXX What should str(Binary(b"\xff")) return?  I'm choosing "\xff"
     # for now (i.e. interpreting the binary data as Latin-1-encoded
     # text).  But this feels very unsatisfactory.  Perhaps we should
     # only define repr(), and return r"Binary(b'\xff')" instead?

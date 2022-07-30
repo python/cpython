@@ -122,7 +122,7 @@ The following classes are provided:
       :mod:`http.cookiejar` and :mod:`http.cookies` modules do not depend on each
       other.
 
-   https://curl.haxx.se/rfc/cookie_spec.html
+   https://curl.se/rfc/cookie_spec.html
       The specification of the original Netscape cookie protocol.  Though this is
       still the dominant protocol, the 'Netscape cookie protocol' implemented by all
       the major browsers (and :mod:`http.cookiejar`) only bears a passing resemblance to
@@ -494,7 +494,8 @@ and ``".168.1.2"``, 192.168.1.2 is blocked, but 193.168.1.2 is not.
 
 .. method:: DefaultCookiePolicy.is_blocked(domain)
 
-   Return whether *domain* is on the blocklist for setting or receiving cookies.
+   Return ``True`` if *domain* is on the blocklist for setting or receiving
+   cookies.
 
 
 .. method:: DefaultCookiePolicy.allowed_domains()
@@ -509,7 +510,7 @@ and ``".168.1.2"``, 192.168.1.2 is blocked, but 193.168.1.2 is not.
 
 .. method:: DefaultCookiePolicy.is_not_allowed(domain)
 
-   Return whether *domain* is not on the allowlist for setting or receiving
+   Return ``True`` if *domain* is not on the allowlist for setting or receiving
    cookies.
 
 :class:`DefaultCookiePolicy` instances have the following attributes, which are
@@ -766,4 +767,3 @@ returned::
    cj = CookieJar(policy)
    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
    r = opener.open("http://example.com/")
-

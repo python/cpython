@@ -1,88 +1,56 @@
+// Entry point of the Python C API.
+// C extensions should only #include <Python.h>, and not include directly
+// the other Python header files included by <Python.h>.
+
 #ifndef Py_PYTHON_H
 #define Py_PYTHON_H
-/* Since this is a "meta-include" file, no #ifdef __cplusplus / extern "C" { */
 
-/* Include nearly all Python header files */
+// Since this is a "meta-include" file, no #ifdef __cplusplus / extern "C" {
 
+// Include Python header files
 #include "patchlevel.h"
 #include "pyconfig.h"
 #include "pymacconfig.h"
 
-#include <limits.h>
-
-#ifndef UCHAR_MAX
-#error "Something's broken.  UCHAR_MAX should be defined in limits.h."
-#endif
-
-#if UCHAR_MAX != 255
-#error "Python's source code assumes C's unsigned char is an 8-bit type."
-#endif
-
 #if defined(__sgi) && !defined(_SGI_MP_SOURCE)
-#define _SGI_MP_SOURCE
+#  define _SGI_MP_SOURCE
 #endif
 
-#include <stdio.h>
-#ifndef NULL
-#   error "Python.h requires that stdio.h define NULL."
+// stdlib.h, stdio.h, errno.h and string.h headers are not used by Python
+// headers, but kept for backward compatibility. They are excluded from the
+// limited C API of Python 3.11.
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#  include <stdlib.h>
+#  include <stdio.h>              // FILE*
+#  include <errno.h>              // errno
+#  include <string.h>             // memcpy()
 #endif
-
-#include <string.h>
-#ifdef HAVE_ERRNO_H
-#include <errno.h>
-#endif
-#include <stdlib.h>
 #ifndef MS_WINDOWS
-#include <unistd.h>
+#  include <unistd.h>
 #endif
-
-/* For size_t? */
 #ifdef HAVE_STDDEF_H
-#include <stddef.h>
+#  include <stddef.h>             // size_t
 #endif
 
-/* CAUTION:  Build setups should ensure that NDEBUG is defined on the
- * compiler command line when building Python in release mode; else
- * assert() calls won't be removed.
- */
-#include <assert.h>
+#include <assert.h>               // assert()
+#include <wchar.h>                // wchar_t
 
 #include "pyport.h"
 #include "pymacro.h"
-
-/* A convenient way for code to know if sanitizers are enabled. */
-#if defined(__has_feature)
-#  if __has_feature(memory_sanitizer)
-#    if !defined(_Py_MEMORY_SANITIZER)
-#      define _Py_MEMORY_SANITIZER
-#    endif
-#  endif
-#  if __has_feature(address_sanitizer)
-#    if !defined(_Py_ADDRESS_SANITIZER)
-#      define _Py_ADDRESS_SANITIZER
-#    endif
-#  endif
-#elif defined(__GNUC__)
-#  if defined(__SANITIZE_ADDRESS__)
-#    define _Py_ADDRESS_SANITIZER
-#  endif
-#endif
-
 #include "pymath.h"
 #include "pymem.h"
-
+#include "pytypedefs.h"
+#include "pybuffer.h"
 #include "object.h"
 #include "objimpl.h"
 #include "typeslots.h"
 #include "pyhash.h"
-
 #include "cpython/pydebug.h"
-
 #include "bytearrayobject.h"
 #include "bytesobject.h"
 #include "unicodeobject.h"
 #include "longobject.h"
-#include "longintrepr.h"
+#include "cpython/longintrepr.h"
 #include "boolobject.h"
 #include "floatobject.h"
 #include "complexobject.h"
@@ -96,34 +64,30 @@
 #include "setobject.h"
 #include "methodobject.h"
 #include "moduleobject.h"
-#include "funcobject.h"
-#include "classobject.h"
+#include "cpython/funcobject.h"
+#include "cpython/classobject.h"
 #include "fileobject.h"
 #include "pycapsule.h"
-#include "code.h"
+#include "cpython/code.h"
 #include "pyframe.h"
 #include "traceback.h"
 #include "sliceobject.h"
-#include "cellobject.h"
+#include "cpython/cellobject.h"
 #include "iterobject.h"
-#include "genobject.h"
+#include "cpython/initconfig.h"
+#include "pystate.h"
+#include "cpython/genobject.h"
 #include "descrobject.h"
 #include "genericaliasobject.h"
 #include "warnings.h"
 #include "weakrefobject.h"
 #include "structseq.h"
-#include "namespaceobject.h"
 #include "cpython/picklebufobject.h"
 #include "cpython/pytime.h"
-
 #include "codecs.h"
 #include "pyerrors.h"
-
-#include "cpython/initconfig.h"
 #include "pythread.h"
-#include "pystate.h"
-#include "context.h"
-
+#include "cpython/context.h"
 #include "modsupport.h"
 #include "compile.h"
 #include "pythonrun.h"
@@ -133,12 +97,8 @@
 #include "osmodule.h"
 #include "intrcheck.h"
 #include "import.h"
-
 #include "abstract.h"
 #include "bltinmodule.h"
-
-#include "eval.h"
-
 #include "cpython/pyctype.h"
 #include "pystrtod.h"
 #include "pystrcmp.h"

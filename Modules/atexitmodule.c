@@ -93,13 +93,16 @@ atexit_callfuncs(struct atexit_state *state)
             continue;
         }
 
+        // bpo-46025: Increment the refcount of cb->func as the call itself may unregister it
+        PyObject* the_func = Py_NewRef(cb->func);
         PyObject *res = PyObject_Call(cb->func, cb->args, cb->kwargs);
         if (res == NULL) {
-            _PyErr_WriteUnraisableMsg("in atexit callback", cb->func);
+            _PyErr_WriteUnraisableMsg("in atexit callback", the_func);
         }
         else {
             Py_DECREF(res);
         }
+        Py_DECREF(the_func);
     }
 
     atexit_cleanup(state);
@@ -248,7 +251,7 @@ atexit_unregister(PyObject *module, PyObject *func)
 
 
 static PyMethodDef atexit_methods[] = {
-    {"register", (PyCFunction)(void(*)(void)) atexit_register, METH_VARARGS|METH_KEYWORDS,
+    {"register", _PyCFunction_CAST(atexit_register), METH_VARARGS|METH_KEYWORDS,
         atexit_register__doc__},
     {"_clear", (PyCFunction) atexit_clear, METH_NOARGS,
         atexit_clear__doc__},

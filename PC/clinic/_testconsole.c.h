@@ -11,7 +11,7 @@ PyDoc_STRVAR(_testconsole_write_input__doc__,
 "Writes UTF-16-LE encoded bytes to the console as if typed by a user.");
 
 #define _TESTCONSOLE_WRITE_INPUT_METHODDEF    \
-    {"write_input", (PyCFunction)(void(*)(void))_testconsole_write_input, METH_FASTCALL|METH_KEYWORDS, _testconsole_write_input__doc__},
+    {"write_input", _PyCFunction_CAST(_testconsole_write_input), METH_FASTCALL|METH_KEYWORDS, _testconsole_write_input__doc__},
 
 static PyObject *
 _testconsole_write_input_impl(PyObject *module, PyObject *file,
@@ -54,7 +54,7 @@ PyDoc_STRVAR(_testconsole_read_output__doc__,
 "Reads a str from the console as written to stdout.");
 
 #define _TESTCONSOLE_READ_OUTPUT_METHODDEF    \
-    {"read_output", (PyCFunction)(void(*)(void))_testconsole_read_output, METH_FASTCALL|METH_KEYWORDS, _testconsole_read_output__doc__},
+    {"read_output", _PyCFunction_CAST(_testconsole_read_output), METH_FASTCALL|METH_KEYWORDS, _testconsole_read_output__doc__},
 
 static PyObject *
 _testconsole_read_output_impl(PyObject *module, PyObject *file);
@@ -88,4 +88,4 @@ exit:
 #ifndef _TESTCONSOLE_READ_OUTPUT_METHODDEF
     #define _TESTCONSOLE_READ_OUTPUT_METHODDEF
 #endif /* !defined(_TESTCONSOLE_READ_OUTPUT_METHODDEF) */
-/*[clinic end generated code: output=dd8b093a91b62753 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6e9f8b0766eb5a0e input=a9049054013a1b77]*/

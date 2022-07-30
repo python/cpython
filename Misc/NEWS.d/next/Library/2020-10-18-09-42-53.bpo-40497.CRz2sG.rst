@@ -1,4 +1,0 @@
-:meth:`subprocess.check_output` now raises :exc:`ValueError` when the
-invalid keyword argument *check* is passed by user code. Previously
-such use would fail later with a :exc:`TypeError`.
-Patch by Rémi Lapeyre.

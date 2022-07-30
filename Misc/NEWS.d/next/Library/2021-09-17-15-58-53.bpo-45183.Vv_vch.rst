@@ -1,3 +1,0 @@
-Have zipimport.zipimporter.find_spec() not raise an exception when the underlying zip
-file has been deleted and the internal cache has been reset via
-invalidate_cache().

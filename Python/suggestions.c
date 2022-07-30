@@ -1,5 +1,4 @@
 #include "Python.h"
-#include "frameobject.h"
 #include "pycore_frame.h"
 
 #include "pycore_pyerrors.h"
@@ -78,9 +77,11 @@ levenshtein_distance(const char *a, size_t a_size,
     // Instead of producing the whole traditional len(a)-by-len(b)
     // matrix, we can update just one row in place.
     // Initialize the buffer row
+    size_t tmp = MOVE_COST;
     for (size_t i = 0; i < a_size; i++) {
         // cost from b[:0] to a[:i+1]
-        buffer[i] = (i + 1) * MOVE_COST;
+        buffer[i] = tmp;
+        tmp += MOVE_COST;
     }
 
     size_t result = 0;
@@ -202,13 +203,21 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
     PyTracebackObject *traceback = (PyTracebackObject *) exc->traceback; // borrowed reference
     // Abort if we don't have a variable name or we have an invalid one
     // or if we don't have a traceback to work with
-    if (name == NULL || traceback == NULL || !PyUnicode_CheckExact(name)) {
+    if (name == NULL || !PyUnicode_CheckExact(name) ||
+        traceback == NULL || !Py_IS_TYPE(traceback, &PyTraceBack_Type)
+    ) {
         return NULL;
     }
 
     // Move to the traceback of the exception
-    while (traceback->tb_next != NULL) {
-        traceback = traceback->tb_next;
+    while (1) {
+        PyTracebackObject *next = traceback->tb_next;
+        if (next == NULL || !Py_IS_TYPE(next, &PyTraceBack_Type)) {
+            break;
+        }
+        else {
+            traceback = next;
+        }
     }
 
     PyFrameObject *frame = traceback->tb_frame;

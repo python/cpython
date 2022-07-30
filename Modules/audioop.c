@@ -5,13 +5,6 @@
 
 #include "Python.h"
 
-#if defined(__CHAR_UNSIGNED__)
-#if defined(signed)
-/* This module currently does not work on systems where only unsigned
-   characters are available.  Take it out of Setup.  Sorry. */
-#endif
-#endif
-
 static const int maxvals[] = {0, 0x7F, 0x7FFF, 0x7FFFFF, 0x7FFFFFFF};
 /* -1 trick is needed on Windows to support -0x80000000 without a warning */
 static const int minvals[] = {0, -0x80, -0x8000, -0x800000, -0x7FFFFFFF-1};
@@ -304,7 +297,7 @@ static const int stepsizeTable[89] = {
 #define GETINT16(cp, i)         GETINTX(int16_t, (cp), (i))
 #define GETINT32(cp, i)         GETINTX(int32_t, (cp), (i))
 
-#if WORDS_BIGENDIAN
+#ifdef WORDS_BIGENDIAN
 #define GETINT24(cp, i)  (                              \
         ((unsigned char *)(cp) + (i))[2] +              \
         (((unsigned char *)(cp) + (i))[1] << 8) +       \
@@ -321,7 +314,7 @@ static const int stepsizeTable[89] = {
 #define SETINT16(cp, i, val)    SETINTX(int16_t, (cp), (i), (val))
 #define SETINT32(cp, i, val)    SETINTX(int32_t, (cp), (i), (val))
 
-#if WORDS_BIGENDIAN
+#ifdef WORDS_BIGENDIAN
 #define SETINT24(cp, i, val)  do {                              \
         ((unsigned char *)(cp) + (i))[2] = (int)(val);          \
         ((unsigned char *)(cp) + (i))[1] = (int)(val) >> 8;     \
@@ -1982,5 +1975,12 @@ static struct PyModuleDef audioopmodule = {
 PyMODINIT_FUNC
 PyInit_audioop(void)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "'audioop' is deprecated and slated for removal in "
+                     "Python 3.13",
+                     7)) {
+        return NULL;
+    }
+
     return PyModuleDef_Init(&audioopmodule);
 }

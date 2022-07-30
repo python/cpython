@@ -3,6 +3,7 @@
 
 .. module:: smtpd
    :synopsis: A SMTP server implementation in Python.
+   :deprecated:
 
 .. moduleauthor:: Barry Warsaw <barry@python.org>
 .. sectionauthor:: Moshe Zadka <moshez@moshez.org>
@@ -13,7 +14,9 @@
 
 This module offers several classes to implement SMTP (email) servers.
 
-.. deprecated:: 3.6
+.. deprecated-removed:: 3.6 3.12
+   The :mod:`smtpd` module is deprecated
+   (see :pep:`PEP 594 <594#smtpd>` for details).
    The `aiosmtpd <https://aiosmtpd.readthedocs.io/>`_ package is a recommended
    replacement for this module.  It is based on :mod:`asyncio` and provides a
    more straightforward API.
@@ -225,7 +228,7 @@ SMTPChannel Objects
 
    .. attribute:: fqdn
 
-      Holds the fully-qualified domain name of the server as returned by
+      Holds the fully qualified domain name of the server as returned by
       :func:`socket.getfqdn`.
 
    .. attribute:: peer

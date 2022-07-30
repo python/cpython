@@ -1,2 +1,0 @@
-Fix a crash in the :mod:`sqlite3` module that happened when the garbage
-collector clears :class:`sqlite.Statement` objects. Patch by Pablo Galindo
