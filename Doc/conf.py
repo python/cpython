@@ -22,6 +22,11 @@ try:
     import _tkinter
 except ImportError:
     _tkinter = None
+# Treat warnings as errors, done here to prevent warnings in Sphinx code from
+# causing spurious test failures.
+import warnings
+warnings.simplefilter('error')
+del warnings
 '''
 
 manpages_url = 'https://manpages.debian.org/{path}'
