@@ -3,6 +3,8 @@ after 3.10.0 until 3.10.10?
 Released 2023-04-03?
 =========================
 
+gh-95411: Enable using IDLE's module browser with .pyw files.
+
 gh-89610: Add .pyi as a recognized extension for IDLE on macOS.  This allows
 opening stub files by double clicking on them in the Finder.
 
