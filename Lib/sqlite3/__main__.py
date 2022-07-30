@@ -21,7 +21,7 @@ def execute(c, sql):
 
 class SqliteInteractiveConsole(InteractiveConsole):
 
-    def __init__(self, connection, sql):
+    def __init__(self, connection):
         super().__init__()
         self._con = connection
         self._cur = connection.cursor()
