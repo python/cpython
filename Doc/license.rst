@@ -953,6 +953,7 @@ https://www.w3.org/TR/xml-c14n2-testcases/ and is distributed under the
 
 Audioop
 -------
+
 The audioop module uses the code base in g771.c file of the SoX project.
 https://web.archive.org/web/19970716121258/http://www.spies.com/Sox/Archive/soxgamma.tar.gz
 
