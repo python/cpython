@@ -1610,13 +1610,14 @@ This section shows recipes for common adapters and converters.
    sqlite3.register_converter("timestamp", convert_timestamp)
 
 
-.. _sqlite3-shortcut-methods:
+.. _sqlite3-connection-shortcuts:
 
-Using shortcut methods
-^^^^^^^^^^^^^^^^^^^^^^
+Using connection shortcut methods
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Using the nonstandard :meth:`execute`, :meth:`executemany` and
-:meth:`executescript` methods of the :class:`Connection` object, your code can
+Using the :meth:`~Connection.execute`,
+:meth:`~Connection.executemany`, and :meth:`~Connection.executescript`
+methods of the :class:`Connection` class, your code can
 be written more concisely because you don't have to create the (often
 superfluous) :class:`Cursor` objects explicitly. Instead, the :class:`Cursor`
 objects are created implicitly and these shortcut methods return the cursor
