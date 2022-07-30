@@ -1,3 +1,1 @@
-Tweak IDLE's Edit menu.  Move ``Select All`` above ``Cut`` as it is used with
-``Cut`` and ``Copy`` but not with ``Paste``.  Add a separator between
- ``Replace`` and ``Go to Line`` to help IDLE issue triagers.
+In the Edit menu, move ``Select All`` and add a new separator.
