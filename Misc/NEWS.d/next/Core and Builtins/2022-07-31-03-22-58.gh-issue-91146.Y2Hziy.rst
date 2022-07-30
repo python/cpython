@@ -1,0 +1,1 @@
+Reduce allocation size of list from :meth:`str.split`. Patch by Dong-hee Na.
