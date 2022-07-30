@@ -20,7 +20,7 @@
 
             <Component Id="doc_folder" Directory="Doc" Guid="{22FD42DB-EC66-4B1C-B1FC-44E0CF7B2462}">
                 <CreateFolder />
-                <RemoveFolder Id="Remove_doc_folder" On="uninstall"/>
+                <RemoveFolder Id="Remove_doc_folder" On="uninstall" />
             </Component>
         </Feature>
         <Feature Id="Shortcuts" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
