@@ -591,6 +591,7 @@ class BaseEventLoop(events.AbstractEventLoop):
     def run_forever(self):
         """Run until stop() is called."""
         self._check_closed()
+        self._check_running()
         my_thread_id = threading.get_ident()
         other_thread_id = vars(self).setdefault("_thread_id", my_thread_id)
         if my_thread_id != other_thread_id:
