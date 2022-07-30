@@ -25,6 +25,15 @@ The sqlite3 module was written by Gerhard Häring.  It provides an SQL interface
 compliant with the DB-API 2.0 specification described by :pep:`249`, and
 requires SQLite 3.7.15 or newer.
 
+This document includes four main sections:
+
+* :ref:`sqlite3-tutorial` teaches how to use the sqlite3 module.
+* :ref:`sqlite3-reference` describes the classes and functions this module
+  defines.
+* :ref:`sqlite3-howtos` details how to handle specific tasks.
+* :ref:`sqlite3-explanation` provides in-depth background on
+  transaction control.
+
 
 .. _sqlite3-tutorial:
 
@@ -136,10 +145,15 @@ both styles:
       PEP written by Marc-André Lemburg.
 
 
+.. _sqlite3-reference:
+
+Reference
+---------
+
 .. _sqlite3-module-contents:
 
 Module functions and constants
-------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 .. data:: apilevel
@@ -421,8 +435,8 @@ Module functions and constants
 
 .. _sqlite3-connection-objects:
 
-Connection Objects
-------------------
+Connection objects
+^^^^^^^^^^^^^^^^^^
 
 .. class:: Connection
 
@@ -982,8 +996,8 @@ Connection Objects
 
 .. _sqlite3-cursor-objects:
 
-Cursor Objects
---------------
+Cursor objects
+^^^^^^^^^^^^^^
 
    A ``Cursor`` object represents a `database cursor`_
    which is used to execute SQL statements,
@@ -1159,8 +1173,8 @@ Cursor Objects
 
 .. _sqlite3-row-objects:
 
-Row Objects
------------
+Row objects
+^^^^^^^^^^^
 
 .. class:: Row
 
@@ -1224,8 +1238,8 @@ Now we plug :class:`Row` in::
 
 .. _sqlite3-blob-objects:
 
-Blob Objects
-------------
+Blob objects
+^^^^^^^^^^^^
 
 .. versionadded:: 3.11
 
@@ -1276,8 +1290,8 @@ Blob Objects
       end).
 
 
-PrepareProtocol Objects
------------------------
+PrepareProtocol objects
+^^^^^^^^^^^^^^^^^^^^^^^
 
 .. class:: PrepareProtocol
 
@@ -1289,7 +1303,7 @@ PrepareProtocol Objects
 .. _sqlite3-exceptions:
 
 Exceptions
-----------
+^^^^^^^^^^
 
 The exception hierarchy is defined by the DB-API 2.0 (:pep:`249`).
 
@@ -1379,11 +1393,7 @@ The exception hierarchy is defined by the DB-API 2.0 (:pep:`249`).
 .. _sqlite3-types:
 
 SQLite and Python types
------------------------
-
-
-Introduction
-^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
 
 SQLite natively supports the following types: ``NULL``, ``INTEGER``,
 ``REAL``, ``TEXT``, ``BLOB``.
@@ -1423,10 +1433,18 @@ This is how SQLite types are converted to Python types by default:
 +-------------+----------------------------------------------+
 
 The type system of the :mod:`sqlite3` module is extensible in two ways: you can
-store additional Python types in an SQLite database via object adaptation, and
-you can let the :mod:`sqlite3` module convert SQLite types to different Python
-types via converters.
+store additional Python types in an SQLite database via
+:ref:`object adapters <sqlite3-adapters>`,
+and you can let the ``sqlite3`` module convert SQLite types to
+Python types via :ref:`converters <sqlite3-converters>`.
 
+
+.. _sqlite3-howtos:
+
+How-to guides
+-------------
+
+.. _sqlite3-adapters:
 
 Using adapters to store custom Python types in SQLite databases
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1549,7 +1567,7 @@ The deprecated default adapters and converters consist of:
 
 .. _sqlite3-adapter-converter-recipes:
 
-Adapter and Converter Recipes
+Adapter and converter recipes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This section shows recipes for common adapters and converters.
@@ -1592,10 +1610,102 @@ This section shows recipes for common adapters and converters.
    sqlite3.register_converter("timestamp", convert_timestamp)
 
 
+.. _sqlite3-connection-shortcuts:
+
+Using connection shortcut methods
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Using the :meth:`~Connection.execute`,
+:meth:`~Connection.executemany`, and :meth:`~Connection.executescript`
+methods of the :class:`Connection` class, your code can
+be written more concisely because you don't have to create the (often
+superfluous) :class:`Cursor` objects explicitly. Instead, the :class:`Cursor`
+objects are created implicitly and these shortcut methods return the cursor
+objects. This way, you can execute a ``SELECT`` statement and iterate over it
+directly using only a single call on the :class:`Connection` object.
+
+.. literalinclude:: ../includes/sqlite3/shortcut_methods.py
+
+
+.. _sqlite3-columns-by-name:
+
+Accessing columns by name instead of by index
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+One useful feature of the :mod:`sqlite3` module is the built-in
+:class:`sqlite3.Row` class designed to be used as a row factory.
+
+Rows wrapped with this class can be accessed both by index (like tuples) and
+case-insensitively by name:
+
+.. literalinclude:: ../includes/sqlite3/rowclass.py
+
+
+.. _sqlite3-connection-context-manager:
+
+Using the connection as a context manager
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A :class:`Connection` object can be used as a context manager that
+automatically commits or rolls back open transactions when leaving the body of
+the context manager.
+If the body of the :keyword:`with` statement finishes without exceptions,
+the transaction is committed.
+If this commit fails,
+or if the body of the ``with`` statement raises an uncaught exception,
+the transaction is rolled back.
+
+If there is no open transaction upon leaving the body of the ``with`` statement,
+the context manager is a no-op.
+
+.. note::
+
+   The context manager neither implicitly opens a new transaction
+   nor closes the connection.
+
+.. literalinclude:: ../includes/sqlite3/ctx_manager.py
+
+
+.. _sqlite3-uri-tricks:
+
+Working with SQLite URIs
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Some useful URI tricks include:
+
+* Open a database in read-only mode::
+
+    con = sqlite3.connect("file:template.db?mode=ro", uri=True)
+
+* Do not implicitly create a new database file if it does not already exist;
+  will raise :exc:`~sqlite3.OperationalError` if unable to create a new file::
+
+    con = sqlite3.connect("file:nosuchdb.db?mode=rw", uri=True)
+
+* Create a shared named in-memory database::
+
+    con1 = sqlite3.connect("file:mem1?mode=memory&cache=shared", uri=True)
+    con2 = sqlite3.connect("file:mem1?mode=memory&cache=shared", uri=True)
+    con1.execute("create table t(t)")
+    con1.execute("insert into t values(28)")
+    con1.commit()
+    rows = con2.execute("select * from t").fetchall()
+
+More information about this feature, including a list of parameters,
+can be found in the `SQLite URI documentation`_.
+
+.. _SQLite URI documentation: https://www.sqlite.org/uri.html
+
+
+.. _sqlite3-explanation:
+
+Explanation
+-----------
+
 .. _sqlite3-controlling-transactions:
 
-Controlling Transactions
-------------------------
+Transaction control
+^^^^^^^^^^^^^^^^^^^
 
 The ``sqlite3`` module does not adhere to the transaction handling recommended
 by :pep:`249`.
@@ -1633,91 +1743,3 @@ regardless of the value of :attr:`~Connection.isolation_level`.
 
 .. _SQLite transaction behaviour:
    https://www.sqlite.org/lang_transaction.html#deferred_immediate_and_exclusive_transactions
-
-
-.. _sqlite3-uri-tricks:
-
-SQLite URI tricks
------------------
-
-Some useful URI tricks include:
-
-* Open a database in read-only mode::
-
-    con = sqlite3.connect("file:template.db?mode=ro", uri=True)
-
-* Do not implicitly create a new database file if it does not already exist;
-  will raise :exc:`~sqlite3.OperationalError` if unable to create a new file::
-
-    con = sqlite3.connect("file:nosuchdb.db?mode=rw", uri=True)
-
-* Create a shared named in-memory database::
-
-    con1 = sqlite3.connect("file:mem1?mode=memory&cache=shared", uri=True)
-    con2 = sqlite3.connect("file:mem1?mode=memory&cache=shared", uri=True)
-    con1.execute("create table t(t)")
-    con1.execute("insert into t values(28)")
-    con1.commit()
-    rows = con2.execute("select * from t").fetchall()
-
-More information about this feature, including a list of parameters,
-can be found in the `SQLite URI documentation`_.
-
-.. _SQLite URI documentation: https://www.sqlite.org/uri.html
-
-Using :mod:`sqlite3` efficiently
---------------------------------
-
-
-.. _sqlite3-connection-shortcuts:
-
-Using connection shortcut methods
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Using the :meth:`~Connection.execute`,
-:meth:`~Connection.executemany`, and :meth:`~Connection.executescript`
-methods of the :class:`Connection` class, your code can
-be written more concisely because you don't have to create the (often
-superfluous) :class:`Cursor` objects explicitly. Instead, the :class:`Cursor`
-objects are created implicitly and these shortcut methods return the cursor
-objects. This way, you can execute a ``SELECT`` statement and iterate over it
-directly using only a single call on the :class:`Connection` object.
-
-.. literalinclude:: ../includes/sqlite3/shortcut_methods.py
-
-
-Accessing columns by name instead of by index
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-One useful feature of the :mod:`sqlite3` module is the built-in
-:class:`sqlite3.Row` class designed to be used as a row factory.
-
-Rows wrapped with this class can be accessed both by index (like tuples) and
-case-insensitively by name:
-
-.. literalinclude:: ../includes/sqlite3/rowclass.py
-
-
-.. _sqlite3-connection-context-manager:
-
-Using the connection as a context manager
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-A :class:`Connection` object can be used as a context manager that
-automatically commits or rolls back open transactions when leaving the body of
-the context manager.
-If the body of the :keyword:`with` statement finishes without exceptions,
-the transaction is committed.
-If this commit fails,
-or if the body of the ``with`` statement raises an uncaught exception,
-the transaction is rolled back.
-
-If there is no open transaction upon leaving the body of the ``with`` statement,
-the context manager is a no-op.
-
-.. note::
-
-   The context manager neither implicitly opens a new transaction
-   nor closes the connection.
-
-.. literalinclude:: ../includes/sqlite3/ctx_manager.py
