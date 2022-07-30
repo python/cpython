@@ -6,9 +6,22 @@ from code import InteractiveConsole
 from textwrap import dedent
 
 
+def execute(c, sql):
+    try:
+        for row in c.execute(sql):
+            print(row)
+    except sqlite3.Error as e:
+        tp = type(e).__name__
+        try:
+            print(f"{tp} ({e.sqlite_errorname}): {e}")
+        except:
+            print(f"{tp}: {e}")
+    return None
+
+
 class SqliteInteractiveConsole(InteractiveConsole):
 
-    def __init__(self, connection):
+    def __init__(self, connection, sql):
         super().__init__()
         self._con = connection
         self._cur = connection.cursor()
@@ -16,11 +29,7 @@ class SqliteInteractiveConsole(InteractiveConsole):
     def runsql(self, sql):
         if not sqlite3.complete_statement(sql):
             return True
-        try:
-            for row in self._cur.execute(sql):
-                print(row)
-        except sqlite3.Error as e:
-            print(f"{e.sqlite_errorname}: {e}")
+        execute(self._cur, sql)
         return False
 
     def runpy(self, source, filename="<input>", symbol="single"):
@@ -30,6 +39,7 @@ class SqliteInteractiveConsole(InteractiveConsole):
 
     def printhelp(self, ignored):
         print("Enter SQL code and press enter.")
+        return None
 
     def runsource(self, source, filename="<input>", symbol="single"):
         keywords = {
@@ -46,9 +56,18 @@ def main():
         prog="python -m sqlite3",
     )
     parser.add_argument(
-        "-f", "--filename",
-        type=str, dest="database", action="store", default=":memory:",
-        help="Database to open (defaults to ':memory:')",
+        "filename", type=str, default=":memory:", nargs="?",
+        help=(
+            "SQLite database to open (defaults to ':memory:'). "
+            "A new database is created if the file does not previously exist."
+        ),
+    )
+    parser.add_argument(
+        "sql", type=str, nargs="?",
+        help=(
+            "An SQL query to execute. "
+            "Any returned rows are printed to stdout."
+        ),
     )
     parser.add_argument(
         "-v", "--version", action="version",
@@ -57,10 +76,10 @@ def main():
     )
     args = parser.parse_args()
 
-    if args.database == ":memory:":
+    if args.filename == ":memory:":
         db_name = "a transient in-memory database"
     else:
-        db_name = repr(args.database)
+        db_name = repr(args.filename)
 
     banner = dedent(f"""
         sqlite3 shell, running on SQLite version {sqlite3.sqlite_version}
@@ -72,9 +91,12 @@ def main():
     sys.ps1 = "sqlite> "
     sys.ps2 = "    ... "
 
-    con = sqlite3.connect(args.database, isolation_level=None)
-    console = SqliteInteractiveConsole(con)
-    console.interact(banner, exitmsg="")
+    con = sqlite3.connect(args.filename, isolation_level=None)
+    if args.sql:
+        execute(con, args.sql)
+    else:
+        console = SqliteInteractiveConsole(con)
+        console.interact(banner, exitmsg="")
     con.close()
 
 
