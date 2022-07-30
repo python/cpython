@@ -1,0 +1,1 @@
+Removed truthy/falsy. Patch by Robert O'Shea
