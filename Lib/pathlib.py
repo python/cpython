@@ -272,13 +272,12 @@ class PurePath(object):
                 continue
             elif altsep:
                 part = part.replace(altsep, sep)
-            drv, rest = cls._flavour.splitdrive(part)
-            rel = rest.lstrip(sep)
+            drv, rest = cls._flavour.splitdrive(cls._flavour.normpath(part))
+            rel = part[len(drv):].lstrip(sep)
             if drv[:1] == sep:
                 root = sep
             elif rest[:1] == sep:
-                root = rest[:len(rest) - len(rel)]
-                root = cls._flavour.normpath(root)
+                root = sep * (len(rest) - len(rest.lstrip(sep)))
 
             if sep in rel:
                 for x in reversed(rel.split(sep)):
