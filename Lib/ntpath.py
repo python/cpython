@@ -254,28 +254,6 @@ def dirname(p):
     """Returns the directory component of a pathname"""
     return split(p)[0]
 
-# Is a path a symbolic link?
-# This will always return false on systems where os.lstat doesn't exist.
-
-def islink(path):
-    """Test whether a path is a symbolic link.
-    This will always return false for Windows prior to 6.0.
-    """
-    try:
-        st = os.lstat(path)
-    except (OSError, ValueError, AttributeError):
-        return False
-    return stat.S_ISLNK(st.st_mode)
-
-# Being true for dangling symbolic links is also useful.
-
-def lexists(path):
-    """Test whether a path exists.  Returns True for broken symbolic links"""
-    try:
-        st = os.lstat(path)
-    except (OSError, ValueError):
-        return False
-    return True
 
 # Is a path a mount point?
 # Any drive letter root (eg c:\)

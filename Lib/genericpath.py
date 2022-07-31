@@ -7,8 +7,8 @@ import os
 import stat
 
 __all__ = ['commonprefix', 'exists', 'getatime', 'getctime', 'getmtime',
-           'getsize', 'isdir', 'isfile', 'samefile', 'sameopenfile',
-           'samestat']
+           'getsize', 'isdir', 'isfile', 'islink', 'lexists', 'samefile',
+           'sameopenfile', 'samestat']
 
 
 # Does a path exist?
@@ -43,6 +43,28 @@ def isdir(s):
     except (OSError, ValueError):
         return False
     return stat.S_ISDIR(st.st_mode)
+
+
+# Is a path a symbolic link?
+# This will always return false on systems where os.lstat doesn't exist.
+
+def islink(path):
+    """Test whether a path is a symbolic link"""
+    try:
+        st = os.lstat(path)
+    except (OSError, ValueError, AttributeError):
+        return False
+    return stat.S_ISLNK(st.st_mode)
+
+# Being true for dangling symbolic links is also useful.
+
+def lexists(path):
+    """Test whether a path exists.  Returns True for broken symbolic links"""
+    try:
+        os.lstat(path)
+    except (OSError, ValueError):
+        return False
+    return True
 
 
 def getsize(filename):
