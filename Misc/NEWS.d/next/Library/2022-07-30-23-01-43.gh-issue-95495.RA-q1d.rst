@@ -1,0 +1,4 @@
+When built against OpenSSL 3.0, the ``ssl`` module had a bug where it
+reported unauthenticated EOFs (i.e. without close_notify) as a clean
+TLS-level EOF. It now raises ``SSLEOFError``, matching the behavior in
+previous versions of OpenSSL.
