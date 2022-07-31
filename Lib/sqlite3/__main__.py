@@ -6,7 +6,7 @@ from code import InteractiveConsole
 from textwrap import dedent
 
 
-def execute(c, sql):
+def execute(c, sql, suppress_errors=True):
     try:
         for row in c.execute(sql):
             print(row)
@@ -16,6 +16,8 @@ def execute(c, sql):
             print(f"{tp} ({e.sqlite_errorname}): {e}", file=sys.stderr)
         except AttributeError:
             print(f"{tp}: {e}", file=sys.stderr)
+        if not suppress_errors:
+            sys.exit(1)
 
 
 class SqliteInteractiveConsole(InteractiveConsole):
@@ -88,7 +90,7 @@ def main():
     con = sqlite3.connect(args.filename, isolation_level=None)
     try:
         if args.sql:
-            execute(con, args.sql)
+            execute(con, args.sql, suppress_errors=False)
         else:
             console = SqliteInteractiveConsole(con)
             console.interact(banner, exitmsg="")
