@@ -1317,7 +1317,7 @@ f(
                 self.assertIsInstance(code.co_consts[1], types.CodeType)
                 self.assertNotEqual(code.co_consts[0], code.co_consts[1])
                 self.assertNotEqual(
-                    list(code.co_consts[0].co_positions()), 
+                    list(code.co_consts[0].co_positions()),
                     list(code.co_consts[1].co_positions()),
                 )
 
