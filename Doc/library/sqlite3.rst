@@ -1439,6 +1439,8 @@ and you can let the ``sqlite3`` module convert SQLite types to
 Python types via :ref:`converters <sqlite3-converters>`.
 
 
+.. _sqlite3-cli:
+
 Command-line interface
 ^^^^^^^^^^^^^^^^^^^^^^
 
