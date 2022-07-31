@@ -9701,7 +9701,7 @@ split(PyObject *self,
 
     if (substring == NULL) {
         if (maxcount < 0) {
-            maxcount = (len1 + 1) / 2;
+            maxcount = (len1 - 1) / 2 + 1;
         }
         switch (kind1) {
         case PyUnicode_1BYTE_KIND:
@@ -9733,7 +9733,7 @@ split(PyObject *self,
     kind2 = PyUnicode_KIND(substring);
     len2 = PyUnicode_GET_LENGTH(substring);
     if (maxcount < 0) {
-        // if len2 == 0, it will raise TypeError.
+        // if len2 == 0, it will raise ValueError.
         maxcount = len2 == 0 ? 0 : (len1 / len2) + 1;
     }
     if (kind1 < kind2 || len1 < len2) {
@@ -9793,7 +9793,7 @@ rsplit(PyObject *self,
 
     if (substring == NULL) {
         if (maxcount < 0) {
-            maxcount = (len1 + 1) / 2;
+            maxcount = (len1 - 1) / 2 + 1;
         }
         switch (kind1) {
         case PyUnicode_1BYTE_KIND:
@@ -9824,7 +9824,7 @@ rsplit(PyObject *self,
     kind2 = PyUnicode_KIND(substring);
     len2 = PyUnicode_GET_LENGTH(substring);
     if (maxcount < 0) {
-        // if len2 == 0, it will raise TypeError.
+        // if len2 == 0, it will raise ValueError.
         maxcount = len2 == 0 ? 0 : (len1 / len2) + 1;
     }
     if (kind1 < kind2 || len1 < len2) {
