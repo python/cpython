@@ -9735,6 +9735,8 @@ split(PyObject *self,
     if (maxcount < 0) {
         // if len2 == 0, it will raise ValueError.
         maxcount = len2 == 0 ? 0 : (len1 / len2) + 1;
+        // handle expected overflow case: (Py_SSIZE_T_MAX / 1) + 1
+        maxcount = maxcount < 0 ? len1 : maxcount;
     }
     if (kind1 < kind2 || len1 < len2) {
         out = PyList_New(1);
@@ -9826,6 +9828,8 @@ rsplit(PyObject *self,
     if (maxcount < 0) {
         // if len2 == 0, it will raise ValueError.
         maxcount = len2 == 0 ? 0 : (len1 / len2) + 1;
+        // handle expected overflow case: (Py_SSIZE_T_MAX / 1) + 1
+        maxcount = maxcount < 0 ? len1 : maxcount;
     }
     if (kind1 < kind2 || len1 < len2) {
         out = PyList_New(1);
