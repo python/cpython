@@ -14,7 +14,7 @@ def execute(c, sql):
         tp = type(e).__name__
         try:
             print(f"{tp} ({e.sqlite_errorname}): {e}")
-        except:
+        except AttributeError:
             print(f"{tp}: {e}")
 
 
