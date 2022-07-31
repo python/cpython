@@ -599,7 +599,7 @@ Main files of the build system
 * :file:`pyconfig.h` (created by :file:`configure`);
 * :file:`Modules/Setup`: C extensions built by the Makefile using
   :file:`Module/makesetup` shell script;
-* :file:`setup.py`: C extensions built using the :mod:`distutils` module.
+* :file:`setup.py`: C extensions built using the ``setuptools`` package.
 
 Main build steps
 ----------------

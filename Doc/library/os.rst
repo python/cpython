@@ -301,7 +301,7 @@ process and user.
    and ``'surrogateescape'`` error handler. Use :func:`os.getenvb` if you
    would like to use a different encoding.
 
-   .. availability:: most flavors of Unix, Windows.
+   .. availability:: Unix, Windows.
 
 
 .. function:: getenvb(key, default=None)
@@ -316,7 +316,7 @@ process and user.
    :func:`getenvb` is only available if :data:`supports_bytes_environ`
    is ``True``.
 
-   .. availability:: most flavors of Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.2
 
@@ -706,7 +706,7 @@ process and user.
    :func:`socket.gethostname`  or even
    ``socket.gethostbyaddr(socket.gethostname())``.
 
-   .. availability:: recent flavors of Unix.
+   .. availability:: Unix.
 
    .. versionchanged:: 3.3
       Return type changed from a tuple to a tuple-like object
@@ -824,7 +824,7 @@ as internal buffering of data.
       It will always copy no bytes and return 0 as if the file was empty
       because of a known Linux kernel issue.
 
-   .. availability:: Linux kernel >= 4.5 or glibc >= 2.27.
+   .. availability:: Linux >= 4.5 with glibc >= 2.27.
 
    .. versionadded:: 3.8
 
@@ -1164,7 +1164,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    descriptors are :ref:`non-inheritable <fd_inheritance>`. For a (slightly) more
    portable approach, use the :mod:`pty` module.
 
-   .. availability:: some flavors of Unix.
+   .. availability:: Unix.
 
    .. versionchanged:: 3.4
       The new file descriptors are now non-inheritable.
@@ -1190,7 +1190,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Return a pair of file descriptors ``(r, w)`` usable for reading and writing,
    respectively.
 
-   .. availability:: some flavors of Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -1269,9 +1269,9 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    Combine the functionality of :func:`os.readv` and :func:`os.pread`.
 
-   .. availability:: Linux 2.6.30 and newer, FreeBSD 6.0 and newer,
-      OpenBSD 2.7 and newer, AIX 7.1 and newer. Using flags requires
-      Linux 4.6 or newer.
+   .. availability:: Linux >= 2.6.30, FreeBSD >= 6.0, OpenBSD >= 2.7, AIX >= 7.1.
+
+      Using flags requires Linux >= 4.6.
 
    .. versionadded:: 3.7
 
@@ -1286,7 +1286,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    If no bytes were read, it will return ``-1`` and set errno to
    :data:`errno.EAGAIN`.
 
-   .. availability:: Linux 4.14 and newer.
+   .. availability:: Linux >= 4.14.
 
    .. versionadded:: 3.7
 
@@ -1300,7 +1300,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Currently, on Linux, this feature is usable only on a file descriptor opened
    using the :data:`O_DIRECT` flag.
 
-   .. availability:: Linux 4.6 and newer.
+   .. availability:: Linux >= 4.6.
 
    .. versionadded:: 3.7
 
@@ -1339,9 +1339,9 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    Combine the functionality of :func:`os.writev` and :func:`os.pwrite`.
 
-   .. availability:: Linux 2.6.30 and newer, FreeBSD 6.0 and newer,
-      OpenBSD 2.7 and newer, AIX 7.1 and newer. Using flags requires
-      Linux 4.7 or newer.
+   .. availability:: Linux >= 2.6.30, FreeBSD >= 6.0, OpenBSD >= 2.7, AIX >= 7.1.
+
+      Using flags requires Linux >= 4.6.
 
    .. versionadded:: 3.7
 
@@ -1351,7 +1351,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Provide a per-write equivalent of the :data:`O_DSYNC` :func:`os.open` flag.
    This flag effect applies only to the data range written by the system call.
 
-   .. availability:: Linux 4.7 and newer.
+   .. availability:: Linux >= 4.7.
 
    .. versionadded:: 3.7
 
@@ -1361,7 +1361,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Provide a per-write equivalent of the :data:`O_SYNC` :func:`os.open` flag.
    This flag effect applies only to the data range written by the system call.
 
-   .. availability:: Linux 4.7 and newer.
+   .. availability:: Linux >= 4.7.
 
    .. versionadded:: 3.7
 
@@ -1375,7 +1375,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    appended to the end of the file. However, if the *offset* argument is
    ``-1``, the current file *offset* is updated.
 
-   .. availability:: Linux 4.16 and newer.
+   .. availability:: Linux >= 4.16.
 
    .. versionadded:: 3.10
 
@@ -1495,7 +1495,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    make sense to block because there are no writers connected to the write end
    of the pipe.
 
-   .. availability:: Linux kernel >= 2.6.17 and glibc >= 2.5
+   .. availability:: Linux >= 2.6.17 with glibc >= 2.5
 
    .. versionadded:: 3.10
 
@@ -3334,7 +3334,7 @@ features:
    the file descriptor, and as such multiple files can have the same name
    without any side effects.
 
-   .. availability:: Linux 3.17 or newer with glibc 2.27 or newer.
+   .. availability:: Linux >= 3.17 with glibc >= 2.27.
 
    .. versionadded:: 3.8
 
@@ -3359,8 +3359,9 @@ features:
 
    These flags can be passed to :func:`memfd_create`.
 
-   .. availability:: Linux 3.17 or newer with glibc 2.27 or newer.  The
-      ``MFD_HUGE*`` flags are only available since Linux 4.14.
+   .. availability:: Linux >= 3.17 with glibc >= 2.27
+
+      The ``MFD_HUGE*`` flags are only available since Linux 4.14.
 
    .. versionadded:: 3.8
 
@@ -3412,7 +3413,7 @@ features:
        finally:
            os.close(fd)
 
-   .. availability:: Linux 2.6.27 or newer with glibc 2.8 or newer.
+   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
    .. versionadded:: 3.10
 
@@ -3421,7 +3422,7 @@ features:
    Read value from an :func:`eventfd` file descriptor and return a 64 bit
    unsigned int. The function does not verify that *fd* is an :func:`eventfd`.
 
-   .. availability:: See :func:`eventfd`
+   .. availability:: Linux >= 2.6.27
 
    .. versionadded:: 3.10
 
@@ -3430,7 +3431,7 @@ features:
    Add value to an :func:`eventfd` file descriptor. *value* must be a 64 bit
    unsigned int. The function does not verify that *fd* is an :func:`eventfd`.
 
-   .. availability:: See :func:`eventfd`
+   .. availability:: Linux >= 2.6.27
 
    .. versionadded:: 3.10
 
@@ -3438,7 +3439,7 @@ features:
 
    Set close-on-exec flag for new :func:`eventfd` file descriptor.
 
-   .. availability:: See :func:`eventfd`
+   .. availability:: Linux >= 2.6.27
 
    .. versionadded:: 3.10
 
@@ -3447,7 +3448,7 @@ features:
    Set :const:`O_NONBLOCK` status flag for new :func:`eventfd` file
    descriptor.
 
-   .. availability:: See :func:`eventfd`
+   .. availability:: Linux >= 2.6.27
 
    .. versionadded:: 3.10
 
@@ -3456,7 +3457,7 @@ features:
    Provide semaphore-like semantics for reads from a :func:`eventfd` file
    descriptor. On read the internal counter is decremented by one.
 
-   .. availability:: Linux 2.6.30 or newer with glibc 2.8 or newer.
+   .. availability:: Linux >= 2.6.30
 
    .. versionadded:: 3.10
 
@@ -3861,7 +3862,7 @@ written in Python, such as a mail server's external command delivery program.
       Calling ``forkpty()`` in a subinterpreter is no longer supported
       (:exc:`RuntimeError` is raised).
 
-   .. availability:: some flavors of Unix.
+   .. availability:: Unix.
 
 
 .. function:: kill(pid, sig)
@@ -3917,7 +3918,7 @@ written in Python, such as a mail server's external command delivery program.
 
    See the :manpage:`pidfd_open(2)` man page for more details.
 
-   .. availability:: Linux 5.3+
+   .. availability:: Linux >= 5.3
    .. versionadded:: 3.9
 
    .. data:: PIDFD_NONBLOCK
@@ -3927,7 +3928,7 @@ written in Python, such as a mail server's external command delivery program.
       then an attempt to wait on the file descriptor using :manpage:`waitid(2)`
       will immediately return the error :data:`~errno.EAGAIN` rather than blocking.
 
-   .. availability:: Linux 5.10+
+   .. availability:: Linux >= 5.10
    .. versionadded:: 3.12
 
 
@@ -4077,7 +4078,9 @@ written in Python, such as a mail server's external command delivery program.
 
    .. versionadded:: 3.8
 
-   .. availability:: See :func:`posix_spawn` documentation.
+   .. availability:: POSIX
+
+      See :func:`posix_spawn` documentation.
 
 
 .. function:: register_at_fork(*, before=None, after_in_parent=None, \
@@ -4177,7 +4180,9 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.spawn mode,path,args,env os.spawnl
 
-   .. availability:: Unix, Windows.  :func:`spawnlp`, :func:`spawnlpe`, :func:`spawnvp`
+   .. availability:: Unix, Windows.
+
+      :func:`spawnlp`, :func:`spawnlpe`, :func:`spawnvp`
       and :func:`spawnvpe` are not available on Windows.  :func:`spawnle` and
       :func:`spawnve` are not thread-safe on Windows; we advise you to use the
       :mod:`subprocess` module instead.
@@ -4224,13 +4229,13 @@ written in Python, such as a mail server's external command delivery program.
 
    Start a file with its associated application.
 
-   When *operation* is not specified or ``'open'``, this acts like double-clicking
+   When *operation* is not specified, this acts like double-clicking
    the file in Windows Explorer, or giving the file name as an argument to the
    :program:`start` command from the interactive command shell: the file is opened
    with whatever application (if any) its extension is associated.
 
    When another *operation* is given, it must be a "command verb" that specifies
-   what should be done with the file. Common verbs documented by Microsoft are
+   what should be done with the file. Common verbs documented by Microsoft are ``'open'``,
    ``'print'`` and  ``'edit'`` (to be used on files) as well as ``'explore'`` and
    ``'find'`` (to be used on directories).
 
@@ -4381,7 +4386,7 @@ written in Python, such as a mail server's external command delivery program.
    This is a Linux-specific *idtype* that indicates that *id* is a file
    descriptor that refers to a process.
 
-   .. availability:: Linux 5.4+
+   .. availability:: Linux >= 5.4
 
    .. versionadded:: 3.9
 
@@ -4523,7 +4528,9 @@ written in Python, such as a mail server's external command delivery program.
    This option causes child processes to be reported if they have been continued
    from a job control stop since their status was last reported.
 
-   .. availability:: some Unix systems.
+   .. availability:: Unix.
+
+      Some Unix systems.
 
 
 .. data:: WUNTRACED
@@ -4929,7 +4936,7 @@ Random numbers
    See also the `Linux getrandom() manual page
    <http://man7.org/linux/man-pages/man2/getrandom.2.html>`_.
 
-   .. availability:: Linux 3.17 and newer.
+   .. availability:: Linux >= 3.17.
 
    .. versionadded:: 3.6
 

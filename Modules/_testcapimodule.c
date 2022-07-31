@@ -6009,6 +6009,13 @@ settrace_to_record(PyObject *self, PyObject *list)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+clear_managed_dict(PyObject *self, PyObject *obj)
+{
+    _PyObject_ClearManagedDict(obj);
+    Py_RETURN_NONE;
+}
+
 
 static PyObject *
 test_macros(PyObject *self, PyObject *Py_UNUSED(args))
@@ -6347,6 +6354,7 @@ static PyMethodDef TestMethods[] = {
     {"test_code_api", test_code_api, METH_NOARGS, NULL},
     {"settrace_to_record", settrace_to_record, METH_O, NULL},
     {"test_macros", test_macros, METH_NOARGS, NULL},
+    {"clear_managed_dict", clear_managed_dict, METH_O, NULL},
     {NULL, NULL} /* sentinel */
 };
 

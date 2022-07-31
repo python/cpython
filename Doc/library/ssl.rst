@@ -410,9 +410,6 @@ Certificate handling
    * :attr:`openssl_capath_env` - OpenSSL's environment key that points to a capath,
    * :attr:`openssl_capath` - hard coded path to a capath directory
 
-   .. availability:: LibreSSL ignores the environment vars
-     :attr:`openssl_cafile_env` and :attr:`openssl_capath_env`.
-
    .. versionadded:: 3.4
 
 .. function:: enum_certificates(store_name)
