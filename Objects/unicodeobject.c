@@ -9733,7 +9733,8 @@ split(PyObject *self,
     kind2 = PyUnicode_KIND(substring);
     len2 = PyUnicode_GET_LENGTH(substring);
     if (maxcount < 0) {
-        maxcount = len2 == 0 ? (len1 + 1) / 2 : (len1 / len2) + 1;
+        // if len2 == 0, it will raise TypeError.
+        maxcount = len2 == 0 ? 0 : (len1 / len2) + 1;
     }
     if (kind1 < kind2 || len1 < len2) {
         out = PyList_New(1);
@@ -9823,7 +9824,8 @@ rsplit(PyObject *self,
     kind2 = PyUnicode_KIND(substring);
     len2 = PyUnicode_GET_LENGTH(substring);
     if (maxcount < 0) {
-        maxcount = len2 == 0 ? (len1 + 1) / 2 : (len1 / len2) + 1;
+        // if len2 == 0, it will raise TypeError.
+        maxcount = len2 == 0 ? 0 : (len1 / len2) + 1;
     }
     if (kind1 < kind2 || len1 < len2) {
         out = PyList_New(1);
