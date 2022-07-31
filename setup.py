@@ -1663,6 +1663,9 @@ class PyBuildExt(build_ext):
         # Platform-specific libraries
         if HOST_PLATFORM.startswith(('linux', 'freebsd', 'gnukfreebsd')):
             self.add(Extension('ossaudiodev', ['ossaudiodev.c']))
+        elif HOST_PLATFORM.startswith(('netbsd')):
+            self.add(Extension('ossaudiodev', ['ossaudiodev.c'],
+                               libraries=["ossaudio"]))
         elif not AIX:
             self.missing.append('ossaudiodev')
 

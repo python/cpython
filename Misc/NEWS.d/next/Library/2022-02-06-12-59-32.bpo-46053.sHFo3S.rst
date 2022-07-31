@@ -1,0 +1,1 @@
+Fix OSS audio support on NetBSD.
