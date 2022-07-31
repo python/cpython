@@ -613,7 +613,7 @@ if 1:
             exec(code, ns)
             f1 = ns['f1']
             f2 = ns['f2']
-            self.assertEqual(f1.__code__.co_consts, f2.__code__.co_consts)
+            self.assertIs(f1.__code__.co_consts, f2.__code__.co_consts)
             self.check_constant(f1, const)
             self.assertEqual(repr(f1()), repr(const))
 
@@ -626,7 +626,7 @@ if 1:
         # Note: "lambda: ..." emits "LOAD_CONST Ellipsis",
         # whereas "lambda: Ellipsis" emits "LOAD_GLOBAL Ellipsis"
         f1, f2 = lambda: ..., lambda: ...
-        self.assertEqual(f1.__code__.co_consts, f2.__code__.co_consts)
+        self.assertIs(f1.__code__.co_consts, f2.__code__.co_consts)
         self.check_constant(f1, Ellipsis)
         self.assertEqual(repr(f1()), repr(Ellipsis))
 
@@ -641,7 +641,7 @@ if 1:
         # {0} is converted to a constant frozenset({0}) by the peephole
         # optimizer
         f1, f2 = lambda x: x in {0}, lambda x: x in {0}
-        self.assertEqual(f1.__code__.co_consts, f2.__code__.co_consts)
+        self.assertIs(f1.__code__.co_consts, f2.__code__.co_consts)
         self.check_constant(f1, frozenset({0}))
         self.assertTrue(f1(0))
 
@@ -1304,14 +1304,14 @@ f(
     def test_column_offset_deduplication(self):
         # GH-95150: Code with different column offsets shouldn't be merged!
         for source in [
-            "(a for b in c), (a for b in c)",
-            "[a for b in c], [a for b in c]",
-            "{a for b in c}, {a for b in c}",
-            "{a: b for c in d}, {a: b for c in d}",
-            "lambda: a, lambda: a",
+            "lambda: a",
+            "(a for b in c)",
+            "[a for b in c]",
+            "{a for b in c}",
+            "{a: b for c in d}",
         ]:
             with self.subTest(source):
-                code = compile(source, "<test>", "eval")
+                code = compile(f"{source}, {source}", "<test>", "eval")
                 self.assertEqual(len(code.co_consts), 2)
                 self.assertIsInstance(code.co_consts[0], types.CodeType)
                 self.assertIsInstance(code.co_consts[1], types.CodeType)
