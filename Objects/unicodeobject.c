@@ -9696,40 +9696,40 @@ split(PyObject *self,
     const void *buf1, *buf2;
     Py_ssize_t len1, len2;
     PyObject* out;
-
-    if (maxcount < 0)
-        maxcount = PY_SSIZE_T_MAX;
+    len1 = PyUnicode_GET_LENGTH(self);
+    kind1 = PyUnicode_KIND(self);
+    if (maxcount < 0) {
+        maxcount = len1;
+    }
 
     if (substring == NULL)
-        switch (PyUnicode_KIND(self)) {
+        switch (kind1) {
         case PyUnicode_1BYTE_KIND:
             if (PyUnicode_IS_ASCII(self))
                 return asciilib_split_whitespace(
                     self,  PyUnicode_1BYTE_DATA(self),
-                    PyUnicode_GET_LENGTH(self), maxcount
+                    len1, maxcount
                     );
             else
                 return ucs1lib_split_whitespace(
                     self,  PyUnicode_1BYTE_DATA(self),
-                    PyUnicode_GET_LENGTH(self), maxcount
+                    len1, maxcount
                     );
         case PyUnicode_2BYTE_KIND:
             return ucs2lib_split_whitespace(
                 self,  PyUnicode_2BYTE_DATA(self),
-                PyUnicode_GET_LENGTH(self), maxcount
+                len1, maxcount
                 );
         case PyUnicode_4BYTE_KIND:
             return ucs4lib_split_whitespace(
                 self,  PyUnicode_4BYTE_DATA(self),
-                PyUnicode_GET_LENGTH(self), maxcount
+                len1, maxcount
                 );
         default:
             Py_UNREACHABLE();
         }
 
-    kind1 = PyUnicode_KIND(self);
     kind2 = PyUnicode_KIND(substring);
-    len1 = PyUnicode_GET_LENGTH(self);
     len2 = PyUnicode_GET_LENGTH(substring);
     if (kind1 < kind2 || len1 < len2) {
         out = PyList_New(1);
@@ -9783,39 +9783,40 @@ rsplit(PyObject *self,
     Py_ssize_t len1, len2;
     PyObject* out;
 
-    if (maxcount < 0)
-        maxcount = PY_SSIZE_T_MAX;
+    len1 = PyUnicode_GET_LENGTH(self);
+    kind1 = PyUnicode_KIND(self);
+    if (maxcount < 0) {
+        maxcount = len1;
+    }
 
     if (substring == NULL)
-        switch (PyUnicode_KIND(self)) {
+        switch (kind1) {
         case PyUnicode_1BYTE_KIND:
             if (PyUnicode_IS_ASCII(self))
                 return asciilib_rsplit_whitespace(
                     self,  PyUnicode_1BYTE_DATA(self),
-                    PyUnicode_GET_LENGTH(self), maxcount
+                    len1, maxcount
                     );
             else
                 return ucs1lib_rsplit_whitespace(
                     self,  PyUnicode_1BYTE_DATA(self),
-                    PyUnicode_GET_LENGTH(self), maxcount
+                    len1, maxcount
                     );
         case PyUnicode_2BYTE_KIND:
             return ucs2lib_rsplit_whitespace(
                 self,  PyUnicode_2BYTE_DATA(self),
-                PyUnicode_GET_LENGTH(self), maxcount
+                len1, maxcount
                 );
         case PyUnicode_4BYTE_KIND:
             return ucs4lib_rsplit_whitespace(
                 self,  PyUnicode_4BYTE_DATA(self),
-                PyUnicode_GET_LENGTH(self), maxcount
+                len1, maxcount
                 );
         default:
             Py_UNREACHABLE();
         }
 
-    kind1 = PyUnicode_KIND(self);
     kind2 = PyUnicode_KIND(substring);
-    len1 = PyUnicode_GET_LENGTH(self);
     len2 = PyUnicode_GET_LENGTH(substring);
     if (kind1 < kind2 || len1 < len2) {
         out = PyList_New(1);
