@@ -16,7 +16,6 @@ def execute(c, sql):
             print(f"{tp} ({e.sqlite_errorname}): {e}")
         except:
             print(f"{tp}: {e}")
-    return None
 
 
 class SqliteInteractiveConsole(InteractiveConsole):
@@ -37,14 +36,10 @@ class SqliteInteractiveConsole(InteractiveConsole):
         self.runcode(code)
         return False
 
-    def printhelp(self, ignored):
-        print("Enter SQL code and press enter.")
-        return None
-
     def runsource(self, source, filename="<input>", symbol="single"):
         keywords = {
             ".version": lambda x: print(f"{sqlite3.sqlite_version}"),
-            ".help": self.printhelp,
+            ".help": lambda x: print("Enter SQL code and press enter."),
             ".quit": lambda x: sys.exit(0),
         }
         return keywords.get(source, self.runsql)(source)
@@ -92,12 +87,14 @@ def main():
     sys.ps2 = "    ... "
 
     con = sqlite3.connect(args.filename, isolation_level=None)
-    if args.sql:
-        execute(con, args.sql)
-    else:
-        console = SqliteInteractiveConsole(con)
-        console.interact(banner, exitmsg="")
-    con.close()
+    try:
+        if args.sql:
+            execute(con, args.sql)
+        else:
+            console = SqliteInteractiveConsole(con)
+            console.interact(banner, exitmsg="")
+    finally:
+        con.close()
 
 
 main()

@@ -1752,10 +1752,10 @@ The ``sqlite3`` module can be invoked as a script
 in order to provide a simple SQLite shell.
 Type ``.quit`` or CTRL-D to exit the shell.
 
-.. program:: python -m sqlite3
+.. program:: python -m sqlite3 [-h] [-v] [filename] [sql]
 
-.. option:: -f, --filename <file>
-    Database to open (defaults to ``':memory:'``).
+.. option:: -h, --help
+    Print CLI help.
 
 .. option:: -v, --version
     Print underlying SQLite library version.
