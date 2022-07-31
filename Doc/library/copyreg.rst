@@ -29,16 +29,13 @@ Such constructors may be factory functions or class instances.
 
    Declares that *function* should be used as a "reduction" function for objects
    of type *type*.  *function* should return either a string or a tuple
-   containing two or three elements.
+   containing two or three elements. See the :attr:`~pickle.Pickler.dispatch_table`
+   for more details on the interface of *function*.
 
-   The optional *constructor* parameter, if provided, is a callable object which
-   can be used to reconstruct the object when called with the tuple of arguments
-   returned by *function* at pickling time.  A :exc:`TypeError` is raised if the
-   *constructor* is not callable.
+   The optional *constructor* parameter, if provided, validates that
+   *constructor* is callable, and if uncallable then :exc:`TypeError` is raised.
 
-   See the :mod:`pickle` module for more details on the interface
-   expected of *function* and *constructor*.  Note that the
-   :attr:`~pickle.Pickler.dispatch_table` attribute of a pickler
+   Note that the :attr:`~pickle.Pickler.dispatch_table` attribute of a pickler
    object or subclass of :class:`pickle.Pickler` can also be used for
    declaring reduction functions.
 
