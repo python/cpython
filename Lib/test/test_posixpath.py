@@ -242,6 +242,16 @@ class PosixPathTest(unittest.TestCase):
         finally:
             os.lstat = save_lstat
 
+    def test_isreserved(self):
+        self.assertFalse(posixpath.isreserved(''))
+        self.assertFalse(posixpath.isreserved(b''))
+        self.assertFalse(posixpath.isreserved('/'))
+        self.assertFalse(posixpath.isreserved(b'/'))
+        self.assertFalse(posixpath.isreserved('hi'))
+        self.assertFalse(posixpath.isreserved(b'hi'))
+        self.assertFalse(posixpath.isreserved('NUL'))
+        self.assertFalse(posixpath.isreserved(b'NUL'))
+
     def test_expanduser(self):
         self.assertEqual(posixpath.expanduser("foo"), "foo")
         self.assertEqual(posixpath.expanduser(b"foo"), b"foo")
