@@ -2455,7 +2455,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # ========================
     def _get_values(self, action, arg_strings):
         # for everything but PARSER, REMAINDER args, strip out first '--'
-        if action.nargs not in [PARSER, REMAINDER]:
+        if action.nargs not in [PARSER, REMAINDER, ONE_OR_MORE]:
             try:
                 arg_strings.remove('--')
             except ValueError:

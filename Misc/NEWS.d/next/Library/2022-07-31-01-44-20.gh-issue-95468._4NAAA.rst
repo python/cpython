@@ -1,0 +1,2 @@
+Fixed an issue where multiple "--" arguments were not returned by
+`ArgumentParser`. Pathch by Robert O'Shea
