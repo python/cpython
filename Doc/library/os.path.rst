@@ -295,6 +295,15 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
+.. function:: isreserved(path)
+
+   Return ``True`` if *path* is a reserved pathname on the current system. On
+   Windows, reserved names include "NUL", "AUX" and "CON". On other platforms,
+   this function always returns ``False``.
+
+   .. versionadded:: 3.12
+
+
 .. function:: join(path, *paths)
 
    Join one or more path components intelligently.  The return value is the

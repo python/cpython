@@ -1392,6 +1392,7 @@ Below is a table mapping various :mod:`os` functions to their corresponding
                                        :meth:`Path.owner`,
                                        :meth:`Path.group`
 :func:`os.path.isabs`                  :meth:`PurePath.is_absolute`
+:func:`os.path.isreserved`             :meth:`PurePath.is_reserved`
 :func:`os.path.join`                   :func:`PurePath.joinpath`
 :func:`os.path.basename`               :data:`PurePath.name`
 :func:`os.path.dirname`                :data:`PurePath.parent`

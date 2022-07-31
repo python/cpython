@@ -7,8 +7,8 @@ import os
 import stat
 
 __all__ = ['commonprefix', 'exists', 'getatime', 'getctime', 'getmtime',
-           'getsize', 'isdir', 'isfile', 'samefile', 'sameopenfile',
-           'samestat']
+           'getsize', 'isdir', 'isfile', 'isreserved', 'samefile',
+           'sameopenfile', 'samestat']
 
 
 # Does a path exist?
@@ -43,6 +43,13 @@ def isdir(s):
     except (OSError, ValueError):
         return False
     return stat.S_ISDIR(st.st_mode)
+
+
+# Is a path reserved? The answer is "no" here, but it can be "yes" in ntpath.
+def isreserved(path):
+    """Return true if the pathname is reserved by the system."""
+    os.fspath(path)
+    return False
 
 
 def getsize(filename):

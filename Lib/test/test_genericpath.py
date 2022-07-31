@@ -215,6 +215,16 @@ class GenericTest:
         finally:
             os_helper.rmdir(filename)
 
+    def test_isreserved(self):
+        self.assertFalse(self.pathmodule.isreserved(''))
+        self.assertFalse(self.pathmodule.isreserved(b''))
+        self.assertFalse(self.pathmodule.isreserved('/'))
+        self.assertFalse(self.pathmodule.isreserved(b'/'))
+        self.assertFalse(self.pathmodule.isreserved('hi'))
+        self.assertFalse(self.pathmodule.isreserved(b'hi'))
+        self.assertFalse(self.pathmodule.isreserved('NUL'))
+        self.assertFalse(self.pathmodule.isreserved(b'NUL'))
+
     def test_samefile(self):
         file1 = os_helper.TESTFN
         file2 = os_helper.TESTFN + "2"
