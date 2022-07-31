@@ -1,0 +1,2 @@
+Added two lines to :func:`argparse.add_subparsers`, to tell user to always
+add the dest parameter if the required parameter is passed

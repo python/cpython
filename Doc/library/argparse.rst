@@ -1745,10 +1745,12 @@ Sub-commands
      encountered at the command line
 
    * dest_ - name of the attribute under which sub-command name will be
-     stored; by default ``None`` and no value is stored
+     stored; by default ``None`` and no value is stored. Required if
+     required_ has been passed
 
    * required_ - Whether or not a subcommand must be provided, by default
-     ``False`` (added in 3.7)
+     ``False``. If this option parameter is passed then it is required
+     to also pass in dest_ (added in 3.7)
 
    * help_ - help for sub-parser group in help output, by default ``None``
 
