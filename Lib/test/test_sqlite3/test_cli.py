@@ -14,7 +14,7 @@ class CommandLineInterface(unittest.TestCase):
 
     def _do_test(self, *args, expect_success=True):
         with subprocess.Popen(
-            [sys.executable, "-m", "-Xutf8", "sqlite3", *args],
+            [sys.executable, "-Xutf8", "-m", "sqlite3", *args],
             encoding="utf-8",
             bufsize=0,
             stdout=subprocess.PIPE,
