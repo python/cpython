@@ -9698,11 +9698,11 @@ split(PyObject *self,
     PyObject* out;
     len1 = PyUnicode_GET_LENGTH(self);
     kind1 = PyUnicode_KIND(self);
-    if (maxcount < 0) {
-        maxcount = len1;
-    }
 
-    if (substring == NULL)
+    if (substring == NULL) {
+        if (maxcount < 0) {
+            maxcount = (len1 + 1) / 2;
+        }
         switch (kind1) {
         case PyUnicode_1BYTE_KIND:
             if (PyUnicode_IS_ASCII(self))
@@ -9728,9 +9728,13 @@ split(PyObject *self,
         default:
             Py_UNREACHABLE();
         }
+    }
 
     kind2 = PyUnicode_KIND(substring);
     len2 = PyUnicode_GET_LENGTH(substring);
+    if (maxcount < 0) {
+        maxcount = len1 / len2 + 1;
+    }
     if (kind1 < kind2 || len1 < len2) {
         out = PyList_New(1);
         if (out == NULL)
@@ -9785,11 +9789,11 @@ rsplit(PyObject *self,
 
     len1 = PyUnicode_GET_LENGTH(self);
     kind1 = PyUnicode_KIND(self);
-    if (maxcount < 0) {
-        maxcount = len1;
-    }
 
-    if (substring == NULL)
+    if (substring == NULL) {
+        if (maxcount < 0) {
+            maxcount = (len1 + 1) / 2;
+        }
         switch (kind1) {
         case PyUnicode_1BYTE_KIND:
             if (PyUnicode_IS_ASCII(self))
@@ -9815,9 +9819,12 @@ rsplit(PyObject *self,
         default:
             Py_UNREACHABLE();
         }
-
+    }
     kind2 = PyUnicode_KIND(substring);
     len2 = PyUnicode_GET_LENGTH(substring);
+    if (maxcount < 0) {
+        maxcount = len1 / len2 + 1;
+    }
     if (kind1 < kind2 || len1 < len2) {
         out = PyList_New(1);
         if (out == NULL)
