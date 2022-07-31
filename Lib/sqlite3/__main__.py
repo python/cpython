@@ -45,7 +45,7 @@ class SqliteInteractiveConsole(InteractiveConsole):
 
 def main():
     parser = ArgumentParser(
-        description="Python sqlite3 REPL",
+        description="Python sqlite3 CLI",
         prog="python -m sqlite3",
     )
     parser.add_argument(
