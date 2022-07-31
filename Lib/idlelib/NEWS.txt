@@ -4,6 +4,10 @@ Released on 2022-10-03
 =========================
 
 
+gh-95471: Tweak Edit menu. Move 'Select All' above 'Cut' as it is used
+with 'Cut' and 'Copy' but not 'Paste'.  Add a separator between 'Replace'
+and 'Go to Line' to help IDLE issue triagers.
+
 gh-95411: Enable using IDLE's module browser with .pyw files.
 
 gh-89610: Add .pyi as a recognized extension for IDLE on macOS.  This allows
