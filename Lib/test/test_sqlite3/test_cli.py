@@ -86,31 +86,31 @@ class InteractiveSession(unittest.TestCase):
             stderr=subprocess.PIPE,
         )
 
-    def expect_success(self, proc, err):
+    def expect_success(self, proc):
         proc.wait()
         if proc.returncode:
-            self.fail("".join(err))
+            self.fail("".join(proc.stderr))
 
     def test_interact(self):
         with self.start_cli() as proc:
             out, err = proc.communicate(timeout=self.TIMEOUT)
             self.assertIn(self.MEMORY_DB_MSG, err)
             self.assertIn(self.PS1, out)
-            self.expect_success(proc, err)
+            self.expect_success(proc)
 
     def test_interact_quit(self):
         with self.start_cli() as proc:
             out, err = proc.communicate(input=".quit", timeout=self.TIMEOUT)
             self.assertIn(self.MEMORY_DB_MSG, err)
             self.assertIn(self.PS1, out)
-            self.expect_success(proc, err)
+            self.expect_success(proc)
 
     def test_interact_version(self):
         with self.start_cli() as proc:
             out, err = proc.communicate(input=".version", timeout=self.TIMEOUT)
             self.assertIn(self.MEMORY_DB_MSG, err)
             self.assertIn(sqlite.sqlite_version, out)
-            self.expect_success(proc, err)
+            self.expect_success(proc)
 
     def test_interact_valid_sql(self):
         with self.start_cli() as proc:
@@ -118,7 +118,7 @@ class InteractiveSession(unittest.TestCase):
                                         timeout=self.TIMEOUT)
             self.assertIn(self.MEMORY_DB_MSG, err)
             self.assertIn("(1,)", out)
-            self.expect_success(proc, err)
+            self.expect_success(proc)
 
     def test_interact_valid_multiline_sql(self):
         with self.start_cli() as proc:
@@ -127,14 +127,14 @@ class InteractiveSession(unittest.TestCase):
             self.assertIn(self.MEMORY_DB_MSG, err)
             self.assertIn(self.PS2, out)
             self.assertIn("(1,)", out)
-            self.expect_success(proc, err)
+            self.expect_success(proc)
 
     def test_interact_invalid_sql(self):
         with self.start_cli() as proc:
             out, err = proc.communicate(input="sel;", timeout=self.TIMEOUT)
             self.assertIn(self.MEMORY_DB_MSG, err)
             self.assertIn("OperationalError (SQLITE_ERROR)", err)
-            self.expect_success(proc, err)
+            self.expect_success(proc)
 
     def test_interact_on_disk_file(self):
         with self.start_cli(TESTFN) as proc:
@@ -142,13 +142,13 @@ class InteractiveSession(unittest.TestCase):
                                         timeout=self.TIMEOUT)
             self.assertIn(TESTFN, err)
             self.assertIn(self.PS1, out)
-            self.expect_success(proc, err)
+            self.expect_success(proc)
         self.addCleanup(unlink, TESTFN)
         with self.start_cli(TESTFN, "select count(t) from t") as proc:
             out = proc.stdout.read()
             err = proc.stderr.read()
             self.assertIn("(0,)", out)
-            self.expect_success(proc, err)
+            self.expect_success(proc)
 
 
 if __name__ == "__main__":
