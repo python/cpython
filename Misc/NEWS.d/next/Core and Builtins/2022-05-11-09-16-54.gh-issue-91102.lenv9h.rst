@@ -1,0 +1,1 @@
+:meth:`_warnings.warn_explicit` is ported to Argument Clinic.

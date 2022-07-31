@@ -2,6 +2,8 @@
     unicode_format.h -- implementation of str.format().
 */
 
+#include "pycore_floatobject.h"   // _PyFloat_FormatAdvancedWriter()
+
 /************************************************************************/
 /***********   Global data structures and forward declarations  *********/
 /************************************************************************/

@@ -213,14 +213,6 @@ class GzipFile(_compression.BaseStream):
             self._write_gzip_header(compresslevel)
 
     @property
-    def filename(self):
-        import warnings
-        warnings.warn("use the name attribute", DeprecationWarning, 2)
-        if self.mode == WRITE and self.name[-3:] != ".gz":
-            return self.name + ".gz"
-        return self.name
-
-    @property
     def mtime(self):
         """Last modification time read from stream, or None"""
         return self._buffer.raw._last_mtime
@@ -397,10 +389,6 @@ class GzipFile(_compression.BaseStream):
     def readline(self, size=-1):
         self._check_not_closed()
         return self._buffer.readline(size)
-
-    def __iter__(self):
-        self._check_not_closed()
-        return self._buffer.__iter__()
 
 
 def _read_exact(fp, n):
@@ -591,7 +579,8 @@ def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=None):
     header = _create_simple_gzip_header(compresslevel, mtime)
     trailer = struct.pack("<LL", zlib.crc32(data), (len(data) & 0xffffffff))
     # Wbits=-15 creates a raw deflate block.
-    return header + zlib.compress(data, wbits=-15) + trailer
+    return (header + zlib.compress(data, level=compresslevel, wbits=-15) +
+            trailer)
 
 
 def decompress(data):
@@ -607,6 +596,9 @@ def decompress(data):
         do = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
         # Read all the data except the header
         decompressed = do.decompress(data[fp.tell():])
+        if not do.eof or len(do.unused_data) < 8:
+            raise EOFError("Compressed file ended before the end-of-stream "
+                           "marker was reached")
         crc, length = struct.unpack("<II", do.unused_data[:8])
         if crc != zlib.crc32(decompressed):
             raise BadGzipFile("CRC check failed")

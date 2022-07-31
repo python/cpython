@@ -1,0 +1,2 @@
+Fix an issue that occurred after interrupting
+:func:`threading.Condition.notify`.

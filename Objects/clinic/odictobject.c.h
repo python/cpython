@@ -9,7 +9,7 @@ PyDoc_STRVAR(OrderedDict_fromkeys__doc__,
 "Create a new ordered dictionary with keys from iterable and values set to value.");
 
 #define ORDEREDDICT_FROMKEYS_METHODDEF    \
-    {"fromkeys", (PyCFunction)(void(*)(void))OrderedDict_fromkeys, METH_FASTCALL|METH_KEYWORDS|METH_CLASS, OrderedDict_fromkeys__doc__},
+    {"fromkeys", _PyCFunction_CAST(OrderedDict_fromkeys), METH_FASTCALL|METH_KEYWORDS|METH_CLASS, OrderedDict_fromkeys__doc__},
 
 static PyObject *
 OrderedDict_fromkeys_impl(PyTypeObject *type, PyObject *seq, PyObject *value);
@@ -50,7 +50,7 @@ PyDoc_STRVAR(OrderedDict_setdefault__doc__,
 "Return the value for key if key is in the dictionary, else default.");
 
 #define ORDEREDDICT_SETDEFAULT_METHODDEF    \
-    {"setdefault", (PyCFunction)(void(*)(void))OrderedDict_setdefault, METH_FASTCALL|METH_KEYWORDS, OrderedDict_setdefault__doc__},
+    {"setdefault", _PyCFunction_CAST(OrderedDict_setdefault), METH_FASTCALL|METH_KEYWORDS, OrderedDict_setdefault__doc__},
 
 static PyObject *
 OrderedDict_setdefault_impl(PyODictObject *self, PyObject *key,
@@ -93,7 +93,7 @@ PyDoc_STRVAR(OrderedDict_pop__doc__,
 "raise a KeyError.");
 
 #define ORDEREDDICT_POP_METHODDEF    \
-    {"pop", (PyCFunction)(void(*)(void))OrderedDict_pop, METH_FASTCALL|METH_KEYWORDS, OrderedDict_pop__doc__},
+    {"pop", _PyCFunction_CAST(OrderedDict_pop), METH_FASTCALL|METH_KEYWORDS, OrderedDict_pop__doc__},
 
 static PyObject *
 OrderedDict_pop_impl(PyODictObject *self, PyObject *key,
@@ -135,7 +135,7 @@ PyDoc_STRVAR(OrderedDict_popitem__doc__,
 "Pairs are returned in LIFO order if last is true or FIFO order if false.");
 
 #define ORDEREDDICT_POPITEM_METHODDEF    \
-    {"popitem", (PyCFunction)(void(*)(void))OrderedDict_popitem, METH_FASTCALL|METH_KEYWORDS, OrderedDict_popitem__doc__},
+    {"popitem", _PyCFunction_CAST(OrderedDict_popitem), METH_FASTCALL|METH_KEYWORDS, OrderedDict_popitem__doc__},
 
 static PyObject *
 OrderedDict_popitem_impl(PyODictObject *self, int last);
@@ -177,7 +177,7 @@ PyDoc_STRVAR(OrderedDict_move_to_end__doc__,
 "Raise KeyError if the element does not exist.");
 
 #define ORDEREDDICT_MOVE_TO_END_METHODDEF    \
-    {"move_to_end", (PyCFunction)(void(*)(void))OrderedDict_move_to_end, METH_FASTCALL|METH_KEYWORDS, OrderedDict_move_to_end__doc__},
+    {"move_to_end", _PyCFunction_CAST(OrderedDict_move_to_end), METH_FASTCALL|METH_KEYWORDS, OrderedDict_move_to_end__doc__},
 
 static PyObject *
 OrderedDict_move_to_end_impl(PyODictObject *self, PyObject *key, int last);
@@ -211,4 +211,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e0afaad5b4bb47fe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4182a5dab66963d0 input=a9049054013a1b77]*/

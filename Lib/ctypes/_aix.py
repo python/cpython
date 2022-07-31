@@ -163,7 +163,7 @@ def get_legacy(members):
             return member
     else:
         # 32-bit legacy names - both shr.o and shr4.o exist.
-        # shr.o is the preffered name so we look for shr.o first
+        # shr.o is the preferred name so we look for shr.o first
         #  i.e., shr4.o is returned only when shr.o does not exist
         for name in ['shr.o', 'shr4.o']:
             member = get_one_match(re.escape(name), members)

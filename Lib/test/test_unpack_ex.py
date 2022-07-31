@@ -1,5 +1,9 @@
 # Tests for extended unpacking, starred expressions.
 
+import doctest
+import unittest
+
+
 doctests = """
 
 Unpack tuple
@@ -392,10 +396,10 @@ Some size constraints (all fail.)
 
 __test__ = {'doctests' : doctests}
 
-def test_main(verbose=False):
-    from test import support
-    from test import test_unpack_ex
-    support.run_doctest(test_unpack_ex, verbose)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
+
 
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

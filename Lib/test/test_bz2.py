@@ -496,6 +496,7 @@ class BZ2FileTest(BaseTest):
         else:
             self.fail("1/0 didn't raise an exception")
 
+    @threading_helper.requires_working_threading()
     def testThreading(self):
         # Issue #7205: Using a BZ2File from several threads shouldn't deadlock.
         data = b"1" * 2**20
@@ -1005,15 +1006,9 @@ class OpenTest(BaseTest):
             self.assertEqual(f.readlines(), [text])
 
 
-def test_main():
-    support.run_unittest(
-        BZ2FileTest,
-        BZ2CompressorTest,
-        BZ2DecompressorTest,
-        CompressDecompressTest,
-        OpenTest,
-    )
+def tearDownModule():
     support.reap_children()
 
+
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

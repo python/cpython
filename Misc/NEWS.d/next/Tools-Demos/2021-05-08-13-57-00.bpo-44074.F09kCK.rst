@@ -1,1 +1,0 @@
-Make patchcheck automatically detect the correct base branch name (previously it was hardcoded to 'master')

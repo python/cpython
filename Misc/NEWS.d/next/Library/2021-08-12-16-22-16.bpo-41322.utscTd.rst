@@ -1,3 +1,0 @@
-Added ``DeprecationWarning`` for tests and async tests that return a
-value!=None (as this may indicate an improperly written test, for example a
-test written as a generator function).

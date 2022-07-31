@@ -83,13 +83,23 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
 .. c:var:: int Py_BytesWarningFlag
 
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.bytes_warning` should be used instead, see :ref:`Python
+   Initialization Configuration <init-config>`.
+
    Issue a warning when comparing :class:`bytes` or :class:`bytearray` with
    :class:`str` or :class:`bytes` with :class:`int`.  Issue an error if greater
    or equal to ``2``.
 
    Set by the :option:`-b` option.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_DebugFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.parser_debug` should be used instead, see :ref:`Python
+   Initialization Configuration <init-config>`.
 
    Turn on parser debugging output (for expert only, depending on compilation
    options).
@@ -97,7 +107,13 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-d` option and the :envvar:`PYTHONDEBUG` environment
    variable.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_DontWriteBytecodeFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.write_bytecode` should be used instead, see :ref:`Python
+   Initialization Configuration <init-config>`.
 
    If set to non-zero, Python won't try to write ``.pyc`` files on the
    import of source modules.
@@ -105,14 +121,27 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-B` option and the :envvar:`PYTHONDONTWRITEBYTECODE`
    environment variable.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_FrozenFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.pathconfig_warnings` should be used instead, see
+   :ref:`Python Initialization Configuration <init-config>`.
 
    Suppress error messages when calculating the module search path in
    :c:func:`Py_GetPath`.
 
    Private flag used by ``_freeze_module`` and ``frozenmain`` programs.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_HashRandomizationFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.hash_seed` and :c:member:`PyConfig.use_hash_seed` should
+   be used instead, see :ref:`Python Initialization Configuration
+   <init-config>`.
 
    Set to ``1`` if the :envvar:`PYTHONHASHSEED` environment variable is set to
    a non-empty string.
@@ -120,14 +149,26 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    If the flag is non-zero, read the :envvar:`PYTHONHASHSEED` environment
    variable to initialize the secret hash seed.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_IgnoreEnvironmentFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.use_environment` should be used instead, see
+   :ref:`Python Initialization Configuration <init-config>`.
 
    Ignore all :envvar:`PYTHON*` environment variables, e.g.
    :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`, that might be set.
 
    Set by the :option:`-E` and :option:`-I` options.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_InspectFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.inspect` should be used instead, see
+   :ref:`Python Initialization Configuration <init-config>`.
 
    When a script is passed as first argument or the :option:`-c` option is used,
    enter interactive mode after executing the script or the command, even when
@@ -136,11 +177,23 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-i` option and the :envvar:`PYTHONINSPECT` environment
    variable.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_InteractiveFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.interactive` should be used instead, see
+   :ref:`Python Initialization Configuration <init-config>`.
 
    Set by the :option:`-i` option.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_IsolatedFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.isolated` should be used instead, see
+   :ref:`Python Initialization Configuration <init-config>`.
 
    Run Python in isolated mode. In isolated mode :data:`sys.path` contains
    neither the script's directory nor the user's site-packages directory.
@@ -149,7 +202,13 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. versionadded:: 3.4
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_LegacyWindowsFSEncodingFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyPreConfig.legacy_windows_fs_encoding` should be used instead, see
+   :ref:`Python Initialization Configuration <init-config>`.
 
    If the flag is non-zero, use the ``mbcs`` encoding with ``replace`` error
    handler, instead of the UTF-8 encoding with ``surrogatepass`` error handler,
@@ -162,7 +221,13 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. availability:: Windows.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_LegacyWindowsStdioFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.legacy_windows_stdio` should be used instead, see
+   :ref:`Python Initialization Configuration <init-config>`.
 
    If the flag is non-zero, use :class:`io.FileIO` instead of
    :class:`WindowsConsoleIO` for :mod:`sys` standard streams.
@@ -174,7 +239,13 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. availability:: Windows.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_NoSiteFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.site_import` should be used instead, see
+   :ref:`Python Initialization Configuration <init-config>`.
 
    Disable the import of the module :mod:`site` and the site-dependent
    manipulations of :data:`sys.path` that it entails.  Also disable these
@@ -183,7 +254,13 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    Set by the :option:`-S` option.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_NoUserSiteDirectory
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.user_site_directory` should be used instead, see
+   :ref:`Python Initialization Configuration <init-config>`.
 
    Don't add the :data:`user site-packages directory <site.USER_SITE>` to
    :data:`sys.path`.
@@ -191,12 +268,24 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-s` and :option:`-I` options, and the
    :envvar:`PYTHONNOUSERSITE` environment variable.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_OptimizeFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.optimization_level` should be used instead, see
+   :ref:`Python Initialization Configuration <init-config>`.
 
    Set by the :option:`-O` option and the :envvar:`PYTHONOPTIMIZE` environment
    variable.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_QuietFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.quiet` should be used instead, see :ref:`Python
+   Initialization Configuration <init-config>`.
 
    Don't display the copyright and version messages even in interactive mode.
 
@@ -204,14 +293,26 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. versionadded:: 3.2
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_UnbufferedStdioFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.buffered_stdio` should be used instead, see :ref:`Python
+   Initialization Configuration <init-config>`.
 
    Force the stdout and stderr streams to be unbuffered.
 
    Set by the :option:`-u` option and the :envvar:`PYTHONUNBUFFERED`
    environment variable.
 
+   .. deprecated:: 3.12
+
 .. c:var:: int Py_VerboseFlag
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.verbose` should be used instead, see :ref:`Python
+   Initialization Configuration <init-config>`.
 
    Print a message each time a module is initialized, showing the place
    (filename or built-in module) from which it is loaded.  If greater or equal
@@ -220,6 +321,8 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    Set by the :option:`-v` option and the :envvar:`PYTHONVERBOSE` environment
    variable.
+
+   .. deprecated:: 3.12
 
 
 Initializing and finalizing the interpreter
@@ -253,6 +356,9 @@ Initializing and finalizing the interpreter
    (without calling :c:func:`Py_FinalizeEx` first).  There is no return value; it is a
    fatal error if the initialization fails.
 
+   Use the :c:func:`Py_InitializeFromConfig` function to customize the
+   :ref:`Python Initialization Configuration <init-config>`.
+
    .. note::
       On Windows, changes the console mode from ``O_TEXT`` to ``O_BINARY``, which will
       also affect non-Python uses of the console using the C Runtime.
@@ -263,6 +369,9 @@ Initializing and finalizing the interpreter
    This function works like :c:func:`Py_Initialize` if *initsigs* is ``1``. If
    *initsigs* is ``0``, it skips initialization registration of signal handlers, which
    might be useful when Python is embedded.
+
+   Use the :c:func:`Py_InitializeFromConfig` function to customize the
+   :ref:`Python Initialization Configuration <init-config>`.
 
 
 .. c:function:: int Py_IsInitialized()
@@ -486,7 +595,7 @@ Process-wide parameters
    (set by :c:func:`Py_SetProgramName` above) and some environment variables.
    The returned string consists of a series of directory names separated by a
    platform dependent delimiter character.  The delimiter character is ``':'``
-   on Unix and Mac OS X, ``';'`` on Windows.  The returned string points into
+   on Unix and macOS, ``';'`` on Windows.  The returned string points into
    static storage; the caller should not modify its value.  The list
    :data:`sys.path` is initialized with this value on interpreter startup; it
    can be (and usually is) modified later to change the search path for loading
@@ -518,7 +627,7 @@ Process-wide parameters
    default search path but uses the one provided instead.  This is useful if
    Python is embedded by an application that has full knowledge of the location
    of all modules.  The path components should be separated by the platform
-   dependent delimiter character, which is ``':'`` on Unix and Mac OS X, ``';'``
+   dependent delimiter character, which is ``':'`` on Unix and macOS, ``';'``
    on Windows.
 
    This also causes :data:`sys.executable` to be set to the program
@@ -549,9 +658,11 @@ Process-wide parameters
    .. index:: single: version (in module sys)
 
    The first word (up to the first space character) is the current Python version;
-   the first three characters are the major and minor version separated by a
+   the first characters are the major and minor version separated by a
    period.  The returned string points into static storage; the caller should not
    modify its value.  The value is available to Python code as :data:`sys.version`.
+
+   See also the :c:var:`Py_Version` constant.
 
 
 .. c:function:: const char* Py_GetPlatform()
@@ -561,7 +672,7 @@ Process-wide parameters
    Return the platform identifier for the current platform.  On Unix, this is
    formed from the "official" name of the operating system, converted to lower
    case, followed by the major revision number; e.g., for Solaris 2.x, which is
-   also known as SunOS 5.x, the value is ``'sunos5'``.  On Mac OS X, it is
+   also known as SunOS 5.x, the value is ``'sunos5'``.  On macOS, it is
    ``'darwin'``.  On Windows, it is ``'win'``.  The returned string points into
    static storage; the caller should not modify its value.  The value is available
    to Python code as ``sys.platform``.
@@ -614,6 +725,11 @@ Process-wide parameters
       single: Py_FatalError()
       single: argv (in module sys)
 
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.argv`, :c:member:`PyConfig.parse_argv` and
+   :c:member:`PyConfig.safe_path` should be used instead, see :ref:`Python
+   Initialization Configuration <init-config>`.
+
    Set :data:`sys.argv` based on *argc* and *argv*.  These parameters are
    similar to those passed to the program's :c:func:`main` function with the
    difference that the first entry should refer to the script file to be
@@ -657,8 +773,14 @@ Process-wide parameters
    .. XXX impl. doesn't seem consistent in allowing ``0``/``NULL`` for the params;
       check w/ Guido.
 
+   .. deprecated:: 3.11
+
 
 .. c:function:: void PySys_SetArgv(int argc, wchar_t **argv)
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.argv` and :c:member:`PyConfig.parse_argv` should be used
+   instead, see :ref:`Python Initialization Configuration <init-config>`.
 
    This function works like :c:func:`PySys_SetArgvEx` with *updatepath* set
    to ``1`` unless the :program:`python` interpreter was started with the
@@ -671,6 +793,8 @@ Process-wide parameters
    members of the :ref:`Python Initialization Configuration <init-config>`.
 
    .. versionchanged:: 3.4 The *updatepath* value depends on :option:`-I`.
+
+   .. deprecated:: 3.11
 
 
 .. c:function:: void Py_SetPythonHome(const wchar_t *home)
@@ -1173,6 +1297,26 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    .. versionadded:: 3.9
 
 
+.. c:function:: void PyThreadState_EnterTracing(PyThreadState *tstate)
+
+   Suspend tracing and profiling in the Python thread state *tstate*.
+
+   Resume them using the :c:func:`PyThreadState_LeaveTracing` function.
+
+   .. versionadded:: 3.11
+
+
+.. c:function:: void PyThreadState_LeaveTracing(PyThreadState *tstate)
+
+   Resume tracing and profiling in the Python thread state *tstate* suspended
+   by the :c:func:`PyThreadState_EnterTracing` function.
+
+   See also :c:func:`PyEval_SetTrace` and :c:func:`PyEval_SetProfile`
+   functions.
+
+   .. versionadded:: 3.11
+
+
 .. c:function:: PyInterpreterState* PyInterpreterState_Get(void)
 
    Get the current interpreter.
@@ -1206,7 +1350,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    .. versionadded:: 3.8
 
-.. c:type:: PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, PyFrameObject *frame, int throwflag)
+.. c:type:: PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 
    Type of a frame evaluation function.
 
@@ -1215,6 +1359,9 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    .. versionchanged:: 3.9
       The function now takes a *tstate* parameter.
+
+   .. versionchanged:: 3.11
+      The *frame* parameter changed from ``PyFrameObject*`` to ``_PyInterpreterFrame*``.
 
 .. c:function:: _PyFrameEvalFunction _PyInterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
 
@@ -1623,6 +1770,8 @@ Python-level trace functions in previous versions.
    profile function is called for all monitored events except :const:`PyTrace_LINE`
    :const:`PyTrace_OPCODE` and :const:`PyTrace_EXCEPTION`.
 
+   See also the :func:`sys.setprofile` function.
+
    The caller must hold the :term:`GIL`.
 
 
@@ -1634,6 +1783,8 @@ Python-level trace functions in previous versions.
    objects being called.  Any trace function registered using :c:func:`PyEval_SetTrace`
    will not receive :const:`PyTrace_C_CALL`, :const:`PyTrace_C_EXCEPTION` or
    :const:`PyTrace_C_RETURN` as a value for the *what* parameter.
+
+   See also the :func:`sys.settrace` function.
 
    The caller must hold the :term:`GIL`.
 
@@ -1757,7 +1908,7 @@ is not possible due to its implementation being opaque at build time.
    argument is `NULL`.
 
    .. note::
-      A freed key becomes a dangling pointer, you should reset the key to
+      A freed key becomes a dangling pointer. You should reset the key to
       `NULL`.
 
 

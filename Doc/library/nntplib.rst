@@ -3,12 +3,33 @@
 
 .. module:: nntplib
    :synopsis: NNTP protocol client (requires sockets).
+   :deprecated:
 
 **Source code:** :source:`Lib/nntplib.py`
 
 .. index::
    pair: NNTP; protocol
    single: Network News Transfer Protocol
+
+.. deprecated:: 3.11
+   The :mod:`nntplib` module is deprecated (see :pep:`594` for details).
+
+.. testsetup::
+
+   import warnings
+   with warnings.catch_warnings():
+       warnings.simplefilter('ignore', category=DeprecationWarning)
+       import nntplib
+
+.. testcleanup::
+
+   try:
+       s.quit()
+   except NameError:
+       pass
+   import sys
+   # Force a warning if any other file imports nntplib
+   sys.modules.pop('nntplib')
 
 --------------
 

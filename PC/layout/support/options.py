@@ -80,7 +80,7 @@ PRESETS = {
             "venv",
             "dev",
             "symbols",
-            "chm",
+            "html-doc",
         ],
     },
     "embed": {

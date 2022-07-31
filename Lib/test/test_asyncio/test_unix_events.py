@@ -9,7 +9,6 @@ import signal
 import socket
 import stat
 import sys
-import tempfile
 import threading
 import unittest
 from unittest import mock
@@ -26,6 +25,10 @@ from asyncio import unix_events
 from test.test_asyncio import utils as test_utils
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 MOCK_ANY = mock.ANY
 
 
@@ -34,12 +37,9 @@ def EXITCODE(exitcode):
 
 
 def SIGNAL(signum):
-    assert 1 <= signum <= 68
+    if not 1 <= signum <= 68:
+        raise AssertionError(f'invalid signum {signum}')
     return 32768 - signum
-
-
-def tearDownModule():
-    asyncio.set_event_loop_policy(None)
 
 
 def close_pipe_transport(transport):
@@ -314,11 +314,15 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
                 self.loop.run_until_complete(coro)
 
     def test_create_unix_server_existing_path_nonsock(self):
-        with tempfile.NamedTemporaryFile() as file:
-            coro = self.loop.create_unix_server(lambda: None, file.name)
-            with self.assertRaisesRegex(OSError,
-                                        'Address.*is already in use'):
-                self.loop.run_until_complete(coro)
+        path = test_utils.gen_unix_socket_path()
+        self.addCleanup(os_helper.unlink, path)
+        # create the file
+        open(path, "wb").close()
+
+        coro = self.loop.create_unix_server(lambda: None, path)
+        with self.assertRaisesRegex(OSError,
+                                    'Address.*is already in use'):
+            self.loop.run_until_complete(coro)
 
     def test_create_unix_server_ssl_bool(self):
         coro = self.loop.create_unix_server(lambda: None, path='spam',
@@ -355,20 +359,18 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
                          'no socket.SOCK_NONBLOCK (linux only)')
     @socket_helper.skip_unless_bind_unix_socket
     def test_create_unix_server_path_stream_bittype(self):
-        sock = socket.socket(
-            socket.AF_UNIX, socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
-        with tempfile.NamedTemporaryFile() as file:
-            fn = file.name
-        try:
-            with sock:
-                sock.bind(fn)
-                coro = self.loop.create_unix_server(lambda: None, path=None,
-                                                    sock=sock)
-                srv = self.loop.run_until_complete(coro)
-                srv.close()
-                self.loop.run_until_complete(srv.wait_closed())
-        finally:
-            os.unlink(fn)
+        fn = test_utils.gen_unix_socket_path()
+        self.addCleanup(os_helper.unlink, fn)
+
+        sock = socket.socket(socket.AF_UNIX,
+                             socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
+        with sock:
+            sock.bind(fn)
+            coro = self.loop.create_unix_server(lambda: None, path=None,
+                                                sock=sock)
+            srv = self.loop.run_until_complete(coro)
+            srv.close()
+            self.loop.run_until_complete(srv.wait_closed())
 
     def test_create_unix_server_ssl_timeout_with_plain_sock(self):
         coro = self.loop.create_unix_server(lambda: None, path='spam',

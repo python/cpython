@@ -1,3 +1,0 @@
-Promote PEP 604 union syntax by using it where possible. Also, mention ``X |
-Y`` more prominently in section about ``Union`` and mention ``X | None`` at
-all in section about ``Optional``.

@@ -1,3 +1,0 @@
-Add a deallocator to the :class:`bool` type to detect refcount bugs in C
-extensions which call ``Py_DECREF(Py_True);`` or ``Py_DECREF(Py_False);`` by
-mistake. Patch by Victor Stinner.

@@ -828,7 +828,7 @@ def create_data():
     return x
 
 
-class AbstractUnpickleTests(unittest.TestCase):
+class AbstractUnpickleTests:
     # Subclass must define self.loads.
 
     _testdata = create_data()
@@ -1380,6 +1380,7 @@ class AbstractUnpickleTests(unittest.TestCase):
             self.check_unpickling_error(self.truncated_errors, p)
 
     @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_unpickle_module_race(self):
         # https://bugs.python.org/issue34572
         locker_module = dedent("""
@@ -1441,7 +1442,7 @@ class AbstractUnpickleTests(unittest.TestCase):
 
 
 
-class AbstractPickleTests(unittest.TestCase):
+class AbstractPickleTests:
     # Subclass must define self.dumps, self.loads.
 
     optimized = False
@@ -2382,8 +2383,11 @@ class AbstractPickleTests(unittest.TestCase):
     def test_bad_getattr(self):
         # Issue #3514: crash when there is an infinite loop in __getattr__
         x = BadGetattr()
-        for proto in protocols:
-            self.assertRaises(RuntimeError, self.dumps, x, proto)
+        for proto in range(2):
+            with support.infinite_recursion():
+                self.assertRaises(RuntimeError, self.dumps, x, proto)
+        for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
+            s = self.dumps(x, proto)
 
     def test_reduce_bad_iterator(self):
         # Issue4176: crash when 4th and 5th items of __reduce__()
@@ -3031,8 +3035,69 @@ class AbstractPickleTests(unittest.TestCase):
         # 2-D, non-contiguous
         check_array(arr[::2])
 
+    def test_evil_class_mutating_dict(self):
+        # https://github.com/python/cpython/issues/92930
+        from random import getrandbits
 
-class BigmemPickleTests(unittest.TestCase):
+        global Bad
+        class Bad:
+            def __eq__(self, other):
+                return ENABLED
+            def __hash__(self):
+                return 42
+            def __reduce__(self):
+                if getrandbits(6) == 0:
+                    collection.clear()
+                return (Bad, ())
+
+        for proto in protocols:
+            for _ in range(20):
+                ENABLED = False
+                collection = {Bad(): Bad() for _ in range(20)}
+                for bad in collection:
+                    bad.bad = bad
+                    bad.collection = collection
+                ENABLED = True
+                try:
+                    data = self.dumps(collection, proto)
+                    self.loads(data)
+                except RuntimeError as e:
+                    expected = "changed size during iteration"
+                    self.assertIn(expected, str(e))
+
+    def test_evil_pickler_mutating_collection(self):
+        # https://github.com/python/cpython/issues/92930
+        if not hasattr(self, "pickler"):
+            raise self.skipTest(f"{type(self)} has no associated pickler type")
+
+        global Clearer
+        class Clearer:
+            pass
+
+        def check(collection):
+            class EvilPickler(self.pickler):
+                def persistent_id(self, obj):
+                    if isinstance(obj, Clearer):
+                        collection.clear()
+                    return None
+            pickler = EvilPickler(io.BytesIO(), proto)
+            try:
+                pickler.dump(collection)
+            except RuntimeError as e:
+                expected = "changed size during iteration"
+                self.assertIn(expected, str(e))
+
+        for proto in protocols:
+            check([Clearer()])
+            check([Clearer(), Clearer()])
+            check({Clearer()})
+            check({Clearer(), Clearer()})
+            check({Clearer(): 1})
+            check({Clearer(): 1, Clearer(): 2})
+            check({1: Clearer(), 2: Clearer()})
+
+
+class BigmemPickleTests:
 
     # Binary protocols can serialize longs of up to 2 GiB-1
 
@@ -3305,7 +3370,7 @@ class BadGetattr:
         self.foo
 
 
-class AbstractPickleModuleTests(unittest.TestCase):
+class AbstractPickleModuleTests:
 
     def test_dump_closed_file(self):
         f = open(TESTFN, "wb")
@@ -3412,7 +3477,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
         self.check_dumps_loads_oob_buffers(dumps, loads)
 
 
-class AbstractPersistentPicklerTests(unittest.TestCase):
+class AbstractPersistentPicklerTests:
 
     # This class defines persistent_id() and persistent_load()
     # functions that should be used by the pickler.  All even integers
@@ -3452,7 +3517,7 @@ class AbstractPersistentPicklerTests(unittest.TestCase):
             self.assertEqual(self.load_false_count, 1)
 
 
-class AbstractIdentityPersistentPicklerTests(unittest.TestCase):
+class AbstractIdentityPersistentPicklerTests:
 
     def persistent_id(self, obj):
         return obj
@@ -3481,7 +3546,7 @@ class AbstractIdentityPersistentPicklerTests(unittest.TestCase):
         self.assertRaises(pickle.UnpicklingError, self.loads, pickled)
 
 
-class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
+class AbstractPicklerUnpicklerObjectTests:
 
     pickler_class = None
     unpickler_class = None
@@ -3695,7 +3760,7 @@ class AbstractCustomPicklerClass:
 
         return NotImplemented
 
-class AbstractHookTests(unittest.TestCase):
+class AbstractHookTests:
     def test_pickler_hook(self):
         # test the ability of a custom, user-defined CPickler subclass to
         # override the default reducing routines of any type using the method
@@ -3723,7 +3788,7 @@ class AbstractHookTests(unittest.TestCase):
 
                 self.assertEqual(new_f, 5)
                 self.assertEqual(some_str, 'some str')
-                # math.log does not have its usual reducer overriden, so the
+                # math.log does not have its usual reducer overridden, so the
                 # custom reduction callback should silently direct the pickler
                 # to the default pickling by attribute, by returning
                 # NotImplemented
@@ -3740,7 +3805,7 @@ class AbstractHookTests(unittest.TestCase):
     def test_reducer_override_no_reference_cycle(self):
         # bpo-39492: reducer_override used to induce a spurious reference cycle
         # inside the Pickler object, that could prevent all serialized objects
-        # from being garbage-collected without explicity invoking gc.collect.
+        # from being garbage-collected without explicitly invoking gc.collect.
 
         for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
             with self.subTest(proto=proto):
@@ -3761,7 +3826,7 @@ class AbstractHookTests(unittest.TestCase):
                 self.assertIsNone(wr())
 
 
-class AbstractDispatchTableTests(unittest.TestCase):
+class AbstractDispatchTableTests:
 
     def test_default_dispatch_table(self):
         # No dispatch_table attribute by default

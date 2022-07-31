@@ -1,2 +1,0 @@
-In importlib.metadata tests, override warnings behavior under expected
-DeprecationWarnings (importlib_metadata 4.6.3).

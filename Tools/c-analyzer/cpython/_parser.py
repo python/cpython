@@ -14,6 +14,10 @@ from . import REPO_ROOT
 GLOB_ALL = '**/*'
 
 
+def _abs(relfile):
+    return os.path.join(REPO_ROOT, relfile)
+
+
 def clean_lines(text):
     """Clear out comments, blank lines, and leading/trailing whitespace."""
     lines = (line.strip() for line in text.splitlines())
@@ -22,7 +26,7 @@ def clean_lines(text):
              if line and not line.startswith('#'))
     glob_all = f'{GLOB_ALL} '
     lines = (re.sub(r'^[*] ', glob_all, line) for line in lines)
-    lines = (os.path.join(REPO_ROOT, line) for line in lines)
+    lines = (_abs(line) for line in lines)
     return list(lines)
 
 
@@ -42,6 +46,7 @@ def clean_lines(text):
 @end=sh@
 '''
 
+# XXX Handle these.
 EXCLUDED = clean_lines('''
 # @begin=conf@
 
@@ -55,26 +60,33 @@ Modules/_scproxy.c                # SystemConfiguration/SystemConfiguration.h
 
 # Windows
 Modules/_winapi.c               # windows.h
+Modules/expat/winconfig.h
 Modules/overlapped.c            # winsock.h
 Python/dynload_win.c            # windows.h
-Modules/expat/winconfig.h
 Python/thread_nt.h
 
 # other OS-dependent
+Python/dynload_aix.c            # sys/ldr.h
 Python/dynload_dl.c             # dl.h
 Python/dynload_hpux.c           # dl.h
-Python/dynload_aix.c            # sys/ldr.h
 Python/thread_pthread.h
+Python/emscripten_signal.c
 
 # only huge constants (safe but parsing is slow)
+Modules/_blake2/impl/blake2-kat.h
 Modules/_ssl_data.h
+Modules/_ssl_data_300.h
+Modules/_ssl_data_111.h
+Modules/cjkcodecs/mappings_*.h
 Modules/unicodedata_db.h
 Modules/unicodename_db.h
-Modules/cjkcodecs/mappings_*.h
 Objects/unicodetype_db.h
-Python/importlib.h
-Python/importlib_external.h
-Python/importlib_zipimport.h
+
+# generated
+Python/deepfreeze/*.c
+Python/frozen_modules/*.h
+Python/opcode_targets.h
+Python/stdlib_module_names.h
 
 # @end=conf@
 ''')
@@ -126,35 +138,43 @@ Python/**/*.c	Py_BUILD_CORE	1
 Parser/**/*.c	Py_BUILD_CORE	1
 Objects/**/*.c	Py_BUILD_CORE	1
 
-Modules/faulthandler.c	Py_BUILD_CORE	1
+Modules/_asynciomodule.c	Py_BUILD_CORE	1
+Modules/_collectionsmodule.c	Py_BUILD_CORE	1
+Modules/_ctypes/_ctypes.c	Py_BUILD_CORE	1
+Modules/_ctypes/cfield.c	Py_BUILD_CORE	1
+Modules/_cursesmodule.c	Py_BUILD_CORE	1
+Modules/_datetimemodule.c	Py_BUILD_CORE	1
 Modules/_functoolsmodule.c	Py_BUILD_CORE	1
-Modules/gcmodule.c	Py_BUILD_CORE	1
-Modules/getpath.c	Py_BUILD_CORE	1
+Modules/_heapqmodule.c	Py_BUILD_CORE	1
 Modules/_io/*.c	Py_BUILD_CORE	1
-Modules/itertoolsmodule.c	Py_BUILD_CORE	1
 Modules/_localemodule.c	Py_BUILD_CORE	1
-Modules/main.c	Py_BUILD_CORE	1
-Modules/posixmodule.c	Py_BUILD_CORE	1
-Modules/signalmodule.c	Py_BUILD_CORE	1
+Modules/_operator.c	Py_BUILD_CORE	1
+Modules/_posixsubprocess.c	Py_BUILD_CORE	1
+Modules/_sre/sre.c	Py_BUILD_CORE	1
 Modules/_threadmodule.c	Py_BUILD_CORE	1
 Modules/_tracemalloc.c	Py_BUILD_CORE	1
-Modules/_asynciomodule.c	Py_BUILD_CORE	1
-Modules/mathmodule.c	Py_BUILD_CORE	1
-Modules/cmathmodule.c	Py_BUILD_CORE	1
 Modules/_weakref.c	Py_BUILD_CORE	1
+Modules/_zoneinfo.c	Py_BUILD_CORE	1
+Modules/atexitmodule.c	Py_BUILD_CORE	1
+Modules/cmathmodule.c	Py_BUILD_CORE	1
+Modules/faulthandler.c	Py_BUILD_CORE	1
+Modules/gcmodule.c	Py_BUILD_CORE	1
+Modules/getpath.c	Py_BUILD_CORE	1
+Modules/getpath_noop.c	Py_BUILD_CORE	1
+Modules/itertoolsmodule.c	Py_BUILD_CORE	1
+Modules/main.c	Py_BUILD_CORE	1
+Modules/mathmodule.c	Py_BUILD_CORE	1
+Modules/posixmodule.c	Py_BUILD_CORE	1
 Modules/sha256module.c	Py_BUILD_CORE	1
 Modules/sha512module.c	Py_BUILD_CORE	1
-Modules/_datetimemodule.c	Py_BUILD_CORE	1
-Modules/_ctypes/cfield.c	Py_BUILD_CORE	1
-Modules/_heapqmodule.c	Py_BUILD_CORE	1
-Modules/_posixsubprocess.c	Py_BUILD_CORE	1
-Modules/_sre.c	Py_BUILD_CORE	1
-Modules/_collectionsmodule.c	Py_BUILD_CORE	1
-Modules/_zoneinfo.c	Py_BUILD_CORE	1
+Modules/signalmodule.c	Py_BUILD_CORE	1
+Modules/symtablemodule.c	Py_BUILD_CORE	1
+Modules/timemodule.c	Py_BUILD_CORE	1
 Modules/unicodedata.c	Py_BUILD_CORE	1
-Modules/_cursesmodule.c	Py_BUILD_CORE	1
-Modules/_ctypes/_ctypes.c	Py_BUILD_CORE	1
 Objects/stringlib/codecs.h	Py_BUILD_CORE	1
+Objects/stringlib/unicode_format.h	Py_BUILD_CORE	1
+Parser/string_parser.h	Py_BUILD_CORE	1
+Parser/pegen.h	Py_BUILD_CORE	1
 Python/ceval_gil.h	Py_BUILD_CORE	1
 Python/condvar.h	Py_BUILD_CORE	1
 
@@ -172,7 +192,6 @@ Include/cpython/fileobject.h	Py_CPYTHON_FILEOBJECT_H	1
 Include/cpython/fileutils.h	Py_CPYTHON_FILEUTILS_H	1
 Include/cpython/frameobject.h	Py_CPYTHON_FRAMEOBJECT_H	1
 Include/cpython/import.h	Py_CPYTHON_IMPORT_H	1
-Include/cpython/interpreteridobject.h	Py_CPYTHON_INTERPRETERIDOBJECT_H	1
 Include/cpython/listobject.h	Py_CPYTHON_LISTOBJECT_H	1
 Include/cpython/methodobject.h	Py_CPYTHON_METHODOBJECT_H	1
 Include/cpython/object.h	Py_CPYTHON_OBJECT_H	1
@@ -185,6 +204,7 @@ Include/cpython/sysmodule.h	Py_CPYTHON_SYSMODULE_H	1
 Include/cpython/traceback.h	Py_CPYTHON_TRACEBACK_H	1
 Include/cpython/tupleobject.h	Py_CPYTHON_TUPLEOBJECT_H	1
 Include/cpython/unicodeobject.h	Py_CPYTHON_UNICODEOBJECT_H	1
+Include/internal/pycore_code.h	SIZEOF_VOID_P	8
 
 # implied include of pyport.h
 Include/**/*.h	PyAPI_DATA(RTYPE)	extern RTYPE
@@ -201,6 +221,7 @@ Python/import.c	PyMODINIT_FUNC	PyObject*
 Modules/_testcapimodule.c	PyAPI_FUNC(RTYPE)	RTYPE
 Python/getargs.c	PyAPI_FUNC(RTYPE)	RTYPE
 Objects/stringlib/unicode_format.h	Py_LOCAL_INLINE(type)	static inline type
+Include/pymath.h	_Py__has_builtin(x)	0
 
 # implied include of pymacro.h
 */clinic/*.c.h	PyDoc_VAR(name)	static const char name[]
@@ -219,6 +240,7 @@ Include/**/*.h	SIZEOF_WCHAR_T	4
 
 # implied include of <unistd.h>
 Include/**/*.h	_POSIX_THREADS	1
+Include/**/*.h	HAVE_PTHREAD_H	1
 
 # from Makefile
 Modules/getpath.c	PYTHONPATH	1
@@ -226,6 +248,7 @@ Modules/getpath.c	PREFIX	...
 Modules/getpath.c	EXEC_PREFIX	...
 Modules/getpath.c	VERSION	...
 Modules/getpath.c	VPATH	...
+Modules/getpath.c	PLATLIBDIR	...
 
 # from Modules/_sha3/sha3module.c
 Modules/_sha3/kcp/KeccakP-1600-inplace32BI.c	PLATFORM_BYTE_ORDER	4321  # force big-endian
@@ -242,9 +265,10 @@ Modules/expat/xmlparse.c	XML_POOR_ENTROPY	1
 Modules/_dbmmodule.c	HAVE_GDBM_DASH_NDBM_H	1
 
 # others
-Modules/sre_lib.h	LOCAL(type)	static inline type
-Modules/sre_lib.h	SRE(F)	sre_ucs2_##F
+Modules/_sre/sre_lib.h	LOCAL(type)	static inline type
+Modules/_sre/sre_lib.h	SRE(F)	sre_ucs2_##F
 Objects/stringlib/codecs.h	STRINGLIB_IS_UNICODE	1
+Include/internal/pycore_bitutils.h	_Py__has_builtin(B)	0
 
 # @end=tsv@
 ''')[1:]
@@ -264,6 +288,21 @@ Objects/stringlib/codecs.h	STRINGLIB_IS_UNICODE	1
 SAME = [
     './Include/cpython/',
 ]
+
+MAX_SIZES = {
+    _abs('Include/**/*.h'): (5_000, 500),
+    _abs('Modules/_ctypes/ctypes.h'): (5_000, 500),
+    _abs('Modules/_datetimemodule.c'): (20_000, 300),
+    _abs('Modules/posixmodule.c'): (20_000, 500),
+    _abs('Modules/termios.c'): (10_000, 800),
+    _abs('Modules/_testcapimodule.c'): (20_000, 400),
+    _abs('Modules/expat/expat.h'): (10_000, 400),
+    _abs('Objects/stringlib/unicode_format.h'): (10_000, 400),
+    _abs('Objects/typeobject.c'): (20_000, 200),
+    _abs('Python/compile.c'): (20_000, 500),
+    _abs('Python/pylifecycle.c'): (500_000, 5000),
+    _abs('Python/pystate.c'): (500_000, 5000),
+}
 
 
 def get_preprocessor(*,
@@ -299,6 +338,7 @@ def parse_file(filename, *,
         filename,
         match_kind=match_kind,
         get_file_preprocessor=get_file_preprocessor,
+        file_maxsizes=MAX_SIZES,
     )
 
 
@@ -318,5 +358,6 @@ def parse_files(filenames=None, *,
         filenames,
         match_kind=match_kind,
         get_file_preprocessor=get_file_preprocessor,
+        file_maxsizes=MAX_SIZES,
         **file_kwargs
     )

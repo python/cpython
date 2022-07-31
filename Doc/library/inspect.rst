@@ -187,12 +187,13 @@ attributes:
 |           | co_name           | name with which this code |
 |           |                   | object was defined        |
 +-----------+-------------------+---------------------------+
-|           | co_qualname       | fully-qualified name with |
+|           | co_qualname       | fully qualified name with |
 |           |                   | which this code object    |
 |           |                   | was defined               |
 +-----------+-------------------+---------------------------+
-|           | co_names          | tuple of names of local   |
-|           |                   | variables                 |
+|           | co_names          | tuple of names other      |
+|           |                   | than arguments and        |
+|           |                   | function locals           |
 +-----------+-------------------+---------------------------+
 |           | co_nlocals        | number of local variables |
 +-----------+-------------------+---------------------------+
@@ -273,6 +274,24 @@ attributes:
       :func:`getmembers` will only return class attributes defined in the
       metaclass when the argument is a class and those attributes have been
       listed in the metaclass' custom :meth:`__dir__`.
+
+
+.. function:: getmembers_static(object[, predicate])
+
+    Return all the members of an object in a list of ``(name, value)``
+    pairs sorted by name without triggering dynamic lookup via the descriptor
+    protocol, __getattr__ or __getattribute__. Optionally, only return members
+    that satisfy a given predicate.
+
+    .. note::
+
+        :func:`getmembers_static` may not be able to retrieve all members
+        that getmembers can fetch (like dynamically created attributes)
+        and may find members that getmembers can't (like descriptors
+        that raise AttributeError). It can also return descriptor objects
+        instead of instance members in some cases.
+
+    .. versionadded:: 3.11
 
 
 .. function:: getmodulename(path)
@@ -411,6 +430,14 @@ attributes:
    Return ``True`` if the object is a built-in function or a bound built-in method.
 
 
+.. function:: ismethodwrapper(object)
+
+   Return ``True`` if the type of object is a :class:`~types.MethodWrapperType`.
+
+   These are instances of :class:`~types.MethodWrapperType`, such as :meth:`~object().__str__`,
+   :meth:`~object().__eq__` and :meth:`~object().__repr__`
+
+
 .. function:: isroutine(object)
 
    Return ``True`` if the object is a user-defined or built-in function or method.
@@ -485,6 +512,7 @@ Retrieving source code
    If the documentation string for an object is not provided and the object is
    a class, a method, a property or a descriptor, retrieve the documentation
    string from the inheritance hierarchy.
+   Return ``None`` if the documentation string is invalid or missing.
 
    .. versionchanged:: 3.5
       Documentation strings are now inherited if not overridden.
@@ -508,12 +536,14 @@ Retrieving source code
 
 .. function:: getmodule(object)
 
-   Try to guess which module an object was defined in.
+   Try to guess which module an object was defined in. Return ``None``
+   if the module cannot be determined.
 
 
 .. function:: getsourcefile(object)
 
-   Return the name of the Python source file in which an object was defined.  This
+   Return the name of the Python source file in which an object was defined
+   or ``None`` if no way can be identified to get the source.  This
    will fail with a :exc:`TypeError` if the object is a built-in module, class, or
    function.
 
@@ -935,26 +965,6 @@ Classes and functions
    times.
 
 
-.. function:: getargspec(func)
-
-   Get the names and default values of a Python function's parameters. A
-   :term:`named tuple` ``ArgSpec(args, varargs, keywords, defaults)`` is
-   returned. *args* is a list of the parameter names. *varargs* and *keywords*
-   are the names of the ``*`` and ``**`` parameters or ``None``. *defaults* is a
-   tuple of default argument values or ``None`` if there are no default
-   arguments; if this tuple has *n* elements, they correspond to the last
-   *n* elements listed in *args*.
-
-   .. deprecated:: 3.0
-      Use :func:`getfullargspec` for an updated API that is usually a drop-in
-      replacement, but also correctly handles function annotations and
-      keyword-only parameters.
-
-      Alternatively, use :func:`signature` and
-      :ref:`Signature Object <inspect-signature-object>`, which provide a
-      more structured introspection API for callables.
-
-
 .. function:: getfullargspec(func)
 
    Get the names and default values of a Python function's parameters.  A
@@ -1013,33 +1023,6 @@ Classes and functions
 
    .. note::
       This function was inadvertently marked as deprecated in Python 3.5.
-
-
-.. function:: formatargspec(args[, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations[, formatarg, formatvarargs, formatvarkw, formatvalue, formatreturns, formatannotations]])
-
-   Format a pretty argument spec from the values returned by
-   :func:`getfullargspec`.
-
-   The first seven arguments are (``args``, ``varargs``, ``varkw``,
-   ``defaults``, ``kwonlyargs``, ``kwonlydefaults``, ``annotations``).
-
-   The other six arguments are functions that are called to turn argument names,
-   ``*`` argument name, ``**`` argument name, default values, return annotation
-   and individual annotations into strings, respectively.
-
-   For example:
-
-   >>> from inspect import formatargspec, getfullargspec
-   >>> def f(a: int, b: float):
-   ...     pass
-   ...
-   >>> formatargspec(*getfullargspec(f))
-   '(a: int, b: float)'
-
-   .. deprecated:: 3.5
-      Use :func:`signature` and
-      :ref:`Signature Object <inspect-signature-object>`, which provide a
-      better introspecting API for callables.
 
 
 .. function:: formatargvalues(args[, varargs, varkw, locals, formatarg, formatvarargs, formatvarkw, formatvalue])
@@ -1147,7 +1130,7 @@ Classes and functions
      doesn't have its own annotations dict, returns an empty dict.
    * All accesses to object members and dict values are done
      using ``getattr()`` and ``dict.get()`` for safety.
-   * Always, always, always returns a freshly-created dict.
+   * Always, always, always returns a freshly created dict.
 
    ``eval_str`` controls whether or not values of type ``str`` are replaced
    with the result of calling :func:`eval()` on those values:
@@ -1183,16 +1166,84 @@ Classes and functions
 The interpreter stack
 ---------------------
 
-When the following functions return "frame records," each record is a
-:term:`named tuple`
-``FrameInfo(frame, filename, lineno, function, code_context, index)``.
-The tuple contains the frame object, the filename, the line number of the
-current line,
-the function name, a list of lines of context from the source code, and the
-index of the current line within that list.
+Some of the following functions return
+:class:`FrameInfo` objects. For backwards compatibility these objects allow
+tuple-like operations on all attributes except ``positions``. This behavior
+is considered deprecated and may be removed in the future.
+
+.. class:: FrameInfo
+
+   .. attribute:: frame
+
+      The :ref:`frame object <frame-objects>` that the record corresponds to.
+
+   .. attribute:: filename
+
+      The file name associated with the code being executed by the frame this record
+      corresponds to.
+
+   .. attribute:: lineno
+
+      The line number of the current line associated with the code being
+      executed by the frame this record corresponds to.
+
+   .. attribute:: function
+
+      The function name that is being executed by the frame this record corresponds to.
+
+   .. attribute:: code_context
+
+      A list of lines of context from the source code that's being executed by the frame
+      this record corresponds to.
+
+   .. attribute:: index
+
+      The index of the current line being executed in the :attr:`code_context` list.
+
+   .. attribute:: positions
+
+      A :class:`dis.Positions` object containing the start line number, end line
+      number, start column offset, and end column offset associated with the
+      instruction being executed by the frame this record corresponds to.
 
 .. versionchanged:: 3.5
    Return a named tuple instead of a tuple.
+
+.. versionchanged:: 3.11
+   Changed the return object from a named tuple to a regular object (that is
+   backwards compatible with the previous named tuple).
+
+.. class:: Traceback
+
+   .. attribute:: filename
+
+      The file name associated with the code being executed by the frame this traceback
+      corresponds to.
+
+   .. attribute:: lineno
+
+      The line number of the current line associated with the code being
+      executed by the frame this traceback corresponds to.
+
+   .. attribute:: function
+
+      The function name that is being executed by the frame this traceback corresponds to.
+
+   .. attribute:: code_context
+
+      A list of lines of context from the source code that's being executed by the frame
+      this traceback corresponds to.
+
+   .. attribute:: index
+
+      The index of the current line being executed in the :attr:`code_context` list.
+
+   .. attribute:: positions
+
+      A :class:`dis.Positions` object containing the start line number, end
+      line number, start column offset, and end column offset associated with
+      the instruction being executed by the frame this traceback corresponds
+      to.
 
 .. note::
 
@@ -1227,35 +1278,41 @@ line.
 
 .. function:: getframeinfo(frame, context=1)
 
-   Get information about a frame or traceback object.  A :term:`named tuple`
-   ``Traceback(filename, lineno, function, code_context, index)`` is returned.
+   Get information about a frame or traceback object.  A :class:`Traceback` object
+   is returned.
 
+   .. versionchanged:: 3.11
+      A :class:`Traceback` object is returned instead of a named tuple.
 
 .. function:: getouterframes(frame, context=1)
 
-   Get a list of frame records for a frame and all outer frames.  These frames
-   represent the calls that lead to the creation of *frame*. The first entry in the
-   returned list represents *frame*; the last entry represents the outermost call
-   on *frame*'s stack.
+   Get a list of :class:`FrameInfo` objects for a frame and all outer frames.
+   These frames represent the calls that lead to the creation of *frame*. The
+   first entry in the returned list represents *frame*; the last entry
+   represents the outermost call on *frame*'s stack.
 
    .. versionchanged:: 3.5
       A list of :term:`named tuples <named tuple>`
       ``FrameInfo(frame, filename, lineno, function, code_context, index)``
       is returned.
 
+   .. versionchanged:: 3.11
+      A list of :class:`FrameInfo` objects is returned.
 
 .. function:: getinnerframes(traceback, context=1)
 
-   Get a list of frame records for a traceback's frame and all inner frames.  These
-   frames represent calls made as a consequence of *frame*.  The first entry in the
-   list represents *traceback*; the last entry represents where the exception was
-   raised.
+   Get a list of :class:`FrameInfo` objects for a traceback's frame and all
+   inner frames.  These frames represent calls made as a consequence of *frame*.
+   The first entry in the list represents *traceback*; the last entry represents
+   where the exception was raised.
 
    .. versionchanged:: 3.5
       A list of :term:`named tuples <named tuple>`
       ``FrameInfo(frame, filename, lineno, function, code_context, index)``
       is returned.
 
+   .. versionchanged:: 3.11
+      A list of :class:`FrameInfo` objects is returned.
 
 .. function:: currentframe()
 
@@ -1271,28 +1328,32 @@ line.
 
 .. function:: stack(context=1)
 
-   Return a list of frame records for the caller's stack.  The first entry in the
-   returned list represents the caller; the last entry represents the outermost
-   call on the stack.
+   Return a list of :class:`FrameInfo` objects for the caller's stack.  The
+   first entry in the returned list represents the caller; the last entry
+   represents the outermost call on the stack.
 
    .. versionchanged:: 3.5
       A list of :term:`named tuples <named tuple>`
       ``FrameInfo(frame, filename, lineno, function, code_context, index)``
       is returned.
 
+   .. versionchanged:: 3.11
+      A list of :class:`FrameInfo` objects is returned.
 
 .. function:: trace(context=1)
 
-   Return a list of frame records for the stack between the current frame and the
-   frame in which an exception currently being handled was raised in.  The first
-   entry in the list represents the caller; the last entry represents where the
-   exception was raised.
+   Return a list of :class:`FrameInfo` objects for the stack between the current
+   frame and the frame in which an exception currently being handled was raised
+   in.  The first entry in the list represents the caller; the last entry
+   represents where the exception was raised.
 
    .. versionchanged:: 3.5
       A list of :term:`named tuples <named tuple>`
       ``FrameInfo(frame, filename, lineno, function, code_context, index)``
       is returned.
 
+   .. versionchanged:: 3.11
+      A list of :class:`FrameInfo` objects is returned.
 
 Fetching attributes statically
 ------------------------------

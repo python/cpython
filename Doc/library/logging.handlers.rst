@@ -234,6 +234,19 @@ need to override.
          return the same output every time for a given input, otherwise the
          rollover behaviour may not work as expected.
 
+         It's also worth noting that care should be taken when using a namer to
+         preserve certain attributes in the filename which are used during rotation.
+         For example, :class:`RotatingFileHandler` expects to have a set of log files
+         whose names contain successive integers, so that rotation works as expected,
+         and :class:`TimedRotatingFileHandler` deletes old log files (based on the
+         ``backupCount`` parameter passed to the handler's initializer) by determining
+         the oldest files to delete. For this to happen, the filenames should be
+         sortable using the date/time portion of the filename, and a namer needs to
+         respect this. (If a namer is wanted that doesn't respect this scheme, it will
+         need to be used in a subclass of :class:`TimedRotatingFileHandler` which
+         overrides the :meth:`~TimedRotatingFileHandler.getFilesToDelete` method to
+         fit in with the custom naming scheme.)
+
       .. versionadded:: 3.3
 
 
@@ -443,6 +456,10 @@ timed intervals.
 
       Outputs the record to the file, catering for rollover as described above.
 
+   .. method:: getFilesToDelete()
+
+      Returns a list of filenames which should be deleted as part of rollover. These
+      are the absolute paths of the oldest backup log files written by the handler.
 
 .. _socket-handler:
 
@@ -1001,6 +1018,8 @@ possible, while any potentially slow operations (such as sending an email via
    have the task tracking API, which means that you can use
    :class:`~queue.SimpleQueue` instances for *queue*.
 
+   .. note:: If you are using :mod:`multiprocessing`, you should avoid using
+      :class:`~queue.SimpleQueue` and instead use :class:`multiprocessing.Queue`.
 
    .. method:: emit(record)
 
@@ -1017,7 +1036,7 @@ possible, while any potentially slow operations (such as sending an email via
       method is enqueued.
 
       The base implementation formats the record to merge the message,
-      arguments, and exception information, if present.  It also removes
+      arguments, exception and stack information, if present.  It also removes
       unpickleable items from the record in-place. Specifically, it overwrites
       the record's :attr:`msg` and :attr:`message` attributes with the merged
       message (obtained by calling the handler's :meth:`format` method), and
@@ -1034,7 +1053,13 @@ possible, while any potentially slow operations (such as sending an email via
       want to override this if you want to use blocking behaviour, or a
       timeout, or a customized queue implementation.
 
+   .. attribute:: listener
 
+      When created via configuration using :func:`~logging.config.dictConfig`, this
+      attribute will contain a :class:`QueueListener` instance for use with this
+      handler. Otherwise, it will be ``None``.
+
+      .. versionadded:: 3.12
 
 .. _queue-listener:
 
@@ -1067,6 +1092,9 @@ possible, while any potentially slow operations (such as sending an email via
    to know how to get messages from it. The queue is not *required* to have the
    task tracking API (though it's used if available), which means that you can
    use :class:`~queue.SimpleQueue` instances for *queue*.
+
+   .. note:: If you are using :mod:`multiprocessing`, you should avoid using
+      :class:`~queue.SimpleQueue` and instead use :class:`multiprocessing.Queue`.
 
    If ``respect_handler_level`` is ``True``, a handler's level is respected
    (compared with the level for the message) when deciding whether to pass

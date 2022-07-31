@@ -133,7 +133,7 @@ The following classes are available:
    encoded data, which contains UID (see PList manual).
 
    It has one attribute, :attr:`data`, which can be used to retrieve the int value
-   of the UID.  :attr:`data` must be in the range `0 <= data < 2**64`.
+   of the UID.  :attr:`data` must be in the range ``0 <= data < 2**64``.
 
    .. versionadded:: 3.8
 

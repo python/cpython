@@ -1,1 +1,0 @@
-Fixed an exception thrown while parsing a malformed multipart email by :class:`email.message.EmailMessage`.

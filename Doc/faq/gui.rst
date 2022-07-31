@@ -23,7 +23,7 @@ install (since it comes included with most
 `binary distributions <https://www.python.org/downloads/>`_ of Python) and use.
 For more info about Tk, including pointers to the source, see the
 `Tcl/Tk home page <https://www.tcl.tk>`_.  Tcl/Tk is fully portable to the
-Mac OS X, Windows, and Unix platforms.
+macOS, Windows, and Unix platforms.
 
 Depending on what platform(s) you are aiming at, there are also several
 alternatives. A `list of cross-platform

@@ -2,6 +2,7 @@ import copy
 import gc
 import pickle
 import sys
+import doctest
 import unittest
 import weakref
 import inspect
@@ -160,6 +161,51 @@ class GeneratorTest(unittest.TestCase):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.assertRaises((TypeError, pickle.PicklingError)):
                 pickle.dumps(g, proto)
+
+    def test_send_non_none_to_new_gen(self):
+        def f():
+            yield 1
+        g = f()
+        with self.assertRaises(TypeError):
+            g.send(0)
+        self.assertEqual(next(g), 1)
+
+    def test_handle_frame_object_in_creation(self):
+
+        #Attempt to expose partially constructed frames
+        #See https://github.com/python/cpython/issues/94262
+
+        def cb(*args):
+            inspect.stack()
+
+        def gen():
+            yield 1
+
+        thresholds = gc.get_threshold()
+
+        gc.callbacks.append(cb)
+        gc.set_threshold(1, 0, 0)
+        try:
+            gen()
+        finally:
+            gc.set_threshold(*thresholds)
+            gc.callbacks.pop()
+
+        class Sneaky:
+            def __del__(self):
+                inspect.stack()
+
+        sneaky = Sneaky()
+        sneaky._s = Sneaky()
+        sneaky._s._s = sneaky
+
+        gc.set_threshold(1, 0, 0)
+        try:
+            del sneaky
+            gen()
+        finally:
+            gc.set_threshold(*thresholds)
+
 
 
 class ExceptionTest(unittest.TestCase):
@@ -888,7 +934,7 @@ From the Iterators list, about the types of these things.
 >>> type(i)
 <class 'generator'>
 >>> [s for s in dir(i) if not s.startswith('_')]
-['close', 'gi_code', 'gi_frame', 'gi_running', 'gi_yieldfrom', 'send', 'throw']
+['close', 'gi_code', 'gi_frame', 'gi_running', 'gi_suspended', 'gi_yieldfrom', 'send', 'throw']
 >>> from test.support import HAVE_DOCSTRINGS
 >>> print(i.__next__.__doc__ if HAVE_DOCSTRINGS else 'Implement next(self).')
 Implement next(self).
@@ -2371,15 +2417,10 @@ __test__ = {"tut":      tutorial_tests,
             "refleaks": refleaks_tests,
             }
 
-# Magic test name that regrtest.py invokes *after* importing this module.
-# This worms around a bootstrap problem.
-# Note that doctest and regrtest both look in sys.argv for a "-v" argument,
-# so this works as expected in both ways of running regrtest.
-def test_main(verbose=None):
-    from test import support, test_generators
-    support.run_unittest(__name__)
-    support.run_doctest(test_generators, verbose)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
-# This part isn't needed for regrtest, but for running the test directly.
+
 if __name__ == "__main__":
-    test_main(1)
+    unittest.main()

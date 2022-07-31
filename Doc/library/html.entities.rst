@@ -34,14 +34,14 @@ This module defines four dictionaries, :data:`html5`,
 
 .. data:: name2codepoint
 
-   A dictionary that maps HTML entity names to the Unicode code points.
+   A dictionary that maps HTML4 entity names to the Unicode code points.
 
 
 .. data:: codepoint2name
 
-   A dictionary that maps Unicode code points to HTML entity names.
+   A dictionary that maps Unicode code points to HTML4 entity names.
 
 
 .. rubric:: Footnotes
 
-.. [#] See https://www.w3.org/TR/html5/syntax.html#named-character-references
+.. [#] See https://html.spec.whatwg.org/multipage/named-characters.html#named-character-references

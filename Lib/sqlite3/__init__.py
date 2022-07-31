@@ -20,18 +20,51 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
+"""
+The sqlite3 extension module provides a DB-API 2.0 (PEP 249) compliant
+interface to the SQLite library, and requires SQLite 3.7.15 or newer.
+
+To use the module, start by creating a database Connection object:
+
+    import sqlite3
+    cx = sqlite3.connect("test.db")  # test.db will be created or opened
+
+The special path name ":memory:" can be provided to connect to a transient
+in-memory database:
+
+    cx = sqlite3.connect(":memory:")  # connect to a database in RAM
+
+Once a connection has been established, create a Cursor object and call
+its execute() method to perform SQL queries:
+
+    cu = cx.cursor()
+
+    # create a table
+    cu.execute("create table lang(name, first_appeared)")
+
+    # insert values into a table
+    cu.execute("insert into lang values (?, ?)", ("C", 1972))
+
+    # execute a query and iterate over the result
+    for row in cu.execute("select * from lang"):
+        print(row)
+
+    cx.close()
+
+The sqlite3 module is written by Gerhard Häring <gh@ghaering.de>.
+"""
+
 from sqlite3.dbapi2 import *
+from sqlite3.dbapi2 import (_deprecated_names,
+                            _deprecated_version_info,
+                            _deprecated_version)
 
 
-# bpo-42264: OptimizedUnicode was deprecated in Python 3.10.  It's scheduled
-# for removal in Python 3.12.
 def __getattr__(name):
-    if name == "OptimizedUnicode":
-        import warnings
-        msg = ("""
-            OptimizedUnicode is deprecated and will be removed in Python 3.12.
-            Since Python 3.3 it has simply been an alias for 'str'.
-        """)
-        warnings.warn(msg, DeprecationWarning, stacklevel=2)
-        return str
-    raise AttributeError(f"module 'sqlite3' has no attribute '{name}'")
+    if name in _deprecated_names:
+        from warnings import warn
+
+        warn(f"{name} is deprecated and will be removed in Python 3.14",
+             DeprecationWarning, stacklevel=2)
+        return globals()[f"_deprecated_{name}"]
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
