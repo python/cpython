@@ -32,15 +32,16 @@ class SqliteInteractiveConsole(InteractiveConsole):
         return False
 
     def runsource(self, source, filename="<input>", symbol="single"):
-        keywords = {
-            ".version": lambda: print(f"{sqlite3.sqlite_version}"),
-            ".help": lambda: print("Enter SQL code and press enter."),
-            ".quit": lambda: sys.exit(0),
-        }
-        if source in keywords:
-            keywords[source]()
-        else:
-            self.runsql(source)
+        match source:
+            case ".version":
+                print(f"{sqlite3.sqlite_version}")
+            case ".help":
+                print("Enter SQL code and press enter.")
+            case ".quit":
+                sys.exit(0)
+            case _:
+                return self.runsql(source)
+        return False
 
 
 def main():
