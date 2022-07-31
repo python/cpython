@@ -13,9 +13,9 @@ def execute(c, sql):
     except sqlite3.Error as e:
         tp = type(e).__name__
         try:
-            print(f"{tp} ({e.sqlite_errorname}): {e}")
+            print(f"{tp} ({e.sqlite_errorname}): {e}", file=sys.stderr)
         except AttributeError:
-            print(f"{tp}: {e}")
+            print(f"{tp}: {e}", file=sys.stderr)
 
 
 class SqliteInteractiveConsole(InteractiveConsole):
