@@ -31,18 +31,16 @@ class SqliteInteractiveConsole(InteractiveConsole):
         execute(self._cur, sql)
         return False
 
-    def runpy(self, source, filename="<input>", symbol="single"):
-        code = self.compile(source, filename, symbol)
-        self.runcode(code)
-        return False
-
     def runsource(self, source, filename="<input>", symbol="single"):
         keywords = {
-            ".version": lambda x: print(f"{sqlite3.sqlite_version}"),
-            ".help": lambda x: print("Enter SQL code and press enter."),
-            ".quit": lambda x: sys.exit(0),
+            ".version": lambda: print(f"{sqlite3.sqlite_version}"),
+            ".help": lambda: print("Enter SQL code and press enter."),
+            ".quit": lambda: sys.exit(0),
         }
-        return keywords.get(source, self.runsql)(source)
+        if source in keywords:
+            keywords[source]()
+        else:
+            self.runsql(source)
 
 
 def main():
