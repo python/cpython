@@ -6246,7 +6246,11 @@ case $host/$ac_cv_cc_name in #(
     PY_SUPPORT_TIER=3 ;; #(
     s390x-*-linux-gnu/gcc) :
     PY_SUPPORT_TIER=3 ;; #(
-        x86_64-*-freebsd*/clang) :
+    wasm32-unknown-emscripten/clang) :
+    PY_SUPPORT_TIER=3 ;; #(
+    wasm32-unknown-wasi/clang) :
+    PY_SUPPORT_TIER=3 ;; #(
+    x86_64-*-freebsd*/clang) :
     PY_SUPPORT_TIER=3 ;; #(
   *) :
       PY_SUPPORT_TIER=0
@@ -11177,7 +11181,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-        CPPFLAGS="$CFLAGS $LIBUUID_CFLAGS"
+        CPPFLAGS="$CPPFLAGS $LIBUUID_CFLAGS"
         LDFLAGS="$LDFLAGS $LIBUUID_LIBS"
         for ac_header in uuid/uuid.h
 do :
@@ -11306,7 +11310,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-        CPPFLAGS="$CFLAGS $LIBUUID_CFLAGS"
+        CPPFLAGS="$CPPFLAGS $LIBUUID_CFLAGS"
         LDFLAGS="$LDFLAGS $LIBUUID_LIBS"
         for ac_header in uuid/uuid.h
 do :
@@ -12349,7 +12353,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-    CPPFLAGS="$LIBNSL_CFLAGS $CFLAGS"
+    CPPFLAGS="$CPPFLAGS $LIBNSL_CFLAGS"
     for ac_header in rpc/rpc.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "rpc/rpc.h" "ac_cv_header_rpc_rpc_h" "$ac_includes_default"
@@ -12482,7 +12486,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-  CPPFLAGS="$LIBSQLITE3_CFLAGS $CFLAGS"
+  CPPFLAGS="$CPPFLAGS $LIBSQLITE3_CFLAGS"
   LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
 
   ac_fn_c_check_header_mongrel "$LINENO" "sqlite3.h" "ac_cv_header_sqlite3_h" "$ac_includes_default"
@@ -13428,7 +13432,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-  CPPFLAGS="$TCLTK_CFLAGS $CFLAGS"
+  CPPFLAGS="$CPPFLAGS $TCLTK_CFLAGS"
   LIBS="$TCLTK_LIBS $LDFLAGS"
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -13493,7 +13497,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-  CPPFLAGS="$GDBM_CFLAGS $CFLAGS"
+  CPPFLAGS="$CPPFLAGS $GDBM_CFLAGS"
   LDFLAGS="$GDBM_LIBS $LDFLAGS"
   for ac_header in gdbm.h
 do :
@@ -16016,7 +16020,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-    CPPFLAGS="$CFLAGS $ZLIB_CFLAGS"
+    CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
     LDFLAGS="$LDFLAGS $ZLIB_LIBS"
     for ac_header in zlib.h
 do :
@@ -16146,7 +16150,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-    CPPFLAGS="$CFLAGS $ZLIB_CFLAGS"
+    CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
     LDFLAGS="$LDFLAGS $ZLIB_LIBS"
     for ac_header in zlib.h
 do :
@@ -16364,7 +16368,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-    CPPFLAGS="$CFLAGS $BZIP2_CFLAGS"
+    CPPFLAGS="$CPPFLAGS $BZIP2_CFLAGS"
     LDFLAGS="$LDFLAGS $BZIP2_LIBS"
     for ac_header in bzlib.h
 do :
@@ -16447,7 +16451,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-    CPPFLAGS="$CFLAGS $BZIP2_CFLAGS"
+    CPPFLAGS="$CPPFLAGS $BZIP2_CFLAGS"
     LDFLAGS="$LDFLAGS $BZIP2_LIBS"
     for ac_header in bzlib.h
 do :
@@ -16594,7 +16598,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-    CPPFLAGS="$CFLAGS $LIBLZMA_CFLAGS"
+    CPPFLAGS="$CPPFLAGS $LIBLZMA_CFLAGS"
     LDFLAGS="$LDFLAGS $LIBLZMA_LIBS"
     for ac_header in lzma.h
 do :
@@ -16677,7 +16681,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-    CPPFLAGS="$CFLAGS $LIBLZMA_CFLAGS"
+    CPPFLAGS="$CPPFLAGS $LIBLZMA_CFLAGS"
     LDFLAGS="$LDFLAGS $LIBLZMA_LIBS"
     for ac_header in lzma.h
 do :
@@ -18138,7 +18142,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-  CPPFLAGS="$LIBCRYPT_CFLAGS $CFLAGS"
+  CPPFLAGS="$CPPFLAGS $LIBCRYPT_CFLAGS"
   LIBS="$LIBCRYPT_LIBS $LIBS"
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for crypt or crypt_r" >&5
 $as_echo_n "checking for crypt or crypt_r... " >&6; }

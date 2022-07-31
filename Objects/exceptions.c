@@ -1114,6 +1114,7 @@ exceptiongroup_split_recursive(PyObject *exc,
             assert(PyList_CheckExact(match_list));
             if (PyList_Append(match_list, rec_result.match) < 0) {
                 Py_DECREF(rec_result.match);
+                Py_XDECREF(rec_result.rest);
                 goto done;
             }
             Py_DECREF(rec_result.match);
@@ -3222,6 +3223,7 @@ MemoryError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self = state->memerrors_freelist;
     self->args = PyTuple_New(0);
     /* This shouldn't happen since the empty tuple is persistent */
+
     if (self->args == NULL) {
         return NULL;
     }
@@ -3237,6 +3239,8 @@ MemoryError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 MemoryError_dealloc(PyBaseExceptionObject *self)
 {
+    _PyObject_GC_UNTRACK(self);
+
     BaseException_clear(self);
 
     /* If this is a subclass of MemoryError, we don't need to
@@ -3245,8 +3249,6 @@ MemoryError_dealloc(PyBaseExceptionObject *self)
         Py_TYPE(self)->tp_free((PyObject *)self);
         return;
     }
-
-    _PyObject_GC_UNTRACK(self);
 
     struct _Py_exc_state *state = get_exc_state();
     if (state->memerrors_numfree >= MEMERRORS_SAVE) {

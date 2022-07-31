@@ -155,10 +155,7 @@ class AuditTest(unittest.TestCase):
 
 
     def test_sqlite3(self):
-        try:
-            import sqlite3
-        except ImportError:
-            return
+        sqlite3 = import_helper.import_module("sqlite3")
         returncode, events, stderr = self.run_python("test_sqlite3")
         if returncode:
             self.fail(stderr)

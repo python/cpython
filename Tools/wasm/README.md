@@ -167,7 +167,7 @@ functions.
 - Heap memory and stack size are limited. Recursion or extensive memory
   consumption can crash Python.
 - Most stdlib modules with a dependency on external libraries are missing,
-  e.g. ``ctypes``, ``readline``, ``sqlite3``, ``ssl``, and more.
+  e.g. ``ctypes``, ``readline``, ``ssl``, and more.
 - Shared extension modules are not implemented yet. All extension modules
   are statically linked into the main binary. The experimental configure
   option ``--enable-wasm-dynamic-linking`` enables dynamic extensions
@@ -234,15 +234,14 @@ compatibility stubs.
 
 The script ``wasi-env`` sets necessary compiler and linker flags as well as
 ``pkg-config`` overrides. The script assumes that WASI-SDK is installed in
-``/opt/wasi-sdk`` or ``$WASI_SDK_PATH``.
+``/opt/wasi-sdk`` or ``$WASI_SDK_PATH`` and WASIX is installed in
+``/opt/wasix`` or ``$WASIX_PATH``.
 
 ```shell
 mkdir -p builddir/wasi
 pushd builddir/wasi
 
 CONFIG_SITE=../../Tools/wasm/config.site-wasm32-wasi \
-  CFLAGS="-isystem /opt/wasix/include" \
-  LDFLAGS="-L/opt/wasix/lib -lwasix" \
   ../../Tools/wasm/wasi-env ../../configure -C \
     --host=wasm32-unknown-wasi \
     --build=$(../../config.guess) \
