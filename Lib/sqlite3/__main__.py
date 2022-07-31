@@ -96,6 +96,4 @@ def main():
         con.close()
 
 
-# This file can be invoked when the module is imported, hence the guard:
-if __name__ == "__main__":
-    main()
+main()
