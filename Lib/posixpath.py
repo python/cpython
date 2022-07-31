@@ -216,6 +216,12 @@ def ismount(path):
     return False
 
 
+def isreserved(path):
+    """Return true if the pathname is reserved by the system."""
+    os.fspath(path)
+    return False
+
+
 # Expand paths beginning with '~' or '~user'.
 # '~' means $HOME; '~user' means that user's home directory.
 # If the path doesn't begin with '~', or if the user or $HOME is unknown,

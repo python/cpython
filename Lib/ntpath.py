@@ -27,8 +27,8 @@ from genericpath import *
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
            "getatime","getctime", "islink","exists","lexists","isdir","isfile",
-           "ismount", "expanduser","expandvars","normpath","abspath",
-           "curdir","pardir","sep","pathsep","defpath","altsep",
+           "ismount","isreserved","expanduser","expandvars","normpath",
+           "abspath","curdir","pardir","sep","pathsep","defpath","altsep",
            "extsep","devnull","realpath","supports_unicode_filenames","relpath",
            "samefile", "sameopenfile", "samestat", "commonpath"]
 
