@@ -5465,7 +5465,7 @@ types, where they are relevant.  Some of these are not reported by the
 Integer maximum digits limitation
 =================================
 
-CPython has a global limit for converting between :class:`int` and class:`str`
+CPython has a global limit for converting between :class:`int` and :class:`str`
 to mitigate denial of service attacks. The limit is necessary because Python's
 integer type is an abitrary length number (also known as bignum). There
 exists no efficient algorithm that can convert a string to an integer or
@@ -5516,7 +5516,7 @@ Affected APIs
 -------------
 
 The limition only applies to slow conversions between :class:`int` and
-class:`str`:
+:class:`str`:
 
 * ``int(string)`` with default base 10.
 * ``int(string, base)`` for all bases that are not power of 2.
