@@ -72,7 +72,7 @@ Notes on WebAssembly platforms
 
 The WebAssembly platforms ``wasm32-emscripten`` and ``wasm32-wasi`` provide a
 subset of POSIX APIs. WASM runtimes and browser are sandboxed and have
-limited access to host and rest of the world. Any standard library module,
+limited access to the host and external resources. Any standard library module
 that uses processes, threading, networking (:mod:`socket`), signals, or
 other forms of inter-process communication (IPC), is either not available
 or may not work as on other Unix-like systems. File I/O, file system, and Unix
