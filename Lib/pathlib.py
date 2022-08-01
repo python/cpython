@@ -261,6 +261,14 @@ class PurePath(object):
         return (self.__class__, tuple(self._parts))
 
     @classmethod
+    def _split_root(cls, part):
+        sep = cls._flavour.sep
+        drv, tail = cls._flavour.splitdrive(cls._flavour.normpath(part))
+        root = sep * (drv[:1] == sep or len(tail) - len(tail.lstrip(sep)))
+        rel = part[len(drv):].lstrip(sep)
+        return drv, root, rel
+
+    @classmethod
     def _parse_parts(cls, parts):
         parsed = []
         sep = cls._flavour.sep
@@ -272,13 +280,7 @@ class PurePath(object):
                 continue
             elif altsep:
                 part = part.replace(altsep, sep)
-            drv, rest = cls._flavour.splitdrive(cls._flavour.normpath(part))
-            rel = part[len(drv):].lstrip(sep)
-            if drv[:1] == sep:
-                root = sep
-            elif rest[:1] == sep:
-                root = sep * (len(rest) - len(rest.lstrip(sep)))
-
+            drv, root, rel = cls._split_root(part)
             if sep in rel:
                 for x in reversed(rel.split(sep)):
                     if x and x != '.':

@@ -621,6 +621,26 @@ class PurePosixPathTest(_BasePurePathTest, unittest.TestCase):
         check(['c:\\a'],                ('', '', ['c:\\a']))
         check(['\\a'],                  ('', '', ['\\a']))
 
+    def test_split_root(self):
+        f = self.cls._split_root
+        self.assertEqual(f(''), ('', '', ''))
+        self.assertEqual(f('a'), ('', '', 'a'))
+        self.assertEqual(f('a/b'), ('', '', 'a/b'))
+        self.assertEqual(f('a/b/'), ('', '', 'a/b/'))
+        self.assertEqual(f('/a'), ('', '/', 'a'))
+        self.assertEqual(f('/a/b'), ('', '/', 'a/b'))
+        self.assertEqual(f('/a/b/'), ('', '/', 'a/b/'))
+        # The root is collapsed when there are redundant slashes
+        # except when there are exactly two leading slashes, which
+        # is a special case in POSIX.
+        self.assertEqual(f('//a'), ('', '//', 'a'))
+        self.assertEqual(f('///a'), ('', '/', 'a'))
+        self.assertEqual(f('///a/b'), ('', '/', 'a/b'))
+        # Paths which look like NT paths aren't treated specially.
+        self.assertEqual(f('c:/a/b'), ('', '', 'c:/a/b'))
+        self.assertEqual(f('\\/a/b'), ('', '', '\\/a/b'))
+        self.assertEqual(f('\\a\\b'), ('', '', '\\a\\b'))
+
     def test_root(self):
         P = self.cls
         self.assertEqual(P('/a/b').root, '/')
@@ -743,6 +763,30 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         check(['a', '/b', 'c'],         ('', '\\', ['\\', 'b', 'c']))
         check(['Z:/a', '/b', 'c'],      ('Z:', '\\', ['Z:\\', 'b', 'c']))
         check(['//?/Z:/a', '/b', 'c'],  ('\\\\?\\Z:', '\\', ['\\\\?\\Z:\\', 'b', 'c']))
+
+    def test_split_root(self):
+        f = self.cls._split_root
+        self.assertEqual(f(''), ('', '', ''))
+        self.assertEqual(f('a'), ('', '', 'a'))
+        self.assertEqual(f('a\\b'), ('', '', 'a\\b'))
+        self.assertEqual(f('\\a'), ('', '\\', 'a'))
+        self.assertEqual(f('\\a\\b'), ('', '\\', 'a\\b'))
+        self.assertEqual(f('c:a\\b'), ('c:', '', 'a\\b'))
+        self.assertEqual(f('c:\\a\\b'), ('c:', '\\', 'a\\b'))
+        # Redundant slashes in the root are collapsed.
+        self.assertEqual(f('\\\\a'), ('', '\\', 'a'))
+        self.assertEqual(f('\\\\\\a/b'), ('', '\\', 'a/b'))
+        self.assertEqual(f('c:\\\\a'), ('c:', '\\', 'a'))
+        self.assertEqual(f('c:\\\\\\a/b'), ('c:', '\\', 'a/b'))
+        # Valid UNC paths.
+        self.assertEqual(f('\\\\a\\b'), ('\\\\a\\b', '\\', ''))
+        self.assertEqual(f('\\\\a\\b\\'), ('\\\\a\\b', '\\', ''))
+        self.assertEqual(f('\\\\a\\b\\c\\d'), ('\\\\a\\b', '\\', 'c\\d'))
+        # These are non-UNC paths (according to ntpath.py and test_ntpath).
+        # However, command.com says such paths are invalid, so it's
+        # difficult to know what the right semantics are.
+        self.assertEqual(f('\\\\\\a\\b'), ('', '\\', 'a\\b'))
+        self.assertEqual(f('\\\\a'), ('', '\\', 'a'))
 
     def test_str(self):
         p = self.cls('a/b/c')
