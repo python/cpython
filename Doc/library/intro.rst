@@ -100,8 +100,8 @@ DOM APIs as well as limited networking capabilities with JavaScript's
 
 * The :mod:`socket` module is available, but is dysfunctional.
 
-* Some functions are stubs that either don't do anything and always return some
-  hardcoded value.
+* Some functions are stubs that either don't do anything and always return
+  hardcoded values.
 
 * Functions related to file descriptors, file permissions, file ownership, and
   links are limited and don't support some operations.
