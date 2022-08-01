@@ -112,6 +112,13 @@ os
   (Contributed by Kumar Aditya in :gh:`93312`.)
 
 
+sqlite3
+-------
+
+* Add a :ref:`command-line interface <sqlite3-cli>`.
+  (Contributed by Erlend E. Aasland in :gh:`77617`.)
+
+
 Optimizations
 =============
 
