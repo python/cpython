@@ -1107,11 +1107,11 @@ class TurtleScreen(TurtleScreenBase):
         """Adds a turtle shape to TurtleScreen's shapelist.
 
         Arguments:
-        (1) name is the name of an image file(PGM, PPM, GIF, and PNG) and shape is None.
+        (1) name is the name of an image file (PNG, GIF, PGM, and PPM) and shape is None.
             Installs the corresponding image shape.
             !! Image-shapes DO NOT rotate when turning the turtle,
             !! so they do not display the heading of the turtle!
-        (2) name is an arbitrary string and shape is the name of an image file(PGM, PPM, GIF, and PNG).
+        (2) name is an arbitrary string and shape is the name of an image file (PNG, GIF, PGM, and PPM).
             Installs the corresponding image shape.
             !! Image-shapes DO NOT rotate when turning the turtle,
             !! so they do not display the heading of the turtle!
@@ -1462,7 +1462,7 @@ class TurtleScreen(TurtleScreenBase):
         """Set background image or return name of current backgroundimage.
 
         Optional argument:
-        picname -- a string, name of an image file(PGM, PPM, GIF, and PNG) or "nopic".
+        picname -- a string, name of an image file (PNG, GIF, PGM, and PPM) or "nopic".
 
         If picname is a filename, set the corresponding image as background.
         If picname is "nopic", delete backgroundimage, if present.

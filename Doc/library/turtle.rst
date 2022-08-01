@@ -1610,7 +1610,7 @@ Window control
 
 .. function:: bgpic(picname=None)
 
-   :param picname: a string, name of an image file(PGM, PPM, GIF, and PNG) or ``"nopic"``, or ``None``
+   :param picname: a string, name of an image file (PNG, GIF, PGM, and PPM) or ``"nopic"``, or ``None``
 
    Set background image or return name of current backgroundimage.  If *picname*
    is a filename, set the corresponding image as background.  If *picname* is
@@ -1989,7 +1989,7 @@ Settings and special methods
 
    There are three different ways to call this function:
 
-   (1) *name* is the name of a gif-file and *shape* is ``None``: Install the
+   (1) *name* is the name of an image file (PNG, GIF, PGM, and PPM) and *shape* is ``None``: Install the
        corresponding image shape. ::
 
        >>> screen.register_shape("turtle.gif")
@@ -1998,7 +1998,7 @@ Settings and special methods
           Image shapes *do not* rotate when turning the turtle, so they do not
           display the heading of the turtle!
 
-   (2) *name* is an arbitrary string and *shape* is the name of an image file(PGM, PPM, GIF, and PNG): Install the
+   (2) *name* is an arbitrary string and *shape* is the name of an image file (PNG, GIF, PGM, and PPM): Install the
        corresponding image shape. ::
 
        >>> screen.register_shape("turtle", "turtle.gif")
