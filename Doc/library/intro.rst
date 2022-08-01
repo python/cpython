@@ -88,7 +88,7 @@ For Python in the browser, users should consider `Pyodide`_ or `PyScript`_.
 PyScript is built on top of Pyodide, which itself is built on top of
 CPython and Emscripten. Pyodide provides access to browsers' JavaScript and
 DOM APIs as well as limited networking capabilities with JavaScript's
-``XMLHttpRequest`` and ``Fetch`` API.
+``XMLHttpRequest`` and ``Fetch`` APIs.
 
 .. TODO: update with information from Tools/wasm/README.md
 
