@@ -508,8 +508,11 @@ Constants
           ETH_P_IP
           ETH_P_IPV6
 
-   Many constants of these forms, documented in the Linux documentation, are
-   also defined in the socket module.
+   IEEE 802.3 protocol numbers, can be used in :class:`~socket.socket`
+   constructor as *proto* if *type* is :const:`SOCK_RAW`.
+   For more information you can consult :manpage:`packet(7)`.
+
+   .. availability:: Linux
 
    .. versionadded:: 3.12
 
