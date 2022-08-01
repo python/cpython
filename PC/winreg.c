@@ -1017,7 +1017,7 @@ static PyObject *
 winreg_DeleteKeyEx_impl(PyObject *module, HKEY key,
                         const Py_UNICODE *sub_key, REGSAM access,
                         int reserved)
-/*[clinic end generated code: output=52a1c8b374ebc003 input=711d9d89e7ecbed7]*/
+/*[clinic end generated code: output=52a1c8b374ebc003 input=531fac4b8cb56a89]*/
 {
     HMODULE hMod;
     typedef LONG (WINAPI *RDKEFunc)(HKEY, const wchar_t*, REGSAM, int);
