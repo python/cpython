@@ -2739,7 +2739,6 @@ class BadElementPathTest(ElementTestCase, unittest.TestCase):
         root_elem = ET.Element('foo')
         sub_elem = ET.SubElement(root_elem, 'bar')
         falsey = ["", 0, False, [], (), {}]
-
         for val in falsey:
             sub_elem.text = val
             self.assertEqual(root_elem.findtext('./bar'), val)
@@ -2748,7 +2747,6 @@ class BadElementPathTest(ElementTestCase, unittest.TestCase):
         root_elem = ET.Element('foo')
         sub_elem = ET.SubElement(root_elem, 'bar')
         sub_elem.text = None
-
         self.assertEqual(root_elem.findtext('./bar'), '')
 
     def test_findall_with_mutating(self):
