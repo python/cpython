@@ -61,8 +61,8 @@ class CommandLineInterface(unittest.TestCase):
         self.assertIn("OperationalError (SQLITE_ERROR)", stderr)
 
     def test_cli_on_disk_db(self):
-        out = self.expect_success(TESTFN, "create table t(t)")
         self.addCleanup(unlink, TESTFN)
+        out = self.expect_success(TESTFN, "create table t(t)")
         self.assertEqual(out, "")
         out = self.expect_success(TESTFN, "select count(t) from t")
         self.assertIn("(0,)", out)
@@ -137,13 +137,13 @@ class InteractiveSession(unittest.TestCase):
             self.expect_success(proc)
 
     def test_interact_on_disk_file(self):
+        self.addCleanup(unlink, TESTFN)
         with self.start_cli(TESTFN) as proc:
             out, err = proc.communicate(input="create table t(t);",
                                         timeout=self.TIMEOUT)
             self.assertIn(TESTFN, err)
             self.assertIn(self.PS1, out)
             self.expect_success(proc)
-        self.addCleanup(unlink, TESTFN)
         with self.start_cli(TESTFN, "select count(t) from t") as proc:
             out = proc.stdout.read()
             err = proc.stderr.read()
