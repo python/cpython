@@ -672,7 +672,7 @@ empty string, all events are passed.
 
    .. method:: filter(record)
 
-      Is the specified record to be logged? Returns falsy for no, truthy for
+      Is the specified record to be logged? Returns false for no, true for
       yes. Filters can either modify log records in-place or return a completely
       different record instance which will replace the original
       log record in any future processing of the event.
