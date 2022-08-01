@@ -1002,12 +1002,9 @@ winreg.DeleteKeyEx
 
 Deletes the specified key (intended for 64-bit OS).
 
-While this function is intended to be used for 64-bit OS, it is available
- on systems based on NT 5.2 and above, including XP Professional x64 Edition,
- Vista, and later releases of Windows.
+While this function is intended to be used for 64-bit OS, it is also
+ available on 32-bit systems.
 To use with 32-bit Windows, 0 must be passed in as the access argument.
-However, using winreg.DeleteKeyW() instead is
- strongly recommended for use on 32-bit OS.
 
 This method can not delete keys with subkeys.
 
@@ -1032,7 +1029,7 @@ winreg_DeleteKeyEx_impl(PyObject *module, HKEY key,
                     (Py_ssize_t)access) < 0) {
         return NULL;
     }
-    /* RegDeleteKeyExW is also available on 32-bit systems NT 5.2 and above.
+    /* RegDeleteKeyExW is also available on 32-bit systems.
      * On such systems, RegDeleteKeyExW() is functionally equivalent to
      * RegDeleteKeyW().
      *

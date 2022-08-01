@@ -147,11 +147,8 @@ This module offers the following functions:
    .. note::
       The :func:`DeleteKeyEx` function is implemented with the RegDeleteKeyEx
       Windows API function, which is intended to be used for 64-bit Windows.
-      While `RegDeleteKeyEx` is available in the API on systems based on NT 5.2
-      and above, including XP Professional x64 Edition, Vista, and later
-      releases of Windows, it is strongly recommended to use `DeleteKey()`
-      instead on 32-bit Windows (on which `RegDeleteKeyEx` is functionally
-      equivalent to `RegDeleteKeyW`).
+      On 32-bit Windows, it is strongly recommended to use `DeleteKey()`
+      instead.
       See the `RegDeleteKeyEx documentation
       <https://msdn.microsoft.com/en-us/library/ms724847%28VS.85%29.aspx>`__.
 
@@ -167,9 +164,8 @@ This module offers the following functions:
    *access* is an integer that specifies an access mask that describes the
    desired security access for the key.  Default is :const:`KEY_WOW64_64KEY`.
    On 32-bit Windows, the access constants `KEY_WOW64_64KEY` and
-   `KEY_WOW64_32KEY` are ignored. To delete a key from the default registry
-   view (or use in 32-bit Windows), 0 should be passed in
-   for this parameter or consider using `DeleteKey()` instead.
+   `KEY_WOW64_32KEY` are ignored, thus 0 should be passed in
+   for this parameter as a workaround.
    See
    :ref:`Access Rights <access-rights>` for other allowed values.
 
