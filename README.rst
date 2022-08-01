@@ -32,7 +32,7 @@ General Information
 Contributing to CPython
 -----------------------
 
-For more complete instructions on contributing to CPython development,
+For more detailed instructions on contributing to CPython development,
 see the `Developer Guide`_.
 
 .. _Developer Guide: https://devguide.python.org/
@@ -63,8 +63,8 @@ the executable is called ``python.exe``; elsewhere it's just ``python``.
 
 Building a complete Python installation requires the use of various
 additional third-party libraries, depending on your build platform and
-configure options.  Not all standard library modules are buildable or
-useable on all platforms.  Refer to the
+specific configure options.  Not all standard library modules are buildable or
+useable across platforms.  Refer to the
 `Install dependencies <https://devguide.python.org/setup/#install-dependencies>`_
 section of the `Developer Guide`_ for current detailed information on
 dependencies for various Linux distributions and macOS.
@@ -76,7 +76,7 @@ to macOS framework and universal builds.  Refer to `Mac/README.rst
 On Windows, see `PCbuild/readme.txt
 <https://github.com/python/cpython/blob/main/PCbuild/readme.txt>`_.
 
-If you wish, you can create a subdirectory and invoke configure from there.
+If you wish, you can create a subdirectory and invoke configurations from there.
 For example::
 
     mkdir debug
@@ -115,8 +115,8 @@ workload.  This is necessary in order to profile the interpreter's execution.
 Note also that any output, both stdout and stderr, that may appear at this step
 is suppressed.
 
-The final step is to build the actual interpreter, using the information
-collected from the instrumented one.  The end result will be a Python binary
+The final step is to build the actual interpreter, using collected information 
+from the instrumented one.  The end result will be a Python binary
 that is optimized; suitable for distribution or production installation.
 
 
@@ -124,7 +124,7 @@ Link Time Optimization
 ^^^^^^^^^^^^^^^^^^^^^^
 
 Enabled via configure's ``--with-lto`` flag.  LTO takes advantage of the
-ability of recent compiler toolchains to optimize across the otherwise
+recent compiler toolchain's ability to optimize across the otherwise
 arbitrary ``.o`` file boundary when building final executables or shared
 libraries for additional performance gains.
 
@@ -197,7 +197,7 @@ Installing multiple versions
 
 On Unix and Mac systems if you intend to install multiple versions of Python
 using the same installation prefix (``--prefix`` argument to the configure
-script) you must take care that your primary python executable is not
+script) you must be careful to ensure that your primary python executable is not
 overwritten by the installation of a different version.  All files and
 directories installed using ``make altinstall`` contain the major and minor
 version and can thus live side-by-side.  ``make install`` also creates
