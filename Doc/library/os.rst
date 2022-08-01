@@ -901,7 +901,7 @@ as internal buffering of data.
 
    .. availability:: Unix.
 
-      The function is a limited on Emscripten and WASI, see
+      The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
 
 
@@ -916,7 +916,7 @@ as internal buffering of data.
 
    .. availability:: Unix.
 
-      The function is a limited on Emscripten and WASI, see
+      The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
 
 
@@ -1007,7 +1007,7 @@ as internal buffering of data.
 
    .. availability:: Unix.
 
-      The function is a limited on Emscripten and WASI, see
+      The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
 
    .. versionadded:: 3.5
@@ -1481,7 +1481,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    .. availability:: Unix.
 
-      The function is a limited on Emscripten and WASI, see
+      The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
 
    .. versionadded:: 3.5
@@ -1912,7 +1912,7 @@ features:
       read-only flag with it (via the ``stat.S_IWRITE`` and ``stat.S_IREAD``
       constants or a corresponding integer value).  All other bits are ignored.
 
-      The function is a limited on Emscripten and WASI, see
+      The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
 
    .. audit-event:: os.chmod path,mode,dir_fd os.chmod
@@ -1941,7 +1941,7 @@ features:
 
    .. availability:: Unix.
 
-      The function is a limited on Emscripten and WASI, see
+      The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
 
    .. versionadded:: 3.3
@@ -3103,7 +3103,7 @@ features:
 
    .. availability:: Unix, Windows.
 
-      The function is a limited on Emscripten and WASI, see
+      The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
 
    .. versionchanged:: 3.2
