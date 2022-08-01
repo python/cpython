@@ -40,8 +40,9 @@ as constants in the fcntl module, using the same names as used in
 the relevant C header files.  The argument arg is optional, and
 defaults to 0; it may be an int or a string.  If arg is given as a string,
 the return value of fcntl is a string of that length, containing the
-resulting value put in the arg buffer by the operating system. If the arg
-given is an integer or if none is specified, the result value is an integer
+resulting value put in the arg buffer by the operating system.  The length
+of the arg string is not allowed to exceed 1024 bytes.  If the arg given
+is an integer or if none is specified, the result value is an integer
 corresponding to the return value of the fcntl call in the C code.
 [clinic start generated code]*/
 
@@ -144,7 +145,7 @@ code.
 static PyObject *
 fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
                  PyObject *ob_arg, int mutate_arg)
-/*[clinic end generated code: output=7f7f5840c65991be input=967b4a4cbeceb0a8]*/
+/*[clinic end generated code: output=7f7f5840c65991be input=6b70e7e5a8df40fa]*/
 {
     /* We use the unsigned non-checked 'I' format for the 'code' parameter
        because the system expects it to be a 32bit bit field value

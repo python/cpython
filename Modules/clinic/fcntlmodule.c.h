@@ -79,8 +79,7 @@ PyDoc_STRVAR(fcntl_ioctl__doc__,
 "If the argument is an immutable buffer (most likely a string) then a copy\n"
 "of the buffer is passed to the operating system and the return value is a\n"
 "string of the same length containing whatever the operating system put in\n"
-"the buffer.  The length of the arg buffer in this case is not allowed to\n"
-"exceed 1024 bytes.\n"
+"the buffer.\n"
 "\n"
 "If the arg given is an integer or if none is specified, the result value is\n"
 "an integer corresponding to the return value of the ioctl call in the C\n"
@@ -243,4 +242,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b8cb14ab35de4c6a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fdcb77f29c5b8df1 input=a9049054013a1b77]*/
