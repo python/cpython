@@ -589,8 +589,8 @@ Supported operations:
 +-------------------------------+----------------------------------------------+
 | Operation                     | Result                                       |
 +===============================+==============================================+
-| ``date2 = date1 + timedelta`` | *date2* is ``timedelta.days`` days removed   |
-|                               | from *date1*. (1)                            |
+| ``date2 = date1 + timedelta`` | *date2* will be ``timedelta.days`` days      |
+|                               | after *date1*. (1)                           |
 +-------------------------------+----------------------------------------------+
 | ``date2 = date1 - timedelta`` | Computes *date2* such that ``date2 +         |
 |                               | timedelta == date1``. (2)                    |
@@ -1370,8 +1370,8 @@ Instance methods:
    time and this method relies on the platform C :c:func:`mktime`
    function to perform the conversion. Since :class:`.datetime`
    supports wider range of values than :c:func:`mktime` on many
-   platforms, this method may raise :exc:`OverflowError` for times far
-   in the past or far in the future.
+   platforms, this method may raise :exc:`OverflowError` or :exc:`OSError`
+   for times far in the past or far in the future.
 
    For aware :class:`.datetime` instances, the return value is computed
    as::

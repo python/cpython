@@ -95,6 +95,7 @@
   <ItemGroup>
     <ClCompile Include="..\Modules\_testcapimodule.c" />
     <ClCompile Include="..\Modules\_testcapi\vectorcall.c" />
+    <ClCompile Include="..\Modules\_testcapi\heaptype.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />

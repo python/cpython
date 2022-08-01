@@ -1079,7 +1079,7 @@ Both the ``build`` and ``build_ext`` commands now accept a ``-j`` option to
 enable parallel building of extension modules.
 (Contributed by Antoine Pitrou in :issue:`5309`.)
 
-The :mod:`distutils` module now supports ``xz`` compression, and can be
+The ``distutils`` module now supports ``xz`` compression, and can be
 enabled by passing ``xztar`` as an argument to ``bdist --format``.
 (Contributed by Serhiy Storchaka in :issue:`16314`.)
 

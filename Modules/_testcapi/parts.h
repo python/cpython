@@ -1,3 +1,4 @@
 #include "Python.h"
 
-PyAPI_FUNC(int) _PyTestCapi_Init_Vectorcall(PyObject *module);
+int _PyTestCapi_Init_Vectorcall(PyObject *module);
+int _PyTestCapi_Init_Heaptype(PyObject *module);
