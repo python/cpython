@@ -91,6 +91,58 @@ AC_DEFUN([PY_CHECK_EMSCRIPTEN_PORT], [
   AS_VAR_POPDEF([py_libs])
 ])
 
+dnl Linker args for rpath.
+dnl Clang does not support '=', so we use ',' to separate args.
+AS_VAR_IF([GNULD], [yes], [
+  rpath_arg="-Wl,--enable-new-dtags,-rpath,"
+], [
+  rpath_arg="-Wl,-rpath,"
+])
+
+dnl Helper for adding rpath arguments
+dnl PY_CHECK_RPATH([lib], [name])
+AC_DEFUN([PY_CHECK_RPATH], [
+AS_VAR_PUSHDEF([with_var], [with_$1_rpath])dnl
+AS_VAR_PUSHDEF([ldflags_var], m4_toupper([$1_ldflags]))dnl
+AS_VAR_PUSHDEF([rpath_var], m4_toupper([$1_ldflags_rpath]))dnl
+AS_VAR_PUSHDEF([res_var], m4_toupper([$1_rpath]))dnl
+dnl
+AC_MSG_CHECKING([for --with-$1-rpath])
+AC_ARG_WITH([$1-rpath], [dnl
+AS_HELP_STRING([--with-$1-rpath=@<:@DIR|auto|no@:>@], [
+  Set runtime library directory (rpath) for $2 libraries,
+  no (default): do not set rpath,
+  auto: auto-detect rpath from --with-$1 and pkg-config,
+  DIR: set an explicit rpath
+])], [], [AS_VAR_SET([with_var], [no])])
+AS_CASE($with_var,
+  [auto|yes], [
+    res_var=auto
+    dnl look for linker directories
+    for arg in "$ldflags_var"; do
+      AS_CASE([$arg],
+        [-L*], [rpath_var="$rpath_var ${rpath_arg}$(echo $arg | cut -c3-)"]
+      )
+    done
+  ],
+  [no], [res_var=],
+  [
+    AS_IF(
+      [test -d "$with_var"], [
+        res_var="$with_var"
+        rpath_var="${rpath_arg}$with_var"
+      ],
+      AC_MSG_ERROR([$with_rpath_op "$with_var" is not a directory])
+    )
+  ]
+)
+AC_MSG_RESULT($res_var)dnl
+AS_VAR_POPDEF([res_var])dnl
+AS_VAR_POPDEF([ldflags_var])dnl
+AS_VAR_POPDEF([rpath_var])dnl
+AS_VAR_POPDEF([with_var])dnl
+])
+
 AC_SUBST(BASECPPFLAGS)
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
@@ -6750,58 +6802,6 @@ WITH_SAVE_ENV([
 
 # Check for usable OpenSSL
 AX_CHECK_OPENSSL([have_openssl=yes],[have_openssl=no])
-
-dnl Linker args for rpath.
-dnl Clang does not support '=', so we use ',' to separate args.
-AS_VAR_IF([GNULD], [yes], [
-  rpath_arg="-Wl,--enable-new-dtags,-rpath,"
-], [
-  rpath_arg="-Wl,-rpath,"
-])
-
-dnl Helper for adding rpath arguments
-dnl PY_CHECK_RPATH([lib], [name])
-AC_DEFUN([PY_CHECK_RPATH], [
-AS_VAR_PUSHDEF([with_var], [with_$1_rpath])dnl
-AS_VAR_PUSHDEF([ldflags_var], m4_toupper([$1_ldflags]))dnl
-AS_VAR_PUSHDEF([rpath_var], m4_toupper([$1_ldflags_rpath]))dnl
-AS_VAR_PUSHDEF([res_var], m4_toupper([$1_rpath]))dnl
-dnl
-AC_MSG_CHECKING([for --with-$1-rpath])
-AC_ARG_WITH([$1-rpath], [dnl
-AS_HELP_STRING([--with-$1-rpath=@<:@DIR|auto|no@:>@], [
-  Set runtime library directory (rpath) for $2 libraries,
-  no (default): do not set rpath,
-  auto: auto-detect rpath from --with-$1 and pkg-config,
-  DIR: set an explicit rpath
-])], [], [AS_VAR_SET([with_var], [no])])
-AS_CASE($with_var,
-  [auto|yes], [
-    res_var=auto
-    dnl look for linker directories
-    for arg in "$ldflags_var"; do
-      AS_CASE([$arg],
-        [-L*], [rpath_var="$rpath_var ${rpath_arg}$(echo $arg | cut -c3-)"]
-      )
-    done
-  ],
-  [no], [res_var=],
-  [
-    AS_IF(
-      [test -d "$with_var"], [
-        res_var="$with_var"
-        rpath_var="${rpath_arg}$with_var"
-      ],
-      AC_MSG_ERROR([$with_rpath_op "$with_var" is not a directory])
-    )
-  ]
-)
-AC_MSG_RESULT($res_var)dnl
-AS_VAR_POPDEF([res_var])dnl
-AS_VAR_POPDEF([ldflags_var])dnl
-AS_VAR_POPDEF([rpath_var])dnl
-AS_VAR_POPDEF([with_var])dnl
-])
 
 PY_CHECK_RPATH([openssl], [OpenSSL])
 

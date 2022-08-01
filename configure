@@ -3093,6 +3093,18 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+if test "x$GNULD" = xyes; then :
+
+  rpath_arg="-Wl,--enable-new-dtags,-rpath,"
+
+else
+
+  rpath_arg="-Wl,-rpath,"
+
+fi
+
+
+
 
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
@@ -24681,18 +24693,6 @@ rm -f core conftest.err conftest.$ac_objext \
 
 
 
-
-
-
-if test "x$GNULD" = xyes; then :
-
-  rpath_arg="-Wl,--enable-new-dtags,-rpath,"
-
-else
-
-  rpath_arg="-Wl,-rpath,"
-
-fi
 
 
 
