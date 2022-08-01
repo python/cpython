@@ -1695,6 +1695,15 @@ code_richcompare(PyObject *self, PyObject *other, int op)
     eq = PyObject_RichCompareBool(co->co_localsplusnames,
                                   cp->co_localsplusnames, Py_EQ);
     if (eq <= 0) goto unequal;
+    eq = PyObject_RichCompareBool(co->co_linetable, cp->co_linetable, Py_EQ);
+    if (eq <= 0) {
+        goto unequal;
+    }
+    eq = PyObject_RichCompareBool(co->co_exceptiontable,
+                                  cp->co_exceptiontable, Py_EQ);
+    if (eq <= 0) {
+        goto unequal;
+    }
 
     if (op == Py_EQ)
         res = Py_True;
@@ -1727,7 +1736,15 @@ code_hash(PyCodeObject *co)
     if (h2 == -1) return -1;
     h3 = PyObject_Hash(co->co_localsplusnames);
     if (h3 == -1) return -1;
-    h = h0 ^ h1 ^ h2 ^ h3 ^
+    Py_hash_t h4 = PyObject_Hash(co->co_linetable);
+    if (h4 == -1) {
+        return -1;
+    }
+    Py_hash_t h5 = PyObject_Hash(co->co_exceptiontable);
+    if (h5 == -1) {
+        return -1;
+    }
+    h = h0 ^ h1 ^ h2 ^ h3 ^ h4 ^ h5 ^
         co->co_argcount ^ co->co_posonlyargcount ^ co->co_kwonlyargcount ^
         co->co_flags;
     if (h == -1) h = -2;
