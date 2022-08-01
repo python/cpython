@@ -14748,10 +14748,15 @@ if test "x$ac_cv_lib_cma_pthread_create" = xyes; then :
 
 else
 
+    case $ac_sys_system in #(
+  WASI) :
+    posix_threads=stub ;; #(
+  *) :
     as_fn_error $? "could not find pthreads on your system" "$LINENO" 5
+     ;;
+esac
 
 fi
-
 
 fi
 
@@ -14907,6 +14912,14 @@ _ACEOF
 
 fi
 done
+
+fi
+
+if test "x$posix_threads" = xstub; then :
+
+
+$as_echo "#define HAVE_PTHREAD_STUBS 1" >>confdefs.h
+
 
 fi
 

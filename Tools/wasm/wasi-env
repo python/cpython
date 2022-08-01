@@ -30,17 +30,23 @@ if test -z "$1"; then
 fi
 
 WASI_SDK_PATH="${WASI_SDK_PATH:-/opt/wasi-sdk}"
+WASI_SYSROOT="${WASI_SDK_PATH}/share/wasi-sysroot"
 
 if ! test -x "${WASI_SDK_PATH}/bin/clang"; then
     echo "Error: ${WASI_SDK_PATH}/bin/clang does not exist." >&2
     exit 2
 fi
 
+CC="${WASI_SDK_PATH}/bin/clang"
+CPP="${WASI_SDK_PATH}/bin/clang-cpp"
+CXX="${WASI_SDK_PATH}/bin/clang++"
+
 # --sysroot is required if WASI-SDK is not installed in /opt/wasi-sdk.
-WASI_SYSROOT="${WASI_SDK_PATH}/share/wasi-sysroot"
-CC="${WASI_SDK_PATH}/bin/clang --sysroot=${WASI_SYSROOT}"
-CPP="${WASI_SDK_PATH}/bin/clang-cpp --sysroot=${WASI_SYSROOT}"
-CXX="${WASI_SDK_PATH}/bin/clang++ --sysroot=${WASI_SYSROOT}"
+if test "${WASI_SDK_PATH}" != "/opt/wasi-sdk"; then
+    CC="${CC} --sysroot=${WASI_SYSROOT}"
+    CPP="${CPP} --sysroot=${WASI_SYSROOT}"
+    CXX="${CXX} --sysroot=${WASI_SYSROOT}"
+fi
 
 # use ccache if available
 if command -v ccache >/dev/null 2>&1; then
@@ -58,10 +64,11 @@ PKG_CONFIG_PATH=""
 PKG_CONFIG_LIBDIR="${WASI_SYSROOT}/lib/pkgconfig:${WASI_SYSROOT}/share/pkgconfig"
 PKG_CONFIG_SYSROOT_DIR="${WASI_SYSROOT}"
 
-PATH="${WASI_SDK_PATH}/bin:$PATH"
+PATH="${WASI_SDK_PATH}/bin:${PATH}"
 
-export WASI_SDK_PATH
+export WASI_SDK_PATH WASI_SYSROOT
 export CC CPP CXX LDSHARED AR RANLIB
+export CFLAGS LDFLAGS
 export PKG_CONFIG_PATH PKG_CONFIG_LIBDIR PKG_CONFIG_SYSROOT_DIR
 export PATH
 
