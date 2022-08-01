@@ -1507,7 +1507,10 @@ subtype_dealloc(PyObject *self)
            finalizers since they might rely on part of the object
            being finalized that has already been destroyed. */
         if (type->tp_weaklistoffset && !base->tp_weaklistoffset) {
-            /* Modeled after GET_WEAKREFS_LISTPTR() */
+            /* Modeled after GET_WEAKREFS_LISTPTR().
+
+               This is never triggered for static types so we can avoid the
+               (slightly) more costly _PyObject_GET_WEAKREFS_LISTPTR(). */
             PyWeakReference **list = (PyWeakReference **) \
                 _PyObject_GET_BASIC_WEAKREFS_LISTPTR(self);
             while (*list)
