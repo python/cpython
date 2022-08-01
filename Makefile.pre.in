@@ -346,8 +346,8 @@ PEGEN_OBJS=		\
 		Parser/action_helpers.o \
 		Parser/parser.o \
 		Parser/string_parser.o \
-		Parser/peg_api.o
-
+		Parser/peg_api.o \
+		Parser/vm.o
 
 PEGEN_HEADERS= \
 		$(srcdir)/Include/internal/pycore_parser.h \
@@ -355,7 +355,7 @@ PEGEN_HEADERS= \
 		$(srcdir)/Parser/string_parser.h
 
 POBJS=		\
-		Parser/token.o \
+		Parser/token.o
 
 PARSER_OBJS=	$(POBJS) $(PEGEN_OBJS) Parser/myreadline.o Parser/tokenizer.o
 
@@ -1632,6 +1632,8 @@ PYTHON_HEADERS= \
 		$(srcdir)/Python/stdlib_module_names.h
 
 $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
+
+$(srcdir)/Parser/vm.o: $(srcdir)/Parser/vm.h $(srcdir)/Parser/vmparse.h
 
 
 ######################################################################

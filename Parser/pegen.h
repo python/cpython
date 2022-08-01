@@ -23,8 +23,8 @@
 #define PyPARSE_TYPE_COMMENTS 0x0040
 #define PyPARSE_ASYNC_HACKS   0x0080
 #define PyPARSE_ALLOW_INCOMPLETE_INPUT 0x0100
-
 #define CURRENT_POS (-5)
+#define PyPARSE_VMPARSER      0x0100
 
 typedef struct _memo {
     int type;
@@ -284,6 +284,15 @@ INVALID_VERSION_CHECK(Parser *p, int version, char *msg, void *node)
 
 arg_ty _PyPegen_add_type_comment_to_arg(Parser *, arg_ty, Token *);
 PyObject *_PyPegen_new_identifier(Parser *, const char *);
+Parser *_PyPegen_Parser_New(struct tok_state *, int, int, int, int *, PyArena *);
+void _PyPegen_Parser_Free(Parser *);
+mod_ty _PyPegen_run_parser_from_file_pointer(FILE *, int, PyObject *, const char *,
+                                    const char *, const char *, PyCompilerFlags *, int *, PyArena *);
+void *_PyPegen_run_parser(Parser *);
+void *_PyPegen_vmparser(Parser *);
+mod_ty _PyPegen_run_parser_from_file(const char *, int, PyObject *, PyCompilerFlags *, PyArena *);
+mod_ty _PyPegen_run_parser_from_string(const char *, int, PyObject *, PyCompilerFlags *, PyArena *);
+void *_PyPegen_interactive_exit(Parser *);
 asdl_seq *_PyPegen_singleton_seq(Parser *, void *);
 asdl_seq *_PyPegen_seq_insert_in_front(Parser *, void *, asdl_seq *);
 asdl_seq *_PyPegen_seq_append_to_end(Parser *, asdl_seq *, void *);

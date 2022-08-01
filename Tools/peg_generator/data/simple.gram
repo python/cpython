@@ -1,0 +1,18 @@
+start: a=stmt+ ENDMARKER { _PyPegen_make_module(p, a) }
+stmt:
+    | !'if' a=expr NEWLINE { _Py_Expr(a, EXTRA) }
+    | &'if' a=if_stmt
+if_stmt:
+    | 'if' ~ a=NAME ':' b=stmt { _Py_If(a, CHECK(_PyPegen_singleton_seq(p, b)), NULL, EXTRA) }
+expr:
+    | a=expr '+' b=term { _Py_BinOp(a, Add, b, EXTRA) }
+    | term
+term: 
+    | a=term ['*'] b=factor { _Py_BinOp(a, Mult, b, EXTRA) }
+    | factor
+factor:
+    | '(' a=expr ')' { a }
+    | '[' a=','.expr+ ']' { _Py_List(a, Load, EXTRA) }
+    | NUMBER
+    | "__peg_parser__" { RAISE_SYNTAX_ERROR("You found it!") }
+    | NAME
