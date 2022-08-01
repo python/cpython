@@ -505,9 +505,9 @@ Constants
 
 .. data:: ETH_P_ALL
 
-   ``ETH_P_ALL`` can be used in :class:`~socket.socket`
+   :data:`!ETH_P_ALL` can be used in the :class:`~socket.socket`
    constructor as *proto* for the :const:`AF_PACKET` family in order to
-   capture every packet.
+   capture every packet, regardless of protocol.
 
    For more information you can consult the Linux documentation
    :manpage:`packet(7)`.
