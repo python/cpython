@@ -182,10 +182,11 @@ created.  Socket addresses are represented as follows:
   ``(ifname, proto[, pkttype[, hatype[, addr]]])`` where:
 
   - *ifname* - String specifying the device name.
-  - *proto* - The Ethernet protocol number. May be one of
-    :ref:`ETHERTYPE_* constants <socket-ethernet-types>`
+  - *proto* - The Ethernet protocol number.
+    May be :data:`ETH_P_ALL` to capture all protocols,
+    one of the :ref:`ETHERTYPE_* constants <socket-ethernet-types>`
     or any other Ethernet protocol number.
-    In both cases, values must be in network-byte-order.
+    Value must be in network-byte-order.
   - *pkttype* - Optional integer specifying the packet type:
 
     - ``PACKET_HOST`` (the default) - Packet addressed to the local host.
@@ -509,8 +510,7 @@ Constants
    constructor as *proto* for the :const:`AF_PACKET` family in order to
    capture every packet, regardless of protocol.
 
-   For more information you can consult the Linux documentation
-   :manpage:`packet(7)`.
+   For more information, see the :manpage:`packet(7)` manpage.
 
    .. availability:: Linux.
 
