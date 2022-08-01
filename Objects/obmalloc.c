@@ -367,7 +367,7 @@ _PyMem_SetupAllocators(PyMemAllocatorName allocator)
 
 
 static int
-pymemallocator_eq(PyMemAllocatorEx *a, PyMemAllocatorEx *b)
+pymemallocator_eq(const PyMemAllocatorEx *a, const PyMemAllocatorEx *b)
 {
     return (memcmp(a, b, sizeof(PyMemAllocatorEx)) == 0);
 }
@@ -2815,7 +2815,7 @@ _PyObject_DebugDumpAddress(const void *p)
     }
 
     tail = q + nbytes;
-    fprintf(stderr, "    The %d pad bytes at tail=%p are ", SST, (void *)tail);
+    fprintf(stderr, "    The %d pad bytes at tail=%p are ", SST, (const void *)tail);
     ok = 1;
     for (i = 0; i < SST; ++i) {
         if (tail[i] != PYMEM_FORBIDDENBYTE) {
