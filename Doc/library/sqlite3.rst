@@ -919,11 +919,20 @@ Connection objects
 
       .. versionadded:: 3.7
 
+.. _SQLite limit category: https://www.sqlite.org/c3ref/c_limit_attached.html
 
    .. method:: getlimit(category, /)
 
-      Get a connection runtime limit. *category* is the limit category to be
-      queried.
+      Get a connection runtime limit.
+
+      :param category:
+          The `SQLite limit category` to be queried.
+      :type category: int
+
+      :rtype: int
+
+      :raises ProgrammingError:
+          If *category* is not recognised by the underlying SQLite library.
 
       Example, query the maximum length of an SQL statement::
 
@@ -937,13 +946,25 @@ Connection objects
 
    .. method:: setlimit(category, limit, /)
 
-      Set a connection runtime limit. *category* is the limit category to be
-      set. *limit* is the new limit. If the new limit is a negative number, the
-      limit is unchanged.
-
+      Set a connection runtime limit.
       Attempts to increase a limit above its hard upper bound are silently
-      truncated to the hard upper bound. Regardless of whether or not the limit
-      was changed, the prior value of the limit is returned.
+      truncated to the hard upper bound.
+      Regardless of whether or not the limit was changed,
+      the prior value of the limit is returned.
+
+      :param category:
+          The `SQLite limit category` to be set.
+      :type category: int
+
+      :param limit:
+          The value of the new limit.
+          If negative, the current limit is unchanged.
+      :type limit: int
+
+      :rtype: int
+
+      :raises ProgrammingError:
+          If *category* is not recognised by the underlying SQLite library.
 
       Example, limit the number of attached databases to 1::
 
@@ -979,12 +1000,26 @@ Connection objects
       :class:`Connection`.
       This method causes the database connection to disconnect from database
       *name*, and reopen *name* as an in-memory database based on the
-      serialization contained in *data*.  Deserialization will raise
-      :exc:`OperationalError` if the database connection is currently involved
-      in a read transaction or a backup operation.  :exc:`OverflowError` will be
-      raised if ``len(data)`` is larger than ``2**63 - 1``, and
-      :exc:`DatabaseError` will be raised if *data* does not contain a valid
-      SQLite database.
+      serialization contained in *data*.
+
+      :param data:
+          A serialized database.
+      :type data: bytes
+
+      :param name:
+          The database name to deserialize into.
+          Defaults to ``"main"``.
+      :type name: str
+
+      :raises OperationalError:
+          If the database connection is currently involved in a read
+          transaction or a backup operation.
+
+      :raises DatabaseError:
+          If *data* does not contain a valid SQLite database.
+
+      :raises OverflowError:
+          If :func:`len(data) <len>` is larger than ``2**63 - 1``.
 
       .. note::
 
@@ -1081,13 +1116,13 @@ Cursor objects
 
    .. method:: fetchone()
 
-      Fetch the next row of a query result set as a :class:`tuple`.
+      Return the next row of a query result set as a :class:`tuple`.
       Return :const:`None` if no more data is available.
 
 
    .. method:: fetchmany(size=cursor.arraysize)
 
-      Fetch the next set of rows of a query result as a :class:`list`.
+      Return the next set of rows of a query result as a :class:`list`.
       Return an empty list if no more rows are available.
 
       The number of rows to fetch per call is specified by the *size* parameter.
@@ -1103,7 +1138,7 @@ Cursor objects
 
    .. method:: fetchall()
 
-      Fetch all (remaining) rows of a query result as a :class:`list`.
+      Return all (remaining) rows of a query result as a :class:`list`.
       Return an empty list if no rows are available.
       Note that the :attr:`arraysize` attribute can affect the performance of
       this operation.
