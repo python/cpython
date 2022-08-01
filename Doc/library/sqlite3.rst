@@ -926,7 +926,7 @@ Connection objects
       Get a connection runtime limit.
 
       :param category:
-          The `SQLite limit category` to be queried.
+          The `SQLite limit category`_ to be queried.
       :type category: int
 
       :rtype: int
@@ -953,7 +953,7 @@ Connection objects
       the prior value of the limit is returned.
 
       :param category:
-          The `SQLite limit category` to be set.
+          The `SQLite limit category`_ to be set.
       :type category: int
 
       :param limit:
