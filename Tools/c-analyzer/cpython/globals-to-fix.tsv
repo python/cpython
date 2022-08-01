@@ -114,7 +114,7 @@ Objects/genericaliasobject.c	-	_Py_GenericAliasIterType	-
 Objects/iterobject.c	-	_PyAnextAwaitable_Type	-
 # Not in a .h file:
 Objects/memoryobject.c	-	_PyMemoryIter_Type	-
-#Objects/unicodeobject.c	-	_PyUnicodeASCIIIter_Type	-
+Objects/unicodeobject.c	-	_PyUnicodeASCIIIter_Type	-
 Objects/unionobject.c	-	_PyUnion_Type	-
 Python/context.c	-	_PyContextTokenMissing_Type	-
 Python/hamt.c	-	_PyHamtItems_Type	-
@@ -349,7 +349,10 @@ Objects/clinic/unicodeobject.c.h	unicode_split	_parser	-
 Objects/clinic/unicodeobject.c.h	unicode_splitlines	_parser	-
 Python/clinic/Python-tokenize.c.h	tokenizeriter_new	_parser	-
 Python/clinic/_warnings.c.h	warnings_warn	_parser	-
+Python/clinic/_warnings.c.h	warnings_warn_explicit	_parser	-
+Python/clinic/bltinmodule.c.h	builtin___import__	_parser	-
 Python/clinic/bltinmodule.c.h	builtin_compile	_parser	-
+Python/clinic/bltinmodule.c.h	builtin_exec	_parser	-
 Python/clinic/bltinmodule.c.h	builtin_pow	_parser	-
 Python/clinic/bltinmodule.c.h	builtin_print	_parser	-
 Python/clinic/bltinmodule.c.h	builtin_round	_parser	-
@@ -511,6 +514,8 @@ Python/bootstrap_hash.c	-	urandom_cache	-
 Python/ceval.c	-	lltrace	-
 # XXX This should have been found by the analyzer but wasn't:
 Python/ceval.c	make_pending_calls	busy	-
+Python/ceval.c	_PyEval_SetProfile	reentrant	-
+Python/ceval.c	_PyEval_SetTrace	reentrant	-
 Python/dynload_shlib.c	-	handles	-
 Python/dynload_shlib.c	-	nhandles	-
 # XXX This should have been found by the analyzer but wasn't:
@@ -587,6 +592,10 @@ Modules/_io/textio.c	-	PyIncrementalNewlineDecoder_Type	-
 Modules/_io/textio.c	-	PyTextIOBase_Type	-
 Modules/_io/textio.c	-	PyTextIOWrapper_Type	-
 Modules/_io/winconsoleio.c	-	PyWindowsConsoleIO_Type	-
+Modules/_testcapi/vectorcall.c	-	MethodDescriptorBase_Type	-
+Modules/_testcapi/vectorcall.c	-	MethodDescriptorDerived_Type	-
+Modules/_testcapi/vectorcall.c	-	MethodDescriptorNopGet_Type	-
+Modules/_testcapi/vectorcall.c	-	MethodDescriptor2_Type	-
 Modules/_threadmodule.c	-	Locktype	-
 Modules/_threadmodule.c	-	RLocktype	-
 Modules/_threadmodule.c	-	localdummytype	-
@@ -629,6 +638,10 @@ Modules/signalmodule.c	-	ItimerError	-
 # cached - initialized once
 
 # _PyArg_Parser
+Modules/clinic/_asynciomodule.c.h	_asyncio_Task__check_future	_parser	-
+Modules/clinic/_csv.c.h	_csv_unregister_dialect	_parser	-
+Modules/clinic/_csv.c.h	_csv_get_dialect	_parser	-
+Modules/clinic/_csv.c.h	_csv_field_size_limit	_parser	-
 Modules/clinic/_codecsmodule.c.h	_codecs_decode	_parser	-
 Modules/clinic/_codecsmodule.c.h	_codecs_encode	_parser	-
 Modules/clinic/_sre.c.h	_sre_SRE_Match_expand	_parser	-
@@ -646,6 +659,10 @@ Modules/clinic/_sre.c.h	_sre_SRE_Pattern_subn	_parser	-
 Modules/clinic/_sre.c.h	_sre_SRE_Scanner_match	_parser	-
 Modules/clinic/_sre.c.h	_sre_SRE_Scanner_search	_parser	-
 Modules/clinic/_sre.c.h	_sre_compile	_parser	-
+Modules/clinic/_winapi.c.h	_winapi_LCMapStringEx	_parser	-
+Modules/clinic/arraymodule.c.h	array_array_fromfile	_parser	-
+Modules/clinic/arraymodule.c.h	array_array_tofile	_parser	-
+Modules/clinic/arraymodule.c.h	array_array___reduce_ex__	_parser	-
 Modules/clinic/gcmodule.c.h	gc_collect	_parser	-
 Modules/clinic/gcmodule.c.h	gc_get_objects	_parser	-
 Modules/clinic/itertoolsmodule.c.h	itertools_accumulate	_parser	-
@@ -681,6 +698,7 @@ Modules/clinic/posixmodule.c.h	os_scandir	_parser	-
 Modules/clinic/posixmodule.c.h	os_stat	_parser	-
 Modules/clinic/posixmodule.c.h	os_unlink	_parser	-
 Modules/clinic/posixmodule.c.h	os_utime	_parser	-
+Modules/clinic/socketmodule.c.h	sock_initobj	_parser	-
 
 #-----------------------
 # other
@@ -942,6 +960,7 @@ Modules/xxmodule.c	-	ErrorObject	-
 # _Py_IDENTIFIER (global)
 Modules/_asynciomodule.c	-	PyId___asyncio_running_event_loop__	-
 Modules/_asynciomodule.c	-	PyId__asyncio_future_blocking	-
+Modules/_asynciomodule.c	-	PyId__check_future	static -
 Modules/_asynciomodule.c	-	PyId_add_done_callback	-
 Modules/_asynciomodule.c	-	PyId_call_soon	-
 Modules/_asynciomodule.c	-	PyId_cancel	-
@@ -1256,11 +1275,13 @@ Modules/clinic/zlibmodule.c.h	zlib_decompressobj	_parser	-
 # other - during module init
 Modules/_asynciomodule.c	-	asyncio_mod	-
 Modules/_asynciomodule.c	-	traceback_extract_stack	-
-Modules/_asynciomodule.c	-	asyncio_get_event_loop_policy	-
+Modules/_asynciomodule.c	-	asyncio_future_repr_func	-
 Modules/_asynciomodule.c	-	asyncio_future_repr_info_func	-
+Modules/_asynciomodule.c	-	asyncio_get_event_loop_policy	-
 Modules/_asynciomodule.c	-	asyncio_iscoroutine_func	-
 Modules/_asynciomodule.c	-	asyncio_task_get_stack_func	-
 Modules/_asynciomodule.c	-	asyncio_task_print_stack_func	-
+Modules/_asynciomodule.c	-	asyncio_task_repr_func	-
 Modules/_asynciomodule.c	-	asyncio_task_repr_info_func	-
 Modules/_asynciomodule.c	-	asyncio_InvalidStateError	-
 Modules/_asynciomodule.c	-	asyncio_CancelledError	-
@@ -1303,6 +1324,7 @@ Modules/_ssl.c	-	lib_codes_to_names	-
 Modules/_ssl.c	-	_ssl_locks	-
 Modules/_struct.c	-	cache	-
 Modules/arraymodule.c	array_array___reduce_ex__	array_reconstructor	-
+Modules/arraymodule.c	array_array___reduce_ex___impl	array_reconstructor	-
 Modules/cjkcodecs/cjkcodecs.h	getmultibytecodec	cofunc	-
 
 # state
@@ -1313,6 +1335,7 @@ Modules/_asynciomodule.c	-	all_tasks	-
 Modules/_asynciomodule.c	-	current_tasks	-
 Modules/_asynciomodule.c	-	iscoroutine_typecache	-
 Modules/_ctypes/_ctypes.c	-	_ctypes_ptrtype_cache	-
+Modules/_testinternalcapi.c	-	record_list	-
 Modules/_tkinter.c	-	tcl_lock	-
 Modules/_tkinter.c	-	excInCmd	-
 Modules/_tkinter.c	-	valInCmd	-
@@ -1401,3 +1424,4 @@ Modules/rotatingtree.c	-	random_stream	-
 Modules/rotatingtree.c	-	random_value	-
 Modules/socketmodule.c	-	defaulttimeout	-
 Modules/syslogmodule.c	-	S_log_open	-
+Modules/clinic/_asynciomodule.c.h	_asyncio_Task__check_future	_parser	-
