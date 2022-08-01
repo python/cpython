@@ -7717,8 +7717,8 @@ PyInit__socket(void)
 
 /* 
  * Ethernet Protocol ID's 
- * There are many ID's - only most popular ones in a standard network
- * are used.
+ * There are many ID's - only the ones required for a standard
+ * TCP/IP network stack are exposed.
  */
 #ifdef ETH_P_8021AD
     PyModule_AddIntMacro(m, ETH_P_8021AD);
