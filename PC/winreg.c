@@ -979,7 +979,7 @@ winreg_DeleteKey_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key)
                     (Py_ssize_t)0) < 0) {
         return NULL;
     }
-    rc = RegDeleteKeyW(key, sub_key );
+    rc = RegDeleteKeyW(key, sub_key);
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegDeleteKey");
     Py_RETURN_NONE;
@@ -1000,7 +1000,14 @@ winreg.DeleteKeyEx
     reserved: int = 0
         A reserved integer, and must be zero.  Default is zero.
 
-Deletes the specified key (64-bit OS only).
+Deletes the specified key (intended for 64-bit OS).
+
+While this function is intended to be used for 64-bit OS, it is available
+ on systems based on NT 5.2 and above, including XP Professional x64 Edition,
+ Vista, and later releases of Windows.
+To use with 32-bit Windows, 0 must be passed in as the access argument.
+However, using winreg.DeleteKeyW() instead is
+ strongly recommended for use on 32-bit OS.
 
 This method can not delete keys with subkeys.
 
@@ -1025,8 +1032,13 @@ winreg_DeleteKeyEx_impl(PyObject *module, HKEY key,
                     (Py_ssize_t)access) < 0) {
         return NULL;
     }
-    /* Only available on 64bit platforms, so we must load it
-       dynamically. */
+    /* RegDeleteKeyExW is also available on 32-bit systems NT 5.2 and above.
+     * On such systems, RegDeleteKeyExW() is functionally equivalent to
+     * RegDeleteKeyW().
+     *
+     * Note: Though it currently isn't necessary, this can be simplified to use
+     * load-time dynamic linking in the future.
+     * */
     Py_BEGIN_ALLOW_THREADS
     hMod = GetModuleHandleW(L"advapi32.dll");
     if (hMod)

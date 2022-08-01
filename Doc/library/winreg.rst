@@ -146,7 +146,12 @@ This module offers the following functions:
 
    .. note::
       The :func:`DeleteKeyEx` function is implemented with the RegDeleteKeyEx
-      Windows API function, which is specific to 64-bit versions of Windows.
+      Windows API function, which is intended to be used for 64-bit Windows.
+      While `RegDeleteKeyEx` is available in the API on systems based on NT 5.2
+      and above, including XP Professional x64 Edition, Vista, and later
+      releases of Windows, it is strongly recommended to use `DeleteKey()`
+      instead on 32-bit Windows (on which `RegDeleteKeyEx` is functionally
+      equivalent to `RegDeleteKeyW`).
       See the `RegDeleteKeyEx documentation
       <https://msdn.microsoft.com/en-us/library/ms724847%28VS.85%29.aspx>`__.
 
@@ -159,8 +164,13 @@ This module offers the following functions:
 
    *reserved* is a reserved integer, and must be zero. The default is zero.
 
-   *access* is an integer that specifies an access mask that describes the desired
-   security access for the key.  Default is :const:`KEY_WOW64_64KEY`.  See
+   *access* is an integer that specifies an access mask that describes the
+   desired security access for the key.  Default is :const:`KEY_WOW64_64KEY`.
+   On 32-bit Windows, the access constants `KEY_WOW64_64KEY` and
+   `KEY_WOW64_32KEY` are ignored. To delete a key from the default registry
+   view (or use in 32-bit Windows), 0 should be passed in
+   for this parameter or consider using `DeleteKey()` instead.
+   See
    :ref:`Access Rights <access-rights>` for other allowed values.
 
    *This method can not delete keys with subkeys.*
@@ -658,13 +668,16 @@ For more information, see `Accessing an Alternate Registry View
 .. data:: KEY_WOW64_64KEY
 
    Indicates that an application on 64-bit Windows should operate on
-   the 64-bit registry view.
+   the 64-bit registry view. On 32-bit Windows, this constant is ignored.
+   As such, to call any function that uses this constant as a default argument
+   on a 32-bit Windows build, 0 should be passed in.
 
 .. data:: KEY_WOW64_32KEY
 
    Indicates that an application on 64-bit Windows should operate on
-   the 32-bit registry view.
-
+   the 32-bit registry view. On 32-bit Windows, this constant is ignored.
+   As such, to call any function that uses this constant as a default argument
+   on a 32-bit Windows build, 0 should be passed in.
 
 .. _value-types:
 
