@@ -7715,28 +7715,23 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, ALG_OP_VERIFY);
 #endif
 
-/* 
- * Ethernet Protocol ID's 
- * There are many ID's - only the ones required for a standard
- * TCP/IP network stack are exposed.
- */
-#ifdef ETH_P_8021AD
-    PyModule_AddIntMacro(m, ETH_P_8021AD);
+/* IEEE 802.3 protocol numbers required for a standard TCP/IP network stack */
+#ifdef ETHERTYPE_ARP
+    PyModule_AddIntMacro(m, ETHERTYPE_ARP);
 #endif
-#ifdef ETH_P_8021Q
-    PyModule_AddIntMacro(m, ETH_P_8021Q);
+#ifdef ETHERTYPE_IP
+    PyModule_AddIntMacro(m, ETHERTYPE_IP);
 #endif
+#ifdef ETHERTYPE_IPV6
+    PyModule_AddIntMacro(m, ETHERTYPE_IPV6);
+#endif
+#ifdef ETHERTYPE_VLAN
+    PyModule_AddIntMacro(m, ETHERTYPE_VLAN);
+#endif
+
+/* Linux pseudo-protocol for sniffing every packet */
 #ifdef ETH_P_ALL
     PyModule_AddIntMacro(m, ETH_P_ALL);
-#endif
-#ifdef ETH_P_ARP
-    PyModule_AddIntMacro(m, ETH_P_ARP);
-#endif
-#ifdef ETH_P_IP
-    PyModule_AddIntMacro(m, ETH_P_IP);
-#endif
-#ifdef ETH_P_IPV6
-    PyModule_AddIntMacro(m, ETH_P_IPV6);
 #endif
 
     /* Socket types */

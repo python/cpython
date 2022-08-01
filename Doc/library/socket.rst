@@ -183,7 +183,7 @@ created.  Socket addresses are represented as follows:
 
   - *ifname* - String specifying the device name.
   - *proto* - An in network-byte-order integer specifying the Ethernet
-    protocol number.
+    protocol number. May be one of :ref:`ETHERTYPE_* constants <socket-ethernet-types>` or any other Ethernet protocol number.
   - *pkttype* - Optional integer specifying the packet type:
 
     - ``PACKET_HOST`` (the default) - Packet addressed to the local host.
@@ -501,18 +501,16 @@ Constants
    .. availability:: Linux >= 2.2.
 
 
-.. data:: ETH_P_8021AD
-          ETH_P_8021Q
-          ETH_P_ALL
-          ETH_P_ARP
-          ETH_P_IP
-          ETH_P_IPV6
+.. data:: ETH_P_ALL
 
-   IEEE 802.3 protocol numbers, can be used in :class:`~socket.socket`
-   constructor as *proto* if *type* is :const:`SOCK_RAW`.
-   For more information you can consult :manpage:`packet(7)`.
+   ``ETH_P_ALL`` can be used in :class:`~socket.socket`
+   constructor as *proto* for the :const:`AF_PACKET` family in order to
+   capture every packet.
 
-   .. availability:: Linux
+   For more information you can consult the Linux documentation
+   :manpage:`packet(7)`.
+
+   .. availability:: Linux.
 
    .. versionadded:: 3.12
 
@@ -646,6 +644,18 @@ Constants
    .. availability:: Windows.
 
    .. versionadded:: 3.12
+
+.. _socket-ethernet-types:
+
+.. data:: ETHERTYPE_ARP
+          ETHERTYPE_IP
+          ETHERTYPE_IPV6
+          ETHERTYPE_VLAN
+
+   IEEE 802.3 protocol numbers.
+
+   .. versionadded:: 3.12
+
 
 Functions
 ^^^^^^^^^
