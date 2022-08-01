@@ -218,6 +218,13 @@ extern void _Py_PrintReferenceAddresses(FILE *);
 #endif
 
 static inline PyObject **
+_PyObject_GET_BASIC_WEAKREFS_LISTPTR(PyObject *op)
+{
+    Py_ssize_t offset = Py_TYPE(op)->tp_weaklistoffset;
+    return (PyObject **)((char *)op + offset);
+}
+
+static inline PyObject **
 _PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
 {
     if (PyType_Check(op) &&
@@ -226,8 +233,7 @@ _PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
                                                         (PyTypeObject *)op);
         return _PyStaticType_GET_WEAKREFS_LISTPTR(state);
     }
-    Py_ssize_t offset = Py_TYPE(op)->tp_weaklistoffset;
-    return (PyObject **)((char *)op + offset);
+    return _PyObject_GET_BASIC_WEAKREFS_LISTPTR(op);
 }
 
 // Fast inlined version of PyObject_IS_GC()
