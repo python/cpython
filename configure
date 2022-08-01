@@ -1060,6 +1060,7 @@ with_system_expat
 with_system_ffi
 with_system_libmpdec
 with_decimal_contextvar
+with_sqlite3_rpath
 enable_loadable_sqlite_extensions
 with_dbmliborder
 enable_ipv6
@@ -1847,6 +1848,10 @@ Optional Packages:
   --with-decimal-contextvar
                           build _decimal module using a coroutine-local rather
                           than a thread-local context (default is yes)
+  --with-sqlite3-rpath=[DIR|auto|no]
+                          Set runtime library directory (rpath) for SQLite
+                          libraries, no (default): do not set rpath, auto:
+                          auto-detect rpath, DIR: set an explicit rpath.
   --with-dbmliborder=db1:db2:...
                           override order to check db backends for dbm; a valid
                           value is a colon separated string with the backend
@@ -1879,8 +1884,7 @@ Optional Packages:
   --with-openssl-rpath=[DIR|auto|no]
                           Set runtime library directory (rpath) for OpenSSL
                           libraries, no (default): do not set rpath, auto:
-                          auto-detect rpath from --with-openssl and
-                          pkg-config, DIR: set an explicit rpath
+                          auto-detect rpath, DIR: set an explicit rpath.
   --with-ssl-default-suites=[python|openssl|STRING]
                           override default cipher suites string, python: use
                           Python's preferred selection (default), openssl:
@@ -13057,6 +13061,50 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
       have_supported_sqlite3=yes
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-sqlite3-rpath" >&5
+$as_echo_n "checking for --with-sqlite3-rpath... " >&6; }
+
+# Check whether --with-sqlite3-rpath was given.
+if test "${with_sqlite3_rpath+set}" = set; then :
+  withval=$with_sqlite3_rpath;
+else
+  with_sqlite3_rpath=no
+fi
+
+case $with_sqlite3_rpath in #(
+  auto|yes) :
+
+    SQLITE3_RPATH=auto
+        for arg in "$SQLITE3_LDFLAGS"; do
+      case $arg in #(
+  -L*) :
+    SQLITE3_LDFLAGS_RPATH="$SQLITE3_LDFLAGS_RPATH ${rpath_arg}$(echo $arg | cut -c3-)"
+       ;; #(
+  *) :
+     ;;
+esac
+    done
+   ;; #(
+  no) :
+    SQLITE3_RPATH= ;; #(
+  *) :
+
+    if test -d "$with_sqlite3_rpath"; then :
+
+        SQLITE3_RPATH="$with_sqlite3_rpath"
+        SQLITE3_LDFLAGS_RPATH="${rpath_arg}$with_sqlite3_rpath"
+
+else
+  as_fn_error $? "$with_rpath_op \"$with_sqlite3_rpath\" is not a directory" "$LINENO" 5
+
+fi
+
+ ;;
+esac
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $SQLITE3_RPATH" >&5
+$as_echo "$SQLITE3_RPATH" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_bind_double in -lsqlite3" >&5
@@ -26936,7 +26984,7 @@ fi
   if test "x$py_cv_module__sqlite3" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__SQLITE3_CFLAGS=$LIBSQLITE3_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SQLITE3_LDFLAGS=$LIBSQLITE3_LIBS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SQLITE3_LDFLAGS=$LIBSQLITE3_LIBS $SQLITE3_LDFLAGS_RPATH$as_nl"
 
 fi
    if test "$py_cv_module__sqlite3" = yes; then

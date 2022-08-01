@@ -112,8 +112,8 @@ AC_ARG_WITH([$1-rpath], [dnl
 AS_HELP_STRING([--with-$1-rpath=@<:@DIR|auto|no@:>@], [
   Set runtime library directory (rpath) for $2 libraries,
   no (default): do not set rpath,
-  auto: auto-detect rpath from --with-$1 and pkg-config,
-  DIR: set an explicit rpath
+  auto: auto-detect rpath,
+  DIR: set an explicit rpath.
 ])], [], [AS_VAR_SET([with_var], [no])])
 AS_CASE($with_var,
   [auto|yes], [
@@ -3899,6 +3899,8 @@ dnl hence CPPFLAGS instead of CFLAGS.
     ], [
       have_supported_sqlite3=yes
 
+      PY_CHECK_RPATH([sqlite3], [SQLite])
+
       dnl Check that required functions are in place. A lot of stuff may be
       dnl omitted with SQLITE_OMIT_* compile time defines.
       PY_CHECK_SQLITE_FUNC([sqlite3_bind_double])
@@ -7224,7 +7226,7 @@ PY_STDLIB_MOD([nis],
 PY_STDLIB_MOD([_sqlite3],
   [test "$have_sqlite3" = "yes"],
   [test "$have_supported_sqlite3" = "yes"],
-  [$LIBSQLITE3_CFLAGS], [$LIBSQLITE3_LIBS])
+  [$LIBSQLITE3_CFLAGS], [$LIBSQLITE3_LIBS $SQLITE3_LDFLAGS_RPATH])
 PY_STDLIB_MOD([_tkinter],
   [], [test "$have_tcltk" = "yes"],
   [$TCLTK_CFLAGS], [$TCLTK_LIBS])
