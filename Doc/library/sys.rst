@@ -544,7 +544,7 @@ always available.
    .. versionchanged:: 3.11
       Added the ``safe_path`` attribute for :option:`-P` option.
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.11
       Added ``intmaxdigits`` attribute
 
 
@@ -1332,7 +1332,7 @@ always available.
    Set global interpreter limit for :ref:`int maximum digits limitation
    <intmaxdigits>`. See also :func:`getintmaxdigits`
 
-   .. versionadded:: 3.9
+   .. versionadded:: 3.11
 
 .. function:: setprofile(profilefunc)
 

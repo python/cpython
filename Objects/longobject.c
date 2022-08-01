@@ -6153,7 +6153,7 @@ PyLong_GetInfo(void)
                               PyLong_FromLong(sizeof(digit)));
     PyStructSequence_SET_ITEM(int_info, field++,
                               PyLong_FromLong(_PY_LONG_DEFAULT_MAX_DIGITS));
-        PyStructSequence_SET_ITEM(int_info, field++,
+    PyStructSequence_SET_ITEM(int_info, field++,
                               PyLong_FromLong(_PY_LONG_MAX_DIGITS_THRESHOLD));
     if (PyErr_Occurred()) {
         Py_CLEAR(int_info);
