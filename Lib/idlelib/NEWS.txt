@@ -4,6 +4,9 @@ Released on 2022-10-03
 =========================
 
 
+gh-95511: Fix the Shell context menu copy-with-prompts bug of copying
+an extra line when one selects whole lines.
+
 gh-95471: Tweak Edit menu. Move 'Select All' above 'Cut' as it is used
 with 'Cut' and 'Copy' but not 'Paste'.  Add a separator between 'Replace'
 and 'Go to Line' to help IDLE issue triagers.
