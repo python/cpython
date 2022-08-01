@@ -144,8 +144,7 @@ class FlowControlMixin(protocols.Protocol):
         if self._loop.get_debug():
             logger.debug("%r resumes writing", self)
 
-        while self._drain_waiters:
-            waiter = self._drain_waiters.popleft()
+        for waiter in self._drain_waiters:
             if not waiter.done():
                 waiter.set_result(None)
 
@@ -155,8 +154,7 @@ class FlowControlMixin(protocols.Protocol):
         if not self._paused:
             return
 
-        while self._drain_waiters:
-            waiter = self._drain_waiters.popleft()
+        for waiter in self._drain_waiters:
             if not waiter.done():
                 if exc is None:
                     waiter.set_result(None)
