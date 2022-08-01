@@ -60,7 +60,7 @@ class PwdTest(unittest.TestCase):
         self.assertRaises(TypeError, pwd.getpwnam, 42)
         self.assertRaises(TypeError, pwd.getpwall, 42)
         # embedded null character
-        self.assertRaises(ValueError, pwd.getpwnam, 'a\x00b')
+        self.assertRaisesRegex(ValueError, 'null', pwd.getpwnam, 'a\x00b')
 
         # try to get some errors
         bynames = {}
