@@ -1878,7 +1878,7 @@ Optional Packages:
   --with-openssl=DIR      root of the OpenSSL directory
   --with-openssl-rpath=[DIR|auto|no]
                           Set runtime library directory (rpath) for OpenSSL
-                          libraries, no (default): don't set rpath, auto:
+                          libraries, no (default): do not set rpath, auto:
                           auto-detect rpath from --with-openssl and
                           pkg-config, DIR: set an explicit rpath
   --with-ssl-default-suites=[python|openssl|STRING]
@@ -13045,6 +13045,7 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
       have_supported_sqlite3=yes
+
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_bind_double in -lsqlite3" >&5
 $as_echo_n "checking for sqlite3_bind_double in -lsqlite3... " >&6; }
@@ -24683,16 +24684,18 @@ rm -f core conftest.err conftest.$ac_objext \
 
 
 
-# rpath to libssl and libcrypto
 if test "x$GNULD" = xyes; then :
 
-  rpath_arg="-Wl,--enable-new-dtags,-rpath="
+  rpath_arg="-Wl,--enable-new-dtags,-rpath,"
 
 else
 
-  rpath_arg="-Wl,-rpath="
+  rpath_arg="-Wl,-rpath,"
 
 fi
+
+
+
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-openssl-rpath" >&5
 $as_echo_n "checking for --with-openssl-rpath... " >&6; }
@@ -24702,33 +24705,34 @@ if test "${with_openssl_rpath+set}" = set; then :
   withval=$with_openssl_rpath;
 else
   with_openssl_rpath=no
-
 fi
 
 case $with_openssl_rpath in #(
   auto|yes) :
 
-      OPENSSL_RPATH=auto
-            for arg in "$OPENSSL_LDFLAGS"; do
-        case $arg in #(
+    OPENSSL_RPATH=auto
+        for arg in "$OPENSSL_LDFLAGS"; do
+      case $arg in #(
   -L*) :
     OPENSSL_LDFLAGS_RPATH="$OPENSSL_LDFLAGS_RPATH ${rpath_arg}$(echo $arg | cut -c3-)"
-         ;; #(
+       ;; #(
   *) :
      ;;
 esac
-      done
-     ;; #(
+    done
+   ;; #(
   no) :
     OPENSSL_RPATH= ;; #(
   *) :
+
     if test -d "$with_openssl_rpath"; then :
 
-          OPENSSL_RPATH="$with_openssl_rpath"
-          OPENSSL_LDFLAGS_RPATH="${rpath_arg}$with_openssl_rpath"
+        OPENSSL_RPATH="$with_openssl_rpath"
+        OPENSSL_LDFLAGS_RPATH="${rpath_arg}$with_openssl_rpath"
 
 else
-  as_fn_error $? "--with-openssl-rpath \"$with_openssl_rpath\" is not a directory" "$LINENO" 5
+  as_fn_error $? "$with_rpath_op \"$with_openssl_rpath\" is not a directory" "$LINENO" 5
+
 fi
 
  ;;

@@ -3846,6 +3846,7 @@ dnl hence CPPFLAGS instead of CFLAGS.
       ], [])
     ], [
       have_supported_sqlite3=yes
+
       dnl Check that required functions are in place. A lot of stuff may be
       dnl omitted with SQLITE_OMIT_* compile time defines.
       PY_CHECK_SQLITE_FUNC([sqlite3_bind_double])
@@ -6750,45 +6751,59 @@ WITH_SAVE_ENV([
 # Check for usable OpenSSL
 AX_CHECK_OPENSSL([have_openssl=yes],[have_openssl=no])
 
-# rpath to libssl and libcrypto
+dnl Linker args for rpath.
+dnl Clang does not support '=', so we use ',' to separate args.
 AS_VAR_IF([GNULD], [yes], [
-  rpath_arg="-Wl,--enable-new-dtags,-rpath="
+  rpath_arg="-Wl,--enable-new-dtags,-rpath,"
 ], [
-  rpath_arg="-Wl,-rpath="
+  rpath_arg="-Wl,-rpath,"
 ])
 
-AC_MSG_CHECKING(for --with-openssl-rpath)
-AC_ARG_WITH(openssl-rpath,
-    AS_HELP_STRING([--with-openssl-rpath=@<:@DIR|auto|no@:>@],
-                   [Set runtime library directory (rpath) for OpenSSL libraries,
-                    no (default): don't set rpath,
-                    auto: auto-detect rpath from --with-openssl and pkg-config,
-                    DIR: set an explicit rpath
-                   ]),
-    [],
-    [with_openssl_rpath=no]
+dnl Helper for adding rpath arguments
+dnl PY_CHECK_RPATH([lib], [name])
+AC_DEFUN([PY_CHECK_RPATH], [
+AS_VAR_PUSHDEF([with_var], [with_$1_rpath])dnl
+AS_VAR_PUSHDEF([ldflags_var], m4_toupper([$1_ldflags]))dnl
+AS_VAR_PUSHDEF([rpath_var], m4_toupper([$1_ldflags_rpath]))dnl
+AS_VAR_PUSHDEF([res_var], m4_toupper([$1_rpath]))dnl
+dnl
+AC_MSG_CHECKING([for --with-$1-rpath])
+AC_ARG_WITH([$1-rpath], [dnl
+AS_HELP_STRING([--with-$1-rpath=@<:@DIR|auto|no@:>@], [
+  Set runtime library directory (rpath) for $2 libraries,
+  no (default): do not set rpath,
+  auto: auto-detect rpath from --with-$1 and pkg-config,
+  DIR: set an explicit rpath
+])], [], [AS_VAR_SET([with_var], [no])])
+AS_CASE($with_var,
+  [auto|yes], [
+    res_var=auto
+    dnl look for linker directories
+    for arg in "$ldflags_var"; do
+      AS_CASE([$arg],
+        [-L*], [rpath_var="$rpath_var ${rpath_arg}$(echo $arg | cut -c3-)"]
+      )
+    done
+  ],
+  [no], [res_var=],
+  [
+    AS_IF(
+      [test -d "$with_var"], [
+        res_var="$with_var"
+        rpath_var="${rpath_arg}$with_var"
+      ],
+      AC_MSG_ERROR([$with_rpath_op "$with_var" is not a directory])
+    )
+  ]
 )
-AS_CASE($with_openssl_rpath,
-    [auto|yes], [
-      OPENSSL_RPATH=auto
-      dnl look for linker directories
-      for arg in "$OPENSSL_LDFLAGS"; do
-        AS_CASE([$arg],
-          [-L*], [OPENSSL_LDFLAGS_RPATH="$OPENSSL_LDFLAGS_RPATH ${rpath_arg}$(echo $arg | cut -c3-)"]
-        )
-      done
-    ],
-    [no], [OPENSSL_RPATH=],
-    [AS_IF(
-        [test -d "$with_openssl_rpath"],
-        [
-          OPENSSL_RPATH="$with_openssl_rpath"
-          OPENSSL_LDFLAGS_RPATH="${rpath_arg}$with_openssl_rpath"
-        ],
-        AC_MSG_ERROR([--with-openssl-rpath "$with_openssl_rpath" is not a directory]))
-    ]
-)
-AC_MSG_RESULT($OPENSSL_RPATH)
+AC_MSG_RESULT($res_var)dnl
+AS_VAR_POPDEF([res_var])dnl
+AS_VAR_POPDEF([ldflags_var])dnl
+AS_VAR_POPDEF([rpath_var])dnl
+AS_VAR_POPDEF([with_var])dnl
+])
+
+PY_CHECK_RPATH([openssl], [OpenSSL])
 
 # This static linking is NOT OFFICIALLY SUPPORTED and not advertised.
 # Requires static OpenSSL build with position-independent code. Some features
