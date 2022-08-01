@@ -690,7 +690,7 @@ of the OpenSSL license here::
      * 3. All advertising materials mentioning features or use of this
      *    software must display the following acknowledgment:
      *    "This product includes software developed by the OpenSSL Project
-     *    for use in the OpenSSL Toolkit. (https://www.openssl.org/)"
+     *    for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
      *
      * 4. The names "OpenSSL Toolkit" and "OpenSSL Project" must not be used to
      *    endorse or promote products derived from this software without
@@ -704,7 +704,7 @@ of the OpenSSL license here::
      * 6. Redistributions of any form whatsoever must retain the following
      *    acknowledgment:
      *    "This product includes software developed by the OpenSSL Project
-     *    for use in the OpenSSL Toolkit (https://www.openssl.org/)"
+     *    for use in the OpenSSL Toolkit (http://www.openssl.org/)"
      *
      * THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
      * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
