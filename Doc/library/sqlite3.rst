@@ -1320,6 +1320,9 @@ The exception hierarchy is defined by the DB-API 2.0 (:pep:`249`).
    Use this to catch all errors with one single :keyword:`except` statement.
    ``Error`` is a subclass of :exc:`Exception`.
 
+   If the exception originated from within the SQLite library,
+   the following two attributes are added to the exception:
+
    .. attribute:: sqlite_errorcode
 
       The numeric error code from the
