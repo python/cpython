@@ -667,6 +667,7 @@ PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
              * zero return value to SSL_ERROR_SSL with a special error code. */
             if (ERR_GET_LIB(e) == ERR_LIB_SSL &&
                     ERR_GET_REASON(e) == SSL_R_UNEXPECTED_EOF_WHILE_READING) {
+                p = PY_SSL_ERROR_EOF;
                 type = state->PySSLEOFErrorObject;
                 errstr = "EOF occurred in violation of protocol";
             }
