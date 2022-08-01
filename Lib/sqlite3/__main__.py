@@ -27,12 +27,6 @@ class SqliteInteractiveConsole(InteractiveConsole):
         self._con = connection
         self._cur = connection.cursor()
 
-    def runsql(self, sql):
-        if not sqlite3.complete_statement(sql):
-            return True
-        execute(self._cur, sql)
-        return False
-
     def runsource(self, source, filename="<input>", symbol="single"):
         match source:
             case ".version":
@@ -42,7 +36,9 @@ class SqliteInteractiveConsole(InteractiveConsole):
             case ".quit":
                 sys.exit(0)
             case _:
-                return self.runsql(source)
+                if not sqlite3.complete_statement(source):
+                    return True
+                execute(self._cur, source)
         return False
 
 
