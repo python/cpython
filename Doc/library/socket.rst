@@ -182,8 +182,10 @@ created.  Socket addresses are represented as follows:
   ``(ifname, proto[, pkttype[, hatype[, addr]]])`` where:
 
   - *ifname* - String specifying the device name.
-  - *proto* - An in network-byte-order integer specifying the Ethernet
-    protocol number. May be one of :ref:`ETHERTYPE_* constants <socket-ethernet-types>` or any other Ethernet protocol number.
+  - *proto* - The Ethernet protocol number. May be one of
+    :ref:`ETHERTYPE_* constants <socket-ethernet-types>`
+    or any other Ethernet protocol number.
+    In both cases, values must be in network-byte-order.
   - *pkttype* - Optional integer specifying the packet type:
 
     - ``PACKET_HOST`` (the default) - Packet addressed to the local host.
