@@ -87,7 +87,7 @@ one row, with one column.
 Now, let us insert three more rows of data,
 using :meth:`~Cursor.executemany`.
 We use :ref:`question mark placeholders <sqlite3-placeholders>`
-to bind ``data`` to the SQL statement.
+to bind ``data`` to the SQL statement::
 
    >>> data = [
    ...    ('2006-03-28', 'BUY', 'IBM', 1000, 45.0),
