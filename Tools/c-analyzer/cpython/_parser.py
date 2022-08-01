@@ -71,6 +71,7 @@ Python/dynload_dl.c             # dl.h
 Python/dynload_hpux.c           # dl.h
 Python/thread_pthread.h
 Python/emscripten_signal.c
+Python/thread_pthread_stubs.h
 
 # only huge constants (safe but parsing is slow)
 Modules/_blake2/impl/blake2-kat.h
