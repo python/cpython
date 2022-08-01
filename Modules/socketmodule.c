@@ -247,6 +247,10 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #include <net/if.h>
 #endif
 
+#ifdef HAVE_NET_ETHERNET_H
+#include <net/ethernet.h>
+#endif
+
 /* Generic socket object definitions and includes */
 #define PySocket_BUILDING_SOCKET
 #include "socketmodule.h"
@@ -7711,7 +7715,11 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, ALG_OP_VERIFY);
 #endif
 
-/* Ethernet Protocol ID's */
+/* 
+ * Ethernet Protocol ID's 
+ * There are many ID's - only most popular ones in a standard network
+ * are used.
+ */
 #ifdef ETH_P_8021AD
     PyModule_AddIntMacro(m, ETH_P_8021AD);
 #endif
