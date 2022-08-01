@@ -1320,6 +1320,9 @@ The exception hierarchy is defined by the DB-API 2.0 (:pep:`249`).
    Use this to catch all errors with one single :keyword:`except` statement.
    ``Error`` is a subclass of :exc:`Exception`.
 
+   If the exception originated from within the SQLite library,
+   the following two attributes are added to the exception:
+
    .. attribute:: sqlite_errorcode
 
       The numeric error code from the
@@ -1437,6 +1440,26 @@ store additional Python types in an SQLite database via
 :ref:`object adapters <sqlite3-adapters>`,
 and you can let the ``sqlite3`` module convert SQLite types to
 Python types via :ref:`converters <sqlite3-converters>`.
+
+
+.. _sqlite3-cli:
+
+Command-line interface
+^^^^^^^^^^^^^^^^^^^^^^
+
+The ``sqlite3`` module can be invoked as a script
+in order to provide a simple SQLite shell.
+Type ``.quit`` or CTRL-D to exit the shell.
+
+.. program:: python -m sqlite3 [-h] [-v] [filename] [sql]
+
+.. option:: -h, --help
+    Print CLI help.
+
+.. option:: -v, --version
+    Print underlying SQLite library version.
+
+.. versionadded:: 3.12
 
 
 .. _sqlite3-howtos:
