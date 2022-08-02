@@ -219,7 +219,7 @@ struct _typeobject {
     PyObject *tp_mro; /* method resolution order */
     PyObject *tp_cache;
     PyObject *tp_subclasses;
-    PyObject *tp_weaklist;
+    PyObject *tp_weaklist; /* not used for static builtin types */
     destructor tp_del;
 
     /* Type attribute cache version tag. Added in version 2.6 */
@@ -510,3 +510,7 @@ Py_DEPRECATED(3.11) typedef int UsingDeprecatedTrashcanMacro;
 #define Py_TRASHCAN_SAFE_END(op) \
         Py_TRASHCAN_END; \
     } while(0);
+
+
+PyAPI_FUNC(int) _PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg);
+PyAPI_FUNC(void) _PyObject_ClearManagedDict(PyObject *obj);

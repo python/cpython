@@ -220,6 +220,12 @@ extern void _Py_PrintReferenceAddresses(FILE *);
 static inline PyObject **
 _PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
 {
+    if (PyType_Check(op) &&
+            ((PyTypeObject *)op)->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        static_builtin_state *state = _PyStaticType_GetState(
+                                                        (PyTypeObject *)op);
+        return _PyStaticType_GET_WEAKREFS_LISTPTR(state);
+    }
     Py_ssize_t offset = Py_TYPE(op)->tp_weaklistoffset;
     return (PyObject **)((char *)op + offset);
 }
@@ -268,24 +274,49 @@ extern int _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
 PyObject * _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
                                         PyObject *name);
 
-static inline PyDictValues **_PyObject_ValuesPointer(PyObject *obj)
+typedef union {
+    PyObject *dict;
+    /* Use a char* to generate a warning if directly assigning a PyDictValues */
+    char *values;
+} PyDictOrValues;
+
+static inline PyDictOrValues *
+_PyObject_DictOrValuesPointer(PyObject *obj)
 {
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-    return ((PyDictValues **)obj)-4;
+    return ((PyDictOrValues *)obj)-3;
 }
 
-static inline PyObject **_PyObject_ManagedDictPointer(PyObject *obj)
+static inline int
+_PyDictOrValues_IsValues(PyDictOrValues dorv)
 {
-    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-    return ((PyObject **)obj)-3;
+    return ((uintptr_t)dorv.values) & 1;
+}
+
+static inline PyDictValues *
+_PyDictOrValues_GetValues(PyDictOrValues dorv)
+{
+    assert(_PyDictOrValues_IsValues(dorv));
+    return (PyDictValues *)(dorv.values + 1);
+}
+
+static inline PyObject *
+_PyDictOrValues_GetDict(PyDictOrValues dorv)
+{
+    assert(!_PyDictOrValues_IsValues(dorv));
+    return dorv.dict;
+}
+
+static inline void
+_PyDictOrValues_SetValues(PyDictOrValues *ptr, PyDictValues *values)
+{
+    ptr->values = ((char *)values) - 1;
 }
 
 #define MANAGED_DICT_OFFSET (((int)sizeof(PyObject *))*-3)
 
-extern PyObject ** _PyObject_DictPointer(PyObject *);
-extern int _PyObject_VisitInstanceAttributes(PyObject *self, visitproc visit, void *arg);
-extern void _PyObject_ClearInstanceAttributes(PyObject *self);
-extern void _PyObject_FreeInstanceAttributes(PyObject *self);
+extern PyObject ** _PyObject_ComputedDictPointer(PyObject *);
+extern void _PyObject_FreeInstanceAttributes(PyObject *obj);
 extern int _PyObject_IsInstanceDictEmpty(PyObject *);
 extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
 

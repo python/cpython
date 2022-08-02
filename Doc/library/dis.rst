@@ -449,7 +449,7 @@ result back on the stack.
 **Binary and in-place operations**
 
 In the following, TOS is the top-of-stack.
-TOS1, TOS2, TOS3 are the second, thrid and fourth items on the stack, respectively.
+TOS1, TOS2, TOS3 are the second, third and fourth items on the stack, respectively.
 
 Binary operations remove the top two items from the stack (TOS and TOS1).
 They perform the operation, then put the result back on the stack.
