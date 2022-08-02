@@ -427,6 +427,9 @@ Porting to Python 3.12
   using the existing public C-API instead, or, if necessary, the
   (internal-only) ``_PyObject_GET_WEAKREFS_LISTPTR()`` macro.
 
+* Fixed wrong sign placement in ``PyUnicode_FromFormat``.
+  (Contributed by Philip Georgi in :gh:`95505`.)
+
 Deprecated
 ----------
 
