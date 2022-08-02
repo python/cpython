@@ -1454,10 +1454,12 @@ Type ``.quit`` or CTRL-D to exit the shell.
 .. program:: python -m sqlite3 [-h] [-v] [filename] [sql]
 
 .. option:: -h, --help
-    Print CLI help.
+
+   Print CLI help.
 
 .. option:: -v, --version
-    Print underlying SQLite library version.
+
+   Print underlying SQLite library version.
 
 .. versionadded:: 3.12
 
