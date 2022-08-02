@@ -149,12 +149,12 @@ static struct jump_target_label_ NO_LABEL = {NULL};
 #define IS_LABEL(L) (!SAME_LABEL((L), (NO_LABEL)))
 
 #define NEW_JUMP_TARGET_LABEL(C, NAME) \
-    jump_target_label NAME = {compiler_new_block(C)}; \
+    jump_target_label NAME = {cfg_builder_new_block(CFG_BUILDER(C))}; \
     if (!IS_LABEL(NAME)) { \
         return 0; \
     }
 
-#define USE_LABEL(C, LBL)  compiler_use_next_block(C, (LBL).block)
+#define USE_LABEL(C, LBL) cfg_builder_use_label(CFG_BUILDER(C), LBL)
 
 struct instr {
     int i_opcode;
@@ -354,6 +354,8 @@ typedef struct cfg_builder_ {
     basicblock *block_list;
     /* pointer to the block currently being constructed */
     basicblock *curblock;
+    /* label for the next instruction to be placed */
+    jump_target_label g_current_label;
 } cfg_builder;
 
 /* The following items change on entry and exit of code blocks.
@@ -449,6 +451,7 @@ typedef struct {
 
 static int basicblock_next_instr(basicblock *);
 
+static int cfg_builder_maybe_start_new_block(cfg_builder *g);
 static int cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, struct location loc);
 
 static void compiler_free(struct compiler *);
@@ -886,16 +889,11 @@ cfg_builder_use_next_block(cfg_builder *g, basicblock *block)
     return block;
 }
 
-static basicblock *
-compiler_new_block(struct compiler *c)
+static int
+cfg_builder_use_label(cfg_builder *g, jump_target_label lbl)
 {
-    return cfg_builder_new_block(CFG_BUILDER(c));
-}
-
-static basicblock *
-compiler_use_next_block(struct compiler *c, basicblock *block)
-{
-    return cfg_builder_use_next_block(CFG_BUILDER(c), block);
+    g->g_current_label = lbl;
+    return cfg_builder_maybe_start_new_block(g);
 }
 
 static basicblock *
@@ -1299,17 +1297,42 @@ basicblock_addop(basicblock *b, int opcode, int oparg,
     return 1;
 }
 
-static int
-cfg_builder_addop(cfg_builder *g, int opcode, int oparg, jump_target_label target,
-                  struct location loc)
+static bool
+cfg_builder_current_block_is_terminated(cfg_builder *g)
 {
+    if (IS_LABEL(g->g_current_label)) {
+        return true;
+    }
     struct instr *last = basicblock_last_instr(g->curblock);
-    if (last && IS_TERMINATOR_OPCODE(last->i_opcode)) {
-        basicblock *b = cfg_builder_new_block(g);
+    return last && IS_TERMINATOR_OPCODE(last->i_opcode);
+}
+
+static int
+cfg_builder_maybe_start_new_block(cfg_builder *g)
+{
+    if (cfg_builder_current_block_is_terminated(g)) {
+        basicblock *b;
+        if (IS_LABEL(g->g_current_label)) {
+            b = g->g_current_label.block;
+            g->g_current_label = NO_LABEL;
+        }
+        else {
+            b = cfg_builder_new_block(g);
+        }
         if (b == NULL) {
             return -1;
         }
         cfg_builder_use_next_block(g, b);
+    }
+    return 0;
+}
+
+static int
+cfg_builder_addop(cfg_builder *g, int opcode, int oparg, jump_target_label target,
+                  struct location loc)
+{
+    if (cfg_builder_maybe_start_new_block(g) != 0) {
+        return -1;
     }
     return basicblock_addop(g->curblock, opcode, oparg, target, loc);
 }
@@ -1765,6 +1788,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     if (block == NULL)
         return 0;
     g->curblock = g->cfg_entryblock = block;
+    g->g_current_label = NO_LABEL;
 
     if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
         c->u->u_loc.lineno = 0;
