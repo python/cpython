@@ -33,6 +33,7 @@ level :mod:`_thread` module.  See also the :mod:`queue` module.
    However, threading is still an appropriate model if you want to run
    multiple I/O-bound tasks simultaneously.
 
+.. include:: ../includes/wasm-notavail.rst
 
 This module defines the following functions:
 
