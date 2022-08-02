@@ -26,7 +26,7 @@ is a lightweight data interchange format inspired by
 .. warning::
    Be cautious when parsing JSON data from untrusted sources. A malicious
    JSON string may cause the decoder to consume considerable CPU and memory
-   resources. It's advised to limit the input to a sensible length.
+   resources.
 
 :mod:`json` exposes an API familiar to users of the standard library
 :mod:`marshal` and :mod:`pickle` modules.
