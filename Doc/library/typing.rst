@@ -1309,7 +1309,7 @@ These are not used in annotations. They are building blocks for creating generic
             return (*tup[1:], tup[0])
 
         # T is bound to int, Ts is bound to ()
-        # Return value is (1, ), which has type tuple[int]
+        # Return value is (1,), which has type tuple[int]
         move_first_element_to_last(tup=(1,))
 
         # T is bound to int, Ts is bound to (str,)
