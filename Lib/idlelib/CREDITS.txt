@@ -33,7 +33,7 @@ Major contributors since 2005:
 
 - 2005: Tal Einat
 - 2010: Terry Jan Reedy (current maintainer)
-- 2013: Roger Serwys and GSOC Phil Webster
+- 2013: Roger Serwys
 - 2014: Saimadhav Heblikar
 - 2015: Mark Roseman
 - 2017: Louie Lu, Cheryl Sabella, and Serhiy Storchaka
