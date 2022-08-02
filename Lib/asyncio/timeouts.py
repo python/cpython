@@ -6,6 +6,7 @@ from typing import final, Optional, Type
 from . import events
 from . import exceptions
 from . import tasks
+from . import mixins
 
 
 __all__ = (
@@ -24,7 +25,7 @@ class _State(enum.Enum):
 
 
 @final
-class Timeout:
+class Timeout(mixins._LoopBoundMixin):
 
     def __init__(self, when: Optional[float]) -> None:
         self._state = _State.CREATED
@@ -51,7 +52,9 @@ class Timeout:
         if when is None:
             self._timeout_handler = None
         else:
-            loop = events.get_running_loop()
+            # two asyncio event loops could be running on the same thread
+            # with different timers eg aioloop-proxy or interleaved asyncio.Runner
+            loop = self._task.get_loop()
             if when <= loop.time():
                 self._timeout_handler = loop.call_soon(self._on_timeout)
             else:
@@ -70,8 +73,10 @@ class Timeout:
         return f"<Timeout [{self._state.value}]{info_str}>"
 
     async def __aenter__(self) -> "Timeout":
+        loop = self._get_loop()
+        assert self._state is _State.CREATED
         self._state = _State.ENTERED
-        self._task = tasks.current_task()
+        self._task = tasks.current_task(loop)
         if self._task is None:
             raise RuntimeError("Timeout should be used inside a task")
         self.reschedule(self._when)
@@ -95,9 +100,12 @@ class Timeout:
             if self._task.uncancel() == 0 and exc_type is exceptions.CancelledError:
                 # Since there are no outstanding cancel requests, we're
                 # handling this.
+                # break a reference cycle: self._task.exception().__traceback__
+                self._task = None
                 raise TimeoutError
         elif self._state is _State.ENTERED:
             self._state = _State.EXITED
+            self._task = None
 
         return None
 

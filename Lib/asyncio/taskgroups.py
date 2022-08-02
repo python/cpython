@@ -6,15 +6,15 @@ __all__ = ["TaskGroup"]
 from . import events
 from . import exceptions
 from . import tasks
+from . import mixins
 
 
-class TaskGroup:
+class TaskGroup(mixins._LoopBoundMixin):
 
     def __init__(self):
         self._entered = False
         self._exiting = False
         self._aborting = False
-        self._loop = None
         self._parent_task = None
         self._parent_cancel_requested = False
         self._tasks = set()
@@ -37,15 +37,13 @@ class TaskGroup:
         return f'<TaskGroup{info_str}>'
 
     async def __aenter__(self):
+        loop = self._get_loop()
         if self._entered:
             raise RuntimeError(
                 f"TaskGroup {self!r} has been already entered")
         self._entered = True
 
-        if self._loop is None:
-            self._loop = events.get_running_loop()
-
-        self._parent_task = tasks.current_task(self._loop)
+        self._parent_task = tasks.current_task(loop)
         if self._parent_task is None:
             raise RuntimeError(
                 f'TaskGroup {self!r} cannot determine the parent task')
@@ -90,7 +88,7 @@ class TaskGroup:
         # our own cancellation is already in progress)
         while self._tasks:
             if self._on_completed_fut is None:
-                self._on_completed_fut = self._loop.create_future()
+                self._on_completed_fut = self._parent_task.get_loop().create_future()
 
             try:
                 await self._on_completed_fut
@@ -124,14 +122,17 @@ class TaskGroup:
             self._errors.append(exc)
 
         if self._errors:
-            # Exceptions are heavy objects that can have object
-            # cycles (bad for GC); let's not keep a reference to
-            # a bunch of them.
-            errors = self._errors
-            self._errors = None
-
-            me = BaseExceptionGroup('unhandled errors in a TaskGroup', errors)
-            raise me from None
+            try:
+                raise BaseExceptionGroup('unhandled errors in a TaskGroup', self._errors) from None
+            finally:
+                # Exceptions are heavy objects that can have object
+                # cycles (bad for GC); let's not keep a reference to
+                # a bunch of them.
+                self._errors = None
+                # If our EG raises out the top of our parent task
+                # we need to break a reference cycle of
+                # self._parent_task.exception().__traceback__
+                self._parent_task = None
 
     def create_task(self, coro, *, name=None, context=None):
         if not self._entered:
@@ -141,9 +142,9 @@ class TaskGroup:
         if self._aborting:
             raise RuntimeError(f"TaskGroup {self!r} is shutting down")
         if context is None:
-            task = self._loop.create_task(coro)
+            task = self._parent_task.get_loop().create_task(coro)
         else:
-            task = self._loop.create_task(coro, context=context)
+            task = self._parent_task.get_loop().create_task(coro, context=context)
         tasks._set_task_name(task, name)
         task.add_done_callback(self._on_task_done)
         self._tasks.add(task)
@@ -185,7 +186,7 @@ class TaskGroup:
         if self._parent_task.done():
             # Not sure if this case is possible, but we want to handle
             # it anyways.
-            self._loop.call_exception_handler({
+            self._parent_task.get_loop().call_exception_handler({
                 'message': f'Task {task!r} has errored out but its parent '
                            f'task {self._parent_task} is already completed',
                 'exception': exc,
