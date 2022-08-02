@@ -3078,7 +3078,7 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type)
     if (ctx->add_dict && ctx->base->tp_itemsize == 0) {
         assert((type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
         type->tp_flags |= Py_TPFLAGS_MANAGED_DICT;
-        type->tp_dictoffset = -type->tp_basicsize - (Py_ssize_t)sizeof(PyObject *)*3;
+        type->tp_dictoffset = -slotoffset - (Py_ssize_t)sizeof(PyObject *)*3;
     }
 
     type->tp_basicsize = slotoffset;
