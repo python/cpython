@@ -194,9 +194,10 @@ class RunPyMixin:
         ignore = {"VIRTUAL_ENV", "PY_PYTHON", "PY_PYTHON2", "PY_PYTHON3"}
         env = {
             **{k.upper(): v for k, v in os.environ.items() if k.upper() not in ignore},
-            **{k.upper(): v for k, v in (env or {}).items()},
+            "PYLAUNCHER_NO_SEARCH_PATH": "1",
             "PYLAUNCHER_DEBUG": "1",
             "PYLAUNCHER_DRYRUN": "1",
+            **{k.upper(): v for k, v in (env or {}).items()},
         }
         if not argv:
             argv = [self.py_exe, *args]
@@ -550,6 +551,20 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
         self.assertEqual("3.100", data["SearchInfo.tag"])
         self.assertEqual(f'X.Y.exe -prearg "{script}" -postarg', data["stdout"].strip())
+
+    def test_search_path(self):
+        stem = Path(sys.executable).stem
+        with self.py_ini(TEST_PY_COMMANDS):
+            with self.script(f"#! /usr/bin/env {stem} -prearg") as script:
+                data = self.run_py([script, "-postarg"], env={"PYLAUNCHER_NO_SEARCH_PATH": ""})
+        self.assertEqual(f"{sys.executable} -prearg {script} -postarg", data["stdout"].strip())
+
+    def test_recursive_search_path(self):
+        with self.py_ini(TEST_PY_COMMANDS):
+            with self.script("#! /usr/bin/env py") as script:
+                data = self.run_py([script], env={"PYLAUNCHER_NO_SEARCH_PATH": ""})
+        # The recursive search is ignored and we get normal "py" behavior
+        self.assertEqual(f"X.Y.exe {script}", data["stdout"].strip())
 
     def test_install(self):
         data = self.run_py(["-V:3.10"], env={"PYLAUNCHER_ALWAYS_INSTALL": "1"}, expect_returncode=111)
