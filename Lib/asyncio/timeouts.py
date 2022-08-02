@@ -52,8 +52,9 @@ class Timeout(mixins._LoopBoundMixin):
         if when is None:
             self._timeout_handler = None
         else:
-            # two asyncio event loops could be running on the same thread
-            # with different timers eg aioloop-proxy or interleaved asyncio.Runner
+            # we can't use get_running_loop() here because two event loops
+            # could be running on the same thread with different timers eg
+            # aioloop-proxy or interleaved asyncio.Runner
             loop = self._task.get_loop()
             if when <= loop.time():
                 self._timeout_handler = loop.call_soon(self._on_timeout)
