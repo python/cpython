@@ -297,7 +297,7 @@ _release_version = re.compile(r'([^0-9]+)'
 # and http://www.die.net/doc/linux/man/man1/lsb_release.1.html
 
 _supported_dists = (
-    'SuSE', 'debian', 'fedora', 'redhat', 'centos',
+    'SuSE', 'debian', 'fedora', 'redhat', 'centos', 'euleros',
     'mandrake', 'mandriva', 'rocks', 'slackware', 'yellowdog', 'gentoo',
     'UnitedLinux', 'turbolinux', 'arch', 'mageia')
 
@@ -367,6 +367,8 @@ def _linux_distribution(distname, version, id, supported_dists,
         return distname, version, id
     etc.sort()
     for file in etc:
+        if os.path.islink(os.path.join(_UNIXCONFDIR, file)):
+            continue
         m = _release_filename.match(file)
         if m is not None:
             _distname, dummy = m.groups()
