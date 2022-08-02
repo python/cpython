@@ -559,6 +559,14 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                 data = self.run_py([script, "-postarg"], env={"PYLAUNCHER_NO_SEARCH_PATH": ""})
         self.assertEqual(f"{sys.executable} -prearg {script} -postarg", data["stdout"].strip())
 
+    def test_search_path_exe(self):
+        # Leave the .exe on the name to ensure we don't add it a second time
+        name = Path(sys.executable).name
+        with self.py_ini(TEST_PY_COMMANDS):
+            with self.script(f"#! /usr/bin/env {name} -prearg") as script:
+                data = self.run_py([script, "-postarg"], env={"PYLAUNCHER_NO_SEARCH_PATH": ""})
+        self.assertEqual(f"{sys.executable} -prearg {script} -postarg", data["stdout"].strip())
+
     def test_recursive_search_path(self):
         with self.py_ini(TEST_PY_COMMANDS):
             with self.script("#! /usr/bin/env py") as script:
