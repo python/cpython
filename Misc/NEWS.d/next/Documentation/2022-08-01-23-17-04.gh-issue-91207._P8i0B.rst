@@ -1,0 +1,2 @@
+Fix stylesheet not working in Windows CHM htmlhelp docs.
+Contributed by C.A.M. Gerlach.
