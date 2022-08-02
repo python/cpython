@@ -635,9 +635,8 @@ specialize_dict_access(
         return 0;
     }
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
-    PyObject **dictptr = _PyObject_ManagedDictPointer(owner);
-    PyDictObject *dict = (PyDictObject *)*dictptr;
-    if (dict == NULL) {
+    PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
+    if (_PyDictOrValues_IsValues(dorv)) {
         // Virtual dictionary
         PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
         assert(PyUnicode_CheckExact(name));
@@ -652,7 +651,8 @@ specialize_dict_access(
         _Py_SET_OPCODE(*instr, values_op);
     }
     else {
-        if (!PyDict_CheckExact(dict)) {
+        PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
+        if (dict == NULL || !PyDict_CheckExact(dict)) {
             SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NO_DICT);
             return 0;
         }
@@ -995,9 +995,9 @@ PyObject *descr, DescriptorClassification kind)
     ObjectDictKind dictkind;
     PyDictKeysObject *keys;
     if (owner_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        PyObject *dict = *_PyObject_ManagedDictPointer(owner);
+        PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
         keys = ((PyHeapTypeObject *)owner_cls)->ht_cached_keys;
-        if (dict == NULL) {
+        if (_PyDictOrValues_IsValues(dorv)) {
             dictkind = MANAGED_VALUES;
         }
         else {

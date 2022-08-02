@@ -84,14 +84,15 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 .. c:function:: PyObject* PyLong_FromString(const char *str, char **pend, int base)
 
    Return a new :c:type:`PyLongObject` based on the string value in *str*, which
-   is interpreted according to the radix in *base*.  If *pend* is non-``NULL``,
-   *\*pend* will point to the first character in *str* which follows the
-   representation of the number.  If *base* is ``0``, *str* is interpreted using
-   the :ref:`integers` definition; in this case, leading zeros in a
-   non-zero decimal number raises a :exc:`ValueError`. If *base* is not ``0``,
-   it must be between ``2`` and ``36``, inclusive.  Leading spaces and single
-   underscores after a base specifier and between digits are ignored.  If there
-   are no digits, :exc:`ValueError` will be raised.
+   is interpreted according to the radix in *base*, or ``NULL`` on failure.  If
+   *pend* is non-``NULL``, *\*pend* will point to the end of *str* on success or
+   to the first character that could not be processed on error.  If *base* is ``0``,
+   *str* is interpreted using the :ref:`integers` definition; in this case, leading
+   zeros in a non-zero decimal number raises a :exc:`ValueError`.  If *base* is not
+   ``0``, it must be between ``2`` and ``36``, inclusive.  Leading and trailing
+   whitespace and single underscores after a base specifier and between digits are
+   ignored.  If there are no digits or *str* is not NULL-terminated following the
+   digits and trailing whitespace, :exc:`ValueError` will be raised.
 
 
 .. c:function:: PyObject* PyLong_FromUnicodeObject(PyObject *u, int base)
