@@ -279,7 +279,7 @@ static int test_pre_initialization_sys_options(void)
      * relying on the caller to keep the passed in strings alive.
      */
     const wchar_t *static_warnoption = L"once";
-    const wchar_t *static_xoption = L"utf8=1";
+    const wchar_t *static_xoption = L"also_not_an_option=2";
     size_t warnoption_len = wcslen(static_warnoption);
     size_t xoption_len = wcslen(static_xoption);
     wchar_t *dynamic_once_warnoption = \
@@ -298,7 +298,7 @@ static int test_pre_initialization_sys_options(void)
     PySys_AddWarnOption(L"module");
     PySys_AddWarnOption(L"default");
     _Py_EMBED_PREINIT_CHECK("Checking PySys_AddXOption\n");
-    PySys_AddXOption(L"dev=2");
+    PySys_AddXOption(L"not_an_option=1");
     PySys_AddXOption(dynamic_xoption);
 
     /* Delete the dynamic options early */
@@ -591,7 +591,7 @@ static int test_init_from_config(void)
         L"-W",
         L"cmdline_warnoption",
         L"-X",
-        L"dev",
+        L"cmdline_xoption",
         L"-c",
         L"pass",
         L"arg2",
@@ -599,9 +599,10 @@ static int test_init_from_config(void)
     config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
     config.parse_argv = 1;
 
-    wchar_t* xoptions[2] = {
-        L"dev=3",
-        L"utf8",
+    wchar_t* xoptions[3] = {
+        L"config_xoption1=3",
+        L"config_xoption2=",
+        L"config_xoption3",
     };
     config_set_wide_string_list(&config, &config.xoptions,
                                 Py_ARRAY_LENGTH(xoptions), xoptions);
@@ -1425,6 +1426,7 @@ fail:
 
 static int test_init_sys_add(void)
 {
+    PySys_AddXOption(L"sysadd_xoption");
     PySys_AddXOption(L"faulthandler");
     PySys_AddWarnOption(L"ignore:::sysadd_warnoption");
 
@@ -1436,14 +1438,14 @@ static int test_init_sys_add(void)
         L"-W",
         L"ignore:::cmdline_warnoption",
         L"-X",
-        L"utf8",
+        L"cmdline_xoption",
     };
     config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
     config.parse_argv = 1;
 
     PyStatus status;
     status = PyWideStringList_Append(&config.xoptions,
-                                     L"dev");
+                                     L"config_xoption");
     if (PyStatus_Exception(status)) {
         goto fail;
     }
