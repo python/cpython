@@ -8,6 +8,8 @@
 
 --------------
 
+.. include:: ../includes/wasm-notavail.rst
+
 Introduction
 ------------
 
