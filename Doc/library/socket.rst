@@ -654,7 +654,11 @@ Constants
           ETHERTYPE_IPV6
           ETHERTYPE_VLAN
 
-   IEEE 802.3 protocol numbers [1]_.
+   `IEEE 802.3 protocol number
+   <https://www.iana.org/assignments/ieee-802-numbers/ieee-802-numbers.txt>`_.
+   constants.
+
+.. availability:: Linux, FreeBSD, macOS.
 
    .. versionadded:: 3.12
 
@@ -2196,9 +2200,3 @@ the :data:`SO_REUSEADDR` flag tells the kernel to reuse a local socket in
    details of socket semantics.  For Unix, refer to the manual pages; for Windows,
    see the WinSock (or Winsock 2) specification.  For IPv6-ready APIs, readers may
    want to refer to :rfc:`3493` titled Basic Socket Interface Extensions for IPv6.
-
-
-.. rubric:: Footnotes
-
-.. [1] See
-   https://www.iana.org/assignments/ieee-802-numbers/ieee-802-numbers.txt
