@@ -869,10 +869,10 @@ as internal buffering of data.
    2: stderr), the new file descriptor is :ref:`inheritable
    <fd_inheritance>`.
 
+   .. availability:: not WASI.
+
    .. versionchanged:: 3.4
       The new file descriptor is now non-inheritable.
-
-   .. availability:: not WASI.
 
 
 .. function:: dup2(fd, fd2, inheritable=True)
@@ -882,13 +882,13 @@ as internal buffering of data.
    <fd_inheritance>` by default or non-inheritable if *inheritable*
    is ``False``.
 
+   .. availability:: not WASI.
+
    .. versionchanged:: 3.4
       Add the optional *inheritable* parameter.
 
    .. versionchanged:: 3.7
       Return *fd2* on success. Previously, ``None`` was always returned.
-
-   .. availability:: not WASI.
 
 
 .. function:: fchmod(fd, mode)

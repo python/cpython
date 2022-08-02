@@ -33,6 +33,7 @@ probably additional platforms, as long as OpenSSL is installed on that platform.
    may lead to a false sense of security, as the default settings of the
    ssl module are not necessarily appropriate for your application.
 
+.. include:: ../includes/wasm-notavail.rst
 
 This section documents the objects and functions in the ``ssl`` module; for more
 general information about TLS, SSL, and certificates, the reader is referred to
@@ -65,7 +66,6 @@ by SSL sockets created through the :meth:`SSLContext.wrap_socket` method.
 
    Use of deprecated constants and functions result in deprecation warnings.
 
-.. include:: ../includes/wasm-notavail.rst
 
 Functions, Constants, and Exceptions
 ------------------------------------

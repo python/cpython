@@ -99,7 +99,7 @@ DOM APIs as well as limited networking capabilities with JavaScript's
   :mod:`subprocess` is importable but does not work.
 
 * The :mod:`socket` module is available, but is limited and behaves
-  differently from other platforms. On Emscripten, sockets are always 
+  differently from other platforms. On Emscripten, sockets are always
   non-blocking and require additional JavaScript code and helpers on the
   server to proxy TCP through WebSockets; see `Emscripten Networking`_
   for more information. WASI snapshot preview 1 only permits sockets from an
