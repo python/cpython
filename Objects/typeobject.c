@@ -67,6 +67,91 @@ slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value);
 
 static inline PyTypeObject * subclass_from_ref(PyObject *ref);
 
+
+/* helpers for for static builtin types */
+
+static inline int
+static_builtin_index_is_set(PyTypeObject *self)
+{
+    return self->tp_static_builtin_index > 0;
+}
+
+static inline size_t
+static_builtin_index_get(PyTypeObject *self)
+{
+    assert(static_builtin_index_is_set(self));
+    /* We store a 1-based index so 0 can mean "not initialized". */
+    return self->tp_static_builtin_index - 1;
+}
+
+static inline void
+static_builtin_index_set(PyTypeObject *self, size_t index)
+{
+    assert(index < _Py_MAX_STATIC_BUILTIN_TYPES);
+    /* We store a 1-based index so 0 can mean "not initialized". */
+    self->tp_static_builtin_index = index + 1;
+}
+
+static inline void
+static_builtin_index_clear(PyTypeObject *self)
+{
+    self->tp_static_builtin_index = 0;
+}
+
+static inline static_builtin_state *
+static_builtin_state_get(PyInterpreterState *interp, PyTypeObject *self)
+{
+    return &(interp->types.builtins[static_builtin_index_get(self)]);
+}
+
+/* For static types we store some state in an array on each interpreter. */
+static_builtin_state *
+_PyStaticType_GetState(PyTypeObject *self)
+{
+    assert(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return static_builtin_state_get(interp, self);
+}
+
+static void
+static_builtin_state_init(PyTypeObject *self)
+{
+    /* Set the type's per-interpreter state. */
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+
+    /* It should only be called once for each builtin type. */
+    assert(!static_builtin_index_is_set(self));
+
+    static_builtin_index_set(self, interp->types.num_builtins_initialized);
+    interp->types.num_builtins_initialized++;
+
+    static_builtin_state *state = static_builtin_state_get(interp, self);
+    state->type = self;
+    /* state->tp_weaklist is left NULL until insert_head() or insert_after()
+       (in weakrefobject.c) sets it. */
+}
+
+static void
+static_builtin_state_clear(PyTypeObject *self)
+{
+    /* Reset the type's per-interpreter state.
+       This basically undoes what static_builtin_state_init() did. */
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+
+    static_builtin_state *state = static_builtin_state_get(interp, self);
+    state->type = NULL;
+    assert(state->tp_weaklist == NULL);  // It was already cleared out.
+    static_builtin_index_clear(self);
+
+    assert(interp->types.num_builtins_initialized > 0);
+    interp->types.num_builtins_initialized--;
+}
+
+// Also see _PyStaticType_InitBuiltin() and _PyStaticType_Dealloc().
+
+/* end static builtin helpers */
+
+
 /*
  * finds the beginning of the docstring's introspection signature.
  * if present, returns a pointer pointing to the first '('.
@@ -206,7 +291,7 @@ static struct type_cache*
 get_type_cache(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return &interp->type_cache;
+    return &interp->types.type_cache;
 }
 
 
@@ -225,7 +310,7 @@ type_cache_clear(struct type_cache *cache, PyObject *value)
 void
 _PyType_InitCache(PyInterpreterState *interp)
 {
-    struct type_cache *cache = &interp->type_cache;
+    struct type_cache *cache = &interp->types.type_cache;
     for (Py_ssize_t i = 0; i < (1 << MCACHE_SIZE_EXP); i++) {
         struct type_cache_entry *entry = &cache->hashtable[i];
         assert(entry->name == NULL);
@@ -242,7 +327,7 @@ _PyType_InitCache(PyInterpreterState *interp)
 static unsigned int
 _PyType_ClearCache(PyInterpreterState *interp)
 {
-    struct type_cache *cache = &interp->type_cache;
+    struct type_cache *cache = &interp->types.type_cache;
 #if MCACHE_STATS
     size_t total = cache->hits + cache->collisions + cache->misses;
     fprintf(stderr, "-- Method cache hits        = %zd (%d%%)\n",
@@ -274,10 +359,16 @@ PyType_ClearCache(void)
 void
 _PyTypes_Fini(PyInterpreterState *interp)
 {
-    struct type_cache *cache = &interp->type_cache;
+    struct type_cache *cache = &interp->types.type_cache;
     type_cache_clear(cache, NULL);
     if (_Py_IsMainInterpreter(interp)) {
         clear_slotdefs();
+    }
+
+    assert(interp->types.num_builtins_initialized == 0);
+    // All the static builtin types should have been finalized already.
+    for (size_t i = 0; i < _Py_MAX_STATIC_BUILTIN_TYPES; i++) {
+        assert(interp->types.builtins[i].type == NULL);
     }
 }
 
@@ -414,6 +505,8 @@ static PyMemberDef type_members[] = {
     {"__basicsize__", T_PYSSIZET, offsetof(PyTypeObject,tp_basicsize),READONLY},
     {"__itemsize__", T_PYSSIZET, offsetof(PyTypeObject, tp_itemsize), READONLY},
     {"__flags__", T_ULONG, offsetof(PyTypeObject, tp_flags), READONLY},
+    /* Note that this value is misleading for static builtin types,
+       since the memory at this offset will always be NULL. */
     {"__weakrefoffset__", T_PYSSIZET,
      offsetof(PyTypeObject, tp_weaklistoffset), READONLY},
     {"__base__", T_OBJECT, offsetof(PyTypeObject, tp_base), READONLY},
@@ -1217,15 +1310,13 @@ subtype_traverse(PyObject *self, visitproc visit, void *arg)
     }
 
     if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        assert(type->tp_dictoffset);
-        int err = _PyObject_VisitInstanceAttributes(self, visit, arg);
+        int err = _PyObject_VisitManagedDict(self, visit, arg);
         if (err) {
             return err;
         }
     }
-
-    if (type->tp_dictoffset != base->tp_dictoffset) {
-        PyObject **dictptr = _PyObject_DictPointer(self);
+    else if (type->tp_dictoffset != base->tp_dictoffset) {
+        PyObject **dictptr = _PyObject_ComputedDictPointer(self);
         if (dictptr && *dictptr)
             Py_VISIT(*dictptr);
     }
@@ -1286,10 +1377,10 @@ subtype_clear(PyObject *self)
     /* Clear the instance dict (if any), to break cycles involving only
        __dict__ slots (as in the case 'self.__dict__ is self'). */
     if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        _PyObject_ClearInstanceAttributes(self);
+        _PyObject_ClearManagedDict(self);
     }
-    if (type->tp_dictoffset != base->tp_dictoffset) {
-        PyObject **dictptr = _PyObject_DictPointer(self);
+    else if (type->tp_dictoffset != base->tp_dictoffset) {
+        PyObject **dictptr = _PyObject_ComputedDictPointer(self);
         if (dictptr && *dictptr)
             Py_CLEAR(*dictptr);
     }
@@ -1433,18 +1524,17 @@ subtype_dealloc(PyObject *self)
 
     /* If we added a dict, DECREF it, or free inline values. */
     if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        PyObject **dictptr = _PyObject_ManagedDictPointer(self);
-        if (*dictptr != NULL) {
-            assert(*_PyObject_ValuesPointer(self) == NULL);
-            Py_DECREF(*dictptr);
-            *dictptr = NULL;
-        }
-        else {
+        PyDictOrValues *dorv_ptr = _PyObject_DictOrValuesPointer(self);
+        if (_PyDictOrValues_IsValues(*dorv_ptr)) {
             _PyObject_FreeInstanceAttributes(self);
         }
+        else {
+            Py_XDECREF(_PyDictOrValues_GetDict(*dorv_ptr));
+        }
+        dorv_ptr->values = NULL;
     }
     else if (type->tp_dictoffset && !base->tp_dictoffset) {
-        PyObject **dictptr = _PyObject_DictPointer(self);
+        PyObject **dictptr = _PyObject_ComputedDictPointer(self);
         if (dictptr != NULL) {
             PyObject *dict = *dictptr;
             if (dict != NULL) {
@@ -4247,6 +4337,8 @@ clear_static_tp_subclasses(PyTypeObject *type)
 void
 _PyStaticType_Dealloc(PyTypeObject *type)
 {
+    assert(!(type->tp_flags & Py_TPFLAGS_HEAPTYPE));
+
     type_dealloc_common(type);
 
     Py_CLEAR(type->tp_dict);
@@ -4261,6 +4353,12 @@ _PyStaticType_Dealloc(PyTypeObject *type)
     }
 
     type->tp_flags &= ~Py_TPFLAGS_READY;
+
+    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        _PyStaticType_ClearWeakRefs(type);
+        static_builtin_state_clear(type);
+        /* We leave _Py_TPFLAGS_STATIC_BUILTIN set on tp_flags. */
+    }
 }
 
 
@@ -5036,7 +5134,9 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
          * so we must materialize the dictionary first. */
         assert((oldto->tp_flags & Py_TPFLAGS_MANAGED_DICT) == (newto->tp_flags & Py_TPFLAGS_MANAGED_DICT));
         _PyObject_GetDictPtr(self);
-        if (oldto->tp_flags & Py_TPFLAGS_MANAGED_DICT && *_PyObject_ValuesPointer(self)) {
+        if (oldto->tp_flags & Py_TPFLAGS_MANAGED_DICT &&
+            _PyDictOrValues_IsValues(*_PyObject_DictOrValuesPointer(self)))
+        {
             /* Was unable to convert to dict */
             PyErr_NoMemory();
             return -1;
@@ -6679,7 +6779,13 @@ _PyStaticType_InitBuiltin(PyTypeObject *self)
 {
     self->tp_flags = self->tp_flags | _Py_TPFLAGS_STATIC_BUILTIN;
 
-    return PyType_Ready(self);
+    static_builtin_state_init(self);
+
+    int res = PyType_Ready(self);
+    if (res < 0) {
+        static_builtin_state_clear(self);
+    }
+    return res;
 }
 
 
