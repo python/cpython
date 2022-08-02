@@ -77,8 +77,8 @@ resources. Any Python standard library module that uses processes, threading,
 networking, signals, or other forms of inter-process communication (IPC), is
 either not available or may not work as on other Unix-like systems. File I/O,
 file system, and Unix permission-related functions are restricted, too.
-Emscripten does not permit blocking I/O or other blocking operations like
-:func:`~time.sleep`.
+Emscripten does not permit blocking I/O. Other blocking operations like
+:func:`~time.sleep` block the browser event loop.
 
 The properties and behavior of Python on WebAssembly platforms depend on the
 `Emscripten`_-SDK or `WASI`_-SDK version, WASM runtimes (browser, NodeJS,
@@ -98,12 +98,10 @@ DOM APIs as well as limited networking capabilities with JavaScript's
   (:func:`~os.kill`), or otherwise interact with processes. The
   :mod:`subprocess` is importable but does not work.
 
-* The :mod:`socket` module is available,
-but is limited and behaves differently from other platforms.
-On Emscripten,
-  sockets are always non-blocking and require additional JavaScript code
-  and helpers on the server to proxy TCP through WebSockets; see
-  `Emscripten Networking <https://emscripten.org/docs/porting/networking.html>`_
+* The :mod:`socket` module is available, but is limited and behaves
+  differently from other platforms. On Emscripten, sockets are always 
+  non-blocking and require additional JavaScript code and helpers on the
+  server to proxy TCP through WebSockets; see `Emscripten Networking`_
   for more information. WASI snapshot preview 1 only permits sockets from an
   existing file descriptor.
 
@@ -116,6 +114,7 @@ On Emscripten,
 
 .. _WebAssembly: https://webassembly.org/
 .. _Emscripten: https://emscripten.org/
+.. _Emscripten Networking: https://emscripten.org/docs/porting/networking.html>
 .. _WASI: https://wasi.dev/
 .. _wasmtime: https://wasmtime.dev/
 .. _Pyodide: https://pyodide.org/
