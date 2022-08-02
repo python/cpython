@@ -1442,6 +1442,26 @@ and you can let the ``sqlite3`` module convert SQLite types to
 Python types via :ref:`converters <sqlite3-converters>`.
 
 
+.. _sqlite3-cli:
+
+Command-line interface
+^^^^^^^^^^^^^^^^^^^^^^
+
+The ``sqlite3`` module can be invoked as a script
+in order to provide a simple SQLite shell.
+Type ``.quit`` or CTRL-D to exit the shell.
+
+.. program:: python -m sqlite3 [-h] [-v] [filename] [sql]
+
+.. option:: -h, --help
+    Print CLI help.
+
+.. option:: -v, --version
+    Print underlying SQLite library version.
+
+.. versionadded:: 3.12
+
+
 .. _sqlite3-howtos:
 
 How-to guides
