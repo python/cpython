@@ -3078,7 +3078,7 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type)
     if (ctx->add_dict && ctx->base->tp_itemsize == 0) {
         assert((type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
         type->tp_flags |= Py_TPFLAGS_MANAGED_DICT;
-        type->tp_dictoffset = -slotoffset - sizeof(PyObject *)*3;
+        type->tp_dictoffset = -type->tp_basicsize - (Py_ssize_t)sizeof(PyObject *)*3;
     }
 
     type->tp_basicsize = slotoffset;
@@ -6078,6 +6078,7 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
     COPYVAL(tp_itemsize);
     COPYVAL(tp_weaklistoffset);
     COPYVAL(tp_dictoffset);
+
 #undef COPYVAL
 
     /* Setup fast subclass flags */
@@ -6486,6 +6487,22 @@ type_ready_fill_dict(PyTypeObject *type)
     return 0;
 }
 
+static int
+type_ready_dict_offset(PyTypeObject *type)
+{
+    if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
+        if (type->tp_dictoffset > 0) {
+            PyErr_Format(PyExc_TypeError,
+                        "type %s has the Py_TPFLAGS_MANAGED_DICT flag "
+                        "but tp_dictoffset is positive",
+                        type->tp_name);
+            return -1;
+        }
+        Py_ssize_t offset = -type->tp_basicsize - sizeof(PyObject *)*3;
+        type->tp_dictoffset = offset;
+    }
+    return 0;
+}
 
 static int
 type_ready_mro(PyTypeObject *type)
@@ -6694,6 +6711,24 @@ type_ready_post_checks(PyTypeObject *type)
                      type->tp_name);
         return -1;
     }
+    if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
+        if (type->tp_itemsize != 0) {
+            PyErr_Format(PyExc_SystemError,
+                        "type %s has the Py_TPFLAGS_MANAGED_DICT flag "
+                        "but is variable sized",
+                        type->tp_name);
+            return -1;
+        }
+        Py_ssize_t size = type->tp_basicsize;
+        if (type->tp_dictoffset != -size - (Py_ssize_t)sizeof(PyObject *)*3) {
+            PyErr_Format(PyExc_SystemError,
+                        "type %s has the Py_TPFLAGS_MANAGED_DICT flag "
+                        "but tp_dictoffset is set to incompatible value",
+                        type->tp_name);
+            assert(0);
+            return -1;
+        }
+    }
     return 0;
 }
 
@@ -6731,6 +6766,9 @@ type_ready(PyTypeObject *type)
         return -1;
     }
     if (type_ready_inherit(type) < 0) {
+        return -1;
+    }
+    if (type_ready_dict_offset(type) < 0) {
         return -1;
     }
     if (type_ready_set_hash(type) < 0) {
