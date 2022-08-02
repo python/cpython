@@ -658,7 +658,7 @@ Constants
    <https://www.iana.org/assignments/ieee-802-numbers/ieee-802-numbers.txt>`_.
    constants.
 
-.. availability:: Linux, FreeBSD, macOS.
+   .. availability:: Linux, FreeBSD, macOS.
 
    .. versionadded:: 3.12
 
