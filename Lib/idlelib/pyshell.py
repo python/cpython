@@ -996,19 +996,17 @@ class PyShell(OutputWindow):
         and/or last lines is selected.
         """
         text = self.text
+        selfirst = text.index('sel.first linestart')
+        if selfirst is None:  # Should not be possible.
+            return  # No selection, do nothing.
+        sellast = text.index('sel.last')
+        if sellast[-1] != '0':
+            sellast = text.index("sel.last+1line linestart")
 
-        selection_indexes = (
-            self.text.index("sel.first linestart"),
-            self.text.index("sel.last +1line linestart"),
-        )
-        if selection_indexes[0] is None:
-            # There is no selection, so do nothing.
-            return
-
-        selected_text = self.text.get(*selection_indexes)
+        selected_text = self.text.get(selfirst, sellast)
         selection_lineno_range = range(
-            int(float(selection_indexes[0])),
-            int(float(selection_indexes[1]))
+            int(float(selfirst)),
+            int(float(sellast))
         )
         prompts = [
             self.shell_sidebar.line_prompts.get(lineno)

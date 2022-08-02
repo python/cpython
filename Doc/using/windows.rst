@@ -194,18 +194,22 @@ of available options is shown below.
 | Include_debug             | Install debug binaries               | 0                        |
 +---------------------------+--------------------------------------+--------------------------+
 | Include_dev               | Install developer headers and        | 1                        |
-|                           | libraries                            |                          |
+|                           | libraries. Omitting this may lead to |                          |
+|                           | an unusable installation.            |                          |
 +---------------------------+--------------------------------------+--------------------------+
 | Include_exe               | Install :file:`python.exe` and       | 1                        |
-|                           | related files                        |                          |
+|                           | related files. Omitting this may     |                          |
+|                           | lead to an unusable installation.    |                          |
 +---------------------------+--------------------------------------+--------------------------+
 | Include_launcher          | Install :ref:`launcher`.             | 1                        |
 +---------------------------+--------------------------------------+--------------------------+
-| InstallLauncherAllUsers   | Installs :ref:`launcher` for all     | 1                        |
-|                           | users.                               |                          |
+| InstallLauncherAllUsers   | Installs the launcher for all        | 1                        |
+|                           | users. Also requires                 |                          |
+|                           | ``Include_launcher`` to be set to 1  |                          |
 +---------------------------+--------------------------------------+--------------------------+
 | Include_lib               | Install standard library and         | 1                        |
-|                           | extension modules                    |                          |
+|                           | extension modules. Omitting this may |                          |
+|                           | lead to an unusable installation.    |                          |
 +---------------------------+--------------------------------------+--------------------------+
 | Include_pip               | Install bundled pip and setuptools   | 1                        |
 +---------------------------+--------------------------------------+--------------------------+
