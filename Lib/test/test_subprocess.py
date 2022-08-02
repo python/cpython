@@ -1129,6 +1129,7 @@ class ProcessTestCase(BaseTestCase):
             stdout, stderr = popen.communicate(input='')
             self.assertEqual(stdout, '1\n2\n3\n4')
 
+    @unittest.skipIf(mswindows, "behavior currently not supported on Windows")
     def test_universal_newlines_timeout(self):
         with self.assertRaises(subprocess.TimeoutExpired) as c:
             p = subprocess.run(
