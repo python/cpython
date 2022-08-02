@@ -1319,7 +1319,6 @@ These are not used in annotations. They are building blocks for creating generic
         # T is bound to int, Ts is bound to (str, float)
         # Return value is ('spam', 3.0, 1), which has type tuple[str, float, int]
         move_first_element_to_last(tup=(1, 'spam', 3.0))
-        
         # This fails to type check (and at runtime)
         # because tuple[()] is not compatible with tuple[T, *Ts]
         # (at least one element is required)
