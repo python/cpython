@@ -667,8 +667,6 @@ For more information, see `Accessing an Alternate Registry View
 
    Indicates that an application on 64-bit Windows should operate on
    the 32-bit registry view. On 32-bit Windows, this constant is ignored.
-   As such, to call any function that uses this constant as a default argument
-   on a 32-bit Windows build, 0 should be passed in.
 
 .. _value-types:
 
