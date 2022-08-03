@@ -527,7 +527,7 @@ creates a :class:`LogRecord` instance that is sent to any number of different
 of filters, and each filter can cause the :class:`LogRecord` to be ignored or
 can modify the record before passing it along.  When they're finally output,
 :class:`LogRecord` instances are converted to text by a :class:`Formatter`
-class.  All of these classes can be replaced by your own specially-written
+class.  All of these classes can be replaced by your own specially written
 classes.
 
 With all of these features the :mod:`logging` package should provide enough
@@ -1650,7 +1650,7 @@ complete list of changes, or look through the CVS logs for all the details.
 
 * The new :mod:`DocXMLRPCServer` module allows writing self-documenting XML-RPC
   servers. Run it in demo mode (as a program) to see it in action.   Pointing the
-  Web browser to the RPC server produces pydoc-style documentation; pointing
+  web browser to the RPC server produces pydoc-style documentation; pointing
   xmlrpclib to the server allows invoking the actual methods. (Contributed by
   Brian Quinlan.)
 

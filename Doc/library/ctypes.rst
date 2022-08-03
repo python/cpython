@@ -20,7 +20,7 @@ ctypes tutorial
 
 Note: The code samples in this tutorial use :mod:`doctest` to make sure that
 they actually work.  Since some code samples behave differently under Linux,
-Windows, or Mac OS X, they contain doctest directives in comments.
+Windows, or macOS, they contain doctest directives in comments.
 
 Note: Some code samples reference the ctypes :class:`c_int` type.  On platforms
 where ``sizeof(long) == sizeof(int)`` it is an alias to :class:`c_long`.
@@ -80,7 +80,7 @@ the library by creating an instance of CDLL by calling the constructor::
    <CDLL 'libc.so.6', handle ... at ...>
    >>>
 
-.. XXX Add section for Mac OS X.
+.. XXX Add section for macOS.
 
 
 .. _ctypes-accessing-functions-from-loaded-dlls:
@@ -148,15 +148,14 @@ Calling functions
 ^^^^^^^^^^^^^^^^^
 
 You can call these functions like any other Python callable. This example uses
-the ``time()`` function, which returns system time in seconds since the Unix
-epoch, and the ``GetModuleHandleA()`` function, which returns a win32 module
-handle.
+the ``rand()`` function, which takes no arguments and returns a pseudo-random integer::
 
-This example calls both functions with a ``NULL`` pointer (``None`` should be used
-as the ``NULL`` pointer)::
+   >>> print(libc.rand())  # doctest: +SKIP
+   1804289383
 
-   >>> print(libc.time(None))  # doctest: +SKIP
-   1150640792
+On Windows, you can call the ``GetModuleHandleA()`` function, which returns a win32 module
+handle (passing ``None`` as single argument to call it with a ``NULL`` pointer)::
+
    >>> print(hex(windll.kernel32.GetModuleHandleA(None)))  # doctest: +WINDOWS
    0x1d000000
    >>>
@@ -247,6 +246,8 @@ Fundamental data types
 | :class:`c_ssize_t`   | :c:type:`ssize_t` or                     | int                        |
 |                      | :c:type:`Py_ssize_t`                     |                            |
 +----------------------+------------------------------------------+----------------------------+
+| :class:`c_time_t`    | :c:type:`time_t`                         | int                        |
++----------------------+------------------------------------------+----------------------------+
 | :class:`c_float`     | :c:type:`float`                          | float                      |
 +----------------------+------------------------------------------+----------------------------+
 | :class:`c_double`    | :c:type:`double`                         | float                      |
@@ -330,10 +331,9 @@ property::
    10 b'Hi\x00lo\x00\x00\x00\x00\x00'
    >>>
 
-The :func:`create_string_buffer` function replaces the :func:`c_buffer` function
-(which is still available as an alias), as well as the :func:`c_string` function
-from earlier ctypes releases.  To create a mutable memory block containing
-unicode characters of the C type :c:type:`wchar_t` use the
+The :func:`create_string_buffer` function replaces the old :func:`c_buffer`
+function (which is still available as an alias).  To create a mutable memory
+block containing unicode characters of the C type :c:type:`wchar_t`, use the
 :func:`create_unicode_buffer` function.
 
 
@@ -447,6 +447,21 @@ Return types
 By default functions are assumed to return the C :c:type:`int` type.  Other
 return types can be specified by setting the :attr:`restype` attribute of the
 function object.
+
+The C prototype of ``time()`` is ``time_t time(time_t *)``. Because ``time_t``
+might be of a different type than the default return type ``int``, you should
+specify the ``restype``::
+
+   >>> libc.time.restype = c_time_t
+
+The argument types can be specified using ``argtypes``::
+
+   >>> libc.time.argtypes = (POINTER(c_time_t),)
+
+To call the function with a ``NULL`` pointer as first argument, use ``None``::
+
+   >>> print(libc.time(None))  # doctest: +SKIP
+   1150640792
 
 Here is a more advanced example, it uses the ``strchr`` function, which expects
 a string pointer and a char, and returns a pointer to a string::
@@ -919,9 +934,9 @@ Let's try it. We create two instances of ``cell``, and let them point to each
 other, and finally follow the pointer chain a few times::
 
    >>> c1 = cell()
-   >>> c1.name = "foo"
+   >>> c1.name = b"foo"
    >>> c2 = cell()
-   >>> c2.name = "bar"
+   >>> c2.name = b"bar"
    >>> c1.next = pointer(c2)
    >>> c2.next = pointer(c1)
    >>> p = c1
@@ -1088,7 +1103,9 @@ size, we show only how this table can be read with :mod:`ctypes`::
    >>> class struct_frozen(Structure):
    ...     _fields_ = [("name", c_char_p),
    ...                 ("code", POINTER(c_ubyte)),
-   ...                 ("size", c_int)]
+   ...                 ("size", c_int),
+   ...                 ("get_code", POINTER(c_ubyte)),  # Function pointer
+   ...                ]
    ...
    >>>
 
@@ -1096,7 +1113,7 @@ We have defined the :c:type:`struct _frozen` data type, so we can get the pointe
 to the table::
 
    >>> FrozenTable = POINTER(struct_frozen)
-   >>> table = FrozenTable.in_dll(pythonapi, "PyImport_FrozenModules")
+   >>> table = FrozenTable.in_dll(pythonapi, "_PyImport_FrozenBootstrap")
    >>>
 
 Since ``table`` is a ``pointer`` to the array of ``struct_frozen`` records, we
@@ -1112,9 +1129,7 @@ hit the ``NULL`` entry::
    ...
    _frozen_importlib 31764
    _frozen_importlib_external 41499
-   __hello__ 161
-   __phello__ -161
-   __phello__.spam 161
+   zipimport 12345
    >>>
 
 The fact that standard Python has a frozen module and a frozen package
@@ -1288,7 +1303,7 @@ Here are some examples::
    'libbz2.so.1.0'
    >>>
 
-On OS X, :func:`find_library` tries several predefined naming schemes and paths
+On macOS, :func:`find_library` tries several predefined naming schemes and paths
 to locate the library, and returns a full pathname if successful::
 
    >>> from ctypes.util import find_library
@@ -1320,14 +1335,29 @@ There are several ways to load shared libraries into the Python process.  One
 way is to instantiate one of the following classes:
 
 
-.. class:: CDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=0)
+.. class:: CDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
 
    Instances of this class represent loaded shared libraries. Functions in these
    libraries use the standard C calling convention, and are assumed to return
    :c:type:`int`.
 
+   On Windows creating a :class:`CDLL` instance may fail even if the DLL name
+   exists. When a dependent DLL of the loaded DLL is not found, a
+   :exc:`OSError` error is raised with the message *"[WinError 126] The
+   specified module could not be found".* This error message does not contain
+   the name of the missing DLL because the Windows API does not return this
+   information making this error hard to diagnose. To resolve this error and
+   determine which DLL is not found, you need to find the list of dependent
+   DLLs and determine which one is not found using Windows debugging and
+   tracing tools.
 
-.. class:: OleDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=0)
+.. seealso::
+
+    `Microsoft DUMPBIN tool <https://docs.microsoft.com/cpp/build/reference/dependents>`_
+    -- A tool to find DLL dependents.
+
+
+.. class:: OleDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
 
    Windows only: Instances of this class represent loaded shared libraries,
    functions in these libraries use the ``stdcall`` calling convention, and are
@@ -1340,15 +1370,11 @@ way is to instantiate one of the following classes:
       :exc:`WindowsError` used to be raised.
 
 
-.. class:: WinDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=0)
+.. class:: WinDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
 
    Windows only: Instances of this class represent loaded shared libraries,
    functions in these libraries use the ``stdcall`` calling convention, and are
    assumed to return :c:type:`int` by default.
-
-   On Windows CE only the standard calling convention is used, for convenience the
-   :class:`WinDLL` and :class:`OleDLL` use the standard calling convention on this
-   platform.
 
 The Python :term:`global interpreter lock` is released before calling any
 function exported by these libraries, and reacquired afterwards.
@@ -1618,7 +1644,7 @@ They are instances of a private class:
    ``ctypes.seh_exception`` with argument ``code`` will be raised, allowing an
    audit hook to replace the exception with its own.
 
-.. audit-event:: ctypes.call_function func_pointer,arguments ctype-foreign-functions
+.. audit-event:: ctypes.call_function func_pointer,arguments foreign-functions
 
    Some ways to invoke foreign function calls may raise an auditing event
    ``ctypes.call_function`` with arguments ``function pointer`` and ``arguments``.
@@ -1650,8 +1676,7 @@ See :ref:`ctypes-callback-functions` for examples.
 .. function:: WINFUNCTYPE(restype, *argtypes, use_errno=False, use_last_error=False)
 
    Windows only: The returned function prototype creates functions that use the
-   ``stdcall`` calling convention, except on Windows CE where
-   :func:`WINFUNCTYPE` is the same as :func:`CFUNCTYPE`.  The function will
+   ``stdcall`` calling convention.  The function will
    release the GIL during the call.  *use_errno* and *use_last_error* have the
    same meaning as above.
 
@@ -2266,6 +2291,13 @@ These are the fundamental ctypes data types:
    .. versionadded:: 3.2
 
 
+.. class:: c_time_t
+
+   Represents the C :c:type:`time_t` datatype.
+
+   .. versionadded:: 3.12
+
+
 .. class:: c_ubyte
 
    Represents the C :c:type:`unsigned char` datatype, it interprets the value as
@@ -2376,6 +2408,18 @@ Structured data types
    Abstract base class for unions in native byte order.
 
 
+.. class:: BigEndianUnion(*args, **kw)
+
+   Abstract base class for unions in *big endian* byte order.
+
+   .. versionadded:: 3.11
+
+.. class:: LittleEndianUnion(*args, **kw)
+
+   Abstract base class for unions in *little endian* byte order.
+
+   .. versionadded:: 3.11
+
 .. class:: BigEndianStructure(*args, **kw)
 
    Abstract base class for structures in *big endian* byte order.
@@ -2385,8 +2429,8 @@ Structured data types
 
    Abstract base class for structures in *little endian* byte order.
 
-Structures with non-native byte order cannot contain pointer type fields, or any
-other data types containing pointer type fields.
+Structures and unions with non-native byte order cannot contain pointer type
+fields, or any other data types containing pointer type fields.
 
 
 .. class:: Structure(*args, **kw)
@@ -2493,12 +2537,12 @@ other data types containing pointer type fields.
 Arrays and pointers
 ^^^^^^^^^^^^^^^^^^^
 
-.. class:: Array(\*args)
+.. class:: Array(*args)
 
    Abstract base class for arrays.
 
    The recommended way to create concrete array types is by multiplying any
-   :mod:`ctypes` data type with a positive integer.  Alternatively, you can subclass
+   :mod:`ctypes` data type with a non-negative integer.  Alternatively, you can subclass
    this type and define :attr:`_length_` and :attr:`_type_` class variables.
    Array elements can be read and written using standard
    subscript and slice accesses; for slice reads, the resulting object is
@@ -2545,4 +2589,3 @@ Arrays and pointers
 
         Returns the object to which to pointer points.  Assigning to this
         attribute changes the pointer to point to the assigned object.
-

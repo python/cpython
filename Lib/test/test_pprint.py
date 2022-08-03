@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import collections
+import contextlib
+import dataclasses
 import io
 import itertools
 import pprint
@@ -66,6 +68,38 @@ class dict_custom_repr(dict):
     def __repr__(self):
         return '*'*len(dict.__repr__(self))
 
+@dataclasses.dataclass
+class dataclass1:
+    field1: str
+    field2: int
+    field3: bool = False
+    field4: int = dataclasses.field(default=1, repr=False)
+
+@dataclasses.dataclass
+class dataclass2:
+    a: int = 1
+    def __repr__(self):
+        return "custom repr that doesn't fit within pprint width"
+
+@dataclasses.dataclass(repr=False)
+class dataclass3:
+    a: int = 1
+
+@dataclasses.dataclass
+class dataclass4:
+    a: "dataclass4"
+    b: int = 1
+
+@dataclasses.dataclass
+class dataclass5:
+    a: "dataclass6"
+    b: int = 1
+
+@dataclasses.dataclass
+class dataclass6:
+    c: "dataclass5"
+    d: int = 1
+
 class Unorderable:
     def __repr__(self):
         return str(id(self))
@@ -126,6 +160,13 @@ class QueryTestCase(unittest.TestCase):
             self.assertTrue(pp.isreadable(safe),
                             "expected isreadable for %r" % (safe,))
 
+    def test_stdout_is_None(self):
+        with contextlib.redirect_stdout(None):
+            # smoke test - there is no output to check
+            value = 'this should not fail'
+            pprint.pprint(value)
+            pprint.PrettyPrinter().pprint(value)
+
     def test_knotted(self):
         # Verify .isrecursive() and .isreadable() w/ recursion
         # Tie a knot.
@@ -162,7 +203,7 @@ class QueryTestCase(unittest.TestCase):
     def test_unreadable(self):
         # Not recursive but not readable anyway
         pp = pprint.PrettyPrinter()
-        for unreadable in type(3), pprint, pprint.isrecursive:
+        for unreadable in object(), int, pprint, pprint.isrecursive:
             # module-level convenience functions
             self.assertFalse(pprint.isrecursive(unreadable),
                              "expected not isrecursive for %r" % (unreadable,))
@@ -206,6 +247,7 @@ class QueryTestCase(unittest.TestCase):
             self.assertEqual(pprint.pformat(simple), native)
             self.assertEqual(pprint.pformat(simple, width=1, indent=0)
                              .replace('\n', ' '), native)
+            self.assertEqual(pprint.pformat(simple, underscore_numbers=True), native)
             self.assertEqual(pprint.saferepr(simple), native)
 
     def test_container_repr_override_called(self):
@@ -323,6 +365,18 @@ class QueryTestCase(unittest.TestCase):
      '1 '
      '2']]]]]""")
 
+    def test_integer(self):
+        self.assertEqual(pprint.pformat(1234567), '1234567')
+        self.assertEqual(pprint.pformat(1234567, underscore_numbers=True), '1_234_567')
+
+        class Temperature(int):
+            def __new__(cls, celsius_degrees):
+                return super().__new__(Temperature, celsius_degrees)
+            def __repr__(self):
+                kelvin_degrees = self + 273.15
+                return f"{kelvin_degrees}°K"
+        self.assertEqual(pprint.pformat(Temperature(1000)), '1273.15°K')
+
     def test_sorted_dict(self):
         # Starting in Python 2.5, pprint sorts dict displays by key regardless
         # of how small the dictionary may be.
@@ -415,7 +469,7 @@ mappingproxy(OrderedDict([('the', 0),
             lazy=7,
             dog=8,
         )
-        formatted = pprint.pformat(ns, width=60)
+        formatted = pprint.pformat(ns, width=60, indent=4)
         self.assertEqual(formatted, """\
 namespace(the=0,
           quick=1,
@@ -452,13 +506,74 @@ AdvancedNamespace(the=0,
                   lazy=7,
                   dog=8)""")
 
+    def test_empty_dataclass(self):
+        dc = dataclasses.make_dataclass("MyDataclass", ())()
+        formatted = pprint.pformat(dc)
+        self.assertEqual(formatted, "MyDataclass()")
+
+    def test_small_dataclass(self):
+        dc = dataclass1("text", 123)
+        formatted = pprint.pformat(dc)
+        self.assertEqual(formatted, "dataclass1(field1='text', field2=123, field3=False)")
+
+    def test_larger_dataclass(self):
+        dc = dataclass1("some fairly long text", int(1e10), True)
+        formatted = pprint.pformat([dc, dc], width=60, indent=4)
+        self.assertEqual(formatted, """\
+[   dataclass1(field1='some fairly long text',
+               field2=10000000000,
+               field3=True),
+    dataclass1(field1='some fairly long text',
+               field2=10000000000,
+               field3=True)]""")
+
+    def test_dataclass_with_repr(self):
+        dc = dataclass2()
+        formatted = pprint.pformat(dc, width=20)
+        self.assertEqual(formatted, "custom repr that doesn't fit within pprint width")
+
+    def test_dataclass_no_repr(self):
+        dc = dataclass3()
+        formatted = pprint.pformat(dc, width=10)
+        self.assertRegex(formatted, r"<test.test_pprint.dataclass3 object at \w+>")
+
+    def test_recursive_dataclass(self):
+        dc = dataclass4(None)
+        dc.a = dc
+        formatted = pprint.pformat(dc, width=10)
+        self.assertEqual(formatted, """\
+dataclass4(a=...,
+           b=1)""")
+
+    def test_cyclic_dataclass(self):
+        dc5 = dataclass5(None)
+        dc6 = dataclass6(None)
+        dc5.a = dc6
+        dc6.c = dc5
+        formatted = pprint.pformat(dc5, width=10)
+        self.assertEqual(formatted, """\
+dataclass5(a=dataclass6(c=...,
+                        d=1),
+           b=1)""")
+
     def test_subclassing(self):
+        # length(repr(obj)) > width
         o = {'names with spaces': 'should be presented using repr()',
              'others.should.not.be': 'like.this'}
         exp = """\
 {'names with spaces': 'should be presented using repr()',
  others.should.not.be: like.this}"""
-        self.assertEqual(DottedPrettyPrinter().pformat(o), exp)
+
+        dotted_printer = DottedPrettyPrinter()
+        self.assertEqual(dotted_printer.pformat(o), exp)
+
+        # length(repr(obj)) < width
+        o1 = ['with space']
+        exp1 = "['with space']"
+        self.assertEqual(dotted_printer.pformat(o1), exp1)
+        o2 = ['without.space']
+        exp2 = "[without.space]"
+        self.assertEqual(dotted_printer.pformat(o2), exp2)
 
     def test_set_reprs(self):
         self.assertEqual(pprint.pformat(set()), 'set()')

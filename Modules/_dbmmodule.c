@@ -12,20 +12,26 @@
 /* Some Linux systems install gdbm/ndbm.h, but not ndbm.h.  This supports
  * whichever configure was able to locate.
  */
-#if defined(HAVE_NDBM_H)
-#include <ndbm.h>
-static const char which_dbm[] = "GNU gdbm";  /* EMX port of GDBM */
-#elif defined(HAVE_GDBM_NDBM_H)
-#include <gdbm/ndbm.h>
-static const char which_dbm[] = "GNU gdbm";
-#elif defined(HAVE_GDBM_DASH_NDBM_H)
-#include <gdbm-ndbm.h>
-static const char which_dbm[] = "GNU gdbm";
-#elif defined(HAVE_BERKDB_H)
-#include <db.h>
-static const char which_dbm[] = "Berkeley DB";
+#if defined(USE_GDBM_COMPAT)
+  #ifdef HAVE_GDBM_NDBM_H
+    #include <gdbm/ndbm.h>
+  #elif HAVE_GDBM_DASH_NDBM_H
+    #include <gdbm-ndbm.h>
+  #else
+    #error "No gdbm/ndbm.h or gdbm-ndbm.h available"
+  #endif
+  static const char which_dbm[] = "GNU gdbm";
+#elif defined(USE_NDBM)
+  #include <ndbm.h>
+  static const char which_dbm[] = "GNU gdbm";
+#elif defined(USE_BERKDB)
+  #ifndef DB_DBM_HSEARCH
+    #define DB_DBM_HSEARCH 1
+  #endif
+  #include <db.h>
+  static const char which_dbm[] = "Berkeley DB";
 #else
-#error "No ndbm.h available!"
+  #error "No ndbm.h available!"
 #endif
 
 typedef struct {
@@ -65,13 +71,14 @@ typedef struct {
 static PyObject *
 newdbmobject(_dbm_state *state, const char *file, int flags, int mode)
 {
-    dbmobject *dp;
-
-    dp = PyObject_New(dbmobject, state->dbm_type);
-    if (dp == NULL)
+    dbmobject *dp = PyObject_GC_New(dbmobject, state->dbm_type);
+    if (dp == NULL) {
         return NULL;
+    }
     dp->di_size = -1;
     dp->flags = flags;
+    PyObject_GC_Track(dp);
+
     /* See issue #19296 */
     if ( (dp->di_dbm = dbm_open((char *)file, flags, mode)) == 0 ) {
         PyErr_SetFromErrnoWithFilename(state->dbm_error, file);
@@ -82,10 +89,17 @@ newdbmobject(_dbm_state *state, const char *file, int flags, int mode)
 }
 
 /* Methods */
+static int
+dbm_traverse(dbmobject *dp, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(dp));
+    return 0;
+}
 
 static void
 dbm_dealloc(dbmobject *dp)
 {
+    PyObject_GC_UnTrack(dp);
     if (dp->di_dbm) {
         dbm_close(dp->di_dbm);
     }
@@ -299,8 +313,8 @@ Return the value for key if present, otherwise default.
 
 static PyObject *
 _dbm_dbm_get_impl(dbmobject *self, PyTypeObject *cls, const char *key,
-                  Py_ssize_clean_t key_length, PyObject *default_value)
-/*[clinic end generated code: output=34851b5dc1c664dc input=66b993b8349fa8c1]*/
+                  Py_ssize_t key_length, PyObject *default_value)
+/*[clinic end generated code: output=b4e55f8b6d482bc4 input=66b993b8349fa8c1]*/
 {
     datum dbm_key, val;
     _dbm_state *state = PyType_GetModuleState(cls);
@@ -331,9 +345,8 @@ If key is not in the database, it is inserted with default as the value.
 
 static PyObject *
 _dbm_dbm_setdefault_impl(dbmobject *self, PyTypeObject *cls, const char *key,
-                         Py_ssize_clean_t key_length,
-                         PyObject *default_value)
-/*[clinic end generated code: output=d5c68fe673886767 input=126a3ff15c5f8232]*/
+                         Py_ssize_t key_length, PyObject *default_value)
+/*[clinic end generated code: output=9c2f6ea6d0fb576c input=126a3ff15c5f8232]*/
 {
     datum dbm_key, val;
     Py_ssize_t tmp_size;
@@ -382,8 +395,7 @@ dbm__enter__(PyObject *self, PyObject *args)
 static PyObject *
 dbm__exit__(PyObject *self, PyObject *args)
 {
-    _Py_IDENTIFIER(close);
-    return _PyObject_CallMethodIdNoArgs(self, &PyId_close);
+    return _dbm_dbm_close_impl((dbmobject *)self);
 }
 
 static PyMethodDef dbm_methods[] = {
@@ -398,6 +410,7 @@ static PyMethodDef dbm_methods[] = {
 
 static PyType_Slot dbmtype_spec_slots[] = {
     {Py_tp_dealloc, dbm_dealloc},
+    {Py_tp_traverse, dbm_traverse},
     {Py_tp_methods, dbm_methods},
     {Py_sq_contains, dbm_contains},
     {Py_mp_length, dbm_length},
@@ -414,7 +427,8 @@ static PyType_Spec dbmtype_spec = {
     // dbmtype_spec does not have Py_TPFLAGS_BASETYPE flag
     // which prevents to create a subclass.
     // So calling PyType_GetModuleState() in this file is always safe.
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = dbmtype_spec_slots,
 };
 
@@ -424,7 +438,7 @@ static PyType_Spec dbmtype_spec = {
 
 _dbm.open as dbmopen
 
-    filename: unicode
+    filename: object
         The filename to open.
 
     flags: str="r"
@@ -443,7 +457,7 @@ Return a database object.
 static PyObject *
 dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
              int mode)
-/*[clinic end generated code: output=9527750f5df90764 input=376a9d903a50df59]*/
+/*[clinic end generated code: output=9527750f5df90764 input=d8cf50a9f81218c8]*/
 {
     int iflags;
     _dbm_state *state =  get_dbm_state(module);
@@ -470,10 +484,11 @@ dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
         return NULL;
     }
 
-    PyObject *filenamebytes = PyUnicode_EncodeFSDefault(filename);
-    if (filenamebytes == NULL) {
+    PyObject *filenamebytes;
+    if (!PyUnicode_FSConverter(filename, &filenamebytes)) {
         return NULL;
     }
+
     const char *name = PyBytes_AS_STRING(filenamebytes);
     if (strlen(name) != (size_t)PyBytes_GET_SIZE(filenamebytes)) {
         Py_DECREF(filenamebytes);

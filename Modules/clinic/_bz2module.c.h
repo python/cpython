@@ -65,23 +65,6 @@ _bz2_BZ2Compressor_flush(BZ2Compressor *self, PyObject *Py_UNUSED(ignored))
     return _bz2_BZ2Compressor_flush_impl(self);
 }
 
-PyDoc_STRVAR(_bz2_BZ2Compressor___reduce____doc__,
-"__reduce__($self, /)\n"
-"--\n"
-"\n");
-
-#define _BZ2_BZ2COMPRESSOR___REDUCE___METHODDEF    \
-    {"__reduce__", (PyCFunction)_bz2_BZ2Compressor___reduce__, METH_NOARGS, _bz2_BZ2Compressor___reduce____doc__},
-
-static PyObject *
-_bz2_BZ2Compressor___reduce___impl(BZ2Compressor *self);
-
-static PyObject *
-_bz2_BZ2Compressor___reduce__(BZ2Compressor *self, PyObject *Py_UNUSED(ignored))
-{
-    return _bz2_BZ2Compressor___reduce___impl(self);
-}
-
 PyDoc_STRVAR(_bz2_BZ2Decompressor_decompress__doc__,
 "decompress($self, /, data, max_length=-1)\n"
 "--\n"
@@ -102,7 +85,7 @@ PyDoc_STRVAR(_bz2_BZ2Decompressor_decompress__doc__,
 "the unused_data attribute.");
 
 #define _BZ2_BZ2DECOMPRESSOR_DECOMPRESS_METHODDEF    \
-    {"decompress", (PyCFunction)(void(*)(void))_bz2_BZ2Decompressor_decompress, METH_FASTCALL|METH_KEYWORDS, _bz2_BZ2Decompressor_decompress__doc__},
+    {"decompress", _PyCFunction_CAST(_bz2_BZ2Decompressor_decompress), METH_FASTCALL|METH_KEYWORDS, _bz2_BZ2Decompressor_decompress__doc__},
 
 static PyObject *
 _bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data,
@@ -156,21 +139,4 @@ exit:
 
     return return_value;
 }
-
-PyDoc_STRVAR(_bz2_BZ2Decompressor___reduce____doc__,
-"__reduce__($self, /)\n"
-"--\n"
-"\n");
-
-#define _BZ2_BZ2DECOMPRESSOR___REDUCE___METHODDEF    \
-    {"__reduce__", (PyCFunction)_bz2_BZ2Decompressor___reduce__, METH_NOARGS, _bz2_BZ2Decompressor___reduce____doc__},
-
-static PyObject *
-_bz2_BZ2Decompressor___reduce___impl(BZ2Decompressor *self);
-
-static PyObject *
-_bz2_BZ2Decompressor___reduce__(BZ2Decompressor *self, PyObject *Py_UNUSED(ignored))
-{
-    return _bz2_BZ2Decompressor___reduce___impl(self);
-}
-/*[clinic end generated code: output=001f31fdacb4cb01 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a1175204a414fe2a input=a9049054013a1b77]*/

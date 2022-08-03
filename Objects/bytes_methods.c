@@ -100,14 +100,14 @@ Return True if B is empty or all characters in B are ASCII,\n\
 False otherwise.");
 
 // Optimization is copied from ascii_decode in unicodeobject.c
-/* Mask to quickly check whether a C 'long' contains a
+/* Mask to quickly check whether a C 'size_t' contains a
    non-ASCII, UTF8-encoded char. */
-#if (SIZEOF_LONG == 8)
-# define ASCII_CHAR_MASK 0x8080808080808080UL
-#elif (SIZEOF_LONG == 4)
-# define ASCII_CHAR_MASK 0x80808080UL
+#if (SIZEOF_SIZE_T == 8)
+# define ASCII_CHAR_MASK 0x8080808080808080ULL
+#elif (SIZEOF_SIZE_T == 4)
+# define ASCII_CHAR_MASK 0x80808080U
 #else
-# error C 'long' size should be either 4 or 8!
+# error C 'size_t' size should be either 4 or 8!
 #endif
 
 PyObject*
@@ -115,20 +115,19 @@ _Py_bytes_isascii(const char *cptr, Py_ssize_t len)
 {
     const char *p = cptr;
     const char *end = p + len;
-    const char *aligned_end = (const char *) _Py_ALIGN_DOWN(end, SIZEOF_LONG);
 
     while (p < end) {
         /* Fast path, see in STRINGLIB(utf8_decode) in stringlib/codecs.h
            for an explanation. */
-        if (_Py_IS_ALIGNED(p, SIZEOF_LONG)) {
+        if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
             /* Help allocation */
             const char *_p = p;
-            while (_p < aligned_end) {
-                unsigned long value = *(const unsigned long *) _p;
+            while (_p + SIZEOF_SIZE_T <= end) {
+                size_t value = *(const size_t *) _p;
                 if (value & ASCII_CHAR_MASK) {
                     Py_RETURN_FALSE;
                 }
-                _p += SIZEOF_LONG;
+                _p += SIZEOF_SIZE_T;
             }
             p = _p;
             if (_p == end)
@@ -432,6 +431,7 @@ _Py_bytes_maketrans(Py_buffer *frm, Py_buffer *to)
 #define STRINGLIB(F) stringlib_##F
 #define STRINGLIB_CHAR char
 #define STRINGLIB_SIZEOF_CHAR 1
+#define STRINGLIB_FAST_MEMCHR memchr
 
 #include "stringlib/fastsearch.h"
 #include "stringlib/count.h"

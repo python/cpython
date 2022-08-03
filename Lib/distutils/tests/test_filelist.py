@@ -331,8 +331,8 @@ class FindAllTestCase(unittest.TestCase):
 
 def test_suite():
     return unittest.TestSuite([
-        unittest.makeSuite(FileListTestCase),
-        unittest.makeSuite(FindAllTestCase),
+        unittest.TestLoader().loadTestsFromTestCase(FileListTestCase),
+        unittest.TestLoader().loadTestsFromTestCase(FindAllTestCase),
     ])
 
 

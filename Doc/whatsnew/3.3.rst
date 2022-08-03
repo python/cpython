@@ -101,7 +101,7 @@ PEP 405: Virtual Environments
 
 Virtual environments help create separate Python setups while sharing a
 system-wide base install, for ease of maintenance.  Virtual environments
-have their own set of private site packages (i.e. locally-installed
+have their own set of private site packages (i.e. locally installed
 libraries), and are optionally segregated from the system-wide site
 packages.  Their concept and implementation are inspired by the popular
 ``virtualenv`` third-party package, but benefit from tighter integration
@@ -898,7 +898,7 @@ an IP address associated with a specific IP subnet).
 lzma
 ----
 
-The newly-added :mod:`lzma` module provides data compression and decompression
+The newly added :mod:`lzma` module provides data compression and decompression
 using the LZMA algorithm, including support for the ``.xz`` and ``.lzma``
 file formats.
 
@@ -1096,7 +1096,7 @@ decimal
    C-module and libmpdec written by Stefan Krah.
 
 The new C version of the decimal module integrates the high speed libmpdec
-library for arbitrary precision correctly-rounded decimal floating point
+library for arbitrary precision correctly rounded decimal floating point
 arithmetic. libmpdec conforms to IBM's General Decimal Arithmetic Specification.
 
 Performance gains range from 10x for database applications to 100x for
@@ -1158,8 +1158,8 @@ API changes
   in order to obtain a rounded or inexact value.
 
 
-* The power function in decimal.py is always correctly-rounded. In the
-  C version, it is defined in terms of the correctly-rounded
+* The power function in decimal.py is always correctly rounded. In the
+  C version, it is defined in terms of the correctly rounded
   :meth:`~decimal.Decimal.exp` and :meth:`~decimal.Decimal.ln` functions,
   but the final result is only "almost always correctly rounded".
 
@@ -2137,7 +2137,7 @@ zlib
 ----
 
 New attribute :attr:`zlib.Decompress.eof` makes it possible to distinguish
-between a properly-formed compressed stream and an incomplete or truncated one.
+between a properly formed compressed stream and an incomplete or truncated one.
 (Contributed by Nadeem Vawda in :issue:`12646`.)
 
 New attribute :attr:`zlib.ZLIB_RUNTIME_VERSION` reports the version string of

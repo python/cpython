@@ -10,6 +10,7 @@ import unittest
 from unittest.mock import patch
 from test import support
 from test.support import os_helper
+from test.support import socket_helper
 from test.support import warnings_helper
 import os
 try:
@@ -22,6 +23,10 @@ from nturl2path import url2pathname, pathname2url
 
 from base64 import b64encode
 import collections
+
+
+if not socket_helper.has_gethostname:
+    raise unittest.SkipTest("test requires gethostname()")
 
 
 def hexescape(char):
@@ -232,16 +237,11 @@ class ProxyTests(unittest.TestCase):
 
     def setUp(self):
         # Records changes to env vars
-        self.env = os_helper.EnvironmentVarGuard()
+        self.env = self.enterContext(os_helper.EnvironmentVarGuard())
         # Delete all proxy related env vars
         for k in list(os.environ):
             if 'proxy' in k.lower():
                 self.env.unset(k)
-
-    def tearDown(self):
-        # Restore all proxy related env vars
-        self.env.__exit__()
-        del self.env
 
     def test_getproxies_environment_keep_no_proxies(self):
         self.env.set('NO_PROXY', 'localhost')
@@ -1525,6 +1525,24 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(expect, result,
                          "url2pathname() failed; %s != %s" %
                          (expect, result))
+
+    @unittest.skipUnless(sys.platform == 'win32',
+                         'test specific to the nturl2path functions.')
+    def test_prefixes(self):
+        # Test special prefixes are correctly handled in pathname2url()
+        given = '\\\\?\\C:\\dir'
+        expect = '///C:/dir'
+        result = urllib.request.pathname2url(given)
+        self.assertEqual(expect, result,
+                         "pathname2url() failed; %s != %s" %
+                         (expect, result))
+        given = '\\\\?\\unc\\server\\share\\dir'
+        expect = '/server/share/dir'
+        result = urllib.request.pathname2url(given)
+        self.assertEqual(expect, result,
+                         "pathname2url() failed; %s != %s" %
+                         (expect, result))
+
 
     @unittest.skipUnless(sys.platform == 'win32',
                          'test specific to the urllib.url2path function.')

@@ -22,8 +22,6 @@ py_warnings = import_helper.import_fresh_module('warnings',
 c_warnings = import_helper.import_fresh_module('warnings',
                                                fresh=['_warnings'])
 
-Py_DEBUG = hasattr(sys, 'gettotalrefcount')
-
 @contextmanager
 def warnings_state(module):
     """Use a specific warnings implementation in warning_tests."""
@@ -372,6 +370,25 @@ class FilterTests(BaseTest):
             self.assertEqual(len(w), 0,
                 "appended duplicate changed order of filters"
             )
+
+    def test_catchwarnings_with_simplefilter_ignore(self):
+        with original_warnings.catch_warnings(module=self.module):
+            self.module.resetwarnings()
+            self.module.simplefilter("error")
+            with self.module.catch_warnings(
+                module=self.module, action="ignore"
+            ):
+                self.module.warn("This will be ignored")
+
+    def test_catchwarnings_with_simplefilter_error(self):
+        with original_warnings.catch_warnings(module=self.module):
+            self.module.resetwarnings()
+            with self.module.catch_warnings(
+                module=self.module, action="error", category=FutureWarning
+            ):
+                self.module.warn("Other types of warnings are not errors")
+                self.assertRaises(FutureWarning,
+                                  self.module.warn, FutureWarning("msg"))
 
 class CFilterTests(FilterTests, unittest.TestCase):
     module = c_warnings
@@ -935,10 +952,10 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
     def test_tracemalloc(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
 
-        with open(os_helper.TESTFN, 'w') as fp:
+        with open(os_helper.TESTFN, 'w', encoding="utf-8") as fp:
             fp.write(textwrap.dedent("""
                 def func():
-                    f = open(__file__)
+                    f = open(__file__, "rb")
                     # Emit ResourceWarning
                     f = None
 
@@ -973,7 +990,7 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
               File "{filename}", lineno 7
                 func()
               File "{filename}", lineno 3
-                f = open(__file__)
+                f = open(__file__, "rb")
         ''').strip()
         self.assertEqual(stderr, expected)
 
@@ -1172,7 +1189,7 @@ class EnvironmentVariableTests(BaseTest):
 
     def test_default_filter_configuration(self):
         pure_python_api = self.module is py_warnings
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             expected_default_filters = []
         else:
             if pure_python_api:
@@ -1219,7 +1236,47 @@ class PyEnvironmentVariableTests(EnvironmentVariableTests, unittest.TestCase):
     module = py_warnings
 
 
+class _DeprecatedTest(BaseTest, unittest.TestCase):
+
+    """Test _deprecated()."""
+
+    module = original_warnings
+
+    def test_warning(self):
+        version = (3, 11, 0, "final", 0)
+        test = [(4, 12), (4, 11), (4, 0), (3, 12)]
+        for remove in test:
+            msg = rf".*test_warnings.*{remove[0]}\.{remove[1]}"
+            filter = msg, DeprecationWarning
+            with self.subTest(remove=remove):
+                with warnings_helper.check_warnings(filter, quiet=False):
+                    self.module._deprecated("test_warnings", remove=remove,
+                                            _version=version)
+
+        version = (3, 11, 0, "alpha", 0)
+        msg = r".*test_warnings.*3\.11"
+        with warnings_helper.check_warnings((msg, DeprecationWarning), quiet=False):
+            self.module._deprecated("test_warnings", remove=(3, 11),
+                                    _version=version)
+
+    def test_RuntimeError(self):
+        version = (3, 11, 0, "final", 0)
+        test = [(2, 0), (2, 12), (3, 10)]
+        for remove in test:
+            with self.subTest(remove=remove):
+                with self.assertRaises(RuntimeError):
+                    self.module._deprecated("test_warnings", remove=remove,
+                                            _version=version)
+        for level in ["beta", "candidate", "final"]:
+            version = (3, 11, 0, level, 0)
+            with self.subTest(releaselevel=level):
+                with self.assertRaises(RuntimeError):
+                    self.module._deprecated("test_warnings", remove=(3, 11),
+                                            _version=version)
+
+
 class BootstrapTest(unittest.TestCase):
+
     def test_issue_8766(self):
         # "import encodings" emits a warning whereas the warnings is not loaded
         # or not completely loaded (warnings imports indirectly encodings by

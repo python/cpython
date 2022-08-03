@@ -2,13 +2,14 @@ from contextlib import contextmanager
 import datetime
 import faulthandler
 import os
+import re
 import signal
 import subprocess
 import sys
-import sysconfig
 from test import support
 from test.support import os_helper
 from test.support import script_helper, is_android
+from test.support import skip_if_sanitizer
 import tempfile
 import unittest
 from textwrap import dedent
@@ -18,18 +19,11 @@ try:
 except ImportError:
     _testcapi = None
 
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
+
 TIMEOUT = 0.5
 MS_WINDOWS = (os.name == 'nt')
-_cflags = sysconfig.get_config_var('CFLAGS') or ''
-_config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
-UB_SANITIZER = (
-    '-fsanitize=undefined' in _cflags or
-    '--with-undefined-behavior-sanitizer' in _config_args
-)
-MEMORY_SANITIZER = (
-    '-fsanitize=memory' in _cflags or
-    '--with-memory-sanitizer' in _config_args
-)
 
 
 def expected_traceback(lineno1, lineno2, header, min_count=1):
@@ -55,6 +49,7 @@ def temporary_filename():
         os_helper.unlink(filename)
 
 class FaultHandlerTests(unittest.TestCase):
+
     def get_output(self, code, filename=None, fd=None):
         """
         Run the specified code in Python (in a new child process) and read the
@@ -88,10 +83,12 @@ class FaultHandlerTests(unittest.TestCase):
             output = output.decode('ascii', 'backslashreplace')
         return output.splitlines(), exitcode
 
-    def check_error(self, code, line_number, fatal_error, *,
+    def check_error(self, code, lineno, fatal_error, *,
                     filename=None, all_threads=True, other_regex=None,
                     fd=None, know_current_thread=True,
-                    py_fatal_error=False):
+                    py_fatal_error=False,
+                    garbage_collecting=False,
+                    function='<module>'):
         """
         Check that the fault handler for fatal errors is enabled and check the
         traceback from the child process output.
@@ -105,20 +102,21 @@ class FaultHandlerTests(unittest.TestCase):
                 header = 'Thread 0x[0-9a-f]+'
         else:
             header = 'Stack'
-        regex = r"""
-            (?m)^{fatal_error}
-
-            {header} \(most recent call first\):
-              File "<string>", line {lineno} in <module>
-            """
+        regex = [f'^{fatal_error}']
         if py_fatal_error:
-            fatal_error += "\nPython runtime state: initialized"
-        regex = dedent(regex).format(
-            lineno=line_number,
-            fatal_error=fatal_error,
-            header=header).strip()
+            regex.append("Python runtime state: initialized")
+        regex.append('')
+        regex.append(fr'{header} \(most recent call first\):')
+        if garbage_collecting:
+            regex.append('  Garbage-collecting')
+        regex.append(fr'  File "<string>", line {lineno} in {function}')
+        regex = '\n'.join(regex)
+
         if other_regex:
-            regex += '|' + other_regex
+            regex = f'(?:{regex}|{other_regex})'
+
+        # Enable MULTILINE flag
+        regex = f'(?m){regex}'
         output, exitcode = self.get_output(code, filename=filename, fd=fd)
         output = '\n'.join(output)
         self.assertRegex(output, regex)
@@ -166,6 +164,42 @@ class FaultHandlerTests(unittest.TestCase):
             """,
             3,
             'Segmentation fault')
+
+    @skip_segfault_on_android
+    def test_gc(self):
+        # bpo-44466: Detect if the GC is running
+        self.check_fatal_error("""
+            import faulthandler
+            import gc
+            import sys
+
+            faulthandler.enable()
+
+            class RefCycle:
+                def __del__(self):
+                    faulthandler._sigsegv()
+
+            # create a reference cycle which triggers a fatal
+            # error in a destructor
+            a = RefCycle()
+            b = RefCycle()
+            a.b = b
+            b.a = a
+
+            # Delete the objects, not the cycle
+            a = None
+            b = None
+
+            # Break the reference cycle: call __del__()
+            gc.collect()
+
+            # Should not reach this line
+            print("exit", file=sys.stderr)
+            """,
+            9,
+            'Segmentation fault',
+            function='__del__',
+            garbage_collecting=True)
 
     def test_fatal_error_c_thread(self):
         self.check_fatal_error("""
@@ -227,25 +261,23 @@ class FaultHandlerTests(unittest.TestCase):
             5,
             'Illegal instruction')
 
+    def check_fatal_error_func(self, release_gil):
+        # Test that Py_FatalError() dumps a traceback
+        with support.SuppressCrashReport():
+            self.check_fatal_error(f"""
+                import _testcapi
+                _testcapi.fatal_error(b'xyz', {release_gil})
+                """,
+                2,
+                'xyz',
+                func='test_fatal_error',
+                py_fatal_error=True)
+
     def test_fatal_error(self):
-        self.check_fatal_error("""
-            import faulthandler
-            faulthandler._fatal_error(b'xyz')
-            """,
-            2,
-            'xyz',
-            func='faulthandler_fatal_error_py',
-            py_fatal_error=True)
+        self.check_fatal_error_func(False)
 
     def test_fatal_error_without_gil(self):
-        self.check_fatal_error("""
-            import faulthandler
-            faulthandler._fatal_error(b'xyz', True)
-            """,
-            2,
-            'xyz',
-            func='faulthandler_fatal_error_py',
-            py_fatal_error=True)
+        self.check_fatal_error_func(True)
 
     @unittest.skipIf(sys.platform.startswith('openbsd'),
                      "Issue #12868: sigaltstack() doesn't work on "
@@ -272,8 +304,8 @@ class FaultHandlerTests(unittest.TestCase):
             3,
             'Segmentation fault')
 
-    @unittest.skipIf(UB_SANITIZER or MEMORY_SANITIZER,
-                     "sanitizer builds change crashing process output.")
+    @skip_if_sanitizer(memory=True, ub=True, reason="sanitizer "
+                       "builds change crashing process output.")
     @skip_segfault_on_android
     def test_enable_file(self):
         with temporary_filename() as filename:
@@ -289,8 +321,8 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform == "win32",
                      "subprocess doesn't support pass_fds on Windows")
-    @unittest.skipIf(UB_SANITIZER or MEMORY_SANITIZER,
-                     "sanitizer builds change crashing process output.")
+    @skip_if_sanitizer(memory=True, ub=True, reason="sanitizer "
+                       "builds change crashing process output.")
     @skip_segfault_on_android
     def test_enable_fd(self):
         with tempfile.TemporaryFile('wb+') as fp:
@@ -331,6 +363,26 @@ class FaultHandlerTests(unittest.TestCase):
                      "%r is present in %r" % (not_expected, stderr))
         self.assertNotEqual(exitcode, 0)
 
+    @skip_segfault_on_android
+    def test_dump_ext_modules(self):
+        code = """
+            import faulthandler
+            import sys
+            # Don't filter stdlib module names
+            sys.stdlib_module_names = frozenset()
+            faulthandler.enable()
+            faulthandler._sigsegv()
+            """
+        stderr, exitcode = self.get_output(code)
+        stderr = '\n'.join(stderr)
+        match = re.search(r'^Extension modules:(.*) \(total: [0-9]+\)$',
+                          stderr, re.MULTILINE)
+        if not match:
+            self.fail(f"Cannot find 'Extension modules:' in {stderr!r}")
+        modules = set(match.group(1).strip().split(', '))
+        for name in ('sys', 'faulthandler'):
+            self.assertIn(name, modules)
+
     def test_is_enabled(self):
         orig_stderr = sys.stderr
         try:
@@ -353,6 +405,7 @@ class FaultHandlerTests(unittest.TestCase):
         finally:
             sys.stderr = orig_stderr
 
+    @support.requires_subprocess()
     def test_disabled_by_default(self):
         # By default, the module should be disabled
         code = "import faulthandler; print(faulthandler.is_enabled())"
@@ -361,6 +414,7 @@ class FaultHandlerTests(unittest.TestCase):
         output = subprocess.check_output(args)
         self.assertEqual(output.rstrip(), b"False")
 
+    @support.requires_subprocess()
     def test_sys_xoptions(self):
         # Test python -X faulthandler
         code = "import faulthandler; print(faulthandler.is_enabled())"
@@ -373,6 +427,7 @@ class FaultHandlerTests(unittest.TestCase):
         output = subprocess.check_output(args, env=env)
         self.assertEqual(output.rstrip(), b"True")
 
+    @support.requires_subprocess()
     def test_env_var(self):
         # empty env var
         code = "import faulthandler; print(faulthandler.is_enabled())"
@@ -644,7 +699,7 @@ class FaultHandlerTests(unittest.TestCase):
             import sys
 
             all_threads = {all_threads}
-            signum = {signum}
+            signum = {signum:d}
             unregister = {unregister}
             chain = {chain}
             filename = {filename!r}

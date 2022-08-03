@@ -11,8 +11,8 @@ extern "C" {
 #include "dynamic_annotations.h"   /* _Py_ANNOTATE_MEMORY_ORDER */
 #include "pyconfig.h"
 
-#if defined(HAVE_STD_ATOMIC)
-#include <stdatomic.h>
+#ifdef HAVE_STD_ATOMIC
+#  include <stdatomic.h>
 #endif
 
 
@@ -62,7 +62,7 @@ typedef struct _Py_atomic_int {
 #define _Py_atomic_load_explicit(ATOMIC_VAL, ORDER) \
     atomic_load_explicit(&((ATOMIC_VAL)->_value), ORDER)
 
-/* Use builtin atomic operations in GCC >= 4.7 */
+// Use builtin atomic operations in GCC >= 4.7 and clang
 #elif defined(HAVE_BUILTIN_ATOMIC)
 
 typedef enum _Py_memory_order {

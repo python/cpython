@@ -7,7 +7,15 @@
                                  |_| XML parser
 
    Copyright (c) 1997-2000 Thai Open Source Software Center Ltd
-   Copyright (c) 2000-2017 Expat development team
+   Copyright (c) 2000      Clark Cooper <coopercc@users.sourceforge.net>
+   Copyright (c) 2000-2005 Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
+   Copyright (c) 2001-2002 Greg Stein <gstein@users.sourceforge.net>
+   Copyright (c) 2002-2016 Karl Waclawek <karl@waclawek.net>
+   Copyright (c) 2016-2022 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2016      Cristian Rodríguez <crrodriguez@opensuse.org>
+   Copyright (c) 2016      Thomas Beutlich <tc@tbeu.de>
+   Copyright (c) 2017      Rhodri James <rhodri@wildebeest.org.uk>
+   Copyright (c) 2022      Thijs Schreijer <thijs@thijsschreijer.nl>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -115,7 +123,11 @@ enum XML_Error {
   XML_ERROR_RESERVED_PREFIX_XMLNS,
   XML_ERROR_RESERVED_NAMESPACE_URI,
   /* Added in 2.2.1. */
-  XML_ERROR_INVALID_ARGUMENT
+  XML_ERROR_INVALID_ARGUMENT,
+  /* Added in 2.3.0. */
+  XML_ERROR_NO_BUFFER,
+  /* Added in 2.4.0. */
+  XML_ERROR_AMPLIFICATION_LIMIT_BREACH
 };
 
 enum XML_Content_Type {
@@ -163,8 +175,10 @@ struct XML_cp {
 };
 
 /* This is called for an element declaration. See above for
-   description of the model argument. It's the caller's responsibility
-   to free model when finished with it.
+   description of the model argument. It's the user code's responsibility
+   to free model when finished with it. See XML_FreeContentModel.
+   There is no need to free the model from the handler, it can be kept
+   around and freed at a later stage.
 */
 typedef void(XMLCALL *XML_ElementDeclHandler)(void *userData,
                                               const XML_Char *name,
@@ -226,6 +240,17 @@ XML_ParserCreate(const XML_Char *encoding);
    and the local part will be concatenated without any separator.
    It is a programming error to use the separator '\0' with namespace
    triplets (see XML_SetReturnNSTriplet).
+   If a namespace separator is chosen that can be part of a URI or
+   part of an XML name, splitting an expanded name back into its
+   1, 2 or 3 original parts on application level in the element handler
+   may end up vulnerable, so these are advised against;  sane choices for
+   a namespace separator are e.g. '\n' (line feed) and '|' (pipe).
+
+   Note that Expat does not validate namespace URIs (beyond encoding)
+   against RFC 3986 today (and is not required to do so with regard to
+   the XML 1.0 namespaces specification) but it may start doing that
+   in future releases.  Before that, an application using Expat must
+   be ready to receive namespace URIs containing non-URI characters.
 */
 XMLPARSEAPI(XML_Parser)
 XML_ParserCreateNS(const XML_Char *encoding, XML_Char namespaceSeparator);
@@ -306,7 +331,7 @@ typedef void(XMLCALL *XML_StartDoctypeDeclHandler)(void *userData,
                                                    const XML_Char *pubid,
                                                    int has_internal_subset);
 
-/* This is called for the start of the DOCTYPE declaration when the
+/* This is called for the end of the DOCTYPE declaration when the
    closing > is encountered, but after processing any external
    subset.
 */
@@ -318,7 +343,7 @@ typedef void(XMLCALL *XML_EndDoctypeDeclHandler)(void *userData);
 
    For internal entities (<!ENTITY foo "bar">), value will
    be non-NULL and systemId, publicID, and notationName will be NULL.
-   The value string is NOT nul-terminated; the length is provided in
+   The value string is NOT null-terminated; the length is provided in
    the value_length argument. Since it is legal to have zero-length
    values, do not use this argument to test for internal entities.
 
@@ -513,7 +538,7 @@ typedef struct {
    Otherwise it must return XML_STATUS_ERROR.
 
    If info does not describe a suitable encoding, then the parser will
-   return an XML_UNKNOWN_ENCODING error.
+   return an XML_ERROR_UNKNOWN_ENCODING error.
 */
 typedef int(XMLCALL *XML_UnknownEncodingHandler)(void *encodingHandlerData,
                                                  const XML_Char *name,
@@ -707,7 +732,7 @@ XML_GetBase(XML_Parser parser);
 /* Returns the number of the attribute/value pairs passed in last call
    to the XML_StartElementHandler that were specified in the start-tag
    rather than defaulted. Each attribute/value pair counts as 2; thus
-   this correspondds to an index into the atts array passed to the
+   this corresponds to an index into the atts array passed to the
    XML_StartElementHandler.  Returns -1 if parser == NULL.
 */
 XMLPARSEAPI(int)
@@ -716,7 +741,7 @@ XML_GetSpecifiedAttributeCount(XML_Parser parser);
 /* Returns the index of the ID attribute passed in the last call to
    XML_StartElementHandler, or -1 if there is no ID attribute or
    parser == NULL.  Each attribute/value pair counts as 2; thus this
-   correspondds to an index into the atts array passed to the
+   corresponds to an index into the atts array passed to the
    XML_StartElementHandler.
 */
 XMLPARSEAPI(int)
@@ -997,7 +1022,10 @@ enum XML_FeatureEnum {
   XML_FEATURE_SIZEOF_XML_LCHAR,
   XML_FEATURE_NS,
   XML_FEATURE_LARGE_SIZE,
-  XML_FEATURE_ATTR_INFO
+  XML_FEATURE_ATTR_INFO,
+  /* Added in Expat 2.4.0. */
+  XML_FEATURE_BILLION_LAUGHS_ATTACK_PROTECTION_MAXIMUM_AMPLIFICATION_DEFAULT,
+  XML_FEATURE_BILLION_LAUGHS_ATTACK_PROTECTION_ACTIVATION_THRESHOLD_DEFAULT
   /* Additional features must be added to the end of this enum. */
 };
 
@@ -1010,12 +1038,24 @@ typedef struct {
 XMLPARSEAPI(const XML_Feature *)
 XML_GetFeatureList(void);
 
+#ifdef XML_DTD
+/* Added in Expat 2.4.0. */
+XMLPARSEAPI(XML_Bool)
+XML_SetBillionLaughsAttackProtectionMaximumAmplification(
+    XML_Parser parser, float maximumAmplificationFactor);
+
+/* Added in Expat 2.4.0. */
+XMLPARSEAPI(XML_Bool)
+XML_SetBillionLaughsAttackProtectionActivationThreshold(
+    XML_Parser parser, unsigned long long activationThresholdBytes);
+#endif
+
 /* Expat follows the semantic versioning convention.
    See http://semver.org.
 */
 #define XML_MAJOR_VERSION 2
-#define XML_MINOR_VERSION 2
-#define XML_MICRO_VERSION 8
+#define XML_MINOR_VERSION 4
+#define XML_MICRO_VERSION 7
 
 #ifdef __cplusplus
 }

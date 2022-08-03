@@ -120,6 +120,8 @@ support ppc (Xcode 4 on 10.6 and later systems).  The flavor can be specified
 using the configure option ``--with-universal-archs=VALUE``. The following
 values are available:
 
+  * ``universal2``: ``arm64``, ``x86_64``
+
   * ``intel``:	  ``i386``, ``x86_64``
 
   * ``intel-32``: ``i386``
@@ -155,9 +157,14 @@ following combinations of SDKs and universal-archs flavors are available:
 
   * 10.15 and later SDKs support ``intel-64`` only
 
+  * 11.0 and later SDKs support ``universal2``
+
 The makefile for a framework build will also install ``python3.x-32``
 binaries when the universal architecture includes at least one 32-bit
 architecture (that is, for all flavors but ``64-bit`` and ``intel-64``).
+It will also install ``python3.x-intel64`` binaries in the ``universal2``
+case to allow easy execution with the Rosetta 2 Intel emulator on Apple
+Silicon Macs.
 
 Running a specific architecture
 ...............................
@@ -177,12 +184,15 @@ subprocesses also run in 32-bit-mode if the main interpreter does, use
 a ``python3.x-32`` binary and use the value of ``sys.executable`` as the
 ``subprocess`` ``Popen`` executable value.
 
+Likewise, use ``python3.x-intel64`` to force execution in ``x86_64`` mode
+with ``universal2`` binaries.
+
 Building and using a framework-based Python on macOS
 ====================================================
 
 
 1. Why would I want a framework Python instead of a normal static Python?
---------------------------------------------------------------------------
+-------------------------------------------------------------------------
 
 The main reason is because you want to create GUI programs in Python. With the
 exception of X11/XDarwin-based GUI toolkits all GUI programs need to be run
@@ -196,7 +206,7 @@ only two places: "/Library/Framework/Python.framework" and
 "/Applications/Python <VERSION>" where ``<VERSION>`` can be e.g. "3.8",
 "2.7", etc.  This simplifies matters for users installing
 Python from a binary distribution if they want to get rid of it again. Moreover,
-due to the way frameworks work, usera without admin privileges can install a
+due to the way frameworks work, users without admin privileges can install a
 binary distribution in their home directory without recompilation.
 
 2. How does a framework Python differ from a normal static Python?
@@ -216,7 +226,7 @@ distribution, this is installed by default on macOS 10.4 or later.  Be
 aware, though, that the Cocoa-based AquaTk's supplied starting with macOS
 10.6 have proven to be unstable.  If possible, you should consider
 installing a newer version before building on macOS 10.6 or later, such as
-the ActiveTcl 8.6.  See http://www.python.org/download/mac/tcltk/.  If you
+the ActiveTcl 8.6.  See https://www.python.org/download/mac/tcltk/.  If you
 are building with an SDK, ensure that the newer Tcl and Tk frameworks are
 seen in the SDK's ``Library/Frameworks`` directory; you may need to
 manually create symlinks to their installed location, ``/Library/Frameworks``.
@@ -262,7 +272,7 @@ normal frameworkinstall which installs the Tools directory into
 distributions.
 
 What do all these programs do?
-===============================
+==============================
 
 "IDLE.app" is an integrated development environment for Python: editor,
 debugger, etc.
@@ -283,10 +293,10 @@ GUI programs.  As of 3.4.0, the ``pythonwx.x`` aliases are no longer installed.
 How do I create a binary distribution?
 ======================================
 
-Download and unpack the source release from http://www.python.org/download/.
+Download and unpack the source release from https://www.python.org/download/.
 Go to the directory ``Mac/BuildScript``. There you will find a script
 ``build-installer.py`` that does all the work. This will download and build
-a number of 3rd-party libaries, configures and builds a framework Python,
+a number of 3rd-party libraries, configures and builds a framework Python,
 installs it, creates the installer package files and then packs this in a
 DMG image.  The script also builds an HTML copy of the current Python
 documentation set for this release for inclusion in the framework.  The
@@ -324,9 +334,9 @@ The configure script sometimes emits warnings like the one below::
    configure: WARNING: libintl.h:     section "Present But Cannot Be Compiled"
    configure: WARNING: libintl.h: proceeding with the preprocessor's result
    configure: WARNING: libintl.h: in the future, the compiler will take precedence
-   configure: WARNING:     ## -------------------------------------- ##
-   configure: WARNING:     ## Report this to http://bugs.python.org/ ##
-   configure: WARNING:     ## -------------------------------------- ##
+   configure: WARNING:     ## --------------------------------------- ##
+   configure: WARNING:     ## Report this to https://bugs.python.org/ ##
+   configure: WARNING:     ## --------------------------------------- ##
 
 This almost always means you are trying to build a universal binary for
 Python and have libraries in ``/usr/local`` that don't contain the required
@@ -352,12 +362,45 @@ A framework install also installs some applications in ``/Applications/Python X.
 And lastly a framework installation installs files in ``/usr/local/bin``, all of
 them symbolic links to files in ``/Library/Frameworks/Python.framework/Versions/X.Y/bin``.
 
+Weak linking support
+====================
+
+The CPython sources support building with the latest SDK while targeting deployment
+to macOS 10.9. This is done through weak linking of symbols introduced in macOS
+10.10 or later and checking for their availability at runtime.
+
+This requires the use of Apple's compiler toolchain on macOS 10.13 or later.
+
+The basic implementation pattern is:
+
+* ``HAVE_<FUNCTION>`` is a macro defined (or not) by the configure script
+
+* ``HAVE_<FUNCTION>_RUNTIME`` is a macro defined in the relevant source
+  files. This expands to a call to ``__builtin_available`` when using
+  a new enough Apple compiler, and to a true value otherwise.
+
+* Use ``HAVE_<FUNCTION>_RUNTIME`` before calling ``<function>``. This macro
+  *must* be used a the sole expression in an if statement::
+
+   if (HAVE_<FUNCTION>_RUNTIME) {
+     /* <function> is available */
+   }
+
+  Or:
+
+   if (HAVE_<FUNCTION>_RUNTIME) {} else {
+     /* <function> is not available */
+   }
+
+  Using other patterns (such as ``!HAVE_<FUNCTION>_RUNTIME``) is not supported
+  by Apple's compilers.
+
 
 Resources
 =========
 
-  *  http://www.python.org/download/mac/
+  *  https://www.python.org/downloads/macos/
 
-  *  http://www.python.org/community/sigs/current/pythonmac-sig/
+  *  https://www.python.org/community/sigs/current/pythonmac-sig/
 
   *  https://devguide.python.org/

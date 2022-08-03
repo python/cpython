@@ -12,15 +12,11 @@ PyAPI_FUNC(wchar_t *) Py_DecodeLocale(
 PyAPI_FUNC(char*) Py_EncodeLocale(
     const wchar_t *text,
     size_t *error_pos);
-
-PyAPI_FUNC(char*) _Py_EncodeLocaleRaw(
-    const wchar_t *text,
-    size_t *error_pos);
 #endif
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_FILEUTILS_H
-#  include  "cpython/fileutils.h"
+#  include "cpython/fileutils.h"
 #  undef Py_CPYTHON_FILEUTILS_H
 #endif
 

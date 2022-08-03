@@ -8,10 +8,10 @@ PyDoc_STRVAR(_io__WindowsConsoleIO_close__doc__,
 "close($self, /)\n"
 "--\n"
 "\n"
-"Close the handle.\n"
+"Close the console object.\n"
 "\n"
-"A closed handle cannot be used for further I/O operations.  close() may be\n"
-"called more than once without error.");
+"A closed console object cannot be used for further I/O operations.\n"
+"close() may be called more than once without error.");
 
 #define _IO__WINDOWSCONSOLEIO_CLOSE_METHODDEF    \
     {"close", (PyCFunction)_io__WindowsConsoleIO_close, METH_NOARGS, _io__WindowsConsoleIO_close__doc__},
@@ -110,10 +110,7 @@ PyDoc_STRVAR(_io__WindowsConsoleIO_fileno__doc__,
 "fileno($self, /)\n"
 "--\n"
 "\n"
-"Return the underlying file descriptor (an integer).\n"
-"\n"
-"fileno is only set when a file descriptor is used to open\n"
-"one of the standard streams.");
+"Return the underlying file descriptor (an integer).");
 
 #define _IO__WINDOWSCONSOLEIO_FILENO_METHODDEF    \
     {"fileno", (PyCFunction)_io__WindowsConsoleIO_fileno, METH_NOARGS, _io__WindowsConsoleIO_fileno__doc__},
@@ -252,7 +249,7 @@ PyDoc_STRVAR(_io__WindowsConsoleIO_read__doc__,
 "Return an empty bytes object at EOF.");
 
 #define _IO__WINDOWSCONSOLEIO_READ_METHODDEF    \
-    {"read", (PyCFunction)(void(*)(void))_io__WindowsConsoleIO_read, METH_FASTCALL, _io__WindowsConsoleIO_read__doc__},
+    {"read", _PyCFunction_CAST(_io__WindowsConsoleIO_read), METH_FASTCALL, _io__WindowsConsoleIO_read__doc__},
 
 static PyObject *
 _io__WindowsConsoleIO_read_impl(winconsoleio *self, Py_ssize_t size);
@@ -381,4 +378,4 @@ _io__WindowsConsoleIO_isatty(winconsoleio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
     #define _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
 #endif /* !defined(_IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF) */
-/*[clinic end generated code: output=a28b3120fa53b256 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2d8648fab31ec60e input=a9049054013a1b77]*/

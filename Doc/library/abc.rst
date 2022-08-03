@@ -186,15 +186,15 @@ The :mod:`abc` module also provides the following decorator:
 
       class C(ABC):
           @abstractmethod
-          def my_abstract_method(self, ...):
+          def my_abstract_method(self, arg1):
               ...
           @classmethod
           @abstractmethod
-          def my_abstract_classmethod(cls, ...):
+          def my_abstract_classmethod(cls, arg2):
               ...
           @staticmethod
           @abstractmethod
-          def my_abstract_staticmethod(...):
+          def my_abstract_staticmethod(arg3):
               ...
 
           @property
@@ -255,7 +255,7 @@ The :mod:`abc` module also supports the following legacy decorators:
       class C(ABC):
           @classmethod
           @abstractmethod
-          def my_abstract_classmethod(cls, ...):
+          def my_abstract_classmethod(cls, arg):
               ...
 
 
@@ -276,7 +276,7 @@ The :mod:`abc` module also supports the following legacy decorators:
       class C(ABC):
           @staticmethod
           @abstractmethod
-          def my_abstract_staticmethod(...):
+          def my_abstract_staticmethod(arg):
               ...
 
 
@@ -336,6 +336,7 @@ The :mod:`abc` module also provides the following functions:
    .. versionadded:: 3.4
 
 .. function:: update_abstractmethods(cls)
+
    A function to recalculate an abstract class's abstraction status. This
    function should be called if a class's abstract methods have been
    implemented or changed after it was created. Usually, this function should
@@ -343,7 +344,7 @@ The :mod:`abc` module also provides the following functions:
 
    Returns *cls*, to allow usage as a class decorator.
 
-   If *cls* is not an instance of ABCMeta, does nothing.
+   If *cls* is not an instance of :class:`ABCMeta`, does nothing.
 
    .. note::
 

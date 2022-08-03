@@ -16,7 +16,6 @@ Porting                 Mini-FAQ on porting to new platforms
 python-config.in        Python script template for python-config
 python.man              UNIX man page for the python interpreter
 python.pc.in            Package configuration info template for pkg-config
-python-wing*.wpr        Wing IDE project file
 README                  The file you're reading now
 README.AIX              Information about using Python on AIX
 README.coverity         Information about running Coverity's Prevent on Python

@@ -781,7 +781,7 @@ class MimeParameters(TokenList):
                     else:
                         try:
                             value = value.decode(charset, 'surrogateescape')
-                        except LookupError:
+                        except (LookupError, UnicodeEncodeError):
                             # XXX: there should really be a custom defect for
                             # unknown character set to make it easy to find,
                             # because otherwise unknown charset is a silent
@@ -2379,7 +2379,7 @@ def get_section(value):
         digits += value[0]
         value = value[1:]
     if digits[0] == '0' and digits != '0':
-        section.defects.append(errors.InvalidHeaderError(
+        section.defects.append(errors.InvalidHeaderDefect(
                 "section number has an invalid leading 0"))
     section.number = int(digits)
     section.append(ValueTerminal(digits, 'digits'))

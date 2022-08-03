@@ -8,7 +8,7 @@ PyDoc_STRVAR(_statistics__normal_dist_inv_cdf__doc__,
 "\n");
 
 #define _STATISTICS__NORMAL_DIST_INV_CDF_METHODDEF    \
-    {"_normal_dist_inv_cdf", (PyCFunction)(void(*)(void))_statistics__normal_dist_inv_cdf, METH_FASTCALL, _statistics__normal_dist_inv_cdf__doc__},
+    {"_normal_dist_inv_cdf", _PyCFunction_CAST(_statistics__normal_dist_inv_cdf), METH_FASTCALL, _statistics__normal_dist_inv_cdf__doc__},
 
 static double
 _statistics__normal_dist_inv_cdf_impl(PyObject *module, double p, double mu,
@@ -65,4 +65,4 @@ _statistics__normal_dist_inv_cdf(PyObject *module, PyObject *const *args, Py_ssi
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c5826928a238326c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b807a8243e7801e6 input=a9049054013a1b77]*/

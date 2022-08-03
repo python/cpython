@@ -22,9 +22,9 @@ PyDoc_STRVAR(_io_open__doc__,
 "\'a\' for appending (which on some Unix systems, means that all writes\n"
 "append to the end of the file regardless of the current seek position).\n"
 "In text mode, if encoding is not specified the encoding used is platform\n"
-"dependent: locale.getpreferredencoding(False) is called to get the\n"
-"current locale encoding. (For reading and writing raw bytes use binary\n"
-"mode and leave encoding unspecified.) The available modes are:\n"
+"dependent: locale.getencoding() is called to get the current locale encoding.\n"
+"(For reading and writing raw bytes use binary mode and leave encoding\n"
+"unspecified.) The available modes are:\n"
 "\n"
 "========= ===============================================================\n"
 "Character Meaning\n"
@@ -36,7 +36,6 @@ PyDoc_STRVAR(_io_open__doc__,
 "\'b\'       binary mode\n"
 "\'t\'       text mode (default)\n"
 "\'+\'       open a disk file for updating (reading and writing)\n"
-"\'U\'       universal newline mode (deprecated)\n"
 "========= ===============================================================\n"
 "\n"
 "The default mode is \'rt\' (open for reading text). For binary random\n"
@@ -51,10 +50,6 @@ PyDoc_STRVAR(_io_open__doc__,
 "\'t\' is appended to the mode argument), the contents of the file are\n"
 "returned as strings, the bytes having been first decoded using a\n"
 "platform-dependent encoding or using the specified encoding if given.\n"
-"\n"
-"\'U\' mode is deprecated and will raise an exception in future versions\n"
-"of Python.  It has no effect in Python 3.  Use newline to control\n"
-"universal newlines mode.\n"
 "\n"
 "buffering is an optional integer used to set the buffering policy.\n"
 "Pass 0 to switch buffering off (only allowed in binary mode), 1 to select\n"
@@ -127,7 +122,7 @@ PyDoc_STRVAR(_io_open__doc__,
 "opened in a binary mode.");
 
 #define _IO_OPEN_METHODDEF    \
-    {"open", (PyCFunction)(void(*)(void))_io_open, METH_FASTCALL|METH_KEYWORDS, _io_open__doc__},
+    {"open", _PyCFunction_CAST(_io_open), METH_FASTCALL|METH_KEYWORDS, _io_open__doc__},
 
 static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
@@ -272,6 +267,53 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_io_text_encoding__doc__,
+"text_encoding($module, encoding, stacklevel=2, /)\n"
+"--\n"
+"\n"
+"A helper function to choose the text encoding.\n"
+"\n"
+"When encoding is not None, this function returns it.\n"
+"Otherwise, this function returns the default text encoding\n"
+"(i.e. \"locale\" or \"utf-8\" depends on UTF-8 mode).\n"
+"\n"
+"This function emits an EncodingWarning if encoding is None and\n"
+"sys.flags.warn_default_encoding is true.\n"
+"\n"
+"This can be used in APIs with an encoding=None parameter.\n"
+"However, please consider using encoding=\"utf-8\" for new APIs.");
+
+#define _IO_TEXT_ENCODING_METHODDEF    \
+    {"text_encoding", _PyCFunction_CAST(_io_text_encoding), METH_FASTCALL, _io_text_encoding__doc__},
+
+static PyObject *
+_io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel);
+
+static PyObject *
+_io_text_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *encoding;
+    int stacklevel = 2;
+
+    if (!_PyArg_CheckPositional("text_encoding", nargs, 1, 2)) {
+        goto exit;
+    }
+    encoding = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    stacklevel = _PyLong_AsInt(args[1]);
+    if (stacklevel == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _io_text_encoding_impl(module, encoding, stacklevel);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_io_open_code__doc__,
 "open_code($module, /, path)\n"
 "--\n"
@@ -282,7 +324,7 @@ PyDoc_STRVAR(_io_open_code__doc__,
 "with calling open(path, \'rb\').");
 
 #define _IO_OPEN_CODE_METHODDEF    \
-    {"open_code", (PyCFunction)(void(*)(void))_io_open_code, METH_FASTCALL|METH_KEYWORDS, _io_open_code__doc__},
+    {"open_code", _PyCFunction_CAST(_io_open_code), METH_FASTCALL|METH_KEYWORDS, _io_open_code__doc__},
 
 static PyObject *
 _io_open_code_impl(PyObject *module, PyObject *path);
@@ -313,4 +355,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5c0dd7a262c30ebc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c4d7e4ef878985f8 input=a9049054013a1b77]*/

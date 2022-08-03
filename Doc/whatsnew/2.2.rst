@@ -49,7 +49,7 @@ amazing new capabilities. Before beginning this, the longest and most
 complicated section of this article, I'll provide an overview of the changes and
 offer some comments.
 
-A long time ago I wrote a Web page listing flaws in Python's design.  One of the
+A long time ago I wrote a web page listing flaws in Python's design.  One of the
 most significant flaws was that it's impossible to subclass Python types
 implemented in C.  In particular, it's not possible to subclass built-in types,
 so you can't just subclass, say, lists in order to add a single useful method to

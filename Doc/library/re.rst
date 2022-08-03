@@ -7,7 +7,7 @@
 .. moduleauthor:: Fredrik Lundh <fredrik@pythonware.com>
 .. sectionauthor:: Andrew M. Kuchling <amk@amk.ca>
 
-**Source code:** :source:`Lib/re.py`
+**Source code:** :source:`Lib/re/`
 
 --------------
 
@@ -87,7 +87,7 @@ Some characters, like ``'|'`` or ``'('``, are special. Special
 characters either stand for classes of ordinary characters, or affect
 how the regular expressions around them are interpreted.
 
-Repetition qualifiers (``*``, ``+``, ``?``, ``{m,n}``, etc) cannot be
+Repetition operators or quantifiers (``*``, ``+``, ``?``, ``{m,n}``, etc) cannot be
 directly nested. This avoids ambiguity with the non-greedy modifier suffix
 ``?``, and with other modifiers in other implementations. To apply a second
 repetition to an inner repetition, parentheses may be used. For example,
@@ -146,13 +146,37 @@ The special characters are:
    single: ??; in regular expressions
 
 ``*?``, ``+?``, ``??``
-   The ``'*'``, ``'+'``, and ``'?'`` qualifiers are all :dfn:`greedy`; they match
+   The ``'*'``, ``'+'``, and ``'?'`` quantifiers are all :dfn:`greedy`; they match
    as much text as possible.  Sometimes this behaviour isn't desired; if the RE
    ``<.*>`` is matched against ``'<a> b <c>'``, it will match the entire
-   string, and not just ``'<a>'``.  Adding ``?`` after the qualifier makes it
+   string, and not just ``'<a>'``.  Adding ``?`` after the quantifier makes it
    perform the match in :dfn:`non-greedy` or :dfn:`minimal` fashion; as *few*
    characters as possible will be matched.  Using the RE ``<.*?>`` will match
    only ``'<a>'``.
+
+.. index::
+   single: *+; in regular expressions
+   single: ++; in regular expressions
+   single: ?+; in regular expressions
+
+``*+``, ``++``, ``?+``
+  Like the ``'*'``, ``'+'``, and ``'?'`` quantifiers, those where ``'+'`` is
+  appended also match as many times as possible.
+  However, unlike the true greedy quantifiers, these do not allow
+  back-tracking when the expression following it fails to match.
+  These are known as :dfn:`possessive` quantifiers.
+  For example, ``a*a`` will match ``'aaaa'`` because the ``a*`` will match
+  all 4 ``'a'``\ s, but, when the final ``'a'`` is encountered, the
+  expression is backtracked so that in the end the ``a*`` ends up matching
+  3 ``'a'``\ s total, and the fourth ``'a'`` is matched by the final ``'a'``.
+  However, when ``a*+a`` is used to match ``'aaaa'``, the ``a*+`` will
+  match all 4 ``'a'``, but when the final ``'a'`` fails to find any more
+  characters to match, the expression cannot be backtracked and will thus
+  fail to match.
+  ``x*+``, ``x++`` and ``x?+`` are equivalent to ``(?>x*)``, ``(?>x+)``
+  and ``(?>x?)`` correspondingly.
+
+   .. versionadded:: 3.11
 
 .. index::
    single: {} (curly brackets); in regular expressions
@@ -174,9 +198,24 @@ The special characters are:
 ``{m,n}?``
    Causes the resulting RE to match from *m* to *n* repetitions of the preceding
    RE, attempting to match as *few* repetitions as possible.  This is the
-   non-greedy version of the previous qualifier.  For example, on the
+   non-greedy version of the previous quantifier.  For example, on the
    6-character string ``'aaaaaa'``, ``a{3,5}`` will match 5 ``'a'`` characters,
    while ``a{3,5}?`` will only match 3 characters.
+
+``{m,n}+``
+   Causes the resulting RE to match from *m* to *n* repetitions of the
+   preceding RE, attempting to match as many repetitions as possible
+   *without* establishing any backtracking points.
+   This is the possessive version of the quantifier above.
+   For example, on the 6-character string ``'aaaaaa'``, ``a{3,5}+aa``
+   attempt to match 5 ``'a'`` characters, then, requiring 2 more ``'a'``\ s,
+   will need more characters than available and thus fail, while
+   ``a{3,5}aa`` will match with ``a{3,5}`` capturing 5, then 4 ``'a'``\ s
+   by backtracking and then the final 2 ``'a'``\ s are matched by the final
+   ``aa`` in the pattern.
+   ``x{m,n}+`` is equivalent to ``(?>x{m,n})``.
+
+   .. versionadded:: 3.11
 
 .. index:: single: \ (backslash); in regular expressions
 
@@ -299,6 +338,9 @@ The special characters are:
    :func:`re.compile` function.  Flags should be used first in the
    expression string.
 
+   .. versionchanged:: 3.11
+      This construction can only be used at the start of the expression.
+
 .. index:: single: (?:; in regular expressions
 
 ``(?:...)``
@@ -333,12 +375,28 @@ The special characters are:
    .. versionchanged:: 3.7
       The letters ``'a'``, ``'L'`` and ``'u'`` also can be used in a group.
 
+``(?>...)``
+   Attempts to match ``...`` as if it was a separate regular expression, and
+   if successful, continues to match the rest of the pattern following it.
+   If the subsequent pattern fails to match, the stack can only be unwound
+   to a point *before* the ``(?>...)`` because once exited, the expression,
+   known as an :dfn:`atomic group`, has thrown away all stack points within
+   itself.
+   Thus, ``(?>.*).`` would never match anything because first the ``.*``
+   would match all characters possible, then, having nothing left to match,
+   the final ``.`` would fail to match.
+   Since there are no stack points saved in the Atomic Group, and there is
+   no stack point before it, the entire expression would thus fail to match.
+
+   .. versionadded:: 3.11
+
 .. index:: single: (?P<; in regular expressions
 
 ``(?P<name>...)``
    Similar to regular parentheses, but the substring matched by the group is
    accessible via the symbolic group name *name*.  Group names must be valid
-   Python identifiers, and each group name must be defined only once within a
+   Python identifiers, and in bytes patterns they must contain only characters
+   in the ASCII range.  Each group name must be defined only once within a
    regular expression.  A symbolic group is also a numbered group, just as if
    the group were not named.
 
@@ -359,6 +417,10 @@ The special characters are:
    | argument of ``re.sub()``              | * ``\g<1>``                      |
    |                                       | * ``\1``                         |
    +---------------------------------------+----------------------------------+
+
+   .. versionchanged:: 3.12
+      In bytes patterns group names must contain only characters in
+      the ASCII range.
 
 .. index:: single: (?P=; in regular expressions
 
@@ -428,6 +490,9 @@ The special characters are:
    ``(<)?(\w+@\w+(?:\.\w+)+)(?(1)>|$)`` is a poor email matching pattern, which
    will match with ``'<user@host.com>'`` as well as ``'user@host.com'``, but
    not with ``'<user@host.com'`` nor ``'user@host.com>'``.
+
+   .. versionchanged:: 3.12
+      Group *id* can only contain ASCII digits.
 
 
 The special sequences consist of ``'\'`` and a character from the list below.
@@ -602,41 +667,20 @@ functions are simplified versions of the full featured methods for compiled
 regular expressions.  Most non-trivial applications always use the compiled
 form.
 
+
+Flags
+^^^^^
+
 .. versionchanged:: 3.6
    Flag constants are now instances of :class:`RegexFlag`, which is a subclass of
    :class:`enum.IntFlag`.
 
-.. function:: compile(pattern, flags=0)
 
-   Compile a regular expression pattern into a :ref:`regular expression object
-   <re-objects>`, which can be used for matching using its
-   :func:`~Pattern.match`, :func:`~Pattern.search` and other methods, described
-   below.
+.. class:: RegexFlag
 
-   The expression's behaviour can be modified by specifying a *flags* value.
-   Values can be any of the following variables, combined using bitwise OR (the
-   ``|`` operator).
+   An :class:`enum.IntFlag` class containing the regex options listed below.
 
-   The sequence ::
-
-      prog = re.compile(pattern)
-      result = prog.match(string)
-
-   is equivalent to ::
-
-      result = re.match(pattern, string)
-
-   but using :func:`re.compile` and saving the resulting regular expression
-   object for reuse is more efficient when the expression will be used several
-   times in a single program.
-
-   .. note::
-
-      The compiled versions of the most recent patterns passed to
-      :func:`re.compile` and the module-level matching functions are cached, so
-      programs that use only a few regular expressions at a time needn't worry
-      about compiling regular expressions.
-
+   .. versionadded:: 3.11 - added to ``__all__``
 
 .. data:: A
           ASCII
@@ -710,6 +754,17 @@ form.
    string and immediately before the newline (if any) at the end of the string.
    Corresponds to the inline flag ``(?m)``.
 
+.. data:: NOFLAG
+
+   Indicates no flag being applied, the value is ``0``.  This flag may be used
+   as a default value for a function keyword argument or as a base value that
+   will be conditionally ORed with other flags.  Example of use as a default
+   value::
+
+      def myfunc(text, flag=re.NOFLAG):
+          return re.match(text, flag)
+
+   .. versionadded:: 3.11
 
 .. data:: S
           DOTALL
@@ -742,6 +797,41 @@ form.
       b = re.compile(r"\d+\.\d*")
 
    Corresponds to the inline flag ``(?x)``.
+
+
+Functions
+^^^^^^^^^
+
+.. function:: compile(pattern, flags=0)
+
+   Compile a regular expression pattern into a :ref:`regular expression object
+   <re-objects>`, which can be used for matching using its
+   :func:`~Pattern.match`, :func:`~Pattern.search` and other methods, described
+   below.
+
+   The expression's behaviour can be modified by specifying a *flags* value.
+   Values can be any of the following variables, combined using bitwise OR (the
+   ``|`` operator).
+
+   The sequence ::
+
+      prog = re.compile(pattern)
+      result = prog.match(string)
+
+   is equivalent to ::
+
+      result = re.match(pattern, string)
+
+   but using :func:`re.compile` and saving the resulting regular expression
+   object for reuse is more efficient when the expression will be used several
+   times in a single program.
+
+   .. note::
+
+      The compiled versions of the most recent patterns passed to
+      :func:`re.compile` and the module-level matching functions are cached, so
+      programs that use only a few regular expressions at a time needn't worry
+      about compiling regular expressions.
 
 
 .. function:: search(pattern, string, flags=0)
@@ -824,10 +914,20 @@ form.
 .. function:: findall(pattern, string, flags=0)
 
    Return all non-overlapping matches of *pattern* in *string*, as a list of
-   strings.  The *string* is scanned left-to-right, and matches are returned in
-   the order found.  If one or more groups are present in the pattern, return a
-   list of groups; this will be a list of tuples if the pattern has more than
-   one group.  Empty matches are included in the result.
+   strings or tuples.  The *string* is scanned left-to-right, and matches
+   are returned in the order found.  Empty matches are included in the result.
+
+   The result depends on the number of capturing groups in the pattern.
+   If there are no groups, return a list of strings matching the whole
+   pattern.  If there is exactly one group, return a list of strings
+   matching that group.  If multiple groups are present, return a list
+   of tuples of strings matching the groups.  Non-capturing groups do not
+   affect the form of the result.
+
+      >>> re.findall(r'\bf[a-z]*', 'which foot or hand fell fastest')
+      ['foot', 'fell', 'fastest']
+      >>> re.findall(r'(\w+)=(\d+)', 'set width=20 and height=10')
+      [('width', '20'), ('height', '10')]
 
    .. versionchanged:: 3.7
       Non-empty matches can now start just after a previous empty match.
@@ -912,6 +1012,11 @@ form.
       Empty matches for the pattern are replaced when adjacent to a previous
       non-empty match.
 
+   .. versionchanged:: 3.12
+      Group *id* can only contain ASCII digits.
+      In bytes replacement strings group names must contain only characters
+      in the ASCII range.
+
 
 .. function:: subn(pattern, repl, string, count=0, flags=0)
 
@@ -931,8 +1036,8 @@ form.
    This is useful if you want to match an arbitrary literal string that may
    have regular expression metacharacters in it.  For example::
 
-      >>> print(re.escape('http://www.python.org'))
-      http://www\.python\.org
+      >>> print(re.escape('https://www.python.org'))
+      https://www\.python\.org
 
       >>> legal_chars = string.ascii_lowercase + string.digits + "!#$%&'*+-.^_`|~:"
       >>> print('[%s]+' % re.escape(legal_chars))
@@ -964,6 +1069,9 @@ form.
 
    Clear the regular expression cache.
 
+
+Exceptions
+^^^^^^^^^^
 
 .. exception:: error(msg, pattern=None, pos=None)
 
@@ -1217,6 +1325,14 @@ Match objects support the following methods and attributes:
       >>> m[1]       # The first parenthesized subgroup.
       'Isaac'
       >>> m[2]       # The second parenthesized subgroup.
+      'Newton'
+
+   Named groups are supported as well::
+
+      >>> m = re.match(r"(?P<first_name>\w+) (?P<last_name>\w+)", "Isaac Newton")
+      >>> m['first_name']
+      'Isaac'
+      >>> m['last_name']
       'Newton'
 
    .. versionadded:: 3.6
@@ -1562,7 +1678,7 @@ find all of the adverbs in some text, they might use :func:`findall` in
 the following manner::
 
    >>> text = "He was carefully disguised but captured quickly by police."
-   >>> re.findall(r"\w+ly", text)
+   >>> re.findall(r"\w+ly\b", text)
    ['carefully', 'quickly']
 
 
@@ -1576,7 +1692,7 @@ a writer wanted to find all of the adverbs *and their positions* in
 some text, they would use :func:`finditer` in the following manner::
 
    >>> text = "He was carefully disguised but captured quickly by police."
-   >>> for m in re.finditer(r"\w+ly", text):
+   >>> for m in re.finditer(r"\w+ly\b", text):
    ...     print('%02d-%02d: %s' % (m.start(), m.end(), m.group(0)))
    07-16: carefully
    40-47: quickly

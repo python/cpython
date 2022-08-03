@@ -32,16 +32,10 @@ parse_qsl_test_cases = [
     (b"&a=b", [(b'a', b'b')]),
     (b"a=a+b&b=b+c", [(b'a', b'a b'), (b'b', b'b c')]),
     (b"a=1&a=2", [(b'a', b'1'), (b'a', b'2')]),
-    (";", []),
-    (";;", []),
-    (";a=b", [('a', 'b')]),
-    ("a=a+b;b=b+c", [('a', 'a b'), ('b', 'b c')]),
-    ("a=1;a=2", [('a', '1'), ('a', '2')]),
-    (b";", []),
-    (b";;", []),
-    (b";a=b", [(b'a', b'b')]),
-    (b"a=a+b;b=b+c", [(b'a', b'a b'), (b'b', b'b c')]),
-    (b"a=1;a=2", [(b'a', b'1'), (b'a', b'2')]),
+    (";a=b", [(';a', 'b')]),
+    ("a=a+b;b=b+c", [('a', 'a b;b=b c')]),
+    (b";a=b", [(b';a', b'b')]),
+    (b"a=a+b;b=b+c", [(b'a', b'a b;b=b c')]),
 ]
 
 # Each parse_qs testcase is a two-tuple that contains
@@ -68,16 +62,10 @@ parse_qs_test_cases = [
     (b"&a=b", {b'a': [b'b']}),
     (b"a=a+b&b=b+c", {b'a': [b'a b'], b'b': [b'b c']}),
     (b"a=1&a=2", {b'a': [b'1', b'2']}),
-    (";", {}),
-    (";;", {}),
-    (";a=b", {'a': ['b']}),
-    ("a=a+b;b=b+c", {'a': ['a b'], 'b': ['b c']}),
-    ("a=1;a=2", {'a': ['1', '2']}),
-    (b";", {}),
-    (b";;", {}),
-    (b";a=b", {b'a': [b'b']}),
-    (b"a=a+b;b=b+c", {b'a': [b'a b'], b'b': [b'b c']}),
-    (b"a=1;a=2", {b'a': [b'1', b'2']}),
+    (";a=b", {';a': ['b']}),
+    ("a=a+b;b=b+c", {'a': ['a b;b=b c']}),
+    (b";a=b", {b';a': [b'b']}),
+    (b"a=a+b;b=b+c", {b'a':[ b'a b;b=b c']}),
 ]
 
 class UrlParseTestCase(unittest.TestCase):
@@ -624,6 +612,43 @@ class UrlParseTestCase(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "out of range"):
             p.port
 
+    def test_urlsplit_remove_unsafe_bytes(self):
+        # Remove ASCII tabs and newlines from input
+        url = "http\t://www.python\n.org\t/java\nscript:\talert('msg\r\n')/?query\n=\tsomething#frag\nment"
+        p = urllib.parse.urlsplit(url)
+        self.assertEqual(p.scheme, "http")
+        self.assertEqual(p.netloc, "www.python.org")
+        self.assertEqual(p.path, "/javascript:alert('msg')/")
+        self.assertEqual(p.query, "query=something")
+        self.assertEqual(p.fragment, "fragment")
+        self.assertEqual(p.username, None)
+        self.assertEqual(p.password, None)
+        self.assertEqual(p.hostname, "www.python.org")
+        self.assertEqual(p.port, None)
+        self.assertEqual(p.geturl(), "http://www.python.org/javascript:alert('msg')/?query=something#fragment")
+
+        # Remove ASCII tabs and newlines from input as bytes.
+        url = b"http\t://www.python\n.org\t/java\nscript:\talert('msg\r\n')/?query\n=\tsomething#frag\nment"
+        p = urllib.parse.urlsplit(url)
+        self.assertEqual(p.scheme, b"http")
+        self.assertEqual(p.netloc, b"www.python.org")
+        self.assertEqual(p.path, b"/javascript:alert('msg')/")
+        self.assertEqual(p.query, b"query=something")
+        self.assertEqual(p.fragment, b"fragment")
+        self.assertEqual(p.username, None)
+        self.assertEqual(p.password, None)
+        self.assertEqual(p.hostname, b"www.python.org")
+        self.assertEqual(p.port, None)
+        self.assertEqual(p.geturl(), b"http://www.python.org/javascript:alert('msg')/?query=something#fragment")
+
+        # with scheme as cache-key
+        url = "http://www.python.org/java\nscript:\talert('msg\r\n')/?query\n=\tsomething#frag\nment"
+        scheme = "ht\ntp"
+        for _ in range(2):
+            p = urllib.parse.urlsplit(url, scheme=scheme)
+            self.assertEqual(p.scheme, "http")
+            self.assertEqual(p.geturl(), "http://www.python.org/javascript:alert('msg')/?query=something#fragment")
+
     def test_attributes_bad_port(self):
         """Check handling of invalid ports."""
         for bytes in (False, True):
@@ -886,9 +911,49 @@ class UrlParseTestCase(unittest.TestCase):
     def test_parse_qsl_max_num_fields(self):
         with self.assertRaises(ValueError):
             urllib.parse.parse_qs('&'.join(['a=a']*11), max_num_fields=10)
-        with self.assertRaises(ValueError):
-            urllib.parse.parse_qs(';'.join(['a=a']*11), max_num_fields=10)
         urllib.parse.parse_qs('&'.join(['a=a']*10), max_num_fields=10)
+
+    def test_parse_qs_separator(self):
+        parse_qs_semicolon_cases = [
+            (";", {}),
+            (";;", {}),
+            (";a=b", {'a': ['b']}),
+            ("a=a+b;b=b+c", {'a': ['a b'], 'b': ['b c']}),
+            ("a=1;a=2", {'a': ['1', '2']}),
+            (b";", {}),
+            (b";;", {}),
+            (b";a=b", {b'a': [b'b']}),
+            (b"a=a+b;b=b+c", {b'a': [b'a b'], b'b': [b'b c']}),
+            (b"a=1;a=2", {b'a': [b'1', b'2']}),
+        ]
+        for orig, expect in parse_qs_semicolon_cases:
+            with self.subTest(f"Original: {orig!r}, Expected: {expect!r}"):
+                result = urllib.parse.parse_qs(orig, separator=';')
+                self.assertEqual(result, expect, "Error parsing %r" % orig)
+                result_bytes = urllib.parse.parse_qs(orig, separator=b';')
+                self.assertEqual(result_bytes, expect, "Error parsing %r" % orig)
+
+
+    def test_parse_qsl_separator(self):
+        parse_qsl_semicolon_cases = [
+            (";", []),
+            (";;", []),
+            (";a=b", [('a', 'b')]),
+            ("a=a+b;b=b+c", [('a', 'a b'), ('b', 'b c')]),
+            ("a=1;a=2", [('a', '1'), ('a', '2')]),
+            (b";", []),
+            (b";;", []),
+            (b";a=b", [(b'a', b'b')]),
+            (b"a=a+b;b=b+c", [(b'a', b'a b'), (b'b', b'b c')]),
+            (b"a=1;a=2", [(b'a', b'1'), (b'a', b'2')]),
+        ]
+        for orig, expect in parse_qsl_semicolon_cases:
+            with self.subTest(f"Original: {orig!r}, Expected: {expect!r}"):
+                result = urllib.parse.parse_qsl(orig, separator=';')
+                self.assertEqual(result, expect, "Error parsing %r" % orig)
+                result_bytes = urllib.parse.parse_qsl(orig, separator=b';')
+                self.assertEqual(result_bytes, expect, "Error parsing %r" % orig)
+
 
     def test_urlencode_sequences(self):
         # Other tests incidentally urlencode things; test non-covered cases:
@@ -979,8 +1044,16 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p1.params, 'phone-context=+1-914-555')
 
     def test_Quoter_repr(self):
-        quoter = urllib.parse.Quoter(urllib.parse._ALWAYS_SAFE)
+        quoter = urllib.parse._Quoter(urllib.parse._ALWAYS_SAFE)
         self.assertIn('Quoter', repr(quoter))
+
+    def test_clear_cache_for_code_coverage(self):
+        urllib.parse.clear_cache()
+
+    def test_urllib_parse_getattr_failure(self):
+        """Test that urllib.parse.__getattr__() fails correctly."""
+        with self.assertRaises(AttributeError):
+            unused = urllib.parse.this_does_not_exist
 
     def test_all(self):
         expected = []
@@ -988,7 +1061,7 @@ class UrlParseTestCase(unittest.TestCase):
             'splitattr', 'splithost', 'splitnport', 'splitpasswd',
             'splitport', 'splitquery', 'splittag', 'splittype', 'splituser',
             'splitvalue',
-            'Quoter', 'ResultBase', 'clear_cache', 'to_bytes', 'unwrap',
+            'ResultBase', 'clear_cache', 'to_bytes', 'unwrap',
         }
         for name in dir(urllib.parse):
             if name.startswith('_') or name in undocumented:
@@ -1006,7 +1079,8 @@ class UrlParseTestCase(unittest.TestCase):
         hex_chars = {'{:04X}'.format(ord(c)) for c in illegal_chars}
         denorm_chars = [
             c for c in map(chr, range(128, sys.maxunicode))
-            if (hex_chars & set(unicodedata.decomposition(c).split()))
+            if unicodedata.decomposition(c)
+            and (hex_chars & set(unicodedata.decomposition(c).split()))
             and c not in illegal_chars
         ]
         # Sanity check that we found at least one such character
@@ -1179,6 +1253,12 @@ class Utility_Tests(unittest.TestCase):
 
 
 class DeprecationTest(unittest.TestCase):
+
+    def test_Quoter_deprecation(self):
+        with self.assertWarns(DeprecationWarning) as cm:
+            old_class = urllib.parse.Quoter
+            self.assertIs(old_class, urllib.parse._Quoter)
+        self.assertIn('Quoter will be removed', str(cm.warning))
 
     def test_splittype_deprecation(self):
         with self.assertWarns(DeprecationWarning) as cm:

@@ -280,6 +280,10 @@ errno_exec(PyObject *module)
 #ifdef ENOANO
     add_errcode("ENOANO", ENOANO, "No anode");
 #endif
+#if defined(__wasi__) && !defined(ESHUTDOWN)
+    // WASI SDK 16 does not have ESHUTDOWN, shutdown results in EPIPE.
+    #define ESHUTDOWN EPIPE
+#endif
 #ifdef ESHUTDOWN
     add_errcode("ESHUTDOWN", ESHUTDOWN, "Cannot send after transport endpoint shutdown");
 #else
@@ -919,6 +923,9 @@ errno_exec(PyObject *module)
 #endif
 #ifdef ESHLIBVERS
     add_errcode("ESHLIBVERS", ESHLIBVERS, "Shared library version mismatch");
+#endif
+#ifdef EQFULL
+    add_errcode("EQFULL", EQFULL, "Interface output queue is full");
 #endif
 
     Py_DECREF(error_dict);

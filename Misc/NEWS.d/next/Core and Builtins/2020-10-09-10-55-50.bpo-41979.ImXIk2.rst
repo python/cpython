@@ -1,1 +1,0 @@
-Star-unpacking is now allowed for with item's targets in the PEG parser.

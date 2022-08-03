@@ -4,18 +4,25 @@
 # a real test suite
 
 import poplib
-import asyncore
-import asynchat
 import socket
 import os
 import errno
 import threading
 
+import unittest
 from unittest import TestCase, skipUnless
 from test import support as test_support
 from test.support import hashlib_helper
 from test.support import socket_helper
 from test.support import threading_helper
+from test.support import warnings_helper
+
+
+asynchat = warnings_helper.import_deprecated('asynchat')
+asyncore = warnings_helper.import_deprecated('asyncore')
+
+
+test_support.requires_working_socket(module=True)
 
 HOST = socket_helper.HOST
 PORT = 0
@@ -155,7 +162,7 @@ class DummyPOP3Handler(asynchat.async_chat):
         def cmd_stls(self, arg):
             if self.tls_active is False:
                 self.push('+OK Begin TLS negotiation')
-                context = ssl.SSLContext()
+                context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
                 context.load_cert_chain(CERTFILE)
                 tls_sock = context.wrap_socket(self.socket,
                                                server_side=True,
@@ -313,11 +320,11 @@ class TestPOP3Class(TestCase):
     def test_rpop(self):
         self.assertOK(self.client.rpop('foo'))
 
-    @hashlib_helper.requires_hashdigest('md5')
+    @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def test_apop_normal(self):
         self.assertOK(self.client.apop('foo', 'dummypassword'))
 
-    @hashlib_helper.requires_hashdigest('md5')
+    @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def test_apop_REDOS(self):
         # Replace welcome with very long evil welcome.
         # NB The upper bound on welcome length is currently 2048.
@@ -501,7 +508,7 @@ class TestTimeouts(TestCase):
             conn, addr = serv.accept()
             conn.send(b"+ Hola mundo\n")
             conn.close()
-        except socket.timeout:
+        except TimeoutError:
             pass
         finally:
             serv.close()
@@ -534,15 +541,10 @@ class TestTimeouts(TestCase):
             poplib.POP3(HOST, self.port, timeout=0)
 
 
-def test_main():
-    tests = [TestPOP3Class, TestTimeouts,
-             TestPOP3_SSLClass, TestPOP3_TLSClass]
+def setUpModule():
     thread_info = threading_helper.threading_setup()
-    try:
-        test_support.run_unittest(*tests)
-    finally:
-        threading_helper.threading_cleanup(*thread_info)
+    unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

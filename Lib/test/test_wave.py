@@ -1,7 +1,6 @@
 import unittest
 from test import audiotests
 from test import support
-from audioop import byteswap
 import io
 import struct
 import sys
@@ -48,7 +47,7 @@ class WavePCM16Test(WaveTest, unittest.TestCase):
       E4B50CEB 63440A5A 08CA0A1F 2BBA0B0B 51460E47 8BCB113C B6F50EEA 44150A59 \
       """)
     if sys.byteorder != 'big':
-        frames = byteswap(frames, 2)
+        frames = wave._byteswap(frames, 2)
 
 
 class WavePCM24Test(WaveTest, unittest.TestCase):
@@ -75,7 +74,7 @@ class WavePCM24Test(WaveTest, unittest.TestCase):
       51486F0E44E1 8BCC64113B05 B6F4EC0EEB36 4413170A5B48 \
       """)
     if sys.byteorder != 'big':
-        frames = byteswap(frames, 3)
+        frames = wave._byteswap(frames, 3)
 
 
 class WavePCM32Test(WaveTest, unittest.TestCase):
@@ -102,7 +101,7 @@ class WavePCM32Test(WaveTest, unittest.TestCase):
       51486F800E44E190 8BCC6480113B0580 B6F4EC000EEB3630 441317800A5B48A0 \
       """)
     if sys.byteorder != 'big':
-        frames = byteswap(frames, 4)
+        frames = wave._byteswap(frames, 4)
 
 
 class MiscTestCase(unittest.TestCase):

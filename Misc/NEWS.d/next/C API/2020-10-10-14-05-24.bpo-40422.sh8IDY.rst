@@ -1,1 +1,0 @@
-Add `_Py_closerange` function to provide performant closing of a range of file descriptors.

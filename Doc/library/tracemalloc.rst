@@ -740,12 +740,12 @@ Traceback
 
    .. method:: format(limit=None, most_recent_first=False)
 
-      Format the traceback as a list of lines with newlines. Use the
-      :mod:`linecache` module to retrieve lines from the source code.
-      If *limit* is set, format the *limit* most recent frames if *limit*
-      is positive. Otherwise, format the ``abs(limit)`` oldest frames.
-      If *most_recent_first* is ``True``, the order of the formatted frames
-      is reversed, returning the most recent frame first instead of last.
+      Format the traceback as a list of lines. Use the :mod:`linecache` module to
+      retrieve lines from the source code. If *limit* is set, format the *limit*
+      most recent frames if *limit* is positive. Otherwise, format the
+      ``abs(limit)`` oldest frames. If *most_recent_first* is ``True``, the order
+      of the formatted frames is reversed, returning the most recent frame first
+      instead of last.
 
       Similar to the :func:`traceback.format_tb` function, except that
       :meth:`.format` does not include newlines.

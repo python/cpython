@@ -52,11 +52,10 @@ import sys
 
 
 __all__ = ['NullTranslations', 'GNUTranslations', 'Catalog',
-           'find', 'translation', 'install', 'textdomain', 'bindtextdomain',
-           'bind_textdomain_codeset',
-           'dgettext', 'dngettext', 'gettext', 'lgettext', 'ldgettext',
-           'ldngettext', 'lngettext', 'ngettext',
-           'pgettext', 'dpgettext', 'npgettext', 'dnpgettext',
+           'bindtextdomain', 'find', 'translation', 'install',
+           'textdomain', 'dgettext', 'dngettext', 'gettext',
+           'ngettext', 'pgettext', 'dpgettext', 'npgettext',
+           'dnpgettext'
            ]
 
 _default_localedir = os.path.join(sys.base_prefix, 'share', 'locale')
@@ -83,6 +82,7 @@ _token_pattern = re.compile(r"""
         (?P<INVALID>\w+|.)                           # invalid token
     """, re.VERBOSE|re.DOTALL)
 
+
 def _tokenize(plural):
     for mo in re.finditer(_token_pattern, plural):
         kind = mo.lastgroup
@@ -94,11 +94,13 @@ def _tokenize(plural):
         yield value
     yield ''
 
+
 def _error(value):
     if value:
         return ValueError('unexpected token in plural form: %s' % value)
     else:
         return ValueError('unexpected end of plural form')
+
 
 _binary_ops = (
     ('||',),
@@ -110,6 +112,7 @@ _binary_ops = (
 )
 _binary_ops = {op: i for i, ops in enumerate(_binary_ops, 1) for op in ops}
 _c2py_ops = {'||': 'or', '&&': 'and', '/': '//'}
+
 
 def _parse(tokens, priority=-1):
     result = ''
@@ -160,6 +163,7 @@ def _parse(tokens, priority=-1):
 
     return result, nexttok
 
+
 def _as_int(n):
     try:
         i = round(n)
@@ -171,6 +175,7 @@ def _as_int(n):
                   (n.__class__.__name__,),
                   DeprecationWarning, 4)
     return n
+
 
 def c2py(plural):
     """Gets a C expression as used in PO files for plural forms and returns a
@@ -250,12 +255,10 @@ def _expand_lang(loc):
     return ret
 
 
-
 class NullTranslations:
     def __init__(self, fp=None):
         self._info = {}
         self._charset = None
-        self._output_charset = None
         self._fallback = None
         if fp is not None:
             self._parse(fp)
@@ -274,20 +277,6 @@ class NullTranslations:
             return self._fallback.gettext(message)
         return message
 
-    def lgettext(self, message):
-        import warnings
-        warnings.warn('lgettext() is deprecated, use gettext() instead',
-                      DeprecationWarning, 2)
-        import locale
-        if self._fallback:
-            with warnings.catch_warnings():
-                warnings.filterwarnings('ignore', r'.*\blgettext\b.*',
-                                        DeprecationWarning)
-                return self._fallback.lgettext(message)
-        if self._output_charset:
-            return message.encode(self._output_charset)
-        return message.encode(locale.getpreferredencoding())
-
     def ngettext(self, msgid1, msgid2, n):
         if self._fallback:
             return self._fallback.ngettext(msgid1, msgid2, n)
@@ -295,24 +284,6 @@ class NullTranslations:
             return msgid1
         else:
             return msgid2
-
-    def lngettext(self, msgid1, msgid2, n):
-        import warnings
-        warnings.warn('lngettext() is deprecated, use ngettext() instead',
-                      DeprecationWarning, 2)
-        import locale
-        if self._fallback:
-            with warnings.catch_warnings():
-                warnings.filterwarnings('ignore', r'.*\blngettext\b.*',
-                                        DeprecationWarning)
-                return self._fallback.lngettext(msgid1, msgid2, n)
-        if n == 1:
-            tmsg = msgid1
-        else:
-            tmsg = msgid2
-        if self._output_charset:
-            return tmsg.encode(self._output_charset)
-        return tmsg.encode(locale.getpreferredencoding())
 
     def pgettext(self, context, message):
         if self._fallback:
@@ -333,24 +304,11 @@ class NullTranslations:
     def charset(self):
         return self._charset
 
-    def output_charset(self):
-        import warnings
-        warnings.warn('output_charset() is deprecated',
-                      DeprecationWarning, 2)
-        return self._output_charset
-
-    def set_output_charset(self, charset):
-        import warnings
-        warnings.warn('set_output_charset() is deprecated',
-                      DeprecationWarning, 2)
-        self._output_charset = charset
-
     def install(self, names=None):
         import builtins
         builtins.__dict__['_'] = self.gettext
         if names is not None:
-            allowed = {'gettext', 'lgettext', 'lngettext',
-                       'ngettext', 'npgettext', 'pgettext'}
+            allowed = {'gettext', 'ngettext', 'npgettext', 'pgettext'}
             for name in allowed & set(names):
                 builtins.__dict__[name] = getattr(self, name)
 
@@ -460,39 +418,6 @@ class GNUTranslations(NullTranslations):
             masteridx += 8
             transidx += 8
 
-    def lgettext(self, message):
-        import warnings
-        warnings.warn('lgettext() is deprecated, use gettext() instead',
-                      DeprecationWarning, 2)
-        import locale
-        missing = object()
-        tmsg = self._catalog.get(message, missing)
-        if tmsg is missing:
-            if self._fallback:
-                return self._fallback.lgettext(message)
-            tmsg = message
-        if self._output_charset:
-            return tmsg.encode(self._output_charset)
-        return tmsg.encode(locale.getpreferredencoding())
-
-    def lngettext(self, msgid1, msgid2, n):
-        import warnings
-        warnings.warn('lngettext() is deprecated, use ngettext() instead',
-                      DeprecationWarning, 2)
-        import locale
-        try:
-            tmsg = self._catalog[(msgid1, self.plural(n))]
-        except KeyError:
-            if self._fallback:
-                return self._fallback.lngettext(msgid1, msgid2, n)
-            if n == 1:
-                tmsg = msgid1
-            else:
-                tmsg = msgid2
-        if self._output_charset:
-            return tmsg.encode(self._output_charset)
-        return tmsg.encode(locale.getpreferredencoding())
-
     def gettext(self, message):
         missing = object()
         tmsg = self._catalog.get(message, missing)
@@ -575,13 +500,12 @@ def find(domain, localedir=None, languages=None, all=False):
     return result
 
 
-
 # a mapping between absolute .mo file path and Translation object
 _translations = {}
-_unspecified = ['unspecified']
+
 
 def translation(domain, localedir=None, languages=None,
-                class_=None, fallback=False, codeset=_unspecified):
+                class_=None, fallback=False):
     if class_ is None:
         class_ = GNUTranslations
     mofiles = find(domain, localedir, languages, all=True)
@@ -607,15 +531,6 @@ def translation(domain, localedir=None, languages=None,
         # are not used.
         import copy
         t = copy.copy(t)
-        if codeset is not _unspecified:
-            import warnings
-            warnings.warn('parameter codeset is deprecated',
-                          DeprecationWarning, 2)
-            if codeset:
-                with warnings.catch_warnings():
-                    warnings.filterwarnings('ignore', r'.*\bset_output_charset\b.*',
-                                            DeprecationWarning)
-                    t.set_output_charset(codeset)
         if result is None:
             result = t
         else:
@@ -623,16 +538,13 @@ def translation(domain, localedir=None, languages=None,
     return result
 
 
-def install(domain, localedir=None, codeset=_unspecified, names=None):
-    t = translation(domain, localedir, fallback=True, codeset=codeset)
+def install(domain, localedir=None, *, names=None):
+    t = translation(domain, localedir, fallback=True)
     t.install(names)
-
 
 
 # a mapping b/w domains and locale directories
 _localedirs = {}
-# a mapping b/w domains and codesets
-_localecodesets = {}
 # current global domain, `messages' used for compatibility w/ GNU gettext
 _current_domain = 'messages'
 
@@ -651,16 +563,6 @@ def bindtextdomain(domain, localedir=None):
     return _localedirs.get(domain, _default_localedir)
 
 
-def bind_textdomain_codeset(domain, codeset=None):
-    import warnings
-    warnings.warn('bind_textdomain_codeset() is deprecated',
-                  DeprecationWarning, 2)
-    global _localecodesets
-    if codeset is not None:
-        _localecodesets[domain] = codeset
-    return _localecodesets.get(domain)
-
-
 def dgettext(domain, message):
     try:
         t = translation(domain, _localedirs.get(domain, None))
@@ -668,23 +570,6 @@ def dgettext(domain, message):
         return message
     return t.gettext(message)
 
-def ldgettext(domain, message):
-    import warnings
-    warnings.warn('ldgettext() is deprecated, use dgettext() instead',
-                  DeprecationWarning, 2)
-    import locale
-    codeset = _localecodesets.get(domain)
-    try:
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', r'.*\bparameter codeset\b.*',
-                                    DeprecationWarning)
-            t = translation(domain, _localedirs.get(domain, None), codeset=codeset)
-    except OSError:
-        return message.encode(codeset or locale.getpreferredencoding())
-    with warnings.catch_warnings():
-        warnings.filterwarnings('ignore', r'.*\blgettext\b.*',
-                                DeprecationWarning)
-        return t.lgettext(message)
 
 def dngettext(domain, msgid1, msgid2, n):
     try:
@@ -695,28 +580,6 @@ def dngettext(domain, msgid1, msgid2, n):
         else:
             return msgid2
     return t.ngettext(msgid1, msgid2, n)
-
-def ldngettext(domain, msgid1, msgid2, n):
-    import warnings
-    warnings.warn('ldngettext() is deprecated, use dngettext() instead',
-                  DeprecationWarning, 2)
-    import locale
-    codeset = _localecodesets.get(domain)
-    try:
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', r'.*\bparameter codeset\b.*',
-                                    DeprecationWarning)
-            t = translation(domain, _localedirs.get(domain, None), codeset=codeset)
-    except OSError:
-        if n == 1:
-            tmsg = msgid1
-        else:
-            tmsg = msgid2
-        return tmsg.encode(codeset or locale.getpreferredencoding())
-    with warnings.catch_warnings():
-        warnings.filterwarnings('ignore', r'.*\blngettext\b.*',
-                                DeprecationWarning)
-        return t.lngettext(msgid1, msgid2, n)
 
 
 def dpgettext(domain, context, message):
@@ -741,26 +604,9 @@ def dnpgettext(domain, context, msgid1, msgid2, n):
 def gettext(message):
     return dgettext(_current_domain, message)
 
-def lgettext(message):
-    import warnings
-    warnings.warn('lgettext() is deprecated, use gettext() instead',
-                  DeprecationWarning, 2)
-    with warnings.catch_warnings():
-        warnings.filterwarnings('ignore', r'.*\bldgettext\b.*',
-                                DeprecationWarning)
-        return ldgettext(_current_domain, message)
 
 def ngettext(msgid1, msgid2, n):
     return dngettext(_current_domain, msgid1, msgid2, n)
-
-def lngettext(msgid1, msgid2, n):
-    import warnings
-    warnings.warn('lngettext() is deprecated, use ngettext() instead',
-                  DeprecationWarning, 2)
-    with warnings.catch_warnings():
-        warnings.filterwarnings('ignore', r'.*\bldngettext\b.*',
-                                DeprecationWarning)
-        return ldngettext(_current_domain, msgid1, msgid2, n)
 
 
 def pgettext(context, message):
