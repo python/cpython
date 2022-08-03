@@ -94,7 +94,7 @@ using :meth:`~Cursor.executemany`::
    ... ]
    >>> cur.executemany('INSERT INTO stocks VALUES(?, ?, ?, ?, ?)', data)
 
-Notice that we used question mark placeholders to bind *data* to the query.
+Notice that we used ``?`` placeholders to bind *data* to the query.
 Always use placeholders instead of :ref:`string formatting<tut-formatting>`
 to bind Python values to SQL statements,
 to avoid `SQL injection attacks`_.
