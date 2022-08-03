@@ -31,6 +31,8 @@ class Queue(mixins._LoopBoundMixin):
     """
 
     def __init__(self, maxsize=0):
+        if not isinstance(maxsize, (int, float)):
+            raise TypeError(f'Expected {maxsize!r} to be an int or float!')
         self._maxsize = maxsize
 
         # Futures.
