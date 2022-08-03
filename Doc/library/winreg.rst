@@ -163,11 +163,8 @@ This module offers the following functions:
 
    *access* is an integer that specifies an access mask that describes the
    desired security access for the key.  Default is :const:`KEY_WOW64_64KEY`.
-   On 32-bit Windows, the access constants :const:`KEY_WOW64_64KEY` and
-   :const:`KEY_WOW64_32KEY` are ignored, thus 0 should be passed in
-   for this parameter as a workaround.
-   See
-   :ref:`Access Rights <access-rights>` for other allowed values.
+   On 32-bit Windows, the WOW64 constants are ignored.
+   See :ref:`Access Rights <access-rights>` for other allowed values.
 
    *This method can not delete keys with subkeys.*
 
