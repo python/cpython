@@ -971,6 +971,7 @@ PyCode_Addr2Location(PyCodeObject *co, int addrq,
     if (addrq < 0) {
         *start_line = *end_line = co->co_firstlineno;
         *start_column = *end_column = 0;
+        return 1;
     }
     assert(addrq >= 0 && addrq < _PyCode_NBYTES(co));
     PyCodeAddressRange bounds;
@@ -1417,7 +1418,7 @@ deopt_code(_Py_CODEUNIT *instructions, Py_ssize_t len)
 {
     for (int i = 0; i < len; i++) {
         _Py_CODEUNIT instruction = instructions[i];
-        int opcode = _PyOpcode_Original[_Py_OPCODE(instruction)];
+        int opcode = _PyOpcode_Deopt[_Py_OPCODE(instruction)];
         int caches = _PyOpcode_Caches[opcode];
         instructions[i] = _Py_MAKECODEUNIT(opcode, _Py_OPARG(instruction));
         while (caches--) {
@@ -1694,6 +1695,15 @@ code_richcompare(PyObject *self, PyObject *other, int op)
     eq = PyObject_RichCompareBool(co->co_localsplusnames,
                                   cp->co_localsplusnames, Py_EQ);
     if (eq <= 0) goto unequal;
+    eq = PyObject_RichCompareBool(co->co_linetable, cp->co_linetable, Py_EQ);
+    if (eq <= 0) {
+        goto unequal;
+    }
+    eq = PyObject_RichCompareBool(co->co_exceptiontable,
+                                  cp->co_exceptiontable, Py_EQ);
+    if (eq <= 0) {
+        goto unequal;
+    }
 
     if (op == Py_EQ)
         res = Py_True;
@@ -1726,7 +1736,15 @@ code_hash(PyCodeObject *co)
     if (h2 == -1) return -1;
     h3 = PyObject_Hash(co->co_localsplusnames);
     if (h3 == -1) return -1;
-    h = h0 ^ h1 ^ h2 ^ h3 ^
+    Py_hash_t h4 = PyObject_Hash(co->co_linetable);
+    if (h4 == -1) {
+        return -1;
+    }
+    Py_hash_t h5 = PyObject_Hash(co->co_exceptiontable);
+    if (h5 == -1) {
+        return -1;
+    }
+    h = h0 ^ h1 ^ h2 ^ h3 ^ h4 ^ h5 ^
         co->co_argcount ^ co->co_posonlyargcount ^ co->co_kwonlyargcount ^
         co->co_flags;
     if (h == -1) h = -2;

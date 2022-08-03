@@ -1942,6 +1942,13 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    Weak reference list head, for weak references to this type object.  Not
    inherited.  Internal use only.
 
+   .. versionchanged:: 3.12
+
+      Internals detail: For the static builtin types this is always ``NULL``,
+      even if weakrefs are added.  Instead, the weakrefs for each are stored
+      on ``PyInterpreterState``.  Use the public C-API or the internal
+      ``_PyObject_GET_WEAKREFS_LISTPTR()`` macro to avoid the distinction.
+
    **Inheritance:**
 
    This field is not inherited.
