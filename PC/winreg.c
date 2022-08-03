@@ -1024,7 +1024,9 @@ winreg_DeleteKeyEx_impl(PyObject *module, HKEY key,
                     (Py_ssize_t)access) < 0) {
         return NULL;
     }
+    Py_BEGIN_ALLOW_THREADS
     rc = RegDeleteKeyExW(key, sub_key, access, reserved);
+    Py_END_ALLOW_THREADS
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegDeleteKeyEx");
     Py_RETURN_NONE;
