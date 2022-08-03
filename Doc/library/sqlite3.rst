@@ -290,7 +290,10 @@ Module functions and constants
    See :ref:`sqlite3-deprecated-transaction-control` for more information.
 
 
-.. function:: connect(database, timeout=5.0, detect_types=0, isolation_level="DEFERRED", check_same_thread=True, factory=sqlite3.Connection, cached_statements=128, uri=False)
+.. function:: connect(database, timeout=5.0, detect_types=0,
+              isolation_level="DEFERRED", check_same_thread=True, factory=sqlite3.Connection,
+              cached_statements=128, uri=False, \*,
+              autocommit=sqlite3.DEPRECATED_TRANSACTION_CONTROL)
 
    Open a connection to an SQLite database.
 
