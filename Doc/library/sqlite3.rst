@@ -94,10 +94,10 @@ using :meth:`~Cursor.executemany`::
    ... ]
    >>> cur.executemany('INSERT INTO stocks VALUES(?, ?, ?, ?, ?)', data)
 
-Notice that we used question mark placeholder to bind *data* to the query.
+Notice that we used question mark placeholders to bind *data* to the query.
 Always use placeholders instead of :ref:`string formatting<tut-formatting>`
 to bind Python values to SQL statements,
-in order to avoid SQL injection attacks.
+to avoid `SQL injection attacks`_.
 See the :ref:`placeholders how-to <sqlite3-placeholders>` for more details.
 
 Then, retrieve the data by iterating over the result of a ``SELECT`` statement::
@@ -112,6 +112,7 @@ Then, retrieve the data by iterating over the result of a ``SELECT`` statement::
 
 You've now created an SQLite database using the :mod:`!sqlite3` module.
 
+.. _SQL injection attacks: https://en.wikipedia.org/wiki/SQL_injection
 
 .. seealso::
 
@@ -1457,7 +1458,7 @@ Using placeholders to bind values in SQL queries
 
 SQL operations usually need to use values from Python variables. However,
 beware of using Python's string operations to assemble queries, as they
-are vulnerable to SQL injection attacks (see the `xkcd webcomic
+are vulnerable to `SQL injection attacks`_ (see the `xkcd webcomic
 <https://xkcd.com/327/>`_ for a humorous example of what can go wrong)::
 
    # Never do this -- insecure!
