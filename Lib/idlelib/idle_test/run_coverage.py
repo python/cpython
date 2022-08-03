@@ -6,7 +6,6 @@ import pathlib
 import subprocess
 import sys
 import textwrap
-import webbrowser
 
 
 def main():
@@ -163,12 +162,7 @@ def generate_coverage_report(*, venv_python_path, no_html):
 
 
 def display_coverage_report(*, module_name):
-    html_file = (
-        'htmlcov/index.html'
-        if module_name == 'all' else
-        f'htmlcov/Lib_idlelib_{module_name}_py.html'
-    )
-    webbrowser.open(html_file)
+    print('Coverage report available at htmlcov/index.html')
 
 
 if __name__ == '__main__':
