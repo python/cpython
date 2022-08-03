@@ -7411,7 +7411,7 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
 
             /* set target */
             struct instr *last = basicblock_last_instr(explicit_jump);
-            last->i_target = b->b_next;
+            last->i_target = explicit_jump->b_next;
             last->i_target_label = NO_LABEL;
         }
     }
