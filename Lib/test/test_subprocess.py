@@ -1140,14 +1140,12 @@ class ProcessTestCase(BaseTestCase):
                     "sys.stderr.buffer.flush();"
                     r"sys.stdout.buffer.write(b'foo \xc2');"
                     "sys.stdout.buffer.flush();"
-                    "time.sleep(0.1);"
-                    r"sys.stdout.buffer.write(b'\xa4 bar');"
-                    "sys.stdout.buffer.flush();"
+                    "time.sleep(10);"
                 ],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
-                timeout=0.05)
+                timeout=3)
         self.assertEqual(c.exception.stdout, "foo ")
         self.assertEqual(c.exception.stderr, "foo ¤ bar")
 
