@@ -1029,13 +1029,7 @@ winreg_DeleteKeyEx_impl(PyObject *module, HKEY key,
                     (Py_ssize_t)access) < 0) {
         return NULL;
     }
-    /* RegDeleteKeyExW is also available on 32-bit systems.
-     * On such systems, RegDeleteKeyExW() is functionally equivalent to
-     * RegDeleteKeyW().
-     *
-     * Note: Though it currently isn't necessary, this can be simplified to use
-     * load-time dynamic linking in the future.
-     * */
+    /* XXX: remove dynamic load, as RegDeleteKeyExW is always available */
     Py_BEGIN_ALLOW_THREADS
     hMod = GetModuleHandleW(L"advapi32.dll");
     if (hMod)
