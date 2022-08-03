@@ -2317,9 +2317,9 @@ best_base(PyObject *bases)
 }
 
 #define ADDED_FIELD_AT_OFFSET(name, offset) \
-(type->tp_ ## name  && (base->tp_ ##name == 0) \
-&& type->tp_ ## name + sizeof(PyObject *) == (offset) \
-&& type->tp_flags & Py_TPFLAGS_HEAPTYPE)
+    (type->tp_ ## name  && (base->tp_ ##name == 0) && \
+    type->tp_ ## name + sizeof(PyObject *) == (offset) && \
+    type->tp_flags & Py_TPFLAGS_HEAPTYPE)
 
 static int
 extra_ivars(PyTypeObject *type, PyTypeObject *base)
