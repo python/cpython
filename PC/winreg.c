@@ -1004,7 +1004,6 @@ Deletes the specified key (intended for 64-bit OS).
 
 While this function is intended to be used for 64-bit OS, it is also
  available on 32-bit systems.
-To use with 32-bit Windows, 0 must be passed in as the access argument.
 
 This method can not delete keys with subkeys.
 
@@ -1017,33 +1016,15 @@ static PyObject *
 winreg_DeleteKeyEx_impl(PyObject *module, HKEY key,
                         const Py_UNICODE *sub_key, REGSAM access,
                         int reserved)
-/*[clinic end generated code: output=52a1c8b374ebc003 input=531fac4b8cb56a89]*/
+/*[clinic end generated code: output=52a1c8b374ebc003 input=a3186db079b3bf85]*/
 {
-    HMODULE hMod;
-    typedef LONG (WINAPI *RDKEFunc)(HKEY, const wchar_t*, REGSAM, int);
-    RDKEFunc pfn = NULL;
     long rc;
-
     if (PySys_Audit("winreg.DeleteKey", "nun",
                     (Py_ssize_t)key, sub_key,
                     (Py_ssize_t)access) < 0) {
         return NULL;
     }
-    /* XXX: remove dynamic load, as RegDeleteKeyExW is always available */
-    Py_BEGIN_ALLOW_THREADS
-    hMod = GetModuleHandleW(L"advapi32.dll");
-    if (hMod)
-        pfn = (RDKEFunc)GetProcAddress(hMod, "RegDeleteKeyExW");
-    Py_END_ALLOW_THREADS
-    if (!pfn) {
-        PyErr_SetString(PyExc_NotImplementedError,
-                                        "not implemented on this platform");
-        return NULL;
-    }
-    Py_BEGIN_ALLOW_THREADS
-    rc = (*pfn)(key, sub_key, access, reserved);
-    Py_END_ALLOW_THREADS
-
+    rc = RegDeleteKeyExW(key, sub_key, access, reserved);
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegDeleteKeyEx");
     Py_RETURN_NONE;

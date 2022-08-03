@@ -421,7 +421,6 @@ PyDoc_STRVAR(winreg_DeleteKeyEx__doc__,
 "\n"
 "While this function is intended to be used for 64-bit OS, it is also\n"
 " available on 32-bit systems.\n"
-"To use with 32-bit Windows, 0 must be passed in as the access argument.\n"
 "\n"
 "This method can not delete keys with subkeys.\n"
 "\n"
@@ -1459,4 +1458,4 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ab808c7d4d33086a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3faa63af6fd1653c input=a9049054013a1b77]*/
