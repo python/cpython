@@ -34,7 +34,7 @@ def main():
                                  no_html=args.no_html)
 
     if not args.no_html:
-        display_coverage_report(module_name=args.module)
+        print('Coverage report available at htmlcov/index.html')
 
 
 def listfiles(path):
@@ -159,10 +159,6 @@ def generate_coverage_report(*, venv_python_path, no_html):
     subprocess.run([venv_python_path, '-m', 'coverage', 'report'])
     if not no_html:
         subprocess.run([venv_python_path, '-m', 'coverage', 'html'])
-
-
-def display_coverage_report(*, module_name):
-    print('Coverage report available at htmlcov/index.html')
 
 
 if __name__ == '__main__':
