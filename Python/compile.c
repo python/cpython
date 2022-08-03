@@ -9458,6 +9458,7 @@ calculate_jump_targets(basicblock *entryblock)
             instr->i_target_label = NO_LABEL;
         }
     }
+    PyMem_Free(label2block);
     return 0;
 }
 
