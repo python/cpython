@@ -788,11 +788,21 @@ searchPath(SearchInfo *search, const wchar_t *shebang, int shebangLength)
         }
     }
 
+    wchar_t pathVariable[MAXLEN];
+    int n = GetEnvironmentVariableW(L"PATH", pathVariable, MAXLEN);
+    if (!n) {
+        if (GetLastError() == ERROR_ENVVAR_NOT_FOUND) {
+            return RC_NO_SHEBANG;
+        }
+        winerror(0, L"Failed to read PATH\n", filename);
+        return RC_INTERNAL_ERROR;
+    }
+
     wchar_t buffer[MAXLEN];
-    SetSearchPathMode(BASE_SEARCH_PATH_ENABLE_SAFE_SEARCHMODE);
-    int n = SearchPathW(NULL, filename, NULL, MAXLEN, buffer, NULL);
+    n = SearchPathW(pathVariable, filename, NULL, MAXLEN, buffer, NULL);
     if (!n) {
         if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+            debug(L"# Did not find %s on PATH\n", filename);
             // If we didn't find it on PATH, let normal handling take over
             return RC_NO_SHEBANG;
         }
@@ -988,8 +998,23 @@ checkShebang(SearchInfo *search)
                 debug(L"# Treating shebang command '%.*s' as %s\n",
                     commandLength, command, search->executablePath);
             } else if (_shebangStartsWith(command, commandLength, L"python", NULL)) {
-                search->tag = &command[6];
-                search->tagLength = commandLength - 6;
+                int tagOffset = 6;
+                // If we're looking for 'python_d', well, we'll settle for a
+                // release build, but need to skip the _d to make sure we get
+                // the right version.
+                if (_startsWith(&command[tagOffset], commandLength - tagOffset, L"_d", -1)) {
+                    tagOffset += 2;
+                }
+                search->tag = &command[tagOffset];
+                search->tagLength = commandLength - tagOffset;
+                // If we had 'python3.12.exe' then we want to strip the suffix
+                // off of the tag
+                if (search->tagLength > 4) {
+                    const wchar_t *suffix = &search->tag[search->tagLength - 4];
+                    if (0 == _comparePath(suffix, 4, L".exe", -1)) {
+                        search->tagLength -= 4;
+                    }
+                }
                 search->oldStyleTag = true;
                 search->executableArgs = &command[commandLength];
                 search->executableArgsLength = shebangLength - commandLength;
