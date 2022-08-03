@@ -322,13 +322,13 @@ Module functions and constants
        The :attr:`~Connection.isolation_level` of the connection,
        controlling whether and how transactions are implicitly opened.
        Can be ``"DEFERRED"`` (default), ``"EXCLUSIVE"`` or ``"IMMEDIATE"``;
-       or :const:`None` to disable opening transactions implicitly.
+       or ``None`` to disable opening transactions implicitly.
        See :ref:`sqlite3-controlling-transactions` for more.
-   :type isolation_level: str | :const:`None`
+   :type isolation_level: str | None
 
    :param check_same_thread:
-       If :const:`True` (default), only the creating thread may use the connection.
-       If :const:`False`, the connection may be shared across multiple threads;
+       If ``True`` (default), only the creating thread may use the connection.
+       If ``False``, the connection may be shared across multiple threads;
        if so, write operations should be serialized by the user to avoid data
        corruption.
    :type check_same_thread: bool
@@ -345,7 +345,7 @@ Module functions and constants
    :type cached_statements: int
 
    :param uri:
-       If set to :const:`True`, *database* is interpreted as a
+       If set to ``True``, *database* is interpreted as a
        :abbr:`URI (Uniform Resource Identifier)` with a file path
        and an optional query string.
        The scheme part *must* be ``"file:"``,
@@ -394,7 +394,7 @@ Module functions and constants
 
 .. function:: complete_statement(statement)
 
-   Returns :const:`True` if the string *statement* contains one or more complete SQL
+   Returns ``True`` if the string *statement* contains one or more complete SQL
    statements terminated by semicolons. It does not verify that the SQL is
    syntactically correct, only that there are no unclosed string literals and the
    statement is terminated by a semicolon.
@@ -410,8 +410,8 @@ Module functions and constants
    Enable or disable callback tracebacks.
    By default you will not get any tracebacks in user-defined functions,
    aggregates, converters, authorizer callbacks etc. If you want to debug them,
-   you can call this function with *flag* set to :const:`True`. Afterwards, you
-   will get tracebacks from callbacks on :data:`sys.stderr`. Use :const:`False`
+   you can call this function with *flag* set to ``True``. Afterwards, you
+   will get tracebacks from callbacks on :data:`sys.stderr`. Use ``False``
    to disable the feature again.
 
    Register an :func:`unraisable hook handler <sys.unraisablehook>` for an
@@ -456,7 +456,7 @@ Connection objects
 
       This attribute controls the :ref:`transaction handling
       <sqlite3-controlling-transactions>` performed by ``sqlite3``.
-      If set to :const:`None`, transactions are never implicitly opened.
+      If set to ``None``, transactions are never implicitly opened.
       If set to one of ``"DEFERRED"``, ``"IMMEDIATE"``, or ``"EXCLUSIVE"``,
       corresponding to the underlying `SQLite transaction behaviour`_,
       implicit :ref:`transaction management
@@ -470,8 +470,8 @@ Connection objects
       This read-only attribute corresponds to the low-level SQLite
       `autocommit mode`_.
 
-      :const:`True` if a transaction is active (there are uncommitted changes),
-      :const:`False` otherwise.
+      ``True`` if a transaction is active (there are uncommitted changes),
+      ``False`` otherwise.
 
       .. versionadded:: 3.2
 
@@ -500,9 +500,9 @@ Connection objects
       :type row: str
 
       :param readonly:
-          Set to :const:`True` if the blob should be opened without write
+          Set to ``True`` if the blob should be opened without write
           permissions.
-          Defaults to :const:`False`.
+          Defaults to ``False``.
       :type readonly: bool
 
       :param name:
@@ -574,11 +574,11 @@ Connection objects
           A callable that is called when the SQL function is invoked.
           The callable must return :ref:`a type natively supported by SQLite
           <sqlite3-types>`.
-          Set to :const:`None` to remove an existing SQL function.
-      :type func: :term:`callback` | :const:`None`
+          Set to ``None`` to remove an existing SQL function.
+      :type func: :term:`callback` | None
 
       :param deterministic:
-          If :const:`True`, the created SQL function is marked as
+          If ``True``, the created SQL function is marked as
           `deterministic <https://sqlite.org/deterministic.html>`_,
           which allows SQLite to perform additional optimizations.
       :type deterministic: bool
@@ -617,8 +617,8 @@ Connection objects
           The number of arguments that the ``step()`` method must accept
           is controlled by *n_arg*.
 
-          Set to :const:`None` to remove an existing SQL aggregate function.
-      :type aggregate_class: :term:`class` | :const:`None`
+          Set to ``None`` to remove an existing SQL aggregate function.
+      :type aggregate_class: :term:`class` | None
 
       Example:
 
@@ -650,13 +650,13 @@ Connection objects
           The number of arguments that the ``step()`` and ``value()`` methods
           must accept is controlled by *num_params*.
 
-          Set to :const:`None` to remove an existing SQL aggregate window function.
+          Set to ``None`` to remove an existing SQL aggregate window function.
 
       :raises NotSupportedError:
           If used with a version of SQLite older than 3.25.0,
           which does not support aggregate window functions.
 
-      :type aggregate_class: :term:`class` | :const:`None`
+      :type aggregate_class: :term:`class` | None
 
       .. versionadded:: 3.11
 
@@ -679,7 +679,7 @@ Connection objects
 
       .. literalinclude:: ../includes/sqlite3/collation_reverse.py
 
-      Remove a collation function by setting *callable* to :const:`None`.
+      Remove a collation function by setting *callable* to ``None``.
 
       .. versionchanged:: 3.11
          The collation name can contain any Unicode character.  Earlier, only
@@ -703,20 +703,20 @@ Connection objects
       :mod:`sqlite3` module.
 
       The first argument to the callback signifies what kind of operation is to be
-      authorized. The second and third argument will be arguments or :const:`None`
+      authorized. The second and third argument will be arguments or ``None``
       depending on the first argument. The 4th argument is the name of the database
       ("main", "temp", etc.) if applicable. The 5th argument is the name of the
       inner-most trigger or view that is responsible for the access attempt or
-      :const:`None` if this access attempt is directly from input SQL code.
+      ``None`` if this access attempt is directly from input SQL code.
 
       Please consult the SQLite documentation about the possible values for the first
       argument and the meaning of the second and third argument depending on the first
       one. All necessary constants are available in the :mod:`sqlite3` module.
 
-      Passing :const:`None` as *authorizer_callback* will disable the authorizer.
+      Passing ``None`` as *authorizer_callback* will disable the authorizer.
 
       .. versionchanged:: 3.11
-         Added support for disabling the authorizer using :const:`None`.
+         Added support for disabling the authorizer using ``None``.
 
 
    .. method:: set_progress_handler(progress_handler, n)
@@ -727,7 +727,7 @@ Connection objects
       a GUI.
 
       If you want to clear any previously installed progress handler, call the
-      method with :const:`None` for *progress_handler*.
+      method with ``None`` for *progress_handler*.
 
       Returning a non-zero value from the handler function will terminate the
       currently executing query and cause it to raise a :exc:`DatabaseError`
@@ -747,7 +747,7 @@ Connection objects
       sqlite3 module and the execution of triggers defined in the current
       database.
 
-      Passing :const:`None` as *trace_callback* will disable the trace callback.
+      Passing ``None`` as *trace_callback* will disable the trace callback.
 
       .. note::
          Exceptions raised in the trace callback are not propagated. As a
@@ -761,7 +761,7 @@ Connection objects
    .. method:: enable_load_extension(enabled, /)
 
       Enable the SQLite engine to load SQLite extensions from shared libraries
-      if *enabled* is :const:`True`;
+      if *enabled* is ``True``;
       else, disallow loading SQLite extensions.
       SQLite extensions can define new functions,
       aggregates or whole new virtual table implementations.  One well-known
@@ -879,8 +879,8 @@ Connection objects
           the *status* of the last iteration,
           the *remaining* number of pages still to be copied,
           and the *total* number of pages.
-          Defaults to :const:`None`.
-      :type progress: :term:`callback` | :const:`None`
+          Defaults to ``None``.
+      :type progress: :term:`callback` | None
 
       :param name:
           The name of the database to back up.
@@ -1034,7 +1034,7 @@ Cursor objects
       :meth:`executescript` if you want to execute multiple SQL statements with one
       call.
 
-      If :attr:`~Connection.isolation_level` is not :const:`None`,
+      If :attr:`~Connection.isolation_level` is not ``None``,
       *sql* is an ``INSERT``, ``UPDATE``, ``DELETE``, or ``REPLACE`` statement,
       and there is no open transaction,
       a transaction is implicitly opened before executing *sql*.
@@ -1082,7 +1082,7 @@ Cursor objects
    .. method:: fetchone()
 
       Fetch the next row of a query result set as a :class:`tuple`.
-      Return :const:`None` if no more data is available.
+      Return ``None`` if no more data is available.
 
 
    .. method:: fetchmany(size=cursor.arraysize)
@@ -1138,7 +1138,7 @@ Cursor objects
       using the :meth:`execute` method.  For other statements, after
       :meth:`executemany` or :meth:`executescript`, or if the insertion failed,
       the value of ``lastrowid`` is left unchanged.  The initial value of
-      ``lastrowid`` is :const:`None`.
+      ``lastrowid`` is ``None``.
 
       .. note::
          Inserts into ``WITHOUT ROWID`` tables are not recorded.
@@ -1155,7 +1155,7 @@ Cursor objects
 
       Read-only attribute that provides the column names of the last query. To
       remain compatible with the Python DB API, it returns a 7-tuple for each
-      column where the last six items of each tuple are :const:`None`.
+      column where the last six items of each tuple are ``None``.
 
       It is set for ``SELECT`` statements without any matching rows as well.
 
@@ -1388,7 +1388,7 @@ The exception hierarchy is defined by the DB-API 2.0 (:pep:`249`).
 
    Exception raised in case a method or database API is not supported by the
    underlying SQLite library. For example, setting *deterministic* to
-   :const:`True` in :meth:`~Connection.create_function`, if the underlying SQLite library
+   ``True`` in :meth:`~Connection.create_function`, if the underlying SQLite library
    does not support deterministic functions.
    ``NotSupportedError`` is a subclass of :exc:`DatabaseError`.
 
@@ -1406,7 +1406,7 @@ The following Python types can thus be sent to SQLite without any problem:
 +-------------------------------+-------------+
 | Python type                   | SQLite type |
 +===============================+=============+
-| :const:`None`                 | ``NULL``    |
+| ``None``                      | ``NULL``    |
 +-------------------------------+-------------+
 | :class:`int`                  | ``INTEGER`` |
 +-------------------------------+-------------+
@@ -1423,7 +1423,7 @@ This is how SQLite types are converted to Python types by default:
 +-------------+----------------------------------------------+
 | SQLite type | Python type                                  |
 +=============+==============================================+
-| ``NULL``    | :const:`None`                                |
+| ``NULL``    | ``None``                                     |
 +-------------+----------------------------------------------+
 | ``INTEGER`` | :class:`int`                                 |
 +-------------+----------------------------------------------+
@@ -1736,7 +1736,7 @@ The ``sqlite3`` module does not adhere to the transaction handling recommended
 by :pep:`249`.
 
 If the connection attribute :attr:`~Connection.isolation_level`
-is not :const:`None`,
+is not ``None``,
 new transactions are implicitly opened before
 :meth:`~Cursor.execute` and :meth:`~Cursor.executemany` executes
 ``INSERT``, ``UPDATE``, ``DELETE``, or ``REPLACE`` statements.
@@ -1747,7 +1747,7 @@ that is, whether and what type of ``BEGIN`` statements ``sqlite3``
 implicitly executes –
 via the :attr:`~Connection.isolation_level` attribute.
 
-If :attr:`~Connection.isolation_level` is set to :const:`None`,
+If :attr:`~Connection.isolation_level` is set to ``None``,
 no transactions are implicitly opened at all.
 This leaves the underlying SQLite library in `autocommit mode`_,
 but also allows the user to perform their own transaction handling
