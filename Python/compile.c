@@ -140,16 +140,17 @@ struct location {
 static struct location NO_LOCATION = {-1, -1, -1, -1};
 
 typedef struct jump_target_label_ {
+    int id;
     struct basicblock_ *block;
 } jump_target_label;
 
-static struct jump_target_label_ NO_LABEL = {NULL};
+static struct jump_target_label_ NO_LABEL = {-1, NULL};
 
-#define SAME_LABEL(L1, L2) ((L1).block == (L2).block)
+#define SAME_LABEL(L1, L2) ((L1).id == (L2).id)
 #define IS_LABEL(L) (!SAME_LABEL((L), (NO_LABEL)))
 
 #define NEW_JUMP_TARGET_LABEL(C, NAME) \
-    jump_target_label NAME = {cfg_builder_new_block(CFG_BUILDER(C))}; \
+    jump_target_label NAME = {cfg_new_label_id(CFG_BUILDER(C)), cfg_builder_new_block(CFG_BUILDER(C))}; \
     if (!IS_LABEL(NAME)) { \
         return 0; \
     }
@@ -255,6 +256,8 @@ typedef struct basicblock_ {
        reverse order that the block are allocated.  b_list points to the next
        block, not to be confused with b_next, which is next by control flow. */
     struct basicblock_ *b_list;
+    /* The label of this block if it is a jump target, -1 otherwise */
+    int b_label;
     /* Exception stack at start of block, used by assembler to create the exception handling table */
     ExceptStack *b_exceptstack;
     /* pointer to an array of instructions, initially NULL */
@@ -356,6 +359,8 @@ typedef struct cfg_builder_ {
     basicblock *curblock;
     /* label for the next instruction to be placed */
     jump_target_label g_current_label;
+    /* next free label id */
+    int g_next_free_label;
 } cfg_builder;
 
 /* The following items change on entry and exit of code blocks.
@@ -862,6 +867,11 @@ compiler_set_qualname(struct compiler *c)
     return 1;
 }
 
+static int
+cfg_new_label_id(cfg_builder *g)
+{
+    return g->g_next_free_label++;
+}
 
 /* Allocate a new block and return a pointer to it.
    Returns NULL on error.
@@ -877,6 +887,7 @@ cfg_builder_new_block(cfg_builder *g)
     /* Extend the singly linked list of blocks with new block. */
     b->b_list = g->block_list;
     g->block_list = b;
+    b->b_label = -1;
     return b;
 }
 
@@ -1314,6 +1325,7 @@ cfg_builder_maybe_start_new_block(cfg_builder *g)
         basicblock *b;
         if (IS_LABEL(g->g_current_label)) {
             b = g->g_current_label.block;
+            b->b_label = g->g_current_label.id;
             g->g_current_label = NO_LABEL;
         }
         else {
@@ -7398,7 +7410,7 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
             if (explicit_jump == NULL) {
                 return -1;
             }
-            jump_target_label next_label = {b->b_next};
+            jump_target_label next_label = {b->b_next->b_label, b->b_next};
             basicblock_addop(explicit_jump, JUMP, 0, next_label, NO_LOCATION);
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
@@ -8228,8 +8240,8 @@ static void
 dump_basicblock(const basicblock *b)
 {
     const char *b_return = basicblock_returns(b) ? "return " : "";
-    fprintf(stderr, "[%d %d %d %p] used: %d, depth: %d, offset: %d %s\n",
-        b->b_cold, b->b_warm, BB_NO_FALLTHROUGH(b), b, b->b_iused,
+    fprintf(stderr, "%d: [%d %d %d %p] used: %d, depth: %d, offset: %d %s\n",
+        b->b_label, b->b_cold, b->b_warm, BB_NO_FALLTHROUGH(b), b, b->b_iused,
         b->b_startdepth, b->b_offset, b_return);
     if (b->b_instr) {
         int i;
@@ -9424,15 +9436,34 @@ propagate_line_numbers(basicblock *entryblock) {
 static int
 calculate_jump_targets(basicblock *entryblock)
 {
+    int max_label = -1;
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        if (b->b_label > max_label) {
+            max_label = b->b_label;
+        }
+    }
+    size_t mapsize = sizeof(basicblock *) * (max_label + 1);
+    basicblock **label2block = (basicblock **)PyMem_Malloc(mapsize);
+    if (!label2block) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    memset(label2block, 0, mapsize);
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        if (b->b_label >= 0) {
+            label2block[b->b_label] = b;
+        }
+    }
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             assert(instr->i_target == NULL);
-            instr->i_target = instr->i_target_label.block;
-            instr->i_target_label = NO_LABEL;
+            instr->i_target = label2block[instr->i_target_label.id];
             if (is_jump(instr) || is_block_push(instr)) {
                 assert(instr->i_target != NULL);
+                assert(instr->i_target->b_label == instr->i_target_label.id);
             }
+            instr->i_target_label = NO_LABEL;
         }
     }
     return 0;
