@@ -9450,10 +9450,12 @@ calculate_jump_targets(basicblock *entryblock)
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             assert(instr->i_target == NULL);
-            instr->i_target = label2block[instr->i_target_label.id];
             if (is_jump(instr) || is_block_push(instr)) {
+                int lbl = instr->i_target_label.id;
+                assert(lbl >= 0 && lbl <= max_label);
+                instr->i_target = label2block[lbl];
                 assert(instr->i_target != NULL);
-                assert(instr->i_target->b_label == instr->i_target_label.id);
+                assert(instr->i_target->b_label == lbl);
             }
             instr->i_target_label = NO_LABEL;
         }
