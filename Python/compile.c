@@ -350,12 +350,12 @@ enum {
 typedef struct cfg_builder_ {
     /* The entryblock, at which control flow begins. All blocks of the
        CFG are reachable through the b_next links */
-    basicblock *cfg_entryblock;
+    basicblock *g_entryblock;
     /* Pointer to the most recently allocated block.  By following
        b_list links, you can reach all allocated blocks. */
-    basicblock *block_list;
+    basicblock *g_block_list;
     /* pointer to the block currently being constructed */
-    basicblock *curblock;
+    basicblock *g_curblock;
     /* label for the next instruction to be placed */
     jump_target_label g_current_label;
     /* next free label id */
@@ -751,7 +751,7 @@ dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
 static void
 cfg_builder_check(cfg_builder *g)
 {
-    for (basicblock *block = g->block_list; block != NULL; block = block->b_list) {
+    for (basicblock *block = g->g_block_list; block != NULL; block = block->b_list) {
         assert(!_PyMem_IsPtrFreed(block));
         if (block->b_instr != NULL) {
             assert(block->b_ialloc > 0);
@@ -769,7 +769,7 @@ static void
 cfg_builder_free(cfg_builder* g)
 {
     cfg_builder_check(g);
-    basicblock *b = g->block_list;
+    basicblock *b = g->g_block_list;
     while (b != NULL) {
         if (b->b_instr) {
             PyObject_Free((void *)b->b_instr);
@@ -884,8 +884,8 @@ cfg_builder_new_block(cfg_builder *g)
         return NULL;
     }
     /* Extend the singly linked list of blocks with new block. */
-    b->b_list = g->block_list;
-    g->block_list = b;
+    b->b_list = g->g_block_list;
+    g->g_block_list = b;
     b->b_label = -1;
     return b;
 }
@@ -894,8 +894,8 @@ static basicblock *
 cfg_builder_use_next_block(cfg_builder *g, basicblock *block)
 {
     assert(block != NULL);
-    g->curblock->b_next = block;
-    g->curblock = block;
+    g->g_curblock->b_next = block;
+    g->g_curblock = block;
     return block;
 }
 
@@ -1313,7 +1313,7 @@ cfg_builder_current_block_is_terminated(cfg_builder *g)
     if (IS_LABEL(g->g_current_label)) {
         return true;
     }
-    struct instr *last = basicblock_last_instr(g->curblock);
+    struct instr *last = basicblock_last_instr(g->g_curblock);
     return last && IS_TERMINATOR_OPCODE(last->i_opcode);
 }
 
@@ -1339,7 +1339,7 @@ cfg_builder_addop(cfg_builder *g, int opcode, int oparg, jump_target_label targe
     if (cfg_builder_maybe_start_new_block(g) != 0) {
         return -1;
     }
-    return basicblock_addop(g->curblock, opcode, oparg, target, loc);
+    return basicblock_addop(g->g_curblock, opcode, oparg, target, loc);
 }
 
 static int
@@ -1788,11 +1788,11 @@ compiler_enter_scope(struct compiler *c, identifier name,
     c->c_nestlevel++;
 
     cfg_builder *g = CFG_BUILDER(c);
-    g->block_list = NULL;
+    g->g_block_list = NULL;
     block = cfg_builder_new_block(g);
     if (block == NULL)
         return 0;
-    g->curblock = g->cfg_entryblock = block;
+    g->g_curblock = g->g_entryblock = block;
     g->g_current_label = NO_LABEL;
 
     if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
@@ -7386,7 +7386,7 @@ mark_cold(basicblock *entryblock) {
 
 static int
 push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
-    basicblock *entryblock = g->cfg_entryblock;
+    basicblock *entryblock = g->g_entryblock;
     if (entryblock->b_next == NULL) {
         /* single basicblock, no need to reorder */
         return 0;
@@ -8516,7 +8516,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     /* Make sure every block that falls off the end returns None. */
-    if (!basicblock_returns(CFG_BUILDER(c)->curblock)) {
+    if (!basicblock_returns(CFG_BUILDER(c)->g_curblock)) {
         UNSET_LOC(c);
         if (addNone)
             ADDOP_LOAD_CONST(c, Py_None);
@@ -8538,7 +8538,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     int nblocks = 0;
-    for (basicblock *b = CFG_BUILDER(c)->block_list; b != NULL; b = b->b_list) {
+    for (basicblock *b = CFG_BUILDER(c)->g_block_list; b != NULL; b = b->b_list) {
         nblocks++;
     }
     if ((size_t)nblocks > SIZE_MAX / sizeof(basicblock *)) {
@@ -8547,7 +8547,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     cfg_builder *g = CFG_BUILDER(c);
-    basicblock *entryblock = g->cfg_entryblock;
+    basicblock *entryblock = g->g_entryblock;
     assert(entryblock != NULL);
 
     /* Set firstlineno if it wasn't explicitly set. */
@@ -9569,7 +9569,7 @@ duplicate_exits_without_lineno(cfg_builder *g)
 {
     /* Copy all exit blocks without line number that are targets of a jump.
      */
-    basicblock *entryblock = g->cfg_entryblock;
+    basicblock *entryblock = g->g_entryblock;
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         if (b->b_iused > 0 && is_jump(&b->b_instr[b->b_iused-1])) {
             basicblock *target = b->b_instr[b->b_iused-1].i_target;
