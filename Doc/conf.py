@@ -83,6 +83,8 @@ html_theme_options = {
 # https://github.com/python/cpython/issues/91207
 if any('htmlhelp' in arg for arg in sys.argv):
     html_style = 'pydoctheme.css'
+    print("\nWARNING: Windows CHM Help is no longer supported.")
+    print("It may be removed in the future\n")
 
 # Short title used e.g. for <title> HTML tags.
 html_short_title = '%s Documentation' % release
