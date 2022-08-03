@@ -399,6 +399,27 @@ _ssl__SSLSocket_verify_client_post_handshake(PySSLSocket *self, PyObject *Py_UNU
     return _ssl__SSLSocket_verify_client_post_handshake_impl(self);
 }
 
+#if (PY_DEBUG_BIO)
+
+PyDoc_STRVAR(_ssl__SSLSocket__debug_bio__doc__,
+"_debug_bio($self, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLSOCKET__DEBUG_BIO_METHODDEF    \
+    {"_debug_bio", (PyCFunction)_ssl__SSLSocket__debug_bio, METH_NOARGS, _ssl__SSLSocket__debug_bio__doc__},
+
+static PyObject *
+_ssl__SSLSocket__debug_bio_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket__debug_bio(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
+{
+    return _ssl__SSLSocket__debug_bio_impl(self);
+}
+
+#endif /* (PY_DEBUG_BIO) */
+
 static PyObject *
 _ssl__SSLContext_impl(PyTypeObject *type, int proto_version);
 
@@ -1323,6 +1344,10 @@ exit:
 
 #endif /* defined(_MSC_VER) */
 
+#ifndef _SSL__SSLSOCKET__DEBUG_BIO_METHODDEF
+    #define _SSL__SSLSOCKET__DEBUG_BIO_METHODDEF
+#endif /* !defined(_SSL__SSLSOCKET__DEBUG_BIO_METHODDEF) */
+
 #ifndef _SSL_ENUM_CERTIFICATES_METHODDEF
     #define _SSL_ENUM_CERTIFICATES_METHODDEF
 #endif /* !defined(_SSL_ENUM_CERTIFICATES_METHODDEF) */
@@ -1330,4 +1355,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=9d806f8ff4a06ed3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0305e6f6115dc11d input=a9049054013a1b77]*/

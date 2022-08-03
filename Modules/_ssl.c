@@ -21,6 +21,8 @@
 #endif
 #define OPENSSL_NO_DEPRECATED 1
 
+#define PY_DEBUG_BIO 1
+
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
@@ -2752,6 +2754,30 @@ _ssl__SSLSocket_verify_client_post_handshake_impl(PySSLSocket *self)
 #endif
 }
 
+#if PY_DEBUG_BIO
+/*[clinic input]
+_ssl._SSLSocket._debug_bio
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket__debug_bio_impl(PySSLSocket *self)
+/*[clinic end generated code: output=16043f90e4d11e66 input=4b0cc8d6ed9998cb]*/
+{
+    BIO *rb, *wb;
+    rb = SSL_get_rbio(self->ssl);
+    wb = SSL_get_wbio(self->ssl);
+    if (rb != NULL) {
+        BIO_set_callback(rb, &BIO_debug_callback);
+        // socket BIO uses same BIO for both directions.
+        // mem bio uses a different BIO for each direction.
+        if (wb != rb) {
+            BIO_set_callback(wb, &BIO_debug_callback);
+        }
+    }
+    Py_RETURN_NONE;
+}
+#endif
+
 static SSL_SESSION*
 _ssl_session_dup(SSL_SESSION *session) {
     SSL_SESSION *newsession = NULL;
@@ -2918,6 +2944,7 @@ static PyMethodDef PySSLMethods[] = {
     _SSL__SSLSOCKET_VERIFY_CLIENT_POST_HANDSHAKE_METHODDEF
     _SSL__SSLSOCKET_GET_UNVERIFIED_CHAIN_METHODDEF
     _SSL__SSLSOCKET_GET_VERIFIED_CHAIN_METHODDEF
+    _SSL__SSLSOCKET__DEBUG_BIO_METHODDEF
     {NULL, NULL}
 };
 

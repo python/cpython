@@ -1080,12 +1080,14 @@ class TestSSL(test_utils.TestCase):
                 try:
                     sock.connect(addr)
                     sock.starttls(client_sslctx_1)
+                    sock._sslobj._debug_bio()
 
                     # because wrap_socket() doesn't work correctly on
                     # SSLSocket, we have to do the 2nd level SSL manually
                     incoming = ssl.MemoryBIO()
                     outgoing = ssl.MemoryBIO()
                     sslobj = client_sslctx_2.wrap_bio(incoming, outgoing)
+                    sslobj._sslobj._debug_bio()
 
                     def do(func, *args):
                         while True:
