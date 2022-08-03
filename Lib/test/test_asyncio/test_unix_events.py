@@ -1531,7 +1531,7 @@ class ChildWatcherTestsMixin:
             self.watcher._sig_chld()
 
         if isinstance(self.watcher, asyncio.FastChildWatcher):
-            # here the FastChildWatche enters a deadlock
+            # here the FastChildWatcher enters a deadlock
             # (there is no way to prevent it)
             self.assertFalse(callback.called)
         else:
