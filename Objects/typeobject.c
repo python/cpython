@@ -2341,6 +2341,7 @@ extra_ivars(PyTypeObject *type, PyTypeObject *base)
         ADDED_FIELD_AT_OFFSET(dictoffset, t_size)) {
         t_size -= sizeof(PyObject *);
     }
+    /* Check __weakrefs__ again, in case it precedes __dict__ */
     if (ADDED_FIELD_AT_OFFSET(weaklistoffset, t_size)) {
         t_size -= sizeof(PyObject *);
     }
