@@ -85,9 +85,7 @@ At this point, our database only contains one row::
 The result is a one-item :class:`tuple`:
 one row, with one column.
 Now, let us insert three more rows of data,
-using :meth:`~Cursor.executemany`.
-We use :ref:`question mark placeholders <sqlite3-placeholders>`
-to bind ``data`` to the SQL statement::
+using :meth:`~Cursor.executemany`::
 
    >>> data = [
    ...    ('2006-03-28', 'BUY', 'IBM', 1000, 45.0),
@@ -95,6 +93,12 @@ to bind ``data`` to the SQL statement::
    ...    ('2006-04-06', 'SELL', 'IBM', 500, 53.0),
    ... ]
    >>> cur.executemany('INSERT INTO stocks VALUES(?, ?, ?, ?, ?)', data)
+
+Notice that we used question mark placeholder to bind *data* to the query.
+Always use placeholders instead of :ref:`string formatting<tut-formatting>`
+to bind Python values to SQL statements,
+in order to avoid SQL injection attacks.
+See the :ref:`placeholders how-to <sqlite3-placeholders>` for more details.
 
 Then, retrieve the data by iterating over the result of a ``SELECT`` statement::
 
