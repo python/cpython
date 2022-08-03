@@ -193,3 +193,5 @@ such as colorizer.
 
 To get a coverage report for IDLE's entire test suite, run the
 above command with "all" instead of a module name.
+
+Note: this does not work with out-of-tree builds yet.
