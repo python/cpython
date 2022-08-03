@@ -141,15 +141,16 @@ static struct location NO_LOCATION = {-1, -1, -1, -1};
 
 typedef struct jump_target_label_ {
     int id;
+    struct basicblock_ *block;
 } jump_target_label;
 
-static struct jump_target_label_ NO_LABEL = {-1};
+static struct jump_target_label_ NO_LABEL = {-1, NULL};
 
 #define SAME_LABEL(L1, L2) ((L1).id == (L2).id)
 #define IS_LABEL(L) (!SAME_LABEL((L), (NO_LABEL)))
 
 #define NEW_JUMP_TARGET_LABEL(C, NAME) \
-    jump_target_label NAME = {cfg_new_label_id(CFG_BUILDER(C))}; \
+    jump_target_label NAME = {cfg_new_label_id(CFG_BUILDER(C)), cfg_builder_new_block(CFG_BUILDER(C))}; \
     if (!IS_LABEL(NAME)) { \
         return 0; \
     }
@@ -1321,12 +1322,18 @@ static int
 cfg_builder_maybe_start_new_block(cfg_builder *g)
 {
     if (cfg_builder_current_block_is_terminated(g)) {
-        basicblock *b = cfg_builder_new_block(g);
+        basicblock *b;
+        if (IS_LABEL(g->g_current_label)) {
+            b = g->g_current_label.block;
+            b->b_label = g->g_current_label.id;
+            g->g_current_label = NO_LABEL;
+        }
+        else {
+            b = cfg_builder_new_block(g);
+        }
         if (b == NULL) {
             return -1;
         }
-        b->b_label = g->g_current_label.id;
-        g->g_current_label = NO_LABEL;
         cfg_builder_use_next_block(g, b);
     }
     return 0;
@@ -7403,15 +7410,16 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
             if (explicit_jump == NULL) {
                 return -1;
             }
-            jump_target_label next_label = {b->b_next->b_label};
+            jump_target_label next_label = {b->b_next->b_label, b->b_next};
             basicblock_addop(explicit_jump, JUMP, 0, next_label, NO_LOCATION);
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
             b->b_next = explicit_jump;
 
-            /* set target */
+            /* calculate target from target_label */
+            /* TODO: formalize an API for adding jumps in the backend */
             struct instr *last = basicblock_last_instr(explicit_jump);
-            last->i_target = b->b_next;
+            last->i_target = last->i_target_label.block;
             last->i_target_label = NO_LABEL;
         }
     }
