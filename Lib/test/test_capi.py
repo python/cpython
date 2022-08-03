@@ -619,6 +619,25 @@ class CAPITest(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, msg):
             t = _testcapi.pytype_fromspec_meta(_testcapi.HeapCTypeMetaclassCustomNew)
 
+    def test_multiple_inheritance_ctypes_with_weakref_or_dict(self):
+
+        class Both1(_testcapi.HeapCTypeWithWeakref, _testcapi.HeapCTypeWithDict):
+            pass
+        class Both2(_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithWeakref):
+            pass
+
+        for cls in (_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithDict2,
+            _testcapi.HeapCTypeWithWeakref, _testcapi.HeapCTypeWithWeakref2):
+            for cls2 in (_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithDict2,
+                _testcapi.HeapCTypeWithWeakref, _testcapi.HeapCTypeWithWeakref2):
+                if cls is not cls2:
+                    class S(cls, cls2):
+                        pass
+            class B1(Both1, cls):
+                pass
+            class B2(Both1, cls):
+                pass
+
     def test_pytype_fromspec_with_repeated_slots(self):
         for variant in range(2):
             with self.subTest(variant=variant):
