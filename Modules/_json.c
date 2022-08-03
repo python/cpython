@@ -1543,9 +1543,9 @@ encoder_encode_key_value(PyEncoderObject *s, _PyUnicodeWriter *writer, bool *fir
 
     if (_steal_accumulate(writer, encoded) < 0)
         return -1;
-    if (_PyUnicodeWriter_WriteStr(writer, s->key_separator))
+    if (_PyUnicodeWriter_WriteStr(writer, s->key_separator) < 0)
         return -1;
-    if (encoder_listencode_obj(s, writer, value, indent_level))
+    if (encoder_listencode_obj(s, writer, value, indent_level) < 0)
         return -1;
     return 0;
 }
