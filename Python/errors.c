@@ -9,6 +9,7 @@
 #include "pycore_structseq.h"     // _PyStructSequence_FiniType()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_traceback.h"     // _PyTraceBack_FromFrame()
+#include "pycore_pylifecycle.h"   // _PyErr_Display()
 
 #include <ctype.h>
 #ifdef MS_WINDOWS
@@ -1329,84 +1330,7 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
             return -1;
         }
     }
-
-    if (exc_tb != NULL && exc_tb != Py_None) {
-        if (PyTraceBack_Print(exc_tb, file) < 0) {
-            /* continue even if writing the traceback failed */
-            _PyErr_Clear(tstate);
-        }
-    }
-
-    if (exc_type == NULL || exc_type == Py_None) {
-        return -1;
-    }
-
-    assert(PyExceptionClass_Check(exc_type));
-
-    PyObject *modulename = PyObject_GetAttr(exc_type, &_Py_ID(__module__));
-    if (modulename == NULL || !PyUnicode_Check(modulename)) {
-        Py_XDECREF(modulename);
-        _PyErr_Clear(tstate);
-        if (PyFile_WriteString("<unknown>", file) < 0) {
-            return -1;
-        }
-    }
-    else {
-        if (!_PyUnicode_Equal(modulename, &_Py_ID(builtins)) &&
-            !_PyUnicode_Equal(modulename, &_Py_ID(__main__))) {
-            if (PyFile_WriteObject(modulename, file, Py_PRINT_RAW) < 0) {
-                Py_DECREF(modulename);
-                return -1;
-            }
-            Py_DECREF(modulename);
-            if (PyFile_WriteString(".", file) < 0) {
-                return -1;
-            }
-        }
-        else {
-            Py_DECREF(modulename);
-        }
-    }
-
-    PyObject *qualname = PyType_GetQualName((PyTypeObject *)exc_type);
-    if (qualname == NULL || !PyUnicode_Check(qualname)) {
-        Py_XDECREF(qualname);
-        _PyErr_Clear(tstate);
-        if (PyFile_WriteString("<unknown>", file) < 0) {
-            return -1;
-        }
-    }
-    else {
-        if (PyFile_WriteObject(qualname, file, Py_PRINT_RAW) < 0) {
-            Py_DECREF(qualname);
-            return -1;
-        }
-        Py_DECREF(qualname);
-    }
-
-    if (exc_value && exc_value != Py_None) {
-        if (PyFile_WriteString(": ", file) < 0) {
-            return -1;
-        }
-        if (PyFile_WriteObject(exc_value, file, Py_PRINT_RAW) < 0) {
-            _PyErr_Clear(tstate);
-            if (PyFile_WriteString("<exception str() failed>", file) < 0) {
-                return -1;
-            }
-        }
-    }
-
-    if (PyFile_WriteString("\n", file) < 0) {
-        return -1;
-    }
-
-    /* Explicitly call file.flush() */
-    PyObject *res = _PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
-    if (!res) {
-        return -1;
-    }
-    Py_DECREF(res);
-
+    _PyErr_Display(file, exc_type, exc_value, exc_tb);
     return 0;
 }
 
