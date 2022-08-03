@@ -979,7 +979,9 @@ winreg_DeleteKey_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key)
                     (Py_ssize_t)0) < 0) {
         return NULL;
     }
+    Py_BEGIN_ALLOW_THREADS
     rc = RegDeleteKeyW(key, sub_key);
+    Py_END_ALLOW_THREADS
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegDeleteKey");
     Py_RETURN_NONE;
