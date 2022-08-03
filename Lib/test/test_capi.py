@@ -15,8 +15,8 @@ import textwrap
 import threading
 import time
 import unittest
-import weakref
 import warnings
+import weakref
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
 from test.support import import_helper
@@ -643,7 +643,9 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(instance.meth(), 'original')
 
         # Cannot override the static type's method
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(
+                TypeError,
+                "cannot set 'meth' attribute of immutable type"):
             ImmutableSubclass.meth = lambda self: 'overridden'
         self.assertEqual(instance.meth(), 'original')
 

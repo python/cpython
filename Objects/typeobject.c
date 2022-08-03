@@ -3672,8 +3672,8 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
      * and only heap types can be mutable.)
      */
     if (spec->flags & Py_TPFLAGS_IMMUTABLETYPE) {
-        for (int i=0; i<PyTuple_Size(bases); i++) {
-            PyTypeObject *b = (PyTypeObject*)PyTuple_GetItem(bases, i);
+        for (int i=0; i<PyTuple_GET_SIZE(bases); i++) {
+            PyTypeObject *b = (PyTypeObject*)PyTuple_GET_ITEM(bases, i);
             if (!b) {
                 goto finally;
             }

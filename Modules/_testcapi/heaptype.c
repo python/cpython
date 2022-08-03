@@ -372,7 +372,7 @@ make_immutable_type_with_base(PyObject *self, PyObject *base)
     assert(PyType_Check(base));
     PyType_Spec ImmutableSubclass_spec = {
         .name = "ImmutableSubclass",
-        .basicsize = ((PyTypeObject*)base)->tp_basicsize,
+        .basicsize = (int)((PyTypeObject*)base)->tp_basicsize,
         .slots = empty_type_slots,
         .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
     };
