@@ -998,21 +998,22 @@ checkShebang(SearchInfo *search)
                 debug(L"# Treating shebang command '%.*s' as %s\n",
                     commandLength, command, search->executablePath);
             } else if (_shebangStartsWith(command, commandLength, L"python", NULL)) {
-                int tagOffset = 6;
-                // If we're looking for 'python_d', well, we'll settle for a
-                // release build, but need to skip the _d to make sure we get
-                // the right version.
-                if (_startsWith(&command[tagOffset], commandLength - tagOffset, L"_d", -1)) {
-                    tagOffset += 2;
-                }
-                search->tag = &command[tagOffset];
-                search->tagLength = commandLength - tagOffset;
+                search->tag = &command[6];
+                search->tagLength = commandLength - 6;
                 // If we had 'python3.12.exe' then we want to strip the suffix
                 // off of the tag
                 if (search->tagLength > 4) {
                     const wchar_t *suffix = &search->tag[search->tagLength - 4];
                     if (0 == _comparePath(suffix, 4, L".exe", -1)) {
                         search->tagLength -= 4;
+                    }
+                }
+                // If we had 'python3_d' then we want to strip the '_d' (any
+                // '.exe' is already gone)
+                if (search->tagLength > 2) {
+                    const wchar_t *suffix = &search->tag[search->tagLength - 2];
+                    if (0 == _comparePath(suffix, 2, L"_d", -1)) {
+                        search->tagLength -= 2;
                     }
                 }
                 search->oldStyleTag = true;
