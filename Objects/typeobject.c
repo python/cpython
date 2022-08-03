@@ -1310,9 +1310,11 @@ subtype_traverse(PyObject *self, visitproc visit, void *arg)
     }
 
     if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        int err = _PyObject_VisitManagedDict(self, visit, arg);
-        if (err) {
-            return err;
+        if ((base->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
+            int err = _PyObject_VisitManagedDict(self, visit, arg);
+            if (err) {
+                return err;
+            }
         }
     }
     else if (type->tp_dictoffset != base->tp_dictoffset) {
@@ -1377,7 +1379,9 @@ subtype_clear(PyObject *self)
     /* Clear the instance dict (if any), to break cycles involving only
        __dict__ slots (as in the case 'self.__dict__ is self'). */
     if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        _PyObject_ClearManagedDict(self);
+        if ((base->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
+            _PyObject_ClearManagedDict(self);
+        }
     }
     else if (type->tp_dictoffset != base->tp_dictoffset) {
         PyObject **dictptr = _PyObject_ComputedDictPointer(self);
