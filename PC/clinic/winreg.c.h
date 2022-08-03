@@ -405,7 +405,7 @@ PyDoc_STRVAR(winreg_DeleteKeyEx__doc__,
 "            reserved=0)\n"
 "--\n"
 "\n"
-"Deletes the specified key (64-bit OS only).\n"
+"Deletes the specified key (intended for 64-bit OS).\n"
 "\n"
 "  key\n"
 "    An already open key, or any one of the predefined HKEY_* constants.\n"
@@ -418,6 +418,9 @@ PyDoc_STRVAR(winreg_DeleteKeyEx__doc__,
 "    desired security access for the key. Default is KEY_WOW64_64KEY.\n"
 "  reserved\n"
 "    A reserved integer, and must be zero.  Default is zero.\n"
+"\n"
+"While this function is intended to be used for 64-bit OS, it is also\n"
+" available on 32-bit systems.\n"
 "\n"
 "This method can not delete keys with subkeys.\n"
 "\n"
@@ -1455,4 +1458,4 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=504fc17ae25a7c75 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3faa63af6fd1653c input=a9049054013a1b77]*/
