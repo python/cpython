@@ -2518,9 +2518,9 @@ features:
    .. note::
 
       On Unix-based systems, :func:`scandir` uses the system's
-      `opendir() <http://pubs.opengroup.org/onlinepubs/009695399/functions/opendir.html>`_
+      `opendir() <https://pubs.opengroup.org/onlinepubs/009695399/functions/opendir.html>`_
       and
-      `readdir() <http://pubs.opengroup.org/onlinepubs/009695399/functions/readdir_r.html>`_
+      `readdir() <https://pubs.opengroup.org/onlinepubs/009695399/functions/readdir_r.html>`_
       functions. On Windows, it uses the Win32
       `FindFirstFileW <https://msdn.microsoft.com/en-us/library/windows/desktop/aa364418(v=vs.85).aspx>`_
       and
@@ -4989,7 +4989,7 @@ Random numbers
    :py:data:`GRND_NONBLOCK`.
 
    See also the `Linux getrandom() manual page
-   <http://man7.org/linux/man-pages/man2/getrandom.2.html>`_.
+   <https://man7.org/linux/man-pages/man2/getrandom.2.html>`_.
 
    .. availability:: Linux >= 3.17.
 
