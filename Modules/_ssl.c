@@ -670,6 +670,21 @@ PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
             p = PY_SSL_ERROR_INVALID_ERROR_CODE;
             errstr = "Invalid error code";
         }
+#if PY_DEBUG_BIO
+        if (p == PY_SSL_ERROR_EOF) {
+            BIO *rb, *wb;
+            rb = SSL_get_rbio(sslsock->ssl);
+            wb = SSL_get_wbio(sslsock->ssl);
+            if (rb != wb) {
+                fprintf(stderr, "BIO[%p] ssl.SSLEOFError: %s (read)\n", rb, errstr);
+                fprintf(stderr, "BIO[%p] ssl.SSLEOFError: %s (write)\n", wb, errstr);
+            } else {
+                int fd = -1;
+                (void)BIO_get_fd(rb, &fd);
+                fprintf(stderr, "BIO[%p] ssl.SSLEOFError: %s (fd=%i)\n", rb, errstr, fd);
+            }
+        }
+#endif
     }
     fill_and_set_sslerror(state, sslsock, type, p, errstr, lineno, e);
     ERR_clear_error();
