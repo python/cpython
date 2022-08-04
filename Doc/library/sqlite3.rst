@@ -267,15 +267,14 @@ Module functions and constants
        in RAM instead of on disk.
    :type database: :term:`path-like object`
 
-   :param timeout:
+   :param float timeout:
        How many seconds the connection should wait before raising
        an exception, if the database is locked by another connection.
        If another connection opens a transaction to modify the database,
        it will be locked until that transaction is committed.
        Default five seconds.
-   :type timeout: float
 
-   :param detect_types:
+   :param int detect_types:
        Control whether and how data types not
        :ref:`natively supported by SQLite <sqlite3-types>`
        are looked up to be converted to Python types,
@@ -288,7 +287,6 @@ Module functions and constants
        even when the *detect_types* parameter is set; :class:`str` will be
        returned instead.
        By default (``0``), type detection is disabled.
-   :type detect_types: int
 
    :param isolation_level:
        The :attr:`~Connection.isolation_level` of the connection,
@@ -298,25 +296,22 @@ Module functions and constants
        See :ref:`sqlite3-controlling-transactions` for more.
    :type isolation_level: str | None
 
-   :param check_same_thread:
+   :param bool check_same_thread:
        If ``True`` (default), only the creating thread may use the connection.
        If ``False``, the connection may be shared across multiple threads;
        if so, write operations should be serialized by the user to avoid data
        corruption.
-   :type check_same_thread: bool
 
-   :param factory:
+   :param Connection factory:
        A custom subclass of :class:`Connection` to create the connection with,
        if not the default :class:`Connection` class.
-   :type factory: :class:`Connection`
 
-   :param cached_statements:
+   :param int cached_statements:
        The number of statements that ``sqlite3``
        should internally cache for this connection, to avoid parsing overhead.
        By default, 100 statements.
-   :type cached_statements: int
 
-   :param uri:
+   :param bool uri:
        If set to ``True``, *database* is interpreted as a
        :abbr:`URI (Uniform Resource Identifier)` with a file path
        and an optional query string.
@@ -324,7 +319,6 @@ Module functions and constants
        and the path can be relative or absolute.
        The query string allows passing parameters to SQLite,
        enabling various :ref:`sqlite3-uri-tricks`.
-   :type uri: bool
 
    :rtype: Connection
 
@@ -475,14 +469,12 @@ Connection objects
 
       Create or remove a user-defined SQL function.
 
-      :param name:
+      :param str name:
           The name of the SQL function.
-      :type name: str
 
-      :param narg:
+      :param int narg:
           The number of arguments the SQL function can accept.
           If ``-1``, it may take any number of arguments.
-      :type narg: int
 
       :param func:
           A callable that is called when the SQL function is invoked.
@@ -491,11 +483,10 @@ Connection objects
           Set to ``None`` to remove an existing SQL function.
       :type func: :term:`callback` | None
 
-      :param deterministic:
+      :param bool deterministic:
           If ``True``, the created SQL function is marked as
           `deterministic <https://sqlite.org/deterministic.html>`_,
           which allows SQLite to perform additional optimizations.
-      :type deterministic: bool
 
       :raises NotSupportedError:
           If *deterministic* is used with SQLite versions older than 3.8.3.
@@ -512,14 +503,12 @@ Connection objects
 
       Create or remove a user-defined SQL aggregate function.
 
-      :param name:
+      :param str name:
           The name of the SQL aggregate function.
-      :type name: str
 
-      :param n_arg:
+      :param int n_arg:
           The number of arguments the SQL aggregate function can accept.
           If ``-1``, it may take any number of arguments.
-      :type n_arg: int
 
       :param aggregate_class:
           A class must implement the following methods:
@@ -727,16 +716,14 @@ Connection objects
       Works even if the database is being accessed by other clients
       or concurrently by the same connection.
 
-      :param target:
+      :param Connection target:
           The database connection to save the backup to.
-      :type target: Connection
 
-      :param pages:
+      :param int pages:
           The number of pages to copy at a time.
           If equal to or less than ``0``,
           the entire database is copied in a single step.
           Defaults to ``-1``.
-      :type pages: int
 
       :param progress:
           If set to a callable, it is invoked with three integer arguments for
@@ -747,18 +734,16 @@ Connection objects
           Defaults to ``None``.
       :type progress: :term:`callback` | None
 
-      :param name:
+      :param str name:
           The name of the database to back up.
           Either ``"main"`` (the default) for the main database,
           ``"temp"`` for the temporary database,
           or the name of a custom database as attached using the
           ``ATTACH DATABASE`` SQL statement.
-      :type name: str
 
-      :param sleep:
+      :param float sleep:
           The number of seconds to sleep between successive attempts
           to back up remaining pages.
-      :type sleep: float
 
       Example 1, copy an existing database into another::
 
@@ -872,13 +857,13 @@ Cursor objects
 
    .. method:: fetchone()
 
-      Fetch the next row of a query result set as a :class:`tuple`.
+      Return the next row of a query result set as a :class:`tuple`.
       Return ``None`` if no more data is available.
 
 
    .. method:: fetchmany(size=cursor.arraysize)
 
-      Fetch the next set of rows of a query result as a :class:`list`.
+      Return the next set of rows of a query result as a :class:`list`.
       Return an empty list if no more rows are available.
 
       The number of rows to fetch per call is specified by the *size* parameter.
@@ -894,7 +879,7 @@ Cursor objects
 
    .. method:: fetchall()
 
-      Fetch all (remaining) rows of a query result as a :class:`list`.
+      Return all (remaining) rows of a query result as a :class:`list`.
       Return an empty list if no rows are available.
       Note that the :attr:`arraysize` attribute can affect the performance of
       this operation.
