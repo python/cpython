@@ -61,7 +61,7 @@ details that are unchanged.
    * `Python and Tkinter Programming <https://www.packtpub.com/product/python-gui-programming-with-tkinter/9781788835886>`_
       By Alan Moore. (ISBN 978-1788835886)
 
-   * `Programming Python <http://learning-python.com/about-pp4e.html>`_
+   * `Programming Python <https://learning-python.com/about-pp4e.html>`_
       By Mark Lutz; has excellent coverage of Tkinter. (ISBN 978-0596158101)
 
    * `Tcl and the Tk Toolkit (2nd edition)  <https://www.amazon.com/exec/obidos/ASIN/032133633X>`_
@@ -988,7 +988,7 @@ wherever the image was used.
 
 .. seealso::
 
-    The `Pillow <http://python-pillow.org/>`_ package adds support for
+    The `Pillow <https://python-pillow.org/>`_ package adds support for
     formats such as BMP, JPEG, TIFF, and WebP, among others.
 
 .. _tkinter-file-handlers:
