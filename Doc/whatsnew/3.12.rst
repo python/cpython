@@ -421,7 +421,7 @@ New Features
   without the :const:`immutable <Py_TPFLAGS_IMMUTABLETYPE>` flag).
   Mutable types that do not override :c:member:`~PyTypeObject.tp_call` now
   inherit the :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag.
-  (Contributed by Petr Viktorin in :gh:`93012`.)
+  (Contributed by Petr Viktorin in :gh:`93274`.)
 
 Porting to Python 3.12
 ----------------------
