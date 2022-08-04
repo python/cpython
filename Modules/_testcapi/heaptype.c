@@ -737,6 +737,14 @@ static PyType_Spec HeapCTypeWithDict_spec = {
     HeapCTypeWithDict_slots
 };
 
+static PyType_Spec HeapCTypeWithDict2_spec = {
+    "_testcapi.HeapCTypeWithDict2",
+    sizeof(HeapCTypeWithDictObject),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    HeapCTypeWithDict_slots
+};
+
 static int
 heapmanaged_traverse(HeapCTypeObject *self, visitproc visit, void *arg)
 {
@@ -829,6 +837,14 @@ static PyType_Slot HeapCTypeWithWeakref_slots[] = {
 
 static PyType_Spec HeapCTypeWithWeakref_spec = {
     "_testcapi.HeapCTypeWithWeakref",
+    sizeof(HeapCTypeWithWeakrefObject),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    HeapCTypeWithWeakref_slots
+};
+
+static PyType_Spec HeapCTypeWithWeakref2_spec = {
+    "_testcapi.HeapCTypeWithWeakref2",
     sizeof(HeapCTypeWithWeakrefObject),
     0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
@@ -958,6 +974,12 @@ _PyTestCapi_Init_Heaptype(PyObject *m) {
     }
     PyModule_AddObject(m, "HeapCTypeWithDict", HeapCTypeWithDict);
 
+    PyObject *HeapCTypeWithDict2 = PyType_FromSpec(&HeapCTypeWithDict2_spec);
+    if (HeapCTypeWithDict2 == NULL) {
+        return -1;
+    }
+    PyModule_AddObject(m, "HeapCTypeWithDict2", HeapCTypeWithDict2);
+
     PyObject *HeapCTypeWithNegativeDict = PyType_FromSpec(&HeapCTypeWithNegativeDict_spec);
     if (HeapCTypeWithNegativeDict == NULL) {
         return -1;
@@ -975,6 +997,12 @@ _PyTestCapi_Init_Heaptype(PyObject *m) {
         return -1;
     }
     PyModule_AddObject(m, "HeapCTypeWithWeakref", HeapCTypeWithWeakref);
+
+    PyObject *HeapCTypeWithWeakref2 = PyType_FromSpec(&HeapCTypeWithWeakref2_spec);
+    if (HeapCTypeWithWeakref2 == NULL) {
+        return -1;
+    }
+    PyModule_AddObject(m, "HeapCTypeWithWeakref2", HeapCTypeWithWeakref2);
 
     PyObject *HeapCTypeWithBuffer = PyType_FromSpec(&HeapCTypeWithBuffer_spec);
     if (HeapCTypeWithBuffer == NULL) {

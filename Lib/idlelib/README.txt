@@ -16,8 +16,9 @@ and omissions and lag behind changes in idlelib.
 
 
 IDLELIB FILES
+=============
+
 Implementation files not in IDLE MENU are marked (nim).
-Deprecated files and objects are listed separately as the end.
 
 Startup
 -------
@@ -33,22 +34,22 @@ autocomplete.py   # Complete attribute names or filenames.
 autocomplete_w.py # Display completions.
 autoexpand.py     # Expand word with previous word in file.
 browser.py        # Create module browser window.
+calltip.py        # Create calltip text.
 calltip_w.py      # Display calltip.
-calltips.py       # Create calltip text.
 codecontext.py    # Show compound statement headers otherwise not visible.
-colorizer.py      # Colorize text (nim)
+colorizer.py      # Colorize text (nim).
 config.py         # Load, fetch, and save configuration (nim).
 configdialog.py   # Display user configuration dialogs.
-config_help.py    # Specify help source in configdialog.
 config_key.py     # Change keybindings.
-dynoption.py      # Define mutable OptionMenu widget (nim).
-debugobj.py       # Define class used in stackviewer.
-debugobj_r.py     # Communicate objects between processes with rpc (nim).
 debugger.py       # Debug code run from shell or editor; show window.
 debugger_r.py     # Debug code run in remote process.
+debugobj.py       # Define class used in stackviewer.
+debugobj_r.py     # Communicate objects between processes with rpc (nim).
 delegator.py      # Define base class for delegators (nim).
+dynoption.py      # Define mutable OptionMenu widget (nim)
 editor.py         # Define most of editor and utility functions.
 filelist.py       # Open files and manage list of open windows (nim).
+format.py         # Define format menu options.
 grep.py           # Find all occurrences of pattern in multiple files.
 help.py           # Display IDLE's html doc.
 help_about.py     # Display About IDLE dialog.
@@ -59,7 +60,6 @@ macosx.py         # Help IDLE run on Macs (nim).
 mainmenu.py       # Define most of IDLE menu.
 multicall.py      # Wrap tk widget to allow multiple calls per event (nim).
 outwin.py         # Create window for grep output.
-paragraph.py      # Re-wrap multiline strings and comments.
 parenmatch.py     # Match fenceposts: (), [], and {}.
 pathbrowser.py    # Create path browser window.
 percolator.py     # Manage delegator stack (nim).
@@ -69,22 +69,25 @@ query.py          # Query user for information
 redirector.py     # Intercept widget subcommands (for percolator) (nim).
 replace.py        # Search and replace pattern in text.
 rpc.py            # Communicate between idle and user processes (nim).
-rstrip.py         # Strip trailing whitespace.
 run.py            # Manage user code execution subprocess.
 runscript.py      # Check and run user code.
 scrolledlist.py   # Define scrolledlist widget for IDLE (nim).
 search.py         # Search for pattern in text.
 searchbase.py     # Define base for search, replace, and grep dialogs.
 searchengine.py   # Define engine for all 3 search dialogs.
+sidebar.py        # Define line number and shell prompt sidebars.
+squeezer.py       # Squeeze long shell output (nim).
 stackviewer.py    # View stack after exception.
 statusbar.py      # Define status bar for windows (nim).
 tabbedpages.py    # Define tabbed pages widget (nim).
 textview.py       # Define read-only text widget (nim).
+tooltip.py        # Define popups for calltips, squeezer (nim).
 tree.py           # Define tree widget, used in browsers (nim).
 undo.py           # Manage undo stack.
-util.py           # Define objects imported elsewhere with no dependencies (nim)
+util.py           # Define common objects imported elsewhere (nim).
 windows.py        # Manage window list and define listed top level.
 zoomheight.py     # Zoom window to full height of screen.
+zzdummy.py        # Example extension.
 
 Configuration
 -------------
@@ -98,6 +101,7 @@ Text
 CREDITS.txt  # not maintained, displayed by About IDLE
 HISTORY.txt  # NEWS up to July 2001
 NEWS.txt     # commits, displayed by About IDLE
+NEWS2.txt    # commits to Python2
 README.txt   # this file, displayed by About IDLE
 TODO.txt     # needs review
 extend.txt   # about writing extensions
@@ -108,13 +112,10 @@ Subdirectories
 Icons        # small image files
 idle_test    # files for human test and automated unit tests
 
-Unused and Deprecated files and objects (nim)
----------------------------------------------
-tooltip.py # unused
-
-
 
 IDLE MENUS
+==========
+
 Top level items and most submenu items are defined in mainmenu.
 Extensions add submenu items when active.  The names given are
 found, quoted, in one of these modules, paired with a '<<pseudoevent>>'.
@@ -160,63 +161,68 @@ Edit
   Show call tip    # Calltips extension and CalltipWindow (& Hyperparser)
   Show surrounding parens  # parenmatch (& Hyperparser)
 
+Format (Editor only) [fFR = format.FormatRegion]
+  Format Paragraph # format.FormatParagraph.format_paragraph_event
+  Indent Region    # fFR.indent_region_event
+  Dedent Region    # fFR.dedent_region_event
+  Comment Out Reg. # fFR.comment_region_event
+  Uncomment Region # fFR.uncomment_region_event
+  Tabify Region    # fFR.tabify_region_event
+  Untabify Region  # fFR.untabify_region_event
+  Toggle Tabs      # format.Indents.toggle_tabs_event
+  New Indent Width # format.Indents.change_indentwidth_event
+  Strip tailing whitespace  # format.rstrip
+  Zin              # zzdummy
+  Zout             # zzdummy
+
+Run (Editor only)
+  Run Module         # runscript.ScriptBinding.run_module_event
+  Run... Customized  # runscript.ScriptBinding.run_custom_event
+  Check Module       # runscript.ScriptBinding.check_module_event
+  Python Shell       # pyshell.Pyshell, pyshell.ModifiedInterpreter
+
 Shell  # pyshell
   View Last Restart    # pyshell.PyShell.view_restart_mark
   Restart Shell        # pyshell.PyShell.restart_shell
+  Previous History     # history.History.history_prev
+  Next History         # history.History.history_next
   Interrupt Execution  # pyshell.PyShell.cancel_callback
 
 Debug (Shell only)
-  Go to File/Line
+  Go to File/Line  # outwin.OutputWindow.goto_file_line
   debugger         # debugger, debugger_r, PyShell.toggle_debugger
   Stack Viewer     # stackviewer, PyShell.open_stack_viewer
   Auto-open Stack Viewer  # stackviewer
 
-Format (Editor only)
-  Indent Region    # eEW.indent_region_event
-  Dedent Region    # eEW.dedent_region_event
-  Comment Out Reg. # eEW.comment_region_event
-  Uncomment Region # eEW.uncomment_region_event
-  Tabify Region    # eEW.tabify_region_event
-  Untabify Region  # eEW.untabify_region_event
-  Toggle Tabs      # eEW.toggle_tabs_event
-  New Indent Width # eEW.change_indentwidth_event
-  Format Paragraph # paragraph extension
-  ---
-  Strip tailing whitespace  # rstrip extension
-
-Run (Editor only)
-  Python Shell     # pyshell
-  ---
-  Check Module     # runscript
-  Run Module       # runscript
-
 Options
-  Configure IDLE   # eEW.config_dialog, configdialog
-    (tabs in the dialog)
-    Font tab       # config-main.def
-    Highlight tab  # query, config-highlight.def
-    Keys tab       # query, config_key, config_keys.def
-    General tab    # config_help, config-main.def
-    Extensions tab # config-extensions.def, corresponding .py
+  Configure IDLE   # eEW.config_dialog, config, configdialog (cd)
+    (Parts of the dialog)
+    Buttons        # cd.ConfigDialog
+    Font tab       # cd.FontPage, config-main.def
+    Highlight tab  # cd.HighPage, query, config-highlight.def
+    Keys tab       # cd.KeysPage, query, config_key, config_keys.def
+    Windows tab    # cd.WinPage, config_main.def
+    Shell/Ed tab   # cd.ShedPage, config-main.def
+    Extensions tab # config-extensions.def, corresponding .py files
   ---
-  Code Context (ed)# codecontext extension
+  ... Code Context # codecontext
+  ... Line Numbers # sidebar
+  Zoomheight       # zoomheight
 
 Window
-  Zoomheight       # zoomheight extension
-  ---
   <open windows>   # windows
 
 Help
   About IDLE       # eEW.about_dialog, help_about.AboutDialog
   ---
-  IDLE Help        # eEW.help_dialog, helpshow_idlehelp
-  Python Doc       # eEW.python_docs
+  IDLE Help        # eEW.help_dialog, help.show_idlehelp
+  Python Docs      # eEW.python_docs
   Turtle Demo      # eEW.open_turtle_demo
   ---
   <other help sources>
 
 <Context Menu> (right click)
-  Defined in editor, PyShelpyshellut
+  Defined in editor, PyShell.pyshell
     Cut
     Copy
     Paste
@@ -232,11 +238,14 @@ Help
 Center Insert      # eEW.center_insert_event
 
 
-CODE STYLE -- Generally PEP 8.
+OTHER TOPICS
+============
+
+Generally use PEP 8.
 
 import
 ------
-Put import at the top, unless there is a good reason otherwise.
+Put imports at the top, unless there is a good reason otherwise.
 PEP 8 says to group stdlib, 3rd-party dependencies, and package imports.
 For idlelib, the groups are general stdlib, tkinter, and idlelib.
 Sort modules within each group, except that tkinter.ttk follows tkinter.
