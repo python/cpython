@@ -330,7 +330,7 @@ different companies and organizations.
 
 High-profile Python projects include `the Mailman mailing list manager
 <http://www.list.org>`_ and `the Zope application server
-<http://www.zope.org>`_.  Several Linux distributions, most notably `Red Hat
+<https://www.zope.dev>`_.  Several Linux distributions, most notably `Red Hat
 <https://www.redhat.com>`_, have written part or all of their installer and
 system administration software in Python.  Companies that use Python internally
 include Google, Yahoo, and Lucasfilm Ltd.
