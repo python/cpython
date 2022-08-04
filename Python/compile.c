@@ -85,6 +85,9 @@
          (opcode) == SETUP_WITH || \
          (opcode) == SETUP_CLEANUP)
 
+#define HAS_TARGET(opcode) \
+        (IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode))
+
 /* opcodes that must be last in the basicblock */
 #define IS_TERMINATOR_OPCODE(opcode) \
         (IS_JUMP_OPCODE(opcode) || IS_SCOPE_EXIT_OPCODE(opcode))
@@ -162,7 +165,6 @@ struct instr {
     /* target block (if jump instruction) -- we temporarily have both the label
        and the block in the instr. The label is set by front end, and the block
        is calculated by backend. */
-    jump_target_label i_target_label;
     struct basicblock_ *i_target;
      /* target block when exception is raised, should not be set by front-end. */
     struct basicblock_ *i_except;
@@ -1299,8 +1301,12 @@ basicblock_addop(basicblock *b, int opcode, int oparg,
     }
     struct instr *i = &b->b_instr[off];
     i->i_opcode = opcode;
-    i->i_oparg = oparg;
-    i->i_target_label = target;
+    if (HAS_TARGET(opcode)) {
+        i->i_oparg = target.id;
+    }
+    else {
+        i->i_oparg = oparg;
+    }
     i->i_target = NULL;
     i->i_loc = loc;
 
@@ -7085,7 +7091,7 @@ stackdepth(basicblock *entryblock, int code_flags)
                 maxdepth = new_depth;
             }
             assert(depth >= 0); /* invalid code or bug in stackdepth() */
-            if (is_jump(instr) || is_block_push(instr)) {
+            if (HAS_TARGET(instr->i_opcode)) {
                 effect = stack_effect(instr->i_opcode, instr->i_oparg, 1);
                 assert(effect != PY_INVALID_STACK_EFFECT);
                 int target_depth = depth + effect;
@@ -7412,7 +7418,6 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
             /* set target */
             struct instr *last = basicblock_last_instr(explicit_jump);
             last->i_target = explicit_jump->b_next;
-            last->i_target_label = NO_LABEL;
         }
     }
 
@@ -8218,11 +8223,8 @@ dump_instr(struct instr *i)
     if (HAS_ARG(i->i_opcode)) {
         sprintf(arg, "arg: %d ", i->i_oparg);
     }
-    if (is_jump(i)) {
+    if (HAS_TARGET(i->i_opcode)) {
         sprintf(arg, "target: %p ", i->i_target);
-    }
-    if (is_block_push(i)) {
-        sprintf(arg, "except_target: %p ", i->i_target);
     }
     fprintf(stderr, "line: %d, opcode: %d %s%s%s\n",
                     i->i_loc.lineno, i->i_opcode, arg, jabs, jrel);
@@ -8966,7 +8968,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
         struct instr *inst = &bb->b_instr[i];
         int oparg = inst->i_oparg;
         int nextop = i+1 < bb->b_iused ? bb->b_instr[i+1].i_opcode : 0;
-        if (is_jump(inst) || is_block_push(inst)) {
+        if (HAS_TARGET(inst->i_opcode)) {
             /* Skip over empty basic blocks. */
             while (inst->i_target->b_iused == 0) {
                 inst->i_target = inst->i_target->b_next;
@@ -9371,7 +9373,7 @@ eliminate_empty_basic_blocks(basicblock *entryblock) {
         }
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
-            if (is_jump(instr) || is_block_push(instr)) {
+            if (HAS_TARGET(instr->i_opcode)) {
                 basicblock *target = instr->i_target;
                 while (target->b_iused == 0) {
                     target = target->b_next;
@@ -9450,14 +9452,13 @@ calculate_jump_targets(basicblock *entryblock)
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             assert(instr->i_target == NULL);
-            if (is_jump(instr) || is_block_push(instr)) {
-                int lbl = instr->i_target_label.id;
+            if (HAS_TARGET(instr->i_opcode)) {
+                int lbl = instr->i_oparg;
                 assert(lbl >= 0 && lbl <= max_label);
                 instr->i_target = label2block[lbl];
                 assert(instr->i_target != NULL);
                 assert(instr->i_target->b_label == lbl);
             }
-            instr->i_target_label = NO_LABEL;
         }
     }
     PyMem_Free(label2block);
