@@ -288,7 +288,7 @@ Module functions
    SQLite type.
    The adapter is called with a Python object of type *type* as its sole
    argument, and must return a value of a
-   :ref:`type that SQLite natively understands<sqlite3-types>`.
+   :ref:`type that SQLite natively understands <sqlite3-types>`.
 
 .. function:: register_converter(typename, converter, /)
 
