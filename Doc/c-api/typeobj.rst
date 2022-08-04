@@ -720,29 +720,29 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    with the *vectorcallfunc* function.
    This can be done by setting *tp_call* to :c:func:`PyVectorcall_Call`.
 
-   .. warning::
-
-      It is not recommended for :ref:`mutable heap types <heap-types>` to implement
-      the vectorcall protocol.
-      When a user sets :attr:`__call__` in Python code, only *tp_call* is updated,
-      likely making it inconsistent with the vectorcall function.
-
    .. versionchanged:: 3.8
 
       Before version 3.8, this slot was named ``tp_print``.
       In Python 2.x, it was used for printing to a file.
       In Python 3.0 to 3.7, it was unused.
 
+   .. versionchanged:: 3.12
+
+      Before version 3.12, it was not recommended for
+      :ref:`mutable heap types <heap-types>` to implement the vectorcall
+      protocol.
+      When a user sets :attr:`~type.__call__` in Python code, only *tp_call* is
+      updated, likely making it inconsistent with the vectorcall function.
+      Since 3.12, setting ``__call__`` will disable vectorcall optimization
+      by clearing the :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag.
+
    **Inheritance:**
 
    This field is always inherited.
    However, the :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag is not
-   always inherited. If it's not, then the subclass won't use
+   always inherited. If it's not set, then the subclass won't use
    :ref:`vectorcall <vectorcall>`, except when
    :c:func:`PyVectorcall_Call` is explicitly called.
-   This is in particular the case for types without the
-   :const:`Py_TPFLAGS_IMMUTABLETYPE` flag set (including subclasses defined in
-   Python).
 
 
 .. c:member:: getattrfunc PyTypeObject.tp_getattr
@@ -1178,11 +1178,17 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       **Inheritance:**
 
-      This bit is inherited for types with the
-      :const:`Py_TPFLAGS_IMMUTABLETYPE` flag set, if
-      :c:member:`~PyTypeObject.tp_call` is also inherited.
+      This bit is inherited if :c:member:`~PyTypeObject.tp_call` is also
+      inherited.
 
       .. versionadded:: 3.9
+
+      .. versionchanged:: 3.12
+
+         This flag is now removed from a class when the class's
+         :py:meth:`~object.__call__` method is reassigned.
+
+         This flag can now be inherited by mutable classes.
 
    .. data:: Py_TPFLAGS_IMMUTABLETYPE
 
