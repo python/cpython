@@ -794,9 +794,12 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
         if (! _PyType_SUPPORTS_WEAKREFS(Py_TYPE(op)))
             continue;
 
-        /* It supports weakrefs.  Does it have any? */
-        wrlist = (PyWeakReference **)
-                                _PyObject_GET_WEAKREFS_LISTPTR(op);
+        /* It supports weakrefs.  Does it have any?
+         *
+         * This is never triggered for static types so we can avoid the
+         * (slightly) more costly _PyObject_GET_WEAKREFS_LISTPTR().
+         */
+        wrlist = _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(op);
 
         /* `op` may have some weakrefs.  March over the list, clear
          * all the weakrefs, and move the weakrefs with callbacks
