@@ -96,6 +96,10 @@
 #define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) _Py_atomic_load_relaxed(ATOMIC_VAL)
 #endif
 
+#define HEAD_LOCK(runtime) \
+    PyThread_acquire_lock((runtime)->interpreters.mutex, WAIT_LOCK)
+#define HEAD_UNLOCK(runtime) \
+    PyThread_release_lock((runtime)->interpreters.mutex)
 
 /* Forward declarations */
 static PyObject *trace_call_function(
@@ -6460,12 +6464,19 @@ PyEval_SetProfileAllThreads(Py_tracefunc func, PyObject *arg)
 {
     PyThreadState *this_tstate = _PyThreadState_GET();
     PyInterpreterState* interp = this_tstate->interp;
+
+    _PyRuntimeState *runtime = &_PyRuntime;
+    HEAD_LOCK(runtime);
     PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
+    HEAD_UNLOCK(runtime);
+
     while (ts) {
         if (_PyEval_SetProfile(ts, func, arg) < 0) {
             _PyErr_WriteUnraisableMsg("in PyEval_SetProfileAllThreads", NULL);
         }
+        HEAD_LOCK(runtime);
         ts = PyThreadState_Next(ts);
+        HEAD_UNLOCK(runtime);
     }
 }
 
@@ -6527,12 +6538,19 @@ PyEval_SetTraceAllThreads(Py_tracefunc func, PyObject *arg)
 {
     PyThreadState *this_tstate = _PyThreadState_GET();
     PyInterpreterState* interp = this_tstate->interp;
+
+    _PyRuntimeState *runtime = &_PyRuntime;
+    HEAD_LOCK(runtime);
     PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
+    HEAD_UNLOCK(runtime);
+
     while (ts) {
         if (_PyEval_SetTrace(ts, func, arg) < 0) {
             _PyErr_WriteUnraisableMsg("in PyEval_SetTraceAllThreads", NULL);
         }
+        HEAD_LOCK(runtime);
         ts = PyThreadState_Next(ts);
+        HEAD_UNLOCK(runtime);
     }
 }
 
