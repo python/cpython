@@ -916,9 +916,8 @@ Connection objects
 
       Set a connection runtime limit.
       Attempts to increase a limit above its hard upper bound are silently
-      truncated to the hard upper bound.
-      Regardless of whether or not the limit was changed,
-      the prior value of the limit is returned.
+      truncated to the hard upper bound. Regardless of whether or not the limit
+      was changed, the prior value of the limit is returned.
 
       :param int category: The `SQLite limit category`_ to be set.
 
