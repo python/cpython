@@ -1066,7 +1066,7 @@ performance levels:
   detrimental to readability).
 
 If you have reached the limit of what pure Python can allow, there are tools
-to take you further away.  For example, `Cython <http://cython.org>`_ can
+to take you further away.  For example, `Cython <https://cython.org>`_ can
 compile a slightly modified version of Python code into a C extension, and
 can be used on many different platforms.  Cython can take advantage of
 compilation (and optional type annotations) to make your code significantly
