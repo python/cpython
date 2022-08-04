@@ -302,7 +302,7 @@ Removed
 * ``smtpd`` has been removed according to the schedule in :pep:`594`,
   having been deprecated in Python 3.4.7 and 3.5.4.
   Use aiosmtpd_ PyPI module or any other
-  :keyword:`async`/:keyword:`await`-based server instead.
+  :mod:`asyncio`-based server instead.
   (Contributed by Oleg Iarygin in :gh:`93243`.)
 
 .. _aiosmtpd: https://pypi.org/project/aiosmtpd/
