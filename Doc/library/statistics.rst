@@ -938,7 +938,7 @@ Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_:
     [1.4591308524824727, 1.8035946855390597, 2.175091447274739]
 
 Normal distributions can be used to approximate `Binomial
-distributions <http://mathworld.wolfram.com/BinomialDistribution.html>`_
+distributions <https://mathworld.wolfram.com/BinomialDistribution.html>`_
 when the sample size is large and when the probability of a successful
 trial is near 50%.
 
