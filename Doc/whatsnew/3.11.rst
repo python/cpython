@@ -574,6 +574,9 @@ IDLE and idlelib
 * Apply syntax highlighting to `.pyi` files. (Contributed by Alex
   Waygood and Terry Jan Reedy in :issue:`45447`.)
 
+* Include prompts when saving Shell with inputs and outputs.
+  (Contributed by Terry Jan Reedy in :gh:`95191`.)
+
 inspect
 -------
 * Add :func:`inspect.getmembers_static`: return all members without
