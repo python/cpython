@@ -295,15 +295,14 @@ Module functions and constants
        in RAM instead of on disk.
    :type database: :term:`path-like object`
 
-   :param timeout:
+   :param float timeout:
        How many seconds the connection should wait before raising
        an exception, if the database is locked by another connection.
        If another connection opens a transaction to modify the database,
        it will be locked until that transaction is committed.
        Default five seconds.
-   :type timeout: float
 
-   :param detect_types:
+   :param int detect_types:
        Control whether and how data types not
        :ref:`natively supported by SQLite <sqlite3-types>`
        are looked up to be converted to Python types,
@@ -316,7 +315,6 @@ Module functions and constants
        even when the *detect_types* parameter is set; :class:`str` will be
        returned instead.
        By default (``0``), type detection is disabled.
-   :type detect_types: int
 
    :param isolation_level:
        The :attr:`~Connection.isolation_level` of the connection,
@@ -326,25 +324,22 @@ Module functions and constants
        See :ref:`sqlite3-controlling-transactions` for more.
    :type isolation_level: str | None
 
-   :param check_same_thread:
+   :param bool check_same_thread:
        If ``True`` (default), only the creating thread may use the connection.
        If ``False``, the connection may be shared across multiple threads;
        if so, write operations should be serialized by the user to avoid data
        corruption.
-   :type check_same_thread: bool
 
-   :param factory:
+   :param Connection factory:
        A custom subclass of :class:`Connection` to create the connection with,
        if not the default :class:`Connection` class.
-   :type factory: :class:`Connection`
 
-   :param cached_statements:
+   :param int cached_statements:
        The number of statements that ``sqlite3``
        should internally cache for this connection, to avoid parsing overhead.
        By default, 128 statements.
-   :type cached_statements: int
 
-   :param uri:
+   :param bool uri:
        If set to ``True``, *database* is interpreted as a
        :abbr:`URI (Uniform Resource Identifier)` with a file path
        and an optional query string.
@@ -352,7 +347,6 @@ Module functions and constants
        and the path can be relative or absolute.
        The query string allows passing parameters to SQLite,
        enabling various :ref:`sqlite3-uri-tricks`.
-   :type uri: bool
 
    :rtype: Connection
 
@@ -487,28 +481,18 @@ Connection objects
       Open a :class:`Blob` handle to an existing
       :abbr:`BLOB (Binary Large OBject)`.
 
-      :param table:
-          The name of the table where the blob is located.
-      :type table: str
+      :param str table: The name of the table where the blob is located.
+      :param str column: The name of the column where the blob is located.
+      :param str row: The name of the row where the blob is located.
 
-      :param column:
-          The name of the column where the blob is located.
-      :type column: str
-
-      :param row:
-          The name of the row where the blob is located.
-      :type row: str
-
-      :param readonly:
+      :param bool readonly:
           Set to ``True`` if the blob should be opened without write
           permissions.
           Defaults to ``False``.
-      :type readonly: bool
 
-      :param name:
+      :param str name:
           The name of the database where the blob is located.
           Defaults to ``"main"``.
-      :type name: str
 
       :raises OperationalError:
           When trying to open a blob in a ``WITHOUT ROWID`` table.
@@ -561,14 +545,11 @@ Connection objects
 
       Create or remove a user-defined SQL function.
 
-      :param name:
-          The name of the SQL function.
-      :type name: str
+      :param str name: The name of the SQL function.
 
-      :param narg:
+      :param int narg:
           The number of arguments the SQL function can accept.
           If ``-1``, it may take any number of arguments.
-      :type narg: int
 
       :param func:
           A callable that is called when the SQL function is invoked.
@@ -577,11 +558,10 @@ Connection objects
           Set to ``None`` to remove an existing SQL function.
       :type func: :term:`callback` | None
 
-      :param deterministic:
+      :param bool deterministic:
           If ``True``, the created SQL function is marked as
           `deterministic <https://sqlite.org/deterministic.html>`_,
           which allows SQLite to perform additional optimizations.
-      :type deterministic: bool
 
       :raises NotSupportedError:
           If *deterministic* is used with SQLite versions older than 3.8.3.
@@ -598,14 +578,12 @@ Connection objects
 
       Create or remove a user-defined SQL aggregate function.
 
-      :param name:
+      :param str name:
           The name of the SQL aggregate function.
-      :type name: str
 
-      :param n_arg:
+      :param int n_arg:
           The number of arguments the SQL aggregate function can accept.
           If ``-1``, it may take any number of arguments.
-      :type n_arg: int
 
       :param aggregate_class:
           A class must implement the following methods:
@@ -629,14 +607,12 @@ Connection objects
 
       Create or remove a user-defined aggregate window function.
 
-      :param name:
+      :param str name:
           The name of the SQL aggregate window function to create or remove.
-      :type name: str
 
-      :param num_params:
+      :param int num_params:
           The number of arguments the SQL aggregate window function can accept.
           If ``-1``, it may take any number of arguments.
-      :type num_params: int
 
       :param aggregate_class:
           A class that must implement the following methods:
@@ -862,16 +838,14 @@ Connection objects
       Works even if the database is being accessed by other clients
       or concurrently by the same connection.
 
-      :param target:
+      :param Connection target:
           The database connection to save the backup to.
-      :type target: Connection
 
-      :param pages:
+      :param int pages:
           The number of pages to copy at a time.
           If equal to or less than ``0``,
           the entire database is copied in a single step.
           Defaults to ``-1``.
-      :type pages: int
 
       :param progress:
           If set to a callable, it is invoked with three integer arguments for
@@ -882,18 +856,16 @@ Connection objects
           Defaults to ``None``.
       :type progress: :term:`callback` | None
 
-      :param name:
+      :param str name:
           The name of the database to back up.
           Either ``"main"`` (the default) for the main database,
           ``"temp"`` for the temporary database,
           or the name of a custom database as attached using the
           ``ATTACH DATABASE`` SQL statment.
-      :type name: str
 
-      :param sleep:
+      :param float sleep:
           The number of seconds to sleep between successive attempts
           to back up remaining pages.
-      :type sleep: float
 
       Example 1, copy an existing database into another::
 
@@ -919,20 +891,16 @@ Connection objects
 
       .. versionadded:: 3.7
 
-.. _SQLite limit category: https://www.sqlite.org/c3ref/c_limit_attached.html
-
    .. method:: getlimit(category, /)
 
       Get a connection runtime limit.
 
-      :param category:
-          The `SQLite limit category`_ to be queried.
-      :type category: int
+      :param int category: The `SQLite limit category`_ to be queried.
 
       :rtype: int
 
       :raises ProgrammingError:
-          If *category* is not recognised by the underlying SQLite library.
+         If *category* is not recognised by the underlying SQLite library.
 
       Example, query the maximum length of an SQL statement::
 
@@ -952,19 +920,16 @@ Connection objects
       Regardless of whether or not the limit was changed,
       the prior value of the limit is returned.
 
-      :param category:
-          The `SQLite limit category`_ to be set.
-      :type category: int
+      :param int category: The `SQLite limit category`_ to be set.
 
-      :param limit:
-          The value of the new limit.
-          If negative, the current limit is unchanged.
-      :type limit: int
+      :param int limit:
+         The value of the new limit.
+         If negative, the current limit is unchanged.
 
       :rtype: int
 
       :raises ProgrammingError:
-          If *category* is not recognised by the underlying SQLite library.
+         If *category* is not recognised by the underlying SQLite library.
 
       Example, limit the number of attached databases to 1::
 
@@ -973,6 +938,8 @@ Connection objects
          con.setlimit(sqlite3.SQLITE_LIMIT_ATTACHED, 1)
 
       .. versionadded:: 3.11
+
+.. _SQLite limit category: https://www.sqlite.org/c3ref/c_limit_attached.html
 
 
    .. method:: serialize(*, name="main")
@@ -983,8 +950,11 @@ Connection objects
       serialization is the same sequence of bytes which would be written to
       disk if that database were backed up to disk.
 
-      *name* is the database to be serialized, and defaults to the main
-      database.
+      :param str name:
+         The database name to be serialized.
+         Defaults to ``"main"``.
+
+      :rtype: bytes
 
       .. note::
 
@@ -1002,24 +972,21 @@ Connection objects
       *name*, and reopen *name* as an in-memory database based on the
       serialization contained in *data*.
 
-      :param data:
-          A serialized database.
-      :type data: bytes
+      :param bytes data: A serialized database.
 
-      :param name:
-          The database name to deserialize into.
-          Defaults to ``"main"``.
-      :type name: str
+      :param str name:
+         The database name to deserialize into.
+         Defaults to ``"main"``.
 
       :raises OperationalError:
-          If the database connection is currently involved in a read
-          transaction or a backup operation.
+         If the database connection is currently involved in a read
+         transaction or a backup operation.
 
       :raises DatabaseError:
-          If *data* does not contain a valid SQLite database.
+         If *data* does not contain a valid SQLite database.
 
       :raises OverflowError:
-          If :func:`len(data) <len>` is larger than ``2**63 - 1``.
+         If :func:`len(data) <len>` is larger than ``2**63 - 1``.
 
       .. note::
 
