@@ -162,13 +162,10 @@ static struct jump_target_label_ NO_LABEL = {-1};
 struct instr {
     int i_opcode;
     int i_oparg;
-    /* target block (if jump instruction) -- we temporarily have both the label
-       and the block in the instr. The label is set by front end, and the block
-       is calculated by backend. */
-    struct basicblock_ *i_target;
-     /* target block when exception is raised, should not be set by front-end. */
-    struct basicblock_ *i_except;
     struct location i_loc;
+    /* The following fields should not be set by the front-end: */
+    struct basicblock_ *i_target; /* target block (if jump instruction) */
+    struct basicblock_ *i_except; /* target block when exception is raised */
 };
 
 typedef struct exceptstack {
