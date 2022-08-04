@@ -390,7 +390,7 @@ Changes in the Python API
   to :term:`filesystem encoding and error handler`.
   Argument files should be encoded in UTF-8 instead of ANSI Codepage on Windows.
 
-* Removed the strictly synchronous ``smtpd`` module, deprecated in Python 3.4.7
+* Removed the ``asyncore``-based ``smtpd`` module deprecated in Python 3.4.7
   and 3.5.4.  A recommended replacement is the
   :keyword:`async`/:keyword:`await`-based aiosmtpd_ PyPI module.
 
