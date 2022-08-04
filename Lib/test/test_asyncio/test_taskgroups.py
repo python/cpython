@@ -763,8 +763,10 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                     async with database():
                         tg.create_task(raise_exc())
                         await asyncio.sleep(1)
-            except* CustomException:
+            except* CustomException as err:
                 self.assertEqual(task.cancelling(), 0)
+                self.assertEqual(len(err.exceptions), 2)
+
             else:
                 self.fail('CustomException not raised')
 
