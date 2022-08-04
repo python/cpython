@@ -266,7 +266,7 @@ The following function generates a discrete distribution.
 .. function:: binomialvariate(n=1, p=0.5)
 
    `Binomial distribution
-   <http://mathworld.wolfram.com/BinomialDistribution.html>`_.
+   <https://mathworld.wolfram.com/BinomialDistribution.html>`_.
    Return the number of successes for *n* independent trials with the
    probability of success in each trial being *p*:
 

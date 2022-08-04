@@ -1930,7 +1930,7 @@ with the same digest state.
 The sqlite3 package
 -------------------
 
-The pysqlite module (http://www.pysqlite.org), a wrapper for the SQLite embedded
+The pysqlite module (https://www.pysqlite.org), a wrapper for the SQLite embedded
 database, has been added to the standard library under the package name
 :mod:`sqlite3`.
 
