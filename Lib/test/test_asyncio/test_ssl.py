@@ -181,8 +181,8 @@ class TestSSL(test_utils.TestCase):
         TOTAL_CNT = 25    # total number of clients that test will create
         TIMEOUT = support.LONG_TIMEOUT  # timeout for this test
 
-        A_DATA = b'A' * 1024 * 1024
-        B_DATA = b'B' * 1024 * 1024
+        A_DATA = b'A' * 1024 * 64
+        B_DATA = b'B' * 1024 * 64
 
         sslctx = self._create_server_ssl_context(
             test_utils.ONLYCERT, test_utils.ONLYKEY
@@ -277,8 +277,8 @@ class TestSSL(test_utils.TestCase):
         CNT = 0
         TOTAL_CNT = 25
 
-        A_DATA = b'A' * 1024 * 1024
-        B_DATA = b'B' * 1024 * 1024
+        A_DATA = b'A' * 1024 * 64
+        B_DATA = b'B' * 1024 * 64
 
         sslctx = self._create_server_ssl_context(
             test_utils.ONLYCERT,
@@ -1024,8 +1024,8 @@ class TestSSL(test_utils.TestCase):
         TOTAL_CNT = 25    # total number of clients that test will create
         TIMEOUT = support.LONG_TIMEOUT  # timeout for this test
 
-        A_DATA = b'A' * 1024 * 1024
-        B_DATA = b'B' * 1024 * 1024
+        A_DATA = b'A' * 1024 * 64
+        B_DATA = b'B' * 1024 * 64
 
         sslctx_1 = self._create_server_ssl_context(
             test_utils.ONLYCERT, test_utils.ONLYKEY)
@@ -1168,7 +1168,7 @@ class TestSSL(test_utils.TestCase):
         CNT = 0
         TOTAL_CNT = 25
 
-        A_DATA = b'A' * 1024 * 1024
+        A_DATA = b'A' * 1024 * 64
 
         sslctx = self._create_server_ssl_context(
             test_utils.ONLYCERT, test_utils.ONLYKEY)
