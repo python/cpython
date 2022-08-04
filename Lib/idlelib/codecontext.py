@@ -8,17 +8,19 @@ enclosing block.  The number of hint lines is determined by the maxlines
 variable in the codecontext section of config-extensions.def. Lines which do
 not open blocks are not shown in the context hints pane.
 
+For EditorWindows, <<toggle-code-context>> is bound to CodeContext(self).
+toggle_code_context_event.
 """
 import re
 from sys import maxsize as INFINITY
 
-import tkinter
-from tkinter.constants import TOP, X, SUNKEN
+from tkinter import Frame, Text, TclError
+from tkinter.constants import NSEW, SUNKEN
 
 from idlelib.config import idleConf
 
-BLOCKOPENERS = {"class", "def", "elif", "else", "except", "finally", "for",
-                "if", "try", "while", "with", "async"}
+BLOCKOPENERS = {'class', 'def', 'if', 'elif', 'else', 'while', 'for',
+                 'try', 'except', 'finally', 'with', 'async'}
 
 
 def get_spaces_firstword(codeline, c=re.compile(r"^(\s*)(\w*)")):
@@ -63,10 +65,14 @@ class CodeContext:
         """
         self.editwin = editwin
         self.text = editwin.text
+        self._reset()
+
+    def _reset(self):
         self.context = None
+        self.cell00 = None
+        self.t1 = None
         self.topvisible = 1
         self.info = [(0, -1, "", False)]
-        self.t1 = None
 
     @classmethod
     def reload(cls):
@@ -80,7 +86,7 @@ class CodeContext:
         if self.t1 is not None:
             try:
                 self.text.after_cancel(self.t1)
-            except tkinter.TclError:
+            except TclError:  # pragma: no cover
                 pass
             self.t1 = None
 
@@ -102,29 +108,41 @@ class CodeContext:
             padx = 0
             border = 0
             for widget in widgets:
-                padx += widget.tk.getint(widget.pack_info()['padx'])
+                info = (widget.grid_info()
+                        if widget is self.editwin.text
+                        else widget.pack_info())
+                padx += widget.tk.getint(info['padx'])
                 padx += widget.tk.getint(widget.cget('padx'))
                 border += widget.tk.getint(widget.cget('border'))
-            self.context = tkinter.Text(
-                self.editwin.top, font=self.text['font'],
+            context = self.context = Text(
+                self.editwin.text_frame,
                 height=1,
                 width=1,  # Don't request more than we get.
+                highlightthickness=0,
                 padx=padx, border=border, relief=SUNKEN, state='disabled')
+            self.update_font()
             self.update_highlight_colors()
-            self.context.bind('<ButtonRelease-1>', self.jumptoline)
-            # Pack the context widget before and above the text_frame widget,
-            # thus ensuring that it will appear directly above text_frame.
-            self.context.pack(side=TOP, fill=X, expand=False,
-                              before=self.editwin.text_frame)
+            context.bind('<ButtonRelease-1>', self.jumptoline)
+            # Get the current context and initiate the recurring update event.
+            self.timer_event()
+            # Grid the context widget above the text widget.
+            context.grid(row=0, column=1, sticky=NSEW)
+
+            line_number_colors = idleConf.GetHighlight(idleConf.CurrentTheme(),
+                                                       'linenumber')
+            self.cell00 = Frame(self.editwin.text_frame,
+                                        bg=line_number_colors['background'])
+            self.cell00.grid(row=0, column=0, sticky=NSEW)
             menu_status = 'Hide'
-            self.t1 = self.text.after(self.UPDATEINTERVAL, self.timer_event)
         else:
             self.context.destroy()
             self.context = None
+            self.cell00.destroy()
+            self.cell00 = None
             self.text.after_cancel(self.t1)
-            self.t1 = None
+            self._reset()
             menu_status = 'Show'
-        self.editwin.update_menu_label(menu='options', index='* Code Context',
+        self.editwin.update_menu_label(menu='options', index='*ode*ontext',
                                        label=f'{menu_status} Code Context')
         return "break"
 
@@ -199,18 +217,25 @@ class CodeContext:
         self.context['state'] = 'disabled'
 
     def jumptoline(self, event=None):
-        "Show clicked context line at top of editor."
-        lines = len(self.info)
-        if lines == 1:  # No context lines are showing.
-            newtop = 1
-        else:
-            # Line number clicked.
-            contextline = int(float(self.context.index('insert')))
-            # Lines not displayed due to maxlines.
-            offset = max(1, lines - self.context_depth) - 1
-            newtop = self.info[offset + contextline][0]
-        self.text.yview(f'{newtop}.0')
-        self.update_code_context()
+        """ Show clicked context line at top of editor.
+
+        If a selection was made, don't jump; allow copying.
+        If no visible context, show the top line of the file.
+        """
+        try:
+            self.context.index("sel.first")
+        except TclError:
+            lines = len(self.info)
+            if lines == 1:  # No context lines are showing.
+                newtop = 1
+            else:
+                # Line number clicked.
+                contextline = int(float(self.context.index('insert')))
+                # Lines not displayed due to maxlines.
+                offset = max(1, lines - self.context_depth) - 1
+                newtop = self.info[offset + contextline][0]
+            self.text.yview(f'{newtop}.0')
+            self.update_code_context()
 
     def timer_event(self):
         "Event on editor text widget triggered every UPDATEINTERVAL ms."
@@ -218,8 +243,9 @@ class CodeContext:
             self.update_code_context()
             self.t1 = self.text.after(self.UPDATEINTERVAL, self.timer_event)
 
-    def update_font(self, font):
+    def update_font(self):
         if self.context is not None:
+            font = idleConf.GetFont(self.text, 'main', 'EditorWindow')
             self.context['font'] = font
 
     def update_highlight_colors(self):
@@ -227,6 +253,11 @@ class CodeContext:
             colors = idleConf.GetHighlight(idleConf.CurrentTheme(), 'context')
             self.context['background'] = colors['background']
             self.context['foreground'] = colors['foreground']
+
+        if self.cell00 is not None:
+            line_number_colors = idleConf.GetHighlight(idleConf.CurrentTheme(),
+                                                       'linenumber')
+            self.cell00.config(bg=line_number_colors['background'])
 
 
 CodeContext.reload()

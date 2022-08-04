@@ -8,12 +8,51 @@
 #   include <sys/socket.h>
 # endif
 # include <netinet/in.h>
-# if !defined(__CYGWIN__)
-#  include <netinet/tcp.h>
-# endif
+# include <netinet/tcp.h>
 
 #else /* MS_WINDOWS */
 # include <winsock2.h>
+
+/*
+ * If Windows has bluetooth support, include bluetooth constants.
+ */
+#ifdef AF_BTH
+# include <ws2bth.h>
+# include <pshpack1.h>
+
+/*
+ * The current implementation assumes the bdaddr in the sockaddr structs
+ * will be a bdaddr_t. We treat this as an opaque type: on *nix systems, it
+ * will be a struct with a single member (an array of six bytes). On windows,
+ * we typedef this to ULONGLONG to match the Windows definition.
+ */
+typedef ULONGLONG bdaddr_t;
+
+/*
+ * Redefine SOCKADDR_BTH to provide names compatible with _BT_RC_MEMB() macros.
+ */
+struct SOCKADDR_BTH_REDEF {
+    union {
+        USHORT    addressFamily;
+        USHORT    family;
+    };
+
+    union {
+        ULONGLONG btAddr;
+        bdaddr_t  bdaddr;
+    };
+
+    GUID      serviceClassId;
+
+    union {
+        ULONG     port;
+        ULONG     channel;
+    };
+
+};
+# include <poppack.h>
+#endif
+
 /* Windows 'supports' CMSG_LEN, but does not follow the POSIX standard
  * interface at all, so there is no point including the code that
  * attempts to use it.
@@ -37,6 +76,15 @@
 # else
 typedef int socklen_t;
 # endif /* IPPROTO_IPV6 */
+
+/* Remove ifdef once Py_WINVER >= 0x0604
+ * socket.h only defines AF_HYPERV if _WIN32_WINNT is at that level or higher
+ * so for now it's just manually defined.
+ */
+# ifndef AF_HYPERV
+#  define AF_HYPERV 34
+# endif
+# include <hvsocket.h>
 #endif /* MS_WINDOWS */
 
 #ifdef HAVE_SYS_UN_H
@@ -90,6 +138,8 @@ typedef int socklen_t;
 
 #ifdef HAVE_LINUX_CAN_H
 # include <linux/can.h>
+#elif defined(HAVE_NETCAN_CAN_H)
+# include <netcan/can.h>
 #else
 # undef AF_CAN
 # undef PF_CAN
@@ -101,6 +151,10 @@ typedef int socklen_t;
 
 #ifdef HAVE_LINUX_CAN_BCM_H
 #include <linux/can/bcm.h>
+#endif
+
+#ifdef HAVE_LINUX_CAN_J1939_H
+#include <linux/can/j1939.h>
 #endif
 
 #ifdef HAVE_SYS_SYS_DOMAIN_H
@@ -147,6 +201,21 @@ typedef int socklen_t;
 
 #endif /* HAVE_SOCKADDR_ALG */
 
+#ifdef __EMSCRIPTEN__
+// wasm32-emscripten sockets only support subset of IPv4 and IPv6.
+// SCTP protocol crashes runtime.
+#ifdef IPPROTO_SCTP
+#  undef IPPROTO_SCTP
+#endif
+// setsockopt() fails with ENOPROTOOPT, getsockopt only supports SO_ERROR.
+// undef SO_REUSEADDR and SO_REUSEPORT so they cannot be used.
+#ifdef SO_REUSEADDR
+#  undef SO_REUSEADDR
+#endif
+#ifdef SO_REUSEPORT
+#  undef SO_REUSEPORT
+#endif
+#endif // __EMSCRIPTEN__
 
 #ifndef Py__SOCKET_H
 #define Py__SOCKET_H
@@ -180,6 +249,11 @@ typedef int SOCKET_T;
 #define PyLong_AsSocket_t(fd) (SOCKET_T)PyLong_AsLongLong(fd)
 #endif
 
+// AF_HYPERV is only supported on Windows
+#if defined(AF_HYPERV) && defined(MS_WINDOWS)
+#  define HAVE_AF_HYPERV
+#endif
+
 /* Socket address */
 typedef union sock_addr {
     struct sockaddr_in in;
@@ -194,16 +268,23 @@ typedef union sock_addr {
     struct sockaddr_in6 in6;
     struct sockaddr_storage storage;
 #endif
-#ifdef HAVE_BLUETOOTH_BLUETOOTH_H
+#if defined(HAVE_BLUETOOTH_H) && defined(__FreeBSD__)
+    struct sockaddr_l2cap bt_l2;
+    struct sockaddr_rfcomm bt_rc;
+    struct sockaddr_sco bt_sco;
+    struct sockaddr_hci bt_hci;
+#elif defined(HAVE_BLUETOOTH_BLUETOOTH_H)
     struct sockaddr_l2 bt_l2;
     struct sockaddr_rc bt_rc;
     struct sockaddr_sco bt_sco;
     struct sockaddr_hci bt_hci;
+#elif defined(MS_WINDOWS)
+    struct SOCKADDR_BTH_REDEF bt_rc;
 #endif
 #ifdef HAVE_NETPACKET_PACKET_H
     struct sockaddr_ll ll;
 #endif
-#ifdef HAVE_LINUX_CAN_H
+#if defined(HAVE_LINUX_CAN_H) || defined(HAVE_NETCAN_CAN_H)
     struct sockaddr_can can;
 #endif
 #ifdef HAVE_SYS_KERN_CONTROL_H
@@ -217,6 +298,12 @@ typedef union sock_addr {
 #endif
 #ifdef AF_VSOCK
     struct sockaddr_vm vm;
+#endif
+#ifdef HAVE_LINUX_TIPC_H
+    struct sockaddr_tipc tipc;
+#endif
+#ifdef HAVE_AF_HYPERV
+    SOCKADDR_HV hv;
 #endif
 } sock_addr_t;
 
@@ -287,7 +374,8 @@ typedef struct {
 
 */
 
-/* C API for usage by other Python modules */
+/* C API for usage by other Python modules.
+ * Always add new things to the end for binary compatibility. */
 typedef struct {
     PyTypeObject *Sock_Type;
     PyObject *error;

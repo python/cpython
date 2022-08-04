@@ -70,6 +70,7 @@
     <ProjectGuid>{31FFC478-7B4A-43E8-9954-8D03E2187E9C}</ProjectGuid>
     <RootNamespace>_msi</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <SupportPGO>false</SupportPGO>
   </PropertyGroup>
   <Import Project="python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

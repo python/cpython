@@ -33,7 +33,12 @@ def get_pip_layout(ns):
         pkg_root = "packages/{}" if ns.zip_lib else "Lib/site-packages/{}"
         for dest, src in rglob(pip_dir, "**/*"):
             yield pkg_root.format(dest), src
-        yield "pip.ini", ("pip.ini", b"[global]\nuser=yes")
+        if ns.include_pip_user:
+            content = "\n".join(
+                "[{}]\nuser=yes".format(n)
+                for n in ["install", "uninstall", "freeze", "list"]
+            )
+            yield "pip.ini", ("pip.ini", content.encode())
 
 
 def extract_pip_files(ns):

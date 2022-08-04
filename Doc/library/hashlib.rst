@@ -23,7 +23,7 @@
 This module implements a common interface to many different secure hash and
 message digest algorithms.  Included are the FIPS secure hash algorithms SHA1,
 SHA224, SHA256, SHA384, and SHA512 (defined in FIPS 180-2) as well as RSA's MD5
-algorithm (defined in Internet :rfc:`1321`).  The terms "secure hash" and
+algorithm (defined in internet :rfc:`1321`).  The terms "secure hash" and
 "message digest" are interchangeable.  Older algorithms were called message
 digests.  The modern term is secure hash.
 
@@ -67,7 +67,7 @@ Constructors for hash algorithms that are always present in this module are
 :func:`sha1`, :func:`sha224`, :func:`sha256`, :func:`sha384`,
 :func:`sha512`, :func:`blake2b`, and :func:`blake2s`.
 :func:`md5` is normally available as well, though it
-may be missing if you are using a rare "FIPS compliant" build of Python.
+may be missing or blocked if you are using a rare "FIPS compliant" build of Python.
 Additional algorithms may also be available depending upon the OpenSSL
 library that Python uses on your platform. On most platforms the
 :func:`sha3_224`, :func:`sha3_256`, :func:`sha3_384`, :func:`sha3_512`,
@@ -80,8 +80,19 @@ library that Python uses on your platform. On most platforms the
 .. versionadded:: 3.6
    :func:`blake2b` and :func:`blake2s` were added.
 
-For example, to obtain the digest of the byte string ``b'Nobody inspects the
-spammish repetition'``::
+.. _hashlib-usedforsecurity:
+
+.. versionchanged:: 3.9
+   All hashlib constructors take a keyword-only argument *usedforsecurity*
+   with default value ``True``. A false value allows the use of insecure and
+   blocked hashing algorithms in restricted environments. ``False`` indicates
+   that the hashing algorithm is not used in a security context, e.g. as a
+   non-cryptographic one-way compression function.
+
+   Hashlib now uses SHA3 and SHAKE from OpenSSL 1.1.1 and newer.
+
+For example, to obtain the digest of the byte string ``b"Nobody inspects the
+spammish repetition"``::
 
    >>> import hashlib
    >>> m = hashlib.sha256()
@@ -89,17 +100,15 @@ spammish repetition'``::
    >>> m.update(b" the spammish repetition")
    >>> m.digest()
    b'\x03\x1e\xdd}Ae\x15\x93\xc5\xfe\\\x00o\xa5u+7\xfd\xdf\xf7\xbcN\x84:\xa6\xaf\x0c\x95\x0fK\x94\x06'
-   >>> m.digest_size
-   32
-   >>> m.block_size
-   64
+   >>> m.hexdigest()
+   '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
 
 More condensed:
 
-   >>> hashlib.sha224(b"Nobody inspects the spammish repetition").hexdigest()
-   'a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2'
+   >>> hashlib.sha256(b"Nobody inspects the spammish repetition").hexdigest()
+   '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
 
-.. function:: new(name[, data])
+.. function:: new(name[, data], *, usedforsecurity=True)
 
    Is a generic constructor that takes the string *name* of the desired
    algorithm as its first parameter.  It also exists to allow access to the
@@ -109,10 +118,10 @@ More condensed:
 
 Using :func:`new` with an algorithm provided by OpenSSL:
 
-   >>> h = hashlib.new('ripemd160')
+   >>> h = hashlib.new('sha256')
    >>> h.update(b"Nobody inspects the spammish repetition")
    >>> h.hexdigest()
-   'cc4a5ce1b3df48aec5d22d1f16b894a0b894eccc'
+   '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
 
 Hashlib provides the following constant attributes:
 
@@ -217,6 +226,49 @@ by the SHAKE algorithm.
    exchange the value safely in email or other non-binary environments.
 
 
+File hashing
+------------
+
+The hashlib module provides a helper function for efficient hashing of
+a file or file-like object.
+
+.. function:: file_digest(fileobj, digest, /)
+
+   Return a digest object that has been updated with contents of file object.
+
+   *fileobj* must be a file-like object opened for reading in binary mode.
+   It accepts file objects from  builtin :func:`open`, :class:`~io.BytesIO`
+   instances, SocketIO objects from :meth:`socket.socket.makefile`, and
+   similar. The function may bypass Python's I/O and use the file descriptor
+   from :meth:`~io.IOBase.fileno` directly. *fileobj* must be assumed to be
+   in an unknown state after this function returns or raises. It is up to
+   the caller to close *fileobj*.
+
+   *digest* must either be a hash algorithm name as a *str*, a hash
+   constructor, or a callable that returns a hash object.
+
+   Example:
+
+      >>> import io, hashlib, hmac
+      >>> with open(hashlib.__file__, "rb") as f:
+      ...     digest = hashlib.file_digest(f, "sha256")
+      ...
+      >>> digest.hexdigest()  # doctest: +ELLIPSIS
+      '...'
+
+      >>> buf = io.BytesIO(b"somedata")
+      >>> mac1 = hmac.HMAC(b"key", digestmod=hashlib.sha512)
+      >>> digest = hashlib.file_digest(buf, lambda: mac1)
+
+      >>> digest is mac1
+      True
+      >>> mac2 = hmac.HMAC(b"key", b"somedata", digestmod=hashlib.sha512)
+      >>> mac1.digest() == mac2.digest()
+      True
+
+   .. versionadded:: 3.11
+
+
 Key derivation
 --------------
 
@@ -238,24 +290,27 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
    a proper source, e.g. :func:`os.urandom`.
 
    The number of *iterations* should be chosen based on the hash algorithm and
-   computing power. As of 2013, at least 100,000 iterations of SHA-256 are
-   suggested.
+   computing power. As of 2022, hundreds of thousands of iterations of SHA-256
+   are suggested. For rationale as to why and how to choose what is best for
+   your application, read *Appendix A.2.2* of NIST-SP-800-132_. The answers
+   on the `stackexchange pbkdf2 iterations question`_ explain in detail.
 
    *dklen* is the length of the derived key. If *dklen* is ``None`` then the
    digest size of the hash algorithm *hash_name* is used, e.g. 64 for SHA-512.
 
-   >>> import hashlib
-   >>> dk = hashlib.pbkdf2_hmac('sha256', b'password', b'salt', 100000)
+   >>> from hashlib import pbkdf2_hmac
+   >>> our_app_iters = 500_000  # Application specific, read above.
+   >>> dk = pbkdf2_hmac('sha256', b'password', b'bad salt' * 2, our_app_iters)
    >>> dk.hex()
-   '0394a2ede332c9a13eb82e9b24631604c31df978b4e2f0fbd2c549944f9d79a5'
+   '15530bba69924174860db778f2c6f8104d3aaf9d26241840c8c4a641c8d000a9'
+
+   Function only available when Python is compiled with OpenSSL.
 
    .. versionadded:: 3.4
 
-   .. note::
-
-      A fast implementation of *pbkdf2_hmac* is available with OpenSSL.  The
-      Python implementation uses an inline version of :mod:`hmac`. It is about
-      three times slower and doesn't release the GIL.
+   .. versionchanged:: 3.12
+      Function now only available when Python is built with OpenSSL. The slow
+      pure Python implementation has been removed.
 
 .. function:: scrypt(password, *, salt, n, r, p, maxmem=0, dklen=64)
 
@@ -270,8 +325,6 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
    *n* is the CPU/Memory cost factor, *r* the block size, *p* parallelization
    factor and *maxmem* limits memory (OpenSSL 1.1.0 defaults to 32 MiB).
    *dklen* is the length of the derived key.
-
-   .. availability:: OpenSSL 1.1+.
 
    .. versionadded:: 3.6
 
@@ -308,11 +361,13 @@ New hash objects are created by calling constructor functions:
 
 .. function:: blake2b(data=b'', *, digest_size=64, key=b'', salt=b'', \
                 person=b'', fanout=1, depth=1, leaf_size=0, node_offset=0,  \
-                node_depth=0, inner_size=0, last_node=False)
+                node_depth=0, inner_size=0, last_node=False, \
+                usedforsecurity=True)
 
 .. function:: blake2s(data=b'', *, digest_size=32, key=b'', salt=b'', \
                 person=b'', fanout=1, depth=1, leaf_size=0, node_offset=0,  \
-                node_depth=0, inner_size=0, last_node=False)
+                node_depth=0, inner_size=0, last_node=False, \
+                usedforsecurity=True)
 
 
 These functions return the corresponding hash objects for calculating
@@ -359,10 +414,10 @@ Constructor functions also accept the following tree hashing parameters:
 * *depth*: maximal depth of tree (1 to 255, 255 if unlimited, 1 in
   sequential mode).
 
-* *leaf_size*: maximal byte length of leaf (0 to 2**32-1, 0 if unlimited or in
+* *leaf_size*: maximal byte length of leaf (0 to ``2**32-1``, 0 if unlimited or in
   sequential mode).
 
-* *node_offset*: node offset (0 to 2**64-1 for BLAKE2b, 0 to 2**48-1 for
+* *node_offset*: node offset (0 to ``2**64-1`` for BLAKE2b, 0 to ``2**48-1`` for
   BLAKE2s, 0 for the first, leftmost, leaf, or in sequential mode).
 
 * *node_depth*: node depth (0 to 255, 0 for leaves, or in sequential mode).
@@ -483,7 +538,7 @@ Keyed hashing
 
 Keyed hashing can be used for authentication as a faster and simpler
 replacement for `Hash-based message authentication code
-<https://en.wikipedia.org/wiki/Hash-based_message_authentication_code>`_ (HMAC).
+<https://en.wikipedia.org/wiki/HMAC>`_ (HMAC).
 BLAKE2 can be securely used in prefix-MAC mode thanks to the
 indifferentiability property inherited from BLAKE.
 
@@ -607,7 +662,7 @@ function:
     hash function used in the protocol summarily stops this type of attack.
 
     (`The Skein Hash Function Family
-    <http://www.skein-hash.info/sites/default/files/skein1.3.pdf>`_,
+    <https://www.schneier.com/wp-content/uploads/2016/02/skein.pdf>`_,
     p. 21)
 
 BLAKE2 can be personalized by passing bytes to the *person* argument::
@@ -714,7 +769,8 @@ Domain Dedication 1.0 Universal:
 .. _SHA-3: https://en.wikipedia.org/wiki/NIST_hash_function_competition
 .. _ChaCha: https://cr.yp.to/chacha.html
 .. _pyblake2: https://pythonhosted.org/pyblake2/
-
+.. _NIST-SP-800-132: https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf
+.. _stackexchange pbkdf2 iterations question: https://security.stackexchange.com/questions/3959/recommended-of-iterations-when-using-pbkdf2-sha256/
 
 
 .. seealso::
@@ -735,5 +791,8 @@ Domain Dedication 1.0 Universal:
       Wikipedia article with information on which algorithms have known issues and
       what that means regarding their use.
 
-   https://www.ietf.org/rfc/rfc2898.txt
-      PKCS #5: Password-Based Cryptography Specification Version 2.0
+   https://www.ietf.org/rfc/rfc8018.txt
+      PKCS #5: Password-Based Cryptography Specification Version 2.1
+
+   https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf
+      NIST Recommendation for Password-Based Key Derivation.

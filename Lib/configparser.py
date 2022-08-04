@@ -148,14 +148,14 @@ import re
 import sys
 import warnings
 
-__all__ = ["NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
+__all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "NoOptionError", "InterpolationError", "InterpolationDepthError",
            "InterpolationMissingOptionError", "InterpolationSyntaxError",
            "ParsingError", "MissingSectionHeaderError",
-           "ConfigParser", "SafeConfigParser", "RawConfigParser",
+           "ConfigParser", "RawConfigParser",
            "Interpolation", "BasicInterpolation",  "ExtendedInterpolation",
            "LegacyInterpolation", "SectionProxy", "ConverterMapping",
-           "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH"]
+           "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH")
 
 _default_dict = dict
 DEFAULTSECT = "DEFAULT"
@@ -297,40 +297,11 @@ class InterpolationDepthError(InterpolationError):
 class ParsingError(Error):
     """Raised when a configuration file does not follow legal syntax."""
 
-    def __init__(self, source=None, filename=None):
-        # Exactly one of `source'/`filename' arguments has to be given.
-        # `filename' kept for compatibility.
-        if filename and source:
-            raise ValueError("Cannot specify both `filename' and `source'. "
-                             "Use `source'.")
-        elif not filename and not source:
-            raise ValueError("Required argument `source' not given.")
-        elif filename:
-            source = filename
-        Error.__init__(self, 'Source contains parsing errors: %r' % source)
+    def __init__(self, source):
+        super().__init__(f'Source contains parsing errors: {source!r}')
         self.source = source
         self.errors = []
         self.args = (source, )
-
-    @property
-    def filename(self):
-        """Deprecated, use `source'."""
-        warnings.warn(
-            "The 'filename' attribute will be removed in future versions.  "
-            "Use 'source' instead.",
-            DeprecationWarning, stacklevel=2
-        )
-        return self.source
-
-    @filename.setter
-    def filename(self, value):
-        """Deprecated, user `source'."""
-        warnings.warn(
-            "The 'filename' attribute will be removed in future versions.  "
-            "Use 'source' instead.",
-            DeprecationWarning, stacklevel=2
-        )
-        self.source = value
 
     def append(self, lineno, line):
         self.errors.append((lineno, line))
@@ -525,6 +496,15 @@ class LegacyInterpolation(Interpolation):
 
     _KEYCRE = re.compile(r"%\(([^)]*)\)s|.")
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        warnings.warn(
+            "LegacyInterpolation has been deprecated since Python 3.2 "
+            "and will be removed from the configparser module in Python 3.13. "
+            "Use BasicInterpolation or ExtendedInterpolation instead.",
+            DeprecationWarning, stacklevel=2
+        )
+
     def before_get(self, parser, section, option, value, vars):
         rawval = value
         depth = MAX_INTERPOLATION_DEPTH
@@ -563,7 +543,7 @@ class RawConfigParser(MutableMapping):
     # Regular expressions for parsing section headers and options
     _SECT_TMPL = r"""
         \[                                 # [
-        (?P<header>[^]]+)                  # very permissive!
+        (?P<header>.+)                     # very permissive!
         \]                                 # ]
         """
     _OPT_TMPL = r"""
@@ -633,6 +613,11 @@ class RawConfigParser(MutableMapping):
             self._interpolation = self._DEFAULT_INTERPOLATION
         if self._interpolation is None:
             self._interpolation = Interpolation()
+        if not isinstance(self._interpolation, Interpolation):
+            raise TypeError(
+                f"interpolation= must be None or an instance of Interpolation;"
+                f" got an object of type {type(self._interpolation)}"
+            )
         if converters is not _UNSET:
             self._converters.update(converters)
         if defaults:
@@ -690,6 +675,7 @@ class RawConfigParser(MutableMapping):
         """
         if isinstance(filenames, (str, bytes, os.PathLike)):
             filenames = [filenames]
+        encoding = io.text_encoding(encoding)
         read_ok = []
         for filename in filenames:
             try:
@@ -752,15 +738,6 @@ class RawConfigParser(MutableMapping):
                     raise DuplicateOptionError(section, key, source)
                 elements_added.add((section, key))
                 self.set(section, key, value)
-
-    def readfp(self, fp, filename=None):
-        """Deprecated, use read_file instead."""
-        warnings.warn(
-            "This method will be removed in future versions.  "
-            "Use 'parser.read_file()' instead.",
-            DeprecationWarning, stacklevel=2
-        )
-        self.read_file(fp, source=filename)
 
     def get(self, section, option, *, raw=False, vars=None, fallback=_UNSET):
         """Get an option value for a given section.
@@ -907,6 +884,9 @@ class RawConfigParser(MutableMapping):
 
         If `space_around_delimiters' is True (the default), delimiters
         between keys and values are surrounded by spaces.
+
+        Please note that comments in the original configuration file are not
+        preserved when writing the configuration back.
         """
         if space_around_delimiters:
             d = " {} ".format(self._delimiters[0])
@@ -1005,7 +985,7 @@ class RawConfigParser(MutableMapping):
         Configuration files may include comments, prefixed by specific
         characters (`#' and `;' by default). Comments may appear on their own
         in an otherwise empty line or may be entered in lines holding values or
-        section names.
+        section names. Please note that comments get stripped off when reading configuration files.
         """
         elements_added = set()
         cursect = None                        # None, or a dictionary
@@ -1219,19 +1199,6 @@ class ConfigParser(RawConfigParser):
             self.read_dict({self.default_section: defaults})
         finally:
             self._interpolation = hold_interpolation
-
-
-class SafeConfigParser(ConfigParser):
-    """ConfigParser alias for backwards compatibility purposes."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        warnings.warn(
-            "The SafeConfigParser class has been renamed to ConfigParser "
-            "in Python 3.2. This alias will be removed in future versions."
-            " Use ConfigParser directly instead.",
-            DeprecationWarning, stacklevel=2
-        )
 
 
 class SectionProxy(MutableMapping):

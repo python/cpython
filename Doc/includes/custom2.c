@@ -98,7 +98,7 @@ static PyMethodDef Custom_methods[] = {
 static PyTypeObject CustomType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "custom2.Custom",
-    .tp_doc = "Custom objects",
+    .tp_doc = PyDoc_STR("Custom objects"),
     .tp_basicsize = sizeof(CustomObject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
@@ -128,6 +128,11 @@ PyInit_custom2(void)
         return NULL;
 
     Py_INCREF(&CustomType);
-    PyModule_AddObject(m, "Custom", (PyObject *) &CustomType);
+    if (PyModule_AddObject(m, "Custom", (PyObject *) &CustomType) < 0) {
+        Py_DECREF(&CustomType);
+        Py_DECREF(m);
+        return NULL;
+    }
+
     return m;
 }

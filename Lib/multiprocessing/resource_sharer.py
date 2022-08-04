@@ -63,7 +63,6 @@ class _ResourceSharer(object):
     def __init__(self):
         self._key = 0
         self._cache = {}
-        self._old_locks = []
         self._lock = threading.Lock()
         self._listener = None
         self._address = None
@@ -113,10 +112,7 @@ class _ResourceSharer(object):
         for key, (send, close) in self._cache.items():
             close()
         self._cache.clear()
-        # If self._lock was locked at the time of the fork, it may be broken
-        # -- see issue 6721.  Replace it without letting it be gc'ed.
-        self._old_locks.append(self._lock)
-        self._lock = threading.Lock()
+        self._lock._at_fork_reinit()
         if self._listener is not None:
             self._listener.close()
         self._listener = None

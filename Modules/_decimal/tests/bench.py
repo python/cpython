@@ -7,10 +7,7 @@
 
 
 import time
-try:
-    from test.support import import_fresh_module
-except ImportError:
-    from test.test_support import import_fresh_module
+from test.support.import_helper import import_fresh_module
 
 C = import_fresh_module('decimal', fresh=['_decimal'])
 P = import_fresh_module('decimal', blocked=['_decimal'])

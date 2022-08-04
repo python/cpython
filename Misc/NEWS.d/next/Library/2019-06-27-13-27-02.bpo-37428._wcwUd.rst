@@ -1,4 +1,0 @@
-SSLContext.post_handshake_auth = True no longer sets
-SSL_VERIFY_POST_HANDSHAKE verify flag for client connections. Although the
-option is documented as ignored for clients, OpenSSL implicitly enables cert
-chain validation when the flag is set.

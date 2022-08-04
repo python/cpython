@@ -37,8 +37,16 @@ if os.name == 'posix':
     import _multiprocessing
     import _posixshmem
 
+    # Use sem_unlink() to clean up named semaphores.
+    #
+    # sem_unlink() may be missing if the Python build process detected the
+    # absence of POSIX named semaphores. In that case, no named semaphores were
+    # ever opened, so no cleanup would be necessary.
+    if hasattr(_multiprocessing, 'sem_unlink'):
+        _CLEANUP_FUNCS.update({
+            'semaphore': _multiprocessing.sem_unlink,
+        })
     _CLEANUP_FUNCS.update({
-        'semaphore': _multiprocessing.sem_unlink,
         'shared_memory': _posixshmem.shm_unlink,
     })
 
@@ -49,6 +57,19 @@ class ResourceTracker(object):
         self._lock = threading.Lock()
         self._fd = None
         self._pid = None
+
+    def _stop(self):
+        with self._lock:
+            if self._fd is None:
+                # not running
+                return
+
+            # closing the "alive" file descriptor stops main()
+            os.close(self._fd)
+            self._fd = None
+
+            os.waitpid(self._pid, 0)
+            self._pid = None
 
     def getfd(self):
         self.ensure_running()

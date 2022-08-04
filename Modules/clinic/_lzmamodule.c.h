@@ -29,7 +29,7 @@ _lzma_LZMACompressor_compress(Compressor *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("compress", 0, "contiguous buffer", arg);
+        _PyArg_BadArgument("compress", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _lzma_LZMACompressor_compress_impl(self, &data);
@@ -85,7 +85,7 @@ PyDoc_STRVAR(_lzma_LZMADecompressor_decompress__doc__,
 "the unused_data attribute.");
 
 #define _LZMA_LZMADECOMPRESSOR_DECOMPRESS_METHODDEF    \
-    {"decompress", (PyCFunction)(void(*)(void))_lzma_LZMADecompressor_decompress, METH_FASTCALL|METH_KEYWORDS, _lzma_LZMADecompressor_decompress__doc__},
+    {"decompress", _PyCFunction_CAST(_lzma_LZMADecompressor_decompress), METH_FASTCALL|METH_KEYWORDS, _lzma_LZMADecompressor_decompress__doc__},
 
 static PyObject *
 _lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data,
@@ -110,20 +110,15 @@ _lzma_LZMADecompressor_decompress(Decompressor *self, PyObject *const *args, Py_
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("decompress", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("decompress", "argument 'data'", "contiguous buffer", args[0]);
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[1]);
+        PyObject *iobj = _PyNumber_Index(args[1]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -194,11 +189,6 @@ _lzma_LZMADecompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs
         goto skip_optional_pos;
     }
     if (fastargs[0]) {
-        if (PyFloat_Check(fastargs[0])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         format = _PyLong_AsInt(fastargs[0]);
         if (format == -1 && PyErr_Occurred()) {
             goto exit;
@@ -241,11 +231,6 @@ _lzma_is_check_supported(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int check_id;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     check_id = _PyLong_AsInt(arg);
     if (check_id == -1 && PyErr_Occurred()) {
         goto exit;
@@ -253,39 +238,6 @@ _lzma_is_check_supported(PyObject *module, PyObject *arg)
     return_value = _lzma_is_check_supported_impl(module, check_id);
 
 exit:
-    return return_value;
-}
-
-PyDoc_STRVAR(_lzma__encode_filter_properties__doc__,
-"_encode_filter_properties($module, filter, /)\n"
-"--\n"
-"\n"
-"Return a bytes object encoding the options (properties) of the filter specified by *filter* (a dict).\n"
-"\n"
-"The result does not include the filter ID itself, only the options.");
-
-#define _LZMA__ENCODE_FILTER_PROPERTIES_METHODDEF    \
-    {"_encode_filter_properties", (PyCFunction)_lzma__encode_filter_properties, METH_O, _lzma__encode_filter_properties__doc__},
-
-static PyObject *
-_lzma__encode_filter_properties_impl(PyObject *module, lzma_filter filter);
-
-static PyObject *
-_lzma__encode_filter_properties(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    lzma_filter filter = {LZMA_VLI_UNKNOWN, NULL};
-
-    if (!lzma_filter_converter(arg, &filter)) {
-        goto exit;
-    }
-    return_value = _lzma__encode_filter_properties_impl(module, filter);
-
-exit:
-    /* Cleanup for filter */
-    if (filter.id != LZMA_VLI_UNKNOWN)
-       PyMem_Free(filter.options);
-
     return return_value;
 }
 
@@ -298,7 +250,7 @@ PyDoc_STRVAR(_lzma__decode_filter_properties__doc__,
 "The result does not include the filter ID itself, only the options.");
 
 #define _LZMA__DECODE_FILTER_PROPERTIES_METHODDEF    \
-    {"_decode_filter_properties", (PyCFunction)(void(*)(void))_lzma__decode_filter_properties, METH_FASTCALL, _lzma__decode_filter_properties__doc__},
+    {"_decode_filter_properties", _PyCFunction_CAST(_lzma__decode_filter_properties), METH_FASTCALL, _lzma__decode_filter_properties__doc__},
 
 static PyObject *
 _lzma__decode_filter_properties_impl(PyObject *module, lzma_vli filter_id,
@@ -321,7 +273,7 @@ _lzma__decode_filter_properties(PyObject *module, PyObject *const *args, Py_ssiz
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&encoded_props, 'C')) {
-        _PyArg_BadArgument("_decode_filter_properties", 2, "contiguous buffer", args[1]);
+        _PyArg_BadArgument("_decode_filter_properties", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     return_value = _lzma__decode_filter_properties_impl(module, filter_id, &encoded_props);
@@ -334,4 +286,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=1a290aa478603107 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bce20bac13b0f252 input=a9049054013a1b77]*/

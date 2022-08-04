@@ -1,6 +1,7 @@
 # Test the most dynamic corner cases of Python's runtime semantics.
 
 import builtins
+import sys
 import unittest
 
 from test.support import swap_item, swap_attr
@@ -133,6 +134,20 @@ class RebindBuiltinsTests(unittest.TestCase):
 
         self.assertEqual(foo(), 7)
 
+    def test_load_global_specialization_failure_keeps_oparg(self):
+        # https://github.com/python/cpython/issues/91625
+        class MyGlobals(dict):
+            def __missing__(self, key):
+                return int(key.removeprefix("_number_"))
+
+        # 1,000 on most systems
+        limit = sys.getrecursionlimit()
+        code = "lambda: " + "+".join(f"_number_{i}" for i in range(limit))
+        sum_func = eval(code, MyGlobals())
+        expected = sum(range(limit))
+        # Warm up the the function for quickening (PEP 659)
+        for _ in range(30):
+            self.assertEqual(sum_func(), expected)
 
 if __name__ == "__main__":
     unittest.main()

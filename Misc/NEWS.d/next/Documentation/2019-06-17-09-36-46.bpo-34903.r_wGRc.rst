@@ -1,1 +1,0 @@
-Documented that in :meth:`datetime.datetime.strptime()`, the leading zero in some two-digit formats is optional. Patch by Mike Gleen.

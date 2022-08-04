@@ -223,6 +223,10 @@ class Process(process.BaseProcess):
     def _Popen(process_obj):
         return _default_context.get_context().Process._Popen(process_obj)
 
+    @staticmethod
+    def _after_fork():
+        return _default_context.get_context().Process._after_fork()
+
 class DefaultContext(BaseContext):
     Process = Process
 
@@ -257,10 +261,11 @@ class DefaultContext(BaseContext):
         if sys.platform == 'win32':
             return ['spawn']
         else:
+            methods = ['spawn', 'fork'] if sys.platform == 'darwin' else ['fork', 'spawn']
             if reduction.HAVE_SEND_HANDLE:
-                return ['fork', 'spawn', 'forkserver']
-            else:
-                return ['fork', 'spawn']
+                methods.append('forkserver')
+            return methods
+
 
 #
 # Context types for fixed start method
@@ -281,6 +286,11 @@ if sys.platform != 'win32':
         def _Popen(process_obj):
             from .popen_spawn_posix import Popen
             return Popen(process_obj)
+
+        @staticmethod
+        def _after_fork():
+            # process is spawned, nothing to do
+            pass
 
     class ForkServerProcess(process.BaseProcess):
         _start_method = 'forkserver'
@@ -324,6 +334,11 @@ else:
         def _Popen(process_obj):
             from .popen_spawn_win32 import Popen
             return Popen(process_obj)
+
+        @staticmethod
+        def _after_fork():
+            # process is spawned, nothing to do
+            pass
 
     class SpawnContext(BaseContext):
         _name = 'spawn'

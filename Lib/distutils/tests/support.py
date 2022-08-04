@@ -6,7 +6,7 @@ import tempfile
 import unittest
 import sysconfig
 from copy import deepcopy
-import test.support
+from test.support import os_helper
 
 from distutils import log
 from distutils.log import DEBUG, INFO, WARN, ERROR, FATAL
@@ -39,8 +39,6 @@ class LoggingSilencer(object):
         self.logs.append((level, msg, args))
 
     def get_logs(self, *levels):
-        def _format(msg, args):
-            return msg % args
         return [msg % args for level, msg, args
                 in self.logs if level in levels]
 
@@ -66,7 +64,7 @@ class TempdirManager(object):
         super().tearDown()
         while self.tempdirs:
             tmpdir = self.tempdirs.pop()
-            test.support.rmtree(tmpdir)
+            os_helper.rmtree(tmpdir)
 
     def mkdtemp(self):
         """Create a temporary directory that will be cleaned up.
