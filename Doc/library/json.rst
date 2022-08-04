@@ -226,7 +226,7 @@ Basic Usage
    *object_hook* is an optional function that will be called with the result of
    any object literal decoded (a :class:`dict`).  The return value of
    *object_hook* will be used instead of the :class:`dict`.  This feature can be used
-   to implement custom decoders (e.g. `JSON-RPC <http://www.jsonrpc.org>`_
+   to implement custom decoders (e.g. `JSON-RPC <https://www.jsonrpc.org>`_
    class hinting).
 
    *object_pairs_hook* is an optional function that will be called with the
@@ -326,7 +326,7 @@ Encoders and Decoders
    *object_hook*, if specified, will be called with the result of every JSON
    object decoded and its return value will be used in place of the given
    :class:`dict`.  This can be used to provide custom deserializations (e.g. to
-   support `JSON-RPC <http://www.jsonrpc.org>`_ class hinting).
+   support `JSON-RPC <https://www.jsonrpc.org>`_ class hinting).
 
    *object_pairs_hook*, if specified will be called with the result of every
    JSON object decoded with an ordered list of pairs.  The return value of

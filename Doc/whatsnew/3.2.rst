@@ -2506,7 +2506,7 @@ IDLE
 Code Repository
 ===============
 
-In addition to the existing Subversion code repository at http://svn.python.org
+In addition to the existing Subversion code repository at https://svn.python.org
 there is now a `Mercurial <https://www.mercurial-scm.org/>`_ repository at
 https://hg.python.org/\ .
 
