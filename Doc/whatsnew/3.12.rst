@@ -205,6 +205,10 @@ Pending Removal in Python 3.14
 
   (Contributed by Jason R. Coombs and Hugo van Kemenade in :gh:`93963`.)
 
+* Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
+  bases using the C API.
+
+
 Pending Removal in Future Versions
 ----------------------------------
 
@@ -410,6 +414,15 @@ New Features
   an additional metaclass argument.
   (Contributed by Wenzel Jakob in :gh:`93012`.)
 
+* (XXX: this should be combined with :gh:`93274` when that is done)
+  The :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag is now removed from a class
+  when the class's :py:meth:`~object.__call__` method is reassigned.
+  This makes vectorcall safe to use with mutable types (i.e. heap types
+  without the :const:`immutable <Py_TPFLAGS_IMMUTABLETYPE>` flag).
+  Mutable types that do not override :c:member:`~PyTypeObject.tp_call` now
+  inherit the :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag.
+  (Contributed by Petr Viktorin in :gh:`93012`.)
+
 Porting to Python 3.12
 ----------------------
 
@@ -457,6 +470,9 @@ Deprecated
   The :c:func:`Py_InitializeFromConfig` API should be used with
   :c:type:`PyConfig` instead.
   (Contributed by Victor Stinner in :gh:`77782`.)
+
+* Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
+  bases is deprecated and will be disabled in Python 3.14.
 
 
 Removed
