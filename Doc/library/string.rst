@@ -6,6 +6,9 @@
 
 **Source code:** :source:`Lib/string.py`
 
+--------------
+
+
 .. seealso::
 
    :ref:`textseq`
