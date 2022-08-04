@@ -474,7 +474,7 @@ Example of `statistical bootstrapping
 <https://en.wikipedia.org/wiki/Bootstrapping_(statistics)>`_ using resampling
 with replacement to estimate a confidence interval for the mean of a sample::
 
-   # http://statistics.about.com/od/Applications/a/Example-Of-Bootstrapping.htm
+   # https://www.thoughtco.com/example-of-bootstrapping-3126155
    from statistics import fmean as mean
    from random import choices
 
