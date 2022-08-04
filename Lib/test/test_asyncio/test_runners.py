@@ -5,10 +5,9 @@ import re
 import signal
 import threading
 import unittest
-
+from test.test_asyncio import utils as test_utils
 from unittest import mock
 from unittest.mock import patch
-from test.test_asyncio import utils as test_utils
 
 
 def tearDownModule():
@@ -209,6 +208,54 @@ class RunTests(BaseTest):
         policy.set_event_loop = mock.Mock()
         asyncio.run(main())
         self.assertTrue(policy.set_event_loop.called)
+
+    def test_asyncio_run_without_uncancel(self):
+        # See https://github.com/python/cpython/issues/95097
+        class Task:
+            def __init__(self, loop, coro, **kwargs):
+                self._task = asyncio.Task(coro, loop=loop, **kwargs)
+
+            def cancel(self, *args, **kwargs):
+                return self._task.cancel(*args, **kwargs)
+
+            def add_done_callback(self, *args, **kwargs):
+                return self._task.add_done_callback(*args, **kwargs)
+
+            def remove_done_callback(self, *args, **kwargs):
+                return self._task.remove_done_callback(*args, **kwargs)
+
+            @property
+            def _asyncio_future_blocking(self):
+                return self._task._asyncio_future_blocking
+
+            def result(self, *args, **kwargs):
+                return self._task.result(*args, **kwargs)
+
+            def done(self, *args, **kwargs):
+                return self._task.done(*args, **kwargs)
+
+            def cancelled(self, *args, **kwargs):
+                return self._task.cancelled(*args, **kwargs)
+
+            def exception(self, *args, **kwargs):
+                return self._task.exception(*args, **kwargs)
+
+            def get_loop(self, *args, **kwargs):
+                return self._task.get_loop(*args, **kwargs)
+
+
+        async def main():
+            interrupt_self()
+            await asyncio.Event().wait()
+
+        def new_event_loop():
+            loop = self.new_loop()
+            loop.set_task_factory(Task)
+            return loop
+
+        asyncio.set_event_loop_policy(TestPolicy(new_event_loop))
+        with self.assertRaises(asyncio.CancelledError):
+            asyncio.run(main())
 
 
 class RunnerTests(BaseTest):

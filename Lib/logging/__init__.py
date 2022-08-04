@@ -833,17 +833,17 @@ class Filterer(object):
         Determine if a record is loggable by consulting all the filters.
 
         The default is to allow the record to be logged; any filter can veto
-        this by returning a falsy value.
+        this by returning a false value.
         If a filter attached to a handler returns a log record instance,
         then that instance is used in place of the original log record in
         any further processing of the event by that handler.
-        If a filter returns any other truthy value, the original log record
+        If a filter returns any other true value, the original log record
         is used in any further processing of the event by that handler.
 
-        If none of the filters return falsy values, this method returns
+        If none of the filters return false values, this method returns
         a log record.
-        If any of the filters return a falsy value, this method returns
-        a falsy value.
+        If any of the filters return a false value, this method returns
+        a false value.
 
         .. versionchanged:: 3.2
 
@@ -1017,7 +1017,7 @@ class Handler(Filterer):
         the I/O thread lock.
 
         Returns an instance of the log record that was emitted
-        if it passed all filters, otherwise a falsy value is returned.
+        if it passed all filters, otherwise a false value is returned.
         """
         rv = self.filter(record)
         if isinstance(rv, LogRecord):

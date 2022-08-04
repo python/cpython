@@ -112,6 +112,13 @@ os
   (Contributed by Kumar Aditya in :gh:`93312`.)
 
 
+sqlite3
+-------
+
+* Add a :ref:`command-line interface <sqlite3-cli>`.
+  (Contributed by Erlend E. Aasland in :gh:`77617`.)
+
+
 Optimizations
 =============
 
@@ -179,6 +186,28 @@ APIs:
 * :func:`unittest.makeSuite` (:gh:`50096`)
 * :func:`unittest.getTestCaseNames` (:gh:`50096`)
 * :class:`webbrowser.MacOSX` (:gh:`86421`)
+
+Pending Removal in Python 3.14
+==============================
+
+* Deprecated the following :mod:`importlib.abc` classes, scheduled for removal in
+  Python 3.14:
+
+  * :class:`importlib.abc.ResourceReader`
+  * :class:`importlib.abc.Traversable`
+  * :class:`importlib.abc.TraversableResources`
+
+  Use :mod:`importlib.resources.abc` classes instead:
+
+  * :class:`importlib.resources.abc.TraversableResources`
+  * :class:`importlib.resources.abc.Traversable`
+  * :class:`importlib.resources.abc.TraversableResources`
+
+  (Contributed by Jason R. Coombs and Hugo van Kemenade in :gh:`93963`.)
+
+* Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
+  bases using the C API.
+
 
 Pending Removal in Future Versions
 ----------------------------------
@@ -397,6 +426,15 @@ New Features
   an additional metaclass argument.
   (Contributed by Wenzel Jakob in :gh:`93012`.)
 
+* (XXX: this should be combined with :gh:`93274` when that is done)
+  The :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag is now removed from a class
+  when the class's :py:meth:`~object.__call__` method is reassigned.
+  This makes vectorcall safe to use with mutable types (i.e. heap types
+  without the :const:`immutable <Py_TPFLAGS_IMMUTABLETYPE>` flag).
+  Mutable types that do not override :c:member:`~PyTypeObject.tp_call` now
+  inherit the :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag.
+  (Contributed by Petr Viktorin in :gh:`93012`.)
+
 Porting to Python 3.12
 ----------------------
 
@@ -406,6 +444,13 @@ Porting to Python 3.12
 * Argument parsing functions like :c:func:`PyArg_ParseTuple` doesn't support
   ``Py_UNICODE*`` based format (e.g. ``u``, ``Z``) anymore. Please migrate
   to other formats for Unicode like ``s``, ``z``, ``es``, and ``U``.
+
+* ``tp_weaklist`` for all static builtin types is always ``NULL``.
+  This is an internal-only field on ``PyTypeObject``
+  but we're pointing out the change in case someone happens to be
+  accessing the field directly anyway.  To avoid breakage, consider
+  using the existing public C-API instead, or, if necessary, the
+  (internal-only) ``_PyObject_GET_WEAKREFS_LISTPTR()`` macro.
 
 Deprecated
 ----------
@@ -437,6 +482,9 @@ Deprecated
   The :c:func:`Py_InitializeFromConfig` API should be used with
   :c:type:`PyConfig` instead.
   (Contributed by Victor Stinner in :gh:`77782`.)
+
+* Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
+  bases is deprecated and will be disabled in Python 3.14.
 
 
 Removed
