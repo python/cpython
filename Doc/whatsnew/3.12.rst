@@ -427,7 +427,6 @@ New Features
   inherit the :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag.
   (Contributed by Petr Viktorin in :gh:`93012`.)
 
-
 Porting to Python 3.12
 ----------------------
 
