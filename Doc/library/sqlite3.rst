@@ -94,6 +94,12 @@ using :meth:`~Cursor.executemany`::
    ... ]
    >>> cur.executemany('INSERT INTO stocks VALUES(?, ?, ?, ?, ?)', data)
 
+Notice that we used ``?`` placeholders to bind *data* to the query.
+Always use placeholders instead of :ref:`string formatting <tut-formatting>`
+to bind Python values to SQL statements,
+to avoid `SQL injection attacks`_.
+See the :ref:`placeholders how-to <sqlite3-placeholders>` for more details.
+
 Then, retrieve the data by iterating over the result of a ``SELECT`` statement::
 
    >>> for row in cur.execute('SELECT * FROM stocks ORDER BY price'):
@@ -104,33 +110,9 @@ Then, retrieve the data by iterating over the result of a ``SELECT`` statement::
    ('2006-04-06', 'SELL', 'IBM', 500, 53.0)
    ('2006-04-05', 'BUY', 'MSFT', 1000, 72.0)
 
+You've now created an SQLite database using the :mod:`!sqlite3` module.
 
-.. _sqlite3-placeholders:
-
-SQL operations usually need to use values from Python variables. However,
-beware of using Python's string operations to assemble queries, as they
-are vulnerable to SQL injection attacks (see the `xkcd webcomic
-<https://xkcd.com/327/>`_ for a humorous example of what can go wrong)::
-
-   # Never do this -- insecure!
-   symbol = 'RHAT'
-   cur.execute("SELECT * FROM stocks WHERE symbol = '%s'" % symbol)
-
-Instead, use the DB-API's parameter substitution. To insert a variable into a
-query string, use a placeholder in the string, and substitute the actual values
-into the query by providing them as a :class:`tuple` of values to the second
-argument of the cursor's :meth:`~Cursor.execute` method. An SQL statement may
-use one of two kinds of placeholders: question marks (qmark style) or named
-placeholders (named style). For the qmark style, ``parameters`` must be a
-:term:`sequence <sequence>`. For the named style, it can be either a
-:term:`sequence <sequence>` or :class:`dict` instance. The length of the
-:term:`sequence <sequence>` must match the number of placeholders, or a
-:exc:`ProgrammingError` is raised. If a :class:`dict` is given, it must contain
-keys for all named parameters. Any extra items are ignored. Here's an example of
-both styles:
-
-.. literalinclude:: ../includes/sqlite3/execute_1.py
-
+.. _SQL injection attacks: https://en.wikipedia.org/wiki/SQL_injection
 
 .. seealso::
 
@@ -1478,6 +1460,36 @@ Type ``.quit`` or CTRL-D to exit the shell.
 
 How-to guides
 -------------
+
+.. _sqlite3-placeholders:
+
+Using placeholders to bind values in SQL queries
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+SQL operations usually need to use values from Python variables. However,
+beware of using Python's string operations to assemble queries, as they
+are vulnerable to `SQL injection attacks`_ (see the `xkcd webcomic
+<https://xkcd.com/327/>`_ for a humorous example of what can go wrong)::
+
+   # Never do this -- insecure!
+   symbol = 'RHAT'
+   cur.execute("SELECT * FROM stocks WHERE symbol = '%s'" % symbol)
+
+Instead, use the DB-API's parameter substitution. To insert a variable into a
+query string, use a placeholder in the string, and substitute the actual values
+into the query by providing them as a :class:`tuple` of values to the second
+argument of the cursor's :meth:`~Cursor.execute` method. An SQL statement may
+use one of two kinds of placeholders: question marks (qmark style) or named
+placeholders (named style). For the qmark style, ``parameters`` must be a
+:term:`sequence <sequence>`. For the named style, it can be either a
+:term:`sequence <sequence>` or :class:`dict` instance. The length of the
+:term:`sequence <sequence>` must match the number of placeholders, or a
+:exc:`ProgrammingError` is raised. If a :class:`dict` is given, it must contain
+keys for all named parameters. Any extra items are ignored. Here's an example of
+both styles:
+
+.. literalinclude:: ../includes/sqlite3/execute_1.py
+
 
 .. _sqlite3-adapters:
 
