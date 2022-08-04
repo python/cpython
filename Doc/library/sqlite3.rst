@@ -365,7 +365,7 @@ Module functions and constants
    SQLite type.
    The adapter is called with a Python object of type *type* as its sole
    argument, and must return a value of a
-   :ref:`type that SQLite natively understands<sqlite3-types>`.
+   :ref:`type that SQLite natively understands <sqlite3-types>`.
 
 
 .. function:: complete_statement(statement)
@@ -1498,7 +1498,7 @@ Using adapters to store custom Python types in SQLite databases
 
 SQLite supports only a limited set of data types natively.
 To store custom Python types in SQLite databases, *adapt* them to one of the
-:ref:`Python types SQLite natively understands<sqlite3-types>`.
+:ref:`Python types SQLite natively understands <sqlite3-types>`.
 
 There are two ways to adapt Python objects to SQLite types:
 letting your object adapt itself, or using an *adapter callable*.
