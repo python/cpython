@@ -121,7 +121,7 @@ class SequenceMatcher:
         """Construct a SequenceMatcher.
 
         Optional arg isjunk is None (the default), or a one-argument
-        function that takes a sequence element and returns true iff the
+        function that takes a sequence element and returns true if the
         element is junk.  None is equivalent to passing "lambda x: 0", i.e.
         no elements are considered to be junk.  For example, pass
             lambda x: x in " \\t"
@@ -167,7 +167,7 @@ class SequenceMatcher:
         #          'equal'     a[i1:i2] == b[j1:j2]
         # isjunk
         #      a user-supplied function taking a sequence element and
-        #      returning true iff the element is "junk" -- this has
+        #      returning true if the element is "junk" -- this has
         #      subtle but helpful effects on the algorithm, which I'll
         #      get around to writing up someday <0.9 wink>.
         #      DON'T USE!  Only __chain_b uses this.  Use "in self.bjunk".
@@ -814,7 +814,7 @@ class Differ:
         The two optional keyword parameters are for filter functions:
 
         - `linejunk`: A function that should accept a single string argument,
-          and return true iff the string is junk. The module-level function
+          and return true if the string is junk. The module-level function
           `IS_LINE_JUNK` may be used to filter out lines without visible
           characters, except for at most one splat ('#').  It is recommended
           to leave linejunk None; the underlying SequenceMatcher class has
@@ -950,7 +950,7 @@ class Differ:
             # there's a close pair, so forget the identical pair (if any)
             eqi = None
 
-        # a[best_i] very similar to b[best_j]; eqi is None iff they're not
+        # a[best_i] very similar to b[best_j]; eqi is None if they're not
         # identical
 
         # pump out diffs from before the synch point
@@ -1044,7 +1044,7 @@ import re
 
 def IS_LINE_JUNK(line, pat=re.compile(r"\s*(?:#\s*)?$").match):
     r"""
-    Return True for ignorable line: iff `line` is blank or contains a single '#'.
+    Return True for ignorable line: if `line` is blank or contains a single '#'.
 
     Examples:
 
@@ -1060,7 +1060,7 @@ def IS_LINE_JUNK(line, pat=re.compile(r"\s*(?:#\s*)?$").match):
 
 def IS_CHARACTER_JUNK(ch, ws=" \t"):
     r"""
-    Return True for ignorable character: iff `ch` is a space or tab.
+    Return True for ignorable character: if `ch` is a space or tab.
 
     Examples:
 
@@ -1308,12 +1308,12 @@ def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK):
     functions, or can be None:
 
     - linejunk: A function that should accept a single string argument and
-      return true iff the string is junk.  The default is None, and is
+      return true if the string is junk.  The default is None, and is
       recommended; the underlying SequenceMatcher class has an adaptive
       notion of "noise" lines.
 
     - charjunk: A function that accepts a character (string of length
-      1), and returns true iff the character is junk. The default is
+      1), and returns true if the character is junk. The default is
       the module-level function IS_CHARACTER_JUNK, which filters out
       whitespace characters (a blank or tab; note: it's a bad idea to
       include newline in this!).
