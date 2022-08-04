@@ -90,7 +90,7 @@ Tcl
    (see `Threading model`_ for details).
 
 Tk
-   Tk is a `Tcl package <http://wiki.tcl.tk/37432>`_ implemented in C
+   Tk is a `Tcl package <https://wiki.tcl-lang.org/37432>`_ implemented in C
    that adds custom commands to create and manipulate GUI widgets. Each
    :class:`Tk` object embeds its own Tcl interpreter instance with Tk loaded into
    it. Tk's widgets are very customizable, though at the cost of a dated appearance.
