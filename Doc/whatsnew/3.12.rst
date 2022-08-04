@@ -205,6 +205,10 @@ Pending Removal in Python 3.14
 
   (Contributed by Jason R. Coombs and Hugo van Kemenade in :gh:`93963`.)
 
+* Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
+  bases using the C API.
+
+
 Pending Removal in Future Versions
 ----------------------------------
 
@@ -457,6 +461,9 @@ Deprecated
   The :c:func:`Py_InitializeFromConfig` API should be used with
   :c:type:`PyConfig` instead.
   (Contributed by Victor Stinner in :gh:`77782`.)
+
+* Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
+  bases is deprecated and will be disabled in Python 3.14.
 
 
 Removed
