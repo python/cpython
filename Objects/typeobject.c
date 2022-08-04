@@ -412,9 +412,6 @@ PyType_Modified(PyTypeObject *type)
             PyType_Modified(subclass);
         }
     }
-    else if (PyErr_Occurred()) {
-        PyErr_Clear();
-    }
 
     type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
     type->tp_version_tag = 0; /* 0 is not a valid version tag */
