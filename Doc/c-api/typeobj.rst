@@ -1710,8 +1710,8 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    at the very end of the structure.
 
    The :c:member:`~PyTypeObject.tp_dictoffset` should be regarded as write-only.
-   To get the pointer to the dictionary call :c:func:`_PyObject_GetDictPtr`.
-   Calling :c:func:`_PyObject_GetDictPtr` may need to allocate memory for the
+   To get the pointer to the dictionary call :c:func:`PyObject_GenericGetDict`.
+   Calling :c:func:`PyObject_GenericGetDict` may need to allocate memory for the
    dictionary, so it is may be more efficient to call :c:func:`PyObject_GetAttr`
    when accessing an attribute on the object.
 
