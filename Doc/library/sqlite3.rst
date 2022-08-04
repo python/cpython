@@ -887,7 +887,7 @@ Connection objects
           Either ``"main"`` (the default) for the main database,
           ``"temp"`` for the temporary database,
           or the name of a custom database as attached using the
-          ``ATTACH DATABASE`` SQL statment.
+          ``ATTACH DATABASE`` SQL statement.
       :type name: str
 
       :param sleep:
@@ -1060,7 +1060,7 @@ Cursor objects
    .. method:: executescript(sql_script, /)
 
       Execute the SQL statements in *sql_script*.
-      If there is a pending transaciton,
+      If there is a pending transaction,
       an implicit ``COMMIT`` statement is executed first.
       No other implicit transaction control is performed;
       any transaction control must be added to *sql_script*.
