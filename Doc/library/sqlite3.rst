@@ -150,10 +150,13 @@ both styles:
 Reference
 ---------
 
+.. We keep the old sqlite3-module-contents ref to prevent breaking links.
 .. _sqlite3-module-contents:
 
-Module functions and constants
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _sqlite3-module-functions:
+
+Module functions
+^^^^^^^^^^^^^^^^
 
 .. function:: connect(database, timeout=5.0, detect_types=0, \
                       isolation_level="DEFERRED", check_same_thread=True, \
@@ -299,6 +302,11 @@ Module functions and constants
 
    Note: *typename* and the name of the type in your query are matched
    case-insensitively.
+
+.. _sqlite3-module-variables:
+
+Module variables
+^^^^^^^^^^^^^^^^
 
 .. data:: PARSE_COLNAMES
 
