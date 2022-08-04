@@ -928,7 +928,7 @@ Connection objects
 
       .. versionadded:: 3.11
 
-.. _SQLite limit category: https://www.sqlite.org/c3ref/c_limit_attached.html
+   .. _SQLite limit category: https://www.sqlite.org/c3ref/c_limit_attached.html
 
 
    .. method:: serialize(*, name="main")
