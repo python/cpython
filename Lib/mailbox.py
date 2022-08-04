@@ -844,9 +844,14 @@ class mbox(_mboxMMDF):
     # _post_message_hooks outputs an empty line between messages.
     _append_newline = True
 
-    def __init__(self, path, factory=None, create=True):
+    def __init__(self, path, factory=None, create=True, from_matcher=None):
         """Initialize an mbox mailbox."""
         self._message_factory = mboxMessage
+        if from_matcher is None:
+            # default to original matcher
+            self._from_matcher = lambda line: line.startswith(b'From ')
+        else:
+            self._from_matcher = from_matcher
         _mboxMMDF.__init__(self, path, factory, create)
 
     def _post_message_hook(self, f):
@@ -861,7 +866,7 @@ class mbox(_mboxMMDF):
         while True:
             line_pos = self._file.tell()
             line = self._file.readline()
-            if line.startswith(b'From '):
+            if self._from_matcher(line):
                 if len(stops) < len(starts):
                     if last_was_empty:
                         stops.append(line_pos - len(linesep))

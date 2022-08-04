@@ -1164,6 +1164,41 @@ class TestMbox(_TestMboxMMDF, unittest.TestCase):
             data = f.read()
             self.assertEqual(data[-3:], '0\n\n')
 
+    # Test reading an mbox file with un-prefixed From in body text
+    # currently generates 2 messages
+    def _test_read_mbox(self, matcher=0, count=2):
+        # create a basic mbox file
+        self._box.add('From: foo\n\nHello\n')
+        # Add an un-prefixed From to create a second entry
+        self._box._file.write(b'From time to time\n')
+        self._box.close()
+        # re-read it using the provided matcher
+        if matcher == 0: # not provided, so omit
+            self._box = mailbox.mbox(self._path, create=False)
+        else:
+            self._box = mailbox.mbox(self._path, create=False, from_matcher=matcher)
+        # How many messages were found?
+        self.assertEqual(len(self._box.keys()), count)
+
+    def test_read_mbox_omitted(self):
+        self._test_read_mbox()
+
+    def test_read_mbox_none(self):
+        self._test_read_mbox(None)
+
+    def test_read_mbox_default(self):
+        self._test_read_mbox(lambda line: re.match(b'From ', line))
+    
+    def test_read_mbox_regex1(self):
+        import re
+        # stricter matching should only find one message
+        self._test_read_mbox(lambda line: re.match(b'From .+ \\d\\d\\d\\d$', line), count=1)
+
+    def test_read_mbox_regex2(self):
+        import re
+        # invalid, so don't find any messages
+        self._test_read_mbox(lambda line: re.match(b'From .+ \\d\\d\\d$', line), count=0)
+
 
 class TestMMDF(_TestMboxMMDF, unittest.TestCase):
 
