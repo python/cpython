@@ -28,7 +28,8 @@ __all__ = ['get_ident', 'active_count', 'Condition', 'current_thread',
            'Event', 'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Thread',
            'Barrier', 'BrokenBarrierError', 'Timer', 'ThreadError',
            'setprofile', 'settrace', 'local', 'stack_size',
-           'excepthook', 'ExceptHookArgs', 'gettrace', 'getprofile']
+           'excepthook', 'ExceptHookArgs', 'gettrace', 'getprofile',
+           'setprofile_all_threads','settrace_all_threads']
 
 # Rename some stuff so "from threading import *" is safe
 _start_new_thread = _thread.start_new_thread
@@ -55,39 +56,47 @@ del _thread
 _profile_hook = None
 _trace_hook = None
 
-def setprofile(func, *, running_threads=False):
+def setprofile(func):
     """Set a profile function for all threads started from the threading module.
 
     The func will be passed to sys.setprofile() for each thread, before its
     run() method is called.
-
-    If running_threads is set, the profile function will be installed in all running
-    threads.
     """
     global _profile_hook
     _profile_hook = func
 
-    if running_threads:
-        _sys._setprofileallthreads(func)
+def setprofile_all_threads(func):
+    """Set a profile function for all threads started from the threading module
+    and all Python threads that are currently executing.
+
+    The func will be passed to sys.setprofile() for each thread, before its
+    run() method is called.
+    """
+    setprofile(func)
+    _sys._setprofileallthreads(func)
 
 def getprofile():
     """Get the profiler function as set by threading.setprofile()."""
     return _profile_hook
 
-def settrace(func, *, running_threads=False):
+def settrace(func):
     """Set a trace function for all threads started from the threading module.
 
     The func will be passed to sys.settrace() for each thread, before its run()
     method is called.
-
-    If running_threads is set, the trace function will be installed in all running
-    threads.
     """
     global _trace_hook
     _trace_hook = func
 
-    if running_threads:
-        _sys._settraceallthreads(func)
+def settrace_all_threads(func):
+    """Set a trace function for all threads started from the threading module
+    and all Python threads that are currently executing.
+
+    The func will be passed to sys.settrace() for each thread, before its run()
+    method is called.
+    """
+    settrace(func)
+    _sys._settraceallthreads(func)
 
 def gettrace():
     """Get the trace function as set by threading.settrace()."""

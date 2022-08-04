@@ -150,7 +150,7 @@ This module defines the following functions:
    .. versionadded:: 3.4
 
 
-.. function:: settrace(func, *, running_threads=False)
+.. function:: settrace(func)
 
    .. index:: single: trace function
 
@@ -158,11 +158,15 @@ This module defines the following functions:
    The *func* will be passed to  :func:`sys.settrace` for each thread, before its
    :meth:`~Thread.run` method is called.
 
-   If *running_threads* is set, the tracing function will be installed in all running
-   threads.
+.. function:: settrace_all_threads(func)
 
-   .. versionchanged:: 3.12
-      The *running_threads* parameter was added.
+   Set a trace function for all threads started from the :mod:`threading` module
+   and all Python threads that are currently executing.
+
+   The *func* will be passed to  :func:`sys.settrace` for each thread, before its
+   :meth:`~Thread.run` method is called.
+
+   .. versionadded:: 3.12
 
 .. function:: gettrace()
 
@@ -175,7 +179,7 @@ This module defines the following functions:
    .. versionadded:: 3.10
 
 
-.. function:: setprofile(func, *, running_threads=False)
+.. function:: setprofile(func)
 
    .. index:: single: profile function
 
@@ -183,11 +187,15 @@ This module defines the following functions:
    The *func* will be passed to  :func:`sys.setprofile` for each thread, before its
    :meth:`~Thread.run` method is called.
 
-   If *running_threads* is set, the profile function will be installed in all running
-   threads.
+.. function:: setprofile_all_threads(func)
 
-   .. versionchanged:: 3.12
-      The *running_threads* parameter was added.
+   Set a profile function for all threads started from the :mod:`threading` module
+   and all Python threads that are currently executing.
+
+   The *func* will be passed to  :func:`sys.setprofile` for each thread, before its
+   :meth:`~Thread.run` method is called.
+
+   .. versionadded:: 3.12
 
 .. function:: getprofile()
 

@@ -853,6 +853,7 @@ class ThreadTests(BaseTestCase):
                 callback()
         finally:
             sys.settrace(old_trace)
+            threading.settrace(old_trace)
 
     def test_gettrace(self):
         def noop_trace(frame, event, arg):
@@ -883,14 +884,15 @@ class ThreadTests(BaseTestCase):
             t = threading.Thread(target=checker)
             t.start()
             first_check.wait()
-            threading.settrace(fn, running_threads=True)
+            threading.settrace_all_threads(fn)
             second_check.set()
             t.join()
             self.assertEqual(trace_funcs, [None, fn])
             self.assertEqual(threading.gettrace(), fn)
             self.assertEqual(sys.gettrace(), fn)
         finally:
-            threading.settrace(old_trace, running_threads=True)
+            threading.settrace_all_threads(old_trace)
+
         self.assertEqual(threading.gettrace(), old_trace)
         self.assertEqual(sys.gettrace(), old_trace)
 
@@ -920,14 +922,14 @@ class ThreadTests(BaseTestCase):
             t = threading.Thread(target=checker)
             t.start()
             first_check.wait()
-            threading.setprofile(fn, running_threads=True)
+            threading.setprofile_all_threads(fn)
             second_check.set()
             t.join()
             self.assertEqual(profile_funcs, [None, fn])
             self.assertEqual(threading.getprofile(), fn)
             self.assertEqual(sys.getprofile(), fn)
         finally:
-            threading.setprofile(old_profile, running_threads=True)
+            threading.setprofile_all_threads(old_profile)
 
         self.assertEqual(threading.getprofile(), old_profile)
         self.assertEqual(sys.getprofile(), old_profile)
