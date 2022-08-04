@@ -3,7 +3,7 @@
 
 import asyncio
 import contextvars
-
+import contextlib
 from asyncio import taskgroups
 import unittest
 
@@ -740,6 +740,37 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                 g.create_task(coro2(g))
 
         self.assertEqual(get_error_types(cm.exception), {ZeroDivisionError})
+
+    async def test_taskgroup_context_manager_exit_raises(self):
+        # See https://github.com/python/cpython/issues/95289
+        class CustomException(Exception):
+            pass
+
+        async def raise_exc():
+            raise CustomException
+
+        @contextlib.asynccontextmanager
+        async def database():
+            try:
+                yield
+            finally:
+                raise CustomException
+
+        async def main():
+            task = asyncio.current_task()
+            try:
+                async with taskgroups.TaskGroup() as tg:
+                    async with database():
+                        tg.create_task(raise_exc())
+                        await asyncio.sleep(1)
+            except* CustomException as err:
+                self.assertEqual(task.cancelling(), 0)
+                self.assertEqual(len(err.exceptions), 2)
+
+            else:
+                self.fail('CustomException not raised')
+
+        await asyncio.create_task(main())
 
 
 if __name__ == "__main__":
