@@ -236,7 +236,7 @@ _PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
                                                         (PyTypeObject *)op);
         return _PyStaticType_GET_WEAKREFS_LISTPTR(state);
     }
-    // Essentially _PyObject_GET_BASIC_WEAKREFS_LISTPTR():
+    // Essentially _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET():
     Py_ssize_t offset = Py_TYPE(op)->tp_weaklistoffset;
     return (PyObject **)((char *)op + offset);
 }
@@ -253,13 +253,13 @@ _PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
  * If the weaklist for static types is actually needed then use
  * _PyObject_GET_WEAKREFS_LISTPTR().
  */
-static inline PyObject **
-_PyObject_GET_BASIC_WEAKREFS_LISTPTR(PyObject *op)
+static inline PyWeakReference **
+_PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(PyObject *op)
 {
     assert(!PyType_Check(op) ||
             ((PyTypeObject *)op)->tp_flags & Py_TPFLAGS_HEAPTYPE);
     Py_ssize_t offset = Py_TYPE(op)->tp_weaklistoffset;
-    return (PyObject **)((char *)op + offset);
+    return (PyWeakReference **)((char *)op + offset);
 }
 
 

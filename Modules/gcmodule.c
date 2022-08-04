@@ -799,7 +799,7 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
          * This is never triggered for static types so we can avoid the
          * (slightly) more costly _PyObject_GET_WEAKREFS_LISTPTR().
          */
-        wrlist = (PyWeakReference **)_PyObject_GET_BASIC_WEAKREFS_LISTPTR(op);
+        wrlist = _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(op);
 
         /* `op` may have some weakrefs.  March over the list, clear
          * all the weakrefs, and move the weakrefs with callbacks

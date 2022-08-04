@@ -1511,10 +1511,11 @@ subtype_dealloc(PyObject *self)
 
                This is never triggered for static types so we can avoid the
                (slightly) more costly _PyObject_GET_WEAKREFS_LISTPTR(). */
-            PyWeakReference **list = (PyWeakReference **) \
-                _PyObject_GET_BASIC_WEAKREFS_LISTPTR(self);
-            while (*list)
+            PyWeakReference **list = \
+                _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(self);
+            while (*list) {
                 _PyWeakref_ClearRef(*list);
+            }
         }
     }
 
