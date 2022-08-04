@@ -158,7 +158,7 @@ def test_file(filename, allow_redirects, limit, print_intermediate_report):
     links = analyze_page(filename, '', allow_redirects)
     if not links:
         print('   not found')
-        return LinkStatus.BAD_REFERRER
+        return [(LinkStatus.BAD_REFERRER, None)]
 
     targets, referers = links
     if limit is not None and len(referers) > limit:
