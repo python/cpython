@@ -608,6 +608,25 @@ class CAPITest(unittest.TestCase):
         del obj.value
         self.assertEqual(obj.pvalue, 0)
 
+    def test_multiple_inheritance_ctypes_with_weakref_or_dict(self):
+
+        class Both1(_testcapi.HeapCTypeWithWeakref, _testcapi.HeapCTypeWithDict):
+            pass
+        class Both2(_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithWeakref):
+            pass
+
+        for cls in (_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithDict2,
+            _testcapi.HeapCTypeWithWeakref, _testcapi.HeapCTypeWithWeakref2):
+            for cls2 in (_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithDict2,
+                _testcapi.HeapCTypeWithWeakref, _testcapi.HeapCTypeWithWeakref2):
+                if cls is not cls2:
+                    class S(cls, cls2):
+                        pass
+            class B1(Both1, cls):
+                pass
+            class B2(Both1, cls):
+                pass
+
     def test_pynumber_tobase(self):
         from _testcapi import pynumber_tobase
         self.assertEqual(pynumber_tobase(123, 2), '0b1111011')
