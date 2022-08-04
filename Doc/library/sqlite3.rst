@@ -481,9 +481,14 @@ Connection objects
       Open a :class:`Blob` handle to an existing
       :abbr:`BLOB (Binary Large OBject)`.
 
-      :param str table: The name of the table where the blob is located.
-      :param str column: The name of the column where the blob is located.
-      :param str row: The name of the row where the blob is located.
+      :param str table:
+          The name of the table where the blob is located.
+
+      :param str column:
+          The name of the column where the blob is located.
+
+      :param str row:
+          The name of the row where the blob is located.
 
       :param bool readonly:
           Set to ``True`` if the blob should be opened without write
@@ -545,7 +550,8 @@ Connection objects
 
       Create or remove a user-defined SQL function.
 
-      :param str name: The name of the SQL function.
+      :param str name:
+          The name of the SQL function.
 
       :param int narg:
           The number of arguments the SQL function can accept.
@@ -895,7 +901,8 @@ Connection objects
 
       Get a connection runtime limit.
 
-      :param int category: The `SQLite limit category`_ to be queried.
+      :param int category:
+         The `SQLite limit category`_ to be queried.
 
       :rtype: int
 
@@ -919,7 +926,8 @@ Connection objects
       truncated to the hard upper bound. Regardless of whether or not the limit
       was changed, the prior value of the limit is returned.
 
-      :param int category: The `SQLite limit category`_ to be set.
+      :param int category:
+         The `SQLite limit category`_ to be set.
 
       :param int limit:
          The value of the new limit.
@@ -971,7 +979,8 @@ Connection objects
       *name*, and reopen *name* as an in-memory database based on the
       serialization contained in *data*.
 
-      :param bytes data: A serialized database.
+      :param bytes data:
+         A serialized database.
 
       :param str name:
          The database name to deserialize into.
