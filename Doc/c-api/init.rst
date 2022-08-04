@@ -1781,6 +1781,9 @@ Python-level trace functions in previous versions.
 
    The caller must hold the :term:`GIL`.
 
+   As :c:func:`PyEval_SetProfile`, this function ignores any exceptions raised while
+   setting the profile functions in all threads.
+
 .. versionadded:: 3.12
 
 
@@ -1803,6 +1806,9 @@ Python-level trace functions in previous versions.
    instead of the setting it only on the current thread.
 
    The caller must hold the :term:`GIL`.
+
+   As :c:func:`PyEval_SetTrace`, this function ignores any exceptions raised while
+   setting the trace functions in all threads.
 
 .. versionadded:: 3.12
 
