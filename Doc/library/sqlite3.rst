@@ -146,12 +146,12 @@ Module functions and constants
 .. data:: paramstyle
 
    String constant stating the type of parameter marker formatting expected by
-   the :mod:`sqlite3` module. Required by the DB-API. Hard-coded to
+   the :mod:`!sqlite3` module. Required by the DB-API. Hard-coded to
    ``"qmark"``.
 
    .. note::
 
-      The :mod:`sqlite3` module supports both ``qmark`` and ``numeric`` DB-API
+      The :mod:`!sqlite3` module supports both ``qmark`` and ``numeric`` DB-API
       parameter styles, because that is what the underlying SQLite library
       supports. However, the DB-API does not allow multiple values for
       the ``paramstyle`` attribute.
@@ -164,7 +164,7 @@ Module functions and constants
    .. deprecated-removed:: 3.12 3.14
       This constant used to reflect the version number of the ``pysqlite``
       package, a third-party library which used to upstream changes to
-      ``sqlite3``. Today, it carries no meaning or practical value.
+      :mod:`!sqlite3`. Today, it carries no meaning or practical value.
 
 
 .. data:: version_info
@@ -175,7 +175,7 @@ Module functions and constants
    .. deprecated-removed:: 3.12 3.14
       This constant used to reflect the version number of the ``pysqlite``
       package, a third-party library which used to upstream changes to
-      ``sqlite3``. Today, it carries no meaning or practical value.
+      :mod:`!sqlite3`. Today, it carries no meaning or practical value.
 
 
 .. data:: sqlite_version
@@ -192,7 +192,7 @@ Module functions and constants
 .. data:: threadsafety
 
    Integer constant required by the DB-API 2.0, stating the level of thread
-   safety the :mod:`sqlite3` module supports. This attribute is set based on
+   safety the :mod:`!sqlite3` module supports. This attribute is set based on
    the default `threading mode <https://sqlite.org/threadsafe.html>`_ the
    underlying SQLite library is compiled with. The SQLite threading modes are:
 
@@ -233,7 +233,7 @@ Module functions and constants
    :func:`connect` to look up a converter function using
    the declared types for each column.
    The types are declared when the database table is created.
-   ``sqlite3`` will look up a converter function using the first word of the
+   :mod:`!sqlite3` will look up a converter function using the first word of the
    declared type as the converter dictionary key.
    For example:
 
@@ -317,7 +317,7 @@ Module functions and constants
        if not the default :class:`Connection` class.
 
    :param int cached_statements:
-       The number of statements that ``sqlite3``
+       The number of statements that :mod:`!sqlite3`
        should internally cache for this connection, to avoid parsing overhead.
        By default, 128 statements.
 
@@ -365,7 +365,7 @@ Module functions and constants
    SQLite type.
    The adapter is called with a Python object of type *type* as its sole
    argument, and must return a value of a
-   :ref:`type that SQLite natively understands<sqlite3-types>`.
+   :ref:`type that SQLite natively understands <sqlite3-types>`.
 
 
 .. function:: complete_statement(statement)
@@ -431,7 +431,7 @@ Connection objects
    .. attribute:: isolation_level
 
       This attribute controls the :ref:`transaction handling
-      <sqlite3-controlling-transactions>` performed by ``sqlite3``.
+      <sqlite3-controlling-transactions>` performed by :mod:`!sqlite3`.
       If set to ``None``, transactions are never implicitly opened.
       If set to one of ``"DEFERRED"``, ``"IMMEDIATE"``, or ``"EXCLUSIVE"``,
       corresponding to the underlying `SQLite transaction behaviour`_,
@@ -664,7 +664,7 @@ Connection objects
       :const:`SQLITE_OK` if access is allowed, :const:`SQLITE_DENY` if the entire SQL
       statement should be aborted with an error and :const:`SQLITE_IGNORE` if the
       column should be treated as a NULL value. These constants are available in the
-      :mod:`sqlite3` module.
+      :mod:`!sqlite3` module.
 
       The first argument to the callback signifies what kind of operation is to be
       authorized. The second and third argument will be arguments or ``None``
@@ -675,7 +675,7 @@ Connection objects
 
       Please consult the SQLite documentation about the possible values for the first
       argument and the meaning of the second and third argument depending on the first
-      one. All necessary constants are available in the :mod:`sqlite3` module.
+      one. All necessary constants are available in the :mod:`!sqlite3` module.
 
       Passing ``None`` as *authorizer_callback* will disable the authorizer.
 
@@ -733,7 +733,7 @@ Connection objects
 
       .. note::
 
-         The ``sqlite3`` module is not built with loadable extension support by
+         The :mod:`!sqlite3` module is not built with loadable extension support by
          default, because some platforms (notably macOS) have SQLite
          libraries which are compiled without this feature.
          To get loadable extension support,
@@ -928,7 +928,7 @@ Connection objects
 
       .. versionadded:: 3.11
 
-.. _SQLite limit category: https://www.sqlite.org/c3ref/c_limit_attached.html
+   .. _SQLite limit category: https://www.sqlite.org/c3ref/c_limit_attached.html
 
 
    .. method:: serialize(*, name="main")
@@ -1109,11 +1109,11 @@ Cursor objects
 
    .. method:: setinputsizes(sizes, /)
 
-      Required by the DB-API. Does nothing in :mod:`sqlite3`.
+      Required by the DB-API. Does nothing in :mod:`!sqlite3`.
 
    .. method:: setoutputsize(size, column=None, /)
 
-      Required by the DB-API. Does nothing in :mod:`sqlite3`.
+      Required by the DB-API. Does nothing in :mod:`!sqlite3`.
 
    .. attribute:: rowcount
 
@@ -1301,8 +1301,8 @@ The exception hierarchy is defined by the DB-API 2.0 (:pep:`249`).
 
 .. exception:: Warning
 
-   This exception is not currently raised by the ``sqlite3`` module,
-   but may be raised by applications using ``sqlite3``,
+   This exception is not currently raised by the :mod:`!sqlite3` module,
+   but may be raised by applications using :mod:`!sqlite3`,
    for example if a user-defined function truncates data while inserting.
    ``Warning`` is a subclass of :exc:`Exception`.
 
@@ -1333,7 +1333,7 @@ The exception hierarchy is defined by the DB-API 2.0 (:pep:`249`).
 
    Exception raised for misuse of the low-level SQLite C API.
    In other words, if this exception is raised, it probably indicates a bug in the
-   ``sqlite3`` module.
+   :mod:`!sqlite3` module.
    ``InterfaceError`` is a subclass of :exc:`Error`.
 
 .. exception:: DatabaseError
@@ -1371,7 +1371,7 @@ The exception hierarchy is defined by the DB-API 2.0 (:pep:`249`).
 
 .. exception:: ProgrammingError
 
-   Exception raised for ``sqlite3`` API programming errors,
+   Exception raised for :mod:`!sqlite3` API programming errors,
    for example supplying the wrong number of bindings to a query,
    or trying to operate on a closed :class:`Connection`.
    ``ProgrammingError`` is a subclass of :exc:`DatabaseError`.
@@ -1427,10 +1427,10 @@ This is how SQLite types are converted to Python types by default:
 | ``BLOB``    | :class:`bytes`                               |
 +-------------+----------------------------------------------+
 
-The type system of the :mod:`sqlite3` module is extensible in two ways: you can
+The type system of the :mod:`!sqlite3` module is extensible in two ways: you can
 store additional Python types in an SQLite database via
 :ref:`object adapters <sqlite3-adapters>`,
-and you can let the ``sqlite3`` module convert SQLite types to
+and you can let the :mod:`!sqlite3` module convert SQLite types to
 Python types via :ref:`converters <sqlite3-converters>`.
 
 
@@ -1439,7 +1439,7 @@ Python types via :ref:`converters <sqlite3-converters>`.
 Command-line interface
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The ``sqlite3`` module can be invoked as a script
+The :mod:`!sqlite3` module can be invoked as a script
 in order to provide a simple SQLite shell.
 Type ``.quit`` or CTRL-D to exit the shell.
 
@@ -1498,7 +1498,7 @@ Using adapters to store custom Python types in SQLite databases
 
 SQLite supports only a limited set of data types natively.
 To store custom Python types in SQLite databases, *adapt* them to one of the
-:ref:`Python types SQLite natively understands<sqlite3-types>`.
+:ref:`Python types SQLite natively understands <sqlite3-types>`.
 
 There are two ways to adapt Python objects to SQLite types:
 letting your object adapt itself, or using an *adapter callable*.
@@ -1562,7 +1562,7 @@ and constructs a :class:`Point` object from it.
        x, y = map(float, s.split(b";"))
        return Point(x, y)
 
-We now need to tell ``sqlite3`` when it should convert a given SQLite value.
+We now need to tell :mod:`!sqlite3` when it should convert a given SQLite value.
 This is done when connecting to a database, using the *detect_types* parameter
 of :func:`connect`. There are three options:
 
@@ -1679,7 +1679,7 @@ directly using only a single call on the :class:`Connection` object.
 Accessing columns by name instead of by index
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-One useful feature of the :mod:`sqlite3` module is the built-in
+One useful feature of the :mod:`!sqlite3` module is the built-in
 :class:`sqlite3.Row` class designed to be used as a row factory.
 
 Rows wrapped with this class can be accessed both by index (like tuples) and
@@ -1754,7 +1754,7 @@ Explanation
 Transaction control
 ^^^^^^^^^^^^^^^^^^^
 
-The ``sqlite3`` module does not adhere to the transaction handling recommended
+The :mod:`!sqlite3` module does not adhere to the transaction handling recommended
 by :pep:`249`.
 
 If the connection attribute :attr:`~Connection.isolation_level`
@@ -1765,7 +1765,7 @@ new transactions are implicitly opened before
 Use the :meth:`~Connection.commit` and :meth:`~Connection.rollback` methods
 to respectively commit and roll back pending transactions.
 You can choose the underlying `SQLite transaction behaviour`_ —
-that is, whether and what type of ``BEGIN`` statements ``sqlite3``
+that is, whether and what type of ``BEGIN`` statements :mod:`!sqlite3`
 implicitly executes –
 via the :attr:`~Connection.isolation_level` attribute.
 
@@ -1782,7 +1782,7 @@ any pending transaction before execution of the given SQL script,
 regardless of the value of :attr:`~Connection.isolation_level`.
 
 .. versionchanged:: 3.6
-   :mod:`sqlite3` used to implicitly commit an open transaction before DDL
+   :mod:`!sqlite3` used to implicitly commit an open transaction before DDL
    statements.  This is no longer the case.
 
 .. _autocommit mode:
