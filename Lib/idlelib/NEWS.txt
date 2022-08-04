@@ -4,6 +4,8 @@ Released on 2022-10-03
 =========================
 
 
+gh-95191: Include prompts when saving Shell (interactive input/output).
+
 gh-95511: Fix the Shell context menu copy-with-prompts bug of copying
 an extra line when one selects whole lines.
 

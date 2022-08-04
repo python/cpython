@@ -1310,15 +1310,13 @@ subtype_traverse(PyObject *self, visitproc visit, void *arg)
     }
 
     if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        assert(type->tp_dictoffset);
-        int err = _PyObject_VisitInstanceAttributes(self, visit, arg);
+        int err = _PyObject_VisitManagedDict(self, visit, arg);
         if (err) {
             return err;
         }
     }
-
-    if (type->tp_dictoffset != base->tp_dictoffset) {
-        PyObject **dictptr = _PyObject_DictPointer(self);
+    else if (type->tp_dictoffset != base->tp_dictoffset) {
+        PyObject **dictptr = _PyObject_ComputedDictPointer(self);
         if (dictptr && *dictptr)
             Py_VISIT(*dictptr);
     }
@@ -1379,10 +1377,10 @@ subtype_clear(PyObject *self)
     /* Clear the instance dict (if any), to break cycles involving only
        __dict__ slots (as in the case 'self.__dict__ is self'). */
     if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        _PyObject_ClearInstanceAttributes(self);
+        _PyObject_ClearManagedDict(self);
     }
-    if (type->tp_dictoffset != base->tp_dictoffset) {
-        PyObject **dictptr = _PyObject_DictPointer(self);
+    else if (type->tp_dictoffset != base->tp_dictoffset) {
+        PyObject **dictptr = _PyObject_ComputedDictPointer(self);
         if (dictptr && *dictptr)
             Py_CLEAR(*dictptr);
     }
@@ -1526,18 +1524,17 @@ subtype_dealloc(PyObject *self)
 
     /* If we added a dict, DECREF it, or free inline values. */
     if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        PyObject **dictptr = _PyObject_ManagedDictPointer(self);
-        if (*dictptr != NULL) {
-            assert(*_PyObject_ValuesPointer(self) == NULL);
-            Py_DECREF(*dictptr);
-            *dictptr = NULL;
-        }
-        else {
+        PyDictOrValues *dorv_ptr = _PyObject_DictOrValuesPointer(self);
+        if (_PyDictOrValues_IsValues(*dorv_ptr)) {
             _PyObject_FreeInstanceAttributes(self);
         }
+        else {
+            Py_XDECREF(_PyDictOrValues_GetDict(*dorv_ptr));
+        }
+        dorv_ptr->values = NULL;
     }
     else if (type->tp_dictoffset && !base->tp_dictoffset) {
-        PyObject **dictptr = _PyObject_DictPointer(self);
+        PyObject **dictptr = _PyObject_ComputedDictPointer(self);
         if (dictptr != NULL) {
             PyObject *dict = *dictptr;
             if (dict != NULL) {
@@ -2319,6 +2316,11 @@ best_base(PyObject *bases)
     return base;
 }
 
+#define ADDED_FIELD_AT_OFFSET(name, offset) \
+    (type->tp_ ## name  && (base->tp_ ##name == 0) && \
+    type->tp_ ## name + sizeof(PyObject *) == (offset) && \
+    type->tp_flags & Py_TPFLAGS_HEAPTYPE)
+
 static int
 extra_ivars(PyTypeObject *type, PyTypeObject *base)
 {
@@ -2331,10 +2333,18 @@ extra_ivars(PyTypeObject *type, PyTypeObject *base)
         return t_size != b_size ||
             type->tp_itemsize != base->tp_itemsize;
     }
-    if (type->tp_weaklistoffset && base->tp_weaklistoffset == 0 &&
-        type->tp_weaklistoffset + sizeof(PyObject *) == t_size &&
-        type->tp_flags & Py_TPFLAGS_HEAPTYPE)
+    /* Check for __dict__ and __weakrefs__ slots in either order */
+    if (ADDED_FIELD_AT_OFFSET(weaklistoffset, t_size)) {
         t_size -= sizeof(PyObject *);
+    }
+    if ((type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0 &&
+        ADDED_FIELD_AT_OFFSET(dictoffset, t_size)) {
+        t_size -= sizeof(PyObject *);
+    }
+    /* Check __weakrefs__ again, in case it precedes __dict__ */
+    if (ADDED_FIELD_AT_OFFSET(weaklistoffset, t_size)) {
+        t_size -= sizeof(PyObject *);
+    }
     return t_size != b_size;
 }
 
@@ -5137,7 +5147,9 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
          * so we must materialize the dictionary first. */
         assert((oldto->tp_flags & Py_TPFLAGS_MANAGED_DICT) == (newto->tp_flags & Py_TPFLAGS_MANAGED_DICT));
         _PyObject_GetDictPtr(self);
-        if (oldto->tp_flags & Py_TPFLAGS_MANAGED_DICT && *_PyObject_ValuesPointer(self)) {
+        if (oldto->tp_flags & Py_TPFLAGS_MANAGED_DICT &&
+            _PyDictOrValues_IsValues(*_PyObject_DictOrValuesPointer(self)))
+        {
             /* Was unable to convert to dict */
             PyErr_NoMemory();
             return -1;

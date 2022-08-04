@@ -64,6 +64,10 @@ Modules/_sqlite/module.c	-	pysqlite_BaseTypeAdapted	-
 Modules/_sqlite/module.h	-	pysqlite_global_state	-
 Modules/_testcapimodule.c	-	_PyBytesIOBuffer_Type	-
 Modules/posixmodule.c	-	_Py_open_cloexec_works	-
+Objects/object.c	-	_Py_GenericAliasIterType	-
+Objects/object.c	-	_PyMemoryIter_Type	-
+Objects/object.c	-	_PyLineIterator	-
+Objects/object.c	-	_PyPositionsIterator	-
 Python/importdl.h	-	_PyImport_DynLoadFiletab	-
 
 
@@ -186,6 +190,7 @@ Modules/_testcapimodule.c	-	x	-
 Modules/_testcapimodule.c	getargs_keyword_only	keywords	-
 Modules/_testcapimodule.c	getargs_keywords	keywords	-
 Modules/_testcapimodule.c	getargs_positional_only_and_keywords	keywords	-
+Modules/_testcapimodule.c	getargs_s_hash_int2	keywords	static char*[]
 Modules/_testcapimodule.c	make_exception_with_doc	kwlist	-
 Modules/_testcapimodule.c	raise_SIGINT_then_send_None	PyId_send	-
 Modules/_testcapimodule.c	slot_tp_del	PyId___tp_del__	-
@@ -400,11 +405,12 @@ Python/sysmodule.c	sys_set_asyncgen_hooks	keywords	-
 
 #-----------------------
 # PyModuleDef
-
 Modules/_multiprocessing/posixshmem.c	-	_posixshmemmodule	-
 Modules/_sqlite/module.h	-	_sqlite3module	-
+Modules/_sre/sre.c	-	sremodule	static struct -
 Modules/_ssl.c	-	_sslmodule_def	-
 Modules/_ssl.h	-	_sslmodule_def	-
+Modules/_testcapi/heaptype.c	-	_testcapimodule	static -
 Modules/_testmultiphase.c	-	def_module_state_shared	-
 Modules/_threadmodule.c	-	thread_module	-
 Modules/_typingmodule.c	-	typingmodule	-
@@ -422,6 +428,7 @@ Python/sysmodule.c	-	sysmodule	-
 # PyModuleDef_Slot
 
 Modules/_abc.c	-	_abcmodule_slots	-
+Modules/_bisectmodule.c	-	bisect_slots	-
 Modules/_blake2/blake2module.c	-	_blake2_slots	-
 Modules/_bz2module.c	-	_bz2_slots	-
 Modules/_codecsmodule.c	-	_codecs_slots	-
@@ -448,6 +455,7 @@ Modules/_scproxy.c	-	_scproxy_slots	-
 Modules/_sha3/sha3module.c	-	_sha3_slots	-
 Modules/_sqlite/module.c	-	module_slots	-
 Modules/_sre.c	-	sre_slots	-
+Modules/_sre/sre.c	-	sre_slots	-
 Modules/_ssl.c	-	sslmodule_slots	-
 Modules/_stat.c	-	stat_slots	-
 Modules/_statisticsmodule.c	-	_statisticsmodule_slots	-
@@ -615,10 +623,15 @@ Modules/_randommodule.c	-	random_methods	-
 Modules/_scproxy.c	-	mod_methods	-
 Modules/_sha3/sha3module.c	-	SHA3_methods	-
 Modules/_sha3/sha3module.c	-	SHAKE_methods	-
+Modules/_sqlite/blob.c	-	blob_methods	static PyMethodDef[]
 Modules/_sqlite/connection.c	-	connection_methods	-
 Modules/_sqlite/cursor.c	-	cursor_methods	-
 Modules/_sqlite/module.c	-	module_methods	-
 Modules/_sqlite/row.c	-	row_methods	-
+Modules/_sre/sre.c	-	_functions	-
+Modules/_sre/sre.c	-	pattern_methods	-
+Modules/_sre/sre.c	-	match_methods	-
+Modules/_sre/sre.c	-	scanner_methods	-
 Modules/_sre.c	-	_functions	-
 Modules/_sre.c	-	match_methods	-
 Modules/_sre.c	-	pattern_methods	-
@@ -633,6 +646,8 @@ Modules/_statisticsmodule.c	-	statistics_methods	-
 Modules/_struct.c	-	module_functions	-
 Modules/_struct.c	-	s_methods	-
 Modules/_struct.c	-	unpackiter_methods	-
+Modules/_testcapi/heaptype.c	-	TestMethods	-
+Modules/_testcapi/vectorcall.c	-	TestMethods	-
 Modules/_threadmodule.c	-	lock_methods	-
 Modules/_threadmodule.c	-	rlock_methods	-
 Modules/_threadmodule.c	-	thread_methods	-
@@ -772,6 +787,7 @@ Objects/fileobject.c	-	stdprinter_methods	-
 Objects/floatobject.c	-	float_methods	-
 Objects/frameobject.c	-	frame_methods	-
 Objects/genericaliasobject.c	-	ga_methods	-
+Objects/genericaliasobject.c	-	ga_iter_methods	-
 Objects/genobject.c	-	async_gen_asend_methods	-
 Objects/genobject.c	-	async_gen_athrow_methods	-
 Objects/genobject.c	-	async_gen_methods	-
@@ -862,15 +878,28 @@ Modules/_json.c	-	encoder_members	-
 Modules/_json.c	-	scanner_members	-
 Modules/_lzmamodule.c	-	Decompressor_members	-
 Modules/_multiprocessing/semaphore.c	-	semlock_members	-
+Modules/_operator.c	-	attrgetter_members	-
+Modules/_operator.c	-	itemgetter_members	-
 Modules/_pickle.c	-	Pickler_members	-
 Modules/_queuemodule.c	-	simplequeue_members	-
+Modules/_sqlite/blob.c	-	blob_members	-
 Modules/_sqlite/connection.c	-	connection_members	-
 Modules/_sqlite/cursor.c	-	cursor_members	-
 Modules/_sqlite/statement.c	-	stmt_members	-
+Modules/_sre/sre.c	-	match_members	-
+Modules/_sre/sre.c	-	pattern_members	-
+Modules/_sre/sre.c	-	scanner_members	-
 Modules/_sre.c	-	match_members	-
 Modules/_sre.c	-	pattern_members	-
 Modules/_sre.c	-	scanner_members	-
 Modules/_struct.c	-	s_members	-
+Modules/_testcapi/heaptype.c	-	heapctype_members	-
+Modules/_testcapi/heaptype.c	-	heapctypesetattr_members	-
+Modules/_testcapi/heaptype.c	-	heapctypesubclass_members	-
+Modules/_testcapi/heaptype.c	-	heapctypewithdict_members	-
+Modules/_testcapi/heaptype.c	-	heapctypewithnegativedict_members	-
+Modules/_testcapi/heaptype.c	-	heapctypewithweakref_members	-
+Modules/_testcapi/heaptype.c	-	members_to_repeat	-
 Modules/_threadmodule.c	-	local_dummy_type_members	-
 Modules/_threadmodule.c	-	local_type_members	-
 Modules/_threadmodule.c	-	lock_type_members	-
@@ -1080,7 +1109,10 @@ Modules/_io/winconsoleio.c	-	winconsoleio_getsetlist	-
 Modules/_pickle.c	-	Pickler_getsets	-
 Modules/_pickle.c	-	Unpickler_getsets	-
 Modules/_sha3/sha3module.c	-	SHA3_getseters	-
+Modules/_sha3/sha3module.c	-	SHAKE_getseters	-
 Modules/_sqlite/connection.c	-	connection_getset	-
+Modules/_sre/sre.c	-	pattern_getset	-
+Modules/_sre/sre.c	-	match_getset	-
 Modules/_sre.c	-	match_getset	-
 Modules/_sre.c	-	pattern_getset	-
 Modules/_ssl.c	-	PySSLSession_getsetlist	-
@@ -1088,6 +1120,7 @@ Modules/_ssl.c	-	context_getsetlist	-
 Modules/_ssl.c	-	memory_bio_getsetlist	-
 Modules/_ssl.c	-	ssl_getsetlist	-
 Modules/_struct.c	-	s_getsetlist	-
+Modules/_testcapi/heaptype.c	-	heapctypewithdict_getsetlist	-
 Modules/_tkinter.c	-	PyTclObject_getsetlist	-
 Modules/_xxsubinterpretersmodule.c	-	channelid_getsets	-
 Modules/arraymodule.c	-	array_getsets	-
@@ -1172,6 +1205,7 @@ Modules/_json.c	-	PyScannerType_slots	-
 Modules/_lsprof.c	-	_lsprof_profiler_type_spec_slots	-
 Modules/_lzmamodule.c	-	lzma_compressor_type_slots	-
 Modules/_lzmamodule.c	-	lzma_decompressor_type_slots	-
+Modules/_multiprocessing/semaphore.c	-	_PyMp_SemLockType_slots	-
 Modules/_operator.c	-	attrgetter_type_slots	-
 Modules/_operator.c	-	itemgetter_type_slots	-
 Modules/_operator.c	-	methodcaller_type_slots	-
@@ -1184,11 +1218,15 @@ Modules/_sha3/sha3module.c	-	sha3_256_slots	-
 Modules/_sha3/sha3module.c	-	sha3_384_slots	-
 Modules/_sha3/sha3module.c	-	sha3_512_slots	-
 Modules/_sha3/sha3module.c	-	type_slots_obj	-
+Modules/_sqlite/blob.c	-	blob_slots	-
 Modules/_sqlite/connection.c	-	connection_slots	-
 Modules/_sqlite/cursor.c	-	cursor_slots	-
 Modules/_sqlite/prepare_protocol.c	-	type_slots	-
 Modules/_sqlite/row.c	-	row_slots	-
 Modules/_sqlite/statement.c	-	stmt_slots	-
+Modules/_sre/sre.c	-	match_slots	-
+Modules/_sre/sre.c	-	pattern_slots	-
+Modules/_sre/sre.c	-	scanner_slots	-
 Modules/_sre.c	-	match_slots	-
 Modules/_sre.c	-	pattern_slots	-
 Modules/_sre.c	-	scanner_slots	-
@@ -1200,6 +1238,22 @@ Modules/_ssl.c	-	sslerror_type_slots	-
 Modules/_ssl/cert.c	-	PySSLCertificate_slots	-
 Modules/_struct.c	-	PyStructType_slots	-
 Modules/_struct.c	-	unpackiter_type_slots	-
+Modules/_testcapi/heaptype.c	-	HeapCTypeMetaclassCustomNew_slots	-
+Modules/_testcapi/heaptype.c	-	HeapCTypeMetaclass_slots	-
+Modules/_testcapi/heaptype.c	-	HeapCTypeSetattr_slots	-
+Modules/_testcapi/heaptype.c	-	HeapCTypeSubclassWithFinalizer_slots	-
+Modules/_testcapi/heaptype.c	-	HeapCTypeSubclass_slots	-
+Modules/_testcapi/heaptype.c	-	HeapCTypeWithBuffer_slots	-
+Modules/_testcapi/heaptype.c	-	HeapCTypeWithDict_slots	-
+Modules/_testcapi/heaptype.c	-	HeapCTypeWithNegativeDict_slots	-
+Modules/_testcapi/heaptype.c	-	HeapCTypeWithWeakref_slots	-
+Modules/_testcapi/heaptype.c	-	HeapCType_slots	-
+Modules/_testcapi/heaptype.c	-	HeapDocCType_slots	-
+Modules/_testcapi/heaptype.c	-	HeapGcCType_slots	-
+Modules/_testcapi/heaptype.c	-	NullTpDocType_slots	-
+Modules/_testcapi/heaptype.c	-	empty_type_slots	-
+Modules/_testcapi/heaptype.c	-	repeated_doc_slots	-
+Modules/_testcapi/heaptype.c	-	repeated_members_slots	-
 Modules/_testcapimodule.c	-	HeapTypeNameType_slots	-
 Modules/_testcapimodule.c	-	NullTpDocType_slots	-
 Modules/_threadmodule.c	-	local_dummy_type_slots	-
@@ -1269,6 +1323,8 @@ Modules/_json.c	-	PyScannerType_spec	-
 Modules/_lsprof.c	-	_lsprof_profiler_type_spec	-
 Modules/_lzmamodule.c	-	lzma_compressor_type_spec	-
 Modules/_lzmamodule.c	-	lzma_decompressor_type_spec	-
+Modules/_multiprocessing/multiprocessing.h	-	_PyMp_SemLockType_spec	-
+Modules/_multiprocessing/semaphore.c	-	_PyMp_SemLockType_spec	-
 Modules/_operator.c	-	attrgetter_type_spec	-
 Modules/_operator.c	-	itemgetter_type_spec	-
 Modules/_operator.c	-	methodcaller_type_spec	-
@@ -1281,11 +1337,15 @@ Modules/_sha3/sha3module.c	-	sha3_256_spec	-
 Modules/_sha3/sha3module.c	-	sha3_384_spec	-
 Modules/_sha3/sha3module.c	-	sha3_512_spec	-
 Modules/_sha3/sha3module.c	-	type_spec_obj	-
+Modules/_sqlite/blob.c	-	blob_spec	-
 Modules/_sqlite/connection.c	-	connection_spec	-
 Modules/_sqlite/cursor.c	-	cursor_spec	-
 Modules/_sqlite/prepare_protocol.c	-	type_spec	-
 Modules/_sqlite/row.c	-	row_spec	-
 Modules/_sqlite/statement.c	-	stmt_spec	-
+Modules/_sre/sre.c	-	pattern_spec	-
+Modules/_sre/sre.c	-	match_spec	-
+Modules/_sre/sre.c	-	scanner_spec	-
 Modules/_sre.c	-	match_spec	-
 Modules/_sre.c	-	pattern_spec	-
 Modules/_sre.c	-	scanner_spec	-
@@ -1297,6 +1357,23 @@ Modules/_ssl.c	-	sslerror_type_spec	-
 Modules/_ssl/cert.c	-	PySSLCertificate_spec	-
 Modules/_struct.c	-	PyStructType_spec	-
 Modules/_struct.c	-	unpackiter_type_spec	-
+Modules/_testcapi/heaptype.c	-	MinimalMetaclass_spec	-
+Modules/_testcapi/heaptype.c	-	MinimalType_spec	-
+Modules/_testcapi/heaptype.c	-	repeated_doc_slots_spec	-
+Modules/_testcapi/heaptype.c	-	repeated_members_slots_spec	-
+Modules/_testcapi/heaptype.c	-	HeapDocCType_spec	-
+Modules/_testcapi/heaptype.c	-	NullTpDocType_spec	-
+Modules/_testcapi/heaptype.c	-	HeapGcCType_spec	-
+Modules/_testcapi/heaptype.c	-	HeapCType_spec	-
+Modules/_testcapi/heaptype.c	-	HeapCTypeSubclass_spec	-
+Modules/_testcapi/heaptype.c	-	HeapCTypeWithBuffer_spec	-
+Modules/_testcapi/heaptype.c	-	HeapCTypeSubclassWithFinalizer_spec	-
+Modules/_testcapi/heaptype.c	-	HeapCTypeMetaclass_spec	-
+Modules/_testcapi/heaptype.c	-	HeapCTypeMetaclassCustomNew_spec	-
+Modules/_testcapi/heaptype.c	-	HeapCTypeWithDict_spec	-
+Modules/_testcapi/heaptype.c	-	HeapCTypeWithNegativeDict_spec	-
+Modules/_testcapi/heaptype.c	-	HeapCTypeWithWeakref_spec	-
+Modules/_testcapi/heaptype.c	-	HeapCTypeSetattr_spec	-
 Modules/_testcapimodule.c	-	HeapTypeNameType_Spec	-
 Modules/_testcapimodule.c	-	NullTpDocType_spec	-
 Modules/_threadmodule.c	-	local_dummy_type_spec	-
@@ -1423,6 +1500,7 @@ Modules/_ctypes/cfield.c	-	ffi_type_void	-
 Modules/_datetimemodule.c	-	epoch	-
 Modules/_datetimemodule.c	-	max_fold_seconds	-
 Modules/_datetimemodule.c	datetime_isoformat	specs	-
+Modules/_datetimemodule.c	parse_hh_mm_ss_ff	correction	-
 Modules/_datetimemodule.c	time_isoformat	specs	-
 Modules/_decimal/_decimal.c	-	cond_map	-
 Modules/_decimal/_decimal.c	-	dec_signal_string	-
@@ -1437,6 +1515,9 @@ Modules/_io/_iomodule.c	-	static_types	-
 Modules/_io/textio.c	-	encodefuncs	-
 Modules/_localemodule.c	-	langinfo_constants	-
 Modules/_sqlite/module.c	-	error_codes	-
+Modules/_sre/sre.c	pattern_repr	flag_names	-
+# XXX I'm pretty sure this is actually constant:
+Modules/_sre/sre_targets.h	-	sre_targets	-
 Modules/_sre.c	pattern_repr	flag_names	-
 Modules/_struct.c	-	bigendian_table	-
 Modules/_struct.c	-	lilendian_table	-
@@ -1500,6 +1581,7 @@ Python/ast_opt.c	fold_unaryop	ops	-
 Python/codecs.c	-	Py_hexdigits	-
 Python/codecs.c	-	ucnhash_capi	-
 Python/codecs.c	_PyCodecRegistry_Init	methods	-
+Python/compile.c	-	NO_LOCATION	-
 Python/dynload_shlib.c	-	_PyImport_DynLoadFiletab	-
 Python/dynload_stub.c	-	_PyImport_DynLoadFiletab	-
 Python/frozen.c	-	aliases	-
@@ -1517,4 +1599,5 @@ Python/pylifecycle.c	-	_TARGET_LOCALES	-
 Python/specialize.c	-	adaptive_opcodes	-
 Python/specialize.c	-	cache_requirements	-
 Python/specialize.c	-	compare_masks	-
+Python/specialize.c	-	_PyOpcode_Adaptive	-
 Python/sysmodule.c	-	whatstrings	-

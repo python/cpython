@@ -71,6 +71,7 @@ Python/dynload_dl.c             # dl.h
 Python/dynload_hpux.c           # dl.h
 Python/thread_pthread.h
 Python/emscripten_signal.c
+Python/thread_pthread_stubs.h
 
 # only huge constants (safe but parsing is slow)
 Modules/_blake2/impl/blake2-kat.h
@@ -136,6 +137,7 @@ glob	name	value
 Include/internal/*.h	Py_BUILD_CORE	1
 Python/**/*.c	Py_BUILD_CORE	1
 Parser/**/*.c	Py_BUILD_CORE	1
+Parser/**/*.h	Py_BUILD_CORE	1
 Objects/**/*.c	Py_BUILD_CORE	1
 
 Modules/_asynciomodule.c	Py_BUILD_CORE	1
@@ -205,6 +207,7 @@ Include/cpython/traceback.h	Py_CPYTHON_TRACEBACK_H	1
 Include/cpython/tupleobject.h	Py_CPYTHON_TUPLEOBJECT_H	1
 Include/cpython/unicodeobject.h	Py_CPYTHON_UNICODEOBJECT_H	1
 Include/internal/pycore_code.h	SIZEOF_VOID_P	8
+Include/internal/pycore_frame.h	SIZEOF_VOID_P	8
 
 # implied include of pyport.h
 Include/**/*.h	PyAPI_DATA(RTYPE)	extern RTYPE
