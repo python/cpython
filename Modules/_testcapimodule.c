@@ -7824,7 +7824,7 @@ PyInit__testcapi(void)
 
     PyObject *HeapCTypeWithDict2 = PyType_FromSpec(&HeapCTypeWithDict2_spec);
     if (HeapCTypeWithDict2 == NULL) {
-        return -1;
+        return NULL;
     }
     PyModule_AddObject(m, "HeapCTypeWithDict2", HeapCTypeWithDict2);
 
@@ -7848,7 +7848,7 @@ PyInit__testcapi(void)
 
     PyObject *HeapCTypeWithWeakref2 = PyType_FromSpec(&HeapCTypeWithWeakref2_spec);
     if (HeapCTypeWithWeakref2 == NULL) {
-        return -1;
+        return NULL;
     }
     PyModule_AddObject(m, "HeapCTypeWithWeakref2", HeapCTypeWithWeakref2);
 
