@@ -58,6 +58,16 @@ class MyBaseProto(asyncio.Protocol):
             self.done.set_result(None)
 
 
+class MessageOutFilter(logging.Filter):
+    def __init__(self, msg):
+        self.msg = msg
+
+    def filter(self, record):
+        if self.msg in record.msg:
+            return False
+        return True
+
+
 @unittest.skipIf(ssl is None, 'No ssl module')
 class TestSSL(test_utils.TestCase):
 
@@ -149,7 +159,7 @@ class TestSSL(test_utils.TestCase):
     def _silence_eof_received_warning(self):
         # TODO This warning has to be fixed in asyncio.
         logger = logging.getLogger('asyncio')
-        filter = logging.Filter('has no effect when using ssl')
+        filter = MessageOutFilter('has no effect when using ssl')
         logger.addFilter(filter)
         try:
             yield
