@@ -712,6 +712,7 @@ the :class:`LogRecord` being processed. Obviously changing the LogRecord needs
 to be done with some care, but it does allow the injection of contextual
 information into logs (see :ref:`filters-contextual`).
 
+
 .. _log-record:
 
 LogRecord Objects
@@ -727,32 +728,54 @@ wire).
 
    Contains all the information pertinent to the event being logged.
 
-   The primary information is passed in :attr:`msg` and :attr:`args`, which
-   are combined using ``msg % args`` to create the :attr:`message` field of the
-   record.
+   The primary information is passed in *msg* and *args*,
+   which are combined using ``msg % args`` to create
+   the :attr:`!message` attribute of the record.
 
-   :param name:  The name of the logger used to log the event represented by
-                 this LogRecord. Note that this name will always have this
-                 value, even though it may be emitted by a handler attached to
-                 a different (ancestor) logger.
-   :param level: The numeric level of the logging event (one of DEBUG, INFO etc.)
-                 Note that this is converted to *two* attributes of the LogRecord:
-                 ``levelno`` for the numeric value and ``levelname`` for the
-                 corresponding level name.
-   :param pathname: The full pathname of the source file where the logging call
-                    was made.
-   :param lineno: The line number in the source file where the logging call was
-                  made.
-   :param msg: The event description message, possibly a format string with
-               placeholders for variable data.
-   :param args: Variable data to merge into the *msg* argument to obtain the
-                event description.
+   :param name: The name of the logger used to log the event
+      represented by this :class:`!LogRecord`.
+      Note that the logger name in the :class:`!LogRecord`
+      will always have this value,
+      even though it may be emitted by a handler
+      attached to a different (ancestor) logger.
+   :type name: str
+
+   :param level: The :ref:`numeric level <levels>` of the logging event
+      (such as ``10`` for ``DEBUG``, ``20`` for ``INFO``, etc).
+      Note that this is converted to *two* attributes of the LogRecord:
+      :attr:`!levelno` for the numeric value
+      and :attr:`!levelname` for the corresponding level name.
+   :type level: int
+
+   :param pathname: The full string path of the source file
+      where the logging call was made.
+   :type pathname: str
+
+   :param lineno: The line number in the source file
+      where the logging call was made.
+   :type lineno: int
+
+   :param msg: The event description message,
+      which can be a %-format string with placeholders for variable data.
+   :type msg: str
+
+   :param args: Variable data to merge into the *msg* argument
+      to obtain the event description.
+   :type args: tuple | dict[str, typing.Any]
+
    :param exc_info: An exception tuple with the current exception information,
-                    or ``None`` if no exception information is available.
-   :param func: The name of the function or method from which the logging call
-                was invoked.
-   :param sinfo: A text string representing stack information from the base of
-                 the stack in the current thread, up to the logging call.
+      as returned by :func:`sys.exc_info`,
+      or ``None`` if no exception information is available.
+   :type exc_info: tuple[type[BaseException], BaseException, types.TracebackType] | None
+
+   :param func: The name of the function or method
+      from which the logging call was invoked.
+   :type func: str | None
+
+   :param sinfo: A text string representing stack information
+      from the base of the stack in the current thread,
+      up to the logging call.
+   :type sinfo: str | None
 
    .. method:: getMessage()
 

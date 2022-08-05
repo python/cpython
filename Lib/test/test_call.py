@@ -606,9 +606,19 @@ class TestPEP590(unittest.TestCase):
         self.assertFalse(_testcapi.MethodDescriptorNopGet.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
         self.assertTrue(_testcapi.MethodDescriptor2.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
 
-        # Mutable heap types should not inherit Py_TPFLAGS_HAVE_VECTORCALL
+        # Mutable heap types should inherit Py_TPFLAGS_HAVE_VECTORCALL,
+        # but should lose it when __call__ is overridden
         class MethodDescriptorHeap(_testcapi.MethodDescriptorBase):
             pass
+        self.assertTrue(MethodDescriptorHeap.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
+        MethodDescriptorHeap.__call__ = print
+        self.assertFalse(MethodDescriptorHeap.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
+
+        # Mutable heap types should not inherit Py_TPFLAGS_HAVE_VECTORCALL if
+        # they define __call__ directly
+        class MethodDescriptorHeap(_testcapi.MethodDescriptorBase):
+            def __call__(self):
+                pass
         self.assertFalse(MethodDescriptorHeap.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
 
     def test_vectorcall_override(self):
@@ -620,6 +630,58 @@ class TestPEP590(unittest.TestCase):
         args = tuple(range(5))
         f = _testcapi.MethodDescriptorNopGet()
         self.assertIs(f(*args), args)
+
+    def test_vectorcall_override_on_mutable_class(self):
+        """Setting __call__ should disable vectorcall"""
+        TestType = _testcapi.make_vectorcall_class()
+        instance = TestType()
+        self.assertEqual(instance(), "tp_call")
+        instance.set_vectorcall(TestType)
+        self.assertEqual(instance(), "vectorcall")  # assume vectorcall is used
+        TestType.__call__ = lambda self: "custom"
+        self.assertEqual(instance(), "custom")
+
+    def test_vectorcall_override_with_subclass(self):
+        """Setting __call__ on a superclass should disable vectorcall"""
+        SuperType = _testcapi.make_vectorcall_class()
+        class DerivedType(SuperType):
+            pass
+
+        instance = DerivedType()
+
+        # Derived types with its own vectorcall should be unaffected
+        UnaffectedType1 = _testcapi.make_vectorcall_class(DerivedType)
+        UnaffectedType2 = _testcapi.make_vectorcall_class(SuperType)
+
+        # Aside: Quickly check that the C helper actually made derived types
+        self.assertTrue(issubclass(UnaffectedType1, DerivedType))
+        self.assertTrue(issubclass(UnaffectedType2, SuperType))
+
+        # Initial state: tp_call
+        self.assertEqual(instance(), "tp_call")
+        self.assertEqual(_testcapi.has_vectorcall_flag(SuperType), True)
+        self.assertEqual(_testcapi.has_vectorcall_flag(DerivedType), True)
+        self.assertEqual(_testcapi.has_vectorcall_flag(UnaffectedType1), True)
+        self.assertEqual(_testcapi.has_vectorcall_flag(UnaffectedType2), True)
+
+        # Setting the vectorcall function
+        instance.set_vectorcall(SuperType)
+
+        self.assertEqual(instance(), "vectorcall")
+        self.assertEqual(_testcapi.has_vectorcall_flag(SuperType), True)
+        self.assertEqual(_testcapi.has_vectorcall_flag(DerivedType), True)
+        self.assertEqual(_testcapi.has_vectorcall_flag(UnaffectedType1), True)
+        self.assertEqual(_testcapi.has_vectorcall_flag(UnaffectedType2), True)
+
+        # Setting __call__ should remove vectorcall from all subclasses
+        SuperType.__call__ = lambda self: "custom"
+
+        self.assertEqual(instance(), "custom")
+        self.assertEqual(_testcapi.has_vectorcall_flag(SuperType), False)
+        self.assertEqual(_testcapi.has_vectorcall_flag(DerivedType), False)
+        self.assertEqual(_testcapi.has_vectorcall_flag(UnaffectedType1), True)
+        self.assertEqual(_testcapi.has_vectorcall_flag(UnaffectedType2), True)
+
 
     def test_vectorcall(self):
         # Test a bunch of different ways to call objects:
