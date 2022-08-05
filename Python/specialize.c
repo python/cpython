@@ -295,6 +295,9 @@ _PyCode_Quicken(PyCodeObject *code)
         else {
             assert(!_PyOpcode_Caches[opcode]);
             switch (opcode) {
+                case EXTENDED_ARG:
+                    _Py_SET_OPCODE(instructions[i], EXTENDED_ARG_QUICK);
+                    break;
                 case JUMP_BACKWARD:
                     _Py_SET_OPCODE(instructions[i], JUMP_BACKWARD_QUICK);
                     break;
@@ -632,9 +635,8 @@ specialize_dict_access(
         return 0;
     }
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
-    PyObject **dictptr = _PyObject_ManagedDictPointer(owner);
-    PyDictObject *dict = (PyDictObject *)*dictptr;
-    if (dict == NULL) {
+    PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
+    if (_PyDictOrValues_IsValues(dorv)) {
         // Virtual dictionary
         PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
         assert(PyUnicode_CheckExact(name));
@@ -649,7 +651,8 @@ specialize_dict_access(
         _Py_SET_OPCODE(*instr, values_op);
     }
     else {
-        if (!PyDict_CheckExact(dict)) {
+        PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
+        if (dict == NULL || !PyDict_CheckExact(dict)) {
             SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NO_DICT);
             return 0;
         }
@@ -945,6 +948,10 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
                              PyObject *name)
 {
     _PyLoadMethodCache *cache = (_PyLoadMethodCache *)(instr + 1);
+    if (!PyType_CheckExact(owner) || _PyType_Lookup(Py_TYPE(owner), name)) {
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_METACLASS_ATTRIBUTE);
+        return -1;
+    }
     PyObject *descr = NULL;
     DescriptorClassification kind = 0;
     kind = analyze_descriptor((PyTypeObject *)owner, name, &descr, 0);
@@ -957,12 +964,7 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
             return 0;
 #ifdef Py_STATS
         case ABSENT:
-            if (_PyType_Lookup(Py_TYPE(owner), name) != NULL) {
-                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_METACLASS_ATTRIBUTE);
-            }
-            else {
-                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_EXPECTED_ERROR);
-            }
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_EXPECTED_ERROR);
             return -1;
 #endif
         default:
@@ -993,9 +995,9 @@ PyObject *descr, DescriptorClassification kind)
     ObjectDictKind dictkind;
     PyDictKeysObject *keys;
     if (owner_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        PyObject *dict = *_PyObject_ManagedDictPointer(owner);
+        PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
         keys = ((PyHeapTypeObject *)owner_cls)->ht_cached_keys;
-        if (dict == NULL) {
+        if (_PyDictOrValues_IsValues(dorv)) {
             dictkind = MANAGED_VALUES;
         }
         else {

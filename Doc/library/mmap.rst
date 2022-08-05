@@ -6,6 +6,8 @@
 
 --------------
 
+.. include:: ../includes/wasm-notavail.rst
+
 Memory-mapped file objects behave like both :class:`bytearray` and like
 :term:`file objects <file object>`.  You can use mmap objects in most places
 where :class:`bytearray` are expected; for example, you can use the :mod:`re`

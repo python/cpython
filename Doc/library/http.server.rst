@@ -22,6 +22,8 @@ This module defines classes for implementing HTTP servers.
     :mod:`http.server` is not recommended for production. It only implements
     :ref:`basic security checks <http.server-security>`.
 
+.. include:: ../includes/wasm-notavail.rst
+
 One class, :class:`HTTPServer`, is a :class:`socketserver.TCPServer` subclass.
 It creates and listens at the HTTP socket, dispatching the requests to a
 handler.  Code to create and run the server looks like this::
