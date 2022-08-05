@@ -1598,7 +1598,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
         if (items == NULL || PyList_Sort(items) < 0)
             goto bail;
 
-        for (i = 0; i < PyList_GET_SIZE(items); i++) {
+        for (Py_ssize_t  i = 0; i < PyList_GET_SIZE(items); i++) {
             PyObject *item = PyList_GET_ITEM(items, i);
 
             if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
