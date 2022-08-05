@@ -1686,6 +1686,31 @@ buildbottest: all
 		fi
 		$(TESTRUNNER) -j 1 -u all -W --slowest --fail-env-changed --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
+TEST_CPPMODS= \
+	Modules/_testcpp03ext$(EXT_SUFFIX) \
+	Modules/_testcpp11ext$(EXT_SUFFIX)
+
+.PHONY: test_cppmods
+test_cppmods: $(TEST_CPPMODS) pybuilddir.txt
+	@target=`cat pybuilddir.txt`; \
+	$(MKDIR_P) $$target; \
+	for mod in $(TEST_CPPMODS); do \
+		$(LN) -sf ../../$$mod $$target/`basename $$mod`; \
+	done
+
+# gh-91321: Build a basic C++ test extension to check that the Python C API is
+# compatible with C++ and does not emit C++ compiler warnings. The purpose of
+# _testcppext extension is to check that building a C++ extension using the
+# Python C API does not emit C++ compiler warnings
+Modules/_testcpp03ext.o: $(srcdir)/Lib/test/_testcppext.cpp $(PYTHON_HEADERS)
+	$(CXX) -Werror -std=c++03 $(CCSHARED) $(PY_CPPFLAGS) $(PY_CFLAGS) -c $(srcdir)/Lib/test/_testcppext.cpp -o $@
+Modules/_testcpp03ext$(EXT_SUFFIX): Modules/_testcpp03ext.o
+	$(LDCXXSHARED) $< -o $@
+Modules/_testcpp11ext.o: $(srcdir)/Lib/test/_testcppext.cpp $(PYTHON_HEADERS)
+	$(CXX) -Werror -std=c++11 $(CCSHARED) $(PY_CPPFLAGS) $(PY_CFLAGS) -c $(srcdir)/Lib/test/_testcppext.cpp -o $@
+Modules/_testcpp11ext$(EXT_SUFFIX): Modules/_testcpp11ext.o
+	$(LDCXXSHARED) $< -o $@
+
 pythoninfo: all
 		$(RUNSHARED) $(HOSTRUNNER) ./$(BUILDPYTHON) -m test.pythoninfo
 
