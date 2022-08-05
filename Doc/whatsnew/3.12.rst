@@ -421,6 +421,7 @@ New Features
   * :const:`Py_TPFLAGS_HAVE_VECTORCALL`
   * :c:func:`PyVectorcall_NARGS`
   * :c:func:`PyVectorcall_Call`
+  * :c:type:`vectorcallfunc`
 
   The :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag is now removed from a class
   when the class's :py:meth:`~object.__call__` method is reassigned.

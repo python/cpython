@@ -2284,3 +2284,5 @@
     added = '3.12'
 [function.PyVectorcall_Call]
     added = '3.12'
+[typedef.vectorcallfunc]
+    added = '3.12'
