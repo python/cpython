@@ -46,14 +46,15 @@ new_weakref(PyObject *ob, PyObject *callback)
 }
 
 
-/* This function is responsible for clearing the callback slot. When using this
- * function it must be called before calling remove_weakref_from_referent,
- * otherwise a segmentation fault will occur at build time.
+/* This function clears the passed-in reference. It must have been
+ * from the weaklist already. (See weaklist_remove_weakref().)
  */
 static void
 clear_weakref(PyWeakReference *self)
 {
     PyObject *callback = self->wr_callback;
+
+    self->wr_object = Py_None;
 
     if (callback != NULL) {
         Py_DECREF(callback);
@@ -61,41 +62,37 @@ clear_weakref(PyWeakReference *self)
     }
 }
 
-/* This function removes the pass in reference from the list of weak
- * references for the referent. This should be called from 
- * remove_weakref_fromt_referent as it will pass the required list
- * argument.
+/* This function removes the passed-in reference from the list of weak
+ * references for the referent.
  */
 static void
-remove_weakref(PyWeakReference *self, PyWeakReference **list)
+weaklist_remove_weakref(PyWeakReference **list, PyWeakReference *ref)
 {
-    if (*list == self) {
-        /* If 'self' is the end of the list (and thus self->wr_next == NULL)
+    if (*list == ref) {
+        /* If 'ref' is the end of the list (and thus ref->wr_next == NULL)
             then the weakref list itself (and thus the value of *list) will
             end up being set to NULL. */
-        *list = self->wr_next;
+        *list = ref->wr_next;
     }
-    self->wr_object = Py_None;
-    if (self->wr_prev != NULL) {
-        self->wr_prev->wr_next = self->wr_next;
+    if (ref->wr_prev != NULL) {
+        ref->wr_prev->wr_next = ref->wr_next;
     }
-    if (self->wr_next != NULL) {
-        self->wr_next->wr_prev = self->wr_prev;
+    if (ref->wr_next != NULL) {
+        ref->wr_next->wr_prev = ref->wr_prev;
     }
-    self->wr_prev = NULL;
-    self->wr_next = NULL;
+    ref->wr_prev = NULL;
+    ref->wr_next = NULL;
 }
 
 /* This function removes the pass in reference from the list of weak references 
- * for the referent. This should be called after clear_weakref, otherwise a
- * segmentation fault will occur at build time.
+ * for the referent.
  */
 static void
 remove_weakref_from_referent(PyWeakReference *self)
 {
     if (self->wr_object != Py_None) {
         PyWeakReference **list = GET_WEAKREFS_LISTPTR(self->wr_object);
-        remove_weakref(self, list);
+        weaklist_remove_weakref(list, self);
     }
 }
 
@@ -120,8 +117,8 @@ _PyWeakref_ClearRef(PyWeakReference *self)
     /* Preserve and restore the callback around clear_weakref. */
     callback = self->wr_callback;
     self->wr_callback = NULL;
-    clear_weakref(self);
     remove_weakref_from_referent(self);
+    clear_weakref(self);
     self->wr_callback = callback;
 }
 
@@ -129,8 +126,8 @@ static void
 weakref_dealloc(PyObject *self)
 {
     PyObject_GC_UnTrack(self);
-    clear_weakref((PyWeakReference *) self);
     remove_weakref_from_referent((PyWeakReference *) self);
+    clear_weakref((PyWeakReference *) self);
     Py_TYPE(self)->tp_free(self);
 }
 
@@ -146,8 +143,8 @@ gc_traverse(PyWeakReference *self, visitproc visit, void *arg)
 static int
 gc_clear(PyWeakReference *self)
 {
-    clear_weakref(self);
     remove_weakref_from_referent(self);
+    clear_weakref(self);
     return 0;
 }
 
@@ -983,10 +980,10 @@ PyObject_ClearWeakRefs(PyObject *object)
     /* Remove the callback-less basic and proxy references */
     if (*list != NULL && (*list)->wr_callback == NULL) {
         clear_weakref(*list);
-        remove_weakref_from_referent(*list);
+        weaklist_remove_weakref(list, *list);
         if (*list != NULL && (*list)->wr_callback == NULL) {
             clear_weakref(*list);
-            remove_weakref_from_referent(*list);
+            weaklist_remove_weakref(list, *list);
         }
     }
     if (*list != NULL) {
@@ -1000,7 +997,7 @@ PyObject_ClearWeakRefs(PyObject *object)
 
             current->wr_callback = NULL;
             clear_weakref(current);
-            remove_weakref_from_referent(current);
+            weaklist_remove_weakref(list, current);
             if (callback != NULL) {
                 if (Py_REFCNT((PyObject *)current) > 0) {
                     handle_callback(current, callback);
@@ -1031,7 +1028,7 @@ PyObject_ClearWeakRefs(PyObject *object)
                 }
                 current->wr_callback = NULL;
                 clear_weakref(current);
-                remove_weakref_from_referent(current);
+                weaklist_remove_weakref(list, current);
                 current = next;
             }
             for (i = 0; i < count; ++i) {
@@ -1066,6 +1063,7 @@ _PyStaticType_ClearWeakRefs(PyTypeObject *type)
            weaklist before clearing its wr_object and wr_callback.
            That is how we're able to loop over the list. */
         clear_weakref((PyWeakReference *)*list);
-        remove_weakref_from_referent((PyWeakReference *)*list);
+        weaklist_remove_weakref((PyWeakReference **)list,
+                                (PyWeakReference *)list);
     }
 }
