@@ -1045,15 +1045,8 @@ sys__settraceallthreads(PyObject *module, PyObject *arg)
         argument = arg;
     }
 
-    PyThreadState *this_tstate = _PyThreadState_GET();
-    PyInterpreterState* interp = this_tstate->interp;
-    PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
-    while (ts) {
-        if (_PyEval_SetTrace(ts, func, argument) < 0) {
-            return NULL;
-        }
-        ts = PyThreadState_Next(ts);
-    }
+
+    PyEval_SetTraceAllThreads(func, argument);
 
     Py_RETURN_NONE;
 }
@@ -1127,15 +1120,7 @@ sys__setprofileallthreads(PyObject *module, PyObject *arg)
         argument = arg;
     }
 
-    PyThreadState *this_tstate = _PyThreadState_GET();
-    PyInterpreterState* interp = this_tstate->interp;
-    PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
-    while (ts) {
-        if (_PyEval_SetProfile(ts, func, argument) < 0) {
-            return NULL;
-        }
-        ts = PyThreadState_Next(ts);
-    }
+    PyEval_SetProfileAllThreads(func, argument);
 
     Py_RETURN_NONE;
 }
