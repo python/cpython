@@ -269,7 +269,7 @@ Python version.  For the first entry in each file, add subsection
 section.  The first entry to '3.(n+1).rst is the first feature or
 feature change that will not appear in the 3.n.0 release.
 
-When, as usual, feature changes are backported, entries are placed in
+When, as per PEP 434, feature changes are backported, entries are placed in
 the 3.n.rst file *in the main branch* for each Python version n that
 gets the feature. (Note: the format of entries have varied between
 versions.)  Add a line "New in 3.n maintenance releases." before the
