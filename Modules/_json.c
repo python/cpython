@@ -1595,7 +1595,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
     if (s->sort_keys) {
         Py_ssize_t i;
 
-        items = PyMapping_Items(dct);
+        items = PyDict_Items(dct);
         if (items == NULL || PyList_Sort(items) < 0)
             goto bail;
 
