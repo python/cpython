@@ -885,4 +885,5 @@ type,symtable,3.2,,opaque
 type,ternaryfunc,3.2,,
 type,traverseproc,3.2,,
 type,unaryfunc,3.2,,
+type,vectorcallfunc,3.12,,
 type,visitproc,3.2,,
