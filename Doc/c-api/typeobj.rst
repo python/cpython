@@ -135,7 +135,7 @@ Quick Reference
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | [:c:member:`~PyTypeObject.tp_cache`]           | :c:type:`PyObject` *              |                   |   |   |       |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | [:c:member:`~PyTypeObject.tp_subclasses`]      | :c:type:`PyObject` *              | __subclasses__    |   |   |       |
+   | [:c:member:`~PyTypeObject.tp_subclasses`]      | void *                            | __subclasses__    |   |   |       |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | [:c:member:`~PyTypeObject.tp_weaklist`]        | :c:type:`PyObject` *              |                   |   |   |       |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
@@ -1934,9 +1934,17 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    This field is not inherited.
 
 
-.. c:member:: PyObject* PyTypeObject.tp_subclasses
+.. c:member:: void* PyTypeObject.tp_subclasses
 
-   List of weak references to subclasses.  Internal use only.
+   A collection of subclasses.  Internal use only.  May be an invalid pointer.
+
+   To get a list of subclasses, call the Python method
+   :py:meth:`~class.__subclasses__`.
+
+   .. versionchanged:: 3.12
+
+      For some types, this field does not hold a valid :c:expr:`PyObject*`.
+      The type was changed to :c:expr:`void*` to indicate this.
 
    **Inheritance:**
 
