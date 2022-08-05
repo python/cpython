@@ -303,6 +303,7 @@ Module functions
    Note: *typename* and the name of the type in your query are matched
    case-insensitively.
 
+
 .. _sqlite3-module-variables:
 
 Module variables
