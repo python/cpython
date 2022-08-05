@@ -1633,7 +1633,6 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
 
         yield '\n' + (' ' * (_indent * _current_indent_level))
     }*/
-
     if (_PyUnicodeWriter_WriteChar(writer, '}'))
         goto bail;
     return 0;
