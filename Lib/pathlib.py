@@ -69,8 +69,8 @@ class _Flavour(object):
         if altsep:
             path = path.replace(altsep, sep)
         drv, root, rel = self.splitroot(path)
-        parsed = [drv + root] + rel.split(sep)
-        parsed = [sys.intern(x) for x in parsed if x and x != '.']
+        unfiltered_parsed = [drv + root] + rel.split(sep)
+        parsed = [sys.intern(x) for x in unfiltered_parsed if x and x != '.']
         return drv, root, parsed
 
     def join_parsed_parts(self, drv, root, parts, drv2, root2, parts2):
