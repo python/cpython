@@ -243,8 +243,8 @@ OTHER TOPICS
 
 Generally use PEP 8.
 
-import
-------
+import statements
+-----------------
 Put imports at the top, unless there is a good reason otherwise.
 PEP 8 says to group stdlib, 3rd-party dependencies, and package imports.
 For idlelib, the groups are general stdlib, tkinter, and idlelib.
@@ -259,3 +259,24 @@ htest function def or "if __name__ == '__main__'" clause.
 Within module imports like "from idlelib.mod import class" may cause
 circular imports to deadlock.  Even without this, circular imports may
 require at least one of the imports to be delayed until a function call.
+
+What's New entries
+------------------
+
+Repository directory Doc/whatsnew/ has a file 3.n.rst for each 3.n
+Python version.  For the first entry in each file, add subsection
+'IDLE and idlelib', in alphabetical position, to the 'Improved Modules'
+section.  For the rest of cpython, entries to 3.(n+1).rst begin with
+the release of 3.n.0b1.  For IDLE, entries for features backported from
+'main' to '3.n' during its beta period do not got in 3.(n+1).rst.  The
+latter usually gets its first entry during the 3.n.0 candidate period
+or after the 3.n.0 release.
+
+When, as per PEP 434, feature changes are backported, entries are placed
+in the 3.n.rst file *in the main branch* for each Python version n that
+gets the backport. (Note: the format of entries have varied between
+versions.)  Add a line "New in 3.n maintenance releases." before the
+first back-ported feature after 3.n.0 is released. Since each older
+version file gets a different number of backports, it is easiest to
+make a separate PR for each file and label it with the backports
+needed.
