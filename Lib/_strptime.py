@@ -209,8 +209,7 @@ class TimeRE(dict):
             'p': self.__seqToRE(self.locale_time.am_pm, 'p'),
             'Z': self.__seqToRE((tz for tz_names in self.locale_time.timezone
                                         for tz in tz_names),
-                                'Z',
-                                fallback='[a-z]{2,5}'),
+                                'Z', fallback='[a-z]{2,5}'),
             '%': '%'})
         base.__setitem__('W', base.__getitem__('U').replace('U', 'W'))
         base.__setitem__('c', self.pattern(self.locale_time.LC_date_time))
@@ -232,12 +231,9 @@ class TimeRE(dict):
                 break
         else:
             return ''
-
         regex = '|'.join(re_escape(stuff) for stuff in to_convert)
-
         if fallback is not None:
             regex = f'({regex})|({fallback})'
-
         return f'(?P<{directive}>{regex})'
 
     def pattern(self, format):

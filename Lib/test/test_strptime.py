@@ -374,7 +374,6 @@ class StrptimeTests(unittest.TestCase):
         create_time_struct = lambda tz_abbr: (
             (1900, 1, 1, 0, 0, 0, 0, 1, -1, tz_abbr, None), 0, 0
         )
-
         accepted_abbrs = ['CT', 'BST', 'CHST', 'CHADT']
         for abbr in accepted_abbrs:
             with self.subTest(f'%Z should match {abbr}'):
@@ -382,7 +381,6 @@ class StrptimeTests(unittest.TestCase):
                     _strptime._strptime(abbr, "%Z"),
                     create_time_struct(abbr),
                 )
-
         rejected_abbrs = ['', 'A', 'ABCDEF']
         for abbr in rejected_abbrs:
             with self.subTest(f'%Z should raise ValueError with {abbr}'):
