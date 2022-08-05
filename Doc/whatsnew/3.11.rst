@@ -1501,7 +1501,7 @@ Changes in the Python API
 * :c:member:`~PyTypeObject.tp_dictoffset` should be treated as write-only.
   It can be set to describe C extension clases to the VM, but should be regarded
   as meaningless when read. To get the pointer to the object's dictionary call
-  :c:func:`_PyObject_GetDictPtr` instead.
+  :c:func:`PyObject_GenericGetDict` instead.
 
 Build Changes
 =============
