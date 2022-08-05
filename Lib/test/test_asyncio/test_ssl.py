@@ -5,6 +5,7 @@ import gc
 import logging
 import select
 import socket
+import sys
 import tempfile
 import threading
 import time
@@ -18,6 +19,10 @@ except ImportError:
 
 from test import support
 from test.test_asyncio import utils as test_utils
+
+
+MACOS = (sys.platform == 'darwin')
+BUF_MULTIPLIER = 1024 if not MACOS else 64
 
 
 def tearDownModule():
@@ -191,8 +196,8 @@ class TestSSL(test_utils.TestCase):
         TOTAL_CNT = 25    # total number of clients that test will create
         TIMEOUT = support.LONG_TIMEOUT  # timeout for this test
 
-        A_DATA = b'A' * 1024 * 1024
-        B_DATA = b'B' * 1024 * 1024
+        A_DATA = b'A' * 1024 * BUF_MULTIPLIER
+        B_DATA = b'B' * 1024 * BUF_MULTIPLIER
 
         sslctx = self._create_server_ssl_context(
             test_utils.ONLYCERT, test_utils.ONLYKEY
@@ -287,8 +292,8 @@ class TestSSL(test_utils.TestCase):
         CNT = 0
         TOTAL_CNT = 25
 
-        A_DATA = b'A' * 1024 * 1024
-        B_DATA = b'B' * 1024 * 1024
+        A_DATA = b'A' * 1024 * BUF_MULTIPLIER
+        B_DATA = b'B' * 1024 * BUF_MULTIPLIER
 
         sslctx = self._create_server_ssl_context(
             test_utils.ONLYCERT,
@@ -1034,8 +1039,8 @@ class TestSSL(test_utils.TestCase):
         TOTAL_CNT = 25    # total number of clients that test will create
         TIMEOUT = support.LONG_TIMEOUT  # timeout for this test
 
-        A_DATA = b'A' * 1024 * 1024
-        B_DATA = b'B' * 1024 * 1024
+        A_DATA = b'A' * 1024 * BUF_MULTIPLIER
+        B_DATA = b'B' * 1024 * BUF_MULTIPLIER
 
         sslctx_1 = self._create_server_ssl_context(
             test_utils.ONLYCERT, test_utils.ONLYKEY)
@@ -1178,7 +1183,7 @@ class TestSSL(test_utils.TestCase):
         CNT = 0
         TOTAL_CNT = 25
 
-        A_DATA = b'A' * 1024 * 1024
+        A_DATA = b'A' * 1024 * BUF_MULTIPLIER
 
         sslctx = self._create_server_ssl_context(
             test_utils.ONLYCERT, test_utils.ONLYKEY)
