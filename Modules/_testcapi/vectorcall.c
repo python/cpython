@@ -214,7 +214,7 @@ _testcapi_make_vectorcall_class_impl(PyObject *module, PyTypeObject *base)
     VectorCallClass_members[0].offset = base->tp_basicsize;
     PyType_Spec spec = {
         .name = "_testcapi.VectorcallClass",
-        .basicsize = base->tp_basicsize + (int)sizeof(vectorcallfunc),
+        .basicsize = (int)(base->tp_basicsize + sizeof(vectorcallfunc)),
         .flags = Py_TPFLAGS_DEFAULT
             | Py_TPFLAGS_HAVE_VECTORCALL
             | Py_TPFLAGS_BASETYPE,
