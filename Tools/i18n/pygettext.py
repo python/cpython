@@ -335,9 +335,10 @@ class TokenEater:
                 if ttype == tokenize.STRING and is_literal_string(tstring):
                     self.__addentry(safe_eval(tstring), lineno, isdocstring=1)
                     self.__freshmodule = 0
-                elif ttype not in (tokenize.COMMENT, tokenize.NL):
-                    self.__freshmodule = 0
-                return
+                    return
+                if ttype in (tokenize.COMMENT, tokenize.NL, tokenize.ENCODING):
+                    return
+                self.__freshmodule = 0
             # class or func/method docstring?
             if ttype == tokenize.NAME and tstring in ('class', 'def'):
                 self.__state = self.__suiteseen
