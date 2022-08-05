@@ -4,7 +4,6 @@ __all__ = (
 
 import socket
 import sys
-import warnings
 import weakref
 
 if hasattr(socket, 'AF_UNIX'):

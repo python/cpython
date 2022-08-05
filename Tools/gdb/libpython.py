@@ -489,6 +489,8 @@ class HeapTypeObjectPtr(PyObjectPtr):
                 dictptr = self._gdbval.cast(_type_char_ptr()) + dictoffset
                 PyObjectPtrPtr = PyObjectPtr.get_gdb_type().pointer()
                 dictptr = dictptr.cast(PyObjectPtrPtr)
+                if int(dictptr.dereference()) & 1:
+                    return None
                 return PyObjectPtr.from_pyobject_ptr(dictptr.dereference())
         except RuntimeError:
             # Corrupt data somewhere; fail safe
@@ -502,12 +504,14 @@ class HeapTypeObjectPtr(PyObjectPtr):
         has_values =  int_from_int(typeobj.field('tp_flags')) & Py_TPFLAGS_MANAGED_DICT
         if not has_values:
             return None
-        PyDictValuesPtrPtr = gdb.lookup_type("PyDictValues").pointer().pointer()
-        valuesptr = self._gdbval.cast(PyDictValuesPtrPtr) - 4
-        values = valuesptr.dereference()
-        if int(values) == 0:
+        charptrptr_t = _type_char_ptr().pointer()
+        ptr = self._gdbval.cast(charptrptr_t) - 3
+        char_ptr = ptr.dereference()
+        if (int(char_ptr) & 1) == 0:
             return None
-        values = values['values']
+        char_ptr += 1
+        values_ptr = char_ptr.cast(gdb.lookup_type("PyDictValues").pointer())
+        values = values_ptr['values']
         return PyKeysValuesPair(self.get_cached_keys(), values)
 
     def get_cached_keys(self):
@@ -527,14 +531,15 @@ class HeapTypeObjectPtr(PyObjectPtr):
             return ProxyAlreadyVisited('<...>')
         visited.add(self.as_address())
 
-        pyop_attr_dict = self.get_attr_dict()
         keys_values = self.get_keys_values()
         if keys_values:
             attr_dict = keys_values.proxyval(visited)
-        elif pyop_attr_dict:
-            attr_dict = pyop_attr_dict.proxyval(visited)
         else:
-            attr_dict = {}
+            pyop_attr_dict = self.get_attr_dict()
+            if pyop_attr_dict:
+                attr_dict = pyop_attr_dict.proxyval(visited)
+            else:
+                attr_dict = {}
         tp_name = self.safe_tp_name()
 
         # Class:

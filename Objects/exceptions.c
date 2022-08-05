@@ -600,17 +600,9 @@ StopIteration_traverse(PyStopIterationObject *self, visitproc visit, void *arg)
     return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
 }
 
-ComplexExtendsException(
-    PyExc_Exception,       /* base */
-    StopIteration,         /* name */
-    StopIteration,         /* prefix for *_init, etc */
-    0,                     /* new */
-    0,                     /* methods */
-    StopIteration_members, /* members */
-    0,                     /* getset */
-    0,                     /* str */
-    "Signal the end from iterator.__next__()."
-);
+ComplexExtendsException(PyExc_Exception, StopIteration, StopIteration,
+                        0, 0, StopIteration_members, 0, 0,
+                        "Signal the end from iterator.__next__().");
 
 
 /*
@@ -1114,6 +1106,7 @@ exceptiongroup_split_recursive(PyObject *exc,
             assert(PyList_CheckExact(match_list));
             if (PyList_Append(match_list, rec_result.match) < 0) {
                 Py_DECREF(rec_result.match);
+                Py_XDECREF(rec_result.rest);
                 goto done;
             }
             Py_DECREF(rec_result.match);
@@ -3222,6 +3215,7 @@ MemoryError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self = state->memerrors_freelist;
     self->args = PyTuple_New(0);
     /* This shouldn't happen since the empty tuple is persistent */
+
     if (self->args == NULL) {
         return NULL;
     }
@@ -3237,6 +3231,8 @@ MemoryError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 MemoryError_dealloc(PyBaseExceptionObject *self)
 {
+    _PyObject_GC_UNTRACK(self);
+
     BaseException_clear(self);
 
     /* If this is a subclass of MemoryError, we don't need to
@@ -3245,8 +3241,6 @@ MemoryError_dealloc(PyBaseExceptionObject *self)
         Py_TYPE(self)->tp_free((PyObject *)self);
         return;
     }
-
-    _PyObject_GC_UNTRACK(self);
 
     struct _Py_exc_state *state = get_exc_state();
     if (state->memerrors_numfree >= MEMERRORS_SAVE) {
@@ -3564,8 +3558,7 @@ _PyExc_InitTypes(PyInterpreterState *interp)
 
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_exceptions); i++) {
         PyTypeObject *exc = static_exceptions[i].exc;
-
-        if (PyType_Ready(exc) < 0) {
+        if (_PyStaticType_InitBuiltin(exc) < 0) {
             return -1;
         }
     }

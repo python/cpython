@@ -1,0 +1,1 @@
+Fix repr of enum of generic aliases.

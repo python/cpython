@@ -1607,6 +1607,10 @@ class MakedirTests(unittest.TestCase):
                 self.assertEqual(os.stat(path).st_mode & 0o777, 0o555)
                 self.assertEqual(os.stat(parent).st_mode & 0o777, 0o775)
 
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "Emscripten's/WASI's umask is a stub."
+    )
     def test_exist_ok_existing_directory(self):
         path = os.path.join(os_helper.TESTFN, 'dir1')
         mode = 0o777
@@ -1621,6 +1625,10 @@ class MakedirTests(unittest.TestCase):
         # Issue #25583: A drive root could raise PermissionError on Windows
         os.makedirs(os.path.abspath('/'), exist_ok=True)
 
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "Emscripten's/WASI's umask is a stub."
+    )
     def test_exist_ok_s_isgid_directory(self):
         path = os.path.join(os_helper.TESTFN, 'dir1')
         S_ISGID = stat.S_ISGID
@@ -3656,6 +3664,19 @@ class TermsizeTests(unittest.TestCase):
                 self.skipTest("failed to query terminal size")
             raise
         self.assertEqual(expected, actual)
+
+    @unittest.skipUnless(sys.platform == 'win32', 'Windows specific test')
+    def test_windows_fd(self):
+        """Check if get_terminal_size() returns a meaningful value in Windows"""
+        try:
+            conout = open('conout$', 'w')
+        except OSError:
+            self.skipTest('failed to open conout$')
+        with conout:
+            size = os.get_terminal_size(conout.fileno())
+
+        self.assertGreaterEqual(size.columns, 0)
+        self.assertGreaterEqual(size.lines, 0)
 
 
 @unittest.skipUnless(hasattr(os, 'memfd_create'), 'requires os.memfd_create')

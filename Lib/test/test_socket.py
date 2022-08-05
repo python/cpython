@@ -4,31 +4,30 @@ from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
 
+import _thread as thread
+import array
+import contextlib
 import errno
 import io
 import itertools
-import socket
+import math
+import os
+import pickle
+import platform
+import queue
+import random
+import re
 import select
+import signal
+import socket
+import string
+import struct
+import sys
 import tempfile
+import threading
 import time
 import traceback
-import queue
-import sys
-import os
-import platform
-import array
-import contextlib
 from weakref import proxy
-import signal
-import math
-import pickle
-import re
-import struct
-import random
-import shutil
-import string
-import _thread as thread
-import threading
 try:
     import multiprocessing
 except ImportError:
@@ -605,16 +604,17 @@ class SocketTestBase(unittest.TestCase):
 
     def setUp(self):
         self.serv = self.newSocket()
+        self.addCleanup(self.close_server)
         self.bindServer()
+
+    def close_server(self):
+        self.serv.close()
+        self.serv = None
 
     def bindServer(self):
         """Bind server socket and set self.serv_addr to its address."""
         self.bindSock(self.serv)
         self.serv_addr = self.serv.getsockname()
-
-    def tearDown(self):
-        self.serv.close()
-        self.serv = None
 
 
 class SocketListeningTestMixin(SocketTestBase):
@@ -700,15 +700,10 @@ class UnixSocketTestBase(SocketTestBase):
     # can't send anything that might be problematic for a privileged
     # user running the tests.
 
-    def setUp(self):
-        self.dir_path = tempfile.mkdtemp()
-        self.addCleanup(os.rmdir, self.dir_path)
-        super().setUp()
-
     def bindSock(self, sock):
-        path = tempfile.mktemp(dir=self.dir_path)
-        socket_helper.bind_unix_socket(sock, path)
+        path = socket_helper.create_unix_domain_name()
         self.addCleanup(os_helper.unlink, path)
+        socket_helper.bind_unix_socket(sock, path)
 
 class UnixStreamBase(UnixSocketTestBase):
     """Base class for Unix-domain SOCK_STREAM tests."""
@@ -969,6 +964,19 @@ class GeneralModuleTests(unittest.TestCase):
         socket.IPPROTO_PGM
         socket.IPPROTO_L2TP
         socket.IPPROTO_SCTP
+
+    @unittest.skipIf(support.is_wasi, "WASI is missing these methods")
+    def test_socket_methods(self):
+        # socket methods that depend on a configure HAVE_ check. They should
+        # be present on all platforms except WASI.
+        names = [
+            "_accept", "bind", "connect", "connect_ex", "getpeername",
+            "getsockname", "listen", "recvfrom", "recvfrom_into", "sendto",
+            "setsockopt", "shutdown"
+        ]
+        for name in names:
+            if not hasattr(socket.socket, name):
+                self.fail(f"socket method {name} is missing")
 
     @unittest.skipUnless(sys.platform == 'darwin', 'macOS specific test')
     @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'IPv6 required for this test')
@@ -1905,17 +1913,18 @@ class GeneralModuleTests(unittest.TestCase):
             self._test_socket_fileno(s, socket.AF_INET6, socket.SOCK_STREAM)
 
         if hasattr(socket, "AF_UNIX"):
-            tmpdir = tempfile.mkdtemp()
-            self.addCleanup(shutil.rmtree, tmpdir)
+            unix_name = socket_helper.create_unix_domain_name()
+            self.addCleanup(os_helper.unlink, unix_name)
+
             s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            self.addCleanup(s.close)
-            try:
-                s.bind(os.path.join(tmpdir, 'socket'))
-            except PermissionError:
-                pass
-            else:
-                self._test_socket_fileno(s, socket.AF_UNIX,
-                                         socket.SOCK_STREAM)
+            with s:
+                try:
+                    s.bind(unix_name)
+                except PermissionError:
+                    pass
+                else:
+                    self._test_socket_fileno(s, socket.AF_UNIX,
+                                             socket.SOCK_STREAM)
 
     def test_socket_fileno_rejects_float(self):
         with self.assertRaises(TypeError):
@@ -2480,7 +2489,6 @@ class BasicHyperVTest(unittest.TestCase):
     def testHyperVConstants(self):
         socket.HVSOCKET_CONNECT_TIMEOUT
         socket.HVSOCKET_CONNECT_TIMEOUT_MAX
-        socket.HVSOCKET_CONTAINER_PASSTHRU
         socket.HVSOCKET_CONNECTED_SUSPEND
         socket.HVSOCKET_ADDRESS_FLAG_PASSTHRU
         socket.HV_GUID_ZERO
@@ -5548,6 +5556,20 @@ class TestLinuxAbstractNamespace(unittest.TestCase):
             s.bind(bytearray(b"\x00python\x00test\x00"))
             self.assertEqual(s.getsockname(), b"\x00python\x00test\x00")
 
+    def testAutobind(self):
+        # Check that binding to an empty string binds to an available address
+        # in the abstract namespace as specified in unix(7) "Autobind feature".
+        abstract_address = b"^\0[0-9a-f]{5}"
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s1:
+            s1.bind("")
+            self.assertRegex(s1.getsockname(), abstract_address)
+            # Each socket is bound to a different abstract address.
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s2:
+                s2.bind("")
+                self.assertRegex(s2.getsockname(), abstract_address)
+                self.assertNotEqual(s1.getsockname(), s2.getsockname())
+
+
 @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'test needs socket.AF_UNIX')
 class TestUnixDomain(unittest.TestCase):
 
@@ -5616,6 +5638,11 @@ class TestUnixDomain(unittest.TestCase):
         self.bind(self.sock, path)
         self.addCleanup(os_helper.unlink, path)
         self.assertEqual(self.sock.getsockname(), path)
+
+    @unittest.skipIf(sys.platform == 'linux', 'Linux specific test')
+    def testEmptyAddress(self):
+        # Test that binding empty address fails.
+        self.assertRaises(OSError, self.sock.bind, "")
 
 
 class BufferIOTest(SocketConnectedTest):

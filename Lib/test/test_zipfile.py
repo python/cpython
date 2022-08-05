@@ -1440,6 +1440,8 @@ class ExtractTests(unittest.TestCase):
         self.assertEqual(san(r',,?,C:,foo,bar/z', ','), r'_,C_,foo,bar/z')
         self.assertEqual(san(r'a\b,c<d>e|f"g?h*i', ','), r'a\b,c_d_e_f_g_h_i')
         self.assertEqual(san('../../foo../../ba..r', '/'), r'foo/ba..r')
+        self.assertEqual(san('  /  /foo  /  /ba  r', '/'), r'foo/ba  r')
+        self.assertEqual(san(' . /. /foo ./ . /. ./ba .r', '/'), r'foo/ba .r')
 
     def test_extract_hackers_arcnames_common_cases(self):
         common_hacknames = [

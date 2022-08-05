@@ -1,3 +1,10 @@
+"""Object-oriented filesystem paths.
+
+This module provides classes to represent abstract paths and concrete
+paths with operations that have semantics appropriate for different
+operating systems.
+"""
+
 import fnmatch
 import functools
 import io
@@ -130,6 +137,8 @@ class _WildcardSelector(_Selector):
 
     def _select_from(self, parent_path, is_dir, exists, scandir):
         try:
+            # We must close the scandir() object before proceeding to
+            # avoid exhausting file descriptors when globbing deep trees.
             with scandir(parent_path) as scandir_it:
                 entries = list(scandir_it)
             for entry in entries:
@@ -161,6 +170,8 @@ class _RecursiveWildcardSelector(_Selector):
     def _iterate_directories(self, parent_path, is_dir, scandir):
         yield parent_path
         try:
+            # We must close the scandir() object before proceeding to
+            # avoid exhausting file descriptors when globbing deep trees.
             with scandir(parent_path) as scandir_it:
                 entries = list(scandir_it)
             for entry in entries:
@@ -1124,26 +1135,9 @@ class Path(PurePath):
 
     def is_mount(self):
         """
-        Check if this path is a POSIX mount point
+        Check if this path is a mount point
         """
-        if self._flavour is not posixpath:
-            raise NotImplementedError("Path.is_mount() is unsupported on this system")
-
-        # Need to exist and be a dir
-        if not self.exists() or not self.is_dir():
-            return False
-
-        try:
-            parent_dev = self.parent.stat().st_dev
-        except OSError:
-            return False
-
-        dev = self.stat().st_dev
-        if dev != parent_dev:
-            return True
-        ino = self.stat().st_ino
-        parent_ino = self.parent.stat().st_ino
-        return ino == parent_ino
+        return self._flavour.ismount(self)
 
     def is_symlink(self):
         """
@@ -1236,6 +1230,49 @@ class Path(PurePath):
             return self._from_parts([homedir] + self._parts[1:])
 
         return self
+
+    def walk(self, top_down=True, on_error=None, follow_symlinks=False):
+        """Walk the directory tree from this directory, similar to os.walk()."""
+        sys.audit("pathlib.Path.walk", self, on_error, follow_symlinks)
+        return self._walk(top_down, on_error, follow_symlinks)
+
+    def _walk(self, top_down, on_error, follow_symlinks):
+        # We may not have read permission for self, in which case we can't
+        # get a list of the files the directory contains. os.walk
+        # always suppressed the exception then, rather than blow up for a
+        # minor reason when (say) a thousand readable directories are still
+        # left to visit. That logic is copied here.
+        try:
+            scandir_it = self._scandir()
+        except OSError as error:
+            if on_error is not None:
+                on_error(error)
+            return
+
+        with scandir_it:
+            dirnames = []
+            filenames = []
+            for entry in scandir_it:
+                try:
+                    is_dir = entry.is_dir(follow_symlinks=follow_symlinks)
+                except OSError:
+                    # Carried over from os.path.isdir().
+                    is_dir = False
+
+                if is_dir:
+                    dirnames.append(entry.name)
+                else:
+                    filenames.append(entry.name)
+
+        if top_down:
+            yield self, dirnames, filenames
+
+        for dirname in dirnames:
+            dirpath = self._make_child_relpath(dirname)
+            yield from dirpath._walk(top_down, on_error, follow_symlinks)
+
+        if not top_down:
+            yield self, dirnames, filenames
 
 
 class PosixPath(Path, PurePosixPath):

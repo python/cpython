@@ -329,6 +329,13 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                 return False
         self.command, self.path = command, path
 
+        # gh-87389: The purpose of replacing '//' with '/' is to protect
+        # against open redirect attacks possibly triggered if the path starts
+        # with '//' because http clients treat //path as an absolute URI
+        # without scheme (similar to http://path) rather than a path.
+        if self.path.startswith('//'):
+            self.path = '/' + self.path.lstrip('/')  # Reduce to a single /
+
         # Examine the headers and look for a Connection directive.
         try:
             self.headers = http.client.parse_headers(self.rfile,
@@ -635,6 +642,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     """
 
+    index_pages = ["index.html", "index.htm"]
     server_version = "SimpleHTTP/" + __version__
     extensions_map = _encodings_map_default = {
         '.gz': 'application/gzip',
@@ -643,9 +651,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         '.xz': 'application/x-xz',
     }
 
-    def __init__(self, *args, directory=None, **kwargs):
+    def __init__(self, *args, directory=None, index_pages=None, **kwargs):
         if directory is None:
             directory = os.getcwd()
+        if index_pages is not None:
+            self.index_pages = index_pages
         self.directory = os.fspath(directory)
         super().__init__(*args, **kwargs)
 
@@ -689,7 +699,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 self.send_header("Content-Length", "0")
                 self.end_headers()
                 return None
-            for index in "index.html", "index.htm":
+            for index in self.index_pages:
                 index = os.path.join(path, index)
                 if os.path.exists(index):
                     path = index

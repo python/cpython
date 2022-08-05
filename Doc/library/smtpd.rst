@@ -31,6 +31,7 @@ interaction behaviour with SMTP clients.
 The code supports :RFC:`5321`, plus the :rfc:`1870` SIZE and :rfc:`6531`
 SMTPUTF8 extensions.
 
+.. include:: ../includes/wasm-notavail.rst
 
 SMTPServer Objects
 ------------------
@@ -228,7 +229,7 @@ SMTPChannel Objects
 
    .. attribute:: fqdn
 
-      Holds the fully-qualified domain name of the server as returned by
+      Holds the fully qualified domain name of the server as returned by
       :func:`socket.getfqdn`.
 
    .. attribute:: peer

@@ -180,7 +180,7 @@ int Py_UTF8Mode = 0;
 int Py_DebugFlag = 0; /* Needed by parser.c */
 int Py_VerboseFlag = 0; /* Needed by import.c */
 int Py_QuietFlag = 0; /* Needed by sysmodule.c */
-int Py_InteractiveFlag = 0; /* Needed by Py_FdIsInteractive() below */
+int Py_InteractiveFlag = 0; /* Previously, was used by Py_FdIsInteractive() */
 int Py_InspectFlag = 0; /* Needed to determine whether to exit at SystemExit */
 int Py_OptimizeFlag = 0; /* Needed by compile.c */
 int Py_NoSiteFlag = 0; /* Suppress 'import site' */
@@ -201,6 +201,8 @@ int Py_LegacyWindowsStdioFlag = 0; /* Uses FileIO instead of WindowsConsoleIO */
 static PyObject *
 _Py_GetGlobalVariablesAsDict(void)
 {
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     PyObject *dict, *obj;
 
     dict = PyDict_New();
@@ -267,15 +269,19 @@ fail:
 #undef SET_ITEM
 #undef SET_ITEM_INT
 #undef SET_ITEM_STR
+_Py_COMP_DIAG_POP
 }
 
 char*
 Py_GETENV(const char *name)
 {
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     if (Py_IgnoreEnvironmentFlag) {
         return NULL;
     }
     return getenv(name);
+_Py_COMP_DIAG_POP
 }
 
 /* --- PyStatus ----------------------------------------------- */
@@ -537,8 +543,11 @@ Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
     }
 #ifdef MS_WINDOWS
     if (_Py_StandardStreamEncoding) {
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
         /* Overriding the stream encoding implies legacy streams */
         Py_LegacyWindowsStdioFlag = 1;
+_Py_COMP_DIAG_POP
     }
 #endif
 
@@ -1443,6 +1452,8 @@ config_get_env_dup(PyConfig *config,
 static void
 config_get_global_vars(PyConfig *config)
 {
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     if (config->_config_init != _PyConfig_INIT_COMPAT) {
         /* Python and Isolated configuration ignore global variables */
         return;
@@ -1478,6 +1489,7 @@ config_get_global_vars(PyConfig *config)
 
 #undef COPY_FLAG
 #undef COPY_NOT_FLAG
+_Py_COMP_DIAG_POP
 }
 
 
@@ -1485,6 +1497,8 @@ config_get_global_vars(PyConfig *config)
 static void
 config_set_global_vars(const PyConfig *config)
 {
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
 #define COPY_FLAG(ATTR, VAR) \
         if (config->ATTR != -1) { \
             VAR = config->ATTR; \
@@ -1519,6 +1533,7 @@ config_set_global_vars(const PyConfig *config)
 
 #undef COPY_FLAG
 #undef COPY_NOT_FLAG
+_Py_COMP_DIAG_POP
 }
 
 
@@ -2046,49 +2061,6 @@ _PyConfig_InitImportConfig(PyConfig *config)
     return config_init_import(config, 1);
 }
 
-// List of known xoptions to validate against the provided ones. Note that all
-// options are listed, even if they are only available if a specific macro is
-// set, like -X showrefcount which requires a debug build. In this case unknown
-// options are silently ignored.
-const wchar_t* known_xoptions[] = {
-    L"faulthandler",
-    L"showrefcount",
-    L"tracemalloc",
-    L"importtime",
-    L"dev",
-    L"utf8",
-    L"pycache_prefix",
-    L"warn_default_encoding",
-    L"no_debug_ranges",
-    L"frozen_modules",
-    NULL,
-};
-
-static const wchar_t*
-_Py_check_xoptions(const PyWideStringList *xoptions, const wchar_t **names)
-{
-    for (Py_ssize_t i=0; i < xoptions->length; i++) {
-        const wchar_t *option = xoptions->items[i];
-        size_t len;
-        wchar_t *sep = wcschr(option, L'=');
-        if (sep != NULL) {
-            len = (sep - option);
-        }
-        else {
-            len = wcslen(option);
-        }
-        int found = 0;
-        for (const wchar_t** name = names; *name != NULL; name++) {
-            if (wcsncmp(option, *name, len) == 0 && (*name)[len] == L'\0') {
-                found = 1;
-            }
-        }
-        if (found == 0) {
-            return option;
-        }
-    }
-    return NULL;
-}
 
 static PyStatus
 config_read(PyConfig *config, int compute_path_config)
@@ -2104,11 +2076,6 @@ config_read(PyConfig *config, int compute_path_config)
     }
 
     /* -X options */
-    const wchar_t* option = _Py_check_xoptions(&config->xoptions, known_xoptions);
-    if (option != NULL) {
-        return PyStatus_Error("Unknown value for option -X (see --help-xoptions)");
-    }
-
     if (config_get_xoption(config, L"showrefcount")) {
         config->show_ref_count = 1;
     }
@@ -2295,6 +2262,9 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
     const PyWideStringList *argv = &config->argv;
     int print_version = 0;
     const wchar_t* program = config->program_name;
+    if (!program && argv->length >= 1) {
+        program = argv->items[0];
+    }
 
     _PyOS_ResetGetOpt();
     do {
