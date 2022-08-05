@@ -252,10 +252,6 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self._num_cancels_requested -= 1
         return self._num_cancels_requested
 
-    def _check_future(self, future):
-        """Return False if task and future loops are not compatible."""
-        return futures._get_loop(future) is self._loop
-
     def __step(self, exc=None):
         if self.done():
             raise exceptions.InvalidStateError(
@@ -296,7 +292,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             blocking = getattr(result, '_asyncio_future_blocking', None)
             if blocking is not None:
                 # Yielded Future must come from Future.__iter__().
-                if not self._check_future(result):
+                if futures._get_loop(result) is not self._loop:
                     new_exc = RuntimeError(
                         f'Task {self!r} got Future '
                         f'{result!r} attached to a different loop')
