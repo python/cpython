@@ -440,6 +440,16 @@ Porting to Python 3.12
   using the existing public C-API instead, or, if necessary, the
   (internal-only) ``_PyObject_GET_WEAKREFS_LISTPTR()`` macro.
 
+* This internal-only :c:member:`PyTypeObject.tp_subclasses` may now not be
+  a valid object pointer.  Its type was changed to :c:expr:`void *` to
+  reflect this.  We mention this in case someone happens to be accessing the
+  internal-only field directly.
+
+  To get a list of subclasses, call the Python method
+  :py:meth:`~class.__subclasses__` (using :c:func:`PyObject_CallMethod`,
+  for example).
+
+
 Deprecated
 ----------
 

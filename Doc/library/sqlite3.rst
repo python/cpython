@@ -94,6 +94,12 @@ using :meth:`~Cursor.executemany`::
    ... ]
    >>> cur.executemany('INSERT INTO stocks VALUES(?, ?, ?, ?, ?)', data)
 
+Notice that we used ``?`` placeholders to bind *data* to the query.
+Always use placeholders instead of :ref:`string formatting <tut-formatting>`
+to bind Python values to SQL statements,
+to avoid `SQL injection attacks`_.
+See the :ref:`placeholders how-to <sqlite3-placeholders>` for more details.
+
 Then, retrieve the data by iterating over the result of a ``SELECT`` statement::
 
    >>> for row in cur.execute('SELECT * FROM stocks ORDER BY price'):
@@ -104,33 +110,9 @@ Then, retrieve the data by iterating over the result of a ``SELECT`` statement::
    ('2006-04-06', 'SELL', 'IBM', 500, 53.0)
    ('2006-04-05', 'BUY', 'MSFT', 1000, 72.0)
 
+You've now created an SQLite database using the :mod:`!sqlite3` module.
 
-.. _sqlite3-placeholders:
-
-SQL operations usually need to use values from Python variables. However,
-beware of using Python's string operations to assemble queries, as they
-are vulnerable to SQL injection attacks (see the `xkcd webcomic
-<https://xkcd.com/327/>`_ for a humorous example of what can go wrong)::
-
-   # Never do this -- insecure!
-   symbol = 'RHAT'
-   cur.execute("SELECT * FROM stocks WHERE symbol = '%s'" % symbol)
-
-Instead, use the DB-API's parameter substitution. To insert a variable into a
-query string, use a placeholder in the string, and substitute the actual values
-into the query by providing them as a :class:`tuple` of values to the second
-argument of the cursor's :meth:`~Cursor.execute` method. An SQL statement may
-use one of two kinds of placeholders: question marks (qmark style) or named
-placeholders (named style). For the qmark style, ``parameters`` must be a
-:term:`sequence <sequence>`. For the named style, it can be either a
-:term:`sequence <sequence>` or :class:`dict` instance. The length of the
-:term:`sequence <sequence>` must match the number of placeholders, or a
-:exc:`ProgrammingError` is raised. If a :class:`dict` is given, it must contain
-keys for all named parameters. Any extra items are ignored. Here's an example of
-both styles:
-
-.. literalinclude:: ../includes/sqlite3/execute_1.py
-
+.. _SQL injection attacks: https://en.wikipedia.org/wiki/SQL_injection
 
 .. seealso::
 
@@ -164,12 +146,12 @@ Module functions and constants
 .. data:: paramstyle
 
    String constant stating the type of parameter marker formatting expected by
-   the :mod:`sqlite3` module. Required by the DB-API. Hard-coded to
+   the :mod:`!sqlite3` module. Required by the DB-API. Hard-coded to
    ``"qmark"``.
 
    .. note::
 
-      The :mod:`sqlite3` module supports both ``qmark`` and ``numeric`` DB-API
+      The :mod:`!sqlite3` module supports both ``qmark`` and ``numeric`` DB-API
       parameter styles, because that is what the underlying SQLite library
       supports. However, the DB-API does not allow multiple values for
       the ``paramstyle`` attribute.
@@ -182,7 +164,7 @@ Module functions and constants
    .. deprecated-removed:: 3.12 3.14
       This constant used to reflect the version number of the ``pysqlite``
       package, a third-party library which used to upstream changes to
-      ``sqlite3``. Today, it carries no meaning or practical value.
+      :mod:`!sqlite3`. Today, it carries no meaning or practical value.
 
 
 .. data:: version_info
@@ -193,7 +175,7 @@ Module functions and constants
    .. deprecated-removed:: 3.12 3.14
       This constant used to reflect the version number of the ``pysqlite``
       package, a third-party library which used to upstream changes to
-      ``sqlite3``. Today, it carries no meaning or practical value.
+      :mod:`!sqlite3`. Today, it carries no meaning or practical value.
 
 
 .. data:: sqlite_version
@@ -210,7 +192,7 @@ Module functions and constants
 .. data:: threadsafety
 
    Integer constant required by the DB-API 2.0, stating the level of thread
-   safety the :mod:`sqlite3` module supports. This attribute is set based on
+   safety the :mod:`!sqlite3` module supports. This attribute is set based on
    the default `threading mode <https://sqlite.org/threadsafe.html>`_ the
    underlying SQLite library is compiled with. The SQLite threading modes are:
 
@@ -251,7 +233,7 @@ Module functions and constants
    :func:`connect` to look up a converter function using
    the declared types for each column.
    The types are declared when the database table is created.
-   ``sqlite3`` will look up a converter function using the first word of the
+   :mod:`!sqlite3` will look up a converter function using the first word of the
    declared type as the converter dictionary key.
    For example:
 
@@ -295,15 +277,14 @@ Module functions and constants
        in RAM instead of on disk.
    :type database: :term:`path-like object`
 
-   :param timeout:
+   :param float timeout:
        How many seconds the connection should wait before raising
        an exception, if the database is locked by another connection.
        If another connection opens a transaction to modify the database,
        it will be locked until that transaction is committed.
        Default five seconds.
-   :type timeout: float
 
-   :param detect_types:
+   :param int detect_types:
        Control whether and how data types not
        :ref:`natively supported by SQLite <sqlite3-types>`
        are looked up to be converted to Python types,
@@ -316,7 +297,6 @@ Module functions and constants
        even when the *detect_types* parameter is set; :class:`str` will be
        returned instead.
        By default (``0``), type detection is disabled.
-   :type detect_types: int
 
    :param isolation_level:
        The :attr:`~Connection.isolation_level` of the connection,
@@ -326,25 +306,22 @@ Module functions and constants
        See :ref:`sqlite3-controlling-transactions` for more.
    :type isolation_level: str | None
 
-   :param check_same_thread:
+   :param bool check_same_thread:
        If ``True`` (default), only the creating thread may use the connection.
        If ``False``, the connection may be shared across multiple threads;
        if so, write operations should be serialized by the user to avoid data
        corruption.
-   :type check_same_thread: bool
 
-   :param factory:
+   :param Connection factory:
        A custom subclass of :class:`Connection` to create the connection with,
        if not the default :class:`Connection` class.
-   :type factory: :class:`Connection`
 
-   :param cached_statements:
-       The number of statements that ``sqlite3``
+   :param int cached_statements:
+       The number of statements that :mod:`!sqlite3`
        should internally cache for this connection, to avoid parsing overhead.
        By default, 128 statements.
-   :type cached_statements: int
 
-   :param uri:
+   :param bool uri:
        If set to ``True``, *database* is interpreted as a
        :abbr:`URI (Uniform Resource Identifier)` with a file path
        and an optional query string.
@@ -352,7 +329,6 @@ Module functions and constants
        and the path can be relative or absolute.
        The query string allows passing parameters to SQLite,
        enabling various :ref:`sqlite3-uri-tricks`.
-   :type uri: bool
 
    :rtype: Connection
 
@@ -389,7 +365,7 @@ Module functions and constants
    SQLite type.
    The adapter is called with a Python object of type *type* as its sole
    argument, and must return a value of a
-   :ref:`type that SQLite natively understands<sqlite3-types>`.
+   :ref:`type that SQLite natively understands <sqlite3-types>`.
 
 
 .. function:: complete_statement(statement)
@@ -455,7 +431,7 @@ Connection objects
    .. attribute:: isolation_level
 
       This attribute controls the :ref:`transaction handling
-      <sqlite3-controlling-transactions>` performed by ``sqlite3``.
+      <sqlite3-controlling-transactions>` performed by :mod:`!sqlite3`.
       If set to ``None``, transactions are never implicitly opened.
       If set to one of ``"DEFERRED"``, ``"IMMEDIATE"``, or ``"EXCLUSIVE"``,
       corresponding to the underlying `SQLite transaction behaviour`_,
@@ -487,28 +463,23 @@ Connection objects
       Open a :class:`Blob` handle to an existing
       :abbr:`BLOB (Binary Large OBject)`.
 
-      :param table:
+      :param str table:
           The name of the table where the blob is located.
-      :type table: str
 
-      :param column:
+      :param str column:
           The name of the column where the blob is located.
-      :type column: str
 
-      :param row:
+      :param str row:
           The name of the row where the blob is located.
-      :type row: str
 
-      :param readonly:
+      :param bool readonly:
           Set to ``True`` if the blob should be opened without write
           permissions.
           Defaults to ``False``.
-      :type readonly: bool
 
-      :param name:
+      :param str name:
           The name of the database where the blob is located.
           Defaults to ``"main"``.
-      :type name: str
 
       :raises OperationalError:
           When trying to open a blob in a ``WITHOUT ROWID`` table.
@@ -561,14 +532,12 @@ Connection objects
 
       Create or remove a user-defined SQL function.
 
-      :param name:
+      :param str name:
           The name of the SQL function.
-      :type name: str
 
-      :param narg:
+      :param int narg:
           The number of arguments the SQL function can accept.
           If ``-1``, it may take any number of arguments.
-      :type narg: int
 
       :param func:
           A callable that is called when the SQL function is invoked.
@@ -577,11 +546,10 @@ Connection objects
           Set to ``None`` to remove an existing SQL function.
       :type func: :term:`callback` | None
 
-      :param deterministic:
+      :param bool deterministic:
           If ``True``, the created SQL function is marked as
           `deterministic <https://sqlite.org/deterministic.html>`_,
           which allows SQLite to perform additional optimizations.
-      :type deterministic: bool
 
       :raises NotSupportedError:
           If *deterministic* is used with SQLite versions older than 3.8.3.
@@ -598,14 +566,12 @@ Connection objects
 
       Create or remove a user-defined SQL aggregate function.
 
-      :param name:
+      :param str name:
           The name of the SQL aggregate function.
-      :type name: str
 
-      :param n_arg:
+      :param int n_arg:
           The number of arguments the SQL aggregate function can accept.
           If ``-1``, it may take any number of arguments.
-      :type n_arg: int
 
       :param aggregate_class:
           A class must implement the following methods:
@@ -629,14 +595,12 @@ Connection objects
 
       Create or remove a user-defined aggregate window function.
 
-      :param name:
+      :param str name:
           The name of the SQL aggregate window function to create or remove.
-      :type name: str
 
-      :param num_params:
+      :param int num_params:
           The number of arguments the SQL aggregate window function can accept.
           If ``-1``, it may take any number of arguments.
-      :type num_params: int
 
       :param aggregate_class:
           A class that must implement the following methods:
@@ -700,7 +664,7 @@ Connection objects
       :const:`SQLITE_OK` if access is allowed, :const:`SQLITE_DENY` if the entire SQL
       statement should be aborted with an error and :const:`SQLITE_IGNORE` if the
       column should be treated as a NULL value. These constants are available in the
-      :mod:`sqlite3` module.
+      :mod:`!sqlite3` module.
 
       The first argument to the callback signifies what kind of operation is to be
       authorized. The second and third argument will be arguments or ``None``
@@ -711,7 +675,7 @@ Connection objects
 
       Please consult the SQLite documentation about the possible values for the first
       argument and the meaning of the second and third argument depending on the first
-      one. All necessary constants are available in the :mod:`sqlite3` module.
+      one. All necessary constants are available in the :mod:`!sqlite3` module.
 
       Passing ``None`` as *authorizer_callback* will disable the authorizer.
 
@@ -769,7 +733,7 @@ Connection objects
 
       .. note::
 
-         The ``sqlite3`` module is not built with loadable extension support by
+         The :mod:`!sqlite3` module is not built with loadable extension support by
          default, because some platforms (notably macOS) have SQLite
          libraries which are compiled without this feature.
          To get loadable extension support,
@@ -862,16 +826,14 @@ Connection objects
       Works even if the database is being accessed by other clients
       or concurrently by the same connection.
 
-      :param target:
+      :param Connection target:
           The database connection to save the backup to.
-      :type target: Connection
 
-      :param pages:
+      :param int pages:
           The number of pages to copy at a time.
           If equal to or less than ``0``,
           the entire database is copied in a single step.
           Defaults to ``-1``.
-      :type pages: int
 
       :param progress:
           If set to a callable, it is invoked with three integer arguments for
@@ -882,18 +844,16 @@ Connection objects
           Defaults to ``None``.
       :type progress: :term:`callback` | None
 
-      :param name:
+      :param str name:
           The name of the database to back up.
           Either ``"main"`` (the default) for the main database,
           ``"temp"`` for the temporary database,
           or the name of a custom database as attached using the
           ``ATTACH DATABASE`` SQL statement.
-      :type name: str
 
-      :param sleep:
+      :param float sleep:
           The number of seconds to sleep between successive attempts
           to back up remaining pages.
-      :type sleep: float
 
       Example 1, copy an existing database into another::
 
@@ -919,11 +879,17 @@ Connection objects
 
       .. versionadded:: 3.7
 
-
    .. method:: getlimit(category, /)
 
-      Get a connection runtime limit. *category* is the limit category to be
-      queried.
+      Get a connection runtime limit.
+
+      :param int category:
+         The `SQLite limit category`_ to be queried.
+
+      :rtype: int
+
+      :raises ProgrammingError:
+         If *category* is not recognised by the underlying SQLite library.
 
       Example, query the maximum length of an SQL statement::
 
@@ -937,13 +903,22 @@ Connection objects
 
    .. method:: setlimit(category, limit, /)
 
-      Set a connection runtime limit. *category* is the limit category to be
-      set. *limit* is the new limit. If the new limit is a negative number, the
-      limit is unchanged.
-
+      Set a connection runtime limit.
       Attempts to increase a limit above its hard upper bound are silently
       truncated to the hard upper bound. Regardless of whether or not the limit
       was changed, the prior value of the limit is returned.
+
+      :param int category:
+         The `SQLite limit category`_ to be set.
+
+      :param int limit:
+         The value of the new limit.
+         If negative, the current limit is unchanged.
+
+      :rtype: int
+
+      :raises ProgrammingError:
+         If *category* is not recognised by the underlying SQLite library.
 
       Example, limit the number of attached databases to 1::
 
@@ -952,6 +927,8 @@ Connection objects
          con.setlimit(sqlite3.SQLITE_LIMIT_ATTACHED, 1)
 
       .. versionadded:: 3.11
+
+   .. _SQLite limit category: https://www.sqlite.org/c3ref/c_limit_attached.html
 
 
    .. method:: serialize(*, name="main")
@@ -962,8 +939,11 @@ Connection objects
       serialization is the same sequence of bytes which would be written to
       disk if that database were backed up to disk.
 
-      *name* is the database to be serialized, and defaults to the main
-      database.
+      :param str name:
+         The database name to be serialized.
+         Defaults to ``"main"``.
+
+      :rtype: bytes
 
       .. note::
 
@@ -979,12 +959,24 @@ Connection objects
       :class:`Connection`.
       This method causes the database connection to disconnect from database
       *name*, and reopen *name* as an in-memory database based on the
-      serialization contained in *data*.  Deserialization will raise
-      :exc:`OperationalError` if the database connection is currently involved
-      in a read transaction or a backup operation.  :exc:`OverflowError` will be
-      raised if ``len(data)`` is larger than ``2**63 - 1``, and
-      :exc:`DatabaseError` will be raised if *data* does not contain a valid
-      SQLite database.
+      serialization contained in *data*.
+
+      :param bytes data:
+         A serialized database.
+
+      :param str name:
+         The database name to deserialize into.
+         Defaults to ``"main"``.
+
+      :raises OperationalError:
+         If the database connection is currently involved in a read
+         transaction or a backup operation.
+
+      :raises DatabaseError:
+         If *data* does not contain a valid SQLite database.
+
+      :raises OverflowError:
+         If :func:`len(data) <len>` is larger than ``2**63 - 1``.
 
       .. note::
 
@@ -1081,13 +1073,13 @@ Cursor objects
 
    .. method:: fetchone()
 
-      Fetch the next row of a query result set as a :class:`tuple`.
+      Return the next row of a query result set as a :class:`tuple`.
       Return ``None`` if no more data is available.
 
 
    .. method:: fetchmany(size=cursor.arraysize)
 
-      Fetch the next set of rows of a query result as a :class:`list`.
+      Return the next set of rows of a query result as a :class:`list`.
       Return an empty list if no more rows are available.
 
       The number of rows to fetch per call is specified by the *size* parameter.
@@ -1103,7 +1095,7 @@ Cursor objects
 
    .. method:: fetchall()
 
-      Fetch all (remaining) rows of a query result as a :class:`list`.
+      Return all (remaining) rows of a query result as a :class:`list`.
       Return an empty list if no rows are available.
       Note that the :attr:`arraysize` attribute can affect the performance of
       this operation.
@@ -1117,11 +1109,11 @@ Cursor objects
 
    .. method:: setinputsizes(sizes, /)
 
-      Required by the DB-API. Does nothing in :mod:`sqlite3`.
+      Required by the DB-API. Does nothing in :mod:`!sqlite3`.
 
    .. method:: setoutputsize(size, column=None, /)
 
-      Required by the DB-API. Does nothing in :mod:`sqlite3`.
+      Required by the DB-API. Does nothing in :mod:`!sqlite3`.
 
    .. attribute:: rowcount
 
@@ -1309,8 +1301,8 @@ The exception hierarchy is defined by the DB-API 2.0 (:pep:`249`).
 
 .. exception:: Warning
 
-   This exception is not currently raised by the ``sqlite3`` module,
-   but may be raised by applications using ``sqlite3``,
+   This exception is not currently raised by the :mod:`!sqlite3` module,
+   but may be raised by applications using :mod:`!sqlite3`,
    for example if a user-defined function truncates data while inserting.
    ``Warning`` is a subclass of :exc:`Exception`.
 
@@ -1341,7 +1333,7 @@ The exception hierarchy is defined by the DB-API 2.0 (:pep:`249`).
 
    Exception raised for misuse of the low-level SQLite C API.
    In other words, if this exception is raised, it probably indicates a bug in the
-   ``sqlite3`` module.
+   :mod:`!sqlite3` module.
    ``InterfaceError`` is a subclass of :exc:`Error`.
 
 .. exception:: DatabaseError
@@ -1379,7 +1371,7 @@ The exception hierarchy is defined by the DB-API 2.0 (:pep:`249`).
 
 .. exception:: ProgrammingError
 
-   Exception raised for ``sqlite3`` API programming errors,
+   Exception raised for :mod:`!sqlite3` API programming errors,
    for example supplying the wrong number of bindings to a query,
    or trying to operate on a closed :class:`Connection`.
    ``ProgrammingError`` is a subclass of :exc:`DatabaseError`.
@@ -1435,10 +1427,10 @@ This is how SQLite types are converted to Python types by default:
 | ``BLOB``    | :class:`bytes`                               |
 +-------------+----------------------------------------------+
 
-The type system of the :mod:`sqlite3` module is extensible in two ways: you can
+The type system of the :mod:`!sqlite3` module is extensible in two ways: you can
 store additional Python types in an SQLite database via
 :ref:`object adapters <sqlite3-adapters>`,
-and you can let the ``sqlite3`` module convert SQLite types to
+and you can let the :mod:`!sqlite3` module convert SQLite types to
 Python types via :ref:`converters <sqlite3-converters>`.
 
 
@@ -1447,7 +1439,7 @@ Python types via :ref:`converters <sqlite3-converters>`.
 Command-line interface
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The ``sqlite3`` module can be invoked as a script
+The :mod:`!sqlite3` module can be invoked as a script
 in order to provide a simple SQLite shell.
 Type ``.quit`` or CTRL-D to exit the shell.
 
@@ -1469,6 +1461,36 @@ Type ``.quit`` or CTRL-D to exit the shell.
 How-to guides
 -------------
 
+.. _sqlite3-placeholders:
+
+Using placeholders to bind values in SQL queries
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+SQL operations usually need to use values from Python variables. However,
+beware of using Python's string operations to assemble queries, as they
+are vulnerable to `SQL injection attacks`_ (see the `xkcd webcomic
+<https://xkcd.com/327/>`_ for a humorous example of what can go wrong)::
+
+   # Never do this -- insecure!
+   symbol = 'RHAT'
+   cur.execute("SELECT * FROM stocks WHERE symbol = '%s'" % symbol)
+
+Instead, use the DB-API's parameter substitution. To insert a variable into a
+query string, use a placeholder in the string, and substitute the actual values
+into the query by providing them as a :class:`tuple` of values to the second
+argument of the cursor's :meth:`~Cursor.execute` method. An SQL statement may
+use one of two kinds of placeholders: question marks (qmark style) or named
+placeholders (named style). For the qmark style, ``parameters`` must be a
+:term:`sequence <sequence>`. For the named style, it can be either a
+:term:`sequence <sequence>` or :class:`dict` instance. The length of the
+:term:`sequence <sequence>` must match the number of placeholders, or a
+:exc:`ProgrammingError` is raised. If a :class:`dict` is given, it must contain
+keys for all named parameters. Any extra items are ignored. Here's an example of
+both styles:
+
+.. literalinclude:: ../includes/sqlite3/execute_1.py
+
+
 .. _sqlite3-adapters:
 
 Using adapters to store custom Python types in SQLite databases
@@ -1476,7 +1498,7 @@ Using adapters to store custom Python types in SQLite databases
 
 SQLite supports only a limited set of data types natively.
 To store custom Python types in SQLite databases, *adapt* them to one of the
-:ref:`Python types SQLite natively understands<sqlite3-types>`.
+:ref:`Python types SQLite natively understands <sqlite3-types>`.
 
 There are two ways to adapt Python objects to SQLite types:
 letting your object adapt itself, or using an *adapter callable*.
@@ -1540,7 +1562,7 @@ and constructs a :class:`Point` object from it.
        x, y = map(float, s.split(b";"))
        return Point(x, y)
 
-We now need to tell ``sqlite3`` when it should convert a given SQLite value.
+We now need to tell :mod:`!sqlite3` when it should convert a given SQLite value.
 This is done when connecting to a database, using the *detect_types* parameter
 of :func:`connect`. There are three options:
 
@@ -1657,7 +1679,7 @@ directly using only a single call on the :class:`Connection` object.
 Accessing columns by name instead of by index
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-One useful feature of the :mod:`sqlite3` module is the built-in
+One useful feature of the :mod:`!sqlite3` module is the built-in
 :class:`sqlite3.Row` class designed to be used as a row factory.
 
 Rows wrapped with this class can be accessed both by index (like tuples) and
@@ -1732,7 +1754,7 @@ Explanation
 Transaction control
 ^^^^^^^^^^^^^^^^^^^
 
-The ``sqlite3`` module does not adhere to the transaction handling recommended
+The :mod:`!sqlite3` module does not adhere to the transaction handling recommended
 by :pep:`249`.
 
 If the connection attribute :attr:`~Connection.isolation_level`
@@ -1743,7 +1765,7 @@ new transactions are implicitly opened before
 Use the :meth:`~Connection.commit` and :meth:`~Connection.rollback` methods
 to respectively commit and roll back pending transactions.
 You can choose the underlying `SQLite transaction behaviour`_ —
-that is, whether and what type of ``BEGIN`` statements ``sqlite3``
+that is, whether and what type of ``BEGIN`` statements :mod:`!sqlite3`
 implicitly executes –
 via the :attr:`~Connection.isolation_level` attribute.
 
@@ -1760,7 +1782,7 @@ any pending transaction before execution of the given SQL script,
 regardless of the value of :attr:`~Connection.isolation_level`.
 
 .. versionchanged:: 3.6
-   :mod:`sqlite3` used to implicitly commit an open transaction before DDL
+   :mod:`!sqlite3` used to implicitly commit an open transaction before DDL
    statements.  This is no longer the case.
 
 .. _autocommit mode:

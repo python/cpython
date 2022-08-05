@@ -87,11 +87,14 @@ Save
 
 Save As...
    Save the current window with a Save As dialog.  The file saved becomes the
-   new associated file for the window.
+   new associated file for the window. (If your file namager is set to hide
+   extensions, the current extension will be omitted in the file name box.
+   If the new filename has no '.', '.py' and .'txt' will be added for Python
+   and text files, except that on macOS Aqua,'.py' is added for all files.)
 
 Save Copy As...
    Save the current window to different file without changing the associated
-   file.
+   file.  (See Save As note above about filename extensions.)
 
 Print Window
    Print the current window to the default printer.
