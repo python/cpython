@@ -910,11 +910,11 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.11
       The delegation to :meth:`__trunc__` is deprecated.
 
-   .. versionchanged:: 3.12
-      :class:`int` string inputs and string representation can be limited.
-      A :exc:`ValueError` is raised when the input or string representation
-      exceeds the limit. See :ref:`int maximum
-      digits limitation <intmaxdigits>` for more information.
+   .. versionchanged:: 3.11
+      :class:`int` string inputs and string representation can be limited
+      to help avoid denial of service attacks. A :exc:`ValueError` is raised
+      when an input or string representation exceeds the limit. See :ref:`int
+      maximum digits limitation <int_max_base10_digits>` for more information.
 
 .. function:: isinstance(object, classinfo)
 

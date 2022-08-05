@@ -178,6 +178,7 @@ typedef struct PyConfig {
     wchar_t *check_hash_pycs_mode;
     int use_frozen_modules;
     int safe_path;
+    int int_max_base10_digits;  // NOTE(gpshead): do not backport to stable releases due to struct change.
 
     /* --- Path configuration inputs ------------ */
     int pathconfig_warnings;
@@ -218,10 +219,6 @@ typedef struct PyConfig {
 
     // If non-zero, we believe we're running from a source tree.
     int _is_python_build;
-
-    /* global limit for long digits */
-    Py_ssize_t intmaxdigits;
-
 } PyConfig;
 
 PyAPI_FUNC(void) PyConfig_InitPythonConfig(PyConfig *config);

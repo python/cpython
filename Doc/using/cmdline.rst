@@ -505,13 +505,13 @@ Miscellaneous options
      stored in a traceback of a trace. Use ``-X tracemalloc=NFRAME`` to start
      tracing with a traceback limit of *NFRAME* frames. See the
      :func:`tracemalloc.start` for more information.
-   * ``-X intmaxdigits`` configures :ref:`int maximum digits limitation
-     <intmaxdigits>`. See also :envvar:`PYTHONPROFILEIMPORTTIME`.
+   * ``-X int_max_base10_digits`` configures :ref:`int maximum digits limitation
+     <int_max_base10_digits>`. See also :envvar:`PYTHONINTMAXBASE10DIGITS`.
    * ``-X importtime`` to show how long each import takes. It shows module
      name, cumulative time (including nested imports) and self time (excluding
      nested imports).  Note that its output may be broken in multi-threaded
      application.  Typical usage is ``python3 -X importtime -c 'import
-     asyncio'``.  See also :envvar:`PYTHONINTMAXDIGITS`.
+     asyncio'``.  See also :envvar:`PYTHONPROFILEIMPORTTIME`.
    * ``-X dev``: enable :ref:`Python Development Mode <devmode>`, introducing
      additional runtime checks that are too expensive to be enabled by
      default.
@@ -583,6 +583,9 @@ Miscellaneous options
 
    .. versionadded:: 3.11
       The ``-X frozen_modules`` option.
+
+   .. versionadded:: 3.11
+      The ``-X int_max_base10_digits`` option.
 
    .. versionadded:: 3.12
       The ``-X perf`` option.
@@ -765,10 +768,10 @@ conflict.
 
    .. versionadded:: 3.2.3
 
-.. envvar:: PYTHONINTMAXDIGITS
+.. envvar:: PYTHONINTMAXBASE10DIGITS
 
    If this variable is set to an integer, it is used to configure the interpreter's
-   global :ref:`int maximum digits limitation <intmaxdigits>`.
+   global :ref:`int maximum digits limitation <int_max_base10_digits>`.
 
    .. versionadded:: 3.11
 

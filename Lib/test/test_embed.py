@@ -434,7 +434,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'install_signal_handlers': 1,
         'use_hash_seed': 0,
         'hash_seed': 0,
-        'intmaxdigits': -1,
+        'int_max_base10_digits': -1,
         'faulthandler': 0,
         'tracemalloc': 0,
         'perf_profiling': 0,

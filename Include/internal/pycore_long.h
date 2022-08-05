@@ -11,6 +11,34 @@ extern "C" {
 #include "pycore_global_objects.h"  // _PY_NSMALLNEGINTS
 #include "pycore_runtime.h"       // _PyRuntime
 
+/*
+ * Default int base conversion size limitation.
+ *
+ * Chosen such that this isn't wildly slow on modern hardware:
+ * % python -m timeit -s 's = "1"*2000; v = int(s)' 'str(int(s))'
+ * 2000 loops, best of 5: 100 usec per loop
+ *
+ * 2000 decimal digits fits a ~6643 bit number.
+ */
+#define _PY_LONG_DEFAULT_MAX_BASE10_DIGITS 2000
+/*
+ * Threshold for max digits check.  For performance reasons int() and
+ * int.__str__ don't checks values that are smaller than this
+ * threshold.  Acts as a guaranteed minimum size limit for bignums that
+ * applications can expect from CPython.
+ *
+ * % python -m timeit -s 's = "1"*333; v = int(s)' 'str(int(s))'
+ * 100000 loops, best of 5: 3.94 usec per loop
+ *
+ * 333 decimal digits fits a ~1106 bit number.
+ */
+#define _PY_LONG_MAX_BASE10_DIGITS_THRESHOLD 333
+
+#if ((_PY_LONG_DEFAULT_MAX_BASE10_DIGITS != 0) && \
+   (_PY_LONG_DEFAULT_MAX_BASE10_DIGITS < _PY_LONG_MAX_BASE10_DIGITS_THRESHOLD))
+# error "_PY_LONG_DEFAULT_MAX_BASE10_DIGITS smaller than threshold."
+#endif
+
 
 /* runtime lifecycle */
 

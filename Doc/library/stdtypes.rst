@@ -5460,28 +5460,28 @@ types, where they are relevant.  Some of these are not reported by the
       [<class 'bool'>]
 
 
-.. _intmaxdigits:
+.. _int_max_base10_digits:
 
 Integer maximum digits limitation
 =================================
 
 CPython has a global limit for converting between :class:`int` and :class:`str`
-to mitigate denial of service attacks. The limit is necessary because Python's
-integer type is an abitrary length number (also known as bignum). There
-exists no efficient algorithm that can convert a string to an integer or
-an integer to a string in linear time, unless the base is a power of *2*. Even
-the best known algorithms for base *10* have sub-quadratic complexity. A large
-input like ``int('1' * 500_000)`` takes about a second at 100% CPU load on
-an X86_64 CPU from 2020 with 4.2 GHz max frequency.
+to mitigate denial of service attacks. The limit is necessary because CPython's
+integer type is an abitrary length number (commonly known as a bignum) stored
+in binary form. There exists no algorithm that can convert a string to a binary
+integer or a binary integer to a string in linear time, unless the base is a
+power of *2*. Even the best known algorithms for base *10* have sub-quadratic
+complexity. Converting a large value such as ``int('1' * 500_000)`` can take
+over a second on a fast CPU.
 
-The limit value uses base 10 as a reference point and scales with base.
-That means :class:`int` accepts longer input strings for smaller bases and
-fails earlier for larger bases. Underscores in input strings don't count
-towards the limit.
+The limit value uses base 10 as a reference point and scales with base.  That
+means an :class:`int` conversion accepts longer strings for smaller bases and
+shorter strings for larger bases. Underscores and the sign in strings don't
+count towards the limit.
 
-When an operation exceeds the limit, an :exc:`ValueError` is raised::
+When an operation exceeds the limit, a :exc:`ValueError` is raised::
 
-   >>> sys.setintmaxdigits(2048)
+   >>> sys.set_int_max_base10_digits(2048)
    >>> i = 10 ** 2047
    >>> len(str(i))
    2048
@@ -5489,60 +5489,69 @@ When an operation exceeds the limit, an :exc:`ValueError` is raised::
    >>> len(str(i))
    Traceback (most recent call last):
    ...
-   ValueError: input exceeds maximum integer digit limit
+   ValueError: exceeds maximum integer base 10 digit limit
 
-
-Configure limitations
+Configuring the limit
 ---------------------
 
-* :data:`sys.int_info.default_max_digits` is the compiled-in default value.
-* :data:`sys.int_info.max_digits_check_threshold` is the minimum limit for
-  digit limitation. For performance reasons Python does not check
+* :data:`sys.int_info.default_max_base10_digits` is the compiled-in default
+  limit.
+* :data:`sys.int_info.base10_digits_check_threshold` is the minimum accepted
+  value for the limit.
 
-* :envvar:`PYTHONINTMAXDIGITS`, e.g. ``PYTHONINTMAXDIGITS=4096 python3`` to
-  set the limit to ``4096`` or ``PYTHONINTMAXDIGITS=0 python3`` to disable
-  the limitation
-* :option:`-X intmaxdigits <-X>`, e.g. ``python3 -X intmaxdigits=4096``
-* :data:`sys.flags.intmaxdigits` contains the value of
-  :envvar:`PYTHONINTMAXDIGITS` or :option:`-X intmaxdigits <-X>`. In case
-  both the env var and the ``-X`` option are set, the ``-X`` option takes
-  precedence. The flag defaults to *-1*.
+* :envvar:`PYTHONINTMAXBASE10DIGITS`, e.g.
+  ``PYTHONINTMAXBASE10DIGITS=4321 python3`` to set the limit to ``4321`` or
+  ``PYTHONINTMAXBASE10DIGITS=0 python3`` to disable the limitation.
+* :option:`-X int_max_base10_digits <-X>`, e.g.
+  ``python3 -X int_max_base10_digits=4321``
+* :data:`sys.flags.int_max_base10_digits` contains the value of
+  :envvar:`PYTHONINTMAXBASE10DIGITS` or
+  :option:`-X int_max_base10_digits <-X>`. In case both the env var and the
+  ``-X`` option are set, the ``-X`` option takes precedence. The value of
+  *-1* indicates that both were unset and the value of
+  :data:`sys.int_info.default_max_base10_digits` will be used.
 
-* :func:`sys.getintmaxdigits` and :func:`sys.setintmaxdigits` are getter
-  and setter for interpreter-wide limit. Subinterpreters have their own
+* :func:`sys.get_int_max_base10_digits` and
+  :func:`sys.set_int_max_base10_digits` are a getter and setter for
+  the interpreter-wide limit. Subinterpreters have their own
   limit.
 
 Affected APIs
 -------------
 
-The limition only applies to slow conversions between :class:`int` and
-:class:`str`:
+The limition only applies to potentially slow conversions between :class:`int`
+and :class:`str`:
 
 * ``int(string)`` with default base 10.
-* ``int(string, base)`` for all bases that are not power of 2.
-* ``str(integer)``
+* ``int(string, base)`` for all bases that are not a power of 2.
+* ``str(integer)``.
 * ``repr(integer)``
 * any other string conversion to base 10, for example ``f"{integer}"``,
   ``"{}".format(integer)``, or ``"%d" % integer``.
 
 The limitations do not apply to functions with a linear algorithm:
 
-* ``int(string, base)`` with base 2, 4, 8, 16, or 32
-* :func:`int.from_bytes` and :func:`int.to_bytes`
-* :func:`hex`, :func:`oct`, :func:`bin` (the resulting string may consume
-  a substantial amount of memory)
-* :ref:`formatspec` for hex, octet, and binary numbers
-* :class:`str` to :class:`float`
-* :class:`str` to :class:`decimal.Decimal`
+* ``int(string, base)`` with base 2, 4, 8, 16, or 32.
+* :func:`int.from_bytes` and :func:`int.to_bytes`.
+* :func:`hex`, :func:`oct`, :func:`bin`.
+* :ref:`formatspec` for hex, octal, and binary numbers.
+* :class:`str` to :class:`float`.
+* :class:`str` to :class:`decimal.Decimal`.
 
 Recommended configuration
 -------------------------
 
+The default :data:`sys.int_info.default_max_base10_digits` is expected to be
+reasonable for most applications. If your application requires a different
+limit, use Python version and implementation agnostic code to set it.
+
 Example::
 
-   import sys
-   if hasattr(sys.flags, "intmaxdigits") and sys.flags.intmaxdigits == -1:
-       sys.setintmaxdigits(4096)
+   >>> import sys
+   >>> if hasattr(sys, "set_int_max_base10_digits"):
+   ...     current_limit = sys.get_int_max_base10_digits()
+   ...     if not current_limit or current_limit > 4321:
+   ...         sys.set_int_max_base10_digits(4321)
 
 
 .. rubric:: Footnotes

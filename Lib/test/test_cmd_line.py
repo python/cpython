@@ -866,35 +866,36 @@ class CmdLineTest(unittest.TestCase):
         self.assertTrue(proc.stderr.startswith(err_msg), proc.stderr)
         self.assertNotEqual(proc.returncode, 0)
 
-    def test_intmaxdigits(self):
-        code = "import sys; print(sys.flags.intmaxdigits, sys.getintmaxdigits())"
+    def test_int_max_base10_digits(self):
+        code = "import sys; print(sys.flags.int_max_base10_digits, sys.get_int_max_base10_digits())"
 
-        assert_python_failure('-X', 'intmaxdigits', '-c', code)
-        assert_python_failure('-X', 'intmaxdigits=foo', '-c', code)
-        assert_python_failure('-X', 'intmaxdigits=100', '-c', code)
+        assert_python_failure('-X', 'int_max_base10_digits', '-c', code)
+        assert_python_failure('-X', 'int_max_base10_digits=foo', '-c', code)
+        assert_python_failure('-X', 'int_max_base10_digits=100', '-c', code)
 
-        assert_python_failure('-c', code, PYTHONINTMAXDIGITS='foo')
-        assert_python_failure('-c', code, PYTHONINTMAXDIGITS='100')
+        assert_python_failure('-c', code, PYTHONINTMAXBASE10DIGITS='foo')
+        assert_python_failure('-c', code, PYTHONINTMAXBASE10DIGITS='100')
 
         def res2int(res):
             out = res.out.strip().decode("utf-8")
             return tuple(int(i) for i in out.split())
 
         res = assert_python_ok('-c', code)
-        self.assertEqual(res2int(res), (-1, sys.getintmaxdigits()))
-        res = assert_python_ok('-X', 'intmaxdigits=0', '-c', code)
+        self.assertEqual(res2int(res), (-1, sys.get_int_max_base10_digits()))
+        res = assert_python_ok('-X', 'int_max_base10_digits=0', '-c', code)
         self.assertEqual(res2int(res), (0, 0))
-        res = assert_python_ok('-X', 'intmaxdigits=4000', '-c', code)
+        res = assert_python_ok('-X', 'int_max_base10_digits=4000', '-c', code)
         self.assertEqual(res2int(res), (4000, 4000))
-        res = assert_python_ok('-X', 'intmaxdigits=100000', '-c', code)
+        res = assert_python_ok('-X', 'int_max_base10_digits=100000', '-c', code)
         self.assertEqual(res2int(res), (100000, 100000))
 
-        res = assert_python_ok('-c', code, PYTHONINTMAXDIGITS='0')
+        res = assert_python_ok('-c', code, PYTHONINTMAXBASE10DIGITS='0')
         self.assertEqual(res2int(res), (0, 0))
-        res = assert_python_ok('-c', code, PYTHONINTMAXDIGITS='4000')
+        res = assert_python_ok('-c', code, PYTHONINTMAXBASE10DIGITS='4000')
         self.assertEqual(res2int(res), (4000, 4000))
         res = assert_python_ok(
-            '-X', 'intmaxdigits=6000', '-c', code, PYTHONINTMAXDIGITS='4000'
+            '-X', 'int_max_base10_digits=6000', '-c', code,
+            PYTHONINTMAXBASE10DIGITS='4000'
         )
         self.assertEqual(res2int(res), (6000, 6000))
 

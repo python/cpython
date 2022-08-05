@@ -176,7 +176,7 @@ struct _is {
     struct types_state types;
     struct callable_cache callable_cache;
 
-    Py_ssize_t intmaxdigits;
+    int int_max_base10_digits;
 
     /* The following fields are here to avoid allocation during init.
        The data is exposed through PyInterpreterState pointer fields.

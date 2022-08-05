@@ -502,27 +502,27 @@ always available.
    The :term:`named tuple` *flags* exposes the status of command line
    flags. The attributes are read only.
 
-   ============================= ================================================================
-   attribute                     flag
-   ============================= ================================================================
-   :const:`debug`                :option:`-d`
-   :const:`inspect`              :option:`-i`
-   :const:`interactive`          :option:`-i`
-   :const:`isolated`             :option:`-I`
-   :const:`optimize`             :option:`-O` or :option:`-OO`
-   :const:`dont_write_bytecode`  :option:`-B`
-   :const:`no_user_site`         :option:`-s`
-   :const:`no_site`              :option:`-S`
-   :const:`ignore_environment`   :option:`-E`
-   :const:`verbose`              :option:`-v`
-   :const:`bytes_warning`        :option:`-b`
-   :const:`quiet`                :option:`-q`
-   :const:`hash_randomization`   :option:`-R`
-   :const:`dev_mode`             :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
-   :const:`utf8_mode`            :option:`-X utf8 <-X>`
-   :const:`safe_path`            :option:`-P`
-   :const:`intmaxdigits`         :option:`-X intmaxdigits <-X>` (default: *-1*)
-   ============================= ================================================================
+   ================================== ======================================================================================================
+   attribute                          flag
+   ================================== ======================================================================================================
+   :const:`debug`                     :option:`-d`
+   :const:`inspect`                   :option:`-i`
+   :const:`interactive`               :option:`-i`
+   :const:`isolated`                  :option:`-I`
+   :const:`optimize`                  :option:`-O` or :option:`-OO`
+   :const:`dont_write_bytecode`       :option:`-B`
+   :const:`no_user_site`              :option:`-s`
+   :const:`no_site`                   :option:`-S`
+   :const:`ignore_environment`        :option:`-E`
+   :const:`verbose`                   :option:`-v`
+   :const:`bytes_warning`             :option:`-b`
+   :const:`quiet`                     :option:`-q`
+   :const:`hash_randomization`        :option:`-R`
+   :const:`dev_mode`                  :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
+   :const:`utf8_mode`                 :option:`-X utf8 <-X>`
+   :const:`safe_path`                 :option:`-P`
+   :const:`int_max_base10_digits`     :option:`-X int_max_base10_digits <-X>` (:ref:`int maximum digits limitation <int_max_base10_digits>`)
+   ================================== ======================================================================================================
 
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
@@ -545,7 +545,7 @@ always available.
       Added the ``safe_path`` attribute for :option:`-P` option.
 
    .. versionchanged:: 3.11
-      Added ``intmaxdigits`` attribute
+      Added the ``int_max_base10_digits`` attribute.
 
 
 .. data:: float_info
@@ -727,10 +727,10 @@ always available.
 
    .. versionadded:: 3.6
 
-.. function:: getintmaxdigits()
+.. function:: get_int_max_base10_digits()
 
    Return current global value for :ref:`int maximum digits limitation
-   <intmaxdigits>`. See also :func:`setintmaxdigits`
+   <int_max_base10_digits>`. See also :func:`set_int_max_base10_digits`
 
    .. versionadded:: 3.11
 
@@ -1007,26 +1007,32 @@ always available.
 
    .. tabularcolumns:: |l|L|
 
-   +-------------------------------------+-----------------------------------------------+
-   | Attribute                           | Explanation                                   |
-   +=====================================+===============================================+
-   | :const:`bits_per_digit`             | number of bits held in each digit.  Python    |
-   |                                     | integers are stored internally in base        |
-   |                                     | ``2**int_info.bits_per_digit``                |
-   +-------------------------------------+-----------------------------------------------+
-   | :const:`sizeof_digit`               | size in bytes of the C type used to           |
-   |                                     | represent a digit                             |
-   +-------------------------------------+-----------------------------------------------+
-   | :const:`default_max_digits`         | default value for :func:`sys.getintmaxdigits` |
-   +-------------------------------------+-----------------------------------------------+
-   | :const:`max_digits_check_threshold` | minimum value value for                       |
-   |                                     | :func:`sys.setintmaxdigits`                   |
-   +-------------------------------------+-----------------------------------------------+
+   +----------------------------------------+-----------------------------------------------+
+   | Attribute                              | Explanation                                   |
+   +========================================+===============================================+
+   | :const:`bits_per_digit`                | number of bits held in each digit.  Python    |
+   |                                        | integers are stored internally in base        |
+   |                                        | ``2**int_info.bits_per_digit``                |
+   +----------------------------------------+-----------------------------------------------+
+   | :const:`sizeof_digit`                  | size in bytes of the C type used to           |
+   |                                        | represent a digit                             |
+   +----------------------------------------+-----------------------------------------------+
+   | :const:`default_max_base10_digits`     | default value for                             |
+   |                                        | :func:`sys.get_int_max_base10_digits` when it |
+   |                                        | is not otherwise explicitly configured.       |
+   +----------------------------------------+-----------------------------------------------+
+   | :const:`base10_digits_check_threshold` | minimum non-zero value for                    |
+   |                                        | :func:`sys.set_int_max_base10_digits`,        |
+   |                                        | :envvar:`PYTHONINTMAXBASE10DIGITS`, or        |
+   |                                        | :option:`-X int_max_base10_digits <-X>`.      |
+   |                                        | Supplied positive values less than this will  |
+   |                                        | be silently rounded up to this value.         |
+   +----------------------------------------+-----------------------------------------------+
 
    .. versionadded:: 3.1
 
    .. versionchanged:: 3.11
-      Added ``default_max_digits`` and ``max_digits_check_threshold``.
+      Added ``default_max_base10_digits`` and ``base10_digits_check_threshold``.
 
 
 .. data:: __interactivehook__
@@ -1327,10 +1333,10 @@ always available.
 
    .. availability:: Unix.
 
-.. function:: setintmaxdigits(n)
+.. function:: set_int_max_base10_digits(n)
 
    Set global interpreter limit for :ref:`int maximum digits limitation
-   <intmaxdigits>`. See also :func:`getintmaxdigits`
+   <int_max_base10_digits>`. See also :func:`get_int_max_base10_digits`
 
    .. versionadded:: 3.11
 

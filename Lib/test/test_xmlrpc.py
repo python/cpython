@@ -295,7 +295,7 @@ class XMLRPCTestCase(unittest.TestCase):
             check('<int>123456780123456789</int>', None)
         with self.assertRaises(ValueError):
             maxdigits = 5000
-            with support.setintmaxdigits(maxdigits):
+            with support.set_int_max_base10_digits(maxdigits):
                 s = '1' * (maxdigits + 1)
                 check(f'<biginteger>{s}</biginteger>', None)
 

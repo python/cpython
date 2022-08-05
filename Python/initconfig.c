@@ -3,6 +3,7 @@
 #include "pycore_getopt.h"        // _PyOS_GetOpt()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // _PyInterpreterState.runtime
+#include "pycore_long.h"          // _PY_LONG_MAX_BASE10_DIGITS_THRESHOLD
 #include "pycore_pathconfig.h"    // _Py_path_config
 #include "pycore_pyerrors.h"      // _PyErr_Fetch()
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromConfig()
@@ -126,7 +127,9 @@ The following implementation-specific options are available:\n\
 -X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
    The default is \"on\" (or \"off\" if you are running a local build).\n\
 \n\
--X intmaxdigits=number: limit maximum digits ints.";
+-X int_max_base10_digits=number: limit the size of int<->str conversions.\n\
+    This helps avoid denial of service attacks when parsing untrusted data.\n\
+    The default is sys.int_info.default_max_base10_digits.  0 disables.";
 
 /* Envvars that don't have equivalent command-line options are listed first */
 static const char usage_envvars[] =
@@ -146,7 +149,10 @@ static const char usage_envvars[] =
 "   to seed the hashes of str and bytes objects.  It can also be set to an\n"
 "   integer in the range [0,4294967295] to get hash values with a\n"
 "   predictable seed.\n"
-"PYTHONINTMAXDIGITS: limt maximum digits when converting from or to int\n"
+"PYTHONINTMAXBASE10DIGITS: limits the maximum decimal digits in an int value\n"
+"   when converting from a string and when converting an int back to a str.\n"
+"   A value of 0 disables the limit.  Conversions from power of two number\n"
+"   bases are never limited.\n"
 "PYTHONMALLOC: set the Python memory allocators and/or install debug hooks\n"
 "   on Python memory allocators. Use PYTHONMALLOC=debug to install debug\n"
 "   hooks.\n"
@@ -785,8 +791,8 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->safe_path = 0;
     config->_is_python_build = 0;
     config->code_debug_ranges = 1;
-    /* config_init_intmaxdigits() sets default limit */
-    config->intmaxdigits = -1;
+    /* config_init_int_max_base10_digits() sets default limit */
+    config->int_max_base10_digits = -1;
 }
 
 
@@ -1013,7 +1019,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(safe_path);
     COPY_WSTRLIST(orig_argv);
     COPY_ATTR(_is_python_build);
-    COPY_ATTR(intmaxdigits);
+    COPY_ATTR(int_max_base10_digits);
 
 #undef COPY_ATTR
 #undef COPY_WSTR_ATTR
@@ -1121,7 +1127,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_INT(use_frozen_modules);
     SET_ITEM_INT(safe_path);
     SET_ITEM_INT(_is_python_build);
-    SET_ITEM_INT(intmaxdigits);
+    SET_ITEM_INT(int_max_base10_digits);
 
     return dict;
 
@@ -1770,38 +1776,47 @@ config_init_tracemalloc(PyConfig *config)
 }
 
 static PyStatus
-config_init_intmaxdigits(PyConfig *config)
+config_init_int_max_base10_digits(PyConfig *config)
 {
     int maxdigits;
     int valid = 0;
 
     /* default to unconfigured, _PyLong_InitTypes() does the rest */
-    config->intmaxdigits = -1;
+    config->int_max_base10_digits = -1;
 
-    const char *env = config_get_env(config, "PYTHONINTMAXDIGITS");
+    const char *env = config_get_env(config, "PYTHONINTMAXBASE10DIGITS");
     if (env) {
         if (!_Py_str_to_int(env, &maxdigits)) {
-            valid = ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_DIGITS_THRESHOLD));
+            valid = ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_BASE10_DIGITS_THRESHOLD));
         }
         if (!valid) {
-            return _PyStatus_ERR("PYTHONINTMAXDIGITS: invalid limit");
+#define STRINGIFY(VAL) _STRINGIFY(VAL)
+#define _STRINGIFY(VAL) #VAL
+            return _PyStatus_ERR(
+                    "PYTHONINTMAXBASE10DIGITS: invalid limit; must be >= "
+                    STRINGIFY(_PY_LONG_MAX_BASE10_DIGITS_THRESHOLD)
+                    " or 0 for unlimited.");
         }
-        config->intmaxdigits = maxdigits;
+        config->int_max_base10_digits = maxdigits;
     }
 
-    const wchar_t *xoption = config_get_xoption(config, L"intmaxdigits");
+    const wchar_t *xoption = config_get_xoption(config, L"int_max_base10_digits");
     if (xoption) {
         const wchar_t *sep = wcschr(xoption, L'=');
         if (sep) {
             if (!config_wstr_to_int(sep + 1, &maxdigits)) {
-                valid = ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_DIGITS_THRESHOLD));
+                valid = ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_BASE10_DIGITS_THRESHOLD));
             }
         }
         if (!valid) {
-            return _PyStatus_ERR("-X intmaxdigits: "
-                                 "invalid limit");
+            return _PyStatus_ERR(
+                    "-X int_max_base10_digits: invalid limit; must be >= "
+                    STRINGIFY(_PY_LONG_MAX_BASE10_DIGITS_THRESHOLD)
+                    " or 0 for unlimited.");
+#undef _STRINGIFY
+#undef STRINGIFY
         }
-        config->intmaxdigits = maxdigits;
+        config->int_max_base10_digits = maxdigits;
     }
     return _PyStatus_OK();
 }
@@ -1869,8 +1884,8 @@ config_read_complex_options(PyConfig *config)
         }
     }
 
-    if (config->intmaxdigits < 0) {
-        status = config_init_intmaxdigits(config);
+    if (config->int_max_base10_digits < 0) {
+        status = config_init_int_max_base10_digits(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }

@@ -20,6 +20,7 @@ Data members:
 #include "pycore_code.h"          // _Py_QuickenedCount
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_long.h"          // _PY_LONG_MAX_BASE10_DIGITS_THRESHOLD
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_object.h"        // _PyObject_IS_GC()
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
@@ -1673,39 +1674,39 @@ sys_mdebug_impl(PyObject *module, int flag)
 
 
 /*[clinic input]
-sys.getintmaxdigits
+sys.get_int_max_base10_digits
 
-Get value of integer maximum digits limit.
+Set the integer maximum decimal digits limit used on int<->str conversions.
 [clinic start generated code]*/
 
 static PyObject *
-sys_getintmaxdigits_impl(PyObject *module)
-/*[clinic end generated code: output=be8245491b631377 input=4c6cf29e9858e10e]*/
+sys_get_int_max_base10_digits_impl(PyObject *module)
+/*[clinic end generated code: output=1b56ca97b75c4c7d input=af480955a120eb99]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return PyLong_FromSsize_t(interp->intmaxdigits);
+    return PyLong_FromSsize_t(interp->int_max_base10_digits);
 }
 
 /*[clinic input]
-sys.setintmaxdigits
+sys.set_int_max_base10_digits
 
-    maxdigits: Py_ssize_t
+    maxdigits: int
 
-Set value of integer maximum digits limit.
+Set the integer maximum decimal digits limit used on int<->str conversions.
 [clinic start generated code]*/
 
 static PyObject *
-sys_setintmaxdigits_impl(PyObject *module, Py_ssize_t maxdigits)
-/*[clinic end generated code: output=f08310ce0abd3fc7 input=66814100429a2b99]*/
+sys_set_int_max_base10_digits_impl(PyObject *module, int maxdigits)
+/*[clinic end generated code: output=d0cc502962bdb9b5 input=52cf6736588172db]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    if ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_DIGITS_THRESHOLD)) {
-        tstate->interp->intmaxdigits = maxdigits;
+    if ((!maxdigits) || (maxdigits >= _PY_LONG_MAX_BASE10_DIGITS_THRESHOLD)) {
+        tstate->interp->int_max_base10_digits = maxdigits;
         Py_RETURN_NONE;
     } else {
         PyErr_Format(
-            PyExc_ValueError, "maxdigits must be 0 or larger than %zd",
-            _PY_LONG_MAX_DIGITS_THRESHOLD);
+            PyExc_ValueError, "maxdigits must be 0 or larger than %d",
+            _PY_LONG_MAX_BASE10_DIGITS_THRESHOLD);
         return NULL;
     }
 }
@@ -2225,8 +2226,8 @@ static PyMethodDef sys_methods[] = {
     SYS_DEACTIVATE_STACK_TRAMPOLINE_METHODDEF
     SYS_IS_STACK_TRAMPOLINE_ACTIVE_METHODDEF
     SYS_UNRAISABLEHOOK_METHODDEF
-    SYS_GETINTMAXDIGITS_METHODDEF
-    SYS_SETINTMAXDIGITS_METHODDEF
+    SYS_GET_INT_MAX_BASE10_DIGITS_METHODDEF
+    SYS_SET_INT_MAX_BASE10_DIGITS_METHODDEF
 #ifdef Py_STATS
     SYS__STATS_ON_METHODDEF
     SYS__STATS_OFF_METHODDEF
@@ -2727,7 +2728,7 @@ static PyStructSequence_Field flags_fields[] = {
     {"utf8_mode",               "-X utf8"},
     {"warn_default_encoding",   "-X warn_default_encoding"},
     {"safe_path", "-P"},
-    {"intmaxdigits",            "-X intmaxdigits"},
+    {"int_max_base10_digits",            "-X int_max_base10_digits"},
     {0}
 };
 
@@ -2776,7 +2777,7 @@ set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
     SetFlag(preconfig->utf8_mode);
     SetFlag(config->warn_default_encoding);
     SetFlagObj(PyBool_FromLong(config->safe_path));
-    SetFlagObj(PyLong_FromSsize_t(config->intmaxdigits));
+    SetFlag(config->int_max_base10_digits);
 #undef SetFlagObj
 #undef SetFlag
     return 0;

@@ -828,12 +828,13 @@ PyConfig
 
       Default: ``0``.
 
-   .. c:member:: int intmaxdigits
+   .. c:member:: int int_max_base10_digits
 
-      If greater than 0, enable int digit limitation.
+      If greater than 0, enable int digit limitation.  ``-1`` means that
+      :data:`sys.int_info.default_max_base10_digits` will be used.
 
-      Configured by :option:`-X intmaxdigits <-X>` command line option or
-      :envvar:`PYTHONINTMAXDIGITS` env var.
+      Configured by the :option:`-X int_max_base10_digits <-X>` command line
+      flag or the :envvar:`PYTHONINTMAXBASE10DIGITS` environment varable.
 
       Default: ``-1``.
 

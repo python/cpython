@@ -745,62 +745,54 @@ exit:
 
 #endif /* defined(USE_MALLOPT) */
 
-PyDoc_STRVAR(sys_getintmaxdigits__doc__,
-"getintmaxdigits($module, /)\n"
+PyDoc_STRVAR(sys_get_int_max_base10_digits__doc__,
+"get_int_max_base10_digits($module, /)\n"
 "--\n"
 "\n"
-"Get value of integer maximum digits limit.");
+"Set the integer maximum decimal digits limit used on int<->str conversions.");
 
-#define SYS_GETINTMAXDIGITS_METHODDEF    \
-    {"getintmaxdigits", (PyCFunction)sys_getintmaxdigits, METH_NOARGS, sys_getintmaxdigits__doc__},
-
-static PyObject *
-sys_getintmaxdigits_impl(PyObject *module);
+#define SYS_GET_INT_MAX_BASE10_DIGITS_METHODDEF    \
+    {"get_int_max_base10_digits", (PyCFunction)sys_get_int_max_base10_digits, METH_NOARGS, sys_get_int_max_base10_digits__doc__},
 
 static PyObject *
-sys_getintmaxdigits(PyObject *module, PyObject *Py_UNUSED(ignored))
+sys_get_int_max_base10_digits_impl(PyObject *module);
+
+static PyObject *
+sys_get_int_max_base10_digits(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    return sys_getintmaxdigits_impl(module);
+    return sys_get_int_max_base10_digits_impl(module);
 }
 
-PyDoc_STRVAR(sys_setintmaxdigits__doc__,
-"setintmaxdigits($module, /, maxdigits)\n"
+PyDoc_STRVAR(sys_set_int_max_base10_digits__doc__,
+"set_int_max_base10_digits($module, /, maxdigits)\n"
 "--\n"
 "\n"
-"Set value of integer maximum digits limit.");
+"Set the integer maximum decimal digits limit used on int<->str conversions.");
 
-#define SYS_SETINTMAXDIGITS_METHODDEF    \
-    {"setintmaxdigits", _PyCFunction_CAST(sys_setintmaxdigits), METH_FASTCALL|METH_KEYWORDS, sys_setintmaxdigits__doc__},
-
-static PyObject *
-sys_setintmaxdigits_impl(PyObject *module, Py_ssize_t maxdigits);
+#define SYS_SET_INT_MAX_BASE10_DIGITS_METHODDEF    \
+    {"set_int_max_base10_digits", _PyCFunction_CAST(sys_set_int_max_base10_digits), METH_FASTCALL|METH_KEYWORDS, sys_set_int_max_base10_digits__doc__},
 
 static PyObject *
-sys_setintmaxdigits(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+sys_set_int_max_base10_digits_impl(PyObject *module, int maxdigits);
+
+static PyObject *
+sys_set_int_max_base10_digits(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"maxdigits", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "setintmaxdigits", 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "set_int_max_base10_digits", 0};
     PyObject *argsbuf[1];
-    Py_ssize_t maxdigits;
+    int maxdigits;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        maxdigits = ival;
+    maxdigits = _PyLong_AsInt(args[0]);
+    if (maxdigits == -1 && PyErr_Occurred()) {
+        goto exit;
     }
-    return_value = sys_setintmaxdigits_impl(module, maxdigits);
+    return_value = sys_set_int_max_base10_digits_impl(module, maxdigits);
 
 exit:
     return return_value;
@@ -1328,4 +1320,4 @@ sys_is_stack_trampoline_active(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=6077bf7ef08d3318 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5539c6096dc5eab5 input=a9049054013a1b77]*/

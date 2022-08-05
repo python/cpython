@@ -26,7 +26,7 @@ is a lightweight data interchange format inspired by
 .. warning::
    Be cautious when parsing JSON data from untrusted sources. A malicious
    JSON string may cause the decoder to consume considerable CPU and memory
-   resources.
+   resources. Limiting the size of data to be parsed is recommended.
 
 :mod:`json` exposes an API familiar to users of the standard library
 :mod:`marshal` and :mod:`pickle` modules.
@@ -258,9 +258,11 @@ Basic Usage
    be used to use another datatype or parser for JSON integers
    (e.g. :class:`float`).
 
-   .. versionchanged:: 3.9
-      The default implementation of *parse_int* limits the input string to
-      5,000 digits to prevent denial of service attacks.
+   .. versionchanged:: 3.11
+      The default implementation of *parse_int* limits the maximum length of
+      the integer string via the interpreter's :ref:`int maximum digits
+      limitation <int_max_base10_digits>` mechanism to help avoid denial of
+      service attacks.
 
    *parse_constant*, if specified, will be called with one of the following
    strings: ``'-Infinity'``, ``'Infinity'``, ``'NaN'``.

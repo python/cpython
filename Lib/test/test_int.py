@@ -1,3 +1,4 @@
+from math import log
 import sys
 
 import unittest
@@ -25,7 +26,6 @@ L = [
         ('  \t\t  ', ValueError),
         ("\u0200", ValueError)
 ]
-
 
 class IntSubclass(int):
     pass
@@ -577,57 +577,108 @@ class IntTestCases(unittest.TestCase):
         self.assertEqual(int('1_2_3_4_5_6_7_8_9', 16), 0x123456789)
         self.assertEqual(int('1_2_3_4_5_6_7', 32), 1144132807)
 
-    def _test_maxdigits(self, c):
-        maxdigits = sys.getintmaxdigits()
-        if maxdigits != 0:
-            # edge cases
-            c('1' * maxdigits)
-            c(' ' + '1' * maxdigits)
-            c('+' + '1' * maxdigits)
-            self.assertEqual(len(str(10 ** (maxdigits - 1))), maxdigits)
 
-        # disable limitation
-        with support.setintmaxdigits(0):
-            i = c('1' * 100_000)
+class IntBase10DigitLimitsTests(unittest.TestCase):
+
+    int_class = int  # Override this in subclasses to reuse the suite.
+
+    def setUp(self):
+        super().setUp()
+        self._previous_limit = sys.get_int_max_base10_digits()
+        sys.set_int_max_base10_digits(2048)
+
+    def tearDown(self):
+        sys.set_int_max_base10_digits(self._previous_limit)
+        super().tearDown()
+
+    def test_disabled_limit(self):
+        self.assertGreater(sys.get_int_max_base10_digits(), 0)
+        self.assertLess(sys.get_int_max_base10_digits(), 20_000)
+        with support.set_int_max_base10_digits(0):
+            self.assertEqual(sys.get_int_max_base10_digits(), 0)
+            i = self.int_class('1' * 20_000)
+            str(i)
+        self.assertGreater(sys.get_int_max_base10_digits(), 0)
+
+    def test_max_base10_digits_edge_cases(self):
+        """Ignore the +/- sign and space padding."""
+        int_class = self.int_class
+        maxdigits = sys.get_int_max_base10_digits()
+
+        int_class('1' * maxdigits)
+        int_class(' ' + '1' * maxdigits)
+        int_class('1' * maxdigits + ' ')
+        int_class('+' + '1' * maxdigits)
+        int_class('-' + '1' * maxdigits)
+        self.assertEqual(len(str(10 ** (maxdigits - 1))), maxdigits)
+
+    def check(self, i, base=None):
+        with self.assertRaises(ValueError):
+            if base is None:
+                self.int_class(i)
+            else:
+                self.int_class(i, base)
+
+    def test_max_base10_digits(self):
+        maxdigits = sys.get_int_max_base10_digits()
+
+        self.check('1' * (maxdigits + 1))
+        self.check(' ' + '1' * (maxdigits + 1))
+        self.check('1' * (maxdigits + 1) + ' ')
+        self.check('+' + '1' * (maxdigits + 1))
+        self.check('-' + '1' * (maxdigits + 1))
+        self.check('1' * (maxdigits + 1))
+
+        i = 10 ** maxdigits
+        with self.assertRaises(ValueError):
             str(i)
 
-        def check(i, base=None):
-            with self.assertRaises(ValueError):
-                if base is None:
-                    c(i)
-                else:
-                    c(i, base)
+    def test_power_of_two_bases_unlimited(self):
+        """The limit does not apply to power of 2 bases."""
+        maxdigits = sys.get_int_max_base10_digits()
 
-        maxdigits = 2048
-        with support.setintmaxdigits(maxdigits):
-            assert maxdigits == sys.getintmaxdigits()
-            check('1' * (maxdigits + 1))
-            check('+' + '1' * (maxdigits + 1))
-            check('1' * (maxdigits + 1))
+        for base in (2, 4, 8, 16, 32):
+            with self.subTest(base=base):
+                self.int_class('1' * (maxdigits + 1), base)
+                assert maxdigits < 100_000
+                self.int_class('1' * 100_000, base)
 
-            i = 10 ** maxdigits
-            with self.assertRaises(ValueError):
-                str(i)
+    def test_underscores_ignored(self):
+        """The limit ignores underscore separators."""
+        maxdigits = sys.get_int_max_base10_digits()
 
-            # ignore power of two
-            for base in (2, 4, 8, 16, 32):
-                c('1' * (maxdigits + 1), base)
-                c('1' * 100_000, base)
+        s = '1111_' * ((maxdigits) // 4)
+        s = s[:-1]
+        self.int_class(s)
+        self.check(s + '1')
 
-            # limit ignores underscores
-            s = '1111_' * ((maxdigits) // 4)
-            s = s[:-1]
-            int(s)
-            check(s + '1')
+    def _other_base_helper(self, base):
+        int_class = self.int_class
+        max_digits = sys.get_int_max_base10_digits()
 
-            # limit is in equivalent of base 10 digits
-            s = '1' * 2147
-            assert len(str(int(s, 9))) == maxdigits
-            int(s + '1', 9)
+        base_digits = int(max_digits*log(10)/log(base))
+        if base > 10:
+            assert base_digits < max_digits
+        elif base < 10:
+            assert base_digits > max_digits
+        s = '3' * base_digits
+        self.assertLessEqual(len(str(int_class(s, base))), max_digits)
+        int_class(f'{s}1', base)
+        with self.assertRaises(ValueError) as err:
+            int_class(f'{s}11', base)
 
-    def test_maxdigits(self):
-        self._test_maxdigits(int)
-        self._test_maxdigits(IntSubclass)
+    def test_int_from_other_bases(self):
+        """The limit should scale as an equivalent number of decimal digits."""
+        with self.subTest(base=9):
+            self._other_base_helper(9)
+
+        with self.subTest(base=36):
+            self._other_base_helper(36)
+
+
+class IntSubclassBase10DigitLimitsTests(IntBase10DigitLimitsTests):
+    int_class = IntSubclass
+
 
 if __name__ == "__main__":
     unittest.main()
