@@ -1524,13 +1524,15 @@ encoder_encode_key_value(PyEncoderObject *s, _PyUnicodeWriter *writer, bool *fir
         return -1;
     }
 
-    if (keystr == NULL)
+    if (keystr == NULL) {
         return -1;
+    }
 
     if (*first) {
         *first = false;
-    } else {
-        if (_PyUnicodeWriter_WriteStr(writer, s->item_separator)) {
+    } 
+    else {
+        if (_PyUnicodeWriter_WriteStr(writer, s->item_separator) < 0) {
             Py_DECREF(keystr);
             return -1;
         }
@@ -1538,15 +1540,19 @@ encoder_encode_key_value(PyEncoderObject *s, _PyUnicodeWriter *writer, bool *fir
 
     encoded = encoder_encode_string(s, keystr);
     Py_DECREF(keystr);
-    if (encoded == NULL)
+    if (encoded == NULL) {
         return -1;
+    }
 
-    if (_steal_accumulate(writer, encoded) < 0)
+    if (_steal_accumulate(writer, encoded) < 0) {
         return -1;
-    if (_PyUnicodeWriter_WriteStr(writer, s->key_separator) < 0)
+    }
+    if (_PyUnicodeWriter_WriteStr(writer, s->key_separator) < 0) {
         return -1;
-    if (encoder_listencode_obj(s, writer, value, indent_level) < 0)
+    }
+    if (encoder_listencode_obj(s, writer, value, indent_level) < 0) {
         return -1;
+    }
     return 0;
 }
 
