@@ -333,7 +333,6 @@ Module variables
    declared type as the converter dictionary key.
    For example:
 
-
    .. code-block:: sql
 
       CREATE TABLE test(
