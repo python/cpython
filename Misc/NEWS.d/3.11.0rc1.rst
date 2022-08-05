@@ -1,0 +1,436 @@
+.. date: 2022-07-31-13-23-12
+.. gh-issue: 95150
+.. nonce: 67FXVo
+.. release date: 2022-08-05
+.. section: Core and Builtins
+
+Update code object hashing and equality to consider all debugging and
+exception handling tables. This fixes an issue where certain non-identical
+code objects could be "deduplicated" during compilation.
+
+..
+
+.. date: 2022-07-28-08-33-31
+.. gh-issue: 95355
+.. nonce: yN4XVk
+.. section: Core and Builtins
+
+``_PyPegen_Parser_New`` now properly detects token memory allocation errors.
+Patch by Honglin Zhu.
+
+..
+
+.. date: 2022-07-27-14-21-57
+.. gh-issue: 90081
+.. nonce: HVAS5x
+.. section: Core and Builtins
+
+Run Python code in tracer/profiler function at full speed. Fixes slowdown in
+earlier versions of 3.11.
+
+..
+
+.. date: 2022-07-27-14-05-07
+.. gh-issue: 95324
+.. nonce: 28Q5u7
+.. section: Core and Builtins
+
+Emit a warning in debug mode if an object does not call
+:c:func:`PyObject_GC_UnTrack` before deallocation. Patch by Pablo Galindo.
+
+..
+
+.. date: 2022-07-24-00-27-47
+.. gh-issue: 95185
+.. nonce: ghYTZx
+.. section: Core and Builtins
+
+Prevented crashes in the AST constructor when compiling some absurdly long
+expressions like ``"+0"*1000000``. :exc:`RecursionError` is now raised
+instead. Patch by Pablo Galindo
+
+..
+
+.. date: 2022-07-23-19-16-25
+.. gh-issue: 93351
+.. nonce: 0Jyvu-
+.. section: Core and Builtins
+
+:class:`ast.AST` node positions are now validated when provided to
+:func:`compile` and other related functions. If invalid positions are
+detected, a :exc:`ValueError` will be raised.
+
+..
+
+.. date: 2022-07-19-09-41-55
+.. gh-issue: 94938
+.. nonce: xYBlM7
+.. section: Core and Builtins
+
+Fix error detection in some builtin functions when keyword argument name is
+an instance of a str subclass with overloaded ``__eq__`` and ``__hash__``.
+Previously it could cause SystemError or other undesired behavior.
+
+..
+
+.. date: 2022-08-03-21-01-17
+.. gh-issue: 95609
+.. nonce: xxyjyX
+.. section: Library
+
+Update bundled pip to 22.2.2.
+
+..
+
+.. date: 2022-08-03-16-52-32
+.. gh-issue: 95289
+.. nonce: FMnHlV
+.. section: Library
+
+Fix :class:`asyncio.TaskGroup` to propagate exception when
+:exc:`asyncio.CancelledError` was replaced with another exception by a
+context manger. Patch by Kumar Aditya and Guido van Rossum.
+
+..
+
+.. date: 2022-07-27-19-43-07
+.. gh-issue: 95339
+.. nonce: NuVQ68
+.. section: Library
+
+Update bundled pip to 22.2.1.
+
+..
+
+.. date: 2022-07-27-11-35-45
+.. gh-issue: 95045
+.. nonce: iysT-Q
+.. section: Library
+
+Fix GC crash when deallocating ``_lsprof.Profiler`` by untracking it before
+calling any callbacks. Patch by Kumar Aditya.
+
+..
+
+.. date: 2022-07-24-18-00-42
+.. gh-issue: 95097
+.. nonce: lu5qNf
+.. section: Library
+
+Fix :func:`asyncio.run` for :class:`asyncio.Task` implementations without
+:meth:`~asyncio.Task.uncancel` method. Patch by Kumar Aditya.
+
+..
+
+.. date: 2022-07-23-10-50-05
+.. gh-issue: 93899
+.. nonce: VT34A5
+.. section: Library
+
+Fix check for existence of :data:`os.EFD_CLOEXEC`, :data:`os.EFD_NONBLOCK`
+and :data:`os.EFD_SEMAPHORE` flags on older kernel versions where these
+flags are not present. Patch by Kumar Aditya.
+
+..
+
+.. date: 2022-07-23-10-42-05
+.. gh-issue: 95166
+.. nonce: xw6p3C
+.. section: Library
+
+Fix :meth:`concurrent.futures.Executor.map` to cancel the currently waiting
+on future on an error - e.g. TimeoutError or KeyboardInterrupt.
+
+..
+
+.. date: 2022-07-21-22-59-22
+.. gh-issue: 95109
+.. nonce: usxA9r
+.. section: Library
+
+Ensure that timeouts scheduled with :class:`asyncio.Timeout` that have
+already expired are delivered promptly.
+
+..
+
+.. date: 2022-06-02-08-40-58
+.. gh-issue: 91810
+.. nonce: Gtk44w
+.. section: Library
+
+Suppress writing an XML declaration in open files in ``ElementTree.write()``
+with ``encoding='unicode'`` and ``xml_declaration=None``.
+
+..
+
+.. date: 2022-04-12-18-05-40
+.. gh-issue: 91447
+.. nonce: N_Fs4H
+.. section: Library
+
+Fix findtext in the xml module to only give an empty string when the text
+attribute is set to None.
+
+..
+
+.. date: 2022-08-03-13-35-08
+.. gh-issue: 91207
+.. nonce: eJ4pPf
+.. section: Documentation
+
+Fix stylesheet not working in Windows CHM htmlhelp docs and add warning that
+they are deprecated. Contributed by C.A.M. Gerlach.
+
+..
+
+.. date: 2022-07-29-23-02-19
+.. gh-issue: 95451
+.. nonce: -tgB93
+.. section: Documentation
+
+Update library documentation with :ref:`availability information
+<wasm-availability>` on WebAssembly platforms ``wasm32-emscripten`` and
+``wasm32-wasi``.
+
+..
+
+.. date: 2022-07-29-09-04-02
+.. gh-issue: 95415
+.. nonce: LKTyw6
+.. section: Documentation
+
+Use consistent syntax for platform availability. The directive now supports
+a content body and emits a warning when it encounters an unknown platform.
+
+..
+
+.. date: 2022-06-19-18-18-22
+.. gh-issue: 86128
+.. nonce: 39DDTD
+.. section: Documentation
+
+Document a limitation in ThreadPoolExecutor where its exit handler is
+executed before any handlers in atexit.
+
+..
+
+.. date: 2022-08-05-09-57-43
+.. gh-issue: 95573
+.. nonce: edMdQB
+.. section: Tests
+
+:source:`Lib/test/test_asyncio/test_ssl.py` exposed a bug in the macOS
+kernel where intense concurrent load on non-blocking sockets occasionally
+causes :const:`errno.ENOBUFS` ("No buffer space available") to be emitted.
+FB11063974 filed with Apple, in the mean time as a workaround buffer size
+used in tests on macOS is decreased to avoid intermittent failures.  Patch
+by Fantix King.
+
+..
+
+.. date: 2022-07-26-15-22-19
+.. gh-issue: 95280
+.. nonce: h8HvbP
+.. section: Tests
+
+Fix problem with ``test_ssl`` ``test_get_ciphers`` on systems that require
+perfect forward secrecy (PFS) ciphers.
+
+..
+
+.. date: 2022-07-08-12-22-00
+.. gh-issue: 94675
+.. nonce: IiTs5f
+.. section: Tests
+
+Add a regression test for :mod:`re` exponentional slowdown when using
+rjsmin.
+
+..
+
+.. date: 2022-07-26-18-13-34
+.. gh-issue: 94801
+.. nonce: 9fREfy
+.. section: Build
+
+Fix a regression in ``configure`` script that caused some header checks to
+ignore custom ``CPPFLAGS``. The regression was introduced in :gh:`94802`.
+
+..
+
+.. date: 2022-07-25-09-48-43
+.. gh-issue: 95145
+.. nonce: ZNS3dj
+.. section: Build
+
+wasm32-wasi builds no longer depend on WASIX's pthread stubs. Python now has
+its own stubbed pthread API.
+
+..
+
+.. date: 2022-07-25-08-59-35
+.. gh-issue: 95174
+.. nonce: g8woUW
+.. section: Build
+
+Python now detects missing ``dup`` function in WASI and works around some
+missing :mod:`errno`, :mod:`select`, and :mod:`socket` constants.
+
+..
+
+.. date: 2022-07-23-21-39-09
+.. gh-issue: 95174
+.. nonce: 7cYMZR
+.. section: Build
+
+Python now skips missing :mod:`socket` functions and methods on WASI. WASI
+can only create sockets from existing fd / accept and has no netdb.
+
+..
+
+.. date: 2022-07-21-09-17-01
+.. gh-issue: 95085
+.. nonce: E9x2S_
+.. section: Build
+
+Platforms ``wasm32-unknown-emscripten`` and ``wasm32-unknown-wasi`` have
+been promoted to :pep:`11` tier 3 platform support.
+
+..
+
+.. date: 2022-08-04-18-47-54
+.. gh-issue: 95656
+.. nonce: VJ1d13
+.. section: Windows
+
+Enable the :meth:`~sqlite3.Connection.enable_load_extension` :mod:`sqlite3`
+API.
+
+..
+
+.. date: 2022-08-04-01-12-27
+.. gh-issue: 95587
+.. nonce: Fvdv5q
+.. section: Windows
+
+Fixes some issues where the Windows installer would incorrectly detect
+certain features of an existing install when upgrading.
+
+..
+
+.. date: 2022-08-03-00-49-46
+.. gh-issue: 94399
+.. nonce: KvxHc0
+.. section: Windows
+
+Restores the behaviour of :ref:`launcher` for ``/usr/bin/env`` shebang
+lines, which will now search :envvar:`PATH` for an executable matching the
+given command. If none is found, the usual search process is used.
+
+..
+
+.. date: 2022-07-30-14-18-33
+.. gh-issue: 95445
+.. nonce: mjrTaq
+.. section: Windows
+
+Fixes the unsuccessful removal of the HTML document directory when
+uninstalling with Windows msi.
+
+..
+
+.. date: 2022-07-28-20-21-38
+.. gh-issue: 95359
+.. nonce: ywMrgu
+.. section: Windows
+
+Fix :ref:`launcher` handling of :file:`py.ini` commands (it was incorrectly
+expecting a ``py_`` prefix on keys) and crashes when reading per-user
+configuration file.
+
+..
+
+.. date: 2022-07-26-20-33-12
+.. gh-issue: 95285
+.. nonce: w6fa22
+.. section: Windows
+
+Fix :ref:`launcher` handling of command lines where it is only passed a
+short executable name.
+
+..
+
+.. date: 2022-08-04-20-07-51
+.. gh-issue: 65802
+.. nonce: xnThWe
+.. section: IDLE
+
+Document handling of extensions in Save As dialogs.
+
+..
+
+.. date: 2022-08-01-23-31-48
+.. gh-issue: 95191
+.. nonce: U7vryB
+.. section: IDLE
+
+Include prompts when saving Shell (interactive input and output).
+
+..
+
+.. date: 2022-07-31-22-15-14
+.. gh-issue: 95511
+.. nonce: WX6PmB
+.. section: IDLE
+
+Fix the Shell context menu copy-with-prompts bug of copying an extra line
+when one selects whole lines.
+
+..
+
+.. date: 2022-07-30-15-10-39
+.. gh-issue: 95471
+.. nonce: z3scVG
+.. section: IDLE
+
+In the Edit menu, move ``Select All`` and add a new separator.
+
+..
+
+.. date: 2022-07-29-11-08-52
+.. gh-issue: 95411
+.. nonce: dazlqH
+.. section: IDLE
+
+Enable using IDLE's module browser with .pyw files.
+
+..
+
+.. date: 2022-07-28-18-56-57
+.. gh-issue: 89610
+.. nonce: hcosiM
+.. section: IDLE
+
+Add .pyi as a recognized extension for IDLE on macOS.    This allows opening
+stub files by double clicking on them in the Finder.
+
+..
+
+.. date: 2022-08-03-14-39-08
+.. gh-issue: 92678
+.. nonce: ozFTEx
+.. section: C API
+
+Restore the 3.10 behavior for multiple inheritance of C extension classes
+that store their dictionary at the end of the struct.
+
+..
+
+.. date: 2022-07-19-22-37-40
+.. gh-issue: 94936
+.. nonce: LGlmKv
+.. section: C API
+
+Added :c:func:`PyCode_GetVarnames`, :c:func:`PyCode_GetCellvars` and
+:c:func:`PyCode_GetFreevars` for accessing ``co_varnames``, ``co_cellvars``
+and ``co_freevars`` respectively via the C API.
