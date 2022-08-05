@@ -1,4 +1,4 @@
-# Adapted with permission from the EdgeDB project.
+# Licensed to PSF from the EdgeDB project.
 
 
 __all__ = ["TaskGroup"]
