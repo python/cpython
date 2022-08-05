@@ -3247,6 +3247,52 @@ class SleepTests(test_utils.TestCase):
         self.assertEqual(result, 11)
 
 
+class WaitTests(test_utils.TestCase):
+    def setUp(self):
+        super().setUp()
+        self.loop = asyncio.new_event_loop()
+        self.set_event_loop(self.loop)
+
+    def tearDown(self):
+        self.loop.close()
+        self.loop = None
+        super().tearDown()
+
+    def test_awaitable_is_deprecated_in_wait(self):
+        # Remove test when passing awaitables to asyncio.wait() is removed in 3.14
+
+        class ExampleAwaitable:
+            def __await__(self):
+                async def _():
+                    return await asyncio.sleep(0)
+
+                return _().__await__()
+
+
+        with self.assertWarns(DeprecationWarning):
+            self.loop.run_until_complete(
+                asyncio.wait([ExampleAwaitable()]))
+
+        task = self.loop.create_task(coroutine_function())
+        with self.assertWarns(DeprecationWarning), self.assertRaises(TypeError):
+            self.loop.run_until_complete(
+                asyncio.wait([task, ExampleAwaitable(), coroutine_function()]))
+
+        # avoid: Task was destroyed but it is pending!
+        self.loop.run_until_complete(task)
+
+    def test_wait_supports_iterators(self):
+        with self.assertRaisesRegex(ValueError, "Iterable of .* is empty\."):
+            self.loop.run_until_complete(asyncio.wait(iter(())))
+
+        task = self.loop.create_task(coroutine_function())
+        done, pending = self.loop.run_until_complete(
+            asyncio.wait(iter((task,))),
+        )
+        self.assertSetEqual(done, {task})
+        self.assertSetEqual(pending, set())
+
+
 class CompatibilityTests(test_utils.TestCase):
     # Tests for checking a bridge between old-styled coroutines
     # and async/await syntax

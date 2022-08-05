@@ -412,19 +412,29 @@ async def wait(fs, *, timeout=None, return_when=ALL_COMPLETED):
     when the timeout occurs are returned in the second set.
     """
     if futures.isfuture(fs) or coroutines.iscoroutine(fs):
-        raise TypeError(f"expect a list of futures, not {type(fs).__name__}")
-    if not fs:
-        raise ValueError('Set of Tasks/Futures is empty.')
+        raise TypeError(f"expected an iterable of futures, not {type(fs).__name__}")
     if return_when not in (FIRST_COMPLETED, FIRST_EXCEPTION, ALL_COMPLETED):
         raise ValueError(f'Invalid return_when value: {return_when}')
 
-    fs = set(fs)
-
-    if any(coroutines.iscoroutine(f) for f in fs):
-        raise TypeError("Passing coroutines is forbidden, use tasks explicitly.")
-
     loop = events.get_running_loop()
-    return await _wait(fs, timeout, return_when, loop)
+    new_fs = set()
+
+    for f in fs:
+        if coroutines.iscoroutine(f):
+            raise TypeError("Passing coroutines is forbidden, use tasks explicitly.")
+        if not futures.isfuture(f):
+            warnings.warn("The explicit passing of awaitable objects to "
+                          "asyncio.wait() is deprecated since Python 3.11, and "
+                          "scheduled for removal in Python 3.14.",
+                          DeprecationWarning, stacklevel=2)
+            new_fs.add(ensure_future(f, loop=loop))
+        else:
+            new_fs.add(f)
+
+    if not new_fs:
+        raise ValueError('Iterable of Tasks/Futures is empty.')
+
+    return await _wait(new_fs, timeout, return_when, loop)
 
 
 def _release_waiter(waiter, *args):
