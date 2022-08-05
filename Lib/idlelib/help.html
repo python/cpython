@@ -91,6 +91,7 @@
 <li><a class="reference internal" href="#editor-windows">Editor windows</a></li>
 <li><a class="reference internal" href="#key-bindings">Key bindings</a></li>
 <li><a class="reference internal" href="#automatic-indentation">Automatic indentation</a></li>
+<li><a class="reference internal" href="#search-and-replace">Search and Replace</a></li>
 <li><a class="reference internal" href="#completions">Completions</a></li>
 <li><a class="reference internal" href="#calltips">Calltips</a></li>
 <li><a class="reference internal" href="#code-context">Code Context</a></li>
@@ -237,13 +238,13 @@ described below are moved around to conform to Apple guidelines.</p>
 </dd>
 <dt>Open…</dt><dd><p>Open an existing file with an Open dialog.</p>
 </dd>
-<dt>Recent Files</dt><dd><p>Open a list of recent files.  Click one to open it.</p>
-</dd>
 <dt>Open Module…</dt><dd><p>Open an existing module (searches sys.path).</p>
+</dd>
+<dt>Recent Files</dt><dd><p>Open a list of recent files.  Click one to open it.</p>
 </dd>
 </dl>
 <dl class="simple" id="index-1">
-<dt>Class Browser</dt><dd><p>Show functions, classes, and methods in the current Editor file in a
+<dt>Module Browser</dt><dd><p>Show functions, classes, and methods in the current Editor file in a
 tree structure.  In the shell, open a module first.</p>
 </dd>
 <dt>Path Browser</dt><dd><p>Show sys.path directories, modules, functions, classes and methods in a
@@ -255,10 +256,13 @@ and after the window title.  If there is no associated file,
 do Save As instead.</p>
 </dd>
 <dt>Save As…</dt><dd><p>Save the current window with a Save As dialog.  The file saved becomes the
-new associated file for the window.</p>
+new associated file for the window. (If your file namager is set to hide
+extensions, the current extension will be omitted in the file name box.
+If the new filename has no ‘.’, ‘.py’ and ‘.txt’ will be added for Python
+and text files, except that on macOS Aqua,’.py’ is added for all files.)</p>
 </dd>
 <dt>Save Copy As…</dt><dd><p>Save the current window to different file without changing the associated
-file.</p>
+file.  (See Save As note above about filename extensions.)</p>
 </dd>
 <dt>Print Window</dt><dd><p>Print the current window to the default printer.</p>
 </dd>
@@ -278,6 +282,8 @@ be undone.</p>
 </dd>
 <dt>Redo</dt><dd><p>Redo the last undone change to the current window.</p>
 </dd>
+<dt>Select All</dt><dd><p>Select the entire contents of the current window.</p>
+</dd>
 <dt>Cut</dt><dd><p>Copy selection into the system-wide clipboard; then delete the selection.</p>
 </dd>
 <dt>Copy</dt><dd><p>Copy selection into the system-wide clipboard.</p>
@@ -287,8 +293,6 @@ be undone.</p>
 </dl>
 <p>The clipboard functions are also available in context menus.</p>
 <dl class="simple">
-<dt>Select All</dt><dd><p>Select the entire contents of the current window.</p>
-</dd>
 <dt>Find…</dt><dd><p>Open a search dialog with many options</p>
 </dd>
 <dt>Find Again</dt><dd><p>Repeat the last search, if there is one.</p>
@@ -309,17 +313,21 @@ Clear any selection and update the line and column status.</p>
 <dt>Expand Word</dt><dd><p>Expand a prefix you have typed to match a full word in the same window;
 repeat to get a different expansion.</p>
 </dd>
-<dt>Show call tip</dt><dd><p>After an unclosed parenthesis for a function, open a small window with
+<dt>Show Call Tip</dt><dd><p>After an unclosed parenthesis for a function, open a small window with
 function parameter hints.  See <a class="reference internal" href="#calltips"><span class="std std-ref">Calltips</span></a> in the
 Editing and navigation section below.</p>
 </dd>
-<dt>Show surrounding parens</dt><dd><p>Highlight the surrounding parenthesis.</p>
+<dt>Show Surrounding Parens</dt><dd><p>Highlight the surrounding parenthesis.</p>
 </dd>
 </dl>
 </section>
 <section id="format-menu-editor-window-only">
 <span id="format-menu"></span><h3>Format menu (Editor window only)<a class="headerlink" href="#format-menu-editor-window-only" title="Permalink to this heading">¶</a></h3>
 <dl class="simple">
+<dt>Format Paragraph</dt><dd><p>Reformat the current blank-line-delimited paragraph in comment block or
+multiline string or selected line in a string.  All lines in the
+paragraph will be formatted to less than N columns, where N defaults to 72.</p>
+</dd>
 <dt>Indent Region</dt><dd><p>Shift selected lines right by the indent width (default 4 spaces).</p>
 </dd>
 <dt>Dedent Region</dt><dd><p>Shift selected lines left by the indent width (default 4 spaces).</p>
@@ -338,11 +346,7 @@ Editing and navigation section below.</p>
 <dt>New Indent Width</dt><dd><p>Open a dialog to change indent width. The accepted default by the Python
 community is 4 spaces.</p>
 </dd>
-<dt>Format Paragraph</dt><dd><p>Reformat the current blank-line-delimited paragraph in comment block or
-multiline string or selected line in a string.  All lines in the
-paragraph will be formatted to less than N columns, where N defaults to 72.</p>
-</dd>
-<dt>Strip trailing whitespace</dt><dd><p>Remove trailing space and other whitespace characters after the last
+<dt>Strip Trailing Chitespace</dt><dd><p>Remove trailing space and other whitespace characters after the last
 non-whitespace character of a line by applying str.rstrip to each line,
 including lines within multiline strings.  Except for Shell windows,
 remove extra newlines at the end of the file.</p>
@@ -564,6 +568,13 @@ Shell window one tab), number depends on Indent width. Currently, tabs
 are restricted to four spaces due to Tcl/Tk limitations.</p>
 <p>See also the indent/dedent region commands on the
 <a class="reference internal" href="#format-menu"><span class="std std-ref">Format menu</span></a>.</p>
+</section>
+<section id="search-and-replace">
+<h3>Search and Replace<a class="headerlink" href="#search-and-replace" title="Permalink to this heading">¶</a></h3>
+<p>Any selection becomes a search target.  However, only selections within
+a line work because searches are only performed within lines with the
+terminal newline removed.  If <code class="docutils literal notranslate"><span class="pre">[x]</span> <span class="pre">Regular</span> <span class="pre">expresion</span></code> is checked, the
+target is interpreted according to the Python re module.</p>
 </section>
 <section id="completions">
 <span id="id3"></span><h3>Completions<a class="headerlink" href="#completions" title="Permalink to this heading">¶</a></h3>
@@ -1021,6 +1032,7 @@ also used for testing.</p>
 <li><a class="reference internal" href="#editor-windows">Editor windows</a></li>
 <li><a class="reference internal" href="#key-bindings">Key bindings</a></li>
 <li><a class="reference internal" href="#automatic-indentation">Automatic indentation</a></li>
+<li><a class="reference internal" href="#search-and-replace">Search and Replace</a></li>
 <li><a class="reference internal" href="#completions">Completions</a></li>
 <li><a class="reference internal" href="#calltips">Calltips</a></li>
 <li><a class="reference internal" href="#code-context">Code Context</a></li>
@@ -1141,7 +1153,7 @@ also used for testing.</p>
 <br />
     <br />
 
-    Last updated on Jul 03, 2022.
+    Last updated on Aug 05, 2022.
     <a href="/bugs.html">Found a bug</a>?
     <br />
 
