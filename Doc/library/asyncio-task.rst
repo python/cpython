@@ -786,7 +786,6 @@ Waiting Primitives
       Passing coroutine objects to ``wait()`` directly is forbidden.
 
    .. deprecated-removed:: 3.11 3.14
-
       Passing awaitable objects that are not futures to ``wait()``
       directly is deprecated.
 
