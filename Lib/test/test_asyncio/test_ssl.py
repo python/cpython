@@ -5,6 +5,7 @@ import gc
 import logging
 import select
 import socket
+import sys
 import tempfile
 import threading
 import time
