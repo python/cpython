@@ -69,10 +69,10 @@ python \- an interpreted, interactive, object-oriented programming language
 .B \-x
 ]
 [
-[
 .B \-X
 .I option
 ]
+[
 .B \-?
 ]
 .br
@@ -83,6 +83,19 @@ python \- an interpreted, interactive, object-oriented programming language
 .I always
 |
 .I never
+]
+.br
+       [
+.B \--help
+]
+[
+.B \--help-env
+]
+[
+.B \--help-xoptions
+]
+[
+.B \--help-all
 ]
 .br
        [
@@ -148,6 +161,16 @@ the behavior of the interpreter.
 .TP
 .B \-h ", " \-? ", "\-\-help
 Prints the usage for the interpreter executable and exits.
+.TP
+.B "\-\-help\-env"
+Prints help about Python-specific environment variables and exits.
+.TP
+.B "\-\-help\-xoptions"
+Prints help about implementation-specific \fB\-X\fP options and exits.
+.TP
+.TP
+.B "\-\-help\-all"
+Prints complete usage information and exits.
 .TP
 .B \-i
 When a script is passed as first argument or the \fB\-c\fP option is
@@ -287,7 +310,7 @@ a regular expression on the warning message.
 
 .TP
 .BI "\-X " option
-Set implementation specific option. The following options are available:
+Set implementation-specific option. The following options are available:
 
     -X faulthandler: enable faulthandler
 
@@ -310,7 +333,8 @@ Set implementation specific option. The following options are available:
         more verbose than the default if the code is correct: new warnings are
         only emitted when an issue is detected. Effect of the developer mode:
            * Add default warning filter, as -W default
-           * Install debug hooks on memory allocators: see the PyMem_SetupDebugHooks() C function
+           * Install debug hooks on memory allocators: see the PyMem_SetupDebugHooks()
+             C function
            * Enable the faulthandler module to dump the Python traceback on a crash
            * Enable asyncio debug mode
            * Set the dev_mode attribute of sys.flags to True
@@ -321,7 +345,19 @@ Set implementation specific option. The following options are available:
         otherwise activate automatically). See PYTHONUTF8 for more details
 
     -X pycache_prefix=PATH: enable writing .pyc files to a parallel tree rooted at the
-         given directory instead of to the code tree.
+        given directory instead of to the code tree.
+
+    -X warn_default_encoding: enable opt-in EncodingWarning for 'encoding=None'
+
+    -X no_debug_ranges: disable the inclusion of the tables mapping extra location
+       information (end line, start column offset and end column offset) to every
+       instruction in code objects. This is useful when smaller code objects and pyc
+       files are desired as well as suppressing the extra visual location indicators
+       when the interpreter displays tracebacks.
+
+    -X frozen_modules=[on|off]: whether or not frozen modules should be used.
+       The default is "on" (or "off" if you are running a local build).
+
 .TP
 .B \-x
 Skip the first line of the source.  This is intended for a DOS
@@ -560,9 +596,6 @@ can be set to the callable of your debugger of choice.
 Setting these variables only has an effect in a debug build of Python, that is,
 if Python was configured with the
 \fB\--with-pydebug\fP build option.
-.IP PYTHONTHREADDEBUG
-If this environment variable is set, Python will print threading debug info.
-The feature is deprecated in Python 3.10 and will be removed in Python 3.12.
 .IP PYTHONDUMPREFS
 If this environment variable is set, Python will dump objects and reference
 counts still alive after shutting down the interpreter.

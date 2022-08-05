@@ -35,8 +35,11 @@ The following functions are provided:
    ``all(val >= x for val in a[i : hi])`` for the right side.
 
    *key* specifies a :term:`key function` of one argument that is used to
-   extract a comparison key from each input element.  The default value is
-   ``None`` (compare the elements directly).
+   extract a comparison key from each element in the array.  To support
+   searching complex records, the key function is not applied to the *x* value.
+
+   If *key* is ``None``, the elements are compared directly with no
+   intervening function call.
 
    .. versionchanged:: 3.10
       Added the *key* parameter.
@@ -53,8 +56,11 @@ The following functions are provided:
    ``all(val > x for val in a[i : hi])`` for the right side.
 
    *key* specifies a :term:`key function` of one argument that is used to
-   extract a comparison key from each input element.  The default value is
-   ``None`` (compare the elements directly).
+   extract a comparison key from each element in the array.  To support
+   searching complex records, the key function is not applied to the *x* value.
+
+   If *key* is ``None``, the elements are compared directly with no
+   intervening function call.
 
    .. versionchanged:: 3.10
       Added the *key* parameter.
@@ -64,13 +70,12 @@ The following functions are provided:
 
    Insert *x* in *a* in sorted order.
 
-   *key* specifies a :term:`key function` of one argument that is used to
-   extract a comparison key from each input element.  The default value is
-   ``None`` (compare the elements directly).
-
    This function first runs :func:`bisect_left` to locate an insertion point.
    Next, it runs the :meth:`insert` method on *a* to insert *x* at the
    appropriate position to maintain sort order.
+
+   To support inserting records in a table, the *key* function (if any) is
+   applied to *x* for the search step but not for the insertion step.
 
    Keep in mind that the ``O(log n)`` search is dominated by the slow O(n)
    insertion step.
@@ -85,13 +90,12 @@ The following functions are provided:
    Similar to :func:`insort_left`, but inserting *x* in *a* after any existing
    entries of *x*.
 
-   *key* specifies a :term:`key function` of one argument that is used to
-   extract a comparison key from each input element.  The default value is
-   ``None`` (compare the elements directly).
-
    This function first runs :func:`bisect_right` to locate an insertion point.
    Next, it runs the :meth:`insert` method on *a* to insert *x* at the
    appropriate position to maintain sort order.
+
+   To support inserting records in a table, the *key* function (if any) is
+   applied to *x* for the search step but not for the insertion step.
 
    Keep in mind that the ``O(log n)`` search is dominated by the slow O(n)
    insertion step.
@@ -194,8 +198,42 @@ a 'B', and so on::
    >>> [grade(score) for score in [33, 99, 77, 70, 89, 90, 100]]
    ['F', 'A', 'C', 'C', 'B', 'A', 'A']
 
-One technique to avoid repeated calls to a key function is to search a list of
-precomputed keys to find the index of a record::
+The :func:`bisect` and :func:`insort` functions also work with lists of
+tuples.  The *key* argument can serve to extract the field used for ordering
+records in a table::
+
+    >>> from collections import namedtuple
+    >>> from operator import attrgetter
+    >>> from bisect import bisect, insort
+    >>> from pprint import pprint
+
+    >>> Movie = namedtuple('Movie', ('name', 'released', 'director'))
+
+    >>> movies = [
+    ...     Movie('Jaws', 1975, 'Speilberg'),
+    ...     Movie('Titanic', 1997, 'Cameron'),
+    ...     Movie('The Birds', 1963, 'Hitchcock'),
+    ...     Movie('Aliens', 1986, 'Scott')
+    ... ]
+
+    >>> # Find the first movie released on or after 1960
+    >>> by_year = attrgetter('released')
+    >>> movies.sort(key=by_year)
+    >>> movies[bisect(movies, 1960, key=by_year)]
+    Movie(name='The Birds', released=1963, director='Hitchcock')
+
+    >>> # Insert a movie while maintaining sort order
+    >>> romance = Movie('Love Story', 1970, 'Hiller')
+    >>> insort(movies, romance, key=by_year)
+    >>> pprint(movies)
+    [Movie(name='The Birds', released=1963, director='Hitchcock'),
+     Movie(name='Love Story', released=1970, director='Hiller'),
+     Movie(name='Jaws', released=1975, director='Speilberg'),
+     Movie(name='Aliens', released=1986, director='Scott'),
+     Movie(name='Titanic', released=1997, director='Cameron')]
+
+If the key function is expensive, it is possible to avoid repeated function
+calls by searching a list of precomputed keys to find the index of a record::
 
     >>> data = [('red', 5), ('blue', 1), ('yellow', 8), ('black', 0)]
     >>> data.sort(key=lambda r: r[1])       # Or use operator.itemgetter(1).
@@ -208,4 +246,3 @@ precomputed keys to find the index of a record::
     ('red', 5)
     >>> data[bisect_left(keys, 8)]
     ('yellow', 8)
-

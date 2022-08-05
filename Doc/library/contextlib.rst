@@ -361,7 +361,7 @@ Functions and classes provided:
    As this changes a global state, the working directory, it is not suitable
    for use in most threaded or async contexts. It is also not suitable for most
    non-linear code execution, like generators, where the program execution is
-   temporarily relinquished -- unless explicitely desired, you should not yield
+   temporarily relinquished -- unless explicitly desired, you should not yield
    when this context manager is active.
 
    This is a simple wrapper around :func:`~os.chdir`, it changes the current

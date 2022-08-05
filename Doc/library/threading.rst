@@ -33,6 +33,7 @@ level :mod:`_thread` module.  See also the :mod:`queue` module.
    However, threading is still an appropriate model if you want to run
    multiple I/O-bound tasks simultaneously.
 
+.. include:: ../includes/wasm-notavail.rst
 
 This module defines the following functions:
 
@@ -114,7 +115,7 @@ This module defines the following functions:
    Its value may be used to uniquely identify this particular thread system-wide
    (until the thread terminates, after which the value may be recycled by the OS).
 
-   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX.
+   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD.
 
    .. versionadded:: 3.8
 
@@ -192,7 +193,9 @@ This module defines the following functions:
    information (4 KiB pages are common; using multiples of 4096 for the stack size is
    the suggested approach in the absence of more specific information).
 
-   .. availability:: Windows, systems with POSIX threads.
+   .. availability:: Windows, pthreads.
+
+      Unix platforms with POSIX threads support.
 
 
 This module also defines the following constant:
@@ -293,7 +296,7 @@ There is the possibility that "dummy thread objects" are created. These are
 thread objects corresponding to "alien threads", which are threads of control
 started outside the threading module, such as directly from C code.  Dummy
 thread objects have limited functionality; they are always considered alive and
-daemonic, and cannot be :meth:`~Thread.join`\ ed.  They are never deleted,
+daemonic, and cannot be :ref:`joined <meth-thread-join>`.  They are never deleted,
 since it is impossible to detect the termination of alien threads.
 
 
@@ -366,6 +369,8 @@ since it is impossible to detect the termination of alien threads.
          >>> t.run()
          1
 
+   .. _meth-thread-join:
+
    .. method:: join(timeout=None)
 
       Wait until the thread terminates. This blocks the calling thread until
@@ -383,7 +388,7 @@ since it is impossible to detect the termination of alien threads.
       When the *timeout* argument is not present or ``None``, the operation will
       block until the thread terminates.
 
-      A thread can be :meth:`~Thread.join`\ ed many times.
+      A thread can be joined many times.
 
       :meth:`~Thread.join` raises a :exc:`RuntimeError` if an attempt is made
       to join the current thread as that would cause a deadlock. It is also
@@ -427,7 +432,7 @@ since it is impossible to detect the termination of alien threads.
          system-wide) from the time the thread is created until the thread
          has been terminated.
 
-      .. availability:: Requires :func:`get_native_id` function.
+      .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD.
 
       .. versionadded:: 3.8
 

@@ -307,7 +307,7 @@ check_edit_cost(const char *a, const char *b, Py_ssize_t expected)
         goto exit;
     }
     b_obj = PyUnicode_FromString(b);
-    if (a_obj == NULL) {
+    if (b_obj == NULL) {
         goto exit;
     }
     Py_ssize_t result = _Py_UTF8_Edit_Cost(a_obj, b_obj, -1);

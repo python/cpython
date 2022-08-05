@@ -65,7 +65,7 @@ number of standard Unix command line editors, :program:`vim` and
 :program:`BBEdit` or :program:`TextWrangler` from Bare Bones Software (see
 http://www.barebones.com/products/bbedit/index.html) are good choices, as is
 :program:`TextMate` (see https://macromates.com/). Other editors include
-:program:`Gvim` (http://macvim-dev.github.io/macvim/) and :program:`Aquamacs`
+:program:`Gvim` (https://macvim-dev.github.io/macvim/) and :program:`Aquamacs`
 (http://aquamacs.org/).
 
 To run your script from the Terminal window you must make sure that
@@ -160,7 +160,7 @@ Distributing Python Applications on the Mac
 
 The standard tool for deploying standalone Python applications on the Mac is
 :program:`py2app`. More information on installing and using py2app can be found
-at http://undefined.org/python/#py2app.
+at https://pypi.org/project/py2app/.
 
 
 Other Resources

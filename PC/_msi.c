@@ -757,19 +757,13 @@ _msi_SummaryInformation_SetProperty_impl(msiobj *self, int field,
     int status;
 
     if (PyUnicode_Check(data)) {
-#if USE_UNICODE_WCHAR_CACHE
-        const WCHAR *value = _PyUnicode_AsUnicode(data);
-#else /* USE_UNICODE_WCHAR_CACHE */
         WCHAR *value = PyUnicode_AsWideCharString(data, NULL);
-#endif /* USE_UNICODE_WCHAR_CACHE */
         if (value == NULL) {
             return NULL;
         }
         status = MsiSummaryInfoSetPropertyW(self->h, field, VT_LPSTR,
             0, NULL, value);
-#if !USE_UNICODE_WCHAR_CACHE
         PyMem_Free(value);
-#endif /* USE_UNICODE_WCHAR_CACHE */
     } else if (PyLong_CheckExact(data)) {
         long value = PyLong_AsLong(data);
         if (value == -1 && PyErr_Occurred()) {

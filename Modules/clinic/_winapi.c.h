@@ -210,9 +210,7 @@ _winapi_CreateFileMapping(PyObject *module, PyObject *const *args, Py_ssize_t na
 
 exit:
     /* Cleanup for name */
-    #if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free((void *)name);
-    #endif /* USE_UNICODE_WCHAR_CACHE */
 
     return return_value;
 }
@@ -243,11 +241,7 @@ _winapi_CreateJunction(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         _PyArg_BadArgument("CreateJunction", "argument 1", "str", args[0]);
         goto exit;
     }
-    #if USE_UNICODE_WCHAR_CACHE
-    src_path = _PyUnicode_AsUnicode(args[0]);
-    #else /* USE_UNICODE_WCHAR_CACHE */
     src_path = PyUnicode_AsWideCharString(args[0], NULL);
-    #endif /* USE_UNICODE_WCHAR_CACHE */
     if (src_path == NULL) {
         goto exit;
     }
@@ -255,11 +249,7 @@ _winapi_CreateJunction(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         _PyArg_BadArgument("CreateJunction", "argument 2", "str", args[1]);
         goto exit;
     }
-    #if USE_UNICODE_WCHAR_CACHE
-    dst_path = _PyUnicode_AsUnicode(args[1]);
-    #else /* USE_UNICODE_WCHAR_CACHE */
     dst_path = PyUnicode_AsWideCharString(args[1], NULL);
-    #endif /* USE_UNICODE_WCHAR_CACHE */
     if (dst_path == NULL) {
         goto exit;
     }
@@ -267,13 +257,9 @@ _winapi_CreateJunction(PyObject *module, PyObject *const *args, Py_ssize_t nargs
 
 exit:
     /* Cleanup for src_path */
-    #if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free((void *)src_path);
-    #endif /* USE_UNICODE_WCHAR_CACHE */
     /* Cleanup for dst_path */
-    #if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free((void *)dst_path);
-    #endif /* USE_UNICODE_WCHAR_CACHE */
 
     return return_value;
 }
@@ -412,13 +398,9 @@ _winapi_CreateProcess(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 
 exit:
     /* Cleanup for application_name */
-    #if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free((void *)application_name);
-    #endif /* USE_UNICODE_WCHAR_CACHE */
     /* Cleanup for current_directory */
-    #if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free((void *)current_directory);
-    #endif /* USE_UNICODE_WCHAR_CACHE */
 
     return return_value;
 }
@@ -767,9 +749,7 @@ _winapi_OpenFileMapping(PyObject *module, PyObject *const *args, Py_ssize_t narg
 
 exit:
     /* Cleanup for name */
-    #if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free((void *)name);
-    #endif /* USE_UNICODE_WCHAR_CACHE */
 
     return return_value;
 }
@@ -837,6 +817,43 @@ _winapi_PeekNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     return_value = _winapi_PeekNamedPipe_impl(module, handle, size);
 
 exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_winapi_LCMapStringEx__doc__,
+"LCMapStringEx($module, /, locale, flags, src)\n"
+"--\n"
+"\n");
+
+#define _WINAPI_LCMAPSTRINGEX_METHODDEF    \
+    {"LCMapStringEx", _PyCFunction_CAST(_winapi_LCMapStringEx), METH_FASTCALL|METH_KEYWORDS, _winapi_LCMapStringEx__doc__},
+
+static PyObject *
+_winapi_LCMapStringEx_impl(PyObject *module, LPCWSTR locale, DWORD flags,
+                           LPCWSTR src);
+
+static PyObject *
+_winapi_LCMapStringEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"locale", "flags", "src", NULL};
+    static _PyArg_Parser _parser = {"O&kO&:LCMapStringEx", _keywords, 0};
+    LPCWSTR locale;
+    DWORD flags;
+    LPCWSTR src;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        _PyUnicode_WideCharString_Converter, &locale, &flags, _PyUnicode_WideCharString_Converter, &src)) {
+        goto exit;
+    }
+    return_value = _winapi_LCMapStringEx_impl(module, locale, flags, src);
+
+exit:
+    /* Cleanup for locale */
+    PyMem_Free((void *)locale);
+    /* Cleanup for src */
+    PyMem_Free((void *)src);
+
     return return_value;
 }
 
@@ -1184,4 +1201,4 @@ _winapi__mimetypes_read_windows_registry(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a4ede01aede352a4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6cdefec63a1d7f12 input=a9049054013a1b77]*/

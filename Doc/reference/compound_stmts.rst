@@ -1495,7 +1495,7 @@ Is semantically equivalent to::
     else:
         SUITE2
 
-See also :meth:`__aiter__` and :meth:`__anext__` for details.
+See also :meth:`~object.__aiter__` and :meth:`~object.__anext__` for details.
 
 It is a :exc:`SyntaxError` to use an ``async for`` statement outside the
 body of a coroutine function.
@@ -1537,7 +1537,7 @@ is semantically equivalent to::
         if not hit_except:
             await aexit(manager, None, None, None)
 
-See also :meth:`__aenter__` and :meth:`__aexit__` for details.
+See also :meth:`~object.__aenter__` and :meth:`~object.__aexit__` for details.
 
 It is a :exc:`SyntaxError` to use an ``async with`` statement outside the
 body of a coroutine function.

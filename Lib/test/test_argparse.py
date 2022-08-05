@@ -45,6 +45,7 @@ class TestCase(unittest.TestCase):
         env['COLUMNS'] = '80'
 
 
+@os_helper.skip_unless_working_chmod
 class TempDirMixin(object):
 
     def setUp(self):
@@ -1504,14 +1505,15 @@ class TestArgumentsFromFile(TempDirMixin, ParserTestCase):
     def setUp(self):
         super(TestArgumentsFromFile, self).setUp()
         file_texts = [
-            ('hello', 'hello world!\n'),
-            ('recursive', '-a\n'
-                          'A\n'
-                          '@hello'),
-            ('invalid', '@no-such-path\n'),
+            ('hello', os.fsencode(self.hello) + b'\n'),
+            ('recursive', b'-a\n'
+                          b'A\n'
+                          b'@hello'),
+            ('invalid', b'@no-such-path\n'),
+            ('undecodable', self.undecodable + b'\n'),
         ]
         for path, text in file_texts:
-            with open(path, 'w', encoding="utf-8") as file:
+            with open(path, 'wb') as file:
                 file.write(text)
 
     parser_signature = Sig(fromfile_prefix_chars='@')
@@ -1521,15 +1523,25 @@ class TestArgumentsFromFile(TempDirMixin, ParserTestCase):
         Sig('y', nargs='+'),
     ]
     failures = ['', '-b', 'X', '@invalid', '@missing']
+    hello = 'hello world!' + os_helper.FS_NONASCII
     successes = [
         ('X Y', NS(a=None, x='X', y=['Y'])),
         ('X -a A Y Z', NS(a='A', x='X', y=['Y', 'Z'])),
-        ('@hello X', NS(a=None, x='hello world!', y=['X'])),
-        ('X @hello', NS(a=None, x='X', y=['hello world!'])),
-        ('-a B @recursive Y Z', NS(a='A', x='hello world!', y=['Y', 'Z'])),
-        ('X @recursive Z -a B', NS(a='B', x='X', y=['hello world!', 'Z'])),
+        ('@hello X', NS(a=None, x=hello, y=['X'])),
+        ('X @hello', NS(a=None, x='X', y=[hello])),
+        ('-a B @recursive Y Z', NS(a='A', x=hello, y=['Y', 'Z'])),
+        ('X @recursive Z -a B', NS(a='B', x='X', y=[hello, 'Z'])),
         (["-a", "", "X", "Y"], NS(a='', x='X', y=['Y'])),
     ]
+    if os_helper.TESTFN_UNDECODABLE:
+        undecodable = os_helper.TESTFN_UNDECODABLE.lstrip(b'@')
+        decoded_undecodable = os.fsdecode(undecodable)
+        successes += [
+            ('@undecodable X', NS(a=None, x=decoded_undecodable, y=['X'])),
+            ('X @undecodable', NS(a=None, x='X', y=[decoded_undecodable])),
+        ]
+    else:
+        undecodable = b''
 
 
 class TestArgumentsFromFileConverter(TempDirMixin, ParserTestCase):
@@ -1538,10 +1550,10 @@ class TestArgumentsFromFileConverter(TempDirMixin, ParserTestCase):
     def setUp(self):
         super(TestArgumentsFromFileConverter, self).setUp()
         file_texts = [
-            ('hello', 'hello world!\n'),
+            ('hello', b'hello world!\n'),
         ]
         for path, text in file_texts:
-            with open(path, 'w', encoding="utf-8") as file:
+            with open(path, 'wb') as file:
                 file.write(text)
 
     class FromFileConverterArgumentParser(ErrorRaisingArgumentParser):
@@ -1722,8 +1734,7 @@ class WFile(object):
         return self.name == other.name
 
 
-@unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
-                 "non-root user required")
+@os_helper.skip_if_dac_override
 class TestFileTypeW(TempDirMixin, ParserTestCase):
     """Test the FileType option/argument type for writing files"""
 
@@ -1745,8 +1756,8 @@ class TestFileTypeW(TempDirMixin, ParserTestCase):
         ('-x - -', NS(x=eq_stdout, spam=eq_stdout)),
     ]
 
-@unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
-                 "non-root user required")
+
+@os_helper.skip_if_dac_override
 class TestFileTypeX(TempDirMixin, ParserTestCase):
     """Test the FileType option/argument type for writing new files only"""
 
@@ -1766,8 +1777,7 @@ class TestFileTypeX(TempDirMixin, ParserTestCase):
     ]
 
 
-@unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
-                 "non-root user required")
+@os_helper.skip_if_dac_override
 class TestFileTypeWB(TempDirMixin, ParserTestCase):
     """Test the FileType option/argument type for writing binary files"""
 
@@ -1784,8 +1794,7 @@ class TestFileTypeWB(TempDirMixin, ParserTestCase):
     ]
 
 
-@unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
-                 "non-root user required")
+@os_helper.skip_if_dac_override
 class TestFileTypeXB(TestFileTypeX):
     "Test the FileType option/argument type for writing new binary files only"
 

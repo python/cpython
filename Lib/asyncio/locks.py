@@ -8,7 +8,6 @@ import enum
 
 from . import exceptions
 from . import mixins
-from . import tasks
 
 class _ContextManagerMixin:
     async def __aenter__(self):

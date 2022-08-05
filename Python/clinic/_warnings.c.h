@@ -66,4 +66,85 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0435c68611fa2fe9 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(warnings_warn_explicit__doc__,
+"warn_explicit($module, /, message, category, filename, lineno,\n"
+"              module=<unrepresentable>, registry=None,\n"
+"              module_globals=None, source=None)\n"
+"--\n"
+"\n"
+"Issue a warning, or maybe ignore it or raise an exception.");
+
+#define WARNINGS_WARN_EXPLICIT_METHODDEF    \
+    {"warn_explicit", _PyCFunction_CAST(warnings_warn_explicit), METH_FASTCALL|METH_KEYWORDS, warnings_warn_explicit__doc__},
+
+static PyObject *
+warnings_warn_explicit_impl(PyObject *module, PyObject *message,
+                            PyObject *category, PyObject *filename,
+                            int lineno, PyObject *mod, PyObject *registry,
+                            PyObject *module_globals, PyObject *sourceobj);
+
+static PyObject *
+warnings_warn_explicit(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"message", "category", "filename", "lineno", "module", "registry", "module_globals", "source", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "warn_explicit", 0};
+    PyObject *argsbuf[8];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 4;
+    PyObject *message;
+    PyObject *category;
+    PyObject *filename;
+    int lineno;
+    PyObject *mod = NULL;
+    PyObject *registry = Py_None;
+    PyObject *module_globals = Py_None;
+    PyObject *sourceobj = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 4, 8, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    message = args[0];
+    category = args[1];
+    if (!PyUnicode_Check(args[2])) {
+        _PyArg_BadArgument("warn_explicit", "argument 'filename'", "str", args[2]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[2]) == -1) {
+        goto exit;
+    }
+    filename = args[2];
+    lineno = _PyLong_AsInt(args[3]);
+    if (lineno == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[4]) {
+        mod = args[4];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[5]) {
+        registry = args[5];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[6]) {
+        module_globals = args[6];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    sourceobj = args[7];
+skip_optional_pos:
+    return_value = warnings_warn_explicit_impl(module, message, category, filename, lineno, mod, registry, module_globals, sourceobj);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=596b370838b95386 input=a9049054013a1b77]*/

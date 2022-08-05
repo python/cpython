@@ -489,6 +489,8 @@ class HeapTypeObjectPtr(PyObjectPtr):
                 dictptr = self._gdbval.cast(_type_char_ptr()) + dictoffset
                 PyObjectPtrPtr = PyObjectPtr.get_gdb_type().pointer()
                 dictptr = dictptr.cast(PyObjectPtrPtr)
+                if int(dictptr.dereference()) & 1:
+                    return None
                 return PyObjectPtr.from_pyobject_ptr(dictptr.dereference())
         except RuntimeError:
             # Corrupt data somewhere; fail safe
@@ -502,12 +504,14 @@ class HeapTypeObjectPtr(PyObjectPtr):
         has_values =  int_from_int(typeobj.field('tp_flags')) & Py_TPFLAGS_MANAGED_DICT
         if not has_values:
             return None
-        PyDictValuesPtrPtr = gdb.lookup_type("PyDictValues").pointer().pointer()
-        valuesptr = self._gdbval.cast(PyDictValuesPtrPtr) - 4
-        values = valuesptr.dereference()
-        if int(values) == 0:
+        charptrptr_t = _type_char_ptr().pointer()
+        ptr = self._gdbval.cast(charptrptr_t) - 3
+        char_ptr = ptr.dereference()
+        if (int(char_ptr) & 1) == 0:
             return None
-        values = values['values']
+        char_ptr += 1
+        values_ptr = char_ptr.cast(gdb.lookup_type("PyDictValues").pointer())
+        values = values_ptr['values']
         return PyKeysValuesPair(self.get_cached_keys(), values)
 
     def get_cached_keys(self):
@@ -527,14 +531,15 @@ class HeapTypeObjectPtr(PyObjectPtr):
             return ProxyAlreadyVisited('<...>')
         visited.add(self.as_address())
 
-        pyop_attr_dict = self.get_attr_dict()
         keys_values = self.get_keys_values()
         if keys_values:
             attr_dict = keys_values.proxyval(visited)
-        elif pyop_attr_dict:
-            attr_dict = pyop_attr_dict.proxyval(visited)
         else:
-            attr_dict = {}
+            pyop_attr_dict = self.get_attr_dict()
+            if pyop_attr_dict:
+                attr_dict = pyop_attr_dict.proxyval(visited)
+            else:
+                attr_dict = {}
         tp_name = self.safe_tp_name()
 
         # Class:
@@ -1376,57 +1381,28 @@ class PyUnicodeObjectPtr(PyObjectPtr):
         return _type_Py_UNICODE.sizeof
 
     def proxyval(self, visited):
-        may_have_surrogates = False
         compact = self.field('_base')
         ascii = compact['_base']
         state = ascii['state']
         is_compact_ascii = (int(state['ascii']) and int(state['compact']))
-        if not int(state['ready']):
-            # string is not ready
-            field_length = int(compact['wstr_length'])
-            may_have_surrogates = True
-            field_str = ascii['wstr']
+        field_length = int(ascii['length'])
+        if is_compact_ascii:
+            field_str = ascii.address + 1
+        elif int(state['compact']):
+            field_str = compact.address + 1
         else:
-            field_length = int(ascii['length'])
-            if is_compact_ascii:
-                field_str = ascii.address + 1
-            elif int(state['compact']):
-                field_str = compact.address + 1
-            else:
-                field_str = self.field('data')['any']
-            repr_kind = int(state['kind'])
-            if repr_kind == 1:
-                field_str = field_str.cast(_type_unsigned_char_ptr())
-            elif repr_kind == 2:
-                field_str = field_str.cast(_type_unsigned_short_ptr())
-            elif repr_kind == 4:
-                field_str = field_str.cast(_type_unsigned_int_ptr())
+            field_str = self.field('data')['any']
+        repr_kind = int(state['kind'])
+        if repr_kind == 1:
+            field_str = field_str.cast(_type_unsigned_char_ptr())
+        elif repr_kind == 2:
+            field_str = field_str.cast(_type_unsigned_short_ptr())
+        elif repr_kind == 4:
+            field_str = field_str.cast(_type_unsigned_int_ptr())
 
         # Gather a list of ints from the Py_UNICODE array; these are either
         # UCS-1, UCS-2 or UCS-4 code points:
-        if not may_have_surrogates:
-            Py_UNICODEs = [int(field_str[i]) for i in safe_range(field_length)]
-        else:
-            # A more elaborate routine if sizeof(Py_UNICODE) is 2 in the
-            # inferior process: we must join surrogate pairs.
-            Py_UNICODEs = []
-            i = 0
-            limit = safety_limit(field_length)
-            while i < limit:
-                ucs = int(field_str[i])
-                i += 1
-                if ucs < 0xD800 or ucs >= 0xDC00 or i == field_length:
-                    Py_UNICODEs.append(ucs)
-                    continue
-                # This could be a surrogate pair.
-                ucs2 = int(field_str[i])
-                if ucs2 < 0xDC00 or ucs2 > 0xDFFF:
-                    continue
-                code = (ucs & 0x03FF) << 10
-                code |= ucs2 & 0x03FF
-                code += 0x00010000
-                Py_UNICODEs.append(code)
-                i += 1
+        Py_UNICODEs = [int(field_str[i]) for i in safe_range(field_length)]
 
         # Convert the int code points to unicode characters, and generate a
         # local unicode instance.

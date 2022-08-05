@@ -19,7 +19,7 @@
     <_TokenOutputs Include="$(PySourcePath)Doc\library\token-list.inc">
       <Format>rst</Format>
     </_TokenOutputs>
-    <_TokenOutputs Include="$(PySourcePath)Include\token.h">
+    <_TokenOutputs Include="$(PySourcePath)Include\internal\pycore_token.h">
       <Format>h</Format>
     </_TokenOutputs>
     <_TokenOutputs Include="$(PySourcePath)Parser\token.c">

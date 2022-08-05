@@ -747,10 +747,11 @@ profiler_traverse(ProfilerObject *op, visitproc visit, void *arg)
 static void
 profiler_dealloc(ProfilerObject *op)
 {
+    PyObject_GC_UnTrack(op);
     if (op->flags & POF_ENABLED) {
         PyThreadState *tstate = _PyThreadState_GET();
         if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
-            PyErr_WriteUnraisable((PyObject *)op);
+            _PyErr_WriteUnraisableMsg("When destroying _lsprof profiler", NULL);
         }
     }
 

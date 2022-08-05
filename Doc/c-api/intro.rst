@@ -537,6 +537,13 @@ data attributes of a new object type, and another is used to describe the value
 of a complex number.  These will  be discussed together with the functions that
 use them.
 
+.. c:type:: Py_ssize_t
+
+   A signed integral type such that ``sizeof(Py_ssize_t) == sizeof(size_t)``.
+   C99 doesn't define such a thing directly (size_t is an unsigned integral type).
+   See :pep:`353` for details. ``PY_SSIZE_T_MAX`` is the largest positive value
+   of type :c:type:`Py_ssize_t`.
+
 
 .. _api-exceptions:
 
@@ -772,7 +779,7 @@ A full list of the various types of debugging builds is in the file
 :file:`Misc/SpecialBuilds.txt` in the Python source distribution. Builds are
 available that support tracing of reference counts, debugging the memory
 allocator, or low-level profiling of the main interpreter loop.  Only the most
-frequently-used builds will be described in the remainder of this section.
+frequently used builds will be described in the remainder of this section.
 
 Compiling the interpreter with the :c:macro:`Py_DEBUG` macro defined produces
 what is generally meant by :ref:`a debug build of Python <debug-build>`.
