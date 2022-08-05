@@ -1165,6 +1165,13 @@ contributors are volunteers from the community.
 CPython bytecode changes
 ========================
 
+* The bytecode now contains inline cache entries, which take the form of
+  :opcode:`CACHE` instructions. Many opcodes expect to be followed by an exact
+  number of caches, and instruct the interpreter to skip over them at runtime.
+  Populated caches can look like arbitrary instructions, so great care should be
+  taken when reading or modifying raw, adaptive bytecode containing quickened
+  data.
+
 * Replaced all numeric ``BINARY_*`` and ``INPLACE_*`` instructions with a single
   :opcode:`BINARY_OP` implementation.
 
