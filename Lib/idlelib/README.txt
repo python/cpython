@@ -265,7 +265,7 @@ What's New entries
 
 Repository directory Doc/whatsnew/ has a file 3.n.rst for each 3.n
 Python version.  For the first entry in each file, add subsection
-'idlelib and IDLE', in alphabetical position, to the 'Improved Modules'
+'IDLE and idlelib', in alphabetical position, to the 'Improved Modules'
 section.  The first entry to '3.(n+1).rst is the first feature or
 feature change that will not appear in the 3.n.0 release.
 
