@@ -3665,6 +3665,19 @@ class TermsizeTests(unittest.TestCase):
             raise
         self.assertEqual(expected, actual)
 
+    @unittest.skipUnless(sys.platform == 'win32', 'Windows specific test')
+    def test_windows_fd(self):
+        """Check if get_terminal_size() returns a meaningful value in Windows"""
+        try:
+            conout = open('conout$', 'w')
+        except OSError:
+            self.skipTest('failed to open conout$')
+        with conout:
+            size = os.get_terminal_size(conout.fileno())
+
+        self.assertGreaterEqual(size.columns, 0)
+        self.assertGreaterEqual(size.lines, 0)
+
 
 @unittest.skipUnless(hasattr(os, 'memfd_create'), 'requires os.memfd_create')
 @support.requires_linux_version(3, 17)
