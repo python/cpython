@@ -1438,4 +1438,34 @@ _PyEval_BuiltinsFromGlobals(PyThreadState *tstate, PyObject *globals)
     return _PyEval_GetBuiltins(tstate);
 }
 
+PyObject *
+PyFrame_GetVar(PyFrameObject *frame, PyObject *name)
+{
+    PyObject *locals = PyFrame_GetLocals(frame);
+    if (locals == NULL) {
+        return NULL;
+    }
+    PyObject *value = PyDict_GetItemWithError(locals, name);
+    Py_DECREF(locals);
 
+    if (value == NULL) {
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
+        PyErr_Format(PyExc_NameError, "variable %R does not exist", name);
+        return NULL;
+    }
+    return Py_NewRef(value);
+}
+
+PyObject *
+PyFrame_GetVarString(PyFrameObject *frame, const char *name)
+{
+    PyObject *name_obj = PyUnicode_FromString(name);
+    if (name_obj == NULL) {
+        return NULL;
+    }
+    PyObject *value = PyFrame_GetVar(frame, name_obj);
+    Py_DECREF(name_obj);
+    return value;
+}
