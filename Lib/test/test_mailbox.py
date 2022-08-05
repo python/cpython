@@ -1192,12 +1192,12 @@ class TestMbox(_TestMboxMMDF, unittest.TestCase):
     def test_read_mbox_regex1(self):
         import re
         # stricter matching should only find one message
-        self._test_read_mbox(lambda line: re.match(b'From .+ \\d\\d\\d\\d$', line), count=1)
+        self._test_read_mbox(lambda line: re.match(b'From .+ \\d\\d\\d\\d\\r?\\n', line), count=1)
 
     def test_read_mbox_regex2(self):
         import re
         # invalid, so don't find any messages
-        self._test_read_mbox(lambda line: re.match(b'From .+ \\d\\d\\d$', line), count=0)
+        self._test_read_mbox(lambda line: re.match(b'From .+ \\d\\d\\d\\r?\\n', line), count=0)
 
 
 class TestMMDF(_TestMboxMMDF, unittest.TestCase):
