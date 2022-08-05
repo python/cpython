@@ -2294,10 +2294,12 @@ class _BasePathTest(object):
         self.assertIs((P / 'fileA\udfff').is_file(), False)
         self.assertIs((P / 'fileA\x00').is_file(), False)
 
-    @only_posix
     def test_is_mount(self):
         P = self.cls(BASE)
-        R = self.cls('/')  # TODO: Work out Windows.
+        if os.name == 'nt':
+            R = self.cls('c:\\')
+        else:
+            R = self.cls('/')
         self.assertFalse((P / 'fileA').is_mount())
         self.assertFalse((P / 'dirA').is_mount())
         self.assertFalse((P / 'non-existing').is_mount())
@@ -2305,8 +2307,7 @@ class _BasePathTest(object):
         self.assertTrue(R.is_mount())
         if os_helper.can_symlink():
             self.assertFalse((P / 'linkA').is_mount())
-        self.assertIs(self.cls('/\udfff').is_mount(), False)
-        self.assertIs(self.cls('/\x00').is_mount(), False)
+        self.assertIs((R / '\udfff').is_mount(), False)
 
     def test_is_symlink(self):
         P = self.cls(BASE)
