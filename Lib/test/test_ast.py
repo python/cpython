@@ -756,6 +756,12 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             ast.parse('(x := 0)', feature_version=(3, 7))
 
+    def test_invalid_major_feature_version(self):
+        with self.assertRaises(ValueError):
+            ast.parse('pass', feature_version=(2, 7))
+        with self.assertRaises(ValueError):
+            ast.parse('pass', feature_version=(4, 0))
+
     def test_constant_as_name(self):
         for constant in "True", "False", "None":
             expr = ast.Expression(ast.Name(constant, ast.Load()))
@@ -792,6 +798,27 @@ class AST_Tests(unittest.TestCase):
                 except ValueError:
                     return self
         enum._test_simple_enum(_Precedence, ast._Precedence)
+
+    @support.cpython_only
+    def test_ast_recursion_limit(self):
+        fail_depth = sys.getrecursionlimit() * 3
+        crash_depth = sys.getrecursionlimit() * 300
+        success_depth = int(fail_depth * 0.75)
+
+        def check_limit(prefix, repeated):
+            expect_ok = prefix + repeated * success_depth
+            ast.parse(expect_ok)
+            for depth in (fail_depth, crash_depth):
+                broken = prefix + repeated * depth
+                details = "Compiling ({!r} + {!r} * {})".format(
+                            prefix, repeated, depth)
+                with self.assertRaises(RecursionError, msg=details):
+                    ast.parse(broken)
+
+        check_limit("a", "()")
+        check_limit("a", ".b")
+        check_limit("a", "[0]")
+        check_limit("a", "*a")
 
 
 class ASTHelpers_Test(unittest.TestCase):

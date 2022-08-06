@@ -61,17 +61,17 @@ New File
 Open...
    Open an existing file with an Open dialog.
 
-Recent Files
-   Open a list of recent files.  Click one to open it.
-
 Open Module...
    Open an existing module (searches sys.path).
 
+Recent Files
+   Open a list of recent files.  Click one to open it.
+
 .. index::
-   single: Class browser
+   single: Module browser
    single: Path browser
 
-Class Browser
+Module Browser
    Show functions, classes, and methods in the current Editor file in a
    tree structure.  In the shell, open a module first.
 
@@ -87,11 +87,14 @@ Save
 
 Save As...
    Save the current window with a Save As dialog.  The file saved becomes the
-   new associated file for the window.
+   new associated file for the window. (If your file namager is set to hide
+   extensions, the current extension will be omitted in the file name box.
+   If the new filename has no '.', '.py' and '.txt' will be added for Python
+   and text files, except that on macOS Aqua,'.py' is added for all files.)
 
 Save Copy As...
    Save the current window to different file without changing the associated
-   file.
+   file.  (See Save As note above about filename extensions.)
 
 Print Window
    Print the current window to the default printer.
@@ -114,6 +117,9 @@ Undo
 Redo
    Redo the last undone change to the current window.
 
+Select All
+   Select the entire contents of the current window.
+
 Cut
    Copy selection into the system-wide clipboard; then delete the selection.
 
@@ -124,9 +130,6 @@ Paste
    Insert contents of the system-wide clipboard into the current window.
 
 The clipboard functions are also available in context menus.
-
-Select All
-   Select the entire contents of the current window.
 
 Find...
    Open a search dialog with many options
@@ -156,18 +159,23 @@ Expand Word
    Expand a prefix you have typed to match a full word in the same window;
    repeat to get a different expansion.
 
-Show call tip
+Show Call Tip
    After an unclosed parenthesis for a function, open a small window with
    function parameter hints.  See :ref:`Calltips <calltips>` in the
    Editing and navigation section below.
 
-Show surrounding parens
+Show Surrounding Parens
    Highlight the surrounding parenthesis.
 
 .. _format-menu:
 
 Format menu (Editor window only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Format Paragraph
+   Reformat the current blank-line-delimited paragraph in comment block or
+   multiline string or selected line in a string.  All lines in the
+   paragraph will be formatted to less than N columns, where N defaults to 72.
 
 Indent Region
    Shift selected lines right by the indent width (default 4 spaces).
@@ -195,12 +203,7 @@ New Indent Width
    Open a dialog to change indent width. The accepted default by the Python
    community is 4 spaces.
 
-Format Paragraph
-   Reformat the current blank-line-delimited paragraph in comment block or
-   multiline string or selected line in a string.  All lines in the
-   paragraph will be formatted to less than N columns, where N defaults to 72.
-
-Strip trailing whitespace
+Strip Trailing Chitespace
    Remove trailing space and other whitespace characters after the last
    non-whitespace character of a line by applying str.rstrip to each line,
    including lines within multiline strings.  Except for Shell windows,
@@ -470,6 +473,14 @@ are restricted to four spaces due to Tcl/Tk limitations.
 
 See also the indent/dedent region commands on the
 :ref:`Format menu <format-menu>`.
+
+Search and Replace
+^^^^^^^^^^^^^^^^^^
+
+Any selection becomes a search target.  However, only selections within
+a line work because searches are only performed within lines with the
+terminal newline removed.  If ``[x] Regular expresion`` is checked, the
+target is interpreted according to the Python re module.
 
 .. _completions:
 

@@ -585,7 +585,7 @@ Options you shouldn't use
 
    Reserved for use by Jython_.
 
-.. _Jython: http://www.jython.org/
+.. _Jython: https://www.jython.org/
 
 
 .. _using-on-envvars:
@@ -981,7 +981,7 @@ conflict.
    order to force the interpreter to use ``ASCII`` instead of ``UTF-8`` for
    system interfaces.
 
-   .. availability:: \*nix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.7
       See :pep:`538` for more details.

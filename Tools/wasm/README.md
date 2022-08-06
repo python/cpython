@@ -23,15 +23,19 @@ to a repository checkout.
 Christian Heimes maintains a container image with Emscripten SDK, Python
 build dependencies, WASI-SDK, wasmtime, and several additional tools.
 
+From within your local CPython repo clone, run one of the following commands:
+
 ```
 # Fedora, RHEL, CentOS
-podman run --rm -ti -v $(pwd):/python-wasm/cpython:Z quay.io/tiran/cpythonbuild:emsdk3
+podman run --rm -ti -v $(pwd):/python-wasm/cpython:Z -w /python-wasm/cpython quay.io/tiran/cpythonbuild:emsdk3
 
 # other
-docker run --rm -ti -v $(pwd):/python-wasm/cpython quay.io/tiran/cpythonbuild:emsdk3
+docker run --rm -ti -v $(pwd):/python-wasm/cpython -w /python-wasm/cpython quay.io/tiran/cpythonbuild:emsdk3
 ```
 
 ### Compile a build Python interpreter
+
+From within the container, run the following commands:
 
 ```shell
 mkdir -p builddir/build
@@ -65,12 +69,9 @@ popd
 ```
 
 Serve `python.html` with a local webserver and open the file in a browser.
-
-```shell
-emrun builddir/emscripten-browser/python.html
-```
-
-or
+Python comes with a minimal web server script that sets necessary HTTP
+headers like COOP, COEP, and mimetypes. Run the script outside the container
+and from the root of the CPython checkout.
 
 ```shell
 ./Tools/wasm/wasm_webserver.py
@@ -79,6 +80,7 @@ or
 and open http://localhost:8000/builddir/emscripten-browser/python.html . This
 directory structure enables the *C/C++ DevTools Support (DWARF)* to load C
 and header files with debug builds.
+
 
 ### Cross compile to wasm32-emscripten for node
 
@@ -165,7 +167,7 @@ functions.
 - Heap memory and stack size are limited. Recursion or extensive memory
   consumption can crash Python.
 - Most stdlib modules with a dependency on external libraries are missing,
-  e.g. ``ctypes``, ``readline``, ``sqlite3``, ``ssl``, and more.
+  e.g. ``ctypes``, ``readline``, ``ssl``, and more.
 - Shared extension modules are not implemented yet. All extension modules
   are statically linked into the main binary. The experimental configure
   option ``--enable-wasm-dynamic-linking`` enables dynamic extensions
@@ -224,9 +226,27 @@ AddType application/wasm wasm
 
 # WASI (wasm32-wasi)
 
-WASI builds require [WASI SDK](https://github.com/WebAssembly/wasi-sdk) 15.0+
-and currently [wasix](https://github.com/singlestore-labs/wasix) for POSIX
-compatibility stubs.
+WASI builds require [WASI SDK](https://github.com/WebAssembly/wasi-sdk) 16.0+.
+
+## Cross-compile to wasm32-wasi
+
+The script ``wasi-env`` sets necessary compiler and linker flags as well as
+``pkg-config`` overrides. The script assumes that WASI-SDK is installed in
+``/opt/wasi-sdk`` or ``$WASI_SDK_PATH``.
+
+```shell
+mkdir -p builddir/wasi
+pushd builddir/wasi
+
+CONFIG_SITE=../../Tools/wasm/config.site-wasm32-wasi \
+  ../../Tools/wasm/wasi-env ../../configure -C \
+    --host=wasm32-unknown-wasi \
+    --build=$(../../config.guess) \
+    --with-build-python=$(pwd)/../build/python
+
+make -j$(nproc)
+popd
+```
 
 ## WASI limitations and issues (WASI SDK 15.0)
 
@@ -372,6 +392,16 @@ git clone https://github.com/emscripten-core/emsdk.git /opt/emsdk
 /opt/emsdk/emsdk activate latest
 ```
 
+### Optionally: enable ccache for EMSDK
+
+The ``EM_COMPILER_WRAPPER`` must be set after the EMSDK environment is
+sourced. Otherwise the source script removes the environment variable.
+
+```
+. /opt/emsdk/emsdk_env.sh
+EM_COMPILER_WRAPPER=ccache
+```
+
 ### Optionally: pre-build and cache static libraries
 
 Emscripten SDK provides static builds of core libraries without PIC
@@ -380,12 +410,8 @@ PIC. To populate the build cache, run:
 
 ```shell
 . /opt/emsdk/emsdk_env.sh
-embuilder build --force zlib bzip2
-embuilder build --force --pic \
-    zlib bzip2 libc-mt libdlmalloc-mt libsockets-mt \
-    libstubs libcompiler_rt libcompiler_rt-mt crtbegin libhtml5 \
-    libc++-mt-noexcept libc++abi-mt-noexcept \
-    libal libGL-mt libstubs-debug libc-mt-debug
+embuilder build zlib bzip2 MINIMAL_PIC
+embuilder build --pic zlib bzip2 MINIMAL_PIC
 ```
 
 ### Install [WASI-SDK](https://github.com/WebAssembly/wasi-sdk)
@@ -405,18 +431,18 @@ rm -f wasi-sdk-${WASI_VERSION_FULL}-linux.tar.gz
 
 ### Install [wasmtime](https://github.com/bytecodealliance/wasmtime) WASI runtime
 
-**NOTE**: wasmtime 0.37 has a bug. Newer versions should be fine again.
+wasmtime 0.38 or newer is required.
 
 ```shell
 curl -sSf -L -o ~/install-wasmtime.sh https://wasmtime.dev/install.sh
 chmod +x ~/install-wasmtime.sh
-~/install-wasmtime.sh --version v0.36.0
+~/install-wasmtime.sh --version v0.38.0
 ln -srf -t /usr/local/bin/ ~/.wasmtime/bin/wasmtime
 ```
 
-### Install [WASIX](https://github.com/singlestore-labs/wasix)
 
-```shell
-git clone https://github.com/singlestore-labs/wasix.git ~/wasix
-make install -C ~/wasix
-```
+### WASI debugging
+
+* ``wasmtime run -g`` generates debugging symbols for gdb and lldb.
+* The environment variable ``RUST_LOG=wasi_common`` enables debug and
+  trace logging.

@@ -54,21 +54,22 @@ class TaskGroup:
 
     async def __aexit__(self, et, exc, tb):
         self._exiting = True
-        propagate_cancellation_error = None
 
         if (exc is not None and
                 self._is_base_error(exc) and
                 self._base_error is None):
             self._base_error = exc
 
-        if et is not None:
-            if et is exceptions.CancelledError:
-                if self._parent_cancel_requested and not self._parent_task.uncancel():
-                    # Do nothing, i.e. swallow the error.
-                    pass
-                else:
-                    propagate_cancellation_error = exc
+        propagate_cancellation_error = \
+            exc if et is exceptions.CancelledError else None
+        if self._parent_cancel_requested:
+            # If this flag is set we *must* call uncancel().
+            if self._parent_task.uncancel() == 0:
+                # If there are no pending cancellations left,
+                # don't propagate CancelledError.
+                propagate_cancellation_error = None
 
+        if et is not None:
             if not self._aborting:
                 # Our parent task is being cancelled:
                 #
