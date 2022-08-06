@@ -62,10 +62,9 @@ Call its :meth:`~Cursor.execute` method to perform SQL queries::
                   (date text, trans text, symbol text, qty real, price real)''')
    cur.execute("INSERT INTO stocks VALUES ('2006-01-05','BUY','RHAT',100,35.14)")
 
-Notice that the ``INSERT`` statement will
-:ref:`implicitly open a transaction <sqlite3-controlling-transactions>`.
-We use the connection object to close pending transactions by using
-:meth:`~Connection.commit` or :meth:`~Connection.rollback`::
+The ``INSERT`` statement will implicitly open a transaction.
+See :ref:`sqlite3-controlling-transactions>` for more details.
+Use connection object to :meth:`~Connection.commit` the pending transaction::
 
    con.commit()  # Save the changes.
 
