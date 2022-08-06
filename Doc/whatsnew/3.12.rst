@@ -392,7 +392,7 @@ Changes in the Python API
 
 * Removed the ``asyncore``-based ``smtpd`` module deprecated in Python 3.4.7
   and 3.5.4.  A recommended replacement is the
-  :keyword:`async`/:keyword:`await`-based aiosmtpd_ PyPI module.
+  :mod:`asyncio`-based aiosmtpd_ PyPI module.
 
 * :func:`shlex.split`: Passing ``None`` for *s* argument now raises an
   exception, rather than reading :data:`sys.stdin`. The feature was deprecated
