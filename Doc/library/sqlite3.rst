@@ -77,7 +77,7 @@ then query the database::
    # Open a new connection and create a new cursor.
    >>> con = sqlite3.connect('example.db')
    >>> cur = con.cursor()
-   # Use the SQL 'count' function to verify that we've got one row of data.
+   # Use the SQL 'count' function to verify the row count.
    >>> res = cur.execute('SELECT count(rowid) FROM stocks')
    >>> print(res.fetchone())
    (1,)
@@ -110,6 +110,7 @@ Now, retrieve the rows by iterating over the result of a ``SELECT`` query::
    ('2006-04-06', 'SELL', 'IBM', 500, 53.0)
    ('2006-04-05', 'BUY', 'MSFT', 1000, 72.0)
 
+Each row is a five-item :class:`!tuple`.
 You've now created an SQLite database using the :mod:`!sqlite3` module.
 
 .. _SQL injection attacks: https://en.wikipedia.org/wiki/SQL_injection
