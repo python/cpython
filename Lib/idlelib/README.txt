@@ -284,7 +284,7 @@ needed.
 Github repository and issues
 ------
 
-The CPython repository is as https://github.com/python/cpython.  The
-IDLE Issues listing is at https://github.com/orgs/python/projects/31.
+The CPython repository is https://github.com/python/cpython.  The
+IDLE Issues listing is https://github.com/orgs/python/projects/31.
 The main classification is by Topic, based on the IDLE menu.  View the
 topics list by clicking the [<]] button in the upper right.
