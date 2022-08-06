@@ -72,12 +72,9 @@ Verify that data has been committed and written to disk:
 close the connection, open a new connection,
 then query the database::
 
-   # Close the database connection.
    >>> con.close()
-   # Open a new connection and create a new cursor.
    >>> con = sqlite3.connect('example.db')
    >>> cur = con.cursor()
-   # Use the SQL 'count' function to verify the row count.
    >>> res = cur.execute('SELECT count(rowid) FROM stocks')
    >>> print(res.fetchone())
    (1,)
