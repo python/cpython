@@ -204,9 +204,13 @@ Glossary
       :ref:`the dis module <bytecodes>`.
 
    callable
-      A callable is an object that has the pointer :c:member:`~PyTypeObject.tp_call`
-      not ``NULL`` and set to a function. Python functions and object methods
-      are callables. An instance of a class that implements the :meth:`~object.__call__`
+      A callable is an object that is possible to execute, possibly with a set
+      of arguments (see :term:`argument`), with the following syntax::
+
+           callable(argument1, argument2, ...)
+
+      A :term:`function`, and by extension a :term:`method`, is a callable.
+      An instance of a class that implements the :meth:`~object.__call__`
       method is also a callable.
 
    callback
