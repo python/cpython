@@ -525,6 +525,7 @@ class XMLDeclarationQuotes(enum.Enum):
     def __str__(self):
         return self.value
 
+
 class ShortEmptyElements(enum.Enum):
     """
     This class creates backwards compatibility with the boolean value of
@@ -557,12 +558,13 @@ class ShortEmptyElements(enum.Enum):
         if not isinstance(short_empty_elements, collections.defaultdict):
             if isinstance(short_empty_elements, ShortEmptyElements):
                 return collections.defaultdict(lambda: short_empty_elements)
-            elif bool(short_empty_elements) is True:
+            elif short_empty_elements:
                 return collections.defaultdict(lambda: ShortEmptyElements.SPACE)
             else:
                 return collections.defaultdict(lambda: ShortEmptyElements.NONE)
         else:
             return short_empty_elements
+
 
 class ElementTree:
     """An XML element hierarchy.
@@ -951,7 +953,7 @@ def _serialize_xml(write, elem, qnames, namespaces,
                     else:
                         v = _escape_attrib(v)
                     write(" %s=\"%s\"" % (qnames[k], v))
-            if text or len(elem) or not bool(short_empty_elements[tag]):
+            if text or len(elem) or not short_empty_elements[tag]:
                 write(">")
                 if text:
                     write(_escape_cdata(text))
