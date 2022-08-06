@@ -68,9 +68,9 @@ Use connection object to :meth:`~Connection.commit` the pending transaction::
 
    con.commit()  # Save the changes.
 
-Let us verify that our data has been committed and written to disk
-by closing the database connection, opening a new connection,
-and querying our ``stocks`` table for our newly inserted row::
+Verify that data has been committed and written to disk:
+close the connection, open a new connection,
+then query the database::
 
    # Close the database connection.
    >>> con.close()
