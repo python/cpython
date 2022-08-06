@@ -53,7 +53,7 @@ the database will be stored in the file :file:`example.db`::
 Notice that the file :file:`example.db` will be created implicitly
 if it does not exist.
 Now, create a :class:`Cursor` object using :meth:`~Connection.cursor`.
-Call its :meth:`~Cursor.execute` method to perform SQL commands::
+Call its :meth:`~Cursor.execute` method to perform SQL queries::
 
    cur = con.cursor()
 
