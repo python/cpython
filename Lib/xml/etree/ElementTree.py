@@ -511,6 +511,7 @@ class QName:
 
 # --------------------------------------------------------------------
 
+
 class XMLDeclarationQuotes(enum.Enum):
     """
     Whether or not single quotes or double quotes ought to be used in the XML
