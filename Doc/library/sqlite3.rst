@@ -1,4 +1,4 @@
-:mod:`!sqlite3` --- DB-API 2.0 interface for SQLite databases
+:mod:`sqlite3` --- DB-API 2.0 interface for SQLite databases
 ============================================================
 
 .. module:: sqlite3
