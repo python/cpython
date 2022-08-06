@@ -282,7 +282,7 @@ make a separate PR for each file and label it with the backports
 needed.
 
 Github repository and issues
-------
+----------------------------
 
 The CPython repository is https://github.com/python/cpython.  The
 IDLE Issues listing is https://github.com/orgs/python/projects/31.
