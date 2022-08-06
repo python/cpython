@@ -65,7 +65,7 @@ Call its :meth:`~Cursor.execute` method to perform SQL commands::
 Notice that the ``INSERT`` statement will
 :ref:`implicitly open a transaction <sqlite3-controlling-transactions>`.
 We use the connection object to close pending transactions by using
-:meth:`~Connection.commit` or `:meth:`~Connection.rollback`::
+:meth:`~Connection.commit` or :meth:`~Connection.rollback`::
 
    con.commit()  # Save the changes.
 
