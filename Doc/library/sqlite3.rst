@@ -63,7 +63,7 @@ Call its :meth:`~Cursor.execute` method to perform SQL queries::
    cur.execute("INSERT INTO stocks VALUES ('2006-01-05','BUY','RHAT',100,35.14)")
 
 The ``INSERT`` statement will implicitly open a transaction.
-See :ref:`sqlite3-controlling-transactions>` for more details.
+See :ref:`sqlite3-controlling-transactions` for more details.
 Use connection object to :meth:`~Connection.commit` the pending transaction::
 
    con.commit()  # Save the changes.
