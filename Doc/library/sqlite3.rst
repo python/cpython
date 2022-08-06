@@ -40,44 +40,45 @@ This document includes four main sections:
 Tutorial
 --------
 
-To use the module, start by creating a :class:`Connection` object that
-represents the database.  Here the data will be stored in the
-:file:`example.db` file::
+To use the module, start by opening a connection to an SQLite database.
+We do this by using the :func:`sqlite3.connect` function.
+The returned :class:`Connection` object represents our
+connection to the database.
+In our example,
+the database will be stored in the file :file:`example.db`::
 
    import sqlite3
    con = sqlite3.connect('example.db')
 
-The special path name ``:memory:`` can be provided to create a temporary
-database in RAM.
-
-Once a :class:`Connection` has been established, create a :class:`Cursor` object
-and call its :meth:`~Cursor.execute` method to perform SQL commands::
+Notice that the file :file:`example.db` will be created implicitly
+if it does not exist.
+Now, create a :class:`Cursor` object using :meth:`~Connection.cursor`.
+Call its :meth:`~Cursor.execute` method to perform SQL commands::
 
    cur = con.cursor()
 
-   # Create table
+   # Create table, then insert a row of data.
    cur.execute('''CREATE TABLE stocks
                   (date text, trans text, symbol text, qty real, price real)''')
-
-   # Insert a row of data
    cur.execute("INSERT INTO stocks VALUES ('2006-01-05','BUY','RHAT',100,35.14)")
 
-   # Save (commit) the changes
-   con.commit()
+Notice that the ``INSERT`` statement will
+:ref:`implicitly open a transaction <sqlite3-controlling-transactions>`.
+We use the connection object to close pending transactions by using
+:meth:`~Connection.commit` or `:meth:`~Connection.rollback`::
 
-   # We can also close the connection if we are done with it.
-   # Just be sure any changes have been committed or they will be lost.
-   con.close()
+   con.commit()  # Save the changes.
 
-The saved data is persistent: it can be reloaded in a subsequent session even
-after restarting the Python interpreter::
+Let us verify that our data has been committed and written to disk
+by closing the database connection, opening a new connection,
+and querying our ``stocks`` table for our newly inserted row::
 
-   import sqlite3
-   con = sqlite3.connect('example.db')
-   cur = con.cursor()
-
-At this point, our database only contains one row::
-
+   # Close the database connection.
+   >>> con.close()
+   # Open a new connection and create a new cursor.
+   >>> con = sqlite3.connect('example.db')
+   >>> cur = con.cursor()
+   # Query the 'stocks' table.
    >>> res = cur.execute('SELECT count(rowid) FROM stocks')
    >>> print(res.fetchone())
    (1,)
@@ -100,7 +101,7 @@ to bind Python values to SQL statements,
 to avoid `SQL injection attacks`_.
 See the :ref:`placeholders how-to <sqlite3-placeholders>` for more details.
 
-Then, retrieve the data by iterating over the result of a ``SELECT`` statement::
+Now, retrieve the rows by iterating over the result of a ``SELECT`` query::
 
    >>> for row in cur.execute('SELECT * FROM stocks ORDER BY price'):
    ...     print(row)
