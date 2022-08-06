@@ -1,16 +1,6 @@
 #include "parts.h"
 
-// Forward declarations
 static struct PyModuleDef *_testcapimodule = NULL;  // set at initialization
-static PyObject *TestError;  /* set to exception object in init */
-
-/* Raise TestError with test_name + ": " + msg, and return NULL. */
-static PyObject *
-raiseTestError(const char* test_name, const char* msg)
-{
-    PyErr_Format(TestError, "%s: %s", test_name, msg);
-    return NULL;
-}
 
 static PyObject *
 codec_incrementalencoder(PyObject *self, PyObject *args)
@@ -41,7 +31,7 @@ test_unicode_compare_with_ascii(PyObject *self, PyObject *Py_UNUSED(ignored)) {
     result = PyUnicode_CompareWithASCIIString(py_s, "str");
     Py_DECREF(py_s);
     if (!result) {
-        PyErr_SetString(TestError, "Python string ending in NULL "
+        PyErr_SetString(PyExc_AssertionError, "Python string ending in NULL "
                         "should not compare equal to c string.");
         return NULL;
     }
@@ -74,18 +64,22 @@ test_widechar(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (PyUnicode_GET_LENGTH(wide) != PyUnicode_GET_LENGTH(utf8)) {
         Py_DECREF(wide);
         Py_DECREF(utf8);
-        return raiseTestError("test_widechar",
-                              "wide string and utf8 string "
-                              "have different length");
+        PyErr_SetString(PyExc_AssertionError,
+                        "test_widechar: "
+                        "wide string and utf8 string "
+                        "have different length");
+        return NULL;
     }
     if (PyUnicode_Compare(wide, utf8)) {
         Py_DECREF(wide);
         Py_DECREF(utf8);
         if (PyErr_Occurred())
             return NULL;
-        return raiseTestError("test_widechar",
-                              "wide string and utf8 string "
-                              "are different");
+        PyErr_SetString(PyExc_AssertionError,
+                        "test_widechar: "
+                        "wide string and utf8 string "
+                        "are different");
+        return NULL;
     }
 
     Py_DECREF(wide);
@@ -95,9 +89,12 @@ test_widechar(PyObject *self, PyObject *Py_UNUSED(ignored))
     wide = PyUnicode_FromWideChar(invalid, 1);
     if (wide == NULL)
         PyErr_Clear();
-    else
-        return raiseTestError("test_widechar",
-                              "PyUnicode_FromWideChar(L\"\\U00110000\", 1) didn't fail");
+    else {
+        PyErr_SetString(PyExc_AssertionError,
+                        "test_widechar: "
+                        "PyUnicode_FromWideChar(L\"\\U00110000\", 1) didn't fail");
+        return NULL;
+    }
 #endif
     Py_RETURN_NONE;
 }
@@ -287,7 +284,7 @@ test_string_from_format(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (result == NULL)                                             \
         return NULL;                                                \
     if (!_PyUnicode_EqualToASCIIString(result, EXPECTED)) {         \
-        PyErr_Format(TestError,                                     \
+        PyErr_Format(PyExc_AssertionError,                          \
                      "test_string_from_format: failed at \"%s\" "   \
                      "expected \"%s\" got \"%s\"",                  \
                      FORMAT, EXPECTED, PyUnicode_AsUTF8(result));   \
@@ -683,10 +680,6 @@ static PyMethodDef TestMethods[] = {
 int
 _PyTestCapi_Init_Unicode(PyObject *m) {
     _testcapimodule = PyModule_GetDef(m);
-
-    TestError = PyErr_NewException("_testcapi.unicode_error", NULL, NULL);
-    Py_INCREF(TestError);
-    PyModule_AddObject(m, "unicode_error", TestError);
 
     if (PyModule_AddFunctions(m, TestMethods) < 0) {
         return -1;
