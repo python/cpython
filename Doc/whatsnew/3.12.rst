@@ -211,21 +211,13 @@ APIs:
 *  :meth:`asyncio.Future.cancel`'s *msg* parameter (:gh:`90985`)
 *  :meth:`asyncio.Task.cancel`'s *msg* parameter (:gh:`90985`)
 
-Pending Removal in Python 4.0
------------------------------
-
-The following have been deprecated in earlier Python releases,
-and will be removed in Python 4.0.
-
-APIs:
-
-* :mod:`array`'s ``'u'`` format code (:gh:`57281`)
-
 Pending Removal in Future Versions
 ----------------------------------
 
 The following were deprecated in earlier Python versions and will be removed,
 although there is currently no date scheduled for their removal.
+
+* :mod:`array`'s ``'u'`` format code (:gh:`57281`)
 
 * :class:`typing.Text` (:gh:`92332`)
 
