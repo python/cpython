@@ -1,4 +1,4 @@
-:mod:`sqlite3` --- DB-API 2.0 interface for SQLite databases
+:mod:`!sqlite3` --- DB-API 2.0 interface for SQLite databases
 ============================================================
 
 .. module:: sqlite3
@@ -306,7 +306,7 @@ Module constants
    :func:`connect` to look up a converter function using
    the declared types for each column.
    The types are declared when the database table is created.
-   ``sqlite3`` will look up a converter function using the first word of the
+   :mod:`!sqlite3` will look up a converter function using the first word of the
    declared type as the converter dictionary key.
    For example:
 
@@ -329,12 +329,12 @@ Module constants
 .. data:: paramstyle
 
    String constant stating the type of parameter marker formatting expected by
-   the :mod:`sqlite3` module. Required by the DB-API. Hard-coded to
+   the :mod:`!sqlite3` module. Required by the DB-API. Hard-coded to
    ``"qmark"``.
 
    .. note::
 
-      The :mod:`sqlite3` module supports both ``qmark`` and ``numeric`` DB-API
+      The :mod:`!sqlite3` module supports both ``qmark`` and ``numeric`` DB-API
       parameter styles, because that is what the underlying SQLite library
       supports. However, the DB-API does not allow multiple values for
       the ``paramstyle`` attribute.
@@ -351,7 +351,7 @@ Module constants
 .. data:: threadsafety
 
    Integer constant required by the DB-API 2.0, stating the level of thread
-   safety the :mod:`sqlite3` module supports. This attribute is set based on
+   safety the :mod:`!sqlite3` module supports. This attribute is set based on
    the default `threading mode <https://sqlite.org/threadsafe.html>`_ the
    underlying SQLite library is compiled with. The SQLite threading modes are:
 
@@ -394,7 +394,7 @@ Module constants
    .. deprecated-removed:: 3.12 3.14
       This constant used to reflect the version number of the ``pysqlite``
       package, a third-party library which used to upstream changes to
-      ``sqlite3``. Today, it carries no meaning or practical value.
+      :mod:`!sqlite3`. Today, it carries no meaning or practical value.
 
 .. data:: version_info
 
@@ -404,7 +404,7 @@ Module constants
    .. deprecated-removed:: 3.12 3.14
       This constant used to reflect the version number of the ``pysqlite``
       package, a third-party library which used to upstream changes to
-      ``sqlite3``. Today, it carries no meaning or practical value.
+      :mod:`!sqlite3`. Today, it carries no meaning or practical value.
 
 
 .. _sqlite3-connection-objects:
