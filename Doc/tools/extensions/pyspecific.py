@@ -143,11 +143,11 @@ class Availability(Directive):
     known_platforms = frozenset({
         "AIX", "Android", "BSD", "DragonFlyBSD", "Emscripten", "FreeBSD",
         "Linux", "NetBSD", "OpenBSD", "POSIX", "Solaris", "Unix", "VxWorks",
-         "WASI", "Windows", "macOS",
-         # libc
-         "BSD libc", "glibc", "musl",
-         # POSIX platforms with pthreads
-         "pthreads",
+        "WASI", "Windows", "macOS",
+        # libc
+        "BSD libc", "glibc", "musl",
+        # POSIX platforms with pthreads
+        "pthreads",
     })
 
     def run(self):
@@ -159,9 +159,7 @@ class Availability(Directive):
         n, m = self.state.inline_text(self.arguments[0], self.lineno)
         pnode.extend(n + m)
         if self.content:
-            content = " " + " ".join(self.content)
-            n, m = self.state.inline_text(content, self.content_offset)
-            pnode.extend(n + m)
+            self.state.nested_parse(self.content, self.content_offset, pnode)
 
         self.parse_platforms()
 

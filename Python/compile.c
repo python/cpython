@@ -139,10 +139,31 @@ struct location {
 
 static struct location NO_LOCATION = {-1, -1, -1, -1};
 
+typedef struct jump_target_label_ {
+    int id;
+    struct basicblock_ *block;
+} jump_target_label;
+
+static struct jump_target_label_ NO_LABEL = {-1, NULL};
+
+#define SAME_LABEL(L1, L2) ((L1).id == (L2).id)
+#define IS_LABEL(L) (!SAME_LABEL((L), (NO_LABEL)))
+
+#define NEW_JUMP_TARGET_LABEL(C, NAME) \
+    jump_target_label NAME = {cfg_new_label_id(CFG_BUILDER(C)), cfg_builder_new_block(CFG_BUILDER(C))}; \
+    if (!IS_LABEL(NAME)) { \
+        return 0; \
+    }
+
+#define USE_LABEL(C, LBL) cfg_builder_use_label(CFG_BUILDER(C), LBL)
+
 struct instr {
     int i_opcode;
     int i_oparg;
-    /* target block (if jump instruction) */
+    /* target block (if jump instruction) -- we temporarily have both the label
+       and the block in the instr. The label is set by front end, and the block
+       is calculated by backend. */
+    jump_target_label i_target_label;
     struct basicblock_ *i_target;
      /* target block when exception is raised, should not be set by front-end. */
     struct basicblock_ *i_except;
@@ -235,6 +256,8 @@ typedef struct basicblock_ {
        reverse order that the block are allocated.  b_list points to the next
        block, not to be confused with b_next, which is next by control flow. */
     struct basicblock_ *b_list;
+    /* The label of this block if it is a jump target, -1 otherwise */
+    int b_label;
     /* Exception stack at start of block, used by assembler to create the exception handling table */
     ExceptStack *b_exceptstack;
     /* pointer to an array of instructions, initially NULL */
@@ -309,9 +332,9 @@ enum fblocktype { WHILE_LOOP, FOR_LOOP, TRY_EXCEPT, FINALLY_TRY, FINALLY_END,
 
 struct fblockinfo {
     enum fblocktype fb_type;
-    basicblock *fb_block;
+    jump_target_label fb_block;
     /* (optional) type-specific exit or cleanup block */
-    basicblock *fb_exit;
+    jump_target_label fb_exit;
     /* (optional) additional information required for unwinding */
     void *fb_datum;
 };
@@ -334,6 +357,10 @@ typedef struct cfg_builder_ {
     basicblock *block_list;
     /* pointer to the block currently being constructed */
     basicblock *curblock;
+    /* label for the next instruction to be placed */
+    jump_target_label g_current_label;
+    /* next free label id */
+    int g_next_free_label;
 } cfg_builder;
 
 /* The following items change on entry and exit of code blocks.
@@ -418,7 +445,7 @@ typedef struct {
     // fail_pop[2]: POP_TOP
     // fail_pop[1]: POP_TOP
     // fail_pop[0]: NOP
-    basicblock **fail_pop;
+    jump_target_label *fail_pop;
     // The current length of fail_pop.
     Py_ssize_t fail_pop_size;
     // The number of items on top of the stack that need to *stay* on top of the
@@ -429,6 +456,7 @@ typedef struct {
 
 static int basicblock_next_instr(basicblock *);
 
+static int cfg_builder_maybe_start_new_block(cfg_builder *g);
 static int cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, struct location loc);
 
 static void compiler_free(struct compiler *);
@@ -839,6 +867,11 @@ compiler_set_qualname(struct compiler *c)
     return 1;
 }
 
+static int
+cfg_new_label_id(cfg_builder *g)
+{
+    return g->g_next_free_label++;
+}
 
 /* Allocate a new block and return a pointer to it.
    Returns NULL on error.
@@ -854,6 +887,7 @@ cfg_builder_new_block(cfg_builder *g)
     /* Extend the singly linked list of blocks with new block. */
     b->b_list = g->block_list;
     g->block_list = b;
+    b->b_label = -1;
     return b;
 }
 
@@ -866,16 +900,11 @@ cfg_builder_use_next_block(cfg_builder *g, basicblock *block)
     return block;
 }
 
-static basicblock *
-compiler_new_block(struct compiler *c)
+static int
+cfg_builder_use_label(cfg_builder *g, jump_target_label lbl)
 {
-    return cfg_builder_new_block(CFG_BUILDER(c));
-}
-
-static basicblock *
-compiler_use_next_block(struct compiler *c, basicblock *block)
-{
-    return cfg_builder_use_next_block(CFG_BUILDER(c), block);
+    g->g_current_label = lbl;
+    return cfg_builder_maybe_start_new_block(g);
 }
 
 static basicblock *
@@ -1254,16 +1283,16 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 
 static int
 basicblock_addop(basicblock *b, int opcode, int oparg,
-                 basicblock *target, struct location loc)
+                 jump_target_label target, struct location loc)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
     assert(HAS_ARG(opcode) || oparg == 0);
     assert(0 <= oparg && oparg < (1 << 30));
-    assert((target == NULL) ||
+    assert(!IS_LABEL(target) ||
            IS_JUMP_OPCODE(opcode) ||
            IS_BLOCK_PUSH_OPCODE(opcode));
-    assert(oparg == 0 || target == NULL);
+    assert(oparg == 0 || !IS_LABEL(target));
 
     int off = basicblock_next_instr(b);
     if (off < 0) {
@@ -1272,23 +1301,50 @@ basicblock_addop(basicblock *b, int opcode, int oparg,
     struct instr *i = &b->b_instr[off];
     i->i_opcode = opcode;
     i->i_oparg = oparg;
-    i->i_target = target;
+    i->i_target_label = target;
+    i->i_target = NULL;
     i->i_loc = loc;
 
     return 1;
 }
 
-static int
-cfg_builder_addop(cfg_builder *g, int opcode, int oparg, basicblock *target,
-                  struct location loc)
+static bool
+cfg_builder_current_block_is_terminated(cfg_builder *g)
 {
+    if (IS_LABEL(g->g_current_label)) {
+        return true;
+    }
     struct instr *last = basicblock_last_instr(g->curblock);
-    if (last && IS_TERMINATOR_OPCODE(last->i_opcode)) {
-        basicblock *b = cfg_builder_new_block(g);
+    return last && IS_TERMINATOR_OPCODE(last->i_opcode);
+}
+
+static int
+cfg_builder_maybe_start_new_block(cfg_builder *g)
+{
+    if (cfg_builder_current_block_is_terminated(g)) {
+        basicblock *b;
+        if (IS_LABEL(g->g_current_label)) {
+            b = g->g_current_label.block;
+            b->b_label = g->g_current_label.id;
+            g->g_current_label = NO_LABEL;
+        }
+        else {
+            b = cfg_builder_new_block(g);
+        }
         if (b == NULL) {
             return -1;
         }
         cfg_builder_use_next_block(g, b);
+    }
+    return 0;
+}
+
+static int
+cfg_builder_addop(cfg_builder *g, int opcode, int oparg, jump_target_label target,
+                  struct location loc)
+{
+    if (cfg_builder_maybe_start_new_block(g) != 0) {
+        return -1;
     }
     return basicblock_addop(g->curblock, opcode, oparg, target, loc);
 }
@@ -1297,7 +1353,7 @@ static int
 cfg_builder_addop_noarg(cfg_builder *g, int opcode, struct location loc)
 {
     assert(!HAS_ARG(opcode));
-    return cfg_builder_addop(g, opcode, 0, NULL, loc);
+    return cfg_builder_addop(g, opcode, 0, NO_LABEL, loc);
 }
 
 static Py_ssize_t
@@ -1509,13 +1565,13 @@ cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, struct locatio
        EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
 
     int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
-    return cfg_builder_addop(g, opcode, oparg_, NULL, loc);
+    return cfg_builder_addop(g, opcode, oparg_, NO_LABEL, loc);
 }
 
 static int
-cfg_builder_addop_j(cfg_builder *g, int opcode, basicblock *target, struct location loc)
+cfg_builder_addop_j(cfg_builder *g, int opcode, jump_target_label target, struct location loc)
 {
-    assert(target != NULL);
+    assert(IS_LABEL(target));
     assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
     return cfg_builder_addop(g, opcode, 0, target, loc);
 }
@@ -1744,6 +1800,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     if (block == NULL)
         return 0;
     g->curblock = g->cfg_entryblock = block;
+    g->g_current_label = NO_LABEL;
 
     if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
         c->u->u_loc.lineno = 0;
@@ -1863,8 +1920,8 @@ find_ann(asdl_stmt_seq *stmts)
  */
 
 static int
-compiler_push_fblock(struct compiler *c, enum fblocktype t, basicblock *b,
-                     basicblock *exit, void *datum)
+compiler_push_fblock(struct compiler *c, enum fblocktype t, jump_target_label block_label,
+                     jump_target_label exit, void *datum)
 {
     struct fblockinfo *f;
     if (c->u->u_nfblocks >= CO_MAXBLOCKS) {
@@ -1872,20 +1929,20 @@ compiler_push_fblock(struct compiler *c, enum fblocktype t, basicblock *b,
     }
     f = &c->u->u_fblock[c->u->u_nfblocks++];
     f->fb_type = t;
-    f->fb_block = b;
+    f->fb_block = block_label;
     f->fb_exit = exit;
     f->fb_datum = datum;
     return 1;
 }
 
 static void
-compiler_pop_fblock(struct compiler *c, enum fblocktype t, basicblock *b)
+compiler_pop_fblock(struct compiler *c, enum fblocktype t, jump_target_label block_label)
 {
     struct compiler_unit *u = c->u;
     assert(u->u_nfblocks > 0);
     u->u_nfblocks--;
     assert(u->u_fblock[u->u_nfblocks].fb_type == t);
-    assert(u->u_fblock[u->u_nfblocks].fb_block == b);
+    assert(SAME_LABEL(u->u_fblock[u->u_nfblocks].fb_block, block_label));
 }
 
 static int
@@ -1900,20 +1957,19 @@ compiler_call_exit_with_nones(struct compiler *c) {
 static int
 compiler_add_yield_from(struct compiler *c, int await)
 {
-    basicblock *start, *resume, *exit;
-    start = compiler_new_block(c);
-    resume = compiler_new_block(c);
-    exit = compiler_new_block(c);
-    if (start == NULL || resume == NULL || exit == NULL) {
-        return 0;
-    }
-    compiler_use_next_block(c, start);
+    NEW_JUMP_TARGET_LABEL(c, start);
+    NEW_JUMP_TARGET_LABEL(c, resume);
+    NEW_JUMP_TARGET_LABEL(c, exit);
+
+    USE_LABEL(c, start);
     ADDOP_JUMP(c, SEND, exit);
-    compiler_use_next_block(c, resume);
+
+    USE_LABEL(c, resume);
     ADDOP_I(c, YIELD_VALUE, 0);
     ADDOP_I(c, RESUME, await ? 3 : 2);
     ADDOP_JUMP(c, JUMP_NO_INTERRUPT, start);
-    compiler_use_next_block(c, exit);
+
+    USE_LABEL(c, exit);
     return 1;
 }
 
@@ -1965,14 +2021,14 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             /* This POP_BLOCK gets the line number of the unwinding statement */
             ADDOP(c, POP_BLOCK);
             if (preserve_tos) {
-                if (!compiler_push_fblock(c, POP_VALUE, NULL, NULL, NULL)) {
+                if (!compiler_push_fblock(c, POP_VALUE, NO_LABEL, NO_LABEL, NULL)) {
                     return 0;
                 }
             }
             /* Emit the finally block */
             VISIT_SEQ(c, stmt, info->fb_datum);
             if (preserve_tos) {
-                compiler_pop_fblock(c, POP_VALUE, NULL);
+                compiler_pop_fblock(c, POP_VALUE, NO_LABEL);
             }
             /* The finally block should appear to execute after the
              * statement causing the unwinding, so make the unwinding
@@ -2816,7 +2872,7 @@ static int compiler_addcompare(struct compiler *c, cmpop_ty op)
 
 
 static int
-compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
+compiler_jump_if(struct compiler *c, expr_ty e, jump_target_label next, int cond)
 {
     switch (e->kind) {
     case UnaryOp_kind:
@@ -2829,11 +2885,10 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
         Py_ssize_t i, n = asdl_seq_LEN(s) - 1;
         assert(n >= 0);
         int cond2 = e->v.BoolOp.op == Or;
-        basicblock *next2 = next;
+        jump_target_label next2 = next;
         if (!cond2 != !cond) {
-            next2 = compiler_new_block(c);
-            if (next2 == NULL)
-                return 0;
+            NEW_JUMP_TARGET_LABEL(c, new_next2);
+            next2 = new_next2;
         }
         for (i = 0; i < n; ++i) {
             if (!compiler_jump_if(c, (expr_ty)asdl_seq_GET(s, i), next2, cond2))
@@ -2841,27 +2896,25 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
         }
         if (!compiler_jump_if(c, (expr_ty)asdl_seq_GET(s, n), next, cond))
             return 0;
-        if (next2 != next)
-            compiler_use_next_block(c, next2);
+        if (!SAME_LABEL(next2, next)) {
+            USE_LABEL(c, next2);
+        }
         return 1;
     }
     case IfExp_kind: {
-        basicblock *end, *next2;
-        end = compiler_new_block(c);
-        if (end == NULL)
-            return 0;
-        next2 = compiler_new_block(c);
-        if (next2 == NULL)
-            return 0;
+        NEW_JUMP_TARGET_LABEL(c, end);
+        NEW_JUMP_TARGET_LABEL(c, next2);
         if (!compiler_jump_if(c, e->v.IfExp.test, next2, 0))
             return 0;
         if (!compiler_jump_if(c, e->v.IfExp.body, next, cond))
             return 0;
         ADDOP_JUMP_NOLINE(c, JUMP, end);
-        compiler_use_next_block(c, next2);
+
+        USE_LABEL(c, next2);
         if (!compiler_jump_if(c, e->v.IfExp.orelse, next, cond))
             return 0;
-        compiler_use_next_block(c, end);
+
+        USE_LABEL(c, end);
         return 1;
     }
     case Compare_kind: {
@@ -2870,9 +2923,7 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
             if (!check_compare(c, e)) {
                 return 0;
             }
-            basicblock *cleanup = compiler_new_block(c);
-            if (cleanup == NULL)
-                return 0;
+            NEW_JUMP_TARGET_LABEL(c, cleanup);
             VISIT(c, expr, e->v.Compare.left);
             for (i = 0; i < n; i++) {
                 VISIT(c, expr,
@@ -2885,16 +2936,16 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
             VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
             ADDOP_COMPARE(c, asdl_seq_GET(e->v.Compare.ops, n));
             ADDOP_JUMP(c, cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
-            basicblock *end = compiler_new_block(c);
-            if (end == NULL)
-                return 0;
+            NEW_JUMP_TARGET_LABEL(c, end);
             ADDOP_JUMP_NOLINE(c, JUMP, end);
-            compiler_use_next_block(c, cleanup);
+
+            USE_LABEL(c, cleanup);
             ADDOP(c, POP_TOP);
             if (!cond) {
                 ADDOP_JUMP_NOLINE(c, JUMP, next);
             }
-            compiler_use_next_block(c, end);
+
+            USE_LABEL(c, end);
             return 1;
         }
         /* fallback to general implementation */
@@ -2914,22 +2965,19 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
 static int
 compiler_ifexp(struct compiler *c, expr_ty e)
 {
-    basicblock *end, *next;
-
     assert(e->kind == IfExp_kind);
-    end = compiler_new_block(c);
-    if (end == NULL)
-        return 0;
-    next = compiler_new_block(c);
-    if (next == NULL)
-        return 0;
+    NEW_JUMP_TARGET_LABEL(c, end);
+    NEW_JUMP_TARGET_LABEL(c, next);
+
     if (!compiler_jump_if(c, e->v.IfExp.test, next, 0))
         return 0;
     VISIT(c, expr, e->v.IfExp.body);
     ADDOP_JUMP_NOLINE(c, JUMP, end);
-    compiler_use_next_block(c, next);
+
+    USE_LABEL(c, next);
     VISIT(c, expr, e->v.IfExp.orelse);
-    compiler_use_next_block(c, end);
+
+    USE_LABEL(c, end);
     return 1;
 }
 
@@ -2993,17 +3041,12 @@ compiler_lambda(struct compiler *c, expr_ty e)
 static int
 compiler_if(struct compiler *c, stmt_ty s)
 {
-    basicblock *end, *next;
+    jump_target_label next;
     assert(s->kind == If_kind);
-    end = compiler_new_block(c);
-    if (end == NULL) {
-        return 0;
-    }
+    NEW_JUMP_TARGET_LABEL(c, end);
     if (asdl_seq_LEN(s->v.If.orelse)) {
-        next = compiler_new_block(c);
-        if (next == NULL) {
-            return 0;
-        }
+        NEW_JUMP_TARGET_LABEL(c, orelse);
+        next = orelse;
     }
     else {
         next = end;
@@ -3014,44 +3057,46 @@ compiler_if(struct compiler *c, stmt_ty s)
     VISIT_SEQ(c, stmt, s->v.If.body);
     if (asdl_seq_LEN(s->v.If.orelse)) {
         ADDOP_JUMP_NOLINE(c, JUMP, end);
-        compiler_use_next_block(c, next);
+
+        USE_LABEL(c, next);
         VISIT_SEQ(c, stmt, s->v.If.orelse);
     }
-    compiler_use_next_block(c, end);
+
+    USE_LABEL(c, end);
     return 1;
 }
 
 static int
 compiler_for(struct compiler *c, stmt_ty s)
 {
-    basicblock *start, *body, *cleanup, *end;
+    NEW_JUMP_TARGET_LABEL(c, start);
+    NEW_JUMP_TARGET_LABEL(c, body);
+    NEW_JUMP_TARGET_LABEL(c, cleanup);
+    NEW_JUMP_TARGET_LABEL(c, end);
 
-    start = compiler_new_block(c);
-    body = compiler_new_block(c);
-    cleanup = compiler_new_block(c);
-    end = compiler_new_block(c);
-    if (start == NULL || body == NULL || end == NULL || cleanup == NULL) {
-        return 0;
-    }
     if (!compiler_push_fblock(c, FOR_LOOP, start, end, NULL)) {
         return 0;
     }
     VISIT(c, expr, s->v.For.iter);
     ADDOP(c, GET_ITER);
-    compiler_use_next_block(c, start);
+
+    USE_LABEL(c, start);
     ADDOP_JUMP(c, FOR_ITER, cleanup);
-    compiler_use_next_block(c, body);
+
+    USE_LABEL(c, body);
     VISIT(c, expr, s->v.For.target);
     VISIT_SEQ(c, stmt, s->v.For.body);
     /* Mark jump as artificial */
     UNSET_LOC(c);
     ADDOP_JUMP(c, JUMP, start);
-    compiler_use_next_block(c, cleanup);
+
+    USE_LABEL(c, cleanup);
 
     compiler_pop_fblock(c, FOR_LOOP, start);
 
     VISIT_SEQ(c, stmt, s->v.For.orelse);
-    compiler_use_next_block(c, end);
+
+    USE_LABEL(c, end);
     return 1;
 }
 
@@ -3059,24 +3104,20 @@ compiler_for(struct compiler *c, stmt_ty s)
 static int
 compiler_async_for(struct compiler *c, stmt_ty s)
 {
-    basicblock *start, *except, *end;
     if (IS_TOP_LEVEL_AWAIT(c)){
         c->u->u_ste->ste_coroutine = 1;
     } else if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION) {
         return compiler_error(c, "'async for' outside async function");
     }
 
-    start = compiler_new_block(c);
-    except = compiler_new_block(c);
-    end = compiler_new_block(c);
+    NEW_JUMP_TARGET_LABEL(c, start);
+    NEW_JUMP_TARGET_LABEL(c, except);
+    NEW_JUMP_TARGET_LABEL(c, end);
 
-    if (start == NULL || except == NULL || end == NULL) {
-        return 0;
-    }
     VISIT(c, expr, s->v.AsyncFor.iter);
     ADDOP(c, GET_AITER);
 
-    compiler_use_next_block(c, start);
+    USE_LABEL(c, start);
     if (!compiler_push_fblock(c, FOR_LOOP, start, end, NULL)) {
         return 0;
     }
@@ -3097,7 +3138,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     compiler_pop_fblock(c, FOR_LOOP, start);
 
     /* Except block for __anext__ */
-    compiler_use_next_block(c, except);
+    USE_LABEL(c, except);
 
     /* Use same line number as the iterator,
      * as the END_ASYNC_FOR succeeds the `for`, not the body. */
@@ -3107,23 +3148,19 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     /* `else` block */
     VISIT_SEQ(c, stmt, s->v.For.orelse);
 
-    compiler_use_next_block(c, end);
-
+    USE_LABEL(c, end);
     return 1;
 }
 
 static int
 compiler_while(struct compiler *c, stmt_ty s)
 {
-    basicblock *loop, *body, *end, *anchor = NULL;
-    loop = compiler_new_block(c);
-    body = compiler_new_block(c);
-    anchor = compiler_new_block(c);
-    end = compiler_new_block(c);
-    if (loop == NULL || body == NULL || anchor == NULL || end == NULL) {
-        return 0;
-    }
-    compiler_use_next_block(c, loop);
+    NEW_JUMP_TARGET_LABEL(c, loop);
+    NEW_JUMP_TARGET_LABEL(c, body);
+    NEW_JUMP_TARGET_LABEL(c, end);
+    NEW_JUMP_TARGET_LABEL(c, anchor);
+
+    USE_LABEL(c, loop);
     if (!compiler_push_fblock(c, WHILE_LOOP, loop, end, NULL)) {
         return 0;
     }
@@ -3131,7 +3168,7 @@ compiler_while(struct compiler *c, stmt_ty s)
         return 0;
     }
 
-    compiler_use_next_block(c, body);
+    USE_LABEL(c, body);
     VISIT_SEQ(c, stmt, s->v.While.body);
     SET_LOC(c, s);
     if (!compiler_jump_if(c, s->v.While.test, body, 1)) {
@@ -3140,12 +3177,12 @@ compiler_while(struct compiler *c, stmt_ty s)
 
     compiler_pop_fblock(c, WHILE_LOOP, loop);
 
-    compiler_use_next_block(c, anchor);
+    USE_LABEL(c, anchor);
     if (s->v.While.orelse) {
         VISIT_SEQ(c, stmt, s->v.While.orelse);
     }
-    compiler_use_next_block(c, end);
 
+    USE_LABEL(c, end);
     return 1;
 }
 
@@ -3257,18 +3294,15 @@ compiler_continue(struct compiler *c)
 static int
 compiler_try_finally(struct compiler *c, stmt_ty s)
 {
-    basicblock *body, *end, *exit, *cleanup;
+    NEW_JUMP_TARGET_LABEL(c, body);
+    NEW_JUMP_TARGET_LABEL(c, end);
+    NEW_JUMP_TARGET_LABEL(c, exit);
+    NEW_JUMP_TARGET_LABEL(c, cleanup);
 
-    body = compiler_new_block(c);
-    end = compiler_new_block(c);
-    exit = compiler_new_block(c);
-    cleanup = compiler_new_block(c);
-    if (body == NULL || end == NULL || exit == NULL || cleanup == NULL) {
-        return 0;
-    }
     /* `try` block */
     ADDOP_JUMP(c, SETUP_FINALLY, end);
-    compiler_use_next_block(c, body);
+
+    USE_LABEL(c, body);
     if (!compiler_push_fblock(c, FINALLY_TRY, body, end, s->v.Try.finalbody))
         return 0;
     if (s->v.Try.handlers && asdl_seq_LEN(s->v.Try.handlers)) {
@@ -3283,44 +3317,36 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
     ADDOP_JUMP_NOLINE(c, JUMP, exit);
     /* `finally` block */
-    compiler_use_next_block(c, end);
+
+    USE_LABEL(c, end);
 
     UNSET_LOC(c);
     ADDOP_JUMP(c, SETUP_CLEANUP, cleanup);
     ADDOP(c, PUSH_EXC_INFO);
-    if (!compiler_push_fblock(c, FINALLY_END, end, NULL, NULL))
+    if (!compiler_push_fblock(c, FINALLY_END, end, NO_LABEL, NULL))
         return 0;
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
     compiler_pop_fblock(c, FINALLY_END, end);
     ADDOP_I(c, RERAISE, 0);
-    compiler_use_next_block(c, cleanup);
+
+    USE_LABEL(c, cleanup);
     POP_EXCEPT_AND_RERAISE(c);
-    compiler_use_next_block(c, exit);
+
+    USE_LABEL(c, exit);
     return 1;
 }
 
 static int
 compiler_try_star_finally(struct compiler *c, stmt_ty s)
 {
-    basicblock *body = compiler_new_block(c);
-    if (body == NULL) {
-        return 0;
-    }
-    basicblock *end = compiler_new_block(c);
-    if (!end) {
-        return 0;
-    }
-    basicblock *exit = compiler_new_block(c);
-    if (!exit) {
-        return 0;
-    }
-    basicblock *cleanup = compiler_new_block(c);
-    if (!cleanup) {
-        return 0;
-    }
+    NEW_JUMP_TARGET_LABEL(c, body);
+    NEW_JUMP_TARGET_LABEL(c, end);
+    NEW_JUMP_TARGET_LABEL(c, exit);
+    NEW_JUMP_TARGET_LABEL(c, cleanup);
     /* `try` block */
     ADDOP_JUMP(c, SETUP_FINALLY, end);
-    compiler_use_next_block(c, body);
+
+    USE_LABEL(c, body);
     if (!compiler_push_fblock(c, FINALLY_TRY, body, end, s->v.TryStar.finalbody)) {
         return 0;
     }
@@ -3336,21 +3362,24 @@ compiler_try_star_finally(struct compiler *c, stmt_ty s)
     compiler_pop_fblock(c, FINALLY_TRY, body);
     VISIT_SEQ(c, stmt, s->v.TryStar.finalbody);
     ADDOP_JUMP_NOLINE(c, JUMP, exit);
+
     /* `finally` block */
-    compiler_use_next_block(c, end);
+    USE_LABEL(c, end);
 
     UNSET_LOC(c);
     ADDOP_JUMP(c, SETUP_CLEANUP, cleanup);
     ADDOP(c, PUSH_EXC_INFO);
-    if (!compiler_push_fblock(c, FINALLY_END, end, NULL, NULL)) {
+    if (!compiler_push_fblock(c, FINALLY_END, end, NO_LABEL, NULL)) {
         return 0;
     }
     VISIT_SEQ(c, stmt, s->v.TryStar.finalbody);
     compiler_pop_fblock(c, FINALLY_END, end);
     ADDOP_I(c, RERAISE, 0);
-    compiler_use_next_block(c, cleanup);
+
+    USE_LABEL(c, cleanup);
     POP_EXCEPT_AND_RERAISE(c);
-    compiler_use_next_block(c, exit);
+
+    USE_LABEL(c, exit);
     return 1;
 }
 
@@ -3386,18 +3415,17 @@ compiler_try_star_finally(struct compiler *c, stmt_ty s)
 static int
 compiler_try_except(struct compiler *c, stmt_ty s)
 {
-    basicblock *body, *except, *end, *cleanup;
     Py_ssize_t i, n;
 
-    body = compiler_new_block(c);
-    except = compiler_new_block(c);
-    end = compiler_new_block(c);
-    cleanup = compiler_new_block(c);
-    if (body == NULL || except == NULL || end == NULL || cleanup == NULL)
-        return 0;
+    NEW_JUMP_TARGET_LABEL(c, body);
+    NEW_JUMP_TARGET_LABEL(c, except);
+    NEW_JUMP_TARGET_LABEL(c, end);
+    NEW_JUMP_TARGET_LABEL(c, cleanup);
+
     ADDOP_JUMP(c, SETUP_FINALLY, except);
-    compiler_use_next_block(c, body);
-    if (!compiler_push_fblock(c, TRY_EXCEPT, body, NULL, NULL))
+
+    USE_LABEL(c, body);
+    if (!compiler_push_fblock(c, TRY_EXCEPT, body, NO_LABEL, NULL))
         return 0;
     VISIT_SEQ(c, stmt, s->v.Try.body);
     compiler_pop_fblock(c, TRY_EXCEPT, body);
@@ -3407,13 +3435,14 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     }
     ADDOP_JUMP_NOLINE(c, JUMP, end);
     n = asdl_seq_LEN(s->v.Try.handlers);
-    compiler_use_next_block(c, except);
+
+    USE_LABEL(c, except);
 
     UNSET_LOC(c);
     ADDOP_JUMP(c, SETUP_CLEANUP, cleanup);
     ADDOP(c, PUSH_EXC_INFO);
     /* Runtime will push a block here, so we need to account for that */
-    if (!compiler_push_fblock(c, EXCEPTION_HANDLER, NULL, NULL, NULL))
+    if (!compiler_push_fblock(c, EXCEPTION_HANDLER, NO_LABEL, NO_LABEL, NULL))
         return 0;
     for (i = 0; i < n; i++) {
         excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
@@ -3422,22 +3451,16 @@ compiler_try_except(struct compiler *c, stmt_ty s)
         if (!handler->v.ExceptHandler.type && i < n-1) {
             return compiler_error(c, "default 'except:' must be last");
         }
-        except = compiler_new_block(c);
-        if (except == NULL)
-            return 0;
+        NEW_JUMP_TARGET_LABEL(c, next_except);
+        except = next_except;
         if (handler->v.ExceptHandler.type) {
             VISIT(c, expr, handler->v.ExceptHandler.type);
             ADDOP(c, CHECK_EXC_MATCH);
             ADDOP_JUMP(c, POP_JUMP_IF_FALSE, except);
         }
         if (handler->v.ExceptHandler.name) {
-            basicblock *cleanup_end, *cleanup_body;
-
-            cleanup_end = compiler_new_block(c);
-            cleanup_body = compiler_new_block(c);
-            if (cleanup_end == NULL || cleanup_body == NULL) {
-                return 0;
-            }
+            NEW_JUMP_TARGET_LABEL(c, cleanup_end);
+            NEW_JUMP_TARGET_LABEL(c, cleanup_body);
 
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
 
@@ -3454,8 +3477,9 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 
             /* second try: */
             ADDOP_JUMP(c, SETUP_CLEANUP, cleanup_end);
-            compiler_use_next_block(c, cleanup_body);
-            if (!compiler_push_fblock(c, HANDLER_CLEANUP, cleanup_body, NULL, handler->v.ExceptHandler.name))
+
+            USE_LABEL(c, cleanup_body);
+            if (!compiler_push_fblock(c, HANDLER_CLEANUP, cleanup_body, NO_LABEL, handler->v.ExceptHandler.name))
                 return 0;
 
             /* second # body */
@@ -3472,7 +3496,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             ADDOP_JUMP(c, JUMP, end);
 
             /* except: */
-            compiler_use_next_block(c, cleanup_end);
+            USE_LABEL(c, cleanup_end);
 
             /* name = None; del name; # Mark as artificial */
             UNSET_LOC(c);
@@ -3484,15 +3508,12 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             ADDOP_I(c, RERAISE, 1);
         }
         else {
-            basicblock *cleanup_body;
-
-            cleanup_body = compiler_new_block(c);
-            if (!cleanup_body)
-                return 0;
+            NEW_JUMP_TARGET_LABEL(c, cleanup_body);
 
             ADDOP(c, POP_TOP); /* exc_value */
-            compiler_use_next_block(c, cleanup_body);
-            if (!compiler_push_fblock(c, HANDLER_CLEANUP, cleanup_body, NULL, NULL))
+
+            USE_LABEL(c, cleanup_body);
+            if (!compiler_push_fblock(c, HANDLER_CLEANUP, cleanup_body, NO_LABEL, NULL))
                 return 0;
             VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
             compiler_pop_fblock(c, HANDLER_CLEANUP, cleanup_body);
@@ -3501,15 +3522,18 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             ADDOP(c, POP_EXCEPT);
             ADDOP_JUMP(c, JUMP, end);
         }
-        compiler_use_next_block(c, except);
+
+        USE_LABEL(c, except);
     }
     /* Mark as artificial */
     UNSET_LOC(c);
-    compiler_pop_fblock(c, EXCEPTION_HANDLER, NULL);
+    compiler_pop_fblock(c, EXCEPTION_HANDLER, NO_LABEL);
     ADDOP_I(c, RERAISE, 0);
-    compiler_use_next_block(c, cleanup);
+
+    USE_LABEL(c, cleanup);
     POP_EXCEPT_AND_RERAISE(c);
-    compiler_use_next_block(c, end);
+
+    USE_LABEL(c, end);
     return 1;
 }
 
@@ -3565,34 +3589,17 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 static int
 compiler_try_star_except(struct compiler *c, stmt_ty s)
 {
-    basicblock *body = compiler_new_block(c);
-    if (body == NULL) {
-        return 0;
-    }
-    basicblock *except = compiler_new_block(c);
-    if (except == NULL) {
-        return 0;
-    }
-    basicblock *orelse = compiler_new_block(c);
-     if (orelse == NULL) {
-        return 0;
-    }
-    basicblock *end = compiler_new_block(c);
-    if (end == NULL) {
-        return 0;
-    }
-    basicblock *cleanup = compiler_new_block(c);
-    if (cleanup == NULL) {
-        return 0;
-    }
-    basicblock *reraise_star = compiler_new_block(c);
-    if (reraise_star == NULL) {
-        return 0;
-    }
+    NEW_JUMP_TARGET_LABEL(c, body);
+    NEW_JUMP_TARGET_LABEL(c, except);
+    NEW_JUMP_TARGET_LABEL(c, orelse);
+    NEW_JUMP_TARGET_LABEL(c, end);
+    NEW_JUMP_TARGET_LABEL(c, cleanup);
+    NEW_JUMP_TARGET_LABEL(c, reraise_star);
 
     ADDOP_JUMP(c, SETUP_FINALLY, except);
-    compiler_use_next_block(c, body);
-    if (!compiler_push_fblock(c, TRY_EXCEPT, body, NULL, NULL)) {
+
+    USE_LABEL(c, body);
+    if (!compiler_push_fblock(c, TRY_EXCEPT, body, NO_LABEL, NULL)) {
         return 0;
     }
     VISIT_SEQ(c, stmt, s->v.TryStar.body);
@@ -3600,28 +3607,24 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
     ADDOP_NOLINE(c, POP_BLOCK);
     ADDOP_JUMP_NOLINE(c, JUMP, orelse);
     Py_ssize_t n = asdl_seq_LEN(s->v.TryStar.handlers);
-    compiler_use_next_block(c, except);
+
+    USE_LABEL(c, except);
 
     UNSET_LOC(c);
     ADDOP_JUMP(c, SETUP_CLEANUP, cleanup);
     ADDOP(c, PUSH_EXC_INFO);
     /* Runtime will push a block here, so we need to account for that */
     if (!compiler_push_fblock(c, EXCEPTION_GROUP_HANDLER,
-                                 NULL, NULL, "except handler")) {
+                                 NO_LABEL, NO_LABEL, "except handler")) {
         return 0;
     }
     for (Py_ssize_t i = 0; i < n; i++) {
         excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
             s->v.TryStar.handlers, i);
         SET_LOC(c, handler);
-        except = compiler_new_block(c);
-        if (except == NULL) {
-            return 0;
-        }
-        basicblock *handle_match = compiler_new_block(c);
-        if (handle_match == NULL) {
-            return 0;
-        }
+        NEW_JUMP_TARGET_LABEL(c, next_except);
+        except = next_except;
+        NEW_JUMP_TARGET_LABEL(c, handle_match);
         if (i == 0) {
             /* Push the original EG into the stack */
             /*
@@ -3648,16 +3651,10 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
             ADDOP_JUMP(c, JUMP, except);
         }
 
-        compiler_use_next_block(c, handle_match);
+        USE_LABEL(c, handle_match);
 
-        basicblock *cleanup_end = compiler_new_block(c);
-        if (cleanup_end == NULL) {
-            return 0;
-        }
-        basicblock *cleanup_body = compiler_new_block(c);
-        if (cleanup_body == NULL) {
-            return 0;
-        }
+        NEW_JUMP_TARGET_LABEL(c, cleanup_end);
+        NEW_JUMP_TARGET_LABEL(c, cleanup_body);
 
         if (handler->v.ExceptHandler.name) {
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
@@ -3678,8 +3675,9 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         */
         /* second try: */
         ADDOP_JUMP(c, SETUP_CLEANUP, cleanup_end);
-        compiler_use_next_block(c, cleanup_body);
-        if (!compiler_push_fblock(c, HANDLER_CLEANUP, cleanup_body, NULL, handler->v.ExceptHandler.name))
+
+        USE_LABEL(c, cleanup_body);
+        if (!compiler_push_fblock(c, HANDLER_CLEANUP, cleanup_body, NO_LABEL, handler->v.ExceptHandler.name))
             return 0;
 
         /* second # body */
@@ -3696,7 +3694,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         ADDOP_JUMP(c, JUMP, except);
 
         /* except: */
-        compiler_use_next_block(c, cleanup_end);
+        USE_LABEL(c, cleanup_end);
 
         /* name = None; del name; # Mark as artificial */
         UNSET_LOC(c);
@@ -3710,9 +3708,9 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         /* add exception raised to the res list */
         ADDOP_I(c, LIST_APPEND, 3); // exc
         ADDOP(c, POP_TOP); // lasti
-
         ADDOP_JUMP(c, JUMP, except);
-        compiler_use_next_block(c, except);
+
+        USE_LABEL(c, except);
 
         if (i == n - 1) {
             /* Add exc to the list (if not None it's the unhandled part of the EG) */
@@ -3722,13 +3720,10 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
     }
     /* Mark as artificial */
     UNSET_LOC(c);
-    compiler_pop_fblock(c, EXCEPTION_GROUP_HANDLER, NULL);
-    basicblock *reraise = compiler_new_block(c);
-    if (!reraise) {
-        return 0;
-    }
+    compiler_pop_fblock(c, EXCEPTION_GROUP_HANDLER, NO_LABEL);
+    NEW_JUMP_TARGET_LABEL(c, reraise);
 
-    compiler_use_next_block(c, reraise_star);
+    USE_LABEL(c, reraise_star);
     ADDOP(c, PREP_RERAISE_STAR);
     ADDOP_I(c, COPY, 1);
     ADDOP_JUMP(c, POP_JUMP_IF_NOT_NONE, reraise);
@@ -3738,16 +3733,20 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
     ADDOP(c, POP_BLOCK);
     ADDOP(c, POP_EXCEPT);
     ADDOP_JUMP(c, JUMP, end);
-    compiler_use_next_block(c, reraise);
+
+    USE_LABEL(c, reraise);
     ADDOP(c, POP_BLOCK);
     ADDOP_I(c, SWAP, 2);
     ADDOP(c, POP_EXCEPT);
     ADDOP_I(c, RERAISE, 0);
-    compiler_use_next_block(c, cleanup);
+
+    USE_LABEL(c, cleanup);
     POP_EXCEPT_AND_RERAISE(c);
-    compiler_use_next_block(c, orelse);
+
+    USE_LABEL(c, orelse);
     VISIT_SEQ(c, stmt, s->v.TryStar.orelse);
-    compiler_use_next_block(c, end);
+
+    USE_LABEL(c, end);
     return 1;
 }
 
@@ -3917,8 +3916,6 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 static int
 compiler_assert(struct compiler *c, stmt_ty s)
 {
-    basicblock *end;
-
     /* Always emit a warning if the test is a non-zero length tuple */
     if ((s->v.Assert.test->kind == Tuple_kind &&
         asdl_seq_LEN(s->v.Assert.test->v.Tuple.elts) > 0) ||
@@ -3934,9 +3931,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
     }
     if (c->c_optimize)
         return 1;
-    end = compiler_new_block(c);
-    if (end == NULL)
-        return 0;
+    NEW_JUMP_TARGET_LABEL(c, end);
     if (!compiler_jump_if(c, s->v.Assert.test, end, 1))
         return 0;
     ADDOP(c, LOAD_ASSERTION_ERROR);
@@ -3945,7 +3940,8 @@ compiler_assert(struct compiler *c, stmt_ty s)
         ADDOP_I(c, CALL, 0);
     }
     ADDOP_I(c, RAISE_VARARGS, 1);
-    compiler_use_next_block(c, end);
+
+    USE_LABEL(c, end);
     return 1;
 }
 
@@ -4243,7 +4239,6 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 static int
 compiler_boolop(struct compiler *c, expr_ty e)
 {
-    basicblock *end;
     int jumpi;
     Py_ssize_t i, n;
     asdl_expr_seq *s;
@@ -4253,23 +4248,20 @@ compiler_boolop(struct compiler *c, expr_ty e)
         jumpi = JUMP_IF_FALSE_OR_POP;
     else
         jumpi = JUMP_IF_TRUE_OR_POP;
-    end = compiler_new_block(c);
-    if (end == NULL)
-        return 0;
+    NEW_JUMP_TARGET_LABEL(c, end);
     s = e->v.BoolOp.values;
     n = asdl_seq_LEN(s) - 1;
     assert(n >= 0);
     for (i = 0; i < n; ++i) {
         VISIT(c, expr, (expr_ty)asdl_seq_GET(s, i));
         ADDOP_JUMP(c, jumpi, end);
-        basicblock *next = compiler_new_block(c);
-        if (next == NULL) {
-            return 0;
-        }
-        compiler_use_next_block(c, next);
+        NEW_JUMP_TARGET_LABEL(c, next);
+
+        USE_LABEL(c, next);
     }
     VISIT(c, expr, (expr_ty)asdl_seq_GET(s, n));
-    compiler_use_next_block(c, end);
+
+    USE_LABEL(c, end);
     return 1;
 }
 
@@ -4563,9 +4555,7 @@ compiler_compare(struct compiler *c, expr_ty e)
         ADDOP_COMPARE(c, asdl_seq_GET(e->v.Compare.ops, 0));
     }
     else {
-        basicblock *cleanup = compiler_new_block(c);
-        if (cleanup == NULL)
-            return 0;
+        NEW_JUMP_TARGET_LABEL(c, cleanup);
         for (i = 0; i < n; i++) {
             VISIT(c, expr,
                 (expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
@@ -4576,14 +4566,14 @@ compiler_compare(struct compiler *c, expr_ty e)
         }
         VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
         ADDOP_COMPARE(c, asdl_seq_GET(e->v.Compare.ops, n));
-        basicblock *end = compiler_new_block(c);
-        if (end == NULL)
-            return 0;
+        NEW_JUMP_TARGET_LABEL(c, end);
         ADDOP_JUMP_NOLINE(c, JUMP, end);
-        compiler_use_next_block(c, cleanup);
+
+        USE_LABEL(c, cleanup);
         ADDOP_I(c, SWAP, 2);
         ADDOP(c, POP_TOP);
-        compiler_use_next_block(c, end);
+
+        USE_LABEL(c, end);
     }
     return 1;
 }
@@ -5138,16 +5128,11 @@ compiler_sync_comprehension_generator(struct compiler *c,
        and then write to the element */
 
     comprehension_ty gen;
-    basicblock *start, *anchor, *if_cleanup;
     Py_ssize_t i, n;
 
-    start = compiler_new_block(c);
-    if_cleanup = compiler_new_block(c);
-    anchor = compiler_new_block(c);
-
-    if (start == NULL || if_cleanup == NULL || anchor == NULL) {
-        return 0;
-    }
+    NEW_JUMP_TARGET_LABEL(c, start);
+    NEW_JUMP_TARGET_LABEL(c, if_cleanup);
+    NEW_JUMP_TARGET_LABEL(c, anchor);
 
     gen = (comprehension_ty)asdl_seq_GET(generators, gen_index);
 
@@ -5176,17 +5161,17 @@ compiler_sync_comprehension_generator(struct compiler *c,
             expr_ty elt = asdl_seq_GET(elts, 0);
             if (elt->kind != Starred_kind) {
                 VISIT(c, expr, elt);
-                start = NULL;
+                start = NO_LABEL;
             }
         }
-        if (start) {
+        if (IS_LABEL(start)) {
             VISIT(c, expr, gen->iter);
             ADDOP(c, GET_ITER);
         }
     }
-    if (start) {
+    if (IS_LABEL(start)) {
         depth++;
-        compiler_use_next_block(c, start);
+        USE_LABEL(c, start);
         ADDOP_JUMP(c, FOR_ITER, anchor);
     }
     VISIT(c, expr, gen->target);
@@ -5233,10 +5218,12 @@ compiler_sync_comprehension_generator(struct compiler *c,
             return 0;
         }
     }
-    compiler_use_next_block(c, if_cleanup);
-    if (start) {
+
+    USE_LABEL(c, if_cleanup);
+    if (IS_LABEL(start)) {
         ADDOP_JUMP(c, JUMP, start);
-        compiler_use_next_block(c, anchor);
+
+        USE_LABEL(c, anchor);
     }
 
     return 1;
@@ -5249,15 +5236,10 @@ compiler_async_comprehension_generator(struct compiler *c,
                                       expr_ty elt, expr_ty val, int type)
 {
     comprehension_ty gen;
-    basicblock *start, *if_cleanup, *except;
     Py_ssize_t i, n;
-    start = compiler_new_block(c);
-    except = compiler_new_block(c);
-    if_cleanup = compiler_new_block(c);
-
-    if (start == NULL || if_cleanup == NULL || except == NULL) {
-        return 0;
-    }
+    NEW_JUMP_TARGET_LABEL(c, start);
+    NEW_JUMP_TARGET_LABEL(c, except);
+    NEW_JUMP_TARGET_LABEL(c, if_cleanup);
 
     gen = (comprehension_ty)asdl_seq_GET(generators, gen_index);
 
@@ -5272,10 +5254,10 @@ compiler_async_comprehension_generator(struct compiler *c,
         ADDOP(c, GET_AITER);
     }
 
-    compiler_use_next_block(c, start);
+    USE_LABEL(c, start);
     /* Runtime will push a block here, so we need to account for that */
     if (!compiler_push_fblock(c, ASYNC_COMPREHENSION_GENERATOR, start,
-                              NULL, NULL)) {
+                              NO_LABEL, NULL)) {
         return 0;
     }
 
@@ -5328,12 +5310,13 @@ compiler_async_comprehension_generator(struct compiler *c,
             return 0;
         }
     }
-    compiler_use_next_block(c, if_cleanup);
+
+    USE_LABEL(c, if_cleanup);
     ADDOP_JUMP(c, JUMP, start);
 
     compiler_pop_fblock(c, ASYNC_COMPREHENSION_GENERATOR, start);
 
-    compiler_use_next_block(c, except);
+    USE_LABEL(c, except);
     //UNSET_LOC(c);
 
     ADDOP(c, END_ASYNC_FOR);
@@ -5494,28 +5477,25 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
 
 
 static int
-compiler_with_except_finish(struct compiler *c, basicblock * cleanup) {
+compiler_with_except_finish(struct compiler *c, jump_target_label cleanup) {
     UNSET_LOC(c);
-    basicblock *suppress = compiler_new_block(c);
-    if (suppress == NULL) {
-        return 0;
-    }
+    NEW_JUMP_TARGET_LABEL(c, suppress);
     ADDOP_JUMP(c, POP_JUMP_IF_TRUE, suppress);
     ADDOP_I(c, RERAISE, 2);
-    compiler_use_next_block(c, suppress);
+
+    USE_LABEL(c, suppress);
     ADDOP(c, POP_TOP); /* exc_value */
     ADDOP(c, POP_BLOCK);
     ADDOP(c, POP_EXCEPT);
     ADDOP(c, POP_TOP);
     ADDOP(c, POP_TOP);
-    basicblock *exit = compiler_new_block(c);
-    if (exit == NULL) {
-        return 0;
-    }
+    NEW_JUMP_TARGET_LABEL(c, exit);
     ADDOP_JUMP(c, JUMP, exit);
-    compiler_use_next_block(c, cleanup);
+
+    USE_LABEL(c, cleanup);
     POP_EXCEPT_AND_RERAISE(c);
-    compiler_use_next_block(c, exit);
+
+    USE_LABEL(c, exit);
     return 1;
 }
 
@@ -5546,7 +5526,6 @@ compiler_with_except_finish(struct compiler *c, basicblock * cleanup) {
 static int
 compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 {
-    basicblock *block, *final, *exit, *cleanup;
     withitem_ty item = asdl_seq_GET(s->v.AsyncWith.items, pos);
 
     assert(s->kind == AsyncWith_kind);
@@ -5556,12 +5535,10 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
         return compiler_error(c, "'async with' outside async function");
     }
 
-    block = compiler_new_block(c);
-    final = compiler_new_block(c);
-    exit = compiler_new_block(c);
-    cleanup = compiler_new_block(c);
-    if (!block || !final || !exit || !cleanup)
-        return 0;
+    NEW_JUMP_TARGET_LABEL(c, block);
+    NEW_JUMP_TARGET_LABEL(c, final);
+    NEW_JUMP_TARGET_LABEL(c, exit);
+    NEW_JUMP_TARGET_LABEL(c, cleanup);
 
     /* Evaluate EXPR */
     VISIT(c, expr, item->context_expr);
@@ -5574,7 +5551,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP_JUMP(c, SETUP_WITH, final);
 
     /* SETUP_WITH pushes a finally block. */
-    compiler_use_next_block(c, block);
+    USE_LABEL(c, block);
     if (!compiler_push_fblock(c, ASYNC_WITH, block, final, s)) {
         return 0;
     }
@@ -5613,7 +5590,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP_JUMP(c, JUMP, exit);
 
     /* For exceptional outcome: */
-    compiler_use_next_block(c, final);
+    USE_LABEL(c, final);
 
     ADDOP_JUMP(c, SETUP_CLEANUP, cleanup);
     ADDOP(c, PUSH_EXC_INFO);
@@ -5623,7 +5600,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADD_YIELD_FROM(c, 1);
     compiler_with_except_finish(c, cleanup);
 
-    compiler_use_next_block(c, exit);
+    USE_LABEL(c, exit);
     return 1;
 }
 
@@ -5652,17 +5629,14 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 static int
 compiler_with(struct compiler *c, stmt_ty s, int pos)
 {
-    basicblock *block, *final, *exit, *cleanup;
     withitem_ty item = asdl_seq_GET(s->v.With.items, pos);
 
     assert(s->kind == With_kind);
 
-    block = compiler_new_block(c);
-    final = compiler_new_block(c);
-    exit = compiler_new_block(c);
-    cleanup = compiler_new_block(c);
-    if (!block || !final || !exit || !cleanup)
-        return 0;
+    NEW_JUMP_TARGET_LABEL(c, block);
+    NEW_JUMP_TARGET_LABEL(c, final);
+    NEW_JUMP_TARGET_LABEL(c, exit);
+    NEW_JUMP_TARGET_LABEL(c, cleanup);
 
     /* Evaluate EXPR */
     VISIT(c, expr, item->context_expr);
@@ -5671,7 +5645,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP_JUMP(c, SETUP_WITH, final);
 
     /* SETUP_WITH pushes a finally block. */
-    compiler_use_next_block(c, block);
+    USE_LABEL(c, block);
     if (!compiler_push_fblock(c, WITH, block, final, s)) {
         return 0;
     }
@@ -5709,14 +5683,14 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP_JUMP(c, JUMP, exit);
 
     /* For exceptional outcome: */
-    compiler_use_next_block(c, final);
+    USE_LABEL(c, final);
 
     ADDOP_JUMP(c, SETUP_CLEANUP, cleanup);
     ADDOP(c, PUSH_EXC_INFO);
     ADDOP(c, WITH_EXCEPT_START);
     compiler_with_except_finish(c, cleanup);
 
-    compiler_use_next_block(c, exit);
+    USE_LABEL(c, exit);
     return 1;
 }
 
@@ -6243,16 +6217,15 @@ ensure_fail_pop(struct compiler *c, pattern_context *pc, Py_ssize_t n)
     if (size <= pc->fail_pop_size) {
         return 1;
     }
-    Py_ssize_t needed = sizeof(basicblock*) * size;
-    basicblock **resized = PyObject_Realloc(pc->fail_pop, needed);
+    Py_ssize_t needed = sizeof(jump_target_label) * size;
+    jump_target_label *resized = PyObject_Realloc(pc->fail_pop, needed);
     if (resized == NULL) {
         PyErr_NoMemory();
         return 0;
     }
     pc->fail_pop = resized;
     while (pc->fail_pop_size < size) {
-        basicblock *new_block;
-        RETURN_IF_FALSE(new_block = compiler_new_block(c));
+        NEW_JUMP_TARGET_LABEL(c, new_block);
         pc->fail_pop[pc->fail_pop_size++] = new_block;
     }
     return 1;
@@ -6279,7 +6252,7 @@ emit_and_reset_fail_pop(struct compiler *c, pattern_context *pc)
         return 1;
     }
     while (--pc->fail_pop_size) {
-        compiler_use_next_block(c, pc->fail_pop[pc->fail_pop_size]);
+        USE_LABEL(c, pc->fail_pop[pc->fail_pop_size]);
         if (!cfg_builder_addop_noarg(CFG_BUILDER(c), POP_TOP, COMPILER_LOC(c))) {
             pc->fail_pop_size = 0;
             PyObject_Free(pc->fail_pop);
@@ -6287,7 +6260,7 @@ emit_and_reset_fail_pop(struct compiler *c, pattern_context *pc)
             return 0;
         }
     }
-    compiler_use_next_block(c, pc->fail_pop[0]);
+    USE_LABEL(c, pc->fail_pop[0]);
     PyObject_Free(pc->fail_pop);
     pc->fail_pop = NULL;
     return 1;
@@ -6689,8 +6662,7 @@ static int
 compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchOr_kind);
-    basicblock *end;
-    RETURN_IF_FALSE(end = compiler_new_block(c));
+    NEW_JUMP_TARGET_LABEL(c, end);
     Py_ssize_t size = asdl_seq_LEN(p->v.MatchOr.patterns);
     assert(size > 1);
     // We're going to be messing with pc. Keep the original info handy:
@@ -6793,7 +6765,8 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
     if (!cfg_builder_addop_noarg(CFG_BUILDER(c), POP_TOP, COMPILER_LOC(c)) || !jump_to_fail_pop(c, pc, JUMP)) {
         goto error;
     }
-    compiler_use_next_block(c, end);
+
+    USE_LABEL(c, end);
     Py_ssize_t nstores = PyList_GET_SIZE(control);
     // There's a bunch of stuff on the stack between where the new stores
     // are and where they need to be:
@@ -6952,8 +6925,7 @@ static int
 compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
 {
     VISIT(c, expr, s->v.Match.subject);
-    basicblock *end;
-    RETURN_IF_FALSE(end = compiler_new_block(c));
+    NEW_JUMP_TARGET_LABEL(c, end);
     Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
     assert(cases > 0);
     match_case_ty m = asdl_seq_GET(s->v.Match.cases, cases - 1);
@@ -7022,7 +6994,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
         }
         VISIT_SEQ(c, stmt, m->body);
     }
-    compiler_use_next_block(c, end);
+    USE_LABEL(c, end);
     return 1;
 }
 
@@ -7438,11 +7410,17 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
             if (explicit_jump == NULL) {
                 return -1;
             }
-            basicblock_addop(explicit_jump, JUMP, 0, b->b_next, NO_LOCATION);
-
+            jump_target_label next_label = {b->b_next->b_label, b->b_next};
+            basicblock_addop(explicit_jump, JUMP, 0, next_label, NO_LOCATION);
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
             b->b_next = explicit_jump;
+
+            /* calculate target from target_label */
+            /* TODO: formalize an API for adding jumps in the backend */
+            struct instr *last = basicblock_last_instr(explicit_jump);
+            last->i_target = last->i_target_label.block;
+            last->i_target_label = NO_LABEL;
         }
     }
 
@@ -8262,8 +8240,8 @@ static void
 dump_basicblock(const basicblock *b)
 {
     const char *b_return = basicblock_returns(b) ? "return " : "";
-    fprintf(stderr, "[%d %d %d %p] used: %d, depth: %d, offset: %d %s\n",
-        b->b_cold, b->b_warm, BB_NO_FALLTHROUGH(b), b, b->b_iused,
+    fprintf(stderr, "%d: [%d %d %d %p] used: %d, depth: %d, offset: %d %s\n",
+        b->b_label, b->b_cold, b->b_warm, BB_NO_FALLTHROUGH(b), b, b->b_iused,
         b->b_startdepth, b->b_offset, b_return);
     if (b->b_instr) {
         int i;
@@ -8278,6 +8256,9 @@ dump_basicblock(const basicblock *b)
 
 static int
 normalize_basic_block(basicblock *bb);
+
+static int
+calculate_jump_targets(basicblock *entryblock);
 
 static int
 optimize_cfg(basicblock *entryblock, PyObject *consts, PyObject *const_cache);
@@ -8497,7 +8478,7 @@ static void
 eliminate_empty_basic_blocks(basicblock *entryblock);
 
 
-static void
+static int
 remove_redundant_jumps(basicblock *entryblock) {
     /* If a non-empty block ends with a jump instruction, check if the next
      * non-empty block reached through normal flow control is the target
@@ -8511,6 +8492,10 @@ remove_redundant_jumps(basicblock *entryblock) {
             assert(!IS_ASSEMBLER_OPCODE(b_last_instr->i_opcode));
             if (b_last_instr->i_opcode == JUMP ||
                 b_last_instr->i_opcode == JUMP_NO_INTERRUPT) {
+                if (b_last_instr->i_target == NULL) {
+                    PyErr_SetString(PyExc_SystemError, "jump with NULL target");
+                    return -1;
+                }
                 if (b_last_instr->i_target == b->b_next) {
                     assert(b->b_next->b_iused);
                     b_last_instr->i_opcode = NOP;
@@ -8522,6 +8507,7 @@ remove_redundant_jumps(basicblock *entryblock) {
     if (removed) {
         eliminate_empty_basic_blocks(entryblock);
     }
+    return 0;
 }
 
 static PyCodeObject *
@@ -8599,7 +8585,9 @@ assemble(struct compiler *c, int addNone)
     if (consts == NULL) {
         goto error;
     }
-
+    if (calculate_jump_targets(entryblock)) {
+        goto error;
+    }
     if (optimize_cfg(entryblock, consts, c->c_const_cache)) {
         goto error;
     }
@@ -8627,7 +8615,9 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
-    remove_redundant_jumps(entryblock);
+    if (remove_redundant_jumps(entryblock) < 0) {
+        goto error;
+    }
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         clean_basic_block(b);
     }
@@ -9439,6 +9429,47 @@ propagate_line_numbers(basicblock *entryblock) {
             }
         }
     }
+}
+
+
+/* Calculate the actual jump target from the target_label */
+static int
+calculate_jump_targets(basicblock *entryblock)
+{
+    int max_label = -1;
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        if (b->b_label > max_label) {
+            max_label = b->b_label;
+        }
+    }
+    size_t mapsize = sizeof(basicblock *) * (max_label + 1);
+    basicblock **label2block = (basicblock **)PyMem_Malloc(mapsize);
+    if (!label2block) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    memset(label2block, 0, mapsize);
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        if (b->b_label >= 0) {
+            label2block[b->b_label] = b;
+        }
+    }
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        for (int i = 0; i < b->b_iused; i++) {
+            struct instr *instr = &b->b_instr[i];
+            assert(instr->i_target == NULL);
+            if (is_jump(instr) || is_block_push(instr)) {
+                int lbl = instr->i_target_label.id;
+                assert(lbl >= 0 && lbl <= max_label);
+                instr->i_target = label2block[lbl];
+                assert(instr->i_target != NULL);
+                assert(instr->i_target->b_label == lbl);
+            }
+            instr->i_target_label = NO_LABEL;
+        }
+    }
+    PyMem_Free(label2block);
+    return 0;
 }
 
 /* Perform optimizations on a control flow graph.
