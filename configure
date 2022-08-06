@@ -927,7 +927,6 @@ MULTIARCH_CPPFLAGS
 PLATFORM_TRIPLET
 MULTIARCH
 ac_ct_CXX
-MAINCC
 CXX
 EGREP
 SED
@@ -1036,7 +1035,6 @@ enable_universalsdk
 with_universal_archs
 with_framework_name
 enable_framework
-with_cxx_main
 with_emscripten_target
 enable_wasm_dynamic_linking
 enable_wasm_pthreads
@@ -1805,9 +1803,6 @@ Optional Packages:
                           specify the name for the python framework on macOS
                           only valid when --enable-framework is set. see
                           Mac/README.rst (default is 'Python')
-  --with-cxx-main[=COMPILER]
-                          compile main() and link Python executable with C++
-                          compiler specified in COMPILER (default is $CXX)
   --with-emscripten-target=[browser|node]
                           Emscripten platform
   --with-suffix=SUFFIX    set executable suffix to SUFFIX (default is empty,
@@ -5550,35 +5545,6 @@ $as_echo "$ac_cv_safe_to_define___extensions__" >&6; }
 
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-cxx-main=<compiler>" >&5
-$as_echo_n "checking for --with-cxx-main=<compiler>... " >&6; }
-
-# Check whether --with-cxx_main was given.
-if test "${with_cxx_main+set}" = set; then :
-  withval=$with_cxx_main;
-
-	case $withval in
-	no)	with_cxx_main=no
-		MAINCC='$(CC)';;
-	yes)	with_cxx_main=yes
-		MAINCC='$(CXX)';;
-	*)	with_cxx_main=yes
-		MAINCC=$withval
-		if test -z "$CXX"
-		then
-			CXX=$withval
-		fi;;
-	esac
-else
-
-	with_cxx_main=no
-	MAINCC='$(CC)'
-
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_cxx_main" >&5
-$as_echo "$with_cxx_main" >&6; }
-
 preset_cxx="$CXX"
 if test -z "$CXX"
 then
@@ -6661,7 +6627,7 @@ LDVERSION="$VERSION"
 $as_echo_n "checking LINKCC... " >&6; }
 if test -z "$LINKCC"
 then
-	LINKCC='$(PURIFY) $(MAINCC)'
+	LINKCC='$(PURIFY) $(CC)'
 	case $ac_sys_system in
 	QNX*)
 	   # qcc must be used because the other compilers do not
