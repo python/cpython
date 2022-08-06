@@ -72,24 +72,12 @@
 
 __all__ = [
     # public symbols
-    "Comment",
-    "dump",
-    "Element", "ElementTree",
-    "fromstring", "fromstringlist",
-    "indent", "iselement", "iterparse",
-    "parse", "ParseError",
-    "PI", "ProcessingInstruction",
-    "QName",
-    "SubElement",
-    "tostring", "tostringlist",
-    "TreeBuilder",
-    "VERSION",
-    "XML", "XMLID",
-    "XMLParser", "XMLPullParser",
-    "register_namespace",
-    "canonicalize", "C14NWriterTarget",
-    "XMLDeclarationQuotes",
-    "ShortEmptyElements"
+    "Comment", "dump", "Element", "ElementTree", "fromstring",
+    "fromstringlist", "indent", "iselement", "iterparse", "parse",
+    "ParseError", "PI", "ProcessingInstruction", "QName", "SubElement",
+    "tostring", "tostringlist", "TreeBuilder", "VERSION", "XML", "XMLID",
+    "XMLParser", "XMLPullParser", "register_namespace", "canonicalize",
+    "C14NWriterTarget", "ShortEmptyElements"
 ]
 
 VERSION = "1.3.0"
@@ -512,21 +500,6 @@ class QName:
 # --------------------------------------------------------------------
 
 
-class XMLDeclarationQuotes(enum.Enum):
-    """
-    Whether or not single quotes or double quotes ought to be used in the XML
-    declaration.
-
-    *SINGLE* (default): <?xml version='1.0' encoding='UTF-8'?>
-    *DOUBLE*: <?xml version="1.0" encoding="UTF-8"?>
-    """
-    SINGLE = "'"
-    DOUBLE = '"'
-
-    def __str__(self):
-        return self.value
-
-
 class ShortEmptyElements(enum.Enum):
     """
     This class creates backwards compatibility with the boolean value of
@@ -738,7 +711,7 @@ class ElementTree:
     def write(self, file_or_filename,
               encoding=None,
               xml_declaration=None,
-              xml_declaration_quotes=XMLDeclarationQuotes.SINGLE,
+              xml_declaration_quotes="'",
               default_namespace=None,
               method=None, *,
               short_empty_elements=True):
@@ -755,7 +728,7 @@ class ElementTree:
                                US-ASCII, UTF-8, or Unicode
 
           *xml_declaration_quotes* -- Changes character used in XML declaration,
-                                      see *XMLDeclarationQuotes*.
+                                      should be a *str*.
 
           *default_namespace* -- sets the default XML namespace (for "xmlns")
 
@@ -781,6 +754,8 @@ class ElementTree:
                 encoding = "utf-8"
             else:
                 encoding = "us-ascii"
+        if not xml_declaration_quotes in ['"', "'"]:
+            raise ValueError("xml_declaration_quotes must be either ' or \"")
         with _get_writer(file_or_filename, encoding) as (write, declared_encoding):
             if method == "xml" and (xml_declaration or
                     (xml_declaration is None and
@@ -788,8 +763,6 @@ class ElementTree:
                      declared_encoding.lower() not in ("utf-8", "us-ascii"))):
                 write("<?xml version={0}1.0{0} encoding={0}{1}{0}?>\n"
                       .format(xml_declaration_quotes, declared_encoding))
-                if not isinstance(xml_declaration_quotes, XMLDeclarationQuotes):
-                    raise ValueError("Unknown type for `xml_declaration_quotes`")
             if method == "text":
                 _serialize_text(write, self._root)
             else:
