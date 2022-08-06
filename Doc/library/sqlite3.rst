@@ -64,7 +64,7 @@ Call its :meth:`~Cursor.execute` method to perform SQL queries::
 
 The ``INSERT`` statement will implicitly open a transaction.
 See :ref:`sqlite3-controlling-transactions` for more details.
-Use connection object to :meth:`~Connection.commit` the pending transaction::
+Use the connection object to :meth:`~Connection.commit` the transaction::
 
    con.commit()  # Save the changes.
 
@@ -84,7 +84,7 @@ then query the database::
 
 The result is a one-item :class:`tuple`:
 one row, with one column.
-Now, let us insert three more rows of data,
+Now, insert three more rows of data,
 using :meth:`~Cursor.executemany`::
 
    >>> data = [
