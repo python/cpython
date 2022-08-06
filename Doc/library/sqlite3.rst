@@ -280,9 +280,9 @@ Module functions
    case-insensitively.
 
 
-.. _sqlite3-module-variables:
+.. _sqlite3-module-constants:
 
-Module variables
+Module constants
 ^^^^^^^^^^^^^^^^
 
 .. data:: PARSE_COLNAMES
