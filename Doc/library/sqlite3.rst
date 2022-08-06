@@ -78,7 +78,7 @@ and querying our ``stocks`` table for our newly inserted row::
    # Open a new connection and create a new cursor.
    >>> con = sqlite3.connect('example.db')
    >>> cur = con.cursor()
-   # Query the 'stocks' table.
+   # Use the SQL 'count' function to verify that we've got one row of data.
    >>> res = cur.execute('SELECT count(rowid) FROM stocks')
    >>> print(res.fetchone())
    (1,)
