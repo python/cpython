@@ -140,6 +140,8 @@ equal to the constant name (i.e. ``http.HTTPStatus.OK`` is also available as
 HTTP status category
 --------------------
 
+.. versionadded:: 3.11
+
 The enum values have several properties to indicate the HTTP status category:
 
 ==================== ======================== ===============================
