@@ -5494,10 +5494,8 @@ When an operation exceeds the limit, a :exc:`ValueError` is raised::
 Configuring the limit
 ---------------------
 
-* :data:`sys.int_info.default_max_base10_digits` is the compiled-in default
-  limit.
-* :data:`sys.int_info.base10_digits_check_threshold` is the minimum accepted
-  value for the limit.
+Before Python starts up you can use an environment variable or an interpreter
+command line flag to configure the limit:
 
 * :envvar:`PYTHONINTMAXBASE10DIGITS`, e.g.
   ``PYTHONINTMAXBASE10DIGITS=4321 python3`` to set the limit to ``4321`` or
@@ -5509,12 +5507,22 @@ Configuring the limit
   :option:`-X int_max_base10_digits <-X>`. In case both the env var and the
   ``-X`` option are set, the ``-X`` option takes precedence. The value of
   *-1* indicates that both were unset and the value of
-  :data:`sys.int_info.default_max_base10_digits` will be used.
+  :data:`sys.int_info.default_max_base10_digits` was used during initilization.
+
+From code, you can inspect the current limit and set a new one using these
+:mod:`sys` APIs:
 
 * :func:`sys.get_int_max_base10_digits` and
   :func:`sys.set_int_max_base10_digits` are a getter and setter for
   the interpreter-wide limit. Subinterpreters have their own
   limit.
+
+Information about the default and minimum can be found in :attr:`sys.int_info`:
+
+* :data:`sys.int_info.default_max_base10_digits <sys.int_info>` is the
+  compiled-in default limit.
+* :data:`sys.int_info.base10_digits_check_threshold <sys.int_info>` is the
+  minimum accepted value for the limit.
 
 Affected APIs
 -------------
