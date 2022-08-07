@@ -205,8 +205,13 @@ Pending Removal in Python 3.14
 
   (Contributed by Jason R. Coombs and Hugo van Kemenade in :gh:`93963`.)
 
+APIs:
+
 * Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
-  bases using the C API.
+  bases using the C API (:gh:`95388`)
+* :mod:`array`'s ``'u'`` format code, deprecated in docs since Python 3.3,
+  emits :exc:`DeprecationWarning` since 3.12
+  (contributed by Hugo van Kemenade in :gh:`80480`)
 
 
 Pending Removal in Future Versions

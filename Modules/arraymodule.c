@@ -2620,6 +2620,15 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTuple(args, "C|O:array", &c, &initial))
         return NULL;
 
+    if (c == 'u') {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "The 'u' type code is deprecated and "
+                         "will be removed in Python 3.14",
+                         1)) {
+            return NULL;
+        }
+    }
+
     if (PySys_Audit("array.__new__", "CO",
                     c, initial ? initial : Py_None) < 0) {
         return NULL;

@@ -23,6 +23,7 @@ import warnings
 import sys, array, io, os
 from decimal import Decimal
 from fractions import Fraction
+from test.support import warnings_helper
 
 try:
     from _testbuffer import *
@@ -3174,6 +3175,7 @@ class TestBufferProtocol(unittest.TestCase):
                             self.assertEqual(m.tobytes(), a.tobytes())
                             cmptest(self, a, b, m, singleitem)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-80480 array('u')
     def test_memoryview_compare_special_cases(self):
 
         a = array.array('L', [1, 2, 3])
