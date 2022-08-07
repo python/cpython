@@ -83,6 +83,14 @@ Other Language Changes
   mapping is hashable.
   (Contributed by Serhiy Storchaka in :gh:`87995`.)
 
+* Converting between :class:`int` and :class:`str` in non binary multiple bases
+  such as human friendly base 10 now limits the maximum number of string digits
+  by default to avoid potential denial of service attacks. This is a mitigation
+  for `CVE-2020-10735
+  <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_. The limit
+  can be configured by environment variable, command line flag, or :mod:`sys`
+  APIs. See the :ref:`int maximum digits limitation <int_max_str_digits>` docs.
+
 
 New Modules
 ===========
