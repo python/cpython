@@ -24,8 +24,11 @@ Intel(R) Core(TM) i7-8650U CPU @ 1.90GHz
 1000000 digits
 1 loop, best of 5: 5.2 sec per loop
 """
+import sys
 import timeit
 
+unlimiter = getattr(sys, "set_int_max_str_digits", lambda _: None)
+unlimiter(0)  # Disable the limit when running on a limited interpreter.
 
 for i in [
     100,
