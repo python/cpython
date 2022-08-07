@@ -2273,38 +2273,6 @@ long_from_binary_base(const char **str, int base, PyLongObject **res)
     return 0;
 }
 
-/*
- * A helper function to precompute valies in a small static log table used
- * in PyLong_String.  The caller should check if the table is already filled
- * in (non-zero value) at the [base] index before calling.
- *
- * Appropriate values in log_base_table, convwidth_base, and convmultmax_base
- * are computed and filled in at index [base].
- */
-static void fill_in_log_conversion_table(
-        int base,
-        double *log_base_table,
-        int *convwidth_base,
-        twodigits *convmultmax_base)
-{
-    twodigits convmax = base;
-    int i = 1;
-
-    log_base_table[base] = (log((double)base) /
-                            log((double)PyLong_BASE));
-    for (;;) {
-        twodigits next = convmax * base;
-        if (next > PyLong_BASE) {
-            break;
-        }
-        convmax = next;
-        ++i;
-    }
-    convmultmax_base[base] = convmax;
-    assert(i > 0);
-    convwidth_base[base] = i;
-}
-
 /* Parses an int from a bytestring. Leading and trailing whitespace will be
  * ignored.
  *
@@ -2482,8 +2450,22 @@ digit beyond the first.
         static twodigits convmultmax_base[37] = {0,};
 
         if (log_base_BASE[base] == 0.0) {
-            fill_in_log_conversion_table(
-                    base, log_base_BASE, convwidth_base, convmultmax_base);
+            twodigits convmax = base;
+            int i = 1;
+
+            log_base_BASE[base] = (log((double)base) /
+                                   log((double)PyLong_BASE));
+            for (;;) {
+                twodigits next = convmax * base;
+                if (next > PyLong_BASE) {
+                    break;
+                }
+                convmax = next;
+                ++i;
+            }
+            convmultmax_base[base] = convmax;
+            assert(i > 0);
+            convwidth_base[base] = i;
         }
 
         /* Find length of the string of numeric characters. */
