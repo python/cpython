@@ -65,6 +65,7 @@ extern PyObject* _PyEval_BuiltinsFromGlobals(
     PyThreadState *tstate,
     PyObject *globals);
 
+extern int _PyPerfTrampoline_Init(int activate);
 
 static inline PyObject*
 _PyEval_EvalFrame(PyThreadState *tstate, struct _PyInterpreterFrame *frame, int throwflag)

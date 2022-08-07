@@ -872,6 +872,9 @@
 /* Define to 1 if you have the `pause' function. */
 #undef HAVE_PAUSE
 
+/* Define to 1 if you have the perf trampoline. */
+#undef HAVE_PERF_TRAMPOLINE
+
 /* Define to 1 if you have the `pipe' function. */
 #undef HAVE_PIPE
 

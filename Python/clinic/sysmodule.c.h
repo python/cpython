@@ -1127,6 +1127,42 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(ANDROID_API_LEVEL) */
 
+PyDoc_STRVAR(sys__activate_perf_trampoline__doc__,
+"_activate_perf_trampoline($module, /)\n"
+"--\n"
+"\n"
+"Activate the perf profiler trampoline.");
+
+#define SYS__ACTIVATE_PERF_TRAMPOLINE_METHODDEF    \
+    {"_activate_perf_trampoline", (PyCFunction)sys__activate_perf_trampoline, METH_NOARGS, sys__activate_perf_trampoline__doc__},
+
+static PyObject *
+sys__activate_perf_trampoline_impl(PyObject *module);
+
+static PyObject *
+sys__activate_perf_trampoline(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__activate_perf_trampoline_impl(module);
+}
+
+PyDoc_STRVAR(sys__deactivate_perf_trampoline__doc__,
+"_deactivate_perf_trampoline($module, /)\n"
+"--\n"
+"\n"
+"Activate the perf profiler trampoline.");
+
+#define SYS__DEACTIVATE_PERF_TRAMPOLINE_METHODDEF    \
+    {"_deactivate_perf_trampoline", (PyCFunction)sys__deactivate_perf_trampoline, METH_NOARGS, sys__deactivate_perf_trampoline__doc__},
+
+static PyObject *
+sys__deactivate_perf_trampoline_impl(PyObject *module);
+
+static PyObject *
+sys__deactivate_perf_trampoline(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__deactivate_perf_trampoline_impl(module);
+}
+
 #ifndef SYS_GETWINDOWSVERSION_METHODDEF
     #define SYS_GETWINDOWSVERSION_METHODDEF
 #endif /* !defined(SYS_GETWINDOWSVERSION_METHODDEF) */
@@ -1170,4 +1206,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=38446a4c76e2f3b6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=639b32664762e04a input=a9049054013a1b77]*/

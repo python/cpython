@@ -1149,6 +1149,11 @@ init_interp_main(PyThreadState *tstate)
         if (_PyTraceMalloc_Init(config->tracemalloc) < 0) {
             return _PyStatus_ERR("can't initialize tracemalloc");
         }
+
+        if (_PyPerfTrampoline_Init(config->perf_profiling) < 0) {
+            return _PyStatus_ERR("can't initialize the perf trampoline");
+        }
+
     }
 
     status = init_sys_streams(tstate);

@@ -1994,6 +1994,42 @@ sys_getandroidapilevel_impl(PyObject *module)
 }
 #endif   /* ANDROID_API_LEVEL */
 
+/*[clinic input]
+sys._activate_perf_trampoline
+
+Activate the perf profiler trampoline.
+[clinic start generated code]*/
+
+static PyObject *
+sys__activate_perf_trampoline_impl(PyObject *module)
+/*[clinic end generated code: output=248f6dc862887fd0 input=67667f43ffabb1e4]*/
+{
+    if  (_PyPerfTrampoline_Init(1) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+/*[clinic input]
+sys._deactivate_perf_trampoline
+
+Activate the perf profiler trampoline.
+[clinic start generated code]*/
+
+static PyObject *
+sys__deactivate_perf_trampoline_impl(PyObject *module)
+/*[clinic end generated code: output=7dde745eb7ba5e54 input=3d4fbb4aef9ad3d8]*/
+{
+    if  (_PyPerfTrampoline_Init(0) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+
+
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
     SYS_ADDAUDITHOOK_METHODDEF
@@ -2047,6 +2083,8 @@ static PyMethodDef sys_methods[] = {
      METH_VARARGS | METH_KEYWORDS, set_asyncgen_hooks_doc},
     SYS_GET_ASYNCGEN_HOOKS_METHODDEF
     SYS_GETANDROIDAPILEVEL_METHODDEF
+    SYS__ACTIVATE_PERF_TRAMPOLINE_METHODDEF
+    SYS__DEACTIVATE_PERF_TRAMPOLINE_METHODDEF
     SYS_UNRAISABLEHOOK_METHODDEF
 #ifdef Py_STATS
     SYS__STATS_ON_METHODDEF

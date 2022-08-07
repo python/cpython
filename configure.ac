@@ -3425,6 +3425,20 @@ case "$ac_sys_system" in
 esac
 AC_MSG_RESULT($SHLIBS)
 
+dnl perf trampoline is Linux specific and requires an arch-specific
+dnl trampoline in asssembly.
+AC_MSG_CHECKING([perf trampoline])
+AS_CASE([$host],
+  [x86_64-*-linux-*], [perf_trampoline=yes],
+  [perf_trampoline=no]
+)
+AC_MSG_RESULT([$perf_trampoline])
+
+AS_VAR_IF([perf_trampoline], [yes], [
+  AC_DEFINE([HAVE_PERF_TRAMPOLINE], [1], [Define to 1 if you have the perf trampoline.])
+  PERF_TRAMPOLINE_OBJ=Objects/asm_trampoline.o
+])
+AC_SUBST([PERF_TRAMPOLINE_OBJ])
 
 # checks for libraries
 AC_CHECK_LIB(sendfile, sendfile)

@@ -745,6 +745,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->use_hash_seed = -1;
     config->faulthandler = -1;
     config->tracemalloc = -1;
+    config->perf_profiling = -1;
     config->module_search_paths_set = 0;
     config->parse_argv = 0;
     config->site_import = -1;
@@ -829,6 +830,7 @@ PyConfig_InitIsolatedConfig(PyConfig *config)
     config->use_hash_seed = 0;
     config->faulthandler = 0;
     config->tracemalloc = 0;
+    config->perf_profiling = 0;
     config->safe_path = 1;
     config->pathconfig_warnings = 0;
 #ifdef MS_WINDOWS
@@ -940,6 +942,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(_install_importlib);
     COPY_ATTR(faulthandler);
     COPY_ATTR(tracemalloc);
+    COPY_ATTR(perf_profiling);
     COPY_ATTR(import_time);
     COPY_ATTR(code_debug_ranges);
     COPY_ATTR(show_ref_count);
@@ -1050,6 +1053,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_UINT(hash_seed);
     SET_ITEM_INT(faulthandler);
     SET_ITEM_INT(tracemalloc);
+    SET_ITEM_INT(perf_profiling);
     SET_ITEM_INT(import_time);
     SET_ITEM_INT(code_debug_ranges);
     SET_ITEM_INT(show_ref_count);
@@ -1331,6 +1335,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     CHECK_VALUE("hash_seed", config->hash_seed <= MAX_HASH_SEED);
     GET_UINT(faulthandler);
     GET_UINT(tracemalloc);
+    GET_UINT(perf_profiling);
     GET_UINT(import_time);
     GET_UINT(code_debug_ranges);
     GET_UINT(show_ref_count);
@@ -1687,6 +1692,16 @@ config_read_env_vars(PyConfig *config)
     return _PyStatus_OK();
 }
 
+static PyStatus
+config_init_perf_profiling(PyConfig *config)
+{
+    const wchar_t *xoption = config_get_xoption(config, L"perf");
+    if (xoption) {
+        config->perf_profiling = 1;
+    }
+    return _PyStatus_OK();
+
+}
 
 static PyStatus
 config_init_tracemalloc(PyConfig *config)
@@ -1784,6 +1799,12 @@ config_read_complex_options(PyConfig *config)
     PyStatus status;
     if (config->tracemalloc < 0) {
         status = config_init_tracemalloc(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+    if (config->tracemalloc < 0) {
+        status = config_init_perf_profiling(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -2103,6 +2124,9 @@ config_read(PyConfig *config, int compute_path_config)
     }
     if (config->tracemalloc < 0) {
         config->tracemalloc = 0;
+    }
+    if (config->perf_profiling < 0) {
+        config->perf_profiling = 0;
     }
     if (config->use_hash_seed < 0) {
         config->use_hash_seed = 0;
