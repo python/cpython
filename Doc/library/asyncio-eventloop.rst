@@ -332,7 +332,7 @@ Creating Futures and Tasks
 
 .. method:: loop.create_task(coro, *, name=None, context=None)
 
-   Schedule the execution of a :ref:`coroutine`.
+   Schedule the execution of a :ref:`coroutine <coroutine>`.
    Return a :class:`Task` object.
 
    Third-party event loops can use their own subclass of :class:`Task`
