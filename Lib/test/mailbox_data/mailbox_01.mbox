@@ -1,0 +1,8 @@
+From MAILER-DAEMON Sun Aug  7 11:40:37 2022 extra info
+From: foo
+Subject: unquoted From in body; extra info on From line
+
+Hello
+
+From time to time
+
