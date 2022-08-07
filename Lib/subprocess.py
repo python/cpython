@@ -1262,14 +1262,14 @@ class Popen:
             return output
 
         if skip_check_and_raise or _time() > endtime:
-            if stdout_seq:
+            if stdout_seq is not None:
                 stdout = b''.join(stdout_seq)
                 if self.text_mode:
                     stdout = translate_newlines_partial_output(
                             stdout, self.stdout.encoding, self.stdout.errors)
             else:
                 stdout = None
-            if stderr_seq:
+            if stderr_seq is not None:
                 stderr = b''.join(stderr_seq)
                 if self.text_mode:
                     stderr = translate_newlines_partial_output(

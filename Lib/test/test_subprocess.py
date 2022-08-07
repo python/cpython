@@ -1149,6 +1149,17 @@ class ProcessTestCase(BaseTestCase):
         self.assertEqual(c.exception.stdout, "foo ")
         self.assertEqual(c.exception.stderr, "foo ¤ bar")
 
+    @unittest.skipIf(mswindows, "behavior currently not supported on Windows")
+    def test_no_output_timeout(self):
+        with self.assertRaises(subprocess.TimeoutExpired) as c:
+            p = subprocess.run(
+                [sys.executable, "-c", "import time; time.sleep(10)"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                timeout=3)
+        self.assertEqual(c.exception.stdout, b"")
+        self.assertEqual(c.exception.stderr, b"")
+
     def test_communicate_errors(self):
         for errors, expected in [
             ('ignore', ''),
