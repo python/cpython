@@ -992,7 +992,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
       class Starship:
           stats: ClassVar[dict[str, int]] = {} # class variable
           damage: int = 10                     # instance variable
-          
+
           def __init__(self, damage: int): ...
 
    :data:`ClassVar` accepts only types and cannot be further subscribed.
