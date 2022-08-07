@@ -83,7 +83,7 @@ BOM64_BE = BOM_UTF32_BE
 class CodecInfo(tuple):
     """Codec details when looking up the codec registry"""
 
-    # Private API to allow Python 3.4 to blacklist the known non-Unicode
+    # Private API to allow Python 3.4 to denylist the known non-Unicode
     # codecs in the standard library. A more general mechanism to
     # reliably distinguish test encodings from other codecs will hopefully
     # be defined for Python 3.5
@@ -386,7 +386,7 @@ class StreamWriter(Codec):
 
     def reset(self):
 
-        """ Flushes and resets the codec buffers used for keeping state.
+        """ Resets the codec buffers used for keeping internal state.
 
             Calling this method should ensure that the data on the
             output is put into a clean state, that allows appending
@@ -620,7 +620,7 @@ class StreamReader(Codec):
 
     def reset(self):
 
-        """ Resets the codec buffers used for keeping state.
+        """ Resets the codec buffers used for keeping internal state.
 
             Note that no stream repositioning should take place.
             This method is primarily intended to be able to recover
@@ -838,7 +838,7 @@ class StreamRecoder:
 
     def writelines(self, list):
 
-        data = ''.join(list)
+        data = b''.join(list)
         data, bytesdecoded = self.decode(data, self.errors)
         return self.writer.write(data)
 
@@ -846,6 +846,12 @@ class StreamRecoder:
 
         self.reader.reset()
         self.writer.reset()
+
+    def seek(self, offset, whence=0):
+        # Seeks must be propagated to both the readers and writers
+        # as they might need to reset their internal buffers.
+        self.reader.seek(offset, whence)
+        self.writer.seek(offset, whence)
 
     def __getattr__(self, name,
                     getattr=getattr):
@@ -862,7 +868,7 @@ class StreamRecoder:
 
 ### Shortcuts
 
-def open(filename, mode='r', encoding=None, errors='strict', buffering=1):
+def open(filename, mode='r', encoding=None, errors='strict', buffering=-1):
 
     """ Open an encoded file using the given mode and return
         a wrapped version providing transparent encoding/decoding.
@@ -883,7 +889,8 @@ def open(filename, mode='r', encoding=None, errors='strict', buffering=1):
         encoding error occurs.
 
         buffering has the same meaning as for the builtin open() API.
-        It defaults to line buffered.
+        It defaults to -1 which means that the default buffer size will
+        be used.
 
         The returned wrapped file object provides an extra attribute
         .encoding which allows querying the used encoding. This
@@ -898,11 +905,16 @@ def open(filename, mode='r', encoding=None, errors='strict', buffering=1):
     file = builtins.open(filename, mode, buffering)
     if encoding is None:
         return file
-    info = lookup(encoding)
-    srw = StreamReaderWriter(file, info.streamreader, info.streamwriter, errors)
-    # Add attributes to simplify introspection
-    srw.encoding = encoding
-    return srw
+
+    try:
+        info = lookup(encoding)
+        srw = StreamReaderWriter(file, info.streamreader, info.streamwriter, errors)
+        # Add attributes to simplify introspection
+        srw.encoding = encoding
+        return srw
+    except:
+        file.close()
+        raise
 
 def EncodedFile(file, data_encoding, file_encoding=None, errors='strict'):
 
@@ -1102,13 +1114,3 @@ except LookupError:
 _false = 0
 if _false:
     import encodings
-
-### Tests
-
-if __name__ == '__main__':
-
-    # Make stdout translate Latin-1 output into UTF-8 output
-    sys.stdout = EncodedFile(sys.stdout, 'latin-1', 'utf-8')
-
-    # Have stdin translate Latin-1 input into UTF-8 input
-    sys.stdin = EncodedFile(sys.stdin, 'utf-8', 'latin-1')

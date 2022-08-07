@@ -14,15 +14,20 @@
  * (c) 2002 Gregory P. Ward.  All Rights Reserved.
  * (c) 2002 Python Software Foundation.  All Rights Reserved.
  *
- * XXX need a license statement
- *
  * $Id$
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+#define NEEDS_PY_IDENTIFIER
+
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "structmember.h"
+#include "pycore_fileutils.h"     // _Py_write()
+#include "structmember.h"         // PyMemberDef
 
+#include <stdlib.h>               // getenv()
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #else
@@ -156,7 +161,7 @@ oss_dealloc(oss_audio_t *self)
     /* if already closed, don't reclose it */
     if (self->fd != -1)
         close(self->fd);
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 
@@ -201,7 +206,7 @@ oss_mixer_dealloc(oss_mixer_t *self)
     /* if already closed, don't reclose it */
     if (self->fd != -1)
         close(self->fd);
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 
@@ -242,7 +247,7 @@ static int _is_fd_valid(int fd)
      arg = dsp.xxx(arg)
 */
 static PyObject *
-_do_ioctl_1(int fd, PyObject *args, char *fname, int cmd)
+_do_ioctl_1(int fd, PyObject *args, char *fname, unsigned long cmd)
 {
     char argfmt[33] = "i:";
     int arg;
@@ -267,7 +272,7 @@ _do_ioctl_1(int fd, PyObject *args, char *fname, int cmd)
    way.
 */
 static PyObject *
-_do_ioctl_1_internal(int fd, PyObject *args, char *fname, int cmd)
+_do_ioctl_1_internal(int fd, PyObject *args, char *fname, unsigned long cmd)
 {
     char argfmt[32] = ":";
     int arg = 0;
@@ -287,7 +292,7 @@ _do_ioctl_1_internal(int fd, PyObject *args, char *fname, int cmd)
 /* _do_ioctl_0() is a private helper for the no-argument ioctls:
    SNDCTL_DSP_{SYNC,RESET,POST}. */
 static PyObject *
-_do_ioctl_0(int fd, PyObject *args, char *fname, int cmd)
+_do_ioctl_0(int fd, PyObject *args, char *fname, unsigned long cmd)
 {
     char argfmt[32] = ":";
     int rv;
@@ -539,7 +544,7 @@ oss_exit(PyObject *self, PyObject *unused)
 {
     _Py_IDENTIFIER(close);
 
-    PyObject *ret = _PyObject_CallMethodId(self, &PyId_close, NULL);
+    PyObject *ret = _PyObject_CallMethodIdNoArgs(self, &PyId_close);
     if (!ret)
         return NULL;
     Py_DECREF(ret);
@@ -921,57 +926,54 @@ static PyMethodDef oss_mixer_methods[] = {
     { NULL,             NULL}
 };
 
+static PyMemberDef oss_members[] = {
+    {"name", T_STRING, offsetof(oss_audio_t, devicename), READONLY, NULL},
+    {NULL}
+};
+
 static PyObject *
-oss_getattro(oss_audio_t *self, PyObject *nameobj)
+oss_closed_getter(oss_audio_t *self, void *closure)
 {
-    const char *name = "";
-    PyObject * rval = NULL;
-
-    if (PyUnicode_Check(nameobj)) {
-        name = PyUnicode_AsUTF8(nameobj);
-        if (name == NULL)
-            return NULL;
-    }
-
-    if (strcmp(name, "closed") == 0) {
-        rval = (self->fd == -1) ? Py_True : Py_False;
-        Py_INCREF(rval);
-    }
-    else if (strcmp(name, "name") == 0) {
-        rval = PyUnicode_FromString(self->devicename);
-    }
-    else if (strcmp(name, "mode") == 0) {
-        /* No need for a "default" in this switch: from newossobject(),
-           self->mode can only be one of these three values. */
-        switch(self->mode) {
-            case O_RDONLY:
-                rval = PyUnicode_FromString("r");
-                break;
-            case O_RDWR:
-                rval = PyUnicode_FromString("rw");
-                break;
-            case O_WRONLY:
-                rval = PyUnicode_FromString("w");
-                break;
-        }
-    }
-    else {
-        rval = PyObject_GenericGetAttr((PyObject *)self, nameobj);
-    }
-    return rval;
+    return PyBool_FromLong(self->fd == -1);
 }
+
+static PyObject *
+oss_mode_getter(oss_audio_t *self, void *closure)
+{
+    switch(self->mode) {
+        case O_RDONLY:
+            return PyUnicode_FromString("r");
+            break;
+        case O_RDWR:
+            return PyUnicode_FromString("rw");
+            break;
+        case O_WRONLY:
+            return PyUnicode_FromString("w");
+            break;
+        default:
+            /* From newossobject(), self->mode can only be one
+               of these three values. */
+            Py_UNREACHABLE();
+    }
+}
+
+static PyGetSetDef oss_getsetlist[] = {
+    {"closed", (getter)oss_closed_getter, (setter)NULL, NULL},
+    {"mode", (getter)oss_mode_getter, (setter)NULL, NULL},
+    {NULL},
+};
 
 static PyTypeObject OSSAudioType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "ossaudiodev.oss_audio_device", /*tp_name*/
-    sizeof(oss_audio_t),        /*tp_size*/
+    sizeof(oss_audio_t),        /*tp_basicsize*/
     0,                          /*tp_itemsize*/
     /* methods */
     (destructor)oss_dealloc,    /*tp_dealloc*/
-    0,                          /*tp_print*/
+    0,                          /*tp_vectorcall_offset*/
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
-    0,                          /*tp_reserved*/
+    0,                          /*tp_as_async*/
     0,                          /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
@@ -979,7 +981,7 @@ static PyTypeObject OSSAudioType = {
     0,                          /*tp_hash*/
     0,                          /*tp_call*/
     0,                          /*tp_str*/
-    (getattrofunc)oss_getattro, /*tp_getattro*/
+    0,                          /*tp_getattro*/
     0,                          /*tp_setattro*/
     0,                          /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT,         /*tp_flags*/
@@ -991,19 +993,21 @@ static PyTypeObject OSSAudioType = {
     0,                          /*tp_iter*/
     0,                          /*tp_iternext*/
     oss_methods,                /*tp_methods*/
+    oss_members,                /*tp_members*/
+    oss_getsetlist,             /*tp_getset*/
 };
 
 static PyTypeObject OSSMixerType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "ossaudiodev.oss_mixer_device", /*tp_name*/
-    sizeof(oss_mixer_t),            /*tp_size*/
+    sizeof(oss_mixer_t),            /*tp_basicsize*/
     0,                              /*tp_itemsize*/
     /* methods */
     (destructor)oss_mixer_dealloc,  /*tp_dealloc*/
-    0,                              /*tp_print*/
+    0,                              /*tp_vectorcall_offset*/
     0,                              /*tp_getattr*/
     0,                              /*tp_setattr*/
-    0,                              /*tp_reserved*/
+    0,                              /*tp_as_async*/
     0,                              /*tp_repr*/
     0,                              /*tp_as_number*/
     0,                              /*tp_as_sequence*/
@@ -1113,6 +1117,13 @@ PyInit_ossaudiodev(void)
 {
     PyObject *m;
 
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "'ossaudiodev' is deprecated and slated for removal in "
+                     "Python 3.13",
+                     7)) {
+        return NULL;
+    }
+
     if (PyType_Ready(&OSSAudioType) < 0)
         return NULL;
 
@@ -1215,16 +1226,36 @@ PyInit_ossaudiodev(void)
 
     /* Expose all the ioctl numbers for masochists who like to do this
        stuff directly. */
+#ifdef SNDCTL_COPR_HALT
     _EXPORT_INT(m, SNDCTL_COPR_HALT);
+#endif
+#ifdef SNDCTL_COPR_LOAD
     _EXPORT_INT(m, SNDCTL_COPR_LOAD);
+#endif
+#ifdef SNDCTL_COPR_RCODE
     _EXPORT_INT(m, SNDCTL_COPR_RCODE);
+#endif
+#ifdef SNDCTL_COPR_RCVMSG
     _EXPORT_INT(m, SNDCTL_COPR_RCVMSG);
+#endif
+#ifdef SNDCTL_COPR_RDATA
     _EXPORT_INT(m, SNDCTL_COPR_RDATA);
+#endif
+#ifdef SNDCTL_COPR_RESET
     _EXPORT_INT(m, SNDCTL_COPR_RESET);
+#endif
+#ifdef SNDCTL_COPR_RUN
     _EXPORT_INT(m, SNDCTL_COPR_RUN);
+#endif
+#ifdef SNDCTL_COPR_SENDMSG
     _EXPORT_INT(m, SNDCTL_COPR_SENDMSG);
+#endif
+#ifdef SNDCTL_COPR_WCODE
     _EXPORT_INT(m, SNDCTL_COPR_WCODE);
+#endif
+#ifdef SNDCTL_COPR_WDATA
     _EXPORT_INT(m, SNDCTL_COPR_WDATA);
+#endif
 #ifdef SNDCTL_DSP_BIND_CHANNEL
     _EXPORT_INT(m, SNDCTL_DSP_BIND_CHANNEL);
 #endif
@@ -1246,8 +1277,12 @@ PyInit_ossaudiodev(void)
     _EXPORT_INT(m, SNDCTL_DSP_GETSPDIF);
 #endif
     _EXPORT_INT(m, SNDCTL_DSP_GETTRIGGER);
+#ifdef SNDCTL_DSP_MAPINBUF
     _EXPORT_INT(m, SNDCTL_DSP_MAPINBUF);
+#endif
+#ifdef SNDCTL_DSP_MAPOUTBUF
     _EXPORT_INT(m, SNDCTL_DSP_MAPOUTBUF);
+#endif
     _EXPORT_INT(m, SNDCTL_DSP_NONBLOCK);
     _EXPORT_INT(m, SNDCTL_DSP_POST);
 #ifdef SNDCTL_DSP_PROFILE
@@ -1267,46 +1302,104 @@ PyInit_ossaudiodev(void)
     _EXPORT_INT(m, SNDCTL_DSP_STEREO);
     _EXPORT_INT(m, SNDCTL_DSP_SUBDIVIDE);
     _EXPORT_INT(m, SNDCTL_DSP_SYNC);
+#ifdef SNDCTL_FM_4OP_ENABLE
     _EXPORT_INT(m, SNDCTL_FM_4OP_ENABLE);
+#endif
+#ifdef SNDCTL_FM_LOAD_INSTR
     _EXPORT_INT(m, SNDCTL_FM_LOAD_INSTR);
+#endif
+#ifdef SNDCTL_MIDI_INFO
     _EXPORT_INT(m, SNDCTL_MIDI_INFO);
+#endif
+#ifdef SNDCTL_MIDI_MPUCMD
     _EXPORT_INT(m, SNDCTL_MIDI_MPUCMD);
+#endif
+#ifdef SNDCTL_MIDI_MPUMODE
     _EXPORT_INT(m, SNDCTL_MIDI_MPUMODE);
+#endif
+#ifdef SNDCTL_MIDI_PRETIME
     _EXPORT_INT(m, SNDCTL_MIDI_PRETIME);
+#endif
+#ifdef SNDCTL_SEQ_CTRLRATE
     _EXPORT_INT(m, SNDCTL_SEQ_CTRLRATE);
+#endif
+#ifdef SNDCTL_SEQ_GETINCOUNT
     _EXPORT_INT(m, SNDCTL_SEQ_GETINCOUNT);
+#endif
+#ifdef SNDCTL_SEQ_GETOUTCOUNT
     _EXPORT_INT(m, SNDCTL_SEQ_GETOUTCOUNT);
+#endif
 #ifdef SNDCTL_SEQ_GETTIME
     _EXPORT_INT(m, SNDCTL_SEQ_GETTIME);
 #endif
+#ifdef SNDCTL_SEQ_NRMIDIS
     _EXPORT_INT(m, SNDCTL_SEQ_NRMIDIS);
+#endif
+#ifdef SNDCTL_SEQ_NRSYNTHS
     _EXPORT_INT(m, SNDCTL_SEQ_NRSYNTHS);
+#endif
+#ifdef SNDCTL_SEQ_OUTOFBAND
     _EXPORT_INT(m, SNDCTL_SEQ_OUTOFBAND);
+#endif
+#ifdef SNDCTL_SEQ_PANIC
     _EXPORT_INT(m, SNDCTL_SEQ_PANIC);
+#endif
+#ifdef SNDCTL_SEQ_PERCMODE
     _EXPORT_INT(m, SNDCTL_SEQ_PERCMODE);
+#endif
+#ifdef SNDCTL_SEQ_RESET
     _EXPORT_INT(m, SNDCTL_SEQ_RESET);
+#endif
+#ifdef SNDCTL_SEQ_RESETSAMPLES
     _EXPORT_INT(m, SNDCTL_SEQ_RESETSAMPLES);
+#endif
+#ifdef SNDCTL_SEQ_SYNC
     _EXPORT_INT(m, SNDCTL_SEQ_SYNC);
+#endif
+#ifdef SNDCTL_SEQ_TESTMIDI
     _EXPORT_INT(m, SNDCTL_SEQ_TESTMIDI);
+#endif
+#ifdef SNDCTL_SEQ_THRESHOLD
     _EXPORT_INT(m, SNDCTL_SEQ_THRESHOLD);
+#endif
 #ifdef SNDCTL_SYNTH_CONTROL
     _EXPORT_INT(m, SNDCTL_SYNTH_CONTROL);
 #endif
 #ifdef SNDCTL_SYNTH_ID
     _EXPORT_INT(m, SNDCTL_SYNTH_ID);
 #endif
+#ifdef SNDCTL_SYNTH_INFO
     _EXPORT_INT(m, SNDCTL_SYNTH_INFO);
+#endif
+#ifdef SNDCTL_SYNTH_MEMAVL
     _EXPORT_INT(m, SNDCTL_SYNTH_MEMAVL);
+#endif
 #ifdef SNDCTL_SYNTH_REMOVESAMPLE
     _EXPORT_INT(m, SNDCTL_SYNTH_REMOVESAMPLE);
 #endif
+#ifdef SNDCTL_TMR_CONTINUE
     _EXPORT_INT(m, SNDCTL_TMR_CONTINUE);
+#endif
+#ifdef SNDCTL_TMR_METRONOME
     _EXPORT_INT(m, SNDCTL_TMR_METRONOME);
+#endif
+#ifdef SNDCTL_TMR_SELECT
     _EXPORT_INT(m, SNDCTL_TMR_SELECT);
+#endif
+#ifdef SNDCTL_TMR_SOURCE
     _EXPORT_INT(m, SNDCTL_TMR_SOURCE);
+#endif
+#ifdef SNDCTL_TMR_START
     _EXPORT_INT(m, SNDCTL_TMR_START);
+#endif
+#ifdef SNDCTL_TMR_STOP
     _EXPORT_INT(m, SNDCTL_TMR_STOP);
+#endif
+#ifdef SNDCTL_TMR_TEMPO
     _EXPORT_INT(m, SNDCTL_TMR_TEMPO);
+#endif
+#ifdef SNDCTL_TMR_TIMEBASE
     _EXPORT_INT(m, SNDCTL_TMR_TIMEBASE);
+#endif
     return m;
 }

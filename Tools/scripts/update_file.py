@@ -6,23 +6,87 @@ This avoids wholesale rebuilds when a code (re)generation phase does not
 actually change the in-tree generated code.
 """
 
+import contextlib
 import os
+import os.path
 import sys
 
 
-def main(old_path, new_path):
-    with open(old_path, 'rb') as f:
-        old_contents = f.read()
-    with open(new_path, 'rb') as f:
-        new_contents = f.read()
-    if old_contents != new_contents:
-        os.replace(new_path, old_path)
+@contextlib.contextmanager
+def updating_file_with_tmpfile(filename, tmpfile=None):
+    """A context manager for updating a file via a temp file.
+
+    The context manager provides two open files: the source file open
+    for reading, and the temp file, open for writing.
+
+    Upon exiting: both files are closed, and the source file is replaced
+    with the temp file.
+    """
+    # XXX Optionally use tempfile.TemporaryFile?
+    if not tmpfile:
+        tmpfile = filename + '.tmp'
+    elif os.path.isdir(tmpfile):
+        tmpfile = os.path.join(tmpfile, filename + '.tmp')
+
+    with open(filename, 'rb') as infile:
+        line = infile.readline()
+
+    if line.endswith(b'\r\n'):
+        newline = "\r\n"
+    elif line.endswith(b'\r'):
+        newline = "\r"
+    elif line.endswith(b'\n'):
+        newline = "\n"
     else:
-        os.unlink(new_path)
+        raise ValueError(f"unknown end of line: {filename}: {line!a}")
+
+    with open(tmpfile, 'w', newline=newline) as outfile:
+        with open(filename) as infile:
+            yield infile, outfile
+    update_file_with_tmpfile(filename, tmpfile)
+
+
+def update_file_with_tmpfile(filename, tmpfile, *, create=False):
+    try:
+        targetfile = open(filename, 'rb')
+    except FileNotFoundError:
+        if not create:
+            raise  # re-raise
+        outcome = 'created'
+        os.replace(tmpfile, filename)
+    else:
+        with targetfile:
+            old_contents = targetfile.read()
+        with open(tmpfile, 'rb') as f:
+            new_contents = f.read()
+        # Now compare!
+        if old_contents != new_contents:
+            outcome = 'updated'
+            os.replace(tmpfile, filename)
+        else:
+            outcome = 'same'
+            os.unlink(tmpfile)
+    return outcome
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
-        print("Usage: %s <path to be updated> <path with new contents>" % (sys.argv[0],))
-        sys.exit(1)
-    main(sys.argv[1], sys.argv[2])
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--create', action='store_true')
+    parser.add_argument('--exitcode', action='store_true')
+    parser.add_argument('filename', help='path to be updated')
+    parser.add_argument('tmpfile', help='path with new contents')
+    args = parser.parse_args()
+    kwargs = vars(args)
+    setexitcode = kwargs.pop('exitcode')
+
+    outcome = update_file_with_tmpfile(**kwargs)
+    if setexitcode:
+        if outcome == 'same':
+            sys.exit(0)
+        elif outcome == 'updated':
+            sys.exit(1)
+        elif outcome == 'created':
+            sys.exit(2)
+        else:
+            raise NotImplementedError

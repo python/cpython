@@ -58,6 +58,8 @@ class TestDecode(TestEmailBase):
             _ew.decode('=?')
         with self.assertRaises(ValueError):
             _ew.decode('')
+        with self.assertRaises(KeyError):
+            _ew.decode('=?utf-8?X?somevalue?=')
 
     def _test(self, source, result, charset='us-ascii', lang='', defects=[]):
         res, char, l, d = _ew.decode(source)
@@ -125,6 +127,13 @@ class TestDecode(TestEmailBase):
         self._test('=?foobar?q?foo=ACbar?=',
                    b'foo\xacbar'.decode('ascii', 'surrogateescape'),
                    charset = 'foobar',
+                   # XXX Should this be a new Defect instead?
+                   defects = [errors.CharsetError])
+
+    def test_invalid_character_in_charset(self):
+        self._test('=?utf-8\udce2\udc80\udc9d?q?foo=ACbar?=',
+                   b'foo\xacbar'.decode('ascii', 'surrogateescape'),
+                   charset = 'utf-8\udce2\udc80\udc9d',
                    # XXX Should this be a new Defect instead?
                    defects = [errors.CharsetError])
 

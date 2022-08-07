@@ -18,12 +18,10 @@ The list of modules described in this chapter is:
 
    typing.rst
    pydoc.rst
+   devmode.rst
    doctest.rst
    unittest.rst
    unittest.mock.rst
    unittest.mock-examples.rst
    2to3.rst
    test.rst
-
-See also the Python development mode: the :option:`-X` ``dev`` option and
-:envvar:`PYTHONDEVMODE` environment variable.

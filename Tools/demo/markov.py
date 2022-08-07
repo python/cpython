@@ -78,9 +78,9 @@ def test():
                     continue
             else:
                 f = open(filename, 'r')
-            if debug: print('processing', filename, '...')
-            text = f.read()
-            f.close()
+            with f:
+                if debug: print('processing', filename, '...')
+                text = f.read()
             paralist = text.split('\n\n')
             for para in paralist:
                 if debug > 1: print('feeding ...')

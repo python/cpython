@@ -1,3 +1,4 @@
+#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include "structmember.h"
 
@@ -159,7 +160,7 @@ static PyMethodDef Custom_methods[] = {
 static PyTypeObject CustomType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "custom4.Custom",
-    .tp_doc = "Custom objects",
+    .tp_doc = PyDoc_STR("Custom objects"),
     .tp_basicsize = sizeof(CustomObject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
@@ -192,6 +193,11 @@ PyInit_custom4(void)
         return NULL;
 
     Py_INCREF(&CustomType);
-    PyModule_AddObject(m, "Custom", (PyObject *) &CustomType);
+    if (PyModule_AddObject(m, "Custom", (PyObject *) &CustomType) < 0) {
+        Py_DECREF(&CustomType);
+        Py_DECREF(m);
+        return NULL;
+    }
+
     return m;
 }

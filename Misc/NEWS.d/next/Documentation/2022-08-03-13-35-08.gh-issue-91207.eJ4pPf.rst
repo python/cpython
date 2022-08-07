@@ -1,0 +1,3 @@
+Fix stylesheet not working in Windows CHM htmlhelp docs
+and add warning that they are deprecated.
+Contributed by C.A.M. Gerlach.

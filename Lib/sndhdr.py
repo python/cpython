@@ -27,6 +27,10 @@ option -r tells it to recurse down directories found inside
 explicitly given directories.
 """
 
+import warnings
+
+warnings._deprecated(__name__, remove=(3, 13))
+
 # The file structure is top-down except that the test program and its
 # subroutine come last.
 
@@ -73,7 +77,9 @@ def whathdr(filename):
 tests = []
 
 def test_aifc(h, f):
-    import aifc
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', category=DeprecationWarning)
+        import aifc
     if not h.startswith(b'FORM'):
         return None
     if h[8:12] == b'AIFC':
@@ -241,7 +247,7 @@ def testall(list, recursive, toplevel):
             if recursive or toplevel:
                 print('recursing down:')
                 import glob
-                names = glob.glob(os.path.join(filename, '*'))
+                names = glob.glob(os.path.join(glob.escape(filename), '*'))
                 testall(names, recursive, 0)
             else:
                 print('*** directory (use -r) ***')

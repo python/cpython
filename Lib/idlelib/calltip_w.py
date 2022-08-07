@@ -80,7 +80,8 @@ class CalltipWindow(TooltipBase):
     def showcontents(self):
         """Create the call-tip widget."""
         self.label = Label(self.tipwindow, text=self.text, justify=LEFT,
-                           background="#ffffe0", relief=SOLID, borderwidth=1,
+                           background="#ffffd0", foreground="black",
+                           relief=SOLID, borderwidth=1,
                            font=self.anchor_widget['font'])
         self.label.pack()
 

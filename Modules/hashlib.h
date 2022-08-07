@@ -8,7 +8,7 @@
 #define GET_BUFFER_VIEW_OR_ERROR(obj, viewp, erraction) do { \
         if (PyUnicode_Check((obj))) { \
             PyErr_SetString(PyExc_TypeError, \
-                            "Unicode-objects must be encoded before hashing");\
+                            "Strings must be encoded before hashing");\
             erraction; \
         } \
         if (!PyObject_CheckBuffer((obj))) { \

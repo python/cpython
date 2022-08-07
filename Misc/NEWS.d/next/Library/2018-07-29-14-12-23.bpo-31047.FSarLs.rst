@@ -1,2 +1,0 @@
-Fix ``ntpath.abspath`` for invalid paths on windows. Patch by Franz
-Woellert.

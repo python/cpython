@@ -39,8 +39,8 @@ Python's deep copy operation avoids these problems by:
     set of components copied
 
 This version does not copy types like module, class, function, method,
-nor stack trace, stack frame, nor file, socket, window, nor array, nor
-any similar types.
+nor stack trace, stack frame, nor file, socket, window, nor any
+similar types.
 
 Classes can use the same interfaces to control copying that they use
 to control pickling: they can define methods called __getinitargs__(),
@@ -107,7 +107,7 @@ _copy_dispatch = d = {}
 def _copy_immutable(x):
     return x
 for t in (type(None), int, float, bool, complex, str, tuple,
-          bytes, frozenset, type, range, slice,
+          bytes, frozenset, type, range, slice, property,
           types.BuiltinFunctionType, type(Ellipsis), type(NotImplemented),
           types.FunctionType, weakref.ref):
     d[t] = _copy_immutable
@@ -192,9 +192,11 @@ d[bytes] = _deepcopy_atomic
 d[str] = _deepcopy_atomic
 d[types.CodeType] = _deepcopy_atomic
 d[type] = _deepcopy_atomic
+d[range] = _deepcopy_atomic
 d[types.BuiltinFunctionType] = _deepcopy_atomic
 d[types.FunctionType] = _deepcopy_atomic
 d[weakref.ref] = _deepcopy_atomic
+d[property] = _deepcopy_atomic
 
 def _deepcopy_list(x, memo, deepcopy=deepcopy):
     y = []
@@ -256,7 +258,7 @@ def _keep_alive(x, memo):
 
 def _reconstruct(x, memo, func, args,
                  state=None, listiter=None, dictiter=None,
-                 deepcopy=deepcopy):
+                 *, deepcopy=deepcopy):
     deep = memo is not None
     if deep and args:
         args = (deepcopy(arg, memo) for arg in args)

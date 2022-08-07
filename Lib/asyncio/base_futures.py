@@ -1,14 +1,8 @@
 __all__ = ()
 
-import concurrent.futures
 import reprlib
 
 from . import format_helpers
-
-CancelledError = concurrent.futures.CancelledError
-TimeoutError = concurrent.futures.TimeoutError
-InvalidStateError = concurrent.futures.InvalidStateError
-
 
 # States for Future.
 _PENDING = 'PENDING'
@@ -65,3 +59,9 @@ def _future_repr_info(future):
         frame = future._source_traceback[-1]
         info.append(f'created at {frame[0]}:{frame[1]}')
     return info
+
+
+@reprlib.recursive_repr()
+def _future_repr(future):
+    info = ' '.join(_future_repr_info(future))
+    return f'<{future.__class__.__name__} {info}>'

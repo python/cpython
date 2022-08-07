@@ -83,7 +83,7 @@ Following is a result of running the code:
    $ python3 prog.py --help
    usage: prog.py [-h]
 
-   optional arguments:
+   options:
      -h, --help  show this help message and exit
    $ python3 prog.py --verbose
    usage: prog.py [-h]
@@ -130,7 +130,7 @@ And running the code:
    positional arguments:
      echo
 
-   optional arguments:
+   options:
      -h, --help  show this help message and exit
    $ python3 prog.py foo
    foo
@@ -172,7 +172,7 @@ And we get:
    positional arguments:
      echo        echo the string you use here
 
-   optional arguments:
+   options:
      -h, --help  show this help message and exit
 
 Now, how about doing something even more useful::
@@ -241,7 +241,7 @@ And the output:
    $ python3 prog.py --help
    usage: prog.py [-h] [--verbosity VERBOSITY]
 
-   optional arguments:
+   options:
      -h, --help            show this help message and exit
      --verbosity VERBOSITY
                            increase output verbosity
@@ -289,7 +289,7 @@ And the output:
    $ python3 prog.py --help
    usage: prog.py [-h] [--verbose]
 
-   optional arguments:
+   options:
      -h, --help  show this help message and exit
      --verbose   increase output verbosity
 
@@ -332,7 +332,7 @@ And here goes:
    $ python3 prog.py --help
    usage: prog.py [-h] [-v]
 
-   optional arguments:
+   options:
      -h, --help     show this help message and exit
      -v, --verbose  increase output verbosity
 
@@ -353,7 +353,7 @@ Our program keeps growing in complexity::
    args = parser.parse_args()
    answer = args.square**2
    if args.verbose:
-       print("the square of {} equals {}".format(args.square, answer))
+       print(f"the square of {args.square} equals {answer}")
    else:
        print(answer)
 
@@ -387,9 +387,9 @@ multiple verbosity values, and actually get to use them::
    args = parser.parse_args()
    answer = args.square**2
    if args.verbosity == 2:
-       print("the square of {} equals {}".format(args.square, answer))
+       print(f"the square of {args.square} equals {answer}")
    elif args.verbosity == 1:
-       print("{}^2 == {}".format(args.square, answer))
+       print(f"{args.square}^2 == {answer}")
    else:
        print(answer)
 
@@ -421,9 +421,9 @@ Let's fix it by restricting the values the ``--verbosity`` option can accept::
    args = parser.parse_args()
    answer = args.square**2
    if args.verbosity == 2:
-       print("the square of {} equals {}".format(args.square, answer))
+       print(f"the square of {args.square} equals {answer}")
    elif args.verbosity == 1:
-       print("{}^2 == {}".format(args.square, answer))
+       print(f"{args.square}^2 == {answer}")
    else:
        print(answer)
 
@@ -440,7 +440,7 @@ And the output:
    positional arguments:
      square                display a square of a given number
 
-   optional arguments:
+   options:
      -h, --help            show this help message and exit
      -v {0,1,2}, --verbosity {0,1,2}
                            increase output verbosity
@@ -461,14 +461,15 @@ verbosity argument (check the output of ``python --help``)::
    args = parser.parse_args()
    answer = args.square**2
    if args.verbosity == 2:
-       print("the square of {} equals {}".format(args.square, answer))
+       print(f"the square of {args.square} equals {answer}")
    elif args.verbosity == 1:
-       print("{}^2 == {}".format(args.square, answer))
+       print(f"{args.square}^2 == {answer}")
    else:
        print(answer)
 
 We have introduced another action, "count",
-to count the number of occurrences of a specific optional arguments:
+to count the number of occurrences of specific options.
+
 
 .. code-block:: shell-session
 
@@ -489,7 +490,7 @@ to count the number of occurrences of a specific optional arguments:
    positional arguments:
      square           display a square of a given number
 
-   optional arguments:
+   options:
      -h, --help       show this help message and exit
      -v, --verbosity  increase output verbosity
    $ python3 prog.py 4 -vvv
@@ -529,9 +530,9 @@ Let's fix::
 
    # bugfix: replace == with >=
    if args.verbosity >= 2:
-       print("the square of {} equals {}".format(args.square, answer))
+       print(f"the square of {args.square} equals {answer}")
    elif args.verbosity >= 1:
-       print("{}^2 == {}".format(args.square, answer))
+       print(f"{args.square}^2 == {answer}")
    else:
        print(answer)
 
@@ -566,9 +567,9 @@ Let's fix that bug::
    args = parser.parse_args()
    answer = args.square**2
    if args.verbosity >= 2:
-       print("the square of {} equals {}".format(args.square, answer))
+       print(f"the square of {args.square} equals {answer}")
    elif args.verbosity >= 1:
-       print("{}^2 == {}".format(args.square, answer))
+       print(f"{args.square}^2 == {answer}")
    else:
        print(answer)
 
@@ -606,9 +607,9 @@ not just squares::
    args = parser.parse_args()
    answer = args.x**args.y
    if args.verbosity >= 2:
-       print("{} to the power {} equals {}".format(args.x, args.y, answer))
+       print(f"{args.x} to the power {args.y} equals {answer}")
    elif args.verbosity >= 1:
-       print("{}^{} == {}".format(args.x, args.y, answer))
+       print(f"{args.x}^{args.y} == {answer}")
    else:
        print(answer)
 
@@ -626,7 +627,7 @@ Output:
      x                the base
      y                the exponent
 
-   optional arguments:
+   options:
      -h, --help       show this help message and exit
      -v, --verbosity
    $ python3 prog.py 4 2 -v
@@ -645,9 +646,9 @@ to display *more* text instead::
    args = parser.parse_args()
    answer = args.x**args.y
    if args.verbosity >= 2:
-       print("Running '{}'".format(__file__))
+       print(f"Running '{__file__}'")
    if args.verbosity >= 1:
-       print("{}^{} == ".format(args.x, args.y), end="")
+       print(f"{args.x}^{args.y} == ", end="")
    print(answer)
 
 Output:
@@ -661,6 +662,35 @@ Output:
    $ python3 prog.py 4 2 -vv
    Running 'prog.py'
    4^2 == 16
+
+
+.. _specifying-ambiguous-arguments:
+
+Specifying ambiguous arguments
+------------------------------
+
+When there is ambiguity in deciding whether an argument is positional or for an
+argument, ``--`` can be used to tell :meth:`~ArgumentParser.parse_args` that
+everything after that is a positional argument::
+
+   >>> parser = argparse.ArgumentParser(prog='PROG')
+   >>> parser.add_argument('-n', nargs='+')
+   >>> parser.add_argument('args', nargs='*')
+
+   >>> # ambiguous, so parse_args assumes it's an option
+   >>> parser.parse_args(['-f'])
+   usage: PROG [-h] [-n N [N ...]] [args ...]
+   PROG: error: unrecognized arguments: -f
+
+   >>> parser.parse_args(['--', '-f'])
+   Namespace(args=['-f'], n=None)
+
+   >>> # ambiguous, so the -n option greedily accepts arguments
+   >>> parser.parse_args(['-n', '1', '2', '3'])
+   Namespace(args=[], n=['1', '2', '3'])
+
+   >>> parser.parse_args(['-n', '1', '--', '2', '3'])
+   Namespace(args=['2', '3'], n=['1'])
 
 
 Conflicting options
@@ -688,9 +718,9 @@ which will be the opposite of the ``--verbose`` one::
    if args.quiet:
        print(answer)
    elif args.verbose:
-       print("{} to the power {} equals {}".format(args.x, args.y, answer))
+       print(f"{args.x} to the power {args.y} equals {answer}")
    else:
-       print("{}^{} == {}".format(args.x, args.y, answer))
+       print(f"{args.x}^{args.y} == {answer}")
 
 Our program is now simpler, and we've lost some functionality for the sake of
 demonstration. Anyways, here's the output:
@@ -750,7 +780,7 @@ but not both at the same time:
      x              the base
      y              the exponent
 
-   optional arguments:
+   options:
      -h, --help     show this help message and exit
      -v, --verbose
      -q, --quiet

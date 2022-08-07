@@ -1,3 +1,0 @@
-``subprocess.Popen`` now copies the *startupinfo* argument to leave it
-unchanged: it will modify the copy, so that the same ``STARTUPINFO`` object can
-be used multiple times.

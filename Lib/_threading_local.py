@@ -56,7 +56,7 @@ You can create custom local objects by subclassing the local class:
 
   >>> class MyLocal(local):
   ...     number = 2
-  ...     def __init__(self, **kw):
+  ...     def __init__(self, /, **kw):
   ...         self.__dict__.update(kw)
   ...     def squared(self):
   ...         return self.number ** 2
@@ -204,7 +204,7 @@ def _patch(self):
 class local:
     __slots__ = '_local__impl', '__dict__'
 
-    def __new__(cls, *args, **kw):
+    def __new__(cls, /, *args, **kw):
         if (args or kw) and (cls.__init__ is object.__init__):
             raise TypeError("Initialization arguments are not supported")
         self = object.__new__(cls)

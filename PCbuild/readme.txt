@@ -13,12 +13,10 @@ Quick Start Guide
 Building Python using Microsoft Visual C++
 ------------------------------------------
 
-This directory is used to build CPython for Microsoft Windows NT version
-6.0 or higher (Windows Vista, Windows Server 2008, or later) on 32 and 64
+This directory is used to build CPython for Microsoft Windows on 32- and 64-
 bit platforms.  Using this directory requires an installation of
-Microsoft Visual Studio 2017 (MSVC 14.1) with the *Python workload* and
-its optional *Python native development* component selected. (For
-command-line builds, Visual Studio 2015 may also be used.)
+Microsoft Visual Studio (MSVC) with the *Python workload* and
+its optional *Python native development* component selected.
 
 Building from the command line is recommended in order to obtain any
 external dependencies. To build, simply run the "build.bat" script without
@@ -38,7 +36,7 @@ Debug
     Used to build Python with extra debugging capabilities, equivalent
     to using ./configure --with-pydebug on UNIX.  All binaries built
     using this configuration have "_d" added to their name:
-    python38_d.dll, python_d.exe, parser_d.pyd, and so on.  Both the
+    python310_d.dll, python_d.exe, parser_d.pyd, and so on.  Both the
     build and rt (run test) batch files in this directory accept a -d
     option for debug builds.  If you are building Python to help with
     development of CPython, you will most likely use this configuration.
@@ -105,7 +103,7 @@ pythonw
     Prompt window
 pylauncher
     py.exe, the Python Launcher for Windows, see
-        http://docs.python.org/3/using/windows.html#launcher
+        https://docs.python.org/3/using/windows.html#launcher
 pywlauncher
     pyw.exe, a variant of py.exe that doesn't open a Command Prompt
     window
@@ -115,9 +113,10 @@ _testembed
 
 These are miscellaneous sub-projects that don't really fit the other
 categories:
-_freeze_importlib
-    _freeze_importlib.exe, used to regenerate Python\importlib.h after
-    changes have been made to Lib\importlib\_bootstrap.py
+_freeze_module
+    _freeze_module.exe, used to regenerate frozen modules in Python
+    after changes have been made to the corresponding source files
+    (e.g. Lib\importlib\_bootstrap.py).
 pyshellext
     pyshellext.dll, the shell extension deployed with the launcher
 python3dll
@@ -125,6 +124,9 @@ python3dll
 xxlimited
     builds an example module that makes use of the PEP 384 Stable ABI,
     see Modules\xxlimited.c
+xxlimited_35
+    ditto for testing the Python 3.5 stable ABI, see
+    Modules\xxlimited_35.c
 
 The following sub-projects are for individual modules of the standard
 library which are implemented in C; each one builds a DLL (renamed to
@@ -132,6 +134,7 @@ library which are implemented in C; each one builds a DLL (renamed to
 _asyncio
 _ctypes
 _ctypes_test
+_zoneinfo
 _decimal
 _elementtree
 _hashlib
@@ -157,20 +160,20 @@ interpreter, but they do implement several major features.  See the
 about getting the source for building these libraries.  The sub-projects
 are:
 _bz2
-    Python wrapper for version 1.0.6 of the libbzip2 compression library
+    Python wrapper for version 1.0.8 of the libbzip2 compression library
     Homepage:
         http://www.bzip.org/
 _lzma
     Python wrapper for version 5.2.2 of the liblzma compression library
     Homepage:
-        http://tukaani.org/xz/
+        https://tukaani.org/xz/
 _ssl
-    Python wrapper for version 1.1.0h of the OpenSSL secure sockets
+    Python wrapper for version 1.1.1k of the OpenSSL secure sockets
     library, which is downloaded from our binaries repository at
     https://github.com/python/cpython-bin-deps.
 
     Homepage:
-        http://www.openssl.org/
+        https://www.openssl.org/
 
     Building OpenSSL requires Perl on your path, and can be performed by
     running PCbuild\prepare_ssl.bat. This will retrieve the version of
@@ -184,16 +187,16 @@ _ssl
     again when building.
 
 _sqlite3
-    Wraps SQLite 3.21.0.0, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.38.4, which is itself built by sqlite3.vcxproj
     Homepage:
-        http://www.sqlite.org/
+        https://www.sqlite.org/
 _tkinter
     Wraps version 8.6.6 of the Tk windowing system, which is downloaded
     from our binaries repository at
     https://github.com/python/cpython-bin-deps.
 
     Homepage:
-        http://www.tcl.tk/
+        https://www.tcl.tk/
 
     Building Tcl and Tk can be performed by running
     PCbuild\prepare_tcltk.bat. This will retrieve the version of the
@@ -252,7 +255,7 @@ It creates the PGI files, runs the unit test suite or PyBench with the
 PGI python, and finally creates the optimized files.
 
 See
-    http://msdn.microsoft.com/en-us/library/e7k32f4k(VS.140).aspx
+    https://docs.microsoft.com/en-us/cpp/build/profile-guided-optimizations
 for more on this topic.
 
 
@@ -285,4 +288,4 @@ The pyproject property file defines all of the build settings for each
 project, with some projects overriding certain specific values. The GUI
 doesn't always reflect the correct settings and may confuse the user
 with false information, especially for settings that automatically adapt
-for diffirent configurations.
+for different configurations.
