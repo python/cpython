@@ -261,7 +261,7 @@ Basic Usage
    .. versionchanged:: 3.11
       The default implementation of *parse_int* limits the maximum length of
       the integer string via the interpreter's :ref:`int maximum digits
-      limitation <int_max_base10_digits>` mechanism to help avoid denial of
+      limitation <int_max_str_digits>` mechanism to help avoid denial of
       service attacks.
 
    *parse_constant*, if specified, will be called with one of the following

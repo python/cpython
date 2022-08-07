@@ -5460,7 +5460,7 @@ types, where they are relevant.  Some of these are not reported by the
       [<class 'bool'>]
 
 
-.. _int_max_base10_digits:
+.. _int_max_str_digits:
 
 Integer maximum digits limitation
 =================================
@@ -5474,14 +5474,13 @@ power of *2*. Even the best known algorithms for base *10* have sub-quadratic
 complexity. Converting a large value such as ``int('1' * 500_000)`` can take
 over a second on a fast CPU.
 
-The limit value uses base 10 as a reference point and scales with base.  That
-means an :class:`int` conversion accepts longer strings for smaller bases and
-shorter strings for larger bases. Underscores and the sign in strings don't
-count towards the limit.
+The limit value is based on the number of digit characters in the input or
+output string. That means that higher bases can process larger numbers before
+the limit triggers. Underscores and the sign are not counted towards the limit.
 
 When an operation exceeds the limit, a :exc:`ValueError` is raised::
 
-   >>> sys.set_int_max_base10_digits(2048)
+   >>> sys.set_int_max_str_digits(2048)
    >>> i = 10 ** 2047
    >>> len(str(i))
    2048
@@ -5489,7 +5488,7 @@ When an operation exceeds the limit, a :exc:`ValueError` is raised::
    >>> len(str(i))
    Traceback (most recent call last):
    ...
-   ValueError: exceeds maximum integer base 10 digit limit
+   ValueError: Exceeds digit limit for string conversions: value has 2049 digits.
 
 Configuring the limit
 ---------------------
@@ -5497,32 +5496,30 @@ Configuring the limit
 Before Python starts up you can use an environment variable or an interpreter
 command line flag to configure the limit:
 
-* :envvar:`PYTHONINTMAXBASE10DIGITS`, e.g.
-  ``PYTHONINTMAXBASE10DIGITS=4321 python3`` to set the limit to ``4321`` or
-  ``PYTHONINTMAXBASE10DIGITS=0 python3`` to disable the limitation.
-* :option:`-X int_max_base10_digits <-X>`, e.g.
-  ``python3 -X int_max_base10_digits=4321``
-* :data:`sys.flags.int_max_base10_digits` contains the value of
-  :envvar:`PYTHONINTMAXBASE10DIGITS` or
-  :option:`-X int_max_base10_digits <-X>`. In case both the env var and the
-  ``-X`` option are set, the ``-X`` option takes precedence. The value of
-  *-1* indicates that both were unset and the value of
-  :data:`sys.int_info.default_max_base10_digits` was used during initilization.
+* :envvar:`PYTHONINTMAXSTRDIGITS`, e.g.
+  ``PYTHONINTMAXSTRDIGITS=4321 python3`` to set the limit to ``4321`` or
+  ``PYTHONINTMAXSTRDIGITS=0 python3`` to disable the limitation.
+* :option:`-X int_max_str_digits <-X>`, e.g.
+  ``python3 -X int_max_str_digits=4321``
+* :data:`sys.flags.int_max_str_digits` contains the value of
+  :envvar:`PYTHONINTMAXSTRDIGITS` or :option:`-X int_max_str_digits <-X>`.
+  If both the env var and the ``-X`` option are set, the ``-X`` option takes
+  precedence. A value of *-1* indicates that both were unset, thus a value of
+  :data:`sys.int_info.default_max_str_digits` was used during initilization.
 
 From code, you can inspect the current limit and set a new one using these
 :mod:`sys` APIs:
 
-* :func:`sys.get_int_max_base10_digits` and
-  :func:`sys.set_int_max_base10_digits` are a getter and setter for
-  the interpreter-wide limit. Subinterpreters have their own
-  limit.
+* :func:`sys.get_int_max_str_digits` and :func:`sys.set_int_max_str_digits` are
+  a getter and setter for the interpreter-wide limit. Subinterpreters have
+  their own limit.
 
 Information about the default and minimum can be found in :attr:`sys.int_info`:
 
-* :data:`sys.int_info.default_max_base10_digits <sys.int_info>` is the
-  compiled-in default limit.
-* :data:`sys.int_info.base10_digits_check_threshold <sys.int_info>` is the
-  minimum accepted value for the limit.
+* :data:`sys.int_info.default_max_str_digits <sys.int_info>` is the compiled-in
+  default limit.
+* :data:`sys.int_info.str_digits_check_threshold <sys.int_info>` is the minimum
+  accepted value for the limit.
 
 Affected APIs
 -------------
@@ -5549,17 +5546,17 @@ The limitations do not apply to functions with a linear algorithm:
 Recommended configuration
 -------------------------
 
-The default :data:`sys.int_info.default_max_base10_digits` is expected to be
+The default :data:`sys.int_info.default_max_str_digits` is expected to be
 reasonable for most applications. If your application requires a different
 limit, use Python version and implementation agnostic code to set it.
 
 Example::
 
    >>> import sys
-   >>> if hasattr(sys, "set_int_max_base10_digits"):
-   ...     current_limit = sys.get_int_max_base10_digits()
+   >>> if hasattr(sys, "set_int_max_str_digits"):
+   ...     current_limit = sys.get_int_max_str_digits()
    ...     if not current_limit or current_limit > 4321:
-   ...         sys.set_int_max_base10_digits(4321)
+   ...         sys.set_int_max_str_digits(4321)
 
 
 .. rubric:: Footnotes

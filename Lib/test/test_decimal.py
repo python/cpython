@@ -2528,11 +2528,11 @@ class PyUsabilityTest(UsabilityTest):
 
     def setUp(self):
         super().setUp()
-        self._previous_int_limit = sys.get_int_max_base10_digits()
-        sys.set_int_max_base10_digits(7000)
+        self._previous_int_limit = sys.get_int_max_str_digits()
+        sys.set_int_max_str_digits(7000)
 
     def tearDown(self):
-        sys.set_int_max_base10_digits(self._previous_int_limit)
+        sys.set_int_max_str_digits(self._previous_int_limit)
         super().tearDown()
 
 class PythonAPItests(unittest.TestCase):
@@ -4637,11 +4637,11 @@ class PyCoverage(Coverage):
 
     def setUp(self):
         super().setUp()
-        self._previous_int_limit = sys.get_int_max_base10_digits()
-        sys.set_int_max_base10_digits(7000)
+        self._previous_int_limit = sys.get_int_max_str_digits()
+        sys.set_int_max_str_digits(7000)
 
     def tearDown(self):
-        sys.set_int_max_base10_digits(self._previous_int_limit)
+        sys.set_int_max_str_digits(self._previous_int_limit)
         super().tearDown()
 
 class PyFunctionality(unittest.TestCase):

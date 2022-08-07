@@ -2344,11 +2344,11 @@ def sleeping_retry(timeout, err_msg=None, /,
 
 
 @contextlib.contextmanager
-def set_int_max_base10_digits(max_digits):
-    """Temporarily change the integer maximum base 10 digits limit."""
-    current = sys.get_int_max_base10_digits()
+def set_int_max_str_digits(max_digits):
+    """Temporarily change the int<->str maximum digits limit."""
+    current = sys.get_int_max_str_digits()
     try:
-        sys.set_int_max_base10_digits(max_digits)
+        sys.set_int_max_str_digits(max_digits)
         yield
     finally:
-        sys.set_int_max_base10_digits(current)
+        sys.set_int_max_str_digits(current)

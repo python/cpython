@@ -20,7 +20,7 @@ extern "C" {
  *
  * 2000 decimal digits fits a ~6643 bit number.
  */
-#define _PY_LONG_DEFAULT_MAX_BASE10_DIGITS 2000
+#define _PY_LONG_DEFAULT_MAX_STR_DIGITS 2000
 /*
  * Threshold for max digits check.  For performance reasons int() and
  * int.__str__ don't checks values that are smaller than this
@@ -32,11 +32,11 @@ extern "C" {
  *
  * 333 decimal digits fits a ~1106 bit number.
  */
-#define _PY_LONG_MAX_BASE10_DIGITS_THRESHOLD 333
+#define _PY_LONG_MAX_STR_DIGITS_THRESHOLD 333
 
-#if ((_PY_LONG_DEFAULT_MAX_BASE10_DIGITS != 0) && \
-   (_PY_LONG_DEFAULT_MAX_BASE10_DIGITS < _PY_LONG_MAX_BASE10_DIGITS_THRESHOLD))
-# error "_PY_LONG_DEFAULT_MAX_BASE10_DIGITS smaller than threshold."
+#if ((_PY_LONG_DEFAULT_MAX_STR_DIGITS != 0) && \
+   (_PY_LONG_DEFAULT_MAX_STR_DIGITS < _PY_LONG_MAX_STR_DIGITS_THRESHOLD))
+# error "_PY_LONG_DEFAULT_MAX_STR_DIGITS smaller than threshold."
 #endif
 
 

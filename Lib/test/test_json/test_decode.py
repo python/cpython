@@ -99,7 +99,7 @@ class TestDecode:
 
     def test_limit_int(self):
         maxdigits = 5000
-        with support.set_int_max_base10_digits(maxdigits):
+        with support.set_int_max_str_digits(maxdigits):
             self.loads('1' * maxdigits)
             with self.assertRaises(ValueError):
                 self.loads('1' * (maxdigits + 1))

@@ -37,7 +37,7 @@ medium_value(PyLongObject *x)
 #define IS_SMALL_INT(ival) (-_PY_NSMALLNEGINTS <= (ival) && (ival) < _PY_NSMALLPOSINTS)
 #define IS_SMALL_UINT(ival) ((ival) < _PY_NSMALLPOSINTS)
 
-#define _MAX_BASE10_DIGITS_ERROR_FMT "Exceeds digit limit for string conversions: Value uses approximately %zd base 10 digits."
+#define _MAX_STR_DIGITS_ERROR_FMT "Exceeds digit limit for string conversions: value has %zd digits."
 
 static inline void
 _Py_DECREF_INT(PyLongObject *op)
@@ -1818,14 +1818,14 @@ long_to_decimal_string_internal(PyObject *aa,
         tenpow *= 10;
         strlen++;
     }
-    if (strlen > _PY_LONG_MAX_BASE10_DIGITS_THRESHOLD) {
+    if (strlen > _PY_LONG_MAX_STR_DIGITS_THRESHOLD) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
-        int max_base10_digits = interp->int_max_base10_digits;
-        Py_ssize_t strlen_nosign = strlen - negative;
-        if ((max_base10_digits > 0) && (strlen_nosign > max_base10_digits)) {
+        int max_str_digits = interp->int_max_str_digits;
+	Py_ssize_t strlen_nosign = strlen - negative;
+        if ((max_str_digits > 0) && (strlen_nosign > max_str_digits)) {
             Py_DECREF(scratch);
-            PyErr_Format(PyExc_ValueError, _MAX_BASE10_DIGITS_ERROR_FMT,
-                         strlen_nosign);
+            PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT,
+			 strlen_nosign);
             return -1;
         }
     }
@@ -2374,7 +2374,7 @@ PyLong_FromString(const char *str, char **pend, int base)
 
     start = str;
     if ((base & (base - 1)) == 0) {
-        /* binary bases are not limited by int_max_base10_digits */
+        /* binary bases are not limited by int_max_str_digits */
         int res = long_from_binary_base(&str, base, &z);
         if (res < 0) {
             /* Syntax error. */
@@ -2470,7 +2470,6 @@ digit beyond the first.
         twodigits c;           /* current input character */
         Py_ssize_t size_z;
         Py_ssize_t digits = 0;  // Number of base $base digits in str.
-        Py_ssize_t underscores = 0;
         int i;
         int convwidth;
         twodigits convmultmax, convmult;
@@ -2493,7 +2492,6 @@ digit beyond the first.
 
         while (_PyLong_DigitValue[Py_CHARMASK(*scan)] < base || *scan == '_') {
             if (*scan == '_') {
-                ++underscores;
                 if (prev == '_') {
                     /* Only one underscore allowed. */
                     str = lastdigit + 1;
@@ -2514,48 +2512,14 @@ digit beyond the first.
             goto onError;
         }
 
-        /* The int_max_base10_digits limit ignores underscores.
-         *
-         * We compute the worst case number of base 10 digits to
-         * represent a $digits length number of base $base. The number
-         * isn't precise. It could be off by 1 and will be imprecise
-         * for a million digits but is close enough our needs.
-         */
-        {
-            Py_ssize_t num_decimal_digits;
-            if (base == 10) {
-                num_decimal_digits = digits;
-            }
-            else  // base != 10 && != 2,4,8,16,32 either; those were handled.
-            {
-                // float to save space, limiting doesn't require high precision.
-                // Limits beyond 1,000,000 may be imprecise as a result.
-                static float decimal_digits_per_base_digits_ratio[37] = {0.0e0,};
-                if (decimal_digits_per_base_digits_ratio[base] == 0.0) {
-                    if (log_base_BASE[10] == 0.0) {
-                        fill_in_log_conversion_table(
-                            10, log_base_BASE, convwidth_base, convmultmax_base);
-                    }
-                    double log_10 = log_base_BASE[10];
-                    // The log table was already filled in for this earlier.
-                    assert(log_base_BASE[base] != 0.0);
-                    double log_base = log_base_BASE[base];
-                    decimal_digits_per_base_digits_ratio[base] = (
-                            log_base / log_10);
-                }
-                // digits * log_base / log_10
-                num_decimal_digits = (Py_ssize_t)floorf(
-                    (float)digits * decimal_digits_per_base_digits_ratio[base]);
-            }
-            if (num_decimal_digits > _PY_LONG_MAX_BASE10_DIGITS_THRESHOLD) {
-                PyInterpreterState *interp = _PyInterpreterState_GET();
-                int max_base10_digits = interp->int_max_base10_digits;
-                if ((max_base10_digits > 0) &&
-                    (num_decimal_digits > max_base10_digits)) {
-                    PyErr_Format(PyExc_ValueError, _MAX_BASE10_DIGITS_ERROR_FMT,
-                                 num_decimal_digits);
-                    return NULL;
-                }
+        /* Limit the size to avoid excessive computation attacks. */
+        if (digits > _PY_LONG_MAX_STR_DIGITS_THRESHOLD) {
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            int max_str_digits = interp->int_max_str_digits;
+            if ((max_str_digits > 0) && (digits > max_str_digits)) {
+                PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT,
+                             digits);
+                return NULL;
             }
         }
 
@@ -6171,8 +6135,8 @@ internal representation of integers.  The attributes are read only.");
 static PyStructSequence_Field int_info_fields[] = {
     {"bits_per_digit", "size of a digit in bits"},
     {"sizeof_digit", "size in bytes of the C type used to represent a digit"},
-    {"default_max_base10_digits", "maximum base 10 digits limitation"},
-    {"base10_digits_check_threshold", "minimum positive value for sys.set_int_max_base10_digits()"},
+    {"default_max_str_digits", "maximum string conversion digits limitation"},
+    {"str_digits_check_threshold", "minimum positive value for int_max_str_digits"},
     {NULL, NULL}
 };
 
@@ -6203,9 +6167,9 @@ PyLong_GetInfo(void)
      * as info for debugging. No concern about adding these in a backport.
      */
     PyStructSequence_SET_ITEM(int_info, field++,
-                              PyLong_FromLong(_PY_LONG_DEFAULT_MAX_BASE10_DIGITS));
+                              PyLong_FromLong(_PY_LONG_DEFAULT_MAX_STR_DIGITS));
     PyStructSequence_SET_ITEM(int_info, field++,
-                              PyLong_FromLong(_PY_LONG_MAX_BASE10_DIGITS_THRESHOLD));
+                              PyLong_FromLong(_PY_LONG_MAX_STR_DIGITS_THRESHOLD));
     if (PyErr_Occurred()) {
         Py_CLEAR(int_info);
         return NULL;
@@ -6233,9 +6197,9 @@ _PyLong_InitTypes(PyInterpreterState *interp)
             return _PyStatus_ERR("can't init int info type");
         }
     }
-    interp->int_max_base10_digits = _PyInterpreterState_GetConfig(interp)->int_max_base10_digits;
-    if (interp->int_max_base10_digits == -1) {
-        interp->int_max_base10_digits = _PY_LONG_DEFAULT_MAX_BASE10_DIGITS;
+    interp->int_max_str_digits = _PyInterpreterState_GetConfig(interp)->int_max_str_digits;
+    if (interp->int_max_str_digits == -1) {
+        interp->int_max_str_digits = _PY_LONG_DEFAULT_MAX_STR_DIGITS;
     }
 
     return _PyStatus_OK();
