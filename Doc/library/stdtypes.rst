@@ -5490,6 +5490,8 @@ When an operation exceeds the limit, a :exc:`ValueError` is raised::
    ...
    ValueError: Exceeds digit limit for string conversions: value has 2049 digits.
 
+.. versionadded:: 3.12
+
 Configuring the limit
 ---------------------
 

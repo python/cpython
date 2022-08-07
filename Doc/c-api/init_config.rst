@@ -838,6 +838,8 @@ PyConfig
 
       Default: ``-1``.
 
+      .. versionadded:: 3.12
+
    .. c:member:: int isolated
 
       If greater than ``0``, enable isolated mode:

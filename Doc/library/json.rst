@@ -258,7 +258,7 @@ Basic Usage
    be used to use another datatype or parser for JSON integers
    (e.g. :class:`float`).
 
-   .. versionchanged:: 3.11
+   .. versionchanged:: 3.12
       The default implementation of *parse_int* limits the maximum length of
       the integer string via the interpreter's :ref:`int maximum digits
       limitation <int_max_str_digits>` mechanism to help avoid denial of
