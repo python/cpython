@@ -115,7 +115,8 @@ class TaskGroup:
         if self._base_error is not None:
             raise self._base_error
 
-        if propagate_cancellation_error is not None:
+        if (propagate_cancellation_error is not None and
+                (self._parent_cancel_requested or not self._errors)):
             # The wrapping task was cancelled; since we're done with
             # closing all child tasks, just propagate the cancellation
             # request now.
