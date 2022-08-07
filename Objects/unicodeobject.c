@@ -2482,7 +2482,7 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         }
         assert(len >= 0);
 
-        int negative = buffer[0]=='-'?1:0;
+        int negative = (buffer[0] == '-');
         len -= negative;
 
         precision = Py_MAX(precision, len);
