@@ -2224,7 +2224,8 @@ typedef struct {
 static PyTypeObject product_type;
 
 static PyObject *
-product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+product_new(PyTypeObject *type, PyObject *args, PyObject *kwds,
+    function<bool(PyObject)> product_stopper = NULL)
 {
     productobject *lz;
     Py_ssize_t nargs, npools, repeat=1;
@@ -2273,6 +2274,8 @@ product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
 
     for (i=0; i < nargs ; ++i) {
+        if(product_stopper != NULL && product_stopper(pools))
+            break;
         PyObject *item = PyTuple_GET_ITEM(args, i);
         PyObject *pool = PySequence_Tuple(item);
         if (pool == NULL)
@@ -2281,6 +2284,8 @@ product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         indices[i] = 0;
     }
     for ( ; i < npools; ++i) {
+        if(product_stopper != NULL && product_stopper(pools))
+            break;
         PyObject *pool = PyTuple_GET_ITEM(pools, i - nargs);
         Py_INCREF(pool);
         PyTuple_SET_ITEM(pools, i, pool);
