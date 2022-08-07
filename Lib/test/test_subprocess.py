@@ -1156,7 +1156,7 @@ class ProcessTestCase(BaseTestCase):
                 [sys.executable, "-c", "import time; time.sleep(10)"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                timeout=3)
+                timeout=0.1)
         self.assertEqual(c.exception.stdout, b"")
         self.assertEqual(c.exception.stderr, b"")
 
