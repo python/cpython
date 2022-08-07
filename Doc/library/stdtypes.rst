@@ -5490,6 +5490,9 @@ When an operation exceeds the limit, a :exc:`ValueError` is raised::
    ...
    ValueError: Exceeds digit limit for string conversions: value has 2049 digits.
 
+This limit offers a practical way to avoid `CVE-2020-10735
+https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+
 .. versionadded:: 3.12
 
 Configuring the limit
