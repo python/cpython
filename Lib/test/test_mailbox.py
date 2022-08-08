@@ -1192,12 +1192,6 @@ class TestMbox(_TestMboxMMDF, unittest.TestCase):
     def test_read_mbox_full1(self):
         self._test_read_mbox('full', count=1)
 
-    def test_read_mbox_full2(self):
-        path = os.path.join(os.path.dirname(__file__), 'mailbox_data', 'mailbox_01.mbox')
-        box = mailbox.mbox(path, create=False, from_matcher='full')
-        self.assertEqual(len(box.keys()), 1)
-        box.close()
-
     def test_read_mbox_regex1(self):
         import re
         # stricter matching should only find one message
@@ -1208,6 +1202,35 @@ class TestMbox(_TestMboxMMDF, unittest.TestCase):
         # invalid, so don't find any messages
         self._test_read_mbox(lambda line: re.match(b'From .+ \\d\\d\\d\\r?\\n', line), count=0)
 
+class TestMboxFromFile(unittest.TestCase):
+    # test class without default setUp/tearDown which we don't want
+    
+    def setUp(self):
+        self._box = None
+        self._path = None
+
+    def tearDown(self):
+        if self._box is not None:
+            self._box.close()
+        # Don't delete it!
+
+    def checkmbox(self, name, matcher, count):
+        self._path = os.path.join(os.path.dirname(__file__), 'mailbox_data', name)
+        self._box = mailbox.mbox(self._path, create=False, from_matcher=matcher)
+        self.assertEqual(len(self._box.keys()), count)
+
+    # default matcher finds two messages as there are 2 From lines
+    def test_read_mbox_None_01(self):
+        self.checkmbox('mailbox_01.mbox', None, 2)
+
+    def test_read_mbox_None_02(self):
+        self.checkmbox('mailbox_02.mbox', None, 2)
+
+    def test_read_mbox_full_01(self):
+        self.checkmbox('mailbox_01.mbox', 'full', 1)
+
+    def test_read_mbox_full_02(self):
+        self.checkmbox('mailbox_02.mbox', 'full', 0)  # From line has extra non-space chars after YYYY
 
 class TestMMDF(_TestMboxMMDF, unittest.TestCase):
 
