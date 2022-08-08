@@ -228,8 +228,8 @@ Module functions
    .. versionadded:: 3.10
       The ``sqlite3.connect/handle`` auditing event.
 
-   .. versionchanged:: 3.12
-      Added the *autocommit* parameter.
+   .. versionadded:: 3.12
+      The *autocommit* parameter.
 
 .. function:: complete_statement(statement)
 
