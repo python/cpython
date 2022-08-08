@@ -713,7 +713,7 @@ coverage-lcov:
 # Force regeneration of parser and frozen modules
 coverage-report-lcov: regen-token regen-frozen
 	@ # build with coverage info
-	$(MAKE) coverage
+	$(MAKE) coverage-gcc
 	@ # run tests, ignore failures
 	$(TESTRUNNER) $(TESTOPTS) || true
 	@ # build lcov report
