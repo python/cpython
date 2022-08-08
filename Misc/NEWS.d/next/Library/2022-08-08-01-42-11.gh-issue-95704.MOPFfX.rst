@@ -1,2 +1,3 @@
-When a task catches CancelledError and raises some other error,
+When a task catches :exc:`asyncio.CancelledError` and raises some other error,
+
 the other error should generally not silently be suppressed.
