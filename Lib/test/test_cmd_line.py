@@ -3,7 +3,6 @@
 # See test_cmd_line_script.py for testing of script execution
 
 import os
-import re
 import subprocess
 import sys
 import tempfile

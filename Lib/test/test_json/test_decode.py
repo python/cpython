@@ -3,7 +3,6 @@ from io import StringIO
 from collections import OrderedDict
 from test.test_json import PyTest, CTest
 from test import support
-import sys
 
 
 class TestDecode:
