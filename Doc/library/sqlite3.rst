@@ -132,114 +132,18 @@ You've now created an SQLite database using the :mod:`!sqlite3` module.
 Reference
 ---------
 
+.. We keep the old sqlite3-module-contents ref to prevent breaking links.
 .. _sqlite3-module-contents:
 
-Module functions and constants
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _sqlite3-module-functions:
 
+Module functions
+^^^^^^^^^^^^^^^^
 
-.. data:: apilevel
-
-   String constant stating the supported DB-API level. Required by the DB-API.
-   Hard-coded to ``"2.0"``.
-
-.. data:: paramstyle
-
-   String constant stating the type of parameter marker formatting expected by
-   the :mod:`!sqlite3` module. Required by the DB-API. Hard-coded to
-   ``"qmark"``.
-
-   .. note::
-
-      The :mod:`!sqlite3` module supports both ``qmark`` and ``numeric`` DB-API
-      parameter styles, because that is what the underlying SQLite library
-      supports. However, the DB-API does not allow multiple values for
-      the ``paramstyle`` attribute.
-
-.. data:: version
-
-   Version number of this module as a :class:`string <str>`.
-   This is not the version of the SQLite library.
-
-
-.. data:: version_info
-
-   Version number of this module as a :class:`tuple` of :class:`integers <int>`.
-   This is not the version of the SQLite library.
-
-
-.. data:: sqlite_version
-
-   Version number of the runtime SQLite library as a :class:`string <str>`.
-
-
-.. data:: sqlite_version_info
-
-   Version number of the runtime SQLite library as a :class:`tuple` of
-   :class:`integers <int>`.
-
-
-.. data:: threadsafety
-
-   Integer constant required by the DB-API, stating the level of thread safety
-   the :mod:`!sqlite3` module supports. Currently hard-coded to ``1``, meaning
-   *"Threads may share the module, but not connections."* However, this may not
-   always be true. You can check the underlying SQLite library's compile-time
-   threaded mode using the following query::
-
-     import sqlite3
-     con = sqlite3.connect(":memory:")
-     con.execute("""
-         select * from pragma_compile_options
-         where compile_options like 'THREADSAFE=%'
-     """).fetchall()
-
-   Note that the `SQLITE_THREADSAFE levels
-   <https://sqlite.org/compile.html#threadsafe>`_ do not match the DB-API 2.0
-   ``threadsafety`` levels.
-
-
-.. data:: PARSE_DECLTYPES
-
-   Pass this flag value to the *detect_types* parameter of
-   :func:`connect` to look up a converter function using
-   the declared types for each column.
-   The types are declared when the database table is created.
-   :mod:`!sqlite3` will look up a converter function using the first word of the
-   declared type as the converter dictionary key.
-   For example:
-
-
-   .. code-block:: sql
-
-      CREATE TABLE test(
-         i integer primary key,  ! will look up a converter named "integer"
-         p point,                ! will look up a converter named "point"
-         n number(10)            ! will look up a converter named "number"
-       )
-
-   This flag may be combined with :const:`PARSE_COLNAMES` using the ``|``
-   (bitwise or) operator.
-
-
-.. data:: PARSE_COLNAMES
-
-   Pass this flag value to the *detect_types* parameter of
-   :func:`connect` to look up a converter function by
-   using the type name, parsed from the query column name,
-   as the converter dictionary key.
-   The type name must be wrapped in square brackets (``[]``).
-
-   .. code-block:: sql
-
-      SELECT p as "p [point]" FROM test;  ! will look up converter "point"
-
-   This flag may be combined with :const:`PARSE_DECLTYPES` using the ``|``
-   (bitwise or) operator.
-
-
-
-.. function:: connect(database, timeout=5.0, detect_types=0, isolation_level="DEFERRED", check_same_thread=True, factory=sqlite3.Connection, cached_statements=128, uri=False)
+.. function:: connect(database, timeout=5.0, detect_types=0, \
+                      isolation_level="DEFERRED", check_same_thread=True, \
+                      factory=sqlite3.Connection, cached_statements=128, \
+                      uri=False)
 
    Open a connection to an SQLite database.
 
@@ -316,6 +220,33 @@ Module functions and constants
    .. versionadded:: 3.10
       The ``sqlite3.connect/handle`` auditing event.
 
+.. function:: complete_statement(statement)
+
+   Returns ``True`` if the string *statement* contains one or more complete SQL
+   statements terminated by semicolons. It does not verify that the SQL is
+   syntactically correct, only that there are no unclosed string literals and the
+   statement is terminated by a semicolon.
+
+   This can be used to build a shell for SQLite, as in the following example:
+
+   .. literalinclude:: ../includes/sqlite3/complete_statement.py
+
+.. function:: enable_callback_tracebacks(flag, /)
+
+   Enable or disable callback tracebacks.
+   By default you will not get any tracebacks in user-defined functions,
+   aggregates, converters, authorizer callbacks etc. If you want to debug them,
+   you can call this function with *flag* set to ``True``. Afterwards, you will
+   get tracebacks from callbacks on ``sys.stderr``. Use ``False`` to
+   disable the feature again.
+
+.. function:: register_adapter(type, adapter, /)
+
+   Register an *adapter* callable to adapt the Python type *type* into an
+   SQLite type.
+   The adapter is called with a Python object of type *type* as its sole
+   argument, and must return a value of a
+   :ref:`type that SQLite natively understands <sqlite3-types>`.
 
 .. function:: register_converter(typename, converter, /)
 
@@ -331,36 +262,102 @@ Module functions and constants
    case-insensitively.
 
 
-.. function:: register_adapter(type, adapter, /)
+.. _sqlite3-module-constants:
 
-   Register an *adapter* callable to adapt the Python type *type* into an
-   SQLite type.
-   The adapter is called with a Python object of type *type* as its sole
-   argument, and must return a value of a
-   :ref:`type that SQLite natively understands <sqlite3-types>`.
+Module constants
+^^^^^^^^^^^^^^^^
 
+.. data:: PARSE_COLNAMES
 
-.. function:: complete_statement(statement)
+   Pass this flag value to the *detect_types* parameter of
+   :func:`connect` to look up a converter function by
+   using the type name, parsed from the query column name,
+   as the converter dictionary key.
+   The type name must be wrapped in square brackets (``[]``).
 
-   Returns ``True`` if the string *statement* contains one or more complete SQL
-   statements terminated by semicolons. It does not verify that the SQL is
-   syntactically correct, only that there are no unclosed string literals and the
-   statement is terminated by a semicolon.
+   .. code-block:: sql
 
-   This can be used to build a shell for SQLite, as in the following example:
+      SELECT p as "p [point]" FROM test;  ! will look up converter "point"
 
+   This flag may be combined with :const:`PARSE_DECLTYPES` using the ``|``
+   (bitwise or) operator.
 
-   .. literalinclude:: ../includes/sqlite3/complete_statement.py
+.. data:: PARSE_DECLTYPES
 
+   Pass this flag value to the *detect_types* parameter of
+   :func:`connect` to look up a converter function using
+   the declared types for each column.
+   The types are declared when the database table is created.
+   :mod:`!sqlite3` will look up a converter function using the first word of the
+   declared type as the converter dictionary key.
+   For example:
 
-.. function:: enable_callback_tracebacks(flag, /)
+   .. code-block:: sql
 
-   Enable or disable callback tracebacks.
-   By default you will not get any tracebacks in user-defined functions,
-   aggregates, converters, authorizer callbacks etc. If you want to debug them,
-   you can call this function with *flag* set to ``True``. Afterwards, you will
-   get tracebacks from callbacks on ``sys.stderr``. Use ``False`` to
-   disable the feature again.
+      CREATE TABLE test(
+         i integer primary key,  ! will look up a converter named "integer"
+         p point,                ! will look up a converter named "point"
+         n number(10)            ! will look up a converter named "number"
+       )
+
+   This flag may be combined with :const:`PARSE_COLNAMES` using the ``|``
+   (bitwise or) operator.
+
+.. data:: apilevel
+
+   String constant stating the supported DB-API level. Required by the DB-API.
+   Hard-coded to ``"2.0"``.
+
+.. data:: paramstyle
+
+   String constant stating the type of parameter marker formatting expected by
+   the :mod:`!sqlite3` module. Required by the DB-API. Hard-coded to
+   ``"qmark"``.
+
+   .. note::
+
+      The :mod:`!sqlite3` module supports both ``qmark`` and ``numeric`` DB-API
+      parameter styles, because that is what the underlying SQLite library
+      supports. However, the DB-API does not allow multiple values for
+      the ``paramstyle`` attribute.
+
+.. data:: sqlite_version
+
+   Version number of the runtime SQLite library as a :class:`string <str>`.
+
+.. data:: sqlite_version_info
+
+   Version number of the runtime SQLite library as a :class:`tuple` of
+   :class:`integers <int>`.
+
+.. data:: threadsafety
+
+   Integer constant required by the DB-API, stating the level of thread safety
+   the :mod:`!sqlite3` module supports. Currently hard-coded to ``1``, meaning
+   *"Threads may share the module, but not connections."* However, this may not
+   always be true. You can check the underlying SQLite library's compile-time
+   threaded mode using the following query::
+
+     import sqlite3
+     con = sqlite3.connect(":memory:")
+     con.execute("""
+         select * from pragma_compile_options
+         where compile_options like 'THREADSAFE=%'
+     """).fetchall()
+
+   Note that the `SQLITE_THREADSAFE levels
+   <https://sqlite.org/compile.html#threadsafe>`_ do not match the DB-API 2.0
+   ``threadsafety`` levels.
+
+.. data:: version
+
+   Version number of this module as a :class:`string <str>`.
+   This is not the version of the SQLite library.
+
+.. data:: version_info
+
+   Version number of this module as a :class:`tuple` of :class:`integers <int>`.
+   This is not the version of the SQLite library.
 
 
 .. _sqlite3-connection-objects:
