@@ -1049,7 +1049,7 @@ _PyStack_UnpackDict_Free(PyObject *const *stack, Py_ssize_t nargs,
 }
 
 // Export for the stable ABI
-#undef PyVectorcall_NARGS(n)
+#undef PyVectorcall_NARGS
 Py_ssize_t
 PyVectorcall_NARGS(size_t n)
 {
