@@ -759,6 +759,11 @@ class TestPEP590(unittest.TestCase):
                 self.assertEqual(expected, meth(*args1, **kwargs))
                 self.assertEqual(expected, wrapped(*args, **kwargs))
 
+    def test_vectorcall_limited(self):
+        from _testcapi import pyobject_vectorcall
+        obj = _testcapi.LimitedVectorCallClass()
+        self.assertEqual(pyobject_vectorcall(obj, (), ()), "vectorcall called")
+
 
 class A:
     def method_two_args(self, x, y):
