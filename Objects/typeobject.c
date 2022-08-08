@@ -5460,7 +5460,7 @@ object_getstate(PyObject *obj, int required)
         PyCFunction_GET_SELF(getstate) == obj &&
         PyCFunction_GET_FUNCTION(getstate) == object___getstate__)
     {
-        /* If __getstate__ is not overriden pass the required argument. */
+        /* If __getstate__ is not overridden pass the required argument. */
         state = object_getstate_default(obj, required);
     }
     else {

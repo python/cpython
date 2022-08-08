@@ -426,14 +426,22 @@ New Features
   an additional metaclass argument.
   (Contributed by Wenzel Jakob in :gh:`93012`.)
 
-* (XXX: this should be combined with :gh:`93274` when that is done)
+* API for creating objects that can be called using
+  :ref:`the vectorcall protocol <vectorcall>` was added to the
+  :ref:`Limited API <stable>`:
+
+  * :const:`Py_TPFLAGS_HAVE_VECTORCALL`
+  * :c:func:`PyVectorcall_NARGS`
+  * :c:func:`PyVectorcall_Call`
+  * :c:type:`vectorcallfunc`
+
   The :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag is now removed from a class
   when the class's :py:meth:`~object.__call__` method is reassigned.
   This makes vectorcall safe to use with mutable types (i.e. heap types
   without the :const:`immutable <Py_TPFLAGS_IMMUTABLETYPE>` flag).
   Mutable types that do not override :c:member:`~PyTypeObject.tp_call` now
-  inherit the :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag.
-  (Contributed by Petr Viktorin in :gh:`93012`.)
+  inherit the ``Py_TPFLAGS_HAVE_VECTORCALL`` flag.
+  (Contributed by Petr Viktorin in :gh:`93274`.)
 
 Porting to Python 3.12
 ----------------------
@@ -460,6 +468,12 @@ Porting to Python 3.12
   To get a list of subclasses, call the Python method
   :py:meth:`~class.__subclasses__` (using :c:func:`PyObject_CallMethod`,
   for example).
+
+* An unrecognized format character in :c:func:`PyUnicode_FromFormat` and
+  :c:func:`PyUnicode_FromFormatV` now sets a :exc:`SystemError`.
+  In previous versions it caused all the rest of the format string to be
+  copied as-is to the result string, and any extra arguments discarded.
+  (Contributed by Serhiy Storchaka in :gh:`95781`.)
 
 
 Deprecated
