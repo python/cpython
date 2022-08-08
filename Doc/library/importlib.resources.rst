@@ -26,16 +26,16 @@ for example, a package and its resources can be imported from a zip file using
    This module provides functionality similar to `pkg_resources
    <https://setuptools.readthedocs.io/en/latest/pkg_resources.html>`_ `Basic
    Resource Access
-   <http://setuptools.readthedocs.io/en/latest/pkg_resources.html#basic-resource-access>`_
+   <https://setuptools.readthedocs.io/en/latest/pkg_resources.html#basic-resource-access>`_
    without the performance overhead of that package.  This makes reading
    resources included in packages easier, with more stable and consistent
    semantics.
 
    The standalone backport of this module provides more information
    on `using importlib.resources
-   <http://importlib-resources.readthedocs.io/en/latest/using.html>`_ and
+   <https://importlib-resources.readthedocs.io/en/latest/using.html>`_ and
    `migrating from pkg_resources to importlib.resources
-   <http://importlib-resources.readthedocs.io/en/latest/migration.html>`_.
+   <https://importlib-resources.readthedocs.io/en/latest/migration.html>`_.
 
 :class:`Loaders <importlib.abc.Loader>` that wish to support resource reading should implement a
 ``get_resource_reader(fullname)`` method as specified by

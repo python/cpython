@@ -2355,6 +2355,13 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
 
     p = f;
     f++;
+    if (*f == '%') {
+        if (_PyUnicodeWriter_WriteCharInline(writer, '%') < 0)
+            return NULL;
+        f++;
+        return f;
+    }
+
     zeropad = 0;
     if (*f == '0') {
         zeropad = 1;
@@ -2392,14 +2399,6 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
                 f++;
             }
         }
-        if (*f == '%') {
-            /* "%.3%s" => f points to "3" */
-            f--;
-        }
-    }
-    if (*f == '\0') {
-        /* bogus format "%.123" => go backward, f points to "3" */
-        f--;
     }
 
     /* Handle %ld, %lu, %lld and %llu. */
@@ -2423,7 +2422,7 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         ++f;
     }
 
-    if (f[1] == '\0')
+    if (f[0] != '\0' && f[1] == '\0')
         writer->overallocate = 0;
 
     switch (*f) {
@@ -2616,21 +2615,9 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         break;
     }
 
-    case '%':
-        if (_PyUnicodeWriter_WriteCharInline(writer, '%') < 0)
-            return NULL;
-        break;
-
     default:
-        /* if we stumble upon an unknown formatting code, copy the rest
-           of the format string to the output string. (we cannot just
-           skip the code, since there's no way to know what's in the
-           argument list) */
-        len = strlen(p);
-        if (_PyUnicodeWriter_WriteLatin1String(writer, p, len) == -1)
-            return NULL;
-        f = p+len;
-        return f;
+        PyErr_Format(PyExc_SystemError, "invalid format string: %s", p);
+        return NULL;
     }
 
     f++;
@@ -9698,11 +9685,11 @@ split(PyObject *self,
     PyObject* out;
     len1 = PyUnicode_GET_LENGTH(self);
     kind1 = PyUnicode_KIND(self);
-    if (maxcount < 0) {
-        maxcount = len1;
-    }
 
-    if (substring == NULL)
+    if (substring == NULL) {
+        if (maxcount < 0) {
+            maxcount = (len1 - 1) / 2 + 1;
+        }
         switch (kind1) {
         case PyUnicode_1BYTE_KIND:
             if (PyUnicode_IS_ASCII(self))
@@ -9728,9 +9715,16 @@ split(PyObject *self,
         default:
             Py_UNREACHABLE();
         }
+    }
 
     kind2 = PyUnicode_KIND(substring);
     len2 = PyUnicode_GET_LENGTH(substring);
+    if (maxcount < 0) {
+        // if len2 == 0, it will raise ValueError.
+        maxcount = len2 == 0 ? 0 : (len1 / len2) + 1;
+        // handle expected overflow case: (Py_SSIZE_T_MAX / 1) + 1
+        maxcount = maxcount < 0 ? len1 : maxcount;
+    }
     if (kind1 < kind2 || len1 < len2) {
         out = PyList_New(1);
         if (out == NULL)
@@ -9785,11 +9779,11 @@ rsplit(PyObject *self,
 
     len1 = PyUnicode_GET_LENGTH(self);
     kind1 = PyUnicode_KIND(self);
-    if (maxcount < 0) {
-        maxcount = len1;
-    }
 
-    if (substring == NULL)
+    if (substring == NULL) {
+        if (maxcount < 0) {
+            maxcount = (len1 - 1) / 2 + 1;
+        }
         switch (kind1) {
         case PyUnicode_1BYTE_KIND:
             if (PyUnicode_IS_ASCII(self))
@@ -9815,9 +9809,15 @@ rsplit(PyObject *self,
         default:
             Py_UNREACHABLE();
         }
-
+    }
     kind2 = PyUnicode_KIND(substring);
     len2 = PyUnicode_GET_LENGTH(substring);
+    if (maxcount < 0) {
+        // if len2 == 0, it will raise ValueError.
+        maxcount = len2 == 0 ? 0 : (len1 / len2) + 1;
+        // handle expected overflow case: (Py_SSIZE_T_MAX / 1) + 1
+        maxcount = maxcount < 0 ? len1 : maxcount;
+    }
     if (kind1 < kind2 || len1 < len2) {
         out = PyList_New(1);
         if (out == NULL)

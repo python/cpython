@@ -477,9 +477,6 @@ APIs:
    |                   |                     | :c:func:`PyObject_Repr`.         |
    +-------------------+---------------------+----------------------------------+
 
-   An unrecognized format character causes all the rest of the format string to be
-   copied as-is to the result string, and any extra arguments discarded.
-
    .. note::
       The width formatter unit is number of characters rather than bytes.
       The precision formatter unit is number of bytes for ``"%s"`` and
@@ -499,6 +496,11 @@ APIs:
    .. versionchanged:: 3.4
       Support width and precision formatter for ``"%s"``, ``"%A"``, ``"%U"``,
       ``"%V"``, ``"%S"``, ``"%R"`` added.
+
+   .. versionchanged:: 3.12
+      An unrecognized format character now sets a :exc:`SystemError`.
+      In previous versions it caused all the rest of the format string to be
+      copied as-is to the result string, and any extra arguments discarded.
 
 
 .. c:function:: PyObject* PyUnicode_FromFormatV(const char *format, va_list vargs)

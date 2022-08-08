@@ -37,7 +37,7 @@ _overlapped_CreateIoCompletionPort(PyObject *module, PyObject *const *args, Py_s
     if (!ExistingCompletionPort && PyErr_Occurred()) {
         goto exit;
     }
-    CompletionKey = PyLong_AsVoidPtr(args[2]);
+    CompletionKey = (uintptr_t)PyLong_AsVoidPtr(args[2]);
     if (!CompletionKey && PyErr_Occurred()) {
         goto exit;
     }
@@ -124,7 +124,7 @@ _overlapped_PostQueuedCompletionStatus(PyObject *module, PyObject *const *args, 
     if (!_PyLong_UnsignedLong_Converter(args[1], &NumberOfBytes)) {
         goto exit;
     }
-    CompletionKey = PyLong_AsVoidPtr(args[2]);
+    CompletionKey = (uintptr_t)PyLong_AsVoidPtr(args[2]);
     if (!CompletionKey && PyErr_Occurred()) {
         goto exit;
     }
@@ -1225,4 +1225,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=d90cda84e49a7c23 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=edd05b7a6c9c3aac input=a9049054013a1b77]*/
