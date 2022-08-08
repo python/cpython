@@ -1106,7 +1106,7 @@ the precision is user configurable, the exact figures may vary. For example,
 in integer bignum arithmetic the differences can be significantly higher.
 
 The following table is meant as an illustration. Benchmarks are available
-at http://www.bytereef.org/mpdecimal/quickstart.html.
+at https://www.bytereef.org/mpdecimal/quickstart.html.
 
    +---------+-------------+--------------+-------------+
    |         |  decimal.py |   _decimal   |   speedup   |

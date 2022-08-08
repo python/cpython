@@ -15,6 +15,7 @@ import textwrap
 import threading
 import time
 import unittest
+import warnings
 import weakref
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
@@ -619,11 +620,58 @@ class CAPITest(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, msg):
             t = _testcapi.pytype_fromspec_meta(_testcapi.HeapCTypeMetaclassCustomNew)
 
+    def test_multiple_inheritance_ctypes_with_weakref_or_dict(self):
+
+        class Both1(_testcapi.HeapCTypeWithWeakref, _testcapi.HeapCTypeWithDict):
+            pass
+        class Both2(_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithWeakref):
+            pass
+
+        for cls in (_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithDict2,
+            _testcapi.HeapCTypeWithWeakref, _testcapi.HeapCTypeWithWeakref2):
+            for cls2 in (_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithDict2,
+                _testcapi.HeapCTypeWithWeakref, _testcapi.HeapCTypeWithWeakref2):
+                if cls is not cls2:
+                    class S(cls, cls2):
+                        pass
+            class B1(Both1, cls):
+                pass
+            class B2(Both1, cls):
+                pass
+
     def test_pytype_fromspec_with_repeated_slots(self):
         for variant in range(2):
             with self.subTest(variant=variant):
                 with self.assertRaises(SystemError):
                     _testcapi.create_type_from_repeated_slots(variant)
+
+    def test_immutable_type_with_mutable_base(self):
+        # Add deprecation warning here so it's removed in 3.14
+        warnings._deprecated(
+            'creating immutable classes with mutable bases', remove=(3, 14))
+
+        class MutableBase:
+            def meth(self):
+                return 'original'
+
+        with self.assertWarns(DeprecationWarning):
+            ImmutableSubclass = _testcapi.make_immutable_type_with_base(
+                MutableBase)
+        instance = ImmutableSubclass()
+
+        self.assertEqual(instance.meth(), 'original')
+
+        # Cannot override the static type's method
+        with self.assertRaisesRegex(
+                TypeError,
+                "cannot set 'meth' attribute of immutable type"):
+            ImmutableSubclass.meth = lambda self: 'overridden'
+        self.assertEqual(instance.meth(), 'original')
+
+        # Can change the method on the mutable base
+        MutableBase.meth = lambda self: 'changed'
+        self.assertEqual(instance.meth(), 'changed')
+
 
     def test_pynumber_tobase(self):
         from _testcapi import pynumber_tobase
