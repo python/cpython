@@ -865,29 +865,6 @@ rm -f conftest.c conftest.out
 AC_USE_SYSTEM_EXTENSIONS
 
 AC_SUBST(CXX)
-AC_SUBST(MAINCC)
-AC_MSG_CHECKING(for --with-cxx-main=<compiler>)
-AC_ARG_WITH(cxx_main,
-            AS_HELP_STRING([--with-cxx-main@<:@=COMPILER@:>@],
-                           [compile main() and link Python executable with C++ compiler specified in COMPILER (default is $CXX)]),
-[
-
-	case $withval in
-	no)	with_cxx_main=no
-		MAINCC='$(CC)';;
-	yes)	with_cxx_main=yes
-		MAINCC='$(CXX)';;
-	*)	with_cxx_main=yes
-		MAINCC=$withval
-		if test -z "$CXX"
-		then
-			CXX=$withval
-		fi;;
-	esac], [
-	with_cxx_main=no
-	MAINCC='$(CC)'
-])
-AC_MSG_RESULT($with_cxx_main)
 
 preset_cxx="$CXX"
 if test -z "$CXX"
@@ -1358,7 +1335,7 @@ AC_SUBST(LINKCC)
 AC_MSG_CHECKING(LINKCC)
 if test -z "$LINKCC"
 then
-	LINKCC='$(PURIFY) $(MAINCC)'
+	LINKCC='$(PURIFY) $(CC)'
 	case $ac_sys_system in
 	QNX*)
 	   # qcc must be used because the other compilers do not

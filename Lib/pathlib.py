@@ -1211,23 +1211,9 @@ class Path(PurePath):
 
     def is_mount(self):
         """
-        Check if this path is a POSIX mount point
+        Check if this path is a mount point
         """
-        # Need to exist and be a dir
-        if not self.exists() or not self.is_dir():
-            return False
-
-        try:
-            parent_dev = self.parent.stat().st_dev
-        except OSError:
-            return False
-
-        dev = self.stat().st_dev
-        if dev != parent_dev:
-            return True
-        ino = self.stat().st_ino
-        parent_ino = self.parent.stat().st_ino
-        return ino == parent_ino
+        return self._flavour.pathmod.ismount(self)
 
     def is_symlink(self):
         """
@@ -1378,6 +1364,3 @@ class WindowsPath(Path, PureWindowsPath):
     On a Windows system, instantiating a Path should return this object.
     """
     __slots__ = ()
-
-    def is_mount(self):
-        raise NotImplementedError("Path.is_mount() is unsupported on this system")
