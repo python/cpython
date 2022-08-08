@@ -278,10 +278,26 @@ test_type_from_ephemeral_spec(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     PyTypeObject *class_tp = (PyTypeObject *)class;
     PyHeapTypeObject *class_ht = (PyHeapTypeObject *)class;
-    assert(strcmp(class_tp->tp_name, "testcapi._Test") == 0);
-    assert(strcmp(PyUnicode_AsUTF8(class_ht->ht_name), "_Test") == 0);
-    assert(strcmp(PyUnicode_AsUTF8(class_ht->ht_qualname), "_Test") == 0);
-    assert(strcmp(class_tp->tp_doc, "a test class") == 0);
+    if(strcmp(class_tp->tp_name, "testcapi._Test") != 0) {
+        PyErr_Format(PyExc_AssertionError,
+                     "wrong tp_name, got '%s'", class_tp->tp_name);
+        goto finally;
+    }
+    if(strcmp(PyUnicode_AsUTF8(class_ht->ht_name), "_Test") != 0) {
+        PyErr_Format(PyExc_AssertionError,
+                     "wrong ht_name, got %R", class_ht->ht_name);
+        goto finally;
+    }
+    if(strcmp(PyUnicode_AsUTF8(class_ht->ht_qualname), "_Test") != 0) {
+        PyErr_Format(PyExc_AssertionError,
+                     "wrong ht_qualname, got %R", class_ht->ht_qualname);
+        goto finally;
+    }
+    if(strcmp(class_tp->tp_doc, "a test class") != 0) {
+        PyErr_Format(PyExc_AssertionError,
+                     "wrong tp_doc, got '%s'", class_tp->tp_doc);
+        goto finally;
+    }
 
     // call and check __str__
     instance = PyObject_CallNoArgs(class);
@@ -292,7 +308,11 @@ test_type_from_ephemeral_spec(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (obj == NULL) {
         goto finally;
     }
-    assert(strcmp(PyUnicode_AsUTF8(obj), "<test>") == 0);
+    if(strcmp(PyUnicode_AsUTF8(obj), "<test>") != 0) {
+        PyErr_Format(PyExc_AssertionError,
+                     "wrong tp_str, got %R", obj);
+        goto finally;
+    }
     Py_CLEAR(obj);
 
     result = Py_NewRef(Py_None);
