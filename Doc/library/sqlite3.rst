@@ -52,18 +52,22 @@ This document includes four main sections:
 Tutorial
 --------
 
-To use the module, start by opening a connection to an SQLite database.
-We do this by using the :func:`sqlite3.connect` function.
-The returned :class:`Connection` object represents our
-connection to the database.
-In our example,
-the database will be stored in the file :file:`example.db`::
+In this tutorial you will learn the basics of the :mod:`!sqlite3` API
+by creating an on-disk database :file:`example.db`,
+and executing SQL queries against it.
+A fundamental understanding of database concepts,
+like transactions and cursors, is assumed.
+
+Start by using the :func:`sqlite3.connect` function to
+open a database :class:`Connection` to :file:`example.db`;
+SQLite will implicitly create the database file :file:`example`
+in the current working directory, if it does not exist.
+The returned :class:`!Connection` object represents our
+connection to the on-disk SQLite database::
 
    import sqlite3
    con = sqlite3.connect('example.db')
 
-Notice that the file :file:`example.db` will be created implicitly
-if it does not exist.
 Now, create a :class:`Cursor` object using :meth:`~Connection.cursor`.
 Call its :meth:`~Cursor.execute` method to perform SQL queries::
 
@@ -74,15 +78,17 @@ Call its :meth:`~Cursor.execute` method to perform SQL queries::
                   (date text, trans text, symbol text, qty real, price real)''')
    cur.execute("INSERT INTO stocks VALUES ('2006-01-05','BUY','RHAT',100,35.14)")
 
-The ``INSERT`` statement will implicitly open a transaction.
-See :ref:`sqlite3-controlling-transactions` for more details.
+The ``INSERT`` statement implicitly opens a transaction
+that needs to be committed before changes are saved in the database.
+For more details, see the :ref:`sqlite3-controlling-transactions` how-to.
 Use the connection object to :meth:`~Connection.commit` the transaction::
 
    con.commit()  # Save the changes.
 
 Verify that data has been committed and written to disk:
 close the connection, open a new connection,
-then query the database::
+create a new cursor,
+then use a ``SELECT`` query to read from the database::
 
    >>> con.close()
    >>> con = sqlite3.connect('example.db')
