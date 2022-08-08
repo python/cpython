@@ -1494,7 +1494,7 @@ encoder_listencode_obj(PyEncoderObject *s, _PyUnicodeWriter *writer,
 
 static int
 encoder_encode_key_value(PyEncoderObject *s, _PyUnicodeWriter *writer, bool *first,
-                         PyObject *key, PyObject *value, Py_ssize_t indent_level)
+                         PyObject *key, PyObject *value)
 {
     PyObject *keystr = NULL;
     PyObject *encoded;
@@ -1550,7 +1550,7 @@ encoder_encode_key_value(PyEncoderObject *s, _PyUnicodeWriter *writer, bool *fir
     if (_PyUnicodeWriter_WriteStr(writer, s->key_separator) < 0) {
         return -1;
     }
-    if (encoder_listencode_obj(s, writer, value, indent_level) < 0) {
+    if (encoder_listencode_obj(s, writer, value) < 0) {
         return -1;
     }
     return 0;
@@ -1604,7 +1604,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
 
             key = PyTuple_GET_ITEM(item, 0);
             value = PyTuple_GET_ITEM(item, 1);
-            if (encoder_encode_key_value(s, writer, &first, key, value, indent_level) < 0)
+            if (encoder_encode_key_value(s, writer, &first, key, value) < 0)
                 goto bail;
         }
         Py_CLEAR(items);
@@ -1612,7 +1612,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
     } else {
         Py_ssize_t pos = 0;
         while (PyDict_Next(dct, &pos, &key, &value)) {
-            if (encoder_encode_key_value(s, writer, &first, key, value, indent_level) < 0)
+            if (encoder_encode_key_value(s, writer, &first, key, value) < 0)
                 goto bail;
         }
     }
