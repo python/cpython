@@ -554,7 +554,7 @@ Connection objects
 
       Commit any pending transaction to the database.
       If :attr:`autocommit` is ``True``, or there is no open transaction,
-      this method is a no-op.
+      this method has no effect.
       If :attr:`!autocommit` is ``False``, a new transaction is implicitly
       opened if a pending transaction was committed.
 
@@ -562,7 +562,7 @@ Connection objects
 
       Roll back to the start of any pending transaction.
       If :attr:`autocommit` is ``True``, or there is no open transaction,
-      this method is a no-op.
+      this method has no effect.
       If :attr:`!autocommit` is ``False``, a new transaction is implicitly
       opened if a pending transaction was rolled back.
 
@@ -1872,7 +1872,7 @@ Transaction control via the ``isolation_level`` attribute (deprecated)
 
 If :attr:`~Connection.autocommit` is set to
 :data:`DEPRECATED_TRANSACTION_CONTROL`, transaction control is selected using
-the :attr:`~Connection.isolation_level` attribute.
+the :attr:`!~Connection.isolation_level` attribute.
 
 If the connection attribute :attr:`~Connection.isolation_level`
 is not ``None``,
