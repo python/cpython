@@ -828,18 +828,6 @@ PyConfig
 
       Default: ``0``.
 
-   .. c:member:: int int_max_str_digits
-
-      If greater than 0, enable int conversion digit limitations. ``-1`` means
-      that :data:`sys.int_info.default_max_str_digits` will be used.
-
-      Configured by the :option:`-X int_max_str_digits <-X>` command line
-      flag or the :envvar:`PYTHONINTMAXSTRDIGITS` environment varable.
-
-      Default: ``-1``.
-
-      .. versionadded:: 3.12
-
    .. c:member:: int isolated
 
       If greater than ``0``, enable isolated mode:

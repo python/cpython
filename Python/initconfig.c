@@ -791,9 +791,11 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->safe_path = 0;
     config->_is_python_build = 0;
     config->code_debug_ranges = 1;
-    /* config_init_int_max_str_digits() sets default limit */
-    config->int_max_str_digits = -1;
 }
+
+/* Excluded from public struct PyConfig for backporting reasons. */
+/* default to unconfigured, _PyLong_InitTypes() does the rest */
+int _Py_global_config_int_max_str_digits = -1;
 
 
 static void
@@ -1019,7 +1021,6 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(safe_path);
     COPY_WSTRLIST(orig_argv);
     COPY_ATTR(_is_python_build);
-    COPY_ATTR(int_max_str_digits);
 
 #undef COPY_ATTR
 #undef COPY_WSTR_ATTR
@@ -1127,7 +1128,6 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_INT(use_frozen_modules);
     SET_ITEM_INT(safe_path);
     SET_ITEM_INT(_is_python_build);
-    SET_ITEM_INT(int_max_str_digits);
 
     return dict;
 
@@ -1781,9 +1781,6 @@ config_init_int_max_str_digits(PyConfig *config)
     int maxdigits;
     int valid = 0;
 
-    /* default to unconfigured, _PyLong_InitTypes() does the rest */
-    config->int_max_str_digits = -1;
-
     const char *env = config_get_env(config, "PYTHONINTMAXSTRDIGITS");
     if (env) {
         if (!_Py_str_to_int(env, &maxdigits)) {
@@ -1797,7 +1794,7 @@ config_init_int_max_str_digits(PyConfig *config)
                     STRINGIFY(_PY_LONG_MAX_STR_DIGITS_THRESHOLD)
                     " or 0 for unlimited.");
         }
-        config->int_max_str_digits = maxdigits;
+        _Py_global_config_int_max_str_digits = maxdigits;
     }
 
     const wchar_t *xoption = config_get_xoption(config, L"int_max_str_digits");
@@ -1816,7 +1813,7 @@ config_init_int_max_str_digits(PyConfig *config)
 #undef _STRINGIFY
 #undef STRINGIFY
         }
-        config->int_max_str_digits = maxdigits;
+        _Py_global_config_int_max_str_digits = maxdigits;
     }
     return _PyStatus_OK();
 }
@@ -1884,7 +1881,7 @@ config_read_complex_options(PyConfig *config)
         }
     }
 
-    if (config->int_max_str_digits < 0) {
+    if (_Py_global_config_int_max_str_digits < 0) {
         status = config_init_int_max_str_digits(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;

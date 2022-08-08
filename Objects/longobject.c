@@ -6179,7 +6179,7 @@ _PyLong_InitTypes(PyInterpreterState *interp)
             return _PyStatus_ERR("can't init int info type");
         }
     }
-    interp->int_max_str_digits = _PyInterpreterState_GetConfig(interp)->int_max_str_digits;
+    interp->int_max_str_digits = _Py_global_config_int_max_str_digits;
     if (interp->int_max_str_digits == -1) {
         interp->int_max_str_digits = _PY_LONG_DEFAULT_MAX_STR_DIGITS;
     }
