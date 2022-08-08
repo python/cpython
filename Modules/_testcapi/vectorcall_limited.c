@@ -4,12 +4,12 @@
 
 /* Test Vectorcall in the limited API */
 
-PyObject *
+static PyObject *
 LimitedVectorCallClass_tpcall(PyObject *self, PyObject *args, PyObject *kwargs) {
     return PyUnicode_FromString("tp_call called");
 }
 
-PyObject *
+static PyObject *
 LimitedVectorCallClass_vectorcall(PyObject *callable,
                             PyObject *const *args,
                             size_t nargsf,
@@ -29,19 +29,19 @@ LimitedVectorCallClass_new(PyTypeObject *tp, PyTypeObject *a, PyTypeObject *kw)
     return self;
 }
 
-PyMemberDef LimitedVectorCallClass_members[] = {
+static PyMemberDef LimitedVectorCallClass_members[] = {
     {"__vectorcalloffset__", T_PYSSIZET, sizeof(PyObject), READONLY},
     {NULL}
 };
 
-PyType_Slot LimitedVectorallClass_slots[] = {
+static PyType_Slot LimitedVectorallClass_slots[] = {
     {Py_tp_new, LimitedVectorCallClass_new},
     {Py_tp_call, LimitedVectorCallClass_tpcall},
     {Py_tp_members, LimitedVectorCallClass_members},
     {0},
 };
 
-PyType_Spec LimitedVectorCallClass_spec = {
+static PyType_Spec LimitedVectorCallClass_spec = {
     .name = "_testcapi.LimitedVectorCallClass",
     .basicsize = (int)(sizeof(PyObject) + sizeof(vectorcallfunc)),
     .flags = Py_TPFLAGS_DEFAULT
