@@ -422,7 +422,7 @@ if not real_executable_dir:
 # ******************************************************************************
 
 # The contents of an optional ._pth file are used to totally override
-# sys.path calcualation. Its presence also implies isolated mode and
+# sys.path calculation. Its presence also implies isolated mode and
 # no-site (unless explicitly requested)
 pth = None
 pth_dir = None
