@@ -132,142 +132,18 @@ You've now created an SQLite database using the :mod:`!sqlite3` module.
 Reference
 ---------
 
+.. We keep the old sqlite3-module-contents ref to prevent breaking links.
 .. _sqlite3-module-contents:
 
-Module functions and constants
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _sqlite3-module-functions:
 
+Module functions
+^^^^^^^^^^^^^^^^
 
-.. data:: apilevel
-
-   String constant stating the supported DB-API level. Required by the DB-API.
-   Hard-coded to ``"2.0"``.
-
-.. data:: paramstyle
-
-   String constant stating the type of parameter marker formatting expected by
-   the :mod:`!sqlite3` module. Required by the DB-API. Hard-coded to
-   ``"qmark"``.
-
-   .. note::
-
-      The :mod:`!sqlite3` module supports both ``qmark`` and ``numeric`` DB-API
-      parameter styles, because that is what the underlying SQLite library
-      supports. However, the DB-API does not allow multiple values for
-      the ``paramstyle`` attribute.
-
-.. data:: version
-
-   Version number of this module as a :class:`string <str>`.
-   This is not the version of the SQLite library.
-
-   .. deprecated-removed:: 3.12 3.14
-      This constant used to reflect the version number of the ``pysqlite``
-      package, a third-party library which used to upstream changes to
-      :mod:`!sqlite3`. Today, it carries no meaning or practical value.
-
-
-.. data:: version_info
-
-   Version number of this module as a :class:`tuple` of :class:`integers <int>`.
-   This is not the version of the SQLite library.
-
-   .. deprecated-removed:: 3.12 3.14
-      This constant used to reflect the version number of the ``pysqlite``
-      package, a third-party library which used to upstream changes to
-      :mod:`!sqlite3`. Today, it carries no meaning or practical value.
-
-
-.. data:: sqlite_version
-
-   Version number of the runtime SQLite library as a :class:`string <str>`.
-
-
-.. data:: sqlite_version_info
-
-   Version number of the runtime SQLite library as a :class:`tuple` of
-   :class:`integers <int>`.
-
-
-.. data:: threadsafety
-
-   Integer constant required by the DB-API 2.0, stating the level of thread
-   safety the :mod:`!sqlite3` module supports. This attribute is set based on
-   the default `threading mode <https://sqlite.org/threadsafe.html>`_ the
-   underlying SQLite library is compiled with. The SQLite threading modes are:
-
-     1. **Single-thread**: In this mode, all mutexes are disabled and SQLite is
-        unsafe to use in more than a single thread at once.
-     2. **Multi-thread**: In this mode, SQLite can be safely used by multiple
-        threads provided that no single database connection is used
-        simultaneously in two or more threads.
-     3. **Serialized**: In serialized mode, SQLite can be safely used by
-        multiple threads with no restriction.
-
-   The mappings from SQLite threading modes to DB-API 2.0 threadsafety levels
-   are as follows:
-
-   +------------------+-----------------+----------------------+-------------------------------+
-   | SQLite threading | `threadsafety`_ | `SQLITE_THREADSAFE`_ | DB-API 2.0 meaning            |
-   | mode             |                 |                      |                               |
-   +==================+=================+======================+===============================+
-   | single-thread    | 0               | 0                    | Threads may not share the     |
-   |                  |                 |                      | module                        |
-   +------------------+-----------------+----------------------+-------------------------------+
-   | multi-thread     | 1               | 2                    | Threads may share the module, |
-   |                  |                 |                      | but not connections           |
-   +------------------+-----------------+----------------------+-------------------------------+
-   | serialized       | 3               | 1                    | Threads may share the module, |
-   |                  |                 |                      | connections and cursors       |
-   +------------------+-----------------+----------------------+-------------------------------+
-
-   .. _threadsafety: https://peps.python.org/pep-0249/#threadsafety
-   .. _SQLITE_THREADSAFE: https://sqlite.org/compile.html#threadsafe
-
-   .. versionchanged:: 3.11
-      Set *threadsafety* dynamically instead of hard-coding it to ``1``.
-
-.. data:: PARSE_DECLTYPES
-
-   Pass this flag value to the *detect_types* parameter of
-   :func:`connect` to look up a converter function using
-   the declared types for each column.
-   The types are declared when the database table is created.
-   :mod:`!sqlite3` will look up a converter function using the first word of the
-   declared type as the converter dictionary key.
-   For example:
-
-
-   .. code-block:: sql
-
-      CREATE TABLE test(
-         i integer primary key,  ! will look up a converter named "integer"
-         p point,                ! will look up a converter named "point"
-         n number(10)            ! will look up a converter named "number"
-       )
-
-   This flag may be combined with :const:`PARSE_COLNAMES` using the ``|``
-   (bitwise or) operator.
-
-
-.. data:: PARSE_COLNAMES
-
-   Pass this flag value to the *detect_types* parameter of
-   :func:`connect` to look up a converter function by
-   using the type name, parsed from the query column name,
-   as the converter dictionary key.
-   The type name must be wrapped in square brackets (``[]``).
-
-   .. code-block:: sql
-
-      SELECT p as "p [point]" FROM test;  ! will look up converter "point"
-
-   This flag may be combined with :const:`PARSE_DECLTYPES` using the ``|``
-   (bitwise or) operator.
-
-
-
-.. function:: connect(database, timeout=5.0, detect_types=0, isolation_level="DEFERRED", check_same_thread=True, factory=sqlite3.Connection, cached_statements=128, uri=False)
+.. function:: connect(database, timeout=5.0, detect_types=0, \
+                      isolation_level="DEFERRED", check_same_thread=True, \
+                      factory=sqlite3.Connection, cached_statements=128, \
+                      uri=False)
 
    Open a connection to an SQLite database.
 
@@ -344,30 +220,6 @@ Module functions and constants
    .. versionadded:: 3.10
       The ``sqlite3.connect/handle`` auditing event.
 
-
-.. function:: register_converter(typename, converter, /)
-
-   Register the *converter* callable to convert SQLite objects of type
-   *typename* into a Python object of a specific type.
-   The converter is invoked for all SQLite values of type *typename*;
-   it is passed a :class:`bytes` object and should return an object of the
-   desired Python type.
-   Consult the parameter *detect_types* of
-   :func:`connect` for information regarding how type detection works.
-
-   Note: *typename* and the name of the type in your query are matched
-   case-insensitively.
-
-
-.. function:: register_adapter(type, adapter, /)
-
-   Register an *adapter* callable to adapt the Python type *type* into an
-   SQLite type.
-   The adapter is called with a Python object of type *type* as its sole
-   argument, and must return a value of a
-   :ref:`type that SQLite natively understands <sqlite3-types>`.
-
-
 .. function:: complete_statement(statement)
 
    Returns ``True`` if the string *statement* contains one or more complete SQL
@@ -377,9 +229,7 @@ Module functions and constants
 
    This can be used to build a shell for SQLite, as in the following example:
 
-
    .. literalinclude:: ../includes/sqlite3/complete_statement.py
-
 
 .. function:: enable_callback_tracebacks(flag, /)
 
@@ -407,6 +257,154 @@ Module functions and constants
       >>> cx.execute("select 1")
       UnraisableHookArgs(exc_type=<class 'ZeroDivisionError'>, exc_value=ZeroDivisionError('division by zero'), exc_traceback=<traceback object at 0x10b559900>, err_msg=None, object=<function <lambda> at 0x10b4e3ee0>)
       <sqlite3.Cursor object at 0x10b1fe840>
+
+.. function:: register_adapter(type, adapter, /)
+
+   Register an *adapter* callable to adapt the Python type *type* into an
+   SQLite type.
+   The adapter is called with a Python object of type *type* as its sole
+   argument, and must return a value of a
+   :ref:`type that SQLite natively understands <sqlite3-types>`.
+
+.. function:: register_converter(typename, converter, /)
+
+   Register the *converter* callable to convert SQLite objects of type
+   *typename* into a Python object of a specific type.
+   The converter is invoked for all SQLite values of type *typename*;
+   it is passed a :class:`bytes` object and should return an object of the
+   desired Python type.
+   Consult the parameter *detect_types* of
+   :func:`connect` for information regarding how type detection works.
+
+   Note: *typename* and the name of the type in your query are matched
+   case-insensitively.
+
+
+.. _sqlite3-module-constants:
+
+Module constants
+^^^^^^^^^^^^^^^^
+
+.. data:: PARSE_COLNAMES
+
+   Pass this flag value to the *detect_types* parameter of
+   :func:`connect` to look up a converter function by
+   using the type name, parsed from the query column name,
+   as the converter dictionary key.
+   The type name must be wrapped in square brackets (``[]``).
+
+   .. code-block:: sql
+
+      SELECT p as "p [point]" FROM test;  ! will look up converter "point"
+
+   This flag may be combined with :const:`PARSE_DECLTYPES` using the ``|``
+   (bitwise or) operator.
+
+.. data:: PARSE_DECLTYPES
+
+   Pass this flag value to the *detect_types* parameter of
+   :func:`connect` to look up a converter function using
+   the declared types for each column.
+   The types are declared when the database table is created.
+   :mod:`!sqlite3` will look up a converter function using the first word of the
+   declared type as the converter dictionary key.
+   For example:
+
+   .. code-block:: sql
+
+      CREATE TABLE test(
+         i integer primary key,  ! will look up a converter named "integer"
+         p point,                ! will look up a converter named "point"
+         n number(10)            ! will look up a converter named "number"
+       )
+
+   This flag may be combined with :const:`PARSE_COLNAMES` using the ``|``
+   (bitwise or) operator.
+
+.. data:: apilevel
+
+   String constant stating the supported DB-API level. Required by the DB-API.
+   Hard-coded to ``"2.0"``.
+
+.. data:: paramstyle
+
+   String constant stating the type of parameter marker formatting expected by
+   the :mod:`!sqlite3` module. Required by the DB-API. Hard-coded to
+   ``"qmark"``.
+
+   .. note::
+
+      The :mod:`!sqlite3` module supports both ``qmark`` and ``numeric`` DB-API
+      parameter styles, because that is what the underlying SQLite library
+      supports. However, the DB-API does not allow multiple values for
+      the ``paramstyle`` attribute.
+
+.. data:: sqlite_version
+
+   Version number of the runtime SQLite library as a :class:`string <str>`.
+
+.. data:: sqlite_version_info
+
+   Version number of the runtime SQLite library as a :class:`tuple` of
+   :class:`integers <int>`.
+
+.. data:: threadsafety
+
+   Integer constant required by the DB-API 2.0, stating the level of thread
+   safety the :mod:`!sqlite3` module supports. This attribute is set based on
+   the default `threading mode <https://sqlite.org/threadsafe.html>`_ the
+   underlying SQLite library is compiled with. The SQLite threading modes are:
+
+     1. **Single-thread**: In this mode, all mutexes are disabled and SQLite is
+        unsafe to use in more than a single thread at once.
+     2. **Multi-thread**: In this mode, SQLite can be safely used by multiple
+        threads provided that no single database connection is used
+        simultaneously in two or more threads.
+     3. **Serialized**: In serialized mode, SQLite can be safely used by
+        multiple threads with no restriction.
+
+   The mappings from SQLite threading modes to DB-API 2.0 threadsafety levels
+   are as follows:
+
+   +------------------+-----------------+----------------------+-------------------------------+
+   | SQLite threading | `threadsafety`_ | `SQLITE_THREADSAFE`_ | DB-API 2.0 meaning            |
+   | mode             |                 |                      |                               |
+   +==================+=================+======================+===============================+
+   | single-thread    | 0               | 0                    | Threads may not share the     |
+   |                  |                 |                      | module                        |
+   +------------------+-----------------+----------------------+-------------------------------+
+   | multi-thread     | 1               | 2                    | Threads may share the module, |
+   |                  |                 |                      | but not connections           |
+   +------------------+-----------------+----------------------+-------------------------------+
+   | serialized       | 3               | 1                    | Threads may share the module, |
+   |                  |                 |                      | connections and cursors       |
+   +------------------+-----------------+----------------------+-------------------------------+
+
+   .. _threadsafety: https://peps.python.org/pep-0249/#threadsafety
+   .. _SQLITE_THREADSAFE: https://sqlite.org/compile.html#threadsafe
+
+   .. versionchanged:: 3.11
+      Set *threadsafety* dynamically instead of hard-coding it to ``1``.
+
+.. data:: version
+
+   Version number of this module as a :class:`string <str>`.
+   This is not the version of the SQLite library.
+
+   .. deprecated-removed:: 3.12 3.14
+      This constant used to reflect the version number of the ``pysqlite``
+      package, a third-party library which used to upstream changes to
+      :mod:`!sqlite3`. Today, it carries no meaning or practical value.
+
+.. data:: version_info
+
+   Version number of this module as a :class:`tuple` of :class:`integers <int>`.
+   This is not the version of the SQLite library.
+
+   .. deprecated-removed:: 3.12 3.14
+      This constant used to reflect the version number of the ``pysqlite``
+      package, a third-party library which used to upstream changes to
+      :mod:`!sqlite3`. Today, it carries no meaning or practical value.
 
 
 .. _sqlite3-connection-objects:
