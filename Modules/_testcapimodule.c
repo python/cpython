@@ -6865,6 +6865,9 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_Vectorcall(m) < 0) {
         return NULL;
     }
+    if (_PyTestCapi_Init_VectorcallLimited(m) < 0) {
+        return NULL;
+    }
     if (_PyTestCapi_Init_Heaptype(m) < 0) {
         return NULL;
     }
