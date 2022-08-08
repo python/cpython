@@ -239,12 +239,6 @@ class Random(_random.Random):
         "Return a random int in the range [0,n).  Defined for n > 0."
 
         getrandbits = self.getrandbits
-        # For efficiency, we'd like to use k = (n-1).bit_length() here, but
-        # before Python 3.9, `getrandbits()` did not accept 0 as an argument.
-        # That's why using `n-1` was a problem when `n` was 1.
-        #
-        # Now we are stuck with this version, because we want to reproduce
-        # results after explicitly setting a seed even between releases.
         k = n.bit_length()
         r = getrandbits(k)  # 0 <= r < 2**k
         while r >= n:
