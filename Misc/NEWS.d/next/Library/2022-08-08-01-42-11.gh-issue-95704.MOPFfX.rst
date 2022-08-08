@@ -1,0 +1,2 @@
+When a task catches CancelledError and raises some other error,
+the other error should generally not silently be suppressed.
