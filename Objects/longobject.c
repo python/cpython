@@ -13,7 +13,6 @@
 
 #include <ctype.h>
 #include <float.h>
-#include <math.h>
 #include <stddef.h>
 #include <stdlib.h>               // abs()
 
