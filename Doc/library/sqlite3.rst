@@ -1823,7 +1823,7 @@ Explanation
 
 .. _sqlite3-controlling-transactions:
 
-Transaction Control via the ``autocommit`` Attribute
+Transaction control via the ``autocommit`` attribute
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Use the :attr:`~Connection.autocommit` attribute to select a transaction mode.
@@ -1859,16 +1859,16 @@ have no effect.
    Use :attr:`~Connection.in_transaction` to query the low-level SQLite
    autocommit mode.
 
-
 .. _sqlite3-deprecated-transaction-control:
 
-Transaction Control via the ``isolation_level`` Attribute
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Transaction control via the ``isolation_level`` attribute (deprecated)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
 
    The recommended way of controlling transactions is via the
    :attr:`~Connection.autocommit` attribute.
+   See :ref:`sqlite3-controlling-transactions`.
 
 If :attr:`~Connection.autocommit` is set to
 :data:`DEPRECATED_TRANSACTION_CONTROL`, transaction control is selected using
