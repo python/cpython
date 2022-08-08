@@ -60,6 +60,12 @@ jobs:
         & "$(msbuild)" PCbuild\tix.vcxproj "@msbuild.rsp" /p:Platform=x64 /p:tcltkDir="$(OutDir)\amd64"
       displayName: 'Build for amd64'
 
+    - powershell: |
+        & "$(msbuild)" PCbuild\tcl.vcxproj "@msbuild.rsp" /p:Platform=ARM64 /p:tcltkDir="$(OutDir)\arm64"
+        & "$(msbuild)" PCbuild\tk.vcxproj  "@msbuild.rsp" /p:Platform=ARM64 /p:tcltkDir="$(OutDir)\arm64"
+        & "$(msbuild)" PCbuild\tix.vcxproj "@msbuild.rsp" /p:Platform=ARM64 /p:tcltkDir="$(OutDir)\arm64"
+      displayName: 'Build for arm64'
+
     - publish: '$(OutDir)'
       artifact: 'tcltk'
       displayName: 'Publishing tcltk'

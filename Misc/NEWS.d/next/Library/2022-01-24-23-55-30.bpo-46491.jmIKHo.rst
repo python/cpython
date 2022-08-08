@@ -1,1 +1,0 @@
-Allow :data:`typing.Annotated` to wrap :data:`typing.Final` and :data:`typing.ClassVar`. Patch by Gregory Beauregard.

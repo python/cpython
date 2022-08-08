@@ -1,1 +1,0 @@
-In :func:`typing.get_type_hints`, support evaluating stringified ``ClassVar`` and ``Final`` annotations inside ``Annotated``. Patch by Gregory Beauregard.

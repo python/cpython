@@ -1,1 +1,0 @@
-Improve error message when creating a new :class:`enum.Enum` type subclassing an existing ``Enum`` with ``_member_names_`` using :meth:`enum.Enum.__call__`.

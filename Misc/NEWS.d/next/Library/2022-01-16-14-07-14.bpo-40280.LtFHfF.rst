@@ -1,4 +1,0 @@
-:mod:`subprocess` now imports Windows-specific imports when
-``msvcrt`` module is available, and POSIX-specific imports on all other
-platforms. This gives a clean exception when ``_posixsubprocess`` is not
-available (e.g. Emscripten browser target).

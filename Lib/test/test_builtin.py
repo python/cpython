@@ -24,7 +24,7 @@ from functools import partial
 from inspect import CO_COROUTINE
 from itertools import product
 from textwrap import dedent
-from types import AsyncGeneratorType, FunctionType
+from types import AsyncGeneratorType, FunctionType, CellType
 from operator import neg
 from test import support
 from test.support import (swap_attr, maybe_get_event_loop_policy)
@@ -393,6 +393,10 @@ class BuiltinTest(unittest.TestCase):
                                 msg=f"source={source} mode={mode}")
 
 
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "socket.accept is broken"
+    )
     def test_compile_top_level_await(self):
         """Test whether code some top level await can be compiled.
 
@@ -770,6 +774,84 @@ class BuiltinTest(unittest.TestCase):
             pass
         finally:
             sys.stdout = savestdout
+
+    def test_exec_closure(self):
+        def function_without_closures():
+            return 3 * 5
+
+        result = 0
+        def make_closure_functions():
+            a = 2
+            b = 3
+            c = 5
+            def three_freevars():
+                nonlocal result
+                nonlocal a
+                nonlocal b
+                result = a*b
+            def four_freevars():
+                nonlocal result
+                nonlocal a
+                nonlocal b
+                nonlocal c
+                result = a*b*c
+            return three_freevars, four_freevars
+        three_freevars, four_freevars = make_closure_functions()
+
+        # "smoke" test
+        result = 0
+        exec(three_freevars.__code__,
+            three_freevars.__globals__,
+            closure=three_freevars.__closure__)
+        self.assertEqual(result, 6)
+
+        # should also work with a manually created closure
+        result = 0
+        my_closure = (CellType(35), CellType(72), three_freevars.__closure__[2])
+        exec(three_freevars.__code__,
+            three_freevars.__globals__,
+            closure=my_closure)
+        self.assertEqual(result, 2520)
+
+        # should fail: closure isn't allowed
+        # for functions without free vars
+        self.assertRaises(TypeError,
+            exec,
+            function_without_closures.__code__,
+            function_without_closures.__globals__,
+            closure=my_closure)
+
+        # should fail: closure required but wasn't specified
+        self.assertRaises(TypeError,
+            exec,
+            three_freevars.__code__,
+            three_freevars.__globals__,
+            closure=None)
+
+        # should fail: closure of wrong length
+        self.assertRaises(TypeError,
+            exec,
+            three_freevars.__code__,
+            three_freevars.__globals__,
+            closure=four_freevars.__closure__)
+
+        # should fail: closure using a list instead of a tuple
+        my_closure = list(my_closure)
+        self.assertRaises(TypeError,
+            exec,
+            three_freevars.__code__,
+            three_freevars.__globals__,
+            closure=my_closure)
+
+        # should fail: closure tuple with one non-cell-var
+        my_closure[0] = int
+        my_closure = tuple(my_closure)
+        self.assertRaises(TypeError,
+            exec,
+            three_freevars.__code__,
+            three_freevars.__globals__,
+            closure=my_closure)
+
 
     def test_filter(self):
         self.assertEqual(list(filter(lambda c: 'a' <= c <= 'z', 'Hello World')), list('elloorld'))
@@ -1203,7 +1285,7 @@ class BuiltinTest(unittest.TestCase):
                     del os.environ[key]
 
             self.write_testfile()
-            current_locale_encoding = locale.getpreferredencoding(False)
+            current_locale_encoding = locale.getencoding()
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", EncodingWarning)
                 fp = open(TESTFN, 'w')
@@ -1213,6 +1295,7 @@ class BuiltinTest(unittest.TestCase):
             os.environ.clear()
             os.environ.update(old_environ)
 
+    @support.requires_subprocess()
     def test_open_non_inheritable(self):
         fileobj = open(__file__, encoding="utf-8")
         with fileobj:
@@ -2105,7 +2188,7 @@ class PtyTests(unittest.TestCase):
         # the readline implementation. In some cases, the Python readline
         # callback rlhandler() is called by readline with a string without
         # non-ASCII characters. Skip tests on non-ASCII characters if the
-        # readline module is loaded, since test_builtin is not intented to test
+        # readline module is loaded, since test_builtin is not intended to test
         # the readline module, but the builtins module.
         if 'readline' in sys.modules:
             self.skipTest("the readline module is loaded")

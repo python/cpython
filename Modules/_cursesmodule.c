@@ -103,6 +103,7 @@ static const char PyCursesVersion[] = "2.2";
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
+#define NEEDS_PY_IDENTIFIER
 
 #define PY_SSIZE_T_CLEAN
 
@@ -382,6 +383,7 @@ PyCurses_ConvertToString(PyCursesWindowObject *win, PyObject *obj,
             return 0;
         /* check for embedded null bytes */
         if (PyBytes_AsStringAndSize(*bytes, &str, NULL) < 0) {
+            Py_CLEAR(*bytes);
             return 0;
         }
         return 1;

@@ -2,7 +2,6 @@
 #include <ctype.h>
 
 #include "structmember.h"         // PyMemberDef
-#include "frameobject.h"
 #include "expat.h"
 
 #include "pyexpat.h"
@@ -50,6 +49,7 @@ enum HandlerTypes {
 typedef struct {
     PyTypeObject *xml_parse_type;
     PyObject *error;
+    PyObject *str_read;
 } pyexpat_state;
 
 static inline pyexpat_state*
@@ -744,6 +744,8 @@ pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyTypeObject *cls,
         slen = view.len;
     }
 
+    static_assert(MAX_CHUNK_SIZE <= INT_MAX,
+                  "MAX_CHUNK_SIZE is larger than INT_MAX");
     while (slen > MAX_CHUNK_SIZE) {
         rc = XML_Parse(self->itself, s, MAX_CHUNK_SIZE, 0);
         if (!rc)
@@ -751,7 +753,7 @@ pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyTypeObject *cls,
         s += MAX_CHUNK_SIZE;
         slen -= MAX_CHUNK_SIZE;
     }
-    Py_BUILD_ASSERT(MAX_CHUNK_SIZE <= INT_MAX);
+
     assert(slen <= INT_MAX);
     rc = XML_Parse(self->itself, s, (int)slen, isfinal);
 
@@ -822,11 +824,10 @@ pyexpat_xmlparser_ParseFile_impl(xmlparseobject *self, PyTypeObject *cls,
 {
     int rv = 1;
     PyObject *readmethod = NULL;
-    _Py_IDENTIFIER(read);
 
     pyexpat_state *state = PyType_GetModuleState(cls);
 
-    if (_PyObject_LookupAttrId(file, &PyId_read, &readmethod) < 0) {
+    if (_PyObject_LookupAttr(file, state->str_read, &readmethod) < 0) {
         return NULL;
     }
     if (readmethod == NULL) {
@@ -1086,7 +1087,7 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
     PyObject* u;
     int i;
     const void *data;
-    unsigned int kind;
+    int kind;
 
     if (PyErr_Occurred())
         return XML_STATUS_ERROR;
@@ -1896,6 +1897,10 @@ static int
 pyexpat_exec(PyObject *mod)
 {
     pyexpat_state *state = pyexpat_get_state(mod);
+    state->str_read = PyUnicode_InternFromString("read");
+    if (state->str_read == NULL) {
+        return -1;
+    }
     state->xml_parse_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         mod, &_xml_parse_type_spec, NULL);
 
@@ -2032,6 +2037,7 @@ pyexpat_traverse(PyObject *module, visitproc visit, void *arg)
     pyexpat_state *state = pyexpat_get_state(module);
     Py_VISIT(state->xml_parse_type);
     Py_VISIT(state->error);
+    Py_VISIT(state->str_read);
     return 0;
 }
 
@@ -2041,6 +2047,7 @@ pyexpat_clear(PyObject *module)
     pyexpat_state *state = pyexpat_get_state(module);
     Py_CLEAR(state->xml_parse_type);
     Py_CLEAR(state->error);
+    Py_CLEAR(state->str_read);
     return 0;
 }
 

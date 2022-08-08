@@ -474,10 +474,7 @@ class ShellSidebarTest(unittest.TestCase):
         index = text.index("@0,0")
         if index.split('.', 1)[1] != '0':
             index = text.index(f"{index} +1line linestart")
-        while True:
-            lineinfo = text.dlineinfo(index)
-            if lineinfo is None:
-                break
+        while (lineinfo := text.dlineinfo(index)) is not None:
             y_coords.append(lineinfo[1])
             index = text.index(f"{index} +1line")
         return y_coords
@@ -736,7 +733,7 @@ class ShellSidebarTest(unittest.TestCase):
         first_line = get_end_linenumber(text)
         self.do_input(dedent('''\
             if True:
-            print(1)
+                print(1)
 
             '''))
         yield
@@ -747,9 +744,10 @@ class ShellSidebarTest(unittest.TestCase):
 
         selected_lines_text = text.get('sel.first linestart', 'sel.last')
         selected_lines = selected_lines_text.split('\n')
-        # Expect a block of input, a single output line, and a new prompt
+        selected_lines.pop()  # Final '' is a split artifact, not a line.
+        # Expect a block of input and a single output line.
         expected_prompts = \
-            ['>>>'] + ['...'] * (len(selected_lines) - 3) + [None, '>>>']
+            ['>>>'] + ['...'] * (len(selected_lines) - 2) + [None]
         selected_text_with_prompts = '\n'.join(
             line if prompt is None else prompt + ' ' + line
             for prompt, line in zip(expected_prompts,

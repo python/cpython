@@ -1,1 +1,0 @@
-Fixed case where failing :func:`asyncio.ensure_future` did not close the coroutine. Patch by Kumar Aditya.

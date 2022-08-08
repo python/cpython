@@ -186,7 +186,7 @@ PyDoc_STRVAR(itertools_tee__doc__,
 "Returns a tuple of n independent iterators.");
 
 #define ITERTOOLS_TEE_METHODDEF    \
-    {"tee", (PyCFunction)(void(*)(void))itertools_tee, METH_FASTCALL, itertools_tee__doc__},
+    {"tee", _PyCFunction_CAST(itertools_tee), METH_FASTCALL, itertools_tee__doc__},
 
 static PyObject *
 itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n);
@@ -414,7 +414,7 @@ PyDoc_STRVAR(itertools_combinations_with_replacement__doc__,
 "\n"
 "Return successive r-length combinations of elements in the iterable allowing individual elements to have successive repeats.\n"
 "\n"
-"combinations_with_replacement(\'ABC\', 2) --> AA AB AC BB BC CC\"");
+"combinations_with_replacement(\'ABC\', 2) --> (\'A\',\'A\'), (\'A\',\'B\'), (\'A\',\'C\'), (\'B\',\'B\'), (\'B\',\'C\'), (\'C\',\'C\')");
 
 static PyObject *
 itertools_combinations_with_replacement_impl(PyTypeObject *type,
@@ -667,4 +667,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5364de2e143609b9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=659251a811ff89ed input=a9049054013a1b77]*/

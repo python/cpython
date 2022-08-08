@@ -76,12 +76,17 @@ _weakref__remove_dead_weakref_impl(PyObject *module, PyObject *dct,
 }
 
 
-PyDoc_STRVAR(weakref_getweakrefs__doc__,
-"getweakrefs(object) -- return a list of all weak reference objects\n"
-"that point to 'object'.");
+/*[clinic input]
+_weakref.getweakrefs
+    object: object
+    /
+
+Return a list of all weak reference objects pointing to 'object'.
+[clinic start generated code]*/
 
 static PyObject *
-weakref_getweakrefs(PyObject *self, PyObject *object)
+_weakref_getweakrefs(PyObject *module, PyObject *object)
+/*[clinic end generated code: output=25c7731d8e011824 input=00c6d0e5d3206693]*/
 {
     PyObject *result = NULL;
 
@@ -107,22 +112,24 @@ weakref_getweakrefs(PyObject *self, PyObject *object)
 }
 
 
-PyDoc_STRVAR(weakref_proxy__doc__,
-"proxy(object[, callback]) -- create a proxy object that weakly\n"
-"references 'object'.  'callback', if given, is called with a\n"
-"reference to the proxy when 'object' is about to be finalized.");
+/*[clinic input]
+
+_weakref.proxy
+    object: object
+    callback: object(c_default="NULL") = None
+    /
+
+Create a proxy object that weakly references 'object'.
+
+'callback', if given, is called with a reference to the
+proxy when 'object' is about to be finalized.
+[clinic start generated code]*/
 
 static PyObject *
-weakref_proxy(PyObject *self, PyObject *args)
+_weakref_proxy_impl(PyObject *module, PyObject *object, PyObject *callback)
+/*[clinic end generated code: output=d68fa4ad9ea40519 input=4808adf22fd137e7]*/
 {
-    PyObject *object;
-    PyObject *callback = NULL;
-    PyObject *result = NULL;
-
-    if (PyArg_UnpackTuple(args, "proxy", 1, 2, &object, &callback)) {
-        result = PyWeakref_NewProxy(object, callback);
-    }
-    return result;
+    return PyWeakref_NewProxy(object, callback);
 }
 
 
@@ -130,10 +137,8 @@ static PyMethodDef
 weakref_functions[] =  {
     _WEAKREF_GETWEAKREFCOUNT_METHODDEF
     _WEAKREF__REMOVE_DEAD_WEAKREF_METHODDEF
-    {"getweakrefs",     weakref_getweakrefs,            METH_O,
-     weakref_getweakrefs__doc__},
-    {"proxy",           weakref_proxy,                  METH_VARARGS,
-     weakref_proxy__doc__},
+    _WEAKREF_GETWEAKREFS_METHODDEF
+    _WEAKREF_PROXY_METHODDEF
     {NULL, NULL, 0, NULL}
 };
 

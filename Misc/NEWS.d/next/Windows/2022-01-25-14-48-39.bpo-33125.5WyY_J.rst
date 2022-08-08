@@ -1,2 +1,0 @@
-The traditional EXE/MSI based installer for Windows is now available for
-ARM64

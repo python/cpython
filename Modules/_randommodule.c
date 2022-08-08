@@ -99,7 +99,7 @@ get_random_state(PyObject *module)
 static struct PyModuleDef _randommodule;
 
 #define _randomstate_type(type) \
-    (get_random_state(_PyType_GetModuleByDef(type, &_randommodule)))
+    (get_random_state(PyType_GetModuleByDef(type, &_randommodule)))
 
 typedef struct {
     PyObject_HEAD

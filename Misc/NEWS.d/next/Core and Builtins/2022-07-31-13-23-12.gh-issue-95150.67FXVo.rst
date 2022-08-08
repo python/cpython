@@ -1,0 +1,3 @@
+Update code object hashing and equality to consider all debugging and
+exception handling tables. This fixes an issue where certain non-identical
+code objects could be "deduplicated" during compilation.

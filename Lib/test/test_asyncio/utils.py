@@ -11,9 +11,7 @@ import selectors
 import socket
 import socketserver
 import sys
-import tempfile
 import threading
-import time
 import unittest
 import weakref
 
@@ -34,6 +32,7 @@ from asyncio import futures
 from asyncio import tasks
 from asyncio.log import logger
 from test import support
+from test.support import socket_helper
 from test.support import threading_helper
 
 
@@ -109,13 +108,14 @@ def run_briefly(loop):
 
 
 def run_until(loop, pred, timeout=support.SHORT_TIMEOUT):
-    deadline = time.monotonic() + timeout
-    while not pred():
-        if timeout is not None:
-            timeout = deadline - time.monotonic()
-            if timeout <= 0:
-                raise futures.TimeoutError()
-        loop.run_until_complete(tasks.sleep(0.001))
+    delay = 0.001
+    for _ in support.busy_retry(timeout, error=False):
+        if pred():
+            break
+        loop.run_until_complete(tasks.sleep(delay))
+        delay = max(delay * 2, 1.0)
+    else:
+        raise futures.TimeoutError()
 
 
 def run_once(loop):
@@ -250,8 +250,7 @@ if hasattr(socket, 'AF_UNIX'):
 
 
     def gen_unix_socket_path():
-        with tempfile.NamedTemporaryFile() as file:
-            return file.name
+        return socket_helper.create_unix_domain_name()
 
 
     @contextlib.contextmanager
@@ -279,6 +278,31 @@ def run_test_server(*, host='127.0.0.1', port=0, use_ssl=False):
     yield from _run_test_server(address=(host, port), use_ssl=use_ssl,
                                 server_cls=SilentWSGIServer,
                                 server_ssl_cls=SSLWSGIServer)
+
+
+def echo_datagrams(sock):
+    while True:
+        data, addr = sock.recvfrom(4096)
+        if data == b'STOP':
+            sock.close()
+            break
+        else:
+            sock.sendto(data, addr)
+
+
+@contextlib.contextmanager
+def run_udp_echo_server(*, host='127.0.0.1', port=0):
+    addr_info = socket.getaddrinfo(host, port, type=socket.SOCK_DGRAM)
+    family, type, proto, _, sockaddr = addr_info[0]
+    sock = socket.socket(family, type, proto)
+    sock.bind((host, port))
+    thread = threading.Thread(target=lambda: echo_datagrams(sock))
+    thread.start()
+    try:
+        yield sock.getsockname()
+    finally:
+        sock.sendto(b'STOP', sock.getsockname())
+        thread.join()
 
 
 def make_test_protocol(base):

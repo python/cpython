@@ -1,4 +1,0 @@
-Reorder code emitted by the compiler for a :keyword:`try`-:keyword:`except`
-block so that the :keyword:`else` block's code immediately follows the
-:keyword:`try` body (without a jump). This is more optimal for the happy
-path.

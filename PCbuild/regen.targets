@@ -14,12 +14,12 @@
       <Argument>-C</Argument>
     </_ASTOutputs>
     <_OpcodeSources Include="$(PySourcePath)Tools\scripts\generate_opcode_h.py;$(PySourcePath)Lib\opcode.py" />
-    <_OpcodeOutputs Include="$(PySourcePath)Include\opcode.h;$(PySourcePath)Python\opcode_targets.h" />
+    <_OpcodeOutputs Include="$(PySourcePath)Include\opcode.h;$(PySourcePath)Include\internal\pycore_opcode.h;$(PySourcePath)Python\opcode_targets.h" />
     <_TokenSources Include="$(PySourcePath)Grammar\Tokens" />
     <_TokenOutputs Include="$(PySourcePath)Doc\library\token-list.inc">
       <Format>rst</Format>
     </_TokenOutputs>
-    <_TokenOutputs Include="$(PySourcePath)Include\token.h">
+    <_TokenOutputs Include="$(PySourcePath)Include\internal\pycore_token.h">
       <Format>h</Format>
     </_TokenOutputs>
     <_TokenOutputs Include="$(PySourcePath)Parser\token.c">
@@ -59,7 +59,7 @@
           Inputs="@(_OpcodeSources)" Outputs="@(_OpcodeOutputs)"
           DependsOnTargets="FindPythonForBuild">
     <Message Text="Regenerate @(_OpcodeOutputs->'%(Filename)%(Extension)',' ')" Importance="high" />
-    <Exec Command="$(PythonForBuild) Tools\scripts\generate_opcode_h.py Lib\opcode.py Include\opcode.h"
+    <Exec Command="$(PythonForBuild) Tools\scripts\generate_opcode_h.py Lib\opcode.py Include\opcode.h Include\internal\pycore_opcode.h"
           WorkingDirectory="$(PySourcePath)" />
     <Exec Command="$(PythonForBuild) Python\makeopcodetargets.py Python\opcode_targets.h"
           WorkingDirectory="$(PySourcePath)" />

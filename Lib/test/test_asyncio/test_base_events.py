@@ -40,7 +40,6 @@ def mock_socket_module():
 
     m_socket.socket = mock.MagicMock()
     m_socket.socket.return_value = test_utils.mock_nonblocking_socket()
-    m_socket.getaddrinfo._is_coroutine = False
 
     return m_socket
 
@@ -1286,9 +1285,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         sock = m_socket.socket.return_value
 
         self.loop._add_reader = mock.Mock()
-        self.loop._add_reader._is_coroutine = False
         self.loop._add_writer = mock.Mock()
-        self.loop._add_writer._is_coroutine = False
 
         coro = self.loop.create_connection(asyncio.Protocol, '1.2.3.4', 80)
         t, p = self.loop.run_until_complete(coro)
@@ -1330,9 +1327,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         sock.family = socket.AF_INET6
 
         self.loop._add_reader = mock.Mock()
-        self.loop._add_reader._is_coroutine = False
         self.loop._add_writer = mock.Mock()
-        self.loop._add_writer._is_coroutine = False
 
         coro = self.loop.create_connection(asyncio.Protocol, 'fe80::1%1', 80)
         t, p = self.loop.run_until_complete(coro)
@@ -1359,9 +1354,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         sock = m_socket.socket.return_value
 
         self.loop._add_reader = mock.Mock()
-        self.loop._add_reader._is_coroutine = False
         self.loop._add_writer = mock.Mock()
-        self.loop._add_writer._is_coroutine = False
 
         for service, port in ('http', 80), (b'http', 80):
             coro = self.loop.create_connection(asyncio.Protocol,
@@ -1451,44 +1444,51 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.loop._make_ssl_transport.side_effect = mock_make_ssl_transport
         ANY = mock.ANY
         handshake_timeout = object()
+        shutdown_timeout = object()
         # First try the default server_hostname.
         self.loop._make_ssl_transport.reset_mock()
         coro = self.loop.create_connection(
                 MyProto, 'python.org', 80, ssl=True,
-                ssl_handshake_timeout=handshake_timeout)
+                ssl_handshake_timeout=handshake_timeout,
+                ssl_shutdown_timeout=shutdown_timeout)
         transport, _ = self.loop.run_until_complete(coro)
         transport.close()
         self.loop._make_ssl_transport.assert_called_with(
             ANY, ANY, ANY, ANY,
             server_side=False,
             server_hostname='python.org',
-            ssl_handshake_timeout=handshake_timeout)
+            ssl_handshake_timeout=handshake_timeout,
+            ssl_shutdown_timeout=shutdown_timeout)
         # Next try an explicit server_hostname.
         self.loop._make_ssl_transport.reset_mock()
         coro = self.loop.create_connection(
                 MyProto, 'python.org', 80, ssl=True,
                 server_hostname='perl.com',
-                ssl_handshake_timeout=handshake_timeout)
+                ssl_handshake_timeout=handshake_timeout,
+                ssl_shutdown_timeout=shutdown_timeout)
         transport, _ = self.loop.run_until_complete(coro)
         transport.close()
         self.loop._make_ssl_transport.assert_called_with(
             ANY, ANY, ANY, ANY,
             server_side=False,
             server_hostname='perl.com',
-            ssl_handshake_timeout=handshake_timeout)
+            ssl_handshake_timeout=handshake_timeout,
+            ssl_shutdown_timeout=shutdown_timeout)
         # Finally try an explicit empty server_hostname.
         self.loop._make_ssl_transport.reset_mock()
         coro = self.loop.create_connection(
                 MyProto, 'python.org', 80, ssl=True,
                 server_hostname='',
-                ssl_handshake_timeout=handshake_timeout)
+                ssl_handshake_timeout=handshake_timeout,
+                ssl_shutdown_timeout=shutdown_timeout)
         transport, _ = self.loop.run_until_complete(coro)
         transport.close()
         self.loop._make_ssl_transport.assert_called_with(
                 ANY, ANY, ANY, ANY,
                 server_side=False,
                 server_hostname='',
-                ssl_handshake_timeout=handshake_timeout)
+                ssl_handshake_timeout=handshake_timeout,
+                ssl_shutdown_timeout=shutdown_timeout)
 
     def test_create_connection_no_ssl_server_hostname_errors(self):
         # When not using ssl, server_hostname must be None.
@@ -1583,7 +1583,6 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
 
         m_socket.getaddrinfo.return_value = [
             (2, 1, 6, '', ('127.0.0.1', 10100))]
-        m_socket.getaddrinfo._is_coroutine = False
         m_sock = m_socket.socket.return_value = mock.Mock()
         m_sock.bind.side_effect = Err
 
@@ -1594,7 +1593,6 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
     @patch_socket
     def test_create_datagram_endpoint_no_addrinfo(self, m_socket):
         m_socket.getaddrinfo.return_value = []
-        m_socket.getaddrinfo._is_coroutine = False
 
         coro = self.loop.create_datagram_endpoint(
             MyDatagramProto, local_addr=('localhost', 0))
@@ -1828,7 +1826,6 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         m_socket.getaddrinfo = getaddrinfo
         m_socket.socket.return_value.bind = bind = mock.Mock()
         self.loop._add_reader = mock.Mock()
-        self.loop._add_reader._is_coroutine = False
 
         reuseport_supported = hasattr(socket, 'SO_REUSEPORT')
         coro = self.loop.create_datagram_endpoint(
@@ -1869,7 +1866,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             constants.ACCEPT_RETRY_DELAY,
             # self.loop._start_serving
             mock.ANY,
-            MyProto, sock, None, None, mock.ANY, mock.ANY)
+            MyProto, sock, None, None, mock.ANY, mock.ANY, mock.ANY)
 
     def test_call_coroutine(self):
         async def simple_coroutine():
