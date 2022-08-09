@@ -6976,7 +6976,7 @@ fi
 $as_echo "$ac_cv_tool_node_wasm_bigint" >&6; }
       if test "x$ac_cv_tool_node_wasm_bigint" = xyes; then :
 
-        as_fn_append HOSTRUNNER " --experimental-wasm-threads"
+        as_fn_append HOSTRUNNER " --experimental-wasm-bigint"
 
 fi
 

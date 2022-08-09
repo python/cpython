@@ -1542,7 +1542,7 @@ then
         fi
       ])
       AS_VAR_IF([ac_cv_tool_node_wasm_bigint], [yes], [
-        AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-threads"])
+        AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-bigint"])
       ])
 
       AS_VAR_IF([enable_wasm_pthreads], [yes], [
