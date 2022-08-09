@@ -49,24 +49,31 @@ This document includes four main sections:
 
 .. _sqlite3-tutorial:
 
+.. We use the following practises for SQL code:
+.. - UPPERCASE for keywords
+.. - lowercase for schema
+.. - single quotes for string literals
+.. - singular for table names
+.. - if needed, use double quotes for table and column names
+
 Tutorial
 --------
 
 In this tutorial, you will learn the basics of the :mod:`!sqlite3` API
-by creating an on-disk database :file:`example.db`,
-and executing SQL queries against it.
+by creating an on-disk database :file:`python.db`
+for managing Python release metadata.
 A fundamental understanding of database concepts,
 like `transactions`_ and `cursors`_, is assumed.
 
 To start working with an SQLite database,
 you must first open a connection to it.
 Call the :func:`sqlite3.connect` function
-to create a :class:`Connection` to the database :file:`example.db`::
+to create a :class:`Connection` to the database :file:`python.db`::
 
    import sqlite3
-   con = sqlite3.connect('example.db')
+   con = sqlite3.connect("python.db")
 
-SQLite will implicitly create the database file :file:`example.db`
+SQLite will implicitly create the database file :file:`python.db`
 in the current working directory if it does not exist.
 The returned :class:`Connection` object ``con``
 represents our connection to the on-disk database.
@@ -78,12 +85,13 @@ Call the :meth:`~Connection.cursor` method of ``con`` to create
 
    cur = con.cursor()
 
-Now, create a database table and insert a row of data into it
+Now, let us create a database table ``release`` with columns for version
+number and release date, and inserting the release data for Python 1.0.
+Execute the SQL statements
 by calling the :meth:`~Cursor.execute` method of ``cur``::
 
-   cur.execute('''CREATE TABLE stocks
-                  (date text, trans text, symbol text, qty real, price real)''')
-   cur.execute("INSERT INTO stocks VALUES ('2006-01-05','BUY','RHAT',100,35.14)")
+   cur.execute("""CREATE TABLE release(version, releasedate)""")
+   cur.execute("INSERT INTO release VALUES('3.0', '2008-12-03')")
 
 The ``INSERT`` statement implicitly opens a transaction
 that needs to be committed before changes are saved in the database
@@ -99,9 +107,9 @@ creating a new cursor,
 and then executing a ``SELECT`` query to read from the database::
 
    >>> con.close()
-   >>> con2 = sqlite3.connect('example.db')
+   >>> con2 = sqlite3.connect("python.db")
    >>> cur2 = con2.cursor()
-   >>> res = cur2.execute('SELECT count(rowid) FROM stocks')
+   >>> res = cur2.execute("SELECT count(rowid) FROM release")
    >>> print(res.fetchone())
    (1,)
 
@@ -111,11 +119,10 @@ Now, insert three more rows by calling
 the :meth:`~Cursor.executemany` method on the cursor object::
 
    data = [
-       ('2006-03-28', 'BUY', 'IBM', 1000, 45.0),
-       ('2006-04-05', 'BUY', 'MSFT', 1000, 72.0),
-       ('2006-04-06', 'SELL', 'IBM', 500, 53.0),
+       ("2.0", "2000-10-16"),
+       ("1.0", "1994-01-26"),
    ]
-   cur2.executemany('INSERT INTO stocks VALUES(?, ?, ?, ?, ?)', data)
+   cur2.executemany("INSERT INTO release VALUES(?, ?)", data)
 
 Notice that we use ``?`` placeholders to bind ``data`` to the query.
 Always use placeholders instead of :ref:`string formatting <tut-formatting>`
@@ -125,15 +132,14 @@ See :ref:`sqlite3-placeholders` for more details.
 
 Now, retrieve the rows by iterating over the result of a ``SELECT`` query::
 
-   >>> for row in cur2.execute('SELECT * FROM stocks ORDER BY price'):
+   >>> for row in cur2.execute("SELECT * FROM release ORDER BY version"):
    ...     print(row)
 
-   ('2006-01-05', 'BUY', 'RHAT', 100, 35.14)
-   ('2006-03-28', 'BUY', 'IBM', 1000, 45.0)
-   ('2006-04-06', 'SELL', 'IBM', 500, 53.0)
-   ('2006-04-05', 'BUY', 'MSFT', 1000, 72.0)
+   ('1.0', '1994-01-26')
+   ('2.0', '2000-10-16')
+   ('3.0', '2008-12-03')
 
-Each row is a five-item :class:`!tuple`.
+Each row is a two-item :class:`!tuple`.
 You've now created an SQLite database using the :mod:`!sqlite3` module,
 inserted data and ran several SQL queries against it.
 
