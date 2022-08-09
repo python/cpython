@@ -47,14 +47,14 @@ This document includes four main sections:
       PEP written by Marc-André Lemburg.
 
 
-.. _sqlite3-tutorial:
-
 .. We use the following practises for SQL code:
 .. - UPPERCASE for keywords
 .. - lowercase for schema
 .. - single quotes for string literals
 .. - singular for table names
 .. - if needed, use double quotes for table and column names
+
+.. _sqlite3-tutorial:
 
 Tutorial
 --------
