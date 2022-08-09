@@ -2789,14 +2789,18 @@ EM_JS(char *, _Py_emscripten_runtime, (void), {
     if (typeof navigator == 'object') {
         info = navigator.userAgent;
     } else if (typeof process == 'object') {
-        info = "Node.js ".concat(process.version)
+        info = "Node.js ".concat(process.version);
     } else {
-        info = "UNKNOWN"
+        info = "UNKNOWN";
     }
     var len = lengthBytesUTF8(info) + 1;
     var res = _malloc(len);
-    stringToUTF8(info, res, len);
+    if (res) stringToUTF8(info, res, len);
+#if __wasm64__
+    return BigInt(res);
+#else
     return res;
+#endif
 });
 
 static PyObject *
