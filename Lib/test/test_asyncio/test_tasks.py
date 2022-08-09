@@ -3247,7 +3247,6 @@ class WaitTests(unittest.IsolatedAsyncioTestCase):
             def __await__(self):
                 return asyncio.sleep(0).__await__()
 
-
         with self.assertWarnsRegex(
             DeprecationWarning,
             "awaitable objects that are not futures",
