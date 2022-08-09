@@ -6341,6 +6341,63 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
+case $host in #(
+  aarch64*) :
+
+    for opt in -mbranch-protection=pac-ret -msign-return-address=all
+do :
+
+      as_CACHEVAR=`$as_echo "ax_cv_check_cflags__$opt" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts $opt" >&5
+$as_echo_n "checking whether C compiler accepts $opt... " >&6; }
+if eval \${$as_CACHEVAR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  $opt"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  eval "$as_CACHEVAR=yes"
+else
+  eval "$as_CACHEVAR=no"
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+eval ac_res=\$$as_CACHEVAR
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_CACHEVAR"\" = x"yes"; then :
+  branch_protection=yes
+else
+  branch_protection=no
+fi
+
+      if test "x$branch_protection" = xyes; then :
+
+        BASECFLAGS="${BASECFLAGS} $opt"
+        break
+
+fi
+
+done
+
+ ;; #(
+  *) :
+     ;;
+esac
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for -Wl,--no-as-needed" >&5
 $as_echo_n "checking for -Wl,--no-as-needed... " >&6; }
 if ${ac_cv_wl_no_as_needed+:} false; then :
