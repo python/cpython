@@ -1,13 +1,12 @@
 """Test date/time type.
 
-See http://www.zope.org/Members/fdrake/DateTimeWiki/TestCases
+See https://www.zope.dev/Members/fdrake/DateTimeWiki/TestCases
 """
 import io
 import itertools
 import bisect
 import copy
 import decimal
-import functools
 import sys
 import os
 import pickle

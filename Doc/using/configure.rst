@@ -41,12 +41,6 @@ General Options
 
    See :data:`sys.int_info.bits_per_digit <sys.int_info>`.
 
-.. cmdoption:: --with-cxx-main
-.. cmdoption:: --with-cxx-main=COMPILER
-
-   Compile the Python ``main()`` function and link Python executable with C++
-   compiler: ``$CXX``, or *COMPILER* if specified.
-
 .. cmdoption:: --with-suffix=SUFFIX
 
    Set the Python executable suffix to *SUFFIX*.
@@ -599,7 +593,7 @@ Main files of the build system
 * :file:`pyconfig.h` (created by :file:`configure`);
 * :file:`Modules/Setup`: C extensions built by the Makefile using
   :file:`Module/makesetup` shell script;
-* :file:`setup.py`: C extensions built using the :mod:`distutils` module.
+* :file:`setup.py`: C extensions built using the ``setuptools`` package.
 
 Main build steps
 ----------------
@@ -721,21 +715,9 @@ Compiler flags
 
    Example: ``gcc -pthread``.
 
-.. envvar:: MAINCC
-
-   C compiler command used to build the ``main()`` function of programs like
-   ``python``.
-
-   Variable set by the :option:`--with-cxx-main` option of the configure
-   script.
-
-   Default: ``$(CC)``.
-
 .. envvar:: CXX
 
    C++ compiler command.
-
-   Used if the :option:`--with-cxx-main` option is used.
 
    Example: ``g++ -pthread``.
 
@@ -748,6 +730,17 @@ Compiler flags
    :envvar:`CFLAGS_NODIST` is used for building the interpreter and stdlib C
    extensions.  Use it when a compiler flag should *not* be part of the
    distutils :envvar:`CFLAGS` once Python is installed (:issue:`21121`).
+
+   In particular, :envvar:`CFLAGS` should not contain:
+
+   * the compiler flag `-I` (for setting the search path for include files).
+     The `-I` flags are processed from left to right, and any flags in
+     :envvar:`CFLAGS` would take precedence over user- and package-supplied `-I`
+     flags.
+
+   * hardening flags such as `-Werror` because distributions cannot control
+     whether packages installed by users conform to such heightened
+     standards.
 
    .. versionadded:: 3.5
 
@@ -843,7 +836,7 @@ Linker flags
 
    Linker command used to build programs like ``python`` and ``_testembed``.
 
-   Default: ``$(PURIFY) $(MAINCC)``.
+   Default: ``$(PURIFY) $(CC)``.
 
 .. envvar:: CONFIGURE_LDFLAGS
 
@@ -860,6 +853,13 @@ Linker flags
    :envvar:`LDFLAGS_NODIST` is used in the same manner as
    :envvar:`CFLAGS_NODIST`.  Use it when a linker flag should *not* be part of
    the distutils :envvar:`LDFLAGS` once Python is installed (:issue:`35257`).
+
+   In particular, :envvar:`LDFLAGS` should not contain:
+
+   * the compiler flag `-L` (for setting the search path for libraries).
+     The `-L` flags are processed from left to right, and any flags in
+     :envvar:`LDFLAGS` would take precedence over user- and package-supplied `-L`
+     flags.
 
 .. envvar:: CONFIGURE_LDFLAGS_NODIST
 

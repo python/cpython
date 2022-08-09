@@ -32,15 +32,11 @@ ac_cv_func_makedev=no
 # OSError: [Errno 28] Invalid argument: '.'
 ac_cv_func_fdopendir=no
 
-# WASIX stubs we don't want to use.
-ac_cv_func_kill=no
-
-# WASI SDK 15.0 does not have chmod.
-# Ignore WASIX stubs for now.
-ac_cv_func_chmod=no
-ac_cv_func_fchmod=no
-
 # WASI sockets are limited to operations on given socket fd and inet sockets.
 # Disable AF_UNIX and AF_PACKET support, see socketmodule.h.
 ac_cv_header_sys_un_h=no
 ac_cv_header_netpacket_packet_h=no
+
+# disable accept for WASM runtimes without sock_accept
+#ac_cv_func_accept=no
+#ac_cv_func_accept4=no
