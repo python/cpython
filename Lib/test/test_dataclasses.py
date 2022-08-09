@@ -2215,12 +2215,12 @@ class TestInit(unittest.TestCase):
         self.assertEqual(c.z, 100)
 
     def test_no_init(self):
-        dataclass(init=False)
+        @dataclass(init=False)
         class C:
             i: int = 0
         self.assertEqual(C().i, 0)
 
-        dataclass(init=False)
+        @dataclass(init=False)
         class C:
             i: int = 2
             def __init__(self):
