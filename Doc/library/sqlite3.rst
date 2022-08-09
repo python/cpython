@@ -34,6 +34,18 @@ This document includes four main sections:
 * :ref:`sqlite3-explanation` provides in-depth background on
   transaction control.
 
+.. seealso::
+
+   https://www.sqlite.org
+      The SQLite web page; the documentation describes the syntax and the
+      available data types for the supported SQL dialect.
+
+   https://www.w3schools.com/sql/
+      Tutorial, reference and examples for learning SQL syntax.
+
+   :pep:`249` - Database API Specification 2.0
+      PEP written by Marc-André Lemburg.
+
 
 .. _sqlite3-tutorial:
 
@@ -113,18 +125,6 @@ Then, retrieve the data by iterating over the result of a ``SELECT`` statement::
 You've now created an SQLite database using the :mod:`!sqlite3` module.
 
 .. _SQL injection attacks: https://en.wikipedia.org/wiki/SQL_injection
-
-.. seealso::
-
-   https://www.sqlite.org
-      The SQLite web page; the documentation describes the syntax and the
-      available data types for the supported SQL dialect.
-
-   https://www.w3schools.com/sql/
-      Tutorial, reference and examples for learning SQL syntax.
-
-   :pep:`249` - Database API Specification 2.0
-      PEP written by Marc-André Lemburg.
 
 
 .. _sqlite3-reference:
