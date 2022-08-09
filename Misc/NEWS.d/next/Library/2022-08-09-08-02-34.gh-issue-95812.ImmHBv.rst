@@ -1,1 +1,1 @@
-Add simple dark mode to http.server directory list
+Add simple dark mode to http.server directory list and error pages
