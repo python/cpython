@@ -17,15 +17,16 @@ the IDE and the Package Manager that are worth pointing out.
 Getting and Installing MacPython
 ================================
 
-macOS since version 10.8 comes with Python 2.7 pre-installed by Apple.  If you wish, you
-are invited to install the most recent version of Python 3 from the Python
+macOS used to come with Python 2.7 pre-installed between versions
+10.8 and `12.3 <https://developer.apple.com/documentation/macos-release-notes/macos-12_3-release-notes#Python>`_.
+You are invited to install the most recent version of Python 3 from the Python
 website (https://www.python.org).  A current "universal binary" build of Python,
 which runs natively on the Mac's new Intel and legacy PPC CPU's, is available
 there.
 
 What you get after installing is a number of things:
 
-* A :file:`Python 3.9` folder in your :file:`Applications` folder. In here
+* A :file:`Python 3.12` folder in your :file:`Applications` folder. In here
   you find IDLE, the development environment that is a standard part of official
   Python distributions; and PythonLauncher, which handles double-clicking Python
   scripts from the Finder.
