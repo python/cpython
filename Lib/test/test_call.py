@@ -9,6 +9,7 @@ import collections
 import itertools
 import gc
 import contextlib
+import sys
 
 
 class BadStr(str):
@@ -759,6 +760,9 @@ class TestPEP590(unittest.TestCase):
                 self.assertEqual(expected, meth(*args1, **kwargs))
                 self.assertEqual(expected, wrapped(*args, **kwargs))
 
+    @unittest.skipIf(
+        hasattr(sys, 'getobjects'),
+        "Limited API is not compatible with Py_TRACE_REFS")
     def test_vectorcall_limited(self):
         from _testcapi import pyobject_vectorcall
         obj = _testcapi.LimitedVectorCallClass()
