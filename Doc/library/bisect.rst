@@ -18,11 +18,11 @@ linear searches or frequent resorting.
 
 The module is called :mod:`bisect` because it uses a basic bisection
 algorithm to do its work.  Unlike other bisection tools that search for a
-specific value, the functions in this module are designed to locate can
+specific value, the functions in this module are designed to locate an
 insertion point. Accordingly, the functions never call an :meth:`__eq__`
-method to determine whether a value has been found.  Instead, the functions
-only call the :meth:`__lt__` method and return an insertion point between
-values in an array.
+method to determine whether a value has been found.  Instead, the
+functions only call the :meth:`__lt__` method and will return an insertion
+point between values in an array.
 
 The following functions are provided:
 
@@ -36,9 +36,10 @@ The following functions are provided:
    any existing entries.  The return value is suitable for use as the first
    parameter to ``list.insert()`` assuming that *a* is already sorted.
 
-   The returned insertion point *i* partitions the array *a* into two slices
-   so that ``all(elem < x for elem in a[lo : i])`` for the left side and
-   ``all(elem >= x for elem in a[i : hi])`` for the right side.
+   The returned insertion point *i* partitions the array *a* into two
+   slices such that ``all(elem < x for elem in a[lo : i])`` is true for the
+   left slice and ``all(elem >= x for elem in a[i : hi])`` is true for the
+   right slice.
 
    *key* specifies a :term:`key function` of one argument that is used to
    extract a comparison key from each element in the array.  To support
@@ -58,8 +59,8 @@ The following functions are provided:
    after (to the right of) any existing entries of *x* in *a*.
 
    The returned insertion point *i* partitions the array *a* into two slices
-   so that ``all(elem <= x for elem in a[lo : i])`` for the left side and
-   ``all(elem > x for elem in a[i : hi])`` for the right side.
+   such that ``all(elem <= x for elem in a[lo : i])`` is true for the left slice and
+   ``all(elem > x for elem in a[i : hi])`` is true for the right slice.
 
    .. versionchanged:: 3.10
       Added the *key* parameter.
