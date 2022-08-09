@@ -318,17 +318,19 @@ _reserved_names = frozenset(
 )
 def isreserved(path):
     """Return true if the pathname is reserved by the system."""
-    # NOTE: the rules for reserved names seem somewhat complicated
-    # (e.g. r"..\NUL" is reserved but not r"foo\NUL" if "foo" does not
-    # exist). We err on the side of caution and return True for paths
-    # which are not considered reserved by Windows.
+    # Refer to "Naming Files, Paths, and Namespaces":
+    # https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file
     path = os.fspath(path)
-    if not path[:2].lstrip(_get_bothseps(path)):
-        # UNC paths are never reserved
-        return False
     name = os.fsdecode(basename(path))
-    name = name.partition('.')[0].partition(':')[0].rstrip(' ')
-    return name.upper() in _reserved_names
+    # Trailing spaces and dots are reserved.
+    # File streams are reserved (e.g. "filename:stream[:type]").
+    if name.rstrip('. ') != name or ':' in name:
+        return True
+    # DOS device names are reserved (e.g. "nul" or "nul .txt"). The rules
+    # are complicated and vary across Windows versions (e.g. "../nul" is
+    # reserved but not "foo/nul" if "foo" does not exist). On the side of
+    # caution, return True for names that may not be reserved.
+    return name.partition('.')[0].rstrip(' ').upper() in _reserved_names
 
 
 # Expand paths beginning with '~' or '~user'.

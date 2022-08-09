@@ -826,8 +826,11 @@ class TestNtpath(NtpathTestCase):
         self.assertFalse(ntpath.isreserved(''))
         self.assertFalse(ntpath.isreserved('/'))
         self.assertFalse(ntpath.isreserved('/foo/bar'))
-        # UNC paths are never reserved.
-        self.assertFalse(ntpath.isreserved('//my/share/nul/con/aux'))
+        # A name that ends with a space or dot is reserved.
+        self.assertTrue(ntpath.isreserved('foo.'))
+        self.assertTrue(ntpath.isreserved('foo '))
+        # A name with a file stream is reserved.
+        self.assertTrue(ntpath.isreserved('foo:bar'))
         # Case-insensitive DOS-device names are reserved.
         self.assertTrue(ntpath.isreserved('nul'))
         self.assertTrue(ntpath.isreserved('aux'))
@@ -859,7 +862,7 @@ class TestNtpath(NtpathTestCase):
         self.assertFalse(ntpath.isreserved(b''))
         self.assertFalse(ntpath.isreserved(b'/'))
         self.assertFalse(ntpath.isreserved(b'/foo/bar'))
-        self.assertFalse(ntpath.isreserved(b'//my/share/nul/con/aux'))
+        self.assertTrue(ntpath.isreserved(b'foo.'))
         self.assertTrue(ntpath.isreserved(b'nul'))
 
     def assertEqualCI(self, s1, s2):
