@@ -48,11 +48,11 @@ This document includes four main sections:
 
 
 .. We use the following practises for SQL code:
-.. - UPPERCASE for keywords
-.. - lowercase for schema
-.. - single quotes for string literals
-.. - singular for table names
-.. - if needed, use double quotes for table and column names
+   - UPPERCASE for keywords
+   - lowercase for schema
+   - single quotes for string literals
+   - singular for table names
+   - if needed, use double quotes for table and column names
 
 .. _sqlite3-tutorial:
 
@@ -60,7 +60,7 @@ Tutorial
 --------
 
 In this tutorial, you will learn the basics of the :mod:`!sqlite3` API
-by creating an on-disk database :file:`python.db`
+by creating an on-disk database :file:`tutorial.db`
 for managing Python release metadata.
 A fundamental understanding of database concepts,
 like `transactions`_ and `cursors`_, is assumed.
@@ -68,35 +68,35 @@ like `transactions`_ and `cursors`_, is assumed.
 To start working with an SQLite database,
 you must first open a connection to it.
 Call the :func:`sqlite3.connect` function
-to create a :class:`Connection` to the database :file:`python.db`::
+to create a connection to the database :file:`tutorial.db`::
 
    import sqlite3
-   con = sqlite3.connect("python.db")
+   con = sqlite3.connect("tutorial.db")
 
-SQLite will implicitly create the database file :file:`python.db`
+SQLite will implicitly create an empty database file :file:`tutorial.db`
 in the current working directory if it does not exist.
 The returned :class:`Connection` object ``con``
-represents our connection to the on-disk database.
+represents the connection to the on-disk database.
 
 In order to execute SQL statements and fetch results from SQL queries,
-we need to use a database cursor.
-Call the :meth:`~Connection.cursor` method of ``con`` to create
+use a database cursor.
+Call :meth:`~Connection.cursor` on ``con`` to create
 :class:`Cursor` ``cur``::
 
    cur = con.cursor()
 
-Now, let us create a database table ``release`` with columns for version
-number and release date, and inserting the release data for Python 1.0.
+Now, create a database table ``release`` with columns for version
+number and release date, and inserting the data for Python 3.0.
 Execute the SQL statements
-by calling the :meth:`~Cursor.execute` method of ``cur``::
+by calling :meth:`~Cursor.execute` on ``cur``::
 
    cur.execute("""CREATE TABLE release(version, releasedate)""")
    cur.execute("INSERT INTO release VALUES('3.0', '2008-12-03')")
 
-The ``INSERT`` statement implicitly opens a transaction
-that needs to be committed before changes are saved in the database
+The ``INSERT`` statement implicitly opens a transaction,
+which needs to be committed before changes are saved in the database
 (see :ref:`sqlite3-controlling-transactions` for details).
-Call the :meth:`~Connection.commit` on the connection object
+Call :meth:`~Connection.commit` on the connection object
 to commit the transaction::
 
    con.commit()
@@ -107,7 +107,7 @@ creating a new cursor,
 and then executing a ``SELECT`` query to read from the database::
 
    >>> con.close()
-   >>> con2 = sqlite3.connect("python.db")
+   >>> con2 = sqlite3.connect("tutorial.db")
    >>> cur2 = con2.cursor()
    >>> res = cur2.execute("SELECT count(rowid) FROM release")
    >>> print(res.fetchone())
@@ -116,7 +116,7 @@ and then executing a ``SELECT`` query to read from the database::
 The result is a one-item :class:`tuple`:
 one row, with one column.
 Now, insert three more rows by calling
-the :meth:`~Cursor.executemany` method on the cursor object::
+:meth:`~Cursor.executemany` on the cursor object::
 
    data = [
        ("2.0", "2000-10-16"),
@@ -124,7 +124,7 @@ the :meth:`~Cursor.executemany` method on the cursor object::
    ]
    cur2.executemany("INSERT INTO release VALUES(?, ?)", data)
 
-Notice that we use ``?`` placeholders to bind ``data`` to the query.
+Notice that ``?`` placeholders are used to bind ``data`` to the query.
 Always use placeholders instead of :ref:`string formatting <tut-formatting>`
 to bind Python values to SQL statements,
 to avoid `SQL injection attacks`_.
@@ -140,6 +140,7 @@ Now, retrieve the rows by iterating over the result of a ``SELECT`` query::
    ('3.0', '2008-12-03')
 
 Each row is a two-item :class:`!tuple`.
+
 You've now created an SQLite database using the :mod:`!sqlite3` module,
 inserted data and ran several SQL queries against it.
 
