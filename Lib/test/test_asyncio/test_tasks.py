@@ -3258,7 +3258,7 @@ class WaitTests(test_utils.TestCase):
                 return asyncio.sleep(0).__await__()
 
 
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarnsRegex(DeprecationWarning, "awaitable objects that are not futures"):
             self.loop.run_until_complete(
                 asyncio.wait([ExampleAwaitable()]))
 
