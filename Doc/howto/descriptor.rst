@@ -586,7 +586,7 @@ a pure Python equivalent:
         "Emulate PyObject_GenericGetAttr() in Objects/object.c"
         null = object()
         objtype = type(obj)
-        cls_var = getattr(objtype, name, null)
+        cls_var = vars(objtype).get(name, null)
         descr_get = getattr(type(cls_var), '__get__', null)
         if descr_get is not null:
             if (hasattr(type(cls_var), '__set__')
