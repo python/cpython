@@ -3239,18 +3239,8 @@ class SleepTests(test_utils.TestCase):
         self.assertEqual(result, 11)
 
 
-class WaitTests(test_utils.TestCase):
-    def setUp(self):
-        super().setUp()
-        self.loop = asyncio.new_event_loop()
-        self.set_event_loop(self.loop)
-
-    def tearDown(self):
-        self.loop.close()
-        self.loop = None
-        super().tearDown()
-
-    def test_awaitable_is_deprecated_in_wait(self):
+class WaitTests(unittest.IsolatedAsyncioTestCase):
+    async def test_awaitable_is_deprecated_in_wait(self):
         # Remove test when passing awaitables to asyncio.wait() is removed in 3.14
 
         class ExampleAwaitable:
@@ -3258,26 +3248,25 @@ class WaitTests(test_utils.TestCase):
                 return asyncio.sleep(0).__await__()
 
 
-        with self.assertWarnsRegex(DeprecationWarning, "awaitable objects that are not futures"):
-            self.loop.run_until_complete(
-                asyncio.wait([ExampleAwaitable()]))
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "awaitable objects that are not futures",
+        ):
+            await asyncio.wait([ExampleAwaitable()])
 
-        task = self.loop.create_task(coroutine_function())
+        task = asyncio.create_task(coroutine_function())
         with self.assertWarns(DeprecationWarning), self.assertRaises(TypeError):
-            self.loop.run_until_complete(
-                asyncio.wait([task, ExampleAwaitable(), coroutine_function()]))
+            await asyncio.wait([task, ExampleAwaitable(), coroutine_function()])
 
         # avoid: Task was destroyed but it is pending!
-        self.loop.run_until_complete(task)
+        await task
 
-    def test_wait_supports_iterators(self):
+    async def test_wait_supports_iterators(self):
         with self.assertRaisesRegex(ValueError, "Iterable of .* is empty\."):
-            self.loop.run_until_complete(asyncio.wait(iter(())))
+            await asyncio.wait(iter(()))
 
-        task = self.loop.create_task(coroutine_function())
-        done, pending = self.loop.run_until_complete(
-            asyncio.wait(iter((task,))),
-        )
+        task = asyncio.create_task(coroutine_function())
+        done, pending = await asyncio.wait(iter((task,)))
         self.assertSetEqual(done, {task})
         self.assertSetEqual(pending, set())
 
