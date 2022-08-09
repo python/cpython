@@ -1544,6 +1544,10 @@ Changes in the Python API
   :func:`compile` and other related functions. If invalid positions are detected,
   a :exc:`ValueError` will be raised. (Contributed by Pablo Galindo in :gh:`93351`)
 
+* :c:member:`~PyTypeObject.tp_dictoffset` should be treated as write-only.
+  It can be set to describe C extension clases to the VM, but should be regarded
+  as meaningless when read. To get the pointer to the object's dictionary call
+  :c:func:`PyObject_GenericGetDict` instead.
 
 Build Changes
 =============
