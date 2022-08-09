@@ -36,9 +36,9 @@ The following functions are provided:
    any existing entries.  The return value is suitable for use as the first
    parameter to ``list.insert()`` assuming that *a* is already sorted.
 
-   The returned insertion point *i* partitions the array *a* into two
-   slices such that ``all(elem < x for elem in a[lo : i])`` is true for the
-   left slice and ``all(elem >= x for elem in a[i : hi])`` is true for the
+   The returned insertion point *ip* partitions the array *a* into two
+   slices such that ``all(elem < x for elem in a[lo : ip])`` is true for the
+   left slice and ``all(elem >= x for elem in a[ip : hi])`` is true for the
    right slice.
 
    *key* specifies a :term:`key function` of one argument that is used to
@@ -58,9 +58,9 @@ The following functions are provided:
    Similar to :func:`bisect_left`, but returns an insertion point which comes
    after (to the right of) any existing entries of *x* in *a*.
 
-   The returned insertion point *i* partitions the array *a* into two slices
-   such that ``all(elem <= x for elem in a[lo : i])`` is true for the left slice and
-   ``all(elem > x for elem in a[i : hi])`` is true for the right slice.
+   The returned insertion point *ip* partitions the array *a* into two slices
+   such that ``all(elem <= x for elem in a[lo : ip])`` is true for the left slice and
+   ``all(elem > x for elem in a[ip : hi])`` is true for the right slice.
 
    .. versionchanged:: 3.10
       Added the *key* parameter.
