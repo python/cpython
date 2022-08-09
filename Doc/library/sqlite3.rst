@@ -52,72 +52,80 @@ This document includes four main sections:
 Tutorial
 --------
 
-In this tutorial you will learn the basics of the :mod:`!sqlite3` API
+In this tutorial, you will learn the basics of the :mod:`!sqlite3` API
 by creating an on-disk database :file:`example.db`,
 and executing SQL queries against it.
 A fundamental understanding of database concepts,
-like transactions and cursors, is assumed.
+like `transactions`_ and `cursors`_, is assumed.
 
-Start by using the :func:`sqlite3.connect` function to
-open a database :class:`Connection` to :file:`example.db`;
-SQLite will implicitly create the database file :file:`example`
-in the current working directory, if it does not exist.
-The returned :class:`!Connection` object represents our
-connection to the on-disk SQLite database::
+To start working with an SQLite database,
+you must first open a connection to it.
+Call the :func:`sqlite3.connect` function
+to create a :class:`Connection` to the database :file:`example.db`::
 
    import sqlite3
    con = sqlite3.connect('example.db')
 
-Now, create a :class:`Cursor` object using :meth:`~Connection.cursor`.
-Call its :meth:`~Cursor.execute` method to perform SQL queries::
+SQLite will implicitly create the database file :file:`example.db`
+in the current working directory if it does not exist.
+The returned :class:`Connection` object ``con``
+represents our connection to the on-disk database.
+
+In order to execute SQL statements and fetch results from SQL queries,
+we need to use a database cursor.
+Call the :meth:`~Connection.cursor` method of ``con`` to create
+:class:`Cursor` ``cur``::
 
    cur = con.cursor()
 
-   # Create table, then insert a row of data.
+Now, create a database table and insert a row of data into it
+by calling the :meth:`~Cursor.execute` method of ``cur``::
+
    cur.execute('''CREATE TABLE stocks
                   (date text, trans text, symbol text, qty real, price real)''')
    cur.execute("INSERT INTO stocks VALUES ('2006-01-05','BUY','RHAT',100,35.14)")
 
 The ``INSERT`` statement implicitly opens a transaction
-that needs to be committed before changes are saved in the database.
-For more details, see the :ref:`sqlite3-controlling-transactions` how-to.
-Use the connection object to :meth:`~Connection.commit` the transaction::
+that needs to be committed before changes are saved in the database
+(see :ref:`sqlite3-controlling-transactions` for details).
+Call the :meth:`~Connection.commit` on the connection object
+to commit the transaction::
 
-   con.commit()  # Save the changes.
+   con.commit()
 
-Verify that data has been committed and written to disk:
-close the connection, open a new connection,
-create a new cursor,
-then use a ``SELECT`` query to read from the database::
+Verify that data has been committed and written to disk by
+closing the connection and opening a new one,
+creating a new cursor,
+and then executing a ``SELECT`` query to read from the database::
 
    >>> con.close()
-   >>> con = sqlite3.connect('example.db')
-   >>> cur = con.cursor()
-   >>> res = cur.execute('SELECT count(rowid) FROM stocks')
+   >>> con2 = sqlite3.connect('example.db')
+   >>> cur2 = con2.cursor()
+   >>> res = cur2.execute('SELECT count(rowid) FROM stocks')
    >>> print(res.fetchone())
    (1,)
 
 The result is a one-item :class:`tuple`:
 one row, with one column.
-Now, insert three more rows of data,
-using :meth:`~Cursor.executemany`::
+Now, insert three more rows by calling
+the :meth:`~Cursor.executemany` method on the cursor object::
 
-   >>> data = [
-   ...    ('2006-03-28', 'BUY', 'IBM', 1000, 45.0),
-   ...    ('2006-04-05', 'BUY', 'MSFT', 1000, 72.0),
-   ...    ('2006-04-06', 'SELL', 'IBM', 500, 53.0),
-   ... ]
-   >>> cur.executemany('INSERT INTO stocks VALUES(?, ?, ?, ?, ?)', data)
+   data = [
+       ('2006-03-28', 'BUY', 'IBM', 1000, 45.0),
+       ('2006-04-05', 'BUY', 'MSFT', 1000, 72.0),
+       ('2006-04-06', 'SELL', 'IBM', 500, 53.0),
+   ]
+   cur2.executemany('INSERT INTO stocks VALUES(?, ?, ?, ?, ?)', data)
 
-Notice that we used ``?`` placeholders to bind *data* to the query.
+Notice that we use ``?`` placeholders to bind ``data`` to the query.
 Always use placeholders instead of :ref:`string formatting <tut-formatting>`
 to bind Python values to SQL statements,
 to avoid `SQL injection attacks`_.
-See the :ref:`placeholders how-to <sqlite3-placeholders>` for more details.
+See :ref:`sqlite3-placeholders` for more details.
 
 Now, retrieve the rows by iterating over the result of a ``SELECT`` query::
 
-   >>> for row in cur.execute('SELECT * FROM stocks ORDER BY price'):
+   >>> for row in cur2.execute('SELECT * FROM stocks ORDER BY price'):
    ...     print(row)
 
    ('2006-01-05', 'BUY', 'RHAT', 100, 35.14)
@@ -126,8 +134,11 @@ Now, retrieve the rows by iterating over the result of a ``SELECT`` query::
    ('2006-04-05', 'BUY', 'MSFT', 1000, 72.0)
 
 Each row is a five-item :class:`!tuple`.
-You've now created an SQLite database using the :mod:`!sqlite3` module.
+You've now created an SQLite database using the :mod:`!sqlite3` module,
+inserted data and ran several SQL queries against it.
 
+.. _transactions: https://en.wikipedia.org/wiki/Database_transaction
+.. _cursors: https://en.wikipedia.org/wiki/Cursor_(databases)
 .. _SQL injection attacks: https://en.wikipedia.org/wiki/SQL_injection
 
 
