@@ -202,6 +202,10 @@ class TestPredicates(IsTestBase):
                     gen_coroutine_function_example))))
         self.assertTrue(inspect.isgenerator(gen_coro))
 
+        self.assertFalse(
+            inspect.iscoroutinefunction(unittest.mock.Mock()))
+        self.assertTrue(
+            inspect.iscoroutinefunction(unittest.mock.AsyncMock()))
         self.assertTrue(
             inspect.iscoroutinefunction(coroutine_function_example))
         self.assertTrue(
@@ -211,6 +215,10 @@ class TestPredicates(IsTestBase):
         self.assertTrue(inspect.iscoroutine(coro))
 
         self.assertFalse(
+            inspect.isgeneratorfunction(unittest.mock.Mock()))
+        self.assertFalse(
+            inspect.isgeneratorfunction(unittest.mock.AsyncMock()))
+        self.assertFalse(
             inspect.isgeneratorfunction(coroutine_function_example))
         self.assertFalse(
             inspect.isgeneratorfunction(
@@ -218,6 +226,12 @@ class TestPredicates(IsTestBase):
                     coroutine_function_example))))
         self.assertFalse(inspect.isgenerator(coro))
 
+        self.assertFalse(
+            inspect.isasyncgenfunction(unittest.mock.Mock()))
+        self.assertFalse(
+            inspect.isasyncgenfunction(unittest.mock.AsyncMock()))
+        self.assertFalse(
+            inspect.isasyncgenfunction(coroutine_function_example))
         self.assertTrue(
             inspect.isasyncgenfunction(async_generator_function_example))
         self.assertTrue(

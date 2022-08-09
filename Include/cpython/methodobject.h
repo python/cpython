@@ -31,8 +31,8 @@ typedef struct {
 
 PyAPI_DATA(PyTypeObject) PyCMethod_Type;
 
-#define PyCMethod_CheckExact(op) Py_IS_TYPE(op, &PyCMethod_Type)
-#define PyCMethod_Check(op) PyObject_TypeCheck(op, &PyCMethod_Type)
+#define PyCMethod_CheckExact(op) Py_IS_TYPE((op), &PyCMethod_Type)
+#define PyCMethod_Check(op) PyObject_TypeCheck((op), &PyCMethod_Type)
 
 
 /* Static inline functions for direct access to these values.

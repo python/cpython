@@ -43,6 +43,13 @@ ac_cv_func_symlinkat=no
 ac_cv_func_lchmod=no
 ac_cv_func_lchown=no
 
+# geteuid / getegid are stubs and always return 0 (root). The stub breaks
+# code that assume effective user root has special permissions.
+ac_cv_func_geteuid=no
+ac_cv_func_getegid=no
+ac_cv_func_seteuid=no
+ac_cv_func_setegid=no
+
 # Syscalls not implemented in emscripten
 # [Errno 52] Function not implemented
 ac_cv_func_preadv2=no

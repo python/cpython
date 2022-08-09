@@ -52,6 +52,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_pathconfig.h"    // _Py_DumpPathConfig()
 #include "pycore_pylifecycle.h"   // _Py_SetFileSystemEncoding()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_runtime_init.h"  // _PyUnicode_InitStaticStrings()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "stringlib/eq.h"         // unicode_eq()
@@ -2354,6 +2355,13 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
 
     p = f;
     f++;
+    if (*f == '%') {
+        if (_PyUnicodeWriter_WriteCharInline(writer, '%') < 0)
+            return NULL;
+        f++;
+        return f;
+    }
+
     zeropad = 0;
     if (*f == '0') {
         zeropad = 1;
@@ -2391,14 +2399,6 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
                 f++;
             }
         }
-        if (*f == '%') {
-            /* "%.3%s" => f points to "3" */
-            f--;
-        }
-    }
-    if (*f == '\0') {
-        /* bogus format "%.123" => go backward, f points to "3" */
-        f--;
     }
 
     /* Handle %ld, %lu, %lld and %llu. */
@@ -2422,7 +2422,7 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         ++f;
     }
 
-    if (f[1] == '\0')
+    if (f[0] != '\0' && f[1] == '\0')
         writer->overallocate = 0;
 
     switch (*f) {
@@ -2615,21 +2615,9 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         break;
     }
 
-    case '%':
-        if (_PyUnicodeWriter_WriteCharInline(writer, '%') < 0)
-            return NULL;
-        break;
-
     default:
-        /* if we stumble upon an unknown formatting code, copy the rest
-           of the format string to the output string. (we cannot just
-           skip the code, since there's no way to know what's in the
-           argument list) */
-        len = strlen(p);
-        if (_PyUnicodeWriter_WriteLatin1String(writer, p, len) == -1)
-            return NULL;
-        f = p+len;
-        return f;
+        PyErr_Format(PyExc_SystemError, "invalid format string: %s", p);
+        return NULL;
     }
 
     f++;
@@ -2842,7 +2830,7 @@ PyUnicode_AsWideCharString(PyObject *unicode,
     }
 
     buflen = unicode_get_widechar_size(unicode);
-    buffer = (wchar_t *) PyMem_NEW(wchar_t, (buflen + 1));
+    buffer = (wchar_t *) PyMem_New(wchar_t, (buflen + 1));
     if (buffer == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -9695,41 +9683,48 @@ split(PyObject *self,
     const void *buf1, *buf2;
     Py_ssize_t len1, len2;
     PyObject* out;
+    len1 = PyUnicode_GET_LENGTH(self);
+    kind1 = PyUnicode_KIND(self);
 
-    if (maxcount < 0)
-        maxcount = PY_SSIZE_T_MAX;
-
-    if (substring == NULL)
-        switch (PyUnicode_KIND(self)) {
+    if (substring == NULL) {
+        if (maxcount < 0) {
+            maxcount = (len1 - 1) / 2 + 1;
+        }
+        switch (kind1) {
         case PyUnicode_1BYTE_KIND:
             if (PyUnicode_IS_ASCII(self))
                 return asciilib_split_whitespace(
                     self,  PyUnicode_1BYTE_DATA(self),
-                    PyUnicode_GET_LENGTH(self), maxcount
+                    len1, maxcount
                     );
             else
                 return ucs1lib_split_whitespace(
                     self,  PyUnicode_1BYTE_DATA(self),
-                    PyUnicode_GET_LENGTH(self), maxcount
+                    len1, maxcount
                     );
         case PyUnicode_2BYTE_KIND:
             return ucs2lib_split_whitespace(
                 self,  PyUnicode_2BYTE_DATA(self),
-                PyUnicode_GET_LENGTH(self), maxcount
+                len1, maxcount
                 );
         case PyUnicode_4BYTE_KIND:
             return ucs4lib_split_whitespace(
                 self,  PyUnicode_4BYTE_DATA(self),
-                PyUnicode_GET_LENGTH(self), maxcount
+                len1, maxcount
                 );
         default:
             Py_UNREACHABLE();
         }
+    }
 
-    kind1 = PyUnicode_KIND(self);
     kind2 = PyUnicode_KIND(substring);
-    len1 = PyUnicode_GET_LENGTH(self);
     len2 = PyUnicode_GET_LENGTH(substring);
+    if (maxcount < 0) {
+        // if len2 == 0, it will raise ValueError.
+        maxcount = len2 == 0 ? 0 : (len1 / len2) + 1;
+        // handle expected overflow case: (Py_SSIZE_T_MAX / 1) + 1
+        maxcount = maxcount < 0 ? len1 : maxcount;
+    }
     if (kind1 < kind2 || len1 < len2) {
         out = PyList_New(1);
         if (out == NULL)
@@ -9782,40 +9777,47 @@ rsplit(PyObject *self,
     Py_ssize_t len1, len2;
     PyObject* out;
 
-    if (maxcount < 0)
-        maxcount = PY_SSIZE_T_MAX;
+    len1 = PyUnicode_GET_LENGTH(self);
+    kind1 = PyUnicode_KIND(self);
 
-    if (substring == NULL)
-        switch (PyUnicode_KIND(self)) {
+    if (substring == NULL) {
+        if (maxcount < 0) {
+            maxcount = (len1 - 1) / 2 + 1;
+        }
+        switch (kind1) {
         case PyUnicode_1BYTE_KIND:
             if (PyUnicode_IS_ASCII(self))
                 return asciilib_rsplit_whitespace(
                     self,  PyUnicode_1BYTE_DATA(self),
-                    PyUnicode_GET_LENGTH(self), maxcount
+                    len1, maxcount
                     );
             else
                 return ucs1lib_rsplit_whitespace(
                     self,  PyUnicode_1BYTE_DATA(self),
-                    PyUnicode_GET_LENGTH(self), maxcount
+                    len1, maxcount
                     );
         case PyUnicode_2BYTE_KIND:
             return ucs2lib_rsplit_whitespace(
                 self,  PyUnicode_2BYTE_DATA(self),
-                PyUnicode_GET_LENGTH(self), maxcount
+                len1, maxcount
                 );
         case PyUnicode_4BYTE_KIND:
             return ucs4lib_rsplit_whitespace(
                 self,  PyUnicode_4BYTE_DATA(self),
-                PyUnicode_GET_LENGTH(self), maxcount
+                len1, maxcount
                 );
         default:
             Py_UNREACHABLE();
         }
-
-    kind1 = PyUnicode_KIND(self);
+    }
     kind2 = PyUnicode_KIND(substring);
-    len1 = PyUnicode_GET_LENGTH(self);
     len2 = PyUnicode_GET_LENGTH(substring);
+    if (maxcount < 0) {
+        // if len2 == 0, it will raise ValueError.
+        maxcount = len2 == 0 ? 0 : (len1 / len2) + 1;
+        // handle expected overflow case: (Py_SSIZE_T_MAX / 1) + 1
+        maxcount = maxcount < 0 ? len1 : maxcount;
+    }
     if (kind1 < kind2 || len1 < len2) {
         out = PyList_New(1);
         if (out == NULL)
@@ -14576,6 +14578,14 @@ _PyUnicode_InitGlobalObjects(PyInterpreterState *interp)
         return _PyStatus_OK();
     }
 
+    /* Intern statically allocated string identifiers and deepfreeze strings.
+     * This must be done before any module initialization so that statically
+     * allocated string identifiers are used instead of heap allocated strings.
+     * Deepfreeze uses the interned identifiers if present to save space
+     * else generates them and they are interned to speed up dict lookups.
+    */
+    _PyUnicode_InitStaticStrings();
+
 #ifdef Py_DEBUG
     assert(_PyUnicode_CheckConsistency(&_Py_STR(empty), 1));
 
@@ -14595,13 +14605,13 @@ _PyUnicode_InitTypes(PyInterpreterState *interp)
         return _PyStatus_OK();
     }
 
-    if (PyType_Ready(&EncodingMapType) < 0) {
+    if (_PyStaticType_InitBuiltin(&EncodingMapType) < 0) {
         goto error;
     }
-    if (PyType_Ready(&PyFieldNameIter_Type) < 0) {
+    if (_PyStaticType_InitBuiltin(&PyFieldNameIter_Type) < 0) {
         goto error;
     }
-    if (PyType_Ready(&PyFormatterIter_Type) < 0) {
+    if (_PyStaticType_InitBuiltin(&PyFormatterIter_Type) < 0) {
         goto error;
     }
     return _PyStatus_OK();
