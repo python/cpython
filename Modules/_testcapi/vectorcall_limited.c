@@ -1,3 +1,16 @@
+#include "pyconfig.h"  // Py_TRACE_REFS
+
+#ifdef Py_TRACE_REFS
+
+// Py_TRACE_REFS is incompatible with Limited API
+#include "parts.h"
+int
+_PyTestCapi_Init_VectorcallLimited(PyObject *m) {
+    return 0;
+}
+
+#else
+
 #define Py_LIMITED_API 0x030c0000 // 3.12
 #include "parts.h"
 #include "structmember.h"         // PyMemberDef
@@ -75,3 +88,5 @@ _PyTestCapi_Init_VectorcallLimited(PyObject *m) {
 
     return 0;
 }
+
+#endif // Py_TRACE_REFS
