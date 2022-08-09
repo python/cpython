@@ -3256,7 +3256,9 @@ class WaitTests(unittest.IsolatedAsyncioTestCase):
 
         task = asyncio.create_task(coroutine_function())
         with (
-            self.assertWarns(DeprecationWarning, "awaitable objects that are not futures"),
+            self.assertWarnsRegex(
+                DeprecationWarning, "awaitable objects that are not futures"
+            ),
             self.assertRaises(TypeError),
         ):
             await asyncio.wait([task, ExampleAwaitable(), coroutine_function()])
