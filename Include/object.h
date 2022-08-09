@@ -228,6 +228,11 @@ typedef int (*initproc)(PyObject *, PyObject *, PyObject *);
 typedef PyObject *(*newfunc)(PyTypeObject *, PyObject *, PyObject *);
 typedef PyObject *(*allocfunc)(PyTypeObject *, Py_ssize_t);
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030c0000 // 3.12
+typedef PyObject *(*vectorcallfunc)(PyObject *callable, PyObject *const *args,
+                                    size_t nargsf, PyObject *kwnames);
+#endif
+
 typedef struct{
     int slot;    /* slot id, see below */
     void *pfunc; /* function pointer */
@@ -381,10 +386,12 @@ given type object has a specified feature.
 #define Py_TPFLAGS_BASETYPE (1UL << 10)
 
 /* Set if the type implements the vectorcall protocol (PEP 590) */
-#ifndef Py_LIMITED_API
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030C0000
 #define Py_TPFLAGS_HAVE_VECTORCALL (1UL << 11)
+#ifndef Py_LIMITED_API
 // Backwards compatibility alias for API that was provisional in Python 3.8
 #define _Py_TPFLAGS_HAVE_VECTORCALL Py_TPFLAGS_HAVE_VECTORCALL
+#endif
 #endif
 
 /* Set if the type is 'ready' -- fully initialized */
