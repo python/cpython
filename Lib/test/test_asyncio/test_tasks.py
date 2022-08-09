@@ -3255,10 +3255,7 @@ class WaitTests(test_utils.TestCase):
 
         class ExampleAwaitable:
             def __await__(self):
-                async def _():
-                    return await asyncio.sleep(0)
-
-                return _().__await__()
+                return asyncio.sleep(0).__await__()
 
 
         with self.assertWarns(DeprecationWarning):
