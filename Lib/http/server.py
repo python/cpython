@@ -114,6 +114,14 @@ DEFAULT_ERROR_MESSAGE = """\
     <head>
         <meta charset="utf-8">
         <title>Error response</title>
+        <style type="text/css">
+            @media (prefers-color-scheme: dark) {
+                body {
+                    background-color: #000;
+                    color: #fff;
+                }
+            }
+        </style>
     </head>
     <body>
         <h1>Error response</h1>
