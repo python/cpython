@@ -3255,7 +3255,10 @@ class WaitTests(unittest.IsolatedAsyncioTestCase):
             await asyncio.wait([ExampleAwaitable()])
 
         task = asyncio.create_task(coroutine_function())
-        with self.assertWarns(DeprecationWarning), self.assertRaises(TypeError):
+        with (
+            self.assertWarns(DeprecationWarning, "awaitable objects that are not futures"),
+            self.assertRaises(TypeError),
+        ):
             await asyncio.wait([task, ExampleAwaitable(), coroutine_function()])
 
         # avoid: Task was destroyed but it is pending!
