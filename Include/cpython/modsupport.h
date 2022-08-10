@@ -56,6 +56,7 @@ typedef struct _PyArg_Parser {
     const char * const *keywords;
     const char *fname;
     const char *custom_msg;
+    int len;            /* total number of parameters */
     int pos;            /* number of positional-only arguments */
     int min;            /* minimal number of arguments */
     int max;            /* maximal number of positional arguments */

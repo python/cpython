@@ -1984,7 +1984,8 @@ parser_init(struct _PyArg_Parser *parser)
         assert(parser->kwtuple != NULL);
         return 1;
     }
-    assert(parser->pos == 0 &&
+    assert(parser->len == 0 &&
+           parser->pos == 0 &&
            (parser->format == NULL || parser->fname == NULL) &&
            parser->custom_msg == NULL &&
            parser->min == 0 &&
@@ -2024,6 +2025,7 @@ parser_init(struct _PyArg_Parser *parser)
         }
     }
 
+    parser->len = len;
     parser->pos = pos;
     parser->fname = fname;
     parser->custom_msg = custommsg;
