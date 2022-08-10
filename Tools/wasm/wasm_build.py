@@ -9,7 +9,8 @@ Primary build targets are "emscripten-node-dl" (NodeJS, dynamic linking),
 "emscripten-browser", and "wasi".
 
 Emscripten builds require a recent Emscripten SDK. The tools looks for an
-activated EMSDK environment (". /path/to/emsdk_env.sh").
+activated EMSDK environment (". /path/to/emsdk_env.sh"). System packages
+(Debian, Homebrew) are not supported.
 
 WASI builds require WASI SDK and wasmtime. The tool looks for 'WASI_SDK_PATH'
 and falls back to /opt/wasi-sdk.
