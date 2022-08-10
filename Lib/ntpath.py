@@ -323,8 +323,10 @@ def isreserved(path):
     path = os.fspath(path)
     name = os.fsdecode(basename(path))
     # Trailing spaces and dots are reserved.
+    if name not in ('.', '..') and name.rstrip('. ') != name:
+        return True
     # File streams are reserved (e.g. "filename:stream[:type]").
-    if name.rstrip('. ') != name or ':' in name:
+    if ':' in name:
         return True
     # DOS device names are reserved (e.g. "nul" or "nul .txt"). The rules
     # are complicated and vary across Windows versions (e.g. "../nul" is

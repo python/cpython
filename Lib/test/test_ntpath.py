@@ -824,6 +824,8 @@ class TestNtpath(NtpathTestCase):
 
     def test_isreserved(self):
         self.assertFalse(ntpath.isreserved(''))
+        self.assertFalse(ntpath.isreserved('.'))
+        self.assertFalse(ntpath.isreserved('..'))
         self.assertFalse(ntpath.isreserved('/'))
         self.assertFalse(ntpath.isreserved('/foo/bar'))
         # A name that ends with a space or dot is reserved.
@@ -860,6 +862,8 @@ class TestNtpath(NtpathTestCase):
         self.assertFalse(ntpath.isreserved('c:/NUL/con/baz'))
         # Bytes are supported.
         self.assertFalse(ntpath.isreserved(b''))
+        self.assertFalse(ntpath.isreserved(b'.'))
+        self.assertFalse(ntpath.isreserved(b'..'))
         self.assertFalse(ntpath.isreserved(b'/'))
         self.assertFalse(ntpath.isreserved(b'/foo/bar'))
         self.assertTrue(ntpath.isreserved(b'foo.'))
