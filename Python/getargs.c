@@ -2038,6 +2038,13 @@ parser_init(struct _PyArg_Parser *parser)
     return 1;
 }
 
+static PyObject *
+get_kwtuple(struct _PyArg_Parser *parser)
+{
+    assert(parser->kwtuple != NULL);
+    return parser->kwtuple;
+}
+
 static void
 parser_clear(struct _PyArg_Parser *parser)
 {
@@ -2113,7 +2120,7 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
         return 0;
     }
 
-    kwtuple = parser->kwtuple;
+    kwtuple = get_kwtuple(parser);
     pos = parser->pos;
     len = pos + (int)PyTuple_GET_SIZE(kwtuple);
 
@@ -2345,7 +2352,7 @@ _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
         return NULL;
     }
 
-    kwtuple = parser->kwtuple;
+    kwtuple = get_kwtuple(parser);
     posonly = parser->pos;
     minposonly = Py_MIN(posonly, minpos);
     maxargs = posonly + (int)PyTuple_GET_SIZE(kwtuple);
@@ -2521,7 +2528,7 @@ _PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
         return NULL;
     }
 
-    kwtuple = parser->kwtuple;
+    kwtuple = get_kwtuple(parser);
     posonly = parser->pos;
     minposonly = Py_MIN(posonly, minpos);
     maxargs = posonly + (int)PyTuple_GET_SIZE(kwtuple);
