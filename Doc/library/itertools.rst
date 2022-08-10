@@ -801,9 +801,11 @@ which incur interpreter overhead.
            yield sum(map(operator.mul, kernel, window))
 
    def polynomial_from_roots(roots):
-       'Compute polynomial coefficients from the roots'
-       # polynomial_from_roots([5, -4, 3]) -> [1, -4, -17, 60]
-       # (x - 5) (x + 4) (x - 3) = x³ -4x² -17x + 60
+       """Compute polynomial coefficients from the roots.
+
+          (x - 5) (x + 4) (x - 3)  expands to:   x³ -4x² -17x + 60
+       """
+       # polynomial_from_roots([5, -4, 3]) --> [1, -4, -17, 60]
        roots = list(map(operator.neg, roots))
        return [
            sum(map(math.prod, combinations(roots, k)))
