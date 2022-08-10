@@ -427,8 +427,9 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         self.assertFalse(r.done())
         r.cancel()
-        with self.assertRaises(asyncio.CancelledError):
+        with self.assertRaises(ExceptionGroup) as cm:
             await r
+        self.assertEqual(get_error_types(cm.exception), {ZeroDivisionError})
 
     async def test_taskgroup_16(self):
 
@@ -454,8 +455,9 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         self.assertFalse(r.done())
         r.cancel()
-        with self.assertRaises(asyncio.CancelledError):
+        with self.assertRaises(ExceptionGroup) as cm:
             await r
+        self.assertEqual(get_error_types(cm.exception), {ZeroDivisionError})
 
     async def test_taskgroup_17(self):
         NUM = 0

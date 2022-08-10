@@ -116,10 +116,8 @@ class TaskGroup:
             raise self._base_error
 
         # Propagate CancelledError if there is one, except if there
-        # are other errors and we're not required by uncancel() != 0.
-        # (The latter means we *must* propagate the cancellation.)
-        if (propagate_cancellation_error is not None and
-                (self._parent_cancel_requested or not self._errors)):
+        # are other errors -- those have priority.
+        if propagate_cancellation_error and not self._errors:
             raise propagate_cancellation_error
 
         if et is not None and et is not exceptions.CancelledError:
