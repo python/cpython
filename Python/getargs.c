@@ -1976,12 +1976,7 @@ new_kwtuple(const char * const *keywords, int total, int pos)
 static int
 parser_init(struct _PyArg_Parser *parser)
 {
-    const char * const *keywords;
-    const char *fname, *custommsg;
-    int len, pos, min, max, owned;
-    PyObject *kwtuple;
-
-    keywords = parser->keywords;
+    const char * const *keywords = parser->keywords;
     assert(keywords != NULL);
 
     if (parser->initialized) {
@@ -1994,14 +1989,27 @@ parser_init(struct _PyArg_Parser *parser)
            parser->min == 0 &&
            parser->max == 0);
 
+    int len, pos;
     if (scan_keywords(keywords, &len, &pos) < 0) {
         return 0;
     }
-    if (parser->format && parse_format(parser->format, len, pos,
-                                       &fname, &custommsg, &min, &max) < 0) {
-        return 0;
+
+    const char *fname, *custommsg = NULL;
+    int min = 0, max = 0;
+    if (parser->format) {
+        assert(parser->fname == NULL);
+        if (parse_format(parser->format, len, pos,
+                         &fname, &custommsg, &min, &max) < 0) {
+            return 0;
+        }
     }
-    kwtuple = parser->kwtuple;
+    else {
+        assert(parser->fname != NULL);
+        fname = parser->fname;
+    }
+
+    int owned;
+    PyObject *kwtuple = parser->kwtuple;
     if (kwtuple == NULL) {
         kwtuple = new_kwtuple(keywords, len, pos);
         if (kwtuple == NULL) {
