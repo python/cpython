@@ -1061,10 +1061,10 @@ _PyObject_ComputedDictPointer(PyObject *obj)
 
     assert((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
     dictoffset = tp->tp_dictoffset;
-    assert(dictoffset >= 0);
     if (dictoffset == 0)
         return NULL;
     if (dictoffset < 0) {
+        assert(dictoffset != -1);
         Py_ssize_t tsize = Py_SIZE(obj);
         if (tsize < 0) {
             tsize = -tsize;

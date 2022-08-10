@@ -6583,12 +6583,6 @@ type_ready_dict_offset(PyTypeObject *type)
         }
         type->tp_dictoffset = -1;
     }
-    else if (type->tp_dictoffset < 0) {
-        PyErr_Format(PyExc_TypeError,
-                     "type %s has negative tp_dictoffset",
-                     type->tp_name);
-        return -1;
-    }
     return 0;
 }
 
@@ -6809,10 +6803,10 @@ type_ready_post_checks(PyTypeObject *type)
         }
     }
     else if (type->tp_dictoffset < 0) {
-        PyErr_Format(PyExc_SystemError,
-                     "type %s has negative tp_dictoffset",
-                     type->tp_name);
-        return -1;
+        if (type->tp_dictoffset + type->tp_basicsize <= 0) {
+            PyErr_Format(PyExc_SystemError,
+                         "type %s has a tp_dictoffset that is too small");
+        }
     }
     return 0;
 }
