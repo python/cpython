@@ -134,11 +134,11 @@ import sys
 
 from fractions import Fraction
 from decimal import Decimal
-from itertools import groupby, repeat
+from itertools import count, groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum
 from functools import reduce
-from operator import mul
+from operator import mul, itemgetter
 from collections import Counter, namedtuple, defaultdict
 
 _SQRT2 = sqrt(2.0)
@@ -355,6 +355,25 @@ def _fail_neg(values, errmsg='negative value'):
             raise StatisticsError(errmsg)
         yield x
 
+def _rank(data, /, *, reverse=False) -> list[float]:
+    """Rank order a dataset.
+
+    By default, the lowest value has rank 1.
+    Ties are averaged so that equal values receive the same rank.
+
+    """
+    # Handling of ties matches scipy.stats.mstats.spearmanr
+    val_pos = sorted(zip(data, count()), reverse=reverse)
+    i = 0
+    result = [0] * len(val_pos)
+    for _, g in groupby(val_pos, key=itemgetter(0)):
+        group = list(g)
+        size = len(group)
+        rank = i + (size + 1) / 2
+        for value, orig_pos in group:
+            result[orig_pos] = rank
+        i += size
+    return result
 
 def _integer_sqrt_of_frac_rto(n: int, m: int) -> int:
     """Square root of n/m, rounded to the nearest integer using round-to-odd."""
@@ -988,7 +1007,7 @@ def covariance(x, y, /):
     return sxy / (n - 1)
 
 
-def correlation(x, y, /):
+def correlation(x, y, /, *, ranked=False):
     """Pearson's correlation coefficient
 
     Return the Pearson's correlation coefficient for two inputs. Pearson's
@@ -1004,12 +1023,22 @@ def correlation(x, y, /):
     >>> correlation(x, y)
     -1.0
 
+    If *ranked* is true, computes Spearman's correlation coefficient for
+    two inputs.  The data is replaced by ranks.  Ties are averaged so
+    that equal values receive the same rank.
+
+    Spearman's correlation coefficient is appropriate for ordinal data
+    or for continuous data that doesn't meet the linear proportion
+    requirement for Pearson's correlation coefficient.
     """
     n = len(x)
     if len(y) != n:
         raise StatisticsError('correlation requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('correlation requires at least two data points')
+    if ranked:
+        x = _rank(x)
+        y = _rank(y)
     xbar = fsum(x) / n
     ybar = fsum(y) / n
     sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
