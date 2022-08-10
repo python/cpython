@@ -22,6 +22,7 @@ it was last read.
    encouraged to use the :mod:`selectors` module instead, unless they want
    precise control over the OS-level primitives used.
 
+.. include:: ../includes/wasm-notavail.rst
 
 The module defines the following:
 
