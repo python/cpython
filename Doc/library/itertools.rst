@@ -801,7 +801,7 @@ which incur interpreter overhead.
            yield sum(map(operator.mul, kernel, window))
 
    def polynomial_from_roots(roots):
-       """Compute polynomial coefficients from the roots.
+       """Compute a polynomial's coefficients from its roots.
 
           (x - 5) (x + 4) (x - 3)  expands to:   x³ -4x² -17x + 60
        """
