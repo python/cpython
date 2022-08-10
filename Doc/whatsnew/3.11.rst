@@ -49,13 +49,6 @@ This article explains the new features in Python 3.11, compared to 3.10.
 
 For full details, see the :ref:`changelog <changelog>`.
 
-.. note::
-
-   Prerelease users should be aware that this document is currently in draft
-   form. It will be updated substantially as Python 3.11 moves towards release,
-   so it's worth checking back even after reading earlier versions.
-
-
 Summary -- Release highlights
 =============================
 
@@ -1165,6 +1158,13 @@ contributors are volunteers from the community.
 CPython bytecode changes
 ========================
 
+* The bytecode now contains inline cache entries, which take the form of
+  :opcode:`CACHE` instructions. Many opcodes expect to be followed by an exact
+  number of caches, and instruct the interpreter to skip over them at runtime.
+  Populated caches can look like arbitrary instructions, so great care should be
+  taken when reading or modifying raw, adaptive bytecode containing quickened
+  data.
+
 * Replaced all numeric ``BINARY_*`` and ``INPLACE_*`` instructions with a single
   :opcode:`BINARY_OP` implementation.
 
@@ -1544,6 +1544,10 @@ Changes in the Python API
   :func:`compile` and other related functions. If invalid positions are detected,
   a :exc:`ValueError` will be raised. (Contributed by Pablo Galindo in :gh:`93351`)
 
+* :c:member:`~PyTypeObject.tp_dictoffset` should be treated as write-only.
+  It can be set to describe C extension clases to the VM, but should be regarded
+  as meaningless when read. To get the pointer to the object's dictionary call
+  :c:func:`PyObject_GenericGetDict` instead.
 
 Build Changes
 =============

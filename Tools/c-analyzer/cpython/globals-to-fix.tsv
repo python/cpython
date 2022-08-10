@@ -540,32 +540,6 @@ Python/specialize.c	-	_Py_QuickenedCount	-
 # global objects to fix in builtin modules
 
 #-----------------------
-# modules
-
-Modules/_abc.c	-	_abcmodule	-
-Modules/_codecsmodule.c	-	codecsmodule	-
-Modules/_collectionsmodule.c	-	_collectionsmodule	-
-Modules/_functoolsmodule.c	-	_functools_module	-
-Modules/_io/_iomodule.c	-	_PyIO_Module	-
-Modules/_io/_iomodule.h	-	_PyIO_Module	-
-Modules/_localemodule.c	-	_localemodule	-
-Modules/_sre.c	-	sremodule	-
-Modules/_stat.c	-	statmodule	-
-Modules/_threadmodule.c	-	threadmodule	-
-Modules/_tracemalloc.c	-	module_def	-
-Modules/_weakref.c	-	weakrefmodule	-
-Modules/atexitmodule.c	-	atexitmodule	-
-Modules/errnomodule.c	-	errnomodule	-
-Modules/faulthandler.c	-	module_def	-
-Modules/gcmodule.c	-	gcmodule	-
-Modules/itertoolsmodule.c	-	itertoolsmodule	-
-Modules/posixmodule.c	-	posixmodule	-
-Modules/pwdmodule.c	-	pwdmodule	-
-Modules/signalmodule.c	-	signalmodule	-
-Modules/symtablemodule.c	-	symtablemodule	-
-Modules/timemodule.c	-	timemodule	-
-
-#-----------------------
 # static types
 
 Modules/_collectionsmodule.c	-	defdict_type	-
