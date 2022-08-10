@@ -6851,8 +6851,6 @@ if test "$cross_compiling" = yes; then
 fi
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking HOSTRUNNER" >&5
-$as_echo_n "checking HOSTRUNNER... " >&6; }
 if test -z "$HOSTRUNNER"
 then
   case $ac_sys_system/$ac_sys_emscripten_target in #(
@@ -7019,6 +7017,8 @@ fi
 esac
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking HOSTRUNNER" >&5
+$as_echo_n "checking HOSTRUNNER... " >&6; }
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HOSTRUNNER" >&5
 $as_echo "$HOSTRUNNER" >&6; }
 

@@ -8,8 +8,8 @@
 Primary build targets are "emscripten-node-dl" (NodeJS, dynamic linking),
 "emscripten-browser", and "wasi".
 
-Emscripten builds require Emscripten SDK. The tools looks for 'EMSCRIPTEN'
-env var and falls back to EMSDK installed at /opt/emsdk.
+Emscripten builds require a recent Emscripten SDK. The tools looks for an
+activated EMSDK environment (". /path/to/emsdk_env.sh").
 
 WASI builds require WASI SDK and wasmtime. The tool looks for 'WASI_SDK_PATH'
 and falls back to /opt/wasi-sdk.
@@ -35,18 +35,20 @@ HAS_CCACHE = shutil.which("ccache") is not None
 
 # path to WASI-SDK root
 WASI_SDK_PATH = pathlib.Path(os.environ.get("WASI_SDK_PATH", "/opt/wasi-sdk"))
-# path to Emscripten directory (upstream/emscripten subdirectory in the EMSDK)
-EMSCRIPTEN_PATH = pathlib.Path(os.environ.get("EMSCRIPTEN", "/opt/emsdk/upstream/emscripten"))
+
+# path to Emscripten SDK config file.
+# auto-detect's EMSDK in /opt/emsdk without ". emsdk_env.sh".
+EM_CONFIG = pathlib.Path(os.environ.setdefault("EM_CONFIG", "/opt/emsdk/.emscripten"))
+# 3.1.16 has broken utime()
+EMSDK_MIN_VERSION = (3, 1, 17)
+_MISSING = pathlib.PurePath("MISSING")
 
 # WASM_WEBSERVER = WASMTOOLS / "wasmwebserver.py"
 
 INSTALL_EMSDK = """
 wasm32-emscripten builds need Emscripten SDK. Please follow instructions at
 https://emscripten.org/docs/getting_started/downloads.html how to install
-Emscripten tp "/opt/emsdk". Alternatively you can install the SDK in a
-different location and set the environment variable
-EMSCRIPTEN=.../upstream/emscripten (the directory with emcc and
-emconfigure scripts), e.g. with ". emsdk_env.sh".
+Emscripten and how to activate the SDK with ". /path/to/emsdk_env.sh".
 """
 
 INSTALL_WASI_SDK = """
@@ -61,6 +63,26 @@ INSTALL_WASMTIME = """
 wasm32-wasi tests require wasmtime on PATH. Please follow instructions at
 https://wasmtime.dev/ to install wasmtime.
 """
+
+
+def get_emscripten_root(emconfig: pathlib.Path = EM_CONFIG) -> pathlib.Path:
+    """Parse EM_CONFIG file and lookup EMSCRIPTEN_ROOT
+
+    The ".emscripten" config file is a Python snippet that uses "EM_CONFIG"
+    environment variable. EMSCRIPTEN_ROOT is the "upstream/emscripten"
+    subdirectory with tools like "emconfigure".
+    """
+    if not emconfig.exists():
+        return _MISSING
+    with open(emconfig, encoding="utf-8") as f:
+        code = f.read()
+    # EM_CONFIG file is a Python snippet
+    local = {}
+    exec(code, globals(), local)
+    return pathlib.Path(local["EMSCRIPTEN_ROOT"])
+
+
+EMSCRIPTEN_ROOT = get_emscripten_root()
 
 
 class MissingDependency(ValueError):
@@ -107,17 +129,34 @@ NATIVE = Platform(
 
 
 def _check_emscripten():
-    emconfigure = EMSCRIPTEN_PATH / "emconfigure"
+    if EMSCRIPTEN_ROOT is _MISSING:
+        raise MissingDependency("Emscripten SDK EM_CONFIG", INSTALL_EMSDK)
+    # sanity check
+    emconfigure = EMSCRIPTEN.configure_wrapper
     if not emconfigure.exists():
         raise MissingDependency(emconfigure, INSTALL_EMSDK)
+    # version check
+    version_txt = EMSCRIPTEN_ROOT / "emscripten-version.txt"
+    if not version_txt.exists():
+        raise MissingDependency(version_txt, INSTALL_EMSDK)
+    with open(version_txt) as f:
+        version = f.read().strip().strip('"')
+    version_tuple = tuple(int(v) for v in version.split("."))
+    if version_tuple < EMSDK_MIN_VERSION:
+        raise MissingDependency(
+            version_txt,
+            f"Emscripten SDK {version} in '{EMSCRIPTEN_ROOT}' is older than "
+            "minimum required version "
+            f"{'.'.join(str(v) for v in EMSDK_MIN_VERSION)}.",
+        )
 
 
 EMSCRIPTEN = Platform(
     "emscripten",
     pythonexe="python.js",
     config_site=WASMTOOLS / "config.site-wasm32-emscripten",
-    configure_wrapper=EMSCRIPTEN_PATH / "emconfigure",
-    make_wrapper=EMSCRIPTEN_PATH / "emmake",
+    configure_wrapper=EMSCRIPTEN_ROOT / "emconfigure",
+    make_wrapper=EMSCRIPTEN_ROOT / "emmake",
     environ={"EM_COMPILER_WRAPPER": "ccache"} if HAS_CCACHE else None,
     check=_check_emscripten,
 )
@@ -434,7 +473,7 @@ def main():
     try:
         builder.host.platform.check()
     except MissingDependency as e:
-        parser.exit(2, str(e))
+        parser.exit(2, str(e) + "\n")
 
     # hack for WASI
     if builder.host.is_wasi and not SETUP_LOCAL.exists():
