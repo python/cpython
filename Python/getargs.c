@@ -2009,17 +2009,19 @@ parser_init(struct _PyArg_Parser *parser)
         fname = parser->fname;
     }
 
-    int owned;
+    int owned = 0;
     PyObject *kwtuple = parser->kwtuple;
     if (kwtuple == NULL) {
-        kwtuple = new_kwtuple(keywords, len, pos);
-        if (kwtuple == NULL) {
-            return 0;
+        if (len == pos) {
+            kwtuple = (PyObject *)&_Py_SINGLETON(tuple_empty);
         }
-        owned = 1;
-    }
-    else {
-        owned = 0;
+        else {
+            kwtuple = new_kwtuple(keywords, len, pos);
+            if (kwtuple == NULL) {
+                return 0;
+            }
+            owned = 1;
+        }
     }
 
     parser->pos = pos;
