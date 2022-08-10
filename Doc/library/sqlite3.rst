@@ -49,7 +49,7 @@ This document includes four main sections:
 
 .. We use the following practises for SQL code:
    - UPPERCASE for keywords
-   - lowercase for schema
+   - SnakeCase for schema
    - single quotes for string literals
    - singular for table names
    - if needed, use double quotes for table and column names
@@ -60,8 +60,8 @@ Tutorial
 --------
 
 In this tutorial, you will learn the basics of the :mod:`!sqlite3` API
-by creating an on-disk database :file:`tutorial.db`
-for managing Python release metadata.
+by creating an on-disk movie database :file:`tutorial.db`
+an filling it with meta-data about Monty Python movies.
 A fundamental understanding of database concepts,
 like `transactions`_ and `cursors`_, is assumed.
 
@@ -85,13 +85,38 @@ Call :meth:`~Connection.cursor` on ``con`` to create
 
    cur = con.cursor()
 
-Now, create a database table ``release`` with columns for version
-number and release date, and inserting the data for Python 3.0.
-Execute the SQL statements
+Now, create a database table ``movie`` with columns for title,
+year released, and `IMDB`_ review score.
+The `flexible typing`_ feature of SQLite makes typenames optional;
+for simplicity, just use column names in the table declaration.
+Execute the SQL statement
 by calling :meth:`~Cursor.execute` on ``cur``::
 
-   cur.execute("""CREATE TABLE release(version, releasedate)""")
-   cur.execute("INSERT INTO release VALUES('3.0', '2008-12-03')")
+   cur.execute("CREATE TABLE Movie(Title, Year, Score)")
+
+Verify that the table has been created by running a query against it.
+Execute the query by calling :meth:`~Cursor.execute` on ``cur``,
+store the result in a variable ``res``,
+and call :meth:`~Cursor.fetchone` on ``res`` to fetch the first
+(and only) row from the query::
+
+   >>> res = cur.execute("SELECT count(rowid) FROM Movie")
+   >>> res.fetchone()
+   (0,)
+
+The result is a one-item :class:`tuple`:
+one row, with one column.
+It correctly shows a row count of zero.
+
+Now, add two rows of data supplied as SQL literals
+by executing an ``INSERT`` statement,
+once again by calling :meth:`~Cursor.execute` on ``cur``::
+
+   cur.execute("""
+       INSERT INTO Movie VALUES
+           ('Monty Python and the Holy Grail', 1975, 8.2),
+           ('And Now for Something Completely Different', 1971, 7.5)
+   """)
 
 The ``INSERT`` statement implicitly opens a transaction,
 which needs to be committed before changes are saved in the database
@@ -101,6 +126,38 @@ to commit the transaction::
 
    con.commit()
 
+Execute a query to verify that the data was inserted correctly.
+Use the now familiar :meth:`~Cursor.execute` method on ``con``,
+store the result in ``res``,
+and call :meth:`~Cursor.fetchall` on ``res`` to fetch all rows::
+
+   >>> res = cur.execute("SELECT Score FROM Movie")
+   >>> res.fetchall()
+   [(8.2,), (7.5,)]
+
+The result is a :class:`list` with two rows of data,
+each a one-item :class:`tuple`,
+the single item representing the column queried.
+
+Now, insert three more rows by calling
+:meth:`~Cursor.executemany` on the cursor object,
+once again committing the transaction by calling :meth:`~Connection.commit`
+on the connection object::
+
+   data = [
+       ("Monty Python Live at the Hollywood Bowl", 1982, 7.9),
+       ("Monty Python's The Meaning of Life", 1983, 7.5),
+       ("Monty Python's Life of Brian", 1979, 8.0),
+   ]
+   cur.executemany("INSERT INTO Movie VALUES(?, ?, ?)", data)
+   con.commit()
+
+Notice that ``?`` placeholders are used to bind ``data`` to the query.
+Always use placeholders instead of :ref:`string formatting <tut-formatting>`
+to bind Python values to SQL statements,
+to avoid `SQL injection attacks`_.
+See :ref:`sqlite3-placeholders` for more details.
+
 Verify that data has been committed and written to disk by
 closing the connection and opening a new one,
 creating a new cursor,
@@ -109,44 +166,29 @@ and then executing a ``SELECT`` query to read from the database::
    >>> con.close()
    >>> con2 = sqlite3.connect("tutorial.db")
    >>> cur2 = con2.cursor()
-   >>> res = cur2.execute("SELECT count(rowid) FROM release")
-   >>> print(res.fetchone())
-   (1,)
 
-The result is a one-item :class:`tuple`:
-one row, with one column.
-Now, insert three more rows by calling
-:meth:`~Cursor.executemany` on the cursor object::
+This time, retrieve the rows by iterating over the result
+of the ``SELECT`` query::
 
-   data = [
-       ("2.0", "2000-10-16"),
-       ("1.0", "1994-01-26"),
-   ]
-   cur2.executemany("INSERT INTO release VALUES(?, ?)", data)
-
-Notice that ``?`` placeholders are used to bind ``data`` to the query.
-Always use placeholders instead of :ref:`string formatting <tut-formatting>`
-to bind Python values to SQL statements,
-to avoid `SQL injection attacks`_.
-See :ref:`sqlite3-placeholders` for more details.
-
-Now, retrieve the rows by iterating over the result of a ``SELECT`` query::
-
-   >>> for row in cur2.execute("SELECT * FROM release ORDER BY version"):
+   >>> for row in cur2.execute("SELECT Year, Title FROM Movie ORDER BY Year"):
    ...     print(row)
+   ...
+   (1971, "And Now for Something Completely Different")
+   (1975, "Monty Python and the Holy Grail")
+   (1979, "Monty Python's Life of Brian")
+   (1982, "Monty Python Live at the Hollywood Bowl")
+   (1983, "Monty Python's The Meaning of Life")
 
-   ('1.0', '1994-01-26')
-   ('2.0', '2000-10-16')
-   ('3.0', '2008-12-03')
-
-Each row is a two-item :class:`!tuple`.
+Each row is now a two-item :class:`!tuple`.
 
 You've now created an SQLite database using the :mod:`!sqlite3` module,
 inserted data and ran several SQL queries against it.
 
-.. _transactions: https://en.wikipedia.org/wiki/Database_transaction
-.. _cursors: https://en.wikipedia.org/wiki/Cursor_(databases)
+.. _IMDB: https://www.imdb.com/
 .. _SQL injection attacks: https://en.wikipedia.org/wiki/SQL_injection
+.. _cursors: https://en.wikipedia.org/wiki/Cursor_(databases)
+.. _flexible typing: https://www.sqlite.org/flextypegood.html
+.. _transactions: https://en.wikipedia.org/wiki/Database_transaction
 
 
 .. _sqlite3-reference:
