@@ -365,6 +365,21 @@ create_type_from_repeated_slots(PyObject *self, PyObject *variant_obj)
 }
 
 
+
+static PyObject *
+make_immutable_type_with_base(PyObject *self, PyObject *base)
+{
+    assert(PyType_Check(base));
+    PyType_Spec ImmutableSubclass_spec = {
+        .name = "ImmutableSubclass",
+        .basicsize = (int)((PyTypeObject*)base)->tp_basicsize,
+        .slots = empty_type_slots,
+        .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
+    };
+    return PyType_FromSpecWithBases(&ImmutableSubclass_spec, base);
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"pytype_fromspec_meta",    pytype_fromspec_meta,            METH_O},
     {"test_type_from_ephemeral_spec", test_type_from_ephemeral_spec, METH_NOARGS},
@@ -375,6 +390,7 @@ static PyMethodDef TestMethods[] = {
     {"test_from_spec_invalid_metatype_inheritance",
      test_from_spec_invalid_metatype_inheritance,
      METH_NOARGS},
+    {"make_immutable_type_with_base", make_immutable_type_with_base, METH_O},
     {NULL},
 };
 

@@ -155,7 +155,7 @@ up different products and import some of the bugs and patches from
 SourceForge.  Four different trackers were examined: `Jira
 <https://www.atlassian.com/software/jira/>`__,
 `Launchpad <https://launchpad.net/>`__,
-`Roundup <http://roundup.sourceforge.net/>`__, and
+`Roundup <https://roundup.sourceforge.io/>`__, and
 `Trac <https://trac.edgewall.org/>`__.
 The committee eventually settled on Jira
 and Roundup as the two candidates.  Jira is a commercial product that
@@ -187,7 +187,7 @@ other projects wishing to move from SourceForge to Roundup.
   https://bugs.jython.org:
     The Jython bug tracker.
 
-  http://roundup.sourceforge.net/
+  https://roundup.sourceforge.io/
     Roundup downloads and documentation.
 
   https://svn.python.org/view/tracker/importer/
@@ -238,7 +238,7 @@ have adopted Sphinx as their documentation tool.
    `Sphinx <http://sphinx-doc.org/>`__
      Documentation and code for the Sphinx toolchain.
 
-   `Docutils <http://docutils.sourceforge.net>`__
+   `Docutils <https://docutils.sourceforge.io>`__
      The underlying reStructuredText parser and toolset.
 
 
