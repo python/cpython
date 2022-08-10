@@ -1312,18 +1312,21 @@ subtype_traverse(PyObject *self, visitproc visit, void *arg)
         assert(base);
     }
 
-    if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        if ((base->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
+    if (type->tp_dictoffset != base->tp_dictoffset) {
+        assert(base->tp_dictoffset == 0);
+        if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
+            assert(type->tp_dictoffset == -1);
             int err = _PyObject_VisitManagedDict(self, visit, arg);
             if (err) {
                 return err;
             }
         }
-    }
-    else if (type->tp_dictoffset != base->tp_dictoffset) {
-        PyObject **dictptr = _PyObject_ComputedDictPointer(self);
-        if (dictptr && *dictptr)
-            Py_VISIT(*dictptr);
+        else {
+            PyObject **dictptr = _PyObject_ComputedDictPointer(self);
+            if (dictptr && *dictptr) {
+                Py_VISIT(*dictptr);
+            }
+        }
     }
 
     if (type->tp_flags & Py_TPFLAGS_HEAPTYPE
@@ -3089,20 +3092,15 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type)
         }
     }
 
-    if (ctx->add_dict && ctx->base->tp_itemsize) {
-        type->tp_dictoffset = -(long)sizeof(PyObject *);
-        slotoffset += sizeof(PyObject *);
-    }
-
     if (ctx->add_weak) {
         assert(!ctx->base->tp_itemsize);
         type->tp_weaklistoffset = slotoffset;
         slotoffset += sizeof(PyObject *);
     }
-    if (ctx->add_dict && ctx->base->tp_itemsize == 0) {
+    if (ctx->add_dict) {
         assert((type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
         type->tp_flags |= Py_TPFLAGS_MANAGED_DICT;
-        type->tp_dictoffset = -slotoffset - (Py_ssize_t)sizeof(PyObject *)*3;
+        type->tp_dictoffset = -1;
     }
 
     type->tp_basicsize = slotoffset;
@@ -6576,15 +6574,20 @@ static int
 type_ready_dict_offset(PyTypeObject *type)
 {
     if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        if (type->tp_dictoffset > 0) {
+        if (type->tp_dictoffset > 0 || type->tp_dictoffset < -1) {
             PyErr_Format(PyExc_TypeError,
                         "type %s has the Py_TPFLAGS_MANAGED_DICT flag "
-                        "but tp_dictoffset is positive",
+                        "but tp_dictoffset is set",
                         type->tp_name);
             return -1;
         }
-        Py_ssize_t offset = -type->tp_basicsize - sizeof(PyObject *)*3;
-        type->tp_dictoffset = offset;
+        type->tp_dictoffset = -1;
+    }
+    else if (type->tp_dictoffset < 0) {
+        PyErr_Format(PyExc_TypeError,
+                     "type %s has negative tp_dictoffset",
+                     type->tp_name);
+        return -1;
     }
     return 0;
 }
@@ -6797,22 +6800,19 @@ type_ready_post_checks(PyTypeObject *type)
         return -1;
     }
     if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        if (type->tp_itemsize != 0) {
-            PyErr_Format(PyExc_SystemError,
-                        "type %s has the Py_TPFLAGS_MANAGED_DICT flag "
-                        "but is variable sized",
-                        type->tp_name);
-            return -1;
-        }
-        Py_ssize_t size = type->tp_basicsize;
-        if (type->tp_dictoffset != -size - (Py_ssize_t)sizeof(PyObject *)*3) {
+        if (type->tp_dictoffset != -1) {
             PyErr_Format(PyExc_SystemError,
                         "type %s has the Py_TPFLAGS_MANAGED_DICT flag "
                         "but tp_dictoffset is set to incompatible value",
                         type->tp_name);
-            assert(0);
             return -1;
         }
+    }
+    else if (type->tp_dictoffset < 0) {
+        PyErr_Format(PyExc_SystemError,
+                     "type %s has negative tp_dictoffset",
+                     type->tp_name);
+        return -1;
     }
     return 0;
 }

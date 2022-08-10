@@ -5421,7 +5421,6 @@ clear_managed_dict(PyObject *self, PyObject *obj)
     Py_RETURN_NONE;
 }
 
-
 static PyObject *
 test_macros(PyObject *self, PyObject *Py_UNUSED(args))
 {

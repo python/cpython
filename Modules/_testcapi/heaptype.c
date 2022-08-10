@@ -800,27 +800,6 @@ static PyType_Spec  HeapCTypeWithManagedDict_spec = {
     HeapCTypeWithManagedDict_slots
 };
 
-static struct PyMemberDef heapctypewithnegativedict_members[] = {
-    {"dictobj", T_OBJECT, offsetof(HeapCTypeWithDictObject, dict)},
-    {"__dictoffset__", T_PYSSIZET, -(Py_ssize_t)sizeof(void*), READONLY},
-    {NULL} /* Sentinel */
-};
-
-static PyType_Slot HeapCTypeWithNegativeDict_slots[] = {
-    {Py_tp_members, heapctypewithnegativedict_members},
-    {Py_tp_getset, heapctypewithdict_getsetlist},
-    {Py_tp_dealloc, heapctypewithdict_dealloc},
-    {0, 0},
-};
-
-static PyType_Spec HeapCTypeWithNegativeDict_spec = {
-    "_testcapi.HeapCTypeWithNegativeDict",
-    sizeof(HeapCTypeWithDictObject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    HeapCTypeWithNegativeDict_slots
-};
-
 typedef struct {
     PyObject_HEAD
     PyObject *weakreflist;
@@ -995,12 +974,6 @@ _PyTestCapi_Init_Heaptype(PyObject *m) {
         return -1;
     }
     PyModule_AddObject(m, "HeapCTypeWithDict2", HeapCTypeWithDict2);
-
-    PyObject *HeapCTypeWithNegativeDict = PyType_FromSpec(&HeapCTypeWithNegativeDict_spec);
-    if (HeapCTypeWithNegativeDict == NULL) {
-        return -1;
-    }
-    PyModule_AddObject(m, "HeapCTypeWithNegativeDict", HeapCTypeWithNegativeDict);
 
     PyObject *HeapCTypeWithManagedDict = PyType_FromSpec(&HeapCTypeWithManagedDict_spec);
     if (HeapCTypeWithManagedDict == NULL) {
