@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#ifdef Py_BUILD_CORE
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_runtime.h"       // _Py_ID()
 #endif
@@ -68,14 +68,14 @@ _dbm_dbm_get(dbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -136,14 +136,14 @@ _dbm_dbm_setdefault(dbmobject *self, PyTypeObject *cls, PyObject *const *args, P
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -244,4 +244,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2d4ad4cbe0f9587b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5a1de231d91123d7 input=a9049054013a1b77]*/

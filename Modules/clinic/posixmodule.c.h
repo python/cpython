@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#ifdef Py_BUILD_CORE
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_runtime.h"       // _Py_ID()
 #endif
@@ -46,14 +46,14 @@ os_stat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     #define NUM_KEYWORDS 3
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -138,14 +138,14 @@ os_lstat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -244,14 +244,14 @@ os_access(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     #define NUM_KEYWORDS 5
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -414,14 +414,14 @@ os_chdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -489,14 +489,14 @@ os_fchdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -579,14 +579,14 @@ os_chmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     #define NUM_KEYWORDS 4
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -677,14 +677,14 @@ os_fchmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -757,14 +757,14 @@ os_lchmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -843,14 +843,14 @@ os_chflags(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     #define NUM_KEYWORDS 3
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -936,14 +936,14 @@ os_lchflags(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -1016,14 +1016,14 @@ os_chroot(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -1090,14 +1090,14 @@ os_fsync(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -1183,14 +1183,14 @@ os_fdatasync(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -1279,14 +1279,14 @@ os_chown(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     #define NUM_KEYWORDS 5
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -1382,14 +1382,14 @@ os_fchown(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     #define NUM_KEYWORDS 3
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -1465,14 +1465,14 @@ os_lchown(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     #define NUM_KEYWORDS 3
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -1595,14 +1595,14 @@ os_link(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     #define NUM_KEYWORDS 5
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -1712,14 +1712,14 @@ os_listdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -1856,14 +1856,14 @@ os__getvolumepathname(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -1930,14 +1930,14 @@ os__path_splitroot(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -2002,14 +2002,14 @@ os__path_normpath(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -2074,14 +2074,14 @@ os_mkdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     #define NUM_KEYWORDS 3
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -2201,14 +2201,14 @@ os_getpriority(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -2278,14 +2278,14 @@ os_setpriority(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     #define NUM_KEYWORDS 3
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -2365,14 +2365,14 @@ os_rename(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     #define NUM_KEYWORDS 4
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -2466,14 +2466,14 @@ os_replace(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     #define NUM_KEYWORDS 4
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -2565,14 +2565,14 @@ os_rmdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -2646,14 +2646,14 @@ os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -2730,14 +2730,14 @@ os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -2844,14 +2844,14 @@ os_unlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -2928,14 +2928,14 @@ os_remove(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -3056,14 +3056,14 @@ os_utime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     #define NUM_KEYWORDS 5
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -3163,14 +3163,14 @@ os__exit(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -3284,14 +3284,14 @@ os_execve(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     #define NUM_KEYWORDS 3
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -3389,14 +3389,14 @@ os_posix_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     #define NUM_KEYWORDS 10
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -3549,14 +3549,14 @@ os_posix_spawnp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     #define NUM_KEYWORDS 10
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -3802,14 +3802,14 @@ os_register_at_fork(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     #define NUM_KEYWORDS 3
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -3938,14 +3938,14 @@ os_sched_get_priority_max(PyObject *module, PyObject *const *args, Py_ssize_t na
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -4010,14 +4010,14 @@ os_sched_get_priority_min(PyObject *module, PyObject *const *args, Py_ssize_t na
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -4115,14 +4115,14 @@ os_sched_param(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -4817,14 +4817,14 @@ os_getpgid(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -5311,14 +5311,14 @@ os_wait3(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -5386,14 +5386,14 @@ os_wait4(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -5603,14 +5603,14 @@ os_pidfd_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -5677,14 +5677,14 @@ os_readlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -5771,14 +5771,14 @@ os_symlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     #define NUM_KEYWORDS 4
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -6054,14 +6054,14 @@ os_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     #define NUM_KEYWORDS 4
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -6157,14 +6157,14 @@ os_close(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -6296,14 +6296,14 @@ os_dup2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     #define NUM_KEYWORDS 3
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -6758,14 +6758,14 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     #define NUM_KEYWORDS 7
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -6870,14 +6870,14 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     #define NUM_KEYWORDS 7
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -6989,14 +6989,14 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     #define NUM_KEYWORDS 4
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -7127,14 +7127,14 @@ os_fstat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -7489,14 +7489,14 @@ os_copy_file_range(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     #define NUM_KEYWORDS 5
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -7613,14 +7613,14 @@ os_splice(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     #define NUM_KEYWORDS 6
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -7731,14 +7731,14 @@ os_mkfifo(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     #define NUM_KEYWORDS 3
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -7841,14 +7841,14 @@ os_mknod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     #define NUM_KEYWORDS 4
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -8106,14 +8106,14 @@ os_truncate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -8517,14 +8517,14 @@ os_WIFCONTINUED(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -8594,14 +8594,14 @@ os_WIFSTOPPED(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -8671,14 +8671,14 @@ os_WIFSIGNALED(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -8748,14 +8748,14 @@ os_WIFEXITED(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -8825,14 +8825,14 @@ os_WEXITSTATUS(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -8902,14 +8902,14 @@ os_WTERMSIG(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -8979,14 +8979,14 @@ os_WSTOPSIG(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -9094,14 +9094,14 @@ os_statvfs(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -9168,14 +9168,14 @@ os__getdiskusage(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -9291,14 +9291,14 @@ os_pathconf(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -9490,14 +9490,14 @@ os_startfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     #define NUM_KEYWORDS 5
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -9644,14 +9644,14 @@ os_device_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -9848,14 +9848,14 @@ os_getxattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     #define NUM_KEYWORDS 3
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -9945,14 +9945,14 @@ os_setxattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     #define NUM_KEYWORDS 5
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -10067,14 +10067,14 @@ os_removexattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     #define NUM_KEYWORDS 3
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -10163,14 +10163,14 @@ os_listxattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -10291,14 +10291,14 @@ os_memfd_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -10375,14 +10375,14 @@ os_eventfd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -10456,14 +10456,14 @@ os_eventfd_read(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -10527,14 +10527,14 @@ os_eventfd_write(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -10927,14 +10927,14 @@ os_DirEntry_stat(DirEntry *self, PyTypeObject *defining_class, PyObject *const *
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -11001,14 +11001,14 @@ os_DirEntry_is_dir(DirEntry *self, PyTypeObject *defining_class, PyObject *const
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -11080,14 +11080,14 @@ os_DirEntry_is_file(DirEntry *self, PyTypeObject *defining_class, PyObject *cons
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -11200,14 +11200,14 @@ os_scandir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -11279,14 +11279,14 @@ os_fspath(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -11346,14 +11346,14 @@ os_getrandom(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -11443,14 +11443,14 @@ os__add_dll_directory(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -11521,14 +11521,14 @@ os__remove_dll_directory(PyObject *module, PyObject *const *args, Py_ssize_t nar
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -11602,14 +11602,14 @@ os_waitstatus_to_exitcode(PyObject *module, PyObject *const *args, Py_ssize_t na
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -12237,4 +12237,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=3ef512db1b497a7a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=121f02e045a6b629 input=a9049054013a1b77]*/

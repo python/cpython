@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#ifdef Py_BUILD_CORE
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_runtime.h"       // _Py_ID()
 #endif
@@ -177,14 +177,14 @@ _elementtree_Element_find(ElementObject *self, PyObject *const *args, Py_ssize_t
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -250,14 +250,14 @@ _elementtree_Element_findtext(ElementObject *self, PyObject *const *args, Py_ssi
     #define NUM_KEYWORDS 3
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -329,14 +329,14 @@ _elementtree_Element_findall(ElementObject *self, PyObject *const *args, Py_ssiz
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -401,14 +401,14 @@ _elementtree_Element_iterfind(ElementObject *self, PyObject *const *args, Py_ssi
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -473,14 +473,14 @@ _elementtree_Element_get(ElementObject *self, PyObject *const *args, Py_ssize_t 
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -544,14 +544,14 @@ _elementtree_Element_iter(ElementObject *self, PyObject *const *args, Py_ssize_t
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -797,14 +797,14 @@ _elementtree_TreeBuilder___init__(PyObject *self, PyObject *args, PyObject *kwar
     #define NUM_KEYWORDS 5
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -1041,14 +1041,14 @@ _elementtree_XMLParser___init__(PyObject *self, PyObject *args, PyObject *kwargs
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -1185,4 +1185,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=504df66c2fc501aa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5b8b1f933908de5f input=a9049054013a1b77]*/

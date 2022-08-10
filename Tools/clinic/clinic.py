@@ -547,14 +547,14 @@ def declare_parser(*, hasformat=False):
         #define NUM_KEYWORDS {num_keywords}
         #if NUM_KEYWORDS == 0
 
-        #  ifdef Py_BUILD_CORE
+        #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
         #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
         #  else
         #    define KWTUPLE NULL
         #  endif
 
         #else  // NUM_KEYWORDS != 0
-        #  ifdef Py_BUILD_CORE
+        #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
         static struct {{
             PyGC_Head _this_is_not_used;
@@ -1785,7 +1785,7 @@ class BlockPrinter:
 
         if core_includes:
             write("\n")
-            write('#ifdef Py_BUILD_CORE\n')
+            write('#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)\n')
             write('#include "pycore_gc.h"            // PyGC_Head\n')
             write('#include "pycore_runtime.h"       // _Py_ID()\n')
             write('#endif\n')

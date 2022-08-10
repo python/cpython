@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#ifdef Py_BUILD_CORE
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_runtime.h"       // _Py_ID()
 #endif
@@ -24,14 +24,14 @@ memoryview(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -110,14 +110,14 @@ memoryview_cast(PyMemoryViewObject *self, PyObject *const *args, Py_ssize_t narg
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -231,14 +231,14 @@ memoryview_tobytes(PyMemoryViewObject *self, PyObject *const *args, Py_ssize_t n
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -336,14 +336,14 @@ memoryview_hex(PyMemoryViewObject *self, PyObject *const *args, Py_ssize_t nargs
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -396,4 +396,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=fcb3ec2c37478ec9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b8f0e4719635195e input=a9049054013a1b77]*/

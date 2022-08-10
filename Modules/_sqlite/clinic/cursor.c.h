@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#ifdef Py_BUILD_CORE
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_runtime.h"       // _Py_ID()
 #endif
@@ -195,14 +195,14 @@ pysqlite_cursor_fetchmany(pysqlite_Cursor *self, PyObject *const *args, Py_ssize
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -328,4 +328,4 @@ pysqlite_cursor_close(pysqlite_Cursor *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_cursor_close_impl(self);
 }
-/*[clinic end generated code: output=c3aa062ac7ec6514 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4689e3f5d4ae05a7 input=a9049054013a1b77]*/

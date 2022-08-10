@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#ifdef Py_BUILD_CORE
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_runtime.h"       // _Py_ID()
 #endif
@@ -58,14 +58,14 @@ _io_FileIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     #define NUM_KEYWORDS 4
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -476,4 +476,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=c672138f03a82c17 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8976aa06d75caf37 input=a9049054013a1b77]*/

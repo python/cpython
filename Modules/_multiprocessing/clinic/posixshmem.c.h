@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#ifdef Py_BUILD_CORE
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_runtime.h"       // _Py_ID()
 #endif
@@ -30,14 +30,14 @@ _posixshmem_shm_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     #define NUM_KEYWORDS 3
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -130,14 +130,14 @@ _posixshmem_shm_unlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -192,4 +192,4 @@ exit:
 #ifndef _POSIXSHMEM_SHM_UNLINK_METHODDEF
     #define _POSIXSHMEM_SHM_UNLINK_METHODDEF
 #endif /* !defined(_POSIXSHMEM_SHM_UNLINK_METHODDEF) */
-/*[clinic end generated code: output=a36ebc1b27795ef3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dae6e051a8e11d3c input=a9049054013a1b77]*/

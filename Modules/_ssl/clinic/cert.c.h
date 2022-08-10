@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#ifdef Py_BUILD_CORE
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_runtime.h"       // _Py_ID()
 #endif
@@ -26,14 +26,14 @@ _ssl_Certificate_public_bytes(PySSLCertificate *self, PyObject *const *args, Py_
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -96,4 +96,4 @@ _ssl_Certificate_get_info(PySSLCertificate *self, PyObject *Py_UNUSED(ignored))
 {
     return _ssl_Certificate_get_info_impl(self);
 }
-/*[clinic end generated code: output=053d41038844a6ee input=a9049054013a1b77]*/
+/*[clinic end generated code: output=27f13d1a19cf03d4 input=a9049054013a1b77]*/

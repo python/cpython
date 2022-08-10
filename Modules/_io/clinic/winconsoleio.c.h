@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#ifdef Py_BUILD_CORE
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_runtime.h"       // _Py_ID()
 #endif
@@ -57,14 +57,14 @@ _io__WindowsConsoleIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     #define NUM_KEYWORDS 4
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -417,4 +417,4 @@ _io__WindowsConsoleIO_isatty(winconsoleio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
     #define _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
 #endif /* !defined(_IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF) */
-/*[clinic end generated code: output=7ce9c272bb2466a8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c0afbe38d6d4bd9c input=a9049054013a1b77]*/

@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#ifdef Py_BUILD_CORE
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_runtime.h"       // _Py_ID()
 #endif
@@ -27,14 +27,14 @@ sys_addaudithook(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -467,14 +467,14 @@ sys_set_coroutine_origin_tracking_depth(PyObject *module, PyObject *const *args,
     #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -1190,4 +1190,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=a414781ef1a86126 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2edb28371788ddd8 input=a9049054013a1b77]*/

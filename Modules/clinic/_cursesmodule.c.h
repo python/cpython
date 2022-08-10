@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#ifdef Py_BUILD_CORE
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_runtime.h"       // _Py_ID()
 #endif
@@ -2687,14 +2687,14 @@ _curses_setupterm(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
     #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
     #  else
     #    define KWTUPLE NULL
     #  endif
 
     #else  // NUM_KEYWORDS != 0
-    #  ifdef Py_BUILD_CORE
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
@@ -4323,4 +4323,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=2e6d3d121a9b63fa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1b80d2343a1432b7 input=a9049054013a1b77]*/
