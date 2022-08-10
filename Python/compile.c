@@ -157,7 +157,10 @@ static struct jump_target_label_ NO_LABEL = {-1};
         return 0; \
     }
 
-#define USE_LABEL(C, LBL) cfg_builder_use_label(CFG_BUILDER(C), LBL)
+#define USE_LABEL(C, LBL) \
+    if (cfg_builder_use_label(CFG_BUILDER(C), LBL) < 0) { \
+        return 0; \
+    }
 
 struct instr {
     int i_opcode;
