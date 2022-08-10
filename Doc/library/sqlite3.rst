@@ -226,7 +226,7 @@ Module functions
    one or more complete SQL statements.
    No syntactic verification or parsing of any kind is performed,
    other than checking that there are no unclosed string literals
-   and the statment is terminated by a semicolon.
+   and the statement is terminated by a semicolon.
 
    This function may be useful during command-line input
    to determine if the entered text seems to form a complete SQL statement,
