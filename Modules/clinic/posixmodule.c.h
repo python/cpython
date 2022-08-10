@@ -3386,7 +3386,7 @@ static PyObject *
 os_posix_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 10
+    #define NUM_KEYWORDS 7
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -3404,7 +3404,7 @@ os_posix_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), &_Py_STR(empty), &_Py_STR(empty), &_Py_ID(file_actions), &_Py_ID(setpgroup), &_Py_ID(resetids), &_Py_ID(setsid), &_Py_ID(setsigmask), &_Py_ID(setsigdef), &_Py_ID(scheduler), },
+        .ob_item = { &_Py_ID(file_actions), &_Py_ID(setpgroup), &_Py_ID(resetids), &_Py_ID(setsid), &_Py_ID(setsigmask), &_Py_ID(setsigdef), &_Py_ID(scheduler), },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -3546,7 +3546,7 @@ static PyObject *
 os_posix_spawnp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 10
+    #define NUM_KEYWORDS 7
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -3564,7 +3564,7 @@ os_posix_spawnp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), &_Py_STR(empty), &_Py_STR(empty), &_Py_ID(file_actions), &_Py_ID(setpgroup), &_Py_ID(resetids), &_Py_ID(setsid), &_Py_ID(setsigmask), &_Py_ID(setsigdef), &_Py_ID(scheduler), },
+        .ob_item = { &_Py_ID(file_actions), &_Py_ID(setpgroup), &_Py_ID(resetids), &_Py_ID(setsid), &_Py_ID(setsigmask), &_Py_ID(setsigdef), &_Py_ID(scheduler), },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -12237,4 +12237,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=138487baeecdf698 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=de9700c5cedd6f55 input=a9049054013a1b77]*/

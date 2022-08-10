@@ -1434,11 +1434,12 @@ class CLanguage(Language):
         template_dict['declarations'] = format_escape("\n".join(data.declarations))
         template_dict['initializers'] = "\n\n".join(data.initializers)
         template_dict['modifications'] = '\n\n'.join(data.modifications)
-        template_dict['keywords_c'] = ' '.join('"' + k + '",' for k in data.keywords)
-        template_dict['num_keywords'] = len(data.keywords)
-        template_dict['keywords_py'] = ' '.join(
-                '&_Py_ID(' + k + '),' if k else '&_Py_STR(empty),'
-                for k in data.keywords)
+        template_dict['keywords_c'] = ' '.join('"' + k + '",'
+                                               for k in data.keywords)
+        keywords = [k for k in data.keywords if k]
+        template_dict['num_keywords'] = len(keywords)
+        template_dict['keywords_py'] = ' '.join('&_Py_ID(' + k + '),'
+                                                for k in keywords)
         template_dict['format_units'] = ''.join(data.format_units)
         template_dict['parse_arguments'] = ', '.join(data.parse_arguments)
         if data.parse_arguments:

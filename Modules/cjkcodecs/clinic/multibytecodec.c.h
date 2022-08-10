@@ -630,7 +630,7 @@ static PyObject *
 _multibytecodec_MultibyteStreamWriter_write(MultibyteStreamWriterObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
+    #define NUM_KEYWORDS 0
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -648,7 +648,7 @@ _multibytecodec_MultibyteStreamWriter_write(MultibyteStreamWriterObject *self, P
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), },
+        .ob_item = {  },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -696,7 +696,7 @@ static PyObject *
 _multibytecodec_MultibyteStreamWriter_writelines(MultibyteStreamWriterObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
+    #define NUM_KEYWORDS 0
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -714,7 +714,7 @@ _multibytecodec_MultibyteStreamWriter_writelines(MultibyteStreamWriterObject *se
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), },
+        .ob_item = {  },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -774,4 +774,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=c52a32f9520fdcb4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1e596a9dfd1c97cd input=a9049054013a1b77]*/

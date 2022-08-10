@@ -27,7 +27,7 @@ static PyObject *
 pyexpat_xmlparser_Parse(xmlparseobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 0
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -45,7 +45,7 @@ pyexpat_xmlparser_Parse(xmlparseobject *self, PyTypeObject *cls, PyObject *const
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), &_Py_STR(empty), },
+        .ob_item = {  },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -102,7 +102,7 @@ static PyObject *
 pyexpat_xmlparser_ParseFile(xmlparseobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
+    #define NUM_KEYWORDS 0
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -120,7 +120,7 @@ pyexpat_xmlparser_ParseFile(xmlparseobject *self, PyTypeObject *cls, PyObject *c
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), },
+        .ob_item = {  },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -247,7 +247,7 @@ static PyObject *
 pyexpat_xmlparser_ExternalEntityParserCreate(xmlparseobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 0
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -265,7 +265,7 @@ pyexpat_xmlparser_ExternalEntityParserCreate(xmlparseobject *self, PyTypeObject 
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), &_Py_STR(empty), },
+        .ob_item = {  },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -387,7 +387,7 @@ static PyObject *
 pyexpat_xmlparser_UseForeignDTD(xmlparseobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
+    #define NUM_KEYWORDS 0
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -405,7 +405,7 @@ pyexpat_xmlparser_UseForeignDTD(xmlparseobject *self, PyTypeObject *cls, PyObjec
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), },
+        .ob_item = {  },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -596,4 +596,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=8d9e11048b0d56ee input=a9049054013a1b77]*/
+/*[clinic end generated code: output=94c16fdc27f36fae input=a9049054013a1b77]*/

@@ -357,7 +357,7 @@ static PyObject *
 unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 3
+    #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -375,7 +375,7 @@ unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), &_Py_ID(buffer), &_Py_ID(offset), },
+        .ob_item = { &_Py_ID(buffer), &_Py_ID(offset), },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -481,4 +481,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=df360e1fc9e87799 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f968221cff7bc5b3 input=a9049054013a1b77]*/

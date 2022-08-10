@@ -15,7 +15,7 @@ static PyObject *
 long_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -33,7 +33,7 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), &_Py_ID(base), },
+        .ob_item = { &_Py_ID(base), },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -496,4 +496,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3700bfa5d2457605 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8c99dba22fab5787 input=a9049054013a1b77]*/

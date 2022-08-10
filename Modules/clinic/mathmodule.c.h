@@ -712,7 +712,7 @@ static PyObject *
 math_prod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -730,7 +730,7 @@ math_prod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), &_Py_ID(start), },
+        .ob_item = { &_Py_ID(start), },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -937,4 +937,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=28c0efbb3dd26af8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9f9605edaac98c6c input=a9049054013a1b77]*/

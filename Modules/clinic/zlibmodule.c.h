@@ -31,7 +31,7 @@ static PyObject *
 zlib_compress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 3
+    #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -49,7 +49,7 @@ zlib_compress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), &_Py_ID(level), &_Py_ID(wbits), },
+        .ob_item = { &_Py_ID(level), &_Py_ID(wbits), },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -135,7 +135,7 @@ static PyObject *
 zlib_decompress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 3
+    #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -153,7 +153,7 @@ zlib_decompress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), &_Py_ID(wbits), &_Py_ID(bufsize), },
+        .ob_item = { &_Py_ID(wbits), &_Py_ID(bufsize), },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -489,7 +489,7 @@ static PyObject *
 zlib_Compress_compress(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
+    #define NUM_KEYWORDS 0
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -507,7 +507,7 @@ zlib_Compress_compress(compobject *self, PyTypeObject *cls, PyObject *const *arg
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), },
+        .ob_item = {  },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -577,7 +577,7 @@ static PyObject *
 zlib_Decompress_decompress(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -595,7 +595,7 @@ zlib_Decompress_decompress(compobject *self, PyTypeObject *cls, PyObject *const 
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), &_Py_ID(max_length), },
+        .ob_item = { &_Py_ID(max_length), },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -677,7 +677,7 @@ static PyObject *
 zlib_Compress_flush(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
+    #define NUM_KEYWORDS 0
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -695,7 +695,7 @@ zlib_Compress_flush(compobject *self, PyTypeObject *cls, PyObject *const *args, 
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), },
+        .ob_item = {  },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -802,7 +802,7 @@ static PyObject *
 zlib_Compress___deepcopy__(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
+    #define NUM_KEYWORDS 0
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -820,7 +820,7 @@ zlib_Compress___deepcopy__(compobject *self, PyTypeObject *cls, PyObject *const 
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), },
+        .ob_item = {  },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -922,7 +922,7 @@ static PyObject *
 zlib_Decompress___deepcopy__(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
+    #define NUM_KEYWORDS 0
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -940,7 +940,7 @@ zlib_Decompress___deepcopy__(compobject *self, PyTypeObject *cls, PyObject *cons
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), },
+        .ob_item = {  },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -993,7 +993,7 @@ static PyObject *
 zlib_Decompress_flush(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
+    #define NUM_KEYWORDS 0
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -1011,7 +1011,7 @@ zlib_Decompress_flush(compobject *self, PyTypeObject *cls, PyObject *const *args
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), },
+        .ob_item = {  },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -1191,4 +1191,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=63fa454ab1ec62ab input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ea8865903fb98344 input=a9049054013a1b77]*/

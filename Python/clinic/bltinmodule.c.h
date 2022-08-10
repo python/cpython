@@ -504,7 +504,7 @@ static PyObject *
 builtin_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 4
+    #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -522,7 +522,7 @@ builtin_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), &_Py_STR(empty), &_Py_STR(empty), &_Py_ID(closure), },
+        .ob_item = { &_Py_ID(closure), },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -1157,7 +1157,7 @@ static PyObject *
 builtin_sum(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -1175,7 +1175,7 @@ builtin_sum(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), &_Py_ID(start), },
+        .ob_item = { &_Py_ID(start), },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -1282,4 +1282,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=806561885dac9e09 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4590e66a40312a9f input=a9049054013a1b77]*/

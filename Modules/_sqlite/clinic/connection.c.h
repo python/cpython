@@ -240,7 +240,7 @@ static PyObject *
 blobopen(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 5
+    #define NUM_KEYWORDS 2
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -258,7 +258,7 @@ blobopen(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyO
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), &_Py_STR(empty), &_Py_STR(empty), &_Py_ID(readonly), &_Py_ID(name), },
+        .ob_item = { &_Py_ID(readonly), &_Py_ID(name), },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -535,7 +535,7 @@ static PyObject *
 create_window_function(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 3
+    #define NUM_KEYWORDS 0
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -553,7 +553,7 @@ create_window_function(pysqlite_Connection *self, PyTypeObject *cls, PyObject *c
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), &_Py_STR(empty), &_Py_STR(empty), },
+        .ob_item = {  },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -1242,7 +1242,7 @@ static PyObject *
 pysqlite_connection_create_collation(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 0
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -1260,7 +1260,7 @@ pysqlite_connection_create_collation(pysqlite_Connection *self, PyTypeObject *cl
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), &_Py_STR(empty), },
+        .ob_item = {  },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -1430,7 +1430,7 @@ static PyObject *
 deserialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -1448,7 +1448,7 @@ deserialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, 
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), &_Py_ID(name), },
+        .ob_item = { &_Py_ID(name), },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -1672,4 +1672,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=55af2556e3315c50 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e6873a956553d806 input=a9049054013a1b77]*/

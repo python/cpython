@@ -178,7 +178,7 @@ static PyObject *
 _asyncio_Future_add_done_callback(FutureObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -196,7 +196,7 @@ _asyncio_Future_add_done_callback(FutureObj *self, PyObject *const *args, Py_ssi
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), &_Py_ID(context), },
+        .ob_item = { &_Py_ID(context), },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -1292,4 +1292,4 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3fee37f03f5f0a2c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f923801842642bd9 input=a9049054013a1b77]*/

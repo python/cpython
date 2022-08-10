@@ -169,7 +169,7 @@ static PyObject *
 _curses_panel_panel_move(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 0
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -187,7 +187,7 @@ _curses_panel_panel_move(PyCursesPanelObject *self, PyTypeObject *cls, PyObject 
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), &_Py_STR(empty), },
+        .ob_item = {  },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -262,7 +262,7 @@ static PyObject *
 _curses_panel_panel_replace(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
+    #define NUM_KEYWORDS 0
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -280,7 +280,7 @@ _curses_panel_panel_replace(PyCursesPanelObject *self, PyTypeObject *cls, PyObje
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), },
+        .ob_item = {  },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -332,7 +332,7 @@ static PyObject *
 _curses_panel_panel_set_userptr(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
+    #define NUM_KEYWORDS 0
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -350,7 +350,7 @@ _curses_panel_panel_set_userptr(PyCursesPanelObject *self, PyTypeObject *cls, Py
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), },
+        .ob_item = {  },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -488,4 +488,4 @@ _curses_panel_update_panels(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_panel_update_panels_impl(module);
 }
-/*[clinic end generated code: output=696ec62268ffcced input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b4bbea7cfaaf3982 input=a9049054013a1b77]*/

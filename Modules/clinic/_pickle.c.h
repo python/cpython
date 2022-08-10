@@ -937,7 +937,7 @@ static PyObject *
 _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 5
+    #define NUM_KEYWORDS 4
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -955,7 +955,7 @@ _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), &_Py_ID(fix_imports), &_Py_ID(encoding), &_Py_ID(errors), &_Py_ID(buffers), },
+        .ob_item = { &_Py_ID(fix_imports), &_Py_ID(encoding), &_Py_ID(errors), &_Py_ID(buffers), },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -1040,4 +1040,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=33dfd5412936523d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fecab7d905b02139 input=a9049054013a1b77]*/

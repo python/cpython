@@ -199,7 +199,7 @@ static PyObject *
 _imp_find_frozen(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 1
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -217,7 +217,7 @@ _imp_find_frozen(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), &_Py_ID(withdata), },
+        .ob_item = { &_Py_ID(withdata), },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -637,4 +637,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=96ff35831e24c781 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7d75c10a93f2f26c input=a9049054013a1b77]*/

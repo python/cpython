@@ -168,7 +168,7 @@ static PyObject *
 _gdbm_gdbm_nextkey(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #define NUM_KEYWORDS 1
+    #define NUM_KEYWORDS 0
     #if NUM_KEYWORDS == 0
 
     #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -186,7 +186,7 @@ _gdbm_gdbm_nextkey(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, P
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_STR(empty), },
+        .ob_item = {  },
     };
     #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
@@ -344,4 +344,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d7836472f67cc148 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=72d3e46432e2d324 input=a9049054013a1b77]*/
