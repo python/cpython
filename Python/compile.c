@@ -1280,17 +1280,12 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 */
 
 static int
-basicblock_addop(basicblock *b, int opcode, int oparg,
-                 jump_target_label target, struct location loc)
+basicblock_addop(basicblock *b, int opcode, int oparg, struct location loc)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
-    assert(HAS_ARG(opcode) || oparg == 0);
+    assert(HAS_ARG(opcode) || HAS_TARGET(opcode) || oparg == 0);
     assert(0 <= oparg && oparg < (1 << 30));
-    assert(!IS_LABEL(target) ||
-           IS_JUMP_OPCODE(opcode) ||
-           IS_BLOCK_PUSH_OPCODE(opcode));
-    assert(oparg == 0 || !IS_LABEL(target));
 
     int off = basicblock_next_instr(b);
     if (off < 0) {
@@ -1298,12 +1293,7 @@ basicblock_addop(basicblock *b, int opcode, int oparg,
     }
     struct instr *i = &b->b_instr[off];
     i->i_opcode = opcode;
-    if (HAS_TARGET(opcode)) {
-        i->i_oparg = target.id;
-    }
-    else {
-        i->i_oparg = oparg;
-    }
+    i->i_oparg = oparg;
     i->i_target = NULL;
     i->i_loc = loc;
 
@@ -1336,20 +1326,19 @@ cfg_builder_maybe_start_new_block(cfg_builder *g)
 }
 
 static int
-cfg_builder_addop(cfg_builder *g, int opcode, int oparg, jump_target_label target,
-                  struct location loc)
+cfg_builder_addop(cfg_builder *g, int opcode, int oparg, struct location loc)
 {
     if (cfg_builder_maybe_start_new_block(g) != 0) {
         return -1;
     }
-    return basicblock_addop(g->g_curblock, opcode, oparg, target, loc);
+    return basicblock_addop(g->g_curblock, opcode, oparg, loc);
 }
 
 static int
 cfg_builder_addop_noarg(cfg_builder *g, int opcode, struct location loc)
 {
     assert(!HAS_ARG(opcode));
-    return cfg_builder_addop(g, opcode, 0, NO_LABEL, loc);
+    return cfg_builder_addop(g, opcode, 0, loc);
 }
 
 static Py_ssize_t
@@ -1561,7 +1550,7 @@ cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, struct locatio
        EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
 
     int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
-    return cfg_builder_addop(g, opcode, oparg_, NO_LABEL, loc);
+    return cfg_builder_addop(g, opcode, oparg_, loc);
 }
 
 static int
@@ -1569,7 +1558,7 @@ cfg_builder_addop_j(cfg_builder *g, int opcode, jump_target_label target, struct
 {
     assert(IS_LABEL(target));
     assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
-    return cfg_builder_addop(g, opcode, 0, target, loc);
+    return cfg_builder_addop(g, opcode, target.id, loc);
 }
 
 
@@ -7406,8 +7395,7 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
             if (explicit_jump == NULL) {
                 return -1;
             }
-            jump_target_label next_label = {b->b_next->b_label};
-            basicblock_addop(explicit_jump, JUMP, 0, next_label, NO_LOCATION);
+            basicblock_addop(explicit_jump, JUMP, b->b_next->b_label, NO_LOCATION);
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
             b->b_next = explicit_jump;
