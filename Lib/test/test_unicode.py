@@ -2880,10 +2880,11 @@ class CAPITest(unittest.TestCase):
         # check for crashes
         for fmt in (b'%', b'%0', b'%01', b'%.', b'%.1',
                     b'%0%s', b'%1%s', b'%.%s', b'%.1%s', b'%1abc',
-                    b'%l', b'%ll', b'%z', b'%ls', b'%lls', b'%zs'):
+                    b'%l', b'%ll', b'%z', b'%lls', b'%zs'):
             with self.subTest(fmt=fmt):
                 self.assertRaisesRegex(SystemError, 'invalid format string',
                     PyUnicode_FromFormat, fmt, b'abc')
+
         self.assertRaisesRegex(SystemError, 'invalid format string',
             PyUnicode_FromFormat, b'%+i', c_int(10))
 

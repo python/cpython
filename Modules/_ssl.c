@@ -1326,10 +1326,8 @@ _get_peer_alt_names (_sslmodulestate *state, X509 *certificate) {
                         p[0], p[1], p[2], p[3]
                     );
                 } else if (name->d.ip->length == 16) {
-                    /* PyUnicode_FromFormat() does not support %X */
                     unsigned char *p = name->d.ip->data;
-                    len = sprintf(
-                        buf,
+                    v = PyUnicode_FromFormat(
                         "%X:%X:%X:%X:%X:%X:%X:%X",
                         p[0] << 8 | p[1],
                         p[2] << 8 | p[3],
@@ -1340,7 +1338,6 @@ _get_peer_alt_names (_sslmodulestate *state, X509 *certificate) {
                         p[12] << 8 | p[13],
                         p[14] << 8 | p[15]
                     );
-                    v = PyUnicode_FromStringAndSize(buf, len);
                 } else {
                     v = PyUnicode_FromString("<invalid>");
                 }
