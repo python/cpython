@@ -3,7 +3,8 @@
 
 #include "Python.h"
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
-#include "pycore_pylifecycle.h"   // _PyArg_Fini
+#include "pycore_pylifecycle.h"   // _PyArg_Fini()
+#include "pycore_pystate.h"       // _Py_IsMainInterpreter()
 
 #include <ctype.h>
 #include <float.h>
@@ -2913,8 +2914,11 @@ _PyArg_NoKwnames(const char *funcname, PyObject *kwnames)
 }
 
 void
-_PyArg_Fini(void)
+_PyArg_Fini(PyInterpreterState *interp)
 {
+    if (!_Py_IsMainInterpreter(interp)) {
+        return;
+    }
     struct _PyArg_Parser *tmp, *s = static_arg_parsers;
     while (s) {
         tmp = s->next;

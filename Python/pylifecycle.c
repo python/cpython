@@ -1717,7 +1717,11 @@ finalize_interp_clear(PyThreadState *tstate)
 
     if (is_main_interp) {
         _Py_HashRandomization_Fini();
-        _PyArg_Fini();
+    }
+
+    _PyArg_Fini(tstate->interp);
+
+    if (is_main_interp) {
         _Py_ClearFileSystemEncoding();
         _Py_Deepfreeze_Fini();
     }
