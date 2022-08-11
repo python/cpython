@@ -536,6 +536,12 @@ def normalize_snippet(s, *, indent=0):
 
 
 def declare_parser(*, hasformat=False):
+    """
+    Generates the code template for a static local PyArg_Parser variable,
+    with an initializer.  For core code (incl. builtin modules) the
+    kwtuple field is also statically initialized.  Otherwise
+    it is initialized at runtime.
+    """
     if hasformat:
         fname = ''
         format_ = '.format = "{format_units}:{name}",'
