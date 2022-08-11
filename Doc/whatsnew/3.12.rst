@@ -93,6 +93,13 @@ New Modules
 Improved Modules
 ================
 
+pathlib
+-------
+
+* Add :meth:`~pathlib.Path.walk` for walking the directory trees and generating
+  all file or directory names within them, similar to :func:`os.walk`.
+  (Contributed by Stanislav Zmiev in :gh:`90385`.)
+
 dis
 ---
 
