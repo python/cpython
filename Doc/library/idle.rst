@@ -984,16 +984,19 @@ beginning of config-extensions.def in the idlelib directory for further
 information.  The only current default extension is zzdummy, an example
 also used for testing.
 
+
 idlelib
-^^^^^^^
+-------
 
 .. module:: idlelib
    :synopsis: Implementation package for the IDLE shell/editor.
 
 **Source code:** :source:`Lib/idlelib`
 
-The Lib/idlelib package implements the IDLE application.  See the top
-of this file or content listing on the left for how to use IDLE.
+--------------
+
+The Lib/idlelib package implements the IDLE application.  See the rest
+of this page for how to use IDLE.
 
 The files in idlelib are described in idlelib/README.txt.  Access it
 either in idlelib or click Help => About IDLE on the IDLE menu.  This
