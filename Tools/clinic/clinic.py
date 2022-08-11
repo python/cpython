@@ -536,6 +536,12 @@ def normalize_snippet(s, *, indent=0):
 
 
 def declare_parser(f, *, hasformat=False):
+    """
+    Generates the code template for a static local PyArg_Parser variable,
+    with an initializer.  For core code (incl. builtin modules) the
+    kwtuple field is also statically initialized.  Otherwise
+    it is initialized at runtime.
+    """
     def keywords(f):
         params = f.parameters.values()
         kwds = [
@@ -544,18 +550,13 @@ def declare_parser(f, *, hasformat=False):
         ]
         return kwds
 
-    """
-    Generates the code template for a static local PyArg_Parser variable,
-    with an initializer.  For core code (incl. builtin modules) the
-    kwtuple field is also statically initialized.  Otherwise
-    it is initialized at runtime.
-    """
     if hasformat:
         fname = ''
         format_ = '.format = "{format_units}:{name}",'
     else:
         fname = '.fname = "{name}",'
         format_ = ''
+
     num_keywords = len(keywords(f))
     if num_keywords == 0:
         declarations = """
@@ -564,15 +565,7 @@ def declare_parser(f, *, hasformat=False):
             #else
             #  define KWTUPLE NULL
             #endif
-
-            static const char * const _keywords[] = {{{keywords_c} NULL}};
-            static _PyArg_Parser _parser = {{
-                .keywords = _keywords,
-                %s
-                .kwtuple = KWTUPLE,
-            }};
-            #undef KWTUPLE
-            """ % (format_ or fname)
+        """
     else:
         declarations = """
             #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -590,7 +583,9 @@ def declare_parser(f, *, hasformat=False):
             #else  // !Py_BUILD_CORE
             #  define KWTUPLE NULL
             #endif  // !Py_BUILD_CORE
+        """ % (num_keywords, num_keywords)
 
+    declarations += """
             static const char * const _keywords[] = {{{keywords_c} NULL}};
             static _PyArg_Parser _parser = {{
                 .keywords = _keywords,
@@ -598,7 +593,7 @@ def declare_parser(f, *, hasformat=False):
                 .kwtuple = KWTUPLE,
             }};
             #undef KWTUPLE
-            """ % (num_keywords, num_keywords, format_ or fname)
+    """ % (format_ or fname)
     return normalize_snippet(declarations)
 
 
