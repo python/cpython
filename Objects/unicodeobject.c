@@ -2355,6 +2355,13 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
 
     p = f;
     f++;
+    if (*f == '%') {
+        if (_PyUnicodeWriter_WriteCharInline(writer, '%') < 0)
+            return NULL;
+        f++;
+        return f;
+    }
+
     zeropad = 0;
     if (*f == '0') {
         zeropad = 1;
@@ -2392,14 +2399,6 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
                 f++;
             }
         }
-        if (*f == '%') {
-            /* "%.3%s" => f points to "3" */
-            f--;
-        }
-    }
-    if (*f == '\0') {
-        /* bogus format "%.123" => go backward, f points to "3" */
-        f--;
     }
 
     /* Handle %ld, %lu, %lld and %llu. */
@@ -2423,7 +2422,7 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         ++f;
     }
 
-    if (f[1] == '\0')
+    if (f[0] != '\0' && f[1] == '\0')
         writer->overallocate = 0;
 
     switch (*f) {
@@ -2482,21 +2481,34 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         }
         assert(len >= 0);
 
-        if (precision < len)
-            precision = len;
+        int negative = (buffer[0] == '-');
+        len -= negative;
+
+        precision = Py_MAX(precision, len);
+        width = Py_MAX(width, precision + negative);
 
         arglen = Py_MAX(precision, width);
         if (_PyUnicodeWriter_Prepare(writer, arglen, 127) == -1)
             return NULL;
 
         if (width > precision) {
-            Py_UCS4 fillchar;
-            fill = width - precision;
-            fillchar = zeropad?'0':' ';
+            if (negative && zeropad) {
+                if (_PyUnicodeWriter_WriteChar(writer, '-') == -1)
+                    return NULL;
+            }
+
+            Py_UCS4 fillchar = zeropad?'0':' ';
+            fill = width - precision - negative;
             if (PyUnicode_Fill(writer->buffer, writer->pos, fill, fillchar) == -1)
                 return NULL;
             writer->pos += fill;
+
+            if (negative && !zeropad) {
+                if (_PyUnicodeWriter_WriteChar(writer, '-') == -1)
+                    return NULL;
+            }
         }
+
         if (precision > len) {
             fill = precision - len;
             if (PyUnicode_Fill(writer->buffer, writer->pos, fill, '0') == -1)
@@ -2504,7 +2516,7 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
             writer->pos += fill;
         }
 
-        if (_PyUnicodeWriter_WriteASCIIString(writer, buffer, len) < 0)
+        if (_PyUnicodeWriter_WriteASCIIString(writer, &buffer[negative], len) < 0)
             return NULL;
         break;
     }
@@ -2616,21 +2628,9 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         break;
     }
 
-    case '%':
-        if (_PyUnicodeWriter_WriteCharInline(writer, '%') < 0)
-            return NULL;
-        break;
-
     default:
-        /* if we stumble upon an unknown formatting code, copy the rest
-           of the format string to the output string. (we cannot just
-           skip the code, since there's no way to know what's in the
-           argument list) */
-        len = strlen(p);
-        if (_PyUnicodeWriter_WriteLatin1String(writer, p, len) == -1)
-            return NULL;
-        f = p+len;
-        return f;
+        PyErr_Format(PyExc_SystemError, "invalid format string: %s", p);
+        return NULL;
     }
 
     f++;
