@@ -215,8 +215,8 @@ Classes:
 
 APIs:
 
-*  :meth:`asyncio.Future.cancel`'s *msg* parameter (:gh:`90985`)
-*  :meth:`asyncio.Task.cancel`'s *msg* parameter (:gh:`90985`)
+* :meth:`asyncio.Future.cancel`'s *msg* parameter (:gh:`90985`)
+* :meth:`asyncio.Task.cancel`'s *msg* parameter (:gh:`90985`)
 * Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
   bases using the C API (:gh:`95388`)
 
