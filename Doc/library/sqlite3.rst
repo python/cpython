@@ -239,7 +239,7 @@ Module functions
        >>> sqlite3.complete_statement('SELECT foo')
        False
 
-   See :source:`Lib/sqlite3/__main__.py` for a more complete real-world use.
+   See ``runsource()`` in :source:`Lib/sqlite3/__main__.py` for real-world use.
 
 .. function:: enable_callback_tracebacks(flag, /)
 
