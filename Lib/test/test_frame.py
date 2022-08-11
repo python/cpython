@@ -240,8 +240,9 @@ class TestIncompleteFrameAreInvisible(unittest.TestCase):
     def test_issue95818(self):
         #See GH-95818 for details
         import gc
-        gc.set_threshold(1,1,1)
+        self.addCleanup(gc.set_threshold, *gc.get_threshold())
 
+        gc.set_threshold(1,1,1)
         class GCHello:
             def __del__(self):
                 print("Destroyed from gc")
