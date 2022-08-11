@@ -23,7 +23,7 @@ _uu_deprecation_warning_filter = {
 ### Codec APIs
 
 def uu_encode(input, errors='strict', filename='<data>', mode=0o666):
-    warnings._deprecated(__name__, remove=(3, 13))
+    warnings._deprecated(__name__, remove=(3, 14))
     assert errors == 'strict'
     infile = BytesIO(input)
     outfile = BytesIO()
@@ -49,7 +49,7 @@ def uu_encode(input, errors='strict', filename='<data>', mode=0o666):
     return (outfile.getvalue(), len(input))
 
 def uu_decode(input, errors='strict'):
-    warnings._deprecated(__name__, remove=(3, 13))
+    warnings._deprecated(__name__, remove=(3, 14))
     assert errors == 'strict'
     infile = BytesIO(input)
     outfile = BytesIO()

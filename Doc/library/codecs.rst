@@ -1430,7 +1430,7 @@ to :class:`bytes` mappings. They are not supported by :meth:`bytes.decode`
 .. versionchanged:: 3.4
    Restoration of the aliases for the binary transforms.
 
-.. deprecated-removed:: 3.11 3.13
+.. deprecated-removed:: 3.12 3.14
    The uuencode codec (``uu_codec``) is deprecated
    (see :pep:`PEP 594 <594#uu-and-the-uu-encoding>` for details).
 

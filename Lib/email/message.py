@@ -322,7 +322,7 @@ class Message:
             warnings._deprecated(
                 'Support for decoding legacy uuencoded payloads in messages '
                 'is deprecated and scheduled for removal in Python {remove}',
-                remove=(3, 13))
+                remove=(3, 14))
             try:
                 # We already issue our own warning here
                 with warnings.catch_warnings():

@@ -225,7 +225,7 @@ binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
 
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "'binascii.a2b_uu' is deprecated and scheduled for "
-                     "removal in Python 3.13",
+                     "removal in Python 3.14",
                      1)) {
         return NULL;
     }
@@ -330,7 +330,7 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
 
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "'binascii.b2a_uu' is deprecated and scheduled for "
-                     "removal in Python 3.13",
+                     "removal in Python 3.14",
                      1)) {
         return NULL;
     }
