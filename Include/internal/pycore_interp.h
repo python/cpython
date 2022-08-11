@@ -54,6 +54,12 @@ struct _ceval_state {
 };
 
 
+struct getargs_state {
+    /* A dict mapping a pointer ID to a keywords tuple. */
+    PyObject *kwtuples;
+};
+
+
 // atexit state
 typedef struct {
     PyObject *func;
@@ -175,6 +181,7 @@ struct _is {
     struct ast_state ast;
     struct types_state types;
     struct callable_cache callable_cache;
+    struct getargs_state getargs;
 
     /* The following fields are here to avoid allocation during init.
        The data is exposed through PyInterpreterState pointer fields.

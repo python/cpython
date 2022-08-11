@@ -2,9 +2,10 @@
 /* New getargs implementation */
 
 #include "Python.h"
-#include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_object.h"        // _PyObject_IMMORTAL_REFCNT
 #include "pycore_pylifecycle.h"   // _PyArg_Fini()
 #include "pycore_pystate.h"       // _Py_IsMainInterpreter()
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
 #include <ctype.h>
 #include <float.h>
@@ -1953,17 +1954,44 @@ parse_format(const char *format, int total, int npos,
     return 0;
 }
 
+#define KWTUPLE_IS_STATIC(parser) \
+    (PyTuple_CheckExact(parser->kwtuple))
+
 static int
 init_kwtuple(struct _PyArg_Parser *parser)
 {
-    assert(!parser->initialized);
+    PyObject *key;
     if (parser->kwtuple != NULL) {
-        return 0;  // not owned (statically initialized)
+        assert(!KWTUPLE_IS_STATIC(parser));
+        assert(PyLong_CheckExact(parser->kwtuple));
+        key = parser->kwtuple;
     }
-    if (parser->len == parser->pos) {
-        parser->kwtuple = (PyObject *)&_Py_SINGLETON(tuple_empty);
-        return 0;  // not owned (statically initialized)
+    else {
+        if (parser->len == parser->pos) {
+            parser->kwtuple = (PyObject *)&_Py_SINGLETON(tuple_empty);
+            return 0;
+        }
+        // XXX This should be made "immortal"
+        key = PyLong_FromVoidPtr((void *)parser);
+        if (key == NULL) {
+            return -1;
+        }
+        Py_SET_REFCNT(key, _PyObject_IMMORTAL_REFCNT);
+        // We will leave this in place even if there's an error later.
+        parser->kwtuple = key;
     }
+
+    /* Initialize the interpreter state, if necessary. */
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->getargs.kwtuples == NULL) {
+        // We will leave this in place even if there's an error later.
+        interp->getargs.kwtuples = PyDict_New();
+        if (interp->getargs.kwtuples == NULL) {
+            return -1;
+        }
+    }
+
+    /* Initialize the tuple. */
     int nkw = parser->len - parser->pos;
     PyObject *kwtuple = PyTuple_New(nkw);
     if (kwtuple == NULL) {
@@ -1979,23 +2007,61 @@ init_kwtuple(struct _PyArg_Parser *parser)
         PyUnicode_InternInPlace(&str);
         PyTuple_SET_ITEM(kwtuple, i, str);
     }
-    parser->kwtuple = kwtuple;
-    return 1;  // owned
+
+    /* Add the tuple to the interpreter state. */
+    int res = PyDict_SetItem(interp->getargs.kwtuples, key, kwtuple);
+    Py_DECREF(kwtuple);
+    // We keep a reference to key in parser->kwtuple.
+    if (res < 0) {
+        return -1;
+    }
+    return 0;
 }
 
 static PyObject *
 get_kwtuple(struct _PyArg_Parser *parser)
 {
     assert(parser->kwtuple != NULL);
-    return parser->kwtuple;
+    if (KWTUPLE_IS_STATIC(parser)) {
+        assert(PyTuple_CheckExact(parser->kwtuple));
+        return parser->kwtuple;
+    }
+    /* It was initialized at runtime on the interpreter state. */
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp->getargs.kwtuples != NULL);
+    assert(PyLong_CheckExact(parser->kwtuple));
+    return PyDict_GetItem(interp->getargs.kwtuples, parser->kwtuple);
 }
 
+/* This should be called only at the end of runtime finalization. */
 static void
 clear_kwtuple(struct _PyArg_Parser *parser)
 {
-    if (parser->initialized == 1) {
+    if (parser->kwtuple != NULL && !KWTUPLE_IS_STATIC(parser)) {
+        PyObject *key = parser->kwtuple;
+        assert(PyLong_CheckExact(key));
+        // We don't expose parser->kwtuple anywhere
+        // so we can control the refcount.
+        assert(Py_REFCNT(key) == _PyObject_IMMORTAL_REFCNT);
+        Py_SET_REFCNT(key, 1);
         Py_CLEAR(parser->kwtuple);
     }
+}
+
+static void
+clear_kwtuples(PyInterpreterState *interp)
+{
+#ifdef Py_DEBUG
+    if (interp->getargs.kwtuples != NULL) {
+        // Nothing else should be holding a reference to any of the tuples.
+        Py_ssize_t i = 0;
+        PyObject *kwtuple;
+        while (PyDict_Next(interp->getargs.kwtuples, &i, NULL, &kwtuple)) {
+            assert(Py_REFCNT(kwtuple) == 1);
+        }
+    }
+#endif  // Py_DEBUG
+    Py_CLEAR(interp->getargs.kwtuples);
 }
 
 static int
@@ -2005,14 +2071,22 @@ parser_init(struct _PyArg_Parser *parser)
 
     if (parser->initialized) {
         assert(parser->kwtuple != NULL);
+        if (KWTUPLE_IS_STATIC(parser)) {
+            return 1;
+        }
+        if (init_kwtuple(parser) < 0) {
+            return 0;
+        }
         return 1;
     }
+
     assert(parser->len == 0 &&
            parser->pos == 0 &&
            (parser->format == NULL || parser->fname == NULL) &&
            parser->custom_msg == NULL &&
            parser->min == 0 &&
-           parser->max == 0);
+           parser->max == 0 &&
+           (parser->kwtuple == NULL || KWTUPLE_IS_STATIC(parser)));
 
     int len, pos;
     if (scan_keywords(parser->keywords, &len, &pos) < 0) {
@@ -2039,12 +2113,12 @@ parser_init(struct _PyArg_Parser *parser)
     parser->custom_msg = custommsg;
     parser->min = min;
     parser->max = max;
-
-    int owned = init_kwtuple(parser);
-    if (owned < 0) {
-        return 0;
+    if (parser->kwtuple == NULL) {
+        if (init_kwtuple(parser) < 0) {
+            return 0;
+        }
     }
-    parser->initialized = owned ? 1 : -1;
+    parser->initialized = 1;
 
     assert(parser->next == NULL);
     parser->next = static_arg_parsers;
@@ -2930,17 +3004,17 @@ _PyArg_NoKwnames(const char *funcname, PyObject *kwnames)
 void
 _PyArg_Fini(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
+    clear_kwtuples(interp);
+    if (_Py_IsMainInterpreter(interp)) {
+        struct _PyArg_Parser *tmp, *s = static_arg_parsers;
+        while (s) {
+            tmp = s->next;
+            s->next = NULL;
+            parser_clear(s);
+            s = tmp;
+        }
+        static_arg_parsers = NULL;
     }
-    struct _PyArg_Parser *tmp, *s = static_arg_parsers;
-    while (s) {
-        tmp = s->next;
-        s->next = NULL;
-        parser_clear(s);
-        s = tmp;
-    }
-    static_arg_parsers = NULL;
 }
 
 #ifdef __cplusplus
