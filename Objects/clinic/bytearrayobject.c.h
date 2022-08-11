@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 static int
 bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
                         const char *encoding, const char *errors);
@@ -10,8 +16,41 @@ static int
 bytearray___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
+    #define NUM_KEYWORDS 3
+    #if NUM_KEYWORDS == 0
+
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #  else
+    #    define KWTUPLE NULL
+    #  endif
+
+    #else  // NUM_KEYWORDS != 0
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(source), &_Py_ID(encoding), &_Py_ID(errors), },
+    };
+    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #  else  // !Py_BUILD_CORE
+    #    define KWTUPLE NULL
+    #  endif  // !Py_BUILD_CORE
+    #endif  // NUM_KEYWORDS != 0
+    #undef NUM_KEYWORDS
+
     static const char * const _keywords[] = {"source", "encoding", "errors", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "bytearray", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "bytearray",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[3];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -210,8 +249,41 @@ static PyObject *
 bytearray_translate(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #define NUM_KEYWORDS 1
+    #if NUM_KEYWORDS == 0
+
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #  else
+    #    define KWTUPLE NULL
+    #  endif
+
+    #else  // NUM_KEYWORDS != 0
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(delete), },
+    };
+    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #  else  // !Py_BUILD_CORE
+    #    define KWTUPLE NULL
+    #  endif  // !Py_BUILD_CORE
+    #endif  // NUM_KEYWORDS != 0
+    #undef NUM_KEYWORDS
+
     static const char * const _keywords[] = {"", "delete", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "translate", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "translate",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *table;
@@ -390,8 +462,41 @@ static PyObject *
 bytearray_split(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #define NUM_KEYWORDS 2
+    #if NUM_KEYWORDS == 0
+
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #  else
+    #    define KWTUPLE NULL
+    #  endif
+
+    #else  // NUM_KEYWORDS != 0
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(sep), &_Py_ID(maxsplit), },
+    };
+    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #  else  // !Py_BUILD_CORE
+    #    define KWTUPLE NULL
+    #  endif  // !Py_BUILD_CORE
+    #endif  // NUM_KEYWORDS != 0
+    #undef NUM_KEYWORDS
+
     static const char * const _keywords[] = {"sep", "maxsplit", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "split", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "split",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = Py_None;
@@ -489,8 +594,41 @@ static PyObject *
 bytearray_rsplit(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #define NUM_KEYWORDS 2
+    #if NUM_KEYWORDS == 0
+
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #  else
+    #    define KWTUPLE NULL
+    #  endif
+
+    #else  // NUM_KEYWORDS != 0
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(sep), &_Py_ID(maxsplit), },
+    };
+    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #  else  // !Py_BUILD_CORE
+    #    define KWTUPLE NULL
+    #  endif  // !Py_BUILD_CORE
+    #endif  // NUM_KEYWORDS != 0
+    #undef NUM_KEYWORDS
+
     static const char * const _keywords[] = {"sep", "maxsplit", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "rsplit", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "rsplit",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = Py_None;
@@ -843,8 +981,41 @@ static PyObject *
 bytearray_decode(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #define NUM_KEYWORDS 2
+    #if NUM_KEYWORDS == 0
+
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #  else
+    #    define KWTUPLE NULL
+    #  endif
+
+    #else  // NUM_KEYWORDS != 0
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(encoding), &_Py_ID(errors), },
+    };
+    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #  else  // !Py_BUILD_CORE
+    #    define KWTUPLE NULL
+    #  endif  // !Py_BUILD_CORE
+    #endif  // NUM_KEYWORDS != 0
+    #undef NUM_KEYWORDS
+
     static const char * const _keywords[] = {"encoding", "errors", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "decode", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "decode",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     const char *encoding = NULL;
@@ -927,8 +1098,41 @@ static PyObject *
 bytearray_splitlines(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #define NUM_KEYWORDS 1
+    #if NUM_KEYWORDS == 0
+
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #  else
+    #    define KWTUPLE NULL
+    #  endif
+
+    #else  // NUM_KEYWORDS != 0
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(keepends), },
+    };
+    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #  else  // !Py_BUILD_CORE
+    #    define KWTUPLE NULL
+    #  endif  // !Py_BUILD_CORE
+    #endif  // NUM_KEYWORDS != 0
+    #undef NUM_KEYWORDS
+
     static const char * const _keywords[] = {"keepends", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "splitlines", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "splitlines",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int keepends = 0;
@@ -1019,8 +1223,41 @@ static PyObject *
 bytearray_hex(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #define NUM_KEYWORDS 2
+    #if NUM_KEYWORDS == 0
+
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #  else
+    #    define KWTUPLE NULL
+    #  endif
+
+    #else  // NUM_KEYWORDS != 0
+    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(sep), &_Py_ID(bytes_per_sep), },
+    };
+    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #  else  // !Py_BUILD_CORE
+    #    define KWTUPLE NULL
+    #  endif  // !Py_BUILD_CORE
+    #endif  // NUM_KEYWORDS != 0
+    #undef NUM_KEYWORDS
+
     static const char * const _keywords[] = {"sep", "bytes_per_sep", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "hex", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "hex",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = NULL;
@@ -1120,4 +1357,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=033e9eb5f2bb0139 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d3a4d0ae9fb8c738 input=a9049054013a1b77]*/
