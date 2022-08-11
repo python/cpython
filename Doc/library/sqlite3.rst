@@ -232,7 +232,14 @@ Module functions
    to determine if the entered text seems to form a complete SQL statement,
    or if additional input is needed before calling :meth:`~Cursor.execute`.
 
-   See :source:`Lib/sqlite3/__main__.py` for example use.
+   For example::
+
+       >>> sqlite3.complete_statement('SELECT foo FROM bar;')
+       True
+       >>> sqlite3.complete_statement('SELECT foo')
+       False
+
+   See :source:`Lib/sqlite3/__main__.py` for a more complete real-world use.
 
 .. function:: enable_callback_tracebacks(flag, /)
 
