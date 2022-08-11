@@ -94,6 +94,7 @@ by calling :meth:`con.execute() <Cursor.execute>`::
 
 .. Ideally, we'd use sqlite_schema instead of sqlite_master below,
    but earlier versions of SQLite does not recognise that variant.
+
 You can verify that the table has been created by querying
 the ever-present ``sqlite_master`` table.
 It should contain an entry for the ``Movie`` table definition.
