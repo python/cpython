@@ -12,16 +12,16 @@ Define function with args::
     *args: object
     kw: object
 
-and pass kw=1 to the function, the `kw` parameter won't receive the pass in value.
+and pass kw=1 to the function, the "kw" parameter won't receive the pass in value.
 
 
 2. Fix an array index out-of-bound bug
 
-Variable `vararg` indicates the index of vararg in parameter list.
+Variable "vararg" indicates the index of vararg in parameter list.
 
-While copying kwargs to `buf`, the index `i` should not add `vararg`, which leads to an out-of-bound bug.
+While copying kwargs to "buf", the index "i" should not add "vararg", which leads to an out-of-bound bug.
 
-When there are positional args, vararg and keyword args in a function definition, in which case `vararg` > 1, this bug can be triggered.
+When there are positional args, vararg and keyword args in a function definition, in which case "vararg" > 1, this bug can be triggered.
 
 e.g.
 Define function with args::
@@ -33,7 +33,7 @@ Define function with args::
 
 3. Fix a bug which allows more than one varargs
 
-More than *one* `vararg` should not be allowed.
+More than *one* "vararg" should not be allowed.
 
 e.g.
 Define function with args::
