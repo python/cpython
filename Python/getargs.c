@@ -1953,32 +1953,40 @@ parse_format(const char *format, int total, int npos,
     return 0;
 }
 
-static PyObject *
-new_kwtuple(const char * const *keywords, int total, int pos)
+static int
+init_kwtuple(struct _PyArg_Parser *parser)
 {
-    int nkw = total - pos;
+    assert(!parser->initialized);
+    if (parser->kwtuple != NULL) {
+        return 0;  // not owned (statically initialized)
+    }
+    if (parser->len == parser->pos) {
+        parser->kwtuple = (PyObject *)&_Py_SINGLETON(tuple_empty);
+        return 0;  // not owned (statically initialized)
+    }
+    int nkw = parser->len - parser->pos;
     PyObject *kwtuple = PyTuple_New(nkw);
     if (kwtuple == NULL) {
-        return NULL;
+        return -1;
     }
-    keywords += pos;
+    const char * const *keywords = parser->keywords + parser->pos;
     for (int i = 0; i < nkw; i++) {
         PyObject *str = PyUnicode_FromString(keywords[i]);
         if (str == NULL) {
             Py_DECREF(kwtuple);
-            return NULL;
+            return -1;
         }
         PyUnicode_InternInPlace(&str);
         PyTuple_SET_ITEM(kwtuple, i, str);
     }
-    return kwtuple;
+    parser->kwtuple = kwtuple;
+    return 1;  // owned
 }
 
 static int
 parser_init(struct _PyArg_Parser *parser)
 {
-    const char * const *keywords = parser->keywords;
-    assert(keywords != NULL);
+    assert(parser->keywords != NULL);
 
     if (parser->initialized) {
         assert(parser->kwtuple != NULL);
@@ -1992,7 +2000,7 @@ parser_init(struct _PyArg_Parser *parser)
            parser->max == 0);
 
     int len, pos;
-    if (scan_keywords(keywords, &len, &pos) < 0) {
+    if (scan_keywords(parser->keywords, &len, &pos) < 0) {
         return 0;
     }
 
@@ -2010,28 +2018,17 @@ parser_init(struct _PyArg_Parser *parser)
         fname = parser->fname;
     }
 
-    int owned = 0;
-    PyObject *kwtuple = parser->kwtuple;
-    if (kwtuple == NULL) {
-        if (len == pos) {
-            kwtuple = (PyObject *)&_Py_SINGLETON(tuple_empty);
-        }
-        else {
-            kwtuple = new_kwtuple(keywords, len, pos);
-            if (kwtuple == NULL) {
-                return 0;
-            }
-            owned = 1;
-        }
-    }
-
     parser->len = len;
     parser->pos = pos;
     parser->fname = fname;
     parser->custom_msg = custommsg;
     parser->min = min;
     parser->max = max;
-    parser->kwtuple = kwtuple;
+
+    int owned = init_kwtuple(parser);
+    if (owned < 0) {
+        return 0;
+    }
     parser->initialized = owned ? 1 : -1;
 
     assert(parser->next == NULL);
