@@ -1990,6 +1990,14 @@ get_kwtuple(struct _PyArg_Parser *parser)
     return parser->kwtuple;
 }
 
+static void
+clear_kwtuple(struct _PyArg_Parser *parser)
+{
+    if (parser->initialized == 1) {
+        Py_CLEAR(parser->kwtuple);
+    }
+}
+
 static int
 parser_init(struct _PyArg_Parser *parser)
 {
@@ -2047,9 +2055,7 @@ parser_init(struct _PyArg_Parser *parser)
 static void
 parser_clear(struct _PyArg_Parser *parser)
 {
-    if (parser->initialized == 1) {
-        Py_CLEAR(parser->kwtuple);
-    }
+    clear_kwtuple(parser);
 }
 
 static PyObject*
