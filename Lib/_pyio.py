@@ -122,8 +122,9 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
 
     buffering is an optional integer used to set the buffering policy.
     Pass 0 to switch buffering off (only allowed in binary mode), 1 to select
-    line buffering (only usable in text mode), and an integer > 1 to indicate
-    the size of a fixed-size chunk buffer.  When no buffering argument is
+    line buffering (only usable in text mode), an integer > 1 to indicate
+    the size of a fixed-size chunk buffer, or -1 to use the default buffering
+    policy. When no buffering argument is
     given, the default buffering policy works as follows:
 
     * Binary files are buffered in fixed-size chunks; the size of the buffer

@@ -123,8 +123,9 @@ platform-dependent encoding or using the specified encoding if given.
 
 buffering is an optional integer used to set the buffering policy.
 Pass 0 to switch buffering off (only allowed in binary mode), 1 to select
-line buffering (only usable in text mode), and an integer > 1 to indicate
-the size of a fixed-size chunk buffer.  When no buffering argument is
+line buffering (only usable in text mode), an integer > 1 to indicate
+the size of a fixed-size chunk buffer, or -1 to use the default buffering
+policy.  When no buffering argument is
 given, the default buffering policy works as follows:
 
 * Binary files are buffered in fixed-size chunks; the size of the buffer
@@ -196,7 +197,7 @@ static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
               int buffering, const char *encoding, const char *errors,
               const char *newline, int closefd, PyObject *opener)
-/*[clinic end generated code: output=aefafc4ce2b46dc0 input=5bb37f174cb2fb11]*/
+/*[clinic end generated code: output=aefafc4ce2b46dc0 input=e90b1875043160db]*/
 {
     unsigned i;
 
