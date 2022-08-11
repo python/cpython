@@ -178,11 +178,9 @@ class AsyncContextManagerTestCase(unittest.TestCase):
                 else:
                     self.fail(f'{stop_exc} was suppressed')
 
-                self.assertEqual(len(frames), 2)
-                self.assertEqual(frames[0].name, 'f')
-                self.assertEqual(frames[0].line, 'yield')
-                self.assertEqual(frames[1].name, 'test_contextmanager_traceback')
-                self.assertEqual(frames[1].line, 'raise stop_exc')
+                self.assertEqual(len(frames), 1)
+                self.assertEqual(frames[0].name, 'test_contextmanager_traceback')
+                self.assertEqual(frames[0].line, 'raise stop_exc')
 
     @_async_test
     async def test_contextmanager_no_reraise(self):
