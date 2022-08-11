@@ -261,33 +261,21 @@ static int
 _io_StringIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
+        PyObject *ob_item[2];
     } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, 2)
         .ob_item = { &_Py_ID(initial_value), &_Py_ID(newline), },
     };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
-    #undef NUM_KEYWORDS
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
 
     static const char * const _keywords[] = {"initial_value", "newline", NULL};
     static _PyArg_Parser _parser = {
@@ -377,4 +365,4 @@ _io_StringIO_seekable(stringio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_StringIO_seekable_impl(self);
 }
-/*[clinic end generated code: output=b1bde306e2928b19 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4f15862a62730297 input=a9049054013a1b77]*/

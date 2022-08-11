@@ -536,13 +536,13 @@ def normalize_snippet(s, *, indent=0):
 
 
 def declare_parser(f, *, hasformat=False):
-    def num_keywords(f):
+    def keywords(f):
         params = f.parameters.values()
         kwds = [
             p for p in params
             if not p.is_positional_only() and not p.is_vararg()
         ]
-        return len(kwds)
+        return kwds
 
     """
     Generates the code template for a static local PyArg_Parser variable,
@@ -556,43 +556,49 @@ def declare_parser(f, *, hasformat=False):
     else:
         fname = '.fname = "{name}",'
         format_ = ''
-    declarations = """
-        #define NUM_KEYWORDS %d
-        #if NUM_KEYWORDS == 0
+    num_keywords = len(keywords(f))
+    if num_keywords == 0:
+        declarations = """
+            #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+            #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+            #else
+            #  define KWTUPLE NULL
+            #endif
 
-        #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-        #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-        #  else
-        #    define KWTUPLE NULL
-        #  endif
+            static const char * const _keywords[] = {{{keywords_c} NULL}};
+            static _PyArg_Parser _parser = {{
+                .keywords = _keywords,
+                %s
+                .kwtuple = KWTUPLE,
+            }};
+            #undef KWTUPLE
+            """ % (format_ or fname)
+    else:
+        declarations = """
+            #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-        #else  // NUM_KEYWORDS != 0
-        #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+            static struct {{
+                PyGC_Head _this_is_not_used;
+                PyObject_VAR_HEAD
+                PyObject *ob_item[%d];
+            }} _kwtuple = {{
+                .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, %d)
+                .ob_item = {{ {keywords_py} }},
+            }};
+            #define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
-        static struct {{
-            PyGC_Head _this_is_not_used;
-            PyObject_VAR_HEAD
-            PyObject *ob_item[NUM_KEYWORDS];
-        }} _kwtuple = {{
-            .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-            .ob_item = {{ {keywords_py} }},
-        }};
-        #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
+            #else  // !Py_BUILD_CORE
+            #  define KWTUPLE NULL
+            #endif  // !Py_BUILD_CORE
 
-        #  else  // !Py_BUILD_CORE
-        #    define KWTUPLE NULL
-        #  endif  // !Py_BUILD_CORE
-        #endif  // NUM_KEYWORDS != 0
-        #undef NUM_KEYWORDS
-
-        static const char * const _keywords[] = {{{keywords_c} NULL}};
-        static _PyArg_Parser _parser = {{
-            .keywords = _keywords,
-            %s
-            .kwtuple = KWTUPLE,
-        }};
-        #undef KWTUPLE
-        """ % (num_keywords(f), format_ or fname)
+            static const char * const _keywords[] = {{{keywords_c} NULL}};
+            static _PyArg_Parser _parser = {{
+                .keywords = _keywords,
+                %s
+                .kwtuple = KWTUPLE,
+            }};
+            #undef KWTUPLE
+            """ % (num_keywords, num_keywords, format_ or fname)
     return normalize_snippet(declarations)
 
 
@@ -1450,7 +1456,6 @@ class CLanguage(Language):
         template_dict['keywords_c'] = ' '.join('"' + k + '",'
                                                for k in data.keywords)
         keywords = [k for k in data.keywords if k]
-        template_dict['num_keywords'] = len(keywords)
         template_dict['keywords_py'] = ' '.join('&_Py_ID(' + k + '),'
                                                 for k in keywords)
         template_dict['format_units'] = ''.join(data.format_units)
