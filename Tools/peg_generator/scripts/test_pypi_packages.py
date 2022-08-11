@@ -9,11 +9,10 @@ import shutil
 import pathlib
 import sys
 
-from typing import Generator, Any
+from typing import Generator
 
 sys.path.insert(0, ".")
 
-from pegen import build
 from scripts import test_parse_directory
 
 HERE = pathlib.Path(__file__).resolve().parent

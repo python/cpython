@@ -1,4 +1,0 @@
-Add the *metadata_encoding* parameter in the :class:`zipfile.ZipFile`
-constructor and the ``--metadata-encoding`` option in the :mod:`zipfile`
-CLI to allow reading zipfiles using non-standard codecs to encode the
-filenames within the archive.

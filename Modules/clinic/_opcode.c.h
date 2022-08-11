@@ -9,7 +9,7 @@ PyDoc_STRVAR(_opcode_stack_effect__doc__,
 "Compute the stack effect of the opcode.");
 
 #define _OPCODE_STACK_EFFECT_METHODDEF    \
-    {"stack_effect", (PyCFunction)(void(*)(void))_opcode_stack_effect, METH_FASTCALL|METH_KEYWORDS, _opcode_stack_effect__doc__},
+    {"stack_effect", _PyCFunction_CAST(_opcode_stack_effect), METH_FASTCALL|METH_KEYWORDS, _opcode_stack_effect__doc__},
 
 static int
 _opcode_stack_effect_impl(PyObject *module, int opcode, PyObject *oparg,
@@ -74,4 +74,4 @@ _opcode_get_specialization_stats(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _opcode_get_specialization_stats_impl(module);
 }
-/*[clinic end generated code: output=1699b4b1488b49c1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b904260bf022f953 input=a9049054013a1b77]*/

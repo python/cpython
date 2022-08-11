@@ -35,9 +35,9 @@ PyAPI_FUNC(PyObject *) PyStructSequence_New(PyTypeObject* type);
 typedef PyTupleObject PyStructSequence;
 
 /* Macro, *only* to be used to fill in brand new objects */
-#define PyStructSequence_SET_ITEM(op, i, v) PyTuple_SET_ITEM(op, i, v)
+#define PyStructSequence_SET_ITEM(op, i, v) PyTuple_SET_ITEM((op), (i), (v))
 
-#define PyStructSequence_GET_ITEM(op, i) PyTuple_GET_ITEM(op, i)
+#define PyStructSequence_GET_ITEM(op, i) PyTuple_GET_ITEM((op), (i))
 #endif
 
 PyAPI_FUNC(void) PyStructSequence_SetItem(PyObject*, Py_ssize_t, PyObject*);

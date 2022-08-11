@@ -14,6 +14,12 @@ module instead.
 #include "structmember.h"         // PyMemberDef
 #include <stdbool.h>
 
+/*[clinic input]
+module _csv
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=385118b71aa43706]*/
+
+#include "clinic/_csv.c.h"
 #define NOT_SET ((Py_UCS4)-1)
 #define EOL ((Py_UCS4)-2)
 
@@ -862,7 +868,7 @@ Reader_iternext(ReaderObj *self)
     PyObject *fields = NULL;
     Py_UCS4 c;
     Py_ssize_t pos, linelen;
-    unsigned int kind;
+    int kind;
     const void *data;
     PyObject *lineobj;
 
@@ -1060,7 +1066,7 @@ join_reset(WriterObj *self)
  * record length.
  */
 static Py_ssize_t
-join_append_data(WriterObj *self, unsigned int field_kind, const void *field_data,
+join_append_data(WriterObj *self, int field_kind, const void *field_data,
                  Py_ssize_t field_len, int *quoted,
                  int copy_phase)
 {
@@ -1173,7 +1179,7 @@ join_check_rec_size(WriterObj *self, Py_ssize_t rec_len)
 static int
 join_append(WriterObj *self, PyObject *field, int quoted)
 {
-    unsigned int field_kind = -1;
+    int field_kind = -1;
     const void *field_data = NULL;
     Py_ssize_t field_len = 0;
     Py_ssize_t rec_len;
@@ -1205,7 +1211,7 @@ static int
 join_append_lineterminator(WriterObj *self)
 {
     Py_ssize_t terminator_len, i;
-    unsigned int term_kind;
+    int term_kind;
     const void *term_data;
 
     terminator_len = PyUnicode_GET_LENGTH(self->dialect->lineterminator);
@@ -1473,8 +1479,18 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
 /*
  * DIALECT REGISTRY
  */
+
+/*[clinic input]
+_csv.list_dialects
+
+Return a list of all known dialect names.
+
+    names = csv.list_dialects()
+[clinic start generated code]*/
+
 static PyObject *
-csv_list_dialects(PyObject *module, PyObject *args)
+_csv_list_dialects_impl(PyObject *module)
+/*[clinic end generated code: output=a5b92b215b006a6d input=8953943eb17d98ab]*/
 {
     return PyDict_Keys(get_csv_state(module)->dialects);
 }
@@ -1506,11 +1522,23 @@ csv_register_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
     Py_RETURN_NONE;
 }
 
+
+/*[clinic input]
+_csv.unregister_dialect
+
+    name: object
+
+Delete the name/dialect mapping associated with a string name.
+
+    csv.unregister_dialect(name)
+[clinic start generated code]*/
+
 static PyObject *
-csv_unregister_dialect(PyObject *module, PyObject *name_obj)
+_csv_unregister_dialect_impl(PyObject *module, PyObject *name)
+/*[clinic end generated code: output=0813ebca6c058df4 input=6b5c1557bf60c7e7]*/
 {
     _csvstate *module_state = get_csv_state(module);
-    if (PyDict_DelItem(module_state->dialects, name_obj) < 0) {
+    if (PyDict_DelItem(module_state->dialects, name) < 0) {
         if (PyErr_ExceptionMatches(PyExc_KeyError)) {
             PyErr_Format(module_state->error_obj, "unknown dialect");
         }
@@ -1519,21 +1547,42 @@ csv_unregister_dialect(PyObject *module, PyObject *name_obj)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_csv.get_dialect
+
+    name: object
+
+Return the dialect instance associated with name.
+
+    dialect = csv.get_dialect(name)
+[clinic start generated code]*/
+
 static PyObject *
-csv_get_dialect(PyObject *module, PyObject *name_obj)
+_csv_get_dialect_impl(PyObject *module, PyObject *name)
+/*[clinic end generated code: output=aa988cd573bebebb input=edf9ddab32e448fb]*/
 {
-    return get_dialect_from_registry(name_obj, get_csv_state(module));
+    return get_dialect_from_registry(name, get_csv_state(module));
 }
 
+/*[clinic input]
+_csv.field_size_limit
+
+    new_limit: object = NULL
+
+Sets an upper limit on parsed fields.
+
+    csv.field_size_limit([limit])
+
+Returns old limit. If limit is not given, no new limit is set and
+the old limit is returned
+[clinic start generated code]*/
+
 static PyObject *
-csv_field_size_limit(PyObject *module, PyObject *args)
+_csv_field_size_limit_impl(PyObject *module, PyObject *new_limit)
+/*[clinic end generated code: output=f2799ecd908e250b input=cec70e9226406435]*/
 {
-    PyObject *new_limit = NULL;
     _csvstate *module_state = get_csv_state(module);
     long old_limit = module_state->field_limit;
-
-    if (!PyArg_UnpackTuple(args, "field_size_limit", 0, 1, &new_limit))
-        return NULL;
     if (new_limit != NULL) {
         if (!PyLong_CheckExact(new_limit)) {
             PyErr_Format(PyExc_TypeError,
@@ -1650,44 +1699,21 @@ PyDoc_STRVAR(csv_writer_doc,
 "\n"
 "The \"fileobj\" argument can be any object that supports the file API.\n");
 
-PyDoc_STRVAR(csv_list_dialects_doc,
-"Return a list of all know dialect names.\n"
-"    names = csv.list_dialects()");
-
-PyDoc_STRVAR(csv_get_dialect_doc,
-"Return the dialect instance associated with name.\n"
-"    dialect = csv.get_dialect(name)");
-
 PyDoc_STRVAR(csv_register_dialect_doc,
 "Create a mapping from a string name to a dialect class.\n"
 "    dialect = csv.register_dialect(name[, dialect[, **fmtparams]])");
 
-PyDoc_STRVAR(csv_unregister_dialect_doc,
-"Delete the name/dialect mapping associated with a string name.\n"
-"    csv.unregister_dialect(name)");
-
-PyDoc_STRVAR(csv_field_size_limit_doc,
-"Sets an upper limit on parsed fields.\n"
-"    csv.field_size_limit([limit])\n"
-"\n"
-"Returns old limit. If limit is not given, no new limit is set and\n"
-"the old limit is returned");
-
 static struct PyMethodDef csv_methods[] = {
-    { "reader", (PyCFunction)(void(*)(void))csv_reader,
+    { "reader", _PyCFunction_CAST(csv_reader),
         METH_VARARGS | METH_KEYWORDS, csv_reader_doc},
-    { "writer", (PyCFunction)(void(*)(void))csv_writer,
+    { "writer", _PyCFunction_CAST(csv_writer),
         METH_VARARGS | METH_KEYWORDS, csv_writer_doc},
-    { "list_dialects", (PyCFunction)csv_list_dialects,
-        METH_NOARGS, csv_list_dialects_doc},
-    { "register_dialect", (PyCFunction)(void(*)(void))csv_register_dialect,
+    { "register_dialect", _PyCFunction_CAST(csv_register_dialect),
         METH_VARARGS | METH_KEYWORDS, csv_register_dialect_doc},
-    { "unregister_dialect", (PyCFunction)csv_unregister_dialect,
-        METH_O, csv_unregister_dialect_doc},
-    { "get_dialect", (PyCFunction)csv_get_dialect,
-        METH_O, csv_get_dialect_doc},
-    { "field_size_limit", (PyCFunction)csv_field_size_limit,
-        METH_VARARGS, csv_field_size_limit_doc},
+    _CSV_LIST_DIALECTS_METHODDEF
+    _CSV_UNREGISTER_DIALECT_METHODDEF
+    _CSV_GET_DIALECT_METHODDEF
+    _CSV_FIELD_SIZE_LIMIT_METHODDEF
     { NULL, NULL }
 };
 

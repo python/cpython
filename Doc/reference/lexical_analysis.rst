@@ -101,11 +101,10 @@ addition, if the first bytes of the file are the UTF-8 byte-order mark
 (``b'\xef\xbb\xbf'``), the declared file encoding is UTF-8 (this is supported,
 among others, by Microsoft's :program:`notepad`).
 
-If an encoding is declared, the encoding name must be recognized by Python. The
+If an encoding is declared, the encoding name must be recognized by Python
+(see :ref:`standard-encodings`). The
 encoding is used for all lexical analysis, including string literals, comments
 and identifiers.
-
-.. XXX there should be a list of supported encodings.
 
 
 .. _explicit-joining:
@@ -481,9 +480,11 @@ declaration is given in the source file; see section :ref:`encodings`.
 In plain English: Both types of literals can be enclosed in matching single quotes
 (``'``) or double quotes (``"``).  They can also be enclosed in matching groups
 of three single or double quotes (these are generally referred to as
-*triple-quoted strings*).  The backslash (``\``) character is used to escape
-characters that otherwise have a special meaning, such as newline, backslash
-itself, or the quote character.
+*triple-quoted strings*). The backslash (``\``) character is used to give special
+meaning to otherwise ordinary characters like ``n``, which means 'newline' when
+escaped (``\n``). It can also be used to escape characters that otherwise have a
+special meaning, such as newline, backslash itself, or the quote character.
+See :ref:`escape sequences <escape-sequences>` below for examples.
 
 .. index::
    single: b'; bytes literal
@@ -542,6 +543,8 @@ retained), except that three unescaped quotes in a row terminate the literal.  (
    single: \u; escape sequence
    single: \U; escape sequence
 
+.. _escape-sequences:
+
 Unless an ``'r'`` or ``'R'`` prefix is present, escape sequences in string and
 bytes literals are interpreted according to rules similar to those used by
 Standard C.  The recognized escape sequences are:
@@ -596,6 +599,11 @@ Notes:
 
 (1)
    As in Standard C, up to three octal digits are accepted.
+
+   .. versionchanged:: 3.11
+      Octal escapes with value larger than ``0o377`` produce a :exc:`DeprecationWarning`.
+      In a future Python version they will be a :exc:`SyntaxWarning` and
+      eventually a :exc:`SyntaxError`.
 
 (2)
    Unlike in Standard C, exactly two hex digits are required.
@@ -749,7 +757,7 @@ the final value of the whole string.
 
 Top-level format specifiers may include nested replacement fields. These nested
 fields may include their own conversion fields and :ref:`format specifiers
-<formatspec>`, but may not include more deeply-nested replacement fields. The
+<formatspec>`, but may not include more deeply nested replacement fields. The
 :ref:`format specifier mini-language <formatspec>` is the same as that used by
 the :meth:`str.format` method.
 

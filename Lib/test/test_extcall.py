@@ -8,6 +8,7 @@ We're going the use these types for extra testing
 
 We're defining four helper functions
 
+    >>> from test import support
     >>> def e(a,b):
     ...     print(a, b)
 
@@ -522,7 +523,6 @@ Same with keyword only args:
 
 import doctest
 import unittest
-from test import support
 
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite())

@@ -485,50 +485,44 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
         self.assertEqual(rint, 0)
 
     def test_randrange_errors(self):
-        raises = partial(self.assertRaises, ValueError, self.gen.randrange)
-        # Empty range
-        raises(3, 3)
-        raises(-721)
-        raises(0, 100, -12)
-        # Non-integer start/stop
-        self.assertWarns(DeprecationWarning, raises, 3.14159)
-        self.assertWarns(DeprecationWarning, self.gen.randrange, 3.0)
-        self.assertWarns(DeprecationWarning, self.gen.randrange, Fraction(3, 1))
-        self.assertWarns(DeprecationWarning, raises, '3')
-        self.assertWarns(DeprecationWarning, raises, 0, 2.71828)
-        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 2.0)
-        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, Fraction(2, 1))
-        self.assertWarns(DeprecationWarning, raises, 0, '2')
-        # Zero and non-integer step
-        raises(0, 42, 0)
-        self.assertWarns(DeprecationWarning, raises, 0, 42, 0.0)
-        self.assertWarns(DeprecationWarning, raises, 0, 0, 0.0)
-        self.assertWarns(DeprecationWarning, raises, 0, 42, 3.14159)
-        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 42, 3.0)
-        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 42, Fraction(3, 1))
-        self.assertWarns(DeprecationWarning, raises, 0, 42, '3')
-        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 42, 1.0)
-        self.assertWarns(DeprecationWarning, raises, 0, 0, 1.0)
+        raises_value_error = partial(self.assertRaises, ValueError, self.gen.randrange)
+        raises_type_error = partial(self.assertRaises, TypeError, self.gen.randrange)
 
-    def test_randrange_argument_handling(self):
-        randrange = self.gen.randrange
-        with self.assertWarns(DeprecationWarning):
-            randrange(10.0, 20, 2)
-        with self.assertWarns(DeprecationWarning):
-            randrange(10, 20.0, 2)
-        with self.assertWarns(DeprecationWarning):
-            randrange(10, 20, 1.0)
-        with self.assertWarns(DeprecationWarning):
-            randrange(10, 20, 2.0)
-        with self.assertWarns(DeprecationWarning):
-            with self.assertRaises(ValueError):
-                randrange(10.5)
-        with self.assertWarns(DeprecationWarning):
-            with self.assertRaises(ValueError):
-                randrange(10, 20.5)
-        with self.assertWarns(DeprecationWarning):
-            with self.assertRaises(ValueError):
-                randrange(10, 20, 1.5)
+        # Empty range
+        raises_value_error(3, 3)
+        raises_value_error(-721)
+        raises_value_error(0, 100, -12)
+
+        # Zero step
+        raises_value_error(0, 42, 0)
+        raises_type_error(0, 42, 0.0)
+        raises_type_error(0, 0, 0.0)
+
+        # Non-integer stop
+        raises_type_error(3.14159)
+        raises_type_error(3.0)
+        raises_type_error(Fraction(3, 1))
+        raises_type_error('3')
+        raises_type_error(0, 2.71827)
+        raises_type_error(0, 2.0)
+        raises_type_error(0, Fraction(2, 1))
+        raises_type_error(0, '2')
+        raises_type_error(0, 2.71827, 2)
+
+        # Non-integer start
+        raises_type_error(2.71827, 5)
+        raises_type_error(2.0, 5)
+        raises_type_error(Fraction(2, 1), 5)
+        raises_type_error('2', 5)
+        raises_type_error(2.71827, 5, 2)
+
+        # Non-integer step
+        raises_type_error(0, 42, 3.14159)
+        raises_type_error(0, 42, 3.0)
+        raises_type_error(0, 42, Fraction(3, 1))
+        raises_type_error(0, 42, '3')
+        raises_type_error(0, 42, 1.0)
+        raises_type_error(0, 0, 1.0)
 
     def test_randrange_step(self):
         # bpo-42772: When stop is None, the step argument was being ignored.
@@ -1051,12 +1045,68 @@ class TestDistributions(unittest.TestCase):
                 (g.lognormvariate, (0.0, 0.0), 1.0),
                 (g.lognormvariate, (-float('inf'), 0.0), 0.0),
                 (g.normalvariate, (10.0, 0.0), 10.0),
+                (g.binomialvariate, (0, 0.5), 0),
+                (g.binomialvariate, (10, 0.0), 0),
+                (g.binomialvariate, (10, 1.0), 10),
                 (g.paretovariate, (float('inf'),), 1.0),
                 (g.weibullvariate, (10.0, float('inf')), 10.0),
                 (g.weibullvariate, (0.0, 10.0), 0.0),
             ]:
             for i in range(N):
                 self.assertEqual(variate(*args), expected)
+
+    def test_binomialvariate(self):
+        B = random.binomialvariate
+
+        # Cover all the code paths
+        with self.assertRaises(ValueError):
+            B(n=-1)                            # Negative n
+        with self.assertRaises(ValueError):
+            B(n=1, p=-0.5)                     # Negative p
+        with self.assertRaises(ValueError):
+            B(n=1, p=1.5)                      # p > 1.0
+        self.assertEqual(B(10, 0.0), 0)        # p == 0.0
+        self.assertEqual(B(10, 1.0), 10)       # p == 1.0
+        self.assertTrue(B(1, 0.3) in {0, 1})   # n == 1 fast path
+        self.assertTrue(B(1, 0.9) in {0, 1})   # n == 1 fast path
+        self.assertTrue(B(1, 0.0) in {0})      # n == 1 fast path
+        self.assertTrue(B(1, 1.0) in {1})      # n == 1 fast path
+
+        # BG method p <= 0.5 and n*p=1.25
+        self.assertTrue(B(5, 0.25) in set(range(6)))
+
+        # BG method p >= 0.5 and n*(1-p)=1.25
+        self.assertTrue(B(5, 0.75) in set(range(6)))
+
+        # BTRS method p <= 0.5 and n*p=25
+        self.assertTrue(B(100, 0.25) in set(range(101)))
+
+        # BTRS method p > 0.5 and n*(1-p)=25
+        self.assertTrue(B(100, 0.75) in set(range(101)))
+
+        # Statistical tests chosen such that they are
+        # exceedingly unlikely to ever fail for correct code.
+
+        # BG code path
+        # Expected dist: [31641, 42188, 21094, 4688, 391]
+        c = Counter(B(4, 0.25) for i in range(100_000))
+        self.assertTrue(29_641 <= c[0] <= 33_641, c)
+        self.assertTrue(40_188 <= c[1] <= 44_188)
+        self.assertTrue(19_094 <= c[2] <= 23_094)
+        self.assertTrue(2_688  <= c[3] <= 6_688)
+        self.assertEqual(set(c), {0, 1, 2, 3, 4})
+
+        # BTRS code path
+        # Sum of c[20], c[21], c[22], c[23], c[24] expected to be 36,214
+        c = Counter(B(100, 0.25) for i in range(100_000))
+        self.assertTrue(34_214 <= c[20]+c[21]+c[22]+c[23]+c[24] <= 38_214)
+        self.assertTrue(set(c) <= set(range(101)))
+        self.assertEqual(c.total(), 100_000)
+
+        # Demonstrate the BTRS works for huge values of n
+        self.assertTrue(19_000_000 <= B(100_000_000, 0.2) <= 21_000_000)
+        self.assertTrue(89_000_000 <= B(100_000_000, 0.9) <= 91_000_000)
+
 
     def test_von_mises_range(self):
         # Issue 17149: von mises variates were not consistently in the

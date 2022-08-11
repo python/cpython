@@ -188,10 +188,9 @@ class _ConnectionBase:
         self._check_closed()
         self._check_writable()
         m = memoryview(buf)
-        # HACK for byte-indexing of non-bytewise buffers (e.g. array.array)
         if m.itemsize > 1:
-            m = memoryview(bytes(m))
-        n = len(m)
+            m = m.cast('B')
+        n = m.nbytes
         if offset < 0:
             raise ValueError("offset is negative")
         if n < offset:

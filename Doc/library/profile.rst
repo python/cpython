@@ -66,22 +66,23 @@ your system.)
 The above action would run :func:`re.compile` and print profile results like
 the following::
 
-         197 function calls (192 primitive calls) in 0.002 seconds
+         214 function calls (207 primitive calls) in 0.002 seconds
 
-   Ordered by: standard name
+   Ordered by: cumulative time
 
    ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000    0.002    0.002 {built-in method builtins.exec}
         1    0.000    0.000    0.001    0.001 <string>:1(<module>)
-        1    0.000    0.000    0.001    0.001 re.py:212(compile)
-        1    0.000    0.000    0.001    0.001 re.py:268(_compile)
-        1    0.000    0.000    0.000    0.000 sre_compile.py:172(_compile_charset)
-        1    0.000    0.000    0.000    0.000 sre_compile.py:201(_optimize_charset)
-        4    0.000    0.000    0.000    0.000 sre_compile.py:25(_identityfunction)
-      3/1    0.000    0.000    0.000    0.000 sre_compile.py:33(_compile)
+        1    0.000    0.000    0.001    0.001 __init__.py:250(compile)
+        1    0.000    0.000    0.001    0.001 __init__.py:289(_compile)
+        1    0.000    0.000    0.000    0.000 _compiler.py:759(compile)
+        1    0.000    0.000    0.000    0.000 _parser.py:937(parse)
+        1    0.000    0.000    0.000    0.000 _compiler.py:598(_code)
+        1    0.000    0.000    0.000    0.000 _parser.py:435(_parse_sub)
 
-The first line indicates that 197 calls were monitored.  Of those calls, 192
+The first line indicates that 214 calls were monitored.  Of those calls, 207
 were :dfn:`primitive`, meaning that the call was not induced via recursion. The
-next line: ``Ordered by: standard name``, indicates that the text string in the
+next line: ``Ordered by: cumulative name``, indicates that the text string in the
 far right column was used to sort the output. The column headings include:
 
 ncalls

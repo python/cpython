@@ -48,7 +48,7 @@ PyDoc_STRVAR(_io_StringIO_read__doc__,
 "is reached. Return an empty string at EOF.");
 
 #define _IO_STRINGIO_READ_METHODDEF    \
-    {"read", (PyCFunction)(void(*)(void))_io_StringIO_read, METH_FASTCALL, _io_StringIO_read__doc__},
+    {"read", _PyCFunction_CAST(_io_StringIO_read), METH_FASTCALL, _io_StringIO_read__doc__},
 
 static PyObject *
 _io_StringIO_read_impl(stringio *self, Py_ssize_t size);
@@ -84,7 +84,7 @@ PyDoc_STRVAR(_io_StringIO_readline__doc__,
 "Returns an empty string if EOF is hit immediately.");
 
 #define _IO_STRINGIO_READLINE_METHODDEF    \
-    {"readline", (PyCFunction)(void(*)(void))_io_StringIO_readline, METH_FASTCALL, _io_StringIO_readline__doc__},
+    {"readline", _PyCFunction_CAST(_io_StringIO_readline), METH_FASTCALL, _io_StringIO_readline__doc__},
 
 static PyObject *
 _io_StringIO_readline_impl(stringio *self, Py_ssize_t size);
@@ -122,7 +122,7 @@ PyDoc_STRVAR(_io_StringIO_truncate__doc__,
 "Returns the new absolute position.");
 
 #define _IO_STRINGIO_TRUNCATE_METHODDEF    \
-    {"truncate", (PyCFunction)(void(*)(void))_io_StringIO_truncate, METH_FASTCALL, _io_StringIO_truncate__doc__},
+    {"truncate", _PyCFunction_CAST(_io_StringIO_truncate), METH_FASTCALL, _io_StringIO_truncate__doc__},
 
 static PyObject *
 _io_StringIO_truncate_impl(stringio *self, Py_ssize_t size);
@@ -162,7 +162,7 @@ PyDoc_STRVAR(_io_StringIO_seek__doc__,
 "Returns the new absolute position.");
 
 #define _IO_STRINGIO_SEEK_METHODDEF    \
-    {"seek", (PyCFunction)(void(*)(void))_io_StringIO_seek, METH_FASTCALL, _io_StringIO_seek__doc__},
+    {"seek", _PyCFunction_CAST(_io_StringIO_seek), METH_FASTCALL, _io_StringIO_seek__doc__},
 
 static PyObject *
 _io_StringIO_seek_impl(stringio *self, Py_ssize_t pos, int whence);
@@ -338,4 +338,4 @@ _io_StringIO_seekable(stringio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_StringIO_seekable_impl(self);
 }
-/*[clinic end generated code: output=eea93dcab10d0a97 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3207dc548c305ad8 input=a9049054013a1b77]*/

@@ -11,12 +11,12 @@ PyAPI_DATA(PyTypeObject) PyCallIter_Type;
 extern PyTypeObject _PyAnextAwaitable_Type;
 #endif
 
-#define PySeqIter_Check(op) Py_IS_TYPE(op, &PySeqIter_Type)
+#define PySeqIter_Check(op) Py_IS_TYPE((op), &PySeqIter_Type)
 
 PyAPI_FUNC(PyObject *) PySeqIter_New(PyObject *);
 
 
-#define PyCallIter_Check(op) Py_IS_TYPE(op, &PyCallIter_Type)
+#define PyCallIter_Check(op) Py_IS_TYPE((op), &PyCallIter_Type)
 
 PyAPI_FUNC(PyObject *) PyCallIter_New(PyObject *, PyObject *);
 

@@ -63,8 +63,9 @@ typedef struct
 
     PyObject *statement_cache;
 
-    /* Lists of weak references to statements and cursors used within this connection */
-    PyObject* cursors;
+    /* Lists of weak references to cursors and blobs used within this connection */
+    PyObject *cursors;
+    PyObject *blobs;
 
     /* Counters for how many cursors were created in the connection. May be
      * reset to 0 at certain intervals */
@@ -98,7 +99,6 @@ typedef struct
     PyObject* NotSupportedError;
 } pysqlite_Connection;
 
-int pysqlite_connection_register_cursor(pysqlite_Connection* connection, PyObject* cursor);
 int pysqlite_check_thread(pysqlite_Connection* self);
 int pysqlite_check_connection(pysqlite_Connection* con);
 

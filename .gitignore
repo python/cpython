@@ -150,3 +150,6 @@ Python/frozen_modules/MANIFEST
 # Ignore ./python binary on Unix but still look into ./Python/ directory.
 /python
 !/Python/
+
+# main branch only: ABI files are not checked/maintained
+Doc/data/python*.abi
