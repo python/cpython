@@ -434,6 +434,30 @@ class TestAsyncCase(unittest.TestCase):
         test.doCleanups()
         self.assertEqual(events, ['asyncSetUp', 'test', 'cleanup'])
 
+    def test_setup_get_event_loop(self):
+        # See https://github.com/python/cpython/issues/95736
+        events = []
+        class TestCase1(unittest.IsolatedAsyncioTestCase):
+            def setUp(self):
+                self.loop = asyncio.get_event_loop_policy().get_event_loop()
+
+            async def test_demo1(self):
+                events.append('called demo1')
+
+
+        class TestCase2(unittest.IsolatedAsyncioTestCase):
+            def setUp(self):
+                self.loop = asyncio.get_event_loop_policy().get_event_loop()
+
+            async def test_demo2(self):
+                events.append('called demo2')
+
+        test = TestCase1('test_demo1')
+        test.debug()
+        self.assertEqual(events, ['called demo1'])
+        test = TestCase2('test_demo2')
+        test.debug()
+        self.assertEqual(events, ['called demo1', 'called demo2'])
 
 if __name__ == "__main__":
     unittest.main()
