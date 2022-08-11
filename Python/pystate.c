@@ -1255,10 +1255,14 @@ PyFrameObject*
 PyThreadState_GetFrame(PyThreadState *tstate)
 {
     assert(tstate != NULL);
-    if (tstate->cframe->current_frame == NULL) {
+    _PyInterpreterFrame *f = tstate->cframe->current_frame;
+    while (f && _PyFrame_IsIncomplete(f)) {
+        f = f->previous;
+    }
+    if (f == NULL) {
         return NULL;
     }
-    PyFrameObject *frame = _PyFrame_GetFrameObject(tstate->cframe->current_frame);
+    PyFrameObject *frame = _PyFrame_GetFrameObject(f);
     if (frame == NULL) {
         PyErr_Clear();
     }
