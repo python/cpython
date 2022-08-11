@@ -3,7 +3,6 @@ import sys
 import types
 import unittest
 import weakref
-from test.support.os_helper import TESTFN
 
 from test import support
 
