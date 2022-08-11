@@ -240,7 +240,7 @@ class _AsyncGeneratorContextManager(
                     isinstance(value, (StopIteration, StopAsyncIteration))
                     and exc.__cause__ is value
                 ):
-                    exc.__traceback__ = traceback
+                    value.__traceback__ = traceback
                     return False
                 raise
             except BaseException as exc:
