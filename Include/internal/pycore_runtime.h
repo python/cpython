@@ -15,6 +15,10 @@ extern "C" {
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_ids
 
 
+struct getargs_runtime_state {
+    PyThread_type_lock mutex;
+};
+
 /* ceval state */
 
 struct _ceval_runtime_state {
@@ -124,6 +128,8 @@ typedef struct pyruntimestate {
     _Py_AuditHookEntry *audit_hook_head;
 
     struct _Py_unicode_runtime_ids unicode_ids;
+
+    struct getargs_runtime_state getargs;
 
     /* All the objects that are shared by the runtime's interpreters. */
     struct _Py_global_objects global_objects;

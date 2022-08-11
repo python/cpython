@@ -2033,10 +2033,11 @@ get_kwtuple(struct _PyArg_Parser *parser)
     return PyDict_GetItem(interp->getargs.kwtuples, parser->kwtuple);
 }
 
-/* This should be called only at the end of runtime finalization. */
 static void
 clear_kwtuple(struct _PyArg_Parser *parser)
 {
+    // This should be called only at the end of runtime finalization.
+    assert(_Py_IsMainInterpreter(_PyInterpreterState_GET()));
     if (parser->kwtuple != NULL && !KWTUPLE_IS_STATIC(parser)) {
         PyObject *key = parser->kwtuple;
         assert(PyLong_CheckExact(key));
@@ -2065,21 +2066,8 @@ clear_kwtuples(PyInterpreterState *interp)
 }
 
 static int
-parser_init(struct _PyArg_Parser *parser)
+_parser_init(struct _PyArg_Parser *parser)
 {
-    assert(parser->keywords != NULL);
-
-    if (parser->initialized) {
-        assert(parser->kwtuple != NULL);
-        if (KWTUPLE_IS_STATIC(parser)) {
-            return 1;
-        }
-        if (init_kwtuple(parser) < 0) {
-            return 0;
-        }
-        return 1;
-    }
-
     assert(parser->len == 0 &&
            parser->pos == 0 &&
            (parser->format == NULL || parser->fname == NULL) &&
@@ -2124,6 +2112,29 @@ parser_init(struct _PyArg_Parser *parser)
     parser->next = static_arg_parsers;
     static_arg_parsers = parser;
     return 1;
+}
+
+static int
+parser_init(struct _PyArg_Parser *parser)
+{
+    int res = 1;
+    assert(parser->keywords != NULL);
+
+    PyThread_acquire_lock(_PyRuntime.getargs.mutex, WAIT_LOCK);
+    if (parser->initialized) {
+        PyThread_release_lock(_PyRuntime.getargs.mutex);
+        assert(parser->kwtuple != NULL);
+        if (!KWTUPLE_IS_STATIC(parser)) {
+            if (init_kwtuple(parser) < 0) {
+                res = 0;
+            }
+        }
+    }
+    else {
+        res = _parser_init(parser);
+        PyThread_release_lock(_PyRuntime.getargs.mutex);
+    }
+    return res;
 }
 
 static void
