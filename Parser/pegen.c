@@ -547,7 +547,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
                          byte_offset_to_character_offset(error_line, end_col_offset) :
                          end_col_number;
     }
-    tmp = Py_BuildValue("(OiiNii)", p->tok->filename, lineno, col_number, error_line, end_lineno, end_col_number);
+    tmp = Py_BuildValue("(OnnNnn)", p->tok->filename, lineno, col_number, error_line, end_lineno, end_col_number);
     if (!tmp) {
         goto error;
     }
