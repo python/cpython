@@ -480,7 +480,7 @@ def main():
     try:
         builder.host.platform.check()
     except MissingDependency as e:
-        parser.error(2, str(e))
+        parser.error(str(e))
 
     # hack for WASI
     if builder.host.is_wasi and not SETUP_LOCAL.exists():
