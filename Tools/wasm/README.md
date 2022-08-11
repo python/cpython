@@ -212,6 +212,15 @@ Node builds use ``NODERAWFS``.
 - Node RawFS allows direct access to the host file system without need to
   perform ``FS.mount()`` call.
 
+## wasm64-emscripten
+
+- wasm64 requires recent NodeJS and ``--experimental-wasm-memory64``.
+- ``EM_JS`` functions must return ``BigInt()``.
+- ``Py_BuildValue()`` format strings must match size of types. Confusing 32
+  and 64 bits types leads to memory corruption, see
+  [gh-95876](https://github.com/python/cpython/issues/95876) and
+  [gh-95878](https://github.com/python/cpython/issues/95878).
+
 # Hosting Python WASM builds
 
 The simple REPL terminal uses SharedArrayBuffer. For security reasons
