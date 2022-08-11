@@ -520,7 +520,6 @@ def strip_leading_and_trailing_blank_lines(s):
         del lines[0]
     return '\n'.join(lines)
 
-
 @functools.lru_cache()
 def normalize_snippet(s, *, indent=0):
     """
