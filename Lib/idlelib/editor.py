@@ -8,7 +8,6 @@ import sys
 import tokenize
 import traceback
 import webbrowser
-import winreg
 
 from tkinter import *
 from tkinter.font import Font
@@ -87,7 +86,8 @@ class EditorWindow:
                     dochome = os.path.join(basepath, pyver,
                                            'Doc', 'index.html')
             elif sys.platform[:3] == 'win':
-                docfile = "Dummy^file&name*that(should)fail-isfile#check"
+                import winreg  # Windows only, block only executed once.
+                docfile = ''
                 KEY = (rf"Software\Python\PythonCore\{sys.winver}"
                         r"\Help\Main Python Documentation")
                 try:
