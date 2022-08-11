@@ -535,7 +535,15 @@ def normalize_snippet(s, *, indent=0):
     return s
 
 
-def declare_parser(*, hasformat=False):
+def declare_parser(f, *, hasformat=False):
+    def num_keywords(f):
+        params = f.parameters.values()
+        kwds = [
+            p for p in params
+            if not p.is_positional_only() and not p.is_vararg()
+        ]
+        return len(kwds)
+
     """
     Generates the code template for a static local PyArg_Parser variable,
     with an initializer.  For core code (incl. builtin modules) the
@@ -549,7 +557,7 @@ def declare_parser(*, hasformat=False):
         fname = '.fname = "{name}",'
         format_ = ''
     declarations = """
-        #define NUM_KEYWORDS {num_keywords}
+        #define NUM_KEYWORDS %d
         #if NUM_KEYWORDS == 0
 
         #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -584,7 +592,7 @@ def declare_parser(*, hasformat=False):
             .kwtuple = KWTUPLE,
         }};
         #undef KWTUPLE
-        """ % (format_ or fname)
+        """ % (num_keywords(f), format_ or fname)
     return normalize_snippet(declarations)
 
 
@@ -1020,7 +1028,7 @@ class CLanguage(Language):
                 flags = "METH_FASTCALL|METH_KEYWORDS"
                 parser_prototype = parser_prototype_fastcall_keywords
                 argname_fmt = 'args[%d]'
-                declarations = declare_parser()
+                declarations = declare_parser(f)
                 declarations += "\nPyObject *argsbuf[%s];" % len(converters)
                 if has_optional_kw:
                     pre_buffer = "0" if vararg != NO_VARARG else "nargs"
@@ -1036,7 +1044,7 @@ class CLanguage(Language):
                 flags = "METH_VARARGS|METH_KEYWORDS"
                 parser_prototype = parser_prototype_keyword
                 argname_fmt = 'fastargs[%d]'
-                declarations = declare_parser()
+                declarations = declare_parser(f)
                 declarations += "\nPyObject *argsbuf[%s];" % len(converters)
                 declarations += "\nPyObject * const *fastargs;"
                 declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"
@@ -1116,7 +1124,7 @@ class CLanguage(Language):
                 if add_label:
                     parser_code.append("%s:" % add_label)
             else:
-                declarations = declare_parser(hasformat=True)
+                declarations = declare_parser(f, hasformat=True)
                 if not new_or_init:
                     parser_code = [normalize_snippet("""
                         if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser{parse_arguments_comma}
