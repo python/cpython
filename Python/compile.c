@@ -152,7 +152,7 @@ static struct jump_target_label_ NO_LABEL = {-1};
 #define IS_LABEL(L) (!SAME_LABEL((L), (NO_LABEL)))
 
 #define NEW_JUMP_TARGET_LABEL(C, NAME) \
-    jump_target_label NAME = {cfg_new_label_id(CFG_BUILDER(C))}; \
+    jump_target_label NAME = cfg_new_label(CFG_BUILDER(C)); \
     if (!IS_LABEL(NAME)) { \
         return 0; \
     }
@@ -868,10 +868,11 @@ compiler_set_qualname(struct compiler *c)
     return 1;
 }
 
-static int
-cfg_new_label_id(cfg_builder *g)
+static jump_target_label
+cfg_new_label(cfg_builder *g)
 {
-    return g->g_next_free_label++;
+    jump_target_label lbl = {g->g_next_free_label++};
+    return lbl;
 }
 
 /* Allocate a new block and return a pointer to it.
