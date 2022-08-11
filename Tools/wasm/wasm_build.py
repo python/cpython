@@ -46,6 +46,11 @@ _MISSING = pathlib.PurePath("MISSING")
 
 # WASM_WEBSERVER = WASMTOOLS / "wasmwebserver.py"
 
+CLEAN_SRCDIR = f"""
+Builds require a clean source directory. Please use a clean checkout or
+run "make clean -C '{SRCDIR}'".
+"""
+
 INSTALL_EMSDK = """
 wasm32-emscripten builds need Emscripten SDK. Please follow instructions at
 https://emscripten.org/docs/getting_started/downloads.html how to install
@@ -92,13 +97,21 @@ def get_emscripten_root(emconfig: pathlib.Path = EM_CONFIG) -> pathlib.Path:
 EMSCRIPTEN_ROOT = get_emscripten_root()
 
 
-class MissingDependency(ValueError):
-    def __init__(self, command: str, text: str):
-        self.command = command
+class ConditionError(ValueError):
+    def __init__(self, info: str, text: str):
+        self.info = info
         self.text = text
 
     def __str__(self):
-        return f"{type(self).__name__}: '{self.command}'\n{self.text}"
+        return f"{type(self).__name__}: '{self.info}'\n{self.text}"
+
+
+class MissingDependency(ConditionError):
+    pass
+
+
+class DirtySourceDirectory(ConditionError):
+    pass
 
 
 @dataclasses.dataclass
@@ -124,6 +137,16 @@ class Platform:
         return self.environ.copy()
 
 
+def _check_clean_src():
+    candidates = [
+        SRCDIR / "Programs" / "python.o",
+        SRCDIR / "Python" / "frozen_modules" / "importlib._bootstrap.h",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            raise DirtySourceDirectory(candidate, CLEAN_SRCDIR)
+
+
 NATIVE = Platform(
     "native",
     pythonexe=sysconfig.get_config_var("PYTHON"),  # TODO: check macOS
@@ -131,7 +154,7 @@ NATIVE = Platform(
     configure_wrapper=None,
     make_wrapper=None,
     environ={},
-    check=lambda: None,
+    check=_check_clean_src,
 )
 
 
@@ -156,6 +179,7 @@ def _check_emscripten():
             "minimum required version "
             f"{'.'.join(str(v) for v in EMSDK_MIN_VERSION)}.",
         )
+    _check_clean_src()
 
 
 EMSCRIPTEN = Platform(
@@ -176,6 +200,7 @@ def _check_wasi():
     wasmtime = shutil.which("wasmtime")
     if wasmtime is None:
         raise MissingDependency("wasmtime", INSTALL_WASMTIME)
+    _check_clean_src()
 
 
 WASI = Platform(
@@ -479,7 +504,7 @@ def main():
     builder = PROFILES[args.platform]
     try:
         builder.host.platform.check()
-    except MissingDependency as e:
+    except ConditionError as e:
         parser.error(str(e))
 
     # hack for WASI
