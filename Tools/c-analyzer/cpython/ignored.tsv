@@ -30,6 +30,7 @@ Modules/_io/_iomodule.h	-	PyBufferedRandom_Type	-
 Modules/_io/_iomodule.h	-	PyTextIOWrapper_Type	-
 Modules/_io/_iomodule.h	-	PyIncrementalNewlineDecoder_Type	-
 Modules/_io/_iomodule.h	-	_PyBytesIOBuffer_Type	-
+Modules/_io/_iomodule.h	-	_PyIO_Module	-
 Modules/_io/_iomodule.h	-	_PyIO_str_close	-
 Modules/_io/_iomodule.h	-	_PyIO_str_closed	-
 Modules/_io/_iomodule.h	-	_PyIO_str_decode	-
@@ -405,16 +406,35 @@ Python/sysmodule.c	sys_set_asyncgen_hooks	keywords	-
 
 #-----------------------
 # PyModuleDef
+
+Modules/_abc.c	-	_abcmodule	-
+Modules/_codecsmodule.c	-	codecsmodule	-
+Modules/_collectionsmodule.c	-	_collectionsmodule	-
+Modules/_functoolsmodule.c	-	_functools_module	-
+Modules/_io/_iomodule.c	-	_PyIO_Module	-
+Modules/_localemodule.c	-	_localemodule	-
 Modules/_multiprocessing/posixshmem.c	-	_posixshmemmodule	-
 Modules/_sqlite/module.h	-	_sqlite3module	-
-Modules/_sre/sre.c	-	sremodule	static struct -
+Modules/_sre/sre.c	-	sremodule	-
 Modules/_ssl.c	-	_sslmodule_def	-
 Modules/_ssl.h	-	_sslmodule_def	-
-Modules/_testcapi/heaptype.c	-	_testcapimodule	static -
+Modules/_stat.c	-	statmodule	-
+Modules/_testcapi/heaptype.c	-	_testcapimodule	-
 Modules/_testmultiphase.c	-	def_module_state_shared	-
 Modules/_threadmodule.c	-	thread_module	-
+Modules/_tracemalloc.c	-	module_def	-
 Modules/_typingmodule.c	-	typingmodule	-
+Modules/_weakref.c	-	weakrefmodule	-
+Modules/atexitmodule.c	-	atexitmodule	-
+Modules/errnomodule.c	-	errnomodule	-
+Modules/faulthandler.c	-	module_def	-
+Modules/gcmodule.c	-	gcmodule	-
+Modules/itertoolsmodule.c	-	itertoolsmodule	-
+Modules/posixmodule.c	-	posixmodule	-
+Modules/pwdmodule.c	-	pwdmodule	-
 Modules/signalmodule.c	-	signal_module	-
+Modules/symtablemodule.c	-	symtablemodule	-
+Modules/timemodule.c	-	timemodule	-
 Modules/xxlimited_35.c	-	xxmodule	-
 Python/Python-ast.c	-	_astmodule	-
 Python/Python-tokenize.c	-	_tokenizemodule	-
@@ -1371,8 +1391,10 @@ Modules/_testcapi/heaptype.c	-	HeapCTypeSubclassWithFinalizer_spec	-
 Modules/_testcapi/heaptype.c	-	HeapCTypeMetaclass_spec	-
 Modules/_testcapi/heaptype.c	-	HeapCTypeMetaclassCustomNew_spec	-
 Modules/_testcapi/heaptype.c	-	HeapCTypeWithDict_spec	-
+Modules/_testcapi/heaptype.c	-	HeapCTypeWithDict2_spec	-
 Modules/_testcapi/heaptype.c	-	HeapCTypeWithNegativeDict_spec	-
 Modules/_testcapi/heaptype.c	-	HeapCTypeWithWeakref_spec	-
+Modules/_testcapi/heaptype.c	-	HeapCTypeWithWeakref2_spec	-
 Modules/_testcapi/heaptype.c	-	HeapCTypeSetattr_spec	-
 Modules/_testcapimodule.c	-	HeapTypeNameType_Spec	-
 Modules/_testcapimodule.c	-	NullTpDocType_spec	-

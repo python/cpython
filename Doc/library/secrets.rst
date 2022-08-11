@@ -153,7 +153,7 @@ Generate an eight-character alphanumeric password:
 .. note::
 
    Applications should not
-   `store passwords in a recoverable format <http://cwe.mitre.org/data/definitions/257.html>`_,
+   `store passwords in a recoverable format <https://cwe.mitre.org/data/definitions/257.html>`_,
    whether plain text or encrypted.  They should be salted and hashed
    using a cryptographically strong one-way (irreversible) hash function.
 

@@ -36,6 +36,7 @@
 #define RC_DUPLICATE_ITEM   110
 #define RC_INSTALLING       111
 #define RC_NO_PYTHON_AT_ALL 112
+#define RC_NO_SHEBANG       113
 
 static FILE * log_fp = NULL;
 
@@ -751,6 +752,88 @@ _shebangStartsWith(const wchar_t *buffer, int bufferLength, const wchar_t *prefi
 
 
 int
+searchPath(SearchInfo *search, const wchar_t *shebang, int shebangLength)
+{
+    if (isEnvVarSet(L"PYLAUNCHER_NO_SEARCH_PATH")) {
+        return RC_NO_SHEBANG;
+    }
+
+    wchar_t *command;
+    if (!_shebangStartsWith(shebang, shebangLength, L"/usr/bin/env ", &command)) {
+        return RC_NO_SHEBANG;
+    }
+
+    wchar_t filename[MAXLEN];
+    int lastDot = 0;
+    int commandLength = 0;
+    while (commandLength < MAXLEN && command[commandLength] && !isspace(command[commandLength])) {
+        if (command[commandLength] == L'.') {
+            lastDot = commandLength;
+        }
+        filename[commandLength] = command[commandLength];
+        commandLength += 1;
+    }
+
+    if (!commandLength || commandLength == MAXLEN) {
+        return RC_BAD_VIRTUAL_PATH;
+    }
+
+    filename[commandLength] = L'\0';
+
+    const wchar_t *ext = L".exe";
+    // If the command already has an extension, we do not want to add it again
+    if (!lastDot || _comparePath(&filename[lastDot], -1, ext, -1)) {
+        if (wcscat_s(filename, MAXLEN, L".exe")) {
+            return RC_BAD_VIRTUAL_PATH;
+        }
+    }
+
+    wchar_t pathVariable[MAXLEN];
+    int n = GetEnvironmentVariableW(L"PATH", pathVariable, MAXLEN);
+    if (!n) {
+        if (GetLastError() == ERROR_ENVVAR_NOT_FOUND) {
+            return RC_NO_SHEBANG;
+        }
+        winerror(0, L"Failed to read PATH\n", filename);
+        return RC_INTERNAL_ERROR;
+    }
+
+    wchar_t buffer[MAXLEN];
+    n = SearchPathW(pathVariable, filename, NULL, MAXLEN, buffer, NULL);
+    if (!n) {
+        if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+            debug(L"# Did not find %s on PATH\n", filename);
+            // If we didn't find it on PATH, let normal handling take over
+            return RC_NO_SHEBANG;
+        }
+        // Other errors should cause us to break
+        winerror(0, L"Failed to find %s on PATH\n", filename);
+        return RC_BAD_VIRTUAL_PATH;
+    }
+
+    // Check that we aren't going to call ourselves again
+    // If we are, pretend there was no shebang and let normal handling take over
+    if (GetModuleFileNameW(NULL, filename, MAXLEN) &&
+        0 == _comparePath(filename, -1, buffer, -1)) {
+        debug(L"# ignoring recursive shebang command\n");
+        return RC_NO_SHEBANG;
+    }
+
+    wchar_t *buf = allocSearchInfoBuffer(search, n + 1);
+    if (!buf || wcscpy_s(buf, n + 1, buffer)) {
+        return RC_NO_MEMORY;
+    }
+
+    search->executablePath = buf;
+    search->executableArgs = &command[commandLength];
+    search->executableArgsLength = shebangLength - commandLength;
+    debug(L"# Found %s on PATH\n", buf);
+
+    return 0;
+}
+
+
+int
 _readIni(const wchar_t *section, const wchar_t *settingName, wchar_t *buffer, int bufferLength)
 {
     wchar_t iniPath[MAXLEN];
@@ -885,6 +968,12 @@ checkShebang(SearchInfo *search)
     }
     debug(L"Shebang: %s\n", shebang);
 
+    // Handle shebangs that we should search PATH for
+    exitCode = searchPath(search, shebang, shebangLength);
+    if (exitCode != RC_NO_SHEBANG) {
+        return exitCode;
+    }
+
     // Handle some known, case-sensitive shebang templates
     const wchar_t *command;
     int commandLength;
@@ -895,6 +984,7 @@ checkShebang(SearchInfo *search)
         L"",
         NULL
     };
+
     for (const wchar_t **tmpl = shebangTemplates; *tmpl; ++tmpl) {
         if (_shebangStartsWith(shebang, shebangLength, *tmpl, &command)) {
             commandLength = 0;
@@ -910,6 +1000,22 @@ checkShebang(SearchInfo *search)
             } else if (_shebangStartsWith(command, commandLength, L"python", NULL)) {
                 search->tag = &command[6];
                 search->tagLength = commandLength - 6;
+                // If we had 'python3.12.exe' then we want to strip the suffix
+                // off of the tag
+                if (search->tagLength > 4) {
+                    const wchar_t *suffix = &search->tag[search->tagLength - 4];
+                    if (0 == _comparePath(suffix, 4, L".exe", -1)) {
+                        search->tagLength -= 4;
+                    }
+                }
+                // If we had 'python3_d' then we want to strip the '_d' (any
+                // '.exe' is already gone)
+                if (search->tagLength > 2) {
+                    const wchar_t *suffix = &search->tag[search->tagLength - 2];
+                    if (0 == _comparePath(suffix, 2, L"_d", -1)) {
+                        search->tagLength -= 2;
+                    }
+                }
                 search->oldStyleTag = true;
                 search->executableArgs = &command[commandLength];
                 search->executableArgsLength = shebangLength - commandLength;
