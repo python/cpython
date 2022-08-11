@@ -956,7 +956,7 @@ class CLanguage(Language):
                     max_pos,
                     min_kw_only
                 )
-                pre_buffer = "nargs"
+                nargs = "nargs"
             else:
                 args_declaration = "_PyArg_UnpackKeywordsWithVararg", "%s, %s, %s, %s" % (
                     min_pos,
@@ -964,7 +964,7 @@ class CLanguage(Language):
                     min_kw_only,
                     vararg
                 )
-                pre_buffer = f"Py_MIN(nargs, {max_pos})" if max_pos else "0"
+                nargs = f"Py_MIN(nargs, {max_pos})" if max_pos else "0"
             if not new_or_init:
                 flags = "METH_FASTCALL|METH_KEYWORDS"
                 parser_prototype = parser_prototype_fastcall_keywords
@@ -975,7 +975,7 @@ class CLanguage(Language):
                     PyObject *argsbuf[%s];
                     """ % len(converters))
                 if has_optional_kw:
-                    declarations += "\nPy_ssize_t noptargs = %s + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (pre_buffer, min_pos + min_kw_only)
+                    declarations += "\nPy_ssize_t noptargs = %s + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (nargs, min_pos + min_kw_only)
                 parser_code = [normalize_snippet("""
                     args = %s(args, nargs, NULL, kwnames, &_parser, %s, argsbuf);
                     if (!args) {{
@@ -995,7 +995,7 @@ class CLanguage(Language):
                     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
                     """ % len(converters))
                 if has_optional_kw:
-                    declarations += "\nPy_ssize_t noptargs = %s + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - %d;" % (pre_buffer, min_pos + min_kw_only)
+                    declarations += "\nPy_ssize_t noptargs = %s + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - %d;" % (nargs, min_pos + min_kw_only)
                 parser_code = [normalize_snippet("""
                     fastargs = %s(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, %s, argsbuf);
                     if (!fastargs) {{
