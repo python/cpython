@@ -5,6 +5,7 @@ from contextlib import (
 import functools
 from test import support
 import unittest
+import traceback
 
 from test.test_contextlib import TestBaseExitStack
 
