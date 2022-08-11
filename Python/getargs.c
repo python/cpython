@@ -1983,6 +1983,13 @@ init_kwtuple(struct _PyArg_Parser *parser)
     return 1;  // owned
 }
 
+static PyObject *
+get_kwtuple(struct _PyArg_Parser *parser)
+{
+    assert(parser->kwtuple != NULL);
+    return parser->kwtuple;
+}
+
 static int
 parser_init(struct _PyArg_Parser *parser)
 {
@@ -2035,13 +2042,6 @@ parser_init(struct _PyArg_Parser *parser)
     parser->next = static_arg_parsers;
     static_arg_parsers = parser;
     return 1;
-}
-
-static PyObject *
-get_kwtuple(struct _PyArg_Parser *parser)
-{
-    assert(parser->kwtuple != NULL);
-    return parser->kwtuple;
 }
 
 static void
