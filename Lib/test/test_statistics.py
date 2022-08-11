@@ -2801,9 +2801,10 @@ class TestNormalDist:
             iq.inv_cdf(1.0)                         # p is one
         with self.assertRaises(self.module.StatisticsError):
             iq.inv_cdf(1.1)                         # p over one
-        with self.assertRaises(self.module.StatisticsError):
-            iq = NormalDist(100, 0)                 # sigma is zero
-            iq.inv_cdf(0.5)
+
+        # Supported case:
+        iq = NormalDist(100, 0)                     # sigma is zero
+        self.assertEqual(iq.inv_cdf(0.5), 100)
 
         # Special values
         self.assertTrue(math.isnan(Z.inv_cdf(float('NaN'))))
