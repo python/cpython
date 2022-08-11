@@ -49,7 +49,13 @@ _MISSING = pathlib.PurePath("MISSING")
 INSTALL_EMSDK = """
 wasm32-emscripten builds need Emscripten SDK. Please follow instructions at
 https://emscripten.org/docs/getting_started/downloads.html how to install
-Emscripten and how to activate the SDK with ". /path/to/emsdk_env.sh".
+Emscripten and how to activate the SDK with ". /path/to/emsdk/emsdk_env.sh".
+
+    git clone https://github.com/emscripten-core/emsdk.git /path/to/emsdk
+    cd /path/to/emsdk
+    ./emsdk install latest
+    ./emsdk activate latest
+    source /path/to/emsdk_env.sh
 """
 
 INSTALL_WASI_SDK = """
@@ -158,7 +164,7 @@ EMSCRIPTEN = Platform(
     config_site=WASMTOOLS / "config.site-wasm32-emscripten",
     configure_wrapper=EMSCRIPTEN_ROOT / "emconfigure",
     make_wrapper=EMSCRIPTEN_ROOT / "emmake",
-    environ={"EM_COMPILER_WRAPPER": "ccache"} if HAS_CCACHE else None,
+    environ={"EM_COMPILER_WRAPPER": "ccache"} if HAS_CCACHE else {},
     check=_check_emscripten,
 )
 
@@ -474,7 +480,7 @@ def main():
     try:
         builder.host.platform.check()
     except MissingDependency as e:
-        parser.exit(2, str(e) + "\n")
+        parser.error(2, str(e))
 
     # hack for WASI
     if builder.host.is_wasi and not SETUP_LOCAL.exists():
