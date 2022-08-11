@@ -61,56 +61,64 @@ Tutorial
 
 In this tutorial, you will learn the basics of the :mod:`!sqlite3` API
 by creating an on-disk movie database :file:`tutorial.db`
-an filling it with meta-data about Monty Python movies.
-A fundamental understanding of database concepts,
-like `transactions`_ and `cursors`_, is assumed.
+about Monty Python movies.
+It assumes a fundamental understanding of database concepts,
+including `cursors`_ and `transactions`_.
 
-To start working with an SQLite database,
-you must first open a connection to it.
-Call the :func:`sqlite3.connect` function
-to create a connection to the database :file:`tutorial.db`::
+First, create a new database to hold the movie data,
+and open a database connection to allow :mod:`!sqlite3` to work with it.
+Call the :func:`sqlite3.connect` function to
+to create a connection to the database :file:`tutorial.db`,
+implicitly creating it in the current working directory if it does not exist::
 
    import sqlite3
    con = sqlite3.connect("tutorial.db")
 
-SQLite will implicitly create an empty database file :file:`tutorial.db`
-in the current working directory if it does not exist.
 The returned :class:`Connection` object ``con``
 represents the connection to the on-disk database.
 
 In order to execute SQL statements and fetch results from SQL queries,
 use a database cursor.
-Call :meth:`~Connection.cursor` on ``con`` to create
-:class:`Cursor` ``cur``::
+Call :meth:`con.cursor() <Connection.cursor>` to create the :class:`Cursor`::
 
    cur = con.cursor()
 
 Now, create a database table ``movie`` with columns for title,
-year released, and `IMDB`_ review score.
+release year, and review score.
 The `flexible typing`_ feature of SQLite makes typenames optional;
 for simplicity, just use column names in the table declaration.
 Execute the SQL statement
-by calling :meth:`~Cursor.execute` on ``cur``::
+by calling :meth:`con.execute() <Cursor.execute>`::
 
    cur.execute("CREATE TABLE Movie(Title, Year, Score)")
 
-Verify that the table has been created by running a query against it.
-Execute the query by calling :meth:`~Cursor.execute` on ``cur``,
+.. Ideally, we'd use sqlite_schema instead of sqlite_master below,
+   but earlier versions of SQLite does not recognise that variant.
+You can verify that the table has been created by querying
+the ever-present ``sqlite_master`` table.
+It should contain an entry for the ``Movie`` table definition.
+Execute the query by calling :meth:`cur.execute(...) <Cursor.execute>`,
 store the result in a variable ``res``,
-and call :meth:`~Cursor.fetchone` on ``res`` to fetch the first
+and call :meth:`res.fetchone() <Cursor.fetchone>` to fetch the first
 (and only) row from the query::
 
-   >>> res = cur.execute("SELECT count(rowid) FROM Movie")
+   >>> res = cur.execute("SELECT name FROM sqlite_master where name='Movie'")
    >>> res.fetchone()
-   (0,)
+   ('Movie',)
 
-The result is a one-item :class:`tuple`:
-one row, with one column.
-It correctly shows a row count of zero.
+The result is a one-item :class:`tuple`: one row, with one column.
+As expected, the query shows the table is now created.
+As an exercise, try querying ``sqlite_master`` for a bogus name ``"abc"``::
+
+   >>> res = cur.execute("SELECT name FROM sqlite_master where name='abc'")
+   >>> res.fetchone()
+   >>>
+
+As expected, the query returns an empty result.
 
 Now, add two rows of data supplied as SQL literals
 by executing an ``INSERT`` statement,
-once again by calling :meth:`~Cursor.execute` on ``cur``::
+once again by calling :meth:`cur.execute(...) <Cursor.execute>`::
 
    cur.execute("""
        INSERT INTO Movie VALUES
@@ -121,28 +129,26 @@ once again by calling :meth:`~Cursor.execute` on ``cur``::
 The ``INSERT`` statement implicitly opens a transaction,
 which needs to be committed before changes are saved in the database
 (see :ref:`sqlite3-controlling-transactions` for details).
-Call :meth:`~Connection.commit` on the connection object
+Call :meth:`con.commit() <Connection.commit>` on the connection object
 to commit the transaction::
 
    con.commit()
 
 Execute a query to verify that the data was inserted correctly.
-Use the now familiar :meth:`~Cursor.execute` method on ``con``,
+Use the now familiar :meth:`con.execute(...) <Cursor.execute>` to
 store the result in ``res``,
-and call :meth:`~Cursor.fetchall` on ``res`` to fetch all rows::
+and call :meth:`res.fetchall() <Cursor.fetchall>` to fetch all rows::
 
    >>> res = cur.execute("SELECT Score FROM Movie")
    >>> res.fetchall()
    [(8.2,), (7.5,)]
 
 The result is a :class:`list` with two rows of data,
-each a one-item :class:`tuple`,
-the single item representing the column queried.
+each a one-item :class:`!tuple`,
+containing the value from the single column queried.
 
 Now, insert three more rows by calling
-:meth:`~Cursor.executemany` on the cursor object,
-once again committing the transaction by calling :meth:`~Connection.commit`
-on the connection object::
+:meth:`cur.executemany(...) <Cursor.executemany>`::
 
    data = [
        ("Monty Python Live at the Hollywood Bowl", 1982, 7.9),
@@ -150,7 +156,7 @@ on the connection object::
        ("Monty Python's Life of Brian", 1979, 8.0),
    ]
    cur.executemany("INSERT INTO Movie VALUES(?, ?, ?)", data)
-   con.commit()
+   con.commit()  # Remember to commit the transaction after executing INSERT.
 
 Notice that ``?`` placeholders are used to bind ``data`` to the query.
 Always use placeholders instead of :ref:`string formatting <tut-formatting>`
@@ -158,18 +164,15 @@ to bind Python values to SQL statements,
 to avoid `SQL injection attacks`_.
 See :ref:`sqlite3-placeholders` for more details.
 
-Verify that data has been committed and written to disk by
-closing the connection and opening a new one,
-creating a new cursor,
-and then executing a ``SELECT`` query to read from the database::
+Verify that data has been written to disk by
+calling :meth:`con.close() <Connection.close>` to close the connection,
+opening a new one, creating a new cursor,
+then executing a ``SELECT`` query, this time iterating over the results
+of the query to read from the database::
 
    >>> con.close()
    >>> con2 = sqlite3.connect("tutorial.db")
    >>> cur2 = con2.cursor()
-
-This time, retrieve the rows by iterating over the result
-of the ``SELECT`` query::
-
    >>> for row in cur2.execute("SELECT Year, Title FROM Movie ORDER BY Year"):
    ...     print(row)
    ...
@@ -179,16 +182,16 @@ of the ``SELECT`` query::
    (1982, "Monty Python Live at the Hollywood Bowl")
    (1983, "Monty Python's The Meaning of Life")
 
-Each row is now a two-item :class:`!tuple`.
+Each row is now a two-item :class:`tuple` of ``(Year, Title)``.
 
 You've now created an SQLite database using the :mod:`!sqlite3` module,
 inserted data and ran several SQL queries against it.
 
-.. _IMDB: https://www.imdb.com/
 .. _SQL injection attacks: https://en.wikipedia.org/wiki/SQL_injection
 .. _cursors: https://en.wikipedia.org/wiki/Cursor_(databases)
 .. _flexible typing: https://www.sqlite.org/flextypegood.html
 .. _transactions: https://en.wikipedia.org/wiki/Database_transaction
+.. _sqlite_master: https://www.sqlite.org/schematab.html
 
 
 .. _sqlite3-reference:
