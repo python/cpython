@@ -14,6 +14,7 @@
 // is not exported by <windows.h> if the WIN32_LEAN_AND_MEAN macro is defined,
 // whereas pycore_condvar.h defines the WIN32_LEAN_AND_MEAN macro.
 #ifdef MS_WINDOWS
+#  include "osdefs.h"             // SEP
 #  include <windows.h>
 #  include <pathcch.h>
 #endif
@@ -416,7 +417,6 @@ extern char        *ctermid_r(char *);
 #  ifndef IO_REPARSE_TAG_MOUNT_POINT
 #    define IO_REPARSE_TAG_MOUNT_POINT (0xA0000003L)
 #  endif
-#  include "osdefs.h"             // SEP
 #  include <malloc.h>
 #  include <windows.h>
 #  include <shellapi.h>           // ShellExecute()
