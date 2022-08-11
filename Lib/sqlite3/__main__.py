@@ -18,7 +18,7 @@ def execute(c, sql, suppress_errors=True):
     This is used both by the REPL and by direct execution from the CLI.
 
     'c' may be a cursor or a connection.
-    'sql' is the SQL string to execute
+    'sql' is the SQL string to execute.
     """
 
     try:

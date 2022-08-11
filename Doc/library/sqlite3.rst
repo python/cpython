@@ -228,18 +228,19 @@ Module functions
    other than checking that there are no unclosed string literals
    and the statement is terminated by a semicolon.
 
+   For example::
+
+      >>> sqlite3.complete_statement("SELECT foo FROM bar;")
+      True
+      >>> sqlite3.complete_statement("SELECT foo")
+      False
+
    This function may be useful during command-line input
    to determine if the entered text seems to form a complete SQL statement,
    or if additional input is needed before calling :meth:`~Cursor.execute`.
 
-   For example::
-
-       >>> sqlite3.complete_statement('SELECT foo FROM bar;')
-       True
-       >>> sqlite3.complete_statement('SELECT foo')
-       False
-
-   See ``runsource()`` in :source:`Lib/sqlite3/__main__.py` for real-world use.
+   See :func:`!runsource` in :source:`Lib/sqlite3/__main__.py`
+   for real-world use.
 
 .. function:: enable_callback_tracebacks(flag, /)
 
