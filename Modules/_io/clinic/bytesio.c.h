@@ -491,14 +491,16 @@ _io_BytesIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     int return_value = -1;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
+    #define NUM_KEYWORDS 1
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
-        PyObject *ob_item[1];
+        PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, 1)
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(initial_bytes), },
     };
+    #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
     #else  // !Py_BUILD_CORE
@@ -532,4 +534,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4d9e7301462263e3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a44770efbaeb80dd input=a9049054013a1b77]*/

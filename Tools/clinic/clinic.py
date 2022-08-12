@@ -542,14 +542,6 @@ def declare_parser(f, *, hasformat=False):
     kwtuple field is also statically initialized.  Otherwise
     it is initialized at runtime.
     """
-    def keywords(f):
-        params = f.parameters.values()
-        kwds = [
-            p for p in params
-            if not p.is_positional_only() and not p.is_vararg()
-        ]
-        return kwds
-
     if hasformat:
         fname = ''
         format_ = '.format = "{format_units}:{name}",'
@@ -557,7 +549,10 @@ def declare_parser(f, *, hasformat=False):
         fname = '.fname = "{name}",'
         format_ = ''
 
-    num_keywords = len(keywords(f))
+    num_keywords = len([
+        p for p in f.parameters.values()
+        if not p.is_positional_only() and not p.is_vararg()
+    ])
     if num_keywords == 0:
         declarations = """
             #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -574,7 +569,7 @@ def declare_parser(f, *, hasformat=False):
             static struct {{
                 PyGC_Head _this_is_not_used;
                 PyObject_VAR_HEAD
-                PyObject *ob_item[%d];
+                PyObject *ob_item[NUM_KEYWORDS];
             }} _kwtuple = {{
                 .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
                 .ob_item = {{ {keywords_py} }},
@@ -585,7 +580,7 @@ def declare_parser(f, *, hasformat=False):
             #else  // !Py_BUILD_CORE
             #  define KWTUPLE NULL
             #endif  // !Py_BUILD_CORE
-        """ % (num_keywords)
+        """ % num_keywords
 
     declarations += """
             static const char * const _keywords[] = {{{keywords_c} NULL}};
