@@ -222,14 +222,25 @@ Module functions
 
 .. function:: complete_statement(statement)
 
-   Returns ``True`` if the string *statement* contains one or more complete SQL
-   statements terminated by semicolons. It does not verify that the SQL is
-   syntactically correct, only that there are no unclosed string literals and the
-   statement is terminated by a semicolon.
+   Return ``True`` if the string *statement* appears to contain
+   one or more complete SQL statements.
+   No syntactic verification or parsing of any kind is performed,
+   other than checking that there are no unclosed string literals
+   and the statement is terminated by a semicolon.
 
-   This can be used to build a shell for SQLite, as in the following example:
+   For example::
 
-   .. literalinclude:: ../includes/sqlite3/complete_statement.py
+      >>> sqlite3.complete_statement("SELECT foo FROM bar;")
+      True
+      >>> sqlite3.complete_statement("SELECT foo")
+      False
+
+   This function may be useful during command-line input
+   to determine if the entered text seems to form a complete SQL statement,
+   or if additional input is needed before calling :meth:`~Cursor.execute`.
+
+   See :func:`!runsource` in :source:`Lib/sqlite3/__main__.py`
+   for real-world use.
 
 .. function:: enable_callback_tracebacks(flag, /)
 

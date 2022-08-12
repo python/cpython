@@ -49,13 +49,14 @@ This article explains the new features in Python 3.11, compared to 3.10.
 
 For full details, see the :ref:`changelog <changelog>`.
 
+
 Summary -- Release highlights
 =============================
 
 .. This section singles out the most important changes in Python 3.11.
    Brevity is key.
 
-- Python 3.11 is up to 10-60% faster than Python 3.10. On average, we measured a
+- Python 3.11 is between 10-60% faster than Python 3.10. On average, we measured a
   1.25x speedup on the standard benchmark suite. See `Faster CPython`_ for details.
 
 .. PEP-sized items next.
@@ -65,18 +66,35 @@ New syntax features:
 * :pep:`654`: Exception Groups and ``except*``.
   (Contributed by Irit Katriel in :issue:`45292`.)
 
+New built-in features:
+
+* :pep:`678`: Enriching Exceptions with Notes.
+
+New standard library modules:
+
+* :pep:`680`: ``tomllib`` — Support for Parsing TOML in the Standard Library.
+
+Interpreter improvements:
+
+* :pep:`657`: Include Fine Grained Error Locations in Tracebacks.
+* New :option:`-P` command line option and :envvar:`PYTHONSAFEPATH` environment
+  variable to disable automatically prepending a potentially unsafe path
+  (the working dir or script directory, depending on invocation)
+  to :data:`sys.path`.
+
 New typing features:
 
 * :pep:`646`: Variadic generics.
 * :pep:`655`: Marking individual TypedDict items as required or potentially missing.
 * :pep:`673`: ``Self`` type.
 * :pep:`675`: Arbitrary literal string type.
+* :pep:`681`: Data Class Transforms.
 
-Security improvements:
+Important deprecations, removals or restrictions:
 
-* New :option:`-P` command line option and :envvar:`PYTHONSAFEPATH` environment
-  variable to not prepend a potentially unsafe path to :data:`sys.path` such as
-  the current directory, the script's directory or an empty string.
+* :pep:`594`: Removing dead batteries from the standard library.
+* :pep:`624`: Remove ``Py_UNICODE`` encoder APIs.
+* :pep:`670`: Convert macros to functions in the Python C API.
 
 
 New Features
@@ -416,6 +434,12 @@ Other CPython Implementation Changes
   initialization to use :c:member:`PyConfig.module_search_paths` to initialize
   :data:`sys.path`. Otherwise, initialization will recalculate the path and replace
   any values added to ``module_search_paths``.
+
+* The output of the :option:`--help` option is changed to fit inside 50 lines and 80
+  columns.  Information about :ref:`Python environment variables <using-on-envvars>`
+  and :option:`-X options <-X>` is available with the new :option:`--help-env` or
+  :option:`--help-xoptions` flags, and with :option:`--help-all`.
+  (Contributed by Éric Araujo in :issue:`46142`.)
 
 
 New Modules
