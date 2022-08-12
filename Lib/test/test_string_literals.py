@@ -266,6 +266,13 @@ class TestLiterals(unittest.TestCase):
         self.assertRaises(SyntaxError, eval, """ bu'' """)
         self.assertRaises(SyntaxError, eval, """ ub'' """)
 
+    def test_uppercase_prefixes(self):
+        self.assertEqual(eval(""" B'x' """), b'x')
+        self.assertEqual(eval(r""" R'\x01' """), '\\x01')
+        self.assertEqual(eval(r""" BR'\x01' """), b'\\' + b'x01')
+        self.assertEqual(eval(""" F'{1+1}' """), '2')
+        self.assertEqual(eval(""" U'\U0001d120' """), '\U0001d120')
+
     def check_encoding(self, encoding, extra=""):
         modname = "xx_" + encoding.replace("-", "_")
         fn = os.path.join(self.tmpdir, modname + ".py")
