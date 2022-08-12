@@ -187,13 +187,14 @@ Irit Katriel, Yury Selivanov and Guido van Rossum.)
 
 
 PEP 678: Exceptions can be enriched with notes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------
 
-The :meth:`add_note` method was added to :exc:`BaseException`. It can be
-used to enrich exceptions with context information which is not available
-at the time when the exception is raised. The notes added appear in the
-default traceback. See :pep:`678` for more details. (Contributed by
-Irit Katriel in :issue:`45607`.)
+The :meth:`~BaseException.add_note` method is added to :exc:`BaseException`.
+It can be used to enrich exceptions with context information
+that is not available at the time when the exception is raised.
+The added notes appear in the default traceback.
+See :pep:`678` for more details.
+(Contributed by Irit Katriel in :issue:`45607`.)
 
 
 .. _new-feat-related-type-hints-311:
