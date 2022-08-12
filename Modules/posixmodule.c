@@ -18,12 +18,6 @@
 #  include <pathcch.h>
 #  include <lmcons.h>             // UNLEN
 #  include "osdefs.h"             // SEP
-#  ifndef IO_REPARSE_TAG_SYMLINK
-#    define IO_REPARSE_TAG_SYMLINK (0xA000000CL)
-#  endif
-#  ifndef IO_REPARSE_TAG_MOUNT_POINT
-#    define IO_REPARSE_TAG_MOUNT_POINT (0xA0000003L)
-#  endif
 #  define HAVE_SYMLINK
 #endif
 
