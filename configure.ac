@@ -1909,9 +1909,9 @@ if test "$Py_BOLT" = 'true' ; then
   LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,--emit-relocs"
 
   # These flags are required to get good performance from bolt:
-  CFLAGS_NODIST="$CFLAGS_NODIST -specs=Misc/no-pie-compile.specs"
-  LDFLAGS_NODIST="$LDFLAGS_NODIST -specs=Misc/no-pie-link.specs"
-  LDFLAGS_NOLTO="$LDFLAGS_NOLTO -specs=Misc/no-pie-link.specs"
+  CFLAGS_NODIST="$CFLAGS_NODIST -fno-pie"
+  # We want to add these no-pie flags to linking executables but not shared libraries:
+  LINKCC="$LINKCC -fno-pie -no-pie"
 
   AC_SUBST(LLVM_BOLT)
   AC_PATH_TOOL(LLVM_BOLT, llvm-bolt, '', ${llvm_path})
