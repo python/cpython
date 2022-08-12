@@ -1017,10 +1017,8 @@ def correlation(x, y, /, *, by_rank=False):
     """Pearson's correlation coefficient
 
     Return the Pearson's correlation coefficient for two inputs. Pearson's
-    correlation coefficient *r* takes values between -1 and +1. It measures the
-    strength and direction of the linear relationship, where +1 means very
-    strong, positive linear relationship, -1 very strong, negative linear
-    relationship, and 0 no linear relationship.
+    correlation coefficient *r* takes values between -1 and +1. It measures
+    the strength and direction of a linear relationship.
 
     >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
     >>> y = [9, 8, 7, 6, 5, 4, 3, 2, 1]
@@ -1029,12 +1027,13 @@ def correlation(x, y, /, *, by_rank=False):
     >>> correlation(x, y)
     -1.0
 
-    If *by_rank* is true, computes Spearman's correlation coefficient
+    If *by_rank* is true, computes Spearman's rank correlation coefficient
     for two inputs.  The data is replaced by ranks.  Ties are averaged
-    so that equal values receive the same rank.
+    so that equal values receive the same rank.  The resulting coefficient measures
+    the strength of a monotonic relationship.
 
-    Spearman's correlation coefficient is appropriate for ordinal data
-    or for continuous data that doesn't meet the linear proportion
+    Spearman's rank correlation coefficient is appropriate for ordinal
+    data or for continuous data that doesn't meet the linear proportion
     requirement for Pearson's correlation coefficient.
     """
     n = len(x)
