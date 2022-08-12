@@ -1,8 +1,8 @@
 .. highlight:: c
 
-.. _codeobjects:
-
 .. index:: object; code, code object
+
+.. _codeobjects:
 
 Code Objects
 ------------

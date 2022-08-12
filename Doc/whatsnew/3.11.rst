@@ -149,6 +149,14 @@ As well as complex arithmetic expressions:
                   ~~~~~~^~~
     ZeroDivisionError: division by zero
 
+Additionally, the information used by the enhanced traceback feature
+is made available via a general API, that can be used to correlate
+:term:`bytecode` :ref:`instructions <bytecodes>` with source code location.
+This information can be retrieved using:
+
+- The :meth:`codeobject.co_positions` method in Python.
+- The :c:func:`PyCode_Addr2Location` function in the C API.
+
 See :pep:`657` for more details. (Contributed by Pablo Galindo, Batuhan Taskaya
 and Ammar Askar in :issue:`43950`.)
 
@@ -160,23 +168,6 @@ and Ammar Askar in :issue:`43950`.)
    and deactivate printing the extra traceback information,
    use the :option:`-X no_debug_ranges <-X>` command line option
    or the :envvar:`PYTHONNODEBUGRANGES` environment variable.
-
-
-Column information for code objects
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The information used by the enhanced traceback feature is made available as a
-general API that can be used to correlate bytecode instructions with source
-code. This information can be retrieved using:
-
-- The :meth:`codeobject.co_positions` method in Python.
-- The :c:func:`PyCode_Addr2Location` function in the C-API.
-
-The :option:`-X` ``no_debug_ranges`` option and the environment variable
-:envvar:`PYTHONNODEBUGRANGES` can be used to disable this feature.
-
-See :pep:`657` for more details. (Contributed by Pablo Galindo, Batuhan Taskaya
-and Ammar Askar in :issue:`43950`.)
 
 
 PEP 654: Exception Groups and ``except*``
