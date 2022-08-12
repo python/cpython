@@ -570,20 +570,22 @@ def declare_parser(f, *, hasformat=False):
         declarations = """
             #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
+            #define NUM_KEYWORDS %d
             static struct {{
                 PyGC_Head _this_is_not_used;
                 PyObject_VAR_HEAD
                 PyObject *ob_item[%d];
             }} _kwtuple = {{
-                .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, %d)
+                .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
                 .ob_item = {{ {keywords_py} }},
             }};
+            #undef NUM_KEYWORDS
             #define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
             #else  // !Py_BUILD_CORE
             #  define KWTUPLE NULL
             #endif  // !Py_BUILD_CORE
-        """ % (num_keywords, num_keywords)
+        """ % (num_keywords)
 
     declarations += """
             static const char * const _keywords[] = {{{keywords_c} NULL}};
