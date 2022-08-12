@@ -1,1 +1,1 @@
-Fix for the compatibility problems with expat made more robust.
+Make two tests forgiving towards host system libexpat with backported security fixes applied.
