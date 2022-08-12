@@ -234,7 +234,7 @@ class PositionalOnlyTestCase(unittest.TestCase):
 
     def test_invalid_syntax_lambda(self):
         check_syntax_error(self, "lambda a, b = 5, /, c: None", "parameter without a default follows parameter with a default")
-        check_syntax_error(self, "lambda a = 5, b, /, c: None", "parameter without a default follows parameter with a default")        
+        check_syntax_error(self, "lambda a = 5, b, /, c: None", "parameter without a default follows parameter with a default")
         check_syntax_error(self, "lambda a = 5, b=1, /, c, *, d=2: None", "parameter without a default follows parameter with a default")
         check_syntax_error(self, "lambda a = 5, b, /: None", "parameter without a default follows parameter with a default")
         check_syntax_error(self, "lambda a, /, b = 5, c: None", "parameter without a default follows parameter with a default")
