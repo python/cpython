@@ -1041,7 +1041,7 @@ def correlation(x, y, /, *, by_rank=False):
         raise StatisticsError('correlation requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('correlation requires at least two data points')
-    if ranked:
+    if by_rank:
         x = _rank(x)
         y = _rank(y)
     xbar = fsum(x) / n
