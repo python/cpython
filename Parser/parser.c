@@ -20192,7 +20192,7 @@ invalid_dict_comprehension_rule(Parser *p)
 }
 
 // invalid_parameters:
-//     | param_no_default* invalid_parameters_helper param_no_default
+//     | slash_no_default? param_no_default* invalid_parameters_helper param_no_default
 //     | param_no_default* '(' param_no_default+ ','? ')'
 //     | "/" ','
 //     | (slash_no_default | slash_with_default) param_maybe_default* '/'
@@ -20211,16 +20211,20 @@ invalid_parameters_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // param_no_default* invalid_parameters_helper param_no_default
+    { // slash_no_default? param_no_default* invalid_parameters_helper param_no_default
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> invalid_parameters[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param_no_default* invalid_parameters_helper param_no_default"));
+        D(fprintf(stderr, "%*c> invalid_parameters[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "slash_no_default? param_no_default* invalid_parameters_helper param_no_default"));
         asdl_seq * _loop0_159_var;
+        void *_opt_var;
+        UNUSED(_opt_var); // Silence compiler warnings
         arg_ty a;
         void *invalid_parameters_helper_var;
         if (
+            (_opt_var = slash_no_default_rule(p), !p->error_indicator)  // slash_no_default?
+            &&
             (_loop0_159_var = _loop0_159_rule(p))  // param_no_default*
             &&
             (invalid_parameters_helper_var = invalid_parameters_helper_rule(p))  // invalid_parameters_helper
@@ -20228,8 +20232,8 @@ invalid_parameters_rule(Parser *p)
             (a = param_no_default_rule(p))  // param_no_default
         )
         {
-            D(fprintf(stderr, "%*c+ invalid_parameters[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "param_no_default* invalid_parameters_helper param_no_default"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "non-default argument follows default argument" );
+            D(fprintf(stderr, "%*c+ invalid_parameters[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "slash_no_default? param_no_default* invalid_parameters_helper param_no_default"));
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "parameter without a default follows parameter with a default" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -20239,7 +20243,7 @@ invalid_parameters_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_parameters[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "param_no_default* invalid_parameters_helper param_no_default"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "slash_no_default? param_no_default* invalid_parameters_helper param_no_default"));
     }
     { // param_no_default* '(' param_no_default+ ','? ')'
         if (p->error_indicator) {
@@ -20784,7 +20788,7 @@ invalid_parameters_helper_rule(Parser *p)
 }
 
 // invalid_lambda_parameters:
-//     | lambda_param_no_default* invalid_lambda_parameters_helper lambda_param_no_default
+//     | lambda_slash_no_default? lambda_param_no_default* invalid_lambda_parameters_helper lambda_param_no_default
 //     | lambda_param_no_default* '(' ','.lambda_param+ ','? ')'
 //     | "/" ','
 //     | (lambda_slash_no_default | lambda_slash_with_default) lambda_param_maybe_default* '/'
@@ -20803,16 +20807,20 @@ invalid_lambda_parameters_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // lambda_param_no_default* invalid_lambda_parameters_helper lambda_param_no_default
+    { // lambda_slash_no_default? lambda_param_no_default* invalid_lambda_parameters_helper lambda_param_no_default
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> invalid_lambda_parameters[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param_no_default* invalid_lambda_parameters_helper lambda_param_no_default"));
+        D(fprintf(stderr, "%*c> invalid_lambda_parameters[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_slash_no_default? lambda_param_no_default* invalid_lambda_parameters_helper lambda_param_no_default"));
         asdl_seq * _loop0_176_var;
+        void *_opt_var;
+        UNUSED(_opt_var); // Silence compiler warnings
         arg_ty a;
         void *invalid_lambda_parameters_helper_var;
         if (
+            (_opt_var = lambda_slash_no_default_rule(p), !p->error_indicator)  // lambda_slash_no_default?
+            &&
             (_loop0_176_var = _loop0_176_rule(p))  // lambda_param_no_default*
             &&
             (invalid_lambda_parameters_helper_var = invalid_lambda_parameters_helper_rule(p))  // invalid_lambda_parameters_helper
@@ -20820,8 +20828,8 @@ invalid_lambda_parameters_rule(Parser *p)
             (a = lambda_param_no_default_rule(p))  // lambda_param_no_default
         )
         {
-            D(fprintf(stderr, "%*c+ invalid_lambda_parameters[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "lambda_param_no_default* invalid_lambda_parameters_helper lambda_param_no_default"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "non-default argument follows default argument" );
+            D(fprintf(stderr, "%*c+ invalid_lambda_parameters[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "lambda_slash_no_default? lambda_param_no_default* invalid_lambda_parameters_helper lambda_param_no_default"));
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "parameter without a default follows parameter with a default" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -20831,7 +20839,7 @@ invalid_lambda_parameters_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_lambda_parameters[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "lambda_param_no_default* invalid_lambda_parameters_helper lambda_param_no_default"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "lambda_slash_no_default? lambda_param_no_default* invalid_lambda_parameters_helper lambda_param_no_default"));
     }
     { // lambda_param_no_default* '(' ','.lambda_param+ ','? ')'
         if (p->error_indicator) {
