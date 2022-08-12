@@ -7,7 +7,7 @@ class _LoopBoundMixin:
     _loop = None
 
     def _get_loop(self):
-        loop = events._get_running_loop()
+        loop = events.get_running_loop()
 
         if self._loop is None:
             vars(self).setdefault("_loop", loop)
