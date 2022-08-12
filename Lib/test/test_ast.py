@@ -746,6 +746,13 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             ast.parse('def bar(x=1, /): ...', feature_version=(3, 7))
 
+        ast.parse('lambda x, /: ...', feature_version=(3, 8))
+        ast.parse('lambda x=1, /: ...', feature_version=(3, 8))
+        with self.assertRaises(SyntaxError):
+            ast.parse('lambda x, /: ...', feature_version=(3, 7))
+        with self.assertRaises(SyntaxError):
+            ast.parse('lambda x=1, /: ...', feature_version=(3, 7))
+
     def test_parenthesized_with_feature_version(self):
         ast.parse('with (CtxManager() as example): ...', feature_version=(3, 10))
         # While advertised as a feature in Python 3.10, this was allowed starting 3.9
