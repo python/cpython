@@ -49,7 +49,7 @@ This document includes four main sections:
 
 .. We use the following practises for SQL code:
    - UPPERCASE for keywords
-   - SnakeCase for schema
+   - snake_case for schema
    - single quotes for string literals
    - singular for table names
    - if needed, use double quotes for table and column names
@@ -60,22 +60,22 @@ Tutorial
 --------
 
 In this tutorial, you will learn the basics of the :mod:`!sqlite3` API
-by creating an on-disk movie database :file:`tutorial.db`
-about Monty Python movies.
+by creating a database of Monty Python movies.
 It assumes a fundamental understanding of database concepts,
 including `cursors`_ and `transactions`_.
 
-First, create a new database to hold the movie data,
+First, you'll need to create a new database to hold the movie data
 and open a database connection to allow :mod:`!sqlite3` to work with it.
 Call the :func:`sqlite3.connect` function to
-to create a connection to the database :file:`tutorial.db`,
-implicitly creating it in the current working directory if it does not exist::
+to create a connection to a database :file:`tutorial.db`
+in the current working directory,
+implicitly creating it if it does not exist::
 
    import sqlite3
    con = sqlite3.connect("tutorial.db")
 
 The returned :class:`Connection` object ``con``
-represents the connection to the on-disk database.
+represents the connection to the database.
 
 In order to execute SQL statements and fetch results from SQL queries,
 use a database cursor.
@@ -85,33 +85,35 @@ Call :meth:`con.cursor() <Connection.cursor>` to create the :class:`Cursor`::
 
 Now, create a database table ``movie`` with columns for title,
 release year, and review score.
-The `flexible typing`_ feature of SQLite makes typenames optional;
-for simplicity, just use column names in the table declaration.
-Execute the SQL statement
+For simplicitly, just use column names in the table declaration:
+thanks to the `flexible typing`_ feature of SQLite,
+specifying the data types is optional.
+Execute the ``CREATE TABLE`` statement
 by calling :meth:`con.execute() <Cursor.execute>`::
 
-   cur.execute("CREATE TABLE Movie(Title, Year, Score)")
+   cur.execute("CREATE TABLE movie(title, year, score)")
 
 .. Ideally, we'd use sqlite_schema instead of sqlite_master below,
-   but earlier versions of SQLite does not recognise that variant.
+   but earlier versions of SQLite do not recognise that variant.
 
-You can verify that the table has been created by querying
-the ever-present ``sqlite_master`` table.
-It should contain an entry for the ``Movie`` table definition.
-Execute the query by calling :meth:`cur.execute(...) <Cursor.execute>`,
+You can verify that the new table has been created by querying
+the ``sqlite_master`` table built-in to SQLite.
+It should contain an entry for the ``movie`` table definition.
+Execute that query by calling :meth:`cur.execute(...) <Cursor.execute>`,
 store the result in a variable ``res``,
 and call :meth:`res.fetchone() <Cursor.fetchone>` to fetch the first
-(and only) row from the query::
+(and only) row that was returned::
 
-   >>> res = cur.execute("SELECT name FROM sqlite_master where name='Movie'")
+   >>> res = cur.execute("SELECT name FROM sqlite_master")
    >>> res.fetchone()
-   ('Movie',)
+   ('movie',)
 
-The result is a one-item :class:`tuple`: one row, with one column.
-As expected, the query shows the table is now created.
-As an exercise, try querying ``sqlite_master`` for a bogus name ``"abc"``::
+As expected, the query shows the table is now created
+by returning a single :class:`tuple`: with the name of the table.
+As an exercise, try querying ``sqlite_master``
+for a non-existent table ``"abc"``::
 
-   >>> res = cur.execute("SELECT name FROM sqlite_master where name='abc'")
+   >>> res = cur.execute("SELECT name FROM sqlite_master WHERE name='abc'")
    >>> res.fetchone()
    >>>
 
@@ -122,7 +124,7 @@ by executing an ``INSERT`` statement,
 once again by calling :meth:`cur.execute(...) <Cursor.execute>`::
 
    cur.execute("""
-       INSERT INTO Movie VALUES
+       INSERT INTO movie VALUES
            ('Monty Python and the Holy Grail', 1975, 8.2),
            ('And Now for Something Completely Different', 1971, 7.5)
    """)
@@ -136,17 +138,16 @@ to commit the transaction::
    con.commit()
 
 Execute a query to verify that the data was inserted correctly.
-Use the now familiar :meth:`con.execute(...) <Cursor.execute>` to
+Use the now-familiar :meth:`con.execute(...) <Cursor.execute>` to
 store the result in ``res``,
 and call :meth:`res.fetchall() <Cursor.fetchall>` to fetch all rows::
 
-   >>> res = cur.execute("SELECT Score FROM Movie")
+   >>> res = cur.execute("SELECT score FROM movie")
    >>> res.fetchall()
    [(8.2,), (7.5,)]
 
-The result is a :class:`list` with two rows of data,
-each a one-item :class:`!tuple`,
-containing the value from the single column queried.
+The result is a :class:`list` of two :class:`!tuple`\s, one per row,
+each containing a the ``score`` from the query.
 
 Now, insert three more rows by calling
 :meth:`cur.executemany(...) <Cursor.executemany>`::
@@ -156,34 +157,44 @@ Now, insert three more rows by calling
        ("Monty Python's The Meaning of Life", 1983, 7.5),
        ("Monty Python's Life of Brian", 1979, 8.0),
    ]
-   cur.executemany("INSERT INTO Movie VALUES(?, ?, ?)", data)
+   cur.executemany("INSERT INTO movie VALUES(?, ?, ?)", data)
    con.commit()  # Remember to commit the transaction after executing INSERT.
 
 Notice that ``?`` placeholders are used to bind ``data`` to the query.
 Always use placeholders instead of :ref:`string formatting <tut-formatting>`
 to bind Python values to SQL statements,
-to avoid `SQL injection attacks`_.
-See :ref:`sqlite3-placeholders` for more details.
+to avoid `SQL injection attacks`_
+(see :ref:`sqlite3-placeholders` for more details).
 
-Verify that data has been written to disk by
-calling :meth:`con.close() <Connection.close>` to close the connection,
-opening a new one, creating a new cursor,
-then executing a ``SELECT`` query, this time iterating over the results
-of the query to read from the database::
+Verify that the new rows were inserted by executing a ``SELECT`` query,
+this time iterating over the results of the query::
 
-   >>> con.close()
-   >>> con2 = sqlite3.connect("tutorial.db")
-   >>> cur2 = con2.cursor()
-   >>> for row in cur2.execute("SELECT Year, Title FROM Movie ORDER BY Year"):
+   >>> for row in cur.execute("SELECT year, title FROM movie ORDER BY year"):
    ...     print(row)
-   ...
    (1971, "And Now for Something Completely Different")
    (1975, "Monty Python and the Holy Grail")
    (1979, "Monty Python's Life of Brian")
    (1982, "Monty Python Live at the Hollywood Bowl")
    (1983, "Monty Python's The Meaning of Life")
 
-Each row is now a two-item :class:`tuple` of ``(Year, Title)``.
+Each row is now a two-item :class:`tuple` of ``(year, title)``.
+
+At last, verify that the database has been written to disk by
+calling :meth:`con.close() <Connection.close>`
+to close the existing connection,
+opening a new one, creating a new cursor,
+then reusing the query from above to read from the database::
+
+   >>> con.close()
+   >>> con2 = sqlite3.connect("tutorial.db")
+   >>> cur2 = con2.cursor()
+   >>> for row in cur.execute("SELECT year, title FROM movie ORDER BY year"):
+   ...     print(row)
+   (1971, "And Now for Something Completely Different")
+   (1975, "Monty Python and the Holy Grail")
+   (1979, "Monty Python's Life of Brian")
+   (1982, "Monty Python Live at the Hollywood Bowl")
+   (1983, "Monty Python's The Meaning of Life")
 
 You've now created an SQLite database using the :mod:`!sqlite3` module,
 inserted data and ran several SQL queries against it.
@@ -194,6 +205,10 @@ inserted data and ran several SQL queries against it.
 .. _transactions: https://en.wikipedia.org/wiki/Database_transaction
 .. _sqlite_master: https://www.sqlite.org/schematab.html
 
+.. seealso::
+
+   * :ref:`sqlite3-howtos` for details how to handle specific tasks.
+   * :ref:`sqlite3-explanation` for in-depth background on transaction control.
 
 .. _sqlite3-reference:
 
