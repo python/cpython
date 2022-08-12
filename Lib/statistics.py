@@ -355,15 +355,21 @@ def _fail_neg(values, errmsg='negative value'):
             raise StatisticsError(errmsg)
         yield x
 
-def _rank(data, /, *, reverse=False) -> list[float]:
-    """Rank order a dataset.
+def _rank(data, /) -> list[float]:
+    """Rank order a dataset. The lowest value has rank 1.
 
-    By default, the lowest value has rank 1.
     Ties are averaged so that equal values receive the same rank.
+    The operation is idempotent.
+
+    >>> data = [31, 56, 31, 25, 75, 18]
+    >>> _rank(data)
+    [3.5, 5.0, 3.5, 2.0, 6.0, 1.0]
+    >>> _rank(_)
+    [3.5, 5.0, 3.5, 2.0, 6.0, 1.0]
 
     """
     # Handling of ties matches scipy.stats.mstats.spearmanr
-    val_pos = sorted(zip(data, count()), reverse=reverse)
+    val_pos = sorted(zip(data, count()))
     i = 0
     result = [0] * len(val_pos)
     for _, g in groupby(val_pos, key=itemgetter(0)):
@@ -1007,7 +1013,7 @@ def covariance(x, y, /):
     return sxy / (n - 1)
 
 
-def correlation(x, y, /, *, ranked=False):
+def correlation(x, y, /, *, by_rank=False):
     """Pearson's correlation coefficient
 
     Return the Pearson's correlation coefficient for two inputs. Pearson's
@@ -1023,9 +1029,9 @@ def correlation(x, y, /, *, ranked=False):
     >>> correlation(x, y)
     -1.0
 
-    If *ranked* is true, computes Spearman's correlation coefficient for
-    two inputs.  The data is replaced by ranks.  Ties are averaged so
-    that equal values receive the same rank.
+    If *by_rank* is true, computes Spearman's correlation coefficient
+    for two inputs.  The data is replaced by ranks.  Ties are averaged
+    so that equal values receive the same rank.
 
     Spearman's correlation coefficient is appropriate for ordinal data
     or for continuous data that doesn't meet the linear proportion
