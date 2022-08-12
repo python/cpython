@@ -631,11 +631,6 @@ create_cancelled_error(FutureObj *fut)
     } else {
         exc = PyObject_CallOneArg(asyncio_CancelledError, msg);
     }
-    if (exc == NULL) {
-        return NULL;
-    }
-    PyException_SetContext(exc, fut->fut_cancelled_exc);
-    Py_CLEAR(fut->fut_cancelled_exc);
     return exc;
 }
 
