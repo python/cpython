@@ -9349,17 +9349,13 @@ eliminate_empty_basic_blocks(basicblock *entryblock) {
     /* Eliminate empty blocks */
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         basicblock *next = b->b_next;
-        if (next) {
-            while (next->b_iused == 0 && next->b_next) {
-                next = next->b_next;
-            }
-            b->b_next = next;
+        while (next && next->b_iused == 0) {
+            next = next->b_next;
         }
+        b->b_next = next;
     }
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        if (b->b_iused == 0) {
-            continue;
-        }
+        assert(b->b_iused > 0);
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             if (HAS_TARGET(instr->i_opcode)) {
@@ -9368,6 +9364,7 @@ eliminate_empty_basic_blocks(basicblock *entryblock) {
                     target = target->b_next;
                 }
                 instr->i_target = target;
+                assert(instr->i_target && instr->i_target->b_iused > 0);
             }
         }
     }
