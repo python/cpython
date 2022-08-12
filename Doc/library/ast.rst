@@ -1991,7 +1991,7 @@ and classes for traversing abstract syntax trees:
 
 .. function:: literal_eval(node_or_string)
 
-   Evaluate an expression node or a string containing a Python literal or
+   Evaluate an expression node or a string containing only a Python literal or
    container display.  The string or node provided may only consist of the
    following Python literal structures: strings, bytes, numbers, tuples, lists,
    dicts, sets, booleans, ``None`` and ``Ellipsis``.
