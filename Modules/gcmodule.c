@@ -462,6 +462,43 @@ visit_decref(PyObject *op, void *parent)
     return 0;
 }
 
+int tupletraverse(PyTupleObject *o, visitproc visit, void *arg);
+int func_traverse(PyFunctionObject *f, visitproc visit, void *arg);
+int cell_traverse(PyCellObject *op, visitproc visit, void *arg);
+int dict_traverse(PyObject *op, visitproc visit, void *arg);
+int list_traverse(PyListObject *o, visitproc visit, void *arg);
+
+/* Optimization:
+ * Calling inlined_tp_traverse(op, proc, c) is equivalent to calling
+ * Py_TYPE(op)->tp_traverse(op, proc, c), but is intended to be faster.  The
+ * approach is to check for common Python types and statically call their
+ * traverse functions (changing an indirect call to a static call), and by
+ * using a combination of the always_inline and flatten attributes to get the
+ * compiler to generate specializations of the traversal methods, getting rid
+ * of the indirect calls via Py_VISIT.
+ */
+__attribute__((always_inline)) __attribute__((flatten))
+static void
+inlined_tp_traverse(PyObject* op, visitproc proc, void* c)
+{
+    // This set of types and the order that they are checked was driven by data
+    // from a webserving macrobenchmark, but a more robust analysis and
+    // optimization should still be possible.
+    if (Py_TYPE(op) == &PyTuple_Type) {
+        tupletraverse((PyTupleObject*)op, proc, c);
+    } else if (Py_TYPE(op) == &PyFunction_Type) {
+        func_traverse((PyFunctionObject*)op, proc, c);
+    } else if (Py_TYPE(op) == &PyCell_Type) {
+        cell_traverse((PyCellObject*)op, proc, c);
+    } else if (Py_TYPE(op) == &PyDict_Type) {
+        dict_traverse(op, proc, c);
+    } else if (Py_TYPE(op) == &PyList_Type) {
+        list_traverse((PyListObject*)op, proc, c);
+    } else {
+        Py_TYPE(op)->tp_traverse(op, proc, c);
+    }
+}
+
 /* Subtract internal references from gc_refs.  After this, gc_refs is >= 0
  * for all objects in containers, and is GC_REACHABLE for all tracked gc
  * objects not in containers.  The ones with gc_refs > 0 are directly
@@ -474,10 +511,7 @@ subtract_refs(PyGC_Head *containers)
     PyGC_Head *gc = GC_NEXT(containers);
     for (; gc != containers; gc = GC_NEXT(gc)) {
         PyObject *op = FROM_GC(gc);
-        traverse = Py_TYPE(op)->tp_traverse;
-        (void) traverse(op,
-                        (visitproc)visit_decref,
-                        op);
+        inlined_tp_traverse(op, (visitproc)visit_decref, op);
     }
 }
 
@@ -581,14 +615,11 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
              * the next object to visit.
              */
             PyObject *op = FROM_GC(gc);
-            traverseproc traverse = Py_TYPE(op)->tp_traverse;
             _PyObject_ASSERT_WITH_MSG(op, gc_get_refs(gc) > 0,
                                       "refcount is too small");
             // NOTE: visit_reachable may change gc->_gc_next when
             // young->_gc_prev == gc.  Don't do gc = GC_NEXT(gc) before!
-            (void) traverse(op,
-                    (visitproc)visit_reachable,
-                    (void *)young);
+            inlined_tp_traverse(op, (visitproc)visit_reachable, young);
             // relink gc_prev to prev element.
             _PyGCHead_SET_PREV(gc, prev);
             // gc is not COLLECTING state after here.
@@ -732,10 +763,7 @@ move_legacy_finalizer_reachable(PyGC_Head *finalizers)
     PyGC_Head *gc = GC_NEXT(finalizers);
     for (; gc != finalizers; gc = GC_NEXT(gc)) {
         /* Note that the finalizers list may grow during this. */
-        traverse = Py_TYPE(FROM_GC(gc))->tp_traverse;
-        (void) traverse(FROM_GC(gc),
-                        (visitproc)visit_move,
-                        (void *)finalizers);
+        inlined_tp_traverse(FROM_GC(gc), (visitproc)visit_move, (void*)finalizers);
     }
 }
 

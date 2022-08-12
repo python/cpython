@@ -3490,7 +3490,7 @@ dict_popitem_impl(PyDictObject *self)
     return res;
 }
 
-static int
+int
 dict_traverse(PyObject *op, visitproc visit, void *arg)
 {
     PyDictObject *mp = (PyDictObject *)op;

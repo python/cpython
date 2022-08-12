@@ -2677,7 +2677,7 @@ list_remove(PyListObject *self, PyObject *value)
     return NULL;
 }
 
-static int
+int
 list_traverse(PyListObject *o, visitproc visit, void *arg)
 {
     Py_ssize_t i;

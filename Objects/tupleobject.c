@@ -609,7 +609,7 @@ tuple_count(PyTupleObject *self, PyObject *value)
     return PyLong_FromSsize_t(count);
 }
 
-static int
+int
 tupletraverse(PyTupleObject *o, visitproc visit, void *arg)
 {
     Py_ssize_t i;
