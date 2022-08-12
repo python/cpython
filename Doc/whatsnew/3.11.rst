@@ -435,6 +435,12 @@ Other CPython Implementation Changes
   :data:`sys.path`. Otherwise, initialization will recalculate the path and replace
   any values added to ``module_search_paths``.
 
+* The output of the :option:`--help` option is changed to fit inside 50 lines and 80
+  columns.  Information about :ref:`Python environment variables <using-on-envvars>`
+  and :option:`-X options <-X>` is available with the new :option:`--help-env` or
+  :option:`--help-xoptions` flags, and with :option:`--help-all`.
+  (Contributed by Éric Araujo in :issue:`46142`.)
+
 
 New Modules
 ===========
