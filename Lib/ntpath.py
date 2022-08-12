@@ -325,7 +325,7 @@ def isreserved(path):
     if name == '.' or name == '..':
         return False
     # Trailing spaces and dots are reserved.
-    elif name and name[-1] in '. ':
+    elif name.endswith((' ', '.')):
         return True
     # File streams are reserved (e.g. "filename:stream[:type]").
     elif ':' in name:
