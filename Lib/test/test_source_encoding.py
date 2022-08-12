@@ -225,12 +225,15 @@ class AbstractSourceEncodingTest:
 
 
 class UTF8ValidatorTest(unittest.TestCase):
-    @unittest.skipIf(sys.platform.startswith("win"),
-                     "Times out on Windows due to file I/O")
+    @unittest.skipIf(not sys.platform.startswith("linux"),
+                     "Too slow to run on non-Linux platforms")
     def test_invalid_utf8(self):
         # This is port of test_utf8_decode_invalid_sequences in test_unicode.py
         # to exercise the separate utf8 validator in tokenize.c used when
         # reading source files.
+
+        # That file is written using low-level C file I/O, so the only way to
+        # test it is to write actual files to disk.
 
         # Each example is put inside a string at the top of the file so
         # it's an otherwise valid Python source file.
