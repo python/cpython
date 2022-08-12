@@ -291,12 +291,12 @@ class XMLRPCTestCase(unittest.TestCase):
 
     def test_limit_int(self):
         check = self.check_loads
-        with self.assertRaises(OverflowError):
-            check('<int>123456780123456789</int>', None)
-        with self.assertRaises(ValueError):
-            maxdigits = 5000
-            with support.set_int_max_str_digits(maxdigits):
-                s = '1' * (maxdigits + 1)
+        maxdigits = 5000
+        with support.set_int_max_str_digits(maxdigits):
+            s = '1' * (maxdigits + 1)
+            with self.assertRaises(ValueError):
+                check(f'<int>{s}</int>', None)
+            with self.assertRaises(ValueError):
                 check(f'<biginteger>{s}</biginteger>', None)
 
     def test_get_host_info(self):

@@ -742,22 +742,14 @@ class Unmarshaller:
     dispatch["boolean"] = end_boolean
 
     def end_int(self, data):
-        if len(data.strip()) > 16:
-            # XML-RPC ints are signed int32 with 11 chars text max
-            raise OverflowError("int exceeds XML-RPC limits")
         self.append(int(data))
         self._value = 0
-
     dispatch["i1"] = end_int
     dispatch["i2"] = end_int
     dispatch["i4"] = end_int
     dispatch["i8"] = end_int
     dispatch["int"] = end_int
-
-    def end_bigint(self, data):
-        self.append(int(data))
-        self._value = 0
-    dispatch["biginteger"] = end_bigint
+    dispatch["biginteger"] = end_int
 
     def end_double(self, data):
         self.append(float(data))
