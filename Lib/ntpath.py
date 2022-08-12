@@ -320,13 +320,15 @@ def isreserved(path):
     """Return true if the pathname is reserved by the system."""
     # Refer to "Naming Files, Paths, and Namespaces":
     # https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file
-    path = os.fspath(path)
     name = os.fsdecode(basename(path))
+    # '.' and '..' are not reserved.
+    if name == '.' or name == '..':
+        return False
     # Trailing spaces and dots are reserved.
-    if name not in ('.', '..') and name.rstrip('. ') != name:
+    elif name and name[-1] in '. ':
         return True
     # File streams are reserved (e.g. "filename:stream[:type]").
-    if ':' in name:
+    elif ':' in name:
         return True
     # DOS device names are reserved (e.g. "nul" or "nul .txt"). The rules
     # are complicated and vary across Windows versions (e.g. "../nul" is
