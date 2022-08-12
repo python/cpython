@@ -9349,12 +9349,10 @@ eliminate_empty_basic_blocks(basicblock *entryblock) {
     /* Eliminate empty blocks */
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         basicblock *next = b->b_next;
-        if (next) {
-            while (next->b_iused == 0 && next->b_next) {
-                next = next->b_next;
-            }
-            b->b_next = next;
+        while (next && next->b_iused == 0) {
+            next = next->b_next;
         }
+        b->b_next = next;
     }
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         if (b->b_iused == 0) {
@@ -9370,6 +9368,9 @@ eliminate_empty_basic_blocks(basicblock *entryblock) {
                 instr->i_target = target;
             }
         }
+    }
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        assert(b->b_iused > 0);
     }
 }
 
