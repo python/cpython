@@ -78,12 +78,12 @@ The returned :class:`Connection` object ``con``
 represents the connection to the database.
 
 In order to execute SQL statements and fetch results from SQL queries,
-use a database cursor.
+you'll use a database cursor.
 Call :meth:`con.cursor() <Connection.cursor>` to create the :class:`Cursor`::
 
    cur = con.cursor()
 
-Now, create a database table ``movie`` with columns for title,
+Now you'll create a database table ``movie`` with columns for title,
 release year, and review score.
 For simplicitly, just use column names in the table declaration:
 thanks to the `flexible typing`_ feature of SQLite,
@@ -119,7 +119,7 @@ for a non-existent table ``"abc"``::
 
 As expected, the query returns an empty result.
 
-Now, add two rows of data supplied as SQL literals
+Now, you'll add two rows of data supplied as SQL literals
 by executing an ``INSERT`` statement,
 once again by calling :meth:`cur.execute(...) <Cursor.execute>`::
 
@@ -137,7 +137,8 @@ to commit the transaction::
 
    con.commit()
 
-Execute a query to verify that the data was inserted correctly.
+You can verify that the data was inserted correctly
+by executing a ``SELECT`` query.
 Use the now-familiar :meth:`con.execute(...) <Cursor.execute>` to
 store the result in ``res``,
 and call :meth:`res.fetchall() <Cursor.fetchall>` to fetch all rows::
@@ -149,7 +150,7 @@ and call :meth:`res.fetchall() <Cursor.fetchall>` to fetch all rows::
 The result is a :class:`list` of two :class:`!tuple`\s, one per row,
 each containing a the ``score`` from the query.
 
-Now, insert three more rows by calling
+Now, you'll insert three more rows by calling
 :meth:`cur.executemany(...) <Cursor.executemany>`::
 
    data = [
@@ -166,7 +167,8 @@ to bind Python values to SQL statements,
 to avoid `SQL injection attacks`_
 (see :ref:`sqlite3-placeholders` for more details).
 
-Verify that the new rows were inserted by executing a ``SELECT`` query,
+You can verify that the new rows were inserted
+by executing a ``SELECT`` query,
 this time iterating over the results of the query::
 
    >>> for row in cur.execute("SELECT year, title FROM movie ORDER BY year"):
@@ -179,7 +181,7 @@ this time iterating over the results of the query::
 
 Each row is now a two-item :class:`tuple` of ``(year, title)``.
 
-At last, verify that the database has been written to disk by
+At last, you'll verify that the database has been written to disk by
 calling :meth:`con.close() <Connection.close>`
 to close the existing connection,
 opening a new one, creating a new cursor,
