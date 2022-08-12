@@ -2,6 +2,7 @@
 
 import collections
 import contextvars
+import concurrent.futures
 import gc
 import io
 import random
@@ -3273,6 +3274,22 @@ class WaitTests(unittest.IsolatedAsyncioTestCase):
         done, pending = await asyncio.wait(iter((task,)))
         self.assertSetEqual(done, {task})
         self.assertSetEqual(pending, set())
+
+    async def test_wait_does_not_support_cf_future(self):
+        fut = concurrent.futures.Future()
+        with self.assertRaisesRegex(
+            TypeError,
+            r"An asyncio\.Future was expected, got <Future at 0x.* state=pending>",
+        ):
+            await asyncio.wait({fut})
+
+        fut.set_result(None)
+        with self.assertRaisesRegex(
+            TypeError,
+            r"An asyncio\.Future was expected, got <Future at 0x.* state=finished"
+            r" returned NoneType>",
+        ):
+            await asyncio.wait({fut})
 
 
 class CompatibilityTests(test_utils.TestCase):

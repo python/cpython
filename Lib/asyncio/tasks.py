@@ -426,7 +426,12 @@ async def wait(fs, *, timeout=None, return_when=ALL_COMPLETED):
                 DeprecationWarning,
                 stacklevel=2,
             )
-            new_fs.add(ensure_future(f, loop=loop))
+            try:
+                new_fs.add(ensure_future(f, loop=loop))
+            except TypeError:
+                raise TypeError(
+                    f"An asyncio.Future was expected, got {f!r}"
+                ) from None
         else:
             new_fs.add(f)
 
