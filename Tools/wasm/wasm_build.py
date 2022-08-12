@@ -149,7 +149,7 @@ def _check_clean_src():
 
 NATIVE = Platform(
     "native",
-    pythonexe=sysconfig.get_config_var("PYTHON"),  # TODO: check macOS
+    pythonexe=sysconfig.get_config_var("BUILDPYTHON"),  # macOS has python.exe
     config_site=None,
     configure_wrapper=None,
     make_wrapper=None,
