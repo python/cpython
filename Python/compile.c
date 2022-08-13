@@ -85,6 +85,9 @@
          (opcode) == SETUP_WITH || \
          (opcode) == SETUP_CLEANUP)
 
+#define HAS_TARGET(opcode) \
+        (IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode))
+
 /* opcodes that must be last in the basicblock */
 #define IS_TERMINATOR_OPCODE(opcode) \
         (IS_JUMP_OPCODE(opcode) || IS_SCOPE_EXIT_OPCODE(opcode))
@@ -141,33 +144,31 @@ static struct location NO_LOCATION = {-1, -1, -1, -1};
 
 typedef struct jump_target_label_ {
     int id;
-    struct basicblock_ *block;
 } jump_target_label;
 
-static struct jump_target_label_ NO_LABEL = {-1, NULL};
+static struct jump_target_label_ NO_LABEL = {-1};
 
 #define SAME_LABEL(L1, L2) ((L1).id == (L2).id)
 #define IS_LABEL(L) (!SAME_LABEL((L), (NO_LABEL)))
 
 #define NEW_JUMP_TARGET_LABEL(C, NAME) \
-    jump_target_label NAME = {cfg_new_label_id(CFG_BUILDER(C)), cfg_builder_new_block(CFG_BUILDER(C))}; \
+    jump_target_label NAME = cfg_new_label(CFG_BUILDER(C)); \
     if (!IS_LABEL(NAME)) { \
         return 0; \
     }
 
-#define USE_LABEL(C, LBL) cfg_builder_use_label(CFG_BUILDER(C), LBL)
+#define USE_LABEL(C, LBL) \
+    if (cfg_builder_use_label(CFG_BUILDER(C), LBL) < 0) { \
+        return 0; \
+    }
 
 struct instr {
     int i_opcode;
     int i_oparg;
-    /* target block (if jump instruction) -- we temporarily have both the label
-       and the block in the instr. The label is set by front end, and the block
-       is calculated by backend. */
-    jump_target_label i_target_label;
-    struct basicblock_ *i_target;
-     /* target block when exception is raised, should not be set by front-end. */
-    struct basicblock_ *i_except;
     struct location i_loc;
+    /* The following fields should not be set by the front-end: */
+    struct basicblock_ *i_target; /* target block (if jump instruction) */
+    struct basicblock_ *i_except; /* target block when exception is raised */
 };
 
 typedef struct exceptstack {
@@ -351,12 +352,12 @@ enum {
 typedef struct cfg_builder_ {
     /* The entryblock, at which control flow begins. All blocks of the
        CFG are reachable through the b_next links */
-    basicblock *cfg_entryblock;
+    basicblock *g_entryblock;
     /* Pointer to the most recently allocated block.  By following
        b_list links, you can reach all allocated blocks. */
-    basicblock *block_list;
+    basicblock *g_block_list;
     /* pointer to the block currently being constructed */
-    basicblock *curblock;
+    basicblock *g_curblock;
     /* label for the next instruction to be placed */
     jump_target_label g_current_label;
     /* next free label id */
@@ -752,7 +753,7 @@ dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
 static void
 cfg_builder_check(cfg_builder *g)
 {
-    for (basicblock *block = g->block_list; block != NULL; block = block->b_list) {
+    for (basicblock *block = g->g_block_list; block != NULL; block = block->b_list) {
         assert(!_PyMem_IsPtrFreed(block));
         if (block->b_instr != NULL) {
             assert(block->b_ialloc > 0);
@@ -770,7 +771,7 @@ static void
 cfg_builder_free(cfg_builder* g)
 {
     cfg_builder_check(g);
-    basicblock *b = g->block_list;
+    basicblock *b = g->g_block_list;
     while (b != NULL) {
         if (b->b_instr) {
             PyObject_Free((void *)b->b_instr);
@@ -867,10 +868,11 @@ compiler_set_qualname(struct compiler *c)
     return 1;
 }
 
-static int
-cfg_new_label_id(cfg_builder *g)
+static jump_target_label
+cfg_new_label(cfg_builder *g)
 {
-    return g->g_next_free_label++;
+    jump_target_label lbl = {g->g_next_free_label++};
+    return lbl;
 }
 
 /* Allocate a new block and return a pointer to it.
@@ -885,8 +887,8 @@ cfg_builder_new_block(cfg_builder *g)
         return NULL;
     }
     /* Extend the singly linked list of blocks with new block. */
-    b->b_list = g->block_list;
-    g->block_list = b;
+    b->b_list = g->g_block_list;
+    g->g_block_list = b;
     b->b_label = -1;
     return b;
 }
@@ -895,8 +897,8 @@ static basicblock *
 cfg_builder_use_next_block(cfg_builder *g, basicblock *block)
 {
     assert(block != NULL);
-    g->curblock->b_next = block;
-    g->curblock = block;
+    g->g_curblock->b_next = block;
+    g->g_curblock = block;
     return block;
 }
 
@@ -1282,17 +1284,12 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 */
 
 static int
-basicblock_addop(basicblock *b, int opcode, int oparg,
-                 jump_target_label target, struct location loc)
+basicblock_addop(basicblock *b, int opcode, int oparg, struct location loc)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
-    assert(HAS_ARG(opcode) || oparg == 0);
+    assert(HAS_ARG(opcode) || HAS_TARGET(opcode) || oparg == 0);
     assert(0 <= oparg && oparg < (1 << 30));
-    assert(!IS_LABEL(target) ||
-           IS_JUMP_OPCODE(opcode) ||
-           IS_BLOCK_PUSH_OPCODE(opcode));
-    assert(oparg == 0 || !IS_LABEL(target));
 
     int off = basicblock_next_instr(b);
     if (off < 0) {
@@ -1301,7 +1298,6 @@ basicblock_addop(basicblock *b, int opcode, int oparg,
     struct instr *i = &b->b_instr[off];
     i->i_opcode = opcode;
     i->i_oparg = oparg;
-    i->i_target_label = target;
     i->i_target = NULL;
     i->i_loc = loc;
 
@@ -1314,7 +1310,7 @@ cfg_builder_current_block_is_terminated(cfg_builder *g)
     if (IS_LABEL(g->g_current_label)) {
         return true;
     }
-    struct instr *last = basicblock_last_instr(g->curblock);
+    struct instr *last = basicblock_last_instr(g->g_curblock);
     return last && IS_TERMINATOR_OPCODE(last->i_opcode);
 }
 
@@ -1322,38 +1318,31 @@ static int
 cfg_builder_maybe_start_new_block(cfg_builder *g)
 {
     if (cfg_builder_current_block_is_terminated(g)) {
-        basicblock *b;
-        if (IS_LABEL(g->g_current_label)) {
-            b = g->g_current_label.block;
-            b->b_label = g->g_current_label.id;
-            g->g_current_label = NO_LABEL;
-        }
-        else {
-            b = cfg_builder_new_block(g);
-        }
+        basicblock *b = cfg_builder_new_block(g);
         if (b == NULL) {
             return -1;
         }
+        b->b_label = g->g_current_label.id;
+        g->g_current_label = NO_LABEL;
         cfg_builder_use_next_block(g, b);
     }
     return 0;
 }
 
 static int
-cfg_builder_addop(cfg_builder *g, int opcode, int oparg, jump_target_label target,
-                  struct location loc)
+cfg_builder_addop(cfg_builder *g, int opcode, int oparg, struct location loc)
 {
     if (cfg_builder_maybe_start_new_block(g) != 0) {
         return -1;
     }
-    return basicblock_addop(g->curblock, opcode, oparg, target, loc);
+    return basicblock_addop(g->g_curblock, opcode, oparg, loc);
 }
 
 static int
 cfg_builder_addop_noarg(cfg_builder *g, int opcode, struct location loc)
 {
     assert(!HAS_ARG(opcode));
-    return cfg_builder_addop(g, opcode, 0, NO_LABEL, loc);
+    return cfg_builder_addop(g, opcode, 0, loc);
 }
 
 static Py_ssize_t
@@ -1565,7 +1554,7 @@ cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, struct locatio
        EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
 
     int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
-    return cfg_builder_addop(g, opcode, oparg_, NO_LABEL, loc);
+    return cfg_builder_addop(g, opcode, oparg_, loc);
 }
 
 static int
@@ -1573,7 +1562,7 @@ cfg_builder_addop_j(cfg_builder *g, int opcode, jump_target_label target, struct
 {
     assert(IS_LABEL(target));
     assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
-    return cfg_builder_addop(g, opcode, 0, target, loc);
+    return cfg_builder_addop(g, opcode, target.id, loc);
 }
 
 
@@ -1795,11 +1784,11 @@ compiler_enter_scope(struct compiler *c, identifier name,
     c->c_nestlevel++;
 
     cfg_builder *g = CFG_BUILDER(c);
-    g->block_list = NULL;
+    g->g_block_list = NULL;
     block = cfg_builder_new_block(g);
     if (block == NULL)
         return 0;
-    g->curblock = g->cfg_entryblock = block;
+    g->g_curblock = g->g_entryblock = block;
     g->g_current_label = NO_LABEL;
 
     if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
@@ -7092,7 +7081,7 @@ stackdepth(basicblock *entryblock, int code_flags)
                 maxdepth = new_depth;
             }
             assert(depth >= 0); /* invalid code or bug in stackdepth() */
-            if (is_jump(instr) || is_block_push(instr)) {
+            if (HAS_TARGET(instr->i_opcode)) {
                 effect = stack_effect(instr->i_opcode, instr->i_oparg, 1);
                 assert(effect != PY_INVALID_STACK_EFFECT);
                 int target_depth = depth + effect;
@@ -7393,7 +7382,7 @@ mark_cold(basicblock *entryblock) {
 
 static int
 push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
-    basicblock *entryblock = g->cfg_entryblock;
+    basicblock *entryblock = g->g_entryblock;
     if (entryblock->b_next == NULL) {
         /* single basicblock, no need to reorder */
         return 0;
@@ -7410,17 +7399,14 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
             if (explicit_jump == NULL) {
                 return -1;
             }
-            jump_target_label next_label = {b->b_next->b_label, b->b_next};
-            basicblock_addop(explicit_jump, JUMP, 0, next_label, NO_LOCATION);
+            basicblock_addop(explicit_jump, JUMP, b->b_next->b_label, NO_LOCATION);
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
             b->b_next = explicit_jump;
 
-            /* calculate target from target_label */
-            /* TODO: formalize an API for adding jumps in the backend */
+            /* set target */
             struct instr *last = basicblock_last_instr(explicit_jump);
-            last->i_target = last->i_target_label.block;
-            last->i_target_label = NO_LABEL;
+            last->i_target = explicit_jump->b_next;
         }
     }
 
@@ -8226,11 +8212,8 @@ dump_instr(struct instr *i)
     if (HAS_ARG(i->i_opcode)) {
         sprintf(arg, "arg: %d ", i->i_oparg);
     }
-    if (is_jump(i)) {
+    if (HAS_TARGET(i->i_opcode)) {
         sprintf(arg, "target: %p ", i->i_target);
-    }
-    if (is_block_push(i)) {
-        sprintf(arg, "except_target: %p ", i->i_target);
     }
     fprintf(stderr, "line: %d, opcode: %d %s%s%s\n",
                     i->i_loc.lineno, i->i_opcode, arg, jabs, jrel);
@@ -8524,7 +8507,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     /* Make sure every block that falls off the end returns None. */
-    if (!basicblock_returns(CFG_BUILDER(c)->curblock)) {
+    if (!basicblock_returns(CFG_BUILDER(c)->g_curblock)) {
         UNSET_LOC(c);
         if (addNone)
             ADDOP_LOAD_CONST(c, Py_None);
@@ -8546,7 +8529,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     int nblocks = 0;
-    for (basicblock *b = CFG_BUILDER(c)->block_list; b != NULL; b = b->b_list) {
+    for (basicblock *b = CFG_BUILDER(c)->g_block_list; b != NULL; b = b->b_list) {
         nblocks++;
     }
     if ((size_t)nblocks > SIZE_MAX / sizeof(basicblock *)) {
@@ -8555,7 +8538,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     cfg_builder *g = CFG_BUILDER(c);
-    basicblock *entryblock = g->cfg_entryblock;
+    basicblock *entryblock = g->g_entryblock;
     assert(entryblock != NULL);
 
     /* Set firstlineno if it wasn't explicitly set. */
@@ -8974,7 +8957,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
         struct instr *inst = &bb->b_instr[i];
         int oparg = inst->i_oparg;
         int nextop = i+1 < bb->b_iused ? bb->b_instr[i+1].i_opcode : 0;
-        if (is_jump(inst) || is_block_push(inst)) {
+        if (HAS_TARGET(inst->i_opcode)) {
             /* Skip over empty basic blocks. */
             while (inst->i_target->b_iused == 0) {
                 inst->i_target = inst->i_target->b_next;
@@ -9366,25 +9349,22 @@ eliminate_empty_basic_blocks(basicblock *entryblock) {
     /* Eliminate empty blocks */
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         basicblock *next = b->b_next;
-        if (next) {
-            while (next->b_iused == 0 && next->b_next) {
-                next = next->b_next;
-            }
-            b->b_next = next;
+        while (next && next->b_iused == 0) {
+            next = next->b_next;
         }
+        b->b_next = next;
     }
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        if (b->b_iused == 0) {
-            continue;
-        }
+        assert(b->b_iused > 0);
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
-            if (is_jump(instr) || is_block_push(instr)) {
+            if (HAS_TARGET(instr->i_opcode)) {
                 basicblock *target = instr->i_target;
                 while (target->b_iused == 0) {
                     target = target->b_next;
                 }
                 instr->i_target = target;
+                assert(instr->i_target && instr->i_target->b_iused > 0);
             }
         }
     }
@@ -9458,14 +9438,13 @@ calculate_jump_targets(basicblock *entryblock)
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             assert(instr->i_target == NULL);
-            if (is_jump(instr) || is_block_push(instr)) {
-                int lbl = instr->i_target_label.id;
+            if (HAS_TARGET(instr->i_opcode)) {
+                int lbl = instr->i_oparg;
                 assert(lbl >= 0 && lbl <= max_label);
                 instr->i_target = label2block[lbl];
                 assert(instr->i_target != NULL);
                 assert(instr->i_target->b_label == lbl);
             }
-            instr->i_target_label = NO_LABEL;
         }
     }
     PyMem_Free(label2block);
@@ -9577,7 +9556,7 @@ duplicate_exits_without_lineno(cfg_builder *g)
 {
     /* Copy all exit blocks without line number that are targets of a jump.
      */
-    basicblock *entryblock = g->cfg_entryblock;
+    basicblock *entryblock = g->g_entryblock;
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         if (b->b_iused > 0 && is_jump(&b->b_instr[b->b_iused-1])) {
             basicblock *target = b->b_instr[b->b_iused-1].i_target;

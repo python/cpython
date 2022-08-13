@@ -304,43 +304,16 @@ class PurePath(object):
 
     @classmethod
     def _parse_parts(cls, parts):
-        parsed = []
+        if not parts:
+            return '', '', []
         sep = cls._flavour.sep
         altsep = cls._flavour.altsep
-        drv = root = ''
-        it = reversed(parts)
-        for part in it:
-            if not part:
-                continue
-            elif altsep:
-                part = part.replace(altsep, sep)
-            drv, root, rel = cls._split_root(part)
-            if sep in rel:
-                for x in reversed(rel.split(sep)):
-                    if x and x != '.':
-                        parsed.append(sys.intern(x))
-            else:
-                if rel and rel != '.':
-                    parsed.append(sys.intern(rel))
-
-            if drv or root:
-                if not drv:
-                    # If no drive is present, try to find one in the previous
-                    # parts. This makes the result of parsing e.g.
-                    # ("C:", "/", "a") reasonably intuitive.
-                    for part in it:
-                        if not part:
-                            continue
-                        elif altsep:
-                            part = part.replace(altsep, sep)
-                        drv = cls._flavour.splitdrive(part)[0]
-                        if drv:
-                            break
-
-                break
-        if drv or root:
-            parsed.append(drv + root)
-        parsed.reverse()
+        path = cls._flavour.join(*parts)
+        if altsep:
+            path = path.replace(altsep, sep)
+        drv, root, rel = cls._split_root(path)
+        unfiltered_parsed = [drv + root] + rel.split(sep)
+        parsed = [sys.intern(x) for x in unfiltered_parsed if x and x != '.']
         return drv, root, parsed
 
     @classmethod

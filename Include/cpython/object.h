@@ -54,9 +54,6 @@ typedef struct _Py_Identifier {
 typedef int (*getbufferproc)(PyObject *, Py_buffer *, int);
 typedef void (*releasebufferproc)(PyObject *, Py_buffer *);
 
-typedef PyObject *(*vectorcallfunc)(PyObject *callable, PyObject *const *args,
-                                    size_t nargsf, PyObject *kwnames);
-
 
 typedef struct {
     /* Number implementations must check *both*
