@@ -495,6 +495,13 @@ asyncio
   holding a group of tasks that will wait for all of them upon exit.
   (Contributed by Yury Seliganov and others.)
 
+contextlib
+----------
+
+Added non parallel-safe :func:`~contextlib.chdir` context manager to change
+the current working directory and then restore it on exit. Simple wrapper
+around :func:`~os.chdir`. (Contributed by Filipe Laíns in :issue:`25625`)
+
 datetime
 --------
 
