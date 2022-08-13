@@ -1827,6 +1827,7 @@ These are not used in annotations. They are building blocks for declaring types.
    .. attribute:: __required_keys__
 
       .. versionadded:: 3.9
+
    .. attribute:: __optional_keys__
 
       ``Point2D.__required_keys__`` and ``Point2D.__optional_keys__`` return
