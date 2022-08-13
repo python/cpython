@@ -1979,10 +1979,18 @@ parser_init(struct _PyArg_Parser *parser)
     const char * const *keywords = parser->keywords;
     assert(keywords != NULL);
 
-    if (parser->initialized) {
+    if (_Py_atomic_load_relaxed(&parser->initialized)) {
         assert(parser->kwtuple != NULL);
         return 1;
     }
+    PyThread_acquire_lock(_PyRuntime.getargs.mutex, WAIT_LOCK);
+    // Check again if another thread initialized the parser
+    // while we were waiting for the lock.
+    if (_Py_atomic_load_relaxed(&parser->initialized)) {
+        assert(parser->kwtuple != NULL);
+        return 1;
+    }
+
     assert(parser->pos == 0 &&
            (parser->format == NULL || parser->fname == NULL) &&
            parser->custom_msg == NULL &&
@@ -1991,6 +1999,7 @@ parser_init(struct _PyArg_Parser *parser)
 
     int len, pos;
     if (scan_keywords(keywords, &len, &pos) < 0) {
+        PyThread_release_lock(_PyRuntime.getargs.mutex);
         return 0;
     }
 
@@ -2000,6 +2009,7 @@ parser_init(struct _PyArg_Parser *parser)
         assert(parser->fname == NULL);
         if (parse_format(parser->format, len, pos,
                          &fname, &custommsg, &min, &max) < 0) {
+            PyThread_release_lock(_PyRuntime.getargs.mutex);
             return 0;
         }
     }
@@ -2013,6 +2023,7 @@ parser_init(struct _PyArg_Parser *parser)
     if (kwtuple == NULL) {
         kwtuple = new_kwtuple(keywords, len, pos);
         if (kwtuple == NULL) {
+            PyThread_release_lock(_PyRuntime.getargs.mutex);
             return 0;
         }
         owned = 1;
@@ -2027,18 +2038,18 @@ parser_init(struct _PyArg_Parser *parser)
     parser->min = min;
     parser->max = max;
     parser->kwtuple = kwtuple;
-    parser->initialized = owned ? 1 : -1;
-
     assert(parser->next == NULL);
     parser->next = static_arg_parsers;
     static_arg_parsers = parser;
+    _Py_atomic_store_relaxed(&parser->initialized, owned ? 1 : -1);
+    PyThread_release_lock(_PyRuntime.getargs.mutex);
     return 1;
 }
 
 static void
 parser_clear(struct _PyArg_Parser *parser)
 {
-    if (parser->initialized == 1) {
+    if (_Py_atomic_load_relaxed(&parser->initialized) == 1) {
         Py_CLEAR(parser->kwtuple);
     }
 }
