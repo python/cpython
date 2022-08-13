@@ -193,8 +193,11 @@ The :meth:`~BaseException.add_note` method is added to :exc:`BaseException`.
 It can be used to enrich exceptions with context information
 that is not available at the time when the exception is raised.
 The added notes appear in the default traceback.
+
 See :pep:`678` for more details.
-(Contributed by Irit Katriel in :issue:`45607`.)
+
+(Contributed by Irit Katriel in :issue:`45607`.
+PEP written by Zac Hatfield-Dodds.)
 
 
 .. _new-feat-related-type-hints-311:
