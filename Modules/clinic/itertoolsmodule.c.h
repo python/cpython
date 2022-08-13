@@ -60,18 +60,9 @@ static PyObject *
 itertools_groupby(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
     #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -80,13 +71,12 @@ itertools_groupby(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(iterable), &_Py_ID(key), },
     };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
     #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
 
     static const char * const _keywords[] = {"iterable", "key", NULL};
     static _PyArg_Parser _parser = {
@@ -416,18 +406,9 @@ static PyObject *
 itertools_combinations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
     #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -436,13 +417,12 @@ itertools_combinations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(iterable), &_Py_ID(r), },
     };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
     #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
 
     static const char * const _keywords[] = {"iterable", "r", NULL};
     static _PyArg_Parser _parser = {
@@ -497,18 +477,9 @@ static PyObject *
 itertools_combinations_with_replacement(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
     #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -517,13 +488,12 @@ itertools_combinations_with_replacement(PyTypeObject *type, PyObject *args, PyOb
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(iterable), &_Py_ID(r), },
     };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
     #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
 
     static const char * const _keywords[] = {"iterable", "r", NULL};
     static _PyArg_Parser _parser = {
@@ -577,18 +547,9 @@ static PyObject *
 itertools_permutations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
     #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -597,13 +558,12 @@ itertools_permutations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(iterable), &_Py_ID(r), },
     };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
     #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
 
     static const char * const _keywords[] = {"iterable", "r", NULL};
     static _PyArg_Parser _parser = {
@@ -649,18 +609,9 @@ static PyObject *
 itertools_accumulate(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
     #define NUM_KEYWORDS 3
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -669,13 +620,12 @@ itertools_accumulate(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(iterable), &_Py_ID(func), &_Py_ID(initial), },
     };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
     #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
 
     static const char * const _keywords[] = {"iterable", "func", "initial", NULL};
     static _PyArg_Parser _parser = {
@@ -734,18 +684,9 @@ static PyObject *
 itertools_compress(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
     #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -754,13 +695,12 @@ itertools_compress(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(data), &_Py_ID(selectors), },
     };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
     #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
 
     static const char * const _keywords[] = {"data", "selectors", NULL};
     static _PyArg_Parser _parser = {
@@ -842,18 +782,9 @@ static PyObject *
 itertools_count(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
     #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -862,13 +793,12 @@ itertools_count(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(start), &_Py_ID(step), },
     };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
     #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
 
     static const char * const _keywords[] = {"start", "step", NULL};
     static _PyArg_Parser _parser = {
@@ -904,4 +834,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=66bc6a70f05e9bc7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b1056d63f68a9059 input=a9049054013a1b77]*/
