@@ -609,6 +609,10 @@ hashlib
   OpenSSL support.
   (Contributed by Christian Heimes in :issue:`47098`.)
 
+* Add :func:`hashlib.file_digest`, a helper function for efficient hashing
+  of files or file-like objects.
+  (Contributed by Christian Heimes in :gh:`89313`.)
+
 IDLE and idlelib
 ----------------
 
