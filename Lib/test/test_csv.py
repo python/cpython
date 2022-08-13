@@ -462,7 +462,7 @@ class TestDialectRegistry(unittest.TestCase):
                              delimiter=';',
                              quotechar="'",
                              doublequote=False,
-                             skipinitialspace=True
+                             skipinitialspace=True,
                              lineterminator='\n',
                              quoting=csv.QUOTE_ALL)
         self.addCleanup(csv.unregister_dialect, name)
