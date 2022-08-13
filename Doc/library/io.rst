@@ -1051,6 +1051,7 @@ Text I/O
    called.
 
    The initial value of the buffer can be set by providing *initial_value*.
+   If the buffer is written to, the character(s) written will overwrite part or all of any initial_value.
    If newline translation is enabled, newlines will be encoded as if by
    :meth:`~TextIOBase.write`.  The stream is positioned at the start of
    the buffer.
@@ -1072,13 +1073,14 @@ Text I/O
 
       import io
 
-      output = io.StringIO()
-      output.write('First line.\n')
+      output = io.StringIO('Start text')
+      output.seek(0, io.SEEK_END)
+      output.write('and end text')
       print('Second line.', file=output)
 
       # Retrieve file contents -- this will be
-      # 'First line.\nSecond line.\n'
-      contents = output.getvalue()
+      # 'Start text and end text'
+      assert output.getvalue() == 'Start text and end text'
 
       # Close object and discard memory buffer --
       # .getvalue() will now raise an exception.
