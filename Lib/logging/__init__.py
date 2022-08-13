@@ -2245,7 +2245,11 @@ def shutdown(handlerList=_handlerList):
             if h:
                 try:
                     h.acquire()
-                    h.flush()
+                    # MemoryHandlers might not want to be flushed on close,
+                    # but circular imports prevent us scoping this to just
+                    # those handlers.  hence the default to True.
+                    if getattr(h, 'flushOnClose', True):
+                        h.flush()
                     h.close()
                 except (OSError, ValueError):
                     # Ignore errors which might be caused

@@ -79,13 +79,6 @@ class SingleNamespacePackage(NamespacePackageTest):
         with self.assertRaises(ImportError):
             import foo.two
 
-    def test_module_repr(self):
-        import foo.one
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            self.assertEqual(foo.__spec__.loader.module_repr(foo),
-                            "<module 'foo' (namespace)>")
-
 
 class DynamicPathNamespacePackage(NamespacePackageTest):
     paths = ['portion1']

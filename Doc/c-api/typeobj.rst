@@ -135,7 +135,7 @@ Quick Reference
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | [:c:member:`~PyTypeObject.tp_cache`]           | :c:type:`PyObject` *              |                   |   |   |       |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | [:c:member:`~PyTypeObject.tp_subclasses`]      | :c:type:`PyObject` *              | __subclasses__    |   |   |       |
+   | [:c:member:`~PyTypeObject.tp_subclasses`]      | void *                            | __subclasses__    |   |   |       |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | [:c:member:`~PyTypeObject.tp_weaklist`]        | :c:type:`PyObject` *              |                   |   |   |       |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
@@ -1715,18 +1715,11 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    :c:member:`~PyTypeObject.tp_dictoffset` should be set to ``-4`` to indicate that the dictionary is
    at the very end of the structure.
 
-   The real dictionary offset in an instance can be computed from a negative
-   :c:member:`~PyTypeObject.tp_dictoffset` as follows::
-
-      dictoffset = tp_basicsize + abs(ob_size)*tp_itemsize + tp_dictoffset
-      if dictoffset is not aligned on sizeof(void*):
-          round up to sizeof(void*)
-
-   where :c:member:`~PyTypeObject.tp_basicsize`, :c:member:`~PyTypeObject.tp_itemsize` and :c:member:`~PyTypeObject.tp_dictoffset` are
-   taken from the type object, and :attr:`ob_size` is taken from the instance.  The
-   absolute value is taken because ints use the sign of :attr:`ob_size` to
-   store the sign of the number.  (There's never a need to do this calculation
-   yourself; it is done for you by :c:func:`_PyObject_GetDictPtr`.)
+   The :c:member:`~PyTypeObject.tp_dictoffset` should be regarded as write-only.
+   To get the pointer to the dictionary call :c:func:`PyObject_GenericGetDict`.
+   Calling :c:func:`PyObject_GenericGetDict` may need to allocate memory for the
+   dictionary, so it is may be more efficient to call :c:func:`PyObject_GetAttr`
+   when accessing an attribute on the object.
 
    **Inheritance:**
 
@@ -1934,9 +1927,17 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    This field is not inherited.
 
 
-.. c:member:: PyObject* PyTypeObject.tp_subclasses
+.. c:member:: void* PyTypeObject.tp_subclasses
 
-   List of weak references to subclasses.  Internal use only.
+   A collection of subclasses.  Internal use only.  May be an invalid pointer.
+
+   To get a list of subclasses, call the Python method
+   :py:meth:`~class.__subclasses__`.
+
+   .. versionchanged:: 3.12
+
+      For some types, this field does not hold a valid :c:expr:`PyObject*`.
+      The type was changed to :c:expr:`void*` to indicate this.
 
    **Inheritance:**
 
