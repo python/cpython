@@ -24,7 +24,9 @@ import shlex
 import shutil
 import subprocess
 import sysconfig
-from typing import Callable, List, Union  # for Python 3.8
+
+# for Python 3.8
+from typing import Any, Dict, Callable, Iterable, List, Optional, Union
 
 SRCDIR = pathlib.Path(__file__).parent.parent.parent.absolute()
 WASMTOOLS = SRCDIR / "Tools" / "wasm"
@@ -77,7 +79,7 @@ https://wasmtime.dev/ to install wasmtime.
 """
 
 
-def get_emscripten_root(emconfig: pathlib.Path = EM_CONFIG) -> pathlib.Path:
+def get_emscripten_root(emconfig: pathlib.Path = EM_CONFIG) -> pathlib.PurePath:
     """Parse EM_CONFIG file and lookup EMSCRIPTEN_ROOT
 
     The ".emscripten" config file is a Python snippet that uses "EM_CONFIG"
@@ -89,7 +91,7 @@ def get_emscripten_root(emconfig: pathlib.Path = EM_CONFIG) -> pathlib.Path:
     with open(emconfig, encoding="utf-8") as f:
         code = f.read()
     # EM_CONFIG file is a Python snippet
-    local = {}
+    local: Dict[str, Any] = {}
     exec(code, globals(), local)
     return pathlib.Path(local["EMSCRIPTEN_ROOT"])
 
@@ -127,9 +129,9 @@ class Platform:
 
     name: str
     pythonexe: str
-    config_site: pathlib.Path
-    configure_wrapper: pathlib.Path
-    make_wrapper: pathlib.Path
+    config_site: Optional[pathlib.PurePath]
+    configure_wrapper: Optional[pathlib.PurePath]
+    make_wrapper: Optional[pathlib.PurePath]
     environ: dict
     check: Callable[[], None]
 
@@ -144,12 +146,13 @@ def _check_clean_src():
     ]
     for candidate in candidates:
         if candidate.exists():
-            raise DirtySourceDirectory(candidate, CLEAN_SRCDIR)
+            raise DirtySourceDirectory(os.fspath(candidate), CLEAN_SRCDIR)
 
 
 NATIVE = Platform(
     "native",
-    pythonexe=sysconfig.get_config_var("BUILDPYTHON"),  # macOS has python.exe
+    # macOS has python.exe
+    pythonexe=sysconfig.get_config_var("BUILDPYTHON") or "python",
     config_site=None,
     configure_wrapper=None,
     make_wrapper=None,
@@ -164,17 +167,17 @@ def _check_emscripten():
     # sanity check
     emconfigure = EMSCRIPTEN.configure_wrapper
     if not emconfigure.exists():
-        raise MissingDependency(emconfigure, INSTALL_EMSDK)
+        raise MissingDependency(os.fspath(emconfigure), INSTALL_EMSDK)
     # version check
     version_txt = EMSCRIPTEN_ROOT / "emscripten-version.txt"
     if not version_txt.exists():
-        raise MissingDependency(version_txt, INSTALL_EMSDK)
+        raise MissingDependency(os.fspath(version_txt), INSTALL_EMSDK)
     with open(version_txt) as f:
         version = f.read().strip().strip('"')
     version_tuple = tuple(int(v) for v in version.split("."))
     if version_tuple < EMSDK_MIN_VERSION:
         raise MissingDependency(
-            version_txt,
+            os.fspath(version_txt),
             f"Emscripten SDK {version} in '{EMSCRIPTEN_ROOT}' is older than "
             "minimum required version "
             f"{'.'.join(str(v) for v in EMSDK_MIN_VERSION)}.",
@@ -196,7 +199,7 @@ EMSCRIPTEN = Platform(
 def _check_wasi():
     wasm_ld = WASI_SDK_PATH / "bin" / "wasm-ld"
     if not wasm_ld.exists():
-        raise MissingDependency(wasm_ld, INSTALL_WASI_SDK)
+        raise MissingDependency(os.fspath(wasm_ld), INSTALL_WASI_SDK)
     wasmtime = shutil.which("wasmtime")
     if wasmtime is None:
         raise MissingDependency("wasmtime", INSTALL_WASMTIME)
