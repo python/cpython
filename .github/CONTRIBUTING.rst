@@ -6,19 +6,19 @@ Build Status
 
 - main
 
-  + `Stable buildbots <http://buildbot.python.org/3.x.stable/>`_
+  + `Stable buildbots <https://buildbot.python.org/3.x.stable/>`_
 
 - 3.9
 
-  + `Stable buildbots <http://buildbot.python.org/3.9.stable/>`_
+  + `Stable buildbots <https://buildbot.python.org/3.9.stable/>`_
 
 - 3.8
 
-  + `Stable buildbots <http://buildbot.python.org/3.8.stable/>`_
+  + `Stable buildbots <https://buildbot.python.org/3.8.stable/>`_
 
 - 3.7
 
-  + `Stable buildbots <http://buildbot.python.org/3.7.stable/>`_
+  + `Stable buildbots <https://buildbot.python.org/3.7.stable/>`_
 
 
 Thank You

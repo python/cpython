@@ -3,6 +3,18 @@ What's New in IDLE 3.11.0
 Released on 2022-10-03
 =========================
 
+
+gh-65802: Document handling of extensions in Save As dialogs.
+
+gh-95191: Include prompts when saving Shell (interactive input/output).
+
+gh-95511: Fix the Shell context menu copy-with-prompts bug of copying
+an extra line when one selects whole lines.
+
+gh-95471: Tweak Edit menu. Move 'Select All' above 'Cut' as it is used
+with 'Cut' and 'Copy' but not 'Paste'.  Add a separator between 'Replace'
+and 'Go to Line' to help IDLE issue triagers.
+
 gh-95411: Enable using IDLE's module browser with .pyw files.
 
 gh-89610: Add .pyi as a recognized extension for IDLE on macOS.  This allows
