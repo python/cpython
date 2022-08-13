@@ -178,7 +178,7 @@ and Ammar Askar in :issue:`43950`.)
 
 
 Exception Groups and ``except*`` (PEP 654)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------
 
 :pep:`654` introduces language features that enable a program
 to raise and handle multiple unrelated exceptions simultaneously.
