@@ -51,7 +51,7 @@ make -j$(nproc)
 popd
 ```
 
-### Cross compile to wasm32-emscripten for browser
+### Cross-compile to wasm32-emscripten for browser
 
 ```shell
 ./Tools/wasm/wasm_build.py emscripten-browser
