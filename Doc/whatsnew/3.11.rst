@@ -176,8 +176,25 @@ The :option:`-X` ``no_debug_ranges`` option and the environment variable
 See :pep:`657` for more details. (Contributed by Pablo Galindo, Batuhan Taskaya
 and Ammar Askar in :issue:`43950`.)
 
-Exceptions can be enriched with notes (PEP 678)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+PEP 654: Exception Groups and ``except*``
+-----------------------------------------
+
+:pep:`654` introduces language features that enable a program
+to raise and handle multiple unrelated exceptions simultaneously.
+The builtin types :exc:`ExceptionGroup` and :exc:`BaseExceptionGroup`
+make it possible to group exceptions and raise them together,
+and the new :keyword:`except* <except_star>` syntax generalizes
+:keyword:`except` to match subgroups of exception groups.
+
+See :pep:`654` for more details.
+
+(Contributed by Irit Katriel in :issue:`45292`. PEP written by
+Irit Katriel, Yury Selivanov and Guido van Rossum.)
+
+
+PEP 678: Exceptions can be enriched with notes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The :meth:`add_note` method was added to :exc:`BaseException`. It can be
 used to enrich exceptions with context information which is not available
