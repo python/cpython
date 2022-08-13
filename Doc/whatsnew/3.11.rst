@@ -184,9 +184,8 @@ PEP 654: Exception Groups and ``except*``
 to raise and handle multiple unrelated exceptions simultaneously.
 The builtin types :exc:`ExceptionGroup` and :exc:`BaseExceptionGroup`
 make it possible to group exceptions and raise them together,
-and the new :keyword:`except* <except_star>` syntax
-generalizes :keyword:`except` to match subgroups
-of exception groups.
+and the new :keyword:`except* <except_star>` syntax generalizes
+:keyword:`except` to match subgroups of exception groups.
 
 See :pep:`654` for more details.
 
