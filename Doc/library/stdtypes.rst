@@ -5478,8 +5478,9 @@ The limit value is based on the number of digit characters in the input or
 output string. That means that higher bases can process larger numbers before
 the limit triggers. Underscores and the sign are not counted towards the limit.
 
-When an operation exceeds the limit, a :exc:`ValueError` is raised::
+When an operation would exceed the limit, a :exc:`ValueError` is raised::
 
+   >>> import sys
    >>> sys.set_int_max_str_digits(2048)
    >>> i = 10 ** 2047
    >>> len(str(i))
@@ -5493,38 +5494,21 @@ When an operation exceeds the limit, a :exc:`ValueError` is raised::
 This limit offers a practical way to avoid `CVE-2020-10735
 <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
 
+The default limit is 4300 digits as seen in
+:data:`sys.int_info.default_max_str_digits <sys.int_info>`. The smallest limit
+is 640 digits as seen in :data:`sys.int_info.str_digits_check_threshold
+<sys.int_info>`.
+
+Verification::
+
+   >>> import sys
+   >>> assert sys.int_info.default_max_str_digits == 4300, sys.int_info
+   >>> assert sys.int_info.str_digits_check_threshold == 640, sys.int_info
+   >>> msg = int('379431350246233136746328250873855212517275894113083563419'
+   ...           '189439726510664285115764751963294910345124558029500996970'
+   ...           '709334425217234291').to_bytes(55, 'big')
+
 .. versionadded:: 3.12
-
-Configuring the limit
----------------------
-
-Before Python starts up you can use an environment variable or an interpreter
-command line flag to configure the limit:
-
-* :envvar:`PYTHONINTMAXSTRDIGITS`, e.g.
-  ``PYTHONINTMAXSTRDIGITS=4321 python3`` to set the limit to ``4321`` or
-  ``PYTHONINTMAXSTRDIGITS=0 python3`` to disable the limitation.
-* :option:`-X int_max_str_digits <-X>`, e.g.
-  ``python3 -X int_max_str_digits=4321``
-* :data:`sys.flags.int_max_str_digits` contains the value of
-  :envvar:`PYTHONINTMAXSTRDIGITS` or :option:`-X int_max_str_digits <-X>`.
-  If both the env var and the ``-X`` option are set, the ``-X`` option takes
-  precedence. A value of *-1* indicates that both were unset, thus a value of
-  :data:`sys.int_info.default_max_str_digits` was used during initilization.
-
-From code, you can inspect the current limit and set a new one using these
-:mod:`sys` APIs:
-
-* :func:`sys.get_int_max_str_digits` and :func:`sys.set_int_max_str_digits` are
-  a getter and setter for the interpreter-wide limit. Subinterpreters have
-  their own limit.
-
-Information about the default and minimum can be found in :attr:`sys.int_info`:
-
-* :data:`sys.int_info.default_max_str_digits <sys.int_info>` is the compiled-in
-  default limit.
-* :data:`sys.int_info.str_digits_check_threshold <sys.int_info>` is the minimum
-  accepted value for the limit.
 
 Affected APIs
 -------------
@@ -5548,20 +5532,72 @@ The limitations do not apply to functions with a linear algorithm:
 * :class:`str` to :class:`float`.
 * :class:`str` to :class:`decimal.Decimal`.
 
+Configuring the limit
+---------------------
+
+Before Python starts up you can use an environment variable or an interpreter
+command line flag to configure the limit:
+
+* :envvar:`PYTHONINTMAXSTRDIGITS`, e.g.
+  ``PYTHONINTMAXSTRDIGITS=640 python3`` to set the limit to ``640`` or
+  ``PYTHONINTMAXSTRDIGITS=0 python3`` to disable the limitation.
+* :option:`-X int_max_str_digits <-X>`, e.g.
+  ``python3 -X int_max_str_digits=640``
+* :data:`sys.flags.int_max_str_digits` contains the value of
+  :envvar:`PYTHONINTMAXSTRDIGITS` or :option:`-X int_max_str_digits <-X>`.
+  If both the env var and the ``-X`` option are set, the ``-X`` option takes
+  precedence. A value of *-1* indicates that both were unset, thus a value of
+  :data:`sys.int_info.default_max_str_digits` was used during initilization.
+
+From code, you can inspect the current limit and set a new one using these
+:mod:`sys` APIs:
+
+* :func:`sys.get_int_max_str_digits` and :func:`sys.set_int_max_str_digits` are
+  a getter and setter for the interpreter-wide limit. Subinterpreters have
+  their own limit.
+
+Information about the default and minimum can be found in :attr:`sys.int_info`:
+
+* :data:`sys.int_info.default_max_str_digits <sys.int_info>` is the compiled-in
+  default limit.
+* :data:`sys.int_info.str_digits_check_threshold <sys.int_info>` is the minimum
+  accepted value for the limit.
+
+.. versionadded:: 3.12
+
+.. caution::
+
+   Setting a low limit can lead to problems. While rare, code exists that
+   contains integer constants in decimal in their source that exceed the
+   minimum threshold. A consequence of setting the limit is that Python source
+   code containing decimal integer literals longer than the limit will
+   encounter a ValueError during compilation, usually at startup time or import
+   time or even at installation time - anytime an up to date ``.pyc`` does not
+   already exist for the code. A workaround for source that contains such large
+   constants is to convert them to ``0x`` hexidecimal form as it has no limit.
+
+   Test your application thoroughly if you use a low limit. Ensure your tests
+   run with the limit set early via the environment or flag so that it applies
+   during startup and even during any installation step that may precompile
+   source to ``.pyc`` files.
+
 Recommended configuration
 -------------------------
 
 The default :data:`sys.int_info.default_max_str_digits` is expected to be
 reasonable for most applications. If your application requires a different
-limit, use Python version and implementation agnostic code to set it.
+limit, use Python version and implementation agnostic code to set it from your
+main entry point as these APIs were added in later patch releases before 3.12.
 
 Example::
 
    >>> import sys
    >>> if hasattr(sys, "set_int_max_str_digits"):
    ...     current_limit = sys.get_int_max_str_digits()
-   ...     if not current_limit or current_limit > 4321:
-   ...         sys.set_int_max_str_digits(4321)
+   ...     if not current_limit or current_limit > 8088:
+   ...         sys.set_int_max_str_digits(8088)
+
+If you need to disable it entirely, set it to ``0``.
 
 
 .. rubric:: Footnotes
