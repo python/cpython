@@ -298,8 +298,11 @@ the :mod:`glob` module.)
 .. function:: isreserved(path)
 
    Return ``True`` if *path* is a reserved pathname on the current system. On
-   Windows, reserved names include "NUL", "AUX" and "CON". On other platforms,
-   this function always returns ``False``.
+   Windows, reserved filenames include those that end with a space or dot;
+   those that contain colons, which may delimit file streams such as
+   "filename:streamname"; and DOS device names such as "NUL", "CON", "CONIN$",
+   "CONOUT$", "AUX", "PRN", "COM1", and "LPT1". On other platforms, this
+   function always returns ``False``.
 
    .. versionadded:: 3.12
 
