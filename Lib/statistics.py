@@ -359,12 +359,14 @@ def _rank(data, /) -> list[float]:
     """Rank order a dataset. The lowest value has rank 1.
 
     Ties are averaged so that equal values receive the same rank.
-    The operation is idempotent.
 
     >>> data = [31, 56, 31, 25, 75, 18]
     >>> _rank(data)
     [3.5, 5.0, 3.5, 2.0, 6.0, 1.0]
-    >>> _rank(_)
+
+    The operation is idempotent.
+
+    >>> _rank([3.5, 5.0, 3.5, 2.0, 6.0, 1.0])
     [3.5, 5.0, 3.5, 2.0, 6.0, 1.0]
 
     """
