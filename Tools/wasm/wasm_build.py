@@ -135,7 +135,7 @@ class Platform:
     environ: dict
     check: Callable[[], None]
 
-    def getenv(self) -> dict:
+    def getenv(self, profile: "BuildProfile") -> dict:
         return self.environ.copy()
 
 
@@ -212,7 +212,15 @@ WASI = Platform(
     config_site=WASMTOOLS / "config.site-wasm32-wasi",
     configure_wrapper=WASMTOOLS / "wasi-env",
     make_wrapper=None,
-    environ={"WASI_SDK_PATH": WASI_SDK_PATH},
+    environ={
+        "WASI_SDK_PATH": WASI_SDK_PATH,
+        # workaround for https://github.com/python/cpython/issues/95952
+        "HOSTRUNNER": (
+            "wasmtime run "
+            "--env PYTHONPATH=/{relbuilddir}/build/lib.wasi-wasm32-$(VERSION):/Lib "
+            "--mapdir /::{srcdir} --"
+        ),
+    },
     check=_check_wasi,
 )
 
@@ -342,7 +350,14 @@ class BuildProfile:
         """Generate environ dict for platform"""
         env = os.environ.copy()
         env.setdefault("MAKEFLAGS", f"-j{os.cpu_count()}")
-        env.update(self.host.platform.getenv())
+        platenv = self.host.platform.getenv(self)
+        for key, value in platenv.items():
+            if isinstance(value, str):
+                value = value.format(
+                    relbuilddir=self.builddir.relative_to(SRCDIR),
+                    srcdir=SRCDIR,
+                )
+            env[key] = value
         return env
 
     def _run_cmd(self, cmd: Iterable[str], args: Iterable[str]):
