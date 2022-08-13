@@ -535,7 +535,7 @@ def normalize_snippet(s, *, indent=0):
     return s
 
 
-def declare_parser(*, hasformat=False):
+def declare_parser(f, *, hasformat=False):
     """
     Generates the code template for a static local PyArg_Parser variable,
     with an initializer.  For core code (incl. builtin modules) the
@@ -548,43 +548,49 @@ def declare_parser(*, hasformat=False):
     else:
         fname = '.fname = "{name}",'
         format_ = ''
-    declarations = """
-        #define NUM_KEYWORDS {num_keywords}
-        #if NUM_KEYWORDS == 0
 
-        #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-        #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-        #  else
-        #    define KWTUPLE NULL
-        #  endif
+    num_keywords = len([
+        p for p in f.parameters.values()
+        if not p.is_positional_only() and not p.is_vararg()
+    ])
+    if num_keywords == 0:
+        declarations = """
+            #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+            #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+            #else
+            #  define KWTUPLE NULL
+            #endif
+        """
+    else:
+        declarations = """
+            #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-        #else  // NUM_KEYWORDS != 0
-        #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+            #define NUM_KEYWORDS %d
+            static struct {{
+                PyGC_Head _this_is_not_used;
+                PyObject_VAR_HEAD
+                PyObject *ob_item[NUM_KEYWORDS];
+            }} _kwtuple = {{
+                .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+                .ob_item = {{ {keywords_py} }},
+            }};
+            #undef NUM_KEYWORDS
+            #define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
-        static struct {{
-            PyGC_Head _this_is_not_used;
-            PyObject_VAR_HEAD
-            PyObject *ob_item[NUM_KEYWORDS];
-        }} _kwtuple = {{
-            .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-            .ob_item = {{ {keywords_py} }},
-        }};
-        #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
+            #else  // !Py_BUILD_CORE
+            #  define KWTUPLE NULL
+            #endif  // !Py_BUILD_CORE
+        """ % num_keywords
 
-        #  else  // !Py_BUILD_CORE
-        #    define KWTUPLE NULL
-        #  endif  // !Py_BUILD_CORE
-        #endif  // NUM_KEYWORDS != 0
-        #undef NUM_KEYWORDS
-
-        static const char * const _keywords[] = {{{keywords_c} NULL}};
-        static _PyArg_Parser _parser = {{
-            .keywords = _keywords,
-            %s
-            .kwtuple = KWTUPLE,
-        }};
-        #undef KWTUPLE
-        """ % (format_ or fname)
+    declarations += """
+            static const char * const _keywords[] = {{{keywords_c} NULL}};
+            static _PyArg_Parser _parser = {{
+                .keywords = _keywords,
+                %s
+                .kwtuple = KWTUPLE,
+            }};
+            #undef KWTUPLE
+    """ % (format_ or fname)
     return normalize_snippet(declarations)
 
 
@@ -1020,7 +1026,7 @@ class CLanguage(Language):
                 flags = "METH_FASTCALL|METH_KEYWORDS"
                 parser_prototype = parser_prototype_fastcall_keywords
                 argname_fmt = 'args[%d]'
-                declarations = declare_parser()
+                declarations = declare_parser(f)
                 declarations += "\nPyObject *argsbuf[%s];" % len(converters)
                 if has_optional_kw:
                     pre_buffer = "0" if vararg != NO_VARARG else "nargs"
@@ -1036,7 +1042,7 @@ class CLanguage(Language):
                 flags = "METH_VARARGS|METH_KEYWORDS"
                 parser_prototype = parser_prototype_keyword
                 argname_fmt = 'fastargs[%d]'
-                declarations = declare_parser()
+                declarations = declare_parser(f)
                 declarations += "\nPyObject *argsbuf[%s];" % len(converters)
                 declarations += "\nPyObject * const *fastargs;"
                 declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"
@@ -1116,7 +1122,7 @@ class CLanguage(Language):
                 if add_label:
                     parser_code.append("%s:" % add_label)
             else:
-                declarations = declare_parser(hasformat=True)
+                declarations = declare_parser(f, hasformat=True)
                 if not new_or_init:
                     parser_code = [normalize_snippet("""
                         if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser{parse_arguments_comma}
@@ -1442,7 +1448,6 @@ class CLanguage(Language):
         template_dict['keywords_c'] = ' '.join('"' + k + '",'
                                                for k in data.keywords)
         keywords = [k for k in data.keywords if k]
-        template_dict['num_keywords'] = len(keywords)
         template_dict['keywords_py'] = ' '.join('&_Py_ID(' + k + '),'
                                                 for k in keywords)
         template_dict['format_units'] = ''.join(data.format_units)
