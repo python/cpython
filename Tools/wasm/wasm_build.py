@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build script for Python on WebAssembly platforms
+"""Build script for Python on WebAssembly platforms.
 
   $ ./Tools/wasm/wasm_builder.py emscripten-browser compile
   $ ./Tools/wasm/wasm_builder.py emscripten-node-dl test
@@ -342,7 +342,7 @@ class BuildProfile:
         env.update(self.host.platform.getenv())
         return env
 
-    def _run_cmd(self, cmd: List[str], args: List[str]):
+    def _run_cmd(self, cmd: Iterable[str], args: Iterable[str]):
         cmd = list(cmd)
         cmd.extend(args)
         return subprocess.check_call(
