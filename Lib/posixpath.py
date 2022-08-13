@@ -218,7 +218,6 @@ def ismount(path):
 
 def isreserved(path):
     """Return true if the pathname is reserved by the system."""
-    os.fspath(path)
     return False
 
 
