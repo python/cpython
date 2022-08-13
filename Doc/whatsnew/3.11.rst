@@ -177,8 +177,8 @@ See :pep:`657` for more details. (Contributed by Pablo Galindo, Batuhan Taskaya
 and Ammar Askar in :issue:`43950`.)
 
 
-Exception Groups and ``except*`` (PEP 654)
-------------------------------------------
+PEP 654: Exception Groups and ``except*``
+-----------------------------------------
 
 :pep:`654` introduces language features that enable a program
 to raise and handle multiple unrelated exceptions simultaneously.
@@ -194,18 +194,14 @@ See :pep:`654` for more details.
 Irit Katriel, Yury Selivanov and Guido van Rossum.)
 
 
-Exceptions can be enriched with notes (PEP 678)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+PEP 678: Exceptions can be enriched with notes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The :meth:`add_note` method was added to :exc:`BaseException`. It can be
 used to enrich exceptions with context information which is not available
 at the time when the exception is raised. The notes added appear in the
-default traceback.
-
-See :pep:`678` for more details.
-
-(Contributed by Irit Katriel in :issue:`45607`. PEP written by
-Zac Hatfield-Dodds.)
+default traceback.  See :pep:`678` for more details. (Contributed by
+Irit Katriel in :issue:`45607`.)
 
 
 .. _new-feat-related-type-hints-311:
