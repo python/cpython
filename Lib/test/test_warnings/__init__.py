@@ -489,7 +489,7 @@ class WarnTests(BaseTest):
             self.module.filterwarnings("always", category=UserWarning)
             filenames = ["nonascii\xe9\u20ac"]
             if not support.is_emscripten:
-                # JavaScript does not like surrogates
+                # JavaScript does not like surrogates.
                 # Invalid UTF-8 leading byte 0x80 encountered when
                 # deserializing a UTF-8 string in wasm memory to a JS
                 # string!
