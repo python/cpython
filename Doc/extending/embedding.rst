@@ -310,7 +310,7 @@ wanted to add our own module to the frozen list we would normally do this::
    for your compiler to work you must point it to the Python subdirectory
    in an active clone of the cpython repository or source tarball.
    However it is not required to manually build the python core if you are
-   using an clone or source tarbar of an version installed on your system.
+   using an clone or source tarball of an version installed on your system.
 
 As you can see the above code will compile (with an warning on Windows
 which will export ``PyImport_FrozenModules`` on the embedded python program).
