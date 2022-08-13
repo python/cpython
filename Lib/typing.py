@@ -1,5 +1,6 @@
 """
 The typing module: Support for gradual typing as defined by PEP 484.
+https://peps.python.org/pep-0484/
 
 At large scale, the structure of the module is following:
 * Imports and exports, all public names should be explicitly added to __all__.
@@ -289,6 +290,7 @@ def _prepare_paramspec_params(cls, params):
     variables (internal helper).
     """
     # Special case where Z[[int, str, bool]] == Z[int, str, bool] in PEP 612.
+    # https://peps.python.org/pep-0612/
     if (len(cls.__parameters__) == 1
             and params and not _is_param_expr(params[0])):
         assert isinstance(cls.__parameters__[0], ParamSpec)
@@ -759,6 +761,7 @@ def Concatenate(self, parameters):
        Callable[Concatenate[int, P], int]
 
     See PEP 612 for detailed information.
+    https://peps.python.org/pep-0612/
     """
     if parameters == ():
         raise TypeError("Cannot take a Concatenate of no types.")
@@ -816,6 +819,7 @@ def TypeGuard(self, parameters):
 
     ``TypeGuard`` also works with type variables.  For more information, see
     PEP 647 (User-Defined Type Guards).
+    https://peps.python.org/pep-0647/
     """
     item = _type_check(parameters, f'{self} accepts only single type.')
     return _GenericAlias(self, (item,))
@@ -994,6 +998,7 @@ class TypeVar(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
     can be used to declare covariant or contravariant generic types.
     See PEP 484 for more details. By default generic types are invariant
     in all type variables.
+    https://peps.python.org/pep-0484/
 
     Type variables can be introspected. e.g.:
 
@@ -1050,6 +1055,7 @@ class TypeVarTuple(_Final, _Immutable, _PickleUsingNameMixin, _root=True):
       C[()]        # Even this is fine
 
     For more details, see PEP 646.
+    https://peps.python.org/pep-0646/
 
     Note that only TypeVarTuples defined in global scope can be pickled.
     """
@@ -1200,6 +1206,7 @@ class ParamSpec(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
     contravariant=True can be used to declare covariant or contravariant
     generic types.  These keyword arguments are valid, but their actual semantics
     are yet to be decided.  See PEP 612 for details.
+    https://peps.python.org/pep-0612/
 
     Parameter specification variables can be introspected. e.g.:
 
@@ -1602,6 +1609,7 @@ class _CallableType(_SpecialGenericAlias, _root=True):
         # This relaxes what args can be on purpose to allow things like
         # PEP 612 ParamSpec.  Responsibility for whether a user is using
         # Callable[...] properly is deferred to static type checkers.
+        # https://peps.python.org/pep-0612/
         if isinstance(args, list):
             params = (tuple(args), result)
         else:
@@ -1724,6 +1732,7 @@ def Unpack(self, parameters):
     everything the runtime allows may be accepted by static type checkers.
 
     For more information, see PEP 646.
+    https://peps.python.org/pep-0646/
     """
     item = _type_check(parameters, f'{self} accepts only single type.')
     return _UnpackGenericAlias(origin=self, args=(item,))
@@ -1903,6 +1912,7 @@ def _get_protocol_attrs(cls):
 
 def _is_callable_members_only(cls):
     # PEP 544 prohibits using issubclass() with protocols that have non-method members.
+    # https://peps.python.org/pep-0544/
     return all(callable(getattr(cls, attr, None)) for attr in _get_protocol_attrs(cls))
 
 
@@ -2012,6 +2022,7 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
     See PEP 544 for details. Protocol classes decorated with
     @typing.runtime_checkable act as simple-minded runtime protocols that check
     only the presence of given attributes, ignoring their type signatures.
+    https://peps.python.org/pep-0544/
     Protocol classes can be generic, they are defined as::
 
         class GenProto(Protocol[T]):
@@ -3420,6 +3431,7 @@ def dataclass_transform(
     It has no other runtime effect.
 
     See PEP 681 for more details.
+    https://peps.python.org/pep-0681/
     """
     def decorator(cls_or_fn):
         cls_or_fn.__dataclass_transform__ = {
