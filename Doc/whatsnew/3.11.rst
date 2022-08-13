@@ -1646,10 +1646,15 @@ Build Changes
   :issue:`45847`, :issue:`45747`, and :issue:`45763`.)
 
   .. note::
-     Use the environment variables ``TCLTK_CFLAGS`` and ``TCLTK_LIBS`` to
-     manually specify the location of Tcl/Tk headers and libraries.
-     The :program:`configure` options ``--with-tcltk-includes`` and
-     ``--with-tcltk-libs`` have been removed.
+     Use the environment variables :envvar:`TCLTK_CFLAGS` and 
+     :envvar:`TCLTK_LIBS` to manually specify the location of Tcl/Tk headers
+     and libraries. The :program:`configure` options ``--with-tcltk-includes``
+     and ``--with-tcltk-libs`` have been removed.
+
+     On RHEL 7 and CentOS 7 the development packages do not provide ``tcl.pc``
+     and ``tk.pc``, use :envvar:`TCLTK_LIBS="-ltk8.5 -ltkstub8.5 -ltcl8.5"`.
+     The directory ``Misc/rhel7`` contains ``.pc`` files and instructions
+     how to build Python with RHEL 7's and CentOS 7's TCL/TK and OpenSSL.
 
 * CPython now has :pep:`11` tier 3 support for cross compiling to WebAssembly
   platform ``wasm32-unknown-emscripten`` (Python in the browser). The effort
@@ -1676,6 +1681,9 @@ Build Changes
 
 * The :mod:`tkinter` package now requires Tcl/Tk version 8.5.12 or newer.
   (Contributed by Serhiy Storchaka in :issue:`46996`.)
+
+* :mod:`tkinter` now requires ``pkg-config`` command to detect development
+  settings for headers and libraries. 
 
 
 C API Changes
