@@ -231,6 +231,9 @@ for a group of statements:
 
 .. _except:
 
+:keyword:`!except` clause
+-------------------------
+
 The :keyword:`except` clause(s) specify one or more exception handlers. When no
 exception occurs in the :keyword:`try` clause, no exception handler is executed.
 When an exception occurs in the :keyword:`!try` suite, a search for an exception
@@ -311,10 +314,14 @@ when leaving an exception handler::
    >>> print(sys.exc_info())
    (None, None, None)
 
+
 .. index::
    keyword: except_star
 
 .. _except_star:
+
+:keyword:`!except*` clause
+--------------------------
 
 The :keyword:`except*<except_star>` clause(s) are used for handling
 :exc:`ExceptionGroup`\ s. The exception type for matching is interpreted as in
@@ -362,15 +369,22 @@ one except* clause, the first that matches it. ::
 
 .. _except_else:
 
+:keyword:`!else` clause
+-----------------------
+
 The optional :keyword:`!else` clause is executed if the control flow leaves the
 :keyword:`try` suite, no exception was raised, and no :keyword:`return`,
 :keyword:`continue`, or :keyword:`break` statement was executed.  Exceptions in
 the :keyword:`!else` clause are not handled by the preceding :keyword:`except`
 clauses.
 
+
 .. index:: keyword: finally
 
 .. _finally:
+
+:keyword:`!finally` clause
+--------------------------
 
 If :keyword:`finally` is present, it specifies a 'cleanup' handler.  The
 :keyword:`try` clause is executed, including any :keyword:`except` and
