@@ -2386,6 +2386,12 @@ requires, and these work on all platforms with a standard C implementation.
 |           | string if the object is        | +063415,               |       |
 |           | naive).                        | -030712.345216         |       |
 +-----------+--------------------------------+------------------------+-------+
+| ``%:z``   | UTC offset in the form         | (empty), +00:00,       |       |
+|           | ``±HH:MM[:SS[.ffffff]]``       | -04:00, +10:30,        |       |
+|           | (empty string if the object is | +06:34:15,             |       |
+|           | naive).                        | -03:07:12.345216       |       |
+|           | .. versionadded:: 3.12         |                        |       |
++-----------+--------------------------------+------------------------+-------+
 | ``%Z``    | Time zone name (empty string   | (empty), UTC, GMT      | \(6)  |
 |           | if the object is naive).       |                        |       |
 +-----------+--------------------------------+------------------------+-------+

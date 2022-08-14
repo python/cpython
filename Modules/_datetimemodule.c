@@ -1578,6 +1578,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     PyObject *result = NULL;            /* guilty until proved innocent */
 
     PyObject *zreplacement = NULL;      /* py string, replacement for %z */
+    PyObject *colonzreplacement = NULL; /* py string, replacement for %:z */
     PyObject *Zreplacement = NULL;      /* py string, replacement for %Z */
     PyObject *freplacement = NULL;      /* py string, replacement for %f */
 
@@ -1631,32 +1632,42 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             ntoappend = 1;
         }
         /* A % has been seen and ch is the character after it. */
-        else if (ch == 'z') {
-            if (zreplacement == NULL) {
+        else if (ch == 'z' || (ch == ':' && *pin == 'z' && pin++)) {
+            /* %z -> +HHMM, %:z -> +HH:MM */
+            PyObject **replacement_p;
+            char *sep;
+            if (ch == ':') {
+                sep = ":";
+                replacement_p = &colonzreplacement;
+            } else {
+                sep = "";
+                replacement_p = &zreplacement;
+            }
+            if (*replacement_p == NULL) {
                 /* format utcoffset */
                 char buf[100];
                 PyObject *tzinfo = get_tzinfo_member(object);
-                zreplacement = PyBytes_FromStringAndSize("", 0);
-                if (zreplacement == NULL) goto Done;
+                *replacement_p = PyBytes_FromStringAndSize("", 0);
+                if (*replacement_p == NULL) goto Done;
                 if (tzinfo != Py_None && tzinfo != NULL) {
                     assert(tzinfoarg != NULL);
                     if (format_utcoffset(buf,
                                          sizeof(buf),
-                                         "",
+                                         sep,
                                          tzinfo,
                                          tzinfoarg) < 0)
                         goto Done;
-                    Py_DECREF(zreplacement);
-                    zreplacement =
+                    Py_DECREF(*replacement_p);
+                    *replacement_p =
                       PyBytes_FromStringAndSize(buf,
                                                strlen(buf));
-                    if (zreplacement == NULL)
+                    if (*replacement_p == NULL)
                         goto Done;
                 }
             }
-            assert(zreplacement != NULL);
-            ptoappend = PyBytes_AS_STRING(zreplacement);
-            ntoappend = PyBytes_GET_SIZE(zreplacement);
+            assert(*replacement_p != NULL);
+            ptoappend = PyBytes_AS_STRING(*replacement_p);
+            ntoappend = PyBytes_GET_SIZE(*replacement_p);
         }
         else if (ch == 'Z') {
             /* format tzname */
@@ -1686,7 +1697,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             ntoappend = PyBytes_GET_SIZE(freplacement);
         }
         else {
-            /* percent followed by neither z nor Z */
+            /* percent followed by something else */
             ptoappend = pin - 2;
             ntoappend = 2;
         }
