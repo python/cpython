@@ -1217,12 +1217,8 @@ class UnicodeTest(StringTest, unittest.TestCase):
         self.assertRaises(ValueError, str, a)
 
     def test_typecode_u_deprecation(self):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always", DeprecationWarning)
+        with self.assertWarns(DeprecationWarning):
             array.array("u")
-        self.assertGreaterEqual(len(w), 1)
-        for warning in w:
-            self.assertIs(warning.category, DeprecationWarning)
 
 
 class NumberTest(BaseTest):
