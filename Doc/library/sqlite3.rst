@@ -140,17 +140,14 @@ You can verify that the data was inserted correctly
 by executing a ``SELECT`` query.
 Use the now-familiar :meth:`con.execute(...) <Cursor.execute>` to
 assign the result to ``res``,
-and call :meth:`res.fetchall() <Cursor.fetchall>` to
-fetch a :class:`list` of all resulting rows::
+and call :meth:`res.fetchall() <Cursor.fetchall>` to all resulting rows::
 
    >>> res = cur.execute("SELECT score FROM movie")
    >>> res.fetchall()
    [(8.2,), (7.5,)]
 
-As expected, the resulting :class:`!list` contains two rows
-as :class:`!tuple`\s of ``(score,)``.
 The result is a :class:`list` of two :class:`!tuple`\s, one per row,
-each containing a the ``score`` selected in the query.
+each containing that row's ``score`` value.
 
 Now, you'll insert three more rows by calling
 :meth:`cur.executemany(...) <Cursor.executemany>`::
