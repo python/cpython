@@ -64,7 +64,7 @@ using basic :mod:`!sqlite3` APIs.
 It assumes a fundamental understanding of database concepts,
 including `cursors`_ and `transactions`_.
 
-First, you will need to create a new database and open
+First, you need to create a new database and open
 a database connection to allow :mod:`!sqlite3` to work with it.
 Call :func:`sqlite3.connect` to to create a connection to
 the database :file:`tutorial.db` in the current working directory,
@@ -77,7 +77,7 @@ The returned :class:`Connection` object ``con``
 represents the connection to the on-disk database.
 
 In order to execute SQL statements and fetch results from SQL queries,
-you will use a database cursor.
+you use a database cursor.
 Call :meth:`con.cursor() <Connection.cursor>` to create the :class:`Cursor`::
 
    cur = con.cursor()
