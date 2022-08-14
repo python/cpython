@@ -630,8 +630,8 @@ _PyEval_AddPendingCall(PyInterpreterState *interp,
 {
     struct _pending_calls *pending = &interp->ceval.pending;
 
-    /* Ensure that _PyEval_InitPendingCalls() was called
-       and that _PyEval_FiniPendingCalls() is not called yet. */
+    /* Ensure that _PyEval_InitState() was called
+       and that _PyEval_FiniState() is not called yet. */
     assert(pending->lock != NULL);
 
     PyThread_acquire_lock(pending->lock, WAIT_LOCK);
@@ -3564,9 +3564,9 @@ handle_eval_breaker:
             DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
             assert(tp->tp_dictoffset < 0);
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictValues *values = *_PyObject_ValuesPointer(owner);
-            DEOPT_IF(values == NULL, LOAD_ATTR);
-            res = values->values[cache->index];
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
+            DEOPT_IF(!_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
+            res = _PyDictOrValues_GetValues(dorv)->values[cache->index];
             DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(res);
@@ -3613,7 +3613,9 @@ handle_eval_breaker:
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictObject *dict = *(PyDictObject **)_PyObject_ManagedDictPointer(owner);
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
+            DEOPT_IF(_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
+            PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
             DEOPT_IF(dict == NULL, LOAD_ATTR);
             assert(PyDict_CheckExact((PyObject *)dict));
             PyObject *name = GETITEM(names, oparg>>1);
@@ -3789,12 +3791,13 @@ handle_eval_breaker:
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, STORE_ATTR);
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictValues *values = *_PyObject_ValuesPointer(owner);
-            DEOPT_IF(values == NULL, STORE_ATTR);
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
+            DEOPT_IF(!_PyDictOrValues_IsValues(dorv), STORE_ATTR);
             STAT_INC(STORE_ATTR, hit);
             Py_ssize_t index = cache->index;
             STACK_SHRINK(1);
             PyObject *value = POP();
+            PyDictValues *values = _PyDictOrValues_GetValues(dorv);
             PyObject *old_value = values->values[index];
             values->values[index] = value;
             if (old_value == NULL) {
@@ -3817,7 +3820,9 @@ handle_eval_breaker:
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, STORE_ATTR);
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictObject *dict = *(PyDictObject **)_PyObject_ManagedDictPointer(owner);
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
+            DEOPT_IF(_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
+            PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
             DEOPT_IF(dict == NULL, STORE_ATTR);
             assert(PyDict_CheckExact((PyObject *)dict));
             PyObject *name = GETITEM(names, oparg);
@@ -4719,8 +4724,8 @@ handle_eval_breaker:
             assert(type_version != 0);
             DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
             assert(self_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictObject *dict = *(PyDictObject**)_PyObject_ManagedDictPointer(self);
-            DEOPT_IF(dict != NULL, LOAD_ATTR);
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(self);
+            DEOPT_IF(!_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
             PyHeapTypeObject *self_heap_type = (PyHeapTypeObject *)self_cls;
             DEOPT_IF(self_heap_type->ht_cached_keys->dk_version !=
                      read_u32(cache->keys_version), LOAD_ATTR);
@@ -5670,8 +5675,16 @@ handle_eval_breaker:
             assert(oparg);
             oparg <<= 8;
             oparg |= _Py_OPARG(*next_instr);
+            // We might be tracing. To avoid breaking tracing guarantees in
+            // quickened instructions, always deoptimize the next opcode:
             opcode = _PyOpcode_Deopt[_Py_OPCODE(*next_instr)];
             PRE_DISPATCH_GOTO();
+            // CPython hasn't traced the following instruction historically
+            // (DO_TRACING would clobber our extended oparg anyways), so just
+            // skip our usual cframe.use_tracing check before dispatch. Also,
+            // make sure the next instruction isn't a RESUME, since that needs
+            // to trace properly (and shouldn't have an extended arg anyways):
+            assert(opcode != RESUME);
             DISPATCH_GOTO();
         }
 
@@ -5692,9 +5705,9 @@ handle_eval_breaker:
         case DO_TRACING:
 #endif
     {
-        if (tstate->tracing == 0 &&
-            INSTR_OFFSET() >= frame->f_code->_co_firsttraceable
-        ) {
+        assert(cframe.use_tracing);
+        assert(tstate->tracing == 0);
+        if (INSTR_OFFSET() >= frame->f_code->_co_firsttraceable) {
             int instr_prev = _PyInterpreterFrame_LASTI(frame);
             frame->prev_instr = next_instr;
             TRACING_NEXTOPARG();
@@ -6906,12 +6919,15 @@ void
 PyThreadState_EnterTracing(PyThreadState *tstate)
 {
     tstate->tracing++;
+    tstate->cframe->use_tracing = 0;
 }
 
 void
 PyThreadState_LeaveTracing(PyThreadState *tstate)
 {
+    assert(tstate->tracing > 0 && tstate->cframe->use_tracing == 0);
     tstate->tracing--;
+    _PyThreadState_UpdateTracingState(tstate);
 }
 
 static int

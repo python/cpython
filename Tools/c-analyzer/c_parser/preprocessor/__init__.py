@@ -1,7 +1,9 @@
 import contextlib
-import distutils.ccompiler
 import logging
+import os
 import os.path
+import re
+import sys
 
 from c_common.fsutil import match_glob as _match_glob
 from c_common.tables import parse_table as _parse_table
@@ -168,9 +170,17 @@ _COMPILERS = {
 }
 
 
+def _get_default_compiler():
+    if re.match('cygwin.*', sys.platform) is not None:
+        return 'unix'
+    if os.name == 'nt':
+        return 'msvc'
+    return 'unix'
+
+
 def _get_preprocessor(tool):
     if tool is True:
-        tool = distutils.ccompiler.get_default_compiler()
+        tool = _get_default_compiler()
     preprocess = _COMPILERS.get(tool)
     if preprocess is None:
         raise ValueError(f'unsupported tool {tool}')
