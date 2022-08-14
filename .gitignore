@@ -5,6 +5,7 @@
 *.cover
 *.iml
 *.o
+*.lto
 *.a
 *.so
 *.so.*
