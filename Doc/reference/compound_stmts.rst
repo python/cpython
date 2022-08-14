@@ -229,6 +229,11 @@ for a group of statements:
    try3_stmt: "try" ":" `suite`
             : "finally" ":" `suite`
 
+Additional information on exceptions can be found in section :ref:`exceptions`,
+and information on using the :keyword:`raise` statement to generate exceptions
+may be found in section :ref:`raise`.
+
+
 .. _except:
 
 :keyword:`!except` clause
@@ -430,10 +435,6 @@ always be the last one executed::
    ...
    >>> foo()
    'finally'
-
-Additional information on exceptions can be found in section :ref:`exceptions`,
-and information on using the :keyword:`raise` statement to generate exceptions
-may be found in section :ref:`raise`.
 
 .. versionchanged:: 3.8
    Prior to Python 3.8, a :keyword:`continue` statement was illegal in the
