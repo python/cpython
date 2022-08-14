@@ -199,10 +199,8 @@ returns the list ``[0, 1, 2]``.
 .. versionchanged:: 3.11
    Starred elements are now allowed in the expression list.
 
+
 .. _try:
-.. _except:
-.. _except_star:
-.. _finally:
 
 The :keyword:`!try` statement
 =============================
@@ -231,6 +229,7 @@ for a group of statements:
    try3_stmt: "try" ":" `suite`
             : "finally" ":" `suite`
 
+.. _except:
 
 The :keyword:`except` clause(s) specify one or more exception handlers. When no
 exception occurs in the :keyword:`try` clause, no exception handler is executed.
@@ -315,6 +314,8 @@ when leaving an exception handler::
 .. index::
    keyword: except_star
 
+.. _except_star:
+
 The :keyword:`except*<except_star>` clause(s) are used for handling
 :exc:`ExceptionGroup`\ s. The exception type for matching is interpreted as in
 the case of :keyword:`except`, but in the case of exception groups we can have
@@ -359,6 +360,8 @@ one except* clause, the first that matches it. ::
    statement: break
    statement: continue
 
+.. _except_else:
+
 The optional :keyword:`!else` clause is executed if the control flow leaves the
 :keyword:`try` suite, no exception was raised, and no :keyword:`return`,
 :keyword:`continue`, or :keyword:`break` statement was executed.  Exceptions in
@@ -366,6 +369,8 @@ the :keyword:`!else` clause are not handled by the preceding :keyword:`except`
 clauses.
 
 .. index:: keyword: finally
+
+.. _finally:
 
 If :keyword:`finally` is present, it specifies a 'cleanup' handler.  The
 :keyword:`try` clause is executed, including any :keyword:`except` and
