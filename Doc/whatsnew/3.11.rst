@@ -50,6 +50,8 @@ This article explains the new features in Python 3.11, compared to 3.10.
 For full details, see the :ref:`changelog <changelog>`.
 
 
+.. _whatsnew311-summary:
+
 Summary -- Release highlights
 =============================
 
@@ -96,6 +98,8 @@ Important deprecations, removals or restrictions:
 * :pep:`624`: Remove ``Py_UNICODE`` encoder APIs.
 * :pep:`670`: Convert macros to functions in the Python C API.
 
+
+.. _whatsnew311-features:
 
 New Features
 ============
@@ -170,6 +174,8 @@ and Ammar Askar in :issue:`43950`.)
    or the :envvar:`PYTHONNODEBUGRANGES` environment variable.
 
 
+.. _whatsnew311-pep654:
+
 PEP 654: Exception Groups and ``except*``
 -----------------------------------------
 
@@ -185,6 +191,8 @@ See :pep:`654` for more details.
 (Contributed by Irit Katriel in :issue:`45292`. PEP written by
 Irit Katriel, Yury Selivanov and Guido van Rossum.)
 
+
+.. _whatsnew311-pep670:
 
 PEP 678: Exceptions can be enriched with notes
 ----------------------------------------------
