@@ -59,59 +59,58 @@ This document includes four main sections:
 Tutorial
 --------
 
-In this tutorial, you will learn the basics of the :mod:`!sqlite3` API
-by creating a database of Monty Python movies.
+In this tutorial, you will create a database of Monty Python movies,
+using basic :mod:`!sqlite3` APIs.
 It assumes a fundamental understanding of database concepts,
 including `cursors`_ and `transactions`_.
 
-First, you'll need to create a new database to hold the movie data
-and open a database connection to allow :mod:`!sqlite3` to work with it.
-Call the :func:`sqlite3.connect` function to
-to create a connection to a database :file:`tutorial.db`
-in the current working directory,
+First, you will need to create a new database and open
+a database connection to allow :mod:`!sqlite3` to work with it.
+Call :func:`sqlite3.connect` to to create a connection to
+the database :file:`tutorial.db` in the current working directory,
 implicitly creating it if it does not exist::
 
    import sqlite3
    con = sqlite3.connect("tutorial.db")
 
 The returned :class:`Connection` object ``con``
-represents the connection to the database.
+represents the connection to the on-disk database.
 
 In order to execute SQL statements and fetch results from SQL queries,
-you'll use a database cursor.
+you will use a database cursor.
 Call :meth:`con.cursor() <Connection.cursor>` to create the :class:`Cursor`::
 
    cur = con.cursor()
 
-Now you'll create a database table ``movie`` with columns for title,
+Now that you've got a database connection and a cursor,
+you can create a database table ``movie`` with columns for title,
 release year, and review score.
-For simplicitly, just use column names in the table declaration:
+For simplicity, just use column names in the table declaration --
 thanks to the `flexible typing`_ feature of SQLite,
 specifying the data types is optional.
 Execute the ``CREATE TABLE`` statement
-by calling :meth:`con.execute() <Cursor.execute>`::
+by calling :meth:`con.execute(...) <Cursor.execute>`::
 
    cur.execute("CREATE TABLE movie(title, year, score)")
 
 .. Ideally, we'd use sqlite_schema instead of sqlite_master below,
-   but earlier versions of SQLite do not recognise that variant.
+   but SQLite versions older than 3.33.0 do not recognise that variant.
 
 You can verify that the new table has been created by querying
-the ``sqlite_master`` table built-in to SQLite.
-It should contain an entry for the ``movie`` table definition.
+the ``sqlite_master`` table built-in to SQLite,
+which should contain an entry for the ``movie`` table definition.
 Execute that query by calling :meth:`cur.execute(...) <Cursor.execute>`,
-store the result in a variable ``res``,
-and call :meth:`res.fetchone() <Cursor.fetchone>` to fetch the first
-(and only) row that was returned::
+assigning the result to ``res``,
+and call :meth:`res.fetchone() <Cursor.fetchone>` to fetch the resulting row::
 
    >>> res = cur.execute("SELECT name FROM sqlite_master")
    >>> res.fetchone()
    ('movie',)
 
-As expected, the query shows the table is now created
-by returning a single :class:`tuple`: with the name of the table.
+As expected, the query shows the table has been created,
+as it returns a :class:`tuple`: containing the name of the table.
 As an exercise, try querying ``sqlite_master``
-for a non-existent table ``"abc"``::
+for a non-existent table ``abc``::
 
    >>> res = cur.execute("SELECT name FROM sqlite_master WHERE name='abc'")
    >>> res.fetchone()
@@ -140,15 +139,18 @@ to commit the transaction::
 You can verify that the data was inserted correctly
 by executing a ``SELECT`` query.
 Use the now-familiar :meth:`con.execute(...) <Cursor.execute>` to
-store the result in ``res``,
-and call :meth:`res.fetchall() <Cursor.fetchall>` to fetch all rows::
+assign the result to ``res``,
+and call :meth:`res.fetchall() <Cursor.fetchall>` to
+fetch a :class:`list` of all resulting rows::
 
    >>> res = cur.execute("SELECT score FROM movie")
    >>> res.fetchall()
    [(8.2,), (7.5,)]
 
+As expected, the resulting :class:`!list` contains two rows
+as :class:`!tuple`\s of ``(score,)``.
 The result is a :class:`list` of two :class:`!tuple`\s, one per row,
-each containing a the ``score`` from the query.
+each containing a the ``score`` selected in the query.
 
 Now, you'll insert three more rows by calling
 :meth:`cur.executemany(...) <Cursor.executemany>`::
@@ -179,18 +181,19 @@ this time iterating over the results of the query::
    (1982, "Monty Python Live at the Hollywood Bowl")
    (1983, "Monty Python's The Meaning of Life")
 
-Each row is now a two-item :class:`tuple` of ``(year, title)``.
+Each row is a two-item :class:`tuple` of ``(year, title)``,
+matching the columns selected in the query.
 
-At last, you'll verify that the database has been written to disk by
+Finally, you'll verify that the database has been written to disk by
 calling :meth:`con.close() <Connection.close>`
 to close the existing connection,
 opening a new one, creating a new cursor,
 then reusing the query from above to read from the database::
 
    >>> con.close()
-   >>> con2 = sqlite3.connect("tutorial.db")
-   >>> cur2 = con2.cursor()
-   >>> for row in cur.execute("SELECT year, title FROM movie ORDER BY year"):
+   >>> new_con = sqlite3.connect("tutorial.db")
+   >>> new_cur = new_con.cursor()
+   >>> for row in new_cur.execute("SELECT year, title FROM movie ORDER BY year"):
    ...     print(row)
    (1971, "And Now for Something Completely Different")
    (1975, "Monty Python and the Holy Grail")
@@ -199,7 +202,7 @@ then reusing the query from above to read from the database::
    (1983, "Monty Python's The Meaning of Life")
 
 You've now created an SQLite database using the :mod:`!sqlite3` module,
-inserted data and ran several SQL queries against it.
+inserted data and retrieved values from it in multiple ways.
 
 .. _SQL injection attacks: https://en.wikipedia.org/wiki/SQL_injection
 .. _cursors: https://en.wikipedia.org/wiki/Cursor_(databases)
@@ -209,7 +212,14 @@ inserted data and ran several SQL queries against it.
 
 .. seealso::
 
-   * :ref:`sqlite3-howtos` for details how to handle specific tasks.
+   * :ref:`sqlite3-howtos` for further reading:
+
+      * :ref:`sqlite3-placeholders`
+      * :ref:`sqlite3-adapters`
+      * :ref:`sqlite3-converters`
+      * :ref:`sqlite3-columns-by-name`
+      * :ref:`sqlite3-connection-context-manager`
+
    * :ref:`sqlite3-explanation` for in-depth background on transaction control.
 
 .. _sqlite3-reference:
