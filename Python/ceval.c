@@ -630,8 +630,8 @@ _PyEval_AddPendingCall(PyInterpreterState *interp,
 {
     struct _pending_calls *pending = &interp->ceval.pending;
 
-    /* Ensure that _PyEval_InitPendingCalls() was called
-       and that _PyEval_FiniPendingCalls() is not called yet. */
+    /* Ensure that _PyEval_InitState() was called
+       and that _PyEval_FiniState() is not called yet. */
     assert(pending->lock != NULL);
 
     PyThread_acquire_lock(pending->lock, WAIT_LOCK);

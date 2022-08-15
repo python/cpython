@@ -539,6 +539,30 @@ class CAPITest(unittest.TestCase):
         inst = _testcapi.HeapCTypeWithDict()
         self.assertEqual({}, inst.__dict__)
 
+    def test_heaptype_with_managed_dict(self):
+        inst = _testcapi.HeapCTypeWithManagedDict()
+        inst.foo = 42
+        self.assertEqual(inst.foo, 42)
+        self.assertEqual(inst.__dict__, {"foo": 42})
+
+        inst = _testcapi.HeapCTypeWithManagedDict()
+        self.assertEqual({}, inst.__dict__)
+
+        a = _testcapi.HeapCTypeWithManagedDict()
+        b = _testcapi.HeapCTypeWithManagedDict()
+        a.b = b
+        b.a = a
+        del a, b
+
+    def test_sublclassing_managed_dict(self):
+
+        class C(_testcapi.HeapCTypeWithManagedDict):
+            pass
+
+        i = C()
+        i.spam = i
+        del i
+
     def test_heaptype_with_negative_dict(self):
         inst = _testcapi.HeapCTypeWithNegativeDict()
         inst.foo = 42
