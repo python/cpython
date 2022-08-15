@@ -59,12 +59,12 @@ This document includes four main sections:
 Tutorial
 --------
 
-In this tutorial, you will create a database of Monty Python movies,
-using basic :mod:`!sqlite3` APIs.
+In this tutorial, you will create a database of Monty Python movies
+using basic :mod:`!sqlite3` functionality.
 It assumes a fundamental understanding of database concepts,
 including `cursors`_ and `transactions`_.
 
-First, you need to create a new database and open
+First, we need to create a new database and open
 a database connection to allow :mod:`!sqlite3` to work with it.
 Call :func:`sqlite3.connect` to to create a connection to
 the database :file:`tutorial.db` in the current working directory,
@@ -77,15 +77,15 @@ The returned :class:`Connection` object ``con``
 represents the connection to the on-disk database.
 
 In order to execute SQL statements and fetch results from SQL queries,
-you use a database cursor.
+we will need to use a database cursor.
 Call :meth:`con.cursor() <Connection.cursor>` to create the :class:`Cursor`::
 
    cur = con.cursor()
 
-Now that you've got a database connection and a cursor,
-you can create a database table ``movie`` with columns for title,
+Now that we've got a database connection and a cursor,
+we can create a database table ``movie`` with columns for title,
 release year, and review score.
-For simplicity, just use column names in the table declaration --
+For simplicity, we can just use column names in the table declaration --
 thanks to the `flexible typing`_ feature of SQLite,
 specifying the data types is optional.
 Execute the ``CREATE TABLE`` statement
@@ -96,11 +96,11 @@ by calling :meth:`con.execute(...) <Cursor.execute>`::
 .. Ideally, we'd use sqlite_schema instead of sqlite_master below,
    but SQLite versions older than 3.33.0 do not recognise that variant.
 
-You can verify that the new table has been created by querying
+We can verify that the new table has been created by querying
 the ``sqlite_master`` table built-in to SQLite,
 which should contain an entry for the ``movie`` table definition.
 Execute that query by calling :meth:`cur.execute(...) <Cursor.execute>`,
-assigning the result to ``res``,
+assign the result to ``res``,
 and call :meth:`res.fetchone() <Cursor.fetchone>` to fetch the resulting row::
 
    >>> res = cur.execute("SELECT name FROM sqlite_master")
@@ -108,7 +108,7 @@ and call :meth:`res.fetchone() <Cursor.fetchone>` to fetch the resulting row::
    ('movie',)
 
 As expected, the query shows the table has been created,
-as it returns a :class:`tuple`: containing the name of the table.
+as it returns a :class:`tuple`: containing the table's name.
 As an exercise, try querying ``sqlite_master``
 for a non-existent table ``abc``::
 
@@ -116,9 +116,9 @@ for a non-existent table ``abc``::
    >>> res.fetchone()
    >>>
 
-As expected, the query returns an empty result.
+Indeed, the query returns an empty result.
 
-Now, you'll add two rows of data supplied as SQL literals
+Now, add two rows of data supplied as SQL literals
 by executing an ``INSERT`` statement,
 once again by calling :meth:`cur.execute(...) <Cursor.execute>`::
 
@@ -136,11 +136,11 @@ to commit the transaction::
 
    con.commit()
 
-You can verify that the data was inserted correctly
+We can verify that the data was inserted correctly
 by executing a ``SELECT`` query.
 Use the now-familiar :meth:`con.execute(...) <Cursor.execute>` to
 assign the result to ``res``,
-and call :meth:`res.fetchall() <Cursor.fetchall>` to all resulting rows::
+and call :meth:`res.fetchall() <Cursor.fetchall>` to return all resulting rows::
 
    >>> res = cur.execute("SELECT score FROM movie")
    >>> res.fetchall()
@@ -149,7 +149,7 @@ and call :meth:`res.fetchall() <Cursor.fetchall>` to all resulting rows::
 The result is a :class:`list` of two :class:`!tuple`\s, one per row,
 each containing that row's ``score`` value.
 
-Now, you'll insert three more rows by calling
+Now, insert three more rows by calling
 :meth:`cur.executemany(...) <Cursor.executemany>`::
 
    data = [
@@ -166,7 +166,7 @@ to bind Python values to SQL statements,
 to avoid `SQL injection attacks`_
 (see :ref:`sqlite3-placeholders` for more details).
 
-You can verify that the new rows were inserted
+We can verify that the new rows were inserted
 by executing a ``SELECT`` query,
 this time iterating over the results of the query::
 
@@ -181,8 +181,8 @@ this time iterating over the results of the query::
 Each row is a two-item :class:`tuple` of ``(year, title)``,
 matching the columns selected in the query.
 
-Finally, you'll verify that the database has been written to disk by
-calling :meth:`con.close() <Connection.close>`
+Finally, verify that the database has been written to disk
+by calling :meth:`con.close() <Connection.close>`
 to close the existing connection,
 opening a new one, creating a new cursor,
 then reusing the query from above to read from the database::
