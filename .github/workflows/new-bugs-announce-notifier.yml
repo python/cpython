@@ -5,6 +5,9 @@ on:
     types:
       - opened
 
+permissions:
+  issues: read
+
 jobs:
   notify-new-bugs-announce:
     runs-on: ubuntu-latest
@@ -39,7 +42,7 @@ jobs:
                 assignee : issue.data.assignees.map(assignee => { return assignee.login }),
                 body   : issue.data.body
               };
-            
+
               const data = {
                 from: "CPython Issues <github@mg.python.org>",
                 to: "new-bugs-announce@python.org",

@@ -298,7 +298,7 @@ def _exact_ratio(x):
 
     # The integer ratios for binary floats can have numerators or
     # denominators with over 300 decimal digits.  The problem is more
-    # acute with decimal floats where the the default decimal context
+    # acute with decimal floats where the default decimal context
     # supports a huge range of exponents from Emin=-999999 to
     # Emax=999999.  When expanded with as_integer_ratio(), numbers like
     # Decimal('3.14E+5000') and Decimal('3.14E-5000') have large
@@ -611,7 +611,7 @@ def median_high(data):
     return data[n // 2]
 
 
-def median_grouped(data, interval=1):
+def median_grouped(data, interval=1.0):
     """Estimates the median for numeric data binned around the midpoints
     of consecutive, fixed-width intervals.
 
@@ -650,35 +650,34 @@ def median_grouped(data, interval=1):
     by exact multiples of *interval*.  This is essential for getting a
     correct result.  The function does not check this precondition.
 
+    Inputs may be any numeric type that can be coerced to a float during
+    the interpolation step.
+
     """
     data = sorted(data)
     n = len(data)
-    if n == 0:
+    if not n:
         raise StatisticsError("no median for empty data")
-    elif n == 1:
-        return data[0]
 
     # Find the value at the midpoint. Remember this corresponds to the
     # midpoint of the class interval.
     x = data[n // 2]
-
-    # Generate a clear error message for non-numeric data
-    for obj in (x, interval):
-        if isinstance(obj, (str, bytes)):
-            raise TypeError(f'expected a number but got {obj!r}')
 
     # Using O(log n) bisection, find where all the x values occur in the data.
     # All x will lie within data[i:j].
     i = bisect_left(data, x)
     j = bisect_right(data, x, lo=i)
 
+    # Coerce to floats, raising a TypeError if not possible
+    try:
+        interval = float(interval)
+        x = float(x)
+    except ValueError:
+        raise TypeError(f'Value cannot be converted to a float')
+
     # Interpolate the median using the formula found at:
     # https://www.cuemath.com/data/median-of-grouped-data/
-    try:
-        L = x - interval / 2  # The lower limit of the median interval.
-    except TypeError:
-        # Coerce mixed types to float.
-        L = float(x) - float(interval) / 2
+    L = x - interval / 2.0    # Lower limit of the median interval
     cf = i                    # Cumulative frequency of the preceding interval
     f = j - i                 # Number of elements in the median internal
     return L + interval * (n / 2 - cf) / f
@@ -1194,7 +1193,7 @@ class NormalDist:
         "Generate *n* samples for a given mean and standard deviation."
         gauss = random.gauss if seed is None else random.Random(seed).gauss
         mu, sigma = self._mu, self._sigma
-        return [gauss(mu, sigma) for i in range(n)]
+        return [gauss(mu, sigma) for _ in repeat(None, n)]
 
     def pdf(self, x):
         "Probability density function.  P(x <= X < x+dx) / dx"
@@ -1222,8 +1221,6 @@ class NormalDist:
         """
         if p <= 0.0 or p >= 1.0:
             raise StatisticsError('p must be in the range 0.0 < p < 1.0')
-        if self._sigma <= 0.0:
-            raise StatisticsError('cdf() not defined when sigma at or below zero')
         return _normal_dist_inv_cdf(p, self._mu, self._sigma)
 
     def quantiles(self, n=4):

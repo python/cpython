@@ -1,2 +1,0 @@
-Forbid pickling constants ``re._constants.SUCCESS`` etc. Previously,
-pickling did not fail, but the result could not be unpickled.

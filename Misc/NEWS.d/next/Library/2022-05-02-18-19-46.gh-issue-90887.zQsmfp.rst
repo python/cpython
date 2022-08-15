@@ -1,1 +1,0 @@
-Adding ``COPYFILE_STAT``, ``COPYFILE_ACL`` and ``COPYFILE_XATTR`` constants for :func:`os.fcopyfile` available in macOs.

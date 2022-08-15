@@ -1918,7 +1918,7 @@ dec_dealloc(PyObject *dec)
 /******************************************************************************/
 
 Py_LOCAL_INLINE(int)
-is_space(enum PyUnicode_Kind kind, const void *data, Py_ssize_t pos)
+is_space(int kind, const void *data, Py_ssize_t pos)
 {
     Py_UCS4 ch = PyUnicode_READ(kind, data, pos);
     return Py_UNICODE_ISSPACE(ch);
@@ -1933,9 +1933,9 @@ is_space(enum PyUnicode_Kind kind, const void *data, Py_ssize_t pos)
    Return NULL if malloc fails and an empty string if invalid characters
    are found. */
 static char *
-numeric_as_ascii(const PyObject *u, int strip_ws, int ignore_underscores)
+numeric_as_ascii(PyObject *u, int strip_ws, int ignore_underscores)
 {
-    enum PyUnicode_Kind kind;
+    int kind;
     const void *data;
     Py_UCS4 ch;
     char *res, *cp;
@@ -2047,7 +2047,7 @@ PyDecType_FromCStringExact(PyTypeObject *type, const char *s,
 
 /* Return a new PyDecObject or a subtype from a PyUnicodeObject. */
 static PyObject *
-PyDecType_FromUnicode(PyTypeObject *type, const PyObject *u,
+PyDecType_FromUnicode(PyTypeObject *type, PyObject *u,
                       PyObject *context)
 {
     PyObject *dec;
@@ -2067,7 +2067,7 @@ PyDecType_FromUnicode(PyTypeObject *type, const PyObject *u,
  * conversion. If the conversion is not exact, fail with InvalidOperation.
  * Allow leading and trailing whitespace in the input operand. */
 static PyObject *
-PyDecType_FromUnicodeExactWS(PyTypeObject *type, const PyObject *u,
+PyDecType_FromUnicodeExactWS(PyTypeObject *type, PyObject *u,
                              PyObject *context)
 {
     PyObject *dec;
@@ -2150,7 +2150,7 @@ PyDecType_FromSsizeExact(PyTypeObject *type, mpd_ssize_t v, PyObject *context)
 /* Convert from a PyLongObject. The context is not modified; flags set
    during conversion are accumulated in the status parameter. */
 static PyObject *
-dec_from_long(PyTypeObject *type, const PyObject *v,
+dec_from_long(PyTypeObject *type, PyObject *v,
               const mpd_context_t *ctx, uint32_t *status)
 {
     PyObject *dec;
@@ -2201,7 +2201,7 @@ dec_from_long(PyTypeObject *type, const PyObject *v,
 /* Return a new PyDecObject from a PyLongObject. Use the context for
    conversion. */
 static PyObject *
-PyDecType_FromLong(PyTypeObject *type, const PyObject *v, PyObject *context)
+PyDecType_FromLong(PyTypeObject *type, PyObject *v, PyObject *context)
 {
     PyObject *dec;
     uint32_t status = 0;
@@ -2227,7 +2227,7 @@ PyDecType_FromLong(PyTypeObject *type, const PyObject *v, PyObject *context)
 /* Return a new PyDecObject from a PyLongObject. Use a maximum context
    for conversion. If the conversion is not exact, set InvalidOperation. */
 static PyObject *
-PyDecType_FromLongExact(PyTypeObject *type, const PyObject *v,
+PyDecType_FromLongExact(PyTypeObject *type, PyObject *v,
                         PyObject *context)
 {
     PyObject *dec;

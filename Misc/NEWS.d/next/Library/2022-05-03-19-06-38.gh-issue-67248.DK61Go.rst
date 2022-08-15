@@ -1,1 +1,0 @@
-Sort the miscellaneous topics in Cmd.do_help()

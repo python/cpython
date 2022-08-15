@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(sys_addaudithook__doc__,
 "addaudithook($module, /, hook)\n"
 "--\n"
@@ -18,8 +24,31 @@ static PyObject *
 sys_addaudithook(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(hook), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"hook", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "addaudithook", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "addaudithook",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject *hook;
 
@@ -425,8 +454,31 @@ static PyObject *
 sys_set_coroutine_origin_tracking_depth(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(depth), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"depth", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "set_coroutine_origin_tracking_depth", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_coroutine_origin_tracking_depth",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     int depth;
 
@@ -965,6 +1017,94 @@ sys_is_finalizing(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys_is_finalizing_impl(module);
 }
 
+#if defined(Py_STATS)
+
+PyDoc_STRVAR(sys__stats_on__doc__,
+"_stats_on($module, /)\n"
+"--\n"
+"\n"
+"Turns on stats gathering (stats gathering is on by default).");
+
+#define SYS__STATS_ON_METHODDEF    \
+    {"_stats_on", (PyCFunction)sys__stats_on, METH_NOARGS, sys__stats_on__doc__},
+
+static PyObject *
+sys__stats_on_impl(PyObject *module);
+
+static PyObject *
+sys__stats_on(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__stats_on_impl(module);
+}
+
+#endif /* defined(Py_STATS) */
+
+#if defined(Py_STATS)
+
+PyDoc_STRVAR(sys__stats_off__doc__,
+"_stats_off($module, /)\n"
+"--\n"
+"\n"
+"Turns off stats gathering (stats gathering is on by default).");
+
+#define SYS__STATS_OFF_METHODDEF    \
+    {"_stats_off", (PyCFunction)sys__stats_off, METH_NOARGS, sys__stats_off__doc__},
+
+static PyObject *
+sys__stats_off_impl(PyObject *module);
+
+static PyObject *
+sys__stats_off(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__stats_off_impl(module);
+}
+
+#endif /* defined(Py_STATS) */
+
+#if defined(Py_STATS)
+
+PyDoc_STRVAR(sys__stats_clear__doc__,
+"_stats_clear($module, /)\n"
+"--\n"
+"\n"
+"Clears the stats.");
+
+#define SYS__STATS_CLEAR_METHODDEF    \
+    {"_stats_clear", (PyCFunction)sys__stats_clear, METH_NOARGS, sys__stats_clear__doc__},
+
+static PyObject *
+sys__stats_clear_impl(PyObject *module);
+
+static PyObject *
+sys__stats_clear(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__stats_clear_impl(module);
+}
+
+#endif /* defined(Py_STATS) */
+
+#if defined(Py_STATS)
+
+PyDoc_STRVAR(sys__stats_dump__doc__,
+"_stats_dump($module, /)\n"
+"--\n"
+"\n"
+"Dump stats to file, and clears the stats.");
+
+#define SYS__STATS_DUMP_METHODDEF    \
+    {"_stats_dump", (PyCFunction)sys__stats_dump, METH_NOARGS, sys__stats_dump__doc__},
+
+static PyObject *
+sys__stats_dump_impl(PyObject *module);
+
+static PyObject *
+sys__stats_dump(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__stats_dump_impl(module);
+}
+
+#endif /* defined(Py_STATS) */
+
 #if defined(ANDROID_API_LEVEL)
 
 PyDoc_STRVAR(sys_getandroidapilevel__doc__,
@@ -1011,7 +1151,23 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define SYS_GETTOTALREFCOUNT_METHODDEF
 #endif /* !defined(SYS_GETTOTALREFCOUNT_METHODDEF) */
 
+#ifndef SYS__STATS_ON_METHODDEF
+    #define SYS__STATS_ON_METHODDEF
+#endif /* !defined(SYS__STATS_ON_METHODDEF) */
+
+#ifndef SYS__STATS_OFF_METHODDEF
+    #define SYS__STATS_OFF_METHODDEF
+#endif /* !defined(SYS__STATS_OFF_METHODDEF) */
+
+#ifndef SYS__STATS_CLEAR_METHODDEF
+    #define SYS__STATS_CLEAR_METHODDEF
+#endif /* !defined(SYS__STATS_CLEAR_METHODDEF) */
+
+#ifndef SYS__STATS_DUMP_METHODDEF
+    #define SYS__STATS_DUMP_METHODDEF
+#endif /* !defined(SYS__STATS_DUMP_METHODDEF) */
+
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=98efd34fd9b9b6ab input=a9049054013a1b77]*/
+/*[clinic end generated code: output=38446a4c76e2f3b6 input=a9049054013a1b77]*/

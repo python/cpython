@@ -1851,6 +1851,8 @@ init_types(struct ast_state *state)
         "TypeIgnore(int lineno, string tag)");
     if (!state->TypeIgnore_type) return 0;
 
+    state->recursion_depth = 0;
+    state->recursion_limit = 0;
     state->initialized = 1;
     return 1;
 }
@@ -3610,6 +3612,11 @@ ast2obj_mod(struct ast_state *state, void* _o)
     if (!o) {
         Py_RETURN_NONE;
     }
+    if (++state->recursion_depth > state->recursion_limit) {
+        PyErr_SetString(PyExc_RecursionError,
+            "maximum recursion depth exceeded during ast construction");
+        return 0;
+    }
     switch (o->kind) {
     case Module_kind:
         tp = (PyTypeObject *)state->Module_type;
@@ -3665,6 +3672,7 @@ ast2obj_mod(struct ast_state *state, void* _o)
         Py_DECREF(value);
         break;
     }
+    state->recursion_depth--;
     return result;
 failed:
     Py_XDECREF(value);
@@ -3680,6 +3688,11 @@ ast2obj_stmt(struct ast_state *state, void* _o)
     PyTypeObject *tp;
     if (!o) {
         Py_RETURN_NONE;
+    }
+    if (++state->recursion_depth > state->recursion_limit) {
+        PyErr_SetString(PyExc_RecursionError,
+            "maximum recursion depth exceeded during ast construction");
+        return 0;
     }
     switch (o->kind) {
     case FunctionDef_kind:
@@ -4224,6 +4237,7 @@ ast2obj_stmt(struct ast_state *state, void* _o)
     if (PyObject_SetAttr(result, state->end_col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
+    state->recursion_depth--;
     return result;
 failed:
     Py_XDECREF(value);
@@ -4239,6 +4253,11 @@ ast2obj_expr(struct ast_state *state, void* _o)
     PyTypeObject *tp;
     if (!o) {
         Py_RETURN_NONE;
+    }
+    if (++state->recursion_depth > state->recursion_limit) {
+        PyErr_SetString(PyExc_RecursionError,
+            "maximum recursion depth exceeded during ast construction");
+        return 0;
     }
     switch (o->kind) {
     case BoolOp_kind:
@@ -4701,6 +4720,7 @@ ast2obj_expr(struct ast_state *state, void* _o)
     if (PyObject_SetAttr(result, state->end_col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
+    state->recursion_depth--;
     return result;
 failed:
     Py_XDECREF(value);
@@ -4843,6 +4863,11 @@ ast2obj_comprehension(struct ast_state *state, void* _o)
     if (!o) {
         Py_RETURN_NONE;
     }
+    if (++state->recursion_depth > state->recursion_limit) {
+        PyErr_SetString(PyExc_RecursionError,
+            "maximum recursion depth exceeded during ast construction");
+        return 0;
+    }
     tp = (PyTypeObject *)state->comprehension_type;
     result = PyType_GenericNew(tp, NULL, NULL);
     if (!result) return NULL;
@@ -4866,6 +4891,7 @@ ast2obj_comprehension(struct ast_state *state, void* _o)
     if (PyObject_SetAttr(result, state->is_async, value) == -1)
         goto failed;
     Py_DECREF(value);
+    state->recursion_depth--;
     return result;
 failed:
     Py_XDECREF(value);
@@ -4881,6 +4907,11 @@ ast2obj_excepthandler(struct ast_state *state, void* _o)
     PyTypeObject *tp;
     if (!o) {
         Py_RETURN_NONE;
+    }
+    if (++state->recursion_depth > state->recursion_limit) {
+        PyErr_SetString(PyExc_RecursionError,
+            "maximum recursion depth exceeded during ast construction");
+        return 0;
     }
     switch (o->kind) {
     case ExceptHandler_kind:
@@ -4925,6 +4956,7 @@ ast2obj_excepthandler(struct ast_state *state, void* _o)
     if (PyObject_SetAttr(result, state->end_col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
+    state->recursion_depth--;
     return result;
 failed:
     Py_XDECREF(value);
@@ -4940,6 +4972,11 @@ ast2obj_arguments(struct ast_state *state, void* _o)
     PyTypeObject *tp;
     if (!o) {
         Py_RETURN_NONE;
+    }
+    if (++state->recursion_depth > state->recursion_limit) {
+        PyErr_SetString(PyExc_RecursionError,
+            "maximum recursion depth exceeded during ast construction");
+        return 0;
     }
     tp = (PyTypeObject *)state->arguments_type;
     result = PyType_GenericNew(tp, NULL, NULL);
@@ -4979,6 +5016,7 @@ ast2obj_arguments(struct ast_state *state, void* _o)
     if (PyObject_SetAttr(result, state->defaults, value) == -1)
         goto failed;
     Py_DECREF(value);
+    state->recursion_depth--;
     return result;
 failed:
     Py_XDECREF(value);
@@ -4994,6 +5032,11 @@ ast2obj_arg(struct ast_state *state, void* _o)
     PyTypeObject *tp;
     if (!o) {
         Py_RETURN_NONE;
+    }
+    if (++state->recursion_depth > state->recursion_limit) {
+        PyErr_SetString(PyExc_RecursionError,
+            "maximum recursion depth exceeded during ast construction");
+        return 0;
     }
     tp = (PyTypeObject *)state->arg_type;
     result = PyType_GenericNew(tp, NULL, NULL);
@@ -5033,6 +5076,7 @@ ast2obj_arg(struct ast_state *state, void* _o)
     if (PyObject_SetAttr(result, state->end_col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
+    state->recursion_depth--;
     return result;
 failed:
     Py_XDECREF(value);
@@ -5048,6 +5092,11 @@ ast2obj_keyword(struct ast_state *state, void* _o)
     PyTypeObject *tp;
     if (!o) {
         Py_RETURN_NONE;
+    }
+    if (++state->recursion_depth > state->recursion_limit) {
+        PyErr_SetString(PyExc_RecursionError,
+            "maximum recursion depth exceeded during ast construction");
+        return 0;
     }
     tp = (PyTypeObject *)state->keyword_type;
     result = PyType_GenericNew(tp, NULL, NULL);
@@ -5082,6 +5131,7 @@ ast2obj_keyword(struct ast_state *state, void* _o)
     if (PyObject_SetAttr(result, state->end_col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
+    state->recursion_depth--;
     return result;
 failed:
     Py_XDECREF(value);
@@ -5097,6 +5147,11 @@ ast2obj_alias(struct ast_state *state, void* _o)
     PyTypeObject *tp;
     if (!o) {
         Py_RETURN_NONE;
+    }
+    if (++state->recursion_depth > state->recursion_limit) {
+        PyErr_SetString(PyExc_RecursionError,
+            "maximum recursion depth exceeded during ast construction");
+        return 0;
     }
     tp = (PyTypeObject *)state->alias_type;
     result = PyType_GenericNew(tp, NULL, NULL);
@@ -5131,6 +5186,7 @@ ast2obj_alias(struct ast_state *state, void* _o)
     if (PyObject_SetAttr(result, state->end_col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
+    state->recursion_depth--;
     return result;
 failed:
     Py_XDECREF(value);
@@ -5147,6 +5203,11 @@ ast2obj_withitem(struct ast_state *state, void* _o)
     if (!o) {
         Py_RETURN_NONE;
     }
+    if (++state->recursion_depth > state->recursion_limit) {
+        PyErr_SetString(PyExc_RecursionError,
+            "maximum recursion depth exceeded during ast construction");
+        return 0;
+    }
     tp = (PyTypeObject *)state->withitem_type;
     result = PyType_GenericNew(tp, NULL, NULL);
     if (!result) return NULL;
@@ -5160,6 +5221,7 @@ ast2obj_withitem(struct ast_state *state, void* _o)
     if (PyObject_SetAttr(result, state->optional_vars, value) == -1)
         goto failed;
     Py_DECREF(value);
+    state->recursion_depth--;
     return result;
 failed:
     Py_XDECREF(value);
@@ -5175,6 +5237,11 @@ ast2obj_match_case(struct ast_state *state, void* _o)
     PyTypeObject *tp;
     if (!o) {
         Py_RETURN_NONE;
+    }
+    if (++state->recursion_depth > state->recursion_limit) {
+        PyErr_SetString(PyExc_RecursionError,
+            "maximum recursion depth exceeded during ast construction");
+        return 0;
     }
     tp = (PyTypeObject *)state->match_case_type;
     result = PyType_GenericNew(tp, NULL, NULL);
@@ -5194,6 +5261,7 @@ ast2obj_match_case(struct ast_state *state, void* _o)
     if (PyObject_SetAttr(result, state->body, value) == -1)
         goto failed;
     Py_DECREF(value);
+    state->recursion_depth--;
     return result;
 failed:
     Py_XDECREF(value);
@@ -5209,6 +5277,11 @@ ast2obj_pattern(struct ast_state *state, void* _o)
     PyTypeObject *tp;
     if (!o) {
         Py_RETURN_NONE;
+    }
+    if (++state->recursion_depth > state->recursion_limit) {
+        PyErr_SetString(PyExc_RecursionError,
+            "maximum recursion depth exceeded during ast construction");
+        return 0;
     }
     switch (o->kind) {
     case MatchValue_kind:
@@ -5349,6 +5422,7 @@ ast2obj_pattern(struct ast_state *state, void* _o)
     if (PyObject_SetAttr(result, state->end_col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
+    state->recursion_depth--;
     return result;
 failed:
     Py_XDECREF(value);
@@ -5364,6 +5438,11 @@ ast2obj_type_ignore(struct ast_state *state, void* _o)
     PyTypeObject *tp;
     if (!o) {
         Py_RETURN_NONE;
+    }
+    if (++state->recursion_depth > state->recursion_limit) {
+        PyErr_SetString(PyExc_RecursionError,
+            "maximum recursion depth exceeded during ast construction");
+        return 0;
     }
     switch (o->kind) {
     case TypeIgnore_kind:
@@ -5382,6 +5461,7 @@ ast2obj_type_ignore(struct ast_state *state, void* _o)
         Py_DECREF(value);
         break;
     }
+    state->recursion_depth--;
     return result;
 failed:
     Py_XDECREF(value);
@@ -5697,7 +5777,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
-        end_lineno = 0;
+        end_lineno = lineno;
     }
     else {
         int res;
@@ -5714,7 +5794,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
-        end_col_offset = 0;
+        end_col_offset = col_offset;
     }
     else {
         int res;
@@ -8114,7 +8194,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
-        end_lineno = 0;
+        end_lineno = lineno;
     }
     else {
         int res;
@@ -8131,7 +8211,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
-        end_col_offset = 0;
+        end_col_offset = col_offset;
     }
     else {
         int res;
@@ -10291,7 +10371,7 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
-        end_lineno = 0;
+        end_lineno = lineno;
     }
     else {
         int res;
@@ -10308,7 +10388,7 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
-        end_col_offset = 0;
+        end_col_offset = col_offset;
     }
     else {
         int res;
@@ -10755,7 +10835,7 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
-        end_lineno = 0;
+        end_lineno = lineno;
     }
     else {
         int res;
@@ -10772,7 +10852,7 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
-        end_col_offset = 0;
+        end_col_offset = col_offset;
     }
     else {
         int res;
@@ -10877,7 +10957,7 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
-        end_lineno = 0;
+        end_lineno = lineno;
     }
     else {
         int res;
@@ -10894,7 +10974,7 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
-        end_col_offset = 0;
+        end_col_offset = col_offset;
     }
     else {
         int res;
@@ -10999,7 +11079,7 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
-        end_lineno = 0;
+        end_lineno = lineno;
     }
     else {
         int res;
@@ -11016,7 +11096,7 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
-        end_col_offset = 0;
+        end_col_offset = col_offset;
     }
     else {
         int res;
@@ -12234,7 +12314,32 @@ PyObject* PyAST_mod2obj(mod_ty t)
     if (state == NULL) {
         return NULL;
     }
-    return ast2obj_mod(state, t);
+
+    int recursion_limit = Py_GetRecursionLimit();
+    int starting_recursion_depth;
+    /* Be careful here to prevent overflow. */
+    int COMPILER_STACK_FRAME_SCALE = 3;
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (!tstate) {
+        return 0;
+    }
+    state->recursion_limit = (recursion_limit < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
+        recursion_limit * COMPILER_STACK_FRAME_SCALE : recursion_limit;
+    int recursion_depth = tstate->recursion_limit - tstate->recursion_remaining;
+    starting_recursion_depth = (recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
+        recursion_depth * COMPILER_STACK_FRAME_SCALE : recursion_depth;
+    state->recursion_depth = starting_recursion_depth;
+
+    PyObject *result = ast2obj_mod(state, t);
+
+    /* Check that the recursion depth counting balanced correctly */
+    if (result && state->recursion_depth != starting_recursion_depth) {
+        PyErr_Format(PyExc_SystemError,
+            "AST constructor recursion depth mismatch (before=%d, after=%d)",
+            starting_recursion_depth, state->recursion_depth);
+        return 0;
+    }
+    return result;
 }
 
 /* mode is 0 for "exec", 1 for "eval" and 2 for "single" input */

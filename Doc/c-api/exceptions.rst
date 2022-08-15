@@ -909,11 +909,11 @@ the variables:
 +-----------------------------------------+---------------------------------+----------+
 | C Name                                  | Python Name                     | Notes    |
 +=========================================+=================================+==========+
-| :c:data:`PyExc_BaseException`           | :exc:`BaseException`            | \(1)     |
+| :c:data:`PyExc_BaseException`           | :exc:`BaseException`            | [1]_     |
 +-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_Exception`               | :exc:`Exception`                | \(1)     |
+| :c:data:`PyExc_Exception`               | :exc:`Exception`                | [1]_     |
 +-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_ArithmeticError`         | :exc:`ArithmeticError`          | \(1)     |
+| :c:data:`PyExc_ArithmeticError`         | :exc:`ArithmeticError`          | [1]_     |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_AssertionError`          | :exc:`AssertionError`           |          |
 +-----------------------------------------+---------------------------------+----------+
@@ -959,7 +959,7 @@ the variables:
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_KeyboardInterrupt`       | :exc:`KeyboardInterrupt`        |          |
 +-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_LookupError`             | :exc:`LookupError`              | \(1)     |
+| :c:data:`PyExc_LookupError`             | :exc:`LookupError`              | [1]_     |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_MemoryError`             | :exc:`MemoryError`              |          |
 +-----------------------------------------+---------------------------------+----------+
@@ -971,7 +971,7 @@ the variables:
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_NotImplementedError`     | :exc:`NotImplementedError`      |          |
 +-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_OSError`                 | :exc:`OSError`                  | \(1)     |
+| :c:data:`PyExc_OSError`                 | :exc:`OSError`                  | [1]_     |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_OverflowError`           | :exc:`OverflowError`            |          |
 +-----------------------------------------+---------------------------------+----------+
@@ -981,7 +981,7 @@ the variables:
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_RecursionError`          | :exc:`RecursionError`           |          |
 +-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_ReferenceError`          | :exc:`ReferenceError`           | \(2)     |
+| :c:data:`PyExc_ReferenceError`          | :exc:`ReferenceError`           |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_RuntimeError`            | :exc:`RuntimeError`             |          |
 +-----------------------------------------+---------------------------------+----------+
@@ -1046,7 +1046,7 @@ These are compatibility aliases to :c:data:`PyExc_OSError`:
 +-------------------------------------+----------+
 | :c:data:`PyExc_IOError`             |          |
 +-------------------------------------+----------+
-| :c:data:`PyExc_WindowsError`        | \(3)     |
+| :c:data:`PyExc_WindowsError`        | [2]_     |
 +-------------------------------------+----------+
 
 .. versionchanged:: 3.3
@@ -1054,10 +1054,10 @@ These are compatibility aliases to :c:data:`PyExc_OSError`:
 
 Notes:
 
-(1)
+.. [1]
    This is a base class for other standard exceptions.
 
-(2)
+.. [2]
    Only defined on Windows; protect code that uses this by testing that the
    preprocessor macro ``MS_WINDOWS`` is defined.
 
@@ -1087,7 +1087,7 @@ the variables:
 +------------------------------------------+---------------------------------+----------+
 | C Name                                   | Python Name                     | Notes    |
 +==========================================+=================================+==========+
-| :c:data:`PyExc_Warning`                  | :exc:`Warning`                  | \(1)     |
+| :c:data:`PyExc_Warning`                  | :exc:`Warning`                  | [3]_     |
 +------------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_BytesWarning`             | :exc:`BytesWarning`             |          |
 +------------------------------------------+---------------------------------+----------+
@@ -1115,5 +1115,5 @@ the variables:
 
 Notes:
 
-(1)
+.. [3]
    This is a base class for other standard warning categories.

@@ -20,7 +20,8 @@ jobs:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         stale-pr-message: 'This PR is stale because it has been open for 30 days with no activity.'
         stale-pr-label: 'stale'
-        days-before-stale: 30
+        days-before-issue-stale: -1
+        days-before-pr-stale: 30
         days-before-close: -1
         ascending: true
         operations-per-run: 120

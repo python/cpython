@@ -42,7 +42,8 @@ def parse(source, filename='<unknown>', mode='exec', *,
         flags |= PyCF_TYPE_COMMENTS
     if isinstance(feature_version, tuple):
         major, minor = feature_version  # Should be a 2-tuple.
-        assert major == 3
+        if major != 3:
+            raise ValueError(f"Unsupported major version: {major}")
         feature_version = minor
     elif feature_version is None:
         feature_version = -1
@@ -1335,7 +1336,11 @@ class _Unparser(NodeVisitor):
             )
 
     def visit_Tuple(self, node):
-        with self.require_parens(_Precedence.TUPLE, node):
+        with self.delimit_if(
+            "(",
+            ")",
+            len(node.elts) == 0 or self.get_precedence(node) > _Precedence.TUPLE
+        ):
             self.items_view(self.traverse, node.elts)
 
     unop = {"Invert": "~", "Not": "not", "UAdd": "+", "USub": "-"}

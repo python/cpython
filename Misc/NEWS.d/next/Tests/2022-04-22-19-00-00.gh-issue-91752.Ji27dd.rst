@@ -1,1 +1,0 @@
-Added @requires_zlib to test.test_tools.test_freeze.TestFreeze.

@@ -93,7 +93,7 @@ Cookie Objects
    :meth:`value_decode` are inverses on the range of *value_decode*.
 
 
-.. method:: BaseCookie.output(attrs=None, header='Set-Cookie:', sep='\\r\\n')
+.. method:: BaseCookie.output(attrs=None, header='Set-Cookie:', sep='\r\n')
 
    Return a string representation suitable to be sent as HTTP headers. *attrs* and
    *header* are sent to each :class:`Morsel`'s :meth:`output` method. *sep* is used
