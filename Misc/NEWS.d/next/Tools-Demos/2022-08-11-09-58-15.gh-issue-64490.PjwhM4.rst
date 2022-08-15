@@ -1,3 +1,3 @@
-Fix an out-of-bound bug of :c:func:`_PyArg_UnpackKeywordsWithVararg`.
+Fix an out-of-bound bug of :c:func:`!_PyArg_UnpackKeywordsWithVararg`.
 Fix a incorrect check which allows more than one varargs in clinic.py.
 Fix a calculation error of ``noptargs`` in ArgumentClinic generated code.
