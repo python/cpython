@@ -89,7 +89,7 @@ For simplicity, we can just use column names in the table declaration --
 thanks to the `flexible typing`_ feature of SQLite,
 specifying the data types is optional.
 Execute the ``CREATE TABLE`` statement
-by calling :meth:`con.execute(...) <Cursor.execute>`::
+by calling :meth:`cur.execute(...) <Cursor.execute>`::
 
    cur.execute("CREATE TABLE movie(title, year, score)")
 
@@ -138,7 +138,7 @@ to commit the transaction::
 
 We can verify that the data was inserted correctly
 by executing a ``SELECT`` query.
-Use the now-familiar :meth:`con.execute(...) <Cursor.execute>` to
+Use the now-familiar :meth:`cur.execute(...) <Cursor.execute>` to
 assign the result to ``res``,
 and call :meth:`res.fetchall() <Cursor.fetchall>` to return all resulting rows::
 
