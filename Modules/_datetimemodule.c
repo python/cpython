@@ -1666,6 +1666,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                 }
             }
             assert(*replacement_p != NULL);
+            assert(PyBytes_Check(*replacement_p));
             ptoappend = PyBytes_AS_STRING(*replacement_p);
             ntoappend = PyBytes_GET_SIZE(*replacement_p);
         }
