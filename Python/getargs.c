@@ -1989,6 +1989,7 @@ parser_init(struct _PyArg_Parser *parser)
     // while we were waiting for the lock.
     if (_Py_atomic_size_get(&parser->initialized)) {
         assert(parser->kwtuple != NULL);
+        PyThread_release_lock(_PyRuntime.getargs.mutex);
         return 1;
     }
 
