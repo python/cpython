@@ -364,6 +364,7 @@ given type object has a specified feature.
  * The VM will automatically set tp_dictoffset. Should not be used for variable sized
  * classes, such as classes that extend tuple.
  */
+#define Py_TPFLAGS_MANAGED_WEAKREF (1 << 3)
 #define Py_TPFLAGS_MANAGED_DICT (1 << 4)
 
 /* Set if instances of the type object are treated as sequences for pattern matching */
