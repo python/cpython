@@ -101,18 +101,9 @@ static PyObject *
 _lzma_LZMADecompressor_decompress(Decompressor *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
     #define NUM_KEYWORDS 2
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -121,13 +112,12 @@ _lzma_LZMADecompressor_decompress(Decompressor *self, PyObject *const *args, Py_
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(data), &_Py_ID(max_length), },
     };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
     #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
 
     static const char * const _keywords[] = {"data", "max_length", NULL};
     static _PyArg_Parser _parser = {
@@ -210,18 +200,9 @@ static int
 _lzma_LZMADecompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
     #define NUM_KEYWORDS 3
-    #if NUM_KEYWORDS == 0
-
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #    define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #  else
-    #    define KWTUPLE NULL
-    #  endif
-
-    #else  // NUM_KEYWORDS != 0
-    #  if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -230,13 +211,12 @@ _lzma_LZMADecompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(format), &_Py_ID(memlimit), &_Py_ID(filters), },
     };
-    #  define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #  else  // !Py_BUILD_CORE
-    #    define KWTUPLE NULL
-    #  endif  // !Py_BUILD_CORE
-    #endif  // NUM_KEYWORDS != 0
     #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
 
     static const char * const _keywords[] = {"format", "memlimit", "filters", NULL};
     static _PyArg_Parser _parser = {
@@ -358,4 +338,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=2713a1ba282060d3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=da3e83ba97244044 input=a9049054013a1b77]*/
