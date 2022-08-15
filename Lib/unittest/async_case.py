@@ -116,7 +116,8 @@ class IsolatedAsyncioTestCase(TestCase):
         assert self._asyncioRunner is None, 'asyncio runner is already initialized'
         runner = asyncio.Runner(debug=True)
         self._asyncioRunner = runner
-        asyncio.set_event_loop(runner.get_loop())
+        # Force loop to be initialized
+        runner.get_loop()
 
     def _tearDownAsyncioRunner(self):
         runner = self._asyncioRunner
