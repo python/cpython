@@ -752,6 +752,7 @@ extern "C" {
                 INIT_ID(argv), \
                 INIT_ID(attribute), \
                 INIT_ID(authorizer_callback), \
+                INIT_ID(autocommit), \
                 INIT_ID(b), \
                 INIT_ID(backtick), \
                 INIT_ID(base), \
@@ -1805,6 +1806,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(attribute);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(authorizer_callback);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(autocommit);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(b);
     PyUnicode_InternInPlace(&string);
@@ -5533,6 +5536,10 @@ _PyStaticObjects_CheckRefcnt(void) {
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(authorizer_callback)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(authorizer_callback));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(autocommit)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(autocommit));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(b)) < _PyObject_IMMORTAL_REFCNT) {
