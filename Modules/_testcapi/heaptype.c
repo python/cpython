@@ -768,10 +768,11 @@ heapmanaged_traverse(HeapCTypeObject *self, visitproc visit, void *arg)
     return _PyObject_VisitManagedDict((PyObject *)self, visit, arg);
 }
 
-static void
+static int
 heapmanaged_clear(HeapCTypeObject *self)
 {
     _PyObject_ClearManagedDict((PyObject *)self);
+    return 0;
 }
 
 static void
