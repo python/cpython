@@ -1507,6 +1507,32 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
 }
 
 static PyObject *
+make_somezreplacement(PyObject *object, char *sep, PyObject *tzinfoarg)
+{
+    char buf[100];
+    PyObject *tzinfo = get_tzinfo_member(object);
+    PyObject *replacement = PyBytes_FromStringAndSize(NULL, 0);
+
+    if (replacement == NULL)
+        return NULL;
+    if (tzinfo == Py_None || tzinfo == NULL)
+        return replacement;
+
+    Py_DECREF(replacement);
+
+    assert(tzinfoarg != NULL);
+    if (format_utcoffset(buf,
+                         sizeof(buf),
+                         sep,
+                         tzinfo,
+                         tzinfoarg) < 0)
+        return NULL;
+
+    replacement = PyBytes_FromStringAndSize(buf, strlen(buf));
+    return replacement;
+}
+
+static PyObject *
 make_Zreplacement(PyObject *object, PyObject *tzinfoarg)
 {
     PyObject *temp;
@@ -1644,26 +1670,10 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                 replacement_p = &zreplacement;
             }
             if (*replacement_p == NULL) {
-                /* format utcoffset */
-                char buf[100];
-                PyObject *tzinfo = get_tzinfo_member(object);
-                *replacement_p = PyBytes_FromStringAndSize("", 0);
-                if (*replacement_p == NULL) goto Done;
-                if (tzinfo != Py_None && tzinfo != NULL) {
-                    assert(tzinfoarg != NULL);
-                    if (format_utcoffset(buf,
-                                         sizeof(buf),
-                                         sep,
-                                         tzinfo,
-                                         tzinfoarg) < 0)
-                        goto Done;
-                    Py_DECREF(*replacement_p);
-                    *replacement_p =
-                      PyBytes_FromStringAndSize(buf,
-                                               strlen(buf));
-                    if (*replacement_p == NULL)
-                        goto Done;
-                }
+                *replacement_p = make_somezreplacement(object,
+                                                       sep, tzinfoarg);
+                if (*replacement_p == NULL)
+                    goto Done;
             }
             assert(*replacement_p != NULL);
             assert(PyBytes_Check(*replacement_p));
