@@ -5460,7 +5460,7 @@ object_getstate(PyObject *obj, int required)
         PyCFunction_GET_SELF(getstate) == obj &&
         PyCFunction_GET_FUNCTION(getstate) == object___getstate__)
     {
-        /* If __getstate__ is not overriden pass the required argument. */
+        /* If __getstate__ is not overridden pass the required argument. */
         state = object_getstate_default(obj, required);
     }
     else {
@@ -8242,7 +8242,8 @@ slot_tp_descr_get(PyObject *self, PyObject *obj, PyObject *type)
         obj = Py_None;
     if (type == NULL)
         type = Py_None;
-    return PyObject_CallFunctionObjArgs(get, self, obj, type, NULL);
+    PyObject *stack[3] = {self, obj, type};
+    return PyObject_Vectorcall(get, stack, 3, NULL);
 }
 
 static int
