@@ -912,6 +912,7 @@ rundsymutil: sharedmods $(PYTHON_FOR_BUILD_DEPS) $(BUILDPYTHON)
 		$(DSYMUTIL_PATH) $(BUILDPYTHON); \
 		for mod in X $(SHAREDMODS); do \
 			if test $$mod != X; then \
+				echo $(DSYMUTIL_PATH) $$mod; \
 				$(DSYMUTIL_PATH) $$mod; \
 			fi; \
 		done \
@@ -1767,8 +1768,17 @@ sharedinstall: $(DESTSHARED) all
 		  if test $$i != X; then \
 		    echo $(INSTALL_SHARED) $$i $(DESTSHARED)/`basename $$i`; \
 		    $(INSTALL_SHARED) $$i $(DESTDIR)$(DESTSHARED)/`basename $$i`; \
+			if test -d "$$i.dSYM"; then \
+				for dfile in `cd \`dirname $$i\` && find \`basename $$i\`.dSYM -type f`; do \
+					echo $(INSTALL) -d $(DESTSHARED)/`dirname $$dfile`; \
+					$(INSTALL) -d $(DESTSHARED)/`dirname $$dfile`; \
+					echo $(INSTALL) `dirname $$i`/$$dfile $(DESTSHARED)/$$dfile; \
+					$(INSTALL) `dirname $$i`/$$dfile $(DESTDIR)$(DESTSHARED)/$$dfile; \
+				done; \
+			fi; \
 		  fi; \
 		done
+
 
 $(DESTSHARED):
 		@for i in $(DESTDIRS); \
@@ -1795,6 +1805,14 @@ altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
 		$(INSTALL_PROGRAM) $(BUILDPYTHON) $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE); \
 	else \
 		$(INSTALL_PROGRAM) $(STRIPFLAG) Mac/pythonw $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE); \
+	fi
+	if test -d "$(BUILDPYTHON).dSYM"; then \
+		echo $(INSTALL) -d $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE).dSYM/Contents/Resources/DWARF; \
+		$(INSTALL) -d $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE).dSYM/Contents/Resources/DWARF; \
+		echo $(INSTALL) $(BUILDPYTHON).dSYM/Contents/Resources/DWARF/$(BUILDPYTHON) \
+			$(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE).dSYM/Contents/Resources/DWARF/python$(LDVERSION)$(EXE); \
+		$(INSTALL) $(BUILDPYTHON).dSYM/Contents/Resources/DWARF/$(BUILDPYTHON) \
+			$(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE).dSYM/Contents/Resources/DWARF/python$(LDVERSION)$(EXE); \
 	fi
 	-if test "$(VERSION)" != "$(LDVERSION)"; then \
 		if test -f $(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE) -o -h $(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE); \
