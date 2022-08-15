@@ -909,7 +909,12 @@ checksharedmods: sharedmods $(PYTHON_FOR_BUILD_DEPS) $(BUILDPYTHON)
 
 rundsymutil: sharedmods $(PYTHON_FOR_BUILD_DEPS) $(BUILDPYTHON)
 	@if [ ! -z $(DSYMUTIL) ] ; then \
+		echo $(DSYMUTIL_PATH) $(BUILDPYTHON); \
 		$(DSYMUTIL_PATH) $(BUILDPYTHON); \
+		if test -f $(LDLIBRARY); then \
+			echo $(DSYMUTIL_PATH) $(LDLIBRARY); \
+			$(DSYMUTIL_PATH) $(LDLIBRARY); \
+		fi; \
 		for mod in X $(SHAREDMODS); do \
 			if test $$mod != X; then \
 				echo $(DSYMUTIL_PATH) $$mod; \
@@ -1769,12 +1774,8 @@ sharedinstall: $(DESTSHARED) all
 		    echo $(INSTALL_SHARED) $$i $(DESTSHARED)/`basename $$i`; \
 		    $(INSTALL_SHARED) $$i $(DESTDIR)$(DESTSHARED)/`basename $$i`; \
 			if test -d "$$i.dSYM"; then \
-				for dfile in `cd \`dirname $$i\` && find \`basename $$i\`.dSYM -type f`; do \
-					echo $(INSTALL) -d $(DESTSHARED)/`dirname $$dfile`; \
-					$(INSTALL) -d $(DESTSHARED)/`dirname $$dfile`; \
-					echo $(INSTALL) `dirname $$i`/$$dfile $(DESTSHARED)/$$dfile; \
-					$(INSTALL) `dirname $$i`/$$dfile $(DESTDIR)$(DESTSHARED)/$$dfile; \
-				done; \
+				echo $(DSYMUTIL_PATH) $(DESTDIR)$(DESTSHARED)/`basename $$i`; \
+				$(DSYMUTIL_PATH) $(DESTDIR)$(DESTSHARED)/`basename $$i`; \
 			fi; \
 		  fi; \
 		done
@@ -1805,14 +1806,6 @@ altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
 		$(INSTALL_PROGRAM) $(BUILDPYTHON) $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE); \
 	else \
 		$(INSTALL_PROGRAM) $(STRIPFLAG) Mac/pythonw $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE); \
-	fi
-	if test -d "$(BUILDPYTHON).dSYM"; then \
-		echo $(INSTALL) -d $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE).dSYM/Contents/Resources/DWARF; \
-		$(INSTALL) -d $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE).dSYM/Contents/Resources/DWARF; \
-		echo $(INSTALL) $(BUILDPYTHON).dSYM/Contents/Resources/DWARF/$(BUILDPYTHON) \
-			$(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE).dSYM/Contents/Resources/DWARF/python$(LDVERSION)$(EXE); \
-		$(INSTALL) $(BUILDPYTHON).dSYM/Contents/Resources/DWARF/$(BUILDPYTHON) \
-			$(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE).dSYM/Contents/Resources/DWARF/python$(LDVERSION)$(EXE); \
 	fi
 	-if test "$(VERSION)" != "$(LDVERSION)"; then \
 		if test -f $(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE) -o -h $(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE); \
@@ -1847,6 +1840,14 @@ altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
 		lipo $(LIPO_INTEL64_FLAGS) \
 			-output $(DESTDIR)$(BINDIR)/python$(VERSION)-intel64$(EXE) \
 			$(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE); \
+	fi
+	if test -d "$(BUILDPYTHON).dSYM"; then \
+		echo $(DSYMUTIL_PATH) $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE); \
+		$(DSYMUTIL_PATH) $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE); \
+	fi
+	if test -d "$(LDLIBRARY).dSYM"; then \
+		echo $(DSYMUTIL_PATH) $(DESTDIR)$(LIBDIR)/$(INSTSONAME); \
+		$(DSYMUTIL_PATH) $(DESTDIR)$(LIBDIR)/$(INSTSONAME); \
 	fi
 
 bininstall: altbininstall

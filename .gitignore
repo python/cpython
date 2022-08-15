@@ -10,6 +10,7 @@
 *.so
 *.so.*
 *.dylib
+*.dSYM
 *.dll
 *.wasm
 *.orig
