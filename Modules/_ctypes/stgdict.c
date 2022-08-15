@@ -341,10 +341,10 @@ MakeAnonFields(PyObject *type)
 }
 
 /*
-  Compute ceil(log10(x)), for the purpose of determining string lengths.
+  Compute `floor(log10(x)) + 1`, for the purpose of determining string lengths.
 */
 static Py_ssize_t
-clog10(Py_ssize_t n)
+num_digits_of(Py_ssize_t n)
 {
     Py_ssize_t log_n = 0;
     while (n > 0) {
@@ -371,7 +371,7 @@ _ctypes_alloc_format_padding(const char *prefix, Py_ssize_t padding)
     }
 
     /* decimal characters + x + null */
-    buf = PyMem_Malloc(clog10(padding) + 2);
+    buf = PyMem_Malloc(num_digits_of(padding) + 2);
     if (buf == NULL) {
         PyErr_NoMemory();
         return NULL;
