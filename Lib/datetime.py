@@ -202,9 +202,10 @@ def _wrap_strftime(object, format, timetuple):
     # Don't call utcoffset() or tzname() unless actually needed.
     freplace = None  # the string to use for %f
     zreplace = None  # the string to use for %z
+    colonzreplace = None  # the string to use for %:z
     Zreplace = None  # the string to use for %Z
 
-    # Scan format for %z and %Z escapes, replacing as needed.
+    # Scan format for %z, %:z and %Z escapes, replacing as needed.
     newformat = []
     push = newformat.append
     i, n = 0, len(format)
@@ -228,6 +229,22 @@ def _wrap_strftime(object, format, timetuple):
                             zreplace = ""
                     assert '%' not in zreplace
                     newformat.append(zreplace)
+                elif ch == ':':
+                    if i < n:
+                        ch2 = format[i]
+                        i += 1
+                        if ch2 == 'z':
+                            if colonzreplace is None:
+                                if hasattr(object, "utcoffset"):
+                                   colonzreplace = _format_offset(object.utcoffset(), sep=":")
+                                else:
+                                    colonzreplace = ""
+                            assert '%' not in colonzreplace
+                            newformat.append(colonzreplace)
+                        else:
+                            push('%')
+                            push(ch)
+                            push(ch2)
                 elif ch == 'Z':
                     if Zreplace is None:
                         Zreplace = ""
