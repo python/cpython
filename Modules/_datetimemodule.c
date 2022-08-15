@@ -1658,27 +1658,29 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             ntoappend = 1;
         }
         /* A % has been seen and ch is the character after it. */
-        else if (ch == 'z' || (ch == ':' && *pin == 'z' && pin++)) {
-            /* %z -> +HHMM, %:z -> +HH:MM */
-            PyObject **replacement_p;
-            char *sep;
-            if (ch == ':') {
-                sep = ":";
-                replacement_p = &colonzreplacement;
-            } else {
-                sep = "";
-                replacement_p = &zreplacement;
-            }
-            if (*replacement_p == NULL) {
-                *replacement_p = make_somezreplacement(object,
-                                                       sep, tzinfoarg);
-                if (*replacement_p == NULL)
+        else if (ch == 'z') {
+            /* %z -> +HHMM */
+            if (zreplacement == NULL) {
+                zreplacement = make_somezreplacement(object, "", tzinfoarg);
+                if (zreplacement == NULL)
                     goto Done;
             }
-            assert(*replacement_p != NULL);
-            assert(PyBytes_Check(*replacement_p));
-            ptoappend = PyBytes_AS_STRING(*replacement_p);
-            ntoappend = PyBytes_GET_SIZE(*replacement_p);
+            assert(zreplacement != NULL);
+            assert(PyBytes_Check(zreplacement));
+            ptoappend = PyBytes_AS_STRING(zreplacement);
+            ntoappend = PyBytes_GET_SIZE(zreplacement);
+        }
+        else if (ch == ':' && *pin == 'z' && pin++) {
+            /* %:z -> +HH:MM */
+            if (colonzreplacement == NULL) {
+                colonzreplacement = make_somezreplacement(object, ":", tzinfoarg);
+                if (colonzreplacement == NULL)
+                    goto Done;
+            }
+            assert(colonzreplacement != NULL);
+            assert(PyBytes_Check(colonzreplacement));
+            ptoappend = PyBytes_AS_STRING(colonzreplacement);
+            ntoappend = PyBytes_GET_SIZE(colonzreplacement);
         }
         else if (ch == 'Z') {
             /* format tzname */
