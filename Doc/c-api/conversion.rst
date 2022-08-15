@@ -28,7 +28,8 @@ not.
 The wrappers ensure that ``str[size-1]`` is always ``'\0'`` upon return. They
 never write more than *size* bytes (including the trailing ``'\0'``) into str.
 Both functions require that ``str != NULL``, ``size > 0``, ``format != NULL``
-and ``size < INT_MAX``.
+and ``size < INT_MAX``. Note that this means there is no equivalent to the C99
+``n = snprintf(NULL, 0, ...)`` which would determine the necessary buffer size.
 
 The return value (*rv*) for these functions should be interpreted as follows:
 

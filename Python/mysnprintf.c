@@ -9,6 +9,7 @@
    would have been written had the buffer not been too small, and to set
    the last byte of the buffer to \0.  At least MS _vsnprintf returns a
    negative value instead, and fills the entire buffer with non-\0 data.
+   Unlike C99, our wrappers do not support passing a null buffer.
 
    The wrappers ensure that str[size-1] is always \0 upon return.
 
