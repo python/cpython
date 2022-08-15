@@ -716,7 +716,7 @@ iterations of the loop.
    * ``0``: :exc:`AssertionError`
    * ``1``: :exc:`StopIteration`
 
-   .. versionadded:: 3.11
+   .. versionadded:: 3.12
 
 
 .. opcode:: LOAD_BUILD_CLASS
@@ -1346,10 +1346,13 @@ iterations of the loop.
     .. versionadded:: 3.11
 
 
-.. opcode:: SEND
+.. opcode:: SEND (delta)
 
-    Sends ``None`` to the sub-generator of this generator.
-    Used in ``yield from`` and ``await`` statements.
+    Equivalent to ``TOS = TOS1.send(TOS)``. Used in ``yield from`` and ``await``
+    statements.
+
+    If the call raises :exc:`StopIteration`, pop both values, push its return
+    value, and increment the bytecode counter by *delta*.
 
     .. versionadded:: 3.11
 
