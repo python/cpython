@@ -8242,7 +8242,8 @@ slot_tp_descr_get(PyObject *self, PyObject *obj, PyObject *type)
         obj = Py_None;
     if (type == NULL)
         type = Py_None;
-    return PyObject_CallFunctionObjArgs(get, self, obj, type, NULL);
+    PyObject *stack[3] = {self, obj, type};
+    return PyObject_Vectorcall(get, stack, 3, NULL);
 }
 
 static int

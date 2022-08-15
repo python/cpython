@@ -1887,234 +1887,6 @@ exit:
 }
 
 static PyObject *
-test_widechar(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-#if defined(SIZEOF_WCHAR_T) && (SIZEOF_WCHAR_T == 4)
-    const wchar_t wtext[2] = {(wchar_t)0x10ABCDu};
-    size_t wtextlen = 1;
-    const wchar_t invalid[1] = {(wchar_t)0x110000u};
-#else
-    const wchar_t wtext[3] = {(wchar_t)0xDBEAu, (wchar_t)0xDFCDu};
-    size_t wtextlen = 2;
-#endif
-    PyObject *wide, *utf8;
-
-    wide = PyUnicode_FromWideChar(wtext, wtextlen);
-    if (wide == NULL)
-        return NULL;
-
-    utf8 = PyUnicode_FromString("\xf4\x8a\xaf\x8d");
-    if (utf8 == NULL) {
-        Py_DECREF(wide);
-        return NULL;
-    }
-
-    if (PyUnicode_GET_LENGTH(wide) != PyUnicode_GET_LENGTH(utf8)) {
-        Py_DECREF(wide);
-        Py_DECREF(utf8);
-        return raiseTestError("test_widechar",
-                              "wide string and utf8 string "
-                              "have different length");
-    }
-    if (PyUnicode_Compare(wide, utf8)) {
-        Py_DECREF(wide);
-        Py_DECREF(utf8);
-        if (PyErr_Occurred())
-            return NULL;
-        return raiseTestError("test_widechar",
-                              "wide string and utf8 string "
-                              "are different");
-    }
-
-    Py_DECREF(wide);
-    Py_DECREF(utf8);
-
-#if defined(SIZEOF_WCHAR_T) && (SIZEOF_WCHAR_T == 4)
-    wide = PyUnicode_FromWideChar(invalid, 1);
-    if (wide == NULL)
-        PyErr_Clear();
-    else
-        return raiseTestError("test_widechar",
-                              "PyUnicode_FromWideChar(L\"\\U00110000\", 1) didn't fail");
-#endif
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-unicode_aswidechar(PyObject *self, PyObject *args)
-{
-    PyObject *unicode, *result;
-    Py_ssize_t buflen, size;
-    wchar_t *buffer;
-
-    if (!PyArg_ParseTuple(args, "Un", &unicode, &buflen))
-        return NULL;
-    buffer = PyMem_New(wchar_t, buflen);
-    if (buffer == NULL)
-        return PyErr_NoMemory();
-
-    size = PyUnicode_AsWideChar(unicode, buffer, buflen);
-    if (size == -1) {
-        PyMem_Free(buffer);
-        return NULL;
-    }
-
-    if (size < buflen)
-        buflen = size + 1;
-    else
-        buflen = size;
-    result = PyUnicode_FromWideChar(buffer, buflen);
-    PyMem_Free(buffer);
-    if (result == NULL)
-        return NULL;
-
-    return Py_BuildValue("(Nn)", result, size);
-}
-
-static PyObject *
-unicode_aswidecharstring(PyObject *self, PyObject *args)
-{
-    PyObject *unicode, *result;
-    Py_ssize_t size;
-    wchar_t *buffer;
-
-    if (!PyArg_ParseTuple(args, "U", &unicode))
-        return NULL;
-
-    buffer = PyUnicode_AsWideCharString(unicode, &size);
-    if (buffer == NULL)
-        return NULL;
-
-    result = PyUnicode_FromWideChar(buffer, size + 1);
-    PyMem_Free(buffer);
-    if (result == NULL)
-        return NULL;
-    return Py_BuildValue("(Nn)", result, size);
-}
-
-static PyObject *
-unicode_asucs4(PyObject *self, PyObject *args)
-{
-    PyObject *unicode, *result;
-    Py_UCS4 *buffer;
-    int copy_null;
-    Py_ssize_t str_len, buf_len;
-
-    if (!PyArg_ParseTuple(args, "Unp:unicode_asucs4", &unicode, &str_len, &copy_null)) {
-        return NULL;
-    }
-
-    buf_len = str_len + 1;
-    buffer = PyMem_NEW(Py_UCS4, buf_len);
-    if (buffer == NULL) {
-        return PyErr_NoMemory();
-    }
-    memset(buffer, 0, sizeof(Py_UCS4)*buf_len);
-    buffer[str_len] = 0xffffU;
-
-    if (!PyUnicode_AsUCS4(unicode, buffer, buf_len, copy_null)) {
-        PyMem_Free(buffer);
-        return NULL;
-    }
-
-    result = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, buffer, buf_len);
-    PyMem_Free(buffer);
-    return result;
-}
-
-static PyObject *
-unicode_asutf8(PyObject *self, PyObject *args)
-{
-    PyObject *unicode;
-    const char *buffer;
-
-    if (!PyArg_ParseTuple(args, "U", &unicode)) {
-        return NULL;
-    }
-
-    buffer = PyUnicode_AsUTF8(unicode);
-    if (buffer == NULL) {
-        return NULL;
-    }
-
-    return PyBytes_FromString(buffer);
-}
-
-static PyObject *
-unicode_asutf8andsize(PyObject *self, PyObject *args)
-{
-    PyObject *unicode, *result;
-    const char *buffer;
-    Py_ssize_t utf8_len;
-
-    if(!PyArg_ParseTuple(args, "U", &unicode)) {
-        return NULL;
-    }
-
-    buffer = PyUnicode_AsUTF8AndSize(unicode, &utf8_len);
-    if (buffer == NULL) {
-        return NULL;
-    }
-
-    result = PyBytes_FromString(buffer);
-    if (result == NULL) {
-        return NULL;
-    }
-
-    return Py_BuildValue("(Nn)", result, utf8_len);
-}
-
-static PyObject *
-unicode_findchar(PyObject *self, PyObject *args)
-{
-    PyObject *str;
-    int direction;
-    unsigned int ch;
-    Py_ssize_t result;
-    Py_ssize_t start, end;
-
-    if (!PyArg_ParseTuple(args, "UInni:unicode_findchar", &str, &ch,
-                          &start, &end, &direction)) {
-        return NULL;
-    }
-
-    result = PyUnicode_FindChar(str, (Py_UCS4)ch, start, end, direction);
-    if (result == -2)
-        return NULL;
-    else
-        return PyLong_FromSsize_t(result);
-}
-
-static PyObject *
-unicode_copycharacters(PyObject *self, PyObject *args)
-{
-    PyObject *from, *to, *to_copy;
-    Py_ssize_t from_start, to_start, how_many, copied;
-
-    if (!PyArg_ParseTuple(args, "UnOnn:unicode_copycharacters", &to, &to_start,
-                          &from, &from_start, &how_many)) {
-        return NULL;
-    }
-
-    if (!(to_copy = PyUnicode_New(PyUnicode_GET_LENGTH(to),
-                                  PyUnicode_MAX_CHAR_VALUE(to)))) {
-        return NULL;
-    }
-    if (PyUnicode_Fill(to_copy, 0, PyUnicode_GET_LENGTH(to_copy), 0U) < 0) {
-        Py_DECREF(to_copy);
-        return NULL;
-    }
-
-    if ((copied = PyUnicode_CopyCharacters(to_copy, to_start, from,
-                                           from_start, how_many)) < 0) {
-        Py_DECREF(to_copy);
-        return NULL;
-    }
-
-    return Py_BuildValue("(Nn)", to_copy, copied);
-}
-
-static PyObject *
 getargs_w_star(PyObject *self, PyObject *args)
 {
     Py_buffer buffer;
@@ -2163,27 +1935,6 @@ test_empty_argparse(PyObject *self, PyObject *Py_UNUSED(ignored))
         Py_RETURN_NONE;
     }
 }
-
-static PyObject *
-codec_incrementalencoder(PyObject *self, PyObject *args)
-{
-    const char *encoding, *errors = NULL;
-    if (!PyArg_ParseTuple(args, "s|s:test_incrementalencoder",
-                          &encoding, &errors))
-        return NULL;
-    return PyCodec_IncrementalEncoder(encoding, errors);
-}
-
-static PyObject *
-codec_incrementaldecoder(PyObject *self, PyObject *args)
-{
-    const char *encoding, *errors = NULL;
-    if (!PyArg_ParseTuple(args, "s|s:test_incrementaldecoder",
-                          &encoding, &errors))
-        return NULL;
-    return PyCodec_IncrementalDecoder(encoding, errors);
-}
-
 
 /* Simple test of _PyLong_NumBits and _PyLong_Sign. */
 static PyObject *
@@ -2687,7 +2438,7 @@ test_PyDateTime_GET(PyObject *self, PyObject *obj)
     month = PyDateTime_GET_MONTH(obj);
     day = PyDateTime_GET_DAY(obj);
 
-    return Py_BuildValue("(lll)", year, month, day);
+    return Py_BuildValue("(iii)", year, month, day);
 }
 
 static PyObject *
@@ -2701,7 +2452,7 @@ test_PyDateTime_DATE_GET(PyObject *self, PyObject *obj)
     microsecond = PyDateTime_DATE_GET_MICROSECOND(obj);
     PyObject *tzinfo = PyDateTime_DATE_GET_TZINFO(obj);
 
-    return Py_BuildValue("(llllO)", hour, minute, second, microsecond, tzinfo);
+    return Py_BuildValue("(iiiiO)", hour, minute, second, microsecond, tzinfo);
 }
 
 static PyObject *
@@ -2715,7 +2466,7 @@ test_PyDateTime_TIME_GET(PyObject *self, PyObject *obj)
     microsecond = PyDateTime_TIME_GET_MICROSECOND(obj);
     PyObject *tzinfo = PyDateTime_TIME_GET_TZINFO(obj);
 
-    return Py_BuildValue("(llllO)", hour, minute, second, microsecond, tzinfo);
+    return Py_BuildValue("(iiiiO)", hour, minute, second, microsecond, tzinfo);
 }
 
 static PyObject *
@@ -2727,7 +2478,7 @@ test_PyDateTime_DELTA_GET(PyObject *self, PyObject *obj)
     seconds = PyDateTime_DELTA_GET_SECONDS(obj);
     microseconds = PyDateTime_DELTA_GET_MICROSECONDS(obj);
 
-    return Py_BuildValue("(lll)", days, seconds, microseconds);
+    return Py_BuildValue("(iii)", days, seconds, microseconds);
 }
 
 /* test_thread_state spawns a thread of its own, and that thread releases
@@ -2845,63 +2596,6 @@ pending_threadfunc(PyObject *self, PyObject *arg)
         Py_RETURN_FALSE;
     }
     Py_RETURN_TRUE;
-}
-
-/* Some tests of PyUnicode_FromFormat().  This needs more tests. */
-static PyObject *
-test_string_from_format(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *result;
-    char *msg;
-
-#define CHECK_1_FORMAT(FORMAT, TYPE)                                \
-    result = PyUnicode_FromFormat(FORMAT, (TYPE)1);                 \
-    if (result == NULL)                                             \
-        return NULL;                                                \
-    if (!_PyUnicode_EqualToASCIIString(result, "1")) {              \
-        msg = FORMAT " failed at 1";                                \
-        goto Fail;                                                  \
-    }                                                               \
-    Py_DECREF(result)
-
-    CHECK_1_FORMAT("%d", int);
-    CHECK_1_FORMAT("%ld", long);
-    /* The z width modifier was added in Python 2.5. */
-    CHECK_1_FORMAT("%zd", Py_ssize_t);
-
-    /* The u type code was added in Python 2.5. */
-    CHECK_1_FORMAT("%u", unsigned int);
-    CHECK_1_FORMAT("%lu", unsigned long);
-    CHECK_1_FORMAT("%zu", size_t);
-
-    /* "%lld" and "%llu" support added in Python 2.7. */
-    CHECK_1_FORMAT("%llu", unsigned long long);
-    CHECK_1_FORMAT("%lld", long long);
-
-    Py_RETURN_NONE;
-
- Fail:
-    Py_XDECREF(result);
-    return raiseTestError("test_string_from_format", msg);
-
-#undef CHECK_1_FORMAT
-}
-
-
-static PyObject *
-test_unicode_compare_with_ascii(PyObject *self, PyObject *Py_UNUSED(ignored)) {
-    PyObject *py_s = PyUnicode_FromStringAndSize("str\0", 4);
-    int result;
-    if (py_s == NULL)
-        return NULL;
-    result = PyUnicode_CompareWithASCIIString(py_s, "str");
-    Py_DECREF(py_s);
-    if (!result) {
-        PyErr_SetString(TestError, "Python string ending in NULL "
-                        "should not compare equal to c string.");
-        return NULL;
-    }
-    Py_RETURN_NONE;
 }
 
 /* This is here to provide a docstring for test_descr. */
@@ -5823,12 +5517,9 @@ static PyMethodDef TestMethods[] = {
     {"pyobject_repr_from_null", pyobject_repr_from_null, METH_NOARGS},
     {"pyobject_str_from_null",  pyobject_str_from_null, METH_NOARGS},
     {"pyobject_bytes_from_null", pyobject_bytes_from_null, METH_NOARGS},
-    {"test_string_from_format", (PyCFunction)test_string_from_format, METH_NOARGS},
     {"test_with_docstring",     test_with_docstring,             METH_NOARGS,
      PyDoc_STR("This is a pretty normal docstring.")},
     {"test_string_to_double",   test_string_to_double,           METH_NOARGS},
-    {"test_unicode_compare_with_ascii", test_unicode_compare_with_ascii,
-     METH_NOARGS},
     {"test_capsule", (PyCFunction)test_capsule, METH_NOARGS},
     {"test_from_contiguous", (PyCFunction)test_from_contiguous, METH_NOARGS},
 #if (defined(__linux__) || defined(__FreeBSD__)) && defined(__GNUC__)
@@ -5897,19 +5588,7 @@ static PyMethodDef TestMethods[] = {
     {"getargs_et",              getargs_et,                      METH_VARARGS},
     {"getargs_es_hash",         getargs_es_hash,                 METH_VARARGS},
     {"getargs_et_hash",         getargs_et_hash,                 METH_VARARGS},
-    {"codec_incrementalencoder",
-     (PyCFunction)codec_incrementalencoder,                      METH_VARARGS},
-    {"codec_incrementaldecoder",
-     (PyCFunction)codec_incrementaldecoder,                      METH_VARARGS},
     {"test_s_code",             test_s_code,                     METH_NOARGS},
-    {"test_widechar",           test_widechar,                   METH_NOARGS},
-    {"unicode_aswidechar",      unicode_aswidechar,              METH_VARARGS},
-    {"unicode_aswidecharstring",unicode_aswidecharstring,        METH_VARARGS},
-    {"unicode_asucs4",          unicode_asucs4,                  METH_VARARGS},
-    {"unicode_asutf8",          unicode_asutf8,                  METH_VARARGS},
-    {"unicode_asutf8andsize",   unicode_asutf8andsize,           METH_VARARGS},
-    {"unicode_findchar",        unicode_findchar,                METH_VARARGS},
-    {"unicode_copycharacters",  unicode_copycharacters,          METH_VARARGS},
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
     {"_pending_threadfunc",     pending_threadfunc,              METH_VARARGS},
 #ifdef HAVE_GETTIMEOFDAY
@@ -6869,6 +6548,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Heaptype(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Unicode(m) < 0) {
         return NULL;
     }
 

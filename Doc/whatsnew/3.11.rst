@@ -49,13 +49,14 @@ This article explains the new features in Python 3.11, compared to 3.10.
 
 For full details, see the :ref:`changelog <changelog>`.
 
+
 Summary -- Release highlights
 =============================
 
 .. This section singles out the most important changes in Python 3.11.
    Brevity is key.
 
-- Python 3.11 is up to 10-60% faster than Python 3.10. On average, we measured a
+- Python 3.11 is between 10-60% faster than Python 3.10. On average, we measured a
   1.25x speedup on the standard benchmark suite. See `Faster CPython`_ for details.
 
 .. PEP-sized items next.
@@ -65,18 +66,35 @@ New syntax features:
 * :pep:`654`: Exception Groups and ``except*``.
   (Contributed by Irit Katriel in :issue:`45292`.)
 
+New built-in features:
+
+* :pep:`678`: Enriching Exceptions with Notes.
+
+New standard library modules:
+
+* :pep:`680`: ``tomllib`` — Support for Parsing TOML in the Standard Library.
+
+Interpreter improvements:
+
+* :pep:`657`: Include Fine Grained Error Locations in Tracebacks.
+* New :option:`-P` command line option and :envvar:`PYTHONSAFEPATH` environment
+  variable to disable automatically prepending a potentially unsafe path
+  (the working dir or script directory, depending on invocation)
+  to :data:`sys.path`.
+
 New typing features:
 
 * :pep:`646`: Variadic generics.
 * :pep:`655`: Marking individual TypedDict items as required or potentially missing.
 * :pep:`673`: ``Self`` type.
 * :pep:`675`: Arbitrary literal string type.
+* :pep:`681`: Data Class Transforms.
 
-Security improvements:
+Important deprecations, removals or restrictions:
 
-* New :option:`-P` command line option and :envvar:`PYTHONSAFEPATH` environment
-  variable to not prepend a potentially unsafe path to :data:`sys.path` such as
-  the current directory, the script's directory or an empty string.
+* :pep:`594`: Removing dead batteries from the standard library.
+* :pep:`624`: Remove ``Py_UNICODE`` encoder APIs.
+* :pep:`670`: Convert macros to functions in the Python C API.
 
 
 New Features
@@ -158,8 +176,25 @@ The :option:`-X` ``no_debug_ranges`` option and the environment variable
 See :pep:`657` for more details. (Contributed by Pablo Galindo, Batuhan Taskaya
 and Ammar Askar in :issue:`43950`.)
 
-Exceptions can be enriched with notes (PEP 678)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+PEP 654: Exception Groups and ``except*``
+-----------------------------------------
+
+:pep:`654` introduces language features that enable a program
+to raise and handle multiple unrelated exceptions simultaneously.
+The builtin types :exc:`ExceptionGroup` and :exc:`BaseExceptionGroup`
+make it possible to group exceptions and raise them together,
+and the new :keyword:`except* <except_star>` syntax generalizes
+:keyword:`except` to match subgroups of exception groups.
+
+See :pep:`654` for more details.
+
+(Contributed by Irit Katriel in :issue:`45292`. PEP written by
+Irit Katriel, Yury Selivanov and Guido van Rossum.)
+
+
+PEP 678: Exceptions can be enriched with notes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The :meth:`add_note` method was added to :exc:`BaseException`. It can be
 used to enrich exceptions with context information which is not available
@@ -417,6 +452,12 @@ Other CPython Implementation Changes
   :data:`sys.path`. Otherwise, initialization will recalculate the path and replace
   any values added to ``module_search_paths``.
 
+* The output of the :option:`--help` option is changed to fit inside 50 lines and 80
+  columns.  Information about :ref:`Python environment variables <using-on-envvars>`
+  and :option:`-X options <-X>` is available with the new :option:`--help-env` or
+  :option:`--help-xoptions` flags, and with :option:`--help-all`.
+  (Contributed by Éric Araujo in :issue:`46142`.)
+
 
 New Modules
 ===========
@@ -453,6 +494,13 @@ asyncio
   an :ref:`asynchronous context manager <async-context-managers>`
   holding a group of tasks that will wait for all of them upon exit.
   (Contributed by Yury Seliganov and others.)
+
+contextlib
+----------
+
+Added non parallel-safe :func:`~contextlib.chdir` context manager to change
+the current working directory and then restore it on exit. Simple wrapper
+around :func:`~os.chdir`. (Contributed by Filipe Laíns in :issue:`25625`)
 
 datetime
 --------
@@ -560,6 +608,10 @@ hashlib
   implementations from OpenSSL. The change affects only installations without
   OpenSSL support.
   (Contributed by Christian Heimes in :issue:`47098`.)
+
+* Add :func:`hashlib.file_digest`, a helper function for efficient hashing
+  of files or file-like objects.
+  (Contributed by Christian Heimes in :gh:`89313`.)
 
 IDLE and idlelib
 ----------------
@@ -1208,6 +1260,8 @@ CPython bytecode changes
 * :opcode:`JUMP_IF_TRUE_OR_POP` and :opcode:`JUMP_IF_FALSE_OR_POP` are now
   relative rather than absolute.
 
+* :opcode:`RESUME` has been added. It is a no-op. Performs internal tracing,
+  debugging and optimization checks.
 
 Deprecated
 ==========
@@ -1544,6 +1598,10 @@ Changes in the Python API
   :func:`compile` and other related functions. If invalid positions are detected,
   a :exc:`ValueError` will be raised. (Contributed by Pablo Galindo in :gh:`93351`)
 
+* :c:member:`~PyTypeObject.tp_dictoffset` should be treated as write-only.
+  It can be set to describe C extension clases to the VM, but should be regarded
+  as meaningless when read. To get the pointer to the object's dictionary call
+  :c:func:`PyObject_GenericGetDict` instead.
 
 Build Changes
 =============
