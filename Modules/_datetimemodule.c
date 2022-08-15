@@ -1566,7 +1566,7 @@ make_freplacement(PyObject *object)
 
 /* I sure don't want to reproduce the strftime code from the time module,
  * so this imports the module and calls it.  All the hair is due to
- * giving special meanings to the %z, %Z and %f format codes via a
+ * giving special meanings to the %z, %:z, %Z and %f format codes via a
  * preprocessing step on the format string.
  * tzinfoarg is the argument to pass to the object's tzinfo method, if
  * needed.
