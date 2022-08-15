@@ -1974,7 +1974,7 @@ compiler_add_yield_from(struct compiler *c, int await)
     ADDOP_NAME(c, LOAD_ATTR, &_Py_ID(value), names);
     ADDOP_I(c, SWAP, 3);
     ADDOP(c, POP_TOP);  // The thing we're yielding from.
-    ADDOP(c, POP_TOP);  // The last sent value
+    ADDOP(c, POP_TOP);  // The last sent value.
 
     USE_LABEL(c, exit);
     return 1;

@@ -2751,7 +2751,7 @@ handle_eval_breaker:
 
         TARGET(LOAD_EXCEPTION_TYPE) {
             assert(oparg < 2);
-            PyObject *value = oparg ? PyExc_StopIteration: PyExc_AssertionError;
+            PyObject *value = oparg ? PyExc_StopIteration : PyExc_AssertionError;
             Py_INCREF(value);
             PUSH(value);
             DISPATCH();
