@@ -1744,6 +1744,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
  Done:
     Py_XDECREF(freplacement);
     Py_XDECREF(zreplacement);
+    Py_XDECREF(colonzreplacement);
     Py_XDECREF(Zreplacement);
     Py_XDECREF(newfmt);
     return result;
