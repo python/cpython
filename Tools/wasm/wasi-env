@@ -72,4 +72,5 @@ export CFLAGS LDFLAGS
 export PKG_CONFIG_PATH PKG_CONFIG_LIBDIR PKG_CONFIG_SYSROOT_DIR
 export PATH
 
-exec "$@"
+# no exec, it makes arvg[0] path absolute.
+"$@"

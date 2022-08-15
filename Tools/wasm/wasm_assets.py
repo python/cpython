@@ -77,7 +77,6 @@ OMIT_NETWORKING_FILES = (
     "mailcap.py",
     "nntplib.py",
     "poplib.py",
-    "smtpd.py",
     "smtplib.py",
     "socketserver.py",
     "telnetlib.py",

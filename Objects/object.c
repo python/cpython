@@ -1064,6 +1064,7 @@ _PyObject_ComputedDictPointer(PyObject *obj)
     if (dictoffset == 0)
         return NULL;
     if (dictoffset < 0) {
+        assert(dictoffset != -1);
         Py_ssize_t tsize = Py_SIZE(obj);
         if (tsize < 0) {
             tsize = -tsize;
@@ -1079,7 +1080,11 @@ _PyObject_ComputedDictPointer(PyObject *obj)
 
 /* Helper to get a pointer to an object's __dict__ slot, if any.
  * Creates the dict from inline attributes if necessary.
- * Does not set an exception. */
+ * Does not set an exception.
+ *
+ * Note that the tp_dictoffset docs used to recommend this function,
+ * so it should be treated as part of the public API.
+ */
 PyObject **
 _PyObject_GetDictPtr(PyObject *obj)
 {
