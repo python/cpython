@@ -1946,35 +1946,36 @@ compiler_call_exit_with_nones(struct compiler *c) {
 static int
 compiler_add_yield_from(struct compiler *c, int await)
 {
-    NEW_JUMP_TARGET_LABEL(c, start);
-    NEW_JUMP_TARGET_LABEL(c, resume);
-    NEW_JUMP_TARGET_LABEL(c, error);
-    NEW_JUMP_TARGET_LABEL(c, stopiter);
+    NEW_JUMP_TARGET_LABEL(c, send);
+    NEW_JUMP_TARGET_LABEL(c, fail);
+    NEW_JUMP_TARGET_LABEL(c, stop);
     NEW_JUMP_TARGET_LABEL(c, exit);
-    USE_LABEL(c, start);
+
+    USE_LABEL(c, send);
     ADDOP_JUMP(c, SEND, exit);
-    USE_LABEL(c, resume);
-    // Set up a virtual try/except to handle StopIteration raised during a
-    // close() or throw():
-    ADDOP_JUMP(c, SETUP_FINALLY, error);
-    RETURN_IF_FALSE(compiler_push_fblock(c, TRY_EXCEPT, resume, NO_LABEL, NULL));
-    // The only way YIELD_VALUE can raise is if close() or throw() raises:
+    // Set up a virtual try/except to handle when StopIteration is raised during
+    // a close or throw call. The only way YIELD_VALUE raises if they do!
+    ADDOP_JUMP(c, SETUP_FINALLY, fail);
+    RETURN_IF_FALSE(compiler_push_fblock(c, TRY_EXCEPT, send, NO_LABEL, NULL));
     ADDOP_I(c, YIELD_VALUE, 0);
-    compiler_pop_fblock(c, TRY_EXCEPT, resume);
+    compiler_pop_fblock(c, TRY_EXCEPT, send);
     ADDOP_NOLINE(c, POP_BLOCK);
     ADDOP_I(c, RESUME, await ? 3 : 2);
-    ADDOP_JUMP(c, JUMP_NO_INTERRUPT, start);
-    USE_LABEL(c, error);
+    ADDOP_JUMP(c, JUMP_NO_INTERRUPT, send);
+
+    USE_LABEL(c, fail);
     ADDOP_I(c, LOAD_EXCEPTION_TYPE, 1);  // StopIteration
     ADDOP(c, CHECK_EXC_MATCH);
-    ADDOP_JUMP(c, POP_JUMP_IF_TRUE, stopiter);
+    ADDOP_JUMP(c, POP_JUMP_IF_TRUE, stop);
     ADDOP_I(c, RERAISE, 0);
-    USE_LABEL(c, stopiter);
-    // StopIteration was raised. Push the return value and continue execution:
+
+    USE_LABEL(c, stop);
+    // StopIteration was raised. Push the value and break out of the loop:
     ADDOP_NAME(c, LOAD_ATTR, &_Py_ID(value), names);
     ADDOP_I(c, SWAP, 3);
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_TOP);  // The thing we're yielding from.
+    ADDOP(c, POP_TOP);  // The last sent value
+
     USE_LABEL(c, exit);
     return 1;
 }
