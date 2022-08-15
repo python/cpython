@@ -229,7 +229,7 @@ Module functions
       The ``sqlite3.connect/handle`` auditing event.
 
    .. versionadded:: 3.12
-      The *autocommit* parameter.
+      The *autocommit* attribute.
 
 .. function:: complete_statement(statement)
 
@@ -299,7 +299,7 @@ Module constants
 .. data:: DEPRECATED_TRANSACTION_CONTROL
 
    Set :attr:`~Connection.autocommit` to this constant to select deprecated
-   (pre-Python 3.12) transaction control.
+   (pre-Python 3.12) transaction control behaviour.
    See :ref:`sqlite3-deprecated-transaction-control` for more information.
 
 .. data:: PARSE_COLNAMES
@@ -445,10 +445,10 @@ Connection objects
 
    .. attribute:: autocommit
 
-      Get or set :pep:`249` compliant transaction behaviour.
+      Get or set :pep:`249`-compliant transaction behaviour.
       *autocommit* has three allowed values:
 
-      * ``False``: :pep:`249` compliant transaction behaviour,
+      * ``False``: :pep:`249`-compliant transaction behaviour,
         implying that a transaction is always open.
         Use :meth:`~Connection.commit` and :meth:`~Connection.rollback` to
         close transactions.
@@ -466,17 +466,17 @@ Connection objects
         transaction control. See :attr:`isolation_level`.
         This is currently the default value of *autocommit*.
 
-      Changing to ``False`` when there is an open transaction will
+      Changing *autocommit* to ``False`` when there is an open transaction will
       implicitly commit the transaction and open a new one.
 
-      Changing to ``True`` when there is an open transaction will
+      Changing *autocommit* to ``True`` when there is an open transaction will
       implicitly commit the transaction.
 
       See :ref:`sqlite3-controlling-transactions` for more details.
 
       .. note::
 
-         The :pep:`249` compliant autocommit feature and the SQLite autocommit
+         The :pep:`249`-compliant autocommit feature and the SQLite autocommit
          mode are two related, but different concepts.
          Query the SQLite autocommit mode using the :attr:`in_transaction`
          attribute.
@@ -1089,7 +1089,6 @@ Cursor objects
       more than one statement with it, it will raise a :exc:`ProgrammingError`. Use
       :meth:`executescript` if you want to execute multiple SQL statements with one
       call.
-
 
       If :attr:`~Connection.autocommit` is
       :data:`DEPRECATED_TRANSACTION_CONTROL`,
@@ -1774,7 +1773,7 @@ a new transaction is implicitly opened after committing or rolling back.
 
 If there is no open transaction upon leaving the body of the ``with`` statement,
 or if :attr:`~Connection.autocommit` is ``False``,
-the context manager is a no-op.
+the context manager does nothing.
 
 .. note::
 
@@ -1834,7 +1833,7 @@ This causes transaction control to be selected using the
 See :ref:`sqlite3-deprecated-transaction-control` for more information.
 
 Starting in Python 3.14, *autocommit* will default to ``False``,
-which will imply :pep:`249` compliant transaction control, meaning:
+which will imply :pep:`249`-compliant transaction control, meaning:
 
 * A transaction is always open.
 * Transactions should be committed using :meth:`~Connection.commit`.
