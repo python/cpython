@@ -367,6 +367,8 @@ given type object has a specified feature.
 #define Py_TPFLAGS_MANAGED_WEAKREF (1 << 3)
 #define Py_TPFLAGS_MANAGED_DICT (1 << 4)
 
+#define Py_TPFLAGS_PREHEADER (Py_TPFLAGS_MANAGED_WEAKREF | Py_TPFLAGS_MANAGED_DICT)
+
 /* Set if instances of the type object are treated as sequences for pattern matching */
 #define Py_TPFLAGS_SEQUENCE (1 << 5)
 /* Set if instances of the type object are treated as mappings for pattern matching */
