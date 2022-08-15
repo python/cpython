@@ -157,7 +157,7 @@ new_statement_cache(pysqlite_Connection *self, pysqlite_state *state,
 }
 
 static inline int
-connection_txn_stmt(pysqlite_Connection *self, const char *sql)
+connection_exec_stmt(pysqlite_Connection *self, const char *sql)
 {
     int rc;
     Py_BEGIN_ALLOW_THREADS
@@ -311,7 +311,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
     self->initialized = 1;
 
     if (autocommit == AUTOCOMMIT_DISABLED) {
-        (void)connection_txn_stmt(self, "BEGIN");
+        (void)connection_exec_stmt(self, "BEGIN");
     }
     return 0;
 
@@ -385,7 +385,7 @@ connection_close(pysqlite_Connection *self)
         if (self->autocommit == AUTOCOMMIT_DISABLED &&
             !sqlite3_get_autocommit(self->db))
         {
-            (void)connection_txn_stmt(self, "ROLLBACK");
+            (void)connection_exec_stmt(self, "ROLLBACK");
         }
 
         free_callback_contexts(self);
@@ -603,16 +603,16 @@ pysqlite_connection_commit_impl(pysqlite_Connection *self)
 
     if (self->autocommit == AUTOCOMMIT_COMPAT) {
         if (!sqlite3_get_autocommit(self->db)) {
-            if (connection_txn_stmt(self, "COMMIT") < 0) {
+            if (connection_exec_stmt(self, "COMMIT") < 0) {
                 return NULL;
             }
         }
     }
     else if (self->autocommit == AUTOCOMMIT_DISABLED) {
-        if (connection_txn_stmt(self, "COMMIT") < 0) {
+        if (connection_exec_stmt(self, "COMMIT") < 0) {
             return NULL;
         }
-        if (connection_txn_stmt(self, "BEGIN") < 0) {
+        if (connection_exec_stmt(self, "BEGIN") < 0) {
             return NULL;
         }
     }
@@ -637,16 +637,16 @@ pysqlite_connection_rollback_impl(pysqlite_Connection *self)
 
     if (self->autocommit == AUTOCOMMIT_COMPAT) {
         if (!sqlite3_get_autocommit(self->db)) {
-            if (connection_txn_stmt(self, "ROLLBACK") < 0) {
+            if (connection_exec_stmt(self, "ROLLBACK") < 0) {
                 return NULL;
             }
         }
     }
     else if (self->autocommit == AUTOCOMMIT_DISABLED) {
-        if (connection_txn_stmt(self, "ROLLBACK") < 0) {
+        if (connection_exec_stmt(self, "ROLLBACK") < 0) {
             return NULL;
         }
-        if (connection_txn_stmt(self, "BEGIN") < 0) {
+        if (connection_exec_stmt(self, "BEGIN") < 0) {
             return NULL;
         }
     }
@@ -2352,18 +2352,18 @@ set_autocommit(pysqlite_Connection *self, PyObject *val, void *Py_UNUSED(ctx))
     }
     if (self->autocommit == AUTOCOMMIT_ENABLED) {
         if (!sqlite3_get_autocommit(self->db)) {
-            if (connection_txn_stmt(self, "COMMIT") < 0) {
+            if (connection_exec_stmt(self, "COMMIT") < 0) {
                 return -1;
             }
         }
     }
     else if (self->autocommit == AUTOCOMMIT_DISABLED) {
         if (!sqlite3_get_autocommit(self->db)) {
-            if (connection_txn_stmt(self, "COMMIT") < 0) {
+            if (connection_exec_stmt(self, "COMMIT") < 0) {
                 return -1;
             }
         }
-        if (connection_txn_stmt(self, "BEGIN") < 0) {
+        if (connection_exec_stmt(self, "BEGIN") < 0) {
             return -1;
         }
     }
