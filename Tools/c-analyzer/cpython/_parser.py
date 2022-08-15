@@ -141,6 +141,7 @@ Parser/**/*.h	Py_BUILD_CORE	1
 Objects/**/*.c	Py_BUILD_CORE	1
 
 Modules/_asynciomodule.c	Py_BUILD_CORE	1
+Modules/_codecsmodule.c	Py_BUILD_CORE	1
 Modules/_collectionsmodule.c	Py_BUILD_CORE	1
 Modules/_ctypes/_ctypes.c	Py_BUILD_CORE	1
 Modules/_ctypes/cfield.c	Py_BUILD_CORE	1
