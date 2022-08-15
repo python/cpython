@@ -98,7 +98,8 @@ by calling :meth:`cur.execute(...) <Cursor.execute>`::
 
 We can verify that the new table has been created by querying
 the ``sqlite_master`` table built-in to SQLite,
-which should contain an entry for the ``movie`` table definition.
+which should now contain an entry for the ``movie`` table definition
+(see `The Schema Table`_ for details).
 Execute that query by calling :meth:`cur.execute(...) <Cursor.execute>`,
 assign the result to ``res``,
 and call :meth:`res.fetchone() <Cursor.fetchone>` to fetch the resulting row::
@@ -108,7 +109,7 @@ and call :meth:`res.fetchone() <Cursor.fetchone>` to fetch the resulting row::
    ('movie',)
 
 As expected, the query shows the table has been created,
-as it returns a :class:`tuple`: containing the table's name.
+as it returns a :class:`tuple` containing the table's name.
 As an exercise, try querying ``sqlite_master``
 for a non-existent table ``abc``::
 
@@ -202,6 +203,7 @@ You've now created an SQLite database using the :mod:`!sqlite3` module,
 inserted data and retrieved values from it in multiple ways.
 
 .. _SQL injection attacks: https://en.wikipedia.org/wiki/SQL_injection
+.. _The Schema Table: https://www.sqlite.org/schematab.html
 .. _cursors: https://en.wikipedia.org/wiki/Cursor_(databases)
 .. _flexible typing: https://www.sqlite.org/flextypegood.html
 .. _transactions: https://en.wikipedia.org/wiki/Database_transaction
