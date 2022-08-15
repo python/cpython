@@ -11,12 +11,14 @@ import os
 import sys
 import tempfile
 
+from subprocess import DEVNULL
+
 
 def fetch_server_certificate (host, port):
 
-    def subproc(cmd):
+    def subproc(cmd, stdin=None):
         from subprocess import Popen, PIPE, STDOUT
-        proc = Popen(cmd, stdout=PIPE, stderr=STDOUT, shell=True)
+        proc = Popen(cmd, stdout=PIPE, stderr=STDOUT, stdin=stdin)
         status = proc.wait()
         output = proc.stdout.read()
         return status, output
@@ -50,15 +52,14 @@ def fetch_server_certificate (host, port):
         with open(tfile, "w") as fp:
             fp.write("quit\n")
         try:
-            status, output = subproc(
-                'openssl s_client -connect "%s:%s" -showcerts < "%s"' %
-                (host, port, tfile))
+            cmd = ['openssl', 's_client', '-connect', '%s:%s' % (host, port), '-showcerts']
+            status, output = subproc(cmd, stdin=tfile)
         finally:
             os.unlink(tfile)
     else:
-        status, output = subproc(
-            'openssl s_client -connect "%s:%s" -showcerts < /dev/null' %
-            (host, port))
+        cmd = ['openssl', 's_client', '-connect', '%s:%s' % (host, port), '-showcerts']
+        status, output = subproc(cmd, stdin=DEVNULL)
+        
     if status != 0:
         raise RuntimeError('OpenSSL connect failed with status %s and '
                            'output: %r' % (status, output))
