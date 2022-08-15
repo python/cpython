@@ -341,27 +341,13 @@ MakeAnonFields(PyObject *type)
 }
 
 /*
-  Compute `floor(log10(x)) + 1`, for the purpose of determining string lengths.
-*/
-static Py_ssize_t
-num_digits_of(Py_ssize_t n)
-{
-    Py_ssize_t log_n = 0;
-    while (n > 0) {
-        log_n++;
-        n /= 10;
-    }
-    return log_n;
-}
-
-/*
   Append {padding}x to the PEP3118 format string.
 */
 char *
 _ctypes_alloc_format_padding(const char *prefix, Py_ssize_t padding)
 {
-    char *result;
-    char *buf;
+    /* int64 decimal characters + x + null */
+    char buf[19 + 1 + 1];
 
     assert(padding > 0);
 
@@ -370,16 +356,8 @@ _ctypes_alloc_format_padding(const char *prefix, Py_ssize_t padding)
         return _ctypes_alloc_format_string(prefix, "x");
     }
 
-    /* decimal characters + x + null */
-    buf = PyMem_Malloc(num_digits_of(padding) + 2);
-    if (buf == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
     sprintf(buf, "%zdx", padding);
-    result = _ctypes_alloc_format_string(prefix, buf);
-    PyMem_Free(buf);
-    return result;
+    return _ctypes_alloc_format_string(prefix, buf);
 }
 
 /*
