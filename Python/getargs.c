@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_pylifecycle.h"   // _PyArg_Fini
+#include "pycore_atomic_funcs.h"
 
 #include <ctype.h>
 #include <float.h>
@@ -1979,14 +1980,14 @@ parser_init(struct _PyArg_Parser *parser)
     const char * const *keywords = parser->keywords;
     assert(keywords != NULL);
 
-    if (_Py_atomic_load_relaxed(&parser->initialized)) {
+    if (_Py_atomic_size_get(&parser->initialized)) {
         assert(parser->kwtuple != NULL);
         return 1;
     }
     PyThread_acquire_lock(_PyRuntime.getargs.mutex, WAIT_LOCK);
     // Check again if another thread initialized the parser
     // while we were waiting for the lock.
-    if (_Py_atomic_load_relaxed(&parser->initialized)) {
+    if (_Py_atomic_size_get(&parser->initialized)) {
         assert(parser->kwtuple != NULL);
         return 1;
     }
@@ -2041,7 +2042,7 @@ parser_init(struct _PyArg_Parser *parser)
     assert(parser->next == NULL);
     parser->next = static_arg_parsers;
     static_arg_parsers = parser;
-    _Py_atomic_store_relaxed(&parser->initialized, owned ? 1 : -1);
+    _Py_atomic_size_set(&parser->initialized, owned ? 1 : -1);
     PyThread_release_lock(_PyRuntime.getargs.mutex);
     return 1;
 }
@@ -2049,7 +2050,7 @@ parser_init(struct _PyArg_Parser *parser)
 static void
 parser_clear(struct _PyArg_Parser *parser)
 {
-    if (_Py_atomic_load_relaxed(&parser->initialized) == 1) {
+    if (_Py_atomic_size_get(&parser->initialized) == 1) {
         Py_CLEAR(parser->kwtuple);
     }
 }
