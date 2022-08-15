@@ -236,7 +236,7 @@ def _wrap_strftime(object, format, timetuple):
                         if ch2 == 'z':
                             if colonzreplace is None:
                                 if hasattr(object, "utcoffset"):
-                                   colonzreplace = _format_offset(object.utcoffset(), sep=":")
+                                    colonzreplace = _format_offset(object.utcoffset(), sep=":")
                                 else:
                                     colonzreplace = ""
                             assert '%' not in colonzreplace
