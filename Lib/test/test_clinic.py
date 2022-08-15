@@ -730,6 +730,15 @@ foo.bar
     x: int
 """)
 
+    def test_parameters_no_more_than_one_vararg(self):
+        s = self.parse_function_should_fail("""
+module foo
+foo.bar
+   *vararg1: object
+   *vararg2: object
+""")
+        self.assertEqual(s, "Error on line 0:\nToo many var args\n")
+
     def test_function_not_at_column_0(self):
         function = self.parse_function("""
   module foo
