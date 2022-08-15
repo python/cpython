@@ -237,10 +237,11 @@ Module contents
      c = C()
      c.mylist += [1, 2, 3]
 
-   As shown above, the :const:`MISSING` value is a sentinel object used to
-   detect if some parameters are provided by the user. This sentinel is
-   used because ``None`` is a valid value for some parameters with
-   a distinct meaning.  No code should directly use the :const:`MISSING` value.
+   In the signature above, the :const:`dataclasses.MISSING` default
+   value is a sentinel object used to indicate the caller provided no
+   value.  This sentinel is used because ``None`` is a valid value
+   for some parameters, with a distinct meaning.  Do not use the
+   :const:`MISSING` value in your code.
 
    The parameters to :func:`field` are:
 
