@@ -79,8 +79,14 @@ class IsolatedAsyncioTestCase(TestCase):
         return result
 
     def _callSetUp(self):
-        self._asyncioTestContext.run(self.setUp)
-        self._callAsync(self.asyncSetUp)
+        self._setupAsyncioRunner()
+        try:
+            self._asyncioTestContext.run(self.setUp)
+            self._callAsync(self.asyncSetUp)
+        except Exception:
+            # _callTearDown is not called when _callSetUp fails.
+            self._tearDownAsyncioRunner()
+            raise
 
     def _callTestMethod(self, method):
         if self._callMaybeAsync(method) is not None:
@@ -88,8 +94,11 @@ class IsolatedAsyncioTestCase(TestCase):
                           f'test case ({method})', DeprecationWarning, stacklevel=4)
 
     def _callTearDown(self):
-        self._callAsync(self.asyncTearDown)
-        self._asyncioTestContext.run(self.tearDown)
+        try:
+            self._callAsync(self.asyncTearDown)
+            self._asyncioTestContext.run(self.tearDown)
+        finally:
+            self._tearDownAsyncioRunner()
 
     def _callCleanup(self, function, *args, **kwargs):
         self._callMaybeAsync(function, *args, **kwargs)
@@ -124,18 +133,6 @@ class IsolatedAsyncioTestCase(TestCase):
     def _tearDownAsyncioRunner(self):
         runner = self._asyncioRunner
         runner.close()
-
-    def run(self, result=None):
-        self._setupAsyncioRunner()
-        try:
-            return super().run(result)
-        finally:
-            self._tearDownAsyncioRunner()
-
-    def debug(self):
-        self._setupAsyncioRunner()
-        super().debug()
-        self._tearDownAsyncioRunner()
 
     def __del__(self):
         if self._asyncioRunner is not None:

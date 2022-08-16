@@ -1,0 +1,2 @@
+The ``run`` method of :class:`unittest.IsolatedAsyncioTestCase`
+no longer sets up an asyncio runner if a test case or class is skipped.
