@@ -389,6 +389,7 @@ miss_counter_start(void) {
 #define SPEC_FAIL_ATTR_HAS_MANAGED_DICT 25
 #define SPEC_FAIL_ATTR_INSTANCE_ATTRIBUTE 26
 #define SPEC_FAIL_ATTR_METACLASS_ATTRIBUTE 27
+#define SPEC_FAIL_ATTR_PROPERTY_NOT_PY_FUNCTION 28
 
 /* Binary subscr and store subscr */
 
@@ -594,7 +595,9 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int sto
                 getattribute != interp->callable_cache.object__getattribute__;
             has_getattr = _PyType_Lookup(type, &_Py_ID(__getattr__)) != NULL;
             if (has_custom_getattribute) {
-                if (!has_getattr && Py_IS_TYPE(getattribute, &PyFunction_Type)) {
+                if (getattro_slot == _Py_slot_tp_getattro &&
+                    !has_getattr &&
+                    Py_IS_TYPE(getattribute, &PyFunction_Type)) {
                     *descr = getattribute;
                     return GETATTRIBUTE_IS_PYTHON_FUNCTION;
                 }
@@ -772,7 +775,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
                 goto fail;
             }
             if (!Py_IS_TYPE(fget, &PyFunction_Type)) {
-                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_NOT_PY_FUNCTION);
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_PROPERTY_NOT_PY_FUNCTION);
                 goto fail;
             }
             uint32_t version = function_check_args(fget, 1, LOAD_ATTR) &&
