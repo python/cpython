@@ -1074,9 +1074,9 @@ def requires_limited_api(test):
     try:
         import _testcapi
     except ImportError:
-        return unittest.skipIf(True, 'needs _testcapi module')(test)
-    return unittest.skipIf(
-        not _testcapi.LIMITED_API_AVAILABLE, 'needs Limited API support')(test)
+        return unittest.skip('needs _testcapi module')(test)
+    return unittest.skipUnless(
+        _testcapi.LIMITED_API_AVAILABLE, 'needs Limited API support')(test)
 
 
 def _filter_suite(suite, pred):
