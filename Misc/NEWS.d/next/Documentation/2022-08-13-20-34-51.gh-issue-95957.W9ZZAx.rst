@@ -1,2 +1,2 @@
-What's new 3.11 now has instructions how to build Python with TCL/TK and
-OpenSSL on RHEL 7 and CentOS 7.
+What's New 3.11 now has instructions for how to provide compiler and
+linker flags for Tcl/Tk and OpenSSL on RHEL 7 and CentOS 7.
