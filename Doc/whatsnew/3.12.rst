@@ -450,9 +450,10 @@ New Features
   inherit the ``Py_TPFLAGS_HAVE_VECTORCALL`` flag.
   (Contributed by Petr Viktorin in :gh:`93274`.)
 
-  The :const:`Py_TPFLAGS_MANAGED_DICT` and `Py_TPFLAGS_MANAGED_WEAKREF` flags
-  have been added. This allows extensions classes to support object ``__dict__``
-  and weakrefs with less bookkeeping, using less memory and with faster access.
+  The :const:`Py_TPFLAGS_MANAGED_DICT` and :const:`Py_TPFLAGS_MANAGED_WEAKREF`
+  flags have been added. This allows extensions classes to support object
+  ``__dict__`` and weakrefs with less bookkeeping,
+  using less memory and with faster access.
 
 Porting to Python 3.12
 ----------------------
