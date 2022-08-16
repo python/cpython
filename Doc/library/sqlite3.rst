@@ -110,14 +110,12 @@ and call :meth:`res.fetchone() <Cursor.fetchone>` to fetch the resulting row::
 
 As expected, the query shows the table has been created,
 as it returns a :class:`tuple` containing the table's name.
-As an exercise, try querying ``sqlite_master``
-for a non-existent table ``abc``::
+If we query ``sqlite_master`` for a non-existent table ``spam``,
+:meth:`!res.fetchone()` will return ``None``::
 
-   >>> res = cur.execute("SELECT name FROM sqlite_master WHERE name='abc'")
+   >>> res = cur.execute("SELECT name FROM sqlite_master WHERE name='spam'")
    >>> res.fetchone()
    >>>
-
-Indeed, the query returns an empty result.
 
 Now, add two rows of data supplied as SQL literals
 by executing an ``INSERT`` statement,
@@ -184,20 +182,16 @@ matching the columns selected in the query.
 
 Finally, verify that the database has been written to disk
 by calling :meth:`con.close() <Connection.close>`
-to close the existing connection,
-opening a new one, creating a new cursor,
-then reusing the query from above to read from the database::
+to close the existing connection, opening a new one,
+creating a new cursor, then querying the database::
 
    >>> con.close()
    >>> new_con = sqlite3.connect("tutorial.db")
    >>> new_cur = new_con.cursor()
-   >>> for row in new_cur.execute("SELECT year, title FROM movie ORDER BY year"):
-   ...     print(row)
-   (1971, "And Now for Something Completely Different")
-   (1975, "Monty Python and the Holy Grail")
-   (1979, "Monty Python's Life of Brian")
-   (1982, "Monty Python Live at the Hollywood Bowl")
-   (1983, "Monty Python's The Meaning of Life")
+   >>> res = new_cur.execute("SELECT year, title FROM movie ORDER BY score DESC"):
+   >>> title, year = res.fetchone()
+   >>> print(f'The highest scoring Monty Python movie is "{title}", released in {year}')
+   'The highest scoring Monty Python movie is "Monty Python and the Holy Grail", released in 1975'
 
 You've now created an SQLite database using the :mod:`!sqlite3` module,
 inserted data and retrieved values from it in multiple ways.
@@ -206,8 +200,8 @@ inserted data and retrieved values from it in multiple ways.
 .. _The Schema Table: https://www.sqlite.org/schematab.html
 .. _cursors: https://en.wikipedia.org/wiki/Cursor_(databases)
 .. _flexible typing: https://www.sqlite.org/flextypegood.html
-.. _transactions: https://en.wikipedia.org/wiki/Database_transaction
 .. _sqlite_master: https://www.sqlite.org/schematab.html
+.. _transactions: https://en.wikipedia.org/wiki/Database_transaction
 
 .. seealso::
 
