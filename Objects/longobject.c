@@ -36,7 +36,7 @@ medium_value(PyLongObject *x)
 #define IS_SMALL_INT(ival) (-_PY_NSMALLNEGINTS <= (ival) && (ival) < _PY_NSMALLPOSINTS)
 #define IS_SMALL_UINT(ival) ((ival) < _PY_NSMALLPOSINTS)
 
-#define _MAX_STR_DIGITS_ERROR_FMT "Exceeds digit limit for string conversions: value has %zd digits."
+#define _MAX_STR_DIGITS_ERROR_FMT "Exceeds digit limit for string conversions: value has %zd digits"
 
 static inline void
 _Py_DECREF_INT(PyLongObject *op)

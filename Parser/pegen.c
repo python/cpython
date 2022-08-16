@@ -1,5 +1,6 @@
 #include <Python.h>
 #include "pycore_ast.h"           // _PyAST_Validate(),
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include <errcode.h>
 
 #include "tokenizer.h"
@@ -645,6 +646,21 @@ _PyPegen_number_token(Parser *p)
 
     if (c == NULL) {
         p->error_indicator = 1;
+        PyThreadState *tstate = _PyThreadState_GET();
+        // The only way a ValueError should happen in _this_ code is via
+        // PyLong_FromString hitting a length limit.
+        if (tstate->curexc_type == PyExc_ValueError &&
+            tstate->curexc_value != NULL) {
+            /* Intentionally omitting columns to avoid a giant wall of ^s on
+             * the error message. Nobody is going to overlook their huge
+             * numeric literal once given the line. */
+            return RAISE_ERROR_KNOWN_LOCATION(
+                p, PyExc_SyntaxError,
+                t->lineno, -1 /* col_offset */,
+                t->end_lineno, -1 /* end_col_offset */,
+                "%S - Consider hexidecimal for huge integer literals to avoid decimal conversion limits.",
+                tstate->curexc_value);
+        }
         return NULL;
     }
 
