@@ -1973,7 +1973,7 @@ new_kwtuple(const char * const *keywords, int total, int pos)
     return kwtuple;
 }
 
-static inline int
+static int
 _parser_init(struct _PyArg_Parser *parser)
 {
     const char * const *keywords = parser->keywords;
@@ -2022,10 +2022,11 @@ _parser_init(struct _PyArg_Parser *parser)
     parser->min = min;
     parser->max = max;
     parser->kwtuple = kwtuple;
+    parser->initialized = owned ? 1 : -1;
+
     assert(parser->next == NULL);
     parser->next = static_arg_parsers;
     static_arg_parsers = parser;
-    parser->initialized = owned ? 1 : -1;
     return 1;
 }
 
