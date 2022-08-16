@@ -665,4 +665,4 @@ defined by the module.  The specific list of defined symbols is available as
 
    .. availability:: WASI
 
-   .. versionadded:: 3.11
+   .. versionadded:: 3.11.1

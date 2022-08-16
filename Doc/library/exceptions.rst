@@ -749,7 +749,7 @@ depending on the system error code.
    Corresponds to :c:data:`errno` :py:data:`~errno.EACCES`,
    :py:data:`~errno.EPERM`, and :py:data:`~errno.ENOTCAPABLE`.
 
-   .. versionchanged:: 3.11
+   .. versionchanged:: 3.11.1
       WASI's :py:data:`~errno.ENOTCAPABLE` is now mapped to
       :exc:`PermissionError`.
 
