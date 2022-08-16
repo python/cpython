@@ -436,28 +436,19 @@ class TestAsyncCase(unittest.TestCase):
 
     def test_setup_get_event_loop(self):
         # See https://github.com/python/cpython/issues/95736
-        events = []
+        # Make sure the default event loop is not used
+        asyncio.set_event_loop(None)
+
         class TestCase1(unittest.IsolatedAsyncioTestCase):
             def setUp(self):
                 self.loop = asyncio.get_event_loop_policy().get_event_loop()
 
             async def test_demo1(self):
-                events.append('called demo1')
-
-
-        class TestCase2(unittest.IsolatedAsyncioTestCase):
-            def setUp(self):
-                self.loop = asyncio.get_event_loop_policy().get_event_loop()
-
-            async def test_demo2(self):
-                events.append('called demo2')
+                pass
 
         test = TestCase1('test_demo1')
-        test.debug()
-        self.assertEqual(events, ['called demo1'])
-        test = TestCase2('test_demo2')
-        test.debug()
-        self.assertEqual(events, ['called demo1', 'called demo2'])
+        result = test.run()
+        self.assertTrue(result.wasSuccessful())
 
 if __name__ == "__main__":
     unittest.main()
