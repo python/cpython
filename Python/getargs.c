@@ -1973,25 +1973,11 @@ new_kwtuple(const char * const *keywords, int total, int pos)
     return kwtuple;
 }
 
-static int
-parser_init(struct _PyArg_Parser *parser)
+static inline int
+_parser_init(struct _PyArg_Parser *parser)
 {
     const char * const *keywords = parser->keywords;
     assert(keywords != NULL);
-    // volatile as it can be modified by other threads
-    if (*((volatile int *)&parser->initialized)) {
-        assert(parser->kwtuple != NULL);
-        return 1;
-    }
-    PyThread_acquire_lock(_PyRuntime.getargs.mutex, WAIT_LOCK);
-    // Check again if another thread initialized the parser
-    // while we were waiting for the lock.
-    if (*((volatile int *)&parser->initialized)) {
-        assert(parser->kwtuple != NULL);
-        PyThread_release_lock(_PyRuntime.getargs.mutex);
-        return 1;
-    }
-
     assert(parser->pos == 0 &&
            (parser->format == NULL || parser->fname == NULL) &&
            parser->custom_msg == NULL &&
@@ -2000,7 +1986,6 @@ parser_init(struct _PyArg_Parser *parser)
 
     int len, pos;
     if (scan_keywords(keywords, &len, &pos) < 0) {
-        PyThread_release_lock(_PyRuntime.getargs.mutex);
         return 0;
     }
 
@@ -2010,7 +1995,6 @@ parser_init(struct _PyArg_Parser *parser)
         assert(parser->fname == NULL);
         if (parse_format(parser->format, len, pos,
                          &fname, &custommsg, &min, &max) < 0) {
-            PyThread_release_lock(_PyRuntime.getargs.mutex);
             return 0;
         }
     }
@@ -2024,7 +2008,6 @@ parser_init(struct _PyArg_Parser *parser)
     if (kwtuple == NULL) {
         kwtuple = new_kwtuple(keywords, len, pos);
         if (kwtuple == NULL) {
-            PyThread_release_lock(_PyRuntime.getargs.mutex);
             return 0;
         }
         owned = 1;
@@ -2043,8 +2026,29 @@ parser_init(struct _PyArg_Parser *parser)
     parser->next = static_arg_parsers;
     static_arg_parsers = parser;
     parser->initialized = owned ? 1 : -1;
-    PyThread_release_lock(_PyRuntime.getargs.mutex);
     return 1;
+}
+
+static int
+parser_init(struct _PyArg_Parser *parser)
+{
+    // volatile as it can be modified by other threads
+    // and should not be optimized or reordered by compiler
+    if (*((volatile int *)&parser->initialized)) {
+        assert(parser->kwtuple != NULL);
+        return 1;
+    }
+    PyThread_acquire_lock(_PyRuntime.getargs.mutex, WAIT_LOCK);
+    // Check again if another thread initialized the parser
+    // while we were waiting for the lock.
+    if (*((volatile int *)&parser->initialized)) {
+        assert(parser->kwtuple != NULL);
+        PyThread_release_lock(_PyRuntime.getargs.mutex);
+        return 1;
+    }
+    int ret = _parser_init(parser);
+    PyThread_release_lock(_PyRuntime.getargs.mutex);
+    return ret;
 }
 
 static void
