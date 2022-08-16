@@ -83,7 +83,7 @@ class IsolatedAsyncioTestCase(TestCase):
         try:
             self._asyncioTestContext.run(self.setUp)
             self._callAsync(self.asyncSetUp)
-        except Exception:
+        except BaseException:
             # _callTearDown is not called when _callSetUp fails.
             self._tearDownAsyncioRunner()
             raise
