@@ -441,7 +441,7 @@ class TestAsyncCase(unittest.TestCase):
 
         class TestCase1(unittest.IsolatedAsyncioTestCase):
             def setUp(self):
-                self.loop = asyncio.get_event_loop_policy().get_event_loop()
+                asyncio.get_event_loop_policy().get_event_loop()
 
             async def test_demo1(self):
                 pass
