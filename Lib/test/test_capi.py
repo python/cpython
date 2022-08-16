@@ -607,6 +607,7 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(ref(), inst)
             inst.spam = inst
             del inst
+            self.assertIs(ref(), None)
 
     def test_heaptype_with_buffer(self):
         inst = _testcapi.HeapCTypeWithBuffer()

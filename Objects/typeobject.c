@@ -6590,7 +6590,7 @@ type_ready_preheader(PyTypeObject *type)
         {
             PyErr_Format(PyExc_TypeError,
                         "type %s has the Py_TPFLAGS_MANAGED_WEAKREF flag "
-                        "but tp_dictoffset is set",
+                        "but tp_weaklistoffset is set",
                         type->tp_name);
             return -1;
         }
