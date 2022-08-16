@@ -505,7 +505,6 @@ specialize_module_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
 {
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
     PyModuleObject *m = (PyModuleObject *)owner;
-    PyObject *value = NULL;
     assert((owner->ob_type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
     PyDictObject *dict = (PyDictObject *)m->md_dict;
     if (dict == NULL) {
@@ -516,13 +515,13 @@ specialize_module_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_ATTR_NON_STRING_OR_SPLIT);
         return -1;
     }
-    Py_ssize_t index = _PyDict_GetItemSpecialize(dict, &_Py_ID(__getattr__), &value);
+    Py_ssize_t index = _PyDict_LookupIndex(dict, &_Py_ID(__getattr__));
     assert(index != DKIX_ERROR);
     if (index != DKIX_EMPTY) {
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_ATTR_MODULE_ATTR_NOT_FOUND);
         return -1;
     }
-    index = _PyDict_GetItemSpecialize(dict, name, &value);
+    index = _PyDict_LookupIndex(dict, name);
     assert (index != DKIX_ERROR);
     if (index != (uint16_t)index) {
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_OUT_OF_RANGE);

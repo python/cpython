@@ -1686,9 +1686,9 @@ PyDict_GetItem(PyObject *op, PyObject *key)
 }
 
 Py_ssize_t
-_PyDict_GetItemSpecialize(PyDictObject *mp, PyObject *key, PyObject **value)
+_PyDict_LookupIndex(PyDictObject *mp, PyObject *key)
 {
-    assert(*value == NULL);
+    PyObject *value;
     assert(PyDict_CheckExact((PyObject*)mp));
     assert(PyUnicode_CheckExact(key));
 
@@ -1700,7 +1700,7 @@ _PyDict_GetItemSpecialize(PyDictObject *mp, PyObject *key, PyObject **value)
         }
     }
 
-    return _Py_dict_lookup(mp, key, hash, value);
+    return _Py_dict_lookup(mp, key, hash, &value);
 }
 
 /* Same as PyDict_GetItemWithError() but with hash supplied by caller.
