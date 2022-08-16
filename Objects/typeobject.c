@@ -70,11 +70,13 @@ static inline PyTypeObject * subclass_from_ref(PyObject *ref);
 
 /* helpers for for static builtin types */
 
+#ifndef NDEBUG
 static inline int
 static_builtin_index_is_set(PyTypeObject *self)
 {
     return self->tp_subclasses != NULL;
 }
+#endif
 
 static inline size_t
 static_builtin_index_get(PyTypeObject *self)
@@ -6802,7 +6804,7 @@ type_ready_post_checks(PyTypeObject *type)
             return -1;
         }
     }
-    else if (type->tp_dictoffset < sizeof(PyObject)) {
+    else if (type->tp_dictoffset < (Py_ssize_t)sizeof(PyObject)) {
         if (type->tp_dictoffset + type->tp_basicsize <= 0) {
             PyErr_Format(PyExc_SystemError,
                          "type %s has a tp_dictoffset that is too small");
