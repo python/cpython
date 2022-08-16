@@ -108,7 +108,7 @@ and call :meth:`res.fetchone() <Cursor.fetchone>` to fetch the resulting row::
    >>> res.fetchone()
    ('movie',)
 
-As expected, the query shows the table has been created,
+The query shows that the table has been created,
 as it returns a :class:`tuple` containing the table's name.
 If we query ``sqlite_master`` for a non-existent table ``spam``,
 :meth:`!res.fetchone()` will return ``None``::
