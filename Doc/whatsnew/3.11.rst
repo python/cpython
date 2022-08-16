@@ -2116,5 +2116,30 @@ Removed
   API).
   (Contributed by Victor Stinner in :issue:`45412`.)
 
+* Remove the :c:type:`Py_UNICODE` encoder APIs,
+  as they have been deprecated since Python 3.3,
+  are little used
+  and are inefficient relative to the recommended alternatives.
+
+  The removed functions are:
+
+  * :c:func:`!PyUnicode_Encode`
+  * :c:func:`!PyUnicode_EncodeASCII`
+  * :c:func:`!PyUnicode_EncodeLatin1`
+  * :c:func:`!PyUnicode_EncodeUTF7`
+  * :c:func:`!PyUnicode_EncodeUTF8`
+  * :c:func:`!PyUnicode_EncodeUTF16`
+  * :c:func:`!PyUnicode_EncodeUTF32`
+  * :c:func:`!PyUnicode_EncodeUnicodeEscape`
+  * :c:func:`!PyUnicode_EncodeRawUnicodeEscape`
+  * :c:func:`!PyUnicode_EncodeCharmap`
+  * :c:func:`!PyUnicode_TranslateCharmap`
+  * :c:func:`!PyUnicode_EncodeDecimal`
+  * :c:func:`!PyUnicode_TransformDecimalToASCII`
+
+  See :pep:`624` for details and
+  :pep:`migration guidance <624#alternative-apis>`.
+  (Contributed by Inada Naoki in :issue:`44029`.)
+
 
 .. _libb2: https://www.blake2.net/
