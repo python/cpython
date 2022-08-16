@@ -607,6 +607,7 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(ref(), inst)
             inst.spam = inst
             del inst
+            ref = weakref.ref(cls())
             self.assertIs(ref(), None)
 
     def test_heaptype_with_buffer(self):
