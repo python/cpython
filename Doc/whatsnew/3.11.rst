@@ -64,7 +64,6 @@ Summary -- Release highlights
 New syntax features:
 
 * :pep:`654`: Exception Groups and ``except*``.
-  (Contributed by Irit Katriel in :issue:`45292`.)
 
 New built-in features:
 
