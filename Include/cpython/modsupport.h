@@ -59,7 +59,7 @@ typedef struct _PyArg_Parser {
     int min;            /* minimal number of arguments */
     int max;            /* maximal number of positional arguments */
     PyObject *kwtuple;  /* tuple of keyword parameter names */
-    Py_ssize_t initialized; /* atomic flag */
+    int initialized;
     struct _PyArg_Parser *next;
 } _PyArg_Parser;
 
