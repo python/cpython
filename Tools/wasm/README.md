@@ -35,7 +35,13 @@ docker run --rm -ti -v $(pwd):/python-wasm/cpython -w /python-wasm/cpython quay.
 
 ### Compile a build Python interpreter
 
-From within the container, run the following commands:
+From within the container, run the following command:
+
+```shell
+./Tools/wasm/wasm_build.py build
+```
+
+The command is roughly equivalent to:
 
 ```shell
 mkdir -p builddir/build
@@ -45,13 +51,13 @@ make -j$(nproc)
 popd
 ```
 
-### Fetch and build additional emscripten ports
+### Cross-compile to wasm32-emscripten for browser
 
 ```shell
-embuilder build zlib bzip2
+./Tools/wasm/wasm_build.py emscripten-browser
 ```
 
-### Cross compile to wasm32-emscripten for browser
+The command is roughly equivalent to:
 
 ```shell
 mkdir -p builddir/emscripten-browser
@@ -85,14 +91,21 @@ and header files with debug builds.
 ### Cross compile to wasm32-emscripten for node
 
 ```shell
-mkdir -p builddir/emscripten-node
-pushd builddir/emscripten-node
+./Tools/wasm/wasm_build.py emscripten-browser-dl
+```
+
+The command is roughly equivalent to:
+
+```shell
+mkdir -p builddir/emscripten-node-dl
+pushd builddir/emscripten-node-dl
 
 CONFIG_SITE=../../Tools/wasm/config.site-wasm32-emscripten \
   emconfigure ../../configure -C \
     --host=wasm32-unknown-emscripten \
     --build=$(../../config.guess) \
     --with-emscripten-target=node \
+    --enable-wasm-dynamic-linking \
     --with-build-python=$(pwd)/../build/python
 
 emmake make -j$(nproc)
@@ -100,7 +113,7 @@ popd
 ```
 
 ```shell
-node --experimental-wasm-threads --experimental-wasm-bulk-memory --experimental-wasm-bigint builddir/emscripten-node/python.js
+node --experimental-wasm-threads --experimental-wasm-bulk-memory --experimental-wasm-bigint builddir/emscripten-node-dl/python.js
 ```
 
 (``--experimental-wasm-bigint`` is not needed with recent NodeJS versions)
@@ -167,7 +180,7 @@ functions.
 - Heap memory and stack size are limited. Recursion or extensive memory
   consumption can crash Python.
 - Most stdlib modules with a dependency on external libraries are missing,
-  e.g. ``ctypes``, ``readline``, ``sqlite3``, ``ssl``, and more.
+  e.g. ``ctypes``, ``readline``, ``ssl``, and more.
 - Shared extension modules are not implemented yet. All extension modules
   are statically linked into the main binary. The experimental configure
   option ``--enable-wasm-dynamic-linking`` enables dynamic extensions
@@ -199,6 +212,15 @@ Node builds use ``NODERAWFS``.
 - Node RawFS allows direct access to the host file system without need to
   perform ``FS.mount()`` call.
 
+## wasm64-emscripten
+
+- wasm64 requires recent NodeJS and ``--experimental-wasm-memory64``.
+- ``EM_JS`` functions must return ``BigInt()``.
+- ``Py_BuildValue()`` format strings must match size of types. Confusing 32
+  and 64 bits types leads to memory corruption, see
+  [gh-95876](https://github.com/python/cpython/issues/95876) and
+  [gh-95878](https://github.com/python/cpython/issues/95878).
+
 # Hosting Python WASM builds
 
 The simple REPL terminal uses SharedArrayBuffer. For security reasons
@@ -226,9 +248,7 @@ AddType application/wasm wasm
 
 # WASI (wasm32-wasi)
 
-WASI builds require [WASI SDK](https://github.com/WebAssembly/wasi-sdk) 15.0+
-and currently [wasix](https://github.com/singlestore-labs/wasix) for POSIX
-compatibility stubs.
+WASI builds require [WASI SDK](https://github.com/WebAssembly/wasi-sdk) 16.0+.
 
 ## Cross-compile to wasm32-wasi
 
@@ -237,12 +257,16 @@ The script ``wasi-env`` sets necessary compiler and linker flags as well as
 ``/opt/wasi-sdk`` or ``$WASI_SDK_PATH``.
 
 ```shell
+./Tools/wasm/wasm_build.py wasi
+```
+
+The command is roughly equivalent to:
+
+```shell
 mkdir -p builddir/wasi
 pushd builddir/wasi
 
 CONFIG_SITE=../../Tools/wasm/config.site-wasm32-wasi \
-  CFLAGS="-isystem /opt/wasix/include" \
-  LDFLAGS="-L/opt/wasix/lib -lwasix" \
   ../../Tools/wasm/wasi-env ../../configure -C \
     --host=wasm32-unknown-wasi \
     --build=$(../../config.guess) \
@@ -435,21 +459,15 @@ rm -f wasi-sdk-${WASI_VERSION_FULL}-linux.tar.gz
 
 ### Install [wasmtime](https://github.com/bytecodealliance/wasmtime) WASI runtime
 
-**NOTE**: wasmtime 0.37 has a bug. Newer versions should be fine again.
+wasmtime 0.38 or newer is required.
 
 ```shell
 curl -sSf -L -o ~/install-wasmtime.sh https://wasmtime.dev/install.sh
 chmod +x ~/install-wasmtime.sh
-~/install-wasmtime.sh --version v0.36.0
+~/install-wasmtime.sh --version v0.38.0
 ln -srf -t /usr/local/bin/ ~/.wasmtime/bin/wasmtime
 ```
 
-### Install [WASIX](https://github.com/singlestore-labs/wasix)
-
-```shell
-git clone https://github.com/singlestore-labs/wasix.git ~/wasix
-make install -C ~/wasix
-```
 
 ### WASI debugging
 

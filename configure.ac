@@ -753,6 +753,16 @@ if test -z "$CFLAGS"; then
         CFLAGS=
 fi
 
+dnl Emscripten SDK and WASI SDK default to wasm32.
+dnl On Emscripten use MEMORY64 setting to build target wasm64-emscripten.
+dnl for wasm64.
+AS_CASE([$host],
+  [wasm64-*-emscripten], [
+    AS_VAR_APPEND([CFLAGS], [" -sMEMORY64=1"])
+    AS_VAR_APPEND([LDFLAGS], [" -sMEMORY64=1"])
+  ],
+)
+
 if test "$ac_sys_system" = "Darwin"
 then
   dnl look for SDKROOT
@@ -865,29 +875,6 @@ rm -f conftest.c conftest.out
 AC_USE_SYSTEM_EXTENSIONS
 
 AC_SUBST(CXX)
-AC_SUBST(MAINCC)
-AC_MSG_CHECKING(for --with-cxx-main=<compiler>)
-AC_ARG_WITH(cxx_main,
-            AS_HELP_STRING([--with-cxx-main@<:@=COMPILER@:>@],
-                           [compile main() and link Python executable with C++ compiler specified in COMPILER (default is $CXX)]),
-[
-
-	case $withval in
-	no)	with_cxx_main=no
-		MAINCC='$(CC)';;
-	yes)	with_cxx_main=yes
-		MAINCC='$(CXX)';;
-	*)	with_cxx_main=yes
-		MAINCC=$withval
-		if test -z "$CXX"
-		then
-			CXX=$withval
-		fi;;
-	esac], [
-	with_cxx_main=no
-	MAINCC='$(CC)'
-])
-AC_MSG_RESULT($with_cxx_main)
 
 preset_cxx="$CXX"
 if test -z "$CXX"
@@ -1071,7 +1058,7 @@ cat > conftest.c <<EOF
 #    error unknown wasm32 platform
 #  endif
 #elif defined(__wasm64__)
-#  if defined(__EMSCRIPTEN)
+#  if defined(__EMSCRIPTEN__)
 	wasm64-emscripten
 #  elif defined(__wasi__)
 	wasm64-wasi
@@ -1141,8 +1128,8 @@ AS_CASE([$host/$ac_cv_cc_name],
   [armv7l-*-linux-gnueabihf/gcc],    [PY_SUPPORT_TIER=3], dnl ARMv7 LE with hardware floats, any vendor, glibc, gcc
   [powerpc64le-*-linux-gnu/clang],   [PY_SUPPORT_TIER=3], dnl Linux on PPC64 little endian, glibc, clang
   [s390x-*-linux-gnu/gcc],           [PY_SUPPORT_TIER=3], dnl Linux on 64bit s390x (big endian), glibc, gcc
-  dnl [wasm32-unknown-emscripten/clang], [PY_SUPPORT_TIER=3], dnl WebAssembly Emscripten
-  dnl [wasm32-unknown-wasi/clang],       [PY_SUPPORT_TIER=3], dnl WebAssembly System Interface
+  [wasm32-unknown-emscripten/clang], [PY_SUPPORT_TIER=3], dnl WebAssembly Emscripten
+  [wasm32-unknown-wasi/clang],       [PY_SUPPORT_TIER=3], dnl WebAssembly System Interface
   [x86_64-*-freebsd*/clang],         [PY_SUPPORT_TIER=3], dnl FreeBSD on AMD64
   [PY_SUPPORT_TIER=0]
 )
@@ -1358,7 +1345,7 @@ AC_SUBST(LINKCC)
 AC_MSG_CHECKING(LINKCC)
 if test -z "$LINKCC"
 then
-	LINKCC='$(PURIFY) $(MAINCC)'
+	LINKCC='$(PURIFY) $(CC)'
 	case $ac_sys_system in
 	QNX*)
 	   # qcc must be used because the other compilers do not
@@ -1538,16 +1525,41 @@ if test "$cross_compiling" = yes; then
 fi
 
 AC_ARG_VAR([HOSTRUNNER], [Program to run CPython for the host platform])
-AC_MSG_CHECKING([HOSTRUNNER])
 if test -z "$HOSTRUNNER"
 then
   AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
     [Emscripten/node*], [
+      AC_PATH_TOOL([NODE], [node], [node])
+      HOSTRUNNER="$NODE"
       # bigint for ctypes c_longlong, c_longdouble
-      HOSTRUNNER="node --experimental-wasm-bigint"
-      AS_VAR_IF([enable_wasm_pthreads], [yes], [
-        HOSTRUNNER="$HOSTRUNNER --experimental-wasm-threads --experimental-wasm-bulk-memory"
+      # no longer available in Node 16
+      AC_CACHE_CHECK([for node --experimental-wasm-bigint], [ac_cv_tool_node_wasm_bigint], [
+        if $NODE -v --experimental-wasm-bigint > /dev/null 2>&1; then
+          ac_cv_tool_node_wasm_bigint=yes
+        else
+          ac_cv_tool_node_wasm_bigint=no
+        fi
       ])
+      AS_VAR_IF([ac_cv_tool_node_wasm_bigint], [yes], [
+        AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-bigint"])
+      ])
+
+      AS_VAR_IF([enable_wasm_pthreads], [yes], [
+        AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-threads"])
+        # no longer available in Node 16
+        AC_CACHE_CHECK([for node --experimental-wasm-bulk-memory], [ac_cv_tool_node_wasm_bulk_memory], [
+          if $NODE -v --experimental-wasm-bulk-memory > /dev/null 2>&1; then
+            ac_cv_tool_node_wasm_bulk_memory=yes
+          else
+            ac_cv_tool_node_wasm_bulk_memory=no
+          fi
+        ])
+        AS_VAR_IF([ac_cv_tool_node_wasm_bulk_memory], [yes], [
+          AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-bulk-memory"])
+        ])
+      ])
+
+      AS_VAR_IF([host_cpu], [wasm64], [AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-memory64"])])
     ],
     dnl TODO: support other WASI runtimes
     dnl wasmtime starts the proces with "/" as CWD. For OOT builds add the
@@ -1557,6 +1569,7 @@ then
   )
 fi
 AC_SUBST([HOSTRUNNER])
+AC_MSG_CHECKING([HOSTRUNNER])
 AC_MSG_RESULT([$HOSTRUNNER])
 
 if test -n "$HOSTRUNNER"; then
@@ -2643,7 +2656,7 @@ AC_CHECK_HEADERS([ \
   alloca.h asm/types.h bluetooth.h conio.h crypt.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
   ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/memfd.h \
   linux/random.h linux/soundcard.h \
-  linux/tipc.h linux/wait.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
+  linux/tipc.h linux/wait.h netdb.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
   sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/poll.h \
@@ -3394,7 +3407,7 @@ AS_VAR_IF([have_uuid], [missing], [
       AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE], [1])
     ], [
       WITH_SAVE_ENV([
-        CPPFLAGS="$CFLAGS $LIBUUID_CFLAGS"
+        CPPFLAGS="$CPPFLAGS $LIBUUID_CFLAGS"
         LDFLAGS="$LDFLAGS $LIBUUID_LIBS"
         AC_CHECK_HEADERS([uuid/uuid.h], [
           PY_CHECK_LIB([uuid], [uuid_generate_time], [have_uuid=yes])
@@ -3625,7 +3638,7 @@ have_libffi=missing
 AS_VAR_IF([with_system_ffi], [yes], [
   PKG_CHECK_MODULES([LIBFFI], [libffi], [have_libffi=yes], [
     WITH_SAVE_ENV([
-      CPPFLAGS="$CFLAGS $LIBFFI_CFLAGS"
+      CPPFLAGS="$CPPFLAGS $LIBFFI_CFLAGS"
       LDFLAGS="$LDFLAGS $LIBFFI_LIBS"
       AC_CHECK_HEADER([ffi.h], [
         AC_CHECK_LIB([ffi], [ffi_call], [
@@ -3798,7 +3811,7 @@ PKG_CHECK_MODULES([LIBNSL], [libnsl], [have_nis=yes], [
 
 AS_VAR_IF([have_nis], [yes], [
   WITH_SAVE_ENV([
-    CPPFLAGS="$LIBNSL_CFLAGS $CFLAGS"
+    CPPFLAGS="$CPPFLAGS $LIBNSL_CFLAGS"
     AC_CHECK_HEADERS([rpc/rpc.h])
   ])
 ])
@@ -3831,7 +3844,7 @@ AC_DEFUN([PY_CHECK_SQLITE_FUNC], [
 WITH_SAVE_ENV([
 dnl bpo-45774/GH-29507: The CPP check in AC_CHECK_HEADER can fail on FreeBSD,
 dnl hence CPPFLAGS instead of CFLAGS.
-  CPPFLAGS="$LIBSQLITE3_CFLAGS $CFLAGS"
+  CPPFLAGS="$CPPFLAGS $LIBSQLITE3_CFLAGS"
   LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
 
   AC_CHECK_HEADER([sqlite3.h], [
@@ -3935,7 +3948,7 @@ AS_CASE([$ac_sys_system],
 )
 
 WITH_SAVE_ENV([
-  CPPFLAGS="$TCLTK_CFLAGS $CFLAGS"
+  CPPFLAGS="$CPPFLAGS $TCLTK_CFLAGS"
   LIBS="$TCLTK_LIBS $LDFLAGS"
 
   AC_LINK_IFELSE([
@@ -3977,7 +3990,7 @@ dnl NOTE: gdbm does not provide a pkgconf file.
 AC_ARG_VAR([GDBM_CFLAGS], [C compiler flags for gdbm])
 AC_ARG_VAR([GDBM_LIBS], [additional linker flags for gdbm])
 WITH_SAVE_ENV([
-  CPPFLAGS="$GDBM_CFLAGS $CFLAGS"
+  CPPFLAGS="$CPPFLAGS $GDBM_CFLAGS"
   LDFLAGS="$GDBM_LIBS $LDFLAGS"
   AC_CHECK_HEADERS([gdbm.h], [
     AC_CHECK_LIB([gdbm], [gdbm_open], [
@@ -4207,9 +4220,11 @@ pthread_create (NULL, NULL, start_routine, NULL)]])],[
     posix_threads=yes
     LIBS="$LIBS -lcma"
     ],[
-    AC_MSG_ERROR([could not find pthreads on your system])
-    ])
-    ])])])])])
+    AS_CASE([$ac_sys_system],
+      [WASI], [posix_threads=stub],
+      [AC_MSG_ERROR([could not find pthreads on your system])]
+    )
+    ])])])])])])
 
     AC_CHECK_LIB(mpc, usconfig, [
     LIBS="$LIBS -lmpc"
@@ -4272,6 +4287,9 @@ if test "$posix_threads" = "yes"; then
       AC_CHECK_FUNCS(pthread_getcpuclockid)
 fi
 
+AS_VAR_IF([posix_threads], [stub], [
+  AC_DEFINE([HAVE_PTHREAD_STUBS], [1], [Define if platform requires stubbed pthreads support])
+])
 
 # Check for enable-ipv6
 AH_TEMPLATE(ENABLE_IPV6, [Define if --enable-ipv6 is specified])
@@ -4657,7 +4675,7 @@ AC_CHECK_FUNCS([ \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
   gai_strerror getegid getentropy geteuid getgid getgrgid getgrgid_r \
-  getgrnam_r getgrouplist getgroups getitimer getloadavg getlogin \
+  getgrnam_r getgrouplist getgroups gethostname getitimer getloadavg getlogin \
   getpeername getpgid getpid getppid getpriority _getpty \
   getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid getspent \
   getspnam getuid getwd if_nameindex initgroups kill killpg lchown linkat \
@@ -4830,7 +4848,7 @@ PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
   AC_DEFINE([HAVE_ZLIB_COPY], [1])
 ], [
   WITH_SAVE_ENV([
-    CPPFLAGS="$CFLAGS $ZLIB_CFLAGS"
+    CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
     LDFLAGS="$LDFLAGS $ZLIB_LIBS"
     AC_CHECK_HEADERS([zlib.h], [
       PY_CHECK_LIB([z], [gzread], [have_zlib=yes], [have_zlib=no])
@@ -4854,7 +4872,7 @@ PY_CHECK_EMSCRIPTEN_PORT([BZIP2], [-sUSE_BZIP2])
 
 PKG_CHECK_MODULES([BZIP2], [bzip2], [have_bzip2=yes], [
   WITH_SAVE_ENV([
-    CPPFLAGS="$CFLAGS $BZIP2_CFLAGS"
+    CPPFLAGS="$CPPFLAGS $BZIP2_CFLAGS"
     LDFLAGS="$LDFLAGS $BZIP2_LIBS"
     AC_CHECK_HEADERS([bzlib.h], [
       AC_CHECK_LIB([bz2], [BZ2_bzCompress], [have_bzip2=yes], [have_bzip2=no])
@@ -4868,7 +4886,7 @@ PKG_CHECK_MODULES([BZIP2], [bzip2], [have_bzip2=yes], [
 
 PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
   WITH_SAVE_ENV([
-    CPPFLAGS="$CFLAGS $LIBLZMA_CFLAGS"
+    CPPFLAGS="$CPPFLAGS $LIBLZMA_CFLAGS"
     LDFLAGS="$LDFLAGS $LIBLZMA_LIBS"
     AC_CHECK_HEADERS([lzma.h], [
       AC_CHECK_LIB([lzma], [lzma_easy_encoder], [have_liblzma=yes], [have_liblzma=no])
@@ -4880,21 +4898,39 @@ PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
   ])
 ])
 
-PY_CHECK_FUNC([hstrerror], [#include <netdb.h>])
+dnl PY_CHECK_NETDB_FUNC(FUNCTION)
+AC_DEFUN([PY_CHECK_NETDB_FUNC], [PY_CHECK_FUNC([$1], [#include <netdb.h>])])
 
-PY_CHECK_FUNC([inet_aton], [
+PY_CHECK_NETDB_FUNC([hstrerror])
+dnl not available in WASI yet
+PY_CHECK_NETDB_FUNC([getservbyname])
+PY_CHECK_NETDB_FUNC([getservbyport])
+PY_CHECK_NETDB_FUNC([gethostbyname])
+PY_CHECK_NETDB_FUNC([gethostbyaddr])
+PY_CHECK_NETDB_FUNC([getprotobyname])
+
+dnl PY_CHECK_SOCKET_FUNC(FUNCTION)
+AC_DEFUN([PY_CHECK_SOCKET_FUNC], [PY_CHECK_FUNC([$1], [
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-])
+])])
 
-PY_CHECK_FUNC([inet_pton], [
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-])
+PY_CHECK_SOCKET_FUNC([inet_aton])
+PY_CHECK_SOCKET_FUNC([inet_ntoa])
+PY_CHECK_SOCKET_FUNC([inet_pton])
+dnl not available in WASI yet
+PY_CHECK_SOCKET_FUNC([getpeername])
+PY_CHECK_SOCKET_FUNC([getsockname])
+PY_CHECK_SOCKET_FUNC([accept])
+PY_CHECK_SOCKET_FUNC([bind])
+PY_CHECK_SOCKET_FUNC([connect])
+PY_CHECK_SOCKET_FUNC([listen])
+PY_CHECK_SOCKET_FUNC([recvfrom])
+PY_CHECK_SOCKET_FUNC([sendto])
+PY_CHECK_SOCKET_FUNC([setsockopt])
+PY_CHECK_SOCKET_FUNC([socket])
 
 # On some systems, setgroups is in unistd.h, on others, in grp.h
 PY_CHECK_FUNC([setgroups], [
@@ -4960,7 +4996,7 @@ PKG_CHECK_MODULES([LIBCRYPT], [libxcrypt >= 3.1.1], [
 ])
 
 WITH_SAVE_ENV([
-  CPPFLAGS="$LIBCRYPT_CFLAGS $CFLAGS"
+  CPPFLAGS="$CPPFLAGS $LIBCRYPT_CFLAGS"
   LIBS="$LIBCRYPT_LIBS $LIBS"
   AC_CACHE_CHECK([for crypt or crypt_r], [ac_cv_crypt_crypt], [
     AC_LINK_IFELSE([AC_LANG_PROGRAM([
@@ -5845,7 +5881,7 @@ AS_VAR_IF([with_readline], [readline], [
     READLINE_LIBS=$LIBREADLINE_LIBS
   ], [
     WITH_SAVE_ENV([
-      CPPFLAGS="$CFLAGS $LIBREADLINE_CFLAGS"
+      CPPFLAGS="$CPPFLAGS $LIBREADLINE_CFLAGS"
       LDFLAGS="$LDFLAGS $LIBREADLINE_LIBS"
       AC_CHECK_HEADERS([readline/readline.h], [
         AC_CHECK_LIB([readline], [readline], [
@@ -5866,7 +5902,7 @@ AS_VAR_IF([with_readline], [edit], [
     READLINE_LIBS=$LIBEDIT_LIBS
   ], [
     WITH_SAVE_ENV([
-      CPPFLAGS="$CFLAGS $LIBEDIT_CFLAGS"
+      CPPFLAGS="$CPPFLAGS $LIBEDIT_CFLAGS"
       LDFLAGS="$LDFLAGS $LIBEDIT_LIBS"
       AC_CHECK_HEADERS([editline/readline.h], [
         AC_CHECK_LIB([edit], [readline], [
@@ -5890,7 +5926,7 @@ AS_VAR_IF([with_readline], [no], [
   AC_MSG_RESULT([$with_readline (CFLAGS: $READLINE_CFLAGS, LIBS: $READLINE_LIBS)])
 
   WITH_SAVE_ENV([
-    CPPFLAGS="$READLINE_CFLAGS $CFLAGS"
+    CPPFLAGS="$CPPFLAGS $READLINE_CFLAGS"
     LIBS="$READLINE_LIBS $LIBS"
     LIBS_SAVE=$LIBS
 

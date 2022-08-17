@@ -28,6 +28,8 @@
 This module provides the basic infrastructure for writing asynchronous  socket
 service clients and servers.
 
+.. include:: ../includes/wasm-notavail.rst
+
 There are only two ways to have a program on a single processor do  "more than
 one thing at a time." Multi-threaded programming is the  simplest and most
 popular way to do it, but there is another very different technique, that lets

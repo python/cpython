@@ -108,6 +108,7 @@ class TestSpecifics(unittest.TestCase):
         exec('z = a', g, d)
         self.assertEqual(d['z'], 12)
 
+    @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_extended_arg(self):
         # default: 1000 * 2.5 = 2500 repetitions
         repeat = int(sys.getrecursionlimit() * 2.5)
@@ -542,6 +543,7 @@ if 1:
         self.assertIn(b"Non-UTF-8", res.err)
 
     @support.cpython_only
+    @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_compiler_recursion_limit(self):
         # Expected limit is sys.getrecursionlimit() * the scaling factor
         # in symtable.c (currently 3)
@@ -613,7 +615,7 @@ if 1:
             exec(code, ns)
             f1 = ns['f1']
             f2 = ns['f2']
-            self.assertIs(f1.__code__, f2.__code__)
+            self.assertIs(f1.__code__.co_consts, f2.__code__.co_consts)
             self.check_constant(f1, const)
             self.assertEqual(repr(f1()), repr(const))
 
@@ -626,7 +628,7 @@ if 1:
         # Note: "lambda: ..." emits "LOAD_CONST Ellipsis",
         # whereas "lambda: Ellipsis" emits "LOAD_GLOBAL Ellipsis"
         f1, f2 = lambda: ..., lambda: ...
-        self.assertIs(f1.__code__, f2.__code__)
+        self.assertIs(f1.__code__.co_consts, f2.__code__.co_consts)
         self.check_constant(f1, Ellipsis)
         self.assertEqual(repr(f1()), repr(Ellipsis))
 
@@ -641,7 +643,7 @@ if 1:
         # {0} is converted to a constant frozenset({0}) by the peephole
         # optimizer
         f1, f2 = lambda x: x in {0}, lambda x: x in {0}
-        self.assertIs(f1.__code__, f2.__code__)
+        self.assertIs(f1.__code__.co_consts, f2.__code__.co_consts)
         self.check_constant(f1, frozenset({0}))
         self.assertTrue(f1(0))
 
@@ -1299,6 +1301,27 @@ f(
             self.assertIsNotNone(column)
             self.assertIsNotNone(end_column)
             self.assertLessEqual((line, column), (end_line, end_column))
+
+    @support.cpython_only
+    def test_column_offset_deduplication(self):
+        # GH-95150: Code with different column offsets shouldn't be merged!
+        for source in [
+            "lambda: a",
+            "(a for b in c)",
+            "[a for b in c]",
+            "{a for b in c}",
+            "{a: b for c in d}",
+        ]:
+            with self.subTest(source):
+                code = compile(f"{source}, {source}", "<test>", "eval")
+                self.assertEqual(len(code.co_consts), 2)
+                self.assertIsInstance(code.co_consts[0], types.CodeType)
+                self.assertIsInstance(code.co_consts[1], types.CodeType)
+                self.assertNotEqual(code.co_consts[0], code.co_consts[1])
+                self.assertNotEqual(
+                    list(code.co_consts[0].co_positions()),
+                    list(code.co_consts[1].co_positions()),
+                )
 
 
 class TestExpressionStackSize(unittest.TestCase):
