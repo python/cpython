@@ -1714,7 +1714,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     } \
     assert(_PyInterpreterFrame_LASTI(frame) >= -1); \
     /* Jump back to the last instruction executed... */ \
-    next_instr = frame->prev_instr + 1; \
+    if (frame->prev_instr >= first_instr) \
+        next_instr = frame->prev_instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[_Py_OPCODE(*frame->prev_instr)]]; \
+    else \
+        next_instr = first_instr; \
     stack_pointer = _PyFrame_GetStackPointer(frame); \
     /* Set stackdepth to -1. \
         Update when returning or calling trace function. \
@@ -2273,8 +2276,8 @@ handle_eval_breaker:
                 new_frame->localsplus[i] = NULL;
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
             frame->prev_instr = next_instr - 1;
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
             CALL_STAT_INC(inlined_py_calls);
@@ -4758,8 +4761,8 @@ handle_eval_breaker:
                     goto error;
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                JUMPBY(INLINE_CACHE_ENTRIES_CALL);
                 frame->prev_instr = next_instr - 1;
+                JUMPBY(INLINE_CACHE_ENTRIES_CALL);
                 new_frame->previous = frame;
                 cframe.current_frame = frame = new_frame;
                 CALL_STAT_INC(inlined_py_calls);
@@ -4865,8 +4868,8 @@ handle_eval_breaker:
             }
             STACK_SHRINK(2-is_meth);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             frame->prev_instr = next_instr - 1;
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
             goto start_frame;
@@ -4907,8 +4910,8 @@ handle_eval_breaker:
             }
             STACK_SHRINK(2-is_meth);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             frame->prev_instr = next_instr - 1;
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
             goto start_frame;
