@@ -6786,6 +6786,7 @@ type_ready_managed_dict(PyTypeObject *type)
             return -1;
         }
     }
+    return 0;
 }
 
 static int
