@@ -111,7 +111,6 @@ Modules/_dbmmodule.c
 Modules/cjkcodecs/_codecs_*.c
 Modules/expat/xmlrole.c
 Modules/expat/xmlparse.c
-Python/initconfig.c
 ''')
 
 INCL_DIRS = clean_lines('''
