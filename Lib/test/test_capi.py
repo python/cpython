@@ -677,21 +677,43 @@ class CAPITest(unittest.TestCase):
 
     def test_multiple_inheritance_ctypes_with_weakref_or_dict(self):
 
-        class Both1(_testcapi.HeapCTypeWithWeakref, _testcapi.HeapCTypeWithDict):
+        with self.assertRaises(TypeError):
+            class Both1(_testcapi.HeapCTypeWithWeakref, _testcapi.HeapCTypeWithDict):
+                pass
+        with self.assertRaises(TypeError):
+            class Both2(_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithWeakref):
+                pass
+
+    def test_multiple_inheritance_ctypes_with_weakref_or_dict_and_other_builtin(self):
+
+        with self.assertRaises(TypeError):
+            class C1(_testcapi.HeapCTypeWithDict, list):
+                pass
+
+        with self.assertRaises(TypeError):
+            class C2(_testcapi.HeapCTypeWithWeakref, list):
+                pass
+
+        class C3(_testcapi.HeapCTypeWithManagedDict, list):
             pass
-        class Both2(_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithWeakref):
+        class C4(_testcapi.HeapCTypeWithManagedWeakref, list):
             pass
 
-        for cls in (_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithDict2,
-            _testcapi.HeapCTypeWithWeakref, _testcapi.HeapCTypeWithWeakref2):
-            for cls2 in (_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithDict2,
-                _testcapi.HeapCTypeWithWeakref, _testcapi.HeapCTypeWithWeakref2):
-                if cls is not cls2:
-                    class S(cls, cls2):
-                        pass
-            class B1(Both1, cls):
+        inst = C3()
+        inst.append(0)
+        str(inst.__dict__)
+
+        inst = C4()
+        inst.append(0)
+        str(inst.__weakref__)
+
+        for cls in (_testcapi.HeapCTypeWithManagedDict, _testcapi.HeapCTypeWithManagedWeakref):
+            for cls2 in (_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithWeakref):
+                class S(cls, cls2):
+                    pass
+            class B1(C3, cls):
                 pass
-            class B2(Both1, cls):
+            class B2(C4, cls):
                 pass
 
     def test_pytype_fromspec_with_repeated_slots(self):
