@@ -1234,13 +1234,15 @@ stack_effect(int opcode, int oparg, int jump)
             return 0;
         case END_ASYNC_FOR:
             return -2;
+        case END_THROW:
+            return -2;
         case FORMAT_VALUE:
             /* If there's a fmt_spec on the stack, we go from 2->1,
                else 1->1. */
             return (oparg & FVS_MASK) == FVS_HAVE_SPEC ? -1 : 0;
         case LOAD_METHOD:
             return 1;
-        case LOAD_EXCEPTION_TYPE:
+        case LOAD_ASSERTION_ERROR:
             return 1;
         case LIST_TO_TUPLE:
             return 0;
@@ -1948,7 +1950,6 @@ compiler_add_yield_from(struct compiler *c, int await)
 {
     NEW_JUMP_TARGET_LABEL(c, send);
     NEW_JUMP_TARGET_LABEL(c, fail);
-    NEW_JUMP_TARGET_LABEL(c, stop);
     NEW_JUMP_TARGET_LABEL(c, exit);
 
     USE_LABEL(c, send);
@@ -1964,17 +1965,7 @@ compiler_add_yield_from(struct compiler *c, int await)
     ADDOP_JUMP(c, JUMP_NO_INTERRUPT, send);
 
     USE_LABEL(c, fail);
-    ADDOP_I(c, LOAD_EXCEPTION_TYPE, 1);  // StopIteration
-    ADDOP(c, CHECK_EXC_MATCH);
-    ADDOP_JUMP(c, POP_JUMP_IF_TRUE, stop);
-    ADDOP_I(c, RERAISE, 0);
-
-    USE_LABEL(c, stop);
-    // StopIteration was raised. Push the value and break out of the loop:
-    ADDOP_NAME(c, LOAD_ATTR, &_Py_ID(value), names);
-    ADDOP_I(c, SWAP, 3);
-    ADDOP(c, POP_TOP);  // The thing we're yielding from.
-    ADDOP(c, POP_TOP);  // The last sent value.
+    ADDOP(c, END_THROW);
 
     USE_LABEL(c, exit);
     return 1;
@@ -3941,7 +3932,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
     NEW_JUMP_TARGET_LABEL(c, end);
     if (!compiler_jump_if(c, s->v.Assert.test, end, 1))
         return 0;
-    ADDOP_I(c, LOAD_EXCEPTION_TYPE, 0);  // AssertionError
+    ADDOP(c, LOAD_ASSERTION_ERROR);
     if (s->v.Assert.msg) {
         VISIT(c, expr, s->v.Assert.msg);
         ADDOP_I(c, CALL, 0);

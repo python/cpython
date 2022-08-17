@@ -427,14 +427,13 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 }
                 case LOAD_ATTR:
                 {
-                    assert(top_of_stack(next_stack) == Object ||
-                           top_of_stack(next_stack) == Except);
+                    assert(top_of_stack(next_stack) == Object);
                     int j = get_arg(code, i);
-                    next_stack = pop_value(next_stack);
                     if (j & 1) {
+                        next_stack = pop_value(next_stack);
                         next_stack = push_value(next_stack, Null);
+                        next_stack = push_value(next_stack, Object);
                     }
-                    next_stack = push_value(next_stack, Object);
                     stacks[i+1] = next_stack;
                     break;
                 }

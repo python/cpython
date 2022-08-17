@@ -166,7 +166,7 @@ def bug1333982(x=[]):
 dis_bug1333982 = """\
 %3d        RESUME                   0
 
-%3d        LOAD_EXCEPTION_TYPE      0 (AssertionError)
+%3d        LOAD_ASSERTION_ERROR
            LOAD_CONST               2 (<code object <listcomp> at 0x..., file "%s", line %d>)
            MAKE_FUNCTION            0
            LOAD_FAST                0 (x)
@@ -507,47 +507,26 @@ dis_asyncwith = """\
            LOAD_CONST               0 (None)
            RETURN_VALUE
 
-%3d     >> LOAD_EXCEPTION_TYPE      1 (StopIteration)
-           CHECK_EXC_MATCH
-           POP_JUMP_FORWARD_IF_TRUE     1 (to 74)
-           RERAISE                  0
-        >> LOAD_ATTR                0 (value)
-           SWAP                     3
-           POP_TOP
-           POP_TOP
-           JUMP_BACKWARD           40 (to 22)
-        >> LOAD_EXCEPTION_TYPE      1 (StopIteration)
-           CHECK_EXC_MATCH
-           POP_JUMP_FORWARD_IF_TRUE     1 (to 110)
-           RERAISE                  0
-        >> LOAD_ATTR                0 (value)
-           SWAP                     3
-           POP_TOP
-           POP_TOP
-           JUMP_BACKWARD           41 (to 56)
+%3d     >> END_THROW
+           JUMP_BACKWARD           24 (to 22)
+        >> END_THROW
+           JUMP_BACKWARD            9 (to 56)
         >> PUSH_EXC_INFO
            WITH_EXCEPT_START
            GET_AWAITABLE            2
            LOAD_CONST               0 (None)
-        >> SEND                    20 (to 188)
+        >> SEND                     4 (to 92)
            YIELD_VALUE              6
            RESUME                   3
-           JUMP_BACKWARD_NO_INTERRUPT     4 (to 146)
-        >> LOAD_EXCEPTION_TYPE      1 (StopIteration)
-           CHECK_EXC_MATCH
-           POP_JUMP_FORWARD_IF_TRUE     1 (to 162)
-           RERAISE                  0
-        >> LOAD_ATTR                0 (value)
-           SWAP                     3
-           POP_TOP
-           POP_TOP
-        >> POP_JUMP_FORWARD_IF_TRUE     1 (to 192)
+           JUMP_BACKWARD_NO_INTERRUPT     4 (to 82)
+        >> END_THROW
+        >> POP_JUMP_FORWARD_IF_TRUE     1 (to 96)
            RERAISE                  2
         >> POP_TOP
            POP_EXCEPT
            POP_TOP
            POP_TOP
-           JUMP_BACKWARD           72 (to 58)
+           JUMP_BACKWARD           24 (to 58)
         >> COPY                     3
            POP_EXCEPT
            RERAISE                  1
@@ -1376,9 +1355,8 @@ Constants:
    0: None
    1: 1
 Names:
-   0: value
-   1: b
-   2: c
+   0: b
+   1: c
 Variable names:
    0: a
    1: d"""

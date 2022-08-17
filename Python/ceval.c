@@ -2749,9 +2749,28 @@ handle_eval_breaker:
             }
         }
 
-        TARGET(LOAD_EXCEPTION_TYPE) {
-            assert(oparg < 2);
-            PyObject *value = oparg ? PyExc_StopIteration : PyExc_AssertionError;
+        TARGET(END_THROW) {
+            assert(throwflag);
+            PyObject *exc_value = TOP();
+            assert(exc_value && PyExceptionInstance_Check(exc_value));
+            if (PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration)) {
+                PyObject *value = ((PyStopIterationObject *)exc_value)->value;
+                Py_INCREF(value);
+                Py_DECREF(POP());  // The StopIteration.
+                Py_DECREF(POP());  // The last sent value.
+                Py_DECREF(POP());  // The delegated sub-iterator.
+                PUSH(value);
+                DISPATCH();
+            }
+            Py_INCREF(exc_value);
+            PyObject *exc_type = Py_NewRef(Py_TYPE(exc_value));
+            PyObject *exc_traceback = PyException_GetTraceback(exc_value);
+            _PyErr_Restore(tstate, exc_type, exc_value, exc_traceback);
+            goto exception_unwind;
+        }
+
+        TARGET(LOAD_ASSERTION_ERROR) {
+            PyObject *value = PyExc_AssertionError;
             Py_INCREF(value);
             PUSH(value);
             DISPATCH();

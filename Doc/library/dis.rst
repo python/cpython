@@ -567,6 +567,17 @@ the original TOS1.
     .. versionchanged:: 3.11
        Exception representation on the stack now consist of one, not three, items.
 
+
+.. opcode:: END_THROW
+
+   Handles an exception raised during a :meth:`~generator.throw` or
+   :meth:`~generator.close` call through the current frame.  If TOS is an
+   instance of :exc:`StopIteration`, pop three values from the stack and push
+   its ``value`` member.  Otherwise, re-raise TOS.
+
+   .. versionadded:: 3.12
+
+
 .. opcode:: BEFORE_ASYNC_WITH
 
    Resolves ``__aenter__`` and ``__aexit__`` from the object on top of the
@@ -709,14 +720,12 @@ iterations of the loop.
        Exception representation on the stack now consist of one, not three, items.
 
 
-.. opcode:: LOAD_EXCEPTION_TYPE (type)
+.. opcode:: LOAD_ASSERTION_ERROR
 
-   Pushes an exception type onto the stack, depending on the value of *type*:
+   Pushes :exc:`AssertionError` onto the stack.  Used by the :keyword:`assert`
+   statement.
 
-   * ``0``: :exc:`AssertionError`
-   * ``1``: :exc:`StopIteration`
-
-   .. versionadded:: 3.12
+   .. versionadded:: 3.9
 
 
 .. opcode:: LOAD_BUILD_CLASS
