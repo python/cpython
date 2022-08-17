@@ -6795,6 +6795,13 @@ type_ready_post_checks(PyTypeObject *type)
                         type->tp_name);
             return -1;
         }
+        if (((PyHeapTypeObject*)type)->ht_cached_keys == NULL) {
+            PyErr_Format(PyExc_SystemError,
+                        "type %s has the Py_TPFLAGS_MANAGED_DICT flag "
+                        "but ht_cached_keys is not initialized.",
+                        type->tp_name);
+            return -1;
+        }
     }
     else if (type->tp_dictoffset < (Py_ssize_t)sizeof(PyObject)) {
         if (type->tp_dictoffset + type->tp_basicsize <= 0) {
