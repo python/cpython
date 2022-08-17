@@ -338,6 +338,7 @@ _specializations = {
         "LOAD_ATTR_ADAPTIVE",
         # These potentially push [NULL, bound method] onto the stack.
         "LOAD_ATTR_CLASS",
+        "LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN",
         "LOAD_ATTR_INSTANCE_VALUE",
         "LOAD_ATTR_MODULE",
         "LOAD_ATTR_PROPERTY",
