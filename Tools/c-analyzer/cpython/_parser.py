@@ -294,6 +294,7 @@ SAME = [
 ]
 
 MAX_SIZES = {
+    # GLOB: (MAXTEXT, MAXLINES),
     _abs('Include/**/*.h'): (5_000, 500),
     _abs('Modules/_ctypes/ctypes.h'): (5_000, 500),
     _abs('Modules/_datetimemodule.c'): (20_000, 300),
