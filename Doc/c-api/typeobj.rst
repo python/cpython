@@ -1139,7 +1139,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
        This bit indicates that instances of the class have a ``__dict___``
        attribute, and that the space for the dictionary is managed by the VM.
 
-       If this flag is set, `:const:`Py_TPFLAGS_HAVE_GC` should also be set.
+       If this flag is set, :const:`Py_TPFLAGS_HAVE_GC` should also be set.
 
        .. versionadded:: 3.12
 
