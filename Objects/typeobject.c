@@ -2330,36 +2330,13 @@ best_base(PyObject *bases)
     return base;
 }
 
-#define ADDED_FIELD_AT_OFFSET(name, offset) \
-    (type->tp_ ## name  && (base->tp_ ##name == 0) && \
-    type->tp_ ## name + sizeof(PyObject *) == (offset) && \
-    type->tp_flags & Py_TPFLAGS_HEAPTYPE)
-
 static int
-extra_ivars(PyTypeObject *type, PyTypeObject *base)
+shape_differs(PyTypeObject *t1, PyTypeObject *t2)
 {
-    size_t t_size = type->tp_basicsize;
-    size_t b_size = base->tp_basicsize;
-
-    assert(t_size >= b_size); /* Else type smaller than base! */
-    if (type->tp_itemsize || base->tp_itemsize) {
-        /* If itemsize is involved, stricter rules */
-        return t_size != b_size ||
-            type->tp_itemsize != base->tp_itemsize;
-    }
-    /* Check for __dict__ and __weakrefs__ slots in either order */
-    if (ADDED_FIELD_AT_OFFSET(weaklistoffset, t_size)) {
-        t_size -= sizeof(PyObject *);
-    }
-    if ((type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0 &&
-        ADDED_FIELD_AT_OFFSET(dictoffset, t_size)) {
-        t_size -= sizeof(PyObject *);
-    }
-    /* Check __weakrefs__ again, in case it precedes __dict__ */
-    if (ADDED_FIELD_AT_OFFSET(weaklistoffset, t_size)) {
-        t_size -= sizeof(PyObject *);
-    }
-    return t_size != b_size;
+    return (
+        t1->tp_basicsize != t2->tp_basicsize ||
+        t1->tp_itemsize != t2->tp_itemsize
+    );
 }
 
 static PyTypeObject *
@@ -2367,14 +2344,18 @@ solid_base(PyTypeObject *type)
 {
     PyTypeObject *base;
 
-    if (type->tp_base)
+    if (type->tp_base) {
         base = solid_base(type->tp_base);
-    else
+    }
+    else {
         base = &PyBaseObject_Type;
-    if (extra_ivars(type, base))
+    }
+    if (shape_differs(type, base)) {
         return type;
-    else
+    }
+    else {
         return base;
+    }
 }
 
 static void object_dealloc(PyObject *);
