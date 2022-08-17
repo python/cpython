@@ -18,7 +18,7 @@ Objects/codeobject.c          @markshannon
 Objects/frameobject.c         @markshannon
 Objects/call.c                @markshannon
 Python/ceval.c                @markshannon
-Python/compile.c              @markshannon
+Python/compile.c              @markshannon @iritkatriel
 Python/ast_opt.c              @isidentical
 Lib/test/test_patma.py        @brandtbucher
 Lib/test/test_peepholer.py    @brandtbucher
@@ -29,7 +29,6 @@ Lib/test/test_except*.py      @iritkatriel
 Lib/test/test_traceback.py    @iritkatriel
 Objects/exceptions.c          @iritkatriel
 Python/traceback.c            @iritkatriel
-Python/pythonrun.c            @iritkatriel
 
 # Hashing
 **/*hashlib*                  @tiran

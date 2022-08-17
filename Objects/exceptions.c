@@ -1106,6 +1106,7 @@ exceptiongroup_split_recursive(PyObject *exc,
             assert(PyList_CheckExact(match_list));
             if (PyList_Append(match_list, rec_result.match) < 0) {
                 Py_DECREF(rec_result.match);
+                Py_XDECREF(rec_result.rest);
                 goto done;
             }
             Py_DECREF(rec_result.match);
@@ -3634,6 +3635,11 @@ _PyExc_InitState(PyInterpreterState *interp)
     ADD_ERRNO(InterruptedError, EINTR);
     ADD_ERRNO(PermissionError, EACCES);
     ADD_ERRNO(PermissionError, EPERM);
+#ifdef ENOTCAPABLE
+    // Extension for WASI capability-based security. Process lacks
+    // capability to access a resource.
+    ADD_ERRNO(PermissionError, ENOTCAPABLE);
+#endif
     ADD_ERRNO(ProcessLookupError, ESRCH);
     ADD_ERRNO(TimeoutError, ETIMEDOUT);
 

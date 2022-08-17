@@ -1287,7 +1287,7 @@ class SizeofTest(unittest.TestCase):
             def __sizeof__(self):
                 return int(self)
         self.assertEqual(sys.getsizeof(OverflowSizeof(sys.maxsize)),
-                         sys.maxsize + self.gc_headsize)
+                         sys.maxsize + self.gc_headsize*2)
         with self.assertRaises(OverflowError):
             sys.getsizeof(OverflowSizeof(sys.maxsize + 1))
         with self.assertRaises(ValueError):
@@ -1507,7 +1507,7 @@ class SizeofTest(unittest.TestCase):
         check((1,2,3), vsize('') + 3*self.P)
         # type
         # static type: PyTypeObject
-        fmt = 'P2nPI13Pl4Pn9Pn12PIPI'
+        fmt = 'P2nPI13Pl4Pn9Pn12PIP'
         s = vsize('2P' + fmt)
         check(int, s)
         # class

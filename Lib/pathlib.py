@@ -61,41 +61,16 @@ class _Flavour(object):
         self.join = self.sep.join
 
     def parse_parts(self, parts):
-        parsed = []
+        if not parts:
+            return '', '', []
         sep = self.sep
         altsep = self.altsep
-        drv = root = ''
-        it = reversed(parts)
-        for part in it:
-            if not part:
-                continue
-            if altsep:
-                part = part.replace(altsep, sep)
-            drv, root, rel = self.splitroot(part)
-            if sep in rel:
-                for x in reversed(rel.split(sep)):
-                    if x and x != '.':
-                        parsed.append(sys.intern(x))
-            else:
-                if rel and rel != '.':
-                    parsed.append(sys.intern(rel))
-            if drv or root:
-                if not drv:
-                    # If no drive is present, try to find one in the previous
-                    # parts. This makes the result of parsing e.g.
-                    # ("C:", "/", "a") reasonably intuitive.
-                    for part in it:
-                        if not part:
-                            continue
-                        if altsep:
-                            part = part.replace(altsep, sep)
-                        drv = self.splitroot(part)[0]
-                        if drv:
-                            break
-                break
-        if drv or root:
-            parsed.append(drv + root)
-        parsed.reverse()
+        path = self.pathmod.join(*parts)
+        if altsep:
+            path = path.replace(altsep, sep)
+        drv, root, rel = self.splitroot(path)
+        unfiltered_parsed = [drv + root] + rel.split(sep)
+        parsed = [sys.intern(x) for x in unfiltered_parsed if x and x != '.']
         return drv, root, parsed
 
     def join_parsed_parts(self, drv, root, parts, drv2, root2, parts2):
@@ -1211,23 +1186,9 @@ class Path(PurePath):
 
     def is_mount(self):
         """
-        Check if this path is a POSIX mount point
+        Check if this path is a mount point
         """
-        # Need to exist and be a dir
-        if not self.exists() or not self.is_dir():
-            return False
-
-        try:
-            parent_dev = self.parent.stat().st_dev
-        except OSError:
-            return False
-
-        dev = self.stat().st_dev
-        if dev != parent_dev:
-            return True
-        ino = self.stat().st_ino
-        parent_ino = self.parent.stat().st_ino
-        return ino == parent_ino
+        return self._flavour.pathmod.ismount(self)
 
     def is_symlink(self):
         """
@@ -1378,6 +1339,3 @@ class WindowsPath(Path, PureWindowsPath):
     On a Windows system, instantiating a Path should return this object.
     """
     __slots__ = ()
-
-    def is_mount(self):
-        raise NotImplementedError("Path.is_mount() is unsupported on this system")

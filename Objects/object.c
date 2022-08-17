@@ -1054,18 +1054,17 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 }
 
 PyObject **
-_PyObject_DictPointer(PyObject *obj)
+_PyObject_ComputedDictPointer(PyObject *obj)
 {
     Py_ssize_t dictoffset;
     PyTypeObject *tp = Py_TYPE(obj);
 
-    if (tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        return _PyObject_ManagedDictPointer(obj);
-    }
+    assert((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
     dictoffset = tp->tp_dictoffset;
     if (dictoffset == 0)
         return NULL;
     if (dictoffset < 0) {
+        assert(dictoffset != -1);
         Py_ssize_t tsize = Py_SIZE(obj);
         if (tsize < 0) {
             tsize = -tsize;
@@ -1081,27 +1080,27 @@ _PyObject_DictPointer(PyObject *obj)
 
 /* Helper to get a pointer to an object's __dict__ slot, if any.
  * Creates the dict from inline attributes if necessary.
- * Does not set an exception. */
+ * Does not set an exception.
+ *
+ * Note that the tp_dictoffset docs used to recommend this function,
+ * so it should be treated as part of the public API.
+ */
 PyObject **
 _PyObject_GetDictPtr(PyObject *obj)
 {
     if ((Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
-        return _PyObject_DictPointer(obj);
+        return _PyObject_ComputedDictPointer(obj);
     }
-    PyObject **dict_ptr = _PyObject_ManagedDictPointer(obj);
-    PyDictValues **values_ptr = _PyObject_ValuesPointer(obj);
-    if (*values_ptr == NULL) {
-        return dict_ptr;
+    PyDictOrValues *dorv_ptr = _PyObject_DictOrValuesPointer(obj);
+    if (_PyDictOrValues_IsValues(*dorv_ptr)) {
+        PyObject *dict = _PyObject_MakeDictFromInstanceAttributes(obj, _PyDictOrValues_GetValues(*dorv_ptr));
+        if (dict == NULL) {
+            PyErr_Clear();
+            return NULL;
+        }
+        dorv_ptr->dict = dict;
     }
-    assert(*dict_ptr == NULL);
-    PyObject *dict = _PyObject_MakeDictFromInstanceAttributes(obj, *values_ptr);
-    if (dict == NULL) {
-        PyErr_Clear();
-        return NULL;
-    }
-    *values_ptr = NULL;
-    *dict_ptr = dict;
-    return dict_ptr;
+    return &dorv_ptr->dict;
 }
 
 PyObject *
@@ -1170,36 +1169,46 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
             }
         }
     }
-    PyDictValues *values;
-    if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) &&
-        (values = *_PyObject_ValuesPointer(obj)))
-    {
-        assert(*_PyObject_DictPointer(obj) == NULL);
-        PyObject *attr = _PyObject_GetInstanceAttribute(obj, values, name);
-        if (attr != NULL) {
-            *method = attr;
-            Py_XDECREF(descr);
-            return 0;
+    PyObject *dict;
+    if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
+        PyDictOrValues* dorv_ptr = _PyObject_DictOrValuesPointer(obj);
+        if (_PyDictOrValues_IsValues(*dorv_ptr)) {
+            PyDictValues *values = _PyDictOrValues_GetValues(*dorv_ptr);
+            PyObject *attr = _PyObject_GetInstanceAttribute(obj, values, name);
+            if (attr != NULL) {
+                *method = attr;
+                Py_XDECREF(descr);
+                return 0;
+            }
+            dict = NULL;
+        }
+        else {
+            dict = dorv_ptr->dict;
         }
     }
     else {
-        PyObject **dictptr = _PyObject_DictPointer(obj);
-        PyObject *dict;
-        if (dictptr != NULL && (dict = *dictptr) != NULL) {
-            Py_INCREF(dict);
-            PyObject *attr = PyDict_GetItemWithError(dict, name);
-            if (attr != NULL) {
-                *method = Py_NewRef(attr);
-                Py_DECREF(dict);
-                Py_XDECREF(descr);
-                return 0;
-            }
+        PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
+        if (dictptr != NULL) {
+            dict = *dictptr;
+        }
+        else {
+            dict = NULL;
+        }
+    }
+    if (dict != NULL) {
+        Py_INCREF(dict);
+        PyObject *attr = PyDict_GetItemWithError(dict, name);
+        if (attr != NULL) {
+            *method = Py_NewRef(attr);
             Py_DECREF(dict);
+            Py_XDECREF(descr);
+            return 0;
+        }
+        Py_DECREF(dict);
 
-            if (PyErr_Occurred()) {
-                Py_XDECREF(descr);
-                return 0;
-            }
+        if (PyErr_Occurred()) {
+            Py_XDECREF(descr);
+            return 0;
         }
     }
 
@@ -1243,7 +1252,6 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     PyObject *descr = NULL;
     PyObject *res = NULL;
     descrgetfunc f;
-    PyObject **dictptr;
 
     if (!PyUnicode_Check(name)){
         PyErr_Format(PyExc_TypeError,
@@ -1274,30 +1282,31 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
         }
     }
     if (dict == NULL) {
-        if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) &&
-            *_PyObject_ValuesPointer(obj))
-        {
-            PyDictValues **values_ptr = _PyObject_ValuesPointer(obj);
-            if (PyUnicode_CheckExact(name)) {
-                assert(*_PyObject_DictPointer(obj) == NULL);
-                res = _PyObject_GetInstanceAttribute(obj, *values_ptr, name);
-                if (res != NULL) {
-                    goto done;
+        if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
+            PyDictOrValues* dorv_ptr = _PyObject_DictOrValuesPointer(obj);
+            if (_PyDictOrValues_IsValues(*dorv_ptr)) {
+                PyDictValues *values = _PyDictOrValues_GetValues(*dorv_ptr);
+                if (PyUnicode_CheckExact(name)) {
+                    res = _PyObject_GetInstanceAttribute(obj, values, name);
+                    if (res != NULL) {
+                        goto done;
+                    }
+                }
+                else {
+                    dict = _PyObject_MakeDictFromInstanceAttributes(obj, values);
+                    if (dict == NULL) {
+                        res = NULL;
+                        goto done;
+                    }
+                    dorv_ptr->dict = dict;
                 }
             }
             else {
-                dictptr = _PyObject_DictPointer(obj);
-                assert(dictptr != NULL && *dictptr == NULL);
-                *dictptr = dict = _PyObject_MakeDictFromInstanceAttributes(obj, *values_ptr);
-                if (dict == NULL) {
-                    res = NULL;
-                    goto done;
-                }
-                *values_ptr = NULL;
+                dict = _PyDictOrValues_GetDict(*dorv_ptr);
             }
         }
         else {
-            dictptr = _PyObject_DictPointer(obj);
+            PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
             if (dictptr) {
                 dict = *dictptr;
             }
@@ -1389,27 +1398,34 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     }
 
     if (dict == NULL) {
-        if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) && *_PyObject_ValuesPointer(obj)) {
-            res = _PyObject_StoreInstanceAttribute(obj, *_PyObject_ValuesPointer(obj), name, value);
+        PyObject **dictptr;
+        if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
+            PyDictOrValues *dorv_ptr = _PyObject_DictOrValuesPointer(obj);
+            if (_PyDictOrValues_IsValues(*dorv_ptr)) {
+                res = _PyObject_StoreInstanceAttribute(
+                    obj, _PyDictOrValues_GetValues(*dorv_ptr), name, value);
+                goto error_check;
+            }
+            dictptr = &dorv_ptr->dict;
         }
         else {
-            PyObject **dictptr = _PyObject_DictPointer(obj);
-            if (dictptr == NULL) {
-                if (descr == NULL) {
-                    PyErr_Format(PyExc_AttributeError,
-                                "'%.100s' object has no attribute '%U'",
-                                tp->tp_name, name);
-                }
-                else {
-                    PyErr_Format(PyExc_AttributeError,
-                                "'%.50s' object attribute '%U' is read-only",
-                                tp->tp_name, name);
-                }
-                goto done;
+            dictptr = _PyObject_ComputedDictPointer(obj);
+        }
+        if (dictptr == NULL) {
+            if (descr == NULL) {
+                PyErr_Format(PyExc_AttributeError,
+                            "'%.100s' object has no attribute '%U'",
+                            tp->tp_name, name);
             }
             else {
-                res = _PyObjectDict_SetItem(tp, dictptr, name, value);
+                PyErr_Format(PyExc_AttributeError,
+                            "'%.50s' object attribute '%U' is read-only",
+                            tp->tp_name, name);
             }
+            goto done;
+        }
+        else {
+            res = _PyObjectDict_SetItem(tp, dictptr, name, value);
         }
     }
     else {
@@ -1420,6 +1436,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
             res = PyDict_SetItem(dict, name, value);
         Py_DECREF(dict);
     }
+  error_check:
     if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError)) {
         if (PyType_IsSubtype(tp, &PyType_Type)) {
             PyErr_Format(PyExc_AttributeError,
@@ -1451,7 +1468,7 @@ PyObject_GenericSetDict(PyObject *obj, PyObject *value, void *context)
     PyObject **dictptr = _PyObject_GetDictPtr(obj);
     if (dictptr == NULL) {
         if (_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_MANAGED_DICT) &&
-            *_PyObject_ValuesPointer(obj) != NULL)
+            _PyDictOrValues_IsValues(*_PyObject_DictOrValuesPointer(obj)))
         {
             /* Was unable to convert to dict */
             PyErr_NoMemory();

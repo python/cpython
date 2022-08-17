@@ -266,7 +266,7 @@ The following function generates a discrete distribution.
 .. function:: binomialvariate(n=1, p=0.5)
 
    `Binomial distribution
-   <http://mathworld.wolfram.com/BinomialDistribution.html>`_.
+   <https://mathworld.wolfram.com/BinomialDistribution.html>`_.
    Return the number of successes for *n* independent trials with the
    probability of success in each trial being *p*:
 
@@ -494,7 +494,7 @@ Example of `statistical bootstrapping
 <https://en.wikipedia.org/wiki/Bootstrapping_(statistics)>`_ using resampling
 with replacement to estimate a confidence interval for the mean of a sample::
 
-   # http://statistics.about.com/od/Applications/a/Example-Of-Bootstrapping.htm
+   # https://www.thoughtco.com/example-of-bootstrapping-3126155
    from statistics import fmean as mean
    from random import choices
 
