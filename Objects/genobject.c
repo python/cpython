@@ -421,7 +421,7 @@ Raise exception in generator, return next yielded value or raise\n\
 StopIteration.");
 
 static PyObject *
-_gen_throw(PyGenObject *gen, int close_on_genexit,
+_gen_throw(PyGenObject *gen,
            PyObject *typ, PyObject *val, PyObject *tb)
 {
     PyObject *yf = _PyGen_yf(gen);
@@ -430,21 +430,21 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
         _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
         PyObject *ret;
         int err;
-        if (PyErr_GivenExceptionMatches(typ, PyExc_GeneratorExit) &&
-            close_on_genexit
-        ) {
+        if (PyErr_GivenExceptionMatches(typ, PyExc_GeneratorExit)) {
             /* Asynchronous generators *should not* be closed right away.
-               We have to allow some awaits to work it through, hence the
-               `close_on_genexit` parameter here.
+            We have to allow some awaits to work it through, hence the
+            `close_on_genexit` parameter here.
             */
-            PyFrameState state = gen->gi_frame_state;
-            gen->gi_frame_state = FRAME_EXECUTING;
-            err = gen_close_iter(yf);
-            gen->gi_frame_state = state;
-            Py_DECREF(yf);
-            if (err < 0)
-                return gen_send_ex(gen, Py_None, 1, 0);
-            goto throw_here;
+            if(!PyAsyncGen_CheckExact(gen)) {
+                PyFrameState state = gen->gi_frame_state;
+                gen->gi_frame_state = FRAME_EXECUTING;
+                err = gen_close_iter(yf);
+                gen->gi_frame_state = state;
+                Py_DECREF(yf);
+                if (err < 0)
+                    return gen_send_ex(gen, Py_None, 1, 0);
+                goto throw_here;
+            }
         }
         if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf)) {
             /* `yf` is a generator or a coroutine. */
@@ -461,8 +461,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
                'yield from' or awaiting on with 'await'. */
             PyFrameState state = gen->gi_frame_state;
             gen->gi_frame_state = FRAME_EXECUTING;
-            ret = _gen_throw((PyGenObject *)yf, close_on_genexit,
-                             typ, val, tb);
+            ret = _gen_throw((PyGenObject *)yf, typ, val, tb);
             gen->gi_frame_state = state;
             tstate->cframe->current_frame = prev;
             frame->previous = NULL;
@@ -586,7 +585,7 @@ gen_throw(PyGenObject *gen, PyObject *const *args, Py_ssize_t nargs)
     else if (nargs == 2) {
         val = args[1];
     }
-    return _gen_throw(gen, 1, typ, val, tb);
+    return _gen_throw(gen, typ, val, tb);
 }
 
 
@@ -2119,8 +2118,6 @@ async_gen_athrow_send(PyAsyncGenAThrow *o, PyObject *arg)
             o->agt_gen->ag_closed = 1;
 
             retval = _gen_throw((PyGenObject *)gen,
-                                0,  /* Do not close generator when
-                                       PyExc_GeneratorExit is passed */
                                 PyExc_GeneratorExit, NULL, NULL);
 
             if (retval && _PyAsyncGenWrappedValue_CheckExact(retval)) {
@@ -2138,8 +2135,6 @@ async_gen_athrow_send(PyAsyncGenAThrow *o, PyObject *arg)
             }
 
             retval = _gen_throw((PyGenObject *)gen,
-                                0,  /* Do not close generator when
-                                       PyExc_GeneratorExit is passed */
                                 typ, val, tb);
             retval = async_gen_unwrap_value(o->agt_gen, retval);
         }
