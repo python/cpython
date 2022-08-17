@@ -829,7 +829,7 @@ traceback
 ---------
 
 * Add :func:`traceback.StackSummary.format_frame_summary` to allow users
-  to configure which frames appear in the traceback, and how they are
+  to override which frames appear in the traceback, and how they are
   formatted.
   (Contributed by Ammar Askar in :issue:`44569`.)
 
