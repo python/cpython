@@ -3635,6 +3635,11 @@ _PyExc_InitState(PyInterpreterState *interp)
     ADD_ERRNO(InterruptedError, EINTR);
     ADD_ERRNO(PermissionError, EACCES);
     ADD_ERRNO(PermissionError, EPERM);
+#ifdef ENOTCAPABLE
+    // Extension for WASI capability-based security. Process lacks
+    // capability to access a resource.
+    ADD_ERRNO(PermissionError, ENOTCAPABLE);
+#endif
     ADD_ERRNO(ProcessLookupError, ESRCH);
     ADD_ERRNO(TimeoutError, ETIMEDOUT);
 

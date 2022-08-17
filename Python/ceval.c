@@ -3698,6 +3698,7 @@ handle_eval_breaker:
             DEOPT_IF(cls->tp_version_tag != type_version, LOAD_ATTR);
             assert(type_version != 0);
             PyObject *fget = read_obj(cache->descr);
+            assert(Py_IS_TYPE(fget, &PyFunction_Type));
             PyFunctionObject *f = (PyFunctionObject *)fget;
             uint32_t func_version = read_u32(cache->keys_version);
             assert(func_version != 0);
@@ -3709,10 +3710,48 @@ handle_eval_breaker:
             Py_INCREF(fget);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f);
             SET_TOP(NULL);
-            int push_null = !(oparg & 1);
-            STACK_SHRINK(push_null);
+            int shrink_stack = !(oparg & 1);
+            STACK_SHRINK(shrink_stack);
             new_frame->localsplus[0] = owner;
             for (int i = 1; i < code->co_nlocalsplus; i++) {
+                new_frame->localsplus[i] = NULL;
+            }
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
+            frame->prev_instr = next_instr - 1;
+            new_frame->previous = frame;
+            frame = cframe.current_frame = new_frame;
+            CALL_STAT_INC(inlined_py_calls);
+            goto start_frame;
+        }
+
+        TARGET(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN) {
+            assert(cframe.use_tracing == 0);
+            DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
+            _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
+            PyObject *owner = TOP();
+            PyTypeObject *cls = Py_TYPE(owner);
+            uint32_t type_version = read_u32(cache->type_version);
+            DEOPT_IF(cls->tp_version_tag != type_version, LOAD_ATTR);
+            assert(type_version != 0);
+            PyObject *getattribute = read_obj(cache->descr);
+            assert(Py_IS_TYPE(getattribute, &PyFunction_Type));
+            PyFunctionObject *f = (PyFunctionObject *)getattribute;
+            PyCodeObject *code = (PyCodeObject *)f->func_code;
+            DEOPT_IF(((PyCodeObject *)f->func_code)->co_argcount != 2, LOAD_ATTR);
+            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
+            STAT_INC(LOAD_ATTR, hit);
+
+            PyObject *name = GETITEM(names, oparg >> 1);
+            Py_INCREF(f);
+            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f);
+            SET_TOP(NULL);
+            int shrink_stack = !(oparg & 1);
+            STACK_SHRINK(shrink_stack);
+            Py_INCREF(name);
+            new_frame->localsplus[0] = owner;
+            new_frame->localsplus[1] = name;
+            for (int i = 2; i < code->co_nlocalsplus; i++) {
                 new_frame->localsplus[i] = NULL;
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);

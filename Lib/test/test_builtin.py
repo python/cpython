@@ -737,11 +737,6 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError,
                           exec, code, {'__builtins__': 123})
 
-        # no __build_class__ function
-        code = compile("class A: pass", "", "exec")
-        self.assertRaisesRegex(NameError, "__build_class__ not found",
-                               exec, code, {'__builtins__': {}})
-
         class frozendict_error(Exception):
             pass
 
@@ -757,6 +752,15 @@ class BuiltinTest(unittest.TestCase):
         code = compile("__builtins__['superglobal']=2; print(superglobal)", "test", "exec")
         self.assertRaises(frozendict_error,
                           exec, code, {'__builtins__': frozen_builtins})
+
+        # no __build_class__ function
+        code = compile("class A: pass", "", "exec")
+        self.assertRaisesRegex(NameError, "__build_class__ not found",
+                               exec, code, {'__builtins__': {}})
+        # __build_class__ in a custom __builtins__
+        exec(code, {'__builtins__': frozen_builtins})
+        self.assertRaisesRegex(NameError, "__build_class__ not found",
+                               exec, code, {'__builtins__': frozendict()})
 
         # read-only globals
         namespace = frozendict({})
