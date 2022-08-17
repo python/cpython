@@ -479,7 +479,7 @@ Accessing attributes of extension types
           {NULL}  /* Sentinel */
       };
 
-    The legacy offsets :c:member:`~PyTypeObject.tp_dictoffset` and
+   The legacy offsets :c:member:`~PyTypeObject.tp_dictoffset` and
    :c:member:`~PyTypeObject.tp_weaklistoffset` are still supported, but extensions are
    strongly encouraged to use ``Py_TPFLAGS_MANAGED_DICT`` and
    ``Py_TPFLAGS_MANAGED_WEAKREF`` instead.
