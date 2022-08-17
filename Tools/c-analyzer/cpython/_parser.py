@@ -87,7 +87,6 @@ Objects/unicodetype_db.h
 Python/deepfreeze/*.c
 Python/frozen_modules/*.h
 Python/opcode_targets.h
-Python/stdlib_module_names.h
 
 # @end=conf@
 ''')
@@ -308,6 +307,7 @@ MAX_SIZES = {
     _abs('Python/compile.c'): (20_000, 500),
     _abs('Python/pylifecycle.c'): (500_000, 5000),
     _abs('Python/pystate.c'): (500_000, 5000),
+    _abs('Python/stdlib_module_names.h'): (5_000, 500),
 }
 
 
