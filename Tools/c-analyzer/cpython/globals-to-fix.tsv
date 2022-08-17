@@ -290,7 +290,6 @@ Objects/exceptions.c	-	PyExc_EncodingWarning	-
 Objects/boolobject.c	-	_Py_FalseStruct	-
 Objects/boolobject.c	-	_Py_TrueStruct	-
 Objects/dictobject.c	-	empty_keys_struct	-
-Objects/dictobject.c	-	empty_values_struct	-
 Objects/object.c	-	_Py_NoneStruct	-
 Objects/object.c	-	_Py_NotImplementedStruct	-
 Objects/setobject.c	-	_dummy_struct	-
@@ -301,37 +300,27 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 # cached - initialized once
 
 # manually cached PyUnicodeObject
-# XXX This should have been found by the analyzer but wasn't:
 Python/ast_unparse.c	-	_str_replace_inf	-
 
 # holds strings
 Objects/typeobject.c	-	slotdefs	-
 
 # other
-Objects/typeobject.c	-	method_cache	-
 Objects/typeobject.c	object___reduce_ex___impl	objreduce	-
 Objects/unicodeobject.c	-	_string_module	-
 Objects/unicodeobject.c	-	interned	-
-Objects/unicodeobject.c	-	static_strings	-
 
 #-----------------------
 # other
 
 # initialized once
-# XXX This should have been found by the analyzer but wasn't:
 Python/context.c	-	_token_missing	-
-# XXX This should have been found by the analyzer but wasn't:
 Python/fileutils.c	-	_Py_open_cloexec_works	-
-# XXX This should have been found by the analyzer but wasn't:
 Python/hamt.c	-	_empty_bitmap_node	-
-# XXX This should have been found by the analyzer but wasn't:
 Python/hamt.c	-	_empty_hamt	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/import.c	PyImport_Import	silly_list	-
 
 # state
 Objects/typeobject.c	resolve_slotdups	pname	-
-# XXX This should have been found by the analyzer but wasn't:
 Python/import.c	-	extensions	-
 
 
@@ -347,23 +336,43 @@ Modules/getbuildinfo.c	Py_GetBuildInfo	buildinfo	-
 # during init
 Objects/typeobject.c	-	slotdefs_initialized	-
 Objects/unicodeobject.c	-	bloom_linebreak	-
-Parser/parser.c	-	Py_DebugFlag	-
 Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
 Python/bootstrap_hash.c	py_getrandom	getrandom_works	-
+Python/initconfig.c	-	Py_DebugFlag	-
+Python/initconfig.c	-	Py_UTF8Mode	-
+Python/initconfig.c	-	Py_DebugFlag	-
+Python/initconfig.c	-	Py_VerboseFlag	-
+Python/initconfig.c	-	Py_QuietFlag	-
+Python/initconfig.c	-	Py_InteractiveFlag	-
+Python/initconfig.c	-	Py_InspectFlag	-
+Python/initconfig.c	-	Py_OptimizeFlag	-
+Python/initconfig.c	-	Py_NoSiteFlag	-
+Python/initconfig.c	-	Py_BytesWarningFlag	-
+Python/initconfig.c	-	Py_FrozenFlag	-
+Python/initconfig.c	-	Py_IgnoreEnvironmentFlag	-
+Python/initconfig.c	-	Py_DontWriteBytecodeFlag	-
+Python/initconfig.c	-	Py_NoUserSiteDirectory	-
+Python/initconfig.c	-	Py_UnbufferedStdioFlag	-
+Python/initconfig.c	-	Py_HashRandomizationFlag	-
+Python/initconfig.c	-	Py_IsolatedFlag	-
+Python/initconfig.c	-	Py_LegacyWindowsFSEncodingFlag	-
+Python/initconfig.c	-	Py_LegacyWindowsStdioFlag	-
+Python/initconfig.c	-	orig_argv	-
 Python/pyhash.c	-	_Py_HashSecret	-
 Python/pylifecycle.c	-	runtime_initialized	-
 Python/sysmodule.c	-	_PySys_ImplCacheTag	-
 Python/sysmodule.c	-	_PySys_ImplName	-
 Python/sysmodule.c	-	_preinit_warnoptions	-
 Python/sysmodule.c	-	_preinit_xoptions	-
-Python/thread.c	-	thread_debug	-
 Python/thread.c	-	initialized	-
+
+# set by embedders during init
+Python/initconfig.c	-	_Py_StandardStreamEncoding	-
+Python/initconfig.c	-	_Py_StandardStreamErrors	-
 
 # lazy
 Objects/floatobject.c	-	double_format	-
 Objects/floatobject.c	-	float_format	-
-Objects/floatobject.c	-	detected_double_format	-
-Objects/floatobject.c	-	detected_float_format	-
 Objects/longobject.c	PyLong_FromString	log_base_BASE	-
 Objects/longobject.c	PyLong_FromString	convwidth_base	-
 Objects/longobject.c	PyLong_FromString	convmultmax_base	-
@@ -372,11 +381,8 @@ Parser/action_helpers.c	_PyPegen_dummy_name	cache	-
 Python/dtoa.c	-	p5s	-
 Python/fileutils.c	-	force_ascii	-
 Python/fileutils.c	set_inheritable	ioctl_works	-
-# XXX This should have been found by the analyzer but wasn't:
 Python/import.c	-	import_lock	-
-# XXX This should have been found by the analyzer but wasn't:
 Python/import.c	import_find_and_load	header	-
-Python/specialize.c	-	_list_append	-
 
 #-----------------------
 # unlikely to change after init (or main thread)
@@ -442,37 +448,24 @@ Python/getargs.c	-	static_arg_parsers	-
 # other
 Objects/dictobject.c	-	_pydict_global_version	-
 Objects/dictobject.c	-	next_dict_keys_version	-
-Objects/dictobject.c	-	pydict_global_version	-
 Objects/funcobject.c	-	next_func_version	-
 Objects/moduleobject.c	-	max_module_number	-
 Objects/object.c	-	_Py_RefTotal	-
 Objects/typeobject.c	-	next_version_tag	-
 Objects/typeobject.c	resolve_slotdups	ptrs	-
 Parser/pegen.c	-	memo_statistics	-
-# XXX This should have been found by the analyzer but wasn't:
 Python/bootstrap_hash.c	-	urandom_cache	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/ceval.c	-	lltrace	-
-# XXX This should have been found by the analyzer but wasn't:
 Python/ceval.c	make_pending_calls	busy	-
 Python/ceval.c	_PyEval_SetProfile	reentrant	-
 Python/ceval.c	_PyEval_SetTrace	reentrant	-
-Python/dynload_shlib.c	-	handles	-
-Python/dynload_shlib.c	-	nhandles	-
-# XXX This should have been found by the analyzer but wasn't:
 Python/import.c	-	import_lock_level	-
-# XXX This should have been found by the analyzer but wasn't:
 Python/import.c	-	import_lock_thread	-
-# XXX This should have been found by the analyzer but wasn't:
 Python/import.c	import_find_and_load	accumulated	-
-# XXX This should have been found by the analyzer but wasn't:
 Python/import.c	import_find_and_load	import_level	-
 Python/modsupport.c	-	_Py_PackageContext	-
 Python/pyfpe.c	-	PyFPE_counter	-
 Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
-# XXX This should have been found by the analyzer but wasn't:
 Python/pylifecycle.c	-	_Py_UnhandledKeyboardInterrupt	-
-# XXX This should have been found by the analyzer but wasn't:
 Python/pylifecycle.c	fatal_error	reentrant	-
 Python/specialize.c	-	_Py_QuickenedCount	-
 
@@ -488,10 +481,6 @@ Modules/_collectionsmodule.c	-	deque_type	-
 Modules/_collectionsmodule.c	-	dequeiter_type	-
 Modules/_collectionsmodule.c	-	dequereviter_type	-
 Modules/_collectionsmodule.c	-	tuplegetter_type	-
-Modules/_functoolsmodule.c	-	keyobject_type	-
-Modules/_functoolsmodule.c	-	lru_cache_type	-
-Modules/_functoolsmodule.c	-	lru_list_elem_type	-
-Modules/_functoolsmodule.c	-	partial_type	-
 Modules/_io/bufferedio.c	-	PyBufferedIOBase_Type	-
 Modules/_io/bufferedio.c	-	PyBufferedRWPair_Type	-
 Modules/_io/bufferedio.c	-	PyBufferedRandom_Type	-
@@ -506,15 +495,12 @@ Modules/_io/stringio.c	-	PyStringIO_Type	-
 Modules/_io/textio.c	-	PyIncrementalNewlineDecoder_Type	-
 Modules/_io/textio.c	-	PyTextIOBase_Type	-
 Modules/_io/textio.c	-	PyTextIOWrapper_Type	-
+# XXX This should have been found by the analyzer but wasn't:
 Modules/_io/winconsoleio.c	-	PyWindowsConsoleIO_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorBase_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorDerived_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorNopGet_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptor2_Type	-
-Modules/_threadmodule.c	-	Locktype	-
-Modules/_threadmodule.c	-	RLocktype	-
-Modules/_threadmodule.c	-	localdummytype	-
-Modules/_threadmodule.c	-	localtype	-
 Modules/itertoolsmodule.c	-	_grouper_type	-
 Modules/itertoolsmodule.c	-	accumulate_type	-
 Modules/itertoolsmodule.c	-	chain_type	-
@@ -538,19 +524,12 @@ Modules/itertoolsmodule.c	-	teedataobject_type	-
 Modules/itertoolsmodule.c	-	ziplongest_type	-
 
 #-----------------------
-# non-static types - initialized once
-
-# structseq types
-Modules/_threadmodule.c	-	ExceptHookArgsType	-
-Modules/signalmodule.c	-	SiginfoType	-
-Modules/timemodule.c	-	StructTimeType	-
-
-# exception types
-Modules/_threadmodule.c	-	ThreadError	-
-Modules/signalmodule.c	-	ItimerError	-
-
-#-----------------------
 # other
+
+# statically initializd pointer to static type
+# XXX should be const?
+# XXX This should have been found by the analyzer but wasn't:
+Modules/_io/winconsoleio.c	-	_PyWindowsConsoleIO_Type	-
 
 # initialized once
 Modules/_functoolsmodule.c	-	kwd_mark	-
@@ -579,8 +558,6 @@ Modules/_io/bufferedio.c	_PyIO_trap_eintr	eintr_int	-
 Modules/posixmodule.c	os_dup2_impl	dup3_works	-
 Modules/posixmodule.c	-	structseq_new	-
 Modules/posixmodule.c	-	ticks_per_second	-
-Modules/signalmodule.c	-	initialized	-
-Modules/timemodule.c	-	initialized	-
 Modules/timemodule.c	_PyTime_GetClockWithInfo	initialized	-
 Modules/timemodule.c	_PyTime_GetProcessTimeWithInfo	ticks_per_second	-
 
@@ -675,14 +652,12 @@ Modules/_decimal/_decimal.c	-	PyDecSignalDict_Type	-
 Modules/_tkinter.c	-	PyTclObject_Type	-
 Modules/_tkinter.c	-	Tkapp_Type	-
 Modules/_tkinter.c	-	Tktt_Type	-
-Modules/xxlimited.c	-	Xxo_Type	-
 Modules/xxlimited_35.c	-	Xxo_Type	-
 
 # exception types
 Modules/_ctypes/_ctypes.c	-	PyExc_ArgError	-
 Modules/_cursesmodule.c	-	PyCursesError	-
 Modules/_decimal/_decimal.c	-	DecimalException	-
-Modules/_queuemodule.c	-	EmptyError	-
 Modules/_tkinter.c	-	Tkinter_TclError	-
 Modules/_xxsubinterpretersmodule.c	-	ChannelError	-
 Modules/_xxsubinterpretersmodule.c	-	ChannelNotFoundError	-
