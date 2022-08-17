@@ -190,8 +190,9 @@ Install Options
 Performance options
 -------------------
 
-Configuring Python using ``--enable-optimizations --with-lto --enable-bolt``
-(PGO + LTO + BOLT) is recommended for best performance.
+Configuring Python using ``--enable-optimizations --with-lto`` (PGO + LTO) is
+recommended for best performance. The experimental ``--enable-bolt`` flag can
+also be used to improve performance.
 
 .. cmdoption:: --enable-optimizations
 
