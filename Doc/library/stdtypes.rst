@@ -622,6 +622,12 @@ class`. float also has the following additional methods.
    :exc:`OverflowError` on infinities and a :exc:`ValueError` on
    NaNs.
 
+   .. note::
+
+      The integers returned by ``as_integer_ratio()`` can be huge. Attempts
+      to render such integers into decimal strings may bump into the
+      :ref:`int maximum digits limitation <int_max_str_digits>`.
+
 .. method:: float.is_integer()
 
    Return ``True`` if the float instance is finite with integral
