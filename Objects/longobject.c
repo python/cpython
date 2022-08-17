@@ -36,7 +36,7 @@ medium_value(PyLongObject *x)
 #define IS_SMALL_INT(ival) (-_PY_NSMALLNEGINTS <= (ival) && (ival) < _PY_NSMALLPOSINTS)
 #define IS_SMALL_UINT(ival) ((ival) < _PY_NSMALLPOSINTS)
 
-#define _MAX_STR_DIGITS_ERROR_FMT "Exceeds digit limit for string conversions: value has %zd digits"
+#define _MAX_STR_DIGITS_ERROR_FMT "Exceeds the limit (%d) for integer string conversion: value has %zd digits"
 
 static inline void
 _Py_DECREF_INT(PyLongObject *op)
@@ -1824,7 +1824,7 @@ long_to_decimal_string_internal(PyObject *aa,
         if ((max_str_digits > 0) && (strlen_nosign > max_str_digits)) {
             Py_DECREF(scratch);
             PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT,
-                         strlen_nosign);
+                         max_str_digits, strlen_nosign);
             return -1;
         }
     }
@@ -2499,7 +2499,7 @@ digit beyond the first.
             int max_str_digits = interp->int_max_str_digits;
             if ((max_str_digits > 0) && (digits > max_str_digits)) {
                 PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT,
-                             digits);
+                             max_str_digits, digits);
                 return NULL;
             }
         }

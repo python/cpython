@@ -209,7 +209,7 @@ if 1:
                 compile(source, "<long_int_fail>", "exec")
             exc = err_ctx.exception
             self.assertEqual(exc.lineno, 3)
-            self.assertIn('Exceeds digit limit', str(exc))
+            self.assertIn('Exceeds the limit ', str(exc))
             self.assertIn(' Consider hexidecimal ', str(exc))
 
     def test_unary_minus(self):

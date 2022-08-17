@@ -624,9 +624,10 @@ class`. float also has the following additional methods.
 
    .. note::
 
-      The integers returned by ``as_integer_ratio()`` can be huge. Attempts
+      The values returned by ``as_integer_ratio()`` can be huge. Attempts
       to render such integers into decimal strings may bump into the
-      :ref:`int maximum digits limitation <int_max_str_digits>`.
+      :ref:`integer string conversion length limitation
+      <int_max_str_digits>`.
 
 .. method:: float.is_integer()
 
@@ -5468,37 +5469,47 @@ types, where they are relevant.  Some of these are not reported by the
 
 .. _int_max_str_digits:
 
-Integer maximum digits limitation
-=================================
+Integer string conversion length limitation
+===========================================
 
 CPython has a global limit for converting between :class:`int` and :class:`str`
-to mitigate denial of service attacks. The limit is necessary because CPython's
-integer type is an abitrary length number (commonly known as a bignum) stored
-in binary form. There exists no algorithm that can convert a string to a binary
-integer or a binary integer to a string in linear time, unless the base is a
-power of *2*. Even the best known algorithms for base *10* have sub-quadratic
-complexity. Converting a large value such as ``int('1' * 500_000)`` can take
-over a second on a fast CPU.
+to mitigate denial of service attacks. This limit *only* applies to
+non-power-of-two number bases such as decimal. Hexidecimal, octal, and binary
+are not limited. The limit can be configured.
 
-The limit value is based on the number of digit characters in the input or
-output string. That means that higher bases can process larger numbers before
-the limit triggers. Underscores and the sign are not counted towards the limit.
+The limit is necessary because CPython's integer type is an abitrary length
+number (commonly known as a bignum) stored in binary form. There exists no
+algorithm that can convert a string to a binary integer or a binary integer to
+a string in linear time, unless the base is a power of 2. Even the best known
+algorithms for base 10 have sub-quadratic complexity. Converting a large value
+such as ``int('1' * 500_000)`` can take over a second on a fast CPU.
+
+Limiting conversion size offers a practical way to avoid `CVE-2020-10735
+<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+
+The limit is applied to the number of digit characters in the input or output
+string. That means that higher bases can process larger numbers before the
+limit triggers. Underscores and the sign are not counted towards the limit.
 
 When an operation would exceed the limit, a :exc:`ValueError` is raised::
 
    >>> import sys
-   >>> sys.set_int_max_str_digits(2048)
-   >>> i = 10 ** 2047
-   >>> len(str(i))
-   2048
-   >>> i = 10 ** 2048
-   >>> len(str(i))
+   >>> sys.set_int_max_str_digits(4300)  # Illustrative, this is the default.
+   >>> _ = int('2' * 5432)
    Traceback (most recent call last):
    ...
-   ValueError: Exceeds digit limit for string conversions: value has 2049 digits.
-
-This limit offers a practical way to avoid `CVE-2020-10735
-<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+   ValueError: Exceeds the limit (4300) for integer string conversion: value has 5432 digits.
+   >>> i = int('2' * 4300)
+   >>> len(str(i))
+   4300
+   >>> i_squared = i*i
+   >>> len(str(i_squared))
+   Traceback (most recent call last):
+   ...
+   ValueError: Exceeds the limit (4300) for integer string conversion: value has 8599 digits.
+   >>> len(hex(i_squared))
+   7144
+   >>> assert int(hex(i_squared), base=16) == i
 
 The default limit is 4300 digits as seen in
 :data:`sys.int_info.default_max_str_digits <sys.int_info>`. The smallest limit
@@ -5510,9 +5521,10 @@ Verification::
    >>> import sys
    >>> assert sys.int_info.default_max_str_digits == 4300, sys.int_info
    >>> assert sys.int_info.str_digits_check_threshold == 640, sys.int_info
-   >>> msg = int('379431350246233136746328250873855212517275894113083563419'
-   ...           '189439726510664285115764751963294910345124558029500996970'
-   ...           '709334425217234291').to_bytes(55, 'big')
+   >>> msg = int('578966293710682886880994035146873798396722250538762761564'
+   ...           '9252925514383915483333812743580549779436104706260696366600'
+   ...           '571186405732').to_bytes(53, 'big')
+   ...
 
 .. versionadded:: 3.12
 
@@ -5573,13 +5585,13 @@ Information about the default and minimum can be found in :attr:`sys.int_info`:
 
 .. caution::
 
-   Setting a low limit can lead to problems. While rare, code exists that
+   Setting a low limit *can* lead to problems. While rare, code exists that
    contains integer constants in decimal in their source that exceed the
    minimum threshold. A consequence of setting the limit is that Python source
    code containing decimal integer literals longer than the limit will
-   encounter a ValueError during compilation, usually at startup time or import
-   time or even at installation time - anytime an up to date ``.pyc`` does not
-   already exist for the code. A workaround for source that contains such large
+   encounter an error during parsing, usually at startup time or import time or
+   even at installation time - anytime an up to date ``.pyc`` does not already
+   exist for the code. A workaround for source that contains such large
    constants is to convert them to ``0x`` hexidecimal form as it has no limit.
 
    Test your application thoroughly if you use a low limit. Ensure your tests
@@ -5592,16 +5604,20 @@ Recommended configuration
 
 The default :data:`sys.int_info.default_max_str_digits` is expected to be
 reasonable for most applications. If your application requires a different
-limit, use Python version and implementation agnostic code to set it from your
-main entry point as these APIs were added in later patch releases before 3.12.
+limit, set it from your main entry point using Python version agnostic code as
+these APIs were added in patch releases before 3.12.
 
 Example::
 
    >>> import sys
    >>> if hasattr(sys, "set_int_max_str_digits"):
+   ...     upper_bound = 68000
+   ...     lower_bound = 4004
    ...     current_limit = sys.get_int_max_str_digits()
-   ...     if not current_limit or current_limit > 8088:
-   ...         sys.set_int_max_str_digits(8088)
+   ...     if current_limit == 0 or current_limit > upper_bound:
+   ...         sys.set_int_max_str_digits(upper_bound)
+   ...     elif current_limit < lower_bound:
+   ...         sys.set_int_max_str_digits(lower_bound)
 
 If you need to disable it entirely, set it to ``0``.
 

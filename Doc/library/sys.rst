@@ -521,7 +521,7 @@ always available.
    :const:`dev_mode`                  :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
    :const:`utf8_mode`                 :option:`-X utf8 <-X>`
    :const:`safe_path`                 :option:`-P`
-   :const:`int_max_str_digits`        :option:`-X int_max_str_digits <-X>` (:ref:`int maximum digits limitation <int_max_str_digits>`)
+   :const:`int_max_str_digits`        :option:`-X int_max_str_digits <-X>` (:ref:`integer string conversion length limitation <int_max_str_digits>`)
    ================================== ======================================================================================================
 
    .. versionchanged:: 3.2
@@ -729,8 +729,8 @@ always available.
 
 .. function:: get_int_max_str_digits()
 
-   Return current global value for :ref:`int maximum digits limitation
-   <int_max_str_digits>`. See also :func:`set_int_max_str_digits`
+   Return current global value for :ref:`integer string conversion length
+   limitation <int_max_str_digits>`. See also :func:`set_int_max_str_digits`
 
    .. versionadded:: 3.12
 
@@ -1333,8 +1333,8 @@ always available.
 
 .. function:: set_int_max_str_digits(n)
 
-   Set global interpreter limit for :ref:`int maximum digits limitation
-   <int_max_str_digits>`. See also :func:`get_int_max_str_digits`
+   Set global interpreter limit for :ref:`integer string conversion length
+   limitation <int_max_str_digits>`. See also :func:`get_int_max_str_digits`
 
    .. versionadded:: 3.12
 

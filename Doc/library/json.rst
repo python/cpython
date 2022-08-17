@@ -259,10 +259,10 @@ Basic Usage
    (e.g. :class:`float`).
 
    .. versionchanged:: 3.12
-      The default implementation of *parse_int* limits the maximum length of
-      the integer string via the interpreter's :ref:`int maximum digits
-      limitation <int_max_str_digits>` mechanism to help avoid denial of
-      service attacks.
+      The default *parse_int* of :func:`int` now limits the maximum length of
+      the integer string via the interpreter's :ref:`integer string
+      conversion length limitation <int_max_str_digits>` to help avoid denial
+      of service attacks.
 
    *parse_constant*, if specified, will be called with one of the following
    strings: ``'-Infinity'``, ``'Infinity'``, ``'NaN'``.
