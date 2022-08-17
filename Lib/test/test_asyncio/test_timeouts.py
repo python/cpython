@@ -4,7 +4,6 @@ import unittest
 import time
 
 import asyncio
-from asyncio import tasks
 
 
 def tearDownModule():
@@ -105,6 +104,30 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
         # 2 sec for slow CI boxes
         self.assertLess(t1-t0, 2)
         self.assertTrue(t0 <= cm.when() <= t1)
+
+    async def test_timeout_zero_sleep_zero(self):
+        loop = asyncio.get_running_loop()
+        t0 = loop.time()
+        with self.assertRaises(TimeoutError):
+            async with asyncio.timeout(0) as cm:
+                await asyncio.sleep(0)
+        t1 = loop.time()
+        self.assertTrue(cm.expired())
+        # 2 sec for slow CI boxes
+        self.assertLess(t1-t0, 2)
+        self.assertTrue(t0 <= cm.when() <= t1)
+
+    async def test_timeout_in_the_past_sleep_zero(self):
+        loop = asyncio.get_running_loop()
+        t0 = loop.time()
+        with self.assertRaises(TimeoutError):
+            async with asyncio.timeout(-11) as cm:
+                await asyncio.sleep(0)
+        t1 = loop.time()
+        self.assertTrue(cm.expired())
+        # 2 sec for slow CI boxes
+        self.assertLess(t1-t0, 2)
+        self.assertTrue(t0 >= cm.when() <= t1)
 
     async def test_foreign_exception_passed(self):
         with self.assertRaises(KeyError):

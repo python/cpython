@@ -119,7 +119,7 @@ The :mod:`functools` module defines the following functions:
    tool for programs being converted from Python 2 which supported the use of
    comparison functions.
 
-   A comparison function is any callable that accept two arguments, compares them,
+   A comparison function is any callable that accepts two arguments, compares them,
    and returns a negative number for less-than, zero for equality, or a positive
    number for greater-than.  A key function is a callable that accepts one
    argument and returns another value to be used as the sort key.
@@ -436,6 +436,23 @@ The :mod:`functools` module defines the following functions:
      ...     for i, elem in enumerate(arg):
      ...         print(i, elem)
 
+   :data:`types.UnionType` and :data:`typing.Union` can also be used::
+
+    >>> @fun.register
+    ... def _(arg: int | float, verbose=False):
+    ...     if verbose:
+    ...         print("Strength in numbers, eh?", end=" ")
+    ...     print(arg)
+    ...
+    >>> from typing import Union
+    >>> @fun.register
+    ... def _(arg: Union[list, set], verbose=False):
+    ...     if verbose:
+    ...         print("Enumerate this:")
+    ...     for i, elem in enumerate(arg):
+    ...         print(i, elem)
+    ...
+
    For code which doesn't use type annotations, the appropriate type
    argument can be passed explicitly to the decorator itself::
 
@@ -534,6 +551,10 @@ The :mod:`functools` module defines the following functions:
 
    .. versionchanged:: 3.7
       The :func:`register` attribute now supports using type annotations.
+
+   .. versionchanged:: 3.11
+      The :func:`register` attribute now supports :data:`types.UnionType`
+      and :data:`typing.Union` as type annotations.
 
 
 .. class:: singledispatchmethod(func)

@@ -1668,9 +1668,27 @@ if __doc__ is not None:
 # Simplified interface
 
 def run(statement, globals=None, locals=None):
+    """Execute the *statement* (given as a string or a code object)
+    under debugger control.
+
+    The debugger prompt appears before any code is executed; you can set
+    breakpoints and type continue, or you can step through the statement
+    using step or next.
+
+    The optional *globals* and *locals* arguments specify the
+    environment in which the code is executed; by default the
+    dictionary of the module __main__ is used (see the explanation of
+    the built-in exec() or eval() functions.).
+    """
     Pdb().run(statement, globals, locals)
 
 def runeval(expression, globals=None, locals=None):
+    """Evaluate the *expression* (given as a string or a code object)
+    under debugger control.
+
+    When runeval() returns, it returns the value of the expression.
+    Otherwise this function is similar to run().
+    """
     return Pdb().runeval(expression, globals, locals)
 
 def runctx(statement, globals, locals):
@@ -1678,9 +1696,23 @@ def runctx(statement, globals, locals):
     run(statement, globals, locals)
 
 def runcall(*args, **kwds):
+    """Call the function (a function or method object, not a string)
+    with the given arguments.
+
+    When runcall() returns, it returns whatever the function call
+    returned. The debugger prompt appears as soon as the function is
+    entered.
+    """
     return Pdb().runcall(*args, **kwds)
 
 def set_trace(*, header=None):
+    """Enter the debugger at the calling stack frame.
+
+    This is useful to hard-code a breakpoint at a given point in a
+    program, even if the code is not otherwise being debugged (e.g. when
+    an assertion fails). If given, *header* is printed to the console
+    just before debugging begins.
+    """
     pdb = Pdb()
     if header is not None:
         pdb.message(header)
@@ -1689,6 +1721,12 @@ def set_trace(*, header=None):
 # Post-Mortem interface
 
 def post_mortem(t=None):
+    """Enter post-mortem debugging of the given *traceback* object.
+
+    If no traceback is given, it uses the one of the exception that is
+    currently being handled (an exception must be being handled if the
+    default is to be used).
+    """
     # handling the default
     if t is None:
         # sys.exc_info() returns (type, value, traceback) if an exception is
@@ -1703,6 +1741,7 @@ def post_mortem(t=None):
     p.interaction(None, t)
 
 def pm():
+    """Enter post-mortem debugging of the traceback found in sys.last_traceback."""
     post_mortem(sys.last_traceback)
 
 

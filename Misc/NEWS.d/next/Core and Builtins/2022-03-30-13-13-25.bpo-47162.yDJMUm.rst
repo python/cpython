@@ -1,4 +1,0 @@
-WebAssembly cannot deal with bad function pointer casts (different count
-or types of arguments). Python can now use call trampolines to mitigate
-the problem. Define :c:macro:`PY_CALL_TRAMPOLINE` to enable call
-trampolines.

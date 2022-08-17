@@ -624,6 +624,7 @@ new_keys_object(uint8_t log2_size, bool unicode)
 #endif
     if (log2_size == PyDict_LOG_MINSIZE && unicode && state->keys_numfree > 0) {
         dk = state->keys_free_list[--state->keys_numfree];
+        OBJECT_STAT_INC(from_freelist);
     }
     else
 #endif
@@ -681,6 +682,7 @@ free_keys_object(PyDictKeysObject *keys)
             && state->keys_numfree < PyDict_MAXFREELIST
             && DK_IS_UNICODE(keys)) {
         state->keys_free_list[state->keys_numfree++] = keys;
+        OBJECT_STAT_INC(to_freelist);
         return;
     }
 #endif
@@ -726,6 +728,7 @@ new_dict(PyDictKeysObject *keys, PyDictValues *values, Py_ssize_t used, int free
         mp = state->free_list[--state->numfree];
         assert (mp != NULL);
         assert (Py_IS_TYPE(mp, &PyDict_Type));
+        OBJECT_STAT_INC(from_freelist);
         _Py_NewReference((PyObject *)mp);
     }
     else
@@ -1544,6 +1547,7 @@ dictresize(PyDictObject *mp, uint8_t log2_newsize, int unicode)
                     state->keys_numfree < PyDict_MAXFREELIST)
             {
                 state->keys_free_list[state->keys_numfree++] = oldkeys;
+                OBJECT_STAT_INC(to_freelist);
             }
             else
 #endif
@@ -2381,6 +2385,7 @@ dict_dealloc(PyDictObject *mp)
 #endif
     if (state->numfree < PyDict_MAXFREELIST && Py_IS_TYPE(mp, &PyDict_Type)) {
         state->free_list[state->numfree++] = mp;
+        OBJECT_STAT_INC(to_freelist);
     }
     else
 #endif
@@ -3655,9 +3660,9 @@ PyDoc_STRVAR(values__doc__,
 
 static PyMethodDef mapp_methods[] = {
     DICT___CONTAINS___METHODDEF
-    {"__getitem__", (PyCFunction)(void(*)(void))dict_subscript,        METH_O | METH_COEXIST,
+    {"__getitem__", _PyCFunction_CAST(dict_subscript),        METH_O | METH_COEXIST,
      getitem__doc__},
-    {"__sizeof__",      (PyCFunction)(void(*)(void))dict_sizeof,       METH_NOARGS,
+    {"__sizeof__",      _PyCFunction_CAST(dict_sizeof),       METH_NOARGS,
      sizeof__doc__},
     DICT_GET_METHODDEF
     DICT_SETDEFAULT_METHODDEF
@@ -3669,7 +3674,7 @@ static PyMethodDef mapp_methods[] = {
     items__doc__},
     {"values",          dictvalues_new,                 METH_NOARGS,
     values__doc__},
-    {"update",          (PyCFunction)(void(*)(void))dict_update, METH_VARARGS | METH_KEYWORDS,
+    {"update",          _PyCFunction_CAST(dict_update), METH_VARARGS | METH_KEYWORDS,
      update__doc__},
     DICT_FROMKEYS_METHODDEF
     {"clear",           (PyCFunction)dict_clear,        METH_NOARGS,
@@ -4026,9 +4031,9 @@ dictiter_reduce(dictiterobject *di, PyObject *Py_UNUSED(ignored));
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyMethodDef dictiter_methods[] = {
-    {"__length_hint__", (PyCFunction)(void(*)(void))dictiter_len, METH_NOARGS,
+    {"__length_hint__", _PyCFunction_CAST(dictiter_len), METH_NOARGS,
      length_hint_doc},
-     {"__reduce__", (PyCFunction)(void(*)(void))dictiter_reduce, METH_NOARGS,
+     {"__reduce__", _PyCFunction_CAST(dictiter_reduce), METH_NOARGS,
      reduce_doc},
     {NULL,              NULL}           /* sentinel */
 };
@@ -5079,7 +5084,7 @@ PyDoc_STRVAR(reversed_keys_doc,
 static PyMethodDef dictkeys_methods[] = {
     {"isdisjoint",      (PyCFunction)dictviews_isdisjoint,  METH_O,
      isdisjoint_doc},
-    {"__reversed__",    (PyCFunction)(void(*)(void))dictkeys_reversed,    METH_NOARGS,
+    {"__reversed__",    _PyCFunction_CAST(dictkeys_reversed),    METH_NOARGS,
      reversed_keys_doc},
     {NULL,              NULL}           /* sentinel */
 };
@@ -5363,7 +5368,7 @@ init_inline_values(PyObject *obj, PyTypeObject *tp)
     for (int i = 0; i < size; i++) {
         values->values[i] = NULL;
     }
-    *_PyObject_ValuesPointer(obj) = values;
+    _PyDictOrValues_SetValues(_PyObject_DictOrValuesPointer(obj), values);
     return 0;
 }
 
@@ -5389,7 +5394,7 @@ _PyObject_InitializeDict(PyObject *obj)
     if (dict == NULL) {
         return -1;
     }
-    PyObject **dictptr = _PyObject_DictPointer(obj);
+    PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
     *dictptr = dict;
     return 0;
 }
@@ -5417,7 +5422,6 @@ make_dict_from_instance_attributes(PyDictKeysObject *keys, PyDictValues *values)
 PyObject *
 _PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values)
 {
-    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
     PyDictKeysObject *keys = CACHED_KEYS(Py_TYPE(obj));
     OBJECT_STAT_INC(dict_materialized_on_request);
     return make_dict_from_instance_attributes(keys, values);
@@ -5453,8 +5457,7 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
         if (dict == NULL) {
             return -1;
         }
-        *_PyObject_ValuesPointer(obj) = NULL;
-        *_PyObject_ManagedDictPointer(obj) = dict;
+        _PyObject_DictOrValuesPointer(obj)->dict = dict;
         if (value == NULL) {
             return PyDict_DelItem(dict, name);
         }
@@ -5467,7 +5470,9 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
     values->values[ix] = value;
     if (old_value == NULL) {
         if (value == NULL) {
-            PyErr_SetObject(PyExc_AttributeError, name);
+            PyErr_Format(PyExc_AttributeError,
+                         "'%.100s' object has no attribute '%U'",
+                         Py_TYPE(obj)->tp_name, name);
             return -1;
         }
         _PyDictValues_AddToInsertionOrder(values, ix);
@@ -5480,6 +5485,37 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
     }
     return 0;
 }
+
+/* Sanity check for managed dicts */
+#if 0
+#define CHECK(val) assert(val); if (!(val)) { return 0; }
+
+int
+_PyObject_ManagedDictValidityCheck(PyObject *obj)
+{
+    PyTypeObject *tp = Py_TYPE(obj);
+    CHECK(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    PyDictOrValues *dorv_ptr = _PyObject_DictOrValuesPointer(obj);
+    if (_PyDictOrValues_IsValues(*dorv_ptr)) {
+        PyDictValues *values = _PyDictOrValues_GetValues(*dorv_ptr);
+        int size = ((uint8_t *)values)[-2];
+        int count = 0;
+        PyDictKeysObject *keys = CACHED_KEYS(tp);
+        for (Py_ssize_t i = 0; i < keys->dk_nentries; i++) {
+            if (values->values[i] != NULL) {
+                count++;
+            }
+        }
+        CHECK(size == count);
+    }
+    else {
+        if (dorv_ptr->dict != NULL) {
+            CHECK(PyDict_Check(dorv_ptr->dict));
+        }
+    }
+    return 1;
+}
+#endif
 
 PyObject *
 _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
@@ -5504,60 +5540,28 @@ _PyObject_IsInstanceDictEmpty(PyObject *obj)
     if (tp->tp_dictoffset == 0) {
         return 1;
     }
-    PyObject **dictptr;
+    PyObject *dict;
     if (tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        PyDictValues *values = *_PyObject_ValuesPointer(obj);
-        if (values) {
+        PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(obj);
+        if (_PyDictOrValues_IsValues(dorv)) {
             PyDictKeysObject *keys = CACHED_KEYS(tp);
             for (Py_ssize_t i = 0; i < keys->dk_nentries; i++) {
-                if (values->values[i] != NULL) {
+                if (_PyDictOrValues_GetValues(dorv)->values[i] != NULL) {
                     return 0;
                 }
             }
             return 1;
         }
-        dictptr = _PyObject_ManagedDictPointer(obj);
+        dict = _PyDictOrValues_GetDict(dorv);
     }
     else {
-       dictptr = _PyObject_DictPointer(obj);
+        PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
+        dict = *dictptr;
     }
-    PyObject *dict = *dictptr;
     if (dict == NULL) {
         return 1;
     }
     return ((PyDictObject *)dict)->ma_used == 0;
-}
-
-
-int
-_PyObject_VisitInstanceAttributes(PyObject *self, visitproc visit, void *arg)
-{
-    PyTypeObject *tp = Py_TYPE(self);
-    assert(Py_TYPE(self)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-    PyDictValues **values_ptr = _PyObject_ValuesPointer(self);
-    if (*values_ptr == NULL) {
-        return 0;
-    }
-    PyDictKeysObject *keys = CACHED_KEYS(tp);
-    for (Py_ssize_t i = 0; i < keys->dk_nentries; i++) {
-        Py_VISIT((*values_ptr)->values[i]);
-    }
-    return 0;
-}
-
-void
-_PyObject_ClearInstanceAttributes(PyObject *self)
-{
-    PyTypeObject *tp = Py_TYPE(self);
-    assert(Py_TYPE(self)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-    PyDictValues **values_ptr = _PyObject_ValuesPointer(self);
-    if (*values_ptr == NULL) {
-        return;
-    }
-    PyDictKeysObject *keys = CACHED_KEYS(tp);
-    for (Py_ssize_t i = 0; i < keys->dk_nentries; i++) {
-        Py_CLEAR((*values_ptr)->values[i]);
-    }
 }
 
 void
@@ -5565,15 +5569,65 @@ _PyObject_FreeInstanceAttributes(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     assert(Py_TYPE(self)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-    PyDictValues **values_ptr = _PyObject_ValuesPointer(self);
-    if (*values_ptr == NULL) {
+    PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(self);
+    if (!_PyDictOrValues_IsValues(dorv)) {
         return;
     }
+    PyDictValues *values = _PyDictOrValues_GetValues(dorv);
     PyDictKeysObject *keys = CACHED_KEYS(tp);
     for (Py_ssize_t i = 0; i < keys->dk_nentries; i++) {
-        Py_XDECREF((*values_ptr)->values[i]);
+        Py_XDECREF(values->values[i]);
     }
-    free_values(*values_ptr);
+    free_values(values);
+}
+
+int
+_PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg)
+{
+    PyTypeObject *tp = Py_TYPE(obj);
+    if((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
+        return 0;
+    }
+    assert(tp->tp_dictoffset);
+    PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(obj);
+    if (_PyDictOrValues_IsValues(dorv)) {
+        PyDictValues *values = _PyDictOrValues_GetValues(dorv);
+        PyDictKeysObject *keys = CACHED_KEYS(tp);
+        for (Py_ssize_t i = 0; i < keys->dk_nentries; i++) {
+            Py_VISIT(values->values[i]);
+        }
+    }
+    else {
+        PyObject *dict = _PyDictOrValues_GetDict(dorv);
+        Py_VISIT(dict);
+    }
+    return 0;
+}
+
+void
+_PyObject_ClearManagedDict(PyObject *obj)
+{
+    PyTypeObject *tp = Py_TYPE(obj);
+    if((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
+        return;
+    }
+    PyDictOrValues *dorv_ptr = _PyObject_DictOrValuesPointer(obj);
+    if (_PyDictOrValues_IsValues(*dorv_ptr)) {
+        PyDictValues *values = _PyDictOrValues_GetValues(*dorv_ptr);
+        PyDictKeysObject *keys = CACHED_KEYS(tp);
+        for (Py_ssize_t i = 0; i < keys->dk_nentries; i++) {
+            Py_CLEAR(values->values[i]);
+        }
+        dorv_ptr->dict = NULL;
+        free_values(values);
+    }
+    else {
+        PyObject *dict = dorv_ptr->dict;
+        if (dict) {
+            dorv_ptr->dict = NULL;
+            Py_DECREF(dict);
+        }
+    }
 }
 
 PyObject *
@@ -5582,25 +5636,26 @@ PyObject_GenericGetDict(PyObject *obj, void *context)
     PyObject *dict;
     PyTypeObject *tp = Py_TYPE(obj);
     if (_PyType_HasFeature(tp, Py_TPFLAGS_MANAGED_DICT)) {
-        PyDictValues **values_ptr = _PyObject_ValuesPointer(obj);
-        PyObject **dictptr = _PyObject_ManagedDictPointer(obj);
-        if (*values_ptr) {
-            assert(*dictptr == NULL);
+        PyDictOrValues *dorv_ptr = _PyObject_DictOrValuesPointer(obj);
+        if (_PyDictOrValues_IsValues(*dorv_ptr)) {
+            PyDictValues *values = _PyDictOrValues_GetValues(*dorv_ptr);
             OBJECT_STAT_INC(dict_materialized_on_request);
-            *dictptr = dict = make_dict_from_instance_attributes(CACHED_KEYS(tp), *values_ptr);
+            dict = make_dict_from_instance_attributes(CACHED_KEYS(tp), values);
             if (dict != NULL) {
-                *values_ptr = NULL;
+                dorv_ptr->dict = dict;
             }
         }
-        else if (*dictptr == NULL) {
-            *dictptr = dict = PyDict_New();
-        }
         else {
-            dict = *dictptr;
+            dict = _PyDictOrValues_GetDict(*dorv_ptr);
+            if (dict == NULL) {
+                dictkeys_incref(CACHED_KEYS(tp));
+                dict = new_dict_with_shared_keys(CACHED_KEYS(tp));
+                dorv_ptr->dict = dict;
+            }
         }
     }
     else {
-        PyObject **dictptr = _PyObject_DictPointer(obj);
+        PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
         if (dictptr == NULL) {
             PyErr_SetString(PyExc_AttributeError,
                             "This object has no __dict__");

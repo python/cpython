@@ -1,7 +1,6 @@
 import unittest
 from test import support
 from test.support import os_helper
-from test.support import socket_helper
 from test.support import warnings_helper
 from test import test_urllib
 
@@ -1557,11 +1556,11 @@ class HandlerTests(unittest.TestCase):
 
     def test_basic_and_digest_auth_handlers(self):
         # HTTPDigestAuthHandler raised an exception if it couldn't handle a 40*
-        # response (http://python.org/sf/1479302), where it should instead
+        # response (https://bugs.python.org/issue1479302), where it should instead
         # return None to allow another handler (especially
         # HTTPBasicAuthHandler) to handle the response.
 
-        # Also (http://python.org/sf/14797027, RFC 2617 section 1.2), we must
+        # Also (https://bugs.python.org/issue14797027, RFC 2617 section 1.2), we must
         # try digest first (since it's the strongest auth scheme), so we record
         # order of calls here to check digest comes first:
         class RecordingOpenerDirector(OpenerDirector):

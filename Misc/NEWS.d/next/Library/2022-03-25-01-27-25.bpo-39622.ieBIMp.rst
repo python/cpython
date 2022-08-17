@@ -1,1 +1,0 @@
-Handle Ctrl+C in asyncio programs to interrupt the main task.

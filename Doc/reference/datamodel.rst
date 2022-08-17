@@ -1270,7 +1270,7 @@ Basic customization
 
    Typical implementations create a new instance of the class by invoking the
    superclass's :meth:`__new__` method using ``super().__new__(cls[, ...])``
-   with appropriate arguments and then modifying the newly-created instance
+   with appropriate arguments and then modifying the newly created instance
    as necessary before returning it.
 
    If :meth:`__new__` is invoked during object construction and it returns an
@@ -1560,7 +1560,7 @@ Basic customization
       predictable between repeated invocations of Python.
 
       This is intended to provide protection against a denial-of-service caused
-      by carefully-chosen inputs that exploit the worst case performance of a
+      by carefully chosen inputs that exploit the worst case performance of a
       dict insertion, O(n\ :sup:`2`) complexity.  See
       http://www.ocert.org/advisories/ocert-2011-003.html for details.
 
@@ -2984,7 +2984,8 @@ generators, coroutines do not directly support iteration.
    :exc:`StopIteration`, or other exception) is the same as when
    iterating over the :meth:`__await__` return value, described above.
 
-.. method:: coroutine.throw(type[, value[, traceback]])
+.. method:: coroutine.throw(value)
+            coroutine.throw(type[, value[, traceback]])
 
    Raises the specified exception in the coroutine.  This method delegates
    to the :meth:`~generator.throw` method of the iterator that caused
