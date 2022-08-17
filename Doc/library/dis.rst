@@ -1351,8 +1351,9 @@ iterations of the loop.
     Equivalent to ``TOS = TOS1.send(TOS)``. Used in ``yield from`` and ``await``
     statements.
 
-    If the call raises :exc:`StopIteration`, pop both values, push its return
-    value, and increment the bytecode counter by *delta*.
+    If the call raises :exc:`StopIteration`, pop both items, push the
+    exception's ``value`` attribute, and increment the bytecode counter by
+    *delta*.
 
     .. versionadded:: 3.11
 
