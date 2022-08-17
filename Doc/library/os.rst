@@ -615,7 +615,7 @@ process and user.
       os.setns(fd, os.CLONE_NEWNET)
       os.close(fd)
 
-   .. availability:: Linux 3.0 or newer with glibc 2.14 or newer.
+   .. availability:: Linux >= 3.0 with glibc >= 2.14.
 
    .. versionadded:: 3.12
 
@@ -802,7 +802,7 @@ process and user.
    If the *flags* argument is ``0``, no changes are made to the calling process's
    execution context.
 
-   .. availability:: Linux 2.6.16 or newer.
+   .. availability:: Linux >= 2.6.16.
 
    .. versionadded:: 3.12
 
