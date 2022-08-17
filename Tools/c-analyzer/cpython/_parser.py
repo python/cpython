@@ -141,6 +141,7 @@ Parser/**/*.h	Py_BUILD_CORE	1
 Objects/**/*.c	Py_BUILD_CORE	1
 
 Modules/_asynciomodule.c	Py_BUILD_CORE	1
+Modules/_codecsmodule.c	Py_BUILD_CORE	1
 Modules/_collectionsmodule.c	Py_BUILD_CORE	1
 Modules/_ctypes/_ctypes.c	Py_BUILD_CORE	1
 Modules/_ctypes/cfield.c	Py_BUILD_CORE	1
@@ -293,6 +294,10 @@ SAME = [
 ]
 
 MAX_SIZES = {
+    # GLOB: (MAXTEXT, MAXLINES),
+    # First match wins.
+    _abs('Include/internal/pycore_global_strings.h'): (5_000, 1000),
+    _abs('Include/internal/pycore_runtime_init_generated.h'): (5_000, 1000),
     _abs('Include/**/*.h'): (5_000, 500),
     _abs('Modules/_ctypes/ctypes.h'): (5_000, 500),
     _abs('Modules/_datetimemodule.c'): (20_000, 300),
