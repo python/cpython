@@ -191,7 +191,11 @@ EMSCRIPTEN = Platform(
     config_site=WASMTOOLS / "config.site-wasm32-emscripten",
     configure_wrapper=EMSCRIPTEN_ROOT / "emconfigure",
     make_wrapper=EMSCRIPTEN_ROOT / "emmake",
-    environ={"EM_COMPILER_WRAPPER": "ccache"} if HAS_CCACHE else {},
+    environ={
+        # workaround for https://github.com/emscripten-core/emscripten/issues/17635
+        "TZ": "UTC",
+        "EM_COMPILER_WRAPPER": "ccache" if HAS_CCACHE else None,
+    },
     check=_check_emscripten,
 )
 
@@ -352,12 +356,15 @@ class BuildProfile:
         env.setdefault("MAKEFLAGS", f"-j{os.cpu_count()}")
         platenv = self.host.platform.getenv(self)
         for key, value in platenv.items():
-            if isinstance(value, str):
-                value = value.format(
+            if value is None:
+                env.pop(key, None)
+            elif isinstance(value, str):
+                env[key] = value.format(
                     relbuilddir=self.builddir.relative_to(SRCDIR),
                     srcdir=SRCDIR,
                 )
-            env[key] = value
+            else:
+                env[key] = value
         return env
 
     def _run_cmd(self, cmd: Iterable[str], args: Iterable[str]):
