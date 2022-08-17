@@ -794,11 +794,11 @@ class TestInheritance(unittest.TestCase):
 
     @patch("_markupbase.ParserBase.__init__")
     @patch("_markupbase.ParserBase.reset")
-    def test_init(self, super_init_method, super_reset_method):
+    def test_base_class_methods_called(self, super_reset_method, super_init_method):
         with patch('_markupbase.ParserBase') as parser_base:
-            a = html.parser.HTMLParser()
-            self.assertTrue(super_init_method.called)
-            self.assertTrue(super_reset_method.called)
+            EventCollector()
+            super_init_method.assert_called_once()
+            super_reset_method.assert_called_once()
 
 
 if __name__ == "__main__":
