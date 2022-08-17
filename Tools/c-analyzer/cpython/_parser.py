@@ -295,6 +295,9 @@ SAME = [
 
 MAX_SIZES = {
     # GLOB: (MAXTEXT, MAXLINES),
+    # First match wins.
+    _abs('Include/internal/pycore_global_strings.h'): (5_000, 1000),
+    _abs('Include/internal/pycore_runtime_init_generated.h'): (5_000, 1000),
     _abs('Include/**/*.h'): (5_000, 500),
     _abs('Modules/_ctypes/ctypes.h'): (5_000, 500),
     _abs('Modules/_datetimemodule.c'): (20_000, 300),
