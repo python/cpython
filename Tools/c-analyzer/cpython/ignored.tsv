@@ -307,6 +307,58 @@ Objects/object.c	-	_PyLineIterator	-
 Objects/object.c	-	_PyPositionsIterator	-
 Python/importdl.h	-	_PyImport_DynLoadFiletab	-
 
+Modules/expat/xmlrole.c	-	prolog0	-
+Modules/expat/xmlrole.c	-	prolog1	-
+Modules/expat/xmlrole.c	-	prolog2	-
+Modules/expat/xmlrole.c	-	doctype0	-
+Modules/expat/xmlrole.c	-	doctype1	-
+Modules/expat/xmlrole.c	-	doctype2	-
+Modules/expat/xmlrole.c	-	doctype3	-
+Modules/expat/xmlrole.c	-	doctype4	-
+Modules/expat/xmlrole.c	-	doctype5	-
+Modules/expat/xmlrole.c	-	internalSubset	-
+Modules/expat/xmlrole.c	-	entity0	-
+Modules/expat/xmlrole.c	-	entity1	-
+Modules/expat/xmlrole.c	-	entity2	-
+Modules/expat/xmlrole.c	-	entity3	-
+Modules/expat/xmlrole.c	-	entity4	-
+Modules/expat/xmlrole.c	-	entity5	-
+Modules/expat/xmlrole.c	-	entity6	-
+Modules/expat/xmlrole.c	-	entity7	-
+Modules/expat/xmlrole.c	-	entity8	-
+Modules/expat/xmlrole.c	-	entity9	-
+Modules/expat/xmlrole.c	-	entity10	-
+Modules/expat/xmlrole.c	-	notation0	-
+Modules/expat/xmlrole.c	-	notation1	-
+Modules/expat/xmlrole.c	-	notation2	-
+Modules/expat/xmlrole.c	-	notation3	-
+Modules/expat/xmlrole.c	-	notation4	-
+Modules/expat/xmlrole.c	-	attlist0	-
+Modules/expat/xmlrole.c	-	attlist1	-
+Modules/expat/xmlrole.c	-	attlist2	-
+Modules/expat/xmlrole.c	-	attlist3	-
+Modules/expat/xmlrole.c	-	attlist4	-
+Modules/expat/xmlrole.c	-	attlist5	-
+Modules/expat/xmlrole.c	-	attlist6	-
+Modules/expat/xmlrole.c	-	attlist7	-
+Modules/expat/xmlrole.c	-	attlist8	-
+Modules/expat/xmlrole.c	-	attlist9	-
+Modules/expat/xmlrole.c	-	element0	-
+Modules/expat/xmlrole.c	-	element1	-
+Modules/expat/xmlrole.c	-	element2	-
+Modules/expat/xmlrole.c	-	element3	-
+Modules/expat/xmlrole.c	-	element4	-
+Modules/expat/xmlrole.c	-	element5	-
+Modules/expat/xmlrole.c	-	element6	-
+Modules/expat/xmlrole.c	-	element7	-
+Modules/expat/xmlrole.c	-	externalSubset0	-
+Modules/expat/xmlrole.c	-	externalSubset1	-
+Modules/expat/xmlrole.c	-	condSect0	-
+Modules/expat/xmlrole.c	-	condSect1	-
+Modules/expat/xmlrole.c	-	condSect2	-
+Modules/expat/xmlrole.c	-	declClose	-
+Modules/expat/xmlrole.c	-	error	-
+
 
 ##################################
 # test code
@@ -1933,4 +1985,5 @@ Python/specialize.c	-	adaptive_opcodes	-
 Python/specialize.c	-	cache_requirements	-
 Python/specialize.c	-	compare_masks	-
 Python/specialize.c	-	_PyOpcode_Adaptive	-
+Python/stdlib_module_names.h	-	_Py_stdlib_module_names	-
 Python/sysmodule.c	-	whatstrings	-

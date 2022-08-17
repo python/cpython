@@ -86,8 +86,6 @@ Objects/unicodetype_db.h
 # generated
 Python/deepfreeze/*.c
 Python/frozen_modules/*.h
-Python/opcode_targets.h
-Python/stdlib_module_names.h
 
 # @end=conf@
 ''')
@@ -109,9 +107,7 @@ Objects/stringlib/split.h
 
 Modules/_dbmmodule.c
 Modules/cjkcodecs/_codecs_*.c
-Modules/expat/xmlrole.c
 Modules/expat/xmlparse.c
-Python/initconfig.c
 ''')
 
 INCL_DIRS = clean_lines('''
@@ -308,8 +304,12 @@ MAX_SIZES = {
     _abs('Objects/stringlib/unicode_format.h'): (10_000, 400),
     _abs('Objects/typeobject.c'): (20_000, 200),
     _abs('Python/compile.c'): (20_000, 500),
+    _abs('Python/deepfreeze/*.c'): (20_000, 500),
+    _abs('Python/frozen_modules/*.h'): (20_000, 500),
     _abs('Python/pylifecycle.c'): (500_000, 5000),
     _abs('Python/pystate.c'): (500_000, 5000),
+    _abs('Python/opcode_targets.h'): (10_000, 500),
+    _abs('Python/stdlib_module_names.h'): (5_000, 500),
 }
 
 
