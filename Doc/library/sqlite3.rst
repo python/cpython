@@ -190,7 +190,7 @@ creating a new cursor, then querying the database::
    >>> new_cur = new_con.cursor()
    >>> res = new_cur.execute("SELECT year, title FROM movie ORDER BY score DESC"):
    >>> title, year = res.fetchone()
-   >>> print(f'The highest scoring Monty Python movie is "{title}", released in {year}')
+   >>> print(f'The highest scoring Monty Python movie is {title!r}, released in {year}')
    'The highest scoring Monty Python movie is "Monty Python and the Holy Grail", released in 1975'
 
 You've now created an SQLite database using the :mod:`!sqlite3` module,
