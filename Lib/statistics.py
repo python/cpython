@@ -1032,7 +1032,7 @@ def covariance(x, y, /):
     return sxy / (n - 1)
 
 
-def correlation(x, y, /, *, by_rank=False):
+def correlation(x, y, /, *, method='linear'):
     """Pearson's correlation coefficient
 
     Return the Pearson's correlation coefficient for two inputs. Pearson's
@@ -1046,10 +1046,10 @@ def correlation(x, y, /, *, by_rank=False):
     >>> correlation(x, y)
     -1.0
 
-    If *by_rank* is true, computes Spearman's rank correlation coefficient
+    If *method* is "ranked", computes Spearman's rank correlation coefficient
     for two inputs.  The data is replaced by ranks.  Ties are averaged
-    so that equal values receive the same rank.  The resulting coefficient measures
-    the strength of a monotonic relationship.
+    so that equal values receive the same rank.  The resulting coefficient
+    measures the strength of a monotonic relationship.
 
     Spearman's rank correlation coefficient is appropriate for ordinal
     data or for continuous data that doesn't meet the linear proportion
@@ -1060,7 +1060,9 @@ def correlation(x, y, /, *, by_rank=False):
         raise StatisticsError('correlation requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('correlation requires at least two data points')
-    if by_rank:
+    if method not in {'linear', 'ranked'}:
+        raise ValueError(f'Unknown method: {method!r}')
+    if method == 'ranked':
         x = _rank(x)
         y = _rank(y)
     xbar = fsum(x) / n

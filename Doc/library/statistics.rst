@@ -648,7 +648,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    .. versionadded:: 3.10
 
-.. function:: correlation(x, y, /, *, by_rank=False)
+.. function:: correlation(x, y, /, *, method='linear')
 
    Return the `Pearson's correlation coefficient
    <https://en.wikipedia.org/wiki/Pearson_correlation_coefficient>`_
@@ -656,7 +656,7 @@ However, for reading convenience, most of the examples show sorted sequences.
    between -1 and +1. It measures the strength and direction of a linear
    relationship.
 
-   If *by_rank* is true, computes `Spearman's rank correlation coefficient
+   If *method* is "ranked", computes `Spearman's rank correlation coefficient
    <https://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient>`_
    for two inputs. The data is replaced by ranks.  Ties are averaged so that
    equal values receive the same rank.  The resulting coefficient measures the
@@ -679,7 +679,7 @@ However, for reading convenience, most of the examples show sorted sequences.
       >>> dist_from_sun = [58, 108, 150, 228, 778, 1_400, 2_900, 4_500] # million km
 
       >>> # Show that a perfect monotonic relationship exists
-      >>> correlation(orbital_period, dist_from_sun, by_rank=True)
+      >>> correlation(orbital_period, dist_from_sun, method='ranked')
       1.0
 
       >>> # Observe that a linear relationship is imperfect
@@ -688,7 +688,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
       >>> # Demonstrate Kepler's third law: There is a linear correlation
       >>> # between the square of the orbital period and the cube of the
-      >>> # distance from the sun
+      >>> # distance from the sun.
       >>> period_squared = [p * p for p in orbital_period]
       >>> dist_cubed = [d * d * d for d in dist_from_sun]
       >>> round(correlation(period_squared, dist_cubed), 4)

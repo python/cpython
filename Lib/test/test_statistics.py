@@ -2575,8 +2575,11 @@ class TestCorrelationAndCovariance(unittest.TestCase):
         #     https://www.wolframalpha.com/input?i=SpearmanRho%5B%7B56%2C+75%2C+45%2C+71%2C+61%2C+64%2C+58%2C+80%2C+76%2C+61%7D%2C+%7B66%2C+70%2C+40%2C+60%2C+65%2C+56%2C+59%2C+77%2C+67%2C+63%7D%5D
         reading = [56, 75, 45, 71, 61, 64, 58, 80, 76, 61]
         mathematics = [66, 70, 40, 60, 65, 56, 59, 77, 67, 63]
-        self.assertAlmostEqual(statistics.correlation(reading, mathematics, by_rank=True),
+        self.assertAlmostEqual(statistics.correlation(reading, mathematics, method='ranked'),
                                0.6686960980480712)
+
+        with self.assertRaises(ValueError):
+            statistics.correlation(reading, mathematics, method='bad_method')
 
 class TestLinearRegression(unittest.TestCase):
 
