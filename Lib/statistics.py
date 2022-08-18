@@ -355,7 +355,7 @@ def _fail_neg(values, errmsg='negative value'):
             raise StatisticsError(errmsg)
         yield x
 
-def _rank(data, /) -> list[float]:
+def _rank(data, /, *, key=None, reverse=False, ties='average') -> list[float]:
     """Rank order a dataset. The lowest value has rank 1.
 
     Ties are averaged so that equal values receive the same rank.
@@ -369,10 +369,27 @@ def _rank(data, /) -> list[float]:
     >>> _rank([3.5, 5.0, 3.5, 2.0, 6.0, 1.0])
     [3.5, 5.0, 3.5, 2.0, 6.0, 1.0]
 
+    It is possible to rank the data in reverse order so that
+    the highest value has rank 1.  Also, a key-function can
+    extract the field to be ranked:
+
+    >>> goals = [('eagles', 45), ('bears', 48), ('lions', 44)]
+    >>> _rank(goals, key=itemgetter(1), reverse=True)
+    [2.0, 1.0, 3.0]
+
     """
-    # Handling of ties matches scipy.stats.mstats.spearmanr
-    val_pos = sorted(zip(data, count()))
-    i = 0
+    # If this function becomes public at some point, more thought
+    # needs to be given to the signature.  A list of ints is
+    # plausible when ties is "min" or "max".  When ties is "average",
+    # either list[float] or list[Fraction] is plausible.
+
+    # Default handling of ties matches scipy.stats.mstats.spearmanr.
+    if ties != 'average':
+        raise ValueError(f'Unknown tie resolution method: {ties!r}')
+    if key is not None:
+        data = map(key, data)
+    val_pos = sorted(zip(data, count()), reverse=reverse)
+    i = 0   # To rank starting at 0 instead of 1, set i = -1.
     result = [0] * len(val_pos)
     for _, g in groupby(val_pos, key=itemgetter(0)):
         group = list(g)
