@@ -230,29 +230,29 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(NUM, 15)
 
-    async def test_cancellation_in_body(self):
+    async def test_taskgroup_08(self):
 
         async def foo():
-            await asyncio.sleep(0.1)
-            1 / 0
+            try:
+                await asyncio.sleep(10)
+            finally:
+                1 / 0
 
         async def runner():
             async with taskgroups.TaskGroup() as g:
                 for _ in range(5):
                     g.create_task(foo())
 
-                try:
-                    await asyncio.sleep(10)
-                except asyncio.CancelledError:
-                    raise
+                await asyncio.sleep(10)
 
         r = asyncio.create_task(runner())
         await asyncio.sleep(0.1)
 
         self.assertFalse(r.done())
         r.cancel()
-        with self.assertRaises(asyncio.CancelledError) as cm:
+        with self.assertRaises(ExceptionGroup) as cm:
             await r
+        self.assertEqual(get_error_types(cm.exception), {ZeroDivisionError})
 
     async def test_taskgroup_09(self):
 
@@ -316,8 +316,10 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
     async def test_taskgroup_11(self):
 
         async def foo():
-            await asyncio.sleep(0.1)
-            1 / 0
+            try:
+                await asyncio.sleep(10)
+            finally:
+                1 / 0
 
         async def runner():
             async with taskgroups.TaskGroup():
@@ -325,24 +327,26 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                     for _ in range(5):
                         g2.create_task(foo())
 
-                    try:
-                        await asyncio.sleep(10)
-                    except asyncio.CancelledError:
-                        raise
+                    await asyncio.sleep(10)
 
         r = asyncio.create_task(runner())
         await asyncio.sleep(0.1)
 
         self.assertFalse(r.done())
         r.cancel()
-        with self.assertRaises(asyncio.CancelledError):
+        with self.assertRaises(ExceptionGroup) as cm:
             await r
+
+        self.assertEqual(get_error_types(cm.exception), {ExceptionGroup})
+        self.assertEqual(get_error_types(cm.exception.exceptions[0]), {ZeroDivisionError})
 
     async def test_taskgroup_12(self):
 
         async def foo():
-            await asyncio.sleep(0.1)
-            1 / 0
+            try:
+                await asyncio.sleep(10)
+            finally:
+                1 / 0
 
         async def runner():
             async with taskgroups.TaskGroup() as g1:
@@ -352,18 +356,18 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                     for _ in range(5):
                         g2.create_task(foo())
 
-                    try:
-                        await asyncio.sleep(10)
-                    except asyncio.CancelledError:
-                        raise
+                    await asyncio.sleep(10)
 
         r = asyncio.create_task(runner())
         await asyncio.sleep(0.1)
 
         self.assertFalse(r.done())
         r.cancel()
-        with self.assertRaises(asyncio.CancelledError):
+        with self.assertRaises(ExceptionGroup) as cm:
             await r
+
+        self.assertEqual(get_error_types(cm.exception), {ExceptionGroup})
+        self.assertEqual(get_error_types(cm.exception.exceptions[0]), {ZeroDivisionError})
 
     async def test_taskgroup_13(self):
 
@@ -424,8 +428,9 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         self.assertFalse(r.done())
         r.cancel()
-        with self.assertRaises(asyncio.CancelledError):
+        with self.assertRaises(ExceptionGroup) as cm:
             await r
+        self.assertEqual(get_error_types(cm.exception), {ZeroDivisionError})
 
     async def test_taskgroup_16(self):
 
@@ -451,8 +456,9 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         self.assertFalse(r.done())
         r.cancel()
-        with self.assertRaises(asyncio.CancelledError):
+        with self.assertRaises(ExceptionGroup) as cm:
             await r
+        self.assertEqual(get_error_types(cm.exception), {ZeroDivisionError})
 
     async def test_taskgroup_17(self):
         NUM = 0
