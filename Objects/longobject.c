@@ -4249,7 +4249,7 @@ long_divmod(PyObject *a, PyObject *b)
     if (l_divmod((PyLongObject*)a, (PyLongObject*)b, &div, &mod) < 0) {
         return NULL;
     }
-    z = PyTuple_New(2);
+    z = _PyTuple_New_Nonzeroed(2);
     if (z != NULL) {
         PyTuple_SET_ITEM(z, 0, (PyObject *) div);
         PyTuple_SET_ITEM(z, 1, (PyObject *) mod);
@@ -5544,7 +5544,7 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
             goto error;
     }
 
-    result = PyTuple_New(2);
+    result = _PyTuple_New_Nonzeroed(2);
     if (result == NULL)
         goto error;
 

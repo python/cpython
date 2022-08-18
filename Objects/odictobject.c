@@ -1770,7 +1770,7 @@ odictiter_iternext(odictiterobject *di)
         }
     }
     else {
-        result = PyTuple_New(2);
+        result = _PyTuple_New_Nonzeroed(2);
         if (result == NULL) {
             Py_DECREF(key);
             Py_DECREF(value);

@@ -67,6 +67,20 @@ struct _Py_tuple_state {
 extern PyObject *_PyTuple_FromArray(PyObject *const *, Py_ssize_t);
 extern PyObject *_PyTuple_FromArraySteal(PyObject *const *, Py_ssize_t);
 
+/* A faster, but unsafe, version of PyTuple_New for use in performance-
+ * critical paths.
+ *
+ * Zeroing the contents of a tuple is surprisingly expensive, so for
+ * cases where the contents of the tuple will immediately be overwritten,
+ * time can be saved by calling this non-zeroing version.
+ *
+ * This tuple is not safe to be seen by any other code since it will
+ * have garbage where PyObject pointers are expected. If there is any
+ * chance that the initialization code will raise an exception or do
+ * a GC collection, it is not safe to use this function.
+ */
+PyAPI_FUNC(PyObject *) _PyTuple_New_Nonzeroed(Py_ssize_t size);
+
 #ifdef __cplusplus
 }
 #endif

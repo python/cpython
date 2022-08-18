@@ -207,7 +207,7 @@ enum_next_long(enumobject *en, PyObject* next_item)
         }
         return result;
     }
-    result = PyTuple_New(2);
+    result = _PyTuple_New_Nonzeroed(2);
     if (result == NULL) {
         Py_DECREF(next_index);
         Py_DECREF(next_item);
@@ -257,7 +257,7 @@ enum_next(enumobject *en)
         }
         return result;
     }
-    result = PyTuple_New(2);
+    result = _PyTuple_New_Nonzeroed(2);
     if (result == NULL) {
         Py_DECREF(next_index);
         Py_DECREF(next_item);

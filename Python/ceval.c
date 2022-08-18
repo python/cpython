@@ -2647,7 +2647,7 @@ handle_eval_breaker:
         }
 
         TARGET(BUILD_TUPLE) {
-            PyObject *tup = PyTuple_New(oparg);
+            PyObject *tup = _PyTuple_New_Nonzeroed(oparg);
             if (tup == NULL)
                 goto error;
             while (--oparg >= 0) {
@@ -5937,7 +5937,7 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
         allargs = args;
     }
     else {
-        kwnames = PyTuple_New(kwcount);
+        kwnames = _PyTuple_New_Nonzeroed(kwcount);
         if (kwnames == NULL) {
             goto fail;
         }

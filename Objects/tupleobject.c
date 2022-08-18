@@ -83,6 +83,21 @@ PyTuple_New(Py_ssize_t size)
     return (PyObject *) op;
 }
 
+PyObject *
+_PyTuple_New_Nonzeroed(Py_ssize_t size)
+{
+    PyTupleObject *op;
+    if (size == 0) {
+        return tuple_get_empty();
+    }
+    op = tuple_alloc(size);
+    if (op == NULL) {
+        return NULL;
+    }
+    _PyObject_GC_TRACK(op);
+    return (PyObject *) op;
+}
+
 Py_ssize_t
 PyTuple_Size(PyObject *op)
 {

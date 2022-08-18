@@ -23,7 +23,7 @@ STRINGLIB(partition)(PyObject* str_obj,
         return NULL;
     }
 
-    out = PyTuple_New(3);
+    out = _PyTuple_New_Nonzeroed(3);
     if (!out)
         return NULL;
 
@@ -80,7 +80,7 @@ STRINGLIB(rpartition)(PyObject* str_obj,
         return NULL;
     }
 
-    out = PyTuple_New(3);
+    out = _PyTuple_New_Nonzeroed(3);
     if (!out)
         return NULL;
 

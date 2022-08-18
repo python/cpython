@@ -2051,7 +2051,7 @@ mro_implementation(PyTypeObject *type)
          */
         PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(bases, 0));
         Py_ssize_t k = PyTuple_GET_SIZE(base->tp_mro);
-        PyObject *result = PyTuple_New(k + 1);
+        PyObject *result = _PyTuple_New_Nonzeroed(k + 1);
         if (result == NULL) {
             return NULL;
         }
@@ -5639,7 +5639,7 @@ reduce_newobj(PyObject *obj)
             return NULL;
         }
         n = args ? PyTuple_GET_SIZE(args) : 0;
-        newargs = PyTuple_New(n+1);
+        newargs = _PyTuple_New_Nonzeroed(n+1);
         if (newargs == NULL) {
             Py_XDECREF(args);
             Py_DECREF(newobj);

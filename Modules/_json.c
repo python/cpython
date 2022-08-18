@@ -353,7 +353,7 @@ _build_rval_index_tuple(PyObject *rval, Py_ssize_t idx) {
         Py_DECREF(rval);
         return NULL;
     }
-    tpl = PyTuple_New(2);
+    tpl = _PyTuple_New_Nonzeroed(2);
     if (tpl == NULL) {
         Py_DECREF(pyidx);
         Py_DECREF(rval);
