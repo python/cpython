@@ -825,6 +825,7 @@ time
   it had a resolution of 1 millisecond (10\ :sup:`-3` seconds).
   (Contributed by Benjamin Szőke, Dong-hee Na, Eryk Sun and Victor Stinner in :issue:`21302` and :issue:`45429`.)
 
+
 traceback
 ---------
 
@@ -833,9 +834,10 @@ traceback
   formatted.
   (Contributed by Ammar Askar in :issue:`44569`.)
 
-* Add :func:`traceback.TracebackException.print` which prints the
-  formatted ``TracebackException`` instance to a file.
+* Add :func:`traceback.TracebackException.print`, which prints the
+  formatted :exc:`~traceback.TracebackException` instance to a file.
   (Contributed by Irit Katriel in :issue:`33809`.)
+
 
 typing
 ------
