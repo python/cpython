@@ -234,7 +234,9 @@ also be used to improve performance.
 
 .. cmdoption:: --enable-bolt
 
-   Enable usage of the BOLT post-link binary optimizer (disabled by default).
+   Enable usage of the `BOLT post-link binary optimizer
+   <https://github.com/llvm/llvm-project/tree/main/bolt>` (disabled by
+   default).
 
    BOLT is part of the LLVM project but is not always included in their binary
    distributions. This flag requires that ``llvm-bolt`` and ``merge-fdata``
