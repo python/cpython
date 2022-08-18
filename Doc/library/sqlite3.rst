@@ -105,7 +105,8 @@ assign the result to ``res``,
 and call :meth:`res.fetchone() <Cursor.fetchone>` to fetch the resulting row::
 
    >>> res = cur.execute("SELECT name FROM sqlite_master")
-   >>> res.fetchone()
+   >>> res.fetchone() is None
+   True
    ('movie',)
 
 We can see that the table has been created,
