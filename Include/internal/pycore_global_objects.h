@@ -45,6 +45,15 @@ struct _Py_global_objects {
         _PyGC_Head_UNUSED _tuple_empty_gc_not_used;
         PyTupleObject tuple_empty;
     } singletons;
+    /* This dictionary holds all interned unicode strings.  Note that references
+       to strings in this dictionary are *not* counted in the string's ob_refcnt.
+       When the interned string reaches a refcnt of 0 the string deallocation
+       function will delete the reference from this dictionary.
+
+       Another way to look at this is that to say that the actual reference
+       count of a string is:  s->ob_refcnt + (s->state ? 2 : 0)
+    */
+    PyObject *interned;
 };
 
 

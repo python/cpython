@@ -69,6 +69,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
    in _PyUnicode_ClearInterned(). */
 /* #define INTERNED_STATS 1 */
 
+#define INTERNED_DICT() \
+    _PyRuntime.global_objects.interned
 
 /*[clinic input]
 class str "PyObject *" "&PyUnicode_Type"
@@ -190,16 +192,6 @@ extern "C" {
    /* On Linux, overallocate by 25% is the best factor */
 #  define OVERALLOCATE_FACTOR 4
 #endif
-
-/* This dictionary holds all interned unicode strings.  Note that references
-   to strings in this dictionary are *not* counted in the string's ob_refcnt.
-   When the interned string reaches a refcnt of 0 the string deallocation
-   function will delete the reference from this dictionary.
-
-   Another way to look at this is that to say that the actual reference
-   count of a string is:  s->ob_refcnt + (s->state ? 2 : 0)
-*/
-static PyObject *interned = NULL;
 
 /* Forward declaration */
 static inline int
@@ -1523,7 +1515,7 @@ unicode_dealloc(PyObject *unicode)
         _Py_FatalRefcountError("deallocating an Unicode singleton");
     }
 #endif
-
+    PyObject *interned = INTERNED_DICT();
     if (PyUnicode_CHECK_INTERNED(unicode)) {
         /* Revive the dead object temporarily. PyDict_DelItem() removes two
            references (key and value) which were ignored by
@@ -14657,12 +14649,14 @@ PyUnicode_InternInPlace(PyObject **p)
         return;
     }
 
+    PyObject *interned = INTERNED_DICT();
     if (interned == NULL) {
         interned = PyDict_New();
         if (interned == NULL) {
             PyErr_Clear(); /* Don't leave an exception */
             return;
         }
+        INTERNED_DICT() = interned;
     }
 
     PyObject *t = PyDict_SetDefault(interned, s, s);
@@ -14713,6 +14707,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
         return;
     }
 
+    PyObject *interned = INTERNED_DICT();
     if (interned == NULL) {
         return;
     }
@@ -14748,7 +14743,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
 #endif
 
     PyDict_Clear(interned);
-    Py_CLEAR(interned);
+    Py_CLEAR(INTERNED_DICT());
 }
 
 
@@ -15155,7 +15150,7 @@ _PyUnicode_EnableLegacyWindowsFSEncoding(void)
 static inline int
 unicode_is_finalizing(void)
 {
-    return (interned == NULL);
+    return (INTERNED_DICT() == NULL);
 }
 #endif
 
@@ -15197,7 +15192,7 @@ _PyUnicode_Fini(PyInterpreterState *interp)
 
     if (_Py_IsMainInterpreter(interp)) {
         // _PyUnicode_ClearInterned() must be called before _PyUnicode_Fini()
-        assert(interned == NULL);
+        assert(INTERNED_DICT() == NULL);
         // bpo-47182: force a unicodedata CAPI capsule re-import on
         // subsequent initialization of main interpreter.
         ucnhash_capi = NULL;
