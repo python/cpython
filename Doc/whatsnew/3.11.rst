@@ -2123,19 +2123,19 @@ Removed
 
   The removed functions are:
 
-  * :c:func:`!PyUnicode_Encode`
-  * :c:func:`!PyUnicode_EncodeASCII`
-  * :c:func:`!PyUnicode_EncodeLatin1`
-  * :c:func:`!PyUnicode_EncodeUTF7`
-  * :c:func:`!PyUnicode_EncodeUTF8`
-  * :c:func:`!PyUnicode_EncodeUTF16`
-  * :c:func:`!PyUnicode_EncodeUTF32`
-  * :c:func:`!PyUnicode_EncodeUnicodeEscape`
-  * :c:func:`!PyUnicode_EncodeRawUnicodeEscape`
-  * :c:func:`!PyUnicode_EncodeCharmap`
-  * :c:func:`!PyUnicode_TranslateCharmap`
-  * :c:func:`!PyUnicode_EncodeDecimal`
-  * :c:func:`!PyUnicode_TransformDecimalToASCII`
+  * :func:`!PyUnicode_Encode`
+  * :func:`!PyUnicode_EncodeASCII`
+  * :func:`!PyUnicode_EncodeLatin1`
+  * :func:`!PyUnicode_EncodeUTF7`
+  * :func:`!PyUnicode_EncodeUTF8`
+  * :func:`!PyUnicode_EncodeUTF16`
+  * :func:`!PyUnicode_EncodeUTF32`
+  * :func:`!PyUnicode_EncodeUnicodeEscape`
+  * :func:`!PyUnicode_EncodeRawUnicodeEscape`
+  * :func:`!PyUnicode_EncodeCharmap`
+  * :func:`!PyUnicode_TranslateCharmap`
+  * :func:`!PyUnicode_EncodeDecimal`
+  * :func:`!PyUnicode_TransformDecimalToASCII`
 
   See :pep:`624` for details and
   :pep:`migration guidance <624#alternative-apis>`.
