@@ -655,9 +655,8 @@ specialize_dict_access(
             return 0;
         }
         // We found an instance with a __dict__.
-        PyObject *value = NULL;
         Py_ssize_t index =
-            _PyDict_GetItemSpecialize(dict, name, &value);
+            _PyDict_LookupIndex(dict, name);
         if (index != (uint16_t)index) {
             SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
             return 0;
