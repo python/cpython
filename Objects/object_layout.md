@@ -62,7 +62,7 @@ the values pointer, to enable the (legacy) C-API function
 * ob_refcnt
 * ob_type
 
-For a "normal" Python object, that is one that doen't inherit from a builtin
+For a "normal" Python object, that is one that doesn't inherit from a builtin
 class or have slots, the header and pre-header form the entire object.
 
 ![Layout of "normal" object in 3.12](./object_layout_312.png)
