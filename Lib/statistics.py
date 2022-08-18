@@ -358,24 +358,24 @@ def _fail_neg(values, errmsg='negative value'):
 def _rank(data, /, *, key=None, reverse=False, ties='average') -> list[float]:
     """Rank order a dataset. The lowest value has rank 1.
 
-    Ties are averaged so that equal values receive the same rank.
+    Ties are averaged so that equal values receive the same rank:
 
-    >>> data = [31, 56, 31, 25, 75, 18]
-    >>> _rank(data)
-    [3.5, 5.0, 3.5, 2.0, 6.0, 1.0]
+        >>> data = [31, 56, 31, 25, 75, 18]
+        >>> _rank(data)
+        [3.5, 5.0, 3.5, 2.0, 6.0, 1.0]
 
-    The operation is idempotent.
+    The operation is idempotent:
 
-    >>> _rank([3.5, 5.0, 3.5, 2.0, 6.0, 1.0])
-    [3.5, 5.0, 3.5, 2.0, 6.0, 1.0]
+        >>> _rank([3.5, 5.0, 3.5, 2.0, 6.0, 1.0])
+        [3.5, 5.0, 3.5, 2.0, 6.0, 1.0]
 
     It is possible to rank the data in reverse order so that
     the highest value has rank 1.  Also, a key-function can
     extract the field to be ranked:
 
-    >>> goals = [('eagles', 45), ('bears', 48), ('lions', 44)]
-    >>> _rank(goals, key=itemgetter(1), reverse=True)
-    [2.0, 1.0, 3.0]
+        >>> goals = [('eagles', 45), ('bears', 48), ('lions', 44)]
+        >>> _rank(goals, key=itemgetter(1), reverse=True)
+        [2.0, 1.0, 3.0]
 
     """
     # If this function becomes public at some point, more thought
