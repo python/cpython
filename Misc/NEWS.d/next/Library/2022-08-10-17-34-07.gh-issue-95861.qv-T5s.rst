@@ -1,0 +1,2 @@
+Add support for computing Spearman's correlation coefficient to the existing
+statistics.correlation() function.
