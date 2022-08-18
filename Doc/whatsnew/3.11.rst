@@ -825,6 +825,20 @@ time
   it had a resolution of 1 millisecond (10\ :sup:`-3` seconds).
   (Contributed by Benjamin Szőke, Dong-hee Na, Eryk Sun and Victor Stinner in :issue:`21302` and :issue:`45429`.)
 
+
+traceback
+---------
+
+* Add :func:`traceback.StackSummary.format_frame_summary` to allow users
+  to override which frames appear in the traceback, and how they are
+  formatted.
+  (Contributed by Ammar Askar in :issue:`44569`.)
+
+* Add :func:`traceback.TracebackException.print`, which prints the
+  formatted :exc:`~traceback.TracebackException` instance to a file.
+  (Contributed by Irit Katriel in :issue:`33809`.)
+
+
 typing
 ------
 

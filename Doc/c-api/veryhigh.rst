@@ -39,7 +39,7 @@ the same library that the Python runtime is using.
 
    Note that if an otherwise unhandled :exc:`SystemExit` is raised, this
    function will not return ``1``, but exit the process, as long as
-   ``Py_InspectFlag`` is not set.
+   :c:member:`PyConfig.inspect` is zero.
 
 
 .. c:function:: int Py_BytesMain(int argc, char **argv)
@@ -95,7 +95,7 @@ the same library that the Python runtime is using.
 
    Note that if an otherwise unhandled :exc:`SystemExit` is raised, this
    function will not return ``-1``, but exit the process, as long as
-   ``Py_InspectFlag`` is not set.
+   :c:member:`PyConfig.inspect` is zero.
 
 
 .. c:function:: int PyRun_SimpleFile(FILE *fp, const char *filename)

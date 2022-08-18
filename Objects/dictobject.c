@@ -1686,49 +1686,11 @@ PyDict_GetItem(PyObject *op, PyObject *key)
 }
 
 Py_ssize_t
-_PyDict_GetItemHint(PyDictObject *mp, PyObject *key,
-                    Py_ssize_t hint, PyObject **value)
+_PyDict_LookupIndex(PyDictObject *mp, PyObject *key)
 {
-    assert(*value == NULL);
+    PyObject *value;
     assert(PyDict_CheckExact((PyObject*)mp));
     assert(PyUnicode_CheckExact(key));
-
-    if (hint >= 0 && hint < mp->ma_keys->dk_nentries) {
-        PyObject *res = NULL;
-
-        if (DK_IS_UNICODE(mp->ma_keys)) {
-            PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(mp->ma_keys) + (size_t)hint;
-            if (ep->me_key == key) {
-                if (mp->ma_keys->dk_kind == DICT_KEYS_SPLIT) {
-                    assert(mp->ma_values != NULL);
-                    res = mp->ma_values->values[(size_t)hint];
-                }
-                else {
-                    res = ep->me_value;
-                }
-                if (res != NULL) {
-                    *value = res;
-                    return hint;
-                }
-            }
-        }
-        else {
-            PyDictKeyEntry *ep = DK_ENTRIES(mp->ma_keys) + (size_t)hint;
-            if (ep->me_key == key) {
-                if (mp->ma_keys->dk_kind == DICT_KEYS_SPLIT) {
-                    assert(mp->ma_values != NULL);
-                    res = mp->ma_values->values[(size_t)hint];
-                }
-                else {
-                    res = ep->me_value;
-                }
-                if (res != NULL) {
-                    *value = res;
-                    return hint;
-                }
-            }
-        }
-    }
 
     Py_hash_t hash = unicode_get_hash(key);
     if (hash == -1) {
@@ -1738,7 +1700,7 @@ _PyDict_GetItemHint(PyDictObject *mp, PyObject *key,
         }
     }
 
-    return _Py_dict_lookup(mp, key, hash, value);
+    return _Py_dict_lookup(mp, key, hash, &value);
 }
 
 /* Same as PyDict_GetItemWithError() but with hash supplied by caller.

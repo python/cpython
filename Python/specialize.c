@@ -511,7 +511,6 @@ specialize_module_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
 {
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
     PyModuleObject *m = (PyModuleObject *)owner;
-    PyObject *value = NULL;
     assert((owner->ob_type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
     PyDictObject *dict = (PyDictObject *)m->md_dict;
     if (dict == NULL) {
@@ -522,14 +521,13 @@ specialize_module_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_ATTR_NON_STRING_OR_SPLIT);
         return -1;
     }
-    Py_ssize_t index = _PyDict_GetItemHint(dict, &_Py_ID(__getattr__), -1,
-                                           &value);
+    Py_ssize_t index = _PyDict_LookupIndex(dict, &_Py_ID(__getattr__));
     assert(index != DKIX_ERROR);
     if (index != DKIX_EMPTY) {
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_ATTR_MODULE_ATTR_NOT_FOUND);
         return -1;
     }
-    index = _PyDict_GetItemHint(dict, name, -1, &value);
+    index = _PyDict_LookupIndex(dict, name);
     assert (index != DKIX_ERROR);
     if (index != (uint16_t)index) {
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_OUT_OF_RANGE);
@@ -703,14 +701,13 @@ specialize_dict_access(
             return 0;
         }
         // We found an instance with a __dict__.
-        PyObject *value = NULL;
-        Py_ssize_t hint =
-            _PyDict_GetItemHint(dict, name, -1, &value);
-        if (hint != (uint16_t)hint) {
+        Py_ssize_t index =
+            _PyDict_LookupIndex(dict, name);
+        if (index != (uint16_t)index) {
             SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
             return 0;
         }
-        cache->index = (uint16_t)hint;
+        cache->index = (uint16_t)index;
         write_u32(cache->version, type->tp_version_tag);
         _Py_SET_OPCODE(*instr, hint_op);
     }
