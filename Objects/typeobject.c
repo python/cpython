@@ -2330,36 +2330,13 @@ best_base(PyObject *bases)
     return base;
 }
 
-#define ADDED_FIELD_AT_OFFSET(name, offset) \
-    (type->tp_ ## name  && (base->tp_ ##name == 0) && \
-    type->tp_ ## name + sizeof(PyObject *) == (offset) && \
-    type->tp_flags & Py_TPFLAGS_HEAPTYPE)
-
 static int
-extra_ivars(PyTypeObject *type, PyTypeObject *base)
+shape_differs(PyTypeObject *t1, PyTypeObject *t2)
 {
-    size_t t_size = type->tp_basicsize;
-    size_t b_size = base->tp_basicsize;
-
-    assert(t_size >= b_size); /* Else type smaller than base! */
-    if (type->tp_itemsize || base->tp_itemsize) {
-        /* If itemsize is involved, stricter rules */
-        return t_size != b_size ||
-            type->tp_itemsize != base->tp_itemsize;
-    }
-    /* Check for __dict__ and __weakrefs__ slots in either order */
-    if (ADDED_FIELD_AT_OFFSET(weaklistoffset, t_size)) {
-        t_size -= sizeof(PyObject *);
-    }
-    if ((type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0 &&
-        ADDED_FIELD_AT_OFFSET(dictoffset, t_size)) {
-        t_size -= sizeof(PyObject *);
-    }
-    /* Check __weakrefs__ again, in case it precedes __dict__ */
-    if (ADDED_FIELD_AT_OFFSET(weaklistoffset, t_size)) {
-        t_size -= sizeof(PyObject *);
-    }
-    return t_size != b_size;
+    return (
+        t1->tp_basicsize != t2->tp_basicsize ||
+        t1->tp_itemsize != t2->tp_itemsize
+    );
 }
 
 static PyTypeObject *
@@ -2367,14 +2344,18 @@ solid_base(PyTypeObject *type)
 {
     PyTypeObject *base;
 
-    if (type->tp_base)
+    if (type->tp_base) {
         base = solid_base(type->tp_base);
-    else
+    }
+    else {
         base = &PyBaseObject_Type;
-    if (extra_ivars(type, base))
+    }
+    if (shape_differs(type, base)) {
         return type;
-    else
+    }
+    else {
         return base;
+    }
 }
 
 static void object_dealloc(PyObject *);
@@ -8102,17 +8083,17 @@ slot_tp_call(PyObject *self, PyObject *args, PyObject *kwds)
 
 /* There are two slot dispatch functions for tp_getattro.
 
-   - slot_tp_getattro() is used when __getattribute__ is overridden
+   - _Py_slot_tp_getattro() is used when __getattribute__ is overridden
      but no __getattr__ hook is present;
 
-   - slot_tp_getattr_hook() is used when a __getattr__ hook is present.
+   - _Py_slot_tp_getattr_hook() is used when a __getattr__ hook is present.
 
-   The code in update_one_slot() always installs slot_tp_getattr_hook(); this
-   detects the absence of __getattr__ and then installs the simpler slot if
-   necessary. */
+   The code in update_one_slot() always installs _Py_slot_tp_getattr_hook();
+   this detects the absence of __getattr__ and then installs the simpler
+   slot if necessary. */
 
-static PyObject *
-slot_tp_getattro(PyObject *self, PyObject *name)
+PyObject *
+_Py_slot_tp_getattro(PyObject *self, PyObject *name)
 {
     PyObject *stack[2] = {self, name};
     return vectorcall_method(&_Py_ID(__getattribute__), stack, 2);
@@ -8143,8 +8124,8 @@ call_attribute(PyObject *self, PyObject *attr, PyObject *name)
     return res;
 }
 
-static PyObject *
-slot_tp_getattr_hook(PyObject *self, PyObject *name)
+PyObject *
+_Py_slot_tp_getattr_hook(PyObject *self, PyObject *name)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject *getattr, *getattribute, *res;
@@ -8157,8 +8138,8 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
     getattr = _PyType_Lookup(tp, &_Py_ID(__getattr__));
     if (getattr == NULL) {
         /* No __getattr__ hook: use a simpler dispatcher */
-        tp->tp_getattro = slot_tp_getattro;
-        return slot_tp_getattro(self, name);
+        tp->tp_getattro = _Py_slot_tp_getattro;
+        return _Py_slot_tp_getattro(self, name);
     }
     Py_INCREF(getattr);
     /* speed hack: we could use lookup_maybe, but that would resolve the
@@ -8519,10 +8500,10 @@ static slotdef slotdefs[] = {
            PyWrapperFlag_KEYWORDS),
     TPSLOT("__str__", tp_str, slot_tp_str, wrap_unaryfunc,
            "__str__($self, /)\n--\n\nReturn str(self)."),
-    TPSLOT("__getattribute__", tp_getattro, slot_tp_getattr_hook,
+    TPSLOT("__getattribute__", tp_getattro, _Py_slot_tp_getattr_hook,
            wrap_binaryfunc,
            "__getattribute__($self, name, /)\n--\n\nReturn getattr(self, name)."),
-    TPSLOT("__getattr__", tp_getattro, slot_tp_getattr_hook, NULL, ""),
+    TPSLOT("__getattr__", tp_getattro, _Py_slot_tp_getattr_hook, NULL, ""),
     TPSLOT("__setattr__", tp_setattro, slot_tp_setattro, wrap_setattr,
            "__setattr__($self, name, value, /)\n--\n\nImplement setattr(self, name, value)."),
     TPSLOT("__delattr__", tp_setattro, slot_tp_setattro, wrap_delattr,
