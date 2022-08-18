@@ -1489,7 +1489,7 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         else:
             name = _type_repr(self.__origin__)
         if self.__args__:
-            args = ", ".join([_type_repr(a) for a in self.__args__])
+            args = ", ".join(_type_repr(a) for a in self.__args__)
         else:
             # To ensure the repr is eval-able.
             args = "()"
@@ -1578,7 +1578,7 @@ class _CallableGenericAlias(_NotIterable, _GenericAlias, _root=True):
         if len(args) == 2 and _is_param_expr(args[0]):
             return super().__repr__()
         return (f'typing.Callable'
-                f'[[{", ".join([_type_repr(a) for a in args[:-1]])}], '
+                f'[[{", ".join(_type_repr(a) for a in args[:-1])}], '
                 f'{_type_repr(args[-1])}]')
 
     def __reduce__(self):
