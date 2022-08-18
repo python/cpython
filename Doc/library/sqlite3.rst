@@ -668,8 +668,8 @@ Connection objects
 
       Close the database connection.
       If :attr:`autocommit` is ``False``,
-      any pending transaction is implicitly rolled back,
-      else, no action is taken.
+      any pending transaction is implicitly rolled back.
+      Otherwise, no action is taken.
       Make sure to :meth:`commit` before closing
       to avoid losing pending changes.
 
