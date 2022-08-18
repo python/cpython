@@ -794,6 +794,12 @@ The :mod:`test.support` module defines the following functions:
    Decorator for only running the test if :data:`HAVE_DOCSTRINGS`.
 
 
+.. decorator:: requires_limited_api
+
+   Decorator for only running the test if :ref:`Limited C API <stable>`
+   is available.
+
+
 .. decorator:: cpython_only
 
    Decorator for tests only applicable to CPython.
