@@ -114,8 +114,8 @@ If we query ``sqlite_master`` for a non-existent table ``spam``,
 :meth:`!res.fetchone()` will return ``None``::
 
    >>> res = cur.execute("SELECT name FROM sqlite_master WHERE name='spam'")
-   >>> res.fetchone()
-   >>>
+   >>> res.fetchone() is None
+   True
 
 Now, add two rows of data supplied as SQL literals
 by executing an ``INSERT`` statement,
