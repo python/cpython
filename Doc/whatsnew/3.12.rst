@@ -133,6 +133,10 @@ Optimizations
   It reduces object size by 8 or 16 bytes on 64bit platform. (:pep:`623`)
   (Contributed by Inada Naoki in :gh:`92536`.)
 
+* Added experimental support for using the BOLT binary optimizer in the build
+  process, which improves performance by 1-5%.
+  (Contributed by Kevin Modzelewski in :gh:`90536`.)
+
 
 CPython bytecode changes
 ========================
