@@ -545,6 +545,43 @@ Connection objects
 
       .. versionadded:: 3.2
 
+   .. attribute:: row_factory
+
+      A callable that accepts two arguments,
+      a :class:`Cursor` object and the raw row results as a :class:`tuple`,
+      and returns a custom object representing an SQLite row.
+
+      Example:
+
+      .. literalinclude:: ../includes/sqlite3/row_factory.py
+
+      If returning a tuple doesn't suffice and you want name-based access to
+      columns, you should consider setting :attr:`row_factory` to the
+      highly optimized :class:`sqlite3.Row` type. :class:`Row` provides both
+      index-based and case-insensitive name-based access to columns with almost no
+      memory overhead. It will probably be better than your own custom
+      dictionary-based approach or even a db_row based solution.
+
+      .. XXX what's a db_row-based solution?
+
+   .. attribute:: text_factory
+
+      A callable that accepts a :class:`bytes` parameter and returns a text
+      representation of it.
+      The callable is invoked for SQLite values with the ``TEXT`` data type.
+      By default, this attribute is set to :class:`str`.
+      If you want to return ``bytes`` instead, set *text_factory* to ``bytes``.
+
+      Example:
+
+      .. literalinclude:: ../includes/sqlite3/text_factory.py
+
+   .. attribute:: total_changes
+
+      Return the total number of database rows that have been modified, inserted, or
+      deleted since the database connection was opened.
+
+
    .. method:: cursor(factory=Cursor)
 
       Create and return a :class:`Cursor` object.
@@ -855,45 +892,6 @@ Connection objects
 
       .. versionchanged:: 3.10
          Added the ``sqlite3.load_extension`` auditing event.
-
-   .. attribute:: row_factory
-
-      A callable that accepts two arguments,
-      a :class:`Cursor` object and the raw row results as a :class:`tuple`,
-      and returns a custom object representing an SQLite row.
-
-      Example:
-
-      .. literalinclude:: ../includes/sqlite3/row_factory.py
-
-      If returning a tuple doesn't suffice and you want name-based access to
-      columns, you should consider setting :attr:`row_factory` to the
-      highly optimized :class:`sqlite3.Row` type. :class:`Row` provides both
-      index-based and case-insensitive name-based access to columns with almost no
-      memory overhead. It will probably be better than your own custom
-      dictionary-based approach or even a db_row based solution.
-
-      .. XXX what's a db_row-based solution?
-
-
-   .. attribute:: text_factory
-
-      A callable that accepts a :class:`bytes` parameter and returns a text
-      representation of it.
-      The callable is invoked for SQLite values with the ``TEXT`` data type.
-      By default, this attribute is set to :class:`str`.
-      If you want to return ``bytes`` instead, set *text_factory* to ``bytes``.
-
-      Example:
-
-      .. literalinclude:: ../includes/sqlite3/text_factory.py
-
-
-   .. attribute:: total_changes
-
-      Return the total number of database rows that have been modified, inserted, or
-      deleted since the database connection was opened.
-
 
    .. method:: iterdump
 
