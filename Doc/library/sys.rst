@@ -502,27 +502,27 @@ always available.
    The :term:`named tuple` *flags* exposes the status of command line
    flags. The attributes are read only.
 
-   ================================== ======================================================================================================
-   attribute                          flag
-   ================================== ======================================================================================================
-   :const:`debug`                     :option:`-d`
-   :const:`inspect`                   :option:`-i`
-   :const:`interactive`               :option:`-i`
-   :const:`isolated`                  :option:`-I`
-   :const:`optimize`                  :option:`-O` or :option:`-OO`
-   :const:`dont_write_bytecode`       :option:`-B`
-   :const:`no_user_site`              :option:`-s`
-   :const:`no_site`                   :option:`-S`
-   :const:`ignore_environment`        :option:`-E`
-   :const:`verbose`                   :option:`-v`
-   :const:`bytes_warning`             :option:`-b`
-   :const:`quiet`                     :option:`-q`
-   :const:`hash_randomization`        :option:`-R`
-   :const:`dev_mode`                  :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
-   :const:`utf8_mode`                 :option:`-X utf8 <-X>`
-   :const:`safe_path`                 :option:`-P`
-   :const:`int_max_str_digits`        :option:`-X int_max_str_digits <-X>` (:ref:`integer string conversion length limitation <int_max_str_digits>`)
-   ================================== ======================================================================================================
+   ============================= ==============================================================================================================
+   attribute                     flag
+   ============================= ==============================================================================================================
+   :const:`debug`                :option:`-d`
+   :const:`inspect`              :option:`-i`
+   :const:`interactive`          :option:`-i`
+   :const:`isolated`             :option:`-I`
+   :const:`optimize`             :option:`-O` or :option:`-OO`
+   :const:`dont_write_bytecode`  :option:`-B`
+   :const:`no_user_site`         :option:`-s`
+   :const:`no_site`              :option:`-S`
+   :const:`ignore_environment`   :option:`-E`
+   :const:`verbose`              :option:`-v`
+   :const:`bytes_warning`        :option:`-b`
+   :const:`quiet`                :option:`-q`
+   :const:`hash_randomization`   :option:`-R`
+   :const:`dev_mode`             :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
+   :const:`utf8_mode`            :option:`-X utf8 <-X>`
+   :const:`safe_path`            :option:`-P`
+   :const:`int_max_str_digits`   :option:`-X int_max_str_digits <-X>` (:ref:`integer string conversion length limitation <int_max_str_digits>`)
+   ============================= ==============================================================================================================
 
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
@@ -729,8 +729,8 @@ always available.
 
 .. function:: get_int_max_str_digits()
 
-   Return current global value for :ref:`integer string conversion length
-   limitation <int_max_str_digits>`. See also :func:`set_int_max_str_digits`
+   Returns the current value for the :ref:`integer string conversion length
+   limitation <int_max_str_digits>`. See also :func:`set_int_max_str_digits`.
 
    .. versionadded:: 3.12
 
@@ -1333,8 +1333,9 @@ always available.
 
 .. function:: set_int_max_str_digits(n)
 
-   Set global interpreter limit for :ref:`integer string conversion length
-   limitation <int_max_str_digits>`. See also :func:`get_int_max_str_digits`
+   Set the :ref:`integer string conversion length limitation
+   <int_max_str_digits>` used by this interpreter. See also
+   :func:`get_int_max_str_digits`.
 
    .. versionadded:: 3.12
 
