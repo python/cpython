@@ -99,6 +99,7 @@ static const char usage_3[] = "\
          -X int_max_str_digits=number: limit the size of int<->str conversions.\n\
              This helps avoid denial of service attacks when parsing untrusted data.\n\
              The default is sys.int_info.default_max_str_digits.  0 disables.\n\
+\n\
 --check-hash-based-pycs always|default|never:\n\
     control how Python invalidates hash-based .pyc files\n\
 ";
