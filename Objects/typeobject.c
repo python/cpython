@@ -6772,7 +6772,7 @@ type_ready_managed_dict(PyTypeObject *type)
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         PyErr_Format(PyExc_SystemError,
                      "type %s has the Py_TPFLAGS_MANAGED_DICT flag "
-                     "but not Py_TPFLAGS_HEAPTYPE flag.",
+                     "but not Py_TPFLAGS_HEAPTYPE flag",
                      type->tp_name);
         return -1;
     }
@@ -6780,9 +6780,7 @@ type_ready_managed_dict(PyTypeObject *type)
     if (et->ht_cached_keys == NULL) {
         et->ht_cached_keys = _PyDict_NewKeysForClass();
         if (et->ht_cached_keys == NULL) {
-            PyErr_Format(PyExc_SystemError,
-                        "failed to initialize ht_cached_keys of type %s.",
-                        type->tp_name);
+            PyErr_NoMemory();
             return -1;
         }
     }
