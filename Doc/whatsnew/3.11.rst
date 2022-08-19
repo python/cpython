@@ -1870,20 +1870,6 @@ Porting to Python 3.11
 
   (Contributed by Victor Stinner in :issue:`39573`.)
 
-* Since :c:func:`Py_SIZE()` is changed to a inline static function,
-  ``Py_SIZE(obj) = new_size`` must be replaced with
-  ``Py_SET_SIZE(obj, new_size)``: see the :c:func:`Py_SET_SIZE()` function
-  (available since Python 3.9). For backward compatibility, this macro can be
-  used::
-
-      #if PY_VERSION_HEX < 0x030900A4 && !defined(Py_SET_SIZE)
-      static inline void _Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size)
-      { ob->ob_size = size; }
-      #define Py_SET_SIZE(ob, size) _Py_SET_SIZE((PyVarObject*)(ob), size)
-      #endif
-
-  (Contributed by Victor Stinner in :issue:`39573`.)
-
 * ``<Python.h>`` no longer includes the header files ``<stdlib.h>``,
   ``<stdio.h>``, ``<errno.h>`` and ``<string.h>`` when the ``Py_LIMITED_API``
   macro is set to ``0x030b0000`` (Python 3.11) or higher. C extensions should

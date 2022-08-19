@@ -1,0 +1,2 @@
+Allow again to use :c:func:`Py_SIZE` to set an object size:
+``Py_SIZE(obj) = size``. Patch by Victor Stinner.

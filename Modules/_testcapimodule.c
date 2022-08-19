@@ -4950,7 +4950,11 @@ test_set_type_size(PyObject *self, PyObject *Py_UNUSED(ignored))
     assert(Py_TYPE(obj) == &PyList_Type);
     assert(Py_SIZE(obj) == 0);
 
-    // bpo-39573: Test Py_SET_TYPE() and Py_SET_SIZE() functions.
+    // gh-89639: Check that Py_SIZE() can be used as l-value
+    // to set an object size.
+    Py_SIZE(obj) = 0;
+
+    // gh-89639: Test Py_SET_TYPE() and Py_SET_SIZE() functions.
     Py_SET_TYPE(obj, &PyList_Type);
     Py_SET_SIZE(obj, 0);
 
