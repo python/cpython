@@ -1606,7 +1606,7 @@ registering custom adapter functions.
 Letting your object adapt itself
 """"""""""""""""""""""""""""""""
 
-Suppose we have a ``Point`` class that represents a pair of coordinates,
+Suppose we have a :class:`!Point` class that represents a pair of coordinates,
 ``x`` and ``y``, in a Cartesian coordinate system.
 The coordinate pair will be stored as a text string in the database,
 using a semicolon to separate the coordinates.
@@ -1637,11 +1637,11 @@ values.
 To be able to convert *from* SQLite values *to* custom Python types,
 we use *converters*.
 
-Let's go back to the :class:`Point` class. We stored the x and y coordinates
+Let's go back to the :class:`!Point` class. We stored the x and y coordinates
 separated via semicolons as strings in SQLite.
 
 First, we'll define a converter function that accepts the string as a parameter
-and constructs a :class:`Point` object from it.
+and constructs a :class:`!Point` object from it.
 
 .. note::
 
