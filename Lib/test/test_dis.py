@@ -507,9 +507,9 @@ dis_asyncwith = """\
            LOAD_CONST               0 (None)
            RETURN_VALUE
 
-%3d     >> END_THROW
+%3d     >> CLEANUP_THROW
            JUMP_BACKWARD           24 (to 22)
-        >> END_THROW
+        >> CLEANUP_THROW
            JUMP_BACKWARD            9 (to 56)
         >> PUSH_EXC_INFO
            WITH_EXCEPT_START
@@ -519,7 +519,7 @@ dis_asyncwith = """\
            YIELD_VALUE              6
            RESUME                   3
            JUMP_BACKWARD_NO_INTERRUPT     4 (to 82)
-        >> END_THROW
+        >> CLEANUP_THROW
         >> POP_JUMP_FORWARD_IF_TRUE     1 (to 96)
            RERAISE                  2
         >> POP_TOP

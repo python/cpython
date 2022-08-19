@@ -568,7 +568,7 @@ the original TOS1.
        Exception representation on the stack now consist of one, not three, items.
 
 
-.. opcode:: END_THROW
+.. opcode:: CLEANUP_THROW
 
    Handles an exception raised during a :meth:`~generator.throw` or
    :meth:`~generator.close` call through the current frame.  If TOS is an

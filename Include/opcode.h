@@ -32,7 +32,7 @@ extern "C" {
 #define BEFORE_ASYNC_WITH                       52
 #define BEFORE_WITH                             53
 #define END_ASYNC_FOR                           54
-#define END_THROW                               55
+#define CLEANUP_THROW                           55
 #define STORE_SUBSCR                            60
 #define DELETE_SUBSCR                           61
 #define GET_ITER                                68

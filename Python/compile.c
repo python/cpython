@@ -1234,7 +1234,7 @@ stack_effect(int opcode, int oparg, int jump)
             return 0;
         case END_ASYNC_FOR:
             return -2;
-        case END_THROW:
+        case CLEANUP_THROW:
             return -2;
         case FORMAT_VALUE:
             /* If there's a fmt_spec on the stack, we go from 2->1,
@@ -1957,15 +1957,13 @@ compiler_add_yield_from(struct compiler *c, int await)
     // Set up a virtual try/except to handle when StopIteration is raised during
     // a close or throw call. The only way YIELD_VALUE raises if they do!
     ADDOP_JUMP(c, SETUP_FINALLY, fail);
-    RETURN_IF_FALSE(compiler_push_fblock(c, TRY_EXCEPT, send, NO_LABEL, NULL));
     ADDOP_I(c, YIELD_VALUE, 0);
-    compiler_pop_fblock(c, TRY_EXCEPT, send);
     ADDOP_NOLINE(c, POP_BLOCK);
     ADDOP_I(c, RESUME, await ? 3 : 2);
     ADDOP_JUMP(c, JUMP_NO_INTERRUPT, send);
 
     USE_LABEL(c, fail);
-    ADDOP(c, END_THROW);
+    ADDOP(c, CLEANUP_THROW);
 
     USE_LABEL(c, exit);
     return 1;

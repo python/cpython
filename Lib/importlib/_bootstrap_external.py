@@ -411,7 +411,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12a1 3505 (Specialization/Cache for FOR_ITER)
 #     Python 3.12a1 3506 (Add BINARY_SLICE and STORE_SLICE instructions)
 #     Python 3.12a1 3507 (Set lineno of module's RESUME to 0)
-#     Python 3.12a1 3508 (Add END_THROW)
+#     Python 3.12a1 3508 (Add CLEANUP_THROW)
 
 #     Python 3.13 will start with 3550
 

@@ -2749,7 +2749,7 @@ handle_eval_breaker:
             }
         }
 
-        TARGET(END_THROW) {
+        TARGET(CLEANUP_THROW) {
             assert(throwflag);
             PyObject *exc_value = TOP();
             assert(exc_value && PyExceptionInstance_Check(exc_value));
