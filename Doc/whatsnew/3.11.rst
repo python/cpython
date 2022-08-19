@@ -244,21 +244,22 @@ PEP 655: Marking individual ``TypedDict`` items as required or not-required
 
 :data:`~typing.Required` and :data:`~typing.NotRequired` provide a
 straightforward way to mark whether individual items in a
-:data:`~typing.TypedDict` must be present. Previously this was only possible
+:class:`~typing.TypedDict` must be present. Previously, this was only possible
 using inheritance.
 
-Fields are still required by default, unless the ``total=False``
-parameter is set.
-For example, the following specifies a dictionary with one required and
-one not-required key::
+All fields are still required by default,
+unless the *total* parameter is set to ``False``,
+in which case all fields are still not-required by default.
+For example, the following specifies a :class:`!TypedDict`
+with one required and one not-required key::
 
    class Movie(TypedDict):
       title: str
       year: NotRequired[int]
 
-   m1: Movie = {"title": "Black Panther", "year": 2018}  # ok
-   m2: Movie = {"title": "Star Wars"}  # ok (year is not required)
-   m3: Movie = {"year": 2022}  # error (missing required field title)
+   m1: Movie = {"title": "Black Panther", "year": 2018}  # OK
+   m2: Movie = {"title": "Star Wars"}  # OK (year is not required)
+   m3: Movie = {"year": 2022}  # ERROR (missing required field title)
 
 The following definition is equivalent::
 
