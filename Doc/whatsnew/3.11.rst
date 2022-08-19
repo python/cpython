@@ -280,10 +280,12 @@ PEP 673: ``Self`` type
 
 The new :data:`~typing.Self` annotation provides a simple and intuitive
 way to annotate methods that return an instance of their class. This
-behaves the same as the :data:`~typing.TypeVar`-based approach specified
-in :pep:`484` but is more concise and easier to follow.
+behaves the same as the :data:`~typing.TypeVar`-based approach
+:pep:`specified in PEP 484<484#annotating-instance-and-class-methods>`,
+but is more concise and easier to follow.
 
-Common use cases include alternative constructors provided as classmethods
+Common use cases include alternative constructors provided as
+:func:`classmethod <classmethod>`\s,
 and :meth:`~object.__enter__` methods that return ``self``::
 
    class MyLock:
