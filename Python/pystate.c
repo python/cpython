@@ -810,7 +810,10 @@ new_threadstate(PyInterpreterState *interp)
 {
     PyThreadState *tstate;
     _PyRuntimeState *runtime = interp->runtime;
-    // Allocate eagerly without lock
+    // We don't need to allocate a thread state for the main interpreter
+    // (the common case), but doing it later for the other case revealed a
+    // reentrancy problem (deadlock).  So for now we always allocate before
+    // taking the interpreters lock.  See GH-96071.
     PyThreadState *new_tstate = alloc_threadstate();
     int used_newtstate;
     if (new_tstate == NULL) {
