@@ -133,6 +133,10 @@ Optimizations
   It reduces object size by 8 or 16 bytes on 64bit platform. (:pep:`623`)
   (Contributed by Inada Naoki in :gh:`92536`.)
 
+* Added experimental support for using the BOLT binary optimizer in the build
+  process, which improves performance by 1-5%.
+  (Contributed by Kevin Modzelewski in :gh:`90536`.)
+
 
 CPython bytecode changes
 ========================
@@ -450,6 +454,11 @@ New Features
   inherit the ``Py_TPFLAGS_HAVE_VECTORCALL`` flag.
   (Contributed by Petr Viktorin in :gh:`93274`.)
 
+  The :const:`Py_TPFLAGS_MANAGED_DICT` and :const:`Py_TPFLAGS_MANAGED_WEAKREF`
+  flags have been added. This allows extensions classes to support object
+  ``__dict__`` and weakrefs with less bookkeeping,
+  using less memory and with faster access.
+
 Porting to Python 3.12
 ----------------------
 
@@ -485,6 +494,18 @@ Porting to Python 3.12
 * Fixed wrong sign placement in :c:func:`PyUnicode_FromFormat` and
   :c:func:`PyUnicode_FromFormatV`.
   (Contributed by Philip Georgi in :gh:`95504`.)
+
+* Extension classes wanting to add a ``__dict__`` or weak reference slot
+  should use :const:`Py_TPFLAGS_MANAGED_DICT` and
+  :const:`Py_TPFLAGS_MANAGED_WEAKREF` instead of ``tp_dictoffset`` and
+  ``tp_weaklistoffset``, respectively.
+  The use of ``tp_dictoffset`` and ``tp_weaklistoffset`` is still
+  supported, but does not fully support multiple inheritance
+  (:gh: `95589`), and performance may be worse.
+  Classes declaring :const:`Py_TPFLAGS_MANAGED_DICT` should call
+  :c:func:`_PyObject_VisitManagedDict` and :c:func:`_PyObject_ClearManagedDict`
+  to traverse and clear their instance's dictionaries.
+  To clear weakrefs, call :c:func:`PyObject_ClearWeakRefs`, as before.
 
 Deprecated
 ----------

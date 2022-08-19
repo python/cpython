@@ -927,6 +927,10 @@ errno_exec(PyObject *module)
 #ifdef EQFULL
     add_errcode("EQFULL", EQFULL, "Interface output queue is full");
 #endif
+#ifdef ENOTCAPABLE
+    // WASI extension
+    add_errcode("ENOTCAPABLE", ENOTCAPABLE, "Capabilities insufficient");
+#endif
 
     Py_DECREF(error_dict);
     return 0;

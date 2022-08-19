@@ -86,8 +86,6 @@ Objects/unicodetype_db.h
 # generated
 Python/deepfreeze/*.c
 Python/frozen_modules/*.h
-Python/opcode_targets.h
-Python/stdlib_module_names.h
 
 # @end=conf@
 ''')
@@ -109,9 +107,7 @@ Objects/stringlib/split.h
 
 Modules/_dbmmodule.c
 Modules/cjkcodecs/_codecs_*.c
-Modules/expat/xmlrole.c
 Modules/expat/xmlparse.c
-Python/initconfig.c
 ''')
 
 INCL_DIRS = clean_lines('''
@@ -141,6 +137,7 @@ Parser/**/*.h	Py_BUILD_CORE	1
 Objects/**/*.c	Py_BUILD_CORE	1
 
 Modules/_asynciomodule.c	Py_BUILD_CORE	1
+Modules/_codecsmodule.c	Py_BUILD_CORE	1
 Modules/_collectionsmodule.c	Py_BUILD_CORE	1
 Modules/_ctypes/_ctypes.c	Py_BUILD_CORE	1
 Modules/_ctypes/cfield.c	Py_BUILD_CORE	1
@@ -293,6 +290,10 @@ SAME = [
 ]
 
 MAX_SIZES = {
+    # GLOB: (MAXTEXT, MAXLINES),
+    # First match wins.
+    _abs('Include/internal/pycore_global_strings.h'): (5_000, 1000),
+    _abs('Include/internal/pycore_runtime_init_generated.h'): (5_000, 1000),
     _abs('Include/**/*.h'): (5_000, 500),
     _abs('Modules/_ctypes/ctypes.h'): (5_000, 500),
     _abs('Modules/_datetimemodule.c'): (20_000, 300),
@@ -303,8 +304,12 @@ MAX_SIZES = {
     _abs('Objects/stringlib/unicode_format.h'): (10_000, 400),
     _abs('Objects/typeobject.c'): (20_000, 200),
     _abs('Python/compile.c'): (20_000, 500),
+    _abs('Python/deepfreeze/*.c'): (20_000, 500),
+    _abs('Python/frozen_modules/*.h'): (20_000, 500),
     _abs('Python/pylifecycle.c'): (500_000, 5000),
     _abs('Python/pystate.c'): (500_000, 5000),
+    _abs('Python/opcode_targets.h'): (10_000, 500),
+    _abs('Python/stdlib_module_names.h'): (5_000, 500),
 }
 
 
