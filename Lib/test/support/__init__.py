@@ -2344,8 +2344,8 @@ def sleeping_retry(timeout, err_msg=None, /,
 
 
 @contextlib.contextmanager
-def set_int_max_str_digits(max_digits):
-    """Temporarily change the int<->str maximum digits limit."""
+def adjust_int_max_str_digits(max_digits):
+    """Temporarily change the integer string conversion length limit."""
     current = sys.get_int_max_str_digits()
     try:
         sys.set_int_max_str_digits(max_digits)

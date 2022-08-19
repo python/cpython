@@ -202,9 +202,9 @@ if 1:
     def test_int_literals_too_long(self):
         n = 3000
         source = f"a = 1\nb = 2\nc = {'3'*n}\nd = 4"
-        with support.set_int_max_str_digits(n):
+        with support.adjust_int_max_str_digits(n):
             compile(source, "<long_int_pass>", "exec")  # no errors.
-        with support.set_int_max_str_digits(n-1):
+        with support.adjust_int_max_str_digits(n-1):
             with self.assertRaises(SyntaxError) as err_ctx:
                 compile(source, "<long_int_fail>", "exec")
             exc = err_ctx.exception

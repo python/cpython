@@ -292,7 +292,7 @@ class XMLRPCTestCase(unittest.TestCase):
     def test_limit_int(self):
         check = self.check_loads
         maxdigits = 5000
-        with support.set_int_max_str_digits(maxdigits):
+        with support.adjust_int_max_str_digits(maxdigits):
             s = '1' * (maxdigits + 1)
             with self.assertRaises(ValueError):
                 check(f'<int>{s}</int>', None)

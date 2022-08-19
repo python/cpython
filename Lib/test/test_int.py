@@ -593,7 +593,7 @@ class IntStrDigitLimitsTests(unittest.TestCase):
     def test_disabled_limit(self):
         self.assertGreater(sys.get_int_max_str_digits(), 0)
         self.assertLess(sys.get_int_max_str_digits(), 20_000)
-        with support.set_int_max_str_digits(0):
+        with support.adjust_int_max_str_digits(0):
             self.assertEqual(sys.get_int_max_str_digits(), 0)
             i = self.int_class('1' * 20_000)
             str(i)

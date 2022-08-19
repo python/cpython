@@ -1137,7 +1137,7 @@ Module(
         self.assertRaises(ValueError, ast.literal_eval, '2+3')
 
     def test_literal_eval_str_int_limit(self):
-        with support.set_int_max_str_digits(4000):
+        with support.adjust_int_max_str_digits(4000):
             ast.literal_eval('3'*4000)  # no error
             with self.assertRaises(SyntaxError) as err_ctx:
                 ast.literal_eval('3'*4001)
