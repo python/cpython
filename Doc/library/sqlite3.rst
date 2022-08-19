@@ -18,13 +18,13 @@ SQLite for internal data storage.  It's also possible to prototype an
 application using SQLite and then port the code to a larger database such as
 PostgreSQL or Oracle.
 
-The sqlite3 module was written by Gerhard Häring.  It provides an SQL interface
+The :mod:`!sqlite3` module was written by Gerhard Häring.  It provides an SQL interface
 compliant with the DB-API 2.0 specification described by :pep:`249`, and
 requires SQLite 3.7.15 or newer.
 
 This document includes four main sections:
 
-* :ref:`sqlite3-tutorial` teaches how to use the sqlite3 module.
+* :ref:`sqlite3-tutorial` teaches how to use the :mod:`!sqlite3` module.
 * :ref:`sqlite3-reference` describes the classes and functions this module
   defines.
 * :ref:`sqlite3-howtos` details how to handle specific tasks.
@@ -839,7 +839,7 @@ Connection objects
       ignored. Note that the backend does not only run statements passed to the
       :meth:`Cursor.execute` methods.  Other sources include the
       :ref:`transaction management <sqlite3-controlling-transactions>` of the
-      sqlite3 module and the execution of triggers defined in the current
+      :mod:`!sqlite3` module and the execution of triggers defined in the current
       database.
 
       Passing ``None`` as *trace_callback* will disable the trace callback.
