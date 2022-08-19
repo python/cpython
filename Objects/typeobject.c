@@ -3505,21 +3505,21 @@ type_check_basicsize_includes_size_and_offsets(PyTypeObject* type)
     }
     if (type->tp_weaklistoffset + (Py_ssize_t)sizeof(PyObject*) > max) {
         PyErr_Format(PyExc_TypeError,
-                     "weaklist offset %zd is out of bounds for type '%s' (tp_basicsize = %zd)",
+                     "weaklist offset %d is out of bounds for type '%s' (tp_basicsize = %d)",
                      type->tp_weaklistoffset,
                      type->tp_name, type->tp_basicsize);
         return -1;
     }
     if (type->tp_dictoffset + (Py_ssize_t)sizeof(PyObject*) > max) {
         PyErr_Format(PyExc_TypeError,
-                     "dict offset %zd is out of bounds for type '%s' (tp_basicsize = %zd)",
+                     "dict offset %d is out of bounds for type '%s' (tp_basicsize = %d)",
                      type->tp_dictoffset,
                      type->tp_name, type->tp_basicsize);
         return -1;
     }
     if (type->tp_vectorcall_offset + (Py_ssize_t)sizeof(vectorcallfunc*) > max) {
         PyErr_Format(PyExc_TypeError,
-                     "vectorcall offset %zd is out of bounds for type '%s' (tp_basicsize = %zd)",
+                     "vectorcall offset %d is out of bounds for type '%s' (tp_basicsize = %d)",
                      type->tp_vectorcall_offset,
                      type->tp_name, type->tp_basicsize);
         return -1;
@@ -6768,7 +6768,7 @@ type_ready_managed_dict(PyTypeObject *type)
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         PyErr_Format(PyExc_SystemError,
                      "type %s has the Py_TPFLAGS_MANAGED_DICT flag "
-                     "but not Py_TPFLAGS_HEAPTYPE flag",
+                     "but not Py_TPFLAGS_HEAPTYPE flag.",
                      type->tp_name);
         return -1;
     }
@@ -6776,7 +6776,9 @@ type_ready_managed_dict(PyTypeObject *type)
     if (et->ht_cached_keys == NULL) {
         et->ht_cached_keys = _PyDict_NewKeysForClass();
         if (et->ht_cached_keys == NULL) {
-            PyErr_NoMemory();
+            PyErr_Format(PyExc_SystemError,
+                        "failed to initialize ht_cached_keys of type %s.",
+                        type->tp_name);
             return -1;
         }
     }
