@@ -119,12 +119,6 @@ extern "C" {
         }, \
         .gc = { \
             .enabled = 1, \
-            .generations = { \
-                /* .head is set in _PyGC_InitState(). */ \
-                { .threshold = 700, }, \
-                { .threshold = 10, }, \
-                { .threshold = 10, }, \
-            }, \
         }, \
         .static_objects = { \
             .singletons = { \
