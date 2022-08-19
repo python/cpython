@@ -507,26 +507,31 @@ dis_asyncwith = """\
            LOAD_CONST               0 (None)
            RETURN_VALUE
 
-%3d     >> PUSH_EXC_INFO
+%3d     >> CLEANUP_THROW
+           JUMP_BACKWARD           24 (to 22)
+        >> CLEANUP_THROW
+           JUMP_BACKWARD            9 (to 56)
+        >> PUSH_EXC_INFO
            WITH_EXCEPT_START
            GET_AWAITABLE            2
            LOAD_CONST               0 (None)
-        >> SEND                     3 (to 82)
+        >> SEND                     4 (to 92)
            YIELD_VALUE              6
            RESUME                   3
-           JUMP_BACKWARD_NO_INTERRUPT     4 (to 74)
-        >> POP_JUMP_FORWARD_IF_TRUE     1 (to 86)
+           JUMP_BACKWARD_NO_INTERRUPT     4 (to 82)
+        >> CLEANUP_THROW
+        >> POP_JUMP_FORWARD_IF_TRUE     1 (to 96)
            RERAISE                  2
         >> POP_TOP
            POP_EXCEPT
            POP_TOP
            POP_TOP
-           JUMP_BACKWARD           19 (to 58)
+           JUMP_BACKWARD           24 (to 58)
         >> COPY                     3
            POP_EXCEPT
            RERAISE                  1
 ExceptionTable:
-2 rows
+6 rows
 """ % (_asyncwith.__code__.co_firstlineno,
        _asyncwith.__code__.co_firstlineno + 1,
        _asyncwith.__code__.co_firstlineno + 2,
