@@ -227,7 +227,7 @@ enabling *variadic* generics.
 This enables a wide variety of use cases.
 In particular, it allows the type of array-like structures
 in numerical computing libraries such as NumPy and TensorFlow to be
-parameterised with the array *shape*, and static type checkers will now
+parameterised with the array *shape*. Static type checkers will now
 be able to catch shape-related bugs in code that uses these libraries.
 
 See :pep:`646` for more details.
@@ -390,7 +390,8 @@ PEP 563 may not be the future
 
 :pep:`563` Postponed Evaluation of Annotations
 (the ``from __future__ import annotations`` :ref:`future statement <future>`)
-that was originally planned for release in Python 3.10 has been deferred again.
+that was originally planned for release in Python 3.10
+has been deferred indefinitely.
 See `this message from the Steering Council <https://mail.python.org/archives/list/python-dev@python.org/message/VIZEBX5EYMSYIJNDBF6DMUMZOCWHARSO/>`__
 for more information.
 
