@@ -829,11 +829,16 @@ new_threadstate(PyInterpreterState *interp)
         // Every valid interpreter must have at least one thread.
         assert(id > 1);
         assert(old_head->prev == NULL);
-
+        // Unlock before allocating memory.
+        HEAD_UNLOCK(runtime);
         tstate = alloc_threadstate();
+        HEAD_LOCK(runtime);
         if (tstate == NULL) {
             goto error;
         }
+        // Read interp->threads.head again as another thread could
+        // have created a thread state while we were allocating memory.
+        old_head = interp->threads.head;
         // Set to _PyThreadState_INIT.
         memcpy(tstate,
                &initial._main_interpreter._initial_thread,
