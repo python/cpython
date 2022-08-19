@@ -217,15 +217,17 @@ the :mod:`typing` module.
 PEP 646: Variadic generics
 --------------------------
 
-:pep:`484` introduced :data:`~typing.TypeVar`, enabling creation
-of generics parameterised with a single type. :pep:`646` introduces
+:pep:`484` previously introduced :data:`~typing.TypeVar`, enabling creation
+of generics parameterised with a single type. :pep:`646` adds
 :data:`~typing.TypeVarTuple`, enabling parameterisation
 with an *arbitrary* number of types. In other words,
 a :data:`~typing.TypeVarTuple` is a *variadic* type variable,
-enabling *variadic* generics. This enables a wide variety of use cases.
+enabling *variadic* generics.
+
+This enables a wide variety of use cases.
 In particular, it allows the type of array-like structures
 in numerical computing libraries such as NumPy and TensorFlow to be
-parameterised with the array *shape*. Static type checkers will now
+parameterised with the array *shape*, and static type checkers will now
 be able to catch shape-related bugs in code that uses these libraries.
 
 See :pep:`646` for more details.
