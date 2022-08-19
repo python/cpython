@@ -1,2 +1,2 @@
-Fix incorrect condition that cause ``sys.thread_info.name`` to be wrong on
+Fix incorrect condition that causes ``sys.thread_info.name`` to be wrong on
 pthread platforms.
