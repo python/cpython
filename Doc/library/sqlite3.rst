@@ -207,7 +207,6 @@ inserted data and retrieved values from it in multiple ways.
       * :ref:`sqlite3-placeholders`
       * :ref:`sqlite3-adapters`
       * :ref:`sqlite3-converters`
-      * :ref:`sqlite3-columns-by-name`
       * :ref:`sqlite3-connection-context-manager`
 
    * :ref:`sqlite3-explanation` for in-depth background on transaction control.
@@ -1255,6 +1254,12 @@ Cursor objects
          >>> cur.connection == con
          True
 
+.. The sqlite3.Row example used to be a how-to. It has now been incorporated
+   into the Row reference. We keep the anchor here in order not to break
+   existing links.
+
+.. _sqlite3-columns-by-name:
+
 .. _sqlite3-row-objects:
 
 Row objects
@@ -1270,10 +1275,6 @@ Row objects
 
    Two row objects compare equal if have equal columns and equal members.
 
-   .. seealso::
-
-      :ref:`sqlite3-columns-by-name`
-
    .. method:: keys
 
       Return a :class:`list` of column names as :class:`strings <str>`.
@@ -1282,6 +1283,22 @@ Row objects
 
    .. versionchanged:: 3.5
       Added support of slicing.
+
+   Example::
+
+      >>> con.row_factory = sqlite3.Row  # con is an sqlite3.Connection object.
+      >>> res = con.execute("select 'Tellus' as name, 6378 as radius")
+      >>> row = res.fetchone()
+      >>> row.keys()
+      ['name', 'radius']
+      >>> row[0]
+      'Tellus'
+      >>> row["name"]
+      'Tellus'
+      >>> row["RADIUS"]
+      6378
+      >>> "Tellus" in row
+      True
 
 
 .. _sqlite3-blob-objects:
@@ -1728,29 +1745,6 @@ objects. This way, you can execute a ``SELECT`` statement and iterate over it
 directly using only a single call on the :class:`Connection` object.
 
 .. literalinclude:: ../includes/sqlite3/shortcut_methods.py
-
-
-.. _sqlite3-columns-by-name:
-
-How to access columns by name
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Use the :class:`~sqlite3.Row` class as a :attr:`~Connection.row_factory`
-in order to access columns either by index or case-insensitively by name::
-
-   >>> con.row_factory = sqlite3.Row  # con is an sqlite3.Connection object.
-   >>> res = con.execute("select 'Tellus' as name, 6378 as radius")
-   >>> row = res.fetchone()
-   >>> row.keys()
-   ['name', 'radius']
-   >>> row[0]
-   'Tellus'
-   >>> row["name"]
-   'Tellus'
-   >>> row["RADIUS"]
-   6378
-   >>> "Tellus" in row
-   True
 
 
 .. _sqlite3-connection-context-manager:
