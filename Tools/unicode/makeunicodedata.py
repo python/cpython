@@ -215,6 +215,8 @@ def makeunicodedata(unicode, trace):
                     decomp_data.extend(decomp)
                     decomp_size = decomp_size + len(decomp) * 2
                     decomp_data_cache[key] = i
+                else:
+                    assert decomp_data[i:i+len(decomp)] == decomp
             else:
                 i = 0
             decomp_index[char] = i
