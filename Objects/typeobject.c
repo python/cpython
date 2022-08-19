@@ -3488,11 +3488,11 @@ get_bases_tuple(PyObject *bases_in, PyType_Spec *spec)
 }
 
 static inline int
-type_check_basicsize_includes_size_and_offsets(PyTypeObject* type)
+check_basicsize_includes_size_and_offsets(PyTypeObject* type)
 {
     if (type->tp_alloc != PyType_GenericAlloc) {
         // Custom allocators can ignore tp_basicsize
-        return 0;
+        return 1;
     }
     Py_ssize_t max = (Py_ssize_t)type->tp_basicsize;
 
@@ -3501,30 +3501,30 @@ type_check_basicsize_includes_size_and_offsets(PyTypeObject* type)
                      "tp_basicsize for type '%s' (%d) is too small for base '%s' (%d)",
                      type->tp_name, type->tp_basicsize,
                      type->tp_base->tp_name, type->tp_base->tp_basicsize);
-        return -1;
+        return 0;
     }
     if (type->tp_weaklistoffset + (Py_ssize_t)sizeof(PyObject*) > max) {
         PyErr_Format(PyExc_TypeError,
                      "weaklist offset %d is out of bounds for type '%s' (tp_basicsize = %d)",
                      type->tp_weaklistoffset,
                      type->tp_name, type->tp_basicsize);
-        return -1;
+        return 0;
     }
     if (type->tp_dictoffset + (Py_ssize_t)sizeof(PyObject*) > max) {
         PyErr_Format(PyExc_TypeError,
                      "dict offset %d is out of bounds for type '%s' (tp_basicsize = %d)",
                      type->tp_dictoffset,
                      type->tp_name, type->tp_basicsize);
-        return -1;
+        return 0;
     }
     if (type->tp_vectorcall_offset + (Py_ssize_t)sizeof(vectorcallfunc*) > max) {
         PyErr_Format(PyExc_TypeError,
                      "vectorcall offset %d is out of bounds for type '%s' (tp_basicsize = %d)",
                      type->tp_vectorcall_offset,
                      type->tp_name, type->tp_basicsize);
-        return -1;
+        return 0;
     }
-    return 0;
+    return 1;
 }
 
 PyObject *
@@ -3822,6 +3822,10 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
      */
 
     if (PyType_Ready(type) < 0) {
+        goto finally;
+    }
+
+    if (!check_basicsize_includes_size_and_offsets(type)) {
         goto finally;
     }
 
@@ -6863,9 +6867,6 @@ type_ready(PyTypeObject *type)
         return -1;
     }
     if (type_ready_managed_dict(type) < 0) {
-        return -1;
-    }
-    if (type_check_basicsize_includes_size_and_offsets(type) < 0) {
         return -1;
     }
     if (type_ready_post_checks(type) < 0) {
