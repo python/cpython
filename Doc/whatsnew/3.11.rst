@@ -388,9 +388,11 @@ Erik De Bonte and Eric Traut.)
 PEP 563 may not be the future
 -----------------------------
 
-* :pep:`563` Postponed Evaluation of Annotations, ``__future__.annotations``
-  that was planned for this release has been indefinitely postponed.
-  See `this message <https://mail.python.org/archives/list/python-dev@python.org/message/VIZEBX5EYMSYIJNDBF6DMUMZOCWHARSO/>`_ for more information.
+:pep:`563` Postponed Evaluation of Annotations
+(the ``from __future__ import annotations`` :ref:`future statement <future>`)
+that was originally planned for release in Python 3.10 has been deferred again.
+See `this message from the Steering Council <https://mail.python.org/archives/list/python-dev@python.org/message/VIZEBX5EYMSYIJNDBF6DMUMZOCWHARSO/>`__
+for more information.
 
 
 Other Language Changes
