@@ -3,6 +3,7 @@
 #include "pycore_fileutils.h"
 #include "pycore_getopt.h"
 #include "pycore_initconfig.h"
+#include "pycore_long.h"          // _PY_LONG_MAX_STR_DIGITS_THRESHOLD
 #include "pycore_pathconfig.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
@@ -94,6 +95,9 @@ static const char usage_3[] = "\
              otherwise activate automatically)\n\
          -X pycache_prefix=PATH: enable writing .pyc files to a parallel tree rooted at the\n\
              given directory instead of to the code tree\n\
+         -X int_max_str_digits=number: limit the size of int<->str conversions.\n\
+             This helps avoid denial of service attacks when parsing untrusted data.\n\
+             The default is sys.int_info.default_max_str_digits.  0 disables.\n\
 \n\
 --check-hash-based-pycs always|default|never:\n\
     control how Python invalidates hash-based .pyc files\n\
@@ -119,6 +123,10 @@ static const char usage_6[] =
 "   to seed the hashes of str and bytes objects.  It can also be set to an\n"
 "   integer in the range [0,4294967295] to get hash values with a\n"
 "   predictable seed.\n"
+"PYTHONINTMAXSTRDIGITS: limits the maximum digit characters in an int value\n"
+"   when converting from a string and when converting an int back to a str.\n"
+"   A value of 0 disables the limit.  Conversions to or from bases 2, 4, 8,\n"
+"   16, and 32 are never limited.\n"
 "PYTHONMALLOC: set the Python memory allocators and/or install debug hooks\n"
 "   on Python memory allocators. Use PYTHONMALLOC=debug to install debug\n"
 "   hooks.\n"
@@ -636,6 +644,10 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->legacy_windows_stdio = -1;
 #endif
 }
+
+/* Excluded from public struct PyConfig for backporting reasons. */
+/* default to unconfigured, _PyLong_Init() does the rest */
+int _Py_global_config_int_max_str_digits = -1;
 
 
 static void
@@ -1387,6 +1399,48 @@ config_init_tracemalloc(PyConfig *config)
     return _PyStatus_OK();
 }
 
+static PyStatus
+config_init_int_max_str_digits(PyConfig *config)
+{
+    int maxdigits;
+    int valid = 0;
+
+    const char *env = config_get_env(config, "PYTHONINTMAXSTRDIGITS");
+    if (env) {
+        if (!_Py_str_to_int(env, &maxdigits)) {
+            valid = ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_STR_DIGITS_THRESHOLD));
+        }
+        if (!valid) {
+#define STRINGIFY(VAL) _STRINGIFY(VAL)
+#define _STRINGIFY(VAL) #VAL
+            return _PyStatus_ERR(
+                    "PYTHONINTMAXSTRDIGITS: invalid limit; must be >= "
+                    STRINGIFY(_PY_LONG_MAX_STR_DIGITS_THRESHOLD)
+                    " or 0 for unlimited.");
+        }
+        _Py_global_config_int_max_str_digits = maxdigits;
+    }
+
+    const wchar_t *xoption = config_get_xoption(config, L"int_max_str_digits");
+    if (xoption) {
+        const wchar_t *sep = wcschr(xoption, L'=');
+        if (sep) {
+            if (!config_wstr_to_int(sep + 1, &maxdigits)) {
+                valid = ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_STR_DIGITS_THRESHOLD));
+            }
+        }
+        if (!valid) {
+            return _PyStatus_ERR(
+                    "-X int_max_str_digits: invalid limit; must be >= "
+                    STRINGIFY(_PY_LONG_MAX_STR_DIGITS_THRESHOLD)
+                    " or 0 for unlimited.");
+#undef _STRINGIFY
+#undef STRINGIFY
+        }
+        _Py_global_config_int_max_str_digits = maxdigits;
+    }
+    return _PyStatus_OK();
+}
 
 static PyStatus
 config_init_pycache_prefix(PyConfig *config)
@@ -1434,6 +1488,12 @@ config_read_complex_options(PyConfig *config)
     PyStatus status;
     if (config->tracemalloc < 0) {
         status = config_init_tracemalloc(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+    if (_Py_global_config_int_max_str_digits < 0) {
+        status = config_init_int_max_str_digits(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
