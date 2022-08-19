@@ -19,6 +19,7 @@ Data members:
 #include "frameobject.h"          // PyFrame_GetBack()
 #include "pycore_ceval.h"
 #include "pycore_initconfig.h"
+#include "pycore_long.h"          // _PY_LONG_MAX_STR_DIGITS_THRESHOLD
 #include "pycore_object.h"
 #include "pycore_pathconfig.h"
 #include "pycore_pyerrors.h"
@@ -1636,6 +1637,45 @@ sys_mdebug_impl(PyObject *module, int flag)
 }
 #endif /* USE_MALLOPT */
 
+
+/*[clinic input]
+sys.get_int_max_str_digits
+
+Set the maximum string digits limit for non-binary int<->str conversions.
+[clinic start generated code]*/
+
+static PyObject *
+sys_get_int_max_str_digits_impl(PyObject *module)
+/*[clinic end generated code: output=0042f5e8ae0e8631 input=8dab13e2023e60d5]*/
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return PyLong_FromSsize_t(interp->int_max_str_digits);
+}
+
+/*[clinic input]
+sys.set_int_max_str_digits
+
+    maxdigits: int
+
+Set the maximum string digits limit for non-binary int<->str conversions.
+[clinic start generated code]*/
+
+static PyObject *
+sys_set_int_max_str_digits_impl(PyObject *module, int maxdigits)
+/*[clinic end generated code: output=734d4c2511f2a56d input=d7e3f325db6910c5]*/
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    if ((!maxdigits) || (maxdigits >= _PY_LONG_MAX_STR_DIGITS_THRESHOLD)) {
+        tstate->interp->int_max_str_digits = maxdigits;
+        Py_RETURN_NONE;
+    } else {
+        PyErr_Format(
+            PyExc_ValueError, "maxdigits must be 0 or larger than %d",
+            _PY_LONG_MAX_STR_DIGITS_THRESHOLD);
+        return NULL;
+    }
+}
+
 size_t
 _PySys_GetSizeOf(PyObject *o)
 {
@@ -1980,6 +2020,8 @@ static PyMethodDef sys_methods[] = {
     SYS_GET_ASYNCGEN_HOOKS_METHODDEF
     SYS_GETANDROIDAPILEVEL_METHODDEF
     SYS_UNRAISABLEHOOK_METHODDEF
+    SYS_GET_INT_MAX_STR_DIGITS_METHODDEF
+    SYS_SET_INT_MAX_STR_DIGITS_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -2440,6 +2482,7 @@ static PyStructSequence_Field flags_fields[] = {
     {"isolated",                "-I"},
     {"dev_mode",                "-X dev"},
     {"utf8_mode",               "-X utf8"},
+    {"int_max_str_digits",      "-X int_max_str_digits"},
     {0}
 };
 
@@ -2447,7 +2490,7 @@ static PyStructSequence_Desc flags_desc = {
     "sys.flags",        /* name */
     flags__doc__,       /* doc */
     flags_fields,       /* fields */
-    15
+    16
 };
 
 static PyObject*
@@ -2483,6 +2526,7 @@ make_flags(PyThreadState *tstate)
     SetFlag(config->isolated);
     PyStructSequence_SET_ITEM(seq, pos++, PyBool_FromLong(config->dev_mode));
     SetFlag(preconfig->utf8_mode);
+    SetFlag(_Py_global_config_int_max_str_digits);
 #undef SetFlag
 
     if (_PyErr_Occurred(tstate)) {
