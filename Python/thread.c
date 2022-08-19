@@ -97,7 +97,7 @@ _PyThread_debug_deprecation(void)
 #   define PYTHREAD_NAME "pthread-stubs"
 #   include "thread_pthread_stubs.h"
 #elif defined(_POSIX_THREADS)
-#   if defined(__EMSCRIPTEN__) || !defined(__EMSCRIPTEN_PTHREADS__)
+#   if defined(__EMSCRIPTEN__) && !defined(__EMSCRIPTEN_PTHREADS__)
 #     define PYTHREAD_NAME "pthread-stubs"
 #   else
 #     define PYTHREAD_NAME "pthread"
