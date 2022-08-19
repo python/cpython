@@ -1589,7 +1589,7 @@ AC_MSG_RESULT($LDLIBRARY)
 
 # LIBRARY_DEPS, LINK_PYTHON_OBJS and LINK_PYTHON_DEPS variable
 AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-  [Emscripten/browser*], [LIBRARY_DEPS='$(PY3LIBRARY) $(WASM_STDLIB)'],
+  [Emscripten/browser*], [LIBRARY_DEPS='$(PY3LIBRARY) $(WASM_STDLIB) python.html python.worker.js'],
   [LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)']
 )
 LINK_PYTHON_DEPS='$(LIBRARY_DEPS)'

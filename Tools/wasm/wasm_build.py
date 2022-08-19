@@ -20,6 +20,7 @@ import enum
 import dataclasses
 import os
 import pathlib
+import re
 import shlex
 import shutil
 import subprocess
@@ -99,6 +100,24 @@ def get_emscripten_root(emconfig: pathlib.Path = EM_CONFIG) -> pathlib.PurePath:
 EMSCRIPTEN_ROOT = get_emscripten_root()
 
 
+def read_python_version(configure: pathlib.Path = CONFIGURE) -> str:
+    """Read PACKAGE_VERSION from configure script
+
+    configure and configure.ac are the canonical source for major and
+    minor version number.
+    """
+    version_re = re.compile("^PACKAGE_VERSION='(\d\.\d+)'")
+    with configure.open(encoding="utf-8") as f:
+        for line in f:
+            mo = version_re.match(line)
+            if mo:
+                return mo.group(1)
+    raise ValueError(f"PACKAGE_VERSION not found in {configure}")
+
+
+PYTHON_VERSION = read_python_version()
+
+
 class ConditionError(ValueError):
     def __init__(self, info: str, text: str):
         self.info = info
@@ -174,6 +193,9 @@ def _check_emscripten():
         raise MissingDependency(os.fspath(version_txt), INSTALL_EMSDK)
     with open(version_txt) as f:
         version = f.read().strip().strip('"')
+    if version.endswith("-git"):
+        # git / upstream / tot-upstream installation
+        version = version[:-4]
     version_tuple = tuple(int(v) for v in version.split("."))
     if version_tuple < EMSDK_MIN_VERSION:
         raise MissingDependency(
@@ -221,7 +243,7 @@ WASI = Platform(
         # workaround for https://github.com/python/cpython/issues/95952
         "HOSTRUNNER": (
             "wasmtime run "
-            "--env PYTHONPATH=/{relbuilddir}/build/lib.wasi-wasm32-$(VERSION):/Lib "
+            "--env PYTHONPATH=/{relbuilddir}/build/lib.wasi-wasm32-{version}:/Lib "
             "--mapdir /::{srcdir} --"
         ),
     },
@@ -362,6 +384,7 @@ class BuildProfile:
                 env[key] = value.format(
                     relbuilddir=self.builddir.relative_to(SRCDIR),
                     srcdir=SRCDIR,
+                    version=PYTHON_VERSION,
                 )
             else:
                 env[key] = value
