@@ -203,12 +203,16 @@ Irit Katriel in :issue:`45607`.)
 
 
 .. _new-feat-related-type-hints-311:
+.. _whatsnew311-typing-features:
 
 New Features Related to Type Hints
 ==================================
 
 This section covers major changes affecting :pep:`484` type hints and
 the :mod:`typing` module.
+
+
+.. _whatsnew311-pep646:
 
 PEP 646: Variadic generics
 --------------------------
@@ -229,6 +233,9 @@ See :pep:`646` for more details.
 (Contributed by Matthew Rahtz in :issue:`43224`, with contributions by
 Serhiy Storchaka and Jelle Zijlstra. PEP written by Mark Mendoza, Matthew
 Rahtz, Pradeep Kumar Srinivasan, and Vincent Siles.)
+
+
+.. _whatsnew311-pep655:
 
 PEP 655: Marking individual ``TypedDict`` items as required or not-required
 ---------------------------------------------------------------------------
@@ -262,6 +269,9 @@ See :pep:`655` for more details.
 (Contributed by David Foster and Jelle Zijlstra in :issue:`47087`. PEP
 written by David Foster.)
 
+
+.. _whatsnew311-pep673:
+
 PEP 673: ``Self`` type
 ----------------------
 
@@ -294,6 +304,9 @@ See :pep:`673` for more details.
 
 (Contributed by James Hilton-Balfe in :issue:`46534`. PEP written by
 Pradeep Kumar Srinivasan and James Hilton-Balfe.)
+
+
+.. _whatsnew311-pep675:
 
 PEP 675: Arbitrary literal string type
 --------------------------------------
@@ -329,6 +342,9 @@ See :pep:`675` for more details.
 (Contributed by Jelle Zijlstra in :issue:`47088`. PEP written by Pradeep
 Kumar Srinivasan and Graham Bleaney.)
 
+
+.. _whatsnew311-pep681:
+
 PEP 681: Data Class Transforms
 ------------------------------
 
@@ -362,12 +378,16 @@ See :pep:`681` for more details.
 (Contributed by Jelle Zijlstra in :gh:`91860`. PEP written by
 Erik De Bonte and Eric Traut.)
 
-PEP 563 May Not Be the Future
+
+.. _whatsnew311-pep563-deferred:
+
+PEP 563 may not be the future
 -----------------------------
 
 * :pep:`563` Postponed Evaluation of Annotations, ``__future__.annotations``
   that was planned for this release has been indefinitely postponed.
   See `this message <https://mail.python.org/archives/list/python-dev@python.org/message/VIZEBX5EYMSYIJNDBF6DMUMZOCWHARSO/>`_ for more information.
+
 
 Other Language Changes
 ======================
