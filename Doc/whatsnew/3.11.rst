@@ -356,8 +356,8 @@ PEP 681: Data Class Transforms
 :data:`~typing.dataclass_transform` may be used to
 decorate a class, metaclass, or a function that is itself a decorator.
 The presence of ``@dataclass_transform()`` tells a static type checker that the
-decorated object performs runtime "magic" that
-transforms a class, giving it :func:`dataclasses.dataclass`-like behaviors.
+decorated object performs runtime "magic" that transforms a class,
+giving it :func:`dataclass <dataclasses.dataclass>`-like behaviors.
 
 For example::
 
@@ -369,14 +369,13 @@ For example::
         cls.__ne__ = ...
         return cls
 
-    # The create_model decorator can now be used to create new model
-    # classes, like this:
+    # The create_model decorator can now be used to create new model classes:
     @create_model
     class CustomerModel:
         id: int
         name: str
 
-    c = CustomerModel(id=327, name="John Smith")
+    c = CustomerModel(id=327, name="Eric Idle")
 
 See :pep:`681` for more details.
 
