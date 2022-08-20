@@ -1293,7 +1293,7 @@ Row objects
       ['name', 'radius']
       >>> row[0], row["name"]  # Access by index and name.
       ('Earth', 'Earth')
-      >>> row["RADIUS"]
+      >>> row["RADIUS"]  # Column names are case-insensitive.
       6378
 
 
