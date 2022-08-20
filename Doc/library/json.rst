@@ -12,6 +12,7 @@
 .. testsetup:: *
 
     import json
+    from json import AttrDict
 
 --------------
 
