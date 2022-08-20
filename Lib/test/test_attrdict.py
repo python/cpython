@@ -4,24 +4,24 @@ from json import AttrDict
 
 kepler_dict = {
     "orbital_period": {
-        "Mercury": 88,
-        "Venus": 225,
-        "Earth": 365,
-        "Mars": 687,
-        "Jupiter": 4331,
-        "Saturn": 10_756,
-        "Uranus": 30_687,
-        "Neptune": 60_190
+        "mercury": 88,
+        "venus": 225,
+        "earth": 365,
+        "mars": 687,
+        "jupiter": 4331,
+        "saturn": 10_756,
+        "uranus": 30_687,
+        "neptune": 60_190
     },
     "dist_from_sun": {
-        "Mercury": 58,
-        "Venus": 108,
-        "Earth": 150,
-        "Mars": 228,
-        "Jupiter": 778,
-        "Saturn": 1_400,
-        "Uranus": 2_900,
-        "Neptune": 4_500
+        "mercury": 58,
+        "venus": 108,
+        "earth": 150,
+        "mars": 228,
+        "jupiter": 778,
+        "saturn": 1_400,
+        "uranus": 2_900,
+        "neptune": 4_500
     }
 }
 
@@ -89,14 +89,14 @@ class TestAttrDict(unittest.TestCase):
 
         # Exercise dotted lookups
         self.assertEqual(kepler_ad.orbital_period, kepler_dict['orbital_period'])
-        self.assertEqual(kepler_ad.orbital_period.Earth,
-                         kepler_dict['orbital_period']['Earth'])
-        self.assertEqual(kepler_ad['orbital_period'].Earth,
-                         kepler_dict['orbital_period']['Earth'])
+        self.assertEqual(kepler_ad.orbital_period.earth,
+                         kepler_dict['orbital_period']['earth'])
+        self.assertEqual(kepler_ad['orbital_period'].earth,
+                         kepler_dict['orbital_period']['earth'])
 
         # Dict style error handling and Attribute style error handling
         with self.assertRaises(KeyError):
-            kepler_ad.orbital_period['Pluto']
+            kepler_ad.orbital_period['pluto']
         with self.assertRaises(AttributeError):
             kepler_ad.orbital_period.Pluto
 
