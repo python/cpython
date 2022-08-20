@@ -280,8 +280,8 @@ PEP 673: ``Self`` type
 
 The new :data:`~typing.Self` annotation provides a simple and intuitive
 way to annotate methods that return an instance of their class. This
-behaves the same as the :data:`~typing.TypeVar`-based approach
-:pep:`specified in PEP 484<484#annotating-instance-and-class-methods>`,
+behaves the same as the :class:`~typing.TypeVar`-based approach
+:pep:`specified in PEP 484 <484#annotating-instance-and-class-methods>`,
 but is more concise and easier to follow.
 
 Common use cases include alternative constructors provided as
@@ -391,7 +391,7 @@ PEP 563 may not be the future
 :pep:`563` Postponed Evaluation of Annotations
 (the ``from __future__ import annotations`` :ref:`future statement <future>`)
 that was originally planned for release in Python 3.10
-has been deferred indefinitely.
+has been put on hold indefinitely.
 See `this message from the Steering Council <https://mail.python.org/archives/list/python-dev@python.org/message/VIZEBX5EYMSYIJNDBF6DMUMZOCWHARSO/>`__
 for more information.
 
