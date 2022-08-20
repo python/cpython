@@ -235,7 +235,7 @@ also be used to improve performance.
 .. cmdoption:: --enable-bolt
 
    Enable usage of the `BOLT post-link binary optimizer
-   <https://github.com/llvm/llvm-project/tree/main/bolt>` (disabled by
+   <https://github.com/llvm/llvm-project/tree/main/bolt>`_ (disabled by
    default).
 
    BOLT is part of the LLVM project but is not always included in their binary
