@@ -2320,7 +2320,7 @@ config.status:	$(srcdir)/configure
 
 .PRECIOUS: config.status $(BUILDPYTHON) Makefile Makefile.pre
 
-Objects/asm_trampoline.o: $(srcdir)/Objects/asm_trampoline.sx
+Objects/asm_trampoline.o: $(srcdir)/Objects/asm_trampoline.S
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
 # Some make's put the object file in the current directory
