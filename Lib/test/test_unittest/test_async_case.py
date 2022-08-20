@@ -151,6 +151,7 @@ class TestAsyncCase(unittest.TestCase):
 
         events = []
         test = Test("test_func")
+        self.addCleanup(test._tearDownAsyncioRunner)
         try:
             test.debug()
         except MyException:
@@ -186,6 +187,7 @@ class TestAsyncCase(unittest.TestCase):
 
         events = []
         test = Test("test_func")
+        self.addCleanup(test._tearDownAsyncioRunner)
         try:
             test.debug()
         except MyException:
@@ -221,6 +223,7 @@ class TestAsyncCase(unittest.TestCase):
 
         events = []
         test = Test("test_func")
+        self.addCleanup(test._tearDownAsyncioRunner)
         try:
             test.debug()
         except MyException:
@@ -262,6 +265,7 @@ class TestAsyncCase(unittest.TestCase):
 
         events = []
         test = Test("test_func")
+        self.addCleanup(test._tearDownAsyncioRunner)
         try:
             test.debug()
         except MyException:
@@ -424,6 +428,7 @@ class TestAsyncCase(unittest.TestCase):
 
         events = []
         test = Test("test_func")
+        self.addCleanup(test._tearDownAsyncioRunner)
         try:
             test.debug()
         except MyException:
