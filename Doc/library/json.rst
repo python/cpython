@@ -11,8 +11,8 @@
 
 .. testsetup:: *
 
-    import json
-    from json import AttrDict
+   import json
+   from json import AttrDict
 
 --------------
 
@@ -544,7 +544,7 @@ Exceptions
    Subclass of :class:`dict` object that also supports attribute style dotted access.
 
    This class is intended for use with the :attr:`object_hook` in
-   :func:`json.load` and :func:`json.loads`:
+   :func:`json.load` and :func:`json.loads`::
 
    .. doctest::
 

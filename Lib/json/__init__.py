@@ -363,8 +363,9 @@ class AttrDict(dict):
 
     This class is intended for use with the *object_hook* in json.loads():
 
+        >>> from json import loads, AttrDict
         >>> json_string = '{"mercury": 88, "venus": 225, "earth": 365, "mars": 687}'
-        >>> orbital_period = json.loads(json_string, object_hook=AttrDict)
+        >>> orbital_period = loads(json_string, object_hook=AttrDict)
         >>> orbital_period['earth']     # Dict style lookup
         365
         >>> orbital_period.earth        # Attribute style lookup
@@ -372,15 +373,10 @@ class AttrDict(dict):
         >>> orbital_period.keys()       # All dict methods are present
         dict_keys(['mercury', 'venus', 'earth', 'mars'])
 
-    For keys that are not valid attribute names, Python syntax only allows
-    dictionary style access:
-
-        >>> d = AttrDict({'two words': 2})
-        >>> d['two words']              # Normal dictionary lookup works
-        2
-        >>> d.two words                 # Attribute names cannot contain spaces
-        ...
-        SyntaxError: invalid syntax
+    Attribute style access only works for keys that are valid attribute names.
+    In contrast, dictionary style access works for all keys.
+    For example, ``d.two words`` contains a space and is not syntactically
+    valid Python, so ``d["two words"]`` should be used instead.
 
     If a key has the same name as dictionary method, then a dictionary
     lookup finds the key and an attribute lookup finds the method:

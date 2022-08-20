@@ -1,6 +1,5 @@
 import unittest
-import json
-from json import AttrDict
+from test.test_json import PyTest
 
 kepler_dict = {
     "orbital_period": {
@@ -11,7 +10,7 @@ kepler_dict = {
         "jupiter": 4331,
         "saturn": 10_756,
         "uranus": 30_687,
-        "neptune": 60_190
+        "neptune": 60_190,
     },
     "dist_from_sun": {
         "mercury": 58,
@@ -21,36 +20,36 @@ kepler_dict = {
         "jupiter": 778,
         "saturn": 1_400,
         "uranus": 2_900,
-        "neptune": 4_500
+        "neptune": 4_500,
     }
 }
 
-class TestAttrDict(unittest.TestCase):
+class TestAttrDict(PyTest):
 
     def test_dict_subclass(self):
-        self.assertTrue(issubclass(AttrDict, dict))
+        self.assertTrue(issubclass(self.AttrDict, dict))
 
     def test_getattr(self):
-        d = AttrDict(x=1, y=2)
+        d = self.AttrDict(x=1, y=2)
         self.assertEqual(d.x, 1)
         with self.assertRaises(AttributeError):
             d.z
 
     def test_setattr(self):
-        d = AttrDict(x=1, y=2)
+        d = self.AttrDict(x=1, y=2)
         d.x = 3
         d.z = 5
         self.assertEqual(d, dict(x=3, y=2, z=5))
 
     def test_delattr(self):
-        d = AttrDict(x=1, y=2)
+        d = self.AttrDict(x=1, y=2)
         del d.x
         self.assertEqual(d, dict(y=2))
         with self.assertRaises(AttributeError):
             del d.z
 
     def test_dir(self):
-        d = AttrDict(x=1, y=2)
+        d = self.AttrDict(x=1, y=2)
         self.assertTrue(set(dir(d)), set(dir(dict)).union({'x', 'y'}))
 
     def test_repr(self):
@@ -59,16 +58,16 @@ class TestAttrDict(unittest.TestCase):
         # in the wild.  Also it supports the design concept that an
         # AttrDict is just like a regular dict but has optional
         # attribute style lookup.
-        self.assertEqual(repr(AttrDict(x=1, y=2)),
+        self.assertEqual(repr(self.AttrDict(x=1, y=2)),
                          repr(dict(x=1, y=2)))
 
     def test_overlapping_keys_and_methods(self):
-        d = AttrDict(items=50)
+        d = self.AttrDict(items=50)
         self.assertEqual(d['items'], 50)
         self.assertEqual(d.items(), dict(d).items())
 
     def test_invalid_attribute_names(self):
-        d = AttrDict({
+        d = self.AttrDict({
             'control': 'normal case',
             'class': 'keyword',
             'two words': 'contains space',
@@ -80,8 +79,9 @@ class TestAttrDict(unittest.TestCase):
         self.assertEqual(d['hypen-ate'], dict(d)['hypen-ate'])
 
     def test_object_hook_use_case(self):
-        json_string = json.dumps(kepler_dict)
-        kepler_ad = json.loads(json_string, object_hook=AttrDict)
+        AttrDict = self.AttrDict
+        json_string = self.dumps(kepler_dict)
+        kepler_ad = self.loads(json_string, object_hook=AttrDict)
 
         self.assertEqual(kepler_ad, kepler_dict)     # Match regular dict
         self.assertIsInstance(kepler_ad, AttrDict)   # Verify conversion
