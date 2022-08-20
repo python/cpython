@@ -1259,7 +1259,6 @@ Cursor objects
    existing links.
 
 .. _sqlite3-columns-by-name:
-
 .. _sqlite3-row-objects:
 
 Row objects
