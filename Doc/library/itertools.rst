@@ -668,7 +668,7 @@ loops that truncate the stream.
    the tee objects being informed.
 
    ``tee`` iterators are not threadsafe. A :exc:`RuntimeError` may be
-   raised when using simultaneously iterators returned by the same :func:`tee`
+   raised when simultaneously using iterators returned by the same :func:`tee`
    call, even if the original *iterable* is threadsafe.
 
    This itertool may require significant auxiliary storage (depending on how
