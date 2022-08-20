@@ -544,7 +544,7 @@ Exceptions
    Subclass of :class:`dict` object that also supports attribute style dotted access.
 
    This class is intended for use with the :attr:`object_hook` in
-   :func:`json.loads`:
+   :func:`json.load` and :func:`json.loads`:
 
    .. doctest::
 
@@ -557,15 +557,10 @@ Exceptions
         >>> orbital_period.keys()       # All dict methods are present
         dict_keys(['mercury', 'venus', 'earth', 'mars'])
 
-   For keys that are not valid attribute names, Python syntax only allows
-   dictionary style access::
-
-        >>> d = AttrDict({'two words': 2})
-        >>> d['two words']              # Normal dictionary lookup works
-        2
-        >>> d.two words                 # Attribute names cannot contain spaces
-        ...
-        SyntaxError: invalid syntax
+   Attribute style access only works for keys that are valid attribute
+   names.  In contrast, dictionary style access works for all keys.  For
+   example, ``d.two words`` contains a space and is not syntactically
+   valid Python, so ``d["two words"]`` should be used instead.
 
    If a key has the same name as dictionary method, then a dictionary
    lookup finds the key and an attribute lookup finds the method:
