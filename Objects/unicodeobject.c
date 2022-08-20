@@ -69,6 +69,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
    in _PyUnicode_ClearInterned(). */
 /* #define INTERNED_STATS 1 */
 
+
 /*[clinic input]
 class str "PyObject *" "&PyUnicode_Type"
 [clinic start generated code]*/
