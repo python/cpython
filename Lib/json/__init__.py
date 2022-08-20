@@ -357,3 +357,56 @@ def loads(s, *, cls=None, object_hook=None, parse_float=None,
     if parse_constant is not None:
         kw['parse_constant'] = parse_constant
     return cls(**kw).decode(s)
+
+class AttrDict(dict):
+    """Dict like object that supports attribute style dotted access.
+
+    This class is intended for use with the *object_hook* in json.loads():
+
+        >>> json_string = '{"mercury": 88, "venus": 225, "earth": 365, "mars": 687}'
+        >>> orbital_period = json.loads(json_string, object_hook=AttrDict)
+        >>> orbital_period['earth']     # Dict style lookup
+        365
+        >>> orbital_period.earth        # Attribute style lookup
+        365
+        >>> orbital_period.keys()       # All dict methods are present
+        dict_keys(['mercury', 'venus', 'earth', 'mars'])
+
+    For keys that are not valid attribute names, Python syntax only allows
+    dictionary style access:
+
+        >>> d = AttrDict({'two words': 2})
+        >>> d['two words']              # Normal dictionary lookup works
+        2
+        >>> d.two words                 # Attribute names cannot contain spaces
+        ...
+        SyntaxError: invalid syntax
+
+    If a key has the same name as dictionary method, then a dictionary
+    lookup finds the key and an attribute lookup finds the method:
+
+        >>> d = AttrDict(items=50)
+        >>> d['items']                  # Lookup the key
+        50
+        >>> d.items()                   # Call the method
+        dict_items([('items', 50)])
+
+    """
+
+    def __getattr__(self, attr):
+        try:
+            return self[attr]
+        except KeyError:
+            raise AttributeError(attr) from None
+
+    def __setattr__(self, attr, value):
+        self[attr] = value
+
+    def __delattr__(self, attr):
+        try:
+            del self[attr]
+        except KeyError:
+            raise AttributeError(attr) from None
+
+    def __dir__(self):
+        return list(self) + dir(type(self))
