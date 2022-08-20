@@ -1286,7 +1286,7 @@ Row objects
 
       >>> con = sqlite3.connect(":memory:")
       >>> con.row_factory = sqlite3.Row
-      >>> res = con.execute("select 'Earth' as name, 6378 as radius")
+      >>> res = con.execute("SELECT 'Earth' AS name, 6378 AS radius")
       >>> row = res.fetchone()
       >>> row.keys()
       ['name', 'radius']
