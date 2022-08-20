@@ -9,6 +9,10 @@
 
 **Source code:** :source:`Lib/json/__init__.py`
 
+.. testsetup:: *
+
+    import json
+
 --------------
 
 `JSON (JavaScript Object Notation) <https://json.org>`_, specified by
@@ -538,7 +542,10 @@ Exceptions
 
    Subclass of :class:`dict` object that also supports attribute style dotted access.
 
-   This class is intended for use with the :attr:`object_hook` in :func:`json.loads`::
+   This class is intended for use with the :attr:`object_hook` in
+   :func:`json.loads`:
+
+   .. doctest::
 
         >>> json_string = '{"mercury": 88, "venus": 225, "earth": 365, "mars": 687}'
         >>> orbital_period = json.loads(json_string, object_hook=AttrDict)
@@ -560,7 +567,9 @@ Exceptions
         SyntaxError: invalid syntax
 
    If a key has the same name as dictionary method, then a dictionary
-   lookup finds the key and an attribute lookup finds the method::
+   lookup finds the key and an attribute lookup finds the method:
+
+   .. doctest::
 
         >>> d = AttrDict(items=50)
         >>> d['items']                  # Lookup the key
