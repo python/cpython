@@ -417,6 +417,18 @@ Module constants
    This flag may be combined with :const:`PARSE_COLNAMES` using the ``|``
    (bitwise or) operator.
 
+.. data:: SQLITE_OK
+          SQLITE_DENY
+          SQLITE_IGNORE
+
+   Flags used for return values from the callable passed as
+   the *authorizer_callback* argument of :meth:`Connection.set_authorizer`
+   to indicate whether:
+
+   * Access is allowed (:const:`!SQLITE_OK`),
+   * The SQL statement should be aborted with an error (:const:`!SQLITE_DENY`)
+   * The column should be treated as a ``NULL`` value (:const:`!SQLITE_IGNORE`)
+
 .. data:: apilevel
 
    String constant stating the supported DB-API level. Required by the DB-API.
