@@ -1269,8 +1269,7 @@ Row objects
 
    A :class:`!Row` instance serves as a highly optimized
    :attr:`~Connection.row_factory` for :class:`Connection` objects.
-   It tries to mimic a :class:`tuple` in most of its features,
-   and supports iteration, :func:`repr`, equality testing, :func:`len`,
+   It supports iteration, equality testing, :func:`len`,
    and :term:`mapping` access by column name and index.
 
    Two row objects compare equal if have equal columns and equal members.
@@ -1286,19 +1285,16 @@ Row objects
 
    Example::
 
-      >>> con.row_factory = sqlite3.Row  # con is an sqlite3.Connection object.
-      >>> res = con.execute("select 'Tellus' as name, 6378 as radius")
+      >>> con = sqlite3.connect(":memory:")
+      >>> con.row_factory = sqlite3.Row
+      >>> res = con.execute("select 'Earth' as name, 6378 as radius")
       >>> row = res.fetchone()
       >>> row.keys()
       ['name', 'radius']
-      >>> row[0]
-      'Tellus'
-      >>> row["name"]
-      'Tellus'
+      >>> row[0], row["name"]  # Access by index and name.
+      ('Earth', 'Earth')
       >>> row["RADIUS"]
       6378
-      >>> "Tellus" in row
-      True
 
 
 .. _sqlite3-blob-objects:
