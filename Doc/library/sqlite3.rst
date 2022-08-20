@@ -1620,8 +1620,8 @@ both styles:
 
 .. _sqlite3-adapters:
 
-Using adapters to store custom Python types in SQLite databases
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+How to adapt custom Python types to SQLite values
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 SQLite supports only a limited set of data types natively.
 To store custom Python types in SQLite databases, *adapt* them to one of the
@@ -1638,8 +1638,8 @@ registering custom adapter functions.
 
 .. _sqlite3-conform:
 
-Letting your object adapt itself
-""""""""""""""""""""""""""""""""
+Let your object adapt itself
+""""""""""""""""""""""""""""
 
 Suppose we have a :class:`!Point` class that represents a pair of coordinates,
 ``x`` and ``y``, in a Cartesian coordinate system.
@@ -1652,8 +1652,8 @@ The object passed to *protocol* will be of type :class:`PrepareProtocol`.
 .. literalinclude:: ../includes/sqlite3/adapter_point_1.py
 
 
-Registering an adapter callable
-"""""""""""""""""""""""""""""""
+Register an adapter callable
+""""""""""""""""""""""""""""
 
 The other possibility is to create a function that converts the Python object
 to an SQLite-compatible type.
@@ -1664,8 +1664,8 @@ This function can then be registered using :func:`register_adapter`.
 
 .. _sqlite3-converters:
 
-Converting SQLite values to custom Python types
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+How to convert SQLite values to custom Python types
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Writing an adapter lets you convert *from* custom Python types *to* SQLite
 values.
@@ -1751,8 +1751,8 @@ This section shows recipes for common adapters and converters.
 
 .. _sqlite3-connection-shortcuts:
 
-Using connection shortcut methods
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+How to use connection shortcut methods
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Using the :meth:`~Connection.execute`,
 :meth:`~Connection.executemany`, and :meth:`~Connection.executescript`
@@ -1768,8 +1768,8 @@ directly using only a single call on the :class:`Connection` object.
 
 .. _sqlite3-columns-by-name:
 
-Accessing columns by name instead of by index
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Hwo to access columns by name
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 One useful feature of the :mod:`!sqlite3` module is the built-in
 :class:`sqlite3.Row` class designed to be used as a row factory.
@@ -1782,8 +1782,8 @@ case-insensitively by name:
 
 .. _sqlite3-connection-context-manager:
 
-Using the connection as a context manager
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+How to use a connection as a context manager
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A :class:`Connection` object can be used as a context manager that
 automatically commits or rolls back open transactions when leaving the body of
@@ -1807,8 +1807,8 @@ the context manager is a no-op.
 
 .. _sqlite3-uri-tricks:
 
-Working with SQLite URIs
-^^^^^^^^^^^^^^^^^^^^^^^^
+How to work with SQLite URIs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Some useful URI tricks include:
 
