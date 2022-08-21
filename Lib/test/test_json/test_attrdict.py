@@ -1,5 +1,7 @@
-import unittest
 from test.test_json import PyTest
+import pickle
+import sys
+import unittest
 
 kepler_dict = {
     "orbital_period": {
@@ -121,6 +123,22 @@ class TestAttrDict(PyTest):
 
         # Round trip
         self.assertEqual(self.dumps(kepler_ad), json_string)
+
+    def test_pickle(self):
+        AttrDict = self.AttrDict
+        json_string = self.dumps(kepler_dict)
+        kepler_ad = self.loads(json_string, object_hook=AttrDict)
+
+        # Pickling requires the cached module to be the real module
+        cached_module = sys.modules.get('json')
+        sys.modules['json'] = self.json
+        try:
+            for protocol in range(6):
+                kepler_ad2 = pickle.loads(pickle.dumps(kepler_ad, protocol))
+                self.assertEqual(kepler_ad2, kepler_ad)
+                self.assertEqual(type(kepler_ad2), AttrDict)
+        finally:
+            sys.modules['json'] = cached_module
 
 
 if __name__ == "__main__":
