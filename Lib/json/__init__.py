@@ -97,7 +97,7 @@ Using json.tool from the shell to validate and pretty-print::
 """
 __version__ = '2.0.9'
 __all__ = [
-    'dump', 'dumps', 'load', 'loads',
+    'dump', 'dumps', 'load', 'loads', 'AttrDict',
     'JSONDecoder', 'JSONDecodeError', 'JSONEncoder',
 ]
 

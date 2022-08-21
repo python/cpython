@@ -119,6 +119,9 @@ class TestAttrDict(PyTest):
         self.assertEqual(list(kepler_ad.orbital_period.items()),
                              list(kepler_dict['orbital_period'].items()))
 
+        # Round trip
+        self.assertEqual(self.dumps(kepler_ad), json_string)
+
 
 if __name__ == "__main__":
     unittest.main()
