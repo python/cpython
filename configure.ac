@@ -10,7 +10,7 @@ m4_define(PYTHON_VERSION, 3.12)
 
 AC_PREREQ([2.69])
 
-AC_INIT([python],[PYTHON_VERSION],[https://bugs.python.org/])
+AC_INIT([python],[PYTHON_VERSION],[https://github.com/python/cpython/issues])
 
 m4_ifdef(
     [AX_C_FLOAT_WORDS_BIGENDIAN],
