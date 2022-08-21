@@ -562,7 +562,7 @@ Exceptions
    example, ``d.two words`` contains a space and is not syntactically
    valid Python, so ``d["two words"]`` should be used instead.
 
-   If a key has the same name as dictionary method, then a dictionary
+   If a key has the same name as a dictionary method, then a dictionary
    lookup finds the key and an attribute lookup finds the method:
 
    .. doctest::
