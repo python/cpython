@@ -3425,6 +3425,58 @@ class EncodedMetadataTests(unittest.TestCase):
         for name in self.file_names:
             self.assertIn(name, listing)
 
+class StripExtraTests(unittest.TestCase):
+    # Note: all of the "z" characters are technically invalid, but up to 3 bytes
+    # at the end of the extra will be passed through as they are too short to
+    # encode a valid extra.
+    def test_no_data(self):
+        s = struct.Struct("<HH")
+        a = s.pack(1, 0)  # 1=zip64 exta signature
+        b = s.pack(2, 0)
+        c = s.pack(3, 0)
+
+        self.assertEqual(b'', zipfile._strip_extra(a, (1,)))
+        self.assertEqual(b, zipfile._strip_extra(b, (1,)))
+        self.assertEqual(b+b"z", zipfile._strip_extra(b+b"z", (1,)))
+
+        self.assertEqual(b+c, zipfile._strip_extra(a+b+c, (1,)))
+        self.assertEqual(b+c, zipfile._strip_extra(b+a+c, (1,)))
+        self.assertEqual(b+c, zipfile._strip_extra(b+c+a, (1,)))
+
+    def test_with_data(self):
+        s = struct.Struct("<HH")
+        a = s.pack(1, 1) + b"a"  # 1=zip64 exta signature
+        b = s.pack(2, 2) + b"bb"
+        c = s.pack(3, 3) + b"ccc"
+
+        self.assertEqual(b"", zipfile._strip_extra(a, (1,)))
+        self.assertEqual(b, zipfile._strip_extra(b, (1,)))
+        self.assertEqual(b+b"z", zipfile._strip_extra(b+b"z", (1,)))
+
+        self.assertEqual(b+c, zipfile._strip_extra(a+b+c, (1,)))
+        self.assertEqual(b+c, zipfile._strip_extra(b+a+c, (1,)))
+        self.assertEqual(b+c, zipfile._strip_extra(b+c+a, (1,)))
+
+    def test_multiples(self):
+        s = struct.Struct("<HH")
+        a = s.pack(1, 1) + b"a"  # 1=zip64 exta signature
+        b = s.pack(2, 2) + b"bb"
+        c = s.pack(3, 3) + b"ccc"
+
+        self.assertEqual(b"", zipfile._strip_extra(a+a, (1,)))
+        self.assertEqual(b"", zipfile._strip_extra(a+a+a, (1,)))
+        self.assertEqual(b"z", zipfile._strip_extra(a+a+b"z", (1,)))
+        self.assertEqual(b+b"z", zipfile._strip_extra(a+a+b+b"z", (1,)))
+
+        self.assertEqual(b, zipfile._strip_extra(a+a+b, (1,)))
+        self.assertEqual(b, zipfile._strip_extra(a+b+a, (1,)))
+        self.assertEqual(b, zipfile._strip_extra(b+a+a, (1,)))
+
+    def test_too_short(self):
+        self.assertEqual(b"", zipfile._strip_extra(b"", (1,)))
+        self.assertEqual(b"z", zipfile._strip_extra(b"z", (1,)))
+        self.assertEqual(b"zz", zipfile._strip_extra(b"zz", (1,)))
+        self.assertEqual(b"zzz", zipfile._strip_extra(b"zzz", (1,)))
 
 if __name__ == "__main__":
     unittest.main()
