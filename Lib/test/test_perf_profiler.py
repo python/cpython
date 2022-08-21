@@ -5,6 +5,7 @@ import sys
 import sysconfig
 from test.support.script_helper import make_script
 from test.support.os_helper import temp_dir
+from test.support import check_sanitizer
 
 
 def get_perf_version():
@@ -38,6 +39,9 @@ if not version:
 
 if "no-omit-frame-pointe" not in sysconfig.get_config_var("CFLAGS"):
     raise unittest.SkipTest("Unwinding without frame pointer is unreliable")
+
+if check_sanitizer(address=True, memory=True, ub=True):
+    raise unittest.SkipTest("Perf unwinding doesn't work with sanitizers")
 
 
 def run_perf(cwd, *args, **env_vars):
