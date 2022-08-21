@@ -41,7 +41,7 @@ new_code_arena(void)
     assert(mem_size % sysconf(_SC_PAGESIZE) == 0);
     char *memory = mmap(NULL,  // address
                         mem_size,
-                        PROT_READ | PROT_WRITE | PROT_EXEC,
+                        PROT_READ | PROT_WRITE,
                         MAP_PRIVATE | MAP_ANONYMOUS,
                         -1,  // fd (not used here)
                         0);  // offset (not used here)
@@ -53,8 +53,8 @@ new_code_arena(void)
     void *end = &_Py_trampoline_func_end;
     size_t code_size = end - start;
 
-    long n_copies = mem_size / code_size;
-    for (int i = 0; i < n_copies; i++) {
+    size_t n_copies = mem_size / code_size;
+    for (size_t i = 0; i < n_copies; i++) {
         memcpy(memory + i * code_size, start, code_size * sizeof(char));
     }
 
@@ -144,7 +144,8 @@ perf_map_write_entry(FILE *method_file, const void *code_addr,
                      unsigned int code_size, const char *entry,
                      const char *file)
 {
-    fprintf(method_file, "%lx %x py::%s:%s\n", (unsigned long)code_addr,
+    assert(entry != NULL && file != NULL);
+    fprintf(method_file, "%p %x py::%s:%s\n", code_addr,
             code_size, entry, file);
     fflush(method_file);
 }
@@ -157,15 +158,15 @@ py_trampoline_evaluator(PyThreadState *ts, _PyInterpreterFrame *frame,
     py_trampoline f = NULL;
     _PyCode_GetExtra((PyObject *)co, extra_code_index, (void **)&f);
     if (f == NULL) {
+        FILE *pfile = perf_map_get_file();
+        if (pfile == NULL) {
+            return NULL;
+        }
         if (extra_code_index == -1) {
             extra_code_index = _PyEval_RequestCodeExtraIndex(NULL);
         }
         py_trampoline new_trampoline = compile_trampoline();
         if (new_trampoline == NULL) {
-            return NULL;
-        }
-        FILE *pfile = perf_map_get_file();
-        if (pfile == NULL) {
             return NULL;
         }
         perf_map_write_entry(pfile, new_trampoline, code_arena->code_size,
@@ -178,7 +179,19 @@ py_trampoline_evaluator(PyThreadState *ts, _PyInterpreterFrame *frame,
     assert(f != NULL);
     return f(_PyEval_EvalFrameDefault, ts, frame, throw);
 }
+#endif // HAVE_PERF_TRAMPOLINE
+
+int
+_PyIsPerfTrampolineActive(void)
+{
+#ifdef HAVE_PERF_TRAMPOLINE
+    PyThreadState *tstate = _PyThreadState_GET();
+    return tstate->interp->eval_frame == py_trampoline_evaluator;
 #endif
+    return 0;
+}
+
+
 
 int
 _PyPerfTrampoline_Init(int activate)
@@ -214,6 +227,7 @@ _PyPerfTrampoline_AfterFork_Child(void)
 #ifdef HAVE_PERF_TRAMPOLINE
     // close file in child.
     perf_map_close(perf_map_file);
+    perf_map_file = NULL;
 #endif
     return PyStatus_Ok();
 }

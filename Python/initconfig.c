@@ -1803,7 +1803,7 @@ config_read_complex_options(PyConfig *config)
             return status;
         }
     }
-    if (config->tracemalloc < 0) {
+    if (config->perf_profiling < 0) {
         status = config_init_perf_profiling(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;

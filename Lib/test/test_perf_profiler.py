@@ -3,6 +3,7 @@ import subprocess
 import re
 import sys
 import sysconfig
+import os
 from test.support.script_helper import make_script
 from test.support.os_helper import temp_dir
 from test.support import check_sanitizer
@@ -11,20 +12,13 @@ from test.support import check_sanitizer
 def get_perf_version():
     try:
         cmd = ["perf", "--version"]
-        proc = subprocess.Popen(
+        proc = subprocess.run(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True
         )
-        with proc:
-            version, stderr = proc.communicate()
-
-        if proc.returncode:
-            raise Exception(
-                f"Command {' '.join(cmd)!r} failed "
-                f"with exit code {proc.returncode}: "
-                f"stdout={version!r} stderr={stderr!r}"
-            )
-    except OSError:
+    except subprocess.SubprocessError:
         raise unittest.SkipTest("Couldn't find perf on the path")
+    
+    version = proc.stdout
 
     match = re.search(r"^perf version\s+(.*)", version)
     if match is None:
@@ -50,32 +44,22 @@ def run_perf(cwd, *args, **env_vars):
         env.update(env_vars)
     else:
         env = None
-    # -nx: Do not execute commands from any .gdbinit initialization files
-    #      (issue #22188)
     output_file = cwd + "/perf_output.perf"
     base_cmd = ("perf", "record", "-g", "--call-graph=fp", "-o", output_file, "--")
-    proc = subprocess.Popen(
+    proc = subprocess.run(
         base_cmd + args,
-        # Redirect stdin to prevent GDB from messing with
-        # the terminal settings
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         env=env,
     )
-    with proc:
-        out, err = proc.communicate()
     base_cmd = ("perf", "script")
-    proc = subprocess.Popen(
+    proc = subprocess.run(
         ("perf", "script", "-i", output_file),
-        # Redirect stdin to prevent GDB from messing with
-        # the terminal settings
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         env=env,
     )
-    with proc:
-        out, err = proc.communicate()
-    return out.decode("utf-8", "replace"), err.decode("utf-8", "replace")
+    return proc.stdout.decode("utf-8", "replace"), proc.stderr.decode("utf-8", "replace")
 
 
 class TestPerfProfiler(unittest.TestCase):

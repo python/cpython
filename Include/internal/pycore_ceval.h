@@ -67,6 +67,7 @@ extern PyObject* _PyEval_BuiltinsFromGlobals(
 
 extern int _PyPerfTrampoline_Init(int activate);
 extern int _PyPerfTrampoline_Fini(void);
+extern int _PyIsPerfTrampolineActive(void);
 extern PyStatus _PyPerfTrampoline_AfterFork_Child(void);
 
 static inline PyObject*
