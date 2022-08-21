@@ -1754,7 +1754,7 @@ win32_wgetcwd(wchar_t *buf, DWORD buf_size)
         temp = PyMem_RawRealloc(local_buf != buf ? local_buf : NULL,
                                 buf_size * sizeof(wchar_t));
         if (!temp) {
-            SetLastError(ERROR_OUTOFMEMORY);
+            SetLastError(ERROR_NOT_ENOUGH_MEMORY);
             goto fail;
         }
         local_buf = temp;
