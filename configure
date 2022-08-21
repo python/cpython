@@ -11421,8 +11421,10 @@ $as_echo "$SHLIBS" >&6; }
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking perf trampoline" >&5
 $as_echo_n "checking perf trampoline... " >&6; }
-case $host in #(
-  x86_64-*-linux-*) :
+case $PLATFORM_TRIPLET in #(
+  x86_64-linux-gnu) :
+    perf_trampoline=yes ;; #(
+  aarch64-linux-gnu) :
     perf_trampoline=yes ;; #(
   *) :
     perf_trampoline=no
