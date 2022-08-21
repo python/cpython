@@ -18,23 +18,30 @@ typedef PyObject *(*py_trampoline)(py_evaluator, PyThreadState *,
 extern void *_Py_trampoline_func_start;
 extern void *_Py_trampoline_func_end;
 
-typedef struct {
+struct code_arena_st {
     char *start_addr;
     char *current_addr;
     size_t size;
     size_t size_left;
     size_t code_size;
-} code_arena_t;
+    struct code_arena_st *prev;
+};
+
+typedef struct code_arena_st code_arena_t;
 
 static Py_ssize_t extra_code_index = -1;
-static code_arena_t code_arena;
+static code_arena_t *code_arena;
+static FILE *perf_map_file;
 
 static int
-new_code_arena()
+new_code_arena(void)
 {
-    size_t page_size = sysconf(_SC_PAGESIZE);
+    // non-trivial programs typically need 64 to 256 kiB.
+    size_t mem_size = 4096 * 16;
+    assert(mem_size % sysconf(_SC_PAGESIZE) == 0);
     char *memory = mmap(NULL,  // address
-                        page_size, PROT_READ | PROT_WRITE | PROT_EXEC,
+                        mem_size,
+                        PROT_READ | PROT_WRITE | PROT_EXEC,
                         MAP_PRIVATE | MAP_ANONYMOUS,
                         -1,  // fd (not used here)
                         0);  // offset (not used here)
@@ -46,19 +53,41 @@ new_code_arena()
     void *end = &_Py_trampoline_func_end;
     size_t code_size = end - start;
 
-    long n_copies = page_size / code_size;
+    long n_copies = mem_size / code_size;
     for (int i = 0; i < n_copies; i++) {
         memcpy(memory + i * code_size, start, code_size * sizeof(char));
     }
 
-    mprotect(memory, page_size, PROT_READ | PROT_EXEC);
+    mprotect(memory, mem_size, PROT_READ | PROT_EXEC);
 
-    code_arena.start_addr = memory;
-    code_arena.current_addr = memory;
-    code_arena.size = page_size;
-    code_arena.size_left = page_size;
-    code_arena.code_size = code_size;
+    code_arena_t *new_arena = PyMem_RawCalloc(1, sizeof(code_arena_t));
+    if (new_arena == NULL) {
+        Py_FatalError("Failed to allocate new code arena struct");
+        return -1;
+    }
+
+    new_arena->start_addr = memory;
+    new_arena->current_addr = memory;
+    new_arena->size = mem_size;
+    new_arena->size_left = mem_size;
+    new_arena->code_size = code_size;
+    new_arena->prev = code_arena;
+    code_arena = new_arena;
     return 0;
+}
+
+static void
+free_code_arenas(void)
+{
+    code_arena_t *cur = code_arena;
+    code_arena_t *prev;
+    code_arena = NULL; // invalid static pointer
+    while(cur) {
+        munmap(cur->start_addr, cur->size);
+        prev = cur->prev;
+        PyMem_RawFree(cur);
+        cur = prev;
+    }
 }
 
 static inline py_trampoline
@@ -73,27 +102,32 @@ code_arena_new_code(code_arena_t *code_arena)
 static inline py_trampoline
 compile_trampoline(void)
 {
-    if (code_arena.size_left <= code_arena.code_size) {
+    if ((code_arena == NULL) || (code_arena->size_left <= code_arena->code_size)) {
         if (new_code_arena() < 0) {
             return NULL;
         }
     }
 
-    assert(code_arena.size_left <= code_arena.size);
-    return code_arena_new_code(&code_arena);
+    assert(code_arena->size_left <= code_arena->size);
+    return code_arena_new_code(code_arena);
 }
 
 static inline FILE *
-perf_map_open(pid_t pid)
+perf_map_get_file(void)
 {
+    if (perf_map_file) {
+        return perf_map_file;
+    }
     char filename[100];
+    pid_t pid = getpid();
+    // TODO: %d is incorrect if pid_t is long long
     snprintf(filename, sizeof(filename), "/tmp/perf-%d.map", pid);
-    FILE *res = fopen(filename, "a");
-    if (!res) {
+    perf_map_file = fopen(filename, "a");
+    if (!perf_map_file) {
         _Py_FatalErrorFormat(__func__, "Couldn't open %s: errno(%d)", filename, errno);
         return NULL;
     }
-    return res;
+    return perf_map_file;
 }
 
 static inline int
@@ -112,6 +146,7 @@ perf_map_write_entry(FILE *method_file, const void *code_addr,
 {
     fprintf(method_file, "%lx %x py::%s:%s\n", (unsigned long)code_addr,
             code_size, entry, file);
+    fflush(method_file);
 }
 
 static PyObject *
@@ -129,14 +164,13 @@ py_trampoline_evaluator(PyThreadState *ts, _PyInterpreterFrame *frame,
         if (new_trampoline == NULL) {
             return NULL;
         }
-        FILE *pfile = perf_map_open(getpid());
+        FILE *pfile = perf_map_get_file();
         if (pfile == NULL) {
             return NULL;
         }
-        perf_map_write_entry(pfile, new_trampoline, code_arena.code_size,
+        perf_map_write_entry(pfile, new_trampoline, code_arena->code_size,
                              PyUnicode_AsUTF8(co->co_qualname),
                              PyUnicode_AsUTF8(co->co_filename));
-        perf_map_close(pfile);
         _PyCode_SetExtra((PyObject *)co, extra_code_index,
                          (void *)new_trampoline);
         f = new_trampoline;
@@ -162,4 +196,24 @@ _PyPerfTrampoline_Init(int activate)
 #endif
     }
     return 0;
+}
+
+int
+_PyPerfTrampoline_Fini(void)
+{
+#ifdef HAVE_PERF_TRAMPOLINE
+    free_code_arenas();
+    perf_map_close(perf_map_file);
+#endif
+    return 0;
+}
+
+PyStatus
+_PyPerfTrampoline_AfterFork_Child(void)
+{
+#ifdef HAVE_PERF_TRAMPOLINE
+    // close file in child.
+    perf_map_close(perf_map_file);
+#endif
+    return PyStatus_Ok();
 }
