@@ -2795,8 +2795,10 @@ class AbstractPickleTests:
             ({1, 2}.__contains__, (2,)),
             # unbound "coexist" method
             (set.__contains__, ({1, 2}, 2)),
-            # built-in class method
+            # built-in bound class method
             (dict.fromkeys, (("a", 1), ("b", 2))),
+            # built-in unbound class method
+            (dict.__dict__["fromkeys"], (dict, ("a", 1), ("b", 2))),
             # built-in static method
             (bytearray.maketrans, (b"abc", b"xyz")),
             # subclass methods

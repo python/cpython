@@ -83,6 +83,9 @@ Other Language Changes
   mapping is hashable.
   (Contributed by Serhiy Storchaka in :gh:`87995`.)
 
+* :class:`types.ClassMethodDescriptorType` instances are now pickled correctly.
+  (Contributed by Nir Schulman in :gh:`95196`.)
+
 
 New Modules
 ===========

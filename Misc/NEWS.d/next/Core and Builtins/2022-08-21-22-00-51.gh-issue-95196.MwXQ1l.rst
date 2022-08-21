@@ -1,0 +1,1 @@
+Fixed :class:`types.ClassMethodDescriptorType` being pickled incorrectly.
