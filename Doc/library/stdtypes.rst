@@ -5310,7 +5310,7 @@ Verification::
    ...           '571186405732').to_bytes(53, 'big')
    ...
 
-.. versionadded:: 3.10.7
+.. versionadded:: 3.9.14
 
 Affected APIs
 -------------
@@ -5365,7 +5365,7 @@ Information about the default and minimum can be found in :attr:`sys.int_info`:
 * :data:`sys.int_info.str_digits_check_threshold <sys.int_info>` is the lowest
   accepted value for the limit (other than 0 which disables it).
 
-.. versionadded:: 3.10.7
+.. versionadded:: 3.9.14
 
 .. caution::
 

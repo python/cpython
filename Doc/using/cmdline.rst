@@ -671,7 +671,7 @@ conflict.
    interpreter's global :ref:`integer string conversion length limitation
    <int_max_str_digits>`.
 
-   .. versionadded:: 3.10.7
+   .. versionadded:: 3.9.14
 
 .. envvar:: PYTHONIOENCODING
 

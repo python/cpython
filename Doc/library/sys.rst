@@ -481,7 +481,7 @@ always available.
       Mode <devmode>` and the ``utf8_mode`` attribute for the new  :option:`-X`
       ``utf8`` flag.
 
-   .. versionchanged:: 3.10.7
+   .. versionchanged:: 3.9.14
       Added the ``int_max_str_digits`` attribute.
 
 
@@ -966,7 +966,7 @@ always available.
 
    .. versionadded:: 3.1
 
-   .. versionchanged:: 3.10.7
+   .. versionchanged:: 3.9.14
       Added ``default_max_str_digits`` and ``str_digits_check_threshold``.
 
 
@@ -1252,7 +1252,7 @@ always available.
    <int_max_str_digits>` used by this interpreter. See also
    :func:`get_int_max_str_digits`.
 
-   .. versionadded:: 3.10.7
+   .. versionadded:: 3.9.14
 
 .. function:: setprofile(profilefunc)
 
