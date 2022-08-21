@@ -604,9 +604,8 @@ Notes:
       ... backslashes or newline characters.'
       'This string will not include backslashes or newline characters.'
 
-   The same result can be achieved by using parentheses and :ref:`string
-   literals concatenation <string-concatenation>` or :ref:`triple-quoted
-   strings <strings>`.
+   The same result can be achieved using :ref:`triple-quoted strings <strings>`,
+   or parentheses and :ref:`string literal concatenation <string-concatenation>`.
 
 
 (2)
