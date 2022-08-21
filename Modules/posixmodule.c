@@ -1741,12 +1741,14 @@ win32_wgetcwd(wchar_t *buf, DWORD buf_size)
     while (1) {
         wchar_t *temp;
         DWORD result = GetCurrentDirectoryW(buf_size, local_buf);
-        if (!result)
+        if (!result) {
             goto fail;
+        }
 
         /* L'\0' is not counted in result on success. */
-        if (result < buf_size)
+        if (result < buf_size) {
             break;
+        }
 
         buf_size = result;
         temp = PyMem_RawRealloc(local_buf != buf ? local_buf : NULL,
