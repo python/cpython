@@ -388,6 +388,7 @@ class AttrDict(dict):
         dict_items([('items', 50)])
 
     """
+    __slots__ = ()
 
     def __getattr__(self, attr):
         try:

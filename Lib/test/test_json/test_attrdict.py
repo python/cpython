@@ -29,6 +29,20 @@ class TestAttrDict(PyTest):
     def test_dict_subclass(self):
         self.assertTrue(issubclass(self.AttrDict, dict))
 
+    def test_slots(self):
+        d = self.AttrDict(x=1, y=2)
+        with self.assertRaises(TypeError):
+            vars(d)
+
+    def test_constructor_signatures(self):
+        AttrDict = self.AttrDict
+        target = dict(x=1, y=2)
+        self.assertEqual(AttrDict(x=1, y=2), target)                   # kwargs
+        self.assertEqual(AttrDict(dict(x=1, y=2)), target)             # mapping
+        self.assertEqual(AttrDict(dict(x=1, y=0), y=2), target)        # mapping, kwargs
+        self.assertEqual(AttrDict([('x', 1), ('y', 2)]), target)       # iterable
+        self.assertEqual(AttrDict([('x', 1), ('y', 0)], y=2), target)  # iterable, kwargs
+
     def test_getattr(self):
         d = self.AttrDict(x=1, y=2)
         self.assertEqual(d.x, 1)
