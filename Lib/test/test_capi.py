@@ -539,6 +539,30 @@ class CAPITest(unittest.TestCase):
         inst = _testcapi.HeapCTypeWithDict()
         self.assertEqual({}, inst.__dict__)
 
+    def test_heaptype_with_managed_dict(self):
+        inst = _testcapi.HeapCTypeWithManagedDict()
+        inst.foo = 42
+        self.assertEqual(inst.foo, 42)
+        self.assertEqual(inst.__dict__, {"foo": 42})
+
+        inst = _testcapi.HeapCTypeWithManagedDict()
+        self.assertEqual({}, inst.__dict__)
+
+        a = _testcapi.HeapCTypeWithManagedDict()
+        b = _testcapi.HeapCTypeWithManagedDict()
+        a.b = b
+        b.a = a
+        del a, b
+
+    def test_sublclassing_managed_dict(self):
+
+        class C(_testcapi.HeapCTypeWithManagedDict):
+            pass
+
+        i = C()
+        i.spam = i
+        del i
+
     def test_heaptype_with_negative_dict(self):
         inst = _testcapi.HeapCTypeWithNegativeDict()
         inst.foo = 42
@@ -554,6 +578,37 @@ class CAPITest(unittest.TestCase):
         ref = weakref.ref(inst)
         self.assertEqual(ref(), inst)
         self.assertEqual(inst.weakreflist, ref)
+
+    def test_heaptype_with_managed_weakref(self):
+        inst = _testcapi.HeapCTypeWithManagedWeakref()
+        ref = weakref.ref(inst)
+        self.assertEqual(ref(), inst)
+
+    def test_sublclassing_managed_weakref(self):
+
+        class C(_testcapi.HeapCTypeWithManagedWeakref):
+            pass
+
+        inst = C()
+        ref = weakref.ref(inst)
+        self.assertEqual(ref(), inst)
+
+    def test_sublclassing_managed_both(self):
+
+        class C1(_testcapi.HeapCTypeWithManagedWeakref, _testcapi.HeapCTypeWithManagedDict):
+            pass
+
+        class C2(_testcapi.HeapCTypeWithManagedDict, _testcapi.HeapCTypeWithManagedWeakref):
+            pass
+
+        for cls in (C1, C2):
+            inst = cls()
+            ref = weakref.ref(inst)
+            self.assertEqual(ref(), inst)
+            inst.spam = inst
+            del inst
+            ref = weakref.ref(cls())
+            self.assertIs(ref(), None)
 
     def test_heaptype_with_buffer(self):
         inst = _testcapi.HeapCTypeWithBuffer()
@@ -622,21 +677,43 @@ class CAPITest(unittest.TestCase):
 
     def test_multiple_inheritance_ctypes_with_weakref_or_dict(self):
 
-        class Both1(_testcapi.HeapCTypeWithWeakref, _testcapi.HeapCTypeWithDict):
+        with self.assertRaises(TypeError):
+            class Both1(_testcapi.HeapCTypeWithWeakref, _testcapi.HeapCTypeWithDict):
+                pass
+        with self.assertRaises(TypeError):
+            class Both2(_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithWeakref):
+                pass
+
+    def test_multiple_inheritance_ctypes_with_weakref_or_dict_and_other_builtin(self):
+
+        with self.assertRaises(TypeError):
+            class C1(_testcapi.HeapCTypeWithDict, list):
+                pass
+
+        with self.assertRaises(TypeError):
+            class C2(_testcapi.HeapCTypeWithWeakref, list):
+                pass
+
+        class C3(_testcapi.HeapCTypeWithManagedDict, list):
             pass
-        class Both2(_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithWeakref):
+        class C4(_testcapi.HeapCTypeWithManagedWeakref, list):
             pass
 
-        for cls in (_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithDict2,
-            _testcapi.HeapCTypeWithWeakref, _testcapi.HeapCTypeWithWeakref2):
-            for cls2 in (_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithDict2,
-                _testcapi.HeapCTypeWithWeakref, _testcapi.HeapCTypeWithWeakref2):
-                if cls is not cls2:
-                    class S(cls, cls2):
-                        pass
-            class B1(Both1, cls):
+        inst = C3()
+        inst.append(0)
+        str(inst.__dict__)
+
+        inst = C4()
+        inst.append(0)
+        str(inst.__weakref__)
+
+        for cls in (_testcapi.HeapCTypeWithManagedDict, _testcapi.HeapCTypeWithManagedWeakref):
+            for cls2 in (_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithWeakref):
+                class S(cls, cls2):
+                    pass
+            class B1(C3, cls):
                 pass
-            class B2(Both1, cls):
+            class B2(C4, cls):
                 pass
 
     def test_pytype_fromspec_with_repeated_slots(self):
