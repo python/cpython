@@ -2004,7 +2004,7 @@ static PyObject *
 sys_activate_perf_trampoline_impl(PyObject *module)
 /*[clinic end generated code: output=7f97c60d4f580b85 input=666a2d744a97a220]*/
 {
-    if  (_PyPerfTrampoline_Init(1) < 0) {
+    if (_PyPerfTrampoline_Init(1) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;

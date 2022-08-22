@@ -28,17 +28,91 @@ struct code_arena_st {
     struct code_arena_st *prev;
 };
 
-typedef struct code_arena_st code_arena_t;
-
 typedef enum {
     PERF_STATUS_FAILED = -1,
     PERF_STATUS_NO_INIT = 0,
+    PERF_STATUS_OK = 1,
 } perf_status_t;
+
+typedef struct code_arena_st code_arena_t;
+
+struct trampoline_api_st {
+    trampoline_state_init init_state;
+    trampoline_state_write write_state;
+    trampoline_state_free free_state;
+    void* state;
+};
+
+typedef struct trampoline_api_st trampoline_api_t;
 
 static perf_status_t perf_status = PERF_STATUS_NO_INIT;
 static Py_ssize_t extra_code_index = -1;
 static code_arena_t *code_arena;
+static trampoline_api_t trampoline_api;
 static FILE *perf_map_file;
+
+void*
+_Py_perf_map_get_file(void)
+{
+    if (perf_map_file) {
+        return perf_map_file;
+    }
+    char filename[100];
+    pid_t pid = getpid();
+    // Location and file name of perf map is hard-coded in perf tool.
+    // Use exclusive create flag wit nofollow to prevent symlink attacks.
+    int flags = O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC;
+    snprintf(filename, sizeof(filename)-1, "/tmp/perf-%jd.map", (intmax_t)pid);
+    int fd = open(filename, flags, 0600);
+    if (fd == -1) {
+        perf_status = PERF_STATUS_FAILED;
+        PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
+        _PyErr_WriteUnraisableMsg("Failed to create perf map file", NULL);
+        return NULL;
+    }
+    perf_map_file = fdopen(fd, "w");
+    if (!perf_map_file) {
+        perf_status = PERF_STATUS_FAILED;
+        PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
+        close(fd);
+        _PyErr_WriteUnraisableMsg("Failed to create perf map file handle", NULL);
+        return NULL;
+    }
+    return perf_map_file;
+}
+
+int
+_Py_perf_map_close(void* state)
+{
+    FILE *fp = (FILE*)state;
+    if (fp) {
+        return fclose(fp);
+    }
+    perf_map_file = NULL;
+    perf_status = PERF_STATUS_NO_INIT;
+    return 0;
+}
+
+void
+_Py_perf_map_write_entry(void* state, const void *code_addr,
+                     unsigned int code_size, PyCodeObject* co)
+{
+    assert(file != NULL);
+    FILE *method_file = (FILE*)state;
+    const char* entry = PyUnicode_AsUTF8(co->co_qualname);
+    if (entry == NULL) {
+        _PyErr_WriteUnraisableMsg( "Failed to get qualname from code object", NULL);
+        return;
+    }
+    const char* filename = PyUnicode_AsUTF8(co->co_filename);
+    if (filename == NULL) {
+        _PyErr_WriteUnraisableMsg( "Failed to get filename from code object", NULL);
+        return;
+    }
+    fprintf(method_file, "%p %x py::%s:%s\n", code_addr,
+            code_size, entry, filename);
+    fflush(method_file);
+}
 
 static int
 new_code_arena(void)
@@ -130,88 +204,34 @@ compile_trampoline(void)
     return code_arena_new_code(code_arena);
 }
 
-static inline FILE *
-perf_map_get_file(void)
-{
-    if (perf_map_file) {
-        return perf_map_file;
-    }
-    char filename[100];
-    pid_t pid = getpid();
-    // Location and file name of perf map is hard-coded in perf tool.
-    // Use exclusive create flag wit nofollow to prevent symlink attacks.
-    int flags = O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC;
-    snprintf(filename, sizeof(filename)-1, "/tmp/perf-%jd.map", (intmax_t)pid);
-    int fd = open(filename, flags, 0600);
-    if (fd == -1) {
-        perf_status = PERF_STATUS_FAILED;
-        PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
-        _PyErr_WriteUnraisableMsg("Failed to create perf map file", NULL);
-        return NULL;
-    }
-    perf_map_file = fdopen(fd, "w");
-    if (!perf_map_file) {
-        perf_status = PERF_STATUS_FAILED;
-        PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
-        close(fd);
-        _PyErr_WriteUnraisableMsg("Failed to create perf map file handle", NULL);
-        return NULL;
-    }
-    return perf_map_file;
-}
-
-static inline int
-perf_map_close(FILE *fp)
-{
-    if (fp) {
-        return fclose(fp);
-    }
-    perf_status = PERF_STATUS_NO_INIT;
-    return 0;
-}
-
-static void
-perf_map_write_entry(FILE *method_file, const void *code_addr,
-                     unsigned int code_size, const char *entry,
-                     const char *file)
-{
-    assert(entry != NULL && file != NULL);
-    fprintf(method_file, "%p %x py::%s:%s\n", code_addr,
-            code_size, entry, file);
-    fflush(method_file);
-}
-
 static PyObject *
 py_trampoline_evaluator(PyThreadState *ts, _PyInterpreterFrame *frame,
                         int throw)
 {
-    if (perf_status == PERF_STATUS_FAILED) {
-        return _PyEval_EvalFrameDefault(ts, frame, throw);
+    if (perf_status == PERF_STATUS_FAILED || perf_status == PERF_STATUS_NO_INIT) {
+        goto default_eval;
     }
     PyCodeObject *co = frame->f_code;
     py_trampoline f = NULL;
     _PyCode_GetExtra((PyObject *)co, extra_code_index, (void **)&f);
     if (f == NULL) {
-        FILE *pfile = perf_map_get_file();
-        if (pfile == NULL) {
-            return _PyEval_EvalFrameDefault(ts, frame, throw);
-        }
         if (extra_code_index == -1) {
             extra_code_index = _PyEval_RequestCodeExtraIndex(NULL);
         }
         py_trampoline new_trampoline = compile_trampoline();
         if (new_trampoline == NULL) {
-            return _PyEval_EvalFrameDefault(ts, frame, throw);
+            goto default_eval;
         }
-        perf_map_write_entry(pfile, new_trampoline, code_arena->code_size,
-                             PyUnicode_AsUTF8(co->co_qualname),
-                             PyUnicode_AsUTF8(co->co_filename));
+        trampoline_api.write_state(trampoline_api.state, new_trampoline,
+                                   code_arena->code_size, co);
         _PyCode_SetExtra((PyObject *)co, extra_code_index,
                          (void *)new_trampoline);
         f = new_trampoline;
     }
     assert(f != NULL);
     return f(_PyEval_EvalFrameDefault, ts, frame, throw);
+default_eval:
+    return _PyEval_EvalFrameDefault(ts, frame, throw);
 }
 #endif // HAVE_PERF_TRAMPOLINE
 
@@ -225,7 +245,26 @@ _PyIsPerfTrampolineActive(void)
     return 0;
 }
 
-
+int _PyPerfTrampoline_SetCallbacks(
+    trampoline_state_init init_state,
+    trampoline_state_write write_state,
+    trampoline_state_free free_state
+) {
+    if (trampoline_api.state) {
+        Py_FatalError("Trampoline state already initialized");
+        return -1;
+    }
+    trampoline_api.init_state = init_state;
+    trampoline_api.write_state = write_state;
+    trampoline_api.free_state = free_state;
+    void* state = trampoline_api.init_state();
+    if (state == NULL) {
+        return -1;
+    }
+    trampoline_api.state = state;
+    perf_status = PERF_STATUS_OK;
+    return 0;
+}
 
 int
 _PyPerfTrampoline_Init(int activate)
@@ -250,7 +289,7 @@ _PyPerfTrampoline_Fini(void)
 {
 #ifdef HAVE_PERF_TRAMPOLINE
     free_code_arenas();
-    perf_map_close(perf_map_file);
+    trampoline_api.free_state(trampoline_api.state);
 #endif
     return 0;
 }
@@ -260,8 +299,7 @@ _PyPerfTrampoline_AfterFork_Child(void)
 {
 #ifdef HAVE_PERF_TRAMPOLINE
     // close file in child.
-    perf_map_close(perf_map_file);
-    perf_map_file = NULL;
+    trampoline_api.free_state(trampoline_api.state);
 #endif
     return PyStatus_Ok();
 }

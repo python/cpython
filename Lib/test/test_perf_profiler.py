@@ -11,11 +11,11 @@ from test.support import check_sanitizer
 
 def get_perf_version():
     try:
-        cmd = ["perf", "--version"]
+        cmd = ["perf", "version"]
         proc = subprocess.run(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True
         )
-    except subprocess.SubprocessError:
+    except (subprocess.SubprocessError, OSError):
         raise unittest.SkipTest("Couldn't find perf on the path")
     
     version = proc.stdout
