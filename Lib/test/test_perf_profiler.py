@@ -13,7 +13,7 @@ if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
 
-def is_unwinding_realiable():
+def is_unwinding_reliable():
     cflags = sysconfig.get_config_var("PY_CORE_CFLAGS")
     if not cflags:
         return False
