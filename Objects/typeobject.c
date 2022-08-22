@@ -3287,11 +3287,6 @@ type_new_impl(type_new_ctx *ctx)
     // Put the proper slots in place
     fixup_slot_dispatchers(type);
 
-    if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        PyHeapTypeObject *et = (PyHeapTypeObject*)type;
-        et->ht_cached_keys = _PyDict_NewKeysForClass();
-    }
-
     if (type_new_set_names(type) < 0) {
         goto error;
     }
@@ -3834,10 +3829,6 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
 
     if (!check_basicsize_includes_size_and_offsets(type)) {
         goto finally;
-    }
-
-    if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        res->ht_cached_keys = _PyDict_NewKeysForClass();
     }
 
     if (type->tp_doc) {
@@ -6774,6 +6765,29 @@ type_ready_set_new(PyTypeObject *type)
     return 0;
 }
 
+static int
+type_ready_managed_dict(PyTypeObject *type)
+{
+    if (!(type->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
+        return 0;
+    }
+    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+        PyErr_Format(PyExc_SystemError,
+                     "type %s has the Py_TPFLAGS_MANAGED_DICT flag "
+                     "but not Py_TPFLAGS_HEAPTYPE flag",
+                     type->tp_name);
+        return -1;
+    }
+    PyHeapTypeObject* et = (PyHeapTypeObject*)type;
+    if (et->ht_cached_keys == NULL) {
+        et->ht_cached_keys = _PyDict_NewKeysForClass();
+        if (et->ht_cached_keys == NULL) {
+            PyErr_NoMemory();
+            return -1;
+        }
+    }
+    return 0;
+}
 
 static int
 type_ready_post_checks(PyTypeObject *type)
@@ -6850,6 +6864,9 @@ type_ready(PyTypeObject *type)
         return -1;
     }
     if (type_ready_add_subclasses(type) < 0) {
+        return -1;
+    }
+    if (type_ready_managed_dict(type) < 0) {
         return -1;
     }
     if (type_ready_post_checks(type) < 0) {
