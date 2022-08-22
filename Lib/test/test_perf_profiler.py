@@ -4,6 +4,7 @@ import re
 import sys
 import sysconfig
 import os
+from test import support
 from test.support.script_helper import make_script
 from test.support.os_helper import temp_dir
 from test.support import check_sanitizer
@@ -24,6 +25,9 @@ def get_perf_version():
     if match is None:
         raise Exception("unable to parse perf version: %r" % version)
     return (version, match.group(1))
+
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
 
 
 _, version = get_perf_version()
