@@ -480,7 +480,7 @@ class ZipInfo (object):
 
     def _encodeFilenameFlags(self):
         try:
-            return self.filename.encode('ascii'), self.flag_bits & ~_MASK_UTF_FILENAME
+            return self.filename.encode('ascii'), self.flag_bits
         except UnicodeEncodeError:
             return self.filename.encode('utf-8'), self.flag_bits | _MASK_UTF_FILENAME
 

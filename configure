@@ -887,6 +887,9 @@ LLVM_PROF_FILE
 LLVM_PROF_MERGER
 PGO_PROF_USE_FLAG
 PGO_PROF_GEN_FLAG
+MERGE_FDATA
+LLVM_BOLT
+PREBOLT_RULE
 LLVM_AR_FOUND
 LLVM_AR
 PROFILE_TASK
@@ -1049,6 +1052,7 @@ enable_pystats
 with_assertions
 enable_optimizations
 with_lto
+enable_bolt
 with_address_sanitizer
 with_memory_sanitizer
 with_undefined_behavior_sanitizer
@@ -1773,6 +1777,8 @@ Optional Features:
                           no)
   --enable-pystats        enable internal statistics gathering (default is no)
   --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
+                          (default is no)
+  --enable-bolt           enable usage of the llvm-bolt post-link optimizer
                           (default is no)
   --enable-loadable-sqlite-extensions
                           support loadable extensions in the sqlite3 module,
@@ -7032,7 +7038,7 @@ $as_echo "$LDLIBRARY" >&6; }
 # LIBRARY_DEPS, LINK_PYTHON_OBJS and LINK_PYTHON_DEPS variable
 case $ac_sys_system/$ac_sys_emscripten_target in #(
   Emscripten/browser*) :
-    LIBRARY_DEPS='$(PY3LIBRARY) $(WASM_STDLIB)' ;; #(
+    LIBRARY_DEPS='$(PY3LIBRARY) $(WASM_STDLIB) python.html python.worker.js' ;; #(
   *) :
     LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)'
  ;;
@@ -7876,6 +7882,261 @@ $as_echo "$as_me: llvm-ar found via xcrun: ${LLVM_AR}" >&6;}
 
   CFLAGS_NODIST="$CFLAGS_NODIST ${LTOCFLAGS-$LTOFLAGS}"
   LDFLAGS_NODIST="$LDFLAGS_NODIST $LTOFLAGS"
+fi
+
+# Enable bolt flags
+Py_BOLT='false'
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-bolt" >&5
+$as_echo_n "checking for --enable-bolt... " >&6; }
+# Check whether --enable-bolt was given.
+if test "${enable_bolt+set}" = set; then :
+  enableval=$enable_bolt;
+if test "$enableval" != no
+then
+  Py_BOLT='true'
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; };
+else
+  Py_BOLT='false'
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; };
+fi
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+
+if test "$Py_BOLT" = 'true' ; then
+  PREBOLT_RULE="${DEF_MAKE_ALL_RULE}"
+  DEF_MAKE_ALL_RULE="bolt-opt"
+  DEF_MAKE_RULE="build_all"
+
+  # These flags are required for bolt to work:
+  CFLAGS_NODIST="$CFLAGS_NODIST -fno-reorder-blocks-and-partition"
+  LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,--emit-relocs"
+
+  # These flags are required to get good performance from bolt:
+  CFLAGS_NODIST="$CFLAGS_NODIST -fno-pie"
+  # We want to add these no-pie flags to linking executables but not shared libraries:
+  LINKCC="$LINKCC -fno-pie -no-pie"
+  # Designate the DWARF version into 4 since the LLVM-BOLT does not support DWARF5 yet.
+  CFLAGS="$CFLAGS -gdwarf-4"
+  LDFLAGS="$LDFLAGS -gdwarf-4"
+
+  if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}llvm-bolt", so it can be a program name with args.
+set dummy ${ac_tool_prefix}llvm-bolt; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_LLVM_BOLT+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $LLVM_BOLT in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_LLVM_BOLT="$LLVM_BOLT" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in ${llvm_path}
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_LLVM_BOLT="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+LLVM_BOLT=$ac_cv_path_LLVM_BOLT
+if test -n "$LLVM_BOLT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LLVM_BOLT" >&5
+$as_echo "$LLVM_BOLT" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_path_LLVM_BOLT"; then
+  ac_pt_LLVM_BOLT=$LLVM_BOLT
+  # Extract the first word of "llvm-bolt", so it can be a program name with args.
+set dummy llvm-bolt; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ac_pt_LLVM_BOLT+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ac_pt_LLVM_BOLT in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_LLVM_BOLT="$ac_pt_LLVM_BOLT" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in ${llvm_path}
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_LLVM_BOLT="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ac_pt_LLVM_BOLT=$ac_cv_path_ac_pt_LLVM_BOLT
+if test -n "$ac_pt_LLVM_BOLT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_LLVM_BOLT" >&5
+$as_echo "$ac_pt_LLVM_BOLT" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_pt_LLVM_BOLT" = x; then
+    LLVM_BOLT="''"
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    LLVM_BOLT=$ac_pt_LLVM_BOLT
+  fi
+else
+  LLVM_BOLT="$ac_cv_path_LLVM_BOLT"
+fi
+
+  if test -n "${LLVM_BOLT}" -a -x "${LLVM_BOLT}"
+  then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: \"Found llvm-bolt\"" >&5
+$as_echo "\"Found llvm-bolt\"" >&6; }
+  else
+    as_fn_error $? "llvm-bolt is required for a --enable-bolt build but could not be found." "$LINENO" 5
+  fi
+
+
+  if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}merge-fdata", so it can be a program name with args.
+set dummy ${ac_tool_prefix}merge-fdata; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_MERGE_FDATA+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $MERGE_FDATA in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_MERGE_FDATA="$MERGE_FDATA" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in ${llvm_path}
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_MERGE_FDATA="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+MERGE_FDATA=$ac_cv_path_MERGE_FDATA
+if test -n "$MERGE_FDATA"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MERGE_FDATA" >&5
+$as_echo "$MERGE_FDATA" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_path_MERGE_FDATA"; then
+  ac_pt_MERGE_FDATA=$MERGE_FDATA
+  # Extract the first word of "merge-fdata", so it can be a program name with args.
+set dummy merge-fdata; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ac_pt_MERGE_FDATA+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ac_pt_MERGE_FDATA in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_MERGE_FDATA="$ac_pt_MERGE_FDATA" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in ${llvm_path}
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_MERGE_FDATA="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ac_pt_MERGE_FDATA=$ac_cv_path_ac_pt_MERGE_FDATA
+if test -n "$ac_pt_MERGE_FDATA"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_MERGE_FDATA" >&5
+$as_echo "$ac_pt_MERGE_FDATA" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_pt_MERGE_FDATA" = x; then
+    MERGE_FDATA="''"
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    MERGE_FDATA=$ac_pt_MERGE_FDATA
+  fi
+else
+  MERGE_FDATA="$ac_cv_path_MERGE_FDATA"
+fi
+
+  if test -n "${MERGE_FDATA}" -a -x "${MERGE_FDATA}"
+  then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: \"Found merge-fdata\"" >&5
+$as_echo "\"Found merge-fdata\"" >&6; }
+  else
+    as_fn_error $? "merge-fdata is required for a --enable-bolt build but could not be found." "$LINENO" 5
+  fi
 fi
 
 # Enable PGO flags.

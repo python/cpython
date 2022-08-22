@@ -810,7 +810,15 @@ new_threadstate(PyInterpreterState *interp)
 {
     PyThreadState *tstate;
     _PyRuntimeState *runtime = interp->runtime;
-
+    // We don't need to allocate a thread state for the main interpreter
+    // (the common case), but doing it later for the other case revealed a
+    // reentrancy problem (deadlock).  So for now we always allocate before
+    // taking the interpreters lock.  See GH-96071.
+    PyThreadState *new_tstate = alloc_threadstate();
+    int used_newtstate;
+    if (new_tstate == NULL) {
+        return NULL;
+    }
     /* We serialize concurrent creation to protect global state. */
     HEAD_LOCK(runtime);
 
@@ -822,18 +830,15 @@ new_threadstate(PyInterpreterState *interp)
     if (old_head == NULL) {
         // It's the interpreter's initial thread state.
         assert(id == 1);
-
+        used_newtstate = 0;
         tstate = &interp->_initial_thread;
     }
     else {
         // Every valid interpreter must have at least one thread.
         assert(id > 1);
         assert(old_head->prev == NULL);
-
-        tstate = alloc_threadstate();
-        if (tstate == NULL) {
-            goto error;
-        }
+        used_newtstate = 1;
+        tstate = new_tstate;
         // Set to _PyThreadState_INIT.
         memcpy(tstate,
                &initial._main_interpreter._initial_thread,
@@ -844,11 +849,11 @@ new_threadstate(PyInterpreterState *interp)
     init_threadstate(tstate, interp, id, old_head);
 
     HEAD_UNLOCK(runtime);
+    if (!used_newtstate) {
+        // Must be called with lock unlocked to avoid re-entrancy deadlock.
+        PyMem_RawFree(new_tstate);
+    }
     return tstate;
-
-error:
-    HEAD_UNLOCK(runtime);
-    return NULL;
 }
 
 PyThreadState *

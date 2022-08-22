@@ -825,6 +825,20 @@ time
   it had a resolution of 1 millisecond (10\ :sup:`-3` seconds).
   (Contributed by Benjamin Szőke, Dong-hee Na, Eryk Sun and Victor Stinner in :issue:`21302` and :issue:`45429`.)
 
+
+traceback
+---------
+
+* Add :func:`traceback.StackSummary.format_frame_summary` to allow users
+  to override which frames appear in the traceback, and how they are
+  formatted.
+  (Contributed by Ammar Askar in :issue:`44569`.)
+
+* Add :func:`traceback.TracebackException.print`, which prints the
+  formatted :exc:`~traceback.TracebackException` instance to a file.
+  (Contributed by Irit Katriel in :issue:`33809`.)
+
+
 typing
 ------
 
@@ -2121,6 +2135,31 @@ Removed
 * Remove the ``HAVE_PY_SET_53BIT_PRECISION`` macro (moved to the internal C
   API).
   (Contributed by Victor Stinner in :issue:`45412`.)
+
+* Remove the :c:type:`Py_UNICODE` encoder APIs,
+  as they have been deprecated since Python 3.3,
+  are little used
+  and are inefficient relative to the recommended alternatives.
+
+  The removed functions are:
+
+  * :func:`!PyUnicode_Encode`
+  * :func:`!PyUnicode_EncodeASCII`
+  * :func:`!PyUnicode_EncodeLatin1`
+  * :func:`!PyUnicode_EncodeUTF7`
+  * :func:`!PyUnicode_EncodeUTF8`
+  * :func:`!PyUnicode_EncodeUTF16`
+  * :func:`!PyUnicode_EncodeUTF32`
+  * :func:`!PyUnicode_EncodeUnicodeEscape`
+  * :func:`!PyUnicode_EncodeRawUnicodeEscape`
+  * :func:`!PyUnicode_EncodeCharmap`
+  * :func:`!PyUnicode_TranslateCharmap`
+  * :func:`!PyUnicode_EncodeDecimal`
+  * :func:`!PyUnicode_TransformDecimalToASCII`
+
+  See :pep:`624` for details and
+  :pep:`migration guidance <624#alternative-apis>`.
+  (Contributed by Inada Naoki in :issue:`44029`.)
 
 
 .. _libb2: https://www.blake2.net/
