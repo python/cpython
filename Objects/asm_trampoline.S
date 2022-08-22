@@ -9,9 +9,10 @@
 # }
 _Py_trampoline_func_start:
 #ifdef __x86_64__
-    sub    $8, %rsp
+    pushq   %rbp
+    movq    %rsp, %rbp
     call    *%rcx
-    add    $8, %rsp
+    popq    %rbp
     ret
 #endif // __x86_64__
 #if defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
