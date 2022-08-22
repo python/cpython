@@ -1,0 +1,3 @@
+Compile virtual :keyword:`try`/:keyword:`except` blocks to handle exceptions
+raised during :meth:`~generator.close` or :meth:`~generator.throw` calls
+through a suspended frame.

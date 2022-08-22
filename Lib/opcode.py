@@ -104,6 +104,7 @@ def_op('GET_ANEXT', 51)
 def_op('BEFORE_ASYNC_WITH', 52)
 def_op('BEFORE_WITH', 53)
 def_op('END_ASYNC_FOR', 54)
+def_op('CLEANUP_THROW', 55)
 
 def_op('STORE_SUBSCR', 60)
 def_op('DELETE_SUBSCR', 61)
@@ -338,6 +339,7 @@ _specializations = {
         "LOAD_ATTR_ADAPTIVE",
         # These potentially push [NULL, bound method] onto the stack.
         "LOAD_ATTR_CLASS",
+        "LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN",
         "LOAD_ATTR_INSTANCE_VALUE",
         "LOAD_ATTR_MODULE",
         "LOAD_ATTR_PROPERTY",

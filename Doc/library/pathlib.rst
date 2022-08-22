@@ -876,9 +876,14 @@ call fails (for example because the path doesn't exist).
    function checks whether *path*'s parent, :file:`path/..`, is on a different
    device than *path*, or whether :file:`path/..` and *path* point to the same
    i-node on the same device --- this should detect mount points for all Unix
-   and POSIX variants.  Not implemented on Windows.
+   and POSIX variants.  On Windows, a mount point is considered to be a drive
+   letter root (e.g. ``c:\``), a UNC share (e.g. ``\\server\share``), or a
+   mounted filesystem directory.
 
    .. versionadded:: 3.7
+
+   .. versionchanged:: 3.12
+      Windows support was added.
 
 
 .. method:: Path.is_symlink()

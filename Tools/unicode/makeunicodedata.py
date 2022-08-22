@@ -169,6 +169,7 @@ def makeunicodedata(unicode, trace):
 
     # 2) decomposition data
 
+    decomp_data_cache = {}
     decomp_data = [0]
     decomp_prefix = [""]
     decomp_index = [0] * len(unicode.chars)
@@ -207,12 +208,15 @@ def makeunicodedata(unicode, trace):
                     comp_first[l] = 1
                     comp_last[r] = 1
                     comp_pairs.append((l,r,char))
-                try:
-                    i = decomp_data.index(decomp)
-                except ValueError:
+                key = tuple(decomp)
+                i = decomp_data_cache.get(key, -1)
+                if i == -1:
                     i = len(decomp_data)
                     decomp_data.extend(decomp)
                     decomp_size = decomp_size + len(decomp) * 2
+                    decomp_data_cache[key] = i
+                else:
+                    assert decomp_data[i:i+len(decomp)] == decomp
             else:
                 i = 0
             decomp_index[char] = i

@@ -485,26 +485,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
         }
         Py_DECREF(yf);
         if (!ret) {
-            PyObject *val;
-            /* Pop subiterator from stack */
-            assert(gen->gi_frame_state < FRAME_CLEARED);
-            ret = _PyFrame_StackPop((_PyInterpreterFrame *)gen->gi_iframe);
-            assert(ret == yf);
-            Py_DECREF(ret);
-            // XXX: Performing this jump ourselves is awkward and problematic.
-            // See https://github.com/python/cpython/pull/31968.
-            /* Termination repetition of SEND loop */
-            assert(_PyInterpreterFrame_LASTI(frame) >= 0);
-            /* Backup to SEND */
-            assert(_Py_OPCODE(frame->prev_instr[-1]) == SEND);
-            int jump = _Py_OPARG(frame->prev_instr[-1]);
-            frame->prev_instr += jump - 1;
-            if (_PyGen_FetchStopIterationValue(&val) == 0) {
-                ret = gen_send(gen, val);
-                Py_DECREF(val);
-            } else {
-                ret = gen_send_ex(gen, Py_None, 1, 0);
-            }
+            ret = gen_send_ex(gen, Py_None, 1, 0);
         }
         return ret;
     }
