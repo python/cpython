@@ -128,7 +128,7 @@ needed.
 #include "pycore_frame.h"
 #include "pycore_interp.h"
 
-#ifdef HAVE_PERF_TRAMPOLINE
+#ifdef _PY_HAVE_PERF_TRAMPOLINE
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -373,12 +373,12 @@ default_eval:
     // Something failed, fall back to the default evaluator.
     return _PyEval_EvalFrameDefault(ts, frame, throw);
 }
-#endif  // HAVE_PERF_TRAMPOLINE
+#endif  // _PY_HAVE_PERF_TRAMPOLINE
 
 int
 _PyIsPerfTrampolineActive(void)
 {
-#ifdef HAVE_PERF_TRAMPOLINE
+#ifdef _PY_HAVE_PERF_TRAMPOLINE
     PyThreadState *tstate = _PyThreadState_GET();
     return tstate->interp->eval_frame == py_trampoline_evaluator;
 #endif
@@ -390,7 +390,7 @@ _PyPerfTrampoline_SetCallbacks(trampoline_state_init init_state,
                                trampoline_state_write write_state,
                                trampoline_state_free free_state)
 {
-#ifdef HAVE_PERF_TRAMPOLINE
+#ifdef _PY_HAVE_PERF_TRAMPOLINE
     if (trampoline_api.state) {
         Py_FatalError("Trampoline state already initialized");
         return -1;
@@ -416,7 +416,7 @@ _PyPerfTrampoline_Init(int activate)
         tstate->interp->eval_frame = NULL;
     }
     else {
-#ifdef HAVE_PERF_TRAMPOLINE
+#ifdef _PY_HAVE_PERF_TRAMPOLINE
         tstate->interp->eval_frame = py_trampoline_evaluator;
         if (new_code_arena() < 0) {
             return -1;
@@ -429,7 +429,7 @@ _PyPerfTrampoline_Init(int activate)
 int
 _PyPerfTrampoline_Fini(void)
 {
-#ifdef HAVE_PERF_TRAMPOLINE
+#ifdef _PY_HAVE_PERF_TRAMPOLINE
     free_code_arenas();
     trampoline_api.free_state(trampoline_api.state);
 #endif
@@ -439,7 +439,7 @@ _PyPerfTrampoline_Fini(void)
 PyStatus
 _PyPerfTrampoline_AfterFork_Child(void)
 {
-#ifdef HAVE_PERF_TRAMPOLINE
+#ifdef _PY_HAVE_PERF_TRAMPOLINE
     // close file in child.
     trampoline_api.free_state(trampoline_api.state);
 #endif

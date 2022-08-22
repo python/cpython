@@ -872,9 +872,6 @@
 /* Define to 1 if you have the `pause' function. */
 #undef HAVE_PAUSE
 
-/* Define to 1 if you have the perf trampoline. */
-#undef HAVE_PERF_TRAMPOLINE
-
 /* Define to 1 if you have the `pipe' function. */
 #undef HAVE_PIPE
 
@@ -1801,6 +1798,9 @@
 
 /* framework name */
 #undef _PYTHONFRAMEWORK
+
+/* Define to 1 if you have the perf trampoline. */
+#undef _PY_HAVE_PERF_TRAMPOLINE
 
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT

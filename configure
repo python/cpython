@@ -11436,7 +11436,7 @@ $as_echo "$perf_trampoline" >&6; }
 if test "x$perf_trampoline" = xyes; then :
 
 
-$as_echo "#define HAVE_PERF_TRAMPOLINE 1" >>confdefs.h
+$as_echo "#define _PY_HAVE_PERF_TRAMPOLINE 1" >>confdefs.h
 
   PERF_TRAMPOLINE_OBJ=Objects/asm_trampoline.o
 

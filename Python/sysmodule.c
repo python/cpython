@@ -2037,7 +2037,7 @@ static PyObject *
 sys_is_perf_trampoline_active_impl(PyObject *module)
 /*[clinic end generated code: output=7bbf80001165b590 input=59f045e52c228654]*/
 {
-#ifdef HAVE_PERF_TRAMPOLINE
+#ifdef _PY_HAVE_PERF_TRAMPOLINE
     if (_PyIsPerfTrampolineActive()) {
         Py_RETURN_TRUE;
     }
