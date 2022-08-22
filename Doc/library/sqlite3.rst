@@ -11,9 +11,6 @@
 
 .. _sqlite3-intro:
 
-Introduction
-------------
-
 SQLite is a C library that provides a lightweight disk-based database that
 doesn't require a separate server process and allows accessing the database
 using a nonstandard variant of the SQL query language. Some applications can use
@@ -21,13 +18,13 @@ SQLite for internal data storage.  It's also possible to prototype an
 application using SQLite and then port the code to a larger database such as
 PostgreSQL or Oracle.
 
-The sqlite3 module was written by Gerhard Häring.  It provides an SQL interface
+The :mod:`!sqlite3` module was written by Gerhard Häring.  It provides an SQL interface
 compliant with the DB-API 2.0 specification described by :pep:`249`, and
 requires SQLite 3.7.15 or newer.
 
 This document includes four main sections:
 
-* :ref:`sqlite3-tutorial` teaches how to use the sqlite3 module.
+* :ref:`sqlite3-tutorial` teaches how to use the :mod:`!sqlite3` module.
 * :ref:`sqlite3-reference` describes the classes and functions this module
   defines.
 * :ref:`sqlite3-howtos` details how to handle specific tasks.
@@ -47,85 +44,173 @@ This document includes four main sections:
       PEP written by Marc-André Lemburg.
 
 
+.. We use the following practises for SQL code:
+   - UPPERCASE for keywords
+   - snake_case for schema
+   - single quotes for string literals
+   - singular for table names
+   - if needed, use double quotes for table and column names
+
 .. _sqlite3-tutorial:
 
 Tutorial
 --------
 
-To use the module, start by creating a :class:`Connection` object that
-represents the database.  Here the data will be stored in the
-:file:`example.db` file::
+In this tutorial, you will create a database of Monty Python movies
+using basic :mod:`!sqlite3` functionality.
+It assumes a fundamental understanding of database concepts,
+including `cursors`_ and `transactions`_.
+
+First, we need to create a new database and open
+a database connection to allow :mod:`!sqlite3` to work with it.
+Call :func:`sqlite3.connect` to to create a connection to
+the database :file:`tutorial.db` in the current working directory,
+implicitly creating it if it does not exist::
 
    import sqlite3
-   con = sqlite3.connect('example.db')
+   con = sqlite3.connect("tutorial.db")
 
-The special path name ``:memory:`` can be provided to create a temporary
-database in RAM.
+The returned :class:`Connection` object ``con``
+represents the connection to the on-disk database.
 
-Once a :class:`Connection` has been established, create a :class:`Cursor` object
-and call its :meth:`~Cursor.execute` method to perform SQL commands::
+In order to execute SQL statements and fetch results from SQL queries,
+we will need to use a database cursor.
+Call :meth:`con.cursor() <Connection.cursor>` to create the :class:`Cursor`::
 
    cur = con.cursor()
 
-   # Create table
-   cur.execute('''CREATE TABLE stocks
-                  (date text, trans text, symbol text, qty real, price real)''')
+Now that we've got a database connection and a cursor,
+we can create a database table ``movie`` with columns for title,
+release year, and review score.
+For simplicity, we can just use column names in the table declaration --
+thanks to the `flexible typing`_ feature of SQLite,
+specifying the data types is optional.
+Execute the ``CREATE TABLE`` statement
+by calling :meth:`cur.execute(...) <Cursor.execute>`::
 
-   # Insert a row of data
-   cur.execute("INSERT INTO stocks VALUES ('2006-01-05','BUY','RHAT',100,35.14)")
+   cur.execute("CREATE TABLE movie(title, year, score)")
 
-   # Save (commit) the changes
+.. Ideally, we'd use sqlite_schema instead of sqlite_master below,
+   but SQLite versions older than 3.33.0 do not recognise that variant.
+
+We can verify that the new table has been created by querying
+the ``sqlite_master`` table built-in to SQLite,
+which should now contain an entry for the ``movie`` table definition
+(see `The Schema Table`_ for details).
+Execute that query by calling :meth:`cur.execute(...) <Cursor.execute>`,
+assign the result to ``res``,
+and call :meth:`res.fetchone() <Cursor.fetchone>` to fetch the resulting row::
+
+   >>> res = cur.execute("SELECT name FROM sqlite_master")
+   >>> res.fetchone()
+   ('movie',)
+
+We can see that the table has been created,
+as the query returns a :class:`tuple` containing the table's name.
+If we query ``sqlite_master`` for a non-existent table ``spam``,
+:meth:`!res.fetchone()` will return ``None``::
+
+   >>> res = cur.execute("SELECT name FROM sqlite_master WHERE name='spam'")
+   >>> res.fetchone() is None
+   True
+
+Now, add two rows of data supplied as SQL literals
+by executing an ``INSERT`` statement,
+once again by calling :meth:`cur.execute(...) <Cursor.execute>`::
+
+   cur.execute("""
+       INSERT INTO movie VALUES
+           ('Monty Python and the Holy Grail', 1975, 8.2),
+           ('And Now for Something Completely Different', 1971, 7.5)
+   """)
+
+The ``INSERT`` statement implicitly opens a transaction,
+which needs to be committed before changes are saved in the database
+(see :ref:`sqlite3-controlling-transactions` for details).
+Call :meth:`con.commit() <Connection.commit>` on the connection object
+to commit the transaction::
+
    con.commit()
 
-   # We can also close the connection if we are done with it.
-   # Just be sure any changes have been committed or they will be lost.
-   con.close()
+We can verify that the data was inserted correctly
+by executing a ``SELECT`` query.
+Use the now-familiar :meth:`cur.execute(...) <Cursor.execute>` to
+assign the result to ``res``,
+and call :meth:`res.fetchall() <Cursor.fetchall>` to return all resulting rows::
 
-The saved data is persistent: it can be reloaded in a subsequent session even
-after restarting the Python interpreter::
+   >>> res = cur.execute("SELECT score FROM movie")
+   >>> res.fetchall()
+   [(8.2,), (7.5,)]
 
-   import sqlite3
-   con = sqlite3.connect('example.db')
-   cur = con.cursor()
+The result is a :class:`list` of two :class:`!tuple`\s, one per row,
+each containing that row's ``score`` value.
 
-At this point, our database only contains one row::
+Now, insert three more rows by calling
+:meth:`cur.executemany(...) <Cursor.executemany>`::
 
-   >>> res = cur.execute('SELECT count(rowid) FROM stocks')
-   >>> print(res.fetchone())
-   (1,)
+   data = [
+       ("Monty Python Live at the Hollywood Bowl", 1982, 7.9),
+       ("Monty Python's The Meaning of Life", 1983, 7.5),
+       ("Monty Python's Life of Brian", 1979, 8.0),
+   ]
+   cur.executemany("INSERT INTO movie VALUES(?, ?, ?)", data)
+   con.commit()  # Remember to commit the transaction after executing INSERT.
 
-The result is a one-item :class:`tuple`:
-one row, with one column.
-Now, let us insert three more rows of data,
-using :meth:`~Cursor.executemany`::
-
-   >>> data = [
-   ...    ('2006-03-28', 'BUY', 'IBM', 1000, 45.0),
-   ...    ('2006-04-05', 'BUY', 'MSFT', 1000, 72.0),
-   ...    ('2006-04-06', 'SELL', 'IBM', 500, 53.0),
-   ... ]
-   >>> cur.executemany('INSERT INTO stocks VALUES(?, ?, ?, ?, ?)', data)
-
-Notice that we used ``?`` placeholders to bind *data* to the query.
+Notice that ``?`` placeholders are used to bind ``data`` to the query.
 Always use placeholders instead of :ref:`string formatting <tut-formatting>`
 to bind Python values to SQL statements,
-to avoid `SQL injection attacks`_.
-See the :ref:`placeholders how-to <sqlite3-placeholders>` for more details.
+to avoid `SQL injection attacks`_
+(see :ref:`sqlite3-placeholders` for more details).
 
-Then, retrieve the data by iterating over the result of a ``SELECT`` statement::
+We can verify that the new rows were inserted
+by executing a ``SELECT`` query,
+this time iterating over the results of the query::
 
-   >>> for row in cur.execute('SELECT * FROM stocks ORDER BY price'):
+   >>> for row in cur.execute("SELECT year, title FROM movie ORDER BY year"):
    ...     print(row)
+   (1971, "And Now for Something Completely Different")
+   (1975, "Monty Python and the Holy Grail")
+   (1979, "Monty Python's Life of Brian")
+   (1982, "Monty Python Live at the Hollywood Bowl")
+   (1983, "Monty Python's The Meaning of Life")
 
-   ('2006-01-05', 'BUY', 'RHAT', 100, 35.14)
-   ('2006-03-28', 'BUY', 'IBM', 1000, 45.0)
-   ('2006-04-06', 'SELL', 'IBM', 500, 53.0)
-   ('2006-04-05', 'BUY', 'MSFT', 1000, 72.0)
+Each row is a two-item :class:`tuple` of ``(year, title)``,
+matching the columns selected in the query.
 
-You've now created an SQLite database using the :mod:`!sqlite3` module.
+Finally, verify that the database has been written to disk
+by calling :meth:`con.close() <Connection.close>`
+to close the existing connection, opening a new one,
+creating a new cursor, then querying the database::
+
+   >>> con.close()
+   >>> new_con = sqlite3.connect("tutorial.db")
+   >>> new_cur = new_con.cursor()
+   >>> res = new_cur.execute("SELECT year, title FROM movie ORDER BY score DESC"):
+   >>> title, year = res.fetchone()
+   >>> print(f'The highest scoring Monty Python movie is {title!r}, released in {year}')
+   'The highest scoring Monty Python movie is "Monty Python and the Holy Grail", released in 1975'
+
+You've now created an SQLite database using the :mod:`!sqlite3` module,
+inserted data and retrieved values from it in multiple ways.
 
 .. _SQL injection attacks: https://en.wikipedia.org/wiki/SQL_injection
+.. _The Schema Table: https://www.sqlite.org/schematab.html
+.. _cursors: https://en.wikipedia.org/wiki/Cursor_(databases)
+.. _flexible typing: https://www.sqlite.org/flextypegood.html
+.. _sqlite_master: https://www.sqlite.org/schematab.html
+.. _transactions: https://en.wikipedia.org/wiki/Database_transaction
 
+.. seealso::
+
+   * :ref:`sqlite3-howtos` for further reading:
+
+      * :ref:`sqlite3-placeholders`
+      * :ref:`sqlite3-adapters`
+      * :ref:`sqlite3-converters`
+      * :ref:`sqlite3-columns-by-name`
+      * :ref:`sqlite3-connection-context-manager`
+
+   * :ref:`sqlite3-explanation` for in-depth background on transaction control.
 
 .. _sqlite3-reference:
 
@@ -460,6 +545,43 @@ Connection objects
 
       .. versionadded:: 3.2
 
+   .. attribute:: row_factory
+
+      A callable that accepts two arguments,
+      a :class:`Cursor` object and the raw row results as a :class:`tuple`,
+      and returns a custom object representing an SQLite row.
+
+      Example:
+
+      .. literalinclude:: ../includes/sqlite3/row_factory.py
+
+      If returning a tuple doesn't suffice and you want name-based access to
+      columns, you should consider setting :attr:`row_factory` to the
+      highly optimized :class:`sqlite3.Row` type. :class:`Row` provides both
+      index-based and case-insensitive name-based access to columns with almost no
+      memory overhead. It will probably be better than your own custom
+      dictionary-based approach or even a db_row based solution.
+
+      .. XXX what's a db_row-based solution?
+
+   .. attribute:: text_factory
+
+      A callable that accepts a :class:`bytes` parameter and returns a text
+      representation of it.
+      The callable is invoked for SQLite values with the ``TEXT`` data type.
+      By default, this attribute is set to :class:`str`.
+      If you want to return ``bytes`` instead, set *text_factory* to ``bytes``.
+
+      Example:
+
+      .. literalinclude:: ../includes/sqlite3/text_factory.py
+
+   .. attribute:: total_changes
+
+      Return the total number of database rows that have been modified, inserted, or
+      deleted since the database connection was opened.
+
+
    .. method:: cursor(factory=Cursor)
 
       Create and return a :class:`Cursor` object.
@@ -467,7 +589,7 @@ Connection objects
       supplied, this must be a callable returning an instance of :class:`Cursor`
       or its subclasses.
 
-   .. method:: blobopen(table, column, row, /, *, readonly=False, name="main")
+   .. method:: blobopen(table, column, row, /, \*, readonly=False, name="main")
 
       Open a :class:`Blob` handle to an existing
       :abbr:`BLOB (Binary Large OBject)`.
@@ -537,7 +659,7 @@ Connection objects
       :meth:`~Cursor.executescript` on it with the given *sql_script*.
       Return the new cursor object.
 
-   .. method:: create_function(name, narg, func, *, deterministic=False)
+   .. method:: create_function(name, narg, func, \*, deterministic=False)
 
       Create or remove a user-defined SQL function.
 
@@ -717,7 +839,7 @@ Connection objects
       ignored. Note that the backend does not only run statements passed to the
       :meth:`Cursor.execute` methods.  Other sources include the
       :ref:`transaction management <sqlite3-controlling-transactions>` of the
-      sqlite3 module and the execution of triggers defined in the current
+      :mod:`!sqlite3` module and the execution of triggers defined in the current
       database.
 
       Passing ``None`` as *trace_callback* will disable the trace callback.
@@ -771,45 +893,6 @@ Connection objects
       .. versionchanged:: 3.10
          Added the ``sqlite3.load_extension`` auditing event.
 
-   .. attribute:: row_factory
-
-      A callable that accepts two arguments,
-      a :class:`Cursor` object and the raw row results as a :class:`tuple`,
-      and returns a custom object representing an SQLite row.
-
-      Example:
-
-      .. literalinclude:: ../includes/sqlite3/row_factory.py
-
-      If returning a tuple doesn't suffice and you want name-based access to
-      columns, you should consider setting :attr:`row_factory` to the
-      highly optimized :class:`sqlite3.Row` type. :class:`Row` provides both
-      index-based and case-insensitive name-based access to columns with almost no
-      memory overhead. It will probably be better than your own custom
-      dictionary-based approach or even a db_row based solution.
-
-      .. XXX what's a db_row-based solution?
-
-
-   .. attribute:: text_factory
-
-      A callable that accepts a :class:`bytes` parameter and returns a text
-      representation of it.
-      The callable is invoked for SQLite values with the ``TEXT`` data type.
-      By default, this attribute is set to :class:`str`.
-      If you want to return ``bytes`` instead, set *text_factory* to ``bytes``.
-
-      Example:
-
-      .. literalinclude:: ../includes/sqlite3/text_factory.py
-
-
-   .. attribute:: total_changes
-
-      Return the total number of database rows that have been modified, inserted, or
-      deleted since the database connection was opened.
-
-
    .. method:: iterdump
 
       Return an :term:`iterator` to dump the database as SQL source code.
@@ -828,7 +911,7 @@ Connection objects
          con.close()
 
 
-   .. method:: backup(target, *, pages=-1, progress=None, name="main", sleep=0.250)
+   .. method:: backup(target, \*, pages=-1, progress=None, name="main", sleep=0.250)
 
       Create a backup of an SQLite database.
 
@@ -940,7 +1023,7 @@ Connection objects
    .. _SQLite limit category: https://www.sqlite.org/c3ref/c_limit_attached.html
 
 
-   .. method:: serialize(*, name="main")
+   .. method:: serialize(\*, name="main")
 
       Serialize a database into a :class:`bytes` object.  For an
       ordinary on-disk database file, the serialization is just a copy of the
@@ -962,7 +1045,7 @@ Connection objects
       .. versionadded:: 3.11
 
 
-   .. method:: deserialize(data, /, *, name="main")
+   .. method:: deserialize(data, /, \*, name="main")
 
       Deserialize a :meth:`serialized <serialize>` database into a
       :class:`Connection`.
@@ -1523,7 +1606,7 @@ registering custom adapter functions.
 Letting your object adapt itself
 """"""""""""""""""""""""""""""""
 
-Suppose we have a ``Point`` class that represents a pair of coordinates,
+Suppose we have a :class:`!Point` class that represents a pair of coordinates,
 ``x`` and ``y``, in a Cartesian coordinate system.
 The coordinate pair will be stored as a text string in the database,
 using a semicolon to separate the coordinates.
@@ -1554,11 +1637,11 @@ values.
 To be able to convert *from* SQLite values *to* custom Python types,
 we use *converters*.
 
-Let's go back to the :class:`Point` class. We stored the x and y coordinates
+Let's go back to the :class:`!Point` class. We stored the x and y coordinates
 separated via semicolons as strings in SQLite.
 
 First, we'll define a converter function that accepts the string as a parameter
-and constructs a :class:`Point` object from it.
+and constructs a :class:`!Point` object from it.
 
 .. note::
 
