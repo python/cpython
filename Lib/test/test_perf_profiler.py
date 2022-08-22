@@ -20,7 +20,7 @@ def is_unwinding_reliable():
     return "no-omit-frame-pointer" in cflags
 
 
-if not is_unwinding_realiable():
+if not is_unwinding_reliable():
     raise unittest.SkipTest("Unwinding without frame pointer is unreliable")
 
 if support.check_sanitizer(address=True, memory=True, ub=True):
