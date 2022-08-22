@@ -207,7 +207,6 @@ inserted data and retrieved values from it in multiple ways.
       * :ref:`sqlite3-placeholders`
       * :ref:`sqlite3-adapters`
       * :ref:`sqlite3-converters`
-      * :ref:`sqlite3-columns-by-name`
       * :ref:`sqlite3-connection-context-manager`
 
    * :ref:`sqlite3-explanation` for in-depth background on transaction control.
@@ -1255,6 +1254,11 @@ Cursor objects
          >>> cur.connection == con
          True
 
+.. The sqlite3.Row example used to be a how-to. It has now been incorporated
+   into the Row reference. We keep the anchor here in order not to break
+   existing links.
+
+.. _sqlite3-columns-by-name:
 .. _sqlite3-row-objects:
 
 Row objects
@@ -1262,10 +1266,9 @@ Row objects
 
 .. class:: Row
 
-   A :class:`Row` instance serves as a highly optimized
+   A :class:`!Row` instance serves as a highly optimized
    :attr:`~Connection.row_factory` for :class:`Connection` objects.
-   It tries to mimic a :class:`tuple` in most of its features,
-   and supports iteration, :func:`repr`, equality testing, :func:`len`,
+   It supports iteration, equality testing, :func:`len`,
    and :term:`mapping` access by column name and index.
 
    Two row objects compare equal if have equal columns and equal members.
@@ -1279,45 +1282,18 @@ Row objects
    .. versionchanged:: 3.5
       Added support of slicing.
 
-Let's assume we initialize a table as in the example given above::
+   Example::
 
-   con = sqlite3.connect(":memory:")
-   cur = con.cursor()
-   cur.execute('''create table stocks
-   (date text, trans text, symbol text,
-    qty real, price real)''')
-   cur.execute("""insert into stocks
-               values ('2006-01-05','BUY','RHAT',100,35.14)""")
-   con.commit()
-   cur.close()
-
-Now we plug :class:`Row` in::
-
-   >>> con.row_factory = sqlite3.Row
-   >>> cur = con.cursor()
-   >>> cur.execute('select * from stocks')
-   <sqlite3.Cursor object at 0x7f4e7dd8fa80>
-   >>> r = cur.fetchone()
-   >>> type(r)
-   <class 'sqlite3.Row'>
-   >>> tuple(r)
-   ('2006-01-05', 'BUY', 'RHAT', 100.0, 35.14)
-   >>> len(r)
-   5
-   >>> r[2]
-   'RHAT'
-   >>> r.keys()
-   ['date', 'trans', 'symbol', 'qty', 'price']
-   >>> r['qty']
-   100.0
-   >>> for member in r:
-   ...     print(member)
-   ...
-   2006-01-05
-   BUY
-   RHAT
-   100.0
-   35.14
+      >>> con = sqlite3.connect(":memory:")
+      >>> con.row_factory = sqlite3.Row
+      >>> res = con.execute("SELECT 'Earth' AS name, 6378 AS radius")
+      >>> row = res.fetchone()
+      >>> row.keys()
+      ['name', 'radius']
+      >>> row[0], row["name"]  # Access by index and name.
+      ('Earth', 'Earth')
+      >>> row["RADIUS"]  # Column names are case-insensitive.
+      6378
 
 
 .. _sqlite3-blob-objects:
@@ -1764,20 +1740,6 @@ objects. This way, you can execute a ``SELECT`` statement and iterate over it
 directly using only a single call on the :class:`Connection` object.
 
 .. literalinclude:: ../includes/sqlite3/shortcut_methods.py
-
-
-.. _sqlite3-columns-by-name:
-
-Accessing columns by name instead of by index
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-One useful feature of the :mod:`!sqlite3` module is the built-in
-:class:`sqlite3.Row` class designed to be used as a row factory.
-
-Rows wrapped with this class can be accessed both by index (like tuples) and
-case-insensitively by name:
-
-.. literalinclude:: ../includes/sqlite3/rowclass.py
 
 
 .. _sqlite3-connection-context-manager:
