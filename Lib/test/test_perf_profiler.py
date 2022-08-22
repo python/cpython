@@ -35,7 +35,7 @@ _, version = get_perf_version()
 if not version:
     raise unittest.SkipTest("Could not find valid perf tool")
 
-if "no-omit-frame-pointe" not in sysconfig.get_config_var("CFLAGS"):
+if "no-omit-frame-pointer" not in sysconfig.get_config_var("CFLAGS"):
     raise unittest.SkipTest("Unwinding without frame pointer is unreliable")
 
 if check_sanitizer(address=True, memory=True, ub=True):
