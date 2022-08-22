@@ -804,7 +804,7 @@ Connection objects
 
       Register callable *authorizer_callback* to be invoked for each attempt to
       access a column of a table in the database. The callback should return
-      one of :const:`SQLITE_OK`, :const:`SQLITE_DENY` or :const:`SQLITE_IGNORE`
+      one of :const:`SQLITE_OK`, :const:`SQLITE_DENY`, or :const:`SQLITE_IGNORE`
       to signal how the column should be handled.
 
       The first argument to the callback signifies what kind of operation is to be
