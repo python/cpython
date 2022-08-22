@@ -459,6 +459,10 @@ New Features
   ``__dict__`` and weakrefs with less bookkeeping,
   using less memory and with faster access.
 
+* Added C API function :c:func:`PyTraceback_GetLineNumber` to get the lineno
+  of a traceback object.
+  (Contributed by Kumar Aditya in :gh:`95238`)
+
 Porting to Python 3.12
 ----------------------
 
@@ -506,6 +510,10 @@ Porting to Python 3.12
   :c:func:`_PyObject_VisitManagedDict` and :c:func:`_PyObject_ClearManagedDict`
   to traverse and clear their instance's dictionaries.
   To clear weakrefs, call :c:func:`PyObject_ClearWeakRefs`, as before.
+
+* The ``tb_lineno`` field of ``PyTracebackObject`` is now computed lazily,
+  C extensions should use the new :c:func:`PyTraceback_GetLineNumber` instead
+  or ``PyObject_GetAttrString(tb, "tb_lineno")``.
 
 Deprecated
 ----------
