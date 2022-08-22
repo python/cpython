@@ -5,6 +5,7 @@
 
 #ifdef HAVE_PERF_TRAMPOLINE
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/mman.h>
@@ -29,6 +30,12 @@ struct code_arena_st {
 
 typedef struct code_arena_st code_arena_t;
 
+typedef enum {
+    PERF_STATUS_FAILED = -1,
+    PERF_STATUS_NO_INIT = 0,
+} perf_status_t;
+
+static perf_status_t perf_status = PERF_STATUS_NO_INIT;
 static Py_ssize_t extra_code_index = -1;
 static code_arena_t *code_arena;
 static FILE *perf_map_file;
@@ -46,7 +53,10 @@ new_code_arena(void)
                         -1,  // fd (not used here)
                         0);  // offset (not used here)
     if (!memory) {
-        Py_FatalError("Failed to allocate new code arena");
+        PyErr_SetFromErrno(PyExc_OSError);
+        _PyErr_WriteUnraisableMsg(
+            "Failed to create new mmap for perf trampoline", NULL);
+        perf_status = PERF_STATUS_FAILED;
         return -1;
     }
     void *start = &_Py_trampoline_func_start;
@@ -57,12 +67,19 @@ new_code_arena(void)
     for (size_t i = 0; i < n_copies; i++) {
         memcpy(memory + i * code_size, start, code_size * sizeof(char));
     }
-
-    mprotect(memory, mem_size, PROT_READ | PROT_EXEC);
+    // Some systems may prevent us from creating executable code on the fly.
+    int res = mprotect(memory, mem_size, PROT_READ | PROT_EXEC);
+    if (res == -1) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        _PyErr_WriteUnraisableMsg(
+            "Failed to set mmap for perf trampoline to PROT_READ | PROT_EXEC", NULL);
+    }
 
     code_arena_t *new_arena = PyMem_RawCalloc(1, sizeof(code_arena_t));
     if (new_arena == NULL) {
-        Py_FatalError("Failed to allocate new code arena struct");
+        PyErr_NoMemory();
+        _PyErr_WriteUnraisableMsg(
+            "Failed to allocate new code arena struct", NULL);
         return -1;
     }
 
@@ -107,7 +124,6 @@ compile_trampoline(void)
             return NULL;
         }
     }
-
     assert(code_arena->size_left <= code_arena->size);
     return code_arena_new_code(code_arena);
 }
@@ -120,11 +136,23 @@ perf_map_get_file(void)
     }
     char filename[100];
     pid_t pid = getpid();
-    // TODO: %d is incorrect if pid_t is long long
-    snprintf(filename, sizeof(filename), "/tmp/perf-%d.map", pid);
-    perf_map_file = fopen(filename, "a");
+    // Location and file name of perf map is hard-coded in perf tool.
+    // Use exclusive create flag wit nofollow to prevent symlink attacks.
+    int flags = O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC;
+    snprintf(filename, sizeof(filename)-1, "/tmp/perf-%jd.map", (intmax_t)pid);
+    int fd = open(filename, flags, 0600);
+    if (fd == -1) {
+        perf_status = PERF_STATUS_FAILED;
+        PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
+        _PyErr_WriteUnraisableMsg("Failed to create perf map file", NULL);
+        return NULL;
+    }
+    perf_map_file = fdopen(fd, "w");
     if (!perf_map_file) {
-        _Py_FatalErrorFormat(__func__, "Couldn't open %s: errno(%d)", filename, errno);
+        perf_status = PERF_STATUS_FAILED;
+        PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
+        _PyErr_WriteUnraisableMsg("Failed to create perf map file handle", NULL);
+        close(fd);
         return NULL;
     }
     return perf_map_file;
@@ -154,20 +182,23 @@ static PyObject *
 py_trampoline_evaluator(PyThreadState *ts, _PyInterpreterFrame *frame,
                         int throw)
 {
+    if (perf_status == PERF_STATUS_FAILED) {
+        return _PyEval_EvalFrameDefault(ts, frame, throw);
+    }
     PyCodeObject *co = frame->f_code;
     py_trampoline f = NULL;
     _PyCode_GetExtra((PyObject *)co, extra_code_index, (void **)&f);
     if (f == NULL) {
         FILE *pfile = perf_map_get_file();
         if (pfile == NULL) {
-            return NULL;
+            return _PyEval_EvalFrameDefault(ts, frame, throw);
         }
         if (extra_code_index == -1) {
             extra_code_index = _PyEval_RequestCodeExtraIndex(NULL);
         }
         py_trampoline new_trampoline = compile_trampoline();
         if (new_trampoline == NULL) {
-            return NULL;
+            return _PyEval_EvalFrameDefault(ts, frame, throw);
         }
         perf_map_write_entry(pfile, new_trampoline, code_arena->code_size,
                              PyUnicode_AsUTF8(co->co_qualname),
