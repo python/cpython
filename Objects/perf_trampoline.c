@@ -5,9 +5,9 @@ Perf trampoline instrumentation
 
 This file contains instrumentation to allow to associate
 calls to the CPython eval loop back to the names of the Python
-fuctions and filename being executed.
+functions and filename being executed.
 
-Many natve performance profilers like the Linux perf tools are
+Many native performance profilers like the Linux perf tools are
 only available to 'see' the C stack when sampling from the profiled
 process. This means that if we have the following python code:
 
@@ -23,8 +23,8 @@ process. This means that if we have the following python code:
 
     baz(10000000)
 
-A performace profiler that is only able to see native frames will
-produce the following backtrace whe sampling from foo():
+A performance profiler that is only able to see native frames will
+produce the following backtrace when sampling from foo():
 
     _PyEval_EvalFrameDefault -----> Evaluation frame of foo()
     _PyEval_Vector
@@ -57,9 +57,9 @@ associate the names of the Python functions and the filenames associated with
 those calls, rendering the results useless in the Python world.
 
 To fix this problem, we introduce the concept of a trampoline frame. A
-trampoline frame is a piece of code that is uniqued per Python code object that
+trampoline frame is a piece of code that is unique per Python code object that
 is executed before entering the CPython eval loop. This piece of code just
-calls the original Python evaluattion function (_PyEval_EvalFrameDefault) and
+calls the original Python evaluation function (_PyEval_EvalFrameDefault) and
 forwards all the arguments received. In this way, when a profiler samples
 frames from the previous example it will see;
 
@@ -114,7 +114,7 @@ trampoline for a Python code object, we copy the assembly code into a mmaped
 area that has executable permissions and we return the start of that area as
 our trampoline function.
 
-Asking for a mmap-ed memory area for trampoline is very wastefull so we
+Asking for a mmap-ed memory area for trampoline is very wasteful so we
 allocate big arenas of memory in a single mmap call, we populate the entire
 arena with copies of the trampoline (this allows us to now have to invalidate
 the icache for the instructions in the page) and then we return the next
