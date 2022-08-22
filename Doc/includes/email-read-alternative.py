@@ -12,7 +12,7 @@ from email.parser import BytesParser
 # The magic_html_parser has to rewrite the href="cid:...." attributes to
 # point to the filenames in partfiles.  It also has to do a safety-sanitize
 # of the html.  It could be written using html.parser.
-from imaginary import magic_html_parser
+from imaginary_module import magic_html_parser
 
 # In a real program you'd get the filename from the arguments.
 with open('outgoing.msg', 'rb') as fp:
