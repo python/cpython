@@ -1,5 +1,6 @@
 Add a new ``-X perf`` Python command line option as well as
-:func:`sys._activate_perf_trampoline` and
-:func:`sys._deactivate_perf_trampoline` function in the :mod:`sys` module
-that allows to set/unset the interpreter in a way that the Linux ``perf``
-profiler can detect Python calls. Patch by Pablo Galindo.
+:func:`sys.activate_perf_trampoline` and :func:`sys.deactivate_perf_trampoline`
+function in the :mod:`sys` module that allows to set/unset the interpreter in a
+way that the Linux ``perf`` profiler can detect Python calls. The new
+:func:`sys.is_perf_trampoline_active` function allows to query the state of the
+perf trampoline. Patch by Pablo Galindo.
