@@ -12,7 +12,13 @@ from test.support.os_helper import temp_dir
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
-if "no-omit-frame-pointer" not in sysconfig.get_config_var("PY_CORE_CFLAGS"):
+def is_unwinding_realiable():
+    cflags = sysconfig.get_config_var("PY_CORE_CFLAGS")
+    if not cflags:
+        return False
+    return "no-omit-frame-pointer" in cflags
+
+if not is_unwinding_realiable():
     raise unittest.SkipTest("Unwinding without frame pointer is unreliable")
 
 if support.check_sanitizer(address=True, memory=True, ub=True):
@@ -51,12 +57,17 @@ def run_perf(cwd, *args, **env_vars):
         stderr=subprocess.PIPE,
         env=env,
     )
+    if proc.returncode:
+        print(proc.stderr)
+        raise ValueError(f"Perf failed with return code {proc.returncode}")
+
     base_cmd = ("perf", "script")
     proc = subprocess.run(
         ("perf", "script", "-i", output_file),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         env=env,
+        check=True,
     )
     return proc.stdout.decode("utf-8", "replace"), proc.stderr.decode("utf-8", "replace")
 

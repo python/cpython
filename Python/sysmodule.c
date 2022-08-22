@@ -2046,8 +2046,6 @@ sys_is_perf_trampoline_active_impl(PyObject *module)
 }
 
 
-
-
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
     SYS_ADDAUDITHOOK_METHODDEF

@@ -289,7 +289,7 @@ new_code_arena(void)
         _PyErr_WriteUnraisableMsg(
             "Failed to set mmap for perf trampoline to PROT_READ | PROT_EXEC",
             NULL);
-        retur - 1;
+        return -1;
     }
 
     code_arena_t *new_arena = PyMem_RawCalloc(1, sizeof(code_arena_t));
@@ -415,6 +415,13 @@ int
 _PyPerfTrampoline_Init(int activate)
 {
     PyThreadState *tstate = _PyThreadState_GET();
+    if (tstate->interp->eval_frame &&
+        tstate->interp->eval_frame != py_trampoline_evaluator) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "Trampoline cannot be initialized as a custom eval "
+                        "frame is already present");
+        return -1;
+    }
     if (!activate) {
         tstate->interp->eval_frame = NULL;
     }
@@ -431,9 +438,9 @@ _PyPerfTrampoline_Init(int activate)
             }
             trampoline_api.state = state;
         }
+        perf_status = PERF_STATUS_OK;
 #endif
     }
-    perf_status = PERF_STATUS_OK;
     return 0;
 }
 
