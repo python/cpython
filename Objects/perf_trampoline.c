@@ -71,6 +71,7 @@ new_code_arena(void)
     int res = mprotect(memory, mem_size, PROT_READ | PROT_EXEC);
     if (res == -1) {
         PyErr_SetFromErrno(PyExc_OSError);
+        munmap(memory, mem_size);
         _PyErr_WriteUnraisableMsg(
             "Failed to set mmap for perf trampoline to PROT_READ | PROT_EXEC", NULL);
     }
@@ -78,6 +79,7 @@ new_code_arena(void)
     code_arena_t *new_arena = PyMem_RawCalloc(1, sizeof(code_arena_t));
     if (new_arena == NULL) {
         PyErr_NoMemory();
+        munmap(memory, mem_size);
         _PyErr_WriteUnraisableMsg(
             "Failed to allocate new code arena struct", NULL);
         return -1;
@@ -151,8 +153,8 @@ perf_map_get_file(void)
     if (!perf_map_file) {
         perf_status = PERF_STATUS_FAILED;
         PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
-        _PyErr_WriteUnraisableMsg("Failed to create perf map file handle", NULL);
         close(fd);
+        _PyErr_WriteUnraisableMsg("Failed to create perf map file handle", NULL);
         return NULL;
     }
     return perf_map_file;
@@ -164,6 +166,7 @@ perf_map_close(FILE *fp)
     if (fp) {
         return fclose(fp);
     }
+    perf_status = PERF_STATUS_NO_INIT;
     return 0;
 }
 
