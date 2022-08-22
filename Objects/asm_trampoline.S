@@ -1,5 +1,12 @@
     .text
     .globl	_Py_trampoline_func_start
+# The following assembly is equivalent to:
+# PyObject *
+# trampoline(py_evaluator evaluator, PyThreadState *ts,
+#            _PyInterpreterFrame *f, int throwflag)
+# {
+#     return evaluator(ts, f, throwflag);
+# }
 _Py_trampoline_func_start:
 #ifdef __x86_64__
     push   %rbp
