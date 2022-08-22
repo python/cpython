@@ -121,12 +121,24 @@ the icache for the instructions in the page) and then we return the next
 available chunk every time someone asks for a new trampoline. We keep a linked
 list of arenas in case the current memory arena is exhausted and another one is
 needed.
+
+For the best results, Python should be compiled with
+CFLAGS="-fno-omit-frame-pointer -mno-omit-leaf-frame-pointer"` as this allows
+profilers to unwind using only the frame pointer and not on DWARF debug
+information (note that as trampilines are dynamically generated there won't be
+any DWARF information available for them).
 */
 
 #include "Python.h"
 #include "pycore_ceval.h"
 #include "pycore_frame.h"
 #include "pycore_interp.h"
+
+typedef enum {
+    PERF_STATUS_FAILED = -1,  // Perf trampoline is in an invalid state
+    PERF_STATUS_NO_INIT = 0,  // Perf trampoline is not initialized
+    PERF_STATUS_OK = 1,       // Perf trampoline is ready to be executed
+} perf_status_t;
 
 #ifdef _PY_HAVE_PERF_TRAMPOLINE
 
@@ -156,12 +168,6 @@ struct code_arena_st {
     struct code_arena_st
         *prev;  // Pointer to the arena  or NULL if this is the first arena.
 };
-
-typedef enum {
-    PERF_STATUS_FAILED = -1,  // Perf trampoline is in an invalid state
-    PERF_STATUS_NO_INIT = 0,  // Perf trampoline is not initialized
-    PERF_STATUS_OK = 1,       // Perf trampoline is ready to be executed
-} perf_status_t;
 
 typedef struct code_arena_st code_arena_t;
 
@@ -283,6 +289,7 @@ new_code_arena(void)
         _PyErr_WriteUnraisableMsg(
             "Failed to set mmap for perf trampoline to PROT_READ | PROT_EXEC",
             NULL);
+        retur - 1;
     }
 
     code_arena_t *new_arena = PyMem_RawCalloc(1, sizeof(code_arena_t));
