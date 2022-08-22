@@ -1127,58 +1127,84 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(ANDROID_API_LEVEL) */
 
-PyDoc_STRVAR(sys_activate_perf_trampoline__doc__,
-"activate_perf_trampoline($module, /)\n"
+PyDoc_STRVAR(sys_activate_stack_trampoline__doc__,
+"activate_stack_trampoline($module, backend=\'perf\', /)\n"
 "--\n"
 "\n"
 "Activate the perf profiler trampoline.");
 
-#define SYS_ACTIVATE_PERF_TRAMPOLINE_METHODDEF    \
-    {"activate_perf_trampoline", (PyCFunction)sys_activate_perf_trampoline, METH_NOARGS, sys_activate_perf_trampoline__doc__},
+#define SYS_ACTIVATE_STACK_TRAMPOLINE_METHODDEF    \
+    {"activate_stack_trampoline", _PyCFunction_CAST(sys_activate_stack_trampoline), METH_FASTCALL, sys_activate_stack_trampoline__doc__},
 
 static PyObject *
-sys_activate_perf_trampoline_impl(PyObject *module);
+sys_activate_stack_trampoline_impl(PyObject *module, const char *backend);
 
 static PyObject *
-sys_activate_perf_trampoline(PyObject *module, PyObject *Py_UNUSED(ignored))
+sys_activate_stack_trampoline(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
-    return sys_activate_perf_trampoline_impl(module);
+    PyObject *return_value = NULL;
+    const char *backend = "perf";
+
+    if (!_PyArg_CheckPositional("activate_stack_trampoline", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("activate_stack_trampoline", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    Py_ssize_t backend_length;
+    backend = PyUnicode_AsUTF8AndSize(args[0], &backend_length);
+    if (backend == NULL) {
+        goto exit;
+    }
+    if (strlen(backend) != (size_t)backend_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+skip_optional:
+    return_value = sys_activate_stack_trampoline_impl(module, backend);
+
+exit:
+    return return_value;
 }
 
-PyDoc_STRVAR(sys_deactivate_perf_trampoline__doc__,
-"deactivate_perf_trampoline($module, /)\n"
+PyDoc_STRVAR(sys_deactivate_stack_trampoline__doc__,
+"deactivate_stack_trampoline($module, /)\n"
 "--\n"
 "\n"
 "Dectivate the perf profiler trampoline.");
 
-#define SYS_DEACTIVATE_PERF_TRAMPOLINE_METHODDEF    \
-    {"deactivate_perf_trampoline", (PyCFunction)sys_deactivate_perf_trampoline, METH_NOARGS, sys_deactivate_perf_trampoline__doc__},
+#define SYS_DEACTIVATE_STACK_TRAMPOLINE_METHODDEF    \
+    {"deactivate_stack_trampoline", (PyCFunction)sys_deactivate_stack_trampoline, METH_NOARGS, sys_deactivate_stack_trampoline__doc__},
 
 static PyObject *
-sys_deactivate_perf_trampoline_impl(PyObject *module);
+sys_deactivate_stack_trampoline_impl(PyObject *module);
 
 static PyObject *
-sys_deactivate_perf_trampoline(PyObject *module, PyObject *Py_UNUSED(ignored))
+sys_deactivate_stack_trampoline(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    return sys_deactivate_perf_trampoline_impl(module);
+    return sys_deactivate_stack_trampoline_impl(module);
 }
 
-PyDoc_STRVAR(sys_is_perf_trampoline_active__doc__,
-"is_perf_trampoline_active($module, /)\n"
+PyDoc_STRVAR(sys_is_stack_trampoline_active__doc__,
+"is_stack_trampoline_active($module, /)\n"
 "--\n"
 "\n"
 "Returns *True* if the perf profiler trampoline is active.");
 
-#define SYS_IS_PERF_TRAMPOLINE_ACTIVE_METHODDEF    \
-    {"is_perf_trampoline_active", (PyCFunction)sys_is_perf_trampoline_active, METH_NOARGS, sys_is_perf_trampoline_active__doc__},
+#define SYS_IS_STACK_TRAMPOLINE_ACTIVE_METHODDEF    \
+    {"is_stack_trampoline_active", (PyCFunction)sys_is_stack_trampoline_active, METH_NOARGS, sys_is_stack_trampoline_active__doc__},
 
 static PyObject *
-sys_is_perf_trampoline_active_impl(PyObject *module);
+sys_is_stack_trampoline_active_impl(PyObject *module);
 
 static PyObject *
-sys_is_perf_trampoline_active(PyObject *module, PyObject *Py_UNUSED(ignored))
+sys_is_stack_trampoline_active(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    return sys_is_perf_trampoline_active_impl(module);
+    return sys_is_stack_trampoline_active_impl(module);
 }
 
 #ifndef SYS_GETWINDOWSVERSION_METHODDEF
@@ -1224,4 +1250,4 @@ sys_is_perf_trampoline_active(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=4b43e2be96492326 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9fd2e37197f55a7f input=a9049054013a1b77]*/

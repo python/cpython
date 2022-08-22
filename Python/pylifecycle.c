@@ -1152,13 +1152,12 @@ init_interp_main(PyThreadState *tstate)
 
 
 #ifdef _PY_HAVE_PERF_TRAMPOLINE
-        if (_PyPerfTrampoline_SetCallbacks(
-                _Py_perf_map_get_file, _Py_perf_map_write_entry, _Py_perf_map_close
-            ) < 0 ||
-            _PyPerfTrampoline_Init(
-                config->perf_profiling
-            ) < 0) {
-            return _PyStatus_ERR("can't initialize the perf trampoline");
+        if (config->perf_profiling) {
+            if (_PyPerfTrampoline_SetCallbacks(
+                    _Py_perf_map_get_file, _Py_perf_map_write_entry, _Py_perf_map_close
+                ) < 0 || _PyPerfTrampoline_Init(config->perf_profiling) < 0) {
+                return _PyStatus_ERR("can't initialize the perf trampoline");
+            }
         }
 #endif
     }

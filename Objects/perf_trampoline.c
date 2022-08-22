@@ -155,8 +155,8 @@ typedef enum {
  */
 typedef PyObject *(*py_evaluator)(PyThreadState *, _PyInterpreterFrame *,
                                   int throwflag);
-typedef PyObject *(*py_trampoline)(PyThreadState *, _PyInterpreterFrame *,
-                                   int, py_evaluator);
+typedef PyObject *(*py_trampoline)(PyThreadState *, _PyInterpreterFrame *, int,
+                                   py_evaluator);
 
 extern void *_Py_trampoline_func_start;  // Start of the template of the
                                          // assembly trampoline
@@ -403,8 +403,7 @@ _PyPerfTrampoline_SetCallbacks(trampoline_state_init init_state,
 {
 #ifdef _PY_HAVE_PERF_TRAMPOLINE
     if (trampoline_api.state) {
-        Py_FatalError("Trampoline state already initialized");
-        return -1;
+        _PyPerfTrampoline_Fini();
     }
     trampoline_api.init_state = init_state;
     trampoline_api.write_state = write_state;
@@ -453,7 +452,11 @@ _PyPerfTrampoline_Fini(void)
 {
 #ifdef _PY_HAVE_PERF_TRAMPOLINE
     free_code_arenas();
-    trampoline_api.free_state(trampoline_api.state);
+    if (trampoline_api.state) {
+        trampoline_api.free_state(trampoline_api.state);
+        trampoline_api.state = NULL;
+    }
+    extra_code_index = -1;
 #endif
     return 0;
 }
@@ -462,8 +465,12 @@ PyStatus
 _PyPerfTrampoline_AfterFork_Child(void)
 {
 #ifdef _PY_HAVE_PERF_TRAMPOLINE
-    // close file in child.
-    trampoline_api.free_state(trampoline_api.state);
+    // Restart trampoline in file in child.
+    int was_active = _PyIsPerfTrampolineActive();
+    _PyPerfTrampoline_Fini();
+    if (was_active) {
+        _PyPerfTrampoline_Init(1);
+    }
 #endif
     return PyStatus_Ok();
 }

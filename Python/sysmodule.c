@@ -1995,15 +1995,30 @@ sys_getandroidapilevel_impl(PyObject *module)
 #endif   /* ANDROID_API_LEVEL */
 
 /*[clinic input]
-sys.activate_perf_trampoline
+sys.activate_stack_trampoline
+
+    backend: str = "perf"
+    /
 
 Activate the perf profiler trampoline.
 [clinic start generated code]*/
 
 static PyObject *
-sys_activate_perf_trampoline_impl(PyObject *module)
-/*[clinic end generated code: output=7f97c60d4f580b85 input=666a2d744a97a220]*/
+sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
+/*[clinic end generated code: output=5783cdeb51874b43 input=58d7244062b933a8]*/
 {
+    if (strcmp(backend, "perf") == 0) {
+        if (_PyPerfTrampoline_SetCallbacks(
+                _Py_perf_map_get_file, _Py_perf_map_write_entry, _Py_perf_map_close
+            ) < 0 ) {
+            PyErr_SetString(PyExc_ValueError, "can't activate perf trampoline");
+            return NULL;
+        }
+    }
+    else {
+        PyErr_Format(PyExc_ValueError, "unsuported invalid backend: %s", backend);
+        return NULL;
+    }
     if (_PyPerfTrampoline_Init(1) < 0) {
         return NULL;
     }
@@ -2012,14 +2027,14 @@ sys_activate_perf_trampoline_impl(PyObject *module)
 
 
 /*[clinic input]
-sys.deactivate_perf_trampoline
+sys.deactivate_stack_trampoline
 
 Dectivate the perf profiler trampoline.
 [clinic start generated code]*/
 
 static PyObject *
-sys_deactivate_perf_trampoline_impl(PyObject *module)
-/*[clinic end generated code: output=5ba2f93711f85b6e input=d85cf6e3cd37d81e]*/
+sys_deactivate_stack_trampoline_impl(PyObject *module)
+/*[clinic end generated code: output=b50da25465df0ef1 input=491f4fc1ed615736]*/
 {
     if  (_PyPerfTrampoline_Init(0) < 0) {
         return NULL;
@@ -2028,14 +2043,14 @@ sys_deactivate_perf_trampoline_impl(PyObject *module)
 }
 
 /*[clinic input]
-sys.is_perf_trampoline_active
+sys.is_stack_trampoline_active
 
 Returns *True* if the perf profiler trampoline is active.
 [clinic start generated code]*/
 
 static PyObject *
-sys_is_perf_trampoline_active_impl(PyObject *module)
-/*[clinic end generated code: output=7bbf80001165b590 input=59f045e52c228654]*/
+sys_is_stack_trampoline_active_impl(PyObject *module)
+/*[clinic end generated code: output=ab2746de0ad9d293 input=061fa5776ac9dd59]*/
 {
 #ifdef _PY_HAVE_PERF_TRAMPOLINE
     if (_PyIsPerfTrampolineActive()) {
@@ -2099,9 +2114,9 @@ static PyMethodDef sys_methods[] = {
      METH_VARARGS | METH_KEYWORDS, set_asyncgen_hooks_doc},
     SYS_GET_ASYNCGEN_HOOKS_METHODDEF
     SYS_GETANDROIDAPILEVEL_METHODDEF
-    SYS_ACTIVATE_PERF_TRAMPOLINE_METHODDEF
-    SYS_IS_PERF_TRAMPOLINE_ACTIVE_METHODDEF
-    SYS_DEACTIVATE_PERF_TRAMPOLINE_METHODDEF
+    SYS_ACTIVATE_STACK_TRAMPOLINE_METHODDEF
+    SYS_DEACTIVATE_STACK_TRAMPOLINE_METHODDEF
+    SYS_IS_STACK_TRAMPOLINE_ACTIVE_METHODDEF
     SYS_UNRAISABLEHOOK_METHODDEF
 #ifdef Py_STATS
     SYS__STATS_ON_METHODDEF
