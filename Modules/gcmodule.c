@@ -484,19 +484,20 @@ inlined_tp_traverse(PyObject* op, visitproc proc, void* c)
     // This set of types and the order that they are checked was driven by data
     // from a webserving macrobenchmark, but a more robust analysis and
     // optimization should still be possible.
-    if (Py_TYPE(op) == &PyTuple_Type) {
-        tupletraverse((PyTupleObject*)op, proc, c);
-    } else if (Py_TYPE(op) == &PyFunction_Type) {
-        func_traverse((PyFunctionObject*)op, proc, c);
-    } else if (Py_TYPE(op) == &PyCell_Type) {
-        cell_traverse((PyCellObject*)op, proc, c);
-    } else if (Py_TYPE(op) == &PyDict_Type) {
-        dict_traverse(op, proc, c);
-    } else if (Py_TYPE(op) == &PyList_Type) {
-        list_traverse((PyListObject*)op, proc, c);
-    } else {
-        Py_TYPE(op)->tp_traverse(op, proc, c);
+    if (PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_LIST_SUBCLASS |
+            Py_TPFLAGS_TUPLE_SUBCLASS | Py_TPFLAGS_DICT_SUBCLASS)) {
+        if (Py_TYPE(op) == &PyTuple_Type) {
+            tupletraverse((PyTupleObject*)op, proc, c);
+            return;
+        } else if (Py_TYPE(op) == &PyDict_Type) {
+            dict_traverse(op, proc, c);
+            return;
+        } else if (Py_TYPE(op) == &PyList_Type) {
+            list_traverse((PyListObject*)op, proc, c);
+            return;
+        }
     }
+    Py_TYPE(op)->tp_traverse(op, proc, c);
 }
 
 /* Subtract internal references from gc_refs.  After this, gc_refs is >= 0
