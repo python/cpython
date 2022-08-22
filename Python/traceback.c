@@ -99,20 +99,22 @@ tb_dir(PyTracebackObject *self, PyObject *Py_UNUSED(ignored))
                                    "tb_lasti", "tb_lineno");
 }
 
-static int
-_PyTraceback_GetLineNumber(PyTracebackObject *tb)
+int
+PyTraceback_GetLineNumber(PyObject *tb)
 {
-    if (tb->tb_lineno < 0) {
-        tb->tb_lineno = PyCode_Addr2Line(tb->tb_frame->f_frame->f_code,
-                                          tb->tb_lasti);
+    assert(PyTraceBack_Check(tb));
+    PyTracebackObject *traceback = (PyTracebackObject *)tb;
+    if (traceback->tb_lineno < 0) {
+        traceback->tb_lineno = PyCode_Addr2Line(traceback->tb_frame->f_frame->f_code,
+                                          traceback->tb_lasti);
     }
-    return tb->tb_lineno;
+    return traceback->tb_lineno;
 }
 
 static PyObject *
 tb_getlineno(PyTracebackObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return PyLong_FromLong(_PyTraceback_GetLineNumber(self));
+    return PyLong_FromLong(PyTraceback_GetLineNumber((PyObject *) self));
 }
 
 static PyObject *
@@ -952,7 +954,7 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit,
         code = PyFrame_GetCode(tb->tb_frame);
         if (last_file == NULL ||
             code->co_filename != last_file ||
-            last_line == -1 || _PyTraceback_GetLineNumber(tb) != last_line ||
+            last_line == -1 || PyTraceback_GetLineNumber((PyObject *)tb) != last_line ||
             last_name == NULL || code->co_name != last_name) {
             if (cnt > TB_RECURSIVE_CUTOFF) {
                 if (tb_print_line_repeated(f, cnt) < 0) {
@@ -960,13 +962,13 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit,
                 }
             }
             last_file = code->co_filename;
-            last_line = _PyTraceback_GetLineNumber(tb);
+            last_line = PyTraceback_GetLineNumber((PyObject *)tb);
             last_name = code->co_name;
             cnt = 0;
         }
         cnt++;
         if (cnt <= TB_RECURSIVE_CUTOFF) {
-            if (tb_displayline(tb, f, code->co_filename, _PyTraceback_GetLineNumber(tb),
+            if (tb_displayline(tb, f, code->co_filename, PyTraceback_GetLineNumber((PyObject *)tb),
                                tb->tb_frame, code->co_name, indent, margin) < 0) {
                 goto error;
             }

@@ -14,3 +14,5 @@ struct _traceback {
 
 PyAPI_FUNC(int) _Py_DisplaySourceLine(PyObject *, PyObject *, int, int, int *, PyObject **);
 PyAPI_FUNC(void) _PyTraceback_Add(const char *, const char *, int);
+
+PyAPI_FUNC(int) PyTraceback_GetLineNumber(PyObject *);
