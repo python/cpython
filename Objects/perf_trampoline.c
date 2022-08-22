@@ -149,10 +149,14 @@ typedef enum {
 #include <sys/types.h>
 #include <unistd.h>
 
+/* The function pointer is passed as last argument. The other three arguments
+ * are passed in the same order as the function requires. This results in
+ * shorter, more efficient ASM code for trampoline.
+ */
 typedef PyObject *(*py_evaluator)(PyThreadState *, _PyInterpreterFrame *,
                                   int throwflag);
-typedef PyObject *(*py_trampoline)(py_evaluator, PyThreadState *,
-                                   _PyInterpreterFrame *, int throwflag);
+typedef PyObject *(*py_trampoline)(PyThreadState *, _PyInterpreterFrame *,
+                                   int, py_evaluator);
 
 extern void *_Py_trampoline_func_start;  // Start of the template of the
                                          // assembly trampoline
@@ -375,7 +379,7 @@ py_trampoline_evaluator(PyThreadState *ts, _PyInterpreterFrame *frame,
         f = new_trampoline;
     }
     assert(f != NULL);
-    return f(_PyEval_EvalFrameDefault, ts, frame, throw);
+    return f(ts, frame, throw, _PyEval_EvalFrameDefault);
 default_eval:
     // Something failed, fall back to the default evaluator.
     return _PyEval_EvalFrameDefault(ts, frame, throw);
