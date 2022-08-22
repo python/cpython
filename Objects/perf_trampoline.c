@@ -414,6 +414,7 @@ _PyPerfTrampoline_SetCallbacks(trampoline_state_init init_state,
 int
 _PyPerfTrampoline_Init(int activate)
 {
+#ifdef _PY_HAVE_PERF_TRAMPOLINE
     PyThreadState *tstate = _PyThreadState_GET();
     if (tstate->interp->eval_frame &&
         tstate->interp->eval_frame != py_trampoline_evaluator) {
@@ -426,7 +427,6 @@ _PyPerfTrampoline_Init(int activate)
         tstate->interp->eval_frame = NULL;
     }
     else {
-#ifdef _PY_HAVE_PERF_TRAMPOLINE
         tstate->interp->eval_frame = py_trampoline_evaluator;
         if (new_code_arena() < 0) {
             return -1;
@@ -439,8 +439,8 @@ _PyPerfTrampoline_Init(int activate)
             trampoline_api.state = state;
         }
         perf_status = PERF_STATUS_OK;
-#endif
     }
+#endif
     return 0;
 }
 
