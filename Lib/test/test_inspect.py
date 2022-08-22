@@ -202,6 +202,10 @@ class TestPredicates(IsTestBase):
                     gen_coroutine_function_example))))
         self.assertTrue(inspect.isgenerator(gen_coro))
 
+        self.assertFalse(
+            inspect.iscoroutinefunction(unittest.mock.Mock()))
+        self.assertTrue(
+            inspect.iscoroutinefunction(unittest.mock.AsyncMock()))
         self.assertTrue(
             inspect.iscoroutinefunction(coroutine_function_example))
         self.assertTrue(
@@ -211,6 +215,10 @@ class TestPredicates(IsTestBase):
         self.assertTrue(inspect.iscoroutine(coro))
 
         self.assertFalse(
+            inspect.isgeneratorfunction(unittest.mock.Mock()))
+        self.assertFalse(
+            inspect.isgeneratorfunction(unittest.mock.AsyncMock()))
+        self.assertFalse(
             inspect.isgeneratorfunction(coroutine_function_example))
         self.assertFalse(
             inspect.isgeneratorfunction(
@@ -218,6 +226,12 @@ class TestPredicates(IsTestBase):
                     coroutine_function_example))))
         self.assertFalse(inspect.isgenerator(coro))
 
+        self.assertFalse(
+            inspect.isasyncgenfunction(unittest.mock.Mock()))
+        self.assertFalse(
+            inspect.isasyncgenfunction(unittest.mock.AsyncMock()))
+        self.assertFalse(
+            inspect.isasyncgenfunction(coroutine_function_example))
         self.assertTrue(
             inspect.isasyncgenfunction(async_generator_function_example))
         self.assertTrue(
@@ -842,7 +856,10 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(mod2.cls213, 218, 222)
         self.assertSourceEqual(mod2.cls213().func219(), 220, 221)
 
-    @unittest.skipIf(support.is_emscripten, "socket.accept is broken")
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "socket.accept is broken"
+    )
     def test_nested_class_definition_inside_async_function(self):
         import asyncio
         self.addCleanup(asyncio.set_event_loop_policy, None)
@@ -3603,6 +3620,9 @@ class TestParameterObject(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, 'not a valid parameter name'):
             inspect.Parameter('1', kind=inspect.Parameter.VAR_KEYWORD)
+
+        with self.assertRaisesRegex(ValueError, 'not a valid parameter name'):
+            inspect.Parameter('from', kind=inspect.Parameter.VAR_KEYWORD)
 
         with self.assertRaisesRegex(TypeError, 'name must be a str'):
             inspect.Parameter(None, kind=inspect.Parameter.VAR_KEYWORD)

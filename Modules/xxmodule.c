@@ -358,31 +358,32 @@ xx_exec(PyObject *m)
 
     /* Finalize the type object including setting type of the new type
      * object; doing it here is required for portability, too. */
-    if (PyType_Ready(&Xxo_Type) < 0)
-        goto fail;
+    if (PyType_Ready(&Xxo_Type) < 0) {
+        return -1;
+    }
 
     /* Add some symbolic constants to the module */
     if (ErrorObject == NULL) {
         ErrorObject = PyErr_NewException("xx.error", NULL, NULL);
-        if (ErrorObject == NULL)
-            goto fail;
+        if (ErrorObject == NULL) {
+            return -1;
+        }
     }
-    Py_INCREF(ErrorObject);
-    PyModule_AddObject(m, "error", ErrorObject);
+    int rc = PyModule_AddType(m, (PyTypeObject *)ErrorObject);
+    Py_DECREF(ErrorObject);
+    if (rc < 0) {
+        return -1;
+    }
 
-    /* Add Str */
-    if (PyType_Ready(&Str_Type) < 0)
-        goto fail;
-    PyModule_AddObject(m, "Str", (PyObject *)&Str_Type);
+    /* Add Str and Null types */
+    if (PyModule_AddType(m, &Str_Type) < 0) {
+        return -1;
+    }
+    if (PyModule_AddType(m, &Null_Type) < 0) {
+        return -1;
+    }
 
-    /* Add Null */
-    if (PyType_Ready(&Null_Type) < 0)
-        goto fail;
-    PyModule_AddObject(m, "Null", (PyObject *)&Null_Type);
     return 0;
- fail:
-    Py_XDECREF(m);
-    return -1;
 }
 
 static struct PyModuleDef_Slot xx_slots[] = {

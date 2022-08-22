@@ -75,7 +75,9 @@ Runner context manager
    :ref:`asyncio-debug-mode` settings.
 
    *loop_factory* could be used for overriding the loop creation.
-   :func:`asyncio.new_event_loop` is used if ``None``.
+   It is the responsibility of the *loop_factory* to set the created loop as the
+   current one. By default :func:`asyncio.new_event_loop` is used and set as
+   current event loop with :func:`asyncio.set_event_loop` if *loop_factory* is ``None``.
 
    Basically, :func:`asyncio.run()` example can be rewritten with the runner usage::
 
@@ -139,7 +141,7 @@ To mitigate this issue, :mod:`asyncio` handles :const:`signal.SIGINT` as follows
    execution.
 3. When :const:`signal.SIGINT` is raised by :kbd:`Ctrl-C`, the custom signal handler
    cancels the main task by calling :meth:`asyncio.Task.cancel` which raises
-   :exc:`asyncio.CancelledError` inside the the main task.  This causes the Python stack
+   :exc:`asyncio.CancelledError` inside the main task.  This causes the Python stack
    to unwind, ``try/except`` and ``try/finally`` blocks can be used for resource
    cleanup.  After the main task is cancelled, :meth:`asyncio.Runner.run` raises
    :exc:`KeyboardInterrupt`.

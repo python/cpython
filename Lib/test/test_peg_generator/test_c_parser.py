@@ -75,7 +75,7 @@ class TestCParser(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # When running under regtest, a seperate tempdir is used
+        # When running under regtest, a separate tempdir is used
         # as the current directory and watched for left-overs.
         # Reusing that as the base for temporary directories
         # ensures everything is cleaned up properly and
@@ -96,9 +96,7 @@ class TestCParser(unittest.TestCase):
             self.skipTest("The %r command is not found" % cmd)
         self.old_cwd = os.getcwd()
         self.tmp_path = tempfile.mkdtemp(dir=self.tmp_base)
-        change_cwd = os_helper.change_cwd(self.tmp_path)
-        change_cwd.__enter__()
-        self.addCleanup(change_cwd.__exit__, None, None, None)
+        self.enterContext(os_helper.change_cwd(self.tmp_path))
 
     def tearDown(self):
         os.chdir(self.old_cwd)

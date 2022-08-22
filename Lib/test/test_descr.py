@@ -21,6 +21,11 @@ try:
 except ImportError:
     _testcapi = None
 
+try:
+    import xxsubtype
+except ImportError:
+    xxsubtype = None
+
 
 class OperatorsTest(unittest.TestCase):
 
@@ -299,6 +304,7 @@ class OperatorsTest(unittest.TestCase):
         self.assertEqual(float.__rsub__(3.0, 1), -2.0)
 
     @support.impl_detail("the module 'xxsubtype' is internal")
+    @unittest.skipIf(xxsubtype is None, "requires xxsubtype module")
     def test_spam_lists(self):
         # Testing spamlist operations...
         import copy, xxsubtype as spam
@@ -343,6 +349,7 @@ class OperatorsTest(unittest.TestCase):
         self.assertEqual(a.getstate(), 42)
 
     @support.impl_detail("the module 'xxsubtype' is internal")
+    @unittest.skipIf(xxsubtype is None, "requires xxsubtype module")
     def test_spam_dicts(self):
         # Testing spamdict operations...
         import copy, xxsubtype as spam
@@ -426,7 +433,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             def __getitem__(self, key):
                 return self.get(key, 0)
             def __setitem__(self_local, key, value):
-                self.assertIsInstance(key, type(0))
+                self.assertIsInstance(key, int)
                 dict.__setitem__(self_local, key, value)
             def setstate(self, state):
                 self.state = state
@@ -838,7 +845,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                                ("getattr", "foo"),
                                ("delattr", "foo")])
 
-        # http://python.org/sf/1174712
+        # https://bugs.python.org/issue1174712
         try:
             class Module(types.ModuleType, str):
                 pass
@@ -871,7 +878,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertEqual(a.getstate(), 10)
         class D(dict, C):
             def __init__(self):
-                type({}).__init__(self)
+                dict.__init__(self)
                 C.__init__(self)
         d = D()
         self.assertEqual(list(d.keys()), [])
@@ -1600,6 +1607,7 @@ order (MRO) for bases """
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
     @support.impl_detail("the module 'xxsubtype' is internal")
+    @unittest.skipIf(xxsubtype is None, "requires xxsubtype module")
     def test_classmethods_in_c(self):
         # Testing C-based class methods...
         import xxsubtype as spam
@@ -1683,6 +1691,7 @@ order (MRO) for bases """
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
     @support.impl_detail("the module 'xxsubtype' is internal")
+    @unittest.skipIf(xxsubtype is None, "requires xxsubtype module")
     def test_staticmethods_in_c(self):
         # Testing C-based static methods...
         import xxsubtype as spam
@@ -3288,7 +3297,7 @@ order (MRO) for bases """
         cant(True, int)
         cant(2, bool)
         o = object()
-        cant(o, type(1))
+        cant(o, int)
         cant(o, type(None))
         del o
         class G(object):
@@ -3563,7 +3572,6 @@ order (MRO) for bases """
     def test_str_of_str_subclass(self):
         # Testing __str__ defined in subclass of str ...
         import binascii
-        import io
 
         class octetstring(str):
             def __str__(self):
@@ -4726,6 +4734,33 @@ order (MRO) for bases """
         with self.assertRaises(TypeError):
             str.__add__(fake_str, "abc")
 
+    def test_specialized_method_calls_check_types(self):
+        # https://github.com/python/cpython/issues/92063
+        class Thing:
+            pass
+        thing = Thing()
+        for i in range(20):
+            with self.assertRaises(TypeError):
+                # PRECALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS
+                list.sort(thing)
+        for i in range(20):
+            with self.assertRaises(TypeError):
+                # PRECALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS
+                str.split(thing)
+        for i in range(20):
+            with self.assertRaises(TypeError):
+                # PRECALL_NO_KW_METHOD_DESCRIPTOR_NOARGS
+                str.upper(thing)
+        for i in range(20):
+            with self.assertRaises(TypeError):
+                # PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST
+                str.strip(thing)
+        from collections import deque
+        for i in range(20):
+            with self.assertRaises(TypeError):
+                # PRECALL_NO_KW_METHOD_DESCRIPTOR_O
+                deque.append(thing, thing)
+
     def test_repr_as_str(self):
         # Issue #11603: crash or infinite loop when rebinding __str__ as
         # __repr__.
@@ -5756,6 +5791,23 @@ class MroTest(unittest.TestCase):
 
         class A(metaclass=M):
             pass
+
+    def test_disappearing_custom_mro(self):
+        """
+        gh-92112: A custom mro() returning a result conflicting with
+        __bases__ and deleting itself caused a double free.
+        """
+        class B:
+            pass
+
+        class M(DebugHelperMeta):
+            def mro(cls):
+                del M.mro
+                return (B,)
+
+        with self.assertRaises(TypeError):
+            class A(metaclass=M):
+                pass
 
 
 if __name__ == "__main__":

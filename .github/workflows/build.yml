@@ -8,6 +8,7 @@ on:
   push:
     branches:
     - 'main'
+    - '3.11'
     - '3.10'
     - '3.9'
     - '3.8'
@@ -15,10 +16,14 @@ on:
   pull_request:
     branches:
     - 'main'
+    - '3.11'
     - '3.10'
     - '3.9'
     - '3.8'
     - '3.7'
+
+permissions:
+  contents: read
 
 jobs:
   check_source:
@@ -185,7 +190,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v3.0.1
+      uses: actions/cache@v3
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -248,7 +253,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v3.0.1
+      uses: actions/cache@v3
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -292,7 +297,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v3.0.1
+      uses: actions/cache@v3
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}

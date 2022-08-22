@@ -160,7 +160,7 @@ Krajta
 Original Python readme:
 
 
-This is Python version 3.11.0 alpha 7
+This is Python version 3.12.0 alpha 0
 =====================================
 
 .. image:: https://github.com/python/cpython/workflows/Tests/badge.svg
@@ -295,7 +295,7 @@ What's New
 ----------
 
 We have a comprehensive overview of the changes in the `What's New in Python
-3.11 <https://docs.python.org/3.11/whatsnew/3.11.html>`_ document.  For a more
+3.12 <https://docs.python.org/3.12/whatsnew/3.12.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
 <https://github.com/python/cpython/blob/main/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
@@ -308,7 +308,7 @@ entitled "Installing multiple versions".
 Documentation
 -------------
 
-`Documentation for Python 3.11 <https://docs.python.org/3.11/>`_ is online,
+`Documentation for Python 3.12 <https://docs.python.org/3.12/>`_ is online,
 updated daily.
 
 It can also be downloaded in many formats for faster access.  The documentation
@@ -363,13 +363,13 @@ script) you must take care that your primary python executable is not
 overwritten by the installation of a different version.  All files and
 directories installed using ``make altinstall`` contain the major and minor
 version and can thus live side-by-side.  ``make install`` also creates
-``${prefix}/bin/python3`` which refers to ``${prefix}/bin/pythonX.Y``.  If you
+``${prefix}/bin/python3`` which refers to ``${prefix}/bin/python3.X``.  If you
 intend to install multiple versions using the same prefix you must decide which
 version (if any) is your "primary" version.  Install that version using ``make
 install``.  Install all other versions using ``make altinstall``.
 
-For example, if you want to install Python 2.7, 3.6, and 3.11 with 3.11 being the
-primary version, you would execute ``make install`` in your 3.11 build directory
+For example, if you want to install Python 2.7, 3.6, and 3.12 with 3.12 being the
+primary version, you would execute ``make install`` in your 3.12 build directory
 and ``make altinstall`` in the others.
 
 
@@ -400,7 +400,7 @@ All current PEPs, as well as guidelines for submitting a new PEP, are listed at
 Release Schedule
 ----------------
 
-See :pep:`664` for Python 3.11 release details.
+See :pep:`693` for Python 3.12 release details.
 
 
 Copyright and License Information

@@ -1453,7 +1453,7 @@ objects that compare equal might have different :attr:`~range.start`,
 
 .. seealso::
 
-   * The `linspace recipe <http://code.activestate.com/recipes/579000/>`_
+   * The `linspace recipe <https://code.activestate.com/recipes/579000/>`_
      shows how to implement a lazy version of range suitable for floating
      point applications.
 
@@ -1865,6 +1865,8 @@ expression support in the :mod:`re` module).
       False
 
 
+
+.. _meth-str-join:
 
 .. method:: str.join(iterable)
 
@@ -2572,16 +2574,6 @@ and slicing will produce a string of length 1)
 The representation of bytes objects uses the literal format (``b'...'``)
 since it is often more useful than e.g. ``bytes([46, 46, 46])``.  You can
 always convert a bytes object into a list of integers using ``list(b)``.
-
-.. note::
-   For Python 2.x users: In the Python 2.x series, a variety of implicit
-   conversions between 8-bit strings (the closest thing 2.x offers to a
-   built-in binary data type) and Unicode strings were permitted. This was a
-   backwards compatibility workaround to account for the fact that Python
-   originally only supported 8-bit text, and Unicode text was a later
-   addition. In Python 3.x, those implicit conversions are gone - conversions
-   between 8-bit binary data and Unicode text must be explicit, and bytes and
-   string objects will always compare unequal.
 
 
 .. _typebytearray:
@@ -5054,6 +5046,15 @@ All parameterized generics implement special read-only attributes.
       A ``GenericAlias`` object with :class:`typing.ParamSpec` parameters may not
       have correct ``__parameters__`` after substitution because
       :class:`typing.ParamSpec` is intended primarily for static type checking.
+
+
+.. attribute:: genericalias.__unpacked__
+
+   A boolean that is true if the alias has been unpacked using the
+   ``*`` operator (see :data:`~typing.TypeVarTuple`).
+
+   .. versionadded:: 3.11
+
 
 .. seealso::
 

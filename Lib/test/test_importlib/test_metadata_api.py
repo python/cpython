@@ -89,15 +89,15 @@ class APITests(
             self.assertIn(ep.dist.name, ('distinfo-pkg', 'egginfo-pkg'))
             self.assertEqual(ep.dist.version, "1.0.0")
 
-    def test_entry_points_unique_packages(self):
+    def test_entry_points_unique_packages_normalized(self):
         """
         Entry points should only be exposed for the first package
-        on sys.path with a given name.
+        on sys.path with a given name (even when normalized).
         """
         alt_site_dir = self.fixtures.enter_context(fixtures.tempdir())
         self.fixtures.enter_context(self.add_sys_path(alt_site_dir))
         alt_pkg = {
-            "distinfo_pkg-1.1.0.dist-info": {
+            "DistInfo_pkg-1.1.0.dist-info": {
                 "METADATA": """
                 Name: distinfo-pkg
                 Version: 1.1.0

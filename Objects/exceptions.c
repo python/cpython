@@ -7,6 +7,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <stdbool.h>
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
@@ -599,17 +600,9 @@ StopIteration_traverse(PyStopIterationObject *self, visitproc visit, void *arg)
     return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
 }
 
-ComplexExtendsException(
-    PyExc_Exception,       /* base */
-    StopIteration,         /* name */
-    StopIteration,         /* prefix for *_init, etc */
-    0,                     /* new */
-    0,                     /* methods */
-    StopIteration_members, /* members */
-    0,                     /* getset */
-    0,                     /* str */
-    "Signal the end from iterator.__next__()."
-);
+ComplexExtendsException(PyExc_Exception, StopIteration, StopIteration,
+                        0, 0, StopIteration_members, 0, 0,
+                        "Signal the end from iterator.__next__().");
 
 
 /*
@@ -1097,7 +1090,7 @@ exceptiongroup_split_recursive(PyObject *exc,
     for (Py_ssize_t i = 0; i < num_excs; i++) {
         PyObject *e = PyTuple_GET_ITEM(eg->excs, i);
         _exceptiongroup_split_result rec_result;
-        if (Py_EnterRecursiveCall(" in exceptiongroup_split_recursive")) {
+        if (_Py_EnterRecursiveCall(" in exceptiongroup_split_recursive")) {
             goto done;
         }
         if (exceptiongroup_split_recursive(
@@ -1105,14 +1098,15 @@ exceptiongroup_split_recursive(PyObject *exc,
                 construct_rest, &rec_result) < 0) {
             assert(!rec_result.match);
             assert(!rec_result.rest);
-            Py_LeaveRecursiveCall();
+            _Py_LeaveRecursiveCall();
             goto done;
         }
-        Py_LeaveRecursiveCall();
+        _Py_LeaveRecursiveCall();
         if (rec_result.match) {
             assert(PyList_CheckExact(match_list));
             if (PyList_Append(match_list, rec_result.match) < 0) {
                 Py_DECREF(rec_result.match);
+                Py_XDECREF(rec_result.rest);
                 goto done;
             }
             Py_DECREF(rec_result.match);
@@ -1234,11 +1228,11 @@ collect_exception_group_leaves(PyObject *exc, PyObject *leaves)
     /* recursive calls */
     for (Py_ssize_t i = 0; i < num_excs; i++) {
         PyObject *e = PyTuple_GET_ITEM(eg->excs, i);
-        if (Py_EnterRecursiveCall(" in collect_exception_group_leaves")) {
+        if (_Py_EnterRecursiveCall(" in collect_exception_group_leaves")) {
             return -1;
         }
         int res = collect_exception_group_leaves(e, leaves);
-        Py_LeaveRecursiveCall();
+        _Py_LeaveRecursiveCall();
         if (res < 0) {
             return -1;
         }
@@ -3221,6 +3215,7 @@ MemoryError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self = state->memerrors_freelist;
     self->args = PyTuple_New(0);
     /* This shouldn't happen since the empty tuple is persistent */
+
     if (self->args == NULL) {
         return NULL;
     }
@@ -3236,6 +3231,8 @@ MemoryError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 MemoryError_dealloc(PyBaseExceptionObject *self)
 {
+    _PyObject_GC_UNTRACK(self);
+
     BaseException_clear(self);
 
     /* If this is a subclass of MemoryError, we don't need to
@@ -3244,8 +3241,6 @@ MemoryError_dealloc(PyBaseExceptionObject *self)
         Py_TYPE(self)->tp_free((PyObject *)self);
         return;
     }
-
-    _PyObject_GC_UNTRACK(self);
 
     struct _Py_exc_state *state = get_exc_state();
     if (state->memerrors_numfree >= MEMERRORS_SAVE) {
@@ -3563,8 +3558,7 @@ _PyExc_InitTypes(PyInterpreterState *interp)
 
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_exceptions); i++) {
         PyTypeObject *exc = static_exceptions[i].exc;
-
-        if (PyType_Ready(exc) < 0) {
+        if (_PyStaticType_InitBuiltin(exc) < 0) {
             return -1;
         }
     }
@@ -3641,6 +3635,11 @@ _PyExc_InitState(PyInterpreterState *interp)
     ADD_ERRNO(InterruptedError, EINTR);
     ADD_ERRNO(PermissionError, EACCES);
     ADD_ERRNO(PermissionError, EPERM);
+#ifdef ENOTCAPABLE
+    // Extension for WASI capability-based security. Process lacks
+    // capability to access a resource.
+    ADD_ERRNO(PermissionError, ENOTCAPABLE);
+#endif
     ADD_ERRNO(ProcessLookupError, ESRCH);
     ADD_ERRNO(TimeoutError, ETIMEDOUT);
 
@@ -3815,11 +3814,7 @@ _PyErr_TrySetFromCause(const char *format, ...)
         Py_DECREF(tb);
     }
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     msg_prefix = PyUnicode_FromFormatV(format, vargs);
     va_end(vargs);
     if (msg_prefix == NULL) {

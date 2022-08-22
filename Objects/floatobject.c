@@ -71,7 +71,7 @@ static PyStructSequence_Field floatinfo_fields[] = {
     {"min_exp",         "DBL_MIN_EXP -- minimum int e such that radix**(e-1) "
                     "is a normalized float"},
     {"min_10_exp",      "DBL_MIN_10_EXP -- minimum int e such that 10**e is "
-                    "a normalized"},
+                    "a normalized float"},
     {"dig",             "DBL_DIG -- maximum number of decimal digits that "
                     "can be faithfully represented in a float"},
     {"mant_dig",        "DBL_MANT_DIG -- mantissa digits"},
@@ -141,6 +141,7 @@ PyFloat_FromDouble(double fval)
 #endif
         state->free_list = (PyFloatObject *) Py_TYPE(op);
         state->numfree--;
+        OBJECT_STAT_INC(from_freelist);
     }
     else
 #endif
@@ -161,11 +162,18 @@ float_from_string_inner(const char *s, Py_ssize_t len, void *obj)
     double x;
     const char *end;
     const char *last = s + len;
-    /* strip space */
+    /* strip leading whitespace */
     while (s < last && Py_ISSPACE(*s)) {
         s++;
     }
+    if (s == last) {
+        PyErr_Format(PyExc_ValueError,
+                     "could not convert string to float: "
+                     "%R", obj);
+        return NULL;
+    }
 
+    /* strip trailing whitespace */
     while (s < last - 1 && Py_ISSPACE(last[-1])) {
         last--;
     }
@@ -256,6 +264,7 @@ _PyFloat_ExactDealloc(PyObject *obj)
     state->numfree++;
     Py_SET_TYPE(op, (PyTypeObject *)state->free_list);
     state->free_list = op;
+    OBJECT_STAT_INC(to_freelist);
 #else
     PyObject_Free(op);
 #endif
@@ -1990,7 +1999,8 @@ _PyFloat_InitTypes(PyInterpreterState *interp)
 
     /* Init float info */
     if (FloatInfoType.tp_name == NULL) {
-        if (PyStructSequence_InitType2(&FloatInfoType, &floatinfo_desc) < 0) {
+        if (_PyStructSequence_InitBuiltin(&FloatInfoType,
+                                          &floatinfo_desc) < 0) {
             return _PyStatus_ERR("can't init float info type");
         }
     }

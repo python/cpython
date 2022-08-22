@@ -51,9 +51,6 @@ struct _ceval_state {
     /* Request for dropping the GIL */
     _Py_atomic_int gil_drop_request;
     struct _pending_calls pending;
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-    struct _gil_runtime_state gil;
-#endif
 };
 
 
@@ -76,7 +73,7 @@ struct atexit_state {
 /* PyInterpreterState holds the global state for one of the runtime's
    interpreters.  Typically the initial (main) interpreter is the only one.
 
-   The PyInterpreterState typedef is in Include/pystate.h.
+   The PyInterpreterState typedef is in Include/pytypedefs.h.
    */
 struct _is {
 
@@ -176,7 +173,7 @@ struct _is {
     struct _Py_exc_state exc_state;
 
     struct ast_state ast;
-    struct type_cache type_cache;
+    struct types_state types;
     struct callable_cache callable_cache;
 
     /* The following fields are here to avoid allocation during init.

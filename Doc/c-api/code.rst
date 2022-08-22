@@ -76,3 +76,42 @@ bound into a function.
    information is not available for any particular element.
 
    Returns ``1`` if the function succeeds and 0 otherwise.
+
+.. c:function:: PyObject* PyCode_GetCode(PyCodeObject *co)
+
+   Equivalent to the Python code ``getattr(co, 'co_code')``.
+   Returns a strong reference to a :c:type:`PyBytesObject` representing the
+   bytecode in a code object. On error, ``NULL`` is returned and an exception
+   is raised.
+
+   This ``PyBytesObject`` may be created on-demand by the interpreter and does
+   not necessarily represent the bytecode actually executed by CPython. The
+   primary use case for this function is debuggers and profilers.
+
+   .. versionadded:: 3.11
+
+.. c:function:: PyObject* PyCode_GetVarnames(PyCodeObject *co)
+
+   Equivalent to the Python code ``getattr(co, 'co_varnames')``.
+   Returns a new reference to a :c:type:`PyTupleObject` containing the names of
+   the local variables. On error, ``NULL`` is returned and an exception
+   is raised.
+
+   .. versionadded:: 3.11
+
+.. c:function:: PyObject* PyCode_GetCellvars(PyCodeObject *co)
+
+   Equivalent to the Python code ``getattr(co, 'co_cellvars')``.
+   Returns a new reference to a :c:type:`PyTupleObject` containing the names of
+   the local variables that are referenced by nested functions. On error, ``NULL``
+   is returned and an exception is raised.
+
+   .. versionadded:: 3.11
+
+.. c:function:: PyObject* PyCode_GetFreevars(PyCodeObject *co)
+
+   Equivalent to the Python code ``getattr(co, 'co_freevars')``.
+   Returns a new reference to a :c:type:`PyTupleObject` containing the names of
+   the free variables. On error, ``NULL`` is returned and an exception is raised.
+
+   .. versionadded:: 3.11

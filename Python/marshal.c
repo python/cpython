@@ -298,9 +298,14 @@ w_ref(PyObject *v, char *flag, WFILE *p)
     if (p->version < 3 || p->hashtable == NULL)
         return 0; /* not writing object references */
 
-    /* if it has only one reference, it definitely isn't shared */
-    if (Py_REFCNT(v) == 1)
+    /* If it has only one reference, it definitely isn't shared.
+     * But we use TYPE_REF always for interned string, to PYC file stable
+     * as possible.
+     */
+    if (Py_REFCNT(v) == 1 &&
+            !(PyUnicode_CheckExact(v) && PyUnicode_CHECK_INTERNED(v))) {
         return 0;
+    }
 
     entry = _Py_hashtable_get_entry(p->hashtable, v);
     if (entry != NULL) {

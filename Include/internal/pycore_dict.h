@@ -62,7 +62,7 @@ extern Py_ssize_t _PyDict_KeysSize(PyDictKeysObject *keys);
  */
 extern Py_ssize_t _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
 
-extern Py_ssize_t _PyDict_GetItemHint(PyDictObject *, PyObject *, Py_ssize_t, PyObject **);
+extern Py_ssize_t _PyDict_LookupIndex(PyDictObject *, PyObject *);
 extern Py_ssize_t _PyDictKeys_StringLookup(PyDictKeysObject* dictkeys, PyObject *key);
 extern PyObject *_PyDict_LoadGlobal(PyDictObject *, PyDictObject *, PyObject *);
 
@@ -154,9 +154,11 @@ struct _dictvalues {
             2 : sizeof(int32_t))
 #endif
 #define DK_ENTRIES(dk) \
-    (assert(dk->dk_kind == DICT_KEYS_GENERAL), (PyDictKeyEntry*)(&((int8_t*)((dk)->dk_indices))[(size_t)1 << (dk)->dk_log2_index_bytes]))
+    (assert((dk)->dk_kind == DICT_KEYS_GENERAL), \
+     (PyDictKeyEntry*)(&((int8_t*)((dk)->dk_indices))[(size_t)1 << (dk)->dk_log2_index_bytes]))
 #define DK_UNICODE_ENTRIES(dk) \
-    (assert(dk->dk_kind != DICT_KEYS_GENERAL), (PyDictUnicodeEntry*)(&((int8_t*)((dk)->dk_indices))[(size_t)1 << (dk)->dk_log2_index_bytes]))
+    (assert((dk)->dk_kind != DICT_KEYS_GENERAL), \
+     (PyDictUnicodeEntry*)(&((int8_t*)((dk)->dk_indices))[(size_t)1 << (dk)->dk_log2_index_bytes]))
 #define DK_IS_UNICODE(dk) ((dk)->dk_kind != DICT_KEYS_GENERAL)
 
 extern uint64_t _pydict_global_version;
