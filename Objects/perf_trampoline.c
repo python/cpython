@@ -49,8 +49,8 @@ static perf_status_t perf_status = PERF_STATUS_NO_INIT;
 static Py_ssize_t extra_code_index = -1;
 static code_arena_t *code_arena;
 static trampoline_api_t trampoline_api;
-static FILE *perf_map_file;
 
+static FILE *perf_map_file;
 void*
 _Py_perf_map_get_file(void)
 {
@@ -97,7 +97,7 @@ void
 _Py_perf_map_write_entry(void* state, const void *code_addr,
                      unsigned int code_size, PyCodeObject* co)
 {
-    assert(file != NULL);
+    assert(state != NULL);
     FILE *method_file = (FILE*)state;
     const char* entry = PyUnicode_AsUTF8(co->co_qualname);
     if (entry == NULL) {
@@ -250,6 +250,7 @@ int _PyPerfTrampoline_SetCallbacks(
     trampoline_state_write write_state,
     trampoline_state_free free_state
 ) {
+#ifdef HAVE_PERF_TRAMPOLINE
     if (trampoline_api.state) {
         Py_FatalError("Trampoline state already initialized");
         return -1;
@@ -263,6 +264,7 @@ int _PyPerfTrampoline_SetCallbacks(
     }
     trampoline_api.state = state;
     perf_status = PERF_STATUS_OK;
+#endif
     return 0;
 }
 
