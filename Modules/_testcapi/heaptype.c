@@ -801,6 +801,32 @@ static PyType_Spec  HeapCTypeWithManagedDict_spec = {
     HeapCTypeWithManagedDict_slots
 };
 
+static void
+heapctypewithmanagedweakref_dealloc(PyObject* self)
+{
+
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_ClearWeakRefs(self);
+    PyObject_GC_UnTrack(self);
+    PyObject_GC_Del(self);
+    Py_DECREF(tp);
+}
+
+static PyType_Slot HeapCTypeWithManagedWeakref_slots[] = {
+    {Py_tp_traverse, heapgcctype_traverse},
+    {Py_tp_getset, heapctypewithdict_getsetlist},
+    {Py_tp_dealloc, heapctypewithmanagedweakref_dealloc},
+    {0, 0},
+};
+
+static PyType_Spec  HeapCTypeWithManagedWeakref_spec = {
+    "_testcapi.HeapCTypeWithManagedWeakref",
+    sizeof(PyObject),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_MANAGED_WEAKREF,
+    HeapCTypeWithManagedWeakref_slots
+};
+
 static struct PyMemberDef heapctypewithnegativedict_members[] = {
     {"dictobj", T_OBJECT, offsetof(HeapCTypeWithDictObject, dict)},
     {"__dictoffset__", T_PYSSIZET, -(Py_ssize_t)sizeof(void*), READONLY},
@@ -1008,6 +1034,12 @@ _PyTestCapi_Init_Heaptype(PyObject *m) {
         return -1;
     }
     PyModule_AddObject(m, "HeapCTypeWithManagedDict", HeapCTypeWithManagedDict);
+
+    PyObject *HeapCTypeWithManagedWeakref = PyType_FromSpec(&HeapCTypeWithManagedWeakref_spec);
+    if (HeapCTypeWithManagedWeakref == NULL) {
+        return -1;
+    }
+    PyModule_AddObject(m, "HeapCTypeWithManagedWeakref", HeapCTypeWithManagedWeakref);
 
     PyObject *HeapCTypeWithWeakref = PyType_FromSpec(&HeapCTypeWithWeakref_spec);
     if (HeapCTypeWithWeakref == NULL) {

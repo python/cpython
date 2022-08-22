@@ -70,11 +70,13 @@ static inline PyTypeObject * subclass_from_ref(PyObject *ref);
 
 /* helpers for for static builtin types */
 
+#ifndef NDEBUG
 static inline int
 static_builtin_index_is_set(PyTypeObject *self)
 {
     return self->tp_subclasses != NULL;
 }
+#endif
 
 static inline size_t
 static_builtin_index_get(PyTypeObject *self)
@@ -2330,36 +2332,13 @@ best_base(PyObject *bases)
     return base;
 }
 
-#define ADDED_FIELD_AT_OFFSET(name, offset) \
-    (type->tp_ ## name  && (base->tp_ ##name == 0) && \
-    type->tp_ ## name + sizeof(PyObject *) == (offset) && \
-    type->tp_flags & Py_TPFLAGS_HEAPTYPE)
-
 static int
-extra_ivars(PyTypeObject *type, PyTypeObject *base)
+shape_differs(PyTypeObject *t1, PyTypeObject *t2)
 {
-    size_t t_size = type->tp_basicsize;
-    size_t b_size = base->tp_basicsize;
-
-    assert(t_size >= b_size); /* Else type smaller than base! */
-    if (type->tp_itemsize || base->tp_itemsize) {
-        /* If itemsize is involved, stricter rules */
-        return t_size != b_size ||
-            type->tp_itemsize != base->tp_itemsize;
-    }
-    /* Check for __dict__ and __weakrefs__ slots in either order */
-    if (ADDED_FIELD_AT_OFFSET(weaklistoffset, t_size)) {
-        t_size -= sizeof(PyObject *);
-    }
-    if ((type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0 &&
-        ADDED_FIELD_AT_OFFSET(dictoffset, t_size)) {
-        t_size -= sizeof(PyObject *);
-    }
-    /* Check __weakrefs__ again, in case it precedes __dict__ */
-    if (ADDED_FIELD_AT_OFFSET(weaklistoffset, t_size)) {
-        t_size -= sizeof(PyObject *);
-    }
-    return t_size != b_size;
+    return (
+        t1->tp_basicsize != t2->tp_basicsize ||
+        t1->tp_itemsize != t2->tp_itemsize
+    );
 }
 
 static PyTypeObject *
@@ -2367,14 +2346,18 @@ solid_base(PyTypeObject *type)
 {
     PyTypeObject *base;
 
-    if (type->tp_base)
+    if (type->tp_base) {
         base = solid_base(type->tp_base);
-    else
+    }
+    else {
         base = &PyBaseObject_Type;
-    if (extra_ivars(type, base))
+    }
+    if (shape_differs(type, base)) {
         return type;
-    else
+    }
+    else {
         return base;
+    }
 }
 
 static void object_dealloc(PyObject *);
@@ -2497,10 +2480,11 @@ subtype_getweakref(PyObject *obj, void *context)
         return NULL;
     }
     _PyObject_ASSERT((PyObject *)type,
-                     type->tp_weaklistoffset > 0);
+                     type->tp_weaklistoffset > 0 ||
+                     type->tp_weaklistoffset == MANAGED_WEAKREF_OFFSET);
     _PyObject_ASSERT((PyObject *)type,
-                     ((type->tp_weaklistoffset + sizeof(PyObject *))
-                      <= (size_t)(type->tp_basicsize)));
+                     ((type->tp_weaklistoffset + (Py_ssize_t)sizeof(PyObject *))
+                      <= type->tp_basicsize));
     weaklistptr = (PyObject **)((char *)obj + type->tp_weaklistoffset);
     if (*weaklistptr == NULL)
         result = Py_None;
@@ -3093,9 +3077,9 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type)
     }
 
     if (ctx->add_weak) {
-        assert(!ctx->base->tp_itemsize);
-        type->tp_weaklistoffset = slotoffset;
-        slotoffset += sizeof(PyObject *);
+        assert((type->tp_flags & Py_TPFLAGS_MANAGED_WEAKREF) == 0);
+        type->tp_flags |= Py_TPFLAGS_MANAGED_WEAKREF;
+        type->tp_weaklistoffset = MANAGED_WEAKREF_OFFSET;
     }
     if (ctx->add_dict) {
         assert((type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
@@ -3302,11 +3286,6 @@ type_new_impl(type_new_ctx *ctx)
 
     // Put the proper slots in place
     fixup_slot_dispatchers(type);
-
-    if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        PyHeapTypeObject *et = (PyHeapTypeObject*)type;
-        et->ht_cached_keys = _PyDict_NewKeysForClass();
-    }
 
     if (type_new_set_names(type) < 0) {
         goto error;
@@ -3850,10 +3829,6 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
 
     if (!check_basicsize_includes_size_and_offsets(type)) {
         goto finally;
-    }
-
-    if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        res->ht_cached_keys = _PyDict_NewKeysForClass();
     }
 
     if (type->tp_doc) {
@@ -5116,9 +5091,9 @@ compatible_for_assignment(PyTypeObject* oldto, PyTypeObject* newto, const char* 
          !same_slots_added(newbase, oldbase))) {
         goto differs;
     }
-    /* The above does not check for managed __dicts__ */
-    if ((oldto->tp_flags & Py_TPFLAGS_MANAGED_DICT) ==
-        ((newto->tp_flags & Py_TPFLAGS_MANAGED_DICT)))
+    /* The above does not check for the preheader */
+    if ((oldto->tp_flags & Py_TPFLAGS_PREHEADER) ==
+        ((newto->tp_flags & Py_TPFLAGS_PREHEADER)))
     {
         return 1;
     }
@@ -5217,7 +5192,7 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
     if (compatible_for_assignment(oldto, newto, "__class__")) {
         /* Changing the class will change the implicit dict keys,
          * so we must materialize the dictionary first. */
-        assert((oldto->tp_flags & Py_TPFLAGS_MANAGED_DICT) == (newto->tp_flags & Py_TPFLAGS_MANAGED_DICT));
+        assert((oldto->tp_flags & Py_TPFLAGS_PREHEADER) == (newto->tp_flags & Py_TPFLAGS_PREHEADER));
         _PyObject_GetDictPtr(self);
         if (oldto->tp_flags & Py_TPFLAGS_MANAGED_DICT &&
             _PyDictOrValues_IsValues(*_PyObject_DictOrValuesPointer(self)))
@@ -5360,7 +5335,7 @@ object_getstate_default(PyObject *obj, int required)
         {
             basicsize += sizeof(PyObject *);
         }
-        if (Py_TYPE(obj)->tp_weaklistoffset) {
+        if (Py_TYPE(obj)->tp_weaklistoffset > 0) {
             basicsize += sizeof(PyObject *);
         }
         if (slotnames != Py_None) {
@@ -6150,7 +6125,7 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
         if (type->tp_clear == NULL)
             type->tp_clear = base->tp_clear;
     }
-    type->tp_flags |= (base->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    type->tp_flags |= (base->tp_flags & Py_TPFLAGS_PREHEADER);
 
     if (type->tp_basicsize == 0)
         type->tp_basicsize = base->tp_basicsize;
@@ -6571,7 +6546,7 @@ type_ready_fill_dict(PyTypeObject *type)
 }
 
 static int
-type_ready_dict_offset(PyTypeObject *type)
+type_ready_preheader(PyTypeObject *type)
 {
     if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
         if (type->tp_dictoffset > 0 || type->tp_dictoffset < -1) {
@@ -6582,6 +6557,18 @@ type_ready_dict_offset(PyTypeObject *type)
             return -1;
         }
         type->tp_dictoffset = -1;
+    }
+    if (type->tp_flags & Py_TPFLAGS_MANAGED_WEAKREF) {
+        if (type->tp_weaklistoffset != 0 &&
+            type->tp_weaklistoffset != MANAGED_WEAKREF_OFFSET)
+        {
+            PyErr_Format(PyExc_TypeError,
+                        "type %s has the Py_TPFLAGS_MANAGED_WEAKREF flag "
+                        "but tp_weaklistoffset is set",
+                        type->tp_name);
+            return -1;
+        }
+        type->tp_weaklistoffset = MANAGED_WEAKREF_OFFSET;
     }
     return 0;
 }
@@ -6778,6 +6765,29 @@ type_ready_set_new(PyTypeObject *type)
     return 0;
 }
 
+static int
+type_ready_managed_dict(PyTypeObject *type)
+{
+    if (!(type->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
+        return 0;
+    }
+    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+        PyErr_Format(PyExc_SystemError,
+                     "type %s has the Py_TPFLAGS_MANAGED_DICT flag "
+                     "but not Py_TPFLAGS_HEAPTYPE flag",
+                     type->tp_name);
+        return -1;
+    }
+    PyHeapTypeObject* et = (PyHeapTypeObject*)type;
+    if (et->ht_cached_keys == NULL) {
+        et->ht_cached_keys = _PyDict_NewKeysForClass();
+        if (et->ht_cached_keys == NULL) {
+            PyErr_NoMemory();
+            return -1;
+        }
+    }
+    return 0;
+}
 
 static int
 type_ready_post_checks(PyTypeObject *type)
@@ -6802,7 +6812,7 @@ type_ready_post_checks(PyTypeObject *type)
             return -1;
         }
     }
-    else if (type->tp_dictoffset < sizeof(PyObject)) {
+    else if (type->tp_dictoffset < (Py_ssize_t)sizeof(PyObject)) {
         if (type->tp_dictoffset + type->tp_basicsize <= 0) {
             PyErr_Format(PyExc_SystemError,
                          "type %s has a tp_dictoffset that is too small");
@@ -6847,13 +6857,16 @@ type_ready(PyTypeObject *type)
     if (type_ready_inherit(type) < 0) {
         return -1;
     }
-    if (type_ready_dict_offset(type) < 0) {
+    if (type_ready_preheader(type) < 0) {
         return -1;
     }
     if (type_ready_set_hash(type) < 0) {
         return -1;
     }
     if (type_ready_add_subclasses(type) < 0) {
+        return -1;
+    }
+    if (type_ready_managed_dict(type) < 0) {
         return -1;
     }
     if (type_ready_post_checks(type) < 0) {
@@ -8089,17 +8102,17 @@ slot_tp_call(PyObject *self, PyObject *args, PyObject *kwds)
 
 /* There are two slot dispatch functions for tp_getattro.
 
-   - slot_tp_getattro() is used when __getattribute__ is overridden
+   - _Py_slot_tp_getattro() is used when __getattribute__ is overridden
      but no __getattr__ hook is present;
 
-   - slot_tp_getattr_hook() is used when a __getattr__ hook is present.
+   - _Py_slot_tp_getattr_hook() is used when a __getattr__ hook is present.
 
-   The code in update_one_slot() always installs slot_tp_getattr_hook(); this
-   detects the absence of __getattr__ and then installs the simpler slot if
-   necessary. */
+   The code in update_one_slot() always installs _Py_slot_tp_getattr_hook();
+   this detects the absence of __getattr__ and then installs the simpler
+   slot if necessary. */
 
-static PyObject *
-slot_tp_getattro(PyObject *self, PyObject *name)
+PyObject *
+_Py_slot_tp_getattro(PyObject *self, PyObject *name)
 {
     PyObject *stack[2] = {self, name};
     return vectorcall_method(&_Py_ID(__getattribute__), stack, 2);
@@ -8130,8 +8143,8 @@ call_attribute(PyObject *self, PyObject *attr, PyObject *name)
     return res;
 }
 
-static PyObject *
-slot_tp_getattr_hook(PyObject *self, PyObject *name)
+PyObject *
+_Py_slot_tp_getattr_hook(PyObject *self, PyObject *name)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject *getattr, *getattribute, *res;
@@ -8144,8 +8157,8 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
     getattr = _PyType_Lookup(tp, &_Py_ID(__getattr__));
     if (getattr == NULL) {
         /* No __getattr__ hook: use a simpler dispatcher */
-        tp->tp_getattro = slot_tp_getattro;
-        return slot_tp_getattro(self, name);
+        tp->tp_getattro = _Py_slot_tp_getattro;
+        return _Py_slot_tp_getattro(self, name);
     }
     Py_INCREF(getattr);
     /* speed hack: we could use lookup_maybe, but that would resolve the
@@ -8506,10 +8519,10 @@ static slotdef slotdefs[] = {
            PyWrapperFlag_KEYWORDS),
     TPSLOT("__str__", tp_str, slot_tp_str, wrap_unaryfunc,
            "__str__($self, /)\n--\n\nReturn str(self)."),
-    TPSLOT("__getattribute__", tp_getattro, slot_tp_getattr_hook,
+    TPSLOT("__getattribute__", tp_getattro, _Py_slot_tp_getattr_hook,
            wrap_binaryfunc,
            "__getattribute__($self, name, /)\n--\n\nReturn getattr(self, name)."),
-    TPSLOT("__getattr__", tp_getattro, slot_tp_getattr_hook, NULL, ""),
+    TPSLOT("__getattr__", tp_getattro, _Py_slot_tp_getattr_hook, NULL, ""),
     TPSLOT("__setattr__", tp_setattro, slot_tp_setattro, wrap_setattr,
            "__setattr__($self, name, value, /)\n--\n\nImplement setattr(self, name, value)."),
     TPSLOT("__delattr__", tp_setattro, slot_tp_setattro, wrap_delattr,
