@@ -1,9 +1,9 @@
 import unittest
 import subprocess
-import re
 import sys
 import sysconfig
 import os
+import pathlib
 from test import support
 from test.support.script_helper import make_script
 from test.support.os_helper import temp_dir
@@ -76,27 +76,36 @@ def run_perf(cwd, *args, **env_vars):
         env = None
     output_file = cwd + "/perf_output.perf"
     base_cmd = ("perf", "record", "-g", "--call-graph=fp", "-o", output_file, "--")
-    proc = subprocess.run(
-        base_cmd + args,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        env=env,
-    )
-    if proc.returncode:
-        print(proc.stderr)
-        raise ValueError(f"Perf failed with return code {proc.returncode}")
+    prev_perf_files = set(pathlib.Path("/tmp/").glob("perf-*.map"))
+    try:
+        proc = subprocess.run(
+            base_cmd + args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=env,
+        )
+        if proc.returncode:
+            print(proc.stderr)
+            raise ValueError(f"Perf failed with return code {proc.returncode}")
 
-    base_cmd = ("perf", "script")
-    proc = subprocess.run(
-        ("perf", "script", "-i", output_file),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        env=env,
-        check=True,
-    )
-    return proc.stdout.decode("utf-8", "replace"), proc.stderr.decode(
-        "utf-8", "replace"
-    )
+        base_cmd = ("perf", "script")
+        proc = subprocess.run(
+            ("perf", "script", "-i", output_file),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=env,
+            check=True,
+        )
+        return proc.stdout.decode("utf-8", "replace"), proc.stderr.decode(
+            "utf-8", "replace"
+        )
+    finally:
+        # Clean up the perf map file at the end
+        files_to_delete = (
+            set(pathlib.Path("/tmp/").glob("perf-*.map")) - prev_perf_files
+        )
+        for file in files_to_delete:
+            file.unlink()
 
 
 class TestPerfProfiler(unittest.TestCase):
