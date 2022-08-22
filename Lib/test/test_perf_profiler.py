@@ -7,39 +7,34 @@ import os
 from test import support
 from test.support.script_helper import make_script
 from test.support.os_helper import temp_dir
-from test.support import check_sanitizer
 
-
-def get_perf_version():
-    try:
-        cmd = ["perf", "version"]
-        proc = subprocess.run(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True
-        )
-    except (subprocess.SubprocessError, OSError):
-        raise unittest.SkipTest("Couldn't find perf on the path")
-    
-    version = proc.stdout
-
-    match = re.search(r"^perf version\s+(.*)", version)
-    if match is None:
-        raise Exception("unable to parse perf version: %r" % version)
-    return (version, match.group(1))
 
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
-
-_, version = get_perf_version()
-
-if not version:
-    raise unittest.SkipTest("Could not find valid perf tool")
-
-if "no-omit-frame-pointer" not in sysconfig.get_config_var("CFLAGS"):
+if "no-omit-frame-pointer" not in sysconfig.get_config_var("PY_CORE_CFLAGS"):
     raise unittest.SkipTest("Unwinding without frame pointer is unreliable")
 
-if check_sanitizer(address=True, memory=True, ub=True):
+if support.check_sanitizer(address=True, memory=True, ub=True):
     raise unittest.SkipTest("Perf unwinding doesn't work with sanitizers")
+
+def check_perf_command():
+    try:
+        cmd = ["perf", "--help"]
+        stdout = subprocess.check_output(
+            cmd, universal_newlines=True
+        )
+    except (subprocess.SubprocessError, OSError):
+        raise unittest.SkipTest("Couldn't find perf on the path")
+
+    # perf version does not return a version number on Fedora. Use presence
+    # of "perf.data" in help as indicator that it's perf from Linux tools.
+    if "perf.data" not in stdout:
+        raise unittest.SkipTest(
+            "perf command does not look like Linux tool perf"
+        )
+    
+check_perf_command()
 
 
 def run_perf(cwd, *args, **env_vars):
