@@ -228,12 +228,13 @@ int
 _Py_perf_map_close(void *state)
 {
     FILE *fp = (FILE *)state;
+    int ret = 0;
     if (fp) {
-        return fclose(fp);
+        ret = fclose(fp);
     }
     perf_map_file = NULL;
     perf_status = PERF_STATUS_NO_INIT;
-    return 0;
+    return ret;
 }
 
 void
@@ -361,8 +362,11 @@ py_trampoline_evaluator(PyThreadState *ts, _PyInterpreterFrame *frame,
     }
     PyCodeObject *co = frame->f_code;
     py_trampoline f = NULL;
-    _PyCode_GetExtra((PyObject *)co, extra_code_index, (void **)&f);
-    if (f == NULL) {
+    int ret = -1;
+    if (extra_code_index != -1) {
+        ret = _PyCode_GetExtra((PyObject *)co, extra_code_index, (void **)&f);
+    }
+    if (ret != 0 || f == NULL) {
         // This is the first time we see this code object so we need
         // to compile a trampoline for it.
         if (extra_code_index == -1) {
@@ -452,7 +456,7 @@ _PyPerfTrampoline_Fini(void)
 {
 #ifdef _PY_HAVE_PERF_TRAMPOLINE
     free_code_arenas();
-    if (trampoline_api.state) {
+    if (trampoline_api.state != NULL) {
         trampoline_api.free_state(trampoline_api.state);
         trampoline_api.state = NULL;
     }
