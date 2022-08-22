@@ -398,11 +398,7 @@ _PyPerfTrampoline_SetCallbacks(trampoline_state_init init_state,
     trampoline_api.init_state = init_state;
     trampoline_api.write_state = write_state;
     trampoline_api.free_state = free_state;
-    void *state = trampoline_api.init_state();
-    if (state == NULL) {
-        return -1;
-    }
-    trampoline_api.state = state;
+    trampoline_api.state = NULL;
     perf_status = PERF_STATUS_OK;
 #endif
     return 0;
@@ -421,8 +417,16 @@ _PyPerfTrampoline_Init(int activate)
         if (new_code_arena() < 0) {
             return -1;
         }
+        if (trampoline_api.state == NULL) {
+            void *state = trampoline_api.init_state();
+            if (state == NULL) {
+                return -1;
+            }
+            trampoline_api.state = state;
+        }
 #endif
     }
+    perf_status = PERF_STATUS_OK;
     return 0;
 }
 
