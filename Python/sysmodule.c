@@ -2008,12 +2008,17 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
 /*[clinic end generated code: output=5783cdeb51874b43 input=58d7244062b933a8]*/
 {
     if (strcmp(backend, "perf") == 0) {
+#ifdef _PY_HAVE_PERF_TRAMPOLINE
         if (_PyPerfTrampoline_SetCallbacks(
                 _Py_perf_map_get_file, _Py_perf_map_write_entry, _Py_perf_map_close
             ) < 0 ) {
             PyErr_SetString(PyExc_ValueError, "can't activate perf trampoline");
             return NULL;
         }
+#else
+        PyErr_SetString(PyExc_ValueError, "perf trampoline not available");
+        return NULL;
+#endif
     }
     else {
         PyErr_Format(PyExc_ValueError, "unsuported invalid backend: %s", backend);
