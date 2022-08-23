@@ -362,16 +362,11 @@ py_trampoline_evaluator(PyThreadState *ts, _PyInterpreterFrame *frame,
     }
     PyCodeObject *co = frame->f_code;
     py_trampoline f = NULL;
-    int ret = -1;
-    if (extra_code_index != -1) {
-        ret = _PyCode_GetExtra((PyObject *)co, extra_code_index, (void **)&f);
-    }
+    assert(extra_code_index != -1);
+    int ret = _PyCode_GetExtra((PyObject *)co, extra_code_index, (void **)&f);
     if (ret != 0 || f == NULL) {
         // This is the first time we see this code object so we need
         // to compile a trampoline for it.
-        if (extra_code_index == -1) {
-            extra_code_index = _PyEval_RequestCodeExtraIndex(NULL);
-        }
         py_trampoline new_trampoline = compile_trampoline();
         if (new_trampoline == NULL) {
             goto default_eval;
@@ -445,6 +440,10 @@ _PyPerfTrampoline_Init(int activate)
             }
             trampoline_api.state = state;
         }
+        extra_code_index = _PyEval_RequestCodeExtraIndex(NULL);
+        if (extra_code_index == -1) {
+            return -1;
+        }
         perf_status = PERF_STATUS_OK;
     }
 #endif
@@ -455,6 +454,10 @@ int
 _PyPerfTrampoline_Fini(void)
 {
 #ifdef _PY_HAVE_PERF_TRAMPOLINE
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (tstate->interp->eval_frame == py_trampoline_evaluator) {
+        tstate->interp->eval_frame = NULL;
+    }
     free_code_arenas();
     if (trampoline_api.state != NULL) {
         trampoline_api.free_state(trampoline_api.state);

@@ -862,6 +862,7 @@ TZPATH
 LIBUUID_LIBS
 LIBUUID_CFLAGS
 PERF_TRAMPOLINE_OBJ
+PERF_TRAMPOLINE_SUPPORT
 SHLIBS
 CFLAGSFORSHARED
 LINKFORSHARED
@@ -11433,12 +11434,15 @@ esac
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $perf_trampoline" >&5
 $as_echo "$perf_trampoline" >&6; }
 
+
+PERF_TRAMPOLINE_SUPPORT=
 if test "x$perf_trampoline" = xyes; then :
 
 
 $as_echo "#define _PY_HAVE_PERF_TRAMPOLINE 1" >>confdefs.h
 
   PERF_TRAMPOLINE_OBJ=Objects/asm_trampoline.o
+  PERF_TRAMPOLINE_SUPPORT=1
 
     if test "x$Py_DEBUG" = xtrue; then :
 
