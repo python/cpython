@@ -326,7 +326,7 @@ def isreserved(path):
     """Return true if the pathname is reserved by the system."""
     # Refer to "Naming Files, Paths, and Namespaces":
     # https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file
-    path = os.fsdecode(path).rstrip(r'\/')
+    path = os.fsdecode(splitdrive(path)[1]).rstrip(r'\/')
     while True:
         path, name = split(path)
         if not name:
