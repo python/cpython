@@ -89,7 +89,7 @@ class MinidomTest(unittest.TestCase):
         self.assertEqual(attr.name, "qName")
         self.assertEqual(attr.namespaceURI, "namespaceURI")
         self.assertEqual(attr.prefix, "prefix")
-        self.assertFalse(hasattr(attr, "_localName"))
+        self.assertEqual(attr.localName, attr.name)
 
     def testGetElementsByTagName(self):
         dom = parse(tstfile)
