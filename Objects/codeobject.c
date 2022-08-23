@@ -1339,7 +1339,7 @@ _PyCode_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
     PyCodeObject *o = (PyCodeObject*) code;
     _PyCodeObjectExtra *co_extra = (_PyCodeObjectExtra*) o->co_extra;
 
-    if (co_extra == NULL || co_extra->ce_size <= index) {
+    if (co_extra == NULL || index < 0 || co_extra->ce_size <= index) {
         *extra = NULL;
         return 0;
     }
