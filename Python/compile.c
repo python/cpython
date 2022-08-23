@@ -9704,9 +9704,10 @@ cfg_to_instructions(cfg_builder *g)
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             struct location loc = instr->i_loc;
-            long long arg = instr->i_oparg;
+            uintptr_t arg = instr->i_oparg;
             if (HAS_TARGET(instr->i_opcode)) {
-                arg = (long long)instr->i_target;
+                /* Use the address of the block as its unique ID (for the label) */
+                arg = (uintptr_t)instr->i_target;
             }
 
             PyObject *inst_tuple = Py_BuildValue(
