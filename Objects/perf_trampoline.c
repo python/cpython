@@ -140,7 +140,7 @@ typedef enum {
     PERF_STATUS_OK = 1,       // Perf trampoline is ready to be executed
 } perf_status_t;
 
-#ifdef _PY_HAVE_PERF_TRAMPOLINE
+#ifdef PY_HAVE_PERF_TRAMPOLINE
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -386,12 +386,12 @@ default_eval:
     // Something failed, fall back to the default evaluator.
     return _PyEval_EvalFrameDefault(ts, frame, throw);
 }
-#endif  // _PY_HAVE_PERF_TRAMPOLINE
+#endif  // PY_HAVE_PERF_TRAMPOLINE
 
 int
 _PyIsPerfTrampolineActive(void)
 {
-#ifdef _PY_HAVE_PERF_TRAMPOLINE
+#ifdef PY_HAVE_PERF_TRAMPOLINE
     PyThreadState *tstate = _PyThreadState_GET();
     return tstate->interp->eval_frame == py_trampoline_evaluator;
 #endif
@@ -404,7 +404,7 @@ _PyPerfTrampoline_GetCallbacks(_PyPerf_Callbacks *callbacks)
     if (callbacks == NULL) {
         return;
     }
-#ifdef _PY_HAVE_PERF_TRAMPOLINE
+#ifdef PY_HAVE_PERF_TRAMPOLINE
     callbacks->init_state = trampoline_api.init_state;
     callbacks->write_state = trampoline_api.write_state;
     callbacks->free_state = trampoline_api.free_state;
@@ -418,7 +418,7 @@ _PyPerfTrampoline_SetCallbacks(_PyPerf_Callbacks *callbacks)
     if (callbacks == NULL) {
         return -1;
     }
-#ifdef _PY_HAVE_PERF_TRAMPOLINE
+#ifdef PY_HAVE_PERF_TRAMPOLINE
     if (trampoline_api.state) {
         _PyPerfTrampoline_Fini();
     }
@@ -434,7 +434,7 @@ _PyPerfTrampoline_SetCallbacks(_PyPerf_Callbacks *callbacks)
 int
 _PyPerfTrampoline_Init(int activate)
 {
-#ifdef _PY_HAVE_PERF_TRAMPOLINE
+#ifdef PY_HAVE_PERF_TRAMPOLINE
     PyThreadState *tstate = _PyThreadState_GET();
     if (tstate->interp->eval_frame &&
         tstate->interp->eval_frame != py_trampoline_evaluator) {
@@ -471,7 +471,7 @@ _PyPerfTrampoline_Init(int activate)
 int
 _PyPerfTrampoline_Fini(void)
 {
-#ifdef _PY_HAVE_PERF_TRAMPOLINE
+#ifdef PY_HAVE_PERF_TRAMPOLINE
     PyThreadState *tstate = _PyThreadState_GET();
     if (tstate->interp->eval_frame == py_trampoline_evaluator) {
         tstate->interp->eval_frame = NULL;
@@ -489,7 +489,7 @@ _PyPerfTrampoline_Fini(void)
 PyStatus
 _PyPerfTrampoline_AfterFork_Child(void)
 {
-#ifdef _PY_HAVE_PERF_TRAMPOLINE
+#ifdef PY_HAVE_PERF_TRAMPOLINE
     // Restart trampoline in file in child.
     int was_active = _PyIsPerfTrampolineActive();
     _PyPerfTrampoline_Fini();

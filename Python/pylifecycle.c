@@ -1151,7 +1151,7 @@ init_interp_main(PyThreadState *tstate)
         }
 
 
-#ifdef _PY_HAVE_PERF_TRAMPOLINE
+#ifdef PY_HAVE_PERF_TRAMPOLINE
         if (config->perf_profiling) {
             if (_PyPerfTrampoline_SetCallbacks(&_Py_perfmap_callbacks) < 0 ||
                     _PyPerfTrampoline_Init(config->perf_profiling) < 0) {

@@ -2008,7 +2008,7 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
 /*[clinic end generated code: output=5783cdeb51874b43 input=58d7244062b933a8]*/
 {
     if (strcmp(backend, "perf") == 0) {
-#ifdef _PY_HAVE_PERF_TRAMPOLINE
+#ifdef PY_HAVE_PERF_TRAMPOLINE
         _PyPerf_Callbacks cur_cb;
         _PyPerfTrampoline_GetCallbacks(&cur_cb);
         if (cur_cb.init_state != _Py_perfmap_callbacks.init_state) {
@@ -2059,7 +2059,7 @@ static PyObject *
 sys_is_stack_trampoline_active_impl(PyObject *module)
 /*[clinic end generated code: output=ab2746de0ad9d293 input=061fa5776ac9dd59]*/
 {
-#ifdef _PY_HAVE_PERF_TRAMPOLINE
+#ifdef PY_HAVE_PERF_TRAMPOLINE
     if (_PyIsPerfTrampolineActive()) {
         Py_RETURN_TRUE;
     }

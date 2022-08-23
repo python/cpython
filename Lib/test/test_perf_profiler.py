@@ -18,7 +18,7 @@ if not support.has_subprocess_support:
 
 
 def supports_trampoline_profiling():
-    perf_trampoline = sysconfig.get_config_var("PERF_TRAMPOLINE_SUPPORT")
+    perf_trampoline = sysconfig.get_config_var("PY_HAVE_PERF_TRAMPOLINE")
     if not perf_trampoline:
         return False
     return int(perf_trampoline) == 1
