@@ -30,7 +30,6 @@ test_urlparse.py provides a good indicator of parsing behavior.
 from collections import namedtuple
 import functools
 import re
-import sys
 import types
 import warnings
 

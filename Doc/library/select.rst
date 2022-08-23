@@ -22,6 +22,7 @@ it was last read.
    encouraged to use the :mod:`selectors` module instead, unless they want
    precise control over the OS-level primitives used.
 
+.. include:: ../includes/wasm-notavail.rst
 
 The module defines the following:
 
@@ -252,7 +253,7 @@ object.
 
 .. method:: devpoll.poll([timeout])
 
-   Polls the set of registered file descriptors, and returns a possibly-empty list
+   Polls the set of registered file descriptors, and returns a possibly empty list
    containing ``(fd, event)`` 2-tuples for the descriptors that have events or
    errors to report. *fd* is the file descriptor, and *event* is a bitmask with
    bits set for the reported events for that descriptor --- :const:`POLLIN` for
@@ -440,7 +441,7 @@ linearly scanned again. :c:func:`select` is O(highest file descriptor), while
 
 .. method:: poll.poll([timeout])
 
-   Polls the set of registered file descriptors, and returns a possibly-empty list
+   Polls the set of registered file descriptors, and returns a possibly empty list
    containing ``(fd, event)`` 2-tuples for the descriptors that have events or
    errors to report. *fd* is the file descriptor, and *event* is a bitmask with
    bits set for the reported events for that descriptor --- :const:`POLLIN` for

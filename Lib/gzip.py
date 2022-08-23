@@ -213,14 +213,6 @@ class GzipFile(_compression.BaseStream):
             self._write_gzip_header(compresslevel)
 
     @property
-    def filename(self):
-        import warnings
-        warnings.warn("use the name attribute", DeprecationWarning, 2)
-        if self.mode == WRITE and self.name[-3:] != ".gz":
-            return self.name + ".gz"
-        return self.name
-
-    @property
     def mtime(self):
         """Last modification time read from stream, or None"""
         return self._buffer.raw._last_mtime
