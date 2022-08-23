@@ -176,11 +176,10 @@ struct code_arena_st {
 typedef struct code_arena_st code_arena_t;
 
 struct trampoline_api_st {
-    trampoline_state_init
-        init_state;  // Callback to initialize the trampoline state
-    trampoline_state_write
-        write_state;  // Callback to register every trampoline being created
-    trampoline_state_free free_state;  // Callback to free the trampoline state
+    void* (*init_state)(void);
+    void (*write_state)(void* state, const void *code_addr,
+                        unsigned int code_size, PyCodeObject* code);
+    int (*free_state)(void* state);
     void *state;
 };
 
@@ -192,8 +191,9 @@ static code_arena_t *code_arena;
 static trampoline_api_t trampoline_api;
 
 static FILE *perf_map_file;
-void *
-_Py_perf_map_get_file(void)
+
+static void *
+perf_map_get_file(void)
 {
     if (perf_map_file) {
         return perf_map_file;
@@ -221,8 +221,8 @@ _Py_perf_map_get_file(void)
     return perf_map_file;
 }
 
-int
-_Py_perf_map_close(void *state)
+static int
+perf_map_close(void *state)
 {
     FILE *fp = (FILE *)state;
     int ret = 0;
@@ -234,8 +234,8 @@ _Py_perf_map_close(void *state)
     return ret;
 }
 
-void
-_Py_perf_map_write_entry(void *state, const void *code_addr,
+static void
+perf_map_write_entry(void *state, const void *code_addr,
                          unsigned int code_size, PyCodeObject *co)
 {
     assert(state != NULL);
@@ -256,6 +256,12 @@ _Py_perf_map_write_entry(void *state, const void *code_addr,
             filename);
     fflush(method_file);
 }
+
+_PyPerf_Callbacks _Py_perfmap_callbacks = {
+    &perf_map_get_file,
+    &perf_map_write_entry,
+    &perf_map_close
+};
 
 static int
 new_code_arena(void)
@@ -393,36 +399,32 @@ _PyIsPerfTrampolineActive(void)
 }
 
 void
-_PyPerfTrampoline_GetCallbacks(trampoline_state_init *init_state,
-                               trampoline_state_write *write_state,
-                               trampoline_state_free *free_state)
+_PyPerfTrampoline_GetCallbacks(_PyPerf_Callbacks *callbacks)
 {
+    if (callbacks == NULL) {
+        return;
+    }
 #ifdef _PY_HAVE_PERF_TRAMPOLINE
-    if (init_state) {
-        *init_state = trampoline_api.init_state;
-    }
-    if (write_state) {
-        *write_state = trampoline_api.write_state;
-    }
-    if (free_state) {
-        *free_state = trampoline_api.free_state;
-    }
+    callbacks->init_state = trampoline_api.init_state;
+    callbacks->write_state = trampoline_api.write_state;
+    callbacks->free_state = trampoline_api.free_state;
 #endif
     return;
 }
 
 int
-_PyPerfTrampoline_SetCallbacks(trampoline_state_init init_state,
-                               trampoline_state_write write_state,
-                               trampoline_state_free free_state)
+_PyPerfTrampoline_SetCallbacks(_PyPerf_Callbacks *callbacks)
 {
+    if (callbacks == NULL) {
+        return -1;
+    }
 #ifdef _PY_HAVE_PERF_TRAMPOLINE
     if (trampoline_api.state) {
         _PyPerfTrampoline_Fini();
     }
-    trampoline_api.init_state = init_state;
-    trampoline_api.write_state = write_state;
-    trampoline_api.free_state = free_state;
+    trampoline_api.init_state = callbacks->init_state;
+    trampoline_api.write_state = callbacks->write_state;
+    trampoline_api.free_state = callbacks->free_state;
     trampoline_api.state = NULL;
     perf_status = PERF_STATUS_OK;
 #endif

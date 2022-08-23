@@ -2009,14 +2009,10 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
 {
     if (strcmp(backend, "perf") == 0) {
 #ifdef _PY_HAVE_PERF_TRAMPOLINE
-        trampoline_state_init init_callback = NULL; 
-        _PyPerfTrampoline_GetCallbacks(&init_callback, NULL, NULL);
-        if (init_callback != _Py_perf_map_get_file) {
-            if ( _PyPerfTrampoline_SetCallbacks(
-                    _Py_perf_map_get_file,
-                    _Py_perf_map_write_entry,
-                    _Py_perf_map_close
-                ) < 0 ) {
+        _PyPerf_Callbacks cur_cb;
+        _PyPerfTrampoline_GetCallbacks(&cur_cb);
+        if (cur_cb.init_state != _Py_perfmap_callbacks.init_state) {
+            if (_PyPerfTrampoline_SetCallbacks(&_Py_perfmap_callbacks) < 0 ) {
                 PyErr_SetString(PyExc_ValueError, "can't activate perf trampoline");
                 return NULL;
             }
