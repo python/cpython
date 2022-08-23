@@ -1449,8 +1449,10 @@ format_ctime(PyDateTime_Date *date, int hours, int minutes, int seconds)
 static PyObject *delta_negative(PyDateTime_Delta *self);
 
 /* Add formatted UTC offset string to buf.  buf has no more than
- * buflen bytes remaining.  The UTC offset is gotten by calling
- * tzinfo.uctoffset(tzinfoarg).  If that returns None, \0 is stored into
+ * buflen bytes remaining.  If use_utc_designator is true,
+ * tzinfo.tzname(tzinfoarg) will be called, and if it returns "UTC",
+ * only "Z\0" will be added. Otherwise, the UTC offset is gotten by calling
+ * tzinfo.utcoffset(tzinfoarg).  If that returns None, \0 is stored into
  * *buf, and that's all.  Else the returned value is checked for sanity (an
  * integer in range), and if that's OK it's converted to an hours & minutes
  * string of the form
@@ -1460,6 +1462,7 @@ static PyObject *delta_negative(PyDateTime_Delta *self);
  */
 static int
 format_utcoffset(char *buf, size_t buflen, const char *sep,
+                int use_utc_designator,
                 PyObject *tzinfo, PyObject *tzinfoarg)
 {
     PyObject *offset;
@@ -1467,6 +1470,20 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
     char sign;
 
     assert(buflen >= 1);
+
+    if (use_utc_designator) {
+        PyObject* name = PyObject_CallMethod(tzinfo, "tzname", "O", tzinfoarg);
+        if (name == NULL)
+            return -1;
+        int tz_is_utc = (PyUnicode_Check(name) &&
+                         0 == strcmp("UTC", PyUnicode_AsUTF8(name)));
+        Py_DECREF(name);
+
+        if (tz_is_utc) {
+            PyOS_snprintf(buf, buflen, "Z");
+            return 0;
+        }
+    }
 
     offset = call_utcoffset(tzinfo, tzinfoarg);
     if (offset == NULL)
@@ -1643,6 +1660,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                     if (format_utcoffset(buf,
                                          sizeof(buf),
                                          "",
+                                         0,
                                          tzinfo,
                                          tzinfoarg) < 0)
                         goto Done;
@@ -4356,7 +4374,8 @@ time_isoformat(PyDateTime_Time *self, PyObject *args, PyObject *kw)
 {
     char buf[100];
     const char *timespec = NULL;
-    static char *keywords[] = {"timespec", NULL};
+    int use_utc_designator = 0;
+    static char *keywords[] = {"timespec", "use_utc_designator", NULL};
     PyObject *result;
     int us = TIME_GET_MICROSECOND(self);
     static const char *specs[][2] = {
@@ -4368,7 +4387,8 @@ time_isoformat(PyDateTime_Time *self, PyObject *args, PyObject *kw)
     };
     size_t given_spec;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "|s:isoformat", keywords, &timespec))
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "|sp:isoformat", keywords,
+                                     &timespec, &use_utc_designator))
         return NULL;
 
     if (timespec == NULL || strcmp(timespec, "auto") == 0) {
@@ -4407,8 +4427,8 @@ time_isoformat(PyDateTime_Time *self, PyObject *args, PyObject *kw)
         return result;
 
     /* We need to append the UTC offset. */
-    if (format_utcoffset(buf, sizeof(buf), ":", self->tzinfo,
-                         Py_None) < 0) {
+    if (format_utcoffset(buf, sizeof(buf), ":", use_utc_designator,
+                         self->tzinfo, Py_None) < 0) {
         Py_DECREF(result);
         return NULL;
     }
@@ -5735,7 +5755,8 @@ datetime_isoformat(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 {
     int sep = 'T';
     char *timespec = NULL;
-    static char *keywords[] = {"sep", "timespec", NULL};
+    int use_utc_designator = 0;
+    static char *keywords[] = {"sep", "timespec", "use_utc_designator", NULL};
     char buffer[100];
     PyObject *result = NULL;
     int us = DATE_GET_MICROSECOND(self);
@@ -5748,7 +5769,8 @@ datetime_isoformat(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     };
     size_t given_spec;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "|Cs:isoformat", keywords, &sep, &timespec))
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "|Csp:isoformat", keywords,
+                                     &sep, &timespec, &use_utc_designator))
         return NULL;
 
     if (timespec == NULL || strcmp(timespec, "auto") == 0) {
@@ -5788,8 +5810,8 @@ datetime_isoformat(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
         return result;
 
     /* We need to append the UTC offset. */
-    if (format_utcoffset(buffer, sizeof(buffer), ":", self->tzinfo,
-                         (PyObject *)self) < 0) {
+    if (format_utcoffset(buffer, sizeof(buffer), ":", use_utc_designator,
+                         self->tzinfo, (PyObject *)self) < 0) {
         Py_DECREF(result);
         return NULL;
     }
