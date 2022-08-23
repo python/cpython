@@ -447,6 +447,17 @@ Module constants
    This flag may be combined with :const:`PARSE_COLNAMES` using the ``|``
    (bitwise or) operator.
 
+.. data:: SQLITE_OK
+          SQLITE_DENY
+          SQLITE_IGNORE
+
+   Flags that should be returned by the *authorizer_callback* callable
+   passed to :meth:`Connection.set_authorizer`, to indicate whether:
+
+   * Access is allowed (:const:`!SQLITE_OK`),
+   * The SQL statement should be aborted with an error (:const:`!SQLITE_DENY`)
+   * The column should be treated as a ``NULL`` value (:const:`!SQLITE_IGNORE`)
+
 .. data:: apilevel
 
    String constant stating the supported DB-API level. Required by the DB-API.
@@ -822,10 +833,9 @@ Connection objects
 
       Register callable *authorizer_callback* to be invoked for each attempt to
       access a column of a table in the database. The callback should return
-      :const:`SQLITE_OK` if access is allowed, :const:`SQLITE_DENY` if the entire SQL
-      statement should be aborted with an error and :const:`SQLITE_IGNORE` if the
-      column should be treated as a NULL value. These constants are available in the
-      :mod:`!sqlite3` module.
+      one of :const:`SQLITE_OK`, :const:`SQLITE_DENY`, or :const:`SQLITE_IGNORE`
+      to signal how access to the column should be handled
+      by the underlying SQLite library.
 
       The first argument to the callback signifies what kind of operation is to be
       authorized. The second and third argument will be arguments or ``None``
