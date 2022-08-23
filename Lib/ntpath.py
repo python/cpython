@@ -311,30 +311,42 @@ def ismount(path):
         return False
 
 
+_reserved_chars = frozenset(
+    {chr(i) for i in range(32)} |
+    {'"', '*', ':', '<', '>', '?', '|'}
+)
+
 _reserved_names = frozenset(
     {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
     {f'COM{c}' for c in '123456789\xb9\xb2\xb3'} |
     {f'LPT{c}' for c in '123456789\xb9\xb2\xb3'}
 )
+
 def isreserved(path):
     """Return true if the pathname is reserved by the system."""
     # Refer to "Naming Files, Paths, and Namespaces":
     # https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file
-    name = os.fsdecode(basename(path))
-    # '.' and '..' are not reserved.
-    if name == '.' or name == '..':
-        return False
-    # Trailing spaces and dots are reserved.
-    elif name.endswith((' ', '.')):
-        return True
-    # File streams are reserved (e.g. "filename:stream[:type]").
-    elif ':' in name:
-        return True
-    # DOS device names are reserved (e.g. "nul" or "nul .txt"). The rules
-    # are complicated and vary across Windows versions (e.g. "../nul" is
-    # reserved but not "foo/nul" if "foo" does not exist). On the side of
-    # caution, return True for names that may not be reserved.
-    return name.partition('.')[0].rstrip(' ').upper() in _reserved_names
+    path = os.fsdecode(splitdrive(path)[1]).rstrip(r'\/')
+    while path:
+        path, name = split(path)
+        if not name:
+            break
+        # '.' and '..' are not reserved.
+        if name == '.' or name == '..':
+            continue
+        # Trailing spaces and dots are reserved.
+        elif name.endswith((' ', '.')):
+            return True
+        # The wildcard characters, colon, and pipe (*?"<>:|) are reserved.
+        # Colon is reserved for file streams (e.g. "name:stream[:type]").
+        elif _reserved_chars.intersection(name):
+            return True
+        # DOS device names are reserved (e.g. "nul" or "nul .txt"). The rules
+        # are complex and vary across Windows versions. On the side of
+        # caution, return True for names that may not be reserved.
+        elif name.partition('.')[0].rstrip(' ').upper() in _reserved_names:
+            return True
+    return False
 
 
 # Expand paths beginning with '~' or '~user'.

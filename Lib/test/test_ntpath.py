@@ -831,8 +831,16 @@ class TestNtpath(NtpathTestCase):
         # A name that ends with a space or dot is reserved.
         self.assertTrue(ntpath.isreserved('foo.'))
         self.assertTrue(ntpath.isreserved('foo '))
-        # A name with a file stream is reserved.
+        # ASCII control characters are reserved.
+        self.assertTrue(ntpath.isreserved('\foo'))
+        # Wildcard characters, colon, and pipe are reserved.
+        self.assertTrue(ntpath.isreserved('foo*bar'))
+        self.assertTrue(ntpath.isreserved('foo?bar'))
+        self.assertTrue(ntpath.isreserved('foo"bar'))
+        self.assertTrue(ntpath.isreserved('foo<bar'))
+        self.assertTrue(ntpath.isreserved('foo>bar'))
         self.assertTrue(ntpath.isreserved('foo:bar'))
+        self.assertTrue(ntpath.isreserved('foo|bar'))     
         # Case-insensitive DOS-device names are reserved.
         self.assertTrue(ntpath.isreserved('nul'))
         self.assertTrue(ntpath.isreserved('aux'))
@@ -857,9 +865,10 @@ class TestNtpath(NtpathTestCase):
         # of a path component.
         self.assertFalse(ntpath.isreserved('bar.com9'))
         self.assertFalse(ntpath.isreserved('bar.lpt9'))
-        # Only the last path component matters.
-        self.assertTrue(ntpath.isreserved('c:/baz/con/NUL'))
-        self.assertFalse(ntpath.isreserved('c:/NUL/con/baz'))
+        # The entire path is checked, except for the drive.
+        self.assertTrue(ntpath.isreserved('c:/bar/baz/NUL'))
+        self.assertTrue(ntpath.isreserved('c:/NUL/bar/baz'))
+        self.assertFalse(ntpath.isreserved('//./NUL'))
         # Bytes are supported.
         self.assertFalse(ntpath.isreserved(b''))
         self.assertFalse(ntpath.isreserved(b'.'))
