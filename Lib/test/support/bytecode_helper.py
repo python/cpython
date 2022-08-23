@@ -133,4 +133,3 @@ class CfgOptimizationTestCase(unittest.TestCase):
             # pad exp with -1's (if location info is incomplete)
             exp += (-1,) * (len(act) - len(exp))
             self.assertEqual(exp, act)
-
