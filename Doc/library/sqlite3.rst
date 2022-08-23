@@ -421,9 +421,8 @@ Module constants
           SQLITE_DENY
           SQLITE_IGNORE
 
-   Flags used for return values from the callable passed as
-   the *authorizer_callback* argument of :meth:`Connection.set_authorizer`
-   to indicate whether:
+   Flags that should be returned by the *authorizer_callback* callable
+   passed to :meth:`Connection.set_authorizer`, to indicate whether:
 
    * Access is allowed (:const:`!SQLITE_OK`),
    * The SQL statement should be aborted with an error (:const:`!SQLITE_DENY`)
@@ -805,7 +804,8 @@ Connection objects
       Register callable *authorizer_callback* to be invoked for each attempt to
       access a column of a table in the database. The callback should return
       one of :const:`SQLITE_OK`, :const:`SQLITE_DENY`, or :const:`SQLITE_IGNORE`
-      to signal how the column should be handled.
+      to signal how access to the column should be handled
+      by the underlying SQLite library.
 
       The first argument to the callback signifies what kind of operation is to be
       authorized. The second and third argument will be arguments or ``None``
