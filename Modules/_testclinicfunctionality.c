@@ -17,6 +17,18 @@ module  _testclinicfunctionality
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=19bd80db1aefb188]*/
 
 /*[clinic input]
+test_empty_function
+
+[clinic start generated code]*/
+
+static PyObject *
+test_empty_function_impl(PyObject *module)
+/*[clinic end generated code: output=0f8aeb3ddced55cb input=0dd7048651ad4ae4]*/
+{
+    Py_RETURN_NONE;
+};
+
+/*[clinic input]
 gh_32092_oob
 
     pos1: object
@@ -81,6 +93,7 @@ gh_32092_kw_pass_impl(PyObject *module, PyObject *pos, PyObject *args,
 }
 
 static PyMethodDef tester_methods[] = {
+        TEST_EMPTY_FUNCTION_METHODDEF
         GH_32092_OOB_METHODDEF
         GH_32092_KW_PASS_METHODDEF
         {NULL, NULL}

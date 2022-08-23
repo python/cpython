@@ -14,3 +14,8 @@ class TestClinicFunctionality(unittest.TestCase):
         res = ac_tester.gh_32092_kw_pass(1, 2, 3)
         expect = (1, (2, 3), None)
         self.assertEqual(res, expect)
+
+
+class TestClinicFunctionalityC(unittest.TestCase):
+    locals().update((name, getattr(ac_tester, name))
+                    for name in dir(ac_tester) if name.startswith('test_'))

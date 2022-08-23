@@ -8,6 +8,23 @@ preserve
 #endif
 
 
+PyDoc_STRVAR(test_empty_function__doc__,
+"test_empty_function($module, /)\n"
+"--\n"
+"\n");
+
+#define TEST_EMPTY_FUNCTION_METHODDEF    \
+    {"test_empty_function", (PyCFunction)test_empty_function, METH_NOARGS, test_empty_function__doc__},
+
+static PyObject *
+test_empty_function_impl(PyObject *module);
+
+static PyObject *
+test_empty_function(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return test_empty_function_impl(module);
+}
+
 PyDoc_STRVAR(gh_32092_oob__doc__,
 "gh_32092_oob($module, /, pos1, pos2, *varargs, kw1=None, kw2=None)\n"
 "--\n"
@@ -162,4 +179,4 @@ exit:
     Py_XDECREF(__clinic_args);
     return return_value;
 }
-/*[clinic end generated code: output=15c1dca3a5c1ae38 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=da33e7aa2f9377db input=a9049054013a1b77]*/
