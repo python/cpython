@@ -1614,8 +1614,8 @@ registering custom adapter functions.
 
 .. _sqlite3-conform:
 
-Let your object adapt itself
-""""""""""""""""""""""""""""
+How to write adaptable objects
+""""""""""""""""""""""""""""""
 
 Suppose we have a :class:`!Point` class that represents a pair of coordinates,
 ``x`` and ``y``, in a Cartesian coordinate system.
@@ -1628,8 +1628,8 @@ The object passed to *protocol* will be of type :class:`PrepareProtocol`.
 .. literalinclude:: ../includes/sqlite3/adapter_point_1.py
 
 
-Register an adapter callable
-""""""""""""""""""""""""""""
+How to register adapter callables
+"""""""""""""""""""""""""""""""""
 
 The other possibility is to create a function that converts the Python object
 to an SQLite-compatible type.
@@ -1744,8 +1744,8 @@ directly using only a single call on the :class:`Connection` object.
 
 .. _sqlite3-connection-context-manager:
 
-How to use a connection as a context manager
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+How to use the connection context manager
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A :class:`Connection` object can be used as a context manager that
 automatically commits or rolls back open transactions when leaving the body of
