@@ -30,12 +30,6 @@ __all__ = [
 # Internals
 #
 
-_WIN_RESERVED_NAMES = frozenset(
-    {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
-    {f'COM{c}' for c in '123456789\xb9\xb2\xb3'} |
-    {f'LPT{c}' for c in '123456789\xb9\xb2\xb3'}
-)
-
 _WINERROR_NOT_READY = 21  # drive exists but is not accessible
 _WINERROR_INVALID_NAME = 123  # fix for bpo-35306
 _WINERROR_CANT_RESOLVE_FILENAME = 1921  # broken symlink pointing to itself
@@ -660,18 +654,7 @@ class PurePath(object):
     def is_reserved(self):
         """Return True if the path contains one of the special names reserved
         by the system, if any."""
-        if self._flavour is posixpath or not self._parts:
-            return False
-
-        # NOTE: the rules for reserved names seem somewhat complicated
-        # (e.g. r"..\NUL" is reserved but not r"foo\NUL" if "foo" does not
-        # exist). We err on the side of caution and return True for paths
-        # which are not considered reserved by Windows.
-        if self._parts[0].startswith('\\\\'):
-            # UNC paths are never reserved
-            return False
-        name = self._parts[-1].partition('.')[0].partition(':')[0].rstrip(' ')
-        return name.upper() in _WIN_RESERVED_NAMES
+        return self._flavour._isreserved(self)
 
     def match(self, path_pattern):
         """

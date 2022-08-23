@@ -216,6 +216,17 @@ def ismount(path):
     return False
 
 
+# Is the path reserved?
+# This private function is used by pathlib.PurePosixPath.is_reserved().
+# See GH-88569 for a proposal to make this function public.
+
+def _isreserved(path):
+    """Return true if the pathname is reserved by the system."""
+    # Raise TypeError if the argument isn't path-like
+    os.fspath(path)
+    return False
+
+
 # Expand paths beginning with '~' or '~user'.
 # '~' means $HOME; '~user' means that user's home directory.
 # If the path doesn't begin with '~', or if the user or $HOME is unknown,

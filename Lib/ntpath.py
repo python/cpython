@@ -311,6 +311,30 @@ def ismount(path):
         return False
 
 
+# Is the path reserved?
+# This private function is used by pathlib.PureWindowsPath.is_reserved().
+# See GH-88569 for a proposal to make this function public.
+
+_reserved_names = frozenset(
+    {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
+    {f'COM{c}' for c in '123456789\xb9\xb2\xb3'} |
+    {f'LPT{c}' for c in '123456789\xb9\xb2\xb3'}
+)
+
+def _isreserved(path):
+    """Return true if the pathname is reserved by the system."""
+    # NOTE: the rules for reserved names seem somewhat complicated
+    # (e.g. r"..\NUL" is reserved but not r"foo\NUL" if "foo" does not
+    # exist). We err on the side of caution and return True for paths
+    # which are not considered reserved by Windows.
+    path = os.fsdecode(path)
+    if path.startswith('\\\\'):
+        # UNC paths are never reserved
+        return False
+    name = basename(path).partition('.')[0].partition(':')[0].rstrip(' ')
+    return name.upper() in _reserved_names
+
+
 # Expand paths beginning with '~' or '~user'.
 # '~' means $HOME; '~user' means that user's home directory.
 # If the path doesn't begin with '~', or if the user or $HOME is unknown,
