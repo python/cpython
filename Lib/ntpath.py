@@ -313,7 +313,7 @@ def ismount(path):
 
 _reserved_chars = frozenset(
     {chr(i) for i in range(32)} |
-    {'"', '*', ':', '<', '>', '?', '|'}
+    {'"', '*', ':', '<', '>', '?', '|', '/', '\\'}
 )
 
 _reserved_names = frozenset(
@@ -327,20 +327,25 @@ def isreserved(path):
     # Refer to "Naming Files, Paths, and Namespaces":
     # https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file
     path = splitdrive(path)[1]
-    path = os.fsdecode(path).replace(altsep, sep)
-    for name in reversed(path.split(sep)):
-        # Trailing dots and spaces are reserved.
-        if name.endswith(('.', ' ')) and name not in ('.', '..'):
-            return True
-        # The wildcard characters, colon, and pipe (*?"<>:|) are reserved.
-        # Colon is reserved for file streams (e.g. "name:stream[:type]").
-        elif _reserved_chars.intersection(name):
-            return True
-        # DOS device names are reserved (e.g. "nul" or "nul .txt"). The rules
-        # are complex and vary across Windows versions. On the side of
-        # caution, return True for names that may not be reserved.
-        elif name.partition('.')[0].rstrip(' ').upper() in _reserved_names:
-            return True
+    path = os.fsdecode(path)
+    parts = path.replace(altsep, sep).split(sep)
+    return any(isreservedname(name) for name in reversed(parts))
+
+def isreservedname(name):
+    """Return true if the filename is reserved by the system."""
+    name = os.fsdecode(name)
+    # Trailing dots and spaces are reserved.
+    if name.endswith(('.', ' ')) and name not in ('.', '..'):
+        return True
+    # The wildcard characters, colon, and pipe (*?"<>:|) are reserved.
+    # Colon is reserved for file streams (e.g. "name:stream[:type]").
+    if _reserved_chars.intersection(name):
+        return True
+    # DOS device names are reserved (e.g. "nul" or "nul .txt"). The rules
+    # are complex and vary across Windows versions. On the side of
+    # caution, return True for names that may not be reserved.
+    if name.partition('.')[0].rstrip(' ').upper() in _reserved_names:
+        return True
     return False
 
 
