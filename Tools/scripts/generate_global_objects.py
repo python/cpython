@@ -250,6 +250,7 @@ def generate_runtime_init(identifiers, strings):
 
     # Generate the file.
     with open_for_changes(filename, orig) as outfile:
+        immortal_objects = []
         printer = Printer(outfile)
         printer.write(before)
         printer.write(START)
@@ -259,31 +260,39 @@ def generate_runtime_init(identifiers, strings):
                 with printer.block('.small_ints =', ','):
                     for i in range(-nsmallnegints, nsmallposints):
                         printer.write(f'_PyLong_DIGIT_INIT({i}),')
+                        immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + {i}]')
                 printer.write('')
                 # Global bytes objects.
                 printer.write('.bytes_empty = _PyBytes_SIMPLE_INIT(0, 0),')
+                immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(bytes_empty)')
                 with printer.block('.bytes_characters =', ','):
                     for i in range(256):
                         printer.write(f'_PyBytes_CHAR_INIT({i}),')
+                        immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(bytes_characters)[{i}]')
                 printer.write('')
                 # Global strings.
                 with printer.block('.strings =', ','):
                     with printer.block('.literals =', ','):
                         for literal, name in sorted(strings.items(), key=lambda x: x[1]):
                             printer.write(f'INIT_STR({name}, "{literal}"),')
+                            immortal_objects.append(f'(PyObject *)&_Py_STR({name})')
                     with printer.block('.identifiers =', ','):
                         for name in sorted(identifiers):
                             assert name.isidentifier(), name
                             printer.write(f'INIT_ID({name}),')
+                            immortal_objects.append(f'(PyObject *)&_Py_ID({name})')
                     with printer.block('.ascii =', ','):
                         for i in range(128):
                             printer.write(f'_PyASCIIObject_INIT("\\x{i:02x}"),')
+                            immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(strings).ascii[{i}]')
                     with printer.block('.latin1 =', ','):
                         for i in range(128, 256):
                             printer.write(f'_PyUnicode_LATIN1_INIT("\\x{i:02x}"),')
+                            immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(strings).latin1[{i} - 128]')
                 printer.write('')
                 with printer.block('.tuple_empty =', ','):
                     printer.write('.ob_base = _PyVarObject_IMMORTAL_INIT(&PyTuple_Type, 0)')
+                    immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(tuple_empty)')
         printer.write('')
         printer.write("static inline void")
         with printer.block("_PyUnicode_InitStaticStrings(void)"):
@@ -293,6 +302,16 @@ def generate_runtime_init(identifiers, strings):
                 # since iter_files() ignores .h files.
                 printer.write(f'string = &_Py_ID({i});')
                 printer.write(f'PyUnicode_InternInPlace(&string);')
+        printer.write('')
+        printer.write('#ifdef Py_DEBUG')
+        printer.write("static inline void")
+        with printer.block("_PyStaticObjects_CheckRefcnt(void)"):
+            for i in immortal_objects:
+                with printer.block(f'if (Py_REFCNT({i}) < _PyObject_IMMORTAL_REFCNT)', ';'):
+                    printer.write(f'_PyObject_Dump({i});')
+                    printer.write(f'Py_FatalError("immortal object has less refcnt than '
+                                    'expected _PyObject_IMMORTAL_REFCNT");')
+        printer.write('#endif')
         printer.write(END)
         printer.write(after)
 

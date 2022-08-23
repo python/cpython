@@ -135,7 +135,7 @@ Quick Reference
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | [:c:member:`~PyTypeObject.tp_cache`]           | :c:type:`PyObject` *              |                   |   |   |       |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | [:c:member:`~PyTypeObject.tp_subclasses`]      | :c:type:`PyObject` *              | __subclasses__    |   |   |       |
+   | [:c:member:`~PyTypeObject.tp_subclasses`]      | void *                            | __subclasses__    |   |   |       |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | [:c:member:`~PyTypeObject.tp_weaklist`]        | :c:type:`PyObject` *              |                   |   |   |       |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
@@ -720,29 +720,29 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    with the *vectorcallfunc* function.
    This can be done by setting *tp_call* to :c:func:`PyVectorcall_Call`.
 
-   .. warning::
-
-      It is not recommended for :ref:`mutable heap types <heap-types>` to implement
-      the vectorcall protocol.
-      When a user sets :attr:`__call__` in Python code, only *tp_call* is updated,
-      likely making it inconsistent with the vectorcall function.
-
    .. versionchanged:: 3.8
 
       Before version 3.8, this slot was named ``tp_print``.
       In Python 2.x, it was used for printing to a file.
       In Python 3.0 to 3.7, it was unused.
 
+   .. versionchanged:: 3.12
+
+      Before version 3.12, it was not recommended for
+      :ref:`mutable heap types <heap-types>` to implement the vectorcall
+      protocol.
+      When a user sets :attr:`~type.__call__` in Python code, only *tp_call* is
+      updated, likely making it inconsistent with the vectorcall function.
+      Since 3.12, setting ``__call__`` will disable vectorcall optimization
+      by clearing the :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag.
+
    **Inheritance:**
 
    This field is always inherited.
    However, the :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag is not
-   always inherited. If it's not, then the subclass won't use
+   always inherited. If it's not set, then the subclass won't use
    :ref:`vectorcall <vectorcall>`, except when
    :c:func:`PyVectorcall_Call` is explicitly called.
-   This is in particular the case for types without the
-   :const:`Py_TPFLAGS_IMMUTABLETYPE` flag set (including subclasses defined in
-   Python).
 
 
 .. c:member:: getattrfunc PyTypeObject.tp_getattr
@@ -1178,11 +1178,17 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       **Inheritance:**
 
-      This bit is inherited for types with the
-      :const:`Py_TPFLAGS_IMMUTABLETYPE` flag set, if
-      :c:member:`~PyTypeObject.tp_call` is also inherited.
+      This bit is inherited if :c:member:`~PyTypeObject.tp_call` is also
+      inherited.
 
       .. versionadded:: 3.9
+
+      .. versionchanged:: 3.12
+
+         This flag is now removed from a class when the class's
+         :py:meth:`~object.__call__` method is reassigned.
+
+         This flag can now be inherited by mutable classes.
 
    .. data:: Py_TPFLAGS_IMMUTABLETYPE
 
@@ -1709,18 +1715,11 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    :c:member:`~PyTypeObject.tp_dictoffset` should be set to ``-4`` to indicate that the dictionary is
    at the very end of the structure.
 
-   The real dictionary offset in an instance can be computed from a negative
-   :c:member:`~PyTypeObject.tp_dictoffset` as follows::
-
-      dictoffset = tp_basicsize + abs(ob_size)*tp_itemsize + tp_dictoffset
-      if dictoffset is not aligned on sizeof(void*):
-          round up to sizeof(void*)
-
-   where :c:member:`~PyTypeObject.tp_basicsize`, :c:member:`~PyTypeObject.tp_itemsize` and :c:member:`~PyTypeObject.tp_dictoffset` are
-   taken from the type object, and :attr:`ob_size` is taken from the instance.  The
-   absolute value is taken because ints use the sign of :attr:`ob_size` to
-   store the sign of the number.  (There's never a need to do this calculation
-   yourself; it is done for you by :c:func:`_PyObject_GetDictPtr`.)
+   The :c:member:`~PyTypeObject.tp_dictoffset` should be regarded as write-only.
+   To get the pointer to the dictionary call :c:func:`PyObject_GenericGetDict`.
+   Calling :c:func:`PyObject_GenericGetDict` may need to allocate memory for the
+   dictionary, so it is may be more efficient to call :c:func:`PyObject_GetAttr`
+   when accessing an attribute on the object.
 
    **Inheritance:**
 
@@ -1928,9 +1927,17 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    This field is not inherited.
 
 
-.. c:member:: PyObject* PyTypeObject.tp_subclasses
+.. c:member:: void* PyTypeObject.tp_subclasses
 
-   List of weak references to subclasses.  Internal use only.
+   A collection of subclasses.  Internal use only.  May be an invalid pointer.
+
+   To get a list of subclasses, call the Python method
+   :py:meth:`~class.__subclasses__`.
+
+   .. versionchanged:: 3.12
+
+      For some types, this field does not hold a valid :c:expr:`PyObject*`.
+      The type was changed to :c:expr:`void*` to indicate this.
 
    **Inheritance:**
 
@@ -1941,6 +1948,13 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    Weak reference list head, for weak references to this type object.  Not
    inherited.  Internal use only.
+
+   .. versionchanged:: 3.12
+
+      Internals detail: For the static builtin types this is always ``NULL``,
+      even if weakrefs are added.  Instead, the weakrefs for each are stored
+      on ``PyInterpreterState``.  Use the public C-API or the internal
+      ``_PyObject_GET_WEAKREFS_LISTPTR()`` macro to avoid the distinction.
 
    **Inheritance:**
 
