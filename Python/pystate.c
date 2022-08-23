@@ -642,6 +642,9 @@ _PyInterpreterState_IDInitref(PyInterpreterState *interp)
     if (interp->id_mutex != NULL) {
         return 0;
     }
+    if (interp == PyInterpreterState_Main()) {
+        return 0;
+    }
     interp->id_mutex = PyThread_allocate_lock();
     if (interp->id_mutex == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -1758,6 +1761,76 @@ PyGILState_Release(PyGILState_STATE oldstate)
 /* cross-interpreter data */
 /**************************/
 
+/* cross-interpreter operations */
+
+static int
+_decref_pyobj(void *obj)
+{
+    Py_DECREF(obj);
+    return 0;
+}
+
+int
+_Py_DECREF_in_interpreter(PyInterpreterState *interp, PyObject *obj)
+{
+    if (interp == _PyInterpreterState_GET()) {
+        Py_DECREF(obj);
+        return 0;
+    }
+    return _PyEval_AddPendingCall(interp, _decref_pyobj, obj);
+}
+
+static int
+_release_pybuf(void *view)
+{
+    PyBuffer_Release((Py_buffer *)view);
+    return 0;
+}
+
+int
+_PyBuffer_Release_in_interpreter(PyInterpreterState *interp, Py_buffer *view)
+{
+    if (interp == _PyInterpreterState_GET()) {
+        PyBuffer_Release((Py_buffer *)view);
+        return 0;
+    }
+    return _PyEval_AddPendingCall(interp, _release_pybuf, view);
+}
+
+static int
+_pymem_free(void *data)
+{
+    PyMem_Free(data);
+    return 0;
+}
+
+int
+_PyMem_Free_in_interpreter(PyInterpreterState *interp, void *data)
+{
+    if (interp == _PyInterpreterState_GET()) {
+        PyMem_Free(data);
+        return 0;
+    }
+    return _PyEval_AddPendingCall(interp, _pymem_free, data);
+}
+
+static int
+_pymem_rawfree(void *data)
+{
+    PyMem_RawFree(data);
+    return 0;
+}
+
+int
+_PyMem_RawFree_in_interpreter(PyInterpreterState *interp, void *data)
+{
+    if (interp == _PyInterpreterState_GET()) {
+        PyMem_RawFree(data);
+        return 0;
+    }
+    return _PyEval_AddPendingCall(interp, _pymem_rawfree, data);
+}
+
 /* cross-interpreter data */
 
 crossinterpdatafunc _PyCrossInterpreterData_Lookup(PyObject *);
@@ -1843,41 +1916,6 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
     return 0;
 }
 
-static void
-_release_xidata(void *arg)
-{
-    _PyCrossInterpreterData *data = (_PyCrossInterpreterData *)arg;
-    if (data->free != NULL) {
-        data->free(data->data);
-    }
-    Py_XDECREF(data->obj);
-}
-
-static void
-_call_in_interpreter(struct _gilstate_runtime_state *gilstate,
-                     PyInterpreterState *interp,
-                     void (*func)(void *), void *arg)
-{
-    /* We would use Py_AddPendingCall() if it weren't specific to the
-     * main interpreter (see bpo-33608).  In the meantime we take a
-     * naive approach.
-     */
-    PyThreadState *save_tstate = NULL;
-    if (interp != _PyRuntimeGILState_GetThreadState(gilstate)->interp) {
-        // XXX Using the "head" thread isn't strictly correct.
-        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
-        // XXX Possible GILState issues?
-        save_tstate = _PyThreadState_Swap(gilstate, tstate);
-    }
-
-    func(arg);
-
-    // Switch back.
-    if (save_tstate != NULL) {
-        _PyThreadState_Swap(gilstate, save_tstate);
-    }
-}
-
 void
 _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
 {
@@ -1897,13 +1935,37 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
     }
 
     // "Release" the data and/or the object.
-    struct _gilstate_runtime_state *gilstate = &_PyRuntime.gilstate;
-    _call_in_interpreter(gilstate, interp, _release_xidata, data);
+    if (data->free != NULL) {
+        if (data->free == PyMem_Free) {
+            _PyMem_Free_in_interpreter(interp, data->data);
+        } else if (data->free == PyMem_RawFree) {
+            _PyMem_RawFree_in_interpreter(interp, data->data);
+        } else {
+            // We only worry about special-casing the PyMem_* deallocators.
+            data->free(data->data);
+        }
+    }
+    if (data->obj != NULL) {
+        _Py_DECREF_in_interpreter(interp, data->obj);
+    }
+    // Note that we do not free "data" itself.  That should be done by
+    // the caller after this completes.  That implies that the memory
+    // for "data" is either owned by the calling interpreter or
+    // on the stack.
 }
 
 PyObject *
 _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *data)
 {
+    if (data->obj) {
+        // Return the object directly if the current interpreter
+        // is the one that owns the object.
+        PyInterpreterState *owner = _PyInterpreterState_LookUpID(data->interp);
+        if (owner == _PyInterpreterState_GET()) {
+            Py_INCREF(data->obj);
+            return data->obj;
+        }
+    }
     return data->new_object(data);
 }
 
@@ -2109,6 +2171,10 @@ _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
         Py_FatalError("could not register str for cross-interpreter sharing");
     }
 }
+
+/******************************/
+/* END cross-interpreter data */
+/******************************/
 
 
 _PyFrameEvalFunction

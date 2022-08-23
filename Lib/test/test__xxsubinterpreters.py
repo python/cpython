@@ -526,17 +526,21 @@ class IsRunningTests(TestBase):
 class InterpreterIDTests(TestBase):
 
     def test_with_int(self):
-        id = interpreters.InterpreterID(10, force=True)
+        orig = interpreters.create()
+        value = int(orig)
+        interpid = interpreters.InterpreterID(value)
 
-        self.assertEqual(int(id), 10)
+        self.assertEqual(int(interpid), value)
 
     def test_coerce_id(self):
+        interpid = interpreters.create()
+        value = int(interpid)
         class Int(str):
             def __index__(self):
-                return 10
+                return value
 
-        id = interpreters.InterpreterID(Int(), force=True)
-        self.assertEqual(int(id), 10)
+        id = interpreters.InterpreterID(Int())
+        self.assertEqual(int(id), value)
 
     def test_bad_id(self):
         self.assertRaises(TypeError, interpreters.InterpreterID, object())
@@ -547,39 +551,66 @@ class InterpreterIDTests(TestBase):
         self.assertRaises(OverflowError, interpreters.InterpreterID, 2**64)
 
     def test_does_not_exist(self):
-        id = interpreters.channel_create()
+        interpid = interpreters.create()
+        does_not_exist = int(interpid) + 1
         with self.assertRaises(RuntimeError):
-            interpreters.InterpreterID(int(id) + 1)  # unforced
+            interpreters.InterpreterID(does_not_exist)
+
+#    def test_cannot_be_instantiated(self):
+#        interpid = interpreters.create()
+#        does_not_exist = int(interpid) + 1
+#        with self.assertRaises(TypeError):
+#            interpreters.InterpreterID(interpid)
+#        with self.assertRaises(TypeError):
+#            interpreters.InterpreterID(does_not_exist)
+
+    def test_int(self):
+        interpid = interpreters.create()
+        self.assertNotIsInstance(interpid, int)
+        with self.assertRaises(TypeError):
+            interpid + 1
+        with self.assertRaises(TypeError):
+            interpid - 1
+        with self.assertRaises(TypeError):
+            1 + interpid
+        with self.assertRaises(TypeError):
+            1 - interpid
 
     def test_str(self):
-        id = interpreters.InterpreterID(10, force=True)
-        self.assertEqual(str(id), '10')
+        interpid = interpreters.create()
+        value = int(interpid)
+        self.assertEqual(str(interpid), str(value))
 
     def test_repr(self):
-        id = interpreters.InterpreterID(10, force=True)
-        self.assertEqual(repr(id), 'InterpreterID(10)')
+        interpid = interpreters.create()
+        value = int(interpid)
+        self.assertEqual(repr(interpid), f'InterpreterID({value})')
 
     def test_equality(self):
         id1 = interpreters.create()
-        id2 = interpreters.InterpreterID(int(id1))
-        id3 = interpreters.create()
+        id2 = int(id1)
+        id3 = interpreters.InterpreterID(int(id1))
+        id4 = interpreters.create()
 
         self.assertTrue(id1 == id1)
         self.assertTrue(id1 == id2)
-        self.assertTrue(id1 == int(id1))
-        self.assertTrue(int(id1) == id1)
-        self.assertTrue(id1 == float(int(id1)))
-        self.assertTrue(float(int(id1)) == id1)
-        self.assertFalse(id1 == float(int(id1)) + 0.1)
-        self.assertFalse(id1 == str(int(id1)))
+        self.assertTrue(id2 == id1)
+        self.assertTrue(id1 == id3)
+        self.assertTrue(str(id1) == str(id2))
+        self.assertTrue(id1 == float(id2))
+        self.assertTrue(float(id2) == id1)
+        self.assertFalse(id1 == float(id2) + 0.1)
+        self.assertFalse(id1 == str(id2))
         self.assertFalse(id1 == 2**1000)
         self.assertFalse(id1 == float('inf'))
         self.assertFalse(id1 == 'spam')
-        self.assertFalse(id1 == id3)
+        self.assertFalse(id1 == id4)
+        self.assertIsNot(id1, id3)
 
         self.assertFalse(id1 != id1)
         self.assertFalse(id1 != id2)
-        self.assertTrue(id1 != id3)
+        self.assertFalse(id1 != id3)
+        self.assertTrue(id1 != id4)
 
 
 class CreateTests(TestBase):
@@ -1383,7 +1414,8 @@ class ChannelTests(TestBase):
         obj = interpreters.channel_recv(cid)
 
         self.assertEqual(obj, orig)
-        self.assertIsNot(obj, orig)
+        # When going back to the same interpreter we get the same object.
+        self.assertIs(obj, orig)
 
     def test_send_recv_same_interpreter(self):
         id1 = interpreters.create()
@@ -1393,8 +1425,9 @@ class ChannelTests(TestBase):
             orig = b'spam'
             _interpreters.channel_send(cid, orig)
             obj = _interpreters.channel_recv(cid)
-            assert obj is not orig
             assert obj == orig
+            # When going back to the same interpreter we get the same object.
+            assert obj is orig
             """))
 
     def test_send_recv_different_interpreters(self):
@@ -1407,6 +1440,37 @@ class ChannelTests(TestBase):
         obj = interpreters.channel_recv(cid)
 
         self.assertEqual(obj, b'spam')
+
+    def test_send_recv_round_trip_same_channel(self):
+        cid = interpreters.channel_create()
+        id1 = interpreters.create()
+        orig = b'spam'
+        interpreters.channel_send(cid, orig)
+        out = _run_output(id1, dedent(f"""
+            import _xxsubinterpreters as _interpreters
+            obj = _interpreters.channel_recv({cid})
+            _interpreters.channel_send({cid}, obj)
+            """))
+        obj = interpreters.channel_recv(cid)
+
+        self.assertEqual(obj, orig)
+        self.assertIsNot(obj, orig)
+
+    def test_send_recv_round_trip_different_channel(self):
+        cid1 = interpreters.channel_create()
+        cid2 = interpreters.channel_create()
+        id1 = interpreters.create()
+        orig = b'spam'
+        interpreters.channel_send(cid1, orig)
+        out = _run_output(id1, dedent(f"""
+            import _xxsubinterpreters as _interpreters
+            obj = _interpreters.channel_recv({cid1})
+            _interpreters.channel_send({cid2}, obj)
+            """))
+        obj = interpreters.channel_recv(cid2)
+
+        self.assertEqual(obj, orig)
+        self.assertIsNot(obj, orig)
 
     def test_send_recv_different_threads(self):
         cid = interpreters.channel_create()

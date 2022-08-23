@@ -309,6 +309,15 @@ PyAPI_FUNC(int) _PyInterpreterState_SetConfig(
 PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 
 
+/* cross-interpreter operations */
+
+PyAPI_FUNC(int) _Py_DECREF_in_interpreter(PyInterpreterState *, PyObject *);
+PyAPI_FUNC(int) _PyBuffer_Release_in_interpreter(PyInterpreterState *,
+                                                 Py_buffer *);
+typedef void (*_deallocfunc)(void *);
+PyAPI_FUNC(int) _PyMem_Free_in_interpreter(PyInterpreterState *, void *);
+PyAPI_FUNC(int) _PyMem_RawFree_in_interpreter(PyInterpreterState *, void *);
+
 /* cross-interpreter data */
 
 // _PyCrossInterpreterData is similar to Py_buffer as an effectively
