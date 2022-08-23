@@ -79,48 +79,17 @@ class MinidomTest(unittest.TestCase):
 
     def testAttrModeSetsParamsAsAttrs(self):
         attr = Attr("qName", "namespaceURI", "localName", "prefix")
-        self.assertEqual(
-            attr._name,
-            "qName",
-            "testAttrModeSetsParamsAsAttrs -- qName parameter does not match",
-        )
-        self.assertEqual(
-            attr.namespaceURI,
-            "namespaceURI",
-            "testAttrModeSetsParamsAsAttrs -- namespaceURI parameter does not match",
-        )
-        self.assertEqual(
-            attr._prefix,
-            "prefix",
-            "testAttrModeSetsParamsAsAttrs -- prefix parameter does not match",
-        )
-        self.assertEqual(
-            attr._localName,
-            "localName",
-            "testAttrModeSetsParamsAsAttrs -- localName parameter does not match",
-        )
+        self.assertEqual(attr._name, "qName")
+        self.assertEqual(attr.namespaceURI, "namespaceURI")
+        self.assertEqual(attr._prefix, "prefix")
+        self.assertEqual(attr._localName, "localName")
 
     def testAttrModeSetsNonOptionalAttrs(self):
         attr = Attr("qName", "namespaceURI", None, "prefix")
-        self.assertEqual(
-            attr._name,
-            "qName",
-            "testAttrModeSetsParamsAsAttrs -- qName parameter does not match",
-        )
-        self.assertEqual(
-            attr.namespaceURI,
-            "namespaceURI",
-            "testAttrModeSetsParamsAsAttrs -- namespaceURI parameter does not match",
-        )
-        self.assertEqual(
-            attr._prefix,
-            "prefix",
-            "testAttrModeSetsParamsAsAttrs -- prefix parameter does not match",
-        )
-        self.assertFalse(
-            hasattr(attr, "_localName"),
-            "testAttrModeSetsParamsAsAttrs -- localName parameter set when None",
-        )
+        self.assertEqual(attr._name, "qName")
+        self.assertEqual(attr.namespaceURI, "namespaceURI")
+        self.assertEqual(attr._prefix, "prefix")
+        self.assertFalse(hasattr(attr, "_localName"))
 
     def testGetElementsByTagName(self):
         dom = parse(tstfile)
