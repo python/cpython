@@ -505,21 +505,25 @@ Pure paths provide the following methods and properties:
 
 .. method:: PurePath.is_reserved()
 
-   With :class:`PureWindowsPath`, return ``True`` if the path is considered
-   reserved under Windows, ``False`` otherwise.  With :class:`PurePosixPath`,
-   ``False`` is always returned.
+   Return ``True`` if the path is considered reserved, ``False`` otherwise.
 
       >>> PureWindowsPath('nul').is_reserved()
       True
-      >>> PurePosixPath('nul').is_reserved()
-      False
+      >>> PurePosixPath('\x00').is_reserved()
+      True
 
    File system calls on reserved paths can fail mysteriously or have
    unintended effects.
 
+   .. seealso::
+      :func:`os.path.isreserved`, which is used to implement this method.
+
    .. versionchanged: 3.12
       Windows path names that contain a colon, or end with a dot or a space,
       are considered reserved. UNC paths may be reserved.
+
+   .. versionchanged: 3.12
+      POSIX path names that contain a NUL character are considered reserved.
 
 
 .. method:: PurePath.joinpath(*other)

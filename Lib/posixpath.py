@@ -218,10 +218,7 @@ def ismount(path):
 
 def isreserved(path):
     """Return true if the pathname is reserved by the system."""
-    # For consistency with ntpath.isreserved(), ensure the argument is
-    # path-like. If it isn't, a TypeError exception is raised.
-    os.fspath(path)
-    return False
+    return 0 in os.fsencode(path)
 
 
 # Expand paths beginning with '~' or '~user'.

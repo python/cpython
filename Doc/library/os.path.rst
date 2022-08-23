@@ -305,7 +305,8 @@ the :mod:`glob` module.)
    as well as DOS device names such as "NUL", "CON", "CONIN$", "CONOUT$",
    "AUX", "PRN", "COM1", and "LPT1".
 
-   On POSIX platforms, this function always returns ``False``.
+   On POSIX platforms, paths that contains NUL characters are reserved; all
+   other paths are unreserved.
 
    .. versionadded:: 3.12
 
