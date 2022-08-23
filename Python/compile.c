@@ -9691,8 +9691,12 @@ cfg_to_instructions(cfg_builder *g)
     if (instructions == NULL) {
         return NULL;
     }
+    int lbl = 1;
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        PyObject *lbl = PyLong_FromUnsignedLongLong((uintptr_t)b);
+        b->b_label = lbl++;
+    }
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+        PyObject *lbl = PyLong_FromLong(b->b_label);
         if (lbl == NULL) {
             goto error;
         }
@@ -9704,14 +9708,9 @@ cfg_to_instructions(cfg_builder *g)
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             struct location loc = instr->i_loc;
-            uintptr_t arg = instr->i_oparg;
-            if (HAS_TARGET(instr->i_opcode)) {
-                /* Use the address of the block as its unique ID (for the label) */
-                arg = (uintptr_t)instr->i_target;
-            }
-
+            int arg = HAS_TARGET(instr->i_opcode) ? instr->i_target->b_label : instr->i_oparg;
             PyObject *inst_tuple = Py_BuildValue(
-                "(iLiiii)", instr->i_opcode, arg,
+                "(iiiiii)", instr->i_opcode, arg,
                 loc.lineno, loc.end_lineno,
                 loc.col_offset, loc.end_col_offset);
             if (inst_tuple == NULL) {
