@@ -123,7 +123,7 @@ list of arenas in case the current memory arena is exhausted and another one is
 needed.
 
 For the best results, Python should be compiled with
-CFLAGS="-fno-omit-frame-pointer -mno-omit-leaf-frame-pointer"` as this allows
+CFLAGS="-fno-omit-frame-pointer -mno-omit-leaf-frame-pointer" as this allows
 profilers to unwind using only the frame pointer and not on DWARF debug
 information (note that as trampilines are dynamically generated there won't be
 any DWARF information available for them).
