@@ -642,6 +642,8 @@ MODULE__TESTBUFFER_FALSE
 MODULE__TESTBUFFER_TRUE
 MODULE__TESTINTERNALCAPI_FALSE
 MODULE__TESTINTERNALCAPI_TRUE
+MODULE__TESTCLINICFUNCTIONALITY_FALSE
+MODULE__TESTCLINICFUNCTIONALITY_TRUE
 MODULE__TESTCAPI_FALSE
 MODULE__TESTCAPI_TRUE
 MODULE__HASHLIB_FALSE
@@ -27625,6 +27627,40 @@ fi
 $as_echo "$py_cv_module__testcapi" >&6; }
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testclinicfunctionality" >&5
+$as_echo_n "checking for stdlib extension module _testclinicfunctionality... " >&6; }
+        if test "$py_cv_module__testclinicfunctionality" != "n/a"; then :
+
+    if test "$TEST_MODULES" = yes; then :
+  if true; then :
+  py_cv_module__testclinicfunctionality=yes
+else
+  py_cv_module__testclinicfunctionality=missing
+fi
+else
+  py_cv_module__testclinicfunctionality=disabled
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__TESTCLINICFUNCTIONALITY_STATE=$py_cv_module__testclinicfunctionality$as_nl"
+  if test "x$py_cv_module__testclinicfunctionality" = xyes; then :
+
+
+
+
+fi
+   if test "$py_cv_module__testclinicfunctionality" = yes; then
+  MODULE__TESTCLINICFUNCTIONALITY_TRUE=
+  MODULE__TESTCLINICFUNCTIONALITY_FALSE='#'
+else
+  MODULE__TESTCLINICFUNCTIONALITY_TRUE='#'
+  MODULE__TESTCLINICFUNCTIONALITY_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__testclinicfunctionality" >&5
+$as_echo "$py_cv_module__testclinicfunctionality" >&6; }
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testinternalcapi" >&5
 $as_echo_n "checking for stdlib extension module _testinternalcapi... " >&6; }
         if test "$py_cv_module__testinternalcapi" != "n/a"; then :
@@ -28342,6 +28378,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTCAPI_TRUE}" && test -z "${MODULE__TESTCAPI_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__TESTCAPI\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TESTCLINICFUNCTIONALITY_TRUE}" && test -z "${MODULE__TESTCLINICFUNCTIONALITY_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TESTCLINICFUNCTIONALITY\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTINTERNALCAPI_TRUE}" && test -z "${MODULE__TESTINTERNALCAPI_FALSE}"; then
