@@ -328,7 +328,7 @@ def isreserved(path):
     # https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file
     path = splitdrive(path)[1]
     path = os.fsdecode(path).replace(altsep, sep)
-    for name in path.split(sep):
+    for name in reversed(path.split(sep)):
         # Trailing dots and spaces are reserved.
         if name.endswith(('.', ' ')) and name not in ('.', '..'):
             return True
