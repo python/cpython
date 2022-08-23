@@ -2008,15 +2008,11 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
 /*[clinic end generated code: output=5783cdeb51874b43 input=b09020e3a17c78c5]*/
 {
     if (strcmp(backend, "perf") == 0) {
-#ifdef _PY_HAVE_PERF_TRAMPOLINE
-        trampoline_state_init init_callback = NULL; 
-        _PyPerfTrampoline_GetCallbacks(&init_callback, NULL, NULL);
-        if (init_callback != _Py_perf_map_get_file) {
-            if ( _PyPerfTrampoline_SetCallbacks(
-                    _Py_perf_map_get_file,
-                    _Py_perf_map_write_entry,
-                    _Py_perf_map_close
-                ) < 0 ) {
+#ifdef PY_HAVE_PERF_TRAMPOLINE
+        _PyPerf_Callbacks cur_cb;
+        _PyPerfTrampoline_GetCallbacks(&cur_cb);
+        if (cur_cb.init_state != _Py_perfmap_callbacks.init_state) {
+            if (_PyPerfTrampoline_SetCallbacks(&_Py_perfmap_callbacks) < 0 ) {
                 PyErr_SetString(PyExc_ValueError, "can't activate perf trampoline");
                 return NULL;
             }
@@ -2063,7 +2059,7 @@ static PyObject *
 sys_is_stack_trampoline_active_impl(PyObject *module)
 /*[clinic end generated code: output=ab2746de0ad9d293 input=061fa5776ac9dd59]*/
 {
-#ifdef _PY_HAVE_PERF_TRAMPOLINE
+#ifdef PY_HAVE_PERF_TRAMPOLINE
     if (_PyIsPerfTrampolineActive()) {
         Py_RETURN_TRUE;
     }
