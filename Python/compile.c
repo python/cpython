@@ -9692,7 +9692,7 @@ cfg_to_instructions(cfg_builder *g)
         return NULL;
     }
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        PyObject *lbl = PyLong_FromLongLong((long long)b);
+        PyObject *lbl = PyLong_FromUnsignedLongLong((uintptr_t)b);
         if (lbl == NULL) {
             goto error;
         }
