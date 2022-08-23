@@ -1997,7 +1997,7 @@ sys_getandroidapilevel_impl(PyObject *module)
 /*[clinic input]
 sys.activate_stack_trampoline
 
-    backend: str = "perf"
+    backend: str
     /
 
 Activate the perf profiler trampoline.
@@ -2005,7 +2005,7 @@ Activate the perf profiler trampoline.
 
 static PyObject *
 sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
-/*[clinic end generated code: output=5783cdeb51874b43 input=58d7244062b933a8]*/
+/*[clinic end generated code: output=5783cdeb51874b43 input=b09020e3a17c78c5]*/
 {
     if (strcmp(backend, "perf") == 0) {
 #ifdef _PY_HAVE_PERF_TRAMPOLINE

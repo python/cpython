@@ -1128,35 +1128,29 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #endif /* defined(ANDROID_API_LEVEL) */
 
 PyDoc_STRVAR(sys_activate_stack_trampoline__doc__,
-"activate_stack_trampoline($module, backend=\'perf\', /)\n"
+"activate_stack_trampoline($module, backend, /)\n"
 "--\n"
 "\n"
 "Activate the perf profiler trampoline.");
 
 #define SYS_ACTIVATE_STACK_TRAMPOLINE_METHODDEF    \
-    {"activate_stack_trampoline", _PyCFunction_CAST(sys_activate_stack_trampoline), METH_FASTCALL, sys_activate_stack_trampoline__doc__},
+    {"activate_stack_trampoline", (PyCFunction)sys_activate_stack_trampoline, METH_O, sys_activate_stack_trampoline__doc__},
 
 static PyObject *
 sys_activate_stack_trampoline_impl(PyObject *module, const char *backend);
 
 static PyObject *
-sys_activate_stack_trampoline(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+sys_activate_stack_trampoline(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    const char *backend = "perf";
+    const char *backend;
 
-    if (!_PyArg_CheckPositional("activate_stack_trampoline", nargs, 0, 1)) {
-        goto exit;
-    }
-    if (nargs < 1) {
-        goto skip_optional;
-    }
-    if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("activate_stack_trampoline", "argument 1", "str", args[0]);
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("activate_stack_trampoline", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t backend_length;
-    backend = PyUnicode_AsUTF8AndSize(args[0], &backend_length);
+    backend = PyUnicode_AsUTF8AndSize(arg, &backend_length);
     if (backend == NULL) {
         goto exit;
     }
@@ -1164,7 +1158,6 @@ sys_activate_stack_trampoline(PyObject *module, PyObject *const *args, Py_ssize_
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-skip_optional:
     return_value = sys_activate_stack_trampoline_impl(module, backend);
 
 exit:
@@ -1250,4 +1243,4 @@ sys_is_stack_trampoline_active(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=9fd2e37197f55a7f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=75d0508065ec2818 input=a9049054013a1b77]*/
