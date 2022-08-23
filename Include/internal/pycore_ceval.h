@@ -76,7 +76,11 @@ extern int _PyPerfTrampoline_SetCallbacks(
     trampoline_state_write write_state,
     trampoline_state_free free_state
 );
-
+extern void _PyPerfTrampoline_GetCallbacks(
+    trampoline_state_init *init_state,
+    trampoline_state_write *write_state,
+    trampoline_state_free *free_state
+);
 extern int _PyPerfTrampoline_Init(int activate);
 extern int _PyPerfTrampoline_Fini(void);
 extern int _PyIsPerfTrampolineActive(void);

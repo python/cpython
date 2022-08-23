@@ -2009,11 +2009,17 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
 {
     if (strcmp(backend, "perf") == 0) {
 #ifdef _PY_HAVE_PERF_TRAMPOLINE
-        if (_PyPerfTrampoline_SetCallbacks(
-                _Py_perf_map_get_file, _Py_perf_map_write_entry, _Py_perf_map_close
-            ) < 0 ) {
-            PyErr_SetString(PyExc_ValueError, "can't activate perf trampoline");
-            return NULL;
+        trampoline_state_init init_callback = NULL; 
+        _PyPerfTrampoline_GetCallbacks(&init_callback, NULL, NULL);
+        if (init_callback != _Py_perf_map_get_file) {
+            if ( _PyPerfTrampoline_SetCallbacks(
+                    _Py_perf_map_get_file,
+                    _Py_perf_map_write_entry,
+                    _Py_perf_map_close
+                ) < 0 ) {
+                PyErr_SetString(PyExc_ValueError, "can't activate perf trampoline");
+                return NULL;
+            }
         }
 #else
         PyErr_SetString(PyExc_ValueError, "perf trampoline not available");
@@ -2021,7 +2027,7 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
 #endif
     }
     else {
-        PyErr_Format(PyExc_ValueError, "unsuported invalid backend: %s", backend);
+        PyErr_Format(PyExc_ValueError, "invalid backend: %s", backend);
         return NULL;
     }
     if (_PyPerfTrampoline_Init(1) < 0) {

@@ -209,7 +209,6 @@ _Py_perf_map_get_file(void)
     if (fd == -1) {
         perf_status = PERF_STATUS_FAILED;
         PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
-        _PyErr_WriteUnraisableMsg("Failed to create perf map file", NULL);
         return NULL;
     }
     perf_map_file = fdopen(fd, "w");
@@ -217,8 +216,6 @@ _Py_perf_map_get_file(void)
         perf_status = PERF_STATUS_FAILED;
         PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
         close(fd);
-        _PyErr_WriteUnraisableMsg("Failed to create perf map file handle",
-                                  NULL);
         return NULL;
     }
     return perf_map_file;
@@ -393,6 +390,25 @@ _PyIsPerfTrampolineActive(void)
     return tstate->interp->eval_frame == py_trampoline_evaluator;
 #endif
     return 0;
+}
+
+void
+_PyPerfTrampoline_GetCallbacks(trampoline_state_init *init_state,
+                               trampoline_state_write *write_state,
+                               trampoline_state_free *free_state)
+{
+#ifdef _PY_HAVE_PERF_TRAMPOLINE
+    if (init_state) {
+        *init_state = trampoline_api.init_state;
+    }
+    if (write_state) {
+        *write_state = trampoline_api.write_state;
+    }
+    if (free_state) {
+        *free_state = trampoline_api.free_state;
+    }
+#endif
+    return;
 }
 
 int

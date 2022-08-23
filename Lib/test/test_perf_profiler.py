@@ -5,7 +5,11 @@ import sysconfig
 import os
 import pathlib
 from test import support
-from test.support.script_helper import make_script
+from test.support.script_helper import (
+    make_script,
+    assert_python_failure,
+    assert_python_ok,
+)
 from test.support.os_helper import temp_dir
 
 
@@ -50,19 +54,25 @@ class TestPerfTrampoline(unittest.TestCase):
 
                 baz()
                 """
-        with subprocess.Popen(
-            [sys.executable, "-Xperf", "-c", code],
-            universal_newlines=True,
-            stderr=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-        ) as process:
-            stdout, stderr = process.communicate()
+        with temp_dir() as script_dir:
+            script = make_script(script_dir, "perftest", code)
+            with subprocess.Popen(
+                [sys.executable, "-Xperf", script],
+                universal_newlines=True,
+                stderr=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+            ) as process:
+                stdout, stderr = process.communicate()
 
-        self.assertEqual(process.returncode, 0)
         self.assertEqual(stderr, "")
         self.assertEqual(stdout, "")
+
         perf_file = pathlib.Path(f"/tmp/perf-{process.pid}.map")
         self.assertTrue(perf_file.exists())
+        perf_file_contents = perf_file.read_text()
+        self.assertIn(f"py::foo:{script}", perf_file_contents)
+        self.assertIn(f"py::bar:{script}", perf_file_contents)
+        self.assertIn(f"py::baz:{script}", perf_file_contents)
 
     def test_trampoline_works_with_forks(self):
         code = """if 1:
@@ -121,6 +131,74 @@ class TestPerfTrampoline(unittest.TestCase):
         self.assertIn(f"py::foo_fork:{script}", child_perf_file_contents)
         self.assertIn(f"py::bar_fork:{script}", child_perf_file_contents)
         self.assertIn(f"py::baz_fork:{script}", child_perf_file_contents)
+
+    def test_sys_api(self):
+        code = """if 1:
+                import sys
+                def foo():
+                    pass
+
+                def spam():
+                    pass
+
+                def bar():
+                    sys.deactivate_stack_trampoline()
+                    foo()
+                    sys.activate_stack_trampoline("perf")
+                    spam()
+
+                def baz():
+                    bar()
+
+                sys.activate_stack_trampoline("perf")
+                baz()
+                """
+        with temp_dir() as script_dir:
+            script = make_script(script_dir, "perftest", code)
+            with subprocess.Popen(
+                [sys.executable, script],
+                universal_newlines=True,
+                stderr=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+            ) as process:
+                stdout, stderr = process.communicate()
+
+        self.assertEqual(stderr, "")
+        self.assertEqual(stdout, "")
+
+        perf_file = pathlib.Path(f"/tmp/perf-{process.pid}.map")
+        self.assertTrue(perf_file.exists())
+        perf_file_contents = perf_file.read_text()
+        self.assertNotIn(f"py::foo:{script}", perf_file_contents)
+        self.assertIn(f"py::spam:{script}", perf_file_contents)
+        self.assertIn(f"py::bar:{script}", perf_file_contents)
+        self.assertIn(f"py::baz:{script}", perf_file_contents)
+
+    def test_sys_api_with_existing_trampoline(self):
+        code = """if 1:
+                import sys
+                sys.activate_stack_trampoline("perf")
+                sys.activate_stack_trampoline("perf")
+                """
+        assert_python_ok("-c", code)
+
+    def test_sys_api_with_invalid_trampoline(self):
+        code = """if 1:
+                import sys
+                sys.activate_stack_trampoline("invalid")
+                """
+        rc, out, err = assert_python_failure("-c", code)
+        self.assertIn("invalid backend: invalid", err.decode())
+
+    def test_sys_api_get_status(self):
+        code = """if 1:
+                import sys
+                sys.activate_stack_trampoline("perf")
+                assert sys.is_stack_trampoline_active() is True
+                sys.deactivate_stack_trampoline()
+                assert sys.is_stack_trampoline_active() is False
+                """
+        assert_python_ok("-c", code)
 
 
 def is_unwinding_reliable():
