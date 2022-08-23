@@ -95,14 +95,15 @@ class _Selector:
         is_dir = path_cls.is_dir
         exists = path_cls.exists
         scandir = path_cls._scandir
+        normcase = path_cls._flavour.normcase
         if not is_dir(parent_path):
             return iter([])
-        return self._select_from(parent_path, is_dir, exists, scandir)
+        return self._select_from(parent_path, is_dir, exists, scandir, normcase)
 
 
 class _TerminatingSelector:
 
-    def _select_from(self, parent_path, is_dir, exists, scandir):
+    def _select_from(self, parent_path, is_dir, exists, scandir, normcase):
         yield parent_path
 
 
@@ -112,11 +113,11 @@ class _PreciseSelector(_Selector):
         self.name = name
         _Selector.__init__(self, child_parts, flavour)
 
-    def _select_from(self, parent_path, is_dir, exists, scandir):
+    def _select_from(self, parent_path, is_dir, exists, scandir, normcase):
         try:
             path = parent_path._make_child_relpath(self.name)
             if (is_dir if self.dironly else exists)(path):
-                for p in self.successor._select_from(path, is_dir, exists, scandir):
+                for p in self.successor._select_from(path, is_dir, exists, scandir, normcase):
                     yield p
         except PermissionError:
             return
@@ -125,11 +126,10 @@ class _PreciseSelector(_Selector):
 class _WildcardSelector(_Selector):
 
     def __init__(self, pat, child_parts, flavour):
-        flags = re.NOFLAG if flavour is posixpath else re.IGNORECASE
-        self.match = re.compile(fnmatch.translate(pat), flags).fullmatch
+        self.match = re.compile(fnmatch.translate(flavour.normcase(pat))).fullmatch
         _Selector.__init__(self, child_parts, flavour)
 
-    def _select_from(self, parent_path, is_dir, exists, scandir):
+    def _select_from(self, parent_path, is_dir, exists, scandir, normcase):
         try:
             # We must close the scandir() object before proceeding to
             # avoid exhausting file descriptors when globbing deep trees.
@@ -148,9 +148,9 @@ class _WildcardSelector(_Selector):
                             raise
                         continue
                 name = entry.name
-                if self.match(name):
+                if self.match(normcase(name)):
                     path = parent_path._make_child_relpath(name)
-                    for p in self.successor._select_from(path, is_dir, exists, scandir):
+                    for p in self.successor._select_from(path, is_dir, exists, scandir, normcase):
                         yield p
         except PermissionError:
             return
@@ -182,13 +182,13 @@ class _RecursiveWildcardSelector(_Selector):
         except PermissionError:
             return
 
-    def _select_from(self, parent_path, is_dir, exists, scandir):
+    def _select_from(self, parent_path, is_dir, exists, scandir, normcase):
         try:
             yielded = set()
             try:
                 successor_select = self.successor._select_from
                 for starting_point in self._iterate_directories(parent_path, is_dir, scandir):
-                    for p in successor_select(starting_point, is_dir, exists, scandir):
+                    for p in successor_select(starting_point, is_dir, exists, scandir, normcase):
                         if p not in yielded:
                             yield p
                             yielded.add(p)
