@@ -2072,6 +2072,11 @@ class TestBreakpoint(unittest.TestCase):
             breakpoint()
             mock.assert_not_called()
 
+    def test_runtime_error_when_hook_is_lost(self):
+        del sys.breakpointhook
+        with self.assertRaises(RuntimeError):
+            breakpoint()
+
 
 @unittest.skipUnless(pty, "the pty and signal modules must be available")
 class PtyTests(unittest.TestCase):
