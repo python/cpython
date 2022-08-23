@@ -882,7 +882,7 @@ in an :c:type:`int`.  The C compilers for most 64-bit platforms still define
 :c:type:`int` as a 32-bit type, so that meant that lists could only hold up to
 ``2**31 - 1`` = 2147483647 items. (There are actually a few different
 programming models that 64-bit C compilers can use -- see
-http://www.unix.org/version2/whatsnew/lp64_wp.html for a discussion -- but the
+https://unix.org/version2/whatsnew/lp64_wp.html for a discussion -- but the
 most commonly available model leaves :c:type:`int` as 32 bits.)
 
 A limit of 2147483647 items doesn't really matter on a 32-bit platform because
@@ -1930,7 +1930,7 @@ with the same digest state.
 The sqlite3 package
 -------------------
 
-The pysqlite module (http://www.pysqlite.org), a wrapper for the SQLite embedded
+The pysqlite module (https://www.pysqlite.org), a wrapper for the SQLite embedded
 database, has been added to the standard library under the package name
 :mod:`sqlite3`.
 
@@ -2019,7 +2019,7 @@ https://www.sqlite.org.
 
 .. seealso::
 
-   http://www.pysqlite.org
+   https://www.pysqlite.org
       The pysqlite web page.
 
    https://www.sqlite.org
