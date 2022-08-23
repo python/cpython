@@ -219,13 +219,13 @@ def ismount(path):
 def isreserved(path):
     """Return true if the pathname is reserved by the system."""
     path = os.fsencode(path)
-    return 0x00 in path
+    return b'\0' in path
 
 
 def isreservedname(name):
     """Return true if the filename is reserved by the system."""
     name = os.fsencode(name)
-    return 0x00 in name or 0x2f in name
+    return b'\0' in name or b'/' in name
 
 
 # Expand paths beginning with '~' or '~user'.
