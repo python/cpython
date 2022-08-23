@@ -326,13 +326,11 @@ def isreserved(path):
     """Return true if the pathname is reserved by the system."""
     # Refer to "Naming Files, Paths, and Namespaces":
     # https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file
-    path = os.fsdecode(splitdrive(path)[1]).rstrip(r'\/')
-    while True:
-        path, name = split(path)
-        if not name:
-            return False
+    path = splitdrive(path)[1]
+    path = os.fsdecode(path).replace(altsep, sep)
+    for name in path.split(sep):
         # Trailing dots and spaces are reserved.
-        elif name.endswith(('.', ' ')) and name not in ('.', '..'):
+        if name.endswith(('.', ' ')) and name not in ('.', '..'):
             return True
         # The wildcard characters, colon, and pipe (*?"<>:|) are reserved.
         # Colon is reserved for file streams (e.g. "name:stream[:type]").
@@ -343,6 +341,7 @@ def isreserved(path):
         # caution, return True for names that may not be reserved.
         elif name.partition('.')[0].rstrip(' ').upper() in _reserved_names:
             return True
+    return False
 
 
 # Expand paths beginning with '~' or '~user'.
