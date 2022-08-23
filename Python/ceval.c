@@ -238,14 +238,6 @@ is_tstate_valid(PyThreadState *tstate)
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
 #endif
-void _Py_NO_RETURN
-_Py_FatalError_TstateNULL(const char *func)
-{
-    _Py_FatalErrorFunc(func,
-        "the function must be called with the GIL held, "
-        "after Python initialization and before Python finalization, "
-        "but the GIL is released (the current Python thread state is NULL)");
-}
 
 int
 Py_GetRecursionLimit(void)
