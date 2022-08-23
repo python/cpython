@@ -79,16 +79,16 @@ class MinidomTest(unittest.TestCase):
 
     def testAttrModeSetsParamsAsAttrs(self):
         attr = Attr("qName", "namespaceURI", "localName", "prefix")
-        self.assertEqual(attr._name, "qName")
+        self.assertEqual(attr.name, "qName")
         self.assertEqual(attr.namespaceURI, "namespaceURI")
-        self.assertEqual(attr._prefix, "prefix")
-        self.assertEqual(attr._localName, "localName")
+        self.assertEqual(attr.prefix, "prefix")
+        self.assertEqual(attr.localName, "localName")
 
     def testAttrModeSetsNonOptionalAttrs(self):
         attr = Attr("qName", "namespaceURI", None, "prefix")
-        self.assertEqual(attr._name, "qName")
+        self.assertEqual(attr.name, "qName")
         self.assertEqual(attr.namespaceURI, "namespaceURI")
-        self.assertEqual(attr._prefix, "prefix")
+        self.assertEqual(attr.prefix, "prefix")
         self.assertFalse(hasattr(attr, "_localName"))
 
     def testGetElementsByTagName(self):
