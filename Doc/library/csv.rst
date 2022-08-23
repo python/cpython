@@ -275,6 +275,8 @@ The :mod:`csv` module defines the following classes:
       reflecting the parameters found.  If the optional *delimiters* parameter
       is given, it is interpreted as a string containing possible valid
       delimiter characters.
+      If not excluded by the *delimiters* parameter, and if there is ambiguity,
+      then delimiter choice will be bias towards ``[',', '\t', ';', ' ', ':']``.
 
 
    .. method:: has_header(sample)
