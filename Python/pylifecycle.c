@@ -788,6 +788,9 @@ pycore_init_builtins(PyThreadState *tstate)
     assert(list_append);
     interp->callable_cache.list_append = list_append;
     interp->callable_cache.init_cleanup = NULL;
+    PyObject *object__getattribute__ = _PyType_Lookup(&PyBaseObject_Type, &_Py_ID(__getattribute__));
+    assert(object__getattribute__);
+    interp->callable_cache.object__getattribute__ = object__getattribute__;
 
     if (_PyBuiltins_AddExceptions(bimod) < 0) {
         return _PyStatus_ERR("failed to add exceptions to builtins");
@@ -1673,8 +1676,9 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyLong_FiniTypes(interp);
     _PyThread_FiniType(interp);
     _PyErr_FiniTypes(interp);
-    _PyTypes_Fini(interp);
     _PyTypes_FiniTypes(interp);
+
+    _PyTypes_Fini(interp);
 
     // Call _PyUnicode_ClearInterned() before _PyDict_Fini() since it uses
     // a dict internally.
@@ -1688,6 +1692,9 @@ finalize_interp_types(PyInterpreterState *interp)
 
     _PyUnicode_Fini(interp);
     _PyFloat_Fini(interp);
+#ifdef Py_DEBUG
+    _PyStaticObjects_CheckRefcnt();
+#endif
 }
 
 

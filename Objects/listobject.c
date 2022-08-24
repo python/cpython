@@ -551,47 +551,41 @@ list_concat(PyListObject *a, PyObject *bb)
 static PyObject *
 list_repeat(PyListObject *a, Py_ssize_t n)
 {
-    Py_ssize_t size;
-    PyListObject *np;
-    if (n < 0)
-        n = 0;
-    if (n > 0 && Py_SIZE(a) > PY_SSIZE_T_MAX / n)
-        return PyErr_NoMemory();
-    size = Py_SIZE(a) * n;
-    if (size == 0)
+    const Py_ssize_t input_size = Py_SIZE(a);
+    if (input_size == 0 || n <= 0)
         return PyList_New(0);
-    np = (PyListObject *) list_new_prealloc(size);
+    assert(n > 0);
+
+    if (input_size > PY_SSIZE_T_MAX / n)
+        return PyErr_NoMemory();
+    Py_ssize_t output_size = input_size * n;
+
+    PyListObject *np = (PyListObject *) list_new_prealloc(output_size);
     if (np == NULL)
         return NULL;
+
     PyObject **dest = np->ob_item;
-    PyObject **dest_end = dest + size;
-    if (Py_SIZE(a) == 1) {
+    if (input_size == 1) {
         PyObject *elem = a->ob_item[0];
-        Py_SET_REFCNT(elem, Py_REFCNT(elem) + n);
-#ifdef Py_REF_DEBUG
-        _Py_RefTotal += n;
-#endif
+        _Py_RefcntAdd(elem, n);
+        PyObject **dest_end = dest + output_size;
         while (dest < dest_end) {
             *dest++ = elem;
         }
     }
     else {
         PyObject **src = a->ob_item;
-        PyObject **src_end = src + Py_SIZE(a);
+        PyObject **src_end = src + input_size;
         while (src < src_end) {
-            Py_SET_REFCNT(*src, Py_REFCNT(*src) + n);
-#ifdef Py_REF_DEBUG
-            _Py_RefTotal += n;
-#endif
+            _Py_RefcntAdd(*src, n);
             *dest++ = *src++;
         }
-        // Now src chases after dest in the same buffer
-        src = np->ob_item;
-        while (dest < dest_end) {
-            *dest++ = *src++;
-        }
+
+        _Py_memory_repeat((char *)np->ob_item, sizeof(PyObject *)*output_size,
+                                        sizeof(PyObject *)*input_size);
     }
-    Py_SET_SIZE(np, size);
+
+    Py_SET_SIZE(np, output_size);
     return (PyObject *) np;
 }
 
@@ -743,12 +737,8 @@ PyList_SetSlice(PyObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
 static PyObject *
 list_inplace_repeat(PyListObject *self, Py_ssize_t n)
 {
-    PyObject **items;
-    Py_ssize_t size, i, j, p;
-
-
-    size = PyList_GET_SIZE(self);
-    if (size == 0 || n == 1) {
+    Py_ssize_t input_size = PyList_GET_SIZE(self);
+    if (input_size == 0 || n == 1) {
         Py_INCREF(self);
         return (PyObject *)self;
     }
@@ -759,22 +749,21 @@ list_inplace_repeat(PyListObject *self, Py_ssize_t n)
         return (PyObject *)self;
     }
 
-    if (size > PY_SSIZE_T_MAX / n) {
+    if (input_size > PY_SSIZE_T_MAX / n) {
         return PyErr_NoMemory();
     }
+    Py_ssize_t output_size = input_size * n;
 
-    if (list_resize(self, size*n) < 0)
+    if (list_resize(self, output_size) < 0)
         return NULL;
 
-    p = size;
-    items = self->ob_item;
-    for (i = 1; i < n; i++) { /* Start counting at 1, not 0 */
-        for (j = 0; j < size; j++) {
-            PyObject *o = items[j];
-            Py_INCREF(o);
-            items[p++] = o;
-        }
+    PyObject **items = self->ob_item;
+    for (Py_ssize_t j = 0; j < input_size; j++) {
+        _Py_RefcntAdd(items[j], n-1);
     }
+    _Py_memory_repeat((char *)items, sizeof(PyObject *)*output_size,
+                      sizeof(PyObject *)*input_size);
+
     Py_INCREF(self);
     return (PyObject *)self;
 }

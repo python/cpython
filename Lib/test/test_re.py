@@ -1,6 +1,7 @@
 from test.support import (gc_collect, bigmemtest, _2G,
                           cpython_only, captured_stdout,
-                          check_disallow_instantiation, is_emscripten, is_wasi)
+                          check_disallow_instantiation, is_emscripten, is_wasi,
+                          SHORT_TIMEOUT)
 import locale
 import re
 import string
@@ -10,6 +11,14 @@ import unittest
 import warnings
 from re import Scanner
 from weakref import proxy
+
+# some platforms lack working multiprocessing
+try:
+    import _multiprocessing
+except ImportError:
+    multiprocessing = None
+else:
+    import multiprocessing
 
 # Misc tests from Tim Peters' re.doc
 
@@ -2406,6 +2415,26 @@ class ReTests(unittest.TestCase):
         self.assertEqual(template_re1, template_re2)
         self.assertTrue(template_re1.match('ahoy'))
         self.assertFalse(template_re1.match('nope'))
+
+    @unittest.skipIf(multiprocessing is None, 'test requires multiprocessing')
+    def test_regression_gh94675(self):
+        pattern = re.compile(r'(?<=[({}])(((//[^\n]*)?[\n])([\000-\040])*)*'
+                             r'((/[^/\[\n]*(([^\n]|(\[\n]*(]*)*\]))'
+                             r'[^/\[]*)*/))((((//[^\n]*)?[\n])'
+                             r'([\000-\040]|(/\*[^*]*\*+'
+                             r'([^/*]\*+)*/))*)+(?=[^\000-\040);\]}]))')
+        input_js = '''a(function() {
+            ///////////////////////////////////////////////////////////////////
+        });'''
+        p = multiprocessing.Process(target=pattern.sub, args=('', input_js))
+        p.start()
+        p.join(SHORT_TIMEOUT)
+        try:
+            self.assertFalse(p.is_alive(), 'pattern.sub() timed out')
+        finally:
+            if p.is_alive():
+                p.terminate()
+                p.join()
 
 
 def get_debug_out(pat):

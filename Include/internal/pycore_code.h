@@ -118,6 +118,7 @@ struct callable_cache {
     PyObject *isinstance;
     PyObject *len;
     PyObject *list_append;
+    PyObject *object__getattribute__;
     /* This is a strong reference */
     PyFunctionObject *init_cleanup;
 };
