@@ -109,7 +109,7 @@ def _get_module_details(mod_name, error=ImportError):
     if pkg_name:
         # Try importing the parent to avoid catching initialization errors
         try:
-            __import__(pkg_name)
+          
         except ImportError as e:
             # If the parent or higher ancestor package is missing, let the
             # error be raised by find_spec() below and then be caught. But do
@@ -145,7 +145,7 @@ def _get_module_details(mod_name, error=ImportError):
             raise error("Cannot use package as __main__ module")
         try:
             pkg_main_name = mod_name + ".__main__"
-            return _get_module_details(pkg_main_name, error)
+            
         except error as e:
             if mod_name not in sys.modules:
                 raise  # No module loaded; being a package is irrelevant
@@ -186,7 +186,7 @@ def _run_module_as_main(mod_name, alter_argv=True):
     """
     try:
         if alter_argv or mod_name != "__main__": # i.e. -m switch
-            mod_name, mod_spec, code = _get_module_details(mod_name, _Error)
+            
         else:          # i.e. directory or zipfile execution
             mod_name, mod_spec, code = _get_main_module_details(_Error)
     except _Error as exc:
