@@ -45,6 +45,16 @@ will print to standard output ::
    [1, 4, 9]
 
 
+.. seealso::
+
+   :class:`concurrent.futures.ProcessPoolExecutor` offers a higher level interface
+   to push tasks to a background process without blocking execution of the
+   calling process. Compared to using the :class:`~multiprocessing.pool.Pool`
+   interface directly, the :mod:`concurrent.futures` API more readily allows
+   the submission of work to the underlying process pool to be separated from
+   waiting for the results.
+
+
 The :class:`Process` class
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -191,16 +191,6 @@ extern "C" {
 #  define OVERALLOCATE_FACTOR 4
 #endif
 
-/* This dictionary holds all interned unicode strings.  Note that references
-   to strings in this dictionary are *not* counted in the string's ob_refcnt.
-   When the interned string reaches a refcnt of 0 the string deallocation
-   function will delete the reference from this dictionary.
-
-   Another way to look at this is that to say that the actual reference
-   count of a string is:  s->ob_refcnt + (s->state ? 2 : 0)
-*/
-static PyObject *interned = NULL;
-
 /* Forward declaration */
 static inline int
 _PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch);
@@ -233,6 +223,23 @@ static inline PyObject* unicode_new_empty(void)
     PyObject *empty = unicode_get_empty();
     Py_INCREF(empty);
     return empty;
+}
+
+/* This dictionary holds all interned unicode strings.  Note that references
+   to strings in this dictionary are *not* counted in the string's ob_refcnt.
+   When the interned string reaches a refcnt of 0 the string deallocation
+   function will delete the reference from this dictionary.
+   Another way to look at this is that to say that the actual reference
+   count of a string is:  s->ob_refcnt + (s->state ? 2 : 0)
+*/
+static inline PyObject *get_interned_dict(void)
+{
+    return _PyRuntime.global_objects.interned;
+}
+
+static inline void set_interned_dict(PyObject *dict)
+{
+    _PyRuntime.global_objects.interned = dict;
 }
 
 #define _Py_RETURN_UNICODE_EMPTY()   \
@@ -1523,7 +1530,7 @@ unicode_dealloc(PyObject *unicode)
         _Py_FatalRefcountError("deallocating an Unicode singleton");
     }
 #endif
-
+    PyObject *interned = get_interned_dict();
     if (PyUnicode_CHECK_INTERNED(unicode)) {
         /* Revive the dead object temporarily. PyDict_DelItem() removes two
            references (key and value) which were ignored by
@@ -14657,12 +14664,14 @@ PyUnicode_InternInPlace(PyObject **p)
         return;
     }
 
+    PyObject *interned = get_interned_dict();
     if (interned == NULL) {
         interned = PyDict_New();
         if (interned == NULL) {
             PyErr_Clear(); /* Don't leave an exception */
             return;
         }
+        set_interned_dict(interned);
     }
 
     PyObject *t = PyDict_SetDefault(interned, s, s);
@@ -14713,6 +14722,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
         return;
     }
 
+    PyObject *interned = get_interned_dict();
     if (interned == NULL) {
         return;
     }
@@ -14748,7 +14758,8 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
 #endif
 
     PyDict_Clear(interned);
-    Py_CLEAR(interned);
+    Py_DECREF(interned);
+    set_interned_dict(NULL);
 }
 
 
@@ -15155,7 +15166,7 @@ _PyUnicode_EnableLegacyWindowsFSEncoding(void)
 static inline int
 unicode_is_finalizing(void)
 {
-    return (interned == NULL);
+    return (get_interned_dict() == NULL);
 }
 #endif
 
@@ -15197,7 +15208,7 @@ _PyUnicode_Fini(PyInterpreterState *interp)
 
     if (_Py_IsMainInterpreter(interp)) {
         // _PyUnicode_ClearInterned() must be called before _PyUnicode_Fini()
-        assert(interned == NULL);
+        assert(get_interned_dict() == NULL);
         // bpo-47182: force a unicodedata CAPI capsule re-import on
         // subsequent initialization of main interpreter.
         ucnhash_capi = NULL;
