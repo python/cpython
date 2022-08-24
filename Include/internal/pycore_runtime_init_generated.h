@@ -807,6 +807,7 @@ extern "C" {
                 INIT_ID(code), \
                 INIT_ID(command), \
                 INIT_ID(comment_factory), \
+                INIT_ID(consts), \
                 INIT_ID(context), \
                 INIT_ID(cookie), \
                 INIT_ID(copy), \
@@ -916,6 +917,7 @@ extern "C" {
                 INIT_ID(input), \
                 INIT_ID(insert_comments), \
                 INIT_ID(insert_pis), \
+                INIT_ID(instructions), \
                 INIT_ID(intern), \
                 INIT_ID(intersection), \
                 INIT_ID(isatty), \
@@ -1916,6 +1918,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(comment_factory);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(consts);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(context);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(cookie);
@@ -2133,6 +2137,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(insert_comments);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(insert_pis);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(instructions);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(intern);
     PyUnicode_InternInPlace(&string);
@@ -5755,6 +5761,10 @@ _PyStaticObjects_CheckRefcnt(void) {
         _PyObject_Dump((PyObject *)&_Py_ID(comment_factory));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
+    if (Py_REFCNT((PyObject *)&_Py_ID(consts)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(consts));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
     if (Py_REFCNT((PyObject *)&_Py_ID(context)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(context));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
@@ -6189,6 +6199,10 @@ _PyStaticObjects_CheckRefcnt(void) {
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(insert_pis)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(insert_pis));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(instructions)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(instructions));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(intern)) < _PyObject_IMMORTAL_REFCNT) {

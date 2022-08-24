@@ -457,6 +457,7 @@ typedef struct {
 
 static int basicblock_next_instr(basicblock *);
 
+static basicblock *cfg_builder_new_block(cfg_builder *g);
 static int cfg_builder_maybe_start_new_block(cfg_builder *g);
 static int cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, struct location loc);
 
@@ -767,8 +768,20 @@ cfg_builder_check(cfg_builder *g)
     }
 }
 
+static int
+cfg_builder_init(cfg_builder *g)
+{
+    g->g_block_list = NULL;
+    basicblock *block = cfg_builder_new_block(g);
+    if (block == NULL)
+        return 0;
+    g->g_curblock = g->g_entryblock = block;
+    g->g_current_label = NO_LABEL;
+    return 1;
+}
+
 static void
-cfg_builder_free(cfg_builder* g)
+cfg_builder_fini(cfg_builder* g)
 {
     cfg_builder_check(g);
     basicblock *b = g->g_block_list;
@@ -785,7 +798,7 @@ cfg_builder_free(cfg_builder* g)
 static void
 compiler_unit_free(struct compiler_unit *u)
 {
-    cfg_builder_free(&u->u_cfg_builder);
+    cfg_builder_fini(&u->u_cfg_builder);
     Py_CLEAR(u->u_ste);
     Py_CLEAR(u->u_name);
     Py_CLEAR(u->u_qualname);
@@ -1708,7 +1721,6 @@ compiler_enter_scope(struct compiler *c, identifier name,
                      int scope_type, void *key, int lineno)
 {
     struct compiler_unit *u;
-    basicblock *block;
 
     u = (struct compiler_unit *)PyObject_Calloc(1, sizeof(
                                             struct compiler_unit));
@@ -1786,12 +1798,9 @@ compiler_enter_scope(struct compiler *c, identifier name,
     c->c_nestlevel++;
 
     cfg_builder *g = CFG_BUILDER(c);
-    g->g_block_list = NULL;
-    block = cfg_builder_new_block(g);
-    if (block == NULL)
+    if (!cfg_builder_init(g)) {
         return 0;
-    g->g_curblock = g->g_entryblock = block;
-    g->g_current_label = NO_LABEL;
+    }
 
     if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
         c->u->u_loc.lineno = 0;
@@ -8220,7 +8229,7 @@ dump_instr(struct instr *i)
         sprintf(arg, "arg: %d ", i->i_oparg);
     }
     if (HAS_TARGET(i->i_opcode)) {
-        sprintf(arg, "target: %p ", i->i_target);
+        sprintf(arg, "target: %p [%d] ", i->i_target, i->i_oparg);
     }
     fprintf(stderr, "line: %d, opcode: %d %s%s%s\n",
                     i->i_loc.lineno, i->i_opcode, arg, jabs, jrel);
@@ -8251,7 +8260,7 @@ static int
 calculate_jump_targets(basicblock *entryblock);
 
 static int
-optimize_cfg(basicblock *entryblock, PyObject *consts, PyObject *const_cache);
+optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache);
 
 static int
 trim_unused_consts(basicblock *entryblock, PyObject *consts);
@@ -8465,18 +8474,18 @@ static void
 propagate_line_numbers(basicblock *entryblock);
 
 static void
-eliminate_empty_basic_blocks(basicblock *entryblock);
+eliminate_empty_basic_blocks(cfg_builder *g);
 
 
 static int
-remove_redundant_jumps(basicblock *entryblock) {
+remove_redundant_jumps(cfg_builder *g) {
     /* If a non-empty block ends with a jump instruction, check if the next
      * non-empty block reached through normal flow control is the target
      * of that jump. If it is, then the jump instruction is redundant and
      * can be deleted.
      */
     int removed = 0;
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         if (b->b_iused > 0) {
             struct instr *b_last_instr = &b->b_instr[b->b_iused - 1];
             assert(!IS_ASSEMBLER_OPCODE(b_last_instr->i_opcode));
@@ -8495,7 +8504,7 @@ remove_redundant_jumps(basicblock *entryblock) {
         }
     }
     if (removed) {
-        eliminate_empty_basic_blocks(entryblock);
+        eliminate_empty_basic_blocks(g);
     }
     return 0;
 }
@@ -8545,13 +8554,12 @@ assemble(struct compiler *c, int addNone)
     }
 
     cfg_builder *g = CFG_BUILDER(c);
-    basicblock *entryblock = g->g_entryblock;
-    assert(entryblock != NULL);
+    assert(g->g_entryblock != NULL);
 
     /* Set firstlineno if it wasn't explicitly set. */
     if (!c->u->u_firstlineno) {
-        if (entryblock->b_instr && entryblock->b_instr->i_loc.lineno) {
-            c->u->u_firstlineno = entryblock->b_instr->i_loc.lineno;
+        if (g->g_entryblock->b_instr && g->g_entryblock->b_instr->i_loc.lineno) {
+            c->u->u_firstlineno = g->g_entryblock->b_instr->i_loc.lineno;
         }
         else {
             c->u->u_firstlineno = 1;
@@ -8559,11 +8567,11 @@ assemble(struct compiler *c, int addNone)
     }
 
     // This must be called before fix_cell_offsets().
-    if (insert_prefix_instructions(c, entryblock, cellfixedoffsets, nfreevars, code_flags)) {
+    if (insert_prefix_instructions(c, g->g_entryblock, cellfixedoffsets, nfreevars, code_flags)) {
         goto error;
     }
 
-    int numdropped = fix_cell_offsets(c, entryblock, cellfixedoffsets);
+    int numdropped = fix_cell_offsets(c, g->g_entryblock, cellfixedoffsets);
     PyMem_Free(cellfixedoffsets);  // At this point we're done with it.
     cellfixedoffsets = NULL;
     if (numdropped < 0) {
@@ -8575,52 +8583,52 @@ assemble(struct compiler *c, int addNone)
     if (consts == NULL) {
         goto error;
     }
-    if (calculate_jump_targets(entryblock)) {
+    if (calculate_jump_targets(g->g_entryblock)) {
         goto error;
     }
-    if (optimize_cfg(entryblock, consts, c->c_const_cache)) {
+    if (optimize_cfg(g, consts, c->c_const_cache)) {
         goto error;
     }
-    if (trim_unused_consts(entryblock, consts)) {
+    if (trim_unused_consts(g->g_entryblock, consts)) {
         goto error;
     }
     if (duplicate_exits_without_lineno(g)) {
         return NULL;
     }
-    propagate_line_numbers(entryblock);
-    guarantee_lineno_for_exits(entryblock, c->u->u_firstlineno);
+    propagate_line_numbers(g->g_entryblock);
+    guarantee_lineno_for_exits(g->g_entryblock, c->u->u_firstlineno);
 
-    int maxdepth = stackdepth(entryblock, code_flags);
+    int maxdepth = stackdepth(g->g_entryblock, code_flags);
     if (maxdepth < 0) {
         goto error;
     }
     /* TO DO -- For 3.12, make sure that `maxdepth <= MAX_ALLOWED_STACK_USE` */
 
-    if (label_exception_targets(entryblock)) {
+    if (label_exception_targets(g->g_entryblock)) {
         goto error;
     }
-    convert_exception_handlers_to_nops(entryblock);
+    convert_exception_handlers_to_nops(g->g_entryblock);
 
     if (push_cold_blocks_to_end(g, code_flags) < 0) {
         goto error;
     }
 
-    if (remove_redundant_jumps(entryblock) < 0) {
+    if (remove_redundant_jumps(g) < 0) {
         goto error;
     }
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         clean_basic_block(b);
     }
 
     /* Order of basic blocks must have been determined by now */
-    normalize_jumps(entryblock);
+    normalize_jumps(g->g_entryblock);
 
-    if (add_checks_for_loads_of_unknown_variables(entryblock, c) < 0) {
+    if (add_checks_for_loads_of_unknown_variables(g->g_entryblock, c) < 0) {
         goto error;
     }
 
     /* Can't modify the bytecode after computing jump offsets. */
-    assemble_jump_offsets(entryblock);
+    assemble_jump_offsets(g->g_entryblock);
 
 
     /* Create assembler */
@@ -8628,7 +8636,7 @@ assemble(struct compiler *c, int addNone)
         goto error;
 
     /* Emit code. */
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         for (int j = 0; j < b->b_iused; j++)
             if (!assemble_emit(&a, &b->b_instr[j]))
                 goto error;
@@ -8636,13 +8644,13 @@ assemble(struct compiler *c, int addNone)
 
     /* Emit location info */
     a.a_lineno = c->u->u_firstlineno;
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         for (int j = 0; j < b->b_iused; j++)
             if (!assemble_emit_location(&a, &b->b_instr[j]))
                 goto error;
     }
 
-    if (!assemble_exception_table(&a, entryblock)) {
+    if (!assemble_exception_table(&a, g->g_entryblock)) {
         goto error;
     }
     if (_PyBytes_Resize(&a.a_except_table, a.a_except_table_off) < 0) {
@@ -9352,16 +9360,19 @@ mark_reachable(basicblock *entryblock) {
 }
 
 static void
-eliminate_empty_basic_blocks(basicblock *entryblock) {
+eliminate_empty_basic_blocks(cfg_builder *g) {
     /* Eliminate empty blocks */
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         basicblock *next = b->b_next;
         while (next && next->b_iused == 0) {
             next = next->b_next;
         }
         b->b_next = next;
     }
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+    while(g->g_entryblock && g->g_entryblock->b_iused == 0) {
+        g->g_entryblock = g->g_entryblock->b_next;
+    }
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         assert(b->b_iused > 0);
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
@@ -9467,42 +9478,42 @@ calculate_jump_targets(basicblock *entryblock)
 */
 
 static int
-optimize_cfg(basicblock *entryblock, PyObject *consts, PyObject *const_cache)
+optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
 {
     assert(PyDict_CheckExact(const_cache));
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         if (normalize_basic_block(b)) {
             return -1;
         }
     }
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         if (extend_block(b)) {
             return -1;
         }
     }
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         if (optimize_basic_block(const_cache, b, consts)) {
             return -1;
         }
         clean_basic_block(b);
         assert(b->b_predecessors == 0);
     }
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         if (extend_block(b)) {
             return -1;
         }
     }
-    if (mark_reachable(entryblock)) {
+    if (mark_reachable(g->g_entryblock)) {
         return -1;
     }
     /* Delete unreachable instructions */
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
        if (b->b_predecessors == 0) {
             b->b_iused = 0;
        }
     }
-    eliminate_empty_basic_blocks(entryblock);
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+    eliminate_empty_basic_blocks(g);
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         clean_basic_block(b);
     }
     return 0;
@@ -9598,6 +9609,157 @@ duplicate_exits_without_lineno(cfg_builder *g)
         }
     }
     return 0;
+}
+
+
+/* Access to compiler optimizations for unit tests.
+ *
+ * _PyCompile_OptimizeCfg takes an instruction list, constructs
+ * a CFG, optimizes it and converts back to an instruction list.
+ *
+ * An instruction list is a PyList where each item is either
+ * a tuple describing a single instruction:
+ * (opcode, oparg, lineno, end_lineno, col, end_col), or
+ * a jump target label marking the beginning of a basic block.
+ */
+
+static int
+instructions_to_cfg(PyObject *instructions, cfg_builder *g)
+{
+    assert(PyList_Check(instructions));
+
+    Py_ssize_t instr_size = PyList_GET_SIZE(instructions);
+    for (Py_ssize_t i = 0; i < instr_size; i++) {
+        PyObject *item = PyList_GET_ITEM(instructions, i);
+        if (PyLong_Check(item)) {
+            int lbl_id = PyLong_AsLong(item);
+            if (PyErr_Occurred()) {
+                return -1;
+            }
+            if (lbl_id <= 0 || lbl_id > instr_size) {
+                /* expect label in a reasonable range */
+                PyErr_SetString(PyExc_ValueError, "label out of range");
+                return -1;
+            }
+            jump_target_label lbl = {lbl_id};
+            if (cfg_builder_use_label(g, lbl) < 0) {
+                return -1;
+            }
+        }
+        else {
+            if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 6) {
+                PyErr_SetString(PyExc_ValueError, "expected a 6-tuple");
+                return -1;
+            }
+            int opcode = PyLong_AsLong(PyTuple_GET_ITEM(item, 0));
+            if (PyErr_Occurred()) {
+                return -1;
+            }
+            int oparg = PyLong_AsLong(PyTuple_GET_ITEM(item, 1));
+            if (PyErr_Occurred()) {
+                return -1;
+            }
+            struct location loc;
+            loc.lineno = PyLong_AsLong(PyTuple_GET_ITEM(item, 2));
+            if (PyErr_Occurred()) {
+                return -1;
+            }
+            loc.end_lineno = PyLong_AsLong(PyTuple_GET_ITEM(item, 3));
+            if (PyErr_Occurred()) {
+                return -1;
+            }
+            loc.col_offset = PyLong_AsLong(PyTuple_GET_ITEM(item, 4));
+            if (PyErr_Occurred()) {
+                return -1;
+            }
+            loc.end_col_offset = PyLong_AsLong(PyTuple_GET_ITEM(item, 5));
+            if (PyErr_Occurred()) {
+                return -1;
+            }
+            if (!cfg_builder_addop(g, opcode, oparg, loc)) {
+                return -1;
+            }
+        }
+    }
+    return 0;
+}
+
+static PyObject *
+cfg_to_instructions(cfg_builder *g)
+{
+    PyObject *instructions = PyList_New(0);
+    if (instructions == NULL) {
+        return NULL;
+    }
+    int lbl = 1;
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+        b->b_label = lbl++;
+    }
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+        PyObject *lbl = PyLong_FromLong(b->b_label);
+        if (lbl == NULL) {
+            goto error;
+        }
+        if (PyList_Append(instructions, lbl) != 0) {
+            Py_DECREF(lbl);
+            goto error;
+        }
+        Py_DECREF(lbl);
+        for (int i = 0; i < b->b_iused; i++) {
+            struct instr *instr = &b->b_instr[i];
+            struct location loc = instr->i_loc;
+            int arg = HAS_TARGET(instr->i_opcode) ? instr->i_target->b_label : instr->i_oparg;
+            PyObject *inst_tuple = Py_BuildValue(
+                "(iiiiii)", instr->i_opcode, arg,
+                loc.lineno, loc.end_lineno,
+                loc.col_offset, loc.end_col_offset);
+            if (inst_tuple == NULL) {
+                goto error;
+            }
+
+            if (PyList_Append(instructions, inst_tuple) != 0) {
+                Py_DECREF(inst_tuple);
+                goto error;
+            }
+            Py_DECREF(inst_tuple);
+        }
+    }
+
+    return instructions;
+error:
+    Py_DECREF(instructions);
+    return NULL;
+}
+
+
+PyObject *
+_PyCompile_OptimizeCfg(PyObject *instructions, PyObject *consts)
+{
+    PyObject *res = NULL;
+    PyObject *const_cache = NULL;
+    cfg_builder g;
+    memset(&g, 0, sizeof(cfg_builder));
+    if (cfg_builder_init(&g) < 0) {
+        goto error;
+    }
+    if (instructions_to_cfg(instructions, &g) < 0) {
+        goto error;
+    }
+    const_cache = PyDict_New();
+    if (const_cache == NULL) {
+        goto error;
+    }
+    if (calculate_jump_targets(g.g_entryblock)) {
+        goto error;
+    }
+    if (optimize_cfg(&g, consts, const_cache) < 0) {
+        goto error;
+    }
+    res = cfg_to_instructions(&g);
+error:
+    Py_XDECREF(const_cache);
+    cfg_builder_fini(&g);
+    return res;
 }
 
 
