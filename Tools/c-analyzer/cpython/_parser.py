@@ -174,7 +174,6 @@ Objects/stringlib/codecs.h	Py_BUILD_CORE	1
 Objects/stringlib/unicode_format.h	Py_BUILD_CORE	1
 Parser/string_parser.h	Py_BUILD_CORE	1
 Parser/pegen.h	Py_BUILD_CORE	1
-Python/ceval_gil.h	Py_BUILD_CORE	1
 Python/condvar.h	Py_BUILD_CORE	1
 
 Modules/_json.c	Py_BUILD_CORE_BUILTIN	1
