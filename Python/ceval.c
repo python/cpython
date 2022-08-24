@@ -1668,7 +1668,16 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 
     frame->is_entry = true;
     /* Push frame */
-    frame->previous = prev_cframe->current_frame;
+    struct _PyInterpreterFrame py_frame;
+    py_frame.f_func = Py_INCREF(&_exit_func);
+    py_frame.f_locals = NULL;
+    py_frame.frame_obj = NULL;
+    py_frame.prev_instr = _PyCode_CODE(&exit_code);
+    py_frame.stacktop = 0;
+    py_frame.owner = -1;
+    py_frame.is_entry = 1;
+    py_frame.previous = prev_cframe->current_frame;
+    frame->previous = &py_frame;
     cframe.current_frame = frame;
 
     /* support for generator.throw() */
@@ -2456,6 +2465,17 @@ handle_eval_breaker:
             goto error;
         }
 
+        TARGET(INTERPRETER_EXIT) {
+            PyObject *retval = POP();
+            assert(EMPTY());
+            /* Restore previous cframe and return. */
+            tstate->cframe = cframe.previous;
+            tstate->cframe->use_tracing = cframe.use_tracing;
+            assert(tstate->cframe->current_frame == frame->previous);
+            assert(!_PyErr_Occurred(tstate));
+            return retval;
+        }
+
         TARGET(RETURN_VALUE) {
             PyObject *retval = POP();
             assert(EMPTY());
@@ -2463,17 +2483,10 @@ handle_eval_breaker:
             TRACE_FUNCTION_EXIT();
             DTRACE_FUNCTION_EXIT();
             _Py_LeaveRecursiveCallTstate(tstate);
-            if (!frame->is_entry) {
-                frame = cframe.current_frame = pop_frame(tstate, frame);
-                _PyFrame_StackPush(frame, retval);
-                goto resume_frame;
-            }
-            /* Restore previous cframe and return. */
-            tstate->cframe = cframe.previous;
-            tstate->cframe->use_tracing = cframe.use_tracing;
-            assert(tstate->cframe->current_frame == frame->previous);
-            assert(!_PyErr_Occurred(tstate));
-            return retval;
+            assert(!frame->is_entry);
+            frame = cframe.current_frame = pop_frame(tstate, frame);
+            _PyFrame_StackPush(frame, retval);
+            goto resume_frame;
         }
 
         TARGET(GET_AITER) {
