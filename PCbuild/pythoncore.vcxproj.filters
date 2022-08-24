@@ -312,9 +312,6 @@
     <ClInclude Include="..\Python\condvar.h">
       <Filter>Python</Filter>
     </ClInclude>
-    <ClInclude Include="..\Python\ceval_gil.h">
-      <Filter>Python</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\pyhash.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -1095,6 +1092,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\getversion.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\ceval_gil.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\hashtable.c">

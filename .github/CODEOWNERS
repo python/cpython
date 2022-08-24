@@ -9,7 +9,7 @@
 
 # Core
 **/*context*                  @1st1
-**/*genobject*                @1st1 @markshannon
+**/*genobject*                @markshannon
 **/*hamt*                     @1st1
 Objects/set*                  @rhettinger
 Objects/dict*                 @methane @markshannon

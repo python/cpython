@@ -1053,6 +1053,21 @@ class TestThreadState(unittest.TestCase):
         t.start()
         t.join()
 
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_gilstate_ensure_no_deadlock(self):
+        # See https://github.com/python/cpython/issues/96071
+        code = textwrap.dedent(f"""
+            import _testcapi
+
+            def callback():
+                print('callback called')
+
+            _testcapi._test_thread_state(callback)
+            """)
+        ret = assert_python_ok('-X', 'tracemalloc', '-c', code)
+        self.assertIn(b'callback called', ret.out)
+
 
 class Test_testcapi(unittest.TestCase):
     locals().update((name, getattr(_testcapi, name))
