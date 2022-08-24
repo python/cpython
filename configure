@@ -884,6 +884,13 @@ BASECFLAGS
 CFLAGS_ALIASING
 OPT
 LLVM_COV
+COVERAGE_REPORT_OPTIONS
+COVERAGE_OPTIONS
+COVERAGE_INFO
+COVERAGE_GEN_TARGET
+COVERAGE_LDFLAGS
+COVERAGE_CFLAGS
+COVERAGE_CC
 LLVM_PROF_FOUND
 LLVM_PROFDATA
 LLVM_PROF_ERR
@@ -936,7 +943,6 @@ PLATFORM_TRIPLET
 MULTIARCH
 ac_ct_CXX
 CXX
-CC_NAME
 EGREP
 SED
 GREP
@@ -5372,9 +5378,6 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cc_name" >&5
 $as_echo "$ac_cv_cc_name" >&6; }
 
-CC_NAME=$ac_cv_cc_name
-
-
 # checks for UNIX variants that set C preprocessor variables
 # may set _GNU_SOURCE, __EXTENSIONS__, _POSIX_PTHREAD_SEMANTICS,
 # _POSIX_SOURCE, _POSIX_1_SOURCE, and more
@@ -8434,6 +8437,38 @@ case $CC in
     LLVM_PROF_FILE=""
     ;;
 esac
+
+# Coverage flags
+
+case $CC in
+     *clang*)
+         COVERAGE_CC="\$(CC) -fprofile-instr-generate -fcoverage-mapping"
+         COVERAGE_CFLAGS=""
+         COVERAGE_LDFLAGS=""
+         COVERAGE_GEN_TARGET="coverage-generate-profdata"
+         COVERAGE_INFO="coverage.profdata"
+         COVERAGE_OPTIONS=""
+         COVERAGE_REPORT_OPTIONS="-show-branches=count -show-regions"
+         ;;
+     *gcc*)
+         COVERAGE_CC="\$(CC)"
+         COVERAGE_CFLAGS="-O0 -pg --coverage"
+         COVERAGE_LDFLAGS="--coverage"
+         COVERAGE_GEN_TARGET="coverage-generate-lcov"
+         COVERAGE_INFO="coverage.info"
+         COVERAGE_OPTIONS="--rc lcov_brange_coverage=1"
+         COVERAGE_REPORT_OPTIONS="\$(COVERAGE_OPTIONS) --branch-coverage --title \"CPython \$(VERSION) LCOV report commit \$(shell \$(GITVERSION))\""
+         ;;
+     *)
+esac
+
+
+
+
+
+
+
+
 
 if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}llvm-cov", so it can be a program name with args.

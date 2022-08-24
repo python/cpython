@@ -869,8 +869,6 @@ fi
 rm -f conftest.c conftest.out
 ])
 
-AC_SUBST([CC_NAME], [$ac_cv_cc_name])
-
 # checks for UNIX variants that set C preprocessor variables
 # may set _GNU_SOURCE, __EXTENSIONS__, _POSIX_PTHREAD_SEMANTICS,
 # _POSIX_SOURCE, _POSIX_1_SOURCE, and more
@@ -2057,6 +2055,38 @@ case $CC in
     LLVM_PROF_FILE=""
     ;;
 esac
+
+# Coverage flags
+
+case $CC in
+     *clang*)
+         COVERAGE_CC="\$(CC) -fprofile-instr-generate -fcoverage-mapping"
+         COVERAGE_CFLAGS=""
+         COVERAGE_LDFLAGS=""
+         COVERAGE_GEN_TARGET="coverage-generate-profdata"
+         COVERAGE_INFO="coverage.profdata"
+         COVERAGE_OPTIONS=""
+         COVERAGE_REPORT_OPTIONS="-show-branches=count -show-regions"
+         ;;
+     *gcc*)
+         COVERAGE_CC="\$(CC)"
+         COVERAGE_CFLAGS="-O0 -pg --coverage"
+         COVERAGE_LDFLAGS="--coverage"
+         COVERAGE_GEN_TARGET="coverage-generate-lcov"
+         COVERAGE_INFO="coverage.info"
+         COVERAGE_OPTIONS="--rc lcov_brange_coverage=1"
+         COVERAGE_REPORT_OPTIONS="\$(COVERAGE_OPTIONS) --branch-coverage --title \"CPython \$(VERSION) LCOV report [commit \$(shell \$(GITVERSION))]\""
+         ;;
+     *)
+esac
+
+AC_SUBST(COVERAGE_CC)
+AC_SUBST(COVERAGE_CFLAGS)
+AC_SUBST(COVERAGE_LDFLAGS)
+AC_SUBST(COVERAGE_GEN_TARGET)
+AC_SUBST(COVERAGE_INFO)
+AC_SUBST(COVERAGE_OPTIONS)
+AC_SUBST(COVERAGE_REPORT_OPTIONS)
 AC_SUBST(LLVM_COV)
 AC_PATH_TOOL(LLVM_COV, llvm-cov, '', ${llvm_path})
 
