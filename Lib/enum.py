@@ -185,19 +185,35 @@ class property(DynamicClassAttribute):
     a corresponding enum member.
     """
 
+    member = None
+
     def __get__(self, instance, ownerclass=None):
         if instance is None:
-            try:
-                return ownerclass._member_map_[self.name]
-            except KeyError:
+            if self.member is not None:
+                return self.member
+            else:
                 raise AttributeError(
                         '%r has no attribute %r' % (ownerclass, self.name)
                         )
         else:
             if self.fget is None:
-                raise AttributeError(
-                        '%r member has no attribute %r' % (ownerclass, self.name)
+                if self.member is None:   # not sure this can happen, but just in case
+                    raise AttributeError(
+                            '%r has no attribute %r' % (ownerclass, self.name)
+                            )
+                # issue warning deprecating this behavior
+                import warnings
+                warnings.warn(
+                        "`member.member` access (e.g. `Color.RED.BLUE`) is "
+                        "deprecated and will be removed in 3.14.",
+                        DeprecationWarning,
+                        stacklevel=2,
                         )
+                return self.member
+                # XXX: uncomment in 3.14 and remove warning above
+                # raise AttributeError(
+                #         '%r member has no attribute %r' % (ownerclass, self.name)
+                #         )
             else:
                 return self.fget(instance)
 
@@ -299,30 +315,20 @@ class _proto_member:
                 enum_class._member_names_.append(member_name)
         # get redirect in place before adding to _member_map_
         # but check for other instances in parent classes first
-        need_override = False
         descriptor = None
         for base in enum_class.__mro__[1:]:
             descriptor = base.__dict__.get(member_name)
             if descriptor is not None:
                 if isinstance(descriptor, (property, DynamicClassAttribute)):
                     break
-                else:
-                    need_override = True
-                    # keep looking for an enum.property
-        if descriptor and not need_override:
-            # previous enum.property found, no further action needed
-            pass
-        elif descriptor and need_override:
-            redirect = property()
-            redirect.__set_name__(enum_class, member_name)
-            # Previous enum.property found, but some other inherited attribute
-            # is in the way; copy fget, fset, fdel to this one.
-            redirect.fget = descriptor.fget
-            redirect.fset = descriptor.fset
-            redirect.fdel = descriptor.fdel
-            setattr(enum_class, member_name, redirect)
-        else:
-            setattr(enum_class, member_name, enum_member)
+        redirect = property()
+        redirect.member = enum_member
+        redirect.__set_name__(enum_class, member_name)
+        if descriptor:
+            redirect.fget = getattr(descriptor, 'fget', None)
+            redirect.fset = getattr(descriptor, 'fset', None)
+            redirect.fdel = getattr(descriptor, 'fdel', None)
+        setattr(enum_class, member_name, redirect)
         # now add to _member_map_ (even aliases)
         enum_class._member_map_[member_name] = enum_member
         try:
@@ -739,22 +745,6 @@ class EnumType(type):
         else:
             # return whatever mixed-in data type has
             return sorted(set(dir(cls._member_type_)) | interesting)
-
-    def __getattr__(cls, name):
-        """
-        Return the enum member matching `name`
-
-        We use __getattr__ instead of descriptors or inserting into the enum
-        class' __dict__ in order to support `name` and `value` being both
-        properties for enum members (which live in the class' __dict__) and
-        enum members themselves.
-        """
-        if _is_dunder(name):
-            raise AttributeError(name)
-        try:
-            return cls._member_map_[name]
-        except KeyError:
-            raise AttributeError(name) from None
 
     def __getitem__(cls, name):
         """
@@ -1200,10 +1190,10 @@ class Enum(metaclass=EnumType):
     # enum.property is used to provide access to the `name` and
     # `value` attributes of enum members while keeping some measure of
     # protection from modification, while still allowing for an enumeration
-    # to have members named `name` and `value`.  This works because enumeration
-    # members are not set directly on the enum class; they are kept in a
-    # separate structure, _member_map_, which is where enum.property looks for
-    # them
+    # to have members named `name` and `value`.  This works because each
+    # instance of enum.property saves its companion member, which it returns
+    # on class lookup; on instance lookup it either executes a provided function
+    # or raises an AttributeError.
 
     @property
     def name(self):
@@ -1677,10 +1667,12 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
                     value = gnv(name, 1, len(member_names), gnv_last_values)
                 if value in value2member_map:
                     # an alias to an existing member
+                    member = value2member_map[value]
                     redirect = property()
+                    redirect.member = member
                     redirect.__set_name__(enum_class, name)
                     setattr(enum_class, name, redirect)
-                    member_map[name] = value2member_map[value]
+                    member_map[name] = member
                 else:
                     # create the member
                     if use_args:
@@ -1696,6 +1688,7 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
                     member.__objclass__ = enum_class
                     member.__init__(value)
                     redirect = property()
+                    redirect.member = member
                     redirect.__set_name__(enum_class, name)
                     setattr(enum_class, name, redirect)
                     member_map[name] = member
@@ -1723,10 +1716,12 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
                     value = value.value
                 if value in value2member_map:
                     # an alias to an existing member
+                    member = value2member_map[value]
                     redirect = property()
+                    redirect.member = member
                     redirect.__set_name__(enum_class, name)
                     setattr(enum_class, name, redirect)
-                    member_map[name] = value2member_map[value]
+                    member_map[name] = member
                 else:
                     # create the member
                     if use_args:
@@ -1743,6 +1738,7 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
                     member.__init__(value)
                     member._sort_order_ = len(member_names)
                     redirect = property()
+                    redirect.member = member
                     redirect.__set_name__(enum_class, name)
                     setattr(enum_class, name, redirect)
                     member_map[name] = member
