@@ -1005,6 +1005,7 @@ Connection objects
          con.close()
 
       .. testoutput::
+         :hide:
 
          Copied 0 of 0 pages...
 
@@ -1166,6 +1167,7 @@ Cursor objects
           print(row)
 
    .. testoutput:: sqlite3.cursor
+      :hide:
 
       (1,)
 
@@ -1206,10 +1208,13 @@ Cursor objects
 
       Example:
 
-      .. testcode::
+      .. testsetup:: sqlite3.executemany
 
-         con = sqlite3.connect(":memory:")  # doctest: +SKIP
-         cur = con.execute("CREATE TABLE t(t)")  # doctest: +SKIP
+         con = sqlite3.connect(":memory:")
+         cur = con.execute("CREATE TABLE t(t)")
+
+      .. testcode:: sqlite3.executemany
+
          data = [
              ("row1",),
              ("row2",),
