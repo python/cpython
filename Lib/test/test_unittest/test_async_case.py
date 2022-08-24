@@ -43,10 +43,10 @@ VAR = contextvars.ContextVar('VAR', default=())
 class TestAsyncCase(unittest.TestCase):
     maxDiff = None
 
-    def tearDown(self):
+    def setUp(self):
         # Ensure that IsolatedAsyncioTestCase instances are destroyed before
         # starting a new event loop
-        support.gc_collect()
+        self.addCleanup(support.gc_collect)
 
     def test_full_cycle(self):
         class Test(unittest.IsolatedAsyncioTestCase):
