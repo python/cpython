@@ -303,6 +303,7 @@ class BuildProfile:
     dynamic_linking: Union[bool, None] = None
     pthreads: Union[bool, None] = None
     testopts: str = "-j2"
+    pkg_config_path: Union[str, None] = None
 
     @property
     def can_execute(self) -> bool:
@@ -360,6 +361,9 @@ class BuildProfile:
 
         if platform.config_site is not None:
             cmd.append(f"CONFIG_SITE={platform.config_site}")
+
+        if self.pkg_config_path is not None:
+            cmd.append(f"PKG_CONFIG_PATH={self.pkg_config_path}")
 
         return cmd
 
@@ -484,6 +488,13 @@ _profiles = [
         pthreads=True,
     ),
     BuildProfile(
+        "emscripten-node-pthreads-dl",
+        host=Host.wasm32_emscripten,
+        target=EmscriptenTarget.node,
+        pthreads=True,
+        dynamic_linking=True
+    ),
+    BuildProfile(
         "emscripten-node-pthreads-debug",
         host=Host.wasm32_emscripten,
         target=EmscriptenTarget.node_debug,
@@ -541,6 +552,11 @@ parser.add_argument(
     nargs="?",
 )
 
+parser.add_argument(
+    "--pkg-config-path",
+    help="PKG_CONFIG_PATH value to pass to configure"
+)
+
 
 def main():
     args = parser.parse_args()
@@ -550,6 +566,7 @@ def main():
         parser.exit(0)
 
     builder = PROFILES[args.platform]
+    builder.pkg_config_path = args.pkg_config_path
     try:
         builder.host.platform.check()
     except ConditionError as e:
