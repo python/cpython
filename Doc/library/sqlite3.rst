@@ -371,7 +371,11 @@ Module functions
    Register an :func:`unraisable hook handler <sys.unraisablehook>` for an
    improved debug experience:
 
-   .. doctest::
+   .. testsetup:: sqlite3.trace
+
+      import sqlite3
+
+   .. doctest:: sqlite3.trace
 
       >>> sqlite3.enable_callback_tracebacks(True)
       >>> con = sqlite3.connect(":memory:")
@@ -1208,19 +1212,14 @@ Cursor objects
 
       Example:
 
-      .. testsetup:: sqlite3.executemany
+      .. testcode:: sqlite3.cursor
 
-         con = sqlite3.connect(":memory:")
-         cur = con.execute("CREATE TABLE t(t)")
-
-      .. testcode:: sqlite3.executemany
-
-         data = [
+         rows = [
              ("row1",),
              ("row2",),
          ]
          # cur is an sqlite3.Cursor object
-         cur.executemany("insert into t values(?)", data)
+         cur.executemany("insert into data values(?)", rows)
 
    .. method:: executescript(sql_script, /)
 
@@ -1234,7 +1233,7 @@ Cursor objects
 
       Example:
 
-      .. testcode::
+      .. testcode:: sqlite3.cursor
 
          # cur is an sqlite3.Cursor object
          cur.executescript("""
