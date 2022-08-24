@@ -1,7 +1,4 @@
 
-#include <stdlib.h>
-#include <errno.h>
-
 #include "Python.h"
 #include "pycore_atomic.h"        // _Py_atomic_int
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()

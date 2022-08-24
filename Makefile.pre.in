@@ -388,7 +388,7 @@ PYTHON_OBJS=	\
 		Python/getcopyright.o \
 		Python/getplatform.o \
 		Python/getversion.o \
-		Python/gil.o \
+		Python/ceval_gil.o \
 		Python/hamt.o \
 		Python/hashtable.o \
 		Python/import.o \

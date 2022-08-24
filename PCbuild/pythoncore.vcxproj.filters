@@ -1094,7 +1094,7 @@
     <ClCompile Include="..\Python\getversion.c">
       <Filter>Python</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\gil.c">
+    <ClCompile Include="..\Python\ceval_gil.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\hashtable.c">
