@@ -1031,7 +1031,7 @@ Connection objects
          If *category* is not recognised by the underlying SQLite library.
 
       Example, query the maximum length of an SQL statement
-      for :class:`Connection` ``con`` (the default is 10000000000):
+      for :class:`Connection` ``con`` (the default is 1000000000):
 
       .. testsetup:: sqlite3.limits
 
