@@ -24,7 +24,7 @@ jobs:
         echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> $GITHUB_ENV
         echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> $GITHUB_ENV
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
-    - name: 'Restore OpenSSL build'
+    - name: Restore OpenSSL build
       id: cache-openssl
       uses: actions/cache@v3
       with:
