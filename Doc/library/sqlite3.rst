@@ -1160,10 +1160,13 @@ Cursor objects
       cur = con.execute("CREATE TABLE data(t)")
       cur.execute("INSERT INTO data VALUES(1)")
 
-   .. doctest:: sqlite3.cursor
+   .. testcode:: sqlite3.cursor
 
-      >>> for row in cur.execute("SELECT t FROM data"):
-      ...     print(row)
+      for row in cur.execute("SELECT t FROM data"):
+          print(row)
+
+   .. testoutput:: sqlite3.cursor
+
       (1,)
 
    .. _database cursor: https://en.wikipedia.org/wiki/Cursor_(databases)
