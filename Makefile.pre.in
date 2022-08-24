@@ -388,6 +388,7 @@ PYTHON_OBJS=	\
 		Python/getcopyright.o \
 		Python/getplatform.o \
 		Python/getversion.o \
+		Python/ceval_gil.o \
 		Python/hamt.o \
 		Python/hashtable.o \
 		Python/import.o \
@@ -1419,8 +1420,7 @@ regen-opcode-targets:
 		$(srcdir)/Python/opcode_targets.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
 
-Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/ceval_gil.h \
-		$(srcdir)/Python/condvar.h
+Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/condvar.h
 
 Python/frozen.o: $(FROZEN_FILES_OUT)
 
