@@ -37,7 +37,6 @@ abs_builddir=	@abs_builddir@
 CC=		@CC@
 CXX=		@CXX@
 LINKCC=		@LINKCC@
-CC_NAME=@CC_NAME@
 AR=		@AR@
 READELF=	@READELF@
 SOABI=		@SOABI@
@@ -661,8 +660,9 @@ bolt-opt: @PREBOLT_RULE@
 	rm -f $(BUILDPYTHON).bolt_inst
 	mv $(BUILDPYTHON).bolt $(BUILDPYTHON)
 
+# Support generating coverage reports
 .PHONY=coverage-report coverage coverage-generate-lcov coverage-generate-profdata
-coverage-report:
+coverage-report: regen-token regen-frozen
 	@ # build with coverage info
 	$(MAKE) coverage
 	@ # run tests, ignore failures
@@ -679,7 +679,9 @@ coverage-report:
 coverage:
 	@echo "Building with support for coverage checking:"
 	$(MAKE) clean
-	$(MAKE) @DEF_MAKE_RULE@ CC="$(COVERAGE_CC)" CFLAGS="$(CFLAGS) $(COVERAGE_CFLAGS)" LDFLAGS="$(LDFLAGS) $(COVERAGE_LDFLAGS)"
+	$(MAKE) @DEF_MAKE_RULE@ CC="$(COVERAGE_CC)" \
+		CFLAGS="$(CFLAGS) $(COVERAGE_CFLAGS)" \
+		LDFLAGS="$(LDFLAGS) $(COVERAGE_LDFLAGS)"
 
 coverage-generate-lcov:
 	@echo "Creating Coverage HTML report with LCOV:"

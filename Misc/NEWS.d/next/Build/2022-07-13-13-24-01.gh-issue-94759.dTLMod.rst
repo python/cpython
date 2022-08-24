@@ -1,2 +1,1 @@
-The ``coverage-report`` Makefile target will now automatically use ``llvm-cov`` to generate a coverage report when using ``clang``.
-This provides more details about branch coverage and subexpressions than the existing ``gcc`` and ``lcov`` based ``coverage-report``.
+The ``coverage-report`` Makefile now supports both the ``gcc/lcov`` and ``clang/llvm-profdata`` stacks to generate coverage reports, and will select the correct one based on the compiler in use.

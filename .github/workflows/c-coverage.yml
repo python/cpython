@@ -50,7 +50,7 @@ jobs:
     - name: Publish coverage-report
       uses: JamesIves/github-pages-deploy-action@v4
       with:
-        folder: llvm-cov-report
+        folder: coverage-report
         repository-name: '' # TODO Destination
         token: ${{ secrets.COVERAGE_DEPLOY_TOKEN }} # TODO: Use an organization-level token
         single-commit: true
