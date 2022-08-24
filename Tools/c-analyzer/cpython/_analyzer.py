@@ -60,6 +60,11 @@ _IGNORED = {
     # {ID => reason}
 }
 
+# XXX We should be handling these through known.tsv.
+_OTHER_SUPPORTED_TYPES = {
+    '_PyArg_Parser',
+}
+
 KINDS = frozenset((*KIND.TYPES, KIND.VARIABLE))
 
 
@@ -202,6 +207,8 @@ def _check_typedep(decl, typedecl, types, knowntypes):
         # XXX Fail?
         return 'typespec (missing)'
     elif typedecl is _info.UNKNOWN:
+        if str(decl.vartype) in _OTHER_SUPPORTED_TYPES:
+            return None
         # XXX Is this right?
         return 'typespec (unknown)'
     elif not isinstance(typedecl, TypeDeclaration):
