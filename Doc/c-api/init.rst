@@ -1777,7 +1777,7 @@ Python-level trace functions in previous versions.
 .. c:function:: void PyEval_SetProfileAllThreads(Py_tracefunc func, PyObject *obj)
 
    Like :c:func:`PyEval_SetProfile` but sets the profile function in all running threads
-   instead of the setting it only on the current thread.
+   belonging to the current interpreter instead of the setting it only on the current thread.
 
    The caller must hold the :term:`GIL`.
 
@@ -1803,7 +1803,7 @@ Python-level trace functions in previous versions.
 .. c:function:: void PyEval_SetTraceAllThreads(Py_tracefunc func, PyObject *obj)
 
    Like :c:func:`PyEval_SetTrace` but sets the tracing function in all running threads
-   instead of the setting it only on the current thread.
+   belonging to the current interpreter instead of the setting it only on the current thread.
 
    The caller must hold the :term:`GIL`.
 

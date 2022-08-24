@@ -1027,7 +1027,7 @@ sys._settraceallthreads
     arg: object
     /
 
-Set the global debug tracing function in all running threads.
+Set the global debug tracing function in all running threads belonging to the current interpreter.
 
 It will be called on each function call. See the debugger chapter
 in the library manual.
@@ -1035,7 +1035,7 @@ in the library manual.
 
 static PyObject *
 sys__settraceallthreads(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=161cca30207bf3ca input=57c1ae02b1b5ee94]*/
+/*[clinic end generated code: output=161cca30207bf3ca input=5906aa1485a50289]*/
 {
     PyObject* argument = NULL;
     Py_tracefunc func = NULL;
@@ -1102,7 +1102,7 @@ sys._setprofileallthreads
     arg: object
     /
 
-Set the profiling function in all running threads.
+Set the profiling function in all running threads belonging to the current interpreter.
 
 It will be called on each function call and return.  See the profiler chapter
 in the library manual.
@@ -1110,7 +1110,7 @@ in the library manual.
 
 static PyObject *
 sys__setprofileallthreads(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=2d61319e27b309fe input=7daefd8797f0476f]*/
+/*[clinic end generated code: output=2d61319e27b309fe input=d1a356d3f4f9060a]*/
 {
     PyObject* argument = NULL;
     Py_tracefunc func = NULL;

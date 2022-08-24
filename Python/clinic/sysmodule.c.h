@@ -296,7 +296,7 @@ PyDoc_STRVAR(sys__settraceallthreads__doc__,
 "_settraceallthreads($module, arg, /)\n"
 "--\n"
 "\n"
-"Set the global debug tracing function in all running threads.\n"
+"Set the global debug tracing function in all running threads belonging to the current interpreter.\n"
 "\n"
 "It will be called on each function call. See the debugger chapter\n"
 "in the library manual.");
@@ -328,7 +328,7 @@ PyDoc_STRVAR(sys__setprofileallthreads__doc__,
 "_setprofileallthreads($module, arg, /)\n"
 "--\n"
 "\n"
-"Set the profiling function in all running threads.\n"
+"Set the profiling function in all running threads belonging to the current interpreter.\n"
 "\n"
 "It will be called on each function call and return.  See the profiler chapter\n"
 "in the library manual.");
@@ -1194,8 +1194,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-<<<<<<< HEAD
-/*[clinic end generated code: output=38446a4c76e2f3b6 input=a9049054013a1b77]*/
-=======
-/*[clinic end generated code: output=541cc7ffee7d20f8 input=a9049054013a1b77]*/
->>>>>>> d37f6a3263 (gh-93503: Add APIs to set profiling and tracing functions in all threads in the C-API)
+/*[clinic end generated code: output=322fb0409e376ad4 input=a9049054013a1b77]*/
