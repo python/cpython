@@ -1530,6 +1530,38 @@ and you can let the :mod:`!sqlite3` module convert SQLite types to
 Python types via :ref:`converters <sqlite3-converters>`.
 
 
+.. _sqlite3-default-converters:
+
+Default adapters and converters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+There are default adapters for the date and datetime types in the datetime
+module. They will be sent as ISO dates/ISO timestamps to SQLite.
+
+The default converters are registered under the name "date" for
+:class:`datetime.date` and under the name "timestamp" for
+:class:`datetime.datetime`.
+
+This way, you can use date/timestamps from Python without any additional
+fiddling in most cases. The format of the adapters is also compatible with the
+experimental SQLite date/time functions.
+
+The following example demonstrates this.
+
+.. literalinclude:: ../includes/sqlite3/pysqlite_datetime.py
+
+If a timestamp stored in SQLite has a fractional part longer than 6
+numbers, its value will be truncated to microsecond precision by the
+timestamp converter.
+
+.. note::
+
+   The default "timestamp" converter ignores UTC offsets in the database and
+   always returns a naive :class:`datetime.datetime` object. To preserve UTC
+   offsets in timestamps, either leave converters disabled, or register an
+   offset-aware converter with :func:`register_converter`.
+
+
 .. _sqlite3-howtos:
 
 How-to guides
@@ -1567,8 +1599,8 @@ both styles:
 
 .. _sqlite3-adapters:
 
-Using adapters to store custom Python types in SQLite databases
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+How to adapt custom Python types to SQLite values
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 SQLite supports only a limited set of data types natively.
 To store custom Python types in SQLite databases, *adapt* them to one of the
@@ -1585,8 +1617,8 @@ registering custom adapter functions.
 
 .. _sqlite3-conform:
 
-Letting your object adapt itself
-""""""""""""""""""""""""""""""""
+How to write adaptable objects
+""""""""""""""""""""""""""""""
 
 Suppose we have a :class:`!Point` class that represents a pair of coordinates,
 ``x`` and ``y``, in a Cartesian coordinate system.
@@ -1599,8 +1631,8 @@ The object passed to *protocol* will be of type :class:`PrepareProtocol`.
 .. literalinclude:: ../includes/sqlite3/adapter_point_1.py
 
 
-Registering an adapter callable
-"""""""""""""""""""""""""""""""
+How to register adapter callables
+"""""""""""""""""""""""""""""""""
 
 The other possibility is to create a function that converts the Python object
 to an SQLite-compatible type.
@@ -1611,8 +1643,8 @@ This function can then be registered using :func:`register_adapter`.
 
 .. _sqlite3-converters:
 
-Converting SQLite values to custom Python types
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+How to convert SQLite values to custom Python types
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Writing an adapter lets you convert *from* custom Python types *to* SQLite
 values.
@@ -1649,36 +1681,6 @@ of :func:`connect`. There are three options:
 The following example illustrates the implicit and explicit approaches:
 
 .. literalinclude:: ../includes/sqlite3/converter_point.py
-
-
-Default adapters and converters
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-There are default adapters for the date and datetime types in the datetime
-module. They will be sent as ISO dates/ISO timestamps to SQLite.
-
-The default converters are registered under the name "date" for
-:class:`datetime.date` and under the name "timestamp" for
-:class:`datetime.datetime`.
-
-This way, you can use date/timestamps from Python without any additional
-fiddling in most cases. The format of the adapters is also compatible with the
-experimental SQLite date/time functions.
-
-The following example demonstrates this.
-
-.. literalinclude:: ../includes/sqlite3/pysqlite_datetime.py
-
-If a timestamp stored in SQLite has a fractional part longer than 6
-numbers, its value will be truncated to microsecond precision by the
-timestamp converter.
-
-.. note::
-
-   The default "timestamp" converter ignores UTC offsets in the database and
-   always returns a naive :class:`datetime.datetime` object. To preserve UTC
-   offsets in timestamps, either leave converters disabled, or register an
-   offset-aware converter with :func:`register_converter`.
 
 
 .. _sqlite3-adapter-converter-recipes:
@@ -1728,8 +1730,8 @@ This section shows recipes for common adapters and converters.
 
 .. _sqlite3-connection-shortcuts:
 
-Using connection shortcut methods
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+How to use connection shortcut methods
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Using the :meth:`~Connection.execute`,
 :meth:`~Connection.executemany`, and :meth:`~Connection.executescript`
@@ -1745,7 +1747,7 @@ directly using only a single call on the :class:`Connection` object.
 
 .. _sqlite3-connection-context-manager:
 
-Using the connection as a context manager
+How to use the connection context manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A :class:`Connection` object can be used as a context manager that
@@ -1770,8 +1772,8 @@ the context manager is a no-op.
 
 .. _sqlite3-uri-tricks:
 
-Working with SQLite URIs
-^^^^^^^^^^^^^^^^^^^^^^^^
+How to work with SQLite URIs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Some useful URI tricks include:
 
