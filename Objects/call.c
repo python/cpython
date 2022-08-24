@@ -32,7 +32,7 @@ PyObject*
 _Py_CheckFunctionResult(PyThreadState *tstate, PyObject *callable,
                         PyObject *result, const char *where)
 {
-    assert((callable != NULL) ^ (where != NULL));
+    assert((callable) ^ (where));
 
     if (result == NULL) {
         if (!_PyErr_Occurred(tstate)) {
