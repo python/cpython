@@ -27,8 +27,9 @@ __all__ = ['get_ident', 'active_count', 'Condition', 'current_thread',
            'enumerate', 'main_thread', 'TIMEOUT_MAX',
            'Event', 'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Thread',
            'Barrier', 'BrokenBarrierError', 'Timer', 'ThreadError',
-           'setprofile', 'settrace', 'local', 'stack_size',
-           'excepthook', 'ExceptHookArgs', 'gettrace', 'getprofile']
+           'setprofile', 'setthreadcreationhook', 'settrace', 'local',
+           'stack_size', 'excepthook', 'ExceptHookArgs', 'gettrace',
+           'getprofile', 'getthreadcreationhook']
 
 # Rename some stuff so "from threading import *" is safe
 _start_new_thread = _thread.start_new_thread
@@ -50,10 +51,11 @@ TIMEOUT_MAX = _thread.TIMEOUT_MAX
 del _thread
 
 
-# Support for profile and trace hooks
+# Support for profile, trace and thread creation hooks
 
 _profile_hook = None
 _trace_hook = None
+_thread_creation_hook = None
 
 def setprofile(func):
     """Set a profile function for all threads started from the threading module.
@@ -82,6 +84,20 @@ def settrace(func):
 def gettrace():
     """Get the trace function as set by threading.settrace()."""
     return _trace_hook
+
+def setthreadcreationhook(func):
+    """Set a thread creation hook.
+
+    The func will be invoked exactly once within each newly created thread, before
+    its run() method is called.  It will be passed a single argument: the instance
+    of the thread object itself.
+    """
+    global _thread_creation_hook
+    _thread_creation_hook = func
+
+def getthreadcreationhook():
+    """Get the thread creation hook as set by setthreadcreationhook()."""
+    return _thread_creation_hook
 
 # Synchronization classes
 
@@ -1031,6 +1047,15 @@ class Thread:
                 _sys.settrace(_trace_hook)
             if _profile_hook:
                 _sys.setprofile(_profile_hook)
+            global _thread_creation_hook
+            if _thread_creation_hook:
+                try:
+                    _thread_creation_hook(self)
+                except:
+                    # error? unset the misbehaving hook, like trace and
+                    # profile hooks do.
+                    _thread_creation_hook = None
+                    raise  # This uncaught exception should find stderr.
 
             try:
                 self.run()
