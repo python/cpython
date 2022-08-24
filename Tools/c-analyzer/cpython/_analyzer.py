@@ -62,7 +62,24 @@ _IGNORED = {
 
 # XXX We should be handling these through known.tsv.
 _OTHER_SUPPORTED_TYPES = {
+    # Holds tuple of strings, which we statically initialize:
     '_PyArg_Parser',
+    # Uses of these should be const, but we don't worry about it.
+    'PyModuleDef',
+    'PyModuleDef_Slot[]',
+    'PyType_Spec',
+    'PyType_Slot[]',
+    'PyMethodDef',
+    'PyMethodDef[]',
+    'PyMemberDef[]',
+    'PyGetSetDef[]',
+    'PyNumberMethods',
+    'PySequenceMethods',
+    'PyMappingMethods',
+    'PyAsyncMethods',
+    'PyBufferProcs',
+    'PyStructSequence_Field[]',
+    'PyStructSequence_Desc',
 }
 
 KINDS = frozenset((*KIND.TYPES, KIND.VARIABLE))
@@ -207,7 +224,11 @@ def _check_typedep(decl, typedecl, types, knowntypes):
         # XXX Fail?
         return 'typespec (missing)'
     elif typedecl is _info.UNKNOWN:
-        if str(decl.vartype) in _OTHER_SUPPORTED_TYPES:
+        vartype = str(decl.vartype).split()
+        if vartype[0] == 'struct':
+            vartype = vartype[1:]
+        vartype = ''.join(vartype)
+        if vartype in _OTHER_SUPPORTED_TYPES:
             return None
         # XXX Is this right?
         return 'typespec (unknown)'
