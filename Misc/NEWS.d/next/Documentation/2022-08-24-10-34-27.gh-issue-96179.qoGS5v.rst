@@ -1,0 +1,1 @@
+Fix minor error in example for the bisect documentation
