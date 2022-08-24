@@ -291,7 +291,9 @@ typedef struct basicblock_ {
 
 static struct instr *
 basicblock_last_instr(const basicblock *b) {
-    if (b->b_iused) {
+    assert(b->b_iused >= 0);
+    if (b->b_iused > 0) {
+        assert(b->b_instr != NULL);
         return &b->b_instr[b->b_iused - 1];
     }
     return NULL;
@@ -7168,10 +7170,8 @@ assemble_free(struct assembler *a)
 static int
 blocksize(basicblock *b)
 {
-    int i;
     int size = 0;
-
-    for (i = 0; i < b->b_iused; i++) {
+    for (int i = 0; i < b->b_iused; i++) {
         size += instr_size(&b->b_instr[i]);
     }
     return size;
@@ -7746,10 +7746,10 @@ normalize_jumps(basicblock *entryblock)
     }
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         b->b_visited = 1;
-        if (b->b_iused == 0) {
+        struct instr *last = basicblock_last_instr(b);
+        if (last == NULL) {
             continue;
         }
-        struct instr *last = &b->b_instr[b->b_iused-1];
         assert(!IS_ASSEMBLER_OPCODE(last->i_opcode));
         if (is_jump(last)) {
             bool is_forward = last->i_target->b_visited == 0;
@@ -7915,8 +7915,8 @@ scan_block_for_local(int target, basicblock *b, bool unsafe_to_start,
         if (b->b_next && BB_HAS_FALLTHROUGH(b)) {
             MAYBE_PUSH(b->b_next);
         }
-        if (b->b_iused > 0) {
-            struct instr *last = &b->b_instr[b->b_iused-1];
+        struct instr *last = basicblock_last_instr(b);
+        if (last != NULL) {
             if (is_jump(last)) {
                 assert(last->i_target != NULL);
                 MAYBE_PUSH(last->i_target);
@@ -8405,10 +8405,10 @@ guarantee_lineno_for_exits(basicblock *entryblock, int firstlineno) {
     int lineno = firstlineno;
     assert(lineno > 0);
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        if (b->b_iused == 0) {
+        struct instr *last = basicblock_last_instr(b);
+        if (last == NULL) {
             continue;
         }
-        struct instr *last = &b->b_instr[b->b_iused-1];
         if (last->i_loc.lineno < 0) {
             if (last->i_opcode == RETURN_VALUE) {
                 for (int i = 0; i < b->b_iused; i++) {
@@ -8486,18 +8486,18 @@ remove_redundant_jumps(cfg_builder *g) {
      */
     int removed = 0;
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        if (b->b_iused > 0) {
-            struct instr *b_last_instr = &b->b_instr[b->b_iused - 1];
-            assert(!IS_ASSEMBLER_OPCODE(b_last_instr->i_opcode));
-            if (b_last_instr->i_opcode == JUMP ||
-                b_last_instr->i_opcode == JUMP_NO_INTERRUPT) {
-                if (b_last_instr->i_target == NULL) {
+        struct instr *last = basicblock_last_instr(b);
+        if (last != NULL) {
+            assert(!IS_ASSEMBLER_OPCODE(last->i_opcode));
+            if (last->i_opcode == JUMP ||
+                last->i_opcode == JUMP_NO_INTERRUPT) {
+                if (last->i_target == NULL) {
                     PyErr_SetString(PyExc_SystemError, "jump with NULL target");
                     return -1;
                 }
-                if (b_last_instr->i_target == b->b_next) {
+                if (last->i_target == b->b_next) {
                     assert(b->b_next->b_iused);
-                    b_last_instr->i_opcode = NOP;
+                    last->i_opcode = NOP;
                     removed++;
                 }
             }
@@ -9215,10 +9215,10 @@ basicblock_has_lineno(const basicblock *bb) {
  */
 static int
 extend_block(basicblock *bb) {
-    if (bb->b_iused == 0) {
+    struct instr *last = basicblock_last_instr(bb);
+    if (last == NULL) {
         return 0;
     }
-    struct instr *last = &bb->b_instr[bb->b_iused-1];
     if (last->i_opcode != JUMP &&
         last->i_opcode != JUMP_FORWARD &&
         last->i_opcode != JUMP_BACKWARD) {
@@ -9399,7 +9399,8 @@ eliminate_empty_basic_blocks(cfg_builder *g) {
 static void
 propagate_line_numbers(basicblock *entryblock) {
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        if (b->b_iused == 0) {
+        struct instr *last = basicblock_last_instr(b);
+        if (last == NULL) {
             continue;
         }
 
@@ -9418,8 +9419,8 @@ propagate_line_numbers(basicblock *entryblock) {
                 b->b_next->b_instr[0].i_loc = prev_location;
             }
         }
-        if (is_jump(&b->b_instr[b->b_iused-1])) {
-            basicblock *target = b->b_instr[b->b_iused-1].i_target;
+        if (is_jump(last)) {
+            basicblock *target = last->i_target;
             if (target->b_predecessors == 1) {
                 if (target->b_instr[0].i_loc.lineno < 0) {
                     target->b_instr[0].i_loc = prev_location;
@@ -9576,15 +9577,16 @@ duplicate_exits_without_lineno(cfg_builder *g)
      */
     basicblock *entryblock = g->g_entryblock;
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        if (b->b_iused > 0 && is_jump(&b->b_instr[b->b_iused-1])) {
-            basicblock *target = b->b_instr[b->b_iused-1].i_target;
+        struct instr *last = basicblock_last_instr(b);
+        if (last != NULL && is_jump(last)) {
+            basicblock *target = last->i_target;
             if (is_exit_without_lineno(target) && target->b_predecessors > 1) {
                 basicblock *new_target = copy_basicblock(g, target);
                 if (new_target == NULL) {
                     return -1;
                 }
-                new_target->b_instr[0].i_loc = b->b_instr[b->b_iused-1].i_loc;
-                b->b_instr[b->b_iused-1].i_target = new_target;
+                new_target->b_instr[0].i_loc = last->i_loc;
+                last->i_target = new_target;
                 target->b_predecessors--;
                 new_target->b_predecessors = 1;
                 new_target->b_next = target->b_next;
@@ -9603,8 +9605,9 @@ duplicate_exits_without_lineno(cfg_builder *g)
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         if (BB_HAS_FALLTHROUGH(b) && b->b_next && b->b_iused > 0) {
             if (is_exit_without_lineno(b->b_next)) {
-                assert(b->b_next->b_iused > 0);
-                b->b_next->b_instr[0].i_loc = b->b_instr[b->b_iused-1].i_loc;
+                struct instr *last = basicblock_last_instr(b);
+                assert(last != NULL);
+                b->b_next->b_instr[0].i_loc = last->i_loc;
             }
         }
     }
