@@ -2021,10 +2021,10 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    This field is inherited by subtypes.
 
    .. versionadded:: 3.4
-   
+
    .. versionchanged:: 3.8
 
-      Before version 3.8 it was necessary to set the 
+      Before version 3.8 it was necessary to set the
       :const:`Py_TPFLAGS_HAVE_FINALIZE` flags bit in order for this field to be
       used.  This is no longer required.
 
