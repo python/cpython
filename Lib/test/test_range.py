@@ -305,6 +305,39 @@ class RangeTest(unittest.TestCase):
 
         self.assertEqual(range(10).index(ALWAYS_EQ), 0)
 
+        a = range(100)
+        self.assertEqual(a.index(20, 10), 20)
+        self.assertEqual(a.index(20, 1, 40), 20)
+        self.assertEqual(a.index(20, 10, 40), 20)
+        self.assertEqual(a.index(20, start=10, stop=40), 20)
+        self.assertEqual(a.index(20, stop=40, start=10), 20)
+        self.assertEqual(a.index(20, 10, -1), 20)
+        self.assertRaises(ValueError, a.index, 20, start=21)
+        self.assertRaises(ValueError, a.index, 20, stop=20)
+        self.assertRaises(TypeError, a.index, 20, start="2")
+        self.assertRaises(TypeError, a.index, 10, stop="20")
+
+        a = range(0, 150, 10)
+        self.assertEqual(a.index(20, 0), 2)
+        self.assertEqual(a.index(20, 0, 5), 2)
+        self.assertEqual(a.index(20, 1, 5), 2)
+        self.assertEqual(a.index(20, 1, -1), 2)
+        self.assertEqual(a.index(20, start=1, stop=10), 2)
+        self.assertEqual(a.index(20, stop=10, start=1), 2)
+        self.assertRaises(ValueError, a.index, 20, start=3)
+        self.assertRaises(ValueError, a.index, 20, stop=2)
+        self.assertRaises(TypeError, a.index, 20, start="1")
+        self.assertRaises(TypeError, a.index, 10, stop="1")
+
+        class AlwaysEqual(object):
+            def __eq__(self, _):
+                return True
+
+        always_equal = AlwaysEqual()
+
+        # start, stop indices with non-integer objects
+        self.assertEqual(range(10).index(always_equal, start=5), 0)
+
     def test_user_index_method(self):
         bignum = 2*sys.maxsize
         smallnum = 42

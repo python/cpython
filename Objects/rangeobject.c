@@ -572,9 +572,48 @@ range_count(rangeobject *r, PyObject *ob)
 }
 
 static PyObject *
-range_index(rangeobject *r, PyObject *ob)
+range_index(rangeobject *r, PyObject *args, PyObject *kw)
 {
     int contains;
+    static char *keywords[] = {"value", "start", "stop", NULL};
+    PyObject *ob;
+    PyObject *start = NULL, *stop = NULL;
+
+    if(!PyArg_ParseTupleAndKeywords(args, kw, "O|OO:range_index",
+                                    keywords, &ob, &start, &stop)){
+      return NULL;
+    }
+
+    if(start || stop){
+        if(start && (!PyLong_CheckExact(start))){
+            PyErr_Format(PyExc_TypeError,
+                         "start value must be integer, not %.200s",
+                         start->ob_type->tp_name);
+            return NULL;
+        }
+        if(stop && (!PyLong_CheckExact(stop))){
+            PyErr_Format(PyExc_TypeError,
+                         "stop value must be integer, not %.200s",
+                         stop->ob_type->tp_name);
+            return NULL;
+        }
+
+        if(!start){
+            start = _PyLong_GetZero();
+        }
+
+        if(!stop){
+            stop = r->length;
+        }
+
+        PyObject *slice = PySlice_New(start, stop, _PyLong_GetOne());
+        r = (rangeobject*) compute_slice(r, slice);
+        Py_XDECREF(slice);
+        if(!r){
+            Py_XDECREF(r);
+            return NULL;
+        }
+    }
 
     if (!PyLong_CheckExact(ob) && !PyBool_Check(ob)) {
         Py_ssize_t index;
@@ -595,13 +634,24 @@ range_index(rangeobject *r, PyObject *ob)
         }
 
         if (r->step == _PyLong_GetOne()) {
-            return idx;
+            if(start) {
+                return PyNumber_Add(idx, start);
+            }
+            else {
+                return idx;
+            }
         }
 
         /* idx = (ob - r.start) // r.step */
         PyObject *sidx = PyNumber_FloorDivide(idx, r->step);
         Py_DECREF(idx);
-        return sidx;
+
+        if(start){
+            return PyNumber_Add(sidx, start);
+        }
+        else {
+            return sidx;
+        }
     }
 
     /* object is not in the range */
@@ -703,7 +753,7 @@ static PyMethodDef range_methods[] = {
     {"__reversed__",    range_reverse,              METH_NOARGS, reverse_doc},
     {"__reduce__",      (PyCFunction)range_reduce,  METH_VARARGS},
     {"count",           (PyCFunction)range_count,   METH_O,      count_doc},
-    {"index",           (PyCFunction)range_index,   METH_O,      index_doc},
+    {"index",           (PyCFunction)range_index,   METH_VARARGS|METH_KEYWORDS,      index_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
