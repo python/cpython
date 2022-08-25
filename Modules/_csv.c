@@ -364,6 +364,19 @@ Dialect_dealloc(DialectObj *self)
     Py_DECREF(tp);
 }
 
+static char *dialect_kws[] = {
+    "dialect",
+    "delimiter",
+    "doublequote",
+    "escapechar",
+    "lineterminator",
+    "quotechar",
+    "quoting",
+    "skipinitialspace",
+    "strict",
+    NULL
+};
+
 static _csvstate *
 _csv_state_from_type(PyTypeObject *type, const char *name)
 {
@@ -395,21 +408,8 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *skipinitialspace = NULL;
     PyObject *strict = NULL;
 
-    static char *kwlist[] = {
-        "dialect",
-        "delimiter",
-        "doublequote",
-        "escapechar",
-        "lineterminator",
-        "quotechar",
-        "quoting",
-        "skipinitialspace",
-        "strict",
-        NULL
-    };
-
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                                     "|OOOOOOOOO", kwlist,
+                                     "|OOOOOOOOO", dialect_kws,
                                      &dialect,
                                      &delimiter,
                                      &doublequote,

@@ -2868,7 +2868,7 @@ static PyGetSetDef date_getset[] = {
 
 /* Constructors. */
 
-static char *date_kwlist[] = {"year", "month", "day", NULL};
+static char *date_kws[] = {"year", "month", "day", NULL};
 
 static PyObject *
 date_from_pickle(PyTypeObject *type, PyObject *state)
@@ -2927,7 +2927,7 @@ date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         }
     }
 
-    if (PyArg_ParseTupleAndKeywords(args, kw, "iii", date_kwlist,
+    if (PyArg_ParseTupleAndKeywords(args, kw, "iii", date_kws,
                                     &year, &month, &day)) {
         self = new_date_ex(year, month, day, type);
     }
@@ -3477,7 +3477,7 @@ date_replace(PyDateTime_Date *self, PyObject *args, PyObject *kw)
     int month = GET_MONTH(self);
     int day = GET_DAY(self);
 
-    if (! PyArg_ParseTupleAndKeywords(args, kw, "|iii:replace", date_kwlist,
+    if (! PyArg_ParseTupleAndKeywords(args, kw, "|iii:replace", date_kws,
                                       &year, &month, &day))
         return NULL;
     tuple = Py_BuildValue("iii", year, month, day);
@@ -3892,14 +3892,14 @@ static PyTypeObject PyDateTime_TZInfoType = {
     0,                                          /* tp_free */
 };
 
-static char *timezone_kwlist[] = {"offset", "name", NULL};
+static char *timezone_kws[] = {"offset", "name", NULL};
 
 static PyObject *
 timezone_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
     PyObject *offset;
     PyObject *name = NULL;
-    if (PyArg_ParseTupleAndKeywords(args, kw, "O!|U:timezone", timezone_kwlist,
+    if (PyArg_ParseTupleAndKeywords(args, kw, "O!|U:timezone", timezone_kws,
                                     &PyDateTime_DeltaType, &offset, &name))
         return new_timezone(offset, name);
 
@@ -4187,8 +4187,8 @@ static PyGetSetDef time_getset[] = {
  * Constructors.
  */
 
-static char *time_kwlist[] = {"hour", "minute", "second", "microsecond",
-                              "tzinfo", "fold", NULL};
+static char *time_kws[] = {"hour", "minute", "second", "microsecond",
+                           "tzinfo", "fold", NULL};
 
 static PyObject *
 time_from_pickle(PyTypeObject *type, PyObject *state, PyObject *tzinfo)
@@ -4273,7 +4273,7 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         tzinfo = Py_None;
     }
 
-    if (PyArg_ParseTupleAndKeywords(args, kw, "|iiiiO$i", time_kwlist,
+    if (PyArg_ParseTupleAndKeywords(args, kw, "|iiiiO$i", time_kws,
                                     &hour, &minute, &second, &usecond,
                                     &tzinfo, &fold)) {
         self = new_time_ex2(hour, minute, second, usecond, tzinfo, fold,
@@ -4593,7 +4593,7 @@ time_replace(PyDateTime_Time *self, PyObject *args, PyObject *kw)
     int fold = TIME_GET_FOLD(self);
 
     if (! PyArg_ParseTupleAndKeywords(args, kw, "|iiiiO$i:replace",
-                                      time_kwlist,
+                                      time_kws,
                                       &hh, &mm, &ss, &us, &tzinfo, &fold))
         return NULL;
     if (fold != 0 && fold != 1) {
@@ -4862,7 +4862,7 @@ static PyGetSetDef datetime_getset[] = {
  * Constructors.
  */
 
-static char *datetime_kwlist[] = {
+static char *datetime_kws[] = {
     "year", "month", "day", "hour", "minute", "second",
     "microsecond", "tzinfo", "fold", NULL
 };
@@ -4953,7 +4953,7 @@ datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         tzinfo = Py_None;
     }
 
-    if (PyArg_ParseTupleAndKeywords(args, kw, "iii|iiiiO$i", datetime_kwlist,
+    if (PyArg_ParseTupleAndKeywords(args, kw, "iii|iiiiO$i", datetime_kws,
                                     &year, &month, &day, &hour, &minute,
                                     &second, &usecond, &tzinfo, &fold)) {
         self = new_datetime_ex2(year, month, day,
@@ -6049,7 +6049,7 @@ datetime_replace(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     int fold = DATE_GET_FOLD(self);
 
     if (! PyArg_ParseTupleAndKeywords(args, kw, "|iiiiiiiO$i:replace",
-                                      datetime_kwlist,
+                                      datetime_kws,
                                       &y, &m, &d, &hh, &mm, &ss, &us,
                                       &tzinfo, &fold))
         return NULL;

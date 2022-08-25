@@ -82,6 +82,24 @@ _OTHER_SUPPORTED_TYPES = {
     'PyStructSequence_Desc',
 }
 
+# XXX We should normalize all cases to a single name,
+# e.g. "kwlist" (currently the most common).
+_KWLIST_VARIANTS = [
+    ('*', 'kwlist'),
+    ('*', 'keywords'),
+    ('*', 'kwargs'),
+    ('Modules/_csv.c', 'dialect_kws'),
+    ('Modules/_datetimemodule.c', 'date_kws'),
+    ('Modules/_datetimemodule.c', 'datetime_kws'),
+    ('Modules/_datetimemodule.c', 'time_kws'),
+    ('Modules/_datetimemodule.c', 'timezone_kws'),
+    ('Modules/_lzmamodule.c', 'optnames'),
+    ('Modules/_lzmamodule.c', 'arg_names'),
+    ('Modules/cjkcodecs/multibytecodec.c', 'incnewkwarglist'),
+    ('Modules/cjkcodecs/multibytecodec.c', 'streamkwarglist'),
+    ('Modules/socketmodule.c', 'kwnames'),
+]
+
 KINDS = frozenset((*KIND.TYPES, KIND.VARIABLE))
 
 
@@ -254,9 +272,16 @@ def _is_kwlist(decl):
     # keywords for PyArg_ParseTupleAndKeywords()
     # "static char *name[]" -> "static const char * const name[]"
     # XXX These should be made const.
-    if decl.name not in ('kwlist', 'keywords', 'kwargs'):
-        if not decl.name.endswith('_kwlist'):
-            return False
+    for relpath, name in _KWLIST_VARIANTS:
+        if decl.name == name:
+            if relpath == '*':
+                break
+            assert os.path.isabs(decl.file.filename)
+            relpath = os.path.normpath(relpath)
+            if decl.file.filename.endswith(os.path.sep + relpath):
+                break
+    else:
+        return False
     vartype = ''.join(str(decl.vartype).split())
     return vartype == 'char*[]'
 
