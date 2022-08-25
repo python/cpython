@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from test.support import findfile, script_helper, captured_stdout, requires_subprocess
+from test.support import script_helper, captured_stdout, requires_subprocess
 from test.support.os_helper import TESTFN, unlink, rmtree
 from test.support.import_helper import unload
 import importlib
