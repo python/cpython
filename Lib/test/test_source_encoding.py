@@ -12,11 +12,6 @@ import tempfile
 
 class MiscSourceEncodingTest(unittest.TestCase):
 
-    def test_pep263(self):
-        # Test moved to its own file because encoding isn't understood by all editors.
-        # See #96272
-        script_helper.assert_python_ok(findfile("source_encoding_pep263.py"))
-
     def test_compilestring(self):
         # see #1882
         c = compile(b"\n# coding: utf-8\nu = '\xc3\xb3'\n", "dummy", "exec")
@@ -298,6 +293,19 @@ class FileSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
                 fp.write(src)
             res = script_helper.assert_python_ok(fn)
         self.assertEqual(res.out.rstrip(), expected)
+
+
+class ImportTests(unittest.TestCase):
+    def setUp(self):
+        mod = importlib.import_module('test.encoded_modules')
+        self.test_strings = mod.test_strings
+        self.test_path = mod.__path__
+
+    def test_import_encoded_module(self):
+        for modname, encoding, teststr in self.test_strings:
+            mod = importlib.import_module('test.encoded_modules.'
+                                          'module_' + modname)
+            self.assertEqual(teststr, mod.test)
 
 
 if __name__ == "__main__":
