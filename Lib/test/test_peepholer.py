@@ -892,7 +892,8 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
         self.cfg_optimization_test(insts, expected, consts=list(range(5)))
 
     def test_conditional_jump_forward_const_condition(self):
-        # The unreachable branch of the jump is removed
+        # The unreachable branch of the jump is removed, the jump
+        # becomes redundant and is replaced by a NOP (for the lineno)
 
         insts = [
             ('LOAD_CONST', 3, 11),
@@ -903,8 +904,7 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         expected = [
             ('NOP', None, 11),
-            ('JUMP', lbl := self.Label(), 12),
-            lbl,
+            ('NOP', None, 12),
             ('LOAD_CONST', '3', 14)
         ]
         self.cfg_optimization_test(insts, expected, consts=list(range(5)))
