@@ -9,6 +9,9 @@ Python/pylifecycle.c	-	_PyRuntime	-
 #-----------------------
 # others
 
+# XXX The analyzer should have ignored these.
+Modules/_io/_iomodule.c	-	_PyIO_Module	-
+Modules/_sqlite/module.c	-	_sqlite3module	-
 
 ##################################
 # forward/extern references
