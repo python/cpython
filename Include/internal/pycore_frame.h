@@ -47,7 +47,7 @@ enum _frameowner {
 
 typedef struct _PyInterpreterFrame {
     /* "Specials" section */
-    PyFunctionObject *f_func; /* Strong reference */
+    PyObject *f_funcobj; /* Strong reference */
     PyObject *f_globals; /* Borrowed reference */
     PyObject *f_builtins; /* Borrowed reference */
     PyObject *f_locals; /* Strong reference, may be NULL */
@@ -101,7 +101,7 @@ _PyFrame_InitializeSpecials(
     _PyInterpreterFrame *frame, PyFunctionObject *func,
     PyObject *locals, PyCodeObject *code)
 {
-    frame->f_func = func;
+    frame->f_funcobj = (PyObject *)func;
     frame->f_code = (PyCodeObject *)Py_NewRef(code);
     frame->f_builtins = func->func_builtins;
     frame->f_globals = func->func_globals;

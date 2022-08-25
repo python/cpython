@@ -511,7 +511,9 @@ set_eval_frame_default(PyObject *self, PyObject *Py_UNUSED(args))
 static PyObject *
 record_eval(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
 {
-    PyList_Append(record_list, f->f_func->func_name);
+    if (PyFunction_Check(f->f_funcobj)) {
+        PyList_Append(record_list, ((PyFunctionObject *)f->f_funcobj)->func_name);
+    }
     return _PyEval_EvalFrameDefault(tstate, f, exc);
 }
 
