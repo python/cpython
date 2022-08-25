@@ -736,6 +736,34 @@ class TestDictFields(unittest.TestCase):
         csv.DictWriter.writerow(writer, dictrow)
         self.assertEqual(fileobj.getvalue(), "1,2\r\n")
 
+    def test_dict_reader_fieldnames_accepts_iter(self):
+        fieldnames = ["a", "b", "c"]
+        f = StringIO()
+        reader = csv.DictReader(f, iter(fieldnames))
+        self.assertEqual(reader.fieldnames, fieldnames)
+
+    def test_dict_reader_fieldnames_accepts_list(self):
+        fieldnames = ["a", "b", "c"]
+        f = StringIO()
+        reader = csv.DictReader(f, fieldnames)
+        self.assertEqual(reader.fieldnames, fieldnames)
+
+    def test_dict_writer_fieldnames_rejects_iter(self):
+        fieldnames = ["a", "b", "c"]
+        f = StringIO()
+        writer = csv.DictWriter(f, iter(fieldnames))
+        self.assertEqual(writer.fieldnames, fieldnames)
+
+    def test_dict_writer_fieldnames_accepts_list(self):
+        fieldnames = ["a", "b", "c"]
+        f = StringIO()
+        writer = csv.DictWriter(f, fieldnames)
+        self.assertEqual(writer.fieldnames, fieldnames)
+
+    def test_dict_reader_fieldnames_is_optional(self):
+        f = StringIO()
+        reader = csv.DictReader(f, fieldnames=None)
+
     def test_read_dict_fields(self):
         with TemporaryFile("w+", encoding="utf-8") as fileobj:
             fileobj.write("1,2,abc\r\n")
