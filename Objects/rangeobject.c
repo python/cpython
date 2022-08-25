@@ -579,37 +579,37 @@ range_index(rangeobject *r, PyObject *args, PyObject *kw)
     PyObject *ob;
     PyObject *start = NULL, *stop = NULL;
 
-    if(!PyArg_ParseTupleAndKeywords(args, kw, "O|OO:range_index",
-                                    keywords, &ob, &start, &stop)){
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "O|OO:range_index",
+                                    keywords, &ob, &start, &stop)) {
       return NULL;
     }
 
-    if(start || stop){
-        if(start && (!PyLong_CheckExact(start))){
+    if (start || stop) {
+        if (start && (!PyLong_CheckExact(start))) {
             PyErr_Format(PyExc_TypeError,
                          "start value must be integer, not %.200s",
                          start->ob_type->tp_name);
             return NULL;
         }
-        if(stop && (!PyLong_CheckExact(stop))){
+        if (stop && (!PyLong_CheckExact(stop))) {
             PyErr_Format(PyExc_TypeError,
                          "stop value must be integer, not %.200s",
                          stop->ob_type->tp_name);
             return NULL;
         }
 
-        if(!start){
+        if (!start) {
             start = _PyLong_GetZero();
         }
 
-        if(!stop){
+        if (!stop) {
             stop = r->length;
         }
 
         PyObject *slice = PySlice_New(start, stop, _PyLong_GetOne());
         r = (rangeobject*) compute_slice(r, slice);
         Py_XDECREF(slice);
-        if(!r){
+        if (!r) {
             Py_XDECREF(r);
             return NULL;
         }
@@ -620,7 +620,14 @@ range_index(rangeobject *r, PyObject *args, PyObject *kw)
         index = _PySequence_IterSearch((PyObject*)r, ob, PY_ITERSEARCH_INDEX);
         if (index == -1)
             return NULL;
-        return PyLong_FromSsize_t(index);
+
+        PyObject *temp = PyLong_FromSsize_t(index);
+        if (start) {
+            return PyNumber_Add(start, temp);
+        }
+        else {
+            return temp;
+        }
     }
 
     contains = range_contains_long(r, ob);
@@ -634,7 +641,7 @@ range_index(rangeobject *r, PyObject *args, PyObject *kw)
         }
 
         if (r->step == _PyLong_GetOne()) {
-            if(start) {
+            if (start) {
                 return PyNumber_Add(idx, start);
             }
             else {
@@ -646,7 +653,7 @@ range_index(rangeobject *r, PyObject *args, PyObject *kw)
         PyObject *sidx = PyNumber_FloorDivide(idx, r->step);
         Py_DECREF(idx);
 
-        if(start){
+        if (start) {
             return PyNumber_Add(sidx, start);
         }
         else {

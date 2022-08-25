@@ -336,7 +336,7 @@ class RangeTest(unittest.TestCase):
         always_equal = AlwaysEqual()
 
         # start, stop indices with non-integer objects
-        self.assertEqual(range(10).index(always_equal, start=5), 0)
+        self.assertEqual(range(10).index(always_equal, start=5), 5)
 
     def test_user_index_method(self):
         bignum = 2*sys.maxsize
