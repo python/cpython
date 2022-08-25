@@ -267,34 +267,16 @@ class PurePath(object):
 
     @classmethod
     def _split_root(cls, part):
-        # Fast path for POSIX
-        if cls._flavour is posixpath:
-            if part.startswith('///'):
-                return '', '/', part.lstrip('/')
-            elif part.startswith('//'):
-                return '', '//', part[2:]
-            elif part.startswith('/'):
-                return '', '/', part[1:]
-            else:
-                return '', '', part
-
-        # Fast path for Windows
-        elif cls._flavour is ntpath:
-            drv, tail = cls._flavour.splitdrive(part)
-            if tail.startswith('\\') or drv.startswith('\\'):
-                return drv, '\\', tail.lstrip('\\')
-            else:
-                return drv, '', tail
-
-        # Slow path for a generic path flavour. Note that normpath() is used
-        # to normalize the 'drive' and 'root' but NOT the 'rel' part, as we
-        # need to preserve '..' path segments.
-        else:
-            sep = cls._flavour.sep
-            drv, tail = cls._flavour.splitdrive(cls._flavour.normpath(part))
-            root = sep * (drv[:1] == sep or len(tail) - len(tail.lstrip(sep)))
-            rel = part[len(drv):].lstrip(sep)
-            return drv, root, rel
+        sep = cls._flavour.sep
+        rel = cls._flavour.splitdrive(part)[1].lstrip(sep)
+        anchor = part[:len(part)-len(rel)]
+        if anchor:
+            anchor = cls._flavour.normpath(anchor)
+        drv, root = cls._flavour.splitdrive(anchor)
+        if drv.startswith(sep):
+            # UNC paths always have a root.
+            root = sep
+        return drv, root, rel
 
     @classmethod
     def _parse_parts(cls, parts):
