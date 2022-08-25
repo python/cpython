@@ -2024,7 +2024,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    
    .. versionchanged:: 3.8
 
-      Before version 3.8 it was neccessary to set the 
+      Before version 3.8 it was necessary to set the 
       :const:`Py_TPFLAGS_HAVE_FINALIZE` flags bit in order for this field to be
       used.  This is no longer required.
 
