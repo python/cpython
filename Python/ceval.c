@@ -154,11 +154,12 @@ lltrace_instruction(_PyInterpreterFrame *frame,
 static void
 lltrace_resume_frame(_PyInterpreterFrame *frame)
 {
-    PyFunctionObject *f = frame->f_func;
-    if (f == NULL) {
+    PyObject *fobj = frame->f_funcobj;
+    if (fobj == NULL || !PyFunction_Check(fobj)) {
         printf("\nResuming frame.");
         return;
     }
+    PyFunctionObject *f = (PyFunctionObject *)fobj;
     PyObject *type, *value, *traceback;
     PyErr_Fetch(&type, &value, &traceback);
     PyObject *name = f->func_qualname;
@@ -2619,7 +2620,8 @@ handle_eval_breaker:
         TARGET(COPY_FREE_VARS) {
             /* Copy closure variables to free variables */
             PyCodeObject *co = frame->f_code;
-            PyObject *closure = frame->f_func->func_closure;
+            assert(PyFunction_Check(frame->f_funcobj));
+            PyObject *closure = ((PyFunctionObject *)frame->f_funcobj)->func_closure;
             int offset = co->co_nlocals + co->co_nplaincellvars;
             assert(oparg == co->co_nfreevars);
             for (int i = 0; i < oparg; ++i) {
@@ -4897,7 +4899,9 @@ handle_eval_breaker:
         }
 
         TARGET(RETURN_GENERATOR) {
-            PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(frame->f_func);
+            assert(PyFunction_Check(frame->f_funcobj));
+            PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
+            PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
             if (gen == NULL) {
                 goto error;
             }
@@ -4919,7 +4923,7 @@ handle_eval_breaker:
             /* Make sure that frame is in a valid state */
             frame->stacktop = 0;
             frame->f_locals = NULL;
-            Py_INCREF(frame->f_func);
+            Py_INCREF(frame->f_funcobj);
             Py_INCREF(frame->f_code);
             /* Restore previous cframe and return. */
             tstate->cframe = cframe.previous;
