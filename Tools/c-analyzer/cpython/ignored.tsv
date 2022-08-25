@@ -503,6 +503,8 @@ Modules/_struct.c	-	lilendian_table	-
 Modules/_tkinter.c	-	state_key	-
 Modules/_xxsubinterpretersmodule.c	-	_channelid_end_recv	-
 Modules/_xxsubinterpretersmodule.c	-	_channelid_end_send	-
+Modules/_zoneinfo.c	-	DAYS_BEFORE_MONTH	-
+Modules/_zoneinfo.c	-	DAYS_IN_MONTH	-
 Modules/arraymodule.c	-	descriptors	-
 Modules/arraymodule.c	-	emptybuf	-
 Modules/cjkcodecs/cjkcodecs.h	-	__methods	-
