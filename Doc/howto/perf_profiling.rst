@@ -9,9 +9,9 @@ Python support for the Linux ``perf`` profiler
 :author: Pablo Galindo
 
 The Linux ``perf`` profiler is a very powerful tool that allows you to profile and
-obtain information about the performance of your application. It is a very powerful
-profiler that also has a very vibrant ecosystem of tools that aid with the analysis
-of the data that it produces.
+obtain information about the performance of your application. ``perf`` also has
+a very vibrant ecosystem of tools that aid with the analysis of the data that it
+produces.
 
 The main problem with using the ``perf`` profiler with Python applications is that
 ``perf`` only allows to get information about native symbols, this is, the names of
@@ -29,7 +29,7 @@ relationship between this piece of code and the associated Python function using
 
     Support for the ``perf`` profiler is only currently available for Linux on
     selected architectures. Check the output of the configure build step or
-    check the output of ``python.exe -m sysconfig | grep HAVE_PERF_TRAMPOLINE``
+    check the output of ``python -m sysconfig | grep HAVE_PERF_TRAMPOLINE``
     to see if your system is supported.
 
 For example, consider the following script:
@@ -198,4 +198,3 @@ frame pointers and therefore it may not be able to show Python functions in the 
 of ``perf``.
 
 .. _perf map files: https://github.com/torvalds/linux/blob/0513e464f9007b70b96740271a948ca5ab6e7dd7/tools/perf/Documentation/jit-interface.txt
-
