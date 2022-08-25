@@ -240,6 +240,8 @@ def _check_typedep(decl, typedecl, types, knowntypes):
     elif decl.kind is KIND.VARIABLE:
         if not is_process_global(decl):
             return None
+        if _has_other_supported_type(decl):
+            return None
         checked = _check_vartype(decl, typedecl, types, knowntypes)
         return 'mutable' if checked is FIXED_TYPE else checked
     else:
