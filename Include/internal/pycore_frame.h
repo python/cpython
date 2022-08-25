@@ -95,9 +95,27 @@ static inline void _PyFrame_StackPush(_PyInterpreterFrame *f, PyObject *value) {
 
 void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest);
 
+static inline void
+_PyFrame_InitializeSpecialsTrampoline(
+    _PyInterpreterFrame *frame, PyCodeObject *code, int stackdepth, int start)
+{
+    frame->f_funcobj = Py_NewRef(Py_None);
+    frame->f_code = (PyCodeObject *)Py_NewRef(code);
+#ifdef Py_DEBUG
+    frame->f_builtins = NULL;
+    frame->f_globals = NULL;
+#endif
+    frame->f_locals = NULL;
+    frame->stacktop = code->co_nlocalsplus + stackdepth;
+    frame->frame_obj = NULL;
+    frame->prev_instr = _PyCode_CODE(code) + start;
+    frame->is_entry = false;
+    frame->owner = FRAME_OWNED_BY_THREAD;
+}
+
 /* Consumes reference to func and locals */
 static inline void
-_PyFrame_InitializeSpecials(
+_PyFrame_InitializeSpecialsFromFunction(
     _PyInterpreterFrame *frame, PyFunctionObject *func,
     PyObject *locals, PyCodeObject *code)
 {
@@ -213,7 +231,20 @@ _PyFrame_PushUnchecked(PyThreadState *tstate, PyFunctionObject *func)
     _PyInterpreterFrame *new_frame = (_PyInterpreterFrame *)tstate->datastack_top;
     tstate->datastack_top += code->co_framesize;
     assert(tstate->datastack_top < tstate->datastack_limit);
-    _PyFrame_InitializeSpecials(new_frame, func, NULL, code);
+    _PyFrame_InitializeSpecialsFromFunction(new_frame, func, NULL, code);
+    return new_frame;
+}
+
+/* Pushes a trampoline frame without checking for space.
+ * Must be guarded by _PyThreadState_HasStackSpace() */
+static inline _PyInterpreterFrame *
+_PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int stackdepth, int start)
+{
+    CALL_STAT_INC(frames_pushed);
+    _PyInterpreterFrame *new_frame = (_PyInterpreterFrame *)tstate->datastack_top;
+    tstate->datastack_top += code->co_framesize;
+    assert(tstate->datastack_top < tstate->datastack_limit);
+    _PyFrame_InitializeSpecialsTrampoline(new_frame, code, stackdepth, start);
     return new_frame;
 }
 

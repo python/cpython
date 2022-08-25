@@ -1503,12 +1503,13 @@ get_init_for_simple_managed_python_class(PyTypeObject *tp)
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_INIT_NOT_SIMPLE);
         return NULL;
     }
+    Py_CLEAR(((PyHeapTypeObject *)tp)->_spec_cache.init);
     ((PyHeapTypeObject *)tp)->_spec_cache.init = init;
     return (PyFunctionObject *)init;
 }
 
 static int
-setup_init_cleanup_func(void);
+setup_init_cleanup_code(void);
 
 static int
 specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr,
@@ -1516,7 +1517,7 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr,
 {
     assert(_Py_OPCODE(*instr) == CALL_ADAPTIVE);
     _PyCallCache *cache = (_PyCallCache *)(instr + 1);
-    if (setup_init_cleanup_func()) {
+    if (setup_init_cleanup_code()) {
         return -1;
     }
     assert(PyType_Check(callable));
@@ -2121,13 +2122,15 @@ success:
     cache->counter = miss_counter_start();
 }
 
-/* Code for init cleanup function.
+/* Code init cleanup.
  * CALL_NO_KW_ALLOC_AND_ENTER_INIT will set up
  * the frame to execute the EXIT_INIT_CHECK
  * instruction.
  * Starts with an assertion error, in case it is called
  * directly.
  * Ends with a RESUME so that it is not traced.
+ * This is used as a plain code object, not a function,
+ * so must not access globals or builtins.
  */
 char INIT_CLEANUP_CODE[10] = {
     LOAD_ASSERTION_ERROR, 0,
@@ -2138,7 +2141,7 @@ char INIT_CLEANUP_CODE[10] = {
 };
 
 static int
-setup_init_cleanup_func(void) {
+setup_init_cleanup_code(void) {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->callable_cache.init_cleanup != NULL) {
         return 0;
@@ -2188,27 +2191,9 @@ setup_init_cleanup_func(void) {
     };
 
     codeobj = _PyCode_New(&con);
-    if (codeobj == NULL) {
-        goto cleanup;
-    }
-    globals = PyDict_New();
-    if (globals == NULL) {
-        goto cleanup;
-    }
-    PyFrameConstructor desc = {
-        .fc_globals = globals,
-        .fc_builtins = globals,
-        .fc_name = codeobj->co_name,
-        .fc_qualname = codeobj->co_name,
-        .fc_code = (PyObject *)codeobj,
-        .fc_defaults = NULL,
-        .fc_kwdefaults = NULL,
-        .fc_closure = NULL
-    };
-    interp->callable_cache.init_cleanup = _PyFunction_FromConstructor(&desc);
+    interp->callable_cache.init_cleanup = codeobj;
 cleanup:
     PyErr_Clear();
-    Py_XDECREF(codeobj);
     Py_XDECREF(globals);
     Py_XDECREF(name);
     Py_XDECREF(code);

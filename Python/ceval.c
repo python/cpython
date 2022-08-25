@@ -1088,11 +1088,13 @@ resume_frame:
 
 #ifdef LLTRACE
     {
-        int r = PyDict_Contains(GLOBALS(), &_Py_ID(__lltrace__));
-        if (r < 0) {
-            goto exit_unwind;
+        if (PyFunction_Check(frame->f_funcobj)) {
+            int r = PyDict_Contains(GLOBALS(), &_Py_ID(__lltrace__));
+            if (r < 0) {
+                goto exit_unwind;
+            }
+            lltrace = r;
         }
-        lltrace = r;
     }
     if (lltrace) {
         lltrace_resume_frame(frame);
@@ -4473,22 +4475,19 @@ handle_eval_breaker:
             }
             PEEK(oparg+1) = self;
             Py_DECREF(tp);
-            PyInterpreterState *interp = _PyInterpreterState_GET();
-            PyFunctionObject *init_cleanup = interp->callable_cache.init_cleanup;
-            Py_INCREF(init_cleanup);
-            _PyInterpreterFrame *shim = _PyFrame_PushUnchecked(tstate, init_cleanup);
             CALL_STAT_INC(inlined_py_calls);
-            shim->previous = frame;
-            shim->prev_instr = _PyCode_CODE(shim->f_code) + 1;
-            assert(_Py_OPCODE(*(_PyCode_CODE(shim->f_code)+ 2)) == EXIT_INIT_CHECK);
             if (_Py_EnterRecursiveCallTstate(tstate, "")) {
                 tstate->recursion_remaining--;
                 goto exit_unwind;
             }
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
+                tstate, interp->callable_cache.init_cleanup, 1, 1);
+            assert(_Py_OPCODE(*(_PyCode_CODE(shim->f_code)+ 2)) == EXIT_INIT_CHECK);
             /* Push self onto stack of shim */
             Py_INCREF(self);
-            shim->stacktop = 1;
             shim->localsplus[0] = self;
+            shim->previous = frame;
             Py_INCREF(init);
             _PyInterpreterFrame *init_frame = _PyFrame_PushUnchecked(tstate, init);
             /* Copy self followed by args to __init__ frame */
@@ -5907,7 +5906,7 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
     if (frame == NULL) {
         goto fail;
     }
-    _PyFrame_InitializeSpecials(frame, func, locals, code);
+    _PyFrame_InitializeSpecialsFromFunction(frame, func, locals, code);
     PyObject **localsarray = &frame->localsplus[0];
     for (int i = 0; i < code->co_nlocalsplus; i++) {
         localsarray[i] = NULL;
