@@ -251,8 +251,8 @@ class UTF8ValidatorTest(unittest.TestCase):
             # We want to assert that the python subprocess failed gracefully,
             # not via a signal.
             self.assertGreaterEqual(rc, 1)
-            self.assertTrue(b"Non-UTF-8 code starting with" in stderr)
-            self.assertTrue(b"on line 5" in stderr)
+            self.assertIn(b"Non-UTF-8 code starting with", stderr)
+            self.assertIn(b"on line 5", stderr)
 
         # continuation bytes in a sequence of 2, 3, or 4 bytes
         continuation_bytes = [bytes([x]) for x in range(0x80, 0xC0)]
