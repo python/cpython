@@ -224,11 +224,7 @@ def _check_typedep(decl, typedecl, types, knowntypes):
         # XXX Fail?
         return 'typespec (missing)'
     elif typedecl is _info.UNKNOWN:
-        vartype = str(decl.vartype).split()
-        if vartype[0] == 'struct':
-            vartype = vartype[1:]
-        vartype = ''.join(vartype)
-        if vartype in _OTHER_SUPPORTED_TYPES:
+        if _has_other_supported_type(decl):
             return None
         # XXX Is this right?
         return 'typespec (unknown)'
@@ -248,6 +244,14 @@ def _check_typedep(decl, typedecl, types, knowntypes):
         return 'mutable' if checked is FIXED_TYPE else checked
     else:
         raise NotImplementedError(decl)
+
+
+def _has_other_supported_type(decl):
+    vartype = str(decl.vartype).split()
+    if vartype[0] == 'struct':
+        vartype = vartype[1:]
+    vartype = ''.join(vartype)
+    return vartype in _OTHER_SUPPORTED_TYPES
 
 
 def _check_vartype(decl, typedecl, types, knowntypes):
