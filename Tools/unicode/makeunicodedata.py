@@ -77,6 +77,7 @@ BIDIRECTIONAL_NAMES = [ "", "L", "LRE", "LRO", "R", "AL", "RLE", "RLO",
     "PDF", "EN", "ES", "ET", "AN", "CS", "NSM", "BN", "B", "S", "WS",
     "ON", "LRI", "RLI", "FSI", "PDI" ]
 
+# "N" needs to be the first entry, see the comment in makeunicodedata
 EASTASIANWIDTH_NAMES = [ "N", "H", "W", "Na", "A", "F" ]
 
 MANDATORY_LINE_BREAKS = [ "BK", "CR", "LF", "NL" ]
@@ -135,8 +136,13 @@ def maketables(trace=0):
 
 def makeunicodedata(unicode, trace):
 
-    # the default value of east_asian_width is "N", for all code points not
-    # mentioned in EastAsianWidth.txt
+    # the default value of east_asian_width is "N", for unassigned code points
+    # not mentioned in EastAsianWidth.txt
+    # in addition there are some reserved but unassigned code points in CJK
+    # ranges that are classified as "W". code points in private use areas
+    # have a width of "A". both of these have entries in
+    # EastAsianWidth.txt
+    # see https://unicode.org/reports/tr11/#Unassigned
     assert EASTASIANWIDTH_NAMES[0] == "N"
     dummy = (0, 0, 0, 0, 0, 0)
     table = [dummy]
