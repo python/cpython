@@ -5230,6 +5230,25 @@ class TestParseKnownArgs(TestCase):
         self.assertEqual(NS(v=3, spam=True, badger="B"), args)
         self.assertEqual(["C", "--foo", "4"], extras)
 
+    def test_nongreedy(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('first', nargs='*', action='extend')
+        parser.add_argument('second')
+
+        argv = ['arg1', 'arg2', 'arg3']
+        args = parser.parse_args(argv)
+        self.assertEqual(NS(first=['arg1', 'arg2'], second='arg3'), args)
+
+    def test_greedy(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--foo', action='store')
+        parser.add_argument('first', nargs='**', action='extend')
+
+        argv = ['arg1', 'arg2', '--foo', 'bar', 'arg3', 'arg4']
+        args = parser.parse_args(argv)
+        self.assertEqual(NS(foo='bar',
+                            first=['arg1', 'arg2', 'arg3', 'arg4']), args)
+
 # ===========================
 # parse_intermixed_args tests
 # ===========================

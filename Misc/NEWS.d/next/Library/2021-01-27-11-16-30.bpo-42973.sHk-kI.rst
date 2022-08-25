@@ -1,0 +1,1 @@
+New possible value ``'**'`` for ``nargs`` parameter of :func:`ArgumentParser.add_argument` in :mod:`argparse`.

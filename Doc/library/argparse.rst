@@ -1037,6 +1037,28 @@ See also :ref:`specifying-ambiguous-arguments`. The supported values are:
      usage: PROG [-h] foo [foo ...]
      PROG: error: the following arguments are required: foo
 
+.. index:: single: **; in argparse module
+
+* ``'**'``. This value is only valid for positional arguments. Like ``'*'``,
+  all command-line args are gathered into a list. In contrast to ``'*'``,
+  all arguments are consumed, even if they are interspersed with optional
+  arguments. For example::
+
+     >>> parser = argparse.ArgumentParser()
+     >>> parser.add_argument('--foo', action='store_true')
+     >>> parser.add_argument('bar', nargs='**', action='extend')
+     >>> parser.parse_args('arg1 arg2 --foo arg3 arg4'.split())
+     Namespace(foo=True, bar=['arg1', 'arg2', 'arg3', 'arg4'])
+
+  Note that the ``action`` associated with the positional argument is executed
+  for each group of command-line args separated by optional args, so using the
+  default ``'store'`` action will not give expected results. In the example
+  above, if ``action`` was ``'store'``, ``bar`` in the returned namespace would
+  be just ``['args3', 'args4']``. Positional argument with ``nargs='**'``, if
+  preset, must be the last positional argument.
+
+  .. versionadded:: 3.10
+
 If the ``nargs`` keyword argument is not provided, the number of arguments consumed
 is determined by the action_.  Generally this means a single command-line argument
 will be consumed and a single item (not a list) will be produced.
@@ -1436,6 +1458,8 @@ behavior::
    >>> parser.add_argument('--foo', dest='bar')
    >>> parser.parse_args('--foo XXX'.split())
    Namespace(bar='XXX')
+
+.. _action-classes:
 
 Action classes
 ^^^^^^^^^^^^^^
