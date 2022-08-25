@@ -1022,6 +1022,36 @@ function call.  See the debugger chapter in the library manual."
 );
 
 /*[clinic input]
+sys._settraceallthreads
+
+    arg: object
+    /
+
+Set the global debug tracing function in all running threads belonging to the current interpreter.
+
+It will be called on each function call. See the debugger chapter
+in the library manual.
+[clinic start generated code]*/
+
+static PyObject *
+sys__settraceallthreads(PyObject *module, PyObject *arg)
+/*[clinic end generated code: output=161cca30207bf3ca input=5906aa1485a50289]*/
+{
+    PyObject* argument = NULL;
+    Py_tracefunc func = NULL;
+
+    if (arg != Py_None) {
+        func = trace_trampoline;
+        argument = arg;
+    }
+
+
+    PyEval_SetTraceAllThreads(func, argument);
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
 sys.gettrace
 
 Return the global debug tracing function set with sys.settrace.
@@ -1065,6 +1095,35 @@ PyDoc_STRVAR(setprofile_doc,
 Set the profiling function.  It will be called on each function call\n\
 and return.  See the profiler chapter in the library manual."
 );
+
+/*[clinic input]
+sys._setprofileallthreads
+
+    arg: object
+    /
+
+Set the profiling function in all running threads belonging to the current interpreter.
+
+It will be called on each function call and return.  See the profiler chapter
+in the library manual.
+[clinic start generated code]*/
+
+static PyObject *
+sys__setprofileallthreads(PyObject *module, PyObject *arg)
+/*[clinic end generated code: output=2d61319e27b309fe input=d1a356d3f4f9060a]*/
+{
+    PyObject* argument = NULL;
+    Py_tracefunc func = NULL;
+
+    if (arg != Py_None) {
+        func = profile_trampoline;
+        argument = arg;
+    }
+
+    PyEval_SetProfileAllThreads(func, argument);
+
+    Py_RETURN_NONE;
+}
 
 /*[clinic input]
 sys.getprofile
@@ -2035,9 +2094,11 @@ static PyMethodDef sys_methods[] = {
     SYS_GETSWITCHINTERVAL_METHODDEF
     SYS_SETDLOPENFLAGS_METHODDEF
     {"setprofile", sys_setprofile, METH_O, setprofile_doc},
+    SYS__SETPROFILEALLTHREADS_METHODDEF
     SYS_GETPROFILE_METHODDEF
     SYS_SETRECURSIONLIMIT_METHODDEF
     {"settrace", sys_settrace, METH_O, settrace_doc},
+    SYS__SETTRACEALLTHREADS_METHODDEF
     SYS_GETTRACE_METHODDEF
     SYS_CALL_TRACING_METHODDEF
     SYS__DEBUGMALLOCSTATS_METHODDEF
