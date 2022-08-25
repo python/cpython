@@ -1,0 +1,1 @@
+Adds internal ``_wmi`` module for directly querying OS properties
