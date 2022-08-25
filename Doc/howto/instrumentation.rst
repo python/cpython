@@ -3,7 +3,7 @@
 .. _instrumentation:
 
 ===============================================
-Instrumenting CPython with DTrace and SystemTap
+instrumenting cpython with dtrace and systemtap
 ===============================================
 
 :author: David Malcolm
