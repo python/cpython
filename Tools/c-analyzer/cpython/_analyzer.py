@@ -240,12 +240,25 @@ def _check_typedep(decl, typedecl, types, knowntypes):
     elif decl.kind is KIND.VARIABLE:
         if not is_process_global(decl):
             return None
+        if _is_kwlist(decl):
+            return None
         if _has_other_supported_type(decl):
             return None
         checked = _check_vartype(decl, typedecl, types, knowntypes)
         return 'mutable' if checked is FIXED_TYPE else checked
     else:
         raise NotImplementedError(decl)
+
+
+def _is_kwlist(decl):
+    # keywords for PyArg_ParseTupleAndKeywords()
+    # "static char *name[]" -> "static const char * const name[]"
+    # XXX These should be made const.
+    if decl.name not in ('kwlist', 'keywords', 'kwargs'):
+        if not decl.name.endswith('_kwlist'):
+            return False
+    vartype = ''.join(str(decl.vartype).split())
+    return vartype == 'char*[]'
 
 
 def _has_other_supported_type(decl):

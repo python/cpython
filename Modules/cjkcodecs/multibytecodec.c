@@ -63,9 +63,6 @@ typedef struct {
     _PyUnicodeWriter    writer;
 } MultibyteDecodeBuffer;
 
-static char *incnewkwarglist[] = {"errors", NULL};
-static char *streamkwarglist[] = {"stream", "errors", NULL};
-
 static PyObject *multibytecodec_encode(MultibyteCodec *,
                 MultibyteCodec_State *, PyObject *, Py_ssize_t *,
                 PyObject *, int);
@@ -1033,9 +1030,10 @@ mbiencoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     MultibyteIncrementalEncoderObject *self;
     PyObject *codec = NULL;
     char *errors = NULL;
+    static char *kwlist[] = {"errors", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|s:IncrementalEncoder",
-                                     incnewkwarglist, &errors))
+                                     kwlist, &errors))
         return NULL;
 
     self = (MultibyteIncrementalEncoderObject *)type->tp_alloc(type, 0);
@@ -1308,9 +1306,10 @@ mbidecoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     MultibyteIncrementalDecoderObject *self;
     PyObject *codec = NULL;
     char *errors = NULL;
+    static char *kwlist[] = {"errors", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|s:IncrementalDecoder",
-                                     incnewkwarglist, &errors))
+                                     kwlist, &errors))
         return NULL;
 
     self = (MultibyteIncrementalDecoderObject *)type->tp_alloc(type, 0);
@@ -1625,9 +1624,10 @@ mbstreamreader_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     MultibyteStreamReaderObject *self;
     PyObject *stream, *codec = NULL;
     char *errors = NULL;
+    static char *kwlist[] = {"stream", "errors", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|s:StreamReader",
-                            streamkwarglist, &stream, &errors))
+                            kwlist, &stream, &errors))
         return NULL;
 
     self = (MultibyteStreamReaderObject *)type->tp_alloc(type, 0);
@@ -1849,9 +1849,10 @@ mbstreamwriter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     MultibyteStreamWriterObject *self;
     PyObject *stream, *codec = NULL;
     char *errors = NULL;
+    static char *kwlist[] = {"stream", "errors", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|s:StreamWriter",
-                            streamkwarglist, &stream, &errors))
+                            kwlist, &stream, &errors))
         return NULL;
 
     self = (MultibyteStreamWriterObject *)type->tp_alloc(type, 0);

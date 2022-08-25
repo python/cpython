@@ -232,8 +232,8 @@ INT_TYPE_CONVERTER_FUNC(lzma_match_finder, lzma_mf_converter)
 static void *
 parse_filter_spec_lzma(_lzma_state *state, PyObject *spec)
 {
-    static char *optnames[] = {"id", "preset", "dict_size", "lc", "lp",
-                               "pb", "mode", "nice_len", "mf", "depth", NULL};
+    static char *kwlist[] = {"id", "preset", "dict_size", "lc", "lp",
+                             "pb", "mode", "nice_len", "mf", "depth", NULL};
     PyObject *id;
     PyObject *preset_obj;
     uint32_t preset = LZMA_PRESET_DEFAULT;
@@ -270,7 +270,7 @@ parse_filter_spec_lzma(_lzma_state *state, PyObject *spec)
     }
 
     if (!PyArg_ParseTupleAndKeywords(state->empty_tuple, spec,
-                                     "|OOO&O&O&O&O&O&O&O&", optnames,
+                                     "|OOO&O&O&O&O&O&O&O&", kwlist,
                                      &id, &preset_obj,
                                      uint32_converter, &options->dict_size,
                                      uint32_converter, &options->lc,
@@ -292,12 +292,12 @@ parse_filter_spec_lzma(_lzma_state *state, PyObject *spec)
 static void *
 parse_filter_spec_delta(_lzma_state *state, PyObject *spec)
 {
-    static char *optnames[] = {"id", "dist", NULL};
+    static char *kwlist[] = {"id", "dist", NULL};
     PyObject *id;
     uint32_t dist = 1;
     lzma_options_delta *options;
 
-    if (!PyArg_ParseTupleAndKeywords(state->empty_tuple, spec, "|OO&", optnames,
+    if (!PyArg_ParseTupleAndKeywords(state->empty_tuple, spec, "|OO&", kwlist,
                                      &id, uint32_converter, &dist)) {
         PyErr_SetString(PyExc_ValueError,
                         "Invalid filter specifier for delta filter");
@@ -316,12 +316,12 @@ parse_filter_spec_delta(_lzma_state *state, PyObject *spec)
 static void *
 parse_filter_spec_bcj(_lzma_state *state, PyObject *spec)
 {
-    static char *optnames[] = {"id", "start_offset", NULL};
+    static char *kwlist[] = {"id", "start_offset", NULL};
     PyObject *id;
     uint32_t start_offset = 0;
     lzma_options_bcj *options;
 
-    if (!PyArg_ParseTupleAndKeywords(state->empty_tuple, spec, "|OO&", optnames,
+    if (!PyArg_ParseTupleAndKeywords(state->empty_tuple, spec, "|OO&", kwlist,
                                      &id, uint32_converter, &start_offset)) {
         PyErr_SetString(PyExc_ValueError,
                         "Invalid filter specifier for BCJ filter");
@@ -768,7 +768,7 @@ For one-shot compression, use the compress() function instead.
 static int
 Compressor_init(Compressor *self, PyObject *args, PyObject *kwargs)
 {
-    static char *arg_names[] = {"format", "check", "preset", "filters", NULL};
+    static char *kwlist[] = {"format", "check", "preset", "filters", NULL};
     int format = FORMAT_XZ;
     int check = -1;
     uint32_t preset = LZMA_PRESET_DEFAULT;
@@ -777,7 +777,7 @@ Compressor_init(Compressor *self, PyObject *args, PyObject *kwargs)
     _lzma_state *state = PyType_GetModuleState(Py_TYPE(self));
     assert(state != NULL);
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                                     "|iiOO:LZMACompressor", arg_names,
+                                     "|iiOO:LZMACompressor", kwlist,
                                      &format, &check, &preset_obj,
                                      &filterspecs)) {
         return -1;
