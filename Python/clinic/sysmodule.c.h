@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(sys_addaudithook__doc__,
 "addaudithook($module, /, hook)\n"
 "--\n"
@@ -18,8 +24,31 @@ static PyObject *
 sys_addaudithook(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(hook), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"hook", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "addaudithook", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "addaudithook",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject *hook;
 
@@ -263,6 +292,18 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys__settraceallthreads__doc__,
+"_settraceallthreads($module, arg, /)\n"
+"--\n"
+"\n"
+"Set the global debug tracing function in all running threads belonging to the current interpreter.\n"
+"\n"
+"It will be called on each function call. See the debugger chapter\n"
+"in the library manual.");
+
+#define SYS__SETTRACEALLTHREADS_METHODDEF    \
+    {"_settraceallthreads", (PyCFunction)sys__settraceallthreads, METH_O, sys__settraceallthreads__doc__},
+
 PyDoc_STRVAR(sys_gettrace__doc__,
 "gettrace($module, /)\n"
 "--\n"
@@ -282,6 +323,18 @@ sys_gettrace(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return sys_gettrace_impl(module);
 }
+
+PyDoc_STRVAR(sys__setprofileallthreads__doc__,
+"_setprofileallthreads($module, arg, /)\n"
+"--\n"
+"\n"
+"Set the profiling function in all running threads belonging to the current interpreter.\n"
+"\n"
+"It will be called on each function call and return.  See the profiler chapter\n"
+"in the library manual.");
+
+#define SYS__SETPROFILEALLTHREADS_METHODDEF    \
+    {"_setprofileallthreads", (PyCFunction)sys__setprofileallthreads, METH_O, sys__setprofileallthreads__doc__},
 
 PyDoc_STRVAR(sys_getprofile__doc__,
 "getprofile($module, /)\n"
@@ -425,8 +478,31 @@ static PyObject *
 sys_set_coroutine_origin_tracking_depth(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(depth), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"depth", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "set_coroutine_origin_tracking_depth", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_coroutine_origin_tracking_depth",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     int depth;
 
@@ -1118,4 +1194,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=41122dae1bb7158c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=322fb0409e376ad4 input=a9049054013a1b77]*/

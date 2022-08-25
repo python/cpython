@@ -775,7 +775,7 @@ readinst(char *buf, int buf_size, PyObject *meth)
     Py_ssize_t len;
     const char *ptr;
 
-    str = PyObject_CallFunction(meth, "n", buf_size);
+    str = PyObject_CallFunction(meth, "i", buf_size);
     if (str == NULL)
         goto error;
 

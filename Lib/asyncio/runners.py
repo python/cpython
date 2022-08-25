@@ -114,14 +114,13 @@ class Runner:
 
         self._interrupt_count = 0
         try:
-            if self._set_event_loop:
-                events.set_event_loop(self._loop)
             return self._loop.run_until_complete(task)
         except exceptions.CancelledError:
-            if self._interrupt_count > 0 and task.uncancel() == 0:
-                raise KeyboardInterrupt()
-            else:
-                raise  # CancelledError
+            if self._interrupt_count > 0:
+                uncancel = getattr(task, "uncancel", None)
+                if uncancel is not None and uncancel() == 0:
+                    raise KeyboardInterrupt()
+            raise  # CancelledError
         finally:
             if (sigint_handler is not None
                 and signal.getsignal(signal.SIGINT) is sigint_handler
@@ -135,7 +134,11 @@ class Runner:
             return
         if self._loop_factory is None:
             self._loop = events.new_event_loop()
-            self._set_event_loop = True
+            if not self._set_event_loop:
+                # Call set_event_loop only once to avoid calling
+                # attach_loop multiple times on child watchers
+                events.set_event_loop(self._loop)
+                self._set_event_loop = True
         else:
             self._loop = self._loop_factory()
         if self._debug is not None:
