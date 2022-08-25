@@ -187,6 +187,9 @@
     <ClCompile Include="..\Python\getversion.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\ceval_gil.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\hamt.c">
       <Filter>Source Files</Filter>
     </ClCompile>
