@@ -1,7 +1,7 @@
-# -*- coding: koi8-r -*-
+# -*- coding: utf-8 -*-
 
 import unittest
-from test.support import script_helper, captured_stdout, requires_subprocess
+from test.support import findfile, script_helper, captured_stdout, requires_subprocess
 from test.support.os_helper import TESTFN, unlink, rmtree
 from test.support.import_helper import unload
 import importlib
@@ -13,14 +13,9 @@ import tempfile
 class MiscSourceEncodingTest(unittest.TestCase):
 
     def test_pep263(self):
-        self.assertEqual(
-            "Питон".encode("utf-8"),
-            b'\xd0\x9f\xd0\xb8\xd1\x82\xd0\xbe\xd0\xbd'
-        )
-        self.assertEqual(
-            "\П".encode("utf-8"),
-            b'\\\xd0\x9f'
-        )
+        # Test moved to its own file because encoding isn't understood by all editors.
+        # See #96272
+        script_helper.assert_python_ok(findfile("source_encoding_pep263.py"))
 
     def test_compilestring(self):
         # see #1882
