@@ -6,6 +6,8 @@ filename	funcname	name	reason
 
 Python/pylifecycle.c	-	_PyRuntime	-
 
+# All uses of _PyArg_Parser are handled in c-analyzr/cpython/_analyzer.py.
+
 #-----------------------
 # others
 
@@ -331,6 +333,9 @@ Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	AST_LITERAL_EVAL_INITIALIZED
 # XXX Make them const.
 
 # These are all variables that we will be leaving global.
+
+# All module defs, type defs, etc. are handled in c-analyzr/cpython/_analyzer.py.
+# All kwlist arrays are handled in c-analyzr/cpython/_analyzer.py.
 
 #-----------------------
 # other vars that are actually constant
