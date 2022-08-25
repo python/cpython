@@ -489,25 +489,37 @@ static void fp_ungetc(int c, struct tok_state *tok) {
 
 /* Check whether the characters at s start a valid
    UTF-8 sequence. Return the number of characters forming
-   the sequence if yes, 0 if not.  */
+   the sequence if yes, 0 if not.  The special cases match
+   those in stringlib/codecs.h:decode_utf8.
+*/
 static int valid_utf8(const unsigned char* s)
 {
     int expected = 0;
     int length;
-    if (*s < 0x80)
+    if (*s < 0x80) {
         /* single-byte code */
         return 1;
-    if (*s < 0xc0)
-        /* following byte */
-        return 0;
-    if (*s < 0xE0)
+    } else if (*s < 0xE0) {
+        if (*s < 0xC2) {
+            return 0;
+        }
         expected = 1;
-    else if (*s < 0xF0)
+    } else if (*s < 0xF0) {
+        if (*s == 0xE0 && *(s + 1) < 0xA0) {
+            return 0;
+        } else if (*s == 0xED && *(s + 1) >= 0xA0) {
+            return 0;
+        }
         expected = 2;
-    else if (*s < 0xF8)
+    } else if (*s < 0xF5) {
+        if (*(s + 1) < 0x90 ? *s == 0xF0 : *s == 0xF4) {
+            return 0;
+        }
         expected = 3;
-    else
+    } else {
+        /* invalid start byte */
         return 0;
+    }
     length = expected + 1;
     for (; expected; expected--)
         if (s[expected] < 0x80 || s[expected] >= 0xC0)
