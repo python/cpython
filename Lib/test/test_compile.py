@@ -8,6 +8,7 @@ import _ast
 import tempfile
 import types
 import textwrap
+import warnings
 from test import support
 from test.support import script_helper, requires_debug_ranges
 from test.support.os_helper import FakePath
@@ -1231,7 +1232,9 @@ f(
             with self.subTest(body):
                 namespace = {}
                 source = textwrap.dedent(source_template.format(body))
-                exec(source, namespace)
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', SyntaxWarning)
+                    exec(source, namespace)
                 code = namespace["f"].__code__
                 self.assertOpcodeSourcePositionIs(
                     code,
