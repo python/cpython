@@ -1841,7 +1841,7 @@ altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
 			-output $(DESTDIR)$(BINDIR)/python$(VERSION)-intel64$(EXE) \
 			$(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE); \
 	fi
-	# Install MacOS debug information (if available)
+	# Install macOS debug information (if available)
 	if test -d "$(BUILDPYTHON).dSYM"; then \
 		echo $(DSYMUTIL_PATH) $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE); \
 		$(DSYMUTIL_PATH) $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE); \

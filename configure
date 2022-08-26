@@ -1831,7 +1831,7 @@ Optional Packages:
                           enable Link-Time-Optimization in any build (default
                           is no)
   --with-dsymutil         link debug information into final executable with
-                          dsymutil in MacOS (default is no)
+                          dsymutil in macOS (default is no)
   --with-address-sanitizer
                           enable AddressSanitizer memory error detector,
                           'asan' (default is no)
@@ -10996,7 +10996,7 @@ if test "${with_dsymutil+set}" = set; then :
 if test "$withval" != no
 then
   if test "$MACHDEP" != "darwin"; then
-    as_fn_error $? "dsymutil debug linking is only available in MacOS." "$LINENO" 5
+    as_fn_error $? "dsymutil debug linking is only available in macOS." "$LINENO" 5
   fi
  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; };

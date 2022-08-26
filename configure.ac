@@ -3060,12 +3060,12 @@ DSYMUTIL=
 DSYMUTIL_PATH=
 AC_MSG_CHECKING(for --with-dsymutil)
 AC_ARG_WITH(dsymutil,
-            AS_HELP_STRING([--with-dsymutil], [link debug information into final executable with dsymutil in MacOS  (default is no)]),
+            AS_HELP_STRING([--with-dsymutil], [link debug information into final executable with dsymutil in macOS  (default is no)]),
 [
 if test "$withval" != no
 then
   if test "$MACHDEP" != "darwin"; then
-    AC_MSG_ERROR([dsymutil debug linking is only available in MacOS.])
+    AC_MSG_ERROR([dsymutil debug linking is only available in macOS.])
   fi
  AC_MSG_RESULT(yes);
   DSYMUTIL='true'
