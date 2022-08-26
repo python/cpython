@@ -153,7 +153,7 @@ complete listing.
 .. c:macro:: Py_GETENV(s)
 
    Like ``getenv(s)``, but returns ``NULL`` if :option:`-E` was passed on the
-   command line (i.e. if ``Py_IgnoreEnvironmentFlag`` is set).
+   command line (see :c:member:`PyConfig.use_environment`).
 
 .. c:macro:: Py_MAX(x, y)
 

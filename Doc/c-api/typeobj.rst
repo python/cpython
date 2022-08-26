@@ -2062,9 +2062,9 @@ This results in types that are limited relative to types defined in Python:
   :ref:`sub-interpreters <sub-interpreter-support>`, so they should not
   include any subinterpreter-specific state.
 
-Also, since :c:type:`PyTypeObject` is not part of the :ref:`stable ABI <stable>`,
-any extension modules using static types must be compiled for a specific
-Python minor version.
+Also, since :c:type:`PyTypeObject` is only part of the :ref:`Limited API
+<stable>` as an opaque struct, any extension modules using static types must be
+compiled for a specific Python minor version.
 
 
 .. _heap-types:

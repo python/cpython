@@ -388,6 +388,7 @@ PYTHON_OBJS=	\
 		Python/getcopyright.o \
 		Python/getplatform.o \
 		Python/getversion.o \
+		Python/ceval_gil.o \
 		Python/hamt.o \
 		Python/hashtable.o \
 		Python/import.o \
@@ -640,6 +641,16 @@ profile-opt: profile-run-stamp
 	-rm -f profile-clean-stamp
 	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS_NODIST) $(PGO_PROF_USE_FLAG)" LDFLAGS_NODIST="$(LDFLAGS_NODIST)"
 
+bolt-opt: @PREBOLT_RULE@
+	rm -f *.fdata
+	@LLVM_BOLT@ ./$(BUILDPYTHON) -instrument -instrumentation-file-append-pid -instrumentation-file=$(abspath $(BUILDPYTHON).bolt) -o $(BUILDPYTHON).bolt_inst
+	./$(BUILDPYTHON).bolt_inst $(PROFILE_TASK) || true
+	@MERGE_FDATA@ $(BUILDPYTHON).*.fdata > $(BUILDPYTHON).fdata
+	@LLVM_BOLT@ ./$(BUILDPYTHON) -o $(BUILDPYTHON).bolt -data=$(BUILDPYTHON).fdata -update-debug-sections -reorder-blocks=ext-tsp -reorder-functions=hfsort+ -split-functions=3 -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=all -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot
+	rm -f *.fdata
+	rm -f $(BUILDPYTHON).bolt_inst
+	mv $(BUILDPYTHON).bolt $(BUILDPYTHON)
+
 # Compile and run with gcov
 .PHONY=coverage coverage-lcov coverage-report
 coverage:
@@ -690,6 +701,7 @@ coverage-report: regen-token regen-frozen
 .PHONY=clinic
 clinic: check-clean-src $(srcdir)/Modules/_blake2/blake2s_impl.c
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py --make --srcdir $(srcdir)
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
 
 # Build the interpreter
 $(BUILDPYTHON):	Programs/python.o $(LINK_PYTHON_DEPS)
@@ -792,10 +804,11 @@ $(DLLLIBRARY) libpython$(LDVERSION).dll.a: $(LIBRARY_OBJS)
 # wasm assets directory is relative to current build dir, e.g. "./usr/local".
 # --preload-file turns a relative asset path into an absolute path.
 
+.PHONY: wasm_stdlib
+wasm_stdlib: $(WASM_STDLIB)
 $(WASM_STDLIB): $(srcdir)/Lib/*.py $(srcdir)/Lib/*/*.py \
 	    $(srcdir)/Tools/wasm/wasm_assets.py \
-	    Makefile pybuilddir.txt Modules/Setup.local \
-	    python.html python.worker.js
+	    Makefile pybuilddir.txt Modules/Setup.local
 	$(PYTHON_FOR_BUILD) $(srcdir)/Tools/wasm/wasm_assets.py \
 	    --buildroot . --prefix $(prefix)
 
@@ -1407,8 +1420,7 @@ regen-opcode-targets:
 		$(srcdir)/Python/opcode_targets.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
 
-Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/ceval_gil.h \
-		$(srcdir)/Python/condvar.h
+Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/condvar.h
 
 Python/frozen.o: $(FROZEN_FILES_OUT)
 
@@ -2509,6 +2521,8 @@ Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
 
 ##########################################################################
 # Module dependencies and platform-specific files
+
+MODULE_DEPS=$(PYTHON_HEADERS) Modules/config.c $(EXPORTSYMS)
 
 MODULE_CMATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_MATH_DEPS=$(srcdir)/Modules/_math.h

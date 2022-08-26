@@ -279,7 +279,7 @@ static inline size_t
 _PyType_PreHeaderSize(PyTypeObject *tp)
 {
     return _PyType_IS_GC(tp) * sizeof(PyGC_Head) +
-        _PyType_HasFeature(tp, Py_TPFLAGS_MANAGED_DICT) * 2 * sizeof(PyObject *);
+        _PyType_HasFeature(tp, Py_TPFLAGS_PREHEADER) * 2 * sizeof(PyObject *);
 }
 
 void _PyObject_GC_Link(PyObject *op);
@@ -296,7 +296,7 @@ extern int _Py_CheckSlotResult(
 
 // Test if a type supports weak references
 static inline int _PyType_SUPPORTS_WEAKREFS(PyTypeObject *type) {
-    return (type->tp_weaklistoffset > 0);
+    return (type->tp_weaklistoffset != 0);
 }
 
 extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
@@ -346,7 +346,7 @@ _PyDictOrValues_SetValues(PyDictOrValues *ptr, PyDictValues *values)
     ptr->values = ((char *)values) - 1;
 }
 
-#define MANAGED_DICT_OFFSET (((int)sizeof(PyObject *))*-3)
+#define MANAGED_WEAKREF_OFFSET (((Py_ssize_t)sizeof(PyObject *))*-4)
 
 extern PyObject ** _PyObject_ComputedDictPointer(PyObject *);
 extern void _PyObject_FreeInstanceAttributes(PyObject *obj);
