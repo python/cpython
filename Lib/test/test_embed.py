@@ -343,9 +343,6 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_quickened_static_code_gets_unquickened_at_Py_FINALIZE(self):
         # https://github.com/python/cpython/issues/92031
 
-        # Do these imports outside of the code string to avoid using
-        # importlib too much from within the code string, so that
-        # _handle_fromlist doesn't get quickened until we intend it to.
         from dis import _all_opmap
         resume = _all_opmap["RESUME"]
         resume_quick = _all_opmap["RESUME_QUICK"]
