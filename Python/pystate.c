@@ -425,6 +425,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->importlib);
     Py_CLEAR(interp->import_func);
     Py_CLEAR(interp->dict);
+    Py_CLEAR(interp->interpreter_trampoline);
 #ifdef HAVE_FORK
     Py_CLEAR(interp->before_forkers);
     Py_CLEAR(interp->after_forkers_parent);

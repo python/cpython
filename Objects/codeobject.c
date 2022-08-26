@@ -2221,3 +2221,57 @@ _PyStaticCode_InternStrings(PyCodeObject *co)
     }
     return 0;
 }
+
+PyCodeObject *
+_Py_MakeTrampoline(const char *code, int codelen, const char *cname)
+{
+    PyObject *name = NULL;
+    PyObject *co_code = NULL;
+    PyObject *lines = NULL;
+    PyCodeObject *codeobj = NULL;
+
+    name = _PyUnicode_FromASCII(cname, strlen(cname));
+    if (name == NULL) {
+        goto cleanup;
+    }
+    co_code = PyBytes_FromStringAndSize(code, codelen);
+    if (co_code == NULL) {
+        goto cleanup;
+    }
+    const char loc[2] = { 0x80 | (PY_CODE_LOCATION_INFO_NO_COLUMNS << 3) | 3, 0 };
+    lines = PyBytes_FromStringAndSize(loc, 2);
+    if (lines == NULL) {
+        goto cleanup;
+    }
+    struct _PyCodeConstructor con = {
+        .filename = &_Py_STR(empty),
+        .name = name,
+        .qualname = name,
+        .flags = CO_NEWLOCALS | CO_OPTIMIZED,
+
+        .code = co_code,
+        .firstlineno = 1,
+        .linetable = lines,
+
+        .consts = (PyObject *)&_Py_SINGLETON(tuple_empty),
+        .names = (PyObject *)&_Py_SINGLETON(tuple_empty),
+
+        .localsplusnames = (PyObject *)&_Py_SINGLETON(tuple_empty),
+        .localspluskinds = (PyObject *)&_Py_SINGLETON(bytes_empty),
+
+        .argcount = 0,
+        .posonlyargcount = 0,
+        .kwonlyargcount = 0,
+
+        .stacksize = 2,
+
+        .exceptiontable = (PyObject *)&_Py_SINGLETON(bytes_empty),
+    };
+
+    codeobj = _PyCode_New(&con);
+cleanup:
+    Py_XDECREF(name);
+    Py_XDECREF(co_code);
+    Py_XDECREF(lines);
+    return codeobj;
+}

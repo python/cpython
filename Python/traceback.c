@@ -1229,6 +1229,13 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
         if (frame == NULL) {
             break;
         }
+        if (frame->owner == FRAME_OWNED_BY_CSTACK) {
+            /* Trampoline frame */
+            frame = frame->previous;
+        }
+        if (frame == NULL) {
+            break;
+        }
         depth++;
     }
 }

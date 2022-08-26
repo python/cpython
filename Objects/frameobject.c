@@ -1339,13 +1339,17 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
     }
 }
 
-
 int _PyFrame_IsEntryFrame(PyFrameObject *frame)
 {
     assert(frame != NULL);
-    return frame->f_frame->is_entry;
+    _PyInterpreterFrame *f = frame->f_frame;
+    assert(f->owner == FRAME_OWNED_BY_FRAME_OBJECT ||
+           f->owner == FRAME_OWNED_BY_GENERATOR);
+    if (f->previous == NULL) {
+        return 0;
+    }
+    return f->previous->owner == FRAME_OWNED_BY_CSTACK;
 }
-
 
 PyCodeObject *
 PyFrame_GetCode(PyFrameObject *frame)

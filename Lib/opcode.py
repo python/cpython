@@ -77,7 +77,7 @@ def pseudo_op(name, op, real_ops):
 def_op('CACHE', 0)
 def_op('POP_TOP', 1)
 def_op('PUSH_NULL', 2)
-def_op('INTEPRETER_EXIT', 3)
+def_op('INTERPRETER_EXIT', 3)
 
 def_op('NOP', 9)
 def_op('UNARY_POSITIVE', 10)

@@ -1278,6 +1278,8 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
         case BINARY_OP:
             return -1;
+        case INTERPRETER_EXIT:
+            return -1;
         default:
             return PY_INVALID_STACK_EFFECT;
     }

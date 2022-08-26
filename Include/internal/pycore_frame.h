@@ -42,7 +42,8 @@ typedef enum _framestate {
 enum _frameowner {
     FRAME_OWNED_BY_THREAD = 0,
     FRAME_OWNED_BY_GENERATOR = 1,
-    FRAME_OWNED_BY_FRAME_OBJECT = 2
+    FRAME_OWNED_BY_FRAME_OBJECT = 2,
+    FRAME_OWNED_BY_CSTACK = 3,
 };
 
 typedef struct _PyInterpreterFrame {
@@ -60,9 +61,9 @@ typedef struct _PyInterpreterFrame {
     // example, it may be an inline CACHE entry, an instruction we just jumped
     // over, or (in the case of a newly-created frame) a totally invalid value:
     _Py_CODEUNIT *prev_instr;
-    int stacktop;     /* Offset of TOS from localsplus  */
-    bool is_entry;  // Whether this is the "root" frame for the current _PyCFrame.
-    char owner;
+    int stacktop;  /* Offset of TOS from localsplus  */
+    int yield_offset: 28;
+    int owner: 4;
     /* Locals and stack */
     PyObject *localsplus[1];
 } _PyInterpreterFrame;
@@ -109,7 +110,6 @@ _PyFrame_InitializeSpecials(
     frame->stacktop = code->co_nlocalsplus;
     frame->frame_obj = NULL;
     frame->prev_instr = _PyCode_CODE(code) - 1;
-    frame->is_entry = false;
     frame->owner = FRAME_OWNED_BY_THREAD;
 }
 

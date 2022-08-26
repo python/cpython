@@ -411,6 +411,9 @@ traceback_get_frames(traceback_t *traceback)
         }
 
         _PyInterpreterFrame *back = pyframe->previous;
+        if (back && back->owner == FRAME_OWNED_BY_CSTACK) {
+            back = back->previous;
+        }
         pyframe = back;
     }
 }

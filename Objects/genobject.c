@@ -208,6 +208,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     Py_INCREF(result);
     _PyFrame_StackPush(frame, result);
 
+    _PyInterpreterFrame *prev = tstate->cframe->current_frame;
     frame->previous = tstate->cframe->current_frame;
 
     gen->gi_exc_state.previous_item = tstate->exc_info;
@@ -227,7 +228,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     tstate->exc_info = gen->gi_exc_state.previous_item;
     gen->gi_exc_state.previous_item = NULL;
 
-    assert(tstate->cframe->current_frame == frame->previous);
+    assert(tstate->cframe->current_frame == prev);
     /* Don't keep the reference to previous any longer than necessary.  It
      * may keep a chain of frames alive or it could create a reference
      * cycle. */
@@ -273,7 +274,6 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     _PyErr_ClearExcState(&gen->gi_exc_state);
 
     gen->gi_frame_state = FRAME_CLEARED;
-    _PyFrame_Clear(frame);
     *presult = result;
     return result ? PYGEN_RETURN : PYGEN_ERROR;
 }

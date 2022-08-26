@@ -28,6 +28,7 @@
 #include "pycore_tuple.h"         // _PyTuple_InitTypes()
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
+#include "opcode.h"
 
 extern void _PyIO_Fini(void);
 
@@ -756,6 +757,11 @@ pycore_init_types(PyInterpreterState *interp)
     return _PyStatus_OK();
 }
 
+const char INTERPRETER_TRAMPOLINE_CODE[] = {
+    0, 0,
+    INTERPRETER_EXIT, 0,
+    RESUME, 0
+};
 
 static PyStatus
 pycore_init_builtins(PyThreadState *tstate)
@@ -790,7 +796,11 @@ pycore_init_builtins(PyThreadState *tstate)
     PyObject *object__getattribute__ = _PyType_Lookup(&PyBaseObject_Type, &_Py_ID(__getattribute__));
     assert(object__getattribute__);
     interp->callable_cache.object__getattribute__ = object__getattribute__;
-
+    interp->interpreter_trampoline = _Py_MakeTrampoline(
+        INTERPRETER_TRAMPOLINE_CODE, sizeof(INTERPRETER_TRAMPOLINE_CODE), "<interpreter trampoline>");
+    if (interp->interpreter_trampoline == NULL) {
+        return _PyStatus_ERR("failed to create interpreter trampoline.");
+    }
     if (_PyBuiltins_AddExceptions(bimod) < 0) {
         return _PyStatus_ERR("failed to add exceptions to builtins");
     }
