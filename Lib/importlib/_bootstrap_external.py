@@ -412,6 +412,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12a1 3506 (Add BINARY_SLICE and STORE_SLICE instructions)
 #     Python 3.12a1 3507 (Set lineno of module's RESUME to 0)
 #     Python 3.12a1 3508 (Add CLEANUP_THROW)
+#     Python 3.12a1 3509 (remove conditional jump opcodes with forward/backward direction)
 
 #     Python 3.13 will start with 3550
 

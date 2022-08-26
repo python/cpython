@@ -96,23 +96,11 @@
 #define IS_ASSEMBLER_OPCODE(opcode) \
         ((opcode) == JUMP_FORWARD || \
          (opcode) == JUMP_BACKWARD || \
-         (opcode) == JUMP_BACKWARD_NO_INTERRUPT || \
-         (opcode) == POP_JUMP_FORWARD_IF_NONE || \
-         (opcode) == POP_JUMP_BACKWARD_IF_NONE || \
-         (opcode) == POP_JUMP_FORWARD_IF_NOT_NONE || \
-         (opcode) == POP_JUMP_BACKWARD_IF_NOT_NONE || \
-         (opcode) == POP_JUMP_FORWARD_IF_TRUE || \
-         (opcode) == POP_JUMP_BACKWARD_IF_TRUE || \
-         (opcode) == POP_JUMP_FORWARD_IF_FALSE || \
-         (opcode) == POP_JUMP_BACKWARD_IF_FALSE)
+         (opcode) == JUMP_BACKWARD_NO_INTERRUPT)
 
 #define IS_BACKWARDS_JUMP_OPCODE(opcode) \
         ((opcode) == JUMP_BACKWARD || \
-         (opcode) == JUMP_BACKWARD_NO_INTERRUPT || \
-         (opcode) == POP_JUMP_BACKWARD_IF_NONE || \
-         (opcode) == POP_JUMP_BACKWARD_IF_NOT_NONE || \
-         (opcode) == POP_JUMP_BACKWARD_IF_TRUE || \
-         (opcode) == POP_JUMP_BACKWARD_IF_FALSE)
+         (opcode) == JUMP_BACKWARD_NO_INTERRUPT)
 
 #define IS_UNCONDITIONAL_JUMP_OPCODE(opcode) \
         ((opcode) == JUMP || \
@@ -1146,17 +1134,9 @@ stack_effect(int opcode, int oparg, int jump)
         case JUMP_IF_FALSE_OR_POP:
             return jump ? 0 : -1;
 
-        case POP_JUMP_BACKWARD_IF_NONE:
-        case POP_JUMP_FORWARD_IF_NONE:
         case POP_JUMP_IF_NONE:
-        case POP_JUMP_BACKWARD_IF_NOT_NONE:
-        case POP_JUMP_FORWARD_IF_NOT_NONE:
         case POP_JUMP_IF_NOT_NONE:
-        case POP_JUMP_FORWARD_IF_FALSE:
-        case POP_JUMP_BACKWARD_IF_FALSE:
         case POP_JUMP_IF_FALSE:
-        case POP_JUMP_FORWARD_IF_TRUE:
-        case POP_JUMP_BACKWARD_IF_TRUE:
         case POP_JUMP_IF_TRUE:
             return -1;
 
@@ -7758,20 +7738,16 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
     int reversed_opcode = 0;
     switch(last->i_opcode) {
         case POP_JUMP_IF_NOT_NONE:
-            last->i_opcode = POP_JUMP_FORWARD_IF_NOT_NONE;
-            reversed_opcode = POP_JUMP_FORWARD_IF_NONE;
+            reversed_opcode = POP_JUMP_IF_NONE;
             break;
         case POP_JUMP_IF_NONE:
-            last->i_opcode = POP_JUMP_FORWARD_IF_NONE;
-            reversed_opcode = POP_JUMP_FORWARD_IF_NOT_NONE;
+            reversed_opcode = POP_JUMP_IF_NOT_NONE;
             break;
         case POP_JUMP_IF_FALSE:
-            last->i_opcode = POP_JUMP_FORWARD_IF_FALSE;
-            reversed_opcode = POP_JUMP_FORWARD_IF_TRUE;
+            reversed_opcode = POP_JUMP_IF_TRUE;
             break;
         case POP_JUMP_IF_TRUE:
-            last->i_opcode = POP_JUMP_FORWARD_IF_TRUE;
-            reversed_opcode = POP_JUMP_FORWARD_IF_FALSE;
+            reversed_opcode = POP_JUMP_IF_FALSE;
             break;
         case JUMP_IF_TRUE_OR_POP:
         case JUMP_IF_FALSE_OR_POP:
