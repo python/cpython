@@ -753,6 +753,16 @@ if test -z "$CFLAGS"; then
         CFLAGS=
 fi
 
+dnl Emscripten SDK and WASI SDK default to wasm32.
+dnl On Emscripten use MEMORY64 setting to build target wasm64-emscripten.
+dnl for wasm64.
+AS_CASE([$host],
+  [wasm64-*-emscripten], [
+    AS_VAR_APPEND([CFLAGS], [" -sMEMORY64=1"])
+    AS_VAR_APPEND([LDFLAGS], [" -sMEMORY64=1"])
+  ],
+)
+
 if test "$ac_sys_system" = "Darwin"
 then
   dnl look for SDKROOT
@@ -1048,7 +1058,7 @@ cat > conftest.c <<EOF
 #    error unknown wasm32 platform
 #  endif
 #elif defined(__wasm64__)
-#  if defined(__EMSCRIPTEN)
+#  if defined(__EMSCRIPTEN__)
 	wasm64-emscripten
 #  elif defined(__wasi__)
 	wasm64-wasi
@@ -1515,16 +1525,41 @@ if test "$cross_compiling" = yes; then
 fi
 
 AC_ARG_VAR([HOSTRUNNER], [Program to run CPython for the host platform])
-AC_MSG_CHECKING([HOSTRUNNER])
 if test -z "$HOSTRUNNER"
 then
   AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
     [Emscripten/node*], [
+      AC_PATH_TOOL([NODE], [node], [node])
+      HOSTRUNNER="$NODE"
       # bigint for ctypes c_longlong, c_longdouble
-      HOSTRUNNER="node --experimental-wasm-bigint"
-      AS_VAR_IF([enable_wasm_pthreads], [yes], [
-        HOSTRUNNER="$HOSTRUNNER --experimental-wasm-threads --experimental-wasm-bulk-memory"
+      # no longer available in Node 16
+      AC_CACHE_CHECK([for node --experimental-wasm-bigint], [ac_cv_tool_node_wasm_bigint], [
+        if $NODE -v --experimental-wasm-bigint > /dev/null 2>&1; then
+          ac_cv_tool_node_wasm_bigint=yes
+        else
+          ac_cv_tool_node_wasm_bigint=no
+        fi
       ])
+      AS_VAR_IF([ac_cv_tool_node_wasm_bigint], [yes], [
+        AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-bigint"])
+      ])
+
+      AS_VAR_IF([enable_wasm_pthreads], [yes], [
+        AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-threads"])
+        # no longer available in Node 16
+        AC_CACHE_CHECK([for node --experimental-wasm-bulk-memory], [ac_cv_tool_node_wasm_bulk_memory], [
+          if $NODE -v --experimental-wasm-bulk-memory > /dev/null 2>&1; then
+            ac_cv_tool_node_wasm_bulk_memory=yes
+          else
+            ac_cv_tool_node_wasm_bulk_memory=no
+          fi
+        ])
+        AS_VAR_IF([ac_cv_tool_node_wasm_bulk_memory], [yes], [
+          AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-bulk-memory"])
+        ])
+      ])
+
+      AS_VAR_IF([host_cpu], [wasm64], [AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-memory64"])])
     ],
     dnl TODO: support other WASI runtimes
     dnl wasmtime starts the proces with "/" as CWD. For OOT builds add the
@@ -1534,6 +1569,7 @@ then
   )
 fi
 AC_SUBST([HOSTRUNNER])
+AC_MSG_CHECKING([HOSTRUNNER])
 AC_MSG_RESULT([$HOSTRUNNER])
 
 if test -n "$HOSTRUNNER"; then
@@ -1545,7 +1581,7 @@ AC_MSG_RESULT($LDLIBRARY)
 
 # LIBRARY_DEPS, LINK_PYTHON_OBJS and LINK_PYTHON_DEPS variable
 AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-  [Emscripten/browser*], [LIBRARY_DEPS='$(PY3LIBRARY) $(WASM_STDLIB)'],
+  [Emscripten/browser*], [LIBRARY_DEPS='$(PY3LIBRARY) $(WASM_STDLIB) python.html python.worker.js'],
   [LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)']
 )
 LINK_PYTHON_DEPS='$(LIBRARY_DEPS)'
@@ -1879,6 +1915,59 @@ if test "$Py_LTO" = 'true' ; then
 
   CFLAGS_NODIST="$CFLAGS_NODIST ${LTOCFLAGS-$LTOFLAGS}"
   LDFLAGS_NODIST="$LDFLAGS_NODIST $LTOFLAGS"
+fi
+
+# Enable bolt flags
+Py_BOLT='false'
+AC_MSG_CHECKING(for --enable-bolt)
+AC_ARG_ENABLE(bolt, AS_HELP_STRING(
+                [--enable-bolt],
+                [enable usage of the llvm-bolt post-link optimizer (default is no)]),
+[
+if test "$enableval" != no
+then
+  Py_BOLT='true'
+  AC_MSG_RESULT(yes);
+else
+  Py_BOLT='false'
+  AC_MSG_RESULT(no);
+fi],
+[AC_MSG_RESULT(no)])
+
+AC_SUBST(PREBOLT_RULE)
+if test "$Py_BOLT" = 'true' ; then
+  PREBOLT_RULE="${DEF_MAKE_ALL_RULE}"
+  DEF_MAKE_ALL_RULE="bolt-opt"
+  DEF_MAKE_RULE="build_all"
+
+  # These flags are required for bolt to work:
+  CFLAGS_NODIST="$CFLAGS_NODIST -fno-reorder-blocks-and-partition"
+  LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,--emit-relocs"
+
+  # These flags are required to get good performance from bolt:
+  CFLAGS_NODIST="$CFLAGS_NODIST -fno-pie"
+  # We want to add these no-pie flags to linking executables but not shared libraries:
+  LINKCC="$LINKCC -fno-pie -no-pie"
+  # Designate the DWARF version into 4 since the LLVM-BOLT does not support DWARF5 yet.
+  CFLAGS="$CFLAGS -gdwarf-4"
+  LDFLAGS="$LDFLAGS -gdwarf-4"
+  AC_SUBST(LLVM_BOLT)
+  AC_PATH_TOOL(LLVM_BOLT, llvm-bolt, '', ${llvm_path})
+  if test -n "${LLVM_BOLT}" -a -x "${LLVM_BOLT}"
+  then
+    AC_MSG_RESULT("Found llvm-bolt")
+  else
+    AC_MSG_ERROR([llvm-bolt is required for a --enable-bolt build but could not be found.])
+  fi
+
+  AC_SUBST(MERGE_FDATA)
+  AC_PATH_TOOL(MERGE_FDATA, merge-fdata, '', ${llvm_path})
+  if test -n "${MERGE_FDATA}" -a -x "${MERGE_FDATA}"
+  then
+    AC_MSG_RESULT("Found merge-fdata")
+  else
+    AC_MSG_ERROR([merge-fdata is required for a --enable-bolt build but could not be found.])
+  fi
 fi
 
 # Enable PGO flags.

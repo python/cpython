@@ -910,7 +910,7 @@ frame_dealloc(PyFrameObject *f)
         /* Don't clear code object until the end */
         co = frame->f_code;
         frame->f_code = NULL;
-        Py_CLEAR(frame->f_func);
+        Py_CLEAR(frame->f_funcobj);
         Py_CLEAR(frame->f_locals);
         PyObject **locals = _PyFrame_GetLocalsArray(frame);
         for (int i = 0; i < frame->stacktop; i++) {
@@ -1154,10 +1154,12 @@ _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame) {
     // COPY_FREE_VARS has no quickened forms, so no need to use _PyOpcode_Deopt
     // here:
     int lasti = _PyInterpreterFrame_LASTI(frame);
-    if (lasti < 0 && _Py_OPCODE(_PyCode_CODE(co)[0]) == COPY_FREE_VARS) {
+    if (lasti < 0 && _Py_OPCODE(_PyCode_CODE(co)[0]) == COPY_FREE_VARS
+        && PyFunction_Check(frame->f_funcobj))
+    {
         /* Free vars have not been initialized -- Do that */
         PyCodeObject *co = frame->f_code;
-        PyObject *closure = frame->f_func->func_closure;
+        PyObject *closure = ((PyFunctionObject *)frame->f_funcobj)->func_closure;
         int offset = co->co_nlocals + co->co_nplaincellvars;
         for (int i = 0; i < co->co_nfreevars; ++i) {
             PyObject *o = PyTuple_GET_ITEM(closure, i);

@@ -668,7 +668,7 @@ loops that truncate the stream.
    the tee objects being informed.
 
    ``tee`` iterators are not threadsafe. A :exc:`RuntimeError` may be
-   raised when using simultaneously iterators returned by the same :func:`tee`
+   raised when simultaneously using iterators returned by the same :func:`tee`
    call, even if the original *iterable* is threadsafe.
 
    This itertool may require significant auxiliary storage (depending on how
@@ -799,6 +799,18 @@ which incur interpreter overhead.
        for x in chain(signal, repeat(0, n-1)):
            window.append(x)
            yield sum(map(operator.mul, kernel, window))
+
+   def polynomial_from_roots(roots):
+       """Compute a polynomial's coefficients from its roots.
+
+          (x - 5) (x + 4) (x - 3)  expands to:   x³ -4x² -17x + 60
+       """
+       # polynomial_from_roots([5, -4, 3]) --> [1, -4, -17, 60]
+       roots = list(map(operator.neg, roots))
+       return [
+           sum(map(math.prod, combinations(roots, k)))
+           for k in range(len(roots) + 1)
+       ]
 
    def flatten(list_of_lists):
        "Flatten one level of nesting"
@@ -1136,6 +1148,13 @@ which incur interpreter overhead.
     [20, 20, -16, 8, -12, 8, -12, -16]
     >>> list(convolve(data, [1, -2, 1]))
     [20, 0, -36, 24, -20, 20, -20, -4, 16]
+
+    >>> polynomial_from_roots([5, -4, 3])
+    [1, -4, -17, 60]
+    >>> factored = lambda x: (x - 5) * (x + 4) * (x - 3)
+    >>> expanded = lambda x: x**3 -4*x**2 -17*x + 60
+    >>> all(factored(x) == expanded(x) for x in range(-10, 11))
+    True
 
     >>> list(flatten([('a', 'b'), (), ('c', 'd', 'e'), ('f',), ('g', 'h', 'i')]))
     ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
