@@ -1,0 +1,1 @@
+In ``test_quickened_static_code_gets_unquickened_at_Py_FINALIZE``, use the ``__phello__`` module, rather than ``importlib``, to avoid interference with other code.
