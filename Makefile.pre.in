@@ -2522,6 +2522,8 @@ Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
 ##########################################################################
 # Module dependencies and platform-specific files
 
+MODULE_DEPS=$(PYTHON_HEADERS) Modules/config.c $(EXPORTSYMS)
+
 MODULE_CMATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_MATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_PYEXPAT_DEPS=$(LIBEXPAT_HEADERS) @LIBEXPAT_INTERNAL@
