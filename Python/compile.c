@@ -7720,7 +7720,7 @@ assemble_emit(struct assembler *a, struct instr *i)
 
 static int
 normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
-    struct instr *last = &b->b_instr[b->b_iused-1];
+    struct instr *last = basicblock_last_instr(b);
     if (last == NULL || !is_jump(last)) {
         return 0;
     }
