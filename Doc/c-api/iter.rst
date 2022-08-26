@@ -14,8 +14,8 @@ There are two functions specifically for working with iterators.
 
 .. c:function:: int PyAIter_Check(PyObject *o)
 
-   Returns non-zero if the object 'obj' provides :class:`AsyncIterator`
-   protocols, and ``0`` otherwise.  This function always succeeds.
+   Return non-zero if the object *o* provides the :class:`AsyncIterator`
+   protocol, and ``0`` otherwise.  This function always succeeds.
 
    .. versionadded:: 3.10
 

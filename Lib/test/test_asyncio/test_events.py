@@ -29,7 +29,6 @@ if sys.platform not in ('win32', 'vxworks'):
 import asyncio
 from asyncio import coroutines
 from asyncio import events
-from asyncio import proactor_events
 from asyncio import selector_events
 from test.test_asyncio import utils as test_utils
 from test import support
@@ -737,14 +736,6 @@ class EventLoopTestsMixin:
 
     @unittest.skipIf(ssl is None, 'No ssl module')
     def test_ssl_connect_accepted_socket(self):
-        if (sys.platform == 'win32' and
-            sys.version_info < (3, 5) and
-            isinstance(self.loop, proactor_events.BaseProactorEventLoop)
-            ):
-            raise unittest.SkipTest(
-                'SSL not supported with proactor event loops before Python 3.5'
-                )
-
         server_context = test_utils.simple_server_sslcontext()
         client_context = test_utils.simple_client_sslcontext()
 
@@ -2206,17 +2197,15 @@ class HandleTests(test_utils.TestCase):
         self.assertRegex(repr(h), regex)
 
         # partial method
-        if sys.version_info >= (3, 4):
-            method = HandleTests.test_handle_repr
-            cb = functools.partialmethod(method)
-            filename, lineno = test_utils.get_function_source(method)
-            h = asyncio.Handle(cb, (), self.loop)
+        method = HandleTests.test_handle_repr
+        cb = functools.partialmethod(method)
+        filename, lineno = test_utils.get_function_source(method)
+        h = asyncio.Handle(cb, (), self.loop)
 
-            cb_regex = r'<function HandleTests.test_handle_repr .*>'
-            cb_regex = (r'functools.partialmethod\(%s, , \)\(\)' % cb_regex)
-            regex = (r'^<Handle %s at %s:%s>$'
-                     % (cb_regex, re.escape(filename), lineno))
-            self.assertRegex(repr(h), regex)
+        cb_regex = r'<function HandleTests.test_handle_repr .*>'
+        cb_regex = fr'functools.partialmethod\({cb_regex}, , \)\(\)'
+        regex = fr'^<Handle {cb_regex} at {re.escape(filename)}:{lineno}>$'
+        self.assertRegex(repr(h), regex)
 
     def test_handle_repr_debug(self):
         self.loop.get_debug.return_value = True
@@ -2722,12 +2711,12 @@ class GetEventLoopTestsMixin:
             with self.assertWarns(DeprecationWarning) as cm:
                 with self.assertRaises(TestError):
                     asyncio.get_event_loop()
-            self.assertEqual(cm.warnings[0].filename, __file__)
+            self.assertEqual(cm.filename, __file__)
             asyncio.set_event_loop(None)
             with self.assertWarns(DeprecationWarning) as cm:
                 with self.assertRaises(TestError):
                     asyncio.get_event_loop()
-            self.assertEqual(cm.warnings[0].filename, __file__)
+            self.assertEqual(cm.filename, __file__)
 
             with self.assertRaisesRegex(RuntimeError, 'no running'):
                 asyncio.get_running_loop()
@@ -2744,13 +2733,13 @@ class GetEventLoopTestsMixin:
             with self.assertWarns(DeprecationWarning) as cm:
                 with self.assertRaises(TestError):
                     asyncio.get_event_loop()
-            self.assertEqual(cm.warnings[0].filename, __file__)
+            self.assertEqual(cm.filename, __file__)
 
             asyncio.set_event_loop(None)
             with self.assertWarns(DeprecationWarning) as cm:
                 with self.assertRaises(TestError):
                     asyncio.get_event_loop()
-            self.assertEqual(cm.warnings[0].filename, __file__)
+            self.assertEqual(cm.filename, __file__)
 
         finally:
             asyncio.set_event_loop_policy(old_policy)
@@ -2772,12 +2761,12 @@ class GetEventLoopTestsMixin:
             with self.assertWarns(DeprecationWarning) as cm:
                 loop2 = asyncio.get_event_loop()
             self.addCleanup(loop2.close)
-            self.assertEqual(cm.warnings[0].filename, __file__)
+            self.assertEqual(cm.filename, __file__)
             asyncio.set_event_loop(None)
             with self.assertWarns(DeprecationWarning) as cm:
                 with self.assertRaisesRegex(RuntimeError, 'no current'):
                     asyncio.get_event_loop()
-            self.assertEqual(cm.warnings[0].filename, __file__)
+            self.assertEqual(cm.filename, __file__)
 
             with self.assertRaisesRegex(RuntimeError, 'no running'):
                 asyncio.get_running_loop()
@@ -2793,13 +2782,13 @@ class GetEventLoopTestsMixin:
             asyncio.set_event_loop(loop)
             with self.assertWarns(DeprecationWarning) as cm:
                 self.assertIs(asyncio.get_event_loop(), loop)
-            self.assertEqual(cm.warnings[0].filename, __file__)
+            self.assertEqual(cm.filename, __file__)
 
             asyncio.set_event_loop(None)
             with self.assertWarns(DeprecationWarning) as cm:
                 with self.assertRaisesRegex(RuntimeError, 'no current'):
                     asyncio.get_event_loop()
-            self.assertEqual(cm.warnings[0].filename, __file__)
+            self.assertEqual(cm.filename, __file__)
 
         finally:
             asyncio.set_event_loop_policy(old_policy)

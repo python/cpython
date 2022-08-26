@@ -30,6 +30,9 @@ PyAPI_FUNC(PyObject *) _PyObject_Call(
     PyObject *args,
     PyObject *kwargs);
 
+extern PyObject * _PyObject_CallMethodFormat(
+        PyThreadState *tstate, PyObject *callable, const char *format, ...);
+
 
 // Static inline variant of public PyVectorcall_Function().
 static inline vectorcallfunc
@@ -100,6 +103,7 @@ _PyObject_CallNoArgsTstate(PyThreadState *tstate, PyObject *func) {
 // Private static inline function variant of public PyObject_CallNoArgs()
 static inline PyObject *
 _PyObject_CallNoArgs(PyObject *func) {
+    EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, func);
     PyThreadState *tstate = _PyThreadState_GET();
     return _PyObject_VectorcallTstate(tstate, func, NULL, 0, NULL);
 }
@@ -108,6 +112,7 @@ _PyObject_CallNoArgs(PyObject *func) {
 static inline PyObject *
 _PyObject_FastCallTstate(PyThreadState *tstate, PyObject *func, PyObject *const *args, Py_ssize_t nargs)
 {
+    EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, func);
     return _PyObject_VectorcallTstate(tstate, func, args, (size_t)nargs, NULL);
 }
 

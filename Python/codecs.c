@@ -522,7 +522,6 @@ PyObject *PyCodec_Decode(PyObject *object,
 PyObject * _PyCodec_LookupTextEncoding(const char *encoding,
                                        const char *alternate_command)
 {
-    _Py_IDENTIFIER(_is_text_encoding);
     PyObject *codec;
     PyObject *attr;
     int is_text_codec;
@@ -536,7 +535,7 @@ PyObject * _PyCodec_LookupTextEncoding(const char *encoding,
      * attribute.
      */
     if (!PyTuple_CheckExact(codec)) {
-        if (_PyObject_LookupAttrId(codec, &PyId__is_text_encoding, &attr) < 0) {
+        if (_PyObject_LookupAttr(codec, &_Py_ID(_is_text_encoding), &attr) < 0) {
             Py_DECREF(codec);
             return NULL;
         }

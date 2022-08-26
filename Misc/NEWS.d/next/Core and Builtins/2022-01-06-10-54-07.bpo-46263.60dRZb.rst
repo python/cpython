@@ -1,2 +1,0 @@
-We always expect the "use_frozen_modules" config to be set, now that
-getpath.c was rewritten in pure Python and the logic improved.

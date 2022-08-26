@@ -1,4 +1,0 @@
-Improve day constants in :mod:`calendar`.
-
-Now all constants (`MONDAY` ... `SUNDAY`) are documented, tested, and added
-to ``__all__``.

@@ -61,6 +61,9 @@ raised for division by zero and mod by zero.
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_dtoa.h"          // _Py_dg_infinity()
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object.h"        // _PyObject_LookupSpecial()
+#include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 /* For DBL_EPSILON in _math.h */
 #include <float.h>
 /* For _Py_log1p with workarounds for buggy handling of zeros. */
@@ -73,6 +76,20 @@ module math
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=76bc7002685dd942]*/
 
+
+typedef struct {
+    PyObject *str___ceil__;
+    PyObject *str___floor__;
+    PyObject *str___trunc__;
+} math_module_state;
+
+static inline math_module_state*
+get_math_module_state(PyObject *module)
+{
+    void *state = _PyModule_GetState(module);
+    assert(state != NULL);
+    return (math_module_state *)state;
+}
 
 /*
    sin(pi*x), giving accurate results for all finite x (especially x
@@ -271,7 +288,7 @@ lanczos_sum(double x)
 static double
 m_inf(void)
 {
-#ifndef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 1
     return _Py_dg_infinity(0);
 #else
     return Py_HUGE_VAL;
@@ -281,12 +298,12 @@ m_inf(void)
 /* Constant nan value, generated in the same way as float('nan'). */
 /* We don't currently assume that Py_NAN is defined everywhere. */
 
-#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
+#if _PY_SHORT_FLOAT_REPR == 1
 
 static double
 m_nan(void)
 {
-#ifndef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 1
     return _Py_dg_stdnan(0);
 #else
     return Py_NAN;
@@ -1213,10 +1230,10 @@ static PyObject *
 math_ceil(PyObject *module, PyObject *number)
 /*[clinic end generated code: output=6c3b8a78bc201c67 input=2725352806399cab]*/
 {
-    _Py_IDENTIFIER(__ceil__);
 
     if (!PyFloat_CheckExact(number)) {
-        PyObject *method = _PyObject_LookupSpecial(number, &PyId___ceil__);
+        math_module_state *state = get_math_module_state(module);
+        PyObject *method = _PyObject_LookupSpecial(number, state->str___ceil__);
         if (method != NULL) {
             PyObject *result = _PyObject_CallNoArgs(method);
             Py_DECREF(method);
@@ -1281,14 +1298,13 @@ math_floor(PyObject *module, PyObject *number)
 {
     double x;
 
-    _Py_IDENTIFIER(__floor__);
-
     if (PyFloat_CheckExact(number)) {
         x = PyFloat_AS_DOUBLE(number);
     }
     else
     {
-        PyObject *method = _PyObject_LookupSpecial(number, &PyId___floor__);
+        math_module_state *state = get_math_module_state(module);
+        PyObject *method = _PyObject_LookupSpecial(number, state->str___floor__);
         if (method != NULL) {
             PyObject *result = _PyObject_CallNoArgs(method);
             Py_DECREF(method);
@@ -1718,20 +1734,49 @@ completes the proof sketch.
 
 */
 
+/*
+    The _approximate_isqrt_tab table provides approximate square roots for
+    16-bit integers. For any n in the range 2**14 <= n < 2**16, the value
+
+        a = _approximate_isqrt_tab[(n >> 8) - 64]
+
+    is an approximate square root of n, satisfying (a - 1)**2 < n < (a + 1)**2.
+
+    The table was computed in Python using the expression:
+
+        [min(round(sqrt(256*n + 128)), 255) for n in range(64, 256)]
+*/
+
+static const uint8_t _approximate_isqrt_tab[192] = {
+    128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139,
+    140, 141, 142, 143, 144, 144, 145, 146, 147, 148, 149, 150,
+    151, 151, 152, 153, 154, 155, 156, 156, 157, 158, 159, 160,
+    160, 161, 162, 163, 164, 164, 165, 166, 167, 167, 168, 169,
+    170, 170, 171, 172, 173, 173, 174, 175, 176, 176, 177, 178,
+    179, 179, 180, 181, 181, 182, 183, 183, 184, 185, 186, 186,
+    187, 188, 188, 189, 190, 190, 191, 192, 192, 193, 194, 194,
+    195, 196, 196, 197, 198, 198, 199, 200, 200, 201, 201, 202,
+    203, 203, 204, 205, 205, 206, 206, 207, 208, 208, 209, 210,
+    210, 211, 211, 212, 213, 213, 214, 214, 215, 216, 216, 217,
+    217, 218, 219, 219, 220, 220, 221, 221, 222, 223, 223, 224,
+    224, 225, 225, 226, 227, 227, 228, 228, 229, 229, 230, 230,
+    231, 232, 232, 233, 233, 234, 234, 235, 235, 236, 237, 237,
+    238, 238, 239, 239, 240, 240, 241, 241, 242, 242, 243, 243,
+    244, 244, 245, 246, 246, 247, 247, 248, 248, 249, 249, 250,
+    250, 251, 251, 252, 252, 253, 253, 254, 254, 255, 255, 255,
+};
 
 /* Approximate square root of a large 64-bit integer.
 
    Given `n` satisfying `2**62 <= n < 2**64`, return `a`
    satisfying `(a - 1)**2 < n < (a + 1)**2`. */
 
-static uint64_t
+static inline uint32_t
 _approximate_isqrt(uint64_t n)
 {
-    uint32_t u = 1U + (n >> 62);
-    u = (u << 1) + (n >> 59) / u;
-    u = (u << 3) + (n >> 53) / u;
-    u = (u << 7) + (n >> 41) / u;
-    return (u << 15) + (n >> 17) / u;
+    uint32_t u = _approximate_isqrt_tab[(n >> 56) - 64];
+    u = (u << 7) + (uint32_t)(n >> 41) / u;
+    return (u << 15) + (uint32_t)((n >> 17) / u);
 }
 
 /*[clinic input]
@@ -1749,7 +1794,8 @@ math_isqrt(PyObject *module, PyObject *n)
 {
     int a_too_large, c_bit_length;
     size_t c, d;
-    uint64_t m, u;
+    uint64_t m;
+    uint32_t u;
     PyObject *a = NULL, *b;
 
     n = _PyNumber_Index(n);
@@ -1776,18 +1822,17 @@ math_isqrt(PyObject *module, PyObject *n)
     c = (c - 1U) / 2U;
 
     /* Fast path: if c <= 31 then n < 2**64 and we can compute directly with a
-       fast, almost branch-free algorithm. In the final correction, we use `u*u
-       - 1 >= m` instead of the simpler `u*u > m` in order to get the correct
-       result in the corner case where `u=2**32`. */
+       fast, almost branch-free algorithm. */
     if (c <= 31U) {
+        int shift = 31 - (int)c;
         m = (uint64_t)PyLong_AsUnsignedLongLong(n);
         Py_DECREF(n);
         if (m == (uint64_t)(-1) && PyErr_Occurred()) {
             return NULL;
         }
-        u = _approximate_isqrt(m << (62U - 2U*c)) >> (31U - c);
-        u -= u * u - 1U >= m;
-        return PyLong_FromUnsignedLongLong((unsigned long long)u);
+        u = _approximate_isqrt(m << 2*shift) >> shift;
+        u -= (uint64_t)u * u > m;
+        return PyLong_FromUnsignedLong(u);
     }
 
     /* Slow path: n >= 2**64. We perform the first five iterations in C integer
@@ -1811,7 +1856,7 @@ math_isqrt(PyObject *module, PyObject *n)
         goto error;
     }
     u = _approximate_isqrt(m) >> (31U - d);
-    a = PyLong_FromUnsignedLongLong((unsigned long long)u);
+    a = PyLong_FromUnsignedLong(u);
     if (a == NULL) {
         goto error;
     }
@@ -2062,17 +2107,17 @@ static const unsigned long SmallFactorials[] = {
 /*[clinic input]
 math.factorial
 
-    x as arg: object
+    n as arg: object
     /
 
-Find x!.
+Find n!.
 
 Raise a ValueError if x is negative or non-integral.
 [clinic start generated code]*/
 
 static PyObject *
 math_factorial(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=6686f26fae00e9ca input=6d1c8105c0d91fb4]*/
+/*[clinic end generated code: output=6686f26fae00e9ca input=713fb771677e8c31]*/
 {
     long x, two_valuation;
     int overflow;
@@ -2125,7 +2170,6 @@ static PyObject *
 math_trunc(PyObject *module, PyObject *x)
 /*[clinic end generated code: output=34b9697b707e1031 input=2168b34e0a09134d]*/
 {
-    _Py_IDENTIFIER(__trunc__);
     PyObject *trunc, *result;
 
     if (PyFloat_CheckExact(x)) {
@@ -2137,7 +2181,8 @@ math_trunc(PyObject *module, PyObject *x)
             return NULL;
     }
 
-    trunc = _PyObject_LookupSpecial(x, &PyId___trunc__);
+    math_module_state *state = get_math_module_state(module);
+    trunc = _PyObject_LookupSpecial(x, state->str___trunc__);
     if (trunc == NULL) {
         if (!PyErr_Occurred())
             PyErr_Format(PyExc_TypeError,
@@ -2281,7 +2326,7 @@ math_modf_impl(PyObject *module, double x)
    in that int is larger than PY_SSIZE_T_MAX. */
 
 static PyObject*
-loghelper(PyObject* arg, double (*func)(double), const char *funcname)
+loghelper(PyObject* arg, double (*func)(double))
 {
     /* If it is int, do it ourselves. */
     if (PyLong_Check(arg)) {
@@ -2341,11 +2386,11 @@ math_log_impl(PyObject *module, PyObject *x, int group_right_1,
     PyObject *num, *den;
     PyObject *ans;
 
-    num = loghelper(x, m_log, "log");
+    num = loghelper(x, m_log);
     if (num == NULL || base == NULL)
         return num;
 
-    den = loghelper(base, m_log, "log");
+    den = loghelper(base, m_log);
     if (den == NULL) {
         Py_DECREF(num);
         return NULL;
@@ -2371,7 +2416,7 @@ static PyObject *
 math_log2(PyObject *module, PyObject *x)
 /*[clinic end generated code: output=5425899a4d5d6acb input=08321262bae4f39b]*/
 {
-    return loghelper(x, m_log2, "log2");
+    return loghelper(x, m_log2);
 }
 
 
@@ -2388,7 +2433,7 @@ static PyObject *
 math_log10(PyObject *module, PyObject *x)
 /*[clinic end generated code: output=be72a64617df9c6f input=b2469d02c6469e53]*/
 {
-    return loghelper(x, m_log10, "log10");
+    return loghelper(x, m_log10);
 }
 
 
@@ -3794,6 +3839,20 @@ math_ulp_impl(PyObject *module, double x)
 static int
 math_exec(PyObject *module)
 {
+
+    math_module_state *state = get_math_module_state(module);
+    state->str___ceil__ = PyUnicode_InternFromString("__ceil__");
+    if (state->str___ceil__ == NULL) {
+        return -1;
+    }
+    state->str___floor__ = PyUnicode_InternFromString("__floor__");
+    if (state->str___floor__ == NULL) {
+        return -1;
+    }
+    state->str___trunc__ = PyUnicode_InternFromString("__trunc__");
+    if (state->str___trunc__ == NULL) {
+        return -1;
+    }
     if (PyModule_AddObject(module, "pi", PyFloat_FromDouble(Py_MATH_PI)) < 0) {
         return -1;
     }
@@ -3807,12 +3866,28 @@ math_exec(PyObject *module)
     if (PyModule_AddObject(module, "inf", PyFloat_FromDouble(m_inf())) < 0) {
         return -1;
     }
-#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
+#if _PY_SHORT_FLOAT_REPR == 1
     if (PyModule_AddObject(module, "nan", PyFloat_FromDouble(m_nan())) < 0) {
         return -1;
     }
 #endif
     return 0;
+}
+
+static int
+math_clear(PyObject *module)
+{
+    math_module_state *state = get_math_module_state(module);
+    Py_CLEAR(state->str___ceil__);
+    Py_CLEAR(state->str___floor__);
+    Py_CLEAR(state->str___trunc__);
+    return 0;
+}
+
+static void
+math_free(void *module)
+{
+    math_clear((PyObject *)module);
 }
 
 static PyMethodDef math_methods[] = {
@@ -3821,11 +3896,11 @@ static PyMethodDef math_methods[] = {
     {"asin",            math_asin,      METH_O,         math_asin_doc},
     {"asinh",           math_asinh,     METH_O,         math_asinh_doc},
     {"atan",            math_atan,      METH_O,         math_atan_doc},
-    {"atan2",           (PyCFunction)(void(*)(void))math_atan2,     METH_FASTCALL,  math_atan2_doc},
+    {"atan2",           _PyCFunction_CAST(math_atan2),     METH_FASTCALL,  math_atan2_doc},
     {"atanh",           math_atanh,     METH_O,         math_atanh_doc},
     {"cbrt",            math_cbrt,      METH_O,         math_cbrt_doc},
     MATH_CEIL_METHODDEF
-    {"copysign",        (PyCFunction)(void(*)(void))math_copysign,  METH_FASTCALL,  math_copysign_doc},
+    {"copysign",        _PyCFunction_CAST(math_copysign),  METH_FASTCALL,  math_copysign_doc},
     {"cos",             math_cos,       METH_O,         math_cos_doc},
     {"cosh",            math_cosh,      METH_O,         math_cosh_doc},
     MATH_DEGREES_METHODDEF
@@ -3842,14 +3917,14 @@ static PyMethodDef math_methods[] = {
     MATH_FREXP_METHODDEF
     MATH_FSUM_METHODDEF
     {"gamma",           math_gamma,     METH_O,         math_gamma_doc},
-    {"gcd",             (PyCFunction)(void(*)(void))math_gcd,       METH_FASTCALL,  math_gcd_doc},
-    {"hypot",           (PyCFunction)(void(*)(void))math_hypot,     METH_FASTCALL,  math_hypot_doc},
+    {"gcd",             _PyCFunction_CAST(math_gcd),       METH_FASTCALL,  math_gcd_doc},
+    {"hypot",           _PyCFunction_CAST(math_hypot),     METH_FASTCALL,  math_hypot_doc},
     MATH_ISCLOSE_METHODDEF
     MATH_ISFINITE_METHODDEF
     MATH_ISINF_METHODDEF
     MATH_ISNAN_METHODDEF
     MATH_ISQRT_METHODDEF
-    {"lcm",             (PyCFunction)(void(*)(void))math_lcm,       METH_FASTCALL,  math_lcm_doc},
+    {"lcm",             _PyCFunction_CAST(math_lcm),       METH_FASTCALL,  math_lcm_doc},
     MATH_LDEXP_METHODDEF
     {"lgamma",          math_lgamma,    METH_O,         math_lgamma_doc},
     MATH_LOG_METHODDEF
@@ -3859,7 +3934,7 @@ static PyMethodDef math_methods[] = {
     MATH_MODF_METHODDEF
     MATH_POW_METHODDEF
     MATH_RADIANS_METHODDEF
-    {"remainder",       (PyCFunction)(void(*)(void))math_remainder, METH_FASTCALL,  math_remainder_doc},
+    {"remainder",       _PyCFunction_CAST(math_remainder), METH_FASTCALL,  math_remainder_doc},
     {"sin",             math_sin,       METH_O,         math_sin_doc},
     {"sinh",            math_sinh,      METH_O,         math_sinh_doc},
     {"sqrt",            math_sqrt,      METH_O,         math_sqrt_doc},
@@ -3887,9 +3962,11 @@ static struct PyModuleDef mathmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "math",
     .m_doc = module_doc,
-    .m_size = 0,
+    .m_size = sizeof(math_module_state),
     .m_methods = math_methods,
     .m_slots = math_slots,
+    .m_clear = math_clear,
+    .m_free = math_free,
 };
 
 PyMODINIT_FUNC

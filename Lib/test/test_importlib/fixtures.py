@@ -5,6 +5,7 @@ import shutil
 import pathlib
 import tempfile
 import textwrap
+import functools
 import contextlib
 
 from test.support.os_helper import FS_NONASCII
@@ -12,7 +13,7 @@ from test.support import requires_zlib
 from typing import Dict, Union
 
 try:
-    from importlib import resources
+    from importlib import resources  # type: ignore
 
     getattr(resources, 'files')
     getattr(resources, 'as_file')
@@ -232,21 +233,6 @@ class EggInfoFile(OnSysPath, SiteDir):
         build_files(EggInfoFile.files, prefix=self.site_dir)
 
 
-class LocalPackage:
-    files: FilesDef = {
-        "setup.py": """
-            import setuptools
-            setuptools.setup(name="local-pkg", version="2.0.1")
-            """,
-    }
-
-    def setUp(self):
-        self.fixtures = contextlib.ExitStack()
-        self.addCleanup(self.fixtures.close)
-        self.fixtures.enter_context(tempdir_as_cwd())
-        build_files(self.files)
-
-
 def build_files(file_defs, prefix=pathlib.Path()):
     """Build a set of files/directories, as described by the
 
@@ -311,3 +297,18 @@ class ZipFixtures:
         # Add self.zip_name to the front of sys.path.
         self.resources = contextlib.ExitStack()
         self.addCleanup(self.resources.close)
+
+
+def parameterize(*args_set):
+    """Run test method with a series of parameters."""
+
+    def wrapper(func):
+        @functools.wraps(func)
+        def _inner(self):
+            for args in args_set:
+                with self.subTest(**args):
+                    func(self, **args)
+
+        return _inner
+
+    return wrapper

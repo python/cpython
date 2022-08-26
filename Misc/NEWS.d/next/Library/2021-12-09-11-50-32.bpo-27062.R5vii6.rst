@@ -1,1 +1,0 @@
-Add :attr:`__all__` to :mod:`inspect`, patch by Kumar Aditya.

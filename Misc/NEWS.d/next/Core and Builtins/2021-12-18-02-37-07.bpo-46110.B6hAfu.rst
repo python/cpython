@@ -1,2 +1,0 @@
-Add a maximum recursion check to the PEG parser to avoid stack overflow.
-Patch by Pablo Galindo

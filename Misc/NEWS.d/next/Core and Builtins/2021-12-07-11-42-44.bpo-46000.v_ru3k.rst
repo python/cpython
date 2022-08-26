@@ -1,1 +1,0 @@
-Improve compatibility of the :mod:`curses` module with NetBSD curses.

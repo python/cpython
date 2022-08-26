@@ -1,3 +1,0 @@
-Calling :meth:`add_argument_group` on an argument group is deprecated. Calling :meth:`add_argument_group` or :meth:`add_mutually_exclusive_group` on a mutually exclusive group is deprecated.
-
-These features were never supported and do not always work correctly. The functions exist on the API by accident through inheritance and will be removed in the future.
