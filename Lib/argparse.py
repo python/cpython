@@ -405,6 +405,8 @@ class HelpFormatter(object):
             else:
                 end = start + len(group._group_actions)
                 if actions[start:end] == group._group_actions:
+                    if all((action.help is SUPPRESS for action in group._group_actions)):
+                        continue
                     for action in group._group_actions:
                         group_actions.add(action)
                     if not group.required:
