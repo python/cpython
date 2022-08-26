@@ -4,6 +4,7 @@ import inspect
 import pickle
 import sys
 import types
+import traceback
 import unittest
 import warnings
 from test import support
@@ -2206,6 +2207,29 @@ class CoroutineTest(unittest.TestCase):
         gen = f()
         with self.assertWarns(RuntimeWarning):
             gen.cr_frame.clear()
+
+    def test_stack_in_coroutine_throw(self):
+        # Regression test for https://github.com/python/cpython/issues/93592
+        async def a():
+            return await b()
+
+        async def b():
+            return await c()
+
+        @types.coroutine
+        def c():
+            try:
+                # traceback.print_stack()
+                yield len(traceback.extract_stack())
+            except ZeroDivisionError:
+                # traceback.print_stack()
+                yield len(traceback.extract_stack())
+
+        coro = a()
+        len_send = coro.send(None)
+        len_throw = coro.throw(ZeroDivisionError)
+        # before fixing, visible stack from throw would be shorter than from send.
+        self.assertEqual(len_send, len_throw)
 
 
 @unittest.skipIf(
