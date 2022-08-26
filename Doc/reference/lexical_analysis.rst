@@ -552,7 +552,7 @@ Standard C.  The recognized escape sequences are:
 +-----------------+---------------------------------+-------+
 | Escape Sequence | Meaning                         | Notes |
 +=================+=================================+=======+
-| ``\`` <LF>      | Backslash and newline ignored   | \(1)  |
+| ``\``\ <newline>| Backslash and newline ignored   | \(1)  |
 +-----------------+---------------------------------+-------+
 | ``\\``          | Backslash (``\``)               |       |
 +-----------------+---------------------------------+-------+
