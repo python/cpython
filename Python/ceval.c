@@ -96,6 +96,10 @@
 #define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) _Py_atomic_load_relaxed(ATOMIC_VAL)
 #endif
 
+#define HEAD_LOCK(runtime) \
+    PyThread_acquire_lock((runtime)->interpreters.mutex, WAIT_LOCK)
+#define HEAD_UNLOCK(runtime) \
+    PyThread_release_lock((runtime)->interpreters.mutex)
 
 /* Forward declarations */
 static PyObject *trace_call_function(
@@ -150,11 +154,12 @@ lltrace_instruction(_PyInterpreterFrame *frame,
 static void
 lltrace_resume_frame(_PyInterpreterFrame *frame)
 {
-    PyFunctionObject *f = frame->f_func;
-    if (f == NULL) {
+    PyObject *fobj = frame->f_funcobj;
+    if (fobj == NULL || !PyFunction_Check(fobj)) {
         printf("\nResuming frame.");
         return;
     }
+    PyFunctionObject *f = (PyFunctionObject *)fobj;
     PyObject *type, *value, *traceback;
     PyErr_Fetch(&type, &value, &traceback);
     PyObject *name = f->func_qualname;
@@ -2615,7 +2620,8 @@ handle_eval_breaker:
         TARGET(COPY_FREE_VARS) {
             /* Copy closure variables to free variables */
             PyCodeObject *co = frame->f_code;
-            PyObject *closure = frame->f_func->func_closure;
+            assert(PyFunction_Check(frame->f_funcobj));
+            PyObject *closure = ((PyFunctionObject *)frame->f_funcobj)->func_closure;
             int offset = co->co_nlocals + co->co_nplaincellvars;
             assert(oparg == co->co_nfreevars);
             for (int i = 0; i < oparg; ++i) {
@@ -4893,7 +4899,9 @@ handle_eval_breaker:
         }
 
         TARGET(RETURN_GENERATOR) {
-            PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(frame->f_func);
+            assert(PyFunction_Check(frame->f_funcobj));
+            PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
+            PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
             if (gen == NULL) {
                 goto error;
             }
@@ -4915,7 +4923,7 @@ handle_eval_breaker:
             /* Make sure that frame is in a valid state */
             frame->stacktop = 0;
             frame->f_locals = NULL;
-            Py_INCREF(frame->f_func);
+            Py_INCREF(frame->f_funcobj);
             Py_INCREF(frame->f_code);
             /* Restore previous cframe and return. */
             tstate->cframe = cframe.previous;
@@ -6455,6 +6463,27 @@ PyEval_SetProfile(Py_tracefunc func, PyObject *arg)
     }
 }
 
+void
+PyEval_SetProfileAllThreads(Py_tracefunc func, PyObject *arg)
+{
+    PyThreadState *this_tstate = _PyThreadState_GET();
+    PyInterpreterState* interp = this_tstate->interp;
+
+    _PyRuntimeState *runtime = &_PyRuntime;
+    HEAD_LOCK(runtime);
+    PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
+    HEAD_UNLOCK(runtime);
+
+    while (ts) {
+        if (_PyEval_SetProfile(ts, func, arg) < 0) {
+            _PyErr_WriteUnraisableMsg("in PyEval_SetProfileAllThreads", NULL);
+        }
+        HEAD_LOCK(runtime);
+        ts = PyThreadState_Next(ts);
+        HEAD_UNLOCK(runtime);
+    }
+}
+
 int
 _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
 {
@@ -6508,6 +6537,26 @@ PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
     }
 }
 
+void
+PyEval_SetTraceAllThreads(Py_tracefunc func, PyObject *arg)
+{
+    PyThreadState *this_tstate = _PyThreadState_GET();
+    PyInterpreterState* interp = this_tstate->interp;
+
+    _PyRuntimeState *runtime = &_PyRuntime;
+    HEAD_LOCK(runtime);
+    PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
+    HEAD_UNLOCK(runtime);
+
+    while (ts) {
+        if (_PyEval_SetTrace(ts, func, arg) < 0) {
+            _PyErr_WriteUnraisableMsg("in PyEval_SetTraceAllThreads", NULL);
+        }
+        HEAD_LOCK(runtime);
+        ts = PyThreadState_Next(ts);
+        HEAD_UNLOCK(runtime);
+    }
+}
 
 int
 _PyEval_SetCoroutineOriginTrackingDepth(int depth)
