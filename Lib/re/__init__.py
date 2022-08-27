@@ -229,6 +229,7 @@ def compile(pattern, flags=0):
 def purge():
     "Clear the regular expression caches"
     _cache.clear()
+    _cache2.clear()
     _compile_repl.cache_clear()
 
 def template(pattern, flags=0):
@@ -267,39 +268,55 @@ Match = type(_compiler.compile('', 0).match(''))
 # internals
 
 _cache = {}  # ordered!
+_cache2 = {}  # ordered!
 
 _MAXCACHE = 512
+_MAXCACHE2 = 256
 def _compile(pattern, flags):
     # internal: compile pattern
     if isinstance(flags, RegexFlag):
         flags = flags.value
     try:
-        return _cache[type(pattern), pattern, flags]
+        return _cache2[type(pattern), pattern, flags]
     except KeyError:
         pass
-    if isinstance(pattern, Pattern):
-        if flags:
-            raise ValueError(
-                "cannot process flags argument with a compiled pattern")
-        return pattern
-    if not _compiler.isstring(pattern):
-        raise TypeError("first argument must be string or compiled pattern")
-    if flags & T:
-        import warnings
-        warnings.warn("The re.TEMPLATE/re.T flag is deprecated "
-                  "as it is an undocumented flag "
-                  "without an obvious purpose. "
-                  "Don't use it.",
-                  DeprecationWarning)
-    p = _compiler.compile(pattern, flags)
-    if not (flags & DEBUG):
+
+    key = (type(pattern), pattern, flags)
+    p = _cache.pop(key, None)
+    if p is None:
+        if isinstance(pattern, Pattern):
+            if flags:
+                raise ValueError(
+                    "cannot process flags argument with a compiled pattern")
+            return pattern
+        if not _compiler.isstring(pattern):
+            raise TypeError("first argument must be string or compiled pattern")
+        if flags & T:
+            import warnings
+            warnings.warn("The re.TEMPLATE/re.T flag is deprecated "
+                    "as it is an undocumented flag "
+                    "without an obvious purpose. "
+                    "Don't use it.",
+                    DeprecationWarning)
+        p = _compiler.compile(pattern, flags)
+        if flags & DEBUG:
+            return p
         if len(_cache) >= _MAXCACHE:
-            # Drop the oldest item
+            # Drop the least used item
             try:
                 del _cache[next(iter(_cache))]
             except (StopIteration, RuntimeError, KeyError):
                 pass
-        _cache[type(pattern), pattern, flags] = p
+    # Append to the end
+    _cache[key] = p
+
+    if len(_cache2) >= _MAXCACHE2:
+        # Drop the oldest item
+        try:
+            del _cache2[next(iter(_cache2))]
+        except (StopIteration, RuntimeError, KeyError):
+            pass
+    _cache2[key] = p
     return p
 
 @functools.lru_cache(_MAXCACHE)
