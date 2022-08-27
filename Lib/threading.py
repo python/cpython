@@ -589,7 +589,7 @@ class Event:
     def isSet(self):
         """Return true if and only if the internal flag is true.
 
-        This method is deprecated, use notify_all() instead.
+        This method is deprecated, use is_set() instead.
 
         """
         import warnings
