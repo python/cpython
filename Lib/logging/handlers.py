@@ -1111,7 +1111,16 @@ class NTEventLogHandler(logging.Handler):
                 dllname = os.path.join(dllname[0], r'win32service.pyd')
             self.dllname = dllname
             self.logtype = logtype
-            self._welu.AddSourceToRegistry(appname, dllname, logtype)
+            # Administrative privileges are required to add a source to the registry.
+            # This may not be available for a user that just wants to add to an
+            # existing source - handle this specific case.
+            try:
+                self._welu.AddSourceToRegistry(appname, dllname, logtype)
+            except Exception as e:
+                # This will probably be a pywintypes.error. Only raise if it's not
+                # an "access denied" error, else let it pass
+                if getattr(e, 'winerror', None) != 5:  # not access denied
+                    raise
             self.deftype = win32evtlog.EVENTLOG_ERROR_TYPE
             self.typemap = {
                 logging.DEBUG   : win32evtlog.EVENTLOG_INFORMATION_TYPE,
