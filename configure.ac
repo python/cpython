@@ -1863,10 +1863,10 @@ if test "$Py_LTO" = 'true' ; then
           # Any changes made here should be reflected in the GCC+Darwin case below
           if test $Py_LTO_POLICY = default
           then
-            LTOFLAGS="-flto -Wl,-export_dynamic"
+            LTOFLAGS="-flto -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
             LTOCFLAGS="-flto"
           else
-            LTOFLAGS="-flto=${Py_LTO_POLICY} -Wl,-export_dynamic"
+            LTOFLAGS="-flto=${Py_LTO_POLICY} -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
             LTOCFLAGS="-flto=${Py_LTO_POLICY}"
           fi
           ;;
@@ -1896,7 +1896,7 @@ if test "$Py_LTO" = 'true' ; then
       LDFLAGS_NOLTO="-fno-lto"
       case $ac_sys_system in
         Darwin*)
-          LTOFLAGS="-flto -Wl,-export_dynamic"
+          LTOFLAGS="-flto -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
           LTOCFLAGS="-flto"
           ;;
         *)
@@ -3051,6 +3051,33 @@ then
 	fi
 else
 	AC_MSG_RESULT(no)
+fi
+
+# Check for --with-dsymutil
+AC_SUBST(DSYMUTIL)
+AC_SUBST(DSYMUTIL_PATH)
+DSYMUTIL=
+DSYMUTIL_PATH=
+AC_MSG_CHECKING(for --with-dsymutil)
+AC_ARG_WITH(dsymutil,
+            AS_HELP_STRING([--with-dsymutil], [link debug information into final executable with dsymutil in macOS  (default is no)]),
+[
+if test "$withval" != no
+then
+  if test "$MACHDEP" != "darwin"; then
+    AC_MSG_ERROR([dsymutil debug linking is only available in macOS.])
+  fi
+ AC_MSG_RESULT(yes);
+  DSYMUTIL='true'
+else AC_MSG_RESULT(no); DSYMUTIL=
+fi],
+[AC_MSG_RESULT(no)])
+
+if test "$DSYMUTIL"; then
+  AC_PATH_PROG(DSYMUTIL_PATH, [dsymutil], [not found])
+  if test "$DSYMUTIL_PATH" = "not found"; then
+      AC_MSG_ERROR([dsymutil command not found on \$PATH])
+  fi
 fi
 
 AC_MSG_CHECKING(for dyld)
