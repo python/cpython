@@ -64,7 +64,6 @@ Summary -- Release highlights
 New syntax features:
 
 * :pep:`654`: Exception Groups and ``except*``.
-  (Contributed by Irit Katriel in :issue:`45292`.)
 
 New built-in features:
 
@@ -825,6 +824,20 @@ time
   which has a resolution of 100 nanoseconds (10\ :sup:`-7` seconds). Previously,
   it had a resolution of 1 millisecond (10\ :sup:`-3` seconds).
   (Contributed by Benjamin Szőke, Dong-hee Na, Eryk Sun and Victor Stinner in :issue:`21302` and :issue:`45429`.)
+
+
+traceback
+---------
+
+* Add :func:`traceback.StackSummary.format_frame_summary` to allow users
+  to override which frames appear in the traceback, and how they are
+  formatted.
+  (Contributed by Ammar Askar in :issue:`44569`.)
+
+* Add :func:`traceback.TracebackException.print`, which prints the
+  formatted :exc:`~traceback.TracebackException` instance to a file.
+  (Contributed by Irit Katriel in :issue:`33809`.)
+
 
 typing
 ------
@@ -1644,16 +1657,23 @@ Build Changes
 
 * Build dependencies, compiler flags, and linker flags for most stdlib
   extension modules are now detected by :program:`configure`. libffi, libnsl,
-  libsqlite3, zlib, bzip2, liblzma, libcrypt, Tcl/Tk libs, and uuid flags
-  are detected by ``pkg-config`` (when available).
+  libsqlite3, zlib, bzip2, liblzma, libcrypt, Tcl/Tk, and uuid flags
+  are detected by ``pkg-config`` (when available). :mod:`tkinter` now
+  requires ``pkg-config`` command to detect development settings for Tcl/Tk
+  headers and libraries.
   (Contributed by Christian Heimes and Erlend Egeberg Aasland in
   :issue:`45847`, :issue:`45747`, and :issue:`45763`.)
 
   .. note::
-     Use the environment variables ``TCLTK_CFLAGS`` and ``TCLTK_LIBS`` to
-     manually specify the location of Tcl/Tk headers and libraries.
-     The :program:`configure` options ``--with-tcltk-includes`` and
-     ``--with-tcltk-libs`` have been removed.
+     Use the environment variables :envvar:`TCLTK_CFLAGS` and
+     :envvar:`TCLTK_LIBS` to manually specify the location of Tcl/Tk headers
+     and libraries. The :program:`configure` options ``--with-tcltk-includes``
+     and ``--with-tcltk-libs`` have been removed.
+
+     On RHEL 7 and CentOS 7 the development packages do not provide ``tcl.pc``
+     and ``tk.pc``, use :envvar:`TCLTK_LIBS="-ltk8.5 -ltkstub8.5 -ltcl8.5"`.
+     The directory ``Misc/rhel7`` contains ``.pc`` files and instructions
+     how to build Python with RHEL 7's and CentOS 7's Tcl/Tk and OpenSSL.
 
 * CPython now has :pep:`11` tier 3 support for cross compiling to WebAssembly
   platform ``wasm32-unknown-emscripten`` (Python in the browser). The effort
@@ -2115,6 +2135,31 @@ Removed
 * Remove the ``HAVE_PY_SET_53BIT_PRECISION`` macro (moved to the internal C
   API).
   (Contributed by Victor Stinner in :issue:`45412`.)
+
+* Remove the :c:type:`Py_UNICODE` encoder APIs,
+  as they have been deprecated since Python 3.3,
+  are little used
+  and are inefficient relative to the recommended alternatives.
+
+  The removed functions are:
+
+  * :func:`!PyUnicode_Encode`
+  * :func:`!PyUnicode_EncodeASCII`
+  * :func:`!PyUnicode_EncodeLatin1`
+  * :func:`!PyUnicode_EncodeUTF7`
+  * :func:`!PyUnicode_EncodeUTF8`
+  * :func:`!PyUnicode_EncodeUTF16`
+  * :func:`!PyUnicode_EncodeUTF32`
+  * :func:`!PyUnicode_EncodeUnicodeEscape`
+  * :func:`!PyUnicode_EncodeRawUnicodeEscape`
+  * :func:`!PyUnicode_EncodeCharmap`
+  * :func:`!PyUnicode_TranslateCharmap`
+  * :func:`!PyUnicode_EncodeDecimal`
+  * :func:`!PyUnicode_TransformDecimalToASCII`
+
+  See :pep:`624` for details and
+  :pep:`migration guidance <624#alternative-apis>`.
+  (Contributed by Inada Naoki in :issue:`44029`.)
 
 
 .. _libb2: https://www.blake2.net/

@@ -411,10 +411,10 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12a1 3505 (Specialization/Cache for FOR_ITER)
 #     Python 3.12a1 3506 (Add BINARY_SLICE and STORE_SLICE instructions)
 #     Python 3.12a1 3507 (Set lineno of module's RESUME to 0)
+#     Python 3.12a1 3508 (Add CLEANUP_THROW)
 
 #     Python 3.13 will start with 3550
 
-#
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
 # due to the addition of new opcodes).
@@ -424,7 +424,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3507).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3508).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
