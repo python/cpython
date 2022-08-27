@@ -184,8 +184,7 @@ class _BasePurePathTest(object):
             ('', 'a', 'b'), ('a', '', 'b'), ('a', 'b', ''),
             ],
         '/b/c/d': [
-            ('a', '/b/c', 'd'), ('a', '///b//c', 'd/'),
-            ('/a', '/b/c', 'd'),
+            ('a', '/b/c', 'd'), ('/a', '/b/c', 'd'),
             # Empty components get removed.
             ('/', 'b', '', 'c/d'), ('/', '', 'b/c/d'), ('', '/b/c/d'),
             ],
