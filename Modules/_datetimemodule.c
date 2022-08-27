@@ -1511,15 +1511,11 @@ make_somezreplacement(PyObject *object, char *sep, PyObject *tzinfoarg)
 {
     char buf[100];
     PyObject *tzinfo = get_tzinfo_member(object);
-    PyObject *replacement = PyBytes_FromStringAndSize(NULL, 0);
 
-    if (replacement == NULL)
-        return NULL;
-    if (tzinfo == Py_None || tzinfo == NULL)
-        return replacement;
-
-    Py_DECREF(replacement);
-
+    if (tzinfo == Py_None || tzinfo == NULL) {
+        return PyBytes_FromStringAndSize(NULL, 0);
+    }
+   
     assert(tzinfoarg != NULL);
     if (format_utcoffset(buf,
                          sizeof(buf),
@@ -1527,9 +1523,8 @@ make_somezreplacement(PyObject *object, char *sep, PyObject *tzinfoarg)
                          tzinfo,
                          tzinfoarg) < 0)
         return NULL;
-
-    replacement = PyBytes_FromStringAndSize(buf, strlen(buf));
-    return replacement;
+        
+    return PyBytes_FromStringAndSize(buf, strlen(buf));
 }
 
 static PyObject *
