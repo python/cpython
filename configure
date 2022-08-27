@@ -1054,11 +1054,8 @@ enable_pystats
 with_assertions
 enable_optimizations
 with_lto
-<<<<<<< HEAD
 enable_bolt
-=======
 with_dsymutil
->>>>>>> f589747ac9 (gh-95973: Add a new --with-dsymutil option to link debug information in MacOS)
 with_address_sanitizer
 with_memory_sanitizer
 with_undefined_behavior_sanitizer
