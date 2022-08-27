@@ -275,7 +275,7 @@ class PurePath(object):
     def _split_root(cls, part):
         sep = cls._flavour.sep
         rel = cls._flavour.splitdrive(part)[1].lstrip(sep)
-        anchor = part[:len(part)-len(rel)]
+        anchor = part.removesuffix(rel)
         if anchor:
             anchor = cls._flavour.normpath(anchor)
         drv, root = cls._flavour.splitdrive(anchor)
