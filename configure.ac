@@ -2452,18 +2452,25 @@ yes)
                 LDFLAGS="${UNIVERSAL_ARCH_FLAGS} ${LDFLAGS}"
             fi
         else
-          MACOS_MACHINE=$host_cpu
           AC_CHECK_SIZEOF([size_t], [4])
-          if "$MACOS_MACHINE" = "i386" -a $ac_cv_sizeof_size_t -eq 8; then
-              MACOS_MACHINE=x86_64
-          fi
-          if "$MACOS_MACHINE" = "powerpc"; then
+          AS_CASE([$host_cpu],
+            [i386], [
               if test $ac_cv_sizeof_size_t -eq 8; then
-                  MACOS_MACHINE=ppc64
+                MACOS_MACHINE=x86_64
               else
-                  MACOS_MACHINE=ppc
+                MACOS_MACHINE=i386
               fi
-          fi
+            ],
+            [powerpc], [
+              if test $ac_cv_sizeof_size_t -eq 8; then
+                MACOS_MACHINE=ppc64
+              else
+                MACOS_MACHINE=ppc
+              fi
+            ],
+            [aarch64], [MACOS_MACHINE=arm64],
+            [MACOS_MACHINE=$host_cpu]
+          )
         fi
 
         # Calculate an appropriate deployment target for this build:
@@ -2554,27 +2561,46 @@ AC_SUBST([PY_SYSCONFIGDATA_NAME])
 AC_MSG_RESULT([$PY_SYSCONFIGDATA_NAME])
 
 AC_MSG_CHECKING([for sysconfig platform])
-dnl lower case, mangled ac_sys_system
-sysconfig_osname=$ac_md_system
 sysconfig_machine=$(echo $host_cpu | tr '/ ' '-_')
-sysconfig_release=$ac_sys_release
 
 AS_CASE([$ac_sys_system],
-  [Linux*], [PY_SYSCONFIG_PLATFORM="linux-${sysconfig_machine}"],
   [AIX*], [AC_MSG_ERROR([not implemented])],
-  [SunOS*], [AC_MSG_ERROR([not implemented])],
-  [Cygwin], [AC_MSG_ERROR([not implemented])],
+  [Cygwin], [
+    dnl split on "-", use first part
+    PY_SYSCONFIG_PLATFORM="cygwin-$(echo $ac_sys_release | cut -d - -f 1)"
+  ],
   [Darwin], [PY_SYSCONFIG_PLATFORM="macosx-${MACOSX_DEPLOYMENT_TARGET}-${MACOS_MACHINE}"],
+  [FreeBSD*], [
+    dnl FreeBSD's uname() returns amd64 for x86_64.
+    AS_CASE([$host_cpu],
+      [x86_64], [sysconfig_machine=amd64],
+    )
+    PY_SYSCONFIG_PLATFORM="freebsd-${ac_sys_release}-${sysconfig_machine}"
+  ],
+  [Linux*], [
+    dnl config.guess uses powerpc*, Linux uname() uses ppc*
+    sysconfig_machine=$(echo $sysconfig_machine | sed 's/^powerpc/ppc/')
+    PY_SYSCONFIG_PLATFORM="linux-${sysconfig_machine}"
+  ],
+  [SunOS*], [AC_MSG_ERROR([not implemented])],
   [
-    if test -n "$sysconfig_release"; then
-      PY_SYSCONFIG_PLATFORM="${sysconfig_osname}-${sysconfig_release}-${sysconfig_machine}"
+    dnl default
+    if test -n "$ac_sys_release"; then
+      PY_SYSCONFIG_PLATFORM="${ac_md_system}-${ac_sys_release}-${sysconfig_machine}"
     else
-      PY_SYSCONFIG_PLATFORM="${sysconfig_osname}-${sysconfig_machine}"
+      PY_SYSCONFIG_PLATFORM="${ac_md_system}-${sysconfig_machine}"
     fi
   ]
 )
+
 AC_SUBST([PY_SYSCONFIG_PLATFORM])
 AC_MSG_RESULT([$PY_SYSCONFIG_PLATFORM])
+
+AC_MSG_CHECKING([for pybuilddir.txt])
+PYBUILDDIR="build/lib.${PY_SYSCONFIG_PLATFORM}-PYTHON_VERSION"
+AS_VAR_IF([with_pydebug], [yes], [PYBUILDDIR="$PYBUILDDIR-pydebug"])
+AC_SUBST([PYBUILDDIR])
+AC_MSG_RESULT([$PYBUILDDIR])
 
 case "$CC" in
 *icc*)

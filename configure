@@ -873,6 +873,7 @@ DSYMUTIL_PATH
 DSYMUTIL
 LIBTOOL_CRUFT
 OTHER_LIBTOOL_OPT
+PYBUILDDIR
 PY_SYSCONFIG_PLATFORM
 PY_SYSCONFIGDATA_NAME
 UNIVERSAL_ARCH_FLAGS
@@ -9090,7 +9091,6 @@ $as_echo "$CC" >&6; }
                 LDFLAGS="${UNIVERSAL_ARCH_FLAGS} ${LDFLAGS}"
             fi
         else
-          MACOS_MACHINE=$host_cpu
           # The cast to long int works around a bug in the HP C Compiler
 # version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
 # declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
@@ -9124,16 +9124,29 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-          if "$MACOS_MACHINE" = "i386" -a $ac_cv_sizeof_size_t -eq 8; then
-              MACOS_MACHINE=x86_64
-          fi
-          if "$MACOS_MACHINE" = "powerpc"; then
+          case $host_cpu in #(
+  i386) :
+
               if test $ac_cv_sizeof_size_t -eq 8; then
-                  MACOS_MACHINE=ppc64
+                MACOS_MACHINE=x86_64
               else
-                  MACOS_MACHINE=ppc
+                MACOS_MACHINE=i386
               fi
-          fi
+             ;; #(
+  powerpc) :
+
+              if test $ac_cv_sizeof_size_t -eq 8; then
+                MACOS_MACHINE=ppc64
+              else
+                MACOS_MACHINE=ppc
+              fi
+             ;; #(
+  aarch64) :
+    MACOS_MACHINE=arm64 ;; #(
+  *) :
+    MACOS_MACHINE=$host_cpu
+           ;;
+esac
         fi
 
         # Calculate an appropriate deployment target for this build:
@@ -9242,34 +9255,58 @@ $as_echo "$PY_SYSCONFIGDATA_NAME" >&6; }
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sysconfig platform" >&5
 $as_echo_n "checking for sysconfig platform... " >&6; }
-sysconfig_osname=$ac_md_system
 sysconfig_machine=$(echo $host_cpu | tr '/ ' '-_')
-sysconfig_release=$ac_sys_release
 
 case $ac_sys_system in #(
-  Linux*) :
-    PY_SYSCONFIG_PLATFORM="linux-${sysconfig_machine}" ;; #(
   AIX*) :
     as_fn_error $? "not implemented" "$LINENO" 5 ;; #(
-  SunOS*) :
-    as_fn_error $? "not implemented" "$LINENO" 5 ;; #(
   Cygwin) :
-    as_fn_error $? "not implemented" "$LINENO" 5 ;; #(
+
+        PY_SYSCONFIG_PLATFORM="cygwin-$(echo $ac_sys_release | cut -d - -f 1)"
+   ;; #(
   Darwin) :
     PY_SYSCONFIG_PLATFORM="macosx-${MACOSX_DEPLOYMENT_TARGET}-${MACOS_MACHINE}" ;; #(
+  FreeBSD*) :
+
+        case $host_cpu in #(
+  x86_64) :
+    sysconfig_machine=amd64 ;; #(
+  *) :
+     ;;
+esac
+    PY_SYSCONFIG_PLATFORM="freebsd-${ac_sys_release}-${sysconfig_machine}"
+   ;; #(
+  Linux*) :
+
+        sysconfig_machine=$(echo $sysconfig_machine | sed 's/^powerpc/ppc/')
+    PY_SYSCONFIG_PLATFORM="linux-${sysconfig_machine}"
+   ;; #(
+  SunOS*) :
+    as_fn_error $? "not implemented" "$LINENO" 5 ;; #(
   *) :
 
-    if test -n "$sysconfig_release"; then
-      PY_SYSCONFIG_PLATFORM="${sysconfig_osname}-${sysconfig_release}-${sysconfig_machine}"
+        if test -n "$ac_sys_release"; then
+      PY_SYSCONFIG_PLATFORM="${ac_md_system}-${ac_sys_release}-${sysconfig_machine}"
     else
-      PY_SYSCONFIG_PLATFORM="${sysconfig_osname}-${sysconfig_machine}"
+      PY_SYSCONFIG_PLATFORM="${ac_md_system}-${sysconfig_machine}"
     fi
 
  ;;
 esac
 
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PY_SYSCONFIG_PLATFORM" >&5
 $as_echo "$PY_SYSCONFIG_PLATFORM" >&6; }
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for pybuilddir.txt" >&5
+$as_echo_n "checking for pybuilddir.txt... " >&6; }
+PYBUILDDIR="build/lib.${PY_SYSCONFIG_PLATFORM}-3.12"
+if test "x$with_pydebug" = xyes; then :
+  PYBUILDDIR="$PYBUILDDIR-pydebug"
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $PYBUILDDIR" >&5
+$as_echo "$PYBUILDDIR" >&6; }
 
 case "$CC" in
 *icc*)
@@ -28111,7 +28148,11 @@ $as_echo "$py_cv_module_xxlimited_35" >&6; }
 
 
 # generate output files
-ac_config_files="$ac_config_files Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh"
+ac_config_files="$ac_config_files Makefile.pre pycrosscompile.cfg"
+
+ac_config_files="$ac_config_files pybuilddir.txt"
+
+ac_config_files="$ac_config_files Misc/python.pc Misc/python-embed.pc Misc/python-config.sh"
 
 ac_config_files="$ac_config_files Modules/Setup.bootstrap Modules/Setup.stdlib"
 
@@ -29143,6 +29184,8 @@ do
     "Mac/Resources/framework/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/framework/Info.plist" ;;
     "Mac/Resources/app/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/app/Info.plist" ;;
     "Makefile.pre") CONFIG_FILES="$CONFIG_FILES Makefile.pre" ;;
+    "pycrosscompile.cfg") CONFIG_FILES="$CONFIG_FILES pycrosscompile.cfg" ;;
+    "pybuilddir.txt") CONFIG_FILES="$CONFIG_FILES pybuilddir.txt" ;;
     "Misc/python.pc") CONFIG_FILES="$CONFIG_FILES Misc/python.pc" ;;
     "Misc/python-embed.pc") CONFIG_FILES="$CONFIG_FILES Misc/python-embed.pc" ;;
     "Misc/python-config.sh") CONFIG_FILES="$CONFIG_FILES Misc/python-config.sh" ;;
@@ -29707,6 +29750,7 @@ $as_echo "$as_me: $ac_file is unchanged" >&6;}
 
 
   case $ac_file$ac_mode in
+    "pybuilddir.txt":F) sed -i 's/\n//' ;;
     "Modules/ld_so_aix":F) chmod +x Modules/ld_so_aix ;;
 
   esac

@@ -94,7 +94,11 @@ def get_host_platform():
                                         distutils.sysconfig.get_config_vars(),
                                         osname, release, machine)
 
-    return "%s-%s-%s" % (osname, release, machine)
+    if osname in {"emscripten", "wasi"}:
+        # short name
+        return "%s-%s" % (osname, machine)
+    else:
+        return "%s-%s-%s" % (osname, release, machine)
 
 def get_platform():
     if os.name == 'nt':
