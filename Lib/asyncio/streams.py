@@ -205,7 +205,7 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             self._strong_reader = stream_reader
         self._reject_connection = False
         self._stream_writer = None
-        self._connection_tasks = set()
+        self._task = None
         self._transport = None
         self._client_connected_cb = client_connected_cb
         self._over_ssl = False
@@ -248,9 +248,7 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             res = self._client_connected_cb(reader,
                                             self._stream_writer)
             if coroutines.iscoroutine(res):
-                task = self._loop.create_task(res)
-                task.add_done_callback(self._connection_tasks.remove)
-                self._connection_tasks.add(task)
+                self._task = self._loop.create_task(res)
             self._strong_reader = None
 
     def connection_lost(self, exc):

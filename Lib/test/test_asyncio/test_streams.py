@@ -864,25 +864,6 @@ os.close(fd)
         self.assertEqual(cm.filename, __file__)
         self.assertIs(protocol._loop, self.loop)
 
-    def test_streamreaderprotocol_task_reference(self):
-        # See http://bugs.python.org/issue46309
-        messages = []
-        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
-
-        async def callback(*args):
-            await self.loop.create_future()
-
-        async def test():
-            reader = asyncio.StreamReader()
-            protocol = asyncio.StreamReaderProtocol(reader, callback)
-            transport = mock.Mock()
-            protocol.connection_made(transport)
-            await asyncio.sleep(0)
-            gc.collect()
-
-        self.loop.run_until_complete(test())
-        self.assertEqual(messages, [])
-
     def test_drain_raises(self):
         # See http://bugs.python.org/issue25441
 
