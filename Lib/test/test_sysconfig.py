@@ -501,6 +501,18 @@ class TestSysConfig(unittest.TestCase):
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
         self.assertTrue(suffix.endswith('-darwin.so'), suffix)
 
+    @unittest.skipUnless(os.name == "posix", "Requires POSIX")
+    def test_configure_sysconfig(self):
+        self.assertEqual(
+            sysconfig.get_config_var("PY_SYSCONFIGDATA_NAME"),
+            sysconfig._get_sysconfigdata_name()
+        )
+        self.assertEqual(
+            sysconfig.get_config_var("PY_SYSCONFIG_PLATFORM"),
+            sysconfig.get_platform()
+        )
+
+
 class MakefileTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform.startswith('win'),

@@ -793,7 +793,11 @@ def get_platform():
                                             get_config_vars(),
                                             osname, release, machine)
 
-    return f"{osname}-{release}-{machine}"
+    if osname in {"emscripten", "wasi"}:
+        # short name
+        return f"{osname}-{machine}"
+    else:
+        return f"{osname}-{release}-{machine}"
 
 
 def get_python_version():

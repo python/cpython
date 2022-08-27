@@ -3,6 +3,7 @@ Collect various information about Python to help debugging test failures.
 """
 from __future__ import print_function
 import errno
+import os
 import re
 import sys
 import traceback
@@ -472,6 +473,10 @@ def collect_sysconfig(info_add):
         return
 
     import sysconfig
+
+    info_add('sysconfig.get_platform', sysconfig.get_platform())
+    if os.name == "posix":
+        info_add('sysconfig._get_sysconfigdata_name', sysconfig._get_sysconfigdata_name())
 
     for name in (
         'ABIFLAGS',

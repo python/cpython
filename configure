@@ -873,6 +873,8 @@ DSYMUTIL_PATH
 DSYMUTIL
 LIBTOOL_CRUFT
 OTHER_LIBTOOL_OPT
+PY_SYSCONFIG_PLATFORM
+PY_SYSCONFIGDATA_NAME
 UNIVERSAL_ARCH_FLAGS
 WASM_STDLIB
 WASM_ASSETS_DIR
@@ -2333,60 +2335,6 @@ fi
 
 } # ac_fn_c_try_link
 
-# ac_fn_c_check_type LINENO TYPE VAR INCLUDES
-# -------------------------------------------
-# Tests whether TYPE exists after having included INCLUDES, setting cache
-# variable VAR accordingly.
-ac_fn_c_check_type ()
-{
-  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
-$as_echo_n "checking for $2... " >&6; }
-if eval \${$3+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  eval "$3=no"
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-int
-main ()
-{
-if (sizeof ($2))
-	 return 0;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-int
-main ()
-{
-if (sizeof (($2)))
-	    return 0;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-else
-  eval "$3=yes"
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-eval ac_res=\$$3
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
-
-} # ac_fn_c_check_type
-
 # ac_fn_c_compute_int LINENO EXPR VAR INCLUDES
 # --------------------------------------------
 # Tries to find the compile-time value of EXPR in a program that includes
@@ -2569,6 +2517,60 @@ rm -f conftest.val
   as_fn_set_status $ac_retval
 
 } # ac_fn_c_compute_int
+
+# ac_fn_c_check_type LINENO TYPE VAR INCLUDES
+# -------------------------------------------
+# Tests whether TYPE exists after having included INCLUDES, setting cache
+# variable VAR accordingly.
+ac_fn_c_check_type ()
+{
+  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
+$as_echo_n "checking for $2... " >&6; }
+if eval \${$3+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  eval "$3=no"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+int
+main ()
+{
+if (sizeof ($2))
+	 return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+int
+main ()
+{
+if (sizeof (($2)))
+	    return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+else
+  eval "$3=yes"
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+eval ac_res=\$$3
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
+
+} # ac_fn_c_check_type
 
 # ac_fn_c_check_func LINENO FUNC VAR
 # ----------------------------------
@@ -3850,6 +3852,7 @@ fi
 cat >>confdefs.h <<_ACEOF
 #define _PYTHONFRAMEWORK "${PYTHONFRAMEWORK}"
 _ACEOF
+
 
 
 # Set name for machine-dependent library files
@@ -9027,42 +9030,50 @@ $as_echo "$CC" >&6; }
                UNIVERSAL_ARCH_FLAGS="-arch ppc -arch i386"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT=""
+               MACOS_MACHINE=fat
                ;;
             64-bit)
                UNIVERSAL_ARCH_FLAGS="-arch ppc64 -arch x86_64"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT="true"
+               MACOS_MACHINE=fat64
                ;;
             all)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch ppc64 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
+               MACOS_MACHINE=universal
                ;;
             universal2)
                UNIVERSAL_ARCH_FLAGS="-arch arm64 -arch x86_64"
                LIPO_32BIT_FLAGS=""
                LIPO_INTEL64_FLAGS="-extract x86_64"
                ARCH_RUN_32BIT="true"
+               MACOS_MACHINE=universal2
                ;;
             intel)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386"
+               MACOS_MACHINE=intel
                ;;
             intel-32)
                UNIVERSAL_ARCH_FLAGS="-arch i386"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT=""
+               MACOS_MACHINE=i386
                ;;
             intel-64)
                UNIVERSAL_ARCH_FLAGS="-arch x86_64"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT="true"
+               MACOS_MACHINE=x86_64
                ;;
             3-way)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch x86_64"
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
+               MACOS_MACHINE=fat3
                ;;
             *)
                as_fn_error $? "proper usage is --with-universal-arch=universal2|32-bit|64-bit|all|intel|3-way" "$LINENO" 5
@@ -9078,6 +9089,51 @@ $as_echo "$CC" >&6; }
                 CFLAGS="${UNIVERSAL_ARCH_FLAGS} ${CFLAGS}"
                 LDFLAGS="${UNIVERSAL_ARCH_FLAGS} ${LDFLAGS}"
             fi
+        else
+          MACOS_MACHINE=$host_cpu
+          # The cast to long int works around a bug in the HP C Compiler
+# version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
+# declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
+# This bug is HP SR number 8606223364.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking size of size_t" >&5
+$as_echo_n "checking size of size_t... " >&6; }
+if ${ac_cv_sizeof_size_t+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if ac_fn_c_compute_int "$LINENO" "(long int) (sizeof (size_t))" "ac_cv_sizeof_size_t"        "$ac_includes_default"; then :
+
+else
+  if test "$ac_cv_type_size_t" = yes; then
+     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error 77 "cannot compute sizeof (size_t)
+See \`config.log' for more details" "$LINENO" 5; }
+   else
+     ac_cv_sizeof_size_t=0
+   fi
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_sizeof_size_t" >&5
+$as_echo "$ac_cv_sizeof_size_t" >&6; }
+
+
+
+cat >>confdefs.h <<_ACEOF
+#define SIZEOF_SIZE_T $ac_cv_sizeof_size_t
+_ACEOF
+
+
+          if "$MACOS_MACHINE" = "i386" -a $ac_cv_sizeof_size_t -eq 8; then
+              MACOS_MACHINE=x86_64
+          fi
+          if "$MACOS_MACHINE" = "powerpc"; then
+              if test $ac_cv_sizeof_size_t -eq 8; then
+                  MACOS_MACHINE=ppc64
+              else
+                  MACOS_MACHINE=ppc
+              fi
+          fi
         fi
 
         # Calculate an appropriate deployment target for this build:
@@ -9175,6 +9231,45 @@ rm -f core conftest.err conftest.$ac_objext \
     esac
     ;;
 esac
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for sysconfigdata name" >&5
+$as_echo_n "checking for sysconfigdata name... " >&6; }
+PY_SYSCONFIGDATA_NAME="_sysconfigdata_${ABIFLAGS}_${MACHDEP}_${MULTIARCH}"
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $PY_SYSCONFIGDATA_NAME" >&5
+$as_echo "$PY_SYSCONFIGDATA_NAME" >&6; }
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for sysconfig platform" >&5
+$as_echo_n "checking for sysconfig platform... " >&6; }
+sysconfig_osname=$ac_md_system
+sysconfig_machine=$(echo $host_cpu | tr '/ ' '-_')
+sysconfig_release=$ac_sys_release
+
+case $ac_sys_system in #(
+  Linux*) :
+    PY_SYSCONFIG_PLATFORM="linux-${sysconfig_machine}" ;; #(
+  AIX*) :
+    as_fn_error $? "not implemented" "$LINENO" 5 ;; #(
+  SunOS*) :
+    as_fn_error $? "not implemented" "$LINENO" 5 ;; #(
+  Cygwin) :
+    as_fn_error $? "not implemented" "$LINENO" 5 ;; #(
+  Darwin) :
+    PY_SYSCONFIG_PLATFORM="macosx-${MACOSX_DEPLOYMENT_TARGET}-${MACOS_MACHINE}" ;; #(
+  *) :
+
+    if test -n "$sysconfig_release"; then
+      PY_SYSCONFIG_PLATFORM="${sysconfig_osname}-${sysconfig_release}-${sysconfig_machine}"
+    else
+      PY_SYSCONFIG_PLATFORM="${sysconfig_osname}-${sysconfig_machine}"
+    fi
+
+ ;;
+esac
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $PY_SYSCONFIG_PLATFORM" >&5
+$as_echo "$PY_SYSCONFIG_PLATFORM" >&6; }
 
 case "$CC" in
 *icc*)

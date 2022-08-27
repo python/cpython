@@ -525,6 +525,7 @@ AC_SUBST(FRAMEWORKINSTALLAPPSPREFIX)
 
 AC_DEFINE_UNQUOTED(_PYTHONFRAMEWORK, "${PYTHONFRAMEWORK}", [framework name])
 
+
 # Set name for machine-dependent library files
 AC_ARG_VAR([MACHDEP], [name for machine-dependent library files])
 AC_MSG_CHECKING(MACHDEP)
@@ -2391,42 +2392,50 @@ yes)
                UNIVERSAL_ARCH_FLAGS="-arch ppc -arch i386"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT=""
+               MACOS_MACHINE=fat
                ;;
             64-bit)
                UNIVERSAL_ARCH_FLAGS="-arch ppc64 -arch x86_64"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT="true"
+               MACOS_MACHINE=fat64
                ;;
             all)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch ppc64 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
+               MACOS_MACHINE=universal
                ;;
             universal2)
                UNIVERSAL_ARCH_FLAGS="-arch arm64 -arch x86_64"
                LIPO_32BIT_FLAGS=""
                LIPO_INTEL64_FLAGS="-extract x86_64"
                ARCH_RUN_32BIT="true"
+               MACOS_MACHINE=universal2
                ;;
             intel)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386"
+               MACOS_MACHINE=intel
                ;;
             intel-32)
                UNIVERSAL_ARCH_FLAGS="-arch i386"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT=""
+               MACOS_MACHINE=i386
                ;;
             intel-64)
                UNIVERSAL_ARCH_FLAGS="-arch x86_64"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT="true"
+               MACOS_MACHINE=x86_64
                ;;
             3-way)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch x86_64"
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
+               MACOS_MACHINE=fat3
                ;;
             *)
                AC_MSG_ERROR([proper usage is --with-universal-arch=universal2|32-bit|64-bit|all|intel|3-way])
@@ -2442,6 +2451,19 @@ yes)
                 CFLAGS="${UNIVERSAL_ARCH_FLAGS} ${CFLAGS}"
                 LDFLAGS="${UNIVERSAL_ARCH_FLAGS} ${LDFLAGS}"
             fi
+        else
+          MACOS_MACHINE=$host_cpu
+          AC_CHECK_SIZEOF([size_t], [4])
+          if "$MACOS_MACHINE" = "i386" -a $ac_cv_sizeof_size_t -eq 8; then
+              MACOS_MACHINE=x86_64
+          fi
+          if "$MACOS_MACHINE" = "powerpc"; then
+              if test $ac_cv_sizeof_size_t -eq 8; then
+                  MACOS_MACHINE=ppc64
+              else
+                  MACOS_MACHINE=ppc
+              fi
+          fi
         fi
 
         # Calculate an appropriate deployment target for this build:
@@ -2519,6 +2541,40 @@ yes)
     esac
     ;;
 esac
+
+dnl
+dnl sysconfig.py / _sysconfigdata
+dnl
+
+AC_MSG_CHECKING([for sysconfigdata name])
+dnl multiarch = getattr(sys.implementation, '_multiarch', '')
+dnl f'_sysconfigdata_{sys.abiflags}_{sys.platform}_{multiarch}'
+PY_SYSCONFIGDATA_NAME="_sysconfigdata_${ABIFLAGS}_${MACHDEP}_${MULTIARCH}"
+AC_SUBST([PY_SYSCONFIGDATA_NAME])
+AC_MSG_RESULT([$PY_SYSCONFIGDATA_NAME])
+
+AC_MSG_CHECKING([for sysconfig platform])
+dnl lower case, mangled ac_sys_system
+sysconfig_osname=$ac_md_system
+sysconfig_machine=$(echo $host_cpu | tr '/ ' '-_')
+sysconfig_release=$ac_sys_release
+
+AS_CASE([$ac_sys_system],
+  [Linux*], [PY_SYSCONFIG_PLATFORM="linux-${sysconfig_machine}"],
+  [AIX*], [AC_MSG_ERROR([not implemented])],
+  [SunOS*], [AC_MSG_ERROR([not implemented])],
+  [Cygwin], [AC_MSG_ERROR([not implemented])],
+  [Darwin], [PY_SYSCONFIG_PLATFORM="macosx-${MACOSX_DEPLOYMENT_TARGET}-${MACOS_MACHINE}"],
+  [
+    if test -n "$sysconfig_release"; then
+      PY_SYSCONFIG_PLATFORM="${sysconfig_osname}-${sysconfig_release}-${sysconfig_machine}"
+    else
+      PY_SYSCONFIG_PLATFORM="${sysconfig_osname}-${sysconfig_machine}"
+    fi
+  ]
+)
+AC_SUBST([PY_SYSCONFIG_PLATFORM])
+AC_MSG_RESULT([$PY_SYSCONFIG_PLATFORM])
 
 case "$CC" in
 *icc*)
