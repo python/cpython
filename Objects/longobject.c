@@ -527,7 +527,7 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
             i = -(i);
         }
         while (--i >= 0) {
-            if (x > (unsigned long)-1 >> PyLong_SHIFT) {
+            if (x > ULONG_MAX >> PyLong_SHIFT) {
                 *overflow = sign;
                 goto exit;
             }
@@ -622,7 +622,7 @@ PyLong_AsSsize_t(PyObject *vv) {
         i = -(i);
     }
     while (--i >= 0) {
-        if (x > (size_t)-1 >> PyLong_SHIFT) {
+        if (x > SIZE_MAX >> PyLong_SHIFT) {
             goto overflow;
         }
         x = (x << PyLong_SHIFT) | v->ob_digit[i];
@@ -676,7 +676,7 @@ PyLong_AsUnsignedLong(PyObject *vv)
     case 1: return v->ob_digit[0];
     }
     while (--i >= 0) {
-        if (x > (unsigned long)-1 >> PyLong_SHIFT) {
+        if (x > ULONG_MAX >> PyLong_SHIFT) {
             PyErr_SetString(PyExc_OverflowError,
                             "Python int too large to convert "
                             "to C unsigned long");
@@ -719,7 +719,7 @@ PyLong_AsSize_t(PyObject *vv)
     case 1: return v->ob_digit[0];
     }
     while (--i >= 0) {
-        if (x > (size_t)-1 >> PyLong_SHIFT) {
+        if (x > SIZE_MAX >> PyLong_SHIFT) {
             PyErr_SetString(PyExc_OverflowError,
                 "Python int too large to convert to C size_t");
             return (size_t) -1;
