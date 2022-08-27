@@ -566,9 +566,9 @@ Glossary
       from their :func:`id`.
 
    IDLE
-      An Integrated Development Environment for Python.  IDLE is a basic editor
-      and interpreter environment which ships with the standard distribution of
-      Python.
+      An Integrated Development and Learning Environment for Python.
+      :ref:`idle` is a basic editor and interpreter environment
+      which ships with the standard distribution of Python.
 
    immutable
       An object with a fixed value.  Immutable objects include numbers, strings and

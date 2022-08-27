@@ -1,5 +1,5 @@
 import unittest
-from test.support import cpython_only
+from test.support import cpython_only, requires_limited_api
 try:
     import _testcapi
 except ImportError:
@@ -9,6 +9,7 @@ import collections
 import itertools
 import gc
 import contextlib
+import sys
 
 
 class BadStr(str):
@@ -758,6 +759,12 @@ class TestPEP590(unittest.TestCase):
                 self.assertEqual(expected, vectorcall(func, args, kwargs))
                 self.assertEqual(expected, meth(*args1, **kwargs))
                 self.assertEqual(expected, wrapped(*args, **kwargs))
+
+    @requires_limited_api
+    def test_vectorcall_limited(self):
+        from _testcapi import pyobject_vectorcall
+        obj = _testcapi.LimitedVectorCallClass()
+        self.assertEqual(pyobject_vectorcall(obj, (), ()), "vectorcall called")
 
 
 class A:

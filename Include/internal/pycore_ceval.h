@@ -133,6 +133,9 @@ extern struct _PyInterpreterFrame* _PyEval_GetFrame(void);
 
 extern PyObject* _Py_MakeCoro(PyFunctionObject *func);
 
+extern int _Py_HandlePending(PyThreadState *tstate);
+
+
 #ifdef __cplusplus
 }
 #endif
