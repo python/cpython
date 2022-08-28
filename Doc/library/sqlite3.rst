@@ -1001,12 +1001,12 @@ Connection objects
          def progress(status, remaining, total):
              print(f'Copied {total-remaining} of {total} pages...')
 
-         con = sqlite3.connect('example.db')
-         bck = sqlite3.connect('backup.db')
-         with bck:
-             con.backup(bck, pages=1, progress=progress)
-         bck.close()
-         con.close()
+         src = sqlite3.connect('example.db')
+         dst = sqlite3.connect('backup.db')
+         with dst:
+             src.backup(dst, pages=1, progress=progress)
+         dst.close()
+         src.close()
 
       .. testoutput::
          :hide:
@@ -1017,9 +1017,9 @@ Connection objects
 
       .. testcode::
 
-         source = sqlite3.connect('example.db')
-         dest = sqlite3.connect(':memory:')
-         source.backup(dest)
+         src = sqlite3.connect('example.db')
+         dst = sqlite3.connect(':memory:')
+         src.backup(dst)
 
       .. versionadded:: 3.7
 
