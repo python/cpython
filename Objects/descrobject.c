@@ -640,19 +640,8 @@ classmethoddescr_reduce(PyDescrObject* descr, PyObject* Py_UNUSED(ignored))
     /* Ideally, we would want to use a different callable than eval in
        order to get the descriptor. However, we need to ensure the pickled
        object will not cause errors upon unpickling in older versions. */
-    PyObject* evalFunctionName = PyUnicode_FromString("eval");
-    if (evalFunctionName == NULL) {
-        return NULL;
-    }
-    PyObject* eval = _PyEval_GetBuiltin(evalFunctionName);
-    Py_DECREF(evalFunctionName);
-
-    if (eval == NULL) {
-        return NULL;
-    }
-
     return Py_BuildValue("N(s, N, {s:O, s:O})",
-        eval, "cls.__dict__[name]", Py_None,
+        _PyEval_GetBuiltin(&_Py_ID(eval)), "cls.__dict__[name]", Py_None,
         "cls", PyDescr_TYPE(descr), "name", PyDescr_NAME(descr)
     );
 }
