@@ -3289,9 +3289,6 @@ if test "x$cross_compiling" = xmaybe; then :
 
 fi
 
-# pybuilddir.txt will be created by --generate-posix-vars in the Makefile
-rm -f pybuilddir.txt
-
 
 # Check whether --with-build-python was given.
 if test "${with_build_python+set}" = set; then :
@@ -9256,7 +9253,6 @@ $as_echo "$PY_SYSCONFIGDATA_NAME" >&6; }
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sysconfig platform" >&5
 $as_echo_n "checking for sysconfig platform... " >&6; }
 sysconfig_machine=$(echo $host_cpu | tr '/ ' '-_')
-
 case $ac_sys_system in #(
   AIX*) :
     as_fn_error $? "not implemented" "$LINENO" 5 ;; #(
@@ -9294,12 +9290,11 @@ esac
  ;;
 esac
 
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PY_SYSCONFIG_PLATFORM" >&5
 $as_echo "$PY_SYSCONFIG_PLATFORM" >&6; }
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for pybuilddir.txt" >&5
-$as_echo_n "checking for pybuilddir.txt... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for pybuilddir" >&5
+$as_echo_n "checking for pybuilddir... " >&6; }
 PYBUILDDIR="build/lib.${PY_SYSCONFIG_PLATFORM}-3.12"
 if test "x$with_pydebug" = xyes; then :
   PYBUILDDIR="$PYBUILDDIR-pydebug"
@@ -28148,15 +28143,13 @@ $as_echo "$py_cv_module_xxlimited_35" >&6; }
 
 
 # generate output files
-ac_config_files="$ac_config_files Makefile.pre pycrosscompile.cfg"
-
-ac_config_files="$ac_config_files pybuilddir.txt"
-
-ac_config_files="$ac_config_files Misc/python.pc Misc/python-embed.pc Misc/python-config.sh"
+ac_config_files="$ac_config_files Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh"
 
 ac_config_files="$ac_config_files Modules/Setup.bootstrap Modules/Setup.stdlib"
 
 ac_config_files="$ac_config_files Modules/ld_so_aix"
+
+ac_config_commands="$ac_config_commands pybuilddir.txt"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -29020,6 +29013,7 @@ cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
 # Files that config.status was made for.
 config_files="$ac_config_files"
 config_headers="$ac_config_headers"
+config_commands="$ac_config_commands"
 
 _ACEOF
 
@@ -29048,6 +29042,9 @@ $config_files
 
 Configuration headers:
 $config_headers
+
+Configuration commands:
+$config_commands
 
 Report bugs to <https://bugs.python.org/>."
 
@@ -29170,6 +29167,11 @@ _ASBOX
 
 _ACEOF
 cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
+#
+# INIT-COMMANDS
+#
+PYBUILDDIR=$PYBUILDDIR
+
 _ACEOF
 
 cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
@@ -29184,14 +29186,13 @@ do
     "Mac/Resources/framework/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/framework/Info.plist" ;;
     "Mac/Resources/app/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/app/Info.plist" ;;
     "Makefile.pre") CONFIG_FILES="$CONFIG_FILES Makefile.pre" ;;
-    "pycrosscompile.cfg") CONFIG_FILES="$CONFIG_FILES pycrosscompile.cfg" ;;
-    "pybuilddir.txt") CONFIG_FILES="$CONFIG_FILES pybuilddir.txt" ;;
     "Misc/python.pc") CONFIG_FILES="$CONFIG_FILES Misc/python.pc" ;;
     "Misc/python-embed.pc") CONFIG_FILES="$CONFIG_FILES Misc/python-embed.pc" ;;
     "Misc/python-config.sh") CONFIG_FILES="$CONFIG_FILES Misc/python-config.sh" ;;
     "Modules/Setup.bootstrap") CONFIG_FILES="$CONFIG_FILES Modules/Setup.bootstrap" ;;
     "Modules/Setup.stdlib") CONFIG_FILES="$CONFIG_FILES Modules/Setup.stdlib" ;;
     "Modules/ld_so_aix") CONFIG_FILES="$CONFIG_FILES Modules/ld_so_aix" ;;
+    "pybuilddir.txt") CONFIG_COMMANDS="$CONFIG_COMMANDS pybuilddir.txt" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
@@ -29205,6 +29206,7 @@ done
 if $ac_need_defaults; then
   test "${CONFIG_FILES+set}" = set || CONFIG_FILES=$config_files
   test "${CONFIG_HEADERS+set}" = set || CONFIG_HEADERS=$config_headers
+  test "${CONFIG_COMMANDS+set}" = set || CONFIG_COMMANDS=$config_commands
 fi
 
 # Have a temporary directory for convenience.  Make it in the build tree
@@ -29501,7 +29503,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 fi # test -n "$CONFIG_HEADERS"
 
 
-eval set X "  :F $CONFIG_FILES  :H $CONFIG_HEADERS    "
+eval set X "  :F $CONFIG_FILES  :H $CONFIG_HEADERS    :C $CONFIG_COMMANDS"
 shift
 for ac_tag
 do
@@ -29745,13 +29747,15 @@ $as_echo "$as_me: $ac_file is unchanged" >&6;}
   fi
  ;;
 
-
+  :C)  { $as_echo "$as_me:${as_lineno-$LINENO}: executing $ac_file commands" >&5
+$as_echo "$as_me: executing $ac_file commands" >&6;}
+ ;;
   esac
 
 
   case $ac_file$ac_mode in
-    "pybuilddir.txt":F) sed -i 's/\n//' ;;
     "Modules/ld_so_aix":F) chmod +x Modules/ld_so_aix ;;
+    "pybuilddir.txt":C) echo -n $PYBUILDDIR > pybuilddir.txt ;;
 
   esac
 done # for ac_tag

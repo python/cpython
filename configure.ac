@@ -139,9 +139,6 @@ AS_VAR_IF([cross_compiling], [maybe],
  [AC_MSG_ERROR([Cross compiling required --host=HOST-TUPLE and --build=ARCH])]
 )
 
-# pybuilddir.txt will be created by --generate-posix-vars in the Makefile
-rm -f pybuilddir.txt
-
 AC_ARG_WITH(
   [build-python],
   [AS_HELP_STRING([--with-build-python=python]PYTHON_VERSION,
@@ -2550,19 +2547,18 @@ yes)
 esac
 
 dnl
-dnl sysconfig.py / _sysconfigdata
+dnl pybuilddir, sysconfig.py, and _sysconfigdata_*
 dnl
 
-AC_MSG_CHECKING([for sysconfigdata name])
 dnl multiarch = getattr(sys.implementation, '_multiarch', '')
 dnl f'_sysconfigdata_{sys.abiflags}_{sys.platform}_{multiarch}'
+AC_MSG_CHECKING([for sysconfigdata name])
 PY_SYSCONFIGDATA_NAME="_sysconfigdata_${ABIFLAGS}_${MACHDEP}_${MULTIARCH}"
 AC_SUBST([PY_SYSCONFIGDATA_NAME])
 AC_MSG_RESULT([$PY_SYSCONFIGDATA_NAME])
 
 AC_MSG_CHECKING([for sysconfig platform])
 sysconfig_machine=$(echo $host_cpu | tr '/ ' '-_')
-
 AS_CASE([$ac_sys_system],
   [AIX*], [AC_MSG_ERROR([not implemented])],
   [Cygwin], [
@@ -2592,11 +2588,10 @@ AS_CASE([$ac_sys_system],
     fi
   ]
 )
-
 AC_SUBST([PY_SYSCONFIG_PLATFORM])
 AC_MSG_RESULT([$PY_SYSCONFIG_PLATFORM])
 
-AC_MSG_CHECKING([for pybuilddir.txt])
+AC_MSG_CHECKING([for pybuilddir])
 PYBUILDDIR="build/lib.${PY_SYSCONFIG_PLATFORM}-PYTHON_VERSION"
 AS_VAR_IF([with_pydebug], [yes], [PYBUILDDIR="$PYBUILDDIR-pydebug"])
 AC_SUBST([PYBUILDDIR])
@@ -7433,6 +7428,8 @@ AC_SUBST([MODULE_BLOCK])
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh)
 AC_CONFIG_FILES([Modules/Setup.bootstrap Modules/Setup.stdlib])
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])
+dnl generate without trailing new line
+AC_CONFIG_COMMANDS([pybuilddir.txt], [echo -n $PYBUILDDIR > pybuilddir.txt], [PYBUILDDIR=$PYBUILDDIR])
 AC_OUTPUT
 
 AC_MSG_NOTICE([creating Modules/Setup.local])

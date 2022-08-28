@@ -502,6 +502,9 @@ def _generate_posix_vars():
     # This is more than sufficient for ensuring the subsequent call to
     # get_platform() succeeds.
     name = _get_sysconfigdata_name()
+    # TODO: for development, to be removed
+    if name != vars['PY_SYSCONFIGDATA_NAME']:
+        raise ValueError(f"{name} != {vars['PY_SYSCONFIGDATA_NAME']}")
     if 'darwin' in sys.platform:
         import types
         module = types.ModuleType(name)
@@ -513,6 +516,9 @@ def _generate_posix_vars():
         pybuilddir += '-pydebug'
     os.makedirs(pybuilddir, exist_ok=True)
     destfile = os.path.join(pybuilddir, name + '.py')
+    # TODO: for development, to be removed
+    if not os.path.samefile(destfile, vars['SYSCONFIGDATA_FILE']):
+        raise ValueError(f"{destfile} != {vars['SYSCONFIGDATA_FILE']}")
 
     with open(destfile, 'w', encoding='utf8') as f:
         f.write('# system configuration generated and used by'

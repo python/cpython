@@ -133,8 +133,10 @@ MACHDEP=	@MACHDEP@
 MULTIARCH=	@MULTIARCH@
 MULTIARCH_CPPFLAGS = @MULTIARCH_CPPFLAGS@
 
+PYBUILDDIR=@PYBUILDDIR@
 PY_SYSCONFIGDATA_NAME=@PY_SYSCONFIGDATA_NAME@
 PY_SYSCONFIG_PLATFORM=@PY_SYSCONFIG_PLATFORM@
+SYSCONFIGDATA_FILE=$(PYBUILDDIR)/$(PY_SYSCONFIGDATA_NAME).py
 
 # Install prefix for architecture-independent files
 prefix=		@prefix@
@@ -715,6 +717,7 @@ $(BUILDPYTHON):	Programs/python.o $(LINK_PYTHON_DEPS)
 platform: $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt
 	$(RUNSHARED) $(PYTHON_FOR_BUILD) -c 'import sys ; from sysconfig import get_platform ; print("%s-%d.%d" % (get_platform(), *sys.version_info[:2]))' >platform
 
+
 # Create build directory and generate the sysconfig build-time data there.
 # pybuilddir.txt contains the name of the build dir and is used for
 # sys.path fixup -- see Modules/getpath.c.
@@ -722,14 +725,12 @@ platform: $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt
 # problems by creating a dummy pybuilddir.txt just to allow interpreter
 # initialization to succeed.  It will be overwritten by generate-posix-vars
 # or removed in case of failure.
-pybuilddir.txt: $(PYTHON_FOR_BUILD_DEPS)
-	@echo "none" > ./pybuilddir.txt
-	$(RUNSHARED) $(PYTHON_FOR_BUILD) -S -m sysconfig --generate-posix-vars ;\
-	if test $$? -ne 0 ; then \
-		echo "generate-posix-vars failed" ; \
-		rm -f ./pybuilddir.txt ; \
-		exit 1 ; \
-	fi
+$(SYSCONFIGDATA_FILE): $(PYTHON_FOR_BUILD_DEPS) config.status
+	@./config.status pybuilddir.txt >/dev/null
+	$(RUNSHARED) $(PYTHON_FOR_BUILD) -S -m sysconfig --generate-posix-vars
+
+pybuilddir.txt: config.status $(SYSCONFIGDATA_FILE)
+	./config.status $@
 
 # blake2s is auto-generated from blake2b
 $(srcdir)/Modules/_blake2/blake2s_impl.c: $(srcdir)/Modules/_blake2/blake2b_impl.c $(srcdir)/Modules/_blake2/blake2b2s.py
