@@ -2386,11 +2386,6 @@ requires, and these work on all platforms with a standard C implementation.
 |           | string if the object is        | +063415,               |       |
 |           | naive).                        | -030712.345216         |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%:z``   | UTC offset in the form         | (empty), +00:00,       |       |
-|           | ``±HH:MM[:SS[.ffffff]]``       | -04:00, +10:30,        |       |
-|           | (empty string if the object is | +06:34:15,             |       |
-|           | naive).                        | -03:07:12.345216       |       |
-+-----------+--------------------------------+------------------------+-------+
 | ``%Z``    | Time zone name (empty string   | (empty), UTC, GMT      | \(6)  |
 |           | if the object is naive).       |                        |       |
 +-----------+--------------------------------+------------------------+-------+
@@ -2447,6 +2442,11 @@ convenience. These parameters all correspond to ISO 8601 date values.
 |           | the first day of the week.     |                        |       |
 |           | Week 01 is the week containing |                        |       |
 |           | Jan 4.                         |                        |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%:z``   | UTC offset in the form         | (empty), +00:00,       |       |
+|           | ``±HH:MM[:SS[.ffffff]]``       | -04:00, +10:30,        |       |
+|           | (empty string if the object is | +06:34:15,             |       |
+|           | naive).                        | -03:07:12.345216       |       |
 +-----------+--------------------------------+------------------------+-------+
 
 These may not be available on all platforms when used with the :meth:`strftime`
