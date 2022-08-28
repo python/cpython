@@ -4416,6 +4416,9 @@ class OverloadTests(BaseTestCase):
         other_overload = some_other_func
         def some_other_func(): pass
         self.assertEqual(list(get_overloads(some_other_func)), [other_overload])
+        # Unrelated function still has no overloads:
+        def not_overloaded(): pass
+        self.assertEqual(list(get_overloads(not_overloaded)), [])
 
         # Make sure that after we clear all overloads, the registry is
         # completely empty.
