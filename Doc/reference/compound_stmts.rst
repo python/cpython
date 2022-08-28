@@ -1122,7 +1122,7 @@ subject value:
 
    These classes accept a single positional argument, and the pattern there is matched
    against the whole object rather than an attribute. For example ``int(0|1)`` matches
-   the value ``0``, but not the values ``0.0`` or ``False``.
+   the value ``0``, but not the value ``0.0``.
 
 In simple terms ``CLS(P1, attr=P2)`` matches only if the following happens:
 
