@@ -2463,6 +2463,9 @@ differences between platforms in handling of unsupported format specifiers.
 .. versionadded:: 3.6
    ``%G``, ``%u`` and ``%V`` were added.
 
+.. versionadded:: 3.12
+   ``%:z`` was added.
+
 Technical Detail
 ^^^^^^^^^^^^^^^^
 
