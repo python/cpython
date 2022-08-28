@@ -2443,7 +2443,7 @@ convenience. These parameters all correspond to ISO 8601 date values.
 |           | Week 01 is the week containing |                        |       |
 |           | Jan 4.                         |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%:z``   | UTC offset in the form         | (empty), +00:00,       |       |
+| ``%:z``   | UTC offset in the form         | (empty), +00:00,       | \(6)  |
 |           | ``±HH:MM[:SS[.ffffff]]``       | -04:00, +10:30,        |       |
 |           | (empty string if the object is | +06:34:15,             |       |
 |           | naive).                        | -03:07:12.345216       |       |
@@ -2538,8 +2538,8 @@ Notes:
    available).
 
 (6)
-   For a naive object, the ``%z`` and ``%Z`` format codes are replaced by empty
-   strings.
+   For a naive object, the ``%z``, ``%:z`` and ``%Z`` format codes are replaced
+   by empty strings.
 
    For an aware object:
 
@@ -2564,6 +2564,10 @@ Notes:
       and seconds.
       For example, ``'+01:00:00'`` will be parsed as an offset of one hour.
       In addition, providing ``'Z'`` is identical to ``'+00:00'``.
+
+   ``%:z``
+      Behaves exactly as ``%z``, but has a colon separator added between
+      hours, minutes and seconds.
 
    ``%Z``
       In :meth:`strftime`, ``%Z`` is replaced by an empty string if
