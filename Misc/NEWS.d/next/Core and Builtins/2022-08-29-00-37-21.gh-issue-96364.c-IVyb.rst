@@ -1,0 +1,1 @@
+Fix text signatures of ``list.__getitem__`` and ``dict.__getitem__``.

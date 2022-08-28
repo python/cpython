@@ -2824,7 +2824,8 @@ static PyObject *list_iter(PyObject *seq);
 static PyObject *list_subscript(PyListObject*, PyObject*);
 
 static PyMethodDef list_methods[] = {
-    {"__getitem__", (PyCFunction)list_subscript, METH_O|METH_COEXIST, "x.__getitem__(y) <==> x[y]"},
+    {"__getitem__", (PyCFunction)list_subscript, METH_O|METH_COEXIST,
+     "__getitem__($self, key, /)\n--\n\nReturn self[key]."},
     LIST___REVERSED___METHODDEF
     LIST___SIZEOF___METHODDEF
     LIST_CLEAR_METHODDEF
