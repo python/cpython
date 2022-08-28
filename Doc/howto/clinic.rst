@@ -1070,11 +1070,6 @@ None of these take parameters.  For the first three, return -1 to indicate
 error.  For ``DecodeFSDefault``, the return type is ``const char *``; return a ``NULL``
 pointer to indicate an error.
 
-(There's also an experimental ``NoneType`` converter, which lets you
-return ``Py_None`` on success or ``NULL`` on failure, without having
-to increment the reference count on ``Py_None``.  I'm not sure it adds
-enough clarity to be worth using.)
-
 To see all the return converters Argument Clinic supports, along with
 their parameters (if any),
 just run ``Tools/clinic/clinic.py --converters`` for the full list.

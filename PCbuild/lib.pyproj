@@ -642,7 +642,6 @@
     <Compile Include="shutil.py" />
     <Compile Include="signal.py" />
     <Compile Include="site.py" />
-    <Compile Include="smtpd.py" />
     <Compile Include="smtplib.py" />
     <Compile Include="sndhdr.py" />
     <Compile Include="socket.py" />
@@ -760,6 +759,7 @@
     <Compile Include="test\sample_doctest_no_doctests.py" />
     <Compile Include="test\seq_tests.py" />
     <Compile Include="test\signalinterproctester.py" />
+    <Compile Include="test\smtpd.py" />
     <Compile Include="test\sortperf.py" />
     <Compile Include="test\ssltests.py" />
     <Compile Include="test\ssl_servers.py" />
@@ -1261,7 +1261,6 @@
     <Compile Include="test\test_signal.py" />
     <Compile Include="test\test_site.py" />
     <Compile Include="test\test_slice.py" />
-    <Compile Include="test\test_smtpd.py" />
     <Compile Include="test\test_smtplib.py" />
     <Compile Include="test\test_smtpnet.py" />
     <Compile Include="test\test_sndhdr.py" />

@@ -1,0 +1,3 @@
+Fix error detection in some builtin functions when keyword argument name is
+an instance of a str subclass with overloaded ``__eq__`` and ``__hash__``.
+Previously it could cause SystemError or other undesired behavior.

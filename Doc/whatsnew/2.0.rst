@@ -820,7 +820,7 @@ packages, which made administering a Python installation something of  a chore.
 
 The SIG for distribution utilities, shepherded by Greg Ward, has created the
 Distutils, a system to make package installation much easier.  They form the
-:mod:`distutils` package, a new part of Python's standard library. In the best
+``distutils`` package, a new part of Python's standard library. In the best
 case, installing a Python module from source will require the same steps: first
 you simply mean unpack the tarball or zip archive, and the run "``python
 setup.py install``".  The platform will be automatically detected, the compiler

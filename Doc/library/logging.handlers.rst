@@ -629,6 +629,12 @@ supports sending logging messages to a remote or local Unix syslog.
    application needs to run on several platforms). On Windows, you pretty
    much have to use the UDP option.
 
+   .. note:: On macOS 12.x (Monterey), Apple has changed the behaviour of their
+      syslog daemon - it no longer listens on a domain socket. Therefore, you cannot
+      expect :class:`SysLogHandler` to work on this system.
+
+      See :gh:`91070` for more information.
+
    .. versionchanged:: 3.2
       *socktype* was added.
 
@@ -1018,6 +1024,8 @@ possible, while any potentially slow operations (such as sending an email via
    have the task tracking API, which means that you can use
    :class:`~queue.SimpleQueue` instances for *queue*.
 
+   .. note:: If you are using :mod:`multiprocessing`, you should avoid using
+      :class:`~queue.SimpleQueue` and instead use :class:`multiprocessing.Queue`.
 
    .. method:: emit(record)
 
@@ -1090,6 +1098,9 @@ possible, while any potentially slow operations (such as sending an email via
    to know how to get messages from it. The queue is not *required* to have the
    task tracking API (though it's used if available), which means that you can
    use :class:`~queue.SimpleQueue` instances for *queue*.
+
+   .. note:: If you are using :mod:`multiprocessing`, you should avoid using
+      :class:`~queue.SimpleQueue` and instead use :class:`multiprocessing.Queue`.
 
    If ``respect_handler_level`` is ``True``, a handler's level is respected
    (compared with the level for the message) when deciding whether to pass

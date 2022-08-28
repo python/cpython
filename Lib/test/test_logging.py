@@ -61,9 +61,10 @@ from urllib.parse import urlparse, parse_qs
 from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
                           ThreadingTCPServer, StreamRequestHandler)
 
+with warnings.catch_warnings():
+    from . import smtpd
 
 asyncore = warnings_helper.import_deprecated('asyncore')
-smtpd = warnings_helper.import_deprecated('smtpd')
 
 
 try:
@@ -1223,6 +1224,35 @@ class MemoryHandlerTest(BaseTest):
         self.mem_hdlr.close()
         # assert that no new lines have been added
         self.assert_log_lines(lines)  # no change
+
+    def test_shutdown_flush_on_close(self):
+        """
+        Test that the flush-on-close configuration is respected by the
+        shutdown method.
+        """
+        self.mem_logger.debug(self.next_message())
+        self.assert_log_lines([])
+        self.mem_logger.info(self.next_message())
+        self.assert_log_lines([])
+        # Default behaviour is to flush on close. Check that it happens.
+        logging.shutdown(handlerList=[logging.weakref.ref(self.mem_hdlr)])
+        lines = [
+            ('DEBUG', '1'),
+            ('INFO', '2'),
+        ]
+        self.assert_log_lines(lines)
+        # Now configure for flushing not to be done on close.
+        self.mem_hdlr = logging.handlers.MemoryHandler(10, logging.WARNING,
+                                                       self.root_hdlr,
+                                                       False)
+        self.mem_logger.addHandler(self.mem_hdlr)
+        self.mem_logger.debug(self.next_message())
+        self.assert_log_lines(lines)  # no change
+        self.mem_logger.info(self.next_message())
+        self.assert_log_lines(lines)  # no change
+        # assert that no new lines have been added after shutdown
+        logging.shutdown(handlerList=[logging.weakref.ref(self.mem_hdlr)])
+        self.assert_log_lines(lines) # no change
 
     @threading_helper.requires_working_threading()
     def test_race_between_set_target_and_flush(self):
@@ -4230,6 +4260,14 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
         f = NoMsecFormatter()
         f.converter = time.gmtime
         self.assertEqual(f.formatTime(r), '21/04/1993 08:03:00')
+
+    def test_issue_89047(self):
+        f = logging.Formatter(fmt='{asctime}.{msecs:03.0f} {message}', style='{', datefmt="%Y-%m-%d %H:%M:%S")
+        for i in range(2500):
+            time.sleep(0.0004)
+            r = logging.makeLogRecord({'msg': 'Message %d' % (i + 1)})
+            s = f.format(r)
+            self.assertNotIn('.1000', s)
 
 
 class TestBufferingFormatter(logging.BufferingFormatter):

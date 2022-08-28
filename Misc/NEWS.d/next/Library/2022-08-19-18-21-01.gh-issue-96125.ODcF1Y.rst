@@ -1,0 +1,2 @@
+Fix incorrect condition that causes ``sys.thread_info.name`` to be wrong on
+pthread platforms.

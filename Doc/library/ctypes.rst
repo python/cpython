@@ -1068,18 +1068,16 @@ Accessing values exported from dlls
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Some shared libraries not only export functions, they also export variables. An
-example in the Python library itself is the :c:data:`Py_OptimizeFlag`, an integer
-set to 0, 1, or 2, depending on the :option:`-O` or :option:`-OO` flag given on
-startup.
+example in the Python library itself is the :c:data:`Py_Version`, Python
+runtime version number encoded in a single constant integer.
 
 :mod:`ctypes` can access values like this with the :meth:`in_dll` class methods of
 the type.  *pythonapi* is a predefined symbol giving access to the Python C
 api::
 
-   >>> opt_flag = c_int.in_dll(pythonapi, "Py_OptimizeFlag")
-   >>> print(opt_flag)
-   c_long(0)
-   >>>
+   >>> version = ctypes.c_int.in_dll(ctypes.pythonapi, "Py_Version")
+   >>> print(hex(version.value))
+   0x30c00a0
 
 If the interpreter would have been started with :option:`-O`, the sample would
 have printed ``c_long(1)``, or ``c_long(2)`` if :option:`-OO` would have been
