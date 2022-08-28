@@ -678,6 +678,28 @@ class TestCopy(unittest.TestCase):
         self.assertIsNot(x, y)
         self.assertIsNot(x["foo"], y["foo"])
 
+    def test_reduce_6tuple(self):
+        def state_setter(*args, **kwargs):
+            self.fail("shouldn't call this")
+        class C:
+            def __reduce__(self):
+                return C, (), self.__dict__, None, None, state_setter
+        x = C()
+        with self.assertRaises(TypeError):
+            copy.copy(x)
+        with self.assertRaises(TypeError):
+            copy.deepcopy(x)
+
+    def test_reduce_6tuple_none(self):
+        class C:
+            def __reduce__(self):
+                return C, (), self.__dict__, None, None, None
+        x = C()
+        with self.assertRaises(TypeError):
+            copy.copy(x)
+        with self.assertRaises(TypeError):
+            copy.deepcopy(x)
+
     def test_copy_slots(self):
         class C(object):
             __slots__ = ["foo"]

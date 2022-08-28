@@ -1,3 +1,0 @@
-Reverted an argparse bugfix that caused regression in the handling of
-default arguments for subparsers.  This prevented leaf level arguments from
-taking precedence over root level arguments.

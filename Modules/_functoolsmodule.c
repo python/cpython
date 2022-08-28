@@ -51,7 +51,7 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs);
 static inline _functools_state *
 get_functools_state_by_type(PyTypeObject *type)
 {
-    PyObject *module = _PyType_GetModuleByDef(type, &_functools_module);
+    PyObject *module = PyType_GetModuleByDef(type, &_functools_module);
     if (module == NULL) {
         return NULL;
     }
@@ -1432,7 +1432,7 @@ PyDoc_STRVAR(_functools_doc,
 
 static PyMethodDef _functools_methods[] = {
     {"reduce",          functools_reduce,     METH_VARARGS, functools_reduce_doc},
-    {"cmp_to_key",      (PyCFunction)(void(*)(void))functools_cmp_to_key,
+    {"cmp_to_key",      _PyCFunction_CAST(functools_cmp_to_key),
      METH_VARARGS | METH_KEYWORDS, functools_cmp_to_key_doc},
     {NULL,              NULL}           /* sentinel */
 };

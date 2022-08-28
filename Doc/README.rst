@@ -91,7 +91,7 @@ Available make targets are:
 
 * "pydoc-topics", which builds a Python module containing a dictionary with
   plain text documentation for the labels defined in
-  `tools/pyspecific.py` -- pydoc needs these to show topic and keyword help.
+  ``tools/pyspecific.py`` -- pydoc needs these to show topic and keyword help.
 
 * "suspicious", which checks the parsed markup for text that looks like
   malformed and thus unconverted reST.
@@ -130,7 +130,7 @@ Contributing
 ============
 
 Bugs in the content should be reported to the
-`Python bug tracker <https://bugs.python.org>`_.
+`Python bug tracker <https://github.com/python/cpython/issues>`_.
 
 Bugs in the toolset should be reported to the tools themselves.
 

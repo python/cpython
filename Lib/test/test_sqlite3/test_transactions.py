@@ -20,38 +20,36 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
-import os, unittest
+import unittest
 import sqlite3 as sqlite
 
-from .test_dbapi import memory_database
+from test.support import LOOPBACK_TIMEOUT
+from test.support.os_helper import TESTFN, unlink
 
-def get_db_path():
-    return "sqlite_testdb"
+from test.test_sqlite3.test_dbapi import memory_database
+
+
+TIMEOUT = LOOPBACK_TIMEOUT / 10
+
 
 class TransactionTests(unittest.TestCase):
     def setUp(self):
-        try:
-            os.remove(get_db_path())
-        except OSError:
-            pass
-
-        self.con1 = sqlite.connect(get_db_path(), timeout=0.1)
+        self.con1 = sqlite.connect(TESTFN, timeout=TIMEOUT)
         self.cur1 = self.con1.cursor()
 
-        self.con2 = sqlite.connect(get_db_path(), timeout=0.1)
+        self.con2 = sqlite.connect(TESTFN, timeout=TIMEOUT)
         self.cur2 = self.con2.cursor()
 
     def tearDown(self):
-        self.cur1.close()
-        self.con1.close()
-
-        self.cur2.close()
-        self.con2.close()
-
         try:
-            os.unlink(get_db_path())
-        except OSError:
-            pass
+            self.cur1.close()
+            self.con1.close()
+
+            self.cur2.close()
+            self.con2.close()
+
+        finally:
+            unlink(TESTFN)
 
     def test_dml_does_not_auto_commit_before(self):
         self.cur1.execute("create table test(i)")
@@ -131,10 +129,7 @@ class TransactionTests(unittest.TestCase):
         self.con1.commit()
 
     def test_rollback_cursor_consistency(self):
-        """
-        Checks if cursors on the connection are set into a "reset" state
-        when a rollback is done on the connection.
-        """
+        """Check that cursors behave correctly after rollback."""
         con = sqlite.connect(":memory:")
         cur = con.cursor()
         cur.execute("create table test(x)")
@@ -142,8 +137,83 @@ class TransactionTests(unittest.TestCase):
         cur.execute("select 1 union select 2 union select 3")
 
         con.rollback()
-        with self.assertRaises(sqlite.InterfaceError):
-            cur.fetchall()
+        self.assertEqual(cur.fetchall(), [(1,), (2,), (3,)])
+
+    def test_multiple_cursors_and_iternext(self):
+        # gh-94028: statements are cleared and reset in cursor iternext.
+
+        # Provoke the gh-94028 by using a cursor cache.
+        CURSORS = {}
+        def sql(cx, sql, *args):
+            cu = cx.cursor()
+            cu.execute(sql, args)
+            CURSORS[id(sql)] = cu
+            return cu
+
+        self.con1.execute("create table t(t)")
+        sql(self.con1, "insert into t values (?), (?), (?)", "u1", "u2", "u3")
+        self.con1.commit()
+
+        # On second connection, verify rows are visible, then delete them.
+        count = sql(self.con2, "select count(*) from t").fetchone()[0]
+        self.assertEqual(count, 3)
+        changes = sql(self.con2, "delete from t").rowcount
+        self.assertEqual(changes, 3)
+        self.con2.commit()
+
+        # Back in original connection, create 2 new users.
+        sql(self.con1, "insert into t values (?)", "u4")
+        sql(self.con1, "insert into t values (?)", "u5")
+
+        # The second connection cannot see uncommitted changes.
+        count = sql(self.con2, "select count(*) from t").fetchone()[0]
+        self.assertEqual(count, 0)
+
+        # First connection can see its own changes.
+        count = sql(self.con1, "select count(*) from t").fetchone()[0]
+        self.assertEqual(count, 2)
+
+        # The second connection can now see the changes.
+        self.con1.commit()
+        count = sql(self.con2, "select count(*) from t").fetchone()[0]
+        self.assertEqual(count, 2)
+
+
+class RollbackTests(unittest.TestCase):
+    """bpo-44092: sqlite3 now leaves it to SQLite to resolve rollback issues"""
+
+    def setUp(self):
+        self.con = sqlite.connect(":memory:")
+        self.cur1 = self.con.cursor()
+        self.cur2 = self.con.cursor()
+        with self.con:
+            self.con.execute("create table t(c)");
+            self.con.executemany("insert into t values(?)", [(0,), (1,), (2,)])
+        self.cur1.execute("begin transaction")
+        select = "select c from t"
+        self.cur1.execute(select)
+        self.con.rollback()
+        self.res = self.cur2.execute(select)  # Reusing stmt from cache
+
+    def tearDown(self):
+        self.con.close()
+
+    def _check_rows(self):
+        for i, row in enumerate(self.res):
+            self.assertEqual(row[0], i)
+
+    def test_no_duplicate_rows_after_rollback_del_cursor(self):
+        del self.cur1
+        self._check_rows()
+
+    def test_no_duplicate_rows_after_rollback_close_cursor(self):
+        self.cur1.close()
+        self._check_rows()
+
+    def test_no_duplicate_rows_after_rollback_new_query(self):
+        self.cur1.execute("select c from t where c = 1")
+        self._check_rows()
+
 
 
 class SpecialCommandTests(unittest.TestCase):

@@ -253,7 +253,7 @@ attribute will include the package's path if imported::
 
 This won't work for ``__main__.py`` files in the root directory of a .zip file
 though.  Hence, for consistency, minimal ``__main__.py`` like the :mod:`venv`
-one mentioned above are preferred.
+one mentioned below are preferred.
 
 .. seealso::
 

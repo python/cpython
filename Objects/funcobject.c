@@ -29,7 +29,8 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
     op->func_code = constr->fc_code;
     op->func_defaults = NULL;
     op->func_kwdefaults = NULL;
-    op->func_closure = NULL;
+    Py_XINCREF(constr->fc_closure);
+    op->func_closure = constr->fc_closure;
     Py_INCREF(Py_None);
     op->func_doc = Py_None;
     op->func_dict = NULL;
@@ -79,8 +80,7 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     Py_INCREF(doc);
 
     // __module__: Use globals['__name__'] if it exists, or NULL.
-    _Py_IDENTIFIER(__name__);
-    PyObject *module = _PyDict_GetItemIdWithError(globals, &PyId___name__);
+    PyObject *module = PyDict_GetItemWithError(globals, &_Py_ID(__name__));
     PyObject *builtins = NULL;
     if (module == NULL && _PyErr_Occurred(tstate)) {
         goto error;
@@ -274,6 +274,37 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
     return 0;
 }
 
+static PyObject *
+func_get_annotation_dict(PyFunctionObject *op)
+{
+    if (op->func_annotations == NULL) {
+        return NULL;
+    }
+    if (PyTuple_CheckExact(op->func_annotations)) {
+        PyObject *ann_tuple = op->func_annotations;
+        PyObject *ann_dict = PyDict_New();
+        if (ann_dict == NULL) {
+            return NULL;
+        }
+
+        assert(PyTuple_GET_SIZE(ann_tuple) % 2 == 0);
+
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(ann_tuple); i += 2) {
+            int err = PyDict_SetItem(ann_dict,
+                                     PyTuple_GET_ITEM(ann_tuple, i),
+                                     PyTuple_GET_ITEM(ann_tuple, i + 1));
+
+            if (err < 0) {
+                return NULL;
+            }
+        }
+        Py_SETREF(op->func_annotations, ann_dict);
+    }
+    Py_INCREF(op->func_annotations);
+    assert(PyDict_Check(op->func_annotations));
+    return op->func_annotations;
+}
+
 PyObject *
 PyFunction_GetAnnotations(PyObject *op)
 {
@@ -281,7 +312,7 @@ PyFunction_GetAnnotations(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_annotations;
+    return func_get_annotation_dict((PyFunctionObject *)op);
 }
 
 int
@@ -501,27 +532,7 @@ func_get_annotations(PyFunctionObject *op, void *Py_UNUSED(ignored))
         if (op->func_annotations == NULL)
             return NULL;
     }
-    if (PyTuple_CheckExact(op->func_annotations)) {
-        PyObject *ann_tuple = op->func_annotations;
-        PyObject *ann_dict = PyDict_New();
-        if (ann_dict == NULL) {
-            return NULL;
-        }
-
-        assert(PyTuple_GET_SIZE(ann_tuple) % 2 == 0);
-
-        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(ann_tuple); i += 2) {
-            int err = PyDict_SetItem(ann_dict,
-                                     PyTuple_GET_ITEM(ann_tuple, i),
-                                     PyTuple_GET_ITEM(ann_tuple, i + 1));
-
-            if (err < 0)
-                return NULL;
-        }
-        Py_SETREF(op->func_annotations, ann_dict);
-    }
-    Py_INCREF(op->func_annotations);
-    return op->func_annotations;
+    return func_get_annotation_dict(op);
 }
 
 static int
@@ -668,11 +679,8 @@ static int
 func_clear(PyFunctionObject *op)
 {
     op->func_version = 0;
-    Py_CLEAR(op->func_code);
     Py_CLEAR(op->func_globals);
     Py_CLEAR(op->func_builtins);
-    Py_CLEAR(op->func_name);
-    Py_CLEAR(op->func_qualname);
     Py_CLEAR(op->func_module);
     Py_CLEAR(op->func_defaults);
     Py_CLEAR(op->func_kwdefaults);
@@ -680,6 +688,13 @@ func_clear(PyFunctionObject *op)
     Py_CLEAR(op->func_dict);
     Py_CLEAR(op->func_closure);
     Py_CLEAR(op->func_annotations);
+    // Don't Py_CLEAR(op->func_code), since code is always required
+    // to be non-NULL. Similarly, name and qualname shouldn't be NULL.
+    // However, name and qualname could be str subclasses, so they
+    // could have reference cycles. The solution is to replace them
+    // with a genuinely immutable string.
+    Py_SETREF(op->func_name, Py_NewRef(&_Py_STR(empty)));
+    Py_SETREF(op->func_qualname, Py_NewRef(&_Py_STR(empty)));
     return 0;
 }
 
@@ -691,6 +706,10 @@ func_dealloc(PyFunctionObject *op)
         PyObject_ClearWeakRefs((PyObject *) op);
     }
     (void)func_clear(op);
+    // These aren't cleared by func_clear().
+    Py_DECREF(op->func_code);
+    Py_DECREF(op->func_name);
+    Py_DECREF(op->func_qualname);
     PyObject_GC_Del(op);
 }
 
@@ -797,12 +816,7 @@ functools_wraps(PyObject *wrapper, PyObject *wrapped)
 {
 #define COPY_ATTR(ATTR) \
     do { \
-        _Py_IDENTIFIER(ATTR); \
-        PyObject *attr = _PyUnicode_FromId(&PyId_ ## ATTR); \
-        if (attr == NULL) { \
-            return -1; \
-        } \
-        if (functools_copy_attr(wrapper, wrapped, attr) < 0) { \
+        if (functools_copy_attr(wrapper, wrapped, &_Py_ID(ATTR)) < 0) { \
             return -1; \
         } \
     } while (0) \

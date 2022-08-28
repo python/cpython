@@ -2,6 +2,7 @@
 
 #include "pycore_bitutils.h"      // _Py_popcount32
 #include "pycore_hamt.h"
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include <stddef.h>               // offsetof()
 
@@ -408,14 +409,22 @@ hamt_hash(PyObject *o)
         return -1;
     }
 
-    /* While it's suboptimal to reduce Python's 64 bit hash to
+    /* While it's somewhat suboptimal to reduce Python's 64 bit hash to
        32 bits via XOR, it seems that the resulting hash function
        is good enough (this is also how Long type is hashed in Java.)
        Storing 10, 100, 1000 Python strings results in a relatively
        shallow and uniform tree structure.
 
-       Please don't change this hashing algorithm, as there are many
-       tests that test some exact tree shape to cover all code paths.
+       Also it's worth noting that it would be possible to adapt the tree
+       structure to 64 bit hashes, but that would increase memory pressure
+       and provide little to no performance benefits for collections with
+       fewer than billions of key/value pairs.
+
+       Important: do not change this hash reducing function. There are many
+       tests that need an exact tree shape to cover all code paths and
+       we do that by specifying concrete values for test data's `__hash__`.
+       If this function is changed most of the regression tests would
+       become useless.
     */
     int32_t xored = (int32_t)(hash & 0xffffffffl) ^ (int32_t)(hash >> 32);
     return xored == -1 ? -2 : xored;
@@ -487,11 +496,7 @@ _hamt_dump_format(_PyUnicodeWriter *writer, const char *format, ...)
     int ret;
 
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     msg = PyUnicode_FromFormatV(format, vargs);
     va_end(vargs);
 
@@ -2844,14 +2849,14 @@ hamt_py_values(PyHamtObject *self, PyObject *args)
 }
 
 static PyObject *
-hamt_py_keys(PyHamtObject *self, PyObject *args)
+hamt_py_keys(PyHamtObject *self, PyObject *Py_UNUSED(args))
 {
     return _PyHamt_NewIterKeys(self);
 }
 
 #ifdef Py_DEBUG
 static PyObject *
-hamt_py_dump(PyHamtObject *self, PyObject *args)
+hamt_py_dump(PyHamtObject *self, PyObject *Py_UNUSED(args))
 {
     return hamt_dump(self);
 }
@@ -2859,14 +2864,14 @@ hamt_py_dump(PyHamtObject *self, PyObject *args)
 
 
 static PyMethodDef PyHamt_methods[] = {
-    {"set", (PyCFunction)hamt_py_set, METH_VARARGS, NULL},
-    {"get", (PyCFunction)hamt_py_get, METH_VARARGS, NULL},
-    {"delete", (PyCFunction)hamt_py_delete, METH_O, NULL},
-    {"items", (PyCFunction)hamt_py_items, METH_NOARGS, NULL},
-    {"keys", (PyCFunction)hamt_py_keys, METH_NOARGS, NULL},
-    {"values", (PyCFunction)hamt_py_values, METH_NOARGS, NULL},
+    {"set", _PyCFunction_CAST(hamt_py_set), METH_VARARGS, NULL},
+    {"get", _PyCFunction_CAST(hamt_py_get), METH_VARARGS, NULL},
+    {"delete", _PyCFunction_CAST(hamt_py_delete), METH_O, NULL},
+    {"items", _PyCFunction_CAST(hamt_py_items), METH_NOARGS, NULL},
+    {"keys", _PyCFunction_CAST(hamt_py_keys), METH_NOARGS, NULL},
+    {"values", _PyCFunction_CAST(hamt_py_values), METH_NOARGS, NULL},
 #ifdef Py_DEBUG
-    {"__dump__", (PyCFunction)hamt_py_dump, METH_NOARGS, NULL},
+    {"__dump__", _PyCFunction_CAST(hamt_py_dump), METH_NOARGS, NULL},
 #endif
     {NULL, NULL}
 };
@@ -2952,25 +2957,8 @@ PyTypeObject _PyHamt_CollisionNode_Type = {
 };
 
 
-int
-_PyHamt_Init(void)
-{
-    if ((PyType_Ready(&_PyHamt_Type) < 0) ||
-        (PyType_Ready(&_PyHamt_ArrayNode_Type) < 0) ||
-        (PyType_Ready(&_PyHamt_BitmapNode_Type) < 0) ||
-        (PyType_Ready(&_PyHamt_CollisionNode_Type) < 0) ||
-        (PyType_Ready(&_PyHamtKeys_Type) < 0) ||
-        (PyType_Ready(&_PyHamtValues_Type) < 0) ||
-        (PyType_Ready(&_PyHamtItems_Type) < 0))
-    {
-        return 0;
-    }
-
-    return 1;
-}
-
 void
-_PyHamt_Fini(void)
+_PyHamt_Fini(PyInterpreterState *interp)
 {
     Py_CLEAR(_empty_hamt);
     Py_CLEAR(_empty_bitmap_node);
