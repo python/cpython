@@ -267,11 +267,16 @@ Match = type(_compiler.compile('', 0).match(''))
 # --------------------------------------------------------------------
 # internals
 
-_cache = {}  # ordered!
-_cache2 = {}  # ordered!
-
+# Use the fact that dict keeps the insertion order.
+# _cache2 uses the simple FIFO policy which has better latency.
+# _cache uses the LRU policy which has better hit rate.
+# OrderedDict is not used because it adds a new dependence, and
+# performance difference is negligible.
+_cache = {}  # LRU
+_cache2 = {}  # FIFO
 _MAXCACHE = 512
-_MAXCACHE2 = 256
+_MAXCACHE2 = 256  # Must be less than _MAXCACHE.
+
 def _compile(pattern, flags):
     # internal: compile pattern
     if isinstance(flags, RegexFlag):
@@ -302,7 +307,7 @@ def _compile(pattern, flags):
         if flags & DEBUG:
             return p
         if len(_cache) >= _MAXCACHE:
-            # Drop the least used item
+            # Drop the least recently used item
             try:
                 del _cache[next(iter(_cache))]
             except (StopIteration, RuntimeError, KeyError):
