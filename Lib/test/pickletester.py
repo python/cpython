@@ -2814,8 +2814,7 @@ class AbstractPickleTests:
             (Subclass.Nested("sweet").count, ("e",)),
             (Subclass.Nested.count, (Subclass.Nested("sweet"), "e")),
         )
-        #for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-        for proto in [5]:
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             for method, args in c_methods:
                 with self.subTest(proto=proto, method=method):
                     unpickled = self.loads(self.dumps(method, proto))
