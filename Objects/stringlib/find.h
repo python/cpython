@@ -117,3 +117,19 @@ STRINGLIB(parse_args_finds)(const char * function_name, PyObject *args,
 }
 
 #undef FORMAT_BUFFER_SIZE
+
+
+/*
+GH-96354: A helper for the "find" family (find, rfind, index,
+rindex) and for count, startswith and endswith.
+
+Left variable untouched if object is Py_None.
+*/
+Py_LOCAL_INLINE(int)
+STRINGLIB(parse_ssize_from_object)(PyObject *object, Py_ssize_t *size)
+{
+    if (object != Py_None)
+        if (!_PyEval_SliceIndex(object, size))
+            return 0;
+    return 1;
+}

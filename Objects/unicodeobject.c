@@ -10826,58 +10826,51 @@ PyUnicode_AppendAndDel(PyObject **pleft, PyObject *right)
     Py_XDECREF(right);
 }
 
-/*
-Wraps asciilib_parse_args_finds() and additionally ensures that the
-first argument is a unicode object.
-*/
+/*[clinic input]
+str.count as unicode_count
 
-static inline int
-parse_args_finds_unicode(const char * function_name, PyObject *args,
-                         PyObject **substring,
-                         Py_ssize_t *start, Py_ssize_t *end)
-{
-    if (asciilib_parse_args_finds(function_name, args, substring, start, end)) {
-        if (ensure_unicode(*substring) < 0)
-            return 0;
-        return 1;
-    }
-    return 0;
-}
+    sub: object(c_default="NULL")
+    start: object(c_default="Py_None") = None
+    end: object(c_default="Py_None") = None
+    /
 
-PyDoc_STRVAR(count__doc__,
-             "S.count(sub[, start[, end]]) -> int\n\
-\n\
-Return the number of non-overlapping occurrences of substring sub in\n\
-string S[start:end].  Optional arguments start and end are\n\
-interpreted as in slice notation.");
+Return the number of non-overlapping occurrences of substring sub in string self[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+[clinic start generated code]*/
 
 static PyObject *
-unicode_count(PyObject *self, PyObject *args)
+unicode_count_impl(PyObject *self, PyObject *sub, PyObject *start,
+                   PyObject *end)
+/*[clinic end generated code: output=93817bef2a22a8c5 input=914a612d7b8201b8]*/
 {
-    PyObject *substring = NULL;   /* initialize to fix a compiler warning */
-    Py_ssize_t start = 0;
-    Py_ssize_t end = PY_SSIZE_T_MAX;
+    /* initialize to fix a compiler warning */
+    Py_ssize_t start_idx = 0;
+    Py_ssize_t end_idx = PY_SSIZE_T_MAX;
     PyObject *result;
     int kind1, kind2;
     const void *buf1, *buf2;
     Py_ssize_t len1, len2, iresult;
+    if (!asciilib_parse_ssize_from_object(start, &start_idx) ||
+        !asciilib_parse_ssize_from_object(end, &end_idx))
+        return NULL;
 
-    if (!parse_args_finds_unicode("count", args, &substring, &start, &end))
+    if (ensure_unicode(sub) < 0)
         return NULL;
 
     kind1 = PyUnicode_KIND(self);
-    kind2 = PyUnicode_KIND(substring);
+    kind2 = PyUnicode_KIND(sub);
     if (kind1 < kind2)
         return PyLong_FromLong(0);
 
     len1 = PyUnicode_GET_LENGTH(self);
-    len2 = PyUnicode_GET_LENGTH(substring);
-    ADJUST_INDICES(start, end, len1);
-    if (end - start < len2)
+    len2 = PyUnicode_GET_LENGTH(sub);
+    ADJUST_INDICES(start_idx, end_idx, len1);
+    if (end_idx - start_idx < len2)
         return PyLong_FromLong(0);
 
     buf1 = PyUnicode_DATA(self);
-    buf2 = PyUnicode_DATA(substring);
+    buf2 = PyUnicode_DATA(sub);
     if (kind2 != kind1) {
         buf2 = unicode_askind(kind2, buf2, len2, kind1);
         if (!buf2)
@@ -10886,19 +10879,19 @@ unicode_count(PyObject *self, PyObject *args)
     switch (kind1) {
     case PyUnicode_1BYTE_KIND:
         iresult = ucs1lib_count(
-            ((const Py_UCS1*)buf1) + start, end - start,
+            ((const Py_UCS1*)buf1) + start_idx, end_idx - start_idx,
             buf2, len2, PY_SSIZE_T_MAX
             );
         break;
     case PyUnicode_2BYTE_KIND:
         iresult = ucs2lib_count(
-            ((const Py_UCS2*)buf1) + start, end - start,
+            ((const Py_UCS2*)buf1) + start_idx, end_idx - start_idx,
             buf2, len2, PY_SSIZE_T_MAX
             );
         break;
     case PyUnicode_4BYTE_KIND:
         iresult = ucs4lib_count(
-            ((const Py_UCS4*)buf1) + start, end - start,
+            ((const Py_UCS4*)buf1) + start_idx, end_idx - start_idx,
             buf2, len2, PY_SSIZE_T_MAX
             );
         break;
@@ -10908,7 +10901,7 @@ unicode_count(PyObject *self, PyObject *args)
 
     result = PyLong_FromSsize_t(iresult);
 
-    assert((kind2 == kind1) == (buf2 == PyUnicode_DATA(substring)));
+    assert((kind2 == kind1) == (buf2 == PyUnicode_DATA(sub)));
     if (kind2 != kind1)
         PyMem_Free((void *)buf2);
 
@@ -11023,28 +11016,41 @@ unicode_expandtabs_impl(PyObject *self, int tabsize)
     return NULL;
 }
 
-PyDoc_STRVAR(find__doc__,
-             "S.find(sub[, start[, end]]) -> int\n\
-\n\
-Return the lowest index in S where substring sub is found,\n\
-such that sub is contained within S[start:end].  Optional\n\
-arguments start and end are interpreted as in slice notation.\n\
-\n\
-Return -1 on failure.");
+
+/*[clinic input]
+str.find as unicode_find
+
+    sub: object(c_default="NULL")
+    start: object(c_default="Py_None") = None
+    end: object(c_default="Py_None") = None
+    /
+
+Return the lowest index in a string where substring sub is found.
+
+Such that sub is contained within self[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+
+Return -1 on failure.
+[clinic start generated code]*/
 
 static PyObject *
-unicode_find(PyObject *self, PyObject *args)
+unicode_find_impl(PyObject *self, PyObject *sub, PyObject *start,
+                  PyObject *end)
+/*[clinic end generated code: output=b4f74b4174c08bbe input=e6674c6945fd9a08]*/
 {
     /* initialize variables to prevent gcc warning */
-    PyObject *substring = NULL;
-    Py_ssize_t start = 0;
-    Py_ssize_t end = 0;
     Py_ssize_t result;
-
-    if (!parse_args_finds_unicode("find", args, &substring, &start, &end))
+    Py_ssize_t start_idx = 0;
+    Py_ssize_t end_idx = PY_SSIZE_T_MAX;
+    if (!asciilib_parse_ssize_from_object(start, &start_idx) ||
+        !asciilib_parse_ssize_from_object(end, &end_idx))
         return NULL;
 
-    result = any_find_slice(self, substring, start, end, 1);
+    if (ensure_unicode(sub) < 0)
+        return NULL;
+
+    result = any_find_slice(self, sub, start_idx, end_idx, 1);
 
     if (result == -2)
         return NULL;
@@ -11092,28 +11098,41 @@ unicode_hash(PyObject *self)
     return x;
 }
 
-PyDoc_STRVAR(index__doc__,
-             "S.index(sub[, start[, end]]) -> int\n\
-\n\
-Return the lowest index in S where substring sub is found,\n\
-such that sub is contained within S[start:end].  Optional\n\
-arguments start and end are interpreted as in slice notation.\n\
-\n\
-Raises ValueError when the substring is not found.");
+/*[clinic input]
+str.index as unicode_index
+
+    sub: object(c_default="NULL")
+    start: object(c_default="Py_None") = None
+    end: object(c_default="Py_None") = None
+    /
+
+Return the lowest index in a string where substring sub is found.
+
+Such that sub is contained within self[start:end].  Optional
+arguments start and end are interpreted as in slice notation.
+
+Raises ValueError when the substring is not found.
+
+[clinic start generated code]*/
 
 static PyObject *
-unicode_index(PyObject *self, PyObject *args)
+unicode_index_impl(PyObject *self, PyObject *sub, PyObject *start,
+                   PyObject *end)
+/*[clinic end generated code: output=1093f562ebac6c01 input=9f281870120bd64e]*/
 {
     /* initialize variables to prevent gcc warning */
     Py_ssize_t result;
-    PyObject *substring = NULL;
-    Py_ssize_t start = 0;
-    Py_ssize_t end = 0;
+    Py_ssize_t start_idx = 0;
+    Py_ssize_t end_idx = PY_SSIZE_T_MAX;
 
-    if (!parse_args_finds_unicode("index", args, &substring, &start, &end))
+    if (!asciilib_parse_ssize_from_object(start, &start_idx) ||
+        !asciilib_parse_ssize_from_object(end, &end_idx))
         return NULL;
 
-    result = any_find_slice(self, substring, start, end, 1);
+    if (ensure_unicode(sub) < 0)
+        return NULL;
+
+    result = any_find_slice(self, sub, start_idx, end_idx, 1);
 
     if (result == -2)
         return NULL;
@@ -12203,28 +12222,40 @@ unicode_repr(PyObject *unicode)
     return repr;
 }
 
-PyDoc_STRVAR(rfind__doc__,
-             "S.rfind(sub[, start[, end]]) -> int\n\
-\n\
-Return the highest index in S where substring sub is found,\n\
-such that sub is contained within S[start:end].  Optional\n\
-arguments start and end are interpreted as in slice notation.\n\
-\n\
-Return -1 on failure.");
+/*[clinic input]
+str.rfind as unicode_rfind
+
+    sub: object(c_default="NULL")
+    start: object(c_default="Py_None") = None
+    end: object(c_default="Py_None") = None
+    /
+
+Return the highest index in a string where substring sub is found.
+
+Such that sub is contained within self[start:end].  Optional
+arguments start and end are interpreted as in slice notation.
+
+Return -1 on failure.
+[clinic start generated code]*/
 
 static PyObject *
-unicode_rfind(PyObject *self, PyObject *args)
+unicode_rfind_impl(PyObject *self, PyObject *sub, PyObject *start,
+                   PyObject *end)
+/*[clinic end generated code: output=1e4263ee29f0630f input=ef2e64f0de521210]*/
 {
     /* initialize variables to prevent gcc warning */
-    PyObject *substring = NULL;
-    Py_ssize_t start = 0;
-    Py_ssize_t end = 0;
+    Py_ssize_t start_idx = 0;
+    Py_ssize_t end_idx = PY_SSIZE_T_MAX;
     Py_ssize_t result;
 
-    if (!parse_args_finds_unicode("rfind", args, &substring, &start, &end))
+    if (!asciilib_parse_ssize_from_object(start, &start_idx) ||
+        !asciilib_parse_ssize_from_object(end, &end_idx))
         return NULL;
 
-    result = any_find_slice(self, substring, start, end, -1);
+    if (ensure_unicode(sub) < 0)
+        return NULL;
+
+    result = any_find_slice(self, sub, start_idx, end_idx, -1);
 
     if (result == -2)
         return NULL;
@@ -12232,28 +12263,40 @@ unicode_rfind(PyObject *self, PyObject *args)
     return PyLong_FromSsize_t(result);
 }
 
-PyDoc_STRVAR(rindex__doc__,
-             "S.rindex(sub[, start[, end]]) -> int\n\
-\n\
-Return the highest index in S where substring sub is found,\n\
-such that sub is contained within S[start:end].  Optional\n\
-arguments start and end are interpreted as in slice notation.\n\
-\n\
-Raises ValueError when the substring is not found.");
+/*[clinic input]
+str.rindex as unicode_rindex
+
+    sub: object(c_default="NULL")
+    start: object(c_default="Py_None") = None
+    end: object(c_default="Py_None") = None
+    /
+
+Return the highest index in a string where substring sub is found.
+
+Such that sub is contained within self[start:end].  Optional
+arguments start and end are interpreted as in slice notation.
+
+Raises ValueError when the substring is not found.
+[clinic start generated code]*/
 
 static PyObject *
-unicode_rindex(PyObject *self, PyObject *args)
+unicode_rindex_impl(PyObject *self, PyObject *sub, PyObject *start,
+                    PyObject *end)
+/*[clinic end generated code: output=dd216e9cb35161f0 input=0f2cbae477601acb]*/
 {
     /* initialize variables to prevent gcc warning */
-    PyObject *substring = NULL;
-    Py_ssize_t start = 0;
-    Py_ssize_t end = 0;
+    Py_ssize_t start_idx = 0;
+    Py_ssize_t end_idx = PY_SSIZE_T_MAX;
     Py_ssize_t result;
 
-    if (!parse_args_finds_unicode("rindex", args, &substring, &start, &end))
+    if (!asciilib_parse_ssize_from_object(start, &start_idx) ||
+        !asciilib_parse_ssize_from_object(end, &end_idx))
         return NULL;
 
-    result = any_find_slice(self, substring, start, end, -1);
+    if (ensure_unicode(sub) < 0)
+        return NULL;
+
+    result = any_find_slice(self, sub, start_idx, end_idx, -1);
 
     if (result == -2)
         return NULL;
@@ -12760,30 +12803,40 @@ unicode_zfill_impl(PyObject *self, Py_ssize_t width)
     return u;
 }
 
-PyDoc_STRVAR(startswith__doc__,
-             "S.startswith(prefix[, start[, end]]) -> bool\n\
-\n\
-Return True if S starts with the specified prefix, False otherwise.\n\
-With optional start, test S beginning at that position.\n\
-With optional end, stop comparing S at that position.\n\
-prefix can also be a tuple of strings to try.");
+/*[clinic input]
+str.startswith as unicode_startswith
+
+    prefix: object(c_default="NULL")
+    start: object(c_default="Py_None") = None
+    end: object(c_default="Py_None") = None
+    /
+
+Return True if a string starts with the specified prefix, False otherwise.
+
+With optional start, test string beginning at that position.
+With optional end, stop comparing string at that position.
+
+prefix can also be a tuple of strings to try.
+[clinic start generated code]*/
 
 static PyObject *
-unicode_startswith(PyObject *self,
-                   PyObject *args)
+unicode_startswith_impl(PyObject *self, PyObject *prefix, PyObject *start,
+                        PyObject *end)
+/*[clinic end generated code: output=3571dd1184b1d69a input=7db7ac2eba56d199]*/
 {
-    PyObject *subobj;
     PyObject *substring;
-    Py_ssize_t start = 0;
-    Py_ssize_t end = PY_SSIZE_T_MAX;
+    Py_ssize_t start_idx = 0;
+    Py_ssize_t end_idx = PY_SSIZE_T_MAX;
     int result;
 
-    if (!asciilib_parse_args_finds("startswith", args, &subobj, &start, &end))
+    if (!asciilib_parse_ssize_from_object(start, &start_idx) ||
+        !asciilib_parse_ssize_from_object(end, &end_idx))
         return NULL;
-    if (PyTuple_Check(subobj)) {
+
+    if (PyTuple_Check(prefix)) {
         Py_ssize_t i;
-        for (i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
-            substring = PyTuple_GET_ITEM(subobj, i);
+        for (i = 0; i < PyTuple_GET_SIZE(prefix); i++) {
+            substring = PyTuple_GET_ITEM(prefix, i);
             if (!PyUnicode_Check(substring)) {
                 PyErr_Format(PyExc_TypeError,
                              "tuple for startswith must only contain str, "
@@ -12791,7 +12844,7 @@ unicode_startswith(PyObject *self,
                              Py_TYPE(substring)->tp_name);
                 return NULL;
             }
-            result = tailmatch(self, substring, start, end, -1);
+            result = tailmatch(self, substring, start_idx, end_idx, -1);
             if (result == -1)
                 return NULL;
             if (result) {
@@ -12801,43 +12854,52 @@ unicode_startswith(PyObject *self,
         /* nothing matched */
         Py_RETURN_FALSE;
     }
-    if (!PyUnicode_Check(subobj)) {
+    if (!PyUnicode_Check(prefix)) {
         PyErr_Format(PyExc_TypeError,
                      "startswith first arg must be str or "
-                     "a tuple of str, not %.100s", Py_TYPE(subobj)->tp_name);
+                     "a tuple of str, not %.100s", Py_TYPE(prefix)->tp_name);
         return NULL;
     }
-    result = tailmatch(self, subobj, start, end, -1);
+    result = tailmatch(self, prefix, start_idx, end_idx, -1);
     if (result == -1)
         return NULL;
     return PyBool_FromLong(result);
 }
 
+/*[clinic input]
+str.endswith as unicode_endswith
 
-PyDoc_STRVAR(endswith__doc__,
-             "S.endswith(suffix[, start[, end]]) -> bool\n\
-\n\
-Return True if S ends with the specified suffix, False otherwise.\n\
-With optional start, test S beginning at that position.\n\
-With optional end, stop comparing S at that position.\n\
-suffix can also be a tuple of strings to try.");
+    suffix: object(c_default="NULL")
+    start: object(c_default="Py_None") = None
+    end: object(c_default="Py_None") = None
+    /
+
+Return True if a string ends with the specified suffix, False otherwise.
+
+With optional start, test string beginning at that position.
+With optional end, stop comparing string at that position.
+
+Suffix can also be a tuple of strings to try.
+[clinic start generated code]*/
 
 static PyObject *
-unicode_endswith(PyObject *self,
-                 PyObject *args)
+unicode_endswith_impl(PyObject *self, PyObject *suffix, PyObject *start,
+                      PyObject *end)
+/*[clinic end generated code: output=0bc5ef33cda7d7bb input=57275e6e98e0a33e]*/
 {
-    PyObject *subobj;
     PyObject *substring;
-    Py_ssize_t start = 0;
-    Py_ssize_t end = PY_SSIZE_T_MAX;
+    Py_ssize_t start_idx = 0;
+    Py_ssize_t end_idx = PY_SSIZE_T_MAX;
     int result;
 
-    if (!asciilib_parse_args_finds("endswith", args, &subobj, &start, &end))
+    if (!asciilib_parse_ssize_from_object(start, &start_idx) ||
+        !asciilib_parse_ssize_from_object(end, &end_idx))
         return NULL;
-    if (PyTuple_Check(subobj)) {
+
+    if (PyTuple_Check(suffix)) {
         Py_ssize_t i;
-        for (i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
-            substring = PyTuple_GET_ITEM(subobj, i);
+        for (i = 0; i < PyTuple_GET_SIZE(suffix); i++) {
+            substring = PyTuple_GET_ITEM(suffix, i);
             if (!PyUnicode_Check(substring)) {
                 PyErr_Format(PyExc_TypeError,
                              "tuple for endswith must only contain str, "
@@ -12845,7 +12907,7 @@ unicode_endswith(PyObject *self,
                              Py_TYPE(substring)->tp_name);
                 return NULL;
             }
-            result = tailmatch(self, substring, start, end, +1);
+            result = tailmatch(self, substring, start_idx, end_idx, +1);
             if (result == -1)
                 return NULL;
             if (result) {
@@ -12854,13 +12916,13 @@ unicode_endswith(PyObject *self,
         }
         Py_RETURN_FALSE;
     }
-    if (!PyUnicode_Check(subobj)) {
+    if (!PyUnicode_Check(suffix)) {
         PyErr_Format(PyExc_TypeError,
                      "endswith first arg must be str or "
-                     "a tuple of str, not %.100s", Py_TYPE(subobj)->tp_name);
+                     "a tuple of str, not %.100s", Py_TYPE(suffix)->tp_name);
         return NULL;
     }
-    result = tailmatch(self, subobj, start, end, +1);
+    result = tailmatch(self, suffix, start_idx, end_idx, +1);
     if (result == -1)
         return NULL;
     return PyBool_FromLong(result);
@@ -13296,16 +13358,16 @@ static PyMethodDef unicode_methods[] = {
     UNICODE_CASEFOLD_METHODDEF
     UNICODE_TITLE_METHODDEF
     UNICODE_CENTER_METHODDEF
-    {"count", (PyCFunction) unicode_count, METH_VARARGS, count__doc__},
+    UNICODE_COUNT_METHODDEF
     UNICODE_EXPANDTABS_METHODDEF
-    {"find", (PyCFunction) unicode_find, METH_VARARGS, find__doc__},
+    UNICODE_FIND_METHODDEF
     UNICODE_PARTITION_METHODDEF
-    {"index", (PyCFunction) unicode_index, METH_VARARGS, index__doc__},
+    UNICODE_INDEX_METHODDEF
     UNICODE_LJUST_METHODDEF
     UNICODE_LOWER_METHODDEF
     UNICODE_LSTRIP_METHODDEF
-    {"rfind", (PyCFunction) unicode_rfind, METH_VARARGS, rfind__doc__},
-    {"rindex", (PyCFunction) unicode_rindex, METH_VARARGS, rindex__doc__},
+    UNICODE_RFIND_METHODDEF
+    UNICODE_RINDEX_METHODDEF
     UNICODE_RJUST_METHODDEF
     UNICODE_RSTRIP_METHODDEF
     UNICODE_RPARTITION_METHODDEF
@@ -13314,8 +13376,8 @@ static PyMethodDef unicode_methods[] = {
     UNICODE_SWAPCASE_METHODDEF
     UNICODE_TRANSLATE_METHODDEF
     UNICODE_UPPER_METHODDEF
-    {"startswith", (PyCFunction) unicode_startswith, METH_VARARGS, startswith__doc__},
-    {"endswith", (PyCFunction) unicode_endswith, METH_VARARGS, endswith__doc__},
+    UNICODE_STARTSWITH_METHODDEF
+    UNICODE_ENDSWITH_METHODDEF
     UNICODE_REMOVEPREFIX_METHODDEF
     UNICODE_REMOVESUFFIX_METHODDEF
     UNICODE_ISASCII_METHODDEF

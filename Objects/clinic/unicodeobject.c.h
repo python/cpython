@@ -135,6 +135,48 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(unicode_count__doc__,
+"count($self, sub, start=None, end=None, /)\n"
+"--\n"
+"\n"
+"Return the number of non-overlapping occurrences of substring sub in string self[start:end].\n"
+"\n"
+"Optional arguments start and end are interpreted as in slice notation.");
+
+#define UNICODE_COUNT_METHODDEF    \
+    {"count", _PyCFunction_CAST(unicode_count), METH_FASTCALL, unicode_count__doc__},
+
+static PyObject *
+unicode_count_impl(PyObject *self, PyObject *sub, PyObject *start,
+                   PyObject *end);
+
+static PyObject *
+unicode_count(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *sub = NULL;
+    PyObject *start = Py_None;
+    PyObject *end = Py_None;
+
+    if (!_PyArg_CheckPositional("count", nargs, 1, 3)) {
+        goto exit;
+    }
+    sub = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    start = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    end = args[2];
+skip_optional:
+    return_value = unicode_count_impl(self, sub, start, end);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(unicode_encode__doc__,
 "encode($self, /, encoding=\'utf-8\', errors=\'strict\')\n"
 "--\n"
@@ -295,6 +337,97 @@ unicode_expandtabs(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     }
 skip_optional_pos:
     return_value = unicode_expandtabs_impl(self, tabsize);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(unicode_find__doc__,
+"find($self, sub, start=None, end=None, /)\n"
+"--\n"
+"\n"
+"Return the lowest index in a string where substring sub is found.\n"
+"\n"
+"Such that sub is contained within self[start:end].\n"
+"\n"
+"Optional arguments start and end are interpreted as in slice notation.\n"
+"\n"
+"Return -1 on failure.");
+
+#define UNICODE_FIND_METHODDEF    \
+    {"find", _PyCFunction_CAST(unicode_find), METH_FASTCALL, unicode_find__doc__},
+
+static PyObject *
+unicode_find_impl(PyObject *self, PyObject *sub, PyObject *start,
+                  PyObject *end);
+
+static PyObject *
+unicode_find(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *sub = NULL;
+    PyObject *start = Py_None;
+    PyObject *end = Py_None;
+
+    if (!_PyArg_CheckPositional("find", nargs, 1, 3)) {
+        goto exit;
+    }
+    sub = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    start = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    end = args[2];
+skip_optional:
+    return_value = unicode_find_impl(self, sub, start, end);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(unicode_index__doc__,
+"index($self, sub, start=None, end=None, /)\n"
+"--\n"
+"\n"
+"Return the lowest index in a string where substring sub is found.\n"
+"\n"
+"Such that sub is contained within self[start:end].  Optional\n"
+"arguments start and end are interpreted as in slice notation.\n"
+"\n"
+"Raises ValueError when the substring is not found.");
+
+#define UNICODE_INDEX_METHODDEF    \
+    {"index", _PyCFunction_CAST(unicode_index), METH_FASTCALL, unicode_index__doc__},
+
+static PyObject *
+unicode_index_impl(PyObject *self, PyObject *sub, PyObject *start,
+                   PyObject *end);
+
+static PyObject *
+unicode_index(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *sub = NULL;
+    PyObject *start = Py_None;
+    PyObject *end = Py_None;
+
+    if (!_PyArg_CheckPositional("index", nargs, 1, 3)) {
+        goto exit;
+    }
+    sub = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    start = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    end = args[2];
+skip_optional:
+    return_value = unicode_index_impl(self, sub, start, end);
 
 exit:
     return return_value;
@@ -875,6 +1008,96 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(unicode_rfind__doc__,
+"rfind($self, sub, start=None, end=None, /)\n"
+"--\n"
+"\n"
+"Return the highest index in a string where substring sub is found.\n"
+"\n"
+"Such that sub is contained within self[start:end].  Optional\n"
+"arguments start and end are interpreted as in slice notation.\n"
+"\n"
+"Return -1 on failure.");
+
+#define UNICODE_RFIND_METHODDEF    \
+    {"rfind", _PyCFunction_CAST(unicode_rfind), METH_FASTCALL, unicode_rfind__doc__},
+
+static PyObject *
+unicode_rfind_impl(PyObject *self, PyObject *sub, PyObject *start,
+                   PyObject *end);
+
+static PyObject *
+unicode_rfind(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *sub = NULL;
+    PyObject *start = Py_None;
+    PyObject *end = Py_None;
+
+    if (!_PyArg_CheckPositional("rfind", nargs, 1, 3)) {
+        goto exit;
+    }
+    sub = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    start = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    end = args[2];
+skip_optional:
+    return_value = unicode_rfind_impl(self, sub, start, end);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(unicode_rindex__doc__,
+"rindex($self, sub, start=None, end=None, /)\n"
+"--\n"
+"\n"
+"Return the highest index in a string where substring sub is found.\n"
+"\n"
+"Such that sub is contained within self[start:end].  Optional\n"
+"arguments start and end are interpreted as in slice notation.\n"
+"\n"
+"Raises ValueError when the substring is not found.");
+
+#define UNICODE_RINDEX_METHODDEF    \
+    {"rindex", _PyCFunction_CAST(unicode_rindex), METH_FASTCALL, unicode_rindex__doc__},
+
+static PyObject *
+unicode_rindex_impl(PyObject *self, PyObject *sub, PyObject *start,
+                    PyObject *end);
+
+static PyObject *
+unicode_rindex(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *sub = NULL;
+    PyObject *start = Py_None;
+    PyObject *end = Py_None;
+
+    if (!_PyArg_CheckPositional("rindex", nargs, 1, 3)) {
+        goto exit;
+    }
+    sub = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    start = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    end = args[2];
+skip_optional:
+    return_value = unicode_rindex_impl(self, sub, start, end);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(unicode_rjust__doc__,
 "rjust($self, width, fillchar=\' \', /)\n"
 "--\n"
@@ -1356,6 +1579,96 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(unicode_startswith__doc__,
+"startswith($self, prefix, start=None, end=None, /)\n"
+"--\n"
+"\n"
+"Return True if a string starts with the specified prefix, False otherwise.\n"
+"\n"
+"With optional start, test string beginning at that position.\n"
+"With optional end, stop comparing string at that position.\n"
+"\n"
+"prefix can also be a tuple of strings to try.");
+
+#define UNICODE_STARTSWITH_METHODDEF    \
+    {"startswith", _PyCFunction_CAST(unicode_startswith), METH_FASTCALL, unicode_startswith__doc__},
+
+static PyObject *
+unicode_startswith_impl(PyObject *self, PyObject *prefix, PyObject *start,
+                        PyObject *end);
+
+static PyObject *
+unicode_startswith(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *prefix = NULL;
+    PyObject *start = Py_None;
+    PyObject *end = Py_None;
+
+    if (!_PyArg_CheckPositional("startswith", nargs, 1, 3)) {
+        goto exit;
+    }
+    prefix = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    start = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    end = args[2];
+skip_optional:
+    return_value = unicode_startswith_impl(self, prefix, start, end);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(unicode_endswith__doc__,
+"endswith($self, suffix, start=None, end=None, /)\n"
+"--\n"
+"\n"
+"Return True if a string ends with the specified suffix, False otherwise.\n"
+"\n"
+"With optional start, test string beginning at that position.\n"
+"With optional end, stop comparing string at that position.\n"
+"\n"
+"Suffix can also be a tuple of strings to try.");
+
+#define UNICODE_ENDSWITH_METHODDEF    \
+    {"endswith", _PyCFunction_CAST(unicode_endswith), METH_FASTCALL, unicode_endswith__doc__},
+
+static PyObject *
+unicode_endswith_impl(PyObject *self, PyObject *suffix, PyObject *start,
+                      PyObject *end);
+
+static PyObject *
+unicode_endswith(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *suffix = NULL;
+    PyObject *start = Py_None;
+    PyObject *end = Py_None;
+
+    if (!_PyArg_CheckPositional("endswith", nargs, 1, 3)) {
+        goto exit;
+    }
+    suffix = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    start = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    end = args[2];
+skip_optional:
+    return_value = unicode_endswith_impl(self, suffix, start, end);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(unicode___format____doc__,
 "__format__($self, format_spec, /)\n"
 "--\n"
@@ -1497,4 +1810,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e775ff4154f1c935 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=56c8d581d11d6023 input=a9049054013a1b77]*/

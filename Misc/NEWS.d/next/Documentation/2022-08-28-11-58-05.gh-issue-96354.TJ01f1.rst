@@ -1,0 +1,1 @@
+Port docstring of unicode_find family to Argument Clinic
