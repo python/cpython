@@ -218,6 +218,7 @@ library/sqlite3,,:template,"con = sqlite3.connect(""file:template.db?mode=ro"", 
 library/sqlite3,,:nosuchdb,"con = sqlite3.connect(""file:nosuchdb.db?mode=rw"", uri=True)"
 library/sqlite3,,:mem1,"con1 = sqlite3.connect(""file:mem1?mode=memory&cache=shared"", uri=True)"
 library/sqlite3,,:mem1,"con2 = sqlite3.connect(""file:mem1?mode=memory&cache=shared"", uri=True)"
+library/sqlite3,,:tutorial,">>> con = sqlite3.connect(""file:tutorial.db?mode=ro"", uri=True)"
 library/ssl,,:My,"Organizational Unit Name (eg, section) []:My Group"
 library/ssl,,:My,"Organization Name (eg, company) [Internet Widgits Pty Ltd]:My Organization, Inc."
 library/ssl,,:myserver,"Common Name (eg, YOUR name) []:myserver.mygroup.myorganization.com"
