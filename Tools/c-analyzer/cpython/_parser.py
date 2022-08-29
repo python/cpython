@@ -74,7 +74,6 @@ Python/emscripten_signal.c
 Python/thread_pthread_stubs.h
 
 # only huge constants (safe but parsing is slow)
-Modules/_blake2/impl/blake2-kat.h
 Modules/_ssl_data.h
 Modules/_ssl_data_300.h
 Modules/_ssl_data_111.h
@@ -290,10 +289,8 @@ SAME = [
 
 MAX_SIZES = {
     # GLOB: (MAXTEXT, MAXLINES),
+    # default: (10_000, 200)
     # First match wins.
-    _abs('Include/internal/pycore_global_strings.h'): (5_000, 1000),
-    _abs('Include/internal/pycore_runtime_init_generated.h'): (5_000, 1000),
-    _abs('Include/**/*.h'): (5_000, 500),
     _abs('Modules/_ctypes/ctypes.h'): (5_000, 500),
     _abs('Modules/_datetimemodule.c'): (20_000, 300),
     _abs('Modules/posixmodule.c'): (20_000, 500),
@@ -303,12 +300,28 @@ MAX_SIZES = {
     _abs('Objects/stringlib/unicode_format.h'): (10_000, 400),
     _abs('Objects/typeobject.c'): (20_000, 200),
     _abs('Python/compile.c'): (20_000, 500),
-    _abs('Python/deepfreeze/*.c'): (20_000, 500),
-    _abs('Python/frozen_modules/*.h'): (20_000, 500),
     _abs('Python/pylifecycle.c'): (500_000, 5000),
     _abs('Python/pystate.c'): (500_000, 5000),
+
+    # Generated files:
+    _abs('Include/internal/pycore_global_strings.h'): (5_000, 1000),
+    _abs('Include/internal/pycore_runtime_init_generated.h'): (5_000, 1000),
+    _abs('Python/deepfreeze/*.c'): (20_000, 500),
+    _abs('Python/frozen_modules/*.h'): (20_000, 500),
     _abs('Python/opcode_targets.h'): (10_000, 500),
     _abs('Python/stdlib_module_names.h'): (5_000, 500),
+
+    # These large files are currently ignored (see above).
+    _abs('Modules/_ssl_data.h'): (80_000, 10_000),
+    _abs('Modules/_ssl_data_300.h'): (80_000, 10_000),
+    _abs('Modules/_ssl_data_111.h'): (80_000, 10_000),
+    _abs('Modules/cjkcodecs/mappings_*.h'): (160_000, 2_000),
+    _abs('Modules/unicodedata_db.h'): (180_000, 3_000),
+    _abs('Modules/unicodename_db.h'): (1_200_000, 15_000),
+    _abs('Objects/unicodetype_db.h'): (240_000, 3_000),
+
+    # Catch-alls:
+    _abs('Include/**/*.h'): (5_000, 500),
 }
 
 
