@@ -2066,8 +2066,8 @@ static PyObject *
 sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
 /*[clinic end generated code: output=5783cdeb51874b43 input=b09020e3a17c78c5]*/
 {
-    if (strcmp(backend, "perf") == 0) {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
+    if (strcmp(backend, "perf") == 0) {
         _PyPerf_Callbacks cur_cb;
         _PyPerfTrampoline_GetCallbacks(&cur_cb);
         if (cur_cb.init_state != _Py_perfmap_callbacks.init_state) {
@@ -2076,10 +2076,6 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
                 return NULL;
             }
         }
-#else
-        PyErr_SetString(PyExc_ValueError, "perf trampoline not available");
-        return NULL;
-#endif
     }
     else {
         PyErr_Format(PyExc_ValueError, "invalid backend: %s", backend);
@@ -2089,6 +2085,10 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
         return NULL;
     }
     Py_RETURN_NONE;
+#else
+    PyErr_SetString(PyExc_ValueError, "perf trampoline not available");
+    return NULL;
+#endif
 }
 
 

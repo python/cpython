@@ -1695,6 +1695,16 @@ config_read_env_vars(PyConfig *config)
 static PyStatus
 config_init_perf_profiling(PyConfig *config)
 {
+    int active = 0;
+    const char *env = config_get_env(config, "PYTHONPERFSUPPORT");
+    if (env) {
+        if (_Py_str_to_int(env, &active) != 0) {
+            active = 0;
+        }
+        if (active) {
+            config->perf_profiling = 1;
+        }
+    }
     const wchar_t *xoption = config_get_xoption(config, L"perf");
     if (xoption) {
         config->perf_profiling = 1;
