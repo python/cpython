@@ -1,0 +1,1 @@
+Use cc_basename instead of CC in configure.ac when checking binary name.
