@@ -4261,6 +4261,14 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
         f.converter = time.gmtime
         self.assertEqual(f.formatTime(r), '21/04/1993 08:03:00')
 
+    def test_issue_89047(self):
+        f = logging.Formatter(fmt='{asctime}.{msecs:03.0f} {message}', style='{', datefmt="%Y-%m-%d %H:%M:%S")
+        for i in range(2500):
+            time.sleep(0.0004)
+            r = logging.makeLogRecord({'msg': 'Message %d' % (i + 1)})
+            s = f.format(r)
+            self.assertNotIn('.1000', s)
+
 
 class TestBufferingFormatter(logging.BufferingFormatter):
     def formatHeader(self, records):
