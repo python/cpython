@@ -355,7 +355,8 @@ def _fail_neg(values, errmsg='negative value'):
             raise StatisticsError(errmsg)
         yield x
 
-def _rank(data, /, *, key=None, reverse=False, ties='average') -> list[float]:
+
+def _rank(data, /, *, key=None, reverse=False, ties='average', start=1) -> list[float]:
     """Rank order a dataset. The lowest value has rank 1.
 
     Ties are averaged so that equal values receive the same rank:
@@ -369,13 +370,21 @@ def _rank(data, /, *, key=None, reverse=False, ties='average') -> list[float]:
         >>> _rank([3.5, 5.0, 3.5, 2.0, 6.0, 1.0])
         [3.5, 5.0, 3.5, 2.0, 6.0, 1.0]
 
-    It is possible to rank the data in reverse order so that
-    the highest value has rank 1.  Also, a key-function can
-    extract the field to be ranked:
+    It is possible to rank the data in reverse order so that the
+    highest value has rank 1.  Also, a key-function can extract
+    the field to be ranked:
 
         >>> goals = [('eagles', 45), ('bears', 48), ('lions', 44)]
         >>> _rank(goals, key=itemgetter(1), reverse=True)
         [2.0, 1.0, 3.0]
+
+    Ranks are conventionally numbered starting from one; however,
+    setting *start* to zero allow the ranks to be used as array indices:
+
+        >>> prize = ['Gold', 'Silver', 'Bronze', 'Certificate']
+        >>> scores = [8.1, 7.3, 9.4, 8.3]
+        >>> [prize[int(i)] for i in _rank(scores, start=0, reverse=True)]
+        ['Bronze', 'Certificate', 'Gold', 'Silver']
 
     """
     # If this function becomes public at some point, more thought
@@ -389,7 +398,7 @@ def _rank(data, /, *, key=None, reverse=False, ties='average') -> list[float]:
     if key is not None:
         data = map(key, data)
     val_pos = sorted(zip(data, count()), reverse=reverse)
-    i = 0   # To rank starting at 0 instead of 1, set i = -1.
+    i = start - 1
     result = [0] * len(val_pos)
     for _, g in groupby(val_pos, key=itemgetter(0)):
         group = list(g)
@@ -399,6 +408,7 @@ def _rank(data, /, *, key=None, reverse=False, ties='average') -> list[float]:
             result[orig_pos] = rank
         i += size
     return result
+
 
 def _integer_sqrt_of_frac_rto(n: int, m: int) -> int:
     """Square root of n/m, rounded to the nearest integer using round-to-odd."""
