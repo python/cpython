@@ -379,7 +379,7 @@ def _rank(data, /, *, key=None, reverse=False, ties='average', start=1) -> list[
         [2.0, 1.0, 3.0]
 
     Ranks are conventionally numbered starting from one; however,
-    setting *start* to zero allow the ranks to be used as array indices:
+    setting *start* to zero allows the ranks to be used as array indices:
 
         >>> prize = ['Gold', 'Silver', 'Bronze', 'Certificate']
         >>> scores = [8.1, 7.3, 9.4, 8.3]
