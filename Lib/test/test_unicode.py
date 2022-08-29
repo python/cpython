@@ -2370,20 +2370,19 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertIs(s.expandtabs(), s)
 
     def test_raiseMemError(self):
-        if struct.calcsize('P') == 8:
-            # 64 bits pointers
-            ascii_struct_size = 48
-            compact_struct_size = 72
-        else:
-            # 32 bits pointers
-            ascii_struct_size = 24
-            compact_struct_size = 36
+        asciifields = "nnb"
+        compactfields = asciifields + "nP"
+        ascii_struct_size = support.calcobjsize(asciifields)
+        compact_struct_size = support.calcobjsize(compactfields)
 
         for char in ('a', '\xe9', '\u20ac', '\U0010ffff'):
             code = ord(char)
-            if code < 0x100:
+            if code < 0x80:
                 char_size = 1  # sizeof(Py_UCS1)
                 struct_size = ascii_struct_size
+            elif code < 0x100:
+                char_size = 1  # sizeof(Py_UCS1)
+                struct_size = compact_struct_size
             elif code < 0x10000:
                 char_size = 2  # sizeof(Py_UCS2)
                 struct_size = compact_struct_size
@@ -2395,8 +2394,18 @@ class UnicodeTest(string_tests.CommonTest,
             # be allocatable, given enough memory.
             maxlen = ((sys.maxsize - struct_size) // char_size)
             alloc = lambda: char * maxlen
-            self.assertRaises(MemoryError, alloc)
-            self.assertRaises(MemoryError, alloc)
+            with self.subTest(
+                char=char,
+                struct_size=struct_size,
+                char_size=char_size
+            ):
+                # self-check
+                self.assertEqual(
+                    sys.getsizeof(char * 42),
+                    struct_size + (char_size * (42 + 1))
+                )
+                self.assertRaises(MemoryError, alloc)
+                self.assertRaises(MemoryError, alloc)
 
     def test_format_subclass(self):
         class S(str):
@@ -2633,8 +2642,6 @@ class CAPITest(unittest.TestCase):
 
         # test "%"
         check_format('%',
-                     b'%')
-        check_format('%',
                      b'%%')
         check_format('%s',
                      b'%%s')
@@ -2810,22 +2817,21 @@ class CAPITest(unittest.TestCase):
         check_format('repr=abc\ufffd',
                      b'repr=%V', None, b'abc\xff')
 
-        # not supported: copy the raw format string. these tests are just here
-        # to check for crashes and should not be considered as specifications
-        check_format('%s',
-                     b'%1%s', b'abc')
-        check_format('%1abc',
-                     b'%1abc')
-        check_format('%+i',
-                     b'%+i', c_int(10))
-        check_format('%.%s',
-                     b'%.%s', b'abc')
-
         # Issue #33817: empty strings
         check_format('',
                      b'')
         check_format('',
                      b'%s', b'')
+
+        # check for crashes
+        for fmt in (b'%', b'%0', b'%01', b'%.', b'%.1',
+                    b'%0%s', b'%1%s', b'%.%s', b'%.1%s', b'%1abc',
+                    b'%l', b'%ll', b'%z', b'%ls', b'%lls', b'%zs'):
+            with self.subTest(fmt=fmt):
+                self.assertRaisesRegex(SystemError, 'invalid format string',
+                    PyUnicode_FromFormat, fmt, b'abc')
+        self.assertRaisesRegex(SystemError, 'invalid format string',
+            PyUnicode_FromFormat, b'%+i', c_int(10))
 
     # Test PyUnicode_AsWideChar()
     @support.cpython_only

@@ -527,7 +527,7 @@ creates a :class:`LogRecord` instance that is sent to any number of different
 of filters, and each filter can cause the :class:`LogRecord` to be ignored or
 can modify the record before passing it along.  When they're finally output,
 :class:`LogRecord` instances are converted to text by a :class:`Formatter`
-class.  All of these classes can be replaced by your own specially-written
+class.  All of these classes can be replaced by your own specially written
 classes.
 
 With all of these features the :mod:`logging` package should provide enough
@@ -1082,7 +1082,7 @@ Here are all of the changes that Python 2.3 makes to the core Python language.
   hierarchy.  Classic classes are unaffected by this change.  Python 2.2
   originally used a topological sort of a class's ancestors, but 2.3 now uses the
   C3 algorithm as described in the paper `"A Monotonic Superclass Linearization
-  for Dylan" <http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.19.3910>`_. To
+  for Dylan" <https://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.19.3910>`_. To
   understand the motivation for this change,  read Michele Simionato's article
   `"Python 2.3 Method Resolution Order" <http://www.phyast.pitt.edu/~micheles/mro.html>`_, or
   read the thread on python-dev starting with the message at

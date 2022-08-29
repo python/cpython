@@ -1,5 +1,5 @@
 /*  C implementation for the date/time type documented at
- *  http://www.zope.org/Members/fdrake/DateTimeWiki/FrontPage
+ *  https://www.zope.dev/Members/fdrake/DateTimeWiki/FrontPage
  */
 
 /* bpo-35081: Defining this prevents including the C API capsule;
@@ -1507,6 +1507,27 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
 }
 
 static PyObject *
+make_somezreplacement(PyObject *object, char *sep, PyObject *tzinfoarg)
+{
+    char buf[100];
+    PyObject *tzinfo = get_tzinfo_member(object);
+
+    if (tzinfo == Py_None || tzinfo == NULL) {
+        return PyBytes_FromStringAndSize(NULL, 0);
+    }
+   
+    assert(tzinfoarg != NULL);
+    if (format_utcoffset(buf,
+                         sizeof(buf),
+                         sep,
+                         tzinfo,
+                         tzinfoarg) < 0)
+        return NULL;
+        
+    return PyBytes_FromStringAndSize(buf, strlen(buf));
+}
+
+static PyObject *
 make_Zreplacement(PyObject *object, PyObject *tzinfoarg)
 {
     PyObject *temp;
@@ -1566,7 +1587,7 @@ make_freplacement(PyObject *object)
 
 /* I sure don't want to reproduce the strftime code from the time module,
  * so this imports the module and calls it.  All the hair is due to
- * giving special meanings to the %z, %Z and %f format codes via a
+ * giving special meanings to the %z, %:z, %Z and %f format codes via a
  * preprocessing step on the format string.
  * tzinfoarg is the argument to pass to the object's tzinfo method, if
  * needed.
@@ -1578,6 +1599,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     PyObject *result = NULL;            /* guilty until proved innocent */
 
     PyObject *zreplacement = NULL;      /* py string, replacement for %z */
+    PyObject *colonzreplacement = NULL; /* py string, replacement for %:z */
     PyObject *Zreplacement = NULL;      /* py string, replacement for %Z */
     PyObject *freplacement = NULL;      /* py string, replacement for %f */
 
@@ -1632,31 +1654,28 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         }
         /* A % has been seen and ch is the character after it. */
         else if (ch == 'z') {
+            /* %z -> +HHMM */
             if (zreplacement == NULL) {
-                /* format utcoffset */
-                char buf[100];
-                PyObject *tzinfo = get_tzinfo_member(object);
-                zreplacement = PyBytes_FromStringAndSize("", 0);
-                if (zreplacement == NULL) goto Done;
-                if (tzinfo != Py_None && tzinfo != NULL) {
-                    assert(tzinfoarg != NULL);
-                    if (format_utcoffset(buf,
-                                         sizeof(buf),
-                                         "",
-                                         tzinfo,
-                                         tzinfoarg) < 0)
-                        goto Done;
-                    Py_DECREF(zreplacement);
-                    zreplacement =
-                      PyBytes_FromStringAndSize(buf,
-                                               strlen(buf));
-                    if (zreplacement == NULL)
-                        goto Done;
-                }
+                zreplacement = make_somezreplacement(object, "", tzinfoarg);
+                if (zreplacement == NULL)
+                    goto Done;
             }
             assert(zreplacement != NULL);
+            assert(PyBytes_Check(zreplacement));
             ptoappend = PyBytes_AS_STRING(zreplacement);
             ntoappend = PyBytes_GET_SIZE(zreplacement);
+        }
+        else if (ch == ':' && *pin == 'z' && pin++) {
+            /* %:z -> +HH:MM */
+            if (colonzreplacement == NULL) {
+                colonzreplacement = make_somezreplacement(object, ":", tzinfoarg);
+                if (colonzreplacement == NULL)
+                    goto Done;
+            }
+            assert(colonzreplacement != NULL);
+            assert(PyBytes_Check(colonzreplacement));
+            ptoappend = PyBytes_AS_STRING(colonzreplacement);
+            ntoappend = PyBytes_GET_SIZE(colonzreplacement);
         }
         else if (ch == 'Z') {
             /* format tzname */
@@ -1686,7 +1705,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             ntoappend = PyBytes_GET_SIZE(freplacement);
         }
         else {
-            /* percent followed by neither z nor Z */
+            /* percent followed by something else */
             ptoappend = pin - 2;
             ntoappend = 2;
         }
@@ -1718,21 +1737,22 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         goto Done;
     {
         PyObject *format;
-        PyObject *time = PyImport_ImportModule("time");
+        PyObject *strftime = _PyImport_GetModuleAttrString("time", "strftime");
 
-        if (time == NULL)
+        if (strftime == NULL)
             goto Done;
         format = PyUnicode_FromString(PyBytes_AS_STRING(newfmt));
         if (format != NULL) {
-            result = _PyObject_CallMethodIdObjArgs(time, &PyId_strftime,
+            result = PyObject_CallFunctionObjArgs(strftime,
                                                    format, timetuple, NULL);
             Py_DECREF(format);
         }
-        Py_DECREF(time);
+        Py_DECREF(strftime);
     }
  Done:
     Py_XDECREF(freplacement);
     Py_XDECREF(zreplacement);
+    Py_XDECREF(colonzreplacement);
     Py_XDECREF(Zreplacement);
     Py_XDECREF(newfmt);
     return result;
@@ -1748,12 +1768,10 @@ static PyObject *
 time_time(void)
 {
     PyObject *result = NULL;
-    PyObject *time = PyImport_ImportModule("time");
+    PyObject *time = _PyImport_GetModuleAttrString("time", "time");
 
     if (time != NULL) {
-        _Py_IDENTIFIER(time);
-
-        result = _PyObject_CallMethodIdNoArgs(time, &PyId_time);
+        result = PyObject_CallNoArgs(time);
         Py_DECREF(time);
     }
     return result;
@@ -1765,31 +1783,21 @@ time_time(void)
 static PyObject *
 build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
 {
-    PyObject *time;
+    PyObject *struct_time;
     PyObject *result;
-    _Py_IDENTIFIER(struct_time);
-    PyObject *args;
 
-
-    time = PyImport_ImportModule("time");
-    if (time == NULL) {
+    struct_time = _PyImport_GetModuleAttrString("time", "struct_time");
+    if (struct_time == NULL) {
         return NULL;
     }
 
-    args = Py_BuildValue("iiiiiiiii",
+    result = PyObject_CallFunction(struct_time, "((iiiiiiiii))",
                          y, m, d,
                          hh, mm, ss,
                          weekday(y, m, d),
                          days_before_month(y, m) + d,
                          dstflag);
-    if (args == NULL) {
-        Py_DECREF(time);
-        return NULL;
-    }
-
-    result = _PyObject_CallMethodIdOneArg(time, &PyId_struct_time, args);
-    Py_DECREF(time);
-    Py_DECREF(args);
+    Py_DECREF(struct_time);
     return result;
 }
 
@@ -5071,6 +5079,10 @@ datetime_from_timet_and_us(PyObject *cls, TM_FUNC f, time_t timet, int us,
 
         result_seconds = utc_to_seconds(year, month, day,
                                         hour, minute, second);
+        if (result_seconds == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
+
         /* Probe max_fold_seconds to detect a fold. */
         probe_seconds = local(epoch + timet - max_fold_seconds);
         if (probe_seconds == -1)
@@ -5280,7 +5292,7 @@ _sanitize_isoformat_str(PyObject *dtstr)
     //
     // The result of this, if not NULL, returns a new reference
     const void* const unicode_data = PyUnicode_DATA(dtstr);
-    const unsigned int kind = PyUnicode_KIND(dtstr);
+    const int kind = PyUnicode_KIND(dtstr);
 
     // Depending on the format of the string, the separator can only ever be
     // in positions 7, 8 or 10. We'll check each of these for a surrogate and

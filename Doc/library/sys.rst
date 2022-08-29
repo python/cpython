@@ -338,7 +338,7 @@ always available.
    |                             | memory support.                              |
    +-----------------------------+----------------------------------------------+
 
-   .. availability:: WebAssembly Emscripten platform (*wasm32-emscripten*).
+   .. availability:: Emscripten.
 
    .. versionadded:: 3.11
 
@@ -774,7 +774,7 @@ always available.
    that is deeper than the call stack, :exc:`ValueError` is raised.  The default
    for *depth* is zero, returning the frame at the top of the call stack.
 
-   .. audit-event:: sys._getframe "" sys._getframe
+   .. audit-event:: sys._getframe frame sys._getframe
 
    .. impl-detail::
 
@@ -1087,7 +1087,8 @@ always available.
 
     A list of :term:`meta path finder` objects that have their
     :meth:`~importlib.abc.MetaPathFinder.find_spec` methods called to see if one
-    of the objects can find the module to be imported. The
+    of the objects can find the module to be imported. By default, it holds entries
+    that implement Python's default import semantics. The
     :meth:`~importlib.abc.MetaPathFinder.find_spec` method is called with at
     least the absolute name of the module being imported. If the module to be
     imported is contained in a package, then the parent package's :attr:`__path__`
@@ -1157,7 +1158,7 @@ always available.
    line option or the :envvar:`PYTHONSAFEPATH` environment variable?
 
    A program is free to modify this list for its own purposes.  Only strings
-   and bytes should be added to :data:`sys.path`; all other data types are
+   should be added to :data:`sys.path`; all other data types are
    ignored during import.
 
 
@@ -1657,6 +1658,8 @@ always available.
    |                  |                                                         |
    |                  |  * ``'nt'``: Windows threads                            |
    |                  |  * ``'pthread'``: POSIX threads                         |
+   |                  |  * ``'pthread-stubs'``: stub POSIX threads              |
+   |                  |    (on WebAssembly platforms without threading support) |
    |                  |  * ``'solaris'``: Solaris threads                       |
    +------------------+---------------------------------------------------------+
    | :const:`lock`    | Name of the lock implementation:                        |
@@ -1777,13 +1780,13 @@ always available.
 
    .. code-block:: shell-session
 
-      $ ./python -Xpycache_prefix=some_path -Xdev
+      $ ./python -Xa=b -Xc
       Python 3.2a3+ (py3k, Oct 16 2010, 20:14:50)
       [GCC 4.4.3] on linux2
       Type "help", "copyright", "credits" or "license" for more information.
       >>> import sys
       >>> sys._xoptions
-      {'pycache_prefix': 'some_path', 'dev': True}
+      {'a': 'b', 'c': True}
 
    .. impl-detail::
 
@@ -1796,4 +1799,4 @@ always available.
 
 .. rubric:: Citations
 
-.. [C99] ISO/IEC 9899:1999.  "Programming languages -- C."  A public draft of this standard is available at http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf\ .
+.. [C99] ISO/IEC 9899:1999.  "Programming languages -- C."  A public draft of this standard is available at https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf\ .

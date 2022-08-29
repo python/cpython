@@ -53,8 +53,12 @@ PyAPI_FUNC(PyObject *) _PyObject_MakeTpCall(
 #define PY_VECTORCALL_ARGUMENTS_OFFSET \
     (_Py_STATIC_CAST(size_t, 1) << (8 * sizeof(size_t) - 1))
 
+// PyVectorcall_NARGS() is exported as a function for the stable ABI.
+// Here (when we are not using the stable ABI), the name is overridden to
+// call a static inline function for best performance.
+#define PyVectorcall_NARGS(n) _PyVectorcall_NARGS(n)
 static inline Py_ssize_t
-PyVectorcall_NARGS(size_t n)
+_PyVectorcall_NARGS(size_t n)
 {
     return n & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
 }
@@ -84,10 +88,6 @@ PyAPI_FUNC(PyObject *) PyObject_VectorcallDict(
     size_t nargsf,
     PyObject *kwargs);
 
-/* Call "callable" (which must support vectorcall) with positional arguments
-   "tuple" and keyword arguments "dict". "dict" may also be NULL */
-PyAPI_FUNC(PyObject *) PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *dict);
-
 // Same as PyObject_Vectorcall(), except without keyword arguments
 PyAPI_FUNC(PyObject *) _PyObject_FastCall(
     PyObject *func,
@@ -111,9 +111,8 @@ static inline PyObject *
 PyObject_CallMethodOneArg(PyObject *self, PyObject *name, PyObject *arg)
 {
     PyObject *args[2] = {self, arg};
-
-    assert(arg != NULL);
     size_t nargsf = 2 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    assert(arg != NULL);
     return PyObject_VectorcallMethod(name, args, nargsf, _Py_NULL);
 }
 
@@ -160,9 +159,8 @@ static inline PyObject *
 _PyObject_CallMethodIdOneArg(PyObject *self, _Py_Identifier *name, PyObject *arg)
 {
     PyObject *args[2] = {self, arg};
-
-    assert(arg != NULL);
     size_t nargsf = 2 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    assert(arg != NULL);
     return _PyObject_VectorcallMethodId(name, args, nargsf, _Py_NULL);
 }
 
@@ -178,7 +176,7 @@ PyAPI_FUNC(Py_ssize_t) PyObject_LengthHint(PyObject *o, Py_ssize_t);
 /* Assume tp_as_sequence and sq_item exist and that 'i' does not
    need to be corrected for a negative index. */
 #define PySequence_ITEM(o, i)\
-    ( Py_TYPE(o)->tp_as_sequence->sq_item(o, i) )
+    ( Py_TYPE(o)->tp_as_sequence->sq_item((o), (i)) )
 
 #define PY_ITERSEARCH_COUNT    1
 #define PY_ITERSEARCH_INDEX    2

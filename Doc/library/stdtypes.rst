@@ -1453,7 +1453,7 @@ objects that compare equal might have different :attr:`~range.start`,
 
 .. seealso::
 
-   * The `linspace recipe <http://code.activestate.com/recipes/579000/>`_
+   * The `linspace recipe <https://code.activestate.com/recipes/579000/>`_
      shows how to implement a lazy version of range suitable for floating
      point applications.
 
@@ -1865,6 +1865,8 @@ expression support in the :mod:`re` module).
       False
 
 
+
+.. _meth-str-join:
 
 .. method:: str.join(iterable)
 

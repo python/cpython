@@ -549,17 +549,18 @@ class CmdLineTest(unittest.TestCase):
             script_name = _make_test_script(script_dir, 'script', script)
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = stderr.decode('ascii').split('\n')
-            self.assertEqual(len(text), 6)
+            self.assertEqual(len(text), 5)
             self.assertTrue(text[0].startswith('Traceback'))
             self.assertTrue(text[1].startswith('  File '))
-            self.assertTrue(text[4].startswith('NameError'))
+            self.assertTrue(text[3].startswith('NameError'))
 
     def test_non_ascii(self):
         # Mac OS X denies the creation of a file with an invalid UTF-8 name.
         # Windows allows creating a name with an arbitrary bytes name, but
         # Python cannot a undecodable bytes argument to a subprocess.
+        # WASI does not permit invalid UTF-8 names.
         if (os_helper.TESTFN_UNDECODABLE
-        and sys.platform not in ('win32', 'darwin')):
+        and sys.platform not in ('win32', 'darwin', 'emscripten', 'wasi')):
             name = os.fsdecode(os_helper.TESTFN_UNDECODABLE)
         elif os_helper.TESTFN_NONASCII:
             name = os_helper.TESTFN_NONASCII

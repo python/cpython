@@ -164,6 +164,8 @@ are always available.  They are listed here in alphabetical order.
    :func:`sys.breakpointhook` can be set to some other function and
    :func:`breakpoint` will automatically call that, allowing you to drop into
    the debugger of choice.
+   If :func:`sys.breakpointhook` is not accessible, this function will
+   raise :exc:`RuntimeError`.
 
    .. audit-event:: builtins.breakpoint breakpointhook breakpoint
 
@@ -500,6 +502,7 @@ are always available.  They are listed here in alphabetical order.
               yield n, elem
               n += 1
 
+.. _func-eval:
 
 .. function:: eval(expression[, globals[, locals]])
 
@@ -859,8 +862,8 @@ are always available.  They are listed here in alphabetical order.
 
    .. audit-event:: builtins.input/result result input
 
-      Raises an auditing event ``builtins.input/result`` with the result after
-      successfully reading input.
+      Raises an :ref:`auditing event <auditing>` ``builtins.input/result``
+      with the result after successfully reading input.
 
 
 .. class:: int([x])
@@ -1392,7 +1395,7 @@ are always available.  They are listed here in alphabetical order.
       supported.
 
 
-.. function:: print(*objects, sep=' ', end='\\n', file=sys.stdout, flush=False)
+.. function:: print(*objects, sep=' ', end='\n', file=sys.stdout, flush=False)
 
    Print *objects* to the text stream *file*, separated by *sep* and followed
    by *end*.  *sep*, *end*, *file*, and *flush*, if present, must be given as keyword
@@ -1512,6 +1515,8 @@ are always available.  They are listed here in alphabetical order.
    of the type of the object together with additional information often
    including the name and address of the object.  A class can control what this
    function returns for its instances by defining a :meth:`__repr__` method.
+   If :func:`sys.displayhook` is not accessible, this function will raise
+   :exc:`RuntimeError`.
 
 
 .. function:: reversed(seq)

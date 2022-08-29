@@ -45,7 +45,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.9, compared to 3.8.
-Python 3.9 was released on October 5th, 2020.
+Python 3.9 was released on October 5, 2020.
 
 For full details, see the :ref:`changelog <changelog>`.
 
