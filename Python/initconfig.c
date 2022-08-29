@@ -118,6 +118,11 @@ The following implementation-specific options are available:\n\
    files are desired as well as suppressing the extra visual location indicators \n\
    when the interpreter displays tracebacks.\n\
 \n\
+-X perf: activate support for the Linux \"perf\" profiler by activating the \"perf\"\n\
+    trampoline. When this option is activated, the Linux \"perf\" profiler will be \n\
+    able to report Python calls. This option is only available on some platforms and will \n\
+    do nothing if is not supported on the current system. The default value is \"off\".\n\
+\n\
 -X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
    The default is \"on\" (or \"off\" if you are running a local build).";
 
