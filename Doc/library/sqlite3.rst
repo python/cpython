@@ -387,7 +387,7 @@ Module functions
       ...     print(f"Error message: {unraisable.err_msg}")
       >>> import sys
       >>> sys.unraisablehook = debug
-      >>> cur = con.execute("select 1")
+      >>> cur = con.execute("SELECT 1")
       ZeroDivisionError('division by zero') in callback evil_trace
       Error message: None
 
@@ -1219,7 +1219,7 @@ Cursor objects
              ("row2",),
          ]
          # cur is an sqlite3.Cursor object
-         cur.executemany("insert into data values(?)", rows)
+         cur.executemany("INSERT INTO data VALUES(?)", rows)
 
    .. method:: executescript(sql_script, /)
 
@@ -1237,11 +1237,11 @@ Cursor objects
 
          # cur is an sqlite3.Cursor object
          cur.executescript("""
-             begin;
-             create table person(firstname, lastname, age);
-             create table book(title, author, published);
-             create table publisher(name, address);
-             commit;
+             BEGIN;
+             CREATE TABLE person(firstname, lastname, age);
+             CREATE TABLE book(title, author, published);
+             CREATE TABLE publisher(name, address);
+             COMMIT;
          """)
 
 
