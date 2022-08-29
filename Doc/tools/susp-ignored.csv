@@ -215,7 +215,6 @@ library/socket,,:len,fds.frombytes(cmsg_data[:len(cmsg_data) - (len(cmsg_data) %
 library/sqlite3,,:year,"cur.execute(""select * from lang where first_appeared=:year"", {""year"": 1972})"
 library/sqlite3,,:memory,
 library/sqlite3,,:mem1,"db = ""file:mem1?mode=memory&cache=shared"""
-library/sqlite3,,:mem1,"con2 = sqlite3.connect(""file:mem1?mode=memory&cache=shared"", uri=True)"
 library/sqlite3,,:nosuchdb,">>> con = sqlite3.connect(""file:nosuchdb.db?mode=rw"", uri=True)"
 library/sqlite3,,:tutorial,">>> con = sqlite3.connect(""file:tutorial.db?mode=ro"", uri=True)"
 library/ssl,,:My,"Organizational Unit Name (eg, section) []:My Group"
