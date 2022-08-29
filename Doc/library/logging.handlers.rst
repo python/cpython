@@ -629,6 +629,12 @@ supports sending logging messages to a remote or local Unix syslog.
    application needs to run on several platforms). On Windows, you pretty
    much have to use the UDP option.
 
+   .. note:: On macOS 12.x (Monterey), Apple has changed the behaviour of their
+      syslog daemon - it no longer listens on a domain socket. Therefore, you cannot
+      expect :class:`SysLogHandler` to work on this system.
+
+      See :gh:`91070` for more information.
+
    .. versionchanged:: 3.2
       *socktype* was added.
 

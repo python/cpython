@@ -5,11 +5,11 @@
 # https://git-scm.com/docs/gitignore#_pattern_format
 
 # asyncio
-**/*asyncio*                  @1st1 @asvetlov
+**/*asyncio*                  @1st1 @asvetlov @gvanrossum
 
 # Core
 **/*context*                  @1st1
-**/*genobject*                @1st1 @markshannon
+**/*genobject*                @markshannon
 **/*hamt*                     @1st1
 Objects/set*                  @rhettinger
 Objects/dict*                 @methane @markshannon
