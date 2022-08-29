@@ -2330,7 +2330,7 @@ assignment_rule(Parser *p)
             &&
             (b = augassign_rule(p))  // augassign
             &&
-            (_cut_var = 1)
+            (_cut_var == 1)
             &&
             (c = _tmp_16_rule(p))  // yield_expr | star_expressions
         )
@@ -6299,7 +6299,7 @@ for_stmt_rule(Parser *p)
             &&
             (_keyword_1 = _PyPegen_expect_token(p, 643))  // token='in'
             &&
-            (_cut_var = 1)
+            (_cut_var == 1)
             &&
             (ex = star_expressions_rule(p))  // star_expressions
             &&
@@ -6363,7 +6363,7 @@ for_stmt_rule(Parser *p)
             &&
             (_keyword_1 = _PyPegen_expect_token(p, 643))  // token='in'
             &&
-            (_cut_var = 1)
+            (_cut_var == 1)
             &&
             (ex = star_expressions_rule(p))  // star_expressions
             &&
@@ -11208,7 +11208,7 @@ assignment_expression_rule(Parser *p)
             &&
             (_literal = _PyPegen_expect_token(p, 53))  // token=':='
             &&
-            (_cut_var = 1)
+            (_cut_var == 1)
             &&
             (b = expression_rule(p))  // expression
         )
@@ -16041,7 +16041,7 @@ for_if_clause_rule(Parser *p)
             &&
             (_keyword_1 = _PyPegen_expect_token(p, 643))  // token='in'
             &&
-            (_cut_var = 1)
+            (_cut_var == 1)
             &&
             (b = disjunction_rule(p))  // disjunction
             &&
@@ -16084,7 +16084,7 @@ for_if_clause_rule(Parser *p)
             &&
             (_keyword_1 = _PyPegen_expect_token(p, 643))  // token='in'
             &&
-            (_cut_var = 1)
+            (_cut_var == 1)
             &&
             (b = disjunction_rule(p))  // disjunction
             &&
