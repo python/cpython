@@ -1061,7 +1061,7 @@ a :exc:`TypeError` exception is raised.
 When ``**expression`` is used, each key in this mapping must be
 an instance of :class:`str` or a :term:`hashable` sub-class of it.
 Each value from the mapping is assigned to the first formal parameter
-eligible for keyword assignment, where the name is equal to the key.
+eligible for keyword assignment whose name is equal to the key.
 A key need not be a Python identifier (e.g. ``"max-temp °F"`` is acceptable,
 although it will not match any formal parameter that could be declared).
 If there is no match to a formal parameter
