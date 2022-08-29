@@ -343,7 +343,9 @@ Module functions
    other than checking that there are no unclosed string literals
    and the statement is terminated by a semicolon.
 
-   For example::
+   For example:
+
+   .. doctest::
 
       >>> sqlite3.complete_statement("SELECT foo FROM bar;")
       True
@@ -807,12 +809,12 @@ Connection objects
       Useful when saving an in-memory database for later restoration.
       Similar to the ``.dump`` command in the :program:`sqlite3` shell.
 
-      Example::
+      Example:
 
-         # Convert file existing_db.db to SQL dump file dump.sql
-         import sqlite3
+      .. testcode::
 
-         con = sqlite3.connect('existing_db.db')
+         # Convert file example.db to SQL dump file dump.sql
+         con = sqlite3.connect('example.db')
          with open('dump.sql', 'w') as f:
              for line in con.iterdump():
                  f.write('%s\n' % line)
@@ -855,27 +857,32 @@ Connection objects
           The number of seconds to sleep between successive attempts
           to back up remaining pages.
 
-      Example 1, copy an existing database into another::
+      Example 1, copy an existing database into another:
 
-         import sqlite3
+      .. testcode::
 
          def progress(status, remaining, total):
              print(f'Copied {total-remaining} of {total} pages...')
 
-         con = sqlite3.connect('existing_db.db')
-         bck = sqlite3.connect('backup.db')
-         with bck:
-             con.backup(bck, pages=1, progress=progress)
-         bck.close()
-         con.close()
+         src = sqlite3.connect('example.db')
+         dst = sqlite3.connect('backup.db')
+         with dst:
+             src.backup(dst, pages=1, progress=progress)
+         dst.close()
+         src.close()
 
-      Example 2, copy an existing database into a transient copy::
+      .. testoutput::
+         :hide:
 
-         import sqlite3
+         Copied 0 of 0 pages...
 
-         source = sqlite3.connect('existing_db.db')
-         dest = sqlite3.connect(':memory:')
-         source.backup(dest)
+      Example 2, copy an existing database into a transient copy:
+
+      .. testcode::
+
+         src = sqlite3.connect('example.db')
+         dst = sqlite3.connect(':memory:')
+         src.backup(dst)
 
       .. versionadded:: 3.7
 
@@ -894,10 +901,24 @@ Cursor objects
 
    Cursor objects are :term:`iterators <iterator>`,
    meaning that if you :meth:`~Cursor.execute` a ``SELECT`` query,
-   you can simply iterate over the cursor to fetch the resulting rows::
+   you can simply iterate over the cursor to fetch the resulting rows:
 
-      for row in cur.execute("select * from data"):
+   .. testsetup:: sqlite3.cursor
+
+      import sqlite3
+      con = sqlite3.connect(":memory:", isolation_level=None)
+      cur = con.execute("CREATE TABLE data(t)")
+      cur.execute("INSERT INTO data VALUES(1)")
+
+   .. testcode:: sqlite3.cursor
+
+      for row in cur.execute("SELECT t FROM data"):
           print(row)
+
+   .. testoutput:: sqlite3.cursor
+      :hide:
+
+      (1,)
 
    .. _database cursor: https://en.wikipedia.org/wiki/Cursor_(databases)
 
@@ -934,14 +955,16 @@ Cursor objects
       :term:`iterator` yielding parameters instead of a sequence.
       Uses the same implicit transaction handling as :meth:`~Cursor.execute`.
 
-      Example::
+      Example:
 
-          data = [
-              ("row1",),
-              ("row2",),
-          ]
-          # cur is an sqlite3.Cursor object
-          cur.executemany("insert into t values(?)", data)
+      .. testcode:: sqlite3.cursor
+
+         rows = [
+             ("row1",),
+             ("row2",),
+         ]
+         # cur is an sqlite3.Cursor object
+         cur.executemany("insert into data values(?)", rows)
 
    .. method:: executescript(sql_script, /)
 
@@ -953,7 +976,9 @@ Cursor objects
 
       *sql_script* must be a :class:`string <str>`.
 
-      Example::
+      Example:
+
+      .. testcode:: sqlite3.cursor
 
          # cur is an sqlite3.Cursor object
          cur.executescript("""
@@ -1050,7 +1075,9 @@ Cursor objects
       Read-only attribute that provides the SQLite database :class:`Connection`
       belonging to the cursor.  A :class:`Cursor` object created by
       calling :meth:`con.cursor() <Connection.cursor>` will have a
-      :attr:`connection` attribute that refers to *con*::
+      :attr:`connection` attribute that refers to *con*:
+
+      .. doctest::
 
          >>> con = sqlite3.connect(":memory:")
          >>> cur = con.cursor()
@@ -1085,7 +1112,9 @@ Row objects
    .. versionchanged:: 3.5
       Added support of slicing.
 
-   Example::
+   Example:
+
+   .. doctest::
 
       >>> con = sqlite3.connect(":memory:")
       >>> con.row_factory = sqlite3.Row
@@ -1365,7 +1394,7 @@ and constructs a :class:`!Point` object from it.
    Converter functions are **always** passed a :class:`bytes` object,
    no matter the underlying SQLite data type.
 
-::
+.. testcode::
 
    def convert_point(s):
        x, y = map(float, s.split(b";"))
@@ -1393,7 +1422,7 @@ Adapter and converter recipes
 
 This section shows recipes for common adapters and converters.
 
-.. code-block::
+.. testcode::
 
    import datetime
    import sqlite3
@@ -1406,7 +1435,7 @@ This section shows recipes for common adapters and converters.
        """Adapt datetime.datetime to timezone-naive ISO 8601 date."""
        return val.isoformat()
 
-   def adapt_datetime_epoch(val)
+   def adapt_datetime_epoch(val):
        """Adapt datetime.datetime to Unix timestamp."""
        return int(val.timestamp())
 
@@ -1480,23 +1509,38 @@ How to work with SQLite URIs
 
 Some useful URI tricks include:
 
-* Open a database in read-only mode::
+* Open a database in read-only mode:
 
-    con = sqlite3.connect("file:template.db?mode=ro", uri=True)
+.. doctest::
+
+   >>> con = sqlite3.connect("file:tutorial.db?mode=ro", uri=True)
+   >>> con.execute("CREATE TABLE readonly(data)")
+   Traceback (most recent call last):
+   OperationalError: attempt to write a readonly database
 
 * Do not implicitly create a new database file if it does not already exist;
-  will raise :exc:`~sqlite3.OperationalError` if unable to create a new file::
+  will raise :exc:`~sqlite3.OperationalError` if unable to create a new file:
 
-    con = sqlite3.connect("file:nosuchdb.db?mode=rw", uri=True)
+.. doctest::
 
-* Create a shared named in-memory database::
+   >>> con = sqlite3.connect("file:nosuchdb.db?mode=rw", uri=True)
+   Traceback (most recent call last):
+   OperationalError: unable to open database file
 
-    con1 = sqlite3.connect("file:mem1?mode=memory&cache=shared", uri=True)
-    con2 = sqlite3.connect("file:mem1?mode=memory&cache=shared", uri=True)
-    con1.execute("create table t(t)")
-    con1.execute("insert into t values(28)")
-    con1.commit()
-    rows = con2.execute("select * from t").fetchall()
+
+* Create a shared named in-memory database:
+
+.. testcode::
+
+   db = "file:mem1?mode=memory&cache=shared"
+   con1 = sqlite3.connect(db, uri=True)
+   con2 = sqlite3.connect(db, uri=True)
+   with con1:
+       con1.execute("CREATE TABLE shared(data)")
+       con1.execute("INSERT INTO shared VALUES(28)")
+   res = con2.execute("SELECT data FROM shared")
+   assert res.fetchone() == (28,)
+
 
 More information about this feature, including a list of parameters,
 can be found in the `SQLite URI documentation`_.
