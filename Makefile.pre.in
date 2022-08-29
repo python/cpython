@@ -54,6 +54,8 @@ DTRACE=         @DTRACE@
 DFLAGS=         @DFLAGS@
 DTRACE_HEADERS= @DTRACE_HEADERS@
 DTRACE_OBJS=    @DTRACE_OBJS@
+DSYMUTIL=       @DSYMUTIL@
+DSYMUTIL_PATH=  @DSYMUTIL_PATH@
 
 GNULD=		@GNULD@
 
@@ -388,6 +390,7 @@ PYTHON_OBJS=	\
 		Python/getcopyright.o \
 		Python/getplatform.o \
 		Python/getversion.o \
+		Python/ceval_gil.o \
 		Python/hamt.o \
 		Python/hashtable.o \
 		Python/import.o \
@@ -575,7 +578,7 @@ LIBEXPAT_HEADERS= \
 # Default target
 all:		@DEF_MAKE_ALL_RULE@
 build_all:	check-clean-src $(BUILDPYTHON) platform sharedmods \
-		gdbhooks Programs/_testembed scripts checksharedmods
+		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil
 build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
 		python-config checksharedmods
 
@@ -903,6 +906,22 @@ sharedmods: $(SHAREDMODS) pybuilddir.txt
 # dependency on BUILDPYTHON ensures that the target is run last
 checksharedmods: sharedmods $(PYTHON_FOR_BUILD_DEPS) $(BUILDPYTHON)
 	@$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/scripts/check_extension_modules.py
+
+rundsymutil: sharedmods $(PYTHON_FOR_BUILD_DEPS) $(BUILDPYTHON)
+	@if [ ! -z $(DSYMUTIL) ] ; then \
+		echo $(DSYMUTIL_PATH) $(BUILDPYTHON); \
+		$(DSYMUTIL_PATH) $(BUILDPYTHON); \
+		if test -f $(LDLIBRARY); then \
+			echo $(DSYMUTIL_PATH) $(LDLIBRARY); \
+			$(DSYMUTIL_PATH) $(LDLIBRARY); \
+		fi; \
+		for mod in X $(SHAREDMODS); do \
+			if test $$mod != X; then \
+				echo $(DSYMUTIL_PATH) $$mod; \
+				$(DSYMUTIL_PATH) $$mod; \
+			fi; \
+		done \
+	fi
 
 Modules/Setup.local:
 	@# Create empty Setup.local when file was deleted by user
@@ -1419,8 +1438,7 @@ regen-opcode-targets:
 		$(srcdir)/Python/opcode_targets.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
 
-Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/ceval_gil.h \
-		$(srcdir)/Python/condvar.h
+Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/condvar.h
 
 Python/frozen.o: $(FROZEN_FILES_OUT)
 
@@ -1755,8 +1773,13 @@ sharedinstall: $(DESTSHARED) all
 		  if test $$i != X; then \
 		    echo $(INSTALL_SHARED) $$i $(DESTSHARED)/`basename $$i`; \
 		    $(INSTALL_SHARED) $$i $(DESTDIR)$(DESTSHARED)/`basename $$i`; \
+			if test -d "$$i.dSYM"; then \
+				echo $(DSYMUTIL_PATH) $(DESTDIR)$(DESTSHARED)/`basename $$i`; \
+				$(DSYMUTIL_PATH) $(DESTDIR)$(DESTSHARED)/`basename $$i`; \
+			fi; \
 		  fi; \
 		done
+
 
 $(DESTSHARED):
 		@for i in $(DESTDIRS); \
@@ -1818,6 +1841,23 @@ altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
 			-output $(DESTDIR)$(BINDIR)/python$(VERSION)-intel64$(EXE) \
 			$(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE); \
 	fi
+	# Install macOS debug information (if available)
+	if test -d "$(BUILDPYTHON).dSYM"; then \
+		echo $(DSYMUTIL_PATH) $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE); \
+		$(DSYMUTIL_PATH) $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE); \
+	fi
+	if test "$(PYTHONFRAMEWORKDIR)" = "no-framework" ; then \
+		if test -d "$(LDLIBRARY).dSYM"; then \
+			echo $(DSYMUTIL_PATH) $(DESTDIR)$(LIBDIR)/$(INSTSONAME); \
+			$(DSYMUTIL_PATH) $(DESTDIR)$(LIBDIR)/$(INSTSONAME); \
+		fi \
+	else \
+		if test -d "$(LDLIBRARY).dSYM"; then \
+			echo $(DSYMUTIL_PATH) $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/$(INSTSONAME); \
+      $(DSYMUTIL_PATH) $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/$(INSTSONAME); \
+		fi \
+	fi
+	
 
 bininstall: altbininstall
 	if test ! -d $(DESTDIR)$(LIBPC); then \
@@ -2392,6 +2432,7 @@ clean-retain-profile: pycremoval
 	find . -name '*.[oa]' -exec rm -f {} ';'
 	find . -name '*.s[ol]' -exec rm -f {} ';'
 	find . -name '*.so.[0-9]*.[0-9]*' -exec rm -f {} ';'
+	find . -name '*.lto' -exec rm -f {} ';'
 	find . -name '*.wasm' -exec rm -f {} ';'
 	find . -name '*.lst' -exec rm -f {} ';'
 	find build -name 'fficonfig.h' -exec rm -f {} ';' || true
@@ -2508,7 +2549,7 @@ Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
 
 # Declare targets that aren't real files
 .PHONY: all build_all build_wasm check-clean-src
-.PHONY: sharedmods checksharedmods test quicktest
+.PHONY: sharedmods checksharedmods test quicktest rundsymutil
 .PHONY: install altinstall sharedinstall bininstall altbininstall
 .PHONY: maninstall libinstall inclinstall libainstall
 .PHONY: frameworkinstall frameworkinstallframework frameworkinstallstructure
@@ -2521,6 +2562,8 @@ Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
 
 ##########################################################################
 # Module dependencies and platform-specific files
+
+MODULE_DEPS=$(PYTHON_HEADERS) Modules/config.c $(EXPORTSYMS)
 
 MODULE_CMATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_MATH_DEPS=$(srcdir)/Modules/_math.h

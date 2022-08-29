@@ -2,7 +2,7 @@ dnl ***************************************************
 dnl * Please run autoreconf -if to test your changes! *
 dnl ***************************************************
 dnl
-dnl Python's configure script requires autoconf 2.69 and autoconf-archive.
+dnl Python's configure.ac file requires autoconf 2.69 and autoconf-archive.
 dnl
 
 # Set VERSION so we only need to edit in one place (i.e., here)
@@ -10,7 +10,7 @@ m4_define(PYTHON_VERSION, 3.12)
 
 AC_PREREQ([2.69])
 
-AC_INIT([python],[PYTHON_VERSION],[https://bugs.python.org/])
+AC_INIT([python],[PYTHON_VERSION],[https://github.com/python/cpython/issues/])
 
 m4_ifdef(
     [AX_C_FLOAT_WORDS_BIGENDIAN],
@@ -1863,10 +1863,10 @@ if test "$Py_LTO" = 'true' ; then
           # Any changes made here should be reflected in the GCC+Darwin case below
           if test $Py_LTO_POLICY = default
           then
-            LTOFLAGS="-flto -Wl,-export_dynamic"
+            LTOFLAGS="-flto -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
             LTOCFLAGS="-flto"
           else
-            LTOFLAGS="-flto=${Py_LTO_POLICY} -Wl,-export_dynamic"
+            LTOFLAGS="-flto=${Py_LTO_POLICY} -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
             LTOCFLAGS="-flto=${Py_LTO_POLICY}"
           fi
           ;;
@@ -1896,7 +1896,7 @@ if test "$Py_LTO" = 'true' ; then
       LDFLAGS_NOLTO="-fno-lto"
       case $ac_sys_system in
         Darwin*)
-          LTOFLAGS="-flto -Wl,-export_dynamic"
+          LTOFLAGS="-flto -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
           LTOCFLAGS="-flto"
           ;;
         *)
@@ -3051,6 +3051,33 @@ then
 	fi
 else
 	AC_MSG_RESULT(no)
+fi
+
+# Check for --with-dsymutil
+AC_SUBST(DSYMUTIL)
+AC_SUBST(DSYMUTIL_PATH)
+DSYMUTIL=
+DSYMUTIL_PATH=
+AC_MSG_CHECKING(for --with-dsymutil)
+AC_ARG_WITH(dsymutil,
+            AS_HELP_STRING([--with-dsymutil], [link debug information into final executable with dsymutil in macOS  (default is no)]),
+[
+if test "$withval" != no
+then
+  if test "$MACHDEP" != "darwin"; then
+    AC_MSG_ERROR([dsymutil debug linking is only available in macOS.])
+  fi
+ AC_MSG_RESULT(yes);
+  DSYMUTIL='true'
+else AC_MSG_RESULT(no); DSYMUTIL=
+fi],
+[AC_MSG_RESULT(no)])
+
+if test "$DSYMUTIL"; then
+  AC_PATH_PROG(DSYMUTIL_PATH, [dsymutil], [not found])
+  if test "$DSYMUTIL_PATH" = "not found"; then
+      AC_MSG_ERROR([dsymutil command not found on \$PATH])
+  fi
 fi
 
 AC_MSG_CHECKING(for dyld)
@@ -5555,7 +5582,7 @@ AS_VAR_IF([ac_cv_gcc_asm_for_mc68881], [yes], [
 # rounding issues.  The result of this test has little meaning on non
 # IEEE 754 platforms.  On IEEE 754, test should return 1 if rounding
 # mode is round-to-nearest and double rounding issues are present, and
-# 0 otherwise.  See http://bugs.python.org/issue2937 for more info.
+# 0 otherwise.  See https://github.com/python/cpython/issues/47186 for more info.
 AC_CACHE_CHECK([for x87-style double rounding], [ac_cv_x87_double_rounding], [
 # $BASECFLAGS may affect the result
 ac_save_cc="$CC"
@@ -6282,7 +6309,7 @@ dnl TODO: detect "curses" and special cases tinfo, terminfo, or termcap
 
 AC_MSG_CHECKING([curses module flags])
 AS_VAR_IF([have_curses], [no], [
-  AC_MSG_RESULT([no])  
+  AC_MSG_RESULT([no])
 ], [
   AC_MSG_RESULT([$have_curses (CFLAGS: $CURSES_CFLAGS, LIBS: $CURSES_LIBS)])
 ])
@@ -6330,7 +6357,7 @@ PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
 AC_MSG_CHECKING([panel flags])
 AS_VAR_IF([have_panel], [no], [
-  AC_MSG_RESULT([no])  
+  AC_MSG_RESULT([no])
 ], [
   AC_MSG_RESULT([$have_panel (CFLAGS: $PANEL_CFLAGS, LIBS: $PANEL_LIBS)])
 ])

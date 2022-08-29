@@ -9,6 +9,11 @@
 
 **Source code:** :source:`Lib/json/__init__.py`
 
+.. testsetup:: *
+
+   import json
+   from json import AttrDict
+
 --------------
 
 `JSON (JavaScript Object Notation) <https://json.org>`_, specified by
@@ -531,6 +536,44 @@ Exceptions
       The column corresponding to *pos*.
 
    .. versionadded:: 3.5
+
+.. class:: AttrDict(**kwargs)
+           AttrDict(mapping, **kwargs)
+           AttrDict(iterable, **kwargs)
+
+   Subclass of :class:`dict` object that also supports attribute style dotted access.
+
+   This class is intended for use with the :attr:`object_hook` in
+   :func:`json.load` and :func:`json.loads`::
+
+   .. doctest::
+
+        >>> json_string = '{"mercury": 88, "venus": 225, "earth": 365, "mars": 687}'
+        >>> orbital_period = json.loads(json_string, object_hook=AttrDict)
+        >>> orbital_period['earth']     # Dict style lookup
+        365
+        >>> orbital_period.earth        # Attribute style lookup
+        365
+        >>> orbital_period.keys()       # All dict methods are present
+        dict_keys(['mercury', 'venus', 'earth', 'mars'])
+
+   Attribute style access only works for keys that are valid attribute
+   names.  In contrast, dictionary style access works for all keys.  For
+   example, ``d.two words`` contains a space and is not syntactically
+   valid Python, so ``d["two words"]`` should be used instead.
+
+   If a key has the same name as a dictionary method, then a dictionary
+   lookup finds the key and an attribute lookup finds the method:
+
+   .. doctest::
+
+        >>> d = AttrDict(items=50)
+        >>> d['items']                  # Lookup the key
+        50
+        >>> d.items()                   # Call the method
+        dict_items([('items', 50)])
+
+   .. versionadded:: 3.12
 
 
 Standard Compliance and Interoperability
