@@ -25,7 +25,7 @@ fly before the execution of every Python function and it will teach ``perf`` the
 relationship between this piece of code and the associated Python function using
 `perf map files`_.
 
-.. warning::
+.. note::
 
     Support for the ``perf`` profiler is only currently available for Linux on
     selected architectures. Check the output of the configure build step or
@@ -51,11 +51,11 @@ For example, consider the following script:
     if __name__ == "__main__":
         baz(1000000)
 
-We can run perf to sample CPU stack traces at 9999 Hertz:
+We can run ``perf`` to sample CPU stack traces at 9999 Hertz::
 
     $ perf record -F 9999 -g -o perf.data python my_script.py
 
-Then we can use perf report to analyze the data:
+Then we can use ``perf`` report to analyze the data:
 
 .. code-block:: shell-session
 
@@ -101,7 +101,7 @@ As you can see here, the Python functions are not shown in the output, only ``_P
 functions use the same C function to evaluate bytecode so we cannot know which Python function corresponds to which
 bytecode-evaluating function.
 
-Instead, if we run the same experiment with perf support activated we get:
+Instead, if we run the same experiment with ``perf`` support activated we get:
 
 .. code-block:: shell-session
 
@@ -147,19 +147,27 @@ Instead, if we run the same experiment with perf support activated we get:
 
 
 
-Enabling perf profiling mode
-----------------------------
+How to enable the ``perf`` profiling mode
+-----------------------------------------
 
-There are two main ways to activate the perf profiling mode. If you want it to be
-active since the start of the Python interpreter, you can use the `-Xperf` option:
+There are three ways to activate the ``perf`` profiling mode:
+using the :option:`-Xperf <-X>` command-line option,
+using the :envvar:`PYTHONPERFSUPPORT` environment variable,
+and using the :func:`sys.activate_stack_trampoline` and
+:func:`sys.deactivate_stack_trampoline` APIs.
+If you want profiling to be active when you start the Python interpreter,
+use the :option:`-Xperf <-X>` option::
 
     $ python -Xperf my_script.py
 
-You can also set the :envvar:`PYTHONPERFSUPPORT` to a nonzero value to actiavate perf
-profiling mode globally.
+If you need to activate the ``perf`` profiling mode globally,
+set the environment variable :envvar:`PYTHONPERFSUPPORT`
+to a nonzero value.
 
-There is also support for dynamically activating and deactivating the perf
-profiling mode by using the APIs in the :mod:`sys` module:
+If you need to dynamically activate and deactivate the ``perf`` profiling mode
+in response to a signal or other communication mechanisms with your process,
+use the :func:`sys.activate_stack_trampoline` and
+:func:`sys.deactivate_stack_trampoline` APIs:
 
 .. code-block:: python
 
@@ -172,27 +180,22 @@ profiling mode by using the APIs in the :mod:`sys` module:
 
     # Perf profiling is not active anymore
 
-These APIs can be handy if you want to activate/deactivate profiling mode in
-response to a signal or other communication mechanism with your process.
-
-
-
-Now we can analyze the data with ``perf report``:
+Now we can analyze the data with ``perf report``::
 
     $ perf report -g -i perf.data
 
 
 How to obtain the best results
--------------------------------
+------------------------------
 
 For the best results, Python should be compiled with
 ``CFLAGS="-fno-omit-frame-pointer -mno-omit-leaf-frame-pointer"`` as this allows
 profilers to unwind using only the frame pointer and not on DWARF debug
-information. This is because as the code that is interposed to allow perf
+information. This is because as the code that is interposed to allow ``perf``
 support is dynamically generated it doesn't have any DWARF debugging information
 available.
 
-You can check if you system has been compiled with this flag by running:
+You can check if you system has been compiled with this flag by running::
 
     $ python -m sysconfig | grep 'no-omit-frame-pointer'
 

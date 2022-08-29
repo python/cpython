@@ -1,7 +1,6 @@
-Add a new ``-X perf`` Python command line option as well as
-:func:`sys.activate_stack_trampoline` and :func:`sys.deactivate_stack_trampoline`
-function in the :mod:`sys` module that allows to set/unset the interpreter in a
-way that the Linux ``perf`` profiler can detect Python calls. The new
-:func:`sys.is_stack_trampoline_active` function allows to query the state of the
-perf trampoline. Design by Pablo Galindo. Patch by Pablo Galindo and Christian Heimes
+Add :ref:`perf_profiling` through the new command-line option
+:option:`-X perf <-X>`, as well as the new
+:func:`sys.activate_stack_trampoline`, :func:`sys.deactivate_stack_trampoline`,
+and :func:`sys.is_stack_trampoline_active` APIs.
+Design by Pablo Galindo. Patch by Pablo Galindo and Christian Heimes
 with contributions from Gregory P. Smith [Google] and Mark Shannon.
