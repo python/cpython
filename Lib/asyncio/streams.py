@@ -150,7 +150,7 @@ class FlowControlMixin(protocols.Protocol):
 
     def connection_lost(self, exc):
         self._connection_lost = True
-        # Wake up the writer if currently paused.
+        # Wake up the writer(s) if currently paused.
         if not self._paused:
             return
 
