@@ -139,9 +139,6 @@ AS_VAR_IF([cross_compiling], [maybe],
  [AC_MSG_ERROR([Cross compiling required --host=HOST-TUPLE and --build=ARCH])]
 )
 
-# pybuilddir.txt will be created by --generate-posix-vars in the Makefile
-rm -f pybuilddir.txt
-
 AC_ARG_WITH(
   [build-python],
   [AS_HELP_STRING([--with-build-python=python]PYTHON_VERSION,
@@ -524,6 +521,7 @@ AC_SUBST(FRAMEWORKUNIXTOOLSPREFIX)
 AC_SUBST(FRAMEWORKINSTALLAPPSPREFIX)
 
 AC_DEFINE_UNQUOTED(_PYTHONFRAMEWORK, "${PYTHONFRAMEWORK}", [framework name])
+
 
 # Set name for machine-dependent library files
 AC_ARG_VAR([MACHDEP], [name for machine-dependent library files])
@@ -2391,42 +2389,50 @@ yes)
                UNIVERSAL_ARCH_FLAGS="-arch ppc -arch i386"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT=""
+               MACOS_MACHINE=fat
                ;;
             64-bit)
                UNIVERSAL_ARCH_FLAGS="-arch ppc64 -arch x86_64"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT="true"
+               MACOS_MACHINE=fat64
                ;;
             all)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch ppc64 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
+               MACOS_MACHINE=universal
                ;;
             universal2)
                UNIVERSAL_ARCH_FLAGS="-arch arm64 -arch x86_64"
                LIPO_32BIT_FLAGS=""
                LIPO_INTEL64_FLAGS="-extract x86_64"
                ARCH_RUN_32BIT="true"
+               MACOS_MACHINE=universal2
                ;;
             intel)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386"
+               MACOS_MACHINE=intel
                ;;
             intel-32)
                UNIVERSAL_ARCH_FLAGS="-arch i386"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT=""
+               MACOS_MACHINE=i386
                ;;
             intel-64)
                UNIVERSAL_ARCH_FLAGS="-arch x86_64"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT="true"
+               MACOS_MACHINE=x86_64
                ;;
             3-way)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch x86_64"
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
+               MACOS_MACHINE=fat3
                ;;
             *)
                AC_MSG_ERROR([proper usage is --with-universal-arch=universal2|32-bit|64-bit|all|intel|3-way])
@@ -2442,6 +2448,26 @@ yes)
                 CFLAGS="${UNIVERSAL_ARCH_FLAGS} ${CFLAGS}"
                 LDFLAGS="${UNIVERSAL_ARCH_FLAGS} ${LDFLAGS}"
             fi
+        else
+          AC_CHECK_SIZEOF([size_t], [4])
+          AS_CASE([$host_cpu],
+            [i386], [
+              if test $ac_cv_sizeof_size_t -eq 8; then
+                MACOS_MACHINE=x86_64
+              else
+                MACOS_MACHINE=i386
+              fi
+            ],
+            [powerpc], [
+              if test $ac_cv_sizeof_size_t -eq 8; then
+                MACOS_MACHINE=ppc64
+              else
+                MACOS_MACHINE=ppc
+              fi
+            ],
+            [aarch64], [MACOS_MACHINE=arm64],
+            [MACOS_MACHINE=$host_cpu]
+          )
         fi
 
         # Calculate an appropriate deployment target for this build:
@@ -2519,6 +2545,57 @@ yes)
     esac
     ;;
 esac
+
+dnl
+dnl pybuilddir, sysconfig.py, and _sysconfigdata_*
+dnl
+
+dnl multiarch = getattr(sys.implementation, '_multiarch', '')
+dnl f'_sysconfigdata_{sys.abiflags}_{sys.platform}_{multiarch}'
+AC_MSG_CHECKING([for sysconfigdata name])
+PY_SYSCONFIGDATA_NAME="_sysconfigdata_${ABIFLAGS}_${MACHDEP}_${MULTIARCH}"
+AC_SUBST([PY_SYSCONFIGDATA_NAME])
+AC_MSG_RESULT([$PY_SYSCONFIGDATA_NAME])
+
+AC_MSG_CHECKING([for sysconfig platform])
+sysconfig_machine=$(echo $host_cpu | tr '/ ' '-_')
+AS_CASE([$ac_sys_system],
+  [AIX*], [AC_MSG_ERROR([not implemented])],
+  [Cygwin], [
+    dnl split on "-", use first part
+    PY_SYSCONFIG_PLATFORM="cygwin-$(echo $ac_sys_release | cut -d - -f 1)"
+  ],
+  [Darwin], [PY_SYSCONFIG_PLATFORM="macosx-${MACOSX_DEPLOYMENT_TARGET}-${MACOS_MACHINE}"],
+  [FreeBSD*], [
+    dnl FreeBSD's uname() returns amd64 for x86_64.
+    AS_CASE([$host_cpu],
+      [x86_64], [sysconfig_machine=amd64],
+    )
+    PY_SYSCONFIG_PLATFORM="freebsd-${ac_sys_release}-${sysconfig_machine}"
+  ],
+  [Linux*], [
+    dnl config.guess uses powerpc*, Linux uname() uses ppc*
+    sysconfig_machine=$(echo $sysconfig_machine | sed 's/^powerpc/ppc/')
+    PY_SYSCONFIG_PLATFORM="linux-${sysconfig_machine}"
+  ],
+  [SunOS*], [AC_MSG_ERROR([not implemented])],
+  [
+    dnl default
+    if test -n "$ac_sys_release"; then
+      PY_SYSCONFIG_PLATFORM="${ac_md_system}-${ac_sys_release}-${sysconfig_machine}"
+    else
+      PY_SYSCONFIG_PLATFORM="${ac_md_system}-${sysconfig_machine}"
+    fi
+  ]
+)
+AC_SUBST([PY_SYSCONFIG_PLATFORM])
+AC_MSG_RESULT([$PY_SYSCONFIG_PLATFORM])
+
+AC_MSG_CHECKING([for pybuilddir])
+PYBUILDDIR="build/lib.${PY_SYSCONFIG_PLATFORM}-PYTHON_VERSION"
+AS_VAR_IF([with_pydebug], [yes], [PYBUILDDIR="$PYBUILDDIR-pydebug"])
+AC_SUBST([PYBUILDDIR])
+AC_MSG_RESULT([$PYBUILDDIR])
 
 case "$CC" in
 *icc*)
@@ -7351,6 +7428,8 @@ AC_SUBST([MODULE_BLOCK])
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh)
 AC_CONFIG_FILES([Modules/Setup.bootstrap Modules/Setup.stdlib])
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])
+dnl generate without trailing new line
+AC_CONFIG_COMMANDS([pybuilddir.txt], [echo -n $PYBUILDDIR > pybuilddir.txt], [PYBUILDDIR=$PYBUILDDIR])
 AC_OUTPUT
 
 AC_MSG_NOTICE([creating Modules/Setup.local])
