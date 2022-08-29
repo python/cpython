@@ -1073,8 +1073,9 @@ def correlation(x, y, /, *, method='linear'):
     if method not in {'linear', 'ranked'}:
         raise ValueError(f'Unknown method: {method!r}')
     if method == 'ranked':
-        x = _rank(x)
-        y = _rank(y)
+        start = (n - 1) / -2            # Center rankings around zero
+        x = _rank(x, start=start)
+        y = _rank(y, start=start)
     xbar = fsum(x) / n
     ybar = fsum(y) / n
     sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
