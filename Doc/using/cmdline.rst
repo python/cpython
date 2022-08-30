@@ -582,6 +582,8 @@ Miscellaneous options
    .. versionadded:: 3.11
       The ``-X frozen_modules`` option.
 
+   .. versionadded:: 3.12
+      The ``-X perf`` option.
 
 
 Options you shouldn't use
