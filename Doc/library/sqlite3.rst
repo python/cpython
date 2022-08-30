@@ -1956,7 +1956,31 @@ the context manager is a no-op.
    The context manager neither implicitly opens a new transaction
    nor closes the connection.
 
-.. literalinclude:: ../includes/sqlite3/ctx_manager.py
+.. testcode::
+
+   con = sqlite3.connect(":memory:")
+   con.execute("CREATE TABLE lang(id INTEGER PRIMARY KEY, name VARCHAR UNIQUE)")
+
+   # Successful, con.commit() is called automatically afterwards
+   with con:
+       con.execute("INSERT INTO lang(name) VALUES(?)", ("Python",))
+
+   # con.rollback() is called after the with block finishes with an exception,
+   # the exception is still raised and must be caught
+   try:
+       with con:
+           con.execute("INSERT INTO lang(name) VALUES(?)", ("Python",))
+   except sqlite3.IntegrityError:
+       print("couldn't add Python twice")
+
+   # Connection object used as context manager only commits or rollbacks transactions,
+   # so the connection object should be closed manually
+   con.close()
+
+.. testoutput::
+   :hide:
+
+   couldn't add Python twice
 
 
 .. _sqlite3-uri-tricks:
