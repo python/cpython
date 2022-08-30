@@ -113,6 +113,12 @@ class AnyTests(BaseTestCase):
     def test_repr(self):
         self.assertEqual(repr(Any), 'typing.Any')
 
+        class Sub(Any): pass
+        self.assertEqual(
+            repr(Sub),
+            "<class 'test.test_typing.AnyTests.test_repr.<locals>.Sub'>",
+        )
+
     def test_errors(self):
         with self.assertRaises(TypeError):
             issubclass(42, Any)
