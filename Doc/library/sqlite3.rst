@@ -934,7 +934,43 @@ Connection objects
       .. versionchanged:: 3.10
          Added the ``sqlite3.enable_load_extension`` auditing event.
 
-      .. literalinclude:: ../includes/sqlite3/load_extension.py
+      .. testsetup:: sqlite3.loadext
+
+         import sqlite3
+         con = sqlite3.connect(":memory:")
+
+      .. testcode:: sqlite3.loadext
+         :skipif: True  # not testable at the moment
+
+         con.enable_load_extension(True)
+
+         # Load the fulltext search extension
+         con.execute("select load_extension('./fts3.so')")
+
+         # alternatively you can load the extension using an API call:
+         # con.load_extension("./fts3.so")
+
+         # disable extension loading again
+         con.enable_load_extension(False)
+
+         # example from SQLite wiki
+         con.execute("create virtual table recipe using fts3(name, ingredients)")
+         con.executescript("""
+             insert into recipe (name, ingredients) values ('broccoli stew', 'broccoli peppers cheese tomatoes');
+             insert into recipe (name, ingredients) values ('pumpkin stew', 'pumpkin onions garlic celery');
+             insert into recipe (name, ingredients) values ('broccoli pie', 'broccoli cheese onions flour');
+             insert into recipe (name, ingredients) values ('pumpkin pie', 'pumpkin sugar flour butter');
+             """)
+         for row in con.execute("select rowid, name, ingredients from recipe where name match 'pie'"):
+             print(row)
+
+         con.close()
+
+      .. testoutput::
+         :hide:
+
+         (2, 'broccoli pie', 'broccoli cheese onions flour')
+         (3, 'pumpkin pie', 'pumpkin sugar flour butter')
 
    .. method:: load_extension(path, /)
 
