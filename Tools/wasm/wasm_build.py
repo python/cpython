@@ -90,7 +90,7 @@ https://wasmtime.dev/ to install wasmtime.
 def get_emscripten_root(
     emconfig: pathlib.Path = EM_CONFIG,
 ) -> Iterable[pathlib.PurePath]:
-    """Parse EM_CONFIG file and lookup EMSCRIPTEN_ROOT and NODE_JS
+    """Parse EM_CONFIG file and lookup EMSCRIPTEN_ROOT and NODE_JS.
 
     The ".emscripten" config file is a Python snippet that uses "EM_CONFIG"
     environment variable. EMSCRIPTEN_ROOT is the "upstream/emscripten"
@@ -164,7 +164,7 @@ class Platform:
     make_wrapper: Optional[pathlib.PurePath]
     environ: dict
     check: Callable[[], None]
-    # used for build_emports()
+    # Used for build_emports().
     ports: Optional[pathlib.PurePath]
     cc: Optional[pathlib.PurePath]
 
@@ -224,8 +224,8 @@ def _check_emscripten():
     if broken is not None:
         raise ConditionError(
             os.fspath(version_txt),
-            f"Emscripten SDK {version} in '{EMSCRIPTEN_ROOT}' has known ",
-            f"bugs, see {broken}.",
+            (f"Emscripten SDK {version} in '{EMSCRIPTEN_ROOT}' has known "
+            f"bugs, see {broken}."),
         )
     if os.environ.get("PKG_CONFIG_PATH"):
         warnings.warn(
@@ -315,7 +315,7 @@ class Host(enum.Enum):
         return self in {cls.wasm32_wasi, cls.wasm64_wasi}
 
     def get_extra_paths(self) -> Iterable[pathlib.PurePath]:
-        """Host-specific os.environ["PATH"] entries
+        """Host-specific os.environ["PATH"] entries.
 
         Emscripten's Node version 14.x works well for wasm32-emscripten.
         wasm64-emscripten requires more recent v8 version, e.g. node 16.x.
@@ -332,7 +332,7 @@ class Host(enum.Enum):
 
     @property
     def emport_args(self) -> List[str]:
-        """Host-specific port args (Emscripten)"""
+        """Host-specific port args (Emscripten)."""
         cls = type(self)
         if self is cls.wasm64_emscripten:
             return ["-sMEMORY64=1"]
@@ -343,7 +343,7 @@ class Host(enum.Enum):
 
     @property
     def embuilder_args(self) -> List[str]:
-        """Host-specific embuilder args (Emscripten)"""
+        """Host-specific embuilder args (Emscripten)."""
         cls = type(self)
         if self is cls.wasm64_emscripten:
             return ["--wasm64"]
@@ -366,7 +366,7 @@ class EmscriptenTarget(enum.Enum):
 
     @property
     def emport_args(self) -> List[str]:
-        """Target-specific port args"""
+        """Target-specific port args."""
         cls = type(self)
         if self in {cls.browser_debug, cls.node_debug}:
             # some libs come in debug and non-debug builds
@@ -549,7 +549,7 @@ class BuildProfile:
             self.run_make("clean")
 
     def build_emports(self, force: bool = False):
-        """Pre-build emscripten ports"""
+        """Pre-build emscripten ports."""
         platform = self.host.platform
         if platform.ports is None or platform.cc is None:
             raise ValueError("Need ports and CC command")
@@ -565,15 +565,15 @@ class BuildProfile:
             ports_cmd.extend(self.target.emport_args)
 
         if self.dynamic_linking:
-            # trigger PIC build
+            # Trigger PIC build.
             ports_cmd.append("-sMAIN_MODULE")
             embuilder_cmd.append("--pic")
         if self.pthreads:
-            # trigger multi-threaded build
+            # Trigger multi-threaded build.
             ports_cmd.append("-sUSE_PTHREADS")
             # embuilder_cmd.append("--pthreads")
 
-        # pre-build libbz2, libsqlite3, libz, and some system libs
+        # Pre-build libbz2, libsqlite3, libz, and some system libs.
         ports_cmd.extend(["-sUSE_ZLIB", "-sUSE_BZIP2", "-sUSE_SQLITE3"])
         embuilder_cmd.extend(["build", "bzip2", "sqlite3", "zlib"])
 
