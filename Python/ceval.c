@@ -1038,7 +1038,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     py_frame.frame_obj = NULL;
     py_frame.f_code = tstate->interp->interpreter_trampoline;
     assert(tstate->interp->interpreter_trampoline != NULL);
-    py_frame.prev_instr = _PyCode_CODE(tstate->interp->interpreter_trampoline);
+    _Py_CODEUNIT *code = _PyCode_CODE(tstate->interp->interpreter_trampoline);
+    py_frame.prev_instr = code;
     py_frame.stacktop = 0;
     py_frame.owner = FRAME_OWNED_BY_CSTACK;
     py_frame.yield_offset = 0;

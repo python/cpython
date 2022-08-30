@@ -511,7 +511,7 @@ _PyCode_LineNumberFromArray(PyCodeObject *co, int index)
 }
 
 extern PyCodeObject *
-_Py_MakeTrampoline(const char *code, int codelen, const char *cname);
+_Py_MakeTrampoline(const char *code, int codelen, int stacksize, const char *cname);
 
 
 #ifdef __cplusplus

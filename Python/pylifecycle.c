@@ -797,7 +797,7 @@ pycore_init_builtins(PyThreadState *tstate)
     assert(object__getattribute__);
     interp->callable_cache.object__getattribute__ = object__getattribute__;
     interp->interpreter_trampoline = _Py_MakeTrampoline(
-        INTERPRETER_TRAMPOLINE_CODE, sizeof(INTERPRETER_TRAMPOLINE_CODE), "<interpreter trampoline>");
+        INTERPRETER_TRAMPOLINE_CODE, sizeof(INTERPRETER_TRAMPOLINE_CODE), 1, "<interpreter trampoline>");
     if (interp->interpreter_trampoline == NULL) {
         return _PyStatus_ERR("failed to create interpreter trampoline.");
     }

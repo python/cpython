@@ -2223,7 +2223,7 @@ _PyStaticCode_InternStrings(PyCodeObject *co)
 }
 
 PyCodeObject *
-_Py_MakeTrampoline(const char *code, int codelen, const char *cname)
+_Py_MakeTrampoline(const char *code, int codelen, int stacksize, const char *cname)
 {
     PyObject *name = NULL;
     PyObject *co_code = NULL;
@@ -2263,7 +2263,7 @@ _Py_MakeTrampoline(const char *code, int codelen, const char *cname)
         .posonlyargcount = 0,
         .kwonlyargcount = 0,
 
-        .stacksize = 2,
+        .stacksize = stacksize,
 
         .exceptiontable = (PyObject *)&_Py_SINGLETON(bytes_empty),
     };
