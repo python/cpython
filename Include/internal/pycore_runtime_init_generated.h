@@ -1035,6 +1035,7 @@ extern "C" {
                 INIT_ID(protocol), \
                 INIT_ID(ps1), \
                 INIT_ID(ps2), \
+                INIT_ID(query), \
                 INIT_ID(quotetabs), \
                 INIT_ID(r), \
                 INIT_ID(raw), \
@@ -2373,6 +2374,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(ps1);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(ps2);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(query);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(quotetabs);
     PyUnicode_InternInPlace(&string);
@@ -6671,6 +6674,10 @@ _PyStaticObjects_CheckRefcnt(void) {
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(ps2)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(ps2));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(query)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(query));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(quotetabs)) < _PyObject_IMMORTAL_REFCNT) {
