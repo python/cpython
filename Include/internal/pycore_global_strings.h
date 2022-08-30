@@ -370,6 +370,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(flags)
         STRUCT_FOR_ID(flush)
         STRUCT_FOR_ID(follow_symlinks)
+        STRUCT_FOR_ID(force)
         STRUCT_FOR_ID(format)
         STRUCT_FOR_ID(frequency)
         STRUCT_FOR_ID(fromlist)

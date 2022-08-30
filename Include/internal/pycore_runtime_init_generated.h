@@ -879,6 +879,7 @@ extern "C" {
                 INIT_ID(flags), \
                 INIT_ID(flush), \
                 INIT_ID(follow_symlinks), \
+                INIT_ID(force), \
                 INIT_ID(format), \
                 INIT_ID(frequency), \
                 INIT_ID(fromlist), \
@@ -2061,6 +2062,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(flush);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(follow_symlinks);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(force);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(format);
     PyUnicode_InternInPlace(&string);
@@ -6047,6 +6050,10 @@ _PyStaticObjects_CheckRefcnt(void) {
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(follow_symlinks)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(follow_symlinks));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(force)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(force));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(format)) < _PyObject_IMMORTAL_REFCNT) {
