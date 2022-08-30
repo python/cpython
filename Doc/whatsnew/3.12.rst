@@ -198,6 +198,9 @@ APIs:
 * :func:`unittest.getTestCaseNames` (:gh:`50096`)
 * :class:`webbrowser.MacOSX` (:gh:`86421`)
 
+* Deprecated the *isdst* parameter in :func:`email.utils.localtime`.
+  (Contributed by Alan Williams in :gh:`72346`.)
+
 Pending Removal in Python 3.14
 ==============================
 

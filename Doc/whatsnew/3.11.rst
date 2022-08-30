@@ -1471,13 +1471,6 @@ C API:
 * :c:type:`PyUnicodeObject`
 * :c:func:`PyUnicode_InternImmortal()`
 
-* Deprecated the *isdst* parameter in :func:`email.utils.localtime`.
-  (Contributed by Alan Williams in :gh:`72346`.)
-
-* Deprecated the *isdst* parameter in :func:`email.utils.localtime`.
-  (Contributed by Alan Williams in :gh:`72346`.)
-
-
 Removed
 =======
 
