@@ -61,14 +61,23 @@ useful than quitting the debugger upon program's exit.
    :file:`pdb.py` now accepts a ``-c`` option that executes commands as if given
    in a :file:`.pdbrc` file, see :ref:`debugger-commands`.
 
-The typical usage to break into the debugger from a running program is to
-insert ::
+.. versionadded:: 3.7
+   :file:`pdb.py` now accepts a ``-m`` option that execute modules similar to the way
+   ``python3 -m`` does. As with a script, the debugger will pause execution just
+   before the first line of the module.
+
+
+The typical usage to break into the debugger is to insert::
 
    import pdb; pdb.set_trace()
 
-at the location you want to break into the debugger.  You can then step through
-the code following this statement, and continue running without the debugger
-using the :pdbcmd:`continue` command.
+at the location you want to break into the debugger, and then run the program.
+You can then step through the code following this statement, and continue
+running without the debugger using the :pdbcmd:`continue` command.
+
+.. versionadded:: 3.7
+   The built-in :func:`breakpoint()`, when called with defaults, can be used
+   instead of ``import pdb; pdb.set_trace()``.
 
 The typical usage to inspect a crashed program is::
 
@@ -118,11 +127,15 @@ slightly different way:
    is entered.
 
 
-.. function:: set_trace()
+.. function:: set_trace(*, header=None)
 
-   Enter the debugger at the calling stack frame.  This is useful to hard-code a
-   breakpoint at a given point in a program, even if the code is not otherwise
-   being debugged (e.g. when an assertion fails).
+   Enter the debugger at the calling stack frame.  This is useful to hard-code
+   a breakpoint at a given point in a program, even if the code is not
+   otherwise being debugged (e.g. when an assertion fails).  If given,
+   *header* is printed to the console just before debugging begins.
+
+   .. versionchanged:: 3.7
+      The keyword-only argument *header*.
 
 
 .. function:: post_mortem(traceback=None)
@@ -166,6 +179,8 @@ access further features, you have to do this yourself:
    Example call to enable tracing with *skip*::
 
       import pdb; pdb.Pdb(skip=['django.*']).set_trace()
+
+   .. audit-event:: pdb.Pdb "" pdb.Pdb
 
    .. versionadded:: 3.1
       The *skip* argument.
@@ -218,17 +233,22 @@ Multiple commands may be entered on a single line, separated by ``;;``.  (A
 single ``;`` is not used as it is the separator for multiple commands in a line
 that is passed to the Python parser.)  No intelligence is applied to separating
 the commands; the input is split at the first ``;;`` pair, even if it is in the
-middle of a quoted string.
+middle of a quoted string. A workaround for strings with double semicolons
+is to use implicit string concatenation ``';'';'`` or ``";"";"``.
 
 .. index::
    pair: .pdbrc; file
    triple: debugger; configuration; file
 
 If a file :file:`.pdbrc` exists in the user's home directory or in the current
-directory, it is read in and executed as if it had been typed at the debugger
-prompt.  This is particularly useful for aliases.  If both files exist, the one
-in the home directory is read first and aliases defined there can be overridden
-by the local file.
+directory, it is read with ``'utf-8'`` encoding and executed as if it had been
+typed at the debugger prompt.  This is particularly useful for aliases.  If both
+files exist, the one in the home directory is read first and aliases defined there
+can be overridden by the local file.
+
+.. versionchanged:: 3.11
+   :file:`.pdbrc` is now read with ``'utf-8'`` encoding. Previously, it was read
+   with the system locale encoding.
 
 .. versionchanged:: 3.2
    :file:`.pdbrc` can now contain commands that continue debugging, such as
@@ -280,20 +300,20 @@ by the local file.
    Temporary breakpoint, which is removed automatically when it is first hit.
    The arguments are the same as for :pdbcmd:`break`.
 
-.. pdbcommand:: cl(ear) [filename:lineno | bpnumber [bpnumber ...]]
+.. pdbcommand:: cl(ear) [filename:lineno | bpnumber ...]
 
    With a *filename:lineno* argument, clear all the breakpoints at this line.
    With a space separated list of breakpoint numbers, clear those breakpoints.
    Without argument, clear all breaks (but first ask confirmation).
 
-.. pdbcommand:: disable [bpnumber [bpnumber ...]]
+.. pdbcommand:: disable [bpnumber ...]
 
    Disable the breakpoints given as a space separated list of breakpoint
    numbers.  Disabling a breakpoint means it cannot cause the program to stop
    execution, but unlike clearing a breakpoint, it remains in the list of
    breakpoints and can be (re-)enabled.
 
-.. pdbcommand:: enable [bpnumber [bpnumber ...]]
+.. pdbcommand:: enable [bpnumber ...]
 
    Enable the breakpoints specified.
 
@@ -322,16 +342,19 @@ by the local file.
       (com) end
       (Pdb)
 
-   To remove all commands from a breakpoint, type commands and follow it
+   To remove all commands from a breakpoint, type ``commands`` and follow it
    immediately with ``end``; that is, give no commands.
 
-   With no *bpnumber* argument, commands refers to the last breakpoint set.
+   With no *bpnumber* argument, ``commands`` refers to the last breakpoint set.
 
    You can use breakpoint commands to start your program up again.  Simply use
-   the continue command, or step, or any other command that resumes execution.
+   the :pdbcmd:`continue` command, or :pdbcmd:`step`,
+   or any other command that resumes execution.
 
-   Specifying any command resuming execution (currently continue, step, next,
-   return, jump, quit and their abbreviations) terminates the command list (as if
+   Specifying any command resuming execution
+   (currently :pdbcmd:`continue`, :pdbcmd:`step`, :pdbcmd:`next`,
+   :pdbcmd:`return`, :pdbcmd:`jump`, :pdbcmd:`quit` and their abbreviations)
+   terminates the command list (as if
    that command was immediately followed by end). This is because any time you
    resume execution (even with a simple next or step), you may encounter another
    breakpoint—which could have its own command list, leading to ambiguities about
@@ -512,6 +535,15 @@ by the local file.
 
    Quit from the debugger.  The program being executed is aborted.
 
+.. pdbcommand:: debug code
+
+   Enter a recursive debugger that steps through the code
+   argument (which is an arbitrary expression or statement to be
+   executed in the current environment).
+
+.. pdbcommand:: retval
+
+   Print the return value for the last return of a function.
 
 .. rubric:: Footnotes
 

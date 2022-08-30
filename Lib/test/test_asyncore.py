@@ -1,4 +1,3 @@
-import asyncore
 import unittest
 import select
 import os
@@ -7,19 +6,23 @@ import sys
 import time
 import errno
 import struct
+import threading
 
 from test import support
+from test.support import os_helper
+from test.support import socket_helper
+from test.support import threading_helper
+from test.support import warnings_helper
 from io import BytesIO
 
 if support.PGO:
     raise unittest.SkipTest("test is not helpful for PGO")
 
-try:
-    import threading
-except ImportError:
-    threading = None
+support.requires_working_socket(module=True)
 
-TIMEOUT = 3
+asyncore = warnings_helper.import_deprecated('asyncore')
+
+
 HAS_UNIX_SOCKETS = hasattr(socket, 'AF_UNIX')
 
 class dummysocket:
@@ -69,12 +72,11 @@ def capture_server(evt, buf, serv):
     try:
         serv.listen()
         conn, addr = serv.accept()
-    except socket.timeout:
+    except TimeoutError:
         pass
     else:
         n = 200
-        start = time.time()
-        while n > 0 and time.time() - start < 3.0:
+        for _ in support.busy_retry(support.SHORT_TIMEOUT):
             r, w, e = select.select([conn], [], [], 0.1)
             if r:
                 n -= 1
@@ -83,7 +85,8 @@ def capture_server(evt, buf, serv):
                 buf.write(data.replace(b'\n', b''))
                 if b'\n' in data:
                     break
-            time.sleep(0.01)
+            if n <= 0:
+                break
 
         conn.close()
     finally:
@@ -94,8 +97,8 @@ def bind_af_aware(sock, addr):
     """Helper function to bind a socket according to its family."""
     if HAS_UNIX_SOCKETS and sock.family == socket.AF_UNIX:
         # Make sure the path doesn't exist.
-        support.unlink(addr)
-        support.bind_unix_socket(sock, addr)
+        os_helper.unlink(addr)
+        socket_helper.bind_unix_socket(sock, addr)
     else:
         sock.bind(addr)
 
@@ -326,13 +329,12 @@ class DispatcherWithSendTests(unittest.TestCase):
     def tearDown(self):
         asyncore.close_all()
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
-    @support.reap_threads
+    @threading_helper.reap_threads
     def test_send(self):
         evt = threading.Event()
         sock = socket.socket()
         sock.settimeout(3)
-        port = support.bind_port(sock)
+        port = socket_helper.bind_port(sock)
 
         cap = BytesIO()
         args = (evt, cap, sock)
@@ -346,7 +348,7 @@ class DispatcherWithSendTests(unittest.TestCase):
             data = b"Suppose there isn't a 16-ton weight?"
             d = dispatcherwithsend_noread()
             d.create_socket()
-            d.connect((support.HOST, port))
+            d.connect((socket_helper.HOST, port))
 
             # give time for socket to connect
             time.sleep(0.1)
@@ -364,9 +366,7 @@ class DispatcherWithSendTests(unittest.TestCase):
 
             self.assertEqual(cap.getvalue(), data*2)
         finally:
-            t.join(timeout=TIMEOUT)
-            if t.is_alive():
-                self.fail("join() timed out")
+            threading_helper.join_thread(t)
 
 
 @unittest.skipUnless(hasattr(asyncore, 'file_wrapper'),
@@ -374,14 +374,14 @@ class DispatcherWithSendTests(unittest.TestCase):
 class FileWrapperTest(unittest.TestCase):
     def setUp(self):
         self.d = b"It's not dead, it's sleeping!"
-        with open(support.TESTFN, 'wb') as file:
+        with open(os_helper.TESTFN, 'wb') as file:
             file.write(self.d)
 
     def tearDown(self):
-        support.unlink(support.TESTFN)
+        os_helper.unlink(os_helper.TESTFN)
 
     def test_recv(self):
-        fd = os.open(support.TESTFN, os.O_RDONLY)
+        fd = os.open(os_helper.TESTFN, os.O_RDONLY)
         w = asyncore.file_wrapper(fd)
         os.close(fd)
 
@@ -395,20 +395,20 @@ class FileWrapperTest(unittest.TestCase):
     def test_send(self):
         d1 = b"Come again?"
         d2 = b"I want to buy some cheese."
-        fd = os.open(support.TESTFN, os.O_WRONLY | os.O_APPEND)
+        fd = os.open(os_helper.TESTFN, os.O_WRONLY | os.O_APPEND)
         w = asyncore.file_wrapper(fd)
         os.close(fd)
 
         w.write(d1)
         w.send(d2)
         w.close()
-        with open(support.TESTFN, 'rb') as file:
+        with open(os_helper.TESTFN, 'rb') as file:
             self.assertEqual(file.read(), self.d + d1 + d2)
 
     @unittest.skipUnless(hasattr(asyncore, 'file_dispatcher'),
                          'asyncore.file_dispatcher required')
     def test_dispatcher(self):
-        fd = os.open(support.TESTFN, os.O_RDONLY)
+        fd = os.open(os_helper.TESTFN, os.O_RDONLY)
         data = []
         class FileDispatcher(asyncore.file_dispatcher):
             def handle_read(self):
@@ -420,20 +420,23 @@ class FileWrapperTest(unittest.TestCase):
 
     def test_resource_warning(self):
         # Issue #11453
-        fd = os.open(support.TESTFN, os.O_RDONLY)
+        fd = os.open(os_helper.TESTFN, os.O_RDONLY)
         f = asyncore.file_wrapper(fd)
 
         os.close(fd)
-        with support.check_warnings(('', ResourceWarning)):
+        with warnings_helper.check_warnings(('', ResourceWarning)):
             f = None
             support.gc_collect()
 
     def test_close_twice(self):
-        fd = os.open(support.TESTFN, os.O_RDONLY)
+        fd = os.open(os_helper.TESTFN, os.O_RDONLY)
         f = asyncore.file_wrapper(fd)
         os.close(fd)
 
-        f.close()
+        os.close(f.fd)  # file_wrapper dupped fd
+        with self.assertRaises(OSError):
+            f.close()
+
         self.assertEqual(f.fd, -1)
         # calling close twice should not fail
         f.close()
@@ -729,14 +732,10 @@ class BaseTestAPI:
     def test_create_socket(self):
         s = asyncore.dispatcher()
         s.create_socket(self.family)
+        self.assertEqual(s.socket.type, socket.SOCK_STREAM)
         self.assertEqual(s.socket.family, self.family)
-        SOCK_NONBLOCK = getattr(socket, 'SOCK_NONBLOCK', 0)
-        sock_type = socket.SOCK_STREAM | SOCK_NONBLOCK
-        if hasattr(socket, 'SOCK_CLOEXEC'):
-            self.assertIn(s.socket.type,
-                          (sock_type | socket.SOCK_CLOEXEC, sock_type))
-        else:
-            self.assertEqual(s.socket.type, sock_type)
+        self.assertEqual(s.socket.gettimeout(), 0)
+        self.assertFalse(s.socket.get_inheritable())
 
     def test_bind(self):
         if HAS_UNIX_SOCKETS and self.family == socket.AF_UNIX:
@@ -773,8 +772,7 @@ class BaseTestAPI:
                 self.assertTrue(s.socket.getsockopt(socket.SOL_SOCKET,
                                                      socket.SO_REUSEADDR))
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
-    @support.reap_threads
+    @threading_helper.reap_threads
     def test_quick_connect(self):
         # see: http://bugs.python.org/issue10340
         if self.family not in (socket.AF_INET, getattr(socket, "AF_INET6", object())):
@@ -796,27 +794,25 @@ class BaseTestAPI:
                 except OSError:
                     pass
         finally:
-            t.join(timeout=TIMEOUT)
-            if t.is_alive():
-                self.fail("join() timed out")
+            threading_helper.join_thread(t)
 
 class TestAPI_UseIPv4Sockets(BaseTestAPI):
     family = socket.AF_INET
-    addr = (support.HOST, 0)
+    addr = (socket_helper.HOST, 0)
 
-@unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 support required')
+@unittest.skipUnless(socket_helper.IPV6_ENABLED, 'IPv6 support required')
 class TestAPI_UseIPv6Sockets(BaseTestAPI):
     family = socket.AF_INET6
-    addr = (support.HOSTv6, 0)
+    addr = (socket_helper.HOSTv6, 0)
 
 @unittest.skipUnless(HAS_UNIX_SOCKETS, 'Unix sockets required')
 class TestAPI_UseUnixSockets(BaseTestAPI):
     if HAS_UNIX_SOCKETS:
         family = socket.AF_UNIX
-    addr = support.TESTFN
+    addr = os_helper.TESTFN
 
     def tearDown(self):
-        support.unlink(self.addr)
+        os_helper.unlink(self.addr)
         BaseTestAPI.tearDown(self)
 
 class TestAPI_UseIPv4Select(TestAPI_UseIPv4Sockets, unittest.TestCase):

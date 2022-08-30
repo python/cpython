@@ -1,4 +1,5 @@
 from test import support
+from test.support import warnings_helper
 import decimal
 import enum
 import locale
@@ -7,21 +8,19 @@ import platform
 import sys
 import sysconfig
 import time
+import threading
 import unittest
-try:
-    import threading
-except ImportError:
-    threading = None
 try:
     import _testcapi
 except ImportError:
     _testcapi = None
 
+from test.support import skip_if_buggy_ucrt_strfptime
 
 # Max year is only limited by the size of C int.
 SIZEOF_INT = sysconfig.get_config_var('SIZEOF_INT') or 4
 TIME_MAXYEAR = (1 << 8 * SIZEOF_INT - 1) - 1
-TIME_MINYEAR = -TIME_MAXYEAR - 1
+TIME_MINYEAR = -TIME_MAXYEAR - 1 + 1900
 
 SEC_TO_US = 10 ** 6
 US_TO_NS = 10 ** 3
@@ -36,6 +35,12 @@ class _PyTime(enum.IntEnum):
     ROUND_CEILING = 1
     # Round to nearest with ties going to nearest even integer
     ROUND_HALF_EVEN = 2
+    # Round away from zero
+    ROUND_UP = 3
+
+# _PyTime_t is int64_t
+_PyTime_MIN = -2 ** 63
+_PyTime_MAX = 2 ** 63 - 1
 
 # Rounding modes supported by PyTime
 ROUNDING_MODES = (
@@ -43,6 +48,7 @@ ROUNDING_MODES = (
     (_PyTime.ROUND_FLOOR, decimal.ROUND_FLOOR),
     (_PyTime.ROUND_CEILING, decimal.ROUND_CEILING),
     (_PyTime.ROUND_HALF_EVEN, decimal.ROUND_HALF_EVEN),
+    (_PyTime.ROUND_UP, decimal.ROUND_UP),
 )
 
 
@@ -63,17 +69,36 @@ class TimeTestCase(unittest.TestCase):
         self.assertFalse(info.monotonic)
         self.assertTrue(info.adjustable)
 
-    def test_clock(self):
-        time.clock()
+    def test_time_ns_type(self):
+        def check_ns(sec, ns):
+            self.assertIsInstance(ns, int)
 
-        info = time.get_clock_info('clock')
-        self.assertTrue(info.monotonic)
-        self.assertFalse(info.adjustable)
+            sec_ns = int(sec * 1e9)
+            # tolerate a difference of 50 ms
+            self.assertLess((sec_ns - ns), 50 ** 6, (sec, ns))
+
+        check_ns(time.time(),
+                 time.time_ns())
+        check_ns(time.monotonic(),
+                 time.monotonic_ns())
+        check_ns(time.perf_counter(),
+                 time.perf_counter_ns())
+        check_ns(time.process_time(),
+                 time.process_time_ns())
+
+        if hasattr(time, 'thread_time'):
+            check_ns(time.thread_time(),
+                     time.thread_time_ns())
+
+        if hasattr(time, 'clock_gettime'):
+            check_ns(time.clock_gettime(time.CLOCK_REALTIME),
+                     time.clock_gettime_ns(time.CLOCK_REALTIME))
 
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')
     def test_clock_realtime(self):
-        time.clock_gettime(time.CLOCK_REALTIME)
+        t = time.clock_gettime(time.CLOCK_REALTIME)
+        self.assertIsInstance(t, float)
 
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')
@@ -83,6 +108,25 @@ class TimeTestCase(unittest.TestCase):
         a = time.clock_gettime(time.CLOCK_MONOTONIC)
         b = time.clock_gettime(time.CLOCK_MONOTONIC)
         self.assertLessEqual(a, b)
+
+    @unittest.skipUnless(hasattr(time, 'pthread_getcpuclockid'),
+                         'need time.pthread_getcpuclockid()')
+    @unittest.skipUnless(hasattr(time, 'clock_gettime'),
+                         'need time.clock_gettime()')
+    def test_pthread_getcpuclockid(self):
+        clk_id = time.pthread_getcpuclockid(threading.get_ident())
+        self.assertTrue(type(clk_id) is int)
+        # when in 32-bit mode AIX only returns the predefined constant
+        if platform.system() == "AIX" and (sys.maxsize.bit_length() <= 32):
+            self.assertEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        # Solaris returns CLOCK_THREAD_CPUTIME_ID when current thread is given
+        elif sys.platform.startswith("sunos"):
+            self.assertEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        else:
+            self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        t1 = time.clock_gettime(clk_id)
+        t2 = time.clock_gettime(clk_id)
+        self.assertLessEqual(t1, t2)
 
     @unittest.skipUnless(hasattr(time, 'clock_getres'),
                          'need time.clock_getres()')
@@ -115,6 +159,13 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(ValueError, time.sleep, -1)
         time.sleep(1.2)
 
+    def test_epoch(self):
+        # bpo-43869: Make sure that Python use the same Epoch on all platforms:
+        # January 1, 1970, 00:00:00 (UTC).
+        epoch = time.gmtime(0)
+        # Only test the date and time, ignore other gmtime() members
+        self.assertEqual(tuple(epoch)[:6], (1970, 1, 1, 0, 0, 0), epoch)
+
     def test_strftime(self):
         tt = time.gmtime(self.t)
         for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'H', 'I',
@@ -125,6 +176,10 @@ class TimeTestCase(unittest.TestCase):
                 time.strftime(format, tt)
             except ValueError:
                 self.fail('conversion specifier: %r failed.' % format)
+
+        self.assertRaises(TypeError, time.strftime, b'%S', tt)
+        # embedded null character
+        self.assertRaises(ValueError, time.strftime, '%S\0', tt)
 
     def _bounds_checking(self, func):
         # Make sure that strftime() checks the bounds of the various parts
@@ -205,10 +260,11 @@ class TimeTestCase(unittest.TestCase):
         # not change output based on its value and no test for year
         # because systems vary in their support for year 0.
         expected = "2000 01 01 00 00 00 1 001"
-        with support.check_warnings():
+        with warnings_helper.check_warnings():
             result = time.strftime("%Y %m %d %H %M %S %w %j", (2000,)+(0,)*8)
         self.assertEqual(expected, result)
 
+    @skip_if_buggy_ucrt_strfptime
     def test_strptime(self):
         # Should be able to go round-trip from strftime to strptime without
         # raising an exception.
@@ -257,6 +313,9 @@ class TimeTestCase(unittest.TestCase):
     def test_asctime_bounding_check(self):
         self._bounds_checking(time.asctime)
 
+    @unittest.skipIf(
+        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
+    )
     def test_ctime(self):
         t = time.mktime((1973, 9, 16, 1, 3, 52, 0, 0, -1))
         self.assertEqual(time.ctime(t), 'Sun Sep 16 01:03:52 1973')
@@ -380,13 +439,6 @@ class TimeTestCase(unittest.TestCase):
     def test_mktime(self):
         # Issue #1726687
         for t in (-2, -1, 0, 1):
-            if sys.platform.startswith('aix') and t == -1:
-                # Issue #11188, #19748: mktime() returns -1 on error. On Linux,
-                # the tm_wday field is used as a sentinel () to detect if -1 is
-                # really an error or a valid timestamp. On AIX, tm_wday is
-                # unchanged even on success and so cannot be used as a
-                # sentinel.
-                continue
             try:
                 tt = time.localtime(t)
             except (OverflowError, OSError):
@@ -399,8 +451,8 @@ class TimeTestCase(unittest.TestCase):
     @unittest.skipUnless(platform.libc_ver()[0] != 'glibc',
                          "disabled because of a bug in glibc. Issue #13309")
     def test_mktime_error(self):
-        # It may not be possible to reliably make mktime return error
-        # on all platfom.  This will make sure that no other exception
+        # It may not be possible to reliably make mktime return an error
+        # on all platforms.  This will make sure that no other exception
         # than OverflowError is raised for an extreme value.
         tt = time.gmtime(self.t)
         tzname = time.strftime('%Z', tt)
@@ -411,8 +463,6 @@ class TimeTestCase(unittest.TestCase):
             pass
         self.assertEqual(time.strftime('%Z', tt), tzname)
 
-    @unittest.skipUnless(hasattr(time, 'monotonic'),
-                         'need time.monotonic')
     def test_monotonic(self):
         # monotonic() should not go backward
         times = [time.monotonic() for n in range(100)]
@@ -427,8 +477,9 @@ class TimeTestCase(unittest.TestCase):
         t2 = time.monotonic()
         dt = t2 - t1
         self.assertGreater(t2, t1)
-        # Issue #20101: On some Windows machines, dt may be slightly low
-        self.assertTrue(0.45 <= dt <= 1.0, dt)
+        # bpo-20101: tolerate a difference of 50 ms because of bad timer
+        # resolution on Windows
+        self.assertTrue(0.450 <= dt)
 
         # monotonic() is a monotonic but non adjustable clock
         info = time.get_clock_info('monotonic')
@@ -438,6 +489,9 @@ class TimeTestCase(unittest.TestCase):
     def test_perf_counter(self):
         time.perf_counter()
 
+    @unittest.skipIf(
+        support.is_wasi, "process_time not available on WASI"
+    )
     def test_process_time(self):
         # process_time() should not include time spend during a sleep
         start = time.process_time()
@@ -451,8 +505,26 @@ class TimeTestCase(unittest.TestCase):
         self.assertTrue(info.monotonic)
         self.assertFalse(info.adjustable)
 
-    @unittest.skipUnless(hasattr(time, 'monotonic'),
-                         'need time.monotonic')
+    def test_thread_time(self):
+        if not hasattr(time, 'thread_time'):
+            if sys.platform.startswith(('linux', 'win')):
+                self.fail("time.thread_time() should be available on %r"
+                          % (sys.platform,))
+            else:
+                self.skipTest("need time.thread_time")
+
+        # thread_time() should not include time spend during a sleep
+        start = time.thread_time()
+        time.sleep(0.100)
+        stop = time.thread_time()
+        # use 20 ms because thread_time() has usually a resolution of 15 ms
+        # on Windows
+        self.assertLess(stop - start, 0.020)
+
+        info = time.get_clock_info('thread_time')
+        self.assertTrue(info.monotonic)
+        self.assertFalse(info.adjustable)
+
     @unittest.skipUnless(hasattr(time, 'clock_settime'),
                          'need time.clock_settime')
     def test_monotonic_settime(self):
@@ -485,22 +557,32 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(OSError, time.localtime, invalid_time_t)
         self.assertRaises(OSError, time.ctime, invalid_time_t)
 
+        # Issue #26669: check for localtime() failure
+        self.assertRaises(ValueError, time.localtime, float("nan"))
+        self.assertRaises(ValueError, time.ctime, float("nan"))
+
     def test_get_clock_info(self):
-        clocks = ['clock', 'perf_counter', 'process_time', 'time']
-        if hasattr(time, 'monotonic'):
-            clocks.append('monotonic')
+        clocks = [
+            'monotonic',
+            'perf_counter',
+            'process_time',
+            'time',
+        ]
+        if hasattr(time, 'thread_time'):
+            clocks.append('thread_time')
 
         for name in clocks:
-            info = time.get_clock_info(name)
-            #self.assertIsInstance(info, dict)
-            self.assertIsInstance(info.implementation, str)
-            self.assertNotEqual(info.implementation, '')
-            self.assertIsInstance(info.monotonic, bool)
-            self.assertIsInstance(info.resolution, float)
-            # 0.0 < resolution <= 1.0
-            self.assertGreater(info.resolution, 0.0)
-            self.assertLessEqual(info.resolution, 1.0)
-            self.assertIsInstance(info.adjustable, bool)
+            with self.subTest(name=name):
+                info = time.get_clock_info(name)
+
+                self.assertIsInstance(info.implementation, str)
+                self.assertNotEqual(info.implementation, '')
+                self.assertIsInstance(info.monotonic, bool)
+                self.assertIsInstance(info.resolution, float)
+                # 0.0 < resolution <= 1.0
+                self.assertGreater(info.resolution, 0.0)
+                self.assertLessEqual(info.resolution, 1.0)
+                self.assertIsInstance(info.adjustable, bool)
 
         self.assertRaises(ValueError, time.get_clock_info, 'xxx')
 
@@ -547,6 +629,9 @@ class _TestStrftimeYear:
     def yearstr(self, y):
         return time.strftime('%Y', (y,) + (0,) * 8)
 
+    @unittest.skipUnless(
+        support.has_strftime_extensions, "requires strftime extension"
+    )
     def test_4dyear(self):
         # Check that we can return the zero padded value.
         if self._format == '%04d':
@@ -592,9 +677,9 @@ class _Test4dYear:
         self.assertEqual(func(9999), fmt % 9999)
 
     def test_large_year(self):
-        self.assertEqual(self.yearstr(12345), '12345')
-        self.assertEqual(self.yearstr(123456789), '123456789')
-        self.assertEqual(self.yearstr(TIME_MAXYEAR), str(TIME_MAXYEAR))
+        self.assertEqual(self.yearstr(12345).lstrip('+'), '12345')
+        self.assertEqual(self.yearstr(123456789).lstrip('+'), '123456789')
+        self.assertEqual(self.yearstr(TIME_MAXYEAR).lstrip('+'), str(TIME_MAXYEAR))
         self.assertRaises(OverflowError, self.yearstr, TIME_MAXYEAR + 1)
 
     def test_negative(self):
@@ -603,12 +688,11 @@ class _Test4dYear:
         self.assertEqual(self.yearstr(-123456), '-123456')
         self.assertEqual(self.yearstr(-123456789), str(-123456789))
         self.assertEqual(self.yearstr(-1234567890), str(-1234567890))
-        self.assertEqual(self.yearstr(TIME_MINYEAR + 1900), str(TIME_MINYEAR + 1900))
-        # Issue #13312: it may return wrong value for year < TIME_MINYEAR + 1900
-        # Skip the value test, but check that no error is raised
-        self.yearstr(TIME_MINYEAR)
-        # self.assertEqual(self.yearstr(TIME_MINYEAR), str(TIME_MINYEAR))
+        self.assertEqual(self.yearstr(TIME_MINYEAR), str(TIME_MINYEAR))
+        # Modules/timemodule.c checks for underflow
         self.assertRaises(OverflowError, self.yearstr, TIME_MINYEAR - 1)
+        with self.assertRaises(OverflowError):
+            self.yearstr(-TIME_MAXYEAR - 1)
 
 
 class TestAsctime4dyear(_TestAsctimeYear, _Test4dYear, unittest.TestCase):
@@ -619,7 +703,11 @@ class TestStrftime4dyear(_TestStrftimeYear, _Test4dYear, unittest.TestCase):
 
 
 class TestPytime(unittest.TestCase):
+    @skip_if_buggy_ucrt_strfptime
     @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
+    @unittest.skipIf(
+        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
+    )
     def test_localtime_timezone(self):
 
         # Get the localtime and examine it for the offset and zone.
@@ -761,19 +849,19 @@ class CPyTimeTestCase:
         ns_timestamps = self._rounding_values(use_float)
         valid_values = convert_values(ns_timestamps)
         for time_rnd, decimal_rnd in ROUNDING_MODES :
-            context = decimal.getcontext()
-            context.rounding = decimal_rnd
+            with decimal.localcontext() as context:
+                context.rounding = decimal_rnd
 
-            for value in valid_values:
-                debug_info = {'value': value, 'rounding': decimal_rnd}
-                try:
-                    result = pytime_converter(value, time_rnd)
-                    expected = expected_func(value)
-                except Exception as exc:
-                    self.fail("Error on timestamp conversion: %s" % debug_info)
-                self.assertEqual(result,
-                                 expected,
-                                 debug_info)
+                for value in valid_values:
+                    debug_info = {'value': value, 'rounding': decimal_rnd}
+                    try:
+                        result = pytime_converter(value, time_rnd)
+                        expected = expected_func(value)
+                    except Exception:
+                        self.fail("Error on timestamp conversion: %s" % debug_info)
+                    self.assertEqual(result,
+                                     expected,
+                                     debug_info)
 
         # test overflow
         ns = self.OVERFLOW_SECONDS * SEC_TO_NS
@@ -819,6 +907,11 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
                                 lambda secs: secs * SEC_TO_NS,
                                 value_filter=c_int_filter)
 
+        # test nan
+        for time_rnd, _ in ROUNDING_MODES:
+            with self.assertRaises(TypeError):
+                PyTime_FromSeconds(float('nan'))
+
     def test_FromSecondsObject(self):
         from _testcapi import PyTime_FromSecondsObject
 
@@ -829,6 +922,11 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
         self.check_float_rounding(
             PyTime_FromSecondsObject,
             lambda ns: self.decimal_round(ns * SEC_TO_NS))
+
+        # test nan
+        for time_rnd, _ in ROUNDING_MODES:
+            with self.assertRaises(ValueError):
+                PyTime_FromSecondsObject(float('nan'), time_rnd)
 
     def test_AsSecondsDouble(self):
         from _testcapi import PyTime_AsSecondsDouble
@@ -842,6 +940,11 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
         self.check_int_rounding(lambda ns, rnd: PyTime_AsSecondsDouble(ns),
                                 float_converter,
                                 NS_TO_SEC)
+
+        # test nan
+        for time_rnd, _ in ROUNDING_MODES:
+            with self.assertRaises(TypeError):
+                PyTime_AsSecondsDouble(float('nan'))
 
     def create_decimal_converter(self, denominator):
         denom = decimal.Decimal(denominator)
@@ -887,6 +990,49 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
                                 timespec_converter,
                                 NS_TO_SEC,
                                 value_filter=self.time_t_filter)
+
+    @unittest.skipUnless(hasattr(_testcapi, 'PyTime_AsTimeval_clamp'),
+                         'need _testcapi.PyTime_AsTimeval_clamp')
+    def test_AsTimeval_clamp(self):
+        from _testcapi import PyTime_AsTimeval_clamp
+
+        if sys.platform == 'win32':
+            from _testcapi import LONG_MIN, LONG_MAX
+            tv_sec_max = LONG_MAX
+            tv_sec_min = LONG_MIN
+        else:
+            tv_sec_max = self.time_t_max
+            tv_sec_min = self.time_t_min
+
+        for t in (_PyTime_MIN, _PyTime_MAX):
+            ts = PyTime_AsTimeval_clamp(t, _PyTime.ROUND_CEILING)
+            with decimal.localcontext() as context:
+                context.rounding = decimal.ROUND_CEILING
+                us = self.decimal_round(decimal.Decimal(t) / US_TO_NS)
+            tv_sec, tv_usec = divmod(us, SEC_TO_US)
+            if tv_sec_max < tv_sec:
+                tv_sec = tv_sec_max
+                tv_usec = 0
+            elif tv_sec < tv_sec_min:
+                tv_sec = tv_sec_min
+                tv_usec = 0
+            self.assertEqual(ts, (tv_sec, tv_usec))
+
+    @unittest.skipUnless(hasattr(_testcapi, 'PyTime_AsTimespec_clamp'),
+                         'need _testcapi.PyTime_AsTimespec_clamp')
+    def test_AsTimespec_clamp(self):
+        from _testcapi import PyTime_AsTimespec_clamp
+
+        for t in (_PyTime_MIN, _PyTime_MAX):
+            ts = PyTime_AsTimespec_clamp(t)
+            tv_sec, tv_nsec = divmod(t, NS_TO_SEC)
+            if self.time_t_max < tv_sec:
+                tv_sec = self.time_t_max
+                tv_nsec = 0
+            elif tv_sec < self.time_t_min:
+                tv_sec = self.time_t_min
+                tv_nsec = 0
+            self.assertEqual(ts, (tv_sec, tv_nsec))
 
     def test_AsMilliseconds(self):
         from _testcapi import PyTime_AsMilliseconds
@@ -948,6 +1094,11 @@ class TestOldPyTime(CPyTimeTestCase, unittest.TestCase):
                                   self.create_converter(SEC_TO_US),
                                   value_filter=self.time_t_filter)
 
+         # test nan
+        for time_rnd, _ in ROUNDING_MODES:
+            with self.assertRaises(ValueError):
+                pytime_object_to_timeval(float('nan'), time_rnd)
+
     def test_object_to_timespec(self):
         from _testcapi import pytime_object_to_timespec
 
@@ -958,6 +1109,41 @@ class TestOldPyTime(CPyTimeTestCase, unittest.TestCase):
         self.check_float_rounding(pytime_object_to_timespec,
                                   self.create_converter(SEC_TO_NS),
                                   value_filter=self.time_t_filter)
+
+        # test nan
+        for time_rnd, _ in ROUNDING_MODES:
+            with self.assertRaises(ValueError):
+                pytime_object_to_timespec(float('nan'), time_rnd)
+
+@unittest.skipUnless(sys.platform == "darwin", "test weak linking on macOS")
+class TestTimeWeaklinking(unittest.TestCase):
+    # These test cases verify that weak linking support on macOS works
+    # as expected. These cases only test new behaviour introduced by weak linking,
+    # regular behaviour is tested by the normal test cases.
+    #
+    # See the section on Weak Linking in Mac/README.txt for more information.
+    def test_clock_functions(self):
+        import sysconfig
+        import platform
+
+        config_vars = sysconfig.get_config_vars()
+        var_name = "HAVE_CLOCK_GETTIME"
+        if var_name not in config_vars or not config_vars[var_name]:
+            raise unittest.SkipTest(f"{var_name} is not available")
+
+        mac_ver = tuple(int(x) for x in platform.mac_ver()[0].split("."))
+
+        clock_names = [
+            "CLOCK_MONOTONIC", "clock_gettime", "clock_gettime_ns", "clock_settime",
+            "clock_settime_ns", "clock_getres"]
+
+        if mac_ver >= (10, 12):
+            for name in clock_names:
+                self.assertTrue(hasattr(time, name), f"time.{name} is not available")
+
+        else:
+            for name in clock_names:
+                self.assertFalse(hasattr(time, name), f"time.{name} is available")
 
 
 if __name__ == "__main__":

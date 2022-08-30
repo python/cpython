@@ -3,6 +3,7 @@
 
 .. module:: aifc
    :synopsis: Read and write audio files in AIFF or AIFC format.
+   :deprecated:
 
 **Source code:** :source:`Lib/aifc.py`
 
@@ -11,18 +12,17 @@
    single: AIFF
    single: AIFF-C
 
+
+.. deprecated-removed:: 3.11 3.13
+   The :mod:`aifc` module is deprecated
+   (see :pep:`PEP 594 <594#aifc>` for details).
+
 --------------
 
 This module provides support for reading and writing AIFF and AIFF-C files.
 AIFF is Audio Interchange File Format, a format for storing digital audio
 samples in a file.  AIFF-C is a newer version of the format that includes the
 ability to compress the audio data.
-
-.. note::
-
-   Some operations may only work under IRIX; these will raise :exc:`ImportError`
-   when attempting to import the :mod:`cl` module, which is only available on
-   IRIX.
 
 Audio files have a number of parameters that describe the audio data. The
 sampling rate or frame rate is the number of times per second the sound is
@@ -51,7 +51,7 @@ Module :mod:`aifc` defines the following function:
    time how many samples you are going to write in total and use
    :meth:`writeframesraw` and :meth:`setnframes`.
    The :func:`.open` function may be used in a :keyword:`with` statement.  When
-   the :keyword:`with` block completes, the :meth:`~aifc.close` method is called.
+   the :keyword:`!with` block completes, the :meth:`~aifc.close` method is called.
 
    .. versionchanged:: 3.4
       Support for the :keyword:`with` statement was added.
@@ -214,6 +214,7 @@ number of frames must be filled in.
 
 
 .. method:: aifc.tell()
+   :noindex:
 
    Return the current write position in the output file.  Useful in combination
    with :meth:`setmark`.
@@ -238,6 +239,7 @@ number of frames must be filled in.
 
 
 .. method:: aifc.close()
+   :noindex:
 
    Close the AIFF file.  The header of the file is updated to reflect the actual
    size of the audio data. After calling this method, the object can no longer be

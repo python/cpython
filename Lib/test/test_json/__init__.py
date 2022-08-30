@@ -4,10 +4,12 @@ import doctest
 import unittest
 
 from test import support
+from test.support import import_helper
+
 
 # import json with and without accelerations
-cjson = support.import_fresh_module('json', fresh=['_json'])
-pyjson = support.import_fresh_module('json', blocked=['_json'])
+cjson = import_helper.import_fresh_module('json', fresh=['_json'])
+pyjson = import_helper.import_fresh_module('json', blocked=['_json'])
 # JSONDecodeError is cached inside the _json module
 cjson.JSONDecodeError = cjson.decoder.JSONDecodeError = json.JSONDecodeError
 
@@ -16,6 +18,7 @@ class PyTest(unittest.TestCase):
     json = pyjson
     loads = staticmethod(pyjson.loads)
     dumps = staticmethod(pyjson.dumps)
+    AttrDict = pyjson.AttrDict
     JSONDecodeError = staticmethod(pyjson.JSONDecodeError)
 
 @unittest.skipUnless(cjson, 'requires _json')

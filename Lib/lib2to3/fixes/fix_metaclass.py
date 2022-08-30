@@ -1,6 +1,6 @@
 """Fixer for __metaclass__ = X -> (metaclass=X) methods.
 
-   The various forms of classef (inherits nothing, inherits once, inherints
+   The various forms of classef (inherits nothing, inherits once, inherits
    many) don't parse the same in the CST so we look at ALL classes for
    a __metaclass__ and if we find one normalize the inherits to all be
    an arglist.
@@ -51,7 +51,7 @@ def fixup_parse_tree(cls_node):
             # already in the preferred format, do nothing
             return
 
-    # !%@#! oneliners have no suite node, we have to fake one up
+    # !%@#! one-liners have no suite node, we have to fake one up
     for i, node in enumerate(cls_node.children):
         if node.type == token.COLON:
             break

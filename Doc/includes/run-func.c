@@ -1,9 +1,10 @@
+#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
 int
 main(int argc, char *argv[])
 {
-    PyObject *pName, *pModule, *pDict, *pFunc;
+    PyObject *pName, *pModule, *pFunc;
     PyObject *pArgs, *pValue;
     int i;
 

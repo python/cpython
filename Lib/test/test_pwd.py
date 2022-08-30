@@ -1,22 +1,14 @@
 import sys
 import unittest
-from test import support
+from test.support import import_helper
 
-pwd = support.import_module('pwd')
+pwd = import_helper.import_module('pwd')
 
-def _getpwall():
-    # Android does not have getpwall.
-    if hasattr(pwd, 'getpwall'):
-        return pwd.getpwall()
-    elif hasattr(pwd, 'getpwuid'):
-        return [pwd.getpwuid(0)]
-    else:
-        return []
-
+@unittest.skipUnless(hasattr(pwd, 'getpwall'), 'Does not have getpwall()')
 class PwdTest(unittest.TestCase):
 
     def test_values(self):
-        entries = _getpwall()
+        entries = pwd.getpwall()
 
         for e in entries:
             self.assertEqual(len(e), 7)
@@ -29,7 +21,7 @@ class PwdTest(unittest.TestCase):
             self.assertEqual(e[3], e.pw_gid)
             self.assertIsInstance(e.pw_gid, int)
             self.assertEqual(e[4], e.pw_gecos)
-            self.assertIsInstance(e.pw_gecos, str)
+            self.assertIn(type(e.pw_gecos), (str, type(None)))
             self.assertEqual(e[5], e.pw_dir)
             self.assertIsInstance(e.pw_dir, str)
             self.assertEqual(e[6], e.pw_shell)
@@ -42,7 +34,7 @@ class PwdTest(unittest.TestCase):
             # and check afterwards (done in test_values_extended)
 
     def test_values_extended(self):
-        entries = _getpwall()
+        entries = pwd.getpwall()
         entriesbyname = {}
         entriesbyuid = {}
 
@@ -66,19 +58,20 @@ class PwdTest(unittest.TestCase):
         self.assertRaises(TypeError, pwd.getpwuid, 3.14)
         self.assertRaises(TypeError, pwd.getpwnam)
         self.assertRaises(TypeError, pwd.getpwnam, 42)
-        if hasattr(pwd, 'getpwall'):
-            self.assertRaises(TypeError, pwd.getpwall, 42)
+        self.assertRaises(TypeError, pwd.getpwall, 42)
+        # embedded null character
+        self.assertRaisesRegex(ValueError, 'null', pwd.getpwnam, 'a\x00b')
 
         # try to get some errors
         bynames = {}
         byuids = {}
-        for (n, p, u, g, gecos, d, s) in _getpwall():
+        for (n, p, u, g, gecos, d, s) in pwd.getpwall():
             bynames[n] = u
             byuids[u] = n
 
         allnames = list(bynames.keys())
         namei = 0
-        fakename = allnames[namei]
+        fakename = allnames[namei] if allnames else "invaliduser"
         while fakename in bynames:
             chars = list(fakename)
             for i in range(len(chars)):
@@ -106,17 +99,13 @@ class PwdTest(unittest.TestCase):
         # loop, say), pwd.getpwuid() might still be able to find data for that
         # uid. Using sys.maxint may provoke the same problems, but hopefully
         # it will be a more repeatable failure.
-        # Android accepts a very large span of uids including sys.maxsize and
-        # -1; it raises KeyError with 1 or 2 for example.
         fakeuid = sys.maxsize
         self.assertNotIn(fakeuid, byuids)
-        if not support.is_android:
-            self.assertRaises(KeyError, pwd.getpwuid, fakeuid)
+        self.assertRaises(KeyError, pwd.getpwuid, fakeuid)
 
         # -1 shouldn't be a valid uid because it has a special meaning in many
         # uid-related functions
-        if not support.is_android:
-            self.assertRaises(KeyError, pwd.getpwuid, -1)
+        self.assertRaises(KeyError, pwd.getpwuid, -1)
         # should be out of uid_t range
         self.assertRaises(KeyError, pwd.getpwuid, 2**128)
         self.assertRaises(KeyError, pwd.getpwuid, -2**128)

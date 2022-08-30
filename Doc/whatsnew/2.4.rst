@@ -120,7 +120,7 @@ having the entire data set in memory at one time.  List comprehensions don't fit
 into this picture very well because they produce a Python list object containing
 all of the items.  This unavoidably pulls all of the objects into memory, which
 can be a problem if your data set is very large.  When trying to write a
-functionally-styled program, it would be natural to write something like::
+functionally styled program, it would be natural to write something like::
 
    links = [link for link in get_all_links() if not link.followed]
    for link in links:
@@ -918,7 +918,7 @@ Here are all of the changes that Python 2.4 makes to the core Python language.
 
   (Contributed by Raymond Hettinger.)
 
-* Encountering a failure while importing a module no longer leaves a partially-initialized
+* Encountering a failure while importing a module no longer leaves a partially initialized
   module object in ``sys.modules``.  The incomplete module object left
   behind would fool further imports of the same module into succeeding, leading to
   confusing errors.   (Fixed by Tim Peters.)
@@ -998,7 +998,7 @@ complete list of changes, or look through the CVS logs for all the details.
   that lets you perform a limited number of passes through the polling loop.  The
   default is still to loop forever.
 
-* The :mod:`base64` module now has more complete RFC 3548 support for Base64,
+* The :mod:`base64` module now has more complete :rfc:`3548` support for Base64,
   Base32, and Base16 encoding and decoding, including optional case folding and
   optional alternative alphabets. (Contributed by Barry Warsaw.)
 
@@ -1541,7 +1541,7 @@ code:
 * The :mod:`tarfile` module now generates GNU-format tar files by default.
 
 * Encountering a failure while importing a module no longer leaves a
-  partially-initialized module object in ``sys.modules``.
+  partially initialized module object in ``sys.modules``.
 
 * :const:`None` is now a constant; code that binds a new value to  the name
   ``None`` is now a syntax error.

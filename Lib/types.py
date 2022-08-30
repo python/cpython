@@ -15,6 +15,13 @@ CodeType = type(_f.__code__)
 MappingProxyType = type(type.__dict__)
 SimpleNamespace = type(sys.implementation)
 
+def _cell_factory():
+    a = 1
+    def f():
+        nonlocal a
+    return f.__closure__[0]
+CellType = type(_cell_factory())
+
 def _g():
     yield 1
 GeneratorType = type(_g())
@@ -39,31 +46,54 @@ BuiltinMethodType = type([].append)     # Same as BuiltinFunctionType
 WrapperDescriptorType = type(object.__init__)
 MethodWrapperType = type(object().__str__)
 MethodDescriptorType = type(str.join)
+ClassMethodDescriptorType = type(dict.__dict__['fromkeys'])
 
 ModuleType = type(sys)
 
 try:
     raise TypeError
-except TypeError:
-    tb = sys.exc_info()[2]
-    TracebackType = type(tb)
-    FrameType = type(tb.tb_frame)
-    tb = None; del tb
+except TypeError as exc:
+    TracebackType = type(exc.__traceback__)
+    FrameType = type(exc.__traceback__.tb_frame)
 
 # For Jython, the following two types are identical
 GetSetDescriptorType = type(FunctionType.__code__)
 MemberDescriptorType = type(FunctionType.__globals__)
 
-del sys, _f, _g, _C, _c,                           # Not for export
+del sys, _f, _g, _C, _c, _ag  # Not for export
 
 
 # Provide a PEP 3115 compliant mechanism for class creation
 def new_class(name, bases=(), kwds=None, exec_body=None):
     """Create a class object dynamically using the appropriate metaclass."""
-    meta, ns, kwds = prepare_class(name, bases, kwds)
+    resolved_bases = resolve_bases(bases)
+    meta, ns, kwds = prepare_class(name, resolved_bases, kwds)
     if exec_body is not None:
         exec_body(ns)
-    return meta(name, bases, ns, **kwds)
+    if resolved_bases is not bases:
+        ns['__orig_bases__'] = bases
+    return meta(name, resolved_bases, ns, **kwds)
+
+def resolve_bases(bases):
+    """Resolve MRO entries dynamically as specified by PEP 560."""
+    new_bases = list(bases)
+    updated = False
+    shift = 0
+    for i, base in enumerate(bases):
+        if isinstance(base, type):
+            continue
+        if not hasattr(base, "__mro_entries__"):
+            continue
+        new_base = base.__mro_entries__(bases)
+        updated = True
+        if not isinstance(new_base, tuple):
+            raise TypeError("__mro_entries__ must return a tuple")
+        else:
+            new_bases[i+shift:i+shift+1] = new_base
+            shift += len(new_base) - 1
+    if not updated:
+        return bases
+    return tuple(new_bases)
 
 def prepare_class(name, bases=(), kwds=None):
     """Call the __prepare__ method of the appropriate metaclass.
@@ -123,7 +153,12 @@ class DynamicClassAttribute:
     class's __getattr__ method; this is done by raising AttributeError.
 
     This allows one to have properties active on an instance, and have virtual
-    attributes on the class with the same name (see Enum for an example).
+    attributes on the class with the same name.  (Enum used this between Python
+    versions 3.4 - 3.9 .)
+
+    Subclass from this to use a different method of accessing virtual attributes
+    and still be treated properly by the inspect module. (Enum uses this since
+    Python 3.10 .)
 
     """
     def __init__(self, fget=None, fset=None, fdel=None, doc=None):
@@ -171,9 +206,6 @@ class DynamicClassAttribute:
         result.overwrite_doc = self.overwrite_doc
         return result
 
-
-import functools as _functools
-import collections.abc as _collections_abc
 
 class _GeneratorWrapper:
     # TODO: Implement this in C.
@@ -233,21 +265,18 @@ def coroutine(func):
         if co_flags & 0x20:
             # TODO: Implement this in C.
             co = func.__code__
-            func.__code__ = CodeType(
-                co.co_argcount, co.co_kwonlyargcount, co.co_nlocals,
-                co.co_stacksize,
-                co.co_flags | 0x100,  # 0x100 == CO_ITERABLE_COROUTINE
-                co.co_code,
-                co.co_consts, co.co_names, co.co_varnames, co.co_filename,
-                co.co_name, co.co_firstlineno, co.co_lnotab, co.co_freevars,
-                co.co_cellvars)
+            # 0x100 == CO_ITERABLE_COROUTINE
+            func.__code__ = co.replace(co_flags=co.co_flags | 0x100)
             return func
 
     # The following code is primarily to support functions that
     # return generator-like objects (for instance generators
     # compiled with Cython).
 
-    @_functools.wraps(func)
+    # Delay functools and _collections_abc import for speeding up types import.
+    import functools
+    import _collections_abc
+    @functools.wraps(func)
     def wrapped(*args, **kwargs):
         coro = func(*args, **kwargs)
         if (coro.__class__ is CoroutineType or
@@ -266,5 +295,11 @@ def coroutine(func):
 
     return wrapped
 
+GenericAlias = type(list[int])
+UnionType = type(int | str)
+
+EllipsisType = type(Ellipsis)
+NoneType = type(None)
+NotImplementedType = type(NotImplemented)
 
 __all__ = [n for n in globals() if n[:1] != '_']

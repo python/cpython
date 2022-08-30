@@ -140,8 +140,11 @@ __all__ = [
     # Limits for the C version for compatibility
     'MAX_PREC',  'MAX_EMAX', 'MIN_EMIN', 'MIN_ETINY',
 
-    # C version: compile time choice that enables the thread local context
-    'HAVE_THREADS'
+    # C version: compile time choice that enables the thread local context (deprecated, now always true)
+    'HAVE_THREADS',
+
+    # C version: compile time choice that enables the coroutine local context
+    'HAVE_CONTEXTVAR'
 ]
 
 __xname__ = __name__    # sys.modules lookup (--without-threads)
@@ -172,6 +175,7 @@ ROUND_05UP = 'ROUND_05UP'
 
 # Compatibility with the C version
 HAVE_THREADS = True
+HAVE_CONTEXTVAR = True
 if sys.maxsize == 2**63-1:
     MAX_PREC = 999999999999999999
     MAX_EMAX = 999999999999999999
@@ -431,82 +435,40 @@ _rounding_modes = (ROUND_DOWN, ROUND_HALF_UP, ROUND_HALF_EVEN, ROUND_CEILING,
 ##### Context Functions ##################################################
 
 # The getcontext() and setcontext() function manage access to a thread-local
-# current context.  Py2.4 offers direct support for thread locals.  If that
-# is not available, use threading.current_thread() which is slower but will
-# work for older Pythons.  If threads are not part of the build, create a
-# mock threading object with threading.local() returning the module namespace.
+# current context.
 
-try:
-    import threading
-except ImportError:
-    # Python was compiled without threads; create a mock object instead
-    class MockThreading(object):
-        def local(self, sys=sys):
-            return sys.modules[__xname__]
-    threading = MockThreading()
-    del MockThreading
+import contextvars
 
-try:
-    threading.local
+_current_context_var = contextvars.ContextVar('decimal_context')
 
-except AttributeError:
+_context_attributes = frozenset(
+    ['prec', 'Emin', 'Emax', 'capitals', 'clamp', 'rounding', 'flags', 'traps']
+)
 
-    # To fix reloading, force it to create a new context
-    # Old contexts have different exceptions in their dicts, making problems.
-    if hasattr(threading.current_thread(), '__decimal_context__'):
-        del threading.current_thread().__decimal_context__
+def getcontext():
+    """Returns this thread's context.
 
-    def setcontext(context):
-        """Set this thread's context to context."""
-        if context in (DefaultContext, BasicContext, ExtendedContext):
-            context = context.copy()
-            context.clear_flags()
-        threading.current_thread().__decimal_context__ = context
+    If this thread does not yet have a context, returns
+    a new context and sets this thread's context.
+    New contexts are copies of DefaultContext.
+    """
+    try:
+        return _current_context_var.get()
+    except LookupError:
+        context = Context()
+        _current_context_var.set(context)
+        return context
 
-    def getcontext():
-        """Returns this thread's context.
+def setcontext(context):
+    """Set this thread's context to context."""
+    if context in (DefaultContext, BasicContext, ExtendedContext):
+        context = context.copy()
+        context.clear_flags()
+    _current_context_var.set(context)
 
-        If this thread does not yet have a context, returns
-        a new context and sets this thread's context.
-        New contexts are copies of DefaultContext.
-        """
-        try:
-            return threading.current_thread().__decimal_context__
-        except AttributeError:
-            context = Context()
-            threading.current_thread().__decimal_context__ = context
-            return context
+del contextvars        # Don't contaminate the namespace
 
-else:
-
-    local = threading.local()
-    if hasattr(local, '__decimal_context__'):
-        del local.__decimal_context__
-
-    def getcontext(_local=local):
-        """Returns this thread's context.
-
-        If this thread does not yet have a context, returns
-        a new context and sets this thread's context.
-        New contexts are copies of DefaultContext.
-        """
-        try:
-            return _local.__decimal_context__
-        except AttributeError:
-            context = Context()
-            _local.__decimal_context__ = context
-            return context
-
-    def setcontext(context, _local=local):
-        """Set this thread's context to context."""
-        if context in (DefaultContext, BasicContext, ExtendedContext):
-            context = context.copy()
-            context.clear_flags()
-        _local.__decimal_context__ = context
-
-    del threading, local        # Don't contaminate the namespace
-
-def localcontext(ctx=None):
+def localcontext(ctx=None, **kwargs):
     """Return a context manager for a copy of the supplied context
 
     Uses a copy of the current context if no context is specified
@@ -542,8 +504,14 @@ def localcontext(ctx=None):
     >>> print(getcontext().prec)
     28
     """
-    if ctx is None: ctx = getcontext()
-    return _ContextManager(ctx)
+    if ctx is None:
+        ctx = getcontext()
+    ctx_manager = _ContextManager(ctx)
+    for key, value in kwargs.items():
+        if key not in _context_attributes:
+            raise TypeError(f"'{key}' is an invalid keyword argument for this function")
+        setattr(ctx_manager.new_context, key, value)
+    return ctx_manager
 
 
 ##### Decimal class #######################################################
@@ -993,7 +961,7 @@ class Decimal(object):
             if self.is_snan():
                 raise TypeError('Cannot hash a signaling NaN value.')
             elif self.is_nan():
-                return _PyHASH_NAN
+                return object.__hash__(self)
             else:
                 if self._sign:
                     return -_PyHASH_INF
@@ -2067,7 +2035,7 @@ class Decimal(object):
         if not other and not self:
             return context._raise_error(InvalidOperation,
                                         'at least one of pow() 1st argument '
-                                        'and 2nd argument must be nonzero ;'
+                                        'and 2nd argument must be nonzero; '
                                         '0**0 is not defined')
 
         # compute sign of result
@@ -2272,7 +2240,7 @@ class Decimal(object):
             if xe != 0 and len(str(abs(yc*xe))) <= -ye:
                 return None
             xc_bits = _nbits(xc)
-            if xc != 1 and len(str(abs(yc)*xc_bits)) <= -ye:
+            if len(str(abs(yc)*xc_bits)) <= -ye:
                 return None
             m, n = yc, 10**(-ye)
             while m % 2 == n % 2 == 0:
@@ -2285,7 +2253,7 @@ class Decimal(object):
         # compute nth root of xc*10**xe
         if n > 1:
             # if 1 < xc < 2**n then xc isn't an nth power
-            if xc != 1 and xc_bits <= n:
+            if xc_bits <= n:
                 return None
 
             xe, rem = divmod(xe, n)
@@ -3837,6 +3805,10 @@ class Decimal(object):
         # represented in fixed point; rescale them to 0e0.
         if not self and self._exp > 0 and spec['type'] in 'fF%':
             self = self._rescale(0, rounding)
+        if not self and spec['no_neg_0'] and self._sign:
+            adjusted_sign = 0
+        else:
+            adjusted_sign = self._sign
 
         # figure out placement of the decimal point
         leftdigits = self._exp + len(self._int)
@@ -3867,7 +3839,7 @@ class Decimal(object):
 
         # done with the decimal-specific stuff;  hand over the rest
         # of the formatting to the _format_number function
-        return _format_number(self._sign, intpart, fracpart, exp, spec)
+        return _format_number(adjusted_sign, intpart, fracpart, exp, spec)
 
 def _dec_from_triple(sign, coefficient, exponent, special=False):
     """Create a decimal instance directly, without any validation,
@@ -5677,8 +5649,6 @@ class _WorkRep(object):
     def __repr__(self):
         return "(%r, %r, %r)" % (self.sign, self.int, self.exp)
 
-    __str__ = __repr__
-
 
 
 def _normalize(op1, op2, prec = 0):
@@ -6187,7 +6157,7 @@ _exact_half = re.compile('50*$').match
 #
 # A format specifier for Decimal looks like:
 #
-#   [[fill]align][sign][#][0][minimumwidth][,][.precision][type]
+#   [[fill]align][sign][z][#][0][minimumwidth][,][.precision][type]
 
 _parse_format_specifier_regex = re.compile(r"""\A
 (?:
@@ -6195,6 +6165,7 @@ _parse_format_specifier_regex = re.compile(r"""\A
    (?P<align>[<>=^])
 )?
 (?P<sign>[-+ ])?
+(?P<no_neg_0>z)?
 (?P<alt>\#)?
 (?P<zeropad>0)?
 (?P<minimumwidth>(?!0)\d+)?

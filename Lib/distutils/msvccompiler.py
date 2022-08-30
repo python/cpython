@@ -13,7 +13,7 @@ from distutils.errors import \
      DistutilsExecError, DistutilsPlatformError, \
      CompileError, LibError, LinkError
 from distutils.ccompiler import \
-     CCompiler, gen_preprocess_options, gen_lib_options
+     CCompiler, gen_lib_options
 from distutils import log
 
 _can_read_reg = False
@@ -44,7 +44,6 @@ except ImportError:
                  "necessary compiler setting\n"
                  "Make sure that Python modules winreg, "
                  "win32api or win32con are installed.")
-        pass
 
 if _can_read_reg:
     HKEYS = (hkey_mod.HKEY_USERS,
@@ -172,7 +171,7 @@ def get_build_version():
 def get_build_architecture():
     """Return the processor architecture.
 
-    Possible results are "Intel", "Itanium", or "AMD64".
+    Possible results are "Intel" or "AMD64".
     """
 
     prefix = " bit ("
