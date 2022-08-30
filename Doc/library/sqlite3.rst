@@ -1712,7 +1712,26 @@ This can be implemented by adding a ``__conform__(self, protocol)``
 method which returns the adapted value.
 The object passed to *protocol* will be of type :class:`PrepareProtocol`.
 
-.. literalinclude:: ../includes/sqlite3/adapter_point_1.py
+.. testcode::
+
+   class Point:
+       def __init__(self, x, y):
+           self.x, self.y = x, y
+
+       def __conform__(self, protocol):
+           if protocol is sqlite3.PrepareProtocol:
+               return f"{self.x};{self.y}"
+
+   con = sqlite3.connect(":memory:")
+   cur = con.cursor()
+
+   cur.execute("select ?", (Point(4.0, -3.2),))
+   print(cur.fetchone()[0])
+
+.. testoutput::
+   :hide:
+   
+   4.0;-3.2
 
 
 How to register adapter callables
@@ -1722,7 +1741,27 @@ The other possibility is to create a function that converts the Python object
 to an SQLite-compatible type.
 This function can then be registered using :func:`register_adapter`.
 
-.. literalinclude:: ../includes/sqlite3/adapter_point_2.py
+.. testcode::
+
+   class Point:
+       def __init__(self, x, y):
+           self.x, self.y = x, y
+
+   def adapt_point(point):
+       return f"{point.x};{point.y}"
+
+   sqlite3.register_adapter(Point, adapt_point)
+
+   con = sqlite3.connect(":memory:")
+   cur = con.cursor()
+
+   cur.execute("select ?", (Point(1.0, 2.5),))
+   print(cur.fetchone()[0])
+
+.. testoutput::
+   :hide:
+
+   1.0;2.5
 
 
 .. _sqlite3-converters:
