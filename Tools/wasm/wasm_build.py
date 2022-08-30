@@ -25,9 +25,11 @@ import shlex
 import shutil
 import subprocess
 import sysconfig
+import tempfile
+import warnings
 
 # for Python 3.8
-from typing import Any, Dict, Callable, Iterable, List, Optional, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 SRCDIR = pathlib.Path(__file__).parent.parent.parent.absolute()
 WASMTOOLS = SRCDIR / "Tools" / "wasm"
@@ -45,6 +47,11 @@ WASI_SDK_PATH = pathlib.Path(os.environ.get("WASI_SDK_PATH", "/opt/wasi-sdk"))
 EM_CONFIG = pathlib.Path(os.environ.setdefault("EM_CONFIG", "/opt/emsdk/.emscripten"))
 # 3.1.16 has broken utime()
 EMSDK_MIN_VERSION = (3, 1, 17)
+EMSDK_BROKEN_VERSION = {
+    (3, 1, 14): "https://github.com/emscripten-core/emscripten/issues/17338",
+    (3, 1, 16): "https://github.com/emscripten-core/emscripten/issues/17393",
+    (3, 1, 20): "https://github.com/emscripten-core/emscripten/issues/17720",
+}
 _MISSING = pathlib.PurePath("MISSING")
 
 # WASM_WEBSERVER = WASMTOOLS / "wasmwebserver.py"
@@ -80,24 +87,28 @@ https://wasmtime.dev/ to install wasmtime.
 """
 
 
-def get_emscripten_root(emconfig: pathlib.Path = EM_CONFIG) -> pathlib.PurePath:
-    """Parse EM_CONFIG file and lookup EMSCRIPTEN_ROOT
+def parse_emconfig(
+    emconfig: pathlib.Path = EM_CONFIG,
+) -> Tuple[pathlib.PurePath, pathlib.PurePath]:
+    """Parse EM_CONFIG file and lookup EMSCRIPTEN_ROOT and NODE_JS.
 
     The ".emscripten" config file is a Python snippet that uses "EM_CONFIG"
     environment variable. EMSCRIPTEN_ROOT is the "upstream/emscripten"
     subdirectory with tools like "emconfigure".
     """
     if not emconfig.exists():
-        return _MISSING
+        return _MISSING, _MISSING
     with open(emconfig, encoding="utf-8") as f:
         code = f.read()
     # EM_CONFIG file is a Python snippet
     local: Dict[str, Any] = {}
     exec(code, globals(), local)
-    return pathlib.Path(local["EMSCRIPTEN_ROOT"])
+    emscripten_root = pathlib.Path(local["EMSCRIPTEN_ROOT"])
+    node_js = pathlib.Path(local["NODE_JS"])
+    return emscripten_root, node_js
 
 
-EMSCRIPTEN_ROOT = get_emscripten_root()
+EMSCRIPTEN_ROOT, NODE_JS = parse_emconfig()
 
 
 def read_python_version(configure: pathlib.Path = CONFIGURE) -> str:
@@ -153,6 +164,9 @@ class Platform:
     make_wrapper: Optional[pathlib.PurePath]
     environ: dict
     check: Callable[[], None]
+    # Used for build_emports().
+    ports: Optional[pathlib.PurePath]
+    cc: Optional[pathlib.PurePath]
 
     def getenv(self, profile: "BuildProfile") -> dict:
         return self.environ.copy()
@@ -174,6 +188,8 @@ NATIVE = Platform(
     pythonexe=sysconfig.get_config_var("BUILDPYTHON") or "python",
     config_site=None,
     configure_wrapper=None,
+    ports=None,
+    cc=None,
     make_wrapper=None,
     environ={},
     check=_check_clean_src,
@@ -198,11 +214,25 @@ def _check_emscripten():
         version = version[:-4]
     version_tuple = tuple(int(v) for v in version.split("."))
     if version_tuple < EMSDK_MIN_VERSION:
-        raise MissingDependency(
+        raise ConditionError(
             os.fspath(version_txt),
             f"Emscripten SDK {version} in '{EMSCRIPTEN_ROOT}' is older than "
             "minimum required version "
             f"{'.'.join(str(v) for v in EMSDK_MIN_VERSION)}.",
+        )
+    broken = EMSDK_BROKEN_VERSION.get(version_tuple)
+    if broken is not None:
+        raise ConditionError(
+            os.fspath(version_txt),
+            (
+                f"Emscripten SDK {version} in '{EMSCRIPTEN_ROOT}' has known "
+                f"bugs, see {broken}."
+            ),
+        )
+    if os.environ.get("PKG_CONFIG_PATH"):
+        warnings.warn(
+            "PKG_CONFIG_PATH is set and not empty. emconfigure overrides "
+            "this environment variable. Use EM_PKG_CONFIG_PATH instead."
         )
     _check_clean_src()
 
@@ -212,11 +242,14 @@ EMSCRIPTEN = Platform(
     pythonexe="python.js",
     config_site=WASMTOOLS / "config.site-wasm32-emscripten",
     configure_wrapper=EMSCRIPTEN_ROOT / "emconfigure",
+    ports=EMSCRIPTEN_ROOT / "embuilder",
+    cc=EMSCRIPTEN_ROOT / "emcc",
     make_wrapper=EMSCRIPTEN_ROOT / "emmake",
     environ={
         # workaround for https://github.com/emscripten-core/emscripten/issues/17635
         "TZ": "UTC",
         "EM_COMPILER_WRAPPER": "ccache" if HAS_CCACHE else None,
+        "PATH": [EMSCRIPTEN_ROOT, os.environ["PATH"]],
     },
     check=_check_emscripten,
 )
@@ -237,6 +270,8 @@ WASI = Platform(
     pythonexe="python.wasm",
     config_site=WASMTOOLS / "config.site-wasm32-wasi",
     configure_wrapper=WASMTOOLS / "wasi-env",
+    ports=None,
+    cc=WASI_SDK_PATH / "bin" / "clang",
     make_wrapper=None,
     environ={
         "WASI_SDK_PATH": WASI_SDK_PATH,
@@ -246,6 +281,7 @@ WASI = Platform(
             "--env PYTHONPATH=/{relbuilddir}/build/lib.wasi-wasm32-{version}:/Lib "
             "--mapdir /::{srcdir} --"
         ),
+        "PATH": [WASI_SDK_PATH / "bin", os.environ["PATH"]],
     },
     check=_check_wasi,
 )
@@ -280,6 +316,42 @@ class Host(enum.Enum):
         cls = type(self)
         return self in {cls.wasm32_wasi, cls.wasm64_wasi}
 
+    def get_extra_paths(self) -> Iterable[pathlib.PurePath]:
+        """Host-specific os.environ["PATH"] entries.
+
+        Emscripten's Node version 14.x works well for wasm32-emscripten.
+        wasm64-emscripten requires more recent v8 version, e.g. node 16.x.
+        Attempt to use system's node command.
+        """
+        cls = type(self)
+        if self == cls.wasm32_emscripten:
+            return [NODE_JS.parent]
+        elif self == cls.wasm64_emscripten:
+            # TODO: look for recent node
+            return []
+        else:
+            return []
+
+    @property
+    def emport_args(self) -> List[str]:
+        """Host-specific port args (Emscripten)."""
+        cls = type(self)
+        if self is cls.wasm64_emscripten:
+            return ["-sMEMORY64=1"]
+        elif self is cls.wasm32_emscripten:
+            return ["-sMEMORY64=0"]
+        else:
+            return []
+
+    @property
+    def embuilder_args(self) -> List[str]:
+        """Host-specific embuilder args (Emscripten)."""
+        cls = type(self)
+        if self is cls.wasm64_emscripten:
+            return ["--wasm64"]
+        else:
+            return []
+
 
 class EmscriptenTarget(enum.Enum):
     """Emscripten-specific targets (--with-emscripten-target)"""
@@ -294,10 +366,32 @@ class EmscriptenTarget(enum.Enum):
         cls = type(self)
         return self not in {cls.browser, cls.browser_debug}
 
+    @property
+    def emport_args(self) -> List[str]:
+        """Target-specific port args."""
+        cls = type(self)
+        if self in {cls.browser_debug, cls.node_debug}:
+            # some libs come in debug and non-debug builds
+            return ["-O0"]
+        else:
+            return ["-O2"]
+
+
+class SupportLevel(enum.Enum):
+    supported = "tier 3, supported"
+    working = "working, unsupported"
+    experimental = "experimental, may be broken"
+    broken = "broken / unavailable"
+
+    def __bool__(self):
+        cls = type(self)
+        return self in {cls.supported, cls.working}
+
 
 @dataclasses.dataclass
 class BuildProfile:
     name: str
+    support_level: SupportLevel
     host: Host
     target: Union[EmscriptenTarget, None] = None
     dynamic_linking: Union[bool, None] = None
@@ -380,6 +474,12 @@ class BuildProfile:
         for key, value in platenv.items():
             if value is None:
                 env.pop(key, None)
+            elif key == "PATH":
+                # list of path items, prefix with extra paths
+                new_path: List[pathlib.PurePath] = []
+                new_path.extend(self.host.get_extra_paths())
+                new_path.extend(value)
+                env[key] = os.pathsep.join(os.fspath(p) for p in new_path)
             elif isinstance(value, str):
                 env[key] = value.format(
                     relbuilddir=self.builddir.relative_to(SRCDIR),
@@ -390,12 +490,19 @@ class BuildProfile:
                 env[key] = value
         return env
 
-    def _run_cmd(self, cmd: Iterable[str], args: Iterable[str]):
+    def _run_cmd(
+        self,
+        cmd: Iterable[str],
+        args: Iterable[str] = (),
+        cwd: Optional[pathlib.Path] = None,
+    ):
         cmd = list(cmd)
         cmd.extend(args)
+        if cwd is None:
+            cwd = self.builddir
         return subprocess.check_call(
             cmd,
-            cwd=os.fspath(self.builddir),
+            cwd=os.fspath(cwd),
             env=self.getenv(),
         )
 
@@ -443,10 +550,58 @@ class BuildProfile:
         elif self.makefile.exists():
             self.run_make("clean")
 
+    def build_emports(self, force: bool = False):
+        """Pre-build emscripten ports."""
+        platform = self.host.platform
+        if platform.ports is None or platform.cc is None:
+            raise ValueError("Need ports and CC command")
+
+        embuilder_cmd = [os.fspath(platform.ports)]
+        embuilder_cmd.extend(self.host.embuilder_args)
+        if force:
+            embuilder_cmd.append("--force")
+
+        ports_cmd = [os.fspath(platform.cc)]
+        ports_cmd.extend(self.host.emport_args)
+        if self.target:
+            ports_cmd.extend(self.target.emport_args)
+
+        if self.dynamic_linking:
+            # Trigger PIC build.
+            ports_cmd.append("-sMAIN_MODULE")
+            embuilder_cmd.append("--pic")
+        if self.pthreads:
+            # Trigger multi-threaded build.
+            ports_cmd.append("-sUSE_PTHREADS")
+            # https://github.com/emscripten-core/emscripten/pull/17729
+            # embuilder_cmd.append("--pthreads")
+
+        # Pre-build libbz2, libsqlite3, libz, and some system libs.
+        ports_cmd.extend(["-sUSE_ZLIB", "-sUSE_BZIP2", "-sUSE_SQLITE3"])
+        embuilder_cmd.extend(["build", "bzip2", "sqlite3", "zlib"])
+
+        if not self.pthreads:
+            # Emscripten <= 3.1.20 has no option to build multi-threaded ports.
+            self._run_cmd(embuilder_cmd, cwd=SRCDIR)
+
+        with tempfile.TemporaryDirectory(suffix="-py-emport") as tmpdir:
+            tmppath = pathlib.Path(tmpdir)
+            main_c = tmppath / "main.c"
+            main_js = tmppath / "main.js"
+            with main_c.open("w") as f:
+                f.write("int main(void) { return 0; }\n")
+            args = [
+                os.fspath(main_c),
+                "-o",
+                os.fspath(main_js),
+            ]
+            self._run_cmd(ports_cmd, args, cwd=tmppath)
+
 
 # native build (build Python)
 BUILD = BuildProfile(
     "build",
+    support_level=SupportLevel.working,
     host=Host.build,
 )
 
@@ -455,43 +610,59 @@ _profiles = [
     # wasm32-emscripten
     BuildProfile(
         "emscripten-browser",
+        support_level=SupportLevel.supported,
         host=Host.wasm32_emscripten,
         target=EmscriptenTarget.browser,
         dynamic_linking=True,
     ),
     BuildProfile(
         "emscripten-browser-debug",
+        support_level=SupportLevel.working,
         host=Host.wasm32_emscripten,
         target=EmscriptenTarget.browser_debug,
         dynamic_linking=True,
     ),
     BuildProfile(
         "emscripten-node-dl",
+        support_level=SupportLevel.supported,
         host=Host.wasm32_emscripten,
         target=EmscriptenTarget.node,
         dynamic_linking=True,
     ),
     BuildProfile(
         "emscripten-node-dl-debug",
+        support_level=SupportLevel.working,
         host=Host.wasm32_emscripten,
         target=EmscriptenTarget.node_debug,
         dynamic_linking=True,
     ),
     BuildProfile(
         "emscripten-node-pthreads",
+        support_level=SupportLevel.supported,
         host=Host.wasm32_emscripten,
         target=EmscriptenTarget.node,
         pthreads=True,
     ),
     BuildProfile(
         "emscripten-node-pthreads-debug",
+        support_level=SupportLevel.working,
         host=Host.wasm32_emscripten,
         target=EmscriptenTarget.node_debug,
         pthreads=True,
     ),
-    # wasm64-emscripten (currently not working)
+    # Emscripten build with both pthreads and dynamic linking is crashing.
+    BuildProfile(
+        "emscripten-node-dl-pthreads-debug",
+        support_level=SupportLevel.broken,
+        host=Host.wasm32_emscripten,
+        target=EmscriptenTarget.node_debug,
+        dynamic_linking=True,
+        pthreads=True,
+    ),
+    # wasm64-emscripten (requires unreleased Emscripten >= 3.1.21)
     BuildProfile(
         "wasm64-emscripten-node-debug",
+        support_level=SupportLevel.experimental,
         host=Host.wasm64_emscripten,
         target=EmscriptenTarget.node_debug,
         # MEMORY64 is not compatible with dynamic linking
@@ -501,6 +672,7 @@ _profiles = [
     # wasm32-wasi
     BuildProfile(
         "wasi",
+        support_level=SupportLevel.supported,
         host=Host.wasm32_wasi,
         # skip sysconfig test_srcdir
         testopts="-i '*.test_srcdir' -j2",
@@ -508,6 +680,7 @@ _profiles = [
     # no SDK available yet
     # BuildProfile(
     #    "wasm64-wasi",
+    #    support_level=SupportLevel.broken,
     #    host=Host.wasm64_wasi,
     # ),
 ]
@@ -523,15 +696,17 @@ parser.add_argument(
     "--clean", "-c", help="Clean build directories first", action="store_true"
 )
 
-platforms = list(PROFILES) + ["cleanall"]
+# Don't list broken and experimental variants in help
+platforms_choices = list(p.name for p in _profiles) + ["cleanall"]
+platforms_help = list(p.name for p in _profiles if p.support_level) + ["cleanall"]
 parser.add_argument(
     "platform",
     metavar="PLATFORM",
-    help=f"Build platform: {', '.join(platforms)}",
-    choices=platforms,
+    help=f"Build platform: {', '.join(platforms_help)}",
+    choices=platforms_choices,
 )
 
-ops = ["compile", "pythoninfo", "test", "repl", "clean", "cleanall"]
+ops = ["compile", "pythoninfo", "test", "repl", "clean", "cleanall", "emports"]
 parser.add_argument(
     "op",
     metavar="OP",
@@ -572,6 +747,8 @@ def main():
             builder.clean(all=False)
 
         if args.op == "compile":
+            if builder.host.is_emscripten:
+                builder.build_emports()
             builder.run_build(force_configure=True)
         else:
             if not builder.makefile.exists():
@@ -586,6 +763,8 @@ def main():
         builder.clean(all=False)
     elif args.op == "cleanall":
         builder.clean(all=True)
+    elif args.op == "emports":
+        builder.build_emports(force=args.clean)
     else:
         raise ValueError(args.op)
 
