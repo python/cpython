@@ -195,7 +195,7 @@ information. This is because as the code that is interposed to allow ``perf``
 support is dynamically generated it doesn't have any DWARF debugging information
 available.
 
-You can check if you system has been compiled with this flag by running::
+You can check if your system has been compiled with this flag by running::
 
     $ python -m sysconfig | grep 'no-omit-frame-pointer'
 
