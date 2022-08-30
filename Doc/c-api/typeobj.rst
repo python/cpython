@@ -1984,9 +1984,6 @@ and :c:type:`PyType_Type` effectively act as defaults.)
           PyErr_Restore(error_type, error_value, error_traceback);
       }
 
-   For this field to be taken into account (even through inheritance),
-   you must also set the :const:`Py_TPFLAGS_HAVE_FINALIZE` flags bit.
-
    Also, note that, in a garbage collected Python,
    :c:member:`~PyTypeObject.tp_dealloc` may be called from
    any Python thread, not just the thread which created the object (if the object
@@ -2003,6 +2000,12 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    This field is inherited by subtypes.
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.8
+
+      Before version 3.8 it was necessary to set the
+      :const:`Py_TPFLAGS_HAVE_FINALIZE` flags bit in order for this field to be
+      used.  This is no longer required.
 
    .. seealso:: "Safe object finalization" (:pep:`442`)
 
