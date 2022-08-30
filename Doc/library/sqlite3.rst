@@ -1653,8 +1653,8 @@ How-to guides
 
 .. _sqlite3-placeholders:
 
-Using placeholders to bind values in SQL queries
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+How to use placeholders to bind values in SQL queries
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 SQL operations usually need to use values from Python variables. However,
 beware of using Python's string operations to assemble queries, as they
