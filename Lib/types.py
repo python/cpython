@@ -60,7 +60,7 @@ except TypeError as exc:
 GetSetDescriptorType = type(FunctionType.__code__)
 MemberDescriptorType = type(FunctionType.__globals__)
 
-del sys, _f, _g, _C, _c, _ag  # Not for export
+del sys, _f, _g, _C, _c, _ag, _cell_factory  # Not for export
 
 
 # Provide a PEP 3115 compliant mechanism for class creation

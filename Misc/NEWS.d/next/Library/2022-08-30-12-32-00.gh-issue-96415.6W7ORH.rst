@@ -1,0 +1,1 @@
+Remove ``types._cell_factory`` from module namespace.
