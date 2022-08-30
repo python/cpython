@@ -1,0 +1,2 @@
+``_aix_support`` now uses a simple code to get platform details rather than
+the now non-existent ``_bootsubprocess`` during bootstrap.
