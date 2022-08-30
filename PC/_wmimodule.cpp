@@ -41,7 +41,7 @@ _query_thread(LPVOID param)
     BSTR bstrQuery = NULL;
     struct _query_data *data = (struct _query_data*)param;
 
-    HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+    HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     if (FAILED(hr)) {
         CloseHandle(data->writePipe);
         return (DWORD)hr;
@@ -120,14 +120,17 @@ _query_thread(LPVOID param)
                 WCHAR propStr[8192];
                 hr = VariantToString(propValue, propStr, sizeof(propStr) / sizeof(propStr[0]));
                 if (SUCCEEDED(hr)) {
-                    DWORD cbStr;
+                    DWORD cbStr1, cbStr2;
                     DWORD written;
-                    cbStr = (DWORD)(wcslen(propName) * sizeof(propName[0]));
-                    WriteFile(data->writePipe, propName, cbStr, &written, NULL);
-                    WriteFile(data->writePipe, (LPVOID)L"=", 2, &written, NULL);
-                    cbStr = (DWORD)(wcslen(propStr) * sizeof(propStr[0]));
-                    WriteFile(data->writePipe, propStr, cbStr, &written, NULL);
-                    WriteFile(data->writePipe, (LPVOID)L"\0", 2, &written, NULL);
+                    cbStr1 = (DWORD)(wcslen(propName) * sizeof(propName[0]));
+                    cbStr2 = (DWORD)(wcslen(propStr) * sizeof(propStr[0]));
+                    if (!WriteFile(data->writePipe, propName, cbStr1, &written, NULL) ||
+                        !WriteFile(data->writePipe, (LPVOID)L"=", 2, &written, NULL) ||
+                        !WriteFile(data->writePipe, propStr, cbStr2, &written, NULL) ||
+                        !WriteFile(data->writePipe, (LPVOID)L"\0", 2, &written, NULL)
+                    ) {
+                        hr = HRESULT_FROM_WIN32(GetLastError());
+                    }
                 }
                 VariantClear(&propValue);
                 SysFreeString(propName);
@@ -175,7 +178,7 @@ _wmi_exec_query_impl(PyObject *module, PyObject *query)
     PyObject *result = NULL;
     HANDLE hThread = NULL;
     int err = 0;
-    WCHAR buffer[16384];
+    WCHAR buffer[8192];
     DWORD offset = 0;
     DWORD bytesRead;
     struct _query_data data = {0};
@@ -186,6 +189,12 @@ _wmi_exec_query_impl(PyObject *module, PyObject *query)
 
     data.query = PyUnicode_AsWideCharString(query, NULL);
     if (!data.query) {
+        return NULL;
+    }
+
+    if (0 != _wcsnicmp(data.query, L"select ", 7)) {
+        PyMem_Free((void *)data.query);
+        PyErr_SetString(PyExc_ValueError, "only SELECT queries are supported");
         return NULL;
     }
 
@@ -235,6 +244,14 @@ _wmi_exec_query_impl(PyObject *module, PyObject *query)
     Py_END_ALLOW_THREADS
 
     PyMem_Free((void *)data.query);
+
+    if (err == ERROR_MORE_DATA) {
+        PyErr_SetString(PyExc_OSError, "Query returns too much data");
+        return NULL;
+    } else if (err) {
+        PyErr_SetFromWindowsErr(err);
+        return NULL;
+    }
 
     return PyUnicode_FromWideChar(buffer, offset  / sizeof(buffer[0]) - 1);
 }
