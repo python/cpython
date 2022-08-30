@@ -1940,7 +1940,33 @@ objects are created implicitly and these shortcut methods return the cursor
 objects. This way, you can execute a ``SELECT`` statement and iterate over it
 directly using only a single call on the :class:`Connection` object.
 
-.. literalinclude:: ../includes/sqlite3/shortcut_methods.py
+.. testcode::
+
+   # Create and fill the table.
+   con = sqlite3.connect(":memory:")
+   con.execute("CREATE TABLE lang(name, first_appeared)")
+   data = [
+       ("C++", 1985),
+       ("Objective-C", 1984),
+   ]
+   con.executemany("INSERT INTO lang(name, first_appeared) VALUES(?, ?)", data)
+
+   # Print the table contents
+   for row in con.execute("SELECT name, first_appeared FROM lang"):
+       print(row)
+
+   print("I just deleted", con.execute("DELETE FROM lang").rowcount, "rows")
+
+   # close() is not a shortcut method and it's not called automatically;
+   # the connection object should be closed manually
+   con.close()
+
+.. testoutput::
+   :hide:
+
+   ('C++', 1985)
+   ('Objective-C', 1984)
+   I just deleted 2 rows
 
 
 .. _sqlite3-connection-context-manager:
