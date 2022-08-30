@@ -1964,7 +1964,7 @@ The object passed to *protocol* will be of type :class:`PrepareProtocol`.
 
 .. testoutput::
    :hide:
-   
+
    4.0;-3.2
 
 
