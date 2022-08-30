@@ -341,7 +341,7 @@ def localtime(dt=None, isdst=None):
     The isdst parameter is ignored.
 
     """
-    if isdst != None:
+    if isdst is not None:
         import warnings
         warnings._deprecated(
             "The 'isdst' parameter to 'localtime'",
