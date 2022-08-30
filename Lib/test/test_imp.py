@@ -456,5 +456,20 @@ class NullImporterTests(unittest.TestCase):
             os.rmdir(name)
 
 
+@unittest.skipUnless(support.is_emscripten, "Emscripten specific test")
+@requires_load_dynamic
+class EmscriptenSuffixes(unittest.TestCase):
+    def test_extension_suffixes(self):
+        # see gh-96426
+        suffixes = _imp.extension_suffixes()
+        uname = os.uname()
+        release = uname.release.replace(".", "_")
+        shortver = f"{sys.version_info.major}{sys.version_info.minor}"
+        self.assertEqual(
+            suffixes,
+            [f".cpython-{shortver}-{uname.machine}-emscripten-{release}.so"]
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

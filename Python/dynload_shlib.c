@@ -42,8 +42,12 @@ const char *_PyImport_DynLoadFiletab[] = {
 #ifdef ALT_SOABI
     "." ALT_SOABI ".so",
 #endif
+#if !defined(__EMSCRIPTEN__)
+    // gh-96426: Emscripten has no stable ABI, only support extensions
+    // with full SOABI, e.g. ".cpython-312-wasm32-emscripten-3_1_19.so".
     ".abi" PYTHON_ABI_STRING ".so",
     ".so",
+#endif // Emscripten
 #endif  /* __CYGWIN__ */
     NULL,
 };

@@ -112,6 +112,16 @@ DOM APIs as well as limited networking capabilities with JavaScript's
   links are limited and don't support some operations. For example, WASI does
   not permit symlinks with absolute file names.
 
+* ``wasm32-emscripten`` has optional support for shared extensions. Since
+  Emscripten does not provide a stable ABI, yet. Shared libraries include
+  the Emscripten SDK version, for example
+  ``.cpython-312-wasm32-emscripten-3_1_19.so``. Unqualified extensions with
+  ``.abi3.so`` or ``.so`` suffix are not supported.
+
+* ``wasm32-wasi`` does not support shared extensions, yet. All extensions
+  must be compiled into the main WASM binary.
+
+
 .. _WebAssembly: https://webassembly.org/
 .. _Emscripten: https://emscripten.org/
 .. _Emscripten Networking: https://emscripten.org/docs/porting/networking.html>

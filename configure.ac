@@ -1051,7 +1051,7 @@ cat > conftest.c <<EOF
         vxworks
 #elif defined(__wasm32__)
 #  if defined(__EMSCRIPTEN__)
-	wasm32-emscripten
+	wasm32-emscripten - __EMSCRIPTEN_major__ _ __EMSCRIPTEN_minor__ _ __EMSCRIPTEN_tiny__
 #  elif defined(__wasi__)
 	wasm32-wasi
 #  else
@@ -1059,7 +1059,7 @@ cat > conftest.c <<EOF
 #  endif
 #elif defined(__wasm64__)
 #  if defined(__EMSCRIPTEN__)
-	wasm64-emscripten
+	wasm64-emscripten - __EMSCRIPTEN_major__ _ __EMSCRIPTEN_minor__ _ __EMSCRIPTEN_tiny__
 #  elif defined(__wasi__)
 	wasm64-wasi
 #  else

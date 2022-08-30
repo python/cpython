@@ -1,0 +1,5 @@
+``wasm32-emscripten`` platform now include the Emscripten SDK version in
+platform triplet and suffix for shared extension modules (``SOABI``).
+Extensions with `.abi3.so` and `.so` are no longer importable. This avoids
+problems with ABI incompatible builds or accidental mixing of ELF shared
+extensions and WASM shared extensions.
