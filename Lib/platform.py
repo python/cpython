@@ -444,9 +444,10 @@ def win32_ver(release='', version='', csd='', ptype=''):
 
     version, csd, ptype, is_client = _win32_ver(version, csd, ptype)
 
-    intversion = tuple(map(int, version.split('.')))
-    releases = _WIN32_CLIENT_RELEASES if is_client else _WIN32_SERVER_RELEASES
-    release = next((r for v, r in releases if v <= intversion), release)
+    if version:
+        intversion = tuple(map(int, version.split('.')))
+        releases = _WIN32_CLIENT_RELEASES if is_client else _WIN32_SERVER_RELEASES
+        release = next((r for v, r in releases if v <= intversion), release)
 
     return release, version, csd, ptype
 
