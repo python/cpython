@@ -964,7 +964,7 @@ Cursor objects
              ("row2",),
          ]
          # cur is an sqlite3.Cursor object
-         cur.executemany("insert into data values(?)", rows)
+         cur.executemany("INSERT INTO data VALUES(?)", rows)
 
    .. method:: executescript(sql_script, /)
 
@@ -982,11 +982,11 @@ Cursor objects
 
          # cur is an sqlite3.Cursor object
          cur.executescript("""
-             begin;
-             create table person(firstname, lastname, age);
-             create table book(title, author, published);
-             create table publisher(name, address);
-             commit;
+             BEGIN;
+             CREATE TABLE person(firstname, lastname, age);
+             CREATE TABLE book(title, author, published);
+             CREATE TABLE publisher(name, address);
+             COMMIT;
          """)
 
 
