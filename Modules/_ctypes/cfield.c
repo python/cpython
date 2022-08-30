@@ -279,6 +279,7 @@ PyCField_clear(CFieldObject *self)
 static void
 PyCField_dealloc(PyObject *self)
 {
+    PyObject_GC_UnTrack(self);
     PyCField_clear((CFieldObject *)self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -325,7 +326,7 @@ PyTypeObject PyCField_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
-    "Structure/Union member",                   /* tp_doc */
+    PyDoc_STR("Structure/Union member"),        /* tp_doc */
     (traverseproc)PyCField_traverse,                    /* tp_traverse */
     (inquiry)PyCField_clear,                            /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -1602,6 +1603,7 @@ _ctypes_get_fielddesc(const char *fmt)
     struct fielddesc *table = formattable;
 
     if (!initialized) {
+        initialized = 1;
         _ctypes_init_fielddesc();
     }
 

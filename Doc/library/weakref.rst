@@ -1,3 +1,5 @@
+.. _mod-weakref:
+
 :mod:`weakref` --- Weak references
 ==================================
 

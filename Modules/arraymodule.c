@@ -60,7 +60,6 @@ typedef struct {
 
     PyObject *str_read;
     PyObject *str_write;
-    PyObject *str__array_reconstructor;
     PyObject *str___dict__;
     PyObject *str_iter;
 } array_state;
@@ -2199,13 +2198,8 @@ array_array___reduce_ex___impl(arrayobject *self, PyTypeObject *cls,
     assert(state != NULL);
 
     if (array_reconstructor == NULL) {
-        PyObject *array_module = PyImport_ImportModule("array");
-        if (array_module == NULL)
-            return NULL;
-        array_reconstructor = PyObject_GetAttr(
-            array_module,
-            state->str__array_reconstructor);
-        Py_DECREF(array_module);
+        array_reconstructor = _PyImport_GetModuleAttrString(
+                "array", "_array_reconstructor");
         if (array_reconstructor == NULL)
             return NULL;
     }
@@ -3029,7 +3023,6 @@ array_clear(PyObject *module)
     Py_CLEAR(state->ArrayIterType);
     Py_CLEAR(state->str_read);
     Py_CLEAR(state->str_write);
-    Py_CLEAR(state->str__array_reconstructor);
     Py_CLEAR(state->str___dict__);
     Py_CLEAR(state->str_iter);
     return 0;
@@ -3075,7 +3068,6 @@ array_modexec(PyObject *m)
     /* Add interned strings */
     ADD_INTERNED(state, read);
     ADD_INTERNED(state, write);
-    ADD_INTERNED(state, _array_reconstructor);
     ADD_INTERNED(state, __dict__);
     ADD_INTERNED(state, iter);
 
@@ -3089,13 +3081,8 @@ array_modexec(PyObject *m)
         return -1;
     }
 
-    PyObject *abc_mod = PyImport_ImportModule("collections.abc");
-    if (!abc_mod) {
-        Py_DECREF((PyObject *)state->ArrayType);
-        return -1;
-    }
-    PyObject *mutablesequence = PyObject_GetAttrString(abc_mod, "MutableSequence");
-    Py_DECREF(abc_mod);
+    PyObject *mutablesequence = _PyImport_GetModuleAttrString(
+            "collections.abc", "MutableSequence");
     if (!mutablesequence) {
         Py_DECREF((PyObject *)state->ArrayType);
         return -1;

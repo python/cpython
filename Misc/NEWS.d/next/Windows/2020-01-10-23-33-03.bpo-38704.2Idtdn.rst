@@ -1,0 +1,1 @@
+Prevent installation on unsupported Windows versions.

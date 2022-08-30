@@ -794,9 +794,12 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
         if (! _PyType_SUPPORTS_WEAKREFS(Py_TYPE(op)))
             continue;
 
-        /* It supports weakrefs.  Does it have any? */
-        wrlist = (PyWeakReference **)
-                                _PyObject_GET_WEAKREFS_LISTPTR(op);
+        /* It supports weakrefs.  Does it have any?
+         *
+         * This is never triggered for static types so we can avoid the
+         * (slightly) more costly _PyObject_GET_WEAKREFS_LISTPTR().
+         */
+        wrlist = _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(op);
 
         /* `op` may have some weakrefs.  March over the list, clear
          * all the weakrefs, and move the weakrefs with callbacks
@@ -1194,14 +1197,6 @@ gc_collect_main(PyThreadState *tstate, int generation,
     // or after _PyGC_Fini()
     assert(gcstate->garbage != NULL);
     assert(!_PyErr_Occurred(tstate));
-
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-    if (tstate->interp->config._isolated_interpreter) {
-        // bpo-40533: The garbage collector must not be run on parallel on
-        // Python objects shared by multiple interpreters.
-        return 0;
-    }
-#endif
 
     if (gcstate->debug & DEBUG_STATS) {
         PySys_WriteStderr("gc: collecting generation %d...\n", generation);
@@ -2165,6 +2160,12 @@ gc_fini_untrack(PyGC_Head *list)
     for (gc = GC_NEXT(list); gc != list; gc = GC_NEXT(list)) {
         PyObject *op = FROM_GC(gc);
         _PyObject_GC_UNTRACK(op);
+        // gh-92036: If a deallocator function expect the object to be tracked
+        // by the GC (ex: func_dealloc()), it can crash if called on an object
+        // which is no longer tracked by the GC. Leak one strong reference on
+        // purpose so the object is never deleted and its deallocator is not
+        // called.
+        Py_INCREF(op);
     }
 }
 
@@ -2349,6 +2350,13 @@ PyObject_GC_Del(void *op)
     size_t presize = _PyType_PreHeaderSize(((PyObject *)op)->ob_type);
     PyGC_Head *g = AS_GC(op);
     if (_PyObject_GC_IS_TRACKED(op)) {
+#ifdef Py_DEBUG
+        if (PyErr_WarnExplicitFormat(PyExc_ResourceWarning, "gc", 0,
+                                     "gc", NULL, "Object of type %s is not untracked before destruction",
+                                     ((PyObject*)op)->ob_type->tp_name)) {
+            PyErr_WriteUnraisable(NULL);
+        }
+#endif
         gc_list_remove(g);
     }
     GCState *gcstate = get_gc_state();

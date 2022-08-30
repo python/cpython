@@ -1012,7 +1012,7 @@ distutils
 ---------
 
 The ``default_format`` attribute has been removed from
-:class:`distutils.command.sdist.sdist` and the ``formats``
+``distutils.command.sdist.sdist`` and the ``formats``
 attribute defaults to ``['gztar']``. Although not anticipated,
 any code relying on the presence of ``default_format`` may
 need to be adapted. See :issue:`27819` for more details.
@@ -1986,7 +1986,7 @@ distutils
 ~~~~~~~~~
 
 The undocumented ``extra_path`` argument to the
-:class:`~distutils.Distribution` constructor is now considered deprecated
+``distutils.Distribution`` constructor is now considered deprecated
 and will raise a warning if set.   Support for this parameter will be
 removed in a future Python release.  See :issue:`27919` for details.
 
@@ -2117,7 +2117,8 @@ API and Feature Removals
   platform specific ``Lib/plat-*/`` directories, but were chronically out of
   date, inconsistently available across platforms, and unmaintained.  The
   script that created these modules is still available in the source
-  distribution at :source:`Tools/scripts/h2py.py`.
+  distribution at `Tools/scripts/h2py.py
+  <https://github.com/python/cpython/blob/v3.6.15/Tools/scripts/h2py.py>`_.
 
 * The deprecated ``asynchat.fifo`` class has been removed.
 
@@ -2242,7 +2243,7 @@ Changes in the Python API
   accepting additional keyword arguments will need to adjust their calls to
   :meth:`type.__new__` (whether direct or via :class:`super`) accordingly.
 
-* In :class:`distutils.command.sdist.sdist`, the ``default_format``
+* In ``distutils.command.sdist.sdist``, the ``default_format``
   attribute has been removed and is no longer honored. Instead, the
   gzipped tarfile format is the default on all platforms and no
   platform-specific selection is made.

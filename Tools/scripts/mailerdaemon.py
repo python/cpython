@@ -70,7 +70,7 @@ emparse_list_list = [
 # compile the re's in the list and store them in-place.
 for i in range(len(emparse_list_list)):
     x = emparse_list_list[i]
-    if type(x) is type(''):
+    if isinstance(x, str):
         x = re.compile(x, re.MULTILINE)
     else:
         xl = []
@@ -105,7 +105,7 @@ def emparse_list(fp, sub):
     emails = []
     reason = None
     for regexp in emparse_list_list:
-        if type(regexp) is type(()):
+        if isinstance(regexp, tuple):
             res = regexp[0].search(data, 0, from_index)
             if res is not None:
                 try:
@@ -134,7 +134,7 @@ def emparse_list(fp, sub):
         if reason[:15] == 'returned mail: ':
             reason = reason[15:]
         for regexp in emparse_list_reason:
-            if type(regexp) is type(''):
+            if isinstance(regexp, str):
                 for i in range(len(emails)-1,-1,-1):
                     email = emails[i]
                     exp = re.compile(re.escape(email).join(regexp.split('<>')), re.MULTILINE)

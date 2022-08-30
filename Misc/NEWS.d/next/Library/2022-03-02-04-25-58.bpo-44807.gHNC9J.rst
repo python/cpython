@@ -1,1 +1,0 @@
-:class:`typing.Protocol` no longer silently replaces :meth:`__init__` methods defined on subclasses. Patch by Adrian Garcia Badaracco.

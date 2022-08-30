@@ -90,7 +90,7 @@ The second bit is the definition of the type object. ::
    static PyTypeObject CustomType = {
        PyVarObject_HEAD_INIT(NULL, 0)
        .tp_name = "custom.Custom",
-       .tp_doc = "Custom objects",
+       .tp_doc = PyDoc_STR("Custom objects"),
        .tp_basicsize = sizeof(CustomObject),
        .tp_itemsize = 0,
        .tp_flags = Py_TPFLAGS_DEFAULT,
@@ -161,7 +161,7 @@ you will need to OR the corresponding flags.
 
 We provide a doc string for the type in :c:member:`~PyTypeObject.tp_doc`. ::
 
-   .tp_doc = "Custom objects",
+   .tp_doc = PyDoc_STR("Custom objects"),
 
 To enable object creation, we have to provide a :c:member:`~PyTypeObject.tp_new`
 handler.  This is the equivalent of the Python method :meth:`__new__`, but

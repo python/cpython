@@ -27,13 +27,16 @@ option -r tells it to recurse down directories found inside
 explicitly given directories.
 """
 
+import warnings
+
+warnings._deprecated(__name__, remove=(3, 13))
+
 # The file structure is top-down except that the test program and its
 # subroutine come last.
 
 __all__ = ['what', 'whathdr']
 
 from collections import namedtuple
-import warnings
 
 SndHeaders = namedtuple('SndHeaders',
                         'filetype framerate nchannels nframes sampwidth')

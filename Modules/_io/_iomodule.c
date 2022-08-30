@@ -92,9 +92,9 @@ it already exists), 'x' for creating and writing to a new file, and
 'a' for appending (which on some Unix systems, means that all writes
 append to the end of the file regardless of the current seek position).
 In text mode, if encoding is not specified the encoding used is platform
-dependent: locale.getpreferredencoding(False) is called to get the
-current locale encoding. (For reading and writing raw bytes use binary
-mode and leave encoding unspecified.) The available modes are:
+dependent: locale.getencoding() is called to get the current locale encoding.
+(For reading and writing raw bytes use binary mode and leave encoding
+unspecified.) The available modes are:
 
 ========= ===============================================================
 Character Meaning
@@ -196,7 +196,7 @@ static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
               int buffering, const char *encoding, const char *errors,
               const char *newline, int closefd, PyObject *opener)
-/*[clinic end generated code: output=aefafc4ce2b46dc0 input=1543f4511d2356a5]*/
+/*[clinic end generated code: output=aefafc4ce2b46dc0 input=5bb37f174cb2fb11]*/
 {
     unsigned i;
 
