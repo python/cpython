@@ -327,9 +327,9 @@ The following functions and structs are used to create
       * :c:member:`~PyTypeObject.tp_weaklist`
       * :c:member:`~PyTypeObject.tp_vectorcall`
       * :c:member:`~PyTypeObject.tp_weaklistoffset`
-        (see :ref:`PyMemberDef <pymemberdef-offsets>`)
+        (use :const:`Py_TPFLAGS_MANAGED_WEAKREF` instead)
       * :c:member:`~PyTypeObject.tp_dictoffset`
-        (see :ref:`PyMemberDef <pymemberdef-offsets>`)
+        (use :const:`Py_TPFLAGS_MANAGED_DICT` instead)
       * :c:member:`~PyTypeObject.tp_vectorcall_offset`
         (see :ref:`PyMemberDef <pymemberdef-offsets>`)
 
