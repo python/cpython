@@ -22,7 +22,7 @@ module:
 
    .. versionadded:: 3.3
 
-   .. deprecated-removed:: 3.11 3.13
+   .. deprecated-removed:: 3.12 3.14
       The *isdst* parameter.
 
 .. function:: make_msgid(idstring=None, domain=None)

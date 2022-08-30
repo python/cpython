@@ -346,7 +346,7 @@ def localtime(dt=None, isdst=None):
         warnings._deprecated(
             "The 'isdst' parameter to 'localtime'",
             message='{name} is deprecated and slated for removal in Python {remove}',
-            remove=(3, 13),
+            remove=(3, 14),
             )
     if dt is None:
         dt = datetime.datetime.now()
