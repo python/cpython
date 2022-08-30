@@ -771,6 +771,19 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             ast.parse('(x := 0)', feature_version=(3, 7))
 
+    def test_relaxed_decorators_feature_version(self):
+        cases = [
+            "@deco.arg[0]",
+            "@deco[0].arg",
+            "@deco or other",
+            "@(x := deco)",
+        ]
+        for case in cases:
+            with self.subTest(case=case):
+                ast.parse(f'{case}\ndef some(): pass', feature_version=(3, 9))
+                with self.assertRaises(SyntaxError):
+                    ast.parse(f'{case}\ndef some(): pass', feature_version=(3, 8))
+
     def test_invalid_major_feature_version(self):
         with self.assertRaises(ValueError):
             ast.parse('pass', feature_version=(2, 7))

@@ -238,7 +238,21 @@ block[asdl_stmt_seq*] (memo):
     | simple_stmts
     | invalid_block
 
-decorators[asdl_expr_seq*]: a[asdl_expr_seq*]=('@' f=named_expression NEWLINE { f })+ { a }
+decorators[asdl_expr_seq*]: a[asdl_expr_seq*]=decorator+
+decorator[expr_ty]:
+    | a=('@' f=dec_maybe_call NEWLINE { f }) { a }
+    | a=('@' f=named_expression NEWLINE { f }) {
+        CHECK_VERSION(expr_ty, 9, "Relaxed decorator syntax is", a) }
+dec_maybe_call[expr_ty]:
+    | a=dec_primary '(' b=[arguments] ')' {
+        _PyAST_Call(a,
+                    (b) ? ((expr_ty) b)->v.Call.args : NULL,
+                    (b) ? ((expr_ty) b)->v.Call.keywords : NULL,
+                    EXTRA) }
+    | dec_primary
+dec_primary[expr_ty]:
+    | a=dec_primary '.' b=NAME { _PyAST_Attribute(a, b->v.Name.id, Load, EXTRA) }
+    | a=NAME
 
 # Class definitions
 # -----------------

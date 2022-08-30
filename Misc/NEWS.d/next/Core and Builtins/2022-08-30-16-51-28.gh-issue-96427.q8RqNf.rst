@@ -1,0 +1,2 @@
+Correctly raise ``SyntaxError`` on relaxed decorator syntax (:pep:`614`) on
+python versions prior to 3.9
