@@ -6344,18 +6344,14 @@ _ACEOF
 case $host in #(
   aarch64*) :
 
-    for opt in -mbranch-protection=pac-ret -msign-return-address=all
-do :
-
-      as_CACHEVAR=`$as_echo "ax_cv_check_cflags__$opt" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts $opt" >&5
-$as_echo_n "checking whether C compiler accepts $opt... " >&6; }
-if eval \${$as_CACHEVAR+:} false; then :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mbranch-protection=pac-ret" >&5
+$as_echo_n "checking whether C compiler accepts -mbranch-protection=pac-ret... " >&6; }
+if ${ax_cv_check_cflags___mbranch_protection_pac_ret+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  $opt"
+  CFLAGS="$CFLAGS  -mbranch-protection=pac-ret"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6368,30 +6364,61 @@ main ()
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-  eval "$as_CACHEVAR=yes"
+  ax_cv_check_cflags___mbranch_protection_pac_ret=yes
 else
-  eval "$as_CACHEVAR=no"
+  ax_cv_check_cflags___mbranch_protection_pac_ret=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
   CFLAGS=$ax_check_save_flags
 fi
-eval ac_res=\$$as_CACHEVAR
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_CACHEVAR"\" = x"yes"; then :
-  branch_protection=yes
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mbranch_protection_pac_ret" >&5
+$as_echo "$ax_cv_check_cflags___mbranch_protection_pac_ret" >&6; }
+if test "x$ax_cv_check_cflags___mbranch_protection_pac_ret" = xyes; then :
+
+      BASECFLAGS="${BASECFLAGS} -mbranch-protection=pac-ret"
 else
-  branch_protection=no
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -msign-return-address=all" >&5
+$as_echo_n "checking whether C compiler accepts -msign-return-address=all... " >&6; }
+if ${ax_cv_check_cflags___msign_return_address_all+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -msign-return-address=all"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_check_cflags___msign_return_address_all=yes
+else
+  ax_cv_check_cflags___msign_return_address_all=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___msign_return_address_all" >&5
+$as_echo "$ax_cv_check_cflags___msign_return_address_all" >&6; }
+if test "x$ax_cv_check_cflags___msign_return_address_all" = xyes; then :
+
+          BASECFLAGS="${BASECFLAGS} -msign-return-address=all"
+
+else
+  :
 fi
 
-      if test "x$branch_protection" = xyes; then :
 
-        BASECFLAGS="${BASECFLAGS} $opt"
-        break
 
 fi
 
-done
 
  ;; #(
   *) :
