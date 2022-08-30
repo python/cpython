@@ -284,12 +284,23 @@ new_code_arena(void)
     void *start = &_Py_trampoline_func_start;
     void *end = &_Py_trampoline_func_end;
     size_t code_size = end - start;
+    // TODO: Check the effect of alignment of the code chunks. Initial investigation
+    // showed that this has no effect on performance in x86-64 or aarch64 and the current
+    // version has the advantage that the unwinder in GDB can unwind across JIT-ed code.
+    //
+    // We should check the values in the future and see if there is a
+    // measurable performance improvement by rounding trampolines up to 32-bit
+    // or 64-bit alignment.
 
     size_t n_copies = mem_size / code_size;
     for (size_t i = 0; i < n_copies; i++) {
         memcpy(memory + i * code_size, start, code_size * sizeof(char));
     }
     // Some systems may prevent us from creating executable code on the fly.
+    // TODO: Call icache invalidation intrinsics if available:
+    // __builtin___clear_cache/__clear_cache (depending if clang/gcc). This is
+    // technically not necessary but we could be missing something so better be
+    // safe.
     int res = mprotect(memory, mem_size, PROT_READ | PROT_EXEC);
     if (res == -1) {
         PyErr_SetFromErrno(PyExc_OSError);
