@@ -58,7 +58,7 @@ class TestPerfTrampoline(unittest.TestCase):
             script = make_script(script_dir, "perftest", code)
             with subprocess.Popen(
                 [sys.executable, "-Xperf", script],
-                universal_newlines=True,
+                text=True,
                 stderr=subprocess.PIPE,
                 stdout=subprocess.PIPE,
             ) as process:
