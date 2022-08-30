@@ -1731,7 +1731,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    Do not confuse this field with :c:member:`~PyTypeObject.tp_dict`; that is the dictionary for
    attributes of the type object itself.
 
-   The value specifies the offset from the start of the instance structure.
+   The value specifies the offset of the dictionary from the start of the instance structure.
 
    The :c:member:`~PyTypeObject.tp_dictoffset` should be regarded as write-only.
    To get the pointer to the dictionary call :c:func:`PyObject_GenericGetDict`.

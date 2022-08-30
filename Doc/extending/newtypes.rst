@@ -585,8 +585,7 @@ Concretely, here is how the statically declared type object would look::
 
 
 The only further addition is that ``tp_dealloc`` needs to clear any weak
-references (by calling :c:func:`PyObject_ClearWeakRefs`) if the field is
-non-``NULL``::
+references (by calling :c:func:`PyObject_ClearWeakRefs`)::
 
    static void
    Trivial_dealloc(TrivialObject *self)
