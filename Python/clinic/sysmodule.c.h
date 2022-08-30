@@ -63,4 +63,52 @@ sys_get_coroutine_origin_tracking_depth(PyObject *module, PyObject *Py_UNUSED(ig
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4a3ac42b97d710ff input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(sys_get_int_max_str_digits__doc__,
+"get_int_max_str_digits($module, /)\n"
+"--\n"
+"\n"
+"Set the maximum string digits limit for non-binary int<->str conversions.");
+
+#define SYS_GET_INT_MAX_STR_DIGITS_METHODDEF    \
+    {"get_int_max_str_digits", (PyCFunction)sys_get_int_max_str_digits, METH_NOARGS, sys_get_int_max_str_digits__doc__},
+
+static PyObject *
+sys_get_int_max_str_digits_impl(PyObject *module);
+
+static PyObject *
+sys_get_int_max_str_digits(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys_get_int_max_str_digits_impl(module);
+}
+
+PyDoc_STRVAR(sys_set_int_max_str_digits__doc__,
+"set_int_max_str_digits($module, /, maxdigits)\n"
+"--\n"
+"\n"
+"Set the maximum string digits limit for non-binary int<->str conversions.");
+
+#define SYS_SET_INT_MAX_STR_DIGITS_METHODDEF    \
+    {"set_int_max_str_digits", (PyCFunction)sys_set_int_max_str_digits, METH_FASTCALL|METH_KEYWORDS, sys_set_int_max_str_digits__doc__},
+
+static PyObject *
+sys_set_int_max_str_digits_impl(PyObject *module, int maxdigits);
+
+static PyObject *
+sys_set_int_max_str_digits(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"maxdigits", NULL};
+    static _PyArg_Parser _parser = {"i:set_int_max_str_digits", _keywords, 0};
+    int maxdigits;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &maxdigits)) {
+        goto exit;
+    }
+    return_value = sys_set_int_max_str_digits_impl(module, maxdigits);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=c566fcdbb8f6ae2c input=a9049054013a1b77]*/

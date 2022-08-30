@@ -6,6 +6,7 @@
 #undef Yield /* undefine macro conflicting with winbase.h */
 #include "internal/context.h"
 #include "internal/hamt.h"
+#include "internal/pycore_long.h"
 #include "internal/pystate.h"
 #include "grammar.h"
 #include "node.h"
@@ -129,6 +130,9 @@ int Py_IsolatedFlag = 0; /* for -I, isolate from user's env */
 int Py_LegacyWindowsFSEncodingFlag = 0; /* Uses mbcs instead of utf-8 */
 int Py_LegacyWindowsStdioFlag = 0; /* Uses FileIO instead of WindowsConsoleIO */
 #endif
+
+/* Unusual name compared to the above for backporting from 3.12 reasons. */
+int _Py_global_config_int_max_str_digits = -1; /* -X int_max_str_digits or PYTHONINTMAXSTRDIGITS */
 
 /* Hack to force loading of object files */
 int (*_PyOS_mystrnicmp_hack)(const char *, const char *, Py_ssize_t) = \

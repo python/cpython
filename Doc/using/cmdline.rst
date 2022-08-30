@@ -432,6 +432,9 @@ Miscellaneous options
    * ``-X showalloccount`` to output the total count of allocated objects for
      each type when the program finishes. This only works when Python was built with
      ``COUNT_ALLOCS`` defined.
+   * ``-X int_max_str_digits`` configures the :ref:`integer string conversion
+     length limitation <int_max_str_digits>`.  See also
+     :envvar:`PYTHONINTMAXSTRDIGITS`.
    * ``-X importtime`` to show how long each import takes. It shows module
      name, cumulative time (including nested imports) and self time (excluding
      nested imports).  Note that its output may be broken in multi-threaded
@@ -473,6 +476,9 @@ Miscellaneous options
 
    .. versionadded:: 3.7
       The ``-X importtime``, ``-X dev`` and ``-X utf8`` options.
+
+   .. versionadded:: 3.7.14
+      The ``-X int_max_str_digits`` option.
 
 
 Options you shouldn't use
@@ -618,6 +624,13 @@ conflict.
 
    .. versionadded:: 3.2.3
 
+.. envvar:: PYTHONINTMAXSTRDIGITS
+
+   If this variable is set to an integer, it is used to configure the
+   interpreter's global :ref:`integer string conversion length limitation
+   <int_max_str_digits>`.
+
+   .. versionadded:: 3.7.14
 
 .. envvar:: PYTHONIOENCODING
 

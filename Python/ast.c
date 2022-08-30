@@ -9,6 +9,7 @@
 #include "ast.h"
 #include "token.h"
 #include "pythonrun.h"
+#include "internal/pystate.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -2138,8 +2139,32 @@ ast_for_atom(struct compiling *c, const node *n)
     }
     case NUMBER: {
         PyObject *pynum = parsenumber(c, STR(ch));
-        if (!pynum)
+        if (!pynum) {
+            PyThreadState *tstate = PyThreadState_GET();
+            // The only way a ValueError should happen in _this_ code is via
+            // PyLong_FromString hitting a length limit.
+            if (tstate->curexc_type == PyExc_ValueError &&
+                tstate->curexc_value != NULL) {
+                PyObject *type, *value, *tb;
+                // This acts as PyErr_Clear() as we're replacing curexc.
+                PyErr_Fetch(&type, &value, &tb);
+                Py_XDECREF(tb);
+                Py_DECREF(type);
+                PyObject *helpful_msg = PyUnicode_FromFormat(
+                    "%S - Consider hexidecimal for huge integer literals "
+                    "to avoid decimal conversion limits.",
+                    value);
+                if (helpful_msg) {
+                    const char* error_msg = PyUnicode_AsUTF8(helpful_msg);
+                    if (error_msg) {
+                        ast_error(c, ch, error_msg);
+                    }
+                    Py_DECREF(helpful_msg);
+                }
+                Py_DECREF(value);
+            }
             return NULL;
+        }
 
         if (PyArena_AddPyObject(c->c_arena, pynum) < 0) {
             Py_DECREF(pynum);
