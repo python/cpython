@@ -1944,7 +1944,7 @@ PyDoc_STRVAR(malloc_info__doc__,
 \n\
 Memory allocator info as a named tuple.");
 
-static PyTypeObject MallocInfoType;
+static PyTypeObject *MallocInfoType;
 
 static PyStructSequence_Field malloc_info_fields[] = {
     {"allocator", "current memory allocator"},
@@ -1970,7 +1970,7 @@ make_malloc_info(void)
     PyObject *v;
     int pos = 0;
 
-    malloc_info = PyStructSequence_New(&MallocInfoType);
+    malloc_info = PyStructSequence_New(MallocInfoType);
     if (malloc_info == NULL) {
         return NULL;
     }
@@ -3228,10 +3228,9 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS("thread_info", PyThread_GetInfo());
 
     /* malloc_info */
-    if (MallocInfoType.tp_name == NULL) {
-        if (_PyStructSequence_InitType(&MallocInfoType,
-                                       &malloc_info_desc,
-                                       Py_TPFLAGS_DISALLOW_INSTANTIATION) < 0) {
+    if (MallocInfoType == NULL) {
+        MallocInfoType = PyStructSequence_NewType(&malloc_info_desc);
+        if (MallocInfoType == NULL) {
             goto type_init_failed;
         }
     }
@@ -3503,7 +3502,7 @@ _PySys_Fini(PyInterpreterState *interp)
 #ifdef __EMSCRIPTEN__
         Py_CLEAR(EmscriptenInfoType);
 #endif
-        _PyStructSequence_FiniType(&MallocInfoType);
+        Py_CLEAR(MallocInfoType);
     }
 }
 
