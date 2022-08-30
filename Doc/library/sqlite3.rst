@@ -601,7 +601,25 @@ Connection objects
 
       Example:
 
-      .. literalinclude:: ../includes/sqlite3/row_factory.py
+      .. testcode::
+
+         def dict_factory(cursor, row):
+             d = {}
+             for idx, col in enumerate(cursor.description):
+                 d[col[0]] = row[idx]
+             return d
+
+         con = sqlite3.connect(":memory:")
+         con.row_factory = dict_factory
+         cur = con.execute("SELECT 1 AS a")
+         print(cur.fetchone()["a"])
+
+         con.close()
+
+      .. testoutput::
+         :hide:
+
+         1
 
       If returning a tuple doesn't suffice and you want name-based access to
       columns, you should consider setting :attr:`row_factory` to the
