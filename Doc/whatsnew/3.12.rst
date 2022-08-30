@@ -79,7 +79,7 @@ New Features
   :func:`sys.activate_stack_trampoline`,
   :func:`sys.deactivate_stack_trampoline`,
   and :func:`sys.is_stack_trampoline_active` APIs.
-  (Contributed by Pablo Galindo and Christian Heimes
+  (Design by Pablo Galindo. Contributed by Pablo Galindo and Christian Heimes
   with contributions from Gregory P. Smith [Google] and Mark Shannon
   in :gh:`96123`.)
 
