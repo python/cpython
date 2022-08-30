@@ -200,9 +200,16 @@ _wmi_exec_query_impl(PyObject *module, PyObject *query)
 
     Py_BEGIN_ALLOW_THREADS
 
-    if (!CreatePipe(&data.readPipe, &data.writePipe, NULL, 0) ||
-        !(hThread = CreateThread(NULL, 0, _query_thread, (LPVOID*)&data, 0, NULL))) {
+    if (!CreatePipe(&data.readPipe, &data.writePipe, NULL, 0)) {
         err = GetLastError();
+    } else {
+        hThread = CreateThread(NULL, 0, _query_thread, (LPVOID*)&data, 0, NULL);
+        if (!hThread) {
+            err = GetLastError();
+            // Normally the thread proc closes this handle, but since we never started
+            // we need to close it here.
+            CloseHandle(data.writePipe);
+        }
     }
 
     while (!err) {
@@ -225,17 +232,26 @@ _wmi_exec_query_impl(PyObject *module, PyObject *query)
     if (data.readPipe) {
         CloseHandle(data.readPipe);
     }
-    if (data.writePipe) {
-        CloseHandle(data.writePipe);
-    }
 
-    if (err == ERROR_BROKEN_PIPE) {
-        // broken pipe indicates some kind of failure, but the real error
-        // code will come as the thread exit
-        if (WaitForSingleObject(hThread, 1000) != WAIT_OBJECT_0 ||
-            !GetExitCodeThread(hThread, (LPDWORD)&err)) {
+    // Allow the thread some time to clean up
+    switch (WaitForSingleObject(hThread, 1000)) {
+    case WAIT_OBJECT_0:
+        // Thread ended cleanly
+        if (!GetExitCodeThread(hThread, (LPDWORD)&err)) {
             err = GetLastError();
         }
+        break;
+    case WAIT_TIMEOUT:
+        // Probably stuck - there's not much we can do, unfortunately
+        if (err == 0 || err == ERROR_BROKEN_PIPE) {
+            err = WAIT_TIMEOUT;
+        }
+        break;
+    default:
+        if (err == 0 || err == ERROR_BROKEN_PIPE) {
+            err = GetLastError();
+        }
+        break;
     }
 
     CloseHandle(hThread);
