@@ -8483,16 +8483,18 @@ static void
 eliminate_empty_basic_blocks(cfg_builder *g);
 
 #ifdef Py_DEBUG
-static void
-assert_no_redundant_jumps(cfg_builder *g) {
+static bool
+no_redundant_jumps(cfg_builder *g) {
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         struct instr *last = basicblock_last_instr(b);
         if (last != NULL) {
             if (last->i_opcode == JUMP || last->i_opcode == JUMP_NO_INTERRUPT) {
                 assert(last->i_target != b->b_next);
+                return false;
             }
         }
     }
+    return true;
 }
 #endif
 
@@ -8642,9 +8644,7 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
-#ifdef Py_DEBUG
-    assert_no_redundant_jumps(g);
-#endif
+    assert(no_redundant_jumps(g));
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(g->g_entryblock);
