@@ -1678,7 +1678,30 @@ placeholders (named style). For the qmark style, ``parameters`` must be a
 keys for all named parameters. Any extra items are ignored. Here's an example of
 both styles:
 
-.. literalinclude:: ../includes/sqlite3/execute_1.py
+.. testcode::
+
+   con = sqlite3.connect(":memory:")
+   cur = con.execute("CREATE TABLE lang(name, first_appeared)")
+
+   # This is the qmark style:
+   cur.execute("INSERT INTO lang VALUES(?, ?)", ("C", 1972))
+
+   # The qmark style used with executemany():
+   lang_list = [
+       ("Fortran", 1957),
+       ("Python", 1991),
+       ("Go", 2009),
+   ]
+   cur.executemany("INSERT INTO lang VALUES(?, ?)", lang_list)
+
+   # And this is the named style:
+   cur.execute("SELECT * FROM lang WHERE first_appeared = :year", {"year": 1972})
+   print(cur.fetchall())
+
+.. testoutput::
+   :hide:
+
+   [('C', 1972)]
 
 
 .. _sqlite3-adapters:
