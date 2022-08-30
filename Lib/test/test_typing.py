@@ -591,6 +591,7 @@ class GenericAliasSubstitutionTests(BaseTestCase):
     def test_one_parameter(self):
         T = TypeVar('T')
         Ts = TypeVarTuple('Ts')
+        Ts2 = TypeVarTuple('Ts2')
 
         class C(Generic[T]): pass
 
@@ -616,6 +617,8 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             # Should definitely raise TypeError: list only takes one argument.
             ('list[T, *tuple_type[int, ...]]',    '[int]',                   'list[int, *tuple_type[int, ...]]'),
             ('List[T, *tuple_type[int, ...]]',    '[int]',                   'TypeError'),
+            # Should raise, because more than one `TypeVarTuple` is not supported.
+            ('generic[*Ts, *Ts2]',                '[int]',                   'TypeError'),
         ]
 
         for alias_template, args_template, expected_template in tests:
