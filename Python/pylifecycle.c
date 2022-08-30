@@ -757,7 +757,7 @@ pycore_init_types(PyInterpreterState *interp)
     return _PyStatus_OK();
 }
 
-const char INTERPRETER_TRAMPOLINE_CODE[] = {
+static const char INTERPRETER_TRAMPOLINE_CODE[] = {
     0, 0,
     INTERPRETER_EXIT, 0,
     RESUME, 0
