@@ -4932,6 +4932,7 @@ handle_eval_breaker:
             _Py_LeaveRecursiveCallTstate(tstate);
             assert(frame != &py_frame);
             _PyInterpreterFrame *prev = frame->previous;
+            gen_frame->previous = NULL;
             _PyThreadState_PopFrame(tstate, frame);
             frame = cframe.current_frame = prev;
             _PyFrame_StackPush(frame, (PyObject *)gen);

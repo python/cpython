@@ -60,6 +60,7 @@ _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
 static void
 take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
 {
+    assert(frame->owner != FRAME_OWNED_BY_CSTACK);
     assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
     assert(frame->owner != FRAME_CLEARED);
     Py_ssize_t size = ((char*)&frame->localsplus[frame->stacktop]) - (char *)frame;
@@ -72,7 +73,9 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     while (prev && _PyFrame_IsIncomplete(prev)) {
         prev = prev->previous;
     }
+    frame->previous = NULL;
     if (prev) {
+        assert(prev->owner != FRAME_OWNED_BY_CSTACK);
         /* Link PyFrameObjects.f_back and remove link through _PyInterpreterFrame.previous */
         PyFrameObject *back = _PyFrame_GetFrameObject(prev);
         if (back == NULL) {
@@ -84,7 +87,6 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
         else {
             f->f_back = (PyFrameObject *)Py_NewRef(back);
         }
-        frame->previous = NULL;
     }
     if (!_PyObject_GC_IS_TRACKED((PyObject *)f)) {
         _PyObject_GC_TRACK((PyObject *)f);
