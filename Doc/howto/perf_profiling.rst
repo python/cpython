@@ -8,10 +8,11 @@ Python support for the Linux ``perf`` profiler
 
 :author: Pablo Galindo
 
-The Linux ``perf`` profiler is a very powerful tool that allows you to profile and
-obtain information about the performance of your application. ``perf`` also has
-a very vibrant ecosystem of tools that aid with the analysis of the data that it
-produces.
+`The Linux perf profiler <http://perf.wiki.kernel.org>`_
+is a very powerful tool that allows you to profile and obtain
+information about the performance of your application.
+``perf`` also has a very vibrant ecosystem of tools
+that aid with the analysis of the data that it produces.
 
 The main problem with using the ``perf`` profiler with Python applications is that
 ``perf`` only allows to get information about native symbols, this is, the names of
@@ -151,10 +152,12 @@ How to enable the ``perf`` profiling mode
 -----------------------------------------
 
 There are three ways to activate the ``perf`` profiling mode:
-using the :option:`-Xperf <-X>` command-line option,
-using the :envvar:`PYTHONPERFSUPPORT` environment variable,
-and using the :func:`sys.activate_stack_trampoline` and
-:func:`sys.deactivate_stack_trampoline` APIs.
+
+* using the :option:`-Xperf <-X>` command-line option
+* using the :envvar:`PYTHONPERFSUPPORT` environment variable
+* using the :func:`sys.activate_stack_trampoline` and
+  :func:`sys.deactivate_stack_trampoline` APIs
+
 If you want profiling to be active when you start the Python interpreter,
 use the :option:`-Xperf <-X>` option::
 

@@ -1535,7 +1535,8 @@ always available.
 
    .. seealso::
 
-      :ref:`perf_profiling`
+      * :ref:`perf_profiling`
+      * https://perf.wiki.kernel.org
 
 .. function:: deactivate_stack_trampoline()
 
