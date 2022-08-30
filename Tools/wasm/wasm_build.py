@@ -29,7 +29,7 @@ import tempfile
 import warnings
 
 # for Python 3.8
-from typing import Any, Dict, Callable, Iterable, List, Optional, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 SRCDIR = pathlib.Path(__file__).parent.parent.parent.absolute()
 WASMTOOLS = SRCDIR / "Tools" / "wasm"
@@ -87,9 +87,9 @@ https://wasmtime.dev/ to install wasmtime.
 """
 
 
-def get_emscripten_root(
+def parse_emconfig(
     emconfig: pathlib.Path = EM_CONFIG,
-) -> Iterable[pathlib.PurePath]:
+) -> Tuple[pathlib.PurePath, pathlib.PurePath]:
     """Parse EM_CONFIG file and lookup EMSCRIPTEN_ROOT and NODE_JS.
 
     The ".emscripten" config file is a Python snippet that uses "EM_CONFIG"
@@ -108,7 +108,7 @@ def get_emscripten_root(
     return emscripten_root, node_js
 
 
-EMSCRIPTEN_ROOT, NODE_JS = get_emscripten_root()
+EMSCRIPTEN_ROOT, NODE_JS = parse_emconfig()
 
 
 def read_python_version(configure: pathlib.Path = CONFIGURE) -> str:
@@ -224,8 +224,10 @@ def _check_emscripten():
     if broken is not None:
         raise ConditionError(
             os.fspath(version_txt),
-            (f"Emscripten SDK {version} in '{EMSCRIPTEN_ROOT}' has known "
-            f"bugs, see {broken}."),
+            (
+                f"Emscripten SDK {version} in '{EMSCRIPTEN_ROOT}' has known "
+                f"bugs, see {broken}."
+            ),
         )
     if os.environ.get("PKG_CONFIG_PATH"):
         warnings.warn(
@@ -571,6 +573,7 @@ class BuildProfile:
         if self.pthreads:
             # Trigger multi-threaded build.
             ports_cmd.append("-sUSE_PTHREADS")
+            # https://github.com/emscripten-core/emscripten/pull/17729
             # embuilder_cmd.append("--pthreads")
 
         # Pre-build libbz2, libsqlite3, libz, and some system libs.
