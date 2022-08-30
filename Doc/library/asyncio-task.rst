@@ -40,7 +40,7 @@ be executed::
     >>> main()
     <coroutine object main at 0x1053bb7c8>
 
-To actually run a coroutine, asyncio provides three main mechanisms:
+To actually run a coroutine, asyncio provides the following mechanisms:
 
 * The :func:`asyncio.run` function to run the top-level
   entry point "main()" function (see the above example.)

@@ -262,18 +262,12 @@ class Condition:
         # If the lock defines _release_save() and/or _acquire_restore(),
         # these override the default implementations (which just call
         # release() and acquire() on the lock).  Ditto for _is_owned().
-        try:
+        if hasattr(lock, '_release_save'):
             self._release_save = lock._release_save
-        except AttributeError:
-            pass
-        try:
+        if hasattr(lock, '_acquire_restore'):
             self._acquire_restore = lock._acquire_restore
-        except AttributeError:
-            pass
-        try:
+        if hasattr(lock, '_is_owned'):
             self._is_owned = lock._is_owned
-        except AttributeError:
-            pass
         self._waiters = _deque()
 
     def _at_fork_reinit(self):
@@ -589,7 +583,7 @@ class Event:
     def isSet(self):
         """Return true if and only if the internal flag is true.
 
-        This method is deprecated, use notify_all() instead.
+        This method is deprecated, use is_set() instead.
 
         """
         import warnings
