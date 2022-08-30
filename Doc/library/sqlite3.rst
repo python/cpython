@@ -1826,7 +1826,50 @@ of :func:`connect`. There are three options:
 
 The following example illustrates the implicit and explicit approaches:
 
-.. literalinclude:: ../includes/sqlite3/converter_point.py
+.. testcode::
+
+   class Point:
+       def __init__(self, x, y):
+           self.x, self.y = x, y
+
+       def __repr__(self):
+           return f"Point({self.x}, {self.y})"
+
+   def adapt_point(point):
+       return f"{point.x};{point.y}".encode("utf-8")
+
+   def convert_point(s):
+       x, y = list(map(float, s.split(b";")))
+       return Point(x, y)
+
+   # Register the adapter and converter
+   sqlite3.register_adapter(Point, adapt_point)
+   sqlite3.register_converter("point", convert_point)
+
+   # 1) Parse using declared types
+   p = Point(4.0, -3.2)
+   con = sqlite3.connect(":memory:", detect_types=sqlite3.PARSE_DECLTYPES)
+   cur = con.execute("CREATE TABLE test(p point)")
+
+   cur.execute("INSERT INTO test(p) VALUES(?)", (p,))
+   cur.execute("SELECT p FROM test")
+   print("with declared types:", cur.fetchone()[0])
+   cur.close()
+   con.close()
+
+   # 2) Parse using column names
+   con = sqlite3.connect(":memory:", detect_types=sqlite3.PARSE_COLNAMES)
+   cur = con.execute("CREATE TABLE test(p)")
+
+   cur.execute("INSERT INTO test(p) VALUES(?)", (p,))
+   cur.execute('SELECT p AS "p [point]" FROM test')
+   print("with column names:", cur.fetchone()[0])
+
+.. testoutput::
+   :hide:
+
+   with declared types: Point(4.0, -3.2)
+   with column names: Point(4.0, -3.2)
 
 
 .. _sqlite3-adapter-converter-recipes:
