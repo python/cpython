@@ -2548,9 +2548,10 @@ data and are closely related to string objects in a variety of other ways.
 
       If you want to make the hex string easier to read, you can specify a
       single character separator *sep* parameter to include in the output.
-      By default between each byte.  A second optional *bytes_per_sep*
-      parameter controls the spacing.  Positive values calculate the
-      separator position from the right, negative values from the left.
+      By default, this separator will be included between each byte.
+      A second optional *bytes_per_sep* parameter controls the spacing.
+      Positive values calculate the separator position from the right,
+      negative values from the left.
 
       >>> value = b'\xf0\xf1\xf2'
       >>> value.hex('-')
