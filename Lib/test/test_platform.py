@@ -229,6 +229,18 @@ class PlatformTest(unittest.TestCase):
         self.assertEqual(res[-1], res.processor)
         self.assertEqual(len(res), 6)
 
+    @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
+    def test_uname_win32_without_wmi(self):
+        old_wmi_query = platform._wmi_query
+        def raises_oserror(*a):
+            raise OSError()
+        platform._wmi_query = raises_oserror
+
+        try:
+            self.test_uname()
+        finally:
+            platform._wmi_query = old_wmi_query
+
     def test_uname_cast_to_tuple(self):
         res = platform.uname()
         expected = (
@@ -289,6 +301,14 @@ class PlatformTest(unittest.TestCase):
         # on 64 bit Windows: if PROCESSOR_ARCHITEW6432 exists we should be
         # using it, per
         # http://blogs.msdn.com/david.wang/archive/2006/03/26/HOWTO-Detect-Process-Bitness.aspx
+
+        # We also need to suppress WMI checks, as those are reliable and
+        # overrule the environment variables
+        old_wmi_query = platform._wmi_query
+        def raises_oserror(*a):
+            raise OSError()
+        platform._wmi_query = raises_oserror
+
         try:
             with os_helper.EnvironmentVarGuard() as environ:
                 if 'PROCESSOR_ARCHITEW6432' in environ:
@@ -303,6 +323,7 @@ class PlatformTest(unittest.TestCase):
                 self.assertEqual(machine, 'bar')
         finally:
             platform._uname_cache = None
+            platform._wmi_query = old_wmi_query
 
     def test_java_ver(self):
         res = platform.java_ver()

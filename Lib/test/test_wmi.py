@@ -1,5 +1,5 @@
 # Test the internal _wmi module on Windows
-# This is used 
+# This is used by the platform module, and potentially others
 
 import re
 import sys
