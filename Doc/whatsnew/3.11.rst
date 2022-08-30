@@ -1471,6 +1471,7 @@ C API:
 * :c:type:`PyUnicodeObject`
 * :c:func:`PyUnicode_InternImmortal()`
 
+
 Removed
 =======
 
