@@ -1151,6 +1151,79 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(ANDROID_API_LEVEL) */
 
+PyDoc_STRVAR(sys_activate_stack_trampoline__doc__,
+"activate_stack_trampoline($module, backend, /)\n"
+"--\n"
+"\n"
+"Activate the perf profiler trampoline.");
+
+#define SYS_ACTIVATE_STACK_TRAMPOLINE_METHODDEF    \
+    {"activate_stack_trampoline", (PyCFunction)sys_activate_stack_trampoline, METH_O, sys_activate_stack_trampoline__doc__},
+
+static PyObject *
+sys_activate_stack_trampoline_impl(PyObject *module, const char *backend);
+
+static PyObject *
+sys_activate_stack_trampoline(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    const char *backend;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("activate_stack_trampoline", "argument", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t backend_length;
+    backend = PyUnicode_AsUTF8AndSize(arg, &backend_length);
+    if (backend == NULL) {
+        goto exit;
+    }
+    if (strlen(backend) != (size_t)backend_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    return_value = sys_activate_stack_trampoline_impl(module, backend);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(sys_deactivate_stack_trampoline__doc__,
+"deactivate_stack_trampoline($module, /)\n"
+"--\n"
+"\n"
+"Dectivate the perf profiler trampoline.");
+
+#define SYS_DEACTIVATE_STACK_TRAMPOLINE_METHODDEF    \
+    {"deactivate_stack_trampoline", (PyCFunction)sys_deactivate_stack_trampoline, METH_NOARGS, sys_deactivate_stack_trampoline__doc__},
+
+static PyObject *
+sys_deactivate_stack_trampoline_impl(PyObject *module);
+
+static PyObject *
+sys_deactivate_stack_trampoline(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys_deactivate_stack_trampoline_impl(module);
+}
+
+PyDoc_STRVAR(sys_is_stack_trampoline_active__doc__,
+"is_stack_trampoline_active($module, /)\n"
+"--\n"
+"\n"
+"Returns *True* if the perf profiler trampoline is active.");
+
+#define SYS_IS_STACK_TRAMPOLINE_ACTIVE_METHODDEF    \
+    {"is_stack_trampoline_active", (PyCFunction)sys_is_stack_trampoline_active, METH_NOARGS, sys_is_stack_trampoline_active__doc__},
+
+static PyObject *
+sys_is_stack_trampoline_active_impl(PyObject *module);
+
+static PyObject *
+sys_is_stack_trampoline_active(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys_is_stack_trampoline_active_impl(module);
+}
+
 #ifndef SYS_GETWINDOWSVERSION_METHODDEF
     #define SYS_GETWINDOWSVERSION_METHODDEF
 #endif /* !defined(SYS_GETWINDOWSVERSION_METHODDEF) */
@@ -1194,4 +1267,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=322fb0409e376ad4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=43b44240211afe95 input=a9049054013a1b77]*/
