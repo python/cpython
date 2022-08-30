@@ -1621,7 +1621,10 @@ handle_eval_breaker:
             PyObject *sub = TOP();
             PyObject *res = PyDict_GetItemWithError(dict, sub);
             if (res == NULL) {
-                goto binary_subscr_dict_error;
+                if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_SetKeyError(sub);
+                }
+                goto error;
             }
             Py_INCREF(res);
             STACK_SHRINK(1);
@@ -5192,16 +5195,6 @@ miss:
         next_instr--;
         DISPATCH_GOTO();
     }
-
-binary_subscr_dict_error:
-        {
-            PyObject *sub = POP();
-            if (!_PyErr_Occurred(tstate)) {
-                _PyErr_SetKeyError(sub);
-            }
-            Py_DECREF(sub);
-            goto error;
-        }
 
 unbound_local_error:
         {
