@@ -776,7 +776,32 @@ Connection objects
 
       Example:
 
-      .. literalinclude:: ../includes/sqlite3/mysumaggr.py
+      .. testcode::
+
+         class MySum:
+             def __init__(self):
+                 self.count = 0
+
+             def step(self, value):
+                 self.count += value
+
+             def finalize(self):
+                 return self.count
+
+         con = sqlite3.connect(":memory:")
+         con.create_aggregate("mysum", 1, MySum)
+         cur = con.execute("CREATE TABLE test(i)")
+         cur.execute("INSERT INTO test(i) VALUES(1)")
+         cur.execute("INSERT INTO test(i) VALUES(2)")
+         cur.execute("SELECT mysum(i) FROM test")
+         print(cur.fetchone()[0])
+
+         con.close()
+
+      .. testoutput::
+         :hide:
+
+         3
 
 
    .. method:: create_window_function(name, num_params, aggregate_class, /)
