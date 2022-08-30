@@ -1873,7 +1873,7 @@ PySequence_GetItem(PyObject *s, Py_ssize_t i)
     PySequenceMethods *m = Py_TYPE(s)->tp_as_sequence;
     if (m && m->sq_item) {
         if (i < 0) {
-            if (m->sq_length) {
+            if (!(Py_TYPE(s)->tp_flags & Py_TPFLAGS_NO_SEQ_INDEX_ADJUST) && m->sq_length) {
                 Py_ssize_t l = (*m->sq_length)(s);
                 assert(_Py_CheckSlotResult(s, "__len__", l >= 0));
                 if (l < 0) {

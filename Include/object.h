@@ -425,6 +425,9 @@ given type object has a specified feature.
 /* Type is abstract and cannot be instantiated */
 #define Py_TPFLAGS_IS_ABSTRACT (1UL << 20)
 
+/* Do not adjust negative indexes in PySequence_GetItem calls on this type */
+#define Py_TPFLAGS_NO_SEQ_INDEX_ADJUST (1UL << 21)
+
 // This undocumented flag gives certain built-ins their unique pattern-matching
 // behavior, which allows a single positional subpattern to match against the
 // subject itself (rather than a mapped attribute on it):
