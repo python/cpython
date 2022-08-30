@@ -418,7 +418,9 @@ PyDoc_STRVAR(throw_doc,
 throw(type[,value[,tb]])\n\
 \n\
 Raise exception in generator, return next yielded value or raise\n\
-StopIteration.");
+StopIteration.\n\
+the (type, val, tb) exception representation is deprecated, \n\
+and may be removed in a future version of Python.");
 
 static PyObject *
 _gen_throw(PyGenObject *gen, int close_on_genexit,
@@ -558,6 +560,14 @@ gen_throw(PyGenObject *gen, PyObject *const *args, Py_ssize_t nargs)
 
     if (!_PyArg_CheckPositional("throw", nargs, 1, 3)) {
         return NULL;
+    }
+    if (nargs > 1) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                            "the (type, val, tb) exception representation"
+                            "is deprecated, and may be removed in a future version of Python.",
+                            1) < 0) {
+            return NULL;
+        }
     }
     typ = args[0];
     if (nargs == 3) {
@@ -1147,7 +1157,10 @@ PyDoc_STRVAR(coro_throw_doc,
 throw(type[,value[,traceback]])\n\
 \n\
 Raise exception in coroutine, return next iterated value or raise\n\
-StopIteration.");
+StopIteration.\n\
+the (type, val, tb) exception representation is deprecated, \n\
+and may be removed in a future version of Python.");
+
 
 PyDoc_STRVAR(coro_close_doc,
 "close() -> raise GeneratorExit inside coroutine.");
