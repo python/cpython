@@ -791,7 +791,7 @@ Connection objects
          ...     return hashlib.md5(t).hexdigest()
          >>> con = sqlite3.connect(":memory:")
          >>> con.create_function("md5", 1, md5sum)
-         >>> for row in con.execute("select md5(?)", (b"foo",)):
+         >>> for row in con.execute("SELECT md5(?)", (b"foo",)):
          ...     print(row)
          ('acbd18db4cc2f85cedef654fccc4a4d8',)
 
@@ -1097,14 +1097,14 @@ Connection objects
          con.enable_load_extension(False)
 
          # example from SQLite wiki
-         con.execute("create virtual table recipe using fts3(name, ingredients)")
+         con.execute("CREATE VIRTUAL TABLE recipe USING fts3(name, ingredients)")
          con.executescript("""
-             insert into recipe (name, ingredients) values ('broccoli stew', 'broccoli peppers cheese tomatoes');
-             insert into recipe (name, ingredients) values ('pumpkin stew', 'pumpkin onions garlic celery');
-             insert into recipe (name, ingredients) values ('broccoli pie', 'broccoli cheese onions flour');
-             insert into recipe (name, ingredients) values ('pumpkin pie', 'pumpkin sugar flour butter');
+             INSERT INTO recipe (name, ingredients) VALUES('broccoli stew', 'broccoli peppers cheese tomatoes');
+             INSERT INTO recipe (name, ingredients) VALUES('pumpkin stew', 'pumpkin onions garlic celery');
+             INSERT INTO recipe (name, ingredients) VALUES('broccoli pie', 'broccoli cheese onions flour');
+             INSERT INTO recipe (name, ingredients) VALUES('pumpkin pie', 'pumpkin sugar flour butter');
              """)
-         for row in con.execute("select rowid, name, ingredients from recipe where name match 'pie'"):
+         for row in con.execute("SELECT rowid, name, ingredients FROM recipe WHERE name MATCH 'pie'"):
              print(row)
 
          con.close()
@@ -1959,7 +1959,7 @@ The object passed to *protocol* will be of type :class:`PrepareProtocol`.
    con = sqlite3.connect(":memory:")
    cur = con.cursor()
 
-   cur.execute("select ?", (Point(4.0, -3.2),))
+   cur.execute("SELECT ?", (Point(4.0, -3.2),))
    print(cur.fetchone()[0])
 
 .. testoutput::
@@ -1989,7 +1989,7 @@ This function can then be registered using :func:`register_adapter`.
    con = sqlite3.connect(":memory:")
    cur = con.cursor()
 
-   cur.execute("select ?", (Point(1.0, 2.5),))
+   cur.execute("SELECT ?", (Point(1.0, 2.5),))
    print(cur.fetchone()[0])
 
 .. testoutput::
