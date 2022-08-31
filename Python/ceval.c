@@ -1032,7 +1032,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     tstate->cframe = &cframe;
 
     /* Push frame */
-    struct _PyInterpreterFrame py_frame;
+    _PyInterpreterFrame py_frame;
     py_frame.f_funcobj = Py_None;
     py_frame.f_locals = NULL;
     py_frame.frame_obj = NULL;
