@@ -8,7 +8,7 @@ Python support for the Linux ``perf`` profiler
 
 :author: Pablo Galindo
 
-`The Linux perf profiler <http://perf.wiki.kernel.org>`_
+`The Linux perf profiler <https://perf.wiki.kernel.org>`_
 is a very powerful tool that allows you to profile and obtain
 information about the performance of your application.
 ``perf`` also has a very vibrant ecosystem of tools
