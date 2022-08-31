@@ -604,7 +604,8 @@ Connection objects
       .. doctest::
 
          >>> def dict_factory(cursor, row):
-         ...     return {col[0]: row[i] for i, col in enumerate(cursor.description)}
+         ...     col_names = [col[0] for col in cursor.description]
+         ...     return {key: value for key, value in zip(col_names, row)}
          >>> con = sqlite3.connect(":memory:")
          >>> con.row_factory = dict_factory
          >>> for row in con.execute("SELECT 1 as a, 2 as b"):
