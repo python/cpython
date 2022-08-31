@@ -262,13 +262,16 @@ _wmi_exec_query_impl(PyObject *module, PyObject *query)
     PyMem_Free((void *)data.query);
 
     if (err == ERROR_MORE_DATA) {
-        PyErr_SetString(PyExc_OSError, "Query returns too much data");
+        PyErr_Format(PyExc_OSError, "Query returns more than %zd characters", Py_ARRAY_LENGTH(buffer));
         return NULL;
     } else if (err) {
         PyErr_SetFromWindowsErr(err);
         return NULL;
     }
 
+    if (!offset) {
+        return PyUnicode_FromStringAndSize(NULL, 0);
+    }
     return PyUnicode_FromWideChar(buffer, offset  / sizeof(buffer[0]) - 1);
 }
 
@@ -292,14 +295,9 @@ static PyModuleDef_Slot wmi_slots[] = {
 
 static PyModuleDef wmi_def = {
     PyModuleDef_HEAD_INIT,
-    "_wmi",
-    NULL, // doc
-    0,              // m_size
-    NULL,           // m_methods
-    wmi_slots,
-    NULL,           // m_traverse
-    NULL,           // m_clear
-    NULL,           // m_free
+    .m_name = "_wmi",
+    .m_size = 0,
+    .m_slots = wmi_slots,
 };
 
 extern "C" {
