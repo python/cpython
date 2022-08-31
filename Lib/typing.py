@@ -2132,6 +2132,9 @@ class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):
             return 'Annotated'
         return super().__getattr__(attr)
 
+    def __mro_entries__(self, bases):
+        return (self.__origin__,)
+
 
 class Annotated:
     """Add context specific metadata to a type.
