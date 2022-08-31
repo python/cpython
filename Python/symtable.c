@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_ast.h"           // identifier, stmt_ty
+#include "pycore_ceval.h"         // Py_StackOverflowCheck
 #include "pycore_compile.h"       // _Py_Mangle(), _PyFuture_FromAST()
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()

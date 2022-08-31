@@ -7464,7 +7464,8 @@ maybe_dtrace_line(_PyInterpreterFrame *frame,
 
 int Py_EnterRecursiveCall(const char *where)
 {
-    return _Py_EnterRecursiveCall(where);
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _Py_StackOverflowCheck(tstate, where);
 }
 
 #undef Py_LeaveRecursiveCall
@@ -7472,11 +7473,4 @@ int Py_EnterRecursiveCall(const char *where)
 void Py_LeaveRecursiveCall(void)
 {
     _Py_LeaveRecursiveCall();
-}
-
-
-int Py_StackOverflowCheck(const char *where)
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-    return _Py_StackOverflowCheck(tstate, where);
 }

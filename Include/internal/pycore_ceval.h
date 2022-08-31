@@ -140,7 +140,12 @@ _Py_StackOverflowCheck(PyThreadState *tstate, const char *where)
 
 static inline int _Py_EnterRecursiveCall(const char *where) {
     PyThreadState *tstate = _PyThreadState_GET();
-    return _Py_EnterRecursiveCallTstate(tstate, where);
+    return _Py_StackOverflowCheck(tstate, where);
+}
+
+static inline int Py_StackOverflowCheck(const char *where) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _Py_StackOverflowCheck(tstate, where);
 }
 
 static inline void _Py_LeaveRecursiveCallTstate(PyThreadState *tstate)  {

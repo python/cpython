@@ -1,6 +1,7 @@
 /* AST Optimizer */
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
+#include "pycore_ceval.h"         // Py_StackOverflowCheck
 #include "pycore_compile.h"       // _PyASTOptimizeState
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_format.h"        // F_LJUST
