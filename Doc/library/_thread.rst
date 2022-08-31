@@ -171,7 +171,7 @@ Lock objects have the following methods:
    If the floating-point *timeout* argument is present and positive, it
    specifies the maximum wait time in seconds before returning.  A negative
    *timeout* argument specifies an unbounded wait.  You cannot specify
-   a *timeout* if blocking is False.
+   a *timeout* if *blocking* is False.
 
    The return value is ``True`` if the lock is acquired successfully,
    ``False`` if not.
