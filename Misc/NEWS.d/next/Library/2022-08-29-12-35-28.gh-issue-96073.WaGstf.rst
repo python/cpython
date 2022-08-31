@@ -1,1 +1,1 @@
-Fix inspect formatannotation wild replacement on ``repr(typing_obj)``
+In :mod:`inspect`, fix overeager replacement of "`typing.`" in formatting annotations.
