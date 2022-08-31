@@ -535,6 +535,12 @@ Miscellaneous options
      development (running from the source tree) then the default is "off".
      Note that the "importlib_bootstrap" and "importlib_bootstrap_external"
      frozen modules are always used, even if this flag is set to "off".
+   * ``-X perf`` to activate compatibility mode with the ``perf`` profiler.
+     When this option is activated, the Linux ``perf`` profiler will be able to
+     report Python calls. This option is only available on some platforms and
+     will do nothing if is not supported on the current system. The default value
+     is "off". See also :envvar:`PYTHONPERFSUPPORT` and :ref:`perf_profiling`
+     for more information.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -576,6 +582,8 @@ Miscellaneous options
    .. versionadded:: 3.11
       The ``-X frozen_modules`` option.
 
+   .. versionadded:: 3.12
+      The ``-X perf`` option.
 
 
 Options you shouldn't use
@@ -1025,6 +1033,13 @@ conflict.
 
    .. versionadded:: 3.11
 
+.. envvar:: PYTHONPERFSUPPORT
+
+   If this variable is set to a nonzero value, it activates compatibility mode
+   with the ``perf`` profiler so Python calls can be detected by it. See the
+   :ref:`perf_profiling` section for more information.
+
+   .. versionadded:: 3.12
 
 
 Debug-mode variables

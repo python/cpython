@@ -65,6 +65,27 @@ extern PyObject* _PyEval_BuiltinsFromGlobals(
     PyThreadState *tstate,
     PyObject *globals);
 
+// Trampoline API
+
+typedef struct {
+    // Callback to initialize the trampoline state
+    void* (*init_state)(void);
+    // Callback to register every trampoline being created
+    void (*write_state)(void* state, const void *code_addr,
+                        unsigned int code_size, PyCodeObject* code);
+    // Callback to free the trampoline state
+    int (*free_state)(void* state);
+} _PyPerf_Callbacks;
+
+extern int _PyPerfTrampoline_SetCallbacks(_PyPerf_Callbacks *);
+extern void _PyPerfTrampoline_GetCallbacks(_PyPerf_Callbacks *);
+extern int _PyPerfTrampoline_Init(int activate);
+extern int _PyPerfTrampoline_Fini(void);
+extern int _PyIsPerfTrampolineActive(void);
+extern PyStatus _PyPerfTrampoline_AfterFork_Child(void);
+#ifdef PY_HAVE_PERF_TRAMPOLINE
+extern _PyPerf_Callbacks _Py_perfmap_callbacks;
+#endif
 
 static inline PyObject*
 _PyEval_EvalFrame(PyThreadState *tstate, struct _PyInterpreterFrame *frame, int throwflag)

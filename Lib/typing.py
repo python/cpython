@@ -493,7 +493,9 @@ class _AnyMeta(type):
         return super().__instancecheck__(obj)
 
     def __repr__(self):
-        return "typing.Any"
+        if self is Any:
+            return "typing.Any"
+        return super().__repr__()  # respect to subclasses
 
 
 class Any(metaclass=_AnyMeta):
@@ -1074,7 +1076,7 @@ class TypeVarTuple(_Final, _Immutable, _PickleUsingNameMixin, _root=True):
     def __typing_prepare_subst__(self, alias, args):
         params = alias.__parameters__
         typevartuple_index = params.index(self)
-        for param in enumerate(params[typevartuple_index + 1:]):
+        for param in params[typevartuple_index + 1:]:
             if isinstance(param, TypeVarTuple):
                 raise TypeError(f"More than one TypeVarTuple parameter in {alias}")
 
