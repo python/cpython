@@ -1,0 +1,3 @@
+Recursion that would have overflowed the C stack is prevented and a
+RecursionError raised. Prevents VM crashes when the recursion limit is set
+too high.
