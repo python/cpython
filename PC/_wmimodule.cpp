@@ -91,9 +91,11 @@ _query_thread(LPVOID param)
     // Okay, after all that, at this stage we should have an enumerator
     // to the query results and can start writing them to the pipe!
     IWbemClassObject *value = NULL;
+    int startOfEnum = TRUE;
     int endOfEnum = FALSE;
     while (SUCCEEDED(hr) && !endOfEnum) {
         ULONG got = 0;
+        DWORD written;
         hr = enumerator->Next(WBEM_INFINITE, 1, &value, &got);
         if (hr == WBEM_S_FALSE) {
             // Could be at the end, but still got a result this time
@@ -104,6 +106,10 @@ _query_thread(LPVOID param)
         if (FAILED(hr) || got != 1 || !value) {
             continue;
         }
+        if (!startOfEnum && !WriteFile(data->writePipe, (LPVOID)L"\0", 2, &written, NULL)) {
+            hr = HRESULT_FROM_WIN32(GetLastError());
+        }
+        startOfEnum = FALSE;
         // Okay, now we have each resulting object it's time to
         // enumerate its members
         hr = value->BeginEnumeration(0);
@@ -121,7 +127,6 @@ _query_thread(LPVOID param)
                 hr = VariantToString(propValue, propStr, sizeof(propStr) / sizeof(propStr[0]));
                 if (SUCCEEDED(hr)) {
                     DWORD cbStr1, cbStr2;
-                    DWORD written;
                     cbStr1 = (DWORD)(wcslen(propName) * sizeof(propName[0]));
                     cbStr2 = (DWORD)(wcslen(propStr) * sizeof(propStr[0]));
                     if (!WriteFile(data->writePipe, propName, cbStr1, &written, NULL) ||

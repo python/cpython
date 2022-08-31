@@ -52,3 +52,16 @@ class WmiTests(unittest.TestCase):
         for _ in range(2):
             with self.assertRaises(OSError):
                 _wmi.exec_query("SELECT * FROM CIM_DataFile")
+
+    def test_wmi_query_multiple_rows(self):
+        # Multiple instances should have an extra null separator
+        r = _wmi.exec_query("SELECT ProcessId FROM Win32_Process WHERE ProcessId < 1000")
+        self.assertFalse(r.startswith("\0"), r)
+        self.assertFalse(r.endswith("\0"), r)
+        it = iter(r.split("\0"))
+        try:
+            while True:
+                self.assertTrue(re.match(r"ProcessId=\d+", next(it)))
+                self.assertEqual("", next(it))
+        except StopIteration:
+            pass
