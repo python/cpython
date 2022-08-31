@@ -170,6 +170,18 @@ is the module's name in the Python package namespace.
       .. versionadded:: 3.2
 
 
+   .. method:: Logger.getChildren()
+
+      Returns a set of loggers which are immediate children of this logger. So for
+      example ``logging.getLogger().getChildren()`` might return a set containing
+      loggers named ``foo`` and ``bar``, but a logger named ``foo.bar`` wouldn't be
+      included in the set. Likewise, ``logging.getLogger('foo').getChildren()`` might
+      return a set including a logger named ``foo.bar``, but it wouldn't include one
+      named ``foo.bar.baz``.
+
+      .. versionadded:: 3.12
+
+
    .. method:: Logger.debug(msg, *args, **kwargs)
 
       Logs a message with level :const:`DEBUG` on this logger. The *msg* is the
