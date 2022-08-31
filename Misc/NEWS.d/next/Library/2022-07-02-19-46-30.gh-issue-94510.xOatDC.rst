@@ -1,0 +1,2 @@
+Re-entrant calls to :func:`sys.setprofile` and :func:`sys.settrace` now
+raise :exc:`RuntimeError`. Patch by Pablo Galindo.

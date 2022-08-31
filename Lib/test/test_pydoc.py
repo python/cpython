@@ -27,7 +27,8 @@ from test.support import os_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import threading_helper
 from test.support import (reap_children, captured_output, captured_stdout,
-                          captured_stderr, is_emscripten, requires_docstrings)
+                          captured_stderr, is_emscripten, is_wasi,
+                          requires_docstrings)
 from test.support.os_helper import (TESTFN, rmtree, unlink)
 from test import pydoc_mod
 
@@ -53,58 +54,58 @@ CLASSES
         A
         B
         C
-\x20\x20\x20\x20
+
     class A(builtins.object)
      |  Hello and goodbye
-     |\x20\x20
+     |
      |  Methods defined here:
-     |\x20\x20
+     |
      |  __init__()
      |      Wow, I have no function!
-     |\x20\x20
+     |
      |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
-     |\x20\x20
+     |
      |  __dict__%s
-     |\x20\x20
+     |
      |  __weakref__%s
-\x20\x20\x20\x20
+
     class B(builtins.object)
      |  Data descriptors defined here:
-     |\x20\x20
+     |
      |  __dict__%s
-     |\x20\x20
+     |
      |  __weakref__%s
-     |\x20\x20
+     |
      |  ----------------------------------------------------------------------
      |  Data and other attributes defined here:
-     |\x20\x20
+     |
      |  NO_MEANING = 'eggs'
-     |\x20\x20
+     |
      |  __annotations__ = {'NO_MEANING': <class 'str'>}
-\x20\x20\x20\x20
+
     class C(builtins.object)
      |  Methods defined here:
-     |\x20\x20
+     |
      |  get_answer(self)
      |      Return say_no()
-     |\x20\x20
+     |
      |  is_it_true(self)
      |      Return self.get_answer()
-     |\x20\x20
+     |
      |  say_no(self)
-     |\x20\x20
+     |
      |  ----------------------------------------------------------------------
      |  Class methods defined here:
-     |\x20\x20
+     |
      |  __class_getitem__(item) from builtins.type
-     |\x20\x20
+     |
      |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
-     |\x20\x20
+     |
      |  __dict__
      |      dictionary for instance variables (if defined)
-     |\x20\x20
+     |
      |  __weakref__
      |      list of weak references to the object (if defined)
 
@@ -114,7 +115,7 @@ FUNCTIONS
         hunger
         lack of Python
         war
-\x20\x20\x20\x20
+
     nodoc_func()
 
 DATA
@@ -234,16 +235,16 @@ Help on class DA in module %s:
 
 class DA(builtins.object)
  |  Data descriptors defined here:
- |\x20\x20
+ |
  |  __dict__%s
- |\x20\x20
+ |
  |  __weakref__%s
- |\x20\x20
+ |
  |  ham
- |\x20\x20
+ |
  |  ----------------------------------------------------------------------
  |  Data and other attributes inherited from Meta:
- |\x20\x20
+ |
  |  ham = 'spam'
 """.strip()
 
@@ -252,7 +253,7 @@ Help on class Class in module %s:
 
 class Class(builtins.object)
  |  Data and other attributes inherited from Meta:
- |\x20\x20
+ |
  |  LIFE = 42
 """.strip()
 
@@ -261,7 +262,7 @@ Help on class Class1 in module %s:
 
 class Class1(builtins.object)
  |  Data and other attributes inherited from Meta1:
- |\x20\x20
+ |
  |  one = 1
 """.strip()
 
@@ -273,19 +274,19 @@ class Class2(Class1)
  |      Class2
  |      Class1
  |      builtins.object
- |\x20\x20
+ |
  |  Data and other attributes inherited from Meta1:
- |\x20\x20
+ |
  |  one = 1
- |\x20\x20
+ |
  |  ----------------------------------------------------------------------
  |  Data and other attributes inherited from Meta3:
- |\x20\x20
+ |
  |  three = 3
- |\x20\x20
+ |
  |  ----------------------------------------------------------------------
  |  Data and other attributes inherited from Meta2:
- |\x20\x20
+ |
  |  two = 2
 """.strip()
 
@@ -294,7 +295,7 @@ Help on class C in module %s:
 
 class C(builtins.object)
  |  Data and other attributes defined here:
- |\x20\x20
+ |
  |  here = 'present!'
 """.strip()
 
@@ -784,33 +785,33 @@ class B(A)
  |      B
  |      A
  |      builtins.object
- |\x20\x20
+ |
  |  Methods defined here:
- |\x20\x20
+ |
  |  b_size = a_size(self)
- |\x20\x20
+ |
  |  itemconfig = itemconfigure(self, tagOrId, cnf=None, **kw)
- |\x20\x20
+ |
  |  itemconfigure(self, tagOrId, cnf=None, **kw)
  |      Configure resources of an item TAGORID.
- |\x20\x20
+ |
  |  ----------------------------------------------------------------------
  |  Methods inherited from A:
- |\x20\x20
+ |
  |  a_size(self)
  |      Return size
- |\x20\x20
+ |
  |  lift = tkraise(self, aboveThis=None)
- |\x20\x20
+ |
  |  tkraise(self, aboveThis=None)
  |      Raise this widget in the stacking order.
- |\x20\x20
+ |
  |  ----------------------------------------------------------------------
  |  Data descriptors inherited from A:
- |\x20\x20
+ |
  |  __dict__
  |      dictionary for instance variables (if defined)
- |\x20\x20
+ |
  |  __weakref__
  |      list of weak references to the object (if defined)
 ''' % __name__)
@@ -849,6 +850,23 @@ class B(A)
         expected_lines = [line.strip() for line in expected_text.split("\n") if line]
         for expected_line in expected_lines:
             self.assertIn(expected_line, as_text)
+
+    def test__future__imports(self):
+        # __future__ features are excluded from module help,
+        # except when it's the __future__ module itself
+        import __future__
+        future_text, _ = get_pydoc_text(__future__)
+        future_html, _ = get_pydoc_html(__future__)
+        pydoc_mod_text, _ = get_pydoc_text(pydoc_mod)
+        pydoc_mod_html, _ = get_pydoc_html(pydoc_mod)
+
+        for feature in __future__.all_feature_names:
+            txt = f"{feature} = _Feature"
+            html = f"<strong>{feature}</strong> = _Feature"
+            self.assertIn(txt, future_text)
+            self.assertIn(html, future_html)
+            self.assertNotIn(txt, pydoc_mod_text)
+            self.assertNotIn(html, pydoc_mod_html)
 
 
 class PydocImportTest(PydocBaseTest):
@@ -915,6 +933,8 @@ class PydocImportTest(PydocBaseTest):
         self.assertEqual(out.getvalue(), '')
         self.assertEqual(err.getvalue(), '')
 
+    @os_helper.skip_unless_working_chmod
+    @unittest.skipIf(is_emscripten, "cannot remove x bit")
     def test_apropos_empty_doc(self):
         pkgdir = os.path.join(TESTFN, 'walkpkg')
         os.mkdir(pkgdir)
@@ -1049,14 +1069,14 @@ class TestDescriptions(unittest.TestCase):
         self.assertIn(types.UnionType.__doc__.strip().splitlines()[0], doc)
 
     def test_special_form(self):
-        self.assertEqual(pydoc.describe(typing.Any), '_SpecialForm')
-        doc = pydoc.render_doc(typing.Any, renderer=pydoc.plaintext)
+        self.assertEqual(pydoc.describe(typing.NoReturn), '_SpecialForm')
+        doc = pydoc.render_doc(typing.NoReturn, renderer=pydoc.plaintext)
         self.assertIn('_SpecialForm in module typing', doc)
-        if typing.Any.__doc__:
-            self.assertIn('Any = typing.Any', doc)
-            self.assertIn(typing.Any.__doc__.strip().splitlines()[0], doc)
+        if typing.NoReturn.__doc__:
+            self.assertIn('NoReturn = typing.NoReturn', doc)
+            self.assertIn(typing.NoReturn.__doc__.strip().splitlines()[0], doc)
         else:
-            self.assertIn('Any = class _SpecialForm(_Final)', doc)
+            self.assertIn('NoReturn = class _SpecialForm(_Final)', doc)
 
     def test_typing_pydoc(self):
         def foo(data: typing.List[typing.Any],
@@ -1160,7 +1180,7 @@ sm(x, y)
 """)
         self.assertIn("""
  |  Static methods defined here:
- |\x20\x20
+ |
  |  sm(x, y)
  |      A static method
 """, pydoc.plain(pydoc.render_doc(X)))
@@ -1181,7 +1201,7 @@ cm(x) method of builtins.type instance
 """)
         self.assertIn("""
  |  Class methods defined here:
- |\x20\x20
+ |
  |  cm(x) from builtins.type
  |      A class method
 """, pydoc.plain(pydoc.render_doc(X)))
@@ -1339,7 +1359,10 @@ foo
         )
 
 
-@unittest.skipIf(is_emscripten, "Socket server not available on Emscripten.")
+@unittest.skipIf(
+    is_emscripten or is_wasi,
+    "Socket server not available on Emscripten/WASI."
+)
 class PydocServerTest(unittest.TestCase):
     """Tests for pydoc._start_server"""
 

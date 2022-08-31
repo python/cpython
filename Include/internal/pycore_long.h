@@ -23,8 +23,9 @@ extern void _PyLong_FiniTypes(PyInterpreterState *interp);
 #define _PyLong_SMALL_INTS _Py_SINGLETON(small_ints)
 
 // _PyLong_GetZero() and _PyLong_GetOne() must always be available
-#if _PY_NSMALLPOSINTS < 2
-#  error "_PY_NSMALLPOSINTS must be greater than 1"
+// _PyLong_FromUnsignedChar must always be available
+#if _PY_NSMALLPOSINTS < 257
+#  error "_PY_NSMALLPOSINTS must be greater than or equal to 257"
 #endif
 
 // Return a borrowed reference to the zero singleton.
@@ -37,9 +38,16 @@ static inline PyObject* _PyLong_GetZero(void)
 static inline PyObject* _PyLong_GetOne(void)
 { return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+1]; }
 
+static inline PyObject* _PyLong_FromUnsignedChar(unsigned char i)
+{
+    return Py_NewRef((PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+i]);
+}
+
 PyObject *_PyLong_Add(PyLongObject *left, PyLongObject *right);
 PyObject *_PyLong_Multiply(PyLongObject *left, PyLongObject *right);
 PyObject *_PyLong_Subtract(PyLongObject *left, PyLongObject *right);
+
+int _PyLong_AssignValue(PyObject **target, Py_ssize_t value);
 
 /* Used by Python/mystrtoul.c, _PyBytes_FromHex(),
    _PyBytes_DecodeEscape(), etc. */
