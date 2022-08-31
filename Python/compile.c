@@ -8496,12 +8496,7 @@ no_redundant_jumps(cfg_builder *g) {
     }
     return true;
 }
-
-#define ASSERT_NO_REDUNDANT_JUMPS(G) assert(no_redundant_jumps(G))
-#else
-#define ASSERT_NO_REDUNDANT_JUMPS(G)
 #endif
-
 
 static int
 remove_redundant_jumps(cfg_builder *g) {
@@ -8649,7 +8644,7 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
-    ASSERT_NO_REDUNDANT_JUMPS(g);
+    assert(no_redundant_jumps(g));
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(g->g_entryblock);
