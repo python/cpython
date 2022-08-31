@@ -88,7 +88,7 @@ If there is no relevant entry, the exception bubbles up to the caller.
 If there is an entry, then:
  1. pop values from the stack until it matches the stack depth for the handler,
  2. if 'lasti' is true, then push the offset that the exception was raised at.
- 3. push the exception to the stack as three values: traceback, value, type,
+ 3. push the exception to the stack
  4. jump to the target offset and resume execution.
 
 
