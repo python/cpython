@@ -861,6 +861,7 @@ LIBEXPAT_CFLAGS
 TZPATH
 LIBUUID_LIBS
 LIBUUID_CFLAGS
+PERF_TRAMPOLINE_OBJ
 SHLIBS
 CFLAGSFORSHARED
 LINKFORSHARED
@@ -11497,6 +11498,35 @@ case "$ac_sys_system" in
 esac
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SHLIBS" >&5
 $as_echo "$SHLIBS" >&6; }
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking perf trampoline" >&5
+$as_echo_n "checking perf trampoline... " >&6; }
+case $PLATFORM_TRIPLET in #(
+  x86_64-linux-gnu) :
+    perf_trampoline=yes ;; #(
+  aarch64-linux-gnu) :
+    perf_trampoline=yes ;; #(
+  *) :
+    perf_trampoline=no
+ ;;
+esac
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $perf_trampoline" >&5
+$as_echo "$perf_trampoline" >&6; }
+
+if test "x$perf_trampoline" = xyes; then :
+
+
+$as_echo "#define PY_HAVE_PERF_TRAMPOLINE 1" >>confdefs.h
+
+  PERF_TRAMPOLINE_OBJ=Objects/asm_trampoline.o
+
+    if test "x$Py_DEBUG" = xtrue; then :
+
+    as_fn_append BASECFLAGS " -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer"
+
+fi
+
+fi
 
 
 # checks for libraries

@@ -601,7 +601,25 @@ Connection objects
 
       Example:
 
-      .. literalinclude:: ../includes/sqlite3/row_factory.py
+      .. testcode::
+
+         def dict_factory(cursor, row):
+             d = {}
+             for idx, col in enumerate(cursor.description):
+                 d[col[0]] = row[idx]
+             return d
+
+         con = sqlite3.connect(":memory:")
+         con.row_factory = dict_factory
+         cur = con.execute("SELECT 1 AS a")
+         print(cur.fetchone()["a"])
+
+         con.close()
+
+      .. testoutput::
+         :hide:
+
+         1
 
       If returning a tuple doesn't suffice and you want name-based access to
       columns, you should consider setting :attr:`row_factory` to the
@@ -622,7 +640,35 @@ Connection objects
 
       Example:
 
-      .. literalinclude:: ../includes/sqlite3/text_factory.py
+      .. testcode::
+
+         con = sqlite3.connect(":memory:")
+         cur = con.cursor()
+
+         AUSTRIA = "Österreich"
+
+         # by default, rows are returned as str
+         cur.execute("SELECT ?", (AUSTRIA,))
+         row = cur.fetchone()
+         assert row[0] == AUSTRIA
+
+         # but we can make sqlite3 always return bytestrings ...
+         con.text_factory = bytes
+         cur.execute("SELECT ?", (AUSTRIA,))
+         row = cur.fetchone()
+         assert type(row[0]) is bytes
+         # the bytestrings will be encoded in UTF-8, unless you stored garbage in the
+         # database ...
+         assert row[0] == AUSTRIA.encode("utf-8")
+
+         # we can also implement a custom text_factory ...
+         # here we implement one that appends "foo" to all strings
+         con.text_factory = lambda x: x.decode("utf-8") + "foo"
+         cur.execute("SELECT ?", ("bar",))
+         row = cur.fetchone()
+         assert row[0] == "barfoo"
+
+         con.close()
 
    .. attribute:: total_changes
 
@@ -738,7 +784,16 @@ Connection objects
 
       Example:
 
-      .. literalinclude:: ../includes/sqlite3/md5func.py
+      .. doctest::
+
+         >>> import hashlib
+         >>> def md5sum(t):
+         ...     return hashlib.md5(t).hexdigest()
+         >>> con = sqlite3.connect(":memory:")
+         >>> con.create_function("md5", 1, md5sum)
+         >>> for row in con.execute("SELECT md5(?)", (b"foo",)):
+         ...     print(row)
+         ('acbd18db4cc2f85cedef654fccc4a4d8',)
 
 
    .. method:: create_aggregate(name, /, n_arg, aggregate_class)
@@ -767,7 +822,32 @@ Connection objects
 
       Example:
 
-      .. literalinclude:: ../includes/sqlite3/mysumaggr.py
+      .. testcode::
+
+         class MySum:
+             def __init__(self):
+                 self.count = 0
+
+             def step(self, value):
+                 self.count += value
+
+             def finalize(self):
+                 return self.count
+
+         con = sqlite3.connect(":memory:")
+         con.create_aggregate("mysum", 1, MySum)
+         cur = con.execute("CREATE TABLE test(i)")
+         cur.execute("INSERT INTO test(i) VALUES(1)")
+         cur.execute("INSERT INTO test(i) VALUES(2)")
+         cur.execute("SELECT mysum(i) FROM test")
+         print(cur.fetchone()[0])
+
+         con.close()
+
+      .. testoutput::
+         :hide:
+
+         3
 
 
    .. method:: create_window_function(name, num_params, aggregate_class, /)
@@ -805,8 +885,56 @@ Connection objects
 
       Example:
 
-      .. literalinclude:: ../includes/sqlite3/sumintwindow.py
+      .. testcode::
 
+         # Example taken from https://www.sqlite.org/windowfunctions.html#udfwinfunc
+         class WindowSumInt:
+             def __init__(self):
+                 self.count = 0
+
+             def step(self, value):
+                 """Add a row to the current window."""
+                 self.count += value
+
+             def value(self):
+                 """Return the current value of the aggregate."""
+                 return self.count
+
+             def inverse(self, value):
+                 """Remove a row from the current window."""
+                 self.count -= value
+
+             def finalize(self):
+                 """Return the final value of the aggregate.
+
+                 Any clean-up actions should be placed here.
+                 """
+                 return self.count
+
+
+         con = sqlite3.connect(":memory:")
+         cur = con.execute("CREATE TABLE test(x, y)")
+         values = [
+             ("a", 4),
+             ("b", 5),
+             ("c", 3),
+             ("d", 8),
+             ("e", 1),
+         ]
+         cur.executemany("INSERT INTO test VALUES(?, ?)", values)
+         con.create_window_function("sumint", 1, WindowSumInt)
+         cur.execute("""
+             SELECT x, sumint(y) OVER (
+                 ORDER BY x ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING
+             ) AS sum_y
+             FROM test ORDER BY x
+         """)
+         print(cur.fetchall())
+
+      .. testoutput::
+         :hide:
+
+         [('a', 9), ('b', 12), ('c', 16), ('d', 12), ('e', 9)]
 
    .. method:: create_collation(name, callable)
 
@@ -820,7 +948,31 @@ Connection objects
 
       The following example shows a reverse sorting collation:
 
-      .. literalinclude:: ../includes/sqlite3/collation_reverse.py
+      .. testcode::
+
+         def collate_reverse(string1, string2):
+             if string1 == string2:
+                 return 0
+             elif string1 < string2:
+                 return 1
+             else:
+                 return -1
+
+         con = sqlite3.connect(":memory:")
+         con.create_collation("reverse", collate_reverse)
+
+         cur = con.execute("CREATE TABLE test(x)")
+         cur.executemany("INSERT INTO test(x) VALUES(?)", [("a",), ("b",)])
+         cur.execute("SELECT x FROM test ORDER BY x COLLATE reverse")
+         for row in cur:
+             print(row)
+         con.close()
+
+      .. testoutput::
+         :hide:
+
+         ('b',)
+         ('a',)
 
       Remove a collation function by setting *callable* to ``None``.
 
@@ -925,7 +1077,43 @@ Connection objects
       .. versionchanged:: 3.10
          Added the ``sqlite3.enable_load_extension`` auditing event.
 
-      .. literalinclude:: ../includes/sqlite3/load_extension.py
+      .. testsetup:: sqlite3.loadext
+
+         import sqlite3
+         con = sqlite3.connect(":memory:")
+
+      .. testcode:: sqlite3.loadext
+         :skipif: True  # not testable at the moment
+
+         con.enable_load_extension(True)
+
+         # Load the fulltext search extension
+         con.execute("select load_extension('./fts3.so')")
+
+         # alternatively you can load the extension using an API call:
+         # con.load_extension("./fts3.so")
+
+         # disable extension loading again
+         con.enable_load_extension(False)
+
+         # example from SQLite wiki
+         con.execute("CREATE VIRTUAL TABLE recipe USING fts3(name, ingredients)")
+         con.executescript("""
+             INSERT INTO recipe (name, ingredients) VALUES('broccoli stew', 'broccoli peppers cheese tomatoes');
+             INSERT INTO recipe (name, ingredients) VALUES('pumpkin stew', 'pumpkin onions garlic celery');
+             INSERT INTO recipe (name, ingredients) VALUES('broccoli pie', 'broccoli cheese onions flour');
+             INSERT INTO recipe (name, ingredients) VALUES('pumpkin pie', 'pumpkin sugar flour butter');
+             """)
+         for row in con.execute("SELECT rowid, name, ingredients FROM recipe WHERE name MATCH 'pie'"):
+             print(row)
+
+         con.close()
+
+      .. testoutput:: sqlite3.loadext
+         :hide:
+
+         (2, 'broccoli pie', 'broccoli cheese onions flour')
+         (3, 'pumpkin pie', 'pumpkin sugar flour butter')
 
    .. method:: load_extension(path, /)
 
@@ -1400,7 +1588,30 @@ Blob objects
    Use the :class:`Blob` as a :term:`context manager` to ensure that the blob
    handle is closed after use.
 
-   .. literalinclude:: ../includes/sqlite3/blob.py
+   .. testcode::
+
+      con = sqlite3.connect(":memory:")
+      con.execute("CREATE TABLE test(blob_col blob)")
+      con.execute("INSERT INTO test(blob_col) VALUES(zeroblob(13))")
+
+      # Write to our blob, using two write operations:
+      with con.blobopen("test", "blob_col", 1) as blob:
+          blob.write(b"hello, ")
+          blob.write(b"world.")
+          # Modify the first and last bytes of our blob
+          blob[0] = ord("H")
+          blob[-1] = ord("!")
+
+      # Read the contents of our blob
+      with con.blobopen("test", "blob_col", 1) as blob:
+          greeting = blob.read()
+
+      print(greeting)  # outputs "b'Hello, world!'"
+
+   .. testoutput::
+      :hide:
+
+      b'Hello, world!'
 
    .. method:: close()
 
@@ -1653,8 +1864,8 @@ How-to guides
 
 .. _sqlite3-placeholders:
 
-Using placeholders to bind values in SQL queries
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+How to use placeholders to bind values in SQL queries
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 SQL operations usually need to use values from Python variables. However,
 beware of using Python's string operations to assemble queries, as they
@@ -1678,7 +1889,30 @@ placeholders (named style). For the qmark style, ``parameters`` must be a
 keys for all named parameters. Any extra items are ignored. Here's an example of
 both styles:
 
-.. literalinclude:: ../includes/sqlite3/execute_1.py
+.. testcode::
+
+   con = sqlite3.connect(":memory:")
+   cur = con.execute("CREATE TABLE lang(name, first_appeared)")
+
+   # This is the qmark style:
+   cur.execute("INSERT INTO lang VALUES(?, ?)", ("C", 1972))
+
+   # The qmark style used with executemany():
+   lang_list = [
+       ("Fortran", 1957),
+       ("Python", 1991),
+       ("Go", 2009),
+   ]
+   cur.executemany("INSERT INTO lang VALUES(?, ?)", lang_list)
+
+   # And this is the named style:
+   cur.execute("SELECT * FROM lang WHERE first_appeared = :year", {"year": 1972})
+   print(cur.fetchall())
+
+.. testoutput::
+   :hide:
+
+   [('C', 1972)]
 
 
 .. _sqlite3-adapters:
@@ -1712,7 +1946,26 @@ This can be implemented by adding a ``__conform__(self, protocol)``
 method which returns the adapted value.
 The object passed to *protocol* will be of type :class:`PrepareProtocol`.
 
-.. literalinclude:: ../includes/sqlite3/adapter_point_1.py
+.. testcode::
+
+   class Point:
+       def __init__(self, x, y):
+           self.x, self.y = x, y
+
+       def __conform__(self, protocol):
+           if protocol is sqlite3.PrepareProtocol:
+               return f"{self.x};{self.y}"
+
+   con = sqlite3.connect(":memory:")
+   cur = con.cursor()
+
+   cur.execute("SELECT ?", (Point(4.0, -3.2),))
+   print(cur.fetchone()[0])
+
+.. testoutput::
+   :hide:
+
+   4.0;-3.2
 
 
 How to register adapter callables
@@ -1722,7 +1975,27 @@ The other possibility is to create a function that converts the Python object
 to an SQLite-compatible type.
 This function can then be registered using :func:`register_adapter`.
 
-.. literalinclude:: ../includes/sqlite3/adapter_point_2.py
+.. testcode::
+
+   class Point:
+       def __init__(self, x, y):
+           self.x, self.y = x, y
+
+   def adapt_point(point):
+       return f"{point.x};{point.y}"
+
+   sqlite3.register_adapter(Point, adapt_point)
+
+   con = sqlite3.connect(":memory:")
+   cur = con.cursor()
+
+   cur.execute("SELECT ?", (Point(1.0, 2.5),))
+   print(cur.fetchone()[0])
+
+.. testoutput::
+   :hide:
+
+   1.0;2.5
 
 
 .. _sqlite3-converters:
@@ -1764,7 +2037,50 @@ of :func:`connect`. There are three options:
 
 The following example illustrates the implicit and explicit approaches:
 
-.. literalinclude:: ../includes/sqlite3/converter_point.py
+.. testcode::
+
+   class Point:
+       def __init__(self, x, y):
+           self.x, self.y = x, y
+
+       def __repr__(self):
+           return f"Point({self.x}, {self.y})"
+
+   def adapt_point(point):
+       return f"{point.x};{point.y}".encode("utf-8")
+
+   def convert_point(s):
+       x, y = list(map(float, s.split(b";")))
+       return Point(x, y)
+
+   # Register the adapter and converter
+   sqlite3.register_adapter(Point, adapt_point)
+   sqlite3.register_converter("point", convert_point)
+
+   # 1) Parse using declared types
+   p = Point(4.0, -3.2)
+   con = sqlite3.connect(":memory:", detect_types=sqlite3.PARSE_DECLTYPES)
+   cur = con.execute("CREATE TABLE test(p point)")
+
+   cur.execute("INSERT INTO test(p) VALUES(?)", (p,))
+   cur.execute("SELECT p FROM test")
+   print("with declared types:", cur.fetchone()[0])
+   cur.close()
+   con.close()
+
+   # 2) Parse using column names
+   con = sqlite3.connect(":memory:", detect_types=sqlite3.PARSE_COLNAMES)
+   cur = con.execute("CREATE TABLE test(p)")
+
+   cur.execute("INSERT INTO test(p) VALUES(?)", (p,))
+   cur.execute('SELECT p AS "p [point]" FROM test')
+   print("with column names:", cur.fetchone()[0])
+
+.. testoutput::
+   :hide:
+
+   with declared types: Point(4.0, -3.2)
+   with column names: Point(4.0, -3.2)
 
 
 .. _sqlite3-adapter-converter-recipes:
@@ -1826,7 +2142,33 @@ objects are created implicitly and these shortcut methods return the cursor
 objects. This way, you can execute a ``SELECT`` statement and iterate over it
 directly using only a single call on the :class:`Connection` object.
 
-.. literalinclude:: ../includes/sqlite3/shortcut_methods.py
+.. testcode::
+
+   # Create and fill the table.
+   con = sqlite3.connect(":memory:")
+   con.execute("CREATE TABLE lang(name, first_appeared)")
+   data = [
+       ("C++", 1985),
+       ("Objective-C", 1984),
+   ]
+   con.executemany("INSERT INTO lang(name, first_appeared) VALUES(?, ?)", data)
+
+   # Print the table contents
+   for row in con.execute("SELECT name, first_appeared FROM lang"):
+       print(row)
+
+   print("I just deleted", con.execute("DELETE FROM lang").rowcount, "rows")
+
+   # close() is not a shortcut method and it's not called automatically;
+   # the connection object should be closed manually
+   con.close()
+
+.. testoutput::
+   :hide:
+
+   ('C++', 1985)
+   ('Objective-C', 1984)
+   I just deleted 2 rows
 
 
 .. _sqlite3-connection-context-manager:
@@ -1851,7 +2193,31 @@ the context manager is a no-op.
    The context manager neither implicitly opens a new transaction
    nor closes the connection.
 
-.. literalinclude:: ../includes/sqlite3/ctx_manager.py
+.. testcode::
+
+   con = sqlite3.connect(":memory:")
+   con.execute("CREATE TABLE lang(id INTEGER PRIMARY KEY, name VARCHAR UNIQUE)")
+
+   # Successful, con.commit() is called automatically afterwards
+   with con:
+       con.execute("INSERT INTO lang(name) VALUES(?)", ("Python",))
+
+   # con.rollback() is called after the with block finishes with an exception,
+   # the exception is still raised and must be caught
+   try:
+       with con:
+           con.execute("INSERT INTO lang(name) VALUES(?)", ("Python",))
+   except sqlite3.IntegrityError:
+       print("couldn't add Python twice")
+
+   # Connection object used as context manager only commits or rollbacks transactions,
+   # so the connection object should be closed manually
+   con.close()
+
+.. testoutput::
+   :hide:
+
+   couldn't add Python twice
 
 
 .. _sqlite3-uri-tricks:

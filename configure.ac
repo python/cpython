@@ -3452,6 +3452,26 @@ case "$ac_sys_system" in
 esac
 AC_MSG_RESULT($SHLIBS)
 
+dnl perf trampoline is Linux specific and requires an arch-specific
+dnl trampoline in asssembly.
+AC_MSG_CHECKING([perf trampoline])
+AS_CASE([$PLATFORM_TRIPLET],
+  [x86_64-linux-gnu], [perf_trampoline=yes],
+  [aarch64-linux-gnu], [perf_trampoline=yes],
+  [perf_trampoline=no]
+)
+AC_MSG_RESULT([$perf_trampoline])
+
+AS_VAR_IF([perf_trampoline], [yes], [
+  AC_DEFINE([PY_HAVE_PERF_TRAMPOLINE], [1], [Define to 1 if you have the perf trampoline.])
+  PERF_TRAMPOLINE_OBJ=Objects/asm_trampoline.o
+
+  dnl perf needs frame pointers for unwinding, include compiler option in debug builds
+  AS_VAR_IF([Py_DEBUG], [true], [
+    AS_VAR_APPEND([BASECFLAGS], [" -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer"])
+  ])
+])
+AC_SUBST([PERF_TRAMPOLINE_OBJ])
 
 # checks for libraries
 AC_CHECK_LIB(sendfile, sendfile)
