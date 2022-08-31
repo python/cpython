@@ -768,7 +768,7 @@ def _get_machine_win32():
 
     # WOW64 processes mask the native architecture
     try:
-        arch, = _wmi_query('CPU', 'Architecture')
+        [arch, *_] = _wmi_query('CPU', 'Architecture')
     except OSError:
         pass
     else:

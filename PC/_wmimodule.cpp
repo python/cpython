@@ -281,23 +281,12 @@ static PyMethodDef wmi_functions[] = {
     { NULL, NULL, 0, NULL }
 };
 
-static int exec_wmi(PyObject *module)
-{
-    PyModule_AddFunctions(module, wmi_functions);
-
-    return 0; // success
-}
-
-static PyModuleDef_Slot wmi_slots[] = {
-    { Py_mod_exec, exec_wmi },
-    { 0, NULL }
-};
-
 static PyModuleDef wmi_def = {
     PyModuleDef_HEAD_INIT,
-    .m_name = "_wmi",
-    .m_size = 0,
-    .m_slots = wmi_slots,
+    "_wmi",
+    NULL,   // doc
+    0,      // m_size
+    wmi_functions
 };
 
 extern "C" {
