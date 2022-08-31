@@ -4694,7 +4694,9 @@ values are hashable, so that ``(key, value)`` pairs are unique and hashable,
 then the items view is also set-like.  (Values views are not treated as set-like
 since the entries are generally not unique.)  For set-like views, all of the
 operations defined for the abstract base class :class:`collections.abc.Set` are
-available (for example, ``==``, ``<``, or ``^``).
+available (for example, ``==``, ``<``, or ``^``).  While using set operators,
+set-like views accept any iterable as the other operand, unlike sets which only
+accept sets as the input.
 
 An example of dictionary view usage::
 
@@ -4726,6 +4728,8 @@ An example of dictionary view usage::
    {'bacon'}
    >>> keys ^ {'sausage', 'juice'}
    {'juice', 'sausage', 'bacon', 'spam'}
+   >>> keys | ['juice', 'juice', 'juice']
+   {'juice', 'sausage', 'bacon', 'spam', 'eggs'}
 
    >>> # get back a read-only proxy for the original dictionary
    >>> values.mapping
