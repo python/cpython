@@ -252,7 +252,7 @@ class UTF8ValidatorTest(unittest.TestCase):
             # not via a signal.
             self.assertGreaterEqual(rc, 1)
             self.assertIn(b"Non-UTF-8 code starting with", stderr)
-            self.assertIn(b"on line 5", stderr)
+            self.assertIn(b"on line 4", stderr)
 
         # continuation bytes in a sequence of 2, 3, or 4 bytes
         continuation_bytes = [bytes([x]) for x in range(0x80, 0xC0)]

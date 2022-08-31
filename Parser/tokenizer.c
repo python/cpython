@@ -564,7 +564,7 @@ ensure_utf8(char *line, struct tok_state *tok)
                      "in file %U on line %i, "
                      "but no encoding declared; "
                      "see https://peps.python.org/pep-0263/ for details",
-                     badchar, tok->filename, tok->lineno + 1);
+                     badchar, tok->filename, tok->lineno);
         return 0;
     }
     return 1;
