@@ -102,7 +102,7 @@ As you can see here, the Python functions are not shown in the output, only ``_P
 functions use the same C function to evaluate bytecode so we cannot know which Python function corresponds to which
 bytecode-evaluating function.
 
-Instead, if we run the same experiment with ``perf`` support activated we get:
+Instead, if we run the same experiment with ``perf`` support enabled we get:
 
 .. code-block:: shell-session
 
@@ -148,10 +148,10 @@ Instead, if we run the same experiment with ``perf`` support activated we get:
 
 
 
-How to enable the ``perf`` profiling mode
------------------------------------------
+How to enable ``perf`` profiling support
+----------------------------------------
 
-There are three ways to activate the ``perf`` profiling mode:
+There are three ways to enable ``perf`` profiling support:
 
 * using the :option:`-Xperf <-X>` command-line option
 * using the :envvar:`PYTHONPERFSUPPORT` environment variable
@@ -163,11 +163,11 @@ use the :option:`-Xperf <-X>` option::
 
     $ python -Xperf my_script.py
 
-If you need to activate the ``perf`` profiling mode globally,
+If you need to enable ``perf`` profiling support globally,
 set the environment variable :envvar:`PYTHONPERFSUPPORT`
 to a nonzero value.
 
-If you need to dynamically activate and deactivate the ``perf`` profiling mode
+If you need to dynamically enable and disable ``perf`` profiling
 in response to a signal or other communication mechanisms with your process,
 use the :func:`sys.activate_stack_trampoline` and
 :func:`sys.deactivate_stack_trampoline` APIs:

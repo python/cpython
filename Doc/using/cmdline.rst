@@ -535,13 +535,11 @@ Miscellaneous options
      development (running from the source tree) then the default is "off".
      Note that the "importlib_bootstrap" and "importlib_bootstrap_external"
      frozen modules are always used, even if this flag is set to "off".
-   * ``-X perf`` activates compatibility mode with the ``perf`` profiler.
-     When this option is activated, the Linux ``perf`` profiler will be able to
+   * ``-X perf`` enables support for the Linux ``perf`` profiler.
+     When this option is provided, the ``perf`` profiler will be able to
      report Python calls. This option is only available on some platforms and
      will do nothing if is not supported on the current system. The default value
-     is "off". See :ref:`perf_profiling` for more details.
-     This option is equivalent to setting the environment variable
-     :envvar:`PYTHONPERFSUPPORT` to ``1``.
+     is "off". See also :envvar:`PYTHONPERFSUPPORT` and :ref:`perf_profiling`.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -1036,14 +1034,13 @@ conflict.
 
 .. envvar:: PYTHONPERFSUPPORT
 
-   If this variable is set to a nonzero value, it activates compatibility mode
-   with the ``perf`` profiler so Python calls can be detected by it.
-   This is exactly equivalent to setting :option:`-X perf <-X>`
-   on the command line.
+   If this variable is set to a nonzero value, it enables support for
+   the Linux ``perf`` profiler so Python calls can be detected by it.
 
-   If set to ``0``, disable ``perf`` profiler support.
+   If set to ``0``, disable Linux ``perf`` profiler support.
 
-   See :ref:`perf_profiling` for more details.
+   See also the :option:`-X perf <-X>` command-line option
+   and :ref:`perf_profiling`.
 
    .. versionadded:: 3.12
 
