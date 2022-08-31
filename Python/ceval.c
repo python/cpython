@@ -1036,8 +1036,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     py_frame.f_funcobj = Py_None;
     py_frame.f_locals = NULL;
     py_frame.frame_obj = NULL;
-    py_frame.f_code = tstate->interp->interpreter_trampoline;
     assert(tstate->interp->interpreter_trampoline != NULL);
+    py_frame.f_code = tstate->interp->interpreter_trampoline;
     _Py_CODEUNIT *code = _PyCode_CODE(tstate->interp->interpreter_trampoline);
     py_frame.prev_instr = code;
     py_frame.stacktop = 0;
