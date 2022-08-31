@@ -1003,21 +1003,25 @@ iterations of the loop.
 
    If TOS is true, increments the bytecode counter by *delta*.  TOS is popped.
 
-   .. versionadded:: 3.11
+   .. versionchanged:: 3.11
+      The oparg is now a relative delta rather than an absolute target.
+      This opcode is a pseudo-instruction, replaced in final bytecode by
+      the directed versions (forward/backward).
 
    .. versionchanged:: 3.12
       This is no longer a pseudo-instruction.
-
 
 .. opcode:: POP_JUMP_IF_FALSE (delta)
 
    If TOS is false, increments the bytecode counter by *delta*.  TOS is popped.
 
-   .. versionadded:: 3.11
+   .. versionchanged:: 3.11
+      The oparg is now a relative delta rather than an absolute target.
+      This opcode is a pseudo-instruction, replaced in final bytecode by
+      the directed versions (forward/backward).
 
    .. versionchanged:: 3.12
       This is no longer a pseudo-instruction.
-
 
 .. opcode:: POP_JUMP_IF_NOT_NONE (delta)
 
