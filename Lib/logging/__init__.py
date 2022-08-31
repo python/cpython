@@ -1841,9 +1841,9 @@ class Logger(Filterer):
             # exclude PlaceHolders - the last check is to ensure that lower-level
             # descendants aren't returned - if there are placeholders, a logger's
             # parent field might point to a grandparent or ancestor thereof.
-            return set([item for item in d.values() \
-                if isinstance(item, Logger) and item.parent is self and \
-                    _hierlevel(item) == 1 + _hierlevel(item.parent)])
+            return set(item for item in d.values()
+                       if isinstance(item, Logger) and item.parent is self and
+                       _hierlevel(item) == 1 + _hierlevel(item.parent))
         finally:
             _releaseLock()
 
