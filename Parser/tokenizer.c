@@ -492,7 +492,8 @@ static void fp_ungetc(int c, struct tok_state *tok) {
    the sequence if yes, 0 if not.  The special cases match
    those in stringlib/codecs.h:utf8_decode.
 */
-static int valid_utf8(const unsigned char* s)
+static int
+valid_utf8(const unsigned char* s)
 {
     int expected = 0;
     int length;
