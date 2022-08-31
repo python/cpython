@@ -270,12 +270,11 @@ Match = type(_compiler.compile('', 0).match(''))
 # Use the fact that dict keeps the insertion order.
 # _cache2 uses the simple FIFO policy which has better latency.
 # _cache uses the LRU policy which has better hit rate.
-# OrderedDict is not used because it adds a new dependence, and
-# performance difference is negligible.
 _cache = {}  # LRU
 _cache2 = {}  # FIFO
 _MAXCACHE = 512
-_MAXCACHE2 = 256  # Must be less than _MAXCACHE.
+_MAXCACHE2 = 256
+assert _MAXCACHE2 < _MAXCACHE
 
 def _compile(pattern, flags):
     # internal: compile pattern
@@ -307,16 +306,19 @@ def _compile(pattern, flags):
         if flags & DEBUG:
             return p
         if len(_cache) >= _MAXCACHE:
-            # Drop the least recently used item
+            # Drop the least recently used item.
+            # next(iter(_cache)) is known to have linear amortized time,
+            # but it is used here to avoid a dependency from using OrderedDict.
+            # For the small _MAXCACHE value it doesn't make much of a difference.
             try:
                 del _cache[next(iter(_cache))]
             except (StopIteration, RuntimeError, KeyError):
                 pass
-    # Append to the end
+    # Append to the end.
     _cache[key] = p
 
     if len(_cache2) >= _MAXCACHE2:
-        # Drop the oldest item
+        # Drop the oldest item.
         try:
             del _cache2[next(iter(_cache2))]
         except (StopIteration, RuntimeError, KeyError):
