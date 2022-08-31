@@ -2053,6 +2053,80 @@ sys_getandroidapilevel_impl(PyObject *module)
 }
 #endif   /* ANDROID_API_LEVEL */
 
+/*[clinic input]
+sys.activate_stack_trampoline
+
+    backend: str
+    /
+
+Activate the perf profiler trampoline.
+[clinic start generated code]*/
+
+static PyObject *
+sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
+/*[clinic end generated code: output=5783cdeb51874b43 input=b09020e3a17c78c5]*/
+{
+#ifdef PY_HAVE_PERF_TRAMPOLINE
+    if (strcmp(backend, "perf") == 0) {
+        _PyPerf_Callbacks cur_cb;
+        _PyPerfTrampoline_GetCallbacks(&cur_cb);
+        if (cur_cb.init_state != _Py_perfmap_callbacks.init_state) {
+            if (_PyPerfTrampoline_SetCallbacks(&_Py_perfmap_callbacks) < 0 ) {
+                PyErr_SetString(PyExc_ValueError, "can't activate perf trampoline");
+                return NULL;
+            }
+        }
+    }
+    else {
+        PyErr_Format(PyExc_ValueError, "invalid backend: %s", backend);
+        return NULL;
+    }
+    if (_PyPerfTrampoline_Init(1) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+#else
+    PyErr_SetString(PyExc_ValueError, "perf trampoline not available");
+    return NULL;
+#endif
+}
+
+
+/*[clinic input]
+sys.deactivate_stack_trampoline
+
+Dectivate the perf profiler trampoline.
+[clinic start generated code]*/
+
+static PyObject *
+sys_deactivate_stack_trampoline_impl(PyObject *module)
+/*[clinic end generated code: output=b50da25465df0ef1 input=491f4fc1ed615736]*/
+{
+    if  (_PyPerfTrampoline_Init(0) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+sys.is_stack_trampoline_active
+
+Returns *True* if the perf profiler trampoline is active.
+[clinic start generated code]*/
+
+static PyObject *
+sys_is_stack_trampoline_active_impl(PyObject *module)
+/*[clinic end generated code: output=ab2746de0ad9d293 input=061fa5776ac9dd59]*/
+{
+#ifdef PY_HAVE_PERF_TRAMPOLINE
+    if (_PyIsPerfTrampolineActive()) {
+        Py_RETURN_TRUE;
+    }
+#endif
+    Py_RETURN_FALSE;
+}
+
+
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
     SYS_ADDAUDITHOOK_METHODDEF
@@ -2108,6 +2182,9 @@ static PyMethodDef sys_methods[] = {
      METH_VARARGS | METH_KEYWORDS, set_asyncgen_hooks_doc},
     SYS_GET_ASYNCGEN_HOOKS_METHODDEF
     SYS_GETANDROIDAPILEVEL_METHODDEF
+    SYS_ACTIVATE_STACK_TRAMPOLINE_METHODDEF
+    SYS_DEACTIVATE_STACK_TRAMPOLINE_METHODDEF
+    SYS_IS_STACK_TRAMPOLINE_ACTIVE_METHODDEF
     SYS_UNRAISABLEHOOK_METHODDEF
 #ifdef Py_STATS
     SYS__STATS_ON_METHODDEF

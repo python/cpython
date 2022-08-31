@@ -113,6 +113,12 @@ class AnyTests(BaseTestCase):
     def test_repr(self):
         self.assertEqual(repr(Any), 'typing.Any')
 
+        class Sub(Any): pass
+        self.assertEqual(
+            repr(Sub),
+            "<class 'test.test_typing.AnyTests.test_repr.<locals>.Sub'>",
+        )
+
     def test_errors(self):
         with self.assertRaises(TypeError):
             issubclass(42, Any)
@@ -7137,6 +7143,7 @@ class SpecialAttrsTests(BaseTestCase):
             typing.Self: 'Self',
             # Subscribed special forms
             typing.Annotated[Any, "Annotation"]: 'Annotated',
+            typing.Annotated[int, 'Annotation']: 'Annotated',
             typing.ClassVar[Any]: 'ClassVar',
             typing.Concatenate[Any, SpecialAttrsP]: 'Concatenate',
             typing.Final[Any]: 'Final',
