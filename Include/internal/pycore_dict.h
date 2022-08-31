@@ -76,6 +76,7 @@ extern PyObject *_PyDict_Pop_KnownHash(PyObject *, PyObject *, Py_hash_t, PyObje
 #define DKIX_DUMMY (-2)  /* Used internally */
 #define DKIX_ERROR (-3)
 #define DKIX_KEY_CHANGED (-4) /* Used internally */
+#define DKIX_LOWEST_RESERVED (-4) /* Used internally */
 
 typedef enum {
     DICT_KEYS_GENERAL = 0,

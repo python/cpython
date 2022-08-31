@@ -332,23 +332,39 @@ dictkeys_get_index(const PyDictKeysObject *keys, Py_ssize_t i)
     int log2size = DK_LOG_SIZE(keys);
     Py_ssize_t ix;
 
-    if (log2size < 8) {
-        const int8_t *indices = (const int8_t*)(keys->dk_indices);
-        ix = indices[i];
+    if (log2size <= 8) {
+        const uint8_t *indices = (const uint8_t*)(keys->dk_indices);
+        const uint8_t uix = indices[i];
+        if(uix >= (uint8_t)DKIX_LOWEST_RESERVED) {
+            ix = (int8_t) uix;
+        } else {
+            ix = uix;
+        }
     }
-    else if (log2size < 16) {
-        const int16_t *indices = (const int16_t*)(keys->dk_indices);
-        ix = indices[i];
+    else if (log2size <= 16) {
+        const uint16_t *indices = (const uint16_t*)(keys->dk_indices);
+        const uint16_t uix = indices[i];
+        if(uix >= (uint16_t)DKIX_LOWEST_RESERVED) {
+            ix = (int16_t) uix;
+        } else {
+            ix = uix;
+        }
     }
 #if SIZEOF_VOID_P > 4
     else if (log2size >= 32) {
+        // 64 bits are enough eves as a signed number, no need to fiddle.
         const int64_t *indices = (const int64_t*)(keys->dk_indices);
         ix = indices[i];
     }
 #endif
     else {
-        const int32_t *indices = (const int32_t*)(keys->dk_indices);
-        ix = indices[i];
+        const uint32_t *indices = (const uint32_t*)(keys->dk_indices);
+        const uint32_t u32_ix = indices[i];
+        if(u32_ix >= (uint32_t)DKIX_LOWEST_RESERVED) {
+            ix = (int32_t) u32_ix;
+        } else {
+            ix = u32_ix;
+        }
     }
     assert(ix >= DKIX_DUMMY);
     return ix;
@@ -363,29 +379,28 @@ dictkeys_set_index(PyDictKeysObject *keys, Py_ssize_t i, Py_ssize_t ix)
     assert(ix >= DKIX_DUMMY);
     assert(keys->dk_version == 0);
 
-    if (log2size < 8) {
-        int8_t *indices = (int8_t*)(keys->dk_indices);
-        assert(ix <= 0x7f);
-        indices[i] = (char)ix;
+    if (log2size <= 8) {
+        uint8_t *indices = (uint8_t*)(keys->dk_indices);
+        assert(ix - DKIX_LOWEST_RESERVED < 0xff);
+        indices[i] = (uint8_t)ix;
     }
-    else if (log2size < 16) {
-        int16_t *indices = (int16_t*)(keys->dk_indices);
-        assert(ix <= 0x7fff);
-        indices[i] = (int16_t)ix;
+    else if (log2size <= 16) {
+        uint16_t *indices = (uint16_t*)(keys->dk_indices);
+        assert(ix - DKIX_LOWEST_RESERVED < 0xffff);
+        indices[i] = (uint16_t)ix;
     }
 #if SIZEOF_VOID_P > 4
-    else if (log2size >= 32) {
+    else if (log2size > 32) {
         int64_t *indices = (int64_t*)(keys->dk_indices);
         indices[i] = ix;
     }
 #endif
     else {
-        int32_t *indices = (int32_t*)(keys->dk_indices);
-        assert(ix <= 0x7fffffff);
-        indices[i] = (int32_t)ix;
+        uint32_t *indices = (uint32_t*)(keys->dk_indices);
+        assert(ix - DKIX_LOWEST_RESERVED < 0xffffffff);
+        indices[i] = (uint32_t)ix;
     }
 }
-
 
 /* USABLE_FRACTION is the maximum dictionary load.
  * Increasing this ratio makes dictionaries more dense resulting in more
@@ -601,14 +616,14 @@ new_keys_object(uint8_t log2_size, bool unicode)
     assert(log2_size >= PyDict_LOG_MINSIZE);
 
     usable = USABLE_FRACTION(1<<log2_size);
-    if (log2_size < 8) {
+    if (log2_size <= 8) {
         log2_bytes = log2_size;
     }
-    else if (log2_size < 16) {
+    else if (log2_size <= 16) {
         log2_bytes = log2_size + 1;
     }
 #if SIZEOF_VOID_P > 4
-    else if (log2_size >= 32) {
+    else if (log2_size > 32) {
         log2_bytes = log2_size + 3;
     }
 #endif
