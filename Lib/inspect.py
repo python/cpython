@@ -1450,9 +1450,7 @@ def formatannotation(annotation, base_module=None):
     if getattr(annotation, '__module__', None) == 'typing':
         def repl(match):
             text = match.group()
-            if text.startswith('typing.'):
-                    return text[len('typing.'):]
-            return text
+            return text.removeprefix('typing.')
         return re.sub(r'[\w\.]+', repl, repr(annotation))
     if isinstance(annotation, types.GenericAlias):
         return str(annotation)
