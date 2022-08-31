@@ -816,19 +816,17 @@ class AST_Tests(unittest.TestCase):
 
     @support.cpython_only
     def test_ast_recursion_limit(self):
-        fail_depth = sys.getrecursionlimit() * 3
-        crash_depth = sys.getrecursionlimit() * 300
-        success_depth = int(fail_depth * 0.75)
+        crash_depth = 100_000
+        success_depth = 5_000
 
         def check_limit(prefix, repeated):
             expect_ok = prefix + repeated * success_depth
             ast.parse(expect_ok)
-            for depth in (fail_depth, crash_depth):
-                broken = prefix + repeated * depth
-                details = "Compiling ({!r} + {!r} * {})".format(
-                            prefix, repeated, depth)
-                with self.assertRaises(RecursionError, msg=details):
-                    ast.parse(broken)
+            broken = prefix + repeated * crash_depth
+            details = "Compiling ({!r} + {!r} * {})".format(
+                        prefix, repeated, crash_depth)
+            with self.assertRaises(RecursionError, msg=details):
+                ast.parse(broken)
 
         check_limit("a", "()")
         check_limit("a", ".b")

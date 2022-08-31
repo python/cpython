@@ -4,14 +4,14 @@
  */
 #include "Python.h"
 #include "pycore_ast.h"           // asdl_stmt_seq
+#include "pycore_ceval.h"         // _Py_StackOverflowCheck
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
 #include <assert.h>
 #include <stdbool.h>
 
 struct validator {
-    int recursion_depth;            /* current recursion depth */
-    int recursion_limit;            /* recursion limit */
+    int placeholder;
 };
 
 static int validate_stmts(struct validator *, asdl_stmt_seq *);
@@ -161,9 +161,7 @@ validate_constant(struct validator *state, PyObject *value)
         return 1;
 
     if (PyTuple_CheckExact(value) || PyFrozenSet_CheckExact(value)) {
-        if (++state->recursion_depth > state->recursion_limit) {
-            PyErr_SetString(PyExc_RecursionError,
-                            "maximum recursion depth exceeded during compilation");
+        if (Py_StackOverflowCheck("during compilation")) {
             return 0;
         }
 
@@ -190,7 +188,6 @@ validate_constant(struct validator *state, PyObject *value)
         }
 
         Py_DECREF(it);
-        --state->recursion_depth;
         return 1;
     }
 
@@ -207,9 +204,8 @@ validate_expr(struct validator *state, expr_ty exp, expr_context_ty ctx)
 {
     VALIDATE_POSITIONS(exp);
     int ret = -1;
-    if (++state->recursion_depth > state->recursion_limit) {
-        PyErr_SetString(PyExc_RecursionError,
-                        "maximum recursion depth exceeded during compilation");
+
+    if (Py_StackOverflowCheck("during compilation")) {
         return 0;
     }
     int check_ctx = 1;
@@ -387,7 +383,6 @@ validate_expr(struct validator *state, expr_ty exp, expr_context_ty ctx)
         PyErr_SetString(PyExc_SystemError, "unexpected expression");
         ret = 0;
     }
-    state->recursion_depth--;
     return ret;
 }
 
@@ -530,9 +525,7 @@ validate_pattern(struct validator *state, pattern_ty p, int star_ok)
 {
     VALIDATE_POSITIONS(p);
     int ret = -1;
-    if (++state->recursion_depth > state->recursion_limit) {
-        PyErr_SetString(PyExc_RecursionError,
-                        "maximum recursion depth exceeded during compilation");
+    if (Py_StackOverflowCheck("during compilation")) {
         return 0;
     }
     switch (p->kind) {
@@ -668,7 +661,6 @@ validate_pattern(struct validator *state, pattern_ty p, int star_ok)
         PyErr_SetString(PyExc_SystemError, "unexpected pattern");
         ret = 0;
     }
-    state->recursion_depth--;
     return ret;
 }
 
@@ -701,9 +693,7 @@ validate_stmt(struct validator *state, stmt_ty stmt)
     VALIDATE_POSITIONS(stmt);
     int ret = -1;
     Py_ssize_t i;
-    if (++state->recursion_depth > state->recursion_limit) {
-        PyErr_SetString(PyExc_RecursionError,
-                        "maximum recursion depth exceeded during compilation");
+    if (Py_StackOverflowCheck("during compilation")) {
         return 0;
     }
     switch (stmt->kind) {
@@ -909,7 +899,6 @@ validate_stmt(struct validator *state, stmt_ty stmt)
         PyErr_SetString(PyExc_SystemError, "unexpected statement");
         ret = 0;
     }
-    state->recursion_depth--;
     return ret;
 }
 
@@ -965,32 +954,16 @@ validate_patterns(struct validator *state, asdl_pattern_seq *patterns, int star_
     return 1;
 }
 
-
-/* See comments in symtable.c. */
-#define COMPILER_STACK_FRAME_SCALE 3
-
 int
 _PyAST_Validate(mod_ty mod)
 {
     int res = -1;
     struct validator state;
-    PyThreadState *tstate;
-    int recursion_limit = Py_GetRecursionLimit();
-    int starting_recursion_depth;
 
-    /* Setup recursion depth check counters */
-    tstate = _PyThreadState_GET();
-    if (!tstate) {
+    /* Be careful here to prevent overflow. */
+    if (Py_StackOverflowCheck("_PyAST_Validate")) {
         return 0;
     }
-    /* Be careful here to prevent overflow. */
-    int recursion_depth = tstate->recursion_limit - tstate->recursion_remaining;
-    starting_recursion_depth = (recursion_depth< INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        recursion_depth * COMPILER_STACK_FRAME_SCALE : recursion_depth;
-    state.recursion_depth = starting_recursion_depth;
-    state.recursion_limit = (recursion_limit < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        recursion_limit * COMPILER_STACK_FRAME_SCALE : recursion_limit;
-
     switch (mod->kind) {
     case Module_kind:
         res = validate_stmts(&state, mod->v.Module.body);
@@ -1010,14 +983,6 @@ _PyAST_Validate(mod_ty mod)
 
     if (res < 0) {
         PyErr_SetString(PyExc_SystemError, "impossible module node");
-        return 0;
-    }
-
-    /* Check that the recursion depth counting balanced correctly */
-    if (res && state.recursion_depth != starting_recursion_depth) {
-        PyErr_Format(PyExc_SystemError,
-            "AST validator recursion depth mismatch (before=%d, after=%d)",
-            starting_recursion_depth, state.recursion_depth);
         return 0;
     }
     return res;

@@ -705,9 +705,7 @@ astfold_mod(mod_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 static int
 astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
-    if (++state->recursion_depth > state->recursion_limit) {
-        PyErr_SetString(PyExc_RecursionError,
-                        "maximum recursion depth exceeded during compilation");
+    if (Py_StackOverflowCheck("during compilation")) {
         return 0;
     }
     switch (node_->kind) {
@@ -808,7 +806,6 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case Name_kind:
         if (node_->v.Name.ctx == Load &&
                 _PyUnicode_EqualToASCIIString(node_->v.Name.id, "__debug__")) {
-            state->recursion_depth--;
             return make_const(node_, PyBool_FromLong(!state->optimize), ctx_);
         }
         break;
@@ -821,7 +818,6 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     // No default case, so the compiler will emit a warning if new expression
     // kinds are added without being handled here
     }
-    state->recursion_depth--;
     return 1;
 }
 
@@ -868,9 +864,7 @@ astfold_arg(arg_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 static int
 astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
-    if (++state->recursion_depth > state->recursion_limit) {
-        PyErr_SetString(PyExc_RecursionError,
-                        "maximum recursion depth exceeded during compilation");
+    if (Py_StackOverflowCheck("during compilation")) {
         return 0;
     }
     switch (node_->kind) {
@@ -988,7 +982,6 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     // No default case, so the compiler will emit a warning if new statement
     // kinds are added without being handled here
     }
-    state->recursion_depth--;
     return 1;
 }
 
@@ -1020,9 +1013,7 @@ astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     // Currently, this is really only used to form complex/negative numeric
     // constants in MatchValue and MatchMapping nodes
     // We still recurse into all subexpressions and subpatterns anyway
-    if (++state->recursion_depth > state->recursion_limit) {
-        PyErr_SetString(PyExc_RecursionError,
-                        "maximum recursion depth exceeded during compilation");
+    if (Py_StackOverflowCheck("during compilation")) {
         return 0;
     }
     switch (node_->kind) {
@@ -1056,7 +1047,6 @@ astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     // No default case, so the compiler will emit a warning if new pattern
     // kinds are added without being handled here
     }
-    state->recursion_depth--;
     return 1;
 }
 
@@ -1079,33 +1069,9 @@ astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
 int
 _PyAST_Optimize(mod_ty mod, PyArena *arena, _PyASTOptimizeState *state)
 {
-    PyThreadState *tstate;
-    int recursion_limit = Py_GetRecursionLimit();
-    int starting_recursion_depth;
-
-    /* Setup recursion depth check counters */
-    tstate = _PyThreadState_GET();
-    if (!tstate) {
-        return 0;
-    }
-    /* Be careful here to prevent overflow. */
-    int recursion_depth = tstate->recursion_limit - tstate->recursion_remaining;
-    starting_recursion_depth = (recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        recursion_depth * COMPILER_STACK_FRAME_SCALE : recursion_depth;
-    state->recursion_depth = starting_recursion_depth;
-    state->recursion_limit = (recursion_limit < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        recursion_limit * COMPILER_STACK_FRAME_SCALE : recursion_limit;
-
     int ret = astfold_mod(mod, arena, state);
     assert(ret || PyErr_Occurred());
 
-    /* Check that the recursion depth counting balanced correctly */
-    if (ret && state->recursion_depth != starting_recursion_depth) {
-        PyErr_Format(PyExc_SystemError,
-            "AST optimizer recursion depth mismatch (before=%d, after=%d)",
-            starting_recursion_depth, state->recursion_depth);
-        return 0;
-    }
 
     return ret;
 }

@@ -257,52 +257,85 @@ Py_SetRecursionLimit(int new_limit)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     interp->ceval.recursion_limit = new_limit;
     for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
-        int depth = p->recursion_limit - p->recursion_remaining;
+        int depth = p->recursion_limit - p->py_recursion_remaining;
         p->recursion_limit = new_limit;
-        p->recursion_remaining = new_limit - depth;
+        p->py_recursion_remaining = new_limit - depth;
     }
+}
+
+int
+_Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
+{
+    return _Py_StackOverflowCheck(tstate, where);
+}
+
+int
+_Py_StackOverflowCheckCall(PyThreadState *tstate, const char *where, intptr_t stack_location)
+{
+    assert(stack_location >= tstate->stack_limit);
+    assert(tstate->stack_grows);
+    if (stack_location >= tstate->yellow_stack_limit) {
+        if (_Py_UpdateStackLimits(tstate)) {
+            return -1;
+        }
+    }
+    if (stack_location < tstate->yellow_stack_limit) {
+        tstate->stack_limit = tstate->yellow_stack_limit;
+        tstate->stack_in_yellow = false;
+        return 0;
+    }
+    if (stack_location >= tstate->red_stack_limit) {
+        printf("Relative stack limits: %ld  %ld %ld\n",
+               tstate->stack_limit - stack_location,
+               tstate->yellow_stack_limit - stack_location,
+               tstate->red_stack_limit - stack_location);
+        Py_FatalError("Unrecoverable C stack overflow");
+    }
+    /* In yellow zone */
+    assert(stack_location >= tstate->yellow_stack_limit &&
+        stack_location < tstate->red_stack_limit);
+    if (!tstate->stack_in_yellow) {
+        tstate->stack_limit = INTPTR_MIN;
+        tstate->stack_in_yellow = true;
+        _PyErr_Format(tstate, PyExc_RecursionError,
+                      "C stack overflow %s",
+                      where);
+        return -1;
+    }
+    assert(tstate->stack_limit == INTPTR_MIN);
+    return 0;
 }
 
 /* The function _Py_EnterRecursiveCallTstate() only calls _Py_CheckRecursiveCall()
    if the recursion_depth reaches recursion_limit. */
 int
-_Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
+_Py_CheckPyRecursiveCall(PyThreadState *tstate)
 {
     /* Check against global limit first. */
-    int depth = tstate->recursion_limit - tstate->recursion_remaining;
+    int depth = tstate->recursion_limit - tstate->py_recursion_remaining;
     if (depth < tstate->interp->ceval.recursion_limit) {
         tstate->recursion_limit = tstate->interp->ceval.recursion_limit;
-        tstate->recursion_remaining = tstate->recursion_limit - depth;
-        assert(tstate->recursion_remaining > 0);
+        tstate->py_recursion_remaining = tstate->recursion_limit - depth;
+        assert(tstate->py_recursion_remaining > 0);
         return 0;
     }
-#ifdef USE_STACKCHECK
-    if (PyOS_CheckStack()) {
-        ++tstate->recursion_remaining;
-        _PyErr_SetString(tstate, PyExc_MemoryError, "Stack overflow");
-        return -1;
-    }
-#endif
-    if (tstate->recursion_headroom) {
-        if (tstate->recursion_remaining < -50) {
+    if (tstate->py_recursion_headroom) {
+        if (tstate->py_recursion_remaining < -50) {
             /* Overflowing while handling an overflow. Give up. */
             Py_FatalError("Cannot recover from stack overflow.");
         }
     }
     else {
-        if (tstate->recursion_remaining <= 0) {
-            tstate->recursion_headroom++;
+        if (tstate->py_recursion_remaining <= 0) {
+            tstate->py_recursion_headroom++;
             _PyErr_Format(tstate, PyExc_RecursionError,
-                        "maximum recursion depth exceeded%s",
-                        where);
-            tstate->recursion_headroom--;
-            ++tstate->recursion_remaining;
+                        "maximum recursion depth exceeded");
+            tstate->py_recursion_headroom--;
             return -1;
         }
     }
     return 0;
 }
-
 
 static const binaryfunc binary_ops[] = {
     [NB_ADD] = PyNumber_Add,
@@ -1036,14 +1069,16 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     frame->previous = prev_cframe->current_frame;
     cframe.current_frame = frame;
 
+    if (_Py_EnterRecursiveCallTstate(tstate, "calling a Python function")) {
+        tstate->py_recursion_remaining--;
+        goto exit_unwind;
+    }
+
     /* support for generator.throw() */
     if (throwflag) {
-        if (_Py_EnterRecursiveCallTstate(tstate, "")) {
-            tstate->recursion_remaining--;
-            goto exit_unwind;
-        }
         TRACE_FUNCTION_THROW_ENTRY();
         DTRACE_FUNCTION_ENTRY();
+        tstate->py_recursion_remaining--;
         goto resume_with_error;
     }
 
@@ -1078,9 +1113,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 
 
 start_frame:
-    if (_Py_EnterRecursiveCallTstate(tstate, "")) {
-        tstate->recursion_remaining--;
-        goto exit_unwind;
+    tstate->py_recursion_remaining--;
+    if (tstate->py_recursion_remaining < 0) {
+        if (_Py_CheckPyRecursiveCall(tstate)) {
+            goto exit_unwind;
+        }
     }
 
 resume_frame:
@@ -1830,7 +1867,7 @@ handle_eval_breaker:
             _PyFrame_SetStackPointer(frame, stack_pointer);
             TRACE_FUNCTION_EXIT();
             DTRACE_FUNCTION_EXIT();
-            _Py_LeaveRecursiveCallTstate(tstate);
+            tstate->py_recursion_remaining++;
             if (!frame->is_entry) {
                 frame = cframe.current_frame = pop_frame(tstate, frame);
                 _PyFrame_StackPush(frame, retval);
@@ -2046,7 +2083,7 @@ handle_eval_breaker:
             _PyFrame_SetStackPointer(frame, stack_pointer);
             TRACE_FUNCTION_EXIT();
             DTRACE_FUNCTION_EXIT();
-            _Py_LeaveRecursiveCallTstate(tstate);
+            tstate->py_recursion_remaining++;
             /* Restore previous cframe and return. */
             tstate->cframe = cframe.previous;
             tstate->cframe->use_tracing = cframe.use_tracing;
@@ -4493,14 +4530,8 @@ handle_eval_breaker:
             STAT_INC(CALL, hit);
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
-            // This is slower but CPython promises to check all non-vectorcall
-            // function calls.
-            if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
-                goto error;
-            }
             PyObject *arg = TOP();
             PyObject *res = cfunc(PyCFunction_GET_SELF(callable), arg);
-            _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
             Py_DECREF(arg);
@@ -4695,13 +4726,7 @@ handle_eval_breaker:
             STAT_INC(CALL, hit);
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             PyCFunction cfunc = meth->ml_meth;
-            // This is slower but CPython promises to check all non-vectorcall
-            // function calls.
-            if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
-                goto error;
-            }
             PyObject *res = cfunc(self, arg);
-            _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(self);
             Py_DECREF(arg);
@@ -4767,13 +4792,7 @@ handle_eval_breaker:
             STAT_INC(CALL, hit);
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             PyCFunction cfunc = meth->ml_meth;
-            // This is slower but CPython promises to check all non-vectorcall
-            // function calls.
-            if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
-                goto error;
-            }
             PyObject *res = cfunc(self, NULL);
-            _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(self);
             STACK_SHRINK(oparg + 1);
@@ -4915,7 +4934,7 @@ handle_eval_breaker:
             assert(frame->frame_obj == NULL);
             gen->gi_frame_state = FRAME_CREATED;
             gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
-            _Py_LeaveRecursiveCallTstate(tstate);
+            tstate->py_recursion_remaining++;
             if (!frame->is_entry) {
                 _PyInterpreterFrame *prev = frame->previous;
                 _PyThreadState_PopFrame(tstate, frame);
@@ -5287,7 +5306,7 @@ exception_unwind:
 
 exit_unwind:
     assert(_PyErr_Occurred(tstate));
-    _Py_LeaveRecursiveCallTstate(tstate);
+    tstate->py_recursion_remaining++;
     if (frame->is_entry) {
         /* Restore previous cframe and exit */
         tstate->cframe = cframe.previous;
@@ -5858,11 +5877,9 @@ _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
     // _PyThreadState_PopFrame, since f_code is already cleared at that point:
     assert((PyObject **)frame + frame->f_code->co_framesize ==
            tstate->datastack_top);
-    tstate->recursion_remaining--;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     assert(frame->owner == FRAME_OWNED_BY_THREAD);
     _PyFrame_Clear(frame);
-    tstate->recursion_remaining++;
     _PyThreadState_PopFrame(tstate, frame);
 }
 
@@ -7455,4 +7472,11 @@ int Py_EnterRecursiveCall(const char *where)
 void Py_LeaveRecursiveCall(void)
 {
     _Py_LeaveRecursiveCall();
+}
+
+
+int Py_StackOverflowCheck(const char *where)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _Py_StackOverflowCheck(tstate, where);
 }

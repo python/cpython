@@ -29,8 +29,6 @@ typedef struct {
     int optimize;
     int ff_features;
 
-    int recursion_depth;            /* current recursion depth */
-    int recursion_limit;            /* recursion limit */
 } _PyASTOptimizeState;
 
 extern int _PyAST_Optimize(

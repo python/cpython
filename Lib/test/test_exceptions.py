@@ -1375,16 +1375,6 @@ class ExceptionTests(unittest.TestCase):
 
             class MyException(Exception): pass
 
-            def setrecursionlimit(depth):
-                while 1:
-                    try:
-                        sys.setrecursionlimit(depth)
-                        return depth
-                    except RecursionError:
-                        # sys.setrecursionlimit() raises a RecursionError if
-                        # the new recursion limit is too low (issue #25274).
-                        depth += 1
-
             def recurse(cnt):
                 cnt -= 1
                 if cnt:
@@ -1405,9 +1395,8 @@ class ExceptionTests(unittest.TestCase):
                 # tstate->recursion_depth is equal to (recursion_limit - 1)
                 # and is equal to recursion_limit when _gen_throw() calls
                 # PyErr_NormalizeException().
-                recurse(setrecursionlimit(depth + 2) - depth)
+                recurse(1000)
             finally:
-                sys.setrecursionlimit(recursionlimit)
                 print('Done.')
         """ % __file__
         rc, out, err = script_helper.assert_python_failure("-Wd", "-c", code)

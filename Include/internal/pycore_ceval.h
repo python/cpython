@@ -114,27 +114,29 @@ extern void _PyEval_DeactivateOpCache(void);
 
 /* --- _Py_EnterRecursiveCall() ----------------------------------------- */
 
-#ifdef USE_STACKCHECK
-/* With USE_STACKCHECK macro defined, trigger stack checks in
-   _Py_CheckRecursiveCall() on every 64th call to _Py_EnterRecursiveCall. */
-static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
-    return (tstate->recursion_remaining-- <= 0
-            || (tstate->recursion_remaining & 63) == 0);
-}
-#else
-static inline int _Py_MakeRecCheck(PyThreadState *tstate) {
-    return tstate->recursion_remaining-- <= 0;
-}
-#endif
-
 PyAPI_FUNC(int) _Py_CheckRecursiveCall(
     PyThreadState *tstate,
     const char *where);
 
-static inline int _Py_EnterRecursiveCallTstate(PyThreadState *tstate,
-                                               const char *where) {
-    return (_Py_MakeRecCheck(tstate) && _Py_CheckRecursiveCall(tstate, where));
+
+PyAPI_FUNC(int) _Py_StackOverflowCheckCall(
+    PyThreadState *tstate,
+    const char *where,
+    intptr_t scaled_location);
+
+static inline int
+_Py_StackOverflowCheck(PyThreadState *tstate, const char *where)
+{
+    char addr;
+    intptr_t here = ((uintptr_t)&addr)/SIZEOF_VOID_P;
+    intptr_t here_upward = here*tstate->stack_grows;
+    if (here_upward < tstate->stack_limit) {
+        return 0;
+    }
+    return _Py_StackOverflowCheckCall(tstate, where, here_upward);
 }
+
+#define _Py_EnterRecursiveCallTstate _Py_StackOverflowCheck
 
 static inline int _Py_EnterRecursiveCall(const char *where) {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -142,12 +144,9 @@ static inline int _Py_EnterRecursiveCall(const char *where) {
 }
 
 static inline void _Py_LeaveRecursiveCallTstate(PyThreadState *tstate)  {
-    tstate->recursion_remaining++;
 }
 
 static inline void _Py_LeaveRecursiveCall(void)  {
-    PyThreadState *tstate = _PyThreadState_GET();
-    _Py_LeaveRecursiveCallTstate(tstate);
 }
 
 extern struct _PyInterpreterFrame* _PyEval_GetFrame(void);

@@ -763,6 +763,74 @@ free_threadstate(PyThreadState *tstate)
    the thread is getting added to the interpreter.
   */
 
+Py_NO_INLINE
+static uintptr_t
+callee_address(void)
+ {
+    char addr;
+    uintptr_t here = (uintptr_t)&addr;
+    return here;
+}
+
+static int
+stack_grows(void) {
+    char addr;
+    uintptr_t here = (uintptr_t)&addr;
+    uintptr_t there = callee_address();
+    if (there > here) {
+        /* Stack grows up */
+        return 1;
+     }
+    else {
+         return -1;
+     }
+}
+#define DEFAULT_STACK_ALLOWANCE (1<<16)
+#define SIZE_OF_RED_ZONE (1<<10)
+#define SIZE_OF_YELLOW_ZONE (3<<10)
+
+int
+_Py_OS_GetStackLimits(void** low, void** high);
+
+int
+_Py_UpdateStackLimits(PyThreadState *tstate)
+{
+#ifdef HAVE_OS_STACK_LIMITS
+    assert(tstate->stack_grows);
+    void *lptr, *hptr;
+    if (_Py_Update_StackLimits(tstate, &lptr, &hptr)) {
+        return -1;
+    }
+    intptr_t low = (intptr_t)lptr;
+    intptr_t high = (intptr_t)hptr;
+    low = ((uintptr_t)low)/SIZEOF_VOID_P;
+    high = ((uintptr_t)high/SIZEOF_VOID_P;
+    low *= tstate->stack_grows;
+    high *= tstate->stack_grows;
+    if (low > high) {
+        intptr_t temp = low;
+        low = high;
+        high = temp;
+    }
+    tstate->red_stack_limit = high - SIZE_OF_RED_ZONE;
+    tstate->yellow_stack_limit = tstate->red_stack_limit - SIZE_OF_YELLOW_ZONE;
+#else
+    char addr;
+    intptr_t here = ((uintptr_t)&addr)/SIZEOF_VOID_P;
+    here *= tstate->stack_grows;
+    if (here < tstate->red_stack_limit - DEFAULT_STACK_ALLOWANCE ||
+        here > tstate->red_stack_limit + DEFAULT_STACK_ALLOWANCE/2)
+    {
+        /* Either uninitialized or
+         * sufficiently out of bounds, that we must have the wrong thread. */
+        intptr_t high = here + DEFAULT_STACK_ALLOWANCE;
+        tstate->red_stack_limit = high - SIZE_OF_RED_ZONE;
+        tstate->yellow_stack_limit = tstate->red_stack_limit - SIZE_OF_YELLOW_ZONE;
+    }
+#endif
+    return 0;
+}
+
 static void
 init_threadstate(PyThreadState *tstate,
                  PyInterpreterState *interp, uint64_t id,
@@ -793,7 +861,7 @@ init_threadstate(PyThreadState *tstate,
 #endif
 
     tstate->recursion_limit = interp->ceval.recursion_limit,
-    tstate->recursion_remaining = interp->ceval.recursion_limit,
+    tstate->py_recursion_remaining = interp->ceval.recursion_limit,
 
     tstate->exc_info = &tstate->exc_state;
 
@@ -801,6 +869,13 @@ init_threadstate(PyThreadState *tstate,
     tstate->datastack_chunk = NULL;
     tstate->datastack_top = NULL;
     tstate->datastack_limit = NULL;
+
+    tstate->stack_grows = stack_grows();
+
+    tstate->stack_limit = INTPTR_MIN;
+    tstate->yellow_stack_limit = INTPTR_MIN;
+    tstate->red_stack_limit = INTPTR_MIN;
+    tstate->stack_in_yellow = 0;
 
     tstate->_initialized = 1;
 }

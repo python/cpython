@@ -259,27 +259,12 @@ symtable_new(void)
     return NULL;
 }
 
-/* When compiling the use of C stack is probably going to be a lot
-   lighter than when executing Python code but still can overflow
-   and causing a Python crash if not checked (e.g. eval("()"*300000)).
-   Using the current recursion limit for the compiler seems too
-   restrictive (it caused at least one test to fail) so a factor is
-   used to allow deeper recursion when compiling an expression.
-
-   Using a scaling factor means this should automatically adjust when
-   the recursion limit is adjusted for small or large C stack allocations.
-*/
-#define COMPILER_STACK_FRAME_SCALE 3
-
 struct symtable *
 _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
 {
     struct symtable *st = symtable_new();
     asdl_stmt_seq *seq;
     int i;
-    PyThreadState *tstate;
-    int recursion_limit = Py_GetRecursionLimit();
-    int starting_recursion_depth;
 
     if (st == NULL)
         return NULL;
@@ -290,20 +275,6 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
     Py_INCREF(filename);
     st->st_filename = filename;
     st->st_future = future;
-
-    /* Setup recursion depth check counters */
-    tstate = _PyThreadState_GET();
-    if (!tstate) {
-        _PySymtable_Free(st);
-        return NULL;
-    }
-    /* Be careful here to prevent overflow. */
-    int recursion_depth = tstate->recursion_limit - tstate->recursion_remaining;
-    starting_recursion_depth = (recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        recursion_depth * COMPILER_STACK_FRAME_SCALE : recursion_depth;
-    st->recursion_depth = starting_recursion_depth;
-    st->recursion_limit = (recursion_limit < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        recursion_limit * COMPILER_STACK_FRAME_SCALE : recursion_limit;
 
     /* Make the initial symbol information gathering pass */
     if (!symtable_enter_block(st, &_Py_ID(top), ModuleBlock, (void *)mod, 0, 0, 0, 0)) {
@@ -337,14 +308,6 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
         goto error;
     }
     if (!symtable_exit_block(st)) {
-        _PySymtable_Free(st);
-        return NULL;
-    }
-    /* Check that the recursion depth counting balanced correctly */
-    if (st->recursion_depth != starting_recursion_depth) {
-        PyErr_Format(PyExc_SystemError,
-            "symtable analysis recursion depth mismatch (before=%d, after=%d)",
-            starting_recursion_depth, st->recursion_depth);
         _PySymtable_Free(st);
         return NULL;
     }
@@ -1119,17 +1082,11 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag,
 
    VISIT_SEQ_TAIL permits the start of an ASDL sequence to be skipped, which is
    useful if the first node in the sequence requires special treatment.
-
-   VISIT_QUIT macro returns the specified value exiting from the function but
-   first adjusts current recursion counter depth.
 */
-
-#define VISIT_QUIT(ST, X) \
-    return --(ST)->recursion_depth,(X)
 
 #define VISIT(ST, TYPE, V) \
     if (!symtable_visit_ ## TYPE((ST), (V))) \
-        VISIT_QUIT((ST), 0);
+        return 0;
 
 #define VISIT_SEQ(ST, TYPE, SEQ) { \
     int i; \
@@ -1137,7 +1094,7 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag,
     for (i = 0; i < asdl_seq_LEN(seq); i++) { \
         TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
         if (!symtable_visit_ ## TYPE((ST), elt)) \
-            VISIT_QUIT((ST), 0);                 \
+            return 0;                 \
     } \
 }
 
@@ -1147,7 +1104,7 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag,
     for (i = (START); i < asdl_seq_LEN(seq); i++) { \
         TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
         if (!symtable_visit_ ## TYPE((ST), elt)) \
-            VISIT_QUIT((ST), 0);                 \
+            return 0;                \
     } \
 }
 
@@ -1158,7 +1115,7 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag,
         TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
         if (!elt) continue; /* can be NULL */ \
         if (!symtable_visit_ ## TYPE((ST), elt)) \
-            VISIT_QUIT((ST), 0);             \
+            return 0;             \
     } \
 }
 
@@ -1188,37 +1145,35 @@ symtable_record_directive(struct symtable *st, identifier name, int lineno,
 static int
 symtable_visit_stmt(struct symtable *st, stmt_ty s)
 {
-    if (++st->recursion_depth > st->recursion_limit) {
-        PyErr_SetString(PyExc_RecursionError,
-                        "maximum recursion depth exceeded during compilation");
-        VISIT_QUIT(st, 0);
+    if (Py_StackOverflowCheck("during compilation")) {
+        return 0;
     }
     switch (s->kind) {
     case FunctionDef_kind:
         if (!symtable_add_def(st, s->v.FunctionDef.name, DEF_LOCAL, LOCATION(s)))
-            VISIT_QUIT(st, 0);
+            return 0;
         if (s->v.FunctionDef.args->defaults)
             VISIT_SEQ(st, expr, s->v.FunctionDef.args->defaults);
         if (s->v.FunctionDef.args->kw_defaults)
             VISIT_SEQ_WITH_NULL(st, expr, s->v.FunctionDef.args->kw_defaults);
         if (!symtable_visit_annotations(st, s, s->v.FunctionDef.args,
                                         s->v.FunctionDef.returns))
-            VISIT_QUIT(st, 0);
+            return 0;
         if (s->v.FunctionDef.decorator_list)
             VISIT_SEQ(st, expr, s->v.FunctionDef.decorator_list);
         if (!symtable_enter_block(st, s->v.FunctionDef.name,
                                   FunctionBlock, (void *)s,
                                   LOCATION(s)))
-            VISIT_QUIT(st, 0);
+            return 0;
         VISIT(st, arguments, s->v.FunctionDef.args);
         VISIT_SEQ(st, stmt, s->v.FunctionDef.body);
         if (!symtable_exit_block(st))
-            VISIT_QUIT(st, 0);
+            return 0;
         break;
     case ClassDef_kind: {
         PyObject *tmp;
         if (!symtable_add_def(st, s->v.ClassDef.name, DEF_LOCAL, LOCATION(s)))
-            VISIT_QUIT(st, 0);
+            return 0;
         VISIT_SEQ(st, expr, s->v.ClassDef.bases);
         VISIT_SEQ(st, keyword, s->v.ClassDef.keywords);
         if (s->v.ClassDef.decorator_list)
@@ -1226,13 +1181,13 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (!symtable_enter_block(st, s->v.ClassDef.name, ClassBlock,
                                   (void *)s, s->lineno, s->col_offset,
                                   s->end_lineno, s->end_col_offset))
-            VISIT_QUIT(st, 0);
+            return 0;
         tmp = st->st_private;
         st->st_private = s->v.ClassDef.name;
         VISIT_SEQ(st, stmt, s->v.ClassDef.body);
         st->st_private = tmp;
         if (!symtable_exit_block(st))
-            VISIT_QUIT(st, 0);
+            return 0;
         break;
     }
     case Return_kind:
@@ -1253,7 +1208,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             expr_ty e_name = s->v.AnnAssign.target;
             long cur = symtable_lookup(st, e_name->v.Name.id);
             if (cur < 0) {
-                VISIT_QUIT(st, 0);
+                return 0;
             }
             if ((cur & (DEF_GLOBAL | DEF_NONLOCAL))
                 && (st->st_cur->ste_symbols != st->st_global)
@@ -1266,17 +1221,17 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                                  s->col_offset + 1,
                                                  s->end_lineno,
                                                  s->end_col_offset + 1);
-                VISIT_QUIT(st, 0);
+                return 0;
             }
             if (s->v.AnnAssign.simple &&
                 !symtable_add_def(st, e_name->v.Name.id,
                                   DEF_ANNOT | DEF_LOCAL, LOCATION(e_name))) {
-                VISIT_QUIT(st, 0);
+                return 0;
             }
             else {
                 if (s->v.AnnAssign.value
                     && !symtable_add_def(st, e_name->v.Name.id, DEF_LOCAL, LOCATION(e_name))) {
-                    VISIT_QUIT(st, 0);
+                    return 0;
                 }
             }
         }
@@ -1284,7 +1239,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT(st, expr, s->v.AnnAssign.target);
         }
         if (!symtable_visit_annotation(st, s->v.AnnAssign.annotation)) {
-            VISIT_QUIT(st, 0);
+            return 0;
         }
 
         if (s->v.AnnAssign.value) {
@@ -1357,7 +1312,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             identifier name = (identifier)asdl_seq_GET(seq, i);
             long cur = symtable_lookup(st, name);
             if (cur < 0)
-                VISIT_QUIT(st, 0);
+                return 0;
             if (cur & (DEF_PARAM | DEF_LOCAL | USE | DEF_ANNOT)) {
                 const char* msg;
                 if (cur & DEF_PARAM) {
@@ -1376,13 +1331,13 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                                  s->col_offset + 1,
                                                  s->end_lineno,
                                                  s->end_col_offset + 1);
-                VISIT_QUIT(st, 0);
+                return 0;
             }
             if (!symtable_add_def(st, name, DEF_GLOBAL, LOCATION(s)))
-                VISIT_QUIT(st, 0);
+                return 0;
             if (!symtable_record_directive(st, name, s->lineno, s->col_offset,
                                            s->end_lineno, s->end_col_offset))
-                VISIT_QUIT(st, 0);
+                return 0;
         }
         break;
     }
@@ -1393,7 +1348,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             identifier name = (identifier)asdl_seq_GET(seq, i);
             long cur = symtable_lookup(st, name);
             if (cur < 0)
-                VISIT_QUIT(st, 0);
+                return 0;
             if (cur & (DEF_PARAM | DEF_LOCAL | USE | DEF_ANNOT)) {
                 const char* msg;
                 if (cur & DEF_PARAM) {
@@ -1411,13 +1366,13 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                                  s->col_offset + 1,
                                                  s->end_lineno,
                                                  s->end_col_offset + 1);
-                VISIT_QUIT(st, 0);
+                return 0;
             }
             if (!symtable_add_def(st, name, DEF_NONLOCAL, LOCATION(s)))
-                VISIT_QUIT(st, 0);
+                return 0;
             if (!symtable_record_directive(st, name, s->lineno, s->col_offset,
                                            s->end_lineno, s->end_col_offset))
-                VISIT_QUIT(st, 0);
+                return 0;
         }
         break;
     }
@@ -1435,7 +1390,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         break;
     case AsyncFunctionDef_kind:
         if (!symtable_add_def(st, s->v.AsyncFunctionDef.name, DEF_LOCAL, LOCATION(s)))
-            VISIT_QUIT(st, 0);
+            return 0;
         if (s->v.AsyncFunctionDef.args->defaults)
             VISIT_SEQ(st, expr, s->v.AsyncFunctionDef.args->defaults);
         if (s->v.AsyncFunctionDef.args->kw_defaults)
@@ -1443,19 +1398,19 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                 s->v.AsyncFunctionDef.args->kw_defaults);
         if (!symtable_visit_annotations(st, s, s->v.AsyncFunctionDef.args,
                                         s->v.AsyncFunctionDef.returns))
-            VISIT_QUIT(st, 0);
+            return 0;
         if (s->v.AsyncFunctionDef.decorator_list)
             VISIT_SEQ(st, expr, s->v.AsyncFunctionDef.decorator_list);
         if (!symtable_enter_block(st, s->v.AsyncFunctionDef.name,
                                   FunctionBlock, (void *)s,
                                   s->lineno, s->col_offset,
                                   s->end_lineno, s->end_col_offset))
-            VISIT_QUIT(st, 0);
+            return 0;
         st->st_cur->ste_coroutine = 1;
         VISIT(st, arguments, s->v.AsyncFunctionDef.args);
         VISIT_SEQ(st, stmt, s->v.AsyncFunctionDef.body);
         if (!symtable_exit_block(st))
-            VISIT_QUIT(st, 0);
+            return 0;
         break;
     case AsyncWith_kind:
         VISIT_SEQ(st, withitem, s->v.AsyncWith.items);
@@ -1469,7 +1424,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT_SEQ(st, stmt, s->v.AsyncFor.orelse);
         break;
     }
-    VISIT_QUIT(st, 1);
+    return 1;
 }
 
 static int
@@ -1500,7 +1455,7 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
                                                   e->col_offset + 1,
                                                   e->end_lineno,
                                                   e->end_col_offset + 1);
-                VISIT_QUIT(st, 0);
+                return 0;
             }
             continue;
         }
@@ -1510,22 +1465,22 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
             long target_in_scope = _PyST_GetSymbol(ste, target_name);
             if (target_in_scope & DEF_GLOBAL) {
                 if (!symtable_add_def(st, target_name, DEF_GLOBAL, LOCATION(e)))
-                    VISIT_QUIT(st, 0);
+                    return 0;
             } else {
                 if (!symtable_add_def(st, target_name, DEF_NONLOCAL, LOCATION(e)))
-                    VISIT_QUIT(st, 0);
+                    return 0;
             }
             if (!symtable_record_directive(st, target_name, LOCATION(e)))
-                VISIT_QUIT(st, 0);
+                return 0;
 
             return symtable_add_def_helper(st, target_name, DEF_LOCAL, ste, LOCATION(e));
         }
         /* If we find a ModuleBlock entry, add as GLOBAL */
         if (ste->ste_type == ModuleBlock) {
             if (!symtable_add_def(st, target_name, DEF_GLOBAL, LOCATION(e)))
-                VISIT_QUIT(st, 0);
+                return 0;
             if (!symtable_record_directive(st, target_name, LOCATION(e)))
-                VISIT_QUIT(st, 0);
+                return 0;
 
             return symtable_add_def_helper(st, target_name, DEF_GLOBAL, ste, LOCATION(e));
         }
@@ -1537,7 +1492,7 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
                                               e->col_offset + 1,
                                               e->end_lineno,
                                               e->end_col_offset + 1);
-            VISIT_QUIT(st, 0);
+            return 0;
         }
     }
 
@@ -1574,18 +1529,16 @@ symtable_handle_namedexpr(struct symtable *st, expr_ty e)
 static int
 symtable_visit_expr(struct symtable *st, expr_ty e)
 {
-    if (++st->recursion_depth > st->recursion_limit) {
-        PyErr_SetString(PyExc_RecursionError,
-                        "maximum recursion depth exceeded during compilation");
-        VISIT_QUIT(st, 0);
+    if (Py_StackOverflowCheck("during compilation")) {
+        return 0;
     }
     switch (e->kind) {
     case NamedExpr_kind:
         if (!symtable_raise_if_annotation_block(st, "named expression", e)) {
-            VISIT_QUIT(st, 0);
+            return 0;
         }
         if(!symtable_handle_namedexpr(st, e))
-            VISIT_QUIT(st, 0);
+            return 0;
         break;
     case BoolOp_kind:
         VISIT_SEQ(st, expr, e->v.BoolOp.values);
@@ -1606,11 +1559,11 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
                                   FunctionBlock, (void *)e,
                                   e->lineno, e->col_offset,
                                   e->end_lineno, e->end_col_offset))
-            VISIT_QUIT(st, 0);
+            return 0;
         VISIT(st, arguments, e->v.Lambda.args);
         VISIT(st, expr, e->v.Lambda.body);
         if (!symtable_exit_block(st))
-            VISIT_QUIT(st, 0);
+            return 0;
         break;
     }
     case IfExp_kind:
@@ -1627,23 +1580,23 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         break;
     case GeneratorExp_kind:
         if (!symtable_visit_genexp(st, e))
-            VISIT_QUIT(st, 0);
+            return 0;
         break;
     case ListComp_kind:
         if (!symtable_visit_listcomp(st, e))
-            VISIT_QUIT(st, 0);
+            return 0;
         break;
     case SetComp_kind:
         if (!symtable_visit_setcomp(st, e))
-            VISIT_QUIT(st, 0);
+            return 0;
         break;
     case DictComp_kind:
         if (!symtable_visit_dictcomp(st, e))
-            VISIT_QUIT(st, 0);
+            return 0;
         break;
     case Yield_kind:
         if (!symtable_raise_if_annotation_block(st, "yield expression", e)) {
-            VISIT_QUIT(st, 0);
+            return 0;
         }
         if (e->v.Yield.value)
             VISIT(st, expr, e->v.Yield.value);
@@ -1654,7 +1607,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         break;
     case YieldFrom_kind:
         if (!symtable_raise_if_annotation_block(st, "yield expression", e)) {
-            VISIT_QUIT(st, 0);
+            return 0;
         }
         VISIT(st, expr, e->v.YieldFrom.value);
         st->st_cur->ste_generator = 1;
@@ -1664,7 +1617,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         break;
     case Await_kind:
         if (!symtable_raise_if_annotation_block(st, "await expression", e)) {
-            VISIT_QUIT(st, 0);
+            return 0;
         }
         VISIT(st, expr, e->v.Await.value);
         st->st_cur->ste_coroutine = 1;
@@ -1711,13 +1664,13 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
     case Name_kind:
         if (!symtable_add_def(st, e->v.Name.id,
                               e->v.Name.ctx == Load ? USE : DEF_LOCAL, LOCATION(e)))
-            VISIT_QUIT(st, 0);
+            return 0;
         /* Special-case super: it counts as a use of __class__ */
         if (e->v.Name.ctx == Load &&
             st->st_cur->ste_type == FunctionBlock &&
             _PyUnicode_EqualToASCIIString(e->v.Name.id, "super")) {
             if (!symtable_add_def(st, &_Py_ID(__class__), USE, LOCATION(e)))
-                VISIT_QUIT(st, 0);
+                return 0;
         }
         break;
     /* child nodes of List and Tuple will have expr_context set */
@@ -1728,16 +1681,14 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         VISIT_SEQ(st, expr, e->v.Tuple.elts);
         break;
     }
-    VISIT_QUIT(st, 1);
+    return 1;
 }
 
 static int
 symtable_visit_pattern(struct symtable *st, pattern_ty p)
 {
-    if (++st->recursion_depth > st->recursion_limit) {
-        PyErr_SetString(PyExc_RecursionError,
-                        "maximum recursion depth exceeded during compilation");
-        VISIT_QUIT(st, 0);
+    if (Py_StackOverflowCheck("during compilation")) {
+        return 0;
     }
     switch (p->kind) {
     case MatchValue_kind:
@@ -1778,7 +1729,7 @@ symtable_visit_pattern(struct symtable *st, pattern_ty p)
         VISIT_SEQ(st, pattern, p->v.MatchOr.patterns);
         break;
     }
-    VISIT_QUIT(st, 1);
+    return 1;
 }
 
 static int
@@ -1821,11 +1772,11 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation)
                               (void *)annotation, annotation->lineno,
                               annotation->col_offset, annotation->end_lineno,
                               annotation->end_col_offset)) {
-        VISIT_QUIT(st, 0);
+        return 0;
     }
     VISIT(st, expr, annotation);
     if (future_annotations && !symtable_exit_block(st)) {
-        VISIT_QUIT(st, 0);
+        return 0;
     }
     return 1;
 }
@@ -1855,7 +1806,7 @@ symtable_visit_annotations(struct symtable *st, stmt_ty o, arguments_ty a, expr_
         !symtable_enter_block(st, &_Py_ID(_annotation), AnnotationBlock,
                               (void *)o, o->lineno, o->col_offset, o->end_lineno,
                               o->end_col_offset)) {
-        VISIT_QUIT(st, 0);
+        return 0;
     }
     if (a->posonlyargs && !symtable_visit_argannotations(st, a->posonlyargs))
         return 0;
@@ -1868,10 +1819,10 @@ symtable_visit_annotations(struct symtable *st, stmt_ty o, arguments_ty a, expr_
     if (a->kwonlyargs && !symtable_visit_argannotations(st, a->kwonlyargs))
         return 0;
     if (future_annotations && !symtable_exit_block(st)) {
-        VISIT_QUIT(st, 0);
+        return 0;
     }
     if (returns && !symtable_visit_annotation(st, returns)) {
-        VISIT_QUIT(st, 0);
+        return 0;
     }
     return 1;
 }
@@ -2127,7 +2078,7 @@ symtable_raise_if_comprehension_block(struct symtable *st, expr_ty e) {
     PyErr_RangedSyntaxLocationObject(st->st_filename,
                                      e->lineno, e->col_offset + 1,
                                      e->end_lineno, e->end_col_offset + 1);
-    VISIT_QUIT(st, 0);
+    return 0;
 }
 
 struct symtable *

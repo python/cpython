@@ -95,9 +95,17 @@ struct _ts {
     /* Was this thread state statically allocated? */
     int _static;
 
-    int recursion_remaining;
+    /* Python recursion limit handling */
+    int py_recursion_remaining;
     int recursion_limit;
-    int recursion_headroom; /* Allow 50 more calls to handle any errors. */
+    int py_recursion_headroom; /* Allow 50 more calls to handle any errors. */
+
+    /* C stack overflow handling */
+    intptr_t stack_limit;
+    intptr_t yellow_stack_limit;
+    intptr_t red_stack_limit;
+    int stack_in_yellow;
+    int stack_grows;
 
     /* 'tracing' keeps track of the execution depth when tracing/profiling.
        This is to prevent the actual trace/profile code from being recorded in
@@ -367,3 +375,6 @@ typedef int (*crossinterpdatafunc)(PyObject *, _PyCrossInterpreterData *);
 
 PyAPI_FUNC(int) _PyCrossInterpreterData_RegisterClass(PyTypeObject *, crossinterpdatafunc);
 PyAPI_FUNC(crossinterpdatafunc) _PyCrossInterpreterData_Lookup(PyObject *);
+
+
+PyAPI_FUNC(int) _Py_OS_GetStackLimits(void** low, void** high);

@@ -162,6 +162,8 @@ PyAPI_FUNC(int) _PyState_AddModule(
 
 PyAPI_FUNC(int) _PyOS_InterruptOccurred(PyThreadState *tstate);
 
+int _Py_UpdateStackLimits(PyThreadState *tstate);
+
 #ifdef __cplusplus
 }
 #endif

@@ -546,26 +546,17 @@ if 1:
     @support.cpython_only
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_compiler_recursion_limit(self):
-        # Expected limit is sys.getrecursionlimit() * the scaling factor
-        # in symtable.c (currently 3)
-        # We expect to fail *at* that limit, because we use up some of
-        # the stack depth limit in the test suite code
-        # So we check the expected limit and 75% of that
-        # XXX (ncoghlan): duplicating the scaling factor here is a little
-        # ugly. Perhaps it should be exposed somewhere...
-        fail_depth = sys.getrecursionlimit() * 3
-        crash_depth = sys.getrecursionlimit() * 300
-        success_depth = int(fail_depth * 0.75)
+        crash_depth = 100_000
+        success_depth = 5_000
 
         def check_limit(prefix, repeated, mode="single"):
             expect_ok = prefix + repeated * success_depth
             compile(expect_ok, '<test>', mode)
-            for depth in (fail_depth, crash_depth):
-                broken = prefix + repeated * depth
-                details = "Compiling ({!r} + {!r} * {})".format(
-                            prefix, repeated, depth)
-                with self.assertRaises(RecursionError, msg=details):
-                    compile(broken, '<test>', mode)
+            broken = prefix + repeated * crash_depth
+            details = "Compiling ({!r} + {!r} * {})".format(
+                        prefix, repeated, crash_depth)
+            with self.assertRaises(RecursionError, msg=details):
+                compile(broken, '<test>', mode)
 
         check_limit("a", "()")
         check_limit("a", ".b")

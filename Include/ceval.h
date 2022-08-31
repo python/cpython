@@ -74,6 +74,7 @@ PyAPI_FUNC(int) Py_MakePendingCalls(void);
 PyAPI_FUNC(void) Py_SetRecursionLimit(int);
 PyAPI_FUNC(int) Py_GetRecursionLimit(void);
 
+PyAPI_FUNC(int) Py_StackOverflowCheck(const char *where);
 PyAPI_FUNC(int) Py_EnterRecursiveCall(const char *where);
 PyAPI_FUNC(void) Py_LeaveRecursiveCall(void);
 
