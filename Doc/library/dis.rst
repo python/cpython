@@ -427,12 +427,17 @@ The Python compiler currently generates the following bytecode instructions.
    Push the *i*-th item to the top of the stack. The item is not removed from its
    original location.
 
+   The stack is indexed from 1, so COPY 1 will copy TOS.
+
    .. versionadded:: 3.11
 
 
 .. opcode:: SWAP (i)
 
    Swap TOS with the item at position *i*.
+
+   The stack is indexed from 1, so SWAP 2 will swap the two element at the top
+   of the stack.
 
    .. versionadded:: 3.11
 
