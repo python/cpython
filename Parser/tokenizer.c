@@ -490,7 +490,7 @@ static void fp_ungetc(int c, struct tok_state *tok) {
 /* Check whether the characters at s start a valid
    UTF-8 sequence. Return the number of characters forming
    the sequence if yes, 0 if not.  The special cases match
-   those in stringlib/codecs.h:decode_utf8.
+   those in stringlib/codecs.h:utf8_decode.
 */
 static int valid_utf8(const unsigned char* s)
 {
