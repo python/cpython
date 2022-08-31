@@ -8482,7 +8482,7 @@ propagate_line_numbers(basicblock *entryblock);
 static void
 eliminate_empty_basic_blocks(cfg_builder *g);
 
-#ifdef NDEBUG
+#ifndef NDEBUG
 static bool
 no_redundant_jumps(cfg_builder *g) {
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
