@@ -3717,6 +3717,20 @@ class ChildLoggerTest(BaseTest):
         self.assertIs(c2, logging.getLogger('abc.def.ghi'))
         self.assertIs(c2, c3)
 
+    def test_get_children(self):
+        r = logging.getLogger()
+        l1 = logging.getLogger('foo')
+        l2 = logging.getLogger('foo.bar')
+        l3 = logging.getLogger('foo.bar.baz.bozz')
+        l4 = logging.getLogger('bar')
+        kids = r.getChildren()
+        expected = {l1, l4}
+        self.assertEqual(expected, kids & expected)  # might be other kids for root
+        self.assertNotIn(l2, expected)
+        kids = l1.getChildren()
+        self.assertEqual({l2}, kids)
+        kids = l2.getChildren()
+        self.assertEqual(set(), kids)
 
 class DerivedLogRecord(logging.LogRecord):
     pass
