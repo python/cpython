@@ -119,7 +119,7 @@ PyAPI_FUNC(int) _Py_CheckRecursiveCall(
     const char *where);
 
 
-PyAPI_FUNC(int) _Py_StackOverflowCheckCall(
+int _Py_StackOverflowCheckCall(
     PyThreadState *tstate,
     const char *where,
     intptr_t scaled_location);

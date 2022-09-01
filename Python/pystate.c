@@ -830,7 +830,7 @@ _Py_UpdateStackLimits(PyThreadState *tstate)
         here > tstate->stack_top + 8*BLOCK_SIZE)
     {
         /* Either uninitialized or,
-         * sufficiently out of bounds that we must have the wrong thread. */
+         * sufficiently out of bounds that we must be in a new thread. */
         tstate->stack_base = here - BLOCK_SIZE;
         tstate->stack_top = tstate->stack_base + DEFAULT_STACK_ALLOWANCE;
     }
