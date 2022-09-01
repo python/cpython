@@ -5653,7 +5653,7 @@
         <var-decl name='id' type-id='type-id-238' visibility='default' filepath='./Include/cpython/pystate.h' line='137' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='_is' size-in-bits='45184' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp.h' line='71' column='1' id='type-id-313'>
+    <class-decl name='_is' size-in-bits='45248' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp.h' line='71' column='1' id='type-id-313'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='next' type-id='type-id-314' visibility='default' filepath='./Include/internal/pycore_interp.h' line='73' column='1'/>
       </data-member>
@@ -5773,6 +5773,9 @@
       </data-member>
       <data-member access='public' layout-offset-in-bits='28416'>
         <var-decl name='small_ints' type-id='type-id-326' visibility='default' filepath='./Include/internal/pycore_interp.h' line='155' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='45184'>
+        <var-decl name='int_max_str_digits' type-id='type-id-8' visibility='default' filepath='./Include/internal/pycore_interp.h' line='158' column='1'/>
       </data-member>
     </class-decl>
     <pointer-type-def type-id='type-id-313' size-in-bits='64' id='type-id-314'/>
