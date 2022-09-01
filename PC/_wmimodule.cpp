@@ -108,6 +108,7 @@ _query_thread(LPVOID param)
         }
         if (!startOfEnum && !WriteFile(data->writePipe, (LPVOID)L"\0", 2, &written, NULL)) {
             hr = HRESULT_FROM_WIN32(GetLastError());
+            break;
         }
         startOfEnum = FALSE;
         // Okay, now we have each resulting object it's time to
