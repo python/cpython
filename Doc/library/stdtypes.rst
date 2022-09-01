@@ -4774,6 +4774,8 @@ and the sign are not counted towards the limit.
 
 When an operation would exceed the limit, a :exc:`ValueError` is raised::
 
+.. doctest::
+
    >>> import sys
    >>> sys.set_int_max_str_digits(4300)  # Illustrative, this is the default.
    >>> _ = int('2' * 5432)
@@ -4790,7 +4792,7 @@ When an operation would exceed the limit, a :exc:`ValueError` is raised::
    ValueError: Exceeds the limit (4300) for integer string conversion: value has 8599 digits.
    >>> len(hex(i_squared))
    7144
-   >>> assert int(hex(i_squared), base=16) == i  # Hexidecimal is unlimited.
+   >>> assert int(hex(i_squared), base=16) == i*i  # Hexidecimal is unlimited.
 
 The default limit is 4300 digits as provided in
 :data:`sys.int_info.default_max_str_digits <sys.int_info>`.
