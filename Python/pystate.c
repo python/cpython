@@ -785,9 +785,10 @@ stack_grows(void) {
          return -1;
      }
 }
-#define DEFAULT_STACK_ALLOWANCE (1<<16)
-#define SIZE_OF_RED_ZONE (1<<10)
-#define SIZE_OF_YELLOW_ZONE (3<<10)
+#define BLOCK_SIZE (1 << 10)
+#define DEFAULT_STACK_ALLOWANCE (100 * BLOCK_SIZE)
+#define SIZE_OF_RED_ZONE BLOCK_SIZE
+#define SIZE_OF_YELLOW_ZONE (3 * BLOCK_SIZE)
 
 int
 _Py_OS_GetStackLimits(void** low, void** high);
