@@ -608,7 +608,7 @@ Connection objects
          ...     return {key: value for key, value in zip(col_names, row)}
          >>> con = sqlite3.connect(":memory:")
          >>> con.row_factory = dict_factory
-         >>> for row in con.execute("SELECT 1 as a, 2 as b"):
+         >>> for row in con.execute("SELECT 1 AS a, 2 AS b"):
          ...     print(row)
          {'a': 1, 'b': 2}
 
