@@ -544,9 +544,11 @@ if 1:
 
     @support.cpython_only
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
+    @support.skip_if_sanitizer(memory=True, address=True,
+                               reason= "sanitizer consumes too much stack space")
     def test_compiler_recursion_limit(self):
         crash_depth = 100_000
-        success_depth = 700
+        success_depth = 1000
 
         def check_limit(prefix, repeated, mode="single"):
             expect_ok = prefix + repeated * success_depth
