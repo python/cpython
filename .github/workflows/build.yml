@@ -23,6 +23,7 @@ jobs:
       - name: Check for source changes
         id: check
         run: |
+          echo '::set-output name=run_tests::true'
           if [ -z "$GITHUB_BASE_REF" ]; then
             echo '::set-output name=run_tests::true'
           else
