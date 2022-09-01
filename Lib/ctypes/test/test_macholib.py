@@ -34,7 +34,7 @@ import unittest
 from ctypes.macholib.dyld import dyld_find
 try:
     from _ctypes import _dyld_shared_cache_contains_path
-else:
+except ImportError:
     _dyld_shared_cache_contains_path = None
 
 def find_lib(name):
