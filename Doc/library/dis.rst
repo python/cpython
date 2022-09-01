@@ -402,7 +402,8 @@ The Python compiler currently generates the following bytecode instructions.
 
 **General instructions**
 
-In the following, TOS is the top-of-stack.
+In the following, TOS(i) refer to the *i*-th item on the stack which is index from 1.
+We also use as shorthand TOS = TOS(1) which is the top-of-stack.
 TOS1, TOS2, TOS3 are the second, third and fourth items on the stack, respectively.
 
 .. opcode:: NOP
@@ -427,19 +428,15 @@ TOS1, TOS2, TOS3 are the second, third and fourth items on the stack, respective
 
 .. opcode:: COPY (i)
 
-   Push the *i*-th item to the top of the stack. The item is not removed from its
+   Push TOS(i) to the top of the stack. The item is not removed from its
    original location.
-
-   The stack is indexed from 1, so COPY 1 will copy TOS.
 
    .. versionadded:: 3.11
 
 
 .. opcode:: SWAP (i)
 
-   Swap TOS with the item at position *i*.
-
-   The stack is indexed from 1, so SWAP 2 will swap TOS and TOS1.
+   Swap TOS with TOS(i).
 
    .. versionadded:: 3.11
 
