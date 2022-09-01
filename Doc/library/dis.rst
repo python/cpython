@@ -402,6 +402,9 @@ The Python compiler currently generates the following bytecode instructions.
 
 **General instructions**
 
+In the following, TOS is the top-of-stack.
+TOS1, TOS2, TOS3 are the second, third and fourth items on the stack, respectively.
+
 .. opcode:: NOP
 
    Do nothing code.  Used as a placeholder by the bytecode optimizer, and to
@@ -436,8 +439,7 @@ The Python compiler currently generates the following bytecode instructions.
 
    Swap TOS with the item at position *i*.
 
-   The stack is indexed from 1, so SWAP 2 will swap the two element at the top
-   of the stack.
+   The stack is indexed from 1, so SWAP 2 will swap TOS and TOS1.
 
    .. versionadded:: 3.11
 
@@ -495,9 +497,6 @@ result back on the stack.
 
 
 **Binary and in-place operations**
-
-In the following, TOS is the top-of-stack.
-TOS1, TOS2, TOS3 are the second, third and fourth items on the stack, respectively.
 
 Binary operations remove the top two items from the stack (TOS and TOS1).
 They perform the operation, then put the result back on the stack.
