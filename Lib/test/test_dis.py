@@ -2,6 +2,7 @@
 
 import contextlib
 import dis
+import inspect
 import io
 import re
 import sys
@@ -1414,7 +1415,7 @@ def jumpy():
         if i > 6:
             break
     else:
-        print("I can haz else clause?")
+        print("else")
     while i:
         print(i)
         i -= 1
@@ -1423,16 +1424,16 @@ def jumpy():
         if i < 4:
             break
     else:
-        print("Who let lolcatz into this test suite?")
+        print("foo")
     try:
         1 / 0
     except ZeroDivisionError:
-        print("Here we go, here we go, here we go...")
+        print("Here")
     else:
         with i as dodgy:
-            print("Never reach this")
+            print("Never")
     finally:
-        print("OK, now we're done")
+        print("OK")
 
 # End fodder for opinfo generation tests
 expected_outer_line = 1
@@ -1470,195 +1471,209 @@ def _prepare_test_cases():
 
 #_prepare_test_cases()
 
-Instruction = dis.Instruction
+def inst(opname, opcode, arg, argval, argrepr, offset, starts_line, is_jump_target):
+    return dis.Instruction(opname=opname, opcode=opcode, arg=arg, argval=argval,
+                           argrepr=argrepr, offset=offset,
+                           starts_line=starts_line, is_jump_target=is_jump_target,
+                           positions=None)
 
-expected_opinfo_outer = [
-  Instruction(opname='MAKE_CELL', opcode=135, arg=0, argval='a', argrepr='a', offset=0, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='MAKE_CELL', opcode=135, arg=1, argval='b', argrepr='b', offset=2, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='RESUME', opcode=151, arg=0, argval=0, argrepr='', offset=4, starts_line=1, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=7, argval=(3, 4), argrepr='(3, 4)', offset=6, starts_line=2, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CLOSURE', opcode=136, arg=0, argval='a', argrepr='a', offset=8, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CLOSURE', opcode=136, arg=1, argval='b', argrepr='b', offset=10, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='BUILD_TUPLE', opcode=102, arg=2, argval=2, argrepr='', offset=12, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=3, argval=code_object_f, argrepr=repr(code_object_f), offset=14, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='MAKE_FUNCTION', opcode=132, arg=9, argval=9, argrepr='defaults, closure', offset=16, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='STORE_FAST', opcode=125, arg=2, argval='f', argrepr='f', offset=18, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=116, arg=1, argval='print', argrepr='NULL + print', offset=20, starts_line=7, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_DEREF', opcode=137, arg=0, argval='a', argrepr='a', offset=32, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_DEREF', opcode=137, arg=1, argval='b', argrepr='b', offset=34, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=4, argval='', argrepr="''", offset=36, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=5, argval=1, argrepr='1', offset=38, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='BUILD_LIST', opcode=103, arg=0, argval=0, argrepr='', offset=40, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='BUILD_MAP', opcode=105, arg=0, argval=0, argrepr='', offset=42, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=6, argval='Hello world!', argrepr="'Hello world!'", offset=44, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='CALL', opcode=171, arg=7, argval=7, argrepr='', offset=46, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=56, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=124, arg=2, argval='f', argrepr='f', offset=58, starts_line=8, is_jump_target=False, positions=None),
-  Instruction(opname='RETURN_VALUE', opcode=83, arg=None, argval=None, argrepr='', offset=60, starts_line=None, is_jump_target=False, positions=None),
-]
+_ = None
 
-expected_opinfo_f = [
-  Instruction(opname='COPY_FREE_VARS', opcode=149, arg=2, argval=2, argrepr='', offset=0, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='MAKE_CELL', opcode=135, arg=0, argval='c', argrepr='c', offset=2, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='MAKE_CELL', opcode=135, arg=1, argval='d', argrepr='d', offset=4, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='RESUME', opcode=151, arg=0, argval=0, argrepr='', offset=6, starts_line=2, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=4, argval=(5, 6), argrepr='(5, 6)', offset=8, starts_line=3, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CLOSURE', opcode=136, arg=3, argval='a', argrepr='a', offset=10, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CLOSURE', opcode=136, arg=4, argval='b', argrepr='b', offset=12, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CLOSURE', opcode=136, arg=0, argval='c', argrepr='c', offset=14, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CLOSURE', opcode=136, arg=1, argval='d', argrepr='d', offset=16, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='BUILD_TUPLE', opcode=102, arg=4, argval=4, argrepr='', offset=18, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=3, argval=code_object_inner, argrepr=repr(code_object_inner), offset=20, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='MAKE_FUNCTION', opcode=132, arg=9, argval=9, argrepr='defaults, closure', offset=22, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='STORE_FAST', opcode=125, arg=2, argval='inner', argrepr='inner', offset=24, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=116, arg=1, argval='print', argrepr='NULL + print', offset=26, starts_line=5, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_DEREF', opcode=137, arg=3, argval='a', argrepr='a', offset=38, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_DEREF', opcode=137, arg=4, argval='b', argrepr='b', offset=40, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_DEREF', opcode=137, arg=0, argval='c', argrepr='c', offset=42, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_DEREF', opcode=137, arg=1, argval='d', argrepr='d', offset=44, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='CALL', opcode=171, arg=4, argval=4, argrepr='', offset=46, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=56, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=124, arg=2, argval='inner', argrepr='inner', offset=58, starts_line=6, is_jump_target=False, positions=None),
-  Instruction(opname='RETURN_VALUE', opcode=83, arg=None, argval=None, argrepr='', offset=60, starts_line=None, is_jump_target=False, positions=None),
-]
+expected_opinfo_outer = [inst(*args) for args in [
+    # opname, opcode, arg, argval, argrepr, offset, starts_line, is_jump_target
+    ('MAKE_CELL'                 , 135,   0,                  'a',                       'a',    0,    _,  False),
+    ('MAKE_CELL'                 , 135,   1,                  'b',                       'b',    2,    _,  False),
+    ('RESUME'                    , 151,   0,                    0,                        '',    4,    1,  False),
+    ('LOAD_CONST'                , 100,   7,               (3, 4),                  '(3, 4)',    6,    2,  False),
+    ('LOAD_CLOSURE'              , 136,   0,                  'a',                       'a',    8,    _,  False),
+    ('LOAD_CLOSURE'              , 136,   1,                  'b',                       'b',   10,    _,  False),
+    ('BUILD_TUPLE'               , 102,   2,                    2,                        '',   12,    _,  False),
+    ('LOAD_CONST'                , 100,   3,        code_object_f,       repr(code_object_f),   14,    _,  False),
+    ('MAKE_FUNCTION'             , 132,   9,                    9,       'defaults, closure',   16,    _,  False),
+    ('STORE_FAST'                , 125,   2,                  'f',                       'f',   18,    _,  False),
+    ('LOAD_GLOBAL'               , 116,   1,              'print',            'NULL + print',   20,    7,  False),
+    ('LOAD_DEREF'                , 137,   0,                  'a',                       'a',   32,    _,  False),
+    ('LOAD_DEREF'                , 137,   1,                  'b',                       'b',   34,    _,  False),
+    ('LOAD_CONST'                , 100,   4,                   '',                      "''",   36,    _,  False),
+    ('LOAD_CONST'                , 100,   5,                    1,                       '1',   38,    _,  False),
+    ('BUILD_LIST'                , 103,   0,                    0,                        '',   40,    _,  False),
+    ('BUILD_MAP'                 , 105,   0,                    0,                        '',   42,    _,  False),
+    ('LOAD_CONST'                , 100,   6,       'Hello world!',          "'Hello world!'",   44,    _,  False),
+    ('CALL'                      , 171,   7,                    7,                        '',   46,    _,  False),
+    ('POP_TOP'                   ,   1,   _,                 None,                        '',   56,    _,  False),
+    ('LOAD_FAST'                 , 124,   2,                  'f',                       'f',   58,    8,  False),
+    ('RETURN_VALUE'              ,  83,   _,                 None,                        '',   60,    _,  False),
+]]
 
-expected_opinfo_inner = [
-  Instruction(opname='COPY_FREE_VARS', opcode=149, arg=4, argval=4, argrepr='', offset=0, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='RESUME', opcode=151, arg=0, argval=0, argrepr='', offset=2, starts_line=3, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=116, arg=1, argval='print', argrepr='NULL + print', offset=4, starts_line=4, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_DEREF', opcode=137, arg=2, argval='a', argrepr='a', offset=16, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_DEREF', opcode=137, arg=3, argval='b', argrepr='b', offset=18, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_DEREF', opcode=137, arg=4, argval='c', argrepr='c', offset=20, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_DEREF', opcode=137, arg=5, argval='d', argrepr='d', offset=22, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=124, arg=0, argval='e', argrepr='e', offset=24, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=124, arg=1, argval='f', argrepr='f', offset=26, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='CALL', opcode=171, arg=6, argval=6, argrepr='', offset=28, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=38, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=0, argval=None, argrepr='None', offset=40, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='RETURN_VALUE', opcode=83, arg=None, argval=None, argrepr='', offset=42, starts_line=None, is_jump_target=False, positions=None),
-]
+expected_opinfo_f = [inst(*args) for args in [
+    # opname, opcode, arg, argval, argrepr, offset, starts_line, is_jump_target
+    ('COPY_FREE_VARS'            , 149,   2,                    2,                        '',    0,    _,  False),
+    ('MAKE_CELL'                 , 135,   0,                  'c',                       'c',    2,    _,  False),
+    ('MAKE_CELL'                 , 135,   1,                  'd',                       'd',    4,    _,  False),
+    ('RESUME'                    , 151,   0,                    0,                        '',    6,    2,  False),
+    ('LOAD_CONST'                , 100,   4,               (5, 6),                  '(5, 6)',    8,    3,  False),
+    ('LOAD_CLOSURE'              , 136,   3,                  'a',                       'a',   10,    _,  False),
+    ('LOAD_CLOSURE'              , 136,   4,                  'b',                       'b',   12,    _,  False),
+    ('LOAD_CLOSURE'              , 136,   0,                  'c',                       'c',   14,    _,  False),
+    ('LOAD_CLOSURE'              , 136,   1,                  'd',                       'd',   16,    _,  False),
+    ('BUILD_TUPLE'               , 102,   4,                    4,                        '',   18,    _,  False),
+    ('LOAD_CONST'                , 100,   3,    code_object_inner,   repr(code_object_inner),   20,    _,  False),
+    ('MAKE_FUNCTION'             , 132,   9,                    9,       'defaults, closure',   22,    _,  False),
+    ('STORE_FAST'                , 125,   2,              'inner',                   'inner',   24,    _,  False),
+    ('LOAD_GLOBAL'               , 116,   1,              'print',            'NULL + print',   26,    5,  False),
+    ('LOAD_DEREF'                , 137,   3,                  'a',                       'a',   38,    _,  False),
+    ('LOAD_DEREF'                , 137,   4,                  'b',                       'b',   40,    _,  False),
+    ('LOAD_DEREF'                , 137,   0,                  'c',                       'c',   42,    _,  False),
+    ('LOAD_DEREF'                , 137,   1,                  'd',                       'd',   44,    _,  False),
+    ('CALL'                      , 171,   4,                    4,                        '',   46,    _,  False),
+    ('POP_TOP'                   ,   1,   _,                 None,                        '',   56,    _,  False),
+    ('LOAD_FAST'                 , 124,   2,              'inner',                   'inner',   58,    6,  False),
+    ('RETURN_VALUE'              ,  83,   _,                 None,                        '',   60,    _,  False),
+]]
 
-expected_opinfo_jumpy = [
-  Instruction(opname='RESUME', opcode=151, arg=0, argval=0, argrepr='', offset=0, starts_line=1, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=116, arg=1, argval='range', argrepr='NULL + range', offset=2, starts_line=3, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=1, argval=10, argrepr='10', offset=14, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='CALL', opcode=171, arg=1, argval=1, argrepr='', offset=16, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='GET_ITER', opcode=68, arg=None, argval=None, argrepr='', offset=26, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='FOR_ITER', opcode=93, arg=29, argval=90, argrepr='to 90', offset=28, starts_line=None, is_jump_target=True, positions=None),
-  Instruction(opname='STORE_FAST', opcode=125, arg=0, argval='i', argrepr='i', offset=32, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=116, arg=3, argval='print', argrepr='NULL + print', offset=34, starts_line=4, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=124, arg=0, argval='i', argrepr='i', offset=46, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='CALL', opcode=171, arg=1, argval=1, argrepr='', offset=48, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=58, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=124, arg=0, argval='i', argrepr='i', offset=60, starts_line=5, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=2, argval=4, argrepr='4', offset=62, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='COMPARE_OP', opcode=107, arg=0, argval='<', argrepr='<', offset=64, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_JUMP_FORWARD_IF_FALSE', opcode=114, arg=1, argval=74, argrepr='to 74', offset=70, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='JUMP_BACKWARD', opcode=140, arg=23, argval=28, argrepr='to 28', offset=72, starts_line=6, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=124, arg=0, argval='i', argrepr='i', offset=74, starts_line=7, is_jump_target=True, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=3, argval=6, argrepr='6', offset=76, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='COMPARE_OP', opcode=107, arg=4, argval='>', argrepr='>', offset=78, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_JUMP_BACKWARD_IF_FALSE', opcode=175, arg=29, argval=28, argrepr='to 28', offset=84, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=86, starts_line=8, is_jump_target=False, positions=None),
-  Instruction(opname='JUMP_FORWARD', opcode=110, arg=13, argval=116, argrepr='to 116', offset=88, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=116, arg=3, argval='print', argrepr='NULL + print', offset=90, starts_line=10, is_jump_target=True, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=4, argval='I can haz else clause?', argrepr="'I can haz else clause?'", offset=102, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='CALL', opcode=171, arg=1, argval=1, argrepr='', offset=104, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=114, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_FAST_CHECK', opcode=127, arg=0, argval='i', argrepr='i', offset=116, starts_line=11, is_jump_target=True, positions=None),
-  Instruction(opname='POP_JUMP_FORWARD_IF_FALSE', opcode=114, arg=34, argval=188, argrepr='to 188', offset=118, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=116, arg=3, argval='print', argrepr='NULL + print', offset=120, starts_line=12, is_jump_target=True, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=124, arg=0, argval='i', argrepr='i', offset=132, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='CALL', opcode=171, arg=1, argval=1, argrepr='', offset=134, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=144, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=124, arg=0, argval='i', argrepr='i', offset=146, starts_line=13, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=5, argval=1, argrepr='1', offset=148, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='BINARY_OP', opcode=122, arg=23, argval=23, argrepr='-=', offset=150, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='STORE_FAST', opcode=125, arg=0, argval='i', argrepr='i', offset=154, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=124, arg=0, argval='i', argrepr='i', offset=156, starts_line=14, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=3, argval=6, argrepr='6', offset=158, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='COMPARE_OP', opcode=107, arg=4, argval='>', argrepr='>', offset=160, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_JUMP_FORWARD_IF_FALSE', opcode=114, arg=1, argval=170, argrepr='to 170', offset=166, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='JUMP_BACKWARD', opcode=140, arg=27, argval=116, argrepr='to 116', offset=168, starts_line=15, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=124, arg=0, argval='i', argrepr='i', offset=170, starts_line=16, is_jump_target=True, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=2, argval=4, argrepr='4', offset=172, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='COMPARE_OP', opcode=107, arg=0, argval='<', argrepr='<', offset=174, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_JUMP_FORWARD_IF_FALSE', opcode=114, arg=1, argval=184, argrepr='to 184', offset=180, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='JUMP_FORWARD', opcode=110, arg=15, argval=214, argrepr='to 214', offset=182, starts_line=17, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=124, arg=0, argval='i', argrepr='i', offset=184, starts_line=11, is_jump_target=True, positions=None),
-  Instruction(opname='POP_JUMP_BACKWARD_IF_TRUE', opcode=176, arg=34, argval=120, argrepr='to 120', offset=186, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=116, arg=3, argval='print', argrepr='NULL + print', offset=188, starts_line=19, is_jump_target=True, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=6, argval='Who let lolcatz into this test suite?', argrepr="'Who let lolcatz into this test suite?'", offset=200, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='CALL', opcode=171, arg=1, argval=1, argrepr='', offset=202, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=212, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='NOP', opcode=9, arg=None, argval=None, argrepr='', offset=214, starts_line=20, is_jump_target=True, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=5, argval=1, argrepr='1', offset=216, starts_line=21, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=7, argval=0, argrepr='0', offset=218, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='BINARY_OP', opcode=122, arg=11, argval=11, argrepr='/', offset=220, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=224, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=124, arg=0, argval='i', argrepr='i', offset=226, starts_line=25, is_jump_target=False, positions=None),
-  Instruction(opname='BEFORE_WITH', opcode=53, arg=None, argval=None, argrepr='', offset=228, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='STORE_FAST', opcode=125, arg=1, argval='dodgy', argrepr='dodgy', offset=230, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=116, arg=3, argval='print', argrepr='NULL + print', offset=232, starts_line=26, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=8, argval='Never reach this', argrepr="'Never reach this'", offset=244, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='CALL', opcode=171, arg=1, argval=1, argrepr='', offset=246, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=256, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=0, argval=None, argrepr='None', offset=258, starts_line=25, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=0, argval=None, argrepr='None', offset=260, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=0, argval=None, argrepr='None', offset=262, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='CALL', opcode=171, arg=2, argval=2, argrepr='', offset=264, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=274, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=116, arg=3, argval='print', argrepr='NULL + print', offset=276, starts_line=28, is_jump_target=True, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=10, argval="OK, now we're done", argrepr='"OK, now we\'re done"', offset=288, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='CALL', opcode=171, arg=1, argval=1, argrepr='', offset=290, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=300, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=0, argval=None, argrepr='None', offset=302, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='RETURN_VALUE', opcode=83, arg=None, argval=None, argrepr='', offset=304, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='PUSH_EXC_INFO', opcode=35, arg=None, argval=None, argrepr='', offset=306, starts_line=25, is_jump_target=False, positions=None),
-  Instruction(opname='WITH_EXCEPT_START', opcode=49, arg=None, argval=None, argrepr='', offset=308, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_JUMP_FORWARD_IF_TRUE', opcode=115, arg=1, argval=314, argrepr='to 314', offset=310, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='RERAISE', opcode=119, arg=2, argval=2, argrepr='', offset=312, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=314, starts_line=None, is_jump_target=True, positions=None),
-  Instruction(opname='POP_EXCEPT', opcode=89, arg=None, argval=None, argrepr='', offset=316, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=318, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=320, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='JUMP_BACKWARD', opcode=140, arg=24, argval=276, argrepr='to 276', offset=322, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='COPY', opcode=120, arg=3, argval=3, argrepr='', offset=324, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_EXCEPT', opcode=89, arg=None, argval=None, argrepr='', offset=326, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='RERAISE', opcode=119, arg=1, argval=1, argrepr='', offset=328, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='PUSH_EXC_INFO', opcode=35, arg=None, argval=None, argrepr='', offset=330, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=116, arg=4, argval='ZeroDivisionError', argrepr='ZeroDivisionError', offset=332, starts_line=22, is_jump_target=False, positions=None),
-  Instruction(opname='CHECK_EXC_MATCH', opcode=36, arg=None, argval=None, argrepr='', offset=344, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_JUMP_FORWARD_IF_FALSE', opcode=114, arg=16, argval=380, argrepr='to 380', offset=346, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=348, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=116, arg=3, argval='print', argrepr='NULL + print', offset=350, starts_line=23, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=9, argval='Here we go, here we go, here we go...', argrepr="'Here we go, here we go, here we go...'", offset=362, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='CALL', opcode=171, arg=1, argval=1, argrepr='', offset=364, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=374, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_EXCEPT', opcode=89, arg=None, argval=None, argrepr='', offset=376, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='JUMP_BACKWARD', opcode=140, arg=52, argval=276, argrepr='to 276', offset=378, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='RERAISE', opcode=119, arg=0, argval=0, argrepr='', offset=380, starts_line=22, is_jump_target=True, positions=None),
-  Instruction(opname='COPY', opcode=120, arg=3, argval=3, argrepr='', offset=382, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_EXCEPT', opcode=89, arg=None, argval=None, argrepr='', offset=384, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='RERAISE', opcode=119, arg=1, argval=1, argrepr='', offset=386, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='PUSH_EXC_INFO', opcode=35, arg=None, argval=None, argrepr='', offset=388, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=116, arg=3, argval='print', argrepr='NULL + print', offset=390, starts_line=28, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=10, argval="OK, now we're done", argrepr='"OK, now we\'re done"', offset=402, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='CALL', opcode=171, arg=1, argval=1, argrepr='', offset=404, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=414, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='RERAISE', opcode=119, arg=0, argval=0, argrepr='', offset=416, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='COPY', opcode=120, arg=3, argval=3, argrepr='', offset=418, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_EXCEPT', opcode=89, arg=None, argval=None, argrepr='', offset=420, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='RERAISE', opcode=119, arg=1, argval=1, argrepr='', offset=422, starts_line=None, is_jump_target=False, positions=None),
-]
+expected_opinfo_inner = [inst(*args) for args in [
+    # opname, opcode, arg, argval, argrepr, offset, starts_line, is_jump_target
+    ('COPY_FREE_VARS'            , 149,   4,                    4,                        '',    0,    _,  False),
+    ('RESUME'                    , 151,   0,                    0,                        '',    2,    3,  False),
+    ('LOAD_GLOBAL'               , 116,   1,              'print',            'NULL + print',    4,    4,  False),
+    ('LOAD_DEREF'                , 137,   2,                  'a',                       'a',   16,    _,  False),
+    ('LOAD_DEREF'                , 137,   3,                  'b',                       'b',   18,    _,  False),
+    ('LOAD_DEREF'                , 137,   4,                  'c',                       'c',   20,    _,  False),
+    ('LOAD_DEREF'                , 137,   5,                  'd',                       'd',   22,    _,  False),
+    ('LOAD_FAST'                 , 124,   0,                  'e',                       'e',   24,    _,  False),
+    ('LOAD_FAST'                 , 124,   1,                  'f',                       'f',   26,    _,  False),
+    ('CALL'                      , 171,   6,                    6,                        '',   28,    _,  False),
+    ('POP_TOP'                   ,   1,   _,                 None,                        '',   38,    _,  False),
+    ('LOAD_CONST'                , 100,   0,                 None,                    'None',   40,    _,  False),
+    ('RETURN_VALUE'              ,  83,   _,                 None,                        '',   42,    _,  False),
+]]
+
+expected_opinfo_jumpy = [inst(*args) for args in [
+    # opname, opcode, arg, argval, argrepr, offset, starts_line, is_jump_target
+    ('RESUME'                    , 151,   0,                    0,                        '',    0,    1,  False),
+    ('LOAD_GLOBAL'               , 116,   1,              'range',            'NULL + range',    2,    3,  False),
+    ('LOAD_CONST'                , 100,   1,                   10,                      '10',   14,    _,  False),
+    ('CALL'                      , 171,   1,                    1,                        '',   16,    _,  False),
+    ('GET_ITER'                  ,  68,   _,                 None,                        '',   26,    _,  False),
+    ('FOR_ITER'                  ,  93,  29,                   90,                   'to 90',   28,    _,   True),
+    ('STORE_FAST'                , 125,   0,                  'i',                       'i',   32,    _,  False),
+    ('LOAD_GLOBAL'               , 116,   3,              'print',            'NULL + print',   34,    4,  False),
+    ('LOAD_FAST'                 , 124,   0,                  'i',                       'i',   46,    _,  False),
+    ('CALL'                      , 171,   1,                    1,                        '',   48,    _,  False),
+    ('POP_TOP'                   ,   1,   _,                 None,                        '',   58,    _,  False),
+    ('LOAD_FAST'                 , 124,   0,                  'i',                       'i',   60,    5,  False),
+    ('LOAD_CONST'                , 100,   2,                    4,                       '4',   62,    _,  False),
+    ('COMPARE_OP'                , 107,   0,                  '<',                       '<',   64,    _,  False),
+    ('POP_JUMP_FORWARD_IF_FALSE' , 114,   1,                   74,                   'to 74',   70,    _,  False),
+    ('JUMP_BACKWARD'             , 140,  23,                   28,                   'to 28',   72,    6,  False),
+    ('LOAD_FAST'                 , 124,   0,                  'i',                       'i',   74,    7,   True),
+    ('LOAD_CONST'                , 100,   3,                    6,                       '6',   76,    _,  False),
+    ('COMPARE_OP'                , 107,   4,                  '>',                       '>',   78,    _,  False),
+    ('POP_JUMP_BACKWARD_IF_FALSE', 175,  29,                   28,                   'to 28',   84,    _,  False),
+    ('POP_TOP'                   ,   1,   _,                 None,                        '',   86,    8,  False),
+    ('JUMP_FORWARD'              , 110,  13,                  116,                  'to 116',   88,    _,  False),
+    ('LOAD_GLOBAL'               , 116,   3,              'print',            'NULL + print',   90,   10,   True),
+    ('LOAD_CONST'                , 100,   4,               'else',                  "'else'",  102,    _,  False),
+    ('CALL'                      , 171,   1,                    1,                        '',  104,    _,  False),
+    ('POP_TOP'                   ,   1,   _,                 None,                        '',  114,    _,  False),
+    ('LOAD_FAST_CHECK'           , 127,   0,                  'i',                       'i',  116,   11,   True),
+    ('POP_JUMP_FORWARD_IF_FALSE' , 114,  34,                  188,                  'to 188',  118,    _,  False),
+    ('LOAD_GLOBAL'               , 116,   3,              'print',            'NULL + print',  120,   12,   True),
+    ('LOAD_FAST'                 , 124,   0,                  'i',                       'i',  132,    _,  False),
+    ('CALL'                      , 171,   1,                    1,                        '',  134,    _,  False),
+    ('POP_TOP'                   ,   1,   _,                 None,                        '',  144,    _,  False),
+    ('LOAD_FAST'                 , 124,   0,                  'i',                       'i',  146,   13,  False),
+    ('LOAD_CONST'                , 100,   5,                    1,                       '1',  148,    _,  False),
+    ('BINARY_OP'                 , 122,  23,                   23,                      '-=',  150,    _,  False),
+    ('STORE_FAST'                , 125,   0,                  'i',                       'i',  154,    _,  False),
+    ('LOAD_FAST'                 , 124,   0,                  'i',                       'i',  156,   14,  False),
+    ('LOAD_CONST'                , 100,   3,                    6,                       '6',  158,    _,  False),
+    ('COMPARE_OP'                , 107,   4,                  '>',                       '>',  160,    _,  False),
+    ('POP_JUMP_FORWARD_IF_FALSE' , 114,   1,                  170,                  'to 170',  166,    _,  False),
+    ('JUMP_BACKWARD'             , 140,  27,                  116,                  'to 116',  168,   15,  False),
+    ('LOAD_FAST'                 , 124,   0,                  'i',                       'i',  170,   16,   True),
+    ('LOAD_CONST'                , 100,   2,                    4,                       '4',  172,    _,  False),
+    ('COMPARE_OP'                , 107,   0,                  '<',                       '<',  174,    _,  False),
+    ('POP_JUMP_FORWARD_IF_FALSE' , 114,   1,                  184,                  'to 184',  180,    _,  False),
+    ('JUMP_FORWARD'              , 110,  15,                  214,                  'to 214',  182,   17,  False),
+    ('LOAD_FAST'                 , 124,   0,                  'i',                       'i',  184,   11,   True),
+    ('POP_JUMP_BACKWARD_IF_TRUE' , 176,  34,                  120,                  'to 120',  186,    _,  False),
+    ('LOAD_GLOBAL'               , 116,   3,              'print',            'NULL + print',  188,   19,   True),
+    ('LOAD_CONST'                , 100,   6,                'foo',                   "'foo'",  200,    _,  False),
+    ('CALL'                      , 171,   1,                    1,                        '',  202,    _,  False),
+    ('POP_TOP'                   ,   1,   _,                 None,                        '',  212,    _,  False),
+    ('NOP'                       ,   9,   _,                 None,                        '',  214,   20,   True),
+    ('LOAD_CONST'                , 100,   5,                    1,                       '1',  216,   21,  False),
+    ('LOAD_CONST'                , 100,   7,                    0,                       '0',  218,    _,  False),
+    ('BINARY_OP'                 , 122,  11,                   11,                       '/',  220,    _,  False),
+    ('POP_TOP'                   ,   1,   _,                 None,                        '',  224,    _,  False),
+    ('LOAD_FAST'                 , 124,   0,                  'i',                       'i',  226,   25,  False),
+    ('BEFORE_WITH'               ,  53,   _,                 None,                        '',  228,    _,  False),
+    ('STORE_FAST'                , 125,   1,              'dodgy',                   'dodgy',  230,    _,  False),
+    ('LOAD_GLOBAL'               , 116,   3,              'print',            'NULL + print',  232,   26,  False),
+    ('LOAD_CONST'                , 100,   8,              'Never',                 "'Never'",  244,    _,  False),
+    ('CALL'                      , 171,   1,                    1,                        '',  246,    _,  False),
+    ('POP_TOP'                   ,   1,   _,                 None,                        '',  256,    _,  False),
+    ('LOAD_CONST'                , 100,   0,                 None,                    'None',  258,   25,  False),
+    ('LOAD_CONST'                , 100,   0,                 None,                    'None',  260,    _,  False),
+    ('LOAD_CONST'                , 100,   0,                 None,                    'None',  262,    _,  False),
+    ('CALL'                      , 171,   2,                    2,                        '',  264,    _,  False),
+    ('POP_TOP'                   ,   1,   _,                 None,                        '',  274,    _,  False),
+    ('LOAD_GLOBAL'               , 116,   3,              'print',            'NULL + print',  276,   28,   True),
+    ('LOAD_CONST'                , 100,  10,                 'OK',                    "'OK'",  288,    _,  False),
+    ('CALL'                      , 171,   1,                    1,                        '',  290,    _,  False),
+    ('POP_TOP'                   ,   1,   _,                 None,                        '',  300,    _,  False),
+    ('LOAD_CONST'                , 100,   0,                 None,                    'None',  302,    _,  False),
+    ('RETURN_VALUE'              ,  83,   _,                 None,                        '',  304,    _,  False),
+    ('PUSH_EXC_INFO'             ,  35,   _,                 None,                        '',  306,   25,  False),
+    ('WITH_EXCEPT_START'         ,  49,   _,                 None,                        '',  308,    _,  False),
+    ('POP_JUMP_FORWARD_IF_TRUE'  , 115,   1,                  314,                  'to 314',  310,    _,  False),
+    ('RERAISE'                   , 119,   2,                    2,                        '',  312,    _,  False),
+    ('POP_TOP'                   ,   1,   _,                 None,                        '',  314,    _,   True),
+    ('POP_EXCEPT'                ,  89,   _,                 None,                        '',  316,    _,  False),
+    ('POP_TOP'                   ,   1,   _,                 None,                        '',  318,    _,  False),
+    ('POP_TOP'                   ,   1,   _,                 None,                        '',  320,    _,  False),
+    ('JUMP_BACKWARD'             , 140,  24,                  276,                  'to 276',  322,    _,  False),
+    ('COPY'                      , 120,   3,                    3,                        '',  324,    _,  False),
+    ('POP_EXCEPT'                ,  89,   _,                 None,                        '',  326,    _,  False),
+    ('RERAISE'                   , 119,   1,                    1,                        '',  328,    _,  False),
+    ('PUSH_EXC_INFO'             ,  35,   _,                 None,                        '',  330,    _,  False),
+    ('LOAD_GLOBAL'               , 116,   4,  'ZeroDivisionError',       'ZeroDivisionError',  332,   22,  False),
+    ('CHECK_EXC_MATCH'           ,  36,   _,                 None,                        '',  344,    _,  False),
+    ('POP_JUMP_FORWARD_IF_FALSE' , 114,  16,                  380,                  'to 380',  346,    _,  False),
+    ('POP_TOP'                   ,   1,   _,                 None,                        '',  348,    _,  False),
+    ('LOAD_GLOBAL'               , 116,   3,              'print',            'NULL + print',  350,   23,  False),
+    ('LOAD_CONST'                , 100,   9,               'Here',                  "'Here'",  362,    _,  False),
+    ('CALL'                      , 171,   1,                    1,                        '',  364,    _,  False),
+    ('POP_TOP'                   ,   1,   _,                 None,                        '',  374,    _,  False),
+    ('POP_EXCEPT'                ,  89,   _,                 None,                        '',  376,    _,  False),
+    ('JUMP_BACKWARD'             , 140,  52,                  276,                  'to 276',  378,    _,  False),
+    ('RERAISE'                   , 119,   0,                    0,                        '',  380,   22,   True),
+    ('COPY'                      , 120,   3,                    3,                        '',  382,    _,  False),
+    ('POP_EXCEPT'                ,  89,   _,                 None,                        '',  384,    _,  False),
+    ('RERAISE'                   , 119,   1,                    1,                        '',  386,    _,  False),
+    ('PUSH_EXC_INFO'             ,  35,   _,                 None,                        '',  388,    _,  False),
+    ('LOAD_GLOBAL'               , 116,   3,              'print',            'NULL + print',  390,   28,  False),
+    ('LOAD_CONST'                , 100,  10,                 'OK',                    "'OK'",  402,    _,  False),
+    ('CALL'                      , 171,   1,                    1,                        '',  404,    _,  False),
+    ('POP_TOP'                   ,   1,   _,                 None,                        '',  414,    _,  False),
+    ('RERAISE'                   , 119,   0,                    0,                        '',  416,    _,  False),
+    ('COPY'                      , 120,   3,                    3,                        '',  418,    _,  False),
+    ('POP_EXCEPT'                ,  89,   _,                 None,                        '',  420,    _,  False),
+    ('RERAISE'                   , 119,   1,                    1,                        '',  422,    _,  False),
+]]
+
 
 # One last piece of inspect fodder to check the default line number handling
 def simple(): pass
-expected_opinfo_simple = [
-  Instruction(opname='RESUME', opcode=151, arg=0, argval=0, argrepr='', offset=0, starts_line=simple.__code__.co_firstlineno, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=0, argval=None, argrepr='None', offset=2, starts_line=None, is_jump_target=False),
-  Instruction(opname='RETURN_VALUE', opcode=83, arg=None, argval=None, argrepr='', offset=4, starts_line=None, is_jump_target=False)
-]
+line = inspect.currentframe().f_lineno - 1
+
+expected_opinfo_simple = [inst(*args) for args in [
+    # opname, opcode, arg, argval, argrepr, offset, starts_line, is_jump_target
+    ('RESUME'                    , 151,   0,                    0,                        '',    0,  line,  False),
+    ('LOAD_CONST'                , 100,   0,                 None,                    'None',    2,     _,  False),
+    ('RETURN_VALUE'              ,  83,   _,                 None,                        '',    4,     _,  False),
+]]
 
 
 class InstructionTestCase(BytecodeTestCase):
