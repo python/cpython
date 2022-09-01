@@ -2381,7 +2381,7 @@
       </data-member>
     </class-decl>
     <pointer-type-def type-id='type-id-55' size-in-bits='64' id='type-id-56'/>
-    <class-decl name='_is' size-in-bits='21696' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_pystate.h' line='67' column='1' id='type-id-66'>
+    <class-decl name='_is' size-in-bits='21760' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_pystate.h' line='67' column='1' id='type-id-66'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='next' type-id='type-id-67' visibility='default' filepath='./Include/internal/pycore_pystate.h' line='69' column='1'/>
       </data-member>
@@ -2489,6 +2489,9 @@
       </data-member>
       <data-member access='public' layout-offset-in-bits='21632'>
         <var-decl name='audit_hooks' type-id='type-id-60' visibility='default' filepath='./Include/internal/pycore_pystate.h' line='137' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='21696'>
+        <var-decl name='int_max_str_digits' type-id='type-id-7' visibility='default' filepath='./Include/internal/pycore_pystate.h' line='139' column='1'/>
       </data-member>
     </class-decl>
     <pointer-type-def type-id='type-id-66' size-in-bits='64' id='type-id-67'/>
