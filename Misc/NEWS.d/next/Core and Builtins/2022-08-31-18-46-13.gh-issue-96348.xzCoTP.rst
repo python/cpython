@@ -1,0 +1,1 @@
+Deprecate ``gen.throw(typ, val, tb)``

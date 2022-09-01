@@ -709,7 +709,7 @@ class CoroutineTest(unittest.TestCase):
         aw = coro.__await__()
         next(aw)
         with self.assertRaises(ZeroDivisionError):
-            aw.throw(ZeroDivisionError, None, None)
+            aw.throw(ZeroDivisionError())
         self.assertEqual(N, 102)
 
     def test_func_11(self):
