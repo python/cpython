@@ -62,6 +62,9 @@ Queue
       Remove and return an item from the queue. If queue is empty,
       wait until an item is available.
 
+      Raises :exc:`QueueShutDown` if the queue has been shut down and
+      is empty, or if the queue has been shut down immediately.
+
    .. method:: get_nowait()
 
       Return an item if one is immediately available, else raise
@@ -77,10 +80,15 @@ Queue
       work on it is complete.  When the count of unfinished tasks drops
       to zero, :meth:`join` unblocks.
 
+      Raises :exc:`QueueShutDown` if the queue has been shut down
+      immediately.
+
    .. coroutinemethod:: put(item)
 
       Put an item into the queue. If the queue is full, wait until a
       free slot is available before adding the item.
+
+      Raises :exc:`QueueShutDown` if the queue has been shut down.
 
    .. method:: put_nowait(item)
 
@@ -91,6 +99,19 @@ Queue
    .. method:: qsize()
 
       Return the number of items in the queue.
+
+   .. method:: shutdown(immediate=False)
+
+      Shut-down the queue, making queue gets and puts raise
+      :exc:`QueueShutDown`.
+
+      By default, gets will only raise once the queue is empty. Set
+      *immediate* to true to make gets raise immediately instead.
+
+      All blocked callers of put() will be unblocked, and also get()
+      and join() if *immediate* is true.
+
+      .. versionadded:: 3.12
 
    .. method:: task_done()
 
@@ -107,6 +128,9 @@ Queue
 
       Raises :exc:`ValueError` if called more times than there were
       items placed in the queue.
+
+      Raises :exc:`QueueShutDown` if the queue has been shut down
+      immediately.
 
 
 Priority Queue
@@ -143,6 +167,14 @@ Exceptions
 
    Exception raised when the :meth:`~Queue.put_nowait` method is called
    on a queue that has reached its *maxsize*.
+
+
+.. exception:: QueueShutDown
+
+   Exception raised when getting an item from or putting an item onto a
+   queue which has been shut down.
+
+   .. versionadded:: 3.12
 
 
 Examples

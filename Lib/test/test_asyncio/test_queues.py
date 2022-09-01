@@ -522,5 +522,62 @@ class PriorityQueueJoinTests(_QueueJoinTestMixin, unittest.IsolatedAsyncioTestCa
     q_class = asyncio.PriorityQueue
 
 
+class _QueueShutdownTestMixin:
+    q_class = None
+
+    async def test_empty(self):
+        q = self.q_class()
+        q.shutdown()
+        try:
+            await q.put("data")
+            self.fail("Didn't appear to shut-down queue")
+        except asyncio.QueueShutDown:
+            pass
+        try:
+            await q.get()
+            self.fail("Didn't appear to shut-down queue")
+        except asyncio.QueueShutDown:
+            pass
+
+    async def test_nonempty(self):
+        q = self.q_class()
+        q.put_nowait("data")
+        q.shutdown()
+        await q.get()
+        try:
+            await q.get()
+            self.fail("Didn't appear to shut-down queue")
+        except asyncio.QueueShutDown:
+            pass
+
+    async def test_immediate(self):
+        q = self.q_class()
+        q.put_nowait("data")
+        q.shutdown(immediate=True)
+        try:
+            await q.get()
+            self.fail("Didn't appear to shut-down queue")
+        except asyncio.QueueShutDown:
+            pass
+
+
+class QueueShutdownTests(
+    _QueueShutdownTestMixin, unittest.IsolatedAsyncioTestCase
+):
+    q_class = asyncio.Queue
+
+
+class LifoQueueShutdownTests(
+    _QueueShutdownTestMixin, unittest.IsolatedAsyncioTestCase
+):
+    q_class = asyncio.LifoQueue
+
+
+class PriorityQueueShutdownTests(
+    _QueueShutdownTestMixin, unittest.IsolatedAsyncioTestCase
+):
+    q_class = asyncio.PriorityQueue
+
+
 if __name__ == '__main__':
     unittest.main()
