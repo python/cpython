@@ -114,6 +114,10 @@ _query_thread(LPVOID param)
         // Okay, now we have each resulting object it's time to
         // enumerate its members
         hr = value->BeginEnumeration(0);
+        if (FAILED(hr)) {
+            value->Release();
+            break;
+        }
         while (SUCCEEDED(hr)) {
             BSTR propName;
             VARIANT propValue;
