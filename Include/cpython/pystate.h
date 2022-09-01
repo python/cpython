@@ -101,9 +101,9 @@ struct _ts {
     int py_recursion_headroom; /* Allow 50 more calls to handle any errors. */
 
     /* C stack overflow handling */
+    intptr_t stack_base;
     intptr_t stack_limit;
-    intptr_t yellow_stack_limit;
-    intptr_t red_stack_limit;
+    intptr_t stack_top;
     int stack_in_yellow;
     int stack_grows;
 

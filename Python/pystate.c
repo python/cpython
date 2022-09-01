@@ -785,6 +785,13 @@ stack_grows(void) {
          return -1;
      }
 }
+
+/* We treat the top block (1k words) of the stack as the
+ * "red" zone. If we see a pointer in this zone, we
+ * abort with a Py_FatalError. The next three blocks are
+ * the "yellow". On first entering the yellow raise, a
+ * RecursionError is raised. */
+
 #define BLOCK_SIZE (1 << 10)
 #define DEFAULT_STACK_ALLOWANCE (100 * BLOCK_SIZE)
 #define SIZE_OF_RED_ZONE BLOCK_SIZE
@@ -799,7 +806,7 @@ _Py_UpdateStackLimits(PyThreadState *tstate)
 #ifdef HAVE_OS_STACK_LIMITS
     assert(tstate->stack_grows);
     void *lptr, *hptr;
-    if (_Py_Update_StackLimits(tstate, &lptr, &hptr)) {
+    if (_Py_OS_GetStackLimits(&lptr, &hptr)) {
         return -1;
     }
     intptr_t low = (intptr_t)lptr;
@@ -813,22 +820,60 @@ _Py_UpdateStackLimits(PyThreadState *tstate)
         low = high;
         high = temp;
     }
-    tstate->red_stack_limit = high - SIZE_OF_RED_ZONE;
-    tstate->yellow_stack_limit = tstate->red_stack_limit - SIZE_OF_YELLOW_ZONE;
+    tstate->stack_base = low;
+    tstate->stack_top = high;
 #else
     char addr;
     intptr_t here = ((uintptr_t)&addr)/SIZEOF_VOID_P;
     here *= tstate->stack_grows;
-    if (here < tstate->red_stack_limit - DEFAULT_STACK_ALLOWANCE ||
-        here > tstate->red_stack_limit + DEFAULT_STACK_ALLOWANCE/2)
+    if (here < tstate->stack_base ||
+        here > tstate->stack_top + 8*BLOCK_SIZE)
     {
-        /* Either uninitialized or
-         * sufficiently out of bounds, that we must have the wrong thread. */
-        intptr_t high = here + DEFAULT_STACK_ALLOWANCE;
-        tstate->red_stack_limit = high - SIZE_OF_RED_ZONE;
-        tstate->yellow_stack_limit = tstate->red_stack_limit - SIZE_OF_YELLOW_ZONE;
+        /* Either uninitialized or,
+         * sufficiently out of bounds that we must have the wrong thread. */
+        tstate->stack_base = here - BLOCK_SIZE;
+        tstate->stack_top = tstate->stack_base + DEFAULT_STACK_ALLOWANCE;
     }
 #endif
+    if (!tstate->stack_in_yellow) {
+        tstate->stack_limit = tstate->stack_top - SIZE_OF_RED_ZONE - SIZE_OF_YELLOW_ZONE;
+    }
+    return 0;
+}
+
+int
+_Py_StackOverflowCheckCall(PyThreadState *tstate, const char *where, intptr_t stack_location)
+{
+    assert(stack_location >= tstate->stack_limit);
+    assert(tstate->stack_grows);
+    if (_Py_UpdateStackLimits(tstate)) {
+        return -1;
+    }
+    intptr_t yellow_start = tstate->stack_top - SIZE_OF_RED_ZONE - SIZE_OF_YELLOW_ZONE;
+    if (stack_location < yellow_start) {
+        tstate->stack_limit = yellow_start;
+        tstate->stack_in_yellow = 0;
+        return 0;
+    }
+    intptr_t red_start = tstate->stack_top - SIZE_OF_RED_ZONE;
+    if (stack_location >= red_start) {
+        printf("Relative stack values. base: %ld limit: %ld top: %ld\n",
+               tstate->stack_base - stack_location,
+               tstate->stack_limit - stack_location,
+               tstate->stack_top - stack_location);
+        Py_FatalError("Unrecoverable C stack overflow");
+    }
+    /* In yellow zone */
+    assert(stack_location >= yellow_start && stack_location < red_start);
+    if (!tstate->stack_in_yellow) {
+        tstate->stack_limit = INTPTR_MIN;
+        tstate->stack_in_yellow = 1;
+        _PyErr_Format(tstate, PyExc_RecursionError,
+                      "C stack overflow %s",
+                      where);
+        return -1;
+    }
+    assert(tstate->stack_limit == INTPTR_MIN);
     return 0;
 }
 
@@ -874,8 +919,8 @@ init_threadstate(PyThreadState *tstate,
     tstate->stack_grows = stack_grows();
 
     tstate->stack_limit = INTPTR_MIN;
-    tstate->yellow_stack_limit = INTPTR_MIN;
-    tstate->red_stack_limit = INTPTR_MIN;
+    tstate->stack_base = INTPTR_MAX;
+    tstate->stack_top = INTPTR_MIN;
     tstate->stack_in_yellow = 0;
 
     tstate->_initialized = 1;

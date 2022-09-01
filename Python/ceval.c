@@ -269,43 +269,6 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
     return _Py_StackOverflowCheck(tstate, where);
 }
 
-int
-_Py_StackOverflowCheckCall(PyThreadState *tstate, const char *where, intptr_t stack_location)
-{
-    assert(stack_location >= tstate->stack_limit);
-    assert(tstate->stack_grows);
-    if (stack_location >= tstate->yellow_stack_limit) {
-        if (_Py_UpdateStackLimits(tstate)) {
-            return -1;
-        }
-    }
-    if (stack_location < tstate->yellow_stack_limit) {
-        tstate->stack_limit = tstate->yellow_stack_limit;
-        tstate->stack_in_yellow = false;
-        return 0;
-    }
-    if (stack_location >= tstate->red_stack_limit) {
-        printf("Relative stack limits: %ld  %ld %ld\n",
-               tstate->stack_limit - stack_location,
-               tstate->yellow_stack_limit - stack_location,
-               tstate->red_stack_limit - stack_location);
-        Py_FatalError("Unrecoverable C stack overflow");
-    }
-    /* In yellow zone */
-    assert(stack_location >= tstate->yellow_stack_limit &&
-        stack_location < tstate->red_stack_limit);
-    if (!tstate->stack_in_yellow) {
-        tstate->stack_limit = INTPTR_MIN;
-        tstate->stack_in_yellow = true;
-        _PyErr_Format(tstate, PyExc_RecursionError,
-                      "C stack overflow %s",
-                      where);
-        return -1;
-    }
-    assert(tstate->stack_limit == INTPTR_MIN);
-    return 0;
-}
-
 /* The function _Py_EnterRecursiveCallTstate() only calls _Py_CheckRecursiveCall()
    if the recursion_depth reaches recursion_limit. */
 int
