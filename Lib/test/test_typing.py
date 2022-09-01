@@ -4404,7 +4404,6 @@ class OverloadTests(BaseTestCase):
         # No overloads are recorded (but, it still has a side-effect):
         self.assertEqual(typing.get_overloads(sum), [])
         self.assertEqual(typing.get_overloads(print), [])
-        self.assertNotEqual(typing._overload_registry, {})
 
     def set_up_overloads(self):
         def blah():
