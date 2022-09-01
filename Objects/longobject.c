@@ -1786,7 +1786,8 @@ long_to_decimal_string_internal(PyObject *aa,
         strlen++;
     }
     if (strlen > _PY_LONG_MAX_STR_DIGITS_THRESHOLD) {
-        int max_str_digits = _Py_int_max_str_digits;
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        int max_str_digits = interp->int_max_str_digits;
         Py_ssize_t strlen_nosign = strlen - negative;
         if ((max_str_digits > 0) && (strlen_nosign > max_str_digits)) {
             Py_DECREF(scratch);
@@ -2462,7 +2463,8 @@ digit beyond the first.
 
         /* Limit the size to avoid excessive computation attacks. */
         if (digits > _PY_LONG_MAX_STR_DIGITS_THRESHOLD) {
-            int max_str_digits = _Py_int_max_str_digits;
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            int max_str_digits = interp->int_max_str_digits;
             if ((max_str_digits > 0) && (digits > max_str_digits)) {
                 PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT,
                              max_str_digits, digits);
@@ -6127,8 +6129,6 @@ PyLong_GetInfo(void)
 
 /* runtime lifecycle */
 
-int _Py_int_max_str_digits;
-
 PyStatus
 _PyLong_InitTypes(PyInterpreterState *interp)
 {
@@ -6146,9 +6146,9 @@ _PyLong_InitTypes(PyInterpreterState *interp)
             return _PyStatus_ERR("can't init int info type");
         }
     }
-    _Py_int_max_str_digits = _Py_global_config_int_max_str_digits;
-    if (_Py_int_max_str_digits == -1) {
-        _Py_int_max_str_digits = _PY_LONG_DEFAULT_MAX_STR_DIGITS;
+    interp->int_max_str_digits = _Py_global_config_int_max_str_digits;
+    if (interp->int_max_str_digits == -1) {
+        interp->int_max_str_digits = _PY_LONG_DEFAULT_MAX_STR_DIGITS;
     }
 
     return _PyStatus_OK();

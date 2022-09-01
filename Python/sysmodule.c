@@ -1633,7 +1633,7 @@ sys_get_int_max_str_digits_impl(PyObject *module)
 /*[clinic end generated code: output=0042f5e8ae0e8631 input=8dab13e2023e60d5]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return PyLong_FromSsize_t(_Py_int_max_str_digits);
+    return PyLong_FromSsize_t(interp->int_max_str_digits);
 }
 
 /*[clinic input]
@@ -1648,8 +1648,9 @@ static PyObject *
 sys_set_int_max_str_digits_impl(PyObject *module, int maxdigits)
 /*[clinic end generated code: output=734d4c2511f2a56d input=d7e3f325db6910c5]*/
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     if ((!maxdigits) || (maxdigits >= _PY_LONG_MAX_STR_DIGITS_THRESHOLD)) {
-        _Py_int_max_str_digits = maxdigits;
+        tstate->interp->int_max_str_digits = maxdigits;
         Py_RETURN_NONE;
     } else {
         PyErr_Format(

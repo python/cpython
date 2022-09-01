@@ -176,6 +176,8 @@ struct _is {
     struct type_cache type_cache;
     struct callable_cache callable_cache;
 
+    int int_max_str_digits;
+
     /* The following fields are here to avoid allocation during init.
        The data is exposed through PyInterpreterState pointer fields.
        These fields should not be accessed directly outside of init.
@@ -192,10 +194,6 @@ struct _is {
     PyThreadState _initial_thread;
 };
 
-/* The value should be part of PyInterpreterState. However that would change
-  * the size of the struct and therefore break our ABI promise. Abigail
-  * does not like it... Oh my! */
-extern int _Py_int_max_str_digits;
 
 /* other API */
 
