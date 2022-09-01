@@ -25,6 +25,15 @@ class Full(Exception):
     pass
 
 
+class ShutDown(Exception):
+    '''Raised when put/get with shut-down queue.'''
+
+
+_queue_alive = "alive"
+_queue_shutdown = "shutdown"
+_queue_shutdown_immediate = "shutdown-immediate"
+
+
 class Queue:
     '''Create a queue object with a given maximum size.
 
@@ -53,6 +62,9 @@ class Queue:
         # drops to zero; thread waiting to join() is notified to resume
         self.all_tasks_done = threading.Condition(self.mutex)
         self.unfinished_tasks = 0
+
+        # Queue shut-down state
+        self.shutdown_state = _queue_alive
 
     def task_done(self):
         '''Indicate that a formerly enqueued task is complete.
@@ -87,6 +99,8 @@ class Queue:
         '''
         with self.all_tasks_done:
             while self.unfinished_tasks:
+                if self.shutdown_state == _queue_shutdown_immediate:
+                    return
                 self.all_tasks_done.wait()
 
     def qsize(self):
@@ -130,6 +144,8 @@ class Queue:
         is immediately available, else raise the Full exception ('timeout'
         is ignored in that case).
         '''
+        if self.shutdown_state != _queue_alive:
+            raise ShutDown
         with self.not_full:
             if self.maxsize > 0:
                 if not block:
@@ -138,6 +154,8 @@ class Queue:
                 elif timeout is None:
                     while self._qsize() >= self.maxsize:
                         self.not_full.wait()
+                        if self.shutdown_state != _queue_alive:
+                            raise ShutDown
                 elif timeout < 0:
                     raise ValueError("'timeout' must be a non-negative number")
                 else:
@@ -147,6 +165,8 @@ class Queue:
                         if remaining <= 0.0:
                             raise Full
                         self.not_full.wait(remaining)
+                        if self.shutdown_state != _queue_alive:
+                            raise ShutDown
             self._put(item)
             self.unfinished_tasks += 1
             self.not_empty.notify()
@@ -162,22 +182,36 @@ class Queue:
         available, else raise the Empty exception ('timeout' is ignored
         in that case).
         '''
+        if self.shutdown_state == _queue_shutdown_immediate:
+            raise ShutDown
         with self.not_empty:
             if not block:
                 if not self._qsize():
+                    if self.shutdown_state != _queue_alive:
+                        raise ShutDown
                     raise Empty
             elif timeout is None:
                 while not self._qsize():
+                    if self.shutdown_state != _queue_alive:
+                        raise ShutDown
                     self.not_empty.wait()
+                    if self.shutdown_state != _queue_alive:
+                        raise ShutDown
             elif timeout < 0:
                 raise ValueError("'timeout' must be a non-negative number")
             else:
                 endtime = time() + timeout
                 while not self._qsize():
+                    if self.shutdown_state != _queue_alive:
+                        raise ShutDown
                     remaining = endtime - time()
                     if remaining <= 0.0:
                         raise Empty
                     self.not_empty.wait(remaining)
+                    if self.shutdown_state != _queue_alive:
+                        raise ShutDown
+            if self.shutdown_state == _queue_shutdown_immediate:
+                raise ShutDown
             item = self._get()
             self.not_full.notify()
             return item
@@ -197,6 +231,24 @@ class Queue:
         raise the Empty exception.
         '''
         return self.get(block=False)
+
+    def shutdown(self, immediate=False):
+        '''Shut-down the queue, making queue gets and puts raise.
+
+        By default, gets will only raise once the queue is empty. Set
+        'immediate' to True to make gets raise immediately instead.
+
+        All blocked callers of put() will be unblocked, and also get()
+        and join() if 'immediate'. The ShutDown exception is raised.
+        '''
+        with self.mutex:
+            if immediate:
+                self.shutdown_state = _queue_shutdown_immediate
+                self.not_empty.notify_all()
+                self.all_tasks_done.notify_all()
+            else:
+                self.shutdown_state = _queue_shutdown
+            self.not_full.notify_all()
 
     # Override these methods to implement other queue organizations
     # (e.g. stack or priority queue).
