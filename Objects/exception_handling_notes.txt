@@ -68,6 +68,7 @@ ExceptionTable:
   4 to 32 -> 38 [0]
   38 to 40 -> 48 [1] lasti
 
+(Note this code is from 3.11, later versions may have slightly different bytecode.)
 
 If an instruction raises an exception then its offset is used to find the target to jump to.
 For example, the CALL at offset 22, falls into the range 4 to 32.
@@ -86,9 +87,9 @@ This information is stored in the exception table, described below.
 If there is no relevant entry, the exception bubbles up to the caller.
 
 If there is an entry, then:
- 1. pop values from the stack until it matches the stack depth for the handler,
+ 1. pop values from the stack until it matches the stack depth for the handler.
  2. if 'lasti' is true, then push the offset that the exception was raised at.
- 3. push the exception to the stack
+ 3. push the exception to the stack.
  4. jump to the target offset and resume execution.
 
 
