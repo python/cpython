@@ -160,7 +160,7 @@ extern PyObject* _Py_MakeCoro(PyFunctionObject *func);
 
 extern int _Py_HandlePending(PyThreadState *tstate);
 
-#define C_RECURSION_LIMT 2500
+#define C_RECURSION_LIMT 2000
 
 #ifdef __cplusplus
 }

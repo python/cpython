@@ -111,7 +111,7 @@ class TestSpecifics(unittest.TestCase):
 
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_extended_arg(self):
-        repeat = 2000
+        repeat = 1500
         longexpr = 'x = x or ' + '-x' * repeat
         g = {}
         code = '''
@@ -545,16 +545,9 @@ if 1:
     @support.cpython_only
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_compiler_recursion_limit(self):
-        # Expected limit is sys.getrecursionlimit() * the scaling factor
-        # in symtable.c (currently 3)
-        # We expect to fail *at* that limit, because we use up some of
-        # the stack depth limit in the test suite code
-        # So we check the expected limit and 75% of that
-        # XXX (ncoghlan): duplicating the scaling factor here is a little
-        # ugly. Perhaps it should be exposed somewhere...
-        fail_depth = sys.getrecursionlimit() * 3
-        crash_depth = sys.getrecursionlimit() * 300
-        success_depth = int(fail_depth * 0.75)
+        fail_depth = 3000
+        crash_depth = 100_000
+        success_depth = 1500
 
         def check_limit(prefix, repeated, mode="single"):
             expect_ok = prefix + repeated * success_depth
