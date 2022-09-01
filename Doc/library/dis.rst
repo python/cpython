@@ -402,7 +402,7 @@ The Python compiler currently generates the following bytecode instructions.
 
 **General instructions**
 
-In the following, TOS(i) refer to the *i*-th item on the stack which is index from 1.
+In the following, TOS(i) refers to the *i*-th item on the stack which is index from 1.
 We also use as shorthand TOS = TOS(1) which is the top-of-stack.
 TOS1, TOS2, TOS3 are the second, third and fourth items on the stack, respectively.
 
