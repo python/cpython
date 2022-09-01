@@ -2,7 +2,6 @@
 
 import contextlib
 import dis
-import inspect
 import io
 import re
 import sys
@@ -1666,7 +1665,7 @@ expected_opinfo_jumpy = [inst(*args) for args in [
 
 # One last piece of inspect fodder to check the default line number handling
 def simple(): pass
-line = inspect.currentframe().f_lineno - 1
+line = simple.__code__.co_firstlineno
 
 expected_opinfo_simple = [inst(*args) for args in [
     # opname, opcode, arg, argval, argrepr, offset, starts_line, is_jump_target
