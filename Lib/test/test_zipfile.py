@@ -2077,6 +2077,7 @@ class DecryptionTests(unittest.TestCase):
         self.assertRaises(RuntimeError, self.zip.read, "test.txt")
         self.assertRaises(RuntimeError, self.zip2.read, "zero")
 
+    @requires_zlib
     def test_bad_password(self):
         self.zip.setpassword(b"perl")
         self.assertRaises(RuntimeError, self.zip.read, "test.txt")
