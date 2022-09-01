@@ -43,33 +43,36 @@ SETUP_FINALLY and POP_BLOCK.
 In 3.11, the SETUP_FINALLY and POP_BLOCK are eliminated, replaced with
 a table to determine where to jump to when an exception is raised.
 
-  2           0 NOP
+  1           0 RESUME                   0
 
-  3           2 LOAD_GLOBAL              0 (g)
-              4 LOAD_CONST               1 (0)
-              6 CALL_NO_KW               1
-              8 POP_TOP
-             10 LOAD_CONST               0 (None)
-             12 RETURN_VALUE
-        >>   14 PUSH_EXC_INFO
+  2           2 NOP
 
-  4          16 POP_TOP
-             18 POP_TOP
-             20 POP_TOP
+  3           4 LOAD_GLOBAL              1 (NULL + g)
+             16 LOAD_CONST               1 (0)
+             18 PRECALL                  1
+             22 CALL                     1
+             32 POP_TOP
+             34 LOAD_CONST               0 (None)
+             36 RETURN_VALUE
+        >>   38 PUSH_EXC_INFO
 
-  5          22 POP_EXCEPT
-             24 LOAD_CONST               2 ('fail')
-             26 RETURN_VALUE
-        >>   28 POP_EXCEPT_AND_RERAISE
+  4          40 POP_TOP
+
+  5          42 POP_EXCEPT
+             44 LOAD_CONST               2 ('fail')
+             46 RETURN_VALUE
+        >>   48 COPY                     3
+             50 POP_EXCEPT
+             52 RERAISE                  1
 ExceptionTable:
-  2 to 8 -> 14 [0]
-  14 to 20 -> 28 [3] lasti
+  4 to 32 -> 38 [0]
+  38 to 40 -> 48 [1] lasti
 
-(Note this code is from an early 3.11 alpha, the NOP may well have be removed before release).
+(Note this code is from 3.11, later versions may have slightly different bytecode.)
 
 If an instruction raises an exception then its offset is used to find the target to jump to.
-For example, the CALL_NO_KW at offset 6, falls into the range 2 to 8.
-So, if g() raises an exception, then control jumps to offset 14.
+For example, the CALL at offset 22, falls into the range 4 to 32.
+So, if g() raises an exception, then control jumps to offset 38.
 
 
 Unwinding
@@ -84,9 +87,9 @@ This information is stored in the exception table, described below.
 If there is no relevant entry, the exception bubbles up to the caller.
 
 If there is an entry, then:
- 1. pop values from the stack until it matches the stack depth for the handler,
+ 1. pop values from the stack until it matches the stack depth for the handler.
  2. if 'lasti' is true, then push the offset that the exception was raised at.
- 3. push the exception to the stack as three values: traceback, value, type,
+ 3. push the exception to the stack.
  4. jump to the target offset and resume execution.
 
 
