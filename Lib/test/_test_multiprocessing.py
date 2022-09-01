@@ -1277,6 +1277,41 @@ class _TestQueue(BaseTestCase):
                 q.put('foo')
             with self.assertRaisesRegex(ValueError, 'is closed'):
                 q.get()
+
+    def test_shutdown_empty(self):
+        q = multiprocessing.Queue()
+        q.shutdown()
+        try:
+            q.put("data")
+            self.fail("Didn't appear to shut-down queue")
+        except pyqueue.ShutDown:
+            pass
+        try:
+            q.get()
+            self.fail("Didn't appear to shut-down queue")
+        except pyqueue.ShutDown:
+            pass
+
+    def test_shutdown_nonempty(self):
+        q = multiprocessing.Queue()
+        q.put("data")
+        q.shutdown()
+        q.get()
+        try:
+            q.get()
+            self.fail("Didn't appear to shut-down queue")
+        except pyqueue.ShutDown:
+            pass
+
+    def test_shutdown_immediate(self):
+        q = multiprocessing.Queue()
+        q.put("data")
+        q.shutdown(immediate=True)
+        try:
+            q.get()
+            self.fail("Didn't appear to shut-down queue")
+        except pyqueue.ShutDown:
+            pass
 #
 #
 #
