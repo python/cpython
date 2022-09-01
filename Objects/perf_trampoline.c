@@ -149,6 +149,22 @@ typedef enum {
 #include <sys/types.h>
 #include <unistd.h>
 
+#if defined(__arm__) || defined(__arm64__) || defined(__aarch64__)
+#define PY_HAVE_INVALIDATE_ICACHE
+
+#if defined(__clang__) || defined(__GNUC__)
+extern void __clear_cache(void *, void*);
+#endif
+
+static void invalidate_icache(char* begin, char*end) {
+#if defined(__clang__) || defined(__GNUC__)
+    return __clear_cache(begin, end);
+#else
+    return;
+#endif
+}
+#endif
+
 /* The function pointer is passed as last argument. The other three arguments
  * are passed in the same order as the function requires. This results in
  * shorter, more efficient ASM code for trampoline.
@@ -185,17 +201,9 @@ struct trampoline_api_st {
 
 typedef struct trampoline_api_st trampoline_api_t;
 
-#if defined(__clang__) || defined(__GNUC__)
-extern void __clear_cache(void *, void*);
-#endif
+#ifdef PY_HAVE_INVALIDATE_ICACHE
 
-static void invalidate_icache(char* begin, char*end) {
-#if defined(__clang__) || defined(__GNUC__)
-    return __clear_cache(begin, end);
-#else
-    return;
 #endif
-}
 
 static perf_status_t perf_status = PERF_STATUS_NO_INIT;
 static Py_ssize_t extra_code_index = -1;
@@ -319,7 +327,7 @@ new_code_arena(void)
         return -1;
     }
 
-#if defined(__arm__) || defined(__arm64__) || defined(__aarch64__)
+#ifdef PY_HAVE_INVALIDATE_ICACHE
     // Before the JIT can run a block of code that has been emitted it must invalidate
     // the instruction cache on some platforms like arm and aarch64.
     invalidate_icache(memory, memory + mem_size);
