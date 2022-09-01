@@ -142,7 +142,7 @@ class RebindBuiltinsTests(unittest.TestCase):
 
         code = "lambda: " + "+".join(f"_number_{i}" for i in range(700))
         sum_func = eval(code, MyGlobals())
-        expected = sum(range(limit))
+        expected = sum(range(700))
         # Warm up the the function for quickening (PEP 659)
         for _ in range(30):
             self.assertEqual(sum_func(), expected)

@@ -111,7 +111,7 @@ class TestSpecifics(unittest.TestCase):
 
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_extended_arg(self):
-        repeat = 1000
+        repeat = 700
         longexpr = 'x = x or ' + '-x' * repeat
         g = {}
         code = '''
