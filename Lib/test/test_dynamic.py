@@ -140,9 +140,7 @@ class RebindBuiltinsTests(unittest.TestCase):
             def __missing__(self, key):
                 return int(key.removeprefix("_number_"))
 
-        # 1,000 on most systems
-        limit = sys.getrecursionlimit()
-        code = "lambda: " + "+".join(f"_number_{i}" for i in range(limit))
+        code = "lambda: " + "+".join(f"_number_{i}" for i in range(700))
         sum_func = eval(code, MyGlobals())
         expected = sum(range(limit))
         # Warm up the the function for quickening (PEP 659)
