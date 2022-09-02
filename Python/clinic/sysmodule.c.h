@@ -779,8 +779,31 @@ static PyObject *
 sys_set_int_max_str_digits(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(maxdigits), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"maxdigits", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "set_int_max_str_digits", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_int_max_str_digits",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     int maxdigits;
 
@@ -1320,4 +1343,4 @@ sys_is_stack_trampoline_active(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=27e4e7e2264ea035 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=15318cdd96b62b06 input=a9049054013a1b77]*/
