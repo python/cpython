@@ -200,7 +200,7 @@ if 1:
             exc = err_ctx.exception
             self.assertEqual(exc.lineno, 3)
             self.assertIn('Exceeds the limit ', str(exc))
-            self.assertIn(' Consider hexidecimal ', str(exc))
+            self.assertIn(' Consider hexadecimal ', str(exc))
 
     def test_unary_minus(self):
         # Verify treatment of unary minus on negative numbers SF bug #660455

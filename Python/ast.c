@@ -2151,7 +2151,7 @@ ast_for_atom(struct compiling *c, const node *n)
                 Py_XDECREF(tb);
                 Py_DECREF(type);
                 PyObject *helpful_msg = PyUnicode_FromFormat(
-                    "%S - Consider hexidecimal for huge integer literals "
+                    "%S - Consider hexadecimal for huge integer literals "
                     "to avoid decimal conversion limits.",
                     value);
                 if (helpful_msg) {
