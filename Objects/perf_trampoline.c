@@ -201,9 +201,6 @@ struct trampoline_api_st {
 
 typedef struct trampoline_api_st trampoline_api_t;
 
-#ifdef PY_HAVE_INVALIDATE_ICACHE
-
-#endif
 
 static perf_status_t perf_status = PERF_STATUS_NO_INIT;
 static Py_ssize_t extra_code_index = -1;
