@@ -72,8 +72,8 @@ extern "C" {
 #define JUMP_FORWARD                           110
 #define JUMP_IF_FALSE_OR_POP                   111
 #define JUMP_IF_TRUE_OR_POP                    112
-#define POP_JUMP_FORWARD_IF_FALSE              114
-#define POP_JUMP_FORWARD_IF_TRUE               115
+#define POP_JUMP_IF_FALSE                      114
+#define POP_JUMP_IF_TRUE                       115
 #define LOAD_GLOBAL                            116
 #define IS_OP                                  117
 #define CONTAINS_OP                            118
@@ -85,8 +85,8 @@ extern "C" {
 #define STORE_FAST                             125
 #define DELETE_FAST                            126
 #define LOAD_FAST_CHECK                        127
-#define POP_JUMP_FORWARD_IF_NOT_NONE           128
-#define POP_JUMP_FORWARD_IF_NONE               129
+#define POP_JUMP_IF_NOT_NONE                   128
+#define POP_JUMP_IF_NONE                       129
 #define RAISE_VARARGS                          130
 #define GET_AWAITABLE                          131
 #define MAKE_FUNCTION                          132
@@ -117,10 +117,6 @@ extern "C" {
 #define DICT_UPDATE                            165
 #define CALL                                   171
 #define KW_NAMES                               172
-#define POP_JUMP_BACKWARD_IF_NOT_NONE          173
-#define POP_JUMP_BACKWARD_IF_NONE              174
-#define POP_JUMP_BACKWARD_IF_FALSE             175
-#define POP_JUMP_BACKWARD_IF_TRUE              176
 #define MIN_PSEUDO_OPCODE                      256
 #define SETUP_FINALLY                          256
 #define SETUP_CLEANUP                          257
@@ -128,12 +124,8 @@ extern "C" {
 #define POP_BLOCK                              259
 #define JUMP                                   260
 #define JUMP_NO_INTERRUPT                      261
-#define POP_JUMP_IF_FALSE                      262
-#define POP_JUMP_IF_TRUE                       263
-#define POP_JUMP_IF_NONE                       264
-#define POP_JUMP_IF_NOT_NONE                   265
-#define LOAD_METHOD                            266
-#define MAX_PSEUDO_OPCODE                      266
+#define LOAD_METHOD                            262
+#define MAX_PSEUDO_OPCODE                      262
 #define BINARY_OP_ADAPTIVE                       3
 #define BINARY_OP_ADD_FLOAT                      4
 #define BINARY_OP_ADD_INT                        5
@@ -199,23 +191,19 @@ extern "C" {
 #define STORE_ATTR_SLOT                        168
 #define STORE_ATTR_WITH_HINT                   169
 #define STORE_FAST__LOAD_FAST                  170
-#define STORE_FAST__STORE_FAST                 177
-#define STORE_SUBSCR_ADAPTIVE                  178
-#define STORE_SUBSCR_DICT                      179
-#define STORE_SUBSCR_LIST_INT                  180
-#define UNPACK_SEQUENCE_ADAPTIVE               181
-#define UNPACK_SEQUENCE_LIST                   182
-#define UNPACK_SEQUENCE_TUPLE                  183
-#define UNPACK_SEQUENCE_TWO_TUPLE              184
+#define STORE_FAST__STORE_FAST                 173
+#define STORE_SUBSCR_ADAPTIVE                  174
+#define STORE_SUBSCR_DICT                      175
+#define STORE_SUBSCR_LIST_INT                  176
+#define UNPACK_SEQUENCE_ADAPTIVE               177
+#define UNPACK_SEQUENCE_LIST                   178
+#define UNPACK_SEQUENCE_TUPLE                  179
+#define UNPACK_SEQUENCE_TWO_TUPLE              180
 #define DO_TRACING                             255
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
     || ((op) == JUMP) \
     || ((op) == JUMP_NO_INTERRUPT) \
-    || ((op) == POP_JUMP_IF_FALSE) \
-    || ((op) == POP_JUMP_IF_TRUE) \
-    || ((op) == POP_JUMP_IF_NONE) \
-    || ((op) == POP_JUMP_IF_NOT_NONE) \
     || ((op) == LOAD_METHOD) \
     )
 
