@@ -2472,7 +2472,7 @@ ast_for_atom(struct compiling *c, const node *n)
                 Py_XDECREF(tb);
                 Py_DECREF(type);
                 ast_error(c, ch,
-                    "%S - Consider hexidecimal for huge integer literals "
+                    "%S - Consider hexadecimal for huge integer literals "
                     "to avoid decimal conversion limits.",
                     value);
                 Py_DECREF(value);
