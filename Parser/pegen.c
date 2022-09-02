@@ -1149,7 +1149,7 @@ _PyPegen_number_token(Parser *p)
                 p, PyExc_SyntaxError,
                 t->lineno, -1 /* col_offset */,
                 t->end_lineno, -1 /* end_col_offset */,
-                "%S - Consider hexidecimal for huge integer literals "
+                "%S - Consider hexadecimal for huge integer literals "
                 "to avoid decimal conversion limits.",
                 value);
             Py_DECREF(value);
