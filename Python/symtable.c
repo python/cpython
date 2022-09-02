@@ -1164,7 +1164,7 @@ symtable_record_directive(struct symtable *st, identifier name, int lineno,
 static int
 symtable_visit_stmt(struct symtable *st, stmt_ty s)
 {
-    if (_Py_EnterRecursiveCall("during compilation")) {
+    if (_Py_EnterRecursiveCall(" during compilation")) {
         return 0;
     }
     switch (s->kind) {
@@ -1548,7 +1548,7 @@ symtable_handle_namedexpr(struct symtable *st, expr_ty e)
 static int
 symtable_visit_expr(struct symtable *st, expr_ty e)
 {
-    if (_Py_EnterRecursiveCall("during compilation")) {
+    if (_Py_EnterRecursiveCall(" during compilation")) {
         return 0;
     }
     switch (e->kind) {
@@ -1706,7 +1706,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 static int
 symtable_visit_pattern(struct symtable *st, pattern_ty p)
 {
-    if (_Py_EnterRecursiveCall("during compilation")) {
+    if (_Py_EnterRecursiveCall(" during compilation")) {
         return 0;
     }
     switch (p->kind) {

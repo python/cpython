@@ -158,7 +158,7 @@ validate_constant(PyObject *value)
         return 1;
 
     if (PyTuple_CheckExact(value) || PyFrozenSet_CheckExact(value)) {
-        if (_Py_EnterRecursiveCall("during compilation")) {
+        if (_Py_EnterRecursiveCall(" during compilation")) {
             return 0;
         }
 
@@ -203,7 +203,7 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
     VALIDATE_POSITIONS(exp);
     int ret = -1;
 
-    if (_Py_EnterRecursiveCall("during compilation")) {
+    if (_Py_EnterRecursiveCall(" during compilation")) {
         return 0;
     }
     int check_ctx = 1;
@@ -524,7 +524,7 @@ validate_pattern(pattern_ty p, int star_ok)
 {
     VALIDATE_POSITIONS(p);
     int ret = -1;
-    if (_Py_EnterRecursiveCall("during compilation")) {
+    if (_Py_EnterRecursiveCall(" during compilation")) {
         return 0;
     }
     switch (p->kind) {
@@ -693,7 +693,7 @@ validate_stmt(stmt_ty stmt)
     VALIDATE_POSITIONS(stmt);
     int ret = -1;
     Py_ssize_t i;
-    if (_Py_EnterRecursiveCall("during compilation")) {
+    if (_Py_EnterRecursiveCall(" during compilation")) {
         return 0;
     }
     switch (stmt->kind) {

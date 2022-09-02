@@ -706,7 +706,7 @@ astfold_mod(mod_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 static int
 astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
-    if (_Py_EnterRecursiveCall("during compilation")) {
+    if (_Py_EnterRecursiveCall(" during compilation")) {
         return 0;
     }
     switch (node_->kind) {
@@ -867,7 +867,7 @@ astfold_arg(arg_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 static int
 astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
-    if (_Py_EnterRecursiveCall("during compilation")) {
+    if (_Py_EnterRecursiveCall(" during compilation")) {
         return 0;
     }
     switch (node_->kind) {
@@ -1017,7 +1017,7 @@ astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     // Currently, this is really only used to form complex/negative numeric
     // constants in MatchValue and MatchMapping nodes
     // We still recurse into all subexpressions and subpatterns anyway
-    if (_Py_EnterRecursiveCall("during compilation")) {
+    if (_Py_EnterRecursiveCall(" during compilation")) {
         return 0;
     }
     switch (node_->kind) {
