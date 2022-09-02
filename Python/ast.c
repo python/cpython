@@ -984,7 +984,7 @@ _PyAST_Validate(mod_ty mod)
         return 0;
     }
     /* Be careful here to prevent overflow. */
-    int recursion_depth = tstate->recursion_limit - tstate->recursion_remaining;
+    int recursion_depth = C_RECURSION_LIMIT - tstate->c_recursion_remaining;
     starting_recursion_depth = (recursion_depth< INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
         recursion_depth * COMPILER_STACK_FRAME_SCALE : recursion_depth;
     state.recursion_depth = starting_recursion_depth;

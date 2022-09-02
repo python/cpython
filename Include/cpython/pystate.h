@@ -95,8 +95,10 @@ struct _ts {
     /* Was this thread state statically allocated? */
     int _static;
 
-    int recursion_remaining;
-    int recursion_limit;
+    int py_recursion_remaining;
+    int py_recursion_limit;
+
+    int c_recursion_remaining;
     int recursion_headroom; /* Allow 50 more calls to handle any errors. */
 
     /* 'tracing' keeps track of the execution depth when tracing/profiling.
@@ -202,6 +204,7 @@ struct _ts {
     _PyCFrame root_cframe;
 };
 
+#define C_RECURSION_LIMIT 800
 
 /* other API */
 
