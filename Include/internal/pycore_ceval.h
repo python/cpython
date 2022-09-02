@@ -123,19 +123,14 @@ PyAPI_FUNC(int) _Py_CheckRecursiveCallN(PyThreadState *tstate, int n,
 
 static inline int _Py_EnterRecursiveCallTstate(PyThreadState *tstate,
                                                const char *where) {
-    int remaining = tstate->c_recursion_remaining;
-    if (remaining > 0) {
-        tstate->c_recursion_remaining = remaining - 1;
-        return 0;
-    }
-    return _Py_CheckRecursiveCallN(tstate, 1, where);
+    return (tstate->c_recursion_remaining-- <= 0) &&
+            _Py_CheckRecursiveCallN(tstate, 1, where);
 }
 
 static inline int _Py_EnterRecursiveCallN(PyThreadState *tstate, int n,
                                           const char *where) {
-    int remaining = tstate->c_recursion_remaining;
-    if (remaining >= n) {
-        tstate->c_recursion_remaining = remaining - n;
+    tstate->c_recursion_remaining -= n;
+    if (tstate->c_recursion_remaining < 0) {
         return 0;
     }
     return _Py_CheckRecursiveCallN(tstate, n, where);

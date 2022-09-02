@@ -277,12 +277,13 @@ _Py_CheckRecursiveCallN(PyThreadState *tstate, int n, const char *where)
         }
     }
     else {
-        if (tstate->c_recursion_remaining < n) {
-            tstate->c_recursion_remaining += n;
+        if (tstate->c_recursion_remaining <= 0) {
+            tstate->c_recursion_headroom++;
             _PyErr_Format(tstate, PyExc_RecursionError,
                         "C stack overflow%s",
                         where);
-            tstate->c_recursion_remaining -= n;
+            tstate->c_recursion_headroom--;
+            tstate->c_recursion_remaining += n;
             return -1;
         }
     }
