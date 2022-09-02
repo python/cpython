@@ -305,6 +305,8 @@ struct _is {
 
     struct ast_state ast;
     struct type_cache type_cache;
+
+    int int_max_str_digits;
 };
 
 extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
