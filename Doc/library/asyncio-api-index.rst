@@ -55,7 +55,7 @@ await on multiple things with timeouts.
 
     * - ``await`` :func:`wait`
       - Monitor for completion.
-    
+
     * - :func:`timeout`
       - Run with a timeout. Useful in cases when `wait_for` is not suitable.
 
