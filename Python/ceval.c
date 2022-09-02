@@ -270,7 +270,7 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 {
 #ifdef USE_STACKCHECK
     if (PyOS_CheckStack()) {
-        ++tstate->recursion_remaining;
+        ++tstate->c_recursion_remaining;
         _PyErr_SetString(tstate, PyExc_MemoryError, "Stack overflow");
         return -1;
     }
