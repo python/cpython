@@ -1,0 +1,3 @@
+Decouple C stack overflow checking from Python recursion checking. Allows
+the recursion limit to be increased safely, and reduces the chance of
+segfaults.
