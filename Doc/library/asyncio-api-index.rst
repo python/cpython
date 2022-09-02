@@ -19,7 +19,7 @@ await on multiple things with timeouts.
     :class: full-width-table
 
     * - :func:`run`
-      - Create an event loop, run one async function, and close the loop.
+      - Create event loop, run a coroutine, close the loop.
 
     * - :class:`Runner`
       - A context manager that simplifies multiple async function calls.
@@ -55,6 +55,9 @@ await on multiple things with timeouts.
 
     * - ``await`` :func:`wait`
       - Monitor for completion.
+    
+    * - :func:`timeout`
+      - Run with a timeout. Useful in cases when `wait_for` is not suitable.
 
     * - :func:`to_thread`
       - Asynchronously run a function in a separate OS thread.
