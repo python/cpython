@@ -13,7 +13,7 @@
 
 # update when constants are added or removed
 
-MAGIC = 20220423
+MAGIC = 20220615
 
 from _sre import MAXREPEAT, MAXGROUPS
 

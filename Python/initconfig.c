@@ -118,6 +118,11 @@ The following implementation-specific options are available:\n\
    files are desired as well as suppressing the extra visual location indicators \n\
    when the interpreter displays tracebacks.\n\
 \n\
+-X perf: activate support for the Linux \"perf\" profiler by activating the \"perf\"\n\
+    trampoline. When this option is activated, the Linux \"perf\" profiler will be \n\
+    able to report Python calls. This option is only available on some platforms and will \n\
+    do nothing if is not supported on the current system. The default value is \"off\".\n\
+\n\
 -X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
    The default is \"on\" (or \"off\" if you are running a local build).";
 
@@ -180,7 +185,7 @@ int Py_UTF8Mode = 0;
 int Py_DebugFlag = 0; /* Needed by parser.c */
 int Py_VerboseFlag = 0; /* Needed by import.c */
 int Py_QuietFlag = 0; /* Needed by sysmodule.c */
-int Py_InteractiveFlag = 0; /* Needed by Py_FdIsInteractive() below */
+int Py_InteractiveFlag = 0; /* Previously, was used by Py_FdIsInteractive() */
 int Py_InspectFlag = 0; /* Needed to determine whether to exit at SystemExit */
 int Py_OptimizeFlag = 0; /* Needed by compile.c */
 int Py_NoSiteFlag = 0; /* Suppress 'import site' */
@@ -201,6 +206,8 @@ int Py_LegacyWindowsStdioFlag = 0; /* Uses FileIO instead of WindowsConsoleIO */
 static PyObject *
 _Py_GetGlobalVariablesAsDict(void)
 {
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     PyObject *dict, *obj;
 
     dict = PyDict_New();
@@ -267,15 +274,19 @@ fail:
 #undef SET_ITEM
 #undef SET_ITEM_INT
 #undef SET_ITEM_STR
+_Py_COMP_DIAG_POP
 }
 
 char*
 Py_GETENV(const char *name)
 {
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     if (Py_IgnoreEnvironmentFlag) {
         return NULL;
     }
     return getenv(name);
+_Py_COMP_DIAG_POP
 }
 
 /* --- PyStatus ----------------------------------------------- */
@@ -537,8 +548,11 @@ Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
     }
 #ifdef MS_WINDOWS
     if (_Py_StandardStreamEncoding) {
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
         /* Overriding the stream encoding implies legacy streams */
         Py_LegacyWindowsStdioFlag = 1;
+_Py_COMP_DIAG_POP
     }
 #endif
 
@@ -736,6 +750,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->use_hash_seed = -1;
     config->faulthandler = -1;
     config->tracemalloc = -1;
+    config->perf_profiling = -1;
     config->module_search_paths_set = 0;
     config->parse_argv = 0;
     config->site_import = -1;
@@ -820,6 +835,7 @@ PyConfig_InitIsolatedConfig(PyConfig *config)
     config->use_hash_seed = 0;
     config->faulthandler = 0;
     config->tracemalloc = 0;
+    config->perf_profiling = 0;
     config->safe_path = 1;
     config->pathconfig_warnings = 0;
 #ifdef MS_WINDOWS
@@ -931,6 +947,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(_install_importlib);
     COPY_ATTR(faulthandler);
     COPY_ATTR(tracemalloc);
+    COPY_ATTR(perf_profiling);
     COPY_ATTR(import_time);
     COPY_ATTR(code_debug_ranges);
     COPY_ATTR(show_ref_count);
@@ -1041,6 +1058,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_UINT(hash_seed);
     SET_ITEM_INT(faulthandler);
     SET_ITEM_INT(tracemalloc);
+    SET_ITEM_INT(perf_profiling);
     SET_ITEM_INT(import_time);
     SET_ITEM_INT(code_debug_ranges);
     SET_ITEM_INT(show_ref_count);
@@ -1322,6 +1340,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     CHECK_VALUE("hash_seed", config->hash_seed <= MAX_HASH_SEED);
     GET_UINT(faulthandler);
     GET_UINT(tracemalloc);
+    GET_UINT(perf_profiling);
     GET_UINT(import_time);
     GET_UINT(code_debug_ranges);
     GET_UINT(show_ref_count);
@@ -1443,6 +1462,8 @@ config_get_env_dup(PyConfig *config,
 static void
 config_get_global_vars(PyConfig *config)
 {
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     if (config->_config_init != _PyConfig_INIT_COMPAT) {
         /* Python and Isolated configuration ignore global variables */
         return;
@@ -1478,6 +1499,7 @@ config_get_global_vars(PyConfig *config)
 
 #undef COPY_FLAG
 #undef COPY_NOT_FLAG
+_Py_COMP_DIAG_POP
 }
 
 
@@ -1485,6 +1507,8 @@ config_get_global_vars(PyConfig *config)
 static void
 config_set_global_vars(const PyConfig *config)
 {
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
 #define COPY_FLAG(ATTR, VAR) \
         if (config->ATTR != -1) { \
             VAR = config->ATTR; \
@@ -1519,6 +1543,7 @@ config_set_global_vars(const PyConfig *config)
 
 #undef COPY_FLAG
 #undef COPY_NOT_FLAG
+_Py_COMP_DIAG_POP
 }
 
 
@@ -1672,6 +1697,26 @@ config_read_env_vars(PyConfig *config)
     return _PyStatus_OK();
 }
 
+static PyStatus
+config_init_perf_profiling(PyConfig *config)
+{
+    int active = 0;
+    const char *env = config_get_env(config, "PYTHONPERFSUPPORT");
+    if (env) {
+        if (_Py_str_to_int(env, &active) != 0) {
+            active = 0;
+        }
+        if (active) {
+            config->perf_profiling = 1;
+        }
+    }
+    const wchar_t *xoption = config_get_xoption(config, L"perf");
+    if (xoption) {
+        config->perf_profiling = 1;
+    }
+    return _PyStatus_OK();
+
+}
 
 static PyStatus
 config_init_tracemalloc(PyConfig *config)
@@ -1769,6 +1814,12 @@ config_read_complex_options(PyConfig *config)
     PyStatus status;
     if (config->tracemalloc < 0) {
         status = config_init_tracemalloc(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+    if (config->perf_profiling < 0) {
+        status = config_init_perf_profiling(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -2046,49 +2097,6 @@ _PyConfig_InitImportConfig(PyConfig *config)
     return config_init_import(config, 1);
 }
 
-// List of known xoptions to validate against the provided ones. Note that all
-// options are listed, even if they are only available if a specific macro is
-// set, like -X showrefcount which requires a debug build. In this case unknown
-// options are silently ignored.
-const wchar_t* known_xoptions[] = {
-    L"faulthandler",
-    L"showrefcount",
-    L"tracemalloc",
-    L"importtime",
-    L"dev",
-    L"utf8",
-    L"pycache_prefix",
-    L"warn_default_encoding",
-    L"no_debug_ranges",
-    L"frozen_modules",
-    NULL,
-};
-
-static const wchar_t*
-_Py_check_xoptions(const PyWideStringList *xoptions, const wchar_t **names)
-{
-    for (Py_ssize_t i=0; i < xoptions->length; i++) {
-        const wchar_t *option = xoptions->items[i];
-        size_t len;
-        wchar_t *sep = wcschr(option, L'=');
-        if (sep != NULL) {
-            len = (sep - option);
-        }
-        else {
-            len = wcslen(option);
-        }
-        int found = 0;
-        for (const wchar_t** name = names; *name != NULL; name++) {
-            if (wcsncmp(option, *name, len) == 0 && (*name)[len] == L'\0') {
-                found = 1;
-            }
-        }
-        if (found == 0) {
-            return option;
-        }
-    }
-    return NULL;
-}
 
 static PyStatus
 config_read(PyConfig *config, int compute_path_config)
@@ -2104,11 +2112,6 @@ config_read(PyConfig *config, int compute_path_config)
     }
 
     /* -X options */
-    const wchar_t* option = _Py_check_xoptions(&config->xoptions, known_xoptions);
-    if (option != NULL) {
-        return PyStatus_Error("Unknown value for option -X (see --help-xoptions)");
-    }
-
     if (config_get_xoption(config, L"showrefcount")) {
         config->show_ref_count = 1;
     }
@@ -2136,6 +2139,9 @@ config_read(PyConfig *config, int compute_path_config)
     }
     if (config->tracemalloc < 0) {
         config->tracemalloc = 0;
+    }
+    if (config->perf_profiling < 0) {
+        config->perf_profiling = 0;
     }
     if (config->use_hash_seed < 0) {
         config->use_hash_seed = 0;
@@ -2295,6 +2301,9 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
     const PyWideStringList *argv = &config->argv;
     int print_version = 0;
     const wchar_t* program = config->program_name;
+    if (!program && argv->length >= 1) {
+        program = argv->items[0];
+    }
 
     _PyOS_ResetGetOpt();
     do {

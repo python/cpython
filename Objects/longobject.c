@@ -262,6 +262,38 @@ _PyLong_FromSTwoDigits(stwodigits x)
     return _PyLong_FromLarge(x);
 }
 
+int
+_PyLong_AssignValue(PyObject **target, Py_ssize_t value)
+{
+    PyObject *old = *target;
+    if (IS_SMALL_INT(value)) {
+        *target = get_small_int(Py_SAFE_DOWNCAST(value, Py_ssize_t, sdigit));
+        Py_XDECREF(old);
+        return 0;
+    }
+    else if (old != NULL && PyLong_CheckExact(old) &&
+             Py_REFCNT(old) == 1 && Py_SIZE(old) == 1 &&
+             (size_t)value <= PyLong_MASK)
+    {
+        // Mutate in place if there are no other references the old
+        // object.  This avoids an allocation in a common case.
+        // Since the primary use-case is iterating over ranges, which
+        // are typically positive, only do this optimization
+        // for positive integers (for now).
+        ((PyLongObject *)old)->ob_digit[0] =
+            Py_SAFE_DOWNCAST(value, Py_ssize_t, digit);
+        return 0;
+    }
+    else {
+        *target = PyLong_FromSsize_t(value);
+        Py_XDECREF(old);
+        if (*target == NULL) {
+            return -1;
+        }
+        return 0;
+    }
+}
+
 /* If a freshly-allocated int is already shared, it must
    be a small integer, so negating it must go to PyLong_FromLong */
 Py_LOCAL_INLINE(void)
@@ -6103,7 +6135,7 @@ _PyLong_InitTypes(PyInterpreterState *interp)
 
     /* initialize int_info */
     if (Int_InfoType.tp_name == NULL) {
-        if (PyStructSequence_InitType2(&Int_InfoType, &int_info_desc) < 0) {
+        if (_PyStructSequence_InitBuiltin(&Int_InfoType, &int_info_desc) < 0) {
             return _PyStatus_ERR("can't init int info type");
         }
     }

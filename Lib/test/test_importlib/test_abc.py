@@ -221,8 +221,6 @@ class LoaderDefaultsTests(ABCTestHarness):
         mod = types.ModuleType('blah')
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
-            with self.assertRaises(NotImplementedError):
-                self.ins.module_repr(mod)
             original_repr = repr(mod)
             mod.__loader__ = self.ins
             # Should still return a proper repr.
@@ -324,7 +322,9 @@ class ResourceReader:
 
 class ResourceReaderDefaultsTests(ABCTestHarness):
 
-    SPLIT = make_abc_subclasses(ResourceReader)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', DeprecationWarning)
+        SPLIT = make_abc_subclasses(ResourceReader)
 
     def test_open_resource(self):
         with self.assertRaises(FileNotFoundError):

@@ -54,7 +54,7 @@ class ForkWait(unittest.TestCase):
             self.threads.append(thread)
 
         # busy-loop to wait for threads
-        for _ in support.sleeping_retry(support.SHORT_TIMEOUT, error=False):
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
             if len(self.alive) >= NUM_THREADS:
                 break
 

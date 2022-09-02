@@ -176,4 +176,4 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalErrorFormat(
     const char *format,
     ...);
 
-#define Py_FatalError(message) _Py_FatalErrorFunc(__func__, message)
+#define Py_FatalError(message) _Py_FatalErrorFunc(__func__, (message))

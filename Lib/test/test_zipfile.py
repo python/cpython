@@ -1440,6 +1440,8 @@ class ExtractTests(unittest.TestCase):
         self.assertEqual(san(r',,?,C:,foo,bar/z', ','), r'_,C_,foo,bar/z')
         self.assertEqual(san(r'a\b,c<d>e|f"g?h*i', ','), r'a\b,c_d_e_f_g_h_i')
         self.assertEqual(san('../../foo../../ba..r', '/'), r'foo/ba..r')
+        self.assertEqual(san('  /  /foo  /  /ba  r', '/'), r'foo/ba  r')
+        self.assertEqual(san(' . /. /foo ./ . /. ./ba .r', '/'), r'foo/ba .r')
 
     def test_extract_hackers_arcnames_common_cases(self):
         common_hacknames = [
@@ -2030,6 +2032,7 @@ class OtherTests(unittest.TestCase):
                 fp.seek(bloc, os.SEEK_CUR)
                 self.assertEqual(fp.tell(), bloc)
                 self.assertEqual(fp.read(5), txt[bloc:bloc+5])
+                self.assertEqual(fp.tell(), bloc + 5)
                 fp.seek(0, os.SEEK_END)
                 self.assertEqual(fp.tell(), len(txt))
                 fp.seek(0, os.SEEK_SET)
@@ -2047,6 +2050,7 @@ class OtherTests(unittest.TestCase):
                 fp.seek(bloc, os.SEEK_CUR)
                 self.assertEqual(fp.tell(), bloc)
                 self.assertEqual(fp.read(5), txt[bloc:bloc+5])
+                self.assertEqual(fp.tell(), bloc + 5)
                 fp.seek(0, os.SEEK_END)
                 self.assertEqual(fp.tell(), len(txt))
                 fp.seek(0, os.SEEK_SET)

@@ -368,7 +368,7 @@ Miscellaneous options
    between repeated invocations of Python.
 
    Hash randomization is intended to provide protection against a
-   denial-of-service caused by carefully-chosen inputs that exploit the worst
+   denial-of-service caused by carefully chosen inputs that exploit the worst
    case performance of a dict construction, O(n\ :sup:`2`) complexity.  See
    http://www.ocert.org/advisories/ocert-2011-003.html for details.
 
@@ -464,7 +464,7 @@ Miscellaneous options
    whether the actual warning category of the message is a subclass of the
    specified warning category.
 
-   The *module* field matches the (fully-qualified) module name; this match is
+   The *module* field matches the (fully qualified) module name; this match is
    case-sensitive.
 
    The *lineno* field matches the line number, where zero matches all line
@@ -535,6 +535,12 @@ Miscellaneous options
      development (running from the source tree) then the default is "off".
      Note that the "importlib_bootstrap" and "importlib_bootstrap_external"
      frozen modules are always used, even if this flag is set to "off".
+   * ``-X perf`` to activate compatibility mode with the ``perf`` profiler.
+     When this option is activated, the Linux ``perf`` profiler will be able to
+     report Python calls. This option is only available on some platforms and
+     will do nothing if is not supported on the current system. The default value
+     is "off". See also :envvar:`PYTHONPERFSUPPORT` and :ref:`perf_profiling`
+     for more information.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -576,6 +582,8 @@ Miscellaneous options
    .. versionadded:: 3.11
       The ``-X frozen_modules`` option.
 
+   .. versionadded:: 3.12
+      The ``-X perf`` option.
 
 
 Options you shouldn't use
@@ -585,7 +593,7 @@ Options you shouldn't use
 
    Reserved for use by Jython_.
 
-.. _Jython: http://www.jython.org/
+.. _Jython: https://www.jython.org/
 
 
 .. _using-on-envvars:
@@ -981,7 +989,7 @@ conflict.
    order to force the interpreter to use ``ASCII`` instead of ``UTF-8`` for
    system interfaces.
 
-   .. availability:: \*nix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.7
       See :pep:`538` for more details.
@@ -1025,6 +1033,13 @@ conflict.
 
    .. versionadded:: 3.11
 
+.. envvar:: PYTHONPERFSUPPORT
+
+   If this variable is set to a nonzero value, it activates compatibility mode
+   with the ``perf`` profiler so Python calls can be detected by it. See the
+   :ref:`perf_profiling` section for more information.
+
+   .. versionadded:: 3.12
 
 
 Debug-mode variables

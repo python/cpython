@@ -8,7 +8,6 @@ import hashlib
 import os
 import ntpath
 import posixpath
-import sys
 import argparse
 from update_file import updating_file_with_tmpfile
 

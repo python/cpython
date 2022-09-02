@@ -8,6 +8,8 @@
 
 --------------
 
+.. include:: ../includes/wasm-notavail.rst
+
 Introduction
 ------------
 
@@ -41,6 +43,16 @@ of data parallelism using :class:`~multiprocessing.pool.Pool`, ::
 will print to standard output ::
 
    [1, 4, 9]
+
+
+.. seealso::
+
+   :class:`concurrent.futures.ProcessPoolExecutor` offers a higher level interface
+   to push tasks to a background process without blocking execution of the
+   calling process. Compared to using the :class:`~multiprocessing.pool.Pool`
+   interface directly, the :mod:`concurrent.futures` API more readily allows
+   the submission of work to the underlying process pool to be separated from
+   waiting for the results.
 
 
 The :class:`Process` class
@@ -96,7 +108,7 @@ Depending on the platform, :mod:`multiprocessing` supports three ways
 to start a process.  These *start methods* are
 
   *spawn*
-    The parent process starts a fresh python interpreter process.  The
+    The parent process starts a fresh Python interpreter process.  The
     child process will only inherit those resources necessary to run
     the process object's :meth:`~Process.run` method.  In particular,
     unnecessary file descriptors and handles from the parent process
@@ -1706,7 +1718,7 @@ their parent process exits.  The manager classes are defined in the
    shutdown times out, the process is terminated. If terminating the process
    also times out, the process is killed.
 
-   .. versionchanged: 3.11
+   .. versionchanged:: 3.11
       Added the *shutdown_timeout* parameter.
 
    .. method:: start([initializer[, initargs]])

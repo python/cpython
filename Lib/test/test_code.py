@@ -141,6 +141,7 @@ from test.support import (cpython_only,
                           check_impl_detail, requires_debug_ranges,
                           gc_collect)
 from test.support.script_helper import assert_python_ok
+from test.support import threading_helper
 from opcode import opmap
 COPY_FREE_VARS = opmap['COPY_FREE_VARS']
 
@@ -375,7 +376,6 @@ class CodeTest(unittest.TestCase):
                 for instruction in artificial_instructions
             ],
             [
-                ('RESUME', 0),
                 ("PUSH_EXC_INFO", None),
                 ("LOAD_CONST", None), # artificial 'None'
                 ("STORE_NAME", "e"),  # XX: we know the location for this
@@ -427,6 +427,27 @@ class CodeTest(unittest.TestCase):
         for line, end_line, column, end_column in positions:
             self.assertIsNone(line)
             self.assertEqual(end_line, new_code.co_firstlineno + 1)
+
+    def test_code_equality(self):
+        def f():
+            try:
+                a()
+            except:
+                b()
+            else:
+                c()
+            finally:
+                d()
+        code_a = f.__code__
+        code_b = code_a.replace(co_linetable=b"")
+        code_c = code_a.replace(co_exceptiontable=b"")
+        code_d = code_b.replace(co_exceptiontable=b"")
+        self.assertNotEqual(code_a, code_b)
+        self.assertNotEqual(code_a, code_c)
+        self.assertNotEqual(code_a, code_d)
+        self.assertNotEqual(code_b, code_c)
+        self.assertNotEqual(code_b, code_d)
+        self.assertNotEqual(code_c, code_d)
 
 
 def isinterned(s):
@@ -723,6 +744,7 @@ if check_impl_detail(cpython=True) and ctypes is not None:
             self.assertEqual(extra.value, 300)
             del f
 
+        @threading_helper.requires_working_threading()
         def test_free_different_thread(self):
             # Freeing a code object on a different thread then
             # where the co_extra was set should be safe.
