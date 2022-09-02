@@ -269,7 +269,7 @@ Py_SetRecursionLimit(int new_limit)
 int
 _Py_CheckRecursiveCallN(PyThreadState *tstate, int n, const char *where)
 {
-    assert(tstate->c_recursion_remaining < n);
+    assert(tstate->c_recursion_remaining < 0);
     if (tstate->c_recursion_headroom) {
         if (tstate->c_recursion_remaining < -50) {
             /* Overflowing while handling an overflow. Give up. */

@@ -130,7 +130,7 @@ static inline int _Py_EnterRecursiveCallTstate(PyThreadState *tstate,
 static inline int _Py_EnterRecursiveCallN(PyThreadState *tstate, int n,
                                           const char *where) {
     tstate->c_recursion_remaining -= n;
-    if (tstate->c_recursion_remaining < 0) {
+    if (tstate->c_recursion_remaining >= 0) {
         return 0;
     }
     return _Py_CheckRecursiveCallN(tstate, n, where);
@@ -160,7 +160,7 @@ extern PyObject* _Py_MakeCoro(PyFunctionObject *func);
 
 extern int _Py_HandlePending(PyThreadState *tstate);
 
-#define C_RECURSION_LIMT 3000
+#define C_RECURSION_LIMT 2500
 
 #ifdef __cplusplus
 }
