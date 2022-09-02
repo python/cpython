@@ -221,17 +221,30 @@ class UstarReadTest(ReadTest, unittest.TestCase):
         self._test_fileobj_link("symtype2", "ustar/regtype")
 
     def test_add_dir_getmember(self):
-        # bpo-21987
-        self.add_dir_and_getmember('bar')
-        self.add_dir_and_getmember('a'*101)
+        def reset(tarinfo):
+            tarinfo.uid = tarinfo.gid = 1000
+            return tarinfo
 
-    def add_dir_and_getmember(self, name):
+        # bpo-21987
+        self.add_dir_and_getmember('bar', reset)
+        self.add_dir_and_getmember('a'*101, reset)
+
+    def test_add_dir_getmember_throw_exception_invalid_uid_gid(self):
+        def reset(tarinfo):
+            tarinfo.uid = tarinfo.gid = 16777216
+            return tarinfo
+
+        with self.assertRaises(ValueError) as context:
+            self.add_dir_and_getmember('bar', reset)
+            self.add_dir_and_getmember('a'*101, reset)
+
+    def add_dir_and_getmember(self, name, filter):
         with os_helper.temp_cwd():
             with tarfile.open(tmpname, 'w') as tar:
                 tar.format = tarfile.USTAR_FORMAT
                 try:
                     os.mkdir(name)
-                    tar.add(name)
+                    tar.add(name,filter=filter)
                 finally:
                     os.rmdir(name)
             with tarfile.open(tmpname) as tar:
