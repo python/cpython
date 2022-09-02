@@ -960,6 +960,7 @@ extern "C" {
                 INIT_ID(mapping), \
                 INIT_ID(match), \
                 INIT_ID(max_length), \
+                INIT_ID(maxdigits), \
                 INIT_ID(maxevents), \
                 INIT_ID(maxmem), \
                 INIT_ID(maxsplit), \
@@ -2223,6 +2224,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(match);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(max_length);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(maxdigits);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(maxevents);
     PyUnicode_InternInPlace(&string);
@@ -6371,6 +6374,10 @@ _PyStaticObjects_CheckRefcnt(void) {
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(max_length)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(max_length));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(maxdigits)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(maxdigits));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(maxevents)) < _PyObject_IMMORTAL_REFCNT) {
