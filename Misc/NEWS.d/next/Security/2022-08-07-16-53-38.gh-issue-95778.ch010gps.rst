@@ -1,5 +1,5 @@
 Converting between :class:`int` and :class:`str` in bases other than 2
-(binary), 4, 8 (octal), 16 (hexidecimal), or 32 such as base 10 (decimal) now
+(binary), 4, 8 (octal), 16 (hexadecimal), or 32 such as base 10 (decimal) now
 raises a :exc:`ValueError` if the number of digits in string form is above a
 limit to avoid potential denial of service attacks due to the algorithmic
 complexity. This is a mitigation for `CVE-2020-10735
