@@ -9,7 +9,11 @@
 #include "ast.h"
 #include "token.h"
 #include "pythonrun.h"
+/* A Windows header defines its own Yield macro, so we don't use the one
+ * from Python-ast.h and instead call _Py_Yield() directly. [ugh] */
+#undef Yield
 #include "internal/pystate.h"
+#undef Yield
 
 #include <assert.h>
 #include <stdbool.h>
@@ -2703,7 +2707,7 @@ ast_for_expr(struct compiling *c, const node *n)
             }
             if (is_from)
                 return YieldFrom(exp, LINENO(n), n->n_col_offset, c->c_arena);
-            return Yield(exp, LINENO(n), n->n_col_offset, c->c_arena);
+            return _Py_Yield(exp, LINENO(n), n->n_col_offset, c->c_arena);
         }
         case factor:
             if (NCH(n) == 1) {
