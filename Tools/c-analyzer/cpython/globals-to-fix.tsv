@@ -365,6 +365,8 @@ Python/sysmodule.c	-	_PySys_ImplName	-
 Python/sysmodule.c	-	_preinit_warnoptions	-
 Python/sysmodule.c	-	_preinit_xoptions	-
 Python/thread.c	-	initialized	-
+Python/thread_pthread.h	-	condattr_monotonic	-
+Python/thread_pthread.h	init_condattr	ca	-
 
 # set by embedders during init
 Python/initconfig.c	-	_Py_StandardStreamEncoding	-

@@ -69,8 +69,8 @@ Python/thread_nt.h
 Python/dynload_aix.c            # sys/ldr.h
 Python/dynload_dl.c             # dl.h
 Python/dynload_hpux.c           # dl.h
-Python/thread_pthread.h
 Python/emscripten_signal.c
+Python/thread_pthread.h
 Python/thread_pthread_stubs.h
 
 # only huge constants (safe but parsing is slow)
@@ -131,9 +131,11 @@ glob	name	value
 
 Include/internal/*.h	Py_BUILD_CORE	1
 Python/**/*.c	Py_BUILD_CORE	1
+Python/**/*.h	Py_BUILD_CORE	1
 Parser/**/*.c	Py_BUILD_CORE	1
 Parser/**/*.h	Py_BUILD_CORE	1
 Objects/**/*.c	Py_BUILD_CORE	1
+Objects/**/*.h	Py_BUILD_CORE	1
 
 Modules/_asynciomodule.c	Py_BUILD_CORE	1
 Modules/_codecsmodule.c	Py_BUILD_CORE	1
@@ -169,11 +171,6 @@ Modules/signalmodule.c	Py_BUILD_CORE	1
 Modules/symtablemodule.c	Py_BUILD_CORE	1
 Modules/timemodule.c	Py_BUILD_CORE	1
 Modules/unicodedata.c	Py_BUILD_CORE	1
-Objects/stringlib/codecs.h	Py_BUILD_CORE	1
-Objects/stringlib/unicode_format.h	Py_BUILD_CORE	1
-Parser/string_parser.h	Py_BUILD_CORE	1
-Parser/pegen.h	Py_BUILD_CORE	1
-Python/condvar.h	Py_BUILD_CORE	1
 
 Modules/_json.c	Py_BUILD_CORE_BUILTIN	1
 Modules/_pickle.c	Py_BUILD_CORE_BUILTIN	1
@@ -201,14 +198,13 @@ Include/cpython/sysmodule.h	Py_CPYTHON_SYSMODULE_H	1
 Include/cpython/traceback.h	Py_CPYTHON_TRACEBACK_H	1
 Include/cpython/tupleobject.h	Py_CPYTHON_TUPLEOBJECT_H	1
 Include/cpython/unicodeobject.h	Py_CPYTHON_UNICODEOBJECT_H	1
-Include/internal/pycore_code.h	SIZEOF_VOID_P	8
-Include/internal/pycore_frame.h	SIZEOF_VOID_P	8
 
 # implied include of pyport.h
 Include/**/*.h	PyAPI_DATA(RTYPE)	extern RTYPE
 Include/**/*.h	PyAPI_FUNC(RTYPE)	RTYPE
 Include/**/*.h	Py_DEPRECATED(VER)	/* */
 Include/**/*.h	_Py_NO_RETURN	/* */
+Python/**/*.h	_Py_NO_RETURN	/* */
 Include/**/*.h	PYLONG_BITS_IN_DIGIT	30
 Modules/**/*.c	PyMODINIT_FUNC	PyObject*
 Objects/unicodeobject.c	PyMODINIT_FUNC	PyObject*
@@ -235,6 +231,10 @@ Include/**/*.h	PyObject_VAR_HEAD	PyVarObject ob_base;
 
 # implied include of pyconfig.h
 Include/**/*.h	SIZEOF_WCHAR_T	4
+Include/**/*.h	SIZEOF_VOID_P	8
+
+Include/internal/pycore_gil.h	Py_HAVE_CONDVAR	1
+Python/thread_pthread.h	Py_HAVE_CONDVAR	1
 
 # implied include of <unistd.h>
 Include/**/*.h	_POSIX_THREADS	1
@@ -267,6 +267,8 @@ Modules/_sre/sre_lib.h	LOCAL(type)	static inline type
 Modules/_sre/sre_lib.h	SRE(F)	sre_ucs2_##F
 Objects/stringlib/codecs.h	STRINGLIB_IS_UNICODE	1
 Include/internal/pycore_bitutils.h	_Py__has_builtin(B)	0
+Include/cpython/pthread_stubs.h	HAVE_PTHREAD_STUBS	1
+Python/thread_pthread_stubs.h	HAVE_PTHREAD_STUBS	1
 
 # @end=tsv@
 ''')[1:]
