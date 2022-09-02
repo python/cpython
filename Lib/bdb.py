@@ -816,7 +816,7 @@ def effective(file, line, frame):
        when the condiion cannot be evaluated (in which case, ignore count is
        ignored).
 
-       If no such entry exists, then (None, None) is returned.       
+       If no such entry exists, then (None, None) is returned.
     """
     possibles = Breakpoint.bplist[file, line]
     for b in possibles:
