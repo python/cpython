@@ -4901,7 +4901,7 @@ The limit is applied to the number of digit characters in the input or output
 string when a non-linear conversion algorithm would be involved.  Underscores
 and the sign are not counted towards the limit.
 
-When an operation would exceed the limit, a :exc:`ValueError` is raised::
+When an operation would exceed the limit, a :exc:`ValueError` is raised:
 
 .. doctest::
 
@@ -4928,7 +4928,9 @@ The default limit is 4300 digits as provided in
 The lowest limit that can be configured is 640 digits as provided in
 :data:`sys.int_info.str_digits_check_threshold <sys.int_info>`.
 
-Verification::
+Verification:
+
+.. doctest::
 
    >>> import sys
    >>> assert sys.int_info.default_max_str_digits == 4300, sys.int_info
