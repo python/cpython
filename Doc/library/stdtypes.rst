@@ -5258,7 +5258,7 @@ Integer string conversion length limitation
 
 CPython has a global limit for converting between :class:`int` and :class:`str`
 to mitigate denial of service attacks. This limit *only* applies to decimal or
-other non-power-of-two number bases. Hexidecimal, octal, and binary conversions
+other non-power-of-two number bases. Hexadecimal, octal, and binary conversions
 are unlimited. The limit can be configured.
 
 The :class:`int` type in CPython is an abitrary length number stored in binary
@@ -5295,7 +5295,7 @@ When an operation would exceed the limit, a :exc:`ValueError` is raised:
    ValueError: Exceeds the limit (4300) for integer string conversion: value has 8599 digits.
    >>> len(hex(i_squared))
    7144
-   >>> assert int(hex(i_squared), base=16) == i*i  # Hexidecimal is unlimited.
+   >>> assert int(hex(i_squared), base=16) == i*i  # Hexadecimal is unlimited.
 
 The default limit is 4300 digits as provided in
 :data:`sys.int_info.default_max_str_digits <sys.int_info>`.
@@ -5380,7 +5380,7 @@ Information about the default and minimum can be found in :attr:`sys.int_info`:
    encounter an error during parsing, usually at startup time or import time or
    even at installation time - anytime an up to date ``.pyc`` does not already
    exist for the code. A workaround for source that contains such large
-   constants is to convert them to ``0x`` hexidecimal form as it has no limit.
+   constants is to convert them to ``0x`` hexadecimal form as it has no limit.
 
    Test your application thoroughly if you use a low limit. Ensure your tests
    run with the limit set early via the environment or flag so that it applies
