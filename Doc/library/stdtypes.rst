@@ -2548,9 +2548,10 @@ data and are closely related to string objects in a variety of other ways.
 
       If you want to make the hex string easier to read, you can specify a
       single character separator *sep* parameter to include in the output.
-      By default between each byte.  A second optional *bytes_per_sep*
-      parameter controls the spacing.  Positive values calculate the
-      separator position from the right, negative values from the left.
+      By default, this separator will be included between each byte.
+      A second optional *bytes_per_sep* parameter controls the spacing.
+      Positive values calculate the separator position from the right,
+      negative values from the left.
 
       >>> value = b'\xf0\xf1\xf2'
       >>> value.hex('-')
@@ -4693,7 +4694,9 @@ values are hashable, so that ``(key, value)`` pairs are unique and hashable,
 then the items view is also set-like.  (Values views are not treated as set-like
 since the entries are generally not unique.)  For set-like views, all of the
 operations defined for the abstract base class :class:`collections.abc.Set` are
-available (for example, ``==``, ``<``, or ``^``).
+available (for example, ``==``, ``<``, or ``^``).  While using set operators,
+set-like views accept any iterable as the other operand, unlike sets which only
+accept sets as the input.
 
 An example of dictionary view usage::
 
@@ -4725,6 +4728,8 @@ An example of dictionary view usage::
    {'bacon'}
    >>> keys ^ {'sausage', 'juice'}
    {'juice', 'sausage', 'bacon', 'spam'}
+   >>> keys | ['juice', 'juice', 'juice']
+   {'juice', 'sausage', 'bacon', 'spam', 'eggs'}
 
    >>> # get back a read-only proxy for the original dictionary
    >>> values.mapping

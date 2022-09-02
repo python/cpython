@@ -1619,7 +1619,8 @@ Changes in the Python API
 Build Changes
 =============
 
-* Building Python now requires a C11 compiler without optional C11 features.
+* Building Python now requires a C11 compiler. Optional C11 features are not
+  required.
   (Contributed by Victor Stinner in :issue:`46656`.)
 
 * Building Python now requires support of IEEE 754 floating point numbers.
