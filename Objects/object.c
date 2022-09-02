@@ -421,12 +421,12 @@ PyObject_Repr(PyObject *v)
 
     /* It is possible for a type to have a tp_repr representation that loops
        infinitely. */
-    if (_Py_EnterRecursiveCallTstate(tstate,
+    if (_Py_EnterRecursiveCallN(tstate, 2,
                                      " while getting the repr of an object")) {
         return NULL;
     }
     res = (*Py_TYPE(v)->tp_repr)(v);
-    _Py_LeaveRecursiveCallTstate(tstate);
+    _Py_LeaveRecursiveCallN(tstate, 2);
 
     if (res == NULL) {
         return NULL;

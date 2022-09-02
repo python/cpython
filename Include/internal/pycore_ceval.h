@@ -114,26 +114,31 @@ extern void _PyEval_DeactivateOpCache(void);
 
 /* --- _Py_EnterRecursiveCall() ----------------------------------------- */
 
-#ifdef USE_STACKCHECK
-/* With USE_STACKCHECK macro defined, trigger stack checks in
-   _Py_CheckRecursiveCall() on every 64th call to _Py_EnterRecursiveCall. */
-static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
-    return (tstate->recursion_remaining-- <= 0
-            || (tstate->recursion_remaining & 63) == 0);
-}
-#else
-static inline int _Py_MakeRecCheck(PyThreadState *tstate) {
-    return tstate->recursion_remaining-- <= 0;
-}
-#endif
-
 PyAPI_FUNC(int) _Py_CheckRecursiveCall(
     PyThreadState *tstate,
     const char *where);
 
+PyAPI_FUNC(int) _Py_CheckRecursiveCallN(PyThreadState *tstate, int n,
+                                        const char *where);
+
 static inline int _Py_EnterRecursiveCallTstate(PyThreadState *tstate,
                                                const char *where) {
-    return (_Py_MakeRecCheck(tstate) && _Py_CheckRecursiveCall(tstate, where));
+    int remaining = tstate->c_recursion_remaining;
+    if (remaining > 0) {
+        tstate->c_recursion_remaining = remaining - 1;
+        return 0;
+    }
+    return _Py_CheckRecursiveCallN(tstate, 1, where);
+}
+
+static inline int _Py_EnterRecursiveCallN(PyThreadState *tstate, int n,
+                                          const char *where) {
+    int remaining = tstate->c_recursion_remaining;
+    if (remaining >= n) {
+        tstate->c_recursion_remaining = remaining - n;
+        return 0;
+    }
+    return _Py_CheckRecursiveCallN(tstate, n, where);
 }
 
 static inline int _Py_EnterRecursiveCall(const char *where) {
@@ -142,7 +147,11 @@ static inline int _Py_EnterRecursiveCall(const char *where) {
 }
 
 static inline void _Py_LeaveRecursiveCallTstate(PyThreadState *tstate)  {
-    tstate->recursion_remaining++;
+    tstate->c_recursion_remaining++;
+}
+
+static inline void _Py_LeaveRecursiveCallN(PyThreadState *tstate, int n) {
+    tstate->c_recursion_remaining += n;
 }
 
 static inline void _Py_LeaveRecursiveCall(void)  {
@@ -156,6 +165,7 @@ extern PyObject* _Py_MakeCoro(PyFunctionObject *func);
 
 extern int _Py_HandlePending(PyThreadState *tstate);
 
+#define C_RECURSION_LIMT 3000
 
 #ifdef __cplusplus
 }

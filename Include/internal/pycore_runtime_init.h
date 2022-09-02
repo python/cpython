@@ -68,7 +68,7 @@ extern "C" {
 #define _PyThreadState_INIT \
     { \
         ._static = 1, \
-        .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
+        .py_recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         .context_ver = 1, \
     }
 

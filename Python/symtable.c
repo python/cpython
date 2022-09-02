@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_ast.h"           // identifier, stmt_ty
+#include "pycore_ceval.h"         // _Py_LeaveRecursiveCall()
 #include "pycore_compile.h"       // _Py_Mangle(), _PyFuture_FromAST()
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -277,9 +278,6 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
     struct symtable *st = symtable_new();
     asdl_stmt_seq *seq;
     int i;
-    PyThreadState *tstate;
-    int recursion_limit = Py_GetRecursionLimit();
-    int starting_recursion_depth;
 
     if (st == NULL)
         return NULL;
@@ -290,20 +288,6 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
     Py_INCREF(filename);
     st->st_filename = filename;
     st->st_future = future;
-
-    /* Setup recursion depth check counters */
-    tstate = _PyThreadState_GET();
-    if (!tstate) {
-        _PySymtable_Free(st);
-        return NULL;
-    }
-    /* Be careful here to prevent overflow. */
-    int recursion_depth = tstate->recursion_limit - tstate->recursion_remaining;
-    starting_recursion_depth = (recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        recursion_depth * COMPILER_STACK_FRAME_SCALE : recursion_depth;
-    st->recursion_depth = starting_recursion_depth;
-    st->recursion_limit = (recursion_limit < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        recursion_limit * COMPILER_STACK_FRAME_SCALE : recursion_limit;
 
     /* Make the initial symbol information gathering pass */
     if (!symtable_enter_block(st, &_Py_ID(top), ModuleBlock, (void *)mod, 0, 0, 0, 0)) {
@@ -337,14 +321,6 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
         goto error;
     }
     if (!symtable_exit_block(st)) {
-        _PySymtable_Free(st);
-        return NULL;
-    }
-    /* Check that the recursion depth counting balanced correctly */
-    if (st->recursion_depth != starting_recursion_depth) {
-        PyErr_Format(PyExc_SystemError,
-            "symtable analysis recursion depth mismatch (before=%d, after=%d)",
-            starting_recursion_depth, st->recursion_depth);
         _PySymtable_Free(st);
         return NULL;
     }
@@ -1125,7 +1101,7 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag,
 */
 
 #define VISIT_QUIT(ST, X) \
-    return --(ST)->recursion_depth,(X)
+    return _Py_LeaveRecursiveCall(),(X)
 
 #define VISIT(ST, TYPE, V) \
     if (!symtable_visit_ ## TYPE((ST), (V))) \
@@ -1188,10 +1164,8 @@ symtable_record_directive(struct symtable *st, identifier name, int lineno,
 static int
 symtable_visit_stmt(struct symtable *st, stmt_ty s)
 {
-    if (++st->recursion_depth > st->recursion_limit) {
-        PyErr_SetString(PyExc_RecursionError,
-                        "maximum recursion depth exceeded during compilation");
-        VISIT_QUIT(st, 0);
+    if (_Py_EnterRecursiveCall("during compilation")) {
+        return 0;
     }
     switch (s->kind) {
     case FunctionDef_kind:
@@ -1574,10 +1548,8 @@ symtable_handle_namedexpr(struct symtable *st, expr_ty e)
 static int
 symtable_visit_expr(struct symtable *st, expr_ty e)
 {
-    if (++st->recursion_depth > st->recursion_limit) {
-        PyErr_SetString(PyExc_RecursionError,
-                        "maximum recursion depth exceeded during compilation");
-        VISIT_QUIT(st, 0);
+    if (_Py_EnterRecursiveCall("during compilation")) {
+        return 0;
     }
     switch (e->kind) {
     case NamedExpr_kind:
@@ -1734,10 +1706,8 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 static int
 symtable_visit_pattern(struct symtable *st, pattern_ty p)
 {
-    if (++st->recursion_depth > st->recursion_limit) {
-        PyErr_SetString(PyExc_RecursionError,
-                        "maximum recursion depth exceeded during compilation");
-        VISIT_QUIT(st, 0);
+    if (_Py_EnterRecursiveCall("during compilation")) {
+        return 0;
     }
     switch (p->kind) {
     case MatchValue_kind:

@@ -95,9 +95,12 @@ struct _ts {
     /* Was this thread state statically allocated? */
     int _static;
 
-    int recursion_remaining;
-    int recursion_limit;
-    int recursion_headroom; /* Allow 50 more calls to handle any errors. */
+    int py_recursion_remaining;
+    int py_recursion_limit;
+    int py_recursion_headroom; /* Allow 50 more calls to handle any errors. */
+
+    int c_recursion_remaining;
+    int c_recursion_headroom; /* Allow 50 more calls to handle any errors. */
 
     /* 'tracing' keeps track of the execution depth when tracing/profiling.
        This is to prevent the actual trace/profile code from being recorded in
