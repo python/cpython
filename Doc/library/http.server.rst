@@ -19,7 +19,7 @@ This module defines classes for implementing HTTP servers (Web servers).
 .. warning::
 
     :mod:`http.server` is not recommended for production. It only implements
-    basic security checks.
+    :ref:`basic security checks <http.server-security>`.
 
 One class, :class:`HTTPServer`, is a :class:`socketserver.TCPServer` subclass.
 It creates and listens at the HTTP socket, dispatching the requests to a
@@ -470,3 +470,14 @@ the following command uses a specific directory::
 the ``--cgi`` option::
 
         python -m http.server --cgi 8000
+
+.. _http.server-security:
+
+Security Considerations
+-----------------------
+
+.. index:: pair: http.server; security
+
+:class:`SimpleHTTPRequestHandler` will follow symbolic links when handling
+requests, this makes it possible for files outside of the specified directory
+to be served.
