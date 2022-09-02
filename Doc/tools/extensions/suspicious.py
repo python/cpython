@@ -150,7 +150,6 @@ class CheckSuspiciousMarkupBuilder(Builder):
         return False
 
     def report_issue(self, text, lineno, issue):
-        if not self.any_issue: self.logger.info()
         self.any_issue = True
         self.write_log_entry(lineno, issue, text)
         if py3:
