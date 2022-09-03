@@ -1,4 +1,5 @@
-# This module is for test_inspect formatannotation
+# Test ``inspect.formatannotation``
+# https://github.com/python/cpython/issues/96073
 
 from typing import Union, List
 
