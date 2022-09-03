@@ -261,7 +261,7 @@ Functions for sequences
 
       The *population* must be a sequence.  Automatic conversion of sets
       to lists is no longer supported.
-      
+
       The *k* argument is now optional.
 
 Discrete distributions
