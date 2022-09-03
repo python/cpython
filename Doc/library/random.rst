@@ -224,7 +224,7 @@ Functions for sequences
       The optional parameter *random*.
 
 
-.. function:: sample(population, k, *, counts=None)
+.. function:: sample(population, k=None, *, counts=None)
 
    Return a *k* length list of unique elements chosen from the population
    sequence.  Used for random sampling without replacement.
@@ -237,6 +237,10 @@ Functions for sequences
 
    Members of the population need not be :term:`hashable` or unique.  If the population
    contains repeats, then each occurrence is a possible selection in the sample.
+
+   The number of elements to sample is specified through the *k* parameter.  If
+   omitted, it defaults to ``len(population)``, and the function returns a shuffled
+   copy of the sequence.
 
    Repeated elements can be specified one at a time or with the optional
    keyword-only *counts* parameter.  For example, ``sample(['red', 'blue'],
@@ -257,6 +261,8 @@ Functions for sequences
 
       The *population* must be a sequence.  Automatic conversion of sets
       to lists is no longer supported.
+      
+      The *k* argument is now optional.
 
 Discrete distributions
 ----------------------
