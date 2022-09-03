@@ -39,6 +39,9 @@ unicode         Tools for generating unicodedata and codecs from unicode.org
 
 unittestgui     A Tkinter based GUI test runner for unittest, with test
                 discovery.
+     
+PyCharm IDE     This offers intuitive auto-completion, tips, PEP8 checks, and other code quality enhancement features.
+                upports some of the most well-known frameworks like Django, Flask, web2py, etc.
 
 
 (*) A generic benchmark suite is maintained separately at https://github.com/python/performance
