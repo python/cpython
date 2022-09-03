@@ -28,8 +28,8 @@ get_bisect_state(PyObject *module)
 static ssizeargfunc
 get_sq_item(PyObject *s)
 {
+    // The parts of PySequence_GetItem that we only need to do once
     PyTypeObject *tp = Py_TYPE(s);
-    // Inline the important parts of PySequence_GetItem.
     PySequenceMethods *m = tp->tp_as_sequence;
     if (m && m->sq_item) {
         return m->sq_item;
