@@ -131,7 +131,7 @@ internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t 
     return lo;
 error:
     Py_LeaveRecursiveCall();
-    Py_DECREF(litem);
+    Py_XDECREF(litem);
     return -1;
 }
 
@@ -302,7 +302,7 @@ internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t h
     return lo;
 error:
     Py_LeaveRecursiveCall();
-    Py_DECREF(litem);
+    Py_XDECREF(litem);
     return -1;
 }
 
