@@ -1182,7 +1182,7 @@ buffered_tell(buffered *self, PyObject *Py_UNUSED(ignored))
     Py_off_t pos;
 
     CHECK_INITIALIZED(self)
-    pos = _buffered_raw_tell(self);
+    pos = RAW_TELL(self);
     if (pos == -1)
         return NULL;
     pos -= RAW_OFFSET(self);
