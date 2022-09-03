@@ -349,7 +349,7 @@ class Random(_random.Random):
             j = randbelow(i + 1)
             x[i], x[j] = x[j], x[i]
 
-    def sample(self, population, k, *, counts=None):
+    def sample(self, population, k=None, *, counts=None):
         """Chooses k unique random elements from a population sequence.
 
         Returns a new list containing elements from the population while
@@ -406,6 +406,8 @@ class Random(_random.Random):
             raise TypeError("Population must be a sequence.  "
                             "For dicts or sets, use sorted(d).")
         n = len(population)
+        if k is None:
+            k = n
         if counts is not None:
             cum_counts = list(_accumulate(counts))
             if len(cum_counts) != n:
