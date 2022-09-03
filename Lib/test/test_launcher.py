@@ -238,9 +238,11 @@ class RunPyMixin:
         return data
 
     def py_ini(self, content):
-        if not self.py_exe:
-            self.py_exe = self.find_py()
-        return PreservePyIni(self.py_exe.with_name("py.ini"), content)
+        local_appdata = os.environ.get("LOCALAPPDATA")
+        if not local_appdata:
+            raise unittest.SkipTest("LOCALAPPDATA environment variable is "
+                                    "missing or empty")
+        return PreservePyIni(Path(local_appdata) / "py.ini", content)
 
     @contextlib.contextmanager
     def script(self, content, encoding="utf-8"):

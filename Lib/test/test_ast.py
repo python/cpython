@@ -738,6 +738,21 @@ class AST_Tests(unittest.TestCase):
         expressions[0] = f"expr = {ast.expr.__subclasses__()[0].__doc__}"
         self.assertCountEqual(ast.expr.__doc__.split("\n"), expressions)
 
+    def test_positional_only_feature_version(self):
+        ast.parse('def foo(x, /): ...', feature_version=(3, 8))
+        ast.parse('def bar(x=1, /): ...', feature_version=(3, 8))
+        with self.assertRaises(SyntaxError):
+            ast.parse('def foo(x, /): ...', feature_version=(3, 7))
+        with self.assertRaises(SyntaxError):
+            ast.parse('def bar(x=1, /): ...', feature_version=(3, 7))
+
+        ast.parse('lambda x, /: ...', feature_version=(3, 8))
+        ast.parse('lambda x=1, /: ...', feature_version=(3, 8))
+        with self.assertRaises(SyntaxError):
+            ast.parse('lambda x, /: ...', feature_version=(3, 7))
+        with self.assertRaises(SyntaxError):
+            ast.parse('lambda x=1, /: ...', feature_version=(3, 7))
+
     def test_parenthesized_with_feature_version(self):
         ast.parse('with (CtxManager() as example): ...', feature_version=(3, 10))
         # While advertised as a feature in Python 3.10, this was allowed starting 3.9
@@ -746,7 +761,7 @@ class AST_Tests(unittest.TestCase):
             ast.parse('with (CtxManager() as example): ...', feature_version=(3, 8))
         ast.parse('with CtxManager() as example: ...', feature_version=(3, 8))
 
-    def test_issue40614_feature_version(self):
+    def test_debug_f_string_feature_version(self):
         ast.parse('f"{x=}"', feature_version=(3, 8))
         with self.assertRaises(SyntaxError):
             ast.parse('f"{x=}"', feature_version=(3, 7))
@@ -1120,6 +1135,14 @@ Module(
         self.assertRaises(ValueError, ast.literal_eval, '++6')
         self.assertRaises(ValueError, ast.literal_eval, '+True')
         self.assertRaises(ValueError, ast.literal_eval, '2+3')
+
+    def test_literal_eval_str_int_limit(self):
+        with support.adjust_int_max_str_digits(4000):
+            ast.literal_eval('3'*4000)  # no error
+            with self.assertRaises(SyntaxError) as err_ctx:
+                ast.literal_eval('3'*4001)
+            self.assertIn('Exceeds the limit ', str(err_ctx.exception))
+            self.assertIn(' Consider hexadecimal ', str(err_ctx.exception))
 
     def test_literal_eval_complex(self):
         # Issue #4907

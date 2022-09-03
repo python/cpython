@@ -327,7 +327,6 @@
     <ClInclude Include="..\Parser\pegen.h" />
     <ClInclude Include="..\PC\errmap.h" />
     <ClInclude Include="..\PC\pyconfig.h" />
-    <ClInclude Include="..\Python\ceval_gil.h" />
     <ClInclude Include="..\Python\condvar.h" />
     <ClInclude Include="..\Python\importdl.h" />
     <ClInclude Include="..\Python\stdlib_module_names.h" />
@@ -430,6 +429,7 @@
     <ClCompile Include="..\Objects\cellobject.c" />
     <ClCompile Include="..\Objects\classobject.c" />
     <ClCompile Include="..\Objects\codeobject.c" />
+    <ClCompile Include="..\Objects\perf_trampoline.c" />
     <ClCompile Include="..\Objects\complexobject.c" />
     <ClCompile Include="..\Objects\descrobject.c" />
     <ClCompile Include="..\Objects\dictobject.c" />
@@ -502,6 +502,7 @@
     <ClCompile Include="..\Python\getopt.c" />
     <ClCompile Include="..\Python\getplatform.c" />
     <ClCompile Include="..\Python\getversion.c" />
+    <ClCompile Include="..\Python\ceval_gil.c" />
     <ClCompile Include="..\Python\hamt.c" />
     <ClCompile Include="..\Python\hashtable.c" />
     <ClCompile Include="..\Python\import.c" />

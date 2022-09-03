@@ -83,6 +83,17 @@ Other Language Changes
   mapping is hashable.
   (Contributed by Serhiy Storchaka in :gh:`87995`.)
 
+* Converting between :class:`int` and :class:`str` in bases other than 2
+  (binary), 4, 8 (octal), 16 (hexadecimal), or 32 such as base 10 (decimal)
+  now raises a :exc:`ValueError` if the number of digits in string form is
+  above a limit to avoid potential denial of service attacks due to the
+  algorithmic complexity. This is a mitigation for `CVE-2020-10735
+  <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+  This limit can be configured or disabled by environment variable, command
+  line flag, or :mod:`sys` APIs. See the :ref:`integer string conversion
+  length limitation <int_max_str_digits>` documentation.  The default limit
+  is 4300 digits in string form.
+
 
 New Modules
 ===========
@@ -92,6 +103,13 @@ New Modules
 
 Improved Modules
 ================
+
+pathlib
+-------
+
+* Add :meth:`~pathlib.Path.walk` for walking the directory trees and generating
+  all file or directory names within them, similar to :func:`os.walk`.
+  (Contributed by Stanislav Zmiev in :gh:`90385`.)
 
 dis
 ---
@@ -125,6 +143,10 @@ Optimizations
 * Removed ``wstr`` and ``wstr_length`` members from Unicode objects.
   It reduces object size by 8 or 16 bytes on 64bit platform. (:pep:`623`)
   (Contributed by Inada Naoki in :gh:`92536`.)
+
+* Added experimental support for using the BOLT binary optimizer in the build
+  process, which improves performance by 1-5%.
+  (Contributed by Kevin Modzelewski in :gh:`90536`.)
 
 
 CPython bytecode changes
@@ -426,14 +448,27 @@ New Features
   an additional metaclass argument.
   (Contributed by Wenzel Jakob in :gh:`93012`.)
 
-* (XXX: this should be combined with :gh:`93274` when that is done)
+* API for creating objects that can be called using
+  :ref:`the vectorcall protocol <vectorcall>` was added to the
+  :ref:`Limited API <stable>`:
+
+  * :const:`Py_TPFLAGS_HAVE_VECTORCALL`
+  * :c:func:`PyVectorcall_NARGS`
+  * :c:func:`PyVectorcall_Call`
+  * :c:type:`vectorcallfunc`
+
   The :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag is now removed from a class
   when the class's :py:meth:`~object.__call__` method is reassigned.
   This makes vectorcall safe to use with mutable types (i.e. heap types
   without the :const:`immutable <Py_TPFLAGS_IMMUTABLETYPE>` flag).
   Mutable types that do not override :c:member:`~PyTypeObject.tp_call` now
-  inherit the :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag.
-  (Contributed by Petr Viktorin in :gh:`93012`.)
+  inherit the ``Py_TPFLAGS_HAVE_VECTORCALL`` flag.
+  (Contributed by Petr Viktorin in :gh:`93274`.)
+
+  The :const:`Py_TPFLAGS_MANAGED_DICT` and :const:`Py_TPFLAGS_MANAGED_WEAKREF`
+  flags have been added. This allows extensions classes to support object
+  ``__dict__`` and weakrefs with less bookkeeping,
+  using less memory and with faster access.
 
 Porting to Python 3.12
 ----------------------
@@ -461,6 +496,27 @@ Porting to Python 3.12
   :py:meth:`~class.__subclasses__` (using :c:func:`PyObject_CallMethod`,
   for example).
 
+* An unrecognized format character in :c:func:`PyUnicode_FromFormat` and
+  :c:func:`PyUnicode_FromFormatV` now sets a :exc:`SystemError`.
+  In previous versions it caused all the rest of the format string to be
+  copied as-is to the result string, and any extra arguments discarded.
+  (Contributed by Serhiy Storchaka in :gh:`95781`.)
+
+* Fixed wrong sign placement in :c:func:`PyUnicode_FromFormat` and
+  :c:func:`PyUnicode_FromFormatV`.
+  (Contributed by Philip Georgi in :gh:`95504`.)
+
+* Extension classes wanting to add a ``__dict__`` or weak reference slot
+  should use :const:`Py_TPFLAGS_MANAGED_DICT` and
+  :const:`Py_TPFLAGS_MANAGED_WEAKREF` instead of ``tp_dictoffset`` and
+  ``tp_weaklistoffset``, respectively.
+  The use of ``tp_dictoffset`` and ``tp_weaklistoffset`` is still
+  supported, but does not fully support multiple inheritance
+  (:gh: `95589`), and performance may be worse.
+  Classes declaring :const:`Py_TPFLAGS_MANAGED_DICT` should call
+  :c:func:`_PyObject_VisitManagedDict` and :c:func:`_PyObject_ClearManagedDict`
+  to traverse and clear their instance's dictionaries.
+  To clear weakrefs, call :c:func:`PyObject_ClearWeakRefs`, as before.
 
 Deprecated
 ----------
