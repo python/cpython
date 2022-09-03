@@ -1765,8 +1765,10 @@ long_to_decimal_string_internal(PyObject *aa,
                   / (3 * PyLong_SHIFT) + 2) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         int max_str_digits = interp->int_max_str_digits;
-        if ((max_str_digits > 0) && (size_a >= 10 * max_str_digits
-                                     / (3 * PyLong_SHIFT) + 2)) {
+        if ((max_str_digits > 0) &&
+            /* avoid overflow in 10 * max_str_digits */
+            (max_str_digits <= INT_MAX / 10) &&
+            (size_a >= 10 * max_str_digits / (3 * PyLong_SHIFT) + 2)) {
             PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT2,
                          max_str_digits);
             return -1;
