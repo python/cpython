@@ -989,6 +989,7 @@ idlelib
 -------
 
 .. module:: idlelib
+   :synopsis: Implementation package for the IDLE shell/editor.
 
 **Source code:** :source:`Lib/idlelib`
 
