@@ -1,4 +1,4 @@
-# Copyright 2001-2021 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2022 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -16,7 +16,7 @@
 
 """Test harness for the logging module. Run all tests.
 
-Copyright (C) 2001-2021 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2022 Vinay Sajip. All Rights Reserved.
 """
 
 import logging
@@ -3504,6 +3504,35 @@ class ConfigDictTest(BaseTest):
                 {"version": 1, "root": {"level": "DEBUG", "filters": [filter_]}}
             )
 
+    def test_90195(self):
+        # See gh-90195
+        config = {
+            'version': 1,
+            'disable_existing_loggers': False,
+            'handlers': {
+                'console': {
+                    'level': 'DEBUG',
+                    'class': 'logging.StreamHandler',
+                },
+            },
+            'loggers': {
+                'a': {
+                    'level': 'DEBUG',
+                    'handlers': ['console']
+                }
+            }
+        }
+        logger = logging.getLogger('a')
+        self.assertFalse(logger.disabled)
+        self.apply_config(config)
+        self.assertFalse(logger.disabled)
+        # Should disable all loggers ...
+        self.apply_config({'version': 1})
+        self.assertTrue(logger.disabled)
+        del config['disable_existing_loggers']
+        self.apply_config(config)
+        # Logger should be enabled, since explicitly mentioned
+        self.assertFalse(logger.disabled)
 
 class ManagerTest(BaseTest):
     def test_manager_loggerclass(self):
