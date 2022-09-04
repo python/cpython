@@ -638,7 +638,7 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         maxdigits = sys.get_int_max_str_digits()
         assert maxdigits < 50_000, maxdigits  # A test prerequisite.
         get_time = time.process_time
-        if get_time() <= 0:  # some platforms like WASM lacks process_time()
+        if get_time() <= 0:  # some platforms like WASM lack process_time()
             get_time = time.monotonic
 
         huge_int = int(f'0x{"c"*65_000}', base=16)  # 78268 decimal digits.
@@ -682,7 +682,7 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         maxdigits = sys.get_int_max_str_digits()
         assert maxdigits < 100_000, maxdigits  # A test prerequisite.
         get_time = time.process_time
-        if get_time() <= 0:  # some platforms like WASM lacks process_time()
+        if get_time() <= 0:  # some platforms like WASM lack process_time()
             get_time = time.monotonic
 
         huge = '8'*200_000
