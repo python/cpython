@@ -186,7 +186,7 @@ class UUID:
             if len(bytes) != 16:
                 raise ValueError('bytes is not a 16-char string')
             assert isinstance(bytes, bytes_), repr(bytes)
-            int = int_.from_bytes(bytes, byteorder='big')
+            int = int_.from_bytes(bytes)  # big endian
         if fields is not None:
             if len(fields) != 6:
                 raise ValueError('fields is not a 6-tuple')
@@ -284,7 +284,7 @@ class UUID:
 
     @property
     def bytes(self):
-        return self.int.to_bytes(16, 'big')
+        return self.int.to_bytes(16)  # big endian
 
     @property
     def bytes_le(self):
@@ -524,6 +524,8 @@ def _ip_getnode():
 def _arp_getnode():
     """Get the hardware address on Unix by running arp."""
     import os, socket
+    if not hasattr(socket, "gethostbyname"):
+        return None
     try:
         ip_addr = socket.gethostbyname(socket.gethostname())
     except OSError:

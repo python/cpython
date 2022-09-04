@@ -320,7 +320,8 @@ class saved_test_environment:
                 support.environment_altered = True
                 restore(original)
                 if not self.quiet and not self.pgo:
-                    print_warning(f"{name} was modified by {self.testname}")
-                    print(f"  Before: {original}\n  After:  {current} ",
-                          file=sys.stderr, flush=True)
+                    print_warning(
+                        f"{name} was modified by {self.testname}\n"
+                        f"  Before: {original}\n"
+                        f"  After:  {current} ")
         return False

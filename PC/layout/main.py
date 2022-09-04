@@ -8,11 +8,8 @@ __author__ = "Steve Dower <steve.dower@python.org>"
 __version__ = "3.8"
 
 import argparse
-import functools
 import os
-import re
 import shutil
-import subprocess
 import sys
 import tempfile
 import zipfile
@@ -61,7 +58,7 @@ CDF_FILES = FileSuffixSet(".cdf")
 
 DATA_DIRS = FileNameSet("data")
 
-TOOLS_DIRS = FileNameSet("scripts", "i18n", "pynche", "demo", "parser")
+TOOLS_DIRS = FileNameSet("scripts", "i18n", "demo", "parser")
 TOOLS_FILES = FileSuffixSet(".py", ".pyw", ".txt")
 
 

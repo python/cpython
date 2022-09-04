@@ -35,18 +35,23 @@ def recursive_repr(fillvalue='...'):
 
 class Repr:
 
-    def __init__(self):
-        self.maxlevel = 6
-        self.maxtuple = 6
-        self.maxlist = 6
-        self.maxarray = 5
-        self.maxdict = 4
-        self.maxset = 6
-        self.maxfrozenset = 6
-        self.maxdeque = 6
-        self.maxstring = 30
-        self.maxlong = 40
-        self.maxother = 30
+    def __init__(
+        self, *, maxlevel=6, maxtuple=6, maxlist=6, maxarray=5, maxdict=4,
+        maxset=6, maxfrozenset=6, maxdeque=6, maxstring=30, maxlong=40,
+        maxother=30, fillvalue='...',
+    ):
+        self.maxlevel = maxlevel
+        self.maxtuple = maxtuple
+        self.maxlist = maxlist
+        self.maxarray = maxarray
+        self.maxdict = maxdict
+        self.maxset = maxset
+        self.maxfrozenset = maxfrozenset
+        self.maxdeque = maxdeque
+        self.maxstring = maxstring
+        self.maxlong = maxlong
+        self.maxother = maxother
+        self.fillvalue = fillvalue
 
     def repr(self, x):
         return self.repr1(x, self.maxlevel)
@@ -64,14 +69,16 @@ class Repr:
     def _repr_iterable(self, x, level, left, right, maxiter, trail=''):
         n = len(x)
         if level <= 0 and n:
-            s = '...'
+            s = self.fillvalue
         else:
             newlevel = level - 1
             repr1 = self.repr1
             pieces = [repr1(elem, newlevel) for elem in islice(x, maxiter)]
-            if n > maxiter:  pieces.append('...')
+            if n > maxiter:
+                pieces.append(self.fillvalue)
             s = ', '.join(pieces)
-            if n == 1 and trail:  right = trail + right
+            if n == 1 and trail:
+                right = trail + right
         return '%s%s%s' % (left, s, right)
 
     def repr_tuple(self, x, level):
@@ -104,8 +111,10 @@ class Repr:
 
     def repr_dict(self, x, level):
         n = len(x)
-        if n == 0: return '{}'
-        if level <= 0: return '{...}'
+        if n == 0:
+            return '{}'
+        if level <= 0:
+            return '{' + self.fillvalue + '}'
         newlevel = level - 1
         repr1 = self.repr1
         pieces = []
@@ -113,7 +122,8 @@ class Repr:
             keyrepr = repr1(key, newlevel)
             valrepr = repr1(x[key], newlevel)
             pieces.append('%s: %s' % (keyrepr, valrepr))
-        if n > self.maxdict: pieces.append('...')
+        if n > self.maxdict:
+            pieces.append(self.fillvalue)
         s = ', '.join(pieces)
         return '{%s}' % (s,)
 
@@ -123,7 +133,7 @@ class Repr:
             i = max(0, (self.maxstring-3)//2)
             j = max(0, self.maxstring-3-i)
             s = builtins.repr(x[:i] + x[len(x)-j:])
-            s = s[:i] + '...' + s[len(s)-j:]
+            s = s[:i] + self.fillvalue + s[len(s)-j:]
         return s
 
     def repr_int(self, x, level):
@@ -131,7 +141,7 @@ class Repr:
         if len(s) > self.maxlong:
             i = max(0, (self.maxlong-3)//2)
             j = max(0, self.maxlong-3-i)
-            s = s[:i] + '...' + s[len(s)-j:]
+            s = s[:i] + self.fillvalue + s[len(s)-j:]
         return s
 
     def repr_instance(self, x, level):
@@ -144,7 +154,7 @@ class Repr:
         if len(s) > self.maxother:
             i = max(0, (self.maxother-3)//2)
             j = max(0, self.maxother-3-i)
-            s = s[:i] + '...' + s[len(s)-j:]
+            s = s[:i] + self.fillvalue + s[len(s)-j:]
         return s
 
 

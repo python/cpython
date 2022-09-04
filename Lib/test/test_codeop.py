@@ -182,21 +182,21 @@ class CodeopTests(unittest.TestCase):
         ai("from a import (b,c")
         ai("from a import (b,c,")
 
-        ai("[");
-        ai("[a");
-        ai("[a,");
-        ai("[a,b");
-        ai("[a,b,");
+        ai("[")
+        ai("[a")
+        ai("[a,")
+        ai("[a,b")
+        ai("[a,b,")
 
-        ai("{");
-        ai("{a");
-        ai("{a:");
-        ai("{a:b");
-        ai("{a:b,");
-        ai("{a:b,c");
-        ai("{a:b,c:");
-        ai("{a:b,c:d");
-        ai("{a:b,c:d,");
+        ai("{")
+        ai("{a")
+        ai("{a:")
+        ai("{a:b")
+        ai("{a:b,")
+        ai("{a:b,c")
+        ai("{a:b,c:")
+        ai("{a:b,c:d")
+        ai("{a:b,c:d,")
 
         ai("a(")
         ai("a(b")

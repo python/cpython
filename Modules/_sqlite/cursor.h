@@ -42,19 +42,12 @@ typedef struct
     PyObject* row_factory;
     pysqlite_Statement* statement;
     int closed;
-    int reset;
     int locked;
     int initialized;
-
-    /* the next row to be returned, NULL if no next row available */
-    PyObject* next_row;
 
     PyObject* in_weakreflist; /* List of weak references */
 } pysqlite_Cursor;
 
-extern PyTypeObject *pysqlite_CursorType;
-
 int pysqlite_cursor_setup_types(PyObject *module);
 
-#define UNKNOWN (-1)
 #endif

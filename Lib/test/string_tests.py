@@ -4,6 +4,7 @@ Common tests shared by test_unicode, test_userstring and test_bytes.
 
 import unittest, string, sys, struct
 from test import support
+from test.support import import_helper
 from collections import UserList
 import random
 
@@ -80,12 +81,14 @@ class BaseTest:
                 self.assertIsNot(obj, realresult)
 
     # check that obj.method(*args) raises exc
-    def checkraises(self, exc, obj, methodname, *args):
+    def checkraises(self, exc, obj, methodname, *args, expected_msg=None):
         obj = self.fixtype(obj)
         args = self.fixtype(args)
         with self.assertRaises(exc) as cm:
             getattr(obj, methodname)(*args)
         self.assertNotEqual(str(cm.exception), '')
+        if expected_msg is not None:
+            self.assertEqual(str(cm.exception), expected_msg)
 
     # call obj.method(*args) without any checks
     def checkcall(self, obj, methodname, *args):
@@ -1195,6 +1198,10 @@ class MixinStrUnicodeUserStringTest:
 
         self.checkraises(TypeError, 'abc', '__getitem__', 'def')
 
+        for idx_type in ('def', object()):
+            expected_msg = "string indices must be integers, not '{}'".format(type(idx_type).__name__)
+            self.checkraises(TypeError, 'abc', '__getitem__', idx_type, expected_msg=expected_msg)
+
     def test_slice(self):
         self.checkequal('abc', 'abc', '__getitem__', slice(0, 1000))
         self.checkequal('abc', 'abc', '__getitem__', slice(0, 3))
@@ -1322,17 +1329,17 @@ class MixinStrUnicodeUserStringTest:
 
     @support.cpython_only
     def test_formatting_c_limits(self):
-        from _testcapi import PY_SSIZE_T_MAX, INT_MAX, UINT_MAX
-        SIZE_MAX = (1 << (PY_SSIZE_T_MAX.bit_length() + 1)) - 1
+        _testcapi = import_helper.import_module('_testcapi')
+        SIZE_MAX = (1 << (_testcapi.PY_SSIZE_T_MAX.bit_length() + 1)) - 1
         self.checkraises(OverflowError, '%*s', '__mod__',
-                         (PY_SSIZE_T_MAX + 1, ''))
+                         (_testcapi.PY_SSIZE_T_MAX + 1, ''))
         self.checkraises(OverflowError, '%.*f', '__mod__',
-                         (INT_MAX + 1, 1. / 7))
+                         (_testcapi.INT_MAX + 1, 1. / 7))
         # Issue 15989
         self.checkraises(OverflowError, '%*s', '__mod__',
                          (SIZE_MAX + 1, ''))
         self.checkraises(OverflowError, '%.*f', '__mod__',
-                         (UINT_MAX + 1, 1. / 7))
+                         (_testcapi.UINT_MAX + 1, 1. / 7))
 
     def test_floatformatting(self):
         # float formatting

@@ -5,11 +5,12 @@ import subprocess
 import shutil
 from copy import copy
 
-from test.support import (captured_stdout, PythonSymlink)
+from test.support import (
+    captured_stdout, PythonSymlink, requires_subprocess, is_wasi
+)
 from test.support.import_helper import import_module
 from test.support.os_helper import (TESTFN, unlink, skip_unless_symlink,
                                     change_cwd)
-from test.support.warnings_helper import check_warnings
 
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
@@ -102,6 +103,10 @@ class TestSysConfig(unittest.TestCase):
 
     def test_get_path(self):
         config_vars = get_config_vars()
+        if os.name == 'nt':
+            # On Windows, we replace the native platlibdir name with the
+            # default so that POSIX schemes resolve correctly
+            config_vars = config_vars | {'platlibdir': 'lib'}
         for scheme in _INSTALL_SCHEMES:
             for name in _INSTALL_SCHEMES[scheme]:
                 expected = _INSTALL_SCHEMES[scheme][name].format(**config_vars)
@@ -134,6 +139,72 @@ class TestSysConfig(unittest.TestCase):
         sys._framework = True
         self.assertIsInstance(schemes, dict)
         self.assertEqual(set(schemes), expected_schemes)
+
+    def test_posix_venv_scheme(self):
+        # The following directories were hardcoded in the venv module
+        # before bpo-45413, here we assert the posix_venv scheme does not regress
+        binpath = 'bin'
+        incpath = 'include'
+        libpath = os.path.join('lib',
+                               'python%d.%d' % sys.version_info[:2],
+                               'site-packages')
+
+        # Resolve the paths in prefix
+        binpath = os.path.join(sys.prefix, binpath)
+        incpath = os.path.join(sys.prefix, incpath)
+        libpath = os.path.join(sys.prefix, libpath)
+
+        self.assertEqual(binpath, sysconfig.get_path('scripts', scheme='posix_venv'))
+        self.assertEqual(libpath, sysconfig.get_path('purelib', scheme='posix_venv'))
+
+        # The include directory on POSIX isn't exactly the same as before,
+        # but it is "within"
+        sysconfig_includedir = sysconfig.get_path('include', scheme='posix_venv')
+        self.assertTrue(sysconfig_includedir.startswith(incpath + os.sep))
+
+    def test_nt_venv_scheme(self):
+        # The following directories were hardcoded in the venv module
+        # before bpo-45413, here we assert the posix_venv scheme does not regress
+        binpath = 'Scripts'
+        incpath = 'Include'
+        libpath = os.path.join('Lib', 'site-packages')
+
+        # Resolve the paths in prefix
+        binpath = os.path.join(sys.prefix, binpath)
+        incpath = os.path.join(sys.prefix, incpath)
+        libpath = os.path.join(sys.prefix, libpath)
+
+        self.assertEqual(binpath, sysconfig.get_path('scripts', scheme='nt_venv'))
+        self.assertEqual(incpath, sysconfig.get_path('include', scheme='nt_venv'))
+        self.assertEqual(libpath, sysconfig.get_path('purelib', scheme='nt_venv'))
+
+    def test_venv_scheme(self):
+        if sys.platform == 'win32':
+            self.assertEqual(
+                sysconfig.get_path('scripts', scheme='venv'),
+                sysconfig.get_path('scripts', scheme='nt_venv')
+            )
+            self.assertEqual(
+                sysconfig.get_path('include', scheme='venv'),
+                sysconfig.get_path('include', scheme='nt_venv')
+            )
+            self.assertEqual(
+                sysconfig.get_path('purelib', scheme='venv'),
+                sysconfig.get_path('purelib', scheme='nt_venv')
+            )
+        else:
+            self.assertEqual(
+                sysconfig.get_path('scripts', scheme='venv'),
+                sysconfig.get_path('scripts', scheme='posix_venv')
+            )
+            self.assertEqual(
+                sysconfig.get_path('include', scheme='venv'),
+                sysconfig.get_path('include', scheme='posix_venv')
+            )
+            self.assertEqual(
+                sysconfig.get_path('purelib', scheme='venv'),
+                sysconfig.get_path('purelib', scheme='posix_venv')
+            )
 
     def test_get_config_vars(self):
         cvars = get_config_vars()
@@ -258,17 +329,19 @@ class TestSysConfig(unittest.TestCase):
 
         # XXX more platforms to tests here
 
+    @unittest.skipIf(is_wasi, "Incompatible with WASI mapdir and OOT builds")
     def test_get_config_h_filename(self):
         config_h = sysconfig.get_config_h_filename()
         self.assertTrue(os.path.isfile(config_h), config_h)
 
     def test_get_scheme_names(self):
-        wanted = ['nt', 'posix_home', 'posix_prefix']
+        wanted = ['nt', 'posix_home', 'posix_prefix', 'posix_venv', 'nt_venv', 'venv']
         if HAS_USER_BASE:
             wanted.extend(['nt_user', 'osx_framework_user', 'posix_user'])
         self.assertEqual(get_scheme_names(), tuple(sorted(wanted)))
 
     @skip_unless_symlink
+    @requires_subprocess()
     def test_symlink(self): # Issue 7880
         with PythonSymlink() as py:
             cmd = "-c", "import sysconfig; print(sysconfig.get_platform())"
@@ -296,7 +369,17 @@ class TestSysConfig(unittest.TestCase):
                 base = base.replace(sys.base_prefix, sys.prefix)
             if HAS_USER_BASE:
                 user_path = get_path(name, 'posix_user')
-                self.assertEqual(user_path, global_path.replace(base, user, 1))
+                expected = os.path.normpath(global_path.replace(base, user, 1))
+                # bpo-44860: platlib of posix_user doesn't use sys.platlibdir,
+                # whereas posix_prefix does.
+                if name == 'platlib':
+                    # Replace "/lib64/python3.11/site-packages" suffix
+                    # with "/lib/python3.11/site-packages".
+                    py_version_short = sysconfig.get_python_version()
+                    suffix = f'python{py_version_short}/site-packages'
+                    expected = expected.replace(f'/{sys.platlibdir}/{suffix}',
+                                                f'/lib/{suffix}')
+                self.assertEqual(user_path, expected)
 
     def test_main(self):
         # just making sure _main() runs and returns things in the stdout
@@ -312,6 +395,7 @@ class TestSysConfig(unittest.TestCase):
         self.assertIn(ldflags, ldshared)
 
     @unittest.skipUnless(sys.platform == "darwin", "test only relevant on MacOSX")
+    @requires_subprocess()
     def test_platform_in_subprocess(self):
         my_platform = sysconfig.get_platform()
 
@@ -366,7 +450,11 @@ class TestSysConfig(unittest.TestCase):
             # should be a full source checkout.
             Python_h = os.path.join(srcdir, 'Include', 'Python.h')
             self.assertTrue(os.path.exists(Python_h), Python_h)
-            self.assertTrue(sysconfig._is_python_source_dir(srcdir))
+            # <srcdir>/PC/pyconfig.h always exists even if unused on POSIX.
+            pyconfig_h = os.path.join(srcdir, 'PC', 'pyconfig.h')
+            self.assertTrue(os.path.exists(pyconfig_h), pyconfig_h)
+            pyconfig_h_in = os.path.join(srcdir, 'pyconfig.h.in')
+            self.assertTrue(os.path.exists(pyconfig_h_in), pyconfig_h_in)
         elif os.name == 'posix':
             makefile_dir = os.path.dirname(sysconfig.get_makefile_filename())
             # Issue #19340: srcdir has been realpath'ed already
@@ -383,24 +471,11 @@ class TestSysConfig(unittest.TestCase):
 
     @unittest.skipIf(sysconfig.get_config_var('EXT_SUFFIX') is None,
                      'EXT_SUFFIX required for this test')
-    def test_SO_deprecation(self):
-        self.assertWarns(DeprecationWarning,
-                         sysconfig.get_config_var, 'SO')
-
-    @unittest.skipIf(sysconfig.get_config_var('EXT_SUFFIX') is None,
-                     'EXT_SUFFIX required for this test')
-    def test_SO_value(self):
-        with check_warnings(('', DeprecationWarning)):
-            self.assertEqual(sysconfig.get_config_var('SO'),
-                             sysconfig.get_config_var('EXT_SUFFIX'))
-
-    @unittest.skipIf(sysconfig.get_config_var('EXT_SUFFIX') is None,
-                     'EXT_SUFFIX required for this test')
     def test_EXT_SUFFIX_in_vars(self):
         import _imp
+        if not _imp.extension_suffixes():
+            self.skipTest("stub loader has no suffixes")
         vars = sysconfig.get_config_vars()
-        self.assertIsNotNone(vars['SO'])
-        self.assertEqual(vars['SO'], vars['EXT_SUFFIX'])
         self.assertEqual(vars['EXT_SUFFIX'], _imp.extension_suffixes()[0])
 
     @unittest.skipUnless(sys.platform == 'linux' and
@@ -415,11 +490,11 @@ class TestSysConfig(unittest.TestCase):
             self.assertTrue('linux' in suffix, suffix)
         if re.match('(i[3-6]86|x86_64)$', machine):
             if ctypes.sizeof(ctypes.c_char_p()) == 4:
-                self.assertTrue(suffix.endswith('i386-linux-gnu.so') or
-                                suffix.endswith('x86_64-linux-gnux32.so'),
-                                suffix)
+                expected_suffixes = 'i386-linux-gnu.so', 'x86_64-linux-gnux32.so', 'i386-linux-musl.so'
             else: # 8 byte pointer size
-                self.assertTrue(suffix.endswith('x86_64-linux-gnu.so'), suffix)
+                expected_suffixes = 'x86_64-linux-gnu.so', 'x86_64-linux-musl.so'
+            self.assertTrue(suffix.endswith(expected_suffixes),
+                            f'unexpected suffix {suffix!r}')
 
     @unittest.skipUnless(sys.platform == 'darwin', 'OS X-specific test')
     def test_osx_ext_suffix(self):
@@ -430,6 +505,7 @@ class MakefileTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform.startswith('win'),
                      'Test is not Windows compatible')
+    @unittest.skipIf(is_wasi, "Incompatible with WASI mapdir and OOT builds")
     def test_get_makefile_filename(self):
         makefile = sysconfig.get_makefile_filename()
         self.assertTrue(os.path.isfile(makefile), makefile)

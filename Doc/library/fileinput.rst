@@ -50,8 +50,8 @@ You can control how files are opened by providing an opening hook via the
 *openhook* parameter to :func:`fileinput.input` or :class:`FileInput()`. The
 hook must be a function that takes two arguments, *filename* and *mode*, and
 returns an accordingly opened file-like object. If *encoding* and/or *errors*
-are specified, they will be passed to the hook as aditional keyword arguments.
-This module provides a :func:`hook_encoded` to support compressed files.
+are specified, they will be passed to the hook as additional keyword arguments.
+This module provides a :func:`hook_compressed` to support compressed files.
 
 The following function is the primary interface of this module:
 
@@ -146,14 +146,13 @@ available for subclassing as well:
    Class :class:`FileInput` is the implementation; its methods :meth:`filename`,
    :meth:`fileno`, :meth:`lineno`, :meth:`filelineno`, :meth:`isfirstline`,
    :meth:`isstdin`, :meth:`nextfile` and :meth:`close` correspond to the
-   functions of the same name in the module. In addition it has a
-   :meth:`~io.TextIOBase.readline` method which returns the next input line,
-   and a :meth:`__getitem__` method which implements the sequence behavior.
-   The sequence must be accessed in strictly sequential order; random access
-   and :meth:`~io.TextIOBase.readline` cannot be mixed.
+   functions of the same name in the module. In addition it is :term:`iterable`
+   and has a :meth:`~io.TextIOBase.readline` method which returns the next
+   input line. The sequence must be accessed in strictly sequential order;
+   random access and :meth:`~io.TextIOBase.readline` cannot be mixed.
 
    With *mode* you can specify which file mode will be passed to :func:`open`. It
-   must be one of ``'r'``, ``'rU'``, ``'U'`` and ``'rb'``.
+   must be one of ``'r'`` and ``'rb'``.
 
    The *openhook*, when given, must be a function that takes two arguments,
    *filename* and *mode*, and returns an accordingly opened file-like object. You
@@ -171,17 +170,15 @@ available for subclassing as well:
    .. versionchanged:: 3.2
       Can be used as a context manager.
 
-   .. deprecated:: 3.4
-      The ``'rU'`` and ``'U'`` modes.
-
-   .. deprecated:: 3.8
-      Support for :meth:`__getitem__` method is deprecated.
-
    .. versionchanged:: 3.8
       The keyword parameter *mode* and *openhook* are now keyword-only.
 
    .. versionchanged:: 3.10
       The keyword-only parameter *encoding* and *errors* are added.
+
+   .. versionchanged:: 3.11
+      The ``'rU'`` and ``'U'`` modes and the :meth:`__getitem__` method have
+      been removed.
 
 
 **Optional in-place filtering:** if the keyword argument ``inplace=True`` is
@@ -227,5 +224,5 @@ The two following opening hooks are provided by this module:
       Added the optional *errors* parameter.
 
    .. deprecated:: 3.10
-      This function is deprecated since :func:`input` and :class:`FileInput`
+      This function is deprecated since :func:`fileinput.input` and :class:`FileInput`
       now have *encoding* and *errors* parameters.

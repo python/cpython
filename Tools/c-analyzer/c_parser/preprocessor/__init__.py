@@ -1,7 +1,9 @@
 import contextlib
-import distutils.ccompiler
 import logging
+import os
 import os.path
+import re
+import sys
 
 from c_common.fsutil import match_glob as _match_glob
 from c_common.tables import parse_table as _parse_table
@@ -19,7 +21,7 @@ from . import (
 logger = logging.getLogger(__name__)
 
 
-# Supprted "source":
+# Supported "source":
 #  * filename (string)
 #  * lines (iterable)
 #  * text (string)
@@ -91,7 +93,7 @@ def get_preprocessor(*,
             macros = list(_resolve_file_values(filename, file_macros))
         if file_incldirs:
             incldirs = [v for v, in _resolve_file_values(filename, file_incldirs)]
-    
+
         def preprocess(**kwargs):
             if file_macros and 'macros' not in kwargs:
                 kwargs['macros'] = macros
@@ -156,7 +158,7 @@ def handling_errors(ignore_exc=None, *, log_err=None):
 # tools
 
 _COMPILERS = {
-    # matching disutils.ccompiler.compiler_class:
+    # matching distutils.ccompiler.compiler_class:
     'unix': _gcc.preprocess,
     'msvc': None,
     'cygwin': None,
@@ -168,9 +170,17 @@ _COMPILERS = {
 }
 
 
+def _get_default_compiler():
+    if re.match('cygwin.*', sys.platform) is not None:
+        return 'unix'
+    if os.name == 'nt':
+        return 'msvc'
+    return 'unix'
+
+
 def _get_preprocessor(tool):
     if tool is True:
-        tool = distutils.ccompiler.get_default_compiler()
+        tool = _get_default_compiler()
     preprocess = _COMPILERS.get(tool)
     if preprocess is None:
         raise ValueError(f'unsupported tool {tool}')

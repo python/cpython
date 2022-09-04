@@ -344,7 +344,7 @@ _locate_pythons_for_key(HKEY root, LPCWSTR subkey, REGSAM flags, int bits,
                     }
                     else if (attrs & FILE_ATTRIBUTE_DIRECTORY) {
                         debug(L"locate_pythons_for_key: '%ls' is a directory\n",
-                              ip->executable, attrs);
+                              ip->executable);
                     }
                     else if (find_existing_python(ip->executable)) {
                         debug(L"locate_pythons_for_key: %ls: already found\n",
@@ -542,8 +542,17 @@ find_python_by_version(wchar_t const * wanted_ver)
     }
     for (i = 0; i < num_installed_pythons; i++, ip++) {
         n = wcslen(ip->version);
-        if (n > wlen)
+        /*
+         * If wlen is greater than 1, we're probably trying to find a specific
+         * version and thus want an exact match: 3.1 != 3.10.  Otherwise, we
+         * just want a prefix match.
+         */
+        if ((wlen > 1) && (n != wlen)) {
+            continue;
+        }
+        if (n > wlen) {
             n = wlen;
+        }
         if ((wcsncmp(ip->version, wanted_ver, n) == 0) &&
             /* bits == 0 => don't care */
             ((bits == 0) || (ip->bits == bits))) {
@@ -1259,7 +1268,9 @@ static PYC_MAGIC magic_values[] = {
     { 3400, 3419, L"3.8" },
     { 3420, 3429, L"3.9" },
     { 3430, 3449, L"3.10" },
-    { 3450, 3469, L"3.11" },
+    /* Allow 50 magic numbers per version from here on */
+    { 3450, 3499, L"3.11" },
+    { 3500, 3549, L"3.12" },
     { 0 }
 };
 
@@ -1915,27 +1926,35 @@ process(int argc, wchar_t ** argv)
         if (!cch) {
             error(0, L"Cannot determine memory for home path");
         }
-        cch += (DWORD)wcslen(PYTHON_EXECUTABLE) + 1 + 1; /* include sep and null */
+        cch += (DWORD)wcslen(PYTHON_EXECUTABLE) + 4; /* include sep, null and quotes */
         executable = (wchar_t *)malloc(cch * sizeof(wchar_t));
         if (executable == NULL) {
             error(RC_NO_MEMORY, L"A memory allocation failed");
         }
-        cch_actual = MultiByteToWideChar(CP_UTF8, 0, start, len, executable, cch);
+        /* start with a quote - we'll skip this ahead, but want it for the final string */
+        executable[0] = L'"';
+        cch_actual = MultiByteToWideChar(CP_UTF8, 0, start, len, &executable[1], cch - 1);
         if (!cch_actual) {
             error(RC_BAD_VENV_CFG, L"Cannot decode home path in '%ls'",
                   venv_cfg_path);
         }
+        cch_actual += 1; /* account for the first quote */
+        executable[cch_actual] = L'\0';
         if (executable[cch_actual - 1] != L'\\') {
             executable[cch_actual++] = L'\\';
             executable[cch_actual] = L'\0';
         }
-        if (wcscat_s(executable, cch, PYTHON_EXECUTABLE)) {
+        if (wcscat_s(&executable[1], cch - 1, PYTHON_EXECUTABLE)) {
             error(RC_BAD_VENV_CFG, L"Cannot create executable path from '%ls'",
                   venv_cfg_path);
         }
-        if (GetFileAttributesW(executable) == INVALID_FILE_ATTRIBUTES) {
+        /* there's no trailing quote, so we only have to skip one character for the test */
+        if (GetFileAttributesW(&executable[1]) == INVALID_FILE_ATTRIBUTES) {
             error(RC_NO_PYTHON, L"No Python at '%ls'", executable);
         }
+        /* now append the final quote */
+        wcscat_s(executable, cch, L"\"");
+        /* smuggle our original path through */
         if (!SetEnvironmentVariableW(L"__PYVENV_LAUNCHER__", argv0)) {
             error(0, L"Failed to set launcher environment");
         }

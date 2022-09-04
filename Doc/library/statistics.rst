@@ -35,6 +35,35 @@ and implementation-dependent.  If your input data consists of mixed types,
 you may be able to use :func:`map` to ensure a consistent result, for
 example: ``map(float, input_data)``.
 
+Some datasets use ``NaN`` (not a number) values to represent missing data.
+Since NaNs have unusual comparison semantics, they cause surprising or
+undefined behaviors in the statistics functions that sort data or that count
+occurrences.  The functions affected are ``median()``, ``median_low()``,
+``median_high()``, ``median_grouped()``, ``mode()``, ``multimode()``, and
+``quantiles()``.  The ``NaN`` values should be stripped before calling these
+functions::
+
+    >>> from statistics import median
+    >>> from math import isnan
+    >>> from itertools import filterfalse
+
+    >>> data = [20.7, float('NaN'),19.2, 18.3, float('NaN'), 14.4]
+    >>> sorted(data)  # This has surprising behavior
+    [20.7, nan, 14.4, 18.3, 19.2, nan]
+    >>> median(data)  # This result is unexpected
+    16.35
+
+    >>> sum(map(isnan, data))    # Number of missing values
+    2
+    >>> clean = list(filterfalse(isnan, data))  # Strip NaN values
+    >>> clean
+    [20.7, 19.2, 18.3, 14.4]
+    >>> sorted(clean)  # Sorting now works as expected
+    [14.4, 18.3, 19.2, 20.7]
+    >>> median(clean)       # This result is now well defined
+    18.75
+
+
 Averages and measures of central location
 -----------------------------------------
 
@@ -75,7 +104,7 @@ These functions calculate statistics regarding relations between two inputs.
 
 =========================  =====================================================
 :func:`covariance`         Sample covariance for two variables.
-:func:`correlation`        Pearson's correlation coefficient for two variables.
+:func:`correlation`        Pearson and Spearman's correlation coefficients.
 :func:`linear_regression`  Slope and intercept for simple linear regression.
 =========================  =====================================================
 
@@ -116,10 +145,11 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    .. note::
 
-      The mean is strongly affected by outliers and is not a robust estimator
-      for central location: the mean is not necessarily a typical example of
-      the data points.  For more robust measures of central location, see
-      :func:`median` and :func:`mode`.
+      The mean is strongly affected by `outliers
+      <https://en.wikipedia.org/wiki/Outlier>`_ and is not necessarily a
+      typical example of the data points. For a more robust, although less
+      efficient, measure of `central tendency
+      <https://en.wikipedia.org/wiki/Central_tendency>`_, see :func:`median`.
 
       The sample mean gives an unbiased estimate of the true population mean,
       so that when taken on average over all the possible samples,
@@ -618,32 +648,58 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    .. versionadded:: 3.10
 
-.. function:: correlation(x, y, /)
+.. function:: correlation(x, y, /, *, method='linear')
 
    Return the `Pearson's correlation coefficient
    <https://en.wikipedia.org/wiki/Pearson_correlation_coefficient>`_
    for two inputs. Pearson's correlation coefficient *r* takes values
-   between -1 and +1. It measures the strength and direction of the linear
-   relationship, where +1 means very strong, positive linear relationship,
-   -1 very strong, negative linear relationship, and 0 no linear relationship.
+   between -1 and +1. It measures the strength and direction of a linear
+   relationship.
+
+   If *method* is "ranked", computes `Spearman's rank correlation coefficient
+   <https://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient>`_
+   for two inputs. The data is replaced by ranks.  Ties are averaged so that
+   equal values receive the same rank.  The resulting coefficient measures the
+   strength of a monotonic relationship.
+
+   Spearman's correlation coefficient is appropriate for ordinal data or for
+   continuous data that doesn't meet the linear proportion requirement for
+   Pearson's correlation coefficient.
 
    Both inputs must be of the same length (no less than two), and need
    not to be constant, otherwise :exc:`StatisticsError` is raised.
 
-   Examples:
+   Example with `Kepler's laws of planetary motion
+   <https://en.wikipedia.org/wiki/Kepler's_laws_of_planetary_motion>`_:
 
    .. doctest::
 
-      >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-      >>> y = [9, 8, 7, 6, 5, 4, 3, 2, 1]
-      >>> correlation(x, x)
+      >>> # Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, and  Neptune
+      >>> orbital_period = [88, 225, 365, 687, 4331, 10_756, 30_687, 60_190]    # days
+      >>> dist_from_sun = [58, 108, 150, 228, 778, 1_400, 2_900, 4_500] # million km
+
+      >>> # Show that a perfect monotonic relationship exists
+      >>> correlation(orbital_period, dist_from_sun, method='ranked')
       1.0
-      >>> correlation(x, y)
-      -1.0
+
+      >>> # Observe that a linear relationship is imperfect
+      >>> round(correlation(orbital_period, dist_from_sun), 4)
+      0.9882
+
+      >>> # Demonstrate Kepler's third law: There is a linear correlation
+      >>> # between the square of the orbital period and the cube of the
+      >>> # distance from the sun.
+      >>> period_squared = [p * p for p in orbital_period]
+      >>> dist_cubed = [d * d * d for d in dist_from_sun]
+      >>> round(correlation(period_squared, dist_cubed), 4)
+      1.0
 
    .. versionadded:: 3.10
 
-.. function:: linear_regression(x, y, /)
+   .. versionchanged:: 3.12
+      Added support for Spearman's rank correlation coefficient.
+
+.. function:: linear_regression(x, y, /, *, proportional=False)
 
    Return the slope and intercept of `simple linear regression
    <https://en.wikipedia.org/wiki/Simple_linear_regression>`_
@@ -677,8 +733,18 @@ However, for reading convenience, most of the examples show sorted sequences.
       >>> round(slope * 2019 + intercept)
       16
 
+   If *proportional* is true, the independent variable *x* and the
+   dependent variable *y* are assumed to be directly proportional.
+   The data is fit to a line passing through the origin.
+   Since the *intercept* will always be 0.0, the underlying linear
+   function simplifies to:
+
+      *y = slope \* x + noise*
+
    .. versionadded:: 3.10
 
+   .. versionchanged:: 3.11
+      Added support for *proportional*.
 
 Exceptions
 ----------
@@ -787,7 +853,7 @@ of applications in statistics.
        Compute the inverse cumulative distribution function, also known as the
        `quantile function <https://en.wikipedia.org/wiki/Quantile_function>`_
        or the `percent-point
-       <https://www.statisticshowto.datasciencecentral.com/inverse-distribution-function/>`_
+       <https://web.archive.org/web/20190203145224/https://www.statisticshowto.datasciencecentral.com/inverse-distribution-function/>`_
        function.  Mathematically, it is written ``x : P(X <= x) = p``.
 
        Finds the value *x* of the random variable *X* such that the
@@ -898,7 +964,7 @@ Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_:
     [1.4591308524824727, 1.8035946855390597, 2.175091447274739]
 
 Normal distributions can be used to approximate `Binomial
-distributions <http://mathworld.wolfram.com/BinomialDistribution.html>`_
+distributions <https://mathworld.wolfram.com/BinomialDistribution.html>`_
 when the sample size is large and when the probability of a successful
 trial is near 50%.
 
@@ -936,7 +1002,7 @@ probability that the Python room will stay within its capacity limits?
 Normal distributions commonly arise in machine learning problems.
 
 Wikipedia has a `nice example of a Naive Bayesian Classifier
-<https://en.wikipedia.org/wiki/Naive_Bayes_classifier#Sex_classification>`_.
+<https://en.wikipedia.org/wiki/Naive_Bayes_classifier#Person_classification>`_.
 The challenge is to predict a person's gender from measurements of normally
 distributed features including height, weight, and foot size.
 

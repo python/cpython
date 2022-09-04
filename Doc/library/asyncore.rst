@@ -4,6 +4,7 @@
 .. module:: asyncore
    :synopsis: A base class for developing asynchronous socket handling
               services.
+   :deprecated:
 
 .. moduleauthor:: Sam Rushing <rushing@nightmare.com>
 .. sectionauthor:: Christopher Petrilli <petrilli@amber.org>
@@ -12,7 +13,9 @@
 
 **Source code:** :source:`Lib/asyncore.py`
 
-.. deprecated:: 3.6
+.. deprecated-removed:: 3.6 3.12
+   The :mod:`asyncore` module is deprecated
+   (see :pep:`PEP 594 <594#asyncore>` for details).
    Please use :mod:`asyncio` instead.
 
 --------------
@@ -24,6 +27,8 @@
 
 This module provides the basic infrastructure for writing asynchronous  socket
 service clients and servers.
+
+.. include:: ../includes/wasm-notavail.rst
 
 There are only two ways to have a program on a single processor do  "more than
 one thing at a time." Multi-threaded programming is the  simplest and most

@@ -45,6 +45,7 @@
 :Editor: Raymond Hettinger
 
 This article explains the new features in Python 3.8, compared to 3.7.
+Python 3.8 was released on October 14, 2019.
 For full details, see the :ref:`changelog <changelog>`.
 
 .. testsetup::
@@ -1087,6 +1088,9 @@ contain characters unrepresentable at the OS level.
 Added :meth:`pathlib.Path.link_to()` which creates a hard link pointing
 to a path.
 (Contributed by Joannah Nanjekye in :issue:`26978`)
+Note that ``link_to`` was deprecated in 3.10 and removed in 3.12 in
+favor of a ``hardlink_to`` method added in 3.10 which matches the
+semantics of the existing ``symlink_to`` method.
 
 
 pickle
@@ -1490,7 +1494,7 @@ Optimizations
   first introduced in Python 3.4.  It offers better performance and smaller
   size compared to Protocol 3 available since Python 3.0.
 
-* Removed one ``Py_ssize_t`` member from ``PyGC_Head``.  All GC tracked
+* Removed one :c:type:`Py_ssize_t` member from ``PyGC_Head``.  All GC tracked
   objects (e.g. tuple, list, dict) size is reduced 4 or 8 bytes.
   (Contributed by Inada Naoki in :issue:`33597`.)
 
@@ -2004,6 +2008,8 @@ Changes in the Python API
   ``replace()`` method of :class:`types.CodeType` can be used to make the code
   future-proof.
 
+* The parameter ``digestmod`` for :func:`hmac.new` no longer uses the MD5 digest
+  by default.
 
 Changes in the C API
 --------------------
@@ -2248,3 +2254,16 @@ separator key, with ``&`` as the default.  This change also affects
 functions internally. For more details, please see their respective
 documentation.
 (Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)
+
+Notable changes in Python 3.8.12
+================================
+
+Starting with Python 3.8.12 the :mod:`ipaddress` module no longer accepts
+any leading zeros in IPv4 address strings. Leading zeros are ambiguous and
+interpreted as octal notation by some libraries. For example the legacy
+function :func:`socket.inet_aton` treats leading zeros as octal notation.
+glibc implementation of modern :func:`~socket.inet_pton` does not accept
+any leading zeros.
+
+(Originally contributed by Christian Heimes in :issue:`36384`, and backported
+to 3.8 by Achraf Merzouki.)

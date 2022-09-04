@@ -95,7 +95,7 @@ document: the one that holds all others.  Here is an example program::
 When you are finished with a DOM tree, you may optionally call the
 :meth:`unlink` method to encourage early cleanup of the now-unneeded
 objects.  :meth:`unlink` is an :mod:`xml.dom.minidom`\ -specific
-extension to the DOM API that renders the node and its descendants are
+extension to the DOM API that renders the node and its descendants
 essentially useless.  Otherwise, Python's garbage collector will
 eventually take care of the objects in the tree.
 
@@ -145,7 +145,7 @@ module documentation.  This section lists the differences between the API and
    For the :class:`Document` node, an additional keyword argument *encoding* can
    be used to specify the encoding field of the XML header.
 
-   Silimarly, explicitly stating the *standalone* argument causes the
+   Similarly, explicitly stating the *standalone* argument causes the
    standalone document declarations to be added to the prologue of the XML
    document.
    If the value is set to `True`, `standalone="yes"` is added,
@@ -155,6 +155,9 @@ module documentation.  This section lists the differences between the API and
    .. versionchanged:: 3.8
       The :meth:`writexml` method now preserves the attribute order specified
       by the user.
+
+   .. versionchanged:: 3.9
+      The *standalone* parameter was added.
 
 .. method:: Node.toxml(encoding=None, standalone=None)
 
@@ -174,7 +177,10 @@ module documentation.  This section lists the differences between the API and
       The :meth:`toxml` method now preserves the attribute order specified
       by the user.
 
-.. method:: Node.toprettyxml(indent="\\t", newl="\\n", encoding=None, \
+   .. versionchanged:: 3.9
+      The *standalone* parameter was added.
+
+.. method:: Node.toprettyxml(indent="\t", newl="\n", encoding=None, \
                              standalone=None)
 
    Return a pretty-printed version of the document. *indent* specifies the
@@ -190,6 +196,8 @@ module documentation.  This section lists the differences between the API and
       The :meth:`toprettyxml` method now preserves the attribute order specified
       by the user.
 
+   .. versionchanged:: 3.9
+      The *standalone* parameter was added.
 
 .. _dom-example:
 

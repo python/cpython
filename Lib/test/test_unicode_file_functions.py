@@ -5,8 +5,8 @@ import sys
 import unittest
 import warnings
 from unicodedata import normalize
-from test import support
 from test.support import os_helper
+from test import support
 
 
 filenames = [
@@ -124,6 +124,10 @@ class UnicodeFileTests(unittest.TestCase):
     # NFKD in Python is useless, because darwin will normalize it later and so
     # open(), os.stat(), etc. don't raise any exception.
     @unittest.skipIf(sys.platform == 'darwin', 'irrelevant test on Mac OS X')
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "test fails on Emscripten/WASI when host platform is macOS."
+    )
     def test_normalize(self):
         files = set(self.files)
         others = set()
@@ -185,15 +189,5 @@ class UnicodeNFKDFileTests(UnicodeFileTests):
     normal_form = 'NFKD'
 
 
-def test_main():
-    support.run_unittest(
-        UnicodeFileTests,
-        UnicodeNFCFileTests,
-        UnicodeNFDFileTests,
-        UnicodeNFKCFileTests,
-        UnicodeNFKDFileTests,
-    )
-
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

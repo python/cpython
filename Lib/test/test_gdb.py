@@ -117,6 +117,9 @@ gdbpy_version, _ = run_gdb("--eval-command=python import sys; print(sys.version_
 if not gdbpy_version:
     raise unittest.SkipTest("gdb not built with embedded python support")
 
+if "major=2" in gdbpy_version:
+    raise unittest.SkipTest("gdb built with Python 2")
+
 # Verify that "gdb" can load our custom hooks, as OS security settings may
 # disallow this without a customized .gdbinit.
 _, gdbpy_errors = run_gdb('--args', sys.executable)
@@ -145,7 +148,8 @@ class DebuggerTests(unittest.TestCase):
     def get_stack_trace(self, source=None, script=None,
                         breakpoint=BREAKPOINT_FN,
                         cmds_after_breakpoint=None,
-                        import_site=False):
+                        import_site=False,
+                        ignore_stderr=False):
         '''
         Run 'python -c SOURCE' under gdb with a breakpoint.
 
@@ -224,8 +228,9 @@ class DebuggerTests(unittest.TestCase):
         # Use "args" to invoke gdb, capturing stdout, stderr:
         out, err = run_gdb(*args, PYTHONHASHSEED=PYTHONHASHSEED)
 
-        for line in err.splitlines():
-            print(line, file=sys.stderr)
+        if not ignore_stderr:
+            for line in err.splitlines():
+                print(line, file=sys.stderr)
 
         # bpo-34007: Sometimes some versions of the shared libraries that
         # are part of the traceback are compiled in optimised mode and the
@@ -566,7 +571,7 @@ id(foo)''')
         #  http://bugs.python.org/issue8032#msg100537 )
         gdb_repr, gdb_output = self.get_gdb_repr('id(__builtins__.help)', import_site=True)
 
-        m = re.match(r'<_Helper at remote 0x-?[0-9a-f]+>', gdb_repr)
+        m = re.match(r'<_Helper\(\) at remote 0x-?[0-9a-f]+>', gdb_repr)
         self.assertTrue(m,
                         msg='Unexpected rendering %r' % gdb_repr)
 
@@ -722,18 +727,36 @@ class PyListTests(DebuggerTests):
                            '   3    def foo(a, b, c):\n',
                            bt)
 
+SAMPLE_WITH_C_CALL = """
+
+from _testcapi import pyobject_fastcall
+
+def foo(a, b, c):
+    bar(a, b, c)
+
+def bar(a, b, c):
+    pyobject_fastcall(baz, (a, b, c))
+
+def baz(*args):
+    id(42)
+
+foo(1, 2, 3)
+
+"""
+
+
 class StackNavigationTests(DebuggerTests):
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
     @unittest.skipIf(python_is_optimized(),
                      "Python was compiled with optimizations")
     def test_pyup_command(self):
         'Verify that the "py-up" command works'
-        bt = self.get_stack_trace(script=self.get_sample_script(),
+        bt = self.get_stack_trace(source=SAMPLE_WITH_C_CALL,
                                   cmds_after_breakpoint=['py-up', 'py-up'])
         self.assertMultilineMatches(bt,
                                     r'''^.*
-#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
-    baz\(a, b, c\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file <string>, line 12, in baz \(args=\(1, 2, 3\)\)
+#[0-9]+ <built-in method pyobject_fastcall of module object at remote 0x[0-9a-f]+>
 $''')
 
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
@@ -757,14 +780,13 @@ $''')
                      "Python was compiled with optimizations")
     def test_up_then_down(self):
         'Verify "py-up" followed by "py-down"'
-        bt = self.get_stack_trace(script=self.get_sample_script(),
+        bt = self.get_stack_trace(source=SAMPLE_WITH_C_CALL,
                                   cmds_after_breakpoint=['py-up', 'py-up', 'py-down'])
         self.assertMultilineMatches(bt,
                                     r'''^.*
-#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
-    baz\(a, b, c\)
-#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 10, in baz \(args=\(1, 2, 3\)\)
-    id\(42\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file <string>, line 12, in baz \(args=\(1, 2, 3\)\)
+#[0-9]+ <built-in method pyobject_fastcall of module object at remote 0x[0-9a-f]+>
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file <string>, line 12, in baz \(args=\(1, 2, 3\)\)
 $''')
 
 class PyBtTests(DebuggerTests):
@@ -783,7 +805,7 @@ Traceback \(most recent call first\):
   File ".*gdb_sample.py", line 7, in bar
     baz\(a, b, c\)
   File ".*gdb_sample.py", line 4, in foo
-    bar\(a, b, c\)
+    bar\(a=a, b=b, c=c\)
   File ".*gdb_sample.py", line 12, in <module>
     foo\(1, 2, 3\)
 ''')
@@ -799,11 +821,13 @@ Traceback \(most recent call first\):
 #[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
     baz\(a, b, c\)
 #[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 4, in foo \(a=1, b=2, c=3\)
-    bar\(a, b, c\)
+    bar\(a=a, b=b, c=c\)
 #[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 12, in <module> \(\)
     foo\(1, 2, 3\)
 ''')
 
+    @unittest.skipIf(python_is_optimized(),
+                     "Python was compiled with optimizations")
     def test_threads(self):
         'Verify that "py-bt" indicates threads that are waiting for the GIL'
         cmd = '''
@@ -876,15 +900,19 @@ id(42)
     # to suppress these. See also the comment in DebuggerTests.get_stack_trace
     def test_pycfunction(self):
         'Verify that "py-bt" displays invocations of PyCFunction instances'
+        # bpo-46600: If the compiler inlines _null_to_none() in meth_varargs()
+        # (ex: clang -Og), _null_to_none() is the frame #1. Otherwise,
+        # meth_varargs() is the frame #1.
+        expected_frame = r'#(1|2)'
         # Various optimizations multiply the code paths by which these are
         # called, so test a variety of calling conventions.
-        for func_name, args, expected_frame in (
-            ('meth_varargs', '', 1),
-            ('meth_varargs_keywords', '', 1),
-            ('meth_o', '[]', 1),
-            ('meth_noargs', '', 1),
-            ('meth_fastcall', '', 1),
-            ('meth_fastcall_keywords', '', 1),
+        for func_name, args in (
+            ('meth_varargs', ''),
+            ('meth_varargs_keywords', ''),
+            ('meth_o', '[]'),
+            ('meth_noargs', ''),
+            ('meth_fastcall', ''),
+            ('meth_fastcall_keywords', ''),
         ):
             for obj in (
                 '_testcapi',
@@ -909,6 +937,9 @@ id(42)
                         cmd,
                         breakpoint=func_name,
                         cmds_after_breakpoint=['bt', 'py-bt'],
+                        # bpo-45207: Ignore 'Function "meth_varargs" not
+                        # defined.' message in stderr.
+                        ignore_stderr=True,
                     )
                     self.assertIn(f'<built-in method {func_name}', gdb_output)
 
@@ -917,11 +948,13 @@ id(42)
                         cmd,
                         breakpoint=func_name,
                         cmds_after_breakpoint=['py-bt-full'],
+                        # bpo-45207: Ignore 'Function "meth_varargs" not
+                        # defined.' message in stderr.
+                        ignore_stderr=True,
                     )
-                    self.assertIn(
-                        f'#{expected_frame} <built-in method {func_name}',
-                        gdb_output,
-                    )
+                    regex = expected_frame
+                    regex += re.escape(f' <built-in method {func_name}')
+                    self.assertRegex(gdb_output, regex)
 
     @unittest.skipIf(python_is_optimized(),
                      "Python was compiled with optimizations")
@@ -948,13 +981,12 @@ id(42)
         self.assertRegex(gdb_output,
                          r"<method-wrapper u?'__init__' of MyList object at ")
 
-
 class PyPrintTests(DebuggerTests):
     @unittest.skipIf(python_is_optimized(),
                      "Python was compiled with optimizations")
     def test_basic_command(self):
         'Verify that the "py-print" command works'
-        bt = self.get_stack_trace(script=self.get_sample_script(),
+        bt = self.get_stack_trace(source=SAMPLE_WITH_C_CALL,
                                   cmds_after_breakpoint=['py-up', 'py-print args'])
         self.assertMultilineMatches(bt,
                                     r".*\nlocal 'args' = \(1, 2, 3\)\n.*")
@@ -963,7 +995,7 @@ class PyPrintTests(DebuggerTests):
                      "Python was compiled with optimizations")
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
     def test_print_after_up(self):
-        bt = self.get_stack_trace(script=self.get_sample_script(),
+        bt = self.get_stack_trace(source=SAMPLE_WITH_C_CALL,
                                   cmds_after_breakpoint=['py-up', 'py-up', 'py-print c', 'py-print b', 'py-print a'])
         self.assertMultilineMatches(bt,
                                     r".*\nlocal 'c' = 3\nlocal 'b' = 2\nlocal 'a' = 1\n.*")
@@ -1000,7 +1032,13 @@ class PyLocalsTests(DebuggerTests):
         bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-up', 'py-up', 'py-locals'])
         self.assertMultilineMatches(bt,
-                                    r".*\na = 1\nb = 2\nc = 3\n.*")
+                                    r'''^.*
+Locals for foo
+a = 1
+b = 2
+c = 3
+Locals for <module>
+.*$''')
 
 
 def setUpModule():

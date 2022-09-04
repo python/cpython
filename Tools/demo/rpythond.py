@@ -5,7 +5,7 @@ Remote python server.
 Execute Python commands remotely and send output back.
 
 WARNING: This version has a gaping security hole -- it accepts requests
-from any host on the Internet!
+from any host on the internet!
 """
 
 import sys

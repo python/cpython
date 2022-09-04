@@ -19,8 +19,7 @@ class Test_OSXSupport(unittest.TestCase):
         self.maxDiff = None
         self.prog_name = 'bogus_program_xxxx'
         self.temp_path_dir = os.path.abspath(os.getcwd())
-        self.env = os_helper.EnvironmentVarGuard()
-        self.addCleanup(self.env.__exit__)
+        self.env = self.enterContext(os_helper.EnvironmentVarGuard())
         for cv in ('CFLAGS', 'LDFLAGS', 'CPPFLAGS',
                             'BASECFLAGS', 'BLDSHARED', 'LDSHARED', 'CC',
                             'CXX', 'PY_CFLAGS', 'PY_LDFLAGS', 'PY_CPPFLAGS',
