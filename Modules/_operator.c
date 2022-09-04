@@ -839,7 +839,7 @@ _operator__compare_digest_impl(PyObject *module, PyObject *a, PyObject *b)
                     PyUnicode_GET_LENGTH(a),
                     PyUnicode_GET_LENGTH(b));
     }
-    /* fallback to buffer interface for bytes, bytesarray and other */
+    /* fallback to buffer interface for bytes, bytearray and other */
     else {
         Py_buffer view_a;
         Py_buffer view_b;
@@ -1752,16 +1752,11 @@ methodcaller_reduce(methodcallerobject *mc, PyObject *Py_UNUSED(ignored))
         return Py_BuildValue("ON", Py_TYPE(mc), newargs);
     }
     else {
-        PyObject *functools;
         PyObject *partial;
         PyObject *constructor;
         PyObject *newargs[2];
 
-        functools = PyImport_ImportModule("functools");
-        if (!functools)
-            return NULL;
-        partial = PyObject_GetAttr(functools, &_Py_ID(partial));
-        Py_DECREF(functools);
+        partial = _PyImport_GetModuleAttrString("functools", "partial");
         if (!partial)
             return NULL;
 

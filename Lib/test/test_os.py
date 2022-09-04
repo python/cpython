@@ -186,6 +186,9 @@ class FileTests(unittest.TestCase):
     @unittest.skipIf(
         support.is_emscripten, "Test is unstable under Emscripten."
     )
+    @unittest.skipIf(
+        support.is_wasi, "WASI does not support dup."
+    )
     def test_closerange(self):
         first = os.open(os_helper.TESTFN, os.O_CREAT|os.O_RDWR)
         # We must allocate two consecutive file descriptors, otherwise
@@ -1588,7 +1591,10 @@ class MakedirTests(unittest.TestCase):
                             'dir5', 'dir6')
         os.makedirs(path)
 
-    @unittest.skipIf(support.is_emscripten, "Emscripten's umask is a stub.")
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "Emscripten's/WASI's umask is a stub."
+    )
     def test_mode(self):
         with os_helper.temp_umask(0o002):
             base = os_helper.TESTFN
@@ -1601,6 +1607,10 @@ class MakedirTests(unittest.TestCase):
                 self.assertEqual(os.stat(path).st_mode & 0o777, 0o555)
                 self.assertEqual(os.stat(parent).st_mode & 0o777, 0o775)
 
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "Emscripten's/WASI's umask is a stub."
+    )
     def test_exist_ok_existing_directory(self):
         path = os.path.join(os_helper.TESTFN, 'dir1')
         mode = 0o777
@@ -1615,6 +1625,10 @@ class MakedirTests(unittest.TestCase):
         # Issue #25583: A drive root could raise PermissionError on Windows
         os.makedirs(os.path.abspath('/'), exist_ok=True)
 
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "Emscripten's/WASI's umask is a stub."
+    )
     def test_exist_ok_s_isgid_directory(self):
         path = os.path.join(os_helper.TESTFN, 'dir1')
         S_ISGID = stat.S_ISGID
@@ -1664,7 +1678,7 @@ class MakedirTests(unittest.TestCase):
         os.removedirs(path)
 
 
-@unittest.skipUnless(hasattr(os, 'chown'), "Test needs chown")
+@os_helper.skip_unless_working_chmod
 class ChownFileTests(unittest.TestCase):
 
     @classmethod
@@ -3651,6 +3665,19 @@ class TermsizeTests(unittest.TestCase):
             raise
         self.assertEqual(expected, actual)
 
+    @unittest.skipUnless(sys.platform == 'win32', 'Windows specific test')
+    def test_windows_fd(self):
+        """Check if get_terminal_size() returns a meaningful value in Windows"""
+        try:
+            conout = open('conout$', 'w')
+        except OSError:
+            self.skipTest('failed to open conout$')
+        with conout:
+            size = os.get_terminal_size(conout.fileno())
+
+        self.assertGreaterEqual(size.columns, 0)
+        self.assertGreaterEqual(size.lines, 0)
+
 
 @unittest.skipUnless(hasattr(os, 'memfd_create'), 'requires os.memfd_create')
 @support.requires_linux_version(3, 17)
@@ -3778,7 +3805,6 @@ class OSErrorTests(unittest.TestCase):
     def test_oserror_filename(self):
         funcs = [
             (self.filenames, os.chdir,),
-            (self.filenames, os.chmod, 0o777),
             (self.filenames, os.lstat,),
             (self.filenames, os.open, os.O_RDONLY),
             (self.filenames, os.rmdir,),
@@ -3799,6 +3825,8 @@ class OSErrorTests(unittest.TestCase):
                 (self.filenames, os.rename, "dst"),
                 (self.filenames, os.replace, "dst"),
             ))
+        if os_helper.can_chmod():
+            funcs.append((self.filenames, os.chmod, 0o777))
         if hasattr(os, "chown"):
             funcs.append((self.filenames, os.chown, 0, 0))
         if hasattr(os, "lchown"):
@@ -3987,7 +4015,7 @@ class PathTConverterTests(unittest.TestCase):
         ('access', False, (os.F_OK,), None),
         ('chflags', False, (0,), None),
         ('lchflags', False, (0,), None),
-        ('open', False, (0,), getattr(os, 'close', None)),
+        ('open', False, (os.O_RDONLY,), getattr(os, 'close', None)),
     ]
 
     def test_path_t_converter(self):
@@ -4359,6 +4387,7 @@ class TestScandir(unittest.TestCase):
                     st = os.stat(entry.name, dir_fd=fd, follow_symlinks=False)
                     self.assertEqual(entry.stat(follow_symlinks=False), st)
 
+    @unittest.skipIf(support.is_wasi, "WASI maps '' to cwd")
     def test_empty_path(self):
         self.assertRaises(FileNotFoundError, os.scandir, '')
 

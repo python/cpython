@@ -2008,6 +2008,8 @@ Changes in the Python API
   ``replace()`` method of :class:`types.CodeType` can be used to make the code
   future-proof.
 
+* The parameter ``digestmod`` for :func:`hmac.new` no longer uses the MD5 digest
+  by default.
 
 Changes in the C API
 --------------------
