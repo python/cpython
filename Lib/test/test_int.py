@@ -651,10 +651,13 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         self.assertGreater(seconds_to_convert, 0.02,
                            msg="'We're gonna need a bigger boat (int).'")
 
-        with self.assertRaises(ValueError) as err:
-            start = process_time()
-            str(huge_int)
-        seconds_to_fail_huge = process_time() - start
+        # We test with the limit almost at the size needed to check performance.
+        # The performant limit check is slightly fuzzy, give it a some room.
+        with support.adjust_int_max_str_digits(int(.995 * 120_412)):
+            with self.assertRaises(ValueError) as err:
+                start = process_time()
+                str(huge_int)
+            seconds_to_fail_huge = process_time() - start
         self.assertIn('conversion', str(err.exception))
         self.assertLess(seconds_to_fail_huge, seconds_to_convert/8)
 
@@ -686,10 +689,11 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         self.assertGreater(seconds_to_convert, 0.02,
                            msg="'We're gonna need a bigger boat (str).'")
 
-        with self.assertRaises(ValueError) as err:
-            start = process_time()
-            int(huge)
-        seconds_to_fail_huge = process_time() - start
+        with support.adjust_int_max_str_digits(200_000 - 1):
+            with self.assertRaises(ValueError) as err:
+                start = process_time()
+                int(huge)
+            seconds_to_fail_huge = process_time() - start
         self.assertIn('conversion', str(err.exception))
         self.assertLess(seconds_to_fail_huge, seconds_to_convert/8)
 
