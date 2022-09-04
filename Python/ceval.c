@@ -737,6 +737,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 #else
 static inline PyObject *
 GETITEM(PyObject *v, Py_ssize_t i) {
+    assert(PyTuple_Check(v));
     assert(i >= 0);
     assert(i < PyTuple_GET_SIZE(v));
     return PyTuple_GET_ITEM(v, i);
