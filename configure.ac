@@ -2,7 +2,7 @@ dnl ***************************************************
 dnl * Please run autoreconf -if to test your changes! *
 dnl ***************************************************
 dnl
-dnl Python's configure script requires autoconf 2.69 and autoconf-archive.
+dnl Python's configure.ac file requires autoconf 2.69 and autoconf-archive.
 dnl
 
 # Set VERSION so we only need to edit in one place (i.e., here)
@@ -10,7 +10,7 @@ m4_define(PYTHON_VERSION, 3.12)
 
 AC_PREREQ([2.69])
 
-AC_INIT([python],[PYTHON_VERSION],[https://bugs.python.org/])
+AC_INIT([python],[PYTHON_VERSION],[https://github.com/python/cpython/issues/])
 
 m4_ifdef(
     [AX_C_FLOAT_WORDS_BIGENDIAN],
@@ -3452,6 +3452,26 @@ case "$ac_sys_system" in
 esac
 AC_MSG_RESULT($SHLIBS)
 
+dnl perf trampoline is Linux specific and requires an arch-specific
+dnl trampoline in asssembly.
+AC_MSG_CHECKING([perf trampoline])
+AS_CASE([$PLATFORM_TRIPLET],
+  [x86_64-linux-gnu], [perf_trampoline=yes],
+  [aarch64-linux-gnu], [perf_trampoline=yes],
+  [perf_trampoline=no]
+)
+AC_MSG_RESULT([$perf_trampoline])
+
+AS_VAR_IF([perf_trampoline], [yes], [
+  AC_DEFINE([PY_HAVE_PERF_TRAMPOLINE], [1], [Define to 1 if you have the perf trampoline.])
+  PERF_TRAMPOLINE_OBJ=Objects/asm_trampoline.o
+
+  dnl perf needs frame pointers for unwinding, include compiler option in debug builds
+  AS_VAR_IF([Py_DEBUG], [true], [
+    AS_VAR_APPEND([BASECFLAGS], [" -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer"])
+  ])
+])
+AC_SUBST([PERF_TRAMPOLINE_OBJ])
 
 # checks for libraries
 AC_CHECK_LIB(sendfile, sendfile)
@@ -5582,7 +5602,7 @@ AS_VAR_IF([ac_cv_gcc_asm_for_mc68881], [yes], [
 # rounding issues.  The result of this test has little meaning on non
 # IEEE 754 platforms.  On IEEE 754, test should return 1 if rounding
 # mode is round-to-nearest and double rounding issues are present, and
-# 0 otherwise.  See http://bugs.python.org/issue2937 for more info.
+# 0 otherwise.  See https://github.com/python/cpython/issues/47186 for more info.
 AC_CACHE_CHECK([for x87-style double rounding], [ac_cv_x87_double_rounding], [
 # $BASECFLAGS may affect the result
 ac_save_cc="$CC"
@@ -6309,7 +6329,7 @@ dnl TODO: detect "curses" and special cases tinfo, terminfo, or termcap
 
 AC_MSG_CHECKING([curses module flags])
 AS_VAR_IF([have_curses], [no], [
-  AC_MSG_RESULT([no])  
+  AC_MSG_RESULT([no])
 ], [
   AC_MSG_RESULT([$have_curses (CFLAGS: $CURSES_CFLAGS, LIBS: $CURSES_LIBS)])
 ])
@@ -6357,7 +6377,7 @@ PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
 AC_MSG_CHECKING([panel flags])
 AS_VAR_IF([have_panel], [no], [
-  AC_MSG_RESULT([no])  
+  AC_MSG_RESULT([no])
 ], [
   AC_MSG_RESULT([$have_panel (CFLAGS: $PANEL_CFLAGS, LIBS: $PANEL_LIBS)])
 ])

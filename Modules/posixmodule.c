@@ -606,6 +606,11 @@ PyOS_AfterFork_Child(void)
     }
     assert(_PyThreadState_GET() == tstate);
 
+    status = _PyPerfTrampoline_AfterFork_Child();
+    if (_PyStatus_EXCEPTION(status)) {
+        goto fatal_error;
+    }
+
     run_at_forkers(tstate->interp->after_forkers_child, 0);
     return;
 

@@ -1507,6 +1507,27 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
 }
 
 static PyObject *
+make_somezreplacement(PyObject *object, char *sep, PyObject *tzinfoarg)
+{
+    char buf[100];
+    PyObject *tzinfo = get_tzinfo_member(object);
+
+    if (tzinfo == Py_None || tzinfo == NULL) {
+        return PyBytes_FromStringAndSize(NULL, 0);
+    }
+   
+    assert(tzinfoarg != NULL);
+    if (format_utcoffset(buf,
+                         sizeof(buf),
+                         sep,
+                         tzinfo,
+                         tzinfoarg) < 0)
+        return NULL;
+        
+    return PyBytes_FromStringAndSize(buf, strlen(buf));
+}
+
+static PyObject *
 make_Zreplacement(PyObject *object, PyObject *tzinfoarg)
 {
     PyObject *temp;
@@ -1566,7 +1587,7 @@ make_freplacement(PyObject *object)
 
 /* I sure don't want to reproduce the strftime code from the time module,
  * so this imports the module and calls it.  All the hair is due to
- * giving special meanings to the %z, %Z and %f format codes via a
+ * giving special meanings to the %z, %:z, %Z and %f format codes via a
  * preprocessing step on the format string.
  * tzinfoarg is the argument to pass to the object's tzinfo method, if
  * needed.
@@ -1578,6 +1599,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     PyObject *result = NULL;            /* guilty until proved innocent */
 
     PyObject *zreplacement = NULL;      /* py string, replacement for %z */
+    PyObject *colonzreplacement = NULL; /* py string, replacement for %:z */
     PyObject *Zreplacement = NULL;      /* py string, replacement for %Z */
     PyObject *freplacement = NULL;      /* py string, replacement for %f */
 
@@ -1632,31 +1654,28 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         }
         /* A % has been seen and ch is the character after it. */
         else if (ch == 'z') {
+            /* %z -> +HHMM */
             if (zreplacement == NULL) {
-                /* format utcoffset */
-                char buf[100];
-                PyObject *tzinfo = get_tzinfo_member(object);
-                zreplacement = PyBytes_FromStringAndSize("", 0);
-                if (zreplacement == NULL) goto Done;
-                if (tzinfo != Py_None && tzinfo != NULL) {
-                    assert(tzinfoarg != NULL);
-                    if (format_utcoffset(buf,
-                                         sizeof(buf),
-                                         "",
-                                         tzinfo,
-                                         tzinfoarg) < 0)
-                        goto Done;
-                    Py_DECREF(zreplacement);
-                    zreplacement =
-                      PyBytes_FromStringAndSize(buf,
-                                               strlen(buf));
-                    if (zreplacement == NULL)
-                        goto Done;
-                }
+                zreplacement = make_somezreplacement(object, "", tzinfoarg);
+                if (zreplacement == NULL)
+                    goto Done;
             }
             assert(zreplacement != NULL);
+            assert(PyBytes_Check(zreplacement));
             ptoappend = PyBytes_AS_STRING(zreplacement);
             ntoappend = PyBytes_GET_SIZE(zreplacement);
+        }
+        else if (ch == ':' && *pin == 'z' && pin++) {
+            /* %:z -> +HH:MM */
+            if (colonzreplacement == NULL) {
+                colonzreplacement = make_somezreplacement(object, ":", tzinfoarg);
+                if (colonzreplacement == NULL)
+                    goto Done;
+            }
+            assert(colonzreplacement != NULL);
+            assert(PyBytes_Check(colonzreplacement));
+            ptoappend = PyBytes_AS_STRING(colonzreplacement);
+            ntoappend = PyBytes_GET_SIZE(colonzreplacement);
         }
         else if (ch == 'Z') {
             /* format tzname */
@@ -1686,7 +1705,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             ntoappend = PyBytes_GET_SIZE(freplacement);
         }
         else {
-            /* percent followed by neither z nor Z */
+            /* percent followed by something else */
             ptoappend = pin - 2;
             ntoappend = 2;
         }
@@ -1733,6 +1752,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
  Done:
     Py_XDECREF(freplacement);
     Py_XDECREF(zreplacement);
+    Py_XDECREF(colonzreplacement);
     Py_XDECREF(Zreplacement);
     Py_XDECREF(newfmt);
     return result;

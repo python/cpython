@@ -96,7 +96,7 @@ Quick Reference
    |                                                |                                   | __gt__,           |   |   |   |   |
    |                                                |                                   | __ge__            |   |   |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_weaklistoffset`    | :c:type:`Py_ssize_t`              |                   |   | X |   | ? |
+   | (:c:member:`~PyTypeObject.tp_weaklistoffset`)  | :c:type:`Py_ssize_t`              |                   |   | X |   | ? |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_iter`              | :c:type:`getiterfunc`             | __iter__          |   |   |   | X |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
@@ -117,7 +117,7 @@ Quick Reference
    | :c:member:`~PyTypeObject.tp_descr_set`         | :c:type:`descrsetfunc`            | __set__,          |   |   |   | X |
    |                                                |                                   | __delete__        |   |   |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_dictoffset`        | :c:type:`Py_ssize_t`              |                   |   | X |   | ? |
+   | (:c:member:`~PyTypeObject.tp_dictoffset`)      | :c:type:`Py_ssize_t`              |                   |   | X |   | ? |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_init`              | :c:type:`initproc`                | __init__          | X | X |   | X |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
@@ -1018,7 +1018,6 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    :const:`Py_TPFLAGS_HAVE_GC` flag bit is clear in the subtype and the
    :c:member:`~PyTypeObject.tp_traverse` and :c:member:`~PyTypeObject.tp_clear` fields in the subtype exist and have
    ``NULL`` values.
-
    .. XXX are most flag bits *really* inherited individually?
 
    **Default:**
@@ -1134,6 +1133,33 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       This flag is never inherited by types without the
       :const:`Py_TPFLAGS_IMMUTABLETYPE` flag set.  For extension types, it is
       inherited whenever :c:member:`~PyTypeObject.tp_descr_get` is inherited.
+
+    .. data:: Py_TPFLAGS_MANAGED_DICT
+
+       This bit indicates that instances of the class have a ``__dict___``
+       attribute, and that the space for the dictionary is managed by the VM.
+
+       If this flag is set, :const:`Py_TPFLAGS_HAVE_GC` should also be set.
+
+       .. versionadded:: 3.12
+
+      **Inheritance:**
+
+      This flag is inherited unless the
+      :c:member:`~PyTypeObject.tp_dictoffset` field is set in a superclass.
+
+
+    .. data:: Py_TPFLAGS_MANAGED_WEAKREF
+
+       This bit indicates that instances of the class should be weakly
+       referenceable.
+
+       .. versionadded:: 3.12
+
+      **Inheritance:**
+
+      This flag is inherited unless the
+      :c:member:`~PyTypeObject.tp_weaklistoffset` field is set in a superclass.
 
 
    .. XXX Document more flags here?
@@ -1487,6 +1513,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: Py_ssize_t PyTypeObject.tp_weaklistoffset
 
+   While this field is still supported, :const:`Py_TPFLAGS_MANAGED_WEAKREF`
+   should be used instead, if at all possible.
+
    If the instances of this type are weakly referenceable, this field is greater
    than zero and contains the offset in the instance structure of the weak
    reference list head (ignoring the GC header, if present); this offset is used by
@@ -1497,6 +1526,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    Do not confuse this field with :c:member:`~PyTypeObject.tp_weaklist`; that is the list head for
    weak references to the type object itself.
 
+   It is an error to set both the :const:`Py_TPFLAGS_MANAGED_WEAKREF` bit and
+   :c:member:`~PyTypeObject.tp_weaklist`.
+
    **Inheritance:**
 
    This field is inherited by subtypes, but see the rules listed below. A subtype
@@ -1504,19 +1536,12 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    reference list head than the base type.  Since the list head is always found via
    :c:member:`~PyTypeObject.tp_weaklistoffset`, this should not be a problem.
 
-   When a type defined by a class statement has no :attr:`~object.__slots__` declaration,
-   and none of its base types are weakly referenceable, the type is made weakly
-   referenceable by adding a weak reference list head slot to the instance layout
-   and setting the :c:member:`~PyTypeObject.tp_weaklistoffset` of that slot's offset.
+   **Default:**
 
-   When a type's :attr:`__slots__` declaration contains a slot named
-   :attr:`__weakref__`, that slot becomes the weak reference list head for
-   instances of the type, and the slot's offset is stored in the type's
-   :c:member:`~PyTypeObject.tp_weaklistoffset`.
-
-   When a type's :attr:`__slots__` declaration does not contain a slot named
-   :attr:`__weakref__`, the type inherits its :c:member:`~PyTypeObject.tp_weaklistoffset` from its
-   base type.
+   If the :const:`Py_TPFLAGS_MANAGED_WEAKREF` bit is set in the
+   :c:member:`~PyTypeObject.tp_dict` field, then
+   :c:member:`~PyTypeObject.tp_weaklistoffset` will be set to a negative value,
+   to indicate that it is unsafe to use this field.
 
 
 .. c:member:: getiterfunc PyTypeObject.tp_iter
@@ -1695,6 +1720,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: Py_ssize_t PyTypeObject.tp_dictoffset
 
+   While this field is still supported, :const:`Py_TPFLAGS_MANAGED_DICT` should be
+   used instead, if at all possible.
+
    If the instances of this type have a dictionary containing instance variables,
    this field is non-zero and contains the offset in the instances of the type of
    the instance variable dictionary; this offset is used by
@@ -1703,17 +1731,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    Do not confuse this field with :c:member:`~PyTypeObject.tp_dict`; that is the dictionary for
    attributes of the type object itself.
 
-   If the value of this field is greater than zero, it specifies the offset from
-   the start of the instance structure.  If the value is less than zero, it
-   specifies the offset from the *end* of the instance structure.  A negative
-   offset is more expensive to use, and should only be used when the instance
-   structure contains a variable-length part.  This is used for example to add an
-   instance variable dictionary to subtypes of :class:`str` or :class:`tuple`. Note
-   that the :c:member:`~PyTypeObject.tp_basicsize` field should account for the dictionary added to
-   the end in that case, even though the dictionary is not included in the basic
-   object layout.  On a system with a pointer size of 4 bytes,
-   :c:member:`~PyTypeObject.tp_dictoffset` should be set to ``-4`` to indicate that the dictionary is
-   at the very end of the structure.
+   The value specifies the offset of the dictionary from the start of the instance structure.
 
    The :c:member:`~PyTypeObject.tp_dictoffset` should be regarded as write-only.
    To get the pointer to the dictionary call :c:func:`PyObject_GenericGetDict`.
@@ -1721,29 +1739,25 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    dictionary, so it is may be more efficient to call :c:func:`PyObject_GetAttr`
    when accessing an attribute on the object.
 
+   It is an error to set both the :const:`Py_TPFLAGS_MANAGED_WEAKREF` bit and
+   :c:member:`~PyTypeObject.tp_dictoffset`.
+
    **Inheritance:**
 
-   This field is inherited by subtypes, but see the rules listed below. A subtype
-   may override this offset; this means that the subtype instances store the
-   dictionary at a difference offset than the base type.  Since the dictionary is
-   always found via :c:member:`~PyTypeObject.tp_dictoffset`, this should not be a problem.
-
-   When a type defined by a class statement has no :attr:`~object.__slots__` declaration,
-   and none of its base types has an instance variable dictionary, a dictionary
-   slot is added to the instance layout and the :c:member:`~PyTypeObject.tp_dictoffset` is set to
-   that slot's offset.
-
-   When a type defined by a class statement has a :attr:`__slots__` declaration,
-   the type inherits its :c:member:`~PyTypeObject.tp_dictoffset` from its base type.
-
-   (Adding a slot named :attr:`~object.__dict__` to the :attr:`__slots__` declaration does
-   not have the expected effect, it just causes confusion.  Maybe this should be
-   added as a feature just like :attr:`__weakref__` though.)
+   This field is inherited by subtypes. A subtype should not override this offset;
+   doing so could be unsafe, if C code tries to access the dictionary at the
+   previous offset.
+   To properly support inheritance, use :const:`Py_TPFLAGS_MANAGED_DICT`.
 
    **Default:**
 
    This slot has no default.  For :ref:`static types <static-types>`, if the
    field is ``NULL`` then no :attr:`__dict__` gets created for instances.
+
+   If the :const:`Py_TPFLAGS_MANAGED_DICT` bit is set in the
+   :c:member:`~PyTypeObject.tp_dict` field, then
+   :c:member:`~PyTypeObject.tp_dictoffset` will be set to ``-1``, to indicate
+   that it is unsafe to use this field.
 
 
 .. c:member:: initproc PyTypeObject.tp_init
@@ -2005,9 +2019,6 @@ and :c:type:`PyType_Type` effectively act as defaults.)
           PyErr_Restore(error_type, error_value, error_traceback);
       }
 
-   For this field to be taken into account (even through inheritance),
-   you must also set the :const:`Py_TPFLAGS_HAVE_FINALIZE` flags bit.
-
    Also, note that, in a garbage collected Python,
    :c:member:`~PyTypeObject.tp_dealloc` may be called from
    any Python thread, not just the thread which created the object (if the object
@@ -2024,6 +2035,12 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    This field is inherited by subtypes.
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.8
+
+      Before version 3.8 it was necessary to set the
+      :const:`Py_TPFLAGS_HAVE_FINALIZE` flags bit in order for this field to be
+      used.  This is no longer required.
 
    .. seealso:: "Safe object finalization" (:pep:`442`)
 
@@ -2660,8 +2677,6 @@ A type that supports weakrefs, instance dicts, and hashing::
    typedef struct {
        PyObject_HEAD
        const char *data;
-       PyObject *inst_dict;
-       PyObject *weakreflist;
    } MyObject;
 
    static PyTypeObject MyObject_Type = {
@@ -2669,9 +2684,9 @@ A type that supports weakrefs, instance dicts, and hashing::
        .tp_name = "mymod.MyObject",
        .tp_basicsize = sizeof(MyObject),
        .tp_doc = PyDoc_STR("My objects"),
-       .tp_weaklistoffset = offsetof(MyObject, weakreflist),
-       .tp_dictoffset = offsetof(MyObject, inst_dict),
-       .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+       .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+            Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_MANAGED_DICT |
+            Py_TPFLAGS_MANAGED_WEAKREF,
        .tp_new = myobj_new,
        .tp_traverse = (traverseproc)myobj_traverse,
        .tp_clear = (inquiry)myobj_clear,
