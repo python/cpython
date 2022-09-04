@@ -15184,23 +15184,6 @@ _PyUnicode_FiniTypes(PyInterpreterState *interp)
 }
 
 
-static void unicode_static_dealloc(PyObject *op)
-{
-    PyASCIIObject *ascii = _PyASCIIObject_CAST(op);
-
-    assert(ascii->state.compact);
-
-    if (!ascii->state.ascii) {
-        PyCompactUnicodeObject* compact = (PyCompactUnicodeObject*)op;
-        if (compact->utf8) {
-            PyObject_Free(compact->utf8);
-            compact->utf8 = NULL;
-            compact->utf8_length = 0;
-        }
-    }
-}
-
-
 void
 _PyUnicode_Fini(PyInterpreterState *interp)
 {
@@ -15217,23 +15200,7 @@ _PyUnicode_Fini(PyInterpreterState *interp)
     _PyUnicode_FiniEncodings(&state->fs_codec);
 
     unicode_clear_identifiers(state);
-
-    // Clear the single character singletons
-    for (int i = 0; i < 128; i++) {
-        unicode_static_dealloc((PyObject*)&_Py_SINGLETON(strings).ascii[i]);
-    }
-    for (int i = 0; i < 128; i++) {
-        unicode_static_dealloc((PyObject*)&_Py_SINGLETON(strings).latin1[i]);
-    }
 }
-
-
-void
-_PyStaticUnicode_Dealloc(PyObject *op)
-{
-    unicode_static_dealloc(op);
-}
-
 
 /* A _string module, to export formatter_parser and formatter_field_name_split
    to the string.Formatter class implemented in Python. */
