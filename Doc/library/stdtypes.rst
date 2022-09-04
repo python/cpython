@@ -5535,7 +5535,7 @@ Verification:
 Affected APIs
 -------------
 
-The limition only applies to potentially slow conversions between :class:`int`
+The limitation only applies to potentially slow conversions between :class:`int`
 and :class:`str` or :class:`bytes`:
 
 * ``int(string)`` with default base 10.
