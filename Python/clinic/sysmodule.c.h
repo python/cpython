@@ -773,7 +773,7 @@ PyDoc_STRVAR(sys_set_int_max_str_digits__doc__,
     {"set_int_max_str_digits", _PyCFunction_CAST(sys_set_int_max_str_digits), METH_FASTCALL|METH_KEYWORDS, sys_set_int_max_str_digits__doc__},
 
 static PyObject *
-sys_set_int_max_str_digits_impl(PyObject *module, int maxdigits);
+sys_set_int_max_str_digits_impl(PyObject *module, long maxdigits);
 
 static PyObject *
 sys_set_int_max_str_digits(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -805,13 +805,13 @@ sys_set_int_max_str_digits(PyObject *module, PyObject *const *args, Py_ssize_t n
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    int maxdigits;
+    long maxdigits;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    maxdigits = _PyLong_AsInt(args[0]);
+    maxdigits = PyLong_AsLong(args[0]);
     if (maxdigits == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1343,4 +1343,4 @@ sys_is_stack_trampoline_active(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=15318cdd96b62b06 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b351d7f0c6fea5be input=a9049054013a1b77]*/

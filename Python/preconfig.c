@@ -559,6 +559,28 @@ _Py_str_to_int(const char *str, int *result)
 }
 
 
+int
+_Py_str_to_int32(const char *str, int32_t *result)
+{
+#if INT32_MAX == INT_MAX && INT32_MIN == INT_MIN
+    return _Py_str_to_int(str, result);
+#else
+    const char *endptr = str;
+    errno = 0;
+    long value = strtol(str, (char **)&endptr, 10);
+    if (*endptr != '\0' || errno == ERANGE) {
+        return -1;
+    }
+    if (value < INT32_MIN || value > INT32_MAX) {
+        return -1;
+    }
+
+    *result = (int32_t)value;
+    return 0;
+#endif
+}
+
+
 void
 _Py_get_env_flag(int use_environment, int *flag, const char *name)
 {

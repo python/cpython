@@ -79,6 +79,9 @@ PyAPI_FUNC(PyStatus) _PyArgv_AsWstrList(const _PyArgv *args,
 PyAPI_FUNC(int) _Py_str_to_int(
     const char *str,
     int *result);
+PyAPI_FUNC(int) _Py_str_to_int32(
+    const char *str,
+    int32_t *result);
 PyAPI_FUNC(const wchar_t*) _Py_get_xoption(
     const PyWideStringList *xoptions,
     const wchar_t *name);

@@ -1630,6 +1630,28 @@ config_wstr_to_int(const wchar_t *wstr, int *result)
 }
 
 
+static int
+config_wstr_to_int32(const wchar_t *wstr, int32_t *result)
+{
+#if INT32_MAX == INT_MAX && INT32_MIN == INT_MIN
+    return config_wstr_to_int(wstr, result);
+#else
+    const wchar_t *endptr = wstr;
+    errno = 0;
+    long value = wcstol(wstr, (wchar_t **)&endptr, 10);
+    if (*endptr != '\0' || errno == ERANGE) {
+        return -1;
+    }
+    if (value < INT32_MIN || value > INT32_MAX) {
+        return -1;
+    }
+
+    *result = (int32_t)value;
+    return 0;
+#endif
+}
+
+
 static PyStatus
 config_read_env_vars(PyConfig *config)
 {
@@ -1778,15 +1800,15 @@ config_init_tracemalloc(PyConfig *config)
 static PyStatus
 config_init_int_max_str_digits(PyConfig *config)
 {
-    int maxdigits;
-    int valid = 0;
+    int32_t maxdigits;
+    bool valid = 0;
 
     /* default to unconfigured, _PyLong_InitTypes() does the rest */
     config->int_max_str_digits = -1;
 
     const char *env = config_get_env(config, "PYTHONINTMAXSTRDIGITS");
     if (env) {
-        if (!_Py_str_to_int(env, &maxdigits)) {
+        if (!_Py_str_to_int32(env, &maxdigits)) {
             valid = ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_STR_DIGITS_THRESHOLD));
         }
         if (!valid) {
@@ -1804,7 +1826,7 @@ config_init_int_max_str_digits(PyConfig *config)
     if (xoption) {
         const wchar_t *sep = wcschr(xoption, L'=');
         if (sep) {
-            if (!config_wstr_to_int(sep + 1, &maxdigits)) {
+            if (!config_wstr_to_int32(sep + 1, &maxdigits)) {
                 valid = ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_STR_DIGITS_THRESHOLD));
             }
         }

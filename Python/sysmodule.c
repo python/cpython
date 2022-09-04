@@ -1684,23 +1684,27 @@ sys_get_int_max_str_digits_impl(PyObject *module)
 /*[clinic end generated code: output=0042f5e8ae0e8631 input=8dab13e2023e60d5]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return PyLong_FromSsize_t(interp->int_max_str_digits);
+    return PyLong_FromLong(interp->int_max_str_digits);
 }
 
 /*[clinic input]
 sys.set_int_max_str_digits
 
-    maxdigits: int
+    maxdigits: long
 
 Set the maximum string digits limit for non-binary int<->str conversions.
 [clinic start generated code]*/
 
 static PyObject *
-sys_set_int_max_str_digits_impl(PyObject *module, int maxdigits)
-/*[clinic end generated code: output=734d4c2511f2a56d input=d7e3f325db6910c5]*/
+sys_set_int_max_str_digits_impl(PyObject *module, long maxdigits)
+/*[clinic end generated code: output=40ea5d33a82c5c44 input=657c61a1822f6bcf]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
     if ((!maxdigits) || (maxdigits >= _PY_LONG_MAX_STR_DIGITS_THRESHOLD)) {
+        if (maxdigits > INT32_MAX) {
+            /* Silently cap to our range; already effectively unlimited. */
+            maxdigits = INT32_MAX;
+        }
         tstate->interp->int_max_str_digits = maxdigits;
         Py_RETURN_NONE;
     } else {
