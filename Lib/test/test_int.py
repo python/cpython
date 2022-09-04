@@ -637,18 +637,22 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         """Regression test: ensure we fail before performing O(N**2) work."""
         maxdigits = sys.get_int_max_str_digits()
         assert maxdigits < 50_000, maxdigits  # A test prerequisite.
-        process_time = time.process_time
+        get_time = time.process_time
+        if get_time() <= 0:  # some platforms like WASM lacks process_time()
+            get_time = time.monotonic
 
         huge_int = int(f'0x{"c"*65_000}', base=16)  # 78268 decimal digits.
         digits = 78_268
         with support.adjust_int_max_str_digits(digits):
-            start = process_time()
+            start = get_time()
             huge_decimal = str(huge_int)
-        seconds_to_convert = process_time() - start
+        seconds_to_convert = get_time() - start
         self.assertEqual(len(huge_decimal), digits)
         # Ensuring that we chose a slow enough conversion to time.
         # Unlikely any CPU core will ever be faster than the assertion.
         # It takes 0.10 seconds on a Zen based cloud VM in an opt build.
+        if seconds_to_convert < 0.005:
+            raise unittest.SkipTest(f'')
         self.assertGreater(seconds_to_convert, 0.005,
                            msg="'We're gonna need a bigger boat (int).'")
 
@@ -656,9 +660,9 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         # The performant limit check is slightly fuzzy, give it a some room.
         with support.adjust_int_max_str_digits(int(.995 * digits)):
             with self.assertRaises(ValueError) as err:
-                start = process_time()
+                start = get_time()
                 str(huge_int)
-            seconds_to_fail_huge = process_time() - start
+            seconds_to_fail_huge = get_time() - start
         self.assertIn('conversion', str(err.exception))
         self.assertLess(seconds_to_fail_huge, seconds_to_convert/8)
 
@@ -666,10 +670,10 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         # in a similarly fast fashion.
         extra_huge_int = int(f'0x{"c"*500_000}', base=16)  # 602060 digits.
         with self.assertRaises(ValueError) as err:
-            start = process_time()
+            start = get_time()
             # If not limited, 8 seconds said Zen based cloud VM.
             str(extra_huge_int)
-        seconds_to_fail_extra_huge = process_time() - start
+        seconds_to_fail_extra_huge = get_time() - start
         self.assertIn('conversion', str(err.exception))
         self.assertLess(seconds_to_fail_extra_huge, seconds_to_convert/8)
 
@@ -677,13 +681,15 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         """Regression test: ensure we fail before performing O(N**2) work."""
         maxdigits = sys.get_int_max_str_digits()
         assert maxdigits < 100_000, maxdigits  # A test prerequisite.
-        process_time = time.process_time
+        get_time = time.process_time
+        if get_time() <= 0:  # some platforms like WASM lacks process_time()
+            get_time = time.monotonic
 
         huge = '8'*200_000
         with support.adjust_int_max_str_digits(200_000):
-            start = process_time()
+            start = get_time()
             int(huge)
-        seconds_to_convert = process_time() - start
+        seconds_to_convert = get_time() - start
         # Ensuring that we chose a slow enough conversion to time.
         # Unlikely any CPU core will ever be faster than the assertion.
         # It takes 0.25 seconds on a Zen based cloud VM in an opt build.
@@ -692,9 +698,9 @@ class IntStrDigitLimitsTests(unittest.TestCase):
 
         with support.adjust_int_max_str_digits(200_000 - 1):
             with self.assertRaises(ValueError) as err:
-                start = process_time()
+                start = get_time()
                 int(huge)
-            seconds_to_fail_huge = process_time() - start
+            seconds_to_fail_huge = get_time() - start
         self.assertIn('conversion', str(err.exception))
         self.assertLess(seconds_to_fail_huge, seconds_to_convert/8)
 
@@ -702,10 +708,10 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         # in a similarly fast fashion.
         extra_huge = '7'*1_200_000
         with self.assertRaises(ValueError) as err:
-            start = process_time()
+            start = get_time()
             # If not limited, 8 seconds said Zen based cloud VM.
             int(extra_huge)
-        seconds_to_fail_extra_huge = process_time() - start
+        seconds_to_fail_extra_huge = get_time() - start
         self.assertIn('conversion', str(err.exception))
         self.assertLess(seconds_to_fail_extra_huge, seconds_to_convert/8)
 
