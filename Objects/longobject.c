@@ -36,7 +36,8 @@ medium_value(PyLongObject *x)
 #define IS_SMALL_INT(ival) (-_PY_NSMALLNEGINTS <= (ival) && (ival) < _PY_NSMALLPOSINTS)
 #define IS_SMALL_UINT(ival) ((ival) < _PY_NSMALLPOSINTS)
 
-#define _MAX_STR_DIGITS_ERROR_FMT "Exceeds the limit (%d) for integer string conversion: value has %zd digits"
+#define _MAX_STR_DIGITS_ERROR_FMT_TO_INT "Exceeds the limit (%d) for integer string conversion: value has %zd digits"
+#define _MAX_STR_DIGITS_ERROR_FMT_TO_STR "Exceeds the limit (%d) for integer string conversion"
 
 static inline void
 _Py_DECREF_INT(PyLongObject *op)
@@ -1758,6 +1759,23 @@ long_to_decimal_string_internal(PyObject *aa,
     size_a = Py_ABS(Py_SIZE(a));
     negative = Py_SIZE(a) < 0;
 
+    /* quick and dirty pre-check for overflowing the decimal digit limit,
+       based on the inequality 10/3 >= log2(10)
+
+       explanation in https://github.com/python/cpython/pull/96537
+    */
+    if (size_a >= 10 * _PY_LONG_MAX_STR_DIGITS_THRESHOLD
+                  / (3 * PyLong_SHIFT) + 2) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        int max_str_digits = interp->int_max_str_digits;
+        if ((max_str_digits > 0) &&
+            (max_str_digits / (3 * PyLong_SHIFT) <= (size_a - 11) / 10)) {
+            PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT_TO_STR,
+                         max_str_digits);
+            return -1;
+        }
+    }
+
     /* quick and dirty upper bound for the number of digits
        required to express a in base _PyLong_DECIMAL_BASE:
 
@@ -1823,8 +1841,8 @@ long_to_decimal_string_internal(PyObject *aa,
         Py_ssize_t strlen_nosign = strlen - negative;
         if ((max_str_digits > 0) && (strlen_nosign > max_str_digits)) {
             Py_DECREF(scratch);
-            PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT,
-                         max_str_digits, strlen_nosign);
+            PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT_TO_STR,
+                         max_str_digits);
             return -1;
         }
     }
@@ -2498,7 +2516,7 @@ digit beyond the first.
             PyInterpreterState *interp = _PyInterpreterState_GET();
             int max_str_digits = interp->int_max_str_digits;
             if ((max_str_digits > 0) && (digits > max_str_digits)) {
-                PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT,
+                PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT_TO_INT,
                              max_str_digits, digits);
                 return NULL;
             }
