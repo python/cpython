@@ -11,4 +11,4 @@ limitation <int_max_str_digits>` documentation.  The default limit is 4300
 digits in string form.
 
 Patch by Gregory P. Smith [Google] and Christian Heimes [Red Hat] with feedback
-from Victor Stinner, Thomas Wouters, Steve Dower, and Ned Deily.
+from Victor Stinner, Thomas Wouters, Steve Dower, Ned Deily, and Mark Dickinson.
