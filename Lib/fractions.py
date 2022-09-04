@@ -26,7 +26,7 @@ _RATIONAL_FORMAT = re.compile(r"""
     (?=\d|\.\d)                           # lookahead for digit or .digit
     (?P<num>\d*|\d+(_\d+)*)               # numerator (possibly empty)
     (?:                                   # followed by
-       (?:/(?P<denom>\d+(_\d+)*))?        # an optional denominator
+       (?:\s*/\s*(?P<denom>\d+(_\d+)*))?  # an optional denominator
     |                                     # or
        (?:\.(?P<decimal>d*|\d+(_\d+)*))?  # an optional fractional part
        (?:E(?P<exp>[-+]?\d+(_\d+)*))?     # and optional exponent

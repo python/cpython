@@ -1,0 +1,1 @@
+Correct conversion of :class:`numbers.Rational`'s to :class:`float`.
