@@ -77,6 +77,7 @@ internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t 
            signed overflow.  (See issue 13496.) */
         mid = ((size_t)lo + hi) / 2;
         assert(mid >= 0);
+        // PySequence_GetItem, but we already checked the types.
         litem = sq_item(list, mid);
         assert((PyErr_Occurred() == NULL) ^ (litem == NULL));
         if (litem == NULL) {
@@ -89,7 +90,13 @@ internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t 
             }
             Py_SETREF(litem, newitem);
         }
+        /* if item < key(list[mid]):
+         *     hi = mid
+         * else:
+         *     lo = mid + 1
+         */
         if (compare != NULL && Py_IS_TYPE(litem, tp)) {
+            // A fast path for comparing objects of the same type
             PyObject *res_obj = compare(item, litem, Py_LT);
             if (res_obj == Py_True) {
                 Py_DECREF(res_obj);
@@ -116,6 +123,7 @@ internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t 
             }
         }
         else {
+            // A default path for comparing arbitrary objects
             res = PyObject_RichCompareBool(item, litem, Py_LT);
         }
         if (res < 0) {
@@ -248,6 +256,7 @@ internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t h
            signed overflow.  (See issue 13496.) */
         mid = ((size_t)lo + hi) / 2;
         assert(mid >= 0);
+        // PySequence_GetItem, but we already checked the types.
         litem = sq_item(list, mid);
         assert((PyErr_Occurred() == NULL) ^ (litem == NULL));
         if (litem == NULL) {
@@ -260,7 +269,13 @@ internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t h
             }
             Py_SETREF(litem, newitem);
         }
+        /* if key(list[mid]) < item:
+         *     lo = mid + 1
+         * else:
+         *     hi = mid
+         */
         if (compare != NULL && Py_IS_TYPE(litem, tp)) {
+            // A fast path for comparing objects of the same type
             PyObject *res_obj = compare(litem, item, Py_LT);
             if (res_obj == Py_True) {
                 Py_DECREF(res_obj);
@@ -287,6 +302,7 @@ internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t h
             }
         }
         else {
+            // A default path for comparing arbitrary objects
             res = PyObject_RichCompareBool(litem, item, Py_LT);
         }
         if (res < 0) {
