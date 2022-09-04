@@ -636,24 +636,25 @@ class IntStrDigitLimitsTests(unittest.TestCase):
     def test_denial_of_service_prevented_int_to_str(self):
         """Regression test: ensure we fail before performing O(N**2) work."""
         maxdigits = sys.get_int_max_str_digits()
-        assert maxdigits < 100_000, maxdigits  # A test prerequisite.
+        assert maxdigits < 50_000, maxdigits  # A test prerequisite.
         process_time = time.process_time
 
-        huge_int = int(f'0x{"c"*100_000}', base=16)  # 120412 decimal digits.
-        with support.adjust_int_max_str_digits(120_412):
+        huge_int = int(f'0x{"c"*65_000}', base=16)  # 78268 decimal digits.
+        digits = 78_268
+        with support.adjust_int_max_str_digits(digits):
             start = process_time()
             huge_decimal = str(huge_int)
         seconds_to_convert = process_time() - start
-        self.assertEqual(len(huge_decimal), 120_412)
+        self.assertEqual(len(huge_decimal), digits)
         # Ensuring that we chose a slow enough conversion to time.
         # Unlikely any CPU core will ever be faster than the assertion.
-        # It takes 0.25 seconds on a Zen based cloud VM in an opt build.
-        self.assertGreater(seconds_to_convert, 0.02,
+        # It takes 0.10 seconds on a Zen based cloud VM in an opt build.
+        self.assertGreater(seconds_to_convert, 0.005,
                            msg="'We're gonna need a bigger boat (int).'")
 
         # We test with the limit almost at the size needed to check performance.
         # The performant limit check is slightly fuzzy, give it a some room.
-        with support.adjust_int_max_str_digits(int(.995 * 120_412)):
+        with support.adjust_int_max_str_digits(int(.995 * digits)):
             with self.assertRaises(ValueError) as err:
                 start = process_time()
                 str(huge_int)
