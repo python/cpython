@@ -14,6 +14,7 @@ IGNORED = {
     'DUNDER',  # Objects/typeobject.c
     'RDUNDER',  # Objects/typeobject.c
     'SPECIAL',  # Objects/weakrefobject.c
+    'NAME',  # Objects/typeobject.c
 }
 IDENTIFIERS = [
     # from ADD() Python/_warnings.c
