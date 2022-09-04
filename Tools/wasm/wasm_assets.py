@@ -77,7 +77,6 @@ OMIT_NETWORKING_FILES = (
     "mailcap.py",
     "nntplib.py",
     "poplib.py",
-    "smtpd.py",
     "smtplib.py",
     "socketserver.py",
     "telnetlib.py",
@@ -109,6 +108,14 @@ OMIT_MODULE_FILES = {
     "_zoneinfo": ["zoneinfo/"],
 }
 
+SYSCONFIG_NAMES = (
+    "_sysconfigdata__emscripten_wasm32-emscripten",
+    "_sysconfigdata__emscripten_wasm32-emscripten",
+    "_sysconfigdata__wasi_wasm32-wasi",
+    "_sysconfigdata__wasi_wasm64-wasi",
+)
+
+
 def get_builddir(args: argparse.Namespace) -> pathlib.Path:
     """Get builddir path from pybuilddir.txt
     """
@@ -121,7 +128,11 @@ def get_sysconfigdata(args: argparse.Namespace) -> pathlib.Path:
     """Get path to sysconfigdata relative to build root
     """
     data_name = sysconfig._get_sysconfigdata_name()
-    assert "emscripten_wasm32" in data_name
+    if not data_name.startswith(SYSCONFIG_NAMES):
+        raise ValueError(
+            f"Invalid sysconfig data name '{data_name}'.",
+            SYSCONFIG_NAMES
+        )
     filename = data_name + ".py"
     return args.builddir / filename
 
@@ -219,7 +230,8 @@ def main():
 
     extmods = detect_extension_modules(args)
     omit_files = list(OMIT_FILES)
-    omit_files.extend(OMIT_NETWORKING_FILES)
+    if sysconfig.get_platform().startswith("emscripten"):
+        omit_files.extend(OMIT_NETWORKING_FILES)
     for modname, modfiles in OMIT_MODULE_FILES.items():
         if not extmods.get(modname):
             omit_files.extend(modfiles)
