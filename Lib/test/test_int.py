@@ -1,4 +1,5 @@
 import sys
+import time
 
 import unittest
 from test import support
@@ -631,6 +632,77 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         i = 10 ** maxdigits
         with self.assertRaises(ValueError):
             str(i)
+
+    def test_denial_of_service_prevented_int_to_str(self):
+        """Regression test: ensure we fail before performing O(N**2) work."""
+        maxdigits = sys.get_int_max_str_digits()
+        assert maxdigits < 100_000, maxdigits  # A test prerequisite.
+        process_time = time.process_time
+
+        huge_int = int(f'0x{"c"*100_000}', base=16)  # 120412 decimal digits.
+        with support.adjust_int_max_str_digits(120_412):
+            start = process_time()
+            huge_decimal = str(huge_int)
+        seconds_to_convert = process_time() - start
+        self.assertEqual(len(huge_decimal), 120_412)
+        # Ensuring that we chose a slow enough conversion to time.
+        # Unlikely any CPU core will ever be faster than the assertion.
+        # It takes 0.25 seconds on a Zen based cloud VM in an opt build.
+        self.assertGreater(seconds_to_convert, 0.02,
+                           msg="'We're gonna need a bigger boat (int).'")
+
+        with self.assertRaises(ValueError) as err:
+            start = process_time()
+            str(huge_int)
+        seconds_to_fail_huge = process_time() - start
+        self.assertIn('conversion', str(err.exception))
+        self.assertLess(seconds_to_fail_huge, seconds_to_convert/8)
+
+        # Now we test that a conversion that would take 30x as long also fails
+        # in a similarly fast fashion.
+        extra_huge_int = int(f'0x{"c"*500_000}', base=16)  # 602060 digits.
+        with self.assertRaises(ValueError) as err:
+            start = process_time()
+            # If not limited, 8 seconds said Zen based cloud VM.
+            str(extra_huge_int)
+        seconds_to_fail_extra_huge = process_time() - start
+        self.assertIn('conversion', str(err.exception))
+        self.assertLess(seconds_to_fail_extra_huge, seconds_to_convert/8)
+
+    def test_denial_of_service_prevented_str_to_int(self):
+        """Regression test: ensure we fail before performing O(N**2) work."""
+        maxdigits = sys.get_int_max_str_digits()
+        assert maxdigits < 100_000, maxdigits  # A test prerequisite.
+        process_time = time.process_time
+
+        huge = '8'*200_000
+        with support.adjust_int_max_str_digits(200_000):
+            start = process_time()
+            int(huge)
+        seconds_to_convert = process_time() - start
+        # Ensuring that we chose a slow enough conversion to time.
+        # Unlikely any CPU core will ever be faster than the assertion.
+        # It takes 0.25 seconds on a Zen based cloud VM in an opt build.
+        self.assertGreater(seconds_to_convert, 0.02,
+                           msg="'We're gonna need a bigger boat (str).'")
+
+        with self.assertRaises(ValueError) as err:
+            start = process_time()
+            int(huge)
+        seconds_to_fail_huge = process_time() - start
+        self.assertIn('conversion', str(err.exception))
+        self.assertLess(seconds_to_fail_huge, seconds_to_convert/8)
+
+        # Now we test that a conversion that would take 30x as long also fails
+        # in a similarly fast fashion.
+        extra_huge = '7'*1_200_000
+        with self.assertRaises(ValueError) as err:
+            start = process_time()
+            # If not limited, 8 seconds said Zen based cloud VM.
+            int(extra_huge)
+        seconds_to_fail_extra_huge = process_time() - start
+        self.assertIn('conversion', str(err.exception))
+        self.assertLess(seconds_to_fail_extra_huge, seconds_to_convert/8)
 
     def test_power_of_two_bases_unlimited(self):
         """The limit does not apply to power of 2 bases."""
