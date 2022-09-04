@@ -151,41 +151,45 @@ Instead, if we run the same experiment with ``perf`` support enabled we get:
 How to enable ``perf`` profiling support
 ----------------------------------------
 
-There are three ways to enable ``perf`` profiling support:
+There are three ways to enable ``perf`` profiling support;
+the environment variable :envvar:`PYTHONPERFSUPPORT` and the
+:option:`-X perf <-X>` option allow you to enable perf profiling from the start,
+whereas the :func:`sys.activate_stack_trampoline` and
+:func:`sys.deactivate_stack_trampoline` functions allow you to enable and
+disable it dynamically.
 
-* using the :option:`-Xperf <-X>` command-line option
-* using the :envvar:`PYTHONPERFSUPPORT` environment variable
-* using the :func:`sys.activate_stack_trampoline` and
-  :func:`sys.deactivate_stack_trampoline` APIs
+The :mod:`!sys` functions take precedence over the :option:`!-X` option,
+the :option:`!-X` option takes precedence over the environment variable.
 
-If you want profiling to be active when you start the Python interpreter,
-use the :option:`-Xperf <-X>` option::
+Example, using the environment variable::
 
-    $ python -Xperf my_script.py
+   $ PYTHONPERFSUPPORT=1
+   $ python script1.py
+   $ python script2.py
+   $ python script3.py
+   $ perf report -g -i perf.data
 
-If you need to enable ``perf`` profiling support globally,
-set the environment variable :envvar:`PYTHONPERFSUPPORT`
-to a nonzero value.
+Example, using the :option:`!-X` option::
 
-If you need to dynamically enable and disable ``perf`` profiling
-in response to a signal or other communication mechanisms with your process,
-use the :func:`sys.activate_stack_trampoline` and
-:func:`sys.deactivate_stack_trampoline` APIs:
+   $ python -X perf script1.py
+   $ perf report -g -i perf.data
+
+Example, using the :mod:`sys` APIs in file :file:`example.py`:
 
 .. code-block:: python
 
-    import sys
-    sys.activate_stack_trampoline("perf")
+   import sys
 
-    # Run some code with Perf profiling active
+   sys.activate_stack_trampoline("perf")
+   do_profiled_stuff()
+   sys.deactivate_stack_trampoline()
 
-    sys.deactivate_stack_trampoline()
+   non_profiled_stuff()
 
-    # Perf profiling is not active anymore
+...then::
 
-Now we can analyze the data with ``perf report``::
-
-    $ perf report -g -i perf.data
+   $ python ./example.py
+   $ perf report -g -i perf.data
 
 
 How to obtain the best results

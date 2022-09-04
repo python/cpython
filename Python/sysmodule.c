@@ -2095,12 +2095,14 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
 /*[clinic input]
 sys.deactivate_stack_trampoline
 
-Dectivate stack profiler trampoline backend.
+Deactivate the current stack profiler trampoline backend.
+
+If no stack profiler is activated, this function has no effect.
 [clinic start generated code]*/
 
 static PyObject *
 sys_deactivate_stack_trampoline_impl(PyObject *module)
-/*[clinic end generated code: output=b50da25465df0ef1 input=be0c9a8737fe7e8f]*/
+/*[clinic end generated code: output=b50da25465df0ef1 input=9f629a6be9fe7fc8]*/
 {
     if  (_PyPerfTrampoline_Init(0) < 0) {
         return NULL;
@@ -2111,12 +2113,12 @@ sys_deactivate_stack_trampoline_impl(PyObject *module)
 /*[clinic input]
 sys.is_stack_trampoline_active
 
-Return *True* if the stack profiler trampoline is active.
+Return *True* if a stack profiler trampoline is active.
 [clinic start generated code]*/
 
 static PyObject *
 sys_is_stack_trampoline_active_impl(PyObject *module)
-/*[clinic end generated code: output=ab2746de0ad9d293 input=d802fd4a1afa2de8]*/
+/*[clinic end generated code: output=ab2746de0ad9d293 input=29616b7bf6a0b703]*/
 {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
     if (_PyIsPerfTrampolineActive()) {

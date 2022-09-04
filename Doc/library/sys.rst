@@ -1540,7 +1540,9 @@ always available.
 
 .. function:: deactivate_stack_trampoline()
 
-   Deactivate the stack profiler trampoline.
+   Deactivate the current stack profiler trampoline backend.
+
+   If no stack profiler is activated, this function has no effect.
 
    .. availability:: Linux.
 
@@ -1548,7 +1550,7 @@ always available.
 
 .. function:: is_stack_trampoline_active()
 
-   Return ``True`` if the stack profiler trampoline is active.
+   Return ``True`` if a stack profiler trampoline is active.
 
    .. availability:: Linux.
 
