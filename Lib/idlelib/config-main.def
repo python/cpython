@@ -57,6 +57,7 @@ print-command-win=start /min notepad /p %%s
 delete-exitfunc= 1
 
 [EditorWindow]
+max= 0
 width= 80
 height= 40
 cursor-blink= 1
