@@ -46,6 +46,11 @@ many of the difficult problems for you, making the task of building
 sophisticated high-performance network servers and clients a snap.
 """
 
+# TODO: This module was deprecated and removed from CPython 3.12
+# Now it is a test-only helper. Any attempts to rewrite exising tests that
+# are using this module and remove it completely are appreciated!
+# See: https://github.com/python/cpython/issues/72719
+
 import select
 import socket
 import sys
@@ -56,10 +61,6 @@ import os
 from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, EINVAL, \
      ENOTCONN, ESHUTDOWN, EISCONN, EBADF, ECONNABORTED, EPIPE, EAGAIN, \
      errorcode
-
-_DEPRECATION_MSG = ('The {name} module is deprecated and will be removed in '
-                    'Python {remove}. The recommended replacement is asyncio')
-warnings._deprecated(__name__, _DEPRECATION_MSG, remove=(3, 12))
 
 
 _DISCONNECTED = frozenset({ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED, EPIPE,

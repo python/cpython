@@ -1,0 +1,4 @@
+Remove deprecated as per :pep:`594` modules :mod:`asyncore` and :mod:`asynchat`.
+
+They are moved to ``test.support`` so, some other tests that rely on them keep
+working.
