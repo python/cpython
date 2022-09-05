@@ -967,6 +967,24 @@ _PyPegen_number_token(Parser *p)
 
     if (c == NULL) {
         p->error_indicator = 1;
+        PyObject *exc_type, *exc_value, *exc_tb;
+        PyErr_Fetch(&exc_type, &exc_value, &exc_tb);
+        // The only way a ValueError should happen in _this_ code is via
+        // PyLong_FromString hitting a length limit.
+        if (exc_type == PyExc_ValueError && exc_value != NULL) {
+            // The Fetch acted as PyErr_Clear(), we're replacing the exception.
+            Py_XDECREF(exc_tb);
+            Py_DECREF(exc_type);
+            RAISE_ERROR_KNOWN_LOCATION(
+                p, PyExc_SyntaxError,
+                t->lineno, 0 /* col_offset */,
+                "%S - Consider hexadecimal for huge integer literals "
+                "to avoid decimal conversion limits.",
+                exc_value);
+            Py_DECREF(exc_value);
+        } else {
+            PyErr_Restore(exc_type, exc_value, exc_tb);
+        }
         return NULL;
     }
 
