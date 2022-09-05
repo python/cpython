@@ -585,7 +585,7 @@ Miscellaneous options
    .. versionadded:: 3.11
       The ``-X frozen_modules`` option.
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.11
       The ``-X int_max_str_digits`` option.
 
    .. versionadded:: 3.12
@@ -775,7 +775,7 @@ conflict.
    interpreter's global :ref:`integer string conversion length limitation
    <int_max_str_digits>`.
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.11
 
 .. envvar:: PYTHONIOENCODING
 

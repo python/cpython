@@ -544,7 +544,7 @@ always available.
    .. versionchanged:: 3.11
       Added the ``safe_path`` attribute for :option:`-P` option.
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.11
       Added the ``int_max_str_digits`` attribute.
 
 
@@ -732,7 +732,7 @@ always available.
    Returns the current value for the :ref:`integer string conversion length
    limitation <int_max_str_digits>`. See also :func:`set_int_max_str_digits`.
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.11
 
 .. function:: getrefcount(object)
 
@@ -1029,7 +1029,7 @@ always available.
 
    .. versionadded:: 3.1
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.11
       Added ``default_max_str_digits`` and ``str_digits_check_threshold``.
 
 
@@ -1337,7 +1337,7 @@ always available.
    <int_max_str_digits>` used by this interpreter. See also
    :func:`get_int_max_str_digits`.
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.11
 
 .. function:: setprofile(profilefunc)
 
