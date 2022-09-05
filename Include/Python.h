@@ -4,6 +4,8 @@
 
 /* Include nearly all Python header files */
 
+/* DO-NOT-MERGE: this PR is for buildbot-test as a 3.8 baseline */
+
 #include "patchlevel.h"
 #include "pyconfig.h"
 #include "pymacconfig.h"
