@@ -204,7 +204,16 @@ struct _ts {
     _PyCFrame root_cframe;
 };
 
-#define C_RECURSION_LIMIT 800
+/* WASI has limited call stack. Python's recursion limit depends on code
+   layout, optimization, and WASI runtime. Wasmtime can handle about 700
+   recursions, sometimes less. 500 is a more conservative limit. */
+#ifndef Py_DEFAULT_RECURSION_LIMIT
+#  ifdef __wasi__
+#    define C_RECURSION_LIMIT 500
+#  else
+#    define C_RECURSION_LIMIT 800
+#  endif
+#endif
 
 /* other API */
 
