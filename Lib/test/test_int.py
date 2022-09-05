@@ -1,4 +1,5 @@
 import sys
+import time
 
 import unittest
 from test import support
@@ -631,6 +632,87 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         i = 10 ** maxdigits
         with self.assertRaises(ValueError):
             str(i)
+
+    def test_denial_of_service_prevented_int_to_str(self):
+        """Regression test: ensure we fail before performing O(N**2) work."""
+        maxdigits = sys.get_int_max_str_digits()
+        assert maxdigits < 50_000, maxdigits  # A test prerequisite.
+        get_time = time.process_time
+        if get_time() <= 0:  # some platforms like WASM lack process_time()
+            get_time = time.monotonic
+
+        huge_int = int(f'0x{"c"*65_000}', base=16)  # 78268 decimal digits.
+        digits = 78_268
+        with support.adjust_int_max_str_digits(digits):
+            start = get_time()
+            huge_decimal = str(huge_int)
+        seconds_to_convert = get_time() - start
+        self.assertEqual(len(huge_decimal), digits)
+        # Ensuring that we chose a slow enough conversion to measure.
+        # It takes 0.1 seconds on a Zen based cloud VM in an opt build.
+        if seconds_to_convert < 0.005:
+            raise unittest.SkipTest('"slow" conversion took only '
+                                    f'{seconds_to_convert} seconds.')
+
+        # We test with the limit almost at the size needed to check performance.
+        # The performant limit check is slightly fuzzy, give it a some room.
+        with support.adjust_int_max_str_digits(int(.995 * digits)):
+            with self.assertRaises(ValueError) as err:
+                start = get_time()
+                str(huge_int)
+            seconds_to_fail_huge = get_time() - start
+        self.assertIn('conversion', str(err.exception))
+        self.assertLess(seconds_to_fail_huge, seconds_to_convert/8)
+
+        # Now we test that a conversion that would take 30x as long also fails
+        # in a similarly fast fashion.
+        extra_huge_int = int(f'0x{"c"*500_000}', base=16)  # 602060 digits.
+        with self.assertRaises(ValueError) as err:
+            start = get_time()
+            # If not limited, 8 seconds said Zen based cloud VM.
+            str(extra_huge_int)
+        seconds_to_fail_extra_huge = get_time() - start
+        self.assertIn('conversion', str(err.exception))
+        self.assertLess(seconds_to_fail_extra_huge, seconds_to_convert/8)
+
+    def test_denial_of_service_prevented_str_to_int(self):
+        """Regression test: ensure we fail before performing O(N**2) work."""
+        maxdigits = sys.get_int_max_str_digits()
+        assert maxdigits < 100_000, maxdigits  # A test prerequisite.
+        get_time = time.process_time
+        if get_time() <= 0:  # some platforms like WASM lack process_time()
+            get_time = time.monotonic
+
+        digits = 133700
+        huge = '8'*digits
+        with support.adjust_int_max_str_digits(digits):
+            start = get_time()
+            int(huge)
+        seconds_to_convert = get_time() - start
+        # Ensuring that we chose a slow enough conversion to measure.
+        # It takes 0.1 seconds on a Zen based cloud VM in an opt build.
+        if seconds_to_convert < 0.005:
+            raise unittest.SkipTest('"slow" conversion took only '
+                                    f'{seconds_to_convert} seconds.')
+
+        with support.adjust_int_max_str_digits(digits - 1):
+            with self.assertRaises(ValueError) as err:
+                start = get_time()
+                int(huge)
+            seconds_to_fail_huge = get_time() - start
+        self.assertIn('conversion', str(err.exception))
+        self.assertLess(seconds_to_fail_huge, seconds_to_convert/8)
+
+        # Now we test that a conversion that would take 30x as long also fails
+        # in a similarly fast fashion.
+        extra_huge = '7'*1_200_000
+        with self.assertRaises(ValueError) as err:
+            start = get_time()
+            # If not limited, 8 seconds in the Zen based cloud VM.
+            int(extra_huge)
+        seconds_to_fail_extra_huge = get_time() - start
+        self.assertIn('conversion', str(err.exception))
+        self.assertLess(seconds_to_fail_extra_huge, seconds_to_convert/8)
 
     def test_power_of_two_bases_unlimited(self):
         """The limit does not apply to power of 2 bases."""
