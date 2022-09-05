@@ -558,6 +558,13 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertEqual("3.100", data["SearchInfo.tag"])
         self.assertEqual(f'X.Y.exe -prearg "{script}" -postarg', data["stdout"].strip())
 
+    def test_py_handle_64_in_ini(self):
+        with self.py_ini("\n".join(["[defaults]", "python=3.999-64"])):
+            # Expect this to fail, but should get oldStyleTag flipped on
+            data = self.run_py([], allow_fail=True, expect_returncode=103)
+        self.assertEqual("3.999-64", data["SearchInfo.tag"])
+        self.assertEqual("True", data["SearchInfo.oldStyleTag"])
+
     def test_search_path(self):
         stem = Path(sys.executable).stem
         with self.py_ini(TEST_PY_COMMANDS):

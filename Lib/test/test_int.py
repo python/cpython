@@ -1,4 +1,5 @@
 import sys
+import time
 
 import unittest
 from test import support
@@ -575,6 +576,201 @@ class IntTestCases(unittest.TestCase):
         self.assertEqual(int('1_2_3_4_5_6_7_0_1_2_3', 8), 0o12345670123)
         self.assertEqual(int('1_2_3_4_5_6_7_8_9', 16), 0x123456789)
         self.assertEqual(int('1_2_3_4_5_6_7', 32), 1144132807)
+
+
+class IntStrDigitLimitsTests(unittest.TestCase):
+
+    int_class = int  # Override this in subclasses to reuse the suite.
+
+    def setUp(self):
+        super().setUp()
+        self._previous_limit = sys.get_int_max_str_digits()
+        sys.set_int_max_str_digits(2048)
+
+    def tearDown(self):
+        sys.set_int_max_str_digits(self._previous_limit)
+        super().tearDown()
+
+    def test_disabled_limit(self):
+        self.assertGreater(sys.get_int_max_str_digits(), 0)
+        self.assertLess(sys.get_int_max_str_digits(), 20_000)
+        with support.adjust_int_max_str_digits(0):
+            self.assertEqual(sys.get_int_max_str_digits(), 0)
+            i = self.int_class('1' * 20_000)
+            str(i)
+        self.assertGreater(sys.get_int_max_str_digits(), 0)
+
+    def test_max_str_digits_edge_cases(self):
+        """Ignore the +/- sign and space padding."""
+        int_class = self.int_class
+        maxdigits = sys.get_int_max_str_digits()
+
+        int_class('1' * maxdigits)
+        int_class(' ' + '1' * maxdigits)
+        int_class('1' * maxdigits + ' ')
+        int_class('+' + '1' * maxdigits)
+        int_class('-' + '1' * maxdigits)
+        self.assertEqual(len(str(10 ** (maxdigits - 1))), maxdigits)
+
+    def check(self, i, base=None):
+        with self.assertRaises(ValueError):
+            if base is None:
+                self.int_class(i)
+            else:
+                self.int_class(i, base)
+
+    def test_max_str_digits(self):
+        maxdigits = sys.get_int_max_str_digits()
+
+        self.check('1' * (maxdigits + 1))
+        self.check(' ' + '1' * (maxdigits + 1))
+        self.check('1' * (maxdigits + 1) + ' ')
+        self.check('+' + '1' * (maxdigits + 1))
+        self.check('-' + '1' * (maxdigits + 1))
+        self.check('1' * (maxdigits + 1))
+
+        i = 10 ** maxdigits
+        with self.assertRaises(ValueError):
+            str(i)
+
+    def test_denial_of_service_prevented_int_to_str(self):
+        """Regression test: ensure we fail before performing O(N**2) work."""
+        maxdigits = sys.get_int_max_str_digits()
+        assert maxdigits < 50_000, maxdigits  # A test prerequisite.
+        get_time = time.process_time
+        if get_time() <= 0:  # some platforms like WASM lack process_time()
+            get_time = time.monotonic
+
+        huge_int = int(f'0x{"c"*65_000}', base=16)  # 78268 decimal digits.
+        digits = 78_268
+        with support.adjust_int_max_str_digits(digits):
+            start = get_time()
+            huge_decimal = str(huge_int)
+        seconds_to_convert = get_time() - start
+        self.assertEqual(len(huge_decimal), digits)
+        # Ensuring that we chose a slow enough conversion to measure.
+        # It takes 0.1 seconds on a Zen based cloud VM in an opt build.
+        if seconds_to_convert < 0.005:
+            raise unittest.SkipTest('"slow" conversion took only '
+                                    f'{seconds_to_convert} seconds.')
+
+        # We test with the limit almost at the size needed to check performance.
+        # The performant limit check is slightly fuzzy, give it a some room.
+        with support.adjust_int_max_str_digits(int(.995 * digits)):
+            with self.assertRaises(ValueError) as err:
+                start = get_time()
+                str(huge_int)
+            seconds_to_fail_huge = get_time() - start
+        self.assertIn('conversion', str(err.exception))
+        self.assertLess(seconds_to_fail_huge, seconds_to_convert/8)
+
+        # Now we test that a conversion that would take 30x as long also fails
+        # in a similarly fast fashion.
+        extra_huge_int = int(f'0x{"c"*500_000}', base=16)  # 602060 digits.
+        with self.assertRaises(ValueError) as err:
+            start = get_time()
+            # If not limited, 8 seconds said Zen based cloud VM.
+            str(extra_huge_int)
+        seconds_to_fail_extra_huge = get_time() - start
+        self.assertIn('conversion', str(err.exception))
+        self.assertLess(seconds_to_fail_extra_huge, seconds_to_convert/8)
+
+    def test_denial_of_service_prevented_str_to_int(self):
+        """Regression test: ensure we fail before performing O(N**2) work."""
+        maxdigits = sys.get_int_max_str_digits()
+        assert maxdigits < 100_000, maxdigits  # A test prerequisite.
+        get_time = time.process_time
+        if get_time() <= 0:  # some platforms like WASM lack process_time()
+            get_time = time.monotonic
+
+        digits = 133700
+        huge = '8'*digits
+        with support.adjust_int_max_str_digits(digits):
+            start = get_time()
+            int(huge)
+        seconds_to_convert = get_time() - start
+        # Ensuring that we chose a slow enough conversion to measure.
+        # It takes 0.1 seconds on a Zen based cloud VM in an opt build.
+        if seconds_to_convert < 0.005:
+            raise unittest.SkipTest('"slow" conversion took only '
+                                    f'{seconds_to_convert} seconds.')
+
+        with support.adjust_int_max_str_digits(digits - 1):
+            with self.assertRaises(ValueError) as err:
+                start = get_time()
+                int(huge)
+            seconds_to_fail_huge = get_time() - start
+        self.assertIn('conversion', str(err.exception))
+        self.assertLess(seconds_to_fail_huge, seconds_to_convert/8)
+
+        # Now we test that a conversion that would take 30x as long also fails
+        # in a similarly fast fashion.
+        extra_huge = '7'*1_200_000
+        with self.assertRaises(ValueError) as err:
+            start = get_time()
+            # If not limited, 8 seconds in the Zen based cloud VM.
+            int(extra_huge)
+        seconds_to_fail_extra_huge = get_time() - start
+        self.assertIn('conversion', str(err.exception))
+        self.assertLess(seconds_to_fail_extra_huge, seconds_to_convert/8)
+
+    def test_power_of_two_bases_unlimited(self):
+        """The limit does not apply to power of 2 bases."""
+        maxdigits = sys.get_int_max_str_digits()
+
+        for base in (2, 4, 8, 16, 32):
+            with self.subTest(base=base):
+                self.int_class('1' * (maxdigits + 1), base)
+                assert maxdigits < 100_000
+                self.int_class('1' * 100_000, base)
+
+    def test_underscores_ignored(self):
+        maxdigits = sys.get_int_max_str_digits()
+
+        triples = maxdigits // 3
+        s = '111' * triples
+        s_ = '1_11' * triples
+        self.int_class(s)  # succeeds
+        self.int_class(s_)  # succeeds
+        self.check(f'{s}111')
+        self.check(f'{s_}_111')
+
+    def test_sign_not_counted(self):
+        int_class = self.int_class
+        max_digits = sys.get_int_max_str_digits()
+        s = '5' * max_digits
+        i = int_class(s)
+        pos_i = int_class(f'+{s}')
+        assert i == pos_i
+        neg_i = int_class(f'-{s}')
+        assert -pos_i == neg_i
+        str(pos_i)
+        str(neg_i)
+
+    def _other_base_helper(self, base):
+        int_class = self.int_class
+        max_digits = sys.get_int_max_str_digits()
+        s = '2' * max_digits
+        i = int_class(s, base)
+        if base > 10:
+            with self.assertRaises(ValueError):
+                str(i)
+        elif base < 10:
+            str(i)
+        with self.assertRaises(ValueError) as err:
+            int_class(f'{s}1', base)
+
+    def test_int_from_other_bases(self):
+        base = 3
+        with self.subTest(base=base):
+            self._other_base_helper(base)
+        base = 36
+        with self.subTest(base=base):
+            self._other_base_helper(base)
+
+
+class IntSubclassStrDigitLimitsTests(IntStrDigitLimitsTests):
+    int_class = IntSubclass
 
 
 if __name__ == "__main__":
