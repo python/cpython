@@ -1,0 +1,1 @@
+Speed up ``bisect.bisect()`` functions by taking advantage of type-stability.
