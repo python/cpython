@@ -249,6 +249,7 @@ def library_recipes():
               name="OpenSSL 1.1.1q",
               url="https://www.openssl.org/source/openssl-1.1.1q.tar.gz",
               checksum='d7939ce614029cdff0b6c20f0e2e5703158a489a72b2507b8bd51bf8c8fd10ca',
+              patches=['openssl1.1.1q-pr-18719.patch'],
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
