@@ -2197,7 +2197,7 @@ _PyThreadState_PushFrame(PyThreadState *tstate, size_t size)
     assert(size < INT_MAX/sizeof(PyObject *));
     PyObject **base = tstate->datastack_top;
     PyObject **top = base + size;
-    if (top >= tstate->datastack_limit) {
+    if (base == NULL || top >= tstate->datastack_limit) {
         base = push_chunk(tstate, (int)size);
     }
     else {
