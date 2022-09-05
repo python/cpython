@@ -449,7 +449,6 @@ exception and traceback:
        print(formatted_lines[0])
        print(formatted_lines[-1])
        print("*** format_exception:")
-       # exc_type below is ignored on 3.5 and later
        print(repr(traceback.format_exception(exc_value)))
        print("*** extract_tb:")
        print(repr(traceback.extract_tb(exc_traceback)))
