@@ -185,5 +185,32 @@ class AuditTest(unittest.TestCase):
 
         self.assertEqual(actual, expected)
 
+    def test_int_digits(self):
+        returncode, events, stderr = self.run_python("test_int_digits")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [(ev[0], ev[2].split(' ')) for ev in events]
+
+        threshold = sys.int_info.str_digits_check_threshold
+        self.assertEqual(
+                actual.pop(0),
+                ("int/digits/from_base", [hex(threshold+20), hex(10)]),
+        )
+        self.assertEqual(
+                actual.pop(0),
+                ("int/digits/from_base", [hex(threshold*3//2), hex(36)]),
+        )
+
+        event = actual.pop(0)
+        self.assertEqual(event[0], "int/digits/to_decimal")
+        self.assertEqual(len(event[1]), 1)
+        self.assertGreater(len(event[1][0]), threshold//2)
+
+        self.assertEqual(actual, [])
+
+
 if __name__ == "__main__":
     unittest.main()

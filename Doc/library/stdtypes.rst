@@ -5525,6 +5525,22 @@ Verification:
 
 .. versionadded:: 3.12
 
+.. audit-event:: int/digits/to_decimal value
+
+   When a conversion from an class:`int` to decimal is estimated to be larger
+   than :data:`sys.int_info.str_digits_check_threshold <sys.int_info>` digits
+   an :ref:`auditing event <auditing>` with the :class:`int` ``value`` as the
+   argument is raised.
+
+.. audit-event:: int/digits/from_base digits base
+
+   When a conversion to an :class:`int` from a base other than 2, 4, 8, 16, or
+   32 has more than :data:`sys.int_info.str_digits_check_threshold
+   <sys.int_info>` digits an :ref:`auditing event <auditing>` with the number
+   of ``digits`` and ``base`` is raised.
+
+.. versionadded:: 3.12
+
 Affected APIs
 -------------
 

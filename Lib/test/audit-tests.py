@@ -7,6 +7,7 @@ module with arguments identifying each test.
 
 import contextlib
 import os
+from test import support
 import sys
 
 
@@ -409,8 +410,6 @@ def test_sqlite3():
 
 
 def test_sys_getframe():
-    import sys
-
     def hook(event, args):
         if event.startswith("sys."):
             print(event, args[0].f_code.co_name)
@@ -419,10 +418,24 @@ def test_sys_getframe():
     sys._getframe()
 
 
-if __name__ == "__main__":
-    from test.support import suppress_msvcrt_asserts
+def test_int_digits():
+    def hook(event, args):
+        if event.startswith("int/digits/"):
+            print(event, *(hex(arg) for arg in args))
 
-    suppress_msvcrt_asserts()
+    sys.addaudithook(hook)
+
+    threshold = sys.int_info.str_digits_check_threshold
+    with support.adjust_int_max_str_digits(2*threshold):
+        fives = int('5' * (threshold+20))
+        int('1' * (threshold*3//2), base=36)
+        for base in (2, 4, 8, 16, 32):  # linear unaudited bases
+            int('1' * (threshold+1), base)
+        str(fives)
+
+
+if __name__ == "__main__":
+    support.suppress_msvcrt_asserts()
 
     test = sys.argv[1]
     globals()[test]()

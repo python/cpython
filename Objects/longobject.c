@@ -1766,6 +1766,9 @@ long_to_decimal_string_internal(PyObject *aa,
     */
     if (size_a >= 10 * _PY_LONG_MAX_STR_DIGITS_THRESHOLD
                   / (3 * PyLong_SHIFT) + 2) {
+        if (PySys_Audit("int/digits/to_decimal", "O", aa) < 0) {
+            return -1;
+        }
         PyInterpreterState *interp = _PyInterpreterState_GET();
         int32_t max_str_digits = interp->int_max_str_digits;
         if ((max_str_digits > 0) &&
@@ -2513,6 +2516,9 @@ digit beyond the first.
 
         /* Limit the size to avoid excessive computation attacks. */
         if (digits > _PY_LONG_MAX_STR_DIGITS_THRESHOLD) {
+            if (PySys_Audit("int/digits/from_base", "ni", digits, base) < 0) {
+                return NULL;
+            }
             PyInterpreterState *interp = _PyInterpreterState_GET();
             int32_t max_str_digits = interp->int_max_str_digits;
             if ((max_str_digits > 0) && (digits > max_str_digits)) {
