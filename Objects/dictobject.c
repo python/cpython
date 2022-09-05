@@ -334,12 +334,12 @@ dictkeys_get_index(const PyDictKeysObject *keys, Py_ssize_t i)
 
     if (log2size <= 8) {
         const uint8_t *indices = (const uint8_t*)(keys->dk_indices);
-        const uint8_t uix = indices[i] - DKIX_LOWEST_RESERVED;
+        const uint8_t uix = indices[i] + DKIX_TOTAL_RESERVED_VALUES;
         ix = uix;
     }
     else if (log2size <= 16) {
         const uint16_t *indices = (const uint16_t*)(keys->dk_indices);
-        const uint16_t uix = indices[i] - DKIX_LOWEST_RESERVED;
+        const uint16_t uix = indices[i] + DKIX_TOTAL_RESERVED_VALUES;
         ix = uix;
     }
 #if SIZEOF_VOID_P > 4
@@ -351,10 +351,10 @@ dictkeys_get_index(const PyDictKeysObject *keys, Py_ssize_t i)
 #endif
     else {
         const uint32_t *indices = (const uint32_t*)(keys->dk_indices);
-        const uint32_t uix = indices[i] - DKIX_LOWEST_RESERVED;
+        const uint32_t uix = indices[i] + DKIX_TOTAL_RESERVED_VALUES;
         ix = uix;
     }
-    ix += DKIX_LOWEST_RESERVED;
+    ix -= DKIX_TOTAL_RESERVED_VALUES;
     assert(ix >= DKIX_DUMMY);
     return ix;
 }
@@ -370,12 +370,12 @@ dictkeys_set_index(PyDictKeysObject *keys, Py_ssize_t i, Py_ssize_t ix)
 
     if (log2size <= 8) {
         uint8_t *indices = (uint8_t*)(keys->dk_indices);
-        assert(ix - DKIX_LOWEST_RESERVED < 0xff);
+        assert(ix + DKIX_TOTAL_RESERVED_VALUES < 0xff);
         indices[i] = (uint8_t)ix;
     }
     else if (log2size <= 16) {
         uint16_t *indices = (uint16_t*)(keys->dk_indices);
-        assert(ix - DKIX_LOWEST_RESERVED < 0xffff);
+        assert(ix + DKIX_TOTAL_RESERVED_VALUES < 0xffff);
         indices[i] = (uint16_t)ix;
     }
 #if SIZEOF_VOID_P > 4
@@ -386,7 +386,7 @@ dictkeys_set_index(PyDictKeysObject *keys, Py_ssize_t i, Py_ssize_t ix)
 #endif
     else {
         uint32_t *indices = (uint32_t*)(keys->dk_indices);
-        assert(ix - DKIX_LOWEST_RESERVED < 0xffffffff);
+        assert(ix + DKIX_TOTAL_RESERVED_VALUES < 0xffffffff);
         indices[i] = (uint32_t)ix;
     }
 }
