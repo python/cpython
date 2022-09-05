@@ -1,1 +1,0 @@
-Fix unused ``localName`` parameter in the ``Attr`` class in :mod:`xml.dom.minidom`.

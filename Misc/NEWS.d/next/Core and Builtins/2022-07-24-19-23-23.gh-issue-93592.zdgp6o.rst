@@ -1,2 +1,0 @@
-``coroutine.throw()`` now properly initializes the ``frame.f_back`` when resuming a stack of coroutines.
-This allows e.g. ``traceback.print_stack()`` to work correctly when an exception (such as ``CancelledError``) is thrown into a coroutine.

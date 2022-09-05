@@ -1,0 +1,205 @@
+.. date: 2022-08-07-16-53-38
+.. gh-issue: 95778
+.. nonce: ch010gps
+.. release date: 2022-09-05
+.. section: Security
+
+Converting between :class:`int` and :class:`str` in bases other than 2
+(binary), 4, 8 (octal), 16 (hexadecimal), or 32 such as base 10 (decimal)
+now raises a :exc:`ValueError` if the number of digits in string form is
+above a limit to avoid potential denial of service attacks due to the
+algorithmic complexity. This is a mitigation for `CVE-2020-10735
+<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+
+This new limit can be configured or disabled by environment variable,
+command line flag, or :mod:`sys` APIs. See the :ref:`integer string
+conversion length limitation <int_max_str_digits>` documentation.  The
+default limit is 4300 digits in string form.
+
+Patch by Gregory P. Smith [Google] and Christian Heimes [Red Hat] with
+feedback from Victor Stinner, Thomas Wouters, Steve Dower, Ned Deily, and
+Mark Dickinson.
+
+..
+
+.. date: 2022-08-22-21-33-28
+.. gh-issue: 96187
+.. nonce: W_6SRG
+.. section: Core and Builtins
+
+Fixed a bug that caused ``_PyCode_GetExtra`` to return garbage for negative
+indexes. Patch by Pablo Galindo
+
+..
+
+.. date: 2022-08-11-09-19-55
+.. gh-issue: 95876
+.. nonce: YpQfoV
+.. section: Core and Builtins
+
+Fix format string in ``_PyPegen_raise_error_known_location`` that can lead
+to memory corruption on some 64bit systems. The function was building a
+tuple with ``i`` (int) instead of ``n`` (Py_ssize_t) for Py_ssize_t
+arguments.
+
+..
+
+.. date: 2022-08-04-18-46-54
+.. gh-issue: 95605
+.. nonce: FbpCoG
+.. section: Core and Builtins
+
+Fix misleading contents of error message when converting an all-whitespace
+string to :class:`float`.
+
+..
+
+.. date: 2022-07-24-19-23-23
+.. gh-issue: 93592
+.. nonce: zdgp6o
+.. section: Core and Builtins
+
+``coroutine.throw()`` now properly initializes the ``frame.f_back`` when
+resuming a stack of coroutines. This allows e.g. ``traceback.print_stack()``
+to work correctly when an exception (such as ``CancelledError``) is thrown
+into a coroutine.
+
+..
+
+.. date: 2022-07-19-04-34-56
+.. gh-issue: 94996
+.. nonce: dV564A
+.. section: Core and Builtins
+
+:func:`ast.parse` will no longer parse function definitions with
+positional-only params when passed ``feature_version`` less than ``(3, 8)``.
+Patch by Shantanu Jain.
+
+..
+
+.. date: 2022-09-04-12-32-52
+.. gh-issue: 68163
+.. nonce: h6TJCc
+.. section: Library
+
+Correct conversion of :class:`numbers.Rational`'s to :class:`float`.
+
+..
+
+.. date: 2022-08-22-18-42-17
+.. gh-issue: 96159
+.. nonce: 3bFU39
+.. section: Library
+
+Fix a performance regression in logging TimedRotatingFileHandler. Only check
+for special files when the rollover time has passed.
+
+..
+
+.. date: 2022-08-22-13-54-20
+.. gh-issue: 96175
+.. nonce: bH7zGU
+.. section: Library
+
+Fix unused ``localName`` parameter in the ``Attr`` class in
+:mod:`xml.dom.minidom`.
+
+..
+
+.. date: 2022-08-03-21-01-17
+.. gh-issue: 95609
+.. nonce: xxyjyX
+.. section: Library
+
+Update bundled pip to 22.2.2.
+
+..
+
+.. date: 2022-07-25-15-45-06
+.. gh-issue: 95231
+.. nonce: i807-g
+.. section: Library
+
+Fail gracefully if :data:`~errno.EPERM` or :data:`~errno.ENOSYS` is raised
+when loading :mod:`crypt` methods. This may happen when trying to load
+``MD5`` on a Linux kernel with :abbr:`FIPS (Federal Information Processing
+Standard)` enabled.
+
+..
+
+.. date: 2022-08-19-17-07-45
+.. gh-issue: 96098
+.. nonce: nDp43u
+.. section: Documentation
+
+Improve discoverability of the higher level concurrent.futures module by
+providing clearer links from the lower level threading and multiprocessing
+modules.
+
+..
+
+.. date: 2022-08-09-16-11-36
+.. gh-issue: 95789
+.. nonce: UO7fJL
+.. section: Documentation
+
+Update the default RFC base URL from deprecated tools.ietf.org to
+datatracker.ietf.org
+
+..
+
+.. date: 2022-08-01-23-17-04
+.. gh-issue: 91207
+.. nonce: _P8i0B
+.. section: Documentation
+
+Fix stylesheet not working in Windows CHM htmlhelp docs. Contributed by
+C.A.M. Gerlach.
+
+..
+
+.. bpo: 47115
+.. date: 2022-03-30-17-08-12
+.. nonce: R3wt3i
+.. section: Documentation
+
+The documentation now lists which members of C structs are part of the
+:ref:`Limited API/Stable ABI <stable>`.
+
+..
+
+.. date: 2022-08-22-14-59-42
+.. gh-issue: 95243
+.. nonce: DeD66V
+.. section: Tests
+
+Mitigate the inherent race condition from using find_unused_port() in
+testSockName() by trying to find an unused port a few times before failing.
+Patch by Ross Burton.
+
+..
+
+.. date: 2022-07-08-10-28-23
+.. gh-issue: 94682
+.. nonce: ZtGt_0
+.. section: Build
+
+Build and test with OpenSSL 1.1.1q
+
+..
+
+.. date: 2022-08-04-20-07-51
+.. gh-issue: 65802
+.. nonce: xnThWe
+.. section: IDLE
+
+Document handling of extensions in Save As dialogs.
+
+..
+
+.. date: 2022-08-01-23-31-48
+.. gh-issue: 95191
+.. nonce: U7vryB
+.. section: IDLE
+
+Include prompts when saving Shell (interactive input and output).
