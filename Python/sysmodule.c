@@ -1488,70 +1488,6 @@ static PyStructSequence_Desc windows_version_desc = {
 };
 
 static PyObject *
-_sys_getwindowsversion_from_wmi()
-{
-    PyObject *wmi_module = PyImport_ImportModule("_wmi");
-    if (!wmi_module) {
-        return NULL;
-    }
-
-    PyObject *queryResult = PyObject_CallMethod(wmi_module, "exec_query", "s",
-        "SELECT Version FROM Win32_OperatingSystem"
-    );
-    Py_DECREF(wmi_module);
-
-    if (!queryResult) {
-        return NULL;
-    }
-
-    char versionString[256];
-    const char *queryResultString = PyUnicode_AsUTF8(queryResult);
-    if (!queryResultString) {
-        return NULL;
-    }
-    if (strcpy_s(versionString, sizeof(versionString), queryResultString)) {
-        PyErr_SetFromErrno(0);
-        Py_DECREF(queryResultString);
-        return NULL;
-    }
-    if (0 != _strnicmp(versionString, "version=", 8)) {
-        PyErr_Format(PyExc_SystemError, "invalid WMI result: %s", versionString);
-        Py_DECREF(queryResult);
-        return NULL;
-    }
-    char *majorStart = strchr(versionString, '=');
-    if (!majorStart || !majorStart[1]) {
-        PyErr_Format(PyExc_SystemError, "invalid WMI result: %s", versionString);
-        Py_DECREF(queryResult);
-        return NULL;
-    }
-    majorStart += 1;
-    char *minorStart = strchr(majorStart, '.');
-    if (!minorStart || !minorStart[1]) {
-        PyErr_Format(PyExc_SystemError, "invalid WMI result: %s", versionString);
-        Py_DECREF(queryResult);
-        return NULL;
-    }
-    *minorStart = '\0';
-    minorStart += 1;
-    char *buildStart = strchr(minorStart, '.');
-    if (!buildStart || !buildStart[1]) {
-        PyErr_Format(PyExc_SystemError, "invalid WMI result: %s", versionString);
-        Py_DECREF(queryResult);
-        return NULL;
-    }
-    *buildStart = '\0';
-    buildStart += 1;
-    PyObject *result = Py_BuildValue("(NNN)",
-        PyLong_FromString(majorStart, NULL, 10),
-        PyLong_FromString(minorStart, NULL, 10),
-        PyLong_FromString(buildStart, NULL, 10)
-    );
-    Py_DECREF(queryResult);
-    return result;
-}
-
-static PyObject *
 _sys_getwindowsversion_from_kernel32()
 {
     HANDLE hKernel32;
@@ -1648,19 +1584,14 @@ sys_getwindowsversion_impl(PyObject *module)
     // We need to read the version info from a system file resource
     // to accurately identify the OS version. If we fail for any reason,
     // just return whatever GetVersion said.
-    PyObject *realVersion = _sys_getwindowsversion_from_wmi();
+    PyObject *realVersion = _sys_getwindowsversion_from_kernel32();
     if (!realVersion) {
-        return NULL;
         PyErr_Clear();
-        realVersion = _sys_getwindowsversion_from_kernel32();
-        if (!realVersion) {
-            PyErr_Clear();
-            realVersion = Py_BuildValue("(kkk)",
-                ver.dwMajorVersion,
-                ver.dwMinorVersion,
-                ver.dwBuildNumber
-            );
-        }
+        realVersion = Py_BuildValue("(kkk)",
+            ver.dwMajorVersion,
+            ver.dwMinorVersion,
+            ver.dwBuildNumber
+        );
     }
 
     if (realVersion) {
