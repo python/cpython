@@ -2460,8 +2460,25 @@ ast_for_atom(struct compiling *c, const node *n)
             return NULL;
         }
         pynum = parsenumber(c, STR(ch));
-        if (!pynum)
+        if (!pynum) {
+            PyThreadState *tstate = PyThreadState_GET();
+            // The only way a ValueError should happen in _this_ code is via
+            // PyLong_FromString hitting a length limit.
+            if (tstate->curexc_type == PyExc_ValueError &&
+                tstate->curexc_value != NULL) {
+                PyObject *type, *value, *tb;
+                // This acts as PyErr_Clear() as we're replacing curexc.
+                PyErr_Fetch(&type, &value, &tb);
+                Py_XDECREF(tb);
+                Py_DECREF(type);
+                ast_error(c, ch,
+                    "%S - Consider hexadecimal for huge integer literals "
+                    "to avoid decimal conversion limits.",
+                    value);
+                Py_DECREF(value);
+            }
             return NULL;
+        }
 
         if (PyArena_AddPyObject(c->c_arena, pynum) < 0) {
             Py_DECREF(pynum);
