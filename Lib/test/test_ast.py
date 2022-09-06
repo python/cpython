@@ -771,6 +771,15 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             ast.parse('(x := 0)', feature_version=(3, 7))
 
+    def test_exception_groups_feature_version(self):
+        code = dedent('''
+        try: ...
+        except* Exception: ...
+        ''')
+        ast.parse(code)
+        with self.assertRaises(SyntaxError):
+            ast.parse(code, feature_version=(3, 10))
+
     def test_invalid_major_feature_version(self):
         with self.assertRaises(ValueError):
             ast.parse('pass', feature_version=(2, 7))

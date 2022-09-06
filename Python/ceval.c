@@ -733,9 +733,15 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 /* Tuple access macros */
 
 #ifndef Py_DEBUG
-#define GETITEM(v, i) PyTuple_GET_ITEM((PyTupleObject *)(v), (i))
+#define GETITEM(v, i) PyTuple_GET_ITEM((v), (i))
 #else
-#define GETITEM(v, i) PyTuple_GetItem((v), (i))
+static inline PyObject *
+GETITEM(PyObject *v, Py_ssize_t i) {
+    assert(PyTuple_Check(v));
+    assert(i >= 0);
+    assert(i < PyTuple_GET_SIZE(v));
+    return PyTuple_GET_ITEM(v, i);
+}
 #endif
 
 /* Code access macros */
