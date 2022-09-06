@@ -98,6 +98,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>wbemuuid.lib;propsys.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <DelayLoadDLLs>ole32.dll</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

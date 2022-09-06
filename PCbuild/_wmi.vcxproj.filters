@@ -10,7 +10,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Modules\_uuidmodule.c">
+    <ClCompile Include="..\PC\_wmimodule.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
