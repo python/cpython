@@ -11,7 +11,7 @@ Refer to comments in EditorWindow autoindent code for details.
 """
 import re
 
-from tkinter import (Toplevel, Listbox, Scale, Canvas,
+from tkinter import (Toplevel, Listbox, Canvas,
                      StringVar, BooleanVar, IntVar, TRUE, FALSE,
                      TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE,
                      NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW,
@@ -121,7 +121,7 @@ class ConfigDialog(Toplevel):
         self.winpage = WinPage(note)
         self.shedpage = ShedPage(note)
 
-        note.add(self.fontpage, text='Fonts/Tabs')
+        note.add(self.fontpage, text=' Fonts ')
         note.add(self.highpage, text='Highlights')
         note.add(self.keyspage, text=' Keys ')
         note.add(self.winpage, text=' Windows ')
@@ -1588,7 +1588,7 @@ class WinPage(Frame):
                     win_height_int: Entry > win_height
                 frame_cursor: Frame
                     indent_title: Label
-                    indent_chooser: Spinbox (Combobox < 8.5.9) > indent_spaces
+                    indent_chooser: Spinbox > indent_spaces
                     blink_on: Checkbutton > cursor_blink
                 frame_autocomplete: Frame
                     auto_wait_title: Label

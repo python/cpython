@@ -30,7 +30,6 @@ test_urlparse.py provides a good indicator of parsing behavior.
 from collections import namedtuple
 import functools
 import re
-import sys
 import types
 import warnings
 
@@ -907,7 +906,7 @@ def quote_from_bytes(bs, safe='/'):
     if not bs.rstrip(_ALWAYS_SAFE_BYTES + safe):
         return bs.decode()
     quoter = _byte_quoter_factory(safe)
-    return ''.join([quoter(char) for char in bs])
+    return ''.join(map(quoter, bs))
 
 def urlencode(query, doseq=False, safe='', encoding=None, errors=None,
               quote_via=quote_plus):
@@ -940,10 +939,9 @@ def urlencode(query, doseq=False, safe='', encoding=None, errors=None,
             # but that's a minor nit.  Since the original implementation
             # allowed empty dicts that type of behavior probably should be
             # preserved for consistency
-        except TypeError:
-            ty, va, tb = sys.exc_info()
+        except TypeError as err:
             raise TypeError("not a valid non-string sequence "
-                            "or mapping object").with_traceback(tb)
+                            "or mapping object") from err
 
     l = []
     if not doseq:

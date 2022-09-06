@@ -4,7 +4,6 @@ Glossary:
     * errored    : Whitespace related problems present in file.
 """
 from unittest import TestCase, mock
-from unittest import mock
 import errno
 import os
 import tabnanny

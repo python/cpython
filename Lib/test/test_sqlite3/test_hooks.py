@@ -303,8 +303,6 @@ class TraceCallbackTests(unittest.TestCase):
             con2.close()
         self.assertEqual(traced_statements, queries)
 
-    @unittest.skipIf(sqlite.sqlite_version_info < (3, 14, 0),
-                     "Requires SQLite 3.14.0 or newer")
     def test_trace_expanded_sql(self):
         expected = [
             "create table t(t)",
@@ -325,17 +323,20 @@ class TraceCallbackTests(unittest.TestCase):
     )
     def test_trace_too_much_expanded_sql(self):
         # If the expanded string is too large, we'll fall back to the
-        # unexpanded SQL statement. The resulting string length is limited by
+        # unexpanded SQL statement (for SQLite 3.14.0 and newer).
+        # The resulting string length is limited by the runtime limit
         # SQLITE_LIMIT_LENGTH.
-        template = "select 'b' as \"a\" from sqlite_master where \"a\"="
+        template = "select 1 as a where a="
         category = sqlite.SQLITE_LIMIT_LENGTH
         with memory_database() as cx, cx_limit(cx, category=category) as lim:
-            nextra = lim - (len(template) + 2) - 1
-            ok_param = "a" * nextra
-            bad_param = "a" * (nextra + 1)
+            ok_param = "a"
+            bad_param = "a" * lim
 
             unexpanded_query = template + "?"
-            with self.check_stmt_trace(cx, [unexpanded_query]):
+            expected = [unexpanded_query]
+            if sqlite.sqlite_version_info < (3, 14, 0):
+                expected = []
+            with self.check_stmt_trace(cx, expected):
                 cx.execute(unexpanded_query, (bad_param,))
 
             expanded_query = f"{template}'{ok_param}'"

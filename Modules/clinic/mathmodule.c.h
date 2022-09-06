@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(math_ceil__doc__,
 "ceil($module, x, /)\n"
 "--\n"
@@ -45,10 +51,10 @@ PyDoc_STRVAR(math_isqrt__doc__,
     {"isqrt", (PyCFunction)math_isqrt, METH_O, math_isqrt__doc__},
 
 PyDoc_STRVAR(math_factorial__doc__,
-"factorial($module, x, /)\n"
+"factorial($module, n, /)\n"
 "--\n"
 "\n"
-"Find x!.\n"
+"Find n!.\n"
 "\n"
 "Raise a ValueError if x is negative or non-integral.");
 
@@ -112,7 +118,7 @@ PyDoc_STRVAR(math_ldexp__doc__,
 "This is essentially the inverse of frexp().");
 
 #define MATH_LDEXP_METHODDEF    \
-    {"ldexp", (PyCFunction)(void(*)(void))math_ldexp, METH_FASTCALL, math_ldexp__doc__},
+    {"ldexp", _PyCFunction_CAST(math_ldexp), METH_FASTCALL, math_ldexp__doc__},
 
 static PyObject *
 math_ldexp_impl(PyObject *module, double x, PyObject *i);
@@ -250,7 +256,7 @@ PyDoc_STRVAR(math_fmod__doc__,
 "x % y may differ.");
 
 #define MATH_FMOD_METHODDEF    \
-    {"fmod", (PyCFunction)(void(*)(void))math_fmod, METH_FASTCALL, math_fmod__doc__},
+    {"fmod", _PyCFunction_CAST(math_fmod), METH_FASTCALL, math_fmod__doc__},
 
 static PyObject *
 math_fmod_impl(PyObject *module, double x, double y);
@@ -304,7 +310,7 @@ PyDoc_STRVAR(math_dist__doc__,
 "    sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))");
 
 #define MATH_DIST_METHODDEF    \
-    {"dist", (PyCFunction)(void(*)(void))math_dist, METH_FASTCALL, math_dist__doc__},
+    {"dist", _PyCFunction_CAST(math_dist), METH_FASTCALL, math_dist__doc__},
 
 static PyObject *
 math_dist_impl(PyObject *module, PyObject *p, PyObject *q);
@@ -334,7 +340,7 @@ PyDoc_STRVAR(math_pow__doc__,
 "Return x**y (x to the power of y).");
 
 #define MATH_POW_METHODDEF    \
-    {"pow", (PyCFunction)(void(*)(void))math_pow, METH_FASTCALL, math_pow__doc__},
+    {"pow", _PyCFunction_CAST(math_pow), METH_FASTCALL, math_pow__doc__},
 
 static PyObject *
 math_pow_impl(PyObject *module, double x, double y);
@@ -568,7 +574,7 @@ PyDoc_STRVAR(math_isclose__doc__,
 "only close to themselves.");
 
 #define MATH_ISCLOSE_METHODDEF    \
-    {"isclose", (PyCFunction)(void(*)(void))math_isclose, METH_FASTCALL|METH_KEYWORDS, math_isclose__doc__},
+    {"isclose", _PyCFunction_CAST(math_isclose), METH_FASTCALL|METH_KEYWORDS, math_isclose__doc__},
 
 static int
 math_isclose_impl(PyObject *module, double a, double b, double rel_tol,
@@ -578,8 +584,31 @@ static PyObject *
 math_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(rel_tol), &_Py_ID(abs_tol), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"a", "b", "rel_tol", "abs_tol", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "isclose", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "isclose",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     double a;
@@ -664,7 +693,7 @@ PyDoc_STRVAR(math_prod__doc__,
 "non-numeric types.");
 
 #define MATH_PROD_METHODDEF    \
-    {"prod", (PyCFunction)(void(*)(void))math_prod, METH_FASTCALL|METH_KEYWORDS, math_prod__doc__},
+    {"prod", _PyCFunction_CAST(math_prod), METH_FASTCALL|METH_KEYWORDS, math_prod__doc__},
 
 static PyObject *
 math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start);
@@ -673,8 +702,31 @@ static PyObject *
 math_prod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(start), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"", "start", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "prod", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "prod",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *iterable;
@@ -712,7 +764,7 @@ PyDoc_STRVAR(math_perm__doc__,
 "Raises ValueError if either of the arguments are negative.");
 
 #define MATH_PERM_METHODDEF    \
-    {"perm", (PyCFunction)(void(*)(void))math_perm, METH_FASTCALL, math_perm__doc__},
+    {"perm", _PyCFunction_CAST(math_perm), METH_FASTCALL, math_perm__doc__},
 
 static PyObject *
 math_perm_impl(PyObject *module, PyObject *n, PyObject *k);
@@ -756,7 +808,7 @@ PyDoc_STRVAR(math_comb__doc__,
 "Raises ValueError if either of the arguments are negative.");
 
 #define MATH_COMB_METHODDEF    \
-    {"comb", (PyCFunction)(void(*)(void))math_comb, METH_FASTCALL, math_comb__doc__},
+    {"comb", _PyCFunction_CAST(math_comb), METH_FASTCALL, math_comb__doc__},
 
 static PyObject *
 math_comb_impl(PyObject *module, PyObject *n, PyObject *k);
@@ -786,7 +838,7 @@ PyDoc_STRVAR(math_nextafter__doc__,
 "Return the next floating-point value after x towards y.");
 
 #define MATH_NEXTAFTER_METHODDEF    \
-    {"nextafter", (PyCFunction)(void(*)(void))math_nextafter, METH_FASTCALL, math_nextafter__doc__},
+    {"nextafter", _PyCFunction_CAST(math_nextafter), METH_FASTCALL, math_nextafter__doc__},
 
 static PyObject *
 math_nextafter_impl(PyObject *module, double x, double y);
@@ -865,4 +917,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1eae2b3ef19568fa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c2c2f42452d63734 input=a9049054013a1b77]*/

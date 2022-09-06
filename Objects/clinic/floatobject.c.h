@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(float_is_integer__doc__,
 "is_integer($self, /)\n"
 "--\n"
@@ -83,7 +89,7 @@ PyDoc_STRVAR(float___round____doc__,
 "When an argument is passed, work like built-in round(x, ndigits).");
 
 #define FLOAT___ROUND___METHODDEF    \
-    {"__round__", (PyCFunction)(void(*)(void))float___round__, METH_FASTCALL, float___round____doc__},
+    {"__round__", _PyCFunction_CAST(float___round__), METH_FASTCALL, float___round____doc__},
 
 static PyObject *
 float___round___impl(PyObject *self, PyObject *o_ndigits);
@@ -321,4 +327,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=604cb27bf751ea16 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ac6374ac606a505e input=a9049054013a1b77]*/

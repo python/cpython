@@ -1,0 +1,17 @@
+https://github.com/openssl/openssl/commit/60f011f584d80447e86cae1d1bd3ae24bc13235b
+This fixes a regression in 1.1.1q:
+
+test/v3ext.c:201:24: error: implicitly declaring library function 'memcmp' with type 'int (const void *, const void *, unsigned long)' [-Werror,-Wimplicit-function-declaration]
+        if (!TEST_true(memcmp(ip1->data, ip2->data, ip1->length) <= 0))
+
+diff -Naur openssl-1.1.1q/test/v3ext.c openssl-1.1.1q-patched/test/v3ext.c
+--- openssl-1.1.1q/test/v3ext.c	2022-07-05 09:08:33.000000000 +0000
++++ openssl-1.1.1q-patched/test/v3ext.c	2022-09-05 16:54:45.740859256 +0000
+@@ -8,6 +8,7 @@
+  */
+ 
+ #include <stdio.h>
++#include <string.h>
+ #include <openssl/x509.h>
+ #include <openssl/x509v3.h>
+ #include <openssl/pem.h>

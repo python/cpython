@@ -1,6 +1,7 @@
 import doctest
 import unittest
 from test import support
+from test.support import threading_helper
 from itertools import *
 import weakref
 from decimal import Decimal
@@ -179,6 +180,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(chain.from_iterable([''])), [])
         self.assertEqual(take(4, chain.from_iterable(['abc', 'def'])), list('abcd'))
         self.assertRaises(TypeError, list, chain.from_iterable([2, 3]))
+        self.assertEqual(list(islice(chain.from_iterable(repeat(range(5))), 2)), [0, 1])
 
     def test_chain_reducible(self):
         for oper in [copy.deepcopy] + picklecopiers:
@@ -1533,6 +1535,7 @@ class TestBasicOps(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "tee"):
             next(a)
 
+    @threading_helper.requires_working_threading()
     def test_tee_concurrent(self):
         start = threading.Event()
         finish = threading.Event()

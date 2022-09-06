@@ -1,0 +1,2 @@
+Made :class:`_struct.Struct` GC-tracked in order to fix a reference leak in
+the :mod:`_struct` module.
