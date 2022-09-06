@@ -176,7 +176,6 @@ are always available.  They are listed here in alphabetical order.
 .. class:: bytearray(source)
            bytearray(source, encoding)
            bytearray(source, encoding, errors)
-
    :noindex:
 
    Return a new array of bytes.  The :class:`bytearray` class is a mutable
