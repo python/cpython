@@ -1921,7 +1921,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # find all option indices, and determine the arg_string_pattern
         # which has an 'O' if there is an option at an index,
         # an 'A' if there is an argument, or a '-' if there is a '--'
-        option_string_indices = {}
+        option_tuples = []
         arg_string_pattern_parts = []
         arg_strings_iter = iter(arg_strings)
         for i, arg_string in enumerate(arg_strings_iter):
@@ -1939,7 +1939,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 if option_tuple is None:
                     pattern = 'A'
                 else:
-                    option_string_indices[i] = option_tuple
+                    option_tuples.append((i, option_tuple))
                     pattern = 'O'
                 arg_string_pattern_parts.append(pattern)
 
@@ -1971,10 +1971,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 action(self, namespace, argument_values, option_string)
 
         # function to convert arg_strings into an optional action
-        def consume_optional(start_index):
+        def consume_optional(start_index, option_tuple):
 
             # get the optional identified at this index
-            option_tuple = option_string_indices[start_index]
             action, option_string, explicit_arg = option_tuple
 
             # identify additional optionals in the same arg string
@@ -2070,37 +2069,29 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # passed the last option string
         extras = []
         start_index = 0
-        if option_string_indices:
-            max_option_string_index = max(option_string_indices)
-        else:
-            max_option_string_index = -1
-        while start_index <= max_option_string_index:
+
+        for option_tuple_index, option_tuple in option_tuples:
+            if start_index > option_tuple_index:
+                continue
 
             # consume any Positionals preceding the next option
-            next_option_string_index = min([
-                index
-                for index in option_string_indices
-                if index >= start_index])
-            if start_index != next_option_string_index:
-                positionals_end_index = consume_positionals(start_index)
+            if start_index < option_tuple_index:
+                start_index = consume_positionals(start_index)
 
                 # only try to parse the next optional if we didn't consume
                 # the option string during the positionals parsing
-                if positionals_end_index > start_index:
-                    start_index = positionals_end_index
+                if start_index > option_tuple_index:
                     continue
-                else:
-                    start_index = positionals_end_index
 
             # if we consumed all the positionals we could and we're not
             # at the index of an option string, there were extra arguments
-            if start_index not in option_string_indices:
-                strings = arg_strings[start_index:next_option_string_index]
+            if start_index < option_tuple_index:
+                strings = arg_strings[start_index:option_tuple_index]
                 extras.extend(strings)
-                start_index = next_option_string_index
+                start_index = option_tuple_index
 
             # consume the next optional and any arguments for it
-            start_index = consume_optional(start_index)
+            start_index = consume_optional(start_index, option_tuple)
 
         # consume any positionals following the last Optional
         stop_index = consume_positionals(start_index)
