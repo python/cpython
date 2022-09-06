@@ -472,8 +472,6 @@ New Features
 
 * Added new function :c:func:`PyFunction_SetVectorcall` to the C API
   which sets the vectorcall field of a given :c:type:`PyFunctionObject`.
-  Warning: extensions using this API must preserve the behavior
-  of the unaltered function!
   (Contributed by Andrew Frost in :gh:`92257`.)
 
 Porting to Python 3.12
