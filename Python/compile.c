@@ -8488,19 +8488,28 @@ fix_cell_offsets(struct compiler *c, basicblock *entryblock, int *fixedmap)
 static void
 propagate_line_numbers(basicblock *entryblock);
 
-static void
-eliminate_empty_basic_blocks(cfg_builder *g);
-
 #ifndef NDEBUG
 static bool
 no_redundant_jumps(cfg_builder *g) {
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         struct instr *last = basicblock_last_instr(b);
         if (last != NULL) {
-            if (last->i_opcode == JUMP || last->i_opcode == JUMP_NO_INTERRUPT) {
+            if (IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)) {
                 assert(last->i_target != b->b_next);
-                return false;
+                if (last->i_target == b->b_next) {
+                    return false;
+                }
             }
+        }
+    }
+    return true;
+}
+
+static bool
+no_empty_basic_blocks(cfg_builder *g) {
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+        if (b->b_iused == 0) {
+            return false;
         }
     }
     return true;
@@ -8519,8 +8528,7 @@ remove_redundant_jumps(cfg_builder *g) {
         struct instr *last = basicblock_last_instr(b);
         if (last != NULL) {
             assert(!IS_ASSEMBLER_OPCODE(last->i_opcode));
-            if (last->i_opcode == JUMP ||
-                last->i_opcode == JUMP_NO_INTERRUPT) {
+            if (IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)) {
                 if (last->i_target == NULL) {
                     PyErr_SetString(PyExc_SystemError, "jump with NULL target");
                     return -1;
@@ -8533,9 +8541,7 @@ remove_redundant_jumps(cfg_builder *g) {
             }
         }
     }
-    if (removed) {
-        eliminate_empty_basic_blocks(g);
-    }
+    assert(no_empty_basic_blocks(g));
     return 0;
 }
 
@@ -9240,8 +9246,9 @@ basicblock_has_lineno(const basicblock *bb) {
     return false;
 }
 
-/* If this block ends with an unconditional jump to an exit block,
- * then remove the jump and extend this block with the target.
+/* If this block ends with an unconditional jump to a small exit block that does
+ * not have linenos, then remove the jump and extend this block with the target.
+ * Returns 1 if extended, 0 if no change, and -1 on error.
  */
 static int
 extend_block(basicblock *bb) {
@@ -9249,25 +9256,24 @@ extend_block(basicblock *bb) {
     if (last == NULL) {
         return 0;
     }
-    if (last->i_opcode != JUMP &&
-        last->i_opcode != JUMP_FORWARD &&
-        last->i_opcode != JUMP_BACKWARD) {
+    if (!IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)) {
         return 0;
     }
-    if (basicblock_exits_scope(last->i_target) && last->i_target->b_iused <= MAX_COPY_SIZE) {
-        basicblock *to_copy = last->i_target;
-        if (basicblock_has_lineno(to_copy)) {
+    basicblock *target = last->i_target;
+    if (basicblock_exits_scope(target) && target->b_iused <= MAX_COPY_SIZE) {
+        if (basicblock_has_lineno(target)) {
             /* copy only blocks without line number (like implicit 'return None's) */
             return 0;
         }
         last->i_opcode = NOP;
-        for (int i = 0; i < to_copy->b_iused; i++) {
+        for (int i = 0; i < target->b_iused; i++) {
             int index = basicblock_next_instr(bb);
             if (index < 0) {
                 return -1;
             }
-            bb->b_instr[index] = to_copy->b_instr[i];
+            bb->b_instr[index] = target->b_instr[i];
         }
+        return 1;
     }
     return 0;
 }
