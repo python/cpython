@@ -140,7 +140,7 @@ are always available.  They are listed here in alphabetical order.
    See also :func:`format` for more information.
 
 
-.. class:: bool(x=True)
+.. class:: bool(x=False)
 
    Return a Boolean value, i.e. one of ``True`` or ``False``.  *x* is converted
    using the standard :ref:`truth testing procedure <truth>`.  If *x* is false
