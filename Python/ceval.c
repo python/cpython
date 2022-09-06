@@ -3136,6 +3136,7 @@ handle_eval_breaker:
             assert(Py_IS_TYPE(getattribute, &PyFunction_Type));
             PyFunctionObject *f = (PyFunctionObject *)getattribute;
             uint32_t func_version = read_u32(cache->keys_version);
+            assert(func_version != 0);
             DEOPT_IF(f->func_version != func_version, LOAD_ATTR);
             PyCodeObject *code = (PyCodeObject *)f->func_code;
             DEOPT_IF(code->co_argcount != 2, LOAD_ATTR);

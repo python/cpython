@@ -836,6 +836,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             if (func_version == 0) {
                 goto fail;
             }
+            write_u32(lm_cache->keys_version, func_version);
             /* borrowed */
             write_obj(lm_cache->descr, descr);
             write_u32(lm_cache->type_version, type->tp_version_tag);
