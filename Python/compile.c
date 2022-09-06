@@ -8272,9 +8272,6 @@ dump_basicblock(const basicblock *b)
 
 
 static int
-normalize_basic_block(basicblock *bb);
-
-static int
 calculate_jump_targets(basicblock *entryblock);
 
 static int
@@ -9330,24 +9327,17 @@ remove_redundant_nops(basicblock *bb) {
 }
 
 static int
-normalize_basic_block(basicblock *bb) {
-    /* Skip over empty blocks.
-     * Raise SystemError if jump or exit is not last instruction in the block. */
-    for (int i = 0; i < bb->b_iused; i++) {
-        int opcode = bb->b_instr[i].i_opcode;
-        assert(!IS_ASSEMBLER_OPCODE(opcode));
-        int is_jump = IS_JUMP_OPCODE(opcode);
-        int is_exit = IS_SCOPE_EXIT_OPCODE(opcode);
-        if (is_exit || is_jump) {
-            if (i != bb->b_iused-1) {
-                PyErr_SetString(PyExc_SystemError, "malformed control flow graph.");
-                return -1;
-            }
-        }
-        if (is_jump) {
-            /* Skip over empty basic blocks. */
-            while (bb->b_instr[i].i_target->b_iused == 0) {
-                bb->b_instr[i].i_target = bb->b_instr[i].i_target->b_next;
+check_cfg(cfg_builder *g) {
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+        /* Raise SystemError if jump or exit is not last instruction in the block. */
+        for (int i = 0; i < b->b_iused; i++) {
+            int opcode = b->b_instr[i].i_opcode;
+            assert(!IS_ASSEMBLER_OPCODE(opcode));
+            if (IS_TERMINATOR_OPCODE(opcode)) {
+                if (i != b->b_iused-1) {
+                    PyErr_SetString(PyExc_SystemError, "malformed control flow graph.");
+                    return -1;
+                }
             }
         }
     }
@@ -9518,16 +9508,16 @@ static int
 optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
 {
     assert(PyDict_CheckExact(const_cache));
-    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        if (normalize_basic_block(b)) {
-            return -1;
-        }
+    if (check_cfg(g) < 0) {
+        return -1;
     }
+    eliminate_empty_basic_blocks(g);
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         if (extend_block(b) < 0) {
             return -1;
         }
     }
+    assert(no_empty_basic_blocks(g));
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         if (optimize_basic_block(const_cache, b, consts)) {
             return -1;
