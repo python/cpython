@@ -127,7 +127,8 @@ clean:
 
 venv:
 	$(PYTHON) -m venv $(VENVDIR)
-	$(VENVDIR)/bin/python3 -m pip install -U Sphinx==2.3.1 blurb docutils==0.17.1 Jinja2==3.0.3
+	$(VENVDIR)/bin/python3 -m pip install -U pip setuptools
+	$(VENVDIR)/bin/python3 -m pip install -r requirements.txt
 	@echo "The venv has been created in the $(VENVDIR) directory"
 
 dist:
