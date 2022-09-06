@@ -557,8 +557,6 @@ ensure_utf8(char *line, struct tok_state *tok)
         }
     }
     if (badchar) {
-        /* Need to add 1 to the line number, since this line
-       has not been counted, yet.  */
         PyErr_Format(PyExc_SyntaxError,
                      "Non-UTF-8 code starting with '\\x%.2x' "
                      "in file %U on line %i, "
