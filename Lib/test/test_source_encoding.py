@@ -147,6 +147,18 @@ class MiscSourceEncodingTest(unittest.TestCase):
         self.assertTrue(c.exception.args[0].startswith(expected),
                         msg=c.exception.args[0])
 
+    def test_file_parse_error_multiline(self):
+        # gh96611:
+        with open(TESTFN, "wb") as fd:
+            fd.write(b'print("""\n\xb1""")\n')
+
+        try:
+            retcode, stdout, stderr = script_helper.assert_python_failure(TESTFN)
+
+            self.assertGreater(retcode, 0)
+            self.assertIn(b"Non-UTF-8 code starting with '\\xb1'", stderr)
+        finally:
+            os.unlink(TESTFN)
 
 class AbstractSourceEncodingTest:
 
