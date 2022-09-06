@@ -7,7 +7,7 @@ m4_define(PYTHON_VERSION, 3.7)
 
 AC_PREREQ(2.65)
 
-AC_INIT(python, PYTHON_VERSION, https://bugs.python.org/)
+AC_INIT(python, PYTHON_VERSION, https://github.com/python/cpython/issues/)
 
 AC_CONFIG_MACRO_DIR(m4)
 
