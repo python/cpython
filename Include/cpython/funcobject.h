@@ -48,7 +48,8 @@ typedef struct {
      *     defaults
      *     kwdefaults (only if the object changes, not the contents of the dict)
      *     code
-     *     annotations */
+     *     annotations
+     *     vectorcall function pointer */
     uint32_t func_version;
 
     /* Invariant:
