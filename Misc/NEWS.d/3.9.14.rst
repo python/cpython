@@ -1,0 +1,114 @@
+.. date: 2022-08-07-16-53-38
+.. gh-issue: 95778
+.. nonce: ch010gps
+.. release date: 2022-09-06
+.. section: Security
+
+Converting between :class:`int` and :class:`str` in bases other than 2
+(binary), 4, 8 (octal), 16 (hexadecimal), or 32 such as base 10 (decimal)
+now raises a :exc:`ValueError` if the number of digits in string form is
+above a limit to avoid potential denial of service attacks due to the
+algorithmic complexity. This is a mitigation for `CVE-2020-10735
+<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+
+This new limit can be configured or disabled by environment variable,
+command line flag, or :mod:`sys` APIs. See the :ref:`integer string
+conversion length limitation <int_max_str_digits>` documentation.  The
+default limit is 4300 digits in string form.
+
+Patch by Gregory P. Smith [Google] and Christian Heimes [Red Hat] with
+feedback from Victor Stinner, Thomas Wouters, Steve Dower, Ned Deily, and
+Mark Dickinson.
+
+..
+
+.. date: 2022-06-15-20-09-23
+.. gh-issue: 87389
+.. nonce: QVaC3f
+.. section: Security
+
+:mod:`http.server`: Fix an open redirection vulnerability in the HTTP server
+when an URI path starts with ``//``.  Vulnerability discovered, and initial
+fix proposed, by Hamza Avvan.
+
+..
+
+.. date: 2022-05-21-23-21-37
+.. gh-issue: 93065
+.. nonce: 5I18WC
+.. section: Core and Builtins
+
+Fix contextvars HAMT implementation to handle iteration over deep trees.
+
+The bug was discovered and fixed by Eli Libman. See
+`MagicStack/immutables#84
+<https://github.com/MagicStack/immutables/issues/84>`_ for more details.
+
+..
+
+.. date: 2022-07-14-00-43-52
+.. gh-issue: 94821
+.. nonce: e17ghU
+.. section: Library
+
+Fix binding of unix socket to empty address on Linux to use an available
+address from the abstract namespace, instead of "\0".
+
+..
+
+.. date: 2022-06-02-08-40-58
+.. gh-issue: 91810
+.. nonce: Gtk44w
+.. section: Library
+
+Suppress writing an XML declaration in open files in ``ElementTree.write()``
+with ``encoding='unicode'`` and ``xml_declaration=None``.
+
+..
+
+.. bpo: 45393
+.. date: 2022-02-09-23-44-27
+.. nonce: 9v5Y8U
+.. section: Library
+
+Fix the formatting for ``await x`` and ``not x`` in the operator precedence
+table when using the :func:`help` system.
+
+..
+
+.. bpo: 46197
+.. date: 2022-01-03-15-07-06
+.. nonce: Z0djv6
+.. section: Library
+
+Fix :mod:`ensurepip` environment isolation for subprocess running ``pip``.
+
+..
+
+.. date: 2022-07-26-15-22-19
+.. gh-issue: 95280
+.. nonce: h8HvbP
+.. section: Tests
+
+Fix problem with ``test_ssl`` ``test_get_ciphers`` on systems that require
+perfect forward secrecy (PFS) ciphers.
+
+..
+
+.. date: 2022-06-27-21-27-20
+.. gh-issue: 94208
+.. nonce: VR6HX-
+.. section: Tests
+
+``test_ssl`` is now checking for supported TLS version and protocols in more
+tests.
+
+..
+
+.. bpo: 47016
+.. date: 2022-03-14-23-28-17
+.. nonce: K-t2QX
+.. section: Tests
+
+Create a GitHub Actions workflow for verifying bundled pip and setuptools.
+Patch by Illia Volochii and Adam Turner.
