@@ -498,7 +498,7 @@ static int compiler_match(struct compiler *, stmt_ty);
 static int compiler_pattern_subpattern(struct compiler *, pattern_ty,
                                        pattern_context *);
 
-static void clean_basic_block(basicblock *bb);
+static void remove_redundant_nops(basicblock *bb);
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
 
@@ -8649,7 +8649,7 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        clean_basic_block(b);
+        remove_redundant_nops(b);
     }
 
     /* Order of basic blocks must have been determined by now */
@@ -9279,7 +9279,7 @@ extend_block(basicblock *bb) {
 }
 
 static void
-clean_basic_block(basicblock *bb) {
+remove_redundant_nops(basicblock *bb) {
     /* Remove NOPs when legal to do so. */
     int dest = 0;
     int prev_lineno = -1;
@@ -9532,7 +9532,7 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
         if (optimize_basic_block(const_cache, b, consts)) {
             return -1;
         }
-        clean_basic_block(b);
+        remove_redundant_nops(b);
         assert(b->b_predecessors == 0);
     }
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
@@ -9551,7 +9551,7 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
     }
     eliminate_empty_basic_blocks(g);
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        clean_basic_block(b);
+        remove_redundant_nops(b);
     }
     if (remove_redundant_jumps(g) < 0) {
         return -1;
