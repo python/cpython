@@ -582,6 +582,11 @@ is already executing raises a :exc:`ValueError` exception.
    :attr:`~BaseException.__traceback__` attribute stored in *value* may
    be cleared.
 
+   .. deprecated:: 3.12
+
+      The second signature \(type\[, value\[, traceback\]\]\) is deprecated now.
+      It is still available, but may be removed in a future version of Python.
+
 .. index:: exception: GeneratorExit
 
 
