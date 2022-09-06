@@ -4391,19 +4391,19 @@ class OverloadTests(BaseTestCase):
 
         blah()
 
-    @patch("typing._overload_registry",
-        defaultdict(lambda: defaultdict(dict)))
     def test_overload_on_compiled_functions(self):
-        # The registry starts out empty:
-        self.assertEqual(typing._overload_registry, {})
+        with patch("typing._overload_registry",
+                   defaultdict(lambda: defaultdict(dict))):
+            # The registry starts out empty:
+            self.assertEqual(typing._overload_registry, {})
 
-        # This should just not fail:
-        overload(sum)
-        overload(print)
+            # This should just not fail:
+            overload(sum)
+            overload(print)
 
-        # No overloads are recorded (but, it still has a side-effect):
-        self.assertEqual(typing.get_overloads(sum), [])
-        self.assertEqual(typing.get_overloads(print), [])
+            # No overloads are recorded (but, it still has a side-effect):
+            self.assertEqual(typing.get_overloads(sum), [])
+            self.assertEqual(typing.get_overloads(print), [])
 
     def set_up_overloads(self):
         def blah():
