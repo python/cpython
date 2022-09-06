@@ -674,7 +674,6 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    Example usage of some of the methods of :class:`Process`:
 
    .. doctest::
-      :options: +ELLIPSIS
 
        >>> import multiprocessing, time, signal
        >>> p = multiprocessing.Process(target=time.sleep, args=(1000,))
