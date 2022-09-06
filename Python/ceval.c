@@ -3139,7 +3139,7 @@ handle_eval_breaker:
             assert(func_version != 0);
             DEOPT_IF(f->func_version != func_version, LOAD_ATTR);
             PyCodeObject *code = (PyCodeObject *)f->func_code;
-            DEOPT_IF(code->co_argcount != 2, LOAD_ATTR);
+            assert(code->co_argcount == 2);
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
             STAT_INC(LOAD_ATTR, hit);
 
