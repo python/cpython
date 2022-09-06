@@ -85,7 +85,7 @@ There are a few functions specific to Python functions.
 
 .. c:function:: void PyFunction_SetVectorcall(PyFunctionObject *func, vectorcallfunc vectorcall)
 
-   Set the vectorcall field of a given function object *func*
+   Set the vectorcall field of a given function object *func*.
 
    .. versionadded:: 3.12
 
