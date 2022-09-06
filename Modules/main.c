@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "osdefs.h"
 #include "internal/import.h"
+#include "internal/pycore_long.h"
 #include "internal/pygetopt.h"
 #include "internal/pystate.h"
 
@@ -142,6 +143,9 @@ static const char usage_3[] = "\
          -X utf8: enable UTF-8 mode for operating system interfaces, overriding the default\n\
              locale-aware mode. -X utf8=0 explicitly disables UTF-8 mode (even when it would\n\
              otherwise activate automatically)\n\
+         -X int_max_str_digits=number: limit the size of int<->str conversions.\n\
+             This helps avoid denial of service attacks when parsing untrusted data.\n\
+             The default is sys.int_info.default_max_str_digits.  0 disables.\n\
 \n\
 --check-hash-based-pycs always|default|never:\n\
     control how Python invalidates hash-based .pyc files\n\
@@ -167,6 +171,10 @@ static const char usage_6[] =
 "   to seed the hashes of str, bytes and datetime objects.  It can also be\n"
 "   set to an integer in the range [0,4294967295] to get hash values with a\n"
 "   predictable seed.\n"
+"PYTHONINTMAXSTRDIGITS: limits the maximum digit characters in an int value\n"
+"   when converting from a string and when converting an int back to a str.\n"
+"   A value of 0 disables the limit.  Conversions to or from bases 2, 4, 8,\n"
+"   16, and 32 are never limited.\n"
 "PYTHONMALLOC: set the Python memory allocators and/or install debug hooks\n"
 "   on Python memory allocators. Use PYTHONMALLOC=debug to install debug\n"
 "   hooks.\n"
@@ -1801,6 +1809,48 @@ config_init_tracemalloc(_PyCoreConfig *config)
     return _Py_INIT_OK();
 }
 
+static _PyInitError
+config_init_int_max_str_digits(_PyCoreConfig *config)
+{
+    int maxdigits;
+    int valid = 0;
+
+    const char *env = config_get_env_var("PYTHONINTMAXSTRDIGITS");
+    if (env) {
+        if (!pymain_str_to_int(env, &maxdigits)) {
+            valid = ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_STR_DIGITS_THRESHOLD));
+        }
+        if (!valid) {
+#define STRINGIFY(VAL) _STRINGIFY(VAL)
+#define _STRINGIFY(VAL) #VAL
+            return _Py_INIT_USER_ERR(
+                    "PYTHONINTMAXSTRDIGITS: invalid limit; must be >= "
+                    STRINGIFY(_PY_LONG_MAX_STR_DIGITS_THRESHOLD)
+                    " or 0 for unlimited.");
+        }
+        _Py_global_config_int_max_str_digits = maxdigits;
+    }
+
+    const wchar_t *xoption = config_get_xoption(config, L"int_max_str_digits");
+    if (xoption) {
+        const wchar_t *sep = wcschr(xoption, L'=');
+        if (sep) {
+            if (!pymain_wstr_to_int(sep + 1, &maxdigits)) {
+                valid = ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_STR_DIGITS_THRESHOLD));
+            }
+        }
+        if (!valid) {
+            return _Py_INIT_USER_ERR(
+                    "-X int_max_str_digits: invalid limit; must be >= "
+                    STRINGIFY(_PY_LONG_MAX_STR_DIGITS_THRESHOLD)
+                    " or 0 for unlimited.");
+#undef _STRINGIFY
+#undef STRINGIFY
+        }
+        _Py_global_config_int_max_str_digits = maxdigits;
+    }
+    return _Py_INIT_OK();
+}
 
 static void
 get_env_flag(int *flag, const char *name)
@@ -2016,6 +2066,12 @@ config_read_complex_options(_PyCoreConfig *config)
 
     if (config->tracemalloc < 0) {
         _PyInitError err = config_init_tracemalloc(config);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+    }
+    if (_Py_global_config_int_max_str_digits < 0) {
+        _PyInitError err = config_init_int_max_str_digits(config);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }

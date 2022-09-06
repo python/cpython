@@ -1860,6 +1860,7 @@
     <elf-symbol name='_Py_endswith__doc__' size='264' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_Py_expandtabs__doc__' size='173' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_Py_find__doc__' size='239' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <elf-symbol name='_Py_global_config_int_max_str_digits' size='4' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_Py_index__doc__' size='270' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_Py_isalnum__doc__' size='132' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_Py_isalpha__doc__' size='130' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
@@ -11957,6 +11958,9 @@
       </data-member>
       <data-member access='public' layout-offset-in-bits='11776'>
         <var-decl name='gilstate' type-id='type-id-600' visibility='default' filepath='../gpshead/Include/internal/pystate.h' line='105' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='12096'>
+        <var-decl name='int_max_str_digits' type-id='type-id-7' visibility='default' filepath='../gpshead/Include/internal/pystate.h' line='109' column='1'/>
       </data-member>
     </class-decl>
     <class-decl name='pyinterpreters' size-in-bits='256' is-struct='yes' visibility='default' filepath='../gpshead/Include/internal/pystate.h' line='83' column='1' id='type-id-596'>

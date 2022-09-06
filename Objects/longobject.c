@@ -3,6 +3,8 @@
 /* XXX The functional organization of this file is terrible */
 
 #include "Python.h"
+#include "internal/pycore_long.h"
+#include "internal/pystate.h"  // _Py_global_config_int_max_str_digits
 #include "longintrepr.h"
 
 #include <float.h>
@@ -44,6 +46,9 @@ static PyLongObject small_ints[NSMALLNEGINTS + NSMALLPOSINTS];
 #ifdef COUNT_ALLOCS
 Py_ssize_t quick_int_allocs, quick_neg_int_allocs;
 #endif
+
+#define _MAX_STR_DIGITS_ERROR_FMT_TO_INT "Exceeds the limit (%d) for integer string conversion: value has %zd digits"
+#define _MAX_STR_DIGITS_ERROR_FMT_TO_STR "Exceeds the limit (%d) for integer string conversion"
 
 static PyObject *
 get_small_int(sdigit ival)
@@ -1602,6 +1607,22 @@ long_to_decimal_string_internal(PyObject *aa,
     size_a = Py_ABS(Py_SIZE(a));
     negative = Py_SIZE(a) < 0;
 
+    /* quick and dirty pre-check for overflowing the decimal digit limit,
+       based on the inequality 10/3 >= log2(10)
+
+       explanation in https://github.com/python/cpython/pull/96537
+    */
+    if (size_a >= 10 * _PY_LONG_MAX_STR_DIGITS_THRESHOLD
+                  / (3 * PyLong_SHIFT) + 2) {
+        int max_str_digits = _PyRuntime.int_max_str_digits;
+        if ((max_str_digits > 0) &&
+            (max_str_digits / (3 * PyLong_SHIFT) <= (size_a - 11) / 10)) {
+            PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT_TO_STR,
+                         max_str_digits);
+            return -1;
+        }
+    }
+
     /* quick and dirty upper bound for the number of digits
        required to express a in base _PyLong_DECIMAL_BASE:
 
@@ -1660,6 +1681,16 @@ long_to_decimal_string_internal(PyObject *aa,
     while (rem >= tenpow) {
         tenpow *= 10;
         strlen++;
+    }
+    if (strlen > _PY_LONG_MAX_STR_DIGITS_THRESHOLD) {
+        int max_str_digits = _PyRuntime.int_max_str_digits;
+        Py_ssize_t strlen_nosign = strlen - negative;
+        if ((max_str_digits > 0) && (strlen_nosign > max_str_digits)) {
+            Py_DECREF(scratch);
+            PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT_TO_STR,
+                         max_str_digits);
+            return -1;
+        }
     }
     if (writer) {
         if (_PyUnicodeWriter_Prepare(writer, strlen, '9') == -1) {
@@ -2174,6 +2205,7 @@ PyLong_FromString(const char *str, char **pend, int base)
 
     start = str;
     if ((base & (base - 1)) == 0) {
+        /* binary bases are not limited by int_max_str_digits */
         int res = long_from_binary_base(&str, base, &z);
         if (res < 0) {
             /* Syntax error. */
@@ -2323,6 +2355,16 @@ digit beyond the first.
             /* Set error pointer to first underscore. */
             str = lastdigit + 1;
             goto onError;
+        }
+
+        /* Limit the size to avoid excessive computation attacks. */
+        if (digits > _PY_LONG_MAX_STR_DIGITS_THRESHOLD) {
+            int max_str_digits = _PyRuntime.int_max_str_digits;
+            if ((max_str_digits > 0) && (digits > max_str_digits)) {
+                PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT_TO_INT,
+                             max_str_digits, digits);
+                return NULL;
+            }
         }
 
         /* Create an int object that can contain the largest possible
@@ -4807,6 +4849,7 @@ long_new_impl(PyTypeObject *type, PyObject *x, PyObject *obase)
         }
         return PyLong_FromLong(0L);
     }
+    /* default base and limit, forward to standard implementation */
     if (obase == NULL)
         return PyNumber_Long(x);
 
@@ -5430,6 +5473,8 @@ internal representation of integers.  The attributes are read only.");
 static PyStructSequence_Field int_info_fields[] = {
     {"bits_per_digit", "size of a digit in bits"},
     {"sizeof_digit", "size in bytes of the C type used to represent a digit"},
+    {"default_max_str_digits", "maximum string conversion digits limitation"},
+    {"str_digits_check_threshold", "minimum positive value for int_max_str_digits"},
     {NULL, NULL}
 };
 
@@ -5437,7 +5482,7 @@ static PyStructSequence_Desc int_info_desc = {
     "sys.int_info",   /* name */
     int_info__doc__,  /* doc */
     int_info_fields,  /* fields */
-    2                 /* number of fields */
+    4                 /* number of fields */
 };
 
 PyObject *
@@ -5452,6 +5497,17 @@ PyLong_GetInfo(void)
                               PyLong_FromLong(PyLong_SHIFT));
     PyStructSequence_SET_ITEM(int_info, field++,
                               PyLong_FromLong(sizeof(digit)));
+    /*
+     * The following two fields were added after investigating uses of
+     * sys.int_info in the wild: Exceedingly rarely used. The ONLY use found was
+     * numba using sys.int_info.bits_per_digit as attribute access rather than
+     * sequence unpacking. Cython and sympy also refer to sys.int_info but only
+     * as info for debugging. No concern about adding these in a backport.
+     */
+    PyStructSequence_SET_ITEM(int_info, field++,
+                              PyLong_FromLong(_PY_LONG_DEFAULT_MAX_STR_DIGITS));
+    PyStructSequence_SET_ITEM(int_info, field++,
+                              PyLong_FromLong(_PY_LONG_MAX_STR_DIGITS_THRESHOLD));
     if (PyErr_Occurred()) {
         Py_CLEAR(int_info);
         return NULL;
@@ -5502,6 +5558,10 @@ _PyLong_Init(void)
     if (Int_InfoType.tp_name == NULL) {
         if (PyStructSequence_InitType2(&Int_InfoType, &int_info_desc) < 0)
             return 0;
+    }
+    _PyRuntime.int_max_str_digits = _Py_global_config_int_max_str_digits;
+    if (_PyRuntime.int_max_str_digits == -1) {
+        _PyRuntime.int_max_str_digits = _PY_LONG_DEFAULT_MAX_STR_DIGITS;
     }
 
     return 1;
