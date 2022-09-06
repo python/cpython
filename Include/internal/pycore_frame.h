@@ -190,11 +190,16 @@ _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame);
 void
 _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear);
 
-
 static inline bool
 _PyThreadState_HasStackSpace(PyThreadState *tstate, int size)
 {
-    return tstate->datastack_top + size < tstate->datastack_limit;
+    assert(
+        (tstate->datastack_top == NULL && tstate->datastack_limit == NULL)
+        ||
+        (tstate->datastack_top != NULL && tstate->datastack_limit != NULL)
+    );
+    return tstate->datastack_top != NULL &&
+        size < tstate->datastack_limit - tstate->datastack_top;
 }
 
 extern _PyInterpreterFrame *
