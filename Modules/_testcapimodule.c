@@ -4852,20 +4852,22 @@ hasattr_string(PyObject *self, PyObject* args)
     PyObject* obj;
     PyObject* attr_name;
 
-    if(!PyArg_UnpackTuple(args, "hasattr_string", 2, 2, &obj, &attr_name))
+    if (!PyArg_UnpackTuple(args, "hasattr_string", 2, 2, &obj, &attr_name)) {
         return NULL;
+    }
 
-    if(!PyUnicode_Check(attr_name))
-    {
+    if (!PyUnicode_Check(attr_name)) {
         PyErr_SetString(PyExc_TypeError, "attribute name must a be string");
         return PyErr_Occurred();
     }
 
     const char *name_str = PyUnicode_AsUTF8(attr_name);
-    if(PyObject_HasAttrString(obj, name_str))
+    if (PyObject_HasAttrString(obj, name_str)) {
         Py_RETURN_TRUE;
-    else
+    }
+    else {
         Py_RETURN_FALSE;
+    }
 }
 
 
