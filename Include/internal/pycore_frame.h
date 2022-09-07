@@ -193,7 +193,7 @@ extern _PyInterpreterFrame *
 _PyThreadState_BumpFramePointerSlow(PyThreadState *tstate, size_t size);
 
 static inline bool
-_PyThreadState_HasStackSpace(PyThreadState *tstate, int size)
+_PyThreadState_HasStackSpace(PyThreadState *tstate, size_t size)
 {
     assert(
         (tstate->datastack_top == NULL && tstate->datastack_limit == NULL)
@@ -201,7 +201,7 @@ _PyThreadState_HasStackSpace(PyThreadState *tstate, int size)
         (tstate->datastack_top != NULL && tstate->datastack_limit != NULL)
     );
     return tstate->datastack_top != NULL &&
-        size < tstate->datastack_limit - tstate->datastack_top;
+        size < (size_t)(tstate->datastack_limit - tstate->datastack_top);
 }
 
 static inline _PyInterpreterFrame *

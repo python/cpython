@@ -2183,6 +2183,10 @@ _PyThreadState_BumpFramePointerSlow(PyThreadState *tstate, size_t size)
         tstate->datastack_top += size;
         return res;
     }
+    if (size > INT_MAX/2) {
+        PyErr_NoMemory();
+        return NULL;
+    }
     return (_PyInterpreterFrame *)push_chunk(tstate, (int)size);
 }
 
