@@ -716,10 +716,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         DISPATCH_GOTO(); \
     }
 
-#define NOTRACE_DISPATCH_SAME_OPARG() \
+#define DISPATCH_SAME_OPARG() \
     { \
         opcode = _Py_OPCODE(*next_instr); \
         PRE_DISPATCH_GOTO(); \
+        opcode |= cframe.use_tracing OR_DTRACE_LINE; \
         DISPATCH_GOTO(); \
     }
 
@@ -1237,7 +1238,7 @@ handle_eval_breaker:
             assert(value != NULL);
             Py_INCREF(value);
             PUSH(value);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(STORE_FAST__STORE_FAST) {
@@ -1247,7 +1248,7 @@ handle_eval_breaker:
             next_instr++;
             value = POP();
             SETLOCAL(oparg, value);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(LOAD_CONST__LOAD_FAST) {
@@ -1339,7 +1340,7 @@ handle_eval_breaker:
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(BINARY_OP_MULTIPLY_FLOAT) {
@@ -1360,7 +1361,7 @@ handle_eval_breaker:
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(BINARY_OP_SUBTRACT_INT) {
@@ -1379,7 +1380,7 @@ handle_eval_breaker:
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(BINARY_OP_SUBTRACT_FLOAT) {
@@ -1399,7 +1400,7 @@ handle_eval_breaker:
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(BINARY_OP_ADD_UNICODE) {
@@ -1418,7 +1419,7 @@ handle_eval_breaker:
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(BINARY_OP_INPLACE_ADD_UNICODE) {
@@ -1454,7 +1455,7 @@ handle_eval_breaker:
             }
             // The STORE_FAST is already done.
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP + 1);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(BINARY_OP_ADD_FLOAT) {
@@ -1475,7 +1476,7 @@ handle_eval_breaker:
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(BINARY_OP_ADD_INT) {
@@ -1494,7 +1495,7 @@ handle_eval_breaker:
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(BINARY_SUBSCR) {
@@ -1560,7 +1561,7 @@ handle_eval_breaker:
                 if (_Py_Specialize_BinarySubscr(container, sub, next_instr) < 0) {
                     goto error;
                 }
-                NOTRACE_DISPATCH_SAME_OPARG();
+                DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(BINARY_SUBSCR, deferred);
@@ -1591,7 +1592,7 @@ handle_eval_breaker:
             SET_TOP(res);
             Py_DECREF(list);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(BINARY_SUBSCR_TUPLE_INT) {
@@ -1616,7 +1617,7 @@ handle_eval_breaker:
             SET_TOP(res);
             Py_DECREF(tuple);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(BINARY_SUBSCR_DICT) {
@@ -1724,7 +1725,7 @@ handle_eval_breaker:
                 if (_Py_Specialize_StoreSubscr(container, sub, next_instr) < 0) {
                     goto error;
                 }
-                NOTRACE_DISPATCH_SAME_OPARG();
+                DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(STORE_SUBSCR, deferred);
@@ -1756,7 +1757,7 @@ handle_eval_breaker:
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
             Py_DECREF(list);
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_SUBSCR);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(STORE_SUBSCR_DICT) {
@@ -2238,7 +2239,7 @@ handle_eval_breaker:
                 PyObject *seq = TOP();
                 next_instr--;
                 _Py_Specialize_UnpackSequence(seq, next_instr, oparg);
-                NOTRACE_DISPATCH_SAME_OPARG();
+                DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(UNPACK_SEQUENCE, deferred);
@@ -2256,7 +2257,7 @@ handle_eval_breaker:
             PUSH(Py_NewRef(PyTuple_GET_ITEM(seq, 0)));
             Py_DECREF(seq);
             JUMPBY(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(UNPACK_SEQUENCE_TUPLE) {
@@ -2271,7 +2272,7 @@ handle_eval_breaker:
             }
             Py_DECREF(seq);
             JUMPBY(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(UNPACK_SEQUENCE_LIST) {
@@ -2286,7 +2287,7 @@ handle_eval_breaker:
             }
             Py_DECREF(seq);
             JUMPBY(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(UNPACK_EX) {
@@ -2481,7 +2482,7 @@ handle_eval_breaker:
                 if (_Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name) < 0) {
                     goto error;
                 }
-                NOTRACE_DISPATCH_SAME_OPARG();
+                DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(LOAD_GLOBAL, deferred);
@@ -2508,7 +2509,7 @@ handle_eval_breaker:
             STACK_GROW(push_null+1);
             Py_INCREF(res);
             SET_TOP(res);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(LOAD_GLOBAL_BUILTIN) {
@@ -2533,7 +2534,7 @@ handle_eval_breaker:
             STACK_GROW(push_null+1);
             Py_INCREF(res);
             SET_TOP(res);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(DELETE_FAST) {
@@ -2942,7 +2943,7 @@ handle_eval_breaker:
                 if (_Py_Specialize_LoadAttr(owner, next_instr, name) < 0) {
                     goto error;
                 }
-                NOTRACE_DISPATCH_SAME_OPARG();
+                DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(LOAD_ATTR, deferred);
@@ -2973,7 +2974,7 @@ handle_eval_breaker:
             SET_TOP(res);
             Py_DECREF(owner);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(LOAD_ATTR_MODULE) {
@@ -2998,7 +2999,7 @@ handle_eval_breaker:
             SET_TOP(res);
             Py_DECREF(owner);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(LOAD_ATTR_WITH_HINT) {
@@ -3037,7 +3038,7 @@ handle_eval_breaker:
             SET_TOP(res);
             Py_DECREF(owner);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(LOAD_ATTR_SLOT) {
@@ -3059,7 +3060,7 @@ handle_eval_breaker:
             SET_TOP(res);
             Py_DECREF(owner);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(LOAD_ATTR_CLASS) {
@@ -3082,7 +3083,7 @@ handle_eval_breaker:
             SET_TOP(res);
             Py_DECREF(cls);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(LOAD_ATTR_PROPERTY) {
@@ -3171,7 +3172,7 @@ handle_eval_breaker:
                 if (_Py_Specialize_StoreAttr(owner, next_instr, name) < 0) {
                     goto error;
                 }
-                NOTRACE_DISPATCH_SAME_OPARG();
+                DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(STORE_ATTR, deferred);
@@ -3206,7 +3207,7 @@ handle_eval_breaker:
             }
             Py_DECREF(owner);
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(STORE_ATTR_WITH_HINT) {
@@ -3255,7 +3256,7 @@ handle_eval_breaker:
             dict->ma_version_tag = DICT_NEXT_VERSION();
             Py_DECREF(owner);
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(STORE_ATTR_SLOT) {
@@ -3275,7 +3276,7 @@ handle_eval_breaker:
             Py_XDECREF(old_value);
             Py_DECREF(owner);
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(COMPARE_OP) {
@@ -3302,7 +3303,7 @@ handle_eval_breaker:
                 PyObject *left = SECOND();
                 next_instr--;
                 _Py_Specialize_CompareOp(left, right, next_instr, oparg);
-                NOTRACE_DISPATCH_SAME_OPARG();
+                DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(COMPARE_OP, deferred);
@@ -3339,7 +3340,7 @@ handle_eval_breaker:
             else {
                 JUMPBY(1 + oparg);
             }
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(COMPARE_OP_INT_JUMP) {
@@ -3371,7 +3372,7 @@ handle_eval_breaker:
             else {
                 JUMPBY(1 + oparg);
             }
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(COMPARE_OP_STR_JUMP) {
@@ -3404,7 +3405,7 @@ handle_eval_breaker:
             else {
                 JUMPBY(1 + oparg);
             }
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(IS_OP) {
@@ -3829,7 +3830,7 @@ handle_eval_breaker:
             if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
                 next_instr--;
                 _Py_Specialize_ForIter(TOP(), next_instr);
-                NOTRACE_DISPATCH_SAME_OPARG();
+                DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(FOR_ITER, deferred);
@@ -3850,7 +3851,7 @@ handle_eval_breaker:
                     Py_INCREF(next);
                     PUSH(next);
                     JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
-                    NOTRACE_DISPATCH();
+                    DISPATCH();
                 }
                 it->it_seq = NULL;
                 Py_DECREF(seq);
@@ -3858,7 +3859,7 @@ handle_eval_breaker:
             STACK_SHRINK(1);
             Py_DECREF(it);
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(FOR_ITER_RANGE) {
@@ -3872,7 +3873,7 @@ handle_eval_breaker:
                 STACK_SHRINK(1);
                 Py_DECREF(r);
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
-                NOTRACE_DISPATCH();
+                DISPATCH();
             }
             long value = (long)(r->start +
                                 (unsigned long)(r->index++) * r->step);
@@ -3881,7 +3882,7 @@ handle_eval_breaker:
             }
             // The STORE_FAST is already done.
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + 1);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(BEFORE_ASYNC_WITH) {
@@ -4028,7 +4029,7 @@ handle_eval_breaker:
             SET_TOP(res);
             PUSH(self);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(LOAD_ATTR_METHOD_WITH_DICT) {
@@ -4056,7 +4057,7 @@ handle_eval_breaker:
             SET_TOP(res);
             PUSH(self);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(LOAD_ATTR_METHOD_NO_DICT) {
@@ -4075,7 +4076,7 @@ handle_eval_breaker:
             SET_TOP(res);
             PUSH(self);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(LOAD_ATTR_METHOD_LAZY_DICT) {
@@ -4098,7 +4099,7 @@ handle_eval_breaker:
             SET_TOP(res);
             PUSH(self);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(CALL_BOUND_METHOD_EXACT_ARGS) {
@@ -4208,7 +4209,7 @@ handle_eval_breaker:
                 if (err < 0) {
                     goto error;
                 }
-                NOTRACE_DISPATCH_SAME_OPARG();
+                DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(CALL, deferred);
@@ -4305,7 +4306,7 @@ handle_eval_breaker:
             Py_DECREF(obj);
             STACK_SHRINK(2);
             SET_TOP(res);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(CALL_NO_KW_STR_1) {
@@ -4575,7 +4576,7 @@ handle_eval_breaker:
             STACK_SHRINK(2);
             Py_DECREF(list);
             Py_DECREF(callable);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_O) {
@@ -4947,7 +4948,7 @@ handle_eval_breaker:
                 PyObject *rhs = TOP();
                 next_instr--;
                 _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
-                NOTRACE_DISPATCH_SAME_OPARG();
+                DISPATCH_SAME_OPARG();
             }
             else {
                 STAT_INC(BINARY_OP, deferred);
@@ -4985,7 +4986,7 @@ handle_eval_breaker:
             assert(oparg);
             oparg <<= 8;
             oparg |= _Py_OPARG(*next_instr);
-            NOTRACE_DISPATCH_SAME_OPARG();
+            DISPATCH_SAME_OPARG();
         }
 
         TARGET(CACHE) {
