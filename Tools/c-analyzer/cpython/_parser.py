@@ -92,18 +92,7 @@ Python/frozen_modules/*.h
 # XXX Fix the parser.
 EXCLUDED += clean_lines('''
 # The tool should be able to parse these...
-
 Modules/hashlib.h
-Objects/stringlib/codecs.h
-Objects/stringlib/count.h
-Objects/stringlib/ctype.h
-Objects/stringlib/fastsearch.h
-Objects/stringlib/find.h
-Objects/stringlib/find_max_char.h
-Objects/stringlib/partition.h
-Objects/stringlib/replace.h
-Objects/stringlib/split.h
-
 Modules/expat/xmlparse.c
 ''')
 
@@ -118,6 +107,7 @@ glob	dirname
 Modules/_tkinter.c	/usr/include/tcl8.6
 Modules/tkappinit.c	/usr/include/tcl
 Modules/_decimal/**/*.c	Modules/_decimal/libmpdec
+Objects/stringlib/*.h	Objects
 
 # @end=tsv@
 ''')[1:]
@@ -133,6 +123,28 @@ Include/**/*.h	object.h
 # for Py_HAVE_CONDVAR
 Include/internal/pycore_gil.h	pycore_condvar.h
 Python/thread_pthread.h	pycore_condvar.h
+
+# other
+
+Objects/stringlib/join.h	stringlib/stringdefs.h
+Objects/stringlib/ctype.h	stringlib/stringdefs.h
+Objects/stringlib/transmogrify.h	stringlib/stringdefs.h
+#Objects/stringlib/fastsearch.h	stringlib/stringdefs.h
+#Objects/stringlib/count.h	stringlib/stringdefs.h
+#Objects/stringlib/find.h	stringlib/stringdefs.h
+#Objects/stringlib/partition.h	stringlib/stringdefs.h
+#Objects/stringlib/split.h	stringlib/stringdefs.h
+Objects/stringlib/fastsearch.h	stringlib/ucs1lib.h
+Objects/stringlib/count.h	stringlib/ucs1lib.h
+Objects/stringlib/find.h	stringlib/ucs1lib.h
+Objects/stringlib/partition.h	stringlib/ucs1lib.h
+Objects/stringlib/split.h	stringlib/ucs1lib.h
+Objects/stringlib/find_max_char.h	Objects/stringlib/ucs1lib.h
+Objects/stringlib/count.h	Objects/stringlib/fastsearch.h
+Objects/stringlib/find.h	Objects/stringlib/fastsearch.h
+Objects/stringlib/partition.h	Objects/stringlib/fastsearch.h
+Objects/stringlib/replace.h	Objects/stringlib/fastsearch.h
+Objects/stringlib/split.h	Objects/stringlib/fastsearch.h
 
 # @end=tsv@
 ''')[1:]
@@ -219,6 +231,13 @@ Include/**/*.h	HAVE_PTHREAD_H	1
 # from pyconfig.h
 Include/cpython/pthread_stubs.h	HAVE_PTHREAD_STUBS	1
 Python/thread_pthread_stubs.h	HAVE_PTHREAD_STUBS	1
+
+# from Objects/bytesobject.c
+Objects/stringlib/partition.h	STRINGLIB_GET_EMPTY()	bytes_get_empty()
+Objects/stringlib/join.h	STRINGLIB_MUTABLE	0
+Objects/stringlib/partition.h	STRINGLIB_MUTABLE	0
+Objects/stringlib/split.h	STRINGLIB_MUTABLE	0
+Objects/stringlib/transmogrify.h	STRINGLIB_MUTABLE	0
 
 # from Makefile
 Modules/getpath.c	PYTHONPATH	1
