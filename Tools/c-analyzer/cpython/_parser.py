@@ -104,7 +104,6 @@ Objects/stringlib/partition.h
 Objects/stringlib/replace.h
 Objects/stringlib/split.h
 
-Modules/_dbmmodule.c
 Modules/expat/xmlparse.c
 ''')
 
@@ -228,6 +227,9 @@ Modules/getpath.c	EXEC_PREFIX	...
 Modules/getpath.c	VERSION	...
 Modules/getpath.c	VPATH	...
 Modules/getpath.c	PLATLIBDIR	...
+#Modules/_dbmmodule.c	USE_GDBM_COMPAT	1
+Modules/_dbmmodule.c	USE_NDBM	1
+#Modules/_dbmmodule.c	USE_BERKDB	1
 
 # See: setup.py
 Modules/_decimal/**/*.c	CONFIG_64	1
