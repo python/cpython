@@ -174,7 +174,7 @@ class TestTracing(unittest.TestCase):
             C(0).x, len
 
         def g():
-            # BINARY_SUSCR[_TUPLE_INT] immediately follows the call to C.__del__
+            # BINARY_SUSCR[_LIST_INT] immediately follows the call to C.__del__
             [0][C(0).x]
 
         def h():
