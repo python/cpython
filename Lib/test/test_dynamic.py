@@ -186,6 +186,7 @@ class TestTracing(unittest.TestCase):
                 func()
             turn_on_trace = True
             func()
+            sys.settrace(None)
             turn_on_trace = False
 
 
