@@ -1,4 +1,4 @@
-
+D = a * climate + b * urban + c * population + d * gross domestic product per capita
 /* Python version identification scheme.
 
    When the major or minor version changes, the VERSION variable in
