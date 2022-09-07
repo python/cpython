@@ -444,6 +444,7 @@ Objects/floatobject.c	-	float_format	-
 Objects/longobject.c	PyLong_FromString	log_base_BASE	-
 Objects/longobject.c	PyLong_FromString	convwidth_base	-
 Objects/longobject.c	PyLong_FromString	convmultmax_base	-
+Objects/perf_trampoline.c	-	perf_map_file	-
 Objects/unicodeobject.c	-	ucnhash_capi	-
 Parser/action_helpers.c	_PyPegen_dummy_name	cache	-
 Python/dtoa.c	-	p5s	-
@@ -519,6 +520,10 @@ Objects/dictobject.c	-	next_dict_keys_version	-
 Objects/funcobject.c	-	next_func_version	-
 Objects/moduleobject.c	-	max_module_number	-
 Objects/object.c	-	_Py_RefTotal	-
+Objects/perf_trampoline.c	-	perf_status	-
+Objects/perf_trampoline.c	-	extra_code_index	-
+Objects/perf_trampoline.c	-	code_arena	-
+Objects/perf_trampoline.c	-	trampoline_api	-
 Objects/typeobject.c	-	next_version_tag	-
 Objects/typeobject.c	resolve_slotdups	ptrs	-
 Parser/pegen.c	-	memo_statistics	-
