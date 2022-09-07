@@ -15,7 +15,17 @@
 #include <propvarutil.h>
 
 #include <Python.h>
+
+
+#if _MSC_VER >= 1929
+// We can use clinic directly when the C++ compiler supports C++20
 #include "clinic/_wmimodule.cpp.h"
+#else
+// Cannot use clinic because of missing C++20 support, so create a simpler
+// API instead. This won't impact releases, so fine to omit the docstring.
+static PyObject *_wmi_exec_query_impl(PyObject *module, PyObject *query);
+#define _WMI_EXEC_QUERY_METHODDEF {"exec_query", _wmi_exec_query_impl, METH_O, NULL},
+#endif
 
 
 /*[clinic input]
