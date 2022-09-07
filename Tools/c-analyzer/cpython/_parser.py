@@ -92,7 +92,6 @@ Python/frozen_modules/*.h
 # XXX Fix the parser.
 EXCLUDED += clean_lines('''
 # The tool should be able to parse these...
-Modules/hashlib.h
 Modules/expat/xmlparse.c
 ''')
 
