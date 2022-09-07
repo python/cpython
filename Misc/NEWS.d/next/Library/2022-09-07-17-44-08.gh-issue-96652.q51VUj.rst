@@ -1,0 +1,1 @@
+Check previous signal handler to be non-NULL :func:`faulthandler_user`.
