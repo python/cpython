@@ -699,12 +699,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 #define PRE_DISPATCH_GOTO() ((void)0)
 #endif
 
-#define NOTRACE_DISPATCH() \
-    { \
-        NEXTOPARG(); \
-        PRE_DISPATCH_GOTO(); \
-        DISPATCH_GOTO(); \
-    }
 
 /* Do interpreter dispatch accounting for tracing and instrumentation */
 #define DISPATCH() \
@@ -1213,7 +1207,7 @@ handle_eval_breaker:
             assert(value != NULL);
             Py_INCREF(value);
             PUSH(value);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(LOAD_FAST__LOAD_CONST) {
@@ -1226,7 +1220,7 @@ handle_eval_breaker:
             value = GETITEM(consts, oparg);
             Py_INCREF(value);
             PUSH(value);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(STORE_FAST__LOAD_FAST) {
@@ -1261,7 +1255,7 @@ handle_eval_breaker:
             assert(value != NULL);
             Py_INCREF(value);
             PUSH(value);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(POP_TOP) {
