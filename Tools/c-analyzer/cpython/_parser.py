@@ -124,6 +124,18 @@ Modules/_decimal/**/*.c	Modules/_decimal/libmpdec
 # @end=tsv@
 ''')[1:]
 
+INCLUDES = clean_lines('''
+# @begin=tsv@
+
+glob	include
+
+#*	pyconfig.h
+#*	pyport.h
+#*	pymacro.h
+
+# @end=tsv@
+''')[1:]
+
 MACROS = clean_lines('''
 # @begin=tsv@
 
@@ -332,6 +344,7 @@ MAX_SIZES = {
 
 def get_preprocessor(*,
                      file_macros=None,
+                     file_includes=None,
                      file_incldirs=None,
                      file_same=None,
                      **kwargs
@@ -339,11 +352,15 @@ def get_preprocessor(*,
     macros = tuple(MACROS)
     if file_macros:
         macros += tuple(file_macros)
+    includes = tuple(INCLUDES)
+    if file_includes:
+        includes += tuple(file_includes)
     incldirs = tuple(INCL_DIRS)
     if file_incldirs:
         incldirs += tuple(file_incldirs)
     return _get_preprocessor(
         file_macros=macros,
+        file_includes=includes,
         file_incldirs=incldirs,
         file_same=file_same,
         **kwargs

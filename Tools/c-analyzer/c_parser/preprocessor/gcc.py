@@ -40,11 +40,17 @@ POST_ARGS = (
 )
 
 
-def preprocess(filename, incldirs=None, macros=None, samefiles=None):
+def preprocess(filename,
+               incldirs=None,
+               includes=None,
+               macros=None,
+               samefiles=None,
+               ):
     text = _common.preprocess(
         TOOL,
         filename,
         incldirs=incldirs,
+        includes=includes,
         macros=macros,
         #preargs=PRE_ARGS,
         postargs=POST_ARGS,

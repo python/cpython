@@ -66,12 +66,17 @@ def _build_argv(
     tool,
     filename,
     incldirs=None,
+    includes=None,
     macros=None,
     preargs=None,
     postargs=None,
     executable=None,
     compiler=None,
 ):
+    if includes:
+        includes = tuple(f'-include{i}' for i in includes)
+        postargs = (includes + postargs) if postargs else includes
+
     compiler = distutils.ccompiler.new_compiler(
         compiler=compiler or tool,
     )

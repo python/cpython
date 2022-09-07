@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 
 def preprocess(source, *,
                incldirs=None,
+               includes=None,
                macros=None,
                samefiles=None,
                filename=None,
@@ -47,11 +48,18 @@ def preprocess(source, *,
     if tool:
         logger.debug(f'CWD: {os.getcwd()!r}')
         logger.debug(f'incldirs: {incldirs!r}')
+        logger.debug(f'includes: {includes!r}')
         logger.debug(f'macros: {macros!r}')
         logger.debug(f'samefiles: {samefiles!r}')
         _preprocess = _get_preprocessor(tool)
         with _good_file(source, filename) as source:
-            return _preprocess(source, incldirs, macros, samefiles) or ()
+            return _preprocess(
+                source,
+                incldirs,
+                includes,
+                macros,
+                samefiles,
+            ) or ()
     else:
         source, filename = _resolve_source(source, filename)
         # We ignore "includes", "macros", etc.
@@ -72,6 +80,7 @@ def preprocess(source, *,
 
 def get_preprocessor(*,
                      file_macros=None,
+                     file_includes=None,
                      file_incldirs=None,
                      file_same=None,
                      ignore_exc=False,
@@ -80,6 +89,8 @@ def get_preprocessor(*,
     _preprocess = preprocess
     if file_macros:
         file_macros = tuple(_parse_macros(file_macros))
+    if file_includes:
+        file_includes = tuple(_parse_includes(file_includes))
     if file_incldirs:
         file_incldirs = tuple(_parse_incldirs(file_incldirs))
     if file_same:
@@ -91,14 +102,18 @@ def get_preprocessor(*,
         filename = filename.strip()
         if file_macros:
             macros = list(_resolve_file_values(filename, file_macros))
+        if file_includes:
+            includes = [i for i, in _resolve_file_values(filename, file_includes)]
         if file_incldirs:
             incldirs = [v for v, in _resolve_file_values(filename, file_incldirs)]
 
         def preprocess(**kwargs):
             if file_macros and 'macros' not in kwargs:
                 kwargs['macros'] = macros
+            if file_includes and 'includes' not in kwargs:
+                kwargs['includes'] = includes
             if file_incldirs and 'incldirs' not in kwargs:
-                kwargs['incldirs'] = [v for v, in _resolve_file_values(filename, file_incldirs)]
+                kwargs['incldirs'] = incldirs
             if file_same and 'file_same' not in kwargs:
                 kwargs['samefiles'] = file_same
             kwargs.setdefault('filename', filename)
@@ -117,6 +132,11 @@ def _resolve_file_values(filename, file_values):
 
 def _parse_macros(macros):
     for row, srcfile in _parse_table(macros, '\t', 'glob\tname\tvalue', rawsep='=', default=None):
+        yield row
+
+
+def _parse_includes(includes):
+    for row, srcfile in _parse_table(includes, '\t', 'glob\tinclude', default=None):
         yield row
 
 
