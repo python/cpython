@@ -129,9 +129,12 @@ INCLUDES = clean_lines('''
 
 glob	include
 
-#*	pyconfig.h
-#*	pyport.h
-#*	pymacro.h
+**/*.h	Python.h
+Include/**/*.h	object.h
+
+# for Py_HAVE_CONDVAR
+Include/internal/pycore_gil.h	pycore_condvar.h
+Python/thread_pthread.h	pycore_condvar.h
 
 # @end=tsv@
 ''')[1:]
@@ -211,49 +214,13 @@ Include/cpython/traceback.h	Py_CPYTHON_TRACEBACK_H	1
 Include/cpython/tupleobject.h	Py_CPYTHON_TUPLEOBJECT_H	1
 Include/cpython/unicodeobject.h	Py_CPYTHON_UNICODEOBJECT_H	1
 
-# implied include of pyport.h
-Include/**/*.h	PyAPI_DATA(RTYPE)	extern RTYPE
-Include/**/*.h	PyAPI_FUNC(RTYPE)	RTYPE
-Include/**/*.h	Py_DEPRECATED(VER)	/* */
-Include/**/*.h	_Py_NO_RETURN	/* */
-Python/**/*.h	_Py_NO_RETURN	/* */
-Include/**/*.h	PYLONG_BITS_IN_DIGIT	30
-Modules/**/*.c	PyMODINIT_FUNC	PyObject*
-Objects/unicodeobject.c	PyMODINIT_FUNC	PyObject*
-Python/marshal.c	PyMODINIT_FUNC	PyObject*
-Python/_warnings.c	PyMODINIT_FUNC	PyObject*
-Python/Python-ast.c	PyMODINIT_FUNC	PyObject*
-Python/import.c	PyMODINIT_FUNC	PyObject*
-Modules/_testcapimodule.c	PyAPI_FUNC(RTYPE)	RTYPE
-Python/getargs.c	PyAPI_FUNC(RTYPE)	RTYPE
-Objects/stringlib/unicode_format.h	Py_LOCAL_INLINE(type)	static inline type
-Include/pymath.h	_Py__has_builtin(x)	0
-
-# implied include of pymacro.h
-*/clinic/*.c.h	PyDoc_VAR(name)	static const char name[]
-*/clinic/*.c.h	PyDoc_STR(str)	str
-*/clinic/*.c.h	PyDoc_STRVAR(name,str)	PyDoc_VAR(name) = PyDoc_STR(str)
-
-# implied include of exports.h
-#Modules/_io/bytesio.c	Py_EXPORTED_SYMBOL	/* */
-
-# implied include of object.h
-Include/**/*.h	PyObject_HEAD	PyObject ob_base;
-Include/**/*.h	PyObject_VAR_HEAD	PyVarObject ob_base;
-
-# implied include of pyconfig.h
-Include/**/*.h	SIZEOF_WCHAR_T	4
-Include/**/*.h	SIZEOF_VOID_P	8
-Include/**/*.h	SIZEOF_INT	4
-Include/**/*.h	SIZEOF_LONG	8
-
-Include/internal/pycore_gil.h	Py_HAVE_CONDVAR	1
-Python/thread_pthread.h	Py_HAVE_CONDVAR	1
-**/clinic/*.c.h	Py_HAVE_CONDVAR	1
-
 # implied include of <unistd.h>
 Include/**/*.h	_POSIX_THREADS	1
 Include/**/*.h	HAVE_PTHREAD_H	1
+
+# from pyconfig.h
+Include/cpython/pthread_stubs.h	HAVE_PTHREAD_STUBS	1
+Python/thread_pthread_stubs.h	HAVE_PTHREAD_STUBS	1
 
 # from Makefile
 Modules/getpath.c	PYTHONPATH	1
@@ -263,13 +230,6 @@ Modules/getpath.c	VERSION	...
 Modules/getpath.c	VPATH	...
 Modules/getpath.c	PLATLIBDIR	...
 
-# from Modules/_sha3/sha3module.c
-Modules/_sha3/kcp/KeccakP-1600-inplace32BI.c	PLATFORM_BYTE_ORDER	4321  # force big-endian
-Modules/_sha3/kcp/*.c	KeccakOpt	64
-Modules/_sha3/kcp/*.c	KeccakP200_excluded	1
-Modules/_sha3/kcp/*.c	KeccakP400_excluded	1
-Modules/_sha3/kcp/*.c	KeccakP800_excluded	1
-
 # See: setup.py
 Modules/_decimal/**/*.c	CONFIG_64	1
 Modules/_decimal/**/*.c	ASM	1
@@ -277,13 +237,17 @@ Modules/expat/xmlparse.c	HAVE_EXPAT_CONFIG_H	1
 Modules/expat/xmlparse.c	XML_POOR_ENTROPY	1
 Modules/_dbmmodule.c	HAVE_GDBM_DASH_NDBM_H	1
 
+# from Modules/_sha3/sha3module.c
+Modules/_sha3/kcp/KeccakP-1600-inplace32BI.c	PLATFORM_BYTE_ORDER	4321  # force big-endian
+Modules/_sha3/kcp/*.c	KeccakOpt	64
+Modules/_sha3/kcp/*.c	KeccakP200_excluded	1
+Modules/_sha3/kcp/*.c	KeccakP400_excluded	1
+Modules/_sha3/kcp/*.c	KeccakP800_excluded	1
+
 # others
 Modules/_sre/sre_lib.h	LOCAL(type)	static inline type
 Modules/_sre/sre_lib.h	SRE(F)	sre_ucs2_##F
 Objects/stringlib/codecs.h	STRINGLIB_IS_UNICODE	1
-Include/internal/pycore_bitutils.h	_Py__has_builtin(B)	0
-Include/cpython/pthread_stubs.h	HAVE_PTHREAD_STUBS	1
-Python/thread_pthread_stubs.h	HAVE_PTHREAD_STUBS	1
 
 # @end=tsv@
 ''')[1:]
@@ -321,6 +285,7 @@ MAX_SIZES = {
     _abs('Python/pystate.c'): (500_000, 5000),
 
     # Generated files:
+    _abs('Include/internal/pycore_opcode.h'): (10_000, 1000),
     _abs('Include/internal/pycore_global_strings.h'): (5_000, 1000),
     _abs('Include/internal/pycore_runtime_init_generated.h'): (5_000, 1000),
     _abs('Python/deepfreeze/*.c'): (20_000, 500),
