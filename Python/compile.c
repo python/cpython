@@ -96,23 +96,11 @@
 #define IS_ASSEMBLER_OPCODE(opcode) \
         ((opcode) == JUMP_FORWARD || \
          (opcode) == JUMP_BACKWARD || \
-         (opcode) == JUMP_BACKWARD_NO_INTERRUPT || \
-         (opcode) == POP_JUMP_FORWARD_IF_NONE || \
-         (opcode) == POP_JUMP_BACKWARD_IF_NONE || \
-         (opcode) == POP_JUMP_FORWARD_IF_NOT_NONE || \
-         (opcode) == POP_JUMP_BACKWARD_IF_NOT_NONE || \
-         (opcode) == POP_JUMP_FORWARD_IF_TRUE || \
-         (opcode) == POP_JUMP_BACKWARD_IF_TRUE || \
-         (opcode) == POP_JUMP_FORWARD_IF_FALSE || \
-         (opcode) == POP_JUMP_BACKWARD_IF_FALSE)
+         (opcode) == JUMP_BACKWARD_NO_INTERRUPT)
 
 #define IS_BACKWARDS_JUMP_OPCODE(opcode) \
         ((opcode) == JUMP_BACKWARD || \
-         (opcode) == JUMP_BACKWARD_NO_INTERRUPT || \
-         (opcode) == POP_JUMP_BACKWARD_IF_NONE || \
-         (opcode) == POP_JUMP_BACKWARD_IF_NOT_NONE || \
-         (opcode) == POP_JUMP_BACKWARD_IF_TRUE || \
-         (opcode) == POP_JUMP_BACKWARD_IF_FALSE)
+         (opcode) == JUMP_BACKWARD_NO_INTERRUPT)
 
 #define IS_UNCONDITIONAL_JUMP_OPCODE(opcode) \
         ((opcode) == JUMP || \
@@ -1146,17 +1134,9 @@ stack_effect(int opcode, int oparg, int jump)
         case JUMP_IF_FALSE_OR_POP:
             return jump ? 0 : -1;
 
-        case POP_JUMP_BACKWARD_IF_NONE:
-        case POP_JUMP_FORWARD_IF_NONE:
         case POP_JUMP_IF_NONE:
-        case POP_JUMP_BACKWARD_IF_NOT_NONE:
-        case POP_JUMP_FORWARD_IF_NOT_NONE:
         case POP_JUMP_IF_NOT_NONE:
-        case POP_JUMP_FORWARD_IF_FALSE:
-        case POP_JUMP_BACKWARD_IF_FALSE:
         case POP_JUMP_IF_FALSE:
-        case POP_JUMP_FORWARD_IF_TRUE:
-        case POP_JUMP_BACKWARD_IF_TRUE:
         case POP_JUMP_IF_TRUE:
             return -1;
 
@@ -7095,6 +7075,7 @@ stackdepth(basicblock *entryblock, int code_flags)
                 return -1;
             }
             int new_depth = depth + effect;
+            assert(new_depth >= 0); /* invalid code or bug in stackdepth() */
             if (new_depth > maxdepth) {
                 maxdepth = new_depth;
             }
@@ -7397,6 +7378,9 @@ mark_cold(basicblock *entryblock) {
 }
 
 static int
+remove_redundant_jumps(cfg_builder *g);
+
+static int
 push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
     basicblock *entryblock = g->g_entryblock;
     if (entryblock->b_next == NULL) {
@@ -7465,6 +7449,12 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
     }
     assert(b != NULL && b->b_next == NULL);
     b->b_next = cold_blocks;
+
+    if (cold_blocks != NULL) {
+        if (remove_redundant_jumps(g) < 0) {
+            return -1;
+        }
+    }
     return 0;
 }
 
@@ -7738,63 +7728,91 @@ assemble_emit(struct assembler *a, struct instr *i)
     return 1;
 }
 
-static void
-normalize_jumps(basicblock *entryblock)
+static int
+normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
+    struct instr *last = basicblock_last_instr(b);
+    if (last == NULL || !is_jump(last)) {
+        return 0;
+    }
+    assert(!IS_ASSEMBLER_OPCODE(last->i_opcode));
+    bool is_forward = last->i_target->b_visited == 0;
+    switch(last->i_opcode) {
+        case JUMP:
+            last->i_opcode = is_forward ? JUMP_FORWARD : JUMP_BACKWARD;
+            return 0;
+        case JUMP_NO_INTERRUPT:
+            last->i_opcode = is_forward ?
+                JUMP_FORWARD : JUMP_BACKWARD_NO_INTERRUPT;
+            return 0;
+    }
+    int reversed_opcode = 0;
+    switch(last->i_opcode) {
+        case POP_JUMP_IF_NOT_NONE:
+            reversed_opcode = POP_JUMP_IF_NONE;
+            break;
+        case POP_JUMP_IF_NONE:
+            reversed_opcode = POP_JUMP_IF_NOT_NONE;
+            break;
+        case POP_JUMP_IF_FALSE:
+            reversed_opcode = POP_JUMP_IF_TRUE;
+            break;
+        case POP_JUMP_IF_TRUE:
+            reversed_opcode = POP_JUMP_IF_FALSE;
+            break;
+        case JUMP_IF_TRUE_OR_POP:
+        case JUMP_IF_FALSE_OR_POP:
+            if (!is_forward) {
+                /* As far as we can tell, the compiler never emits
+                 * these jumps with a backwards target. If/when this
+                 * exception is raised, we have found a use case for
+                 * a backwards version of this jump (or to replace
+                 * it with the sequence (COPY 1, POP_JUMP_IF_T/F, POP)
+                 */
+                PyErr_Format(PyExc_SystemError,
+                    "unexpected %s jumping backwards",
+                    last->i_opcode == JUMP_IF_TRUE_OR_POP ?
+                        "JUMP_IF_TRUE_OR_POP" : "JUMP_IF_FALSE_OR_POP");
+            }
+            return 0;
+    }
+    if (is_forward) {
+        return 0;
+    }
+
+    /* transform 'conditional jump T' to
+     * 'reversed_jump b_next' followed by 'jump_backwards T'
+     */
+
+    basicblock *target = last->i_target;
+    basicblock *backwards_jump = cfg_builder_new_block(g);
+    if (backwards_jump == NULL) {
+        return -1;
+    }
+    basicblock_addop(backwards_jump, JUMP, target->b_label, NO_LOCATION);
+    backwards_jump->b_instr[0].i_target = target;
+    last->i_opcode = reversed_opcode;
+    last->i_target = b->b_next;
+
+    backwards_jump->b_cold = b->b_cold;
+    backwards_jump->b_next = b->b_next;
+    b->b_next = backwards_jump;
+    return 0;
+}
+
+static int
+normalize_jumps(cfg_builder *g)
 {
+    basicblock *entryblock = g->g_entryblock;
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         b->b_visited = 0;
     }
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         b->b_visited = 1;
-        struct instr *last = basicblock_last_instr(b);
-        if (last == NULL) {
-            continue;
-        }
-        assert(!IS_ASSEMBLER_OPCODE(last->i_opcode));
-        if (is_jump(last)) {
-            bool is_forward = last->i_target->b_visited == 0;
-            switch(last->i_opcode) {
-                case JUMP:
-                    last->i_opcode = is_forward ? JUMP_FORWARD : JUMP_BACKWARD;
-                    break;
-                case JUMP_NO_INTERRUPT:
-                    last->i_opcode = is_forward ?
-                        JUMP_FORWARD : JUMP_BACKWARD_NO_INTERRUPT;
-                    break;
-                case POP_JUMP_IF_NOT_NONE:
-                    last->i_opcode = is_forward ?
-                        POP_JUMP_FORWARD_IF_NOT_NONE : POP_JUMP_BACKWARD_IF_NOT_NONE;
-                    break;
-                case POP_JUMP_IF_NONE:
-                    last->i_opcode = is_forward ?
-                        POP_JUMP_FORWARD_IF_NONE : POP_JUMP_BACKWARD_IF_NONE;
-                    break;
-                case POP_JUMP_IF_FALSE:
-                    last->i_opcode = is_forward ?
-                        POP_JUMP_FORWARD_IF_FALSE : POP_JUMP_BACKWARD_IF_FALSE;
-                    break;
-                case POP_JUMP_IF_TRUE:
-                    last->i_opcode = is_forward ?
-                        POP_JUMP_FORWARD_IF_TRUE : POP_JUMP_BACKWARD_IF_TRUE;
-                    break;
-                case JUMP_IF_TRUE_OR_POP:
-                case JUMP_IF_FALSE_OR_POP:
-                    if (!is_forward) {
-                        /* As far as we can tell, the compiler never emits
-                         * these jumps with a backwards target. If/when this
-                         * exception is raised, we have found a use case for
-                         * a backwards version of this jump (or to replace
-                         * it with the sequence (COPY 1, POP_JUMP_IF_T/F, POP)
-                         */
-                        PyErr_Format(PyExc_SystemError,
-                            "unexpected %s jumping backwards",
-                            last->i_opcode == JUMP_IF_TRUE_OR_POP ?
-                                "JUMP_IF_TRUE_OR_POP" : "JUMP_IF_FALSE_OR_POP");
-                    }
-                    break;
-            }
+        if (normalize_jumps_in_block(g, b) < 0) {
+            return -1;
         }
     }
+    return 0;
 }
 
 static void
@@ -8269,9 +8287,6 @@ trim_unused_consts(basicblock *entryblock, PyObject *consts);
 static int
 duplicate_exits_without_lineno(cfg_builder *g);
 
-static int
-extend_block(basicblock *bb);
-
 static int *
 build_cellfixedoffsets(struct compiler *c)
 {
@@ -8476,6 +8491,21 @@ propagate_line_numbers(basicblock *entryblock);
 static void
 eliminate_empty_basic_blocks(cfg_builder *g);
 
+#ifndef NDEBUG
+static bool
+no_redundant_jumps(cfg_builder *g) {
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+        struct instr *last = basicblock_last_instr(b);
+        if (last != NULL) {
+            if (last->i_opcode == JUMP || last->i_opcode == JUMP_NO_INTERRUPT) {
+                assert(last->i_target != b->b_next);
+                return false;
+            }
+        }
+    }
+    return true;
+}
+#endif
 
 static int
 remove_redundant_jumps(cfg_builder *g) {
@@ -8592,8 +8622,8 @@ assemble(struct compiler *c, int addNone)
     if (trim_unused_consts(g->g_entryblock, consts)) {
         goto error;
     }
-    if (duplicate_exits_without_lineno(g)) {
-        return NULL;
+    if (duplicate_exits_without_lineno(g) < 0) {
+        goto error;
     }
     propagate_line_numbers(g->g_entryblock);
     guarantee_lineno_for_exits(g->g_entryblock, c->u->u_firstlineno);
@@ -8612,20 +8642,20 @@ assemble(struct compiler *c, int addNone)
     if (push_cold_blocks_to_end(g, code_flags) < 0) {
         goto error;
     }
-
-    if (remove_redundant_jumps(g) < 0) {
-        goto error;
-    }
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         clean_basic_block(b);
     }
 
     /* Order of basic blocks must have been determined by now */
-    normalize_jumps(g->g_entryblock);
+    if (normalize_jumps(g) < 0) {
+        goto error;
+    }
 
     if (add_checks_for_loads_of_unknown_variables(g->g_entryblock, c) < 0) {
         goto error;
     }
+
+    assert(no_redundant_jumps(g));
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(g->g_entryblock);
@@ -9488,7 +9518,7 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
         }
     }
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        if (extend_block(b)) {
+        if (extend_block(b) < 0) {
             return -1;
         }
     }
@@ -9500,7 +9530,7 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
         assert(b->b_predecessors == 0);
     }
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        if (extend_block(b)) {
+        if (extend_block(b) < 0) {
             return -1;
         }
     }
@@ -9516,6 +9546,9 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
     eliminate_empty_basic_blocks(g);
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         clean_basic_block(b);
+    }
+    if (remove_redundant_jumps(g) < 0) {
+        return -1;
     }
     return 0;
 }

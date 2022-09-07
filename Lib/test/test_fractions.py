@@ -162,6 +162,7 @@ class FractionTest(unittest.TestCase):
     def testFromString(self):
         self.assertEqual((5, 1), _components(F("5")))
         self.assertEqual((3, 2), _components(F("3/2")))
+        self.assertEqual((3, 2), _components(F("3 / 2")))
         self.assertEqual((3, 2), _components(F(" \n  +3/2")))
         self.assertEqual((-3, 2), _components(F("-3/2  ")))
         self.assertEqual((13, 2), _components(F("    013/02 \n  ")))
@@ -190,9 +191,6 @@ class FractionTest(unittest.TestCase):
         self.assertRaisesMessage(
             ValueError, "Invalid literal for Fraction: '/2'",
             F, "/2")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '3 /2'",
-            F, "3 /2")
         self.assertRaisesMessage(
             # Denominators don't need a sign.
             ValueError, "Invalid literal for Fraction: '3/+2'",

@@ -155,6 +155,9 @@ active since the start of the Python interpreter, you can use the `-Xperf` optio
 
     $ python -Xperf my_script.py
 
+You can also set the :envvar:`PYTHONPERFSUPPORT` to a nonzero value to actiavate perf
+profiling mode globally.
+
 There is also support for dynamically activating and deactivating the perf
 profiling mode by using the APIs in the :mod:`sys` module:
 

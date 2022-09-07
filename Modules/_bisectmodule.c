@@ -25,6 +25,26 @@ get_bisect_state(PyObject *module)
     return (bisect_state *)state;
 }
 
+static ssizeargfunc
+get_sq_item(PyObject *s)
+{
+    // The parts of PySequence_GetItem that we only need to do once
+    PyTypeObject *tp = Py_TYPE(s);
+    PySequenceMethods *m = tp->tp_as_sequence;
+    if (m && m->sq_item) {
+        return m->sq_item;
+    }
+    const char *msg;
+    if (tp->tp_as_mapping && tp->tp_as_mapping->mp_subscript) {
+        msg = "%.200s is not a sequence";
+    }
+    else {
+        msg = "'%.200s' object does not support indexing";
+    }
+    PyErr_Format(PyExc_TypeError, msg, tp->tp_name);
+    return NULL;
+}
+
 static inline Py_ssize_t
 internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t hi,
                       PyObject* key)
@@ -42,32 +62,86 @@ internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t 
         if (hi < 0)
             return -1;
     }
+    ssizeargfunc sq_item = get_sq_item(list);
+    if (sq_item == NULL) {
+        return -1;
+    }
+    if (Py_EnterRecursiveCall("in _bisect.bisect_right") < 0) {
+        return -1;
+    }
+    PyTypeObject *tp = Py_TYPE(item);
+    richcmpfunc compare = tp->tp_richcompare;
     while (lo < hi) {
         /* The (size_t)cast ensures that the addition and subsequent division
            are performed as unsigned operations, avoiding difficulties from
            signed overflow.  (See issue 13496.) */
         mid = ((size_t)lo + hi) / 2;
-        litem = PySequence_GetItem(list, mid);
-        if (litem == NULL)
-            return -1;
+        assert(mid >= 0);
+        // PySequence_GetItem, but we already checked the types.
+        litem = sq_item(list, mid);
+        assert((PyErr_Occurred() == NULL) ^ (litem == NULL));
+        if (litem == NULL) {
+            goto error;
+        }
         if (key != Py_None) {
             PyObject *newitem = PyObject_CallOneArg(key, litem);
             if (newitem == NULL) {
-                Py_DECREF(litem);
-                return -1;
+                goto error;
             }
             Py_SETREF(litem, newitem);
         }
-        res = PyObject_RichCompareBool(item, litem, Py_LT);
+        /* if item < key(list[mid]):
+         *     hi = mid
+         * else:
+         *     lo = mid + 1
+         */
+        if (compare != NULL && Py_IS_TYPE(litem, tp)) {
+            // A fast path for comparing objects of the same type
+            PyObject *res_obj = compare(item, litem, Py_LT);
+            if (res_obj == Py_True) {
+                Py_DECREF(res_obj);
+                Py_DECREF(litem);
+                hi = mid;
+                continue;
+            }
+            if (res_obj == Py_False) {
+                Py_DECREF(res_obj);
+                Py_DECREF(litem);
+                lo = mid + 1;
+                continue;
+            }
+            if (res_obj == NULL) {
+                goto error;
+            }
+            if (res_obj == Py_NotImplemented) {
+                Py_DECREF(res_obj);
+                compare = NULL;
+                res = PyObject_RichCompareBool(item, litem, Py_LT);
+            }
+            else {
+                res = PyObject_IsTrue(res_obj);
+                Py_DECREF(res_obj);
+            }
+        }
+        else {
+            // A default path for comparing arbitrary objects
+            res = PyObject_RichCompareBool(item, litem, Py_LT);
+        }
+        if (res < 0) {
+            goto error;
+        }
         Py_DECREF(litem);
-        if (res < 0)
-            return -1;
         if (res)
             hi = mid;
         else
             lo = mid + 1;
     }
+    Py_LeaveRecursiveCall();
     return lo;
+error:
+    Py_LeaveRecursiveCall();
+    Py_XDECREF(litem);
+    return -1;
 }
 
 /*[clinic input]
@@ -168,32 +242,86 @@ internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t h
         if (hi < 0)
             return -1;
     }
+    ssizeargfunc sq_item = get_sq_item(list);
+    if (sq_item == NULL) {
+        return -1;
+    }
+    if (Py_EnterRecursiveCall("in _bisect.bisect_left") < 0) {
+        return -1;
+    }
+    PyTypeObject *tp = Py_TYPE(item);
+    richcmpfunc compare = tp->tp_richcompare;
     while (lo < hi) {
         /* The (size_t)cast ensures that the addition and subsequent division
            are performed as unsigned operations, avoiding difficulties from
            signed overflow.  (See issue 13496.) */
         mid = ((size_t)lo + hi) / 2;
-        litem = PySequence_GetItem(list, mid);
-        if (litem == NULL)
-            return -1;
+        assert(mid >= 0);
+        // PySequence_GetItem, but we already checked the types.
+        litem = sq_item(list, mid);
+        assert((PyErr_Occurred() == NULL) ^ (litem == NULL));
+        if (litem == NULL) {
+            goto error;
+        }
         if (key != Py_None) {
             PyObject *newitem = PyObject_CallOneArg(key, litem);
             if (newitem == NULL) {
-                Py_DECREF(litem);
-                return -1;
+                goto error;
             }
             Py_SETREF(litem, newitem);
         }
-        res = PyObject_RichCompareBool(litem, item, Py_LT);
+        /* if key(list[mid]) < item:
+         *     lo = mid + 1
+         * else:
+         *     hi = mid
+         */
+        if (compare != NULL && Py_IS_TYPE(litem, tp)) {
+            // A fast path for comparing objects of the same type
+            PyObject *res_obj = compare(litem, item, Py_LT);
+            if (res_obj == Py_True) {
+                Py_DECREF(res_obj);
+                Py_DECREF(litem);
+                lo = mid + 1;
+                continue;
+            }
+            if (res_obj == Py_False) {
+                Py_DECREF(res_obj);
+                Py_DECREF(litem);
+                hi = mid;
+                continue;
+            }
+            if (res_obj == NULL) {
+                goto error;
+            }
+            if (res_obj == Py_NotImplemented) {
+                Py_DECREF(res_obj);
+                compare = NULL;
+                res = PyObject_RichCompareBool(litem, item, Py_LT);
+            }
+            else {
+                res = PyObject_IsTrue(res_obj);
+                Py_DECREF(res_obj);
+            }
+        }
+        else {
+            // A default path for comparing arbitrary objects
+            res = PyObject_RichCompareBool(litem, item, Py_LT);
+        }
+        if (res < 0) {
+            goto error;
+        }
         Py_DECREF(litem);
-        if (res < 0)
-            return -1;
         if (res)
             lo = mid + 1;
         else
             hi = mid;
     }
+    Py_LeaveRecursiveCall();
     return lo;
+error:
+    Py_LeaveRecursiveCall();
+    Py_XDECREF(litem);
+    return -1;
 }
 
 

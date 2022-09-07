@@ -753,14 +753,30 @@ class CAPITest(unittest.TestCase):
 
     def test_pynumber_tobase(self):
         from _testcapi import pynumber_tobase
-        self.assertEqual(pynumber_tobase(123, 2), '0b1111011')
-        self.assertEqual(pynumber_tobase(123, 8), '0o173')
-        self.assertEqual(pynumber_tobase(123, 10), '123')
-        self.assertEqual(pynumber_tobase(123, 16), '0x7b')
-        self.assertEqual(pynumber_tobase(-123, 2), '-0b1111011')
-        self.assertEqual(pynumber_tobase(-123, 8), '-0o173')
-        self.assertEqual(pynumber_tobase(-123, 10), '-123')
-        self.assertEqual(pynumber_tobase(-123, 16), '-0x7b')
+        small_number = 123
+        large_number = 2**64
+        class IDX:
+            def __init__(self, val):
+                self.val = val
+            def __index__(self):
+                return self.val
+
+        test_cases = ((2, '0b1111011', '0b10000000000000000000000000000000000000000000000000000000000000000'),
+                      (8, '0o173', '0o2000000000000000000000'),
+                      (10, '123', '18446744073709551616'),
+                      (16, '0x7b', '0x10000000000000000'))
+        for base, small_target, large_target in test_cases:
+            with self.subTest(base=base, st=small_target, lt=large_target):
+                # Test for small number
+                self.assertEqual(pynumber_tobase(small_number, base), small_target)
+                self.assertEqual(pynumber_tobase(-small_number, base), '-' + small_target)
+                self.assertEqual(pynumber_tobase(IDX(small_number), base), small_target)
+                # Test for large number(out of range of a longlong,i.e.[-2**63, 2**63-1])
+                self.assertEqual(pynumber_tobase(large_number, base), large_target)
+                self.assertEqual(pynumber_tobase(-large_number, base), '-' + large_target)
+                self.assertEqual(pynumber_tobase(IDX(large_number), base), large_target)
+        self.assertRaises(TypeError, pynumber_tobase, IDX(123.0), 10)
+        self.assertRaises(TypeError, pynumber_tobase, IDX('123'), 10)
         self.assertRaises(TypeError, pynumber_tobase, 123.0, 10)
         self.assertRaises(TypeError, pynumber_tobase, '123', 10)
         self.assertRaises(SystemError, pynumber_tobase, 123, 0)
