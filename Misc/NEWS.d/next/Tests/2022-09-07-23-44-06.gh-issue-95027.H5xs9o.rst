@@ -1,0 +1,2 @@
+Ensures test runner uses UTF-8 and surrogateescape encoding when
+communicating between multiple processes.

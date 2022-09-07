@@ -66,7 +66,9 @@ def run_test_in_subprocess(testname: str, ns: Namespace, tmp_dir: str, stdout_fh
            '-m', 'test.regrtest',
            '--worker-args', worker_args]
 
+
     env = dict(os.environ)
+    env['PYTHONIOENCODING'] = 'utf-8:surrogateescape'
     if tmp_dir is not None:
         env['TMPDIR'] = tmp_dir
         env['TEMP'] = tmp_dir
@@ -270,7 +272,7 @@ class TestWorkerProcess(threading.Thread):
         # gh-94026: Write stdout+stderr to a tempfile as workaround for
         # non-blocking pipes on Emscripten with NodeJS.
         with tempfile.TemporaryFile(
-            'w+', encoding=sys.stdout.encoding
+            'w+', encoding=sys.stdout.encoding, errors="surrogateescape",
         ) as stdout_fh:
             # gh-93353: Check for leaked temporary files in the parent process,
             # since the deletion of temporary files can happen late during

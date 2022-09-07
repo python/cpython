@@ -681,6 +681,10 @@ class Regrtest:
 
         self.fix_umask()
 
+        # We may have been launched with a certain IO encoding, but we do not
+        # want children to inherit it, so clear it out now.
+        os.unsetenv('PYTHONIOENCODING')
+
         if self.ns.cleanup:
             self.cleanup()
             sys.exit(0)
