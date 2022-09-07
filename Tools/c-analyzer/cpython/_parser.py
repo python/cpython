@@ -50,9 +50,6 @@ def clean_lines(text):
 EXCLUDED = clean_lines('''
 # @begin=conf@
 
-# Rather than fixing for this one, we manually make sure it's okay.
-Modules/_sha3/kcp/KeccakP-1600-opt64.c
-
 # OSX
 #Modules/_ctypes/darwin/*.c
 #Modules/_ctypes/libffi_osx/*.c
