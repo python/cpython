@@ -74,15 +74,15 @@ typedef struct _err_stackitem {
 
 typedef struct _stack_chunk {
     struct _stack_chunk *previous;
-    size_t size;
-    size_t top;
+    int size_in_bytes;
+    int free;
     PyObject * data[1]; /* Variable sized */
 } _PyStackChunk;
 
 typedef struct _frame_stack {
     _PyStackChunk *current_chunk;
-    PyObject **top;
     PyObject **limit;
+    int free;
     int chunk_size;
 } _PyFrameStack;
 
@@ -382,5 +382,5 @@ PyAPI_FUNC(crossinterpdatafunc) _PyCrossInterpreterData_Lookup(PyObject *);
 PyAPI_FUNC(void) _PyFrameStack_Init(_PyFrameStack *fs, int chunk_size);
 /* Swap the frame stack of the current thread with fs */
 PyAPI_FUNC(void) _PyFrameStack_Swap(_PyFrameStack *fs);
-/* Free any allocated memory chunks from fs. Does not free fs itself */
-PyAPI_FUNC(void) _PyFrameStack_Free(_PyFrameStack *fs);
+/* Free any allocated memory chunks for fs. */
+PyAPI_FUNC(void) _PyFrameStack_Clear(_PyFrameStack *fs);
