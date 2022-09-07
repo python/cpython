@@ -117,6 +117,7 @@ INCLUDES = clean_lines('''
 
 glob	include
 
+# XXX These cause the includes to not get parsed (silently).
 **/*.h	Python.h
 Include/**/*.h	object.h
 
