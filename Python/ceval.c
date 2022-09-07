@@ -46,7 +46,7 @@
 #  error "ceval.c must be build with Py_BUILD_CORE define for best performance"
 #endif
 
-#ifndef Py_DEBUG
+#if !defined(Py_DEBUG) && !defined(Py_TRACE_REFS)
 // GH-89279: The MSVC compiler does not inline these static inline functions
 // in PGO build in _PyEval_EvalFrameDefault(), because this function is over
 // the limit of PGO, and that limit cannot be configured.
@@ -3816,10 +3816,9 @@ handle_eval_breaker:
                 }
                 _PyErr_Clear(tstate);
             }
-        iterator_exhausted_no_error:
             /* iterator ended normally */
-            assert(!_PyErr_Occurred(tstate));
-            Py_DECREF(POP());
+            STACK_SHRINK(1);
+            Py_DECREF(iter);
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
             DISPATCH();
         }
@@ -3845,19 +3844,21 @@ handle_eval_breaker:
             DEOPT_IF(Py_TYPE(it) != &PyListIter_Type, FOR_ITER);
             STAT_INC(FOR_ITER, hit);
             PyListObject *seq = it->it_seq;
-            if (seq == NULL) {
-                goto iterator_exhausted_no_error;
+            if (seq) {
+                if (it->it_index < PyList_GET_SIZE(seq)) {
+                    PyObject *next = PyList_GET_ITEM(seq, it->it_index++);
+                    Py_INCREF(next);
+                    PUSH(next);
+                    JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
+                    NOTRACE_DISPATCH();
+                }
+                it->it_seq = NULL;
+                Py_DECREF(seq);
             }
-            if (it->it_index < PyList_GET_SIZE(seq)) {
-                PyObject *next = PyList_GET_ITEM(seq, it->it_index++);
-                Py_INCREF(next);
-                PUSH(next);
-                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
-                NOTRACE_DISPATCH();
-            }
-            it->it_seq = NULL;
-            Py_DECREF(seq);
-            goto iterator_exhausted_no_error;
+            STACK_SHRINK(1);
+            Py_DECREF(it);
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+            NOTRACE_DISPATCH();
         }
 
         TARGET(FOR_ITER_RANGE) {
@@ -3868,7 +3869,10 @@ handle_eval_breaker:
             _Py_CODEUNIT next = next_instr[INLINE_CACHE_ENTRIES_FOR_ITER];
             assert(_PyOpcode_Deopt[_Py_OPCODE(next)] == STORE_FAST);
             if (r->index >= r->len) {
-                goto iterator_exhausted_no_error;
+                STACK_SHRINK(1);
+                Py_DECREF(r);
+                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+                NOTRACE_DISPATCH();
             }
             long value = (long)(r->start +
                                 (unsigned long)(r->index++) * r->step);
