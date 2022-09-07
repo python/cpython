@@ -1,0 +1,1 @@
+Ensure `test.test_warnings._WarningsTests.test_default_action` restores default action for warnings in the interpreter's state.
