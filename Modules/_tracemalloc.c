@@ -400,7 +400,13 @@ traceback_get_frames(traceback_t *traceback)
     }
 
     _PyInterpreterFrame *pyframe = tstate->cframe->current_frame;
-    for (; pyframe != NULL;) {
+    for (;;) {
+        while (pyframe && _PyFrame_IsIncomplete(pyframe)) {
+            pyframe = pyframe->previous;
+        }
+        if (pyframe == NULL) {
+            break;
+        }
         if (traceback->nframe < _Py_tracemalloc_config.max_nframe) {
             tracemalloc_get_frame(pyframe, &traceback->frames[traceback->nframe]);
             assert(traceback->frames[traceback->nframe].filename != NULL);
@@ -410,11 +416,7 @@ traceback_get_frames(traceback_t *traceback)
             traceback->total_nframe++;
         }
 
-        _PyInterpreterFrame *back = pyframe->previous;
-        if (back && back->owner == FRAME_OWNED_BY_CSTACK) {
-            back = back->previous;
-        }
-        pyframe = back;
+        pyframe = pyframe->previous;
     }
 }
 
