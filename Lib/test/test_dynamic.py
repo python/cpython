@@ -182,12 +182,13 @@ class TestTracing(unittest.TestCase):
             0 + C(0).x
 
         for func in (f, g, h):
-            for _ in range(58):
+            with self.subTest(func.__name__):
+                for _ in range(58):
+                    func()
+                turn_on_trace = True
                 func()
-            turn_on_trace = True
-            func()
-            sys.settrace(None)
-            turn_on_trace = False
+                sys.settrace(None)
+                turn_on_trace = False
 
 
 
