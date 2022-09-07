@@ -215,6 +215,7 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
 void
 PyFunction_SetVectorcall(PyFunctionObject *func, vectorcallfunc vectorcall)
 {
+    assert(func != NULL);
     func->func_version = 0;
     func->vectorcall = vectorcall;
 }

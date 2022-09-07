@@ -103,8 +103,9 @@ test_pyobject_vectorcall(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-override_vectorcall(
-    PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwnames) {
+override_vectorcall(PyObject *callable, PyObject *const *args, size_t nargsf,
+                    PyObject *kwnames)
+{
     return PyUnicode_FromString("overridden");
 }
 
@@ -112,7 +113,7 @@ static PyObject *
 function_setvectorcall(PyObject *self, PyObject *func)
 {
     if (!PyFunction_Check(func)) {
-        PyErr_BadInternalCall();
+        PyErr_SetString(PyExc_TypeError, "'func' must be a function");
         return NULL;
     }
     PyFunction_SetVectorcall((PyFunctionObject *)func, (vectorcallfunc)override_vectorcall);
