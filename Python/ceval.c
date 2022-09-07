@@ -4143,7 +4143,8 @@ handle_eval_breaker:
             // Check if the call can be inlined or not
             if (Py_TYPE(function) == &PyFunction_Type &&
                 tstate->interp->eval_frame == NULL &&
-                ((PyFunctionObject *)function)->vectorcall == _PyFunction_Vectorcall) {
+                ((PyFunctionObject *)function)->vectorcall == _PyFunction_Vectorcall)
+            {
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(function))->co_flags;
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(function));
                 STACK_SHRINK(total_args);
