@@ -536,6 +536,7 @@ Python/import.c	-	import_lock_thread	-
 Python/import.c	import_find_and_load	accumulated	-
 Python/import.c	import_find_and_load	import_level	-
 Python/modsupport.c	-	_Py_PackageContext	-
+Python/thread_pthread_stubs.h	-	py_tls_entries	-
 Python/pyfpe.c	-	PyFPE_counter	-
 Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
 Python/pylifecycle.c	-	_Py_UnhandledKeyboardInterrupt	-
