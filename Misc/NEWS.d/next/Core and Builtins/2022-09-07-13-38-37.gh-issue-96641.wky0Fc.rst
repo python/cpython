@@ -1,0 +1,1 @@
+Do not expose ``KeyWrapper`` in :mod:`_functools`.
