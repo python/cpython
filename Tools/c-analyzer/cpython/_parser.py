@@ -232,9 +232,12 @@ Include/**/*.h	PyObject_VAR_HEAD	PyVarObject ob_base;
 # implied include of pyconfig.h
 Include/**/*.h	SIZEOF_WCHAR_T	4
 Include/**/*.h	SIZEOF_VOID_P	8
+Include/**/*.h	SIZEOF_INT	4
+Include/**/*.h	SIZEOF_LONG	8
 
 Include/internal/pycore_gil.h	Py_HAVE_CONDVAR	1
 Python/thread_pthread.h	Py_HAVE_CONDVAR	1
+**/clinic/*.c.h	Py_HAVE_CONDVAR	1
 
 # implied include of <unistd.h>
 Include/**/*.h	_POSIX_THREADS	1
