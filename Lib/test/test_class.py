@@ -446,7 +446,7 @@ class ClassTests(unittest.TestCase):
         self.assertCallStack([('__delattr__', (testme, "cardinal"))])
 
     def testHasAttrString(self):
-
+        import sys
         from test.support import import_helper
         _testcapi = import_helper.import_module('_testcapi')
 
@@ -457,6 +457,7 @@ class ClassTests(unittest.TestCase):
         a = A()
         self.assertEqual(_testcapi.hasattr_string(a, "attr"), True)
         self.assertEqual(_testcapi.hasattr_string(a, "noattr"), False)
+        self.assertEqual(sys.exc_info(), (None, None, None))
 
     def testDel(self):
         x = []
