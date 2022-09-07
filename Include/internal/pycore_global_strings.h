@@ -527,6 +527,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(protocol)
         STRUCT_FOR_ID(ps1)
         STRUCT_FOR_ID(ps2)
+        STRUCT_FOR_ID(query)
         STRUCT_FOR_ID(quotetabs)
         STRUCT_FOR_ID(r)
         STRUCT_FOR_ID(raw)
