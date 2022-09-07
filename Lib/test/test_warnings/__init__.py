@@ -729,6 +729,13 @@ class _WarningsTests(BaseTest, unittest.TestCase):
                 self.assertEqual(len(w), 0)
         finally:
             self.module.defaultaction = original
+            # Emit and catch one more warning to propagate just restored default
+            # action into the state structure of the interpreter
+            with original_warnings.catch_warnings(record=True,
+                    module=self.module) as w:
+                self.module.resetwarnings()
+                self.module.warn_explicit(message, UserWarning, "<test>", 45)
+                del w[:]
 
     def test_showwarning_missing(self):
         # Test that showwarning() missing is okay.
