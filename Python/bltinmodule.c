@@ -677,16 +677,19 @@ format as builtin_format
     format_spec: unicode(c_default="NULL") = ''
     /
 
-Return value.__format__(format_spec)
+Return type(value).__format__(value, format_spec)
 
-format_spec defaults to the empty string.
-See the Format Specification Mini-Language section of help('FORMATTING') for
-details.
+Many built-in types implement format_spec according to the
+Format Specification Mini-language. See help('FORMATTING').
+
+If type(value) does not supply a method named __format__
+and format_spec is empty, then str(value) is returned.
+See also help('SPECIALMETHODS').
 [clinic start generated code]*/
 
 static PyObject *
 builtin_format_impl(PyObject *module, PyObject *value, PyObject *format_spec)
-/*[clinic end generated code: output=2f40bdfa4954b077 input=88339c93ea522b33]*/
+/*[clinic end generated code: output=2f40bdfa4954b077 input=45ef3934b86d5624]*/
 {
     return PyObject_Format(value, format_spec);
 }
