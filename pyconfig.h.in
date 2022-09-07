@@ -1568,6 +1568,9 @@
 /* Define if you want to coerce the C locale to a UTF-8 based locale */
 #undef PY_COERCE_C_LOCALE
 
+/* Define to 1 if you have the perf trampoline. */
+#undef PY_HAVE_PERF_TRAMPOLINE
+
 /* Define to 1 to build the sqlite module with loadable extensions support. */
 #undef PY_SQLITE_ENABLE_LOAD_EXTENSION
 

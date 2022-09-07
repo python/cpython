@@ -47,7 +47,7 @@ enum _frameowner {
 
 typedef struct _PyInterpreterFrame {
     /* "Specials" section */
-    PyFunctionObject *f_func; /* Strong reference */
+    PyObject *f_funcobj; /* Strong reference */
     PyObject *f_globals; /* Borrowed reference */
     PyObject *f_builtins; /* Borrowed reference */
     PyObject *f_locals; /* Strong reference, may be NULL */
@@ -101,7 +101,7 @@ _PyFrame_InitializeSpecials(
     _PyInterpreterFrame *frame, PyFunctionObject *func,
     PyObject *locals, PyCodeObject *code)
 {
-    frame->f_func = func;
+    frame->f_funcobj = (PyObject *)func;
     frame->f_code = (PyCodeObject *)Py_NewRef(code);
     frame->f_builtins = func->func_builtins;
     frame->f_globals = func->func_globals;
@@ -190,11 +190,16 @@ _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame);
 void
 _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear);
 
-
 static inline bool
 _PyThreadState_HasStackSpace(PyThreadState *tstate, int size)
 {
-    return tstate->frame_stack.top + size < tstate->frame_stack.limit;
+    assert(
+        (tstate->frame_stack.top == NULL && tstate->frame_stack.limit == NULL)
+        ||
+        (tstate->frame_stack.top != NULL && tstate->frame_stack.limit != NULL)
+    );
+    return tstate->frame_stack.top != NULL &&
+        size < tstate->frame_stack.limit - tstate->frame_stack.top;
 }
 
 extern _PyInterpreterFrame *

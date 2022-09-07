@@ -2,7 +2,7 @@ dnl ***************************************************
 dnl * Please run autoreconf -if to test your changes! *
 dnl ***************************************************
 dnl
-dnl Python's configure script requires autoconf 2.69 and autoconf-archive.
+dnl Python's configure.ac file requires autoconf 2.69 and autoconf-archive.
 dnl
 
 # Set VERSION so we only need to edit in one place (i.e., here)
@@ -10,7 +10,7 @@ m4_define(PYTHON_VERSION, 3.12)
 
 AC_PREREQ([2.69])
 
-AC_INIT([python],[PYTHON_VERSION],[https://bugs.python.org/])
+AC_INIT([python],[PYTHON_VERSION],[https://github.com/python/cpython/issues/])
 
 m4_ifdef(
     [AX_C_FLOAT_WORDS_BIGENDIAN],
@@ -1581,7 +1581,7 @@ AC_MSG_RESULT($LDLIBRARY)
 
 # LIBRARY_DEPS, LINK_PYTHON_OBJS and LINK_PYTHON_DEPS variable
 AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-  [Emscripten/browser*], [LIBRARY_DEPS='$(PY3LIBRARY) $(WASM_STDLIB)'],
+  [Emscripten/browser*], [LIBRARY_DEPS='$(PY3LIBRARY) $(WASM_STDLIB) python.html python.worker.js'],
   [LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)']
 )
 LINK_PYTHON_DEPS='$(LIBRARY_DEPS)'
@@ -1863,10 +1863,10 @@ if test "$Py_LTO" = 'true' ; then
           # Any changes made here should be reflected in the GCC+Darwin case below
           if test $Py_LTO_POLICY = default
           then
-            LTOFLAGS="-flto -Wl,-export_dynamic"
+            LTOFLAGS="-flto -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
             LTOCFLAGS="-flto"
           else
-            LTOFLAGS="-flto=${Py_LTO_POLICY} -Wl,-export_dynamic"
+            LTOFLAGS="-flto=${Py_LTO_POLICY} -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
             LTOCFLAGS="-flto=${Py_LTO_POLICY}"
           fi
           ;;
@@ -1896,7 +1896,7 @@ if test "$Py_LTO" = 'true' ; then
       LDFLAGS_NOLTO="-fno-lto"
       case $ac_sys_system in
         Darwin*)
-          LTOFLAGS="-flto -Wl,-export_dynamic"
+          LTOFLAGS="-flto -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
           LTOCFLAGS="-flto"
           ;;
         *)
@@ -1915,6 +1915,59 @@ if test "$Py_LTO" = 'true' ; then
 
   CFLAGS_NODIST="$CFLAGS_NODIST ${LTOCFLAGS-$LTOFLAGS}"
   LDFLAGS_NODIST="$LDFLAGS_NODIST $LTOFLAGS"
+fi
+
+# Enable bolt flags
+Py_BOLT='false'
+AC_MSG_CHECKING(for --enable-bolt)
+AC_ARG_ENABLE(bolt, AS_HELP_STRING(
+                [--enable-bolt],
+                [enable usage of the llvm-bolt post-link optimizer (default is no)]),
+[
+if test "$enableval" != no
+then
+  Py_BOLT='true'
+  AC_MSG_RESULT(yes);
+else
+  Py_BOLT='false'
+  AC_MSG_RESULT(no);
+fi],
+[AC_MSG_RESULT(no)])
+
+AC_SUBST(PREBOLT_RULE)
+if test "$Py_BOLT" = 'true' ; then
+  PREBOLT_RULE="${DEF_MAKE_ALL_RULE}"
+  DEF_MAKE_ALL_RULE="bolt-opt"
+  DEF_MAKE_RULE="build_all"
+
+  # These flags are required for bolt to work:
+  CFLAGS_NODIST="$CFLAGS_NODIST -fno-reorder-blocks-and-partition"
+  LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,--emit-relocs"
+
+  # These flags are required to get good performance from bolt:
+  CFLAGS_NODIST="$CFLAGS_NODIST -fno-pie"
+  # We want to add these no-pie flags to linking executables but not shared libraries:
+  LINKCC="$LINKCC -fno-pie -no-pie"
+  # Designate the DWARF version into 4 since the LLVM-BOLT does not support DWARF5 yet.
+  CFLAGS="$CFLAGS -gdwarf-4"
+  LDFLAGS="$LDFLAGS -gdwarf-4"
+  AC_SUBST(LLVM_BOLT)
+  AC_PATH_TOOL(LLVM_BOLT, llvm-bolt, '', ${llvm_path})
+  if test -n "${LLVM_BOLT}" -a -x "${LLVM_BOLT}"
+  then
+    AC_MSG_RESULT("Found llvm-bolt")
+  else
+    AC_MSG_ERROR([llvm-bolt is required for a --enable-bolt build but could not be found.])
+  fi
+
+  AC_SUBST(MERGE_FDATA)
+  AC_PATH_TOOL(MERGE_FDATA, merge-fdata, '', ${llvm_path})
+  if test -n "${MERGE_FDATA}" -a -x "${MERGE_FDATA}"
+  then
+    AC_MSG_RESULT("Found merge-fdata")
+  else
+    AC_MSG_ERROR([merge-fdata is required for a --enable-bolt build but could not be found.])
+  fi
 fi
 
 # Enable PGO flags.
@@ -3000,6 +3053,33 @@ else
 	AC_MSG_RESULT(no)
 fi
 
+# Check for --with-dsymutil
+AC_SUBST(DSYMUTIL)
+AC_SUBST(DSYMUTIL_PATH)
+DSYMUTIL=
+DSYMUTIL_PATH=
+AC_MSG_CHECKING(for --with-dsymutil)
+AC_ARG_WITH(dsymutil,
+            AS_HELP_STRING([--with-dsymutil], [link debug information into final executable with dsymutil in macOS  (default is no)]),
+[
+if test "$withval" != no
+then
+  if test "$MACHDEP" != "darwin"; then
+    AC_MSG_ERROR([dsymutil debug linking is only available in macOS.])
+  fi
+ AC_MSG_RESULT(yes);
+  DSYMUTIL='true'
+else AC_MSG_RESULT(no); DSYMUTIL=
+fi],
+[AC_MSG_RESULT(no)])
+
+if test "$DSYMUTIL"; then
+  AC_PATH_PROG(DSYMUTIL_PATH, [dsymutil], [not found])
+  if test "$DSYMUTIL_PATH" = "not found"; then
+      AC_MSG_ERROR([dsymutil command not found on \$PATH])
+  fi
+fi
+
 AC_MSG_CHECKING(for dyld)
 case $ac_sys_system/$ac_sys_release in
   Darwin/*)
@@ -3372,6 +3452,26 @@ case "$ac_sys_system" in
 esac
 AC_MSG_RESULT($SHLIBS)
 
+dnl perf trampoline is Linux specific and requires an arch-specific
+dnl trampoline in asssembly.
+AC_MSG_CHECKING([perf trampoline])
+AS_CASE([$PLATFORM_TRIPLET],
+  [x86_64-linux-gnu], [perf_trampoline=yes],
+  [aarch64-linux-gnu], [perf_trampoline=yes],
+  [perf_trampoline=no]
+)
+AC_MSG_RESULT([$perf_trampoline])
+
+AS_VAR_IF([perf_trampoline], [yes], [
+  AC_DEFINE([PY_HAVE_PERF_TRAMPOLINE], [1], [Define to 1 if you have the perf trampoline.])
+  PERF_TRAMPOLINE_OBJ=Objects/asm_trampoline.o
+
+  dnl perf needs frame pointers for unwinding, include compiler option in debug builds
+  AS_VAR_IF([Py_DEBUG], [true], [
+    AS_VAR_APPEND([BASECFLAGS], [" -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer"])
+  ])
+])
+AC_SUBST([PERF_TRAMPOLINE_OBJ])
 
 # checks for libraries
 AC_CHECK_LIB(sendfile, sendfile)
@@ -5502,7 +5602,7 @@ AS_VAR_IF([ac_cv_gcc_asm_for_mc68881], [yes], [
 # rounding issues.  The result of this test has little meaning on non
 # IEEE 754 platforms.  On IEEE 754, test should return 1 if rounding
 # mode is round-to-nearest and double rounding issues are present, and
-# 0 otherwise.  See http://bugs.python.org/issue2937 for more info.
+# 0 otherwise.  See https://github.com/python/cpython/issues/47186 for more info.
 AC_CACHE_CHECK([for x87-style double rounding], [ac_cv_x87_double_rounding], [
 # $BASECFLAGS may affect the result
 ac_save_cc="$CC"
@@ -6229,7 +6329,7 @@ dnl TODO: detect "curses" and special cases tinfo, terminfo, or termcap
 
 AC_MSG_CHECKING([curses module flags])
 AS_VAR_IF([have_curses], [no], [
-  AC_MSG_RESULT([no])  
+  AC_MSG_RESULT([no])
 ], [
   AC_MSG_RESULT([$have_curses (CFLAGS: $CURSES_CFLAGS, LIBS: $CURSES_LIBS)])
 ])
@@ -6277,7 +6377,7 @@ PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
 AC_MSG_CHECKING([panel flags])
 AS_VAR_IF([have_panel], [no], [
-  AC_MSG_RESULT([no])  
+  AC_MSG_RESULT([no])
 ], [
   AC_MSG_RESULT([$have_panel (CFLAGS: $PANEL_CFLAGS, LIBS: $PANEL_LIBS)])
 ])

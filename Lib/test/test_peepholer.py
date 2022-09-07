@@ -4,7 +4,7 @@ import sys
 import textwrap
 import unittest
 
-from test.support.bytecode_helper import BytecodeTestCase
+from test.support.bytecode_helper import BytecodeTestCase, CfgOptimizationTestCase
 
 
 def compile_pattern_with_fast_locals(pattern):
@@ -77,9 +77,8 @@ class TestTranforms(BytecodeTestCase):
             if not x == 2:
                 del x
         self.assertNotInBytecode(unot, 'UNARY_NOT')
-        self.assertNotInBytecode(unot, 'POP_JUMP_FORWARD_IF_FALSE')
-        self.assertNotInBytecode(unot, 'POP_JUMP_BACKWARD_IF_FALSE')
-        self.assertInBytecode(unot, 'POP_JUMP_FORWARD_IF_TRUE')
+        self.assertNotInBytecode(unot, 'POP_JUMP_IF_FALSE')
+        self.assertInBytecode(unot, 'POP_JUMP_IF_TRUE')
         self.check_lnotab(unot)
 
     def test_elim_inversion_of_is_or_in(self):
@@ -409,7 +408,7 @@ class TestTranforms(BytecodeTestCase):
         self.check_lnotab(f)
         self.assertNotInBytecode(f, 'JUMP_IF_FALSE_OR_POP')
         self.assertInBytecode(f, 'JUMP_IF_TRUE_OR_POP')
-        self.assertInBytecode(f, 'POP_JUMP_FORWARD_IF_FALSE')
+        self.assertInBytecode(f, 'POP_JUMP_IF_FALSE')
         # JUMP_IF_TRUE_OR_POP to JUMP_IF_FALSE_OR_POP --> POP_JUMP_IF_TRUE to non-jump
         def f(a, b, c):
             return ((a or b)
@@ -418,7 +417,7 @@ class TestTranforms(BytecodeTestCase):
         self.check_lnotab(f)
         self.assertNotInBytecode(f, 'JUMP_IF_TRUE_OR_POP')
         self.assertInBytecode(f, 'JUMP_IF_FALSE_OR_POP')
-        self.assertInBytecode(f, 'POP_JUMP_FORWARD_IF_TRUE')
+        self.assertInBytecode(f, 'POP_JUMP_IF_TRUE')
 
     def test_elim_jump_to_uncond_jump4(self):
         def f():
@@ -862,6 +861,82 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         f()
         self.assertInBytecode(f, "LOAD_FAST")
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+
+
+class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
+
+    def cfg_optimization_test(self, insts, expected_insts,
+                              consts=None, expected_consts=None):
+        if expected_consts is None:
+            expected_consts = consts
+        opt_insts, opt_consts = self.get_optimized(insts, consts)
+        self.compareInstructions(opt_insts, expected_insts)
+        self.assertEqual(opt_consts, expected_consts)
+
+    def test_conditional_jump_forward_non_const_condition(self):
+        insts = [
+            ('LOAD_NAME', 1, 11),
+            ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
+            ('LOAD_CONST', 2, 13),
+            lbl,
+            ('LOAD_CONST', 3, 14),
+        ]
+        expected = [
+            ('LOAD_NAME', '1', 11),
+            ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
+            ('LOAD_CONST', '2', 13),
+            lbl,
+            ('LOAD_CONST', '3', 14)
+        ]
+        self.cfg_optimization_test(insts, expected, consts=list(range(5)))
+
+    def test_conditional_jump_forward_const_condition(self):
+        # The unreachable branch of the jump is removed, the jump
+        # becomes redundant and is replaced by a NOP (for the lineno)
+
+        insts = [
+            ('LOAD_CONST', 3, 11),
+            ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
+            ('LOAD_CONST', 2, 13),
+            lbl,
+            ('LOAD_CONST', 3, 14),
+        ]
+        expected = [
+            ('NOP', None, 11),
+            ('NOP', None, 12),
+            ('LOAD_CONST', '3', 14)
+        ]
+        self.cfg_optimization_test(insts, expected, consts=list(range(5)))
+
+    def test_conditional_jump_backward_non_const_condition(self):
+        insts = [
+            lbl1 := self.Label(),
+            ('LOAD_NAME', 1, 11),
+            ('POP_JUMP_IF_TRUE', lbl1, 12),
+            ('LOAD_CONST', 2, 13),
+        ]
+        expected = [
+            lbl := self.Label(),
+            ('LOAD_NAME', '1', 11),
+            ('POP_JUMP_IF_TRUE', lbl, 12),
+            ('LOAD_CONST', '2', 13)
+        ]
+        self.cfg_optimization_test(insts, expected, consts=list(range(5)))
+
+    def test_conditional_jump_backward_const_condition(self):
+        # The unreachable branch of the jump is removed
+        insts = [
+            lbl1 := self.Label(),
+            ('LOAD_CONST', 1, 11),
+            ('POP_JUMP_IF_TRUE', lbl1, 12),
+            ('LOAD_CONST', 2, 13),
+        ]
+        expected = [
+            lbl := self.Label(),
+            ('NOP', None, 11),
+            ('JUMP', lbl, 12)
+        ]
+        self.cfg_optimization_test(insts, expected, consts=list(range(5)))
 
 
 if __name__ == "__main__":
