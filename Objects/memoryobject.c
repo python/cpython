@@ -123,7 +123,7 @@ mbuf_dealloc(_PyManagedBufferObject *self)
     assert(self->exports == 0);
     mbuf_release(self);
     if (self->flags&_Py_MANAGED_BUFFER_FREE_FORMAT)
-        PyMem_Free(self->master.format);
+        PyMem_Free((char *)self->master.format);
     PyObject_GC_Del(self);
 }
 

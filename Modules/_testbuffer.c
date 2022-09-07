@@ -166,7 +166,7 @@ ndbuf_free(ndbuf_t *ndbuf)
     Py_buffer *base = &ndbuf->base;
 
     PyMem_XFree(ndbuf->data);
-    PyMem_XFree(base->format);
+    PyMem_XFree((char *)base->format);
     PyMem_XFree(base->shape);
     PyMem_XFree(base->strides);
     PyMem_XFree(base->suboffsets);
@@ -666,7 +666,7 @@ ndarray_as_list(NDArrayObject *nd)
     Py_ssize_t simple_strides[1];
     char *item = NULL;
     PyObject *format;
-    char *fmt = base->format;
+    const char *fmt = base->format;
 
     base = &nd->head->base;
 
