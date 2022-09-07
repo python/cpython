@@ -185,5 +185,20 @@ class AuditTest(unittest.TestCase):
 
         self.assertEqual(actual, expected)
 
+
+    def test_wmi_exec_query(self):
+        import_helper.import_module("_wmi")
+        returncode, events, stderr = self.run_python("test_wmi_exec_query")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [("_wmi.exec_query", "SELECT * FROM Win32_OperatingSystem")]
+
+        self.assertEqual(actual, expected)
+
+
 if __name__ == "__main__":
     unittest.main()
