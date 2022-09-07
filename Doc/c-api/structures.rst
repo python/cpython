@@ -469,18 +469,20 @@ Accessing attributes of extension types
    .. _pymemberdef-offsets:
 
    Heap allocated types (created using :c:func:`PyType_FromSpec` or similar),
-   ``PyMemberDef`` may contain definitions for the special members
-   ``__dictoffset__``, ``__weaklistoffset__`` and ``__vectorcalloffset__``,
-   corresponding to
-   :c:member:`~PyTypeObject.tp_dictoffset`,
-   :c:member:`~PyTypeObject.tp_weaklistoffset` and
+   ``PyMemberDef`` may contain definitions for the special member
+   ``__vectorcalloffset__``, corresponding to
    :c:member:`~PyTypeObject.tp_vectorcall_offset` in type objects.
    These must be defined with ``T_PYSSIZET`` and ``READONLY``, for example::
 
       static PyMemberDef spam_type_members[] = {
-          {"__dictoffset__", T_PYSSIZET, offsetof(Spam_object, dict), READONLY},
+          {"__vectorcalloffset__", T_PYSSIZET, offsetof(Spam_object, vectorcall), READONLY},
           {NULL}  /* Sentinel */
       };
+
+   The legacy offsets :c:member:`~PyTypeObject.tp_dictoffset` and
+   :c:member:`~PyTypeObject.tp_weaklistoffset` are still supported, but extensions are
+   strongly encouraged to use ``Py_TPFLAGS_MANAGED_DICT`` and
+   ``Py_TPFLAGS_MANAGED_WEAKREF`` instead.
 
 
 .. c:function:: PyObject* PyMember_GetOne(const char *obj_addr, struct PyMemberDef *m)

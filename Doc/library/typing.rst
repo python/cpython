@@ -1305,20 +1305,25 @@ These are not used in annotations. They are building blocks for creating generic
         T = TypeVar('T')
         Ts = TypeVarTuple('Ts')
 
-        def remove_first_element(tup: tuple[T, *Ts]) -> tuple[*Ts]:
-            return tup[1:]
+        def move_first_element_to_last(tup: tuple[T, *Ts]) -> tuple[*Ts, T]:
+            return (*tup[1:], tup[0])
 
         # T is bound to int, Ts is bound to ()
-        # Return value is (), which has type tuple[()]
-        remove_first_element(tup=(1,))
+        # Return value is (1,), which has type tuple[int]
+        move_first_element_to_last(tup=(1,))
 
         # T is bound to int, Ts is bound to (str,)
-        # Return value is ('spam',), which has type tuple[str]
-        remove_first_element(tup=(1, 'spam'))
+        # Return value is ('spam', 1), which has type tuple[str, int]
+        move_first_element_to_last(tup=(1, 'spam'))
 
         # T is bound to int, Ts is bound to (str, float)
-        # Return value is ('spam', 3.0), which has type tuple[str, float]
-        remove_first_element(tup=(1, 'spam', 3.0))
+        # Return value is ('spam', 3.0, 1), which has type tuple[str, float, int]
+        move_first_element_to_last(tup=(1, 'spam', 3.0))
+
+        # This fails to type check (and fails at runtime)
+        # because tuple[()] is not compatible with tuple[T, *Ts]
+        # (at least one element is required)
+        move_first_element_to_last(tup=())
 
     Note the use of the unpacking operator ``*`` in ``tuple[T, *Ts]``.
     Conceptually, you can think of ``Ts`` as a tuple of type variables
@@ -1825,6 +1830,9 @@ These are not used in annotations. They are building blocks for declaring types.
          True
 
    .. attribute:: __required_keys__
+
+      .. versionadded:: 3.9
+
    .. attribute:: __optional_keys__
 
       ``Point2D.__required_keys__`` and ``Point2D.__optional_keys__`` return
@@ -1851,6 +1859,8 @@ These are not used in annotations. They are building blocks for declaring types.
          True
          >>> Point3D.__optional_keys__ == frozenset({'x', 'y'})
          True
+
+      .. versionadded:: 3.9
 
    See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 

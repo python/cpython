@@ -2548,9 +2548,10 @@ data and are closely related to string objects in a variety of other ways.
 
       If you want to make the hex string easier to read, you can specify a
       single character separator *sep* parameter to include in the output.
-      By default between each byte.  A second optional *bytes_per_sep*
-      parameter controls the spacing.  Positive values calculate the
-      separator position from the right, negative values from the left.
+      By default, this separator will be included between each byte.
+      A second optional *bytes_per_sep* parameter controls the spacing.
+      Positive values calculate the separator position from the right,
+      negative values from the left.
 
       >>> value = b'\xf0\xf1\xf2'
       >>> value.hex('-')
@@ -4693,7 +4694,9 @@ values are hashable, so that ``(key, value)`` pairs are unique and hashable,
 then the items view is also set-like.  (Values views are not treated as set-like
 since the entries are generally not unique.)  For set-like views, all of the
 operations defined for the abstract base class :class:`collections.abc.Set` are
-available (for example, ``==``, ``<``, or ``^``).
+available (for example, ``==``, ``<``, or ``^``).  While using set operators,
+set-like views accept any iterable as the other operand, unlike sets which only
+accept sets as the input.
 
 An example of dictionary view usage::
 
@@ -4725,6 +4728,8 @@ An example of dictionary view usage::
    {'bacon'}
    >>> keys ^ {'sausage', 'juice'}
    {'juice', 'sausage', 'bacon', 'spam'}
+   >>> keys | ['juice', 'juice', 'juice']
+   {'juice', 'sausage', 'bacon', 'spam', 'eggs'}
 
    >>> # get back a read-only proxy for the original dictionary
    >>> values.mapping
@@ -5453,6 +5458,165 @@ types, where they are relevant.  Some of these are not reported by the
 
       >>> int.__subclasses__()
       [<class 'bool'>]
+
+
+.. _int_max_str_digits:
+
+Integer string conversion length limitation
+===========================================
+
+CPython has a global limit for converting between :class:`int` and :class:`str`
+to mitigate denial of service attacks. This limit *only* applies to decimal or
+other non-power-of-two number bases. Hexadecimal, octal, and binary conversions
+are unlimited. The limit can be configured.
+
+The :class:`int` type in CPython is an abitrary length number stored in binary
+form (commonly known as a "bignum"). There exists no algorithm that can convert
+a string to a binary integer or a binary integer to a string in linear time,
+*unless* the base is a power of 2. Even the best known algorithms for base 10
+have sub-quadratic complexity. Converting a large value such as ``int('1' *
+500_000)`` can take over a second on a fast CPU.
+
+Limiting conversion size offers a practical way to avoid `CVE-2020-10735
+<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+
+The limit is applied to the number of digit characters in the input or output
+string when a non-linear conversion algorithm would be involved.  Underscores
+and the sign are not counted towards the limit.
+
+When an operation would exceed the limit, a :exc:`ValueError` is raised:
+
+.. doctest::
+
+   >>> import sys
+   >>> sys.set_int_max_str_digits(4300)  # Illustrative, this is the default.
+   >>> _ = int('2' * 5432)
+   Traceback (most recent call last):
+   ...
+   ValueError: Exceeds the limit (4300) for integer string conversion: value has 5432 digits.
+   >>> i = int('2' * 4300)
+   >>> len(str(i))
+   4300
+   >>> i_squared = i*i
+   >>> len(str(i_squared))
+   Traceback (most recent call last):
+   ...
+   ValueError: Exceeds the limit (4300) for integer string conversion: value has 8599 digits.
+   >>> len(hex(i_squared))
+   7144
+   >>> assert int(hex(i_squared), base=16) == i*i  # Hexadecimal is unlimited.
+
+The default limit is 4300 digits as provided in
+:data:`sys.int_info.default_max_str_digits <sys.int_info>`.
+The lowest limit that can be configured is 640 digits as provided in
+:data:`sys.int_info.str_digits_check_threshold <sys.int_info>`.
+
+Verification:
+
+.. doctest::
+
+   >>> import sys
+   >>> assert sys.int_info.default_max_str_digits == 4300, sys.int_info
+   >>> assert sys.int_info.str_digits_check_threshold == 640, sys.int_info
+   >>> msg = int('578966293710682886880994035146873798396722250538762761564'
+   ...           '9252925514383915483333812743580549779436104706260696366600'
+   ...           '571186405732').to_bytes(53, 'big')
+   ...
+
+.. versionadded:: 3.12
+
+Affected APIs
+-------------
+
+The limitation only applies to potentially slow conversions between :class:`int`
+and :class:`str` or :class:`bytes`:
+
+* ``int(string)`` with default base 10.
+* ``int(string, base)`` for all bases that are not a power of 2.
+* ``str(integer)``.
+* ``repr(integer)``
+* any other string conversion to base 10, for example ``f"{integer}"``,
+  ``"{}".format(integer)``, or ``b"%d" % integer``.
+
+The limitations do not apply to functions with a linear algorithm:
+
+* ``int(string, base)`` with base 2, 4, 8, 16, or 32.
+* :func:`int.from_bytes` and :func:`int.to_bytes`.
+* :func:`hex`, :func:`oct`, :func:`bin`.
+* :ref:`formatspec` for hex, octal, and binary numbers.
+* :class:`str` to :class:`float`.
+* :class:`str` to :class:`decimal.Decimal`.
+
+Configuring the limit
+---------------------
+
+Before Python starts up you can use an environment variable or an interpreter
+command line flag to configure the limit:
+
+* :envvar:`PYTHONINTMAXSTRDIGITS`, e.g.
+  ``PYTHONINTMAXSTRDIGITS=640 python3`` to set the limit to 640 or
+  ``PYTHONINTMAXSTRDIGITS=0 python3`` to disable the limitation.
+* :option:`-X int_max_str_digits <-X>`, e.g.
+  ``python3 -X int_max_str_digits=640``
+* :data:`sys.flags.int_max_str_digits` contains the value of
+  :envvar:`PYTHONINTMAXSTRDIGITS` or :option:`-X int_max_str_digits <-X>`.
+  If both the env var and the ``-X`` option are set, the ``-X`` option takes
+  precedence. A value of *-1* indicates that both were unset, thus a value of
+  :data:`sys.int_info.default_max_str_digits` was used during initilization.
+
+From code, you can inspect the current limit and set a new one using these
+:mod:`sys` APIs:
+
+* :func:`sys.get_int_max_str_digits` and :func:`sys.set_int_max_str_digits` are
+  a getter and setter for the interpreter-wide limit. Subinterpreters have
+  their own limit.
+
+Information about the default and minimum can be found in :attr:`sys.int_info`:
+
+* :data:`sys.int_info.default_max_str_digits <sys.int_info>` is the compiled-in
+  default limit.
+* :data:`sys.int_info.str_digits_check_threshold <sys.int_info>` is the lowest
+  accepted value for the limit (other than 0 which disables it).
+
+.. versionadded:: 3.12
+
+.. caution::
+
+   Setting a low limit *can* lead to problems. While rare, code exists that
+   contains integer constants in decimal in their source that exceed the
+   minimum threshold. A consequence of setting the limit is that Python source
+   code containing decimal integer literals longer than the limit will
+   encounter an error during parsing, usually at startup time or import time or
+   even at installation time - anytime an up to date ``.pyc`` does not already
+   exist for the code. A workaround for source that contains such large
+   constants is to convert them to ``0x`` hexadecimal form as it has no limit.
+
+   Test your application thoroughly if you use a low limit. Ensure your tests
+   run with the limit set early via the environment or flag so that it applies
+   during startup and even during any installation step that may invoke Python
+   to precompile ``.py`` sources to ``.pyc`` files.
+
+Recommended configuration
+-------------------------
+
+The default :data:`sys.int_info.default_max_str_digits` is expected to be
+reasonable for most applications. If your application requires a different
+limit, set it from your main entry point using Python version agnostic code as
+these APIs were added in security patch releases in versions before 3.12.
+
+Example::
+
+   >>> import sys
+   >>> if hasattr(sys, "set_int_max_str_digits"):
+   ...     upper_bound = 68000
+   ...     lower_bound = 4004
+   ...     current_limit = sys.get_int_max_str_digits()
+   ...     if current_limit == 0 or current_limit > upper_bound:
+   ...         sys.set_int_max_str_digits(upper_bound)
+   ...     elif current_limit < lower_bound:
+   ...         sys.set_int_max_str_digits(lower_bound)
+
+If you need to disable it entirely, set it to ``0``.
 
 
 .. rubric:: Footnotes

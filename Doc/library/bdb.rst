@@ -20,20 +20,21 @@ The following exception is defined:
 
 The :mod:`bdb` module also defines two classes:
 
-.. class:: Breakpoint(self, file, line, temporary=0, cond=None, funcname=None)
+.. class:: Breakpoint(self, file, line, temporary=False, cond=None, funcname=None)
 
    This class implements temporary breakpoints, ignore counts, disabling and
    (re-)enabling, and conditionals.
 
    Breakpoints are indexed by number through a list called :attr:`bpbynumber`
-   and by ``(file, line)`` pairs through :attr:`bplist`.  The former points to a
-   single instance of class :class:`Breakpoint`.  The latter points to a list of
-   such instances since there may be more than one breakpoint per line.
+   and by ``(file, line)`` pairs through :attr:`bplist`.  The former points to
+   a single instance of class :class:`Breakpoint`.  The latter points to a list
+   of such instances since there may be more than one breakpoint per line.
 
-   When creating a breakpoint, its associated filename should be in canonical
-   form.  If a *funcname* is defined, a breakpoint hit will be counted when the
-   first line of that function is executed.  A conditional breakpoint always
-   counts a hit.
+   When creating a breakpoint, its associated :attr:`file name <file>` should
+   be in canonical form.  If a :attr:`funcname` is defined, a breakpoint
+   :attr:`hit <hits>` will be counted when the first line of that function is
+   executed.  A :attr:`conditional <cond>` breakpoint always counts a
+   :attr:`hit <hits>`.
 
    :class:`Breakpoint` instances have the following methods:
 
@@ -59,12 +60,12 @@ The :mod:`bdb` module also defines two classes:
       Return a string with all the information about the breakpoint, nicely
       formatted:
 
-      * The breakpoint number.
-      * If it is temporary or not.
-      * Its file,line position.
-      * The condition that causes a break.
-      * If it must be ignored the next N times.
-      * The breakpoint hit count.
+      * Breakpoint number.
+      * Temporary status (del or keep).
+      * File/line position.
+      * Break condition.
+      * Number of times to ignore.
+      * Number of times hit.
 
       .. versionadded:: 3.2
 
@@ -73,6 +74,49 @@ The :mod:`bdb` module also defines two classes:
       Print the output of :meth:`bpformat` to the file *out*, or if it is
       ``None``, to standard output.
 
+   :class:`Breakpoint` instances have the following attributes:
+
+   .. attribute:: file
+
+      File name of the :class:`Breakpoint`.
+
+   .. attribute:: line
+
+      Line number of the :class:`Breakpoint` within :attr:`file`.
+
+   .. attribute:: temporary
+
+      True if a :class:`Breakpoint` at (file, line) is temporary.
+
+   .. attribute:: cond
+
+      Condition for evaluating a :class:`Breakpoint` at (file, line).
+
+   .. attribute:: funcname
+
+      Function name that defines whether a :class:`Breakpoint` is hit upon
+      entering the function.
+
+   .. attribute:: enabled
+
+      True if :class:`Breakpoint` is enabled.
+
+   .. attribute:: bpbynumber
+
+      Numeric index for a single instance of a :class:`Breakpoint`.
+
+   .. attribute:: bplist
+
+      Dictionary of :class:`Breakpoint` instances indexed by
+      (:attr:`file`, :attr:`line`) tuples.
+
+   .. attribute:: ignore
+
+      Number of times to ignore a :class:`Breakpoint`.
+
+   .. attribute:: hits
+
+      Count of the number of times a :class:`Breakpoint` has been hit.
 
 .. class:: Bdb(skip=None)
 
@@ -95,9 +139,12 @@ The :mod:`bdb` module also defines two classes:
 
    .. method:: canonic(filename)
 
-      Auxiliary method for getting a filename in a canonical form, that is, as a
-      case-normalized (on case-insensitive filesystems) absolute path, stripped
-      of surrounding angle brackets.
+      Return canonical form of *filename*.
+
+      For real file names, the canonical form is an operating-system-dependent,
+      :func:`case-normalized <os.path.normcase>` :func:`absolute path
+      <os.path.abspath>`. A *filename* with angle brackets, such as `"<stdin>"`
+      generated in interactive mode, is returned unchanged.
 
    .. method:: reset()
 
@@ -166,45 +213,46 @@ The :mod:`bdb` module also defines two classes:
    Normally derived classes don't override the following methods, but they may
    if they want to redefine the definition of stopping and breakpoints.
 
+   .. method:: is_skipped_line(module_name)
+
+      Return True if *module_name* matches any skip pattern.
+
    .. method:: stop_here(frame)
 
-      This method checks if the *frame* is somewhere below :attr:`botframe` in
-      the call stack.  :attr:`botframe` is the frame in which debugging started.
+      Return True if *frame* is below the starting frame in the stack.
 
    .. method:: break_here(frame)
 
-      This method checks if there is a breakpoint in the filename and line
-      belonging to *frame* or, at least, in the current function.  If the
-      breakpoint is a temporary one, this method deletes it.
+      Return True if there is an effective breakpoint for this line.
+
+      Check whether a line or function breakpoint exists and is in effect.  Delete temporary
+      breakpoints based on information from :func:`effective`.
 
    .. method:: break_anywhere(frame)
 
-      This method checks if there is a breakpoint in the filename of the current
-      frame.
+      Return True if any breakpoint exists for *frame*'s filename.
 
    Derived classes should override these methods to gain control over debugger
    operation.
 
    .. method:: user_call(frame, argument_list)
 
-      This method is called from :meth:`dispatch_call` when there is the
-      possibility that a break might be necessary anywhere inside the called
-      function.
+      Called from :meth:`dispatch_call` if a break might stop inside the
+      called function.
 
    .. method:: user_line(frame)
 
-      This method is called from :meth:`dispatch_line` when either
-      :meth:`stop_here` or :meth:`break_here` yields ``True``.
+      Called from :meth:`dispatch_line` when either :meth:`stop_here` or
+      :meth:`break_here` returns ``True``.
 
    .. method:: user_return(frame, return_value)
 
-      This method is called from :meth:`dispatch_return` when :meth:`stop_here`
-      yields ``True``.
+      Called from :meth:`dispatch_return` when :meth:`stop_here` returns ``True``.
 
    .. method:: user_exception(frame, exc_info)
 
-      This method is called from :meth:`dispatch_exception` when
-      :meth:`stop_here` yields ``True``.
+      Called from :meth:`dispatch_exception` when :meth:`stop_here`
+      returns ``True``.
 
    .. method:: do_clear(arg)
 
@@ -228,9 +276,9 @@ The :mod:`bdb` module also defines two classes:
 
       Stop when returning from the given frame.
 
-   .. method:: set_until(frame)
+   .. method:: set_until(frame, lineno=None)
 
-      Stop when the line with the line no greater than the current one is
+      Stop when the line with the *lineno* greater than the current one is
       reached or when returning from current frame.
 
    .. method:: set_trace([frame])
@@ -253,7 +301,7 @@ The :mod:`bdb` module also defines two classes:
    breakpoints.  These methods return a string containing an error message if
    something went wrong, or ``None`` if all is well.
 
-   .. method:: set_break(filename, lineno, temporary=0, cond, funcname)
+   .. method:: set_break(filename, lineno, temporary=False, cond=None, funcname=None)
 
       Set a new breakpoint.  If the *lineno* line doesn't exist for the
       *filename* passed as argument, return an error message.  The *filename*
@@ -261,8 +309,8 @@ The :mod:`bdb` module also defines two classes:
 
    .. method:: clear_break(filename, lineno)
 
-      Delete the breakpoints in *filename* and *lineno*.  If none were set, an
-      error message is returned.
+      Delete the breakpoints in *filename* and *lineno*.  If none were set,
+      return an error message.
 
    .. method:: clear_bpbynumber(arg)
 
@@ -272,12 +320,13 @@ The :mod:`bdb` module also defines two classes:
 
    .. method:: clear_all_file_breaks(filename)
 
-      Delete all breakpoints in *filename*.  If none were set, an error message
-      is returned.
+      Delete all breakpoints in *filename*.  If none were set, return an error
+      message.
 
    .. method:: clear_all_breaks()
 
-      Delete all existing breakpoints.
+      Delete all existing breakpoints.  If none were set, return an error
+      message.
 
    .. method:: get_bpbynumber(arg)
 
@@ -290,7 +339,7 @@ The :mod:`bdb` module also defines two classes:
 
    .. method:: get_break(filename, lineno)
 
-      Check if there is a breakpoint for *lineno* of *filename*.
+      Return True if there is a breakpoint for *lineno* in *filename*.
 
    .. method:: get_breaks(filename, lineno)
 
@@ -311,16 +360,18 @@ The :mod:`bdb` module also defines two classes:
 
    .. method:: get_stack(f, t)
 
-      Get a list of records for a frame and all higher (calling) and lower
-      frames, and the size of the higher part.
+      Return a list of (frame, lineno) tuples in a stack trace, and a size.
+
+      The most recently called frame is last in the list. The size is the number
+      of frames below the frame where the debugger was invoked.
 
    .. method:: format_stack_entry(frame_lineno, lprefix=': ')
 
-      Return a string with information about a stack entry, identified by a
-      ``(frame, lineno)`` tuple:
+      Return a string with information about a stack entry, which is a
+      ``(frame, lineno)`` tuple.  The return string contains:
 
-      * The canonical form of the filename which contains the frame.
-      * The function name, or ``"<lambda>"``.
+      * The canonical filename which contains the frame.
+      * The function name or ``"<lambda>"``.
       * The input arguments.
       * The return value.
       * The line of code (if it exists).
@@ -352,20 +403,34 @@ Finally, the module defines the following functions:
 
 .. function:: checkfuncname(b, frame)
 
-   Check whether we should break here, depending on the way the breakpoint *b*
-   was set.
+   Return True if we should break here, depending on the way the
+   :class:`Breakpoint` *b* was set.
 
-   If it was set via line number, it checks if ``b.line`` is the same as the one
-   in the frame also passed as argument.  If the breakpoint was set via function
-   name, we have to check we are in the right frame (the right function) and if
-   we are in its first executable line.
+   If it was set via line number, it checks if
+   :attr:`b.line <bdb.Breakpoint.line>` is the same as the one in *frame*.
+   If the breakpoint was set via
+   :attr:`function name <bdb.Breakpoint.funcname>`, we have to check we are in
+   the right *frame* (the right function) and if we are on its first executable
+   line.
 
 .. function:: effective(file, line, frame)
 
-   Determine if there is an effective (active) breakpoint at this line of code.
-   Return a tuple of the breakpoint and a boolean that indicates if it is ok
-   to delete a temporary breakpoint.  Return ``(None, None)`` if there is no
-   matching breakpoint.
+   Return ``(active breakpoint, delete temporary flag)`` or ``(None, None)`` as the
+   breakpoint to act upon.
+
+   The *active breakpoint* is the first entry in
+   :attr:`bplist <bdb.Breakpoint.bplist>` for the
+   (:attr:`file <bdb.Breakpoint.file>`, :attr:`line <bdb.Breakpoint.line>`)
+   (which must exist) that is :attr:`enabled <bdb.Breakpoint.enabled>`, for
+   which :func:`checkfuncname` is True, and that has neither a False
+   :attr:`condition <bdb.Breakpoint.cond>` nor positive
+   :attr:`ignore <bdb.Breakpoint.ignore>` count.  The *flag*, meaning that a
+   temporary breakpoint should be deleted, is False only when the
+   :attr:`cond <bdb.Breakpoint.cond>` cannot be evaluated (in which case,
+   :attr:`ignore <bdb.Breakpoint.ignore>` count is ignored).
+
+   If no such entry exists, then (None, None) is returned.
+
 
 .. function:: set_trace()
 

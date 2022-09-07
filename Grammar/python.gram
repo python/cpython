@@ -287,9 +287,9 @@ params[arguments_ty]:
 
 parameters[arguments_ty]:
     | a=slash_no_default b[asdl_arg_seq*]=param_no_default* c=param_with_default* d=[star_etc] {
-        _PyPegen_make_arguments(p, a, NULL, b, c, d) }
+        CHECK_VERSION(arguments_ty, 8, "Positional-only parameters are", _PyPegen_make_arguments(p, a, NULL, b, c, d)) }
     | a=slash_with_default b=param_with_default* c=[star_etc] {
-        _PyPegen_make_arguments(p, NULL, a, NULL, b, c) }
+        CHECK_VERSION(arguments_ty, 8, "Positional-only parameters are", _PyPegen_make_arguments(p, NULL, a, NULL, b, c)) }
     | a[asdl_arg_seq*]=param_no_default+ b=param_with_default* c=[star_etc] {
         _PyPegen_make_arguments(p, NULL, NULL, a, b, c) }
     | a=param_with_default+ b=[star_etc] { _PyPegen_make_arguments(p, NULL, NULL, NULL, a, b)}
@@ -412,7 +412,9 @@ try_stmt[stmt_ty]:
     | invalid_try_stmt
     | 'try' &&':' b=block f=finally_block { _PyAST_Try(b, NULL, NULL, f, EXTRA) }
     | 'try' &&':' b=block ex[asdl_excepthandler_seq*]=except_block+ el=[else_block] f=[finally_block] { _PyAST_Try(b, ex, el, f, EXTRA) }
-    | 'try' &&':' b=block ex[asdl_excepthandler_seq*]=except_star_block+ el=[else_block] f=[finally_block] { _PyAST_TryStar(b, ex, el, f, EXTRA) }
+    | 'try' &&':' b=block ex[asdl_excepthandler_seq*]=except_star_block+ el=[else_block] f=[finally_block] { 
+        CHECK_VERSION(stmt_ty, 11, "Exception groups are", 
+                      _PyAST_TryStar(b, ex, el, f, EXTRA)) }
 
 
 # Except statement
@@ -830,9 +832,9 @@ lambda_params[arguments_ty]:
 #
 lambda_parameters[arguments_ty]:
     | a=lambda_slash_no_default b[asdl_arg_seq*]=lambda_param_no_default* c=lambda_param_with_default* d=[lambda_star_etc] {
-        _PyPegen_make_arguments(p, a, NULL, b, c, d) }
+        CHECK_VERSION(arguments_ty, 8, "Positional-only parameters are", _PyPegen_make_arguments(p, a, NULL, b, c, d)) }
     | a=lambda_slash_with_default b=lambda_param_with_default* c=[lambda_star_etc] {
-        _PyPegen_make_arguments(p, NULL, a, NULL, b, c) }
+        CHECK_VERSION(arguments_ty, 8, "Positional-only parameters are", _PyPegen_make_arguments(p, NULL, a, NULL, b, c)) }
     | a[asdl_arg_seq*]=lambda_param_no_default+ b=lambda_param_with_default* c=[lambda_star_etc] {
         _PyPegen_make_arguments(p, NULL, NULL, a, b, c) }
     | a=lambda_param_with_default+ b=[lambda_star_etc] { _PyPegen_make_arguments(p, NULL, NULL, NULL, a, b)}

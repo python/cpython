@@ -5,10 +5,12 @@
 *.cover
 *.iml
 *.o
+*.lto
 *.a
 *.so
 *.so.*
 *.dylib
+*.dSYM
 *.dll
 *.wasm
 *.orig
