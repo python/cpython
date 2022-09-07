@@ -105,7 +105,6 @@ Objects/stringlib/replace.h
 Objects/stringlib/split.h
 
 Modules/_dbmmodule.c
-Modules/cjkcodecs/_codecs_*.c
 Modules/expat/xmlparse.c
 ''')
 
