@@ -649,7 +649,7 @@ exit_sigint(void)
      * SIG_DFL handler for SIGINT if KeyboardInterrupt went unhandled.
      * If we don't, a calling process such as a shell may not know
      * about the user's ^C.  https://www.cons.org/cracauer/sigint.html */
-#if defined(HAVE_GETPID) && !defined(MS_WINDOWS)
+#if defined(HAVE_GETPID) && defined(HAVE_KILL) && !defined(MS_WINDOWS)
     if (PyOS_setsig(SIGINT, SIG_DFL) == SIG_ERR) {
         perror("signal");  /* Impossible in normal environments. */
     } else {

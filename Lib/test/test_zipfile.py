@@ -124,8 +124,9 @@ class AbstractTestsWithSourceFile:
                 self.assertEqual(info.filename, nm)
                 self.assertEqual(info.file_size, len(self.data))
 
-            # Check that testzip doesn't raise an exception
-            zipfp.testzip()
+            # Check that testzip thinks the archive is ok
+            # (it returns None if all contents could be read properly)
+            self.assertIsNone(zipfp.testzip())
 
     def test_basic(self):
         for f in get_files(self):
@@ -748,8 +749,8 @@ class AbstractTestZip64InSmallFiles:
                 self.assertEqual(info.filename, nm)
                 self.assertEqual(info.file_size, len(self.data))
 
-            # Check that testzip doesn't raise an exception
-            zipfp.testzip()
+            # Check that testzip thinks the archive is valid
+            self.assertIsNone(zipfp.testzip())
 
     def test_basic(self):
         for f in get_files(self):
@@ -2032,6 +2033,7 @@ class OtherTests(unittest.TestCase):
                 fp.seek(bloc, os.SEEK_CUR)
                 self.assertEqual(fp.tell(), bloc)
                 self.assertEqual(fp.read(5), txt[bloc:bloc+5])
+                self.assertEqual(fp.tell(), bloc + 5)
                 fp.seek(0, os.SEEK_END)
                 self.assertEqual(fp.tell(), len(txt))
                 fp.seek(0, os.SEEK_SET)
@@ -2049,6 +2051,7 @@ class OtherTests(unittest.TestCase):
                 fp.seek(bloc, os.SEEK_CUR)
                 self.assertEqual(fp.tell(), bloc)
                 self.assertEqual(fp.read(5), txt[bloc:bloc+5])
+                self.assertEqual(fp.tell(), bloc + 5)
                 fp.seek(0, os.SEEK_END)
                 self.assertEqual(fp.tell(), len(txt))
                 fp.seek(0, os.SEEK_SET)

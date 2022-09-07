@@ -28,6 +28,8 @@ HTTPS protocols.  It is normally not used directly --- the module
    HTTPS support is only available if Python was compiled with SSL support
    (through the :mod:`ssl` module).
 
+.. include:: ../includes/wasm-notavail.rst
+
 The module provides the following classes:
 
 
@@ -589,7 +591,7 @@ Here is an example session that shows how to ``POST`` requests::
    302 Found
    >>> data = response.read()
    >>> data
-   b'Redirecting to <a href="http://bugs.python.org/issue12524">http://bugs.python.org/issue12524</a>'
+   b'Redirecting to <a href="https://bugs.python.org/issue12524">https://bugs.python.org/issue12524</a>'
    >>> conn.close()
 
 Client side ``HTTP PUT`` requests are very similar to ``POST`` requests. The

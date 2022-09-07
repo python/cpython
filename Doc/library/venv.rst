@@ -29,6 +29,7 @@ See :pep:`405` for more information about Python virtual environments.
    `Python Packaging User Guide: Creating and using virtual environments
    <https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment>`__
 
+.. include:: ../includes/wasm-notavail.rst
 
 Creating virtual environments
 -----------------------------
@@ -64,7 +65,7 @@ Creating virtual environments
    Python installation).
 
    When a virtual environment is active, any options that change the
-   installation path will be ignored from all :mod:`distutils` configuration
+   installation path will be ignored from all ``setuptools`` configuration
    files to prevent projects being inadvertently installed outside of the
    virtual environment.
 

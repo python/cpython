@@ -173,8 +173,10 @@ struct _is {
     struct _Py_exc_state exc_state;
 
     struct ast_state ast;
-    struct type_cache type_cache;
+    struct types_state types;
     struct callable_cache callable_cache;
+
+    int int_max_str_digits;
 
     /* The following fields are here to avoid allocation during init.
        The data is exposed through PyInterpreterState pointer fields.
