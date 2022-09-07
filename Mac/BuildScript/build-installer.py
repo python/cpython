@@ -246,9 +246,10 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.1.1n",
-              url="https://www.openssl.org/source/openssl-1.1.1n.tar.gz",
-              checksum='2aad5635f9bb338bc2c6b7d19cbc9676',
+              name="OpenSSL 1.1.1q",
+              url="https://www.openssl.org/source/openssl-1.1.1q.tar.gz",
+              checksum='d7939ce614029cdff0b6c20f0e2e5703158a489a72b2507b8bd51bf8c8fd10ca',
+              patches=['openssl1.1.1q-pr-18719.patch'],
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -797,10 +798,16 @@ def verifyThirdPartyFile(url, checksum, fname):
         print("Downloading %s"%(name,))
         downloadURL(url, fname)
         print("Archive for %s stored as %s"%(name, fname))
+    if len(checksum) == 32:
+        algo = 'md5'
+    elif len(checksum) == 64:
+        algo = 'sha256'
+    else:
+        raise ValueError(checksum)
     if os.system(
-            'MD5=$(openssl md5 %s) ; test "${MD5##*= }" = "%s"'
-                % (shellQuote(fname), checksum) ):
-        fatal('MD5 checksum mismatch for file %s' % fname)
+            'CHECKSUM=$(openssl %s %s) ; test "${CHECKSUM##*= }" = "%s"'
+                % (algo, shellQuote(fname), checksum) ):
+        fatal('%s checksum mismatch for file %s' % (algo, fname))
 
 def build_universal_openssl(basedir, archList):
     """

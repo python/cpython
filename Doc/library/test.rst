@@ -794,6 +794,12 @@ The :mod:`test.support` module defines the following functions:
    Decorator for only running the test if :data:`HAVE_DOCSTRINGS`.
 
 
+.. decorator:: requires_limited_api
+
+   Decorator for only running the test if :ref:`Limited C API <stable>`
+   is available.
+
+
 .. decorator:: cpython_only
 
    Decorator for tests only applicable to CPython.
@@ -1003,6 +1009,16 @@ The :mod:`test.support` module defines the following functions:
    Assert that type *tp* cannot be instantiated using *args* and *kwds*.
 
    .. versionadded:: 3.10
+
+
+.. function:: adjust_int_max_str_digits(max_digits)
+
+   This function returns a context manager that will change the global
+   :func:`sys.set_int_max_str_digits` setting for the duration of the
+   context to allow execution of test code that needs a different limit
+   on the number of digits when converting between an integer and string.
+
+   .. versionadded:: 3.12
 
 
 The :mod:`test.support` module defines the following classes:

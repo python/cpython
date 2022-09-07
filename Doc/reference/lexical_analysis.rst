@@ -552,7 +552,7 @@ Standard C.  The recognized escape sequences are:
 +-----------------+---------------------------------+-------+
 | Escape Sequence | Meaning                         | Notes |
 +=================+=================================+=======+
-| ``\newline``    | Backslash and newline ignored   |       |
+| ``\``\ <newline>| Backslash and newline ignored   | \(1)  |
 +-----------------+---------------------------------+-------+
 | ``\\``          | Backslash (``\``)               |       |
 +-----------------+---------------------------------+-------+
@@ -574,10 +574,10 @@ Standard C.  The recognized escape sequences are:
 +-----------------+---------------------------------+-------+
 | ``\v``          | ASCII Vertical Tab (VT)         |       |
 +-----------------+---------------------------------+-------+
-| ``\ooo``        | Character with octal value      | (1,3) |
+| ``\ooo``        | Character with octal value      | (2,4) |
 |                 | *ooo*                           |       |
 +-----------------+---------------------------------+-------+
-| ``\xhh``        | Character with hex value *hh*   | (2,3) |
+| ``\xhh``        | Character with hex value *hh*   | (3,4) |
 +-----------------+---------------------------------+-------+
 
 Escape sequences only recognized in string literals are:
@@ -585,19 +585,30 @@ Escape sequences only recognized in string literals are:
 +-----------------+---------------------------------+-------+
 | Escape Sequence | Meaning                         | Notes |
 +=================+=================================+=======+
-| ``\N{name}``    | Character named *name* in the   | \(4)  |
+| ``\N{name}``    | Character named *name* in the   | \(5)  |
 |                 | Unicode database                |       |
 +-----------------+---------------------------------+-------+
-| ``\uxxxx``      | Character with 16-bit hex value | \(5)  |
+| ``\uxxxx``      | Character with 16-bit hex value | \(6)  |
 |                 | *xxxx*                          |       |
 +-----------------+---------------------------------+-------+
-| ``\Uxxxxxxxx``  | Character with 32-bit hex value | \(6)  |
+| ``\Uxxxxxxxx``  | Character with 32-bit hex value | \(7)  |
 |                 | *xxxxxxxx*                      |       |
 +-----------------+---------------------------------+-------+
 
 Notes:
 
 (1)
+   A backslash can be added at the end of a line to ignore the newline::
+
+      >>> 'This string will not include \
+      ... backslashes or newline characters.'
+      'This string will not include backslashes or newline characters.'
+
+   The same result can be achieved using :ref:`triple-quoted strings <strings>`,
+   or parentheses and :ref:`string literal concatenation <string-concatenation>`.
+
+
+(2)
    As in Standard C, up to three octal digits are accepted.
 
    .. versionchanged:: 3.11
@@ -605,22 +616,22 @@ Notes:
       In a future Python version they will be a :exc:`SyntaxWarning` and
       eventually a :exc:`SyntaxError`.
 
-(2)
+(3)
    Unlike in Standard C, exactly two hex digits are required.
 
-(3)
+(4)
    In a bytes literal, hexadecimal and octal escapes denote the byte with the
    given value. In a string literal, these escapes denote a Unicode character
    with the given value.
 
-(4)
+(5)
    .. versionchanged:: 3.3
       Support for name aliases [#]_ has been added.
 
-(5)
+(6)
    Exactly four hex digits are required.
 
-(6)
+(7)
    Any Unicode character can be encoded this way.  Exactly eight hex digits
    are required.
 

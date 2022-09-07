@@ -167,6 +167,8 @@ The :mod:`csv` module defines the following classes:
    All other optional or keyword arguments are passed to the underlying
    :class:`reader` instance.
 
+   If the argument passed to *fieldnames* is an iterator, it will be coerced to a :class:`list`.
+
    .. versionchanged:: 3.6
       Returned rows are now of type :class:`OrderedDict`.
 
@@ -208,6 +210,8 @@ The :mod:`csv` module defines the following classes:
 
    Note that unlike the :class:`DictReader` class, the *fieldnames* parameter
    of the :class:`DictWriter` class is not optional.
+
+   If the argument passed to *fieldnames* is an iterator, it will be coerced to a :class:`list`.
 
    A short usage example::
 

@@ -412,7 +412,9 @@ try_stmt[stmt_ty]:
     | invalid_try_stmt
     | 'try' &&':' b=block f=finally_block { _PyAST_Try(b, NULL, NULL, f, EXTRA) }
     | 'try' &&':' b=block ex[asdl_excepthandler_seq*]=except_block+ el=[else_block] f=[finally_block] { _PyAST_Try(b, ex, el, f, EXTRA) }
-    | 'try' &&':' b=block ex[asdl_excepthandler_seq*]=except_star_block+ el=[else_block] f=[finally_block] { _PyAST_TryStar(b, ex, el, f, EXTRA) }
+    | 'try' &&':' b=block ex[asdl_excepthandler_seq*]=except_star_block+ el=[else_block] f=[finally_block] { 
+        CHECK_VERSION(stmt_ty, 11, "Exception groups are", 
+                      _PyAST_TryStar(b, ex, el, f, EXTRA)) }
 
 
 # Except statement

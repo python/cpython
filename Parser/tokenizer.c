@@ -489,25 +489,59 @@ static void fp_ungetc(int c, struct tok_state *tok) {
 
 /* Check whether the characters at s start a valid
    UTF-8 sequence. Return the number of characters forming
-   the sequence if yes, 0 if not.  */
-static int valid_utf8(const unsigned char* s)
+   the sequence if yes, 0 if not.  The special cases match
+   those in stringlib/codecs.h:utf8_decode.
+*/
+static int
+valid_utf8(const unsigned char* s)
 {
     int expected = 0;
     int length;
-    if (*s < 0x80)
+    if (*s < 0x80) {
         /* single-byte code */
         return 1;
-    if (*s < 0xc0)
-        /* following byte */
-        return 0;
-    if (*s < 0xE0)
+    }
+    else if (*s < 0xE0) {
+        /* \xC2\x80-\xDF\xBF -- 0080-07FF */
+        if (*s < 0xC2) {
+            /* invalid sequence
+               \x80-\xBF -- continuation byte
+               \xC0-\xC1 -- fake 0000-007F */
+            return 0;
+        }
         expected = 1;
-    else if (*s < 0xF0)
+    }
+    else if (*s < 0xF0) {
+        /* \xE0\xA0\x80-\xEF\xBF\xBF -- 0800-FFFF */
+        if (*s == 0xE0 && *(s + 1) < 0xA0) {
+            /* invalid sequence
+               \xE0\x80\x80-\xE0\x9F\xBF -- fake 0000-0800 */
+            return 0;
+        }
+        else if (*s == 0xED && *(s + 1) >= 0xA0) {
+            /* Decoding UTF-8 sequences in range \xED\xA0\x80-\xED\xBF\xBF
+               will result in surrogates in range D800-DFFF. Surrogates are
+               not valid UTF-8 so they are rejected.
+               See https://www.unicode.org/versions/Unicode5.2.0/ch03.pdf
+               (table 3-7) and http://www.rfc-editor.org/rfc/rfc3629.txt */
+            return 0;
+        }
         expected = 2;
-    else if (*s < 0xF8)
+    }
+    else if (*s < 0xF5) {
+        /* \xF0\x90\x80\x80-\xF4\x8F\xBF\xBF -- 10000-10FFFF */
+        if (*(s + 1) < 0x90 ? *s == 0xF0 : *s == 0xF4) {
+            /* invalid sequence -- one of:
+               \xF0\x80\x80\x80-\xF0\x8F\xBF\xBF -- fake 0000-FFFF
+               \xF4\x90\x80\x80- -- 110000- overflow */
+            return 0;
+        }
         expected = 3;
-    else
+    }
+    else {
+        /* invalid start byte */
         return 0;
+    }
     length = expected + 1;
     for (; expected; expected--)
         if (s[expected] < 0x80 || s[expected] >= 0xC0)
@@ -528,14 +562,12 @@ ensure_utf8(char *line, struct tok_state *tok)
         }
     }
     if (badchar) {
-        /* Need to add 1 to the line number, since this line
-       has not been counted, yet.  */
         PyErr_Format(PyExc_SyntaxError,
                      "Non-UTF-8 code starting with '\\x%.2x' "
                      "in file %U on line %i, "
                      "but no encoding declared; "
                      "see https://peps.python.org/pep-0263/ for details",
-                     badchar, tok->filename, tok->lineno + 1);
+                     badchar, tok->filename, tok->lineno);
         return 0;
     }
     return 1;
@@ -1936,6 +1968,8 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
         /* Get rest of string */
         while (end_quote_size != quote_size) {
             c = tok_nextc(tok);
+            if (tok->done == E_DECODE)
+                break;
             if (c == EOF || (quote_size == 1 && c == '\n')) {
                 assert(tok->multi_line_start != NULL);
                 // shift the tok_state's location into

@@ -287,7 +287,11 @@ def generate_runtime_init(identifiers, strings):
                             immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(strings).ascii[{i}]')
                     with printer.block('.latin1 =', ','):
                         for i in range(128, 256):
-                            printer.write(f'_PyUnicode_LATIN1_INIT("\\x{i:02x}"),')
+                            utf8 = ['"']
+                            for c in chr(i).encode('utf-8'):
+                                utf8.append(f"\\x{c:02x}")
+                            utf8.append('"')
+                            printer.write(f'_PyUnicode_LATIN1_INIT("\\x{i:02x}", {"".join(utf8)}),')
                             immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(strings).latin1[{i} - 128]')
                 printer.write('')
                 with printer.block('.tuple_empty =', ','):
