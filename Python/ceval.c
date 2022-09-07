@@ -3811,7 +3811,8 @@ handle_eval_breaker:
                 _PyErr_Clear(tstate);
             }
             /* iterator ended normally */
-            Py_DECREF(POP());
+            STACK_SHRINK(1);
+            Py_DECREF(iter);
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
             DISPATCH();
         }
@@ -3848,9 +3849,10 @@ handle_eval_breaker:
                 it->it_seq = NULL;
                 Py_DECREF(seq);
             }
-            Py_DECREF(POP());
+            STACK_SHRINK(1);
+            Py_DECREF(it);
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(FOR_ITER_RANGE) {
@@ -3861,9 +3863,10 @@ handle_eval_breaker:
             _Py_CODEUNIT next = next_instr[INLINE_CACHE_ENTRIES_FOR_ITER];
             assert(_PyOpcode_Deopt[_Py_OPCODE(next)] == STORE_FAST);
             if (r->index >= r->len) {
-                Py_DECREF(POP());
+                STACK_SHRINK(1);
+                Py_DECREF(r);
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
-                DISPATCH();
+                NOTRACE_DISPATCH();
             }
             long value = (long)(r->start +
                                 (unsigned long)(r->index++) * r->step);
