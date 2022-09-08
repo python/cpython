@@ -216,7 +216,7 @@ records in a table::
     ...     Movie('Aliens', 1986, 'Scott')
     ... ]
 
-    >>> # Find the first movie released on or after 1960
+    >>> # Find the first movie released after 1960
     >>> by_year = attrgetter('released')
     >>> movies.sort(key=by_year)
     >>> movies[bisect(movies, 1960, key=by_year)]
