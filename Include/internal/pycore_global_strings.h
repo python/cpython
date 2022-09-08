@@ -468,6 +468,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(modules)
         STRUCT_FOR_ID(mro)
         STRUCT_FOR_ID(msg)
+        STRUCT_FOR_ID(mycmp)
         STRUCT_FOR_ID(n)
         STRUCT_FOR_ID(n_arg)
         STRUCT_FOR_ID(n_fields)
