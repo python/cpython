@@ -4360,10 +4360,6 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-                DISPATCH_SAME_OPARG();
-                    DISPATCH();
-                DISPATCH();
-            DISPATCH();
         TARGET(BEFORE_ASYNC_WITH) {
             PyObject *mgr = TOP();
             PyObject *res;
