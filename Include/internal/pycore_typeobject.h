@@ -11,7 +11,6 @@ extern "C" {
 
 /* runtime lifecycle */
 
-extern PyStatus _PyTypes_InitState(PyInterpreterState *);
 extern PyStatus _PyTypes_InitTypes(PyInterpreterState *);
 extern void _PyTypes_FiniTypes(PyInterpreterState *);
 extern void _PyTypes_Fini(PyInterpreterState *);
@@ -66,8 +65,6 @@ struct types_state {
     static_builtin_state builtins[_Py_MAX_STATIC_BUILTIN_TYPES];
 };
 
-
-extern PyStatus _PyTypes_InitSlotDefs(void);
 
 extern int _PyStaticType_InitBuiltin(PyTypeObject *type);
 extern static_builtin_state * _PyStaticType_GetState(PyTypeObject *);
