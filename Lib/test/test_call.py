@@ -580,6 +580,9 @@ def testfunction_kw(self, *, kw):
     return self
 
 
+QUICKENING_WARMUP_DELAY = 8
+
+
 class TestPEP590(unittest.TestCase):
 
     def test_method_descriptor_flag(self):
@@ -763,28 +766,50 @@ class TestPEP590(unittest.TestCase):
     def test_setvectorcall(self):
         from _testcapi import function_setvectorcall
         def f(num): return num + 1
+        assert_equal = self.assertEqual
         num = 10
-        self.assertEqual(11, f(num))
+        assert_equal(11, f(num))
         function_setvectorcall(f)
         # make sure specializer is triggered by running > 50 times
-        for _ in range(51):
-            self.assertEqual("overridden", f(num))
+        for _ in range(10 * QUICKENING_WARMUP_DELAY):
+            assert_equal("overridden", f(num))
 
-    def test_setvectorcall_load_attr_specialization(self):
+    def test_setvectorcall_load_attr_specialization_skip(self):
         from _testcapi import function_setvectorcall
 
         class X:
             def __getattribute__(self, attr):
                 return attr
 
+        assert_equal = self.assertEqual
+        x = X()
+        assert_equal("a", x.a)
+        function_setvectorcall(X.__getattribute__)
+        # make sure specialization doesn't trigger
+        # when vectorcall is overridden
+        for _ in range(QUICKENING_WARMUP_DELAY):
+            assert_equal("overridden", x.a)
+
+    def test_setvectorcall_load_attr_specialization_deopt(self):
+        from _testcapi import function_setvectorcall
+
+        class X:
+            def __getattribute__(self, attr):
+                return attr
+
+        def get_a(x):
+            return x.a
+
+        assert_equal = self.assertEqual
         x = X()
         # trigger LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN specialization
-        for _ in range(8):
-            self.assertEqual("a", x.a)
+        for _ in range(QUICKENING_WARMUP_DELAY):
+            assert_equal("a", get_a(x))
         function_setvectorcall(X.__getattribute__)
-        # make sure specialization doesn't override the override
-        for _ in range(8):
-            self.assertEqual("overridden", x.a)
+        # make sure specialized LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN
+        # gets deopted due to overridden vectorcall
+        for _ in range(QUICKENING_WARMUP_DELAY):
+            assert_equal("overridden", get_a(x))
 
     @requires_limited_api
     def test_vectorcall_limited(self):
