@@ -1743,28 +1743,26 @@ py_long_to_decimal_string(PyObject *aa,
                           _PyBytesWriter *bytes_writer,
                           char **bytes_str)
 {
+    PyObject *s = NULL;
     PyObject *mod = PyImport_ImportModule("_pylong");
     if (mod == NULL) {
         return -1;
     }
-    PyObject *s = _PyObject_CallMethodIdObjArgs(mod,
-                                                &PyId_long_to_decimal_string,
-                                                aa, NULL);
+    s = _PyObject_CallMethodIdObjArgs(mod,
+                                      &PyId_long_to_decimal_string,
+                                      aa, NULL);
     if (s == NULL) {
-        return -1;
+        goto error;
     }
     assert(PyUnicode_Check(s));
     if (writer) {
         if (_PyUnicodeWriter_Prepare(writer, PyUnicode_GET_LENGTH(s), '9') == -1) {
-            Py_DECREF(s);
-            return -1;
+            goto error;
         }
         if (_PyUnicodeWriter_WriteStr(writer, s) < 0) {
-            Py_DECREF(s);
-            return -1;
+            goto error;
         }
-        Py_DECREF(s);
-        return 0;
+        goto success;
     }
     else if (bytes_writer) {
 #if 0
@@ -1775,13 +1773,23 @@ py_long_to_decimal_string(PyObject *aa,
         }
 #endif
         assert(0); // not implemented
-        Py_DECREF(s);
-        return 0;
+        goto success;
     }
     else {
         *p_output = (PyObject *)s;
-        return 0;
+        Py_INCREF(s);
+        goto success;
     }
+
+error:
+        Py_DECREF(mod);
+        Py_XDECREF(s);
+        return -1;
+
+success:
+        Py_DECREF(mod);
+        Py_DECREF(s);
+        return 0;
 }
 
 
@@ -3954,6 +3962,7 @@ py_divmod(PyLongObject *v, PyLongObject *w,
                                                 &PyId_divmod_fast,
                                                 v, w, NULL);
     if (r == NULL) {
+        Py_DECREF(mod);
         return -1;
     }
     assert(PyTuple_Check(r));
@@ -3962,6 +3971,7 @@ py_divmod(PyLongObject *v, PyLongObject *w,
     Py_INCREF(*pdiv);
     Py_INCREF(*pmod);
     Py_DECREF(r);
+    Py_DECREF(mod);
     return 0;
 }
 
