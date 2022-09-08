@@ -247,8 +247,10 @@ class UTF8ValidatorTest(unittest.TestCase):
         # test it is to write actual files to disk.
 
         # Each example is put inside a string at the top of the file so
-        # it's an otherwise valid Python source file.
-        template = b'"%s"\n'
+        # it's an otherwise valid Python source file. Put some newlines
+        # beforehand so we can assert that the error is reported on the
+        # correct line.
+        template = b'\n\n\n"%s"\n'
 
         fn = TESTFN
         self.addCleanup(unlink, fn)
@@ -256,7 +258,12 @@ class UTF8ValidatorTest(unittest.TestCase):
         def check(content):
             with open(fn, 'wb') as fp:
                 fp.write(template % content)
-            script_helper.assert_python_failure(fn)
+            rc, stdout, stderr = script_helper.assert_python_failure(fn)
+            # We want to assert that the python subprocess failed gracefully,
+            # not via a signal.
+            self.assertGreaterEqual(rc, 1)
+            self.assertIn(b"Non-UTF-8 code starting with", stderr)
+            self.assertIn(b"on line 4", stderr)
 
         # continuation bytes in a sequence of 2, 3, or 4 bytes
         continuation_bytes = [bytes([x]) for x in range(0x80, 0xC0)]
