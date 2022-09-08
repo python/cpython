@@ -2811,13 +2811,14 @@ class CAPITest(unittest.TestCase):
         # We cannot test the exact result,
         # because it returns a hex representation of a C pointer,
         # which is going to be different each time. But, we can test the format.
+        p_format_regex = r'0x[a-zA-Z0-9]{8,}'
         p_format1 = PyUnicode_FromFormat(b'%p', 'abc')
         self.assertIsInstance(p_format1, str)
-        self.assertTrue(p_format1.startswith('0x'))
+        self.assertRegex(p_format1, p_format_regex)
 
-        p_format2 = PyUnicode_FromFormat(b'repr=%p', '123456', b'xyz')
+        p_format2 = PyUnicode_FromFormat(b'repr=%p', '123456', None, b'xyz')
         self.assertIsInstance(p_format2, str)
-        self.assertTrue(p_format2.startswith('repr=0x'))
+        self.assertRegex(p_format2, p_format_regex)
 
         # Test string decode from parameter of %s using utf-8.
         # b'\xe4\xba\xba\xe6\xb0\x91' is utf-8 encoded byte sequence of
