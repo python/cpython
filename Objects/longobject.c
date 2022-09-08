@@ -2,6 +2,8 @@
 
 /* XXX The functional organization of this file is terrible */
 
+#define NEEDS_PY_IDENTIFIER
+
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_popcount32()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -1732,6 +1734,57 @@ rem1(PyLongObject *a, digit n)
     );
 }
 
+_Py_IDENTIFIER(long_to_decimal_string);
+
+static int
+py_long_to_decimal_string(PyObject *aa,
+                          PyObject **p_output,
+                          _PyUnicodeWriter *writer,
+                          _PyBytesWriter *bytes_writer,
+                          char **bytes_str)
+{
+    PyObject *mod = PyImport_ImportModule("_pylong");
+    if (mod == NULL) {
+        return -1;
+    }
+    PyObject *s = _PyObject_CallMethodIdObjArgs(mod,
+                                                &PyId_long_to_decimal_string,
+                                                aa, NULL);
+    if (s == NULL) {
+        return -1;
+    }
+    assert(PyUnicode_Check(s));
+    if (writer) {
+        if (_PyUnicodeWriter_Prepare(writer, PyUnicode_GET_LENGTH(s), '9') == -1) {
+            Py_DECREF(s);
+            return -1;
+        }
+        if (_PyUnicodeWriter_WriteStr(writer, s) < 0) {
+            Py_DECREF(s);
+            return -1;
+        }
+        Py_DECREF(s);
+        return 0;
+    }
+    else if (bytes_writer) {
+#if 0
+        *bytes_str = _PyBytesWriter_Prepare(bytes_writer, *bytes_str, strlen);
+        if (*bytes_str == NULL) {
+            Py_DECREF(s);
+            return -1;
+        }
+#endif
+        assert(0); // not implemented
+        Py_DECREF(s);
+        return 0;
+    }
+    else {
+        *p_output = (PyObject *)s;
+        return 0;
+    }
+}
+
+
 /* Convert an integer to a base 10 string.  Returns a new non-shared
    string.  (Return value is non-shared so that callers can modify the
    returned value if necessary.) */
@@ -1759,6 +1812,7 @@ long_to_decimal_string_internal(PyObject *aa,
     size_a = Py_ABS(Py_SIZE(a));
     negative = Py_SIZE(a) < 0;
 
+#if 0
     /* quick and dirty pre-check for overflowing the decimal digit limit,
        based on the inequality 10/3 >= log2(10)
 
@@ -1775,6 +1829,24 @@ long_to_decimal_string_internal(PyObject *aa,
             return -1;
         }
     }
+#else
+    /* quick and dirty pre-check for overflowing the decimal digit limit,
+       based on the inequality 10/3 >= log2(10)
+
+       explanation in https://github.com/python/cpython/pull/96537
+    */
+    if (size_a >= 10 * _PY_LONG_MAX_STR_DIGITS_THRESHOLD
+                  / (3 * PyLong_SHIFT) + 2) {
+        /* Switch to Python version from the _pylong module.  It is more
+         * efficient for a large number of output digits.
+         */
+        return py_long_to_decimal_string(aa,
+                                         p_output,
+                                         writer,
+                                         bytes_writer,
+                                         bytes_str);
+    }
+#endif
 
     /* quick and dirty upper bound for the number of digits
        required to express a in base _PyLong_DECIMAL_BASE:
@@ -3874,6 +3946,31 @@ fast_floor_div(PyLongObject *a, PyLongObject *b)
     return PyLong_FromLong(div);
 }
 
+_Py_IDENTIFIER(divmod_fast);
+
+static int
+py_divmod(PyLongObject *v, PyLongObject *w,
+          PyLongObject **pdiv, PyLongObject **pmod)
+{
+    PyObject *mod = PyImport_ImportModule("_pylong");
+    if (mod == NULL) {
+        return -1;
+    }
+    PyObject *r = _PyObject_CallMethodIdObjArgs(mod,
+                                                &PyId_divmod_fast,
+                                                v, w, NULL);
+    if (r == NULL) {
+        return -1;
+    }
+    assert(PyTuple_Check(r));
+    *pdiv = PyTuple_GET_ITEM(r, 0);
+    *pmod = PyTuple_GET_ITEM(r, 1);
+    Py_INCREF(*pdiv);
+    Py_INCREF(*pmod);
+    Py_DECREF(r);
+    return 0;
+}
+
 /* The / and % operators are now defined in terms of divmod().
    The expression a mod b has the value a - b*floor(a/b).
    The long_divrem function gives the remainder after division of
@@ -3925,6 +4022,12 @@ l_divmod(PyLongObject *v, PyLongObject *w,
         }
         return 0;
     }
+#if 1
+    if (Py_ABS(Py_SIZE(w)) > 1000) { // FIXME: what threshold to use?
+        /* Use _pylong.divmod_fast(), should be faster. */
+        return py_divmod(v, w, pdiv, pmod);
+    }
+#endif
     if (long_divrem(v, w, &div, &mod) < 0)
         return -1;
     if ((Py_SIZE(mod) < 0 && Py_SIZE(w) > 0) ||
