@@ -1,0 +1,1 @@
+Remove two cases of undefined behavior, by adding NULL checks.
