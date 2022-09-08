@@ -1,1 +1,2 @@
-Ensure `test.test_warnings._WarningsTests.test_default_action` restores default action for warnings in the interpreter's state.
+Ensure :meth:`_WarningsTests.test_default_action` from :mod:`test_warnings`
+restores default action for warnings in the interpreter's state.
