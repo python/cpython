@@ -149,5 +149,48 @@ class RebindBuiltinsTests(unittest.TestCase):
         for _ in range(30):
             self.assertEqual(sum_func(), expected)
 
+
+class TestTracing(unittest.TestCase):
+
+    def setUp(self):
+        self.addCleanup(sys.settrace, sys.gettrace())
+        sys.settrace(None)
+
+    def test_after_specialization(self):
+
+        def trace(frame, event, arg):
+            return trace
+
+        turn_on_trace = False
+
+        class C:
+            def __init__(self, x):
+                self.x = x
+            def __del__(self):
+                if turn_on_trace:
+                    sys.settrace(trace)
+
+        def f():
+            # LOAD_GLOBAL[_BUILTIN] immediately follows the call to C.__del__
+            C(0).x, len
+
+        def g():
+            # BINARY_SUSCR[_LIST_INT] immediately follows the call to C.__del__
+            [0][C(0).x]
+
+        def h():
+            # BINARY_OP[_ADD_INT] immediately follows the call to C.__del__
+            0 + C(0).x
+
+        for func in (f, g, h):
+            with self.subTest(func.__name__):
+                for _ in range(58):
+                    func()
+                turn_on_trace = True
+                func()
+                sys.settrace(None)
+                turn_on_trace = False
+
+
 if __name__ == "__main__":
     unittest.main()
