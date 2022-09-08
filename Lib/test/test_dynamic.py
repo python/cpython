@@ -149,6 +149,7 @@ class RebindBuiltinsTests(unittest.TestCase):
         for _ in range(30):
             self.assertEqual(sum_func(), expected)
 
+
 class TestTracing(unittest.TestCase):
 
     def setUp(self):
@@ -189,8 +190,6 @@ class TestTracing(unittest.TestCase):
                 func()
                 sys.settrace(None)
                 turn_on_trace = False
-
-
 
 
 if __name__ == "__main__":
