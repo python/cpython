@@ -1812,7 +1812,6 @@ long_to_decimal_string_internal(PyObject *aa,
     size_a = Py_ABS(Py_SIZE(a));
     negative = Py_SIZE(a) < 0;
 
-#if 0
     /* quick and dirty pre-check for overflowing the decimal digit limit,
        based on the inequality 10/3 >= log2(10)
 
@@ -1829,14 +1828,9 @@ long_to_decimal_string_internal(PyObject *aa,
             return -1;
         }
     }
-#else
-    /* quick and dirty pre-check for overflowing the decimal digit limit,
-       based on the inequality 10/3 >= log2(10)
 
-       explanation in https://github.com/python/cpython/pull/96537
-    */
-    if (size_a >= 10 * _PY_LONG_MAX_STR_DIGITS_THRESHOLD
-                  / (3 * PyLong_SHIFT) + 2) {
+#if 1
+    if (size_a > 1000) { // FIXME: what threshold to use?
         /* Switch to Python version from the _pylong module.  It is more
          * efficient for a large number of output digits.
          */
