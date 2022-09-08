@@ -2,7 +2,7 @@ import sys
 import decimal
 
 
-def long_to_decimal_string(n):
+def long_to_decimal(n):
     # Function due to Tim Peters.  See GH issue #90716 for details.
     # https://github.com/python/cpython/issues/90716
     #
@@ -11,7 +11,6 @@ def long_to_decimal_string(n):
     # implements a divide-and-conquer algorithm that is faster for large
     # numbers.  Builds an equal decimal.Decimal in a "clever" recursive way,
     # and then applies str to _that_.
-
     D = decimal.Decimal
     D2 = D(2)
 
@@ -24,6 +23,12 @@ def long_to_decimal_string(n):
         hi = n >> w2
         lo = n - (hi << w2)
         return inner(hi, w - w2) * w2pow[w2] + inner(lo, w2)
+
+    if n < 0:
+        negate = True
+        n = -n
+    else:
+        negate = False
 
     with decimal.localcontext() as ctx:
         ctx.prec = decimal.MAX_PREC
@@ -52,7 +57,14 @@ def long_to_decimal_string(n):
                     assert w - w2 in w2pow
                     val = w2pow[w2] * w2pow[w - w2]
                 w2pow[w] = val
-        return str(inner(n, n.bit_length()))
+        result = inner(n, n.bit_length())
+        if negate:
+            result = -result
+    return result
+
+
+def long_to_decimal_string(n):
+    return str(long_to_decimal(n))
 
 
 # Fast integer division, based on code from mdickinson, fast_div.py GH #47701
