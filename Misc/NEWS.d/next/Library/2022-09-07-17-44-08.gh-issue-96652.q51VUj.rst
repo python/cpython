@@ -1,1 +1,2 @@
-Check previous signal handler to be non-NULL :func:`faulthandler_user`.
+Check the previous signal handler to be non-NULL before its invocation in
+:func:`faulthandler_user`.
