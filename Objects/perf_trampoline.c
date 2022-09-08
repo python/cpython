@@ -149,6 +149,22 @@ typedef enum {
 #include <sys/types.h>
 #include <unistd.h>
 
+#if defined(__arm__) || defined(__arm64__) || defined(__aarch64__)
+#define PY_HAVE_INVALIDATE_ICACHE
+
+#if defined(__clang__) || defined(__GNUC__)
+extern void __clear_cache(void *, void*);
+#endif
+
+static void invalidate_icache(char* begin, char*end) {
+#if defined(__clang__) || defined(__GNUC__)
+    return __clear_cache(begin, end);
+#else
+    return;
+#endif
+}
+#endif
+
 /* The function pointer is passed as last argument. The other three arguments
  * are passed in the same order as the function requires. This results in
  * shorter, more efficient ASM code for trampoline.
@@ -184,6 +200,7 @@ struct trampoline_api_st {
 };
 
 typedef struct trampoline_api_st trampoline_api_t;
+
 
 static perf_status_t perf_status = PERF_STATUS_NO_INIT;
 static Py_ssize_t extra_code_index = -1;
@@ -297,10 +314,6 @@ new_code_arena(void)
         memcpy(memory + i * code_size, start, code_size * sizeof(char));
     }
     // Some systems may prevent us from creating executable code on the fly.
-    // TODO: Call icache invalidation intrinsics if available:
-    // __builtin___clear_cache/__clear_cache (depending if clang/gcc). This is
-    // technically not necessary but we could be missing something so better be
-    // safe.
     int res = mprotect(memory, mem_size, PROT_READ | PROT_EXEC);
     if (res == -1) {
         PyErr_SetFromErrno(PyExc_OSError);
@@ -310,6 +323,12 @@ new_code_arena(void)
             NULL);
         return -1;
     }
+
+#ifdef PY_HAVE_INVALIDATE_ICACHE
+    // Before the JIT can run a block of code that has been emitted it must invalidate
+    // the instruction cache on some platforms like arm and aarch64.
+    invalidate_icache(memory, memory + mem_size);
+#endif
 
     code_arena_t *new_arena = PyMem_RawCalloc(1, sizeof(code_arena_t));
     if (new_arena == NULL) {
