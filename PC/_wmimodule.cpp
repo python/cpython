@@ -63,6 +63,12 @@ _query_thread(LPVOID param)
         RPC_C_IMP_LEVEL_IMPERSONATE,
         NULL, EOAC_NONE, NULL
     );
+    // gh-96684: CoInitializeSecurity will fail if another part of the app has
+    // already called it. Hopefully they passed lenient enough settings that we
+    // can complete the WMI query, so keep going.
+    if (hr == RPC_E_TOO_LATE) {
+        hr = 0;
+    }
     if (SUCCEEDED(hr)) {
         hr = CoCreateInstance(
             CLSID_WbemLocator, 0, CLSCTX_INPROC_SERVER,
