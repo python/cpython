@@ -2099,6 +2099,11 @@ class AttributeErrorTests(unittest.TestCase):
         except AttributeError as exc:
             self.assertEqual("bluch", exc.name)
             self.assertEqual(obj, exc.obj)
+        try:
+            object.__getattribute__(obj, "bluch")
+        except AttributeError as exc:
+            self.assertEqual("bluch", exc.name)
+            self.assertEqual(obj, exc.obj)
 
     def test_getattr_has_name_and_obj_for_method(self):
         class A:
