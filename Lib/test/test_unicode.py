@@ -2807,6 +2807,20 @@ class CAPITest(unittest.TestCase):
         check_format('repr=abc',
                      b'repr=%V', 'abc', b'xyz')
 
+        # test %p
+        # We cannot test the exact result,
+        # because it returns a hex representation of a C pointer,
+        # which is going to be different each time. But, we can test the format.
+        p_format1 = PyUnicode_FromFormat(b'%p', 'abc')
+        self.assertIsInstance(p_format1, str)
+        self.assertTrue(p_format1.startswith('0x'))
+        self.assertEqual(len(p_format1), 11)
+
+        p_format2 = PyUnicode_FromFormat(b'repr=%p', b'xyz')
+        self.assertIsInstance(p_format2, str)
+        self.assertTrue(p_format2.startswith('repr=0x'))
+        self.assertEqual(len(p_format2), 11 + 5)
+
         # Test string decode from parameter of %s using utf-8.
         # b'\xe4\xba\xba\xe6\xb0\x91' is utf-8 encoded byte sequence of
         # '\u4eba\u6c11'
