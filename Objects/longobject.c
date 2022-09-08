@@ -2,8 +2,6 @@
 
 /* XXX The functional organization of this file is terrible */
 
-#define NEEDS_PY_IDENTIFIER
-
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_popcount32()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -1734,8 +1732,6 @@ rem1(PyLongObject *a, digit n)
     );
 }
 
-_Py_IDENTIFIER(long_to_decimal_string);
-
 static int
 py_long_to_decimal_string(PyObject *aa,
                           PyObject **p_output,
@@ -1748,9 +1744,7 @@ py_long_to_decimal_string(PyObject *aa,
     if (mod == NULL) {
         return -1;
     }
-    s = _PyObject_CallMethodIdObjArgs(mod,
-                                      &PyId_long_to_decimal_string,
-                                      aa, NULL);
+    s = PyObject_CallMethod(mod, "long_to_decimal_string", "O", aa);
     if (s == NULL) {
         goto error;
     }
@@ -3948,8 +3942,6 @@ fast_floor_div(PyLongObject *a, PyLongObject *b)
     return PyLong_FromLong(div);
 }
 
-_Py_IDENTIFIER(divmod_fast);
-
 static int
 py_divmod(PyLongObject *v, PyLongObject *w,
           PyLongObject **pdiv, PyLongObject **pmod)
@@ -3958,18 +3950,20 @@ py_divmod(PyLongObject *v, PyLongObject *w,
     if (mod == NULL) {
         return -1;
     }
-    PyObject *r = _PyObject_CallMethodIdObjArgs(mod,
-                                                &PyId_divmod_fast,
-                                                v, w, NULL);
+    PyObject *r = PyObject_CallMethod(mod, "divmod_fast", "OO", v, w);
     if (r == NULL) {
         Py_DECREF(mod);
         return -1;
     }
     assert(PyTuple_Check(r));
-    *pdiv = PyTuple_GET_ITEM(r, 0);
-    *pmod = PyTuple_GET_ITEM(r, 1);
-    Py_INCREF(*pdiv);
-    Py_INCREF(*pmod);
+    PyObject *a = PyTuple_GET_ITEM(r, 0);
+    PyObject *b = PyTuple_GET_ITEM(r, 1);
+    Py_INCREF(a);
+    Py_INCREF(b);
+    assert(PyLong_Check(a));
+    assert(PyLong_Check(b));
+    *pdiv = (PyLongObject *)a;
+    *pmod = (PyLongObject *)b;
     Py_DECREF(r);
     Py_DECREF(mod);
     return 0;
