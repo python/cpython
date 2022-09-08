@@ -770,6 +770,22 @@ class TestPEP590(unittest.TestCase):
         for _ in range(51):
             self.assertEqual("overridden", f(num))
 
+    def test_setvectorcall_load_attr_specialization(self):
+        from _testcapi import function_setvectorcall
+
+        class X:
+            def __getattribute__(self, attr):
+                return attr
+
+        x = X()
+        # trigger LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN specialization
+        for _ in range(8):
+            self.assertEqual("a", x.a)
+        function_setvectorcall(X.__getattribute__)
+        # make sure specialization doesn't override the override
+        for _ in range(8):
+            self.assertEqual("overridden", x.a)
+
     @requires_limited_api
     def test_vectorcall_limited(self):
         from _testcapi import pyobject_vectorcall
