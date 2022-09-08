@@ -773,5 +773,30 @@ class IntSubclassStrDigitLimitsTests(IntStrDigitLimitsTests):
     int_class = IntSubclass
 
 
+class PyLongModuleTests(unittest.TestCase):
+    # Tests of the functions in _pylong.py
+
+    def setUp(self):
+        super().setUp()
+        self._previous_limit = sys.get_int_max_str_digits()
+        sys.set_int_max_str_digits(0)
+
+    def tearDown(self):
+        sys.set_int_max_str_digits(self._previous_limit)
+        super().tearDown()
+
+    def test_pylong_long_to_decimal(self):
+        n = (1 << 1_000_000)
+        s = str(n)
+        assert s[-10:] == '2747109376'
+        s = str(-n)
+        assert s[-10:] == '2747109376'
+
+    def test_pylong_divmod_fast(self):
+        n = (1 << 1_000_000)
+        a, b = divmod(n*3 + 1, n)
+        assert a == 3 and b == 1
+
+
 if __name__ == "__main__":
     unittest.main()
