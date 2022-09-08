@@ -4977,10 +4977,12 @@ handle_eval_breaker:
         }
 
         TARGET(EXTENDED_ARG_QUICK) {
+            assert(cframe.use_tracing == 0);
             assert(oparg);
-            oparg <<= 8;
-            oparg |= _Py_OPARG(*next_instr);
-            DISPATCH_SAME_OPARG();
+            int oldoparg = oparg;
+            NEXTOPARG();
+            oparg |= oldoparg << 8;
+            DISPATCH_GOTO();
         }
 
         TARGET(CACHE) {
