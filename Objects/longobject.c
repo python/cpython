@@ -1732,6 +1732,7 @@ rem1(PyLongObject *a, digit n)
     );
 }
 
+/* asymptotically faster long_to_decimal_string, using _pylong.py */
 static int
 py_long_to_decimal_string(PyObject *aa,
                           PyObject **p_output,
@@ -1765,8 +1766,9 @@ py_long_to_decimal_string(PyObject *aa,
             Py_DECREF(s);
             return -1;
         }
+#else
+        assert(0); // FIXME: not implemented
 #endif
-        assert(0); // not implemented
         goto success;
     }
     else {
@@ -1833,9 +1835,7 @@ long_to_decimal_string_internal(PyObject *aa,
 
 #if 1
     if (size_a > 1000) { // FIXME: what threshold to use?
-        /* Switch to _pylong.long_to_decimal_string().  It asymptotically more
-         * efficient and is faster for large inputs.
-         */
+        /* Switch to _pylong.long_to_decimal_string(). */
         return py_long_to_decimal_string(aa,
                                          p_output,
                                          writer,
@@ -3981,6 +3981,7 @@ fast_floor_div(PyLongObject *a, PyLongObject *b)
     return PyLong_FromLong(div);
 }
 
+/* asymptotically faster divmod, using _pylong.py */
 static int
 py_divmod(PyLongObject *v, PyLongObject *w,
           PyLongObject **pdiv, PyLongObject **pmod)
@@ -4061,8 +4062,7 @@ l_divmod(PyLongObject *v, PyLongObject *w,
     }
 #if 1
     if (Py_ABS(Py_SIZE(w)) > 1000) { // FIXME: what threshold to use?
-        /* Switch to _pylong.divmod_fast().  It asymptotically more efficient
-           and is faster for large inputs. */
+        /* Switch to _pylong.divmod_fast() */
         return py_divmod(v, w, pdiv, pmod);
     }
 #endif

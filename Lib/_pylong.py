@@ -4,6 +4,8 @@ import functools
 
 
 def long_to_decimal(n):
+    if 0:
+        print('long_to_decimal', n.bit_length(), file=sys.stderr)
     # Function due to Tim Peters.  See GH issue #90716 for details.
     # https://github.com/python/cpython/issues/90716
     #
@@ -137,7 +139,7 @@ def _divmod_pos(a, b):
 def divmod_fast(a, b):
     """Asymptotically fast replacement for divmod, for integers."""
     if 0:
-        print('divmod_fast', file=sys.stderr)
+        print('divmod_fast', b.bit_length(), file=sys.stderr)
     if b == 0:
         raise ZeroDivisionError
     elif b < 0:
