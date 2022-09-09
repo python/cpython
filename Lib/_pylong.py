@@ -1,4 +1,6 @@
 import sys
+import io
+import re
 import decimal
 import functools
 
@@ -157,25 +159,24 @@ def divmod_fast(a, b):
 # Based on code from bjorn-martinsson GH-90716, faster str-to-int conversion
 # for large numbers.
 
-@functools.cache
-def _pow5(n):
-    # Compute as needed and memoize.  Unfortunately the cache can use quite
-    # a bit of memory because the integers are large.
-    if n == 0:
-        return 5
-    p = _pow5(n-1)
-    return p*p
-
 
 def _str_to_long_inner(s):
-    def inner(l, r):
-        if r - l <= 3000:
-            return int(s[l:r])
-        lg_split = (r - l - 1).bit_length() - 1
+    @functools.cache
+    def pow5(n):
+        if n <= 5:
+            return 5 ** (1 << n)
+        else:
+            p = pow5(n - 1)
+            return p * p
+
+    def inner(a, b):
+        if b - a <= 3000:
+            return int(s[a:b])
+        lg_split = (b - a - 1).bit_length() - 1
         split = 1 << lg_split
-        return ((inner(l, r - split) * _pow5(lg_split)) << split) + inner(
-            r - split, r
-        )
+        x = (inner(a, b - split) * pow5(lg_split)) << split
+        y = inner(b - split, b)
+        return x + y
 
     return inner(0, len(s))
 
@@ -186,13 +187,14 @@ def str_to_long(s):
     # FIXME: this needs to be intelligent to match the behavior of
     # PyLong_FromString().  The caller has already checked for invalid
     # use of underscore characters.  Are we missing anything else?
-    digits = []
-    for i, c in enumerate(s):
-        if c in {' ', '_'}:
-            continue
-        if not c.isdigit():
-            return None, i
-        # FIXME: scanning and creating a list of characters like this is
-        # expensive. Probably should do in C or use regex.
-        digits.append(c)
-    return _str_to_long_inner(''.join(digits)), None
+    if not re.match(r'[0-9]+$', s):
+        # Slow case, handle whitespace, underscores, invalid inputs
+        digits = io.StringIO()
+        for i, c in enumerate(s):
+            if c in {' ', '_'}:
+                continue
+            if not c.isdigit():
+                return None, i  # error, return index of invalid character
+            digits.write(c)
+        s = digits.getvalue()
+    return _str_to_long_inner(s), None
