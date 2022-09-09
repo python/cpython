@@ -5,10 +5,7 @@ import os.path
 import re
 import sys
 
-from c_common.fsutil import (
-    match_glob as _match_glob,
-    match_path_tail as _match_path_tail,
-)
+from c_common.fsutil import match_glob as _match_glob
 from c_common.tables import parse_table as _parse_table
 from ..source import (
     resolve as _resolve_source,
@@ -108,8 +105,11 @@ def get_preprocessor(*,
         if file_macros:
             macros = list(_resolve_file_values(filename, file_macros))
         if file_includes:
-            includes = [i for i, in _resolve_file_values(filename, file_includes)
-                        if not _match_path_tail(filename, i)]
+            # There's a small chance we could need to filter out any
+            # includes that import "filename".  It isn't clear that it's
+            # a problem any longer.  If we do end up filtering then
+            # it may make sense to use c_common.fsutil.match_path_tail().
+            includes = [i for i, in _resolve_file_values(filename, file_includes)]
         if file_incldirs:
             incldirs = [v for v, in _resolve_file_values(filename, file_incldirs)]
 
