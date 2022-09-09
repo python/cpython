@@ -65,7 +65,7 @@ struct _Py_tuple_state {
 #define _PyTuple_ITEMS(op) (_PyTuple_CAST(op)->ob_item)
 
 extern PyObject *_PyTuple_FromArray(PyObject *const *, Py_ssize_t);
-extern PyObject *_PyTuple_FromArraySteal(PyObject *const *, Py_ssize_t);
+extern PyObject *_PyTuple_FromArraySteal(PyObject *const *, Py_ssize_t, Py_ssize_t);
 
 #ifdef __cplusplus
 }
