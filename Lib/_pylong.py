@@ -192,5 +192,7 @@ def str_to_long(s):
             continue
         if not c.isdigit():
             return None, i
+        # FIXME: scanning and creating a list of characters like this is
+        # expensive. Probably should do in C or use regex.
         digits.append(c)
     return _str_to_long_inner(''.join(digits)), None
