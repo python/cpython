@@ -393,11 +393,17 @@ _PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
 }
 
 PyObject *
-_PyTuple_FromArraySteal(PyObject *const *src, Py_ssize_t n)
+_PyTuple_FromArraySteal(PyObject *const *ar, Py_ssize_t ar_size, Py_ssize_t start)
 {
+    assert(start >= 0);
+    assert(start <= ar_size);
+    const Py_ssize_t n = ar_size - start;
+
     if (n == 0) {
         return tuple_get_empty();
     }
+    assert(ar != NULL);
+    PyObject *const *src = ar + start;
     PyTupleObject *tuple = tuple_alloc(n);
     if (tuple == NULL) {
         for (Py_ssize_t i = 0; i < n; i++) {
