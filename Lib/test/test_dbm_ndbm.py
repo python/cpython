@@ -134,10 +134,8 @@ class DbmTestCase(unittest.TestCase):
         dbm.ndbm.open(os_helper.FakePath(os.fsencode(self.filename)), "c").close()
 
     def test_bool_empty(self):
-        # Ensure bool(db with no entry) is False.
         with dbm.ndbm.open(self.filename, 'c') as db:
-            # Empty, should be False
-           self.assertFalse(bool(db))
+            self.assertFalse(bool(db))
 
     def test_bool_not_empty(self):
         with dbm.ndbm.open(self.filename, 'c') as db:
