@@ -7077,6 +7077,7 @@ stackdepth(basicblock *entryblock, int code_flags)
                 return -1;
             }
             int new_depth = depth + effect;
+            assert(new_depth >= 0); /* invalid code or bug in stackdepth() */
             if (new_depth > maxdepth) {
                 maxdepth = new_depth;
             }
