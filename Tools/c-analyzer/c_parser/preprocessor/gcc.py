@@ -65,13 +65,13 @@ def preprocess(filename,
     return _iter_lines(text, filename, samefiles)
 
 
-def _iter_lines(text, filename, samefiles, *, raw=False):
+def _iter_lines(text, reqfile, samefiles, *, raw=False):
     lines = iter(text.splitlines())
 
     # The first line is special.
     # The next two lines are consistent.
     for expected in [
-        f'# 1 "{filename}"',
+        f'# 1 "{reqfile}"',
         '# 1 "<built-in>"',
         '# 1 "<command-line>"',
     ]:
@@ -80,15 +80,15 @@ def _iter_lines(text, filename, samefiles, *, raw=False):
             raise NotImplementedError((line, expected))
 
     # Do all the CLI-provided includes.
-    filter_reqfile = (lambda f: _filter_orig_file(f, filename, samefiles))
-    make_info = (lambda lno: _common.FileInfo(filename, lno))
+    filter_reqfile = (lambda f: _filter_reqfile(f, reqfile, samefiles))
+    make_info = (lambda lno: _common.FileInfo(reqfile, lno))
     last = None
     for line in lines:
-        assert last != filename, (last,)
-        lno, included, flags = _parse_marker_line(line, filename)
+        assert last != reqfile, (last,)
+        lno, included, flags = _parse_marker_line(line, reqfile)
         if not included:
             raise NotImplementedError((line,))
-        if included == filename:
+        if included == reqfile:
             # This will be the last one.
             assert not flags, (line, flags)
         else:
@@ -102,7 +102,7 @@ def _iter_lines(text, filename, samefiles, *, raw=False):
         )
         last = included
     # The last one is always the requested file.
-    assert included == filename, (line,)
+    assert included == reqfile, (line,)
 
 
 def _iter_top_include_lines(lines, topfile, filter_reqfile, make_info, raw):
@@ -210,18 +210,18 @@ def _strip_directives(line, partial=0):
     return line, partial
 
 
-def _filter_orig_file(origfile, current, samefiles):
-    if origfile == current:
+def _filter_reqfile(current, reqfile, samefiles):
+    if current == reqfile:
         return True
-    if origfile == '<stdin>':
+    if current == '<stdin>':
         return True
-    if os.path.isabs(origfile):
+    if os.path.isabs(current):
         return False
 
     for filename in samefiles or ():
         if filename.endswith(os.path.sep):
-            filename += os.path.basename(current)
-        if origfile == filename:
+            filename += os.path.basename(reqfile)
+        if current == filename:
             return True
 
     return False
