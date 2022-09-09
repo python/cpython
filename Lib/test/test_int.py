@@ -785,19 +785,24 @@ class PyLongModuleTests(unittest.TestCase):
         sys.set_int_max_str_digits(self._previous_limit)
         super().tearDown()
 
-    def test_pylong_long_to_decimal(self):
+    def test_pylong_int_to_decimal(self):
         n = (1 << 1_000_000)
+        suffix = '2747109376'
         s = str(n)
-        assert s[-10:] == '2747109376'
+        assert s[-10:] == suffix
         s = str(-n)
-        assert s[-10:] == '2747109376'
+        assert s[-10:] == suffix
+        s = '%d' % n
+        assert s[-10:] == suffix
+        s = b'%d' % n
+        assert s[-10:] == suffix.encode('ascii')
 
-    def test_pylong_divmod_fast(self):
+    def test_pylong_int_divmod(self):
         n = (1 << 1_000_000)
         a, b = divmod(n*3 + 1, n)
         assert a == 3 and b == 1
 
-    def test_pylong_str_to_long(self):
+    def test_pylong_str_to_int(self):
         v1 = 1 << 1_000_000
         s = str(v1)
         v2 = int(s)

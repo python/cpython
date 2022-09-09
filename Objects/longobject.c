@@ -22,6 +22,9 @@ class int "PyObject *" "&PyLong_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=ec0275e3422a36e3]*/
 
+/* If defined, use algorithms from the _pylong.py module */
+#define WITH_PYLONG_MODULE 1
+
 /* Is this PyLong of size 1, 0 or -1? */
 #define IS_MEDIUM_VALUE(x) (((size_t)Py_SIZE(x)) + 1U < 3U)
 
@@ -1732,20 +1735,21 @@ rem1(PyLongObject *a, digit n)
     );
 }
 
+#ifdef WITH_PYLONG_MODULE
 /* asymptotically faster long_to_decimal_string, using _pylong.py */
 static int
-py_long_to_decimal_string(PyObject *aa,
-                          PyObject **p_output,
-                          _PyUnicodeWriter *writer,
-                          _PyBytesWriter *bytes_writer,
-                          char **bytes_str)
+pylong_int_to_decimal_string(PyObject *aa,
+                             PyObject **p_output,
+                             _PyUnicodeWriter *writer,
+                             _PyBytesWriter *bytes_writer,
+                             char **bytes_str)
 {
     PyObject *s = NULL;
     PyObject *mod = PyImport_ImportModule("_pylong");
     if (mod == NULL) {
         return -1;
     }
-    s = PyObject_CallMethod(mod, "long_to_decimal_string", "O", aa);
+    s = PyObject_CallMethod(mod, "int_to_decimal_string", "O", aa);
     if (s == NULL) {
         goto error;
     }
@@ -1791,6 +1795,7 @@ success:
         Py_DECREF(s);
         return 0;
 }
+#endif /* WITH_PYLONG_MODULE */
 
 
 /* Convert an integer to a base 10 string.  Returns a new non-shared
@@ -1837,10 +1842,10 @@ long_to_decimal_string_internal(PyObject *aa,
         }
     }
 
-#if 1
+#if WITH_PYLONG_MODULE
     if (size_a > 1000) { // FIXME: what threshold to use?
-        /* Switch to _pylong.long_to_decimal_string(). */
-        return py_long_to_decimal_string(aa,
+        /* Switch to _pylong.int_to_decimal_string(). */
+        return pylong_int_to_decimal_string(aa,
                                          p_output,
                                          writer,
                                          bytes_writer,
@@ -2364,16 +2369,17 @@ long_from_binary_base(const char **str, int base, PyLongObject **res)
 
 static PyObject *long_neg(PyLongObject *v);
 
+#ifdef WITH_PYLONG_MODULE
 /* asymptotically faster str-to-long conversion for base 10, using _pylong.py */
 static PyObject *
-py_str_to_long(const char *str, char **pend, int base, int sign)
+pylong_int_from_string(const char *str, char **pend, int base, int sign)
 {
     PyObject *mod = PyImport_ImportModule("_pylong");
     if (mod == NULL) {
         return NULL;
     }
     assert(base == 10);
-    PyObject *result = PyObject_CallMethod(mod, "str_to_long", "s", str);
+    PyObject *result = PyObject_CallMethod(mod, "int_from_string", "s", str);
     Py_DECREF(mod);
     if (result == NULL) {
         return NULL;
@@ -2400,6 +2406,7 @@ py_str_to_long(const char *str, char **pend, int base, int sign)
     Py_DECREF(result);
     return v;
 }
+#endif /* WITH_PYLONG_MODULE */
 
 /* Parses an int from a bytestring. Leading and trailing whitespace will be
  * ignored.
@@ -2633,10 +2640,10 @@ digit beyond the first.
             }
         }
 
-#if 1
+#if WITH_PYLONG_MODULE
         if (digits > 3000 && base == 10) {
-            /* Switch to _pylong.str_to_long() */
-            return py_str_to_long(str, pend, base, sign);
+            /* Switch to _pylong.int_from_string() */
+            return pylong_int_from_string(str, pend, base, sign);
         }
 #endif
 
@@ -3992,16 +3999,17 @@ fast_floor_div(PyLongObject *a, PyLongObject *b)
     return PyLong_FromLong(div);
 }
 
+#ifdef WITH_PYLONG_MODULE
 /* asymptotically faster divmod, using _pylong.py */
 static int
-py_divmod(PyLongObject *v, PyLongObject *w,
-          PyLongObject **pdiv, PyLongObject **pmod)
+pylong_int_divmod(PyLongObject *v, PyLongObject *w,
+                  PyLongObject **pdiv, PyLongObject **pmod)
 {
     PyObject *mod = PyImport_ImportModule("_pylong");
     if (mod == NULL) {
         return -1;
     }
-    PyObject *r = PyObject_CallMethod(mod, "divmod_fast", "OO", v, w);
+    PyObject *r = PyObject_CallMethod(mod, "int_divmod", "OO", v, w);
     if (r == NULL) {
         Py_DECREF(mod);
         return -1;
@@ -4019,6 +4027,7 @@ py_divmod(PyLongObject *v, PyLongObject *w,
     Py_DECREF(mod);
     return 0;
 }
+#endif /* WITH_PYLONG_MODULE */
 
 /* The / and % operators are now defined in terms of divmod().
    The expression a mod b has the value a - b*floor(a/b).
@@ -4071,10 +4080,10 @@ l_divmod(PyLongObject *v, PyLongObject *w,
         }
         return 0;
     }
-#if 1
+#if WITH_PYLONG_MODULE
     if (Py_ABS(Py_SIZE(w)) > 1000) { // FIXME: what threshold to use?
-        /* Switch to _pylong.divmod_fast() */
-        return py_divmod(v, w, pdiv, pmod);
+        /* Switch to _pylong.int_divmod() */
+        return pylong_int_divmod(v, w, pdiv, pmod);
     }
 #endif
     if (long_divrem(v, w, &div, &mod) < 0)

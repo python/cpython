@@ -1,21 +1,43 @@
+"""Python implementations of some algorithms for use by longobject.c.
+The goal is to provide asymptotically faster algorithms that can be
+used for operations on integers with many digits.  In those cases, the
+performance overhead of the Python implementation is not significant
+since the asymptotic behavior is what dominates runtime. Functions
+provided by this module should be considered private and not part of any
+public API.
+
+Note: for ease of maintainability, please prefer clear code and avoid
+"micro-optimizations".  This module will only be imported and used for
+integers with a huge number of digits.  Saving a few microseconds with
+tricky or non-obvious code is not worth it.  For people looking for
+maximum performance, they should use something like gmpy2."""
+
+
 import sys
 import io
 import re
 import decimal
 import functools
 
+_DEBUG = False
 
-def long_to_decimal(n):
-    if 0:
-        print('long_to_decimal', n.bit_length(), file=sys.stderr)
+
+def int_to_decimal(n):
+    """Asymptotically fast conversion of an 'int' to Decimal."""
+
     # Function due to Tim Peters.  See GH issue #90716 for details.
     # https://github.com/python/cpython/issues/90716
     #
-    # The implementation in longobject.c of base conversion algorithms between
-    # power-of-2 and non-power-of-2 bases are quadratic time.  This function
-    # implements a divide-and-conquer algorithm that is faster for large
-    # numbers.  Builds an equal decimal.Decimal in a "clever" recursive way,
-    # and then applies str to _that_.
+    # The implementation in longobject.c of base conversion algorithms
+    # between power-of-2 and non-power-of-2 bases are quadratic time.
+    # This function implements a divide-and-conquer algorithm that is
+    # faster for large numbers.  Builds an equal decimal.Decimal in a
+    # "clever" recursive way.  If we want a string representation, we
+    # apply str to _that_.
+
+    if _DEBUG:
+        print('int_to_decimal', n.bit_length(), file=sys.stderr)
+
     D = decimal.Decimal
     D2 = D(2)
 
@@ -68,13 +90,14 @@ def long_to_decimal(n):
     return result
 
 
-def long_to_decimal_string(n):
-    return str(long_to_decimal(n))
+def int_to_decimal_string(n):
+    """Asymptotically fast conversion of an 'int' to a decimal string."""
+    return str(int_to_decimal(n))
 
 
 # Fast integer division, based on code from mdickinson, fast_div.py GH #47701
 
-DIV_LIMIT = 1000
+_DIV_LIMIT = 1000
 
 
 def _div2n1n(a, b, n):
@@ -90,7 +113,7 @@ def _div2n1n(a, b, n):
       (q, r) such that a = b*q+r and 0 <= r < b.
 
     """
-    if n <= DIV_LIMIT:
+    if n <= _DIV_LIMIT:
         return divmod(a, b)
     pad = n & 1
     if pad:
@@ -138,17 +161,17 @@ def _divmod_pos(a, b):
     return q, r
 
 
-def divmod_fast(a, b):
-    """Asymptotically fast replacement for divmod, for integers."""
-    if 0:
-        print('divmod_fast', b.bit_length(), file=sys.stderr)
+def int_divmod(a, b):
+    """Asymptotically fast replacement for divmod, for 'int'."""
+    if _DEBUG:
+        print('int_divmod', b.bit_length(), file=sys.stderr)
     if b == 0:
         raise ZeroDivisionError
     elif b < 0:
-        q, r = divmod_fast(-a, -b)
+        q, r = int_divmod(-a, -b)
         return q, -r
     elif a < 0:
-        q, r = divmod_fast(~a, b)
+        q, r = int_divmod(~a, b)
         return ~q, b + ~r
     elif a == 0:
         return 0, 0
@@ -156,11 +179,10 @@ def divmod_fast(a, b):
         return _divmod_pos(a, b)
 
 
-# Based on code from bjorn-martinsson GH-90716, faster str-to-int conversion
-# for large numbers.
+# Based on code from bjorn-martinsson GH-90716, str-to-int conversion
 
 
-def _str_to_long_inner(s):
+def _str_to_int_inner(s):
     @functools.cache
     def pow5(n):
         if n <= 5:
@@ -181,9 +203,11 @@ def _str_to_long_inner(s):
     return inner(0, len(s))
 
 
-def str_to_long(s):
-    if 0:
-        print('str_to_long', len(s), file=sys.stderr)
+def int_from_string(s):
+    """Asymptotically fast version of PyLong_FromString(), conversion
+    of a string of decimal digits into an 'int'."""
+    if _DEBUG:
+        print('int_from_string', len(s), file=sys.stderr)
     # FIXME: this needs to be intelligent to match the behavior of
     # PyLong_FromString().  The caller has already checked for invalid
     # use of underscore characters.  Are we missing anything else?
@@ -197,4 +221,12 @@ def str_to_long(s):
                 return None, i  # error, return index of invalid character
             digits.write(c)
         s = digits.getvalue()
-    return _str_to_long_inner(s), None
+    return _str_to_int_inner(s), None
+
+
+def str_to_int(s):
+    """Asymptotically fast version of decimal string to 'int' conversion."""
+    v, error_index = int_from_string(s)
+    if v is not None:
+        return v
+    raise ValueError('invalid literal for int() with base 10')
