@@ -797,6 +797,12 @@ class PyLongModuleTests(unittest.TestCase):
         a, b = divmod(n*3 + 1, n)
         assert a == 3 and b == 1
 
+    def test_pylong_str_to_long(self):
+        v1 = 1 << 1_000_000
+        s = str(v1)
+        v2 = int(s)
+        assert v1 == v2
+
 
 if __name__ == "__main__":
     unittest.main()
