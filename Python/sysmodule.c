@@ -1487,6 +1487,44 @@ static PyStructSequence_Desc windows_version_desc = {
                                       via indexing, the rest are name only */
 };
 
+static PyObject *
+_sys_getwindowsversion_from_kernel32()
+{
+    HANDLE hKernel32;
+    wchar_t kernel32_path[MAX_PATH];
+    LPVOID verblock;
+    DWORD verblock_size;
+    VS_FIXEDFILEINFO *ffi;
+    UINT ffi_len;
+    DWORD realMajor, realMinor, realBuild;
+
+    Py_BEGIN_ALLOW_THREADS
+    hKernel32 = GetModuleHandleW(L"kernel32.dll");
+    Py_END_ALLOW_THREADS
+    if (!hKernel32 || !GetModuleFileNameW(hKernel32, kernel32_path, MAX_PATH)) {
+        PyErr_SetFromWindowsErr(0);
+        return NULL;
+    }
+    verblock_size = GetFileVersionInfoSizeW(kernel32_path, NULL);
+    if (!verblock_size) {
+        PyErr_SetFromWindowsErr(0);
+        return NULL;
+    }
+    verblock = PyMem_RawMalloc(verblock_size);
+    if (!verblock ||
+        !GetFileVersionInfoW(kernel32_path, 0, verblock_size, verblock) ||
+        !VerQueryValueW(verblock, L"", (LPVOID)&ffi, &ffi_len)) {
+        PyErr_SetFromWindowsErr(0);
+        return NULL;
+    }
+
+    realMajor = HIWORD(ffi->dwProductVersionMS);
+    realMinor = LOWORD(ffi->dwProductVersionMS);
+    realBuild = HIWORD(ffi->dwProductVersionLS);
+    PyMem_RawFree(verblock);
+    return Py_BuildValue("(kkk)", realMajor, realMinor, realBuild);
+}
+
 /* Disable deprecation warnings about GetVersionEx as the result is
    being passed straight through to the caller, who is responsible for
    using it correctly. */
@@ -1516,11 +1554,13 @@ sys_getwindowsversion_impl(PyObject *module)
     PyObject *version;
     int pos = 0;
     OSVERSIONINFOEXW ver;
-    DWORD realMajor, realMinor, realBuild;
-    HANDLE hKernel32;
-    wchar_t kernel32_path[MAX_PATH];
-    LPVOID verblock;
-    DWORD verblock_size;
+
+    version = PyObject_GetAttrString(module, "_cached_windows_version");
+    if (version && PyObject_TypeCheck(version, &WindowsVersionType)) {
+        return version;
+    }
+    Py_XDECREF(version);
+    PyErr_Clear();
 
     ver.dwOSVersionInfoSize = sizeof(ver);
     if (!GetVersionExW((OSVERSIONINFOW*) &ver))
@@ -1540,41 +1580,34 @@ sys_getwindowsversion_impl(PyObject *module)
     PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wSuiteMask));
     PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wProductType));
 
-    realMajor = ver.dwMajorVersion;
-    realMinor = ver.dwMinorVersion;
-    realBuild = ver.dwBuildNumber;
-
     // GetVersion will lie if we are running in a compatibility mode.
     // We need to read the version info from a system file resource
     // to accurately identify the OS version. If we fail for any reason,
     // just return whatever GetVersion said.
-    Py_BEGIN_ALLOW_THREADS
-    hKernel32 = GetModuleHandleW(L"kernel32.dll");
-    Py_END_ALLOW_THREADS
-    if (hKernel32 && GetModuleFileNameW(hKernel32, kernel32_path, MAX_PATH) &&
-        (verblock_size = GetFileVersionInfoSizeW(kernel32_path, NULL)) &&
-        (verblock = PyMem_RawMalloc(verblock_size))) {
-        VS_FIXEDFILEINFO *ffi;
-        UINT ffi_len;
-
-        if (GetFileVersionInfoW(kernel32_path, 0, verblock_size, verblock) &&
-            VerQueryValueW(verblock, L"", (LPVOID)&ffi, &ffi_len)) {
-            realMajor = HIWORD(ffi->dwProductVersionMS);
-            realMinor = LOWORD(ffi->dwProductVersionMS);
-            realBuild = HIWORD(ffi->dwProductVersionLS);
-        }
-        PyMem_RawFree(verblock);
+    PyObject *realVersion = _sys_getwindowsversion_from_kernel32();
+    if (!realVersion) {
+        PyErr_Clear();
+        realVersion = Py_BuildValue("(kkk)",
+            ver.dwMajorVersion,
+            ver.dwMinorVersion,
+            ver.dwBuildNumber
+        );
     }
-    PyStructSequence_SET_ITEM(version, pos++, Py_BuildValue("(kkk)",
-        realMajor,
-        realMinor,
-        realBuild
-    ));
+
+    if (realVersion) {
+        PyStructSequence_SET_ITEM(version, pos++, realVersion);
+    }
 
     if (PyErr_Occurred()) {
         Py_DECREF(version);
         return NULL;
     }
+
+    if (PyObject_SetAttrString(module, "_cached_windows_version", version) < 0) {
+        Py_DECREF(version);
+        return NULL;
+    }
+
     return version;
 }
 
