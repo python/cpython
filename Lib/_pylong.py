@@ -1,5 +1,6 @@
 import sys
 import decimal
+import functools
 
 
 def long_to_decimal(n):
@@ -149,3 +150,45 @@ def divmod_fast(a, b):
         return 0, 0
     else:
         return _divmod_pos(a, b)
+
+
+# Based on code from bjorn-martinsson GH-90716, faster str-to-int conversion
+# for large numbers.
+
+@functools.cache
+def _pow5(n):
+    # Compute as needed and memoize.  Unfortunately the cache can use quite
+    # a bit of memory because the integers are large.
+    if n == 0:
+        return 5
+    p = _pow5(n-1)
+    return p*p
+
+
+def _str_to_long_inner(s):
+    def inner(l, r):
+        if r - l <= 3000:
+            return int(s[l:r])
+        lg_split = (r - l - 1).bit_length() - 1
+        split = 1 << lg_split
+        return ((inner(l, r - split) * _pow5(lg_split)) << split) + inner(
+            r - split, r
+        )
+
+    return inner(0, len(s))
+
+
+def str_to_long(s):
+    if 0:
+        print('str_to_long', len(s), file=sys.stderr)
+    # FIXME: this needs to be intelligent to match the behavior of
+    # PyLong_FromString().  The caller has already checked for invalid
+    # use of underscore characters.  Are we missing anything else?
+    digits = []
+    for i, c in enumerate(s):
+        if c in {' ', '_'}:
+            continue
+        if not c.isdigit():
+            return None, i
+        digits.append(c)
+    return _str_to_long_inner(''.join(digits)), None
