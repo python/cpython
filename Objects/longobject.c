@@ -2358,6 +2358,38 @@ long_from_binary_base(const char **str, int base, PyLongObject **res)
     return 0;
 }
 
+/* asymptotically faster str-to-long conversion for base 10, using _pylong.py */
+static PyObject *
+py_str_to_long(const char *str, char **pend, int base)
+{
+    PyObject *mod = PyImport_ImportModule("_pylong");
+    if (mod == NULL) {
+        return NULL;
+    }
+    assert(base == 10);
+    PyObject *result = PyObject_CallMethod(mod, "str_to_long", "s", str);
+    Py_DECREF(mod);
+    if (result == NULL) {
+        return NULL;
+    }
+    PyObject *v = PyTuple_GET_ITEM(result, 0); // integer value
+    if (v == Py_None) {
+        /* error case */
+        if (pend != NULL) {
+            PyObject *n = PyTuple_GET_ITEM(result, 1); // last character parsed
+            assert(PyLong_Check(n));
+            *pend = (char *)str + PyLong_AsSize_t(n);
+        }
+    }
+    else {
+        assert(PyLong_Check(v));
+        assert(PyTuple_GET_ITEM(result, 1) == Py_None);
+        Py_INCREF(v);
+    }
+    Py_DECREF(result);
+    return v;
+}
+
 /* Parses an int from a bytestring. Leading and trailing whitespace will be
  * ignored.
  *
@@ -2589,6 +2621,13 @@ digit beyond the first.
                 return NULL;
             }
         }
+
+#if 1
+        if (digits > 3000 && base == 10) {
+            /* Switch to _pylong.str_to_long() */
+            return py_str_to_long(str, pend, base);
+        }
+#endif
 
         /* Create an int object that can contain the largest possible
          * integer with this base and length.  Note that there's no
