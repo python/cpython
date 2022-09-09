@@ -367,7 +367,7 @@ Python/clinic/sysmodule.c.h	sys_set_int_max_str_digits	_kwtuple	-
 # manually cached PyUnicodeObject
 Python/ast_unparse.c	-	_str_replace_inf	-
 
-# holds strings
+# holds statically-initialized strings
 Objects/typeobject.c	-	slotdefs	-
 
 # other
@@ -399,7 +399,6 @@ Python/import.c	-	extensions	-
 Modules/getbuildinfo.c	Py_GetBuildInfo	buildinfo	-
 
 # during init
-Objects/typeobject.c	-	slotdefs_initialized	-
 Objects/unicodeobject.c	-	bloom_linebreak	-
 Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
 Python/bootstrap_hash.c	py_getrandom	getrandom_works	-
