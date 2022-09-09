@@ -9006,10 +9006,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
         int oparg = inst->i_oparg;
         int nextop = i+1 < bb->b_iused ? bb->b_instr[i+1].i_opcode : 0;
         if (HAS_TARGET(inst->i_opcode)) {
-            /* Skip over empty basic blocks. */
-            while (inst->i_target->b_iused == 0) {
-                inst->i_target = inst->i_target->b_next;
-            }
+            assert(inst->i_target->b_iused > 0);
             target = &inst->i_target->b_instr[0];
             assert(!IS_ASSEMBLER_OPCODE(target->i_opcode));
         }
@@ -9233,22 +9230,12 @@ error:
     return -1;
 }
 
-static bool
-basicblock_has_lineno(const basicblock *bb) {
-    for (int i = 0; i < bb->b_iused; i++) {
-        if (bb->b_instr[i].i_loc.lineno > 0) {
-            return true;
-        }
-    }
-    return false;
-}
-
-/* If this block ends with an unconditional jump to a small exit block that does
- * not have linenos, then remove the jump and extend this block with the target.
+/* If this block ends with an unconditional jump to a small exit block, then
+ * remove the jump and extend this block with the target.
  * Returns 1 if extended, 0 if no change, and -1 on error.
  */
 static int
-extend_block(basicblock *bb) {
+inline_small_exit_blocks(basicblock *bb) {
     struct instr *last = basicblock_last_instr(bb);
     if (last == NULL) {
         return 0;
@@ -9258,10 +9245,6 @@ extend_block(basicblock *bb) {
     }
     basicblock *target = last->i_target;
     if (basicblock_exits_scope(target) && target->b_iused <= MAX_COPY_SIZE) {
-        if (basicblock_has_lineno(target)) {
-            /* copy only blocks without line number (like implicit 'return None's) */
-            return 0;
-        }
         last->i_opcode = NOP;
         for (int i = 0; i < target->b_iused; i++) {
             int index = basicblock_next_instr(bb);
@@ -9513,7 +9496,7 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
     }
     eliminate_empty_basic_blocks(g);
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        if (extend_block(b) < 0) {
+        if (inline_small_exit_blocks(b) < 0) {
             return -1;
         }
     }
@@ -9526,7 +9509,7 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
         assert(b->b_predecessors == 0);
     }
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        if (extend_block(b) < 0) {
+        if (inline_small_exit_blocks(b) < 0) {
             return -1;
         }
     }
