@@ -2358,9 +2358,11 @@ long_from_binary_base(const char **str, int base, PyLongObject **res)
     return 0;
 }
 
+static PyObject *long_neg(PyLongObject *v);
+
 /* asymptotically faster str-to-long conversion for base 10, using _pylong.py */
 static PyObject *
-py_str_to_long(const char *str, char **pend, int base)
+py_str_to_long(const char *str, char **pend, int base, int sign)
 {
     PyObject *mod = PyImport_ImportModule("_pylong");
     if (mod == NULL) {
@@ -2384,7 +2386,12 @@ py_str_to_long(const char *str, char **pend, int base)
     else {
         assert(PyLong_Check(v));
         assert(PyTuple_GET_ITEM(result, 1) == Py_None);
-        Py_INCREF(v);
+        if (sign < 0) {
+            v = long_neg((PyLongObject *)v);
+        }
+        else {
+            Py_INCREF(v);
+        }
     }
     Py_DECREF(result);
     return v;
@@ -2625,7 +2632,7 @@ digit beyond the first.
 #if 1
         if (digits > 3000 && base == 10) {
             /* Switch to _pylong.str_to_long() */
-            return py_str_to_long(str, pend, base);
+            return py_str_to_long(str, pend, base, sign);
         }
 #endif
 

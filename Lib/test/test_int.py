@@ -802,6 +802,14 @@ class PyLongModuleTests(unittest.TestCase):
         s = str(v1)
         v2 = int(s)
         assert v1 == v2
+        v3 = int(' -' + s)
+        assert -v1 == v3
+        with self.assertRaises(ValueError) as err:
+            int(s + 'z')
+        with self.assertRaises(ValueError) as err:
+            int(s + '_')
+        with self.assertRaises(ValueError) as err:
+            int('_' + s)
 
 
 if __name__ == "__main__":
