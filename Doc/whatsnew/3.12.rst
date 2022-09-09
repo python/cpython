@@ -159,6 +159,8 @@ Deprecated
   and tailor them to your needs.
   (Contributed by Erlend E. Aasland in :gh:`90016`.)
 
+* The exception representation \(type\[, value\[, traceback\]\]\) is now deprecated. (:gh:`89874`.)
+
 
 Pending Removal in Python 3.13
 ------------------------------
