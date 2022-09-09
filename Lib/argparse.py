@@ -1405,7 +1405,6 @@ class _ActionsContainer(object):
                 return action.default
         return self._defaults.get(dest, None)
 
-
     # =======================
     # Adding argument actions
     # =======================
@@ -1413,6 +1412,8 @@ class _ActionsContainer(object):
         """
         add_argument(dest, ..., name=value, ...)
         add_argument(option_string, option_string, ..., name=value, ...)
+
+        For more details see https://docs.python.org/library/argparse.html?#argparse.ArgumentParser.add_argument
         """
 
         # if no positional args are supplied or only one is supplied and
