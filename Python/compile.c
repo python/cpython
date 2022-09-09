@@ -9623,12 +9623,9 @@ duplicate_exits_without_lineno(cfg_builder *g)
             }
         }
     }
-    /* Eliminate empty blocks */
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        while (b->b_next && b->b_next->b_iused == 0) {
-            b->b_next = b->b_next->b_next;
-        }
-    }
+
+    assert(no_empty_basic_blocks(g));
+
     /* Any remaining reachable exit blocks without line number can only be reached by
      * fall through, and thus can only have a single predecessor */
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
