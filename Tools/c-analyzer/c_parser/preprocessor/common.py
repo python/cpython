@@ -44,7 +44,7 @@ def run_cmd(argv, *,
     return proc.stdout
 
 
-def preprocess(tool, filename, **kwargs):
+def preprocess(tool, filename, cwd=None, **kwargs):
     argv = _build_argv(tool, filename, **kwargs)
     logger.debug(' '.join(shlex.quote(v) for v in argv))
 
@@ -59,7 +59,7 @@ def preprocess(tool, filename, **kwargs):
         # distutil compiler object's preprocess() method, since that
         # one writes to stdout/stderr and it's simpler to do it directly
         # through subprocess.
-        return run_cmd(argv)
+        return run_cmd(argv, cwd=cwd)
 
 
 def _build_argv(

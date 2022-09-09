@@ -50,7 +50,11 @@ def preprocess(filename,
                includes=None,
                macros=None,
                samefiles=None,
+               cwd=None,
                ):
+    if not cwd or not os.path.isabs(cwd):
+        cwd = os.path.abspath(cwd or '.')
+    filename = _normpath(filename, cwd)
     text = _common.preprocess(
         TOOL,
         filename,
@@ -61,11 +65,12 @@ def preprocess(filename,
         postargs=POST_ARGS,
         executable=['gcc'],
         compiler='unix',
+        cwd=cwd,
     )
-    return _iter_lines(text, filename, samefiles)
+    return _iter_lines(text, filename, samefiles, cwd)
 
 
-def _iter_lines(text, reqfile, samefiles, *, raw=False):
+def _iter_lines(text, reqfile, samefiles, cwd, raw=False):
     lines = iter(text.splitlines())
 
     # The first line is special.
@@ -95,7 +100,8 @@ def _iter_lines(text, reqfile, samefiles, *, raw=False):
             assert 1 in flags, (line, flags)
         yield from _iter_top_include_lines(
             lines,
-            included,
+            _normpath(included, cwd),
+            cwd,
             filter_reqfile,
             make_info,
             raw,
@@ -105,7 +111,9 @@ def _iter_lines(text, reqfile, samefiles, *, raw=False):
     assert included == reqfile, (line,)
 
 
-def _iter_top_include_lines(lines, topfile, filter_reqfile, make_info, raw):
+def _iter_top_include_lines(lines, topfile, cwd,
+                            filter_reqfile, make_info,
+                            raw):
     partial = 0  # depth
     files = [topfile]
     # We start at 1 in case there are source lines (including blank onces)
@@ -120,6 +128,7 @@ def _iter_top_include_lines(lines, topfile, filter_reqfile, make_info, raw):
         _lno, included, flags = _parse_marker_line(line)
         if included:
             lno = _lno
+            included = _normpath(included, cwd)
             # We hit a marker line.
             if 1 in flags:
                 # We're entering a file.
@@ -225,3 +234,8 @@ def _filter_reqfile(current, reqfile, samefiles):
             return True
 
     return False
+
+
+def _normpath(filename, cwd):
+    assert cwd
+    return os.path.normpath(os.path.join(cwd, filename))

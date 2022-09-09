@@ -42,6 +42,7 @@ def preprocess(source, *,
                macros=None,
                samefiles=None,
                filename=None,
+               cwd=None,
                tool=True,
                ):
     """...
@@ -62,11 +63,12 @@ def preprocess(source, *,
                 includes,
                 macros,
                 samefiles,
+                cwd,
             ) or ()
     else:
         source, filename = _resolve_source(source, filename)
         # We ignore "includes", "macros", etc.
-        return _pure.preprocess(source, filename)
+        return _pure.preprocess(source, filename, cwd)
 
     # if _run() returns just the lines:
 #    text = _run(source)
