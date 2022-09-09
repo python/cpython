@@ -649,7 +649,6 @@ _functools_cmp_to_key_impl(PyObject *module, PyObject *mycmp)
 {
     keyobject *object;
     _functools_state *state;
-    state = get_functools_state(module);
 
     state = get_functools_state(module);
     object = PyObject_GC_New(keyobject, state->keyobject_type);
@@ -661,9 +660,6 @@ _functools_cmp_to_key_impl(PyObject *module, PyObject *mycmp)
     PyObject_GC_Track(object);
     return (PyObject *)object;
 }
-
-PyDoc_STRVAR(functools_cmp_to_key_doc,
-"Convert a cmp= function into a key= function.");
 
 /* reduce (used to be a builtin) ********************************************/
 
