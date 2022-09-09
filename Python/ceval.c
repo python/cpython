@@ -1007,11 +1007,11 @@ pop_frame(PyThreadState *tstate, _PyInterpreterFrame *frame)
 #endif
 
 typedef struct _eval_frame_data {
-    SENTINEL(0);
+    SENTINEL(0)
     _PyCFrame cframe;
-    SENTINEL(1);
+    SENTINEL(1)
     _PyInterpreterFrame pyframe;
-    SENTINEL(2);
+    SENTINEL(2)
 /* It is only between the KW_NAMES instruction and the following CALL,
  * that this has any meaning.
  */
@@ -1042,9 +1042,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #endif
 
     EvalFrameData cframe;
-    SET_SENTINEL(0);
-    SET_SENTINEL(1);
-    SET_SENTINEL(2);
+    SET_SENTINEL(0)
+    SET_SENTINEL(1)
+    SET_SENTINEL(2)
     cframe.kwnames = NULL; // Borrowed reference. Reset by CALL instructions.
 
     /* WARNING: Because the _PyCFrame lives on the C stack,
@@ -1866,9 +1866,9 @@ handle_eval_breaker:
         TARGET(INTERPRETER_EXIT) {
             assert(frame == &cframe.pyframe);
             assert(_PyFrame_IsIncomplete(frame));
-            CHECK_SENTINEL(0);
-            CHECK_SENTINEL(1);
-            CHECK_SENTINEL(2);
+            CHECK_SENTINEL(0)
+            CHECK_SENTINEL(1)
+            CHECK_SENTINEL(2)
             PyObject *retval = POP();
             assert(EMPTY());
             /* Restore previous cframe and return. */
