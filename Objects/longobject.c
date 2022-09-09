@@ -1760,15 +1760,19 @@ py_long_to_decimal_string(PyObject *aa,
         goto success;
     }
     else if (bytes_writer) {
-#if 0
-        *bytes_str = _PyBytesWriter_Prepare(bytes_writer, *bytes_str, strlen);
+        Py_ssize_t size = PyUnicode_GET_LENGTH(s);
+        const void *data = PyUnicode_DATA(s);
+        int kind = PyUnicode_KIND(s);
+        *bytes_str = _PyBytesWriter_Prepare(bytes_writer, *bytes_str, size);
         if (*bytes_str == NULL) {
-            Py_DECREF(s);
-            return -1;
+            goto error;
         }
-#else
-        assert(0); // FIXME: not implemented
-#endif
+        char *p = *bytes_str;
+        for (Py_ssize_t i=0; i < size; i++) {
+            Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+            *p++ = (char) ch;
+        }
+        (*bytes_str) = p;
         goto success;
     }
     else {
