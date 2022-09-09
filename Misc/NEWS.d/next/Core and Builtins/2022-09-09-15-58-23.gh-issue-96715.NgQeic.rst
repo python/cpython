@@ -1,0 +1,1 @@
+Removed excess NULL check in :c:func:`profile_trampoline` function which is used in :func:`sys.setprofile`.
