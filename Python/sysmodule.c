@@ -20,6 +20,7 @@ Data members:
 #include "pycore_code.h"          // _Py_QuickenedCount
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_long.h"          // _PY_LONG_MAX_STR_DIGITS_THRESHOLD
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_object.h"        // _PyObject_IS_GC()
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
@@ -1486,6 +1487,44 @@ static PyStructSequence_Desc windows_version_desc = {
                                       via indexing, the rest are name only */
 };
 
+static PyObject *
+_sys_getwindowsversion_from_kernel32()
+{
+    HANDLE hKernel32;
+    wchar_t kernel32_path[MAX_PATH];
+    LPVOID verblock;
+    DWORD verblock_size;
+    VS_FIXEDFILEINFO *ffi;
+    UINT ffi_len;
+    DWORD realMajor, realMinor, realBuild;
+
+    Py_BEGIN_ALLOW_THREADS
+    hKernel32 = GetModuleHandleW(L"kernel32.dll");
+    Py_END_ALLOW_THREADS
+    if (!hKernel32 || !GetModuleFileNameW(hKernel32, kernel32_path, MAX_PATH)) {
+        PyErr_SetFromWindowsErr(0);
+        return NULL;
+    }
+    verblock_size = GetFileVersionInfoSizeW(kernel32_path, NULL);
+    if (!verblock_size) {
+        PyErr_SetFromWindowsErr(0);
+        return NULL;
+    }
+    verblock = PyMem_RawMalloc(verblock_size);
+    if (!verblock ||
+        !GetFileVersionInfoW(kernel32_path, 0, verblock_size, verblock) ||
+        !VerQueryValueW(verblock, L"", (LPVOID)&ffi, &ffi_len)) {
+        PyErr_SetFromWindowsErr(0);
+        return NULL;
+    }
+
+    realMajor = HIWORD(ffi->dwProductVersionMS);
+    realMinor = LOWORD(ffi->dwProductVersionMS);
+    realBuild = HIWORD(ffi->dwProductVersionLS);
+    PyMem_RawFree(verblock);
+    return Py_BuildValue("(kkk)", realMajor, realMinor, realBuild);
+}
+
 /* Disable deprecation warnings about GetVersionEx as the result is
    being passed straight through to the caller, who is responsible for
    using it correctly. */
@@ -1515,11 +1554,13 @@ sys_getwindowsversion_impl(PyObject *module)
     PyObject *version;
     int pos = 0;
     OSVERSIONINFOEXW ver;
-    DWORD realMajor, realMinor, realBuild;
-    HANDLE hKernel32;
-    wchar_t kernel32_path[MAX_PATH];
-    LPVOID verblock;
-    DWORD verblock_size;
+
+    version = PyObject_GetAttrString(module, "_cached_windows_version");
+    if (version && PyObject_TypeCheck(version, &WindowsVersionType)) {
+        return version;
+    }
+    Py_XDECREF(version);
+    PyErr_Clear();
 
     ver.dwOSVersionInfoSize = sizeof(ver);
     if (!GetVersionExW((OSVERSIONINFOW*) &ver))
@@ -1539,41 +1580,34 @@ sys_getwindowsversion_impl(PyObject *module)
     PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wSuiteMask));
     PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wProductType));
 
-    realMajor = ver.dwMajorVersion;
-    realMinor = ver.dwMinorVersion;
-    realBuild = ver.dwBuildNumber;
-
     // GetVersion will lie if we are running in a compatibility mode.
     // We need to read the version info from a system file resource
     // to accurately identify the OS version. If we fail for any reason,
     // just return whatever GetVersion said.
-    Py_BEGIN_ALLOW_THREADS
-    hKernel32 = GetModuleHandleW(L"kernel32.dll");
-    Py_END_ALLOW_THREADS
-    if (hKernel32 && GetModuleFileNameW(hKernel32, kernel32_path, MAX_PATH) &&
-        (verblock_size = GetFileVersionInfoSizeW(kernel32_path, NULL)) &&
-        (verblock = PyMem_RawMalloc(verblock_size))) {
-        VS_FIXEDFILEINFO *ffi;
-        UINT ffi_len;
-
-        if (GetFileVersionInfoW(kernel32_path, 0, verblock_size, verblock) &&
-            VerQueryValueW(verblock, L"", (LPVOID)&ffi, &ffi_len)) {
-            realMajor = HIWORD(ffi->dwProductVersionMS);
-            realMinor = LOWORD(ffi->dwProductVersionMS);
-            realBuild = HIWORD(ffi->dwProductVersionLS);
-        }
-        PyMem_RawFree(verblock);
+    PyObject *realVersion = _sys_getwindowsversion_from_kernel32();
+    if (!realVersion) {
+        PyErr_Clear();
+        realVersion = Py_BuildValue("(kkk)",
+            ver.dwMajorVersion,
+            ver.dwMinorVersion,
+            ver.dwBuildNumber
+        );
     }
-    PyStructSequence_SET_ITEM(version, pos++, Py_BuildValue("(kkk)",
-        realMajor,
-        realMinor,
-        realBuild
-    ));
+
+    if (realVersion) {
+        PyStructSequence_SET_ITEM(version, pos++, realVersion);
+    }
 
     if (PyErr_Occurred()) {
         Py_DECREF(version);
         return NULL;
     }
+
+    if (PyObject_SetAttrString(module, "_cached_windows_version", version) < 0) {
+        Py_DECREF(version);
+        return NULL;
+    }
+
     return version;
 }
 
@@ -1670,6 +1704,45 @@ sys_mdebug_impl(PyObject *module, int flag)
     Py_RETURN_NONE;
 }
 #endif /* USE_MALLOPT */
+
+
+/*[clinic input]
+sys.get_int_max_str_digits
+
+Set the maximum string digits limit for non-binary int<->str conversions.
+[clinic start generated code]*/
+
+static PyObject *
+sys_get_int_max_str_digits_impl(PyObject *module)
+/*[clinic end generated code: output=0042f5e8ae0e8631 input=8dab13e2023e60d5]*/
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return PyLong_FromSsize_t(interp->int_max_str_digits);
+}
+
+/*[clinic input]
+sys.set_int_max_str_digits
+
+    maxdigits: int
+
+Set the maximum string digits limit for non-binary int<->str conversions.
+[clinic start generated code]*/
+
+static PyObject *
+sys_set_int_max_str_digits_impl(PyObject *module, int maxdigits)
+/*[clinic end generated code: output=734d4c2511f2a56d input=d7e3f325db6910c5]*/
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    if ((!maxdigits) || (maxdigits >= _PY_LONG_MAX_STR_DIGITS_THRESHOLD)) {
+        tstate->interp->int_max_str_digits = maxdigits;
+        Py_RETURN_NONE;
+    } else {
+        PyErr_Format(
+            PyExc_ValueError, "maxdigits must be 0 or larger than %d",
+            _PY_LONG_MAX_STR_DIGITS_THRESHOLD);
+        return NULL;
+    }
+}
 
 size_t
 _PySys_GetSizeOf(PyObject *o)
@@ -2186,6 +2259,8 @@ static PyMethodDef sys_methods[] = {
     SYS_DEACTIVATE_STACK_TRAMPOLINE_METHODDEF
     SYS_IS_STACK_TRAMPOLINE_ACTIVE_METHODDEF
     SYS_UNRAISABLEHOOK_METHODDEF
+    SYS_GET_INT_MAX_STR_DIGITS_METHODDEF
+    SYS_SET_INT_MAX_STR_DIGITS_METHODDEF
 #ifdef Py_STATS
     SYS__STATS_ON_METHODDEF
     SYS__STATS_OFF_METHODDEF
@@ -2686,6 +2761,7 @@ static PyStructSequence_Field flags_fields[] = {
     {"utf8_mode",               "-X utf8"},
     {"warn_default_encoding",   "-X warn_default_encoding"},
     {"safe_path", "-P"},
+    {"int_max_str_digits",      "-X int_max_str_digits"},
     {0}
 };
 
@@ -2693,7 +2769,7 @@ static PyStructSequence_Desc flags_desc = {
     "sys.flags",        /* name */
     flags__doc__,       /* doc */
     flags_fields,       /* fields */
-    17
+    18
 };
 
 static int
@@ -2734,6 +2810,7 @@ set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
     SetFlag(preconfig->utf8_mode);
     SetFlag(config->warn_default_encoding);
     SetFlagObj(PyBool_FromLong(config->safe_path));
+    SetFlag(_Py_global_config_int_max_str_digits);
 #undef SetFlagObj
 #undef SetFlag
     return 0;

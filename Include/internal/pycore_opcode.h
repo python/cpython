@@ -23,10 +23,10 @@ static const uint32_t _PyOpcode_RelativeJump[9] = {
     536870912U,
     135118848U,
     4163U,
-    122880U,
     0U,
     0U,
-    1008U,
+    0U,
+    48U,
 };
 static const uint32_t _PyOpcode_Jump[9] = {
     0U,
@@ -34,10 +34,10 @@ static const uint32_t _PyOpcode_Jump[9] = {
     536870912U,
     135118848U,
     4163U,
-    122880U,
     0U,
     0U,
-    1008U,
+    0U,
+    48U,
 };
 
 const uint8_t _PyOpcode_Caches[256] = {
@@ -187,14 +187,10 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [MATCH_SEQUENCE] = MATCH_SEQUENCE,
     [NOP] = NOP,
     [POP_EXCEPT] = POP_EXCEPT,
-    [POP_JUMP_BACKWARD_IF_FALSE] = POP_JUMP_BACKWARD_IF_FALSE,
-    [POP_JUMP_BACKWARD_IF_NONE] = POP_JUMP_BACKWARD_IF_NONE,
-    [POP_JUMP_BACKWARD_IF_NOT_NONE] = POP_JUMP_BACKWARD_IF_NOT_NONE,
-    [POP_JUMP_BACKWARD_IF_TRUE] = POP_JUMP_BACKWARD_IF_TRUE,
-    [POP_JUMP_FORWARD_IF_FALSE] = POP_JUMP_FORWARD_IF_FALSE,
-    [POP_JUMP_FORWARD_IF_NONE] = POP_JUMP_FORWARD_IF_NONE,
-    [POP_JUMP_FORWARD_IF_NOT_NONE] = POP_JUMP_FORWARD_IF_NOT_NONE,
-    [POP_JUMP_FORWARD_IF_TRUE] = POP_JUMP_FORWARD_IF_TRUE,
+    [POP_JUMP_IF_FALSE] = POP_JUMP_IF_FALSE,
+    [POP_JUMP_IF_NONE] = POP_JUMP_IF_NONE,
+    [POP_JUMP_IF_NOT_NONE] = POP_JUMP_IF_NOT_NONE,
+    [POP_JUMP_IF_TRUE] = POP_JUMP_IF_TRUE,
     [POP_TOP] = POP_TOP,
     [PREP_RERAISE_STAR] = PREP_RERAISE_STAR,
     [PRINT_EXPR] = PRINT_EXPR,
@@ -243,7 +239,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif   // NEED_OPCODE_TABLES
 
 #ifdef Py_DEBUG
-static const char *const _PyOpcode_OpName[267] = {
+static const char *const _PyOpcode_OpName[263] = {
     [CACHE] = "CACHE",
     [POP_TOP] = "POP_TOP",
     [PUSH_NULL] = "PUSH_NULL",
@@ -358,8 +354,8 @@ static const char *const _PyOpcode_OpName[267] = {
     [JUMP_IF_FALSE_OR_POP] = "JUMP_IF_FALSE_OR_POP",
     [JUMP_IF_TRUE_OR_POP] = "JUMP_IF_TRUE_OR_POP",
     [LOAD_ATTR_METHOD_NO_DICT] = "LOAD_ATTR_METHOD_NO_DICT",
-    [POP_JUMP_FORWARD_IF_FALSE] = "POP_JUMP_FORWARD_IF_FALSE",
-    [POP_JUMP_FORWARD_IF_TRUE] = "POP_JUMP_FORWARD_IF_TRUE",
+    [POP_JUMP_IF_FALSE] = "POP_JUMP_IF_FALSE",
+    [POP_JUMP_IF_TRUE] = "POP_JUMP_IF_TRUE",
     [LOAD_GLOBAL] = "LOAD_GLOBAL",
     [IS_OP] = "IS_OP",
     [CONTAINS_OP] = "CONTAINS_OP",
@@ -372,8 +368,8 @@ static const char *const _PyOpcode_OpName[267] = {
     [STORE_FAST] = "STORE_FAST",
     [DELETE_FAST] = "DELETE_FAST",
     [LOAD_FAST_CHECK] = "LOAD_FAST_CHECK",
-    [POP_JUMP_FORWARD_IF_NOT_NONE] = "POP_JUMP_FORWARD_IF_NOT_NONE",
-    [POP_JUMP_FORWARD_IF_NONE] = "POP_JUMP_FORWARD_IF_NONE",
+    [POP_JUMP_IF_NOT_NONE] = "POP_JUMP_IF_NOT_NONE",
+    [POP_JUMP_IF_NONE] = "POP_JUMP_IF_NONE",
     [RAISE_VARARGS] = "RAISE_VARARGS",
     [GET_AWAITABLE] = "GET_AWAITABLE",
     [MAKE_FUNCTION] = "MAKE_FUNCTION",
@@ -417,10 +413,6 @@ static const char *const _PyOpcode_OpName[267] = {
     [STORE_FAST__LOAD_FAST] = "STORE_FAST__LOAD_FAST",
     [CALL] = "CALL",
     [KW_NAMES] = "KW_NAMES",
-    [POP_JUMP_BACKWARD_IF_NOT_NONE] = "POP_JUMP_BACKWARD_IF_NOT_NONE",
-    [POP_JUMP_BACKWARD_IF_NONE] = "POP_JUMP_BACKWARD_IF_NONE",
-    [POP_JUMP_BACKWARD_IF_FALSE] = "POP_JUMP_BACKWARD_IF_FALSE",
-    [POP_JUMP_BACKWARD_IF_TRUE] = "POP_JUMP_BACKWARD_IF_TRUE",
     [STORE_FAST__STORE_FAST] = "STORE_FAST__STORE_FAST",
     [STORE_SUBSCR_ADAPTIVE] = "STORE_SUBSCR_ADAPTIVE",
     [STORE_SUBSCR_DICT] = "STORE_SUBSCR_DICT",
@@ -429,6 +421,10 @@ static const char *const _PyOpcode_OpName[267] = {
     [UNPACK_SEQUENCE_LIST] = "UNPACK_SEQUENCE_LIST",
     [UNPACK_SEQUENCE_TUPLE] = "UNPACK_SEQUENCE_TUPLE",
     [UNPACK_SEQUENCE_TWO_TUPLE] = "UNPACK_SEQUENCE_TWO_TUPLE",
+    [181] = "<181>",
+    [182] = "<182>",
+    [183] = "<183>",
+    [184] = "<184>",
     [185] = "<185>",
     [186] = "<186>",
     [187] = "<187>",
@@ -506,15 +502,15 @@ static const char *const _PyOpcode_OpName[267] = {
     [POP_BLOCK] = "POP_BLOCK",
     [JUMP] = "JUMP",
     [JUMP_NO_INTERRUPT] = "JUMP_NO_INTERRUPT",
-    [POP_JUMP_IF_FALSE] = "POP_JUMP_IF_FALSE",
-    [POP_JUMP_IF_TRUE] = "POP_JUMP_IF_TRUE",
-    [POP_JUMP_IF_NONE] = "POP_JUMP_IF_NONE",
-    [POP_JUMP_IF_NOT_NONE] = "POP_JUMP_IF_NOT_NONE",
     [LOAD_METHOD] = "LOAD_METHOD",
 };
 #endif
 
 #define EXTRA_CASES \
+    case 181: \
+    case 182: \
+    case 183: \
+    case 184: \
     case 185: \
     case 186: \
     case 187: \
