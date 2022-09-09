@@ -1068,9 +1068,11 @@ iterations of the loop.
 
    TOS is an :term:`iterator`.  Call its :meth:`~iterator.__next__` method.  If
    this yields a new value, push it on the stack (leaving the iterator below
-   it).  If the iterator indicates it is exhausted, TOS is popped, and the byte
+   it).  If the iterator indicates it is exhausted then the byte
    code counter is incremented by *delta*.
 
+   .. versionchanged:: 3.12
+      Up until 3.11 the iterator was popped when it was exhausted.
 
 .. opcode:: LOAD_GLOBAL (namei)
 
