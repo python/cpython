@@ -584,8 +584,8 @@ is already executing raises a :exc:`ValueError` exception.
 
    .. versionchanged:: 3.12
 
-      The second signature \(type\[, value\[, traceback\]\]\) is deprecated now.
-      It is still available, but may be removed in a future version of Python.
+      The second signature \(type\[, value\[, traceback\]\]\) is deprecated and
+      may be removed in a future version of Python.
 
 .. index:: exception: GeneratorExit
 
