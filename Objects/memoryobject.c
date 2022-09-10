@@ -2732,6 +2732,15 @@ struct_unpack_cmp(const char *p, const char *q,
         equal = (x == y);                \
     } while (0)
 
+#define CMP_HALF(p, q, type) \
+    do {                                       \
+        type x;                                \
+        type y;                                \
+        memcpy((char *)&x, p, (sizeof x)/2);   \
+        memcpy((char *)&y, q, (sizeof y)/2);   \
+        equal = (x == y);                      \
+    } while (0)
+
 static inline int
 unpack_cmp(const char *p, const char *q, char fmt,
            struct unpacker *unpack_p, struct unpacker *unpack_q)
@@ -2767,6 +2776,7 @@ unpack_cmp(const char *p, const char *q, char fmt,
     /* XXX DBL_EPSILON? */
     case 'f': CMP_SINGLE(p, q, float); return equal;
     case 'd': CMP_SINGLE(p, q, double); return equal;
+    case 'e': CMP_HALF(p, q, float); return equal;
 
     /* bytes object */
     case 'c': return *p == *q;

@@ -64,7 +64,7 @@ NATIVE = {
     '?':0, 'c':0, 'b':0, 'B':0,
     'h':0, 'H':0, 'i':0, 'I':0,
     'l':0, 'L':0, 'n':0, 'N':0,
-    'f':0, 'd':0, 'P':0
+    'e':0, 'f':0, 'd':0, 'P':0
 }
 
 # NumPy does not have 'n' or 'N':
@@ -89,7 +89,8 @@ STANDARD = {
     'i':(-(1<<31), 1<<31), 'I':(0, 1<<32),
     'l':(-(1<<31), 1<<31), 'L':(0, 1<<32),
     'q':(-(1<<63), 1<<63), 'Q':(0, 1<<64),
-    'f':(-(1<<63), 1<<63), 'd':(-(1<<1023), 1<<1023)
+    'e':(-65519, 65520),   'f':(-(1<<63), 1<<63),
+    'd':(-(1<<1023), 1<<1023)
 }
 
 def native_type_range(fmt):
@@ -98,6 +99,8 @@ def native_type_range(fmt):
         lh = (0, 256)
     elif fmt == '?':
         lh = (0, 2)
+    elif fmt == 'e':
+        lh = (-65519, 65520)
     elif fmt == 'f':
         lh = (-(1<<63), 1<<63)
     elif fmt == 'd':
@@ -125,7 +128,10 @@ if struct:
     for fmt in fmtdict['@']:
         fmtdict['@'][fmt] = native_type_range(fmt)
 
+# Format codes suppported by the memoryview object
 MEMORYVIEW = NATIVE.copy()
+
+# Format codes suppported by array.array
 ARRAY = NATIVE.copy()
 for k in NATIVE:
     if not k in "bBhHiIlLfd":
@@ -164,7 +170,7 @@ def randrange_fmt(mode, char, obj):
             x = b'\x01'
     if char == '?':
         x = bool(x)
-    if char == 'f' or char == 'd':
+    if char in 'efd':
         x = struct.pack(char, x)
         x = struct.unpack(char, x)[0]
     return x
