@@ -1,0 +1,1 @@
+Correctly annotate ``pstats.FunctionProfile.ncalls`` as ``str``
