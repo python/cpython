@@ -848,7 +848,8 @@ def shield(arg):
 
     The statement
 
-        res = await shield(something())
+        task = asyncio.create_task(something())
+        res = await shield(task)
 
     is exactly equivalent to the statement
 
@@ -864,10 +865,16 @@ def shield(arg):
     If you want to completely ignore cancellation (not recommended)
     you can combine shield() with a try/except clause, as follows:
 
+        task = asyncio.create_task(something())
         try:
-            res = await shield(something())
+            res = await shield(task)
         except CancelledError:
             res = None
+
+    Save a reference to tasks passed to this function, to avoid
+    a task disappearing mid-execution. The event loop only keeps
+    weak references to tasks. A task that isn't referenced elsewhere
+    may get garbage collected at any time, even before it's done.
     """
     inner = _ensure_future(arg)
     if inner.done():
