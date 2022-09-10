@@ -1639,7 +1639,7 @@
     <elf-symbol name='_PyNotImplemented_Type' size='408' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_PyOS_ReadlineTState' size='8' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_PyParser_TokenNames' size='520' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
-    <elf-symbol name='_PyRuntime' size='166680' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <elf-symbol name='_PyRuntime' size='166688' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_PySet_Dummy' size='8' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_PyWeakref_CallableProxyType' size='408' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_PyWeakref_ProxyType' size='408' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
@@ -1825,7 +1825,7 @@
     </class-decl>
     <typedef-decl name='PyThreadState' type-id='type-id-9' filepath='./Include/pytypedefs.h' line='24' column='1' id='type-id-25'/>
     <pointer-type-def type-id='type-id-25' size-in-bits='64' id='type-id-10'/>
-    <class-decl name='_is' size-in-bits='861952' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp.h' line='78' column='1' id='type-id-26'>
+    <class-decl name='_is' size-in-bits='862016' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp.h' line='78' column='1' id='type-id-26'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='next' type-id='type-id-11' visibility='default' filepath='./Include/internal/pycore_interp.h' line='80' column='1'/>
       </data-member>
@@ -1971,6 +1971,9 @@
         <var-decl name='callable_cache' type-id='type-id-51' visibility='default' filepath='./Include/internal/pycore_interp.h' line='177' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='859072'>
+        <var-decl name='int_max_str_digits' type-id='type-id-8' visibility='default' filepath='./Include/internal/pycore_interp.h' line='179' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='859136'>
         <var-decl name='_initial_thread' type-id='type-id-25' visibility='default' filepath='./Include/internal/pycore_interp.h' line='192' column='1'/>
       </data-member>
     </class-decl>
@@ -1995,7 +1998,7 @@
     <typedef-decl name='uint64_t' type-id='type-id-55' filepath='/usr/include/x86_64-linux-gnu/bits/stdint-uintn.h' line='27' column='1' id='type-id-19'/>
     <type-decl name='long int' size-in-bits='64' id='type-id-53'/>
     <typedef-decl name='size_t' type-id='type-id-16' filepath='/usr/lib/gcc/x86_64-linux-gnu/9/include/stddef.h' line='209' column='1' id='type-id-54'/>
-    <class-decl name='pyruntimestate' size-in-bits='1333440' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='59' column='1' id='type-id-56'>
+    <class-decl name='pyruntimestate' size-in-bits='1333504' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='59' column='1' id='type-id-56'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='_initialized' type-id='type-id-8' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='64' column='1'/>
       </data-member>

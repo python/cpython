@@ -1,0 +1,1 @@
+Fix incorrect error message in the :mod:`io` module.

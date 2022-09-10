@@ -192,17 +192,25 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear);
 extern _PyInterpreterFrame *
 _PyThreadState_BumpFramePointerSlow(PyThreadState *tstate, size_t size);
 
+static inline bool
+_PyThreadState_HasStackSpace(PyThreadState *tstate, size_t size)
+{
+    assert(
+        (tstate->datastack_top == NULL && tstate->datastack_limit == NULL)
+        ||
+        (tstate->datastack_top != NULL && tstate->datastack_limit != NULL)
+    );
+    return tstate->datastack_top != NULL &&
+        size < (size_t)(tstate->datastack_limit - tstate->datastack_top);
+}
+
 static inline _PyInterpreterFrame *
 _PyThreadState_BumpFramePointer(PyThreadState *tstate, size_t size)
 {
-    PyObject **base = tstate->datastack_top;
-    if (base) {
-        PyObject **top = base + size;
-        assert(tstate->datastack_limit);
-        if (top < tstate->datastack_limit) {
-            tstate->datastack_top = top;
-            return (_PyInterpreterFrame *)base;
-        }
+    if (_PyThreadState_HasStackSpace(tstate, size)) {
+        _PyInterpreterFrame *res = (_PyInterpreterFrame *)tstate->datastack_top;
+        tstate->datastack_top += size;
+        return res;
     }
     return _PyThreadState_BumpFramePointerSlow(tstate, size);
 }
