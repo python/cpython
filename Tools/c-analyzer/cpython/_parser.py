@@ -283,9 +283,9 @@ Objects/stringlib/codecs.h	STRINGLIB_IS_UNICODE	1
 # -Wno-missing-field-initializers
 # -Werror=implicit-function-declaration
 
-SAME = [
-    './Include/cpython/',
-]
+SAME = {
+    _abs('Include/*.h'): [_abs('Include/cpython/')],
+}
 
 MAX_SIZES = {
     # GLOB: (MAXTEXT, MAXLINES),
@@ -342,11 +342,14 @@ def get_preprocessor(*,
     incldirs = tuple(INCL_DIRS)
     if file_incldirs:
         incldirs += tuple(file_incldirs)
+    samefiles = dict(SAME)
+    if file_same:
+        samefiles.update(file_same)
     return _get_preprocessor(
         file_macros=macros,
         file_includes=includes,
         file_incldirs=incldirs,
-        file_same=file_same,
+        file_same=samefiles,
         **kwargs
     )
 

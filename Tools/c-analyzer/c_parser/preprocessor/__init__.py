@@ -96,7 +96,7 @@ def get_preprocessor(*,
     if file_incldirs:
         file_incldirs = tuple(_parse_incldirs(file_incldirs))
     if file_same:
-        file_same = tuple(file_same)
+        file_same = dict(file_same or ())
     if not callable(ignore_exc):
         ignore_exc = (lambda exc, _ig=ignore_exc: _ig)
 
@@ -112,6 +112,8 @@ def get_preprocessor(*,
             includes = [i for i, in _resolve_file_values(filename, file_includes)]
         if file_incldirs:
             incldirs = [v for v, in _resolve_file_values(filename, file_incldirs)]
+        if file_same:
+            samefiles = _resolve_samefiles(filename, file_same)
 
         def preprocess(**kwargs):
             if file_macros and 'macros' not in kwargs:
@@ -120,8 +122,8 @@ def get_preprocessor(*,
                 kwargs['includes'] = includes
             if file_incldirs and 'incldirs' not in kwargs:
                 kwargs['incldirs'] = incldirs
-            if file_same and 'file_same' not in kwargs:
-                kwargs['samefiles'] = file_same
+            if file_same and 'samefiles' not in kwargs:
+                kwargs['samefiles'] = samefiles
             kwargs.setdefault('filename', filename)
             with handling_errors(ignore_exc, log_err=log_err):
                 return _preprocess(filename, **kwargs)
@@ -154,6 +156,43 @@ def _parse_incldirs(incldirs):
             dirname = glob
             row = ('*', dirname.strip())
         yield row
+
+
+def _resolve_samefiles(filename, file_same):
+    assert '*' not in filename, (filename,)
+    assert os.path.normpath(filename) == filename, (filename,)
+    _, suffix = os.path.splitext(filename)
+    samefiles = []
+    for patterns, in _resolve_file_values(filename, file_same.items()):
+        for pattern in patterns:
+            same = _resolve_samefile(filename, pattern, suffix)
+            if not same:
+                continue
+            samefiles.append(same)
+    return samefiles
+
+
+def _resolve_samefile(filename, pattern, suffix):
+    if pattern == filename:
+        return None
+    if pattern.endswith(os.path.sep):
+        pattern += f'*{suffix}'
+    assert os.path.normpath(pattern) == pattern, (pattern,)
+    if '*' in os.path.dirname(pattern):
+        raise NotImplementedError((filename, pattern))
+    if '*' not in os.path.basename(pattern):
+        return pattern
+
+    common = os.path.commonpath([filename, pattern])
+    relpattern = pattern[len(common) + len(os.path.sep):]
+    relpatterndir = os.path.dirname(relpattern)
+    relfile = filename[len(common) + len(os.path.sep):]
+    if os.path.basename(pattern) == '*':
+        return os.path.join(common, relpatterndir, relfile)
+    elif os.path.basename(relpattern) == '*' + suffix:
+        return os.path.join(common, relpatterndir, relfile)
+    else:
+        raise NotImplementedError((filename, pattern))
 
 
 @contextlib.contextmanager

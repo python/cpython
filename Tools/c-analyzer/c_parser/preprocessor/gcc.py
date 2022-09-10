@@ -224,15 +224,8 @@ def _filter_reqfile(current, reqfile, samefiles):
         return True
     if current == '<stdin>':
         return True
-    if os.path.isabs(current):
-        return False
-
-    for filename in samefiles or ():
-        if filename.endswith(os.path.sep):
-            filename += os.path.basename(reqfile)
-        if current == filename:
-            return True
-
+    if current in samefiles:
+        return True
     return False
 
 
