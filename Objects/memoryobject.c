@@ -1703,7 +1703,7 @@ unpack_single(PyMemoryViewObject *self, const char *ptr, const char *fmt)
     int endian = 1;
 #else
     int endian = 0;
-#endif 
+#endif
 
     switch (fmt[0]) {
 
@@ -1799,7 +1799,7 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
     int endian = 1;
 #else
     int endian = 0;
-#endif 
+#endif
     switch (fmt[0]) {
     /* signed integers */
     case 'b': case 'h': case 'i': case 'l':
@@ -2732,15 +2732,6 @@ struct_unpack_cmp(const char *p, const char *q,
         equal = (x == y);                \
     } while (0)
 
-#define CMP_HALF(p, q, type) \
-    do {                                       \
-        type x;                                \
-        type y;                                \
-        memcpy((char *)&x, p, (sizeof x)/2);   \
-        memcpy((char *)&y, q, (sizeof y)/2);   \
-        equal = (x == y);                      \
-    } while (0)
-
 static inline int
 unpack_cmp(const char *p, const char *q, char fmt,
            struct unpacker *unpack_p, struct unpacker *unpack_q)
@@ -2776,7 +2767,17 @@ unpack_cmp(const char *p, const char *q, char fmt,
     /* XXX DBL_EPSILON? */
     case 'f': CMP_SINGLE(p, q, float); return equal;
     case 'd': CMP_SINGLE(p, q, double); return equal;
-    case 'e': CMP_HALF(p, q, float); return equal;
+    case 'e': {
+#if PY_LITTLE_ENDIAN
+        int endian = 1;
+#else
+        int endian = 0;
+#endif
+        /* Note: PyFloat_Unpack2 should never fail */
+        double u = PyFloat_Unpack2(p, endian);
+        double v = PyFloat_Unpack2(q, endian);
+        return (u == v);
+    }
 
     /* bytes object */
     case 'c': return *p == *q;
