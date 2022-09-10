@@ -533,7 +533,7 @@ class OtherTest(unittest.TestCase):
         float_data = struct.pack('fff', 0.0, -1.5, 1.5)
         half_view = memoryview(half_data).cast('e')
         float_view = memoryview(float_data).cast('f')
-        self.assertEqual(half_view.nbytes*2, float_view.nbytes)
+        self.assertEqual(half_view.nbytes * 2, float_view.nbytes)
         self.assertListEqual(half_view.tolist(), float_view.tolist())
 
     def test_memoryview_hex(self):
