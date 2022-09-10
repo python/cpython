@@ -94,6 +94,9 @@ Other Language Changes
   length limitation <int_max_str_digits>` documentation.  The default limit
   is 4300 digits in string form.
 
+* :class:`memoryview` now supports the half-floats type (the "e" format code).
+  (Contributed by Dong-hee Na and Antoine Pitrou in :gh:`90751`.)
+
 
 New Modules
 ===========
