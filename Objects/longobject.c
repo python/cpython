@@ -1755,7 +1755,8 @@ pylong_int_to_decimal_string(PyObject *aa,
     }
     assert(PyUnicode_Check(s));
     if (writer) {
-        if (_PyUnicodeWriter_Prepare(writer, PyUnicode_GET_LENGTH(s), '9') == -1) {
+        Py_ssize_t size = PyUnicode_GET_LENGTH(s);
+        if (_PyUnicodeWriter_Prepare(writer, size, '9') == -1) {
             goto error;
         }
         if (_PyUnicodeWriter_WriteStr(writer, s) < 0) {
@@ -1843,7 +1844,7 @@ long_to_decimal_string_internal(PyObject *aa,
     }
 
 #if WITH_PYLONG_MODULE
-    if (size_a > 1000) { // FIXME: what threshold to use?
+    if (size_a > 1000) {
         /* Switch to _pylong.int_to_decimal_string(). */
         return pylong_int_to_decimal_string(aa,
                                          p_output,
@@ -2641,7 +2642,7 @@ digit beyond the first.
         }
 
 #if WITH_PYLONG_MODULE
-        if (digits > 3000 && base == 10) {
+        if (digits > 6000 && base == 10) {
             /* Switch to _pylong.int_from_string() */
             return pylong_int_from_string(str, pend, base, sign);
         }
@@ -4081,7 +4082,7 @@ l_divmod(PyLongObject *v, PyLongObject *w,
         return 0;
     }
 #if WITH_PYLONG_MODULE
-    if (Py_ABS(Py_SIZE(w)) > 1000) { // FIXME: what threshold to use?
+    if (Py_ABS(Py_SIZE(w)) > 1000) {
         /* Switch to _pylong.int_divmod() */
         return pylong_int_divmod(v, w, pdiv, pmod);
     }
