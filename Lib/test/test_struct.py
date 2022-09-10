@@ -726,17 +726,6 @@ class StructTest(unittest.TestCase):
         with self.assertRaisesRegex(struct.error, error_msg):
             struct.pack('h', -70000)  # too small
 
-    def test_long_long_unpack_undefined_behaviour(self):
-        # Regression test for python/cpython#96735.
-        self.assertEqual(
-            struct.unpack('<q', b'\xff\xff\xff\xff\xff\xff\xff\xff'),
-            (-1,)
-        )
-        self.assertEqual(
-            struct.unpack('>q', b'\xff\xff\xff\xff\xff\xff\xff\xff'),
-            (-1,)
-        )
-
 
 class UnpackIteratorTest(unittest.TestCase):
     """
