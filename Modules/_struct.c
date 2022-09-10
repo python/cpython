@@ -1059,16 +1059,19 @@ lu_uint(_structmodulestate *state, const char *p, const formatdef *f)
 static PyObject *
 lu_longlong(_structmodulestate *state, const char *p, const formatdef *f)
 {
-    long long x = 0;
-    Py_ssize_t i = f->size;
+    unsigned long long x = 0;
+
+    /* This function is only ever used in the case f->size == 8. */
+    assert(f->size == 8);
+    Py_ssize_t i = 8;
     const unsigned char *bytes = (const unsigned char *)p;
     do {
         x = (x<<8) | bytes[--i];
     } while (i > 0);
-    /* Extend the sign bit. */
-    if (SIZEOF_LONG_LONG > f->size)
-        x |= -(x & ((long long)1 << ((8 * f->size) - 1)));
-    return PyLong_FromLongLong(x);
+
+    /* Extend sign, avoiding implementation-defined or undefined behaviour. */
+    return PyLong_FromLongLong(x & 0x8000000000000000 ?
+        -1 - (long long)(0xFFFFFFFFFFFFFFFF - x) : (long long)x);
 }
 
 static PyObject *

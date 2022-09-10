@@ -729,7 +729,11 @@ class StructTest(unittest.TestCase):
     def test_long_long_unpack_undefined_behaviour(self):
         # Regression test for python/cpython#96735.
         self.assertEqual(
-            struct.unpack('!q', b'\xff\xff\xff\xff\xff\xff\xff\xff'),
+            struct.unpack('<q', b'\xff\xff\xff\xff\xff\xff\xff\xff'),
+            (-1,)
+        )
+        self.assertEqual(
+            struct.unpack('>q', b'\xff\xff\xff\xff\xff\xff\xff\xff'),
             (-1,)
         )
 
