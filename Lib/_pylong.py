@@ -206,24 +206,23 @@ def int_from_string(s):
     of a string of decimal digits into an 'int'."""
     if _DEBUG:
         print('int_from_string', len(s), file=sys.stderr)
-    # FIXME: this needs to be intelligent to match the behavior of
-    # PyLong_FromString().  The caller has already checked for invalid
-    # use of underscore characters.  Are we missing anything else?
-    if not re.match(r'[0-9]+$', s):
-        # Slow case, handle whitespace, underscores, invalid inputs
-        digits = io.StringIO()
-        for i, c in enumerate(s):
-            if c in {' ', '_'}:
-                continue
-            if not c.isdigit():
-                return None, i  # error, return index of invalid character
-            digits.write(c)
-        s = digits.getvalue()
+    # PyLong_FromString() has already removed leading +/-, checked for invalid
+    # use of underscore characters and stripped leading whitespace.  The input
+    # can still contain underscores and have trailing whitespace.  If not
+    # valid, return the index of the first invalid character.
+    m = re.match(r'[0-9_]+\s*', s)
+    if not m:
+        return None, 0
+    if m.end() != len(s):
+        # Invalid characters at end.
+        return None, m.end()
+    s = s.rstrip().replace('_', '')
     return _str_to_int_inner(s), None
 
 
 def str_to_int(s):
     """Asymptotically fast version of decimal string to 'int' conversion."""
+    # FIXME: this doesn't support the full syntax that int() supports.
     v, error_index = int_from_string(s)
     if v is not None:
         return v
