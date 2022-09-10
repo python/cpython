@@ -806,18 +806,36 @@ static const formatdef native_table[] = {
 /* Big-endian routines. *****************************************************/
 
 static PyObject *
-bu_int(_structmodulestate *state, const char *p, const formatdef *f)
+bu_short(_structmodulestate *state, const char *p, const formatdef *f)
 {
-    long x = 0;
-    Py_ssize_t i = f->size;
+    unsigned long x = 0;
+
+    /* This function is only ever used in the case f->size == 2. */
+    assert(f->size == 2);
+    Py_ssize_t i = 2;
     const unsigned char *bytes = (const unsigned char *)p;
     do {
         x = (x<<8) | *bytes++;
     } while (--i > 0);
-    /* Extend the sign bit. */
-    if (SIZEOF_LONG > f->size)
-        x |= -(x & (1L << ((8 * f->size) - 1)));
-    return PyLong_FromLong(x);
+    /* Extend sign. */
+    return PyLong_FromLong(x & 0x8000U ? (long)x - 0x10000 : (long)x);
+}
+
+static PyObject *
+bu_int(_structmodulestate *state, const char *p, const formatdef *f)
+{
+    long x = 0;
+
+    /* This function is only ever used in the case f->size == 4. */
+    assert(f->size == 4);
+    Py_ssize_t i = 4;
+    const unsigned char *bytes = (const unsigned char *)p;
+    do {
+        x = (x<<8) | *bytes++;
+    } while (--i > 0);
+    /* Extend sign, avoiding implementation-defined or undefined behaviour. */
+    return PyLong_FromLong(x & 0x80000000U ?
+        -1 - (long)(0xFFFFFFFFU - x) : (long)x);
 }
 
 static PyObject *
@@ -844,10 +862,9 @@ bu_longlong(_structmodulestate *state, const char *p, const formatdef *f)
     do {
         x = (x<<8) | *bytes++;
     } while (--i > 0);
-
     /* Extend sign, avoiding implementation-defined or undefined behaviour. */
-    return PyLong_FromLongLong(x & 0x8000000000000000 ?
-        -1 - (long long)(0xFFFFFFFFFFFFFFFF - x) : (long long)x);
+    return PyLong_FromLongLong(x & 0x8000000000000000U ?
+        -1 - (long long)(0xFFFFFFFFFFFFFFFFU - x) : (long long)x);
 }
 
 static PyObject *
@@ -1012,7 +1029,7 @@ static formatdef bigendian_table[] = {
     {'c',       1,              0,              nu_char,        np_char},
     {'s',       1,              0,              NULL},
     {'p',       1,              0,              NULL},
-    {'h',       2,              0,              bu_int,         bp_int},
+    {'h',       2,              0,              bu_short,       bp_int},
     {'H',       2,              0,              bu_uint,        bp_uint},
     {'i',       4,              0,              bu_int,         bp_int},
     {'I',       4,              0,              bu_uint,        bp_uint},
@@ -1030,18 +1047,36 @@ static formatdef bigendian_table[] = {
 /* Little-endian routines. *****************************************************/
 
 static PyObject *
-lu_int(_structmodulestate *state, const char *p, const formatdef *f)
+lu_short(_structmodulestate *state, const char *p, const formatdef *f)
 {
-    long x = 0;
-    Py_ssize_t i = f->size;
+    unsigned long x = 0;
+
+    /* This function is only ever used in the case f->size == 2. */
+    assert(f->size == 2);
+    Py_ssize_t i = 2;
     const unsigned char *bytes = (const unsigned char *)p;
     do {
         x = (x<<8) | bytes[--i];
     } while (i > 0);
-    /* Extend the sign bit. */
-    if (SIZEOF_LONG > f->size)
-        x |= -(x & (1L << ((8 * f->size) - 1)));
-    return PyLong_FromLong(x);
+    /* Extend sign. */
+    return PyLong_FromLong(x & 0x8000U ? (long)x - 0x10000 : (long)x);
+}
+
+static PyObject *
+lu_int(_structmodulestate *state, const char *p, const formatdef *f)
+{
+    unsigned long x = 0;
+
+    /* This function is only ever used in the case f->size == 4. */
+    assert(f->size == 4);
+    Py_ssize_t i = 4;
+    const unsigned char *bytes = (const unsigned char *)p;
+    do {
+        x = (x<<8) | bytes[--i];
+    } while (i > 0);
+    /* Extend sign, avoiding implementation-defined or undefined behaviour. */
+    return PyLong_FromLong(x & 0x80000000U ?
+        -1 - (long)(0xFFFFFFFFU - x) : (long)x);
 }
 
 static PyObject *
@@ -1068,10 +1103,9 @@ lu_longlong(_structmodulestate *state, const char *p, const formatdef *f)
     do {
         x = (x<<8) | bytes[--i];
     } while (i > 0);
-
     /* Extend sign, avoiding implementation-defined or undefined behaviour. */
-    return PyLong_FromLongLong(x & 0x8000000000000000 ?
-        -1 - (long long)(0xFFFFFFFFFFFFFFFF - x) : (long long)x);
+    return PyLong_FromLongLong(x & 0x8000000000000000U ?
+        -1 - (long long)(0xFFFFFFFFFFFFFFFFU - x) : (long long)x);
 }
 
 static PyObject *
@@ -1219,7 +1253,7 @@ static formatdef lilendian_table[] = {
     {'c',       1,              0,              nu_char,        np_char},
     {'s',       1,              0,              NULL},
     {'p',       1,              0,              NULL},
-    {'h',       2,              0,              lu_int,         lp_int},
+    {'h',       2,              0,              lu_short,       lp_int},
     {'H',       2,              0,              lu_uint,        lp_uint},
     {'i',       4,              0,              lu_int,         lp_int},
     {'I',       4,              0,              lu_uint,        lp_uint},
