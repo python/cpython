@@ -12,7 +12,6 @@ integers with a huge number of digits.  Saving a few microseconds with
 tricky or non-obvious code is not worth it.  For people looking for
 maximum performance, they should use something like gmpy2."""
 
-
 import sys
 import io
 import re
@@ -43,19 +42,34 @@ def int_to_decimal(n):
 
     BITLIM = 128
 
+    mem = {}
+
+    def w2pow(w):
+        """Return D(2)**w and store the result. Also possibly save some
+        intermediate results. In context, these are likely to be reused
+        across various levels of the conversion to Decimal."""
+        if (result := mem.get(w)) is None:
+            if w <= BITLIM:
+                result = D2**w
+            elif w - 1 in mem:
+                result = (t := mem[w - 1]) + t
+            else:
+                w2 = w >> 1
+                # If w happens to be odd, w-w2 is one larger then w2
+                # now. Recurse on the smaller first (w2), so that it's
+                # in the cache and the larger (w-w2) can be handled by
+                # the cheaper `w-1 in mem` branch instead.
+                result = w2pow(w2) * w2pow(w - w2)
+            mem[w] = result
+        return result
+
     def inner(n, w):
         if w <= BITLIM:
             return D(n)
         w2 = w >> 1
         hi = n >> w2
         lo = n - (hi << w2)
-        return inner(hi, w - w2) * w2pow[w2] + inner(lo, w2)
-
-    if n < 0:
-        negate = True
-        n = -n
-    else:
-        negate = False
+        return inner(lo, w2) + inner(hi, w - w2) * w2pow(w2)
 
     with decimal.localcontext() as ctx:
         ctx.prec = decimal.MAX_PREC
@@ -63,27 +77,11 @@ def int_to_decimal(n):
         ctx.Emin = decimal.MIN_EMIN
         ctx.traps[decimal.Inexact] = 1
 
-        w2pow = {}
-        w = n.bit_length()
-        while w >= BITLIM:
-            w2 = w >> 1
-            if w & 1:
-                w2pow[w2 + 1] = None
-            w2pow[w2] = None
-            w = w2
-        if w2pow:
-            it = reversed(w2pow.keys())
-            w = next(it)
-            w2pow[w] = D2**w
-            for w in it:
-                if w - 1 in w2pow:
-                    val = w2pow[w - 1] * D2
-                else:
-                    w2 = w >> 1
-                    assert w2 in w2pow
-                    assert w - w2 in w2pow
-                    val = w2pow[w2] * w2pow[w - w2]
-                w2pow[w] = val
+        if n < 0:
+            negate = True
+            n = -n
+        else:
+            negate = False
         result = inner(n, n.bit_length())
         if negate:
             result = -result
