@@ -118,7 +118,7 @@ dis
   do not appear in executable bytecode) are now exposed in the
   :mod:`dis` module.
   :data:`~dis.HAVE_ARGUMENT` is still relevant to real opcodes,
-  but it is not useful for pseudo instrcutions. Use the new
+  but it is not useful for pseudo instructions. Use the new
   :data:`~dis.hasarg` collection instead.
   (Contributed by Irit Katriel in :gh:`94216`.)
 
