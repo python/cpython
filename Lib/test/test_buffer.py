@@ -2252,7 +2252,7 @@ class TestBufferProtocol(unittest.TestCase):
         ###
         ###    Fortran output:
         ###    ---------------
-        ###       >>> fortran_buf = nd.tostring(order='F')
+        ###       >>> fortran_buf = nd.tobytes(order='F')
         ###       >>> fortran_buf
         ###       b'\x00\x04\x08\x01\x05\t\x02\x06\n\x03\x07\x0b'
         ###
@@ -2295,7 +2295,7 @@ class TestBufferProtocol(unittest.TestCase):
                 self.assertEqual(memoryview(y), memoryview(nd))
 
                 if numpy_array:
-                    self.assertEqual(b, na.tostring(order='C'))
+                    self.assertEqual(b, na.tobytes(order='C'))
 
             # 'F' request
             if f == 0: # 'C' to 'F'
@@ -2318,7 +2318,7 @@ class TestBufferProtocol(unittest.TestCase):
                 self.assertEqual(memoryview(y), memoryview(nd))
 
                 if numpy_array:
-                    self.assertEqual(b, na.tostring(order='F'))
+                    self.assertEqual(b, na.tobytes(order='F'))
 
             # 'A' request
             if f == ND_FORTRAN:
@@ -2342,7 +2342,7 @@ class TestBufferProtocol(unittest.TestCase):
                 self.assertEqual(memoryview(y), memoryview(nd))
 
                 if numpy_array:
-                    self.assertEqual(b, na.tostring(order='A'))
+                    self.assertEqual(b, na.tobytes(order='A'))
 
         # multi-dimensional, non-contiguous input
         nd = ndarray(list(range(12)), shape=[3, 4], flags=ND_WRITABLE|ND_PIL)
