@@ -824,7 +824,7 @@ bu_short(_structmodulestate *state, const char *p, const formatdef *f)
 static PyObject *
 bu_int(_structmodulestate *state, const char *p, const formatdef *f)
 {
-    long x = 0;
+    unsigned long x = 0;
 
     /* This function is only ever used in the case f->size == 4. */
     assert(f->size == 4);
