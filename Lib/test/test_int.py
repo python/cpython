@@ -5,6 +5,7 @@ import unittest
 from test import support
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
+import _pylong
 
 L = [
         ('0', 0),
@@ -776,47 +777,44 @@ class IntSubclassStrDigitLimitsTests(IntStrDigitLimitsTests):
 class PyLongModuleTests(unittest.TestCase):
     # Tests of the functions in _pylong.py
 
-    def setUp(self):
-        super().setUp()
-        self._previous_limit = sys.get_int_max_str_digits()
-        sys.set_int_max_str_digits(0)
-
-    def tearDown(self):
-        sys.set_int_max_str_digits(self._previous_limit)
-        super().tearDown()
-
     def test_pylong_int_to_decimal(self):
-        n = (1 << 100_000) - 1
-        suffix = '9883109375'
-        s = str(n)
-        assert s[-10:] == suffix
-        s = str(-n)
-        assert s[-10:] == suffix
-        s = '%d' % n
-        assert s[-10:] == suffix
-        s = b'%d' % n
-        assert s[-10:] == suffix.encode('ascii')
+        with _pylong.localcontext() as ctx:
+            ctx.max_str_digits = 0
+            n = (1 << 100_000) - 1
+            suffix = '9883109375'
+            s = str(n)
+            assert s[-10:] == suffix
+            s = str(-n)
+            assert s[-10:] == suffix
+            s = '%d' % n
+            assert s[-10:] == suffix
+            s = b'%d' % n
+            assert s[-10:] == suffix.encode('ascii')
 
     def test_pylong_int_divmod(self):
-        n = (1 << 100_000)
-        a, b = divmod(n*3 + 1, n)
-        assert a == 3 and b == 1
+        with _pylong.localcontext() as ctx:
+            ctx.max_str_digits = 0
+            n = (1 << 100_000)
+            a, b = divmod(n*3 + 1, n)
+            assert a == 3 and b == 1
 
     def test_pylong_str_to_int(self):
-        v1 = 1 << 100_000
-        s = str(v1)
-        v2 = int(s)
-        assert v1 == v2
-        v3 = int(' -' + s)
-        assert -v1 == v3
-        v4 = int(' +' + s + ' ')
-        assert v1 == v4
-        with self.assertRaises(ValueError) as err:
-            int(s + 'z')
-        with self.assertRaises(ValueError) as err:
-            int(s + '_')
-        with self.assertRaises(ValueError) as err:
-            int('_' + s)
+        with _pylong.localcontext() as ctx:
+            ctx.max_str_digits = 0
+            v1 = 1 << 100_000
+            s = str(v1)
+            v2 = int(s)
+            assert v1 == v2
+            v3 = int(' -' + s)
+            assert -v1 == v3
+            v4 = int(' +' + s + ' ')
+            assert v1 == v4
+            with self.assertRaises(ValueError) as err:
+                int(s + 'z')
+            with self.assertRaises(ValueError) as err:
+                int(s + '_')
+            with self.assertRaises(ValueError) as err:
+                int('_' + s)
 
 
 if __name__ == "__main__":

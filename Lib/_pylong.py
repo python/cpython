@@ -21,6 +21,105 @@ import functools
 _DEBUG = False
 
 
+##### Context Functions ##################################################
+
+# FIXME: this is largely lifted from _pydecimal and likely can be simplified.
+
+# The getcontext() and setcontext() function manage access to a thread-local
+# current context.
+
+import contextvars
+
+_current_context_var = contextvars.ContextVar('int_context')
+
+_context_attributes = frozenset(['max_str_digits'])
+
+
+def getcontext():
+    """Returns this thread's context.
+
+    If this thread does not yet have a context, returns
+    a new context and sets this thread's context.
+    New contexts are copies of DefaultContext.
+    """
+    try:
+        return _current_context_var.get()
+    except LookupError:
+        context = Context()
+        _current_context_var.set(context)
+        return context
+
+
+def setcontext(context):
+    """Set this thread's context to context."""
+    if context is DefaultContext:
+        context = context.copy()
+    _current_context_var.set(context)
+
+
+del contextvars  # Don't contaminate the namespace
+
+
+def localcontext(ctx=None, **kwargs):
+    """Return a context manager for a copy of the supplied context
+
+    Uses a copy of the current context if no context is specified.
+    """
+    if ctx is None:
+        ctx = getcontext()
+    ctx_manager = _ContextManager(ctx)
+    for key, value in kwargs.items():
+        if key not in _context_attributes:
+            raise TypeError(
+                f"'{key}' is an invalid keyword argument for this function"
+            )
+        setattr(ctx_manager.new_context, key, value)
+    return ctx_manager
+
+
+class _ContextManager(object):
+    """Context manager class to support localcontext().
+
+    Sets a copy of the supplied context in __enter__() and restores
+    the previous decimal context in __exit__()
+    """
+
+    def __init__(self, new_context):
+        self.new_context = new_context.copy()
+
+    def __enter__(self):
+        self.saved_context = getcontext()
+        setcontext(self.new_context)
+        return self.new_context
+
+    def __exit__(self, t, v, tb):
+        setcontext(self.saved_context)
+
+
+class Context:
+    def __init__(self, max_str_digits=None):
+        self.max_str_digits = max_str_digits
+
+    def copy(self):
+        """Returns a deep copy from self."""
+        return Context(self.max_str_digits)
+
+    __copy__ = copy
+
+
+DefaultContext = Context()
+
+
+def get_max_str_digits():
+    n = getcontext().max_str_digits
+    if n is None:
+        n = sys.get_int_max_str_digits()
+    return n
+
+
+##### End of Context Functions ###########################################
+
+
 def int_to_decimal(n):
     """Asymptotically fast conversion of an 'int' to Decimal."""
 

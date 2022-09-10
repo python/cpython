@@ -1735,6 +1735,34 @@ rem1(PyLongObject *a, digit n)
     );
 }
 
+static int
+pylong_get_max_str_digits(void)
+{
+#ifdef WITH_PYLONG_MODULE
+    PyObject *mod = PyImport_ImportModule("_pylong");
+    if (mod == NULL) {
+        return -1;
+    }
+    PyObject *n = PyObject_CallMethod(mod, "get_max_str_digits", "");
+    Py_DECREF(mod);
+    if (n == NULL) {
+        return -1;
+    }
+    if (!PyLong_Check(n)) {
+        PyErr_SetString(PyExc_TypeError, "an integer is required");
+        Py_DECREF(n);
+        return -1;
+    }
+    int max_str_digits = PyLong_AsLong(n);
+    Py_DECREF(n);
+    return max_str_digits;
+#else
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        int max_str_digits = interp->int_max_str_digits;
+#endif /* WITH_PYLONG_MODULE */
+}
+
+
 #ifdef WITH_PYLONG_MODULE
 /* asymptotically faster long_to_decimal_string, using _pylong.py */
 static int
@@ -1833,8 +1861,7 @@ long_to_decimal_string_internal(PyObject *aa,
     */
     if (size_a >= 10 * _PY_LONG_MAX_STR_DIGITS_THRESHOLD
                   / (3 * PyLong_SHIFT) + 2) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        int max_str_digits = interp->int_max_str_digits;
+        int max_str_digits = pylong_get_max_str_digits();
         if ((max_str_digits > 0) &&
             (max_str_digits / (3 * PyLong_SHIFT) <= (size_a - 11) / 10)) {
             PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT_TO_STR,
@@ -1914,8 +1941,7 @@ long_to_decimal_string_internal(PyObject *aa,
         strlen++;
     }
     if (strlen > _PY_LONG_MAX_STR_DIGITS_THRESHOLD) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        int max_str_digits = interp->int_max_str_digits;
+        int max_str_digits = pylong_get_max_str_digits();
         Py_ssize_t strlen_nosign = strlen - negative;
         if ((max_str_digits > 0) && (strlen_nosign > max_str_digits)) {
             Py_DECREF(scratch);
@@ -2632,8 +2658,7 @@ digit beyond the first.
 
         /* Limit the size to avoid excessive computation attacks. */
         if (digits > _PY_LONG_MAX_STR_DIGITS_THRESHOLD) {
-            PyInterpreterState *interp = _PyInterpreterState_GET();
-            int max_str_digits = interp->int_max_str_digits;
+            int max_str_digits = pylong_get_max_str_digits();
             if ((max_str_digits > 0) && (digits > max_str_digits)) {
                 PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT_TO_INT,
                              max_str_digits, digits);
