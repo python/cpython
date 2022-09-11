@@ -11,6 +11,7 @@ __all__ = [ 'Client', 'Listener', 'Pipe', 'wait' ]
 
 import io
 import os
+from queue import Empty
 import sys
 import socket
 import struct
@@ -699,8 +700,12 @@ if sys.platform == 'win32':
         def _finalize_pipe_listener(queue, address, close_event):
             util.sub_debug('closing listener with address=%r', address)
             _overlapped.SetEvent(close_event)
-            for handle in queue:
-                _winapi.CloseHandle(handle)
+            while queue.qsize():
+                try:
+                    handle = queue.get_nowait()
+                    _winapi.CloseHandle(handle)
+                except (Empty, OSError):
+                    pass
             _winapi.CloseHandle(close_event)
 
 
