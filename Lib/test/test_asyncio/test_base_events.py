@@ -1109,6 +1109,15 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
 
         self.assertEqual(str(cm.exception), 'Multiple exceptions: err1, err2')
 
+        idx = -1
+        coro = self.loop.create_connection(MyProto, 'example.com', 80, all_errors=True)
+        with self.assertRaises(ExceptionGroup) as cm:
+            self.loop.run_until_complete(coro)
+
+        self.assertIsInstance(cm.exception, ExceptionGroup)
+        for e in cm.exception.exceptions:
+            self.assertIsInstance(e, OSError)
+
     @patch_socket
     def test_create_connection_timeout(self, m_socket):
         # Ensure that the socket is closed on timeout
@@ -1228,6 +1237,14 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.assertRaises(
             OSError, self.loop.run_until_complete, coro)
 
+        coro = self.loop.create_connection(MyProto, 'example.com', 80, all_errors=True)
+        with self.assertRaises(ExceptionGroup) as cm:
+            self.loop.run_until_complete(coro)
+
+        self.assertIsInstance(cm.exception, ExceptionGroup)
+        self.assertEqual(len(cm.exception.exceptions), 1)
+        self.assertIsInstance(cm.exception.exceptions[0], OSError)
+
     def test_create_connection_multiple(self):
         async def getaddrinfo(*args, **kw):
             return [(2, 1, 6, '', ('0.0.0.1', 80)),
@@ -1244,6 +1261,15 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             MyProto, 'example.com', 80, family=socket.AF_INET)
         with self.assertRaises(OSError):
             self.loop.run_until_complete(coro)
+
+        coro = self.loop.create_connection(
+            MyProto, 'example.com', 80, family=socket.AF_INET, all_errors=True)
+        with self.assertRaises(ExceptionGroup) as cm:
+            self.loop.run_until_complete(coro)
+
+        self.assertIsInstance(cm.exception, ExceptionGroup)
+        for e in cm.exception.exceptions:
+            self.assertIsInstance(e, OSError)
 
     @patch_socket
     def test_create_connection_multiple_errors_local_addr(self, m_socket):
@@ -1275,6 +1301,16 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
 
         self.assertTrue(str(cm.exception).startswith('Multiple exceptions: '))
         self.assertTrue(m_socket.socket.return_value.close.called)
+
+        coro = self.loop.create_connection(
+            MyProto, 'example.com', 80, family=socket.AF_INET,
+            local_addr=(None, 8080), all_errors=True)
+        with self.assertRaises(ExceptionGroup) as cm:
+            self.loop.run_until_complete(coro)
+
+        self.assertIsInstance(cm.exception, ExceptionGroup)
+        for e in cm.exception.exceptions:
+            self.assertIsInstance(e, OSError)
 
     def _test_create_connection_ip_addr(self, m_socket, allow_inet_pton):
         # Test the fallback code, even if this system has inet_pton.

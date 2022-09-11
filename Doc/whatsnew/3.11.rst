@@ -369,6 +369,28 @@ PEP 563 May Not Be the Future
   that was planned for this release has been indefinitely postponed.
   See `this message <https://mail.python.org/archives/list/python-dev@python.org/message/VIZEBX5EYMSYIJNDBF6DMUMZOCWHARSO/>`_ for more information.
 
+Windows py.exe launcher improvements
+------------------------------------
+
+The copy of :ref:`launcher` included with Python 3.11 has been significantly
+updated. It now supports company/tag syntax as defined in :pep:`514` using the
+``-V:<company>/<tag>`` argument instead of the limited ``-x.y`` argument. This
+allows launching distributions other than ``PythonCore``, which is the one
+obtained from `python.org <https://python.org>`_.
+
+When using ``-V:`` selectors, either company or tag can be omitted, but all
+installs will be searched. For example, ``-V:OtherPython/`` will select the
+"best" tag registered for ``OtherPython``, while ``-V:3.11`` or ``-V:/3.11``
+will select the "best" distribution with tag ``3.11``.
+
+When using legacy ``-x``, ``-x.y``, ``-x-ZZ`` or ``-x.y-ZZ`` arguments, all
+existing behaviour should be preserved from past versions. Only releases from
+``PythonCore`` will be selected. However, the ``-64`` suffix now implies "not
+32-bit", as there are multiple supported 64-bit platforms. 32-bit runtimes are
+detected by checking its tag for a ``-32`` suffix. All releases of Python
+since 3.5 have included this in their 32-bit builds.
+
+
 Other Language Changes
 ======================
 
@@ -1619,7 +1641,8 @@ Changes in the Python API
 Build Changes
 =============
 
-* Building Python now requires a C11 compiler without optional C11 features.
+* Building Python now requires a C11 compiler. Optional C11 features are not
+  required.
   (Contributed by Victor Stinner in :issue:`46656`.)
 
 * Building Python now requires support of IEEE 754 floating point numbers.

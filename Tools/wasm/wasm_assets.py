@@ -230,7 +230,8 @@ def main():
 
     extmods = detect_extension_modules(args)
     omit_files = list(OMIT_FILES)
-    omit_files.extend(OMIT_NETWORKING_FILES)
+    if sysconfig.get_platform().startswith("emscripten"):
+        omit_files.extend(OMIT_NETWORKING_FILES)
     for modname, modfiles in OMIT_MODULE_FILES.items():
         if not extmods.get(modname):
             omit_files.extend(modfiles)

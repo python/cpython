@@ -55,7 +55,7 @@ Future Functions
       preferred way for creating new Tasks.
 
       Save a reference to the result of this function, to avoid
-      a task disappearing mid execution.
+      a task disappearing mid-execution.
 
    .. versionchanged:: 3.5.1
       The function accepts any :term:`awaitable` object.

@@ -1413,7 +1413,12 @@ _PyThread_CurrentFrames(void)
             if (id == NULL) {
                 goto fail;
             }
-            int stat = PyDict_SetItem(result, id, (PyObject *)_PyFrame_GetFrameObject(frame));
+            PyObject *frameobj = (PyObject *)_PyFrame_GetFrameObject(frame);
+            if (frameobj == NULL) {
+                Py_DECREF(id);
+                goto fail;
+            }
+            int stat = PyDict_SetItem(result, id, frameobj);
             Py_DECREF(id);
             if (stat < 0) {
                 goto fail;
@@ -2195,15 +2200,12 @@ _PyInterpreterFrame *
 _PyThreadState_PushFrame(PyThreadState *tstate, size_t size)
 {
     assert(size < INT_MAX/sizeof(PyObject *));
-    PyObject **base = tstate->datastack_top;
-    PyObject **top = base + size;
-    if (top >= tstate->datastack_limit) {
-        base = push_chunk(tstate, (int)size);
+    if (_PyThreadState_HasStackSpace(tstate, (int)size)) {
+        _PyInterpreterFrame *res = (_PyInterpreterFrame *)tstate->datastack_top;
+        tstate->datastack_top += size;
+        return res;
     }
-    else {
-        tstate->datastack_top = top;
-    }
-    return (_PyInterpreterFrame *)base;
+    return (_PyInterpreterFrame *)push_chunk(tstate, (int)size);
 }
 
 void

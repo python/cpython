@@ -570,43 +570,28 @@ performance-critical objects (such as numbers).
 .. seealso::
    Documentation for the :mod:`weakref` module.
 
-For an object to be weakly referencable, the extension type must do two things:
+For an object to be weakly referencable, the extension type must set the
+``Py_TPFLAGS_MANAGED_WEAKREF`` bit of the :c:member:`~PyTypeObject.tp_flags`
+field. The legacy :c:member:`~PyTypeObject.tp_weaklistoffset` field should
+be left as zero.
 
-#. Include a :c:type:`PyObject\*` field in the C object structure dedicated to
-   the weak reference mechanism.  The object's constructor should leave it
-   ``NULL`` (which is automatic when using the default
-   :c:member:`~PyTypeObject.tp_alloc`).
-
-#. Set the :c:member:`~PyTypeObject.tp_weaklistoffset` type member
-   to the offset of the aforementioned field in the C object structure,
-   so that the interpreter knows how to access and modify that field.
-
-Concretely, here is how a trivial object structure would be augmented
-with the required field::
-
-   typedef struct {
-       PyObject_HEAD
-       PyObject *weakreflist;  /* List of weak references */
-   } TrivialObject;
-
-And the corresponding member in the statically declared type object::
+Concretely, here is how the statically declared type object would look::
 
    static PyTypeObject TrivialType = {
        PyVarObject_HEAD_INIT(NULL, 0)
        /* ... other members omitted for brevity ... */
-       .tp_weaklistoffset = offsetof(TrivialObject, weakreflist),
+       .tp_flags = Py_TPFLAGS_MANAGED_WEAKREF | ...,
    };
 
+
 The only further addition is that ``tp_dealloc`` needs to clear any weak
-references (by calling :c:func:`PyObject_ClearWeakRefs`) if the field is
-non-``NULL``::
+references (by calling :c:func:`PyObject_ClearWeakRefs`)::
 
    static void
    Trivial_dealloc(TrivialObject *self)
    {
        /* Clear weakrefs first before calling any destructors */
-       if (self->weakreflist != NULL)
-           PyObject_ClearWeakRefs((PyObject *) self);
+       PyObject_ClearWeakRefs((PyObject *) self);
        /* ... remainder of destruction code omitted for brevity ... */
        Py_TYPE(self)->tp_free((PyObject *) self);
    }

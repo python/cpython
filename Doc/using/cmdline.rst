@@ -505,6 +505,9 @@ Miscellaneous options
      stored in a traceback of a trace. Use ``-X tracemalloc=NFRAME`` to start
      tracing with a traceback limit of *NFRAME* frames. See the
      :func:`tracemalloc.start` for more information.
+   * ``-X int_max_str_digits`` configures the :ref:`integer string conversion
+     length limitation <int_max_str_digits>`.  See also
+     :envvar:`PYTHONINTMAXSTRDIGITS`.
    * ``-X importtime`` to show how long each import takes. It shows module
      name, cumulative time (including nested imports) and self time (excluding
      nested imports).  Note that its output may be broken in multi-threaded
@@ -535,6 +538,12 @@ Miscellaneous options
      development (running from the source tree) then the default is "off".
      Note that the "importlib_bootstrap" and "importlib_bootstrap_external"
      frozen modules are always used, even if this flag is set to "off".
+   * ``-X perf`` to activate compatibility mode with the ``perf`` profiler.
+     When this option is activated, the Linux ``perf`` profiler will be able to
+     report Python calls. This option is only available on some platforms and
+     will do nothing if is not supported on the current system. The default value
+     is "off". See also :envvar:`PYTHONPERFSUPPORT` and :ref:`perf_profiling`
+     for more information.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -576,6 +585,11 @@ Miscellaneous options
    .. versionadded:: 3.11
       The ``-X frozen_modules`` option.
 
+   .. versionadded:: 3.12
+      The ``-X int_max_str_digits`` option.
+
+   .. versionadded:: 3.12
+      The ``-X perf`` option.
 
 
 Options you shouldn't use
@@ -755,6 +769,13 @@ conflict.
 
    .. versionadded:: 3.2.3
 
+.. envvar:: PYTHONINTMAXSTRDIGITS
+
+   If this variable is set to an integer, it is used to configure the
+   interpreter's global :ref:`integer string conversion length limitation
+   <int_max_str_digits>`.
+
+   .. versionadded:: 3.12
 
 .. envvar:: PYTHONIOENCODING
 
@@ -1025,6 +1046,13 @@ conflict.
 
    .. versionadded:: 3.11
 
+.. envvar:: PYTHONPERFSUPPORT
+
+   If this variable is set to a nonzero value, it activates compatibility mode
+   with the ``perf`` profiler so Python calls can be detected by it. See the
+   :ref:`perf_profiling` section for more information.
+
+   .. versionadded:: 3.12
 
 
 Debug-mode variables

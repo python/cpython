@@ -455,7 +455,7 @@ Objects/typeobject.c	-	next_version_tag	-
 Objects/typeobject.c	resolve_slotdups	ptrs	-
 Parser/pegen.c	-	memo_statistics	-
 Python/bootstrap_hash.c	-	urandom_cache	-
-Python/ceval.c	make_pending_calls	busy	-
+Python/ceval_gil.c	make_pending_calls	busy	-
 Python/ceval.c	_PyEval_SetProfile	reentrant	-
 Python/ceval.c	_PyEval_SetTrace	reentrant	-
 Python/import.c	-	import_lock_level	-
@@ -534,6 +534,8 @@ Modules/_io/winconsoleio.c	-	_PyWindowsConsoleIO_Type	-
 # initialized once
 Modules/_functoolsmodule.c	-	kwd_mark	-
 Modules/_io/_iomodule.c	-	_PyIO_empty_bytes	-
+Modules/_testcapi/heaptype.c	-	_testcapimodule	-
+Modules/_testcapi/unicode.c	-	_testcapimodule	-
 Modules/_tracemalloc.c	-	tracemalloc_empty_traceback	-
 Modules/signalmodule.c	-	DefaultHandler	-
 Modules/signalmodule.c	-	IgnoreHandler	-
