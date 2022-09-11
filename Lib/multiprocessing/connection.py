@@ -685,12 +685,12 @@ if sys.platform == 'win32':
                     res = _winapi.WaitForMultipleObjects(
                         [ov.event, self._close_event], False, INFINITE)
                     if res == _winapi.WAIT_OBJECT_0 + 1:
-                        raise OSError("Listener was closed.")
+                        raise OSError("listener is closed")
                 except:
                     ov.cancel()
                     _winapi.CloseHandle(handle)
                     raise
-                finally:
+                else:
                     _, err = ov.GetOverlappedResult(True)
                     assert err == 0
             return PipeConnection(handle)
