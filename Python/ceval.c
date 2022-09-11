@@ -4719,19 +4719,7 @@ handle_eval_breaker:
             PyObject *func, *callargs, *kwargs = NULL, *result;
             if (oparg & 0x01) {
                 kwargs = POP();
-                if (!PyDict_CheckExact(kwargs)) {
-                    PyObject *d = PyDict_New();
-                    if (d == NULL)
-                        goto error;
-                    if (_PyDict_MergeEx(d, kwargs, 2) < 0) {
-                        Py_DECREF(d);
-                        format_kwargs_error(tstate, SECOND(), kwargs);
-                        Py_DECREF(kwargs);
-                        goto error;
-                    }
-                    Py_DECREF(kwargs);
-                    kwargs = d;
-                }
+                // DICT_MERGE is called before this opcode.
                 assert(PyDict_CheckExact(kwargs));
             }
             callargs = POP();
