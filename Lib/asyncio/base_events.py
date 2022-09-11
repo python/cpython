@@ -1808,7 +1808,16 @@ class BaseEventLoop(events.AbstractEventLoop):
                              exc_info=True)
         else:
             try:
-                self._exception_handler(self, context)
+                ctx = None
+                task = context.get("task")
+                if task is None:
+                    task = context.get("future")
+                if task is not None and hasattr(task, "get_context"):
+                    ctx = task.get_context()
+                if ctx is not None and hasattr(ctx, "run"):
+                    ctx.run(self._exception_handler, self, context)
+                else:
+                    self._exception_handler(self, context)
             except (SystemExit, KeyboardInterrupt):
                 raise
             except BaseException as exc:
