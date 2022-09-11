@@ -299,7 +299,7 @@ modules.
   constructor was extended with an *object_pairs_hook* parameter to
   allow :class:`OrderedDict` instances to be built by the decoder.
   Support was also added for third-party tools like
-  `PyYAML <http://pyyaml.org/>`_.
+  `PyYAML <https://pyyaml.org/>`_.
 
 .. seealso::
 
@@ -1048,7 +1048,7 @@ changes, or look through the Subversion logs for all the details.
   The new version features better Python 3.x compatibility, various bug fixes,
   and adds several new BerkeleyDB flags and methods.
   (Updated by Jesús Cea Avión; :issue:`8156`.  The pybsddb
-  changelog can be read at http://hg.jcea.es/pybsddb/file/tip/ChangeLog.)
+  changelog can be read at https://hg.jcea.es/pybsddb/file/tip/ChangeLog.)
 
 * The :mod:`bz2` module's :class:`~bz2.BZ2File` now supports the context
   management protocol, so you can write ``with bz2.BZ2File(...) as f:``.
@@ -1831,7 +1831,7 @@ packaged as the :mod:`unittest2` package, from
 https://pypi.org/project/unittest2.
 
 When used from the command line, the module can automatically discover
-tests.  It's not as fancy as `py.test <http://pytest.org>`__ or
+tests.  It's not as fancy as `py.test <https://pytest.org>`__ or
 `nose <https://nose.readthedocs.io/>`__, but provides a
 simple way to run tests kept within a set of package directories.  For example,
 the following command will search the :file:`test/` subdirectory for
@@ -2692,7 +2692,7 @@ As part of this change, the :ref:`installing-index` and
 completely redesigned as short getting started and FAQ documents. Most
 packaging documentation has now been moved out to the Python Packaging
 Authority maintained `Python Packaging User Guide
-<http://packaging.python.org>`__ and the documentation of the individual
+<https://packaging.python.org>`__ and the documentation of the individual
 projects.
 
 However, as this migration is currently still incomplete, the legacy

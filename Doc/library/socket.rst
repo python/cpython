@@ -370,7 +370,7 @@ Constants
 
    .. seealso::
 
-      `Secure File Descriptor Handling <http://udrepper.livejournal.com/20407.html>`_
+      `Secure File Descriptor Handling <https://udrepper.livejournal.com/20407.html>`_
       for a more thorough explanation.
 
    .. availability:: Linux >= 2.6.27.

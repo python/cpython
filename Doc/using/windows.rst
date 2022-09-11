@@ -868,6 +868,11 @@ The ``/usr/bin/env`` form of shebang line has one further special property.
 Before looking for installed Python interpreters, this form will search the
 executable :envvar:`PATH` for a Python executable. This corresponds to the
 behaviour of the Unix ``env`` program, which performs a :envvar:`PATH` search.
+If an executable matching the first argument after the ``env`` command cannot
+be found, it will be handled as described below. Additionally, the environment
+variable :envvar:`PYLAUNCHER_NO_SEARCH_PATH` may be set (to any value) to skip
+this additional search.
+
 
 Arguments in shebang lines
 --------------------------

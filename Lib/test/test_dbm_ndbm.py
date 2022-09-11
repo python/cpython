@@ -133,6 +133,20 @@ class DbmTestCase(unittest.TestCase):
     def test_open_with_pathlib_bytes_path(self):
         dbm.ndbm.open(os_helper.FakePath(os.fsencode(self.filename)), "c").close()
 
+    def test_bool_empty(self):
+        with dbm.ndbm.open(self.filename, 'c') as db:
+            self.assertFalse(bool(db))
+
+    def test_bool_not_empty(self):
+        with dbm.ndbm.open(self.filename, 'c') as db:
+            db['a'] = 'b'
+            self.assertTrue(bool(db))
+
+    def test_bool_on_closed_db_raises(self):
+        with dbm.ndbm.open(self.filename, 'c') as db:
+            db['a'] = 'b'
+        self.assertRaises(dbm.ndbm.error, bool, db)
+
 
 if __name__ == '__main__':
     unittest.main()

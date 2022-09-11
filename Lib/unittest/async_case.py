@@ -79,6 +79,10 @@ class IsolatedAsyncioTestCase(TestCase):
         return result
 
     def _callSetUp(self):
+        # Force loop to be initialized and set as the current loop
+        # so that setUp functions can use get_event_loop() and get the
+        # correct loop instance.
+        self._asyncioRunner.get_loop()
         self._asyncioTestContext.run(self.setUp)
         self._callAsync(self.asyncSetUp)
 

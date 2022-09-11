@@ -578,7 +578,7 @@ class IdleConf:
         """
         return ('<<'+virtualEvent+'>>') in self.GetCoreKeys()
 
-# TODO make keyBindins a file or class attribute used for test above
+# TODO make keyBindings a file or class attribute used for test above
 # and copied in function below.
 
     former_extension_events = {  #  Those with user-configurable keys.

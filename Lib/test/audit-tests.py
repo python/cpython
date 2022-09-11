@@ -419,6 +419,17 @@ def test_sys_getframe():
     sys._getframe()
 
 
+def test_wmi_exec_query():
+    import _wmi
+
+    def hook(event, args):
+        if event.startswith("_wmi."):
+            print(event, args[0])
+
+    sys.addaudithook(hook)
+    _wmi.exec_query("SELECT * FROM Win32_OperatingSystem")
+
+
 if __name__ == "__main__":
     from test.support import suppress_msvcrt_asserts
 

@@ -72,7 +72,7 @@ order.  The *_asdict()* method for :func:`collections.namedtuple` now
 returns an ordered dictionary with the values appearing in the same order as
 the underlying tuple indices.  The :mod:`json` module is being built-out with
 an *object_pairs_hook* to allow OrderedDicts to be built by the decoder.
-Support was also added for third-party tools like `PyYAML <http://pyyaml.org/>`_.
+Support was also added for third-party tools like `PyYAML <https://pyyaml.org/>`_.
 
 .. seealso::
 

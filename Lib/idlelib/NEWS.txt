@@ -4,6 +4,8 @@ Released on 2022-10-03
 =========================
 
 
+gh-65802: Document handling of extensions in Save As dialogs.
+
 gh-95191: Include prompts when saving Shell (interactive input/output).
 
 gh-95511: Fix the Shell context menu copy-with-prompts bug of copying

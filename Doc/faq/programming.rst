@@ -95,7 +95,7 @@ The following packages can help with the creation of console and GUI
 executables:
 
 * `Nuitka <https://nuitka.net/>`_ (Cross-platform)
-* `PyInstaller <http://www.pyinstaller.org/>`_ (Cross-platform)
+* `PyInstaller <https://pyinstaller.org/>`_ (Cross-platform)
 * `PyOxidizer <https://pyoxidizer.readthedocs.io/en/stable/>`_ (Cross-platform)
 * `cx_Freeze <https://marcelotduarte.github.io/cx_Freeze/>`_ (Cross-platform)
 * `py2app <https://github.com/ronaldoussoren/py2app>`_ (macOS only)
@@ -1066,7 +1066,7 @@ performance levels:
   detrimental to readability).
 
 If you have reached the limit of what pure Python can allow, there are tools
-to take you further away.  For example, `Cython <http://cython.org>`_ can
+to take you further away.  For example, `Cython <https://cython.org>`_ can
 compile a slightly modified version of Python code into a C extension, and
 can be used on many different platforms.  Cython can take advantage of
 compilation (and optional type annotations) to make your code significantly

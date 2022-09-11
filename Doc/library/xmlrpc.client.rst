@@ -156,12 +156,12 @@ between conformable Python objects and XML on the wire.
       Added support of unmarshalling additional types used by Apache XML-RPC
       implementation for numerics: ``i1``, ``i2``, ``i8``, ``biginteger``,
       ``float`` and ``bigdecimal``.
-      See http://ws.apache.org/xmlrpc/types.html for a description.
+      See https://ws.apache.org/xmlrpc/types.html for a description.
 
 
 .. seealso::
 
-   `XML-RPC HOWTO <http://www.tldp.org/HOWTO/XML-RPC-HOWTO/index.html>`_
+   `XML-RPC HOWTO <https://www.tldp.org/HOWTO/XML-RPC-HOWTO/index.html>`_
       A good description of XML-RPC operation and client software in several languages.
       Contains pretty much everything an XML-RPC client developer needs to know.
 
