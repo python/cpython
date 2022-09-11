@@ -1663,7 +1663,7 @@ event loop::
         print('Hello World')
         loop.stop()
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
 
     # Schedule a call to hello_world()
     loop.call_soon(hello_world, loop)
@@ -1699,7 +1699,7 @@ after 5 seconds, and then stops the event loop::
         else:
             loop.stop()
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
 
     # Schedule the first call to display_date()
     end_time = loop.time() + 5.0
@@ -1731,7 +1731,7 @@ Wait until a file descriptor received some data using the
     # Create a pair of connected file descriptors
     rsock, wsock = socketpair()
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
 
     def reader():
         data = rsock.recv(100)
