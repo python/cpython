@@ -11,7 +11,7 @@ __all__ = [ 'Client', 'Listener', 'Pipe', 'wait' ]
 
 import io
 import os
-from queue import Empty
+from queue import Empty, Queue
 import sys
 import socket
 import struct
@@ -649,7 +649,8 @@ if sys.platform == 'win32':
         '''
         def __init__(self, address, backlog=None):
             self._address = address
-            self._handle_queue = [self._new_handle(first=True)]
+            self._handle_queue = Queue()
+            self._handle_queue.put_nowait(self._new_handle(first=True))
             self._close_event = _overlapped.CreateEvent(None, True, False, None)
 
             self._last_accepted = None
@@ -672,8 +673,8 @@ if sys.platform == 'win32':
                 )
 
         def accept(self):
-            self._handle_queue.append(self._new_handle())
-            handle = self._handle_queue.pop(0)
+            self._handle_queue.put_nowait(self._new_handle())
+            handle = self._handle_queue.get_nowait()
             try:
                 ov = _winapi.ConnectNamedPipe(handle, overlapped=True)
             except OSError as e:
