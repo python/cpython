@@ -1491,6 +1491,8 @@ _ = None
 
 # Generated test cases
 
+# fmt: off
+
 expected_opinfo_outer = [inst(*args) for args in [
     # opname                  , opcode, arg,               argval, argrepr, offset, starts_line, is_jump_target
     ('MAKE_CELL'                 , 135,   0,                  'a',                      'a',   0,    _, False),
@@ -1677,18 +1679,21 @@ expected_opinfo_jumpy = [inst(*args) for args in [
     ('RERAISE'                   , 119,   1,                    1,                       '', 426,    _, False),
 ]]
 
+# fmt: on
 # End generated test cases
 
 # One last piece of inspect fodder to check the default line number handling
 def simple(): pass
 line = simple.__code__.co_firstlineno
 
+# fmt: off
 expected_opinfo_simple = [inst(*args) for args in [
     # opname                  , opcode, arg,            argval, argrepr, offset, starts_line, is_jump_target
     ('RESUME'                 , 151,   0,                    0,                    '',    0,  line,  False),
     ('LOAD_CONST'             , 100,   0,                 None,                'None',    2,     _,  False),
     ('RETURN_VALUE'           ,  83,   _,                 None,                    '',    4,     _,  False),
 ]]
+# fmt: on
 
 
 class InstructionTestCase(BytecodeTestCase):
