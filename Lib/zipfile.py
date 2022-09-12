@@ -480,7 +480,7 @@ class ZipInfo (object):
 
     def _encodeFilenameFlags(self):
         try:
-            return self.filename.encode('ascii'), self.flag_bits & ~_MASK_UTF_FILENAME
+            return self.filename.encode('ascii'), self.flag_bits
         except UnicodeEncodeError:
             return self.filename.encode('utf-8'), self.flag_bits | _MASK_UTF_FILENAME
 
@@ -1468,7 +1468,10 @@ class ZipFile:
                   file=file)
 
     def testzip(self):
-        """Read all the files and check the CRC."""
+        """Read all the files and check the CRC.
+
+        Return None if all files could be read successfully, or the name
+        of the offending file otherwise."""
         chunk_size = 2 ** 20
         for zinfo in self.filelist:
             try:

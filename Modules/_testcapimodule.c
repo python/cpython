@@ -6544,15 +6544,21 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_Vectorcall(m) < 0) {
         return NULL;
     }
-    if (_PyTestCapi_Init_VectorcallLimited(m) < 0) {
-        return NULL;
-    }
     if (_PyTestCapi_Init_Heaptype(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Unicode(m) < 0) {
         return NULL;
     }
+
+#ifndef LIMITED_API_AVAILABLE
+    PyModule_AddObjectRef(m, "LIMITED_API_AVAILABLE", Py_False);
+#else
+    PyModule_AddObjectRef(m, "LIMITED_API_AVAILABLE", Py_True);
+    if (_PyTestCapi_Init_VectorcallLimited(m) < 0) {
+        return NULL;
+    }
+#endif
 
     PyState_AddModule(m, &_testcapimodule);
     return m;

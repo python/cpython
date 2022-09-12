@@ -136,6 +136,10 @@ class NTFlavourTest(_BaseFlavourTest, unittest.TestCase):
         check(['a', '/b', 'c'],         ('', '\\', ['\\', 'b', 'c']))
         check(['Z:/a', '/b', 'c'],      ('Z:', '\\', ['Z:\\', 'b', 'c']))
         check(['//?/Z:/a', '/b', 'c'],  ('\\\\?\\Z:', '\\', ['\\\\?\\Z:\\', 'b', 'c']))
+        # Joining with the same drive => the first path is appended to if
+        # the second path is relative.
+        check(['c:/a/b', 'c:x/y'], ('c:', '\\', ['c:\\', 'a', 'b', 'x', 'y']))
+        check(['c:/a/b', 'c:/x/y'], ('c:', '\\', ['c:\\', 'x', 'y']))
 
     def test_splitroot(self):
         f = self.flavour.splitroot

@@ -83,6 +83,20 @@ Other Language Changes
   mapping is hashable.
   (Contributed by Serhiy Storchaka in :gh:`87995`.)
 
+* Converting between :class:`int` and :class:`str` in bases other than 2
+  (binary), 4, 8 (octal), 16 (hexadecimal), or 32 such as base 10 (decimal)
+  now raises a :exc:`ValueError` if the number of digits in string form is
+  above a limit to avoid potential denial of service attacks due to the
+  algorithmic complexity. This is a mitigation for `CVE-2020-10735
+  <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+  This limit can be configured or disabled by environment variable, command
+  line flag, or :mod:`sys` APIs. See the :ref:`integer string conversion
+  length limitation <int_max_str_digits>` documentation.  The default limit
+  is 4300 digits in string form.
+
+* :class:`memoryview` now supports the half-float type (the "e" format code).
+  (Contributed by Dong-hee Na and Antoine Pitrou in :gh:`90751`.)
+
 
 New Modules
 ===========
@@ -107,7 +121,7 @@ dis
   do not appear in executable bytecode) are now exposed in the
   :mod:`dis` module.
   :data:`~dis.HAVE_ARGUMENT` is still relevant to real opcodes,
-  but it is not useful for pseudo instrcutions. Use the new
+  but it is not useful for pseudo instructions. Use the new
   :data:`~dis.hasarg` collection instead.
   (Contributed by Irit Katriel in :gh:`94216`.)
 
@@ -132,6 +146,10 @@ Optimizations
 * Removed ``wstr`` and ``wstr_length`` members from Unicode objects.
   It reduces object size by 8 or 16 bytes on 64bit platform. (:pep:`623`)
   (Contributed by Inada Naoki in :gh:`92536`.)
+
+* Added experimental support for using the BOLT binary optimizer in the build
+  process, which improves performance by 1-5%.
+  (Contributed by Kevin Modzelewski in :gh:`90536`.)
 
 
 CPython bytecode changes
@@ -450,6 +468,11 @@ New Features
   inherit the ``Py_TPFLAGS_HAVE_VECTORCALL`` flag.
   (Contributed by Petr Viktorin in :gh:`93274`.)
 
+  The :const:`Py_TPFLAGS_MANAGED_DICT` and :const:`Py_TPFLAGS_MANAGED_WEAKREF`
+  flags have been added. This allows extensions classes to support object
+  ``__dict__`` and weakrefs with less bookkeeping,
+  using less memory and with faster access.
+
 Porting to Python 3.12
 ----------------------
 
@@ -485,6 +508,18 @@ Porting to Python 3.12
 * Fixed wrong sign placement in :c:func:`PyUnicode_FromFormat` and
   :c:func:`PyUnicode_FromFormatV`.
   (Contributed by Philip Georgi in :gh:`95504`.)
+
+* Extension classes wanting to add a ``__dict__`` or weak reference slot
+  should use :const:`Py_TPFLAGS_MANAGED_DICT` and
+  :const:`Py_TPFLAGS_MANAGED_WEAKREF` instead of ``tp_dictoffset`` and
+  ``tp_weaklistoffset``, respectively.
+  The use of ``tp_dictoffset`` and ``tp_weaklistoffset`` is still
+  supported, but does not fully support multiple inheritance
+  (:gh: `95589`), and performance may be worse.
+  Classes declaring :const:`Py_TPFLAGS_MANAGED_DICT` should call
+  :c:func:`_PyObject_VisitManagedDict` and :c:func:`_PyObject_ClearManagedDict`
+  to traverse and clear their instance's dictionaries.
+  To clear weakrefs, call :c:func:`PyObject_ClearWeakRefs`, as before.
 
 Deprecated
 ----------
