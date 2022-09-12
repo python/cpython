@@ -270,6 +270,8 @@ typedef struct basicblock_ {
     unsigned b_preserve_lasti : 1;
     /* Used by compiler passes to mark whether they have visited a basic block. */
     unsigned b_visited : 1;
+    /* b_except_handler is used by the cold-detection algorithm to mark exception targets */
+    unsigned b_except_handler : 1;
     /* b_cold is true if this block is not perf critical (like an exception handler) */
     unsigned b_cold : 1;
     /* b_warm is used by the cold-detection algorithm to mark blocks which are definitely not cold */
@@ -7296,6 +7298,23 @@ error:
     return -1;
 }
 
+
+static int
+mark_except_handlers(basicblock *entryblock) {
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        assert(!b->b_except_handler);
+    }
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        for (int i=0; i < b->b_iused; i++) {
+            struct instr *instr = &b->b_instr[i];
+            if (is_block_push(instr)) {
+                instr->i_target->b_except_handler = 1;
+            }
+        }
+    }
+    return 0;
+}
+
 static int
 mark_warm(basicblock *entryblock) {
     basicblock **stack = make_cfg_traversal_stack(entryblock);
@@ -8257,8 +8276,8 @@ static void
 dump_basicblock(const basicblock *b)
 {
     const char *b_return = basicblock_returns(b) ? "return " : "";
-    fprintf(stderr, "%d: [%d %d %d %p] used: %d, depth: %d, offset: %d %s\n",
-        b->b_label, b->b_cold, b->b_warm, BB_NO_FALLTHROUGH(b), b, b->b_iused,
+    fprintf(stderr, "%d: [P=%d EP=%d EH=%d CLD=%d WRM=%d %d %p] used: %d, depth: %d, offset: %d %s\n",
+        b->b_label, b->b_predecessors, b->b_except_predecessors, b->b_except_handler, b->b_cold, b->b_warm, BB_NO_FALLTHROUGH(b), b, b->b_iused,
         b->b_startdepth, b->b_offset, b_return);
     if (b->b_instr) {
         int i;
@@ -9361,6 +9380,10 @@ mark_reachable(basicblock *entryblock) {
             }
         }
     }
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        if (b->b_except_predecessors) assert(b->b_except_handler);
+        if (b->b_predecessors > b->b_except_predecessors) assert(!b->b_except_handler);
+    }
     PyMem_Free(stack);
     return 0;
 }
@@ -9504,11 +9527,15 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
         }
         remove_redundant_nops(b);
         assert(b->b_predecessors == 0);
+        assert(b->b_except_predecessors == 0);
     }
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         if (inline_small_exit_blocks(b) < 0) {
             return -1;
         }
+    }
+    if (mark_except_handlers(g->g_entryblock) < 0) {
+        return -1;
     }
     if (mark_reachable(g->g_entryblock)) {
         return -1;
