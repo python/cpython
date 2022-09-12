@@ -600,6 +600,9 @@ _hextobyte = None
 
 def unquote_to_bytes(string):
     """unquote_to_bytes('abc%20def') -> b'abc def'."""
+    return bytes(_unquote_to_bytearray(string))
+
+def _unquote_to_bytearray(string):
     # Note: strings are encoded as UTF-8. This is only an issue if it contains
     # unescaped non-ASCII characters, which URIs should not.
     if not string:
@@ -611,8 +614,8 @@ def unquote_to_bytes(string):
     bits = string.split(b'%')
     if len(bits) == 1:
         return string
-    res = [bits[0]]
-    append = res.append
+    res = bytearray(bits[0])
+    add_data = res.extend
     # Delay the initialization of the table to not waste memory
     # if the function is never called
     global _hextobyte
@@ -621,14 +624,24 @@ def unquote_to_bytes(string):
                       for a in _hexdig for b in _hexdig}
     for item in bits[1:]:
         try:
-            append(_hextobyte[item[:2]])
-            append(item[2:])
+            add_data(_hextobyte[item[:2]])
+            add_data(item[2:])
         except KeyError:
-            append(b'%')
-            append(item)
-    return b''.join(res)
+            add_data(b'%')
+            add_data(item)
+    return res
 
 _asciire = re.compile('([\x00-\x7f]+)')
+
+def _generate_unquoted_parts(string, encoding, errors):
+    previous_match_end = 0
+    for ascii_match in _asciire.finditer(string):
+        start, end = ascii_match.span()
+        yield string[previous_match_end:start]  # Non-ASCII
+        # The ascii_match[1] group == string[start:end].
+        yield _unquote_to_bytearray(ascii_match[1]).decode(encoding, errors)
+        previous_match_end = end
+    yield string[previous_match_end:]  # Non-ASCII tail
 
 def unquote(string, encoding='utf-8', errors='replace'):
     """Replace %xx escapes by their single-character equivalent. The optional
@@ -641,22 +654,16 @@ def unquote(string, encoding='utf-8', errors='replace'):
     unquote('abc%20def') -> 'abc def'.
     """
     if isinstance(string, bytes):
-        return unquote_to_bytes(string).decode(encoding, errors)
+        return _unquote_to_bytearray(string).decode(encoding, errors)
     if '%' not in string:
+        # Is it a string-like object?
         string.split
         return string
     if encoding is None:
         encoding = 'utf-8'
     if errors is None:
         errors = 'replace'
-    bits = _asciire.split(string)
-    res = [bits[0]]
-    append = res.append
-    for i in range(1, len(bits), 2):
-        append(unquote_to_bytes(bits[i]).decode(encoding, errors))
-        append(bits[i + 1])
-    return ''.join(res)
-
+    return ''.join(_generate_unquoted_parts(string, encoding, errors))
 
 def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
              encoding='utf-8', errors='replace', max_num_fields=None, separator='&'):

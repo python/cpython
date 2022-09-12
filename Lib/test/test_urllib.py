@@ -1104,6 +1104,8 @@ class UnquotingTests(unittest.TestCase):
         self.assertEqual(result.count('%'), 1,
                          "using unquote(): not all characters escaped: "
                          "%s" % result)
+
+    def test_unquote_rejects_none_and_tuple(self):
         self.assertRaises((TypeError, AttributeError), urllib.parse.unquote, None)
         self.assertRaises((TypeError, AttributeError), urllib.parse.unquote, ())
 
