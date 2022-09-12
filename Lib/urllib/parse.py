@@ -184,7 +184,7 @@ class _NetlocResultMixinStr(_NetlocResultMixinBase, _ResultMixinStr):
     @property
     def _userinfo(self):
         netloc = self.netloc
-        userinfo, have_info, hostinfo = netloc.rpartition('@')
+        userinfo, have_info, _ = netloc.rpartition('@')
         if have_info:
             username, have_password, password = userinfo.partition(':')
             if not have_password:
