@@ -2244,7 +2244,7 @@ _textiowrapper_readline(textio *self, Py_ssize_t limit)
         Py_CLEAR(chunks);
     }
     if (line == NULL) {
-        line = &_Py_STR(empty);
+        line = Py_NewRef(&_Py_STR(empty));
     }
 
     return line;

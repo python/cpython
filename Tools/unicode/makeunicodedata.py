@@ -77,7 +77,8 @@ BIDIRECTIONAL_NAMES = [ "", "L", "LRE", "LRO", "R", "AL", "RLE", "RLO",
     "PDF", "EN", "ES", "ET", "AN", "CS", "NSM", "BN", "B", "S", "WS",
     "ON", "LRI", "RLI", "FSI", "PDI" ]
 
-EASTASIANWIDTH_NAMES = [ "F", "H", "W", "Na", "A", "N" ]
+# "N" needs to be the first entry, see the comment in makeunicodedata
+EASTASIANWIDTH_NAMES = [ "N", "H", "W", "Na", "A", "F" ]
 
 MANDATORY_LINE_BREAKS = [ "BK", "CR", "LF", "NL" ]
 
@@ -135,6 +136,14 @@ def maketables(trace=0):
 
 def makeunicodedata(unicode, trace):
 
+    # the default value of east_asian_width is "N", for unassigned code points
+    # not mentioned in EastAsianWidth.txt
+    # in addition there are some reserved but unassigned code points in CJK
+    # ranges that are classified as "W". code points in private use areas
+    # have a width of "A". both of these have entries in
+    # EastAsianWidth.txt
+    # see https://unicode.org/reports/tr11/#Unassigned
+    assert EASTASIANWIDTH_NAMES[0] == "N"
     dummy = (0, 0, 0, 0, 0, 0)
     table = [dummy]
     cache = {0: dummy}
@@ -160,15 +169,24 @@ def makeunicodedata(unicode, trace):
                 category, combining, bidirectional, mirrored, eastasianwidth,
                 normalizationquickcheck
                 )
-            # add entry to index and item tables
-            i = cache.get(item)
-            if i is None:
-                cache[item] = i = len(table)
-                table.append(item)
-            index[char] = i
+        elif unicode.widths[char] is not None:
+            # an unassigned but reserved character, with a known
+            # east_asian_width
+            eastasianwidth = EASTASIANWIDTH_NAMES.index(unicode.widths[char])
+            item = (0, 0, 0, 0, eastasianwidth, 0)
+        else:
+            continue
+
+        # add entry to index and item tables
+        i = cache.get(item)
+        if i is None:
+            cache[item] = i = len(table)
+            table.append(item)
+        index[char] = i
 
     # 2) decomposition data
 
+    decomp_data_cache = {}
     decomp_data = [0]
     decomp_prefix = [""]
     decomp_index = [0] * len(unicode.chars)
@@ -207,12 +225,15 @@ def makeunicodedata(unicode, trace):
                     comp_first[l] = 1
                     comp_last[r] = 1
                     comp_pairs.append((l,r,char))
-                try:
-                    i = decomp_data.index(decomp)
-                except ValueError:
+                key = tuple(decomp)
+                i = decomp_data_cache.get(key, -1)
+                if i == -1:
                     i = len(decomp_data)
                     decomp_data.extend(decomp)
                     decomp_size = decomp_size + len(decomp) * 2
+                    decomp_data_cache[key] = i
+                else:
+                    assert decomp_data[i:i+len(decomp)] == decomp
             else:
                 i = 0
             decomp_index[char] = i
@@ -1081,6 +1102,7 @@ class UnicodeData:
         for i in range(0, 0x110000):
             if table[i] is not None:
                 table[i].east_asian_width = widths[i]
+        self.widths = widths
 
         for char, (p,) in UcdFile(DERIVED_CORE_PROPERTIES, version).expanded():
             if table[char]:

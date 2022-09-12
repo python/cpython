@@ -118,6 +118,7 @@ struct callable_cache {
     PyObject *isinstance;
     PyObject *len;
     PyObject *list_append;
+    PyObject *object__getattribute__;
 };
 
 /* "Locals plus" for a code object is the set of locals + cell vars +
@@ -388,6 +389,19 @@ read_obj(uint16_t *p)
     #error "SIZEOF_VOID_P must be 4 or 8"
 #endif
     return (PyObject *)val;
+}
+
+/* See Objects/exception_handling_notes.txt for details.
+ */
+static inline unsigned char *
+parse_varint(unsigned char *p, int *result) {
+    int val = p[0] & 63;
+    while (p[0] & 64) {
+        p++;
+        val = (val << 6) | (p[0] & 63);
+    }
+    *result = val;
+    return p+1;
 }
 
 static inline int

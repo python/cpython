@@ -28,8 +28,8 @@ Lib/test/cjkencodings/*                    noeol
 Lib/test/coding20731.py                    noeol
 Lib/test/decimaltestdata/*.decTest         noeol
 Lib/test/test_email/data/*.txt             noeol
-Lib/test/test_importlib/data01/*           noeol
-Lib/test/test_importlib/namespacedata01/*  noeol
+Lib/test/test_importlib/resources/data01/*           noeol
+Lib/test/test_importlib/resources/namespacedata01/*  noeol
 Lib/test/xmltestdata/*                     noeol
 
 # CRLF files

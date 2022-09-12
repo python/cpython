@@ -321,8 +321,8 @@ is exactly the same type of object that a lambda expression yields) is assigned!
 Can Python be compiled to machine code, C or some other language?
 -----------------------------------------------------------------
 
-`Cython <http://cython.org/>`_ compiles a modified version of Python with
-optional annotations into C extensions.  `Nuitka <http://www.nuitka.net/>`_ is
+`Cython <https://cython.org/>`_ compiles a modified version of Python with
+optional annotations into C extensions.  `Nuitka <https://www.nuitka.net/>`_ is
 an up-and-coming compiler of Python into C++ code, aiming to support the full
 Python language.
 
@@ -338,8 +338,8 @@ cycles and deletes the objects involved. The :mod:`gc` module provides functions
 to perform a garbage collection, obtain debugging statistics, and tune the
 collector's parameters.
 
-Other implementations (such as `Jython <http://www.jython.org>`_ or
-`PyPy <http://www.pypy.org>`_), however, can rely on a different mechanism
+Other implementations (such as `Jython <https://www.jython.org>`_ or
+`PyPy <https://www.pypy.org>`_), however, can rely on a different mechanism
 such as a full-blown garbage collector.  This difference can cause some
 subtle porting problems if your Python code depends on the behavior of the
 reference counting implementation.

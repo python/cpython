@@ -34,7 +34,7 @@ developers using Python for any kind of project.
 
 :ref:`windows-store` is a simple installation of Python that is suitable for
 running scripts and packages, and using IDLE or other development environments.
-It requires Windows 10, but can be safely installed without corrupting other
+It requires Windows 10 and above, but can be safely installed without corrupting other
 programs. It also provides many convenient commands for launching Python and
 its tools.
 
@@ -194,18 +194,22 @@ of available options is shown below.
 | Include_debug             | Install debug binaries               | 0                        |
 +---------------------------+--------------------------------------+--------------------------+
 | Include_dev               | Install developer headers and        | 1                        |
-|                           | libraries                            |                          |
+|                           | libraries. Omitting this may lead to |                          |
+|                           | an unusable installation.            |                          |
 +---------------------------+--------------------------------------+--------------------------+
 | Include_exe               | Install :file:`python.exe` and       | 1                        |
-|                           | related files                        |                          |
+|                           | related files. Omitting this may     |                          |
+|                           | lead to an unusable installation.    |                          |
 +---------------------------+--------------------------------------+--------------------------+
 | Include_launcher          | Install :ref:`launcher`.             | 1                        |
 +---------------------------+--------------------------------------+--------------------------+
-| InstallLauncherAllUsers   | Installs :ref:`launcher` for all     | 1                        |
-|                           | users.                               |                          |
+| InstallLauncherAllUsers   | Installs the launcher for all        | 1                        |
+|                           | users. Also requires                 |                          |
+|                           | ``Include_launcher`` to be set to 1  |                          |
 +---------------------------+--------------------------------------+--------------------------+
 | Include_lib               | Install standard library and         | 1                        |
-|                           | extension modules                    |                          |
+|                           | extension modules. Omitting this may |                          |
+|                           | lead to an unusable installation.    |                          |
 +---------------------------+--------------------------------------+--------------------------+
 | Include_pip               | Install bundled pip and setuptools   | 1                        |
 +---------------------------+--------------------------------------+--------------------------+
@@ -348,13 +352,41 @@ Python in Start and right-click to select Uninstall. Uninstalling will
 remove all packages you installed directly into this Python installation, but
 will not remove any virtual environments
 
-Known Issues
+Known issues
 ------------
 
+Redirection of local data, registry, and temporary paths
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Because of restrictions on Microsoft Store apps, Python scripts may not have
-full write access to shared locations such as ``TEMP`` and the registry.
+full write access to shared locations such as :envvar:`TEMP` and the registry.
 Instead, it will write to a private copy. If your scripts must modify the
 shared locations, you will need to install the full installer.
+
+At runtime, Python will use a private copy of well-known Windows folders and the registry.
+For example, if the environment variable :envvar:`%APPDATA%` is :file:`c:\\Users\\<user>\\AppData\\`,
+then when writing to :file:`C:\\Users\\<user>\\AppData\\Local` will write to
+:file:`C:\\Users\\<user>\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.8_qbz5n2kfra8p0\\LocalCache\\Local\\`.
+
+When reading files, Windows will return the file from the private folder, or if that does not exist, the
+real Windows directory. For example reading :file:`C:\\Windows\\System32` returns the contents of :file:`C:\\Windows\\System32`
+plus the contents of :file:`C:\\Program Files\\WindowsApps\\package_name\\VFS\\SystemX86`.
+
+You can find the real path of any existing file using :func:`os.path.realpath`:
+
+.. code-block:: python
+
+  >>> import os
+  >>> test_file = 'C:\\Users\\example\\AppData\\Local\\test.txt'
+  >>> os.path.realpath(test_file)
+  'C:\\Users\\example\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.8_qbz5n2kfra8p0\\LocalCache\\Local\\test.txt'
+
+When writing to the Windows Registry, the following behaviors exist:
+
+* Reading from ``HKLM\\Software`` is allowed and results are merged with the :file:`registry.dat` file in the package.
+* Writing to ``HKLM\\Software`` is not allowed if the corresponding key/value exists, i.e. modifying existing keys.
+* Writing to ``HKLM\\Software`` is allowed as long as a corresponding key/value does not exist in the package
+  and the user has the correct access permissions.
 
 For more detail on the technical basis for these limitations, please consult
 Microsoft's documentation on packaged full-trust apps, currently available at
@@ -836,6 +868,11 @@ The ``/usr/bin/env`` form of shebang line has one further special property.
 Before looking for installed Python interpreters, this form will search the
 executable :envvar:`PATH` for a Python executable. This corresponds to the
 behaviour of the Unix ``env`` program, which performs a :envvar:`PATH` search.
+If an executable matching the first argument after the ``env`` command cannot
+be found, it will be handled as described below. Additionally, the environment
+variable :envvar:`PYLAUNCHER_NO_SEARCH_PATH` may be set (to any value) to skip
+this additional search.
+
 
 Arguments in shebang lines
 --------------------------
@@ -1159,11 +1196,10 @@ shipped with PyWin32.  It is an embeddable IDE with a built-in debugger.
 cx_Freeze
 ---------
 
-`cx_Freeze <https://cx-freeze.readthedocs.io/en/latest/>`_ is a :mod:`distutils`
-extension (see :ref:`extending-distutils`) which wraps Python scripts into
-executable Windows programs (:file:`{*}.exe` files).  When you have done this,
-you can distribute your application without requiring your users to install
-Python.
+`cx_Freeze <https://cx-freeze.readthedocs.io/en/latest/>`_ is a ``distutils``
+extension which wraps Python scripts into executable Windows programs
+(:file:`{*}.exe` files).  When you have done this, you can distribute your
+application without requiring your users to install Python.
 
 
 Compiling Python on Windows

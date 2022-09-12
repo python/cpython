@@ -33,6 +33,7 @@ probably additional platforms, as long as OpenSSL is installed on that platform.
    may lead to a false sense of security, as the default settings of the
    ssl module are not necessarily appropriate for your application.
 
+.. include:: ../includes/wasm-notavail.rst
 
 This section documents the objects and functions in the ``ssl`` module; for more
 general information about TLS, SSL, and certificates, the reader is referred to
@@ -409,9 +410,6 @@ Certificate handling
    * :attr:`openssl_cafile` - hard coded path to a cafile,
    * :attr:`openssl_capath_env` - OpenSSL's environment key that points to a capath,
    * :attr:`openssl_capath` - hard coded path to a capath directory
-
-   .. availability:: LibreSSL ignores the environment vars
-     :attr:`openssl_cafile_env` and :attr:`openssl_capath_env`.
 
    .. versionadded:: 3.4
 

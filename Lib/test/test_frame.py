@@ -235,6 +235,28 @@ class ReprTest(unittest.TestCase):
                          r"^<frame at 0x[0-9a-fA-F]+, file %s, line %d, code inner>$"
                          % (file_repr, offset + 5))
 
+class TestIncompleteFrameAreInvisible(unittest.TestCase):
+
+    def test_issue95818(self):
+        #See GH-95818 for details
+        import gc
+        self.addCleanup(gc.set_threshold, *gc.get_threshold())
+
+        gc.set_threshold(1,1,1)
+        class GCHello:
+            def __del__(self):
+                print("Destroyed from gc")
+
+        def gen():
+            yield
+
+        fd = open(__file__)
+        l = [fd, GCHello()]
+        l.append(l)
+        del fd
+        del l
+        gen()
+
 
 if __name__ == "__main__":
     unittest.main()

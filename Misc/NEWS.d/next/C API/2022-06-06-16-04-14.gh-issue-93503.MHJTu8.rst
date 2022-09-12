@@ -1,0 +1,7 @@
+Add two new public functions to the public C-API,
+:c:func:`PyEval_SetProfileAllThreads` and
+:c:func:`PyEval_SetTraceAllThreads`, that allow to set tracking and
+profiling functions in all running threads in addition to the calling one.
+Also, add a new *running_threads* parameter to :func:`threading.setprofile`
+and :func:`threading.settrace` that allows to do the same from Python. Patch
+by Pablo Galindo

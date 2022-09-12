@@ -83,6 +83,20 @@ Other Language Changes
   mapping is hashable.
   (Contributed by Serhiy Storchaka in :gh:`87995`.)
 
+* Converting between :class:`int` and :class:`str` in bases other than 2
+  (binary), 4, 8 (octal), 16 (hexadecimal), or 32 such as base 10 (decimal)
+  now raises a :exc:`ValueError` if the number of digits in string form is
+  above a limit to avoid potential denial of service attacks due to the
+  algorithmic complexity. This is a mitigation for `CVE-2020-10735
+  <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+  This limit can be configured or disabled by environment variable, command
+  line flag, or :mod:`sys` APIs. See the :ref:`integer string conversion
+  length limitation <int_max_str_digits>` documentation.  The default limit
+  is 4300 digits in string form.
+
+* :class:`memoryview` now supports the half-float type (the "e" format code).
+  (Contributed by Dong-hee Na and Antoine Pitrou in :gh:`90751`.)
+
 
 New Modules
 ===========
@@ -93,6 +107,13 @@ New Modules
 Improved Modules
 ================
 
+pathlib
+-------
+
+* Add :meth:`~pathlib.Path.walk` for walking the directory trees and generating
+  all file or directory names within them, similar to :func:`os.walk`.
+  (Contributed by Stanislav Zmiev in :gh:`90385`.)
+
 dis
 ---
 
@@ -100,7 +121,7 @@ dis
   do not appear in executable bytecode) are now exposed in the
   :mod:`dis` module.
   :data:`~dis.HAVE_ARGUMENT` is still relevant to real opcodes,
-  but it is not useful for pseudo instrcutions. Use the new
+  but it is not useful for pseudo instructions. Use the new
   :data:`~dis.hasarg` collection instead.
   (Contributed by Irit Katriel in :gh:`94216`.)
 
@@ -112,12 +133,23 @@ os
   (Contributed by Kumar Aditya in :gh:`93312`.)
 
 
+sqlite3
+-------
+
+* Add a :ref:`command-line interface <sqlite3-cli>`.
+  (Contributed by Erlend E. Aasland in :gh:`77617`.)
+
+
 Optimizations
 =============
 
 * Removed ``wstr`` and ``wstr_length`` members from Unicode objects.
   It reduces object size by 8 or 16 bytes on 64bit platform. (:pep:`623`)
   (Contributed by Inada Naoki in :gh:`92536`.)
+
+* Added experimental support for using the BOLT binary optimizer in the build
+  process, which improves performance by 1-5%.
+  (Contributed by Kevin Modzelewski in :gh:`90536`.)
 
 
 CPython bytecode changes
@@ -133,7 +165,13 @@ Deprecated
 ==========
 
 * :class:`typing.Hashable` and :class:`typing.Sized` aliases for :class:`collections.abc.Hashable`
-  and :class:`collections.abc.Sized`. (:gh:`94309`)
+  and :class:`collections.abc.Sized`. (:gh:`94309`.)
+
+* The :mod:`sqlite3` :ref:`default adapters and converters
+  <sqlite3-default-converters>` are now deprecated.
+  Instead, use the :ref:`sqlite3-adapter-converter-recipes`
+  and tailor them to your needs.
+  (Contributed by Erlend E. Aasland in :gh:`90016`.)
 
 
 Pending Removal in Python 3.13
@@ -173,6 +211,28 @@ APIs:
 * :func:`unittest.makeSuite` (:gh:`50096`)
 * :func:`unittest.getTestCaseNames` (:gh:`50096`)
 * :class:`webbrowser.MacOSX` (:gh:`86421`)
+
+Pending Removal in Python 3.14
+==============================
+
+* Deprecated the following :mod:`importlib.abc` classes, scheduled for removal in
+  Python 3.14:
+
+  * :class:`importlib.abc.ResourceReader`
+  * :class:`importlib.abc.Traversable`
+  * :class:`importlib.abc.TraversableResources`
+
+  Use :mod:`importlib.resources.abc` classes instead:
+
+  * :class:`importlib.resources.abc.TraversableResources`
+  * :class:`importlib.resources.abc.Traversable`
+  * :class:`importlib.resources.abc.TraversableResources`
+
+  (Contributed by Jason R. Coombs and Hugo van Kemenade in :gh:`93963`.)
+
+* Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
+  bases using the C API.
+
 
 Pending Removal in Future Versions
 ----------------------------------
@@ -258,11 +318,19 @@ Removed
   ``OptimizedUnicode`` can either use ``str`` explicitly, or rely on the
   default value which is also ``str``.
 
-  (Contributed by Erlend E. Aasland in :gh:`92548`)
+  (Contributed by Erlend E. Aasland in :gh:`92548`.)
 
 * The ``--experimental-isolated-subinterpreters`` configure flag
   (and corresponding ``EXPERIMENTAL_ISOLATED_SUBINTERPRETERS``)
   have been removed.
+
+* ``smtpd`` has been removed according to the schedule in :pep:`594`,
+  having been deprecated in Python 3.4.7 and 3.5.4.
+  Use aiosmtpd_ PyPI module or any other
+  :mod:`asyncio`-based server instead.
+  (Contributed by Oleg Iarygin in :gh:`93243`.)
+
+.. _aiosmtpd: https://pypi.org/project/aiosmtpd/
 
 * Remove ``io.OpenWrapper`` and ``_pyio.OpenWrapper``, deprecated in Python
   3.10: just use :func:`open` instead. The :func:`open` (:func:`io.open`)
@@ -347,6 +415,10 @@ Changes in the Python API
   to :term:`filesystem encoding and error handler`.
   Argument files should be encoded in UTF-8 instead of ANSI Codepage on Windows.
 
+* Removed the ``asyncore``-based ``smtpd`` module deprecated in Python 3.4.7
+  and 3.5.4.  A recommended replacement is the
+  :mod:`asyncio`-based aiosmtpd_ PyPI module.
+
 * :func:`shlex.split`: Passing ``None`` for *s* argument now raises an
   exception, rather than reading :data:`sys.stdin`. The feature was deprecated
   in Python 3.9.
@@ -379,6 +451,28 @@ New Features
   an additional metaclass argument.
   (Contributed by Wenzel Jakob in :gh:`93012`.)
 
+* API for creating objects that can be called using
+  :ref:`the vectorcall protocol <vectorcall>` was added to the
+  :ref:`Limited API <stable>`:
+
+  * :const:`Py_TPFLAGS_HAVE_VECTORCALL`
+  * :c:func:`PyVectorcall_NARGS`
+  * :c:func:`PyVectorcall_Call`
+  * :c:type:`vectorcallfunc`
+
+  The :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag is now removed from a class
+  when the class's :py:meth:`~object.__call__` method is reassigned.
+  This makes vectorcall safe to use with mutable types (i.e. heap types
+  without the :const:`immutable <Py_TPFLAGS_IMMUTABLETYPE>` flag).
+  Mutable types that do not override :c:member:`~PyTypeObject.tp_call` now
+  inherit the ``Py_TPFLAGS_HAVE_VECTORCALL`` flag.
+  (Contributed by Petr Viktorin in :gh:`93274`.)
+
+  The :const:`Py_TPFLAGS_MANAGED_DICT` and :const:`Py_TPFLAGS_MANAGED_WEAKREF`
+  flags have been added. This allows extensions classes to support object
+  ``__dict__`` and weakrefs with less bookkeeping,
+  using less memory and with faster access.
+
 Porting to Python 3.12
 ----------------------
 
@@ -388,6 +482,44 @@ Porting to Python 3.12
 * Argument parsing functions like :c:func:`PyArg_ParseTuple` doesn't support
   ``Py_UNICODE*`` based format (e.g. ``u``, ``Z``) anymore. Please migrate
   to other formats for Unicode like ``s``, ``z``, ``es``, and ``U``.
+
+* ``tp_weaklist`` for all static builtin types is always ``NULL``.
+  This is an internal-only field on ``PyTypeObject``
+  but we're pointing out the change in case someone happens to be
+  accessing the field directly anyway.  To avoid breakage, consider
+  using the existing public C-API instead, or, if necessary, the
+  (internal-only) ``_PyObject_GET_WEAKREFS_LISTPTR()`` macro.
+
+* This internal-only :c:member:`PyTypeObject.tp_subclasses` may now not be
+  a valid object pointer.  Its type was changed to :c:expr:`void *` to
+  reflect this.  We mention this in case someone happens to be accessing the
+  internal-only field directly.
+
+  To get a list of subclasses, call the Python method
+  :py:meth:`~class.__subclasses__` (using :c:func:`PyObject_CallMethod`,
+  for example).
+
+* An unrecognized format character in :c:func:`PyUnicode_FromFormat` and
+  :c:func:`PyUnicode_FromFormatV` now sets a :exc:`SystemError`.
+  In previous versions it caused all the rest of the format string to be
+  copied as-is to the result string, and any extra arguments discarded.
+  (Contributed by Serhiy Storchaka in :gh:`95781`.)
+
+* Fixed wrong sign placement in :c:func:`PyUnicode_FromFormat` and
+  :c:func:`PyUnicode_FromFormatV`.
+  (Contributed by Philip Georgi in :gh:`95504`.)
+
+* Extension classes wanting to add a ``__dict__`` or weak reference slot
+  should use :const:`Py_TPFLAGS_MANAGED_DICT` and
+  :const:`Py_TPFLAGS_MANAGED_WEAKREF` instead of ``tp_dictoffset`` and
+  ``tp_weaklistoffset``, respectively.
+  The use of ``tp_dictoffset`` and ``tp_weaklistoffset`` is still
+  supported, but does not fully support multiple inheritance
+  (:gh: `95589`), and performance may be worse.
+  Classes declaring :const:`Py_TPFLAGS_MANAGED_DICT` should call
+  :c:func:`_PyObject_VisitManagedDict` and :c:func:`_PyObject_ClearManagedDict`
+  to traverse and clear their instance's dictionaries.
+  To clear weakrefs, call :c:func:`PyObject_ClearWeakRefs`, as before.
 
 Deprecated
 ----------
@@ -419,6 +551,9 @@ Deprecated
   The :c:func:`Py_InitializeFromConfig` API should be used with
   :c:type:`PyConfig` instead.
   (Contributed by Victor Stinner in :gh:`77782`.)
+
+* Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
+  bases is deprecated and will be disabled in Python 3.14.
 
 
 Removed

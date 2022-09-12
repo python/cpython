@@ -1,0 +1,1 @@
+In :mod:`typing`, fix missing field ``name`` and incorrect ``__module__`` in _AnnotatedAlias.
