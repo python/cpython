@@ -664,6 +664,8 @@ stat_exec(PyObject *module)
     ADD_INT_MACRO(module, STATX_ATTR_APPEND);
     ADD_INT_MACRO(module, STATX_ATTR_NODUMP);
     ADD_INT_MACRO(module, STATX_ATTR_ENCRYPTED);
+    ADD_INT_MACRO(module, STATX_ATTR_VERITY);
+    ADD_INT_MACRO(module, STATX_ATTR_DAX);
 #endif /* HAVE_LINUX_STATX */
 
     return 0;

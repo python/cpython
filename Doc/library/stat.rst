@@ -447,5 +447,7 @@ meaning of these constants.
           STATX_ATTR_APPEND
           STATX_ATTR_NODUMP
           STATX_ATTR_ENCRYPTED
+          STATX_ATTR_VERITY
+          STATX_ATTR_DAX
 
    .. versionadded:: 3.12

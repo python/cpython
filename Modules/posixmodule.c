@@ -2076,8 +2076,14 @@ win32_stat(const wchar_t* path, struct _Py_stat_struct *result)
 
 #ifdef HAVE_LINUX_STATX
 
+#ifdef STATX_MNT_ID  // Added in Linux 5.8
+#  define _PY_STATX_MNT_ID STATX_MNT_ID
+#else
+#  define _PY_STATX_MNT_ID 0x00001000U
+#endif
+
 // Extend this list when adding support for new Linux statx fields
-#define LINUX_STATX_MASK STATX_BASIC_STATS | STATX_BTIME
+#define LINUX_STATX_MASK STATX_BASIC_STATS | STATX_BTIME | _PY_STATX_MNT_ID
 
 static int
 linux_stat(const char* path, struct statx* result)
@@ -2165,6 +2171,7 @@ static PyStructSequence_Field stat_result_fields[] = {
 #ifdef HAVE_LINUX_STATX
     {"st_attributes", "Linux file attribute bits"},
     {"st_attributes_mask", "Linux supported file attribute bits on this filesystem"},
+    {"st_mnt_id", "Linux mount ID of the mount containing the file"},
 #endif
     {0}
 };
@@ -2220,9 +2227,11 @@ static PyStructSequence_Field stat_result_fields[] = {
 #ifdef HAVE_LINUX_STATX
 #define ST_ATTRIBUTES_IDX (ST_REPARSE_TAG_IDX+1)
 #define ST_ATTRIBUTES_MASK_IDX (ST_REPARSE_TAG_IDX+2)
+#define ST_MNT_ID_IDX (ST_REPARSE_TAG_IDX+3)
 #else
 #define ST_ATTRIBUTES_IDX ST_REPARSE_TAG_IDX
 #define ST_ATTRIBUTES_MASK_IDX ST_REPARSE_TAG_IDX
+#define ST_MNT_ID_IDX ST_REPARSE_TAG_IDX
 #endif
 
 static PyStructSequence_Desc stat_result_desc = {
@@ -2464,8 +2473,10 @@ _pystat_fromstructstat(PyObject *module, struct statx* stx)
 
     // Map statx flags to BSD flags
     //
-    // The contants used here are not defined on Linux, are available to
-    // Python users through the "stat" module.
+    // The constants used here are not defined on Linux but are available to
+    // Python users through the "stat" module. In general, try to follow
+    // FreeBSD semantics when adding a mapping here and refrain from mapping
+    // attributes that don't have an obvious equivalent.
     flags = 0;
     if(attributes & STATX_ATTR_COMPRESSED) {
         flags |= 0x00000020; // UF_COMPRESSED
@@ -2482,6 +2493,17 @@ _pystat_fromstructstat(PyObject *module, struct statx* stx)
     if(attributes & STATX_ATTR_ENCRYPTED) {
         flags |= 0x00002000; // UF_ENCRYPTED
     }
+    // Note: There is nothing in the FreeBSD disk flags list resembling
+    // `STATX_ATTR_VERITY` or `STATX_ATTR_DAX`, so leave these unmapped.
+    //
+    // In addition (as of Linux 5.19), `STATX_ATTR_DAX` does not ever appear
+    // to be reported when querying on-disk files that previously had the
+    // corresponding "x" flag set using `chattr(1)`, so even if FreeBSD adds
+    // a corresponding flag mapping it would likely be of little use.
+    //
+    // If these flags ever need to be mapped, remember to add a compatibility
+    // define for them next to the definition of `LINUX_STATX_MASK`, to ensure
+    // builds will continue working on older C library versions.
     PyStructSequence_SET_ITEM(v, 18, PyLong_FromLong(flags));
 
     PyStructSequence_SET_ITEM(v, ST_BLKSIZE_IDX,
@@ -2493,6 +2515,23 @@ _pystat_fromstructstat(PyObject *module, struct statx* stx)
 
     PyStructSequence_SET_ITEM(v, ST_RDEV_IDX,
                               _PyLong_FromDev(makedev(stx->stx_rdev_major, stx->stx_rdev_minor)));
+
+    if(stx->stx_mask & _PY_STATX_MNT_ID) {
+        PyStructSequence_SET_ITEM(v, ST_MNT_ID_IDX, PyLong_FromUnsignedLongLong(
+#ifdef STATX_MNT_ID
+            stx->stx_mnt_id
+#else
+            // `stx_mnt_id` is the next 64-bit field following `stx_dev_minor`
+            //
+            // It is safe to assume its going to be there even if the C library
+            // does not support it yet, since the size of `struct statx` is
+            // constant and value presence is only indicated by the kernel in
+            // the `stx_mask` field queried above if the field is actually
+            // supported and was set.
+            *((unsigned long long *) ((&stx->stx_dev_minor) + 1))
+#endif  /* STATX_MNT_ID */
+        ));
+    }
 
     if (PyErr_Occurred()) {
         Py_DECREF(v);

@@ -2897,6 +2897,12 @@ features:
       Type of device (combined major and minor number) if the queried file
       was an inode device.
 
+   .. attribute:: st_mnt_id
+
+      Mount ID of the mountpoint the queried file resides on. Information on
+      the associated filesystem may be found by analysing
+      */proc/self/mountinfo*.
+
    On other Unix systems (such as FreeBSD), the following attributes may be
    available (but may be only filled out if root tries to use them):
 
