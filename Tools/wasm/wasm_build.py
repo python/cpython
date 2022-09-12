@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Build script for Python on WebAssembly platforms.
 
-  $ ./Tools/wasm/wasm_builder.py emscripten-browser compile
-  $ ./Tools/wasm/wasm_builder.py emscripten-node-dl test
-  $ ./Tools/wasm/wasm_builder.py wasi test
+  $ ./Tools/wasm/wasm_builder.py emscripten-browser build repl
+  $ ./Tools/wasm/wasm_builder.py emscripten-node-dl build test
+  $ ./Tools/wasm/wasm_builder.py wasi build test
 
 Primary build targets are "emscripten-node-dl" (NodeJS, dynamic linking),
 "emscripten-browser", and "wasi".
@@ -14,22 +14,35 @@ activated EMSDK environment (". /path/to/emsdk_env.sh"). System packages
 
 WASI builds require WASI SDK and wasmtime. The tool looks for 'WASI_SDK_PATH'
 and falls back to /opt/wasi-sdk.
+
+The 'build' Python interpreter must be rebuilt every time Python's byte code
+changes.
+
+  ./Tools/wasm/wasm_builder.py --clean build build
+
 """
 import argparse
 import enum
 import dataclasses
+import logging
 import os
 import pathlib
 import re
 import shlex
 import shutil
+import socket
 import subprocess
+import sys
 import sysconfig
 import tempfile
+import time
 import warnings
+import webbrowser
 
 # for Python 3.8
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
+
+logger = logging.getLogger("wasm_build")
 
 SRCDIR = pathlib.Path(__file__).parent.parent.parent.absolute()
 WASMTOOLS = SRCDIR / "Tools" / "wasm"
@@ -45,8 +58,7 @@ WASI_SDK_PATH = pathlib.Path(os.environ.get("WASI_SDK_PATH", "/opt/wasi-sdk"))
 # path to Emscripten SDK config file.
 # auto-detect's EMSDK in /opt/emsdk without ". emsdk_env.sh".
 EM_CONFIG = pathlib.Path(os.environ.setdefault("EM_CONFIG", "/opt/emsdk/.emscripten"))
-# 3.1.16 has broken utime()
-EMSDK_MIN_VERSION = (3, 1, 17)
+EMSDK_MIN_VERSION = (3, 1, 19)
 EMSDK_BROKEN_VERSION = {
     (3, 1, 14): "https://github.com/emscripten-core/emscripten/issues/17338",
     (3, 1, 16): "https://github.com/emscripten-core/emscripten/issues/17393",
@@ -54,17 +66,25 @@ EMSDK_BROKEN_VERSION = {
 }
 _MISSING = pathlib.PurePath("MISSING")
 
-# WASM_WEBSERVER = WASMTOOLS / "wasmwebserver.py"
+WASM_WEBSERVER = WASMTOOLS / "wasm_webserver.py"
 
 CLEAN_SRCDIR = f"""
 Builds require a clean source directory. Please use a clean checkout or
 run "make clean -C '{SRCDIR}'".
 """
 
+INSTALL_NATIVE = f"""
+Builds require a C compiler (gcc, clang), make, pkg-config, and development
+headers for dependencies like zlib.
+
+Debian/Ubuntu: sudo apt install build-essential git curl pkg-config zlib1g-dev
+Fedora/CentOS: sudo dnf install gcc make git-core curl pkgconfig zlib-devel
+"""
+
 INSTALL_EMSDK = """
 wasm32-emscripten builds need Emscripten SDK. Please follow instructions at
 https://emscripten.org/docs/getting_started/downloads.html how to install
-Emscripten and how to activate the SDK with ". /path/to/emsdk/emsdk_env.sh".
+Emscripten and how to activate the SDK with "emsdk_env.sh".
 
     git clone https://github.com/emscripten-core/emsdk.git /path/to/emsdk
     cd /path/to/emsdk
@@ -182,6 +202,24 @@ def _check_clean_src():
             raise DirtySourceDirectory(os.fspath(candidate), CLEAN_SRCDIR)
 
 
+def _check_native():
+    if not any(shutil.which(cc) for cc in ["cc", "gcc", "clang"]):
+        raise MissingDependency("cc", INSTALL_NATIVE)
+    if not shutil.which("make"):
+        raise MissingDependency("make", INSTALL_NATIVE)
+    if sys.platform == "linux":
+        # skip pkg-config check on macOS
+        if not shutil.which("pkg-config"):
+            raise MissingDependency("pkg-config", INSTALL_NATIVE)
+        # zlib is needed to create zip files
+        for devel in ["zlib"]:
+            try:
+                subprocess.check_call(["pkg-config", "--exists", devel])
+            except subprocess.CalledProcessError:
+                raise MissingDependency(devel, INSTALL_NATIVE) from None
+    _check_clean_src()
+
+
 NATIVE = Platform(
     "native",
     # macOS has python.exe
@@ -192,7 +230,7 @@ NATIVE = Platform(
     cc=None,
     make_wrapper=None,
     environ={},
-    check=_check_clean_src,
+    check=_check_native,
 )
 
 
@@ -362,9 +400,9 @@ class EmscriptenTarget(enum.Enum):
     node_debug = "node-debug"
 
     @property
-    def can_execute(self) -> bool:
+    def is_browser(self):
         cls = type(self)
-        return self not in {cls.browser, cls.browser_debug}
+        return self in {cls.browser, cls.browser_debug}
 
     @property
     def emport_args(self) -> List[str]:
@@ -396,15 +434,12 @@ class BuildProfile:
     target: Union[EmscriptenTarget, None] = None
     dynamic_linking: Union[bool, None] = None
     pthreads: Union[bool, None] = None
-    testopts: str = "-j2"
+    default_testopts: str = "-j2"
 
     @property
-    def can_execute(self) -> bool:
-        """Can target run pythoninfo and tests?
-
-        Disabled for browser, enabled for all other targets
-        """
-        return self.target is None or self.target.can_execute
+    def is_browser(self) -> bool:
+        """Is this a browser build?"""
+        return self.target is not None and self.target.is_browser
 
     @property
     def builddir(self) -> pathlib.Path:
@@ -500,6 +535,7 @@ class BuildProfile:
         cmd.extend(args)
         if cwd is None:
             cwd = self.builddir
+        logger.info('Running "%s" in "%s"', shlex.join(cmd), cwd)
         return subprocess.check_call(
             cmd,
             cwd=os.fspath(cwd),
@@ -507,14 +543,15 @@ class BuildProfile:
         )
 
     def _check_execute(self):
-        if not self.can_execute:
+        if self.is_browser:
             raise ValueError(f"Cannot execute on {self.target}")
 
-    def run_build(self, force_configure: bool = False):
+    def run_build(self, *args):
         """Run configure (if necessary) and make"""
-        if force_configure or not self.makefile.exists():
-            self.run_configure()
-        self.run_make()
+        if not self.makefile.exists():
+            logger.info("Makefile not found, running configure")
+            self.run_configure(*args)
+        self.run_make("all", *args)
 
     def run_configure(self, *args):
         """Run configure script to generate Makefile"""
@@ -525,15 +562,17 @@ class BuildProfile:
         """Run make (defaults to build all)"""
         return self._run_cmd(self.make_cmd, args)
 
-    def run_pythoninfo(self):
+    def run_pythoninfo(self, *args):
         """Run 'make pythoninfo'"""
         self._check_execute()
-        return self.run_make("pythoninfo")
+        return self.run_make("pythoninfo", *args)
 
-    def run_test(self):
+    def run_test(self, target: str, testopts: Optional[str] = None):
         """Run buildbottests"""
         self._check_execute()
-        return self.run_make("buildbottest", f"TESTOPTS={self.testopts}")
+        if testopts is None:
+            testopts = self.default_testopts
+        return self.run_make(target, f"TESTOPTS={testopts}")
 
     def run_py(self, *args):
         """Run Python with hostrunner"""
@@ -541,6 +580,37 @@ class BuildProfile:
         self.run_make(
             "--eval", f"run: all; $(HOSTRUNNER) ./$(PYTHON) {shlex.join(args)}", "run"
         )
+
+    def run_browser(self, bind="127.0.0.1", port=8000):
+        """Run WASM webserver and open build in browser"""
+        relbuilddir = self.builddir.relative_to(SRCDIR)
+        url = f"http://{bind}:{port}/{relbuilddir}/python.html"
+        args = [
+            sys.executable,
+            os.fspath(WASM_WEBSERVER),
+            "--bind",
+            bind,
+            "--port",
+            str(port),
+        ]
+        srv = subprocess.Popen(args, cwd=SRCDIR)
+        # wait for server
+        end = time.monotonic() + 3.0
+        while time.monotonic() < end and srv.returncode is None:
+            try:
+                with socket.create_connection((bind, port), timeout=0.1) as s:
+                    pass
+            except OSError:
+                time.sleep(0.01)
+            else:
+                break
+
+        webbrowser.open(url)
+
+        try:
+            srv.wait()
+        except KeyboardInterrupt:
+            pass
 
     def clean(self, all: bool = False):
         """Clean build directory"""
@@ -570,19 +640,19 @@ class BuildProfile:
             # Trigger PIC build.
             ports_cmd.append("-sMAIN_MODULE")
             embuilder_cmd.append("--pic")
+
         if self.pthreads:
             # Trigger multi-threaded build.
             ports_cmd.append("-sUSE_PTHREADS")
-            # https://github.com/emscripten-core/emscripten/pull/17729
-            # embuilder_cmd.append("--pthreads")
 
         # Pre-build libbz2, libsqlite3, libz, and some system libs.
         ports_cmd.extend(["-sUSE_ZLIB", "-sUSE_BZIP2", "-sUSE_SQLITE3"])
-        embuilder_cmd.extend(["build", "bzip2", "sqlite3", "zlib"])
+        # Multi-threaded sqlite3 has different suffix
+        embuilder_cmd.extend(
+            ["build", "bzip2", "sqlite3-mt" if self.pthreads else "sqlite3", "zlib"]
+        )
 
-        if not self.pthreads:
-            # Emscripten <= 3.1.20 has no option to build multi-threaded ports.
-            self._run_cmd(embuilder_cmd, cwd=SRCDIR)
+        self._run_cmd(embuilder_cmd, cwd=SRCDIR)
 
         with tempfile.TemporaryDirectory(suffix="-py-emport") as tmpdir:
             tmppath = pathlib.Path(tmpdir)
@@ -659,7 +729,7 @@ _profiles = [
         dynamic_linking=True,
         pthreads=True,
     ),
-    # wasm64-emscripten (requires unreleased Emscripten >= 3.1.21)
+    # wasm64-emscripten (requires Emscripten >= 3.1.21)
     BuildProfile(
         "wasm64-emscripten-node-debug",
         support_level=SupportLevel.experimental,
@@ -674,8 +744,6 @@ _profiles = [
         "wasi",
         support_level=SupportLevel.supported,
         host=Host.wasm32_wasi,
-        # skip sysconfig test_srcdir
-        testopts="-i '*.test_srcdir' -j2",
     ),
     # no SDK available yet
     # BuildProfile(
@@ -690,10 +758,36 @@ PROFILES = {p.name: p for p in _profiles}
 parser = argparse.ArgumentParser(
     "wasm_build.py",
     description=__doc__,
-    formatter_class=argparse.RawDescriptionHelpFormatter,
+    formatter_class=argparse.RawTextHelpFormatter,
 )
+
 parser.add_argument(
-    "--clean", "-c", help="Clean build directories first", action="store_true"
+    "--clean",
+    "-c",
+    help="Clean build directories first",
+    action="store_true",
+)
+
+parser.add_argument(
+    "--verbose",
+    "-v",
+    help="Verbose logging",
+    action="store_true",
+)
+
+parser.add_argument(
+    "--silent",
+    help="Run configure and make in silent mode",
+    action="store_true",
+)
+
+parser.add_argument(
+    "--testopts",
+    help=(
+        "Additional test options for 'test' and 'hostrunnertest', e.g. "
+        "--testopts='-v test_os'."
+    ),
+    default=None,
 )
 
 # Don't list broken and experimental variants in help
@@ -706,23 +800,47 @@ parser.add_argument(
     choices=platforms_choices,
 )
 
-ops = ["compile", "pythoninfo", "test", "repl", "clean", "cleanall", "emports"]
+ops = dict(
+    build="auto build (build 'build' Python, emports, configure, compile)",
+    configure="run ./configure",
+    compile="run 'make all'",
+    pythoninfo="run 'make pythoninfo'",
+    test="run 'make buildbottest TESTOPTS=...' (supports parallel tests)",
+    hostrunnertest="run 'make hostrunnertest TESTOPTS=...'",
+    repl="start interactive REPL / webserver + browser session",
+    clean="run 'make clean'",
+    cleanall="remove all build directories",
+    emports="build Emscripten port with embuilder (only Emscripten)",
+)
+ops_help = "\n".join(f"{op:16s} {help}" for op, help in ops.items())
 parser.add_argument(
-    "op",
+    "ops",
     metavar="OP",
-    help=f"operation: {', '.join(ops)}",
-    choices=ops,
-    default="compile",
-    nargs="?",
+    help=f"operation (default: build)\n\n{ops_help}",
+    choices=tuple(ops),
+    default="build",
+    nargs="*",
 )
 
 
 def main():
     args = parser.parse_args()
+    logging.basicConfig(
+        level=logging.INFO if args.verbose else logging.ERROR,
+        format="%(message)s",
+    )
+
     if args.platform == "cleanall":
         for builder in PROFILES.values():
             builder.clean(all=True)
         parser.exit(0)
+
+    # additional configure and make args
+    cm_args = ("--silent",) if args.silent else ()
+
+    # nargs=* with default quirk
+    if args.ops == "build":
+        args.ops = ["build"]
 
     builder = PROFILES[args.platform]
     try:
@@ -730,43 +848,56 @@ def main():
     except ConditionError as e:
         parser.error(str(e))
 
+    if args.clean:
+        builder.clean(all=False)
+
     # hack for WASI
     if builder.host.is_wasi and not SETUP_LOCAL.exists():
         SETUP_LOCAL.touch()
 
-    if args.op in {"compile", "pythoninfo", "repl", "test"}:
-        # all targets need a build Python
+    # auto-build
+    if "build" in args.ops:
+        # check and create build Python
         if builder is not BUILD:
+            logger.info("Auto-building 'build' Python.")
+            try:
+                BUILD.host.platform.check()
+            except ConditionError as e:
+                parser.error(str(e))
             if args.clean:
                 BUILD.clean(all=False)
-                BUILD.run_build()
-            elif not BUILD.python_cmd.exists():
-                BUILD.run_build()
+            BUILD.run_build(*cm_args)
+        # build Emscripten ports with embuilder
+        if builder.host.is_emscripten and "emports" not in args.ops:
+            builder.build_emports()
 
-        if args.clean:
-            builder.clean(all=False)
-
-        if args.op == "compile":
-            if builder.host.is_emscripten:
-                builder.build_emports()
-            builder.run_build(force_configure=True)
-        else:
-            if not builder.makefile.exists():
-                builder.run_configure()
-            if args.op == "pythoninfo":
-                builder.run_pythoninfo()
-            elif args.op == "repl":
+    for op in args.ops:
+        logger.info("\n*** %s %s", args.platform, op)
+        if op == "build":
+            builder.run_build(*cm_args)
+        elif op == "configure":
+            builder.run_configure(*cm_args)
+        elif op == "compile":
+            builder.run_make("all", *cm_args)
+        elif op == "pythoninfo":
+            builder.run_pythoninfo(*cm_args)
+        elif op == "repl":
+            if builder.is_browser:
+                builder.run_browser()
+            else:
                 builder.run_py()
-            elif args.op == "test":
-                builder.run_test()
-    elif args.op == "clean":
-        builder.clean(all=False)
-    elif args.op == "cleanall":
-        builder.clean(all=True)
-    elif args.op == "emports":
-        builder.build_emports(force=args.clean)
-    else:
-        raise ValueError(args.op)
+        elif op == "test":
+            builder.run_test("buildbottest", testopts=args.testopts)
+        elif op == "hostrunnertest":
+            builder.run_test("hostrunnertest", testopts=args.testopts)
+        elif op == "clean":
+            builder.clean(all=False)
+        elif op == "cleanall":
+            builder.clean(all=True)
+        elif op == "emports":
+            builder.build_emports(force=args.clean)
+        else:
+            raise ValueError(op)
 
     print(builder.builddir)
     parser.exit(0)

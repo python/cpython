@@ -49,6 +49,10 @@ ac_cv_func_geteuid=no
 ac_cv_func_getegid=no
 ac_cv_func_seteuid=no
 ac_cv_func_setegid=no
+ac_cv_func_getresuid=no
+ac_cv_func_getresgid=no
+ac_cv_func_setresuid=no
+ac_cv_func_setresgid=no
 
 # Syscalls not implemented in emscripten
 # [Errno 52] Function not implemented

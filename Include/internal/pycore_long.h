@@ -18,9 +18,9 @@ extern "C" {
  * everyone's existing deployed numpy test suite passes before
  * https://github.com/numpy/numpy/issues/22098 is widely available.
  *
- * $ python -m timeit -s 's = * "1"*4300' 'int(s)'
+ * $ python -m timeit -s 's = "1"*4300' 'int(s)'
  * 2000 loops, best of 5: 125 usec per loop
- * $ python -m timeit -s 's = * "1"*4300; v = int(s)' 'str(v)'
+ * $ python -m timeit -s 's = "1"*4300; v = int(s)' 'str(v)'
  * 1000 loops, best of 5: 311 usec per loop
  * (zen2 cloud VM)
  *
