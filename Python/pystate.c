@@ -1677,9 +1677,10 @@ PyGILState_Ensure(void)
        spells out other issues.  Embedders are expected to have
        called Py_Initialize(). */
 
-    /* Ensure that _PyEval_InitThreads() and _PyGILState_Init() have been
-       called by Py_Initialize() */
-    assert(_PyEval_ThreadsInitialized(runtime));
+    /* Ensure that _PyEval_InitThreads() has been called by Py_Initialize() */
+    // XXX Use the appropriate interpreter.
+    assert(runtime->main && _PyEval_ThreadsInitialized(runtime->main));
+    /* Ensure that _PyGILState_Init() has been called by Py_Initialize() */
     assert(gilstate->autoInterpreterState);
 
     PyThreadState *tcur = (PyThreadState *)PyThread_tss_get(&gilstate->autoTSSkey);

@@ -462,16 +462,22 @@ unsigned long _PyEval_GetSwitchInterval()
 
 
 int
-_PyEval_ThreadsInitialized(_PyRuntimeState *runtime)
+_PyEval_ThreadsInitialized(PyInterpreterState *interp)
 {
-    return gil_created(&runtime->ceval.gil);
+    if (interp == NULL) {
+        interp = &_PyRuntime.main;
+        if (interp == NULL) {
+            return 0;
+        }
+    }
+    return gil_created(&interp->runtime->ceval.gil);
 }
 
 int
 PyEval_ThreadsInitialized(void)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-    return _PyEval_ThreadsInitialized(runtime);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return _PyEval_ThreadsInitialized(interp);
 }
 
 PyStatus
