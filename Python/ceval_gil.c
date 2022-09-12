@@ -220,13 +220,18 @@ is_tstate_valid(PyThreadState *tstate)
    and only the main interpreter is responsible to create
    and destroy it. */
 #define _GET_OWN_GIL(interp) \
-    (_Py_IsMainInterpreter(interp) ? (&_PyRuntime.ceval.gil) : NULL)
+    (_Py_IsMainInterpreter(interp) \
+        ?  (&_PyRuntime.interpreters.main->ceval.gil) \
+        : NULL)
 
 static inline struct _gil_state *
 _get_gil(PyInterpreterState *interp)
 {
+    //if (interp->config->_isolated_interpreter) {
+    //    return &interp->ceval.gil;
+    //}
     assert(interp->runtime == &_PyRuntime);
-    return &_PyRuntime.ceval.gil;
+    return &_PyRuntime.interpreters.main->ceval.gil;
 }
 
 
