@@ -77,9 +77,8 @@ class TestTranforms(BytecodeTestCase):
             if not x == 2:
                 del x
         self.assertNotInBytecode(unot, 'UNARY_NOT')
-        self.assertNotInBytecode(unot, 'POP_JUMP_FORWARD_IF_FALSE')
-        self.assertNotInBytecode(unot, 'POP_JUMP_BACKWARD_IF_FALSE')
-        self.assertInBytecode(unot, 'POP_JUMP_FORWARD_IF_TRUE')
+        self.assertNotInBytecode(unot, 'POP_JUMP_IF_FALSE')
+        self.assertInBytecode(unot, 'POP_JUMP_IF_TRUE')
         self.check_lnotab(unot)
 
     def test_elim_inversion_of_is_or_in(self):
@@ -409,7 +408,7 @@ class TestTranforms(BytecodeTestCase):
         self.check_lnotab(f)
         self.assertNotInBytecode(f, 'JUMP_IF_FALSE_OR_POP')
         self.assertInBytecode(f, 'JUMP_IF_TRUE_OR_POP')
-        self.assertInBytecode(f, 'POP_JUMP_FORWARD_IF_FALSE')
+        self.assertInBytecode(f, 'POP_JUMP_IF_FALSE')
         # JUMP_IF_TRUE_OR_POP to JUMP_IF_FALSE_OR_POP --> POP_JUMP_IF_TRUE to non-jump
         def f(a, b, c):
             return ((a or b)
@@ -418,7 +417,7 @@ class TestTranforms(BytecodeTestCase):
         self.check_lnotab(f)
         self.assertNotInBytecode(f, 'JUMP_IF_TRUE_OR_POP')
         self.assertInBytecode(f, 'JUMP_IF_FALSE_OR_POP')
-        self.assertInBytecode(f, 'POP_JUMP_FORWARD_IF_TRUE')
+        self.assertInBytecode(f, 'POP_JUMP_IF_TRUE')
 
     def test_elim_jump_to_uncond_jump4(self):
         def f():
@@ -892,7 +891,8 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
         self.cfg_optimization_test(insts, expected, consts=list(range(5)))
 
     def test_conditional_jump_forward_const_condition(self):
-        # The unreachable branch of the jump is removed
+        # The unreachable branch of the jump is removed, the jump
+        # becomes redundant and is replaced by a NOP (for the lineno)
 
         insts = [
             ('LOAD_CONST', 3, 11),
@@ -903,8 +903,7 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         expected = [
             ('NOP', None, 11),
-            ('JUMP', lbl := self.Label(), 12),
-            lbl,
+            ('NOP', None, 12),
             ('LOAD_CONST', '3', 14)
         ]
         self.cfg_optimization_test(insts, expected, consts=list(range(5)))

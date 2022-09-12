@@ -601,25 +601,16 @@ Connection objects
 
       Example:
 
-      .. testcode::
+      .. doctest::
 
-         def dict_factory(cursor, row):
-             d = {}
-             for idx, col in enumerate(cursor.description):
-                 d[col[0]] = row[idx]
-             return d
-
-         con = sqlite3.connect(":memory:")
-         con.row_factory = dict_factory
-         cur = con.execute("SELECT 1 AS a")
-         print(cur.fetchone()["a"])
-
-         con.close()
-
-      .. testoutput::
-         :hide:
-
-         1
+         >>> def dict_factory(cursor, row):
+         ...     col_names = [col[0] for col in cursor.description]
+         ...     return {key: value for key, value in zip(col_names, row)}
+         >>> con = sqlite3.connect(":memory:")
+         >>> con.row_factory = dict_factory
+         >>> for row in con.execute("SELECT 1 AS a, 2 AS b"):
+         ...     print(row)
+         {'a': 1, 'b': 2}
 
       If returning a tuple doesn't suffice and you want name-based access to
       columns, you should consider setting :attr:`row_factory` to the
@@ -1477,13 +1468,32 @@ Cursor objects
 
       Required by the DB-API. Does nothing in :mod:`!sqlite3`.
 
-   .. attribute:: rowcount
+   .. attribute:: arraysize
 
-      Read-only attribute that provides the number of modified rows for
-      ``INSERT``, ``UPDATE``, ``DELETE``, and ``REPLACE`` statements;
-      is ``-1`` for other statements,
-      including :abbr:`CTE (Common Table Expression)` queries.
-      It is only updated by the :meth:`execute` and :meth:`executemany` methods.
+      Read/write attribute that controls the number of rows returned by :meth:`fetchmany`.
+      The default value is 1 which means a single row would be fetched per call.
+
+   .. attribute:: connection
+
+      Read-only attribute that provides the SQLite database :class:`Connection`
+      belonging to the cursor.  A :class:`Cursor` object created by
+      calling :meth:`con.cursor() <Connection.cursor>` will have a
+      :attr:`connection` attribute that refers to *con*:
+
+      .. doctest::
+
+         >>> con = sqlite3.connect(":memory:")
+         >>> cur = con.cursor()
+         >>> cur.connection == con
+         True
+
+   .. attribute:: description
+
+      Read-only attribute that provides the column names of the last query. To
+      remain compatible with the Python DB API, it returns a 7-tuple for each
+      column where the last six items of each tuple are ``None``.
+
+      It is set for ``SELECT`` statements without any matching rows as well.
 
    .. attribute:: lastrowid
 
@@ -1500,32 +1510,14 @@ Cursor objects
       .. versionchanged:: 3.6
          Added support for the ``REPLACE`` statement.
 
-   .. attribute:: arraysize
+   .. attribute:: rowcount
 
-      Read/write attribute that controls the number of rows returned by :meth:`fetchmany`.
-      The default value is 1 which means a single row would be fetched per call.
+      Read-only attribute that provides the number of modified rows for
+      ``INSERT``, ``UPDATE``, ``DELETE``, and ``REPLACE`` statements;
+      is ``-1`` for other statements,
+      including :abbr:`CTE (Common Table Expression)` queries.
+      It is only updated by the :meth:`execute` and :meth:`executemany` methods.
 
-   .. attribute:: description
-
-      Read-only attribute that provides the column names of the last query. To
-      remain compatible with the Python DB API, it returns a 7-tuple for each
-      column where the last six items of each tuple are ``None``.
-
-      It is set for ``SELECT`` statements without any matching rows as well.
-
-   .. attribute:: connection
-
-      Read-only attribute that provides the SQLite database :class:`Connection`
-      belonging to the cursor.  A :class:`Cursor` object created by
-      calling :meth:`con.cursor() <Connection.cursor>` will have a
-      :attr:`connection` attribute that refers to *con*:
-
-      .. doctest::
-
-         >>> con = sqlite3.connect(":memory:")
-         >>> cur = con.cursor()
-         >>> cur.connection == con
-         True
 
 .. The sqlite3.Row example used to be a how-to. It has now been incorporated
    into the Row reference. We keep the anchor here in order not to break
