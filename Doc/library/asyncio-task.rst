@@ -794,10 +794,6 @@ Waiting Primitives
    .. versionchanged:: 3.11
       Passing coroutine objects to ``wait()`` directly is forbidden.
 
-   .. deprecated-removed:: 3.11 3.14
-      Passing awaitable objects that are not futures to ``wait()``
-      directly is deprecated.
-
 .. function:: as_completed(aws, *, timeout=None)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
