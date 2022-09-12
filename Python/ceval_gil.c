@@ -227,9 +227,6 @@ is_tstate_valid(PyThreadState *tstate)
 static inline struct _gil_state *
 _get_gil(PyInterpreterState *interp)
 {
-    //if (interp->config->_isolated_interpreter) {
-    //    return &interp->ceval.gil;
-    //}
     assert(interp->runtime == &_PyRuntime);
     return &_PyRuntime.interpreters.main->ceval.gil;
 }
