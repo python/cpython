@@ -912,9 +912,9 @@ Py_MakePendingCalls(void)
 /* The interpreter's recursion limit */
 
 void
-_PyEval_InitRuntimeState(struct _ceval_runtime_state *ceval)
+_PyEval_InitRuntimeState(_PyRuntimeState *runtime)
 {
-    _gil_initialize(&ceval->gil);
+    _gil_initialize(&runtime->ceval.gil);
 }
 
 void
