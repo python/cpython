@@ -916,13 +916,19 @@ Py_MakePendingCalls(void)
 void
 _PyEval_InitRuntimeState(_PyRuntimeState *runtime)
 {
-    _gil_initialize(&runtime->ceval.gil);
+    //_gil_initialize(&runtime->ceval.gil);
 }
 
 void
 _PyEval_InitState(PyInterpreterState *interp, PyThread_type_lock pending_lock)
 {
-    /* Everthing GIL-related is initialized in _PyEval_InitGIL(). */
+    /* Each interpreter is responsible to create and destroy
+       its own GIL.  Interpreters that share a GIL skip this step. */
+    struct _gil_state *gil = _get_gil(interp);
+    if (gil == _GET_OWN_GIL(interp)) {
+        _gil_initialize(gil);
+        /* Everthing else GIL-related is initialized in _PyEval_InitGIL(). */
+    }
 
     struct _pending_calls *pending = &interp->ceval.pending;
     assert(pending->lock == NULL);
