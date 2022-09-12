@@ -572,7 +572,7 @@ def fs_is_case_insensitive(directory):
 
 
 class FakePath:
-    """Simple implementing of the path protocol.
+    """Simple implementation of the path protocol.
     """
     def __init__(self, path):
         self.path = path
@@ -658,6 +658,11 @@ if hasattr(os, "umask"):
             yield
         finally:
             os.umask(oldmask)
+else:
+    @contextlib.contextmanager
+    def temp_umask(umask):
+        """no-op on platforms without umask()"""
+        yield
 
 
 class EnvironmentVarGuard(collections.abc.MutableMapping):

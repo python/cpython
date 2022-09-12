@@ -118,6 +118,7 @@ struct callable_cache {
     PyObject *isinstance;
     PyObject *len;
     PyObject *list_append;
+    PyObject *object__getattribute__;
 };
 
 /* "Locals plus" for a code object is the set of locals + cell vars +

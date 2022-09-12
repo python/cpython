@@ -535,6 +535,65 @@ def normalize_snippet(s, *, indent=0):
     return s
 
 
+def declare_parser(f, *, hasformat=False):
+    """
+    Generates the code template for a static local PyArg_Parser variable,
+    with an initializer.  For core code (incl. builtin modules) the
+    kwtuple field is also statically initialized.  Otherwise
+    it is initialized at runtime.
+    """
+    if hasformat:
+        fname = ''
+        format_ = '.format = "{format_units}:{name}",'
+    else:
+        fname = '.fname = "{name}",'
+        format_ = ''
+
+    num_keywords = len([
+        p for p in f.parameters.values()
+        if not p.is_positional_only() and not p.is_vararg()
+    ])
+    if num_keywords == 0:
+        declarations = """
+            #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+            #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+            #else
+            #  define KWTUPLE NULL
+            #endif
+        """
+    else:
+        declarations = """
+            #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+            #define NUM_KEYWORDS %d
+            static struct {{
+                PyGC_Head _this_is_not_used;
+                PyObject_VAR_HEAD
+                PyObject *ob_item[NUM_KEYWORDS];
+            }} _kwtuple = {{
+                .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+                .ob_item = {{ {keywords_py} }},
+            }};
+            #undef NUM_KEYWORDS
+            #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+            #else  // !Py_BUILD_CORE
+            #  define KWTUPLE NULL
+            #endif  // !Py_BUILD_CORE
+        """ % num_keywords
+
+    declarations += """
+            static const char * const _keywords[] = {{{keywords_c} NULL}};
+            static _PyArg_Parser _parser = {{
+                .keywords = _keywords,
+                %s
+                .kwtuple = KWTUPLE,
+            }};
+            #undef KWTUPLE
+    """ % (format_ or fname)
+    return normalize_snippet(declarations)
+
+
 def wrap_declarations(text, length=78):
     """
     A simple-minded text wrapper for C function declarations.
@@ -967,11 +1026,8 @@ class CLanguage(Language):
                 flags = "METH_FASTCALL|METH_KEYWORDS"
                 parser_prototype = parser_prototype_fastcall_keywords
                 argname_fmt = 'args[%d]'
-                declarations = normalize_snippet("""
-                    static const char * const _keywords[] = {{{keywords} NULL}};
-                    static _PyArg_Parser _parser = {{NULL, _keywords, "{name}", 0}};
-                    PyObject *argsbuf[%s];
-                    """ % len(converters))
+                declarations = declare_parser(f)
+                declarations += "\nPyObject *argsbuf[%s];" % len(converters)
                 if has_optional_kw:
                     pre_buffer = "0" if vararg != NO_VARARG else "nargs"
                     declarations += "\nPy_ssize_t noptargs = %s + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (pre_buffer, min_pos + min_kw_only)
@@ -986,13 +1042,10 @@ class CLanguage(Language):
                 flags = "METH_VARARGS|METH_KEYWORDS"
                 parser_prototype = parser_prototype_keyword
                 argname_fmt = 'fastargs[%d]'
-                declarations = normalize_snippet("""
-                    static const char * const _keywords[] = {{{keywords} NULL}};
-                    static _PyArg_Parser _parser = {{NULL, _keywords, "{name}", 0}};
-                    PyObject *argsbuf[%s];
-                    PyObject * const *fastargs;
-                    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-                    """ % len(converters))
+                declarations = declare_parser(f)
+                declarations += "\nPyObject *argsbuf[%s];" % len(converters)
+                declarations += "\nPyObject * const *fastargs;"
+                declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"
                 if has_optional_kw:
                     declarations += "\nPy_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - %d;" % (min_pos + min_kw_only)
                 parser_code = [normalize_snippet("""
@@ -1069,9 +1122,7 @@ class CLanguage(Language):
                 if add_label:
                     parser_code.append("%s:" % add_label)
             else:
-                declarations = (
-                    'static const char * const _keywords[] = {{{keywords} NULL}};\n'
-                    'static _PyArg_Parser _parser = {{"{format_units}:{name}", _keywords, 0}};')
+                declarations = declare_parser(f, hasformat=True)
                 if not new_or_init:
                     parser_code = [normalize_snippet("""
                         if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser{parse_arguments_comma}
@@ -1394,7 +1445,11 @@ class CLanguage(Language):
         template_dict['declarations'] = format_escape("\n".join(data.declarations))
         template_dict['initializers'] = "\n\n".join(data.initializers)
         template_dict['modifications'] = '\n\n'.join(data.modifications)
-        template_dict['keywords'] = ' '.join('"' + k + '",' for k in data.keywords)
+        template_dict['keywords_c'] = ' '.join('"' + k + '",'
+                                               for k in data.keywords)
+        keywords = [k for k in data.keywords if k]
+        template_dict['keywords_py'] = ' '.join('&_Py_ID(' + k + '),'
+                                                for k in keywords)
         template_dict['format_units'] = ''.join(data.format_units)
         template_dict['parse_arguments'] = ', '.join(data.parse_arguments)
         if data.parse_arguments:
@@ -1712,7 +1767,7 @@ class BlockPrinter:
         self.language = language
         self.f = f or io.StringIO()
 
-    def print_block(self, block):
+    def print_block(self, block, *, core_includes=False):
         input = block.input
         output = block.output
         dsl_name = block.dsl_name
@@ -1739,8 +1794,18 @@ class BlockPrinter:
         write(self.language.stop_line.format(dsl_name=dsl_name))
         write("\n")
 
+        output = ''
+        if core_includes:
+            output += textwrap.dedent("""
+                #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+                #  include "pycore_gc.h"            // PyGC_Head
+                #  include "pycore_runtime.h"       // _Py_ID()
+                #endif
+
+            """)
+
         input = ''.join(block.input)
-        output = ''.join(block.output)
+        output += ''.join(block.output)
         if output:
             if not output.endswith('\n'):
                 output += '\n'
@@ -2073,7 +2138,7 @@ impl_definition block
 
                     block.input = 'preserve\n'
                     printer_2 = BlockPrinter(self.language)
-                    printer_2.print_block(block)
+                    printer_2.print_block(block, core_includes=True)
                     write_file(destination.filename, printer_2.f.getvalue())
                     continue
         text = printer.f.getvalue()
