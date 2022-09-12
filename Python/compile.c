@@ -7364,7 +7364,7 @@ mark_cold(basicblock *entryblock) {
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             if (is_jump(instr)) {
-                assert(i == b->b_iused-1);
+                assert(i == b->b_iused - 1);
                 basicblock *target = b->b_instr[i].i_target;
                 if (!target->b_warm && !target->b_visited) {
                     *sp++ = target;
@@ -8322,7 +8322,7 @@ insert_instruction(basicblock *block, int pos, struct instr *instr) {
     if (basicblock_next_instr(block) < 0) {
         return -1;
     }
-    for (int i = block->b_iused-1; i > pos; i--) {
+    for (int i = block->b_iused - 1; i > pos; i--) {
         block->b_instr[i] = block->b_instr[i-1];
     }
     block->b_instr[pos] = *instr;
@@ -8520,21 +8520,19 @@ remove_redundant_jumps(cfg_builder *g) {
      * of that jump. If it is, then the jump instruction is redundant and
      * can be deleted.
      */
-    int removed = 0;
+    assert(no_empty_basic_blocks(g));
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         struct instr *last = basicblock_last_instr(b);
-        if (last != NULL) {
-            assert(!IS_ASSEMBLER_OPCODE(last->i_opcode));
-            if (IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)) {
-                if (last->i_target == NULL) {
-                    PyErr_SetString(PyExc_SystemError, "jump with NULL target");
-                    return -1;
-                }
-                if (last->i_target == b->b_next) {
-                    assert(b->b_next->b_iused);
-                    last->i_opcode = NOP;
-                    removed++;
-                }
+        assert(last != NULL);
+        assert(!IS_ASSEMBLER_OPCODE(last->i_opcode));
+        if (IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)) {
+            if (last->i_target == NULL) {
+                PyErr_SetString(PyExc_SystemError, "jump with NULL target");
+                return -1;
+            }
+            if (last->i_target == b->b_next) {
+                assert(b->b_next->b_iused);
+                last->i_opcode = NOP;
             }
         }
     }
@@ -9317,7 +9315,7 @@ check_cfg(cfg_builder *g) {
             int opcode = b->b_instr[i].i_opcode;
             assert(!IS_ASSEMBLER_OPCODE(opcode));
             if (IS_TERMINATOR_OPCODE(opcode)) {
-                if (i != b->b_iused-1) {
+                if (i != b->b_iused - 1) {
                     PyErr_SetString(PyExc_SystemError, "malformed control flow graph.");
                     return -1;
                 }
