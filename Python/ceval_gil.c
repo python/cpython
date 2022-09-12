@@ -218,19 +218,19 @@ is_tstate_valid(PyThreadState *tstate)
 
 #define DEFAULT_INTERVAL 5000
 
-static void _gil_initialize(struct _gil_runtime_state *gil)
+static void _gil_initialize(struct _gil_state *gil)
 {
     _Py_atomic_int uninitialized = {-1};
     gil->locked = uninitialized;
     gil->interval = DEFAULT_INTERVAL;
 }
 
-static int gil_created(struct _gil_runtime_state *gil)
+static int gil_created(struct _gil_state *gil)
 {
     return (_Py_atomic_load_explicit(&gil->locked, _Py_memory_order_acquire) >= 0);
 }
 
-static void create_gil(struct _gil_runtime_state *gil)
+static void create_gil(struct _gil_state *gil)
 {
     MUTEX_INIT(gil->mutex);
 #ifdef FORCE_SWITCHING
@@ -245,7 +245,7 @@ static void create_gil(struct _gil_runtime_state *gil)
     _Py_atomic_store_explicit(&gil->locked, 0, _Py_memory_order_release);
 }
 
-static void destroy_gil(struct _gil_runtime_state *gil)
+static void destroy_gil(struct _gil_state *gil)
 {
     /* some pthread-like implementations tie the mutex to the cond
      * and must have the cond destroyed first.
@@ -262,7 +262,7 @@ static void destroy_gil(struct _gil_runtime_state *gil)
 }
 
 #ifdef HAVE_FORK
-static void recreate_gil(struct _gil_runtime_state *gil)
+static void recreate_gil(struct _gil_state *gil)
 {
     _Py_ANNOTATE_RWLOCK_DESTROY(&gil->locked);
     /* XXX should we destroy the old OS resources here? */
@@ -274,7 +274,7 @@ static void
 drop_gil(struct _ceval_runtime_state *ceval, struct _ceval_state *ceval2,
          PyThreadState *tstate)
 {
-    struct _gil_runtime_state *gil = &ceval->gil;
+    struct _gil_state *gil = &ceval->gil;
     if (!_Py_atomic_load_relaxed(&gil->locked)) {
         Py_FatalError("drop_gil: GIL is not locked");
     }
@@ -358,7 +358,7 @@ take_gil(PyThreadState *tstate)
     PyInterpreterState *interp = tstate->interp;
     struct _ceval_runtime_state *ceval = &interp->runtime->ceval;
     struct _ceval_state *ceval2 = &interp->ceval;
-    struct _gil_runtime_state *gil = &ceval->gil;
+    struct _gil_state *gil = &ceval->gil;
 
     /* Check that _PyEval_InitThreads() was called to create the lock */
     assert(gil_created(gil));
@@ -450,13 +450,13 @@ _ready:
 
 void _PyEval_SetSwitchInterval(unsigned long microseconds)
 {
-    struct _gil_runtime_state *gil = &_PyRuntime.ceval.gil;
+    struct _gil_state *gil = &_PyRuntime.ceval.gil;
     gil->interval = microseconds;
 }
 
 unsigned long _PyEval_GetSwitchInterval()
 {
-    struct _gil_runtime_state *gil = &_PyRuntime.ceval.gil;
+    struct _gil_state *gil = &_PyRuntime.ceval.gil;
     return gil->interval;
 }
 
@@ -484,7 +484,7 @@ _PyEval_InitGIL(PyThreadState *tstate)
         return _PyStatus_OK();
     }
 
-    struct _gil_runtime_state *gil = &tstate->interp->runtime->ceval.gil;
+    struct _gil_state *gil = &tstate->interp->runtime->ceval.gil;
     assert(!gil_created(gil));
 
     PyThread_init_thread();
@@ -506,7 +506,7 @@ _PyEval_FiniGIL(PyInterpreterState *interp)
         return;
     }
 
-    struct _gil_runtime_state *gil = &interp->runtime->ceval.gil;
+    struct _gil_state *gil = &interp->runtime->ceval.gil;
     if (!gil_created(gil)) {
         /* First Py_InitializeFromConfig() call: the GIL doesn't exist
            yet: do nothing. */
@@ -598,7 +598,7 @@ _PyEval_ReInitThreads(PyThreadState *tstate)
 {
     _PyRuntimeState *runtime = tstate->interp->runtime;
 
-    struct _gil_runtime_state *gil = &runtime->ceval.gil;
+    struct _gil_state *gil = &runtime->ceval.gil;
     if (!gil_created(gil)) {
         return _PyStatus_OK();
     }
