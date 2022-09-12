@@ -101,7 +101,7 @@ class WavePCM24ExtTest(WaveTest, unittest.TestCase):
       51486F0E44E1 8BCC64113B05 B6F4EC0EEB36 4413170A5B48 \
       """)
     if sys.byteorder != 'big':
-        frames = byteswap(frames, 3)
+        frames = wave._byteswap(frames, 3)
 
 
 class WavePCM32Test(WaveTest, unittest.TestCase):
@@ -133,8 +133,8 @@ class WavePCM32Test(WaveTest, unittest.TestCase):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        blacklist = {'WAVE_FORMAT_PCM', 'WAVE_FORMAT_EXTENSIBLE'}
-        support.check__all__(self, wave, blacklist=blacklist)
+        not_exported = {'WAVE_FORMAT_PCM', 'WAVE_FORMAT_EXTENSIBLE'}
+        support.check__all__(self, wave, not_exported=not_exported)
 
 
 class WaveLowLevelTest(unittest.TestCase):
