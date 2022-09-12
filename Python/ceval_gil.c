@@ -908,11 +908,12 @@ _PyEval_InitRuntimeState(struct _ceval_runtime_state *ceval)
 }
 
 void
-_PyEval_InitState(struct _ceval_state *ceval, PyThread_type_lock pending_lock)
+_PyEval_InitState(PyInterpreterState *interp, PyThread_type_lock pending_lock)
 {
+    struct _ceval_state *ceval = &interp->ceval;
+
     struct _pending_calls *pending = &ceval->pending;
     assert(pending->lock == NULL);
-
     pending->lock = pending_lock;
 }
 
