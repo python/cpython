@@ -4107,7 +4107,7 @@ handle_eval_breaker:
             PEEK(oparg + 1) = self;
             PEEK(oparg + 2) = meth;
             Py_DECREF(function);
-            goto call_exact_args;
+            JUMP_TO_INSTRUCTION(CALL_PY_EXACT_ARGS);
         }
 
         TARGET(KW_NAMES) {
@@ -4118,8 +4118,8 @@ handle_eval_breaker:
         }
 
         TARGET(CALL) {
+            PREDICTED(CALL);
             int total_args, is_meth;
-        call_function:
             is_meth = is_method(stack_pointer, oparg);
             PyObject *function = PEEK(oparg + 1);
             if (!is_meth && Py_TYPE(function) == &PyMethod_Type) {
@@ -4207,12 +4207,12 @@ handle_eval_breaker:
             else {
                 STAT_INC(CALL, deferred);
                 DECREMENT_ADAPTIVE_COUNTER(cache);
-                goto call_function;
+                JUMP_TO_INSTRUCTION(CALL);
             }
         }
 
         TARGET(CALL_PY_EXACT_ARGS) {
-        call_exact_args:
+            PREDICTED(CALL_PY_EXACT_ARGS);
             assert(call_shape.kwnames == NULL);
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             _PyCallCache *cache = (_PyCallCache *)next_instr;
@@ -5532,7 +5532,13 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
     /* Pack other positional arguments into the *args argument */
     if (co->co_flags & CO_VARARGS) {
         PyObject *u = NULL;
-        u = _PyTuple_FromArraySteal(args + n, argcount - n);
+        if (argcount == n) {
+            u = Py_NewRef(&_Py_SINGLETON(tuple_empty));
+        }
+        else {
+            assert(args != NULL);
+            u = _PyTuple_FromArraySteal(args + n, argcount - n);
+        }
         if (u == NULL) {
             goto fail_post_positional;
         }
