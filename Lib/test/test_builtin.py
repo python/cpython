@@ -768,6 +768,32 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(frozendict_error,
                           exec, code, namespace)
 
+        # custom `globals` or `builtins` can raise errors on item access
+        class setonlyerror(Exception):
+            pass
+
+        class setonlydict(dict):
+            def __getitem__(self, key):
+                raise setonlyerror
+
+        class customdict(dict):  # this one should not do anything fancy
+            pass
+
+        # globals' `__getitem__` raises
+        code = compile("print(globalname)", "test", "exec")
+        self.assertRaises(setonlyerror,
+                          exec, code, setonlydict({'globalname': 1}))
+
+        # builtins' `__getitem__` raises
+        code = compile("print(superglobal)", "test", "exec")
+        self.assertRaises(setonlyerror, exec, code,
+                          {'__builtins__': setonlydict({'superglobal': 1})})
+
+        # custom builtins dict subclass is missing key
+        code = compile("print(superglobal)", "test", "exec")
+        self.assertRaises(NameError, exec, code,
+                          {'__builtins__': customdict()})
+
     def test_exec_redirected(self):
         savestdout = sys.stdout
         sys.stdout = None # Whatever that cannot flush()
