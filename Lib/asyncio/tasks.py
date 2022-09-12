@@ -419,13 +419,6 @@ async def wait(fs, *, timeout=None, return_when=ALL_COMPLETED):
         if coroutines.iscoroutine(f):
             raise TypeError("Passing coroutines is forbidden, use tasks explicitly.")
         if not futures.isfuture(f):
-            warnings.warn(
-                "The explicit passing of awaitable objects that are not futures "
-                "to asyncio.wait() is deprecated since Python 3.11, and "
-                "scheduled for removal in Python 3.14.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
             try:
                 new_fs.add(ensure_future(f, loop=loop))
             except TypeError:
