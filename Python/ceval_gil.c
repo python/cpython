@@ -920,6 +920,8 @@ _PyEval_InitRuntimeState(_PyRuntimeState *runtime)
 void
 _PyEval_InitState(PyInterpreterState *interp, PyThread_type_lock pending_lock)
 {
+    /* Everthing GIL-related is initialized in _PyEval_InitGIL(). */
+
     struct _pending_calls *pending = &interp->ceval.pending;
     assert(pending->lock == NULL);
     pending->lock = pending_lock;
@@ -933,6 +935,8 @@ _PyEval_FiniState(struct _ceval_state *ceval)
         PyThread_free_lock(pending->lock);
         pending->lock = NULL;
     }
+
+    /* Everthing GIL-related is finalized in _PyEval_FiniGIL(). */
 }
 
 /* Handle signals, pending calls, GIL drop request
