@@ -121,8 +121,6 @@ init_runtime(_PyRuntimeState *runtime,
     runtime->open_code_userdata = open_code_userdata;
     runtime->audit_hook_head = audit_hook_head;
 
-    _PyEval_InitRuntimeState(runtime);
-
     PyPreConfig_InitPythonConfig(&runtime->preconfig);
 
     runtime->interpreters.mutex = interpreters_mutex;

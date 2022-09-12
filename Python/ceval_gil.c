@@ -914,12 +914,6 @@ Py_MakePendingCalls(void)
 /* The interpreter's recursion limit */
 
 void
-_PyEval_InitRuntimeState(_PyRuntimeState *runtime)
-{
-    //_gil_initialize(&runtime->ceval.gil);
-}
-
-void
 _PyEval_InitState(PyInterpreterState *interp, PyThread_type_lock pending_lock)
 {
     /* Each interpreter is responsible to create and destroy
