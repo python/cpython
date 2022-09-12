@@ -1679,7 +1679,8 @@ PyGILState_Ensure(void)
 
     /* Ensure that _PyEval_InitThreads() has been called by Py_Initialize() */
     // XXX Use the appropriate interpreter.
-    assert(runtime->main && _PyEval_ThreadsInitialized(runtime->main));
+    assert(runtime->interpreters.main &&
+           _PyEval_ThreadsInitialized(runtime->interpreters.main));
     /* Ensure that _PyGILState_Init() has been called by Py_Initialize() */
     assert(gilstate->autoInterpreterState);
 

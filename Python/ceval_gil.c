@@ -465,7 +465,7 @@ int
 _PyEval_ThreadsInitialized(PyInterpreterState *interp)
 {
     if (interp == NULL) {
-        interp = &_PyRuntime.main;
+        interp = _PyRuntime.interpreters.main;
         if (interp == NULL) {
             return 0;
         }
