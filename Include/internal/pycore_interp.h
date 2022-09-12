@@ -50,6 +50,7 @@ struct _ceval_state {
     _Py_atomic_int eval_breaker;
     /* Request for dropping the GIL */
     _Py_atomic_int gil_drop_request;
+    /* Pending calls */
     struct _pending_calls pending;
 };
 

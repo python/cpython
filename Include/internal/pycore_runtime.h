@@ -26,6 +26,7 @@ struct _ceval_runtime_state {
        the main thread of the main interpreter can handle signals: see
        _Py_ThreadCanHandleSignals(). */
     _Py_atomic_int signals_pending;
+    /* The GIL */
     struct _gil_state gil;
 };
 
