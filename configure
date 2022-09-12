@@ -7705,7 +7705,7 @@ fi
 if test "$Py_LTO" = 'true' ; then
   case $CC in
     *clang*)
-            LDFLAGS_NOLTO="-flto=${Py_LTO_POLICY}"
+                  LDFLAGS_NOLTO="-flto=${Py_LTO_POLICY}"
 
       if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}llvm-ar", so it can be a program name with args.

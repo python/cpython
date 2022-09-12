@@ -1828,7 +1828,8 @@ esac
 if test "$Py_LTO" = 'true' ; then
   case $CC in
     *clang*)
-      dnl flag to disable lto during linking
+      dnl For clang, it seems our LTO policy for bootstrap and freezing needs
+      dnl to match the rest of the build.
       LDFLAGS_NOLTO="-flto=${Py_LTO_POLICY}"
       AC_SUBST(LLVM_AR)
       AC_PATH_TOOL(LLVM_AR, llvm-ar, '', ${llvm_path})
