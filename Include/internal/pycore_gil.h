@@ -20,6 +20,7 @@ extern "C" {
 #undef FORCE_SWITCHING
 #define FORCE_SWITCHING
 
+/* ** The GIL ** */
 struct _gil_runtime_state {
     /* microseconds (the Python API uses seconds, though) */
     unsigned long interval;
