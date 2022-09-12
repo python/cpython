@@ -214,7 +214,7 @@ class _NetlocResultMixinBytes(_NetlocResultMixinBase, _ResultMixinBytes):
     @property
     def _userinfo(self):
         netloc = self.netloc
-        userinfo, have_info, hostinfo = netloc.rpartition(b'@')
+        userinfo, have_info, _ = netloc.rpartition(b'@')
         if have_info:
             username, have_password, password = userinfo.partition(b':')
             if not have_password:
