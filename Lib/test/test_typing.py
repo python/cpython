@@ -1038,6 +1038,15 @@ class TypeVarTupleTests(BaseTestCase):
                 CANNOT_SUBCLASS_INSTANCE % 'TypeVarTuple'):
             class C(Ts): pass
         with self.assertRaisesRegex(TypeError, r'Cannot subclass \*Ts'):
+            class C(*Ts): pass
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
+            class C(type(Unpack)): pass
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
+            class C(type(Unpack[Ts])): pass
+        with self.assertRaisesRegex(TypeError,
+                                    r'Cannot subclass typing\.Unpack'):
+            class C(Unpack): pass
+        with self.assertRaisesRegex(TypeError, r'Cannot subclass \*Ts'):
             class C(Unpack[Ts]): pass
 
     def test_variadic_class_args_are_correct(self):
@@ -3710,6 +3719,14 @@ class ClassVarTests(BaseTestCase):
         with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
             class C(type(ClassVar[int])):
                 pass
+        with self.assertRaisesRegex(TypeError,
+                                    r'Cannot subclass typing\.ClassVar'):
+            class C(ClassVar):
+                pass
+        with self.assertRaisesRegex(TypeError,
+                                    r'Cannot subclass typing\.ClassVar\[int\]'):
+            class C(ClassVar[int]):
+                pass
 
     def test_cannot_init(self):
         with self.assertRaises(TypeError):
@@ -3751,6 +3768,14 @@ class FinalTests(BaseTestCase):
                 pass
         with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
             class C(type(Final[int])):
+                pass
+        with self.assertRaisesRegex(TypeError,
+                r'Cannot subclass typing\.Final'):
+            class C(Final):
+                pass
+        with self.assertRaisesRegex(TypeError,
+                r'Cannot subclass typing\.Final\[int\]'):
+            class C(Final[int]):
                 pass
 
     def test_cannot_init(self):
@@ -6439,13 +6464,18 @@ class RETests(BaseTestCase):
             self.assertEqual(len(w), 1)
 
     def test_cannot_subclass(self):
-        with self.assertRaises(TypeError) as ex:
-
+        with self.assertRaisesRegex(
+            TypeError,
+            r"type 're\.Match' is not an acceptable base type",
+        ):
             class A(typing.Match):
                 pass
-
-        self.assertEqual(str(ex.exception),
-                         "type 're.Match' is not an acceptable base type")
+        with self.assertRaisesRegex(
+            TypeError,
+            r"type 're\.Pattern' is not an acceptable base type",
+        ):
+            class A(typing.Pattern):
+                pass
 
 
 class AnnotatedTests(BaseTestCase):
@@ -7036,6 +7066,14 @@ class TypeGuardTests(BaseTestCase):
                 pass
         with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
             class C(type(TypeGuard[int])):
+                pass
+        with self.assertRaisesRegex(TypeError,
+                                    r'Cannot subclass typing\.TypeGuard'):
+            class C(TypeGuard):
+                pass
+        with self.assertRaisesRegex(TypeError,
+                                    r'Cannot subclass typing\.TypeGuard\[int\]'):
+            class C(TypeGuard[int]):
                 pass
 
     def test_cannot_init(self):
