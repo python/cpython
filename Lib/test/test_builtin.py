@@ -780,19 +780,19 @@ class BuiltinTest(unittest.TestCase):
             pass
 
         # globals' `__getitem__` raises
-        code = compile("print(globalname)", "test", "exec")
+        code = compile("globalname", "test", "exec")
         self.assertRaises(setonlyerror,
                           exec, code, setonlydict({'globalname': 1}))
 
         # builtins' `__getitem__` raises
-        code = compile("print(superglobal)", "test", "exec")
+        code = compile("superglobal", "test", "exec")
         self.assertRaises(setonlyerror, exec, code,
                           {'__builtins__': setonlydict({'superglobal': 1})})
 
         # custom builtins dict subclass is missing key
-        code = compile("print(superglobal)", "test", "exec")
-        self.assertRaises(NameError, exec, code,
-                          {'__builtins__': customdict()})
+        code = compile("superglobal", "test", "exec")
+        self.assertRaisesRegex(NameError, "name 'superglobal' is not defined",
+                               exec, code, {'__builtins__': customdict()})
 
     def test_exec_redirected(self):
         savestdout = sys.stdout
