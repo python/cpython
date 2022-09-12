@@ -439,8 +439,10 @@ Build Changes
   ``va_start()`` is no longer called with a single parameter.
   (Contributed by Kumar Aditya in :gh:`93207`.)
 
-* CPython now uses the ThinLTO option as the default policy if the Clang compiler accepts the flag.
+* CPython now uses the ThinLTO option as the default link time optimization policy
+  if the Clang compiler accepts the flag.
   (Contributed by Dong-hee Na in :gh:`89536`.)
+
 
 C API Changes
 =============
