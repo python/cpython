@@ -47,10 +47,12 @@ def preprocess(source, *,
     CWD should be the project root and "source" should be relative.
     """
     if tool:
-        logger.debug(f'CWD: {os.getcwd()!r}')
-        logger.debug(f'incldirs: {incldirs!r}')
-        logger.debug(f'includes: {includes!r}')
-        logger.debug(f'macros: {macros!r}')
+        if not cwd:
+            cwd = os.getcwd()
+        logger.debug(f'CWD:       {cwd!r}')
+        logger.debug(f'incldirs:  {incldirs!r}')
+        logger.debug(f'includes:  {includes!r}')
+        logger.debug(f'macros:    {macros!r}')
         logger.debug(f'samefiles: {samefiles!r}')
         _preprocess = _get_preprocessor(tool)
         with _good_file(source, filename) as source:
