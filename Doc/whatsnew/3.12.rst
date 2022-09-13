@@ -480,7 +480,7 @@ New Features
 
 * Added two new public functions,
   :c:func:`PyEval_SetProfileAllThreads` and
-  :c:func:`PyEval_SetTraceAllThreads`, that allow to set tracking and profiling
+  :c:func:`PyEval_SetTraceAllThreads`, that allow to set tracing and profiling
   functions in all running threads in addition to the calling one. (Contributed
   by Pablo Galindo in :gh:`93503`.)
 
