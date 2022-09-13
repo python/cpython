@@ -8536,7 +8536,6 @@ remove_redundant_jumps(cfg_builder *g) {
             }
         }
     }
-    assert(no_empty_basic_blocks(g));
     return 0;
 }
 
