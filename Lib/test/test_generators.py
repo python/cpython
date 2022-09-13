@@ -2116,9 +2116,8 @@ caught ValueError (xyz)
 >>> import warnings
 >>> warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-# Filter DeprecationWarning: the (type, val, tb) exception representation is deprecated,
-#                            and may be removed in a future version of Python.
-# Will re-enable it soon.
+# Filter DeprecationWarning: regarding the (type, val, tb) signature of throw().
+# Deprecation warnings are re-enabled below.
 
 >>> g.throw(ValueError, ValueError(1))   # value+matching type
 caught ValueError (1)
