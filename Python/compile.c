@@ -260,8 +260,6 @@ typedef struct basicblock_ {
     int b_ialloc;
     /* Number of predecssors that a block has. */
     int b_predecessors;
-    /* Number of predecssors that a block has as an exception handler. */
-    int b_except_predecessors;
     /* depth of stack upon entry of block, computed by stackdepth() */
     int b_startdepth;
     /* instruction offset for block, computed by assemble_jump_offsets() */
@@ -7327,7 +7325,7 @@ mark_warm(basicblock *entryblock) {
     entryblock->b_visited = 1;
     while (sp > stack) {
         basicblock *b = *(--sp);
-        assert(!b->b_except_predecessors);
+        assert(!b->b_except_handler);
         b->b_warm = 1;
         basicblock *next = b->b_next;
         if (next && BB_HAS_FALLTHROUGH(b) && !next->b_visited) {
@@ -7362,8 +7360,7 @@ mark_cold(basicblock *entryblock) {
 
     basicblock **sp = stack;
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        if (b->b_except_predecessors) {
-            assert(b->b_except_predecessors == b->b_predecessors);
+        if (b->b_except_handler) {
             assert(!b->b_warm);
             *sp++ = b;
             b->b_visited = 1;
@@ -8276,8 +8273,8 @@ static void
 dump_basicblock(const basicblock *b)
 {
     const char *b_return = basicblock_returns(b) ? "return " : "";
-    fprintf(stderr, "%d: [P=%d EP=%d EH=%d CLD=%d WRM=%d %d %p] used: %d, depth: %d, offset: %d %s\n",
-        b->b_label, b->b_predecessors, b->b_except_predecessors, b->b_except_handler, b->b_cold, b->b_warm, BB_NO_FALLTHROUGH(b), b, b->b_iused,
+    fprintf(stderr, "%d: [EH=%d CLD=%d WRM=%d NO_FT=%d %p] used: %d, depth: %d, offset: %d %s\n",
+        b->b_label, b->b_except_handler, b->b_cold, b->b_warm, BB_NO_FALLTHROUGH(b), b, b->b_iused,
         b->b_startdepth, b->b_offset, b_return);
     if (b->b_instr) {
         int i;
@@ -9372,17 +9369,8 @@ mark_reachable(basicblock *entryblock) {
                     *sp++ = target;
                 }
                 target->b_predecessors++;
-                if (is_block_push(instr)) {
-                    target->b_except_predecessors++;
-                }
-                assert(target->b_except_predecessors == 0 ||
-                       target->b_except_predecessors == target->b_predecessors);
             }
         }
-    }
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        if (b->b_except_predecessors) assert(b->b_except_handler);
-        if (b->b_predecessors > b->b_except_predecessors) assert(!b->b_except_handler);
     }
     PyMem_Free(stack);
     return 0;
@@ -9527,7 +9515,6 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
         }
         remove_redundant_nops(b);
         assert(b->b_predecessors == 0);
-        assert(b->b_except_predecessors == 0);
     }
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         if (inline_small_exit_blocks(b) < 0) {
