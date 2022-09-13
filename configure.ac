@@ -6832,6 +6832,7 @@ AS_CASE([$ac_sys_system],
     dnl curses and tkinter user interface are not available.
     dnl dbm and gdbm aren't available, too.
     dnl Emscripten and WASI provide only stubs for pwd, grp APIs.
+    dnl resource functions (get/setrusage) are stubs, too.
     PY_STDLIB_MOD_SET_NA(
       [_curses],
       [_curses_panel],
@@ -6847,6 +6848,7 @@ AS_CASE([$ac_sys_system],
       [nis],
       [ossaudiodev],
       [pwd],
+      [resource],
       [spwd],
       [syslog],
     )
@@ -6855,7 +6857,6 @@ AS_CASE([$ac_sys_system],
         dnl These modules are not particularly useful in browsers.
         PY_STDLIB_MOD_SET_NA(
           [fcntl],
-          [resource],
           [readline],
           [termios],
         )
@@ -6867,7 +6868,6 @@ AS_CASE([$ac_sys_system],
           [_ctypes_test],
           [fcntl],
           [mmap],
-          [resource],
           [termios],
         )
       ]
