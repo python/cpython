@@ -40,7 +40,7 @@ be executed::
     >>> main()
     <coroutine object main at 0x1053bb7c8>
 
-To actually run a coroutine, asyncio provides three main mechanisms:
+To actually run a coroutine, asyncio provides the following mechanisms:
 
 * The :func:`asyncio.run` function to run the top-level
   entry point "main()" function (see the above example.)
@@ -254,9 +254,9 @@ Creating Tasks
    .. important::
 
       Save a reference to the result of this function, to avoid
-      a task disappearing mid execution. The event loop only keeps
+      a task disappearing mid-execution. The event loop only keeps
       weak references to tasks. A task that isn't referenced elsewhere
-      may get garbage-collected at any time, even before it's done.
+      may get garbage collected at any time, even before it's done.
       For reliable "fire-and-forget" background tasks, gather them in
       a collection::
 
@@ -520,7 +520,8 @@ Shielding From Cancellation
 
    The statement::
 
-       res = await shield(something())
+       task = asyncio.create_task(something())
+       res = await shield(task)
 
    is equivalent to::
 
@@ -539,10 +540,18 @@ Shielding From Cancellation
    the ``shield()`` function should be combined with a try/except
    clause, as follows::
 
+       task = asyncio.create_task(something())
        try:
-           res = await shield(something())
+           res = await shield(task)
        except CancelledError:
            res = None
+
+   .. important::
+
+      Save a reference to tasks passed to this function, to avoid
+      a task disappearing mid-execution. The event loop only keeps
+      weak references to tasks. A task that isn't referenced elsewhere
+      may get garbage collected at any time, even before it's done.
 
    .. versionchanged:: 3.10
       Removed the *loop* parameter.

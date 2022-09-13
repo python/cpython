@@ -175,8 +175,25 @@ The :option:`-X` ``no_debug_ranges`` option and the environment variable
 See :pep:`657` for more details. (Contributed by Pablo Galindo, Batuhan Taskaya
 and Ammar Askar in :issue:`43950`.)
 
-Exceptions can be enriched with notes (PEP 678)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+PEP 654: Exception Groups and ``except*``
+-----------------------------------------
+
+:pep:`654` introduces language features that enable a program
+to raise and handle multiple unrelated exceptions simultaneously.
+The builtin types :exc:`ExceptionGroup` and :exc:`BaseExceptionGroup`
+make it possible to group exceptions and raise them together,
+and the new :keyword:`except* <except_star>` syntax generalizes
+:keyword:`except` to match subgroups of exception groups.
+
+See :pep:`654` for more details.
+
+(Contributed by Irit Katriel in :issue:`45292`. PEP written by
+Irit Katriel, Yury Selivanov and Guido van Rossum.)
+
+
+PEP 678: Exceptions can be enriched with notes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The :meth:`add_note` method was added to :exc:`BaseException`. It can be
 used to enrich exceptions with context information which is not available
@@ -352,6 +369,28 @@ PEP 563 May Not Be the Future
   that was planned for this release has been indefinitely postponed.
   See `this message <https://mail.python.org/archives/list/python-dev@python.org/message/VIZEBX5EYMSYIJNDBF6DMUMZOCWHARSO/>`_ for more information.
 
+Windows py.exe launcher improvements
+------------------------------------
+
+The copy of :ref:`launcher` included with Python 3.11 has been significantly
+updated. It now supports company/tag syntax as defined in :pep:`514` using the
+``-V:<company>/<tag>`` argument instead of the limited ``-x.y`` argument. This
+allows launching distributions other than ``PythonCore``, which is the one
+obtained from `python.org <https://python.org>`_.
+
+When using ``-V:`` selectors, either company or tag can be omitted, but all
+installs will be searched. For example, ``-V:OtherPython/`` will select the
+"best" tag registered for ``OtherPython``, while ``-V:3.11`` or ``-V:/3.11``
+will select the "best" distribution with tag ``3.11``.
+
+When using legacy ``-x``, ``-x.y``, ``-x-ZZ`` or ``-x.y-ZZ`` arguments, all
+existing behaviour should be preserved from past versions. Only releases from
+``PythonCore`` will be selected. However, the ``-64`` suffix now implies "not
+32-bit", as there are multiple supported 64-bit platforms. 32-bit runtimes are
+detected by checking its tag for a ``-32`` suffix. All releases of Python
+since 3.5 have included this in their 32-bit builds.
+
+
 Other Language Changes
 ======================
 
@@ -439,6 +478,17 @@ Other CPython Implementation Changes
   and :option:`-X options <-X>` is available with the new :option:`--help-env` or
   :option:`--help-xoptions` flags, and with :option:`--help-all`.
   (Contributed by Éric Araujo in :issue:`46142`.)
+
+* Converting between :class:`int` and :class:`str` in bases other than 2
+  (binary), 4, 8 (octal), 16 (hexadecimal), or 32 such as base 10 (decimal)
+  now raises a :exc:`ValueError` if the number of digits in string form is
+  above a limit to avoid potential denial of service attacks due to the
+  algorithmic complexity. This is a mitigation for `CVE-2020-10735
+  <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+  This limit can be configured or disabled by environment variable, command
+  line flag, or :mod:`sys` APIs. See the :ref:`integer string conversion
+  length limitation <int_max_str_digits>` documentation.  The default limit
+  is 4300 digits in string form.
 
 
 New Modules
@@ -807,6 +857,20 @@ time
   which has a resolution of 100 nanoseconds (10\ :sup:`-7` seconds). Previously,
   it had a resolution of 1 millisecond (10\ :sup:`-3` seconds).
   (Contributed by Benjamin Szőke, Dong-hee Na, Eryk Sun and Victor Stinner in :issue:`21302` and :issue:`45429`.)
+
+
+traceback
+---------
+
+* Add :func:`traceback.StackSummary.format_frame_summary` to allow users
+  to override which frames appear in the traceback, and how they are
+  formatted.
+  (Contributed by Ammar Askar in :issue:`44569`.)
+
+* Add :func:`traceback.TracebackException.print`, which prints the
+  formatted :exc:`~traceback.TracebackException` instance to a file.
+  (Contributed by Irit Katriel in :issue:`33809`.)
+
 
 typing
 ------
@@ -1593,7 +1657,8 @@ Changes in the Python API
 Build Changes
 =============
 
-* Building Python now requires a C11 compiler without optional C11 features.
+* Building Python now requires a C11 compiler. Optional C11 features are not
+  required.
   (Contributed by Victor Stinner in :issue:`46656`.)
 
 * Building Python now requires support of IEEE 754 floating point numbers.
@@ -1631,16 +1696,23 @@ Build Changes
 
 * Build dependencies, compiler flags, and linker flags for most stdlib
   extension modules are now detected by :program:`configure`. libffi, libnsl,
-  libsqlite3, zlib, bzip2, liblzma, libcrypt, Tcl/Tk libs, and uuid flags
-  are detected by ``pkg-config`` (when available).
+  libsqlite3, zlib, bzip2, liblzma, libcrypt, Tcl/Tk, and uuid flags
+  are detected by ``pkg-config`` (when available). :mod:`tkinter` now
+  requires ``pkg-config`` command to detect development settings for Tcl/Tk
+  headers and libraries.
   (Contributed by Christian Heimes and Erlend Egeberg Aasland in
   :issue:`45847`, :issue:`45747`, and :issue:`45763`.)
 
   .. note::
-     Use the environment variables ``TCLTK_CFLAGS`` and ``TCLTK_LIBS`` to
-     manually specify the location of Tcl/Tk headers and libraries.
-     The :program:`configure` options ``--with-tcltk-includes`` and
-     ``--with-tcltk-libs`` have been removed.
+     Use the environment variables :envvar:`TCLTK_CFLAGS` and
+     :envvar:`TCLTK_LIBS` to manually specify the location of Tcl/Tk headers
+     and libraries. The :program:`configure` options ``--with-tcltk-includes``
+     and ``--with-tcltk-libs`` have been removed.
+
+     On RHEL 7 and CentOS 7 the development packages do not provide ``tcl.pc``
+     and ``tk.pc``, use :envvar:`TCLTK_LIBS="-ltk8.5 -ltkstub8.5 -ltcl8.5"`.
+     The directory ``Misc/rhel7`` contains ``.pc`` files and instructions
+     how to build Python with RHEL 7's and CentOS 7's Tcl/Tk and OpenSSL.
 
 * CPython now has :pep:`11` tier 3 support for cross compiling to WebAssembly
   platform ``wasm32-unknown-emscripten`` (Python in the browser). The effort
@@ -2102,6 +2174,31 @@ Removed
 * Remove the ``HAVE_PY_SET_53BIT_PRECISION`` macro (moved to the internal C
   API).
   (Contributed by Victor Stinner in :issue:`45412`.)
+
+* Remove the :c:type:`Py_UNICODE` encoder APIs,
+  as they have been deprecated since Python 3.3,
+  are little used
+  and are inefficient relative to the recommended alternatives.
+
+  The removed functions are:
+
+  * :func:`!PyUnicode_Encode`
+  * :func:`!PyUnicode_EncodeASCII`
+  * :func:`!PyUnicode_EncodeLatin1`
+  * :func:`!PyUnicode_EncodeUTF7`
+  * :func:`!PyUnicode_EncodeUTF8`
+  * :func:`!PyUnicode_EncodeUTF16`
+  * :func:`!PyUnicode_EncodeUTF32`
+  * :func:`!PyUnicode_EncodeUnicodeEscape`
+  * :func:`!PyUnicode_EncodeRawUnicodeEscape`
+  * :func:`!PyUnicode_EncodeCharmap`
+  * :func:`!PyUnicode_TranslateCharmap`
+  * :func:`!PyUnicode_EncodeDecimal`
+  * :func:`!PyUnicode_TransformDecimalToASCII`
+
+  See :pep:`624` for details and
+  :pep:`migration guidance <624#alternative-apis>`.
+  (Contributed by Inada Naoki in :issue:`44029`.)
 
 
 .. _libb2: https://www.blake2.net/
