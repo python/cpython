@@ -817,8 +817,9 @@ bu_short(_structmodulestate *state, const char *p, const formatdef *f)
     do {
         x = (x<<8) | *bytes++;
     } while (--i > 0);
-    /* Extend sign. */
-    return PyLong_FromLong(x & 0x8000U ? (long)x - 0x10000 : (long)x);
+    /* Extend sign, avoiding implementation-defined or undefined behaviour. */
+    x = (x ^ 0x8000U) - 0x8000U;
+    return PyLong_FromLong(x & 0x8000U ? -1 - (long)(~x): (long)x);
 }
 
 static PyObject *
@@ -834,8 +835,8 @@ bu_int(_structmodulestate *state, const char *p, const formatdef *f)
         x = (x<<8) | *bytes++;
     } while (--i > 0);
     /* Extend sign, avoiding implementation-defined or undefined behaviour. */
-    return PyLong_FromLong(x & 0x80000000U ?
-        -1 - (long)(0xFFFFFFFFU - x) : (long)x);
+    x = (x ^ 0x80000000U) - 0x80000000U;
+    return PyLong_FromLong(x & 0x80000000U ? -1 - (long)(~x): (long)x);
 }
 
 static PyObject *
@@ -863,8 +864,9 @@ bu_longlong(_structmodulestate *state, const char *p, const formatdef *f)
         x = (x<<8) | *bytes++;
     } while (--i > 0);
     /* Extend sign, avoiding implementation-defined or undefined behaviour. */
-    return PyLong_FromLongLong(x & 0x8000000000000000U ?
-        -1 - (long long)(0xFFFFFFFFFFFFFFFFU - x) : (long long)x);
+    x = (x ^ 0x8000000000000000U) - 0x8000000000000000U;
+    return PyLong_FromLongLong(
+        x & 0x8000000000000000U ? -1 - (long long)(~x): (long long)x);
 }
 
 static PyObject *
@@ -1058,8 +1060,9 @@ lu_short(_structmodulestate *state, const char *p, const formatdef *f)
     do {
         x = (x<<8) | bytes[--i];
     } while (i > 0);
-    /* Extend sign. */
-    return PyLong_FromLong(x & 0x8000U ? (long)x - 0x10000 : (long)x);
+    /* Extend sign, avoiding implementation-defined or undefined behaviour. */
+    x = (x ^ 0x8000U) - 0x8000U;
+    return PyLong_FromLong(x & 0x8000U ? -1 - (long)(~x): (long)x);
 }
 
 static PyObject *
@@ -1075,8 +1078,8 @@ lu_int(_structmodulestate *state, const char *p, const formatdef *f)
         x = (x<<8) | bytes[--i];
     } while (i > 0);
     /* Extend sign, avoiding implementation-defined or undefined behaviour. */
-    return PyLong_FromLong(x & 0x80000000U ?
-        -1 - (long)(0xFFFFFFFFU - x) : (long)x);
+    x = (x ^ 0x80000000U) - 0x80000000U;
+    return PyLong_FromLong(x & 0x80000000U ? -1 - (long)(~x): (long)x);
 }
 
 static PyObject *
@@ -1104,8 +1107,9 @@ lu_longlong(_structmodulestate *state, const char *p, const formatdef *f)
         x = (x<<8) | bytes[--i];
     } while (i > 0);
     /* Extend sign, avoiding implementation-defined or undefined behaviour. */
-    return PyLong_FromLongLong(x & 0x8000000000000000U ?
-        -1 - (long long)(0xFFFFFFFFFFFFFFFFU - x) : (long long)x);
+    x = (x ^ 0x8000000000000000U) - 0x8000000000000000U;
+    return PyLong_FromLongLong(
+        x & 0x8000000000000000U ? -1 - (long long)(~x): (long long)x);
 }
 
 static PyObject *
