@@ -1923,7 +1923,7 @@ class PatchTest(unittest.TestCase):
             del sys.modules['test.test_unittest.testmock.support']
             del sys.modules['test.test_unittest.testmock']
             del sys.modules['test.test_unittest']
-            del sys.modules['unittest']
+            del sys.modules['test']
 
             # now make sure we can patch based on a dotted path:
             @patch('test.test_unittest.testmock.support.X')
