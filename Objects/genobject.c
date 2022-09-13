@@ -419,7 +419,7 @@ throw(type[,value[,tb]])\n\
 \n\
 Raise exception in generator, return next yielded value or raise\n\
 StopIteration.\n\
-the (type, val, tb) exception representation is deprecated, \n\
+the (type, val, tb) signature is deprecated, \n\
 and may be removed in a future version of Python.");
 
 static PyObject *
