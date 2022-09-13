@@ -586,13 +586,17 @@ class BasicSocketTests(unittest.TestCase):
         self.assertLessEqual(patch, 63)
         self.assertGreaterEqual(status, 0)
         self.assertLessEqual(status, 15)
-        # Version string as returned by {Open,Libre}SSL, the format might change
-        if IS_LIBRESSL:
-            self.assertTrue(s.startswith("LibreSSL {:d}".format(major)),
-                            (s, t, hex(n)))
+
+        libressl_ver = f"LibreSSL {major:d}"
+        if major >= 3:
+            # 3.x uses 0xMNN00PP0L
+            openssl_ver = f"OpenSSL {major:d}.{minor:d}.{patch:d}"
         else:
-            self.assertTrue(s.startswith("OpenSSL {:d}.{:d}.{:d}".format(major, minor, fix)),
-                            (s, t, hex(n)))
+            openssl_ver = f"OpenSSL {major:d}.{minor:d}.{fix:d}"
+        self.assertTrue(
+            s.startswith((openssl_ver, libressl_ver)),
+            (s, t, hex(n))
+        )
 
     @support.cpython_only
     def test_refcycle(self):
@@ -1123,8 +1127,12 @@ class ContextTests(unittest.TestCase):
 
     def test_constructor(self):
         for protocol in PROTOCOLS:
-            ssl.SSLContext(protocol)
-        ctx = ssl.SSLContext()
+            if has_tls_protocol(protocol):
+                with support.check_warnings():
+                    ctx = ssl.SSLContext(protocol)
+                self.assertEqual(ctx.protocol, protocol)
+        with support.check_warnings():
+            ctx = ssl.SSLContext()
         self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLS)
         self.assertRaises(ValueError, ssl.SSLContext, -1)
         self.assertRaises(ValueError, ssl.SSLContext, 42)
@@ -1275,7 +1283,7 @@ class ContextTests(unittest.TestCase):
         ctx.maximum_version = ssl.TLSVersion.MINIMUM_SUPPORTED
         self.assertIn(
             ctx.maximum_version,
-            {ssl.TLSVersion.TLSv1, ssl.TLSVersion.SSLv3}
+            {ssl.TLSVersion.TLSv1, ssl.TLSVersion.TLSv1_1, ssl.TLSVersion.SSLv3}
         )
 
         ctx.minimum_version = ssl.TLSVersion.MAXIMUM_SUPPORTED
@@ -1287,19 +1295,19 @@ class ContextTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             ctx.minimum_version = 42
 
-        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1_1)
+        if has_tls_protocol(ssl.PROTOCOL_TLSv1_1):
+            ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1_1)
 
-        self.assertIn(
-            ctx.minimum_version, minimum_range
-        )
-        self.assertEqual(
-            ctx.maximum_version, ssl.TLSVersion.MAXIMUM_SUPPORTED
-        )
-        with self.assertRaises(ValueError):
-            ctx.minimum_version = ssl.TLSVersion.MINIMUM_SUPPORTED
-        with self.assertRaises(ValueError):
-            ctx.maximum_version = ssl.TLSVersion.TLSv1
-
+            self.assertIn(
+                ctx.minimum_version, minimum_range
+            )
+            self.assertEqual(
+                ctx.maximum_version, ssl.TLSVersion.MAXIMUM_SUPPORTED
+            )
+            with self.assertRaises(ValueError):
+                ctx.minimum_version = ssl.TLSVersion.MINIMUM_SUPPORTED
+            with self.assertRaises(ValueError):
+                ctx.maximum_version = ssl.TLSVersion.TLSv1
 
     @unittest.skipUnless(have_verify_flags(),
                          "verify_flags need OpenSSL > 0.9.8")
@@ -1685,10 +1693,12 @@ class ContextTests(unittest.TestCase):
         self.assertFalse(ctx.check_hostname)
         self._assert_context_options(ctx)
 
-        ctx = ssl._create_stdlib_context(ssl.PROTOCOL_TLSv1)
-        self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1)
-        self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
-        self._assert_context_options(ctx)
+        if has_tls_protocol(ssl.PROTOCOL_TLSv1):
+            with support.check_warnings():
+                ctx = ssl._create_stdlib_context(ssl.PROTOCOL_TLSv1)
+            self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1)
+            self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
+            self._assert_context_options(ctx)
 
         ctx = ssl._create_stdlib_context(ssl.PROTOCOL_TLSv1,
                                          cert_reqs=ssl.CERT_REQUIRED,
@@ -3402,10 +3412,12 @@ class ThreadedTests(unittest.TestCase):
                            client_options=ssl.OP_NO_TLSv1_2)
 
         try_protocol_combo(ssl.PROTOCOL_TLS, ssl.PROTOCOL_TLSv1_2, 'TLSv1.2')
-        try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLSv1, False)
-        try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1_2, False)
-        try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLSv1_1, False)
-        try_protocol_combo(ssl.PROTOCOL_TLSv1_1, ssl.PROTOCOL_TLSv1_2, False)
+        if has_tls_protocol(ssl.PROTOCOL_TLSv1):
+            try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLSv1, False)
+            try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1_2, False)
+        if has_tls_protocol(ssl.PROTOCOL_TLSv1_1):
+            try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLSv1_1, False)
+            try_protocol_combo(ssl.PROTOCOL_TLSv1_1, ssl.PROTOCOL_TLSv1_2, False)
 
     def test_starttls(self):
         """Switching from clear text to encrypted and back again."""

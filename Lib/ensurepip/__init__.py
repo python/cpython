@@ -29,7 +29,12 @@ sys.path = {additional_paths or []} + sys.path
 sys.argv[1:] = {args}
 runpy.run_module("pip", run_name="__main__", alter_sys=True)
 """
-    return subprocess.run([sys.executable, "-c", code], check=True).returncode
+
+    cmd = [sys.executable, '-c', code]
+    if sys.flags.isolated:
+        # run code in isolated mode if currently running isolated
+        cmd.insert(1, '-I')
+    return subprocess.run(cmd, check=True).returncode
 
 
 def version():
