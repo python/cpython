@@ -67,11 +67,12 @@ def literal_eval(node_or_string):
         msg = "malformed node or string"
         if lno := getattr(node, 'lineno', None):
             msg += f' on line {lno}'
-        raise ValueError(msg + f': {node!r}')
+        raise ValueError(f'{msg}: {node!r}')
     def _convert_num(node):
         if not isinstance(node, Constant) or type(node.value) not in (int, float, complex):
             _raise_malformed_node(node)
         return node.value
+
     def _convert_signed_num(node):
         if isinstance(node, UnaryOp) and isinstance(node.op, (UAdd, USub)):
             operand = _convert_num(node.operand)
@@ -80,6 +81,7 @@ def literal_eval(node_or_string):
             else:
                 return - operand
         return _convert_num(node)
+
     def _convert(node):
         if isinstance(node, Constant):
             return node.value
@@ -406,7 +408,7 @@ class NodeVisitor(object):
 
     def visit(self, node):
         """Visit a node."""
-        method = 'visit_' + node.__class__.__name__
+        method = f'visit_{node.__class__.__name__}'
         visitor = getattr(self, method, self.generic_visit)
         return visitor(node)
 
@@ -429,15 +431,15 @@ class NodeVisitor(object):
                     type_name = name
                     break
         if type_name is not None:
-            method = 'visit_' + type_name
+            method = f'visit_{type_name}'
             try:
                 visitor = getattr(self, method)
             except AttributeError:
                 pass
             else:
                 import warnings
-                warnings.warn(f"{method} is deprecated; add visit_Constant",
-                              DeprecationWarning, 2)
+                warnings.warn(f"{method} is deprecated; add visit_Constant", DeprecationWarning, 2)
+
                 return visitor(node)
         return self.generic_visit(node)
 
@@ -635,7 +637,7 @@ class Param(expr_context):
 
 # Large float and imaginary literals get turned into infinities in the AST.
 # We unparse those infinities to INFSTR.
-_INFSTR = "1e" + repr(sys.float_info.max_10_exp + 1)
+_INFSTR = f"1e{repr(sys.float_info.max_10_exp + 1)}"
 
 @_simple_enum(IntEnum)
 class _Precedence:
@@ -872,7 +874,7 @@ class _Unparser(NodeVisitor):
     def visit_AugAssign(self, node):
         self.fill()
         self.traverse(node.target)
-        self.write(" " + self.binop[node.op.__class__.__name__] + "= ")
+        self.write(f" {self.binop[node.op.__class__.__name__]}= ")
         self.traverse(node.value)
 
     def visit_AnnAssign(self, node):
@@ -947,7 +949,7 @@ class _Unparser(NodeVisitor):
         self.fill("raise")
         if not node.exc:
             if node.cause:
-                raise ValueError(f"Node can't use cause without an exception.")
+                raise ValueError("Node can't use cause without an exception.")
             return
         self.write(" ")
         self.traverse(node.exc)
@@ -1002,7 +1004,7 @@ class _Unparser(NodeVisitor):
         for deco in node.decorator_list:
             self.fill("@")
             self.traverse(deco)
-        self.fill("class " + node.name)
+        self.fill(f"class {node.name}")
         with self.delimit_if("(", ")", condition = node.bases or node.keywords):
             comma = False
             for e in node.bases:
@@ -1032,7 +1034,7 @@ class _Unparser(NodeVisitor):
         for deco in node.decorator_list:
             self.fill("@")
             self.traverse(deco)
-        def_str = fill_suffix + " " + node.name
+        def_str = f"{fill_suffix} {node.name}"
         self.fill(def_str)
         with self.delimit("(", ")"):
             self.traverse(node.args)
@@ -1431,7 +1433,7 @@ class _Unparser(NodeVisitor):
             self.set_precedence(_Precedence.CMP.next(), node.left, *node.comparators)
             self.traverse(node.left)
             for o, e in zip(node.ops, node.comparators):
-                self.write(" " + self.cmpops[o.__class__.__name__] + " ")
+                self.write(f" {self.cmpops[o.__class__.__name__]} ")
                 self.traverse(e)
 
     boolops = {"And": "and", "Or": "or"}
@@ -1600,7 +1602,7 @@ class _Unparser(NodeVisitor):
     def visit_alias(self, node):
         self.write(node.name)
         if node.asname:
-            self.write(" as " + node.asname)
+            self.write(f" as {node.asname}")
 
     def visit_withitem(self, node):
         self.traverse(node.context_expr)
