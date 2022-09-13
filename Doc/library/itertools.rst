@@ -818,8 +818,8 @@ which incur interpreter overhead.
       data = bytearray([1]) * n
       data[:2] = 0, 0
       limit = math.isqrt(n) + 1
-      for c in compress(count(), islice(data, limit)):
-         data[c+c::c] = bytearray(len(range(c+c, n, c)))
+      for p in compress(count(), islice(data, limit)):
+         data[p+p : n : p] = bytearray(len(range(p+p, n, p)))
       return compress(count(), data)
 
    def flatten(list_of_lists):
