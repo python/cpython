@@ -1331,7 +1331,7 @@ always available.
 
    .. availability:: Unix.
 
-.. function:: set_int_max_str_digits(n)
+.. function:: set_int_max_str_digits(maxdigits)
 
    Set the :ref:`integer string conversion length limitation
    <int_max_str_digits>` used by this interpreter. See also
