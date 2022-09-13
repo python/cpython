@@ -526,9 +526,9 @@ around :func:`~os.chdir`. (Contributed by Filipe Laíns in :issue:`25625`)
 dataclasses
 -----------
 
-* Change field default mutability check, allowing only defaults which can be
-  hashed instead of all instances of :class:`dict`, :class:`list` and
-  :class:`set` (Contributed by Eric V. Smith in :issue:`44674`)
+* Change field default mutability check, allowing only defaults which are
+  :term:`hashable` instead of all instances of :class:`dict`, :class:`list`
+  and :class:`set` (Contributed by Eric V. Smith in :issue:`44674`)
 
 datetime
 --------
