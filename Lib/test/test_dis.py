@@ -1445,27 +1445,27 @@ expected_jumpy_line = 1
 # outer(), which will appear at the beginning).
 
 def _format(op):
-  arg = "_" if op.arg is None else op.arg
-  line = "_" if op.starts_line is None else op.starts_line
-  if isinstance(op.argval, types.CodeType):
-    argval = f"code_object_{op.argval.co_name}"
-    argrepr = f"repr({argval})"
-  elif isinstance(op.argval, str):
-    argval = repr(op.argval)
-    argrepr = repr(op.argrepr)
-  else:
-    argval = op.argval
-    argrepr = repr(op.argrepr)
-  return (f"    ({op.opname!r:<28}, {op.opcode:>3}, {arg:>3}, {argval!s:>20}, "
-          f"{argrepr:>24}, {op.offset:>3}, {line:>4}, {op.is_jump_target!r}),")
+    arg = "_" if op.arg is None else op.arg
+    line = "_" if op.starts_line is None else op.starts_line
+    if isinstance(op.argval, types.CodeType):
+        argval = f"code_object_{op.argval.co_name}"
+        argrepr = f"repr({argval})"
+    elif isinstance(op.argval, str):
+        argval = repr(op.argval)
+        argrepr = repr(op.argrepr)
+    else:
+        argval = op.argval
+        argrepr = repr(op.argrepr)
+    return (f"    ({op.opname!r:<28}, {op.opcode:>3}, {arg:>3}, {argval!s:>20}, "
+            f"{argrepr:>24}, {op.offset:>3}, {line:>4}, {op.is_jump_target!r}),")
 
 
 def _print_expected(code, name, first_line):
-  print(f"expected_opinfo_{name} = [inst(*args) for args in [")
-  print(f"    # {'opname':<24}, opcode, arg, {'argval':>20}, argrepr, offset, starts_line, is_jump_target")
-  for op in dis.get_instructions(code, first_line=first_line):
-      print(_format(op))
-  print("]]\n")
+    print(f"expected_opinfo_{name} = [inst(*args) for args in [")
+    print(f"    # {'opname':<24}, opcode, arg, {'argval':>20}, argrepr, offset, starts_line, is_jump_target")
+    for op in dis.get_instructions(code, first_line=first_line):
+        print(_format(op))
+    print("]]\n")
 
 
 def _regenerate_expected():
