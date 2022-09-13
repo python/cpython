@@ -563,8 +563,8 @@ gen_throw(PyGenObject *gen, PyObject *const *args, Py_ssize_t nargs)
     }
     if (nargs > 1) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                            "the (type, val, tb) exception representation is deprecated, "
-                            "and may be removed in a future version of Python.",
+                            "the (type, exc, tb) signature of throw() is deprecated, "
+                            "use the single-arg signature instead.",
                             1) < 0) {
             return NULL;
         }
