@@ -1399,7 +1399,6 @@ class CodeInfoTests(unittest.TestCase):
         self.assertEqual(dis.pretty_flags(0), '0x0')
 
 
-
 # Fodder for instruction introspection tests
 #   Editing any of these may require recalculating the expected output
 def outer(a=1, b=2):
