@@ -523,6 +523,14 @@ Added non parallel-safe :func:`~contextlib.chdir` context manager to change
 the current working directory and then restore it on exit. Simple wrapper
 around :func:`~os.chdir`. (Contributed by Filipe Laíns in :issue:`25625`)
 
+dataclasses
+-----------
+
+* Change field default mutability check, allowing only defaults which are
+  :term:`hashable` instead of any object which is not an instance of
+  :class:`dict`, :class:`list` or :class:`set`. (Contributed by Eric V. Smith in
+  :issue:`44674`.)
+
 datetime
 --------
 
