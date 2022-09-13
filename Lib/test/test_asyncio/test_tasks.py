@@ -3241,28 +3241,24 @@ class SleepTests(test_utils.TestCase):
 
 
 class WaitTests(unittest.IsolatedAsyncioTestCase):
-    async def test_awaitable_is_deprecated_in_wait(self):
-        # Remove test when passing awaitables to asyncio.wait() is removed in 3.14
+    async def test_wait_supports_awaitables(self):
 
         class ExampleAwaitable:
             def __await__(self):
                 return asyncio.sleep(0).__await__()
 
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "awaitable objects that are not futures",
-        ):
-            await asyncio.wait([ExampleAwaitable()])
+        await asyncio.wait([ExampleAwaitable()])
 
         task = asyncio.create_task(coroutine_function())
-        with (
-            self.assertWarnsRegex(
-                DeprecationWarning, "awaitable objects that are not futures"
-            ),
-            self.assertRaises(TypeError),
+        coro = coroutine_function()
+        with self.assertRaisesRegex(
+            TypeError,
+            r"Passing coroutines is forbidden, use tasks explicitly."
         ):
-            await asyncio.wait([task, ExampleAwaitable(), coroutine_function()])
+            await asyncio.wait([task, ExampleAwaitable(), coro])
 
+        # avoid: coroutine 'coroutine_function' was never awaited
+        coro.close()
         # avoid: Task was destroyed but it is pending!
         await task
 
