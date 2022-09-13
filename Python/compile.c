@@ -8632,6 +8632,9 @@ assemble(struct compiler *c, int addNone)
     if (calculate_jump_targets(g->g_entryblock)) {
         goto error;
     }
+    if (mark_except_handlers(g->g_entryblock) < 0) {
+        goto error;
+    }
     if (optimize_cfg(g, consts, c->c_const_cache)) {
         goto error;
     }
@@ -9520,9 +9523,6 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
         if (inline_small_exit_blocks(b) < 0) {
             return -1;
         }
-    }
-    if (mark_except_handlers(g->g_entryblock) < 0) {
-        return -1;
     }
     if (mark_reachable(g->g_entryblock)) {
         return -1;
