@@ -1,10 +1,9 @@
 # Test the internal _wmi module on Windows
 # This is used by the platform module, and potentially others
 
-import re
 import sys
 import unittest
-from test.support import import_helper
+from test.support import import_helper, requires_resource
 
 
 # Do this first so test will be skipped if module doesn't exist
@@ -20,7 +19,7 @@ class WmiTests(unittest.TestCase):
         self.assertEqual("Version", k, r[0])
         # Best we can check for the version is that it's digits, dot, digits, anything
         # Otherwise, we are likely checking the result of the query against itself
-        self.assertTrue(re.match(r"\d+\.\d+.+$", v), r[0])
+        self.assertRegex(v, r"\d+\.\d+.+$", r[0])
 
     def test_wmi_query_repeated(self):
         # Repeated queries should not break
@@ -46,6 +45,7 @@ class WmiTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             _wmi.exec_query("not select, just in case someone tries something")
 
+    @requires_resource('cpu')
     def test_wmi_query_overflow(self):
         # Ensure very big queries fail
         # Test multiple times to ensure consistency
@@ -61,7 +61,15 @@ class WmiTests(unittest.TestCase):
         it = iter(r.split("\0"))
         try:
             while True:
-                self.assertTrue(re.match(r"ProcessId=\d+", next(it)))
+                self.assertRegex(next(it), r"ProcessId=\d+")
                 self.assertEqual("", next(it))
         except StopIteration:
             pass
+
+    def test_wmi_query_threads(self):
+        from concurrent.futures import ThreadPoolExecutor
+        query = "SELECT ProcessId FROM Win32_Process WHERE ProcessId < 1000"
+        with ThreadPoolExecutor(4) as pool:
+            task = [pool.submit(_wmi.exec_query, query) for _ in range(32)]
+            for t in task:
+                self.assertRegex(t.result(), "ProcessId=")

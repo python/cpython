@@ -77,6 +77,8 @@ Objects/object.c	-	_Py_GenericAliasIterType	-
 Objects/object.c	-	_PyMemoryIter_Type	-
 Objects/object.c	-	_PyLineIterator	-
 Objects/object.c	-	_PyPositionsIterator	-
+Objects/perf_trampoline.c	-	_Py_trampoline_func_start	-
+Objects/perf_trampoline.c	-	_Py_trampoline_func_end	-
 Python/importdl.h	-	_PyImport_DynLoadFiletab	-
 
 Modules/expat/xmlrole.c	-	prolog0	-
@@ -340,6 +342,7 @@ Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	AST_LITERAL_EVAL_INITIALIZED
 #-----------------------
 # other vars that are actually constant
 
+Include/internal/pycore_blocks_output_buffer.h	-	BUFFER_BLOCK_SIZE	-
 Modules/_csv.c	-	quote_styles	-
 Modules/_ctypes/cfield.c	-	ffi_type_double	-
 Modules/_ctypes/cfield.c	-	ffi_type_float	-
@@ -371,6 +374,7 @@ Modules/_elementtree.c	-	ExpatMemoryHandler	-
 Modules/_io/_iomodule.c	-	static_types	-
 Modules/_io/textio.c	-	encodefuncs	-
 Modules/_localemodule.c	-	langinfo_constants	-
+Modules/_pickle.c	-	READ_WHOLE_LINE	-
 Modules/_sqlite/module.c	-	error_codes	-
 Modules/_sre/sre.c	pattern_repr	flag_names	-
 # XXX I'm pretty sure this is actually constant:
@@ -385,6 +389,39 @@ Modules/_zoneinfo.c	-	DAYS_BEFORE_MONTH	-
 Modules/_zoneinfo.c	-	DAYS_IN_MONTH	-
 Modules/arraymodule.c	-	descriptors	-
 Modules/arraymodule.c	-	emptybuf	-
+Modules/cjkcodecs/_codecs_cn.c	-	_mapping_list	-
+Modules/cjkcodecs/_codecs_cn.c	-	mapping_list	-
+Modules/cjkcodecs/_codecs_cn.c	-	_codec_list	-
+Modules/cjkcodecs/_codecs_cn.c	-	codec_list	-
+Modules/cjkcodecs/_codecs_hk.c	-	big5hkscs_pairenc_table	-
+Modules/cjkcodecs/_codecs_hk.c	-	_mapping_list	-
+Modules/cjkcodecs/_codecs_hk.c	-	mapping_list	-
+Modules/cjkcodecs/_codecs_hk.c	-	_codec_list	-
+Modules/cjkcodecs/_codecs_hk.c	-	codec_list	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	iso2022_kr_config	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	iso2022_jp_config	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	iso2022_jp_1_config	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	iso2022_jp_2_config	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	iso2022_jp_2004_config	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	iso2022_jp_3_config	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	iso2022_jp_ext_config	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	_mapping_list	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	mapping_list	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	_codec_list	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	codec_list	-
+Modules/cjkcodecs/_codecs_jp.c	-	_mapping_list	-
+Modules/cjkcodecs/_codecs_jp.c	-	mapping_list	-
+Modules/cjkcodecs/_codecs_jp.c	-	_codec_list	-
+Modules/cjkcodecs/_codecs_jp.c	-	codec_list	-
+Modules/cjkcodecs/_codecs_kr.c	-	u2johabjamo	-
+Modules/cjkcodecs/_codecs_kr.c	-	_mapping_list	-
+Modules/cjkcodecs/_codecs_kr.c	-	mapping_list	-
+Modules/cjkcodecs/_codecs_kr.c	-	_codec_list	-
+Modules/cjkcodecs/_codecs_kr.c	-	codec_list	-
+Modules/cjkcodecs/_codecs_tw.c	-	_mapping_list	-
+Modules/cjkcodecs/_codecs_tw.c	-	mapping_list	-
+Modules/cjkcodecs/_codecs_tw.c	-	_codec_list	-
+Modules/cjkcodecs/_codecs_tw.c	-	codec_list	-
 Modules/cjkcodecs/cjkcodecs.h	-	__methods	-
 Modules/cmathmodule.c	-	acos_special_values	-
 Modules/cmathmodule.c	-	acosh_special_values	-
@@ -404,6 +441,8 @@ Modules/nismodule.c	-	TIMEOUT	-
 Modules/nismodule.c	-	aliases	-
 Modules/ossaudiodev.c	-	control_labels	-
 Modules/ossaudiodev.c	-	control_names	-
+Modules/posixmodule.c	os_getxattr_impl	buffer_sizes	-
+Modules/posixmodule.c	os_listxattr_impl	buffer_sizes	-
 Modules/posixmodule.c	-	posix_constants_confstr	-
 Modules/posixmodule.c	-	posix_constants_pathconf	-
 Modules/posixmodule.c	-	posix_constants_sysconf	-
@@ -426,6 +465,7 @@ Objects/obmalloc.c	-	_PyMem_Debug	-
 Objects/obmalloc.c	-	_PyMem_Raw	-
 Objects/obmalloc.c	-	_PyObject	-
 Objects/obmalloc.c	-	usedpools	-
+Objects/perf_trampoline.c	-	_Py_perfmap_callbacks	-
 Objects/typeobject.c	-	name_op	-
 Objects/unicodeobject.c	-	stripfuncnames	-
 Objects/unicodeobject.c	-	utf7_category	-
@@ -437,6 +477,7 @@ Parser/parser.c	-	reserved_keywords	-
 Parser/parser.c	-	soft_keywords	-
 Parser/tokenizer.c	-	type_comment_prefix	-
 Python/ast_opt.c	fold_unaryop	ops	-
+Python/ceval.c	-	binary_ops	-
 Python/codecs.c	-	Py_hexdigits	-
 Python/codecs.c	-	ucnhash_capi	-
 Python/codecs.c	_PyCodecRegistry_Init	methods	-
@@ -456,6 +497,7 @@ Python/pyhash.c	-	PyHash_Func	-
 Python/pylifecycle.c	-	_C_LOCALE_WARNING	-
 Python/pylifecycle.c	-	_PyOS_mystrnicmp_hack	-
 Python/pylifecycle.c	-	_TARGET_LOCALES	-
+Python/pystate.c	-	initial	-
 Python/specialize.c	-	adaptive_opcodes	-
 Python/specialize.c	-	cache_requirements	-
 Python/specialize.c	-	compare_masks	-
