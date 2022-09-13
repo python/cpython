@@ -1223,6 +1223,16 @@ Connection objects
 
       .. versionadded:: 3.11
 
+   .. attribute:: in_transaction
+
+      This read-only attribute corresponds to the low-level SQLite
+      `autocommit mode`_.
+
+      ``True`` if a transaction is active (there are uncommitted changes),
+      ``False`` otherwise.
+
+      .. versionadded:: 3.2
+
    .. attribute:: isolation_level
 
       This attribute controls the :ref:`transaction handling
@@ -1235,16 +1245,6 @@ Connection objects
 
       If not overridden by the *isolation_level* parameter of :func:`connect`,
       the default is ``""``, which is an alias for ``"DEFERRED"``.
-
-   .. attribute:: in_transaction
-
-      This read-only attribute corresponds to the low-level SQLite
-      `autocommit mode`_.
-
-      ``True`` if a transaction is active (there are uncommitted changes),
-      ``False`` otherwise.
-
-      .. versionadded:: 3.2
 
    .. attribute:: row_factory
 
