@@ -812,6 +812,16 @@ which incur interpreter overhead.
            for k in range(len(roots) + 1)
        ]
 
+   def sieve(n):
+      "Primes less than n"
+      # sieve(30) --> 2 3 5 7 11 13 17 19 23 29
+      data = bytearray([1]) * n
+      data[:2] = 0, 0
+      limit = math.isqrt(n) + 1
+      for c in compress(count(), islice(data, limit)):
+         data[c+c::c] = bytearray(len(range(c+c, n, c)))
+      return compress(count(), data)
+
    def flatten(list_of_lists):
        "Flatten one level of nesting"
        return chain.from_iterable(list_of_lists)
@@ -1155,6 +1165,19 @@ which incur interpreter overhead.
     >>> expanded = lambda x: x**3 -4*x**2 -17*x + 60
     >>> all(factored(x) == expanded(x) for x in range(-10, 11))
     True
+
+    >>> list(sieve(30))
+    [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
+    >>> len(list(sieve(100)))
+    25
+    >>> len(list(sieve(1_000)))
+    168
+    >>> len(list(sieve(10_000)))
+    1229
+    >>> len(list(sieve(100_000)))
+    9592
+    >>> len(list(sieve(1_000_000)))
+    78498
 
     >>> list(flatten([('a', 'b'), (), ('c', 'd', 'e'), ('f',), ('g', 'h', 'i')]))
     ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
