@@ -528,7 +528,7 @@ dataclasses
 
 * Change field default mutability check, allowing only defaults which can be
    hashed instead of all instances of :class:`dict`, :class:`list` and
-   :class:`set` (Contributed by Eric V. Smith in :gh:`29867`)
+   :class:`set` (Contributed by Eric V. Smith in :issue:`44674`)
 
 datetime
 --------
