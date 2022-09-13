@@ -1533,7 +1533,7 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
     } while (c == ' ' || c == '\t' || c == '\014');
 
     /* Set start of current token */
-    tok->start = tok->cur - 1;
+    tok->start = tok->cur == NULL ? NULL : tok->cur - 1;
 
     /* Skip comment, unless it's a type comment */
     if (c == '#') {
