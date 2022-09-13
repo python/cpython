@@ -1158,7 +1158,7 @@ throw(type[,value[,traceback]])\n\
 \n\
 Raise exception in coroutine, return next iterated value or raise\n\
 StopIteration.\n\
-the (type, val, tb) exception representation is deprecated, \n\
+the (type, val, tb) signature is deprecated, \n\
 and may be removed in a future version of Python.");
 
 
