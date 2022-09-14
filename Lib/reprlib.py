@@ -90,19 +90,28 @@ class Repr:
         maxiter,
         trailing_comma=False,
     ):
-        n = len(x)
-        if level <= 0 and n:
-            s = self.fillvalue
-        else:
-            newlevel = level - 1
-            repr1 = self.repr1
-            pieces = [repr1(elem, newlevel) for elem in islice(x, maxiter)]
-            if n > maxiter:
-                pieces.append(self.fillvalue)
-            s = self._join(pieces, level)
-            if n == 1 and trailing_comma and self.indent is None:
-                right = ',' + right
-        return '%s%s%s' % (left, s, right)
+        body = self._get_iterable_body(x, level, maxiter, trailing_comma)
+        return f'{left}{body}{right}'
+
+    def _get_iterable_body(self, obj, level, maxiter, trailing_comma):
+        if not obj:
+            return ''
+
+        if level <= 0:
+            return self.fillvalue
+
+        pieces = self._gen_pieces(obj, level, maxiter)
+        result = self._join(pieces, level)
+        if trailing_comma and len(obj) == 1 and self.indent is None:
+            return result + ','
+        return result
+
+    def _gen_pieces(self, obj, level, maxiter):
+        for elem in islice(obj, maxiter):
+            yield self.repr1(elem, level - 1)
+
+        if len(obj) > maxiter:
+            yield self.fillvalue
 
     def repr_tuple(self, x, level):
         return self._repr_iterable(
