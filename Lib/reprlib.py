@@ -70,23 +70,14 @@ class Repr:
             return self.repr_instance(x, level)
 
     def _join(self, pieces, level):
-        if self.indent is None:
-            return ', '.join(pieces)
         if not pieces:
             return ''
-        indent = self.indent
-        if isinstance(indent, int):
-            if indent < 0:
-                raise ValueError(
-                    f'Repr.indent cannot be negative int (was {indent!r})'
-                )
-            indent *= ' '
-        try:
-            sep = ',\n' + (self.maxlevel - level + 1) * indent
-        except TypeError as error:
-            raise TypeError(
-                f'Repr.indent must be a str, int or None, not {type(indent)}'
-            ) from error
+
+        indent = _validate_indent(self.indent)
+        if indent is None:
+            return ', '.join(pieces)
+
+        sep = ',\n' + (self.maxlevel - level + 1) * indent
         return sep.join(('', *pieces, ''))[1:-len(indent) or None]
 
     def _repr_iterable(self, x, level, *, left, right, maxiter, trail=''):
@@ -213,6 +204,21 @@ class Repr:
             j = max(0, self.maxother-3-i)
             s = s[:i] + self.fillvalue + s[len(s)-j:]
         return s
+
+
+def _validate_indent(indent):
+    if isinstance(indent, int):
+        if indent < 0:
+            raise ValueError(
+                f'Repr.indent cannot be negative int (was {indent!r})'
+            )
+        return ' ' * indent
+
+    if indent is None or isinstance(indent, str):
+        return indent
+
+    msg = f'Repr.indent must be a str, int or None, not {type(indent)}'
+    raise TypeError(msg)
 
 
 def _possibly_sorted(x):
