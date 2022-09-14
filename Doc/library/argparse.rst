@@ -2036,7 +2036,7 @@ Mutual exclusion
    message with a title and description. For example::
 
      >>> parser = argparse.ArgumentParser(prog='PROG')
-     >>> group = parser.add_argument_group('Group title', 'Group desciption')
+     >>> group = parser.add_argument_group('Group title', 'Group description')
      >>> exclusive_group = group.add_mutually_exclusive_group(required=True)
      >>> exclusive_group.add_argument('--foo', help='foo help')
      >>> exclusive_group.add_argument('--bar', help='bar help')
