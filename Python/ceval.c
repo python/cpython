@@ -1051,10 +1051,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     cframe.cframe.previous = prev_cframe;
     tstate->cframe = &cframe.cframe;
 
-    /* Push frame */
-    cframe.pyframe.f_funcobj = Py_None;
     assert(tstate->interp->interpreter_trampoline != NULL);
 #ifdef Py_DEBUG
+    cframe.pyframe.f_funcobj = (PyObject*)0xaaa0;
     cframe.pyframe.f_locals = (PyObject*)0xaaa1;
     cframe.pyframe.frame_obj = (PyFrameObject*)0xaaa2;
     cframe.pyframe.f_globals = (PyObject*)0xaaa3;
@@ -1066,6 +1065,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     cframe.pyframe.stacktop = 0;
     cframe.pyframe.owner = FRAME_OWNED_BY_CSTACK;
     cframe.pyframe.yield_offset = 0;
+    /* Push frame */
     cframe.pyframe.previous = prev_cframe->current_frame;
     frame->previous = &cframe.pyframe;
     cframe.cframe.current_frame = frame;

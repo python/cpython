@@ -48,12 +48,12 @@ enum _frameowner {
 
 typedef struct _PyInterpreterFrame {
     /* "Specials" section */
-    PyObject *f_funcobj; /* Strong reference */
-    PyObject *f_globals; /* Borrowed reference */
-    PyObject *f_builtins; /* Borrowed reference */
-    PyObject *f_locals; /* Strong reference, may be NULL */
+    PyObject *f_funcobj; /* Strong reference. Only valid for Python frames */
+    PyObject *f_globals; /* Borrowed reference. Only valid for Python frames */
+    PyObject *f_builtins; /* Borrowed reference. Only valid for Python frames */
+    PyObject *f_locals; /* Strong reference, may be NULL. Only valid for Python frames */
     PyCodeObject *f_code; /* Strong reference */
-    PyFrameObject *frame_obj; /* Strong reference, may be NULL */
+    PyFrameObject *frame_obj; /* Strong reference, may be NULL. Only valid for Python frames */
     /* Linkage section */
     struct _PyInterpreterFrame *previous;
     // NOTE: This is not necessarily the last instruction started in the given
