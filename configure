@@ -26049,7 +26049,7 @@ fi
   as_fn_append MODULE_BLOCK "MODULE__STRUCT_STATE=$py_cv_module__struct$as_nl"
   if test "x$py_cv_module__struct" = xyes; then :
 
-
+    as_fn_append MODULE_BLOCK "MODULE__STRUCT_CFLAGS=-fno-strict-overflow$as_nl"
 
 
 fi
@@ -26199,7 +26199,7 @@ fi
   as_fn_append MODULE_BLOCK "MODULE_AUDIOOP_STATE=$py_cv_module_audioop$as_nl"
   if test "x$py_cv_module_audioop" = xyes; then :
 
-
+    as_fn_append MODULE_BLOCK "MODULE_AUDIOOP_CFLAGS=-fno-strict-overflow$as_nl"
     as_fn_append MODULE_BLOCK "MODULE_AUDIOOP_LDFLAGS=$LIBM$as_nl"
 
 fi
@@ -27149,7 +27149,7 @@ fi
   as_fn_append MODULE_BLOCK "MODULE__CTYPES_STATE=$py_cv_module__ctypes$as_nl"
   if test "x$py_cv_module__ctypes" = xyes; then :
 
-    as_fn_append MODULE_BLOCK "MODULE__CTYPES_CFLAGS=$LIBFFI_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES_CFLAGS=-fno-strict-overflow $LIBFFI_CFLAGS$as_nl"
     as_fn_append MODULE_BLOCK "MODULE__CTYPES_LDFLAGS=$LIBFFI_LIBS$as_nl"
 
 fi
@@ -27718,7 +27718,7 @@ fi
   as_fn_append MODULE_BLOCK "MODULE__TESTCAPI_STATE=$py_cv_module__testcapi$as_nl"
   if test "x$py_cv_module__testcapi" = xyes; then :
 
-
+    as_fn_append MODULE_BLOCK "MODULE__TESTCAPI_CFLAGS=-fno-strict-overflow$as_nl"
 
 
 fi

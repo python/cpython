@@ -7222,7 +7222,7 @@ PY_STDLIB_MOD_SIMPLE([_posixsubprocess])
 PY_STDLIB_MOD_SIMPLE([_queue])
 PY_STDLIB_MOD_SIMPLE([_random])
 PY_STDLIB_MOD_SIMPLE([select])
-PY_STDLIB_MOD_SIMPLE([_struct])
+PY_STDLIB_MOD_SIMPLE([_struct], [-fno-strict-overflow])
 PY_STDLIB_MOD_SIMPLE([_typing])
 PY_STDLIB_MOD_SIMPLE([_xxsubinterpreters])
 PY_STDLIB_MOD_SIMPLE([_zoneinfo])
@@ -7236,7 +7236,7 @@ PY_STDLIB_MOD([_posixshmem],
   [$POSIXSHMEM_CFLAGS], [$POSIXSHMEM_LIBS])
 
 dnl needs libm
-PY_STDLIB_MOD_SIMPLE([audioop], [], [$LIBM])
+PY_STDLIB_MOD_SIMPLE([audioop], [-fno-strict-overflow], [$LIBM])
 PY_STDLIB_MOD_SIMPLE([_statistics], [], [$LIBM])
 PY_STDLIB_MOD_SIMPLE([cmath], [], [$LIBM])
 PY_STDLIB_MOD_SIMPLE([math], [], [$LIBM])
@@ -7297,7 +7297,7 @@ PY_STDLIB_MOD([_crypt],
   [$LIBCRYPT_CFLAGS], [$LIBCRYPT_LIBS])
 PY_STDLIB_MOD([_ctypes],
   [], [test "$have_libffi" = yes],
-  [$LIBFFI_CFLAGS], [$LIBFFI_LIBS])
+  [-fno-strict-overflow $LIBFFI_CFLAGS], [$LIBFFI_LIBS])
 PY_STDLIB_MOD([_curses],
   [], [test "$have_curses" != "no"],
   [$CURSES_CFLAGS], [$CURSES_LIBS]
@@ -7347,7 +7347,7 @@ PY_STDLIB_MOD([_hashlib], [], [test "$ac_cv_working_openssl_hashlib" = yes],
   [$OPENSSL_INCLUDES], [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS])
 
 dnl test modules
-PY_STDLIB_MOD([_testcapi], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testcapi], [test "$TEST_MODULES" = yes], [], [-fno-strict-overflow])
 PY_STDLIB_MOD([_testinternalcapi], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
