@@ -94,6 +94,16 @@ Profile Guided Optimization (PGO) and may be used to auto-enable Link Time
 Optimization (LTO) on some platforms.  For more details, see the sections
 below.
 
+Package manager
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+You can also use package manager vcpkg to build cpython with the following step::
+
+    git clone https://github.com/microsoft/vcpkg.git
+    ./bootstrap-vcpkg.bat # for powershell
+    ./bootstrap-vcpkg.sh # for bash
+    ./vcpkg install python3
+
+
 Profile Guided Optimization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
