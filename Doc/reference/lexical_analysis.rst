@@ -315,7 +315,7 @@ The Unicode category codes mentioned above stand for:
 * *Nd* - decimal numbers
 * *Pc* - connector punctuations
 * *Other_ID_Start* - explicit list of characters in `PropList.txt
-  <https://www.unicode.org/Public/14.0.0/ucd/PropList.txt>`_ to support backwards
+  <https://www.unicode.org/Public/15.0.0/ucd/PropList.txt>`_ to support backwards
   compatibility
 * *Other_ID_Continue* - likewise
 
@@ -323,8 +323,8 @@ All identifiers are converted into the normal form NFKC while parsing; compariso
 of identifiers is based on NFKC.
 
 A non-normative HTML file listing all valid identifier characters for Unicode
-14.0.0 can be found at
-https://www.unicode.org/Public/14.0.0/ucd/DerivedCoreProperties.txt
+15.0.0 can be found at
+https://www.unicode.org/Public/15.0.0/ucd/DerivedCoreProperties.txt
 
 
 .. _keywords:
@@ -1013,4 +1013,4 @@ occurrence outside string literals and comments is an unconditional error:
 
 .. rubric:: Footnotes
 
-.. [#] https://www.unicode.org/Public/11.0.0/ucd/NameAliases.txt
+.. [#] https://www.unicode.org/Public/15.0.0/ucd/NameAliases.txt
