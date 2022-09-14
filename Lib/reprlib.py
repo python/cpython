@@ -90,7 +90,7 @@ class Repr:
         maxiter,
         trailing_comma=False,
     ):
-        pieces = list(self._gen_pieces(x, level, maxiter))
+        pieces = list(self._gen_pieces(x, level - 1, maxiter))
         body = self._get_iterable_body(pieces, level, trailing_comma)
         return f'{left}{body}{right}'
 
@@ -108,7 +108,7 @@ class Repr:
 
     def _gen_pieces(self, obj, level, maxiter):
         for elem in islice(obj, maxiter):
-            yield self.repr1(elem, level - 1)
+            yield self.repr1(elem, level)
 
         if len(obj) > maxiter:
             yield self.fillvalue
@@ -180,14 +180,14 @@ class Repr:
     def repr_dict(self, x, level):
         left = '{'
         right = '}'
-        pieces = list(self._gen_dict_pieces(x, level, self.maxdict))
+        pieces = list(self._gen_dict_pieces(x, level - 1, self.maxdict))
         body = self._get_iterable_body(pieces, level, trailing_comma=False)
         return f'{left}{body}{right}'
 
     def _gen_dict_pieces(self, obj, level, maxiter):
         for key in islice(_possibly_sorted(obj), maxiter):
-            keyrepr = self.repr1(key, level - 1)
-            valrepr = self.repr1(obj[key], level - 1)
+            keyrepr = self.repr1(key, level)
+            valrepr = self.repr1(obj[key], level)
             yield f'{keyrepr}: {valrepr}'
 
         if len(obj) > maxiter:
