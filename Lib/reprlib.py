@@ -90,19 +90,19 @@ class Repr:
         maxiter,
         trailing_comma=False,
     ):
-        body = self._get_iterable_body(x, level, maxiter, trailing_comma)
+        pieces = list(self._gen_pieces(x, level, maxiter))
+        body = self._get_iterable_body(pieces, level, trailing_comma)
         return f'{left}{body}{right}'
 
-    def _get_iterable_body(self, obj, level, maxiter, trailing_comma):
-        if not obj:
+    def _get_iterable_body(self, pieces, level, trailing_comma):
+        if not pieces:
             return ''
 
         if level <= 0:
             return self.fillvalue
 
-        pieces = self._gen_pieces(obj, level, maxiter)
         result = self._join(pieces, level)
-        if self._need_tailing_comma(obj, trailing_comma):
+        if self._need_tailing_comma(pieces, trailing_comma):
             return result + ','
         return result
 
@@ -113,8 +113,8 @@ class Repr:
         if len(obj) > maxiter:
             yield self.fillvalue
 
-    def _need_tailing_comma(self, obj, trailing_comma):
-        return trailing_comma and len(obj) == 1 and self.indent is None
+    def _need_tailing_comma(self, pieces, trailing_comma):
+        return trailing_comma and len(pieces) == 1 and self.indent is None
 
     def repr_tuple(self, x, level):
         return self._repr_iterable(
