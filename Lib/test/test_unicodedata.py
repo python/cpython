@@ -18,7 +18,7 @@ from test.support import (open_urlresource, requires_resource, script_helper,
 class UnicodeMethodsTest(unittest.TestCase):
 
     # update this, if the database changes
-    expectedchecksum = '4739770dd4d0e5f1b1677accfc3552ed3c8ef326'
+    expectedchecksum = 'e708c31c0d51f758adf475cb7201cf80917362be'
 
     @requires_resource('cpu')
     def test_method_checksum(self):
@@ -71,7 +71,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     # Update this if the database changes. Make sure to do a full rebuild
     # (e.g. 'make distclean && make') to get the correct checksum.
-    expectedchecksum = '4975f3ec0acd4a62465d18c9bf8519b1964181f6'
+    expectedchecksum = '84b88a89f40aeae96852732f9dc0ee08be49780f'
 
     @requires_resource('cpu')
     def test_function_checksum(self):
@@ -224,7 +224,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
     def test_east_asian_width_unassigned(self):
         eaw = self.db.east_asian_width
         # unassigned
-        for char in '\u0530\u0ece\u10c6\u20fc\uaaca\U000107bd\U000115f2':
+        for char in '\u0530\u0ecf\u10c6\u20fc\uaaca\U000107bd\U000115f2':
             self.assertEqual(eaw(char), 'N')
             self.assertIs(self.db.name(char, None), None)
 
