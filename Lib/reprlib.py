@@ -179,22 +179,20 @@ class Repr:
         )
 
     def repr_dict(self, x, level):
-        n = len(x)
-        if n == 0:
-            return '{}'
-        if level <= 0:
-            return '{' + self.fillvalue + '}'
-        newlevel = level - 1
-        repr1 = self.repr1
-        pieces = []
-        for key in islice(_possibly_sorted(x), self.maxdict):
-            keyrepr = repr1(key, newlevel)
-            valrepr = repr1(x[key], newlevel)
-            pieces.append('%s: %s' % (keyrepr, valrepr))
-        if n > self.maxdict:
-            pieces.append(self.fillvalue)
-        s = self._join(pieces, level)
-        return '{%s}' % (s,)
+        left = '{'
+        right = '}'
+        pieces = list(self._gen_dict_pieces(x, level, self.maxdict))
+        body = self._get_iterable_body(pieces, level, trailing_comma=False)
+        return f'{left}{body}{right}'
+
+    def _gen_dict_pieces(self, obj, level, maxiter):
+        for key in islice(_possibly_sorted(obj), maxiter):
+            keyrepr = self.repr1(key, level - 1)
+            valrepr = self.repr1(obj[key], level - 1)
+            yield f'{keyrepr}: {valrepr}'
+
+        if len(obj) > maxiter:
+            yield self.fillvalue
 
     def repr_str(self, x, level):
         s = builtins.repr(x[:self.maxstring])
