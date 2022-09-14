@@ -138,11 +138,10 @@ class Repr:
     def repr_array(self, x, level):
         if not x:
             return "array('%s')" % x.typecode
-        header = "array('%s', [" % x.typecode
         return self._repr_iterable(
             x,
             level,
-            left=header,
+            left="array('%s', [" % x.typecode,
             right='])',
             maxiter=self.maxarray,
         )
