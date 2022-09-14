@@ -2041,7 +2041,8 @@ Mutual exclusion
      >>> exclusive_group.add_argument('--foo', help='foo help')
      >>> exclusive_group.add_argument('--bar', help='bar help')
      >>> parser.print_help()
-     usage: PROG [-h] (--foo | --bar)
+     usage: PROG [-h] (--foo FOO | --bar BAR)
+
      optional arguments:
        -h, --help  show this help message and exit
 
