@@ -314,7 +314,7 @@ loops that truncate the stream.
 
       def count(start=0, step=1):
           # count(10) --> 10 11 12 13 14 ...
-          # count(2.5, 0.5) -> 2.5 3.0 3.5 ...
+          # count(2.5, 0.5) --> 2.5 3.0 3.5 ...
           n = start
           while True:
               yield n
@@ -739,7 +739,7 @@ which incur interpreter overhead.
 
    def prepend(value, iterator):
        "Prepend a single value in front of an iterator"
-       # prepend(1, [2, 3, 4]) -> 1 2 3 4
+       # prepend(1, [2, 3, 4]) --> 1 2 3 4
        return chain([value], iterator)
 
    def tabulate(function, start=0):
@@ -809,23 +809,13 @@ which incur interpreter overhead.
            for k in range(len(roots) + 1)
        ]
 
-   def iter_index(seq, value, start=0):
-       "Return indices where a value occurs in a sequence."
-       # iter_index('AABCADEAF', 'A') --> 0 1 4 7
-       i = start - 1
-       try:
-           while True:
-               yield (i := seq.index(value, i+1))
-       except ValueError:
-           pass
-
    def sieve(n):
       "Primes less than n"
       # sieve(30) --> 2 3 5 7 11 13 17 19 23 29
       data = bytearray([1]) * n
       data[:2] = 0, 0
       limit = math.isqrt(n) + 1
-      for p in compress(range(limit), data):
+      for p in compress(count(), islice(data, limit)):
          data[p+p : n : p] = bytearray(len(range(p+p, n, p)))
       return compress(count(), data)
 
@@ -866,12 +856,12 @@ which incur interpreter overhead.
 
    def triplewise(iterable):
        "Return overlapping triplets from an iterable"
-       # triplewise('ABCDEFG') -> ABC BCD CDE DEF EFG
+       # triplewise('ABCDEFG') --> ABC BCD CDE DEF EFG
        for (a, _), (b, c) in pairwise(pairwise(iterable)):
            yield a, b, c
 
    def sliding_window(iterable, n):
-       # sliding_window('ABCDEFG', 4) -> ABCD BCDE CDEF DEFG
+       # sliding_window('ABCDEFG', 4) --> ABCD BCDE CDEF DEFG
        it = iter(iterable)
        window = collections.deque(islice(it, n), maxlen=n)
        if len(window) == n:
@@ -1103,6 +1093,7 @@ which incur interpreter overhead.
     >>> import operator
     >>> import collections
     >>> import math
+    >>> import random
 
     >>> take(10, count())
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -1152,7 +1143,6 @@ which incur interpreter overhead.
     >>> list(repeatfunc(pow, 5, 2, 3))
     [8, 8, 8, 8, 8]
 
-    >>> import random
     >>> take(5, map(int, repeatfunc(random.random)))
     [0, 0, 0, 0, 0]
 
@@ -1180,20 +1170,8 @@ which incur interpreter overhead.
     >>> all(factored(x) == expanded(x) for x in range(-10, 11))
     True
 
-    >>> list(iter_index('AABCADEAF', 'A'))
-    [0, 1, 4, 7]
-    >>> list(iter_index('AABCADEAF', 'B'))
-    [2]
-    >>> list(iter_index('AABCADEAF', 'X'))
-    []
-    >>> list(iter_index('', 'X'))
-    []
-
     >>> list(sieve(30))
     [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
-    >>> small_primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59]
-    >>> all(list(sieve(n)) == [p for p in small_primes if p < n] for n in range(60))
-    True
     >>> len(list(sieve(100)))
     25
     >>> len(list(sieve(1_000)))
@@ -1204,14 +1182,10 @@ which incur interpreter overhead.
     9592
     >>> len(list(sieve(1_000_000)))
     78498
-    >>> carmichael = {561, 1105, 1729, 2465, 2821, 6601, 8911}  # https://oeis.org/A002997
-    >>> set(sieve(10_000)).isdisjoint(carmichael)
-    True
 
     >>> list(flatten([('a', 'b'), (), ('c', 'd', 'e'), ('f',), ('g', 'h', 'i')]))
     ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
 
-    >>> import random
     >>> random.seed(85753098575309)
     >>> list(repeatfunc(random.random, 3))
     [0.16370491282496968, 0.45889608687313455, 0.3747076837820118]
