@@ -80,7 +80,16 @@ class Repr:
         sep = ',\n' + (self.maxlevel - level + 1) * indent
         return sep.join(('', *pieces, ''))[1:-len(indent) or None]
 
-    def _repr_iterable(self, x, level, *, left, right, maxiter, trail=''):
+    def _repr_iterable(
+        self,
+        x,
+        level,
+        *,
+        left,
+        right,
+        maxiter,
+        trailing_comma=False,
+    ):
         n = len(x)
         if level <= 0 and n:
             s = self.fillvalue
@@ -91,8 +100,8 @@ class Repr:
             if n > maxiter:
                 pieces.append(self.fillvalue)
             s = self._join(pieces, level)
-            if n == 1 and trail and self.indent is None:
-                right = trail + right
+            if n == 1 and trailing_comma and self.indent is None:
+                right = ',' + right
         return '%s%s%s' % (left, s, right)
 
     def repr_tuple(self, x, level):
@@ -102,7 +111,7 @@ class Repr:
             left='(',
             right=')',
             maxiter=self.maxtuple,
-            trail=',',
+            trailing_comma=True,
         )
 
     def repr_list(self, x, level):
