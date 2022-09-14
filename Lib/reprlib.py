@@ -102,7 +102,7 @@ class Repr:
 
         pieces = self._gen_pieces(obj, level, maxiter)
         result = self._join(pieces, level)
-        if trailing_comma and len(obj) == 1 and self.indent is None:
+        if self._need_tailing_comma(obj, trailing_comma):
             return result + ','
         return result
 
@@ -112,6 +112,9 @@ class Repr:
 
         if len(obj) > maxiter:
             yield self.fillvalue
+
+    def _need_tailing_comma(self, obj, trailing_comma):
+        return trailing_comma and len(obj) == 1 and self.indent is None
 
     def repr_tuple(self, x, level):
         return self._repr_iterable(
