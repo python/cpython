@@ -1828,9 +1828,9 @@ esac
 if test "$Py_LTO" = 'true' ; then
   case $CC in
     *clang*)
-      dnl For clang, it seems our LTO policy for bootstrap and freezing needs
-      dnl to match the rest of the build.
-      LDFLAGS_NOLTO="-flto=${Py_LTO_POLICY}"
+      dnl Clang linker requires -flto in order to link objects with LTO information.
+      dnl Thin LTO is faster and works for object files with full LTO information, too.
+      LDFLAGS_NOLTO="-flto=thin"
       AC_SUBST(LLVM_AR)
       AC_PATH_TOOL(LLVM_AR, llvm-ar, '', ${llvm_path})
       AC_SUBST(LLVM_AR_FOUND)
