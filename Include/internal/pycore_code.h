@@ -285,15 +285,14 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) ((void)0)
 #endif  // !Py_STATS
 
-// NOTE: These cache reading/writing utilities use memcpy to avoid voilating C's
-// strict aliasing rules, while also avoiding the need to maintain big-endian
-// versions of the same code. Compilers are smart enough to understand what
-// we're really trying to do here (see https://blog.regehr.org/archives/959).
+// Utility functions for reading/writing 32/64-bit values in the inline caches.
+// Great care should be taken to ensure that these functions remain correct and
+// performant! They should compile to just "move" instructions on all supported
+// compilers and platforms.
 
-// When modifying these, great care must be taken to ensure that we don't break
-// or slow down our inline caching! All of these functions should compile to
-// simple "move" instructions on all supported compilers and platforms. You can
-// use the Compiler Explorer at https://godbolt.org to help verify this.
+// We use memcpy to let the C compiler handle unaligned accesses and endianness
+// issues for us. It also seems to produce better code than manual copying for
+// most compilers (see https://blog.regehr.org/archives/959 for more info).
 
 static inline void
 write_u32(uint16_t *p, uint32_t val)
