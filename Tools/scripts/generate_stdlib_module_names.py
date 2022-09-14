@@ -12,7 +12,6 @@ from check_extension_modules import ModuleChecker
 
 SRC_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 STDLIB_PATH = os.path.join(SRC_DIR, 'Lib')
-SETUP_PY = os.path.join(SRC_DIR, 'setup.py')
 
 IGNORE = {
     '__init__',
@@ -64,15 +63,6 @@ def list_packages(names):
             names.add(name)
 
 
-# Extension modules built by setup.py
-def list_setup_extensions(names):
-    cmd = [sys.executable, SETUP_PY, "-q", "build", "--list-module-names"]
-    output = subprocess.check_output(cmd)
-    output = output.decode("utf8")
-    extensions = output.splitlines()
-    names |= set(extensions)
-
-
 # Built-in and extension modules built by Modules/Setup*
 # includes Windows and macOS extensions.
 def list_modules_setup_extensions(names):
@@ -103,7 +93,6 @@ def list_frozen(names):
 def list_modules():
     names = set(sys.builtin_module_names)
     list_modules_setup_extensions(names)
-    list_setup_extensions(names)
     list_packages(names)
     list_python_modules(names)
     list_frozen(names)

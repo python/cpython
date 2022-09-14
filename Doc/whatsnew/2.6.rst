@@ -155,7 +155,7 @@ up different products and import some of the bugs and patches from
 SourceForge.  Four different trackers were examined: `Jira
 <https://www.atlassian.com/software/jira/>`__,
 `Launchpad <https://launchpad.net/>`__,
-`Roundup <http://roundup.sourceforge.net/>`__, and
+`Roundup <https://roundup.sourceforge.io/>`__, and
 `Trac <https://trac.edgewall.org/>`__.
 The committee eventually settled on Jira
 and Roundup as the two candidates.  Jira is a commercial product that
@@ -176,7 +176,7 @@ Hosting of the Python bug tracker is kindly provided by
 of Stellenbosch, South Africa.  Martin von Löwis put a
 lot of effort into importing existing bugs and patches from
 SourceForge; his scripts for this import operation are at
-``http://svn.python.org/view/tracker/importer/`` and may be useful to
+``https://svn.python.org/view/tracker/importer/`` and may be useful to
 other projects wishing to move from SourceForge to Roundup.
 
 .. seealso::
@@ -184,13 +184,13 @@ other projects wishing to move from SourceForge to Roundup.
   https://bugs.python.org
     The Python bug tracker.
 
-  http://bugs.jython.org:
+  https://bugs.jython.org:
     The Jython bug tracker.
 
-  http://roundup.sourceforge.net/
+  https://roundup.sourceforge.io/
     Roundup downloads and documentation.
 
-  http://svn.python.org/view/tracker/importer/
+  https://svn.python.org/view/tracker/importer/
     Martin von Löwis's conversion scripts.
 
 New Documentation Format: reStructuredText Using Sphinx
@@ -238,7 +238,7 @@ have adopted Sphinx as their documentation tool.
    `Sphinx <http://sphinx-doc.org/>`__
      Documentation and code for the Sphinx toolchain.
 
-   `Docutils <http://docutils.sourceforge.net>`__
+   `Docutils <https://docutils.sourceforge.io>`__
      The underlying reStructuredText parser and toolset.
 
 
@@ -1433,7 +1433,7 @@ one, :func:`math.trunc`, that's been backported to Python 2.6.
 
    `Scheme's numerical tower <https://www.gnu.org/software/guile/manual/html_node/Numerical-Tower.html#Numerical-Tower>`__, from the Guile manual.
 
-   `Scheme's number datatypes <http://schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.2>`__ from the R5RS Scheme specification.
+   `Scheme's number datatypes <https://schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.2>`__ from the R5RS Scheme specification.
 
 
 The :mod:`fractions` Module

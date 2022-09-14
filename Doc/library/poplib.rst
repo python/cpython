@@ -28,6 +28,8 @@ quality of POP3 servers varies widely, and too many are quite poor. If your
 mailserver supports IMAP, you would be better off using the
 :class:`imaplib.IMAP4` class, as IMAP servers tend to be better implemented.
 
+.. include:: ../includes/wasm-notavail.rst
+
 The :mod:`poplib` module provides two classes:
 
 

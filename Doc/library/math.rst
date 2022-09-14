@@ -108,7 +108,7 @@ Number-theoretic and representation functions
 .. function:: fsum(iterable)
 
    Return an accurate floating point sum of values in the iterable.  Avoids
-   loss of precision by tracking multiple intermediate partial sums::
+   loss of precision by tracking multiple intermediate partial sums:
 
         >>> sum([.1, .1, .1, .1, .1, .1, .1, .1, .1, .1])
         0.9999999999999999
@@ -371,7 +371,7 @@ Power and logarithmic functions
    logarithms.  For small floats *x*, the subtraction in ``exp(x) - 1``
    can result in a `significant loss of precision
    <https://en.wikipedia.org/wiki/Loss_of_significance>`_\; the :func:`expm1`
-   function provides a way to compute this quantity to full precision::
+   function provides a way to compute this quantity to full precision:
 
       >>> from math import exp, expm1
       >>> exp(1e-5) - 1  # gives result accurate to 11 places
@@ -654,7 +654,7 @@ Constants
    not considered to equal to any other numeric value, including themselves. To check
    whether a number is a NaN, use the :func:`isnan` function to test
    for NaNs instead of ``is`` or ``==``.
-   Example::
+   Example:
 
       >>> import math
       >>> math.nan == math.nan
