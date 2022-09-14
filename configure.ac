@@ -753,6 +753,16 @@ if test -z "$CFLAGS"; then
         CFLAGS=
 fi
 
+dnl Emscripten SDK and WASI SDK default to wasm32.
+dnl On Emscripten use MEMORY64 setting to build target wasm64-emscripten.
+dnl for wasm64.
+AS_CASE([$host],
+  [wasm64-*-emscripten], [
+    AS_VAR_APPEND([CFLAGS], [" -sMEMORY64=1"])
+    AS_VAR_APPEND([LDFLAGS], [" -sMEMORY64=1"])
+  ],
+)
+
 if test "$ac_sys_system" = "Darwin"
 then
 	# Compiler selection on MacOSX is more complicated than
@@ -1056,7 +1066,7 @@ cat > conftest.c <<EOF
 #    error unknown wasm32 platform
 #  endif
 #elif defined(__wasm64__)
-#  if defined(__EMSCRIPTEN)
+#  if defined(__EMSCRIPTEN__)
 	wasm64-emscripten
 #  elif defined(__wasi__)
 	wasm64-wasi
@@ -1523,16 +1533,41 @@ if test "$cross_compiling" = yes; then
 fi
 
 AC_ARG_VAR([HOSTRUNNER], [Program to run CPython for the host platform])
-AC_MSG_CHECKING([HOSTRUNNER])
 if test -z "$HOSTRUNNER"
 then
   AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
     [Emscripten/node*], [
+      AC_PATH_TOOL([NODE], [node], [node])
+      HOSTRUNNER="$NODE"
       # bigint for ctypes c_longlong, c_longdouble
-      HOSTRUNNER="node --experimental-wasm-bigint"
-      AS_VAR_IF([enable_wasm_pthreads], [yes], [
-        HOSTRUNNER="$HOSTRUNNER --experimental-wasm-threads --experimental-wasm-bulk-memory"
+      # no longer available in Node 16
+      AC_CACHE_CHECK([for node --experimental-wasm-bigint], [ac_cv_tool_node_wasm_bigint], [
+        if $NODE -v --experimental-wasm-bigint > /dev/null 2>&1; then
+          ac_cv_tool_node_wasm_bigint=yes
+        else
+          ac_cv_tool_node_wasm_bigint=no
+        fi
       ])
+      AS_VAR_IF([ac_cv_tool_node_wasm_bigint], [yes], [
+        AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-bigint"])
+      ])
+
+      AS_VAR_IF([enable_wasm_pthreads], [yes], [
+        AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-threads"])
+        # no longer available in Node 16
+        AC_CACHE_CHECK([for node --experimental-wasm-bulk-memory], [ac_cv_tool_node_wasm_bulk_memory], [
+          if $NODE -v --experimental-wasm-bulk-memory > /dev/null 2>&1; then
+            ac_cv_tool_node_wasm_bulk_memory=yes
+          else
+            ac_cv_tool_node_wasm_bulk_memory=no
+          fi
+        ])
+        AS_VAR_IF([ac_cv_tool_node_wasm_bulk_memory], [yes], [
+          AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-bulk-memory"])
+        ])
+      ])
+
+      AS_VAR_IF([host_cpu], [wasm64], [AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-memory64"])])
     ],
     dnl TODO: support other WASI runtimes
     dnl wasmtime starts the proces with "/" as CWD. For OOT builds add the
@@ -1542,6 +1577,7 @@ then
   )
 fi
 AC_SUBST([HOSTRUNNER])
+AC_MSG_CHECKING([HOSTRUNNER])
 AC_MSG_RESULT([$HOSTRUNNER])
 
 if test -n "$HOSTRUNNER"; then
@@ -1553,7 +1589,7 @@ AC_MSG_RESULT($LDLIBRARY)
 
 # LIBRARY_DEPS, LINK_PYTHON_OBJS and LINK_PYTHON_DEPS variable
 AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-  [Emscripten/browser*], [LIBRARY_DEPS='$(PY3LIBRARY) $(WASM_STDLIB)'],
+  [Emscripten/browser*], [LIBRARY_DEPS='$(PY3LIBRARY) $(WASM_STDLIB) python.html python.worker.js'],
   [LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)']
 )
 LINK_PYTHON_DEPS='$(LIBRARY_DEPS)'
@@ -6796,6 +6832,7 @@ AS_CASE([$ac_sys_system],
     dnl curses and tkinter user interface are not available.
     dnl dbm and gdbm aren't available, too.
     dnl Emscripten and WASI provide only stubs for pwd, grp APIs.
+    dnl resource functions (get/setrusage) are stubs, too.
     PY_STDLIB_MOD_SET_NA(
       [_curses],
       [_curses_panel],
@@ -6811,6 +6848,7 @@ AS_CASE([$ac_sys_system],
       [nis],
       [ossaudiodev],
       [pwd],
+      [resource],
       [spwd],
       [syslog],
     )
@@ -6819,7 +6857,6 @@ AS_CASE([$ac_sys_system],
         dnl These modules are not particularly useful in browsers.
         PY_STDLIB_MOD_SET_NA(
           [fcntl],
-          [resource],
           [readline],
           [termios],
         )
@@ -6831,7 +6868,6 @@ AS_CASE([$ac_sys_system],
           [_ctypes_test],
           [fcntl],
           [mmap],
-          [resource],
           [termios],
         )
       ]

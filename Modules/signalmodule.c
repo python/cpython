@@ -1832,6 +1832,9 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
     _Py_atomic_store(&is_tripped, 0);
 
     _PyInterpreterFrame *frame = tstate->cframe->current_frame;
+    while (frame && _PyFrame_IsIncomplete(frame)) {
+        frame = frame->previous;
+    }
     signal_state_t *state = &signal_global_state;
     for (int i = 1; i < Py_NSIG; i++) {
         if (!_Py_atomic_load_relaxed(&Handlers[i].tripped)) {

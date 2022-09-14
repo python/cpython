@@ -314,7 +314,7 @@ loops that truncate the stream.
 
       def count(start=0, step=1):
           # count(10) --> 10 11 12 13 14 ...
-          # count(2.5, 0.5) -> 2.5 3.0 3.5 ...
+          # count(2.5, 0.5) --> 2.5 3.0 3.5 ...
           n = start
           while True:
               yield n
@@ -739,7 +739,7 @@ which incur interpreter overhead.
 
    def prepend(value, iterator):
        "Prepend a single value in front of an iterator"
-       # prepend(1, [2, 3, 4]) -> 1 2 3 4
+       # prepend(1, [2, 3, 4]) --> 1 2 3 4
        return chain([value], iterator)
 
    def tabulate(function, start=0):
@@ -812,6 +812,16 @@ which incur interpreter overhead.
            for k in range(len(roots) + 1)
        ]
 
+   def sieve(n):
+      "Primes less than n"
+      # sieve(30) --> 2 3 5 7 11 13 17 19 23 29
+      data = bytearray([1]) * n
+      data[:2] = 0, 0
+      limit = math.isqrt(n) + 1
+      for p in compress(count(), islice(data, limit)):
+         data[p+p : n : p] = bytearray(len(range(p+p, n, p)))
+      return compress(count(), data)
+
    def flatten(list_of_lists):
        "Flatten one level of nesting"
        return chain.from_iterable(list_of_lists)
@@ -842,12 +852,12 @@ which incur interpreter overhead.
 
    def triplewise(iterable):
        "Return overlapping triplets from an iterable"
-       # triplewise('ABCDEFG') -> ABC BCD CDE DEF EFG
+       # triplewise('ABCDEFG') --> ABC BCD CDE DEF EFG
        for (a, _), (b, c) in pairwise(pairwise(iterable)):
            yield a, b, c
 
    def sliding_window(iterable, n):
-       # sliding_window('ABCDEFG', 4) -> ABCD BCDE CDEF DEFG
+       # sliding_window('ABCDEFG', 4) --> ABCD BCDE CDEF DEFG
        it = iter(iterable)
        window = collections.deque(islice(it, n), maxlen=n)
        if len(window) == n:
@@ -1079,6 +1089,7 @@ which incur interpreter overhead.
     >>> import operator
     >>> import collections
     >>> import math
+    >>> import random
 
     >>> take(10, count())
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -1128,7 +1139,6 @@ which incur interpreter overhead.
     >>> list(repeatfunc(pow, 5, 2, 3))
     [8, 8, 8, 8, 8]
 
-    >>> import random
     >>> take(5, map(int, repeatfunc(random.random)))
     [0, 0, 0, 0, 0]
 
@@ -1156,10 +1166,22 @@ which incur interpreter overhead.
     >>> all(factored(x) == expanded(x) for x in range(-10, 11))
     True
 
+    >>> list(sieve(30))
+    [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
+    >>> len(list(sieve(100)))
+    25
+    >>> len(list(sieve(1_000)))
+    168
+    >>> len(list(sieve(10_000)))
+    1229
+    >>> len(list(sieve(100_000)))
+    9592
+    >>> len(list(sieve(1_000_000)))
+    78498
+
     >>> list(flatten([('a', 'b'), (), ('c', 'd', 'e'), ('f',), ('g', 'h', 'i')]))
     ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
 
-    >>> import random
     >>> random.seed(85753098575309)
     >>> list(repeatfunc(random.random, 3))
     [0.16370491282496968, 0.45889608687313455, 0.3747076837820118]
