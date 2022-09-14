@@ -1053,11 +1053,13 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 
     /* Push frame */
     cframe.pyframe.f_funcobj = Py_None;
-    cframe.pyframe.f_globals = NULL;
-    cframe.pyframe.f_builtins = NULL;
-    cframe.pyframe.f_locals = NULL;
-    cframe.pyframe.frame_obj = NULL;
     assert(tstate->interp->interpreter_trampoline != NULL);
+#ifdef Py_DEBUG
+    cframe.pyframe.f_locals = (PyObject*)0xaaa1;
+    cframe.pyframe.frame_obj = (PyFrameObject*)0xaaa2;
+    cframe.pyframe.f_globals = (PyObject*)0xaaa3;
+    cframe.pyframe.f_builtins = (PyObject*)0xaaa4;
+#endif
     cframe.pyframe.f_code = tstate->interp->interpreter_trampoline;
     _Py_CODEUNIT *code = _PyCode_CODE(tstate->interp->interpreter_trampoline);
     cframe.pyframe.prev_instr = code;
