@@ -2046,7 +2046,7 @@ Mutual exclusion
        -h, --help  show this help message and exit
 
      Group title:
-       Group desciption
+       Group description
 
        --foo FOO   foo help
        --bar BAR   bar help
