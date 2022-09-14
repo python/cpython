@@ -2102,15 +2102,8 @@ if test "${OPT-unset}" = "unset"
 then
     case $GCC in
     yes)
-        # For gcc 4.x we need to use -fwrapv so lets check if its supported
-        if "$CC" -v --help 2>/dev/null |grep -- -fwrapv > /dev/null; then
-           WRAP="-fwrapv"
-        fi
-
         if test -n "${cc_is_clang}"
         then
-            # Clang also needs -fwrapv
-            WRAP="-fwrapv"
             # bpo-30104: disable strict aliasing to compile correctly dtoa.c,
             # see Makefile.pre.in for more information
             CFLAGS_ALIASING="-fno-strict-aliasing"
@@ -2121,7 +2114,7 @@ then
 	    if test "$Py_DEBUG" = 'true' ; then
 		OPT="-g $PYDEBUG_CFLAGS -Wall"
 	    else
-		OPT="-g $WRAP -O3 -Wall"
+		OPT="-g -O3 -Wall"
 	    fi
 	    ;;
 	*)
