@@ -119,39 +119,168 @@ typedef struct
 // o is a pointer to a time or a datetime object.
 #define _PyDateTime_HAS_TZINFO(o)  (((_PyDateTime_BaseTZInfo *)(o))->hastzinfo)
 
-#define PyDateTime_GET_YEAR(o)     ((((PyDateTime_Date*)(o))->data[0] << 8) | \
-                     ((PyDateTime_Date*)(o))->data[1])
-#define PyDateTime_GET_MONTH(o)    (((PyDateTime_Date*)(o))->data[2])
-#define PyDateTime_GET_DAY(o)      (((PyDateTime_Date*)(o))->data[3])
+#define _PyDateTime_Date_CAST(op) ((PyDateTime_Date*)(op))
 
-#define PyDateTime_DATE_GET_HOUR(o)        (((PyDateTime_DateTime*)(o))->data[4])
-#define PyDateTime_DATE_GET_MINUTE(o)      (((PyDateTime_DateTime*)(o))->data[5])
-#define PyDateTime_DATE_GET_SECOND(o)      (((PyDateTime_DateTime*)(o))->data[6])
-#define PyDateTime_DATE_GET_MICROSECOND(o)              \
-    ((((PyDateTime_DateTime*)(o))->data[7] << 16) |       \
-     (((PyDateTime_DateTime*)(o))->data[8] << 8)  |       \
-      ((PyDateTime_DateTime*)(o))->data[9])
-#define PyDateTime_DATE_GET_FOLD(o)        (((PyDateTime_DateTime*)(o))->fold)
-#define PyDateTime_DATE_GET_TZINFO(o)      (_PyDateTime_HAS_TZINFO((o)) ? \
-    ((PyDateTime_DateTime *)(o))->tzinfo : Py_None)
+static inline int PyDateTime_GET_YEAR(PyObject *o) {
+    PyDateTime_Date *date = _PyDateTime_Date_CAST(o);
+    return ((date->data[0] << 8) | date->data[1]);
+}
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030c0000
+#  define PyDateTime_GET_YEAR(ob) PyDateTime_GET_YEAR(_PyObject_CAST(ob))
+#endif
+
+static inline int PyDateTime_GET_MONTH(PyObject *o) {
+    PyDateTime_Date *date = _PyDateTime_Date_CAST(o);
+    return date->data[2];
+}
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030c0000
+#  define PyDateTime_GET_MONTH(ob) PyDateTime_GET_MONTH(_PyObject_CAST(ob))
+#endif
+static inline int PyDateTime_GET_DAY(PyObject *o) {
+    PyDateTime_Date *date = _PyDateTime_Date_CAST(o);
+    return date->data[3];
+}
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030c0000
+#  define PyDateTime_GET_DAY(ob) PyDateTime_GET_DAY(_PyObject_CAST(ob))
+#endif
+
+#define _PyDateTime_DateTime_CAST(op) ((PyDateTime_DateTime*)(op))
+
+static inline int PyDateTime_DATE_GET_HOUR(PyObject *o) {
+    PyDateTime_DateTime *dt = _PyDateTime_DateTime_CAST(o);
+    return dt->data[4];
+}
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030c0000
+#  define PyDateTime_DATE_GET_HOUR(ob) PyDateTime_DATE_GET_HOUR(_PyObject_CAST(ob))
+#endif
+
+static inline int PyDateTime_DATE_GET_MINUTE(PyObject *o) {
+    PyDateTime_DateTime *dt = _PyDateTime_DateTime_CAST(o);
+    return dt->data[5];
+}
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030c0000
+#  define PyDateTime_DATE_GET_MINUTE(ob) PyDateTime_DATE_GET_MINUTE(_PyObject_CAST(ob))
+#endif
+
+static inline int PyDateTime_DATE_GET_SECOND(PyObject *o) {
+    PyDateTime_DateTime *dt = _PyDateTime_DateTime_CAST(o);
+    return dt->data[6];
+}
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030c0000
+#  define PyDateTime_DATE_GET_SECOND(ob) PyDateTime_DATE_GET_SECOND(_PyObject_CAST(ob))
+#endif
+
+static inline int PyDateTime_DATE_GET_MICROSECOND(PyObject *o) {
+    PyDateTime_DateTime *dt = _PyDateTime_DateTime_CAST(o);
+    return ((dt->data[7] << 16) | (dt->data[8] << 8)  | dt->data[9]);
+}
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030c0000
+#  define PyDateTime_DATE_GET_MICROSECOND(ob) PyDateTime_DATE_GET_MICROSECOND(_PyObject_CAST(ob))
+#endif
+
+static inline int PyDateTime_DATE_GET_FOLD(PyObject *o) {
+    PyDateTime_DateTime *dt = _PyDateTime_DateTime_CAST(o);
+    return dt->fold;
+}
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030c0000
+#  define PyDateTime_DATE_GET_FOLD(ob) PyDateTime_DATE_GET_FOLD(_PyObject_CAST(ob))
+#endif
+
+static inline PyObject* PyDateTime_DATE_GET_TZINFO(PyObject *o) {
+    if (_PyDateTime_HAS_TZINFO((o))) {
+        PyDateTime_DateTime *dt = _PyDateTime_DateTime_CAST(o);
+        return dt->tzinfo;
+    }
+    else {
+        return Py_None;
+    }
+}
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030c0000
+#  define PyDateTime_DATE_GET_TZINFO(ob) PyDateTime_DATE_GET_TZINFO(_PyObject_CAST(ob))
+#endif
+
+#define _PyDateTime_Time_CAST(op) ((PyDateTime_Time*)(op))
 
 /* Apply for time instances. */
-#define PyDateTime_TIME_GET_HOUR(o)        (((PyDateTime_Time*)(o))->data[0])
-#define PyDateTime_TIME_GET_MINUTE(o)      (((PyDateTime_Time*)(o))->data[1])
-#define PyDateTime_TIME_GET_SECOND(o)      (((PyDateTime_Time*)(o))->data[2])
-#define PyDateTime_TIME_GET_MICROSECOND(o)              \
-    ((((PyDateTime_Time*)(o))->data[3] << 16) |           \
-     (((PyDateTime_Time*)(o))->data[4] << 8)  |           \
-      ((PyDateTime_Time*)(o))->data[5])
-#define PyDateTime_TIME_GET_FOLD(o)        (((PyDateTime_Time*)(o))->fold)
-#define PyDateTime_TIME_GET_TZINFO(o)      (_PyDateTime_HAS_TZINFO(o) ? \
-    ((PyDateTime_Time *)(o))->tzinfo : Py_None)
+static inline int PyDateTime_TIME_GET_HOUR(PyObject *o) {
+    PyDateTime_Time *time = _PyDateTime_Time_CAST(o);
+    return time->data[0];
+}
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030c0000
+#  define PyDateTime_TIME_GET_HOUR(ob) PyDateTime_TIME_GET_HOUR(_PyObject_CAST(ob))
+#endif
+
+static inline int PyDateTime_TIME_GET_MINUTE(PyObject *o) {
+    PyDateTime_Time *time = _PyDateTime_Time_CAST(o);
+    return time->data[1];
+}
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030c0000
+#  define PyDateTime_TIME_GET_MINUTE(ob) PyDateTime_TIME_GET_MINUTE(_PyObject_CAST(ob))
+#endif
+
+static inline int PyDateTime_TIME_GET_SECOND(PyObject *o) {
+    PyDateTime_Time *time = _PyDateTime_Time_CAST(o);
+    return time->data[2];
+}
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030c0000
+#  define PyDateTime_TIME_GET_SECOND(ob) PyDateTime_TIME_GET_SECOND(_PyObject_CAST(ob))
+#endif
+
+static inline int PyDateTime_TIME_GET_MICROSECOND(PyObject *o) {
+    PyDateTime_Time *time = _PyDateTime_Time_CAST(o);
+    return ((time->data[3] << 16) | (time->data[4] << 8)  | time->data[5]);
+}
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030c0000
+#  define PyDateTime_TIME_GET_MICROSECOND(ob) PyDateTime_TIME_GET_MICROSECOND(_PyObject_CAST(ob))
+#endif
+
+static inline int PyDateTime_TIME_GET_FOLD(PyObject *o) {
+    PyDateTime_Time *time = _PyDateTime_Time_CAST(o);
+    return time->fold;
+}
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030c0000
+#  define PyDateTime_TIME_GET_FOLD(ob) PyDateTime_TIME_GET_FOLD(_PyObject_CAST(ob))
+#endif
+
+static inline PyObject* PyDateTime_TIME_GET_TZINFO(PyObject *o) {
+    if (_PyDateTime_HAS_TZINFO(o)) {
+        PyDateTime_Time *time = _PyDateTime_Time_CAST(o);
+        return time->tzinfo;
+    }
+    else {
+        return Py_None;
+    }
+}
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030c0000
+#  define PyDateTime_TIME_GET_TZINFO(ob) PyDateTime_TIME_GET_TZINFO(_PyObject_CAST(ob))
+#endif
+
+#define _PyDateTime_DELTA_CAST(op) ((PyDateTime_Delta*)(op))
 
 /* Apply for time delta instances */
-#define PyDateTime_DELTA_GET_DAYS(o)         (((PyDateTime_Delta*)(o))->days)
-#define PyDateTime_DELTA_GET_SECONDS(o)      (((PyDateTime_Delta*)(o))->seconds)
-#define PyDateTime_DELTA_GET_MICROSECONDS(o)            \
-    (((PyDateTime_Delta*)(o))->microseconds)
+static inline int PyDateTime_DELTA_GET_DAYS(PyObject *o) {
+    PyDateTime_Delta *delta = _PyDateTime_DELTA_CAST(o);
+    return delta->days;
+}
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030c0000
+#  define PyDateTime_DELTA_GET_DAYS(ob) PyDateTime_DELTA_GET_DAYS(_PyObject_CAST(ob))
+#endif
+
+static inline int PyDateTime_DELTA_GET_SECONDS(PyObject *o){
+    PyDateTime_Delta *delta = _PyDateTime_DELTA_CAST(o);
+    return delta->seconds;
+}
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030c0000
+#  define PyDateTime_DELTA_GET_SECONDS(ob) PyDateTime_DELTA_GET_SECONDS(_PyObject_CAST(ob))
+#endif
+
+static inline int PyDateTime_DELTA_GET_MICROSECONDS(PyObject *o) {
+    PyDateTime_Delta *delta = _PyDateTime_DELTA_CAST(o);
+    return delta->microseconds;
+}
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030c0000
+#  define PyDateTime_DELTA_GET_MICROSECONDS(ob) PyDateTime_DELTA_GET_MICROSECONDS(_PyObject_CAST(ob))
+#endif
 
 
 /* Define structure for C API. */

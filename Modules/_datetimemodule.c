@@ -84,18 +84,18 @@ class datetime.IsoCalendarDate "PyDateTime_IsoCalendarDate *" "&PyDateTime_IsoCa
 /* Date accessors for date and datetime. */
 #define SET_YEAR(o, v)          (((o)->data[0] = ((v) & 0xff00) >> 8), \
                  ((o)->data[1] = ((v) & 0x00ff)))
-#define SET_MONTH(o, v)         (PyDateTime_GET_MONTH(o) = (v))
-#define SET_DAY(o, v)           (PyDateTime_GET_DAY(o) = (v))
+#define SET_MONTH(o, v)         ((o)->data[2] = (v))
+#define SET_DAY(o, v)           ((o)->data[3] = (v))
 
 /* Date/Time accessors for datetime. */
-#define DATE_SET_HOUR(o, v)     (PyDateTime_DATE_GET_HOUR(o) = (v))
-#define DATE_SET_MINUTE(o, v)   (PyDateTime_DATE_GET_MINUTE(o) = (v))
-#define DATE_SET_SECOND(o, v)   (PyDateTime_DATE_GET_SECOND(o) = (v))
+#define DATE_SET_HOUR(o, v)     ((o)->data[4] = (v))
+#define DATE_SET_MINUTE(o, v)   ((o)->data[5] = (v))
+#define DATE_SET_SECOND(o, v)   ((o)->data[6] = (v))
 #define DATE_SET_MICROSECOND(o, v)      \
     (((o)->data[7] = ((v) & 0xff0000) >> 16), \
      ((o)->data[8] = ((v) & 0x00ff00) >> 8), \
      ((o)->data[9] = ((v) & 0x0000ff)))
-#define DATE_SET_FOLD(o, v)   (PyDateTime_DATE_GET_FOLD(o) = (v))
+#define DATE_SET_FOLD(o, v)   (_PyDateTime_DateTime_CAST(o)->fold = (v))
 
 /* Time accessors for time. */
 #define TIME_GET_HOUR           PyDateTime_TIME_GET_HOUR
@@ -103,14 +103,14 @@ class datetime.IsoCalendarDate "PyDateTime_IsoCalendarDate *" "&PyDateTime_IsoCa
 #define TIME_GET_SECOND         PyDateTime_TIME_GET_SECOND
 #define TIME_GET_MICROSECOND    PyDateTime_TIME_GET_MICROSECOND
 #define TIME_GET_FOLD           PyDateTime_TIME_GET_FOLD
-#define TIME_SET_HOUR(o, v)     (PyDateTime_TIME_GET_HOUR(o) = (v))
-#define TIME_SET_MINUTE(o, v)   (PyDateTime_TIME_GET_MINUTE(o) = (v))
-#define TIME_SET_SECOND(o, v)   (PyDateTime_TIME_GET_SECOND(o) = (v))
+#define TIME_SET_HOUR(o, v)     ((o)->data[0] = (v))
+#define TIME_SET_MINUTE(o, v)   ((o)->data[1] = (v))
+#define TIME_SET_SECOND(o, v)   ((o)->data[2] = (v))
 #define TIME_SET_MICROSECOND(o, v)      \
     (((o)->data[3] = ((v) & 0xff0000) >> 16), \
      ((o)->data[4] = ((v) & 0x00ff00) >> 8), \
      ((o)->data[5] = ((v) & 0x0000ff)))
-#define TIME_SET_FOLD(o, v)   (PyDateTime_TIME_GET_FOLD(o) = (v))
+#define TIME_SET_FOLD(o, v)   (_PyDateTime_Time_CAST(o)->fold = (v))
 
 /* Delta accessors for timedelta. */
 #define GET_TD_DAYS(o)          (((PyDateTime_Delta *)(o))->days)
@@ -1515,7 +1515,7 @@ make_somezreplacement(PyObject *object, char *sep, PyObject *tzinfoarg)
     if (tzinfo == Py_None || tzinfo == NULL) {
         return PyBytes_FromStringAndSize(NULL, 0);
     }
-   
+
     assert(tzinfoarg != NULL);
     if (format_utcoffset(buf,
                          sizeof(buf),
@@ -1523,7 +1523,7 @@ make_somezreplacement(PyObject *object, char *sep, PyObject *tzinfoarg)
                          tzinfo,
                          tzinfoarg) < 0)
         return NULL;
-        
+
     return PyBytes_FromStringAndSize(buf, strlen(buf));
 }
 

@@ -1,0 +1,4 @@
+:pep:`670`: Convert datetime.h "GET" macros, like
+:c:func:`PyDateTime_TIME_GET_HOUR`, to static inline functions.  These macros
+can no longer be used as l-values to modify structure members. Patch by Victor
+Stinner.
