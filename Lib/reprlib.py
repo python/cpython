@@ -6,6 +6,7 @@ import builtins
 from itertools import islice
 from _thread import get_ident
 
+
 def recursive_repr(fillvalue='...'):
     'Decorator to make a repr function return fillvalue for a recursive call'
 
@@ -32,6 +33,7 @@ def recursive_repr(fillvalue='...'):
         return wrapper
 
     return decorating_function
+
 
 class Repr:
 
@@ -87,7 +89,7 @@ class Repr:
             ) from error
         return sep.join(('', *pieces, ''))[1:-len(indent) or None]
 
-    def _repr_iterable(self, x, level, left, right, maxiter, trail=''):
+    def _repr_iterable(self, x, level, *, left, right, maxiter, trail=''):
         n = len(x)
         if level <= 0 and n:
             s = self.fillvalue
@@ -103,32 +105,66 @@ class Repr:
         return '%s%s%s' % (left, s, right)
 
     def repr_tuple(self, x, level):
-        return self._repr_iterable(x, level, '(', ')', self.maxtuple, ',')
+        return self._repr_iterable(
+            x,
+            level,
+            left='(',
+            right=')',
+            maxiter=self.maxtuple,
+            trail=',',
+        )
 
     def repr_list(self, x, level):
-        return self._repr_iterable(x, level, '[', ']', self.maxlist)
+        return self._repr_iterable(
+            x,
+            level,
+            left='[',
+            right=']',
+            maxiter=self.maxlist,
+        )
 
     def repr_array(self, x, level):
         if not x:
             return "array('%s')" % x.typecode
         header = "array('%s', [" % x.typecode
-        return self._repr_iterable(x, level, header, '])', self.maxarray)
+        return self._repr_iterable(
+            x,
+            level,
+            left=header,
+            right='])',
+            maxiter=self.maxarray,
+        )
 
     def repr_set(self, x, level):
         if not x:
             return 'set()'
-        x = _possibly_sorted(x)
-        return self._repr_iterable(x, level, '{', '}', self.maxset)
+        return self._repr_iterable(
+            _possibly_sorted(x),
+            level,
+            left='{',
+            right='}',
+            maxiter=self.maxset,
+        )
 
     def repr_frozenset(self, x, level):
         if not x:
             return 'frozenset()'
-        x = _possibly_sorted(x)
-        return self._repr_iterable(x, level, 'frozenset({', '})',
-                                   self.maxfrozenset)
+        return self._repr_iterable(
+            _possibly_sorted(x),
+            level,
+            left='frozenset({',
+            right='})',
+            maxiter=self.maxfrozenset,
+        )
 
     def repr_deque(self, x, level):
-        return self._repr_iterable(x, level, 'deque([', '])', self.maxdeque)
+        return self._repr_iterable(
+            x,
+            level,
+            left='deque([',
+            right='])',
+            maxiter=self.maxdeque,
+        )
 
     def repr_dict(self, x, level):
         n = len(x)
@@ -158,7 +194,7 @@ class Repr:
         return s
 
     def repr_int(self, x, level):
-        s = builtins.repr(x) # XXX Hope this isn't too slow...
+        s = builtins.repr(x)  # XXX Hope this isn't too slow...
         if len(s) > self.maxlong:
             i = max(0, (self.maxlong-3)//2)
             j = max(0, self.maxlong-3-i)
@@ -187,6 +223,7 @@ def _possibly_sorted(x):
         return sorted(x)
     except Exception:
         return list(x)
+
 
 aRepr = Repr()
 repr = aRepr.repr
