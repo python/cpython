@@ -27,3 +27,18 @@ PyAPI_FUNC(int) _PyFrame_IsEntryFrame(PyFrameObject *frame);
 
 PyAPI_FUNC(int) PyFrame_FastToLocalsWithError(PyFrameObject *f);
 PyAPI_FUNC(void) PyFrame_FastToLocals(PyFrameObject *);
+
+/* The following functions are for use by debuggers and other tools
+ * implementing custom frame evaluators with PEP 523. */
+
+/* Returns the code object of the frame.
+ * Does not raise an exception. */
+PyAPI_FUNC(PyCodeObject *) _PyInterpreterFrame_GetCode(struct _PyInterpreterFrame *frame);
+
+/* Returns a byte ofsset into the last executed instruction.
+ * Does not raise an exception. */
+PyAPI_FUNC(int) _PyInterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame);
+
+/* Returns the currently executing line number, or -1 if there is no line number.
+ * Does not raise an exception. */
+PyAPI_FUNC(int) _PyInterpreterFrame_GetLine(struct _PyInterpreterFrame *frame);

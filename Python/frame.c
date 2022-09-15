@@ -118,6 +118,20 @@ _PyFrame_Clear(_PyInterpreterFrame *frame)
     Py_DECREF(frame->f_code);
 }
 
+/* Limited API functions */
+
+PyCodeObject *_PyInterpreterFrame_GetCode(struct _PyInterpreterFrame *frame)
+{
+    PyCodeObject *code = frame->f_code;
+    Py_INCREF(code);
+    return code;
+}
+
+int _PyInterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame)
+{
+    return _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
+}
+
 int
 _PyInterpreterFrame_GetLine(_PyInterpreterFrame *frame)
 {
