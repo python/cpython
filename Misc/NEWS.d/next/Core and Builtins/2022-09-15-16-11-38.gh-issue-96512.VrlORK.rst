@@ -1,0 +1,4 @@
+Added ``int/digits/to_decimal`` and ``int/digits/from_base`` :ref:`auditing
+events <auditing>` on :class:`int` non-linear algorithm base conversions
+with more than `sys.int_info.str_digits_check_threshold <sys.int_info>`
+digits.
