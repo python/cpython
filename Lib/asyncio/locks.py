@@ -367,7 +367,7 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
 
     def locked(self):
         """Returns True if semaphore can not be acquired immediately."""
-        return self._value <= 0 or self._wakeup_scheduled
+        return self._value <= 0 or bool(self._wakeup_scheduled)
 
     async def acquire(self):
         """Acquire a semaphore.
@@ -378,9 +378,9 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
         called release() to make it larger than 0, and then return
         True.
         """
-        freshman = True
-        while self._value <= 0 or (freshman and self._wakeup_scheduled):
-            freshman = False
+        first = True
+        while self._value <= 0 or (first and self._wakeup_scheduled):
+            first = False
             fut = self._get_loop().create_future()
             self._waiters.append(fut)
             try:
