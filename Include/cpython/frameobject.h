@@ -31,7 +31,7 @@ PyAPI_FUNC(void) PyFrame_FastToLocals(PyFrameObject *);
 /* The following functions are for use by debuggers and other tools
  * implementing custom frame evaluators with PEP 523. */
 
-/* Returns the code object of the frame.
+/* Returns the code object of the frame (strong reference).
  * Does not raise an exception. */
 PyAPI_FUNC(PyCodeObject *) _PyInterpreterFrame_GetCode(struct _PyInterpreterFrame *frame);
 
