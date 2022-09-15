@@ -6,6 +6,7 @@
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_traceback.h"
 #include <pycore_frame.h>
+#include "frameobject.h"          // _PyInterpreterFrame_GetLine
 
 #include <stdlib.h>               // malloc()
 

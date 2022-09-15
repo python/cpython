@@ -13,6 +13,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "structmember.h"         // PyMemberDef
 #include "opcode.h"               // SEND
+#include "frameobject.h"          // _PyInterpreterFrame_GetLine
 #include "pystats.h"
 
 static PyObject *gen_close(PyGenObject *, PyObject *);

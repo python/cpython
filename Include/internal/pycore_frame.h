@@ -222,8 +222,6 @@ _PyFrame_PushUnchecked(PyThreadState *tstate, PyFunctionObject *func)
     return new_frame;
 }
 
-int _PyInterpreterFrame_GetLine(_PyInterpreterFrame *frame);
-
 static inline
 PyGenObject *_PyFrame_GetGenerator(_PyInterpreterFrame *frame)
 {
