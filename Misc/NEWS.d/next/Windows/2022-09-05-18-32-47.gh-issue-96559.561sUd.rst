@@ -1,0 +1,3 @@
+Fixes the Windows launcher not using the compatible interpretation of
+default tags found in configuration files when no tag was passed to the
+command.

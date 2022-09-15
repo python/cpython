@@ -2523,7 +2523,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
         # ArgumentTypeErrors indicate errors
         except ArgumentTypeError as err:
-            name = getattr(action.type, '__name__', repr(action.type))
             msg = str(err)
             raise ArgumentError(action, msg)
 

@@ -418,6 +418,17 @@ def test_sys_getframe():
     sys._getframe()
 
 
+def test_wmi_exec_query():
+    import _wmi
+
+    def hook(event, args):
+        if event.startswith("_wmi."):
+            print(event, args[0])
+
+    sys.addaudithook(hook)
+    _wmi.exec_query("SELECT * FROM Win32_OperatingSystem")
+
+
 def test_int_digits():
     def hook(event, args):
         if event.startswith("int/digits/"):
