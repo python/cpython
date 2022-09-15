@@ -70,6 +70,9 @@ typedef struct _PyInterpreterFrame {
 #define _PyInterpreterFrame_LASTI(IF) \
     ((int)((IF)->prev_instr - _PyCode_CODE((IF)->f_code)))
 
+#define _PyInterpreterFrame_CODE(IF) \
+    ((PyObject*)((IF)->f_code))
+
 static inline PyObject **_PyFrame_Stackbase(_PyInterpreterFrame *f) {
     return f->localsplus + f->f_code->co_nlocalsplus;
 }
@@ -222,7 +225,7 @@ _PyFrame_PushUnchecked(PyThreadState *tstate, PyFunctionObject *func)
     return new_frame;
 }
 
-int _PyInterpreterFrame_GetLine(_PyInterpreterFrame *frame);
+PyAPI_FUNC(int) _PyInterpreterFrame_GetLine(_PyInterpreterFrame *frame);
 
 static inline
 PyGenObject *_PyFrame_GetGenerator(_PyInterpreterFrame *frame)
