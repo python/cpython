@@ -1406,6 +1406,9 @@ _PyThread_CurrentFrames(void)
         PyThreadState *t;
         for (t = i->threads.head; t != NULL; t = t->next) {
             _PyInterpreterFrame *frame = t->cframe->current_frame;
+            while (frame && _PyFrame_IsIncomplete(frame)) {
+                frame = frame->previous;
+            }
             if (frame == NULL) {
                 continue;
             }
@@ -1413,7 +1416,12 @@ _PyThread_CurrentFrames(void)
             if (id == NULL) {
                 goto fail;
             }
-            int stat = PyDict_SetItem(result, id, (PyObject *)_PyFrame_GetFrameObject(frame));
+            PyObject *frameobj = (PyObject *)_PyFrame_GetFrameObject(frame);
+            if (frameobj == NULL) {
+                Py_DECREF(id);
+                goto fail;
+            }
+            int stat = PyDict_SetItem(result, id, frameobj);
             Py_DECREF(id);
             if (stat < 0) {
                 goto fail;

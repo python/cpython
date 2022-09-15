@@ -94,6 +94,9 @@ Other Language Changes
   length limitation <int_max_str_digits>` documentation.  The default limit
   is 4300 digits in string form.
 
+* :class:`memoryview` now supports the half-float type (the "e" format code).
+  (Contributed by Dong-hee Na and Antoine Pitrou in :gh:`90751`.)
+
 
 New Modules
 ===========
@@ -118,7 +121,7 @@ dis
   do not appear in executable bytecode) are now exposed in the
   :mod:`dis` module.
   :data:`~dis.HAVE_ARGUMENT` is still relevant to real opcodes,
-  but it is not useful for pseudo instrcutions. Use the new
+  but it is not useful for pseudo instructions. Use the new
   :data:`~dis.hasarg` collection instead.
   (Contributed by Irit Katriel in :gh:`94216`.)
 
@@ -135,6 +138,20 @@ sqlite3
 
 * Add a :ref:`command-line interface <sqlite3-cli>`.
   (Contributed by Erlend E. Aasland in :gh:`77617`.)
+
+threading
+---------
+
+* Add :func:`threading.settrace_all_threads` and
+  :func:`threading.setprofile_all_threads` that allow to set tracing and
+  profiling functions in all running threads in addition to the calling one.
+  (Contributed by Pablo Galindo in :gh:`93503`.)
+
+unicodedata
+-----------
+
+* The Unicode database has been updated to version 15.0.0. (Contributed by
+  Benjamin Peterson in :gh:`96734`).
 
 
 Optimizations
@@ -469,6 +486,12 @@ New Features
   flags have been added. This allows extensions classes to support object
   ``__dict__`` and weakrefs with less bookkeeping,
   using less memory and with faster access.
+
+* Added two new public functions,
+  :c:func:`PyEval_SetProfileAllThreads` and
+  :c:func:`PyEval_SetTraceAllThreads`, that allow to set tracing and profiling
+  functions in all running threads in addition to the calling one. (Contributed
+  by Pablo Galindo in :gh:`93503`.)
 
 * Added new function :c:func:`PyFunction_SetVectorcall` to the C API
   which sets the vectorcall field of a given :c:type:`PyFunctionObject`.
