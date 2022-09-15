@@ -5527,7 +5527,7 @@ Verification:
 
 .. audit-event:: int/digits/to_decimal value
 
-   When a conversion from an class:`int` to decimal is estimated to be larger
+   When a conversion from an :class:`int` to decimal is estimated to be larger
    than :data:`sys.int_info.str_digits_check_threshold <sys.int_info>` digits
    an :ref:`auditing event <auditing>` with the :class:`int` ``value`` as the
    argument is raised.
