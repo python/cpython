@@ -800,7 +800,7 @@ class Counter(dict):
         '''
         if not isinstance(other, Counter):
             return NotImplemented
-        result = Counter()
+        result = self.__class__()
         for elem, count in self.items():
             newcount = count + other[elem]
             if newcount > 0:
@@ -819,7 +819,7 @@ class Counter(dict):
         '''
         if not isinstance(other, Counter):
             return NotImplemented
-        result = Counter()
+        result = self.__class__()
         for elem, count in self.items():
             newcount = count - other[elem]
             if newcount > 0:
@@ -838,7 +838,7 @@ class Counter(dict):
         '''
         if not isinstance(other, Counter):
             return NotImplemented
-        result = Counter()
+        result = self.__class__()
         for elem, count in self.items():
             other_count = other[elem]
             newcount = other_count if count < other_count else count
@@ -858,7 +858,7 @@ class Counter(dict):
         '''
         if not isinstance(other, Counter):
             return NotImplemented
-        result = Counter()
+        result = self.__class__()
         for elem, count in self.items():
             other_count = other[elem]
             newcount = count if count < other_count else other_count
@@ -868,7 +868,7 @@ class Counter(dict):
 
     def __pos__(self):
         'Adds an empty counter, effectively stripping negative and zero counts'
-        result = Counter()
+        result = self.__class__()
         for elem, count in self.items():
             if count > 0:
                 result[elem] = count
@@ -879,7 +879,7 @@ class Counter(dict):
         and flips the sign on negative counts.
 
         '''
-        result = Counter()
+        result = self.__class__()
         for elem, count in self.items():
             if count < 0:
                 result[elem] = 0 - count
