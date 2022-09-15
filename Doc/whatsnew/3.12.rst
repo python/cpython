@@ -493,6 +493,10 @@ New Features
   functions in all running threads in addition to the calling one. (Contributed
   by Pablo Galindo in :gh:`93503`.)
 
+* Added new function :c:func:`PyFunction_SetVectorcall` to the C API
+  which sets the vectorcall field of a given :c:type:`PyFunctionObject`.
+  (Contributed by Andrew Frost in :gh:`92257`.)
+
 Porting to Python 3.12
 ----------------------
 
