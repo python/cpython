@@ -2043,7 +2043,7 @@ Mutual exclusion
      >>> parser.print_help()
      usage: PROG [-h] (--foo FOO | --bar BAR)
 
-     optional arguments:
+     options:
        -h, --help  show this help message and exit
 
      Group title:
