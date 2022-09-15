@@ -233,7 +233,12 @@ The :mod:`csv` module defines the following classes:
    information for how to handle doublequotes, whitespace, delimiters, etc.
    Due to the lack of a strict CSV specification, different applications
    produce subtly different CSV data.  :class:`Dialect` instances define how
-   :class:`reader` and :class:`writer` instances behave.
+   :class:`reader` and :class:`writer` instances behave. Note that the default
+   values given for the attributes below are for the :class:`excel` dialect, not
+   the :class:`Dialect` class itself, because :class:`excel` is the default
+   dialect used by the :mod:`csv` module. When subclassing the :class:`Dialect`
+   class, all of the following attributes should be specified by your subclass
+   because :class:`Dialect` defaults them all to :const:`None`.
 
    All available :class:`Dialect` names are returned by :func:`list_dialects`,
    and they can be registered with specific :class:`reader` and :class:`writer`
