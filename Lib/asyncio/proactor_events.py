@@ -638,8 +638,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
             oldfd = signal.set_wakeup_fd(self._csock.fileno())
             if oldfd != -1:
                 warnings.warn(
-                    'Overriding signal wakeup file '
-                    'descriptor for loop signal handlers',
+                    "Signal wakeup fd was already set",
                     ResourceWarning,
                     source=self)
 
@@ -691,10 +690,9 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
 
         if threading.current_thread() is threading.main_thread():
             oldfd = signal.set_wakeup_fd(-1)
-            if oldfd == self._csock.fileno():
+            if oldfd != self._csock.fileno():
                 warnings.warn(
-                    'Got unexpected signal wakeup file '
-                    'descriptor while removing it',
+                    "Got unexpected signal wakeup fd",
                     ResourceWarning,
                     source=self)
         # Call these methods before closing the event loop (before calling

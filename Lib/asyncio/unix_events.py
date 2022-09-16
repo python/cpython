@@ -105,8 +105,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             oldfd = signal.set_wakeup_fd(self._csock.fileno())
             if oldfd != -1 and oldfd != self._csock.fileno():
                 warnings.warn(
-                    'Overriding signal wakeup file '
-                    'descriptor for loop signal handlers',
+                    "Signal wakeup fd was already set",
                     ResourceWarning,
                     source=self)
         except (ValueError, OSError) as exc:
@@ -175,8 +174,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 oldfd = signal.set_wakeup_fd(-1)
                 if oldfd != -1 and oldfd != self._csock.fileno():
                     warnings.warn(
-                        'Got unexpected signal wakeup file '
-                        'descriptor while removing it',
+                        "Got unexpected signal wakeup fd",
                         ResourceWarning,
                         source=self)
             except (ValueError, OSError) as exc:

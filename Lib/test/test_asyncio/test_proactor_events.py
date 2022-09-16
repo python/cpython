@@ -723,7 +723,7 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         with mock.patch('signal.set_wakeup_fd') as set_wakeup_fd:
             set_wakeup_fd.return_value = -1000
             with self.assertWarnsRegex(
-                ResourceWarning, 'Overriding signal wakeup'
+                ResourceWarning, 'Signal wakeup fd was already set'
             ):
                 loop = BaseProactorEventLoop(self.proactor)
         self.assertIs(loop._ssock, ssock)
@@ -746,7 +746,10 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         self.loop._close_self_pipe = mock.Mock()
         with mock.patch('signal.set_wakeup_fd') as set_wakeup_fd:
             set_wakeup_fd.return_value = -1000
-            self.loop.close()
+            with self.assertWarnsRegex(
+                ResourceWarning, 'Got unexpected signal wakeup fd'
+            ):
+                self.loop.close()
         self.assertTrue(self.loop._close_self_pipe.called)
         self.assertTrue(self.proactor.close.called)
         self.assertIsNone(self.loop._proactor)

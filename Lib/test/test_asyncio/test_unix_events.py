@@ -95,7 +95,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
         m_signal.set_wakeup_fd.return_value = -1000
 
         with self.assertWarnsRegex(
-            ResourceWarning, 'Overriding signal wakeup'
+            ResourceWarning, 'Signal wakeup fd was already set'
         ):
             self.loop.add_signal_handler(signal.SIGINT, lambda: True)
 
@@ -233,7 +233,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
         m_signal.set_wakeup_fd.return_value = -1000
 
         with self.assertWarnsRegex(
-            ResourceWarning, 'unexpected signal wakeup'
+            ResourceWarning, 'Got unexpected signal wakeup fd'
         ):
             self.loop.remove_signal_handler(signal.SIGHUP)
 
