@@ -615,7 +615,7 @@ def _unquote_impl(string: bytes | bytearray | str) -> bytes | bytearray:
     if len(bits) == 1:
         return string
     res = bytearray(bits[0])
-    add_data = res.extend
+    append = res.extend
     # Delay the initialization of the table to not waste memory
     # if the function is never called
     global _hextobyte
@@ -624,11 +624,11 @@ def _unquote_impl(string: bytes | bytearray | str) -> bytes | bytearray:
                       for a in _hexdig for b in _hexdig}
     for item in bits[1:]:
         try:
-            add_data(_hextobyte[item[:2]])
-            add_data(item[2:])
+            append(_hextobyte[item[:2]])
+            append(item[2:])
         except KeyError:
-            add_data(b'%')
-            add_data(item)
+            append(b'%')
+            append(item)
     return res
 
 _asciire = re.compile('([\x00-\x7f]+)')
@@ -664,6 +664,7 @@ def unquote(string, encoding='utf-8', errors='replace'):
     if errors is None:
         errors = 'replace'
     return ''.join(_generate_unquoted_parts(string, encoding, errors))
+
 
 def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
              encoding='utf-8', errors='replace', max_num_fields=None, separator='&'):
