@@ -232,6 +232,9 @@ also be used to improve performance.
    .. versionadded:: 3.11
       To use ThinLTO feature, use ``--with-lto=thin`` on Clang.
 
+   .. versionchanged:: 3.12
+      Use ThinLTO as the default optimization policy on Clang if the compiler accepts the flag.
+
 .. cmdoption:: --enable-bolt
 
    Enable usage of the `BOLT post-link binary optimizer
