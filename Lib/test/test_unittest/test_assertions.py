@@ -57,6 +57,43 @@ class Test_Assertions(unittest.TestCase):
         self.assertNotAlmostEqual(first, second,
                                   delta=datetime.timedelta(seconds=5))
 
+    def test_AlmostEqualWithRelativeDelta(self):
+        self.assertAlmostEqual(1.1, 1.0, rel_delta=0.5)
+        self.assertAlmostEqual(1.0, 1.1, rel_delta=0.5)
+        with self.assertRaises(self.failureException):
+            self.assertAlmostEqual(1.1, 1.0, rel_delta=0.05)
+        with self.assertRaises(self.failureException):
+            self.assertAlmostEqual(1.0, 1.1, rel_delta=0.05)
+
+        self.assertNotAlmostEqual(1.1, 1.0, rel_delta=0.05)
+        self.assertNotAlmostEqual(1.0, 1.1, rel_delta=0.05)
+        with self.assertRaises(self.failureException):
+            self.assertNotAlmostEqual(1.1, 1.0, rel_delta=0.5)
+        with self.assertRaises(self.failureException):
+            self.assertNotAlmostEqual(1.0, 1.1, rel_delta=0.5)
+
+        self.assertAlmostEqual(1.0, 0.6, rel_delta=0.5)
+        self.assertNotAlmostEqual(0.6, 1.0, rel_delta=0.5)
+        with self.assertRaises(self.failureException):
+            self.assertAlmostEqual(0.6, 1.0, rel_delta=0.5)
+        with self.assertRaises(self.failureException):
+            self.assertNotAlmostEqual(1.0, 0.6, rel_delta=0.5)
+
+        with self.assertRaises(TypeError):
+            self.assertAlmostEqual(1.0, 1.1, places=0, rel_delta=0.5)
+        with self.assertRaises(TypeError):
+            self.assertAlmostEqual(1.0, 1.1, delta=1, rel_delta=0.5)
+        with self.assertRaises(TypeError):
+            self.assertNotAlmostEqual(1.0, 1.1, places=0, rel_delta=0.05)
+        with self.assertRaises(TypeError):
+            self.assertNotAlmostEqual(1.0, 1.1, delta=0.05, rel_delta=0.05)
+
+        first_dt = datetime.timedelta(seconds=20)
+        second_dt = datetime.timedelta(seconds=15)
+
+        self.assertAlmostEqual(first_dt, second_dt, rel_delta=0.5)
+        self.assertNotAlmostEqual(first_dt, second_dt, rel_delta=0.1)
+
     def test_assertRaises(self):
         def _raise(e):
             raise e
