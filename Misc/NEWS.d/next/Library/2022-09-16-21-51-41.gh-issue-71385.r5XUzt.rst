@@ -1,0 +1,1 @@
+A new keyword "rel_delta" was added to the assertAlmostEqual and assertNotAlmostEqual methods of the unittest.TestCase class. It enables to compare two numbers and objects supporting addition, subtraction and scalar number multiplication to be compared with a maximum relative difference to each other.
