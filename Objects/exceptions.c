@@ -11,6 +11,7 @@
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
+#include "pycore_pyerrors.h"      // _PyErr_Restore()
 #include "structmember.h"         // PyMemberDef
 #include "osdefs.h"               // SEP
 
@@ -3832,4 +3833,39 @@ _PyErr_TrySetFromCause(const char *format, ...)
     PyException_SetCause(new_val, val);
     PyErr_Restore(new_exc, new_val, new_tb);
     return new_val;
+}
+
+
+int
+_PyErr_AddNote(const char *note)
+{
+    int err = -1;
+    PyObject *str = NULL, *res = NULL;
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *exc_type, *exc_value, *exc_tb;
+    _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
+    PyErr_NormalizeException(&exc_type, &exc_value, &exc_tb);
+
+    if (exc_value == NULL) {
+        goto exit;
+    }
+
+    str = PyUnicode_FromString(note);
+    if (str == NULL) {
+        goto exit;
+    }
+
+    res = BaseException_add_note(exc_value, str);
+    if (res == NULL) {
+        goto exit;
+    }
+    err = 0;
+
+exit:
+    Py_DECREF(str);
+    Py_XDECREF(res);
+
+    _PyErr_Restore(tstate, exc_type, exc_value, exc_tb);
+    return err;
 }

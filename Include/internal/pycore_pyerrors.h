@@ -94,6 +94,11 @@ PyAPI_FUNC(PyObject *) _PyExc_PrepReraiseStar(
 
 PyAPI_FUNC(int) _PyErr_CheckSignalsTstate(PyThreadState *tstate);
 
+// Call add_note(note) on the current exception.
+// Return -1 on error, or 0 on success.
+// Save and restore the current exception.
+PyAPI_FUNC(int) _PyErr_AddNote(const char *note);
+
 PyAPI_FUNC(void) _Py_DumpExtensionModules(int fd, PyInterpreterState *interp);
 
 extern PyObject* _Py_Offer_Suggestions(PyObject* exception);

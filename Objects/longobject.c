@@ -7,6 +7,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _Py_SmallInts
 #include "pycore_object.h"        // _PyObject_InitVar()
+#include "pycore_pyerrors.h"      // _PyErr_AddNote()
 #include "pycore_pystate.h"       // _Py_IsMainInterpreter()
 #include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
 #include "pycore_structseq.h"     // _PyStructSequence_FiniType()
@@ -36,8 +37,9 @@ medium_value(PyLongObject *x)
 #define IS_SMALL_INT(ival) (-_PY_NSMALLNEGINTS <= (ival) && (ival) < _PY_NSMALLPOSINTS)
 #define IS_SMALL_UINT(ival) ((ival) < _PY_NSMALLPOSINTS)
 
-#define _MAX_STR_DIGITS_ERROR_FMT_TO_INT "Exceeds the limit (%d) for integer string conversion: value has %zd digits; use sys.set_int_max_str_digits() to increase the limit"
-#define _MAX_STR_DIGITS_ERROR_FMT_TO_STR "Exceeds the limit (%d) for integer string conversion; use sys.set_int_max_str_digits() to increase the limit"
+#define _MAX_STR_DIGITS_ERROR_FMT_TO_INT "Exceeds the limit (%d) for integer string conversion: value has %zd digits"
+#define _MAX_STR_DIGITS_ERROR_FMT_TO_STR "Exceeds the limit (%d) for integer string conversion"
+#define _MAX_STR_DIGITS_ERROR_NOTE "Use sys.set_int_max_str_digits() to increase the limit"
 
 static inline void
 _Py_DECREF_INT(PyLongObject *op)
@@ -1732,6 +1734,14 @@ rem1(PyLongObject *a, digit n)
     );
 }
 
+
+static void
+long_error_add_max_digits_note(void)
+{
+    (void)_PyErr_AddNote(_MAX_STR_DIGITS_ERROR_NOTE);
+}
+
+
 /* Convert an integer to a base 10 string.  Returns a new non-shared
    string.  (Return value is non-shared so that callers can modify the
    returned value if necessary.) */
@@ -1772,6 +1782,7 @@ long_to_decimal_string_internal(PyObject *aa,
             (max_str_digits / (3 * PyLong_SHIFT) <= (size_a - 11) / 10)) {
             PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT_TO_STR,
                          max_str_digits);
+            long_error_add_max_digits_note();
             return -1;
         }
     }
@@ -1843,6 +1854,7 @@ long_to_decimal_string_internal(PyObject *aa,
             Py_DECREF(scratch);
             PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT_TO_STR,
                          max_str_digits);
+            long_error_add_max_digits_note();
             return -1;
         }
     }
@@ -2518,6 +2530,7 @@ digit beyond the first.
             if ((max_str_digits > 0) && (digits > max_str_digits)) {
                 PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT_TO_INT,
                              max_str_digits, digits);
+                long_error_add_max_digits_note();
                 return NULL;
             }
         }
