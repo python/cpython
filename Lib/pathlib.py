@@ -30,6 +30,8 @@ __all__ = [
 # Internals
 #
 
+# Reference for Windows paths can be found at
+# https://docs.microsoft.com/en-gb/windows/win32/fileio/naming-a-file
 _WIN_RESERVED_NAMES = frozenset(
     {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
     {f'COM{c}' for c in '123456789\xb9\xb2\xb3'} |
