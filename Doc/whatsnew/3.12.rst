@@ -139,6 +139,20 @@ sqlite3
 * Add a :ref:`command-line interface <sqlite3-cli>`.
   (Contributed by Erlend E. Aasland in :gh:`77617`.)
 
+threading
+---------
+
+* Add :func:`threading.settrace_all_threads` and
+  :func:`threading.setprofile_all_threads` that allow to set tracing and
+  profiling functions in all running threads in addition to the calling one.
+  (Contributed by Pablo Galindo in :gh:`93503`.)
+
+unicodedata
+-----------
+
+* The Unicode database has been updated to version 15.0.0. (Contributed by
+  Benjamin Peterson in :gh:`96734`).
+
 
 Optimizations
 =============
@@ -472,6 +486,16 @@ New Features
   flags have been added. This allows extensions classes to support object
   ``__dict__`` and weakrefs with less bookkeeping,
   using less memory and with faster access.
+
+* Added two new public functions,
+  :c:func:`PyEval_SetProfileAllThreads` and
+  :c:func:`PyEval_SetTraceAllThreads`, that allow to set tracing and profiling
+  functions in all running threads in addition to the calling one. (Contributed
+  by Pablo Galindo in :gh:`93503`.)
+
+* Added new function :c:func:`PyFunction_SetVectorcall` to the C API
+  which sets the vectorcall field of a given :c:type:`PyFunctionObject`.
+  (Contributed by Andrew Frost in :gh:`92257`.)
 
 Porting to Python 3.12
 ----------------------
