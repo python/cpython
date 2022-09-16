@@ -444,6 +444,41 @@ class BasicTest(BaseTest):
             'import sys; print(sys.executable)'])
         self.assertEqual(out.strip(), envpy.encode())
 
+    def test_custom_executable(self):
+
+        pythons = list(map(lambda minor: 'python3.%s' % minor, range(3, sys.version_info[1] + 1))) + ['python']
+
+        found_a_python = False
+        for executable in pythons:
+            alt_python = shutil.which(executable)
+            if alt_python and alt_python != sys._base_executable:
+                found_a_python = True
+
+                out, err = check_output([alt_python, '--version'])
+                expected_version_output = out.strip()
+
+                builder = venv.EnvBuilder(executable=alt_python)
+                self.assertEqual(alt_python, builder.executable)
+                self.assertNotEqual(sys._base_executable, builder.executable)
+
+                rmtree(self.env_dir)
+
+                builder.create(self.env_dir)
+                self.isdir(self.bindir)
+                self.isdir(self.include)
+
+                envpy = os.path.join(os.path.realpath(self.env_dir), self.bindir, os.path.basename(alt_python))
+
+                out, err = check_output([envpy, '--version'])
+                self.assertEqual(out.strip(), expected_version_output)
+
+                # do not let the test execution time depend on the
+                # number of installed python versions
+                break
+
+        if not found_a_python:
+            raise unittest.SkipTest('No alternative Python interpreters found for venv executable test')
+
     @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
     def test_unicode_in_batch_file(self):
         """
