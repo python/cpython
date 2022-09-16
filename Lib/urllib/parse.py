@@ -600,9 +600,9 @@ _hextobyte = None
 
 def unquote_to_bytes(string):
     """unquote_to_bytes('abc%20def') -> b'abc def'."""
-    return bytes(_unquote_to_bytearray(string))
+    return bytes(_unquote_impl(string))
 
-def _unquote_to_bytearray(string):
+def _unquote_impl(string: bytes | bytearray | str) -> bytes | bytearray:
     # Note: strings are encoded as UTF-8. This is only an issue if it contains
     # unescaped non-ASCII characters, which URIs should not.
     if not string:
@@ -639,7 +639,7 @@ def _generate_unquoted_parts(string, encoding, errors):
         start, end = ascii_match.span()
         yield string[previous_match_end:start]  # Non-ASCII
         # The ascii_match[1] group == string[start:end].
-        yield _unquote_to_bytearray(ascii_match[1]).decode(encoding, errors)
+        yield _unquote_impl(ascii_match[1]).decode(encoding, errors)
         previous_match_end = end
     yield string[previous_match_end:]  # Non-ASCII tail
 
@@ -654,7 +654,7 @@ def unquote(string, encoding='utf-8', errors='replace'):
     unquote('abc%20def') -> 'abc def'.
     """
     if isinstance(string, bytes):
-        return _unquote_to_bytearray(string).decode(encoding, errors)
+        return _unquote_impl(string).decode(encoding, errors)
     if '%' not in string:
         # Is it a string-like object?
         string.split
