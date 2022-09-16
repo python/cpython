@@ -65,6 +65,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         self._signal_handlers = {}
 
     def close(self):
+        # remove signal handlers first to verify
+        # the loop's signal handling setup has not
+        # been tampered with
         if not sys.is_finalizing():
             for sig in list(self._signal_handlers):
                 self.remove_signal_handler(sig)
