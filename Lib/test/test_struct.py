@@ -710,8 +710,7 @@ class StructTest(unittest.TestCase):
     @support.cpython_only
     def test__struct_Struct_subclassing(self):
         class Bob(struct.Struct):
-            def __init__(self, format):
-                super().__init__(format)
+            pass
 
         s = Bob("b")
         s.unpack_from(b"abcd")
