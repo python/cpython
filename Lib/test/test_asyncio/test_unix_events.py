@@ -89,6 +89,17 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
             signal.SIGINT, lambda: True)
 
     @mock.patch('asyncio.unix_events.signal')
+    def test_add_signal_handler_setup_warn(self, m_signal):
+        m_signal.NSIG = signal.NSIG
+        m_signal.valid_signals = signal.valid_signals
+        m_signal.set_wakeup_fd.return_value = -1000
+
+        with self.assertWarnsRegex(
+            ResourceWarning, 'Signal wakeup fd was already set'
+        ):
+            self.loop.add_signal_handler(signal.SIGINT, lambda: True)
+
+    @mock.patch('asyncio.unix_events.signal')
     def test_add_signal_handler_coroutine_error(self, m_signal):
         m_signal.NSIG = signal.NSIG
 
@@ -212,6 +223,19 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
 
         self.loop.remove_signal_handler(signal.SIGHUP)
         self.assertTrue(m_logging.info)
+
+    @mock.patch('asyncio.unix_events.signal')
+    def test_remove_signal_handler_cleanup_warn(self, m_signal):
+        m_signal.NSIG = signal.NSIG
+        m_signal.valid_signals = signal.valid_signals
+        self.loop.add_signal_handler(signal.SIGHUP, lambda: True)
+
+        m_signal.set_wakeup_fd.return_value = -1000
+
+        with self.assertWarnsRegex(
+            ResourceWarning, 'Got unexpected signal wakeup fd'
+        ):
+            self.loop.remove_signal_handler(signal.SIGHUP)
 
     @mock.patch('asyncio.unix_events.signal')
     def test_remove_signal_handler_error(self, m_signal):
