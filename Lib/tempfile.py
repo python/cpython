@@ -547,9 +547,6 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
        or on context exit (default True).
     'errors' -- the errors argument to io.open (default None)
     The file is created as mkstemp() would do it.
-    'delete_on_close' -- if 'delete', then determines whether file gets deleted
-       on close. Otherwise it gets deleted on context manager exit
-       (default True)
 
     Returns an object with a file-like interface; the name of the file
     is accessible as its 'name' attribute.  The file will be automatically
