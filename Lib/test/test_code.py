@@ -376,7 +376,6 @@ class CodeTest(unittest.TestCase):
                 for instruction in artificial_instructions
             ],
             [
-                ('RESUME', 0),
                 ("PUSH_EXC_INFO", None),
                 ("LOAD_CONST", None), # artificial 'None'
                 ("STORE_NAME", "e"),  # XX: we know the location for this
@@ -428,6 +427,27 @@ class CodeTest(unittest.TestCase):
         for line, end_line, column, end_column in positions:
             self.assertIsNone(line)
             self.assertEqual(end_line, new_code.co_firstlineno + 1)
+
+    def test_code_equality(self):
+        def f():
+            try:
+                a()
+            except:
+                b()
+            else:
+                c()
+            finally:
+                d()
+        code_a = f.__code__
+        code_b = code_a.replace(co_linetable=b"")
+        code_c = code_a.replace(co_exceptiontable=b"")
+        code_d = code_b.replace(co_exceptiontable=b"")
+        self.assertNotEqual(code_a, code_b)
+        self.assertNotEqual(code_a, code_c)
+        self.assertNotEqual(code_a, code_d)
+        self.assertNotEqual(code_b, code_c)
+        self.assertNotEqual(code_b, code_d)
+        self.assertNotEqual(code_c, code_d)
 
 
 def isinterned(s):

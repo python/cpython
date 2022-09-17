@@ -176,13 +176,6 @@ Data Types
         >>> dir(Color)
         ['BLUE', 'GREEN', 'RED', '__class__', '__contains__', '__doc__', '__getitem__', '__init_subclass__', '__iter__', '__len__', '__members__', '__module__', '__name__', '__qualname__']
 
-   .. method:: EnumType.__getattr__(cls, name)
-
-      Returns the Enum member in *cls* matching *name*, or raises an :exc:`AttributeError`::
-
-        >>> Color.GREEN
-        <Color.GREEN: 2>
-
    .. method:: EnumType.__getitem__(cls, name)
 
       Returns the Enum member in *cls* matching *name*, or raises an :exc:`KeyError`::

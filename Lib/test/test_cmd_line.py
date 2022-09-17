@@ -105,17 +105,8 @@ class CmdLineTest(unittest.TestCase):
         opts = get_xoptions()
         self.assertEqual(opts, {})
 
-        opts = get_xoptions('-Xno_debug_ranges', '-Xdev=1234')
-        self.assertEqual(opts, {'no_debug_ranges': True, 'dev': '1234'})
-
-    @unittest.skipIf(interpreter_requires_environment(),
-                     'Cannot run -E tests when PYTHON env vars are required.')
-    def test_unknown_xoptions(self):
-        rc, out, err = assert_python_failure('-X', 'blech')
-        self.assertIn(b'Unknown value for option -X', err)
-        msg = b'Fatal Python error: Unknown value for option -X (see --help-xoptions)'
-        self.assertEqual(err.splitlines().count(msg), 1)
-        self.assertEqual(b'', out)
+        opts = get_xoptions('-Xa', '-Xb=c,d=e')
+        self.assertEqual(opts, {'a': True, 'b': 'c,d=e'})
 
     def test_showrefcount(self):
         def run_python(*args):
@@ -873,6 +864,39 @@ class CmdLineTest(unittest.TestCase):
         err_msg = "unknown option --unknown-option\nusage: "
         self.assertTrue(proc.stderr.startswith(err_msg), proc.stderr)
         self.assertNotEqual(proc.returncode, 0)
+
+    def test_int_max_str_digits(self):
+        code = "import sys; print(sys.flags.int_max_str_digits, sys.get_int_max_str_digits())"
+
+        assert_python_failure('-X', 'int_max_str_digits', '-c', code)
+        assert_python_failure('-X', 'int_max_str_digits=foo', '-c', code)
+        assert_python_failure('-X', 'int_max_str_digits=100', '-c', code)
+
+        assert_python_failure('-c', code, PYTHONINTMAXSTRDIGITS='foo')
+        assert_python_failure('-c', code, PYTHONINTMAXSTRDIGITS='100')
+
+        def res2int(res):
+            out = res.out.strip().decode("utf-8")
+            return tuple(int(i) for i in out.split())
+
+        res = assert_python_ok('-c', code)
+        self.assertEqual(res2int(res), (-1, sys.get_int_max_str_digits()))
+        res = assert_python_ok('-X', 'int_max_str_digits=0', '-c', code)
+        self.assertEqual(res2int(res), (0, 0))
+        res = assert_python_ok('-X', 'int_max_str_digits=4000', '-c', code)
+        self.assertEqual(res2int(res), (4000, 4000))
+        res = assert_python_ok('-X', 'int_max_str_digits=100000', '-c', code)
+        self.assertEqual(res2int(res), (100000, 100000))
+
+        res = assert_python_ok('-c', code, PYTHONINTMAXSTRDIGITS='0')
+        self.assertEqual(res2int(res), (0, 0))
+        res = assert_python_ok('-c', code, PYTHONINTMAXSTRDIGITS='4000')
+        self.assertEqual(res2int(res), (4000, 4000))
+        res = assert_python_ok(
+            '-X', 'int_max_str_digits=6000', '-c', code,
+            PYTHONINTMAXSTRDIGITS='4000'
+        )
+        self.assertEqual(res2int(res), (6000, 6000))
 
 
 @unittest.skipIf(interpreter_requires_environment(),

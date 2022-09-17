@@ -1,0 +1,3 @@
+Update library documentation with
+:ref:`availability information <wasm-availability>`
+on WebAssembly platforms ``wasm32-emscripten`` and ``wasm32-wasi``.

@@ -21,7 +21,7 @@ Python's development never completely stops between releases, and a steady flow
 of bug fixes and improvements are always being submitted. A host of minor fixes,
 a few optimizations, additional docstrings, and better error messages went into
 2.0; to list them all would be impossible, but they're certainly significant.
-Consult the publicly-available CVS logs if you want to see the full list.  This
+Consult the publicly available CVS logs if you want to see the full list.  This
 progress is due to the five developers working for  PythonLabs are now getting
 paid to spend their days fixing bugs, and also due to the improved communication
 resulting  from moving to SourceForge.
@@ -820,7 +820,7 @@ packages, which made administering a Python installation something of  a chore.
 
 The SIG for distribution utilities, shepherded by Greg Ward, has created the
 Distutils, a system to make package installation much easier.  They form the
-:mod:`distutils` package, a new part of Python's standard library. In the best
+``distutils`` package, a new part of Python's standard library. In the best
 case, installing a Python module from source will require the same steps: first
 you simply mean unpack the tarball or zip archive, and the run "``python
 setup.py install``".  The platform will be automatically detected, the compiler
