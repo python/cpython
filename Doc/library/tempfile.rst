@@ -88,7 +88,7 @@ The module defines the following user-callable items:
 
    The returned object is always a file-like object whose :attr:`!file`
    attribute is the underlying true file object. This file-like object can be
-   used in a :keyword:`with` statement, just like a normal file.The name of the
+   used in a :keyword:`with` statement, just like a normal file.  The name of the
    temporary file can be retrieved from the :attr:`name` attribute of the
    returned file-like object.
 
