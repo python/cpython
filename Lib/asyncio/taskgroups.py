@@ -116,10 +116,9 @@ class TaskGroup:
         if self._base_error is not None:
             raise self._base_error
 
-        if propagate_cancellation_error is not None:
-            # The wrapping task was cancelled; since we're done with
-            # closing all child tasks, just propagate the cancellation
-            # request now.
+        # Propagate CancelledError if there is one, except if there
+        # are other errors -- those have priority.
+        if propagate_cancellation_error and not self._errors:
             raise propagate_cancellation_error
 
         if et is not None and et is not exceptions.CancelledError:

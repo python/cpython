@@ -14,6 +14,9 @@ extern "C" {
 #include "pycore_interp.h"          // PyInterpreterState
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_ids
 
+struct _getargs_runtime_state {
+   PyThread_type_lock mutex;
+};
 
 /* ceval state */
 
@@ -114,6 +117,7 @@ typedef struct pyruntimestate {
 
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
+    struct _getargs_runtime_state getargs;
 
     PyPreConfig preconfig;
 

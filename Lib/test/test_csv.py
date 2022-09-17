@@ -448,6 +448,34 @@ class TestDialectRegistry(unittest.TestCase):
         self.assertEqual(csv.get_dialect(name).delimiter, ';')
         self.assertEqual([['X', 'Y', 'Z']], list(csv.reader(['X;Y;Z'], name)))
 
+    def test_register_kwargs_override(self):
+        class mydialect(csv.Dialect):
+            delimiter = "\t"
+            quotechar = '"'
+            doublequote = True
+            skipinitialspace = False
+            lineterminator = '\r\n'
+            quoting = csv.QUOTE_MINIMAL
+
+        name = 'test_dialect'
+        csv.register_dialect(name, mydialect,
+                             delimiter=';',
+                             quotechar="'",
+                             doublequote=False,
+                             skipinitialspace=True,
+                             lineterminator='\n',
+                             quoting=csv.QUOTE_ALL)
+        self.addCleanup(csv.unregister_dialect, name)
+
+        # Ensure that kwargs do override attributes of a dialect class:
+        dialect = csv.get_dialect(name)
+        self.assertEqual(dialect.delimiter, ';')
+        self.assertEqual(dialect.quotechar, "'")
+        self.assertEqual(dialect.doublequote, False)
+        self.assertEqual(dialect.skipinitialspace, True)
+        self.assertEqual(dialect.lineterminator, '\n')
+        self.assertEqual(dialect.quoting, csv.QUOTE_ALL)
+
     def test_incomplete_dialect(self):
         class myexceltsv(csv.Dialect):
             delimiter = "\t"
@@ -735,6 +763,34 @@ class TestDictFields(unittest.TestCase):
         dictrow = {'f0': 0, 'f1': 1, 'f2': 2, 'f3': 3}
         csv.DictWriter.writerow(writer, dictrow)
         self.assertEqual(fileobj.getvalue(), "1,2\r\n")
+
+    def test_dict_reader_fieldnames_accepts_iter(self):
+        fieldnames = ["a", "b", "c"]
+        f = StringIO()
+        reader = csv.DictReader(f, iter(fieldnames))
+        self.assertEqual(reader.fieldnames, fieldnames)
+
+    def test_dict_reader_fieldnames_accepts_list(self):
+        fieldnames = ["a", "b", "c"]
+        f = StringIO()
+        reader = csv.DictReader(f, fieldnames)
+        self.assertEqual(reader.fieldnames, fieldnames)
+
+    def test_dict_writer_fieldnames_rejects_iter(self):
+        fieldnames = ["a", "b", "c"]
+        f = StringIO()
+        writer = csv.DictWriter(f, iter(fieldnames))
+        self.assertEqual(writer.fieldnames, fieldnames)
+
+    def test_dict_writer_fieldnames_accepts_list(self):
+        fieldnames = ["a", "b", "c"]
+        f = StringIO()
+        writer = csv.DictWriter(f, fieldnames)
+        self.assertEqual(writer.fieldnames, fieldnames)
+
+    def test_dict_reader_fieldnames_is_optional(self):
+        f = StringIO()
+        reader = csv.DictReader(f, fieldnames=None)
 
     def test_read_dict_fields(self):
         with TemporaryFile("w+", encoding="utf-8") as fileobj:

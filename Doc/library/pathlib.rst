@@ -1038,7 +1038,7 @@ call fails (for example because the path doesn't exist).
       # Delete everything reachable from the directory "top".
       # CAUTION:  This is dangerous! For example, if top == Path('/'),
       # it could delete all of your files.
-      for root, dirs, files in top.walk(topdown=False):
+      for root, dirs, files in top.walk(top_down=False):
           for name in files:
               (root / name).unlink()
           for name in dirs:

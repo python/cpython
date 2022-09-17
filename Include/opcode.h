@@ -32,6 +32,7 @@ extern "C" {
 #define BEFORE_ASYNC_WITH                       52
 #define BEFORE_WITH                             53
 #define END_ASYNC_FOR                           54
+#define CLEANUP_THROW                           55
 #define STORE_SUBSCR                            60
 #define DELETE_SUBSCR                           61
 #define GET_ITER                                68
@@ -71,8 +72,8 @@ extern "C" {
 #define JUMP_FORWARD                           110
 #define JUMP_IF_FALSE_OR_POP                   111
 #define JUMP_IF_TRUE_OR_POP                    112
-#define POP_JUMP_FORWARD_IF_FALSE              114
-#define POP_JUMP_FORWARD_IF_TRUE               115
+#define POP_JUMP_IF_FALSE                      114
+#define POP_JUMP_IF_TRUE                       115
 #define LOAD_GLOBAL                            116
 #define IS_OP                                  117
 #define CONTAINS_OP                            118
@@ -84,8 +85,8 @@ extern "C" {
 #define STORE_FAST                             125
 #define DELETE_FAST                            126
 #define LOAD_FAST_CHECK                        127
-#define POP_JUMP_FORWARD_IF_NOT_NONE           128
-#define POP_JUMP_FORWARD_IF_NONE               129
+#define POP_JUMP_IF_NOT_NONE                   128
+#define POP_JUMP_IF_NONE                       129
 #define RAISE_VARARGS                          130
 #define GET_AWAITABLE                          131
 #define MAKE_FUNCTION                          132
@@ -116,10 +117,6 @@ extern "C" {
 #define DICT_UPDATE                            165
 #define CALL                                   171
 #define KW_NAMES                               172
-#define POP_JUMP_BACKWARD_IF_NOT_NONE          173
-#define POP_JUMP_BACKWARD_IF_NONE              174
-#define POP_JUMP_BACKWARD_IF_FALSE             175
-#define POP_JUMP_BACKWARD_IF_TRUE              176
 #define MIN_PSEUDO_OPCODE                      256
 #define SETUP_FINALLY                          256
 #define SETUP_CLEANUP                          257
@@ -127,12 +124,8 @@ extern "C" {
 #define POP_BLOCK                              259
 #define JUMP                                   260
 #define JUMP_NO_INTERRUPT                      261
-#define POP_JUMP_IF_FALSE                      262
-#define POP_JUMP_IF_TRUE                       263
-#define POP_JUMP_IF_NONE                       264
-#define POP_JUMP_IF_NOT_NONE                   265
-#define LOAD_METHOD                            266
-#define MAX_PSEUDO_OPCODE                      266
+#define LOAD_METHOD                            262
+#define MAX_PSEUDO_OPCODE                      262
 #define BINARY_OP_ADAPTIVE                       3
 #define BINARY_OP_ADD_FLOAT                      4
 #define BINARY_OP_ADD_INT                        5
@@ -164,56 +157,53 @@ extern "C" {
 #define CALL_NO_KW_METHOD_DESCRIPTOR_O          46
 #define CALL_NO_KW_STR_1                        47
 #define CALL_NO_KW_TUPLE_1                      48
-#define CALL_NO_KW_TYPE_1                       55
-#define COMPARE_OP_ADAPTIVE                     56
-#define COMPARE_OP_FLOAT_JUMP                   57
-#define COMPARE_OP_INT_JUMP                     58
-#define COMPARE_OP_STR_JUMP                     59
-#define EXTENDED_ARG_QUICK                      62
-#define FOR_ITER_ADAPTIVE                       63
-#define FOR_ITER_LIST                           64
-#define FOR_ITER_RANGE                          65
-#define JUMP_BACKWARD_QUICK                     66
-#define LOAD_ATTR_ADAPTIVE                      67
-#define LOAD_ATTR_CLASS                         72
-#define LOAD_ATTR_INSTANCE_VALUE                73
-#define LOAD_ATTR_MODULE                        76
-#define LOAD_ATTR_PROPERTY                      77
-#define LOAD_ATTR_SLOT                          78
-#define LOAD_ATTR_WITH_HINT                     79
-#define LOAD_ATTR_METHOD_LAZY_DICT              80
-#define LOAD_ATTR_METHOD_NO_DICT                81
-#define LOAD_ATTR_METHOD_WITH_DICT              86
-#define LOAD_ATTR_METHOD_WITH_VALUES           113
-#define LOAD_CONST__LOAD_FAST                  121
-#define LOAD_FAST__LOAD_CONST                  141
-#define LOAD_FAST__LOAD_FAST                   143
-#define LOAD_GLOBAL_ADAPTIVE                   153
-#define LOAD_GLOBAL_BUILTIN                    154
-#define LOAD_GLOBAL_MODULE                     158
-#define RESUME_QUICK                           159
-#define STORE_ATTR_ADAPTIVE                    160
-#define STORE_ATTR_INSTANCE_VALUE              161
-#define STORE_ATTR_SLOT                        166
-#define STORE_ATTR_WITH_HINT                   167
-#define STORE_FAST__LOAD_FAST                  168
-#define STORE_FAST__STORE_FAST                 169
-#define STORE_SUBSCR_ADAPTIVE                  170
-#define STORE_SUBSCR_DICT                      177
-#define STORE_SUBSCR_LIST_INT                  178
-#define UNPACK_SEQUENCE_ADAPTIVE               179
-#define UNPACK_SEQUENCE_LIST                   180
-#define UNPACK_SEQUENCE_TUPLE                  181
-#define UNPACK_SEQUENCE_TWO_TUPLE              182
+#define CALL_NO_KW_TYPE_1                       56
+#define COMPARE_OP_ADAPTIVE                     57
+#define COMPARE_OP_FLOAT_JUMP                   58
+#define COMPARE_OP_INT_JUMP                     59
+#define COMPARE_OP_STR_JUMP                     62
+#define EXTENDED_ARG_QUICK                      63
+#define FOR_ITER_ADAPTIVE                       64
+#define FOR_ITER_LIST                           65
+#define FOR_ITER_RANGE                          66
+#define JUMP_BACKWARD_QUICK                     67
+#define LOAD_ATTR_ADAPTIVE                      72
+#define LOAD_ATTR_CLASS                         73
+#define LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN       76
+#define LOAD_ATTR_INSTANCE_VALUE                77
+#define LOAD_ATTR_MODULE                        78
+#define LOAD_ATTR_PROPERTY                      79
+#define LOAD_ATTR_SLOT                          80
+#define LOAD_ATTR_WITH_HINT                     81
+#define LOAD_ATTR_METHOD_LAZY_DICT              86
+#define LOAD_ATTR_METHOD_NO_DICT               113
+#define LOAD_ATTR_METHOD_WITH_DICT             121
+#define LOAD_ATTR_METHOD_WITH_VALUES           141
+#define LOAD_CONST__LOAD_FAST                  143
+#define LOAD_FAST__LOAD_CONST                  153
+#define LOAD_FAST__LOAD_FAST                   154
+#define LOAD_GLOBAL_ADAPTIVE                   158
+#define LOAD_GLOBAL_BUILTIN                    159
+#define LOAD_GLOBAL_MODULE                     160
+#define RESUME_QUICK                           161
+#define STORE_ATTR_ADAPTIVE                    166
+#define STORE_ATTR_INSTANCE_VALUE              167
+#define STORE_ATTR_SLOT                        168
+#define STORE_ATTR_WITH_HINT                   169
+#define STORE_FAST__LOAD_FAST                  170
+#define STORE_FAST__STORE_FAST                 173
+#define STORE_SUBSCR_ADAPTIVE                  174
+#define STORE_SUBSCR_DICT                      175
+#define STORE_SUBSCR_LIST_INT                  176
+#define UNPACK_SEQUENCE_ADAPTIVE               177
+#define UNPACK_SEQUENCE_LIST                   178
+#define UNPACK_SEQUENCE_TUPLE                  179
+#define UNPACK_SEQUENCE_TWO_TUPLE              180
 #define DO_TRACING                             255
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
     || ((op) == JUMP) \
     || ((op) == JUMP_NO_INTERRUPT) \
-    || ((op) == POP_JUMP_IF_FALSE) \
-    || ((op) == POP_JUMP_IF_TRUE) \
-    || ((op) == POP_JUMP_IF_NONE) \
-    || ((op) == POP_JUMP_IF_NOT_NONE) \
     || ((op) == LOAD_METHOD) \
     )
 
