@@ -43,8 +43,8 @@
    module.
    (Contributed by P.Y. Developer in :issue:`12345`.)
 
-   This saves the maintainer the effort of going through the Mercurial log
-   when researching a change.
+   This saves the maintainer the effort of going through the VCS log when
+   researching a change.
 
 This article explains the new features in Python 3.12, compared to 3.11.
 
