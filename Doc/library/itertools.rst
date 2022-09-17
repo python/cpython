@@ -818,7 +818,7 @@ which incur interpreter overhead.
       data = bytearray([1]) * n
       data[:2] = 0, 0
       limit = math.isqrt(n) + 1
-      for p in compress(count(), islice(data, limit)):
+      for p in compress(range(limit), data):
          data[p+p : n : p] = bytearray(len(range(p+p, n, p)))
       return compress(count(), data)
 
@@ -1168,6 +1168,9 @@ which incur interpreter overhead.
 
     >>> list(sieve(30))
     [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
+    >>> small_primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59]
+    >>> all(list(sieve(n)) == [p for p in small_primes if p < n] for n in range(60))
+    True
     >>> len(list(sieve(100)))
     25
     >>> len(list(sieve(1_000)))
@@ -1178,6 +1181,9 @@ which incur interpreter overhead.
     9592
     >>> len(list(sieve(1_000_000)))
     78498
+    >>> carmichael = {561, 1105, 1729, 2465, 2821, 6601, 8911}  # https://oeis.org/A002997
+    >>> set(sieve(10_000)).isdisjoint(carmichael)
+    True
 
     >>> list(flatten([('a', 'b'), (), ('c', 'd', 'e'), ('f',), ('g', 'h', 'i')]))
     ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
