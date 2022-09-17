@@ -1,10 +1,12 @@
 import re
 import sys
+import textwrap
 import types
 import unittest
 import weakref
 
 from test import support
+from test.support.script_helper import assert_python_ok
 
 
 class ClearTest(unittest.TestCase):
@@ -238,25 +240,26 @@ class ReprTest(unittest.TestCase):
 class TestIncompleteFrameAreInvisible(unittest.TestCase):
 
     def test_issue95818(self):
-        #See GH-95818 for details
-        import gc
-        self.addCleanup(gc.set_threshold, *gc.get_threshold())
+        # See GH-95818 for details
+        code = textwrap.dedent(f"""
+            import gc
 
-        gc.set_threshold(1,1,1)
-        class GCHello:
-            def __del__(self):
-                print("Destroyed from gc")
+            gc.set_threshold(1,1,1)
+            class GCHello:
+                def __del__(self):
+                    print("Destroyed from gc")
 
-        def gen():
-            yield
+            def gen():
+                yield
 
-        fd = open(__file__)
-        l = [fd, GCHello()]
-        l.append(l)
-        del fd
-        del l
-        gen()
-
+            fd = open({__file__!r})
+            l = [fd, GCHello()]
+            l.append(l)
+            del fd
+            del l
+            gen()
+        """)
+        assert_python_ok("-c", code)
 
 if __name__ == "__main__":
     unittest.main()
