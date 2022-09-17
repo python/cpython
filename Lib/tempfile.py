@@ -503,12 +503,12 @@ class _TemporaryFileWrapper:
     def __exit__(self, exc, value, tb):
         result = self.file.__exit__(exc, value, tb)
         self.close()
-        # if file is to be deleted, bot not on closure, deleting it now
+        # If the file is to be deleted, but not on close, delete it now.
         if self.delete and not self.delete_on_close:
             try:
                 _os.unlink(self.name)
-            # It shall be Ok to ignore FileNotFoundError, because user may
-            # have deleted the file already before content manager came to it
+            # It is okay to ignore FileNotFoundError. The file may have
+            # been deleted already.
             except FileNotFoundError:
                 pass
 
@@ -542,14 +542,11 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
     'buffering' -- the buffer size argument to io.open (default -1).
     'encoding' -- the encoding argument to io.open (default None)
     'newline' -- the newline argument to io.open (default None)
-    'delete' -- whether the file is deleted at the end.  When exactly file gets
-       deleted (either on close or on context manager exit) is determined by
-       parameter delete_on_close.  (default True).
+    'delete' -- whether the file is automatically deleted (default True).
+    'delete_on_close' -- if 'delete', whether the file is deleted on close
+       or on context exit (default True).
     'errors' -- the errors argument to io.open (default None)
     The file is created as mkstemp() would do it.
-    'delete_on_close' -- if 'delete', then determines whether file gets deleted
-       on close. Otherwise it gets deleted on context manager exit
-       (default True)
 
     Returns an object with a file-like interface; the name of the file
     is accessible as its 'name' attribute.  The file will be automatically
