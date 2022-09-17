@@ -65,9 +65,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         self._signal_handlers = {}
 
     def close(self):
-        # remove signal handlers first to verify
-        # the loop's signal handling setup has not
-        # been tampered with
+        super().close()
         if not sys.is_finalizing():
             for sig in list(self._signal_handlers):
                 self.remove_signal_handler(sig)
@@ -79,7 +77,6 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                               ResourceWarning,
                               source=self)
                 self._signal_handlers.clear()
-        super().close()
 
     def _process_self_data(self, data):
         for signum in data:
@@ -105,12 +102,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             # main thread.  By calling it early we ensure that an
             # event loop running in another thread cannot add a signal
             # handler.
-            oldfd = signal.set_wakeup_fd(self._csock.fileno())
-            if oldfd != -1 and oldfd != self._csock.fileno():
-                warnings.warn(
-                    "Signal wakeup fd was already set",
-                    ResourceWarning,
-                    source=self)
+            signal.set_wakeup_fd(self._csock.fileno())
         except (ValueError, OSError) as exc:
             raise RuntimeError(str(exc))
 
@@ -174,12 +166,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
 
         if not self._signal_handlers:
             try:
-                oldfd = signal.set_wakeup_fd(-1)
-                if oldfd != -1 and oldfd != self._csock.fileno():
-                    warnings.warn(
-                        "Got unexpected signal wakeup fd",
-                        ResourceWarning,
-                        source=self)
+                signal.set_wakeup_fd(-1)
             except (ValueError, OSError) as exc:
                 logger.info('set_wakeup_fd(-1) failed: %s', exc)
 
