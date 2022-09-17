@@ -58,6 +58,8 @@ OMIT_FILES = (
     # Pure Python implementations of C extensions
     "_pydecimal.py",
     "_pyio.py",
+    # concurrent threading
+    "concurrent/futures/thread.py",
     # Misc unused or large files
     "pydoc_data/",
     "msilib/",
@@ -99,13 +101,12 @@ OMIT_MODULE_FILES = {
     "_dbm": ["dbm/ndbm.py"],
     "_gdbm": ["dbm/gnu.py"],
     "_json": ["json/"],
-    "_multiprocessing": ["concurrent/", "multiprocessing/"],
+    "_multiprocessing": ["concurrent/futures/process.py", "multiprocessing/"],
     "pyexpat": ["xml/", "xmlrpc/"],
     "readline": ["rlcompleter.py"],
     "_sqlite3": ["sqlite3/"],
     "_ssl": ["ssl.py"],
     "_tkinter": ["idlelib/", "tkinter/", "turtle.py", "turtledemo/"],
-
     "_zoneinfo": ["zoneinfo/"],
 }
 
@@ -125,21 +126,18 @@ SYSCONFIG_NAMES = (
 
 
 def get_builddir(args: argparse.Namespace) -> pathlib.Path:
-    """Get builddir path from pybuilddir.txt
-    """
+    """Get builddir path from pybuilddir.txt"""
     with open("pybuilddir.txt", encoding="utf-8") as f:
         builddir = f.read()
     return pathlib.Path(builddir)
 
 
 def get_sysconfigdata(args: argparse.Namespace) -> pathlib.Path:
-    """Get path to sysconfigdata relative to build root
-    """
+    """Get path to sysconfigdata relative to build root"""
     data_name = sysconfig._get_sysconfigdata_name()
     if not data_name.startswith(SYSCONFIG_NAMES):
         raise ValueError(
-            f"Invalid sysconfig data name '{data_name}'.",
-            SYSCONFIG_NAMES
+            f"Invalid sysconfig data name '{data_name}'.", SYSCONFIG_NAMES
         )
     filename = data_name + ".py"
     return args.builddir / filename
@@ -150,19 +148,22 @@ def create_stdlib_zip(
     *,
     optimize: int = 0,
 ) -> None:
-    def filterfunc(name: str) -> bool:
-        return not name.startswith(args.omit_subdirs_absolute)
+    def filterfunc(filename: str) -> bool:
+        pathname = pathlib.Path(filename).resolve()
+        return pathname not in args.omit_files_absolute
 
     with zipfile.PyZipFile(
-        args.wasm_stdlib_zip, mode="w", compression=args.compression, optimize=optimize
+        args.wasm_stdlib_zip,
+        mode="w",
+        compression=args.compression,
+        optimize=optimize,
     ) as pzf:
         if args.compresslevel is not None:
             pzf.compresslevel = args.compresslevel
         pzf.writepy(args.sysconfig_data)
         for entry in sorted(args.srcdir_lib.iterdir()):
+            entry = entry.resolve()
             if entry.name == "__pycache__":
-                continue
-            if entry in args.omit_files_absolute:
                 continue
             if entry.name.endswith(".py") or entry.is_dir():
                 # writepy() writes .pyc files (bytecode).
@@ -247,10 +248,9 @@ def main():
         if not extmods.get(modname):
             omit_files.extend(modfiles)
 
-    args.omit_files_absolute = {args.srcdir_lib / name for name in omit_files}
-    args.omit_subdirs_absolute = tuple(
-        str(args.srcdir_lib / name) for name in OMIT_SUBDIRS
-    )
+    args.omit_files_absolute = {
+        (args.srcdir_lib / name).resolve() for name in omit_files
+    }
 
     # Empty, unused directory for dynamic libs, but required for site initialization.
     args.wasm_dynload.mkdir(parents=True, exist_ok=True)
