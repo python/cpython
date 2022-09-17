@@ -922,7 +922,7 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
 
         async def c2():
             async with sem:
-                await asyncio.sleep(0)
+                self.assertFalse(True)
 
         t1 = asyncio.create_task(c1())
         t2 = asyncio.create_task(c2())
