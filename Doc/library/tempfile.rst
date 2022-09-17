@@ -104,18 +104,18 @@ The module defines the following user-callable items:
    Windows, if *delete* is true and *delete_on_close* is false, additional
    opens that do not share delete access (e.g. via builtin :func:`open`) must
    be closed before exiting the context manager, else the :func:`os.unlink`
-   call on context manager exit will fail with a ``PermissionError``.
+   call on context manager exit will fail with a :exc:`PermissionError`.
 
    To use the name of the temporary file to open the closed file second time,
    either make sure not to delete the file upon closure (set the *delete*
    parameter to be false) or, in case the temporary file is created in a
-   :keyword:`with` statement, set the *delete_on_close* to be false. The latter
-   approach is recommended as it provides assistance in automatic cleaning of
-   the temporary file upon the context manager exit.
+   :keyword:`with` statement, set the *delete_on_close* parameter to be false.
+   The latter approach is recommended as it provides assistance in automatic
+   cleaning of the temporary file upon the context manager exit.
 
-   In Windows, if *delete_on_close* is false, and the file is created in a
+   On Windows, if *delete_on_close* is false, and the file is created in a
    directory for which the user lacks delete access, then the :func:`os.unlink`
-   call on exit of the context manager will fail with a ``PermissionError``.
+   call on exit of the context manager will fail with a :exc:`PermissionError`.
    This cannot happen when *delete_on_close* is true because delete access is
    requested by the open, which fails immediately if the requested access is not
    granted.
