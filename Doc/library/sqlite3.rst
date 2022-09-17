@@ -2274,7 +2274,8 @@ If the connection attribute :attr:`~Connection.isolation_level`
 is not ``None``,
 new transactions are implicitly opened before
 :meth:`~Cursor.execute` and :meth:`~Cursor.executemany` executes
-``INSERT``, ``UPDATE``, ``DELETE``, or ``REPLACE`` statements.
+``INSERT``, ``UPDATE``, ``DELETE``, or ``REPLACE`` statements;
+for other statements, no implicit transaction handling is performed.
 Use the :meth:`~Connection.commit` and :meth:`~Connection.rollback` methods
 to respectively commit and roll back pending transactions.
 You can choose the underlying `SQLite transaction behaviour`_ —

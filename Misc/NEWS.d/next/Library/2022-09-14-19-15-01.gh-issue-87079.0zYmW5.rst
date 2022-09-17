@@ -1,0 +1,2 @@
+Warn the user whenever asyncio event loops override a signal wake up file
+descriptor that was previously set.

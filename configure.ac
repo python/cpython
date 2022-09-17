@@ -1863,8 +1863,15 @@ if test "$Py_LTO" = 'true' ; then
           # Any changes made here should be reflected in the GCC+Darwin case below
           if test $Py_LTO_POLICY = default
           then
-            LTOFLAGS="-flto -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
-            LTOCFLAGS="-flto"
+            # Check that ThinLTO is accepted.
+            AX_CHECK_COMPILE_FLAG([-flto=thin],[
+              LTOFLAGS="-flto=thin -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
+              LTOCFLAGS="-flto=thin"
+              ],[
+              LTOFLAGS="-flto -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
+              LTOCFLAGS="-flto"
+              ]
+            )
           else
             LTOFLAGS="-flto=${Py_LTO_POLICY} -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
             LTOCFLAGS="-flto=${Py_LTO_POLICY}"
@@ -1873,7 +1880,8 @@ if test "$Py_LTO" = 'true' ; then
         *)
           if test $Py_LTO_POLICY = default
           then
-            LTOFLAGS="-flto"
+            # Check that ThinLTO is accepted
+            AX_CHECK_COMPILE_FLAG([-flto=thin],[LTOFLAGS="-flto=thin"],[LTOFLAGS="-flto"])
           else
             LTOFLAGS="-flto=${Py_LTO_POLICY}"
           fi
