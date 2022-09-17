@@ -97,25 +97,14 @@ The module defines the following user-callable items:
    and *delete_on_close* is false, the file is deleted on context manager exit
    only. If *delete* is false, the value of *delete_on_close* is ignored.
 
-   Whether the name of the temporary file can be used to open the file a second
-   time, while the named temporary file is still open, varies across platforms:
-
-   * It can be so used on Unix.
-
-   * In Windows, the file can be opened again if *delete_on_close* is false or
-     if the open shares delete access (e.g. by calling :func:`os.open` with the
-     flag ``O_TEMPORARY``).  If *delete_on_close* is false, and the file is
-     opened again without sharing delete access (e.g. via builtin :func:`open`),
-     then the second open must be closed before exiting the context manager,
-     else the :func:`os.unlink` call on context manager exit will fail with a
-     ``PermissionError``.
-
-   To use the name of the temporary file to open the closed file second time,
-   either make sure not to delete the file upon closure (set the *delete*
-   parameter to be false) or, in case the temporary file is created in a
-   :keyword:`with` statement, set the *delete_on_close* to be false. The latter
-   approach is recommended as it provides assistance in automatic cleaning of
-   the temporary file upon the context manager exit.
+   While the named temporary file is open, the file can always be opened again
+   on POSIX. On Windows, it can be opened again if *delete* is false, or if
+   *delete_on_close* is false, or if the additional open shares delete access
+   (e.g. by calling :func:`os.open` with the flag ``O_TEMPORARY``).  On
+   Windows, if *delete* is true and *delete_on_close* is false, additional
+   opens that do not share delete access (e.g. via builtin :func:`open`) must
+   be closed before exiting the context manager, else the :func:`os.unlink`
+   call on context manager exit will fail with a ``PermissionError``.
 
    In Windows, if *delete_on_close* is false, and the file is created in a
    directory for which the user lacks delete access, then the :func:`os.unlink`
