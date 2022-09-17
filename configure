@@ -1056,7 +1056,7 @@ with_assertions
 enable_optimizations
 with_lto
 enable_bolt
-with_fstrict_overflow
+with_strict_overflow
 with_dsymutil
 with_address_sanitizer
 with_memory_sanitizer
@@ -1829,7 +1829,7 @@ Optional Packages:
   --with-lto=[full|thin|no|yes]
                           enable Link-Time-Optimization in any build (default
                           is no)
-  --with-fstrict-overflow choose between -fstrict-overflow or
+  --with-strict-overflow  choose between -fstrict-overflow or
                           -fno-strict-overflow (default is no for backwards
                           compatibility)
   --with-dsymutil         link debug information into final executable with
@@ -8390,18 +8390,18 @@ fi
 $as_echo "$ac_cv_cc_supports_fstrict_overflow" >&6; }
 CFLAGS=$save_CFLAGS
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-fstrict-overflow" >&5
-$as_echo_n "checking for --with-fstrict-overflow... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-strict-overflow" >&5
+$as_echo_n "checking for --with-strict-overflow... " >&6; }
 
-# Check whether --with-fstrict-overflow was given.
-if test "${with_fstrict_overflow+set}" = set; then :
-  withval=$with_fstrict_overflow;
+# Check whether --with-strict-overflow was given.
+if test "${with_strict_overflow+set}" = set; then :
+  withval=$with_strict_overflow;
 else
-  with_strict_overflow=no
+  with_fstrict_overflow=no
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_fstrict_overflow" >&5
-$as_echo "$with_fstrict_overflow" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_strict_overflow" >&5
+$as_echo "$with_strict_overflow" >&6; }
 
 # Check if CC supports -Og optimization level
 save_CFLAGS=$CFLAGS
