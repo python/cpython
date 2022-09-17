@@ -1,0 +1,1 @@
+Force ``utf8`` encoding in ``_bootstrap_python`` to fix compilation under path containing non-ascii characters. Patch by Kumar Aditya.
