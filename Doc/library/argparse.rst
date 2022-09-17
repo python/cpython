@@ -2032,7 +2032,8 @@ Mutual exclusion
    Note that currently mutually exclusive argument groups do not support the
    *title* and *description* arguments of
    :meth:`~ArgumentParser.add_argument_group`. However, a mutually exclusive
-   group can be added to an argument group that has a title and description. For example::
+   group can be added to an argument group that has a title and description.
+   For example::
 
      >>> parser = argparse.ArgumentParser(prog='PROG')
      >>> group = parser.add_argument_group('Group title', 'Group description')
