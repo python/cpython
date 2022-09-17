@@ -5,6 +5,7 @@ from unittest import mock
 import re
 
 import asyncio
+import collections
 
 STR_RGX_REPR = (
     r'^<(?P<class>.*?) object at (?P<address>.*?)'
@@ -773,6 +774,9 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(repr(sem).endswith('[locked]>'))
         self.assertTrue('waiters' not in repr(sem))
         self.assertTrue(RGX_REPR.match(repr(sem)))
+
+        if sem._waiters is None:
+            sem._waiters = collections.deque()
 
         sem._waiters.append(mock.Mock())
         self.assertTrue('waiters:1' in repr(sem))
