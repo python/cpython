@@ -635,12 +635,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         self._make_self_pipe()
         if threading.current_thread() is threading.main_thread():
             # wakeup fd can only be installed to a file descriptor from the main thread
-            oldfd = signal.set_wakeup_fd(self._csock.fileno())
-            if oldfd != -1:
-                warnings.warn(
-                    "Signal wakeup fd was already set",
-                    ResourceWarning,
-                    source=self)
+            signal.set_wakeup_fd(self._csock.fileno())
 
     def _make_socket_transport(self, sock, protocol, waiter=None,
                                extra=None, server=None):
@@ -689,12 +684,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
             return
 
         if threading.current_thread() is threading.main_thread():
-            oldfd = signal.set_wakeup_fd(-1)
-            if oldfd != self._csock.fileno():
-                warnings.warn(
-                    "Got unexpected signal wakeup fd",
-                    ResourceWarning,
-                    source=self)
+            signal.set_wakeup_fd(-1)
         # Call these methods before closing the event loop (before calling
         # BaseEventLoop.close), because they can schedule callbacks with
         # call_soon(), which is forbidden when the event loop is closed.
