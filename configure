@@ -1056,6 +1056,7 @@ with_assertions
 enable_optimizations
 with_lto
 enable_bolt
+with_fstrict_overflow
 with_dsymutil
 with_address_sanitizer
 with_memory_sanitizer
@@ -1828,6 +1829,9 @@ Optional Packages:
   --with-lto=[full|thin|no|yes]
                           enable Link-Time-Optimization in any build (default
                           is no)
+  --with-fstrict-overflow choose between -fstrict-overflow or
+                          -fno-strict-overflow (default is no for backwards
+                          compatibility)
   --with-dsymutil         link debug information into final executable with
                           dsymutil in macOS (default is no)
   --with-address-sanitizer
@@ -8345,6 +8349,60 @@ case $CC in
         fi
 esac
 
+# Historically, some of our code assumed that signed integer overflow
+# is defined behaviour via twos-complement.  Prepare some flags so that
+# we can mark the modules that still do so.
+save_CFLAGS=$CFLAGS
+CFLAGS="-fstrict-overflow -fno-strict-overflow"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if $CC supports -fstrict-overflow and -fno-strict-overflow" >&5
+$as_echo_n "checking if $CC supports -fstrict-overflow and -fno-strict-overflow... " >&6; }
+if ${ac_cv_cc_supports_fstrict_overflow+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+      STRICT_OVERFLOW_CFLAGS="-fstrict-overflow"
+      NO_STRICT_OVERFLOW_CFLAGS="-fno-strict-overflow"
+
+else
+
+      STRICT_OVERFLOW_CFLAGS=""
+      NO_STRICT_OVERFLOW_CFLAGS=""
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cc_supports_fstrict_overflow" >&5
+$as_echo "$ac_cv_cc_supports_fstrict_overflow" >&6; }
+CFLAGS=$save_CFLAGS
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-fstrict-overflow" >&5
+$as_echo_n "checking for --with-fstrict-overflow... " >&6; }
+
+# Check whether --with-fstrict-overflow was given.
+if test "${with_fstrict_overflow+set}" = set; then :
+  withval=$with_fstrict_overflow;
+else
+  with_strict_overflow=no
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_fstrict_overflow" >&5
+$as_echo "$with_fstrict_overflow" >&6; }
+
 # Check if CC supports -Og optimization level
 save_CFLAGS=$CFLAGS
 CFLAGS="-Og"
@@ -8542,6 +8600,14 @@ UNIVERSAL_ARCH_FLAGS=
 
 
 # tweak BASECFLAGS based on compiler and platform
+if test "x$with_strict_overflow" = xno; then :
+  BASECFLAGS="$BASECFLAGS $NO_STRICT_OVERFLOW_CFLAGS"
+fi
+
+if test "x$with_strict_overflow" = xyes; then :
+  BASECFLAGS="$BASECFLAGS $STRICT_OVERFLOW_CFLAGS"
+fi
+
 case $GCC in
 yes)
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
@@ -26042,7 +26108,7 @@ fi
   as_fn_append MODULE_BLOCK "MODULE__STRUCT_STATE=$py_cv_module__struct$as_nl"
   if test "x$py_cv_module__struct" = xyes; then :
 
-    as_fn_append MODULE_BLOCK "MODULE__STRUCT_CFLAGS=-fno-strict-overflow$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__STRUCT_CFLAGS=$NO_STRICT_OVERFLOW_CFLAGS$as_nl"
 
 
 fi
@@ -26192,7 +26258,7 @@ fi
   as_fn_append MODULE_BLOCK "MODULE_AUDIOOP_STATE=$py_cv_module_audioop$as_nl"
   if test "x$py_cv_module_audioop" = xyes; then :
 
-    as_fn_append MODULE_BLOCK "MODULE_AUDIOOP_CFLAGS=-fno-strict-overflow$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_AUDIOOP_CFLAGS=$NO_STRICT_OVERFLOW_CFLAGS$as_nl"
     as_fn_append MODULE_BLOCK "MODULE_AUDIOOP_LDFLAGS=$LIBM$as_nl"
 
 fi
@@ -27142,7 +27208,7 @@ fi
   as_fn_append MODULE_BLOCK "MODULE__CTYPES_STATE=$py_cv_module__ctypes$as_nl"
   if test "x$py_cv_module__ctypes" = xyes; then :
 
-    as_fn_append MODULE_BLOCK "MODULE__CTYPES_CFLAGS=-fno-strict-overflow $LIBFFI_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES_CFLAGS=$NO_STRICT_OVERFLOW_CFLAGS $LIBFFI_CFLAGS$as_nl"
     as_fn_append MODULE_BLOCK "MODULE__CTYPES_LDFLAGS=$LIBFFI_LIBS$as_nl"
 
 fi
@@ -27711,7 +27777,7 @@ fi
   as_fn_append MODULE_BLOCK "MODULE__TESTCAPI_STATE=$py_cv_module__testcapi$as_nl"
   if test "x$py_cv_module__testcapi" = xyes; then :
 
-    as_fn_append MODULE_BLOCK "MODULE__TESTCAPI_CFLAGS=-fno-strict-overflow$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__TESTCAPI_CFLAGS=$NO_STRICT_OVERFLOW_CFLAGS$as_nl"
 
 
 fi

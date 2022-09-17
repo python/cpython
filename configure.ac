@@ -2072,6 +2072,34 @@ case $CC in
         fi
 esac
 
+# Historically, some of our code assumed that signed integer overflow
+# is defined behaviour via twos-complement.  Prepare some flags so that
+# we can mark the modules that still do so.
+_SAVE_VAR([CFLAGS])
+CFLAGS="-fstrict-overflow -fno-strict-overflow"
+AC_CACHE_CHECK([if $CC supports -fstrict-overflow and -fno-strict-overflow],
+               [ac_cv_cc_supports_fstrict_overflow],
+  AC_COMPILE_IFELSE(
+    [
+      AC_LANG_PROGRAM([[]], [[]])
+    ],[
+      STRICT_OVERFLOW_CFLAGS="-fstrict-overflow"
+      NO_STRICT_OVERFLOW_CFLAGS="-fno-strict-overflow"
+    ],[
+      STRICT_OVERFLOW_CFLAGS=""
+      NO_STRICT_OVERFLOW_CFLAGS=""
+    ])
+)
+_RESTORE_VAR([CFLAGS])
+
+AC_MSG_CHECKING(for --with-fstrict-overflow)
+AC_ARG_WITH(fstrict-overflow,
+  AS_HELP_STRING(
+    [--with-fstrict-overflow],
+    [choose between -fstrict-overflow or -fno-strict-overflow (default is no for backwards compatibility)]),,
+  with_strict_overflow=no)
+AC_MSG_RESULT($with_fstrict_overflow)
+
 # Check if CC supports -Og optimization level
 _SAVE_VAR([CFLAGS])
 CFLAGS="-Og"
@@ -2229,6 +2257,12 @@ AC_DEFUN([PY_CHECK_CC_WARNING], [
 ])
 
 # tweak BASECFLAGS based on compiler and platform
+AS_VAR_IF([with_strict_overflow], [no],
+          [BASECFLAGS="$BASECFLAGS $NO_STRICT_OVERFLOW_CFLAGS"])
+
+AS_VAR_IF([with_strict_overflow], [yes],
+          [BASECFLAGS="$BASECFLAGS $STRICT_OVERFLOW_CFLAGS"])
+
 case $GCC in
 yes)
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
@@ -7215,7 +7249,7 @@ PY_STDLIB_MOD_SIMPLE([_posixsubprocess])
 PY_STDLIB_MOD_SIMPLE([_queue])
 PY_STDLIB_MOD_SIMPLE([_random])
 PY_STDLIB_MOD_SIMPLE([select])
-PY_STDLIB_MOD_SIMPLE([_struct], [-fno-strict-overflow])
+PY_STDLIB_MOD_SIMPLE([_struct], [$NO_STRICT_OVERFLOW_CFLAGS])
 PY_STDLIB_MOD_SIMPLE([_typing])
 PY_STDLIB_MOD_SIMPLE([_xxsubinterpreters])
 PY_STDLIB_MOD_SIMPLE([_zoneinfo])
@@ -7229,7 +7263,7 @@ PY_STDLIB_MOD([_posixshmem],
   [$POSIXSHMEM_CFLAGS], [$POSIXSHMEM_LIBS])
 
 dnl needs libm
-PY_STDLIB_MOD_SIMPLE([audioop], [-fno-strict-overflow], [$LIBM])
+PY_STDLIB_MOD_SIMPLE([audioop], [$NO_STRICT_OVERFLOW_CFLAGS], [$LIBM])
 PY_STDLIB_MOD_SIMPLE([_statistics], [], [$LIBM])
 PY_STDLIB_MOD_SIMPLE([cmath], [], [$LIBM])
 PY_STDLIB_MOD_SIMPLE([math], [], [$LIBM])
@@ -7290,7 +7324,7 @@ PY_STDLIB_MOD([_crypt],
   [$LIBCRYPT_CFLAGS], [$LIBCRYPT_LIBS])
 PY_STDLIB_MOD([_ctypes],
   [], [test "$have_libffi" = yes],
-  [-fno-strict-overflow $LIBFFI_CFLAGS], [$LIBFFI_LIBS])
+  [$NO_STRICT_OVERFLOW_CFLAGS $LIBFFI_CFLAGS], [$LIBFFI_LIBS])
 PY_STDLIB_MOD([_curses],
   [], [test "$have_curses" != "no"],
   [$CURSES_CFLAGS], [$CURSES_LIBS]
@@ -7340,7 +7374,7 @@ PY_STDLIB_MOD([_hashlib], [], [test "$ac_cv_working_openssl_hashlib" = yes],
   [$OPENSSL_INCLUDES], [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS])
 
 dnl test modules
-PY_STDLIB_MOD([_testcapi], [test "$TEST_MODULES" = yes], [], [-fno-strict-overflow])
+PY_STDLIB_MOD([_testcapi], [test "$TEST_MODULES" = yes], [], [$NO_STRICT_OVERFLOW_CFLAGS])
 PY_STDLIB_MOD([_testinternalcapi], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
