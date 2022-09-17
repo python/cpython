@@ -542,9 +542,9 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
     'buffering' -- the buffer size argument to io.open (default -1).
     'encoding' -- the encoding argument to io.open (default None)
     'newline' -- the newline argument to io.open (default None)
-    'delete' -- whether the file is deleted at the end.  When exactly file gets
-       deleted (either on close or on context manager exit) is determined by
-       parameter delete_on_close.  (default True).
+    'delete' -- whether the file is automatically deleted (default True).
+    'delete_on_close' -- if 'delete', whether the file is deleted on close
+       or on context exit (default True).
     'errors' -- the errors argument to io.open (default None)
     The file is created as mkstemp() would do it.
     'delete_on_close' -- if 'delete', then determines whether file gets deleted
