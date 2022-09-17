@@ -507,8 +507,8 @@ class _TemporaryFileWrapper:
         if self.delete and not self.delete_on_close:
             try:
                 _os.unlink(self.name)
-            # It shall be Ok to ignore FileNotFoundError, because user may
-            # have deleted the file already before content manager came to it
+            # It is okay to ignore FileNotFoundError. The file may have
+            # been deleted already.
             except FileNotFoundError:
                 pass
 
