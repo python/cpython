@@ -830,7 +830,7 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
         t2 = asyncio.create_task(c2(result))
         t3 = asyncio.create_task(c3(result))
 
-        await asyncio.sleep(0)
+        await asyncio.sleep(0.01)
         self.assertEqual([1], result)
         self.assertTrue(sem.locked())
         self.assertEqual(2, len(sem._waiters))
@@ -842,7 +842,7 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
         sem.release()
         self.assertEqual(2, sem._value)
 
-        await asyncio.sleep(0)
+        await asyncio.sleep(0.01)
         self.assertEqual(0, sem._value)
         self.assertEqual(3, len(result))
         self.assertTrue(sem.locked())
@@ -878,13 +878,13 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
         t3 = asyncio.create_task(sem.acquire())
         t4 = asyncio.create_task(sem.acquire())
 
-        await asyncio.sleep(0)
+        await asyncio.sleep(0.01)
 
         t1.cancel()
         t2.cancel()
         sem.release()
 
-        await asyncio.sleep(0)
+        await asyncio.sleep(0.01)
         num_done = sum(t.done() for t in [t3, t4])
         self.assertEqual(num_done, 1)
         self.assertTrue(t3.done())
@@ -903,7 +903,7 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
 
         t1.cancel()
         sem.release()
-        await asyncio.sleep(0)
+        await asyncio.sleep(0.01)
         self.assertTrue(sem.locked())
         self.assertTrue(t2.done())
 

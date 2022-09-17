@@ -346,9 +346,8 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
     def __init__(self, value=1):
         if value < 0:
             raise ValueError("Semaphore initial value must be >= 0")
+        self._waiters = None
         self._value = value
-        self._waiters = collections.deque()
-        self._wakeup_scheduled = 0
 
     def __repr__(self):
         res = super().__repr__()
@@ -357,44 +356,44 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
             extra = f'{extra}, waiters:{len(self._waiters)}'
         return f'<{res[1:-1]} [{extra}]>'
 
-    def _wake_up_next(self):
-        while self._waiters:
-            waiter = self._waiters.popleft()
-            if not waiter.done():
-                waiter.set_result(None)
-                self._wakeup_scheduled += 1
-                return
-
     def locked(self):
         """Returns True if semaphore can not be acquired immediately."""
-        return self._value <= 0 or bool(self._wakeup_scheduled)
+        return self._value <= 0
 
     async def acquire(self):
         """Acquire a semaphore.
-
         If the internal counter is larger than zero on entry,
         decrement it by one and return True immediately.  If it is
         zero on entry, block, waiting until some other coroutine has
         called release() to make it larger than 0, and then return
         True.
         """
-        first = True
-        while self._value <= 0 or (first and self._wakeup_scheduled):
-            first = False
-            fut = self._get_loop().create_future()
-            self._waiters.append(fut)
+        if (not self.locked() and (self._waiters is None or
+                all(w.cancelled() for w in self._waiters))):
+            self._value -= 1
+            return True
+
+        if self._waiters is None:
+            self._waiters = collections.deque()
+        fut = self._get_loop().create_future()
+        self._waiters.append(fut)
+
+        # Finally block should be called before the CancelledError
+        # handling as we don't want CancelledError to call
+        # _wake_up_first() and attempt to wake up itself.
+        try:
             try:
                 await fut
-            except exceptions.CancelledError:
-                if not fut.cancelled():
-                    self._wakeup_scheduled -= 1
-                    self._wake_up_next()
-                raise
-            else:
-                self._wakeup_scheduled -= 1
-                if self._value > 1 and self._wakeup_scheduled == 0:
-                    self._wake_up_next()
+            finally:
+                self._waiters.remove(fut)
+        except exceptions.CancelledError:
+            if not self.locked():
+                self._wake_up_first()
+            raise
+
         self._value -= 1
+        if not self.locked():
+            self._wake_up_first()
         return True
 
     def release(self):
@@ -403,7 +402,22 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
         become larger than zero again, wake up that coroutine.
         """
         self._value += 1
-        self._wake_up_next()
+        self._wake_up_first()
+
+    def _wake_up_first(self):
+        """Wake up the first waiter if it isn't done."""
+        if not self._waiters:
+            return
+        try:
+            fut = next(iter(self._waiters))
+        except StopIteration:
+            return
+
+        # .done() necessarily means that a waiter will wake up later on and
+        # either take the lock, or, if it was cancelled and lock wasn't
+        # taken already, will hit this again and wake up a new waiter.
+        if not fut.done():
+            fut.set_result(True)
 
 
 class BoundedSemaphore(Semaphore):
