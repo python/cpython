@@ -90,7 +90,7 @@ The module defines the following user-callable items:
    attribute is the underlying true file object. This file-like object can be
    used in a :keyword:`with` statement, just like a normal file.The name of the
    temporary file can be retrieved from the :attr:`name` attribute of the
-   returned file-like object. 
+   returned file-like object.
 
    If *delete* is true (the default) and *delete_on_close* is true (the
    default), the file is deleted as soon as it is closed. If *delete* is true
@@ -105,6 +105,13 @@ The module defines the following user-callable items:
    opens that do not share delete access (e.g. via builtin :func:`open`) must
    be closed before exiting the context manager, else the :func:`os.unlink`
    call on context manager exit will fail with a ``PermissionError``.
+
+   To use the name of the temporary file to open the closed file second time,
+   either make sure not to delete the file upon closure (set the *delete*
+   parameter to be false) or, in case the temporary file is created in a
+   :keyword:`with` statement, set the *delete_on_close* to be false. The latter
+   approach is recommended as it provides assistance in automatic cleaning of
+   the temporary file upon the context manager exit.
 
    In Windows, if *delete_on_close* is false, and the file is created in a
    directory for which the user lacks delete access, then the :func:`os.unlink`
