@@ -64,6 +64,15 @@ main(int argc, char **argv)
     PyStatus status;
 
     PyConfig config;
+    PyPreConfig preconfig;
+    PyPreConfig_InitIsolatedConfig(&preconfig);
+    // Force utf8 encoding
+    preconfig.utf8_mode = 1;
+    status = Py_PreInitialize(&preconfig);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
     PyConfig_InitIsolatedConfig(&config);
     // don't warn, pybuilddir.txt does not exist yet
     config.pathconfig_warnings = 0;
