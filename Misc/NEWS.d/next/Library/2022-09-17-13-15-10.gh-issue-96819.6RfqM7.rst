@@ -1,1 +1,1 @@
-Fixed the block to guarantee that the length of a write to a pipe is not greater than `PIPE_BUF`
+Fixed the block to guarantee that the length of a write to a pipe is not greater than PIPE_BUF
