@@ -503,7 +503,7 @@ class _TemporaryFileWrapper:
     def __exit__(self, exc, value, tb):
         result = self.file.__exit__(exc, value, tb)
         self.close()
-        # if file is to be deleted, bot not on closure, deleting it now
+        # If the file is to be deleted, but not on close, delete it now.
         if self.delete and not self.delete_on_close:
             try:
                 _os.unlink(self.name)
