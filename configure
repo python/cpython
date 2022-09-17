@@ -8600,12 +8600,10 @@ UNIVERSAL_ARCH_FLAGS=
 
 
 # tweak BASECFLAGS based on compiler and platform
-if test "x$with_strict_overflow" = xno; then :
-  BASECFLAGS="$BASECFLAGS $NO_STRICT_OVERFLOW_CFLAGS"
-fi
-
 if test "x$with_strict_overflow" = xyes; then :
   BASECFLAGS="$BASECFLAGS $STRICT_OVERFLOW_CFLAGS"
+else
+  BASECFLAGS="$BASECFLAGS $NO_STRICT_OVERFLOW_CFLAGS"
 fi
 
 case $GCC in

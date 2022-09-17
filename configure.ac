@@ -2257,11 +2257,9 @@ AC_DEFUN([PY_CHECK_CC_WARNING], [
 ])
 
 # tweak BASECFLAGS based on compiler and platform
-AS_VAR_IF([with_strict_overflow], [no],
-          [BASECFLAGS="$BASECFLAGS $NO_STRICT_OVERFLOW_CFLAGS"])
-
 AS_VAR_IF([with_strict_overflow], [yes],
-          [BASECFLAGS="$BASECFLAGS $STRICT_OVERFLOW_CFLAGS"])
+          [BASECFLAGS="$BASECFLAGS $STRICT_OVERFLOW_CFLAGS"],
+          [BASECFLAGS="$BASECFLAGS $NO_STRICT_OVERFLOW_CFLAGS"])
 
 case $GCC in
 yes)
