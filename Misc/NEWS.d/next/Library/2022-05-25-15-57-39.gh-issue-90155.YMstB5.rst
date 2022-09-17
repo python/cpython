@@ -1,1 +1,1 @@
-Fix broken :class:`asyncio.Semaphore` and strengthen FIFO guarantee.
+Fix broken :class:`asyncio.Semaphore` when acquire is cancelled.

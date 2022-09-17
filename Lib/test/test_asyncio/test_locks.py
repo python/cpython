@@ -915,20 +915,21 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
 
         sem = asyncio.Semaphore(1)
 
-        async def c1(tasks):
+        async def c1():
             async with sem:
                 await asyncio.sleep(0)
-            tasks[1].cancel()
+            t2.cancel()
 
-        async def c2(tasks):
+        async def c2():
             async with sem:
                 await asyncio.sleep(0)
 
-        tasks = []
-        tasks.append(asyncio.create_task(c1(tasks)))
-        tasks.append(asyncio.create_task(c2(tasks)))
+        t1 = asyncio.create_task(c1())
+        t2 = asyncio.create_task(c2())
 
-        await asyncio.gather(*tasks, return_exceptions=True)
+        result = await asyncio.gather(t1, t2, return_exceptions=True)
+        self.assertTrue(result[0] is None)
+        self.assertTrue(isinstance(result[1], asyncio.CancelledError))
 
         await asyncio.wait_for(sem.acquire(), timeout=0.01)
 
