@@ -395,7 +395,7 @@ def _has_code_flag(f, flag):
     while ismethod(f):
         f = f.__func__
     f = functools._unwrap_partial(f)
-    if not isfunction(f):
+    if not (isfunction(f) or _signature_is_functionlike(f)):
         return False
     return bool(f.__code__.co_flags & flag)
 
@@ -946,6 +946,9 @@ def getsourcefile(object):
     elif any(filename.endswith(s) for s in
                  importlib.machinery.EXTENSION_SUFFIXES):
         return None
+    # return a filename found in the linecache even if it doesn't exist on disk
+    if filename in linecache.cache:
+        return filename
     if os.path.exists(filename):
         return filename
     # only return a non-existent filename if the module has a PEP 302 loader
@@ -953,9 +956,6 @@ def getsourcefile(object):
     if getattr(module, '__loader__', None) is not None:
         return filename
     elif getattr(getattr(module, "__spec__", None), "loader", None) is not None:
-        return filename
-    # or it is in the linecache
-    elif filename in linecache.cache:
         return filename
 
 def getabsfile(object, _filename=None):

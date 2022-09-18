@@ -73,19 +73,22 @@ typedef struct _stats {
     ObjectStats object_stats;
 } PyStats;
 
-PyAPI_DATA(PyStats) _py_stats;
 
+PyAPI_DATA(PyStats) _py_stats_struct;
+PyAPI_DATA(PyStats *) _py_stats;
+
+extern void _Py_StatsClear(void);
 extern void _Py_PrintSpecializationStats(int to_file);
 
 #ifdef _PY_INTERPRETER
 
-#define _Py_INCREF_STAT_INC() _py_stats.object_stats.interpreter_increfs++
-#define _Py_DECREF_STAT_INC()  _py_stats.object_stats.interpreter_decrefs++
+#define _Py_INCREF_STAT_INC() do { if (_py_stats) _py_stats->object_stats.interpreter_increfs++; } while (0)
+#define _Py_DECREF_STAT_INC() do { if (_py_stats) _py_stats->object_stats.interpreter_decrefs++; } while (0)
 
 #else
 
-#define _Py_INCREF_STAT_INC() _py_stats.object_stats.increfs++
-#define _Py_DECREF_STAT_INC()  _py_stats.object_stats.decrefs++
+#define _Py_INCREF_STAT_INC() do { if (_py_stats) _py_stats->object_stats.increfs++; } while (0)
+#define _Py_DECREF_STAT_INC() do { if (_py_stats) _py_stats->object_stats.decrefs++; } while (0)
 
 #endif
 

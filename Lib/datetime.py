@@ -179,7 +179,7 @@ def _format_time(hh, mm, ss, us, timespec='auto'):
     else:
         return fmt.format(hh, mm, ss, us)
 
-def _format_offset(off):
+def _format_offset(off, sep=':'):
     s = ''
     if off is not None:
         if off.days < 0:
@@ -189,9 +189,9 @@ def _format_offset(off):
             sign = "+"
         hh, mm = divmod(off, timedelta(hours=1))
         mm, ss = divmod(mm, timedelta(minutes=1))
-        s += "%s%02d:%02d" % (sign, hh, mm)
+        s += "%s%02d%s%02d" % (sign, hh, sep, mm)
         if ss or ss.microseconds:
-            s += ":%02d" % ss.seconds
+            s += "%s%02d" % (sep, ss.seconds)
 
             if ss.microseconds:
                 s += '.%06d' % ss.microseconds
@@ -202,9 +202,10 @@ def _wrap_strftime(object, format, timetuple):
     # Don't call utcoffset() or tzname() unless actually needed.
     freplace = None  # the string to use for %f
     zreplace = None  # the string to use for %z
+    colonzreplace = None  # the string to use for %:z
     Zreplace = None  # the string to use for %Z
 
-    # Scan format for %z and %Z escapes, replacing as needed.
+    # Scan format for %z, %:z and %Z escapes, replacing as needed.
     newformat = []
     push = newformat.append
     i, n = 0, len(format)
@@ -222,26 +223,28 @@ def _wrap_strftime(object, format, timetuple):
                     newformat.append(freplace)
                 elif ch == 'z':
                     if zreplace is None:
-                        zreplace = ""
                         if hasattr(object, "utcoffset"):
-                            offset = object.utcoffset()
-                            if offset is not None:
-                                sign = '+'
-                                if offset.days < 0:
-                                    offset = -offset
-                                    sign = '-'
-                                h, rest = divmod(offset, timedelta(hours=1))
-                                m, rest = divmod(rest, timedelta(minutes=1))
-                                s = rest.seconds
-                                u = offset.microseconds
-                                if u:
-                                    zreplace = '%c%02d%02d%02d.%06d' % (sign, h, m, s, u)
-                                elif s:
-                                    zreplace = '%c%02d%02d%02d' % (sign, h, m, s)
-                                else:
-                                    zreplace = '%c%02d%02d' % (sign, h, m)
+                            zreplace = _format_offset(object.utcoffset(), sep="")
+                        else:
+                            zreplace = ""
                     assert '%' not in zreplace
                     newformat.append(zreplace)
+                elif ch == ':':
+                    if i < n:
+                        ch2 = format[i]
+                        i += 1
+                        if ch2 == 'z':
+                            if colonzreplace is None:
+                                if hasattr(object, "utcoffset"):
+                                    colonzreplace = _format_offset(object.utcoffset(), sep=":")
+                                else:
+                                    colonzreplace = ""
+                            assert '%' not in colonzreplace
+                            newformat.append(colonzreplace)
+                        else:
+                            push('%')
+                            push(ch)
+                            push(ch2)
                 elif ch == 'Z':
                     if Zreplace is None:
                         Zreplace = ""

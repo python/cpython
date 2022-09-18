@@ -102,8 +102,19 @@ if _mswindows:
 else:
     if _can_fork_exec:
         from _posixsubprocess import fork_exec as _fork_exec
+        # used in methods that are called by __del__
+        _waitpid = os.waitpid
+        _waitstatus_to_exitcode = os.waitstatus_to_exitcode
+        _WIFSTOPPED = os.WIFSTOPPED
+        _WSTOPSIG = os.WSTOPSIG
+        _WNOHANG = os.WNOHANG
     else:
         _fork_exec = None
+        _waitpid = None
+        _waitstatus_to_exitcode = None
+        _WIFSTOPPED = None
+        _WSTOPSIG = None
+        _WNOHANG = None
     import select
     import selectors
 
@@ -1890,19 +1901,19 @@ class Popen:
 
 
         def _handle_exitstatus(self, sts,
-                               waitstatus_to_exitcode=os.waitstatus_to_exitcode,
-                               _WIFSTOPPED=os.WIFSTOPPED,
-                               _WSTOPSIG=os.WSTOPSIG):
+                               _waitstatus_to_exitcode=_waitstatus_to_exitcode,
+                               _WIFSTOPPED=_WIFSTOPPED,
+                               _WSTOPSIG=_WSTOPSIG):
             """All callers to this function MUST hold self._waitpid_lock."""
             # This method is called (indirectly) by __del__, so it cannot
             # refer to anything outside of its local scope.
             if _WIFSTOPPED(sts):
                 self.returncode = -_WSTOPSIG(sts)
             else:
-                self.returncode = waitstatus_to_exitcode(sts)
+                self.returncode = _waitstatus_to_exitcode(sts)
 
-        def _internal_poll(self, _deadstate=None, _waitpid=os.waitpid,
-                _WNOHANG=os.WNOHANG, _ECHILD=errno.ECHILD):
+        def _internal_poll(self, _deadstate=None, _waitpid=_waitpid,
+                _WNOHANG=_WNOHANG, _ECHILD=errno.ECHILD):
             """Check if child process has terminated.  Returns returncode
             attribute.
 

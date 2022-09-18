@@ -279,6 +279,7 @@ PyCField_clear(CFieldObject *self)
 static void
 PyCField_dealloc(PyObject *self)
 {
+    PyObject_GC_UnTrack(self);
     PyCField_clear((CFieldObject *)self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }

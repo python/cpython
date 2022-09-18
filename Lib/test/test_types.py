@@ -597,6 +597,12 @@ class TypesTests(unittest.TestCase):
         self.assertIsInstance(object.__lt__, types.WrapperDescriptorType)
         self.assertIsInstance(int.__lt__, types.WrapperDescriptorType)
 
+    def test_dunder_get_signature(self):
+        sig = inspect.signature(object.__init__.__get__)
+        self.assertEqual(list(sig.parameters), ["instance", "owner"])
+        # gh-93021: Second parameter is optional
+        self.assertIs(sig.parameters["owner"].default, None)
+
     def test_method_wrapper_types(self):
         self.assertIsInstance(object().__init__, types.MethodWrapperType)
         self.assertIsInstance(object().__str__, types.MethodWrapperType)
@@ -1196,6 +1202,16 @@ class MappingProxyTests(unittest.TestCase):
         self.assertEqual(view, {'a': 0, 'b': 1, 'c': 2})
         self.assertDictEqual(mapping, {'a': 0, 'b': 1, 'c': 2})
         self.assertDictEqual(other, {'c': 3, 'p': 0})
+
+    def test_hash(self):
+        class HashableDict(dict):
+            def __hash__(self):
+                return 3844817361
+        view = self.mappingproxy({'a': 1, 'b': 2})
+        self.assertRaises(TypeError, hash, view)
+        mapping = HashableDict({'a': 1, 'b': 2})
+        view = self.mappingproxy(mapping)
+        self.assertEqual(hash(view), hash(mapping))
 
 
 class ClassCreationTests(unittest.TestCase):
