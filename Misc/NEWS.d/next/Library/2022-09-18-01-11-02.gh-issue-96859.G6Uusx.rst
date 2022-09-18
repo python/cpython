@@ -1,0 +1,1 @@
+Improved performance of :class:`argparse.ArgumentParser` when parsing very long argument lists.
