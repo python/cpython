@@ -302,7 +302,7 @@ for third-party software incorporated in the Python distribution.
 Mersenne Twister
 ----------------
 
-The :mod:`_random` module includes code based on a download from
+The :mod:`random` module includes code based on a download from
 http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/MT2002/emt19937ar.html. The following are
 the verbatim comments from the original code::
 
