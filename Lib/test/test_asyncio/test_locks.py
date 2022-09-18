@@ -927,9 +927,9 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
         t1 = asyncio.create_task(c1())
         t2 = asyncio.create_task(c2())
 
-        result = await asyncio.gather(t1, t2, return_exceptions=True)
-        self.assertTrue(result[0] is None)
-        self.assertTrue(isinstance(result[1], asyncio.CancelledError))
+        r1, r2 = await asyncio.gather(t1, t2, return_exceptions=True)
+        self.assertTrue(r1 is None)
+        self.assertTrue(isinstance(r2, asyncio.CancelledError))
 
         await asyncio.wait_for(sem.acquire(), timeout=0.01)
 
