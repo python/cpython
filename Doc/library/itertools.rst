@@ -820,14 +820,14 @@ which incur interpreter overhead.
            pass
 
    def sieve(n):
-       "Primes less than n"
-       # sieve(30) --> 2 3 5 7 11 13 17 19 23 29
-       data = bytearray([1]) * n
-       data[:2] = 0, 0
-       limit = math.isqrt(n) + 1
-       for p in compress(range(limit), data):
-           data[p*p : n : p] = bytearray(len(range(p*p, n, p)))
-       return iter_index(data, 1)
+      "Primes less than n"
+      # sieve(30) --> 2 3 5 7 11 13 17 19 23 29
+      data = bytearray([1]) * n
+      data[:2] = 0, 0
+      limit = math.isqrt(n) + 1
+      for p in compress(range(limit), data):
+         data[p+p : n : p] = bytearray(len(range(p+p, n, p)))
+      return compress(count(), data)
 
    def flatten(list_of_lists):
        "Flatten one level of nesting"
@@ -1191,8 +1191,8 @@ which incur interpreter overhead.
 
     >>> list(sieve(30))
     [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
-    >>> small_primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97]
-    >>> all(list(sieve(n)) == [p for p in small_primes if p < n] for n in range(101))
+    >>> small_primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59]
+    >>> all(list(sieve(n)) == [p for p in small_primes if p < n] for n in range(60))
     True
     >>> len(list(sieve(100)))
     25
