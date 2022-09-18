@@ -357,8 +357,8 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
         return f'<{res[1:-1]} [{extra}]>'
 
     def locked(self):
-        """Returns True if semaphore can not be acquired immediately."""
-        return self._value <= 0
+        """Returns True if semaphore counter is zero."""
+        return self._value == 0
 
     async def acquire(self):
         """Acquire a semaphore.
