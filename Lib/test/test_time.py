@@ -117,12 +117,13 @@ class TimeTestCase(unittest.TestCase):
         clk_id = time.pthread_getcpuclockid(threading.get_ident())
         self.assertTrue(type(clk_id) is int)
         # when in 32-bit mode AIX only returns the predefined constant
-        if not platform.system() == "AIX":
-            self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
-        elif (sys.maxsize.bit_length() > 32):
-            self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
-        else:
+        if platform.system() == "AIX" and (sys.maxsize.bit_length() <= 32):
             self.assertEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        # Solaris returns CLOCK_THREAD_CPUTIME_ID when current thread is given
+        elif sys.platform.startswith("sunos"):
+            self.assertEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        else:
+            self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
         t1 = time.clock_gettime(clk_id)
         t2 = time.clock_gettime(clk_id)
         self.assertLessEqual(t1, t2)
@@ -157,6 +158,13 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(ValueError, time.sleep, -2)
         self.assertRaises(ValueError, time.sleep, -1)
         time.sleep(1.2)
+
+    def test_epoch(self):
+        # bpo-43869: Make sure that Python use the same Epoch on all platforms:
+        # January 1, 1970, 00:00:00 (UTC).
+        epoch = time.gmtime(0)
+        # Only test the date and time, ignore other gmtime() members
+        self.assertEqual(tuple(epoch)[:6], (1970, 1, 1, 0, 0, 0), epoch)
 
     def test_strftime(self):
         tt = time.gmtime(self.t)
@@ -305,6 +313,9 @@ class TimeTestCase(unittest.TestCase):
     def test_asctime_bounding_check(self):
         self._bounds_checking(time.asctime)
 
+    @unittest.skipIf(
+        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
+    )
     def test_ctime(self):
         t = time.mktime((1973, 9, 16, 1, 3, 52, 0, 0, -1))
         self.assertEqual(time.ctime(t), 'Sun Sep 16 01:03:52 1973')
@@ -478,6 +489,9 @@ class TimeTestCase(unittest.TestCase):
     def test_perf_counter(self):
         time.perf_counter()
 
+    @unittest.skipIf(
+        support.is_wasi, "process_time not available on WASI"
+    )
     def test_process_time(self):
         # process_time() should not include time spend during a sleep
         start = time.process_time()
@@ -548,20 +562,27 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(ValueError, time.ctime, float("nan"))
 
     def test_get_clock_info(self):
-        clocks = ['monotonic', 'perf_counter', 'process_time', 'time']
+        clocks = [
+            'monotonic',
+            'perf_counter',
+            'process_time',
+            'time',
+        ]
+        if hasattr(time, 'thread_time'):
+            clocks.append('thread_time')
 
         for name in clocks:
-            info = time.get_clock_info(name)
+            with self.subTest(name=name):
+                info = time.get_clock_info(name)
 
-            #self.assertIsInstance(info, dict)
-            self.assertIsInstance(info.implementation, str)
-            self.assertNotEqual(info.implementation, '')
-            self.assertIsInstance(info.monotonic, bool)
-            self.assertIsInstance(info.resolution, float)
-            # 0.0 < resolution <= 1.0
-            self.assertGreater(info.resolution, 0.0)
-            self.assertLessEqual(info.resolution, 1.0)
-            self.assertIsInstance(info.adjustable, bool)
+                self.assertIsInstance(info.implementation, str)
+                self.assertNotEqual(info.implementation, '')
+                self.assertIsInstance(info.monotonic, bool)
+                self.assertIsInstance(info.resolution, float)
+                # 0.0 < resolution <= 1.0
+                self.assertGreater(info.resolution, 0.0)
+                self.assertLessEqual(info.resolution, 1.0)
+                self.assertIsInstance(info.adjustable, bool)
 
         self.assertRaises(ValueError, time.get_clock_info, 'xxx')
 
@@ -608,6 +629,9 @@ class _TestStrftimeYear:
     def yearstr(self, y):
         return time.strftime('%Y', (y,) + (0,) * 8)
 
+    @unittest.skipUnless(
+        support.has_strftime_extensions, "requires strftime extension"
+    )
     def test_4dyear(self):
         # Check that we can return the zero padded value.
         if self._format == '%04d':
@@ -681,6 +705,9 @@ class TestStrftime4dyear(_TestStrftimeYear, _Test4dYear, unittest.TestCase):
 class TestPytime(unittest.TestCase):
     @skip_if_buggy_ucrt_strfptime
     @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
+    @unittest.skipIf(
+        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
+    )
     def test_localtime_timezone(self):
 
         # Get the localtime and examine it for the offset and zone.

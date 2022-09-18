@@ -118,7 +118,7 @@ which relays any information about the UUID's safety, using this enumeration:
 
 .. attribute:: UUID.hex
 
-   The UUID as a 32-character hexadecimal string.
+   The UUID as a 32-character lowercase hexadecimal string.
 
 
 .. attribute:: UUID.int
@@ -211,7 +211,7 @@ The :mod:`uuid` module defines the following namespace identifiers for use with
 
 .. data:: NAMESPACE_DNS
 
-   When this namespace is specified, the *name* string is a fully-qualified domain
+   When this namespace is specified, the *name* string is a fully qualified domain
    name.
 
 

@@ -22,12 +22,12 @@ PyAPI_FUNC(PyObject*) _Py_strhex_bytes(
 PyAPI_FUNC(PyObject*) _Py_strhex_with_sep(
     const char* argbuf,
     const Py_ssize_t arglen,
-    const PyObject* sep,
+    PyObject* sep,
     const int bytes_per_group);
 PyAPI_FUNC(PyObject*) _Py_strhex_bytes_with_sep(
     const char* argbuf,
     const Py_ssize_t arglen,
-    const PyObject* sep,
+    PyObject* sep,
     const int bytes_per_group);
 
 #ifdef __cplusplus

@@ -346,7 +346,7 @@ class TestTracemallocEnabled(unittest.TestCase):
         # everything is fine
         return 0
 
-    @unittest.skipUnless(hasattr(os, 'fork'), 'need os.fork()')
+    @support.requires_fork()
     def test_fork(self):
         # check that tracemalloc is still working after fork
         pid = os.fork()
@@ -359,6 +359,20 @@ class TestTracemallocEnabled(unittest.TestCase):
                 os._exit(exitcode)
         else:
             support.wait_process(pid, exitcode=0)
+
+    def test_no_incomplete_frames(self):
+        tracemalloc.stop()
+        tracemalloc.start(8)
+
+        def f(x):
+            def g():
+                return x
+            return g
+
+        obj = f(0).__closure__[0]
+        traceback = tracemalloc.get_object_traceback(obj)
+        self.assertIn("test_tracemalloc", traceback[-1].filename)
+        self.assertNotIn("test_tracemalloc", traceback[-2].filename)
 
 
 class TestSnapshot(unittest.TestCase):

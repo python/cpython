@@ -1,0 +1,1 @@
+Pickle :class:`enum.Flag` by name.

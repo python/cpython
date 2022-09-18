@@ -1,2 +1,0 @@
-Fix use of :class:`asyncio.Condition` with explicit :class:`asyncio.Lock` objects, which was a regression due to removal of explicit loop arguments.
-Patch by Joongi Kim.

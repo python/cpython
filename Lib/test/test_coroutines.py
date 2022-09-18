@@ -4,6 +4,7 @@ import inspect
 import pickle
 import sys
 import types
+import traceback
 import unittest
 import warnings
 from test import support
@@ -2191,7 +2192,50 @@ class CoroutineTest(unittest.TestCase):
             return 'end'
         self.assertEqual(run_async(run_gen()), ([], 'end'))
 
+    def test_bpo_45813_1(self):
+        'This would crash the interpreter in 3.11a2'
+        async def f():
+            pass
+        with self.assertWarns(RuntimeWarning):
+            frame = f().cr_frame
+        frame.clear()
 
+    def test_bpo_45813_2(self):
+        'This would crash the interpreter in 3.11a2'
+        async def f():
+            pass
+        gen = f()
+        with self.assertWarns(RuntimeWarning):
+            gen.cr_frame.clear()
+
+    def test_stack_in_coroutine_throw(self):
+        # Regression test for https://github.com/python/cpython/issues/93592
+        async def a():
+            return await b()
+
+        async def b():
+            return await c()
+
+        @types.coroutine
+        def c():
+            try:
+                # traceback.print_stack()
+                yield len(traceback.extract_stack())
+            except ZeroDivisionError:
+                # traceback.print_stack()
+                yield len(traceback.extract_stack())
+
+        coro = a()
+        len_send = coro.send(None)
+        len_throw = coro.throw(ZeroDivisionError)
+        # before fixing, visible stack from throw would be shorter than from send.
+        self.assertEqual(len_send, len_throw)
+
+
+@unittest.skipIf(
+    support.is_emscripten or support.is_wasi,
+    "asyncio does not work under Emscripten/WASI yet."
+)
 class CoroAsyncIOCompatTest(unittest.TestCase):
 
     def test_asyncio_1(self):

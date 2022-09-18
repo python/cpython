@@ -7,3 +7,8 @@ updates:
     labels:
       - "skip issue"
       - "skip news"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"

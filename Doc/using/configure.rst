@@ -35,25 +35,24 @@ General Options
 
    Define the size in bits of Python :class:`int` digits: 15 or 30 bits.
 
-   By default, the number of bits is selected depending on ``sizeof(void*)``:
-   30 bits if ``void*`` size is 64-bit or larger, 15 bits otherwise.
+   By default, the digit size is 30.
 
    Define the ``PYLONG_BITS_IN_DIGIT`` to ``15`` or ``30``.
 
    See :data:`sys.int_info.bits_per_digit <sys.int_info>`.
-
-.. cmdoption:: --with-cxx-main
-.. cmdoption:: --with-cxx-main=COMPILER
-
-   Compile the Python ``main()`` function and link Python executable with C++
-   compiler: ``$CXX``, or *COMPILER* if specified.
 
 .. cmdoption:: --with-suffix=SUFFIX
 
    Set the Python executable suffix to *SUFFIX*.
 
    The default suffix is ``.exe`` on Windows and macOS (``python.exe``
-   executable), and an empty string on other platforms (``python`` executable).
+   executable), ``.js`` on Emscripten node, ``.html`` on Emscripten browser,
+   ``.wasm`` on WASI, and an empty string on other platforms (``python``
+   executable).
+
+   .. versionchanged:: 3.11
+      The default suffix on WASM platform is one of ``.js``, ``.html``
+      or ``.wasm``.
 
 .. cmdoption:: --with-tzpath=<list of absolute paths separated by pathsep>
 
@@ -76,7 +75,7 @@ General Options
 
    .. versionadded:: 3.9
 
-.. cmdoption:: --with-dbmliborder=db1:db2:...
+.. cmdoption:: --with-dbmliborder=<list of backend names>
 
    Override order to check db backends for the :mod:`dbm` module
 
@@ -116,6 +115,55 @@ General Options
 
    .. versionadded:: 3.10
 
+.. cmdoption:: --with-pkg-config=[check|yes|no]
+
+   Whether configure should use :program:`pkg-config` to detect build
+   dependencies.
+
+   * ``check`` (default): :program:`pkg-config` is optional
+   * ``yes``: :program:`pkg-config` is mandatory
+   * ``no``: configure does not use :program:`pkg-config` even when present
+
+   .. versionadded:: 3.11
+
+.. cmdoption:: --enable-pystats
+
+   Turn on internal statistics gathering.
+
+   The statistics will be dumped to a arbitrary (probably unique) file in
+   ``/tmp/py_stats/``, or ``C:\temp\py_stats\`` on Windows.
+
+   Use ``Tools/scripts/summarize_stats.py`` to read the stats.
+
+   .. versionadded:: 3.11
+
+WebAssembly Options
+-------------------
+
+.. cmdoption:: --with-emscripten-target=[browser|node]
+
+   Set build flavor for ``wasm32-emscripten``.
+
+   * ``browser`` (default): preload minimal stdlib, default MEMFS.
+   * ``node``: NODERAWFS and pthread support.
+
+   .. versionadded:: 3.11
+
+.. cmdoption:: --enable-wasm-dynamic-linking
+
+   Turn on dynamic linking support for WASM.
+
+   Dynamic linking enables ``dlopen``. File size of the executable
+   increases due to limited dead code elimination and additional features.
+
+   .. versionadded:: 3.11
+
+.. cmdoption:: --enable-wasm-pthreads
+
+   Turn on pthreads support for WASM.
+
+   .. versionadded:: 3.11
+
 
 Install Options
 ---------------
@@ -143,7 +191,8 @@ Performance options
 -------------------
 
 Configuring Python using ``--enable-optimizations --with-lto`` (PGO + LTO) is
-recommended for best performance.
+recommended for best performance. The experimental ``--enable-bolt`` flag can
+also be used to improve performance.
 
 .. cmdoption:: --enable-optimizations
 
@@ -182,6 +231,27 @@ recommended for best performance.
 
    .. versionadded:: 3.11
       To use ThinLTO feature, use ``--with-lto=thin`` on Clang.
+
+   .. versionchanged:: 3.12
+      Use ThinLTO as the default optimization policy on Clang if the compiler accepts the flag.
+
+.. cmdoption:: --enable-bolt
+
+   Enable usage of the `BOLT post-link binary optimizer
+   <https://github.com/llvm/llvm-project/tree/main/bolt>`_ (disabled by
+   default).
+
+   BOLT is part of the LLVM project but is not always included in their binary
+   distributions. This flag requires that ``llvm-bolt`` and ``merge-fdata``
+   are available.
+
+   BOLT is still a fairly new project so this flag should be considered
+   experimental for now. Because this tool operates on machine code its success
+   is dependent on a combination of the build environment + the other
+   optimization configure args + the CPU architecture, and not all combinations
+   are supported.
+
+   .. versionadded:: 3.12
 
 .. cmdoption:: --with-computed-gotos
 
@@ -224,8 +294,9 @@ Effects of a debug build:
 * Add ``d`` to :data:`sys.abiflags`.
 * Add :func:`sys.gettotalrefcount` function.
 * Add :option:`-X showrefcount <-X>` command line option.
-* Add :envvar:`PYTHONTHREADDEBUG` environment variable.
-* Add support for the ``__ltrace__`` variable: enable low-level tracing in the
+* Add :option:`-d` command line option and :envvar:`PYTHONDEBUG` environment
+  variable to debug the parser.
+* Add support for the ``__lltrace__`` variable: enable low-level tracing in the
   bytecode evaluation loop if the variable is defined.
 * Install :ref:`debug hooks on memory allocators <default-memory-allocators>`
   to detect buffer overflow and other memory errors.
@@ -240,6 +311,7 @@ Effects of a debug build:
     to detect usage of uninitialized objects.
   * Ensure that functions which can clear or replace the current exception are
     not called with an exception raised.
+  * Check that deallocator functions don't change the current exception.
   * The garbage collector (:func:`gc.collect` function) runs some basic checks
     on objects consistency.
   * The :c:macro:`Py_SAFE_DOWNCAST()` macro checks for integer underflow and
@@ -379,14 +451,6 @@ Libraries options
 
    .. versionadded:: 3.10
 
-.. cmdoption:: --with-tcltk-includes='-I...'
-
-   Override search for Tcl and Tk include files.
-
-.. cmdoption:: --with-tcltk-libs='-L...'
-
-   Override search for Tcl and Tk libraries.
-
 .. cmdoption:: --with-libm=STRING
 
    Override ``libm`` math library to *STRING* (default is system-dependent).
@@ -498,6 +562,48 @@ See ``Mac/README.rst``.
    :option:`--enable-framework` is set (default: ``Python``).
 
 
+Cross Compiling Options
+-----------------------
+
+Cross compiling, also known as cross building, can be used to build Python
+for another CPU architecture or platform. Cross compiling requires a Python
+interpreter for the build platform. The version of the build Python must match
+the version of the cross compiled host Python.
+
+.. cmdoption:: --build=BUILD
+
+   configure for building on BUILD, usually guessed by :program:`config.guess`.
+
+.. cmdoption:: --host=HOST
+
+   cross-compile to build programs to run on HOST (target platform)
+
+.. cmdoption:: --with-build-python=path/to/python
+
+   path to build ``python`` binary for cross compiling
+
+   .. versionadded:: 3.11
+
+.. cmdoption:: CONFIG_SITE=file
+
+   An environment variable that points to a file with configure overrides.
+
+   Example *config.site* file::
+
+      # config.site-aarch64
+      ac_cv_buggy_getaddrinfo=no
+      ac_cv_file__dev_ptmx=yes
+      ac_cv_file__dev_ptc=no
+
+
+Cross compiling example::
+
+   CONFIG_SITE=config.site-aarch64 ../configure \
+       --build=x86_64-pc-linux-gnu \
+       --host=aarch64-unknown-linux-gnu \
+       --with-build-python=../x86_64/python
+
+
 Python Build System
 ===================
 
@@ -509,7 +615,7 @@ Main files of the build system
 * :file:`pyconfig.h` (created by :file:`configure`);
 * :file:`Modules/Setup`: C extensions built by the Makefile using
   :file:`Module/makesetup` shell script;
-* :file:`setup.py`: C extensions built using the :mod:`distutils` module.
+* :file:`setup.py`: C extensions built using the ``setuptools`` package.
 
 Main build steps
 ----------------
@@ -631,21 +737,9 @@ Compiler flags
 
    Example: ``gcc -pthread``.
 
-.. envvar:: MAINCC
-
-   C compiler command used to build the ``main()`` function of programs like
-   ``python``.
-
-   Variable set by the :option:`--with-cxx-main` option of the configure
-   script.
-
-   Default: ``$(CC)``.
-
 .. envvar:: CXX
 
    C++ compiler command.
-
-   Used if the :option:`--with-cxx-main` option is used.
 
    Example: ``g++ -pthread``.
 
@@ -658,6 +752,17 @@ Compiler flags
    :envvar:`CFLAGS_NODIST` is used for building the interpreter and stdlib C
    extensions.  Use it when a compiler flag should *not* be part of the
    distutils :envvar:`CFLAGS` once Python is installed (:issue:`21121`).
+
+   In particular, :envvar:`CFLAGS` should not contain:
+
+   * the compiler flag `-I` (for setting the search path for include files).
+     The `-I` flags are processed from left to right, and any flags in
+     :envvar:`CFLAGS` would take precedence over user- and package-supplied `-I`
+     flags.
+
+   * hardening flags such as `-Werror` because distributions cannot control
+     whether packages installed by users conform to such heightened
+     standards.
 
    .. versionadded:: 3.5
 
@@ -753,7 +858,7 @@ Linker flags
 
    Linker command used to build programs like ``python`` and ``_testembed``.
 
-   Default: ``$(PURIFY) $(MAINCC)``.
+   Default: ``$(PURIFY) $(CC)``.
 
 .. envvar:: CONFIGURE_LDFLAGS
 
@@ -770,6 +875,13 @@ Linker flags
    :envvar:`LDFLAGS_NODIST` is used in the same manner as
    :envvar:`CFLAGS_NODIST`.  Use it when a linker flag should *not* be part of
    the distutils :envvar:`LDFLAGS` once Python is installed (:issue:`35257`).
+
+   In particular, :envvar:`LDFLAGS` should not contain:
+
+   * the compiler flag `-L` (for setting the search path for libraries).
+     The `-L` flags are processed from left to right, and any flags in
+     :envvar:`LDFLAGS` would take precedence over user- and package-supplied `-L`
+     flags.
 
 .. envvar:: CONFIGURE_LDFLAGS_NODIST
 

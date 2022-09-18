@@ -124,7 +124,7 @@ static PyType_Slot Xxo_Type_slots[] = {
 };
 
 static PyType_Spec Xxo_Type_spec = {
-    "xxlimited.Xxo",
+    "xxlimited_35.Xxo",
     sizeof(XxoObject),
     0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
@@ -189,7 +189,7 @@ static PyType_Slot Str_Type_slots[] = {
 };
 
 static PyType_Spec Str_Type_spec = {
-    "xxlimited.Str",
+    "xxlimited_35.Str",
     0,
     0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
@@ -212,7 +212,7 @@ static PyType_Slot Null_Type_slots[] = {
 };
 
 static PyType_Spec Null_Type_spec = {
-    "xxlimited.Null",
+    "xxlimited_35.Null",
     0,               /* basicsize */
     0,               /* itemsize */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
@@ -248,40 +248,50 @@ xx_modexec(PyObject *m)
     Null_Type_slots[1].pfunc = PyType_GenericNew;
     Str_Type_slots[0].pfunc = &PyUnicode_Type;
 
-    Xxo_Type = PyType_FromSpec(&Xxo_Type_spec);
-    if (Xxo_Type == NULL)
-        goto fail;
-
     /* Add some symbolic constants to the module */
     if (ErrorObject == NULL) {
-        ErrorObject = PyErr_NewException("xxlimited.error", NULL, NULL);
-        if (ErrorObject == NULL)
-            goto fail;
+        ErrorObject = PyErr_NewException("xxlimited_35.error", NULL, NULL);
+        if (ErrorObject == NULL) {
+            return -1;
+        }
     }
     Py_INCREF(ErrorObject);
-    PyModule_AddObject(m, "error", ErrorObject);
+    if (PyModule_AddObject(m, "error", ErrorObject) < 0) {
+        Py_DECREF(ErrorObject);
+        return -1;
+    }
 
     /* Add Xxo */
-    o = PyType_FromSpec(&Xxo_Type_spec);
-    if (o == NULL)
-        goto fail;
-    PyModule_AddObject(m, "Xxo", o);
+    Xxo_Type = PyType_FromSpec(&Xxo_Type_spec);
+    if (Xxo_Type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObject(m, "Xxo", Xxo_Type) < 0) {
+        Py_DECREF(Xxo_Type);
+        return -1;
+    }
 
     /* Add Str */
     o = PyType_FromSpec(&Str_Type_spec);
-    if (o == NULL)
-        goto fail;
-    PyModule_AddObject(m, "Str", o);
+    if (o == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObject(m, "Str", o) < 0) {
+        Py_DECREF(o);
+        return -1;
+    }
 
     /* Add Null */
     o = PyType_FromSpec(&Null_Type_spec);
-    if (o == NULL)
-        goto fail;
-    PyModule_AddObject(m, "Null", o);
+    if (o == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObject(m, "Null", o) < 0) {
+        Py_DECREF(o);
+        return -1;
+    }
+
     return 0;
- fail:
-    Py_XDECREF(m);
-    return -1;
 }
 
 

@@ -579,6 +579,10 @@ class NetmaskTestMixin_v4(CommonTestMixin_v4):
         assertBadAddress("1.2.3.256", re.escape("256 (> 255)"))
 
     def test_valid_netmask(self):
+        self.assertEqual(str(self.factory(('192.0.2.0', 24))), '192.0.2.0/24')
+        self.assertEqual(str(self.factory(('192.0.2.0', '24'))), '192.0.2.0/24')
+        self.assertEqual(str(self.factory(('192.0.2.0', '255.255.255.0'))),
+                         '192.0.2.0/24')
         self.assertEqual(str(self.factory('192.0.2.0/255.255.255.0')),
                          '192.0.2.0/24')
         for i in range(0, 33):
@@ -739,6 +743,10 @@ class NetmaskTestMixin_v6(CommonTestMixin_v6):
     def test_valid_netmask(self):
         # We only support CIDR for IPv6, because expanded netmasks are not
         # standard notation.
+        self.assertEqual(str(self.factory(('2001:db8::', 32))),
+                         '2001:db8::/32')
+        self.assertEqual(str(self.factory(('2001:db8::', '32'))),
+                         '2001:db8::/32')
         self.assertEqual(str(self.factory('2001:db8::/32')), '2001:db8::/32')
         for i in range(0, 129):
             # Generate and re-parse the CIDR format (trivial).
@@ -1132,6 +1140,14 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(ipaddress.IPv4Interface((3221225985, 24)),
                          ipaddress.IPv4Interface('192.0.2.1/24'))
 
+        # Invalid netmask
+        with self.assertRaises(ValueError):
+            ipaddress.IPv4Network(('192.0.2.1', '255.255.255.255.0'))
+
+        # Invalid netmask using factory
+        with self.assertRaises(ValueError):
+            ipaddress.ip_network(('192.0.2.1', '255.255.255.255.0'))
+
     # issue #16531: constructing IPv6Network from an (address, mask) tuple
     def testIPv6Tuple(self):
         # /128
@@ -1190,6 +1206,14 @@ class IpaddrUnitTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             ipaddress.IPv6Network((ip_scoped, 96))
         # strict=False and host bits set
+
+        # Invalid netmask
+        with self.assertRaises(ValueError):
+            ipaddress.IPv6Network(('2001:db8::1', '255.255.255.0'))
+
+        # Invalid netmask using factory
+        with self.assertRaises(ValueError):
+            ipaddress.ip_network(('2001:db8::1', '255.255.255.0'))
 
     # issue57
     def testAddressIntMath(self):

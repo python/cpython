@@ -7,7 +7,7 @@ import sys
 import threading
 import unittest
 from unittest import mock
-
+from types import GenericAlias
 import asyncio
 from asyncio import futures
 from test.test_asyncio import utils as test_utils
@@ -54,30 +54,30 @@ class DuckFuture:
                 or self.__exception is not None)
 
     def result(self):
-        assert not self.cancelled()
+        self.assertFalse(self.cancelled())
         if self.__exception is not None:
             raise self.__exception
         return self.__result
 
     def exception(self):
-        assert not self.cancelled()
+        self.assertFalse(self.cancelled())
         return self.__exception
 
     def set_result(self, result):
-        assert not self.done()
-        assert result is not None
+        self.assertFalse(self.done())
+        self.assertIsNotNone(result)
         self.__result = result
 
     def set_exception(self, exception):
-        assert not self.done()
-        assert exception is not None
+        self.assertFalse(self.done())
+        self.assertIsNotNone(exception)
         self.__exception = exception
 
     def __iter__(self):
         if not self.done():
             self._asyncio_future_blocking = True
             yield self
-        assert self.done()
+        self.assertTrue(self.done())
         return self.result()
 
 
@@ -91,12 +91,12 @@ class DuckTests(test_utils.TestCase):
     def test_wrap_future(self):
         f = DuckFuture()
         g = asyncio.wrap_future(f)
-        assert g is f
+        self.assertIs(g, f)
 
     def test_ensure_future(self):
         f = DuckFuture()
         g = asyncio.ensure_future(f)
-        assert g is f
+        self.assertIs(g, f)
 
 
 class BaseFutureTests:
@@ -108,6 +108,11 @@ class BaseFutureTests:
         super().setUp()
         self.loop = self.new_test_loop()
         self.addCleanup(self.loop.close)
+
+    def test_generic_alias(self):
+        future = self.cls[str]
+        self.assertEqual(future.__args__, (str,))
+        self.assertIsInstance(future, GenericAlias)
 
     def test_isfuture(self):
         class MyFuture:
@@ -143,7 +148,7 @@ class BaseFutureTests:
         with self.assertWarns(DeprecationWarning) as cm:
             with self.assertRaisesRegex(RuntimeError, 'There is no current event loop'):
                 self._new_future()
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertEqual(cm.filename, __file__)
 
     def test_constructor_use_running_loop(self):
         async def test():
@@ -158,7 +163,7 @@ class BaseFutureTests:
         self.addCleanup(asyncio.set_event_loop, None)
         with self.assertWarns(DeprecationWarning) as cm:
             f = self._new_future()
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertEqual(cm.filename, __file__)
         self.assertIs(f._loop, self.loop)
         self.assertIs(f.get_loop(), self.loop)
 
@@ -223,14 +228,22 @@ class BaseFutureTests:
         self.assertTrue(hasattr(f, '_cancel_message'))
         self.assertEqual(f._cancel_message, None)
 
-        f.cancel('my message')
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "Passing 'msg' argument"
+        ):
+            f.cancel('my message')
         with self.assertRaises(asyncio.CancelledError):
             self.loop.run_until_complete(f)
         self.assertEqual(f._cancel_message, 'my message')
 
     def test_future_cancel_message_setter(self):
         f = self._new_future(loop=self.loop)
-        f.cancel('my message')
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "Passing 'msg' argument"
+        ):
+            f.cancel('my message')
         f._cancel_message = 'my new message'
         self.assertEqual(f._cancel_message, 'my new message')
 
@@ -497,7 +510,7 @@ class BaseFutureTests:
         with self.assertWarns(DeprecationWarning) as cm:
             with self.assertRaises(RuntimeError):
                 asyncio.wrap_future(f1)
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertEqual(cm.filename, __file__)
         ex.shutdown(wait=True)
 
     def test_wrap_future_use_running_loop(self):
@@ -521,7 +534,7 @@ class BaseFutureTests:
         f1 = ex.submit(run, 'oi')
         with self.assertWarns(DeprecationWarning) as cm:
             f2 = asyncio.wrap_future(f1)
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertEqual(cm.filename, __file__)
         self.assertIs(self.loop, f2._loop)
         ex.shutdown(wait=True)
 
@@ -571,13 +584,10 @@ class BaseFutureTests:
         test_utils.run_briefly(self.loop)
         support.gc_collect()
 
-        if sys.version_info >= (3, 4):
-            regex = f'^{self.cls.__name__} exception was never retrieved\n'
-            exc_info = (type(exc), exc, exc.__traceback__)
-            m_log.error.assert_called_once_with(mock.ANY, exc_info=exc_info)
-        else:
-            regex = r'^Future/Task exception was never retrieved\n'
-            m_log.error.assert_called_once_with(mock.ANY, exc_info=False)
+        regex = f'^{self.cls.__name__} exception was never retrieved\n'
+        exc_info = (type(exc), exc, exc.__traceback__)
+        m_log.error.assert_called_once_with(mock.ANY, exc_info=exc_info)
+
         message = m_log.error.call_args[0][0]
         self.assertRegex(message, re.compile(regex, re.DOTALL))
 

@@ -100,7 +100,7 @@ PSF LICENSE AGREEMENT FOR PYTHON |release|
       analyze, test, perform and/or display publicly, prepare derivative works,
       distribute, and otherwise use Python |release| alone or in any derivative
       version, provided, however, that PSF's License Agreement and PSF's notice of
-      copyright, i.e., "Copyright © 2001-2021 Python Software Foundation; All Rights
+      copyright, i.e., "Copyright © 2001-2022 Python Software Foundation; All Rights
       Reserved" are retained in Python |release| alone or in any derivative version
       prepared by Licensee.
 
@@ -353,7 +353,7 @@ Sockets
 
 The :mod:`socket` module uses the functions, :func:`getaddrinfo`, and
 :func:`getnameinfo`, which are coded in separate source files from the WIDE
-Project, http://www.wide.ad.jp/. ::
+Project, https://www.wide.ad.jp/. ::
 
    Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
    All rights reserved.
@@ -626,9 +626,9 @@ strtod and dtoa
 The file :file:`Python/dtoa.c`, which supplies C functions dtoa and
 strtod for conversion of C doubles to and from strings, is derived
 from the file of the same name by David M. Gay, currently available
-from http://www.netlib.org/fp/.  The original file, as retrieved on
-March 16, 2009, contains the following copyright and licensing
-notice::
+from https://web.archive.org/web/20220517033456/http://www.netlib.org/fp/dtoa.c.
+The original file, as retrieved on March 16, 2009, contains the following
+copyright and licensing notice::
 
    /****************************************************************
     *

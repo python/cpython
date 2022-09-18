@@ -1140,7 +1140,7 @@ blocks. Patch by Pablo Galindo.
 
 Constructors of subclasses of some builtin classes (e.g. :class:`tuple`,
 :class:`list`, :class:`frozenset`) no longer accept arbitrary keyword
-arguments. Subclass of :class:`set` can now define a ``__new__()`` method
+arguments. [reverted in 3.11a4] Subclass of :class:`set` can now define a ``__new__()`` method
 with additional keyword parameters without overriding also ``__init__()``.
 
 ..
@@ -1445,7 +1445,7 @@ asynchronous.
 .. nonce: NOwcDJ
 .. section: Library
 
-Fix clang rpath issue in :mod:`distutils`. The UnixCCompiler now uses
+Fix clang rpath issue in ``distutils``. The UnixCCompiler now uses
 correct clang option to add a runtime library directory (rpath) to a shared
 library.
 
@@ -1597,7 +1597,7 @@ use map function instead of genexpr in capwords.
 .. section: Library
 
 Fix typo: ``importlib.find_loader`` is really slated for removal in Python
-3.12 not 3.10, like the others in GH-25169.
+3.12 not 3.10, like the others in PR 25169.
 
 Patch by Hugo van Kemenade.
 
@@ -2798,7 +2798,7 @@ documentation for deprecations.
 .. nonce: rvyf2v
 .. section: Library
 
-Restore back :func:`parse_makefile` in :mod:`distutils.sysconfig` because it
+Restore back :func:`parse_makefile` in ``distutils.sysconfig`` because it
 behaves differently than the similar implementation in :mod:`sysconfig`.
 
 ..

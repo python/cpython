@@ -94,7 +94,7 @@ Context Variables
           # var.get() would raise a LookupError.
 
 
-.. class:: contextvars.Token
+.. class:: Token
 
    *Token* objects are returned by the :meth:`ContextVar.set` method.
    They can be passed to the :meth:`ContextVar.reset` method to revert

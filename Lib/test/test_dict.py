@@ -892,6 +892,14 @@ class DictTest(unittest.TestCase):
         gc.collect()
         self.assertTrue(gc.is_tracked(t), t)
 
+    def test_string_keys_can_track_values(self):
+        # Test that this doesn't leak.
+        for i in range(10):
+            d = {}
+            for j in range(10):
+                d[str(j)] = j
+            d["foo"] = d
+
     @support.cpython_only
     def test_track_literals(self):
         # Test GC-optimization of dict literals
@@ -1068,6 +1076,23 @@ class DictTest(unittest.TestCase):
         self.assertGreater(sys.getsizeof(a), orig_size)
         self.assertEqual(list(a), ['x', 'y'])
         self.assertEqual(list(b), ['x', 'y', 'z'])
+
+    @support.cpython_only
+    def test_splittable_update(self):
+        """dict.update(other) must preserve order in other."""
+        class C:
+            def __init__(self, order):
+                if order:
+                    self.a, self.b, self.c = 1, 2, 3
+                else:
+                    self.c, self.b, self.a = 1, 2, 3
+        o = C(True)
+        o = C(False)  # o.__dict__ has reversed order.
+        self.assertEqual(list(o.__dict__), ["c", "b", "a"])
+
+        d = {}
+        d.update(o.__dict__)
+        self.assertEqual(list(d), ["c", "b", "a"])
 
     def test_iterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -1430,7 +1455,7 @@ class DictTest(unittest.TestCase):
         self.assertTrue(gc.is_tracked(next(it)))
 
     @support.cpython_only
-    def test_dict_items_result_gc(self):
+    def test_dict_items_result_gc_reversed(self):
         # Same as test_dict_items_result_gc above, but reversed.
         it = reversed({None: []}.items())
         gc.collect()

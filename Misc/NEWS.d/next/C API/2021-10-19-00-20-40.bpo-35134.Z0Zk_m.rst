@@ -1,3 +1,0 @@
-Exclude :c:func:`PyWeakref_GET_OBJECT` from the limited C API. It never
-worked since the :c:type:`PyWeakReference` structure is opaque in the
-limited C API.

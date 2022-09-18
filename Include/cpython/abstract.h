@@ -50,10 +50,15 @@ PyAPI_FUNC(PyObject *) _PyObject_MakeTpCall(
     PyObject *const *args, Py_ssize_t nargs,
     PyObject *keywords);
 
-#define PY_VECTORCALL_ARGUMENTS_OFFSET ((size_t)1 << (8 * sizeof(size_t) - 1))
+#define PY_VECTORCALL_ARGUMENTS_OFFSET \
+    (_Py_STATIC_CAST(size_t, 1) << (8 * sizeof(size_t) - 1))
 
+// PyVectorcall_NARGS() is exported as a function for the stable ABI.
+// Here (when we are not using the stable ABI), the name is overridden to
+// call a static inline function for best performance.
+#define PyVectorcall_NARGS(n) _PyVectorcall_NARGS(n)
 static inline Py_ssize_t
-PyVectorcall_NARGS(size_t n)
+_PyVectorcall_NARGS(size_t n)
 {
     return n & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
 }
@@ -83,10 +88,6 @@ PyAPI_FUNC(PyObject *) PyObject_VectorcallDict(
     size_t nargsf,
     PyObject *kwargs);
 
-/* Call "callable" (which must support vectorcall) with positional arguments
-   "tuple" and keyword arguments "dict". "dict" may also be NULL */
-PyAPI_FUNC(PyObject *) PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *dict);
-
 // Same as PyObject_Vectorcall(), except without keyword arguments
 PyAPI_FUNC(PyObject *) _PyObject_FastCall(
     PyObject *func,
@@ -102,19 +103,22 @@ PyAPI_FUNC(PyObject *) PyObject_VectorcallMethod(
 static inline PyObject *
 PyObject_CallMethodNoArgs(PyObject *self, PyObject *name)
 {
-    return PyObject_VectorcallMethod(name, &self,
-           1 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+    size_t nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    return PyObject_VectorcallMethod(name, &self, nargsf, _Py_NULL);
 }
 
 static inline PyObject *
 PyObject_CallMethodOneArg(PyObject *self, PyObject *name, PyObject *arg)
 {
     PyObject *args[2] = {self, arg};
-
+    size_t nargsf = 2 | PY_VECTORCALL_ARGUMENTS_OFFSET;
     assert(arg != NULL);
-    return PyObject_VectorcallMethod(name, args,
-           2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+    return PyObject_VectorcallMethod(name, args, nargsf, _Py_NULL);
 }
+
+PyAPI_FUNC(PyObject *) _PyObject_CallMethod(PyObject *obj,
+                                            PyObject *name,
+                                            const char *format, ...);
 
 /* Like PyObject_CallMethod(), but expect a _Py_Identifier*
    as the method name. */
@@ -129,7 +133,7 @@ PyAPI_FUNC(PyObject *) _PyObject_CallMethodId_SizeT(PyObject *obj,
 
 PyAPI_FUNC(PyObject *) _PyObject_CallMethodIdObjArgs(
     PyObject *obj,
-    struct _Py_Identifier *name,
+    _Py_Identifier *name,
     ...);
 
 static inline PyObject *
@@ -139,7 +143,7 @@ _PyObject_VectorcallMethodId(
 {
     PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
     if (!oname) {
-        return NULL;
+        return _Py_NULL;
     }
     return PyObject_VectorcallMethod(oname, args, nargsf, kwnames);
 }
@@ -147,18 +151,17 @@ _PyObject_VectorcallMethodId(
 static inline PyObject *
 _PyObject_CallMethodIdNoArgs(PyObject *self, _Py_Identifier *name)
 {
-    return _PyObject_VectorcallMethodId(name, &self,
-           1 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+    size_t nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    return _PyObject_VectorcallMethodId(name, &self, nargsf, _Py_NULL);
 }
 
 static inline PyObject *
 _PyObject_CallMethodIdOneArg(PyObject *self, _Py_Identifier *name, PyObject *arg)
 {
     PyObject *args[2] = {self, arg};
-
+    size_t nargsf = 2 | PY_VECTORCALL_ARGUMENTS_OFFSET;
     assert(arg != NULL);
-    return _PyObject_VectorcallMethodId(name, args,
-           2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+    return _PyObject_VectorcallMethodId(name, args, nargsf, _Py_NULL);
 }
 
 PyAPI_FUNC(int) _PyObject_HasLen(PyObject *o);
@@ -168,80 +171,12 @@ PyAPI_FUNC(int) _PyObject_HasLen(PyObject *o);
    value.  If one of the calls fails, this function returns -1. */
 PyAPI_FUNC(Py_ssize_t) PyObject_LengthHint(PyObject *o, Py_ssize_t);
 
-/* === New Buffer API ============================================ */
-
-/* Return 1 if the getbuffer function is available, otherwise return 0. */
-PyAPI_FUNC(int) PyObject_CheckBuffer(PyObject *obj);
-
-/* This is a C-API version of the getbuffer function call.  It checks
-   to make sure object has the required function pointer and issues the
-   call.
-
-   Returns -1 and raises an error on failure and returns 0 on success. */
-PyAPI_FUNC(int) PyObject_GetBuffer(PyObject *obj, Py_buffer *view,
-                                   int flags);
-
-/* Get the memory area pointed to by the indices for the buffer given.
-   Note that view->ndim is the assumed size of indices. */
-PyAPI_FUNC(void *) PyBuffer_GetPointer(Py_buffer *view, Py_ssize_t *indices);
-
-/* Return the implied itemsize of the data-format area from a
-   struct-style description. */
-PyAPI_FUNC(Py_ssize_t) PyBuffer_SizeFromFormat(const char *format);
-
-/* Implementation in memoryobject.c */
-PyAPI_FUNC(int) PyBuffer_ToContiguous(void *buf, Py_buffer *view,
-                                      Py_ssize_t len, char order);
-
-PyAPI_FUNC(int) PyBuffer_FromContiguous(Py_buffer *view, void *buf,
-                                        Py_ssize_t len, char order);
-
-/* Copy len bytes of data from the contiguous chunk of memory
-   pointed to by buf into the buffer exported by obj.  Return
-   0 on success and return -1 and raise a PyBuffer_Error on
-   error (i.e. the object does not have a buffer interface or
-   it is not working).
-
-   If fort is 'F', then if the object is multi-dimensional,
-   then the data will be copied into the array in
-   Fortran-style (first dimension varies the fastest).  If
-   fort is 'C', then the data will be copied into the array
-   in C-style (last dimension varies the fastest).  If fort
-   is 'A', then it does not matter and the copy will be made
-   in whatever way is more efficient. */
-PyAPI_FUNC(int) PyObject_CopyData(PyObject *dest, PyObject *src);
-
-/* Copy the data from the src buffer to the buffer of destination. */
-PyAPI_FUNC(int) PyBuffer_IsContiguous(const Py_buffer *view, char fort);
-
-/*Fill the strides array with byte-strides of a contiguous
-  (Fortran-style if fort is 'F' or C-style otherwise)
-  array of the given shape with the given number of bytes
-  per element. */
-PyAPI_FUNC(void) PyBuffer_FillContiguousStrides(int ndims,
-                                               Py_ssize_t *shape,
-                                               Py_ssize_t *strides,
-                                               int itemsize,
-                                               char fort);
-
-/* Fills in a buffer-info structure correctly for an exporter
-   that can only share a contiguous chunk of memory of
-   "unsigned bytes" of the given length.
-
-   Returns 0 on success and -1 (with raising an error) on error. */
-PyAPI_FUNC(int) PyBuffer_FillInfo(Py_buffer *view, PyObject *o, void *buf,
-                                  Py_ssize_t len, int readonly,
-                                  int flags);
-
-/* Releases a Py_buffer obtained from getbuffer ParseTuple's "s*". */
-PyAPI_FUNC(void) PyBuffer_Release(Py_buffer *view);
-
 /* === Sequence protocol ================================================ */
 
 /* Assume tp_as_sequence and sq_item exist and that 'i' does not
    need to be corrected for a negative index. */
 #define PySequence_ITEM(o, i)\
-    ( Py_TYPE(o)->tp_as_sequence->sq_item(o, i) )
+    ( Py_TYPE(o)->tp_as_sequence->sq_item((o), (i)) )
 
 #define PY_ITERSEARCH_COUNT    1
 #define PY_ITERSEARCH_INDEX    2

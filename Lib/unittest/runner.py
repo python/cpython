@@ -68,6 +68,7 @@ class TextTestResult(result.TestResult):
             self.stream.write(self.getDescription(test))
             self.stream.write(" ... ")
         self.stream.writeln(status)
+        self.stream.flush()
         self._newline = True
 
     def addSubTest(self, test, subtest, err):
@@ -121,6 +122,7 @@ class TextTestResult(result.TestResult):
         super(TextTestResult, self).addExpectedFailure(test, err)
         if self.showAll:
             self.stream.writeln("expected failure")
+            self.stream.flush()
         elif self.dots:
             self.stream.write("x")
             self.stream.flush()
@@ -129,6 +131,7 @@ class TextTestResult(result.TestResult):
         super(TextTestResult, self).addUnexpectedSuccess(test)
         if self.showAll:
             self.stream.writeln("unexpected success")
+            self.stream.flush()
         elif self.dots:
             self.stream.write("u")
             self.stream.flush()
@@ -136,8 +139,15 @@ class TextTestResult(result.TestResult):
     def printErrors(self):
         if self.dots or self.showAll:
             self.stream.writeln()
+            self.stream.flush()
         self.printErrorList('ERROR', self.errors)
         self.printErrorList('FAIL', self.failures)
+        unexpectedSuccesses = getattr(self, 'unexpectedSuccesses', ())
+        if unexpectedSuccesses:
+            self.stream.writeln(self.separator1)
+            for test in unexpectedSuccesses:
+                self.stream.writeln(f"UNEXPECTED SUCCESS: {self.getDescription(test)}")
+            self.stream.flush()
 
     def printErrorList(self, flavour, errors):
         for test, err in errors:
@@ -145,6 +155,7 @@ class TextTestResult(result.TestResult):
             self.stream.writeln("%s: %s" % (flavour,self.getDescription(test)))
             self.stream.writeln(self.separator2)
             self.stream.writeln("%s" % err)
+            self.stream.flush()
 
 
 class TextTestRunner(object):
@@ -239,4 +250,5 @@ class TextTestRunner(object):
             self.stream.writeln(" (%s)" % (", ".join(infos),))
         else:
             self.stream.write("\n")
+        self.stream.flush()
         return result

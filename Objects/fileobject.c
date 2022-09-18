@@ -26,24 +26,22 @@
 extern "C" {
 #endif
 
-_Py_IDENTIFIER(open);
-
 /* External C interface */
 
 PyObject *
 PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const char *encoding,
               const char *errors, const char *newline, int closefd)
 {
-    PyObject *io, *stream;
+    PyObject *open, *stream;
 
     /* import _io in case we are being used to open io.py */
-    io = PyImport_ImportModule("_io");
-    if (io == NULL)
+    open = _PyImport_GetModuleAttrString("_io", "open");
+    if (open == NULL)
         return NULL;
-    stream = _PyObject_CallMethodId(io, &PyId_open, "isisssO", fd, mode,
-                                 buffering, encoding, errors,
-                                 newline, closefd ? Py_True : Py_False);
-    Py_DECREF(io);
+    stream = PyObject_CallFunction(open, "isisssO", fd, mode,
+                                  buffering, encoding, errors,
+                                  newline, closefd ? Py_True : Py_False);
+    Py_DECREF(open);
     if (stream == NULL)
         return NULL;
     /* ignore name attribute because the name attribute of _BufferedIOMixin
@@ -54,7 +52,6 @@ PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const c
 PyObject *
 PyFile_GetLine(PyObject *f, int n)
 {
-    _Py_IDENTIFIER(readline);
     PyObject *result;
 
     if (f == NULL) {
@@ -63,10 +60,10 @@ PyFile_GetLine(PyObject *f, int n)
     }
 
     if (n <= 0) {
-        result = _PyObject_CallMethodIdNoArgs(f, &PyId_readline);
+        result = PyObject_CallMethodNoArgs(f, &_Py_ID(readline));
     }
     else {
-        result = _PyObject_CallMethodId(f, &PyId_readline, "i", n);
+        result = _PyObject_CallMethod(f, &_Py_ID(readline), "i", n);
     }
     if (result != NULL && !PyBytes_Check(result) &&
         !PyUnicode_Check(result)) {
@@ -120,13 +117,12 @@ int
 PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
 {
     PyObject *writer, *value, *result;
-    _Py_IDENTIFIER(write);
 
     if (f == NULL) {
         PyErr_SetString(PyExc_TypeError, "writeobject with NULL file");
         return -1;
     }
-    writer = _PyObject_GetAttrId(f, &PyId_write);
+    writer = PyObject_GetAttr(f, &_Py_ID(write));
     if (writer == NULL)
         return -1;
     if (flags & Py_PRINT_RAW) {
@@ -182,12 +178,11 @@ PyObject_AsFileDescriptor(PyObject *o)
 {
     int fd;
     PyObject *meth;
-    _Py_IDENTIFIER(fileno);
 
     if (PyLong_Check(o)) {
         fd = _PyLong_AsInt(o);
     }
-    else if (_PyObject_LookupAttrId(o, &PyId_fileno, &meth) < 0) {
+    else if (_PyObject_LookupAttr(o, &_Py_ID(fileno), &meth) < 0) {
         return -1;
     }
     else if (meth != NULL) {
@@ -495,7 +490,7 @@ PyFile_SetOpenCodeHook(Py_OpenCodeHookFunction hook, void *userData) {
 PyObject *
 PyFile_OpenCodeObject(PyObject *path)
 {
-    PyObject *iomod, *f = NULL;
+    PyObject *f = NULL;
 
     if (!PyUnicode_Check(path)) {
         PyErr_Format(PyExc_TypeError, "'path' must be 'str', not '%.200s'",
@@ -507,11 +502,10 @@ PyFile_OpenCodeObject(PyObject *path)
     if (hook) {
         f = hook(path, _PyRuntime.open_code_userdata);
     } else {
-        iomod = PyImport_ImportModule("_io");
-        if (iomod) {
-            f = _PyObject_CallMethodId(iomod, &PyId_open, "Os",
-                                       path, "rb");
-            Py_DECREF(iomod);
+        PyObject *open = _PyImport_GetModuleAttrString("_io", "open");
+        if (open) {
+            f = PyObject_CallFunction(open, "Os", path, "rb");
+            Py_DECREF(open);
         }
     }
 

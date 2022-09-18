@@ -72,6 +72,7 @@
 
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_runtime.h"
 #ifdef HAVE_PROCESS_H
 #  include <process.h>            // getpid()
 #endif
@@ -99,7 +100,7 @@ get_random_state(PyObject *module)
 static struct PyModuleDef _randommodule;
 
 #define _randomstate_type(type) \
-    (get_random_state(_PyType_GetModuleByDef(type, &_randommodule)))
+    (get_random_state(PyType_GetModuleByDef(type, &_randommodule)))
 
 typedef struct {
     PyObject_HEAD
@@ -258,7 +259,11 @@ random_seed_time_pid(RandomObject *self)
     key[0] = (uint32_t)(now & 0xffffffffU);
     key[1] = (uint32_t)(now >> 32);
 
+#ifdef HAVE_GETPID
     key[2] = (uint32_t)getpid();
+#else
+    key[2] = 0;
+#endif
 
     now = _PyTime_GetMonotonicClock();
     key[3] = (uint32_t)(now & 0xffffffffU);

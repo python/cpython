@@ -66,9 +66,6 @@ WIN32 is still required for the locale module.
 
 #define MS_WIN32 /* only support win32 and greater. */
 #define MS_WINDOWS
-#ifndef PYTHONPATH
-#       define PYTHONPATH L".\\DLLs;.\\lib"
-#endif
 #define NT_THREADS
 #define WITH_THREAD
 #ifndef NETSCAPE_PI
@@ -116,20 +113,30 @@ WIN32 is still required for the locale module.
 #define MS_WIN64
 #endif
 
-/* set the COMPILER */
+/* set the COMPILER and support tier
+ *
+ * win_amd64 MSVC (x86_64-pc-windows-msvc): 1
+ * win32 MSVC (i686-pc-windows-msvc): 1
+ * win_arm64 MSVC (aarch64-pc-windows-msvc): 3
+ * other archs and ICC: 0
+ */
 #ifdef MS_WIN64
 #if defined(_M_X64) || defined(_M_AMD64)
 #if defined(__INTEL_COMPILER)
 #define COMPILER ("[ICC v." _Py_STRINGIZE(__INTEL_COMPILER) " 64 bit (amd64) with MSC v." _Py_STRINGIZE(_MSC_VER) " CRT]")
+#define PY_SUPPORT_TIER 0
 #else
 #define COMPILER _Py_PASTE_VERSION("64 bit (AMD64)")
+#define PY_SUPPORT_TIER 1
 #endif /* __INTEL_COMPILER */
 #define PYD_PLATFORM_TAG "win_amd64"
 #elif defined(_M_ARM64)
 #define COMPILER _Py_PASTE_VERSION("64 bit (ARM64)")
+#define PY_SUPPORT_TIER 3
 #define PYD_PLATFORM_TAG "win_arm64"
 #else
 #define COMPILER _Py_PASTE_VERSION("64 bit (Unknown)")
+#define PY_SUPPORT_TIER 0
 #endif
 #endif /* MS_WIN64 */
 
@@ -165,8 +172,10 @@ WIN32 is still required for the locale module.
 /* Define like size_t, omitting the "unsigned" */
 #ifdef MS_WIN64
 typedef __int64 Py_ssize_t;
+#   define PY_SSIZE_T_MAX LLONG_MAX
 #else
 typedef _W64 int Py_ssize_t;
+#   define PY_SSIZE_T_MAX INT_MAX
 #endif
 #define HAVE_PY_SSIZE_T 1
 
@@ -174,15 +183,19 @@ typedef _W64 int Py_ssize_t;
 #if defined(_M_IX86)
 #if defined(__INTEL_COMPILER)
 #define COMPILER ("[ICC v." _Py_STRINGIZE(__INTEL_COMPILER) " 32 bit (Intel) with MSC v." _Py_STRINGIZE(_MSC_VER) " CRT]")
+#define PY_SUPPORT_TIER 0
 #else
 #define COMPILER _Py_PASTE_VERSION("32 bit (Intel)")
+#define PY_SUPPORT_TIER 1
 #endif /* __INTEL_COMPILER */
 #define PYD_PLATFORM_TAG "win32"
 #elif defined(_M_ARM)
 #define COMPILER _Py_PASTE_VERSION("32 bit (ARM)")
 #define PYD_PLATFORM_TAG "win_arm32"
+#define PY_SUPPORT_TIER 0
 #else
 #define COMPILER _Py_PASTE_VERSION("32 bit (Unknown)")
+#define PY_SUPPORT_TIER 0
 #endif
 #endif /* MS_WIN32 && !MS_WIN64 */
 
@@ -262,11 +275,11 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
                         file in their Makefile (other compilers are
                         generally taken care of by distutils.) */
 #                       if defined(_DEBUG)
-#                               pragma comment(lib,"python311_d.lib")
+#                               pragma comment(lib,"python312_d.lib")
 #                       elif defined(Py_LIMITED_API)
 #                               pragma comment(lib,"python3.lib")
 #                       else
-#                               pragma comment(lib,"python311.lib")
+#                               pragma comment(lib,"python312.lib")
 #                       endif /* _DEBUG */
 #               endif /* _MSC_VER */
 #       endif /* Py_BUILD_CORE */
@@ -517,6 +530,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define if you have siginterrupt.  */
 /* #undef HAVE_SIGINTERRUPT */
 
+/* Define to 1 if you have the `shutdown' function. */
+#define HAVE_SHUTDOWN 1
+
 /* Define if you have symlink.  */
 /* #undef HAVE_SYMLINK */
 
@@ -528,6 +544,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Define if you have times.  */
 /* #undef HAVE_TIMES */
+
+/* Define to 1 if you have the `umask' function. */
+#define HAVE_UMASK 1
 
 /* Define if you have uname.  */
 /* #undef HAVE_UNAME */
@@ -563,9 +582,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Define to 1 if you have the <signal.h> header file. */
 #define HAVE_SIGNAL_H 1
-
-/* Define if you have the <stdarg.h> prototypes.  */
-#define HAVE_STDARG_PROTOTYPES
 
 /* Define if you have the <stddef.h> header file.  */
 #define HAVE_STDDEF_H 1
@@ -659,15 +675,33 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define to 1 if you have the `erfc' function. */
 #define HAVE_ERFC 1
 
-/* Define if you have the 'inet_pton' function. */
+// netdb.h functions (provided by winsock.h)
+#define HAVE_GETHOSTNAME 1
+#define HAVE_GETHOSTBYADDR 1
+#define HAVE_GETHOSTBYNAME 1
+#define HAVE_GETPROTOBYNAME 1
+#define HAVE_GETSERVBYNAME 1
+#define HAVE_GETSERVBYPORT 1
+// sys/socket.h functions (provided by winsock.h)
 #define HAVE_INET_PTON 1
+#define HAVE_INET_NTOA 1
+#define HAVE_ACCEPT 1
+#define HAVE_BIND 1
+#define HAVE_CONNECT 1
+#define HAVE_GETSOCKNAME 1
+#define HAVE_LISTEN 1
+#define HAVE_RECVFROM 1
+#define HAVE_SENDTO 1
+#define HAVE_SETSOCKOPT 1
+#define HAVE_SOCKET 1
+
+/* Define to 1 if you have the `dup' function. */
+#define HAVE_DUP 1
 
 /* framework name */
 #define _PYTHONFRAMEWORK ""
 
 /* Define if libssl has X509_VERIFY_PARAM_set1_host and related function */
 #define HAVE_X509_VERIFY_PARAM_SET1_HOST 1
-
-#define PLATLIBDIR "lib"
 
 #endif /* !Py_CONFIG_H */
