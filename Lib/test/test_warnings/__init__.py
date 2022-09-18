@@ -22,8 +22,6 @@ py_warnings = import_helper.import_fresh_module('warnings',
 c_warnings = import_helper.import_fresh_module('warnings',
                                                fresh=['_warnings'])
 
-Py_DEBUG = hasattr(sys, 'gettotalrefcount')
-
 @contextmanager
 def warnings_state(module):
     """Use a specific warnings implementation in warning_tests."""
@@ -489,7 +487,14 @@ class WarnTests(BaseTest):
                 module=self.module) as w:
             self.module.resetwarnings()
             self.module.filterwarnings("always", category=UserWarning)
-            for filename in ("nonascii\xe9\u20ac", "surrogate\udc80"):
+            filenames = ["nonascii\xe9\u20ac"]
+            if not support.is_emscripten:
+                # JavaScript does not like surrogates.
+                # Invalid UTF-8 leading byte 0x80 encountered when
+                # deserializing a UTF-8 string in wasm memory to a JS
+                # string!
+                filenames.append("surrogate\udc80")
+            for filename in filenames:
                 try:
                     os.fsencode(filename)
                 except UnicodeEncodeError:
@@ -1191,7 +1196,7 @@ class EnvironmentVariableTests(BaseTest):
 
     def test_default_filter_configuration(self):
         pure_python_api = self.module is py_warnings
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             expected_default_filters = []
         else:
             if pure_python_api:

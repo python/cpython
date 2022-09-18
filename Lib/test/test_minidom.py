@@ -9,7 +9,7 @@ import unittest
 import pyexpat
 import xml.dom.minidom
 
-from xml.dom.minidom import parse, Node, Document, parseString
+from xml.dom.minidom import parse, Attr, Node, Document, parseString
 from xml.dom.minidom import getDOMImplementation
 from xml.parsers.expat import ExpatError
 
@@ -76,6 +76,20 @@ class MinidomTest(unittest.TestCase):
             dom = parse(file)
             dom.unlink()
             self.confirm(isinstance(dom, Document))
+
+    def testAttrModeSetsParamsAsAttrs(self):
+        attr = Attr("qName", "namespaceURI", "localName", "prefix")
+        self.assertEqual(attr.name, "qName")
+        self.assertEqual(attr.namespaceURI, "namespaceURI")
+        self.assertEqual(attr.prefix, "prefix")
+        self.assertEqual(attr.localName, "localName")
+
+    def testAttrModeSetsNonOptionalAttrs(self):
+        attr = Attr("qName", "namespaceURI", None, "prefix")
+        self.assertEqual(attr.name, "qName")
+        self.assertEqual(attr.namespaceURI, "namespaceURI")
+        self.assertEqual(attr.prefix, "prefix")
+        self.assertEqual(attr.localName, attr.name)
 
     def testGetElementsByTagName(self):
         dom = parse(tstfile)

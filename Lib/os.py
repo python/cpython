@@ -974,15 +974,14 @@ otherwise return -SIG, where SIG is the signal that killed it. """
 # command in a shell can't be supported.
 if sys.platform != 'vxworks':
     # Supply os.popen()
-    def popen(cmd, mode="r", buffering=-1, encoding=None):
+    def popen(cmd, mode="r", buffering=-1):
         if not isinstance(cmd, str):
             raise TypeError("invalid cmd type (%s, expected string)" % type(cmd))
         if mode not in ("r", "w"):
             raise ValueError("invalid mode %r" % mode)
         if buffering == 0 or buffering is None:
             raise ValueError("popen() does not support unbuffered streams")
-        import subprocess, io
-        encoding = io.text_encoding(encoding)
+        import subprocess
         if mode == "r":
             proc = subprocess.Popen(cmd,
                                     shell=True, text=True,

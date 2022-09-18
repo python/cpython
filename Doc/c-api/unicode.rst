@@ -397,10 +397,6 @@ APIs:
    ASCII-encoded string. The following format characters are allowed:
 
    .. % This should be exactly the same as the table in PyErr_Format.
-   .. % The descriptions for %zd and %zu are wrong, but the truth is complicated
-   .. % because not all compilers support the %z width modifier -- we fake it
-   .. % when necessary via interpolating PY_FORMAT_SIZE_T.
-   .. % Similar comments apply to the %ll width modifier and
 
    .. tabularcolumns:: |l|l|L|
 
@@ -481,9 +477,6 @@ APIs:
    |                   |                     | :c:func:`PyObject_Repr`.         |
    +-------------------+---------------------+----------------------------------+
 
-   An unrecognized format character causes all the rest of the format string to be
-   copied as-is to the result string, and any extra arguments discarded.
-
    .. note::
       The width formatter unit is number of characters rather than bytes.
       The precision formatter unit is number of bytes for ``"%s"`` and
@@ -503,6 +496,11 @@ APIs:
    .. versionchanged:: 3.4
       Support width and precision formatter for ``"%s"``, ``"%A"``, ``"%U"``,
       ``"%V"``, ``"%S"``, ``"%R"`` added.
+
+   .. versionchanged:: 3.12
+      An unrecognized format character now sets a :exc:`SystemError`.
+      In previous versions it caused all the rest of the format string to be
+      copied as-is to the result string, and any extra arguments discarded.
 
 
 .. c:function:: PyObject* PyUnicode_FromFormatV(const char *format, va_list vargs)
@@ -645,8 +643,7 @@ system.
    cannot contain embedded null characters.
 
    Use :c:func:`PyUnicode_DecodeFSDefaultAndSize` to decode a string from
-   :c:data:`Py_FileSystemDefaultEncoding` (the locale encoding read at
-   Python startup).
+   the :term:`filesystem encoding and error handler`.
 
    This function ignores the :ref:`Python UTF-8 Mode <utf8-mode>`.
 
@@ -680,9 +677,8 @@ system.
    *errors* is ``NULL``. Return a :class:`bytes` object. *unicode* cannot
    contain embedded null characters.
 
-   Use :c:func:`PyUnicode_EncodeFSDefault` to encode a string to
-   :c:data:`Py_FileSystemDefaultEncoding` (the locale encoding read at
-   Python startup).
+   Use :c:func:`PyUnicode_EncodeFSDefault` to encode a string to the
+   :term:`filesystem encoding and error handler`.
 
    This function ignores the :ref:`Python UTF-8 Mode <utf8-mode>`.
 
@@ -703,12 +699,12 @@ system.
 File System Encoding
 """"""""""""""""""""
 
-To encode and decode file names and other environment strings,
-:c:data:`Py_FileSystemDefaultEncoding` should be used as the encoding, and
-:c:data:`Py_FileSystemDefaultEncodeErrors` should be used as the error handler
-(:pep:`383` and :pep:`529`). To encode file names to :class:`bytes` during
-argument parsing, the ``"O&"`` converter should be used, passing
-:c:func:`PyUnicode_FSConverter` as the conversion function:
+Functions encoding to and decoding from the :term:`filesystem encoding and
+error handler` (:pep:`383` and :pep:`529`).
+
+To encode file names to :class:`bytes` during argument parsing, the ``"O&"``
+converter should be used, passing :c:func:`PyUnicode_FSConverter` as the
+conversion function:
 
 .. c:function:: int PyUnicode_FSConverter(PyObject* obj, void* result)
 
@@ -745,12 +741,7 @@ conversion function:
 
    Decode a string from the :term:`filesystem encoding and error handler`.
 
-   If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to the
-   locale encoding.
-
-   :c:data:`Py_FileSystemDefaultEncoding` is initialized at startup from the
-   locale encoding and cannot be modified later. If you need to decode a string
-   from the current locale encoding, use
+   If you need to decode a string from the current locale encoding, use
    :c:func:`PyUnicode_DecodeLocaleAndSize`.
 
    .. seealso::
@@ -758,7 +749,8 @@ conversion function:
       The :c:func:`Py_DecodeLocale` function.
 
    .. versionchanged:: 3.6
-      Use :c:data:`Py_FileSystemDefaultEncodeErrors` error handler.
+      The :term:`filesystem error handler <filesystem encoding and error
+      handler>` is now used.
 
 
 .. c:function:: PyObject* PyUnicode_DecodeFSDefault(const char *s)
@@ -766,28 +758,22 @@ conversion function:
    Decode a null-terminated string from the :term:`filesystem encoding and
    error handler`.
 
-   If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to the
-   locale encoding.
-
-   Use :c:func:`PyUnicode_DecodeFSDefaultAndSize` if you know the string length.
+   If the string length is known, use
+   :c:func:`PyUnicode_DecodeFSDefaultAndSize`.
 
    .. versionchanged:: 3.6
-      Use :c:data:`Py_FileSystemDefaultEncodeErrors` error handler.
+      The :term:`filesystem error handler <filesystem encoding and error
+      handler>` is now used.
 
 
 .. c:function:: PyObject* PyUnicode_EncodeFSDefault(PyObject *unicode)
 
-   Encode a Unicode object to :c:data:`Py_FileSystemDefaultEncoding` with the
-   :c:data:`Py_FileSystemDefaultEncodeErrors` error handler, and return
-   :class:`bytes`. Note that the resulting :class:`bytes` object may contain
-   null bytes.
+   Encode a Unicode object to the :term:`filesystem encoding and error
+   handler`, and return :class:`bytes`. Note that the resulting :class:`bytes`
+   object can contain null bytes.
 
-   If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to the
-   locale encoding.
-
-   :c:data:`Py_FileSystemDefaultEncoding` is initialized at startup from the
-   locale encoding and cannot be modified later. If you need to encode a string
-   to the current locale encoding, use :c:func:`PyUnicode_EncodeLocale`.
+   If you need to encode a string to the current locale encoding, use
+   :c:func:`PyUnicode_EncodeLocale`.
 
    .. seealso::
 
@@ -796,7 +782,8 @@ conversion function:
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.6
-      Use :c:data:`Py_FileSystemDefaultEncodeErrors` error handler.
+      The :term:`filesystem error handler <filesystem encoding and error
+      handler>` is now used.
 
 wchar_t Support
 """""""""""""""
@@ -834,7 +821,7 @@ wchar_t Support
    most C functions. If *size* is ``NULL`` and the :c:type:`wchar_t*` string
    contains null characters a :exc:`ValueError` is raised.
 
-   Returns a buffer allocated by :c:func:`PyMem_Alloc` (use
+   Returns a buffer allocated by :c:func:`PyMem_New` (use
    :c:func:`PyMem_Free` to free it) on success. On error, returns ``NULL``
    and *\*size* is undefined. Raises a :exc:`MemoryError` if memory allocation
    is failed.
@@ -861,10 +848,7 @@ constructor.
 Setting encoding to ``NULL`` causes the default encoding to be used
 which is UTF-8.  The file system calls should use
 :c:func:`PyUnicode_FSConverter` for encoding file names. This uses the
-variable :c:data:`Py_FileSystemDefaultEncoding` internally. This
-variable should be treated as read-only: on some systems, it will be a
-pointer to a static string, on others, it will change at run-time
-(such as when the application invokes setlocale).
+:term:`filesystem encoding and error handler` internally.
 
 Error handling is set by errors which may also be set to ``NULL`` meaning to use
 the default handling defined for the codec.  Default error handling for all

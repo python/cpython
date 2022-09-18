@@ -1,7 +1,6 @@
 __all__ = ()
 
 import reprlib
-from _thread import get_ident
 
 from . import format_helpers
 

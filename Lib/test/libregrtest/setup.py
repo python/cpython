@@ -141,7 +141,7 @@ def _adjust_resource_limits():
     """Adjust the system resource limits (ulimit) if needed."""
     try:
         import resource
-        from resource import RLIMIT_NOFILE, RLIM_INFINITY
+        from resource import RLIMIT_NOFILE
     except ImportError:
         return
     fd_limit, max_fds = resource.getrlimit(RLIMIT_NOFILE)
@@ -157,4 +157,3 @@ def _adjust_resource_limits():
         except (ValueError, OSError) as err:
             print(f"Unable to raise RLIMIT_NOFILE from {fd_limit} to "
                   f"{new_fd_limit}: {err}.")
-

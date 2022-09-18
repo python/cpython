@@ -6,7 +6,6 @@
 #endif
 
 #include "Python.h"
-#include "frameobject.h"
 #include "pycore_frame.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_interpreteridobject.h"
@@ -1932,20 +1931,6 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
         return -1;
     }
 
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-    // Switch to interpreter.
-    PyThreadState *new_tstate = PyInterpreterState_ThreadHead(interp);
-    PyThreadState *save1 = PyEval_SaveThread();
-
-    (void)PyThreadState_Swap(new_tstate);
-
-    // Run the script.
-    _sharedexception *exc = NULL;
-    int result = _run_script(interp, codestr, shared, &exc);
-
-    // Switch back.
-    PyEval_RestoreThread(save1);
-#else
     // Switch to interpreter.
     PyThreadState *save_tstate = NULL;
     if (interp != PyInterpreterState_Get()) {
@@ -1963,7 +1948,6 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
     if (save_tstate != NULL) {
         PyThreadState_Swap(save_tstate);
     }
-#endif
 
     // Propagate any exception out to the caller.
     if (exc != NULL) {
@@ -2338,7 +2322,7 @@ channel_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
             ids = NULL;
             break;
         }
-        PyList_SET_ITEM(ids, i, id);
+        PyList_SET_ITEM(ids, (Py_ssize_t)i, id);
     }
 
 finally:

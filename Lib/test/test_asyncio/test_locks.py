@@ -853,7 +853,7 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(t1.result())
         race_tasks = [t2, t3, t4]
         done_tasks = [t for t in race_tasks if t.done() and t.result()]
-        self.assertTrue(2, len(done_tasks))
+        self.assertEqual(2, len(done_tasks))
 
         # cleanup locked semaphore
         sem.release()
@@ -1271,7 +1271,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
                 # catch here waiting tasks
                 results1.append(True)
             else:
-                # here drained task ouside the barrier
+                # here drained task outside the barrier
                 if rest_of_tasks == barrier._count:
                     # tasks outside the barrier
                     await barrier.reset()
@@ -1377,7 +1377,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
                 # last task exited from barrier
                 await barrier.reset()
 
-                # wit here to reach the `parties`
+                # wait here to reach the `parties`
                 await barrier.wait()
             else:
                 try:

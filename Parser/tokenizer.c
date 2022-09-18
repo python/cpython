@@ -88,6 +88,9 @@ tok_new(void)
     tok->async_def_nl = 0;
     tok->interactive_underflow = IUNDERFLOW_NORMAL;
     tok->str = NULL;
+#ifdef Py_DEBUG
+    tok->debug = _Py_GetConfig()->parser_debug;
+#endif
     return tok;
 }
 
@@ -305,6 +308,10 @@ tok_concatenate_interactive_new_line(struct tok_state *tok, const char *line) {
 
     Py_ssize_t current_size = tok->interactive_src_end - tok->interactive_src_start;
     Py_ssize_t line_size = strlen(line);
+    char last_char = line[line_size > 0 ? line_size - 1 : line_size];
+    if (last_char != '\n') {
+        line_size += 1;
+    }
     char* new_str = tok->interactive_src_start;
 
     new_str = PyMem_Realloc(new_str, current_size + line_size + 1);
@@ -318,7 +325,11 @@ tok_concatenate_interactive_new_line(struct tok_state *tok, const char *line) {
         return -1;
     }
     strcpy(new_str + current_size, line);
-
+    if (last_char != '\n') {
+        /* Last line does not end in \n, fake one */
+        new_str[current_size + line_size - 1] = '\n';
+        new_str[current_size + line_size] = '\0';
+    }
     tok->interactive_src_start = new_str;
     tok->interactive_src_end = new_str + current_size + line_size;
     return 0;
@@ -418,7 +429,7 @@ error:
 static int
 fp_setreadl(struct tok_state *tok, const char* enc)
 {
-    PyObject *readline, *io, *stream;
+    PyObject *readline, *open, *stream;
     int fd;
     long pos;
 
@@ -435,13 +446,13 @@ fp_setreadl(struct tok_state *tok, const char* enc)
         return 0;
     }
 
-    io = PyImport_ImportModule("io");
-    if (io == NULL) {
+    open = _PyImport_GetModuleAttrString("io", "open");
+    if (open == NULL) {
         return 0;
     }
-    stream = _PyObject_CallMethod(io, &_Py_ID(open), "isisOOO",
+    stream = PyObject_CallFunction(open, "isisOOO",
                     fd, "r", -1, enc, Py_None, Py_None, Py_False);
-    Py_DECREF(io);
+    Py_DECREF(open);
     if (stream == NULL) {
         return 0;
     }
@@ -478,25 +489,59 @@ static void fp_ungetc(int c, struct tok_state *tok) {
 
 /* Check whether the characters at s start a valid
    UTF-8 sequence. Return the number of characters forming
-   the sequence if yes, 0 if not.  */
-static int valid_utf8(const unsigned char* s)
+   the sequence if yes, 0 if not.  The special cases match
+   those in stringlib/codecs.h:utf8_decode.
+*/
+static int
+valid_utf8(const unsigned char* s)
 {
     int expected = 0;
     int length;
-    if (*s < 0x80)
+    if (*s < 0x80) {
         /* single-byte code */
         return 1;
-    if (*s < 0xc0)
-        /* following byte */
-        return 0;
-    if (*s < 0xE0)
+    }
+    else if (*s < 0xE0) {
+        /* \xC2\x80-\xDF\xBF -- 0080-07FF */
+        if (*s < 0xC2) {
+            /* invalid sequence
+               \x80-\xBF -- continuation byte
+               \xC0-\xC1 -- fake 0000-007F */
+            return 0;
+        }
         expected = 1;
-    else if (*s < 0xF0)
+    }
+    else if (*s < 0xF0) {
+        /* \xE0\xA0\x80-\xEF\xBF\xBF -- 0800-FFFF */
+        if (*s == 0xE0 && *(s + 1) < 0xA0) {
+            /* invalid sequence
+               \xE0\x80\x80-\xE0\x9F\xBF -- fake 0000-0800 */
+            return 0;
+        }
+        else if (*s == 0xED && *(s + 1) >= 0xA0) {
+            /* Decoding UTF-8 sequences in range \xED\xA0\x80-\xED\xBF\xBF
+               will result in surrogates in range D800-DFFF. Surrogates are
+               not valid UTF-8 so they are rejected.
+               See https://www.unicode.org/versions/Unicode5.2.0/ch03.pdf
+               (table 3-7) and http://www.rfc-editor.org/rfc/rfc3629.txt */
+            return 0;
+        }
         expected = 2;
-    else if (*s < 0xF8)
+    }
+    else if (*s < 0xF5) {
+        /* \xF0\x90\x80\x80-\xF4\x8F\xBF\xBF -- 10000-10FFFF */
+        if (*(s + 1) < 0x90 ? *s == 0xF0 : *s == 0xF4) {
+            /* invalid sequence -- one of:
+               \xF0\x80\x80\x80-\xF0\x8F\xBF\xBF -- fake 0000-FFFF
+               \xF4\x90\x80\x80- -- 110000- overflow */
+            return 0;
+        }
         expected = 3;
-    else
+    }
+    else {
+        /* invalid start byte */
         return 0;
+    }
     length = expected + 1;
     for (; expected; expected--)
         if (s[expected] < 0x80 || s[expected] >= 0xC0)
@@ -517,14 +562,12 @@ ensure_utf8(char *line, struct tok_state *tok)
         }
     }
     if (badchar) {
-        /* Need to add 1 to the line number, since this line
-       has not been counted, yet.  */
         PyErr_Format(PyExc_SyntaxError,
                      "Non-UTF-8 code starting with '\\x%.2x' "
                      "in file %U on line %i, "
                      "but no encoding declared; "
                      "see https://peps.python.org/pep-0263/ for details",
-                     badchar, tok->filename, tok->lineno + 1);
+                     badchar, tok->filename, tok->lineno);
         return 0;
     }
     return 1;
@@ -1021,7 +1064,7 @@ tok_nextc(struct tok_state *tok)
             rc = tok_underflow_file(tok);
         }
 #if defined(Py_DEBUG)
-        if (Py_DebugFlag) {
+        if (tok->debug) {
             fprintf(stderr, "line[%d] = ", tok->lineno);
             print_escape(stderr, tok->cur, tok->inp - tok->cur);
             fprintf(stderr, "  tok->done = %d\n", tok->done);
@@ -1102,11 +1145,7 @@ static int
 syntaxerror(struct tok_state *tok, const char *format, ...)
 {
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     int ret = _syntaxerror_range(tok, format, -1, -1, vargs);
     va_end(vargs);
     return ret;
@@ -1118,11 +1157,7 @@ syntaxerror_known_range(struct tok_state *tok,
                         const char *format, ...)
 {
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     int ret = _syntaxerror_range(tok, format, col_offset, end_col_offset, vargs);
     va_end(vargs);
     return ret;
@@ -1143,11 +1178,7 @@ parser_warn(struct tok_state *tok, PyObject *category, const char *format, ...)
 {
     PyObject *errmsg;
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     errmsg = PyUnicode_FromFormatV(format, vargs);
     va_end(vargs);
     if (!errmsg) {
@@ -1502,7 +1533,7 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
     } while (c == ' ' || c == '\t' || c == '\014');
 
     /* Set start of current token */
-    tok->start = tok->cur - 1;
+    tok->start = tok->cur == NULL ? NULL : tok->cur - 1;
 
     /* Skip comment, unless it's a type comment */
     if (c == '#') {
@@ -1937,6 +1968,8 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
         /* Get rest of string */
         while (end_quote_size != quote_size) {
             c = tok_nextc(tok);
+            if (tok->done == E_DECODE)
+                break;
             if (c == EOF || (quote_size == 1 && c == '\n')) {
                 assert(tok->multi_line_start != NULL);
                 // shift the tok_state's location into

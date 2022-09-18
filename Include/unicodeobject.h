@@ -113,7 +113,7 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 
 #define PyUnicode_Check(op) \
     PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_UNICODE_SUBCLASS)
-#define PyUnicode_CheckExact(op) Py_IS_TYPE(op, &PyUnicode_Type)
+#define PyUnicode_CheckExact(op) Py_IS_TYPE((op), &PyUnicode_Type)
 
 /* --- Constants ---------------------------------------------------------- */
 
@@ -755,38 +755,22 @@ PyAPI_FUNC(int) PyUnicode_FSConverter(PyObject*, void*);
 
 PyAPI_FUNC(int) PyUnicode_FSDecoder(PyObject*, void*);
 
-/* Decode a null-terminated string using Py_FileSystemDefaultEncoding
-   and the "surrogateescape" error handler.
+/* Decode a null-terminated string from the Python filesystem encoding
+   and error handler.
 
-   If Py_FileSystemDefaultEncoding is not set, fall back to the locale
-   encoding.
-
-   Use PyUnicode_DecodeFSDefaultAndSize() if the string length is known.
-*/
-
+   If the string length is known, use PyUnicode_DecodeFSDefaultAndSize(). */
 PyAPI_FUNC(PyObject*) PyUnicode_DecodeFSDefault(
     const char *s               /* encoded string */
     );
 
-/* Decode a string using Py_FileSystemDefaultEncoding
-   and the "surrogateescape" error handler.
-
-   If Py_FileSystemDefaultEncoding is not set, fall back to the locale
-   encoding.
-*/
-
+/* Decode a string from the Python filesystem encoding and error handler. */
 PyAPI_FUNC(PyObject*) PyUnicode_DecodeFSDefaultAndSize(
     const char *s,               /* encoded string */
     Py_ssize_t size              /* size */
     );
 
-/* Encode a Unicode object to Py_FileSystemDefaultEncoding with the
-   "surrogateescape" error handler, and return bytes.
-
-   If Py_FileSystemDefaultEncoding is not set, fall back to the locale
-   encoding.
-*/
-
+/* Encode a Unicode object to the Python filesystem encoding and error handler.
+   Return bytes. */
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeFSDefault(
     PyObject *unicode
     );

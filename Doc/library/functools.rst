@@ -49,6 +49,9 @@ The :mod:`functools` module defines the following functions:
         >>> factorial(12)      # makes two new recursive calls, the other 10 are cached
         479001600
 
+   The cache is threadsafe so the wrapped function can be used in multiple
+   threads.
+
    .. versionadded:: 3.9
 
 
@@ -119,7 +122,7 @@ The :mod:`functools` module defines the following functions:
    tool for programs being converted from Python 2 which supported the use of
    comparison functions.
 
-   A comparison function is any callable that accept two arguments, compares them,
+   A comparison function is any callable that accepts two arguments, compares them,
    and returns a negative number for less-than, zero for equality, or a positive
    number for greater-than.  A key function is a callable that accepts one
    argument and returns another value to be used as the sort key.
@@ -139,6 +142,9 @@ The :mod:`functools` module defines the following functions:
    Decorator to wrap a function with a memoizing callable that saves up to the
    *maxsize* most recent calls.  It can save time when an expensive or I/O bound
    function is periodically called with the same arguments.
+
+   The cache is threadsafe so the wrapped function can be used in multiple
+   threads.
 
    Since a dictionary is used to cache results, the positional and keyword
    arguments to the function must be hashable.

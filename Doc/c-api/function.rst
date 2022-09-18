@@ -83,6 +83,15 @@ There are a few functions specific to Python functions.
    Raises :exc:`SystemError` and returns ``-1`` on failure.
 
 
+.. c:function:: void PyFunction_SetVectorcall(PyFunctionObject *func, vectorcallfunc vectorcall)
+
+   Set the vectorcall field of a given function object *func*.
+
+   Warning: extensions using this API must preserve the behavior
+   of the unaltered (default) vectorcall function!
+
+   .. versionadded:: 3.12
+
 .. c:function:: PyObject* PyFunction_GetClosure(PyObject *op)
 
    Return the closure associated with the function object *op*. This can be ``NULL``

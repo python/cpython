@@ -21,6 +21,7 @@ authentication, redirections, cookies and more.
     The `Requests package <https://requests.readthedocs.io/en/master/>`_
     is recommended for a higher-level HTTP client interface.
 
+.. include:: ../includes/wasm-notavail.rst
 
 The :mod:`urllib.request` module defines the following functions:
 
@@ -1279,7 +1280,7 @@ involved.  For example, the :envvar:`http_proxy` environment variable is read to
 obtain the HTTP proxy's URL.
 
 This example replaces the default :class:`ProxyHandler` with one that uses
-programmatically-supplied proxy URLs, and adds proxy authorization support with
+programmatically supplied proxy URLs, and adds proxy authorization support with
 :class:`ProxyBasicAuthHandler`. ::
 
    proxy_handler = urllib.request.ProxyHandler({'http': 'http://www.example.com:3128/'})
