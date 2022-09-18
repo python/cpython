@@ -241,6 +241,41 @@ class BaseQueueTestMixin(BlockingTestMixin):
         with self.assertRaises(self.queue.Full):
             q.put_nowait(4)
 
+    def test_shutdown_empty(self):
+        q = self.type2test()
+        q.shutdown()
+        try:
+            q.put("data")
+            self.fail("Didn't appear to shut-down queue")
+        except self.queue.ShutDown:
+            pass
+        try:
+            q.get()
+            self.fail("Didn't appear to shut-down queue")
+        except self.queue.ShutDown:
+            pass
+
+    def test_shutdown_nonempty(self):
+        q = self.type2test()
+        q.put("data")
+        q.shutdown()
+        q.get()
+        try:
+            q.get()
+            self.fail("Didn't appear to shut-down queue")
+        except self.queue.ShutDown:
+            pass
+
+    def test_shutdown_immediate(self):
+        q = self.type2test()
+        q.put("data")
+        q.shutdown(immediate=True)
+        try:
+            q.get()
+            self.fail("Didn't appear to shut-down queue")
+        except self.queue.ShutDown:
+            pass
+
 class QueueTest(BaseQueueTestMixin):
 
     def setUp(self):

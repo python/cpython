@@ -187,23 +187,31 @@ class Queue:
         with self.not_empty:
             if not block:
                 if not self._qsize():
+                    if self.shutdown_state != _queue_alive:
+                        raise ShutDown
                     raise Empty
             elif timeout is None:
                 while not self._qsize():
+                    if self.shutdown_state != _queue_alive:
+                        raise ShutDown
                     self.not_empty.wait()
-                    if self.shutdown_state == _queue_shutdown_immediate:
+                    if self.shutdown_state != _queue_alive:
                         raise ShutDown
             elif timeout < 0:
                 raise ValueError("'timeout' must be a non-negative number")
             else:
                 endtime = time() + timeout
                 while not self._qsize():
+                    if self.shutdown_state != _queue_alive:
+                        raise ShutDown
                     remaining = endtime - time()
                     if remaining <= 0.0:
                         raise Empty
                     self.not_empty.wait(remaining)
-                    if self.shutdown_state == _queue_shutdown_immediate:
+                    if self.shutdown_state != _queue_alive:
                         raise ShutDown
+            if self.shutdown_state == _queue_shutdown_immediate:
+                raise ShutDown
             item = self._get()
             self.not_full.notify()
             return item
@@ -230,18 +238,16 @@ class Queue:
         By default, gets will only raise once the queue is empty. Set
         'immediate' to True to make gets raise immediately instead.
 
-        All blocked callers of put(), get() and join() will be
-        unblocked. The ShutDown exception is raised.
+        All blocked callers of put() will be unblocked, and also get()
+        and join() if 'immediate'. The ShutDown exception is raised.
         '''
-        if immediate:
-            self.shutdown_state = _queue_shutdown_immediate
-            with self.not_empty:
+        with self.mutex:
+            if immediate:
+                self.shutdown_state = _queue_shutdown_immediate
                 self.not_empty.notify_all()
-            with self.all_tasks_done:
                 self.all_tasks_done.notify_all()
-        else:
-            self.shutdown_state = _queue_shutdown
-        with self.not_full:
+            else:
+                self.shutdown_state = _queue_shutdown
             self.not_full.notify_all()
 
     # Override these methods to implement other queue organizations
