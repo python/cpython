@@ -4918,6 +4918,7 @@ meth_fastcall_keywords(PyObject* self, PyObject* const* args,
     if (pyargs == NULL) {
         return NULL;
     }
+    assert(args != NULL);
     PyObject *pykwargs = PyObject_Vectorcall((PyObject*)&PyDict_Type,
                                               args + nargs, 0, kwargs);
     return Py_BuildValue("NNN", _null_to_none(self), pyargs, pykwargs);
