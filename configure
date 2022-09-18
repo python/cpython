@@ -8473,7 +8473,7 @@ $as_echo_n "checking for --with-strict-overflow... " >&6; }
 if test "${with_strict_overflow+set}" = set; then :
   withval=$with_strict_overflow;
 else
-  with_fstrict_overflow=no
+  with_strict_overflow=no
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_strict_overflow" >&5
