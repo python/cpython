@@ -1,1 +1,1 @@
-Explicitly mark C modules that need defined signed integer overflow.  (So that in future we can turn off the blanket `-fwrapv`, and enjoy more C compiler optimizations.)
+Explicitly mark C modules that need defined signed integer overflow, and set up machinery for `-fstrict-overflow`.
