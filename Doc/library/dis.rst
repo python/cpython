@@ -567,6 +567,17 @@ the original TOS1.
     .. versionchanged:: 3.11
        Exception representation on the stack now consist of one, not three, items.
 
+
+.. opcode:: CLEANUP_THROW
+
+   Handles an exception raised during a :meth:`~generator.throw` or
+   :meth:`~generator.close` call through the current frame.  If TOS is an
+   instance of :exc:`StopIteration`, pop three values from the stack and push
+   its ``value`` member.  Otherwise, re-raise TOS.
+
+   .. versionadded:: 3.12
+
+
 .. opcode:: BEFORE_ASYNC_WITH
 
    Resolves ``__aenter__`` and ``__aexit__`` from the object on top of the
@@ -988,60 +999,48 @@ iterations of the loop.
    .. versionadded:: 3.11
 
 
-.. opcode:: POP_JUMP_FORWARD_IF_TRUE (delta)
+.. opcode:: POP_JUMP_IF_TRUE (delta)
 
    If TOS is true, increments the bytecode counter by *delta*.  TOS is popped.
 
-   .. versionadded:: 3.11
+   .. versionchanged:: 3.11
+      The oparg is now a relative delta rather than an absolute target.
+      This opcode is a pseudo-instruction, replaced in final bytecode by
+      the directed versions (forward/backward).
 
+   .. versionchanged:: 3.12
+      This is no longer a pseudo-instruction.
 
-.. opcode:: POP_JUMP_BACKWARD_IF_TRUE (delta)
-
-   If TOS is true, decrements the bytecode counter by *delta*.  TOS is popped.
-
-   .. versionadded:: 3.11
-
-
-.. opcode:: POP_JUMP_FORWARD_IF_FALSE (delta)
+.. opcode:: POP_JUMP_IF_FALSE (delta)
 
    If TOS is false, increments the bytecode counter by *delta*.  TOS is popped.
 
-   .. versionadded:: 3.11
+   .. versionchanged:: 3.11
+      The oparg is now a relative delta rather than an absolute target.
+      This opcode is a pseudo-instruction, replaced in final bytecode by
+      the directed versions (forward/backward).
 
+   .. versionchanged:: 3.12
+      This is no longer a pseudo-instruction.
 
-.. opcode:: POP_JUMP_BACKWARD_IF_FALSE (delta)
-
-   If TOS is false, decrements the bytecode counter by *delta*.  TOS is popped.
-
-   .. versionadded:: 3.11
-
-
-.. opcode:: POP_JUMP_FORWARD_IF_NOT_NONE (delta)
+.. opcode:: POP_JUMP_IF_NOT_NONE (delta)
 
    If TOS is not ``None``, increments the bytecode counter by *delta*.  TOS is popped.
 
    .. versionadded:: 3.11
 
-
-.. opcode:: POP_JUMP_BACKWARD_IF_NOT_NONE (delta)
-
-   If TOS is not ``None``, decrements the bytecode counter by *delta*.  TOS is popped.
-
-   .. versionadded:: 3.11
+   .. versionchanged:: 3.12
+      This is no longer a pseudo-instruction.
 
 
-.. opcode:: POP_JUMP_FORWARD_IF_NONE (delta)
+.. opcode:: POP_JUMP_IF_NONE (delta)
 
    If TOS is ``None``, increments the bytecode counter by *delta*.  TOS is popped.
 
    .. versionadded:: 3.11
 
-
-.. opcode:: POP_JUMP_BACKWARD_IF_NONE (delta)
-
-   If TOS is ``None``, decrements the bytecode counter by *delta*.  TOS is popped.
-
-   .. versionadded:: 3.11
+   .. versionchanged:: 3.12
+      This is no longer a pseudo-instruction.
 
 
 .. opcode:: JUMP_IF_TRUE_OR_POP (delta)
@@ -1344,10 +1343,14 @@ iterations of the loop.
     .. versionadded:: 3.11
 
 
-.. opcode:: SEND
+.. opcode:: SEND (delta)
 
-    Sends ``None`` to the sub-generator of this generator.
-    Used in ``yield from`` and ``await`` statements.
+    Equivalent to ``TOS = TOS1.send(TOS)``. Used in ``yield from`` and ``await``
+    statements.
+
+    If the call raises :exc:`StopIteration`, pop both items, push the
+    exception's ``value`` attribute, and increment the bytecode counter by
+    *delta*.
 
     .. versionadded:: 3.11
 
@@ -1418,10 +1421,6 @@ but are replaced by real opcodes or removed before bytecode is generated.
 
 .. opcode:: JUMP
 .. opcode:: JUMP_NO_INTERRUPT
-.. opcode:: POP_JUMP_IF_FALSE
-.. opcode:: POP_JUMP_IF_TRUE
-.. opcode:: POP_JUMP_IF_NONE
-.. opcode:: POP_JUMP_IF_NOT_NONE
 
    Undirected relative jump instructions which are replaced by their
    directed (forward/backward) counterparts by the assembler.

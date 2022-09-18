@@ -104,7 +104,7 @@ These functions calculate statistics regarding relations between two inputs.
 
 =========================  =====================================================
 :func:`covariance`         Sample covariance for two variables.
-:func:`correlation`        Pearson's correlation coefficient for two variables.
+:func:`correlation`        Pearson and Spearman's correlation coefficients.
 :func:`linear_regression`  Slope and intercept for simple linear regression.
 =========================  =====================================================
 
@@ -648,30 +648,56 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    .. versionadded:: 3.10
 
-.. function:: correlation(x, y, /)
+.. function:: correlation(x, y, /, *, method='linear')
 
    Return the `Pearson's correlation coefficient
    <https://en.wikipedia.org/wiki/Pearson_correlation_coefficient>`_
    for two inputs. Pearson's correlation coefficient *r* takes values
-   between -1 and +1. It measures the strength and direction of the linear
-   relationship, where +1 means very strong, positive linear relationship,
-   -1 very strong, negative linear relationship, and 0 no linear relationship.
+   between -1 and +1. It measures the strength and direction of a linear
+   relationship.
+
+   If *method* is "ranked", computes `Spearman's rank correlation coefficient
+   <https://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient>`_
+   for two inputs. The data is replaced by ranks.  Ties are averaged so that
+   equal values receive the same rank.  The resulting coefficient measures the
+   strength of a monotonic relationship.
+
+   Spearman's correlation coefficient is appropriate for ordinal data or for
+   continuous data that doesn't meet the linear proportion requirement for
+   Pearson's correlation coefficient.
 
    Both inputs must be of the same length (no less than two), and need
    not to be constant, otherwise :exc:`StatisticsError` is raised.
 
-   Examples:
+   Example with `Kepler's laws of planetary motion
+   <https://en.wikipedia.org/wiki/Kepler's_laws_of_planetary_motion>`_:
 
    .. doctest::
 
-      >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-      >>> y = [9, 8, 7, 6, 5, 4, 3, 2, 1]
-      >>> correlation(x, x)
+      >>> # Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, and  Neptune
+      >>> orbital_period = [88, 225, 365, 687, 4331, 10_756, 30_687, 60_190]    # days
+      >>> dist_from_sun = [58, 108, 150, 228, 778, 1_400, 2_900, 4_500] # million km
+
+      >>> # Show that a perfect monotonic relationship exists
+      >>> correlation(orbital_period, dist_from_sun, method='ranked')
       1.0
-      >>> correlation(x, y)
-      -1.0
+
+      >>> # Observe that a linear relationship is imperfect
+      >>> round(correlation(orbital_period, dist_from_sun), 4)
+      0.9882
+
+      >>> # Demonstrate Kepler's third law: There is a linear correlation
+      >>> # between the square of the orbital period and the cube of the
+      >>> # distance from the sun.
+      >>> period_squared = [p * p for p in orbital_period]
+      >>> dist_cubed = [d * d * d for d in dist_from_sun]
+      >>> round(correlation(period_squared, dist_cubed), 4)
+      1.0
 
    .. versionadded:: 3.10
+
+   .. versionchanged:: 3.12
+      Added support for Spearman's rank correlation coefficient.
 
 .. function:: linear_regression(x, y, /, *, proportional=False)
 

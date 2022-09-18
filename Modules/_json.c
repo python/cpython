@@ -12,6 +12,7 @@
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "structmember.h"         // PyMemberDef
+#include <stdbool.h>              // bool
 
 
 typedef struct _PyScannerObject {
@@ -1492,16 +1493,78 @@ encoder_listencode_obj(PyEncoderObject *s, _PyUnicodeWriter *writer,
 }
 
 static int
+encoder_encode_key_value(PyEncoderObject *s, _PyUnicodeWriter *writer, bool *first,
+                         PyObject *key, PyObject *value, Py_ssize_t indent_level)
+{
+    PyObject *keystr = NULL;
+    PyObject *encoded;
+
+    if (PyUnicode_Check(key)) {
+        Py_INCREF(key);
+        keystr = key;
+    }
+    else if (PyFloat_Check(key)) {
+        keystr = encoder_encode_float(s, key);
+    }
+    else if (key == Py_True || key == Py_False || key == Py_None) {
+                    /* This must come before the PyLong_Check because
+                       True and False are also 1 and 0.*/
+        keystr = _encoded_const(key);
+    }
+    else if (PyLong_Check(key)) {
+        keystr = PyLong_Type.tp_repr(key);
+    }
+    else if (s->skipkeys) {
+        return 0;
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "keys must be str, int, float, bool or None, "
+                     "not %.100s", Py_TYPE(key)->tp_name);
+        return -1;
+    }
+
+    if (keystr == NULL) {
+        return -1;
+    }
+
+    if (*first) {
+        *first = false;
+    } 
+    else {
+        if (_PyUnicodeWriter_WriteStr(writer, s->item_separator) < 0) {
+            Py_DECREF(keystr);
+            return -1;
+        }
+    }
+
+    encoded = encoder_encode_string(s, keystr);
+    Py_DECREF(keystr);
+    if (encoded == NULL) {
+        return -1;
+    }
+
+    if (_steal_accumulate(writer, encoded) < 0) {
+        return -1;
+    }
+    if (_PyUnicodeWriter_WriteStr(writer, s->key_separator) < 0) {
+        return -1;
+    }
+    if (encoder_listencode_obj(s, writer, value, indent_level) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static int
 encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
                         PyObject *dct, Py_ssize_t indent_level)
 {
     /* Encode Python dict dct a JSON term */
-    PyObject *kstr = NULL;
     PyObject *ident = NULL;
-    PyObject *it = NULL;
-    PyObject *items;
-    PyObject *item = NULL;
-    Py_ssize_t idx;
+    PyObject *items = NULL;
+    PyObject *key, *value;
+    bool first = true;
 
     if (PyDict_GET_SIZE(dct) == 0)  /* Fast path */
         return _PyUnicodeWriter_WriteASCIIString(writer, "{}", 2);
@@ -1535,84 +1598,34 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
         */
     }
 
-    items = PyMapping_Items(dct);
-    if (items == NULL)
-        goto bail;
-    if (s->sort_keys && PyList_Sort(items) < 0) {
-        Py_DECREF(items);
-        goto bail;
-    }
-    it = PyObject_GetIter(items);
-    Py_DECREF(items);
-    if (it == NULL)
-        goto bail;
-    idx = 0;
-    while ((item = PyIter_Next(it)) != NULL) {
-        PyObject *encoded, *key, *value;
-        if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
-            PyErr_SetString(PyExc_ValueError, "items must return 2-tuples");
+    if (s->sort_keys) {
+
+        items = PyDict_Items(dct);
+        if (items == NULL || PyList_Sort(items) < 0)
             goto bail;
-        }
-        key = PyTuple_GET_ITEM(item, 0);
-        if (PyUnicode_Check(key)) {
-            Py_INCREF(key);
-            kstr = key;
-        }
-        else if (PyFloat_Check(key)) {
-            kstr = encoder_encode_float(s, key);
-            if (kstr == NULL)
-                goto bail;
-        }
-        else if (key == Py_True || key == Py_False || key == Py_None) {
-                        /* This must come before the PyLong_Check because
-                           True and False are also 1 and 0.*/
-            kstr = _encoded_const(key);
-            if (kstr == NULL)
-                goto bail;
-        }
-        else if (PyLong_Check(key)) {
-            kstr = PyLong_Type.tp_repr(key);
-            if (kstr == NULL) {
+
+        for (Py_ssize_t  i = 0; i < PyList_GET_SIZE(items); i++) {
+            PyObject *item = PyList_GET_ITEM(items, i);
+
+            if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
+                PyErr_SetString(PyExc_ValueError, "items must return 2-tuples");
                 goto bail;
             }
-        }
-        else if (s->skipkeys) {
-            Py_DECREF(item);
-            continue;
-        }
-        else {
-            PyErr_Format(PyExc_TypeError,
-                         "keys must be str, int, float, bool or None, "
-                         "not %.100s", Py_TYPE(key)->tp_name);
-            goto bail;
-        }
 
-        if (idx) {
-            if (_PyUnicodeWriter_WriteStr(writer, s->item_separator))
+            key = PyTuple_GET_ITEM(item, 0);
+            value = PyTuple_GET_ITEM(item, 1);
+            if (encoder_encode_key_value(s, writer, &first, key, value, indent_level) < 0)
                 goto bail;
         }
+        Py_CLEAR(items);
 
-        encoded = encoder_encode_string(s, kstr);
-        Py_CLEAR(kstr);
-        if (encoded == NULL)
-            goto bail;
-        if (_PyUnicodeWriter_WriteStr(writer, encoded)) {
-            Py_DECREF(encoded);
-            goto bail;
+    } else {
+        Py_ssize_t pos = 0;
+        while (PyDict_Next(dct, &pos, &key, &value)) {
+            if (encoder_encode_key_value(s, writer, &first, key, value, indent_level) < 0)
+                goto bail;
         }
-        Py_DECREF(encoded);
-        if (_PyUnicodeWriter_WriteStr(writer, s->key_separator))
-            goto bail;
-
-        value = PyTuple_GET_ITEM(item, 1);
-        if (encoder_listencode_obj(s, writer, value, indent_level))
-            goto bail;
-        idx += 1;
-        Py_DECREF(item);
     }
-    if (PyErr_Occurred())
-        goto bail;
-    Py_CLEAR(it);
 
     if (ident != NULL) {
         if (PyDict_DelItem(s->markers, ident))
@@ -1630,13 +1643,10 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
     return 0;
 
 bail:
-    Py_XDECREF(it);
-    Py_XDECREF(item);
-    Py_XDECREF(kstr);
+    Py_XDECREF(items);
     Py_XDECREF(ident);
     return -1;
 }
-
 
 static int
 encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer,

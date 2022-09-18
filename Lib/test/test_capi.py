@@ -539,6 +539,30 @@ class CAPITest(unittest.TestCase):
         inst = _testcapi.HeapCTypeWithDict()
         self.assertEqual({}, inst.__dict__)
 
+    def test_heaptype_with_managed_dict(self):
+        inst = _testcapi.HeapCTypeWithManagedDict()
+        inst.foo = 42
+        self.assertEqual(inst.foo, 42)
+        self.assertEqual(inst.__dict__, {"foo": 42})
+
+        inst = _testcapi.HeapCTypeWithManagedDict()
+        self.assertEqual({}, inst.__dict__)
+
+        a = _testcapi.HeapCTypeWithManagedDict()
+        b = _testcapi.HeapCTypeWithManagedDict()
+        a.b = b
+        b.a = a
+        del a, b
+
+    def test_sublclassing_managed_dict(self):
+
+        class C(_testcapi.HeapCTypeWithManagedDict):
+            pass
+
+        i = C()
+        i.spam = i
+        del i
+
     def test_heaptype_with_negative_dict(self):
         inst = _testcapi.HeapCTypeWithNegativeDict()
         inst.foo = 42
@@ -554,6 +578,37 @@ class CAPITest(unittest.TestCase):
         ref = weakref.ref(inst)
         self.assertEqual(ref(), inst)
         self.assertEqual(inst.weakreflist, ref)
+
+    def test_heaptype_with_managed_weakref(self):
+        inst = _testcapi.HeapCTypeWithManagedWeakref()
+        ref = weakref.ref(inst)
+        self.assertEqual(ref(), inst)
+
+    def test_sublclassing_managed_weakref(self):
+
+        class C(_testcapi.HeapCTypeWithManagedWeakref):
+            pass
+
+        inst = C()
+        ref = weakref.ref(inst)
+        self.assertEqual(ref(), inst)
+
+    def test_sublclassing_managed_both(self):
+
+        class C1(_testcapi.HeapCTypeWithManagedWeakref, _testcapi.HeapCTypeWithManagedDict):
+            pass
+
+        class C2(_testcapi.HeapCTypeWithManagedDict, _testcapi.HeapCTypeWithManagedWeakref):
+            pass
+
+        for cls in (C1, C2):
+            inst = cls()
+            ref = weakref.ref(inst)
+            self.assertEqual(ref(), inst)
+            inst.spam = inst
+            del inst
+            ref = weakref.ref(cls())
+            self.assertIs(ref(), None)
 
     def test_heaptype_with_buffer(self):
         inst = _testcapi.HeapCTypeWithBuffer()
@@ -622,21 +677,43 @@ class CAPITest(unittest.TestCase):
 
     def test_multiple_inheritance_ctypes_with_weakref_or_dict(self):
 
-        class Both1(_testcapi.HeapCTypeWithWeakref, _testcapi.HeapCTypeWithDict):
+        with self.assertRaises(TypeError):
+            class Both1(_testcapi.HeapCTypeWithWeakref, _testcapi.HeapCTypeWithDict):
+                pass
+        with self.assertRaises(TypeError):
+            class Both2(_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithWeakref):
+                pass
+
+    def test_multiple_inheritance_ctypes_with_weakref_or_dict_and_other_builtin(self):
+
+        with self.assertRaises(TypeError):
+            class C1(_testcapi.HeapCTypeWithDict, list):
+                pass
+
+        with self.assertRaises(TypeError):
+            class C2(_testcapi.HeapCTypeWithWeakref, list):
+                pass
+
+        class C3(_testcapi.HeapCTypeWithManagedDict, list):
             pass
-        class Both2(_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithWeakref):
+        class C4(_testcapi.HeapCTypeWithManagedWeakref, list):
             pass
 
-        for cls in (_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithDict2,
-            _testcapi.HeapCTypeWithWeakref, _testcapi.HeapCTypeWithWeakref2):
-            for cls2 in (_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithDict2,
-                _testcapi.HeapCTypeWithWeakref, _testcapi.HeapCTypeWithWeakref2):
-                if cls is not cls2:
-                    class S(cls, cls2):
-                        pass
-            class B1(Both1, cls):
+        inst = C3()
+        inst.append(0)
+        str(inst.__dict__)
+
+        inst = C4()
+        inst.append(0)
+        str(inst.__weakref__)
+
+        for cls in (_testcapi.HeapCTypeWithManagedDict, _testcapi.HeapCTypeWithManagedWeakref):
+            for cls2 in (_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithWeakref):
+                class S(cls, cls2):
+                    pass
+            class B1(C3, cls):
                 pass
-            class B2(Both1, cls):
+            class B2(C4, cls):
                 pass
 
     def test_pytype_fromspec_with_repeated_slots(self):
@@ -645,6 +722,7 @@ class CAPITest(unittest.TestCase):
                 with self.assertRaises(SystemError):
                     _testcapi.create_type_from_repeated_slots(variant)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_immutable_type_with_mutable_base(self):
         # Add deprecation warning here so it's removed in 3.14
         warnings._deprecated(
@@ -675,14 +753,30 @@ class CAPITest(unittest.TestCase):
 
     def test_pynumber_tobase(self):
         from _testcapi import pynumber_tobase
-        self.assertEqual(pynumber_tobase(123, 2), '0b1111011')
-        self.assertEqual(pynumber_tobase(123, 8), '0o173')
-        self.assertEqual(pynumber_tobase(123, 10), '123')
-        self.assertEqual(pynumber_tobase(123, 16), '0x7b')
-        self.assertEqual(pynumber_tobase(-123, 2), '-0b1111011')
-        self.assertEqual(pynumber_tobase(-123, 8), '-0o173')
-        self.assertEqual(pynumber_tobase(-123, 10), '-123')
-        self.assertEqual(pynumber_tobase(-123, 16), '-0x7b')
+        small_number = 123
+        large_number = 2**64
+        class IDX:
+            def __init__(self, val):
+                self.val = val
+            def __index__(self):
+                return self.val
+
+        test_cases = ((2, '0b1111011', '0b10000000000000000000000000000000000000000000000000000000000000000'),
+                      (8, '0o173', '0o2000000000000000000000'),
+                      (10, '123', '18446744073709551616'),
+                      (16, '0x7b', '0x10000000000000000'))
+        for base, small_target, large_target in test_cases:
+            with self.subTest(base=base, st=small_target, lt=large_target):
+                # Test for small number
+                self.assertEqual(pynumber_tobase(small_number, base), small_target)
+                self.assertEqual(pynumber_tobase(-small_number, base), '-' + small_target)
+                self.assertEqual(pynumber_tobase(IDX(small_number), base), small_target)
+                # Test for large number(out of range of a longlong,i.e.[-2**63, 2**63-1])
+                self.assertEqual(pynumber_tobase(large_number, base), large_target)
+                self.assertEqual(pynumber_tobase(-large_number, base), '-' + large_target)
+                self.assertEqual(pynumber_tobase(IDX(large_number), base), large_target)
+        self.assertRaises(TypeError, pynumber_tobase, IDX(123.0), 10)
+        self.assertRaises(TypeError, pynumber_tobase, IDX('123'), 10)
         self.assertRaises(TypeError, pynumber_tobase, 123.0, 10)
         self.assertRaises(TypeError, pynumber_tobase, '123', 10)
         self.assertRaises(SystemError, pynumber_tobase, 123, 0)
@@ -974,6 +1068,21 @@ class TestThreadState(unittest.TestCase):
         t = threading.Thread(target=target)
         t.start()
         t.join()
+
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_gilstate_ensure_no_deadlock(self):
+        # See https://github.com/python/cpython/issues/96071
+        code = textwrap.dedent(f"""
+            import _testcapi
+
+            def callback():
+                print('callback called')
+
+            _testcapi._test_thread_state(callback)
+            """)
+        ret = assert_python_ok('-X', 'tracemalloc', '-c', code)
+        self.assertIn(b'callback called', ret.out)
 
 
 class Test_testcapi(unittest.TestCase):
