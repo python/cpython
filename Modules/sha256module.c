@@ -15,12 +15,15 @@
 */
 
 /* SHA objects */
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_bswap32()
+#include "pycore_strhex.h"        // _Py_strhex()
 #include "structmember.h"         // PyMemberDef
 #include "hashlib.h"
-#include "pystrhex.h"
 
 /*[clinic input]
 module _sha256

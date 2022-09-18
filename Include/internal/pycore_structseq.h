@@ -9,11 +9,25 @@ extern "C" {
 #endif
 
 
-PyAPI_FUNC(int) _PyStructSequence_InitType(
+/* other API */
+
+PyAPI_FUNC(PyTypeObject *) _PyStructSequence_NewType(
+    PyStructSequence_Desc *desc,
+    unsigned long tp_flags);
+
+PyAPI_FUNC(int) _PyStructSequence_InitBuiltinWithFlags(
     PyTypeObject *type,
     PyStructSequence_Desc *desc,
     unsigned long tp_flags);
 
+static inline int
+_PyStructSequence_InitBuiltin(PyTypeObject *type,
+                              PyStructSequence_Desc *desc)
+{
+    return _PyStructSequence_InitBuiltinWithFlags(type, desc, 0);
+}
+
+extern void _PyStructSequence_FiniType(PyTypeObject *type);
 
 #ifdef __cplusplus
 }

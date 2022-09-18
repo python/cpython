@@ -5,11 +5,6 @@
 extern "C" {
 #endif
 
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _Py_subs_parameters(PyObject *, PyObject *, PyObject *, PyObject *);
-PyAPI_FUNC(PyObject *) _Py_make_parameters(PyObject *);
-#endif
-
 PyAPI_FUNC(PyObject *) Py_GenericAlias(PyObject *, PyObject *);
 PyAPI_DATA(PyTypeObject) Py_GenericAliasType;
 

@@ -4,6 +4,8 @@
 #include <windows.h>
 #endif
 
+#include <stdlib.h>               // qsort()
+
 #define EXPORT(x) Py_EXPORTED_SYMBOL x
 
 /* some functions handy for testing */
@@ -1034,7 +1036,7 @@ EXPORT (HRESULT) KeepObject(IUnknown *punk)
 
 static struct PyModuleDef_Slot _ctypes_test_slots[] = {
     {0, NULL}
-}; 
+};
 
 static struct PyModuleDef _ctypes_testmodule = {
     PyModuleDef_HEAD_INIT,

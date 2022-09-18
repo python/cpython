@@ -1,1 +1,0 @@
-String caches in ``compile.c`` are now subinterpreter compatible.

@@ -30,41 +30,67 @@
 #define MODULE_NAME "sqlite3"
 
 typedef struct {
+    PyObject *DataError;
     PyObject *DatabaseError;
     PyObject *Error;
+    PyObject *IntegrityError;
     PyObject *InterfaceError;
     PyObject *InternalError;
+    PyObject *NotSupportedError;
+    PyObject *OperationalError;
+    PyObject *ProgrammingError;
     PyObject *Warning;
+
+
+    /* A dictionary, mapping column types (INTEGER, VARCHAR, etc.) to converter
+     * functions, that convert the SQL value to the appropriate Python value.
+     * The key is uppercase.
+     */
+    PyObject *converters;
+
     PyObject *lru_cache;
+    PyObject *psyco_adapters;  // The adapters registry
+    int BaseTypeAdapted;
+    int enable_callback_tracebacks;
+
+    PyTypeObject *BlobType;
     PyTypeObject *ConnectionType;
     PyTypeObject *CursorType;
     PyTypeObject *PrepareProtocolType;
     PyTypeObject *RowType;
     PyTypeObject *StatementType;
+
+    /* Pointers to interned strings */
+    PyObject *str___adapt__;
+    PyObject *str___conform__;
+    PyObject *str_executescript;
+    PyObject *str_finalize;
+    PyObject *str_inverse;
+    PyObject *str_step;
+    PyObject *str_upper;
+    PyObject *str_value;
 } pysqlite_state;
 
 extern pysqlite_state pysqlite_global_state;
 
 static inline pysqlite_state *
-pysqlite_get_state(PyObject *Py_UNUSED(module))
+pysqlite_get_state(PyObject *module)
 {
-    return &pysqlite_global_state;
+    pysqlite_state *state = (pysqlite_state *)PyModule_GetState(module);
+    assert(state != NULL);
+    return state;
 }
 
-extern PyObject* pysqlite_OperationalError;
-extern PyObject* pysqlite_ProgrammingError;
-extern PyObject* pysqlite_IntegrityError;
-extern PyObject* pysqlite_DataError;
-extern PyObject* pysqlite_NotSupportedError;
+extern struct PyModuleDef _sqlite3module;
+static inline pysqlite_state *
+pysqlite_get_state_by_type(PyTypeObject *tp)
+{
+    PyObject *module = PyType_GetModuleByDef(tp, &_sqlite3module);
+    assert(module != NULL);
+    return pysqlite_get_state(module);
+}
 
-/* A dictionary, mapping column types (INTEGER, VARCHAR, etc.) to converter
- * functions, that convert the SQL value to the appropriate Python value.
- * The key is uppercase.
- */
-extern PyObject* _pysqlite_converters;
-
-extern int _pysqlite_enable_callback_tracebacks;
-extern int pysqlite_BaseTypeAdapted;
+extern const char *pysqlite_error_name(int rc);
 
 #define PARSE_DECLTYPES 1
 #define PARSE_COLNAMES 2

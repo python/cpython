@@ -23,6 +23,7 @@ servers written in Python.  Servers can either be free standing, using
    constructed data.  If you need to parse untrusted or unauthenticated data see
    :ref:`xml-vulnerabilities`.
 
+.. include:: ../includes/wasm-notavail.rst
 
 .. class:: SimpleXMLRPCServer(addr, requestHandler=SimpleXMLRPCRequestHandler,\
                logRequests=True, allow_none=False, encoding=None,\

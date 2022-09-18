@@ -1,0 +1,2 @@
+Restore the 3.10 behavior for multiple inheritance of C extension classes
+that store their dictionary at the end of the struct.

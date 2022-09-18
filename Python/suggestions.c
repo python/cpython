@@ -1,5 +1,4 @@
 #include "Python.h"
-#include "frameobject.h"
 #include "pycore_frame.h"
 
 #include "pycore_pyerrors.h"
@@ -78,9 +77,11 @@ levenshtein_distance(const char *a, size_t a_size,
     // Instead of producing the whole traditional len(a)-by-len(b)
     // matrix, we can update just one row in place.
     // Initialize the buffer row
+    size_t tmp = MOVE_COST;
     for (size_t i = 0; i < a_size; i++) {
         // cost from b[:0] to a[:i+1]
-        buffer[i] = (i + 1) * MOVE_COST;
+        buffer[i] = tmp;
+        tmp += MOVE_COST;
     }
 
     size_t result = 0;
@@ -151,6 +152,9 @@ calculate_suggestions(PyObject *dir,
         if (item_str == NULL) {
             return NULL;
         }
+        if (PyUnicode_CompareWithASCIIString(name, item_str) == 0) {
+            continue;
+        }
         // No more than 1/3 of the involved characters should need changed.
         Py_ssize_t max_distance = (name_size + item_size + 3) * MOVE_COST / 6;
         // Don't take matches we've already beaten.
@@ -199,13 +203,21 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
     PyTracebackObject *traceback = (PyTracebackObject *) exc->traceback; // borrowed reference
     // Abort if we don't have a variable name or we have an invalid one
     // or if we don't have a traceback to work with
-    if (name == NULL || traceback == NULL || !PyUnicode_CheckExact(name)) {
+    if (name == NULL || !PyUnicode_CheckExact(name) ||
+        traceback == NULL || !Py_IS_TYPE(traceback, &PyTraceBack_Type)
+    ) {
         return NULL;
     }
 
     // Move to the traceback of the exception
-    while (traceback->tb_next != NULL) {
-        traceback = traceback->tb_next;
+    while (1) {
+        PyTracebackObject *next = traceback->tb_next;
+        if (next == NULL || !Py_IS_TYPE(next, &PyTraceBack_Type)) {
+            break;
+        }
+        else {
+            traceback = next;
+        }
     }
 
     PyFrameObject *frame = traceback->tb_frame;
@@ -229,7 +241,7 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
         return suggestions;
     }
 
-    dir = PySequence_List(_PyFrame_GetGlobals(frame));
+    dir = PySequence_List(frame->f_frame->f_globals);
     if (dir == NULL) {
         return NULL;
     }
@@ -239,7 +251,7 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
         return suggestions;
     }
 
-    dir = PySequence_List(_PyFrame_GetBuiltins(frame));
+    dir = PySequence_List(frame->f_frame->f_builtins);
     if (dir == NULL) {
         return NULL;
     }

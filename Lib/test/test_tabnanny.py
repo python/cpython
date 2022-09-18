@@ -4,7 +4,6 @@ Glossary:
     * errored    : Whitespace related problems present in file.
 """
 from unittest import TestCase, mock
-from unittest import mock
 import errno
 import os
 import tabnanny
@@ -293,8 +292,8 @@ class TestCommandLine(TestCase):
         _, out, err = script_helper.assert_python_ok('-m', 'tabnanny', *args)
         # Note: The `splitlines()` will solve the problem of CRLF(\r) added
         # by OS Windows.
-        out = out.decode('ascii')
-        err = err.decode('ascii')
+        out = os.fsdecode(out)
+        err = os.fsdecode(err)
         if partial:
             for std, output in ((stdout, out), (stderr, err)):
                 _output = output.splitlines()

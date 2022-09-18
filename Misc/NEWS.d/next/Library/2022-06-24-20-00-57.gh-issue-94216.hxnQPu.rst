@@ -1,0 +1,1 @@
+The :mod:`dis` module now has the opcodes for pseudo instructions (those which are used by the compiler during code generation but then removed or replaced by real opcodes before the final bytecode is emitted).

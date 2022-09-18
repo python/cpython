@@ -162,9 +162,8 @@ class ShlexTest(unittest.TestCase):
             tok = lex.get_token()
         return ret
 
-    @mock.patch('sys.stdin', io.StringIO())
-    def testSplitNoneDeprecation(self):
-        with self.assertWarns(DeprecationWarning):
+    def testSplitNone(self):
+        with self.assertRaises(ValueError):
             shlex.split(None)
 
     def testSplitPosix(self):

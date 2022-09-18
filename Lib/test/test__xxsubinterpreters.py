@@ -39,6 +39,19 @@ def _run_output(interp, request, shared=None):
         return rpipe.read()
 
 
+def _wait_for_interp_to_run(interp, timeout=None):
+    # bpo-37224: Running this test file in multiprocesses will fail randomly.
+    # The failure reason is that the thread can't acquire the cpu to
+    # run subinterpreter eariler than the main thread in multiprocess.
+    if timeout is None:
+        timeout = support.SHORT_TIMEOUT
+    for _ in support.sleeping_retry(timeout, error=False):
+        if interpreters.is_running(interp):
+            break
+    else:
+        raise RuntimeError('interp is not running')
+
+
 @contextlib.contextmanager
 def _running(interp):
     r, w = os.pipe()
@@ -51,6 +64,7 @@ def _running(interp):
 
     t = threading.Thread(target=run)
     t.start()
+    _wait_for_interp_to_run(interp)
 
     yield
 
@@ -803,7 +817,7 @@ class RunStringTests(TestBase):
 
         self.assertEqual(out, 'it worked!')
 
-    @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
+    @support.requires_fork()
     def test_fork(self):
         import tempfile
         with tempfile.NamedTemporaryFile('w+', encoding="utf-8") as file:
@@ -1206,7 +1220,7 @@ class ChannelTests(TestBase):
             import _xxsubinterpreters as _interpreters
             obj = _interpreters.channel_recv({cid})
             """))
-        # Test for channel that has boths ends associated to an interpreter.
+        # Test for channel that has both ends associated to an interpreter.
         send_interps = interpreters.channel_list_interpreters(cid, send=True)
         recv_interps = interpreters.channel_list_interpreters(cid, send=False)
         self.assertEqual(send_interps, [interp0])

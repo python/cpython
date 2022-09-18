@@ -10,10 +10,8 @@ import _pickle
 import pkgutil
 import re
 import stat
-import string
 import tempfile
 import test.support
-import time
 import types
 import typing
 import unittest
@@ -23,11 +21,14 @@ import xml.etree.ElementTree
 import textwrap
 from io import StringIO
 from collections import namedtuple
+from urllib.request import urlopen, urlcleanup
+from test.support import import_helper
 from test.support import os_helper
-from test.support.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import threading_helper
 from test.support import (reap_children, captured_output, captured_stdout,
-                          captured_stderr, requires_docstrings)
+                          captured_stderr, is_emscripten, is_wasi,
+                          requires_docstrings)
 from test.support.os_helper import (TESTFN, rmtree, unlink)
 from test import pydoc_mod
 
@@ -53,53 +54,58 @@ CLASSES
         A
         B
         C
-\x20\x20\x20\x20
+
     class A(builtins.object)
      |  Hello and goodbye
-     |\x20\x20
+     |
      |  Methods defined here:
-     |\x20\x20
+     |
      |  __init__()
      |      Wow, I have no function!
-     |\x20\x20
+     |
      |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
-     |\x20\x20
+     |
      |  __dict__%s
-     |\x20\x20
+     |
      |  __weakref__%s
-\x20\x20\x20\x20
+
     class B(builtins.object)
      |  Data descriptors defined here:
-     |\x20\x20
+     |
      |  __dict__%s
-     |\x20\x20
+     |
      |  __weakref__%s
-     |\x20\x20
+     |
      |  ----------------------------------------------------------------------
      |  Data and other attributes defined here:
-     |\x20\x20
+     |
      |  NO_MEANING = 'eggs'
-     |\x20\x20
+     |
      |  __annotations__ = {'NO_MEANING': <class 'str'>}
-\x20\x20\x20\x20
+
     class C(builtins.object)
      |  Methods defined here:
-     |\x20\x20
+     |
      |  get_answer(self)
      |      Return say_no()
-     |\x20\x20
+     |
      |  is_it_true(self)
      |      Return self.get_answer()
-     |\x20\x20
+     |
      |  say_no(self)
-     |\x20\x20
+     |
+     |  ----------------------------------------------------------------------
+     |  Class methods defined here:
+     |
+     |  __class_getitem__(item) from builtins.type
+     |
      |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
-     |\x20\x20
+     |
      |  __dict__
      |      dictionary for instance variables (if defined)
-     |\x20\x20
+     |
      |  __weakref__
      |      list of weak references to the object (if defined)
 
@@ -109,11 +115,16 @@ FUNCTIONS
         hunger
         lack of Python
         war
-\x20\x20\x20\x20
+
     nodoc_func()
 
 DATA
     __xyz__ = 'X, Y and Z'
+    c_alias = test.pydoc_mod.C[int]
+    list_alias1 = typing.List[int]
+    list_alias2 = list[int]
+    type_union1 = typing.Union[int, str]
+    type_union2 = int | str
 
 VERSION
     1.2.3.4
@@ -131,128 +142,81 @@ FILE
 expected_text_data_docstrings = tuple('\n     |      ' + s if s else ''
                                       for s in expected_data_docstrings)
 
-expected_html_pattern = """
-<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="heading">
-<tr bgcolor="#7799ee">
-<td valign=bottom>&nbsp;<br>
-<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="test.html"><font color="#ffffff">test</font></a>.pydoc_mod</strong></big></big> (version 1.2.3.4)</font></td
-><td align=right valign=bottom
-><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:%s">%s</a>%s</font></td></tr></table>
-    <p><tt>This&nbsp;is&nbsp;a&nbsp;test&nbsp;module&nbsp;for&nbsp;test_pydoc</tt></p>
-<p>
-<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
-<tr bgcolor="#ee77aa">
-<td colspan=3 valign=bottom>&nbsp;<br>
-<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
-\x20\x20\x20\x20
-<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%%"><dl>
-<dt><font face="helvetica, arial"><a href="builtins.html#object">builtins.object</a>
-</font></dt><dd>
-<dl>
-<dt><font face="helvetica, arial"><a href="test.pydoc_mod.html#A">A</a>
-</font></dt><dt><font face="helvetica, arial"><a href="test.pydoc_mod.html#B">B</a>
-</font></dt><dt><font face="helvetica, arial"><a href="test.pydoc_mod.html#C">C</a>
-</font></dt></dl>
-</dd>
-</dl>
- <p>
-<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
-<tr bgcolor="#ffc8d8">
-<td colspan=3 valign=bottom>&nbsp;<br>
-<font color="#000000" face="helvetica, arial"><a name="A">class <strong>A</strong></a>(<a href="builtins.html#object">builtins.object</a>)</font></td></tr>
-\x20\x20\x20\x20
-<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
-<td colspan=2><tt>Hello&nbsp;and&nbsp;goodbye<br>&nbsp;</tt></td></tr>
-<tr><td>&nbsp;</td>
-<td width="100%%">Methods defined here:<br>
-<dl><dt><a name="A-__init__"><strong>__init__</strong></a>()</dt><dd><tt>Wow,&nbsp;I&nbsp;have&nbsp;no&nbsp;function!</tt></dd></dl>
+html2text_of_expected = """
+test.pydoc_mod (version 1.2.3.4)
+This is a test module for test_pydoc
 
-<hr>
-Data descriptors defined here:<br>
-<dl><dt><strong>__dict__</strong></dt>
-<dd><tt>%s</tt></dd>
-</dl>
-<dl><dt><strong>__weakref__</strong></dt>
-<dd><tt>%s</tt></dd>
-</dl>
-</td></tr></table> <p>
-<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
-<tr bgcolor="#ffc8d8">
-<td colspan=3 valign=bottom>&nbsp;<br>
-<font color="#000000" face="helvetica, arial"><a name="B">class <strong>B</strong></a>(<a href="builtins.html#object">builtins.object</a>)</font></td></tr>
-\x20\x20\x20\x20
-<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%%">Data descriptors defined here:<br>
-<dl><dt><strong>__dict__</strong></dt>
-<dd><tt>%s</tt></dd>
-</dl>
-<dl><dt><strong>__weakref__</strong></dt>
-<dd><tt>%s</tt></dd>
-</dl>
-<hr>
-Data and other attributes defined here:<br>
-<dl><dt><strong>NO_MEANING</strong> = 'eggs'</dl>
+Modules
+    types
+    typing
 
-<dl><dt><strong>__annotations__</strong> = {'NO_MEANING': &lt;class 'str'&gt;}</dl>
+Classes
+    builtins.object
+    A
+    B
+    C
 
-</td></tr></table> <p>
-<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
-<tr bgcolor="#ffc8d8">
-<td colspan=3 valign=bottom>&nbsp;<br>
-<font color="#000000" face="helvetica, arial"><a name="C">class <strong>C</strong></a>(<a href="builtins.html#object">builtins.object</a>)</font></td></tr>
-\x20\x20\x20\x20
-<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%%">Methods defined here:<br>
-<dl><dt><a name="C-get_answer"><strong>get_answer</strong></a>(self)</dt><dd><tt>Return&nbsp;<a href="#C-say_no">say_no</a>()</tt></dd></dl>
+class A(builtins.object)
+    Hello and goodbye
 
-<dl><dt><a name="C-is_it_true"><strong>is_it_true</strong></a>(self)</dt><dd><tt>Return&nbsp;self.<a href="#C-get_answer">get_answer</a>()</tt></dd></dl>
+    Methods defined here:
+        __init__()
+            Wow, I have no function!
 
-<dl><dt><a name="C-say_no"><strong>say_no</strong></a>(self)</dt></dl>
+    Data descriptors defined here:
+        __dict__
+            dictionary for instance variables (if defined)
+        __weakref__
+            list of weak references to the object (if defined)
 
-<hr>
-Data descriptors defined here:<br>
-<dl><dt><strong>__dict__</strong></dt>
-<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
-</dl>
-<dl><dt><strong>__weakref__</strong></dt>
-<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
-</dl>
-</td></tr></table></td></tr></table><p>
-<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
-<tr bgcolor="#eeaa77">
-<td colspan=3 valign=bottom>&nbsp;<br>
-<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
-\x20\x20\x20\x20
-<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%%"><dl><dt><a name="-doc_func"><strong>doc_func</strong></a>()</dt><dd><tt>This&nbsp;function&nbsp;solves&nbsp;all&nbsp;of&nbsp;the&nbsp;world's&nbsp;problems:<br>
-hunger<br>
-lack&nbsp;of&nbsp;Python<br>
-war</tt></dd></dl>
- <dl><dt><a name="-nodoc_func"><strong>nodoc_func</strong></a>()</dt></dl>
-</td></tr></table><p>
-<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
-<tr bgcolor="#55aa55">
-<td colspan=3 valign=bottom>&nbsp;<br>
-<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
-\x20\x20\x20\x20
-<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%%"><strong>__xyz__</strong> = 'X, Y and Z'</td></tr></table><p>
-<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
-<tr bgcolor="#7799ee">
-<td colspan=3 valign=bottom>&nbsp;<br>
-<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
-\x20\x20\x20\x20
-<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%%">Benjamin&nbsp;Peterson</td></tr></table><p>
-<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
-<tr bgcolor="#7799ee">
-<td colspan=3 valign=bottom>&nbsp;<br>
-<font color="#ffffff" face="helvetica, arial"><big><strong>Credits</strong></big></font></td></tr>
-\x20\x20\x20\x20
-<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%%">Nobody</td></tr></table>
-""".strip() # ' <- emacs turd
+class B(builtins.object)
+    Data descriptors defined here:
+        __dict__
+            dictionary for instance variables (if defined)
+        __weakref__
+            list of weak references to the object (if defined)
+    Data and other attributes defined here:
+        NO_MEANING = 'eggs'
+        __annotations__ = {'NO_MEANING': <class 'str'>}
+
+
+class C(builtins.object)
+    Methods defined here:
+        get_answer(self)
+            Return say_no()
+        is_it_true(self)
+            Return self.get_answer()
+        say_no(self)
+    Class methods defined here:
+        __class_getitem__(item) from builtins.type
+    Data descriptors defined here:
+        __dict__
+            dictionary for instance variables (if defined)
+        __weakref__
+             list of weak references to the object (if defined)
+
+Functions
+    doc_func()
+        This function solves all of the world's problems:
+        hunger
+        lack of Python
+        war
+    nodoc_func()
+
+Data
+    __xyz__ = 'X, Y and Z'
+    c_alias = test.pydoc_mod.C[int]
+    list_alias1 = typing.List[int]
+    list_alias2 = list[int]
+    type_union1 = typing.Union[int, str]
+    type_union2 = int | str
+
+Author
+    Benjamin Peterson
+
+Credits
+    Nobody
+"""
 
 expected_html_data_docstrings = tuple(s.replace(' ', '&nbsp;')
                                       for s in expected_data_docstrings)
@@ -271,16 +235,16 @@ Help on class DA in module %s:
 
 class DA(builtins.object)
  |  Data descriptors defined here:
- |\x20\x20
+ |
  |  __dict__%s
- |\x20\x20
+ |
  |  __weakref__%s
- |\x20\x20
+ |
  |  ham
- |\x20\x20
+ |
  |  ----------------------------------------------------------------------
  |  Data and other attributes inherited from Meta:
- |\x20\x20
+ |
  |  ham = 'spam'
 """.strip()
 
@@ -289,7 +253,7 @@ Help on class Class in module %s:
 
 class Class(builtins.object)
  |  Data and other attributes inherited from Meta:
- |\x20\x20
+ |
  |  LIFE = 42
 """.strip()
 
@@ -298,7 +262,7 @@ Help on class Class1 in module %s:
 
 class Class1(builtins.object)
  |  Data and other attributes inherited from Meta1:
- |\x20\x20
+ |
  |  one = 1
 """.strip()
 
@@ -310,19 +274,19 @@ class Class2(Class1)
  |      Class2
  |      Class1
  |      builtins.object
- |\x20\x20
+ |
  |  Data and other attributes inherited from Meta1:
- |\x20\x20
+ |
  |  one = 1
- |\x20\x20
+ |
  |  ----------------------------------------------------------------------
  |  Data and other attributes inherited from Meta3:
- |\x20\x20
+ |
  |  three = 3
- |\x20\x20
+ |
  |  ----------------------------------------------------------------------
  |  Data and other attributes inherited from Meta2:
- |\x20\x20
+ |
  |  two = 2
 """.strip()
 
@@ -331,7 +295,7 @@ Help on class C in module %s:
 
 class C(builtins.object)
  |  Data and other attributes defined here:
- |\x20\x20
+ |
  |  here = 'present!'
 """.strip()
 
@@ -343,6 +307,14 @@ def run_pydoc(module_name, *args, **env):
     args = args + (module_name,)
     # do not write bytecode files to avoid caching errors
     rc, out, err = assert_python_ok('-B', pydoc.__file__, *args, **env)
+    return out.strip()
+
+def run_pydoc_fail(module_name, *args, **env):
+    """
+    Runs pydoc on the specified module expecting a failure.
+    """
+    args = args + (module_name,)
+    rc, out, err = assert_python_failure('-B', pydoc.__file__, *args, **env)
     return out.strip()
 
 def get_pydoc_html(module):
@@ -385,6 +357,17 @@ def get_html_title(text):
     return title
 
 
+def html2text(html):
+    """A quick and dirty implementation of html2text.
+
+    Tailored for pydoc tests only.
+    """
+    html = html.replace("<dd>", "\n")
+    html = re.sub("<.*?>", "", html)
+    html = pydoc.replace(html, "&nbsp;", " ", "&gt;", ">", "&lt;", "<")
+    return html
+
+
 class PydocBaseTest(unittest.TestCase):
 
     def _restricted_walk_packages(self, walk_packages, path=None):
@@ -418,22 +401,24 @@ class PydocBaseTest(unittest.TestCase):
 class PydocDocTest(unittest.TestCase):
     maxDiff = None
 
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
     @requires_docstrings
     def test_html_doc(self):
         result, doc_loc = get_pydoc_html(pydoc_mod)
+        text_result = html2text(result)
+        text_lines = [line.strip() for line in text_result.splitlines()]
+        text_lines = [line for line in text_lines if line]
+        del text_lines[1]
+        expected_lines = html2text_of_expected.splitlines()
+        expected_lines = [line.strip() for line in expected_lines if line]
+        self.assertEqual(text_lines, expected_lines)
         mod_file = inspect.getabsfile(pydoc_mod)
         mod_url = urllib.parse.quote(mod_file)
-        expected_html = expected_html_pattern % (
-                        (mod_url, mod_file, doc_loc) +
-                        expected_html_data_docstrings)
-        self.assertEqual(result, expected_html)
+        self.assertIn(mod_url, result)
+        self.assertIn(mod_file, result)
+        self.assertIn(doc_loc, result)
 
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
     @requires_docstrings
@@ -487,13 +472,12 @@ class PydocDocTest(unittest.TestCase):
 
     def test_not_here(self):
         missing_module = "test.i_am_not_here"
-        result = str(run_pydoc(missing_module), 'ascii')
+        result = str(run_pydoc_fail(missing_module), 'ascii')
         expected = missing_pattern % missing_module
         self.assertEqual(expected, result,
             "documentation for missing module found")
 
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     'Docstrings are omitted with -OO and above')
+    @requires_docstrings
     def test_not_ascii(self):
         result = run_pydoc('test.test_pydoc.nonascii', PYTHONIOENCODING='ascii')
         encoded = nonascii.__doc__.encode('ascii', 'backslashreplace')
@@ -501,7 +485,7 @@ class PydocDocTest(unittest.TestCase):
 
     def test_input_strip(self):
         missing_module = " test.i_am_not_here "
-        result = str(run_pydoc(missing_module), 'ascii')
+        result = str(run_pydoc_fail(missing_module), 'ascii')
         expected = missing_pattern % missing_module.strip()
         self.assertEqual(expected, result)
 
@@ -647,15 +631,12 @@ class PydocDocTest(unittest.TestCase):
         # Testing that the subclasses section does not appear
         self.assertNotIn('Built-in subclasses', text)
 
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     'Docstrings are omitted with -O2 and above')
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
     @requires_docstrings
     def test_help_output_redirect(self):
         # issue 940286, if output is set in Helper, then all output from
         # Helper.help should be redirected
-        old_pattern = expected_text_pattern
         getpager_old = pydoc.getpager
         getpager_new = lambda: (lambda x: x)
         self.maxDiff = None
@@ -717,9 +698,9 @@ class PydocDocTest(unittest.TestCase):
             synopsis = pydoc.synopsis(TESTFN, {})
             self.assertEqual(synopsis, 'line 1: h\xe9')
 
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     'Docstrings are omitted with -OO and above')
+    @requires_docstrings
     def test_synopsis_sourceless(self):
+        os = import_helper.import_fresh_module('os')
         expected = os.__doc__.splitlines()[0]
         filename = os.__cached__
         synopsis = pydoc.synopsis(filename)
@@ -779,6 +760,7 @@ class PydocDocTest(unittest.TestCase):
         methods = pydoc.allmethods(TestClass)
         self.assertDictEqual(methods, expected)
 
+    @requires_docstrings
     def test_method_aliases(self):
         class A:
             def tkraise(self, aboveThis=None):
@@ -803,79 +785,88 @@ class B(A)
  |      B
  |      A
  |      builtins.object
- |\x20\x20
+ |
  |  Methods defined here:
- |\x20\x20
+ |
  |  b_size = a_size(self)
- |\x20\x20
+ |
  |  itemconfig = itemconfigure(self, tagOrId, cnf=None, **kw)
- |\x20\x20
+ |
  |  itemconfigure(self, tagOrId, cnf=None, **kw)
  |      Configure resources of an item TAGORID.
- |\x20\x20
+ |
  |  ----------------------------------------------------------------------
  |  Methods inherited from A:
- |\x20\x20
+ |
  |  a_size(self)
  |      Return size
- |\x20\x20
+ |
  |  lift = tkraise(self, aboveThis=None)
- |\x20\x20
+ |
  |  tkraise(self, aboveThis=None)
  |      Raise this widget in the stacking order.
- |\x20\x20
+ |
  |  ----------------------------------------------------------------------
  |  Data descriptors inherited from A:
- |\x20\x20
+ |
  |  __dict__
  |      dictionary for instance variables (if defined)
- |\x20\x20
+ |
  |  __weakref__
  |      list of weak references to the object (if defined)
 ''' % __name__)
 
         doc = pydoc.render_doc(B, renderer=pydoc.HTMLDoc())
-        self.assertEqual(doc, '''\
-Python Library Documentation: class B in module %s
+        expected_text = f"""
+Python Library Documentation
 
-<p>
-<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
-<tr bgcolor="#ffc8d8">
-<td colspan=3 valign=bottom>&nbsp;<br>
-<font color="#000000" face="helvetica, arial"><a name="B">class <strong>B</strong></a>(A)</font></td></tr>
-\x20\x20\x20\x20
-<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%%"><dl><dt>Method resolution order:</dt>
-<dd>B</dd>
-<dd>A</dd>
-<dd><a href="builtins.html#object">builtins.object</a></dd>
-</dl>
-<hr>
-Methods defined here:<br>
-<dl><dt><a name="B-b_size"><strong>b_size</strong></a> = <a href="#B-a_size">a_size</a>(self)</dt></dl>
+class B in module {__name__}
+class B(A)
+    Method resolution order:
+        B
+        A
+        builtins.object
 
-<dl><dt><a name="B-itemconfig"><strong>itemconfig</strong></a> = <a href="#B-itemconfigure">itemconfigure</a>(self, tagOrId, cnf=None, **kw)</dt></dl>
+    Methods defined here:
+        b_size = a_size(self)
+        itemconfig = itemconfigure(self, tagOrId, cnf=None, **kw)
+        itemconfigure(self, tagOrId, cnf=None, **kw)
+            Configure resources of an item TAGORID.
 
-<dl><dt><a name="B-itemconfigure"><strong>itemconfigure</strong></a>(self, tagOrId, cnf=None, **kw)</dt><dd><tt>Configure&nbsp;resources&nbsp;of&nbsp;an&nbsp;item&nbsp;TAGORID.</tt></dd></dl>
+    Methods inherited from A:
+        a_size(self)
+            Return size
+        lift = tkraise(self, aboveThis=None)
+        tkraise(self, aboveThis=None)
+            Raise this widget in the stacking order.
 
-<hr>
-Methods inherited from A:<br>
-<dl><dt><a name="B-a_size"><strong>a_size</strong></a>(self)</dt><dd><tt>Return&nbsp;size</tt></dd></dl>
+    Data descriptors inherited from A:
+        __dict__
+            dictionary for instance variables (if defined)
+        __weakref__
+            list of weak references to the object (if defined)
+"""
+        as_text = html2text(doc)
+        expected_lines = [line.strip() for line in expected_text.split("\n") if line]
+        for expected_line in expected_lines:
+            self.assertIn(expected_line, as_text)
 
-<dl><dt><a name="B-lift"><strong>lift</strong></a> = <a href="#B-tkraise">tkraise</a>(self, aboveThis=None)</dt></dl>
+    def test__future__imports(self):
+        # __future__ features are excluded from module help,
+        # except when it's the __future__ module itself
+        import __future__
+        future_text, _ = get_pydoc_text(__future__)
+        future_html, _ = get_pydoc_html(__future__)
+        pydoc_mod_text, _ = get_pydoc_text(pydoc_mod)
+        pydoc_mod_html, _ = get_pydoc_html(pydoc_mod)
 
-<dl><dt><a name="B-tkraise"><strong>tkraise</strong></a>(self, aboveThis=None)</dt><dd><tt>Raise&nbsp;this&nbsp;widget&nbsp;in&nbsp;the&nbsp;stacking&nbsp;order.</tt></dd></dl>
-
-<hr>
-Data descriptors inherited from A:<br>
-<dl><dt><strong>__dict__</strong></dt>
-<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
-</dl>
-<dl><dt><strong>__weakref__</strong></dt>
-<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
-</dl>
-</td></tr></table>\
-''' % __name__)
+        for feature in __future__.all_feature_names:
+            txt = f"{feature} = _Feature"
+            html = f"<strong>{feature}</strong> = _Feature"
+            self.assertIn(txt, future_text)
+            self.assertIn(html, future_html)
+            self.assertNotIn(txt, pydoc_mod_text)
+            self.assertNotIn(html, pydoc_mod_html)
 
 
 class PydocImportTest(PydocBaseTest):
@@ -902,7 +893,7 @@ class PydocImportTest(PydocBaseTest):
         for importstring, expectedinmsg in testpairs:
             with open(sourcefn, 'w') as f:
                 f.write("import {}\n".format(importstring))
-            result = run_pydoc(modname, PYTHONPATH=TESTFN).decode("ascii")
+            result = run_pydoc_fail(modname, PYTHONPATH=TESTFN).decode("ascii")
             expected = badimport_pattern % (modname, expectedinmsg)
             self.assertEqual(expected, result)
 
@@ -942,6 +933,8 @@ class PydocImportTest(PydocBaseTest):
         self.assertEqual(out.getvalue(), '')
         self.assertEqual(err.getvalue(), '')
 
+    @os_helper.skip_unless_working_chmod
+    @unittest.skipIf(is_emscripten, "cannot remove x bit")
     def test_apropos_empty_doc(self):
         pkgdir = os.path.join(TESTFN, 'walkpkg')
         os.mkdir(pkgdir)
@@ -1048,6 +1041,43 @@ class TestDescriptions(unittest.TestCase):
         expected = 'C in module %s object' % __name__
         self.assertIn(expected, pydoc.render_doc(c))
 
+    def test_generic_alias(self):
+        self.assertEqual(pydoc.describe(typing.List[int]), '_GenericAlias')
+        doc = pydoc.render_doc(typing.List[int], renderer=pydoc.plaintext)
+        self.assertIn('_GenericAlias in module typing', doc)
+        self.assertIn('List = class list(object)', doc)
+        self.assertIn(list.__doc__.strip().splitlines()[0], doc)
+
+        self.assertEqual(pydoc.describe(list[int]), 'GenericAlias')
+        doc = pydoc.render_doc(list[int], renderer=pydoc.plaintext)
+        self.assertIn('GenericAlias in module builtins', doc)
+        self.assertIn('\nclass list(object)', doc)
+        self.assertIn(list.__doc__.strip().splitlines()[0], doc)
+
+    def test_union_type(self):
+        self.assertEqual(pydoc.describe(typing.Union[int, str]), '_UnionGenericAlias')
+        doc = pydoc.render_doc(typing.Union[int, str], renderer=pydoc.plaintext)
+        self.assertIn('_UnionGenericAlias in module typing', doc)
+        self.assertIn('Union = typing.Union', doc)
+        if typing.Union.__doc__:
+            self.assertIn(typing.Union.__doc__.strip().splitlines()[0], doc)
+
+        self.assertEqual(pydoc.describe(int | str), 'UnionType')
+        doc = pydoc.render_doc(int | str, renderer=pydoc.plaintext)
+        self.assertIn('UnionType in module types object', doc)
+        self.assertIn('\nclass UnionType(builtins.object)', doc)
+        self.assertIn(types.UnionType.__doc__.strip().splitlines()[0], doc)
+
+    def test_special_form(self):
+        self.assertEqual(pydoc.describe(typing.NoReturn), '_SpecialForm')
+        doc = pydoc.render_doc(typing.NoReturn, renderer=pydoc.plaintext)
+        self.assertIn('_SpecialForm in module typing', doc)
+        if typing.NoReturn.__doc__:
+            self.assertIn('NoReturn = typing.NoReturn', doc)
+            self.assertIn(typing.NoReturn.__doc__.strip().splitlines()[0], doc)
+        else:
+            self.assertIn('NoReturn = class _SpecialForm(_Final)', doc)
+
     def test_typing_pydoc(self):
         def foo(data: typing.List[typing.Any],
                 x: int) -> typing.Iterator[typing.Tuple[int, typing.Any]]:
@@ -1150,7 +1180,7 @@ sm(x, y)
 """)
         self.assertIn("""
  |  Static methods defined here:
- |\x20\x20
+ |
  |  sm(x, y)
  |      A static method
 """, pydoc.plain(pydoc.render_doc(X)))
@@ -1171,7 +1201,7 @@ cm(x) method of builtins.type instance
 """)
         self.assertIn("""
  |  Class methods defined here:
- |\x20\x20
+ |
  |  cm(x) from builtins.type
  |      A class method
 """, pydoc.plain(pydoc.render_doc(X)))
@@ -1252,12 +1282,12 @@ cm(x) method of builtins.type instance
         class X:
             attr = Descr()
 
-        self.assertEqual(self._get_summary_lines(X.attr), """\
-<test.test_pydoc.TestDescriptions.test_custom_non_data_descriptor.<locals>.Descr object>""")
+        self.assertEqual(self._get_summary_lines(X.attr), f"""\
+<{__name__}.TestDescriptions.test_custom_non_data_descriptor.<locals>.Descr object>""")
 
         X.attr.__doc__ = 'Custom descriptor'
-        self.assertEqual(self._get_summary_lines(X.attr), """\
-<test.test_pydoc.TestDescriptions.test_custom_non_data_descriptor.<locals>.Descr object>
+        self.assertEqual(self._get_summary_lines(X.attr), f"""\
+<{__name__}.TestDescriptions.test_custom_non_data_descriptor.<locals>.Descr object>
     Custom descriptor
 """)
 
@@ -1316,6 +1346,7 @@ foo
             'async <a name="-an_async_generator"><strong>an_async_generator',
             html)
 
+    @requires_docstrings
     def test_html_for_https_links(self):
         def a_fn_with_https_link():
             """a link https://localhost/"""
@@ -1327,29 +1358,47 @@ foo
             html
         )
 
+
+@unittest.skipIf(
+    is_emscripten or is_wasi,
+    "Socket server not available on Emscripten/WASI."
+)
 class PydocServerTest(unittest.TestCase):
     """Tests for pydoc._start_server"""
 
     def test_server(self):
-
-        # Minimal test that starts the server, then stops it.
+        # Minimal test that starts the server, checks that it works, then stops
+        # it and checks its cleanup.
         def my_url_handler(url, content_type):
             text = 'the URL sent was: (%s, %s)' % (url, content_type)
             return text
 
-        serverthread = pydoc._start_server(my_url_handler, hostname='0.0.0.0', port=0)
-        self.assertIn('0.0.0.0', serverthread.docserver.address)
-
-        starttime = time.monotonic()
-        timeout = test.support.SHORT_TIMEOUT
-
-        while serverthread.serving:
-            time.sleep(.01)
-            if serverthread.serving and time.monotonic() - starttime > timeout:
-                serverthread.stop()
-                break
-
+        serverthread = pydoc._start_server(
+            my_url_handler,
+            hostname='localhost',
+            port=0,
+            )
         self.assertEqual(serverthread.error, None)
+        self.assertTrue(serverthread.serving)
+        self.addCleanup(
+            lambda: serverthread.stop() if serverthread.serving else None
+            )
+        self.assertIn('localhost', serverthread.url)
+
+        self.addCleanup(urlcleanup)
+        self.assertEqual(
+            b'the URL sent was: (/test, text/html)',
+            urlopen(urllib.parse.urljoin(serverthread.url, '/test')).read(),
+            )
+        self.assertEqual(
+            b'the URL sent was: (/test.css, text/css)',
+            urlopen(urllib.parse.urljoin(serverthread.url, '/test.css')).read(),
+            )
+
+        serverthread.stop()
+        self.assertFalse(serverthread.serving)
+        self.assertIsNone(serverthread.docserver)
+        self.assertIsNone(serverthread.url)
 
 
 class PydocUrlHandlerTest(PydocBaseTest):
@@ -1388,11 +1437,11 @@ class TestHelper(unittest.TestCase):
         self.assertEqual(sorted(pydoc.Helper.keywords),
                          sorted(keyword.kwlist))
 
+
 class PydocWithMetaClasses(unittest.TestCase):
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
+    @requires_docstrings
     def test_DynamicClassAttribute(self):
         class Meta(type):
             def __getattr__(self, name):
@@ -1413,10 +1462,9 @@ class PydocWithMetaClasses(unittest.TestCase):
         result = output.getvalue().strip()
         self.assertEqual(expected_text, result)
 
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
+    @requires_docstrings
     def test_virtualClassAttributeWithOneMeta(self):
         class Meta(type):
             def __dir__(cls):
@@ -1434,10 +1482,9 @@ class PydocWithMetaClasses(unittest.TestCase):
         result = output.getvalue().strip()
         self.assertEqual(expected_text, result)
 
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
+    @requires_docstrings
     def test_virtualClassAttributeWithTwoMeta(self):
         class Meta1(type):
             def __dir__(cls):
@@ -1466,7 +1513,6 @@ class PydocWithMetaClasses(unittest.TestCase):
             pass
         class Class2(Class1, metaclass=Meta3):
             pass
-        fail1 = fail2 = False
         output = StringIO()
         helper = pydoc.Helper(output=output)
         helper(Class1)
@@ -1480,10 +1526,9 @@ class PydocWithMetaClasses(unittest.TestCase):
         result2 = output.getvalue().strip()
         self.assertEqual(expected_text2, result2)
 
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
+    @requires_docstrings
     def test_buggy_dir(self):
         class M(type):
             def __dir__(cls):
@@ -1544,7 +1589,6 @@ class TestInternalUtilities(unittest.TestCase):
         trailing_argv0dir = clean_path + [self.argv0dir]
         self.assertEqual(self._get_revised_path(trailing_argv0dir), expected_path)
 
-
     def test_sys_path_adjustment_protects_pydoc_dir(self):
         def _get_revised_path(given_path):
             return self._get_revised_path(given_path, argv0=pydoc.__file__)
@@ -1571,20 +1615,11 @@ class TestInternalUtilities(unittest.TestCase):
                 self.assertIsNone(self._get_revised_path(trailing_argv0dir))
 
 
-@threading_helper.reap_threads
-def test_main():
-    try:
-        test.support.run_unittest(PydocDocTest,
-                                  PydocImportTest,
-                                  TestDescriptions,
-                                  PydocServerTest,
-                                  PydocUrlHandlerTest,
-                                  TestHelper,
-                                  PydocWithMetaClasses,
-                                  TestInternalUtilities,
-                                  )
-    finally:
-        reap_children()
+def setUpModule():
+    thread_info = threading_helper.threading_setup()
+    unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)
+    unittest.addModuleCleanup(reap_children)
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

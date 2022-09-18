@@ -66,7 +66,9 @@ steps:
         COMMAND: make
 
 - ${{ if eq(parameters.patchcheck, 'true') }}:
-  - script: ./python Tools/scripts/patchcheck.py --travis true
+  - script: |
+      git fetch origin
+      ./python Tools/scripts/patchcheck.py --ci true
     displayName: 'Run patchcheck.py'
     condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'))
 

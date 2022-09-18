@@ -130,6 +130,8 @@ def changed_files(base_branch=None):
         with subprocess.Popen(cmd.split(),
                               stdout=subprocess.PIPE,
                               cwd=SRCDIR) as st:
+            if st.wait() != 0:
+                sys.exit(f'error running {cmd}')
             for line in st.stdout:
                 line = line.decode().rstrip()
                 status_text, filename = line.split(maxsplit=1)
@@ -245,7 +247,7 @@ def regenerated_pyconfig_h_in(file_paths):
     else:
         return "not needed"
 
-def travis(pull_request):
+def ci(pull_request):
     if pull_request == 'false':
         print('Not a pull request; skipping')
         return
@@ -301,10 +303,10 @@ def main():
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--travis',
+    parser.add_argument('--ci',
                         help='Perform pass/fail checks')
     args = parser.parse_args()
-    if args.travis:
-        travis(args.travis)
+    if args.ci:
+        ci(args.ci)
     else:
         main()

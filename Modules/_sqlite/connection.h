@@ -32,20 +32,25 @@
 
 #include "sqlite3.h"
 
+typedef struct _callback_context
+{
+    PyObject *callable;
+    PyObject *module;
+    pysqlite_state *state;
+} callback_context;
+
 typedef struct
 {
     PyObject_HEAD
-    sqlite3* db;
+    sqlite3 *db;
+    pysqlite_state *state;
 
     /* the type detection mode. Only 0, PARSE_DECLTYPES, PARSE_COLNAMES or a
      * bitwise combination thereof makes sense */
     int detect_types;
 
-    /* None for autocommit, otherwise a PyUnicode with the isolation level */
-    PyObject* isolation_level;
-
-    /* NULL for autocommit, otherwise a string with the BEGIN statement */
-    const char* begin_statement;
+    /* NULL for autocommit, otherwise a string with the isolation level */
+    const char *isolation_level;
 
     /* 1 if a check should be performed for each API call if the connection is
      * used from the same thread it was created in */
@@ -58,13 +63,12 @@ typedef struct
 
     PyObject *statement_cache;
 
-    /* Lists of weak references to statements and cursors used within this connection */
-    PyObject* statements;
-    PyObject* cursors;
+    /* Lists of weak references to cursors and blobs used within this connection */
+    PyObject *cursors;
+    PyObject *blobs;
 
-    /* Counters for how many statements/cursors were created in the connection. May be
+    /* Counters for how many cursors were created in the connection. May be
      * reset to 0 at certain intervals */
-    int created_statements;
     int created_cursors;
 
     PyObject* row_factory;
@@ -77,13 +81,10 @@ typedef struct
      */
     PyObject* text_factory;
 
-    /* remember references to object used in trace_callback/progress_handler/authorizer_cb */
-    PyObject* function_pinboard_trace_callback;
-    PyObject* function_pinboard_progress_handler;
-    PyObject* function_pinboard_authorizer_cb;
-
-    /* a dictionary of registered collation name => collation callable mappings */
-    PyObject* collations;
+    // Remember contexts used by the trace, progress, and authoriser callbacks
+    callback_context *trace_ctx;
+    callback_context *progress_ctx;
+    callback_context *authorizer_ctx;
 
     /* Exception objects: borrowed refs. */
     PyObject* Warning;
@@ -98,7 +99,6 @@ typedef struct
     PyObject* NotSupportedError;
 } pysqlite_Connection;
 
-int pysqlite_connection_register_cursor(pysqlite_Connection* connection, PyObject* cursor);
 int pysqlite_check_thread(pysqlite_Connection* self);
 int pysqlite_check_connection(pysqlite_Connection* con);
 
