@@ -1897,6 +1897,8 @@ The classes can be used like this:
     'blog-why-python-rocks'
 
 
+.. _faq-cache-method-calls:
+
 How do I cache method calls?
 ----------------------------
 
