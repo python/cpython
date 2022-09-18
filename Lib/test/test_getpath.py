@@ -2,6 +2,7 @@ import copy
 import ntpath
 import pathlib
 import posixpath
+import sys
 import unittest
 
 from test.support import verbose

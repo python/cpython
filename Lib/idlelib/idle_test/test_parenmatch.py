@@ -83,12 +83,12 @@ class ParenMatchTest(unittest.TestCase):
         """
         Test corner cases in flash_paren_event and paren_closed_event.
 
-        Force execution of conditional expressions and alternate paths.
+        These cases force conditional expression and alternate paths.
         """
         text = self.text
         pm = self.get_parenmatch()
 
-        text.insert('insert', '# Comment.)')
+        text.insert('insert', '# this is a commen)')
         pm.paren_closed_event('event')
 
         text.insert('insert', '\ndef')

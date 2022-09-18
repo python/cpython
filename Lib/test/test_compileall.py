@@ -434,9 +434,6 @@ class CompileallTestsWithoutSourceEpoch(CompileallTestsBase,
     pass
 
 
-# WASI does not have a temp directory and uses cwd instead. The cwd contains
-# non-ASCII chars, so _walk_dir() fails to encode self.directory.
-@unittest.skipIf(support.is_wasi, "tempdir is not encodable on WASI")
 class EncodingTest(unittest.TestCase):
     """Issue 6716: compileall should escape source code when printing errors
     to stdout."""

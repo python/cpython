@@ -2161,9 +2161,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             # replace arguments referencing files with the file content
             else:
                 try:
-                    with open(arg_string[1:],
-                              encoding=_sys.getfilesystemencoding(),
-                              errors=_sys.getfilesystemencodeerrors()) as args_file:
+                    with open(arg_string[1:]) as args_file:
                         arg_strings = []
                         for arg_line in args_file.read().splitlines():
                             for arg in self.convert_arg_line_to_args(arg_line):
@@ -2477,11 +2475,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
               not action.option_strings):
             if action.default is not None:
                 value = action.default
-                self._check_value(action, value)
             else:
-                # since arg_strings is always [] at this point
-                # there is no need to use self._check_value(action, value)
                 value = arg_strings
+            self._check_value(action, value)
 
         # single argument or optional argument produces a single value
         elif len(arg_strings) == 1 and action.nargs in [None, OPTIONAL]:
@@ -2523,6 +2519,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
         # ArgumentTypeErrors indicate errors
         except ArgumentTypeError as err:
+            name = getattr(action.type, '__name__', repr(action.type))
             msg = str(err)
             raise ArgumentError(action, msg)
 

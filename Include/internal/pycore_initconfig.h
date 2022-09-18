@@ -36,13 +36,13 @@ struct pyruntimestate;
         ._type = _PyStatus_TYPE_EXIT, \
         .exitcode = (EXITCODE)}
 #define _PyStatus_IS_ERROR(err) \
-    ((err)._type == _PyStatus_TYPE_ERROR)
+    (err._type == _PyStatus_TYPE_ERROR)
 #define _PyStatus_IS_EXIT(err) \
-    ((err)._type == _PyStatus_TYPE_EXIT)
+    (err._type == _PyStatus_TYPE_EXIT)
 #define _PyStatus_EXCEPTION(err) \
-    ((err)._type != _PyStatus_TYPE_OK)
+    (err._type != _PyStatus_TYPE_OK)
 #define _PyStatus_UPDATE_FUNC(err) \
-    do { (err).func = _PyStatus_GET_FUNC(); } while (0)
+    do { err.func = _PyStatus_GET_FUNC(); } while (0)
 
 PyObject* _PyErr_SetFromPyStatus(PyStatus status);
 
@@ -169,8 +169,6 @@ PyAPI_FUNC(int) _PyConfig_FromDict(PyConfig *config, PyObject *dict);
 extern void _Py_DumpPathConfig(PyThreadState *tstate);
 
 PyAPI_FUNC(PyObject*) _Py_Get_Getpath_CodeObject(void);
-
-extern int _Py_global_config_int_max_str_digits;  // TODO(gpshead): move this into PyConfig in 3.12 after the backports ship.
 
 
 /* --- Function used for testing ---------------------------------- */

@@ -6,7 +6,6 @@ from itertools import chain
 import unittest
 import unittest.mock
 from test.support import requires, swap_attr
-from test import support
 import tkinter as tk
 from idlelib.idle_test.tkinter_testing_utils import run_in_tk_mainloop
 
@@ -613,8 +612,7 @@ class ShellSidebarTest(unittest.TestCase):
 
     @run_in_tk_mainloop()
     def test_very_long_wrapped_line(self):
-        with support.adjust_int_max_str_digits(11_111), \
-                swap_attr(self.shell, 'squeezer', None):
+        with swap_attr(self.shell, 'squeezer', None):
             self.do_input('x = ' + '1'*10_000 + '\n')
             yield
             self.assertEqual(self.get_sidebar_lines(), ['>>>'])
@@ -735,7 +733,7 @@ class ShellSidebarTest(unittest.TestCase):
         first_line = get_end_linenumber(text)
         self.do_input(dedent('''\
             if True:
-                print(1)
+            print(1)
 
             '''))
         yield
@@ -746,10 +744,9 @@ class ShellSidebarTest(unittest.TestCase):
 
         selected_lines_text = text.get('sel.first linestart', 'sel.last')
         selected_lines = selected_lines_text.split('\n')
-        selected_lines.pop()  # Final '' is a split artifact, not a line.
-        # Expect a block of input and a single output line.
+        # Expect a block of input, a single output line, and a new prompt
         expected_prompts = \
-            ['>>>'] + ['...'] * (len(selected_lines) - 2) + [None]
+            ['>>>'] + ['...'] * (len(selected_lines) - 3) + [None, '>>>']
         selected_text_with_prompts = '\n'.join(
             line if prompt is None else prompt + ' ' + line
             for prompt, line in zip(expected_prompts,

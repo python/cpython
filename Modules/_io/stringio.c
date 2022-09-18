@@ -1,6 +1,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include <stddef.h>               // offsetof()
+#include "pycore_accu.h"
 #include "pycore_object.h"
 #include "_iomodule.h"
 
@@ -26,12 +27,12 @@ typedef struct {
 
     /* The stringio object can be in two states: accumulating or realized.
        In accumulating state, the internal buffer contains nothing and
-       the contents are given by the embedded _PyUnicodeWriter structure.
+       the contents are given by the embedded _PyAccu structure.
        In realized state, the internal buffer is meaningful and the
-       _PyUnicodeWriter is destroyed.
+       _PyAccu is destroyed.
     */
     int state;
-    _PyUnicodeWriter writer;
+    _PyAccu accu;
 
     char ok; /* initialized? */
     char closed;
@@ -125,14 +126,12 @@ resize_buffer(stringio *self, size_t size)
 static PyObject *
 make_intermediate(stringio *self)
 {
-    PyObject *intermediate = _PyUnicodeWriter_Finish(&self->writer);
+    PyObject *intermediate = _PyAccu_Finish(&self->accu);
     self->state = STATE_REALIZED;
     if (intermediate == NULL)
         return NULL;
-
-    _PyUnicodeWriter_Init(&self->writer);
-    self->writer.overallocate = 1;
-    if (_PyUnicodeWriter_WriteStr(&self->writer, intermediate)) {
+    if (_PyAccu_Init(&self->accu) ||
+        _PyAccu_Accumulate(&self->accu, intermediate)) {
         Py_DECREF(intermediate);
         return NULL;
     }
@@ -151,7 +150,7 @@ realize(stringio *self)
     assert(self->state == STATE_ACCUMULATING);
     self->state = STATE_REALIZED;
 
-    intermediate = _PyUnicodeWriter_Finish(&self->writer);
+    intermediate = _PyAccu_Finish(&self->accu);
     if (intermediate == NULL)
         return -1;
 
@@ -219,7 +218,7 @@ write_str(stringio *self, PyObject *obj)
 
     if (self->state == STATE_ACCUMULATING) {
         if (self->string_size == self->pos) {
-            if (_PyUnicodeWriter_WriteStr(&self->writer, decoded))
+            if (_PyAccu_Accumulate(&self->accu, decoded))
                 goto fail;
             goto success;
         }
@@ -573,7 +572,7 @@ _io_StringIO_close_impl(stringio *self)
     /* Free up some memory */
     if (resize_buffer(self, 0) < 0)
         return NULL;
-    _PyUnicodeWriter_Dealloc(&self->writer);
+    _PyAccu_Destroy(&self->accu);
     Py_CLEAR(self->readnl);
     Py_CLEAR(self->writenl);
     Py_CLEAR(self->decoder);
@@ -603,7 +602,7 @@ stringio_dealloc(stringio *self)
         PyMem_Free(self->buf);
         self->buf = NULL;
     }
-    _PyUnicodeWriter_Dealloc(&self->writer);
+    _PyAccu_Destroy(&self->accu);
     Py_CLEAR(self->readnl);
     Py_CLEAR(self->writenl);
     Py_CLEAR(self->decoder);
@@ -688,7 +687,7 @@ _io_StringIO___init___impl(stringio *self, PyObject *value,
 
     self->ok = 0;
 
-    _PyUnicodeWriter_Dealloc(&self->writer);
+    _PyAccu_Destroy(&self->accu);
     Py_CLEAR(self->readnl);
     Py_CLEAR(self->writenl);
     Py_CLEAR(self->decoder);
@@ -743,8 +742,8 @@ _io_StringIO___init___impl(stringio *self, PyObject *value,
         /* Empty stringio object, we can start by accumulating */
         if (resize_buffer(self, 0) < 0)
             return -1;
-        _PyUnicodeWriter_Init(&self->writer);
-        self->writer.overallocate = 1;
+        if (_PyAccu_Init(&self->accu))
+            return -1;
         self->state = STATE_ACCUMULATING;
     }
     self->pos = 0;

@@ -2,6 +2,7 @@ import io
 import marshal
 import os
 import sys
+from test import support
 from test.support import import_helper
 import types
 import unittest
@@ -221,6 +222,8 @@ class LoaderDefaultsTests(ABCTestHarness):
         mod = types.ModuleType('blah')
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
+            with self.assertRaises(NotImplementedError):
+                self.ins.module_repr(mod)
             original_repr = repr(mod)
             mod.__loader__ = self.ins
             # Should still return a proper repr.
@@ -318,6 +321,32 @@ class ResourceReader:
 
     def contents(self, *args, **kwargs):
         return super().contents(*args, **kwargs)
+
+
+class ResourceReaderDefaultsTests(ABCTestHarness):
+
+    SPLIT = make_abc_subclasses(ResourceReader)
+
+    def test_open_resource(self):
+        with self.assertRaises(FileNotFoundError):
+            self.ins.open_resource('dummy_file')
+
+    def test_resource_path(self):
+        with self.assertRaises(FileNotFoundError):
+            self.ins.resource_path('dummy_file')
+
+    def test_is_resource(self):
+        with self.assertRaises(FileNotFoundError):
+            self.ins.is_resource('dummy_file')
+
+    def test_contents(self):
+        with self.assertRaises(FileNotFoundError):
+            self.ins.contents()
+
+
+(Frozen_RRDefaultTests,
+ Source_RRDefaultsTests
+ ) = test_util.test_both(ResourceReaderDefaultsTests)
 
 
 ##### MetaPathFinder concrete methods ##########################################

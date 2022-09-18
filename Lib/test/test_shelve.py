@@ -1,9 +1,11 @@
 import unittest
 import dbm
 import shelve
+import glob
 import pickle
 import os
 
+from test import support
 from test.support import os_helper
 from collections.abc import MutableMapping
 from test.test_dbm import dbm_iterator

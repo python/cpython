@@ -61,17 +61,17 @@ New File
 Open...
    Open an existing file with an Open dialog.
 
-Open Module...
-   Open an existing module (searches sys.path).
-
 Recent Files
    Open a list of recent files.  Click one to open it.
 
+Open Module...
+   Open an existing module (searches sys.path).
+
 .. index::
-   single: Module browser
+   single: Class browser
    single: Path browser
 
-Module Browser
+Class Browser
    Show functions, classes, and methods in the current Editor file in a
    tree structure.  In the shell, open a module first.
 
@@ -87,14 +87,11 @@ Save
 
 Save As...
    Save the current window with a Save As dialog.  The file saved becomes the
-   new associated file for the window. (If your file namager is set to hide
-   extensions, the current extension will be omitted in the file name box.
-   If the new filename has no '.', '.py' and '.txt' will be added for Python
-   and text files, except that on macOS Aqua,'.py' is added for all files.)
+   new associated file for the window.
 
 Save Copy As...
    Save the current window to different file without changing the associated
-   file.  (See Save As note above about filename extensions.)
+   file.
 
 Print Window
    Print the current window to the default printer.
@@ -117,9 +114,6 @@ Undo
 Redo
    Redo the last undone change to the current window.
 
-Select All
-   Select the entire contents of the current window.
-
 Cut
    Copy selection into the system-wide clipboard; then delete the selection.
 
@@ -130,6 +124,9 @@ Paste
    Insert contents of the system-wide clipboard into the current window.
 
 The clipboard functions are also available in context menus.
+
+Select All
+   Select the entire contents of the current window.
 
 Find...
    Open a search dialog with many options
@@ -159,23 +156,18 @@ Expand Word
    Expand a prefix you have typed to match a full word in the same window;
    repeat to get a different expansion.
 
-Show Call Tip
+Show call tip
    After an unclosed parenthesis for a function, open a small window with
    function parameter hints.  See :ref:`Calltips <calltips>` in the
    Editing and navigation section below.
 
-Show Surrounding Parens
+Show surrounding parens
    Highlight the surrounding parenthesis.
 
 .. _format-menu:
 
 Format menu (Editor window only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Format Paragraph
-   Reformat the current blank-line-delimited paragraph in comment block or
-   multiline string or selected line in a string.  All lines in the
-   paragraph will be formatted to less than N columns, where N defaults to 72.
 
 Indent Region
    Shift selected lines right by the indent width (default 4 spaces).
@@ -203,7 +195,12 @@ New Indent Width
    Open a dialog to change indent width. The accepted default by the Python
    community is 4 spaces.
 
-Strip Trailing Chitespace
+Format Paragraph
+   Reformat the current blank-line-delimited paragraph in comment block or
+   multiline string or selected line in a string.  All lines in the
+   paragraph will be formatted to less than N columns, where N defaults to 72.
+
+Strip trailing whitespace
    Remove trailing space and other whitespace characters after the last
    non-whitespace character of a line by applying str.rstrip to each line,
    including lines within multiline strings.  Except for Shell windows,
@@ -360,7 +357,7 @@ for more on Help menu choices.
    single: Clear Breakpoint
    single: breakpoints
 
-Context menus
+Context Menus
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Open a context menu by right-clicking in a window (Control-click on macOS).
@@ -401,7 +398,7 @@ Squeeze
 
 .. _editing-and-navigation:
 
-Editing and Navigation
+Editing and navigation
 ----------------------
 
 Editor windows
@@ -473,14 +470,6 @@ are restricted to four spaces due to Tcl/Tk limitations.
 
 See also the indent/dedent region commands on the
 :ref:`Format menu <format-menu>`.
-
-Search and Replace
-^^^^^^^^^^^^^^^^^^
-
-Any selection becomes a search target.  However, only selections within
-a line work because searches are only performed within lines with the
-terminal newline removed.  If ``[x] Regular expresion`` is checked, the
-target is interpreted according to the Python re module.
 
 .. _completions:
 
@@ -587,28 +576,16 @@ line to the top of the editor.
 The text and background colors for the context pane can be configured under
 the Highlights tab in the Configure IDLE dialog.
 
-Shell window
-^^^^^^^^^^^^
+Python Shell window
+^^^^^^^^^^^^^^^^^^^
 
-In IDLE's Shell, enter, edit, and recall complete statements. (Most
-consoles and terminals only work with a single physical line at a time).
-
-Submit a single-line statement for execution by hitting :kbd:`Return`
-with the cursor anywhere on the line.  If a line is extended with
-Backslash (:kbd:`\\`), the cursor must be on the last physical line.
-Submit a multi-line compound statement by entering a blank line after
-the statement.
+With IDLE's Shell, one enters, edits, and recalls complete statements.
+Most consoles and terminals only work with a single physical line at a time.
 
 When one pastes code into Shell, it is not compiled and possibly executed
-until one hits :kbd:`Return`, as specified above.
-One may edit pasted code first.
-If one pastes more than one statement into Shell, the result will be a
+until one hits :kbd:`Return`.  One may edit pasted code first.
+If one pastes more that one statement into Shell, the result will be a
 :exc:`SyntaxError` when multiple statements are compiled as if they were one.
-
-Lines containing ``RESTART`` mean that the user execution process has been
-re-started.  This occurs when the user execution process has crashed,
-when one requests a restart on the Shell menu, or when one runs code
-in an editor window.
 
 The editing features described in previous subsections work when entering
 code interactively.  IDLE's Shell window also responds to the following keys.
@@ -626,8 +603,7 @@ code interactively.  IDLE's Shell window also responds to the following keys.
 
   * :kbd:`Alt-n` retrieves next. On macOS use :kbd:`C-n`.
 
-  * :kbd:`Return` while the cursor is on any previous command
-    retrieves that command
+  * :kbd:`Return` while on any previous command retrieves that command
 
 Text colors
 ^^^^^^^^^^^
@@ -651,7 +627,7 @@ Highlighting tab.  The marking of debugger breakpoint lines in the editor and
 text in popups and dialogs is not user-configurable.
 
 
-Startup and Code Execution
+Startup and code execution
 --------------------------
 
 Upon startup with the ``-s`` option, IDLE will execute the file referenced by
@@ -786,9 +762,7 @@ IDLE's standard stream replacements are not inherited by subprocesses
 created in the execution process, whether directly by user code or by
 modules such as multiprocessing.  If such subprocess use ``input`` from
 sys.stdin or ``print`` or ``write`` to sys.stdout or sys.stderr,
-IDLE should be started in a command line window.  (On Windows,
-use ``python`` or ``py`` rather than ``pythonw`` or ``pyw``.)
-The secondary subprocess
+IDLE should be started in a command line window.  The secondary subprocess
 will then be attached to that window for input and output.
 
 If ``sys`` is reset by user code, such as with ``importlib.reload(sys)``,
@@ -920,7 +894,7 @@ with the default subprocess if at all possible.
 .. deprecated:: 3.4
 
 
-Help and Preferences
+Help and preferences
 --------------------
 
 .. _help-sources:
@@ -983,23 +957,3 @@ changed with the Extensions tab of the preferences dialog. See the
 beginning of config-extensions.def in the idlelib directory for further
 information.  The only current default extension is zzdummy, an example
 also used for testing.
-
-
-idlelib
--------
-
-.. module:: idlelib
-   :synopsis: Implementation package for the IDLE shell/editor.
-
-**Source code:** :source:`Lib/idlelib`
-
---------------
-
-The Lib/idlelib package implements the IDLE application.  See the rest
-of this page for how to use IDLE.
-
-The files in idlelib are described in idlelib/README.txt.  Access it
-either in idlelib or click Help => About IDLE on the IDLE menu.  This
-file also maps IDLE menu items to the code that implements the item.
-Except for files listed under 'Startup', the idlelib code is 'private' in
-sense that feature changes can be backported (see :pep:`434`).

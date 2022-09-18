@@ -1,7 +1,10 @@
 import unittest
+import locale
+import re
 import subprocess
 import sys
 import os
+import warnings
 from test import support
 from test.support import import_helper
 from test.support import os_helper

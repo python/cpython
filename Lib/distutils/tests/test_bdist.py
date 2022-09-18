@@ -1,4 +1,5 @@
 """Tests for distutils.command.bdist."""
+import os
 import unittest
 from test.support import run_unittest
 

@@ -1,6 +1,7 @@
 import ast
 import sys
 import unittest
+from test import support
 
 
 funcdef = """\
@@ -322,7 +323,7 @@ class TypeCommentTests(unittest.TestCase):
         self.assertEqual(tree.type_ignores, [])
 
     def test_longargs(self):
-        for tree in self.parse_all(longargs, minver=8):
+        for tree in self.parse_all(longargs):
             for t in tree.body:
                 # The expected args are encoded in the function name
                 todo = set(t.name[1:])

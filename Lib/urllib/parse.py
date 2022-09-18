@@ -30,6 +30,7 @@ test_urlparse.py provides a good indicator of parsing behavior.
 from collections import namedtuple
 import functools
 import re
+import sys
 import types
 import warnings
 
@@ -906,7 +907,7 @@ def quote_from_bytes(bs, safe='/'):
     if not bs.rstrip(_ALWAYS_SAFE_BYTES + safe):
         return bs.decode()
     quoter = _byte_quoter_factory(safe)
-    return ''.join(map(quoter, bs))
+    return ''.join([quoter(char) for char in bs])
 
 def urlencode(query, doseq=False, safe='', encoding=None, errors=None,
               quote_via=quote_plus):

@@ -5,6 +5,8 @@
 #include "pycore_signal.h"        // Py_NSIG
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads
 
+#include "frameobject.h"
+
 #include <object.h>
 #include <signal.h>
 #include <signal.h>
@@ -862,7 +864,7 @@ faulthandler_user(int signum)
         errno = save_errno;
     }
 #else
-    if (user->chain && user->previous != NULL) {
+    if (user->chain) {
         errno = save_errno;
         /* call the previous signal handler */
         user->previous(signum);
@@ -1338,13 +1340,13 @@ PyInit_faulthandler(void)
 static int
 faulthandler_init_enable(void)
 {
-    PyObject *enable = _PyImport_GetModuleAttrString("faulthandler", "enable");
-    if (enable == NULL) {
+    PyObject *module = PyImport_ImportModule("faulthandler");
+    if (module == NULL) {
         return -1;
     }
 
-    PyObject *res = PyObject_CallNoArgs(enable);
-    Py_DECREF(enable);
+    PyObject *res = PyObject_CallMethodNoArgs(module, &_Py_ID(enable));
+    Py_DECREF(module);
     if (res == NULL) {
         return -1;
     }

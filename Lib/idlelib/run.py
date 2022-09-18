@@ -145,7 +145,7 @@ def main(del_exitfunc=False):
                                   args=((LOCALHOST, port),))
     sockthread.daemon = True
     sockthread.start()
-    while True:
+    while 1:
         try:
             if exit_now:
                 try:

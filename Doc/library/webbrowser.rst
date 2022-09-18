@@ -41,8 +41,6 @@ naturally, mutually exclusive.  Usage example::
 
    python -m webbrowser -t "https://www.python.org"
 
-.. include:: ../includes/wasm-notavail.rst
-
 The following exception is defined:
 
 

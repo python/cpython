@@ -1,3 +1,4 @@
+from test import support
 from test.support import import_helper
 import unittest
 import warnings

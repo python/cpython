@@ -6,6 +6,7 @@ machinery = test_util.import_importlib('importlib.machinery')
 
 import os.path
 import sys
+from test import support
 from test.support import import_helper
 from test.support import os_helper
 import types
@@ -395,7 +396,7 @@ class InvalidateCacheTests:
             def invalidate_caches(self):
                 self.called = True
 
-        key = os.path.abspath('gobledeegook')
+        key = 'gobledeegook'
         meta_ins = InvalidatingNullFinder()
         path_ins = InvalidatingNullFinder()
         sys.meta_path.insert(0, meta_ins)

@@ -42,44 +42,47 @@ module _sqlite3
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=81e330492d57488e]*/
 
-// NB: This needs to be in sync with the Connection.__init__ docstring.
-PyDoc_STRVAR(module_connect_doc,
-"connect($module, /, database, timeout=5.0, detect_types=0,\n"
-"        isolation_level='', check_same_thread=True,\n"
-"        factory=ConnectionType, cached_statements=128, uri=False)\n"
-"--\n"
-"\n"
-"Opens a connection to the SQLite database file database.\n"
-"\n"
-"You can use \":memory:\" to open a database connection to a database that resides\n"
-"in RAM instead of on disk.");
+// NOTE: This must equal sqlite3.Connection.__init__ argument spec!
+/*[clinic input]
+_sqlite3.connect as pysqlite_connect
 
-#define PYSQLITE_CONNECT_METHODDEF    \
-    {"connect", _PyCFunction_CAST(module_connect), METH_FASTCALL|METH_KEYWORDS, module_connect_doc},
+    database: object
+    timeout: double = 5.0
+    detect_types: int = 0
+    isolation_level: object = NULL
+    check_same_thread: bool(accept={int}) = True
+    factory: object(c_default='(PyObject*)clinic_state()->ConnectionType') = ConnectionType
+    cached_statements: int = 128
+    uri: bool = False
+
+Opens a connection to the SQLite database file database.
+
+You can use ":memory:" to open a database connection to a database that resides
+in RAM instead of on disk.
+[clinic start generated code]*/
 
 static PyObject *
-module_connect(PyObject *module, PyObject *const *args, Py_ssize_t nargsf,
-               PyObject *kwnames)
+pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
+                      int detect_types, PyObject *isolation_level,
+                      int check_same_thread, PyObject *factory,
+                      int cached_statements, int uri)
+/*[clinic end generated code: output=450ac9078b4868bb input=e16914663ddf93ce]*/
 {
-    pysqlite_state *state = pysqlite_get_state(module);
-    PyObject *factory = (PyObject *)state->ConnectionType;
-
-    static const int FACTORY_POS = 5;
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    if (nargs > FACTORY_POS) {
-        factory = args[FACTORY_POS];
-    }
-    else if (kwnames != NULL) {
-        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(kwnames); i++) {
-            PyObject *item = PyTuple_GET_ITEM(kwnames, i);  // borrowed ref.
-            if (PyUnicode_CompareWithASCIIString(item, "factory") == 0) {
-                factory = args[nargs + i];
-                break;
-            }
+    if (isolation_level == NULL) {
+        isolation_level = PyUnicode_FromString("");
+        if (isolation_level == NULL) {
+            return NULL;
         }
     }
-
-    return PyObject_Vectorcall(factory, args, nargsf, kwnames);
+    else {
+        Py_INCREF(isolation_level);
+    }
+    PyObject *res = PyObject_CallFunction(factory, "OdiOiOii", database,
+                                          timeout, detect_types,
+                                          isolation_level, check_same_thread,
+                                          factory, cached_statements, uri);
+    Py_DECREF(isolation_level);
+    return res;
 }
 
 /*[clinic input]
@@ -105,16 +108,16 @@ pysqlite_complete_statement_impl(PyObject *module, const char *statement)
 _sqlite3.register_adapter as pysqlite_register_adapter
 
     type: object(type='PyTypeObject *')
-    adapter as caster: object
+    caster: object
     /
 
-Register a function to adapt Python objects to SQLite values.
+Registers an adapter with sqlite3's adapter registry.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_register_adapter_impl(PyObject *module, PyTypeObject *type,
                                PyObject *caster)
-/*[clinic end generated code: output=a287e8db18e8af23 input=29a5e0f213030242]*/
+/*[clinic end generated code: output=a287e8db18e8af23 input=b4bd87afcadc535d]*/
 {
     int rc;
 
@@ -139,17 +142,17 @@ pysqlite_register_adapter_impl(PyObject *module, PyTypeObject *type,
 /*[clinic input]
 _sqlite3.register_converter as pysqlite_register_converter
 
-    typename as orig_name: unicode
+    name as orig_name: unicode
     converter as callable: object
     /
 
-Register a function to convert SQLite values to Python objects.
+Registers a converter with sqlite3.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_register_converter_impl(PyObject *module, PyObject *orig_name,
                                  PyObject *callable)
-/*[clinic end generated code: output=a2f2bfeed7230062 input=159a444971b40378]*/
+/*[clinic end generated code: output=a2f2bfeed7230062 input=90f645419425d6c4]*/
 {
     PyObject* name = NULL;
     PyObject* retval = NULL;
@@ -224,8 +227,14 @@ static int converters_init(PyObject* module)
 static int
 load_functools_lru_cache(PyObject *module)
 {
+    PyObject *functools = PyImport_ImportModule("functools");
+    if (functools == NULL) {
+        return -1;
+    }
+
     pysqlite_state *state = pysqlite_get_state(module);
-    state->lru_cache = _PyImport_GetModuleAttrString("functools", "lru_cache");
+    state->lru_cache = PyObject_GetAttrString(functools, "lru_cache");
+    Py_DECREF(functools);
     if (state->lru_cache == NULL) {
         return -1;
     }
@@ -698,7 +707,7 @@ module_exec(PyObject *module)
         goto error;
     }
 
-    if (PyModule_AddStringConstant(module, "_deprecated_version", PYSQLITE_VERSION) < 0) {
+    if (PyModule_AddStringConstant(module, "version", PYSQLITE_VERSION) < 0) {
         goto error;
     }
 

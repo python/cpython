@@ -6,6 +6,7 @@ __author__ = "Steve Dower <steve.dower@python.org>"
 __version__ = "3.8"
 
 import os
+import re
 import struct
 import sys
 

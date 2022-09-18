@@ -1,4 +1,5 @@
 import unittest
+from test import support
 from test.support import os_helper
 
 import io # C implementation.

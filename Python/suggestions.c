@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "frameobject.h"
 #include "pycore_frame.h"
 
 #include "pycore_pyerrors.h"

@@ -15,8 +15,6 @@ This module wraps the system ``syslog`` family of routines.  A pure Python
 library that can speak to a syslog server is available in the
 :mod:`logging.handlers` module as :class:`SysLogHandler`.
 
-.. include:: ../includes/wasm-notavail.rst
-
 The module defines the following functions:
 
 
@@ -31,14 +29,9 @@ The module defines the following functions:
    value given in the :func:`openlog` call is used.
 
    If :func:`openlog` has not been called prior to the call to :func:`syslog`,
-   :func:`openlog` will be called with no arguments.
+   ``openlog()`` will be called with no arguments.
 
    .. audit-event:: syslog.syslog priority,message syslog.syslog
-
-   .. versionchanged:: 3.2
-      In previous versions, :func:`openlog` would not be called automatically if
-      it wasn't called prior to the call to :func:`syslog`, deferring to the syslog
-      implementation to call ``openlog()``.
 
 
 .. function:: openlog([ident[, logoption[, facility]]])
@@ -58,7 +51,8 @@ The module defines the following functions:
 
    .. versionchanged:: 3.2
       In previous versions, keyword arguments were not allowed, and *ident* was
-      required.
+      required.  The default for *ident* was dependent on the system libraries,
+      and often was ``python`` instead of the name of the Python program file.
 
 
 .. function:: closelog()

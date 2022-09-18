@@ -87,10 +87,6 @@ syslog_get_argv(void)
     }
 
     scriptobj = PyList_GetItem(argv, 0);
-    if (scriptobj == NULL) {
-        PyErr_Clear();
-        return NULL;
-    }
     if (!PyUnicode_Check(scriptobj)) {
         return(NULL);
     }
@@ -100,16 +96,16 @@ syslog_get_argv(void)
     }
 
     slash = PyUnicode_FindChar(scriptobj, SEP, 0, scriptlen, -1);
-    if (slash == -2) {
-        PyErr_Clear();
+    if (slash == -2)
         return NULL;
-    }
     if (slash != -1) {
         return PyUnicode_Substring(scriptobj, slash + 1, scriptlen);
     } else {
         Py_INCREF(scriptobj);
         return(scriptobj);
     }
+
+    return(NULL);
 }
 
 
@@ -118,41 +114,42 @@ syslog_openlog(PyObject * self, PyObject * args, PyObject *kwds)
 {
     long logopt = 0;
     long facility = LOG_USER;
-    PyObject *ident = NULL;
+    PyObject *new_S_ident_o = NULL;
     static char *keywords[] = {"ident", "logoption", "facility", 0};
-    const char *ident_str = NULL;
+    const char *ident = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                          "|Ull:openlog", keywords, &ident, &logopt, &facility))
+                          "|Ull:openlog", keywords, &new_S_ident_o, &logopt, &facility))
         return NULL;
 
-    if (ident) {
-        Py_INCREF(ident);
-    }
-    else {
-        /* get sys.argv[0] or NULL if we can't for some reason  */
-        ident = syslog_get_argv();
+    if (new_S_ident_o) {
+        Py_INCREF(new_S_ident_o);
     }
 
-    /* At this point, ident should be INCREF()ed.  openlog(3) does not
-     * make a copy, and syslog(3) later uses it.  We can't garbagecollect it.
+    /*  get sys.argv[0] or NULL if we can't for some reason  */
+    if (!new_S_ident_o) {
+        new_S_ident_o = syslog_get_argv();
+    }
+
+    Py_XDECREF(S_ident_o);
+    S_ident_o = new_S_ident_o;
+
+    /* At this point, S_ident_o should be INCREF()ed.  openlog(3) does not
+     * make a copy, and syslog(3) later uses it.  We can't garbagecollect it
      * If NULL, just let openlog figure it out (probably using C argv[0]).
      */
-    if (ident) {
-        ident_str = PyUnicode_AsUTF8(ident);
-        if (ident_str == NULL) {
-            Py_DECREF(ident);
+    if (S_ident_o) {
+        ident = PyUnicode_AsUTF8(S_ident_o);
+        if (ident == NULL)
             return NULL;
-        }
     }
-    if (PySys_Audit("syslog.openlog", "Oll", ident ? ident : Py_None, logopt, facility) < 0) {
-        Py_DECREF(ident);
+
+    if (PySys_Audit("syslog.openlog", "sll", ident, logopt, facility) < 0) {
         return NULL;
     }
 
-    openlog(ident_str, logopt, facility);
+    openlog(ident, logopt, facility);
     S_log_open = 1;
-    Py_XSETREF(S_ident_o, ident);
 
     Py_RETURN_NONE;
 }
@@ -191,26 +188,14 @@ syslog_syslog(PyObject * self, PyObject * args)
          */
         if ((openargs = PyTuple_New(0))) {
             PyObject *openlog_ret = syslog_openlog(self, openargs, NULL);
+            Py_XDECREF(openlog_ret);
             Py_DECREF(openargs);
-            if (openlog_ret == NULL) {
-                return NULL;
-            }
-            Py_DECREF(openlog_ret);
-        }
-        else {
-            return NULL;
         }
     }
 
-    /* Incref ident, because it can be decrefed if syslog.openlog() is
-     * called when the GIL is released.
-     */
-    PyObject *ident = S_ident_o;
-    Py_XINCREF(ident);
     Py_BEGIN_ALLOW_THREADS;
     syslog(priority, "%s", message);
     Py_END_ALLOW_THREADS;
-    Py_XDECREF(ident);
     Py_RETURN_NONE;
 }
 

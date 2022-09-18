@@ -12,9 +12,8 @@
 
 --------------
 
-.. include:: ../includes/wasm-notavail.rst
-
 The :mod:`getpass` module provides two functions:
+
 
 .. function:: getpass(prompt='Password: ', stream=None)
 

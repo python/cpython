@@ -206,7 +206,7 @@ class Future:
             raise exceptions.InvalidStateError('Result is not ready.')
         self.__log_traceback = False
         if self._exception is not None:
-            raise self._exception.with_traceback(self._exception_tb)
+            raise self._exception
         return self._result
 
     def exception(self):
@@ -282,7 +282,6 @@ class Future:
             raise TypeError("StopIteration interacts badly with generators "
                             "and cannot be raised into a Future")
         self._exception = exception
-        self._exception_tb = exception.__traceback__
         self._state = _FINISHED
         self.__schedule_callbacks()
         self.__log_traceback = True

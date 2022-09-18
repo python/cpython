@@ -336,8 +336,7 @@ class _Stream:
        _Stream is intended to be used only internally.
     """
 
-    def __init__(self, name, mode, comptype, fileobj, bufsize,
-                 compresslevel):
+    def __init__(self, name, mode, comptype, fileobj, bufsize):
         """Construct a _Stream object.
         """
         self._extfileobj = True
@@ -372,7 +371,7 @@ class _Stream:
                     self._init_read_gz()
                     self.exception = zlib.error
                 else:
-                    self._init_write_gz(compresslevel)
+                    self._init_write_gz()
 
             elif comptype == "bz2":
                 try:
@@ -384,7 +383,7 @@ class _Stream:
                     self.cmp = bz2.BZ2Decompressor()
                     self.exception = OSError
                 else:
-                    self.cmp = bz2.BZ2Compressor(compresslevel)
+                    self.cmp = bz2.BZ2Compressor()
 
             elif comptype == "xz":
                 try:
@@ -411,14 +410,13 @@ class _Stream:
         if hasattr(self, "closed") and not self.closed:
             self.close()
 
-    def _init_write_gz(self, compresslevel):
+    def _init_write_gz(self):
         """Initialize for writing with gzip compression.
         """
-        self.cmp = self.zlib.compressobj(compresslevel,
-                                         self.zlib.DEFLATED,
-                                         -self.zlib.MAX_WBITS,
-                                         self.zlib.DEF_MEM_LEVEL,
-                                         0)
+        self.cmp = self.zlib.compressobj(9, self.zlib.DEFLATED,
+                                            -self.zlib.MAX_WBITS,
+                                            self.zlib.DEF_MEM_LEVEL,
+                                            0)
         timestamp = struct.pack("<L", int(time.time()))
         self.__write(b"\037\213\010\010" + timestamp + b"\002\377")
         if self.name.endswith(".gz"):
@@ -1165,11 +1163,6 @@ class TarInfo(object):
         # header information.
         self._apply_pax_info(tarfile.pax_headers, tarfile.encoding, tarfile.errors)
 
-        # Remove redundant slashes from directories. This is to be consistent
-        # with frombuf().
-        if self.isdir():
-            self.name = self.name.rstrip("/")
-
         return self
 
     def _proc_gnulong(self, tarfile):
@@ -1191,11 +1184,6 @@ class TarInfo(object):
             next.name = nts(buf, tarfile.encoding, tarfile.errors)
         elif self.type == GNUTYPE_LONGLINK:
             next.linkname = nts(buf, tarfile.encoding, tarfile.errors)
-
-        # Remove redundant slashes from directories. This is to be consistent
-        # with frombuf().
-        if next.isdir():
-            next.name = next.name.removesuffix("/")
 
         return next
 
@@ -1661,9 +1649,7 @@ class TarFile(object):
             if filemode not in ("r", "w"):
                 raise ValueError("mode must be 'r' or 'w'")
 
-            compresslevel = kwargs.pop("compresslevel", 9)
-            stream = _Stream(name, filemode, comptype, fileobj, bufsize,
-                             compresslevel)
+            stream = _Stream(name, filemode, comptype, fileobj, bufsize)
             try:
                 t = cls(name, filemode, stream, **kwargs)
             except:

@@ -1,2 +1,0 @@
-Ensure that Windows releases built with ``Tools\msi\buildrelease.bat`` are
-upgradable to and from official Python releases.

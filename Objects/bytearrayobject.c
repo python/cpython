@@ -563,28 +563,22 @@ bytearray_setslice(PyByteArrayObject *self, Py_ssize_t lo, Py_ssize_t hi,
 static int
 bytearray_setitem(PyByteArrayObject *self, Py_ssize_t i, PyObject *value)
 {
-    int ival = -1;
+    int ival;
 
-    // GH-91153: We need to do this *before* the size check, in case value has a
-    // nasty __index__ method that changes the size of the bytearray:
-    if (value && !_getbytevalue(value, &ival)) {
-        return -1;
-    }
-
-    if (i < 0) {
+    if (i < 0)
         i += Py_SIZE(self);
-    }
 
     if (i < 0 || i >= Py_SIZE(self)) {
         PyErr_SetString(PyExc_IndexError, "bytearray index out of range");
         return -1;
     }
 
-    if (value == NULL) {
+    if (value == NULL)
         return bytearray_setslice(self, i, i+1, NULL);
-    }
 
-    assert(0 <= ival && ival < 256);
+    if (!_getbytevalue(value, &ival))
+        return -1;
+
     PyByteArray_AS_STRING(self)[i] = ival;
     return 0;
 }
@@ -599,21 +593,11 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
     if (_PyIndex_Check(index)) {
         Py_ssize_t i = PyNumber_AsSsize_t(index, PyExc_IndexError);
 
-        if (i == -1 && PyErr_Occurred()) {
+        if (i == -1 && PyErr_Occurred())
             return -1;
-        }
 
-        int ival = -1;
-
-        // GH-91153: We need to do this *before* the size check, in case values
-        // has a nasty __index__ method that changes the size of the bytearray:
-        if (values && !_getbytevalue(values, &ival)) {
-            return -1;
-        }
-
-        if (i < 0) {
+        if (i < 0)
             i += PyByteArray_GET_SIZE(self);
-        }
 
         if (i < 0 || i >= Py_SIZE(self)) {
             PyErr_SetString(PyExc_IndexError, "bytearray index out of range");
@@ -628,7 +612,9 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
             slicelen = 1;
         }
         else {
-            assert(0 <= ival && ival < 256);
+            int ival;
+            if (!_getbytevalue(values, &ival))
+                return -1;
             buf[i] = (char)ival;
             return 0;
         }

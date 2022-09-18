@@ -9,6 +9,7 @@ from unittest import mock
 
 from test import support
 from test.support import os_helper
+from test.support import warnings_helper
 
 try:
     import _testcapi

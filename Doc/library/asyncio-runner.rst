@@ -75,9 +75,7 @@ Runner context manager
    :ref:`asyncio-debug-mode` settings.
 
    *loop_factory* could be used for overriding the loop creation.
-   It is the responsibility of the *loop_factory* to set the created loop as the
-   current one. By default :func:`asyncio.new_event_loop` is used and set as
-   current event loop with :func:`asyncio.set_event_loop` if *loop_factory* is ``None``.
+   :func:`asyncio.new_event_loop` is used if ``None``.
 
    Basically, :func:`asyncio.run()` example can be rewritten with the runner usage::
 

@@ -4,7 +4,7 @@ import unittest
 import binascii
 import array
 import re
-from test.support import bigmemtest, _1G, _4G
+from test.support import bigmemtest, _1G, _4G, warnings_helper
 
 
 # Note: "*_hex" functions are aliases for "(un)hexlify"

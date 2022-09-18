@@ -12,7 +12,20 @@
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "structmember.h"         // PyMemberDef
-#include <stdbool.h>              // bool
+#include "pycore_accu.h"
+
+typedef struct {
+    PyObject *PyScannerType;
+    PyObject *PyEncoderType;
+} _jsonmodulestate;
+
+static inline _jsonmodulestate*
+get_json_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_jsonmodulestate *)state;
+}
 
 
 typedef struct _PyScannerObject {
@@ -85,11 +98,11 @@ encoder_dealloc(PyObject *self);
 static int
 encoder_clear(PyEncoderObject *self);
 static int
-encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer, PyObject *seq, Py_ssize_t indent_level);
+encoder_listencode_list(PyEncoderObject *s, _PyAccu *acc, PyObject *seq, Py_ssize_t indent_level);
 static int
-encoder_listencode_obj(PyEncoderObject *s, _PyUnicodeWriter *writer, PyObject *obj, Py_ssize_t indent_level);
+encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc, PyObject *obj, Py_ssize_t indent_level);
 static int
-encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer, PyObject *dct, Py_ssize_t indent_level);
+encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc, PyObject *dct, Py_ssize_t indent_level);
 static PyObject *
 _encoded_const(PyObject *obj);
 static void
@@ -1280,29 +1293,19 @@ encoder_call(PyEncoderObject *self, PyObject *args, PyObject *kwds)
 {
     /* Python callable interface to encode_listencode_obj */
     static char *kwlist[] = {"obj", "_current_indent_level", NULL};
-    PyObject *obj, *result;
+    PyObject *obj;
     Py_ssize_t indent_level;
-    _PyUnicodeWriter writer;
-
+    _PyAccu acc;
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "On:_iterencode", kwlist,
         &obj, &indent_level))
         return NULL;
-
-    _PyUnicodeWriter_Init(&writer);
-    writer.overallocate = 1;
-
-    if (encoder_listencode_obj(self, &writer, obj, indent_level)) {
-        _PyUnicodeWriter_Dealloc(&writer);
+    if (_PyAccu_Init(&acc))
+        return NULL;
+    if (encoder_listencode_obj(self, &acc, obj, indent_level)) {
+        _PyAccu_Destroy(&acc);
         return NULL;
     }
-
-    result = PyTuple_New(1);
-    if (result == NULL ||
-            PyTuple_SetItem(result, 0, _PyUnicodeWriter_Finish(&writer)) < 0) {
-        Py_XDECREF(result);
-        return NULL;
-    }
-    return result;
+    return _PyAccu_FinishAsList(&acc);
 }
 
 static PyObject *
@@ -1386,60 +1389,58 @@ encoder_encode_string(PyEncoderObject *s, PyObject *obj)
 }
 
 static int
-_steal_accumulate(_PyUnicodeWriter *writer, PyObject *stolen)
+_steal_accumulate(_PyAccu *acc, PyObject *stolen)
 {
     /* Append stolen and then decrement its reference count */
-    int rval = _PyUnicodeWriter_WriteStr(writer, stolen);
+    int rval = _PyAccu_Accumulate(acc, stolen);
     Py_DECREF(stolen);
     return rval;
 }
 
 static int
-encoder_listencode_obj(PyEncoderObject *s, _PyUnicodeWriter *writer,
+encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
                        PyObject *obj, Py_ssize_t indent_level)
 {
     /* Encode Python object obj to a JSON term */
     PyObject *newobj;
     int rv;
 
-    if (obj == Py_None) {
-      return _PyUnicodeWriter_WriteASCIIString(writer, "null", 4);
+    if (obj == Py_None || obj == Py_True || obj == Py_False) {
+        PyObject *cstr = _encoded_const(obj);
+        if (cstr == NULL)
+            return -1;
+        return _steal_accumulate(acc, cstr);
     }
-    else if (obj == Py_True) {
-      return _PyUnicodeWriter_WriteASCIIString(writer, "true", 4);
-    }
-    else if (obj == Py_False) {
-      return _PyUnicodeWriter_WriteASCIIString(writer, "false", 5);
-    }
-    else if (PyUnicode_Check(obj)) {
+    else if (PyUnicode_Check(obj))
+    {
         PyObject *encoded = encoder_encode_string(s, obj);
         if (encoded == NULL)
             return -1;
-        return _steal_accumulate(writer, encoded);
+        return _steal_accumulate(acc, encoded);
     }
     else if (PyLong_Check(obj)) {
         PyObject *encoded = PyLong_Type.tp_repr(obj);
         if (encoded == NULL)
             return -1;
-        return _steal_accumulate(writer, encoded);
+        return _steal_accumulate(acc, encoded);
     }
     else if (PyFloat_Check(obj)) {
         PyObject *encoded = encoder_encode_float(s, obj);
         if (encoded == NULL)
             return -1;
-        return _steal_accumulate(writer, encoded);
+        return _steal_accumulate(acc, encoded);
     }
     else if (PyList_Check(obj) || PyTuple_Check(obj)) {
         if (_Py_EnterRecursiveCall(" while encoding a JSON object"))
             return -1;
-        rv = encoder_listencode_list(s, writer, obj, indent_level);
+        rv = encoder_listencode_list(s, acc, obj, indent_level);
         _Py_LeaveRecursiveCall();
         return rv;
     }
     else if (PyDict_Check(obj)) {
         if (_Py_EnterRecursiveCall(" while encoding a JSON object"))
             return -1;
-        rv = encoder_listencode_dict(s, writer, obj, indent_level);
+        rv = encoder_listencode_dict(s, acc, obj, indent_level);
         _Py_LeaveRecursiveCall();
         return rv;
     }
@@ -1473,7 +1474,7 @@ encoder_listencode_obj(PyEncoderObject *s, _PyUnicodeWriter *writer,
             Py_XDECREF(ident);
             return -1;
         }
-        rv = encoder_listencode_obj(s, writer, newobj, indent_level);
+        rv = encoder_listencode_obj(s, acc, newobj, indent_level);
         _Py_LeaveRecursiveCall();
 
         Py_DECREF(newobj);
@@ -1493,81 +1494,28 @@ encoder_listencode_obj(PyEncoderObject *s, _PyUnicodeWriter *writer,
 }
 
 static int
-encoder_encode_key_value(PyEncoderObject *s, _PyUnicodeWriter *writer, bool *first,
-                         PyObject *key, PyObject *value, Py_ssize_t indent_level)
-{
-    PyObject *keystr = NULL;
-    PyObject *encoded;
-
-    if (PyUnicode_Check(key)) {
-        Py_INCREF(key);
-        keystr = key;
-    }
-    else if (PyFloat_Check(key)) {
-        keystr = encoder_encode_float(s, key);
-    }
-    else if (key == Py_True || key == Py_False || key == Py_None) {
-                    /* This must come before the PyLong_Check because
-                       True and False are also 1 and 0.*/
-        keystr = _encoded_const(key);
-    }
-    else if (PyLong_Check(key)) {
-        keystr = PyLong_Type.tp_repr(key);
-    }
-    else if (s->skipkeys) {
-        return 0;
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-                     "keys must be str, int, float, bool or None, "
-                     "not %.100s", Py_TYPE(key)->tp_name);
-        return -1;
-    }
-
-    if (keystr == NULL) {
-        return -1;
-    }
-
-    if (*first) {
-        *first = false;
-    } 
-    else {
-        if (_PyUnicodeWriter_WriteStr(writer, s->item_separator) < 0) {
-            Py_DECREF(keystr);
-            return -1;
-        }
-    }
-
-    encoded = encoder_encode_string(s, keystr);
-    Py_DECREF(keystr);
-    if (encoded == NULL) {
-        return -1;
-    }
-
-    if (_steal_accumulate(writer, encoded) < 0) {
-        return -1;
-    }
-    if (_PyUnicodeWriter_WriteStr(writer, s->key_separator) < 0) {
-        return -1;
-    }
-    if (encoder_listencode_obj(s, writer, value, indent_level) < 0) {
-        return -1;
-    }
-    return 0;
-}
-
-static int
-encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
+encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
                         PyObject *dct, Py_ssize_t indent_level)
 {
     /* Encode Python dict dct a JSON term */
+    _Py_static_string(PyId_open_dict, "{");
+    _Py_static_string(PyId_close_dict, "}");
+    _Py_static_string(PyId_empty_dict, "{}");
+    PyObject *open_dict = _PyUnicode_FromId(&PyId_open_dict);    // borrowed ref
+    PyObject *close_dict = _PyUnicode_FromId(&PyId_close_dict);  // borrowed ref
+    PyObject *empty_dict = _PyUnicode_FromId(&PyId_empty_dict);  // borrowed ref
+    PyObject *kstr = NULL;
     PyObject *ident = NULL;
-    PyObject *items = NULL;
-    PyObject *key, *value;
-    bool first = true;
+    PyObject *it = NULL;
+    PyObject *items;
+    PyObject *item = NULL;
+    Py_ssize_t idx;
 
+    if (open_dict == NULL || close_dict == NULL || empty_dict == NULL) {
+        return -1;
+    }
     if (PyDict_GET_SIZE(dct) == 0)  /* Fast path */
-        return _PyUnicodeWriter_WriteASCIIString(writer, "{}", 2);
+        return _PyAccu_Accumulate(acc, empty_dict);
 
     if (s->markers != Py_None) {
         int has_key;
@@ -1585,7 +1533,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
         }
     }
 
-    if (_PyUnicodeWriter_WriteChar(writer, '{'))
+    if (_PyAccu_Accumulate(acc, open_dict))
         goto bail;
 
     if (s->indent != Py_None) {
@@ -1598,34 +1546,84 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
         */
     }
 
-    if (s->sort_keys) {
-
-        items = PyDict_Items(dct);
-        if (items == NULL || PyList_Sort(items) < 0)
+    items = PyMapping_Items(dct);
+    if (items == NULL)
+        goto bail;
+    if (s->sort_keys && PyList_Sort(items) < 0) {
+        Py_DECREF(items);
+        goto bail;
+    }
+    it = PyObject_GetIter(items);
+    Py_DECREF(items);
+    if (it == NULL)
+        goto bail;
+    idx = 0;
+    while ((item = PyIter_Next(it)) != NULL) {
+        PyObject *encoded, *key, *value;
+        if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
+            PyErr_SetString(PyExc_ValueError, "items must return 2-tuples");
             goto bail;
-
-        for (Py_ssize_t  i = 0; i < PyList_GET_SIZE(items); i++) {
-            PyObject *item = PyList_GET_ITEM(items, i);
-
-            if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
-                PyErr_SetString(PyExc_ValueError, "items must return 2-tuples");
+        }
+        key = PyTuple_GET_ITEM(item, 0);
+        if (PyUnicode_Check(key)) {
+            Py_INCREF(key);
+            kstr = key;
+        }
+        else if (PyFloat_Check(key)) {
+            kstr = encoder_encode_float(s, key);
+            if (kstr == NULL)
+                goto bail;
+        }
+        else if (key == Py_True || key == Py_False || key == Py_None) {
+                        /* This must come before the PyLong_Check because
+                           True and False are also 1 and 0.*/
+            kstr = _encoded_const(key);
+            if (kstr == NULL)
+                goto bail;
+        }
+        else if (PyLong_Check(key)) {
+            kstr = PyLong_Type.tp_repr(key);
+            if (kstr == NULL) {
                 goto bail;
             }
+        }
+        else if (s->skipkeys) {
+            Py_DECREF(item);
+            continue;
+        }
+        else {
+            PyErr_Format(PyExc_TypeError,
+                         "keys must be str, int, float, bool or None, "
+                         "not %.100s", Py_TYPE(key)->tp_name);
+            goto bail;
+        }
 
-            key = PyTuple_GET_ITEM(item, 0);
-            value = PyTuple_GET_ITEM(item, 1);
-            if (encoder_encode_key_value(s, writer, &first, key, value, indent_level) < 0)
+        if (idx) {
+            if (_PyAccu_Accumulate(acc, s->item_separator))
                 goto bail;
         }
-        Py_CLEAR(items);
 
-    } else {
-        Py_ssize_t pos = 0;
-        while (PyDict_Next(dct, &pos, &key, &value)) {
-            if (encoder_encode_key_value(s, writer, &first, key, value, indent_level) < 0)
-                goto bail;
+        encoded = encoder_encode_string(s, kstr);
+        Py_CLEAR(kstr);
+        if (encoded == NULL)
+            goto bail;
+        if (_PyAccu_Accumulate(acc, encoded)) {
+            Py_DECREF(encoded);
+            goto bail;
         }
+        Py_DECREF(encoded);
+        if (_PyAccu_Accumulate(acc, s->key_separator))
+            goto bail;
+
+        value = PyTuple_GET_ITEM(item, 1);
+        if (encoder_listencode_obj(s, acc, value, indent_level))
+            goto bail;
+        idx += 1;
+        Py_DECREF(item);
     }
+    if (PyErr_Occurred())
+        goto bail;
+    Py_CLEAR(it);
 
     if (ident != NULL) {
         if (PyDict_DelItem(s->markers, ident))
@@ -1638,31 +1636,44 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
 
         yield '\n' + (' ' * (_indent * _current_indent_level))
     }*/
-    if (_PyUnicodeWriter_WriteChar(writer, '}'))
+    if (_PyAccu_Accumulate(acc, close_dict))
         goto bail;
     return 0;
 
 bail:
-    Py_XDECREF(items);
+    Py_XDECREF(it);
+    Py_XDECREF(item);
+    Py_XDECREF(kstr);
     Py_XDECREF(ident);
     return -1;
 }
 
+
 static int
-encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer,
+encoder_listencode_list(PyEncoderObject *s, _PyAccu *acc,
                         PyObject *seq, Py_ssize_t indent_level)
 {
+    /* Encode Python list seq to a JSON term */
+    _Py_static_string(PyId_open_array, "[");
+    _Py_static_string(PyId_close_array, "]");
+    _Py_static_string(PyId_empty_array, "[]");
+    PyObject *open_array = _PyUnicode_FromId(&PyId_open_array);   // borrowed ref
+    PyObject *close_array = _PyUnicode_FromId(&PyId_close_array); // borrowed ref
+    PyObject *empty_array = _PyUnicode_FromId(&PyId_empty_array); // borrowed ref
     PyObject *ident = NULL;
     PyObject *s_fast = NULL;
     Py_ssize_t i;
 
+    if (open_array == NULL || close_array == NULL || empty_array == NULL) {
+        return -1;
+    }
     ident = NULL;
     s_fast = PySequence_Fast(seq, "_iterencode_list needs a sequence");
     if (s_fast == NULL)
         return -1;
     if (PySequence_Fast_GET_SIZE(s_fast) == 0) {
         Py_DECREF(s_fast);
-        return _PyUnicodeWriter_WriteASCIIString(writer, "[]", 2);
+        return _PyAccu_Accumulate(acc, empty_array);
     }
 
     if (s->markers != Py_None) {
@@ -1681,7 +1692,7 @@ encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer,
         }
     }
 
-    if (_PyUnicodeWriter_WriteChar(writer, '['))
+    if (_PyAccu_Accumulate(acc, open_array))
         goto bail;
     if (s->indent != Py_None) {
         /* TODO: DOES NOT RUN */
@@ -1695,10 +1706,10 @@ encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer,
     for (i = 0; i < PySequence_Fast_GET_SIZE(s_fast); i++) {
         PyObject *obj = PySequence_Fast_GET_ITEM(s_fast, i);
         if (i) {
-            if (_PyUnicodeWriter_WriteStr(writer, s->item_separator))
+            if (_PyAccu_Accumulate(acc, s->item_separator))
                 goto bail;
         }
-        if (encoder_listencode_obj(s, writer, obj, indent_level))
+        if (encoder_listencode_obj(s, acc, obj, indent_level))
             goto bail;
     }
     if (ident != NULL) {
@@ -1713,7 +1724,7 @@ encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer,
 
         yield '\n' + (' ' * (_indent * _current_indent_level))
     }*/
-    if (_PyUnicodeWriter_WriteChar(writer, ']'))
+    if (_PyAccu_Accumulate(acc, close_array))
         goto bail;
     Py_DECREF(s_fast);
     return 0;
@@ -1804,27 +1815,53 @@ PyDoc_STRVAR(module_doc,
 static int
 _json_exec(PyObject *module)
 {
-    PyObject *PyScannerType = PyType_FromSpec(&PyScannerType_spec);
-    if (PyScannerType == NULL) {
+    _jsonmodulestate *state = get_json_state(module);
+
+    state->PyScannerType = PyType_FromSpec(&PyScannerType_spec);
+    if (state->PyScannerType == NULL) {
         return -1;
     }
-    int rc = PyModule_AddObjectRef(module, "make_scanner", PyScannerType);
-    Py_DECREF(PyScannerType);
-    if (rc < 0) {
+    Py_INCREF(state->PyScannerType);
+    if (PyModule_AddObject(module, "make_scanner", state->PyScannerType) < 0) {
+        Py_DECREF(state->PyScannerType);
         return -1;
     }
 
-    PyObject *PyEncoderType = PyType_FromSpec(&PyEncoderType_spec);
-    if (PyEncoderType == NULL) {
+    state->PyEncoderType = PyType_FromSpec(&PyEncoderType_spec);
+    if (state->PyEncoderType == NULL) {
         return -1;
     }
-    rc = PyModule_AddObjectRef(module, "make_encoder", PyEncoderType);
-    Py_DECREF(PyEncoderType);
-    if (rc < 0) {
+    Py_INCREF(state->PyEncoderType);
+    if (PyModule_AddObject(module, "make_encoder", state->PyEncoderType) < 0) {
+        Py_DECREF(state->PyEncoderType);
         return -1;
     }
 
     return 0;
+}
+
+static int
+_jsonmodule_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    _jsonmodulestate *state = get_json_state(module);
+    Py_VISIT(state->PyScannerType);
+    Py_VISIT(state->PyEncoderType);
+    return 0;
+}
+
+static int
+_jsonmodule_clear(PyObject *module)
+{
+    _jsonmodulestate *state = get_json_state(module);
+    Py_CLEAR(state->PyScannerType);
+    Py_CLEAR(state->PyEncoderType);
+    return 0;
+}
+
+static void
+_jsonmodule_free(void *module)
+{
+    _jsonmodule_clear((PyObject *)module);
 }
 
 static PyModuleDef_Slot _json_slots[] = {
@@ -1833,11 +1870,15 @@ static PyModuleDef_Slot _json_slots[] = {
 };
 
 static struct PyModuleDef jsonmodule = {
-    .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = "_json",
-    .m_doc = module_doc,
-    .m_methods = speedups_methods,
-    .m_slots = _json_slots,
+        PyModuleDef_HEAD_INIT,
+        "_json",
+        module_doc,
+        sizeof(_jsonmodulestate),
+        speedups_methods,
+        _json_slots,
+        _jsonmodule_traverse,
+        _jsonmodule_clear,
+        _jsonmodule_free,
 };
 
 PyMODINIT_FUNC

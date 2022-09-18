@@ -313,7 +313,7 @@ class Rational(Real):
         so that ratios of huge integers convert without overflowing.
 
         """
-        return int(self.numerator) / int(self.denominator)
+        return self.numerator / self.denominator
 
 
 class Integral(Rational):

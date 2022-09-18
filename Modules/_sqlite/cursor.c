@@ -130,10 +130,14 @@ stmt_reset(pysqlite_Statement *self)
 {
     int rc = SQLITE_OK;
 
-    if (self->st != NULL) {
+    if (self->in_use && self->st) {
         Py_BEGIN_ALLOW_THREADS
         rc = sqlite3_reset(self->st);
         Py_END_ALLOW_THREADS
+
+        if (rc == SQLITE_OK) {
+            self->in_use = 0;
+        }
     }
 
     return rc;
@@ -766,6 +770,12 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
     }
 }
 
+static inline void
+stmt_mark_dirty(pysqlite_Statement *self)
+{
+    self->in_use = 1;
+}
+
 PyObject *
 _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation, PyObject* second_argument)
 {
@@ -820,12 +830,17 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         }
     }
 
-    /* reset description */
+    if (self->statement != NULL) {
+        /* There is an active statement */
+        stmt_reset(self->statement);
+    }
+
+    /* reset description and rowcount */
     Py_INCREF(Py_None);
     Py_SETREF(self->description, Py_None);
+    self->rowcount = 0L;
 
     if (self->statement) {
-        // Reset pending statements on this cursor.
         (void)stmt_reset(self->statement);
     }
 
@@ -842,7 +857,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         goto error;
     }
 
-    if (sqlite3_stmt_busy(self->statement->st)) {
+    if (self->statement->in_use) {
         Py_SETREF(self->statement,
                   pysqlite_statement_create(self->connection, operation));
         if (self->statement == NULL) {
@@ -850,8 +865,8 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         }
     }
 
-    (void)stmt_reset(self->statement);
-    self->rowcount = self->statement->is_dml ? 0L : -1L;
+    stmt_reset(self->statement);
+    stmt_mark_dirty(self->statement);
 
     /* We start a transaction implicitly before a DML statement.
        SELECT is the only exception. See #9924. */
@@ -864,12 +879,13 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         }
     }
 
-    assert(!sqlite3_stmt_busy(self->statement->st));
     while (1) {
         parameters = PyIter_Next(parameters_iter);
         if (!parameters) {
             break;
         }
+
+        stmt_mark_dirty(self->statement);
 
         bind_parameters(state, self->statement, parameters);
         if (PyErr_Occurred()) {
@@ -886,6 +902,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
                     PyErr_Clear();
                 }
             }
+            (void)stmt_reset(self->statement);
             _pysqlite_seterror(state, self->connection->db);
             goto error;
         }
@@ -927,10 +944,18 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
             }
         }
 
-        if (rc == SQLITE_DONE) {
-            if (self->statement->is_dml) {
-                self->rowcount += (long)sqlite3_changes(self->connection->db);
-            }
+        if (self->statement->is_dml) {
+            self->rowcount += (long)sqlite3_changes(self->connection->db);
+        } else {
+            self->rowcount= -1L;
+        }
+
+        if (rc == SQLITE_DONE && !multiple) {
+            stmt_reset(self->statement);
+            Py_CLEAR(self->statement);
+        }
+
+        if (multiple) {
             stmt_reset(self->statement);
         }
         Py_XDECREF(parameters);
@@ -955,17 +980,11 @@ error:
     self->locked = 0;
 
     if (PyErr_Occurred()) {
-        if (self->statement) {
-            (void)stmt_reset(self->statement);
-            Py_CLEAR(self->statement);
-        }
         self->rowcount = -1L;
         return NULL;
+    } else {
+        return Py_NewRef((PyObject *)self);
     }
-    if (self->statement && !sqlite3_stmt_busy(self->statement->st)) {
-        Py_CLEAR(self->statement);
-    }
-    return Py_NewRef((PyObject *)self);
 }
 
 /*[clinic input]
@@ -1092,7 +1111,11 @@ pysqlite_cursor_iternext(pysqlite_Cursor *self)
 
     sqlite3_stmt *stmt = self->statement->st;
     assert(stmt != NULL);
-    assert(sqlite3_data_count(stmt) != 0);
+    if (sqlite3_data_count(stmt) == 0) {
+        (void)stmt_reset(self->statement);
+        Py_CLEAR(self->statement);
+        return NULL;
+    }
 
     self->locked = 1;  // GH-80254: Prevent recursive use of cursors.
     PyObject *row = _pysqlite_fetch_one_row(self);
@@ -1102,17 +1125,11 @@ pysqlite_cursor_iternext(pysqlite_Cursor *self)
     }
     int rc = stmt_step(stmt);
     if (rc == SQLITE_DONE) {
-        if (self->statement->is_dml) {
-            self->rowcount = (long)sqlite3_changes(self->connection->db);
-        }
         (void)stmt_reset(self->statement);
-        Py_CLEAR(self->statement);
     }
     else if (rc != SQLITE_ROW) {
         (void)_pysqlite_seterror(self->connection->state,
                                  self->connection->db);
-        (void)stmt_reset(self->statement);
-        Py_CLEAR(self->statement);
         Py_DECREF(row);
         return NULL;
     }

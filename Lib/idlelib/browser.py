@@ -6,6 +6,7 @@ XXX TO DO:
     (or recheck on window popup)
 - add popup menu with more options (e.g. doc strings, base classes, imports)
 - add base classes to class browser tree
+- finish removing limitation to x.py files (ModuleBrowserTreeItem)
 """
 
 import os
@@ -15,21 +16,11 @@ import sys
 from idlelib.config import idleConf
 from idlelib import pyshell
 from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
-from idlelib.util import py_extensions
 from idlelib.window import ListedToplevel
 
 
 file_open = None  # Method...Item and Class...Item use this.
 # Normally pyshell.flist.open, but there is no pyshell.flist for htest.
-
-# The browser depends on pyclbr and importlib which do not support .pyi files.
-browseable_extension_blocklist = ('.pyi',)
-
-
-def is_browseable_extension(path):
-    _, ext = os.path.splitext(path)
-    ext = os.path.normcase(ext)
-    return ext in py_extensions and ext not in browseable_extension_blocklist
 
 
 def transform_children(child_dict, modname=None):
@@ -85,8 +76,8 @@ class ModuleBrowser:
 
         Instance variables:
             name: Module name.
-            file: Full path and module with supported extension.
-                Used in creating ModuleBrowserTreeItem as the rootnode for
+            file: Full path and module with .py extension.  Used in
+                creating ModuleBrowserTreeItem as the rootnode for
                 the tree and subsequently in the children.
         """
         self.master = master
@@ -170,22 +161,22 @@ class ModuleBrowserTreeItem(TreeItem):
 
     def OnDoubleClick(self):
         "Open a module in an editor window when double clicked."
-        if not is_browseable_extension(self.file):
+        if os.path.normcase(self.file[-3:]) != ".py":
             return
         if not os.path.exists(self.file):
             return
         file_open(self.file)
 
     def IsExpandable(self):
-        "Return True if Python file."
-        return is_browseable_extension(self.file)
+        "Return True if Python (.py) file."
+        return os.path.normcase(self.file[-3:]) == ".py"
 
     def listchildren(self):
         "Return sequenced classes and functions in the module."
-        if not is_browseable_extension(self.file):
-            return []
         dir, base = os.path.split(self.file)
-        name, _ = os.path.splitext(base)
+        name, ext = os.path.splitext(base)
+        if os.path.normcase(ext) != ".py":
+            return []
         try:
             tree = pyclbr.readmodule_ex(name, [dir] + sys.path)
         except ImportError:

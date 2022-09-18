@@ -123,7 +123,7 @@ if sys.platform.lower().startswith("win"):
     errorTab[10014] = "A fault occurred on the network??"  # WSAEFAULT
     errorTab[10022] = "An invalid operation was attempted."
     errorTab[10024] = "Too many open files."
-    errorTab[10035] = "The socket operation would block."
+    errorTab[10035] = "The socket operation would block"
     errorTab[10036] = "A blocking operation is already in progress."
     errorTab[10037] = "Operation already in progress."
     errorTab[10038] = "Socket operation on nonsocket."
@@ -255,18 +255,17 @@ class socket(_socket.socket):
                self.type,
                self.proto)
         if not closed:
-            # getsockname and getpeername may not be available on WASI.
             try:
                 laddr = self.getsockname()
                 if laddr:
                     s += ", laddr=%s" % str(laddr)
-            except (error, AttributeError):
+            except error:
                 pass
             try:
                 raddr = self.getpeername()
                 if raddr:
                     s += ", raddr=%s" % str(raddr)
-            except (error, AttributeError):
+            except error:
                 pass
         s += '>'
         return s

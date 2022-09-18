@@ -89,7 +89,6 @@ class HTMLParser(_markupbase.ParserBase):
         If convert_charrefs is True (the default), all character references
         are automatically converted to the corresponding Unicode characters.
         """
-        super().__init__()
         self.convert_charrefs = convert_charrefs
         self.reset()
 
@@ -99,7 +98,7 @@ class HTMLParser(_markupbase.ParserBase):
         self.lasttag = '???'
         self.interesting = interesting_normal
         self.cdata_elem = None
-        super().reset()
+        _markupbase.ParserBase.reset(self)
 
     def feed(self, data):
         r"""Feed data to the parser.

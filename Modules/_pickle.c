@@ -232,6 +232,8 @@ _Pickle_InitState(PickleState *st)
 {
     PyObject *copyreg = NULL;
     PyObject *compat_pickle = NULL;
+    PyObject *codecs = NULL;
+    PyObject *functools = NULL;
 
     st->getattr = _PyEval_GetBuiltin(&_Py_ID(getattr));
     if (st->getattr == NULL)
@@ -327,7 +329,10 @@ _Pickle_InitState(PickleState *st)
     }
     Py_CLEAR(compat_pickle);
 
-    st->codecs_encode = _PyImport_GetModuleAttrString("codecs", "encode");
+    codecs = PyImport_ImportModule("codecs");
+    if (codecs == NULL)
+        goto error;
+    st->codecs_encode = PyObject_GetAttrString(codecs, "encode");
     if (st->codecs_encode == NULL) {
         goto error;
     }
@@ -337,16 +342,23 @@ _Pickle_InitState(PickleState *st)
                      Py_TYPE(st->codecs_encode)->tp_name);
         goto error;
     }
+    Py_CLEAR(codecs);
 
-    st->partial = _PyImport_GetModuleAttrString("functools", "partial");
+    functools = PyImport_ImportModule("functools");
+    if (!functools)
+        goto error;
+    st->partial = PyObject_GetAttrString(functools, "partial");
     if (!st->partial)
         goto error;
+    Py_CLEAR(functools);
 
     return 0;
 
   error:
     Py_CLEAR(copyreg);
     Py_CLEAR(compat_pickle);
+    Py_CLEAR(codecs);
+    Py_CLEAR(functools);
     _Pickle_ClearState(st);
     return -1;
 }
@@ -2994,10 +3006,7 @@ batch_list_exact(PicklerObject *self, PyObject *obj)
 
     if (PyList_GET_SIZE(obj) == 1) {
         item = PyList_GET_ITEM(obj, 0);
-        Py_INCREF(item);
-        int err = save(self, item, 0);
-        Py_DECREF(item);
-        if (err < 0)
+        if (save(self, item, 0) < 0)
             return -1;
         if (_Pickler_Write(self, &append_op, 1) < 0)
             return -1;
@@ -3012,10 +3021,7 @@ batch_list_exact(PicklerObject *self, PyObject *obj)
             return -1;
         while (total < PyList_GET_SIZE(obj)) {
             item = PyList_GET_ITEM(obj, total);
-            Py_INCREF(item);
-            int err = save(self, item, 0);
-            Py_DECREF(item);
-            if (err < 0)
+            if (save(self, item, 0) < 0)
                 return -1;
             total++;
             if (++this_batch == BATCHSIZE)
@@ -3253,16 +3259,10 @@ batch_dict_exact(PicklerObject *self, PyObject *obj)
     /* Special-case len(d) == 1 to save space. */
     if (dict_size == 1) {
         PyDict_Next(obj, &ppos, &key, &value);
-        Py_INCREF(key);
-        Py_INCREF(value);
-        if (save(self, key, 0) < 0) {
-            goto error;
-        }
-        if (save(self, value, 0) < 0) {
-            goto error;
-        }
-        Py_CLEAR(key);
-        Py_CLEAR(value);
+        if (save(self, key, 0) < 0)
+            return -1;
+        if (save(self, value, 0) < 0)
+            return -1;
         if (_Pickler_Write(self, &setitem_op, 1) < 0)
             return -1;
         return 0;
@@ -3274,16 +3274,10 @@ batch_dict_exact(PicklerObject *self, PyObject *obj)
         if (_Pickler_Write(self, &mark_op, 1) < 0)
             return -1;
         while (PyDict_Next(obj, &ppos, &key, &value)) {
-            Py_INCREF(key);
-            Py_INCREF(value);
-            if (save(self, key, 0) < 0) {
-                goto error;
-            }
-            if (save(self, value, 0) < 0) {
-                goto error;
-            }
-            Py_CLEAR(key);
-            Py_CLEAR(value);
+            if (save(self, key, 0) < 0)
+                return -1;
+            if (save(self, value, 0) < 0)
+                return -1;
             if (++i == BATCHSIZE)
                 break;
         }
@@ -3298,10 +3292,6 @@ batch_dict_exact(PicklerObject *self, PyObject *obj)
 
     } while (i == BATCHSIZE);
     return 0;
-error:
-    Py_XDECREF(key);
-    Py_XDECREF(value);
-    return -1;
 }
 
 static int
@@ -3419,10 +3409,7 @@ save_set(PicklerObject *self, PyObject *obj)
         if (_Pickler_Write(self, &mark_op, 1) < 0)
             return -1;
         while (_PySet_NextEntry(obj, &ppos, &item, &hash)) {
-            Py_INCREF(item);
-            int err = save(self, item, 0);
-            Py_CLEAR(item);
-            if (err < 0)
+            if (save(self, item, 0) < 0)
                 return -1;
             if (++i == BATCHSIZE)
                 break;
@@ -4761,9 +4748,7 @@ _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
     {
         return -1;
     }
-    if (self->dispatch_table != NULL) {
-        return 0;
-    }
+
     if (_PyObject_LookupAttr((PyObject *)self, &_Py_ID(dispatch_table),
                              &self->dispatch_table) < 0) {
         return -1;

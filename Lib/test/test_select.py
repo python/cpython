@@ -1,4 +1,5 @@
 import errno
+import os
 import select
 import subprocess
 import sys

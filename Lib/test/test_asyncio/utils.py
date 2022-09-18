@@ -11,7 +11,9 @@ import selectors
 import socket
 import socketserver
 import sys
+import tempfile
 import threading
+import time
 import unittest
 import weakref
 
@@ -32,7 +34,6 @@ from asyncio import futures
 from asyncio import tasks
 from asyncio.log import logger
 from test import support
-from test.support import socket_helper
 from test.support import threading_helper
 
 
@@ -108,14 +109,13 @@ def run_briefly(loop):
 
 
 def run_until(loop, pred, timeout=support.SHORT_TIMEOUT):
-    delay = 0.001
-    for _ in support.busy_retry(timeout, error=False):
-        if pred():
-            break
-        loop.run_until_complete(tasks.sleep(delay))
-        delay = max(delay * 2, 1.0)
-    else:
-        raise futures.TimeoutError()
+    deadline = time.monotonic() + timeout
+    while not pred():
+        if timeout is not None:
+            timeout = deadline - time.monotonic()
+            if timeout <= 0:
+                raise futures.TimeoutError()
+        loop.run_until_complete(tasks.sleep(0.001))
 
 
 def run_once(loop):
@@ -250,7 +250,8 @@ if hasattr(socket, 'AF_UNIX'):
 
 
     def gen_unix_socket_path():
-        return socket_helper.create_unix_domain_name()
+        with tempfile.NamedTemporaryFile() as file:
+            return file.name
 
 
     @contextlib.contextmanager

@@ -38,11 +38,6 @@ extern int _PyAST_Optimize(
     struct _arena *arena,
     _PyASTOptimizeState *state);
 
-/* Access compiler internals for unit testing */
-PyAPI_FUNC(PyObject*) _PyCompile_OptimizeCfg(
-        PyObject *instructions,
-        PyObject *consts);
-
 #ifdef __cplusplus
 }
 #endif

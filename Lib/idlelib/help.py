@@ -76,9 +76,9 @@ class HelpParser(HTMLParser):
             if a == 'class':
                 class_ = v
         s = ''
-        if tag == 'section' and attrs == [('id', 'idle')]:
+        if tag == 'div' and class_ == 'section':
             self.show = True    # Start main content.
-        elif tag == 'div' and class_ == 'clearer':
+        elif tag == 'div' and class_ == 'sphinxsidebar':
             self.show = False   # End main content.
         elif tag == 'p' and self.prevtag and not self.prevtag[0]:
             # Begin a new block for <p> tags after a closed tag.

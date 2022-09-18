@@ -2,12 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
-
 #if defined(HAVE_GETRUSAGE)
 
 PyDoc_STRVAR(resource_getrusage__doc__,
@@ -101,42 +95,41 @@ exit:
 #if defined(HAVE_PRLIMIT)
 
 PyDoc_STRVAR(resource_prlimit__doc__,
-"prlimit($module, pid, resource, limits=None, /)\n"
-"--\n"
-"\n");
+"prlimit(pid, resource, [limits])");
 
 #define RESOURCE_PRLIMIT_METHODDEF    \
-    {"prlimit", _PyCFunction_CAST(resource_prlimit), METH_FASTCALL, resource_prlimit__doc__},
+    {"prlimit", (PyCFunction)resource_prlimit, METH_VARARGS, resource_prlimit__doc__},
 
 static PyObject *
 resource_prlimit_impl(PyObject *module, pid_t pid, int resource,
-                      PyObject *limits);
+                      int group_right_1, PyObject *limits);
 
 static PyObject *
-resource_prlimit(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+resource_prlimit(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     pid_t pid;
     int resource;
-    PyObject *limits = Py_None;
+    int group_right_1 = 0;
+    PyObject *limits = NULL;
 
-    if (!_PyArg_CheckPositional("prlimit", nargs, 2, 3)) {
-        goto exit;
+    switch (PyTuple_GET_SIZE(args)) {
+        case 2:
+            if (!PyArg_ParseTuple(args, "" _Py_PARSE_PID "i:prlimit", &pid, &resource)) {
+                goto exit;
+            }
+            break;
+        case 3:
+            if (!PyArg_ParseTuple(args, "" _Py_PARSE_PID "iO:prlimit", &pid, &resource, &limits)) {
+                goto exit;
+            }
+            group_right_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "resource.prlimit requires 2 to 3 arguments");
+            goto exit;
     }
-    pid = PyLong_AsPid(args[0]);
-    if (pid == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    resource = _PyLong_AsInt(args[1]);
-    if (resource == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    if (nargs < 3) {
-        goto skip_optional;
-    }
-    limits = args[2];
-skip_optional:
-    return_value = resource_prlimit_impl(module, pid, resource, limits);
+    return_value = resource_prlimit_impl(module, pid, resource, group_right_1, limits);
 
 exit:
     return return_value;
@@ -178,4 +171,4 @@ exit:
 #ifndef RESOURCE_PRLIMIT_METHODDEF
     #define RESOURCE_PRLIMIT_METHODDEF
 #endif /* !defined(RESOURCE_PRLIMIT_METHODDEF) */
-/*[clinic end generated code: output=2fbec74335a57230 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7c57d4f3688d3f07 input=a9049054013a1b77]*/

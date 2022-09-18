@@ -27,4 +27,5 @@
 .. toctree::
    :hidden:
 
+   distutils/index.rst
    install/index.rst

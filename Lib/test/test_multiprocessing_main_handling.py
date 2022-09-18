@@ -40,7 +40,6 @@ test_source = """\
 import sys
 import time
 from multiprocessing import Pool, set_start_method
-from test import support
 
 # We use this __main__ defined function in the map call below in order to
 # check that multiprocessing in correctly running the unguarded
@@ -60,12 +59,13 @@ if __name__ == '__main__':
     results = []
     with Pool(5) as pool:
         pool.map_async(f, [1, 2, 3], callback=results.extend)
-
-        # up to 1 min to report the results
-        for _ in support.sleeping_retry(support.LONG_TIMEOUT,
-                                        "Timed out waiting for results"):
-            if results:
-                break
+        start_time = time.monotonic()
+        while not results:
+            time.sleep(0.05)
+            # up to 1 min to report the results
+            dt = time.monotonic() - start_time
+            if dt > 60.0:
+                raise RuntimeError("Timed out waiting for results (%.1f sec)" % dt)
 
     results.sort()
     print(start_method, "->", results)
@@ -86,18 +86,19 @@ if __name__ != "__main__":
 import sys
 import time
 from multiprocessing import Pool, set_start_method
-from test import support
 
 start_method = sys.argv[1]
 set_start_method(start_method)
 results = []
 with Pool(5) as pool:
     pool.map_async(int, [1, 4, 9], callback=results.extend)
-    # up to 1 min to report the results
-    for _ in support.sleeping_retry(support.LONG_TIMEOUT,
-                                    "Timed out waiting for results"):
-        if results:
-            break
+    start_time = time.monotonic()
+    while not results:
+        time.sleep(0.05)
+        # up to 1 min to report the results
+        dt = time.monotonic() - start_time
+        if dt > 60.0:
+            raise RuntimeError("Timed out waiting for results (%.1f sec)" % dt)
 
 results.sort()
 print(start_method, "->", results)

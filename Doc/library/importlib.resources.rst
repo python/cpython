@@ -4,7 +4,7 @@
 .. module:: importlib.resources
     :synopsis: Package resource reading, opening, and access
 
-**Source code:** :source:`Lib/importlib/resources/__init__.py`
+**Source code:** :source:`Lib/importlib/resources.py`
 
 --------------
 
@@ -17,54 +17,63 @@ text mode.
 
 Resources are roughly akin to files inside directories, though it's important
 to keep in mind that this is just a metaphor.  Resources and packages **do
-not** have to exist as physical files and directories on the file system:
-for example, a package and its resources can be imported from a zip file using
-:py:mod:`zipimport`.
+not** have to exist as physical files and directories on the file system.
 
 .. note::
 
    This module provides functionality similar to `pkg_resources
    <https://setuptools.readthedocs.io/en/latest/pkg_resources.html>`_ `Basic
    Resource Access
-   <https://setuptools.readthedocs.io/en/latest/pkg_resources.html#basic-resource-access>`_
+   <http://setuptools.readthedocs.io/en/latest/pkg_resources.html#basic-resource-access>`_
    without the performance overhead of that package.  This makes reading
    resources included in packages easier, with more stable and consistent
    semantics.
 
    The standalone backport of this module provides more information
    on `using importlib.resources
-   <https://importlib-resources.readthedocs.io/en/latest/using.html>`_ and
+   <http://importlib-resources.readthedocs.io/en/latest/using.html>`_ and
    `migrating from pkg_resources to importlib.resources
-   <https://importlib-resources.readthedocs.io/en/latest/migration.html>`_.
+   <http://importlib-resources.readthedocs.io/en/latest/migration.html>`_
+   and
+   `migrating legacy usage <https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy>`_.
 
-:class:`Loaders <importlib.abc.Loader>` that wish to support resource reading should implement a
+Loaders that wish to support resource reading should implement a
 ``get_resource_reader(fullname)`` method as specified by
-:class:`importlib.resources.abc.ResourceReader`.
+:class:`importlib.abc.ResourceReader`.
+
+The following types are defined.
 
 .. data:: Package
 
-    Whenever a function accepts a ``Package`` argument, you can pass in
-    either a :class:`module object <types.ModuleType>` or a module name
-    as a string.  You can only pass module objects whose
-    ``__spec__.submodule_search_locations`` is not ``None``.
+    The ``Package`` type is defined as ``Union[str, ModuleType]``.  This means
+    that where the function describes accepting a ``Package``, you can pass in
+    either a string or a module.  Module objects must have a resolvable
+    ``__spec__.submodule_search_locations`` that is not ``None``.
 
-    The ``Package`` type is defined as ``Union[str, ModuleType]``.
+.. data:: Resource
+
+    This type describes the resource names passed into the various functions
+    in this package.  This is defined as ``Union[str, os.PathLike]``.
+
+
+The following functions are available.
+
 
 .. function:: files(package)
 
-    Returns a :class:`~importlib.resources.abc.Traversable` object
+    Returns an :class:`importlib.resources.abc.Traversable` object
     representing the resource container for the package (think directory)
     and its resources (think files). A Traversable may contain other
     containers (think subdirectories).
 
     *package* is either a name or a module object which conforms to the
-    :data:`Package` requirements.
+    ``Package`` requirements.
 
     .. versionadded:: 3.9
 
 .. function:: as_file(traversable)
 
-    Given a :class:`~importlib.resources.abc.Traversable` object representing
+    Given a :class:`importlib.resources.abc.Traversable` object representing
     a file, typically from :func:`importlib.resources.files`, return
     a context manager for use in a :keyword:`with` statement.
     The context manager provides a :class:`pathlib.Path` object.
@@ -78,22 +87,6 @@ for example, a package and its resources can be imported from a zip file using
 
     .. versionadded:: 3.9
 
-Deprecated functions
---------------------
-
-An older, deprecated set of functions is still available, but is
-scheduled for removal in a future version of Python.
-The main drawback of these functions is that they do not support
-directories: they assume all resources are located directly within a *package*.
-
-.. data:: Resource
-
-    For *resource* arguments of the functions below, you can pass in
-    the name of a resource as a string or
-    a :class:`path-like object <os.PathLike>`.
-
-    The ``Resource`` type is defined as ``Union[str, os.PathLike]``.
-
 .. function:: open_binary(package, resource)
 
     Open for binary reading the *resource* within *package*.
@@ -104,11 +97,7 @@ directories: they assume all resources are located directly within a *package*.
     sub-resources (i.e. it cannot be a directory).  This function returns a
     ``typing.BinaryIO`` instance, a binary I/O stream open for reading.
 
-    .. deprecated:: 3.11
-
-       Calls to this function can be replaced by::
-
-          files(package).joinpath(resource).open('rb')
+   .. deprecated:: 3.11
 
 
 .. function:: open_text(package, resource, encoding='utf-8', errors='strict')
@@ -125,11 +114,7 @@ directories: they assume all resources are located directly within a *package*.
     This function returns a ``typing.TextIO`` instance, a text I/O stream open
     for reading.
 
-    .. deprecated:: 3.11
-
-       Calls to this function can be replaced by::
-
-          files(package).joinpath(resource).open('r', encoding=encoding)
+   .. deprecated:: 3.11
 
 
 .. function:: read_binary(package, resource)
@@ -143,11 +128,7 @@ directories: they assume all resources are located directly within a *package*.
     sub-resources (i.e. it cannot be a directory).  This function returns the
     contents of the resource as :class:`bytes`.
 
-    .. deprecated:: 3.11
-
-       Calls to this function can be replaced by::
-
-          files(package).joinpath(resource).read_bytes()
+   .. deprecated:: 3.11
 
 
 .. function:: read_text(package, resource, encoding='utf-8', errors='strict')
@@ -162,11 +143,7 @@ directories: they assume all resources are located directly within a *package*.
     have the same meaning as with built-in :func:`open`.  This function
     returns the contents of the resource as :class:`str`.
 
-    .. deprecated:: 3.11
-
-       Calls to this function can be replaced by::
-
-          files(package).joinpath(resource).read_text(encoding=encoding)
+   .. deprecated:: 3.11
 
 
 .. function:: path(package, resource)
@@ -183,26 +160,17 @@ directories: they assume all resources are located directly within a *package*.
     within *package*; it may not contain path separators and it may not have
     sub-resources (i.e. it cannot be a directory).
 
-    .. deprecated:: 3.11
-
-       Calls to this function can be replaced using :func:`as_file`::
-
-          as_file(files(package).joinpath(resource))
+   .. deprecated:: 3.11
 
 
 .. function:: is_resource(package, name)
 
     Return ``True`` if there is a resource named *name* in the package,
-    otherwise ``False``.
-    This function does not consider directories to be resources.
+    otherwise ``False``.  Remember that directories are *not* resources!
     *package* is either a name or a module object which conforms to the
     ``Package`` requirements.
 
-    .. deprecated:: 3.11
-
-       Calls to this function can be replaced by::
-
-          files(package).joinpath(resource).is_file()
+   .. deprecated:: 3.11
 
 
 .. function:: contents(package)
@@ -214,8 +182,4 @@ directories: they assume all resources are located directly within a *package*.
     *package* is either a name or a module object which conforms to the
     ``Package`` requirements.
 
-    .. deprecated:: 3.11
-
-       Calls to this function can be replaced by::
-
-          (resource.name for resource in files(package).iterdir() if resource.is_file())
+   .. deprecated:: 3.11

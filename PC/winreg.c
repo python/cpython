@@ -217,11 +217,13 @@ class winreg.HKEYType "PyHKEYObject *" "&PyHKEY_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=4c964eba3bf914d6]*/
 
 /*[python input]
-class REGSAM_converter(int_converter):
+class REGSAM_converter(CConverter):
     type = 'REGSAM'
+    format_unit = 'i'
 
-class DWORD_converter(unsigned_long_converter):
+class DWORD_converter(CConverter):
     type = 'DWORD'
+    format_unit = 'k'
 
 class HKEY_converter(CConverter):
     type = 'HKEY'
@@ -247,7 +249,7 @@ class self_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = (PyObject *)_return_value;\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=2ebb7a4922d408d6]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=22f7aedc6d68e80e]*/
 
 #include "clinic/winreg.c.h"
 
@@ -979,9 +981,7 @@ winreg_DeleteKey_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key)
                     (Py_ssize_t)0) < 0) {
         return NULL;
     }
-    Py_BEGIN_ALLOW_THREADS
-    rc = RegDeleteKeyW(key, sub_key);
-    Py_END_ALLOW_THREADS
+    rc = RegDeleteKeyW(key, sub_key );
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegDeleteKey");
     Py_RETURN_NONE;
@@ -1002,10 +1002,7 @@ winreg.DeleteKeyEx
     reserved: int = 0
         A reserved integer, and must be zero.  Default is zero.
 
-Deletes the specified key (intended for 64-bit OS).
-
-While this function is intended to be used for 64-bit OS, it is also
- available on 32-bit systems.
+Deletes the specified key (64-bit OS only).
 
 This method can not delete keys with subkeys.
 
@@ -1018,17 +1015,34 @@ static PyObject *
 winreg_DeleteKeyEx_impl(PyObject *module, HKEY key,
                         const Py_UNICODE *sub_key, REGSAM access,
                         int reserved)
-/*[clinic end generated code: output=52a1c8b374ebc003 input=a3186db079b3bf85]*/
+/*[clinic end generated code: output=52a1c8b374ebc003 input=711d9d89e7ecbed7]*/
 {
+    HMODULE hMod;
+    typedef LONG (WINAPI *RDKEFunc)(HKEY, const wchar_t*, REGSAM, int);
+    RDKEFunc pfn = NULL;
     long rc;
+
     if (PySys_Audit("winreg.DeleteKey", "nun",
                     (Py_ssize_t)key, sub_key,
                     (Py_ssize_t)access) < 0) {
         return NULL;
     }
+    /* Only available on 64bit platforms, so we must load it
+       dynamically. */
     Py_BEGIN_ALLOW_THREADS
-    rc = RegDeleteKeyExW(key, sub_key, access, reserved);
+    hMod = GetModuleHandleW(L"advapi32.dll");
+    if (hMod)
+        pfn = (RDKEFunc)GetProcAddress(hMod, "RegDeleteKeyExW");
     Py_END_ALLOW_THREADS
+    if (!pfn) {
+        PyErr_SetString(PyExc_NotImplementedError,
+                                        "not implemented on this platform");
+        return NULL;
+    }
+    Py_BEGIN_ALLOW_THREADS
+    rc = (*pfn)(key, sub_key, access, reserved);
+    Py_END_ALLOW_THREADS
+
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegDeleteKeyEx");
     Py_RETURN_NONE;

@@ -69,8 +69,7 @@ Examining Symbol Tables
 
    .. method:: get_identifiers()
 
-      Return a view object containing the names of symbols in the table.
-      See the :ref:`documentation of view objects <dict-views>`.
+      Return a list of names of symbols in this table.
 
    .. method:: lookup(name)
 

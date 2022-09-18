@@ -61,9 +61,6 @@
 # define FAITH
 #endif
 
-#ifdef HAVE_NETDB_H
-#define HAVE_GETADDRINFO 1
-
 #define SUCCESS 0
 #define GAI_ANY 0
 #define YES 1
@@ -639,5 +636,3 @@ get_addr(hostname, af, res, pai, port0)
     *res = NULL;
     return error;
 }
-
-#endif // HAVE_NETDB_H

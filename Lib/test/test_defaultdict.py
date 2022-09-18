@@ -1,7 +1,9 @@
 """Unit tests for collections.defaultdict."""
 
+import os
 import copy
 import pickle
+import tempfile
 import unittest
 
 from collections import defaultdict

@@ -29,6 +29,7 @@ if sys.platform not in ('win32', 'vxworks'):
 import asyncio
 from asyncio import coroutines
 from asyncio import events
+from asyncio import proactor_events
 from asyncio import selector_events
 from test.test_asyncio import utils as test_utils
 from test import support

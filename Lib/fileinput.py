@@ -335,21 +335,18 @@ class FileInput:
                     pass
                 # The next few lines may raise OSError
                 os.rename(self._filename, self._backupfilename)
-                self._file = open(self._backupfilename, self._mode,
-                                  encoding=encoding, errors=self._errors)
+                self._file = open(self._backupfilename, self._mode, encoding=encoding)
                 try:
                     perm = os.fstat(self._file.fileno()).st_mode
                 except OSError:
-                    self._output = open(self._filename, self._write_mode,
-                                        encoding=encoding, errors=self._errors)
+                    self._output = open(self._filename, self._write_mode, encoding=encoding)
                 else:
                     mode = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
                     if hasattr(os, 'O_BINARY'):
                         mode |= os.O_BINARY
 
                     fd = os.open(self._filename, mode, perm)
-                    self._output = os.fdopen(fd, self._write_mode,
-                                             encoding=encoding, errors=self._errors)
+                    self._output = os.fdopen(fd, self._write_mode, encoding=encoding)
                     try:
                         os.chmod(self._filename, perm)
                     except OSError:

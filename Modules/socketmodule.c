@@ -227,7 +227,7 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 
 #define HAVE_INET_PTON
 #include <netdb.h>
-#endif // __sgi
+#endif
 
 /* Solaris fails to define this variable at all. */
 #if (defined(__sun) && defined(__SVR4)) && !defined(INET_ADDRSTRLEN)
@@ -256,9 +256,7 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #ifndef MS_WINDOWS
 
 /* Non-MS WINDOWS includes */
-#ifdef HAVE_NETDB_H
-#  include <netdb.h>
-#endif
+# include <netdb.h>
 # include <unistd.h>
 
 /* Headers needed for inet_ntoa() and inet_addr() */
@@ -441,11 +439,10 @@ remove_unusable_flags(PyObject *m)
 #define freeaddrinfo fake_freeaddrinfo
 #include "getaddrinfo.c"
 #endif
-
 #if !defined(HAVE_GETNAMEINFO)
 #define getnameinfo fake_getnameinfo
 #include "getnameinfo.c"
-#endif // HAVE_GETNAMEINFO
+#endif
 
 #ifdef MS_WINDOWS
 #define SOCKETCLOSE closesocket
@@ -626,7 +623,6 @@ set_error(void)
 }
 
 
-#if defined(HAVE_GETHOSTBYNAME_R) || defined (HAVE_GETHOSTBYNAME) || defined (HAVE_GETHOSTBYADDR)
 static PyObject *
 set_herror(int h_error)
 {
@@ -644,10 +640,8 @@ set_herror(int h_error)
 
     return NULL;
 }
-#endif
 
 
-#ifdef HAVE_GETADDRINFO
 static PyObject *
 set_gaierror(int error)
 {
@@ -671,7 +665,6 @@ set_gaierror(int error)
 
     return NULL;
 }
-#endif
 
 /* Function to perform the setting of socket blocking mode
    internally. block = (1 | 0). */
@@ -1023,7 +1016,6 @@ init_sockobject(PySocketSockObject *s,
 }
 
 
-#ifdef HAVE_SOCKETPAIR
 /* Create a new socket object.
    This just creates the object and initializes it.
    If the creation fails, return NULL and set an exception (implicit
@@ -1043,7 +1035,6 @@ new_sockobject(SOCKET_T fd, int family, int type, int proto)
     }
     return s;
 }
-#endif
 
 
 /* Lock to allow python interpreter to continue, but only allow one
@@ -1053,7 +1044,6 @@ static PyThread_type_lock netdb_lock;
 #endif
 
 
-#ifdef HAVE_GETADDRINFO
 /* Convert a string specifying a host name or one of a few symbolic
    names to a numeric IP address.  This usually calls gethostbyname()
    to do the work; the names "" and "<broadcast>" are special.
@@ -1210,7 +1200,7 @@ setipaddr(const char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int
         return -1;
     }
 }
-#endif // HAVE_GETADDRINFO
+
 
 /* Convert IPv4 sockaddr to a Python str. */
 
@@ -1634,7 +1624,6 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
     }
 }
 
-#if defined(HAVE_BIND) || defined(HAVE_CONNECTTO) || defined(CMSG_LEN)
 /* Helper for getsockaddrarg: bypass IDNA for ASCII-only host names
    (in particular, numeric IP addresses). */
 struct maybe_idna {
@@ -1733,10 +1722,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 
         struct sockaddr_un* addr = &addrbuf->un;
 #ifdef __linux__
-        if (path.len == 0 || *(const char *)path.buf == 0) {
-            /* Linux abstract namespace extension:
-               - Empty address auto-binding to an abstract address
-               - Address that starts with null byte */
+        if (path.len > 0 && *(const char *)path.buf == 0) {
+            /* Linux abstract namespace extension */
             if ((size_t)path.len > sizeof addr->sun_path) {
                 PyErr_SetString(PyExc_OSError,
                                 "AF_UNIX path too long");
@@ -2499,7 +2486,6 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 
     }
 }
-#endif // defined(HAVE_BIND) || defined(HAVE_CONNECTTO) || defined(CMSG_LEN)
 
 
 /* Get the address length according to the socket object's address family.
@@ -2797,7 +2783,6 @@ struct sock_accept {
     SOCKET_T result;
 };
 
-#if defined(HAVE_ACCEPT) || defined(HAVE_ACCEPT4)
 #if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
 /* accept4() is available on Linux 2.6.28+ and glibc 2.10 */
 static int accept4_works = -1;
@@ -2911,8 +2896,6 @@ PyDoc_STRVAR(accept_doc,
 Wait for an incoming connection.  Return a new socket file descriptor\n\
 representing the connection, and the address of the client.\n\
 For IP sockets, the address info is a pair (hostaddr, port).");
-#endif // defined(HAVE_ACCEPT) || defined(HAVE_ACCEPT4)
-
 
 /* s.setblocking(flag) method.  Argument:
    False -- non-blocking mode; same as settimeout(0)
@@ -3077,7 +3060,6 @@ Returns the timeout in seconds (float) associated with socket\n\
 operations. A timeout of None indicates that timeouts on socket\n\
 operations are disabled.");
 
-#ifdef HAVE_SETSOCKOPT
 /* s.setsockopt() method.
    With an integer third argument, sets an integer optval with optlen=4.
    With None as third argument and an integer fourth argument, set
@@ -3167,7 +3149,7 @@ setsockopt(level, option, None, optlen: int)\n\
 Set a socket option.  See the Unix manual for level and option.\n\
 The value argument can either be an integer, a string buffer, or\n\
 None, optlen.");
-#endif
+
 
 /* s.getsockopt() method.
    With two arguments, retrieves an integer option.
@@ -3241,7 +3223,6 @@ If a nonzero buffersize argument is given, the return value is a\n\
 string of that length; otherwise it is an integer.");
 
 
-#ifdef HAVE_BIND
 /* s.bind(sockaddr) method */
 
 static PyObject *
@@ -3273,7 +3254,6 @@ PyDoc_STRVAR(bind_doc,
 Bind the socket to a local address.  For IP sockets, the address is a\n\
 pair (host, port); the host must refer to the local host. For raw packet\n\
 sockets the address is a tuple (ifname, proto [,pkttype [,hatype [,addr]]])");
-#endif
 
 
 /* s.close() method.
@@ -3326,7 +3306,6 @@ Close the socket object without closing the underlying file descriptor.\n\
 The object cannot be used after this call, but the file descriptor\n\
 can be reused for other purposes.  The file descriptor is returned.");
 
-#ifdef HAVE_CONNECT
 static int
 sock_connect_impl(PySocketSockObject *s, void* Py_UNUSED(data))
 {
@@ -3474,7 +3453,6 @@ PyDoc_STRVAR(connect_ex_doc,
 \n\
 This is like connect(address), but returns an error code (the errno value)\n\
 instead of raising an exception when an error occurs.");
-#endif // HAVE_CONNECT
 
 
 /* s.fileno() method */
@@ -3491,7 +3469,6 @@ PyDoc_STRVAR(fileno_doc,
 Return the integer file descriptor of the socket.");
 
 
-#ifdef HAVE_GETSOCKNAME
 /* s.getsockname() method */
 
 static PyObject *
@@ -3519,7 +3496,6 @@ PyDoc_STRVAR(getsockname_doc,
 Return the address of the local endpoint. The format depends on the\n\
 address family. For IPv4 sockets, the address info is a pair\n\
 (hostaddr, port).");
-#endif
 
 
 #ifdef HAVE_GETPEERNAME         /* Cray APP doesn't have this :-( */
@@ -3553,7 +3529,6 @@ info is a pair (hostaddr, port).");
 #endif /* HAVE_GETPEERNAME */
 
 
-#ifdef HAVE_LISTEN
 /* s.listen(n) method */
 
 static PyObject *
@@ -3586,7 +3561,6 @@ Enable a server to accept connections.  If backlog is specified, it must be\n\
 at least 0 (if it is lower, it is set to 0); it specifies the number of\n\
 unaccepted connections that the system will allow before refusing new\n\
 connections. If not specified, a default reasonable value is chosen.");
-#endif
 
 struct sock_recv {
     char *cbuf;
@@ -3763,7 +3737,6 @@ struct sock_recvfrom {
     Py_ssize_t result;
 };
 
-#ifdef HAVE_RECVFROM
 static int
 sock_recvfrom_impl(PySocketSockObject *s, void *data)
 {
@@ -3936,7 +3909,6 @@ PyDoc_STRVAR(recvfrom_into_doc,
 "recvfrom_into(buffer[, nbytes[, flags]]) -> (nbytes, address info)\n\
 \n\
 Like recv_into(buffer[, nbytes[, flags]]) but also return the sender's address info.");
-#endif
 
 /* The sendmsg() and recvmsg[_into]() methods require a working
    CMSG_LEN().  See the comment near get_CMSG_LEN(). */
@@ -4403,7 +4375,6 @@ until all data is sent.  If an error occurs, it's impossible\n\
 to tell how much data has been sent.");
 
 
-#ifdef HAVE_SENDTO
 struct sock_sendto {
     char *buf;
     Py_ssize_t len;
@@ -4496,7 +4467,6 @@ PyDoc_STRVAR(sendto_doc,
 \n\
 Like send(data, flags) but allows specifying the destination address.\n\
 For IP sockets, the address is a pair (hostaddr, port).");
-#endif
 
 
 /* The sendmsg() and recvmsg[_into]() methods require a working
@@ -5060,22 +5030,16 @@ socket.fromshare().");
 /* List of methods for socket objects */
 
 static PyMethodDef sock_methods[] = {
-#if defined(HAVE_ACCEPT) || defined(HAVE_ACCEPT4)
     {"_accept",           (PyCFunction)sock_accept, METH_NOARGS,
                       accept_doc},
-#endif
-#ifdef HAVE_BIND
     {"bind",              (PyCFunction)sock_bind, METH_O,
                       bind_doc},
-#endif
     {"close",             (PyCFunction)sock_close, METH_NOARGS,
                       sock_close_doc},
-#ifdef HAVE_CONNECT
     {"connect",           (PyCFunction)sock_connect, METH_O,
                       connect_doc},
     {"connect_ex",        (PyCFunction)sock_connect_ex, METH_O,
                       connect_ex_doc},
-#endif
     {"detach",            (PyCFunction)sock_detach, METH_NOARGS,
                       detach_doc},
     {"fileno",            (PyCFunction)sock_fileno, METH_NOARGS,
@@ -5084,10 +5048,8 @@ static PyMethodDef sock_methods[] = {
     {"getpeername",       (PyCFunction)sock_getpeername,
                       METH_NOARGS, getpeername_doc},
 #endif
-#ifdef HAVE_GETSOCKNAME
     {"getsockname",       (PyCFunction)sock_getsockname,
                       METH_NOARGS, getsockname_doc},
-#endif
     {"getsockopt",        (PyCFunction)sock_getsockopt, METH_VARARGS,
                       getsockopt_doc},
 #if defined(MS_WINDOWS) && defined(SIO_RCVALL)
@@ -5098,28 +5060,22 @@ static PyMethodDef sock_methods[] = {
     {"share",         (PyCFunction)sock_share, METH_VARARGS,
                       sock_share_doc},
 #endif
-#ifdef HAVE_LISTEN
     {"listen",            (PyCFunction)sock_listen, METH_VARARGS,
                       listen_doc},
-#endif
     {"recv",              (PyCFunction)sock_recv, METH_VARARGS,
                       recv_doc},
     {"recv_into",         _PyCFunction_CAST(sock_recv_into), METH_VARARGS | METH_KEYWORDS,
                       recv_into_doc},
-#ifdef HAVE_RECVFROM
     {"recvfrom",          (PyCFunction)sock_recvfrom, METH_VARARGS,
                       recvfrom_doc},
     {"recvfrom_into",  _PyCFunction_CAST(sock_recvfrom_into), METH_VARARGS | METH_KEYWORDS,
                       recvfrom_into_doc},
-#endif
     {"send",              (PyCFunction)sock_send, METH_VARARGS,
                       send_doc},
     {"sendall",           (PyCFunction)sock_sendall, METH_VARARGS,
                       sendall_doc},
-#ifdef HAVE_SENDTO
     {"sendto",            (PyCFunction)sock_sendto, METH_VARARGS,
                       sendto_doc},
-#endif
     {"setblocking",       (PyCFunction)sock_setblocking, METH_O,
                       setblocking_doc},
     {"getblocking",   (PyCFunction)sock_getblocking, METH_NOARGS,
@@ -5128,10 +5084,8 @@ static PyMethodDef sock_methods[] = {
                       settimeout_doc},
     {"gettimeout",    (PyCFunction)sock_gettimeout, METH_NOARGS,
                       gettimeout_doc},
-#ifdef HAVE_SETSOCKOPT
     {"setsockopt",        (PyCFunction)sock_setsockopt, METH_VARARGS,
                       setsockopt_doc},
-#endif
 #ifdef HAVE_SHUTDOWN
     {"shutdown",          (PyCFunction)sock_shutdown, METH_O,
                       shutdown_doc},
@@ -5267,16 +5221,6 @@ static int sock_cloexec_works = -1;
 
 /*ARGSUSED*/
 
-#ifndef HAVE_SOCKET
-#define socket stub_socket
-static int
-socket(int domain, int type, int protocol)
-{
-    errno = ENOTSUP;
-    return INVALID_SOCKET;
-}
-#endif
-
 /*[clinic input]
 _socket.socket.__init__ as sock_initobj
     family: int = -1
@@ -5363,7 +5307,6 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
             socklen_t addrlen = sizeof(sock_addr_t);
 
             memset(&addrbuf, 0, addrlen);
-#ifdef HAVE_GETSOCKNAME
             if (getsockname(fd, SAS2SA(&addrbuf), &addrlen) == 0) {
                 if (family == -1) {
                     family = SAS2SA(&addrbuf)->sa_family;
@@ -5382,7 +5325,6 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
                     return -1;
                 }
             }
-#endif // HAVE_GETSOCKNAME
 #ifdef SO_TYPE
             if (type == -1) {
                 int tmp;
@@ -5561,7 +5503,6 @@ static PyTypeObject sock_type = {
 };
 
 
-#ifdef HAVE_GETHOSTNAME
 /* Python interface to gethostname(). */
 
 /*ARGSUSED*/
@@ -5625,7 +5566,6 @@ PyDoc_STRVAR(gethostname_doc,
 "gethostname() -> string\n\
 \n\
 Return the current host name.");
-#endif
 
 #ifdef HAVE_SETHOSTNAME
 PyDoc_STRVAR(sethostname_doc,
@@ -5669,7 +5609,6 @@ extern int sethostname(const char *, size_t);
 }
 #endif
 
-#ifdef HAVE_GETADDRINFO
 /* Python interface to gethostbyname(name). */
 
 /*ARGSUSED*/
@@ -5697,10 +5636,8 @@ PyDoc_STRVAR(gethostbyname_doc,
 "gethostbyname(host) -> address\n\
 \n\
 Return the IP address (a string of the form '255.255.255.255') for a host.");
-#endif
 
 
-#if defined(HAVE_GETHOSTBYNAME_R) || defined (HAVE_GETHOSTBYNAME) || defined (HAVE_GETHOSTBYADDR)
 static PyObject*
 sock_decode_hostname(const char *name)
 {
@@ -5842,9 +5779,8 @@ gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
     Py_XDECREF(addr_list);
     return rtn_tuple;
 }
-#endif
 
-#if defined(HAVE_GETHOSTBYNAME_R) || defined (HAVE_GETHOSTBYNAME)
+
 /* Python interface to gethostbyname_ex(name). */
 
 /*ARGSUSED*/
@@ -5917,9 +5853,8 @@ PyDoc_STRVAR(ghbn_ex_doc,
 \n\
 Return the true host name, a list of aliases, and a list of IP addresses,\n\
 for a host.  The host argument is a string giving a host name or IP number.");
-#endif
 
-#if defined(HAVE_GETHOSTBYNAME_R) || defined (HAVE_GETHOSTBYADDR)
+
 /* Python interface to gethostbyaddr(IP). */
 
 /*ARGSUSED*/
@@ -6014,9 +5949,8 @@ PyDoc_STRVAR(gethostbyaddr_doc,
 \n\
 Return the true host name, a list of aliases, and a list of IP addresses,\n\
 for a host.  The host argument is a string giving a host name or IP number.");
-#endif
 
-#ifdef HAVE_GETSERVBYNAME
+
 /* Python interface to getservbyname(name).
    This only returns the port number, since the other info is already
    known or not useful (like the list of aliases). */
@@ -6050,9 +5984,8 @@ PyDoc_STRVAR(getservbyname_doc,
 Return a port number from a service name and protocol name.\n\
 The optional protocol name, if given, should be 'tcp' or 'udp',\n\
 otherwise any protocol will match.");
-#endif
 
-#ifdef HAVE_GETSERVBYPORT
+
 /* Python interface to getservbyport(port).
    This only returns the service name, since the other info is already
    known or not useful (like the list of aliases). */
@@ -6093,9 +6026,7 @@ PyDoc_STRVAR(getservbyport_doc,
 Return the service name from a port number and protocol name.\n\
 The optional protocol name, if given, should be 'tcp' or 'udp',\n\
 otherwise any protocol will match.");
-#endif
 
-#ifdef HAVE_GETPROTOBYNAME
 /* Python interface to getprotobyname(name).
    This only returns the protocol number, since the other info is
    already known or not useful (like the list of aliases). */
@@ -6122,7 +6053,6 @@ PyDoc_STRVAR(getprotobyname_doc,
 "getprotobyname(name) -> integer\n\
 \n\
 Return the protocol number for the named protocol.  (Rarely used.)");
-#endif
 
 static PyObject *
 socket_close(PyObject *self, PyObject *fdobj)
@@ -6492,7 +6422,6 @@ socket_inet_aton(PyObject *self, PyObject *args)
 #endif
 }
 
-#ifdef HAVE_INET_NTOA
 PyDoc_STRVAR(inet_ntoa_doc,
 "inet_ntoa(packed_ip) -> ip_address_string\n\
 \n\
@@ -6521,7 +6450,6 @@ socket_inet_ntoa(PyObject *self, PyObject *args)
     SUPPRESS_DEPRECATED_CALL
     return PyUnicode_FromString(inet_ntoa(packed_addr));
 }
-#endif // HAVE_INET_NTOA
 
 #ifdef HAVE_INET_PTON
 
@@ -6633,7 +6561,6 @@ socket_inet_ntop(PyObject *self, PyObject *args)
 
 #endif /* HAVE_INET_PTON */
 
-#ifdef HAVE_GETADDRINFO
 /* Python interface to getaddrinfo(host, port). */
 
 /*ARGSUSED*/
@@ -6761,9 +6688,7 @@ PyDoc_STRVAR(getaddrinfo_doc,
     -> list of (family, type, proto, canonname, sockaddr)\n\
 \n\
 Resolve host and port into addrinfo struct.");
-#endif // HAVE_GETADDRINFO
 
-#ifdef HAVE_GETNAMEINFO
 /* Python interface to getnameinfo(sa, flags). */
 
 /*ARGSUSED*/
@@ -6864,7 +6789,7 @@ PyDoc_STRVAR(getnameinfo_doc,
 "getnameinfo(sockaddr, flags) --> (host, port)\n\
 \n\
 Get host and port for a sockaddr.");
-#endif // HAVE_GETNAMEINFO
+
 
 /* Python API to getting and setting the default timeout value. */
 
@@ -7120,38 +7045,24 @@ range of values.");
 /* List of functions exported by this module. */
 
 static PyMethodDef socket_methods[] = {
-#ifdef HAVE_GETADDRINFO
     {"gethostbyname",           socket_gethostbyname,
      METH_VARARGS, gethostbyname_doc},
-#endif
-#if defined(HAVE_GETHOSTBYNAME_R) || defined (HAVE_GETHOSTBYNAME)
     {"gethostbyname_ex",        socket_gethostbyname_ex,
      METH_VARARGS, ghbn_ex_doc},
-#endif
-#if defined(HAVE_GETHOSTBYNAME_R) || defined (HAVE_GETHOSTBYADDR)
     {"gethostbyaddr",           socket_gethostbyaddr,
      METH_VARARGS, gethostbyaddr_doc},
-#endif
-#ifdef HAVE_GETHOSTNAME
     {"gethostname",             socket_gethostname,
      METH_NOARGS,  gethostname_doc},
-#endif
 #ifdef HAVE_SETHOSTNAME
     {"sethostname",             socket_sethostname,
      METH_VARARGS,  sethostname_doc},
 #endif
-#ifdef HAVE_GETSERVBYNAME
     {"getservbyname",           socket_getservbyname,
      METH_VARARGS, getservbyname_doc},
-#endif
-#ifdef HAVE_GETSERVBYPORT
     {"getservbyport",           socket_getservbyport,
      METH_VARARGS, getservbyport_doc},
-#endif
-#ifdef HAVE_GETPROTOBYNAME
     {"getprotobyname",          socket_getprotobyname,
      METH_VARARGS, getprotobyname_doc},
-#endif
     {"close",                   socket_close,
      METH_O, close_doc},
 #ifndef NO_DUP
@@ -7172,24 +7083,18 @@ static PyMethodDef socket_methods[] = {
      METH_O, htonl_doc},
     {"inet_aton",               socket_inet_aton,
      METH_VARARGS, inet_aton_doc},
-#ifdef HAVE_INET_NTOA
     {"inet_ntoa",               socket_inet_ntoa,
      METH_VARARGS, inet_ntoa_doc},
-#endif
 #ifdef HAVE_INET_PTON
     {"inet_pton",               socket_inet_pton,
      METH_VARARGS, inet_pton_doc},
     {"inet_ntop",               socket_inet_ntop,
      METH_VARARGS, inet_ntop_doc},
 #endif
-#ifdef HAVE_GETADDRINFO
     {"getaddrinfo",             _PyCFunction_CAST(socket_getaddrinfo),
      METH_VARARGS | METH_KEYWORDS, getaddrinfo_doc},
-#endif
-#ifdef HAVE_GETNAMEINFO
     {"getnameinfo",             socket_getnameinfo,
      METH_VARARGS, getnameinfo_doc},
-#endif
     {"getdefaulttimeout",       socket_getdefaulttimeout,
      METH_NOARGS, getdefaulttimeout_doc},
     {"setdefaulttimeout",       socket_setdefaulttimeout,
@@ -7565,6 +7470,7 @@ PyInit__socket(void)
     /* for setsockopt() */
     PyModule_AddIntMacro(m, HVSOCKET_CONNECT_TIMEOUT);
     PyModule_AddIntMacro(m, HVSOCKET_CONNECT_TIMEOUT_MAX);
+    PyModule_AddIntMacro(m, HVSOCKET_CONTAINER_PASSTHRU);
     PyModule_AddIntMacro(m, HVSOCKET_CONNECTED_SUSPEND);
     PyModule_AddIntMacro(m, HVSOCKET_ADDRESS_FLAG_PASSTHRU);
 
@@ -7719,9 +7625,7 @@ PyInit__socket(void)
     /* SOCK_RAW is marked as optional in the POSIX specification */
     PyModule_AddIntMacro(m, SOCK_RAW);
 #endif
-#ifdef SOCK_SEQPACKET
     PyModule_AddIntMacro(m, SOCK_SEQPACKET);
-#endif
 #if defined(SOCK_RDM)
     PyModule_AddIntMacro(m, SOCK_RDM);
 #endif
@@ -7879,10 +7783,6 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, MSG_EOR);
 #endif
 #ifdef  MSG_TRUNC
-    // workaround for https://github.com/WebAssembly/wasi-libc/issues/305
-    #if defined(__wasi__) && !defined(__WASI_RIFLAGS_RECV_DATA_TRUNCATED)
-    #  define __WASI_RIFLAGS_RECV_DATA_TRUNCATED 2
-    #endif
     PyModule_AddIntMacro(m, MSG_TRUNC);
 #endif
 #ifdef  MSG_CTRUNC

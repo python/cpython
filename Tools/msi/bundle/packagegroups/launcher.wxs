@@ -11,11 +11,7 @@
                         EnableFeatureSelection="yes"
                         Permanent="yes"
                         Visible="yes"
-                        InstallCondition="(InstallAllUsers or InstallLauncherAllUsers) and Include_launcher and not DetectedLauncher">
-                <?if $(var.Platform)~="ARM64" ?>
-                <MsiProperty Name="ARM64_SHELLEXT" Value="1" />
-                <?endif ?>
-            </MsiPackage>
+                        InstallCondition="(InstallAllUsers or InstallLauncherAllUsers) and Include_launcher and not DetectedLauncher" />
 
             <MsiPackage Id="launcher_JustForMe"
                         SourceFile="!(bindpath.build32)en-us\launcher.msi"
@@ -25,11 +21,7 @@
                         EnableFeatureSelection="yes"
                         Permanent="yes"
                         Visible="yes"
-                        InstallCondition="not (InstallAllUsers or InstallLauncherAllUsers) and Include_launcher and not DetectedLauncher">
-                <?if $(var.Platform)~="ARM64" ?>
-                <MsiProperty Name="ARM64_SHELLEXT" Value="1" />
-                <?endif ?>
-            </MsiPackage>
+                        InstallCondition="not (InstallAllUsers or InstallLauncherAllUsers) and Include_launcher and not DetectedLauncher" />
         </PackageGroup>
     </Fragment>
 </Wix>

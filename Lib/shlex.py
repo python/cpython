@@ -305,7 +305,9 @@ class shlex:
 def split(s, comments=False, posix=True):
     """Split the string *s* using shell-like syntax."""
     if s is None:
-        raise ValueError("s argument must not be None")
+        import warnings
+        warnings.warn("Passing None for 's' to shlex.split() is deprecated.",
+                      DeprecationWarning, stacklevel=2)
     lex = shlex(s, posix=posix)
     lex.whitespace_split = True
     if not comments:

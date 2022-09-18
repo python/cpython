@@ -4,6 +4,7 @@ from doctest import DocTestSuite
 from test import support
 from test.support import threading_helper
 import weakref
+import gc
 
 # Modules under test
 import _thread

@@ -56,22 +56,22 @@ def _maybe_compile(compiler, source, filename, symbol):
         if symbol != "eval":
             source = "pass"     # Replace it with a 'pass' statement
 
-    # Disable compiler warnings when checking for incomplete input.
+    try:
+        return compiler(source, filename, symbol)
+    except SyntaxError:  # Let other compile() errors propagate.
+        pass
+
+    # Catch syntax warnings after the first compile
+    # to emit warnings (SyntaxWarning, DeprecationWarning) at most once.
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", (SyntaxWarning, DeprecationWarning))
+        warnings.simplefilter("error")
+
         try:
-            compiler(source, filename, symbol)
-        except SyntaxError:  # Let other compile() errors propagate.
-            try:
-                compiler(source + "\n", filename, symbol)
+            compiler(source + "\n", filename, symbol)
+        except SyntaxError as e:
+            if "incomplete input" in str(e):
                 return None
-            except SyntaxError as e:
-                if "incomplete input" in str(e):
-                    return None
-                # fallthrough
-
-    return compiler(source, filename, symbol)
-
+            raise
 
 def _is_syntax_error(err1, err2):
     rep1 = repr(err1)

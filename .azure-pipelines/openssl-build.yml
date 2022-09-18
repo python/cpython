@@ -1,0 +1,110 @@
+name: $(SourceTag)_$(Date:yyyyMMdd)$(Rev:.rr)
+
+variables:
+  IntDir: '$(Build.BinariesDirectory)'
+  OutDir: '$(Build.ArtifactStagingDirectory)'
+
+  # MUST BE SET AT QUEUE TIME
+  # SigningCertificate: 'Python Software Foundation'
+  # SourcesRepo: 'https://github.com/python/cpython-source-deps'
+  # SourceTag: 'openssl-1.1.1k'
+
+jobs:
+- job: Build_SSL
+  displayName: OpenSSL
+  pool:
+    name: 'Windows Release'
+    #vmImage: windows-latest
+
+  strategy:
+    matrix:
+      win32:
+        Platform: 'win32'
+        VCPlatform: 'amd64_x86'
+        OpenSSLPlatform: 'VC-WIN32 no-asm'
+      amd64:
+        Platform: 'amd64'
+        VCPlatform: 'amd64'
+        OpenSSLPlatform: 'VC-WIN64A-masm'
+      arm32:
+        Platform: 'arm32'
+        VCPlatform: 'amd64_arm'
+        OpenSSLPlatform: 'VC-WIN32-ARM'
+      arm64:
+        Platform: 'arm64'
+        VCPlatform: 'amd64_arm64'
+        OpenSSLPlatform: 'VC-WIN64-ARM'
+
+  workspace:
+    clean: all
+
+  steps:
+    - checkout: none
+
+    - template: ./find-tools.yml
+
+    - powershell: |
+        git clone $(SourcesRepo) -b $(SourceTag) --depth 1 .
+      displayName: 'Check out OpenSSL sources'
+
+    - powershell: |
+        $f = gi ms\uplink.c
+        $c1 = gc $f
+        $c2 = $c1 -replace '\(\(h = GetModuleHandle\(NULL\)\) == NULL\)', '((h = GetModuleHandleA("_ssl.pyd")) == NULL) if ((h = GetModuleHandleA("_ssl_d.pyd")) == NULL) if ((h = GetModuleHandle(NULL)) == NULL /*patched*/)'
+        if ($c2 -ne $c1) {
+            $c2 | Out-File $f -Encoding ASCII
+        } else {
+            Write-Host '##warning Failed to patch uplink.c'
+        }
+      displayName: 'Apply uplink.c patch'
+
+    - script: |
+        call "$(vcvarsall)" $(VCPlatform)
+        perl "$(Build.SourcesDirectory)\Configure" $(OpenSSLPlatform)
+        nmake
+      workingDirectory: '$(IntDir)'
+      displayName: 'Build OpenSSL'
+
+    - script: |
+        call "$(vcvarsall)" $(VCPlatform)
+        signtool sign /q /a /n "$(SigningCertificate)" /fd sha256 /tr http://timestamp.digicert.com/ /td sha256 /d "OpenSSL for Python" *.dll
+      workingDirectory: '$(IntDir)'
+      displayName: 'Sign OpenSSL Build'
+      condition: and(succeeded(), variables['SigningCertificate'])
+
+    - task: CopyFiles@2
+      displayName: 'Copy built libraries for upload'
+      inputs:
+        SourceFolder: '$(IntDir)'
+        Contents: |
+          lib*.dll
+          lib*.pdb
+          lib*.lib
+          include\openssl\*.h
+        TargetFolder: '$(OutDir)'
+
+    - task: CopyFiles@2
+      displayName: 'Copy header files for upload'
+      inputs:
+        SourceFolder: '$(Build.SourcesDirectory)'
+        Contents: |
+          include\openssl\*
+        TargetFolder: '$(OutDir)'
+
+    - task: CopyFiles@2
+      displayName: 'Copy applink files for upload'
+      inputs:
+        SourceFolder: '$(Build.SourcesDirectory)\ms'
+        Contents: applink.c
+        TargetFolder: '$(OutDir)\include'
+
+    - task: CopyFiles@2
+      displayName: 'Copy LICENSE for upload'
+      inputs:
+        SourceFolder: '$(Build.SourcesDirectory)'
+        Contents: LICENSE
+        TargetFolder: '$(OutDir)'
+
+    - publish: '$(OutDir)'
+      artifact: '$(Platform)'
+      displayName: 'Publishing $(Platform)'

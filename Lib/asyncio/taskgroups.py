@@ -1,8 +1,9 @@
-# Adapted with permission from the EdgeDB project;
-# license: PSFL.
+# Adapted with permission from the EdgeDB project.
 
 
 __all__ = ["TaskGroup"]
+
+import weakref
 
 from . import events
 from . import exceptions
@@ -18,7 +19,8 @@ class TaskGroup:
         self._loop = None
         self._parent_task = None
         self._parent_cancel_requested = False
-        self._tasks = set()
+        self._tasks = weakref.WeakSet()
+        self._unfinished_tasks = 0
         self._errors = []
         self._base_error = None
         self._on_completed_fut = None
@@ -27,6 +29,8 @@ class TaskGroup:
         info = ['']
         if self._tasks:
             info.append(f'tasks={len(self._tasks)}')
+        if self._unfinished_tasks:
+            info.append(f'unfinished={self._unfinished_tasks}')
         if self._errors:
             info.append(f'errors={len(self._errors)}')
         if self._aborting:
@@ -55,22 +59,21 @@ class TaskGroup:
 
     async def __aexit__(self, et, exc, tb):
         self._exiting = True
+        propagate_cancellation_error = None
 
         if (exc is not None and
                 self._is_base_error(exc) and
                 self._base_error is None):
             self._base_error = exc
 
-        propagate_cancellation_error = \
-            exc if et is exceptions.CancelledError else None
-        if self._parent_cancel_requested:
-            # If this flag is set we *must* call uncancel().
-            if self._parent_task.uncancel() == 0:
-                # If there are no pending cancellations left,
-                # don't propagate CancelledError.
-                propagate_cancellation_error = None
-
         if et is not None:
+            if et is exceptions.CancelledError:
+                if self._parent_cancel_requested and not self._parent_task.uncancel():
+                    # Do nothing, i.e. swallow the error.
+                    pass
+                else:
+                    propagate_cancellation_error = exc
+
             if not self._aborting:
                 # Our parent task is being cancelled:
                 #
@@ -90,7 +93,7 @@ class TaskGroup:
         # can be cancelled multiple times if our parent task
         # is being cancelled repeatedly (or even once, when
         # our own cancellation is already in progress)
-        while self._tasks:
+        while self._unfinished_tasks:
             if self._on_completed_fut is None:
                 self._on_completed_fut = self._loop.create_future()
 
@@ -111,14 +114,15 @@ class TaskGroup:
 
             self._on_completed_fut = None
 
-        assert not self._tasks
+        assert self._unfinished_tasks == 0
 
         if self._base_error is not None:
             raise self._base_error
 
-        # Propagate CancelledError if there is one, except if there
-        # are other errors -- those have priority.
-        if propagate_cancellation_error and not self._errors:
+        if propagate_cancellation_error is not None:
+            # The wrapping task was cancelled; since we're done with
+            # closing all child tasks, just propagate the cancellation
+            # request now.
             raise propagate_cancellation_error
 
         if et is not None and et is not exceptions.CancelledError:
@@ -137,16 +141,15 @@ class TaskGroup:
     def create_task(self, coro, *, name=None, context=None):
         if not self._entered:
             raise RuntimeError(f"TaskGroup {self!r} has not been entered")
-        if self._exiting and not self._tasks:
+        if self._exiting and self._unfinished_tasks == 0:
             raise RuntimeError(f"TaskGroup {self!r} is finished")
-        if self._aborting:
-            raise RuntimeError(f"TaskGroup {self!r} is shutting down")
         if context is None:
             task = self._loop.create_task(coro)
         else:
             task = self._loop.create_task(coro, context=context)
         tasks._set_task_name(task, name)
         task.add_done_callback(self._on_task_done)
+        self._unfinished_tasks += 1
         self._tasks.add(task)
         return task
 
@@ -166,9 +169,10 @@ class TaskGroup:
                 t.cancel()
 
     def _on_task_done(self, task):
-        self._tasks.discard(task)
+        self._unfinished_tasks -= 1
+        assert self._unfinished_tasks >= 0
 
-        if self._on_completed_fut is not None and not self._tasks:
+        if self._on_completed_fut is not None and not self._unfinished_tasks:
             if not self._on_completed_fut.done():
                 self._on_completed_fut.set_result(True)
 

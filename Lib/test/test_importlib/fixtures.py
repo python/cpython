@@ -5,7 +5,6 @@ import shutil
 import pathlib
 import tempfile
 import textwrap
-import functools
 import contextlib
 
 from test.support.os_helper import FS_NONASCII
@@ -297,18 +296,3 @@ class ZipFixtures:
         # Add self.zip_name to the front of sys.path.
         self.resources = contextlib.ExitStack()
         self.addCleanup(self.resources.close)
-
-
-def parameterize(*args_set):
-    """Run test method with a series of parameters."""
-
-    def wrapper(func):
-        @functools.wraps(func)
-        def _inner(self):
-            for args in args_set:
-                with self.subTest(**args):
-                    func(self, **args)
-
-        return _inner
-
-    return wrapper

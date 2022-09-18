@@ -279,7 +279,7 @@ static int test_pre_initialization_sys_options(void)
      * relying on the caller to keep the passed in strings alive.
      */
     const wchar_t *static_warnoption = L"once";
-    const wchar_t *static_xoption = L"also_not_an_option=2";
+    const wchar_t *static_xoption = L"utf8=1";
     size_t warnoption_len = wcslen(static_warnoption);
     size_t xoption_len = wcslen(static_xoption);
     wchar_t *dynamic_once_warnoption = \
@@ -298,7 +298,7 @@ static int test_pre_initialization_sys_options(void)
     PySys_AddWarnOption(L"module");
     PySys_AddWarnOption(L"default");
     _Py_EMBED_PREINIT_CHECK("Checking PySys_AddXOption\n");
-    PySys_AddXOption(L"not_an_option=1");
+    PySys_AddXOption(L"dev=2");
     PySys_AddXOption(dynamic_xoption);
 
     /* Delete the dynamic options early */
@@ -367,8 +367,6 @@ static int test_bpo20891(void)
     Py_END_ALLOW_THREADS
 
     PyThread_free_lock(lock);
-
-    Py_Finalize();
 
     return 0;
 }
@@ -591,7 +589,7 @@ static int test_init_from_config(void)
         L"-W",
         L"cmdline_warnoption",
         L"-X",
-        L"cmdline_xoption",
+        L"dev",
         L"-c",
         L"pass",
         L"arg2",
@@ -599,10 +597,9 @@ static int test_init_from_config(void)
     config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
     config.parse_argv = 1;
 
-    wchar_t* xoptions[3] = {
-        L"config_xoption1=3",
-        L"config_xoption2=",
-        L"config_xoption3",
+    wchar_t* xoptions[2] = {
+        L"dev=3",
+        L"utf8",
     };
     config_set_wide_string_list(&config, &config.xoptions,
                                 Py_ARRAY_LENGTH(xoptions), xoptions);
@@ -1426,7 +1423,6 @@ fail:
 
 static int test_init_sys_add(void)
 {
-    PySys_AddXOption(L"sysadd_xoption");
     PySys_AddXOption(L"faulthandler");
     PySys_AddWarnOption(L"ignore:::sysadd_warnoption");
 
@@ -1438,14 +1434,14 @@ static int test_init_sys_add(void)
         L"-W",
         L"ignore:::cmdline_warnoption",
         L"-X",
-        L"cmdline_xoption",
+        L"utf8",
     };
     config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
     config.parse_argv = 1;
 
     PyStatus status;
     status = PyWideStringList_Append(&config.xoptions,
-                                     L"config_xoption");
+                                     L"dev");
     if (PyStatus_Exception(status)) {
         goto fail;
     }
@@ -1549,46 +1545,6 @@ static int test_init_setpythonhome(void)
 
     Py_Initialize();
     dump_config();
-    Py_Finalize();
-    return 0;
-}
-
-
-static int test_init_is_python_build(void)
-{
-    // gh-91985: in-tree builds fail to check for build directory landmarks
-    // under the effect of 'home' or PYTHONHOME environment variable.
-    char *env = getenv("TESTHOME");
-    if (!env) {
-        error("missing TESTHOME env var");
-        return 1;
-    }
-    wchar_t *home = Py_DecodeLocale(env, NULL);
-    if (home == NULL) {
-        error("failed to decode TESTHOME");
-        return 1;
-    }
-
-    PyConfig config;
-    _PyConfig_InitCompatConfig(&config);
-    config_set_program_name(&config);
-    config_set_string(&config, &config.home, home);
-    PyMem_RawFree(home);
-    putenv("TESTHOME=");
-
-    // Use an impossible value so we can detect whether it isn't updated
-    // during initialization.
-    config._is_python_build = INT_MAX;
-    env = getenv("NEGATIVE_ISPYTHONBUILD");
-    if (env && strcmp(env, "0") != 0) {
-        config._is_python_build = INT_MIN;
-    }
-    init_from_config_clear(&config);
-    Py_Finalize();
-    // Second initialization
-    config._is_python_build = -1;
-    init_from_config_clear(&config);
-    dump_config();  // home and _is_python_build are cached in _Py_path_config
     Py_Finalize();
     return 0;
 }
@@ -2009,7 +1965,6 @@ static struct TestCase TestCases[] = {
     {"test_init_setpath", test_init_setpath},
     {"test_init_setpath_config", test_init_setpath_config},
     {"test_init_setpythonhome", test_init_setpythonhome},
-    {"test_init_is_python_build", test_init_is_python_build},
     {"test_init_warnoptions", test_init_warnoptions},
     {"test_init_set_config", test_init_set_config},
     {"test_run_main", test_run_main},

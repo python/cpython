@@ -266,8 +266,8 @@ def _getuserbase():
     if env_base:
         return env_base
 
-    # Emscripten, VxWorks, and WASI have no home directories
-    if sys.platform in {"emscripten", "vxworks", "wasi"}:
+    # VxWorks has no home directories
+    if sys.platform == "vxworks":
         return None
 
     def joinuser(*args):

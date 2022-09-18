@@ -479,23 +479,12 @@ error:
 }
 
 
-static void
-pymain_set_inspect(PyConfig *config, int inspect)
-{
-    config->inspect = inspect;
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    Py_InspectFlag = inspect;
-_Py_COMP_DIAG_POP
-}
-
-
 static int
 pymain_run_stdin(PyConfig *config)
 {
     if (stdin_is_interactive(config)) {
-        // do exit on SystemExit
-        pymain_set_inspect(config, 0);
+        config->inspect = 0;
+        Py_InspectFlag = 0; /* do exit on SystemExit */
 
         int exitcode;
         if (pymain_run_startup(config, &exitcode)) {
@@ -528,14 +517,16 @@ pymain_repl(PyConfig *config, int *exitcode)
     /* Check this environment variable at the end, to give programs the
        opportunity to set it from Python. */
     if (!config->inspect && _Py_GetEnv(config->use_environment, "PYTHONINSPECT")) {
-        pymain_set_inspect(config, 1);
+        config->inspect = 1;
+        Py_InspectFlag = 1;
     }
 
     if (!(config->inspect && stdin_is_interactive(config) && config_run_code(config))) {
         return;
     }
 
-    pymain_set_inspect(config, 0);
+    config->inspect = 0;
+    Py_InspectFlag = 0;
     if (pymain_run_interactive_hook(exitcode)) {
         return;
     }
@@ -649,7 +640,7 @@ exit_sigint(void)
      * SIG_DFL handler for SIGINT if KeyboardInterrupt went unhandled.
      * If we don't, a calling process such as a shell may not know
      * about the user's ^C.  https://www.cons.org/cracauer/sigint.html */
-#if defined(HAVE_GETPID) && defined(HAVE_KILL) && !defined(MS_WINDOWS)
+#if defined(HAVE_GETPID) && !defined(MS_WINDOWS)
     if (PyOS_setsig(SIGINT, SIG_DFL) == SIG_ERR) {
         perror("signal");  /* Impossible in normal environments. */
     } else {

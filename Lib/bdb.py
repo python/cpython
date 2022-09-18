@@ -805,18 +805,15 @@ def checkfuncname(b, frame):
     return True
 
 
+# Determines if there is an effective (active) breakpoint at this
+# line of code.  Returns breakpoint number or 0 if none
 def effective(file, line, frame):
-    """Return (active breakpoint, delete temporary flag) or (None, None) as
-       breakpoint to act upon.
+    """Determine which breakpoint for this file:line is to be acted upon.
 
-       The "active breakpoint" is the first entry in bplist[line, file] (which
-       must exist) that is enabled, for which checkfuncname is True, and that
-       has neither a False condition nor a positive ignore count.  The flag,
-       meaning that a temporary breakpoint should be deleted, is False only
-       when the condiion cannot be evaluated (in which case, ignore count is
-       ignored).
-
-       If no such entry exists, then (None, None) is returned.
+    Called only if we know there is a breakpoint at this location.  Return
+    the breakpoint that was triggered and a boolean that indicates if it is
+    ok to delete a temporary breakpoint.  Return (None, None) if there is no
+    matching breakpoint.
     """
     possibles = Breakpoint.bplist[file, line]
     for b in possibles:

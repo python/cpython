@@ -301,7 +301,7 @@ The :mod:`locale` module defines the following exception and functions:
    *language code* and *encoding* may be ``None`` if their values cannot be
    determined.
 
-   .. deprecated-removed:: 3.11 3.13
+   .. deprecated:: 3.11 3.13
 
 
 .. function:: getlocale(category=LC_CTYPE)
@@ -375,7 +375,7 @@ The :mod:`locale` module defines the following exception and functions:
    The default setting is determined by calling :func:`getdefaultlocale`.
    *category* defaults to :const:`LC_ALL`.
 
-   .. deprecated-removed:: 3.11 3.13
+   .. deprecated:: 3.11 3.13
 
 
 .. function:: strcoll(string1, string2)
@@ -410,6 +410,18 @@ The :mod:`locale` module defines the following exception and functions:
 
    .. versionchanged:: 3.7
       The *monetary* keyword parameter was added.
+
+
+.. function:: format(format, val, grouping=False, monetary=False)
+
+   Please note that this function works like :meth:`format_string` but will
+   only work for exactly one ``%char`` specifier.  For example, ``'%f'`` and
+   ``'%.0f'`` are both valid specifiers, but ``'%f KiB'`` is not.
+
+   For whole format strings, use :func:`format_string`.
+
+   .. deprecated:: 3.7
+      Use :meth:`format_string` instead.
 
 
 .. function:: currency(val, symbol=True, grouping=False, international=False)
@@ -495,7 +507,7 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. data:: LC_NUMERIC
 
-   Locale category for formatting numbers.  The functions :func:`format_string`,
+   Locale category for formatting numbers.  The functions :func:`.format`,
    :func:`atoi`, :func:`atof` and :func:`.str` of the :mod:`locale` module are
    affected by that category.  All other numeric formatting operations are not
    affected.
@@ -557,7 +569,7 @@ document that your module is not compatible with non-\ ``C`` locale settings.
 
 The only way to perform numeric operations according to the locale is to use the
 special functions defined by this module: :func:`atof`, :func:`atoi`,
-:func:`format_string`, :func:`.str`.
+:func:`.format`, :func:`.str`.
 
 There is no way to perform case conversions and character classifications
 according to the locale.  For (Unicode) text strings these are done according

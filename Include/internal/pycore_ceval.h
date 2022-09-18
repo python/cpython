@@ -12,12 +12,11 @@ extern "C" {
 struct pyruntimestate;
 struct _ceval_runtime_state;
 
-/* WASI has limited call stack. Python's recursion limit depends on code
-   layout, optimization, and WASI runtime. Wasmtime can handle about 700-750
-   recursions, sometimes less. 600 is a more conservative limit. */
+/* WASI has limited call stack. wasmtime 0.36 can handle sufficient amount of
+   C stack frames for little more than 750 recursions. */
 #ifndef Py_DEFAULT_RECURSION_LIMIT
 #  ifdef __wasi__
-#    define Py_DEFAULT_RECURSION_LIMIT 600
+#    define Py_DEFAULT_RECURSION_LIMIT 750
 #  else
 #    define Py_DEFAULT_RECURSION_LIMIT 1000
 #  endif
@@ -65,27 +64,6 @@ extern PyObject* _PyEval_BuiltinsFromGlobals(
     PyThreadState *tstate,
     PyObject *globals);
 
-// Trampoline API
-
-typedef struct {
-    // Callback to initialize the trampoline state
-    void* (*init_state)(void);
-    // Callback to register every trampoline being created
-    void (*write_state)(void* state, const void *code_addr,
-                        unsigned int code_size, PyCodeObject* code);
-    // Callback to free the trampoline state
-    int (*free_state)(void* state);
-} _PyPerf_Callbacks;
-
-extern int _PyPerfTrampoline_SetCallbacks(_PyPerf_Callbacks *);
-extern void _PyPerfTrampoline_GetCallbacks(_PyPerf_Callbacks *);
-extern int _PyPerfTrampoline_Init(int activate);
-extern int _PyPerfTrampoline_Fini(void);
-extern int _PyIsPerfTrampolineActive(void);
-extern PyStatus _PyPerfTrampoline_AfterFork_Child(void);
-#ifdef PY_HAVE_PERF_TRAMPOLINE
-extern _PyPerf_Callbacks _Py_perfmap_callbacks;
-#endif
 
 static inline PyObject*
 _PyEval_EvalFrame(PyThreadState *tstate, struct _PyInterpreterFrame *frame, int throwflag)
@@ -103,7 +81,11 @@ _PyEval_Vector(PyThreadState *tstate,
             PyObject* const* args, size_t argcount,
             PyObject *kwnames);
 
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+extern int _PyEval_ThreadsInitialized(PyInterpreterState *interp);
+#else
 extern int _PyEval_ThreadsInitialized(struct pyruntimestate *runtime);
+#endif
 extern PyStatus _PyEval_InitGIL(PyThreadState *tstate);
 extern void _PyEval_FiniGIL(PyInterpreterState *interp);
 
@@ -153,9 +135,6 @@ static inline void _Py_LeaveRecursiveCall(void)  {
 extern struct _PyInterpreterFrame* _PyEval_GetFrame(void);
 
 extern PyObject* _Py_MakeCoro(PyFunctionObject *func);
-
-extern int _Py_HandlePending(PyThreadState *tstate);
-
 
 #ifdef __cplusplus
 }

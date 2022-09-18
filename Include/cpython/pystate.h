@@ -279,10 +279,7 @@ PyAPI_FUNC(const PyConfig*) _PyInterpreterState_GetConfig(PyInterpreterState *in
    for example.
 
    Python must be preinitialized to call this method.
-   The caller must hold the GIL.
-
-   Once done with the configuration, PyConfig_Clear() must be called to clear
-   it. */
+   The caller must hold the GIL. */
 PyAPI_FUNC(int) _PyInterpreterState_GetConfigCopy(
     struct PyConfig *config);
 

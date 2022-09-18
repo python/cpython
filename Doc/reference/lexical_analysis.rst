@@ -315,7 +315,7 @@ The Unicode category codes mentioned above stand for:
 * *Nd* - decimal numbers
 * *Pc* - connector punctuations
 * *Other_ID_Start* - explicit list of characters in `PropList.txt
-  <https://www.unicode.org/Public/15.0.0/ucd/PropList.txt>`_ to support backwards
+  <https://www.unicode.org/Public/14.0.0/ucd/PropList.txt>`_ to support backwards
   compatibility
 * *Other_ID_Continue* - likewise
 
@@ -323,8 +323,8 @@ All identifiers are converted into the normal form NFKC while parsing; compariso
 of identifiers is based on NFKC.
 
 A non-normative HTML file listing all valid identifier characters for Unicode
-15.0.0 can be found at
-https://www.unicode.org/Public/15.0.0/ucd/DerivedCoreProperties.txt
+14.0.0 can be found at
+https://www.unicode.org/Public/14.0.0/ucd/DerivedCoreProperties.txt
 
 
 .. _keywords:
@@ -552,7 +552,7 @@ Standard C.  The recognized escape sequences are:
 +-----------------+---------------------------------+-------+
 | Escape Sequence | Meaning                         | Notes |
 +=================+=================================+=======+
-| ``\``\ <newline>| Backslash and newline ignored   | \(1)  |
+| ``\newline``    | Backslash and newline ignored   |       |
 +-----------------+---------------------------------+-------+
 | ``\\``          | Backslash (``\``)               |       |
 +-----------------+---------------------------------+-------+
@@ -574,10 +574,10 @@ Standard C.  The recognized escape sequences are:
 +-----------------+---------------------------------+-------+
 | ``\v``          | ASCII Vertical Tab (VT)         |       |
 +-----------------+---------------------------------+-------+
-| ``\ooo``        | Character with octal value      | (2,4) |
+| ``\ooo``        | Character with octal value      | (1,3) |
 |                 | *ooo*                           |       |
 +-----------------+---------------------------------+-------+
-| ``\xhh``        | Character with hex value *hh*   | (3,4) |
+| ``\xhh``        | Character with hex value *hh*   | (2,3) |
 +-----------------+---------------------------------+-------+
 
 Escape sequences only recognized in string literals are:
@@ -585,30 +585,19 @@ Escape sequences only recognized in string literals are:
 +-----------------+---------------------------------+-------+
 | Escape Sequence | Meaning                         | Notes |
 +=================+=================================+=======+
-| ``\N{name}``    | Character named *name* in the   | \(5)  |
+| ``\N{name}``    | Character named *name* in the   | \(4)  |
 |                 | Unicode database                |       |
 +-----------------+---------------------------------+-------+
-| ``\uxxxx``      | Character with 16-bit hex value | \(6)  |
+| ``\uxxxx``      | Character with 16-bit hex value | \(5)  |
 |                 | *xxxx*                          |       |
 +-----------------+---------------------------------+-------+
-| ``\Uxxxxxxxx``  | Character with 32-bit hex value | \(7)  |
+| ``\Uxxxxxxxx``  | Character with 32-bit hex value | \(6)  |
 |                 | *xxxxxxxx*                      |       |
 +-----------------+---------------------------------+-------+
 
 Notes:
 
 (1)
-   A backslash can be added at the end of a line to ignore the newline::
-
-      >>> 'This string will not include \
-      ... backslashes or newline characters.'
-      'This string will not include backslashes or newline characters.'
-
-   The same result can be achieved using :ref:`triple-quoted strings <strings>`,
-   or parentheses and :ref:`string literal concatenation <string-concatenation>`.
-
-
-(2)
    As in Standard C, up to three octal digits are accepted.
 
    .. versionchanged:: 3.11
@@ -616,22 +605,22 @@ Notes:
       In a future Python version they will be a :exc:`SyntaxWarning` and
       eventually a :exc:`SyntaxError`.
 
-(3)
+(2)
    Unlike in Standard C, exactly two hex digits are required.
 
-(4)
+(3)
    In a bytes literal, hexadecimal and octal escapes denote the byte with the
    given value. In a string literal, these escapes denote a Unicode character
    with the given value.
 
-(5)
+(4)
    .. versionchanged:: 3.3
       Support for name aliases [#]_ has been added.
 
-(6)
+(5)
    Exactly four hex digits are required.
 
-(7)
+(6)
    Any Unicode character can be encoded this way.  Exactly eight hex digits
    are required.
 
@@ -768,7 +757,7 @@ the final value of the whole string.
 
 Top-level format specifiers may include nested replacement fields. These nested
 fields may include their own conversion fields and :ref:`format specifiers
-<formatspec>`, but may not include more deeply nested replacement fields. The
+<formatspec>`, but may not include more deeply-nested replacement fields. The
 :ref:`format specifier mini-language <formatspec>` is the same as that used by
 the :meth:`str.format` method.
 
@@ -1013,4 +1002,4 @@ occurrence outside string literals and comments is an unconditional error:
 
 .. rubric:: Footnotes
 
-.. [#] https://www.unicode.org/Public/15.0.0/ucd/NameAliases.txt
+.. [#] https://www.unicode.org/Public/11.0.0/ucd/NameAliases.txt

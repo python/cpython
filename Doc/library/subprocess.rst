@@ -25,7 +25,6 @@ modules and functions can be found in the following sections.
 
    :pep:`324` -- PEP proposing the subprocess module
 
-.. include:: ../includes/wasm-notavail.rst
 
 Using the :mod:`subprocess` Module
 ----------------------------------
@@ -360,7 +359,7 @@ functions.
 
    .. warning::
 
-      For maximum reliability, use a fully qualified path for the executable.
+      For maximum reliability, use a fully-qualified path for the executable.
       To search for an unqualified name on :envvar:`PATH`, use
       :meth:`shutil.which`. On all platforms, passing :data:`sys.executable`
       is the recommended way to launch the current Python interpreter again,
@@ -1474,7 +1473,7 @@ handling consistency are valid for these functions.
       >>> subprocess.getstatusoutput('/bin/kill $$')
       (-15, '')
 
-   .. availability:: Unix, Windows.
+   .. availability:: POSIX & Windows.
 
    .. versionchanged:: 3.3.4
       Windows support was added.
@@ -1496,7 +1495,7 @@ handling consistency are valid for these functions.
       >>> subprocess.getoutput('ls /bin/ls')
       '/bin/ls'
 
-   .. availability:: Unix, Windows.
+   .. availability:: POSIX & Windows.
 
    .. versionchanged:: 3.3.4
       Windows support added
@@ -1554,7 +1553,7 @@ On Linux, :mod:`subprocess` defaults to using the ``vfork()`` system call
 internally when it is safe to do so rather than ``fork()``. This greatly
 improves performance.
 
-If you ever encounter a presumed highly unusual situation where you need to
+If you ever encounter a presumed highly-unusual situation where you need to
 prevent ``vfork()`` from being used by Python, you can set the
 :attr:`subprocess._USE_VFORK` attribute to a false value.
 

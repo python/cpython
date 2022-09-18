@@ -138,7 +138,6 @@ Xxo_finalize(PyObject *self_obj)
 static void
 Xxo_dealloc(PyObject *self)
 {
-    PyObject_GC_UnTrack(self);
     Xxo_finalize(self);
     PyTypeObject *tp = Py_TYPE(self);
     freefunc free = PyType_GetSlot(tp, Py_tp_free);

@@ -26,7 +26,16 @@
 #include "util.h"
 
 /* prototypes */
-static const char *lstrip_sql(const char *sql);
+static int pysqlite_check_remaining_sql(const char* tail);
+
+typedef enum {
+    LINECOMMENT_1,
+    IN_LINECOMMENT,
+    COMMENTSTART_1,
+    IN_COMMENT,
+    COMMENTEND_1,
+    NORMAL
+} parse_remaining_sql_state;
 
 pysqlite_Statement *
 pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
@@ -64,7 +73,7 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
         return NULL;
     }
 
-    if (lstrip_sql(tail) != NULL) {
+    if (pysqlite_check_remaining_sql(tail)) {
         PyErr_SetString(connection->ProgrammingError,
                         "You can only execute one statement at a time.");
         goto error;
@@ -73,12 +82,20 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     /* Determine if the statement is a DML statement.
        SELECT is the only exception. See #9924. */
     int is_dml = 0;
-    const char *p = lstrip_sql(sql_cstr);
-    if (p != NULL) {
+    for (const char *p = sql_cstr; *p != 0; p++) {
+        switch (*p) {
+            case ' ':
+            case '\r':
+            case '\n':
+            case '\t':
+                continue;
+        }
+
         is_dml = (PyOS_strnicmp(p, "insert", 6) == 0)
                   || (PyOS_strnicmp(p, "update", 6) == 0)
                   || (PyOS_strnicmp(p, "delete", 6) == 0)
                   || (PyOS_strnicmp(p, "replace", 7) == 0);
+        break;
     }
 
     pysqlite_Statement *self = PyObject_GC_New(pysqlite_Statement,
@@ -88,6 +105,7 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     }
 
     self->st = stmt;
+    self->in_use = 0;
     self->is_dml = is_dml;
 
     PyObject_GC_Track(self);
@@ -121,61 +139,73 @@ stmt_traverse(pysqlite_Statement *self, visitproc visit, void *arg)
 }
 
 /*
- * Strip leading whitespace and comments from incoming SQL (null terminated C
- * string) and return a pointer to the first non-whitespace, non-comment
- * character.
+ * Checks if there is anything left in an SQL string after SQLite compiled it.
+ * This is used to check if somebody tried to execute more than one SQL command
+ * with one execute()/executemany() command, which the DB-API and we don't
+ * allow.
  *
- * This is used to check if somebody tries to execute more than one SQL query
- * with one execute()/executemany() command, which the DB-API don't allow.
- *
- * It is also used to harden DML query detection.
+ * Returns 1 if there is more left than should be. 0 if ok.
  */
-static inline const char *
-lstrip_sql(const char *sql)
+static int pysqlite_check_remaining_sql(const char* tail)
 {
-    // This loop is borrowed from the SQLite source code.
-    for (const char *pos = sql; *pos; pos++) {
+    const char* pos = tail;
+
+    parse_remaining_sql_state state = NORMAL;
+
+    for (;;) {
         switch (*pos) {
+            case 0:
+                return 0;
+            case '-':
+                if (state == NORMAL) {
+                    state  = LINECOMMENT_1;
+                } else if (state == LINECOMMENT_1) {
+                    state = IN_LINECOMMENT;
+                }
+                break;
             case ' ':
             case '\t':
-            case '\f':
-            case '\n':
-            case '\r':
-                // Skip whitespace.
                 break;
-            case '-':
-                // Skip line comments.
-                if (pos[1] == '-') {
-                    pos += 2;
-                    while (pos[0] && pos[0] != '\n') {
-                        pos++;
-                    }
-                    if (pos[0] == '\0') {
-                        return NULL;
-                    }
-                    continue;
+            case '\n':
+            case 13:
+                if (state == IN_LINECOMMENT) {
+                    state = NORMAL;
                 }
-                return pos;
+                break;
             case '/':
-                // Skip C style comments.
-                if (pos[1] == '*') {
-                    pos += 2;
-                    while (pos[0] && (pos[0] != '*' || pos[1] != '/')) {
-                        pos++;
-                    }
-                    if (pos[0] == '\0') {
-                        return NULL;
-                    }
-                    pos++;
-                    continue;
+                if (state == NORMAL) {
+                    state = COMMENTSTART_1;
+                } else if (state == COMMENTEND_1) {
+                    state = NORMAL;
+                } else if (state == COMMENTSTART_1) {
+                    return 1;
                 }
-                return pos;
+                break;
+            case '*':
+                if (state == NORMAL) {
+                    return 1;
+                } else if (state == LINECOMMENT_1) {
+                    return 1;
+                } else if (state == COMMENTSTART_1) {
+                    state = IN_COMMENT;
+                } else if (state == IN_COMMENT) {
+                    state = COMMENTEND_1;
+                }
+                break;
             default:
-                return pos;
+                if (state == COMMENTEND_1) {
+                    state = IN_COMMENT;
+                } else if (state == IN_LINECOMMENT) {
+                } else if (state == IN_COMMENT) {
+                } else {
+                    return 1;
+                }
         }
+
+        pos++;
     }
 
-    return NULL;
+    return 0;
 }
 
 static PyType_Slot stmt_slots[] = {

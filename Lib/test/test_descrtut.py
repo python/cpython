@@ -1,7 +1,7 @@
 # This contains most of the executable examples from Guido's descr
 # tutorial, once at
 #
-#     https://www.python.org/download/releases/2.2.3/descrintro/
+#     http://www.python.org/2.2/descrintro.html
 #
 # A few examples left implicit in the writeup were fleshed out, a few were
 # skipped due to lack of interest (e.g., faking super() by hand isn't
@@ -9,6 +9,7 @@
 # deterministic.
 
 from test.support import sortdict
+import pprint
 import doctest
 import unittest
 
@@ -166,7 +167,6 @@ For instance of built-in types, x.__class__ is now the same as type(x):
 
 You can get the information from the list type:
 
-    >>> import pprint
     >>> pprint.pprint(dir(list))    # like list.__dict__.keys(), but sorted
     ['__add__',
      '__class__',

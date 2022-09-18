@@ -4,6 +4,7 @@
 import os
 import subprocess
 import sys
+import time
 import unittest
 from test.fork_wait import ForkWait
 from test import support
@@ -19,12 +20,14 @@ class Wait3Test(ForkWait):
         # This many iterations can be required, since some previously run
         # tests (e.g. test_ctypes) could have spawned a lot of children
         # very quickly.
-        for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
+        while time.monotonic() <= deadline:
             # wait3() shouldn't hang, but some of the buildbots seem to hang
             # in the forking tests.  This is an attempt to fix the problem.
             spid, status, rusage = os.wait3(os.WNOHANG)
             if spid == cpid:
                 break
+            time.sleep(0.1)
 
         self.assertEqual(spid, cpid)
         self.assertEqual(os.waitstatus_to_exitcode(status), exitcode)

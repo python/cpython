@@ -1440,13 +1440,19 @@ class PythonFinalizationTests(unittest.TestCase):
         code = textwrap.dedent("""
             import ast
             import codecs
-            from test import support
 
             # Small AST tree to keep their AST types alive
             tree = ast.parse("def f(x, y): return 2*x-y")
+            x = [tree]
+            x.append(x)
 
-            # Store the tree somewhere to survive until the last GC collection
-            support.late_deletion(tree)
+            # Put the cycle somewhere to survive until the last GC collection.
+            # Codec search functions are only cleared at the end of
+            # interpreter_clear().
+            def search_func(encoding):
+                return None
+            search_func.a = x
+            codecs.register(search_func)
         """)
         assert_python_ok("-c", code)
 

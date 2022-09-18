@@ -32,6 +32,10 @@ class TestsWithSourceFile(unittest.TestCase):
         line_gen = ("Test of zipfile line %d." % i for i in range(1000000))
         self.data = '\n'.join(line_gen).encode('ascii')
 
+        # And write it to a file.
+        with open(TESTFN, "wb") as fp:
+            fp.write(self.data)
+
     def zipTest(self, f, compression):
         # Create the ZIP archive.
         with zipfile.ZipFile(f, "w", compression) as zipfp:
@@ -63,9 +67,6 @@ class TestsWithSourceFile(unittest.TestCase):
                     (num, filecount)), file=sys.__stdout__)
                     sys.__stdout__.flush()
 
-            # Check that testzip thinks the archive is valid
-            self.assertIsNone(zipfp.testzip())
-
     def testStored(self):
         # Try the temp file first.  If we do TESTFN2 first, then it hogs
         # gigabytes of disk space for the duration of the test.
@@ -84,7 +85,9 @@ class TestsWithSourceFile(unittest.TestCase):
         self.zipTest(TESTFN2, zipfile.ZIP_DEFLATED)
 
     def tearDown(self):
-        os_helper.unlink(TESTFN2)
+        for fname in TESTFN, TESTFN2:
+            if os.path.exists(fname):
+                os.remove(fname)
 
 
 class OtherTests(unittest.TestCase):

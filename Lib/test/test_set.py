@@ -427,7 +427,7 @@ class TestSet(TestJointOps, unittest.TestCase):
         self.assertRaises(KeyError, self.s.remove, self.thetype(self.word))
 
     def test_remove_keyerror_unpacking(self):
-        # https://bugs.python.org/issue1576657
+        # bug:  www.python.org/sf/1576657
         for v1 in ['Q', (1,)]:
             try:
                 self.s.remove(v1)

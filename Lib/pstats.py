@@ -57,7 +57,7 @@ class SortKey:
 
 @dataclass(unsafe_hash=True)
 class FunctionProfile:
-    ncalls: str
+    ncalls: int
     tottime: float
     percall_tottime: float
     cumtime: float

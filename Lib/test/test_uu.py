@@ -74,7 +74,6 @@ class UUTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             uu.encode(inp, out, "t1", 0o644, True)
 
-    @os_helper.skip_unless_working_chmod
     def test_decode(self):
         for backtick in True, False:
             inp = io.BytesIO(encodedtextwrapped(0o666, "t1", backtick=backtick))
@@ -200,8 +199,6 @@ class UUFileTest(unittest.TestCase):
             s = fout.read()
         self.assertEqual(s, encodedtextwrapped(0o644, self.tmpin))
 
-    # decode() calls chmod()
-    @os_helper.skip_unless_working_chmod
     def test_decode(self):
         with open(self.tmpin, 'wb') as f:
             f.write(encodedtextwrapped(0o644, self.tmpout))
@@ -214,7 +211,6 @@ class UUFileTest(unittest.TestCase):
         self.assertEqual(s, plaintext)
         # XXX is there an xp way to verify the mode?
 
-    @os_helper.skip_unless_working_chmod
     def test_decode_filename(self):
         with open(self.tmpin, 'wb') as f:
             f.write(encodedtextwrapped(0o644, self.tmpout))
@@ -225,7 +221,6 @@ class UUFileTest(unittest.TestCase):
             s = f.read()
         self.assertEqual(s, plaintext)
 
-    @os_helper.skip_unless_working_chmod
     def test_decodetwice(self):
         # Verify that decode() will refuse to overwrite an existing file
         with open(self.tmpin, 'wb') as f:
@@ -236,7 +231,6 @@ class UUFileTest(unittest.TestCase):
         with open(self.tmpin, 'rb') as f:
             self.assertRaises(uu.Error, uu.decode, f)
 
-    @os_helper.skip_unless_working_chmod
     def test_decode_mode(self):
         # Verify that decode() will set the given mode for the out_file
         expected_mode = 0o444

@@ -63,11 +63,6 @@ extern void bzero(void *, int);
 #  define SOCKET int
 #endif
 
-// WASI SDK 16 does not have POLLPRIO, define as no-op
-#if defined(__wasi__) && !defined(POLLPRI)
-#  define POLLPRI 0
-#endif
-
 typedef struct {
     PyObject *close;
     PyTypeObject *poll_Type;

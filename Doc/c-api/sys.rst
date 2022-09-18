@@ -21,11 +21,9 @@ Operating System Utilities
 
    Return true (nonzero) if the standard I/O file *fp* with name *filename* is
    deemed interactive.  This is the case for files for which ``isatty(fileno(fp))``
-   is true.  If the :c:member:`PyConfig.interactive` is non-zero, this function
+   is true.  If the global flag :c:data:`Py_InteractiveFlag` is true, this function
    also returns true if the *filename* pointer is ``NULL`` or if the name is equal to
    one of the strings ``'<stdin>'`` or ``'???'``.
-
-   This function must not be called before Python is initialized.
 
 
 .. c:function:: void PyOS_BeforeFork()
@@ -167,7 +165,7 @@ Operating System Utilities
 
    .. versionchanged:: 3.8
       The function now uses the UTF-8 encoding on Windows if
-      :c:member:`PyConfig.legacy_windows_fs_encoding` is zero;
+      :c:data:`Py_LegacyWindowsFSEncodingFlag` is zero;
 
 
 .. c:function:: char* Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
@@ -209,7 +207,7 @@ Operating System Utilities
 
    .. versionchanged:: 3.8
       The function now uses the UTF-8 encoding on Windows if
-      :c:member:`PyConfig.legacy_windows_fs_encoding` is zero.
+      :c:data:`Py_LegacyWindowsFSEncodingFlag` is zero.
 
 
 .. _systemfunctions:

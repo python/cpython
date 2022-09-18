@@ -188,6 +188,19 @@ class Element:
         """
         return self.__class__(tag, attrib)
 
+    def copy(self):
+        """Return copy of current element.
+
+        This creates a shallow copy. Subelements will be shared with the
+        original tree.
+
+        """
+        warnings.warn(
+            "elem.copy() is deprecated. Use copy.copy(elem) instead.",
+            DeprecationWarning
+            )
+        return self.__copy__()
+
     def __copy__(self):
         elem = self.makeelement(self.tag, self.attrib)
         elem.text = self.text
@@ -718,7 +731,6 @@ class ElementTree:
         with _get_writer(file_or_filename, encoding) as (write, declared_encoding):
             if method == "xml" and (xml_declaration or
                     (xml_declaration is None and
-                     encoding.lower() != "unicode" and
                      declared_encoding.lower() not in ("utf-8", "us-ascii"))):
                 write("<?xml version='1.0' encoding='%s'?>\n" % (
                     declared_encoding,))
@@ -745,10 +757,13 @@ def _get_writer(file_or_filename, encoding):
     except AttributeError:
         # file_or_filename is a file name
         if encoding.lower() == "unicode":
-            encoding="utf-8"
-        with open(file_or_filename, "w", encoding=encoding,
-                  errors="xmlcharrefreplace") as file:
-            yield file.write, encoding
+            file = open(file_or_filename, "w",
+                        errors="xmlcharrefreplace")
+        else:
+            file = open(file_or_filename, "w", encoding=encoding,
+                        errors="xmlcharrefreplace")
+        with file:
+            yield file.write, file.encoding
     else:
         # file_or_filename is a file-like object
         # encoding determines if it is a text or binary writer

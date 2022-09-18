@@ -27,6 +27,7 @@
 # into a program for a different change to Python programs...
 
 import sys
+import re
 import os
 from stat import *
 import getopt

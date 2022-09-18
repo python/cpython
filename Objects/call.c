@@ -1,10 +1,11 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgsTstate()
-#include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
-#include "pycore_object.h"        // _PyCFunctionWithKeywords_TrampolineCall()
+#include "pycore_ceval.h"         // _PyEval_EvalFrame()
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "frameobject.h"          // _PyFrame_New_NoTrack()
 
 
 static PyObject *const *
@@ -1046,12 +1047,4 @@ _PyStack_UnpackDict_Free(PyObject *const *stack, Py_ssize_t nargs,
     }
     PyMem_Free((PyObject **)stack - 1);
     Py_DECREF(kwnames);
-}
-
-// Export for the stable ABI
-#undef PyVectorcall_NARGS
-Py_ssize_t
-PyVectorcall_NARGS(size_t n)
-{
-    return _PyVectorcall_NARGS(n);
 }

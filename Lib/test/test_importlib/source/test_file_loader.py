@@ -51,6 +51,7 @@ class SimpleTest(abc.LoaderTests):
             def get_code(self, _): pass
             def get_source(self, _): pass
             def is_package(self, _): pass
+            def module_repr(self, _): pass
 
         path = 'some_path'
         name = 'some_name'

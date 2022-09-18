@@ -52,7 +52,9 @@ static inline Py_ssize_t PyDict_GET_SIZE(PyObject *op) {
     mp = _Py_CAST(PyDictObject*, op);
     return mp->ma_used;
 }
-#define PyDict_GET_SIZE(op) PyDict_GET_SIZE(_PyObject_CAST(op))
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030c0000
+#  define PyDict_GET_SIZE(op) PyDict_GET_SIZE(_PyObject_CAST(op))
+#endif
 
 PyAPI_FUNC(int) _PyDict_Contains_KnownHash(PyObject *, PyObject *, Py_hash_t);
 PyAPI_FUNC(int) _PyDict_ContainsId(PyObject *, _Py_Identifier *);

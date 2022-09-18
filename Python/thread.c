@@ -55,15 +55,8 @@ PyThread_init_thread(void)
     PyThread__init_thread();
 }
 
-#if defined(HAVE_PTHREAD_STUBS)
-#   define PYTHREAD_NAME "pthread-stubs"
-#   include "thread_pthread_stubs.h"
-#elif defined(_POSIX_THREADS)
-#   if defined(__EMSCRIPTEN__) && !defined(__EMSCRIPTEN_PTHREADS__)
-#     define PYTHREAD_NAME "pthread-stubs"
-#   else
-#     define PYTHREAD_NAME "pthread"
-#   endif
+#if defined(_POSIX_THREADS)
+#   define PYTHREAD_NAME "pthread"
 #   include "thread_pthread.h"
 #elif defined(NT_THREADS)
 #   define PYTHREAD_NAME "nt"
@@ -162,8 +155,7 @@ PyThread_GetInfo(void)
 #endif
 
     if (ThreadInfoType.tp_name == 0) {
-        if (_PyStructSequence_InitBuiltin(&ThreadInfoType,
-                                          &threadinfo_desc) < 0)
+        if (PyStructSequence_InitType2(&ThreadInfoType, &threadinfo_desc) < 0)
             return NULL;
     }
 
@@ -178,9 +170,7 @@ PyThread_GetInfo(void)
     }
     PyStructSequence_SET_ITEM(threadinfo, pos++, value);
 
-#ifdef HAVE_PTHREAD_STUBS
-    value = Py_NewRef(Py_None);
-#elif defined(_POSIX_THREADS)
+#ifdef _POSIX_THREADS
 #ifdef USE_SEMAPHORES
     value = PyUnicode_FromString("semaphore");
 #else
@@ -191,7 +181,8 @@ PyThread_GetInfo(void)
         return NULL;
     }
 #else
-    value = Py_NewRef(Py_None);
+    Py_INCREF(Py_None);
+    value = Py_None;
 #endif
     PyStructSequence_SET_ITEM(threadinfo, pos++, value);
 

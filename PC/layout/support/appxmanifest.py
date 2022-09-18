@@ -6,11 +6,13 @@ __author__ = "Steve Dower <steve.dower@python.org>"
 __version__ = "3.8"
 
 
+import collections
 import ctypes
 import io
 import os
+import sys
 
-from pathlib import PureWindowsPath
+from pathlib import Path, PureWindowsPath
 from xml.etree import ElementTree as ET
 
 from .constants import *
@@ -86,8 +88,7 @@ APPXMANIFEST_NS = {
 }
 
 APPXMANIFEST_TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
-<Package IgnorableNamespaces="desktop4 desktop6"
-    xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
     xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
     xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
     xmlns:rescap4="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities/4"

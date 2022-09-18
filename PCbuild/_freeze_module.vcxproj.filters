@@ -25,6 +25,9 @@
     <ClCompile Include="..\Objects\abstract.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Objects\accu.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\asdl.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -83,9 +86,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\codeobject.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Objects\perf_trampoline.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\compile.c">
@@ -185,9 +185,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\getversion.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Python\ceval_gil.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\hamt.c">

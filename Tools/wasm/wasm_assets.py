@@ -13,13 +13,18 @@ import argparse
 import pathlib
 import shutil
 import sys
-import sysconfig
 import zipfile
 
 # source directory
 SRCDIR = pathlib.Path(__file__).parent.parent.parent.absolute()
 SRCDIR_LIB = SRCDIR / "Lib"
 
+# sysconfig data relative to build dir.
+SYSCONFIGDATA = pathlib.PurePath(
+    "build",
+    f"lib.emscripten-wasm32-{sys.version_info.major}.{sys.version_info.minor}",
+    "_sysconfigdata__emscripten_wasm32-emscripten.py",
+)
 
 # Library directory relative to $(prefix).
 WASM_LIB = pathlib.PurePath("lib")
@@ -77,6 +82,7 @@ OMIT_NETWORKING_FILES = (
     "mailcap.py",
     "nntplib.py",
     "poplib.py",
+    "smtpd.py",
     "smtplib.py",
     "socketserver.py",
     "telnetlib.py",
@@ -108,33 +114,12 @@ OMIT_MODULE_FILES = {
     "_zoneinfo": ["zoneinfo/"],
 }
 
-SYSCONFIG_NAMES = (
-    "_sysconfigdata__emscripten_wasm32-emscripten",
-    "_sysconfigdata__emscripten_wasm32-emscripten",
-    "_sysconfigdata__wasi_wasm32-wasi",
-    "_sysconfigdata__wasi_wasm64-wasi",
+# regression test sub directories
+OMIT_SUBDIRS = (
+    "ctypes/test/",
+    "tkinter/test/",
+    "unittest/test/",
 )
-
-
-def get_builddir(args: argparse.Namespace) -> pathlib.Path:
-    """Get builddir path from pybuilddir.txt
-    """
-    with open("pybuilddir.txt", encoding="utf-8") as f:
-        builddir = f.read()
-    return pathlib.Path(builddir)
-
-
-def get_sysconfigdata(args: argparse.Namespace) -> pathlib.Path:
-    """Get path to sysconfigdata relative to build root
-    """
-    data_name = sysconfig._get_sysconfigdata_name()
-    if not data_name.startswith(SYSCONFIG_NAMES):
-        raise ValueError(
-            f"Invalid sysconfig data name '{data_name}'.",
-            SYSCONFIG_NAMES
-        )
-    filename = data_name + ".py"
-    return args.builddir / filename
 
 
 def create_stdlib_zip(
@@ -142,6 +127,9 @@ def create_stdlib_zip(
     *,
     optimize: int = 0,
 ) -> None:
+    def filterfunc(name: str) -> bool:
+        return not name.startswith(args.omit_subdirs_absolute)
+
     with zipfile.PyZipFile(
         args.wasm_stdlib_zip, mode="w", compression=args.compression, optimize=optimize
     ) as pzf:
@@ -155,14 +143,14 @@ def create_stdlib_zip(
                 continue
             if entry.name.endswith(".py") or entry.is_dir():
                 # writepy() writes .pyc files (bytecode).
-                pzf.writepy(entry)
+                pzf.writepy(entry, filterfunc=filterfunc)
 
 
 def detect_extension_modules(args: argparse.Namespace):
     modules = {}
 
     # disabled by Modules/Setup.local ?
-    with open(args.buildroot / "Makefile") as f:
+    with open(args.builddir / "Makefile") as f:
         for line in f:
             if line.startswith("MODDISABLED_NAMES="):
                 disabled = line.split("=", 1)[1].strip().split()
@@ -176,13 +164,14 @@ def detect_extension_modules(args: argparse.Namespace):
     loc = {}
     exec(data, globals(), loc)
 
-    for key, value in loc["build_time_vars"].items():
-        if not key.startswith("MODULE_") or not key.endswith("_STATE"):
+    for name, value in loc["build_time_vars"].items():
+        if value not in {"yes", "missing", "disabled", "n/a"}:
             continue
-        if value not in {"yes", "disabled", "missing", "n/a"}:
-            raise ValueError(f"Unsupported value '{value}' for {key}")
-
-        modname = key[7:-6].lower()
+        if not name.startswith("MODULE_"):
+            continue
+        if name.endswith(("_CFLAGS", "_DEPS", "_LDFLAGS")):
+            continue
+        modname = name.removeprefix("MODULE_").lower()
         if modname not in modules:
             modules[modname] = value == "yes"
     return modules
@@ -194,8 +183,8 @@ def path(val: str) -> pathlib.Path:
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--buildroot",
-    help="absolute path to build root",
+    "--builddir",
+    help="absolute build directory",
     default=pathlib.Path(".").absolute(),
     type=path,
 )
@@ -213,7 +202,7 @@ def main():
     relative_prefix = args.prefix.relative_to(pathlib.Path("/"))
     args.srcdir = SRCDIR
     args.srcdir_lib = SRCDIR_LIB
-    args.wasm_root = args.buildroot / relative_prefix
+    args.wasm_root = args.builddir / relative_prefix
     args.wasm_stdlib_zip = args.wasm_root / WASM_STDLIB_ZIP
     args.wasm_stdlib = args.wasm_root / WASM_STDLIB
     args.wasm_dynload = args.wasm_root / WASM_DYNLOAD
@@ -223,20 +212,21 @@ def main():
     args.compression = zipfile.ZIP_DEFLATED
     args.compresslevel = 9
 
-    args.builddir = get_builddir(args)
-    args.sysconfig_data = get_sysconfigdata(args)
+    args.sysconfig_data = args.builddir / SYSCONFIGDATA
     if not args.sysconfig_data.is_file():
-        raise ValueError(f"sysconfigdata file {args.sysconfig_data} missing.")
+        raise ValueError(f"sysconfigdata file {SYSCONFIGDATA} missing.")
 
     extmods = detect_extension_modules(args)
     omit_files = list(OMIT_FILES)
-    if sysconfig.get_platform().startswith("emscripten"):
-        omit_files.extend(OMIT_NETWORKING_FILES)
+    omit_files.extend(OMIT_NETWORKING_FILES)
     for modname, modfiles in OMIT_MODULE_FILES.items():
         if not extmods.get(modname):
             omit_files.extend(modfiles)
 
     args.omit_files_absolute = {args.srcdir_lib / name for name in omit_files}
+    args.omit_subdirs_absolute = tuple(
+        str(args.srcdir_lib / name) for name in OMIT_SUBDIRS
+    )
 
     # Empty, unused directory for dynamic libs, but required for site initialization.
     args.wasm_dynload.mkdir(parents=True, exist_ok=True)

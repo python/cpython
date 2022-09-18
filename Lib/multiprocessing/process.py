@@ -304,7 +304,8 @@ class BaseProcess(object):
             if threading._HAVE_THREAD_NATIVE_ID:
                 threading.main_thread()._set_native_id()
             try:
-                self._after_fork()
+                util._finalizer_registry.clear()
+                util._run_after_forkers()
             finally:
                 # delay finalization of the old process object until after
                 # _run_after_forkers() is executed
@@ -334,13 +335,6 @@ class BaseProcess(object):
             util._flush_std_streams()
 
         return exitcode
-
-    @staticmethod
-    def _after_fork():
-        from . import util
-        util._finalizer_registry.clear()
-        util._run_after_forkers()
-
 
 #
 # We subclass bytes to avoid accidental transmission of auth keys over network

@@ -31,8 +31,8 @@ typedef struct {
 
 PyAPI_DATA(PyTypeObject) PyCMethod_Type;
 
-#define PyCMethod_CheckExact(op) Py_IS_TYPE((op), &PyCMethod_Type)
-#define PyCMethod_Check(op) PyObject_TypeCheck((op), &PyCMethod_Type)
+#define PyCMethod_CheckExact(op) Py_IS_TYPE(op, &PyCMethod_Type)
+#define PyCMethod_Check(op) PyObject_TypeCheck(op, &PyCMethod_Type)
 
 
 /* Static inline functions for direct access to these values.
@@ -40,7 +40,9 @@ PyAPI_DATA(PyTypeObject) PyCMethod_Type;
 static inline PyCFunction PyCFunction_GET_FUNCTION(PyObject *func) {
     return _PyCFunctionObject_CAST(func)->m_ml->ml_meth;
 }
-#define PyCFunction_GET_FUNCTION(func) PyCFunction_GET_FUNCTION(_PyObject_CAST(func))
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#  define PyCFunction_GET_FUNCTION(func) PyCFunction_GET_FUNCTION(_PyObject_CAST(func))
+#endif
 
 static inline PyObject* PyCFunction_GET_SELF(PyObject *func_obj) {
     PyCFunctionObject *func = _PyCFunctionObject_CAST(func_obj);
@@ -49,12 +51,16 @@ static inline PyObject* PyCFunction_GET_SELF(PyObject *func_obj) {
     }
     return func->m_self;
 }
-#define PyCFunction_GET_SELF(func) PyCFunction_GET_SELF(_PyObject_CAST(func))
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#  define PyCFunction_GET_SELF(func) PyCFunction_GET_SELF(_PyObject_CAST(func))
+#endif
 
 static inline int PyCFunction_GET_FLAGS(PyObject *func) {
     return _PyCFunctionObject_CAST(func)->m_ml->ml_flags;
 }
-#define PyCFunction_GET_FLAGS(func) PyCFunction_GET_FLAGS(_PyObject_CAST(func))
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#  define PyCFunction_GET_FLAGS(func) PyCFunction_GET_FLAGS(_PyObject_CAST(func))
+#endif
 
 static inline PyTypeObject* PyCFunction_GET_CLASS(PyObject *func_obj) {
     PyCFunctionObject *func = _PyCFunctionObject_CAST(func_obj);
@@ -63,4 +69,6 @@ static inline PyTypeObject* PyCFunction_GET_CLASS(PyObject *func_obj) {
     }
     return _Py_NULL;
 }
-#define PyCFunction_GET_CLASS(func) PyCFunction_GET_CLASS(_PyObject_CAST(func))
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#  define PyCFunction_GET_CLASS(func) PyCFunction_GET_CLASS(_PyObject_CAST(func))
+#endif

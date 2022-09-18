@@ -1,5 +1,6 @@
 import __future__
 import unittest
+from test import support
 
 
 class FLUFLTests(unittest.TestCase):

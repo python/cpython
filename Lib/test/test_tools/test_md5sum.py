@@ -1,5 +1,6 @@
 """Tests for the md5sum script in the Tools directory."""
 
+import sys
 import os
 import unittest
 from test.support import os_helper

@@ -478,23 +478,17 @@ class HeapTypeObjectPtr(PyObjectPtr):
             dictoffset = int_from_int(typeobj.field('tp_dictoffset'))
             if dictoffset != 0:
                 if dictoffset < 0:
-                    if int_from_int(typeobj.field('tp_flags')) & Py_TPFLAGS_MANAGED_DICT:
-                        assert dictoffset == -1
-                        dictoffset = -3 * _sizeof_void_p()
-                    else:
-                        type_PyVarObject_ptr = gdb.lookup_type('PyVarObject').pointer()
-                        tsize = int_from_int(self._gdbval.cast(type_PyVarObject_ptr)['ob_size'])
-                        if tsize < 0:
-                            tsize = -tsize
-                        size = _PyObject_VAR_SIZE(typeobj, tsize)
-                        dictoffset += size
-                        assert dictoffset % _sizeof_void_p() == 0
+                    type_PyVarObject_ptr = gdb.lookup_type('PyVarObject').pointer()
+                    tsize = int_from_int(self._gdbval.cast(type_PyVarObject_ptr)['ob_size'])
+                    if tsize < 0:
+                        tsize = -tsize
+                    size = _PyObject_VAR_SIZE(typeobj, tsize)
+                    dictoffset += size
+                    assert dictoffset % _sizeof_void_p() == 0
 
                 dictptr = self._gdbval.cast(_type_char_ptr()) + dictoffset
                 PyObjectPtrPtr = PyObjectPtr.get_gdb_type().pointer()
                 dictptr = dictptr.cast(PyObjectPtrPtr)
-                if int(dictptr.dereference()) & 1:
-                    return None
                 return PyObjectPtr.from_pyobject_ptr(dictptr.dereference())
         except RuntimeError:
             # Corrupt data somewhere; fail safe
@@ -508,14 +502,12 @@ class HeapTypeObjectPtr(PyObjectPtr):
         has_values =  int_from_int(typeobj.field('tp_flags')) & Py_TPFLAGS_MANAGED_DICT
         if not has_values:
             return None
-        charptrptr_t = _type_char_ptr().pointer()
-        ptr = self._gdbval.cast(charptrptr_t) - 3
-        char_ptr = ptr.dereference()
-        if (int(char_ptr) & 1) == 0:
+        PyDictValuesPtrPtr = gdb.lookup_type("PyDictValues").pointer().pointer()
+        valuesptr = self._gdbval.cast(PyDictValuesPtrPtr) - 4
+        values = valuesptr.dereference()
+        if int(values) == 0:
             return None
-        char_ptr += 1
-        values_ptr = char_ptr.cast(gdb.lookup_type("PyDictValues").pointer())
-        values = values_ptr['values']
+        values = values['values']
         return PyKeysValuesPair(self.get_cached_keys(), values)
 
     def get_cached_keys(self):
@@ -535,15 +527,14 @@ class HeapTypeObjectPtr(PyObjectPtr):
             return ProxyAlreadyVisited('<...>')
         visited.add(self.as_address())
 
+        pyop_attr_dict = self.get_attr_dict()
         keys_values = self.get_keys_values()
         if keys_values:
             attr_dict = keys_values.proxyval(visited)
+        elif pyop_attr_dict:
+            attr_dict = pyop_attr_dict.proxyval(visited)
         else:
-            pyop_attr_dict = self.get_attr_dict()
-            if pyop_attr_dict:
-                attr_dict = pyop_attr_dict.proxyval(visited)
-            else:
-                attr_dict = {}
+            attr_dict = {}
         tp_name = self.safe_tp_name()
 
         # Class:
@@ -1752,7 +1743,7 @@ class Frame(object):
 
     def is_waiting_for_gil(self):
         '''Is this frame waiting on the GIL?'''
-        # This assumes the _POSIX_THREADS version of Python/ceval_gil.c:
+        # This assumes the _POSIX_THREADS version of Python/ceval_gil.h:
         name = self._gdbframe.name()
         if name:
             return (name == 'take_gil')

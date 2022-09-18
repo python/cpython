@@ -10,9 +10,10 @@ from test import support
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import captured_stderr
-from test.support.os_helper import TESTFN, EnvironmentVarGuard
+from test.support.os_helper import TESTFN, EnvironmentVarGuard, change_cwd
 import ast
 import builtins
+import encodings
 import glob
 import io
 import os
@@ -205,7 +206,7 @@ class HelperFunctionsTests(unittest.TestCase):
             scheme = 'osx_framework_user'
         else:
             scheme = os.name + '_user'
-        self.assertEqual(os.path.normpath(site._get_path(site._getuserbase())),
+        self.assertEqual(site._get_path(site._getuserbase()),
                          sysconfig.get_path('purelib', scheme))
 
     @unittest.skipUnless(site.ENABLE_USER_SITE, "requires access to PEP 370 "
@@ -213,7 +214,7 @@ class HelperFunctionsTests(unittest.TestCase):
     @support.requires_subprocess()
     def test_s_option(self):
         # (ncoghlan) Change this to use script_helper...
-        usersite = os.path.normpath(site.USER_SITE)
+        usersite = site.USER_SITE
         self.assertIn(usersite, sys.path)
 
         env = os.environ.copy()
@@ -570,8 +571,6 @@ class _pthFileTests(unittest.TestCase):
             dll_file = os.path.join(temp_dir, os.path.split(dll_src_file)[1])
             shutil.copy(sys.executable, exe_file)
             shutil.copy(dll_src_file, dll_file)
-            for fn in glob.glob(os.path.join(os.path.split(dll_src_file)[0], "vcruntime*.dll")):
-                shutil.copy(fn, os.path.join(temp_dir, os.path.split(fn)[1]))
             if exe_pth:
                 _pth_file = os.path.splitext(exe_file)[0] + '._pth'
             else:

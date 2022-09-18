@@ -24,16 +24,8 @@ module resource
 class pid_t_converter(CConverter):
     type = 'pid_t'
     format_unit = '" _Py_PARSE_PID "'
-
-    def parse_arg(self, argname, displayname):
-        return """
-            {paramname} = PyLong_AsPid({argname});
-            if ({paramname} == -1 && PyErr_Occurred()) {{{{
-                goto exit;
-            }}}}
-            """.format(argname=argname, paramname=self.parser_name)
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=5af1c116d56cbb5a]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=0c1d19f640d57e48]*/
 
 #include "clinic/resource.c.h"
 
@@ -276,15 +268,17 @@ resource.prlimit
 
     pid: pid_t
     resource: int
-    limits: object = None
+    [
+    limits: object
+    ]
     /
 
 [clinic start generated code]*/
 
 static PyObject *
 resource_prlimit_impl(PyObject *module, pid_t pid, int resource,
-                      PyObject *limits)
-/*[clinic end generated code: output=6ebc49ff8c3a816e input=54bb69c9585e33bf]*/
+                      int group_right_1, PyObject *limits)
+/*[clinic end generated code: output=ee976b393187a7a3 input=b77743bdccc83564]*/
 {
     struct rlimit old_limit, new_limit;
     int retval;
@@ -300,7 +294,7 @@ resource_prlimit_impl(PyObject *module, pid_t pid, int resource,
         return NULL;
     }
 
-    if (limits != Py_None) {
+    if (group_right_1) {
         if (py2rlimit(limits, &new_limit) < 0) {
             return NULL;
         }

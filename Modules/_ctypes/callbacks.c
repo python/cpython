@@ -10,6 +10,7 @@
 #endif
 
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "frameobject.h"
 
 #include <stdbool.h>
 
@@ -471,17 +472,24 @@ static void LoadPython(void)
 
 long Call_GetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 {
-    PyObject *func, *result;
+    PyObject *mod, *func, *result;
     long retval;
     static PyObject *context;
 
     if (context == NULL)
         context = PyUnicode_InternFromString("_ctypes.DllGetClassObject");
 
-    func = _PyImport_GetModuleAttrString("ctypes", "DllGetClassObject");
-    if (!func) {
+    mod = PyImport_ImportModule("ctypes");
+    if (!mod) {
         PyErr_WriteUnraisable(context ? context : Py_None);
         /* There has been a warning before about this already */
+        return E_FAIL;
+    }
+
+    func = PyObject_GetAttrString(mod, "DllGetClassObject");
+    Py_DECREF(mod);
+    if (!func) {
+        PyErr_WriteUnraisable(context ? context : Py_None);
         return E_FAIL;
     }
 

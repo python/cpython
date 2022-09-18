@@ -252,6 +252,10 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self._num_cancels_requested -= 1
         return self._num_cancels_requested
 
+    def _check_future(self, future):
+        """Return False if task and future loops are not compatible."""
+        return futures._get_loop(future) is self._loop
+
     def __step(self, exc=None):
         if self.done():
             raise exceptions.InvalidStateError(
@@ -292,7 +296,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             blocking = getattr(result, '_asyncio_future_blocking', None)
             if blocking is not None:
                 # Yielded Future must come from Future.__iter__().
-                if futures._get_loop(result) is not self._loop:
+                if not self._check_future(result):
                     new_exc = RuntimeError(
                         f'Task {self!r} got Future '
                         f'{result!r} attached to a different loop')
@@ -848,8 +852,7 @@ def shield(arg):
 
     The statement
 
-        task = asyncio.create_task(something())
-        res = await shield(task)
+        res = await shield(something())
 
     is exactly equivalent to the statement
 
@@ -865,16 +868,10 @@ def shield(arg):
     If you want to completely ignore cancellation (not recommended)
     you can combine shield() with a try/except clause, as follows:
 
-        task = asyncio.create_task(something())
         try:
-            res = await shield(task)
+            res = await shield(something())
         except CancelledError:
             res = None
-
-    Save a reference to tasks passed to this function, to avoid
-    a task disappearing mid-execution. The event loop only keeps
-    weak references to tasks. A task that isn't referenced elsewhere
-    may get garbage collected at any time, even before it's done.
     """
     inner = _ensure_future(arg)
     if inner.done():

@@ -33,6 +33,7 @@ typedef struct
 {
     PyObject_HEAD
     sqlite3_stmt* st;
+    int in_use;
     int is_dml;
 } pysqlite_Statement;
 

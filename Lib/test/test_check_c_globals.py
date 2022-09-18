@@ -1,14 +1,9 @@
 import unittest
 import test.test_tools
-from test.support.warnings_helper import save_restore_warnings_filters
 
 test.test_tools.skip_if_missing('c-analyzer')
 with test.test_tools.imports_under_tool('c-analyzer'):
-    # gh-95349: Save/restore warnings filters to leave them unchanged.
-    # Importing the c-analyzer imports docutils which imports pkg_resources
-    # which adds a warnings filter.
-    with save_restore_warnings_filters():
-        from cpython.__main__ import main
+    from cpython.__main__ import main
 
 
 class ActualChecks(unittest.TestCase):

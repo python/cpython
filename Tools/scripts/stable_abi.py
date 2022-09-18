@@ -16,6 +16,7 @@ import argparse
 import textwrap
 import tomllib
 import difflib
+import shutil
 import pprint
 import sys
 import os

@@ -5,6 +5,7 @@ import sys
 import unittest
 import subprocess
 import textwrap
+from test import support
 from test.support import os_helper
 from test.support.script_helper import assert_python_ok
 

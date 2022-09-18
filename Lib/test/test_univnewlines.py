@@ -4,6 +4,7 @@ import _pyio as pyio
 import unittest
 import os
 import sys
+from test import support
 from test.support import os_helper
 
 

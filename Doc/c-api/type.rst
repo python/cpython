@@ -193,12 +193,11 @@ The following functions and structs are used to create
 .. c:function:: PyObject* PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module, PyType_Spec *spec, PyObject *bases)
 
    Create and return a :ref:`heap type <heap-types>` from the *spec*
-   (see :const:`Py_TPFLAGS_HEAPTYPE`).
+   (:const:`Py_TPFLAGS_HEAPTYPE`).
 
    The metaclass *metaclass* is used to construct the resulting type object.
-   When *metaclass* is ``NULL``, the metaclass is derived from *bases*
-   (or *Py_tp_base[s]* slots if *bases* is ``NULL``, see below).
-   Note that metaclasses that override
+   When *metaclass* is ``NULL``, the default :c:type:`PyType_Type` is used
+   instead. Note that metaclasses that override
    :c:member:`~PyTypeObject.tp_new` are not supported.
 
    The *bases* argument can be used to specify base classes; it can either
@@ -216,19 +215,6 @@ The following functions and structs are used to create
 
    This function calls :c:func:`PyType_Ready` on the new type.
 
-   Note that this function does *not* fully match the behavior of
-   calling :py:class:`type() <type>` or using the :keyword:`class` statement.
-   With user-provided base types or metaclasses, prefer
-   :ref:`calling <capi-call>` :py:class:`type` (or the metaclass)
-   over ``PyType_From*`` functions.
-   Specifically:
-
-   * :py:meth:`~object.__new__` is not called on the new class
-     (and it must be set to ``type.__new__``).
-   * :py:meth:`~object.__init__` is not called on the new class.
-   * :py:meth:`~object.__init_subclass__` is not called on any bases.
-   * :py:meth:`~object.__set_name__` is not called on new descriptors.
-
    .. versionadded:: 3.12
 
 .. c:function:: PyObject* PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
@@ -242,11 +228,6 @@ The following functions and structs are used to create
       The function now accepts a single class as the *bases* argument and
       ``NULL`` as the ``tp_doc`` slot.
 
-   .. versionchanged:: 3.12
-
-      The function now finds and uses a metaclass corresponding to the provided
-      base classes.  Previously, only :class:`type` instances were returned.
-
 
 .. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
@@ -254,20 +235,9 @@ The following functions and structs are used to create
 
    .. versionadded:: 3.3
 
-   .. versionchanged:: 3.12
-
-      The function now finds and uses a metaclass corresponding to the provided
-      base classes.  Previously, only :class:`type` instances were returned.
-
 .. c:function:: PyObject* PyType_FromSpec(PyType_Spec *spec)
 
    Equivalent to ``PyType_FromMetaclass(NULL, NULL, spec, NULL)``.
-
-   .. versionchanged:: 3.12
-
-      The function now finds and uses a metaclass corresponding to the
-      base classes provided in *Py_tp_base[s]* slots.
-      Previously, only :class:`type` instances were returned.
 
 .. c:type:: PyType_Spec
 
@@ -295,8 +265,6 @@ The following functions and structs are used to create
 
       Array of :c:type:`PyType_Slot` structures.
       Terminated by the special slot value ``{0, NULL}``.
-
-      Each slot ID should be specified at most once.
 
 .. c:type:: PyType_Slot
 
@@ -327,9 +295,9 @@ The following functions and structs are used to create
       * :c:member:`~PyTypeObject.tp_weaklist`
       * :c:member:`~PyTypeObject.tp_vectorcall`
       * :c:member:`~PyTypeObject.tp_weaklistoffset`
-        (use :const:`Py_TPFLAGS_MANAGED_WEAKREF` instead)
+        (see :ref:`PyMemberDef <pymemberdef-offsets>`)
       * :c:member:`~PyTypeObject.tp_dictoffset`
-        (use :const:`Py_TPFLAGS_MANAGED_DICT` instead)
+        (see :ref:`PyMemberDef <pymemberdef-offsets>`)
       * :c:member:`~PyTypeObject.tp_vectorcall_offset`
         (see :ref:`PyMemberDef <pymemberdef-offsets>`)
 

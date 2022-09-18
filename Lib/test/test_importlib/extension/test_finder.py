@@ -3,7 +3,7 @@ from test.test_importlib import abc, util
 machinery = util.import_importlib('importlib.machinery')
 
 import unittest
-import sys
+import warnings
 
 
 class FinderTests(abc.FinderTests):
@@ -13,10 +13,6 @@ class FinderTests(abc.FinderTests):
     def setUp(self):
         if not self.machinery.EXTENSION_SUFFIXES:
             raise unittest.SkipTest("Requires dynamic loading support.")
-        if util.EXTENSIONS.name in sys.builtin_module_names:
-            raise unittest.SkipTest(
-                f"{util.EXTENSIONS.name} is a builtin module"
-            )
 
     def find_spec(self, fullname):
         importer = self.machinery.FileFinder(util.EXTENSIONS.path,

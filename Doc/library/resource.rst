@@ -13,8 +13,6 @@
 This module provides basic mechanisms for measuring and controlling system
 resources utilized by a program.
 
-.. include:: ../includes/wasm-notavail.rst
-
 Symbolic constants are used to specify particular system resources and to
 request usage information about either the current process or its children.
 
@@ -101,7 +99,7 @@ this module for those platforms.
 
    .. audit-event:: resource.prlimit pid,resource,limits resource.prlimit
 
-   .. availability:: Linux >= 2.6.36 with glibc >= 2.13.
+   .. availability:: Linux 2.6.36 or later with glibc 2.13 or later.
 
    .. versionadded:: 3.4
 
@@ -187,7 +185,7 @@ platform.
 
    The number of bytes that can be allocated for POSIX message queues.
 
-   .. availability:: Linux >= 2.6.8.
+   .. availability:: Linux 2.6.8 or later.
 
    .. versionadded:: 3.4
 
@@ -196,7 +194,7 @@ platform.
 
    The ceiling for the process's nice level (calculated as 20 - rlim_cur).
 
-   .. availability:: Linux >= 2.6.12.
+   .. availability:: Linux 2.6.12 or later.
 
    .. versionadded:: 3.4
 
@@ -205,7 +203,7 @@ platform.
 
    The ceiling of the real-time priority.
 
-   .. availability:: Linux >= 2.6.12.
+   .. availability:: Linux 2.6.12 or later.
 
    .. versionadded:: 3.4
 
@@ -215,7 +213,7 @@ platform.
    The time limit (in microseconds) on CPU time that a process can spend
    under real-time scheduling without making a blocking syscall.
 
-   .. availability:: Linux >= 2.6.25.
+   .. availability:: Linux 2.6.25 or later.
 
    .. versionadded:: 3.4
 
@@ -224,7 +222,7 @@ platform.
 
    The number of signals which the process may queue.
 
-   .. availability:: Linux >= 2.6.8.
+   .. availability:: Linux 2.6.8 or later.
 
    .. versionadded:: 3.4
 
@@ -234,7 +232,7 @@ platform.
    This limits the amount of network memory, and hence the amount of mbufs,
    that this user may hold at any time.
 
-   .. availability:: FreeBSD.
+   .. availability:: FreeBSD 9 or later.
 
    .. versionadded:: 3.4
 
@@ -247,7 +245,7 @@ platform.
    `tuning(7) <https://www.freebsd.org/cgi/man.cgi?query=tuning&sektion=7>`__
    for a complete description of this sysctl.
 
-   .. availability:: FreeBSD.
+   .. availability:: FreeBSD 9 or later.
 
    .. versionadded:: 3.4
 
@@ -255,7 +253,7 @@ platform.
 
    The maximum number of pseudo-terminals created by this user id.
 
-   .. availability:: FreeBSD.
+   .. availability:: FreeBSD 9 or later.
 
    .. versionadded:: 3.4
 
@@ -263,7 +261,7 @@ platform.
 
    The maximum number of kqueues this user id is allowed to create.
 
-   .. availability:: FreeBSD >= 11.
+   .. availability:: FreeBSD 11 or later.
 
    .. versionadded:: 3.10
 

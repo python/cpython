@@ -910,9 +910,14 @@ is not present, current time as returned by localtime() is used.\n\
 static PyObject *
 time_strptime(PyObject *self, PyObject *args)
 {
-    PyObject *func, *result;
+    PyObject *module, *func, *result;
 
-    func = _PyImport_GetModuleAttrString("_strptime", "_strptime_time");
+    module = PyImport_ImportModule("_strptime");
+    if (!module)
+        return NULL;
+
+    func = PyObject_GetAttr(module, &_Py_ID(_strptime_time));
+    Py_DECREF(module);
     if (!func) {
         return NULL;
     }

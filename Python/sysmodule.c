@@ -20,7 +20,6 @@ Data members:
 #include "pycore_code.h"          // _Py_QuickenedCount
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
-#include "pycore_long.h"          // _PY_LONG_MAX_STR_DIGITS_THRESHOLD
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_object.h"        // _PyObject_IS_GC()
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
@@ -29,10 +28,10 @@ Data members:
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_structseq.h"     // _PyStructSequence_InitBuiltinWithFlags()
+#include "pycore_structseq.h"     // _PyStructSequence_InitType()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 
-#include "frameobject.h"          // PyFrame_FastToLocalsWithError()
+#include "frameobject.h"          // PyFrame_GetBack()
 #include "pydtrace.h"
 #include "osdefs.h"               // DELIM
 #include "stdlib_module_names.h"  // _Py_stdlib_module_names
@@ -1023,36 +1022,6 @@ function call.  See the debugger chapter in the library manual."
 );
 
 /*[clinic input]
-sys._settraceallthreads
-
-    arg: object
-    /
-
-Set the global debug tracing function in all running threads belonging to the current interpreter.
-
-It will be called on each function call. See the debugger chapter
-in the library manual.
-[clinic start generated code]*/
-
-static PyObject *
-sys__settraceallthreads(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=161cca30207bf3ca input=5906aa1485a50289]*/
-{
-    PyObject* argument = NULL;
-    Py_tracefunc func = NULL;
-
-    if (arg != Py_None) {
-        func = trace_trampoline;
-        argument = arg;
-    }
-
-
-    PyEval_SetTraceAllThreads(func, argument);
-
-    Py_RETURN_NONE;
-}
-
-/*[clinic input]
 sys.gettrace
 
 Return the global debug tracing function set with sys.settrace.
@@ -1096,35 +1065,6 @@ PyDoc_STRVAR(setprofile_doc,
 Set the profiling function.  It will be called on each function call\n\
 and return.  See the profiler chapter in the library manual."
 );
-
-/*[clinic input]
-sys._setprofileallthreads
-
-    arg: object
-    /
-
-Set the profiling function in all running threads belonging to the current interpreter.
-
-It will be called on each function call and return.  See the profiler chapter
-in the library manual.
-[clinic start generated code]*/
-
-static PyObject *
-sys__setprofileallthreads(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=2d61319e27b309fe input=d1a356d3f4f9060a]*/
-{
-    PyObject* argument = NULL;
-    Py_tracefunc func = NULL;
-
-    if (arg != Py_None) {
-        func = profile_trampoline;
-        argument = arg;
-    }
-
-    PyEval_SetProfileAllThreads(func, argument);
-
-    Py_RETURN_NONE;
-}
 
 /*[clinic input]
 sys.getprofile
@@ -1487,44 +1427,6 @@ static PyStructSequence_Desc windows_version_desc = {
                                       via indexing, the rest are name only */
 };
 
-static PyObject *
-_sys_getwindowsversion_from_kernel32()
-{
-    HANDLE hKernel32;
-    wchar_t kernel32_path[MAX_PATH];
-    LPVOID verblock;
-    DWORD verblock_size;
-    VS_FIXEDFILEINFO *ffi;
-    UINT ffi_len;
-    DWORD realMajor, realMinor, realBuild;
-
-    Py_BEGIN_ALLOW_THREADS
-    hKernel32 = GetModuleHandleW(L"kernel32.dll");
-    Py_END_ALLOW_THREADS
-    if (!hKernel32 || !GetModuleFileNameW(hKernel32, kernel32_path, MAX_PATH)) {
-        PyErr_SetFromWindowsErr(0);
-        return NULL;
-    }
-    verblock_size = GetFileVersionInfoSizeW(kernel32_path, NULL);
-    if (!verblock_size) {
-        PyErr_SetFromWindowsErr(0);
-        return NULL;
-    }
-    verblock = PyMem_RawMalloc(verblock_size);
-    if (!verblock ||
-        !GetFileVersionInfoW(kernel32_path, 0, verblock_size, verblock) ||
-        !VerQueryValueW(verblock, L"", (LPVOID)&ffi, &ffi_len)) {
-        PyErr_SetFromWindowsErr(0);
-        return NULL;
-    }
-
-    realMajor = HIWORD(ffi->dwProductVersionMS);
-    realMinor = LOWORD(ffi->dwProductVersionMS);
-    realBuild = HIWORD(ffi->dwProductVersionLS);
-    PyMem_RawFree(verblock);
-    return Py_BuildValue("(kkk)", realMajor, realMinor, realBuild);
-}
-
 /* Disable deprecation warnings about GetVersionEx as the result is
    being passed straight through to the caller, who is responsible for
    using it correctly. */
@@ -1554,13 +1456,11 @@ sys_getwindowsversion_impl(PyObject *module)
     PyObject *version;
     int pos = 0;
     OSVERSIONINFOEXW ver;
-
-    version = PyObject_GetAttrString(module, "_cached_windows_version");
-    if (version && PyObject_TypeCheck(version, &WindowsVersionType)) {
-        return version;
-    }
-    Py_XDECREF(version);
-    PyErr_Clear();
+    DWORD realMajor, realMinor, realBuild;
+    HANDLE hKernel32;
+    wchar_t kernel32_path[MAX_PATH];
+    LPVOID verblock;
+    DWORD verblock_size;
 
     ver.dwOSVersionInfoSize = sizeof(ver);
     if (!GetVersionExW((OSVERSIONINFOW*) &ver))
@@ -1580,34 +1480,41 @@ sys_getwindowsversion_impl(PyObject *module)
     PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wSuiteMask));
     PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wProductType));
 
+    realMajor = ver.dwMajorVersion;
+    realMinor = ver.dwMinorVersion;
+    realBuild = ver.dwBuildNumber;
+
     // GetVersion will lie if we are running in a compatibility mode.
     // We need to read the version info from a system file resource
     // to accurately identify the OS version. If we fail for any reason,
     // just return whatever GetVersion said.
-    PyObject *realVersion = _sys_getwindowsversion_from_kernel32();
-    if (!realVersion) {
-        PyErr_Clear();
-        realVersion = Py_BuildValue("(kkk)",
-            ver.dwMajorVersion,
-            ver.dwMinorVersion,
-            ver.dwBuildNumber
-        );
-    }
+    Py_BEGIN_ALLOW_THREADS
+    hKernel32 = GetModuleHandleW(L"kernel32.dll");
+    Py_END_ALLOW_THREADS
+    if (hKernel32 && GetModuleFileNameW(hKernel32, kernel32_path, MAX_PATH) &&
+        (verblock_size = GetFileVersionInfoSizeW(kernel32_path, NULL)) &&
+        (verblock = PyMem_RawMalloc(verblock_size))) {
+        VS_FIXEDFILEINFO *ffi;
+        UINT ffi_len;
 
-    if (realVersion) {
-        PyStructSequence_SET_ITEM(version, pos++, realVersion);
+        if (GetFileVersionInfoW(kernel32_path, 0, verblock_size, verblock) &&
+            VerQueryValueW(verblock, L"", (LPVOID)&ffi, &ffi_len)) {
+            realMajor = HIWORD(ffi->dwProductVersionMS);
+            realMinor = LOWORD(ffi->dwProductVersionMS);
+            realBuild = HIWORD(ffi->dwProductVersionLS);
+        }
+        PyMem_RawFree(verblock);
     }
+    PyStructSequence_SET_ITEM(version, pos++, Py_BuildValue("(kkk)",
+        realMajor,
+        realMinor,
+        realBuild
+    ));
 
     if (PyErr_Occurred()) {
         Py_DECREF(version);
         return NULL;
     }
-
-    if (PyObject_SetAttrString(module, "_cached_windows_version", version) < 0) {
-        Py_DECREF(version);
-        return NULL;
-    }
-
     return version;
 }
 
@@ -1704,45 +1611,6 @@ sys_mdebug_impl(PyObject *module, int flag)
     Py_RETURN_NONE;
 }
 #endif /* USE_MALLOPT */
-
-
-/*[clinic input]
-sys.get_int_max_str_digits
-
-Set the maximum string digits limit for non-binary int<->str conversions.
-[clinic start generated code]*/
-
-static PyObject *
-sys_get_int_max_str_digits_impl(PyObject *module)
-/*[clinic end generated code: output=0042f5e8ae0e8631 input=8dab13e2023e60d5]*/
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return PyLong_FromSsize_t(interp->int_max_str_digits);
-}
-
-/*[clinic input]
-sys.set_int_max_str_digits
-
-    maxdigits: int
-
-Set the maximum string digits limit for non-binary int<->str conversions.
-[clinic start generated code]*/
-
-static PyObject *
-sys_set_int_max_str_digits_impl(PyObject *module, int maxdigits)
-/*[clinic end generated code: output=734d4c2511f2a56d input=d7e3f325db6910c5]*/
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-    if ((!maxdigits) || (maxdigits >= _PY_LONG_MAX_STR_DIGITS_THRESHOLD)) {
-        tstate->interp->int_max_str_digits = maxdigits;
-        Py_RETURN_NONE;
-    } else {
-        PyErr_Format(
-            PyExc_ValueError, "maxdigits must be 0 or larger than %d",
-            _PY_LONG_MAX_STR_DIGITS_THRESHOLD);
-        return NULL;
-    }
-}
 
 size_t
 _PySys_GetSizeOf(PyObject *o)
@@ -1904,30 +1772,20 @@ sys__getframe_impl(PyObject *module, int depth)
     PyThreadState *tstate = _PyThreadState_GET();
     _PyInterpreterFrame *frame = tstate->cframe->current_frame;
 
-    if (frame != NULL) {
-        while (depth > 0) {
-            frame = frame->previous;
-            if (frame == NULL) {
-                break;
-            }
-            if (_PyFrame_IsIncomplete(frame)) {
-                continue;
-            }
-            --depth;
-        }
+    if (_PySys_Audit(tstate, "sys._getframe", NULL) < 0) {
+        return NULL;
+    }
+
+    while (depth > 0 && frame != NULL) {
+        frame = frame->previous;
+        --depth;
     }
     if (frame == NULL) {
         _PyErr_SetString(tstate, PyExc_ValueError,
                          "call stack is not deep enough");
         return NULL;
     }
-
-    PyObject *pyFrame = Py_XNewRef((PyObject *)_PyFrame_GetFrameObject(frame));
-    if (pyFrame && _PySys_Audit(tstate, "sys._getframe", "(O)", pyFrame) < 0) {
-        Py_DECREF(pyFrame);
-        return NULL;
-    }
-    return pyFrame;
+    return _Py_XNewRef((PyObject *)_PyFrame_GetFrameObject(frame));
 }
 
 /*[clinic input]
@@ -2051,66 +1909,6 @@ sys_is_finalizing_impl(PyObject *module)
     return PyBool_FromLong(_Py_IsFinalizing());
 }
 
-#ifdef Py_STATS
-/*[clinic input]
-sys._stats_on
-
-Turns on stats gathering (stats gathering is on by default).
-[clinic start generated code]*/
-
-static PyObject *
-sys__stats_on_impl(PyObject *module)
-/*[clinic end generated code: output=aca53eafcbb4d9fe input=8ddc6df94e484f3a]*/
-{
-    _py_stats = &_py_stats_struct;
-    Py_RETURN_NONE;
-}
-
-/*[clinic input]
-sys._stats_off
-
-Turns off stats gathering (stats gathering is on by default).
-[clinic start generated code]*/
-
-static PyObject *
-sys__stats_off_impl(PyObject *module)
-/*[clinic end generated code: output=1534c1ee63812214 input=b3e50e71ecf29f66]*/
-{
-    _py_stats = NULL;
-    Py_RETURN_NONE;
-}
-
-/*[clinic input]
-sys._stats_clear
-
-Clears the stats.
-[clinic start generated code]*/
-
-static PyObject *
-sys__stats_clear_impl(PyObject *module)
-/*[clinic end generated code: output=fb65a2525ee50604 input=3e03f2654f44da96]*/
-{
-    _Py_StatsClear();
-    Py_RETURN_NONE;
-}
-
-/*[clinic input]
-sys._stats_dump
-
-Dump stats to file, and clears the stats.
-[clinic start generated code]*/
-
-static PyObject *
-sys__stats_dump_impl(PyObject *module)
-/*[clinic end generated code: output=79f796fb2b4ddf05 input=92346f16d64f6f95]*/
-{
-    _Py_PrintSpecializationStats(1);
-    _Py_StatsClear();
-    Py_RETURN_NONE;
-}
-
-#endif
-
 #ifdef ANDROID_API_LEVEL
 /*[clinic input]
 sys.getandroidapilevel
@@ -2125,80 +1923,6 @@ sys_getandroidapilevel_impl(PyObject *module)
     return PyLong_FromLong(ANDROID_API_LEVEL);
 }
 #endif   /* ANDROID_API_LEVEL */
-
-/*[clinic input]
-sys.activate_stack_trampoline
-
-    backend: str
-    /
-
-Activate the perf profiler trampoline.
-[clinic start generated code]*/
-
-static PyObject *
-sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
-/*[clinic end generated code: output=5783cdeb51874b43 input=b09020e3a17c78c5]*/
-{
-#ifdef PY_HAVE_PERF_TRAMPOLINE
-    if (strcmp(backend, "perf") == 0) {
-        _PyPerf_Callbacks cur_cb;
-        _PyPerfTrampoline_GetCallbacks(&cur_cb);
-        if (cur_cb.init_state != _Py_perfmap_callbacks.init_state) {
-            if (_PyPerfTrampoline_SetCallbacks(&_Py_perfmap_callbacks) < 0 ) {
-                PyErr_SetString(PyExc_ValueError, "can't activate perf trampoline");
-                return NULL;
-            }
-        }
-    }
-    else {
-        PyErr_Format(PyExc_ValueError, "invalid backend: %s", backend);
-        return NULL;
-    }
-    if (_PyPerfTrampoline_Init(1) < 0) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-#else
-    PyErr_SetString(PyExc_ValueError, "perf trampoline not available");
-    return NULL;
-#endif
-}
-
-
-/*[clinic input]
-sys.deactivate_stack_trampoline
-
-Dectivate the perf profiler trampoline.
-[clinic start generated code]*/
-
-static PyObject *
-sys_deactivate_stack_trampoline_impl(PyObject *module)
-/*[clinic end generated code: output=b50da25465df0ef1 input=491f4fc1ed615736]*/
-{
-    if  (_PyPerfTrampoline_Init(0) < 0) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-/*[clinic input]
-sys.is_stack_trampoline_active
-
-Returns *True* if the perf profiler trampoline is active.
-[clinic start generated code]*/
-
-static PyObject *
-sys_is_stack_trampoline_active_impl(PyObject *module)
-/*[clinic end generated code: output=ab2746de0ad9d293 input=061fa5776ac9dd59]*/
-{
-#ifdef PY_HAVE_PERF_TRAMPOLINE
-    if (_PyIsPerfTrampolineActive()) {
-        Py_RETURN_TRUE;
-    }
-#endif
-    Py_RETURN_FALSE;
-}
-
 
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
@@ -2241,11 +1965,9 @@ static PyMethodDef sys_methods[] = {
     SYS_GETSWITCHINTERVAL_METHODDEF
     SYS_SETDLOPENFLAGS_METHODDEF
     {"setprofile", sys_setprofile, METH_O, setprofile_doc},
-    SYS__SETPROFILEALLTHREADS_METHODDEF
     SYS_GETPROFILE_METHODDEF
     SYS_SETRECURSIONLIMIT_METHODDEF
     {"settrace", sys_settrace, METH_O, settrace_doc},
-    SYS__SETTRACEALLTHREADS_METHODDEF
     SYS_GETTRACE_METHODDEF
     SYS_CALL_TRACING_METHODDEF
     SYS__DEBUGMALLOCSTATS_METHODDEF
@@ -2255,18 +1977,7 @@ static PyMethodDef sys_methods[] = {
      METH_VARARGS | METH_KEYWORDS, set_asyncgen_hooks_doc},
     SYS_GET_ASYNCGEN_HOOKS_METHODDEF
     SYS_GETANDROIDAPILEVEL_METHODDEF
-    SYS_ACTIVATE_STACK_TRAMPOLINE_METHODDEF
-    SYS_DEACTIVATE_STACK_TRAMPOLINE_METHODDEF
-    SYS_IS_STACK_TRAMPOLINE_ACTIVE_METHODDEF
     SYS_UNRAISABLEHOOK_METHODDEF
-    SYS_GET_INT_MAX_STR_DIGITS_METHODDEF
-    SYS_SET_INT_MAX_STR_DIGITS_METHODDEF
-#ifdef Py_STATS
-    SYS__STATS_ON_METHODDEF
-    SYS__STATS_OFF_METHODDEF
-    SYS__STATS_CLEAR_METHODDEF
-    SYS__STATS_DUMP_METHODDEF
-#endif
     {NULL, NULL}  // sentinel
 };
 
@@ -2761,7 +2472,6 @@ static PyStructSequence_Field flags_fields[] = {
     {"utf8_mode",               "-X utf8"},
     {"warn_default_encoding",   "-X warn_default_encoding"},
     {"safe_path", "-P"},
-    {"int_max_str_digits",      "-X int_max_str_digits"},
     {0}
 };
 
@@ -2769,7 +2479,7 @@ static PyStructSequence_Desc flags_desc = {
     "sys.flags",        /* name */
     flags__doc__,       /* doc */
     flags_fields,       /* fields */
-    18
+    17
 };
 
 static int
@@ -2810,7 +2520,6 @@ set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
     SetFlag(preconfig->utf8_mode);
     SetFlag(config->warn_default_encoding);
     SetFlagObj(PyBool_FromLong(config->safe_path));
-    SetFlag(_Py_global_config_int_max_str_digits);
 #undef SetFlagObj
 #undef SetFlag
     return 0;
@@ -3004,18 +2713,14 @@ EM_JS(char *, _Py_emscripten_runtime, (void), {
     if (typeof navigator == 'object') {
         info = navigator.userAgent;
     } else if (typeof process == 'object') {
-        info = "Node.js ".concat(process.version);
+        info = "Node.js ".concat(process.version)
     } else {
-        info = "UNKNOWN";
+        info = "UNKNOWN"
     }
     var len = lengthBytesUTF8(info) + 1;
     var res = _malloc(len);
-    if (res) stringToUTF8(info, res, len);
-#if __wasm64__
-    return BigInt(res);
-#else
+    stringToUTF8(info, res, len);
     return res;
-#endif
 });
 
 static PyObject *
@@ -3140,7 +2845,7 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS("int_info", PyLong_GetInfo());
     /* initialize hash_info */
     if (Hash_InfoType.tp_name == NULL) {
-        if (_PyStructSequence_InitBuiltin(&Hash_InfoType, &hash_info_desc) < 0) {
+        if (PyStructSequence_InitType2(&Hash_InfoType, &hash_info_desc) < 0) {
             goto type_init_failed;
         }
     }
@@ -3162,18 +2867,14 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS_FROM_STRING("abiflags", ABIFLAGS);
 #endif
 
-#define ENSURE_INFO_TYPE(TYPE, DESC) \
-    do { \
-        if (TYPE.tp_name == NULL) { \
-            if (_PyStructSequence_InitBuiltinWithFlags( \
-                    &TYPE, &DESC, Py_TPFLAGS_DISALLOW_INSTANTIATION) < 0) { \
-                goto type_init_failed; \
-            } \
-        } \
-    } while (0)
-
     /* version_info */
-    ENSURE_INFO_TYPE(VersionInfoType, version_info_desc);
+    if (VersionInfoType.tp_name == NULL) {
+        if (_PyStructSequence_InitType(&VersionInfoType,
+                                       &version_info_desc,
+                                       Py_TPFLAGS_DISALLOW_INSTANTIATION) < 0) {
+            goto type_init_failed;
+        }
+    }
     version_info = make_version_info(tstate);
     SET_SYS("version_info", version_info);
 
@@ -3181,17 +2882,26 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS("implementation", make_impl_info(version_info));
 
     // sys.flags: updated in-place later by _PySys_UpdateConfig()
-    ENSURE_INFO_TYPE(FlagsType, flags_desc);
+    if (FlagsType.tp_name == 0) {
+        if (_PyStructSequence_InitType(&FlagsType, &flags_desc,
+                                       Py_TPFLAGS_DISALLOW_INSTANTIATION) < 0) {
+            goto type_init_failed;
+        }
+    }
     SET_SYS("flags", make_flags(tstate->interp));
 
 #if defined(MS_WINDOWS)
     /* getwindowsversion */
-    ENSURE_INFO_TYPE(WindowsVersionType, windows_version_desc);
+    if (WindowsVersionType.tp_name == 0) {
+        if (_PyStructSequence_InitType(&WindowsVersionType,
+                                       &windows_version_desc,
+                                       Py_TPFLAGS_DISALLOW_INSTANTIATION) < 0) {
+            goto type_init_failed;
+        }
+    }
 
     SET_SYS_FROM_STRING("_vpath", VPATH);
 #endif
-
-#undef ENSURE_INFO_TYPE
 
     /* float repr style: 0.03 (short) vs 0.029999999999999999 (legacy) */
 #if _PY_SHORT_FLOAT_REPR == 1
@@ -3204,7 +2914,7 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
 
     /* initialize asyncgen_hooks */
     if (AsyncGenHooksType.tp_name == NULL) {
-        if (_PyStructSequence_InitBuiltin(
+        if (PyStructSequence_InitType2(
                 &AsyncGenHooksType, &asyncgen_hooks_desc) < 0) {
             goto type_init_failed;
         }

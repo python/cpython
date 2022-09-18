@@ -1,2 +1,0 @@
-The :class:`HTTPStatus <http.HTTPStatus>` enum offers a couple of properties
-to indicate the HTTP status category e.g. ``HTTPStatus.OK.is_success``.

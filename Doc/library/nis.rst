@@ -21,8 +21,6 @@ central administration of several hosts.
 
 Because NIS exists only on Unix systems, this module is only available for Unix.
 
-.. include:: ../includes/wasm-notavail.rst
-
 The :mod:`nis` module defines the following functions:
 
 

@@ -88,17 +88,19 @@ def wait_threads_exit(timeout=None):
         yield
     finally:
         start_time = time.monotonic()
-        for _ in support.sleeping_retry(timeout, error=False):
-            support.gc_collect()
+        deadline = start_time + timeout
+        while True:
             count = _thread._count()
             if count <= old_count:
                 break
-        else:
-            dt = time.monotonic() - start_time
-            msg = (f"wait_threads() failed to cleanup {count - old_count} "
-                   f"threads after {dt:.1f} seconds "
-                   f"(count: {count}, old count: {old_count})")
-            raise AssertionError(msg)
+            if time.monotonic() > deadline:
+                dt = time.monotonic() - start_time
+                msg = (f"wait_threads() failed to cleanup {count - old_count} "
+                       f"threads after {dt:.1f} seconds "
+                       f"(count: {count}, old count: {old_count})")
+                raise AssertionError(msg)
+            time.sleep(0.010)
+            support.gc_collect()
 
 
 def join_thread(thread, timeout=None):

@@ -1,4 +1,5 @@
 import dis
+import sys
 import textwrap
 import unittest
 

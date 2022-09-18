@@ -582,18 +582,11 @@ a pure Python equivalent:
 
 .. testcode::
 
-    def find_name_in_mro(cls, name, default):
-        "Emulate _PyType_Lookup() in Objects/typeobject.c"
-        for base in cls.__mro__:
-            if name in vars(base):
-                return vars(base)[name]
-        return default
-
     def object_getattribute(obj, name):
         "Emulate PyObject_GenericGetAttr() in Objects/object.c"
         null = object()
         objtype = type(obj)
-        cls_var = find_name_in_mro(objtype, name, null)
+        cls_var = getattr(objtype, name, null)
         descr_get = getattr(type(cls_var), '__get__', null)
         if descr_get is not null:
             if (hasattr(type(cls_var), '__set__')
@@ -670,15 +663,6 @@ a pure Python equivalent:
         def __getattr__(self, name):
             return ('getattr_hook', self, name)
 
-    class D1:
-        def __get__(self, obj, objtype=None):
-            return type(self), obj, objtype
-
-    class U1:
-        x = D1()
-
-    class U2(U1):
-        pass
 
 .. doctest::
     :hide:
@@ -710,10 +694,6 @@ a pure Python equivalent:
     >>> b.m5(200) == b['m5'](200) == 1000
     True
     >>> b.g == b['g'] == ('getattr_hook', b, 'g')
-    True
-
-    >>> u2 = U2()
-    >>> object_getattribute(u2, 'x') == u2.x == (D1, u2, U2)
     True
 
 Note, there is no :meth:`__getattr__` hook in the :meth:`__getattribute__`
