@@ -7,4 +7,5 @@ if 1:
         pass
     elif 1:
         pass
-    else: print("else-clause")
+    else:
+        print("else-clause")

@@ -1,3 +1,0 @@
-Normalization of line endings in ElementTree attributes was removed, as line
-endings which were replaced by entity numbers should be preserved in
-original form.

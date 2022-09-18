@@ -4,6 +4,8 @@ import threading
 import unittest
 import urllib.robotparser
 from test import support
+from test.support import socket_helper
+from test.support import threading_helper
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 
@@ -306,13 +308,17 @@ class RobotHandler(BaseHTTPRequestHandler):
         pass
 
 
+@unittest.skipUnless(
+    support.has_socket_support,
+    "Socket server requires working socket."
+)
 class PasswordProtectedSiteTestCase(unittest.TestCase):
 
     def setUp(self):
         # clear _opener global variable
         self.addCleanup(urllib.request.urlcleanup)
 
-        self.server = HTTPServer((support.HOST, 0), RobotHandler)
+        self.server = HTTPServer((socket_helper.HOST, 0), RobotHandler)
 
         self.t = threading.Thread(
             name='HTTPServer serving',
@@ -329,10 +335,10 @@ class PasswordProtectedSiteTestCase(unittest.TestCase):
         self.t.join()
         self.server.server_close()
 
-    @support.reap_threads
+    @threading_helper.reap_threads
     def testPasswordProtectedSite(self):
         addr = self.server.server_address
-        url = 'http://' + support.HOST + ':' + str(addr[1])
+        url = 'http://' + socket_helper.HOST + ':' + str(addr[1])
         robots_url = url + "/robots.txt"
         parser = urllib.robotparser.RobotFileParser()
         parser.set_url(url)
@@ -340,6 +346,7 @@ class PasswordProtectedSiteTestCase(unittest.TestCase):
         self.assertFalse(parser.can_fetch("*", robots_url))
 
 
+@support.requires_working_socket()
 class NetworkTestCase(unittest.TestCase):
 
     base_url = 'http://www.pythontest.net/'
@@ -348,7 +355,7 @@ class NetworkTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         support.requires('network')
-        with support.transient_internet(cls.base_url):
+        with socket_helper.transient_internet(cls.base_url):
             cls.parser = urllib.robotparser.RobotFileParser(cls.robots_txt)
             cls.parser.read()
 

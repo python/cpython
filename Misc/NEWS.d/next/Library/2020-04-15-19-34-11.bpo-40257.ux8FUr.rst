@@ -1,5 +1,0 @@
-func:`inspect.getdoc` no longer returns docstring inherited from the type of
-the object or from parent class if it is a class if it is not defined in the
-object itself. In :mod:`pydoc` the documentation string is now shown not
-only for class, function, method etc, but for any object that has its own
-``__doc__`` attribute.

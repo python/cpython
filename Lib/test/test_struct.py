@@ -1,12 +1,15 @@
 from collections import abc
 import array
+import gc
 import math
 import operator
 import unittest
 import struct
 import sys
+import weakref
 
 from test import support
+from test.support import import_helper
 from test.support.script_helper import assert_python_ok
 
 ISBIGENDIAN = sys.byteorder == "big"
@@ -670,6 +673,59 @@ class StructTest(unittest.TestCase):
         self.assertEqual(stdout.rstrip(), b"")
         self.assertIn(b"Exception ignored in:", stderr)
         self.assertIn(b"C.__del__", stderr)
+
+    def test__struct_reference_cycle_cleaned_up(self):
+        # Regression test for python/cpython#94207.
+
+        # When we create a new struct module, trigger use of its cache,
+        # and then delete it ...
+        _struct_module = import_helper.import_fresh_module("_struct")
+        module_ref = weakref.ref(_struct_module)
+        _struct_module.calcsize("b")
+        del _struct_module
+
+        # Then the module should have been garbage collected.
+        gc.collect()
+        self.assertIsNone(
+            module_ref(), "_struct module was not garbage collected")
+
+    @support.cpython_only
+    def test__struct_types_immutable(self):
+        # See https://github.com/python/cpython/issues/94254
+
+        Struct = struct.Struct
+        unpack_iterator = type(struct.iter_unpack("b", b'x'))
+        for cls in (Struct, unpack_iterator):
+            with self.subTest(cls=cls):
+                with self.assertRaises(TypeError):
+                    cls.x = 1
+
+
+    def test_issue35714(self):
+        # Embedded null characters should not be allowed in format strings.
+        for s in '\0', '2\0i', b'\0':
+            with self.assertRaisesRegex(struct.error,
+                                        'embedded null character'):
+                struct.calcsize(s)
+
+    @support.cpython_only
+    def test_issue45034_unsigned(self):
+        _testcapi = import_helper.import_module('_testcapi')
+        error_msg = f'ushort format requires 0 <= number <= {_testcapi.USHRT_MAX}'
+        with self.assertRaisesRegex(struct.error, error_msg):
+            struct.pack('H', 70000)  # too large
+        with self.assertRaisesRegex(struct.error, error_msg):
+            struct.pack('H', -1)  # too small
+
+    @support.cpython_only
+    def test_issue45034_signed(self):
+        _testcapi = import_helper.import_module('_testcapi')
+        error_msg = f'short format requires {_testcapi.SHRT_MIN} <= number <= {_testcapi.SHRT_MAX}'
+        with self.assertRaisesRegex(struct.error, error_msg):
+            struct.pack('h', 70000)  # too large
+        with self.assertRaisesRegex(struct.error, error_msg):
+            struct.pack('h', -70000)  # too small
+
 
 class UnpackIteratorTest(unittest.TestCase):
     """

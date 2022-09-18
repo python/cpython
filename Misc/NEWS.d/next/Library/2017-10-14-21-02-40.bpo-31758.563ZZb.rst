@@ -1,2 +1,0 @@
-Prevent crashes when using an uninitialized ``_elementtree.XMLParser``
-object. Patch by Oren Milman.

@@ -1,8 +1,6 @@
 import ast
 import sys
 import time
-import token
-import tokenize
 
 from pegen.testutil import print_memstats
 

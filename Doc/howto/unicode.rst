@@ -167,7 +167,7 @@ On the Computerphile Youtube channel, Tom Scott briefly
 (9 minutes 36 seconds).
 
 To help understand the standard, Jukka Korpela has written `an introductory
-guide <http://jkorpela.fi/unicode/guide.html>`_ to reading the
+guide <https://jkorpela.fi/unicode/guide.html>`_ to reading the
 Unicode character tables.
 
 Another `good introductory article <https://www.joelonsoftware.com/2003/10/08/the-absolute-minimum-every-software-developer-absolutely-positively-must-know-about-unicode-and-character-sets-no-excuses/>`_
@@ -609,9 +609,9 @@ implemented by converting the Unicode string into some encoding that
 varies depending on the system.  Today Python is converging on using
 UTF-8: Python on MacOS has used UTF-8 for several versions, and Python
 3.6 switched to using UTF-8 on Windows as well.  On Unix systems,
-there will only be a filesystem encoding if you've set the ``LANG`` or
-``LC_CTYPE`` environment variables; if you haven't, the default
-encoding is again UTF-8.
+there will only be a :term:`filesystem encoding <filesystem encoding and error
+handler>`. if you've set the ``LANG`` or ``LC_CTYPE`` environment variables; if
+you haven't, the default encoding is again UTF-8.
 
 The :func:`sys.getfilesystemencoding` function returns the encoding to use on
 your current system, in case you want to do the encoding manually, but there's
@@ -633,8 +633,8 @@ provided the directory path as bytes or a Unicode string.  If you pass a
 Unicode string as the path, filenames will be decoded using the filesystem's
 encoding and a list of Unicode strings will be returned, while passing a byte
 path will return the filenames as bytes.  For example,
-assuming the default filesystem encoding is UTF-8, running the following
-program::
+assuming the default :term:`filesystem encoding <filesystem encoding and error
+handler>` is UTF-8, running the following program::
 
    fn = 'filename\u4500abc'
    f = open(fn, 'w')
@@ -735,7 +735,7 @@ References
 ----------
 
 One section of `Mastering Python 3 Input/Output
-<http://pyvideo.org/video/289/pycon-2010--mastering-python-3-i-o>`_,
+<https://pyvideo.org/video/289/pycon-2010--mastering-python-3-i-o>`_,
 a PyCon 2010 talk by David Beazley, discusses text processing and binary data handling.
 
 The `PDF slides for Marc-André Lemburg's presentation "Writing Unicode-aware
@@ -745,7 +745,7 @@ discuss questions of character encodings as well as how to internationalize
 and localize an application.  These slides cover Python 2.x only.
 
 `The Guts of Unicode in Python
-<http://pyvideo.org/video/1768/the-guts-of-unicode-in-python>`_
+<https://pyvideo.org/video/1768/the-guts-of-unicode-in-python>`_
 is a PyCon 2013 talk by Benjamin Peterson that discusses the internal Unicode
 representation in Python 3.3.
 

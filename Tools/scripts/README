@@ -7,7 +7,6 @@ abitype.py                Converts a C file to use the PEP 384 type definition A
 analyze_dxp.py            Analyzes the result of sys.getdxp()
 byext.py                  Print lines/words/chars stats of files by extension
 byteyears.py              Print product of a file's size and age
-checkpyc.py               Check presence and validity of ".pyc" files
 cleanfuture.py            Fix redundant Python __future__ statements
 combinerefs.py            A helper for analyzing PYTHONDUMPREFS output
 copytime.py               Copy one file's atime and mtime to another
@@ -58,7 +57,7 @@ reindent.py               Change .py files to use 4-space indents
 reindent-rst.py           Fix-up reStructuredText file whitespace
 rgrep.py                  Reverse grep through a file (useful for big logfiles)
 run_tests.py              Run the test suite with more sensible default options
-serve.py                  Small wsgiref-based web server, used in make serve in Doc
+stable_abi.py             Stable ABI checks and file generators.
 suff.py                   Sort a list of files by suffix
 texi2html.py              Convert GNU texinfo files into HTML
 untabify.py               Replace tabs with spaces in argument files

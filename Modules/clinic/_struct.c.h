@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(Struct___init____doc__,
 "Struct(format)\n"
 "--\n"
@@ -20,8 +26,31 @@ static int
 Struct___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(format), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"format", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "Struct", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "Struct",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -93,7 +122,7 @@ PyDoc_STRVAR(Struct_unpack_from__doc__,
 "See help(struct) for more on format strings.");
 
 #define STRUCT_UNPACK_FROM_METHODDEF    \
-    {"unpack_from", (PyCFunction)(void(*)(void))Struct_unpack_from, METH_FASTCALL|METH_KEYWORDS, Struct_unpack_from__doc__},
+    {"unpack_from", _PyCFunction_CAST(Struct_unpack_from), METH_FASTCALL|METH_KEYWORDS, Struct_unpack_from__doc__},
 
 static PyObject *
 Struct_unpack_from_impl(PyStructObject *self, Py_buffer *buffer,
@@ -103,8 +132,31 @@ static PyObject *
 Struct_unpack_from(PyStructObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(buffer), &_Py_ID(offset), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"buffer", "offset", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "unpack_from", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "unpack_from",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer buffer = {NULL, NULL};
@@ -124,14 +176,9 @@ Struct_unpack_from(PyStructObject *self, PyObject *const *args, Py_ssize_t nargs
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[1]);
+        PyObject *iobj = _PyNumber_Index(args[1]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -204,7 +251,7 @@ calcsize(PyObject *module, PyObject *arg)
     PyStructObject *s_object = NULL;
     Py_ssize_t _return_value;
 
-    if (!cache_struct_converter(arg, &s_object)) {
+    if (!cache_struct_converter(module, arg, &s_object)) {
         goto exit;
     }
     _return_value = calcsize_impl(module, s_object);
@@ -231,7 +278,7 @@ PyDoc_STRVAR(unpack__doc__,
 "See help(struct) for more on format strings.");
 
 #define UNPACK_METHODDEF    \
-    {"unpack", (PyCFunction)(void(*)(void))unpack, METH_FASTCALL, unpack__doc__},
+    {"unpack", _PyCFunction_CAST(unpack), METH_FASTCALL, unpack__doc__},
 
 static PyObject *
 unpack_impl(PyObject *module, PyStructObject *s_object, Py_buffer *buffer);
@@ -246,7 +293,7 @@ unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("unpack", nargs, 2, 2)) {
         goto exit;
     }
-    if (!cache_struct_converter(args[0], &s_object)) {
+    if (!cache_struct_converter(module, args[0], &s_object)) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[1], &buffer, PyBUF_SIMPLE) != 0) {
@@ -280,7 +327,7 @@ PyDoc_STRVAR(unpack_from__doc__,
 "See help(struct) for more on format strings.");
 
 #define UNPACK_FROM_METHODDEF    \
-    {"unpack_from", (PyCFunction)(void(*)(void))unpack_from, METH_FASTCALL|METH_KEYWORDS, unpack_from__doc__},
+    {"unpack_from", _PyCFunction_CAST(unpack_from), METH_FASTCALL|METH_KEYWORDS, unpack_from__doc__},
 
 static PyObject *
 unpack_from_impl(PyObject *module, PyStructObject *s_object,
@@ -290,8 +337,31 @@ static PyObject *
 unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(buffer), &_Py_ID(offset), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"", "buffer", "offset", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "unpack_from", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "unpack_from",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyStructObject *s_object = NULL;
@@ -302,7 +372,7 @@ unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (!args) {
         goto exit;
     }
-    if (!cache_struct_converter(args[0], &s_object)) {
+    if (!cache_struct_converter(module, args[0], &s_object)) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[1], &buffer, PyBUF_SIMPLE) != 0) {
@@ -315,14 +385,9 @@ unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[2]);
+        PyObject *iobj = _PyNumber_Index(args[2]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -358,7 +423,7 @@ PyDoc_STRVAR(iter_unpack__doc__,
 "Requires that the bytes length be a multiple of the format struct size.");
 
 #define ITER_UNPACK_METHODDEF    \
-    {"iter_unpack", (PyCFunction)(void(*)(void))iter_unpack, METH_FASTCALL, iter_unpack__doc__},
+    {"iter_unpack", _PyCFunction_CAST(iter_unpack), METH_FASTCALL, iter_unpack__doc__},
 
 static PyObject *
 iter_unpack_impl(PyObject *module, PyStructObject *s_object,
@@ -374,7 +439,7 @@ iter_unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("iter_unpack", nargs, 2, 2)) {
         goto exit;
     }
-    if (!cache_struct_converter(args[0], &s_object)) {
+    if (!cache_struct_converter(module, args[0], &s_object)) {
         goto exit;
     }
     buffer = args[1];
@@ -386,4 +451,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=6a6228cfc4b7099c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eca7df0e75f8919d input=a9049054013a1b77]*/

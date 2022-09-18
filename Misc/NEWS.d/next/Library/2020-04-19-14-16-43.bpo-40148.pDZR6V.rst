@@ -1,1 +1,0 @@
-Added :meth:`pathlib.Path.with_stem()` to create a new Path with the stem replaced.

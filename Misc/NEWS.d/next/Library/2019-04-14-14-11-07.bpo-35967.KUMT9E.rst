@@ -1,1 +1,0 @@
-In platform, delay the invocation of 'uname -p' until the processor attribute is requested.
