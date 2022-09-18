@@ -3344,6 +3344,44 @@ _asyncio__leave_task_impl(PyObject *module, PyObject *loop, PyObject *task)
 }
 
 
+/*[clinic input]
+_asyncio.current_task
+
+    loop: object = None
+
+Return a currently executed task.
+
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_current_task_impl(PyObject *module, PyObject *loop)
+/*[clinic end generated code: output=fe15ac331a7f981a input=58910f61a5627112]*/
+{
+    PyObject *ret;
+    asyncio_state *state = get_asyncio_state(module);
+
+    if (loop == Py_None) {
+        loop = _asyncio_get_running_loop_impl(module);
+    }
+
+    if (loop == NULL) {
+        return NULL;
+    }
+
+    ret = PyDict_GetItemWithError(state->current_tasks, loop);
+    if (ret == NULL && PyErr_Occurred()) {
+        return NULL;
+    }
+    else if (ret == NULL) {
+        Py_RETURN_NONE;
+    }
+    else {
+        Py_INCREF(ret);
+        return ret;
+    }
+}
+
+
 /*********************** PyRunningLoopHolder ********************/
 
 
@@ -3599,6 +3637,7 @@ fail:
 PyDoc_STRVAR(module_doc, "Accelerator module for asyncio");
 
 static PyMethodDef asyncio_methods[] = {
+    _ASYNCIO_CURRENT_TASK_METHODDEF
     _ASYNCIO_GET_EVENT_LOOP_METHODDEF
     _ASYNCIO_GET_RUNNING_LOOP_METHODDEF
     _ASYNCIO__GET_RUNNING_LOOP_METHODDEF
