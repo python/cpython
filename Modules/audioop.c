@@ -65,6 +65,8 @@ search(int16_t val, const int16_t *table, int size)
         if (val <= *table++)
             return (i);
     }
+    assert(0 <= size);
+    assert(size < INT16_MAX);
     return (size);
 }
 #define st_ulaw2linear16(uc) (_st_ulaw2linear16[uc])
@@ -170,7 +172,7 @@ st_14linear2ulaw(int16_t pcm_val)       /* 2's complement (14-bit range) */
     if (seg >= 8)           /* out of range, return maximum value. */
         return (unsigned char) (0x7F ^ mask);
     else {
-        uval = (unsigned char) (seg << 4) | ((pcm_val >> (seg + 1)) & 0xF);
+        uval = (unsigned char) (seg * (1 << 4)) | ((pcm_val >> (seg + 1)) & 0xF);
         return (uval ^ mask);
     }
 
@@ -259,7 +261,7 @@ st_linear2alaw(int16_t pcm_val) /* 2's complement (13-bit range) */
     if (seg >= 8)           /* out of range, return maximum value. */
         return (unsigned char) (0x7F ^ mask);
     else {
-        aval = (unsigned char) seg << SEG_SHIFT;
+        aval = (unsigned char) seg * (1 << SEG_SHIFT);
         if (seg < 2)
             aval |= (pcm_val >> 1) & QUANT_MASK;
         else
@@ -300,13 +302,13 @@ static const int stepsizeTable[89] = {
 #ifdef WORDS_BIGENDIAN
 #define GETINT24(cp, i)  (                              \
         ((unsigned char *)(cp) + (i))[2] +              \
-        (((unsigned char *)(cp) + (i))[1] << 8) +       \
-        (((signed char *)(cp) + (i))[0] << 16) )
+        (((unsigned char *)(cp) + (i))[1] * (1 << 8)) + \
+        (((signed char *)(cp) + (i))[0] * (1 << 16)) )
 #else
 #define GETINT24(cp, i)  (                              \
         ((unsigned char *)(cp) + (i))[0] +              \
-        (((unsigned char *)(cp) + (i))[1] << 8) +       \
-        (((signed char *)(cp) + (i))[2] << 16) )
+        (((unsigned char *)(cp) + (i))[1] * (1 << 8)) + \
+        (((signed char *)(cp) + (i))[2] * (1 << 16)) )
 #endif
 
 
@@ -347,10 +349,10 @@ static const int stepsizeTable[89] = {
     } while(0)
 
 
-#define GETSAMPLE32(size, cp, i)  (                     \
-        (size == 1) ? (int)GETINT8((cp), (i)) << 24 :   \
-        (size == 2) ? (int)GETINT16((cp), (i)) << 16 :  \
-        (size == 3) ? (int)GETINT24((cp), (i)) << 8 :   \
+#define GETSAMPLE32(size, cp, i)  (                           \
+        (size == 1) ? (int)GETINT8((cp), (i)) * (1 << 24) :   \
+        (size == 2) ? (int)GETINT16((cp), (i)) * (1 << 16) :  \
+        (size == 3) ? (int)GETINT24((cp), (i)) * (1 << 8) :   \
                       (int)GETINT32((cp), (i)))
 
 #define SETSAMPLE32(size, cp, i, val)  do {     \
@@ -1558,7 +1560,7 @@ audioop_ulaw2lin_impl(PyObject *module, Py_buffer *fragment, int width)
 
     cp = fragment->buf;
     for (i = 0; i < fragment->len*width; i += width) {
-        int val = st_ulaw2linear16(*cp++) << 16;
+        int val = st_ulaw2linear16(*cp++) * (1 << 16);
         SETSAMPLE32(width, ncp, i, val);
     }
     return rv;
@@ -1632,7 +1634,7 @@ audioop_alaw2lin_impl(PyObject *module, Py_buffer *fragment, int width)
     cp = fragment->buf;
 
     for (i = 0; i < fragment->len*width; i += width) {
-        val = st_alaw2linear16(*cp++) << 16;
+        val = st_alaw2linear16(*cp++) * (1 << 16);
         SETSAMPLE32(width, ncp, i, val);
     }
     return rv;
@@ -1757,7 +1759,7 @@ audioop_lin2adpcm_impl(PyObject *module, Py_buffer *fragment, int width,
 
         /* Step 6 - Output value */
         if ( bufferstep ) {
-            outputbuffer = (delta << 4) & 0xf0;
+            outputbuffer = (delta * (1 << 4)) & 0xf0;
         } else {
             *ncp++ = (delta & 0x0f) | outputbuffer;
         }
@@ -1875,7 +1877,7 @@ audioop_adpcm2lin_impl(PyObject *module, Py_buffer *fragment, int width,
         step = stepsizeTable[index];
 
         /* Step 6 - Output value */
-        SETSAMPLE32(width, ncp, i, valpred << 16);
+        SETSAMPLE32(width, ncp, i, valpred * (1 << 16));
     }
 
     rv = Py_BuildValue("(O(ii))", str, valpred, index);
