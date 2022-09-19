@@ -600,7 +600,7 @@ In the 1970s people realized that unrestricted goto could lead
 to messy "spaghetti" code that was hard to understand and revise.
 In a high-level language, it is also unneeded as long as there
 are ways to branch (in Python, with :keyword:`if` statements and :keyword:`or`,
-:keyword:`and`, and ``if-else`` expressions) and loop (with :keyword:`while`
+:keyword:`and`, and :keyword:`if-else <if>` expressions) and loop (with :keyword:`while`
 and :keyword:`for` statements, possibly containing :keyword:`continue` and :keyword:`break`).
 
 One can also use exceptions to provide a "structured goto"
@@ -710,7 +710,7 @@ Why don't generators support the with statement?
 For technical reasons, a generator used directly as a context manager
 would not work correctly.  When, as is most common, a generator is used as
 an iterator run to completion, no closing is needed.  When it is, wrap
-it as ``contextlib.closing(generator)`` in the :keyword:`with` statement.
+it as :func:`contextlib.closing(generator) <contextlib.closing>` in the :keyword:`with` statement.
 
 
 Why are colons required for the if/while/def/class statements?
