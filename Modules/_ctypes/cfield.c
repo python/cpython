@@ -428,7 +428,7 @@ get_ulonglong(PyObject *v, unsigned long long *p)
 /* This macro RETURNS the first parameter with the bit field CHANGED. */
 #define SET(type, x, v, size)                                                 \
     (NUM_BITS(size) ?                                                   \
-     ( ( (type)x & ~(BIT_MASK(type, size) * (1ULL << LOW_BIT(size))) ) | ( ((type)v & BIT_MASK(type, size)) * (1ULL << LOW_BIT(size) )) ) \
+     (type) ( ( (type)x & ~(BIT_MASK(type, size) * (1ULL << LOW_BIT(size))) ) | ( ((type)v & BIT_MASK(type, size)) * (1ULL << LOW_BIT(size) )) ) \
      : (type)v)
 
 #if SIZEOF_SHORT == 2
