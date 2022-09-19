@@ -83,13 +83,6 @@ Other Language Changes
   mapping is hashable.
   (Contributed by Serhiy Storchaka in :gh:`87995`.)
 
-* Converting between :class:`int` and :class:`str` in bases other than 2
-  (binary), 4, 8 (octal), 16 (hexadecimal), or 32 such as base 10 (decimal) now
-  generates an :ref:`auditing event <auditing>` whenever the estimated number
-  of digits is above :data:`sys.int_info.str_digits_check_threshold
-  <sys.int_info>`.  See the :ref:`integer string conversion length limitation
-  <int_max_str_digits>` documentation.
-
 * :class:`memoryview` now supports the half-float type (the "e" format code).
   (Contributed by Dong-hee Na and Antoine Pitrou in :gh:`90751`.)
 
