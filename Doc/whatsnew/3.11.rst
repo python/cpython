@@ -50,6 +50,8 @@ This article explains the new features in Python 3.11, compared to 3.10.
 For full details, see the :ref:`changelog <changelog>`.
 
 
+.. _whatsnew311-summary:
+
 Summary -- Release highlights
 =============================
 
@@ -96,16 +98,18 @@ Important deprecations, removals or restrictions:
 * :pep:`670`: Convert macros to functions in the Python C API.
 
 
+.. _whatsnew311-features:
+
 New Features
 ============
 
 .. _whatsnew311-pep657:
 
-Enhanced error locations in tracebacks
---------------------------------------
+PEP 657: Enhanced error locations in tracebacks
+-----------------------------------------------
 
 When printing tracebacks, the interpreter will now point to the exact expression
-that caused the error instead of just the line. For example:
+that caused the error, instead of just the line. For example:
 
 .. code-block:: python
 
@@ -118,9 +122,9 @@ that caused the error instead of just the line. For example:
                                ^^^^^^^^^
     AttributeError: 'NoneType' object has no attribute 'x'
 
-Previous versions of the interpreter would point to just the line making it
+Previous versions of the interpreter would point to just the line, making it
 ambiguous which object was ``None``. These enhanced errors can also be helpful
-when dealing with deeply nested dictionary objects and multiple function calls,
+when dealing with deeply nested :class:`dict` objects and multiple function calls:
 
 .. code-block:: python
 
@@ -138,7 +142,7 @@ when dealing with deeply nested dictionary objects and multiple function calls,
                                    ~~~~~~~~~~~~~~~~~~^^^^^
     TypeError: 'NoneType' object is not subscriptable
 
-as well as complex arithmetic expressions:
+As well as complex arithmetic expressions:
 
 .. code-block:: python
 
@@ -148,33 +152,28 @@ as well as complex arithmetic expressions:
                   ~~~~~~^~~
     ZeroDivisionError: division by zero
 
+Additionally, the information used by the enhanced traceback feature
+is made available via a general API, that can be used to correlate
+:term:`bytecode` :ref:`instructions <bytecodes>` with source code location.
+This information can be retrieved using:
+
+- The :meth:`codeobject.co_positions` method in Python.
+- The :c:func:`PyCode_Addr2Location` function in the C API.
+
 See :pep:`657` for more details. (Contributed by Pablo Galindo, Batuhan Taskaya
 and Ammar Askar in :issue:`43950`.)
 
 .. note::
-   This feature requires storing column positions in code objects which may
-   result in a small increase of disk usage of compiled Python files or
-   interpreter memory usage. To avoid storing the extra information and/or
-   deactivate printing the extra traceback information, the
-   :option:`-X` ``no_debug_ranges`` command line flag or the :envvar:`PYTHONNODEBUGRANGES`
-   environment variable can be used.
+   This feature requires storing column positions in :ref:`codeobjects`,
+   which may result in a small increase in interpreter memory usage
+   and disk usage for compiled Python files.
+   To avoid storing the extra information
+   and deactivate printing the extra traceback information,
+   use the :option:`-X no_debug_ranges <-X>` command line option
+   or the :envvar:`PYTHONNODEBUGRANGES` environment variable.
 
-Column information for code objects
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The information used by the enhanced traceback feature is made available as a
-general API that can be used to correlate bytecode instructions with source
-code. This information can be retrieved using:
-
-- The :meth:`codeobject.co_positions` method in Python.
-- The :c:func:`PyCode_Addr2Location` function in the C-API.
-
-The :option:`-X` ``no_debug_ranges`` option and the environment variable
-:envvar:`PYTHONNODEBUGRANGES` can be used to disable this feature.
-
-See :pep:`657` for more details. (Contributed by Pablo Galindo, Batuhan Taskaya
-and Ammar Askar in :issue:`43950`.)
-
+.. _whatsnew311-pep654:
 
 PEP 654: Exception Groups and ``except*``
 -----------------------------------------
@@ -192,16 +191,20 @@ See :pep:`654` for more details.
 Irit Katriel, Yury Selivanov and Guido van Rossum.)
 
 
-.. _whatsnew311-pep678:
+.. _whatsnew311-pep670:
 
 PEP 678: Exceptions can be enriched with notes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------
 
-The :meth:`add_note` method was added to :exc:`BaseException`. It can be
-used to enrich exceptions with context information which is not available
-at the time when the exception is raised. The notes added appear in the
-default traceback. See :pep:`678` for more details. (Contributed by
-Irit Katriel in :issue:`45607`.)
+The :meth:`~BaseException.add_note` method is added to :exc:`BaseException`.
+It can be used to enrich exceptions with context information
+that is not available at the time when the exception is raised.
+The added notes appear in the default traceback.
+
+See :pep:`678` for more details.
+
+(Contributed by Irit Katriel in :issue:`45607`.
+PEP written by Zac Hatfield-Dodds.)
 
 
 .. _whatsnew311-windows-launcher:
