@@ -77,6 +77,33 @@ class WavePCM24Test(WaveTest, unittest.TestCase):
         frames = wave._byteswap(frames, 3)
 
 
+class WavePCM24ExtTest(WaveTest, unittest.TestCase):
+    sndfilename = 'pluck-pcm24-ext.wav'
+    sndfilenframes = 3307
+    nchannels = 2
+    sampwidth = 3
+    framerate = 11025
+    nframes = 48
+    comptype = 'NONE'
+    compname = 'not compressed'
+    frames = bytes.fromhex("""\
+      022D65FFEB9D 4B5A0F00FA54 3113C304EE2B 80DCD6084303 \
+      CBDEC006B261 48A99803F2F8 BFE82401B07D 036BFBFE7B5D \
+      B85756FA3EC9 B4B055F3502B 299830EBCB62 1A5CA7E6D99A \
+      EDFA3EE491BD C625EBE27884 0E05A9E0B6CF EF2929E02922 \
+      5758D8E27067 FB3557E83E16 1377BFEF8402 D82C5BF7272A \
+      978F16FB7745 F5F865FC1013 086635FB9C4E DF30FCFB40EE \
+      117FE0FA3438 3EE6B8FB5AC3 BC77A3FCB2F4 66D6DAFF5F32 \
+      CF13B9041275 431D69097A8C C1BB600EC74E 5120B912A2BA \
+      EEDF641754C0 8207001664B7 7FFFFF14453F 8000001294E6 \
+      499C1B0EB3B2 52B73E0DBCA0 EFB2B20F5FD8 CE3CDB0FBE12 \
+      E4B49C0CEA2D 6344A80A5A7C 08C8FE0A1FFE 2BB9860B0A0E \
+      51486F0E44E1 8BCC64113B05 B6F4EC0EEB36 4413170A5B48 \
+      """)
+    if sys.byteorder != 'big':
+        frames = wave._byteswap(frames, 3)
+
+
 class WavePCM32Test(WaveTest, unittest.TestCase):
     sndfilename = 'pluck-pcm32.wav'
     sndfilenframes = 3307
@@ -106,7 +133,8 @@ class WavePCM32Test(WaveTest, unittest.TestCase):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        support.check__all__(self, wave, not_exported={'WAVE_FORMAT_PCM'})
+        not_exported = {'WAVE_FORMAT_PCM', 'WAVE_FORMAT_EXTENSIBLE'}
+        support.check__all__(self, wave, not_exported=not_exported)
 
 
 class WaveLowLevelTest(unittest.TestCase):
