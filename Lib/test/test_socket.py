@@ -1374,10 +1374,21 @@ class GeneralModuleTests(unittest.TestCase):
 
     def testSockName(self):
         # Testing getsockname()
-        port = socket_helper.find_unused_port()
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.addCleanup(sock.close)
-        sock.bind(("0.0.0.0", port))
+
+        # Since find_unused_port() is inherently subject to race conditions, we
+        # call it a couple times if necessary.
+        for i in itertools.count():
+            port = socket_helper.find_unused_port()
+            try:
+                sock.bind(("0.0.0.0", port))
+            except OSError as e:
+                if e.errno != errno.EADDRINUSE or i == 5:
+                    raise
+            else:
+                break
+
         name = sock.getsockname()
         # XXX(nnorwitz): http://tinyurl.com/os5jz seems to indicate
         # it reasonable to get the host's addr in addition to 0.0.0.0.
@@ -5421,6 +5432,20 @@ class TestLinuxAbstractNamespace(unittest.TestCase):
             s.bind(bytearray(b"\x00python\x00test\x00"))
             self.assertEqual(s.getsockname(), b"\x00python\x00test\x00")
 
+    def testAutobind(self):
+        # Check that binding to an empty string binds to an available address
+        # in the abstract namespace as specified in unix(7) "Autobind feature".
+        abstract_address = b"^\0[0-9a-f]{5}"
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s1:
+            s1.bind("")
+            self.assertRegex(s1.getsockname(), abstract_address)
+            # Each socket is bound to a different abstract address.
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s2:
+                s2.bind("")
+                self.assertRegex(s2.getsockname(), abstract_address)
+                self.assertNotEqual(s1.getsockname(), s2.getsockname())
+
+
 @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'test needs socket.AF_UNIX')
 class TestUnixDomain(unittest.TestCase):
 
@@ -5489,6 +5514,11 @@ class TestUnixDomain(unittest.TestCase):
         self.bind(self.sock, path)
         self.addCleanup(os_helper.unlink, path)
         self.assertEqual(self.sock.getsockname(), path)
+
+    @unittest.skipIf(sys.platform == 'linux', 'Linux specific test')
+    def testEmptyAddress(self):
+        # Test that binding empty address fails.
+        self.assertRaises(OSError, self.sock.bind, "")
 
 
 class BufferIOTest(SocketConnectedTest):

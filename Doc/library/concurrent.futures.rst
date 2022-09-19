@@ -149,6 +149,13 @@ And::
    An :class:`Executor` subclass that uses a pool of at most *max_workers*
    threads to execute calls asynchronously.
 
+   All threads enqueued to ``ThreadPoolExecutor`` will be joined before the
+   interpreter can exit. Note that the exit handler which does this is
+   executed *before* any exit handlers added using `atexit`. This means
+   exceptions in the main thread must be caught and handled in order to
+   signal threads to exit gracefully. For this reason, it is recommended
+   that ``ThreadPoolExecutor`` not be used for long-running tasks.
+
    *initializer* is an optional callable that is called at the start of
    each worker thread; *initargs* is a tuple of arguments passed to the
    initializer.  Should *initializer* raise an exception, all currently

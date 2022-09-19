@@ -164,6 +164,8 @@ are always available.  They are listed here in alphabetical order.
    :func:`sys.breakpointhook` can be set to some other function and
    :func:`breakpoint` will automatically call that, allowing you to drop into
    the debugger of choice.
+   If :func:`sys.breakpointhook` is not accessible, this function will
+   raise :exc:`RuntimeError`.
 
    .. audit-event:: builtins.breakpoint breakpointhook breakpoint
 
@@ -891,6 +893,14 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.8
       Falls back to :meth:`__index__` if :meth:`__int__` is not defined.
 
+   .. versionchanged:: 3.10.7
+      :class:`int` string inputs and string representations can be limited to
+      help avoid denial of service attacks. A :exc:`ValueError` is raised when
+      the limit is exceeded while converting a string *x* to an :class:`int` or
+      when converting an :class:`int` into a string would exceed the limit.
+      See the :ref:`integer string conversion length limitation
+      <int_max_str_digits>` documentation.
+
 
 .. function:: isinstance(object, classinfo)
 
@@ -1387,7 +1397,7 @@ are always available.  They are listed here in alphabetical order.
       supported.
 
 
-.. function:: print(*objects, sep=' ', end='\\n', file=sys.stdout, flush=False)
+.. function:: print(*objects, sep=' ', end='\n', file=sys.stdout, flush=False)
 
    Print *objects* to the text stream *file*, separated by *sep* and followed
    by *end*.  *sep*, *end*, *file*, and *flush*, if present, must be given as keyword
@@ -1507,6 +1517,8 @@ are always available.  They are listed here in alphabetical order.
    of the type of the object together with additional information often
    including the name and address of the object.  A class can control what this
    function returns for its instances by defining a :meth:`__repr__` method.
+   If :func:`sys.displayhook` is not accessible, this function will raise
+   :exc:`RuntimeError`.
 
 
 .. function:: reversed(seq)

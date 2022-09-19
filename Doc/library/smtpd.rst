@@ -246,7 +246,7 @@ SMTPChannel Objects
 
    .. attribute:: fqdn
 
-      Holds the fully-qualified domain name of the server as returned by
+      Holds the fully qualified domain name of the server as returned by
       :func:`socket.getfqdn`.
 
    .. attribute:: peer

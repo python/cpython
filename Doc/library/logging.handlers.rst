@@ -572,6 +572,13 @@ over UDP sockets.
    Returns a new instance of the :class:`DatagramHandler` class intended to
    communicate with a remote machine whose address is given by *host* and *port*.
 
+   .. note:: As UDP is not a streaming protocol, there is no persistent connection
+      between an instance of this handler and *host*. For this reason, when using a
+      network socket, a DNS lookup might have to be made each time an event is
+      logged, which can introduce some latency into the system. If this affects you,
+      you can do a lookup yourself and initialize this handler using the looked-up IP
+      address rather than the hostname.
+
    .. versionchanged:: 3.4
       If ``port`` is specified as ``None``, a Unix domain socket is created
       using the value in ``host`` - otherwise, a UDP socket is created.
@@ -628,6 +635,12 @@ supports sending logging messages to a remote or local Unix syslog.
    appropriate address (you may need to do this check at runtime if your
    application needs to run on several platforms). On Windows, you pretty
    much have to use the UDP option.
+
+   .. note:: On macOS 12.x (Monterey), Apple has changed the behaviour of their
+      syslog daemon - it no longer listens on a domain socket. Therefore, you cannot
+      expect :class:`SysLogHandler` to work on this system.
+
+      See :gh:`91070` for more information.
 
    .. versionchanged:: 3.2
       *socktype* was added.
@@ -1018,6 +1031,8 @@ possible, while any potentially slow operations (such as sending an email via
    have the task tracking API, which means that you can use
    :class:`~queue.SimpleQueue` instances for *queue*.
 
+   .. note:: If you are using :mod:`multiprocessing`, you should avoid using
+      :class:`~queue.SimpleQueue` and instead use :class:`multiprocessing.Queue`.
 
    .. method:: emit(record)
 
@@ -1034,12 +1049,30 @@ possible, while any potentially slow operations (such as sending an email via
       method is enqueued.
 
       The base implementation formats the record to merge the message,
-      arguments, and exception information, if present.  It also
-      removes unpickleable items from the record in-place.
+      arguments, exception and stack information, if present.  It also removes
+      unpickleable items from the record in-place. Specifically, it overwrites
+      the record's :attr:`msg` and :attr:`message` attributes with the merged
+      message (obtained by calling the handler's :meth:`format` method), and
+      sets the :attr:`args`, :attr:`exc_info` and :attr:`exc_text` attributes
+      to ``None``.
 
       You might want to override this method if you want to convert
       the record to a dict or JSON string, or send a modified copy
       of the record while leaving the original intact.
+
+      .. note:: The base implementation formats the message with arguments, sets
+         the ``message`` and ``msg`` attributes to the formatted message and
+         sets the ``args`` and ``exc_text`` attributes to ``None`` to allow
+         pickling and to prevent further attempts at formatting. This means
+         that a handler on the :class:`QueueListener` side won't have the
+         information to do custom formatting, e.g. of exceptions. You may wish
+         to subclass ``QueueHandler`` and override this method to e.g. avoid
+         setting ``exc_text`` to ``None``. Note that the ``message`` / ``msg``
+         / ``args`` changes are related to ensuring the record is pickleable,
+         and you might or might not be able to avoid doing that depending on
+         whether your ``args`` are pickleable. (Note that you may have to
+         consider not only your own code but also code in any libraries that
+         you use.)
 
    .. method:: enqueue(record)
 
@@ -1047,7 +1080,13 @@ possible, while any potentially slow operations (such as sending an email via
       want to override this if you want to use blocking behaviour, or a
       timeout, or a customized queue implementation.
 
+   .. attribute:: listener
 
+      When created via configuration using :func:`~logging.config.dictConfig`, this
+      attribute will contain a :class:`QueueListener` instance for use with this
+      handler. Otherwise, it will be ``None``.
+
+      .. versionadded:: 3.12
 
 .. _queue-listener:
 
@@ -1080,6 +1119,9 @@ possible, while any potentially slow operations (such as sending an email via
    to know how to get messages from it. The queue is not *required* to have the
    task tracking API (though it's used if available), which means that you can
    use :class:`~queue.SimpleQueue` instances for *queue*.
+
+   .. note:: If you are using :mod:`multiprocessing`, you should avoid using
+      :class:`~queue.SimpleQueue` and instead use :class:`multiprocessing.Queue`.
 
    If ``respect_handler_level`` is ``True``, a handler's level is respected
    (compared with the level for the message) when deciding whether to pass

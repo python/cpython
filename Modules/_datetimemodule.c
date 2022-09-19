@@ -1,5 +1,5 @@
 /*  C implementation for the date/time type documented at
- *  http://www.zope.org/Members/fdrake/DateTimeWiki/FrontPage
+ *  https://www.zope.dev/Members/fdrake/DateTimeWiki/FrontPage
  */
 
 /* bpo-35081: Defining this prevents including the C API capsule;

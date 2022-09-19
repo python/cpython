@@ -321,7 +321,7 @@ Miscellaneous options
    between repeated invocations of Python.
 
    Hash randomization is intended to provide protection against a
-   denial-of-service caused by carefully-chosen inputs that exploit the worst
+   denial-of-service caused by carefully chosen inputs that exploit the worst
    case performance of a dict construction, O(n\ :sup:`2`) complexity.  See
    http://www.ocert.org/advisories/ocert-2011-003.html for details.
 
@@ -417,7 +417,7 @@ Miscellaneous options
    whether the actual warning category of the message is a subclass of the
    specified warning category.
 
-   The *module* field matches the (fully-qualified) module name; this match is
+   The *module* field matches the (fully qualified) module name; this match is
    case-sensitive.
 
    The *lineno* field matches the line number, where zero matches all line
@@ -457,6 +457,9 @@ Miscellaneous options
      stored in a traceback of a trace. Use ``-X tracemalloc=NFRAME`` to start
      tracing with a traceback limit of *NFRAME* frames. See the
      :func:`tracemalloc.start` for more information.
+   * ``-X int_max_str_digits`` configures the :ref:`integer string conversion
+     length limitation <int_max_str_digits>`.  See also
+     :envvar:`PYTHONINTMAXSTRDIGITS`.
    * ``-X importtime`` to show how long each import takes. It shows module
      name, cumulative time (including nested imports) and self time (excluding
      nested imports).  Note that its output may be broken in multi-threaded
@@ -506,6 +509,9 @@ Miscellaneous options
    .. versionadded:: 3.10
       The ``-X warn_default_encoding`` option.
 
+   .. versionadded:: 3.10.7
+      The ``-X int_max_str_digits`` option.
+
    .. deprecated-removed:: 3.9 3.10
       The ``-X oldparser`` option.
 
@@ -517,8 +523,7 @@ Options you shouldn't use
 
    Reserved for use by Jython_.
 
-.. _Jython: http://www.jython.org/
-
+.. _Jython: https://www.jython.org/
 
 .. _using-on-envvars:
 
@@ -676,6 +681,13 @@ conflict.
 
    .. versionadded:: 3.2.3
 
+.. envvar:: PYTHONINTMAXSTRDIGITS
+
+   If this variable is set to an integer, it is used to configure the
+   interpreter's global :ref:`integer string conversion length limitation
+   <int_max_str_digits>`.
+
+   .. versionadded:: 3.10.7
 
 .. envvar:: PYTHONIOENCODING
 

@@ -34,7 +34,7 @@ developers using Python for any kind of project.
 
 :ref:`windows-store` is a simple installation of Python that is suitable for
 running scripts and packages, and using IDLE or other development environments.
-It requires Windows 10, but can be safely installed without corrupting other
+It requires Windows 10 and above, but can be safely installed without corrupting other
 programs. It also provides many convenient commands for launching Python and
 its tools.
 
@@ -177,18 +177,22 @@ of available options is shown below.
 | Include_debug             | Install debug binaries               | 0                        |
 +---------------------------+--------------------------------------+--------------------------+
 | Include_dev               | Install developer headers and        | 1                        |
-|                           | libraries                            |                          |
+|                           | libraries. Omitting this may lead to |                          |
+|                           | an unusable installation.            |                          |
 +---------------------------+--------------------------------------+--------------------------+
 | Include_exe               | Install :file:`python.exe` and       | 1                        |
-|                           | related files                        |                          |
+|                           | related files. Omitting this may     |                          |
+|                           | lead to an unusable installation.    |                          |
 +---------------------------+--------------------------------------+--------------------------+
 | Include_launcher          | Install :ref:`launcher`.             | 1                        |
 +---------------------------+--------------------------------------+--------------------------+
-| InstallLauncherAllUsers   | Installs :ref:`launcher` for all     | 1                        |
-|                           | users.                               |                          |
+| InstallLauncherAllUsers   | Installs the launcher for all        | 1                        |
+|                           | users. Also requires                 |                          |
+|                           | ``Include_launcher`` to be set to 1  |                          |
 +---------------------------+--------------------------------------+--------------------------+
 | Include_lib               | Install standard library and         | 1                        |
-|                           | extension modules                    |                          |
+|                           | extension modules. Omitting this may |                          |
+|                           | lead to an unusable installation.    |                          |
 +---------------------------+--------------------------------------+--------------------------+
 | Include_pip               | Install bundled pip and setuptools   | 1                        |
 +---------------------------+--------------------------------------+--------------------------+
@@ -331,13 +335,41 @@ Python in Start and right-click to select Uninstall. Uninstalling will
 remove all packages you installed directly into this Python installation, but
 will not remove any virtual environments
 
-Known Issues
+Known issues
 ------------
 
+Redirection of local data, registry, and temporary paths
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Because of restrictions on Microsoft Store apps, Python scripts may not have
-full write access to shared locations such as ``TEMP`` and the registry.
+full write access to shared locations such as :envvar:`TEMP` and the registry.
 Instead, it will write to a private copy. If your scripts must modify the
 shared locations, you will need to install the full installer.
+
+At runtime, Python will use a private copy of well-known Windows folders and the registry.
+For example, if the environment variable :envvar:`%APPDATA%` is :file:`c:\\Users\\<user>\\AppData\\`,
+then when writing to :file:`C:\\Users\\<user>\\AppData\\Local` will write to
+:file:`C:\\Users\\<user>\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.8_qbz5n2kfra8p0\\LocalCache\\Local\\`.
+
+When reading files, Windows will return the file from the private folder, or if that does not exist, the
+real Windows directory. For example reading :file:`C:\\Windows\\System32` returns the contents of :file:`C:\\Windows\\System32`
+plus the contents of :file:`C:\\Program Files\\WindowsApps\\package_name\\VFS\\SystemX86`.
+
+You can find the real path of any existing file using :func:`os.path.realpath`:
+
+.. code-block:: python
+
+  >>> import os
+  >>> test_file = 'C:\\Users\\example\\AppData\\Local\\test.txt'
+  >>> os.path.realpath(test_file)
+  'C:\\Users\\example\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.8_qbz5n2kfra8p0\\LocalCache\\Local\\test.txt'
+
+When writing to the Windows Registry, the following behaviors exist:
+
+* Reading from ``HKLM\\Software`` is allowed and results are merged with the :file:`registry.dat` file in the package.
+* Writing to ``HKLM\\Software`` is not allowed if the corresponding key/value exists, i.e. modifying existing keys.
+* Writing to ``HKLM\\Software`` is allowed as long as a corresponding key/value does not exist in the package
+  and the user has the correct access permissions.
 
 For more detail on the technical basis for these limitations, please consult
 Microsoft's documentation on packaged full-trust apps, currently available at
@@ -496,9 +528,11 @@ key features:
     Popular scientific modules (such as numpy, scipy and pandas) and the
     ``conda`` package manager.
 
-`Canopy <https://www.enthought.com/product/canopy/>`_
-    A "comprehensive Python analysis environment" with editors and other
-    development tools.
+`Enthought Deployment Manager <https://www.enthought.com/edm/>`_
+    "The Next Generation Python Environment and Package Manager".
+
+    Previously Enthought provided Canopy, but it `reached end of life in 2016
+    <https://support.enthought.com/hc/en-us/articles/360038600051-Canopy-GUI-end-of-life-transition-to-the-Enthought-Deployment-Manager-EDM-and-Visual-Studio-Code>`_.
 
 `WinPython <https://winpython.github.io/>`_
     Windows-specific distribution with prebuilt scientific packages and
@@ -1113,7 +1147,7 @@ Compiling Python on Windows
 If you want to compile CPython yourself, first thing you should do is get the
 `source <https://www.python.org/downloads/source/>`_. You can download either the
 latest release's source or just grab a fresh `checkout
-<https://devguide.python.org/setup/#getting-the-source-code>`_.
+<https://devguide.python.org/setup/#get-the-source-code>`_.
 
 The source tree contains a build solution and project files for Microsoft
 Visual Studio, which is the compiler used to build the official Python

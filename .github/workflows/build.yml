@@ -73,7 +73,16 @@ jobs:
           ./configure --enable-shared
           make -j4
       - name: Check for changes in the ABI
-        run: make check-abidump
+        run: |
+          make check-abidump
+          if [ $? -neq 0 ] ; then
+            echo "Generated ABI file is not up to date."
+            echo "Please, add the release manager of this branch as a reviewer of this PR."
+            echo ""
+            echo "To learn more about this check, please visit: https://devguide.python.org/setup/?highlight=abi#regenerate-the-abi-dump"
+            echo ""
+            exit 1
+          fi
 
   check_generated_files:
     name: 'Check if generated files are up to date'
@@ -181,7 +190,7 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
-      OPENSSL_VER: 1.1.1n
+      OPENSSL_VER: 1.1.1q
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v3
@@ -225,7 +234,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        openssl_ver: [1.1.1n, 3.0.2]
+        openssl_ver: [1.1.1q, 3.0.5]
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl

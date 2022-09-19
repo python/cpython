@@ -1,7 +1,7 @@
 # This contains most of the executable examples from Guido's descr
 # tutorial, once at
 #
-#     http://www.python.org/2.2/descrintro.html
+#     https://www.python.org/download/releases/2.2.3/descrintro/
 #
 # A few examples left implicit in the writeup were fleshed out, a few were
 # skipped due to lack of interest (e.g., faking super() by hand isn't

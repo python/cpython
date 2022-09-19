@@ -171,6 +171,8 @@ library/ipaddress,,::,2001:db00::0/ffff:ff00::
 library/itertools,,:step,elements from seq[start:stop:step]
 library/itertools,,::,kernel = tuple(kernel)[::-1]
 library/itertools,,:stop,elements from seq[start:stop:step]
+library/logging,,:root,WARNING:root:Watch out!
+library/logging,,:Watch,WARNING:root:Watch out!
 library/logging.handlers,,:port,host:port
 library/mmap,,:i2,obj[i1:i2]
 library/multiprocessing,,`,# Add more tasks using `put()`
@@ -210,12 +212,11 @@ library/smtplib,,:port,method must support that as well as a regular host:port
 library/socket,,::,'5aef:2b::8'
 library/socket,,:can,"return (can_id, can_dlc, data[:can_dlc])"
 library/socket,,:len,fds.frombytes(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
-library/sqlite3,,:year,"cur.execute(""select * from lang where first_appeared=:year"", {""year"": 1972})"
+library/sqlite3,,:year,"cur.execute(""SELECT * FROM lang WHERE first_appeared = :year"", {""year"": 1972})"
 library/sqlite3,,:memory,
-library/sqlite3,,:template,"con = sqlite3.connect(""file:template.db?mode=ro"", uri=True)"
-library/sqlite3,,:nosuchdb,"con = sqlite3.connect(""file:nosuchdb.db?mode=rw"", uri=True)"
-library/sqlite3,,:mem1,"con1 = sqlite3.connect(""file:mem1?mode=memory&cache=shared"", uri=True)"
-library/sqlite3,,:mem1,"con2 = sqlite3.connect(""file:mem1?mode=memory&cache=shared"", uri=True)"
+library/sqlite3,,:mem1,"db = ""file:mem1?mode=memory&cache=shared"""
+library/sqlite3,,:nosuchdb,">>> con = sqlite3.connect(""file:nosuchdb.db?mode=rw"", uri=True)"
+library/sqlite3,,:tutorial,">>> con = sqlite3.connect(""file:tutorial.db?mode=ro"", uri=True)"
 library/ssl,,:My,"Organizational Unit Name (eg, section) []:My Group"
 library/ssl,,:My,"Organization Name (eg, company) [Internet Widgits Pty Ltd]:My Organization, Inc."
 library/ssl,,:myserver,"Common Name (eg, YOUR name) []:myserver.mygroup.myorganization.com"

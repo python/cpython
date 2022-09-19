@@ -949,7 +949,7 @@ Additionally, you can retrieve named groups as a dictionary with
    >>> m.groupdict()
    {'first': 'Jane', 'last': 'Doe'}
 
-Named groups are handy because they let you use easily-remembered names, instead
+Named groups are handy because they let you use easily remembered names, instead
 of having to remember numbers.  Here's an example RE from the :mod:`imaplib`
 module::
 

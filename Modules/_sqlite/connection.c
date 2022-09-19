@@ -351,12 +351,14 @@ pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyObject *factory)
 /*[clinic input]
 _sqlite3.Connection.close as pysqlite_connection_close
 
-Closes the connection.
+Close the database connection.
+
+Any pending transaction is not committed implicitly.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_connection_close_impl(pysqlite_Connection *self)
-/*[clinic end generated code: output=a546a0da212c9b97 input=3d58064bbffaa3d3]*/
+/*[clinic end generated code: output=a546a0da212c9b97 input=b3ed5b74f6fefc06]*/
 {
     int rc;
 
@@ -445,12 +447,14 @@ error:
 /*[clinic input]
 _sqlite3.Connection.commit as pysqlite_connection_commit
 
-Commit the current transaction.
+Commit any pending transaction to the database.
+
+If there is no open transaction, this method is a no-op.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_connection_commit_impl(pysqlite_Connection *self)
-/*[clinic end generated code: output=3da45579e89407f2 input=39c12c04dda276a8]*/
+/*[clinic end generated code: output=3da45579e89407f2 input=c8793c97c3446065]*/
 {
     int rc;
     sqlite3_stmt* statement;
@@ -494,12 +498,14 @@ error:
 /*[clinic input]
 _sqlite3.Connection.rollback as pysqlite_connection_rollback
 
-Roll back the current transaction.
+Roll back to the start of any pending transaction.
+
+If there is no open transaction, this method is a no-op.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_connection_rollback_impl(pysqlite_Connection *self)
-/*[clinic end generated code: output=b66fa0d43e7ef305 input=12d4e8d068942830]*/
+/*[clinic end generated code: output=b66fa0d43e7ef305 input=7f60a2f1076f16b3]*/
 {
     int rc;
     sqlite3_stmt* statement;

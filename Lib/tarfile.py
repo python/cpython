@@ -1163,6 +1163,11 @@ class TarInfo(object):
         # header information.
         self._apply_pax_info(tarfile.pax_headers, tarfile.encoding, tarfile.errors)
 
+        # Remove redundant slashes from directories. This is to be consistent
+        # with frombuf().
+        if self.isdir():
+            self.name = self.name.rstrip("/")
+
         return self
 
     def _proc_gnulong(self, tarfile):
@@ -1184,6 +1189,11 @@ class TarInfo(object):
             next.name = nts(buf, tarfile.encoding, tarfile.errors)
         elif self.type == GNUTYPE_LONGLINK:
             next.linkname = nts(buf, tarfile.encoding, tarfile.errors)
+
+        # Remove redundant slashes from directories. This is to be consistent
+        # with frombuf().
+        if next.isdir():
+            next.name = next.name.removesuffix("/")
 
         return next
 

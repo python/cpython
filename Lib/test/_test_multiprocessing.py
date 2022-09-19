@@ -5,6 +5,7 @@
 import unittest
 import unittest.mock
 import queue as pyqueue
+import textwrap
 import time
 import io
 import itertools
@@ -2804,6 +2805,11 @@ class _TestPoolWorkerLifetime(BaseTestCase):
         for (j, res) in enumerate(results):
             self.assertEqual(res.get(), sqr(j))
 
+    def test_pool_maxtasksperchild_invalid(self):
+        for value in [0, -1, 0.5, "12"]:
+            with self.assertRaises(ValueError):
+                multiprocessing.Pool(3, maxtasksperchild=value)
+
     def test_worker_finalization_via_atexit_handler_of_multiprocessing(self):
         # tests cases against bpo-38744 and bpo-39360
         cmd = '''if 1:
@@ -3904,7 +3910,7 @@ class _TestSharedMemory(BaseTestCase):
             'multiprocessing.shared_memory._make_filename') as mock_make_filename:
 
             NAME_PREFIX = shared_memory._SHM_NAME_PREFIX
-            names = ['test01_fn', 'test02_fn']
+            names = [self._new_shm_name('test03_fn'), self._new_shm_name('test04_fn')]
             # Prepend NAME_PREFIX which can be '/psm_' or 'wnsm_', necessary
             # because some POSIX compliant systems require name to start with /
             names = [NAME_PREFIX + name for name in names]
@@ -5699,6 +5705,35 @@ class TestSyncManagerTypes(unittest.TestCase):
         self.run_worker(self._test_namespace, o)
 
 
+class TestNamedResource(unittest.TestCase):
+    def test_global_named_resource_spawn(self):
+        #
+        # gh-90549: Check that global named resources in main module
+        # will not leak by a subprocess, in spawn context.
+        #
+        testfn = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, testfn)
+        with open(testfn, 'w', encoding='utf-8') as f:
+            f.write(textwrap.dedent('''\
+                import multiprocessing as mp
+
+                ctx = mp.get_context('spawn')
+
+                global_resource = ctx.Semaphore()
+
+                def submain(): pass
+
+                if __name__ == '__main__':
+                    p = ctx.Process(target=submain)
+                    p.start()
+                    p.join()
+            '''))
+        rc, out, err = test.support.script_helper.assert_python_ok(testfn)
+        # on error, err = 'UserWarning: resource_tracker: There appear to
+        # be 1 leaked semaphore objects to clean up at shutdown'
+        self.assertEqual(err, b'')
+
+
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         # Just make sure names in not_exported are excluded
@@ -5929,3 +5964,15 @@ def install_tests_in_module_dict(remote_globs, start_method):
 
     remote_globs['setUpModule'] = setUpModule
     remote_globs['tearDownModule'] = tearDownModule
+
+
+@unittest.skipIf(not hasattr(_multiprocessing, 'SemLock'), 'SemLock not available')
+@unittest.skipIf(sys.platform != "linux", "Linux only")
+class SemLockTests(unittest.TestCase):
+
+    def test_semlock_subclass(self):
+        class SemLock(_multiprocessing.SemLock):
+            pass
+        name = f'test_semlock_subclass-{os.getpid()}'
+        s = SemLock(1, 0, 10, name, 0)
+        _multiprocessing.sem_unlink(name)

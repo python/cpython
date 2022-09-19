@@ -1397,9 +1397,19 @@ static int arena_map_bot_count;
 static arena_map_bot_t arena_map_root;
 #endif
 
+#if defined(Py_DEBUG)
+#  define ALWAYS_INLINE
+#elif defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER)
+#  define ALWAYS_INLINE __attribute__((always_inline))
+#elif defined(_MSC_VER)
+#  define ALWAYS_INLINE __forceinline
+#else
+#  define ALWAYS_INLINE
+#endif
+
 /* Return a pointer to a bottom tree node, return NULL if it doesn't exist or
  * it cannot be created */
-static arena_map_bot_t *
+static ALWAYS_INLINE arena_map_bot_t *
 arena_map_get(block *p, int create)
 {
 #ifdef USE_INTERIOR_NODES

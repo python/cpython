@@ -2,7 +2,7 @@ dnl ***************************************************
 dnl * Please run autoreconf -if to test your changes! *
 dnl ***************************************************
 dnl
-dnl Python's configure script requires autoconf 2.69 and autoconf-archive.
+dnl Python's configure.ac file requires autoconf 2.69 and autoconf-archive.
 dnl
 
 # Set VERSION so we only need to edit in one place (i.e., here)
@@ -10,7 +10,7 @@ m4_define(PYTHON_VERSION, 3.10)
 
 AC_PREREQ([2.69])
 
-AC_INIT([python],[PYTHON_VERSION],[https://bugs.python.org/])
+AC_INIT([python],[PYTHON_VERSION],[https://github.com/python/cpython/issues/])
 
 m4_ifdef(
     [AX_C_FLOAT_WORDS_BIGENDIAN],
@@ -4585,7 +4585,7 @@ fi
 # rounding issues.  The result of this test has little meaning on non
 # IEEE 754 platforms.  On IEEE 754, test should return 1 if rounding
 # mode is round-to-nearest and double rounding issues are present, and
-# 0 otherwise.  See http://bugs.python.org/issue2937 for more info.
+# 0 otherwise.  See https://github.com/python/cpython/issues/47186 for more info.
 AC_MSG_CHECKING(for x87-style double rounding)
 # $BASECFLAGS may affect the result
 ac_save_cc="$CC"

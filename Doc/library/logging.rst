@@ -30,9 +30,17 @@ is that all Python modules can participate in logging, so your application log
 can include your own messages integrated with messages from third-party
 modules.
 
+The simplest example:
+
+.. code-block:: none
+
+    >>> import logging
+    >>> logging.warning('Watch out!')
+    WARNING:root:Watch out!
+
 The module provides a lot of functionality and flexibility.  If you are
-unfamiliar with logging, the best way to get to grips with it is to see the
-tutorials (see the links on the right).
+unfamiliar with logging, the best way to get to grips with it is to view the
+tutorials (**see the links above and on the right**).
 
 The basic classes defined by the module, together with their functions, are
 listed below.
@@ -225,7 +233,7 @@ is the module's name in the Python package namespace.
          2006-02-08 22:20:02,165 192.168.0.1 fbloggs  Protocol problem: connection reset
 
       The keys in the dictionary passed in *extra* should not clash with the keys used
-      by the logging system. (See the :class:`Formatter` documentation for more
+      by the logging system. (See the section on :ref:`logrecord-attributes` for more
       information on which keys are used by the logging system.)
 
       If you choose to use these attributes in logged messages, you need to exercise
@@ -644,6 +652,35 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
       :func:`traceback.print_stack`, but with the last newline removed) as a
       string. This default implementation just returns the input value.
 
+.. class:: BufferingFormatter(linefmt=None)
+
+   A base formatter class suitable for subclassing when you want to format a
+   number of records. You can pass a :class:`Formatter` instance which you want
+   to use to format each line (that corresponds to a single record). If not
+   specified, the default formatter (which just outputs the event message) is
+   used as the line formatter.
+
+   .. method:: formatHeader(records)
+
+      Return a header for a list of *records*. The base implementation just
+      returns the empty string. You will need to override this method if you
+      want specific behaviour, e.g. to show the count of records, a title or a
+      separator line.
+
+   .. method:: formatFooter(records)
+
+      Return a footer for a list of *records*. The base implementation just
+      returns the empty string. You will need to override this method if you
+      want specific behaviour, e.g. to show the count of records or a separator
+      line.
+
+   .. method:: format(records)
+
+      Return formatted text for a list of *records*. The base implementation
+      just returns the empty string if there are no records; otherwise, it
+      returns the concatenation of the header, each record formatted with the
+      line formatter, and the footer.
+
 .. _filter:
 
 Filter Objects
@@ -699,6 +736,7 @@ the :class:`LogRecord` being processed. Obviously changing the LogRecord needs
 to be done with some care, but it does allow the injection of contextual
 information into logs (see :ref:`filters-contextual`).
 
+
 .. _log-record:
 
 LogRecord Objects
@@ -714,32 +752,54 @@ wire).
 
    Contains all the information pertinent to the event being logged.
 
-   The primary information is passed in :attr:`msg` and :attr:`args`, which
-   are combined using ``msg % args`` to create the :attr:`message` field of the
-   record.
+   The primary information is passed in *msg* and *args*,
+   which are combined using ``msg % args`` to create
+   the :attr:`!message` attribute of the record.
 
-   :param name:  The name of the logger used to log the event represented by
-                 this LogRecord. Note that this name will always have this
-                 value, even though it may be emitted by a handler attached to
-                 a different (ancestor) logger.
-   :param level: The numeric level of the logging event (one of DEBUG, INFO etc.)
-                 Note that this is converted to *two* attributes of the LogRecord:
-                 ``levelno`` for the numeric value and ``levelname`` for the
-                 corresponding level name.
-   :param pathname: The full pathname of the source file where the logging call
-                    was made.
-   :param lineno: The line number in the source file where the logging call was
-                  made.
-   :param msg: The event description message, possibly a format string with
-               placeholders for variable data.
-   :param args: Variable data to merge into the *msg* argument to obtain the
-                event description.
+   :param name: The name of the logger used to log the event
+      represented by this :class:`!LogRecord`.
+      Note that the logger name in the :class:`!LogRecord`
+      will always have this value,
+      even though it may be emitted by a handler
+      attached to a different (ancestor) logger.
+   :type name: str
+
+   :param level: The :ref:`numeric level <levels>` of the logging event
+      (such as ``10`` for ``DEBUG``, ``20`` for ``INFO``, etc).
+      Note that this is converted to *two* attributes of the LogRecord:
+      :attr:`!levelno` for the numeric value
+      and :attr:`!levelname` for the corresponding level name.
+   :type level: int
+
+   :param pathname: The full string path of the source file
+      where the logging call was made.
+   :type pathname: str
+
+   :param lineno: The line number in the source file
+      where the logging call was made.
+   :type lineno: int
+
+   :param msg: The event description message,
+      which can be a %-format string with placeholders for variable data.
+   :type msg: str
+
+   :param args: Variable data to merge into the *msg* argument
+      to obtain the event description.
+   :type args: tuple | dict[str, typing.Any]
+
    :param exc_info: An exception tuple with the current exception information,
-                    or ``None`` if no exception information is available.
-   :param func: The name of the function or method from which the logging call
-                was invoked.
-   :param sinfo: A text string representing stack information from the base of
-                 the stack in the current thread, up to the logging call.
+      as returned by :func:`sys.exc_info`,
+      or ``None`` if no exception information is available.
+   :type exc_info: tuple[type[BaseException], BaseException, types.TracebackType] | None
+
+   :param func: The name of the function or method
+      from which the logging call was invoked.
+   :type func: str | None
+
+   :param sinfo: A text string representing stack information
+      from the base of the stack in the current thread,
+      up to the logging call.
+   :type sinfo: str | None
 
    .. method:: getMessage()
 

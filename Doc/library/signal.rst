@@ -703,7 +703,7 @@ To illustrate this issue, consider the following code::
         def __enter__(self):
             # If KeyboardInterrupt occurs here, everything is fine
             self.lock.acquire()
-            # If KeyboardInterrupt occcurs here, __exit__ will not be called
+            # If KeyboardInterrupt occurs here, __exit__ will not be called
             ...
             # KeyboardInterrupt could occur just before the function returns
 

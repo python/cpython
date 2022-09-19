@@ -341,7 +341,7 @@ _enter_buffered_busy(buffered *self)
      : buffered_closed(self)))
 
 #define CHECK_CLOSED(self, error_msg) \
-    if (IS_CLOSED(self) & (Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t) == 0)) { \
+    if (IS_CLOSED(self) && (Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t) == 0)) { \
         PyErr_SetString(PyExc_ValueError, error_msg); \
         return NULL; \
     } \

@@ -1659,7 +1659,7 @@ The :class:`~unittest.TestCase` class has a new method,
 :keyword:`with` block becomes a "sub-test".  This context manager allows a test
 method to dynamically generate subtests  by, say, calling the ``subTest``
 context manager inside a loop.  A single test method can thereby produce an
-indefinite number of separately-identified and separately-counted tests, all of
+indefinite number of separately identified and separately counted tests, all of
 which will run even if one or more of them fail.  For example::
 
     class NumbersTest(unittest.TestCase):
@@ -2056,7 +2056,7 @@ Significant Optimizations
   ``malloc`` in ``obmalloc``.  Artificial benchmarks show about a 3% memory
   savings.
 
-* :func:`os.urandom` now uses a lazily-opened persistent file descriptor
+* :func:`os.urandom` now uses a lazily opened persistent file descriptor
   so as to avoid using many file descriptors when run in parallel from
   multiple threads.  (Contributed by Antoine Pitrou in :issue:`18756`.)
 

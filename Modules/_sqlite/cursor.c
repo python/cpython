@@ -492,10 +492,9 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         pysqlite_statement_reset(self->statement);
     }
 
-    /* reset description and rowcount */
+    /* reset description */
     Py_INCREF(Py_None);
     Py_SETREF(self->description, Py_None);
-    self->rowcount = 0L;
 
     func_args = PyTuple_New(1);
     if (!func_args) {
@@ -527,6 +526,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
 
     pysqlite_statement_reset(self->statement);
     pysqlite_statement_mark_dirty(self->statement);
+    self->rowcount = self->statement->is_dml ? 0L : -1L;
 
     /* We start a transaction implicitly before a DML statement.
        SELECT is the only exception. See #9924. */
@@ -604,12 +604,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
             }
         }
 
-        if (self->statement->is_dml) {
-            self->rowcount += (long)sqlite3_changes(self->connection->db);
-        } else {
-            self->rowcount= -1L;
-        }
-
         if (!multiple) {
             Py_BEGIN_ALLOW_THREADS
             lastrowid = sqlite3_last_insert_rowid(self->connection->db);
@@ -630,11 +624,17 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
             if (self->next_row == NULL)
                 goto error;
         } else if (rc == SQLITE_DONE && !multiple) {
+            if (self->statement->is_dml) {
+                self->rowcount = (long)sqlite3_changes(self->connection->db);
+            }
             pysqlite_statement_reset(self->statement);
             Py_CLEAR(self->statement);
         }
 
         if (multiple) {
+            if (self->statement->is_dml && rc == SQLITE_DONE) {
+                self->rowcount += (long)sqlite3_changes(self->connection->db);
+            }
             pysqlite_statement_reset(self->statement);
         }
         Py_XDECREF(parameters);
@@ -824,7 +824,12 @@ pysqlite_cursor_iternext(pysqlite_Cursor *self)
         if (PyErr_Occurred()) {
             goto error;
         }
-        if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
+        if (rc == SQLITE_DONE) {
+            if (self->statement->is_dml) {
+                self->rowcount = (long)sqlite3_changes(self->connection->db);
+            }
+        }
+        else if (rc != SQLITE_ROW) {
             _pysqlite_seterror(self->connection->db, NULL);
             goto error;
         }

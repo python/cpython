@@ -7816,7 +7816,7 @@ exit:
 
 #endif /* defined(HAVE_MEMFD_CREATE) */
 
-#if defined(HAVE_EVENTFD)
+#if (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC))
 
 PyDoc_STRVAR(os_eventfd__doc__,
 "eventfd($module, /, initval, flags=EFD_CLOEXEC)\n"
@@ -7862,9 +7862,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_EVENTFD) */
+#endif /* (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC)) */
 
-#if defined(HAVE_EVENTFD)
+#if (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC))
 
 PyDoc_STRVAR(os_eventfd_read__doc__,
 "eventfd_read($module, /, fd)\n"
@@ -7900,9 +7900,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_EVENTFD) */
+#endif /* (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC)) */
 
-#if defined(HAVE_EVENTFD)
+#if (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC))
 
 PyDoc_STRVAR(os_eventfd_write__doc__,
 "eventfd_write($module, /, fd, value)\n"
@@ -7942,7 +7942,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_EVENTFD) */
+#endif /* (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC)) */
 
 #if (defined(TERMSIZE_USE_CONIO) || defined(TERMSIZE_USE_IOCTL))
 
@@ -9291,4 +9291,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=debefcf43738ec66 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=73be33fa0000a6d1 input=a9049054013a1b77]*/

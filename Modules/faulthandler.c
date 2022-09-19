@@ -877,7 +877,7 @@ faulthandler_user(int signum)
         errno = save_errno;
     }
 #else
-    if (user->chain) {
+    if (user->chain && user->previous != NULL) {
         errno = save_errno;
         /* call the previous signal handler */
         user->previous(signum);

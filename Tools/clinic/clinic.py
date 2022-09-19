@@ -4053,7 +4053,7 @@ class DSLParser:
             self.block.output.append('\n')
             return
 
-        d = self.clinic.get_destination(destination)
+        d = self.clinic.get_destination_buffer(destination)
 
         if command_or_name == "everything":
             for name in list(fd):
@@ -4626,9 +4626,14 @@ class DSLParser:
 
         p = Parameter(parameter_name, kind, function=self.function, converter=converter, default=value, group=self.group)
 
-        if parameter_name in self.function.parameters:
+        names = [k.name for k in self.function.parameters.values()]
+        if parameter_name in names[1:]:
             fail("You can't have two parameters named " + repr(parameter_name) + "!")
-        self.function.parameters[parameter_name] = p
+        elif names and parameter_name == names[0] and c_name is None:
+            fail(f"Parameter '{parameter_name}' requires a custom C name")
+
+        key = f"{parameter_name}_as_{c_name}" if c_name else parameter_name
+        self.function.parameters[key] = p
 
     def parse_converter(self, annotation):
         if (hasattr(ast, 'Constant') and

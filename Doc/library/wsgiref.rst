@@ -329,7 +329,7 @@ request.  (E.g., using the :func:`shift_path_info` function from
 
    .. method:: WSGIServer.get_app()
 
-      Returns the currently-set application callable.
+      Returns the currently set application callable.
 
    Normally, however, you do not need to use these additional methods, as
    :meth:`set_app` is normally called by :func:`make_server`, and the
@@ -635,7 +635,7 @@ input, output, and error streams.
 
    .. method:: BaseHandler.setup_environ()
 
-      Set the :attr:`environ` attribute to a fully-populated WSGI environment.  The
+      Set the :attr:`environ` attribute to a fully populated WSGI environment.  The
       default implementation uses all of the above methods and attributes, plus the
       :meth:`get_stdin`, :meth:`get_stderr`, and :meth:`add_cgi_vars` methods and the
       :attr:`wsgi_file_wrapper` attribute.  It also inserts a ``SERVER_SOFTWARE`` key

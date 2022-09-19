@@ -1,5 +1,0 @@
-Provide a fail-safe way to disable :mod:`subprocess` use of ``vfork()`` via
-a private ``subprocess._USE_VFORK`` attribute. While there is currently no
-known need for this, if you find a need please only set it to ``False``.
-File a CPython issue as to why you needed it and link to that from a
-comment in your code. This attribute is documented as a footnote in 3.11.

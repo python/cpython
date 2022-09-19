@@ -794,6 +794,7 @@ class DictConfigurator(BaseConfigurator):
         """Configure a non-root logger from a dictionary."""
         logger = logging.getLogger(name)
         self.common_logger_config(logger, config, incremental)
+        logger.disabled = False
         propagate = config.get('propagate', None)
         if propagate is not None:
             logger.propagate = propagate

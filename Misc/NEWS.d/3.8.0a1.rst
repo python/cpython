@@ -361,7 +361,7 @@ the "n" formatter.
 .. nonce: gjm1LO
 .. section: Core and Builtins
 
-Fix a possible segfault involving a newly-created coroutine.  Patch by
+Fix a possible segfault involving a newly created coroutine.  Patch by
 Zackery Spytz.
 
 ..

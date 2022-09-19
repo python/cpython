@@ -51,6 +51,9 @@ try:
 except ImportError:
     _winapi = None
 
+no_chdir = unittest.mock.patch('os.chdir',
+        side_effect=AssertionError("shouldn't call os.chdir()"))
+
 def _fake_rename(*args, **kwargs):
     # Pretend the destination path is on a different filesystem.
     raise OSError(getattr(errno, 'EXDEV', 18), "Invalid cross-device link")
@@ -1320,7 +1323,7 @@ class TestArchives(BaseTest, unittest.TestCase):
         work_dir = os.path.dirname(tmpdir2)
         rel_base_name = os.path.join(os.path.basename(tmpdir2), 'archive')
 
-        with os_helper.change_cwd(work_dir):
+        with os_helper.change_cwd(work_dir), no_chdir:
             base_name = os.path.abspath(rel_base_name)
             tarball = make_archive(rel_base_name, 'gztar', root_dir, '.')
 
@@ -1334,7 +1337,7 @@ class TestArchives(BaseTest, unittest.TestCase):
                                    './file1', './file2', './sub/file3'])
 
         # trying an uncompressed one
-        with os_helper.change_cwd(work_dir):
+        with os_helper.change_cwd(work_dir), no_chdir:
             tarball = make_archive(rel_base_name, 'tar', root_dir, '.')
         self.assertEqual(tarball, base_name + '.tar')
         self.assertTrue(os.path.isfile(tarball))
@@ -1370,7 +1373,8 @@ class TestArchives(BaseTest, unittest.TestCase):
     def test_tarfile_vs_tar(self):
         root_dir, base_dir = self._create_files()
         base_name = os.path.join(self.mkdtemp(), 'archive')
-        tarball = make_archive(base_name, 'gztar', root_dir, base_dir)
+        with no_chdir:
+            tarball = make_archive(base_name, 'gztar', root_dir, base_dir)
 
         # check if the compressed tarball was created
         self.assertEqual(tarball, base_name + '.tar.gz')
@@ -1387,13 +1391,15 @@ class TestArchives(BaseTest, unittest.TestCase):
         self.assertEqual(self._tarinfo(tarball), self._tarinfo(tarball2))
 
         # trying an uncompressed one
-        tarball = make_archive(base_name, 'tar', root_dir, base_dir)
+        with no_chdir:
+            tarball = make_archive(base_name, 'tar', root_dir, base_dir)
         self.assertEqual(tarball, base_name + '.tar')
         self.assertTrue(os.path.isfile(tarball))
 
         # now for a dry_run
-        tarball = make_archive(base_name, 'tar', root_dir, base_dir,
-                               dry_run=True)
+        with no_chdir:
+            tarball = make_archive(base_name, 'tar', root_dir, base_dir,
+                                   dry_run=True)
         self.assertEqual(tarball, base_name + '.tar')
         self.assertTrue(os.path.isfile(tarball))
 
@@ -1409,7 +1415,7 @@ class TestArchives(BaseTest, unittest.TestCase):
         work_dir = os.path.dirname(tmpdir2)
         rel_base_name = os.path.join(os.path.basename(tmpdir2), 'archive')
 
-        with os_helper.change_cwd(work_dir):
+        with os_helper.change_cwd(work_dir), no_chdir:
             base_name = os.path.abspath(rel_base_name)
             res = make_archive(rel_base_name, 'zip', root_dir)
 
@@ -1422,7 +1428,7 @@ class TestArchives(BaseTest, unittest.TestCase):
                      'dist/file1', 'dist/file2', 'dist/sub/file3',
                      'outer'])
 
-        with os_helper.change_cwd(work_dir):
+        with os_helper.change_cwd(work_dir), no_chdir:
             base_name = os.path.abspath(rel_base_name)
             res = make_archive(rel_base_name, 'zip', root_dir, base_dir)
 
@@ -1440,7 +1446,8 @@ class TestArchives(BaseTest, unittest.TestCase):
     def test_zipfile_vs_zip(self):
         root_dir, base_dir = self._create_files()
         base_name = os.path.join(self.mkdtemp(), 'archive')
-        archive = make_archive(base_name, 'zip', root_dir, base_dir)
+        with no_chdir:
+            archive = make_archive(base_name, 'zip', root_dir, base_dir)
 
         # check if ZIP file  was created
         self.assertEqual(archive, base_name + '.zip')
@@ -1466,7 +1473,8 @@ class TestArchives(BaseTest, unittest.TestCase):
     def test_unzip_zipfile(self):
         root_dir, base_dir = self._create_files()
         base_name = os.path.join(self.mkdtemp(), 'archive')
-        archive = make_archive(base_name, 'zip', root_dir, base_dir)
+        with no_chdir:
+            archive = make_archive(base_name, 'zip', root_dir, base_dir)
 
         # check if ZIP file  was created
         self.assertEqual(archive, base_name + '.zip')
@@ -1524,7 +1532,7 @@ class TestArchives(BaseTest, unittest.TestCase):
         base_name = os.path.join(self.mkdtemp(), 'archive')
         group = grp.getgrgid(0)[0]
         owner = pwd.getpwuid(0)[0]
-        with os_helper.change_cwd(root_dir):
+        with os_helper.change_cwd(root_dir), no_chdir:
             archive_name = make_archive(base_name, 'gztar', root_dir, 'dist',
                                         owner=owner, group=group)
 
@@ -1542,23 +1550,30 @@ class TestArchives(BaseTest, unittest.TestCase):
 
     def test_make_archive_cwd(self):
         current_dir = os.getcwd()
+        root_dir = self.mkdtemp()
         def _breaks(*args, **kw):
             raise RuntimeError()
+        dirs = []
+        def _chdir(path):
+            dirs.append(path)
+            orig_chdir(path)
 
         register_archive_format('xxx', _breaks, [], 'xxx file')
         try:
-            try:
-                make_archive('xxx', 'xxx', root_dir=self.mkdtemp())
-            except Exception:
-                pass
+            with support.swap_attr(os, 'chdir', _chdir) as orig_chdir:
+                try:
+                    make_archive('xxx', 'xxx', root_dir=root_dir)
+                except Exception:
+                    pass
             self.assertEqual(os.getcwd(), current_dir)
+            self.assertEqual(dirs, [root_dir, current_dir])
         finally:
             unregister_archive_format('xxx')
 
     def test_make_tarfile_in_curdir(self):
         # Issue #21280
         root_dir = self.mkdtemp()
-        with os_helper.change_cwd(root_dir):
+        with os_helper.change_cwd(root_dir), no_chdir:
             self.assertEqual(make_archive('test', 'tar'), 'test.tar')
             self.assertTrue(os.path.isfile('test.tar'))
 
@@ -1566,7 +1581,7 @@ class TestArchives(BaseTest, unittest.TestCase):
     def test_make_zipfile_in_curdir(self):
         # Issue #21280
         root_dir = self.mkdtemp()
-        with os_helper.change_cwd(root_dir):
+        with os_helper.change_cwd(root_dir), no_chdir:
             self.assertEqual(make_archive('test', 'zip'), 'test.zip')
             self.assertTrue(os.path.isfile('test.zip'))
 

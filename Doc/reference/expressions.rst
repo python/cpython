@@ -568,7 +568,7 @@ is already executing raises a :exc:`ValueError` exception.
    In typical use, this is called with a single exception instance similar to the
    way the :keyword:`raise` keyword is used.
 
-   For backwards compatability, however, the second signature is
+   For backwards compatibility, however, the second signature is
    supported, following a convention from older versions of Python.
    The *type* argument should be an exception class, and *value*
    should be an exception instance. If the *value* is not provided, the

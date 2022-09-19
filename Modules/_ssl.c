@@ -3518,7 +3518,7 @@ set_min_max_proto_version(PySSLContext *self, PyObject *arg, int what)
 static PyObject *
 get_minimum_version(PySSLContext *self, void *c)
 {
-    int v = SSL_CTX_ctrl(self->ctx, SSL_CTRL_GET_MIN_PROTO_VERSION, 0, NULL);
+    int v = SSL_CTX_get_min_proto_version(self->ctx);
     if (v == 0) {
         v = PY_PROTO_MINIMUM_SUPPORTED;
     }
@@ -3534,7 +3534,7 @@ set_minimum_version(PySSLContext *self, PyObject *arg, void *c)
 static PyObject *
 get_maximum_version(PySSLContext *self, void *c)
 {
-    int v = SSL_CTX_ctrl(self->ctx, SSL_CTRL_GET_MAX_PROTO_VERSION, 0, NULL);
+    int v = SSL_CTX_get_max_proto_version(self->ctx);
     if (v == 0) {
         v = PY_PROTO_MAXIMUM_SUPPORTED;
     }
@@ -4305,7 +4305,11 @@ static PyObject *
 _ssl__SSLContext_set_default_verify_paths_impl(PySSLContext *self)
 /*[clinic end generated code: output=0bee74e6e09deaaa input=35f3408021463d74]*/
 {
-    if (!SSL_CTX_set_default_verify_paths(self->ctx)) {
+    int rc;
+    Py_BEGIN_ALLOW_THREADS
+    rc = SSL_CTX_set_default_verify_paths(self->ctx);
+    Py_END_ALLOW_THREADS
+    if (!rc) {
         _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
         return NULL;
     }
@@ -5067,7 +5071,8 @@ static PyType_Spec PySSLSession_spec = {
     .name = "_ssl.SSLSession",
     .basicsize = sizeof(PySSLSession),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-              Py_TPFLAGS_IMMUTABLETYPE),
+              Py_TPFLAGS_IMMUTABLETYPE |
+              Py_TPFLAGS_DISALLOW_INSTANTIATION),
     .slots = PySSLSession_slots,
 };
 

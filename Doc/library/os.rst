@@ -2086,7 +2086,7 @@ features:
 
    The *mode* parameter is passed to :func:`mkdir` for creating the leaf
    directory; see :ref:`the mkdir() description <mkdir_modebits>` for how it
-   is interpreted.  To set the file permission bits of any newly-created parent
+   is interpreted.  To set the file permission bits of any newly created parent
    directories you can set the umask before invoking :func:`makedirs`.  The
    file permission bits of existing parent directories are not changed.
 
@@ -2117,7 +2117,7 @@ features:
 
    .. versionchanged:: 3.7
       The *mode* argument no longer affects the file permission bits of
-      newly-created intermediate-level directories.
+      newly created intermediate-level directories.
 
 
 .. function:: mkfifo(path, mode=0o666, *, dir_fd=None)
@@ -2307,7 +2307,7 @@ features:
    :exc:`IsADirectoryError` or a :exc:`NotADirectoryError` will be raised
    respectively.  If both are directories and *dst* is empty, *dst* will be
    silently replaced.  If *dst* is a non-empty directory, an :exc:`OSError`
-   is raised. If both are files, *dst* it will be replaced silently if the user
+   is raised. If both are files, *dst* will be replaced silently if the user
    has permission.  The operation may fail on some Unix flavors if *src* and
    *dst* are on different filesystems.  If successful, the renaming will be an
    atomic operation (this is a POSIX requirement).
@@ -2439,9 +2439,9 @@ features:
    .. note::
 
       On Unix-based systems, :func:`scandir` uses the system's
-      `opendir() <http://pubs.opengroup.org/onlinepubs/009695399/functions/opendir.html>`_
+      `opendir() <https://pubs.opengroup.org/onlinepubs/009695399/functions/opendir.html>`_
       and
-      `readdir() <http://pubs.opengroup.org/onlinepubs/009695399/functions/readdir_r.html>`_
+      `readdir() <https://pubs.opengroup.org/onlinepubs/009695399/functions/readdir_r.html>`_
       functions. On Windows, it uses the Win32
       `FindFirstFileW <https://msdn.microsoft.com/en-us/library/windows/desktop/aa364418(v=vs.85).aspx>`_
       and
@@ -4264,7 +4264,7 @@ written in Python, such as a mail server's external command delivery program.
    :attr:`!children_system`, and :attr:`!elapsed` in that order.
 
    See the Unix manual page
-   :manpage:`times(2)` and :manpage:`times(3)` manual page on Unix or `the GetProcessTimes MSDN
+   :manpage:`times(2)` and `times(3) <https://www.freebsd.org/cgi/man.cgi?time(3)>`_ manual page on Unix or `the GetProcessTimes MSDN
    <https://docs.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes>`_
    on Windows. On Windows, only :attr:`!user` and :attr:`!system` are known; the other attributes are zero.
 
@@ -4870,7 +4870,7 @@ Random numbers
    :py:data:`GRND_NONBLOCK`.
 
    See also the `Linux getrandom() manual page
-   <http://man7.org/linux/man-pages/man2/getrandom.2.html>`_.
+   <https://man7.org/linux/man-pages/man2/getrandom.2.html>`_.
 
    .. availability:: Linux 3.17 and newer.
 

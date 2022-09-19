@@ -87,10 +87,10 @@ exit:
 }
 
 PyDoc_STRVAR(pysqlite_register_adapter__doc__,
-"register_adapter($module, type, caster, /)\n"
+"register_adapter($module, type, adapter, /)\n"
 "--\n"
 "\n"
-"Registers an adapter with sqlite3\'s adapter registry.");
+"Register a function to adapt Python objects to SQLite values.");
 
 #define PYSQLITE_REGISTER_ADAPTER_METHODDEF    \
     {"register_adapter", (PyCFunction)(void(*)(void))pysqlite_register_adapter, METH_FASTCALL, pysqlite_register_adapter__doc__},
@@ -118,10 +118,10 @@ exit:
 }
 
 PyDoc_STRVAR(pysqlite_register_converter__doc__,
-"register_converter($module, name, converter, /)\n"
+"register_converter($module, typename, converter, /)\n"
 "--\n"
 "\n"
-"Registers a converter with sqlite3.");
+"Register a function to convert SQLite values to Python objects.");
 
 #define PYSQLITE_REGISTER_CONVERTER_METHODDEF    \
     {"register_converter", (PyCFunction)(void(*)(void))pysqlite_register_converter, METH_FASTCALL, pysqlite_register_converter__doc__},
@@ -222,4 +222,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6939849a4371122d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ad3685282fedde73 input=a9049054013a1b77]*/

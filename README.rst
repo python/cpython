@@ -1,4 +1,4 @@
-This is Python version 3.10.4
+This is Python version 3.10.7
 =============================
 
 .. image:: https://travis-ci.com/python/cpython.svg?branch=master
@@ -204,7 +204,7 @@ script) you must take care that your primary python executable is not
 overwritten by the installation of a different version.  All files and
 directories installed using ``make altinstall`` contain the major and minor
 version and can thus live side-by-side.  ``make install`` also creates
-``${prefix}/bin/python3`` which refers to ``${prefix}/bin/pythonX.Y``.  If you
+``${prefix}/bin/python3`` which refers to ``${prefix}/bin/python3.X``.  If you
 intend to install multiple versions using the same prefix you must decide which
 version (if any) is your "primary" version.  Install that version using ``make
 install``.  Install all other versions using ``make altinstall``.

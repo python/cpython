@@ -1,4 +1,4 @@
-# Copyright 2001-2021 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2022 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -16,7 +16,7 @@
 
 """Test harness for the logging module. Run all tests.
 
-Copyright (C) 2001-2021 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2022 Vinay Sajip. All Rights Reserved.
 """
 
 import logging
@@ -1904,7 +1904,7 @@ class SysLogHandlerTest(BaseTest):
             self.sl_hdlr = hcls((server.server_address[0], server.port))
         else:
             self.sl_hdlr = hcls(server.server_address)
-        self.log_output = ''
+        self.log_output = b''
         self.root_logger.removeHandler(self.root_logger.handlers[0])
         self.root_logger.addHandler(self.sl_hdlr)
         self.handled = threading.Event()
@@ -3439,6 +3439,36 @@ class ConfigDictTest(BaseTest):
             logging.info('some log')
         self.assertEqual(stderr.getvalue(), 'some log my_type\n')
 
+    def test_90195(self):
+        # See gh-90195
+        config = {
+            'version': 1,
+            'disable_existing_loggers': False,
+            'handlers': {
+                'console': {
+                    'level': 'DEBUG',
+                    'class': 'logging.StreamHandler',
+                },
+            },
+            'loggers': {
+                'a': {
+                    'level': 'DEBUG',
+                    'handlers': ['console']
+                }
+            }
+        }
+        logger = logging.getLogger('a')
+        self.assertFalse(logger.disabled)
+        self.apply_config(config)
+        self.assertFalse(logger.disabled)
+        # Should disable all loggers ...
+        self.apply_config({'version': 1})
+        self.assertTrue(logger.disabled)
+        del config['disable_existing_loggers']
+        self.apply_config(config)
+        # Logger should be enabled, since explicitly mentioned
+        self.assertFalse(logger.disabled)
+
 class ManagerTest(BaseTest):
     def test_manager_loggerclass(self):
         logged = []
@@ -3598,7 +3628,7 @@ class QueueHandlerTest(BaseTest):
     @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
                          'logging.handlers.QueueListener required for this test')
     def test_queue_listener_with_StreamHandler(self):
-        # Test that traceback only appends once (bpo-34334).
+        # Test that traceback and stack-info only appends once (bpo-34334, bpo-46755).
         listener = logging.handlers.QueueListener(self.queue, self.root_hdlr)
         listener.start()
         try:
@@ -3606,8 +3636,10 @@ class QueueHandlerTest(BaseTest):
         except ZeroDivisionError as e:
             exc = e
             self.que_logger.exception(self.next_message(), exc_info=exc)
+        self.que_logger.error(self.next_message(), stack_info=True)
         listener.stop()
         self.assertEqual(self.stream.getvalue().strip().count('Traceback'), 1)
+        self.assertEqual(self.stream.getvalue().strip().count('Stack'), 1)
 
     @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
                          'logging.handlers.QueueListener required for this test')
@@ -4017,6 +4049,14 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
         f = NoMsecFormatter()
         f.converter = time.gmtime
         self.assertEqual(f.formatTime(r), '21/04/1993 08:03:00')
+
+    def test_issue_89047(self):
+        f = logging.Formatter(fmt='{asctime}.{msecs:03.0f} {message}', style='{', datefmt="%Y-%m-%d %H:%M:%S")
+        for i in range(2500):
+            time.sleep(0.0004)
+            r = logging.makeLogRecord({'msg': 'Message %d' % (i + 1)})
+            s = f.format(r)
+            self.assertNotIn('.1000', s)
 
 
 class TestBufferingFormatter(logging.BufferingFormatter):

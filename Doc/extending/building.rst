@@ -17,7 +17,7 @@ The initialization function has the signature:
 
 .. c:function:: PyObject* PyInit_modulename(void)
 
-It returns either a fully-initialized module, or a :c:type:`PyModuleDef`
+It returns either a fully initialized module, or a :c:type:`PyModuleDef`
 instance. See :ref:`initializing-modules` for details.
 
 .. highlight:: python

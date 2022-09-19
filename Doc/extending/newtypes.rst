@@ -175,7 +175,7 @@ example::
    }
 
 If no :c:member:`~PyTypeObject.tp_repr` handler is specified, the interpreter will supply a
-representation that uses the type's :c:member:`~PyTypeObject.tp_name` and a uniquely-identifying
+representation that uses the type's :c:member:`~PyTypeObject.tp_name` and a uniquely identifying
 value for the object.
 
 The :c:member:`~PyTypeObject.tp_str` handler is to :func:`str` what the :c:member:`~PyTypeObject.tp_repr` handler
@@ -589,7 +589,7 @@ with the required field::
        PyObject *weakreflist;  /* List of weak references */
    } TrivialObject;
 
-And the corresponding member in the statically-declared type object::
+And the corresponding member in the statically declared type object::
 
    static PyTypeObject TrivialType = {
        PyVarObject_HEAD_INIT(NULL, 0)

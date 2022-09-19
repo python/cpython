@@ -328,6 +328,10 @@ tok_concatenate_interactive_new_line(struct tok_state *tok, const char *line) {
 
     Py_ssize_t current_size = tok->interactive_src_end - tok->interactive_src_start;
     Py_ssize_t line_size = strlen(line);
+    char last_char = line[line_size > 0 ? line_size - 1 : line_size];
+    if (last_char != '\n') {
+        line_size += 1;
+    }
     char* new_str = tok->interactive_src_start;
 
     new_str = PyMem_Realloc(new_str, current_size + line_size + 1);
@@ -341,7 +345,11 @@ tok_concatenate_interactive_new_line(struct tok_state *tok, const char *line) {
         return -1;
     }
     strcpy(new_str + current_size, line);
-
+    if (last_char != '\n') {
+        /* Last line does not end in \n, fake one */
+        new_str[current_size + line_size - 1] = '\n';
+        new_str[current_size + line_size] = '\0';
+    }
     tok->interactive_src_start = new_str;
     tok->interactive_src_end = new_str + current_size + line_size;
     return 0;
@@ -1522,7 +1530,7 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
     } while (c == ' ' || c == '\t' || c == '\014');
 
     /* Set start of current token */
-    tok->start = tok->cur - 1;
+    tok->start = tok->cur == NULL ? NULL : tok->cur - 1;
 
     /* Skip comment, unless it's a type comment */
     if (c == '#') {
@@ -1957,6 +1965,8 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
         /* Get rest of string */
         while (end_quote_size != quote_size) {
             c = tok_nextc(tok);
+            if (tok->done == E_DECODE)
+                break;
             if (c == EOF || (quote_size == 1 && c == '\n')) {
                 assert(tok->multi_line_start != NULL);
                 // shift the tok_state's location into

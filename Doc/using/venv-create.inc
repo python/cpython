@@ -17,7 +17,7 @@ re-used.
 .. deprecated:: 3.6
    ``pyvenv`` was the recommended tool for creating virtual environments for
    Python 3.3 and 3.4, and is `deprecated in Python 3.6
-   <https://docs.python.org/dev/whatsnew/3.6.html#deprecated-features>`_.
+   <https://docs.python.org/dev/whatsnew/3.6.html#id8>`_.
 
 .. versionchanged:: 3.5
    The use of ``venv`` is now recommended for creating virtual environments.

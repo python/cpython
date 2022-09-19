@@ -2800,7 +2800,7 @@ test_PyDateTime_GET(PyObject *self, PyObject *obj)
     month = PyDateTime_GET_MONTH(obj);
     day = PyDateTime_GET_DAY(obj);
 
-    return Py_BuildValue("(lll)", year, month, day);
+    return Py_BuildValue("(iii)", year, month, day);
 }
 
 static PyObject *
@@ -2814,7 +2814,7 @@ test_PyDateTime_DATE_GET(PyObject *self, PyObject *obj)
     microsecond = PyDateTime_DATE_GET_MICROSECOND(obj);
     PyObject *tzinfo = PyDateTime_DATE_GET_TZINFO(obj);
 
-    return Py_BuildValue("(llllO)", hour, minute, second, microsecond, tzinfo);
+    return Py_BuildValue("(iiiiO)", hour, minute, second, microsecond, tzinfo);
 }
 
 static PyObject *
@@ -2828,7 +2828,7 @@ test_PyDateTime_TIME_GET(PyObject *self, PyObject *obj)
     microsecond = PyDateTime_TIME_GET_MICROSECOND(obj);
     PyObject *tzinfo = PyDateTime_TIME_GET_TZINFO(obj);
 
-    return Py_BuildValue("(llllO)", hour, minute, second, microsecond, tzinfo);
+    return Py_BuildValue("(iiiiO)", hour, minute, second, microsecond, tzinfo);
 }
 
 static PyObject *
@@ -2840,7 +2840,7 @@ test_PyDateTime_DELTA_GET(PyObject *self, PyObject *obj)
     seconds = PyDateTime_DELTA_GET_SECONDS(obj);
     microseconds = PyDateTime_DELTA_GET_MICROSECONDS(obj);
 
-    return Py_BuildValue("(lll)", days, seconds, microseconds);
+    return Py_BuildValue("(iii)", days, seconds, microseconds);
 }
 
 /* test_thread_state spawns a thread of its own, and that thread releases
@@ -5388,6 +5388,21 @@ sequence_getitem(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *
+sequence_setitem(PyObject *self, PyObject *args)
+{
+    Py_ssize_t i;
+    PyObject *seq, *val;
+    if (!PyArg_ParseTuple(args, "OnO", &seq, &i, &val)) {
+        return NULL;
+    }
+    if (PySequence_SetItem(seq, i, val)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
 /* Functions for testing C calling conventions (METH_*) are named meth_*,
  * e.g. "meth_varargs" for METH_VARARGS.
  *
@@ -5460,8 +5475,10 @@ meth_fastcall_keywords(PyObject* self, PyObject* const* args,
     if (pyargs == NULL) {
         return NULL;
     }
+    assert(args != NULL || nargs == 0);
+    PyObject* const* args_offset = args == NULL ? NULL : args + nargs;
     PyObject *pykwargs = PyObject_Vectorcall((PyObject*)&PyDict_Type,
-                                              args + nargs, 0, kwargs);
+                                              args_offset, 0, kwargs);
     return Py_BuildValue("NNN", _null_to_none(self), pyargs, pykwargs);
 }
 
@@ -5619,6 +5636,7 @@ test_fatal_error(PyObject *self, PyObject *args)
 
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 static PyObject *getargs_s_hash_int(PyObject *, PyObject *, PyObject*);
+static PyObject *getargs_s_hash_int2(PyObject *, PyObject *, PyObject*);
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -5729,6 +5747,8 @@ static PyMethodDef TestMethods[] = {
     {"getargs_s_star",          getargs_s_star,                  METH_VARARGS},
     {"getargs_s_hash",          getargs_s_hash,                  METH_VARARGS},
     {"getargs_s_hash_int",      (PyCFunction)(void(*)(void))getargs_s_hash_int,
+      METH_VARARGS|METH_KEYWORDS},
+    {"getargs_s_hash_int2",      (PyCFunction)(void(*)(void))getargs_s_hash_int2,
       METH_VARARGS|METH_KEYWORDS},
     {"getargs_z",               getargs_z,                       METH_VARARGS},
     {"getargs_z_star",          getargs_z_star,                  METH_VARARGS},
@@ -5884,6 +5904,7 @@ static PyMethodDef TestMethods[] = {
 #endif
     {"write_unraisable_exc", test_write_unraisable_exc, METH_VARARGS},
     {"sequence_getitem", sequence_getitem, METH_VARARGS},
+    {"sequence_setitem", sequence_setitem, METH_VARARGS},
     {"meth_varargs", meth_varargs, METH_VARARGS},
     {"meth_varargs_keywords", (PyCFunction)(void(*)(void))meth_varargs_keywords, METH_VARARGS|METH_KEYWORDS},
     {"meth_o", meth_o, METH_O},
@@ -7419,11 +7440,27 @@ PyAPI_FUNC(int) PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
 static PyObject *
 getargs_s_hash_int(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    static char *keywords[] = {"", "x", NULL};
+    static char *keywords[] = {"", "", "x", NULL};
+    Py_buffer buf = {NULL};
     const char *s;
     int len;
     int i = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|s#i", keywords, &s, &len, &i))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "w*|s#i", keywords, &buf, &s, &len, &i))
         return NULL;
+    PyBuffer_Release(&buf);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+getargs_s_hash_int2(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    static char *keywords[] = {"", "", "x", NULL};
+    Py_buffer buf = {NULL};
+    const char *s;
+    int len;
+    int i = 0;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "w*|(s#)i", keywords, &buf, &s, &len, &i))
+        return NULL;
+    PyBuffer_Release(&buf);
     Py_RETURN_NONE;
 }

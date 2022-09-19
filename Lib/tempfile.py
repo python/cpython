@@ -203,8 +203,7 @@ def _get_default_tempdir():
                 fd = _os.open(filename, _bin_openflags, 0o600)
                 try:
                     try:
-                        with _io.open(fd, 'wb', closefd=False) as fp:
-                            fp.write(b'blat')
+                        _os.write(fd, b'blat')
                     finally:
                         _os.close(fd)
                 finally:
@@ -244,6 +243,7 @@ def _get_candidate_names():
 def _mkstemp_inner(dir, pre, suf, flags, output_type):
     """Code common to mkstemp, TemporaryFile, and NamedTemporaryFile."""
 
+    dir = _os.path.abspath(dir)
     names = _get_candidate_names()
     if output_type is bytes:
         names = map(_os.fsencode, names)
@@ -264,7 +264,7 @@ def _mkstemp_inner(dir, pre, suf, flags, output_type):
                 continue
             else:
                 raise
-        return (fd, _os.path.abspath(file))
+        return fd, file
 
     raise FileExistsError(_errno.EEXIST,
                           "No usable temporary file name found")
@@ -550,15 +550,26 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
     if "b" not in mode:
         encoding = _io.text_encoding(encoding)
 
-    (fd, name) = _mkstemp_inner(dir, prefix, suffix, flags, output_type)
+    name = None
+    def opener(*args):
+        nonlocal name
+        fd, name = _mkstemp_inner(dir, prefix, suffix, flags, output_type)
+        return fd
     try:
-        file = _io.open(fd, mode, buffering=buffering,
-                        newline=newline, encoding=encoding, errors=errors)
-
-        return _TemporaryFileWrapper(file, name, delete)
-    except BaseException:
-        _os.unlink(name)
-        _os.close(fd)
+        file = _io.open(dir, mode, buffering=buffering,
+                        newline=newline, encoding=encoding, errors=errors,
+                        opener=opener)
+        try:
+            raw = getattr(file, 'buffer', file)
+            raw = getattr(raw, 'raw', raw)
+            raw.name = name
+            return _TemporaryFileWrapper(file, name, delete)
+        except:
+            file.close()
+            raise
+    except:
+        if name is not None and not (_os.name == 'nt' and delete):
+            _os.unlink(name)
         raise
 
 if _os.name != 'posix' or _sys.platform == 'cygwin':
@@ -597,9 +608,20 @@ else:
 
         flags = _bin_openflags
         if _O_TMPFILE_WORKS:
-            try:
+            fd = None
+            def opener(*args):
+                nonlocal fd
                 flags2 = (flags | _os.O_TMPFILE) & ~_os.O_CREAT
                 fd = _os.open(dir, flags2, 0o600)
+                return fd
+            try:
+                file = _io.open(dir, mode, buffering=buffering,
+                                newline=newline, encoding=encoding,
+                                errors=errors, opener=opener)
+                raw = getattr(file, 'buffer', file)
+                raw = getattr(raw, 'raw', raw)
+                raw.name = fd
+                return file
             except IsADirectoryError:
                 # Linux kernel older than 3.11 ignores the O_TMPFILE flag:
                 # O_TMPFILE is read as O_DIRECTORY. Trying to open a directory
@@ -616,24 +638,25 @@ else:
                 # fails with NotADirectoryError, because O_TMPFILE is read as
                 # O_DIRECTORY.
                 pass
-            else:
-                try:
-                    return _io.open(fd, mode, buffering=buffering,
-                                    newline=newline, encoding=encoding,
-                                    errors=errors)
-                except:
-                    _os.close(fd)
-                    raise
             # Fallback to _mkstemp_inner().
 
-        (fd, name) = _mkstemp_inner(dir, prefix, suffix, flags, output_type)
-        try:
-            _os.unlink(name)
-            return _io.open(fd, mode, buffering=buffering,
-                            newline=newline, encoding=encoding, errors=errors)
-        except:
-            _os.close(fd)
-            raise
+        fd = None
+        def opener(*args):
+            nonlocal fd
+            fd, name = _mkstemp_inner(dir, prefix, suffix, flags, output_type)
+            try:
+                _os.unlink(name)
+            except BaseException as e:
+                _os.close(fd)
+                raise
+            return fd
+        file = _io.open(dir, mode, buffering=buffering,
+                        newline=newline, encoding=encoding, errors=errors,
+                        opener=opener)
+        raw = getattr(file, 'buffer', file)
+        raw = getattr(raw, 'raw', raw)
+        raw.name = fd
+        return file
 
 class SpooledTemporaryFile:
     """Temporary file wrapper, specialized to switch from BytesIO

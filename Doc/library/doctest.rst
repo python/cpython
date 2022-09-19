@@ -566,12 +566,12 @@ doctest decides whether actual output matches an example's expected output:
 
    When specified, doctests expecting exceptions pass so long as an exception
    of the expected type is raised, even if the details
-   (message and fully-qualified exception name) don't match.
+   (message and fully qualified exception name) don't match.
 
    For example, an example expecting ``ValueError: 42`` will pass if the actual
    exception raised is ``ValueError: 3*14``, but will fail if, say, a
    :exc:`TypeError` is raised instead.
-   It will also ignore any fully-qualified name included before the
+   It will also ignore any fully qualified name included before the
    exception class, which can vary between implementations and versions
    of Python and the code/libraries in use.
    Hence, all three of these variations will work with the flag specified:

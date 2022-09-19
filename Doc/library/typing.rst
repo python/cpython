@@ -1142,7 +1142,7 @@ These are not used in annotations. They are building blocks for creating generic
 
     Bound type variables are particularly useful for annotating
     :func:`classmethods <classmethod>` that serve as alternative constructors.
-    In the following example (©
+    In the following example (by
     `Raymond Hettinger <https://www.youtube.com/watch?v=HTLu2DFOdTg>`_), the
     type variable ``C`` is bound to the ``Circle`` class through the use of a
     forward reference. Using this type variable to annotate the
@@ -1544,6 +1544,9 @@ These are not used in annotations. They are building blocks for declaring types.
          True
 
    .. attribute:: __required_keys__
+
+      .. versionadded:: 3.9
+
    .. attribute:: __optional_keys__
 
       ``Point2D.__required_keys__`` and ``Point2D.__optional_keys__`` return
@@ -1565,6 +1568,8 @@ These are not used in annotations. They are building blocks for declaring types.
          True
          >>> Point3D.__optional_keys__ == frozenset({'x', 'y'})
          True
+
+      .. versionadded:: 3.9
 
    See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 

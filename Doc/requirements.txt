@@ -3,12 +3,12 @@
 # Sphinx version is pinned so that new versions that introduce new warnings
 # won't suddenly cause build failures. Updating the version is fine as long
 # as no warnings are raised by doing so.
-sphinx==3.2.1
+sphinx==3.4.3
 # Docutils version is pinned to a version compatible with Sphinx
-# version 3.2.1. It can be removed after bumping Sphinx version to at
+# version <3.5.4. It can be removed after bumping Sphinx version to at
 # least 3.5.4.
 docutils==0.17.1
-# Jinja version is pinned to a version compatible with Sphinx version 3.2.1.
+# Jinja version is pinned to a version compatible with Sphinx version <4.5.
 jinja2==3.0.3
 
 blurb
