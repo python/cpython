@@ -239,7 +239,7 @@ may be found in section :ref:`raise`.
 :keyword:`!except` clause
 -------------------------
 
-The :keyword:`except` clause(s) specify one or more exception handlers. When no
+The :keyword:`!except` clause(s) specify one or more exception handlers. When no
 exception occurs in the :keyword:`try` clause, no exception handler is executed.
 When an exception occurs in the :keyword:`!try` suite, a search for an exception
 handler is started.  This search inspects the except clauses in turn until one
