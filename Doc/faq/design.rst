@@ -62,7 +62,7 @@ and think it is a bug in Python.  It's not.  This has little to do with Python,
 and much more to do with how the underlying platform handles floating-point
 numbers.
 
-The :class:`float` type in CPython uses a C ``double`` for storage.  A
+The :class:`float` type in CPython uses a C :c:type:`double` for storage.  A
 :class:`float` object's value is stored in binary floating-point with a fixed
 precision (typically 53 bits) and Python uses C operations, which in turn rely
 on the hardware implementation in the processor, to perform floating-point
@@ -232,7 +232,7 @@ Similar methods exist for bytes and bytearray objects.
 How fast are exceptions?
 ------------------------
 
-A try/except block is extremely efficient if no exceptions are raised.  Actually
+A ``try/except`` block is extremely efficient if no exceptions are raised.  Actually
 catching an exception is expensive.  In versions of Python prior to 2.0 it was
 common to use this idiom::
 
@@ -352,7 +352,7 @@ will probably run out of file descriptors::
        c = f.read(1)
 
 Indeed, using CPython's reference counting and destructor scheme, each new
-assignment to *f* closes the previous file.  With a traditional GC, however,
+assignment to ``f`` closes the previous file.  With a traditional GC, however,
 those file objects will only get collected (and closed) at varying and possibly
 long intervals.
 
@@ -376,10 +376,10 @@ Python to work with it.)
 
 Traditional GC also becomes a problem when Python is embedded into other
 applications.  While in a standalone Python it's fine to replace the standard
-malloc() and free() with versions provided by the GC library, an application
-embedding Python may want to have its *own* substitute for malloc() and free(),
+``malloc()`` and ``free()`` with versions provided by the GC library, an application
+embedding Python may want to have its *own* substitute for ``malloc()`` and ``free()``,
 and may not want Python's.  Right now, CPython works with anything that
-implements malloc() and free() properly.
+implements ``malloc()`` and ``free()`` properly.
 
 
 Why isn't all memory freed when CPython exits?
@@ -401,7 +401,7 @@ Why are there separate tuple and list data types?
 
 Lists and tuples, while similar in many respects, are generally used in
 fundamentally different ways.  Tuples can be thought of as being similar to
-Pascal records or C structs; they're small collections of related data which may
+Pascal ``records`` or C ``structs``; they're small collections of related data which may
 be of different types which are operated on as a group.  For example, a
 Cartesian coordinate is appropriately represented as a tuple of two or three
 numbers.
@@ -444,12 +444,12 @@ far) under most circumstances, and the implementation is simpler.
 
 Dictionaries work by computing a hash code for each key stored in the dictionary
 using the :func:`hash` built-in function.  The hash code varies widely depending
-on the key and a per-process seed; for example, "Python" could hash to
--539294296 while "python", a string that differs by a single bit, could hash
-to 1142331976.  The hash code is then used to calculate a location in an
+on the key and a per-process seed; for example, ``Python`` could hash to
+``-539294296`` while ``python``, a string that differs by a single bit, could hash
+to ``1142331976``.  The hash code is then used to calculate a location in an
 internal array where the value will be stored.  Assuming that you're storing
 keys that all have different hash values, this means that dictionaries take
-constant time -- O(1), in Big-O notation -- to retrieve a key.
+constant time -- ``O(1)``, in Big-O notation -- to retrieve a key.
 
 
 Why must dictionary keys be immutable?
@@ -528,7 +528,7 @@ is True``) then ``hash(o1) == hash(o2)`` (ie, ``o1.__hash__() == o2.__hash__()``
 regardless of whether the object is in a dictionary or not.  If you fail to meet
 these restrictions dictionaries and other hash based structures will misbehave.
 
-In the case of ListWrapper, whenever the wrapper object is in a dictionary the
+In the case of ``ListWrapper``, whenever the wrapper object is in a dictionary the
 wrapped list must not change to avoid anomalies.  Don't do this unless you are
 prepared to think hard about the requirements and the consequences of not
 meeting them correctly.  Consider yourself warned.
@@ -599,14 +599,14 @@ Why is there no goto?
 In the 1970s people realized that unrestricted goto could lead
 to messy "spaghetti" code that was hard to understand and revise.
 In a high-level language, it is also unneeded as long as there
-are ways to branch (in Python, with ``if`` statements and ``or``,
-``and``, and ``if-else`` expressions) and loop (with ``while``
-and ``for`` statements, possibly containing ``continue`` and ``break``).
+are ways to branch (in Python, with :keyword:`if` statements and :keyword:`or`,
+:keyword:`and`, and ``if-else`` expressions) and loop (with :keyword:`while`
+and :keyword:`for` statements, possibly containing :keyword:`continue` and :keyword:`break`).
 
 One can also use exceptions to provide a "structured goto"
 that works even across
 function calls.  Many feel that exceptions can conveniently emulate all
-reasonable uses of the "go" or "goto" constructs of C, Fortran, and other
+reasonable uses of the ``go`` or ``goto`` constructs of C, Fortran, and other
 languages.  For example::
 
    class label(Exception): pass  # declare a label
@@ -620,7 +620,7 @@ languages.  For example::
    ...
 
 This doesn't allow you to jump into the middle of a loop, but that's usually
-considered an abuse of goto anyway.  Use sparingly.
+considered an abuse of ``goto`` anyway.  Use sparingly.
 
 
 Why can't raw strings (r-strings) end with a backslash?
@@ -652,7 +652,7 @@ If you're trying to build a pathname for a DOS command, try e.g. one of ::
 Why doesn't Python have a "with" statement for attribute assignments?
 ---------------------------------------------------------------------
 
-Python has a 'with' statement that wraps the execution of a block, calling code
+Python has a :keyword:`with` statement that wraps the execution of a block, calling code
 on the entrance and exit from the block.  Some languages have a construct that
 looks like this::
 
@@ -679,13 +679,13 @@ For instance, take the following incomplete snippet::
        with a:
            print(x)
 
-The snippet assumes that "a" must have a member attribute called "x".  However,
+The snippet assumes that ``a`` must have a member attribute called ``x``. However,
 there is nothing in Python that tells the interpreter this. What should happen
-if "a" is, let us say, an integer?  If there is a global variable named "x",
-will it be used inside the with block?  As you see, the dynamic nature of Python
+if ``a`` is, let us say, an integer?  If there is a global variable named ``x``,
+will it be used inside the :keyword:`with` block?  As you see, the dynamic nature of Python
 makes such choices much harder.
 
-The primary benefit of "with" and similar language features (reduction of code
+The primary benefit of :keyword:`with` and similar language features (reduction of code
 volume) can, however, easily be achieved in Python by assignment.  Instead of::
 
    function(args).mydict[index][index].a = 21
@@ -710,7 +710,7 @@ Why don't generators support the with statement?
 For technical reasons, a generator used directly as a context manager
 would not work correctly.  When, as is most common, a generator is used as
 an iterator run to completion, no closing is needed.  When it is, wrap
-it as "contextlib.closing(generator)" in the 'with' statement.
+it as ``contextlib.closing(generator)`` in the :keyword:`with` statement.
 
 
 Why are colons required for the if/while/def/class statements?
