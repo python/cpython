@@ -559,10 +559,19 @@ fold_subscr(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 
     arg = node->v.Subscript.value;
     idx = node->v.Subscript.slice;
-    if (node->v.Subscript.ctx != Load ||
-            arg->kind != Constant_kind ||
-            idx->kind != Constant_kind)
+    if (node->v.Subscript.ctx != Load || idx->kind != Constant_kind)
     {
+        return 1;
+    }
+    if (arg->kind == List_kind) {
+        PyObject *tuple = make_const_tuple(arg->v.List.elts);
+        if (tuple == NULL) {
+            return 1;
+        }
+        newval = PyObject_GetItem(tuple, idx->v.Constant.value);
+        return make_const(node, newval, arena);
+    }
+    else if (arg->kind != Constant_kind) {
         return 1;
     }
 
