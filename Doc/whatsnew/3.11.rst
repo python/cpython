@@ -383,10 +383,9 @@ See :pep:`675` for more details.
 (Contributed by Jelle Zijlstra in :issue:`47088`. PEP written by Pradeep
 Kumar Srinivasan and Graham Bleaney.)
 
-
 .. _whatsnew311-pep681:
 
-PEP 681: Data class transforms
+PEP 681: Data Class Transforms
 ------------------------------
 
 :data:`~typing.dataclass_transform` may be used to
