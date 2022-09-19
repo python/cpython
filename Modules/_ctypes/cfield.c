@@ -412,21 +412,23 @@ get_ulonglong(PyObject *v, unsigned long long *p)
 #define NUM_BITS(x) ((x) >> 16)
 
 /* Doesn't work if NUM_BITS(size) == 0, but it never happens in SET() call. */
-#define BIT_MASK(type, size) (((((type)1 << (NUM_BITS(size) - 1)) - 1) << 1) + 1)
+#define BIT_MASK(type, size) \
+    (assert(NUM_BITS(size) > 0), \
+        (((((type)1 << (NUM_BITS(size) - 1)) - 1) << 1) + 1))
 
 /* This macro CHANGES the first parameter IN PLACE. For proper sign handling,
    we must first shift left, then right.
 */
 #define GET_BITFIELD(v, size)                                           \
     if (NUM_BITS(size)) {                                               \
-        v <<= (sizeof(v)*8 - LOW_BIT(size) - NUM_BITS(size));           \
+        v *= 1ULL << (sizeof(v)*8 - LOW_BIT(size) - NUM_BITS(size));    \
         v >>= (sizeof(v)*8 - NUM_BITS(size));                           \
     }
 
 /* This macro RETURNS the first parameter with the bit field CHANGED. */
 #define SET(type, x, v, size)                                                 \
     (NUM_BITS(size) ?                                                   \
-     ( ( (type)x & ~(BIT_MASK(type, size) << LOW_BIT(size)) ) | ( ((type)v & BIT_MASK(type, size)) << LOW_BIT(size) ) ) \
+     ( ( (type)x & ~(BIT_MASK(type, size) * (1ULL << LOW_BIT(size))) ) | ( ((type)v & BIT_MASK(type, size)) * (1ULL << LOW_BIT(size) )) ) \
      : (type)v)
 
 #if SIZEOF_SHORT == 2
