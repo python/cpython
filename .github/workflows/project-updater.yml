@@ -11,8 +11,6 @@ permissions:
 
 jobs:
   add-to-project:
-    permissions:
-      repository-projects: write
     name: Add issues to projects
     runs-on: ubuntu-latest
     strategy:
