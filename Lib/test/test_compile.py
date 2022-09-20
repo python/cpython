@@ -1077,6 +1077,31 @@ if 1:
         check_op_count(aug, "STORE_SLICE", 1)
         check_op_count(aug, "BUILD_SLICE", 0)
 
+    def test_compare_positions(self):
+        for opname, op in [
+            ("COMPARE_OP", "<"),
+            ("COMPARE_OP", "<="),
+            ("COMPARE_OP", ">"),
+            ("COMPARE_OP", ">="),
+            ("CONTAINS_OP", "in"),
+            ("CONTAINS_OP", "not in"),
+            ("IS_OP", "is"),
+            ("IS_OP", "is not"),
+        ]:
+            expr = f'a {op} b {op} c'
+            expected_positions = 2 * [(2, 2, 0, len(expr))]
+            for source in [
+                f"\\\n{expr}", f'if \\\n{expr}: x', f"x if \\\n{expr} else y"
+            ]:
+                code = compile(source, "<test>", "exec")
+                actual_positions = [
+                    instruction.positions
+                    for instruction in dis.get_instructions(code)
+                    if instruction.opname == opname
+                ]
+                with self.subTest(source):
+                    self.assertEqual(actual_positions, expected_positions)
+
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
