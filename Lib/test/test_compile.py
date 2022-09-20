@@ -1001,12 +1001,15 @@ if 1:
                 f"\\\n{expr}", f'if \\\n{expr}: x', f"x if \\\n{expr} else y"
             ]:
                 code = compile(source, "<test>", "exec")
+                all_lines = (
+                    line
+                    for (start, stop, line) in code.co_lines()
+                    for _ in range(start, stop, 2)
+                )
                 actual_lines = [
                     line
                     for instruction, line in zip(
-                        dis.get_instructions(code),
-                        code.co_lines(),
-                        strict=True,
+                        dis.get_instructions(code), all_lines, strict=True
                     )
                     if instruction.opname == opname
                 ]
