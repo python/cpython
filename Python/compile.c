@@ -8628,10 +8628,7 @@ assemble(struct compiler *c, int addNone)
     }
     nlocalsplus -= numdropped;
 
-    consts = consts_dict_keys_inorder(c->u->u_consts);
-    if (consts == NULL) {
-        goto error;
-    }
+    /** Desugaring **/
     if (calculate_jump_targets(g->g_entryblock)) {
         goto error;
     }
@@ -8639,6 +8636,12 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
     if (label_exception_targets(g->g_entryblock)) {
+        goto error;
+    }
+
+    /** Optimization **/
+    consts = consts_dict_keys_inorder(c->u->u_consts);
+    if (consts == NULL) {
         goto error;
     }
     if (optimize_cfg(g, consts, c->c_const_cache)) {
@@ -8665,6 +8668,7 @@ assemble(struct compiler *c, int addNone)
         remove_redundant_nops(b);
     }
 
+    /** Assembly **/
     /* Order of basic blocks must have been determined by now */
     if (normalize_jumps(g) < 0) {
         goto error;
@@ -9599,12 +9603,14 @@ is_exit_without_lineno(basicblock *b) {
 static int
 duplicate_exits_without_lineno(cfg_builder *g)
 {
+    assert(no_empty_basic_blocks(g));
     /* Copy all exit blocks without line number that are targets of a jump.
      */
     basicblock *entryblock = g->g_entryblock;
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         struct instr *last = basicblock_last_instr(b);
-        if (last != NULL && is_jump(last)) {
+        assert(last != NULL);
+        if (is_jump(last)) {
             basicblock *target = last->i_target;
             if (is_exit_without_lineno(target) && target->b_predecessors > 1) {
                 basicblock *new_target = copy_basicblock(g, target);
@@ -9620,8 +9626,6 @@ duplicate_exits_without_lineno(cfg_builder *g)
             }
         }
     }
-
-    assert(no_empty_basic_blocks(g));
 
     /* Any remaining reachable exit blocks without line number can only be reached by
      * fall through, and thus can only have a single predecessor */
