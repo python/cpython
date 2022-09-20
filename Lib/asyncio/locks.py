@@ -362,6 +362,7 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
 
     async def acquire(self):
         """Acquire a semaphore.
+
         If the internal counter is larger than zero on entry,
         decrement it by one and return True immediately.  If it is
         zero on entry, block, waiting until some other coroutine has
@@ -398,6 +399,7 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
 
     def release(self):
         """Release a semaphore, incrementing the internal counter by one.
+
         When it was zero on entry and another coroutine is waiting for it to
         become larger than zero again, wake up that coroutine.
         """
