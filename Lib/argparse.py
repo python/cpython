@@ -1918,9 +1918,10 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 conflicts.extend(group_actions[:i])
                 conflicts.extend(group_actions[i + 1:])
 
-        # find all option indices, and determine the arg_string_pattern
-        # which has an 'O' if there is an option at an index,
-        # an 'A' if there is an argument, or a '-' if there is a '--'
+        # determine the arg_string_pattern which has an 'O' if there is
+        # an option at an index, an 'A' if there is an argument, or a '-' if
+        # there is a '--'. record parsed optionals so that they could be
+        # later passed to consume_optional().
         option_tuples = []
         arg_string_pattern_parts = []
         arg_strings_iter = iter(arg_strings)
