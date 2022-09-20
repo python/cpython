@@ -36,6 +36,11 @@ New features are frequently added to the ``typing`` module.
 The `typing_extensions <https://pypi.org/project/typing-extensions/>`_ package
 provides backports of these new features to older versions of Python.
 
+.. seealso::
+
+   The documentation at https://typing.readthedocs.io/ serves as useful reference
+   for type system features, useful typing related tools and typing best practices.
+
 .. _relevant-peps:
 
 Relevant PEPs
