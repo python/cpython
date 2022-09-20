@@ -992,21 +992,6 @@ unicodedata_UCD_normalize_impl(PyObject *self, PyObject *form,
 /* -------------------------------------------------------------------- */
 /* database code (cut and pasted from the unidb package) */
 
-static unsigned long
-_gethash(const char *s, int len, int scale)
-{
-    int i;
-    unsigned long h = 0;
-    unsigned long ix;
-    for (i = 0; i < len; i++) {
-        h = (h * scale) + (unsigned char) Py_TOUPPER(s[i]);
-        ix = h & 0xff000000;
-        if (ix)
-            h = (h ^ ((ix>>24) & 0xff)) & 0x00ffffff;
-    }
-    return h;
-}
-
 static const char * const hangul_syllables[][3] = {
     { "G",  "A",   ""   },
     { "GG", "AE",  "G"  },
@@ -1067,99 +1052,100 @@ _getucname(PyObject *self,
     /* Find the name associated with the given code point.
      * If with_alias_and_seq is 1, check for names in the Private Use Area 15
      * that we are using for aliases and named sequences. */
-    int offset;
-    int i;
-    int word;
-    const unsigned char* w;
-
-    if (code >= 0x110000)
-        return 0;
-
-    /* XXX should we just skip all the code points in the PUAs here? */
-    if (!with_alias_and_seq && (IS_ALIAS(code) || IS_NAMED_SEQ(code)))
-        return 0;
-
-    if (UCD_Check(self)) {
-        /* in 3.2.0 there are no aliases and named sequences */
-        const change_record *old;
-        if (IS_ALIAS(code) || IS_NAMED_SEQ(code))
-            return 0;
-        old = get_old_record(self, code);
-        if (old->category_changed == 0) {
-            /* unassigned */
-            return 0;
-        }
-    }
-
-    if (SBase <= code && code < SBase+SCount) {
-        /* Hangul syllable. */
-        int SIndex = code - SBase;
-        int L = SIndex / NCount;
-        int V = (SIndex % NCount) / TCount;
-        int T = SIndex % TCount;
-
-        if (buflen < 27)
-            /* Worst case: HANGUL SYLLABLE <10chars>. */
-            return 0;
-        strcpy(buffer, "HANGUL SYLLABLE ");
-        buffer += 16;
-        strcpy(buffer, hangul_syllables[L][0]);
-        buffer += strlen(hangul_syllables[L][0]);
-        strcpy(buffer, hangul_syllables[V][1]);
-        buffer += strlen(hangul_syllables[V][1]);
-        strcpy(buffer, hangul_syllables[T][2]);
-        buffer += strlen(hangul_syllables[T][2]);
-        *buffer = '\0';
-        return 1;
-    }
-
-    if (is_unified_ideograph(code)) {
-        if (buflen < 28)
-            /* Worst case: CJK UNIFIED IDEOGRAPH-20000 */
-            return 0;
-        sprintf(buffer, "CJK UNIFIED IDEOGRAPH-%X", code);
-        return 1;
-    }
-
-    /* get offset into phrasebook */
-    offset = phrasebook_offset1[(code>>phrasebook_shift)];
-    offset = phrasebook_offset2[(offset<<phrasebook_shift) +
-                               (code&((1<<phrasebook_shift)-1))];
-    if (!offset)
-        return 0;
-
-    i = 0;
-
-    for (;;) {
-        /* get word index */
-        word = phrasebook[offset] - phrasebook_short;
-        if (word >= 0) {
-            word = (word << 8) + phrasebook[offset+1];
-            offset += 2;
-        } else
-            word = phrasebook[offset++];
-        if (i) {
-            if (i > buflen)
-                return 0; /* buffer overflow */
-            buffer[i++] = ' ';
-        }
-        /* copy word string from lexicon.  the last character in the
-           word has bit 7 set.  the last word in a string ends with
-           0x80 */
-        w = lexicon + lexicon_offset[word];
-        while (*w < 128) {
-            if (i >= buflen)
-                return 0; /* buffer overflow */
-            buffer[i++] = *w++;
-        }
-        if (i >= buflen)
-            return 0; /* buffer overflow */
-        buffer[i++] = *w & 127;
-        if (*w == 128)
-            break; /* end of word */
-    }
-
-    return 1;
+    return 0;
+//    int offset;
+//    int i;
+//    int word;
+//    const unsigned char* w;
+//
+//    if (code >= 0x110000)
+//        return 0;
+//
+//    /* XXX should we just skip all the code points in the PUAs here? */
+//    if (!with_alias_and_seq && (IS_ALIAS(code) || IS_NAMED_SEQ(code)))
+//        return 0;
+//
+//    if (UCD_Check(self)) {
+//        /* in 3.2.0 there are no aliases and named sequences */
+//        const change_record *old;
+//        if (IS_ALIAS(code) || IS_NAMED_SEQ(code))
+//            return 0;
+//        old = get_old_record(self, code);
+//        if (old->category_changed == 0) {
+//            /* unassigned */
+//            return 0;
+//        }
+//    }
+//
+//    if (SBase <= code && code < SBase+SCount) {
+//        /* Hangul syllable. */
+//        int SIndex = code - SBase;
+//        int L = SIndex / NCount;
+//        int V = (SIndex % NCount) / TCount;
+//        int T = SIndex % TCount;
+//
+//        if (buflen < 27)
+//            /* Worst case: HANGUL SYLLABLE <10chars>. */
+//            return 0;
+//        strcpy(buffer, "HANGUL SYLLABLE ");
+//        buffer += 16;
+//        strcpy(buffer, hangul_syllables[L][0]);
+//        buffer += strlen(hangul_syllables[L][0]);
+//        strcpy(buffer, hangul_syllables[V][1]);
+//        buffer += strlen(hangul_syllables[V][1]);
+//        strcpy(buffer, hangul_syllables[T][2]);
+//        buffer += strlen(hangul_syllables[T][2]);
+//        *buffer = '\0';
+//        return 1;
+//    }
+//
+//    if (is_unified_ideograph(code)) {
+//        if (buflen < 28)
+//            /* Worst case: CJK UNIFIED IDEOGRAPH-20000 */
+//            return 0;
+//        sprintf(buffer, "CJK UNIFIED IDEOGRAPH-%X", code);
+//        return 1;
+//    }
+//
+//    /* get offset into phrasebook */
+//    offset = phrasebook_offset1[(code>>phrasebook_shift)];
+//    offset = phrasebook_offset2[(offset<<phrasebook_shift) +
+//                               (code&((1<<phrasebook_shift)-1))];
+//    if (!offset)
+//        return 0;
+//
+//    i = 0;
+//
+//    for (;;) {
+//        /* get word index */
+//        word = phrasebook[offset] - phrasebook_short;
+//        if (word >= 0) {
+//            word = (word << 8) + phrasebook[offset+1];
+//            offset += 2;
+//        } else
+//            word = phrasebook[offset++];
+//        if (i) {
+//            if (i > buflen)
+//                return 0; /* buffer overflow */
+//            buffer[i++] = ' ';
+//        }
+//        /* copy word string from lexicon.  the last character in the
+//           word has bit 7 set.  the last word in a string ends with
+//           0x80 */
+//        w = lexicon + lexicon_offset[word];
+//        while (*w < 128) {
+//            if (i >= buflen)
+//                return 0; /* buffer overflow */
+//            buffer[i++] = *w++;
+//        }
+//        if (i >= buflen)
+//            return 0; /* buffer overflow */
+//        buffer[i++] = *w & 127;
+//        if (*w == 128)
+//            break; /* end of word */
+//    }
+//
+//    return 1;
 }
 
 static int
@@ -1169,21 +1155,6 @@ capi_getucname(Py_UCS4 code,
 {
     return _getucname(NULL, code, buffer, buflen, with_alias_and_seq);
 
-}
-
-static int
-_cmpname(PyObject *self, int code, const char* name, int namelen)
-{
-    /* check if code corresponds to the given name */
-    int i;
-    char buffer[NAME_MAXLEN+1];
-    if (!_getucname(self, code, buffer, NAME_MAXLEN, 1))
-        return 0;
-    for (i = 0; i < namelen; i++) {
-        if (Py_TOUPPER(name[i]) != buffer[i])
-            return 0;
-    }
-    return buffer[namelen] == '\0';
 }
 
 static void
@@ -1221,6 +1192,153 @@ _check_alias_and_seq(unsigned int cp, Py_UCS4* code, int with_named_seq)
     return 1;
 }
 
+// DAWG decoding functions
+
+static int
+_dawg_decode_varint_unsigned(int index, unsigned int* result) {
+    assert(index >= 0);
+    unsigned int res = 0;
+    int shift = 0;
+    for (;;) {
+        unsigned char byte = packed_name_dawg[index];
+        res |= (byte & 0x7f) << shift;
+        index++;
+        shift += 7;
+        if (!(byte & 0x80)) {
+            *result = res;
+            assert(index >= 0);
+
+            return index;
+        }
+    }
+}
+
+static int
+_dawg_decode_varint_signed(int index, int* result) {
+    assert(index >= 0);
+    int res = 0;
+    int shift = 0;
+    for (;;) {
+        unsigned char byte = packed_name_dawg[index];
+        res |= (byte & 0x7f) << shift;
+        index++;
+        shift += 7;
+        if (!(byte & 0x80)) {
+            if (byte & 0x40) {
+                res |= (~0) << shift;
+                assert(res < 0);
+            }
+            *result = res;
+            assert(index >= 0);
+            return index;
+        }
+    }
+}
+
+
+static int
+_dawg_match_edge(const char* name, int namelen, unsigned int size, int label_offset, int namepos) {
+    if (size > 1 && namepos + size > namelen) {
+        return 0;
+    }
+    for (unsigned int i = 0; i < size; i++) {
+        if (packed_name_dawg[label_offset + i] != name[namepos + i]) {
+            if (i > 0) {
+                return -1; // cannot match at all
+            }
+            return 0;
+        }
+    }
+    return 1;
+}
+
+
+static bool
+_dawg_decode_node(int node_offset, int* node_count, int* edge_offset)
+{
+    unsigned int num;
+    node_offset = _dawg_decode_varint_unsigned(node_offset, &num);
+    bool final = num & 1;
+    num >>= 1;
+    if (edge_offset) {
+        *edge_offset = node_offset;
+    }
+    if (node_count) {
+        *node_count = num;
+    }
+    return final;
+}
+
+static int
+_dawg_decode_edge(int edgeindex, int prev_child_offset, int edge_offset, unsigned int* size, int* label_offset, int* target_node_offset)
+{
+    signed int num;
+    edge_offset = _dawg_decode_varint_signed(edge_offset, &num);
+    if (num == 0 && edgeindex == 0) {
+        return -1; // trying to decode past a final node without outgoing edges
+    }
+    bool final_edge = num & 1;
+    num >>= 1;
+    bool len_is_one = num & 1;
+    num >>= 1;
+    assert(prev_child_offset + num >= 0);
+    *target_node_offset = prev_child_offset + num;
+    if (len_is_one) {
+        *size = 1;
+    } else {
+        edge_offset = _dawg_decode_varint_unsigned(edge_offset, size);
+    }
+    *label_offset = edge_offset;
+    return final_edge;
+}
+
+static int
+_lookup_dawg_packed(const char* name, int namelen)
+{
+    int stringpos = 0;
+    int node_offset = 0;
+    int result = 0; // this is the number of final nodes that we skipped to match name
+    while (stringpos < namelen) {
+        int edge_offset;
+        bool final = _dawg_decode_node(node_offset, NULL, &edge_offset);
+        int prev_child_offset = edge_offset;
+        int edgeindex = 0;
+        for (;;) {
+            unsigned int size;
+            int label_offset, target_node_offset;
+            int final_edge = _dawg_decode_edge(edgeindex, prev_child_offset, edge_offset, &size, &label_offset, &target_node_offset);
+            prev_child_offset = target_node_offset;
+            assert(target_node_offset >= 0);
+            if (final_edge == -1) {
+                return -1;
+            }
+            int matched = _dawg_match_edge(name, namelen, size, label_offset, stringpos);
+            if (matched == -1) {
+                return -1;
+            }
+            if (matched) {
+                if (final)
+                    result += 1;
+                stringpos += size;
+                node_offset = target_node_offset;
+                break;
+            }
+            if (final_edge) {
+                return -1;
+            }
+            int child_count;
+            _dawg_decode_node(target_node_offset, &child_count, NULL);
+            result += child_count;
+            edge_offset = label_offset + size;
+        }
+    }
+    bool final = _dawg_decode_node(node_offset, NULL, NULL);
+    if (final) {
+        return result;
+    }
+    return -1;
+}
+
 static int
 _getcode(PyObject* self,
          const char* name, int namelen, Py_UCS4* code, int with_named_seq)
@@ -1229,9 +1347,6 @@ _getcode(PyObject* self,
      * Named aliases are resolved too (unless self != NULL (i.e. we are using
      * 3.2.0)).  If with_named_seq is 1, returns the PUA code point that we are
      * using for the named sequence, and the caller must then convert it. */
-    unsigned int h, v;
-    unsigned int mask = code_size-1;
-    unsigned int i, incr;
 
     /* Check for hangul syllables. */
     if (strncmp(name, "HANGUL SYLLABLE ", 16) == 0) {
@@ -1254,6 +1369,7 @@ _getcode(PyObject* self,
     /* Check for unified ideographs. */
     if (strncmp(name, "CJK UNIFIED IDEOGRAPH-", 22) == 0) {
         /* Four or five hexdigits must follow. */
+        unsigned int v;
         v = 0;
         name += 22;
         namelen -= 22;
@@ -1275,34 +1391,12 @@ _getcode(PyObject* self,
         return 1;
     }
 
-    /* the following is the same as python's dictionary lookup, with
-       only minor changes.  see the makeunicodedata script for more
-       details */
-
-    h = (unsigned int) _gethash(name, namelen, code_magic);
-    i = (~h) & mask;
-    v = code_hash[i];
-    if (!v)
+    int position = _lookup_dawg_packed(name, namelen);
+    if (position < 0)
         return 0;
-    if (_cmpname(self, v, name, namelen)) {
-        return _check_alias_and_seq(v, code, with_named_seq);
-    }
-    incr = (h ^ (h >> 3)) & mask;
-    if (!incr)
-        incr = mask;
-    for (;;) {
-        i = (i + incr) & mask;
-        v = code_hash[i];
-        if (!v)
-            return 0;
-        if (_cmpname(self, v, name, namelen)) {
-            return _check_alias_and_seq(v, code, with_named_seq);
-        }
-        incr = incr << 1;
-        if (incr > mask)
-            incr = incr ^ code_poly;
-    }
+    return _check_alias_and_seq(dawg_pos_to_codepoint[position], code, with_named_seq);
 }
+
 
 static int
 capi_getcode(const char* name, int namelen, Py_UCS4* code,

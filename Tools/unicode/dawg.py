@@ -327,11 +327,6 @@ def encode_varint_signed(i, res):
     return len(res) - startlen
 
 
-"""
-from rpython.rlib import objectmodel
-
-@objectmodel.specialize.arg(1)
-@objectmodel.always_inline
 def number_split_bits(x, n, acc=()):
     if n == 1:
         return x >> 1, x & 1
@@ -339,24 +334,22 @@ def number_split_bits(x, n, acc=()):
         return x >> 2, (x >> 1) & 1, x & 1
     assert 0, "implement me!"
 
-@objectmodel.always_inline
 def decode_varint_unsigned(b, index=0):
     res = 0
     shift = 0
     while True:
-        byte = ord(b[index])
+        byte = b[index]
         res = res | ((byte & 0b1111111) << shift)
         index += 1
         shift += 7
         if not (byte & 0b10000000):
             return res, index
 
-@objectmodel.always_inline
 def decode_varint_signed(b, index=0):
     res = 0
     shift = 0
     while True:
-        byte = ord(b[index])
+        byte = b[index]
         res = res | ((byte & 0b1111111) << shift)
         index += 1
         shift += 7
@@ -366,13 +359,11 @@ def decode_varint_signed(b, index=0):
             return res, index
 
 
-@objectmodel.always_inline
 def decode_node(packed, node):
     x, node = decode_varint_unsigned(packed, node)
     node_count, final = number_split_bits(x, 1)
     return node_count, final, node
 
-@objectmodel.always_inline
 def decode_edge(packed, edgeindex, prev_child_offset, offset):
     x, offset = decode_varint_signed(packed, offset)
     if x == 0 and edgeindex == 0:
@@ -385,7 +376,6 @@ def decode_edge(packed, edgeindex, prev_child_offset, offset):
         size, offset = decode_varint_unsigned(packed, offset)
     return child_offset, final_edge, size, offset
 
-@objectmodel.always_inline
 def _match_edge(packed, s, size, node_offset, stringpos):
     if size > 1 and stringpos + size > len(s):
         # past the end of the string, can't match
@@ -408,11 +398,13 @@ def _lookup(packed, s):
     skipped = 0  # keep track of number of final nodes that we skipped
     false = False
     while stringpos < len(s):
-        node_count, final, edge_offset = decode_node(packed, node_offset)
+        print(f"{node_offset=} {stringpos=}")
+        _, final, edge_offset = decode_node(packed, node_offset)
         prev_child_offset = edge_offset
         edgeindex = 0
         while 1:
             child_offset, final_edge, size, edgelabel_chars_offset = decode_edge(packed, edgeindex, prev_child_offset, edge_offset)
+            print(f"    {edge_offset=} {child_offset=} {final_edge=} {size=} {edgelabel_chars_offset=}")
             edgeindex += 1
             prev_child_offset = child_offset
             if _match_edge(packed, s, size, edgelabel_chars_offset, stringpos):
@@ -427,7 +419,7 @@ def _lookup(packed, s):
             child_count, _, _ = decode_node(packed, child_offset)
             skipped += child_count
             edge_offset = edgelabel_chars_offset + size
-    node_count, final, _ = decode_node(packed, node_offset)
+    _, final, _ = decode_node(packed, node_offset)
     if final:
         return skipped
     raise KeyError
@@ -466,7 +458,6 @@ def _inverse_lookup(packed, pos):
                 raise KeyError
         else:
             raise KeyError
-"""
 
 
 def build_compression_dawg(ucdata):
@@ -475,6 +466,16 @@ def build_compression_dawg(ucdata):
     for name, value in ucdata:
         d.insert(name, value)
     packed, pos_to_code = d.finish()
-    print("size of dawg [KiB]", round(len(packed) / 1024, 2), len(pos_to_code))
+    print("size of dawg [KiB]", round(len(packed) / 1024, 2))
+    import pdb; pdb.set_trace()
+    lookup(packed, pos_to_code, ucdata[1][0].encode("ascii"))
+    return packed, pos_to_code, d.inverse
+    for name, value in ucdata:
+        name = name.encode('ascii')
+        try:
+            assert lookup(packed, pos_to_code, name) == value
+        except KeyError:
+            import pdb; pdb.set_trace()
+            assert lookup(packed, pos_to_code, name) == value
 
     return packed, pos_to_code, d.inverse
