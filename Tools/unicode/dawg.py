@@ -467,15 +467,4 @@ def build_compression_dawg(ucdata):
         d.insert(name, value)
     packed, pos_to_code = d.finish()
     print("size of dawg [KiB]", round(len(packed) / 1024, 2))
-    import pdb; pdb.set_trace()
-    lookup(packed, pos_to_code, ucdata[1][0].encode("ascii"))
-    return packed, pos_to_code, d.inverse
-    for name, value in ucdata:
-        name = name.encode('ascii')
-        try:
-            assert lookup(packed, pos_to_code, name) == value
-        except KeyError:
-            import pdb; pdb.set_trace()
-            assert lookup(packed, pos_to_code, name) == value
-
     return packed, pos_to_code, d.inverse
