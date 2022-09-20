@@ -164,7 +164,7 @@ class ResourceTracker(object):
         if len(msg) > 512:
             # posix guarantees that writes to a pipe of less than PIPE_BUF
             # bytes are atomic, and that PIPE_BUF >= 512
-            raise ValueError('name too long')
+            raise ValueError('msg too long')
         nbytes = os.write(self._fd, msg)
         assert nbytes == len(msg), "nbytes {0:n} but len(msg) {1:n}".format(
             nbytes, len(msg))
