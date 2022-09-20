@@ -8644,9 +8644,6 @@ assemble(struct compiler *c, int addNone)
     if (optimize_cfg(g, consts, c->c_const_cache)) {
         goto error;
     }
-    if (trim_unused_consts(g->g_entryblock, consts)) {
-        goto error;
-    }
     if (duplicate_exits_without_lineno(g) < 0) {
         goto error;
     }
@@ -8682,6 +8679,9 @@ assemble(struct compiler *c, int addNone)
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(g->g_entryblock);
 
+    if (trim_unused_consts(g->g_entryblock, consts)) {
+        goto error;
+    }
 
     /* Create assembler */
     if (!assemble_init(&a, c->u->u_firstlineno))
