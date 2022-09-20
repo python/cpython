@@ -7640,7 +7640,7 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PROFILE_TASK" >&5
 $as_echo "$PROFILE_TASK" >&6; }
 
-# Make llvm-relatec checks work on systems where llvm tools are not installed with their
+# Make llvm-related checks work on systems where llvm tools are not installed with their
 # normal names in the default $PATH (ie: Ubuntu).  They exist under the
 # non-suffixed name in their versioned llvm directory.
 
@@ -7705,7 +7705,42 @@ fi
 if test "$Py_LTO" = 'true' ; then
   case $CC in
     *clang*)
-            LDFLAGS_NOLTO="-fno-lto"
+      LDFLAGS_NOLTO="-fno-lto"
+                  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -flto=thin" >&5
+$as_echo_n "checking whether C compiler accepts -flto=thin... " >&6; }
+if ${ax_cv_check_cflags___flto_thin+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -flto=thin"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_check_cflags___flto_thin=yes
+else
+  ax_cv_check_cflags___flto_thin=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___flto_thin" >&5
+$as_echo "$ax_cv_check_cflags___flto_thin" >&6; }
+if test "x$ax_cv_check_cflags___flto_thin" = xyes; then :
+  LDFLAGS_NOLTO="-flto=thin"
+else
+  LDFLAGS_NOLTO="-flto"
+fi
+
 
       if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}llvm-ar", so it can be a program name with args.
