@@ -1933,7 +1933,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                     arg_string_pattern_parts.append('A')
 
             # otherwise, add the arg to the arg strings
-            # and note the index if it was an option
+            # and record parsed optionals together with their indices
             else:
                 option_tuple = self._parse_optional(arg_string)
                 if option_tuple is None:
@@ -1971,11 +1971,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 action(self, namespace, argument_values, option_string)
 
         # function to convert arg_strings into an optional action
-        def consume_optional(start_index, option_tuple):
-
-            # get the optional identified at this index
-            action, option_string, explicit_arg = option_tuple
-
+        def consume_optional(start_index, action, option_string, explicit_arg):
             # identify additional optionals in the same arg string
             # (e.g. -xyz is the same as -x -y -z if no args are required)
             match_argument = self._match_argument
@@ -2091,7 +2087,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 start_index = option_tuple_index
 
             # consume the next optional and any arguments for it
-            start_index = consume_optional(start_index, option_tuple)
+            start_index = consume_optional(start_index, *option_tuple)
 
         # consume any positionals following the last Optional
         stop_index = consume_positionals(start_index)
