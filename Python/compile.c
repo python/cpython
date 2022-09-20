@@ -258,7 +258,7 @@ typedef struct basicblock_ {
     int b_iused;
     /* length of instruction array (b_instr) */
     int b_ialloc;
-    /* Number of predecssors that a block has. */
+    /* Number of predecessors that a block has. */
     int b_predecessors;
     /* depth of stack upon entry of block, computed by stackdepth() */
     int b_startdepth;
