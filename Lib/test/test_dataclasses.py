@@ -79,6 +79,15 @@ class TestCase(unittest.TestCase):
                           "slots=True,weakref_slot=False)"
         self.assertEqual(repr_output, expected_output)
 
+    def test_dataclass_params_signature(self):
+        @dataclass(slots=True, frozen=True)
+        class Some: pass
+
+        for param in inspect.signature(dataclass).parameters:
+            if param == 'cls':
+                continue
+            self.assertTrue(hasattr(Some.__dataclass_params__, param), msg=param)
+
     def test_named_init_params(self):
         @dataclass
         class C:
