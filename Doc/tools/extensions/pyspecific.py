@@ -73,11 +73,9 @@ def issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
 
 def gh_issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
     issue = utils.unescape(text)
-    # sanity check: new GitHub issues have ID >= 28525
+    # sanity check: all GitHub issues have ID >= 32426
     # even though some of them are also valid BPO IDs
-    # Note: there are actually some older open pull requests; this check may
-    # need to be adjusted.
-    if int(issue) < 28525:
+    if int(issue) < 32426:
         msg = inliner.reporter.error(f'The GitHub ID {text!r} seems too low -- '
                                      'use :issue:`...` for BPO IDs', line=lineno)
         prb = inliner.problematic(rawtext, rawtext, msg)
