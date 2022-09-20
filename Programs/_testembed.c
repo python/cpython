@@ -683,6 +683,9 @@ static int test_init_from_config(void)
 
     config._isolated_interpreter = 1;
 
+    putenv("PYTHONINTMAXSTRDIGITS=6666");
+    config.int_max_str_digits = 31337;
+
     init_from_config_clear(&config);
 
     dump_config();
