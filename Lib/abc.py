@@ -82,7 +82,7 @@ class abstractproperty(property):
 
 
 try:
-    from _abc import (get_cache_token, _abc_init, _abc_register,
+    from _py_abc import (get_cache_token, _abc_init, _abc_register,
                       _abc_instancecheck, _abc_subclasscheck, _get_dump,
                       _reset_registry, _reset_caches)
 except ImportError:
