@@ -2338,3 +2338,11 @@ line flag, or :mod:`sys` APIs. See the :ref:`integer string conversion
 length limitation <int_max_str_digits>` documentation.  The default limit
 is 4300 digits in string form.
 
+Notable security feature in 3.10.8
+==================================
+
+The deprecated :mod:`mailcap` module now refuses to inject unsafe text
+(filenames, MIME types, parameters) into shell commands. Instead of using such
+text, it will warn and act as if a match was not found (or for test commands,
+as if the test failed).
+(Contributed by Petr Viktorin in :gh:`98966`.)
