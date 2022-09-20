@@ -1106,29 +1106,44 @@ _dawg_match_edge(const char* name, int namelen, unsigned int size, int label_off
     return 1;
 }
 
+// reading DAWG node information:
+// a node is encoded by an unsigned varint. The lowest bit of that int is set
+// if the node is a final, accepting state. The higher bits of that int
+// represent the number of names that are encoded by the sub-DAWG started by
+// this node. It's used to compute the position of a name.
 
-static bool
-_dawg_decode_node(int node_offset, int* node_count, int* edge_offset)
+
+static int
+_dawg_decode_node(int node_offset, bool* final)
 {
     unsigned int num;
     node_offset = _dawg_decode_varint_unsigned(node_offset, &num);
-    bool final = num & 1;
-    num >>= 1;
-    if (edge_offset) {
-        *edge_offset = node_offset;
-    }
-    if (node_count) {
-        *node_count = num;
-    }
-    return final;
+    *final = num & 1;
+    return node_offset;
+}
+
+static bool
+_dawg_node_is_final(int node_offset)
+{
+    unsigned int num;
+    _dawg_decode_varint_unsigned(node_offset, &num);
+    return num & 1;
 }
 
 static int
-_dawg_decode_edge(int edgeindex, int prev_child_offset, int edge_offset, unsigned int* size, int* label_offset, int* target_node_offset)
+_dawg_node_child_count(int node_offset)
+{
+    unsigned int num;
+    _dawg_decode_varint_unsigned(node_offset, &num);
+    return num >> 1;
+}
+
+static int
+_dawg_decode_edge(bool is_first_edge, int prev_child_offset, int edge_offset, unsigned int* size, int* label_offset, int* target_node_offset)
 {
     signed int num;
     edge_offset = _dawg_decode_varint_signed(edge_offset, &num);
-    if (num == 0 && edgeindex == 0) {
+    if (num == 0 && is_first_edge) {
         return -1; // trying to decode past a final node without outgoing edges
     }
     bool final_edge = num & 1;
@@ -1153,15 +1168,15 @@ _lookup_dawg_packed(const char* name, int namelen)
     int node_offset = 0;
     int result = 0; // this is the number of final nodes that we skipped to match name
     while (stringpos < namelen) {
-        int edge_offset;
-        bool final = _dawg_decode_node(node_offset, NULL, &edge_offset);
+        bool final;
+        int edge_offset = _dawg_decode_node(node_offset, &final);
         int prev_child_offset = edge_offset;
-        int edgeindex = 0;
+        bool is_first_edge = true;
         for (;;) {
             unsigned int size;
             int label_offset, target_node_offset;
-            int final_edge = _dawg_decode_edge(edgeindex, prev_child_offset, edge_offset, &size, &label_offset, &target_node_offset);
-            edgeindex++;
+            int final_edge = _dawg_decode_edge(is_first_edge, prev_child_offset, edge_offset, &size, &label_offset, &target_node_offset);
+            is_first_edge = false;
             prev_child_offset = target_node_offset;
             assert(target_node_offset >= 0);
             if (final_edge == -1) {
@@ -1182,13 +1197,11 @@ _lookup_dawg_packed(const char* name, int namelen)
                 return -1;
             }
             int child_count;
-            _dawg_decode_node(target_node_offset, &child_count, NULL);
-            result += child_count;
+            result += _dawg_node_child_count(target_node_offset);
             edge_offset = label_offset + size;
         }
     }
-    bool final = _dawg_decode_node(node_offset, NULL, NULL);
-    if (final) {
+    if (_dawg_node_is_final(node_offset)) {
         return result;
     }
     return -1;
@@ -1200,8 +1213,9 @@ _inverse_dawg_lookup(char* buffer, int buflen, int pos)
     int node_offset = 0;
     int bufpos = 0;
     for (;;) {
-        int edge_offset;
-        bool final = _dawg_decode_node(node_offset, NULL, &edge_offset);
+        bool final;
+        int edge_offset = _dawg_decode_node(node_offset, &final);
+
         if (final) {
             if (pos == 0) {
                 return 1;
@@ -1209,21 +1223,19 @@ _inverse_dawg_lookup(char* buffer, int buflen, int pos)
             pos--;
         }
         int prev_child_offset = edge_offset;
-        int edgeindex = 0;
+        bool is_first_edge = true;
         for (;;) {
             unsigned int size;
-            int label_offset;
-            int target_node_offset;
-            int final_edge = _dawg_decode_edge(edgeindex, prev_child_offset, edge_offset, &size, &label_offset, &target_node_offset);
-            edgeindex++;
+            int label_offset, target_node_offset;
+            int final_edge = _dawg_decode_edge(is_first_edge, prev_child_offset, edge_offset, &size, &label_offset, &target_node_offset);
+            is_first_edge = false;
             prev_child_offset = target_node_offset;
             assert(target_node_offset >= 0);
             if (final_edge == -1) {
                 return 0;
             }
 
-            int child_count;
-            _dawg_decode_node(target_node_offset, &child_count, NULL);
+            int child_count = _dawg_node_child_count(target_node_offset);
             if (pos - child_count < 0) {
                 assert(label_offset >= 0);
                 if (bufpos + (int)size >= buflen) {
