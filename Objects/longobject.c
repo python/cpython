@@ -2193,10 +2193,14 @@ unsigned char _PyLong_DigitValue[256] = {
     37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
 };
 
-/* `start` and `end` point to the start end of a string of base `base` digits.
- * base is a power of 2 (2, 4, 8, 16, or 32). An unnormalized int is returned.
- * The point to this routine is that it takes time linear in the number of
- * string characters.
+/* `start` and `end` point to the start and end of a string of base `base`
+ * digits.  base is a power of 2 (2, 4, 8, 16, or 32). An unnormalized int is
+ * returned in *res. The string should be already validated by the caller and
+ * consists only of valid digit characters and underscores. `digits` gives the
+ * number of digit characters.
+ *
+ * The point to this routine is that it takes time linear in the
+ * number of string characters.
  *
  * Return values:
  *   -1 on syntax error (exception needs to be set, *res is untouched)
@@ -2269,6 +2273,9 @@ long_from_binary_base(const char *start, const char *end, Py_ssize_t digits, int
 }
 
 /***
+long_from_non_binary_base: parameters and return values are the same as
+long_from_binary_base.
+
 Binary bases can be converted in time linear in the number of digits, because
 Python's representation base is binary.  Other bases (including decimal!) use
 the simple quadratic-time algorithm below, complicated by some speed tricks.
@@ -2498,11 +2505,12 @@ long_from_non_binary_base(const char *start, const char *end, Py_ssize_t digits,
  * non-binary bases.
  *
  * Return values:
- *   -1 on syntax error (exception needs to be set, *res is untouched)
- *   0 else (exception may be set, in that case *res is set to NULL)
+ *
+ *   - Returns -1 on syntax error (exception needs to be set, *res is untouched)
+ *   - Returns 0 and sets *res to NULL for MemoryError/OverflowError.
+ *   - Returns 0 and sets *res to an unsigned, unnormalized PyLong (success!).
  *
  * Afterwards *str is set to point to the first non-digit (which may be *str!).
- * On success *res is an unnormalized unsigned PyLong.
  */
 static int
 long_from_string_base(const char **str, int base, PyLongObject **res)
@@ -2516,7 +2524,7 @@ long_from_string_base(const char **str, int base, PyLongObject **res)
      *
      * - Find the `end` of the string.
      * - Validate the string.
-     * - Count the number of `digits`.
+     * - Count the number of `digits` (rather than underscores)
      * - Point *str to the end-of-string or first invalid character.
      */
     start = p = *str;
@@ -2646,14 +2654,7 @@ PyLong_FromString(const char *str, char **pend, int base)
         }
     }
 
-    /*
-     * long_from_string_base is the main workhorse. It sets str to the first
-     * null byte or the first invalid character and either:
-     *
-     * - Returns -1 for a SyntaxError.
-     * - Returns 0 and sets z to NULL for MemoryError/OverflowError.
-     * - Sets z to an unsigned, unnormalized PyLong (success!).
-     */
+    /* long_from_string_base is the main workhorse here. */
     int ret = long_from_string_base(&str, base, &z);
     if (ret == -1) {
         /* Syntax error. */
