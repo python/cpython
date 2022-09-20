@@ -264,7 +264,7 @@ Where in the world is www.python.org located?
 ---------------------------------------------
 
 The Python project's infrastructure is located all over the world and is managed
-by the Python Infrastructure Team. Details `here <http://infra.psf.io>`__.
+by the Python Infrastructure Team. Details `here <https://infra.psf.io>`__.
 
 
 Why is it called Python?
