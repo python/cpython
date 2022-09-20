@@ -7080,15 +7080,14 @@ stackdepth(basicblock *entryblock, int code_flags)
             if (new_depth > maxdepth) {
                 maxdepth = new_depth;
             }
-            assert(depth >= 0); /* invalid code or bug in stackdepth() */
             if (HAS_TARGET(instr->i_opcode)) {
                 effect = stack_effect(instr->i_opcode, instr->i_oparg, 1);
                 assert(effect != PY_INVALID_STACK_EFFECT);
                 int target_depth = depth + effect;
+                assert(target_depth >= 0); /* invalid code or bug in stackdepth() */
                 if (target_depth > maxdepth) {
                     maxdepth = target_depth;
                 }
-                assert(target_depth >= 0); /* invalid code or bug in stackdepth() */
                 stackdepth_push(&sp, instr->i_target, target_depth);
             }
             depth = new_depth;
