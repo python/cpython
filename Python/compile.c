@@ -7299,9 +7299,11 @@ error:
 
 static int
 mark_except_handlers(basicblock *entryblock) {
+#ifndef NDEBUG
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         assert(!b->b_except_handler);
     }
+#endif
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i=0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
