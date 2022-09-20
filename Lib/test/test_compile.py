@@ -1003,7 +1003,7 @@ if 1:
                 code = compile(source, "<test>", "exec")
                 all_lines = (
                     line
-                    for (start, stop, line) in code.co_lines()
+                    for start, stop, line in code.co_lines()
                     for _ in range(start, stop, 2)
                 )
                 actual_lines = [
