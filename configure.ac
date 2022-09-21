@@ -2080,9 +2080,9 @@ case $CC in
         fi
 esac
 
-# Historically, some of our code assumed that signed integer overflow
-# is defined behaviour via twos-complement.  Prepare some flags so that
-# we can mark the modules that still do so.
+dnl Historically, some of our code assumed that signed integer overflow
+dnl is defined behaviour via twos-complement.  Prepare some flags so that
+dnl we can mark the modules that still do so.
 _SAVE_VAR([CFLAGS])
 CFLAGS="-fstrict-overflow -fno-strict-overflow"
 AC_CACHE_CHECK([if $CC supports -fstrict-overflow and -fno-strict-overflow],
@@ -2104,9 +2104,9 @@ AC_MSG_CHECKING(for --with-strict-overflow)
 AC_ARG_WITH(strict-overflow,
   AS_HELP_STRING(
     [--with-strict-overflow],
-    [choose between -fstrict-overflow or -fno-strict-overflow (default is no for backwards compatibility)]),,
+    [choose between -fstrict-overflow or -fno-strict-overflow (default is no)]),,
   with_strict_overflow=no)
-AC_MSG_RESULT($with_strict_overflow)
+AC_MSG_RESULT([$with_strict_overflow])
 
 # Check if CC supports -Og optimization level
 _SAVE_VAR([CFLAGS])
