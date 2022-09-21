@@ -280,4 +280,5 @@ present, and ``getch()`` which gets one character without echoing it.
 How do I solve the missing api-ms-win-crt-runtime-l1-1-0.dll error?
 -------------------------------------------------------------------
 
+This can occur on Python 3.5 and later, and on Windows 8.1 or earlier.
 Install the `Update for Universal C Runtime <https://support.microsoft.com/en-us/help/3118401/>`_.
