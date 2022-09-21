@@ -95,6 +95,13 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         result = h.hexdigest()
         self.assertEqual(result, self.expectedchecksum)
 
+    @requires_resource('cpu')
+    def test_name_inverse_lookup(self):
+        for i in range(sys.maxunicode + 1):
+            char = chr(i)
+            if looked_name := self.db.name(char, None):
+                self.assertEqual(self.db.lookup(looked_name), char)
+
     def test_digit(self):
         self.assertEqual(self.db.digit('A', None), None)
         self.assertEqual(self.db.digit('9'), 9)
