@@ -28,6 +28,7 @@ get_asyncio_state(PyObject *Py_UNUSED(mod))
 }
 
 static PyTypeObject *FutureIterType;
+static PyTypeObject *TaskStepMethWrapper_Type;
 static PyObject *asyncio_mod;
 static PyObject *traceback_extract_stack;
 static PyObject *asyncio_get_event_loop_policy;
@@ -1826,9 +1827,11 @@ TaskStepMethWrapper_clear(TaskStepMethWrapper *o)
 static void
 TaskStepMethWrapper_dealloc(TaskStepMethWrapper *o)
 {
+    PyTypeObject *tp = Py_TYPE(o);
     PyObject_GC_UnTrack(o);
     (void)TaskStepMethWrapper_clear(o);
     Py_TYPE(o)->tp_free(o);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -1850,6 +1853,7 @@ static int
 TaskStepMethWrapper_traverse(TaskStepMethWrapper *o,
                              visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(o));
     Py_VISIT(o->sw_task);
     Py_VISIT(o->sw_arg);
     return 0;
@@ -1870,25 +1874,29 @@ static PyGetSetDef TaskStepMethWrapper_getsetlist[] = {
     {NULL} /* Sentinel */
 };
 
-static PyTypeObject TaskStepMethWrapper_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "TaskStepMethWrapper",
-    .tp_basicsize = sizeof(TaskStepMethWrapper),
-    .tp_itemsize = 0,
-    .tp_getset = TaskStepMethWrapper_getsetlist,
-    .tp_dealloc = (destructor)TaskStepMethWrapper_dealloc,
-    .tp_call = (ternaryfunc)TaskStepMethWrapper_call,
-    .tp_getattro = PyObject_GenericGetAttr,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    .tp_traverse = (traverseproc)TaskStepMethWrapper_traverse,
-    .tp_clear = (inquiry)TaskStepMethWrapper_clear,
+static PyType_Slot TaskStepMethWrapper_slots[] = {
+    {Py_tp_getset, TaskStepMethWrapper_getsetlist},
+    {Py_tp_dealloc, (destructor)TaskStepMethWrapper_dealloc},
+    {Py_tp_call, (ternaryfunc)TaskStepMethWrapper_call},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_traverse, (traverseproc)TaskStepMethWrapper_traverse},
+    {Py_tp_clear, (inquiry)TaskStepMethWrapper_clear},
+    {0, NULL},
+};
+
+static PyType_Spec TaskStepMethWrapper_spec = {
+    .name = "_asyncio.TaskStepMethWrapper",
+    .basicsize = sizeof(TaskStepMethWrapper),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = TaskStepMethWrapper_slots,
 };
 
 static PyObject *
 TaskStepMethWrapper_new(TaskObj *task, PyObject *arg)
 {
     TaskStepMethWrapper *o;
-    o = PyObject_GC_New(TaskStepMethWrapper, &TaskStepMethWrapper_Type);
+    o = PyObject_GC_New(TaskStepMethWrapper, TaskStepMethWrapper_Type);
     if (o == NULL) {
         return NULL;
     }
@@ -3504,10 +3512,6 @@ PyInit__asyncio(void)
     if (module_init() < 0) {
         return NULL;
     }
-    if (PyType_Ready(&TaskStepMethWrapper_Type) < 0) {
-        return NULL;
-    }
-
     PyObject *m = PyModule_Create(&_asynciomodule);
     if (m == NULL) {
         return NULL;
@@ -3521,6 +3525,7 @@ PyInit__asyncio(void)
         } \
     } while (0)
 
+    CREATE_TYPE(m, TaskStepMethWrapper_Type, &TaskStepMethWrapper_spec);
     CREATE_TYPE(m, PyRunningLoopHolder_Type, &PyRunningLoopHolder_spec);
     CREATE_TYPE(m, FutureIterType, &FutureIter_spec);
 
