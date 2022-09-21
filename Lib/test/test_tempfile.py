@@ -979,6 +979,65 @@ class TestNamedTemporaryFile(BaseTestCase):
         finally:
             os.rmdir(dir)
 
+    def test_not_del_on_close_if_delete_on_close_false(self):
+        # A NamedTemporaryFile is NOT deleted when closed if
+        # delete_on_close= False, but is deleted on content manager exit
+        dir = tempfile.mkdtemp()
+        try:
+            with tempfile.NamedTemporaryFile(dir=dir,
+                                             delete=True,
+                                             delete_on_close=False) as f:
+                f.write(b'blat')
+                f_name = f.name
+                f.close()
+                with self.subTest():
+                    # Testing that file is not deleted on close
+                    self.assertTrue(os.path.exists(f.name),
+                            "NamedTemporaryFile %s is incorrectly deleted\
+                             on closure when delete_on_close= False" % f_name)
+
+            with self.subTest():
+                # Testing that file is deleted on content manager exit
+                self.assertFalse(os.path.exists(f.name),
+                                 "NamedTemporaryFile %s exists\
+                                  after content manager exit" % f.name)
+
+        finally:
+            os.rmdir(dir)
+
+    def test_ok_to_delete_manually(self):
+        # A NamedTemporaryFile can be deleted by a user before content manager
+        # comes to it. This will not generate an error
+
+        dir = tempfile.mkdtemp()
+        try:
+            with tempfile.NamedTemporaryFile(dir=dir,
+                                             delete=True,
+                                             delete_on_close=False) as f:
+                f.write(b'blat')
+                f.close()
+                os.unlink(f.name)
+
+        finally:
+            os.rmdir(dir)
+
+    def test_not_del_if_delete_false(self):
+        # A NamedTemporaryFile is not deleted if delete = False
+        dir = tempfile.mkdtemp()
+        f_name = ""
+        try:
+            # setting delete_on_close = True to test, that this does not have
+            # an effect, if delete = False
+            with tempfile.NamedTemporaryFile(dir=dir, delete=False,
+                                             delete_on_close=True) as f:
+                f.write(b'blat')
+                f_name = f.name
+            self.assertTrue(os.path.exists(f.name),
+                        "NamedTemporaryFile %s exists after close" % f.name)
+        finally:
+            os.unlink(f_name)
+            os.rmdir(dir)
+
     def test_dis_del_on_close(self):
         # Tests that delete-on-close can be disabled
         dir = tempfile.mkdtemp()

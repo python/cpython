@@ -75,20 +75,50 @@ The module defines the following user-callable items:
       Added *errors* parameter.
 
 
-.. function:: NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None, delete=True, *, errors=None)
+.. function:: NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None, delete=True, *, errors=None, delete_on_close=True)
 
-   This function operates exactly as :func:`TemporaryFile` does, except that
-   the file is guaranteed to have a visible name in the file system (on
-   Unix, the directory entry is not unlinked).  That name can be retrieved
-   from the :attr:`name` attribute of the returned
-   file-like object.  Whether the name can be
-   used to open the file a second time, while the named temporary file is
-   still open, varies across platforms (it can be so used on Unix; it cannot
-   on Windows).  If *delete* is true (the default), the file is
-   deleted as soon as it is closed.
+   This function operates exactly as :func:`TemporaryFile` does, except the
+   following differences:
+
+   * The file is guaranteed to have a visible name in the file system (on Unix,
+     the directory entry is not unlinked).
+
+   * There is more granularity in the deletion behaviour of the file (see
+     ``delete_on_close`` below)
+
    The returned object is always a file-like object whose :attr:`!file`
-   attribute is the underlying true file object. This file-like object can
-   be used in a :keyword:`with` statement, just like a normal file.
+   attribute is the underlying true file object. This file-like object can be
+   used in a :keyword:`with` statement, just like a normal file.  The name of the
+   temporary file can be retrieved from the :attr:`name` attribute of the
+   returned file-like object.
+
+   If *delete* is true (the default) and *delete_on_close* is true (the
+   default), the file is deleted as soon as it is closed. If *delete* is true
+   and *delete_on_close* is false, the file is deleted on context manager exit
+   only. If *delete* is false, the value of *delete_on_close* is ignored.
+
+   While the named temporary file is open, the file can always be opened again
+   on POSIX. On Windows, it can be opened again if *delete* is false, or if
+   *delete_on_close* is false, or if the additional open shares delete access
+   (e.g. by calling :func:`os.open` with the flag ``O_TEMPORARY``).  On
+   Windows, if *delete* is true and *delete_on_close* is false, additional
+   opens that do not share delete access (e.g. via builtin :func:`open`) must
+   be closed before exiting the context manager, else the :func:`os.unlink`
+   call on context manager exit will fail with a :exc:`PermissionError`.
+
+   To use the name of the temporary file to open the closed file second time,
+   either make sure not to delete the file upon closure (set the *delete*
+   parameter to be false) or, in case the temporary file is created in a
+   :keyword:`with` statement, set the *delete_on_close* parameter to be false.
+   The latter approach is recommended as it provides assistance in automatic
+   cleaning of the temporary file upon the context manager exit.
+
+   On Windows, if *delete_on_close* is false, and the file is created in a
+   directory for which the user lacks delete access, then the :func:`os.unlink`
+   call on exit of the context manager will fail with a :exc:`PermissionError`.
+   This cannot happen when *delete_on_close* is true because delete access is
+   requested by the open, which fails immediately if the requested access is not
+   granted.
 
    On POSIX (only), a process that is terminated abruptly with SIGKILL
    cannot automatically delete any NamedTemporaryFiles it created.
@@ -97,6 +127,9 @@ The module defines the following user-callable items:
 
    .. versionchanged:: 3.8
       Added *errors* parameter.
+
+   .. versionchanged:: 3.12
+      Added *delete_on_close* parameter.
 
 
 .. class:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)
@@ -345,6 +378,22 @@ Here are some examples of typical usage of the :mod:`tempfile` module::
     b'Hello world!'
     >>>
     # file is now closed and removed
+
+    # create a temporary file using a context manager, note the name,
+    # close the file, use the name to open the file again
+    >>> with tempfile.TemporaryFile(delete_on_close=False) as fp:
+    ...     fp.write(b'Hello world!')
+    ...     fp_name = fp.name
+    ...     fp.close()
+    # the file is closed, but not removed
+    # open the file again by using its name
+    ...     f = open(fp_name)
+    ...     f.seek(0)
+    ...     f.read()
+    b'Hello world!'
+    ...     f.close()
+    >>>
+    # file is now removed
 
     # create a temporary directory using the context manager
     >>> with tempfile.TemporaryDirectory() as tmpdirname:
