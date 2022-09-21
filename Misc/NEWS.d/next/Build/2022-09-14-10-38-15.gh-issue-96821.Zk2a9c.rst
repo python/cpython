@@ -1,2 +1,2 @@
-Explicitly mark C modules that need defined signed integer overflow,
-and set up machinery for ``-fstrict-overflow``.
+Explicitly mark C extension modules that need defined signed integer overflow,
+and add a configure option ``--with-strict-overflow``.
