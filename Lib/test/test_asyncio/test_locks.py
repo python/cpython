@@ -846,7 +846,8 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
         sem.release()
         self.assertEqual(2, sem._value)
 
-        await asyncio.sleep(0.01)
+        await asyncio.sleep(0)
+        await asyncio.sleep(0)
         self.assertEqual(0, sem._value)
         self.assertEqual(3, len(result))
         self.assertTrue(sem.locked())
