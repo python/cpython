@@ -250,6 +250,7 @@ Android and Cygwin, whose cases are handled by the script);
 this change is backward incompatible on purpose.
 (Contributed by Victor Stinner in :issue:`36721`.)
 
+.. _bpo-36817-whatsnew:
 
 f-strings support ``=`` for self-documenting expressions and debugging
 ----------------------------------------------------------------------
