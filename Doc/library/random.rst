@@ -130,9 +130,9 @@ Functions for integers
 
    The positional argument pattern matches the :func:`range` function.
 
-   Keyword arguments should not be used because they can interpreted
-   in unexpected ways. For example ``range(start=100)`` is interpreted
-   as ``range(0, 100, 1)``.
+   Keyword arguments should not be used because they can be interpreted
+   in unexpected ways. For example ``randrange(start=100)`` is interpreted
+   as ``randrange(0, 100, 1)``.
 
    .. versionchanged:: 3.2
       :meth:`randrange` is more sophisticated about producing equally distributed
@@ -152,7 +152,7 @@ Functions for integers
 .. function:: getrandbits(k)
 
    Returns a non-negative Python integer with *k* random bits. This method
-   is supplied with the MersenneTwister generator and some other generators
+   is supplied with the Mersenne Twister generator and some other generators
    may also provide it as an optional part of the API. When available,
    :meth:`getrandbits` enables :meth:`randrange` to handle arbitrarily large
    ranges.
