@@ -48,6 +48,7 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
         self.assertIsInstance(cvars, dict)
         self.assertTrue(cvars)
 
+    @unittest.skipIf(is_wasi, "Incompatible with WASI mapdir and OOT builds")
     def test_srcdir(self):
         # See Issues #15322, #15364.
         srcdir = sysconfig.get_config_var('srcdir')
@@ -60,7 +61,11 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
             # should be a full source checkout.
             Python_h = os.path.join(srcdir, 'Include', 'Python.h')
             self.assertTrue(os.path.exists(Python_h), Python_h)
-            self.assertTrue(sysconfig._is_python_source_dir(srcdir))
+            # <srcdir>/PC/pyconfig.h always exists even if unused on POSIX.
+            pyconfig_h = os.path.join(srcdir, 'PC', 'pyconfig.h')
+            self.assertTrue(os.path.exists(pyconfig_h), pyconfig_h)
+            pyconfig_h_in = os.path.join(srcdir, 'pyconfig.h.in')
+            self.assertTrue(os.path.exists(pyconfig_h_in), pyconfig_h_in)
         elif os.name == 'posix':
             self.assertEqual(
                 os.path.dirname(sysconfig.get_makefile_filename()),

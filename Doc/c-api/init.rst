@@ -1774,6 +1774,18 @@ Python-level trace functions in previous versions.
 
    The caller must hold the :term:`GIL`.
 
+.. c:function:: void PyEval_SetProfileAllThreads(Py_tracefunc func, PyObject *obj)
+
+   Like :c:func:`PyEval_SetProfile` but sets the profile function in all running threads
+   belonging to the current interpreter instead of the setting it only on the current thread.
+
+   The caller must hold the :term:`GIL`.
+
+   As :c:func:`PyEval_SetProfile`, this function ignores any exceptions raised while
+   setting the profile functions in all threads.
+
+.. versionadded:: 3.12
+
 
 .. c:function:: void PyEval_SetTrace(Py_tracefunc func, PyObject *obj)
 
@@ -1787,6 +1799,18 @@ Python-level trace functions in previous versions.
    See also the :func:`sys.settrace` function.
 
    The caller must hold the :term:`GIL`.
+
+.. c:function:: void PyEval_SetTraceAllThreads(Py_tracefunc func, PyObject *obj)
+
+   Like :c:func:`PyEval_SetTrace` but sets the tracing function in all running threads
+   belonging to the current interpreter instead of the setting it only on the current thread.
+
+   The caller must hold the :term:`GIL`.
+
+   As :c:func:`PyEval_SetTrace`, this function ignores any exceptions raised while
+   setting the trace functions in all threads.
+
+.. versionadded:: 3.12
 
 
 .. _advanced-debugging:

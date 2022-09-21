@@ -7,7 +7,9 @@
 #if defined(__APPLE__) || defined(HAVE_PTHREAD_DESTRUCTOR)
 #define destructor xxdestructor
 #endif
-#include <pthread.h>
+#ifndef HAVE_PTHREAD_STUBS
+#  include <pthread.h>
+#endif
 #if defined(__APPLE__) || defined(HAVE_PTHREAD_DESTRUCTOR)
 #undef destructor
 #endif

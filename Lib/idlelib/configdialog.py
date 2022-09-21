@@ -121,7 +121,7 @@ class ConfigDialog(Toplevel):
         self.winpage = WinPage(note)
         self.shedpage = ShedPage(note)
 
-        note.add(self.fontpage, text='Fonts/Tabs')
+        note.add(self.fontpage, text=' Fonts ')
         note.add(self.highpage, text='Highlights')
         note.add(self.keyspage, text=' Keys ')
         note.add(self.winpage, text=' Windows ')
