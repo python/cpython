@@ -591,6 +591,7 @@ class GenericAliasSubstitutionTests(BaseTestCase):
     def test_one_parameter(self):
         T = TypeVar('T')
         Ts = TypeVarTuple('Ts')
+        Ts2 = TypeVarTuple('Ts2')
 
         class C(Generic[T]): pass
 
@@ -616,6 +617,8 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             # Should definitely raise TypeError: list only takes one argument.
             ('list[T, *tuple_type[int, ...]]',    '[int]',                   'list[int, *tuple_type[int, ...]]'),
             ('List[T, *tuple_type[int, ...]]',    '[int]',                   'TypeError'),
+            # Should raise, because more than one `TypeVarTuple` is not supported.
+            ('generic[*Ts, *Ts2]',                '[int]',                   'TypeError'),
         ]
 
         for alias_template, args_template, expected_template in tests:
@@ -4375,6 +4378,20 @@ class OverloadTests(BaseTestCase):
             pass
 
         blah()
+
+    @patch("typing._overload_registry",
+        defaultdict(lambda: defaultdict(dict)))
+    def test_overload_on_compiled_functions(self):
+        # The registry starts out empty:
+        self.assertEqual(typing._overload_registry, {})
+
+        # This should just not fail:
+        overload(sum)
+        overload(print)
+
+        # No overloads are recorded (but, it still has a side-effect):
+        self.assertEqual(typing.get_overloads(sum), [])
+        self.assertEqual(typing.get_overloads(print), [])
 
     def set_up_overloads(self):
         def blah():

@@ -20,6 +20,7 @@ Data members:
 #include "pycore_code.h"          // _Py_QuickenedCount
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_long.h"          // _PY_LONG_MAX_STR_DIGITS_THRESHOLD
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_object.h"        // _PyObject_IS_GC()
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
@@ -1620,6 +1621,45 @@ sys_mdebug_impl(PyObject *module, int flag)
 }
 #endif /* USE_MALLOPT */
 
+
+/*[clinic input]
+sys.get_int_max_str_digits
+
+Set the maximum string digits limit for non-binary int<->str conversions.
+[clinic start generated code]*/
+
+static PyObject *
+sys_get_int_max_str_digits_impl(PyObject *module)
+/*[clinic end generated code: output=0042f5e8ae0e8631 input=8dab13e2023e60d5]*/
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return PyLong_FromSsize_t(interp->int_max_str_digits);
+}
+
+/*[clinic input]
+sys.set_int_max_str_digits
+
+    maxdigits: int
+
+Set the maximum string digits limit for non-binary int<->str conversions.
+[clinic start generated code]*/
+
+static PyObject *
+sys_set_int_max_str_digits_impl(PyObject *module, int maxdigits)
+/*[clinic end generated code: output=734d4c2511f2a56d input=d7e3f325db6910c5]*/
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    if ((!maxdigits) || (maxdigits >= _PY_LONG_MAX_STR_DIGITS_THRESHOLD)) {
+        tstate->interp->int_max_str_digits = maxdigits;
+        Py_RETURN_NONE;
+    } else {
+        PyErr_Format(
+            PyExc_ValueError, "maxdigits must be 0 or larger than %d",
+            _PY_LONG_MAX_STR_DIGITS_THRESHOLD);
+        return NULL;
+    }
+}
+
 size_t
 _PySys_GetSizeOf(PyObject *o)
 {
@@ -1996,6 +2036,8 @@ static PyMethodDef sys_methods[] = {
     SYS_GET_ASYNCGEN_HOOKS_METHODDEF
     SYS_GETANDROIDAPILEVEL_METHODDEF
     SYS_UNRAISABLEHOOK_METHODDEF
+    SYS_GET_INT_MAX_STR_DIGITS_METHODDEF
+    SYS_SET_INT_MAX_STR_DIGITS_METHODDEF
     {NULL, NULL}  // sentinel
 };
 
@@ -2490,6 +2532,7 @@ static PyStructSequence_Field flags_fields[] = {
     {"utf8_mode",               "-X utf8"},
     {"warn_default_encoding",   "-X warn_default_encoding"},
     {"safe_path", "-P"},
+    {"int_max_str_digits",      "-X int_max_str_digits"},
     {0}
 };
 
@@ -2497,7 +2540,7 @@ static PyStructSequence_Desc flags_desc = {
     "sys.flags",        /* name */
     flags__doc__,       /* doc */
     flags_fields,       /* fields */
-    17
+    18
 };
 
 static int
@@ -2538,6 +2581,7 @@ set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
     SetFlag(preconfig->utf8_mode);
     SetFlag(config->warn_default_encoding);
     SetFlagObj(PyBool_FromLong(config->safe_path));
+    SetFlag(_Py_global_config_int_max_str_digits);
 #undef SetFlagObj
 #undef SetFlag
     return 0;
@@ -2731,14 +2775,18 @@ EM_JS(char *, _Py_emscripten_runtime, (void), {
     if (typeof navigator == 'object') {
         info = navigator.userAgent;
     } else if (typeof process == 'object') {
-        info = "Node.js ".concat(process.version)
+        info = "Node.js ".concat(process.version);
     } else {
-        info = "UNKNOWN"
+        info = "UNKNOWN";
     }
     var len = lengthBytesUTF8(info) + 1;
     var res = _malloc(len);
-    stringToUTF8(info, res, len);
+    if (res) stringToUTF8(info, res, len);
+#if __wasm64__
+    return BigInt(res);
+#else
     return res;
+#endif
 });
 
 static PyObject *
