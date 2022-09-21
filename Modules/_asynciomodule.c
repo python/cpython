@@ -114,7 +114,7 @@ typedef struct {
 
 static PyTypeObject FutureType;
 static PyTypeObject TaskType;
-static PyTypeObject PyRunningLoopHolder_Type;
+static PyTypeObject *PyRunningLoopHolder_Type;
 
 
 #define Future_CheckExact(obj) Py_IS_TYPE(obj, &FutureType)
@@ -260,7 +260,7 @@ get_running_loop(PyObject **loop)
         cached_running_holder_tsid = ts_id;
     }
 
-    assert(Py_IS_TYPE(rl, &PyRunningLoopHolder_Type));
+    assert(Py_IS_TYPE(rl, PyRunningLoopHolder_Type));
     PyObject *running_loop = ((PyRunningLoopHolder *)rl)->rl_loop;
 
     if (running_loop == Py_None) {
@@ -3269,8 +3269,8 @@ _asyncio__leave_task_impl(PyObject *module, PyObject *loop, PyObject *task)
 static PyRunningLoopHolder *
 new_running_loop_holder(PyObject *loop)
 {
-    PyRunningLoopHolder *rl = PyObject_New(
-        PyRunningLoopHolder, &PyRunningLoopHolder_Type);
+    PyRunningLoopHolder *rl = PyObject_GC_New(
+        PyRunningLoopHolder, PyRunningLoopHolder_Type);
     if (rl == NULL) {
         return NULL;
     }
@@ -3282,7 +3282,26 @@ new_running_loop_holder(PyObject *loop)
     Py_INCREF(loop);
     rl->rl_loop = loop;
 
+    PyObject_GC_Track(rl);
     return rl;
+}
+
+
+static int
+PyRunningLoopHolder_clear(PyRunningLoopHolder *rl)
+{
+    Py_CLEAR(rl->rl_loop);
+    return 0;
+}
+
+
+static int
+PyRunningLoopHolder_traverse(PyRunningLoopHolder *rl, visitproc visit,
+                              void *arg)
+{
+    Py_VISIT(Py_TYPE(rl));
+    Py_VISIT(rl->rl_loop);
+    return 0;
 }
 
 
@@ -3292,18 +3311,29 @@ PyRunningLoopHolder_tp_dealloc(PyRunningLoopHolder *rl)
     if (cached_running_holder == (PyObject *)rl) {
         cached_running_holder = NULL;
     }
-    Py_CLEAR(rl->rl_loop);
-    PyObject_Free(rl);
+    PyTypeObject *tp = Py_TYPE(rl);
+    PyObject_GC_UnTrack(rl);
+    PyRunningLoopHolder_clear(rl);
+    PyObject_GC_Del(rl);
+    Py_DECREF(tp);
 }
 
 
-static PyTypeObject PyRunningLoopHolder_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_RunningLoopHolder",
-    sizeof(PyRunningLoopHolder),
-    .tp_getattro = PyObject_GenericGetAttr,
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_dealloc = (destructor)PyRunningLoopHolder_tp_dealloc,
+static PyType_Slot PyRunningLoopHolder_slots[] = {
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_dealloc, (destructor)PyRunningLoopHolder_tp_dealloc},
+    {Py_tp_traverse, (traverseproc)PyRunningLoopHolder_traverse},
+    {Py_tp_clear, PyRunningLoopHolder_clear},
+    {0, NULL},
+};
+
+
+static PyType_Spec PyRunningLoopHolder_spec = {
+    .name = "_asyncio._RunningLoopHolder",
+    .basicsize = sizeof(PyRunningLoopHolder),
+    .slots = PyRunningLoopHolder_slots,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
 };
 
 
@@ -3477,9 +3507,6 @@ PyInit__asyncio(void)
     if (PyType_Ready(&TaskStepMethWrapper_Type) < 0) {
         return NULL;
     }
-    if (PyType_Ready(&PyRunningLoopHolder_Type) < 0) {
-        return NULL;
-    }
 
     PyObject *m = PyModule_Create(&_asynciomodule);
     if (m == NULL) {
@@ -3494,6 +3521,7 @@ PyInit__asyncio(void)
         } \
     } while (0)
 
+    CREATE_TYPE(m, PyRunningLoopHolder_Type, &PyRunningLoopHolder_spec);
     CREATE_TYPE(m, FutureIterType, &FutureIter_spec);
 
 #undef CREATE_TYPE
