@@ -1111,6 +1111,11 @@ _dawg_match_edge(const char* name, int namelen, unsigned int size, int label_off
 // if the node is a final, accepting state. The higher bits of that int
 // represent the number of names that are encoded by the sub-DAWG started by
 // this node. It's used to compute the position of a name.
+//
+// the starting node of the DAWG is at position 0.
+//
+// the varint representing a node is followed by the node's edges, the encoding
+// is described below
 
 
 static int
@@ -1138,8 +1143,44 @@ _dawg_node_child_count(int node_offset)
     return num >> 1;
 }
 
+
+// reading DAWG edge information:
+// a DAWG edge is comprised of the following information:
+// (1) the size of the label of the string attached to the edge
+// (2) the characters of that edge
+// (3) the target node
+// (4) whether the edge is the last edge in the list of edges following a node
+//
+// this information is encoded in a compact form as follows:
+//
+// +---------+--------------------------+--------------+--------------------
+// |  varint | varuint: size (if != 1)  | label chars  | ... next edge ...
+// +---------+--------------------------+--------------+--------------------
+//
+// - first comes a (signed) varint
+//     - the lowest bit of that varint is whether the edge is final (4)
+//     - the second lowest bit of that varint is true if the size of
+//       the length of the label is 1 (1)
+//     - the rest of the signed varint is an offset that can be used to compute
+//       the offset of the target node of that edge (3)
+//  - if the size is not 1, the first signed varint is followed by an unsigned
+//    varint encoding the number of characters of the label (1)
+//  - the next size bytes are the characters of the label (2)
+//
+// the offset of the target node is computed as follows: the number in the
+// upper bits of the varint needs to be added to the offset of the target node
+// of the previous edge. For the first edge, where the is no previous target
+// node, the offset of the first edge is used.
+// (the intuition here is that edges going out from a node often lead to nodes
+// that are close by, leading to small offsets from the current node and thus
+// fewer bytes)
+//
+// There is a special case: if a final node has no outgoing edges, it has to be
+// followed by a 0 byte to indicate that there are no edges (because the end of
+// the edge list is normally indicated in a bit in the edge encoding).
+
 static int
-_dawg_decode_edge(bool is_first_edge, int prev_child_offset, int edge_offset, unsigned int* size, int* label_offset, int* target_node_offset)
+_dawg_decode_edge(bool is_first_edge, int prev_target_node_offset, int edge_offset, unsigned int* size, int* label_offset, int* target_node_offset)
 {
     signed int num;
     edge_offset = _dawg_decode_varint_signed(edge_offset, &num);
@@ -1150,8 +1191,8 @@ _dawg_decode_edge(bool is_first_edge, int prev_child_offset, int edge_offset, un
     num >>= 1;
     bool len_is_one = num & 1;
     num >>= 1;
-    assert(prev_child_offset + num >= 0);
-    *target_node_offset = prev_child_offset + num;
+    assert(prev_target_node_offset + num >= 0);
+    *target_node_offset = prev_target_node_offset + num;
     if (len_is_one) {
         *size = 1;
     } else {
@@ -1170,18 +1211,18 @@ _lookup_dawg_packed(const char* name, int namelen)
     while (stringpos < namelen) {
         bool final;
         int edge_offset = _dawg_decode_node(node_offset, &final);
-        int prev_child_offset = edge_offset;
+        int prev_target_node_offset = edge_offset;
         bool is_first_edge = true;
         for (;;) {
             unsigned int size;
             int label_offset, target_node_offset;
-            int final_edge = _dawg_decode_edge(is_first_edge, prev_child_offset, edge_offset, &size, &label_offset, &target_node_offset);
-            is_first_edge = false;
-            prev_child_offset = target_node_offset;
-            assert(target_node_offset >= 0);
+            int final_edge = _dawg_decode_edge(is_first_edge, prev_target_node_offset, edge_offset, &size, &label_offset, &target_node_offset);
             if (final_edge == -1) {
                 return -1;
             }
+            is_first_edge = false;
+            prev_target_node_offset = target_node_offset;
+            assert(target_node_offset >= 0);
             int matched = _dawg_match_edge(name, namelen, size, label_offset, stringpos);
             if (matched == -1) {
                 return -1;
@@ -1222,18 +1263,18 @@ _inverse_dawg_lookup(char* buffer, int buflen, int pos)
             }
             pos--;
         }
-        int prev_child_offset = edge_offset;
+        int prev_target_node_offset = edge_offset;
         bool is_first_edge = true;
         for (;;) {
             unsigned int size;
             int label_offset, target_node_offset;
-            int final_edge = _dawg_decode_edge(is_first_edge, prev_child_offset, edge_offset, &size, &label_offset, &target_node_offset);
-            is_first_edge = false;
-            prev_child_offset = target_node_offset;
-            assert(target_node_offset >= 0);
+            int final_edge = _dawg_decode_edge(is_first_edge, prev_target_node_offset, edge_offset, &size, &label_offset, &target_node_offset);
             if (final_edge == -1) {
                 return 0;
             }
+            is_first_edge = false;
+            prev_target_node_offset = target_node_offset;
+            assert(target_node_offset >= 0);
 
             int child_count = _dawg_node_child_count(target_node_offset);
             if (pos - child_count < 0) {

@@ -2,7 +2,7 @@
 # By Steve Hanov, 2011. Released to the public domain.
 # Please see http://stevehanov.ca/blog/index.php?id=115 for the accompanying article.
 #
-# Adapted for RPython by cfbolz
+# Adapted for PyPy/CPython by Carl Friedrich Bolz-Tereick
 #
 # Based on Daciuk, Jan, et al. "Incremental construction of minimal acyclic finite-state automata."
 # Computational linguistics 26.1 (2000): 3-16.
