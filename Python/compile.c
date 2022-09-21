@@ -8649,6 +8649,9 @@ assemble(struct compiler *c, int addNone)
     if (duplicate_exits_without_lineno(g) < 0) {
         goto error;
     }
+    if (push_cold_blocks_to_end(g, code_flags) < 0) {
+        goto error;
+    }
     propagate_line_numbers(g->g_entryblock);
     guarantee_lineno_for_exits(g->g_entryblock, c->u->u_firstlineno);
 
@@ -8660,9 +8663,6 @@ assemble(struct compiler *c, int addNone)
 
     convert_exception_handlers_to_nops(g->g_entryblock);
 
-    if (push_cold_blocks_to_end(g, code_flags) < 0) {
-        goto error;
-    }
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         remove_redundant_nops(b);
     }
