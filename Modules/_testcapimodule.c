@@ -5492,15 +5492,13 @@ static PyObject *
 acquire_finalize_block(PyObject *self, PyObject *Py_UNUSED(args)) {
     PyObject *result;
     result = PyThread_TryAcquireFinalizeBlock() ? Py_True : Py_False;
-    Py_INCREF(result);
-    return result;
+    return Py_NewRef(result);
 }
 
 static PyObject *
 release_finalize_block(PyObject *self, PyObject *Py_UNUSED(args)) {
     PyThread_ReleaseFinalizeBlock();
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);

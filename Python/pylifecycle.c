@@ -1758,7 +1758,7 @@ finalize_interp_delete(PyInterpreterState *interp)
  *
  * This is only to be called from `Py_FinalizeEx`.
  */
-static void wait_for_exit_blocks_to_be_released()
+static void wait_for_exit_blocks_to_be_released(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
 
