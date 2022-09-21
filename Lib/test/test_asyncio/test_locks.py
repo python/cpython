@@ -934,7 +934,7 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(r1 is None)
         self.assertTrue(isinstance(r2, asyncio.CancelledError))
 
-        await asyncio.wait_for(sem.acquire(), timeout=0.01)
+        await asyncio.wait_for(sem.acquire(), timeout=1.0)
 
     def test_release_not_acquired(self):
         sem = asyncio.BoundedSemaphore()
