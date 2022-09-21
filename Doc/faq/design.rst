@@ -129,7 +129,7 @@ reference or call the method from a particular class.  In C++, if you want to
 use a method from a base class which is overridden in a derived class, you have
 to use the ``::`` operator -- in Python you can write
 ``baseclass.methodname(self, <argument list>)``.  This is particularly useful
-for :meth:`__init__` methods, and in general in cases where a derived class
+for :meth:`~object.__init__` methods, and in general in cases where a derived class
 method wants to extend the base class method of the same name and thus has to
 call the base class method somehow.
 
@@ -232,7 +232,8 @@ Similar methods exist for bytes and bytearray objects.
 How fast are exceptions?
 ------------------------
 
-A ``try/except`` block is extremely efficient if no exceptions are raised.  Actually
+A :keyword:`try`/:keyword:`except` block is extremely efficient if no exceptions
+are raised.  Actually
 catching an exception is expensive.  In versions of Python prior to 2.0 it was
 common to use this idiom::
 
@@ -408,7 +409,8 @@ numbers.
 
 Lists, on the other hand, are more like arrays in other languages.  They tend to
 hold a varying number of objects all of which have the same type and which are
-operated on one-by-one.  For example, ``os.listdir('.')`` returns a list of
+operated on one-by-one.  For example, :func:`os.listdir('.') <os.listdir>`
+returns a list of
 strings representing the files in the current directory.  Functions which
 operate on this output would generally not break if you added another file or
 two to the directory.
@@ -497,7 +499,8 @@ Some unacceptable solutions that have been proposed:
 
 There is a trick to get around this if you need to, but use it at your own risk:
 You can wrap a mutable structure inside a class instance which has both a
-:meth:`__eq__` and a :meth:`__hash__` method.  You must then make sure that the
+:meth:`~object.__eq__` and a :meth:`~object.__hash__` method.
+You must then make sure that the
 hash value for all such wrapper objects that reside in a dictionary (or other
 hash based structure), remain fixed while the object is in the dictionary (or
 other structure). ::
@@ -528,7 +531,7 @@ is True``) then ``hash(o1) == hash(o2)`` (ie, ``o1.__hash__() == o2.__hash__()``
 regardless of whether the object is in a dictionary or not.  If you fail to meet
 these restrictions dictionaries and other hash based structures will misbehave.
 
-In the case of ``ListWrapper``, whenever the wrapper object is in a dictionary the
+In the case of :class:`!ListWrapper`, whenever the wrapper object is in a dictionary the
 wrapped list must not change to avoid anomalies.  Don't do this unless you are
 prepared to think hard about the requirements and the consequences of not
 meeting them correctly.  Consider yourself warned.
