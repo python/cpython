@@ -268,10 +268,12 @@ default values. The arguments that are most commonly needed are:
    :data:`PIPE` indicates that a new pipe to the child should be created.
    :data:`DEVNULL` indicates that the special file :data:`os.devnull` will
    be used.  With the default settings of ``None``, no redirection will occur;
-   the child's file handles will be inherited from the parent.
-   Additionally, *stderr* can be :data:`STDOUT`, which indicates that the
-   stderr data from the child process should be captured into the same file
-   handle as for *stdout*.
+   the child's file handles will be inherited from the parent for console
+   applications, if the child can connect to the console.  Otherwise it will
+   allocate a new console. For non-console applications, the window manager
+   and graphical shell will determine behavior.  Additionally, *stderr* can be
+   :data:`STDOUT`, which indicates that the stderr data from the child process
+   should be captured into the same file handle as for *stdout*.
 
    .. index::
       single: universal newlines; subprocess module
@@ -489,9 +491,11 @@ functions.
    be created.  :data:`DEVNULL` indicates that the special file
    :data:`os.devnull` will be used. With the default settings of ``None``,
    no redirection will occur; the child's file handles will be inherited from
-   the parent.  Additionally, *stderr* can be :data:`STDOUT`, which indicates
-   that the stderr data from the applications should be captured into the same
-   file handle as for stdout.
+   the parent for console applications, if the child can connect to the console.
+   Otherwise it will allocate a new console.  For non-console applications, the
+   window manager and graphical shell will determine behavior.  Additionally,
+   *stderr* can be :data:`STDOUT`, which indicates that the stderr data from
+   the applications should be captured into the same file handle as for stdout.
 
    If *preexec_fn* is set to a callable object, this object will be called in the
    child process just before the child is executed.
