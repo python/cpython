@@ -1079,7 +1079,7 @@ _dawg_decode_varint_signed(int index, int* result) {
         shift += 7;
         if (!(byte & 0x80)) {
             if (byte & 0x40) {
-                res |= (~0) << shift;
+                res |= (unsigned int)(-1) << shift;
                 assert(res < 0);
             }
             *result = res;
@@ -1237,7 +1237,6 @@ _lookup_dawg_packed(const char* name, int namelen)
             if (final_edge) {
                 return -1;
             }
-            int child_count;
             result += _dawg_node_child_count(target_node_offset);
             edge_offset = label_offset + size;
         }
@@ -1251,6 +1250,7 @@ _lookup_dawg_packed(const char* name, int namelen)
 static int
 _inverse_dawg_lookup(char* buffer, int buflen, int pos)
 {
+    // TODO: check max name size instead of checking buflen all the time
     int node_offset = 0;
     int bufpos = 0;
     for (;;) {
@@ -1259,6 +1259,10 @@ _inverse_dawg_lookup(char* buffer, int buflen, int pos)
 
         if (final) {
             if (pos == 0) {
+                if (bufpos + 1 == buflen) {
+                    return 0;
+                }
+                buffer[bufpos] = '\0';
                 return 1;
             }
             pos--;
