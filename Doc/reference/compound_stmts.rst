@@ -213,7 +213,7 @@ The :keyword:`!try` statement
    keyword: as
    single: : (colon); compound statement
 
-The :keyword:`try` statement specifies exception handlers and/or cleanup code
+The :keyword:`!try` statement specifies exception handlers and/or cleanup code
 for a group of statements:
 
 .. productionlist:: python-grammar
@@ -328,7 +328,7 @@ when leaving an exception handler::
 :keyword:`!except*` clause
 --------------------------
 
-The :keyword:`except* <except_star>` clause(s) are used for handling
+The :keyword:`!except* <except_star>` clause(s) are used for handling
 :exc:`ExceptionGroup`\s. The exception type for matching is interpreted as in
 the case of :keyword:`except`, but in the case of exception groups we can have
 partial matches when the type matches some of the exceptions in the group.
@@ -391,9 +391,9 @@ clauses.
 :keyword:`!finally` clause
 --------------------------
 
-If :keyword:`finally` is present, it specifies a 'cleanup' handler.  The
+If :keyword:`!finally` is present, it specifies a 'cleanup' handler.  The
 :keyword:`try` clause is executed, including any :keyword:`except` and
-:keyword:`!else` clauses.  If an exception occurs in any of the clauses and is
+:keyword:`else` clauses.  If an exception occurs in any of the clauses and is
 not handled, the exception is temporarily saved. The :keyword:`!finally` clause
 is executed.  If there is a saved exception it is re-raised at the end of the
 :keyword:`!finally` clause.  If the :keyword:`!finally` clause raises another
@@ -411,7 +411,7 @@ or :keyword:`continue` statement, the saved exception is discarded::
    42
 
 The exception information is not available to the program during execution of
-the :keyword:`finally` clause.
+the :keyword:`!finally` clause.
 
 .. index::
    statement: return
@@ -420,10 +420,10 @@ the :keyword:`finally` clause.
 
 When a :keyword:`return`, :keyword:`break` or :keyword:`continue` statement is
 executed in the :keyword:`try` suite of a :keyword:`!try`...\ :keyword:`!finally`
-statement, the :keyword:`finally` clause is also executed 'on the way out.'
+statement, the :keyword:`!finally` clause is also executed 'on the way out.'
 
 The return value of a function is determined by the last :keyword:`return`
-statement executed.  Since the :keyword:`finally` clause always executes, a
+statement executed.  Since the :keyword:`!finally` clause always executes, a
 :keyword:`!return` statement executed in the :keyword:`!finally` clause will
 always be the last one executed::
 
@@ -438,7 +438,7 @@ always be the last one executed::
 
 .. versionchanged:: 3.8
    Prior to Python 3.8, a :keyword:`continue` statement was illegal in the
-   :keyword:`finally` clause due to a problem with the implementation.
+   :keyword:`!finally` clause due to a problem with the implementation.
 
 
 .. _with:
