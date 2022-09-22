@@ -435,9 +435,9 @@ def enablerlcompleter():
     registering a sys.__interactivehook__.
 
     If the readline module can be imported, the hook will set the Tab key
-    as completion key and register ~/.python_history as history file.
-    This can be overridden in the sitecustomize or usercustomize module,
-    or in a PYTHONSTARTUP file.
+    as completion key and register PYTHONHISTFILE (defaults to
+    ~/.python_history) as history file. This can be overridden in the
+    sitecustomize or usercustomize module, or in a PYTHONSTARTUP file.
     """
     def register_readline():
         import atexit
@@ -445,6 +445,11 @@ def enablerlcompleter():
             import readline
             import rlcompleter
         except ImportError:
+            return
+
+        env = os.environ
+        if 'PYTHONHISTFILE' in env and env['PYTHONHISTFILE'].strip() == '':
+            # User explicitly requested to disable python history.
             return
 
         # Reading the initialization (config) file may not be enough to set a
@@ -470,18 +475,29 @@ def enablerlcompleter():
             # each interpreter exit when readline was already configured
             # through a PYTHONSTARTUP hook, see:
             # http://bugs.python.org/issue5845#msg198636
-            history = os.path.join(os.path.expanduser('~'),
-                                   '.python_history')
+            history = env.get('PYTHONHISTFILE',
+                              os.path.join(os.path.expanduser('~'),
+                                           '.python_history'))
             try:
                 readline.read_history_file(history)
             except OSError:
                 pass
 
+            if 'PYTHONHISTSIZE' in env:
+                try:
+                    history_size = int(env['PYTHONHISTSIZE'])
+                except ValueError:
+                    pass
+                else:
+                    readline.set_history_length(history_size)
+            else:
+                readline.set_history_length(2 ** 17)  # ~4MB
+
             def write_history():
                 try:
                     readline.write_history_file(history)
                 except OSError:
-                    # bpo-19891, bpo-41193: Home directory does not exist
+                    # bpo-19891, bpo-41193: history's directory does not exist
                     # or is not writable, or the filesystem is read-only.
                     pass
 

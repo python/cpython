@@ -144,11 +144,17 @@ Readline configuration
 On systems that support :mod:`readline`, this module will also import and
 configure the :mod:`rlcompleter` module, if Python is started in
 :ref:`interactive mode <tut-interactive>` and without the :option:`-S` option.
-The default behavior is enable tab-completion and to use
-:file:`~/.python_history` as the history save file.  To disable it, delete (or
-override) the :data:`sys.__interactivehook__` attribute in your
+The default behavior is enable tab-completion and to use the
+:envvar:`PYTHONHISTFILE` file (defaults to :file:`~/.python_history`) as the
+history save file for up to :envvar:`PYTHONHISTSIZE` lines (defaults to 131072
+or ~4MB). To disable it, set :envvar:`PYTHONHISTFILE` to an empty string,
+or delete (or override) the :data:`sys.__interactivehook__` attribute in your
 :mod:`sitecustomize` or :mod:`usercustomize` module or your
 :envvar:`PYTHONSTARTUP` file.
+
+.. versionchanged:: 3.xx
+   Added :envvar:`PYTHONHISTFILE` and :envvar:`PYTHONHISTSIZE` to control
+   the location and size of the history file.
 
 .. versionchanged:: 3.4
    Activation of rlcompleter and history was made automatic.

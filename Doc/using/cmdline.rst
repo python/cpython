@@ -612,6 +612,28 @@ before the command-line switches other than -E or -I.  It is customary that
 command-line switches override environmental variables where there is a
 conflict.
 
+.. envvar:: PYTHONHISTFILE
+
+   Change the location of the Python history file. By default, the history is
+   saved to :file:`~/.python_history`.
+
+   If the environment variable is defined but has not value, the history will
+   not be saved upon interpreter's exit.
+
+   .. versionadded:: 3.xx
+
+
+.. envvar:: PYTHONHISTSIZE
+
+   Change the maximum number of lines preserved by the :envvar:`PYTHONHISTFILE`
+   file. By default, Python preserves 131072 lines (~4MB).
+
+   This value controls truncation of the history file size upon exit only.
+   Upon start the history file will be read fully, regardless of its size.
+
+   .. versionadded:: 3.xx
+
+
 .. envvar:: PYTHONHOME
 
    Change the location of the standard Python libraries.  By default, the
