@@ -713,7 +713,8 @@ Why don't generators support the with statement?
 For technical reasons, a generator used directly as a context manager
 would not work correctly.  When, as is most common, a generator is used as
 an iterator run to completion, no closing is needed.  When it is, wrap
-it as :func:`contextlib.closing(generator) <contextlib.closing>` in the :keyword:`with` statement.
+it as :func:`contextlib.closing(generator) <contextlib.closing>`
+in the :keyword:`with` statement.
 
 
 Why are colons required for the if/while/def/class statements?
