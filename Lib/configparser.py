@@ -69,8 +69,10 @@ ConfigParser -- responsible for parsing a list of
         section proxies.
 
         When `allow_unnamed_section` is True (default: False), options
-        without section are accepted: the section for these is
-        ``configparser.UNNAMED_SECTION``.
+        without section are accepted: the section for this is
+        ``configparser.UNNAMED_SECTION``. "In the file, they are placed before
+        the first explicit section header. This also allows reading and writing
+        files that don't contain any explicit section headers.
 
     sections()
         Return all the configuration section names, sans DEFAULT.
@@ -598,7 +600,7 @@ class RawConfigParser(MutableMapping):
                  strict=True, empty_lines_in_values=True,
                  default_section=DEFAULTSECT,
                  interpolation=_UNSET, converters=_UNSET,
-                 allow_unnamed_section=False,):
+                 allow_unnamed_section=False):
 
         self._dict = dict_type
         self._sections = self._dict()
@@ -912,7 +914,8 @@ class RawConfigParser(MutableMapping):
             self._write_section(fp, self.default_section,
                                     self._defaults.items(), d)
         if UNNAMED_SECTION in self._sections:
-            self._write_section(fp, UNNAMED_SECTION, self._sections[UNNAMED_SECTION].items(), d, unnamed=True)
+            self._write_section(fp, UNNAMED_SECTION,
+                                self._sections[UNNAMED_SECTION].items(), d)
 
         for section in self._sections:
             if section is UNNAMED_SECTION:
@@ -920,9 +923,9 @@ class RawConfigParser(MutableMapping):
             self._write_section(fp, section,
                                 self._sections[section].items(), d)
 
-    def _write_section(self, fp, section_name, section_items, delimiter, unnamed=False):
+    def _write_section(self, fp, section_name, section_items, delimiter):
         """Write a single section to the specified `fp'."""
-        if not unnamed:
+        if section_name is not UNNAMED_SECTION:
             fp.write("[{}]\n".format(section_name))
         for key, value in section_items:
             value = self._interpolation.before_write(self, section_name, key,
