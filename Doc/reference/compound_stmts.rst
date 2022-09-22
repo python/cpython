@@ -242,36 +242,43 @@ may be found in section :ref:`raise`.
 The :keyword:`!except` clause(s) specify one or more exception handlers. When no
 exception occurs in the :keyword:`try` clause, no exception handler is executed.
 When an exception occurs in the :keyword:`!try` suite, a search for an exception
-handler is started.  This search inspects the except clauses in turn until one
-is found that matches the exception.  An expression-less except clause, if
-present, must be last; it matches any exception.  For an except clause with an
-expression, that expression is evaluated, and the clause matches the exception
+handler is started. This search inspects the :keyword:`!except` clauses in turn
+until one is found that matches the exception.
+An expression-less :keyword:`!except` clause, if present, must be last;
+it matches any exception.
+For an :keyword:`!except` clause with an expression,
+that expression is evaluated, and the clause matches the exception
 if the resulting object is "compatible" with the exception.  An object is
 compatible with an exception if the object is the class or a
 :term:`non-virtual base class <abstract base class>` of the exception object,
 or a tuple containing an item that is the class or a non-virtual base class
 of the exception object.
 
-If no except clause matches the exception, the search for an exception handler
+If no :keyword:`!except` clause matches the exception,
+the search for an exception handler
 continues in the surrounding code and on the invocation stack.  [#]_
 
-If the evaluation of an expression in the header of an except clause raises an
-exception, the original search for a handler is canceled and a search starts for
+If the evaluation of an expression
+in the header of an :keyword:`!except` clause raises an exception,
+the original search for a handler is canceled and a search starts for
 the new exception in the surrounding code and on the call stack (it is treated
 as if the entire :keyword:`try` statement raised the exception).
 
 .. index:: single: as; except clause
 
-When a matching except clause is found, the exception is assigned to the target
-specified after the :keyword:`!as` keyword in that except clause, if present, and
-the except clause's suite is executed.  All except clauses must have an
-executable block.  When the end of this block is reached, execution continues
-normally after the entire try statement.  (This means that if two nested
-handlers exist for the same exception, and the exception occurs in the try
-clause of the inner handler, the outer handler will not handle the exception.)
+When a matching :keyword:`!except` clause is found,
+the exception is assigned to the target
+specified after the :keyword:`!as` keyword in that :keyword:`!except` clause,
+if present, and the :keyword:`!except` clause's suite is executed.
+All :keyword:`!except` clauses must have an executable block.
+When the end of this block is reached, execution continues
+normally after the entire :keyword:`try` statement.
+(This means that if two nested handlers exist for the same exception,
+and the exception occurs in the :keyword:`!try` clause of the inner handler,
+the outer handler will not handle the exception.)
 
 When an exception has been assigned using ``as target``, it is cleared at the
-end of the except clause.  This is as if ::
+end of the :keyword:`!except` clause.  This is as if ::
 
    except E as N:
        foo
@@ -285,7 +292,8 @@ was translated to ::
            del N
 
 This means the exception must be assigned to a different name to be able to
-refer to it after the except clause.  Exceptions are cleared because with the
+refer to it after the :keyword:`!except` clause.
+Exceptions are cleared because with the
 traceback attached to them, they form a reference cycle with the stack frame,
 keeping all locals in that frame alive until the next garbage collection occurs.
 
@@ -293,7 +301,8 @@ keeping all locals in that frame alive until the next garbage collection occurs.
    module: sys
    object: traceback
 
-Before an except clause's suite is executed, details about the exception are
+Before an :keyword:`!except` clause's suite is executed,
+details about the exception are
 stored in the :mod:`sys` module and can be accessed via :func:`sys.exc_info`.
 :func:`sys.exc_info` returns a 3-tuple consisting of the exception class, the
 exception instance and a traceback object (see section :ref:`types`) identifying
@@ -328,14 +337,15 @@ when leaving an exception handler::
 :keyword:`!except*` clause
 --------------------------
 
-The :keyword:`!except* <except_star>` clause(s) are used for handling
+The :keyword:`!except*` clause(s) are used for handling
 :exc:`ExceptionGroup`\s. The exception type for matching is interpreted as in
 the case of :keyword:`except`, but in the case of exception groups we can have
 partial matches when the type matches some of the exceptions in the group.
-This means that multiple except* clauses can execute, each handling part of
-the exception group. Each clause executes once and handles an exception group
+This means that multiple :keyword:`!except*` clauses can execute,
+each handling part of the exception group.
+Each clause executes once and handles an exception group
 of all matching exceptions.  Each exception in the group is handled by at most
-one except* clause, the first that matches it. ::
+one :keyword:`!except*` clause, the first that matches it. ::
 
    >>> try:
    ...     raise ExceptionGroup("eg",
@@ -355,15 +365,16 @@ one except* clause, the first that matches it. ::
        +------------------------------------
    >>>
 
-   Any remaining exceptions that were not handled by any except* clause
-   are re-raised at the end, combined into an exception group along with
-   all exceptions that were raised from within except* clauses.
+   Any remaining exceptions that were not handled by any :keyword:`!except*`
+   clause are re-raised at the end, combined into an exception group along with
+   all exceptions that were raised from within :keyword:`!except*` clauses.
 
-   An except* clause must have a matching type, and this type cannot be a
-   subclass of :exc:`BaseExceptionGroup`. It is not possible to mix except
-   and except* in the same :keyword:`try`. :keyword:`break`,
-   :keyword:`continue` and :keyword:`return` cannot appear in an except*
-   clause.
+   An :keyword:`!except*` clause must have a matching type,
+   and this type cannot be a subclass of :exc:`BaseExceptionGroup`.
+   It is not possible to mix :keyword:`except` and :keyword:`!except*`
+   in the same :keyword:`try`.
+   :keyword:`break`, :keyword:`continue` and :keyword:`return`
+   cannot appear in an :keyword:`!except*` clause.
 
 
 .. index::
