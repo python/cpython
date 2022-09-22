@@ -530,6 +530,17 @@ class _TemporaryFileWrapper:
         for line in self.file:
             yield line
 
+    def __del__(self):
+        # This is to delete the temporary file in case delete = True,
+        # delete_on_close = False and no context manager was used
+        if self.delete:
+            try:
+                _os.unlink(self.name)
+            # It is okay to ignore FileNotFoundError. The file may have
+            # been deleted already.
+            except FileNotFoundError:
+                pass
+
 
 def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
                        newline=None, suffix=None, prefix=None,

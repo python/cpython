@@ -86,8 +86,8 @@ The module defines the following user-callable items:
    * There is more granularity in the deletion behaviour of the file (see
      ``delete_on_close`` below)
 
-   The returned object is always a file-like object whose :attr:`!file`
-   attribute is the underlying true file object. This file-like object can be
+   The returned object is always a :term:`file-like object` whose :attr:`!file`
+   attribute is the underlying true file object. This :term:`file-like object` can be
    used in a :keyword:`with` statement, just like a normal file.  The name of the
    temporary file can be retrieved from the :attr:`name` attribute of the
    returned file-like object.
@@ -95,7 +95,9 @@ The module defines the following user-callable items:
    If *delete* is true (the default) and *delete_on_close* is true (the
    default), the file is deleted as soon as it is closed. If *delete* is true
    and *delete_on_close* is false, the file is deleted on context manager exit
-   only. If *delete* is false, the value of *delete_on_close* is ignored.
+   only, if no context manager was used, then the file is deleted only when the
+   :term:`file-like object` is finalized (see :meth:`object.__del__`). If
+   *delete* is false, the value of *delete_on_close* is ignored.
 
    While the named temporary file is open, the file can always be opened again
    on POSIX. On Windows, it can be opened again if *delete* is false, or if

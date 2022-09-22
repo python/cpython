@@ -1038,6 +1038,29 @@ class TestNamedTemporaryFile(BaseTestCase):
             os.unlink(f_name)
             os.rmdir(dir)
 
+    def test_del_by_finalizer_if_no_with(self):
+        # A NamedTemporaryFile is deleted by fanalizer in case delete = True
+        # delete_on_close = False and no context manager is used
+        dir = tempfile.mkdtemp()
+        try:
+            f = tempfile.NamedTemporaryFile(dir=dir, delete=True,
+                                            delete_on_close=False)
+            tmp = f.name
+            f.write(b'blat')
+            f.close()
+            with self.subTest():
+                self.assertTrue(os.path.exists(tmp),
+                            "NamedTemporaryFile %s missing after close"\
+                                % tmp)
+            # Simulating finalizer
+            f.__del__()
+            with self.subTest():
+                self.assertFalse(os.path.exists(tmp),
+                            "NamedTemporaryFile %s exists after finalizer "\
+                                % f.name)
+        finally:
+            os.rmdir(dir)
+
     def test_dis_del_on_close(self):
         # Tests that delete-on-close can be disabled
         dir = tempfile.mkdtemp()
