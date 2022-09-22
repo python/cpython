@@ -28,20 +28,10 @@ PyAPI_FUNC(PyObject*) _PyBytes_FromHex(
 PyAPI_FUNC(PyObject *) _PyBytes_DecodeEscape(const char *, Py_ssize_t,
                                              const char *, const char **);
 
-/* Macros and static inline functions, trading safety for speed */
-#define _PyBytes_CAST(op) \
-    (assert(PyBytes_Check(op)), _Py_CAST(PyBytesObject*, op))
-
-static inline char* PyBytes_AS_STRING(PyObject *op)
-{
-    return _PyBytes_CAST(op)->ob_sval;
-}
+PyAPI_FUNC(char*) PyBytes_AS_STRING(PyObject *op);
 #define PyBytes_AS_STRING(op) PyBytes_AS_STRING(_PyObject_CAST(op))
 
-static inline Py_ssize_t PyBytes_GET_SIZE(PyObject *op) {
-    PyBytesObject *self = _PyBytes_CAST(op);
-    return Py_SIZE(self);
-}
+PyAPI_FUNC(Py_ssize_t) PyBytes_GET_SIZE(PyObject *op);
 #define PyBytes_GET_SIZE(self) PyBytes_GET_SIZE(_PyObject_CAST(self))
 
 /* _PyBytes_Join(sep, x) is like sep.join(x).  sep must be PyBytesObject*,

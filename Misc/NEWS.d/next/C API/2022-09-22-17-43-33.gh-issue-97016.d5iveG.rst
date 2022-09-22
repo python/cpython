@@ -1,0 +1,9 @@
+Convert the following static inline functions to regular functions:
+
+* :c:func:`PyByteArray_AS_STRING()`
+* :c:func:`PyByteArray_GET_SIZE()`
+* :c:func:`PyBytes_AS_STRING()`
+* :c:func:`PyBytes_GET_SIZE()`
+
+Remove the ``_PyByteArray_empty_string`` variable. It was excluded from the
+limited C API. Patch by Victor Stinner.
