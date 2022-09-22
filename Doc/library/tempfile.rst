@@ -96,8 +96,9 @@ The module defines the following user-callable items:
    default), the file is deleted as soon as it is closed. If *delete* is true
    and *delete_on_close* is false, the file is deleted on context manager exit
    only, if no context manager was used, then the file is deleted only when the
-   :term:`file-like object` is finalized (see :meth:`object.__del__`). If
-   *delete* is false, the value of *delete_on_close* is ignored.
+   :term:`file-like object` is finalized and hence deletion is not always
+   guaranteed (see :meth:`object.__del__`). If *delete* is false, the value of
+   *delete_on_close* is ignored.
 
    While the named temporary file is open, the file can always be opened again
    on POSIX. On Windows, it can be opened again if *delete* is false, or if
