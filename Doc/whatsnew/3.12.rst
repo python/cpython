@@ -161,7 +161,8 @@ Deprecated
 
 * The 3-arg signatures (type, value, traceback) of :meth:`~coroutine.throw`
   and :meth:`~generator.throw` are deprecated and may be removed in a future
-  version of Python. Use the single-arg versions of these functions instead. (:gh:`89874`.)
+  version of Python. Use the single-arg versions of these functions instead.
+  (Contributed by Ofey Chan in :gh:`89874`.)
 
 
 Pending Removal in Python 3.13
