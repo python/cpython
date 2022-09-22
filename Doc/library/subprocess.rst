@@ -271,7 +271,8 @@ default values. The arguments that are most commonly needed are:
    the child's file handles will be inherited from the parent for console
    applications, if the child can connect to the console.  Otherwise it will
    allocate a new console. For non-console applications, the window manager
-   and graphical shell will determine behavior.  Additionally, *stderr* can be
+   and graphical shell will determine behavior.
+   Additionally, *stderr* can be
    :data:`STDOUT`, which indicates that the stderr data from the child process
    should be captured into the same file handle as for *stdout*.
 
@@ -493,7 +494,8 @@ functions.
    no redirection will occur; the child's file handles will be inherited from
    the parent for console applications, if the child can connect to the console.
    Otherwise it will allocate a new console.  For non-console applications, the
-   window manager and graphical shell will determine behavior.  Additionally,
+   window manager and graphical shell will determine behavior.
+   Additionally,
    *stderr* can be :data:`STDOUT`, which indicates that the stderr data from
    the applications should be captured into the same file handle as for stdout.
 
