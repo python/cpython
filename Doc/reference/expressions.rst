@@ -1059,7 +1059,7 @@ given a value (by an explicit keyword argument, or from another unpacking),
 a :exc:`TypeError` exception is raised.
 
 When ``**expression`` is used, each key in this mapping must be
-an instance of :class:`str`.
+a string.
 Each value from the mapping is assigned to the first formal parameter
 eligible for keyword assignment whose name is equal to the key.
 A key need not be a Python identifier (e.g. ``"max-temp °F"`` is acceptable,
