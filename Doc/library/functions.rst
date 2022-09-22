@@ -1001,7 +1001,8 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-list:
-.. class:: list(iterable=[])
+.. class:: list()
+           list(iterable)
    :noindex:
 
    Rather than being a function, :class:`list` is actually a mutable
@@ -1577,7 +1578,8 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-set:
-.. class:: set(iterable=())
+.. class:: set()
+           set(iterable)
    :noindex:
 
    Return a new :class:`set` object, optionally with elements taken from
@@ -1800,7 +1802,8 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-tuple:
-.. class:: tuple(iterable=())
+.. class:: tuple()
+           tuple(iterable)
    :noindex:
 
    Rather than being a function, :class:`tuple` is actually an immutable
