@@ -584,9 +584,9 @@ exhaustive test suites that exercise every line of code in a module.
 An appropriate testing discipline can help build large complex applications in
 Python as well as having interface specifications would.  In fact, it can be
 better because an interface specification cannot test certain properties of a
-program.  For example, the :meth:`append` method is expected to add new elements
+program.  For example, the :meth:`list.append` method is expected to add new elements
 to the end of some internal list; an interface specification cannot test that
-your :meth:`append` implementation will actually do this correctly, but it's
+your :meth:`list.append` implementation will actually do this correctly, but it's
 trivial to check this property in a test suite.
 
 Writing test suites is very helpful, and you might want to design your code to
@@ -603,7 +603,7 @@ In the 1970s people realized that unrestricted goto could lead
 to messy "spaghetti" code that was hard to understand and revise.
 In a high-level language, it is also unneeded as long as there
 are ways to branch (in Python, with :keyword:`if` statements and :keyword:`or`,
-:keyword:`and`, and :keyword:`if-else <if>` expressions) and loop (with :keyword:`while`
+:keyword:`and`, and :keyword:`if`/:keyword:`else` expressions) and loop (with :keyword:`while`
 and :keyword:`for` statements, possibly containing :keyword:`continue` and :keyword:`break`).
 
 One can also use exceptions to provide a "structured goto"
