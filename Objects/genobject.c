@@ -1513,6 +1513,14 @@ async_gen_aclose(PyAsyncGenObject *o, PyObject *arg)
 static PyObject *
 async_gen_athrow(PyAsyncGenObject *o, PyObject *args)
 {
+    if (PyTuple_GET_SIZE(args) > 1) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                            "the (type, exc, tb) signature of athrow() is deprecated, "
+                            "use the single-arg signature instead.",
+                            1) < 0) {
+            return NULL;
+        }
+    }
     if (async_gen_init_hooks(o)) {
         return NULL;
     }
@@ -1550,7 +1558,12 @@ PyDoc_STRVAR(async_asend_doc,
 "asend(v) -> send 'v' in generator.");
 
 PyDoc_STRVAR(async_athrow_doc,
-"athrow(typ[,val[,tb]]) -> raise exception in generator.");
+"athrow(value)\n\
+athrow(type[,value[,tb]])\n\
+\n\
+raise exception in generator.\n\
+the (type, val, tb) signature is deprecated, \n\
+and may be removed in a future version of Python.");
 
 static PyMethodDef async_gen_methods[] = {
     {"asend", (PyCFunction)async_gen_asend, METH_O, async_asend_doc},
