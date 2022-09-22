@@ -3582,7 +3582,6 @@ handle_eval_breaker:
             DISPATCH();
         }
 
-            DISPATCH();
         TARGET(STORE_ATTR_ADAPTIVE) {
             assert(cframe.use_tracing == 0);
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
