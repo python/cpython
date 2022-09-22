@@ -2523,12 +2523,14 @@ async def f():
         valid = generate_source(MAXINDENT - 1)
         tokens = list(_generate_tokens_from_c_tokenizer(valid))
         self.assertEqual(tokens[-1].type, DEDENT)
-        exec(valid)
+        compile(valid, "<string>", "exec")
 
         invalid = generate_source(MAXINDENT)
         tokens = list(_generate_tokens_from_c_tokenizer(invalid))
         self.assertEqual(tokens[-1].type, NEWLINE)
-        self.assertRaises(IndentationError, exec, invalid)
+        self.assertRaises(
+            IndentationError, compile, invalid, "<string>", "exec"
+        )
 
     def test_continuation_lines_indentation(self):
         def get_tokens(string):
