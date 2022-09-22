@@ -272,9 +272,9 @@ default values. The arguments that are most commonly needed are:
    applications, if the child can connect to the console.  Otherwise it will
    allocate a new console. For non-console applications, the window manager
    and graphical shell will determine behavior.
-   Additionally, *stderr* can be
-   :data:`STDOUT`, which indicates that the stderr data from the child process
-   should be captured into the same file handle as for *stdout*.
+   Additionally, *stderr* can be :data:`STDOUT`, which indicates that the
+   stderr data from the child process should be captured into the same file
+   handle as for *stdout*.
 
    .. index::
       single: universal newlines; subprocess module
@@ -495,9 +495,9 @@ functions.
    the parent for console applications, if the child can connect to the console.
    Otherwise it will allocate a new console.  For non-console applications, the
    window manager and graphical shell will determine behavior.
-   Additionally,
-   *stderr* can be :data:`STDOUT`, which indicates that the stderr data from
-   the applications should be captured into the same file handle as for stdout.
+   Additionally, *stderr* can be :data:`STDOUT`, which indicates
+   that the stderr data from the applications should be captured into the same
+   file handle as for stdout.
 
    If *preexec_fn* is set to a callable object, this object will be called in the
    child process just before the child is executed.
