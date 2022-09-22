@@ -701,7 +701,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         epoch, precision, accuracy and drift are unspecified and may
         differ per event loop.
         """
-        return time.monotonic()
+        return time.perf_counter()
 
     def call_later(self, delay, callback, *args, context=None):
         """Arrange for a callback to be called at a given time.
