@@ -1981,7 +1981,7 @@ static void
 free_wrapper(void *ctx, void *ptr)
 {
     PyMemAllocatorEx *allocator = (PyMemAllocatorEx *)ctx;
-    return allocator->free(allocator->ctx, ptr);
+    allocator->free(allocator->ctx, ptr);
 }
 
 static void
@@ -2005,13 +2005,14 @@ unwrap_allocator(PyMemAllocatorEx *allocator)
 }
 
 static int
-test_get_incomplete_frame()
+test_get_incomplete_frame(void)
 {
     _testembed_Py_Initialize();
     PyMemAllocatorEx allocator;
     wrap_allocator(&allocator);
     // Force an allocation with an incomplete (generator) frame:
     int result = PyRun_SimpleString("(_ for _ in ())");
+    unwrap_allocator(&allocator);
     Py_Finalize();
     return result;
 }
