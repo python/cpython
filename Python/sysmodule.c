@@ -2810,8 +2810,7 @@ set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
     SetFlag(preconfig->utf8_mode);
     SetFlag(config->warn_default_encoding);
     SetFlagObj(PyBool_FromLong(config->safe_path));
-    SetFlag(config->int_max_str_digits == _PY_LONG_DEFAULT_MAX_STR_DIGITS ?
-            -1 : config->int_max_str_digits);
+    SetFlag(config->int_max_str_digits);
 #undef SetFlagObj
 #undef SetFlag
     return 0;
