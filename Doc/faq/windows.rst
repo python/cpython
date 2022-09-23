@@ -276,3 +276,11 @@ How do I check for a keypress without blocking?
 Use the :mod:`msvcrt` module.  This is a standard Windows-specific extension module.
 It defines a function ``kbhit()`` which checks whether a keyboard hit is
 present, and ``getch()`` which gets one character without echoing it.
+
+How do I solve the missing api-ms-win-crt-runtime-l1-1-0.dll error?
+-------------------------------------------------------------------
+
+This can occur on Python 3.5 and later when using Windows 8.1 or earlier without all updates having been installed.
+First ensure your operating system is supported and is up to date, and if that does not resolve the issue,
+visit the `Microsoft support page <https://support.microsoft.com/en-us/help/3118401/>`_
+for guidance on manually installing the C Runtime update.
