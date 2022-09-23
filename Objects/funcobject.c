@@ -3,11 +3,56 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
+#include "pycore_function.h"      // FUNC_MAX_WATCHERS
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "structmember.h"         // PyMemberDef
 
 static uint32_t next_func_version = 1;
+
+static void
+handle_func_event(PyFunction_WatchEvent event, PyFunctionObject *func, PyObject *new_value)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    for (int i = 0; i < FUNC_MAX_WATCHERS; i++) {
+        PyFunction_WatchCallback cb = interp->func_watchers[i];
+        if ((cb != NULL) && (cb(event, func, new_value) < 0)) {
+            PyErr_WriteUnraisable((PyObject *) func);
+        }
+    }
+}
+
+int
+PyFunction_AddWatcher(PyFunction_WatchCallback callback)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp->_initialized);
+    for (int i = 0; i < FUNC_MAX_WATCHERS; i++) {
+        if (interp->func_watchers[i] == NULL) {
+            interp->func_watchers[i] = callback;
+            return i;
+        }
+    }
+    PyErr_SetString(PyExc_RuntimeError, "no more func watcher IDs available");
+    return -1;
+
+}
+
+int
+PyFunction_ClearWatcher(int watcher_id)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (watcher_id < 0 || watcher_id >= FUNC_MAX_WATCHERS) {
+        PyErr_Format(PyExc_ValueError, "Invalid func watcher ID %d", watcher_id);
+        return -1;
+    }
+    if (!interp->func_watchers[watcher_id]) {
+        PyErr_Format(PyExc_ValueError, "No func watcher set for ID %d", watcher_id);
+        return -1;
+    }
+    interp->func_watchers[watcher_id] = NULL;
+    return 0;
+}
 
 PyFunctionObject *
 _PyFunction_FromConstructor(PyFrameConstructor *constr)
@@ -40,6 +85,7 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
     op->vectorcall = _PyFunction_Vectorcall;
     op->func_version = 0;
     _PyObject_GC_TRACK(op);
+    handle_func_event(PyFunction_EVENT_CREATED, op, NULL);
     return op;
 }
 
@@ -116,6 +162,7 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     op->vectorcall = _PyFunction_Vectorcall;
     op->func_version = 0;
     _PyObject_GC_TRACK(op);
+    handle_func_event(PyFunction_EVENT_CREATED, op, NULL);
     return (PyObject *)op;
 
 error:
@@ -401,6 +448,7 @@ func_set_code(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
                      nclosure, nfree);
         return -1;
     }
+    handle_func_event(PyFunction_EVENT_MODIFY_CODE, op, value);
     op->func_version = 0;
     Py_INCREF(value);
     Py_XSETREF(op->func_code, value);
@@ -486,6 +534,7 @@ func_set_defaults(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored
         return -1;
     }
 
+    handle_func_event(PyFunction_EVENT_MODIFY_DEFAULTS, op, value);
     op->func_version = 0;
     Py_XINCREF(value);
     Py_XSETREF(op->func_defaults, value);
@@ -528,6 +577,7 @@ func_set_kwdefaults(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignor
         return -1;
     }
 
+    handle_func_event(PyFunction_EVENT_MODIFY_KWDEFAULTS, op, value);
     op->func_version = 0;
     Py_XINCREF(value);
     Py_XSETREF(op->func_kwdefaults, value);
@@ -715,6 +765,7 @@ func_clear(PyFunctionObject *op)
 static void
 func_dealloc(PyFunctionObject *op)
 {
+    handle_func_event(PyFunction_EVENT_DESTROY, op, NULL);
     _PyObject_GC_UNTRACK(op);
     if (op->func_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) op);

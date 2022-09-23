@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#define FUNC_MAX_WATCHERS 8
+
 extern PyFunctionObject* _PyFunction_FromConstructor(PyFrameConstructor *constr);
 
 extern uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func);

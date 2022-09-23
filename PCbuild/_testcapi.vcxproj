@@ -98,6 +98,7 @@
     <ClCompile Include="..\Modules\_testcapi\vectorcall_limited.c" />
     <ClCompile Include="..\Modules\_testcapi\heaptype.c" />
     <ClCompile Include="..\Modules\_testcapi\unicode.c" />
+    <ClCompile Include="..\Modules\_testcapi\func_events.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />
