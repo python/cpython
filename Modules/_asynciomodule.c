@@ -6,6 +6,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime_init.h"  // _Py_ID()
+#include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 
 
@@ -114,15 +115,15 @@ typedef struct {
 
 
 static PyTypeObject FutureType;
-static PyTypeObject TaskType;
+static PyTypeObject *TaskType;
 static PyTypeObject *PyRunningLoopHolder_Type;
 
 
 #define Future_CheckExact(obj) Py_IS_TYPE(obj, &FutureType)
-#define Task_CheckExact(obj) Py_IS_TYPE(obj, &TaskType)
+#define Task_CheckExact(obj) Py_IS_TYPE(obj, TaskType)
 
 #define Future_Check(obj) PyObject_TypeCheck(obj, &FutureType)
-#define Task_Check(obj) PyObject_TypeCheck(obj, &TaskType)
+#define Task_Check(obj) PyObject_TypeCheck(obj, TaskType)
 
 #include "clinic/_asynciomodule.c.h"
 
@@ -2084,6 +2085,7 @@ TaskObj_clear(TaskObj *task)
 static int
 TaskObj_traverse(TaskObj *task, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(task));
     Py_VISIT(task->task_context);
     Py_VISIT(task->task_coro);
     Py_VISIT(task->task_name);
@@ -2531,6 +2533,12 @@ static PyMethodDef TaskType_methods[] = {
     {NULL, NULL}        /* Sentinel */
 };
 
+static PyMemberDef TaskType_members[] = {
+    {"__weaklistoffset__", T_PYSSIZET, offsetof(TaskObj, task_weakreflist), READONLY},
+    {"__dictoffset__", T_PYSSIZET, offsetof(TaskObj, dict), READONLY},
+    {NULL},
+};
+
 static PyGetSetDef TaskType_getsetlist[] = {
     FUTURE_COMMON_GETSETLIST
     {"_log_destroy_pending", (getter)TaskObj_get_log_destroy_pending,
@@ -2541,26 +2549,31 @@ static PyGetSetDef TaskType_getsetlist[] = {
     {NULL} /* Sentinel */
 };
 
-static PyTypeObject TaskType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_asyncio.Task",
-    sizeof(TaskObj),                       /* tp_basicsize */
-    .tp_base = &FutureType,
-    .tp_dealloc = TaskObj_dealloc,
-    .tp_as_async = &FutureType_as_async,
-    .tp_repr = (reprfunc)TaskObj_repr,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
-    .tp_doc = _asyncio_Task___init____doc__,
-    .tp_traverse = (traverseproc)TaskObj_traverse,
-    .tp_clear = (inquiry)TaskObj_clear,
-    .tp_weaklistoffset = offsetof(TaskObj, task_weakreflist),
-    .tp_iter = (getiterfunc)future_new_iter,
-    .tp_methods = TaskType_methods,
-    .tp_getset = TaskType_getsetlist,
-    .tp_dictoffset = offsetof(TaskObj, dict),
-    .tp_init = (initproc)_asyncio_Task___init__,
-    .tp_new = PyType_GenericNew,
-    .tp_finalize = (destructor)TaskObj_finalize,
+static PyType_Slot Task_slots[] = {
+    {Py_tp_dealloc, TaskObj_dealloc},
+    {Py_tp_repr, (reprfunc)TaskObj_repr},
+    {Py_tp_doc, (void *)_asyncio_Task___init____doc__},
+    {Py_tp_traverse, (traverseproc)TaskObj_traverse},
+    {Py_tp_clear, (inquiry)TaskObj_clear},
+    {Py_tp_iter, (getiterfunc)future_new_iter},
+    {Py_tp_methods, TaskType_methods},
+    {Py_tp_members, TaskType_members},
+    {Py_tp_getset, TaskType_getsetlist},
+    {Py_tp_init, (initproc)_asyncio_Task___init__},
+    {Py_tp_new, PyType_GenericNew},
+    {Py_tp_finalize, (destructor)TaskObj_finalize},
+
+    // async slots
+    {Py_am_await, (unaryfunc)future_new_iter},
+    {0, NULL},
+};
+
+static PyType_Spec Task_spec = {
+    .name = "_asyncio.Task",
+    .basicsize = sizeof(TaskObj),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = Task_slots,
 };
 
 static void
@@ -2578,6 +2591,7 @@ TaskObj_dealloc(PyObject *self)
         }
     }
 
+    PyTypeObject *tp = Py_TYPE(task);
     PyObject_GC_UnTrack(self);
 
     if (task->task_weakreflist != NULL) {
@@ -2585,7 +2599,8 @@ TaskObj_dealloc(PyObject *self)
     }
 
     (void)TaskObj_clear(task);
-    Py_TYPE(task)->tp_free(task);
+    tp->tp_free(task);
+    Py_DECREF(tp);
 }
 
 static int
@@ -3517,17 +3532,23 @@ PyInit__asyncio(void)
         return NULL;
     }
 
-#define CREATE_TYPE(m, tp, spec) \
-    do {                  \
-        tp = (PyTypeObject *)PyType_FromMetaclass(NULL, m, spec, NULL); \
-        if (tp == NULL) { \
-            goto error; \
-        } \
+    if (PyType_Ready(&FutureType) < 0) {
+        return NULL;
+    }
+
+#define CREATE_TYPE(m, tp, spec, base)                                  \
+    do {                                                                \
+        tp = (PyTypeObject *)PyType_FromMetaclass(NULL, m, spec,        \
+                                                  (PyObject *)base);    \
+        if (tp == NULL) {                                               \
+            goto error;                                                 \
+        }                                                               \
     } while (0)
 
-    CREATE_TYPE(m, TaskStepMethWrapper_Type, &TaskStepMethWrapper_spec);
-    CREATE_TYPE(m, PyRunningLoopHolder_Type, &PyRunningLoopHolder_spec);
-    CREATE_TYPE(m, FutureIterType, &FutureIter_spec);
+    CREATE_TYPE(m, TaskStepMethWrapper_Type, &TaskStepMethWrapper_spec, NULL);
+    CREATE_TYPE(m, PyRunningLoopHolder_Type, &PyRunningLoopHolder_spec, NULL);
+    CREATE_TYPE(m, FutureIterType, &FutureIter_spec, NULL);
+    CREATE_TYPE(m, TaskType, &Task_spec, &FutureType);
 
 #undef CREATE_TYPE
 
@@ -3537,7 +3558,7 @@ PyInit__asyncio(void)
         return NULL;
     }
 
-    if (PyModule_AddType(m, &TaskType) < 0) {
+    if (PyModule_AddType(m, TaskType) < 0) {
         Py_DECREF(m);
         return NULL;
     }
