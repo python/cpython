@@ -11,6 +11,7 @@ import contextlib
 import stat
 import types
 import weakref
+import gc
 from unittest import mock
 
 import unittest
@@ -980,6 +981,7 @@ class TestNamedTemporaryFile(BaseTestCase):
             os.rmdir(dir)
 
     def test_not_del_on_close_if_delete_on_close_false(self):
+        # Issue gh-58451: tempfile.NamedTemporaryFile is not particulary useful on Windows
         # A NamedTemporaryFile is NOT deleted when closed if
         # delete_on_close= False, but is deleted on content manager exit
         dir = tempfile.mkdtemp()
@@ -1008,7 +1010,6 @@ class TestNamedTemporaryFile(BaseTestCase):
     def test_ok_to_delete_manually(self):
         # A NamedTemporaryFile can be deleted by a user before content manager
         # comes to it. This will not generate an error
-
         dir = tempfile.mkdtemp()
         try:
             with tempfile.NamedTemporaryFile(dir=dir,
@@ -1041,23 +1042,26 @@ class TestNamedTemporaryFile(BaseTestCase):
     def test_del_by_finalizer_if_no_with(self):
         # A NamedTemporaryFile is deleted by fanalizer in case delete = True
         # delete_on_close = False and no context manager is used
-        dir = tempfile.mkdtemp()
-        try:
+        def my_func(dir):
             f = tempfile.NamedTemporaryFile(dir=dir, delete=True,
                                             delete_on_close=False)
-            tmp = f.name
+            tmp_name = f.name
             f.write(b'blat')
             f.close()
             with self.subTest():
-                self.assertTrue(os.path.exists(tmp),
+                self.assertTrue(os.path.exists(tmp_name),
                             "NamedTemporaryFile %s missing after close"\
-                                % tmp)
-            # Simulating finalizer
-            f.__del__()
+                                % tmp_name)
+            return tmp_name
+        # Making sure that Garbage Collector has finalyzed the file object
+        gc.collect()
+        dir = tempfile.mkdtemp()
+        try:
+            tmp_name = my_func(dir)
             with self.subTest():
-                self.assertFalse(os.path.exists(tmp),
+                self.assertFalse(os.path.exists(tmp_name),
                             "NamedTemporaryFile %s exists after finalizer "\
-                                % f.name)
+                                % tmp_name)
         finally:
             os.rmdir(dir)
 

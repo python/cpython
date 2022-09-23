@@ -446,9 +446,6 @@ class _TemporaryFileCloser:
                     if self.delete and self.delete_on_close:
                         unlink(self.name)
 
-        # Need to ensure the file is deleted on __del__
-        def __del__(self):
-            self.close()
 
     else:
         def close(self):
@@ -456,6 +453,12 @@ class _TemporaryFileCloser:
                 self.close_called = True
                 self.file.close()
 
+    def __del__(self):
+        self.close()
+        # Need to ensure the file is deleted on __del__ if delete = True and
+        # file still exists
+        if self.delete and _os.path.exists(self.name):
+            _os.unlink(self.name)
 
 class _TemporaryFileWrapper:
     """Temporary file wrapper
@@ -529,17 +532,6 @@ class _TemporaryFileWrapper:
         # closed when the generator is finalized, due to PEP380 semantics.
         for line in self.file:
             yield line
-
-    def __del__(self):
-        # This is to delete the temporary file in case delete = True,
-        # delete_on_close = False and no context manager was used
-        if self.delete:
-            try:
-                _os.unlink(self.name)
-            # It is okay to ignore FileNotFoundError. The file may have
-            # been deleted already.
-            except FileNotFoundError:
-                pass
 
 
 def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
