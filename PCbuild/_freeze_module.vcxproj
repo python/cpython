@@ -424,6 +424,10 @@
   <Target Name="_CleanFrozen" BeforeTargets="CoreClean" Condition="$(Configuration) != 'PGUpdate'">
     <ItemGroup>
       <Clean Include="%(None.IntFile)" />
+      <Clean Include="%(None.OutFile)" />
+      <Clean Include="%(GetPath.IntFile)" />
+      <Clean Include="%(GetPath.OutFile)" />
+      <Clean Include="$(PySourcePath)Python\deepfreeze\deepfreeze.c" />
     </ItemGroup>
   </Target>
 </Project>
