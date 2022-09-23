@@ -854,6 +854,8 @@ ABC hierarchy::
 
        Read contents of self as text.
 
+    Note: In Python 3.11 and later, this class is found in ``importlib.resources.abc``.
+
 
 .. class:: TraversableResources
 
@@ -867,6 +869,8 @@ ABC hierarchy::
     implement this interface.
 
     .. versionadded:: 3.9
+
+    Note: In Python 3.11 and later, this class is found in ``importlib.resources.abc``.
 
 
 :mod:`importlib.resources` -- Resources
