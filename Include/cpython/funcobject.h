@@ -131,6 +131,44 @@ PyAPI_DATA(PyTypeObject) PyStaticMethod_Type;
 PyAPI_FUNC(PyObject *) PyClassMethod_New(PyObject *);
 PyAPI_FUNC(PyObject *) PyStaticMethod_New(PyObject *);
 
+#define FOREACH_FUNC_EVENT(V) \
+    V(CREATED)                \
+    V(DESTROY)                \
+    V(MODIFY_CODE)            \
+    V(MODIFY_DEFAULTS)        \
+    V(MODIFY_KWDEFAULTS)
+
+typedef enum {
+    #define DEF_EVENT(EVENT) PYFUNC_EVENT_##EVENT,
+    FOREACH_FUNC_EVENT(DEF_EVENT)
+    #undef DEF_EVENT
+} PyFunction_Event;
+
+/*
+ * A callback that is invoked for different events in a function's lifecycle.
+ *
+ * The callback is invoked with a borrowed reference to func, after it is
+ * created and before it is modified or destroyed. The callback should not
+ * modify func.
+ *
+ * When a function's code object, defaults, or kwdefaults are modified the
+ * callback will be invoked with the respective event and new_value will
+ * contain a borrowed reference to the new value that is about to be stored in
+ * the function. Otherwise the third argument is NULL.
+ */
+typedef void(*PyFunction_EventCallback)(
+  PyFunction_Event event,
+  PyFunctionObject *func,
+  PyObject *new_value);
+
+/*
+ * Set the callback that will be invoked for function lifecycle events.
+ *
+ * Pass NULL to clear the callback.
+ */
+PyAPI_FUNC(void) PyFunction_SetEventCallback(PyFunction_EventCallback callback);
+PyAPI_FUNC(PyFunction_EventCallback) PyFunction_GetEventCallback(void);
+
 #ifdef __cplusplus
 }
 #endif
