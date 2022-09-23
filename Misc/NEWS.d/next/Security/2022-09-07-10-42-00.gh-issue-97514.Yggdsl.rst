@@ -1,0 +1,4 @@
+On Linux :mod:`multiprocessing` no longer uses Linux specific abstract socket
+namespace sockets by default for inter-process communication as they have no
+permissions and thus allowed anyone on the system to inject code into the
+multiprocessing server process.
