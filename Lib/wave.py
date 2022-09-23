@@ -396,7 +396,12 @@ class Wave_read:
             except struct.error:
                 raise EOFError from None
             if SubFormat != KSDATAFORMAT_SUBTYPE_PCM:
-                raise Error(f'unknown format: {SubFormatFmt}')
+                try:
+                    import uuid
+                    subformat_msg = f'unknown extended format: {uuid.UUID(bytes_le=SubFormat)}'
+                except Exception:
+                    subformat_msg = 'unknown extended format'
+                raise Error(subformat_msg)
         self._sampwidth = (sampwidth + 7) // 8
         if not self._sampwidth:
             raise Error('bad sample width')
