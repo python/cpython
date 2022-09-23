@@ -114,15 +114,15 @@ typedef struct {
 } PyRunningLoopHolder;
 
 
-static PyTypeObject FutureType;
+static PyTypeObject *FutureType;
 static PyTypeObject *TaskType;
 static PyTypeObject *PyRunningLoopHolder_Type;
 
 
-#define Future_CheckExact(obj) Py_IS_TYPE(obj, &FutureType)
+#define Future_CheckExact(obj) Py_IS_TYPE(obj, FutureType)
 #define Task_CheckExact(obj) Py_IS_TYPE(obj, TaskType)
 
-#define Future_Check(obj) PyObject_TypeCheck(obj, &FutureType)
+#define Future_Check(obj) PyObject_TypeCheck(obj, FutureType)
 #define Task_Check(obj) PyObject_TypeCheck(obj, TaskType)
 
 #include "clinic/_asynciomodule.c.h"
@@ -823,6 +823,7 @@ FutureObj_clear(FutureObj *fut)
 static int
 FutureObj_traverse(FutureObj *fut, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(fut));
     Py_VISIT(fut->fut_loop);
     Py_VISIT(fut->fut_callback0);
     Py_VISIT(fut->fut_context0);
@@ -1461,13 +1462,6 @@ finally:
     PyErr_Restore(error_type, error_value, error_traceback);
 }
 
-static PyAsyncMethods FutureType_as_async = {
-    (unaryfunc)future_new_iter,         /* am_await */
-    0,                                  /* am_aiter */
-    0,                                  /* am_anext */
-    0,                                  /* am_send  */
-};
-
 static PyMethodDef FutureType_methods[] = {
     _ASYNCIO_FUTURE_RESULT_METHODDEF
     _ASYNCIO_FUTURE_EXCEPTION_METHODDEF
@@ -1482,6 +1476,12 @@ static PyMethodDef FutureType_methods[] = {
     _ASYNCIO_FUTURE__MAKE_CANCELLED_ERROR_METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
+};
+
+static PyMemberDef FutureType_members[] = {
+    {"__weaklistoffset__", T_PYSSIZET, offsetof(FutureObj, fut_weakreflist), READONLY},
+    {"__dictoffset__", T_PYSSIZET, offsetof(FutureObj, dict), READONLY},
+    {NULL},
 };
 
 #define FUTURE_COMMON_GETSETLIST                                              \
@@ -1506,25 +1506,31 @@ static PyGetSetDef FutureType_getsetlist[] = {
 
 static void FutureObj_dealloc(PyObject *self);
 
-static PyTypeObject FutureType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_asyncio.Future",
-    sizeof(FutureObj),                       /* tp_basicsize */
-    .tp_dealloc = FutureObj_dealloc,
-    .tp_as_async = &FutureType_as_async,
-    .tp_repr = (reprfunc)FutureObj_repr,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
-    .tp_doc = _asyncio_Future___init____doc__,
-    .tp_traverse = (traverseproc)FutureObj_traverse,
-    .tp_clear = (inquiry)FutureObj_clear,
-    .tp_weaklistoffset = offsetof(FutureObj, fut_weakreflist),
-    .tp_iter = (getiterfunc)future_new_iter,
-    .tp_methods = FutureType_methods,
-    .tp_getset = FutureType_getsetlist,
-    .tp_dictoffset = offsetof(FutureObj, dict),
-    .tp_init = (initproc)_asyncio_Future___init__,
-    .tp_new = PyType_GenericNew,
-    .tp_finalize = (destructor)FutureObj_finalize,
+static PyType_Slot Future_slots[] = {
+    {Py_tp_dealloc, FutureObj_dealloc},
+    {Py_tp_repr, (reprfunc)FutureObj_repr},
+    {Py_tp_doc, (void *)_asyncio_Future___init____doc__},
+    {Py_tp_traverse, (traverseproc)FutureObj_traverse},
+    {Py_tp_clear, (inquiry)FutureObj_clear},
+    {Py_tp_iter, (getiterfunc)future_new_iter},
+    {Py_tp_methods, FutureType_methods},
+    {Py_tp_members, FutureType_members},
+    {Py_tp_getset, FutureType_getsetlist},
+    {Py_tp_init, (initproc)_asyncio_Future___init__},
+    {Py_tp_new, PyType_GenericNew},
+    {Py_tp_finalize, (destructor)FutureObj_finalize},
+
+    // async slots
+    {Py_am_await, (unaryfunc)future_new_iter},
+    {0, NULL},
+};
+
+static PyType_Spec Future_spec = {
+    .name = "_asyncio.Future",
+    .basicsize = sizeof(FutureObj),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = Future_slots,
 };
 
 static void
@@ -1542,6 +1548,7 @@ FutureObj_dealloc(PyObject *self)
         }
     }
 
+    PyTypeObject *tp = Py_TYPE(fut);
     PyObject_GC_UnTrack(self);
 
     if (fut->fut_weakreflist != NULL) {
@@ -1549,7 +1556,8 @@ FutureObj_dealloc(PyObject *self)
     }
 
     (void)FutureObj_clear(fut);
-    Py_TYPE(fut)->tp_free(fut);
+    tp->tp_free(fut);
+    Py_DECREF(tp);
 }
 
 
@@ -1775,7 +1783,7 @@ future_new_iter(PyObject *fut)
 {
     futureiterobject *it;
 
-    if (!PyObject_TypeCheck(fut, &FutureType)) {
+    if (!Future_Check(fut)) {
         PyErr_BadInternalCall();
         return NULL;
     }
@@ -3532,10 +3540,6 @@ PyInit__asyncio(void)
         return NULL;
     }
 
-    if (PyType_Ready(&FutureType) < 0) {
-        return NULL;
-    }
-
 #define CREATE_TYPE(m, tp, spec, base)                                  \
     do {                                                                \
         tp = (PyTypeObject *)PyType_FromMetaclass(NULL, m, spec,        \
@@ -3548,12 +3552,12 @@ PyInit__asyncio(void)
     CREATE_TYPE(m, TaskStepMethWrapper_Type, &TaskStepMethWrapper_spec, NULL);
     CREATE_TYPE(m, PyRunningLoopHolder_Type, &PyRunningLoopHolder_spec, NULL);
     CREATE_TYPE(m, FutureIterType, &FutureIter_spec, NULL);
-    CREATE_TYPE(m, TaskType, &Task_spec, &FutureType);
+    CREATE_TYPE(m, FutureType, &Future_spec, NULL);
+    CREATE_TYPE(m, TaskType, &Task_spec, FutureType);
 
 #undef CREATE_TYPE
 
-    /* FutureType and TaskType are made ready by PyModule_AddType() calls below. */
-    if (PyModule_AddType(m, &FutureType) < 0) {
+    if (PyModule_AddType(m, FutureType) < 0) {
         Py_DECREF(m);
         return NULL;
     }
