@@ -10,9 +10,7 @@ import calendar
 import threading
 import socket
 
-from test.support import (verbose,
-                          run_with_tz, run_with_locale, cpython_only,
-                          requires_working_socket)
+from test.support import verbose, run_with_tz, run_with_locale, cpython_only
 from test.support import hashlib_helper
 from test.support import threading_helper
 from test.support import warnings_helper

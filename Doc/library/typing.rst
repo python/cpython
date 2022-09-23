@@ -39,6 +39,11 @@ provides backports of these new features to older versions of Python.
 For a summary of deprecated features and a deprecation timeline, please see
 `Deprecation Timeline of Major Features`_.
 
+.. seealso::
+
+   The documentation at https://typing.readthedocs.io/ serves as useful reference
+   for type system features, useful typing related tools and typing best practices.
+
 
 .. _relevant-peps:
 
@@ -78,12 +83,14 @@ annotations. These include:
      *Introducing* :data:`TypeVarTuple`
 * :pep:`647`: User-Defined Type Guards
      *Introducing* :data:`TypeGuard`
-* :pep:`655`: Marking individual TypedDict items as required or potentially-missing
+* :pep:`655`: Marking individual TypedDict items as required or potentially missing
      *Introducing* :data:`Required` and :data:`NotRequired`
 * :pep:`673`: Self type
     *Introducing* :data:`Self`
 * :pep:`675`: Arbitrary Literal String Type
     *Introducing* :data:`LiteralString`
+* :pep:`681`: Data Class Transforms
+    *Introducing* the :func:`@dataclass_transform<dataclass_transform>` decorator
 
 .. _type-aliases:
 
@@ -681,7 +688,7 @@ These can be used as types in annotations and do not support ``[]``.
       from typing import Self
 
       class Foo:
-         def returns_self(self) -> Self:
+         def return_self(self) -> Self:
             ...
             return self
 
@@ -694,7 +701,7 @@ These can be used as types in annotations and do not support ``[]``.
       Self = TypeVar("Self", bound="Foo")
 
       class Foo:
-         def returns_self(self: Self) -> Self:
+         def return_self(self: Self) -> Self:
             ...
             return self
 
@@ -705,7 +712,7 @@ These can be used as types in annotations and do not support ``[]``.
             ...
             return self
 
-   You should use use :data:`Self` as calls to ``SubclassOfFoo.returns_self`` would have
+   You should use :data:`Self` as calls to ``SubclassOfFoo.return_self`` would have
    ``Foo`` as the return type and not ``SubclassOfFoo``.
 
    Other common use cases include:
@@ -1032,7 +1039,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    as either required or non-required respectively.
 
    For more information, see :class:`TypedDict` and
-   :pep:`655` ("Marking individual TypedDict items as required or potentially-missing").
+   :pep:`655` ("Marking individual TypedDict items as required or potentially missing").
 
    .. versionadded:: 3.11
 
@@ -1303,20 +1310,25 @@ These are not used in annotations. They are building blocks for creating generic
         T = TypeVar('T')
         Ts = TypeVarTuple('Ts')
 
-        def remove_first_element(tup: tuple[T, *Ts]) -> tuple[*Ts]:
-            return tup[1:]
+        def move_first_element_to_last(tup: tuple[T, *Ts]) -> tuple[*Ts, T]:
+            return (*tup[1:], tup[0])
 
         # T is bound to int, Ts is bound to ()
-        # Return value is (), which has type tuple[()]
-        remove_first_element(tup=(1,))
+        # Return value is (1,), which has type tuple[int]
+        move_first_element_to_last(tup=(1,))
 
         # T is bound to int, Ts is bound to (str,)
-        # Return value is ('spam',), which has type tuple[str]
-        remove_first_element(tup=(1, 'spam'))
+        # Return value is ('spam', 1), which has type tuple[str, int]
+        move_first_element_to_last(tup=(1, 'spam'))
 
         # T is bound to int, Ts is bound to (str, float)
-        # Return value is ('spam', 3.0), which has type tuple[str, float]
-        remove_first_element(tup=(1, 'spam', 3.0))
+        # Return value is ('spam', 3.0, 1), which has type tuple[str, float, int]
+        move_first_element_to_last(tup=(1, 'spam', 3.0))
+
+        # This fails to type check (and fails at runtime)
+        # because tuple[()] is not compatible with tuple[T, *Ts]
+        # (at least one element is required)
+        move_first_element_to_last(tup=())
 
     Note the use of the unpacking operator ``*`` in ``tuple[T, *Ts]``.
     Conceptually, you can think of ``Ts`` as a tuple of type variables
@@ -1823,6 +1835,9 @@ These are not used in annotations. They are building blocks for declaring types.
          True
 
    .. attribute:: __required_keys__
+
+      .. versionadded:: 3.9
+
    .. attribute:: __optional_keys__
 
       ``Point2D.__required_keys__`` and ``Point2D.__optional_keys__`` return
@@ -1849,6 +1864,8 @@ These are not used in annotations. They are building blocks for declaring types.
          True
          >>> Point3D.__optional_keys__ == frozenset({'x', 'y'})
          True
+
+      .. versionadded:: 3.9
 
    See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 
@@ -2213,6 +2230,9 @@ Corresponding to other types in :mod:`collections.abc`
 
    An alias to :class:`collections.abc.Hashable`.
 
+   .. deprecated:: 3.12
+      Use :class:`collections.abc.Hashable` directly instead.
+
 .. class:: Reversible(Iterable[T_co])
 
    A generic version of :class:`collections.abc.Reversible`.
@@ -2224,6 +2244,9 @@ Corresponding to other types in :mod:`collections.abc`
 .. class:: Sized
 
    An alias to :class:`collections.abc.Sized`.
+
+   .. deprecated:: 3.12
+      Use :class:`collections.abc.Sized` directly instead.
 
 Asynchronous programming
 """"""""""""""""""""""""
@@ -2528,7 +2551,17 @@ Functions and decorators
    For example, type checkers will assume these classes have
    ``__init__`` methods that accept ``id`` and ``name``.
 
-   The arguments to this decorator can be used to customize this behavior:
+   The decorated class, metaclass, or function may accept the following bool
+   arguments which type checkers will assume have the same effect as they
+   would have on the
+   :func:`@dataclasses.dataclass<dataclasses.dataclass>` decorator: ``init``,
+   ``eq``, ``order``, ``unsafe_hash``, ``frozen``, ``match_args``,
+   ``kw_only``, and ``slots``. It must be possible for the value of these
+   arguments (``True`` or ``False``) to be statically evaluated.
+
+   The arguments to the ``dataclass_transform`` decorator can be used to
+   customize the default behaviors of the decorated class, metaclass, or
+   function:
 
    * ``eq_default`` indicates whether the ``eq`` parameter is assumed to be
      ``True`` or ``False`` if it is omitted by the caller.
@@ -2540,6 +2573,28 @@ Functions and decorators
      or functions that describe fields, similar to ``dataclasses.field()``.
    * Arbitrary other keyword arguments are accepted in order to allow for
      possible future extensions.
+
+   Type checkers recognize the following optional arguments on field
+   specifiers:
+
+   * ``init`` indicates whether the field should be included in the
+     synthesized ``__init__`` method. If unspecified, ``init`` defaults to
+     ``True``.
+   * ``default`` provides the default value for the field.
+   * ``default_factory`` provides a runtime callback that returns the
+     default value for the field. If neither ``default`` nor
+     ``default_factory`` are specified, the field is assumed to have no
+     default value and must be provided a value when the class is
+     instantiated.
+   * ``factory`` is an alias for ``default_factory``.
+   * ``kw_only`` indicates whether the field should be marked as
+     keyword-only. If ``True``, the field will be keyword-only. If
+     ``False``, it will not be keyword-only. If unspecified, the value of
+     the ``kw_only`` parameter on the object decorated with
+     ``dataclass_transform`` will be used, or if that is unspecified, the
+     value of ``kw_only_default`` on ``dataclass_transform`` will be used.
+   * ``alias`` provides an alternative name for the field. This alternative
+     name is used in the synthesized ``__init__`` method.
 
    At runtime, this decorator records its arguments in the
    ``__dataclass_transform__`` attribute on the decorated object.
@@ -2814,4 +2869,7 @@ convenience. This is subject to change, and not all deprecations are listed.
 |  collections                     |               |                   |                |
 +----------------------------------+---------------+-------------------+----------------+
 |  ``typing.Text``                 | 3.11          | Undecided         | :gh:`92332`    |
++----------------------------------+---------------+-------------------+----------------+
+|  ``typing.Hashable`` and         | 3.12          | Undecided         | :gh:`94309`    |
+|  ``typing.Sized``                |               |                   |                |
 +----------------------------------+---------------+-------------------+----------------+

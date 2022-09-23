@@ -200,15 +200,6 @@ class TextTestRunner(object):
             if self.warnings:
                 # if self.warnings is set, use it to filter all the warnings
                 warnings.simplefilter(self.warnings)
-                # if the filter is 'default' or 'always', special-case the
-                # warnings from the deprecated unittest methods to show them
-                # no more than once per module, because they can be fairly
-                # noisy.  The -Wd and -Wa flags can be used to bypass this
-                # only when self.warnings is None.
-                if self.warnings in ['default', 'always']:
-                    warnings.filterwarnings('module',
-                            category=DeprecationWarning,
-                            message=r'Please use assert\w+ instead.')
             startTime = time.perf_counter()
             startTestRun = getattr(result, 'startTestRun', None)
             if startTestRun is not None:

@@ -406,6 +406,14 @@ _PyTime_FromNanoseconds(_PyTime_t ns)
 }
 
 
+_PyTime_t
+_PyTime_FromMicrosecondsClamp(_PyTime_t us)
+{
+    _PyTime_t ns = _PyTime_Mul(us, US_TO_NS);
+    return pytime_from_nanoseconds(ns);
+}
+
+
 int
 _PyTime_FromNanosecondsObject(_PyTime_t *tp, PyObject *obj)
 {

@@ -2,7 +2,6 @@
 # This script generates Lib/re/_casefix.py.
 
 import collections
-import re
 import sys
 import unicodedata
 

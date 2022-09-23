@@ -335,7 +335,7 @@ class AST_Tests(unittest.TestCase):
         for snippet in snippets_to_validate:
             tree = ast.parse(snippet)
             compile(tree, '<string>', 'exec')
-    
+
     def test_invalid_position_information(self):
         invalid_linenos = [
             (10, 1), (-10, -11), (10, -11), (-5, -2), (-5, 1)
@@ -364,7 +364,7 @@ class AST_Tests(unittest.TestCase):
 
     def test_compilation_of_ast_nodes_with_default_end_position_values(self):
         tree = ast.Module(body=[
-            ast.Import(names=[ast.alias(name='builtins', lineno=1, col_offset=0)], lineno=1, col_offset=0), 
+            ast.Import(names=[ast.alias(name='builtins', lineno=1, col_offset=0)], lineno=1, col_offset=0),
             ast.Import(names=[ast.alias(name='traceback', lineno=0, col_offset=0)], lineno=0, col_offset=1)
         ], type_ignores=[])
 
@@ -738,10 +738,53 @@ class AST_Tests(unittest.TestCase):
         expressions[0] = f"expr = {ast.expr.__subclasses__()[0].__doc__}"
         self.assertCountEqual(ast.expr.__doc__.split("\n"), expressions)
 
-    def test_issue40614_feature_version(self):
+    def test_positional_only_feature_version(self):
+        ast.parse('def foo(x, /): ...', feature_version=(3, 8))
+        ast.parse('def bar(x=1, /): ...', feature_version=(3, 8))
+        with self.assertRaises(SyntaxError):
+            ast.parse('def foo(x, /): ...', feature_version=(3, 7))
+        with self.assertRaises(SyntaxError):
+            ast.parse('def bar(x=1, /): ...', feature_version=(3, 7))
+
+        ast.parse('lambda x, /: ...', feature_version=(3, 8))
+        ast.parse('lambda x=1, /: ...', feature_version=(3, 8))
+        with self.assertRaises(SyntaxError):
+            ast.parse('lambda x, /: ...', feature_version=(3, 7))
+        with self.assertRaises(SyntaxError):
+            ast.parse('lambda x=1, /: ...', feature_version=(3, 7))
+
+    def test_parenthesized_with_feature_version(self):
+        ast.parse('with (CtxManager() as example): ...', feature_version=(3, 10))
+        # While advertised as a feature in Python 3.10, this was allowed starting 3.9
+        ast.parse('with (CtxManager() as example): ...', feature_version=(3, 9))
+        with self.assertRaises(SyntaxError):
+            ast.parse('with (CtxManager() as example): ...', feature_version=(3, 8))
+        ast.parse('with CtxManager() as example: ...', feature_version=(3, 8))
+
+    def test_debug_f_string_feature_version(self):
         ast.parse('f"{x=}"', feature_version=(3, 8))
         with self.assertRaises(SyntaxError):
             ast.parse('f"{x=}"', feature_version=(3, 7))
+
+    def test_assignment_expression_feature_version(self):
+        ast.parse('(x := 0)', feature_version=(3, 8))
+        with self.assertRaises(SyntaxError):
+            ast.parse('(x := 0)', feature_version=(3, 7))
+
+    def test_exception_groups_feature_version(self):
+        code = dedent('''
+        try: ...
+        except* Exception: ...
+        ''')
+        ast.parse(code)
+        with self.assertRaises(SyntaxError):
+            ast.parse(code, feature_version=(3, 10))
+
+    def test_invalid_major_feature_version(self):
+        with self.assertRaises(ValueError):
+            ast.parse('pass', feature_version=(2, 7))
+        with self.assertRaises(ValueError):
+            ast.parse('pass', feature_version=(4, 0))
 
     def test_constant_as_name(self):
         for constant in "True", "False", "None":
@@ -779,6 +822,27 @@ class AST_Tests(unittest.TestCase):
                 except ValueError:
                     return self
         enum._test_simple_enum(_Precedence, ast._Precedence)
+
+    @support.cpython_only
+    def test_ast_recursion_limit(self):
+        fail_depth = sys.getrecursionlimit() * 3
+        crash_depth = sys.getrecursionlimit() * 300
+        success_depth = int(fail_depth * 0.75)
+
+        def check_limit(prefix, repeated):
+            expect_ok = prefix + repeated * success_depth
+            ast.parse(expect_ok)
+            for depth in (fail_depth, crash_depth):
+                broken = prefix + repeated * depth
+                details = "Compiling ({!r} + {!r} * {})".format(
+                            prefix, repeated, depth)
+                with self.assertRaises(RecursionError, msg=details):
+                    ast.parse(broken)
+
+        check_limit("a", "()")
+        check_limit("a", ".b")
+        check_limit("a", "[0]")
+        check_limit("a", "*a")
 
 
 class ASTHelpers_Test(unittest.TestCase):
@@ -1080,6 +1144,14 @@ Module(
         self.assertRaises(ValueError, ast.literal_eval, '++6')
         self.assertRaises(ValueError, ast.literal_eval, '+True')
         self.assertRaises(ValueError, ast.literal_eval, '2+3')
+
+    def test_literal_eval_str_int_limit(self):
+        with support.adjust_int_max_str_digits(4000):
+            ast.literal_eval('3'*4000)  # no error
+            with self.assertRaises(SyntaxError) as err_ctx:
+                ast.literal_eval('3'*4001)
+            self.assertIn('Exceeds the limit ', str(err_ctx.exception))
+            self.assertIn(' Consider hexadecimal ', str(err_ctx.exception))
 
     def test_literal_eval_complex(self):
         # Issue #4907

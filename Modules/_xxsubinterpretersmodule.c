@@ -6,7 +6,6 @@
 #endif
 
 #include "Python.h"
-#include "frameobject.h"
 #include "pycore_frame.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_interpreteridobject.h"

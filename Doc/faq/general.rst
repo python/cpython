@@ -113,8 +113,8 @@ to many different classes of problems.
 
 The language comes with a large standard library that covers areas such as
 string processing (regular expressions, Unicode, calculating differences between
-files), internet protocols (HTTP, FTP, SMTP, XML-RPC, POP, IMAP, CGI
-programming), software engineering (unit testing, logging, profiling, parsing
+files), internet protocols (HTTP, FTP, SMTP, XML-RPC, POP, IMAP),
+software engineering (unit testing, logging, profiling, parsing
 Python code), and operating system interfaces (system calls, filesystems, TCP/IP
 sockets).  Look at the table of contents for :ref:`library-index` to get an idea
 of what's available.  A wide variety of third-party extensions are also
@@ -330,7 +330,7 @@ different companies and organizations.
 
 High-profile Python projects include `the Mailman mailing list manager
 <http://www.list.org>`_ and `the Zope application server
-<http://www.zope.org>`_.  Several Linux distributions, most notably `Red Hat
+<https://www.zope.dev>`_.  Several Linux distributions, most notably `Red Hat
 <https://www.redhat.com>`_, have written part or all of their installer and
 system administration software in Python.  Companies that use Python internally
 include Google, Yahoo, and Lucasfilm Ltd.

@@ -6,6 +6,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "structmember.h"         // PyMemberDef
+#include "pycore_descrobject.h"
 
 /*[clinic input]
 class mappingproxy "mappingproxyobject *" "&PyDictProxy_Type"
@@ -1177,6 +1178,12 @@ mappingproxy_getiter(mappingproxyobject *pp)
     return PyObject_GetIter(pp->mapping);
 }
 
+static Py_hash_t
+mappingproxy_hash(mappingproxyobject *pp)
+{
+    return PyObject_Hash(pp->mapping);
+}
+
 static PyObject *
 mappingproxy_str(mappingproxyobject *pp)
 {
@@ -1500,16 +1507,6 @@ class property(object):
         return self.__del(inst)
 
 */
-
-typedef struct {
-    PyObject_HEAD
-    PyObject *prop_get;
-    PyObject *prop_set;
-    PyObject *prop_del;
-    PyObject *prop_doc;
-    PyObject *prop_name;
-    int getter_doc;
-} propertyobject;
 
 static PyObject * property_copy(PyObject *, PyObject *, PyObject *,
                                   PyObject *);
@@ -1910,7 +1907,7 @@ PyTypeObject PyDictProxy_Type = {
     &mappingproxy_as_number,                    /* tp_as_number */
     &mappingproxy_as_sequence,                  /* tp_as_sequence */
     &mappingproxy_as_mapping,                   /* tp_as_mapping */
-    0,                                          /* tp_hash */
+    (hashfunc)mappingproxy_hash,                /* tp_hash */
     0,                                          /* tp_call */
     (reprfunc)mappingproxy_str,                 /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
