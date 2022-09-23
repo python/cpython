@@ -17,7 +17,6 @@ import struct
 import time
 import tempfile
 import itertools
-import warnings
 
 import _multiprocessing
 
@@ -597,22 +596,11 @@ class SocketListener(object):
         self._family = family
         self._last_accepted = None
 
-        if family == 'AF_UNIX':
-            if util.is_abstract_socket_namespace(address):
-                self._unlink = None
-                warnings.warn(
-                    'Security: This application\'s use of an abstract socket '
-                    f'{address!r} for a multiprocessing Listener may allow '
-                    'anyone on the system to inject code into the process.',
-                    RuntimeWarning)
-                # XXX The stacklevel= `address` came from is not reasonably
-                # known because this could be constructed from multiple
-                # different levels based on how people use multiprocessing.
-            else:
-                # Linux abstract socket namespaces do not need to be explicitly unlinked
-                self._unlink = util.Finalize(
-                    self, os.unlink, args=(address,), exitpriority=0
-                    )
+        if family == 'AF_UNIX' and not util.is_abstract_socket_namespace(address):
+            # Linux abstract socket namespaces do not need to be explicitly unlinked
+            self._unlink = util.Finalize(
+                self, os.unlink, args=(address,), exitpriority=0
+                )
         else:
             self._unlink = None
 
