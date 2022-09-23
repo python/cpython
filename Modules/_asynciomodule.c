@@ -16,6 +16,17 @@ module _asyncio
 
 
 /* State of the _asyncio module */
+typedef struct {
+} asyncio_state;
+
+static asyncio_state global_state;
+
+static inline asyncio_state *
+get_asyncio_state(PyObject *Py_UNUSED(mod))
+{
+    return &global_state;
+}
+
 static PyObject *asyncio_mod;
 static PyObject *traceback_extract_stack;
 static PyObject *asyncio_get_event_loop_policy;
@@ -3435,15 +3446,15 @@ static PyMethodDef asyncio_methods[] = {
 };
 
 static struct PyModuleDef _asynciomodule = {
-    PyModuleDef_HEAD_INIT,      /* m_base */
-    "_asyncio",                 /* m_name */
-    module_doc,                 /* m_doc */
-    -1,                         /* m_size */
-    asyncio_methods,            /* m_methods */
-    NULL,                       /* m_slots */
-    NULL,                       /* m_traverse */
-    NULL,                       /* m_clear */
-    (freefunc)module_free       /* m_free */
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_asyncio",
+    .m_doc = module_doc,
+    .m_size = sizeof(asyncio_state),
+    .m_methods = asyncio_methods,
+    .m_slots = NULL,
+    .m_traverse = NULL,
+    .m_clear = NULL,
+    .m_free = (freefunc)module_free,
 };
 
 
