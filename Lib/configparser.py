@@ -70,7 +70,7 @@ ConfigParser -- responsible for parsing a list of
 
         When `allow_unnamed_section` is True (default: False), options
         without section are accepted: the section for this is
-        ``configparser.UNNAMED_SECTION``. "In the file, they are placed before
+        ``configparser.UNNAMED_SECTION``. In the file, they are placed before
         the first explicit section header. This also allows reading and writing
         files that don't contain any explicit section headers.
 
@@ -1119,6 +1119,13 @@ class RawConfigParser(MutableMapping):
                         # raised at the end of the file and will contain a
                         # list of all bogus lines
                         e = self._handle_error(e, fpname, lineno, line)
+
+        # delete UNNAMED_SECTION if it's empty
+        if (UNNAMED_SECTION in self._sections and not
+                self._sections[UNNAMED_SECTION]):
+            del self._sections[UNNAMED_SECTION]
+            del self._proxies[UNNAMED_SECTION]
+
         self._join_multiline_values()
         # if any parsing errors occurred, raise an exception
         if e:

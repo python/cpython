@@ -1,4 +1,4 @@
 :class:`configparser.ConfigParser` now accepts unnamed sections before named
-ones.
+ones, if configured to do so.
 
-Contributed by Pedro Sousa Lacerda.
+Contributed by Pedro Sousa Lacerda and Christian Siefkes.

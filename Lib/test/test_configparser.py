@@ -2168,6 +2168,25 @@ class SectionlessTestCase(unittest.TestCase):
         self.assertEqual('1', cfg2[configparser.UNNAMED_SECTION]['a'])
         self.assertEqual('2', cfg2[configparser.UNNAMED_SECTION]['b'])
 
+    def test_one_named_section(self):
+        cfg1 = self.fromstring("""
+        [sect1]
+        a = 1
+        b = 2
+        """)
+
+        self.assertEqual(['sect1'], cfg1.sections())
+        self.assertEqual('1', cfg1['sect1']['a'])
+        self.assertEqual('2', cfg1['sect1']['b'])
+
+        output = io.StringIO()
+        cfg1.write(output)
+        cfg2 = self.fromstring(output.getvalue())
+
+        self.assertEqual(['sect1'], cfg2.sections())
+        self.assertEqual('1', cfg2['sect1']['a'])
+        self.assertEqual('2', cfg2['sect1']['b'])
+
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
