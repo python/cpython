@@ -751,6 +751,7 @@ static void set_most_env_vars(void)
     putenv("PYTHONIOENCODING=iso8859-1:replace");
     putenv("PYTHONPLATLIBDIR=env_platlibdir");
     putenv("PYTHONSAFEPATH=1");
+    putenv("PYTHONINTMAXSTRDIGITS=4567");
 }
 
 

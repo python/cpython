@@ -434,7 +434,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'install_signal_handlers': 1,
         'use_hash_seed': 0,
         'hash_seed': 0,
-        'int_max_str_digits': 4300,
+        'int_max_str_digits': sys.int_info.default_max_str_digits,
         'faulthandler': 0,
         'tracemalloc': 0,
         'perf_profiling': 0,
@@ -914,6 +914,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'platlibdir': 'env_platlibdir',
             'module_search_paths': self.IGNORE_CONFIG,
             'safe_path': 1,
+            'int_max_str_digits': 4567,
         }
         self.check_all_configs("test_init_compat_env", config, preconfig,
                                api=API_COMPAT)
@@ -946,6 +947,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'platlibdir': 'env_platlibdir',
             'module_search_paths': self.IGNORE_CONFIG,
             'safe_path': 1,
+            'int_max_str_digits': 4567,
         }
         self.check_all_configs("test_init_python_env", config, preconfig,
                                api=API_PYTHON)

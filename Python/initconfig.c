@@ -847,6 +847,7 @@ PyConfig_InitIsolatedConfig(PyConfig *config)
     config->faulthandler = 0;
     config->tracemalloc = 0;
     config->perf_profiling = 0;
+    config->int_max_str_digits = _PY_LONG_DEFAULT_MAX_STR_DIGITS;
     config->safe_path = 1;
     config->pathconfig_warnings = 0;
 #ifdef MS_WINDOWS
@@ -1823,10 +1824,7 @@ config_init_int_max_str_digits(PyConfig *config)
         }
         config->int_max_str_digits = maxdigits;
     }
-    if (config->int_max_str_digits < -1) {
-        return _PyStatus_ERR("invalid value: PyConfig.int_max_str_digits < -1.");
-    }
-    if (config->int_max_str_digits == -1) {
+    if (config->int_max_str_digits < 0) {
         config->int_max_str_digits = _PY_LONG_DEFAULT_MAX_STR_DIGITS;
     }
     return _PyStatus_OK();
