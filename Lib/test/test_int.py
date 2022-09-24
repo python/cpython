@@ -5,6 +5,7 @@ import unittest
 from test import support
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
+import _pylong
 
 L = [
         ('0', 0),
@@ -773,6 +774,49 @@ class IntStrDigitLimitsTests(unittest.TestCase):
 
 class IntSubclassStrDigitLimitsTests(IntStrDigitLimitsTests):
     int_class = IntSubclass
+
+
+class PyLongModuleTests(unittest.TestCase):
+    # Tests of the functions in _pylong.py
+
+    def test_pylong_int_to_decimal(self):
+        with _pylong.localcontext() as ctx:
+            ctx.max_str_digits = 0
+            n = (1 << 100_000) - 1
+            suffix = '9883109375'
+            s = str(n)
+            assert s[-10:] == suffix
+            s = str(-n)
+            assert s[-10:] == suffix
+            s = '%d' % n
+            assert s[-10:] == suffix
+            s = b'%d' % n
+            assert s[-10:] == suffix.encode('ascii')
+
+    def test_pylong_int_divmod(self):
+        with _pylong.localcontext() as ctx:
+            ctx.max_str_digits = 0
+            n = (1 << 100_000)
+            a, b = divmod(n*3 + 1, n)
+            assert a == 3 and b == 1
+
+    def test_pylong_str_to_int(self):
+        with _pylong.localcontext() as ctx:
+            ctx.max_str_digits = 0
+            v1 = 1 << 100_000
+            s = str(v1)
+            v2 = int(s)
+            assert v1 == v2
+            v3 = int(' -' + s)
+            assert -v1 == v3
+            v4 = int(' +' + s + ' ')
+            assert v1 == v4
+            with self.assertRaises(ValueError) as err:
+                int(s + 'z')
+            with self.assertRaises(ValueError) as err:
+                int(s + '_')
+            with self.assertRaises(ValueError) as err:
+                int('_' + s)
 
 
 if __name__ == "__main__":

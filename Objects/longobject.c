@@ -22,6 +22,9 @@ class int "PyObject *" "&PyLong_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=ec0275e3422a36e3]*/
 
+/* If defined, use algorithms from the _pylong.py module */
+#define WITH_PYLONG_MODULE 1
+
 /* Is this PyLong of size 1, 0 or -1? */
 #define IS_MEDIUM_VALUE(x) (((size_t)Py_SIZE(x)) + 1U < 3U)
 
@@ -1732,6 +1735,98 @@ rem1(PyLongObject *a, digit n)
     );
 }
 
+static int
+pylong_get_max_str_digits(void)
+{
+#ifdef WITH_PYLONG_MODULE
+    PyObject *mod = PyImport_ImportModule("_pylong");
+    if (mod == NULL) {
+        return -1;
+    }
+    PyObject *n = PyObject_CallMethod(mod, "get_max_str_digits", "");
+    Py_DECREF(mod);
+    if (n == NULL) {
+        return -1;
+    }
+    if (!PyLong_Check(n)) {
+        PyErr_SetString(PyExc_TypeError, "an integer is required");
+        Py_DECREF(n);
+        return -1;
+    }
+    int max_str_digits = PyLong_AsLong(n);
+    Py_DECREF(n);
+    return max_str_digits;
+#else
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        int max_str_digits = interp->int_max_str_digits;
+#endif /* WITH_PYLONG_MODULE */
+}
+
+
+#ifdef WITH_PYLONG_MODULE
+/* asymptotically faster long_to_decimal_string, using _pylong.py */
+static int
+pylong_int_to_decimal_string(PyObject *aa,
+                             PyObject **p_output,
+                             _PyUnicodeWriter *writer,
+                             _PyBytesWriter *bytes_writer,
+                             char **bytes_str)
+{
+    PyObject *s = NULL;
+    PyObject *mod = PyImport_ImportModule("_pylong");
+    if (mod == NULL) {
+        return -1;
+    }
+    s = PyObject_CallMethod(mod, "int_to_decimal_string", "O", aa);
+    if (s == NULL) {
+        goto error;
+    }
+    assert(PyUnicode_Check(s));
+    if (writer) {
+        Py_ssize_t size = PyUnicode_GET_LENGTH(s);
+        if (_PyUnicodeWriter_Prepare(writer, size, '9') == -1) {
+            goto error;
+        }
+        if (_PyUnicodeWriter_WriteStr(writer, s) < 0) {
+            goto error;
+        }
+        goto success;
+    }
+    else if (bytes_writer) {
+        Py_ssize_t size = PyUnicode_GET_LENGTH(s);
+        const void *data = PyUnicode_DATA(s);
+        int kind = PyUnicode_KIND(s);
+        *bytes_str = _PyBytesWriter_Prepare(bytes_writer, *bytes_str, size);
+        if (*bytes_str == NULL) {
+            goto error;
+        }
+        char *p = *bytes_str;
+        for (Py_ssize_t i=0; i < size; i++) {
+            Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+            *p++ = (char) ch;
+        }
+        (*bytes_str) = p;
+        goto success;
+    }
+    else {
+        *p_output = (PyObject *)s;
+        Py_INCREF(s);
+        goto success;
+    }
+
+error:
+        Py_DECREF(mod);
+        Py_XDECREF(s);
+        return -1;
+
+success:
+        Py_DECREF(mod);
+        Py_DECREF(s);
+        return 0;
+}
+#endif /* WITH_PYLONG_MODULE */
+
+
 /* Convert an integer to a base 10 string.  Returns a new non-shared
    string.  (Return value is non-shared so that callers can modify the
    returned value if necessary.) */
@@ -1766,8 +1861,7 @@ long_to_decimal_string_internal(PyObject *aa,
     */
     if (size_a >= 10 * _PY_LONG_MAX_STR_DIGITS_THRESHOLD
                   / (3 * PyLong_SHIFT) + 2) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        int max_str_digits = interp->int_max_str_digits;
+        int max_str_digits = pylong_get_max_str_digits();
         if ((max_str_digits > 0) &&
             (max_str_digits / (3 * PyLong_SHIFT) <= (size_a - 11) / 10)) {
             PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT_TO_STR,
@@ -1775,6 +1869,17 @@ long_to_decimal_string_internal(PyObject *aa,
             return -1;
         }
     }
+
+#if WITH_PYLONG_MODULE
+    if (size_a > 1000) {
+        /* Switch to _pylong.int_to_decimal_string(). */
+        return pylong_int_to_decimal_string(aa,
+                                         p_output,
+                                         writer,
+                                         bytes_writer,
+                                         bytes_str);
+    }
+#endif
 
     /* quick and dirty upper bound for the number of digits
        required to express a in base _PyLong_DECIMAL_BASE:
@@ -1836,8 +1941,7 @@ long_to_decimal_string_internal(PyObject *aa,
         strlen++;
     }
     if (strlen > _PY_LONG_MAX_STR_DIGITS_THRESHOLD) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        int max_str_digits = interp->int_max_str_digits;
+        int max_str_digits = pylong_get_max_str_digits();
         Py_ssize_t strlen_nosign = strlen - negative;
         if ((max_str_digits > 0) && (strlen_nosign > max_str_digits)) {
             Py_DECREF(scratch);
@@ -2290,6 +2394,47 @@ long_from_binary_base(const char **str, int base, PyLongObject **res)
     return 0;
 }
 
+static PyObject *long_neg(PyLongObject *v);
+
+#ifdef WITH_PYLONG_MODULE
+/* asymptotically faster str-to-long conversion for base 10, using _pylong.py */
+static PyObject *
+pylong_int_from_string(const char *str, char **pend, int base, int sign)
+{
+    PyObject *mod = PyImport_ImportModule("_pylong");
+    if (mod == NULL) {
+        return NULL;
+    }
+    assert(base == 10);
+    PyObject *result = PyObject_CallMethod(mod, "int_from_string", "s", str);
+    Py_DECREF(mod);
+    if (result == NULL) {
+        return NULL;
+    }
+    PyObject *v = PyTuple_GET_ITEM(result, 0); // integer value
+    if (v == Py_None) {
+        /* error case */
+        if (pend != NULL) {
+            PyObject *n = PyTuple_GET_ITEM(result, 1); // last character parsed
+            assert(PyLong_Check(n));
+            *pend = (char *)str + PyLong_AsSize_t(n);
+        }
+    }
+    else {
+        assert(PyLong_Check(v));
+        assert(PyTuple_GET_ITEM(result, 1) == Py_None);
+        if (sign < 0) {
+            v = long_neg((PyLongObject *)v);
+        }
+        else {
+            Py_INCREF(v);
+        }
+    }
+    Py_DECREF(result);
+    return v;
+}
+#endif /* WITH_PYLONG_MODULE */
+
 /* Parses an int from a bytestring. Leading and trailing whitespace will be
  * ignored.
  *
@@ -2513,14 +2658,20 @@ digit beyond the first.
 
         /* Limit the size to avoid excessive computation attacks. */
         if (digits > _PY_LONG_MAX_STR_DIGITS_THRESHOLD) {
-            PyInterpreterState *interp = _PyInterpreterState_GET();
-            int max_str_digits = interp->int_max_str_digits;
+            int max_str_digits = pylong_get_max_str_digits();
             if ((max_str_digits > 0) && (digits > max_str_digits)) {
                 PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT_TO_INT,
                              max_str_digits, digits);
                 return NULL;
             }
         }
+
+#if WITH_PYLONG_MODULE
+        if (digits > 6000 && base == 10) {
+            /* Switch to _pylong.int_from_string() */
+            return pylong_int_from_string(str, pend, base, sign);
+        }
+#endif
 
         /* Create an int object that can contain the largest possible
          * integer with this base and length.  Note that there's no
@@ -3874,6 +4025,36 @@ fast_floor_div(PyLongObject *a, PyLongObject *b)
     return PyLong_FromLong(div);
 }
 
+#ifdef WITH_PYLONG_MODULE
+/* asymptotically faster divmod, using _pylong.py */
+static int
+pylong_int_divmod(PyLongObject *v, PyLongObject *w,
+                  PyLongObject **pdiv, PyLongObject **pmod)
+{
+    PyObject *mod = PyImport_ImportModule("_pylong");
+    if (mod == NULL) {
+        return -1;
+    }
+    PyObject *r = PyObject_CallMethod(mod, "int_divmod", "OO", v, w);
+    if (r == NULL) {
+        Py_DECREF(mod);
+        return -1;
+    }
+    assert(PyTuple_Check(r));
+    PyObject *a = PyTuple_GET_ITEM(r, 0);
+    PyObject *b = PyTuple_GET_ITEM(r, 1);
+    Py_INCREF(a);
+    Py_INCREF(b);
+    assert(PyLong_Check(a));
+    assert(PyLong_Check(b));
+    *pdiv = (PyLongObject *)a;
+    *pmod = (PyLongObject *)b;
+    Py_DECREF(r);
+    Py_DECREF(mod);
+    return 0;
+}
+#endif /* WITH_PYLONG_MODULE */
+
 /* The / and % operators are now defined in terms of divmod().
    The expression a mod b has the value a - b*floor(a/b).
    The long_divrem function gives the remainder after division of
@@ -3925,6 +4106,12 @@ l_divmod(PyLongObject *v, PyLongObject *w,
         }
         return 0;
     }
+#if WITH_PYLONG_MODULE
+    if (Py_ABS(Py_SIZE(w)) > 1000) {
+        /* Switch to _pylong.int_divmod() */
+        return pylong_int_divmod(v, w, pdiv, pmod);
+    }
+#endif
     if (long_divrem(v, w, &div, &mod) < 0)
         return -1;
     if ((Py_SIZE(mod) < 0 && Py_SIZE(w) > 0) ||
