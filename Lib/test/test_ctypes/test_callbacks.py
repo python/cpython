@@ -163,10 +163,6 @@ class Callbacks(unittest.TestCase):
         # With no fix for i38748, the next line will raise OSError and cause the test to fail.
         self.assertEqual(dll._test_i38748_runCallback(callback, 5, 10), 15)
 
-    # This test is expected to fail on 32-bit (x86) because it uses stdcall
-    # convention, while 64-bit will ignore that and use a safe stack layout.
-    if (sys.maxsize + 1) == 2**31: # 32 bit
-        test_i38748_stackCorruption = unittest.expectedFailure(test_i38748_stackCorruption)
 
 @need_symbol('WINFUNCTYPE')
 class StdcallCallbacks(Callbacks):
