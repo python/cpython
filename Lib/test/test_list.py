@@ -1,10 +1,11 @@
 import sys
 from test import list_tests
 from test.support import cpython_only
+from test.support.bytecode_helper import BytecodeTestCase
 import pickle
 import unittest
 
-class ListTest(list_tests.CommonTest):
+class ListTest(list_tests.CommonTest, BytecodeTestCase):
     type2test = list
 
     def test_basic(self):
