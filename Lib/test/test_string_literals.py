@@ -271,7 +271,7 @@ class TestLiterals(unittest.TestCase):
         self.assertEqual(eval(r""" R'\x01' """), r'\x01')
         self.assertEqual(eval(r""" BR'\x01' """), br'\x01')
         self.assertEqual(eval(""" F'{1+1}' """), f'{1+1}')
-        self.assertEqual(eval(""" U'\U0001d120' """), u'\U0001d120')
+        self.assertEqual(eval(r""" U'\U0001d120' """), u'\U0001d120')
 
     def check_encoding(self, encoding, extra=""):
         modname = "xx_" + encoding.replace("-", "_")
