@@ -2,6 +2,7 @@ import inspect
 import types
 import unittest
 import contextlib
+import warnings
 
 from test.support.import_helper import import_module
 from test.support import gc_collect, requires_working_socket
@@ -376,6 +377,13 @@ class AsyncGenTest(unittest.TestCase):
             yield 3
 
         self.compare_generators(sync_gen_wrapper(), async_gen_wrapper())
+
+    def test_async_gen_3_arg_deprecation_warning(self):
+        async def gen():
+            yield 123
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=DeprecationWarning)
+            gen().athrow(GeneratorExit, GeneratorExit(), None)
 
     def test_async_gen_api_01(self):
         async def gen():
