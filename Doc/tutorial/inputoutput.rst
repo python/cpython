@@ -133,7 +133,17 @@ applies :func:`repr`::
    >>> print(f'My hovercraft is full of {animals!r}.')
    My hovercraft is full of 'eels'.
 
-For a reference on these format specifications, see
+The ``=`` specifier can be used to expand an expression to the text of the
+expression, an equal sign, then the representation of the evaluated expression:
+
+   >>> bugs = 'roaches'
+   >>> count = 13
+   >>> area = 'living room'
+   >>> print(f'Debugging {bugs=} {count=} {area=}')
+   Debugging bugs='roaches' count=13 area='living room'
+
+See :ref:`self-documenting expressions <bpo-36817-whatsnew>` for more information
+on the ``=`` specifier. For a reference on these format specifications, see
 the reference guide for the :ref:`formatspec`.
 
 .. _tut-string-format:
