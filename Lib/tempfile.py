@@ -444,7 +444,8 @@ class _TemporaryFileCloser:
                     self.file.close()
                 finally:
                     if self.delete and self.delete_on_close:
-                        unlink(self.name)
+                        if _os.path.exists(self.name):
+                            unlink(self.name)
 
         # Need to ensure the file is deleted on __del__
         def __del__(self):
