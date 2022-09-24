@@ -182,7 +182,7 @@ at https://docs.python.org/3/.  PDF, plain text, and downloadable HTML versions 
 also available at https://docs.python.org/3/download.html.
 
 The documentation is written in reStructuredText and processed by `the Sphinx
-documentation tool <http://sphinx-doc.org/>`__.  The reStructuredText source for
+documentation tool <https://www.sphinx-doc.org/>`__.  The reStructuredText source for
 the documentation is part of the Python source distribution.
 
 
@@ -264,7 +264,7 @@ Where in the world is www.python.org located?
 ---------------------------------------------
 
 The Python project's infrastructure is located all over the world and is managed
-by the Python Infrastructure Team. Details `here <http://infra.psf.io>`__.
+by the Python Infrastructure Team. Details `here <https://infra.psf.io>`__.
 
 
 Why is it called Python?

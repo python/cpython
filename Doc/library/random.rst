@@ -566,14 +566,14 @@ Simulation of arrival times and service deliveries for a multiserver queue::
    including simulation, sampling, shuffling, and cross-validation.
 
    `Economics Simulation
-   <http://nbviewer.jupyter.org/url/norvig.com/ipython/Economics.ipynb>`_
+   <https://nbviewer.jupyter.org/url/norvig.com/ipython/Economics.ipynb>`_
    a simulation of a marketplace by
    `Peter Norvig <http://norvig.com/bio.html>`_ that shows effective
    use of many of the tools and distributions provided by this module
    (gauss, uniform, sample, betavariate, choice, triangular, and randrange).
 
    `A Concrete Introduction to Probability (using Python)
-   <http://nbviewer.jupyter.org/url/norvig.com/ipython/Probability.ipynb>`_
+   <https://nbviewer.jupyter.org/url/norvig.com/ipython/Probability.ipynb>`_
    a tutorial by `Peter Norvig <http://norvig.com/bio.html>`_ covering
    the basics of probability theory, how to write simulations, and
    how to perform data analysis using Python.
