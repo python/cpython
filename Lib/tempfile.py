@@ -446,6 +446,9 @@ class _TemporaryFileCloser:
                     if self.delete and self.delete_on_close:
                         unlink(self.name)
 
+        # Need to ensure the file is deleted on __del__
+        def __del__(self):
+            self.close()
 
     else:
         def close(self):
@@ -453,12 +456,6 @@ class _TemporaryFileCloser:
                 self.close_called = True
                 self.file.close()
 
-    def __del__(self):
-        self.close()
-        # Need to ensure the file is deleted on __del__ if delete = True and
-        # file still exists
-        if self.delete and _os.path.exists(self.name):
-            _os.unlink(self.name)
 
 class _TemporaryFileWrapper:
     """Temporary file wrapper
@@ -467,6 +464,8 @@ class _TemporaryFileWrapper:
     temporary use.  In particular, it seeks to automatically
     remove the file when it is no longer needed.
     """
+    name = None
+    _cleanup_called = False
 
     def __init__(self, file, name, delete=True, delete_on_close=True):
         self.file = file
@@ -501,21 +500,30 @@ class _TemporaryFileWrapper:
         self.file.__enter__()
         return self
 
+    def _cleanup(self):
+        if self._cleanup_called or self.name is None:
+            return
+        self._cleanup_called = True
+        try:
+            self.close()
+        finally:
+            # If the file is to be deleted, but not on close, delete it now.
+            if self.delete and not self.delete_on_close:
+                try:
+                    _os.unlink(self.name)
+                except FileNotFoundError:
+                    # The file may have been deleted already.
+                    pass
+
     # Need to trap __exit__ as well to ensure the file gets
     # deleted when used in a with statement
     def __exit__(self, exc, value, tb):
         result = self.file.__exit__(exc, value, tb)
-        self.close()
-        # If the file is to be deleted, but not on close, delete it now.
-        if self.delete and not self.delete_on_close:
-            try:
-                _os.unlink(self.name)
-            # It is okay to ignore FileNotFoundError. The file may have
-            # been deleted already.
-            except FileNotFoundError:
-                pass
-
+        self._cleanup()
         return result
+
+    def __del__(self):
+        self._cleanup()
 
     def close(self):
         """
@@ -532,6 +540,17 @@ class _TemporaryFileWrapper:
         # closed when the generator is finalized, due to PEP380 semantics.
         for line in self.file:
             yield line
+
+    def __del__(self):
+        # This is to delete the temporary file in case delete = True,
+        # delete_on_close = False and no context manager was used
+        if self.delete:
+            try:
+                _os.unlink(self.name)
+            # It is okay to ignore FileNotFoundError. The file may have
+            # been deleted already.
+            except FileNotFoundError:
+                pass
 
 
 def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
