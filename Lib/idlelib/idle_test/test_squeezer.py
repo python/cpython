@@ -4,7 +4,7 @@ from textwrap import dedent
 from tkinter import Text, Tk
 import unittest
 from unittest.mock import Mock, NonCallableMagicMock, patch, sentinel, ANY
-from test.support import requires
+from test.support import requires, requires_mac_ver
 
 from idlelib.config import idleConf
 from idlelib.percolator import Percolator
@@ -168,6 +168,8 @@ class SqueezerTest(unittest.TestCase):
             orig_write.assert_called_with(text, "stderr")
             self.assertEqual(len(squeezer.expandingbuttons), 0)
 
+    # gh-97032: The following tests have problems on OS X prior to 11.7
+    @requires_mac_ver(11, 7)
     def test_write_stdout(self):
         """Test Squeezer's overriding of the EditorWindow's write() method."""
         editwin = self.make_mock_editor_window()
