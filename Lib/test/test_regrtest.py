@@ -15,7 +15,6 @@ import sys
 import sysconfig
 import tempfile
 import textwrap
-import time
 import unittest
 from test import libregrtest
 from test import support
@@ -25,7 +24,6 @@ from test.libregrtest import utils, setup
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
-Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 ROOT_DIR = os.path.join(os.path.dirname(__file__), '..', '..')
 ROOT_DIR = os.path.abspath(os.path.normpath(ROOT_DIR))
 LOG_PREFIX = r'[0-9]+:[0-9]+:[0-9]+ (?:load avg: [0-9]+\.[0-9]{2} )?'
@@ -665,7 +663,7 @@ class ProgramsTestCase(BaseTestCase):
             test_args.append('-arm32')   # 32-bit ARM build
         elif platform.architecture()[0] == '64bit':
             test_args.append('-x64')   # 64-bit build
-        if not Py_DEBUG:
+        if not support.Py_DEBUG:
             test_args.append('+d')     # Release build, use python.exe
         self.run_batch(script, *test_args, *self.tests)
 
@@ -682,7 +680,7 @@ class ProgramsTestCase(BaseTestCase):
             rt_args.append('-arm32')   # 32-bit ARM build
         elif platform.architecture()[0] == '64bit':
             rt_args.append('-x64')   # 64-bit build
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             rt_args.append('-d')     # Debug build, use python_d.exe
         self.run_batch(script, *rt_args, *self.regrtest_args, *self.tests)
 
@@ -903,7 +901,7 @@ class ArgsTestCase(BaseTestCase):
             reflog = fp.read()
             self.assertIn(line2, reflog)
 
-    @unittest.skipUnless(Py_DEBUG, 'need a debug build')
+    @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
     def test_huntrleaks(self):
         # test --huntrleaks
         code = textwrap.dedent("""
@@ -917,7 +915,7 @@ class ArgsTestCase(BaseTestCase):
         """)
         self.check_leak(code, 'references')
 
-    @unittest.skipUnless(Py_DEBUG, 'need a debug build')
+    @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
     def test_huntrleaks_fd_leak(self):
         # test --huntrleaks for file descriptor leak
         code = textwrap.dedent("""
@@ -1339,7 +1337,7 @@ class ArgsTestCase(BaseTestCase):
     def test_unicode_guard_env(self):
         guard = os.environ.get(setup.UNICODE_GUARD_ENV)
         self.assertIsNotNone(guard, f"{setup.UNICODE_GUARD_ENV} not set")
-        if guard != "\N{SMILING FACE WITH SUNGLASSES}":
+        if guard.isascii():
             # Skip to signify that the env var value was changed by the user;
             # possibly to something ASCII to work around Unicode issues.
             self.skipTest("Modified guard")
@@ -1358,6 +1356,32 @@ class ArgsTestCase(BaseTestCase):
 
         for name in names:
             self.assertFalse(os.path.exists(name), name)
+
+    @unittest.skipIf(support.is_wasi,
+                     'checking temp files is not implemented on WASI')
+    def test_leak_tmp_file(self):
+        code = textwrap.dedent(r"""
+            import os.path
+            import tempfile
+            import unittest
+
+            class FileTests(unittest.TestCase):
+                def test_leak_tmp_file(self):
+                    filename = os.path.join(tempfile.gettempdir(), 'mytmpfile')
+                    with open(filename, "wb") as fp:
+                        fp.write(b'content')
+        """)
+        testnames = [self.create_test(code=code) for _ in range(3)]
+
+        output = self.run_tests("--fail-env-changed", "-v", "-j2", *testnames, exitcode=3)
+        self.check_executed_tests(output, testnames,
+                                  env_changed=testnames,
+                                  fail_env_changed=True,
+                                  randomize=True)
+        for testname in testnames:
+            self.assertIn(f"Warning -- {testname} leaked temporary "
+                          f"files (1): mytmpfile",
+                          output)
 
 
 class TestUtils(unittest.TestCase):

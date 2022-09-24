@@ -67,7 +67,7 @@ Select Customize to review current options.</String>
   <String Id="CustomBackButton">&amp;Back</String>
   <String Id="CustomBrowseButton">B&amp;rowse</String>
   <String Id="Include_docLabel">&amp;Documentation</String>
-  <String Id="Include_docHelpLabel">Installs the Python documentation file.</String>
+  <String Id="Include_docHelpLabel">Installs the Python documentation files.</String>
   <String Id="Include_pipLabel">&amp;pip</String>
   <String Id="Include_pipHelpLabel">Installs pip, which can download and install other Python packages.</String>
   <String Id="Include_tcltkLabel">tcl/tk and &amp;IDLE</String>
@@ -121,7 +121,6 @@ Feel free to email &lt;a href="mailto:python-list@python.org"&gt;python-list@pyt
   <String Id="FailureRestartText">You must restart your computer to complete the rollback of the software.</String>
   <String Id="FailureRestartButton">&amp;Restart</String>
   <String Id="FailureExistingInstall">Unable to install [WixBundleName] due to an existing install. Use Programs and Features to modify, repair or remove [WixBundleName].</String>
-  
   <String Id="FailureOldOS">At least Windows 8.1 or Windows Server 2012 are required to install [WixBundleName]
 
 Visit &lt;a href="https://www.python.org/"&gt;python.org&lt;/a&gt; to download an earlier version of Python.</String>

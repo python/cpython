@@ -10,8 +10,7 @@ import calendar
 import threading
 import socket
 
-from test.support import (verbose,
-                          run_with_tz, run_with_locale, cpython_only)
+from test.support import verbose, run_with_tz, run_with_locale, cpython_only
 from test.support import hashlib_helper
 from test.support import threading_helper
 from test.support import warnings_helper
@@ -22,6 +21,8 @@ try:
     import ssl
 except ImportError:
     ssl = None
+
+support.requires_working_socket(module=True)
 
 CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "keycert3.pem")
 CAFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "pycacert.pem")
@@ -936,6 +937,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
 
     @threading_helper.reap_threads
     @cpython_only
+    @unittest.skipUnless(__debug__, "Won't work if __debug__ is False")
     def test_dump_ur(self):
         # See: http://bugs.python.org/issue26543
         untagged_resp_dict = {'READ-WRITE': [b'']}

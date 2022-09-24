@@ -98,8 +98,8 @@ Some facts and figures:
    If *fileobj* is specified, it is used as an alternative to a :term:`file object`
    opened in binary mode for *name*. It is supposed to be at position 0.
 
-   For modes ``'w:gz'``, ``'r:gz'``, ``'w:bz2'``, ``'r:bz2'``, ``'x:gz'``,
-   ``'x:bz2'``, :func:`tarfile.open` accepts the keyword argument
+   For modes ``'w:gz'``, ``'x:gz'``, ``'w|gz'``, ``'w:bz2'``, ``'x:bz2'``,
+   ``'w|bz2'``, :func:`tarfile.open` accepts the keyword argument
    *compresslevel* (default ``9``) to specify the compression level of the file.
 
    For modes ``'w:xz'`` and ``'x:xz'``, :func:`tarfile.open` accepts the
@@ -151,6 +151,9 @@ Some facts and figures:
 
    .. versionchanged:: 3.6
       The *name* parameter accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.12
+      The *compresslevel* keyword argument also works for streams.
 
 
 .. class:: TarFile
@@ -836,7 +839,7 @@ There are three tar formats that can be created with the :mod:`tarfile` module:
   files and stores pathnames in a portable way. Modern tar implementations,
   including GNU tar, bsdtar/libarchive and star, fully support extended *pax*
   features; some old or unmaintained libraries may not, but should treat
-  *pax* archives as if they were in the universally-supported *ustar* format.
+  *pax* archives as if they were in the universally supported *ustar* format.
   It is the current default format for new archives.
 
   It extends the existing *ustar* format with extra headers for information

@@ -10,7 +10,6 @@
 
 #include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_floatobject.h"   // _PyFloat_Pack8()
 
 #include <ffi.h>
 #include "ctypes.h"
@@ -280,6 +279,7 @@ PyCField_clear(CFieldObject *self)
 static void
 PyCField_dealloc(PyObject *self)
 {
+    PyObject_GC_UnTrack(self);
     PyCField_clear((CFieldObject *)self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -326,7 +326,7 @@ PyTypeObject PyCField_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
-    "Structure/Union member",                   /* tp_doc */
+    PyDoc_STR("Structure/Union member"),        /* tp_doc */
     (traverseproc)PyCField_traverse,                    /* tp_traverse */
     (inquiry)PyCField_clear,                            /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -1009,10 +1009,10 @@ d_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
     if (x == -1 && PyErr_Occurred())
         return NULL;
 #ifdef WORDS_BIGENDIAN
-    if (_PyFloat_Pack8(x, (unsigned char *)ptr, 1))
+    if (PyFloat_Pack8(x, ptr, 1))
         return NULL;
 #else
-    if (_PyFloat_Pack8(x, (unsigned char *)ptr, 0))
+    if (PyFloat_Pack8(x, ptr, 0))
         return NULL;
 #endif
     _RET(value);
@@ -1022,9 +1022,9 @@ static PyObject *
 d_get_sw(void *ptr, Py_ssize_t size)
 {
 #ifdef WORDS_BIGENDIAN
-    return PyFloat_FromDouble(_PyFloat_Unpack8(ptr, 1));
+    return PyFloat_FromDouble(PyFloat_Unpack8(ptr, 1));
 #else
-    return PyFloat_FromDouble(_PyFloat_Unpack8(ptr, 0));
+    return PyFloat_FromDouble(PyFloat_Unpack8(ptr, 0));
 #endif
 }
 
@@ -1057,10 +1057,10 @@ f_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
     if (x == -1 && PyErr_Occurred())
         return NULL;
 #ifdef WORDS_BIGENDIAN
-    if (_PyFloat_Pack4(x, (unsigned char *)ptr, 1))
+    if (PyFloat_Pack4(x, ptr, 1))
         return NULL;
 #else
-    if (_PyFloat_Pack4(x, (unsigned char *)ptr, 0))
+    if (PyFloat_Pack4(x, ptr, 0))
         return NULL;
 #endif
     _RET(value);
@@ -1070,9 +1070,9 @@ static PyObject *
 f_get_sw(void *ptr, Py_ssize_t size)
 {
 #ifdef WORDS_BIGENDIAN
-    return PyFloat_FromDouble(_PyFloat_Unpack4(ptr, 1));
+    return PyFloat_FromDouble(PyFloat_Unpack4(ptr, 1));
 #else
-    return PyFloat_FromDouble(_PyFloat_Unpack4(ptr, 0));
+    return PyFloat_FromDouble(PyFloat_Unpack4(ptr, 0));
 #endif
 }
 
@@ -1603,6 +1603,7 @@ _ctypes_get_fielddesc(const char *fmt)
     struct fielddesc *table = formattable;
 
     if (!initialized) {
+        initialized = 1;
         _ctypes_init_fielddesc();
     }
 

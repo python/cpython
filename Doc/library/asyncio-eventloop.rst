@@ -330,9 +330,9 @@ Creating Futures and Tasks
 
    .. versionadded:: 3.5.2
 
-.. method:: loop.create_task(coro, *, name=None)
+.. method:: loop.create_task(coro, *, name=None, context=None)
 
-   Schedule the execution of a :ref:`coroutine`.
+   Schedule the execution of :ref:`coroutine <coroutine>` *coro*.
    Return a :class:`Task` object.
 
    Third-party event loops can use their own subclass of :class:`Task`
@@ -342,8 +342,15 @@ Creating Futures and Tasks
    If the *name* argument is provided and not ``None``, it is set as
    the name of the task using :meth:`Task.set_name`.
 
+   An optional keyword-only *context* argument allows specifying a
+   custom :class:`contextvars.Context` for the *coro* to run in.
+   The current context copy is created when no *context* is provided.
+
    .. versionchanged:: 3.8
       Added the *name* parameter.
+
+   .. versionchanged:: 3.11
+      Added the *context* parameter.
 
 .. method:: loop.set_task_factory(factory)
 
@@ -352,7 +359,7 @@ Creating Futures and Tasks
 
    If *factory* is ``None`` the default task factory will be set.
    Otherwise, *factory* must be a *callable* with the signature matching
-   ``(loop, coro)``, where *loop* is a reference to the active
+   ``(loop, coro, context=None)``, where *loop* is a reference to the active
    event loop, and *coro* is a coroutine object.  The callable
    must return a :class:`asyncio.Future`-compatible object.
 
@@ -370,7 +377,8 @@ Opening network connections
                           local_addr=None, server_hostname=None, \
                           ssl_handshake_timeout=None, \
                           ssl_shutdown_timeout=None, \
-                          happy_eyeballs_delay=None, interleave=None)
+                          happy_eyeballs_delay=None, interleave=None, \
+                          all_errors=False)
 
    Open a streaming transport connection to a given
    address specified by *host* and *port*.
@@ -461,6 +469,14 @@ Opening network connections
      to complete before aborting the connection. ``30.0`` seconds if ``None``
      (default).
 
+   * *all_errors* determines what exceptions are raised when a connection cannot
+     be created. By default, only a single ``Exception`` is raised: the first
+     exception if there is only one or all errors have same message, or a single
+     ``OSError`` with the error messages combined. When ``all_errors`` is ``True``,
+     an ``ExceptionGroup`` will be raised containing all exceptions (even if there
+     is only one).
+
+
    .. versionchanged:: 3.5
 
       Added support for SSL/TLS in :class:`ProactorEventLoop`.
@@ -492,6 +508,9 @@ Opening network connections
    .. versionchanged:: 3.11
 
       Added the *ssl_shutdown_timeout* parameter.
+
+   .. versionchanged:: 3.12
+      *all_errors* was added.
 
    .. seealso::
 
@@ -922,6 +941,29 @@ convenient.
 
    .. versionadded:: 3.7
 
+.. coroutinemethod:: loop.sock_recvfrom(sock, bufsize)
+
+   Receive a datagram of up to *bufsize* from *sock*.  Asynchronous version of
+   :meth:`socket.recvfrom() <socket.socket.recvfrom>`.
+
+   Return a tuple of (received data, remote address).
+
+   *sock* must be a non-blocking socket.
+
+   .. versionadded:: 3.11
+
+.. coroutinemethod:: loop.sock_recvfrom_into(sock, buf, nbytes=0)
+
+   Receive a datagram of up to *nbytes* from *sock* into *buf*.
+   Asynchronous version of
+   :meth:`socket.recvfrom_into() <socket.socket.recvfrom_into>`.
+
+   Return a tuple of (number of bytes received, remote address).
+
+   *sock* must be a non-blocking socket.
+
+   .. versionadded:: 3.11
+
 .. coroutinemethod:: loop.sock_sendall(sock, data)
 
    Send *data* to the *sock* socket. Asynchronous version of
@@ -939,6 +981,18 @@ convenient.
       Even though the method was always documented as a coroutine
       method, before Python 3.7 it returned a :class:`Future`.
       Since Python 3.7, this is an ``async def`` method.
+
+.. coroutinemethod:: loop.sock_sendto(sock, data, address)
+
+   Send a datagram from *sock* to *address*.
+   Asynchronous version of
+   :meth:`socket.sendto() <socket.socket.sendto>`.
+
+   Return the number of bytes sent.
+
+   *sock* must be a non-blocking socket.
+
+   .. versionadded:: 3.11
 
 .. coroutinemethod:: loop.sock_connect(sock, address)
 
@@ -1621,7 +1675,7 @@ event loop::
         print('Hello World')
         loop.stop()
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
 
     # Schedule a call to hello_world()
     loop.call_soon(hello_world, loop)
@@ -1657,7 +1711,7 @@ after 5 seconds, and then stops the event loop::
         else:
             loop.stop()
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
 
     # Schedule the first call to display_date()
     end_time = loop.time() + 5.0
@@ -1689,7 +1743,7 @@ Wait until a file descriptor received some data using the
     # Create a pair of connected file descriptors
     rsock, wsock = socketpair()
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
 
     def reader():
         data = rsock.recv(100)

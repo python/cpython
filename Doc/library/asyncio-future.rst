@@ -55,7 +55,7 @@ Future Functions
       preferred way for creating new Tasks.
 
       Save a reference to the result of this function, to avoid
-      a task disappearing mid execution.
+      a task disappearing mid-execution.
 
    .. versionchanged:: 3.5.1
       The function accepts any :term:`awaitable` object.
@@ -196,6 +196,11 @@ Future Object
       .. versionchanged:: 3.9
          Added the *msg* parameter.
 
+      .. deprecated-removed:: 3.11 3.14
+         *msg* parameter is ambiguous when multiple :meth:`cancel`
+         are called with different cancellation messages.
+         The argument will be removed.
+
    .. method:: exception()
 
       Return the exception that was set on this Future.
@@ -276,3 +281,8 @@ the Future has a result::
 
    - :meth:`asyncio.Future.cancel` accepts an optional ``msg`` argument,
      but :func:`concurrent.futures.cancel` does not.
+
+     .. deprecated-removed:: 3.11 3.14
+        *msg* parameter is ambiguous when multiple :meth:`cancel`
+        are called with different cancellation messages.
+        The argument will be removed.

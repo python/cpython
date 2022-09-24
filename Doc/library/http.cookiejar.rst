@@ -160,11 +160,10 @@ contained :class:`Cookie` objects.
    respectively), the :mailheader:`Cookie2` header is also added when appropriate.
 
    The *request* object (usually a :class:`urllib.request.Request` instance)
-   must support the methods :meth:`get_full_url`, :meth:`get_host`,
-   :meth:`get_type`, :meth:`unverifiable`, :meth:`has_header`,
+   must support the methods :meth:`get_full_url`, :meth:`has_header`,
    :meth:`get_header`, :meth:`header_items`, :meth:`add_unredirected_header`
-   and :attr:`origin_req_host` attribute as documented by
-   :mod:`urllib.request`.
+   and the attributes :attr:`host`, :attr:`!type`, :attr:`unverifiable`
+   and :attr:`origin_req_host` as documented by :mod:`urllib.request`.
 
    .. versionchanged:: 3.3
 
@@ -186,11 +185,11 @@ contained :class:`Cookie` objects.
    method, which returns an :class:`email.message.Message` instance.
 
    The *request* object (usually a :class:`urllib.request.Request` instance)
-   must support the methods :meth:`get_full_url`, :meth:`get_host`,
-   :meth:`unverifiable`, and :attr:`origin_req_host` attribute, as documented
-   by :mod:`urllib.request`.  The request is used to set default values for
-   cookie-attributes as well as for checking that the cookie is allowed to be
-   set.
+   must support the method :meth:`get_full_url` and the attributes
+   :attr:`host`, :attr:`unverifiable` and :attr:`origin_req_host`,
+   as documented by :mod:`urllib.request`.  The request is used to set
+   default values for cookie-attributes as well as for checking that the
+   cookie is allowed to be set.
 
    .. versionchanged:: 3.3
 

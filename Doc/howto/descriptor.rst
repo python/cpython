@@ -582,11 +582,18 @@ a pure Python equivalent:
 
 .. testcode::
 
+    def find_name_in_mro(cls, name, default):
+        "Emulate _PyType_Lookup() in Objects/typeobject.c"
+        for base in cls.__mro__:
+            if name in vars(base):
+                return vars(base)[name]
+        return default
+
     def object_getattribute(obj, name):
         "Emulate PyObject_GenericGetAttr() in Objects/object.c"
         null = object()
         objtype = type(obj)
-        cls_var = getattr(objtype, name, null)
+        cls_var = find_name_in_mro(objtype, name, null)
         descr_get = getattr(type(cls_var), '__get__', null)
         if descr_get is not null:
             if (hasattr(type(cls_var), '__set__')
@@ -663,6 +670,15 @@ a pure Python equivalent:
         def __getattr__(self, name):
             return ('getattr_hook', self, name)
 
+    class D1:
+        def __get__(self, obj, objtype=None):
+            return type(self), obj, objtype
+
+    class U1:
+        x = D1()
+
+    class U2(U1):
+        pass
 
 .. doctest::
     :hide:
@@ -694,6 +710,10 @@ a pure Python equivalent:
     >>> b.m5(200) == b['m5'](200) == 1000
     True
     >>> b.g == b['g'] == ('getattr_hook', b, 'g')
+    True
+
+    >>> u2 = U2()
+    >>> object_getattribute(u2, 'x') == u2.x == (D1, u2, U2)
     True
 
 Note, there is no :meth:`__getattr__` hook in the :meth:`__getattribute__`
@@ -1349,6 +1369,8 @@ Using the non-data descriptor protocol, a pure Python version of
             if cls is None:
                 cls = type(obj)
             if hasattr(type(self.f), '__get__'):
+                # This code path was added in Python 3.9
+                # and was deprecated in Python 3.11.
                 return self.f.__get__(cls, cls)
             return MethodType(self.f, cls)
 
@@ -1386,7 +1408,7 @@ Using the non-data descriptor protocol, a pure Python version of
 The code path for ``hasattr(type(self.f), '__get__')`` was added in
 Python 3.9 and makes it possible for :func:`classmethod` to support
 chained decorators.  For example, a classmethod and property could be
-chained together:
+chained together.  In Python 3.11, this functionality was deprecated.
 
 .. testcode::
 

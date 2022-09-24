@@ -53,7 +53,7 @@ List Objects
 
 .. c:function:: Py_ssize_t PyList_GET_SIZE(PyObject *list)
 
-   Macro form of :c:func:`PyList_Size` without error checking.
+   Similar to :c:func:`PyList_Size`, but without error checking.
 
 
 .. c:function:: PyObject* PyList_GetItem(PyObject *list, Py_ssize_t index)
@@ -66,7 +66,7 @@ List Objects
 
 .. c:function:: PyObject* PyList_GET_ITEM(PyObject *list, Py_ssize_t i)
 
-   Macro form of :c:func:`PyList_GetItem` without error checking.
+   Similar to :c:func:`PyList_GetItem`, but without error checking.
 
 
 .. c:function:: int PyList_SetItem(PyObject *list, Py_ssize_t index, PyObject *item)
