@@ -13,7 +13,7 @@ import sysconfig
 import types
 
 
-CORE_VENV_DEPS = ('pip', 'setuptools')
+CORE_VENV_DEPS = ('pip',)
 logger = logging.getLogger(__name__)
 
 

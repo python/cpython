@@ -9,11 +9,9 @@ from importlib import resources
 
 
 __all__ = ["version", "bootstrap"]
-_PACKAGE_NAMES = ('setuptools', 'pip')
-_SETUPTOOLS_VERSION = "65.5.0"
+_PACKAGE_NAMES = ('pip',)
 _PIP_VERSION = "22.3.1"
 _PROJECTS = [
-    ("setuptools", _SETUPTOOLS_VERSION, "py3"),
     ("pip", _PIP_VERSION, "py3"),
 ]
 
@@ -153,10 +151,10 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
 
     _disable_pip_configuration_settings()
 
-    # By default, installing pip and setuptools installs all of the
+    # By default, installing pip installs all of the
     # following scripts (X.Y == running Python version):
     #
-    #   pip, pipX, pipX.Y, easy_install, easy_install-X.Y
+    #   pip, pipX, pipX.Y
     #
     # pip 1.5+ allows ensurepip to request that some of those be left out
     if altinstall:
