@@ -457,11 +457,11 @@ class StackViewer(ScrolledList):
 
 class NamespaceViewer:
 
-    def __init__(self, master, title, dict=None):
+    def __init__(self, master, title, dict_=None):  # XXX dict_ never passed.
         width = 0
         height = 40
-        if dict:
-            height = 20*len(dict) # XXX 20 == observed height of Entry widget
+        if dict_:
+            height = 20*len(dict_) # XXX 20 == observed height of Entry widget
         self.master = master
         self.title = title
         import reprlib
@@ -482,19 +482,20 @@ class NamespaceViewer:
         canvas["yscrollcommand"] = vbar.set
         self.subframe = subframe = Frame(canvas)
         self.sfid = canvas.create_window(0, 0, window=subframe, anchor="nw")
-        self.load_dict(dict)
+        self.load_dict(dict_)
 
-    dict = -1
+    dict = -1  # Needed for self.dict below.
 
-    def load_dict(self, dict, force=0, rpc_client=None):
-        if dict is self.dict and not force:
+    def load_dict(self, dict_, force=0, rpc_client=None):
+        print(self.dict, dict_)
+        if dict_ is self.dict and not force:
             return
         subframe = self.subframe
         frame = self.frame
         for c in list(subframe.children.values()):
             c.destroy()
         self.dict = None
-        if not dict:
+        if not dict_:
             l = Label(subframe, text="None")
             l.grid(row=0, column=0)
         else:
@@ -509,12 +510,12 @@ class NamespaceViewer:
             # interpreter gets into a loop requesting non-existing dict[0],
             # dict[1], dict[2], etc from the debugger_r.DictProxy.
             ###
-            keys_list = dict.keys()
+            keys_list = dict_.keys()
             names = sorted(keys_list)
             ###
             row = 0
             for name in names:
-                value = dict[name]
+                value = dict_[name]
                 svalue = self.repr.repr(value) # repr(value)
                 # Strip extra quotes caused by calling repr on the (already)
                 # repr'd value sent across the RPC interface:
@@ -526,7 +527,7 @@ class NamespaceViewer:
                 l.insert(0, svalue)
                 l.grid(row=row, column=1, sticky="nw")
                 row = row+1
-        self.dict = dict
+        self.dict = dict_
         # XXX Could we use a <Configure> callback for the following?
         subframe.update_idletasks() # Alas!
         width = subframe.winfo_reqwidth()
