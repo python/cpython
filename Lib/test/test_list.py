@@ -264,6 +264,10 @@ class ListTest(list_tests.CommonTest):
         self.assertNotInBytecode(code, "BUILD_LIST")
         self.assertNotInBytecode(code, "BINARY_SUBSCR")
 
+        code = compile("[5, 7, 10, 11][a]", "<string>", "eval")
+        self.assertInBytecode(code, "BUILD_LIST")
+        self.assertInBytecode(code, "BINARY_SUBSCR")
+
         code = compile("[][0]", "<string>", "eval")
         self.assertEqual(code.co_consts, (0,))
         self.assertInBytecode(code, "BUILD_LIST")
