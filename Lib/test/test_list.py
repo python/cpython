@@ -256,6 +256,19 @@ class ListTest(list_tests.CommonTest):
         lst = [X(), X()]
         X() in lst
 
+    def test_constant_list_subscript(self):
+        # testing constant list subscripting
+        code = compile("[5, 7, 10, 11][2]", "<string>", "eval")
+        self.assertEqual(code.co_consts, (10,))
+        self.assertInBytecode(code, "LOAD_CONST", 0)
+        self.assertNotInBytecode(code, "BUILD_LIST")
+        self.assertNotInBytecode(code, "BINARY_SUBSCR")
+
+        code = compile("[][0]", "<string>", "eval")
+        self.assertEqual(code.co_consts, (0,))
+        self.assertInBytecode(code, "BUILD_LIST")
+        self.assertInBytecode(code, "BINARY_SUBSCR")
+
 
 if __name__ == "__main__":
     unittest.main()
