@@ -127,7 +127,7 @@ thoughts in mind:
 .. seealso::
 
    * `Sorted Collections
-     <http://www.grantjenks.com/docs/sortedcollections/>`_ is a high performance
+     <https://grantjenks.com/docs/sortedcollections/>`_ is a high performance
      module that uses *bisect* to managed sorted collections of data.
 
    * The `SortedCollection recipe
