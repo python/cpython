@@ -156,6 +156,10 @@ jobs:
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v3
+    - name: Install tck-tk
+      run: |
+        brew update
+        brew install tcl-tk
     - name: Prepare homebrew environment variables
       run: |
         echo "LDFLAGS=-L$(brew --prefix tcl-tk)/lib" >> $GITHUB_ENV
