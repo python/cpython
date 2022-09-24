@@ -1950,6 +1950,73 @@ static int test_repeated_init_and_inittab(void)
     return 0;
 }
 
+static void wrap_allocator(PyMemAllocatorEx *allocator);
+static void unwrap_allocator(PyMemAllocatorEx *allocator);
+
+static void *
+malloc_wrapper(void *ctx, size_t size)
+{
+    PyMemAllocatorEx *allocator = (PyMemAllocatorEx *)ctx;
+    unwrap_allocator(allocator);
+    PyEval_GetFrame();  // BOOM!
+    wrap_allocator(allocator);
+    return allocator->malloc(allocator->ctx, size);
+}
+
+static void *
+calloc_wrapper(void *ctx, size_t nelem, size_t elsize)
+{
+    PyMemAllocatorEx *allocator = (PyMemAllocatorEx *)ctx;
+    return allocator->calloc(allocator->ctx, nelem, elsize);
+}
+
+static void *
+realloc_wrapper(void *ctx, void *ptr, size_t new_size)
+{
+    PyMemAllocatorEx *allocator = (PyMemAllocatorEx *)ctx;
+    return allocator->realloc(allocator->ctx, ptr, new_size);
+}
+
+static void
+free_wrapper(void *ctx, void *ptr)
+{
+    PyMemAllocatorEx *allocator = (PyMemAllocatorEx *)ctx;
+    allocator->free(allocator->ctx, ptr);
+}
+
+static void
+wrap_allocator(PyMemAllocatorEx *allocator)
+{
+    PyMem_GetAllocator(PYMEM_DOMAIN_OBJ, allocator);
+    PyMemAllocatorEx wrapper = {
+        .malloc = &malloc_wrapper,
+        .calloc = &calloc_wrapper,
+        .realloc = &realloc_wrapper,
+        .free = &free_wrapper,
+        .ctx = allocator,
+    };
+    PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, &wrapper);
+}
+
+static void
+unwrap_allocator(PyMemAllocatorEx *allocator)
+{
+    PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, allocator);
+}
+
+static int
+test_get_incomplete_frame(void)
+{
+    _testembed_Py_Initialize();
+    PyMemAllocatorEx allocator;
+    wrap_allocator(&allocator);
+    // Force an allocation with an incomplete (generator) frame:
+    int result = PyRun_SimpleString("(_ for _ in ())");
+    unwrap_allocator(&allocator);
+    Py_Finalize();
+    return result;
+}
+
 
 /* *********************************************************
  * List of test cases and the function that implements it.
@@ -2032,6 +2099,7 @@ static struct TestCase TestCases[] = {
 #ifndef MS_WINDOWS
     {"test_frozenmain", test_frozenmain},
 #endif
+    {"test_get_incomplete_frame", test_get_incomplete_frame},
 
     {NULL, NULL}
 };

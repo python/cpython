@@ -1018,7 +1018,7 @@ The :mod:`test.support` module defines the following functions:
    context to allow execution of test code that needs a different limit
    on the number of digits when converting between an integer and string.
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.11
 
 
 The :mod:`test.support` module defines the following classes:
