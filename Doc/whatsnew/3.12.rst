@@ -43,8 +43,8 @@
    module.
    (Contributed by P.Y. Developer in :issue:`12345`.)
 
-   This saves the maintainer the effort of going through the Mercurial log
-   when researching a change.
+   This saves the maintainer the effort of going through the VCS log when
+   researching a change.
 
 This article explains the new features in Python 3.12, compared to 3.11.
 
@@ -83,6 +83,9 @@ Other Language Changes
   mapping is hashable.
   (Contributed by Serhiy Storchaka in :gh:`87995`.)
 
+* :class:`memoryview` now supports the half-float type (the "e" format code).
+  (Contributed by Dong-hee Na and Antoine Pitrou in :gh:`90751`.)
+
 
 New Modules
 ===========
@@ -93,6 +96,13 @@ New Modules
 Improved Modules
 ================
 
+pathlib
+-------
+
+* Add :meth:`~pathlib.Path.walk` for walking the directory trees and generating
+  all file or directory names within them, similar to :func:`os.walk`.
+  (Contributed by Stanislav Zmiev in :gh:`90385`.)
+
 dis
 ---
 
@@ -100,7 +110,7 @@ dis
   do not appear in executable bytecode) are now exposed in the
   :mod:`dis` module.
   :data:`~dis.HAVE_ARGUMENT` is still relevant to real opcodes,
-  but it is not useful for pseudo instrcutions. Use the new
+  but it is not useful for pseudo instructions. Use the new
   :data:`~dis.hasarg` collection instead.
   (Contributed by Irit Katriel in :gh:`94216`.)
 
@@ -118,6 +128,20 @@ sqlite3
 * Add a :ref:`command-line interface <sqlite3-cli>`.
   (Contributed by Erlend E. Aasland in :gh:`77617`.)
 
+threading
+---------
+
+* Add :func:`threading.settrace_all_threads` and
+  :func:`threading.setprofile_all_threads` that allow to set tracing and
+  profiling functions in all running threads in addition to the calling one.
+  (Contributed by Pablo Galindo in :gh:`93503`.)
+
+unicodedata
+-----------
+
+* The Unicode database has been updated to version 15.0.0. (Contributed by
+  Benjamin Peterson in :gh:`96734`).
+
 
 Optimizations
 =============
@@ -125,6 +149,10 @@ Optimizations
 * Removed ``wstr`` and ``wstr_length`` members from Unicode objects.
   It reduces object size by 8 or 16 bytes on 64bit platform. (:pep:`623`)
   (Contributed by Inada Naoki in :gh:`92536`.)
+
+* Added experimental support for using the BOLT binary optimizer in the build
+  process, which improves performance by 1-5%.
+  (Contributed by Kevin Modzelewski in :gh:`90536`.)
 
 
 CPython bytecode changes
@@ -299,6 +327,14 @@ Removed
   (and corresponding ``EXPERIMENTAL_ISOLATED_SUBINTERPRETERS``)
   have been removed.
 
+* ``smtpd`` has been removed according to the schedule in :pep:`594`,
+  having been deprecated in Python 3.4.7 and 3.5.4.
+  Use aiosmtpd_ PyPI module or any other
+  :mod:`asyncio`-based server instead.
+  (Contributed by Oleg Iarygin in :gh:`93243`.)
+
+.. _aiosmtpd: https://pypi.org/project/aiosmtpd/
+
 * Remove ``io.OpenWrapper`` and ``_pyio.OpenWrapper``, deprecated in Python
   3.10: just use :func:`open` instead. The :func:`open` (:func:`io.open`)
   function is a built-in function. Since Python 3.10, :func:`_pyio.open` is
@@ -382,6 +418,10 @@ Changes in the Python API
   to :term:`filesystem encoding and error handler`.
   Argument files should be encoded in UTF-8 instead of ANSI Codepage on Windows.
 
+* Removed the ``asyncore``-based ``smtpd`` module deprecated in Python 3.4.7
+  and 3.5.4.  A recommended replacement is the
+  :mod:`asyncio`-based aiosmtpd_ PyPI module.
+
 * :func:`shlex.split`: Passing ``None`` for *s* argument now raises an
   exception, rather than reading :data:`sys.stdin`. The feature was deprecated
   in Python 3.9.
@@ -402,6 +442,10 @@ Build Changes
   ``va_start()`` is no longer called with a single parameter.
   (Contributed by Kumar Aditya in :gh:`93207`.)
 
+* CPython now uses the ThinLTO option as the default link time optimization policy
+  if the Clang compiler accepts the flag.
+  (Contributed by Dong-hee Na in :gh:`89536`.)
+
 
 C API Changes
 =============
@@ -414,14 +458,37 @@ New Features
   an additional metaclass argument.
   (Contributed by Wenzel Jakob in :gh:`93012`.)
 
-* (XXX: this should be combined with :gh:`93274` when that is done)
+* API for creating objects that can be called using
+  :ref:`the vectorcall protocol <vectorcall>` was added to the
+  :ref:`Limited API <stable>`:
+
+  * :const:`Py_TPFLAGS_HAVE_VECTORCALL`
+  * :c:func:`PyVectorcall_NARGS`
+  * :c:func:`PyVectorcall_Call`
+  * :c:type:`vectorcallfunc`
+
   The :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag is now removed from a class
   when the class's :py:meth:`~object.__call__` method is reassigned.
   This makes vectorcall safe to use with mutable types (i.e. heap types
   without the :const:`immutable <Py_TPFLAGS_IMMUTABLETYPE>` flag).
   Mutable types that do not override :c:member:`~PyTypeObject.tp_call` now
-  inherit the :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag.
-  (Contributed by Petr Viktorin in :gh:`93012`.)
+  inherit the ``Py_TPFLAGS_HAVE_VECTORCALL`` flag.
+  (Contributed by Petr Viktorin in :gh:`93274`.)
+
+  The :const:`Py_TPFLAGS_MANAGED_DICT` and :const:`Py_TPFLAGS_MANAGED_WEAKREF`
+  flags have been added. This allows extensions classes to support object
+  ``__dict__`` and weakrefs with less bookkeeping,
+  using less memory and with faster access.
+
+* Added two new public functions,
+  :c:func:`PyEval_SetProfileAllThreads` and
+  :c:func:`PyEval_SetTraceAllThreads`, that allow to set tracing and profiling
+  functions in all running threads in addition to the calling one. (Contributed
+  by Pablo Galindo in :gh:`93503`.)
+
+* Added new function :c:func:`PyFunction_SetVectorcall` to the C API
+  which sets the vectorcall field of a given :c:type:`PyFunctionObject`.
+  (Contributed by Andrew Frost in :gh:`92257`.)
 
 Porting to Python 3.12
 ----------------------
@@ -449,6 +516,27 @@ Porting to Python 3.12
   :py:meth:`~class.__subclasses__` (using :c:func:`PyObject_CallMethod`,
   for example).
 
+* An unrecognized format character in :c:func:`PyUnicode_FromFormat` and
+  :c:func:`PyUnicode_FromFormatV` now sets a :exc:`SystemError`.
+  In previous versions it caused all the rest of the format string to be
+  copied as-is to the result string, and any extra arguments discarded.
+  (Contributed by Serhiy Storchaka in :gh:`95781`.)
+
+* Fixed wrong sign placement in :c:func:`PyUnicode_FromFormat` and
+  :c:func:`PyUnicode_FromFormatV`.
+  (Contributed by Philip Georgi in :gh:`95504`.)
+
+* Extension classes wanting to add a ``__dict__`` or weak reference slot
+  should use :const:`Py_TPFLAGS_MANAGED_DICT` and
+  :const:`Py_TPFLAGS_MANAGED_WEAKREF` instead of ``tp_dictoffset`` and
+  ``tp_weaklistoffset``, respectively.
+  The use of ``tp_dictoffset`` and ``tp_weaklistoffset`` is still
+  supported, but does not fully support multiple inheritance
+  (:gh: `95589`), and performance may be worse.
+  Classes declaring :const:`Py_TPFLAGS_MANAGED_DICT` should call
+  :c:func:`_PyObject_VisitManagedDict` and :c:func:`_PyObject_ClearManagedDict`
+  to traverse and clear their instance's dictionaries.
+  To clear weakrefs, call :c:func:`PyObject_ClearWeakRefs`, as before.
 
 Deprecated
 ----------

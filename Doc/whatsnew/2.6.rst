@@ -217,7 +217,7 @@ the time required to finish the job.
 During the 2.6 development cycle, Georg Brandl put a lot of effort
 into building a new toolchain for processing the documentation.  The
 resulting package is called Sphinx, and is available from
-http://sphinx-doc.org/.
+https://www.sphinx-doc.org/.
 
 Sphinx concentrates on HTML output, producing attractively styled and
 modern HTML; printed output is still supported through conversion to
@@ -235,7 +235,7 @@ have adopted Sphinx as their documentation tool.
    `Documenting Python <https://devguide.python.org/documenting/>`__
        Describes how to write for Python's documentation.
 
-   `Sphinx <http://sphinx-doc.org/>`__
+   `Sphinx <https://www.sphinx-doc.org/>`__
      Documentation and code for the Sphinx toolchain.
 
    `Docutils <https://docutils.sourceforge.io>`__
@@ -1926,7 +1926,7 @@ changes, or look through the Subversion logs for all the details.
   the left to six places.  (Contributed by Skip Montanaro; :issue:`1158`.)
 
 * The :mod:`decimal` module was updated to version 1.66 of
-  `the General Decimal Specification <http://speleotrove.com/decimal/decarith.html>`__.  New features
+  `the General Decimal Specification <https://speleotrove.com/decimal/decarith.html>`__.  New features
   include some methods for some basic mathematical functions such as
   :meth:`exp` and :meth:`log10`::
 

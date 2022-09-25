@@ -3,8 +3,10 @@
 #endif
 
 PyAPI_FUNC(void) PyEval_SetProfile(Py_tracefunc, PyObject *);
+PyAPI_FUNC(void) PyEval_SetProfileAllThreads(Py_tracefunc, PyObject *);
 PyAPI_DATA(int) _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
 PyAPI_FUNC(void) PyEval_SetTrace(Py_tracefunc, PyObject *);
+PyAPI_FUNC(void) PyEval_SetTraceAllThreads(Py_tracefunc, PyObject *);
 PyAPI_FUNC(int) _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
 
 /* Helper to look up a builtin object */
