@@ -153,8 +153,8 @@ name_op('IMPORT_FROM', 109)     # Index in name list
 jrel_op('JUMP_FORWARD', 110)    # Number of words to skip
 jrel_op('JUMP_IF_FALSE_OR_POP', 111) # Number of words to skip
 jrel_op('JUMP_IF_TRUE_OR_POP', 112)  # ""
-jrel_op('POP_JUMP_FORWARD_IF_FALSE', 114)
-jrel_op('POP_JUMP_FORWARD_IF_TRUE', 115)
+jrel_op('POP_JUMP_IF_FALSE', 114)
+jrel_op('POP_JUMP_IF_TRUE', 115)
 name_op('LOAD_GLOBAL', 116)     # Index in name list
 def_op('IS_OP', 117)
 def_op('CONTAINS_OP', 118)
@@ -170,8 +170,8 @@ def_op('DELETE_FAST', 126)      # Local variable number
 haslocal.append(126)
 def_op('LOAD_FAST_CHECK', 127)  # Local variable number
 haslocal.append(127)
-jrel_op('POP_JUMP_FORWARD_IF_NOT_NONE', 128)
-jrel_op('POP_JUMP_FORWARD_IF_NONE', 129)
+jrel_op('POP_JUMP_IF_NOT_NONE', 128)
+jrel_op('POP_JUMP_IF_NONE', 129)
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
 def_op('GET_AWAITABLE', 131)
 def_op('MAKE_FUNCTION', 132)    # Flags
@@ -216,10 +216,6 @@ def_op('CALL', 171)
 def_op('KW_NAMES', 172)
 hasconst.append(172)
 
-jrel_op('POP_JUMP_BACKWARD_IF_NOT_NONE', 173)
-jrel_op('POP_JUMP_BACKWARD_IF_NONE', 174)
-jrel_op('POP_JUMP_BACKWARD_IF_FALSE', 175)
-jrel_op('POP_JUMP_BACKWARD_IF_TRUE', 176)
 
 hasarg.extend([op for op in opmap.values() if op >= HAVE_ARGUMENT])
 
@@ -235,11 +231,8 @@ pseudo_op('POP_BLOCK', 259, ['NOP'])
 
 pseudo_op('JUMP', 260, ['JUMP_FORWARD', 'JUMP_BACKWARD'])
 pseudo_op('JUMP_NO_INTERRUPT', 261, ['JUMP_FORWARD', 'JUMP_BACKWARD_NO_INTERRUPT'])
-pseudo_op('POP_JUMP_IF_FALSE', 262, ['POP_JUMP_FORWARD_IF_FALSE', 'POP_JUMP_BACKWARD_IF_FALSE'])
-pseudo_op('POP_JUMP_IF_TRUE', 263, ['POP_JUMP_FORWARD_IF_TRUE', 'POP_JUMP_BACKWARD_IF_TRUE'])
-pseudo_op('POP_JUMP_IF_NONE', 264, ['POP_JUMP_FORWARD_IF_NONE', 'POP_JUMP_BACKWARD_IF_NONE'])
-pseudo_op('POP_JUMP_IF_NOT_NONE', 265, ['POP_JUMP_FORWARD_IF_NOT_NONE', 'POP_JUMP_BACKWARD_IF_NOT_NONE'])
-pseudo_op('LOAD_METHOD', 266, ['LOAD_ATTR'])
+
+pseudo_op('LOAD_METHOD', 262, ['LOAD_ATTR'])
 
 MAX_PSEUDO_OPCODE = MIN_PSEUDO_OPCODE + len(_pseudo_ops) - 1
 

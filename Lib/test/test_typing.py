@@ -113,6 +113,12 @@ class AnyTests(BaseTestCase):
     def test_repr(self):
         self.assertEqual(repr(Any), 'typing.Any')
 
+        class Sub(Any): pass
+        self.assertEqual(
+            repr(Sub),
+            "<class 'test.test_typing.AnyTests.test_repr.<locals>.Sub'>",
+        )
+
     def test_errors(self):
         with self.assertRaises(TypeError):
             issubclass(42, Any)
@@ -596,6 +602,7 @@ class GenericAliasSubstitutionTests(BaseTestCase):
     def test_one_parameter(self):
         T = TypeVar('T')
         Ts = TypeVarTuple('Ts')
+        Ts2 = TypeVarTuple('Ts2')
 
         class C(Generic[T]): pass
 
@@ -621,6 +628,8 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             # Should definitely raise TypeError: list only takes one argument.
             ('list[T, *tuple_type[int, ...]]',    '[int]',                   'list[int, *tuple_type[int, ...]]'),
             ('List[T, *tuple_type[int, ...]]',    '[int]',                   'TypeError'),
+            # Should raise, because more than one `TypeVarTuple` is not supported.
+            ('generic[*Ts, *Ts2]',                '[int]',                   'TypeError'),
         ]
 
         for alias_template, args_template, expected_template in tests:
@@ -1028,6 +1037,15 @@ class TypeVarTupleTests(BaseTestCase):
         with self.assertRaisesRegex(TypeError,
                 CANNOT_SUBCLASS_INSTANCE % 'TypeVarTuple'):
             class C(Ts): pass
+        with self.assertRaisesRegex(TypeError, r'Cannot subclass \*Ts'):
+            class C(*Ts): pass
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
+            class C(type(Unpack)): pass
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
+            class C(type(Unpack[Ts])): pass
+        with self.assertRaisesRegex(TypeError,
+                                    r'Cannot subclass typing\.Unpack'):
+            class C(Unpack): pass
         with self.assertRaisesRegex(TypeError, r'Cannot subclass \*Ts'):
             class C(Unpack[Ts]): pass
 
@@ -3701,6 +3719,14 @@ class ClassVarTests(BaseTestCase):
         with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
             class C(type(ClassVar[int])):
                 pass
+        with self.assertRaisesRegex(TypeError,
+                                    r'Cannot subclass typing\.ClassVar'):
+            class C(ClassVar):
+                pass
+        with self.assertRaisesRegex(TypeError,
+                                    r'Cannot subclass typing\.ClassVar\[int\]'):
+            class C(ClassVar[int]):
+                pass
 
     def test_cannot_init(self):
         with self.assertRaises(TypeError):
@@ -3742,6 +3768,14 @@ class FinalTests(BaseTestCase):
                 pass
         with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
             class C(type(Final[int])):
+                pass
+        with self.assertRaisesRegex(TypeError,
+                r'Cannot subclass typing\.Final'):
+            class C(Final):
+                pass
+        with self.assertRaisesRegex(TypeError,
+                r'Cannot subclass typing\.Final\[int\]'):
+            class C(Final[int]):
                 pass
 
     def test_cannot_init(self):
@@ -4382,6 +4416,20 @@ class OverloadTests(BaseTestCase):
 
         blah()
 
+    def test_overload_on_compiled_functions(self):
+        with patch("typing._overload_registry",
+                   defaultdict(lambda: defaultdict(dict))):
+            # The registry starts out empty:
+            self.assertEqual(typing._overload_registry, {})
+
+            # This should just not fail:
+            overload(sum)
+            overload(print)
+
+            # No overloads are recorded (but, it still has a side-effect):
+            self.assertEqual(typing.get_overloads(sum), [])
+            self.assertEqual(typing.get_overloads(print), [])
+
     def set_up_overloads(self):
         def blah():
             pass
@@ -4416,6 +4464,9 @@ class OverloadTests(BaseTestCase):
         other_overload = some_other_func
         def some_other_func(): pass
         self.assertEqual(list(get_overloads(some_other_func)), [other_overload])
+        # Unrelated function still has no overloads:
+        def not_overloaded(): pass
+        self.assertEqual(list(get_overloads(not_overloaded)), [])
 
         # Make sure that after we clear all overloads, the registry is
         # completely empty.
@@ -4914,17 +4965,28 @@ class GetUtilitiesTestCase(TestCase):
         class C(Generic[T]): pass
         self.assertEqual(get_args(C[int]), (int,))
         self.assertEqual(get_args(C[T]), (T,))
+        self.assertEqual(get_args(typing.SupportsAbs[int]), (int,))  # Protocol
+        self.assertEqual(get_args(typing.SupportsAbs[T]), (T,))
+        self.assertEqual(get_args(Point2DGeneric[int]), (int,))  # TypedDict
+        self.assertEqual(get_args(Point2DGeneric[T]), (T,))
+        self.assertEqual(get_args(T), ())
         self.assertEqual(get_args(int), ())
+        self.assertEqual(get_args(Any), ())
+        self.assertEqual(get_args(Self), ())
+        self.assertEqual(get_args(LiteralString), ())
         self.assertEqual(get_args(ClassVar[int]), (int,))
         self.assertEqual(get_args(Union[int, str]), (int, str))
         self.assertEqual(get_args(Literal[42, 43]), (42, 43))
         self.assertEqual(get_args(Final[List[int]]), (List[int],))
+        self.assertEqual(get_args(Optional[int]), (int, type(None)))
+        self.assertEqual(get_args(Union[int, None]), (int, type(None)))
         self.assertEqual(get_args(Union[int, Tuple[T, int]][str]),
                          (int, Tuple[str, int]))
         self.assertEqual(get_args(typing.Dict[int, Tuple[T, T]][Optional[int]]),
                          (int, Tuple[Optional[int], Optional[int]]))
         self.assertEqual(get_args(Callable[[], T][int]), ([], int))
         self.assertEqual(get_args(Callable[..., int]), (..., int))
+        self.assertEqual(get_args(Callable[[int], str]), ([int], str))
         self.assertEqual(get_args(Union[int, Callable[[Tuple[T, ...]], str]]),
                          (int, Callable[[Tuple[T, ...]], str]))
         self.assertEqual(get_args(Tuple[int, ...]), (int, ...))
@@ -4941,12 +5003,25 @@ class GetUtilitiesTestCase(TestCase):
         self.assertEqual(get_args(collections.abc.Callable[[int], str]),
                          get_args(Callable[[int], str]))
         P = ParamSpec('P')
+        self.assertEqual(get_args(P), ())
+        self.assertEqual(get_args(P.args), ())
+        self.assertEqual(get_args(P.kwargs), ())
         self.assertEqual(get_args(Callable[P, int]), (P, int))
+        self.assertEqual(get_args(collections.abc.Callable[P, int]), (P, int))
         self.assertEqual(get_args(Callable[Concatenate[int, P], int]),
                          (Concatenate[int, P], int))
+        self.assertEqual(get_args(collections.abc.Callable[Concatenate[int, P], int]),
+                         (Concatenate[int, P], int))
+        self.assertEqual(get_args(Concatenate[int, str, P]), (int, str, P))
         self.assertEqual(get_args(list | str), (list, str))
         self.assertEqual(get_args(Required[int]), (int,))
         self.assertEqual(get_args(NotRequired[int]), (int,))
+        self.assertEqual(get_args(TypeAlias), ())
+        self.assertEqual(get_args(TypeGuard[int]), (int,))
+        Ts = TypeVarTuple('Ts')
+        self.assertEqual(get_args(Ts), ())
+        self.assertEqual(get_args(Unpack[Ts]), (Ts,))
+        self.assertEqual(get_args(tuple[Unpack[Ts]]), (Unpack[Ts],))
 
 
 class CollectionsAbcTests(BaseTestCase):
@@ -5711,9 +5786,12 @@ class NamedTupleTests(BaseTestCase):
         for G in X, Y:
             with self.subTest(type=G):
                 self.assertEqual(G.__parameters__, (T,))
+                self.assertEqual(G[T].__args__, (T,))
+                self.assertEqual(get_args(G[T]), (T,))
                 A = G[int]
                 self.assertIs(A.__origin__, G)
                 self.assertEqual(A.__args__, (int,))
+                self.assertEqual(get_args(A), (int,))
                 self.assertEqual(A.__parameters__, ())
 
                 a = A(3)
@@ -6413,13 +6491,18 @@ class RETests(BaseTestCase):
             self.assertEqual(len(w), 1)
 
     def test_cannot_subclass(self):
-        with self.assertRaises(TypeError) as ex:
-
+        with self.assertRaisesRegex(
+            TypeError,
+            r"type 're\.Match' is not an acceptable base type",
+        ):
             class A(typing.Match):
                 pass
-
-        self.assertEqual(str(ex.exception),
-                         "type 're.Match' is not an acceptable base type")
+        with self.assertRaisesRegex(
+            TypeError,
+            r"type 're\.Pattern' is not an acceptable base type",
+        ):
+            class A(typing.Pattern):
+                pass
 
 
 class AnnotatedTests(BaseTestCase):
@@ -7011,6 +7094,14 @@ class TypeGuardTests(BaseTestCase):
         with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
             class C(type(TypeGuard[int])):
                 pass
+        with self.assertRaisesRegex(TypeError,
+                                    r'Cannot subclass typing\.TypeGuard'):
+            class C(TypeGuard):
+                pass
+        with self.assertRaisesRegex(TypeError,
+                                    r'Cannot subclass typing\.TypeGuard\[int\]'):
+            class C(TypeGuard[int]):
+                pass
 
     def test_cannot_init(self):
         with self.assertRaises(TypeError):
@@ -7131,6 +7222,7 @@ class SpecialAttrsTests(BaseTestCase):
             typing.Self: 'Self',
             # Subscribed special forms
             typing.Annotated[Any, "Annotation"]: 'Annotated',
+            typing.Annotated[int, 'Annotation']: 'Annotated',
             typing.ClassVar[Any]: 'ClassVar',
             typing.Concatenate[Any, SpecialAttrsP]: 'Concatenate',
             typing.Final[Any]: 'Final',

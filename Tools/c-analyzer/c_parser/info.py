@@ -792,6 +792,7 @@ class Declaration(HighlevelParsedItem):
         if kind is not cls.kind:
             raise TypeError(f'expected kind {cls.kind.value!r}, got {row!r}')
         fileinfo = FileInfo.from_raw(filename)
+        extra = None
         if isinstance(data, str):
             data, extra = cls._parse_data(data, fmt='row')
         if extra:

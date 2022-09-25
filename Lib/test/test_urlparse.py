@@ -985,6 +985,10 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(result, 'archaeological%20arcana')
         result = urllib.parse.quote_from_bytes(b'')
         self.assertEqual(result, '')
+        result = urllib.parse.quote_from_bytes(b'A'*10_000)
+        self.assertEqual(result, 'A'*10_000)
+        result = urllib.parse.quote_from_bytes(b'z\x01/ '*253_183)
+        self.assertEqual(result, 'z%01/%20'*253_183)
 
     def test_unquote_to_bytes(self):
         result = urllib.parse.unquote_to_bytes('abc%20def')

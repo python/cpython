@@ -141,17 +141,8 @@ struct _dictvalues {
 #define DK_LOG_SIZE(dk)  ((dk)->dk_log2_size)
 #if SIZEOF_VOID_P > 4
 #define DK_SIZE(dk)      (((int64_t)1)<<DK_LOG_SIZE(dk))
-#define DK_IXSIZE(dk)                     \
-    (DK_LOG_SIZE(dk) <= 7 ?               \
-        1 : DK_LOG_SIZE(dk) <= 15 ?       \
-            2 : DK_LOG_SIZE(dk) <= 31 ?   \
-                4 : sizeof(int64_t))
 #else
 #define DK_SIZE(dk)      (1<<DK_LOG_SIZE(dk))
-#define DK_IXSIZE(dk)                     \
-    (DK_LOG_SIZE(dk) <= 7 ?               \
-        1 : DK_LOG_SIZE(dk) <= 15 ?       \
-            2 : sizeof(int32_t))
 #endif
 #define DK_ENTRIES(dk) \
     (assert((dk)->dk_kind == DICT_KEYS_GENERAL), \
