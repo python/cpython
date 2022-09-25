@@ -418,44 +418,40 @@ class _TemporaryFileCloser:
     underlying file object, without adding a __del__ method to the
     temporary file."""
 
-    file = None  # Set here since __del__ checks it
+    cleanup_called = False
     close_called = False
 
-    def __init__(self, file, name, delete=True):
+    def __init__(self, file, name, delete=True, delete_on_close=True):
         self.file = file
         self.name = name
         self.delete = delete
+        self.delete_on_close = delete_on_close
 
-    # NT provides delete-on-close as a primitive, so we don't need
-    # the wrapper to do anything special.  We still use it so that
-    # file.name is useful (i.e. not "(fdopen)") with NamedTemporaryFile.
-    if _os.name != 'nt':
-        # Cache the unlinker so we don't get spurious errors at
-        # shutdown when the module-level "os" is None'd out.  Note
-        # that this must be referenced as self.unlink, because the
-        # name TemporaryFileWrapper may also get None'd out before
-        # __del__ is called.
-
-        def close(self, unlink=_os.unlink):
-            if not self.close_called and self.file is not None:
-                self.close_called = True
-                try:
+    def cleanup(self, windows=(_os.name == 'nt'), unlink=_os.unlink):
+        if not self.cleanup_called:
+            self.cleanup_called = True
+            try:
+                if not self.close_called:
+                    self.close_called = True
                     self.file.close()
-                finally:
-                    if self.delete and _os.path.exists(self.name):
+            finally:
+                if self.delete and not (self.delete_on_close and windows):
+                    try:
                         unlink(self.name)
+                    except FileNotFoundError:
+                        pass
 
-        # Need to ensure the file is deleted on __del__
-        def __del__(self):
-            self.close()
-
-    else:
-        def close(self):
-            if not self.close_called:
-                self.close_called = True
+    def close(self):
+        if not self.close_called:
+            self.close_called = True
+            try:
                 self.file.close()
+            finally:
+                if self.delete and self.delete_on_close:
+                    self.cleanup()
 
-
+    def __del__(self):
+        self.cleanup()
 class _TemporaryFileWrapper:
     """Temporary file wrapper
 
@@ -463,16 +459,12 @@ class _TemporaryFileWrapper:
     temporary use.  In particular, it seeks to automatically
     remove the file when it is no longer needed.
     """
-    name = None
-    _cleanup_called = False
 
     def __init__(self, file, name, delete=True, delete_on_close=True):
         self.file = file
         self.name = name
-        self.delete = delete
-        self.delete_on_close = delete_on_close
-        self._closer = _TemporaryFileCloser(file, name,
-                                            delete and delete_on_close)
+        self._closer = _TemporaryFileCloser(file, name, delete,
+                                            delete_on_close)
 
     def __getattr__(self, name):
         # Attribute lookups are delegated to the underlying file
@@ -499,30 +491,12 @@ class _TemporaryFileWrapper:
         self.file.__enter__()
         return self
 
-    def _cleanup(self, unlink=_os.unlink):
-        if self._cleanup_called or self.name is None:
-            return
-        self._cleanup_called = True
-        try:
-            self.close()
-        finally:
-            # If the file is to be deleted, but not on close, delete it now.
-            if self.delete and not self.delete_on_close:
-                try:
-                    unlink(self.name)
-                except FileNotFoundError:
-                    # The file may have been deleted already.
-                    pass
-
     # Need to trap __exit__ as well to ensure the file gets
     # deleted when used in a with statement
     def __exit__(self, exc, value, tb):
         result = self.file.__exit__(exc, value, tb)
-        self._cleanup()
+        self._closer.cleanup()
         return result
-
-    def __del__(self):
-        self._cleanup()
 
     def close(self):
         """
