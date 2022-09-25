@@ -197,6 +197,9 @@ The :mod:`functools` module defines the following functions:
    The cache keeps references to the arguments and return values until they age
    out of the cache or until the cache is cleared.
 
+   If a method is cached, the `self` instance argument is included in the
+   cache.  See :ref:`faq-cache-method-calls`
+
    An `LRU (least recently used) cache
    <https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)>`_
    works best when the most recent calls are the best predictors of upcoming
