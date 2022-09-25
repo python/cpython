@@ -80,11 +80,10 @@ The module defines the following user-callable items:
    This function operates exactly as :func:`TemporaryFile` does, except the
    following differences:
 
-   * The file is guaranteed to have a visible name in the file system (on Unix,
-     the directory entry is not unlinked).
-
-   * There is more granularity in the deletion behaviour of the file (see
-     ``delete_on_close`` below)
+   * The file is guaranteed to have a visible name in the file system
+     (on Unix, the directory entry is not unlinked).
+   * There is more granularity in the deletion behaviour of the file
+     (see *delete_on_close* below)
 
    The returned object is always a :term:`file-like object` whose :attr:`!file`
    attribute is the underlying true file object. This :term:`file-like object` can be

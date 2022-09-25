@@ -501,7 +501,7 @@ class _TemporaryFileWrapper:
         self.file.__enter__()
         return self
 
-    def _cleanup(self):
+    def _cleanup(self, unlink=_os.unlink):
         if self._cleanup_called or self.name is None:
             return
         self._cleanup_called = True
@@ -511,7 +511,7 @@ class _TemporaryFileWrapper:
             # If the file is to be deleted, but not on close, delete it now.
             if self.delete and not self.delete_on_close:
                 try:
-                    _os.unlink(self.name)
+                    unlink(self.name)
                 except FileNotFoundError:
                     # The file may have been deleted already.
                     pass
@@ -543,16 +543,7 @@ class _TemporaryFileWrapper:
             yield line
 
     def __del__(self):
-        # This is to delete the temporary file in case delete = True,
-        # delete_on_close = False and no context manager was used
-        if self.delete:
-            try:
-                _os.unlink(self.name)
-            # It is okay to ignore FileNotFoundError. The file may have
-            # been deleted already.
-            except FileNotFoundError:
-                pass
-
+        self._cleanup()
 
 def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
                        newline=None, suffix=None, prefix=None,

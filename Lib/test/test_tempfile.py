@@ -1018,7 +1018,7 @@ class TestNamedTemporaryFile(BaseTestCase):
         # Issue gh-58451: tempfile.NamedTemporaryFile is not particulary useful
         # on Windows
         # A NamedTemporaryFile is NOT deleted when closed if
-        # delete_on_close= False, but is deleted on content manager exit
+        # delete_on_close=False, but is deleted on context manager exit
         dir = tempfile.mkdtemp()
         try:
             with tempfile.NamedTemporaryFile(dir=dir,
@@ -1030,21 +1030,21 @@ class TestNamedTemporaryFile(BaseTestCase):
                 with self.subTest():
                     # Testing that file is not deleted on close
                     self.assertTrue(os.path.exists(f.name),
-                            "NamedTemporaryFile %s is incorrectly deleted\
-                             on closure when delete_on_close= False" % f_name)
+                            f"NamedTemporaryFile {f.name!r} is incorrectly deleted "
+                            f"on closure when delete_on_close=False")
 
             with self.subTest():
-                # Testing that file is deleted on content manager exit
+                # Testing that file is deleted on context manager exit
                 self.assertFalse(os.path.exists(f.name),
-                                 "NamedTemporaryFile %s exists\
-                                  after content manager exit" % f.name)
+                                 f"NamedTemporaryFile {f.name!r} exists "
+                                 f"after context manager exit")
 
         finally:
             os.rmdir(dir)
 
     def test_context_man_ok_to_delete_manually(self):
-        # A NamedTemporaryFile can be deleted by a user before content manager
-        # comes to it. This will not generate an error
+        # A NamedTemporaryFile can be deleted by a user before
+        # context manager comes to it. This will not generate an error
         dir = tempfile.mkdtemp()
         try:
             with tempfile.NamedTemporaryFile(dir=dir,
@@ -1069,7 +1069,7 @@ class TestNamedTemporaryFile(BaseTestCase):
                 f.write(b'blat')
                 f_name = f.name
             self.assertTrue(os.path.exists(f.name),
-                        "NamedTemporaryFile %s exists after close" % f.name)
+                        f"NamedTemporaryFile {f.name!r} exists after close")
         finally:
             os.unlink(f_name)
             os.rmdir(dir)
@@ -1091,8 +1091,7 @@ class TestNamedTemporaryFile(BaseTestCase):
         try:
             tmp_name = my_func(dir)
             self.assertFalse(os.path.exists(tmp_name),
-                        "NamedTemporaryFile %s exists after finalizer "\
-                            % tmp_name)
+                        f"NamedTemporaryFile {tmp_name!r} exists after finalizer ")
         finally:
             os.rmdir(dir)
 
