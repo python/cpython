@@ -478,7 +478,7 @@ becomes complicated.
 Rather than having users constantly writing and debugging code to save
 complicated data types to files, Python allows you to use the popular data
 interchange format called `JSON (JavaScript Object Notation)
-<http://json.org>`_.  The standard module called :mod:`json` can take Python
+<https://json.org>`_.  The standard module called :mod:`json` can take Python
 data hierarchies, and convert them to string representations; this process is
 called :dfn:`serializing`.  Reconstructing the data from the string representation
 is called :dfn:`deserializing`.  Between serializing and deserializing, the
