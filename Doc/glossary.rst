@@ -207,7 +207,7 @@ Glossary
       A callable is an object that is possible to execute, possibly with a set
       of arguments (see :term:`argument`), with the following syntax::
 
-           callable(argument1, argument2, ...)
+         callable(argument1, argument2, ...)
 
       A :term:`function`, and by extension a :term:`method`, is a callable.
       An instance of a class that implements the :meth:`~object.__call__`
