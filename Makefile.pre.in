@@ -478,7 +478,9 @@ OBJECT_OBJS=	\
 		Objects/unicodeobject.o \
 		Objects/unicodectype.o \
 		Objects/unionobject.o \
-		Objects/weakrefobject.o
+		Objects/weakrefobject.o \
+		Objects/perf_trampoline.o \
+		@PERF_TRAMPOLINE_OBJ@
 
 DEEPFREEZE_OBJS = Python/deepfreeze/deepfreeze.o
 
@@ -1716,6 +1718,10 @@ buildbottest: all
 		fi
 		$(TESTRUNNER) -j 1 -u all -W --slowest --fail-env-changed --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
+# Like testall, but run Python tests with HOSTRUNNER directly.
+hostrunnertest: all
+	$(RUNSHARED) $(HOSTRUNNER) ./$(BUILDPYTHON) -m test -u all $(TESTOPTS)
+
 pythoninfo: all
 		$(RUNSHARED) $(HOSTRUNNER) ./$(BUILDPYTHON) -m test.pythoninfo
 
@@ -2357,6 +2363,9 @@ config.status:	$(srcdir)/configure
 	$(SHELL) $(srcdir)/configure $(CONFIG_ARGS)
 
 .PRECIOUS: config.status $(BUILDPYTHON) Makefile Makefile.pre
+
+Objects/asm_trampoline.o: $(srcdir)/Objects/asm_trampoline.S
+	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
 # Some make's put the object file in the current directory
 .c.o:

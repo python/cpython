@@ -861,6 +861,7 @@ LIBEXPAT_CFLAGS
 TZPATH
 LIBUUID_LIBS
 LIBUUID_CFLAGS
+PERF_TRAMPOLINE_OBJ
 SHLIBS
 CFLAGSFORSHARED
 LINKFORSHARED
@@ -7639,7 +7640,7 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PROFILE_TASK" >&5
 $as_echo "$PROFILE_TASK" >&6; }
 
-# Make llvm-relatec checks work on systems where llvm tools are not installed with their
+# Make llvm-related checks work on systems where llvm tools are not installed with their
 # normal names in the default $PATH (ie: Ubuntu).  They exist under the
 # non-suffixed name in their versioned llvm directory.
 
@@ -7704,7 +7705,42 @@ fi
 if test "$Py_LTO" = 'true' ; then
   case $CC in
     *clang*)
-            LDFLAGS_NOLTO="-fno-lto"
+      LDFLAGS_NOLTO="-fno-lto"
+                  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -flto=thin" >&5
+$as_echo_n "checking whether C compiler accepts -flto=thin... " >&6; }
+if ${ax_cv_check_cflags___flto_thin+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -flto=thin"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_check_cflags___flto_thin=yes
+else
+  ax_cv_check_cflags___flto_thin=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___flto_thin" >&5
+$as_echo "$ax_cv_check_cflags___flto_thin" >&6; }
+if test "x$ax_cv_check_cflags___flto_thin" = xyes; then :
+  LDFLAGS_NOLTO="-flto=thin"
+else
+  LDFLAGS_NOLTO="-flto"
+fi
+
 
       if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}llvm-ar", so it can be a program name with args.
@@ -7836,8 +7872,49 @@ $as_echo "$as_me: llvm-ar found via xcrun: ${LLVM_AR}" >&6;}
           # Any changes made here should be reflected in the GCC+Darwin case below
           if test $Py_LTO_POLICY = default
           then
-            LTOFLAGS="-flto -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
-            LTOCFLAGS="-flto"
+            # Check that ThinLTO is accepted.
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -flto=thin" >&5
+$as_echo_n "checking whether C compiler accepts -flto=thin... " >&6; }
+if ${ax_cv_check_cflags___flto_thin+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -flto=thin"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_check_cflags___flto_thin=yes
+else
+  ax_cv_check_cflags___flto_thin=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___flto_thin" >&5
+$as_echo "$ax_cv_check_cflags___flto_thin" >&6; }
+if test "x$ax_cv_check_cflags___flto_thin" = xyes; then :
+
+              LTOFLAGS="-flto=thin -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
+              LTOCFLAGS="-flto=thin"
+
+else
+
+              LTOFLAGS="-flto -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
+              LTOCFLAGS="-flto"
+
+
+fi
+
           else
             LTOFLAGS="-flto=${Py_LTO_POLICY} -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
             LTOCFLAGS="-flto=${Py_LTO_POLICY}"
@@ -7846,7 +7923,42 @@ $as_echo "$as_me: llvm-ar found via xcrun: ${LLVM_AR}" >&6;}
         *)
           if test $Py_LTO_POLICY = default
           then
-            LTOFLAGS="-flto"
+            # Check that ThinLTO is accepted
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -flto=thin" >&5
+$as_echo_n "checking whether C compiler accepts -flto=thin... " >&6; }
+if ${ax_cv_check_cflags___flto_thin+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -flto=thin"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_check_cflags___flto_thin=yes
+else
+  ax_cv_check_cflags___flto_thin=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___flto_thin" >&5
+$as_echo "$ax_cv_check_cflags___flto_thin" >&6; }
+if test "x$ax_cv_check_cflags___flto_thin" = xyes; then :
+  LTOFLAGS="-flto=thin"
+else
+  LTOFLAGS="-flto"
+fi
+
           else
             LTOFLAGS="-flto=${Py_LTO_POLICY}"
           fi
@@ -11497,6 +11609,35 @@ case "$ac_sys_system" in
 esac
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SHLIBS" >&5
 $as_echo "$SHLIBS" >&6; }
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking perf trampoline" >&5
+$as_echo_n "checking perf trampoline... " >&6; }
+case $PLATFORM_TRIPLET in #(
+  x86_64-linux-gnu) :
+    perf_trampoline=yes ;; #(
+  aarch64-linux-gnu) :
+    perf_trampoline=yes ;; #(
+  *) :
+    perf_trampoline=no
+ ;;
+esac
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $perf_trampoline" >&5
+$as_echo "$perf_trampoline" >&6; }
+
+if test "x$perf_trampoline" = xyes; then :
+
+
+$as_echo "#define PY_HAVE_PERF_TRAMPOLINE 1" >>confdefs.h
+
+  PERF_TRAMPOLINE_OBJ=Objects/asm_trampoline.o
+
+    if test "x$Py_DEBUG" = xtrue; then :
+
+    as_fn_append BASECFLAGS " -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer"
+
+fi
+
+fi
 
 
 # checks for libraries
@@ -25624,6 +25765,7 @@ case $ac_sys_system in #(
     py_cv_module_nis=n/a
     py_cv_module_ossaudiodev=n/a
     py_cv_module_pwd=n/a
+    py_cv_module_resource=n/a
     py_cv_module_spwd=n/a
     py_cv_module_syslog=n/a
     py_cv_module_=n/a
@@ -25634,7 +25776,6 @@ case $ac_sys_system in #(
 
 
     py_cv_module_fcntl=n/a
-    py_cv_module_resource=n/a
     py_cv_module_readline=n/a
     py_cv_module_termios=n/a
     py_cv_module_=n/a
@@ -25649,7 +25790,6 @@ case $ac_sys_system in #(
     py_cv_module__ctypes_test=n/a
     py_cv_module_fcntl=n/a
     py_cv_module_mmap=n/a
-    py_cv_module_resource=n/a
     py_cv_module_termios=n/a
     py_cv_module_=n/a
 

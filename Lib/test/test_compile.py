@@ -199,6 +199,19 @@ if 1:
         self.assertEqual(eval("0o777"), 511)
         self.assertEqual(eval("-0o0000010"), -8)
 
+    def test_int_literals_too_long(self):
+        n = 3000
+        source = f"a = 1\nb = 2\nc = {'3'*n}\nd = 4"
+        with support.adjust_int_max_str_digits(n):
+            compile(source, "<long_int_pass>", "exec")  # no errors.
+        with support.adjust_int_max_str_digits(n-1):
+            with self.assertRaises(SyntaxError) as err_ctx:
+                compile(source, "<long_int_fail>", "exec")
+            exc = err_ctx.exception
+            self.assertEqual(exc.lineno, 3)
+            self.assertIn('Exceeds the limit ', str(exc))
+            self.assertIn(' Consider hexadecimal ', str(exc))
+
     def test_unary_minus(self):
         # Verify treatment of unary minus on negative numbers SF bug #660455
         if sys.maxsize == 2147483647:
@@ -1063,6 +1076,31 @@ if 1:
         check_op_count(aug, "BINARY_SLICE", 1)
         check_op_count(aug, "STORE_SLICE", 1)
         check_op_count(aug, "BUILD_SLICE", 0)
+
+    def test_compare_positions(self):
+        for opname, op in [
+            ("COMPARE_OP", "<"),
+            ("COMPARE_OP", "<="),
+            ("COMPARE_OP", ">"),
+            ("COMPARE_OP", ">="),
+            ("CONTAINS_OP", "in"),
+            ("CONTAINS_OP", "not in"),
+            ("IS_OP", "is"),
+            ("IS_OP", "is not"),
+        ]:
+            expr = f'a {op} b {op} c'
+            expected_positions = 2 * [(2, 2, 0, len(expr))]
+            for source in [
+                f"\\\n{expr}", f'if \\\n{expr}: x', f"x if \\\n{expr} else y"
+            ]:
+                code = compile(source, "<test>", "exec")
+                actual_positions = [
+                    instruction.positions
+                    for instruction in dis.get_instructions(code)
+                    if instruction.opname == opname
+                ]
+                with self.subTest(source):
+                    self.assertEqual(actual_positions, expected_positions)
 
 
 @requires_debug_ranges()

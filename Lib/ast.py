@@ -853,7 +853,7 @@ class _Unparser(NodeVisitor):
 
     def visit_ImportFrom(self, node):
         self.fill("from ")
-        self.write("." * node.level)
+        self.write("." * (node.level or 0))
         if node.module:
             self.write(node.module)
         self.write(" import ")

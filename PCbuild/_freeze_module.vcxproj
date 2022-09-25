@@ -129,6 +129,7 @@
     <ClCompile Include="..\Objects\cellobject.c" />
     <ClCompile Include="..\Objects\classobject.c" />
     <ClCompile Include="..\Objects\codeobject.c" />
+    <ClCompile Include="..\Objects\perf_trampoline.c" />
     <ClCompile Include="..\Objects\complexobject.c" />
     <ClCompile Include="..\Objects\descrobject.c" />
     <ClCompile Include="..\Objects\dictobject.c" />
@@ -424,6 +425,10 @@
   <Target Name="_CleanFrozen" BeforeTargets="CoreClean" Condition="$(Configuration) != 'PGUpdate'">
     <ItemGroup>
       <Clean Include="%(None.IntFile)" />
+      <Clean Include="%(None.OutFile)" />
+      <Clean Include="%(GetPath.IntFile)" />
+      <Clean Include="%(GetPath.OutFile)" />
+      <Clean Include="$(PySourcePath)Python\deepfreeze\deepfreeze.c" />
     </ItemGroup>
   </Target>
 </Project>

@@ -1060,6 +1060,20 @@ possible, while any potentially slow operations (such as sending an email via
       the record to a dict or JSON string, or send a modified copy
       of the record while leaving the original intact.
 
+      .. note:: The base implementation formats the message with arguments, sets
+         the ``message`` and ``msg`` attributes to the formatted message and
+         sets the ``args`` and ``exc_text`` attributes to ``None`` to allow
+         pickling and to prevent further attempts at formatting. This means
+         that a handler on the :class:`QueueListener` side won't have the
+         information to do custom formatting, e.g. of exceptions. You may wish
+         to subclass ``QueueHandler`` and override this method to e.g. avoid
+         setting ``exc_text`` to ``None``. Note that the ``message`` / ``msg``
+         / ``args`` changes are related to ensuring the record is pickleable,
+         and you might or might not be able to avoid doing that depending on
+         whether your ``args`` are pickleable. (Note that you may have to
+         consider not only your own code but also code in any libraries that
+         you use.)
+
    .. method:: enqueue(record)
 
       Enqueues the record on the queue using ``put_nowait()``; you may

@@ -267,7 +267,7 @@ See also the main documentation section about the
 
 .. rubric:: Examples
 
-* :ref:`Using asyncio.get_event_loop() and loop.run_forever()
+* :ref:`Using asyncio.new_event_loop() and loop.run_forever()
   <asyncio_example_lowlevel_helloworld>`.
 
 * :ref:`Using loop.call_later() <asyncio_example_call_later>`.
