@@ -230,7 +230,7 @@ class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
         f1 = tkinter.Frame(self.root)
         f2 = tkinter.Frame(self.root)
         b1 = tkinter.Checkbutton(f1, name='test', text='Test1')
-        b2 = tkinter.Checkbutton(f1, name='test', text='Test2')
+        b2 = tkinter.Checkbutton(f2, name='test', text='Test2')
 
         v = tkinter.IntVar(self.root, name='test')
         b1.select()
