@@ -83,6 +83,24 @@ maybe_small_long(PyLongObject *v)
 #define KARATSUBA_CUTOFF 70
 #define KARATSUBA_SQUARE_CUTOFF (2 * KARATSUBA_CUTOFF)
 
+/* For parsing strings in decimal or other non binary bases a quadratic
+ * algorithm is used for strings with fewer than BASE_QUADRATIC_CUTOFF
+ * character digits. The subquadratic algorithm that is used for larger input
+ * strings first reads in chunks of BASE_QUADRATIC_CHUNKSIZE digits using the
+ * quadratic algorithm and then combines those using int multiplication. The
+ * optimal value of these limits has not been systematically explored but at
+ * least for decimal it seems that a chunk size significantly smaller or larger
+ * (e.g. 100 or 100000) is slower.
+ *
+ * For best performance over all bases this limit should probably be expressed
+ * in units of PyLong digits rather than string digits because the optimal
+ * number of string digits would be base dependent. However only base 10 is of
+ * significant interest and these values will probably give performance not far
+ * from optimal for other bases (3 and 36 are the extremal cases).
+ */
+#define BASE_QUADRATIC_CUTOFF 10000
+#define BASE_QUADRATIC_CHUNKSIZE 500
+
 /* For exponentiation, use the binary left-to-right algorithm unless the
  ^ exponent contains more than HUGE_EXP_CUTOFF bits.  In that case, do
  * (no more than) EXP_WINDOW_SIZE bits at a time.  The potential drawback is
@@ -2207,7 +2225,8 @@ unsigned char _PyLong_DigitValue[256] = {
  *   0 else (exception may be set, in that case *res is set to NULL)
  */
 static int
-long_from_binary_base(const char *start, const char *end, Py_ssize_t digits, int base, PyLongObject **res)
+long_from_binary_base(const char *start, const char *end,
+                      Py_ssize_t digits, int base, PyLongObject **res)
 {
     const char *p;
     int bits_per_char;
@@ -2273,7 +2292,7 @@ long_from_binary_base(const char *start, const char *end, Py_ssize_t digits, int
 }
 
 /***
-long_from_non_binary_base: parameters and return values are the same as
+long_from_base_quadratic: parameters and return values are the same as
 long_from_binary_base.
 
 Binary bases can be converted in time linear in the number of digits, because
@@ -2361,7 +2380,9 @@ just 1 digit at the start, so that the copying code was exercised for every
 digit beyond the first.
 ***/
 static int
-long_from_non_binary_base(const char *start, const char *end, Py_ssize_t digits, int base, PyLongObject **res)
+long_from_base_quadratic(const char *start, const char *end,
+                         Py_ssize_t digits, int base,
+                         PyLongObject **res)
 {
     twodigits c;           /* current input character */
     Py_ssize_t size_z;
@@ -2494,6 +2515,203 @@ long_from_non_binary_base(const char *start, const char *end, Py_ssize_t digits,
     return 0;
 }
 
+
+static PyLongObject * k_mul(PyLongObject *a, PyLongObject *b);
+static PyLongObject * x_add(PyLongObject *a, PyLongObject *b);
+static PyObject * long_pow(PyObject *v, PyObject *w, PyObject *x);
+
+/* long_from_base_subquadratic: parameters and return values are the same as
+ * long_from_binary_base.
+ *
+ * This function is used for parsing larger strings into an int from a base
+ * that is not a power of 2 (e.g. decimal) when the number of digits is greater
+ * than BASE_QUADRATIC_CUTOFF. The idea is to parse segments of the input
+ * string having BASE_QUADRATIC_CHUNKSIZE digits into separate PyLongs using
+ * the basic quadratic algorithm (long_from_base_quadratic). This gives an
+ * initial representation of the final result in base
+ * base**BASE_QUADRATIC_CHUNKSIZE with each digit being a PyLong (which is
+ * internally binary). Those digits are combined to build up the final result
+ * using integer multiplication. This is asymptotically faster than the basic
+ * quadratic algorithm because it leverages the subquadratic complexity of
+ * multiplication of large integers.
+ *
+ * A pure Python implementation of this algorithm is:
+ *
+ *     def parse_int(S: str, B: int = 10) -> int:
+ *         """parse string S as an integer in base B"""
+ *         m = len(S)
+ *         l = list(map(int, S[::-1]))
+ *         b, k = B, m
+ *         while k > 1:
+ *             last = [l[-1]] if k % 2 == 1 else []
+ *             l = [l1 + b*l2 for l1, l2 in zip(l[::2], l[1::2])]
+ *             l.extend(last)
+ *             b, k = b**2, (k + 1) // 2
+ *         [l0] = l
+ *         return l0
+ *
+ * The final result that we want to compute is l0. At the intermediate stages
+ * of the algorithm l0 is represented by l which is a list of (binary) integers
+ * representing l0 in base b. The key step is:
+ *
+ *     l = [l1 + b*l2 for l1, l2 in zip(l[::2], l[1::2])]
+ *
+ * This lifts l from a representation of l0 in base b to a representation in
+ * base b**2 so the base goes from 10 to 100 to 10000 etc and eventually the
+ * base is large enough that l0 is represented by a single base b digit.
+ *
+ * The algorithm is not intrinsically subquadratic but rather delegates the
+ * heavy lifting to integer multiplication which is subquadratic for
+ * sufficiently large integers so the complexity is M(n)*log(n) where M(n) is
+ * the complexity of multiplying two n bit integers.
+ *
+ * This is essentially algorithm 1.25 (FastIntegerInput) from section 1.7.2 of
+ * Modern Computer Arithmetic, Richard P. Brent and Paul Zimmermann.
+ */
+static int
+long_from_base_subquadratic(const char *start, const char *end,
+                            Py_ssize_t digits, int base, PyLongObject **res)
+{
+    Py_ssize_t chunk_size = BASE_QUADRATIC_CHUNKSIZE;
+    Py_ssize_t num_chunks = digits / chunk_size + 1;
+    Py_ssize_t i, k, digits_read;
+    const char *p;
+
+    PyLongObject **l = NULL;
+    PyLongObject *base_l = NULL;
+    PyLongObject *chunk_size_l = NULL;
+    PyLongObject *B = NULL;
+    PyLongObject *t1 = NULL;
+    PyLongObject *t2 = NULL;
+
+    /* l will be initially an array of num_chunks ints representing the final
+     * result in base base^chunk_size. */
+    l = (PyLongObject **) PyMem_Malloc(num_chunks * sizeof(PyLongObject *));
+    if (l == NULL) {
+        goto error;
+    }
+    for(i=0; i<num_chunks; ++i) {
+        l[i] = NULL;
+    }
+
+    /* We need to read chunks of chunk_size digits from the end of the string
+     * backwards to give a representation in base base^chunk_size.
+     */
+    k = 0;
+    p = end;
+    while (p != start) {
+        digits_read = 0;
+        while (p != start && digits_read < chunk_size) {
+            if (*p != '_') {
+                ++digits_read;
+            }
+            --p;
+        }
+        long_from_base_quadratic(p, end, digits_read, base, &l[k]);
+        if (l[k] == NULL) {
+            goto error;
+        }
+        ++k;
+        end = p;
+    }
+
+    /* B = base^chunk_size */
+    base_l = (PyLongObject*) PyLong_FromLong((long)base);
+    if (base_l == NULL) {
+        goto error;
+    }
+    chunk_size_l = (PyLongObject*) PyLong_FromLong((long)chunk_size);
+    if (chunk_size_l == NULL) {
+        goto error;
+    }
+    /* Maybe there's a better way than using long_pow... */
+    B = (PyLongObject*) long_pow((PyObject *)base_l, (PyObject *) chunk_size_l, Py_None);
+    if (B == NULL) {
+        goto error;
+    }
+    Py_DECREF(base_l);
+    Py_DECREF(chunk_size_l);
+    base_l = NULL;
+    chunk_size_l = NULL;
+
+    while (k > 1) {
+        /*
+         * last = [l[-1]] if k % 2 == 1 else []
+         * l = [l1 + b*l2 for l1, l2 in zip(l[::2], l[1::2])]
+         * l.extend(last)
+         */
+        for(i=0; i<k/2; i++) {
+            t1 = k_mul(l[2*i+1], B);
+            if (t1 == NULL) {
+                goto error;
+            }
+            Py_DECREF(l[2*i+1]);
+            l[2*i+1] = NULL;
+            /* Memory usage peeks in x_add below at the final iteration of the
+             * outer k loop and drops back after Py_DECREF(t1). For an input
+             * string of N bytes in base 10 the final result will be computed
+             * here as t2 and occupies ~N/2 bytes but we also still have t1 of
+             * the same size and l[2*i] and B of at least half the size so peek
+             * usage could be up to 2*N bytes (on top of the input string)
+             * before dropping back to N/2.
+             *
+             * An in-place x_add would eliminate the need to have both t1 and
+             * t2 reducing peek memory use by N/2 pretty much always. When k=2
+             * we could also decref B here first to save at least N/4 and up to
+             * N/2. Maybe these ideas would just overcomplicate the code
+             * though...
+             */
+            t2 = x_add(l[2*i], t1);
+            if (t2 == NULL) {
+                goto error;
+            }
+            Py_DECREF(t1);
+            t1 = NULL;
+            Py_DECREF(l[2*i]);
+            l[2*i] = NULL;
+            l[i] = t2;
+            t2 = NULL;
+        }
+        if (k % 2) {
+            l[k/2] = l[k-1];
+            l[k-1] = NULL;
+        }
+        /*  b, k = b**2, (k + 1) // 2  */
+        k = (k + 1) / 2;
+        /* Don't compute B^2 if we don't need it. */
+        if (k > 1) {
+            t1 = k_mul(B, B);
+            if (t1 == NULL) {
+                goto error;
+            }
+            Py_DECREF(B);
+            B = t1;
+            t1 = NULL;
+        }
+    }
+
+    /* Success! Now l == [l0]. */
+    Py_DECREF(B);
+    *res = l[0];
+    PyMem_Free(l);
+    return 0;
+
+error:
+    Py_XDECREF(base_l);
+    Py_XDECREF(chunk_size_l);
+    Py_XDECREF(B);
+    Py_XDECREF(t1);
+    Py_XDECREF(t2);
+    if (l != NULL) {
+        for (i = 0; i < num_chunks; ++i) {
+            Py_XDECREF(l[i]);
+        }
+        PyMem_Free(l);
+    }
+    *res = NULL;
+    return 0;
+}
+
 /* *str points to the first digit in a string of base `base` digits. base is an
  * integer from 2 to 36 inclusive. Here we don't need to worry about prefixes
  * like 0x or leading +- signs. The string should be null terminated consisting
@@ -2586,8 +2804,15 @@ long_from_string_base(const char **str, int base, PyLongObject **res)
                 return 0;
             }
         }
-        /* Use the quadratic algorithm for non binary bases. */
-        return long_from_non_binary_base(start, end, digits, base, res);
+
+        if (digits <= BASE_QUADRATIC_CUTOFF) {
+            /* Use the quadratic algorithm for smaller strings. */
+            return long_from_base_quadratic(start, end, digits, base, res);
+        }
+        else {
+            /* Use the subquadratic algorithm for larger strings. */
+            return long_from_base_subquadratic(start, end, digits, base, res);
+        }
     }
 }
 
