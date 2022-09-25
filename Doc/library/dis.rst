@@ -999,60 +999,48 @@ iterations of the loop.
    .. versionadded:: 3.11
 
 
-.. opcode:: POP_JUMP_FORWARD_IF_TRUE (delta)
+.. opcode:: POP_JUMP_IF_TRUE (delta)
 
    If TOS is true, increments the bytecode counter by *delta*.  TOS is popped.
 
-   .. versionadded:: 3.11
+   .. versionchanged:: 3.11
+      The oparg is now a relative delta rather than an absolute target.
+      This opcode is a pseudo-instruction, replaced in final bytecode by
+      the directed versions (forward/backward).
 
+   .. versionchanged:: 3.12
+      This is no longer a pseudo-instruction.
 
-.. opcode:: POP_JUMP_BACKWARD_IF_TRUE (delta)
-
-   If TOS is true, decrements the bytecode counter by *delta*.  TOS is popped.
-
-   .. versionadded:: 3.11
-
-
-.. opcode:: POP_JUMP_FORWARD_IF_FALSE (delta)
+.. opcode:: POP_JUMP_IF_FALSE (delta)
 
    If TOS is false, increments the bytecode counter by *delta*.  TOS is popped.
 
-   .. versionadded:: 3.11
+   .. versionchanged:: 3.11
+      The oparg is now a relative delta rather than an absolute target.
+      This opcode is a pseudo-instruction, replaced in final bytecode by
+      the directed versions (forward/backward).
 
+   .. versionchanged:: 3.12
+      This is no longer a pseudo-instruction.
 
-.. opcode:: POP_JUMP_BACKWARD_IF_FALSE (delta)
-
-   If TOS is false, decrements the bytecode counter by *delta*.  TOS is popped.
-
-   .. versionadded:: 3.11
-
-
-.. opcode:: POP_JUMP_FORWARD_IF_NOT_NONE (delta)
+.. opcode:: POP_JUMP_IF_NOT_NONE (delta)
 
    If TOS is not ``None``, increments the bytecode counter by *delta*.  TOS is popped.
 
    .. versionadded:: 3.11
 
-
-.. opcode:: POP_JUMP_BACKWARD_IF_NOT_NONE (delta)
-
-   If TOS is not ``None``, decrements the bytecode counter by *delta*.  TOS is popped.
-
-   .. versionadded:: 3.11
+   .. versionchanged:: 3.12
+      This is no longer a pseudo-instruction.
 
 
-.. opcode:: POP_JUMP_FORWARD_IF_NONE (delta)
+.. opcode:: POP_JUMP_IF_NONE (delta)
 
    If TOS is ``None``, increments the bytecode counter by *delta*.  TOS is popped.
 
    .. versionadded:: 3.11
 
-
-.. opcode:: POP_JUMP_BACKWARD_IF_NONE (delta)
-
-   If TOS is ``None``, decrements the bytecode counter by *delta*.  TOS is popped.
-
-   .. versionadded:: 3.11
+   .. versionchanged:: 3.12
+      This is no longer a pseudo-instruction.
 
 
 .. opcode:: JUMP_IF_TRUE_OR_POP (delta)
@@ -1433,10 +1421,6 @@ but are replaced by real opcodes or removed before bytecode is generated.
 
 .. opcode:: JUMP
 .. opcode:: JUMP_NO_INTERRUPT
-.. opcode:: POP_JUMP_IF_FALSE
-.. opcode:: POP_JUMP_IF_TRUE
-.. opcode:: POP_JUMP_IF_NONE
-.. opcode:: POP_JUMP_IF_NOT_NONE
 
    Undirected relative jump instructions which are replaced by their
    directed (forward/backward) counterparts by the assembler.

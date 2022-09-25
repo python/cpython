@@ -703,6 +703,10 @@ This also has the side-effect of increasing execution speed because name
 bindings are resolved at run-time in Python, and the second version only needs
 to perform the resolution once.
 
+Similar proposals that would introduce syntax to further reduce code volume,
+such as using a 'leading dot', have been rejected in favour of explicitness (see
+https://mail.python.org/pipermail/python-ideas/2016-May/040070.html).
+
 
 Why don't generators support the with statement?
 ------------------------------------------------
