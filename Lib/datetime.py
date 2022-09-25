@@ -1025,11 +1025,7 @@ class date:
 
 
     def ctime(self):
-        """Return ctime() style string.
-
-        >>> date(2001, 10, 5).ctime()
-        'Fri Oct  5 00:00:00 2001'
-        """
+        """Return ctime() style string, such as 'Fri Oct  5 00:00:00 2001'"""
         weekday = self.toordinal() % 7 or 7
         return "%s %s %2d 00:00:00 %04d" % (
             _DAYNAMES[weekday],
