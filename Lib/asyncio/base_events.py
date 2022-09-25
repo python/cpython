@@ -567,7 +567,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         finally:
             thread.join(timeout)
 
-        if (thread.is_alive()):
+        if thread.is_alive():
             warnings.warn("The ThreadPoolExecutor did not finishing joining "
                              f"its threads within {timeout} seconds.",
                              RuntimeWarning, stacklevel=2)
