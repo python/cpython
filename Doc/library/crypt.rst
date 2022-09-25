@@ -36,7 +36,9 @@ the :manpage:`crypt(3)` routine in the running system.  Therefore, any
 extensions available on the current implementation will also  be available on
 this module.
 
-.. availability:: Unix. Not available on VxWorks.
+.. availability:: Unix, not VxWorks.
+
+.. include:: ../includes/wasm-notavail.rst
 
 Hashing Methods
 ---------------

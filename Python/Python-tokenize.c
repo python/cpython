@@ -15,6 +15,7 @@ get_tokenize_state(PyObject *module) {
 #define _tokenize_get_state_by_type(type) \
     get_tokenize_state(PyType_GetModuleByDef(type, &_tokenizemodule))
 
+#include "pycore_runtime.h"
 #include "clinic/Python-tokenize.c.h"
 
 /*[clinic input]

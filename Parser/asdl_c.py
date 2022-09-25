@@ -1112,6 +1112,8 @@ static int add_ast_fields(struct ast_state *state)
         for dfn in mod.dfns:
             self.visit(dfn)
         self.file.write(textwrap.dedent('''
+                state->recursion_depth = 0;
+                state->recursion_limit = 0;
                 state->initialized = 1;
                 return 1;
             }
@@ -1259,8 +1261,14 @@ class ObjVisitor(PickleVisitor):
         self.emit('if (!o) {', 1)
         self.emit("Py_RETURN_NONE;", 2)
         self.emit("}", 1)
+        self.emit("if (++state->recursion_depth > state->recursion_limit) {", 1)
+        self.emit("PyErr_SetString(PyExc_RecursionError,", 2)
+        self.emit('"maximum recursion depth exceeded during ast construction");', 3)
+        self.emit("return 0;", 2)
+        self.emit("}", 1)
 
     def func_end(self):
+        self.emit("state->recursion_depth--;", 1)
         self.emit("return result;", 1)
         self.emit("failed:", 0)
         self.emit("Py_XDECREF(value);", 1)
@@ -1371,7 +1379,32 @@ PyObject* PyAST_mod2obj(mod_ty t)
     if (state == NULL) {
         return NULL;
     }
-    return ast2obj_mod(state, t);
+
+    int recursion_limit = Py_GetRecursionLimit();
+    int starting_recursion_depth;
+    /* Be careful here to prevent overflow. */
+    int COMPILER_STACK_FRAME_SCALE = 3;
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (!tstate) {
+        return 0;
+    }
+    state->recursion_limit = (recursion_limit < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
+        recursion_limit * COMPILER_STACK_FRAME_SCALE : recursion_limit;
+    int recursion_depth = tstate->recursion_limit - tstate->recursion_remaining;
+    starting_recursion_depth = (recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
+        recursion_depth * COMPILER_STACK_FRAME_SCALE : recursion_depth;
+    state->recursion_depth = starting_recursion_depth;
+
+    PyObject *result = ast2obj_mod(state, t);
+
+    /* Check that the recursion depth counting balanced correctly */
+    if (result && state->recursion_depth != starting_recursion_depth) {
+        PyErr_Format(PyExc_SystemError,
+            "AST constructor recursion depth mismatch (before=%d, after=%d)",
+            starting_recursion_depth, state->recursion_depth);
+        return 0;
+    }
+    return result;
 }
 
 /* mode is 0 for "exec", 1 for "eval" and 2 for "single" input */
@@ -1437,6 +1470,8 @@ class ChainOfVisitors:
 def generate_ast_state(module_state, f):
     f.write('struct ast_state {\n')
     f.write('    int initialized;\n')
+    f.write('    int recursion_depth;\n')
+    f.write('    int recursion_limit;\n')
     for s in module_state:
         f.write('    PyObject *' + s + ';\n')
     f.write('};')
