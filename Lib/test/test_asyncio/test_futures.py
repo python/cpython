@@ -620,6 +620,8 @@ class BaseFutureTests:
     def test_future_iter_throw(self):
         fut = self._new_future(loop=self.loop)
         fi = iter(fut)
+        with self.assertWarns(DeprecationWarning):
+            fi.throw(Exception, Exception("zebra"), None)
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=DeprecationWarning)
             self.assertRaises(TypeError, fi.throw,

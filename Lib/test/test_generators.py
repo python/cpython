@@ -342,6 +342,15 @@ class ExceptionTest(unittest.TestCase):
         with self.assertRaises(StopIteration):
             gen.throw(E)
 
+    def test_gen_3_arg_deprecation_warning(self):
+        def g():
+            yield 42
+
+        gen = g()
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(TypeError):
+                gen.throw(TypeError, TypeError(24), None)
+
     def test_stopiteration_error(self):
         # See also PEP 479.
 
