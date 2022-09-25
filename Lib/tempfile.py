@@ -542,9 +542,6 @@ class _TemporaryFileWrapper:
         for line in self.file:
             yield line
 
-    def __del__(self):
-        self._cleanup()
-
 def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
                        newline=None, suffix=None, prefix=None,
                        dir=None, delete=True, *, errors=None,
