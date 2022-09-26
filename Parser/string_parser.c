@@ -175,6 +175,11 @@ _PyPegen_parsestr(Parser *p, int *bytesmode, int *rawmode, PyObject **result,
         return -1;
     }
 
+    if (len > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "string to parse is too long");
+        return -1;
+    }
+
     int quote = Py_CHARMASK(*s);
     int fmode = 0;
     *bytesmode = 0;
@@ -226,10 +231,6 @@ _PyPegen_parsestr(Parser *p, int *bytesmode, int *rawmode, PyObject **result,
     /* Skip the leading quote char. */
     s++;
     len--;
-    if (len > INT_MAX) {
-        PyErr_SetString(PyExc_OverflowError, "string to parse is too long");
-        return -1;
-    }
     if (s[--len] != quote) {
         /* Last quote char must match the first. */
         PyErr_BadInternalCall();
