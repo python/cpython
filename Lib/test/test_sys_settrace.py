@@ -1721,6 +1721,20 @@ class RaisingTraceFuncTestCase(unittest.TestCase):
         finally:
             sys.settrace(existing)
 
+    def test_line_event_raises_before_opcode_event(self):
+        exception = ValueError("BOOM!")
+        def trace(frame, event, arg):
+            if event == "line":
+                raise exception
+            frame.f_trace_opcodes = True
+            return trace
+        def f():
+            pass
+        with self.assertRaises(ValueError) as caught:
+            sys.settrace(trace)
+            f()
+        self.assertIs(caught.exception, exception)
+
 
 # 'Jump' tests: assigning to frame.f_lineno within a trace function
 # moves the execution position - it's how debuggers implement a Jump
