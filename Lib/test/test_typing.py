@@ -2696,6 +2696,11 @@ class ProtocolTests(BaseTestCase):
     def test_supports_float(self):
         self.assertIsSubclass(float, typing.SupportsFloat)
         self.assertNotIsSubclass(str, typing.SupportsFloat)
+    
+    def test_supports_bool(self):
+        self.assertIsSubclass(bool, typing.SupportsBool)
+        self.assertIsSubclass(int, typing.SupportsBool)
+        self.assertNotIsSubclass(str, typing.SupportsBool)
 
     def test_supports_complex(self):
 

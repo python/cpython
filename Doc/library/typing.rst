@@ -2372,6 +2372,10 @@ These protocols are decorated with :func:`runtime_checkable`.
     An ABC with one abstract method ``__abs__`` that is covariant
     in its return type.
 
+.. class:: SupportsBool
+
+    An ABC with one abstract method ``__bool__``.
+
 .. class:: SupportsBytes
 
     An ABC with one abstract method ``__bytes__``.

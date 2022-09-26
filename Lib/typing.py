@@ -89,6 +89,7 @@ __all__ = [
     # Structural checks, a.k.a. protocols.
     'Reversible',
     'SupportsAbs',
+    'SupportsBool',
     'SupportsBytes',
     'SupportsComplex',
     'SupportsFloat',
@@ -2758,6 +2759,16 @@ class SupportsFloat(Protocol):
 
     @abstractmethod
     def __float__(self) -> float:
+        pass
+
+
+@runtime_checkable
+class SupportsBool(Protocol):
+    """An ABC with one abstract method __bool__."""
+    __slots__ = ()
+
+    @abstractmethod
+    def __bool__(self) -> bool:
         pass
 
 
