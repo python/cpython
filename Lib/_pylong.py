@@ -164,8 +164,9 @@ def str_to_int(s):
 
 
 # Fast integer division, based on code from Mark Dickinson, fast_div.py
-# GH-47701. The algorithm is due to Burnikel and Ziegler, in their paper
-# "Fast Recursive Division".
+# GH-47701. Additional refinements and optimizations by Bjorn Martinsson.  The
+# algorithm is due to Burnikel and Ziegler, in their paper "Fast Recursive
+# Division".
 
 _DIV_LIMIT = 1000
 
@@ -214,7 +215,18 @@ def _div3n2n(a12, a3, b, b1, b2, n):
 
 
 def _int2digits(a, n):
-    """decompose non-negative integer a into base 2**n"""
+    """Decompose non-negative int a into base 2**n
+
+    Input:
+      a is a non-negative integer
+
+    Output:
+      List of the digits of a in base 2**n in little-endian order,
+      meaning the most significant digit is last. The most
+      significant digit is guaranteed to be non-zero.
+      If a is 0 then the output is an empty list.
+
+    """
     a_digits = [0] * ((a.bit_length() + n - 1) // n)
 
     def inner(x, L, R):
@@ -234,7 +246,9 @@ def _int2digits(a, n):
 
 
 def _digits2int(digits, n):
-    """combine base-2**n digits into an int"""
+    """Combine base-2**n digits into an int. This function is the
+    inverse of `_int2digits`. For more details, see _int2digits.
+    """
 
     def inner(L, R):
         if L + 1 == R:
@@ -264,7 +278,9 @@ def _divmod_pos(a, b):
 
 
 def int_divmod(a, b):
-    """Asymptotically fast replacement for divmod, for 'int'."""
+    """Asymptotically fast replacement for divmod, for 'int'.
+    Its time complexity is O(n**1.58), where n = #bits(a) + #bits(b).
+    """
     if _DEBUG:
         print('int_divmod', a.bit_length(), b.bit_length(), file=sys.stderr)
     if b == 0:
@@ -275,7 +291,5 @@ def int_divmod(a, b):
     elif a < 0:
         q, r = int_divmod(~a, b)
         return ~q, b + ~r
-    elif a == 0:
-        return 0, 0
     else:
         return _divmod_pos(a, b)
