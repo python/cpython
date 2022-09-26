@@ -148,7 +148,7 @@ adjusted::
    logging.getLogger("asyncio").setLevel(logging.WARNING)
 
 
-Network logging can block the event loop, it is recommended to use
+Network logging can block the event loop. It is recommended to use
 a separate thread for handling logs or use non-blocking IO.
 
 
