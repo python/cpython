@@ -4122,11 +4122,11 @@ l_divmod(PyLongObject *v, PyLongObject *w,
 #if WITH_PYLONG_MODULE
     Py_ssize_t size_v = Py_ABS(Py_SIZE(v)); /* digits in numerator */
     Py_ssize_t size_w = Py_ABS(Py_SIZE(w)); /* digits in denominator */
-    if (size_w > 500 && (size_v - size_w) > 250) {
+    if (size_w > 300 && (size_v - size_w) > 150) {
         /* Switch to _pylong.int_divmod().  If the quotient is small then
           "schoolbook" division is linear-time so don't use in that case.
           These limits are empirically determined and should be slightly
-          conservative so that _pylong gets used in cases it is likely
+          conservative so that _pylong is used in cases it is likely
           to be faster. */
         return pylong_int_divmod(v, w, pdiv, pmod);
     }

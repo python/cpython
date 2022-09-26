@@ -168,7 +168,7 @@ def str_to_int(s):
 # algorithm is due to Burnikel and Ziegler, in their paper "Fast Recursive
 # Division".
 
-_DIV_LIMIT = 1000
+_DIV_LIMIT = 4000
 
 
 def _div2n1n(a, b, n):
@@ -184,7 +184,7 @@ def _div2n1n(a, b, n):
       (q, r) such that a = b*q+r and 0 <= r < b.
 
     """
-    if n <= _DIV_LIMIT:
+    if a.bit_length() - n <= _DIV_LIMIT:
         return divmod(a, b)
     pad = n & 1
     if pad:
