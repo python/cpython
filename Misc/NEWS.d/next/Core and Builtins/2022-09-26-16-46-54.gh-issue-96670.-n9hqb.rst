@@ -1,0 +1,1 @@
+Fix interpreter crash when a string literal contains a null character.
