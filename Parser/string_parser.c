@@ -256,6 +256,11 @@ _PyPegen_parse_string(Parser *p, Token *t)
         return NULL;
     }
 
+    if (len > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "string to parse is too long");
+        return NULL;
+    }
+
     int quote = Py_CHARMASK(*s);
     int bytesmode = 0;
     int rawmode = 0;
@@ -294,10 +299,6 @@ _PyPegen_parse_string(Parser *p, Token *t)
     // so the code '--len' below is safe.
     assert(len >= 1);
 
-    if (len > INT_MAX) {
-        PyErr_SetString(PyExc_OverflowError, "string to parse is too long");
-        return NULL;
-    }
     if (s[--len] != quote) {
         /* Last quote char must match the first. */
         PyErr_BadInternalCall();
