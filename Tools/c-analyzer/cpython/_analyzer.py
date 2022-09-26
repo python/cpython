@@ -60,6 +60,46 @@ _IGNORED = {
     # {ID => reason}
 }
 
+# XXX We should be handling these through known.tsv.
+_OTHER_SUPPORTED_TYPES = {
+    # Holds tuple of strings, which we statically initialize:
+    '_PyArg_Parser',
+    # Uses of these should be const, but we don't worry about it.
+    'PyModuleDef',
+    'PyModuleDef_Slot[]',
+    'PyType_Spec',
+    'PyType_Slot[]',
+    'PyMethodDef',
+    'PyMethodDef[]',
+    'PyMemberDef[]',
+    'PyGetSetDef[]',
+    'PyNumberMethods',
+    'PySequenceMethods',
+    'PyMappingMethods',
+    'PyAsyncMethods',
+    'PyBufferProcs',
+    'PyStructSequence_Field[]',
+    'PyStructSequence_Desc',
+}
+
+# XXX We should normalize all cases to a single name,
+# e.g. "kwlist" (currently the most common).
+_KWLIST_VARIANTS = [
+    ('*', 'kwlist'),
+    ('*', 'keywords'),
+    ('*', 'kwargs'),
+    ('Modules/_csv.c', 'dialect_kws'),
+    ('Modules/_datetimemodule.c', 'date_kws'),
+    ('Modules/_datetimemodule.c', 'datetime_kws'),
+    ('Modules/_datetimemodule.c', 'time_kws'),
+    ('Modules/_datetimemodule.c', 'timezone_kws'),
+    ('Modules/_lzmamodule.c', 'optnames'),
+    ('Modules/_lzmamodule.c', 'arg_names'),
+    ('Modules/cjkcodecs/multibytecodec.c', 'incnewkwarglist'),
+    ('Modules/cjkcodecs/multibytecodec.c', 'streamkwarglist'),
+    ('Modules/socketmodule.c', 'kwnames'),
+]
+
 KINDS = frozenset((*KIND.TYPES, KIND.VARIABLE))
 
 
@@ -202,6 +242,8 @@ def _check_typedep(decl, typedecl, types, knowntypes):
         # XXX Fail?
         return 'typespec (missing)'
     elif typedecl is _info.UNKNOWN:
+        if _has_other_supported_type(decl):
+            return None
         # XXX Is this right?
         return 'typespec (unknown)'
     elif not isinstance(typedecl, TypeDeclaration):
@@ -216,10 +258,40 @@ def _check_typedep(decl, typedecl, types, knowntypes):
     elif decl.kind is KIND.VARIABLE:
         if not is_process_global(decl):
             return None
+        if _is_kwlist(decl):
+            return None
+        if _has_other_supported_type(decl):
+            return None
         checked = _check_vartype(decl, typedecl, types, knowntypes)
         return 'mutable' if checked is FIXED_TYPE else checked
     else:
         raise NotImplementedError(decl)
+
+
+def _is_kwlist(decl):
+    # keywords for PyArg_ParseTupleAndKeywords()
+    # "static char *name[]" -> "static const char * const name[]"
+    # XXX These should be made const.
+    for relpath, name in _KWLIST_VARIANTS:
+        if decl.name == name:
+            if relpath == '*':
+                break
+            assert os.path.isabs(decl.file.filename)
+            relpath = os.path.normpath(relpath)
+            if decl.file.filename.endswith(os.path.sep + relpath):
+                break
+    else:
+        return False
+    vartype = ''.join(str(decl.vartype).split())
+    return vartype == 'char*[]'
+
+
+def _has_other_supported_type(decl):
+    vartype = str(decl.vartype).split()
+    if vartype[0] == 'struct':
+        vartype = vartype[1:]
+    vartype = ''.join(vartype)
+    return vartype in _OTHER_SUPPORTED_TYPES
 
 
 def _check_vartype(decl, typedecl, types, knowntypes):

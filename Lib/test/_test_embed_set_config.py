@@ -236,10 +236,11 @@ class SetConfigTests(unittest.TestCase):
                         module_search_paths=['a', 'b', 'c'])
         self.assertEqual(sys.path, ['a', 'b', 'c'])
 
-        # Leave sys.path unchanged if module_search_paths_set=0
+        # sys.path is reset if module_search_paths_set=0
         self.set_config(module_search_paths_set=0,
                         module_search_paths=['new_path'])
-        self.assertEqual(sys.path, ['a', 'b', 'c'])
+        self.assertNotEqual(sys.path, ['a', 'b', 'c'])
+        self.assertNotEqual(sys.path, ['new_path'])
 
     def test_argv(self):
         self.set_config(parse_argv=0,
