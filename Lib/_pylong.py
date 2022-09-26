@@ -213,21 +213,53 @@ def _div3n2n(a12, a3, b, b1, b2, n):
     return q, r
 
 
+def _int2digits(a, n):
+    """decompose non-negative integer a into base 2**n"""
+    a_digits = [0] * ((a.bit_length() + n - 1) // n)
+
+    def inner(x, L, R):
+        if L + 1 == R:
+            a_digits[L] = x
+            return
+        mid = (L + R) >> 1
+        shift = (mid - L) * n
+        upper = x >> shift
+        lower = x ^ (upper << shift)
+        inner(lower, L, mid)
+        inner(upper, mid, R)
+
+    if a:
+        inner(a, 0, len(a_digits))
+    return a_digits
+
+
+def _digits2int(digits, n):
+    """combine base-2**n digits into an int"""
+
+    def inner(L, R):
+        if L + 1 == R:
+            return digits[L]
+        mid = (L + R) >> 1
+        shift = (mid - L) * n
+        return (inner(mid, R) << shift) + inner(L, mid)
+
+    return inner(0, len(digits)) if digits else 0
+
+
 def _divmod_pos(a, b):
-    """Divide a positive integer a by a positive integer b, giving
+    """Divide a non-negative integer a by a positive integer b, giving
     quotient and remainder."""
     # Use grade-school algorithm in base 2**n, n = nbits(b)
     n = b.bit_length()
-    mask = (1 << n) - 1
-    a_digits = []
-    while a:
-        a_digits.append(a & mask)
-        a >>= n
-    r = 0 if a_digits[-1] >= b else a_digits.pop()
-    q = 0
-    while a_digits:
-        q_digit, r = _div2n1n((r << n) + a_digits.pop(), b, n)
-        q = (q << n) + q_digit
+    a_digits = _int2digits(a, n)
+
+    r = 0
+    q_digits = []
+    for a_digit in reversed(a_digits):
+        q_digit, r = _div2n1n((r << n) + a_digit, b, n)
+        q_digits.append(q_digit)
+    q_digits.reverse()
+    q = _digits2int(q_digits, n)
     return q, r
 
 
