@@ -298,7 +298,7 @@ The asyncio components that enable structured concurrency, like
 :class:`asyncio.TaskGroup` and :func:`asyncio.timeout`,
 are implemented using cancellation internally and might misbehave if
 a coroutine swallows :exc:`asyncio.CancelledError`. Similarly, user code
-should not attempt to :meth:`uncancel <asyncio.Task.uncancel>`
+should not call :meth:`uncancel <asyncio.Task.uncancel>`.
 
 .. _taskgroups:
 
