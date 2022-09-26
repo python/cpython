@@ -10,7 +10,7 @@ from email.parser import BytesParser
 
 
 def magic_html_parser(html_text, partfiles):
-    """Return safety sanitized html linked to partfiles.
+    """Return safety-sanitized html linked to partfiles.
 
     Rewrite the href="cid:...." attributes to point to the filenames in partfiles.
     Though not trivial, this should be possible using html.parser.
