@@ -4127,7 +4127,7 @@ l_divmod(PyLongObject *v, PyLongObject *w,
           "schoolbook" division is linear-time so don't use in that case.
           These limits are empirically determined and should be slightly
           conservative so that _pylong is used in cases it is likely
-          to be faster. */
+          to be faster. See Tools/scripts/divmod_threshold.py. */
         return pylong_int_divmod(v, w, pdiv, pmod);
     }
 #endif
