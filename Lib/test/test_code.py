@@ -337,6 +337,17 @@ class CodeTest(unittest.TestCase):
         new_code = code = func.__code__.replace(co_linetable=b'')
         self.assertEqual(list(new_code.co_lines()), [])
 
+    def test_invalid_bytecode(self):
+        def foo(): pass
+        foo.__code__ = co = foo.__code__.replace(co_code=b'\xee\x00d\x00S\x00')
+
+        with self.assertRaises(SystemError) as se:
+            foo()
+        self.assertEqual(
+            f"{co.co_filename}:{co.co_firstlineno}: unknown opcode 238",
+            str(se.exception))
+
+
     @requires_debug_ranges()
     def test_co_positions_artificial_instructions(self):
         import dis
@@ -427,6 +438,27 @@ class CodeTest(unittest.TestCase):
         for line, end_line, column, end_column in positions:
             self.assertIsNone(line)
             self.assertEqual(end_line, new_code.co_firstlineno + 1)
+
+    def test_code_equality(self):
+        def f():
+            try:
+                a()
+            except:
+                b()
+            else:
+                c()
+            finally:
+                d()
+        code_a = f.__code__
+        code_b = code_a.replace(co_linetable=b"")
+        code_c = code_a.replace(co_exceptiontable=b"")
+        code_d = code_b.replace(co_exceptiontable=b"")
+        self.assertNotEqual(code_a, code_b)
+        self.assertNotEqual(code_a, code_c)
+        self.assertNotEqual(code_a, code_d)
+        self.assertNotEqual(code_b, code_c)
+        self.assertNotEqual(code_b, code_d)
+        self.assertNotEqual(code_c, code_d)
 
 
 def isinterned(s):

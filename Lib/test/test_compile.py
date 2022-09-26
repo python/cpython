@@ -8,6 +8,7 @@ import _ast
 import tempfile
 import types
 import textwrap
+import warnings
 from test import support
 from test.support import script_helper, requires_debug_ranges
 from test.support.os_helper import FakePath
@@ -108,6 +109,7 @@ class TestSpecifics(unittest.TestCase):
         exec('z = a', g, d)
         self.assertEqual(d['z'], 12)
 
+    @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_extended_arg(self):
         # default: 1000 * 2.5 = 2500 repetitions
         repeat = int(sys.getrecursionlimit() * 2.5)
@@ -196,6 +198,19 @@ if 1:
         self.assertEqual(eval("-0b000000000010"), -2)
         self.assertEqual(eval("0o777"), 511)
         self.assertEqual(eval("-0o0000010"), -8)
+
+    def test_int_literals_too_long(self):
+        n = 3000
+        source = f"a = 1\nb = 2\nc = {'3'*n}\nd = 4"
+        with support.adjust_int_max_str_digits(n):
+            compile(source, "<long_int_pass>", "exec")  # no errors.
+        with support.adjust_int_max_str_digits(n-1):
+            with self.assertRaises(SyntaxError) as err_ctx:
+                compile(source, "<long_int_fail>", "exec")
+            exc = err_ctx.exception
+            self.assertEqual(exc.lineno, 3)
+            self.assertIn('Exceeds the limit ', str(exc))
+            self.assertIn(' Consider hexadecimal ', str(exc))
 
     def test_unary_minus(self):
         # Verify treatment of unary minus on negative numbers SF bug #660455
@@ -542,6 +557,7 @@ if 1:
         self.assertIn(b"Non-UTF-8", res.err)
 
     @support.cpython_only
+    @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_compiler_recursion_limit(self):
         # Expected limit is sys.getrecursionlimit() * the scaling factor
         # in symtable.c (currently 3)
@@ -613,7 +629,7 @@ if 1:
             exec(code, ns)
             f1 = ns['f1']
             f2 = ns['f2']
-            self.assertIs(f1.__code__, f2.__code__)
+            self.assertIs(f1.__code__.co_consts, f2.__code__.co_consts)
             self.check_constant(f1, const)
             self.assertEqual(repr(f1()), repr(const))
 
@@ -626,7 +642,7 @@ if 1:
         # Note: "lambda: ..." emits "LOAD_CONST Ellipsis",
         # whereas "lambda: Ellipsis" emits "LOAD_GLOBAL Ellipsis"
         f1, f2 = lambda: ..., lambda: ...
-        self.assertIs(f1.__code__, f2.__code__)
+        self.assertIs(f1.__code__.co_consts, f2.__code__.co_consts)
         self.check_constant(f1, Ellipsis)
         self.assertEqual(repr(f1()), repr(Ellipsis))
 
@@ -641,7 +657,7 @@ if 1:
         # {0} is converted to a constant frozenset({0}) by the peephole
         # optimizer
         f1, f2 = lambda x: x in {0}, lambda x: x in {0}
-        self.assertIs(f1.__code__, f2.__code__)
+        self.assertIs(f1.__code__.co_consts, f2.__code__.co_consts)
         self.check_constant(f1, frozenset({0}))
         self.assertTrue(f1(0))
 
@@ -1061,6 +1077,31 @@ if 1:
         check_op_count(aug, "STORE_SLICE", 1)
         check_op_count(aug, "BUILD_SLICE", 0)
 
+    def test_compare_positions(self):
+        for opname, op in [
+            ("COMPARE_OP", "<"),
+            ("COMPARE_OP", "<="),
+            ("COMPARE_OP", ">"),
+            ("COMPARE_OP", ">="),
+            ("CONTAINS_OP", "in"),
+            ("CONTAINS_OP", "not in"),
+            ("IS_OP", "is"),
+            ("IS_OP", "is not"),
+        ]:
+            expr = f'a {op} b {op} c'
+            expected_positions = 2 * [(2, 2, 0, len(expr))]
+            for source in [
+                f"\\\n{expr}", f'if \\\n{expr}: x', f"x if \\\n{expr} else y"
+            ]:
+                code = compile(source, "<test>", "exec")
+                actual_positions = [
+                    instruction.positions
+                    for instruction in dis.get_instructions(code)
+                    if instruction.opname == opname
+                ]
+                with self.subTest(source):
+                    self.assertEqual(actual_positions, expected_positions)
+
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
@@ -1229,7 +1270,9 @@ f(
             with self.subTest(body):
                 namespace = {}
                 source = textwrap.dedent(source_template.format(body))
-                exec(source, namespace)
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', SyntaxWarning)
+                    exec(source, namespace)
                 code = namespace["f"].__code__
                 self.assertOpcodeSourcePositionIs(
                     code,
@@ -1299,6 +1342,27 @@ f(
             self.assertIsNotNone(column)
             self.assertIsNotNone(end_column)
             self.assertLessEqual((line, column), (end_line, end_column))
+
+    @support.cpython_only
+    def test_column_offset_deduplication(self):
+        # GH-95150: Code with different column offsets shouldn't be merged!
+        for source in [
+            "lambda: a",
+            "(a for b in c)",
+            "[a for b in c]",
+            "{a for b in c}",
+            "{a: b for c in d}",
+        ]:
+            with self.subTest(source):
+                code = compile(f"{source}, {source}", "<test>", "eval")
+                self.assertEqual(len(code.co_consts), 2)
+                self.assertIsInstance(code.co_consts[0], types.CodeType)
+                self.assertIsInstance(code.co_consts[1], types.CodeType)
+                self.assertNotEqual(code.co_consts[0], code.co_consts[1])
+                self.assertNotEqual(
+                    list(code.co_consts[0].co_positions()),
+                    list(code.co_consts[1].co_positions()),
+                )
 
 
 class TestExpressionStackSize(unittest.TestCase):

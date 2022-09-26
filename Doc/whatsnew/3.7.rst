@@ -611,7 +611,7 @@ Contributed by Barry Warsaw and Brett Cannon in :issue:`32248`.
 
 .. seealso::
 
-    `importlib_resources <http://importlib-resources.readthedocs.io/en/latest/>`_
+    `importlib_resources <https://importlib-resources.readthedocs.io/en/latest/>`_
     -- a PyPI backport for earlier Python versions.
 
 

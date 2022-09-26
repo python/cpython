@@ -783,6 +783,8 @@ function,PyUnicode_WriteChar,3.7,,
 type,PyVarObject,3.2,,members
 member,PyVarObject.ob_base,3.2,,
 member,PyVarObject.ob_size,3.2,,
+function,PyVectorcall_Call,3.12,,
+function,PyVectorcall_NARGS,3.12,,
 type,PyWeakReference,3.2,,opaque
 function,PyWeakref_GetObject,3.2,,
 function,PyWeakref_NewProxy,3.2,,
@@ -883,4 +885,5 @@ type,symtable,3.2,,opaque
 type,ternaryfunc,3.2,,
 type,traverseproc,3.2,,
 type,unaryfunc,3.2,,
+type,vectorcallfunc,3.12,,
 type,visitproc,3.2,,

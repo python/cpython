@@ -34,6 +34,7 @@ Typically an :class:`asyncore.dispatcher` server channel generates new
 :class:`asynchat.async_chat` channel objects as it receives incoming
 connection requests.
 
+.. include:: ../includes/wasm-notavail.rst
 
 .. class:: async_chat()
 

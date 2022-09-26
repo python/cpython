@@ -7,7 +7,7 @@ from pathlib import Path, PurePath
 
 from . import data01
 from . import zipdata01
-from importlib.abc import ResourceReader
+from importlib.resources.abc import ResourceReader
 from test.support import import_helper
 
 
