@@ -148,6 +148,10 @@ adjusted::
    logging.getLogger("asyncio").setLevel(logging.WARNING)
 
 
+Network logging can block the event loop, it is recommended to use
+a separate thread for handling logs or use non blocking io.
+
+
 .. _asyncio-coroutine-not-scheduled:
 
 Detect never-awaited coroutines
