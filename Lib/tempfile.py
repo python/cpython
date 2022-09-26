@@ -575,7 +575,8 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
             file.close()
             raise
     except:
-        if name is not None and not (_os.name == 'nt' and delete):
+        if name is not None and not (
+            _os.name == 'nt' and delete and delete_on_close):
             _os.unlink(name)
         raise
 
