@@ -295,7 +295,7 @@ is explicitly caught, it should generally be propagated when
 clean-up is complete. Most code can safely ignore :exc:`asyncio.CancelledError`.
 
 The asyncio components that enable structured concurrency, like
-:class:`asyncio.TaskGroup` and the :func:`asyncio.timeout` context manager,
+:class:`asyncio.TaskGroup` and :func:`asyncio.timeout`,
 are implemented using cancellation internally and might misbehave if
 a coroutine swallows :exc:`asyncio.CancelledError`. Similarly, user code
 should not attempt to :meth:`uncancel <asyncio.Task.uncancel>`
