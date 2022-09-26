@@ -1030,8 +1030,8 @@ class TestNamedTemporaryFile(BaseTestCase):
                 with self.subTest():
                     # Testing that file is not deleted on close
                     self.assertTrue(os.path.exists(f.name),
-                            f"NamedTemporaryFile {f.name!r} is incorrectly deleted "
-                            f"on closure when delete_on_close=False")
+                            f"NamedTemporaryFile {f.name!r} is incorrectly "
+                            f"deleted on closure when delete_on_close=False")
 
             with self.subTest():
                 # Testing that file is deleted on context manager exit
@@ -1082,7 +1082,7 @@ class TestNamedTemporaryFile(BaseTestCase):
                                             delete_on_close=False)
             tmp_name = f.name
             f.write(b'blat')
-            # Testing extreme case, where the file is not even explicitly closed
+            # Testing extreme case, where the file is not explicitly closed
             # f.close()
             return tmp_name
         # Making sure that Garbage Collector has finalized the file object
@@ -1091,7 +1091,8 @@ class TestNamedTemporaryFile(BaseTestCase):
         try:
             tmp_name = my_func(dir)
             self.assertFalse(os.path.exists(tmp_name),
-                        f"NamedTemporaryFile {tmp_name!r} exists after finalizer ")
+                        f"NamedTemporaryFile {tmp_name!r} "
+                        f"exists after finalizer ")
         finally:
             os.rmdir(dir)
 
@@ -1178,7 +1179,8 @@ class TestSpooledTemporaryFile(BaseTestCase):
         missing_attrs = iobase_attrs - spooledtempfile_attrs
         self.assertFalse(
             missing_attrs,
-            'SpooledTemporaryFile missing attributes from IOBase/BufferedIOBase/TextIOBase'
+            'SpooledTemporaryFile missing attributes from '
+            'IOBase/BufferedIOBase/TextIOBase'
         )
 
     def test_del_on_close(self):
