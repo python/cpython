@@ -1217,8 +1217,9 @@ Task Object
 
    .. method:: cancelling()
 
-      Return the number of cancellation requests to this Task, i.e.,
-      the number of calls to :meth:`cancel`.
+      Return the number of pending cancellation requests to this Task, i.e.,
+      the number of calls to :meth:`cancel` less the number of
+      :meth:`uncancel` calls.
 
       Note that if this number is greater than zero but the Task is
       still executing, :meth:`cancelled` will still return ``False``.
