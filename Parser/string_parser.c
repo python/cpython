@@ -168,12 +168,13 @@ int
 _PyPegen_parsestr(Parser *p, int *bytesmode, int *rawmode, PyObject **result,
                   const char **fstr, Py_ssize_t *fstrlen, Token *t)
 {
-    const char *s = PyBytes_AsString(t->bytes);
-    if (s == NULL) {
+    char *s;
+    Py_ssize_t len;
+
+    if (PyBytes_AsStringAndSize(t->bytes, &s, &len)) {
         return -1;
     }
 
-    size_t len;
     int quote = Py_CHARMASK(*s);
     int fmode = 0;
     *bytesmode = 0;
@@ -184,17 +185,21 @@ _PyPegen_parsestr(Parser *p, int *bytesmode, int *rawmode, PyObject **result,
         while (!*bytesmode || !*rawmode) {
             if (quote == 'b' || quote == 'B') {
                 quote =(unsigned char)*++s;
+                len--;
                 *bytesmode = 1;
             }
             else if (quote == 'u' || quote == 'U') {
                 quote = (unsigned char)*++s;
+                len--;
             }
             else if (quote == 'r' || quote == 'R') {
                 quote = (unsigned char)*++s;
+                len--;
                 *rawmode = 1;
             }
             else if (quote == 'f' || quote == 'F') {
                 quote = (unsigned char)*++s;
+                len--;
                 fmode = 1;
             }
             else {
@@ -220,7 +225,7 @@ _PyPegen_parsestr(Parser *p, int *bytesmode, int *rawmode, PyObject **result,
     }
     /* Skip the leading quote char. */
     s++;
-    len = strlen(s);
+    len--;
     if (len > INT_MAX) {
         PyErr_SetString(PyExc_OverflowError, "string to parse is too long");
         return -1;
