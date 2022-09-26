@@ -249,12 +249,13 @@ _PyPegen_decode_string(Parser *p, int raw, const char *s, size_t len, Token *t)
 PyObject *
 _PyPegen_parse_string(Parser *p, Token *t)
 {
-    const char *s = PyBytes_AsString(t->bytes);
-    if (s == NULL) {
+    char *s;
+    Py_ssize_t len;
+
+    if (PyBytes_AsStringAndSize(t->bytes, &s, &len)) {
         return NULL;
     }
 
-    size_t len;
     int quote = Py_CHARMASK(*s);
     int bytesmode = 0;
     int rawmode = 0;
@@ -263,13 +264,16 @@ _PyPegen_parse_string(Parser *p, Token *t)
         while (!bytesmode || !rawmode) {
             if (quote == 'b' || quote == 'B') {
                 quote =(unsigned char)*++s;
+                len--;
                 bytesmode = 1;
             }
             else if (quote == 'u' || quote == 'U') {
                 quote = (unsigned char)*++s;
+                len--;
             }
             else if (quote == 'r' || quote == 'R') {
                 quote = (unsigned char)*++s;
+                len--;
                 rawmode = 1;
             }
             else {
@@ -285,7 +289,7 @@ _PyPegen_parse_string(Parser *p, Token *t)
 
     /* Skip the leading quote char. */
     s++;
-    len = strlen(s);
+    len--;
     // gh-120155: 's' contains at least the trailing quote,
     // so the code '--len' below is safe.
     assert(len >= 1);
