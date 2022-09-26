@@ -1,0 +1,1 @@
+New :class:`typing.SupportsBool` protocol to describe objects that implement `__bool__`.
