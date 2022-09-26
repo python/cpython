@@ -1774,7 +1774,7 @@ then
 fi
 AC_MSG_RESULT($PROFILE_TASK)
 
-# Make llvm-relatec checks work on systems where llvm tools are not installed with their
+# Make llvm-related checks work on systems where llvm tools are not installed with their
 # normal names in the default $PATH (ie: Ubuntu).  They exist under the
 # non-suffixed name in their versioned llvm directory.
 
@@ -1828,8 +1828,10 @@ esac
 if test "$Py_LTO" = 'true' ; then
   case $CC in
     *clang*)
-      dnl flag to disable lto during linking
       LDFLAGS_NOLTO="-fno-lto"
+      dnl Clang linker requires -flto in order to link objects with LTO information.
+      dnl Thin LTO is faster and works for object files with full LTO information, too.
+      AX_CHECK_COMPILE_FLAG([-flto=thin],[LDFLAGS_NOLTO="-flto=thin"],[LDFLAGS_NOLTO="-flto"])
       AC_SUBST(LLVM_AR)
       AC_PATH_TOOL(LLVM_AR, llvm-ar, '', ${llvm_path})
       AC_SUBST(LLVM_AR_FOUND)
