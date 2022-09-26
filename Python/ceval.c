@@ -2650,13 +2650,10 @@ handle_eval_breaker:
         }
 
         TARGET(BUILD_TUPLE) {
-            PyObject *tup = PyTuple_New(oparg);
+            STACK_SHRINK(oparg);
+            PyObject *tup = _PyTuple_FromArraySteal(stack_pointer, oparg);
             if (tup == NULL)
                 goto error;
-            while (--oparg >= 0) {
-                PyObject *item = POP();
-                PyTuple_SET_ITEM(tup, oparg, item);
-            }
             PUSH(tup);
             DISPATCH();
         }
@@ -3129,8 +3126,11 @@ handle_eval_breaker:
             PyObject *getattribute = read_obj(cache->descr);
             assert(Py_IS_TYPE(getattribute, &PyFunction_Type));
             PyFunctionObject *f = (PyFunctionObject *)getattribute;
+            uint32_t func_version = read_u32(cache->keys_version);
+            assert(func_version != 0);
+            DEOPT_IF(f->func_version != func_version, LOAD_ATTR);
             PyCodeObject *code = (PyCodeObject *)f->func_code;
-            DEOPT_IF(((PyCodeObject *)f->func_code)->co_argcount != 2, LOAD_ATTR);
+            assert(code->co_argcount == 2);
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
             STAT_INC(LOAD_ATTR, hit);
 
@@ -4136,7 +4136,10 @@ handle_eval_breaker:
             function = PEEK(total_args + 1);
             int positional_args = total_args - KWNAMES_LEN();
             // Check if the call can be inlined or not
-            if (Py_TYPE(function) == &PyFunction_Type && tstate->interp->eval_frame == NULL) {
+            if (Py_TYPE(function) == &PyFunction_Type &&
+                tstate->interp->eval_frame == NULL &&
+                ((PyFunctionObject *)function)->vectorcall == _PyFunction_Vectorcall)
+            {
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(function))->co_flags;
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(function));
                 STACK_SHRINK(total_args);
@@ -4719,19 +4722,8 @@ handle_eval_breaker:
             PyObject *func, *callargs, *kwargs = NULL, *result;
             if (oparg & 0x01) {
                 kwargs = POP();
-                if (!PyDict_CheckExact(kwargs)) {
-                    PyObject *d = PyDict_New();
-                    if (d == NULL)
-                        goto error;
-                    if (_PyDict_MergeEx(d, kwargs, 2) < 0) {
-                        Py_DECREF(d);
-                        format_kwargs_error(tstate, SECOND(), kwargs);
-                        Py_DECREF(kwargs);
-                        goto error;
-                    }
-                    Py_DECREF(kwargs);
-                    kwargs = d;
-                }
+                // DICT_MERGE is called before this opcode if there are kwargs.
+                // It converts all dict subtypes in kwargs into regular dicts.
                 assert(PyDict_CheckExact(kwargs));
             }
             callargs = POP();
@@ -5059,9 +5051,11 @@ handle_eval_breaker:
             /* Tell C compilers not to hold the opcode variable in the loop.
                next_instr points the current instruction without TARGET(). */
             opcode = _Py_OPCODE(*next_instr);
-            fprintf(stderr, "XXX lineno: %d, opcode: %d\n",
-                    _PyInterpreterFrame_GetLine(frame),  opcode);
-            _PyErr_SetString(tstate, PyExc_SystemError, "unknown opcode");
+            _PyErr_Format(tstate, PyExc_SystemError,
+                          "%U:%d: unknown opcode %d",
+                          frame->f_code->co_filename,
+                          _PyInterpreterFrame_GetLine(frame),
+                          opcode);
             goto error;
 
         } /* End instructions */
@@ -6301,7 +6295,7 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
         }
     }
     /* Always emit an opcode event if we're tracing all opcodes. */
-    if (f->f_trace_opcodes) {
+    if (f->f_trace_opcodes && result == 0) {
         result = call_trace(func, obj, tstate, frame, PyTrace_OPCODE, Py_None);
     }
     return result;
@@ -6526,11 +6520,14 @@ _PyEval_GetFrame(void)
 PyFrameObject *
 PyEval_GetFrame(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    if (tstate->cframe->current_frame == NULL) {
+    _PyInterpreterFrame *frame = _PyEval_GetFrame();
+    while (frame && _PyFrame_IsIncomplete(frame)) {
+        frame = frame->previous;
+    }
+    if (frame == NULL) {
         return NULL;
     }
-    PyFrameObject *f = _PyFrame_GetFrameObject(tstate->cframe->current_frame);
+    PyFrameObject *f = _PyFrame_GetFrameObject(frame);
     if (f == NULL) {
         PyErr_Clear();
     }

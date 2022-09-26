@@ -341,6 +341,42 @@ class BaseTest:
                 self.checkequal(reference_find(p, text),
                                 text, 'find', p)
 
+    def test_find_many_lengths(self):
+        haystack_repeats = [a * 10**e for e in range(6) for a in (1,2,5)]
+        haystacks = [(n, self.fixtype("abcab"*n + "da")) for n in haystack_repeats]
+
+        needle_repeats = [a * 10**e for e in range(6) for a in (1, 3)]
+        needles = [(m, self.fixtype("abcab"*m + "da")) for m in needle_repeats]
+
+        for n, haystack1 in haystacks:
+            haystack2 = haystack1[:-1]
+            for m, needle in needles:
+                answer1 = 5 * (n - m) if m <= n else -1
+                self.assertEqual(haystack1.find(needle), answer1, msg=(n,m))
+                self.assertEqual(haystack2.find(needle), -1, msg=(n,m))
+
+    def test_adaptive_find(self):
+        # This would be very slow for the naive algorithm,
+        # but str.find() should be O(n + m).
+        for N in 1000, 10_000, 100_000, 1_000_000:
+            A, B = 'a' * N, 'b' * N
+            haystack = A + A + B + A + A
+            needle = A + B + B + A
+            self.checkequal(-1, haystack, 'find', needle)
+            self.checkequal(0, haystack, 'count', needle)
+            self.checkequal(len(haystack), haystack + needle, 'find', needle)
+            self.checkequal(1, haystack + needle, 'count', needle)
+
+    def test_find_with_memory(self):
+        # Test the "Skip with memory" path in the two-way algorithm.
+        for N in 1000, 3000, 10_000, 30_000:
+            needle = 'ab' * N
+            haystack = ('ab'*(N-1) + 'b') * 2
+            self.checkequal(-1, haystack, 'find', needle)
+            self.checkequal(0, haystack, 'count', needle)
+            self.checkequal(len(haystack), haystack + needle, 'find', needle)
+            self.checkequal(1, haystack + needle, 'count', needle)
+
     def test_find_shift_table_overflow(self):
         """When the table of 8-bit shifts overflows."""
         N = 2**8 + 100
@@ -714,6 +750,18 @@ class BaseTest:
         self.checkraises(TypeError, 'hello', 'replace', 42)
         self.checkraises(TypeError, 'hello', 'replace', 42, 'h')
         self.checkraises(TypeError, 'hello', 'replace', 'h', 42)
+
+    def test_replace_uses_two_way_maxcount(self):
+        # Test that maxcount works in _two_way_count in fastsearch.h
+        A, B = "A"*1000, "B"*1000
+        AABAA = A + A + B + A + A
+        ABBA = A + B + B + A
+        self.checkequal(AABAA + ABBA,
+                        AABAA + ABBA, 'replace', ABBA, "ccc", 0)
+        self.checkequal(AABAA + "ccc",
+                        AABAA + ABBA, 'replace', ABBA, "ccc", 1)
+        self.checkequal(AABAA + "ccc",
+                        AABAA + ABBA, 'replace', ABBA, "ccc", 2)
 
     @unittest.skipIf(sys.maxsize > (1 << 32) or struct.calcsize('P') != 4,
                      'only applies to 32-bit platforms')
