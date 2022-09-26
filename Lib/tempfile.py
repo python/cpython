@@ -435,6 +435,8 @@ class _TemporaryFileCloser:
                     self.close_called = True
                     self.file.close()
             finally:
+                # Windows provides delete-on-close as a primitive, in which
+                # case the file was deleted by self.file.close().
                 if self.delete and not (self.delete_on_close and windows):
                     try:
                         unlink(self.name)
