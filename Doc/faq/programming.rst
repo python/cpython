@@ -1270,7 +1270,7 @@ use a list comprehension::
    A = [[None] * w for i in range(h)]
 
 Or, you can use an extension that provides a matrix datatype; `NumPy
-<http://www.numpy.org/>`_ is the best known.
+<https://numpy.org/>`_ is the best known.
 
 
 How do I apply a method to a sequence of objects?
@@ -1896,6 +1896,8 @@ The classes can be used like this:
     >>> TitleStr('Blog: Why Python Rocks')
     'blog-why-python-rocks'
 
+
+.. _faq-cache-method-calls:
 
 How do I cache method calls?
 ----------------------------
