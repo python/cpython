@@ -452,6 +452,8 @@ class _TemporaryFileCloser:
 
     def __del__(self):
         self.cleanup()
+
+
 class _TemporaryFileWrapper:
     """Temporary file wrapper
 
