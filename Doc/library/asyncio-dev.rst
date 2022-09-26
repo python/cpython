@@ -149,7 +149,7 @@ adjusted::
 
 
 Network logging can block the event loop, it is recommended to use
-a separate thread for handling logs or use non blocking io.
+a separate thread for handling logs or use non-blocking IO.
 
 
 .. _asyncio-coroutine-not-scheduled:
