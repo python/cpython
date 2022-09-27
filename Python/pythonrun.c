@@ -1858,7 +1858,7 @@ _Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what, PyComp
     }
 
     if (strlen(str) != (size_t)size) {
-        PyErr_SetString(PyExc_ValueError,
+        PyErr_SetString(PyExc_SyntaxError,
             "source code string cannot contain null bytes");
         Py_CLEAR(*cmd_copy);
         return NULL;
