@@ -109,7 +109,7 @@ that the event loop runs in.
 
 There is currently no way to schedule coroutines or callbacks directly
 from a different process (such as one started with
-:mod:`multiprocessing`). The :ref:`Event Loop Methods <asyncio-event-loop>`
+:mod:`multiprocessing`). The :ref:`asyncio-event-loop-methods`
 section lists APIs that can read from pipes and watch file descriptors
 without blocking the event loop. In addition, asyncio's
 :ref:`Subprocess <asyncio-subprocess>` APIs provide a way to start a
