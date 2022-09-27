@@ -8,7 +8,7 @@ Policies
 ========
 
 An event loop policy is a global (per-interpreter) object
-used to get and set the current event loop,
+used to get and set the current :ref:`event loop <asyncio-event-loop>`,
 as well as create new event loops.
 The default policy can be :ref:`replaced <asyncio-policy-get-set>` with
 :ref:`built-in alternatives <asyncio-policy-builtin>`

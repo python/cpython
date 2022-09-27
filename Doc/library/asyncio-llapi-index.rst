@@ -37,7 +37,7 @@ Event Loop Methods
 ==================
 
 See also the main documentation section about the
-:ref:`event loop methods <asyncio-event-loop>`.
+:ref:`asyncio-event-loop-methods`.
 
 .. rubric:: Lifecycle
 .. list-table::
