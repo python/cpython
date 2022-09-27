@@ -7,17 +7,18 @@
 Policies
 ========
 
-An event loop policy is a global per-process object that controls
-the management of the event loop. Each event loop has a default
-policy, which can be changed and customized using the policy API.
+An event loop policy is a global (per-interpreter) object
+used to get and set the current event loop, as well as create new event loops.
+The default policy can be replaced with built-in alternatives
+to use different event loop implementations,
+or substituted by a custom policy class that can override these behaviors.
 
-A policy defines the notion of *context* and manages a
-separate event loop per context. The default policy
-defines *context* to be the current thread.
+The policy object gets and sets a separate event loop per *context*.
+This is per-thread by default,
+though custom policies could define *context* differently.
 
-By using a custom event loop policy, the behavior of
-:func:`get_event_loop`, :func:`set_event_loop`, and
-:func:`new_event_loop` functions can be customized.
+Custom event loop policies can control the behavior of
+:func:`get_event_loop`, :func:`set_event_loop`, and :func:`new_event_loop`.
 
 Policy objects should implement the APIs defined
 in the :class:`AbstractEventLoopPolicy` abstract base class.
