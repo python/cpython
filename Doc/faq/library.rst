@@ -180,7 +180,7 @@ How do I create documentation from doc strings?
 
 The :mod:`pydoc` module can create HTML from the doc strings in your Python
 source code.  An alternative for creating API documentation purely from
-docstrings is `epydoc <http://epydoc.sourceforge.net/>`_.  `Sphinx
+docstrings is `epydoc <https://epydoc.sourceforge.net/>`_.  `Sphinx
 <https://www.sphinx-doc.org>`_ can also include docstring content.
 
 
