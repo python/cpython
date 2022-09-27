@@ -397,6 +397,14 @@ which, when run, will produce:
 
     MainThread: Look out!
 
+.. note:: Although the earlier discussion wasn't specifically talking about
+   async code, but rather about slow logging handlers, it should be noted that
+   when logging from async code, network and even file handlers could lead to
+   problems (blocking the event loop) because some logging is done from
+   :mod:`asyncio` internals. It might be best, if any async code is used in an
+   application, to use the above approach for logging, so that any blocking code
+   runs only in the ``QueueListener`` thread.
+
 .. versionchanged:: 3.5
    Prior to Python 3.5, the :class:`QueueListener` always passed every message
    received from the queue to every handler it was initialized with. (This was
