@@ -459,7 +459,7 @@ are always available.  They are listed here in alphabetical order.
 .. function:: eval(expression[, globals[, locals]])
 
    The arguments are a string or a compiled code object, optionally along
-   with globals and locals.  If provided; globals must be a dictionary,
+   with globals and locals.  If provided, globals must be a dictionary and
    locals can be any mapping object.
 
    The *expression* argument is parsed and evaluated as a Python expression
