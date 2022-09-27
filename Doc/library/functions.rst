@@ -458,7 +458,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: eval(expression[, globals[, locals]])
 
-   The arguments are a string or compiled code object, optionally along
+   The arguments are a string or a compiled code object, optionally along
    with globals and locals.  If provided; globals must be a dictionary,
    locals can be any mapping object.
 
