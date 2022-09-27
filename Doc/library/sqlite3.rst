@@ -257,7 +257,7 @@ Module functions
 
 .. function:: connect(database, timeout=5.0, detect_types=0, \
                       isolation_level="DEFERRED", check_same_thread=True, \
-                      factory=sqlite3.Connection, cached_statements=128, \
+                      factory=sqlite3.Connection, cached_statements=100, \
                       uri=False)
 
    Open a connection to an SQLite database.
