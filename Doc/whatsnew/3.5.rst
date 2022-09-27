@@ -1977,7 +1977,7 @@ unicodedata
 -----------
 
 The :mod:`unicodedata` module now uses data from `Unicode 8.0.0
-<http://unicode.org/versions/Unicode8.0.0/>`_.
+<https://unicode.org/versions/Unicode8.0.0/>`_.
 
 
 unittest
