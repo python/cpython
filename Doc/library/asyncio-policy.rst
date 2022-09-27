@@ -8,12 +8,16 @@ Policies
 ========
 
 An event loop policy is a global (per-interpreter) object
-used to get and set the current event loop, as well as create new event loops.
-The default policy can be replaced with built-in alternatives
+used to get and set the current event loop,
+as well as create new event loops.
+The default policy can be :ref:`replaced <asyncio-policy-get-set>` with
+:ref:`built-in alternatives <asyncio-policy-builtin>`
 to use different event loop implementations,
-or substituted by a custom policy class that can override these behaviors.
+or substituted by a :ref:`custom policy <asyncio-custom-policies>`
+that can override these behaviors.
 
-The policy object gets and sets a separate event loop per *context*.
+The :ref:`policy object <asyncio-policy-objects>`
+gets and sets a separate event loop per *context*.
 This is per-thread by default,
 though custom policies could define *context* differently.
 
@@ -23,6 +27,8 @@ Custom event loop policies can control the behavior of
 Policy objects should implement the APIs defined
 in the :class:`AbstractEventLoopPolicy` abstract base class.
 
+
+.. _asyncio-policy-get-set:
 
 Getting and Setting the Policy
 ==============================
@@ -40,6 +46,8 @@ for the current process:
 
    If *policy* is set to ``None``, the default policy is restored.
 
+
+.. _asyncio-policy-objects:
 
 Policy Objects
 ==============
@@ -87,6 +95,8 @@ The abstract event loop policy base class is defined as follows:
       This function is Unix specific.
 
 
+.. _asyncio-policy-builtin:
+
 asyncio ships with the following built-in policies:
 
 
@@ -117,6 +127,7 @@ asyncio ships with the following built-in policies:
    :class:`ProactorEventLoop` event loop implementation.
 
    .. availability:: Windows.
+
 
 .. _asyncio-watchers:
 
@@ -270,6 +281,8 @@ implementation used by the asyncio event loop:
 
    .. versionadded:: 3.9
 
+
+.. _asyncio-custom-policies:
 
 Custom Policies
 ===============
