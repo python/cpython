@@ -236,6 +236,26 @@ class BitFieldTest(unittest.TestCase):
         else:
             self.assertEqual(sizeof(X), sizeof(c_int) * 2)
 
+    def test_mixed_5(self):
+        class X(Structure):
+            _fields_ = [
+                ('A', c_uint, 1),
+                ('B', c_ushort, 16)]
+        a = X()
+        a.A = 0
+        a.B = 1
+        self.assertEqual(1, a.B)
+
+    def test_mixed_6(self):
+        class X(Structure):
+            _fields_ = [
+                ('A', c_ulonglong, 1),
+                ('B', c_uint, 32)]
+        a = X()
+        a.A = 0
+        a.B = 1
+        self.assertEqual(1, a.B)
+
     def test_anon_bitfields(self):
         # anonymous bit-fields gave a strange error message
         class X(Structure):
