@@ -38,7 +38,7 @@ details that are unchanged.
 
 .. seealso::
 
-   * `TkDocs <http://tkdocs.com/>`_
+   * `TkDocs <https://tkdocs.com/>`_
       Extensive tutorial on creating user interfaces with Tkinter.  Explains key concepts,
       and illustrates recommended approaches using the modern API.
 

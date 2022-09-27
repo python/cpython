@@ -2269,7 +2269,7 @@ to stdout.  Otherwise, the content is read from stdin.
     code that generated them. This is helpful for tools that make source code
     transformations.
 
-    `leoAst.py <http://leoeditor.com/appendices.html#leoast-py>`_ unifies the
+    `leoAst.py <https://leoeditor.com/appendices.html#leoast-py>`_ unifies the
     token-based and parse-tree-based views of python programs by inserting
     two-way links between tokens and ast nodes.
 
