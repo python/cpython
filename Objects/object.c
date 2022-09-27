@@ -14,7 +14,6 @@
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntry_Type
-#include "pycore_typeobject.h"    // _PyTypes_InitSlotDefs()
 #include "pycore_unionobject.h"   // _PyUnion_Type
 #include "pycore_interpreteridobject.h"  // _PyInterpreterID_Type
 
@@ -1064,6 +1063,7 @@ _PyObject_ComputedDictPointer(PyObject *obj)
     if (dictoffset == 0)
         return NULL;
     if (dictoffset < 0) {
+        assert(dictoffset != -1);
         Py_ssize_t tsize = Py_SIZE(obj);
         if (tsize < 0) {
             tsize = -tsize;
@@ -1079,7 +1079,11 @@ _PyObject_ComputedDictPointer(PyObject *obj)
 
 /* Helper to get a pointer to an object's __dict__ slot, if any.
  * Creates the dict from inline attributes if necessary.
- * Does not set an exception. */
+ * Does not set an exception.
+ *
+ * Note that the tp_dictoffset docs used to recommend this function,
+ * so it should be treated as part of the public API.
+ */
 PyObject **
 _PyObject_GetDictPtr(PyObject *obj)
 {
@@ -1347,6 +1351,8 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
         PyErr_Format(PyExc_AttributeError,
                      "'%.50s' object has no attribute '%U'",
                      tp->tp_name, name);
+
+        set_attribute_error_context(obj, name);
     }
   done:
     Py_XDECREF(descr);
@@ -1829,23 +1835,6 @@ PyObject _Py_NotImplementedStruct = {
     _PyObject_EXTRA_INIT
     1, &_PyNotImplemented_Type
 };
-
-PyStatus
-_PyTypes_InitState(PyInterpreterState *interp)
-{
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
-    PyStatus status = _PyTypes_InitSlotDefs();
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    return _PyStatus_OK();
-}
-
-
 
 #ifdef MS_WINDOWS
 extern PyTypeObject PyHKEY_Type;

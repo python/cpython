@@ -16,6 +16,9 @@ all modern Unix systems, Windows, MacOS, and probably additional platforms.
    Some behavior may be platform dependent, since calls are made to the operating
    system socket APIs.
 
+
+.. include:: ../includes/wasm-notavail.rst
+
 .. index:: object: socket
 
 The Python interface is a straightforward transliteration of the Unix system
@@ -367,7 +370,7 @@ Constants
 
    .. seealso::
 
-      `Secure File Descriptor Handling <http://udrepper.livejournal.com/20407.html>`_
+      `Secure File Descriptor Handling <https://udrepper.livejournal.com/20407.html>`_
       for a more thorough explanation.
 
    .. availability:: Linux >= 2.6.27.
@@ -918,6 +921,8 @@ The :mod:`socket` module also offers various network-related services:
 
    .. audit-event:: socket.gethostbyname hostname socket.gethostbyname
 
+   .. availability:: not WASI.
+
 
 .. function:: gethostbyname_ex(hostname)
 
@@ -932,6 +937,8 @@ The :mod:`socket` module also offers various network-related services:
 
    .. audit-event:: socket.gethostbyname hostname socket.gethostbyname_ex
 
+   .. availability:: not WASI.
+
 
 .. function:: gethostname()
 
@@ -942,6 +949,8 @@ The :mod:`socket` module also offers various network-related services:
 
    Note: :func:`gethostname` doesn't always return the fully qualified domain
    name; use :func:`getfqdn` for that.
+
+   .. availability:: not WASI.
 
 
 .. function:: gethostbyaddr(ip_address)
@@ -955,6 +964,8 @@ The :mod:`socket` module also offers various network-related services:
    both IPv4 and IPv6.
 
    .. audit-event:: socket.gethostbyaddr ip_address socket.gethostbyaddr
+
+   .. availability:: not WASI.
 
 
 .. function:: getnameinfo(sockaddr, flags)
@@ -971,6 +982,9 @@ The :mod:`socket` module also offers various network-related services:
 
    .. audit-event:: socket.getnameinfo sockaddr socket.getnameinfo
 
+   .. availability:: not WASI.
+
+
 .. function:: getprotobyname(protocolname)
 
    Translate an internet protocol name (for example, ``'icmp'``) to a constant
@@ -978,6 +992,8 @@ The :mod:`socket` module also offers various network-related services:
    function.  This is usually only needed for sockets opened in "raw" mode
    (:const:`SOCK_RAW`); for the normal socket modes, the correct protocol is chosen
    automatically if the protocol is omitted or zero.
+
+   .. availability:: not WASI.
 
 
 .. function:: getservbyname(servicename[, protocolname])
@@ -988,6 +1004,8 @@ The :mod:`socket` module also offers various network-related services:
 
    .. audit-event:: socket.getservbyname servicename,protocolname socket.getservbyname
 
+   .. availability:: not WASI.
+
 
 .. function:: getservbyport(port[, protocolname])
 
@@ -996,6 +1014,8 @@ The :mod:`socket` module also offers various network-related services:
    ``'udp'``, otherwise any protocol will match.
 
    .. audit-event:: socket.getservbyport port,protocolname socket.getservbyport
+
+   .. availability:: not WASI.
 
 
 .. function:: ntohl(x)
@@ -1130,7 +1150,7 @@ The :mod:`socket` module also offers various network-related services:
    buffer.  Raises :exc:`OverflowError` if *length* is outside the
    permissible range of values.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
       Most Unix platforms.
 
@@ -1153,7 +1173,7 @@ The :mod:`socket` module also offers various network-related services:
    amount of ancillary data that can be received, since additional
    data may be able to fit into the padding area.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Emscripten, not WASI.
 
       most Unix platforms.
 
@@ -1193,7 +1213,7 @@ The :mod:`socket` module also offers various network-related services:
    (index int, name string) tuples.
    :exc:`OSError` if the system call fails.
 
-   .. availability:: Unix, Windows.
+   .. availability:: Unix, Windows, not Emscripten, not WASI.
 
    .. versionadded:: 3.3
 
@@ -1220,7 +1240,7 @@ The :mod:`socket` module also offers various network-related services:
    interface name.
    :exc:`OSError` if no interface with the given name exists.
 
-   .. availability:: Unix, Windows.
+   .. availability:: Unix, Windows, not Emscripten, not WASI.
 
    .. versionadded:: 3.3
 
@@ -1237,7 +1257,7 @@ The :mod:`socket` module also offers various network-related services:
    interface index number.
    :exc:`OSError` if no interface with the given index exists.
 
-   .. availability:: Unix, Windows.
+   .. availability:: Unix, Windows, not Emscripten, not WASI.
 
    .. versionadded:: 3.3
 
@@ -1254,7 +1274,7 @@ The :mod:`socket` module also offers various network-related services:
    The *fds* parameter is a sequence of file descriptors.
    Consult :meth:`sendmsg` for the documentation of these parameters.
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows, not Emscripten, not WASI.
 
       Unix platforms supporting :meth:`~socket.sendmsg`
       and :const:`SCM_RIGHTS` mechanism.
@@ -1268,7 +1288,7 @@ The :mod:`socket` module also offers various network-related services:
    Return ``(msg, list(fds), flags, addr)``.
    Consult :meth:`recvmsg` for the documentation of these parameters.
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows, not Emscripten, not WASI.
 
       Unix platforms supporting :meth:`~socket.sendmsg`
       and :const:`SCM_RIGHTS` mechanism.
@@ -1319,6 +1339,9 @@ to sockets.
 
    .. audit-event:: socket.bind self,address socket.socket.bind
 
+   .. availability:: not WASI.
+
+
 .. method:: socket.close()
 
    Mark the socket closed.  The underlying system resource (e.g. a file
@@ -1363,6 +1386,8 @@ to sockets.
       signal, the signal handler doesn't raise an exception and the socket is
       blocking or has a timeout (see the :pep:`475` for the rationale).
 
+   .. availability:: not WASI.
+
 
 .. method:: socket.connect_ex(address)
 
@@ -1374,6 +1399,8 @@ to sockets.
    connects.
 
    .. audit-event:: socket.connect self,address socket.socket.connect_ex
+
+   .. availability:: not WASI.
 
 .. method:: socket.detach()
 
@@ -1392,6 +1419,8 @@ to sockets.
 
    .. versionchanged:: 3.4
       The socket is now non-inheritable.
+
+   .. availability:: not WASI.
 
 
 .. method:: socket.fileno()
@@ -1438,6 +1467,8 @@ to sockets.
    contents of the buffer (see the optional built-in module :mod:`struct` for a way
    to decode C structures encoded as byte strings).
 
+   .. availability:: not WASI.
+
 
 .. method:: socket.getblocking()
 
@@ -1481,8 +1512,11 @@ to sockets.
    unaccepted connections that the system will allow before refusing new
    connections. If not specified, a default reasonable value is chosen.
 
+   .. availability:: not WASI.
+
    .. versionchanged:: 3.5
       The *backlog* parameter is now optional.
+
 
 .. method:: socket.makefile(mode='r', buffering=None, *, encoding=None, \
                             errors=None, newline=None)
@@ -1758,7 +1792,7 @@ to sockets.
       def send_fds(sock, msg, fds):
           return sock.sendmsg([msg], [(socket.SOL_SOCKET, socket.SCM_RIGHTS, array.array("i", fds))])
 
-   .. availability:: Unix.
+   .. availability:: Unix, not WASI.
 
       Most Unix platforms.
 
@@ -1854,12 +1888,13 @@ to sockets.
    *optlen* argument is required. It's equivalent to call :c:func:`setsockopt` C
    function with ``optval=NULL`` and ``optlen=optlen``.
 
-
    .. versionchanged:: 3.5
       Writable :term:`bytes-like object` is now accepted.
 
    .. versionchanged:: 3.6
       setsockopt(level, optname, None, optlen: int) form added.
+
+   .. availability:: not WASI.
 
 
 .. method:: socket.shutdown(how)
@@ -1868,6 +1903,8 @@ to sockets.
    further receives are disallowed.  If *how* is :const:`SHUT_WR`, further sends
    are disallowed.  If *how* is :const:`SHUT_RDWR`, further sends and receives are
    disallowed.
+
+   .. availability:: not WASI.
 
 
 .. method:: socket.share(process_id)

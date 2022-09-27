@@ -1851,118 +1851,178 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
 static struct _PyArg_Parser *static_arg_parsers = NULL;
 
 static int
-parser_init(struct _PyArg_Parser *parser)
+scan_keywords(const char * const *keywords, int *ptotal, int *pposonly)
 {
-    const char * const *keywords;
-    const char *format, *msg;
-    int i, len, min, max, nkw;
-    PyObject *kwtuple;
-
-    assert(parser->keywords != NULL);
-    if (parser->kwtuple != NULL) {
-        return 1;
-    }
-
-    keywords = parser->keywords;
     /* scan keywords and count the number of positional-only parameters */
+    int i;
     for (i = 0; keywords[i] && !*keywords[i]; i++) {
     }
-    parser->pos = i;
+    *pposonly = i;
+
     /* scan keywords and get greatest possible nbr of args */
     for (; keywords[i]; i++) {
         if (!*keywords[i]) {
             PyErr_SetString(PyExc_SystemError,
                             "Empty keyword parameter name");
-            return 0;
+            return -1;
         }
     }
-    len = i;
+    *ptotal = i;
+    return 0;
+}
 
-    format = parser->format;
-    if (format) {
-        /* grab the function name or custom error msg first (mutually exclusive) */
-        parser->fname = strchr(parser->format, ':');
-        if (parser->fname) {
-            parser->fname++;
-            parser->custom_msg = NULL;
+static int
+parse_format(const char *format, int total, int npos,
+             const char **pfname, const char **pcustommsg,
+             int *pmin, int *pmax)
+{
+    /* grab the function name or custom error msg first (mutually exclusive) */
+    const char *custommsg;
+    const char *fname = strchr(format, ':');
+    if (fname) {
+        fname++;
+        custommsg = NULL;
+    }
+    else {
+        custommsg = strchr(format,';');
+        if (custommsg) {
+            custommsg++;
         }
-        else {
-            parser->custom_msg = strchr(parser->format,';');
-            if (parser->custom_msg)
-                parser->custom_msg++;
+    }
+
+    int min = INT_MAX;
+    int max = INT_MAX;
+    for (int i = 0; i < total; i++) {
+        if (*format == '|') {
+            if (min != INT_MAX) {
+                PyErr_SetString(PyExc_SystemError,
+                                "Invalid format string (| specified twice)");
+                return -1;
+            }
+            if (max != INT_MAX) {
+                PyErr_SetString(PyExc_SystemError,
+                                "Invalid format string ($ before |)");
+                return -1;
+            }
+            min = i;
+            format++;
         }
-
-        min = max = INT_MAX;
-        for (i = 0; i < len; i++) {
-            if (*format == '|') {
-                if (min != INT_MAX) {
-                    PyErr_SetString(PyExc_SystemError,
-                                    "Invalid format string (| specified twice)");
-                    return 0;
-                }
-                if (max != INT_MAX) {
-                    PyErr_SetString(PyExc_SystemError,
-                                    "Invalid format string ($ before |)");
-                    return 0;
-                }
-                min = i;
-                format++;
+        if (*format == '$') {
+            if (max != INT_MAX) {
+                PyErr_SetString(PyExc_SystemError,
+                                "Invalid format string ($ specified twice)");
+                return -1;
             }
-            if (*format == '$') {
-                if (max != INT_MAX) {
-                    PyErr_SetString(PyExc_SystemError,
-                                    "Invalid format string ($ specified twice)");
-                    return 0;
-                }
-                if (i < parser->pos) {
-                    PyErr_SetString(PyExc_SystemError,
-                                    "Empty parameter name after $");
-                    return 0;
-                }
-                max = i;
-                format++;
+            if (i < npos) {
+                PyErr_SetString(PyExc_SystemError,
+                                "Empty parameter name after $");
+                return -1;
             }
-            if (IS_END_OF_FORMAT(*format)) {
-                PyErr_Format(PyExc_SystemError,
-                            "More keyword list entries (%d) than "
-                            "format specifiers (%d)", len, i);
-                return 0;
-            }
-
-            msg = skipitem(&format, NULL, 0);
-            if (msg) {
-                PyErr_Format(PyExc_SystemError, "%s: '%s'", msg,
-                            format);
-                return 0;
-            }
+            max = i;
+            format++;
         }
-        parser->min = Py_MIN(min, len);
-        parser->max = Py_MIN(max, len);
-
-        if (!IS_END_OF_FORMAT(*format) && (*format != '|') && (*format != '$')) {
+        if (IS_END_OF_FORMAT(*format)) {
             PyErr_Format(PyExc_SystemError,
-                "more argument specifiers than keyword list entries "
-                "(remaining format:'%s')", format);
-            return 0;
+                        "More keyword list entries (%d) than "
+                        "format specifiers (%d)", total, i);
+            return -1;
+        }
+
+        const char *msg = skipitem(&format, NULL, 0);
+        if (msg) {
+            PyErr_Format(PyExc_SystemError, "%s: '%s'", msg,
+                        format);
+            return -1;
         }
     }
+    min = Py_MIN(min, total);
+    max = Py_MIN(max, total);
 
-    nkw = len - parser->pos;
-    kwtuple = PyTuple_New(nkw);
-    if (kwtuple == NULL) {
-        return 0;
+    if (!IS_END_OF_FORMAT(*format) && (*format != '|') && (*format != '$')) {
+        PyErr_Format(PyExc_SystemError,
+            "more argument specifiers than keyword list entries "
+            "(remaining format:'%s')", format);
+        return -1;
     }
-    keywords = parser->keywords + parser->pos;
-    for (i = 0; i < nkw; i++) {
+
+    *pfname = fname;
+    *pcustommsg = custommsg;
+    *pmin = min;
+    *pmax = max;
+    return 0;
+}
+
+static PyObject *
+new_kwtuple(const char * const *keywords, int total, int pos)
+{
+    int nkw = total - pos;
+    PyObject *kwtuple = PyTuple_New(nkw);
+    if (kwtuple == NULL) {
+        return NULL;
+    }
+    keywords += pos;
+    for (int i = 0; i < nkw; i++) {
         PyObject *str = PyUnicode_FromString(keywords[i]);
         if (str == NULL) {
             Py_DECREF(kwtuple);
-            return 0;
+            return NULL;
         }
         PyUnicode_InternInPlace(&str);
         PyTuple_SET_ITEM(kwtuple, i, str);
     }
+    return kwtuple;
+}
+
+static int
+_parser_init(struct _PyArg_Parser *parser)
+{
+    const char * const *keywords = parser->keywords;
+    assert(keywords != NULL);
+    assert(parser->pos == 0 &&
+           (parser->format == NULL || parser->fname == NULL) &&
+           parser->custom_msg == NULL &&
+           parser->min == 0 &&
+           parser->max == 0);
+
+    int len, pos;
+    if (scan_keywords(keywords, &len, &pos) < 0) {
+        return 0;
+    }
+
+    const char *fname, *custommsg = NULL;
+    int min = 0, max = 0;
+    if (parser->format) {
+        assert(parser->fname == NULL);
+        if (parse_format(parser->format, len, pos,
+                         &fname, &custommsg, &min, &max) < 0) {
+            return 0;
+        }
+    }
+    else {
+        assert(parser->fname != NULL);
+        fname = parser->fname;
+    }
+
+    int owned;
+    PyObject *kwtuple = parser->kwtuple;
+    if (kwtuple == NULL) {
+        kwtuple = new_kwtuple(keywords, len, pos);
+        if (kwtuple == NULL) {
+            return 0;
+        }
+        owned = 1;
+    }
+    else {
+        owned = 0;
+    }
+
+    parser->pos = pos;
+    parser->fname = fname;
+    parser->custom_msg = custommsg;
+    parser->min = min;
+    parser->max = max;
     parser->kwtuple = kwtuple;
+    parser->initialized = owned ? 1 : -1;
 
     assert(parser->next == NULL);
     parser->next = static_arg_parsers;
@@ -1970,10 +2030,34 @@ parser_init(struct _PyArg_Parser *parser)
     return 1;
 }
 
+static int
+parser_init(struct _PyArg_Parser *parser)
+{
+    // volatile as it can be modified by other threads
+    // and should not be optimized or reordered by compiler
+    if (*((volatile int *)&parser->initialized)) {
+        assert(parser->kwtuple != NULL);
+        return 1;
+    }
+    PyThread_acquire_lock(_PyRuntime.getargs.mutex, WAIT_LOCK);
+    // Check again if another thread initialized the parser
+    // while we were waiting for the lock.
+    if (*((volatile int *)&parser->initialized)) {
+        assert(parser->kwtuple != NULL);
+        PyThread_release_lock(_PyRuntime.getargs.mutex);
+        return 1;
+    }
+    int ret = _parser_init(parser);
+    PyThread_release_lock(_PyRuntime.getargs.mutex);
+    return ret;
+}
+
 static void
 parser_clear(struct _PyArg_Parser *parser)
 {
-    Py_CLEAR(parser->kwtuple);
+    if (parser->initialized == 1) {
+        Py_CLEAR(parser->kwtuple);
+    }
 }
 
 static PyObject*
@@ -2100,6 +2184,7 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
     }
 
     format = parser->format;
+    assert(format != NULL || len == 0);
     /* convert tuple args and keyword args in same loop, using kwtuple to drive process */
     for (i = 0; i < len; i++) {
         if (*format == '|') {

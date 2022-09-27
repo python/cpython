@@ -580,7 +580,7 @@ _PyStructSequence_FiniType(PyTypeObject *type)
     assert(type->tp_base == &PyTuple_Type);
 
     // Cannot delete a type if it still has subclasses
-    if (type->tp_subclasses != NULL) {
+    if (_PyType_HasSubclasses(type)) {
         return;
     }
 

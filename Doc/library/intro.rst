@@ -64,3 +64,58 @@ Notes on availability
   libc version, then both conditions must hold. For example a feature with note
   *Availability: Linux >= 3.17 with glibc >= 2.27* requires both Linux 3.17 or
   newer and glibc 2.27 or newer.
+
+.. _wasm-availability:
+
+WebAssembly platforms
+---------------------
+
+The `WebAssembly`_ platforms ``wasm32-emscripten`` (`Emscripten`_) and
+``wasm32-wasi`` (`WASI`_) provide a subset of POSIX APIs. WebAssembly runtimes
+and browsers are sandboxed and have limited access to the host and external
+resources. Any Python standard library module that uses processes, threading,
+networking, signals, or other forms of inter-process communication (IPC), is
+either not available or may not work as on other Unix-like systems. File I/O,
+file system, and Unix permission-related functions are restricted, too.
+Emscripten does not permit blocking I/O. Other blocking operations like
+:func:`~time.sleep` block the browser event loop.
+
+The properties and behavior of Python on WebAssembly platforms depend on the
+`Emscripten`_-SDK or `WASI`_-SDK version, WASM runtimes (browser, NodeJS,
+`wasmtime`_), and Python build time flags. WebAssembly, Emscripten, and WASI
+are evolving standards; some features like networking may be
+supported in the future.
+
+For Python in the browser, users should consider `Pyodide`_ or `PyScript`_.
+PyScript is built on top of Pyodide, which itself is built on top of
+CPython and Emscripten. Pyodide provides access to browsers' JavaScript and
+DOM APIs as well as limited networking capabilities with JavaScript's
+``XMLHttpRequest`` and ``Fetch`` APIs.
+
+* Process-related APIs are not available or always fail with an error. That
+  includes APIs that spawn new processes (:func:`~os.fork`,
+  :func:`~os.execve`), wait for processes (:func:`~os.waitpid`), send signals
+  (:func:`~os.kill`), or otherwise interact with processes. The
+  :mod:`subprocess` is importable but does not work.
+
+* The :mod:`socket` module is available, but is limited and behaves
+  differently from other platforms. On Emscripten, sockets are always
+  non-blocking and require additional JavaScript code and helpers on the
+  server to proxy TCP through WebSockets; see `Emscripten Networking`_
+  for more information. WASI snapshot preview 1 only permits sockets from an
+  existing file descriptor.
+
+* Some functions are stubs that either don't do anything and always return
+  hardcoded values.
+
+* Functions related to file descriptors, file permissions, file ownership, and
+  links are limited and don't support some operations. For example, WASI does
+  not permit symlinks with absolute file names.
+
+.. _WebAssembly: https://webassembly.org/
+.. _Emscripten: https://emscripten.org/
+.. _Emscripten Networking: https://emscripten.org/docs/porting/networking.html>
+.. _WASI: https://wasi.dev/
+.. _wasmtime: https://wasmtime.dev/
+.. _Pyodide: https://pyodide.org/
+.. _PyScript: https://pyscript.net/

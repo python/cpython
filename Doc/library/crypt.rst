@@ -38,6 +38,8 @@ this module.
 
 .. availability:: Unix, not VxWorks.
 
+.. include:: ../includes/wasm-notavail.rst
+
 Hashing Methods
 ---------------
 
