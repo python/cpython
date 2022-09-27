@@ -258,10 +258,8 @@ typedef struct basicblock_ {
     int b_iused;
     /* length of instruction array (b_instr) */
     int b_ialloc;
-    /* Number of predecssors that a block has. */
+    /* Number of predecessors that a block has. */
     int b_predecessors;
-    /* Number of predecssors that a block has as an exception handler. */
-    int b_except_predecessors;
     /* depth of stack upon entry of block, computed by stackdepth() */
     int b_startdepth;
     /* instruction offset for block, computed by assemble_jump_offsets() */
@@ -270,6 +268,8 @@ typedef struct basicblock_ {
     unsigned b_preserve_lasti : 1;
     /* Used by compiler passes to mark whether they have visited a basic block. */
     unsigned b_visited : 1;
+    /* b_except_handler is used by the cold-detection algorithm to mark exception targets */
+    unsigned b_except_handler : 1;
     /* b_cold is true if this block is not perf critical (like an exception handler) */
     unsigned b_cold : 1;
     /* b_warm is used by the cold-detection algorithm to mark blocks which are definitely not cold */
@@ -2905,6 +2905,7 @@ compiler_jump_if(struct compiler *c, expr_ty e, jump_target_label next, int cond
         return 1;
     }
     case Compare_kind: {
+        SET_LOC(c, e);
         Py_ssize_t i, n = asdl_seq_LEN(e->v.Compare.ops) - 1;
         if (n > 0) {
             if (!check_compare(c, e)) {
@@ -7296,6 +7297,25 @@ error:
     return -1;
 }
 
+
+static int
+mark_except_handlers(basicblock *entryblock) {
+#ifndef NDEBUG
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        assert(!b->b_except_handler);
+    }
+#endif
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        for (int i=0; i < b->b_iused; i++) {
+            struct instr *instr = &b->b_instr[i];
+            if (is_block_push(instr)) {
+                instr->i_target->b_except_handler = 1;
+            }
+        }
+    }
+    return 0;
+}
+
 static int
 mark_warm(basicblock *entryblock) {
     basicblock **stack = make_cfg_traversal_stack(entryblock);
@@ -7308,7 +7328,7 @@ mark_warm(basicblock *entryblock) {
     entryblock->b_visited = 1;
     while (sp > stack) {
         basicblock *b = *(--sp);
-        assert(!b->b_except_predecessors);
+        assert(!b->b_except_handler);
         b->b_warm = 1;
         basicblock *next = b->b_next;
         if (next && BB_HAS_FALLTHROUGH(b) && !next->b_visited) {
@@ -7343,8 +7363,7 @@ mark_cold(basicblock *entryblock) {
 
     basicblock **sp = stack;
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        if (b->b_except_predecessors) {
-            assert(b->b_except_predecessors == b->b_predecessors);
+        if (b->b_except_handler) {
             assert(!b->b_warm);
             *sp++ = b;
             b->b_visited = 1;
@@ -8257,8 +8276,8 @@ static void
 dump_basicblock(const basicblock *b)
 {
     const char *b_return = basicblock_returns(b) ? "return " : "";
-    fprintf(stderr, "%d: [%d %d %d %p] used: %d, depth: %d, offset: %d %s\n",
-        b->b_label, b->b_cold, b->b_warm, BB_NO_FALLTHROUGH(b), b, b->b_iused,
+    fprintf(stderr, "%d: [EH=%d CLD=%d WRM=%d NO_FT=%d %p] used: %d, depth: %d, offset: %d %s\n",
+        b->b_label, b->b_except_handler, b->b_cold, b->b_warm, BB_NO_FALLTHROUGH(b), b, b->b_iused,
         b->b_startdepth, b->b_offset, b_return);
     if (b->b_instr) {
         int i;
@@ -8616,6 +8635,12 @@ assemble(struct compiler *c, int addNone)
     if (calculate_jump_targets(g->g_entryblock)) {
         goto error;
     }
+    if (mark_except_handlers(g->g_entryblock) < 0) {
+        goto error;
+    }
+    if (label_exception_targets(g->g_entryblock)) {
+        goto error;
+    }
     if (optimize_cfg(g, consts, c->c_const_cache)) {
         goto error;
     }
@@ -8634,9 +8659,6 @@ assemble(struct compiler *c, int addNone)
     }
     /* TO DO -- For 3.12, make sure that `maxdepth <= MAX_ALLOWED_STACK_USE` */
 
-    if (label_exception_targets(g->g_entryblock)) {
-        goto error;
-    }
     convert_exception_handlers_to_nops(g->g_entryblock);
 
     if (push_cold_blocks_to_end(g, code_flags) < 0) {
@@ -9353,11 +9375,6 @@ mark_reachable(basicblock *entryblock) {
                     *sp++ = target;
                 }
                 target->b_predecessors++;
-                if (is_block_push(instr)) {
-                    target->b_except_predecessors++;
-                }
-                assert(target->b_except_predecessors == 0 ||
-                       target->b_except_predecessors == target->b_predecessors);
             }
         }
     }

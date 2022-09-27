@@ -50,6 +50,8 @@ This article explains the new features in Python 3.11, compared to 3.10.
 For full details, see the :ref:`changelog <changelog>`.
 
 
+.. _whatsnew311-summary:
+
 Summary -- Release highlights
 =============================
 
@@ -96,16 +98,18 @@ Important deprecations, removals or restrictions:
 * :pep:`670`: Convert macros to functions in the Python C API.
 
 
+.. _whatsnew311-features:
+
 New Features
 ============
 
 .. _whatsnew311-pep657:
 
-Enhanced error locations in tracebacks
---------------------------------------
+PEP 657: Enhanced error locations in tracebacks
+-----------------------------------------------
 
 When printing tracebacks, the interpreter will now point to the exact expression
-that caused the error instead of just the line. For example:
+that caused the error, instead of just the line. For example:
 
 .. code-block:: python
 
@@ -118,9 +122,9 @@ that caused the error instead of just the line. For example:
                                ^^^^^^^^^
     AttributeError: 'NoneType' object has no attribute 'x'
 
-Previous versions of the interpreter would point to just the line making it
+Previous versions of the interpreter would point to just the line, making it
 ambiguous which object was ``None``. These enhanced errors can also be helpful
-when dealing with deeply nested dictionary objects and multiple function calls,
+when dealing with deeply nested :class:`dict` objects and multiple function calls:
 
 .. code-block:: python
 
@@ -138,7 +142,7 @@ when dealing with deeply nested dictionary objects and multiple function calls,
                                    ~~~~~~~~~~~~~~~~~~^^^^^
     TypeError: 'NoneType' object is not subscriptable
 
-as well as complex arithmetic expressions:
+As well as complex arithmetic expressions:
 
 .. code-block:: python
 
@@ -148,33 +152,28 @@ as well as complex arithmetic expressions:
                   ~~~~~~^~~
     ZeroDivisionError: division by zero
 
+Additionally, the information used by the enhanced traceback feature
+is made available via a general API, that can be used to correlate
+:term:`bytecode` :ref:`instructions <bytecodes>` with source code location.
+This information can be retrieved using:
+
+- The :meth:`codeobject.co_positions` method in Python.
+- The :c:func:`PyCode_Addr2Location` function in the C API.
+
 See :pep:`657` for more details. (Contributed by Pablo Galindo, Batuhan Taskaya
 and Ammar Askar in :issue:`43950`.)
 
 .. note::
-   This feature requires storing column positions in code objects which may
-   result in a small increase of disk usage of compiled Python files or
-   interpreter memory usage. To avoid storing the extra information and/or
-   deactivate printing the extra traceback information, the
-   :option:`-X` ``no_debug_ranges`` command line flag or the :envvar:`PYTHONNODEBUGRANGES`
-   environment variable can be used.
+   This feature requires storing column positions in :ref:`codeobjects`,
+   which may result in a small increase in interpreter memory usage
+   and disk usage for compiled Python files.
+   To avoid storing the extra information
+   and deactivate printing the extra traceback information,
+   use the :option:`-X no_debug_ranges <-X>` command line option
+   or the :envvar:`PYTHONNODEBUGRANGES` environment variable.
 
-Column information for code objects
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The information used by the enhanced traceback feature is made available as a
-general API that can be used to correlate bytecode instructions with source
-code. This information can be retrieved using:
-
-- The :meth:`codeobject.co_positions` method in Python.
-- The :c:func:`PyCode_Addr2Location` function in the C-API.
-
-The :option:`-X` ``no_debug_ranges`` option and the environment variable
-:envvar:`PYTHONNODEBUGRANGES` can be used to disable this feature.
-
-See :pep:`657` for more details. (Contributed by Pablo Galindo, Batuhan Taskaya
-and Ammar Askar in :issue:`43950`.)
-
+.. _whatsnew311-pep654:
 
 PEP 654: Exception Groups and ``except*``
 -----------------------------------------
@@ -192,17 +191,24 @@ See :pep:`654` for more details.
 Irit Katriel, Yury Selivanov and Guido van Rossum.)
 
 
-PEP 678: Exceptions can be enriched with notes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. _whatsnew311-pep670:
 
-The :meth:`add_note` method was added to :exc:`BaseException`. It can be
-used to enrich exceptions with context information which is not available
-at the time when the exception is raised. The notes added appear in the
-default traceback. See :pep:`678` for more details. (Contributed by
-Irit Katriel in :issue:`45607`.)
+PEP 678: Exceptions can be enriched with notes
+----------------------------------------------
+
+The :meth:`~BaseException.add_note` method is added to :exc:`BaseException`.
+It can be used to enrich exceptions with context information
+that is not available at the time when the exception is raised.
+The added notes appear in the default traceback.
+
+See :pep:`678` for more details.
+
+(Contributed by Irit Katriel in :issue:`45607`.
+PEP written by Zac Hatfield-Dodds.)
 
 
 .. _new-feat-related-type-hints-311:
+.. _whatsnew311-typing-features:
 
 New Features Related to Type Hints
 ==================================
@@ -210,15 +216,20 @@ New Features Related to Type Hints
 This section covers major changes affecting :pep:`484` type hints and
 the :mod:`typing` module.
 
+
+.. _whatsnew311-pep646:
+
 PEP 646: Variadic generics
 --------------------------
 
-:pep:`484` introduced :data:`~typing.TypeVar`, enabling creation
-of generics parameterised with a single type. :pep:`646` introduces
+:pep:`484` previously introduced :data:`~typing.TypeVar`, enabling creation
+of generics parameterised with a single type. :pep:`646` adds
 :data:`~typing.TypeVarTuple`, enabling parameterisation
 with an *arbitrary* number of types. In other words,
 a :data:`~typing.TypeVarTuple` is a *variadic* type variable,
-enabling *variadic* generics. This enables a wide variety of use cases.
+enabling *variadic* generics.
+
+This enables a wide variety of use cases.
 In particular, it allows the type of array-like structures
 in numerical computing libraries such as NumPy and TensorFlow to be
 parameterised with the array *shape*. Static type checkers will now
@@ -230,26 +241,30 @@ See :pep:`646` for more details.
 Serhiy Storchaka and Jelle Zijlstra. PEP written by Mark Mendoza, Matthew
 Rahtz, Pradeep Kumar Srinivasan, and Vincent Siles.)
 
+
+.. _whatsnew311-pep655:
+
 PEP 655: Marking individual ``TypedDict`` items as required or not-required
 ---------------------------------------------------------------------------
 
 :data:`~typing.Required` and :data:`~typing.NotRequired` provide a
 straightforward way to mark whether individual items in a
-:data:`~typing.TypedDict` must be present. Previously this was only possible
+:class:`~typing.TypedDict` must be present. Previously, this was only possible
 using inheritance.
 
-Fields are still required by default, unless the ``total=False``
-parameter is set.
-For example, the following specifies a dictionary with one required and
-one not-required key::
+All fields are still required by default,
+unless the *total* parameter is set to ``False``,
+in which case all fields are still not-required by default.
+For example, the following specifies a :class:`!TypedDict`
+with one required and one not-required key::
 
    class Movie(TypedDict):
       title: str
       year: NotRequired[int]
 
-   m1: Movie = {"title": "Black Panther", "year": 2018}  # ok
-   m2: Movie = {"title": "Star Wars"}  # ok (year is not required)
-   m3: Movie = {"year": 2022}  # error (missing required field title)
+   m1: Movie = {"title": "Black Panther", "year": 2018}  # OK
+   m2: Movie = {"title": "Star Wars"}  # OK (year is not required)
+   m3: Movie = {"year": 2022}  # ERROR (missing required field title)
 
 The following definition is equivalent::
 
@@ -262,15 +277,20 @@ See :pep:`655` for more details.
 (Contributed by David Foster and Jelle Zijlstra in :issue:`47087`. PEP
 written by David Foster.)
 
+
+.. _whatsnew311-pep673:
+
 PEP 673: ``Self`` type
 ----------------------
 
 The new :data:`~typing.Self` annotation provides a simple and intuitive
 way to annotate methods that return an instance of their class. This
-behaves the same as the :data:`~typing.TypeVar`-based approach specified
-in :pep:`484` but is more concise and easier to follow.
+behaves the same as the :class:`~typing.TypeVar`-based approach
+:pep:`specified in PEP 484 <484#annotating-instance-and-class-methods>`,
+but is more concise and easier to follow.
 
-Common use cases include alternative constructors provided as classmethods
+Common use cases include alternative constructors provided as
+:func:`classmethod <classmethod>`\s,
 and :meth:`~object.__enter__` methods that return ``self``::
 
    class MyLock:
@@ -294,6 +314,9 @@ See :pep:`673` for more details.
 
 (Contributed by James Hilton-Balfe in :issue:`46534`. PEP written by
 Pradeep Kumar Srinivasan and James Hilton-Balfe.)
+
+
+.. _whatsnew311-pep675:
 
 PEP 675: Arbitrary literal string type
 --------------------------------------
@@ -329,14 +352,17 @@ See :pep:`675` for more details.
 (Contributed by Jelle Zijlstra in :issue:`47088`. PEP written by Pradeep
 Kumar Srinivasan and Graham Bleaney.)
 
+
+.. _whatsnew311-pep681:
+
 PEP 681: Data Class Transforms
 ------------------------------
 
 :data:`~typing.dataclass_transform` may be used to
 decorate a class, metaclass, or a function that is itself a decorator.
 The presence of ``@dataclass_transform()`` tells a static type checker that the
-decorated object performs runtime "magic" that
-transforms a class, giving it :func:`dataclasses.dataclass`-like behaviors.
+decorated object performs runtime "magic" that transforms a class,
+giving it :func:`dataclass <dataclasses.dataclass>`-like behaviors.
 
 For example::
 
@@ -348,26 +374,32 @@ For example::
         cls.__ne__ = ...
         return cls
 
-    # The create_model decorator can now be used to create new model
-    # classes, like this:
+    # The create_model decorator can now be used to create new model classes:
     @create_model
     class CustomerModel:
         id: int
         name: str
 
-    c = CustomerModel(id=327, name="John Smith")
+    c = CustomerModel(id=327, name="Eric Idle")
 
 See :pep:`681` for more details.
 
 (Contributed by Jelle Zijlstra in :gh:`91860`. PEP written by
 Erik De Bonte and Eric Traut.)
 
-PEP 563 May Not Be the Future
+
+.. _whatsnew311-pep563-deferred:
+
+PEP 563 may not be the future
 -----------------------------
 
-* :pep:`563` Postponed Evaluation of Annotations, ``__future__.annotations``
-  that was planned for this release has been indefinitely postponed.
-  See `this message <https://mail.python.org/archives/list/python-dev@python.org/message/VIZEBX5EYMSYIJNDBF6DMUMZOCWHARSO/>`_ for more information.
+:pep:`563` Postponed Evaluation of Annotations
+(the ``from __future__ import annotations`` :ref:`future statement <future>`)
+that was originally planned for release in Python 3.10
+has been put on hold indefinitely.
+See `this message from the Steering Council <https://mail.python.org/archives/list/python-dev@python.org/message/VIZEBX5EYMSYIJNDBF6DMUMZOCWHARSO/>`__
+for more information.
+
 
 Windows py.exe launcher improvements
 ------------------------------------

@@ -4719,7 +4719,7 @@ static PySequenceMethods dictkeys_as_sequence = {
     (objobjproc)dictkeys_contains,      /* sq_contains */
 };
 
-// Create an set object from dictviews object.
+// Create a set object from dictviews object.
 // Returns a new reference.
 // This utility function is used by set operations.
 static PyObject*
