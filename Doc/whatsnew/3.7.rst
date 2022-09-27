@@ -1507,7 +1507,7 @@ unicodedata
 -----------
 
 The internal :mod:`unicodedata` database has been upgraded to use `Unicode 11
-<http://www.unicode.org/versions/Unicode11.0.0/>`_. (Contributed by Benjamin
+<https://www.unicode.org/versions/Unicode11.0.0/>`_. (Contributed by Benjamin
 Peterson.)
 
 

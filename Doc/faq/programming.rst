@@ -35,7 +35,7 @@ debugging non-PythonWin programs.  PythonWin is available as part of
 as a part of the
 `ActivePython <https://www.activestate.com/products/python/>`_ distribution.
 
-`Eric <http://eric-ide.python-projects.org/>`_ is an IDE built on PyQt
+`Eric <https://eric-ide.python-projects.org/>`_ is an IDE built on PyQt
 and the Scintilla editing component.
 
 `trepan3k <https://github.com/rocky/python3-trepan/>`_ is a gdb-like debugger.
@@ -99,7 +99,7 @@ executables:
 * `PyOxidizer <https://pyoxidizer.readthedocs.io/en/stable/>`_ (Cross-platform)
 * `cx_Freeze <https://marcelotduarte.github.io/cx_Freeze/>`_ (Cross-platform)
 * `py2app <https://github.com/ronaldoussoren/py2app>`_ (macOS only)
-* `py2exe <http://www.py2exe.org/>`_ (Windows only)
+* `py2exe <https://www.py2exe.org/>`_ (Windows only)
 
 Are there coding standards or a style guide for Python programs?
 ----------------------------------------------------------------
