@@ -1,0 +1,2 @@
+The parser now raises :exc:`SyntaxError` when parsing source code containing
+null bytes. Patch by Pablo Galindo
