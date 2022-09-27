@@ -212,6 +212,32 @@ class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
         widget = self.create()
         self.checkParams(widget, 'onvalue', 1, 2.3, '', 'any string')
 
+    def test_unique_variables(self):
+        frames = []
+        buttons = []
+        for i in range(2):
+            f = tkinter.Frame(self.root)
+            f.pack()
+            frames.append(f)
+            for j in 'AB':
+                b = tkinter.Checkbutton(f, text=j)
+                b.pack()
+                buttons.append(b)
+        variables = [str(b['variable']) for b in buttons]
+        self.assertEqual(len(set(variables)), 4, variables)
+
+    def test_same_name(self):
+        f1 = tkinter.Frame(self.root)
+        f2 = tkinter.Frame(self.root)
+        b1 = tkinter.Checkbutton(f1, name='test', text='Test1')
+        b2 = tkinter.Checkbutton(f2, name='test', text='Test2')
+
+        v = tkinter.IntVar(self.root, name='test')
+        b1.select()
+        self.assertEqual(v.get(), 1)
+        b2.deselect()
+        self.assertEqual(v.get(), 0)
+
 
 @add_standard_options(StandardOptionsTests)
 class RadiobuttonTest(AbstractLabelTest, unittest.TestCase):
