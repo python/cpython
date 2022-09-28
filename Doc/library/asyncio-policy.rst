@@ -7,9 +7,14 @@
 Policies
 ========
 
-An event loop policy is a global per-process object that controls
-the management of the event loop. Each event loop has a default
-policy, which can be changed and customized using the policy API.
+An event loop policy is a global object
+used to get and set the current :ref:`event loop <asyncio-event-loop>`,
+as well as create new event loops.
+The default policy can be :ref:`replaced <asyncio-policy-get-set>` with
+:ref:`built-in alternatives <asyncio-policy-builtin>`
+to use different event loop implementations,
+or substituted by a :ref:`custom policy <asyncio-custom-policies>`
+that can override these behaviors.
 
 A policy defines the notion of *context* and manages a
 separate event loop per context. The default policy
