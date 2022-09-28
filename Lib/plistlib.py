@@ -152,7 +152,7 @@ def _date_to_string(d):
 def _escape(text):
     m = _controlCharPat.search(text)
     if m is not None:
-        raise ValueError("strings can't contains control characters; "
+        raise ValueError("strings can't contain control characters; "
                          "use bytes instead")
     text = text.replace("\r\n", "\n")       # convert DOS line endings
     text = text.replace("\r", "\n")         # convert Mac line endings
