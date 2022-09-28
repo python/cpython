@@ -438,9 +438,8 @@ future_ensure_alive(FutureObj *fut)
 }
 
 
-#define ENSURE_FUTURE_ALIVE(fut)                                    \
+#define ENSURE_FUTURE_ALIVE(state, fut)                             \
     do {                                                            \
-        asyncio_state *state = get_asyncio_state(NULL);             \
         assert(Future_Check(state, fut) || Task_Check(state, fut)); \
         if (future_ensure_alive((FutureObj*)fut)) {                 \
             return NULL;                                            \
@@ -966,7 +965,8 @@ static PyObject *
 _asyncio_Future_set_result(FutureObj *self, PyObject *result)
 /*[clinic end generated code: output=1ec2e6bcccd6f2ce input=8b75172c2a7b05f1]*/
 {
-    ENSURE_FUTURE_ALIVE(self)
+    asyncio_state *state = get_asyncio_state(NULL);
+    ENSURE_FUTURE_ALIVE(state, self)
     return future_set_result(self, result);
 }
 
@@ -986,7 +986,8 @@ static PyObject *
 _asyncio_Future_set_exception(FutureObj *self, PyObject *exception)
 /*[clinic end generated code: output=f1c1b0cd321be360 input=e45b7d7aa71cc66d]*/
 {
-    ENSURE_FUTURE_ALIVE(self)
+    asyncio_state *state = get_asyncio_state(NULL);
+    ENSURE_FUTURE_ALIVE(state, self)
     return future_set_exception(self, exception);
 }
 
@@ -1041,7 +1042,8 @@ _asyncio_Future_remove_done_callback(FutureObj *self, PyObject *fn)
     Py_ssize_t len, i, j=0;
     Py_ssize_t cleared_callback0 = 0;
 
-    ENSURE_FUTURE_ALIVE(self)
+    asyncio_state *state = get_asyncio_state(NULL);
+    ENSURE_FUTURE_ALIVE(state, self)
 
     if (self->fut_callback0 != NULL) {
         int cmp = PyObject_RichCompareBool(self->fut_callback0, fn, Py_EQ);
@@ -1151,7 +1153,8 @@ static PyObject *
 _asyncio_Future_cancel_impl(FutureObj *self, PyObject *msg)
 /*[clinic end generated code: output=3edebbc668e5aba3 input=925eb545251f2c5a]*/
 {
-    ENSURE_FUTURE_ALIVE(self)
+    asyncio_state *state = get_asyncio_state(NULL);
+    ENSURE_FUTURE_ALIVE(state, self)
     return future_cancel(self, msg);
 }
 
@@ -1204,7 +1207,8 @@ static PyObject *
 _asyncio_Future_get_loop_impl(FutureObj *self)
 /*[clinic end generated code: output=119b6ea0c9816c3f input=cba48c2136c79d1f]*/
 {
-    ENSURE_FUTURE_ALIVE(self)
+    asyncio_state *state = get_asyncio_state(NULL);
+    ENSURE_FUTURE_ALIVE(state, self)
     Py_INCREF(self->fut_loop);
     return self->fut_loop;
 }
@@ -1242,7 +1246,8 @@ FutureObj_set_blocking(FutureObj *fut, PyObject *val, void *Py_UNUSED(ignored))
 static PyObject *
 FutureObj_get_log_traceback(FutureObj *fut, void *Py_UNUSED(ignored))
 {
-    ENSURE_FUTURE_ALIVE(fut)
+    asyncio_state *state = get_asyncio_state(NULL);
+    ENSURE_FUTURE_ALIVE(state, fut)
     if (fut->fut_log_tb) {
         Py_RETURN_TRUE;
     }
@@ -1286,7 +1291,8 @@ FutureObj_get_callbacks(FutureObj *fut, void *Py_UNUSED(ignored))
 {
     Py_ssize_t i;
 
-    ENSURE_FUTURE_ALIVE(fut)
+    asyncio_state *state = get_asyncio_state(NULL);
+    ENSURE_FUTURE_ALIVE(state, fut)
 
     if (fut->fut_callback0 == NULL) {
         if (fut->fut_callbacks == NULL) {
@@ -1336,7 +1342,8 @@ FutureObj_get_callbacks(FutureObj *fut, void *Py_UNUSED(ignored))
 static PyObject *
 FutureObj_get_result(FutureObj *fut, void *Py_UNUSED(ignored))
 {
-    ENSURE_FUTURE_ALIVE(fut)
+    asyncio_state *state = get_asyncio_state(NULL);
+    ENSURE_FUTURE_ALIVE(state, fut)
     if (fut->fut_result == NULL) {
         Py_RETURN_NONE;
     }
@@ -1347,7 +1354,8 @@ FutureObj_get_result(FutureObj *fut, void *Py_UNUSED(ignored))
 static PyObject *
 FutureObj_get_exception(FutureObj *fut, void *Py_UNUSED(ignored))
 {
-    ENSURE_FUTURE_ALIVE(fut)
+    asyncio_state *state = get_asyncio_state(NULL);
+    ENSURE_FUTURE_ALIVE(state, fut)
     if (fut->fut_exception == NULL) {
         Py_RETURN_NONE;
     }
@@ -1393,7 +1401,8 @@ FutureObj_get_state(FutureObj *fut, void *Py_UNUSED(ignored))
 {
     PyObject *ret = NULL;
 
-    ENSURE_FUTURE_ALIVE(fut)
+    asyncio_state *state = get_asyncio_state(NULL);
+    ENSURE_FUTURE_ALIVE(state, fut)
 
     switch (fut->fut_state) {
     case STATE_PENDING:
@@ -1416,7 +1425,7 @@ static PyObject *
 FutureObj_repr(FutureObj *fut)
 {
     asyncio_state *state = get_asyncio_state(NULL);
-    ENSURE_FUTURE_ALIVE(fut)
+    ENSURE_FUTURE_ALIVE(state, fut)
     return PyObject_CallOneArg(state->asyncio_future_repr_func, (PyObject *)fut);
 }
 
@@ -1824,7 +1833,7 @@ future_new_iter(PyObject *fut)
         return NULL;
     }
 
-    ENSURE_FUTURE_ALIVE(fut)
+    ENSURE_FUTURE_ALIVE(state, fut)
 
     if (fi_freelist_len) {
         fi_freelist_len--;
