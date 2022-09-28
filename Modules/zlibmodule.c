@@ -192,6 +192,7 @@ static PyModuleDef zlibmodule;
 typedef struct {
     PyTypeObject *Comptype;
     PyTypeObject *Decomptype;
+    PyTypeObject *ZlibDecompressorType;
     PyObject *ZlibError;
 } zlibstate;
 
@@ -1998,6 +1999,7 @@ zlib_clear(PyObject *mod)
     zlibstate *state = get_zlib_state(mod);
     Py_CLEAR(state->Comptype);
     Py_CLEAR(state->Decomptype);
+    Py_CLEAR(state->ZlibDecompressorType);
     Py_CLEAR(state->ZlibError);
     return 0;
 }
@@ -2008,6 +2010,7 @@ zlib_traverse(PyObject *mod, visitproc visit, void *arg)
     zlibstate *state = get_zlib_state(mod);
     Py_VISIT(state->Comptype);
     Py_VISIT(state->Decomptype);
+    Py_VISIT(state->ZlibDecompressorType);
     Py_VISIT(state->ZlibError);
     return 0;
 }
@@ -2035,6 +2038,12 @@ zlib_exec(PyObject *mod)
         return -1;
     }
 
+    state->ZlibDecompressorType = (PyTypeObject *)PyType_FromModuleAndSpec(
+        mod, &ZlibDecompressor_type_spec, NULL);
+    if (state->ZlibDecompressorType == NULL) {
+        return -1;
+    }
+
     state->ZlibError = PyErr_NewException("zlib.error", NULL, NULL);
     if (state->ZlibError == NULL) {
         return -1;
@@ -2043,6 +2052,12 @@ zlib_exec(PyObject *mod)
     Py_INCREF(state->ZlibError);
     if (PyModule_AddObject(mod, "error", state->ZlibError) < 0) {
         Py_DECREF(state->ZlibError);
+        return -1;
+    }
+    Py_INCREF(state->ZlibDecompressorType);
+    if (PyModule_AddObject(mod, "_ZlibDecompressor", 
+                           state->ZlibDecompressorType) < 0) {
+        Py_DECREF(state->ZlibDecompressorType);
         return -1;
     }
 
