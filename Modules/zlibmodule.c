@@ -1351,36 +1351,6 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
     return RetVal;
 }
 
-#include "clinic/zlibmodule.c.h"
-
-static PyMethodDef comp_methods[] =
-{
-    ZLIB_COMPRESS_COMPRESS_METHODDEF
-    ZLIB_COMPRESS_FLUSH_METHODDEF
-    ZLIB_COMPRESS_COPY_METHODDEF
-    ZLIB_COMPRESS___COPY___METHODDEF
-    ZLIB_COMPRESS___DEEPCOPY___METHODDEF
-    {NULL, NULL}
-};
-
-static PyMethodDef Decomp_methods[] =
-{
-    ZLIB_DECOMPRESS_DECOMPRESS_METHODDEF
-    ZLIB_DECOMPRESS_FLUSH_METHODDEF
-    ZLIB_DECOMPRESS_COPY_METHODDEF
-    ZLIB_DECOMPRESS___COPY___METHODDEF
-    ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
-    {NULL, NULL}
-};
-
-#define COMP_OFF(x) offsetof(compobject, x)
-static PyMemberDef Decomp_members[] = {
-    {"unused_data",     T_OBJECT, COMP_OFF(unused_data), READONLY},
-    {"unconsumed_tail", T_OBJECT, COMP_OFF(unconsumed_tail), READONLY},
-    {"eof",             T_BOOL,   COMP_OFF(eof), READONLY},
-    {NULL},
-};
-
 
 typedef struct {
     PyObject_HEAD
@@ -1484,6 +1454,7 @@ decompress_buf(ZlibDecompressor *self, Py_ssize_t max_length)
     PyObject *RetVal = NULL;
     Py_ssize_t hard_limit;
     Py_ssize_t obuflen;
+    zlibstate *state = PyType_GetModuleState(Py_TYPE(self));
 
     int err;
 
@@ -1680,35 +1651,34 @@ error:
     return NULL;
 }
 
-PyDoc_STRVAR(igzip_lib_IgzipDecompressor___init____doc__,
-"IgzipDecompressor(flag=0, hist_bits=15, zdict=b\'\')\n"
+PyDoc_STRVAR(ZlibDecompressor__new____doc__,
+"_ZlibDecompressor(wbits=15, zdict=b\'\')\n"
 "--\n"
 "\n"
 "Create a decompressor object for decompressing data incrementally.\n"
 "\n"
-"  wbits\n"
-"    The lookback distance is 2 ^ hist_bits.\n"
+"  wbits = 15\n"
 "  zdict\n"
-"    Dictionary used for decompressing the data\n"
-"\n"
-"For one-shot decompression, use the decompress() function instead.");
+"     The predefined compression dictionary.  This must be the same\n"
+"     dictionary as used by the compressor that produced the input data.\n"
+"\n");
 
 static PyObject *
-igzip_lib_IgzipDecompressor__new__(PyTypeObject *type, 
-                                   PyObject *args, 
-                                   PyObject *kwargs)
+ZlibDecompressor__new__(PyTypeObject *cls, 
+                        PyObject *args, 
+                        PyObject *kwargs)
 {
-    static char *keywords[] = {"flag", "hist_bits", "zdict", NULL};
-    static char *format = "|iiO:IgzipDecompressor";
-    int flag = ISAL_DEFLATE;
-    int hist_bits = ISAL_DEF_MAX_HIST_BITS;
+    static char *keywords[] = {"wbits", "zdict", NULL};
+    static char *format = "|iO:IgzipDecompressor";
+    int wbits = MAX_WBITS;
     PyObject *zdict = NULL;
+    zlibstate *state = PyType_GetModuleState(cls);
 
     if (!PyArg_ParseTupleAndKeywords(
-            args, kwargs, format, keywords, &flag, &hist_bits, &zdict)) {
+            args, kwargs, format, keywords, &wbits, &zdict)) {
         return NULL;
     }
-    IgzipDecompressor *self = PyObject_New(IgzipDecompressor, type); 
+    ZlibDecompressor *self = PyObject_New(ZlibDecompressor, cls); 
     int err;
     self->eof = 0;
     self->needs_input = 1;
@@ -1716,41 +1686,81 @@ igzip_lib_IgzipDecompressor__new__(PyTypeObject *type,
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
     self->zdict = zdict;
+    self->zst.opaque = NULL;
+    self->zst.zalloc = PyZlib_Malloc;
+    self->zst.zfree = PyZlib_Free;
     self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
     if (self->unused_data == NULL) {
         Py_CLEAR(self);
         return NULL;
     }
-    isal_inflate_init(&(self->state));
-    self->state.hist_bits = hist_bits;
-    self->state.crc_flag = flag;
-    if (self->zdict != NULL){
-        Py_buffer zdict_buf;
-        if (PyObject_GetBuffer(self->zdict, &zdict_buf, PyBUF_SIMPLE) == -1) {
-                Py_CLEAR(self);
+    int err = inflateInit2(&(self->zst), wbits);
+    switch (err) {
+        case Z_OK:
+        self->is_initialised = 1;
+        if (self->zdict != NULL && wbits < 0) {
+#ifdef AT_LEAST_ZLIB_1_2_2_1
+            if (set_inflate_zdict(state, self) < 0) {
+                Py_DECREF(self);
                 return NULL;
-        }
-        if ((size_t)zdict_buf.len > UINT32_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                           "zdict length does not fit in an unsigned 32-bits int");
-            PyBuffer_Release(&zdict_buf);
-            Py_CLEAR(self);
+            }
+#else
+            PyErr_Format(state->ZlibError,
+                         "zlib version %s does not allow raw inflate with dictionary",
+                         ZLIB_VERSION);
+            Py_DECREF(self);
             return NULL;
+#endif
         }
-        err = isal_inflate_set_dict(&(self->state), zdict_buf.buf, 
-                                    (uint32_t)zdict_buf.len);
-        PyBuffer_Release(&zdict_buf);
-        if (err != ISAL_DECOMP_OK) {
-            isal_inflate_error(err);
-            Py_CLEAR(self);
-            return NULL;
-        }        
+        return (PyObject *)self;
+    case Z_STREAM_ERROR:
+        Py_DECREF(self);
+        PyErr_SetString(PyExc_ValueError, "Invalid initialization option");
+        return NULL;
+    case Z_MEM_ERROR:
+        Py_DECREF(self);
+        PyErr_SetString(PyExc_MemoryError,
+                        "Can't allocate memory for decompression object");
+        return NULL;
+    default:
+        zlib_error(state, self->zst, err, "while creating decompression object");
+        Py_DECREF(self);
+        return NULL;
     }
-    return (PyObject *)self;
 }
 
+#include "clinic/zlibmodule.c.h"
+
+static PyMethodDef comp_methods[] =
+{
+    ZLIB_COMPRESS_COMPRESS_METHODDEF
+    ZLIB_COMPRESS_FLUSH_METHODDEF
+    ZLIB_COMPRESS_COPY_METHODDEF
+    ZLIB_COMPRESS___COPY___METHODDEF
+    ZLIB_COMPRESS___DEEPCOPY___METHODDEF
+    {NULL, NULL}
+};
+
+static PyMethodDef Decomp_methods[] =
+{
+    ZLIB_DECOMPRESS_DECOMPRESS_METHODDEF
+    ZLIB_DECOMPRESS_FLUSH_METHODDEF
+    ZLIB_DECOMPRESS_COPY_METHODDEF
+    ZLIB_DECOMPRESS___COPY___METHODDEF
+    ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
+    {NULL, NULL}
+};
+
+#define COMP_OFF(x) offsetof(compobject, x)
+static PyMemberDef Decomp_members[] = {
+    {"unused_data",     T_OBJECT, COMP_OFF(unused_data), READONLY},
+    {"unconsumed_tail", T_OBJECT, COMP_OFF(unconsumed_tail), READONLY},
+    {"eof",             T_BOOL,   COMP_OFF(eof), READONLY},
+    {NULL},
+};
+
 static PyMethodDef IgzipDecompressor_methods[] = {
-    IGZIP_LIB_IGZIPDECOMPRESSOR_DECOMPRESS_METHODDEF,
+    ZLIBCOMPRESSOR_DECOMPRESS_METHODDEF,
     {NULL}
 };
 
