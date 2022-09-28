@@ -275,7 +275,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 #xx xxmodule.c
 #xxlimited xxlimited.c
 #xxlimited_35 xxlimited_35.c
-xxsubtype xxsubtype.c  # Required for the test suite to pass!
+#xxsubtype xxsubtype.c
 
 # Testing
 

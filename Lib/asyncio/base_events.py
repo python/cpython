@@ -888,7 +888,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         # non-mmap files even if sendfile is supported by OS
         raise exceptions.SendfileNotAvailableError(
             f"syscall sendfile is not available for socket {sock!r} "
-            "and file {file!r} combination")
+            f"and file {file!r} combination")
 
     async def _sock_sendfile_fallback(self, sock, file, offset, count):
         if offset:
@@ -980,7 +980,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             local_addr=None, server_hostname=None,
             ssl_handshake_timeout=None,
             ssl_shutdown_timeout=None,
-            happy_eyeballs_delay=None, interleave=None):
+            happy_eyeballs_delay=None, interleave=None,
+            all_errors=False):
         """Connect to a TCP server.
 
         Create a streaming transport connection to a given internet host and
@@ -1069,6 +1070,8 @@ class BaseEventLoop(events.AbstractEventLoop):
 
             if sock is None:
                 exceptions = [exc for sub in exceptions for exc in sub]
+                if all_errors:
+                    raise ExceptionGroup("create_connection failed", exceptions)
                 if len(exceptions) == 1:
                     raise exceptions[0]
                 else:

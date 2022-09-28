@@ -124,9 +124,18 @@ Module Contents
       Enum class decorator that checks user-selectable constraints on an
       enumeration.
 
+   :func:`member`
+
+      Make ``obj`` a member.  Can be used as a decorator.
+
+   :func:`nonmember`
+
+      Do not make ``obj`` a member.  Can be used as a decorator.
+
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
 .. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``FlagBoundary``, ``property``
+.. versionadded:: 3.11  ``member``, ``nonmember``
 
 ---------------
 
@@ -166,13 +175,6 @@ Data Types
 
         >>> dir(Color)
         ['BLUE', 'GREEN', 'RED', '__class__', '__contains__', '__doc__', '__getitem__', '__init_subclass__', '__iter__', '__len__', '__members__', '__module__', '__name__', '__qualname__']
-
-   .. method:: EnumType.__getattr__(cls, name)
-
-      Returns the Enum member in *cls* matching *name*, or raises an :exc:`AttributeError`::
-
-        >>> Color.GREEN
-        <Color.GREEN: 2>
 
    .. method:: EnumType.__getitem__(cls, name)
 
@@ -752,6 +754,10 @@ Utilities and Decorators
    ``_generate_next_value_`` can be overridden to customize the values used by
    *auto*.
 
+   .. note:: in 3.13 the default ``"generate_next_value_`` will always return
+             the highest member value incremented by 1, and will fail if any
+             member is an incompatible type.
+
 .. decorator:: property
 
    A decorator similar to the built-in *property*, but specifically for
@@ -788,6 +794,18 @@ Utilities and Decorators
    A :keyword:`class` decorator specifically for enumerations.  Members from
    :class:`EnumCheck` are used to specify which constraints should be checked
    on the decorated enumeration.
+
+   .. versionadded:: 3.11
+
+.. decorator:: member
+
+   A decorator for use in enums: its target will become a member.
+
+   .. versionadded:: 3.11
+
+.. decorator:: nonmember
+
+   A decorator for use in enums: its target will not become a member.
 
    .. versionadded:: 3.11
 

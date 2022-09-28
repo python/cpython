@@ -9,7 +9,6 @@ from unittest import mock
 
 from test import support
 from test.support import os_helper
-from test.support import warnings_helper
 
 try:
     import _testcapi
@@ -1193,7 +1192,6 @@ class EscapeDecodeTest(unittest.TestCase):
         check(br"[\418]", b"[!8]")
         check(br"[\101]", b"[A]")
         check(br"[\1010]", b"[A0]")
-        check(br"[\501]", b"[A]")
         check(br"[\x41]", b"[A]")
         check(br"[\x410]", b"[A0]")
         for i in range(97, 123):
@@ -1209,6 +1207,9 @@ class EscapeDecodeTest(unittest.TestCase):
             check(br"\9", b"\\9")
         with self.assertWarns(DeprecationWarning):
             check(b"\\\xfa", b"\\\xfa")
+        for i in range(0o400, 0o1000):
+            with self.assertWarns(DeprecationWarning):
+                check(rb'\%o' % i, bytes([i & 0o377]))
 
     def test_errors(self):
         decode = codecs.escape_decode
@@ -2435,6 +2436,9 @@ class UnicodeEscapeTest(ReadTest, unittest.TestCase):
             check(br"\9", "\\9")
         with self.assertWarns(DeprecationWarning):
             check(b"\\\xfa", "\\\xfa")
+        for i in range(0o400, 0o1000):
+            with self.assertWarns(DeprecationWarning):
+                check(rb'\%o' % i, chr(i))
 
     def test_decode_errors(self):
         decode = codecs.unicode_escape_decode

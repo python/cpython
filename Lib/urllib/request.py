@@ -88,7 +88,6 @@ import hashlib
 import http.client
 import io
 import os
-import posixpath
 import re
 import socket
 import string
@@ -1384,12 +1383,16 @@ if hasattr(http.client, 'HTTPSConnection'):
 
         def __init__(self, debuglevel=0, context=None, check_hostname=None):
             AbstractHTTPHandler.__init__(self, debuglevel)
+            if context is None:
+                http_version = http.client.HTTPSConnection._http_vsn
+                context = http.client._create_https_context(http_version)
+            if check_hostname is not None:
+                context.check_hostname = check_hostname
             self._context = context
-            self._check_hostname = check_hostname
 
         def https_open(self, req):
             return self.do_open(http.client.HTTPSConnection, req,
-                context=self._context, check_hostname=self._check_hostname)
+                                context=self._context)
 
         https_request = AbstractHTTPHandler.do_request_
 
@@ -1987,9 +1990,17 @@ class URLopener:
 
     if _have_ssl:
         def _https_connection(self, host):
-            return http.client.HTTPSConnection(host,
-                                           key_file=self.key_file,
-                                           cert_file=self.cert_file)
+            if self.key_file or self.cert_file:
+                http_version = http.client.HTTPSConnection._http_vsn
+                context = http.client._create_https_context(http_version)
+                context.load_cert_chain(self.cert_file, self.key_file)
+                # cert and key file means the user wants to authenticate.
+                # enable TLS 1.3 PHA implicitly even for custom contexts.
+                if context.post_handshake_auth is not None:
+                    context.post_handshake_auth = True
+            else:
+                context = None
+            return http.client.HTTPSConnection(host, context=context)
 
         def open_https(self, url, data=None):
             """Use HTTPS protocol."""
@@ -2679,22 +2690,26 @@ elif os.name == 'nt':
                 # Returned as Unicode but problems if not converted to ASCII
                 proxyServer = str(winreg.QueryValueEx(internetSettings,
                                                        'ProxyServer')[0])
-                if '=' in proxyServer:
-                    # Per-protocol settings
-                    for p in proxyServer.split(';'):
-                        protocol, address = p.split('=', 1)
-                        # See if address has a type:// prefix
-                        if not re.match('(?:[^/:]+)://', address):
-                            address = '%s://%s' % (protocol, address)
-                        proxies[protocol] = address
-                else:
-                    # Use one setting for all protocols
-                    if proxyServer[:5] == 'http:':
-                        proxies['http'] = proxyServer
-                    else:
-                        proxies['http'] = 'http://%s' % proxyServer
-                        proxies['https'] = 'https://%s' % proxyServer
-                        proxies['ftp'] = 'ftp://%s' % proxyServer
+                if '=' not in proxyServer and ';' not in proxyServer:
+                    # Use one setting for all protocols.
+                    proxyServer = 'http={0};https={0};ftp={0}'.format(proxyServer)
+                for p in proxyServer.split(';'):
+                    protocol, address = p.split('=', 1)
+                    # See if address has a type:// prefix
+                    if not re.match('(?:[^/:]+)://', address):
+                        # Add type:// prefix to address without specifying type
+                        if protocol in ('http', 'https', 'ftp'):
+                            # The default proxy type of Windows is HTTP
+                            address = 'http://' + address
+                        elif protocol == 'socks':
+                            address = 'socks://' + address
+                    proxies[protocol] = address
+                # Use SOCKS proxy for HTTP(S) protocols
+                if proxies.get('socks'):
+                    # The default SOCKS proxy type of Windows is SOCKS4
+                    address = re.sub(r'^socks://', 'socks4://', proxies['socks'])
+                    proxies['http'] = proxies.get('http') or address
+                    proxies['https'] = proxies.get('https') or address
             internetSettings.Close()
         except (OSError, ValueError, TypeError):
             # Either registry key not found etc, or the value in an

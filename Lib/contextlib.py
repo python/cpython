@@ -161,6 +161,7 @@ class _GeneratorContextManager(
             except RuntimeError as exc:
                 # Don't re-raise the passed in exception. (issue27122)
                 if exc is value:
+                    exc.__traceback__ = traceback
                     return False
                 # Avoid suppressing if a StopIteration exception
                 # was passed to throw() and later wrapped into a RuntimeError
@@ -172,6 +173,7 @@ class _GeneratorContextManager(
                     isinstance(value, StopIteration)
                     and exc.__cause__ is value
                 ):
+                    exc.__traceback__ = traceback
                     return False
                 raise
             except BaseException as exc:
@@ -183,6 +185,7 @@ class _GeneratorContextManager(
                 # and the __exit__() protocol.
                 if exc is not value:
                     raise
+                exc.__traceback__ = traceback
                 return False
             raise RuntimeError("generator didn't stop after throw()")
 

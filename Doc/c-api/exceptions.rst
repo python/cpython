@@ -460,12 +460,46 @@ Querying the error indicator
          }
 
 
+.. c:function:: PyObject* PyErr_GetHandledException(void)
+
+   Retrieve the active exception instance, as would be returned by :func:`sys.exception`.
+   This refers to an exception that was *already caught*, not to an exception that was
+   freshly raised. Returns a new reference to the exception or ``NULL``.
+   Does not modify the interpreter's exception state.
+
+   .. note::
+
+      This function is not normally used by code that wants to handle exceptions.
+      Rather, it can be used when code needs to save and restore the exception
+      state temporarily.  Use :c:func:`PyErr_SetHandledException` to restore or
+      clear the exception state.
+
+   .. versionadded:: 3.11
+
+.. c:function:: void PyErr_SetHandledException(PyObject *exc)
+
+   Set the active exception, as known from ``sys.exception()``.  This refers
+   to an exception that was *already caught*, not to an exception that was
+   freshly raised.
+   To clear the exception state, pass ``NULL``.
+
+   .. note::
+
+      This function is not normally used by code that wants to handle exceptions.
+      Rather, it can be used when code needs to save and restore the exception
+      state temporarily.  Use :c:func:`PyErr_GetHandledException` to get the exception
+      state.
+
+   .. versionadded:: 3.11
+
 .. c:function:: void PyErr_GetExcInfo(PyObject **ptype, PyObject **pvalue, PyObject **ptraceback)
 
-   Retrieve the exception info, as known from ``sys.exc_info()``.  This refers
-   to an exception that was *already caught*, not to an exception that was
-   freshly raised.  Returns new references for the three objects, any of which
-   may be ``NULL``.  Does not modify the exception info state.
+   Retrieve the old-style representation of the exception info, as known from
+   :func:`sys.exc_info`.  This refers to an exception that was *already caught*,
+   not to an exception that was freshly raised.  Returns new references for the
+   three objects, any of which may be ``NULL``.  Does not modify the exception
+   info state.  This function is kept for backwards compatibility. Prefer using
+   :c:func:`PyErr_GetHandledException`.
 
    .. note::
 
@@ -483,6 +517,8 @@ Querying the error indicator
    to an exception that was *already caught*, not to an exception that was
    freshly raised.  This function steals the references of the arguments.
    To clear the exception state, pass ``NULL`` for all three arguments.
+   This function is kept for backwards compatibility. Prefer using
+   :c:func:`PyErr_SetHandledException`.
 
    .. note::
 
@@ -873,11 +909,11 @@ the variables:
 +-----------------------------------------+---------------------------------+----------+
 | C Name                                  | Python Name                     | Notes    |
 +=========================================+=================================+==========+
-| :c:data:`PyExc_BaseException`           | :exc:`BaseException`            | \(1)     |
+| :c:data:`PyExc_BaseException`           | :exc:`BaseException`            | [1]_     |
 +-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_Exception`               | :exc:`Exception`                | \(1)     |
+| :c:data:`PyExc_Exception`               | :exc:`Exception`                | [1]_     |
 +-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_ArithmeticError`         | :exc:`ArithmeticError`          | \(1)     |
+| :c:data:`PyExc_ArithmeticError`         | :exc:`ArithmeticError`          | [1]_     |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_AssertionError`          | :exc:`AssertionError`           |          |
 +-----------------------------------------+---------------------------------+----------+
@@ -923,7 +959,7 @@ the variables:
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_KeyboardInterrupt`       | :exc:`KeyboardInterrupt`        |          |
 +-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_LookupError`             | :exc:`LookupError`              | \(1)     |
+| :c:data:`PyExc_LookupError`             | :exc:`LookupError`              | [1]_     |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_MemoryError`             | :exc:`MemoryError`              |          |
 +-----------------------------------------+---------------------------------+----------+
@@ -935,7 +971,7 @@ the variables:
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_NotImplementedError`     | :exc:`NotImplementedError`      |          |
 +-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_OSError`                 | :exc:`OSError`                  | \(1)     |
+| :c:data:`PyExc_OSError`                 | :exc:`OSError`                  | [1]_     |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_OverflowError`           | :exc:`OverflowError`            |          |
 +-----------------------------------------+---------------------------------+----------+
@@ -945,7 +981,7 @@ the variables:
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_RecursionError`          | :exc:`RecursionError`           |          |
 +-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_ReferenceError`          | :exc:`ReferenceError`           | \(2)     |
+| :c:data:`PyExc_ReferenceError`          | :exc:`ReferenceError`           |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_RuntimeError`            | :exc:`RuntimeError`             |          |
 +-----------------------------------------+---------------------------------+----------+
@@ -1010,7 +1046,7 @@ These are compatibility aliases to :c:data:`PyExc_OSError`:
 +-------------------------------------+----------+
 | :c:data:`PyExc_IOError`             |          |
 +-------------------------------------+----------+
-| :c:data:`PyExc_WindowsError`        | \(3)     |
+| :c:data:`PyExc_WindowsError`        | [2]_     |
 +-------------------------------------+----------+
 
 .. versionchanged:: 3.3
@@ -1018,10 +1054,10 @@ These are compatibility aliases to :c:data:`PyExc_OSError`:
 
 Notes:
 
-(1)
+.. [1]
    This is a base class for other standard exceptions.
 
-(2)
+.. [2]
    Only defined on Windows; protect code that uses this by testing that the
    preprocessor macro ``MS_WINDOWS`` is defined.
 
@@ -1051,7 +1087,7 @@ the variables:
 +------------------------------------------+---------------------------------+----------+
 | C Name                                   | Python Name                     | Notes    |
 +==========================================+=================================+==========+
-| :c:data:`PyExc_Warning`                  | :exc:`Warning`                  | \(1)     |
+| :c:data:`PyExc_Warning`                  | :exc:`Warning`                  | [3]_     |
 +------------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_BytesWarning`             | :exc:`BytesWarning`             |          |
 +------------------------------------------+---------------------------------+----------+
@@ -1079,5 +1115,5 @@ the variables:
 
 Notes:
 
-(1)
+.. [3]
    This is a base class for other standard warning categories.

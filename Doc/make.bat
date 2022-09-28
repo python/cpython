@@ -111,7 +111,7 @@ echo.   Provided by Sphinx:
 echo.      html, htmlhelp, latex, text
 echo.      suspicious, linkcheck, changes, doctest
 echo.   Provided by this script:
-echo.      clean, check, serve, htmlview
+echo.      clean, check, htmlview
 echo.
 echo.All arguments past the first one are passed through to sphinx-build as
 echo.filenames to build or are ignored.  See README.rst in this directory or
@@ -180,11 +180,14 @@ if EXIST "%BUILDDIR%\html\index.html" (
 goto end
 
 :check
-cmd /S /C "%SPHINXLINT% -i tools"
+rem Check the docs and NEWS files with sphinx-lint.
+rem Ignore the tools dir and check that the default role is not used.
+cmd /S /C "%SPHINXLINT% -i tools --enable default-role"
+cmd /S /C "%SPHINXLINT% --enable default-role ..\Misc\NEWS.d\next\ "
 goto end
 
 :serve
-cmd /S /C "%PYTHON% ..\Tools\scripts\serve.py "%BUILDDIR%\html""
+echo.The serve target was removed, use htmlview instead (see bpo-36329)
 goto end
 
 :end

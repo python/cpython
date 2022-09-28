@@ -1,2 +1,0 @@
-:mod:`re` module, fix a few bugs about capturing group. In rare cases,
-capturing group gets an incorrect string. Patch by Ma Lin.

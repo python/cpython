@@ -68,9 +68,6 @@ FLAGS = {
 TYPE_FLAGS = SRE_FLAG_ASCII | SRE_FLAG_LOCALE | SRE_FLAG_UNICODE
 GLOBAL_FLAGS = SRE_FLAG_DEBUG | SRE_FLAG_TEMPLATE
 
-class Verbose(Exception):
-    pass
-
 class State:
     # keeps track of state for parsing
     def __init__(self):
@@ -78,6 +75,7 @@ class State:
         self.groupdict = {}
         self.groupwidths = [None]  # group 0
         self.lookbehindgroups = None
+        self.grouprefpos = {}
     @property
     def groups(self):
         return len(self.groupwidths)
@@ -186,10 +184,6 @@ class SubPattern:
                     j = max(j, h)
                 lo = lo + i
                 hi = hi + j
-            elif op is CALL:
-                i, j = av.getwidth()
-                lo = lo + i
-                hi = hi + j
             elif op is ATOMIC_GROUP:
                 i, j = av.getwidth()
                 lo = lo + i
@@ -294,7 +288,17 @@ class Tokenizer:
         self.__next()
 
     def error(self, msg, offset=0):
+        if not self.istext:
+            msg = msg.encode('ascii', 'backslashreplace').decode('ascii')
         return error(msg, self.string, self.tell() - offset)
+
+    def checkgroupname(self, name, offset):
+        if not (self.istext or name.isascii()):
+            msg = "bad character in group name %a" % name
+            raise self.error(msg, len(name) + offset)
+        if not name.isidentifier():
+            msg = "bad character in group name %r" % name
+            raise self.error(msg, len(name) + offset)
 
 def _class_escape(source, escape):
     # handle escape code inside character class
@@ -334,9 +338,9 @@ def _class_escape(source, escape):
             charname = source.getuntil('}', 'character name')
             try:
                 c = ord(unicodedata.lookup(charname))
-            except KeyError:
+            except (KeyError, TypeError):
                 raise source.error("undefined character name %r" % charname,
-                                   len(charname) + len(r'\N{}'))
+                                   len(charname) + len(r'\N{}')) from None
             return LITERAL, c
         elif c in OCTDIGITS:
             # octal escape (up to three digits)
@@ -394,9 +398,9 @@ def _escape(source, escape, state):
             charname = source.getuntil('}', 'character name')
             try:
                 c = ord(unicodedata.lookup(charname))
-            except KeyError:
+            except (KeyError, TypeError):
                 raise source.error("undefined character name %r" % charname,
-                                   len(charname) + len(r'\N{}'))
+                                   len(charname) + len(r'\N{}')) from None
             return LITERAL, c
         elif c == "0":
             # octal escape
@@ -448,6 +452,8 @@ def _parse_sub(source, state, verbose, nested):
                            not nested and not items))
         if not sourcematch("|"):
             break
+        if not nested:
+            verbose = state.flags & SRE_FLAG_VERBOSE
 
     if len(items) == 1:
         return items[0]
@@ -708,15 +714,11 @@ def _parse(source, state, verbose, nested, first=False):
                     if sourcematch("<"):
                         # named group: skip forward to end of name
                         name = source.getuntil(">", "group name")
-                        if not name.isidentifier():
-                            msg = "bad character in group name %r" % name
-                            raise source.error(msg, len(name) + 1)
+                        source.checkgroupname(name, 1)
                     elif sourcematch("="):
                         # named backreference
                         name = source.getuntil(")", "group name")
-                        if not name.isidentifier():
-                            msg = "bad character in group name %r" % name
-                            raise source.error(msg, len(name) + 1)
+                        source.checkgroupname(name, 1)
                         gid = state.groupdict.get(name)
                         if gid is None:
                             msg = "unknown group name %r" % name
@@ -777,25 +779,32 @@ def _parse(source, state, verbose, nested, first=False):
                 elif char == "(":
                     # conditional backreference group
                     condname = source.getuntil(")", "group name")
-                    if condname.isidentifier():
+                    if not (condname.isdecimal() and condname.isascii()):
+                        source.checkgroupname(condname, 1)
                         condgroup = state.groupdict.get(condname)
                         if condgroup is None:
                             msg = "unknown group name %r" % condname
                             raise source.error(msg, len(condname) + 1)
                     else:
-                        try:
-                            condgroup = int(condname)
-                            if condgroup < 0:
-                                raise ValueError
-                        except ValueError:
-                            msg = "bad character in group name %r" % condname
-                            raise source.error(msg, len(condname) + 1) from None
+                        condgroup = int(condname)
                         if not condgroup:
                             raise source.error("bad group number",
                                                len(condname) + 1)
                         if condgroup >= MAXGROUPS:
                             msg = "invalid group reference %d" % condgroup
                             raise source.error(msg, len(condname) + 1)
+                        if condgroup not in state.grouprefpos:
+                            state.grouprefpos[condgroup] = (
+                                source.tell() - len(condname) - 1
+                            )
+                        if not (condname.isdecimal() and condname.isascii()):
+                            import warnings
+                            warnings.warn(
+                                "bad character in group name %s at position %d" %
+                                (repr(condname) if source.istext else ascii(condname),
+                                 source.tell() - len(condname) - 1),
+                                DeprecationWarning, stacklevel=nested + 6
+                            )
                     state.checklookbehindgroup(condgroup, source)
                     item_yes = _parse(source, state, verbose, nested + 1)
                     if source.match("|"):
@@ -822,8 +831,7 @@ def _parse(source, state, verbose, nested, first=False):
                             raise source.error('global flags not at the start '
                                                'of the expression',
                                                source.tell() - start)
-                        if (state.flags & SRE_FLAG_VERBOSE) and not verbose:
-                            raise Verbose
+                        verbose = state.flags & SRE_FLAG_VERBOSE
                         continue
 
                     add_flags, del_flags = flags
@@ -959,22 +967,17 @@ def parse(str, flags=0, state=None):
     state.flags = flags
     state.str = str
 
-    try:
-        p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
-    except Verbose:
-        # the VERBOSE flag was switched on inside the pattern.  to be
-        # on the safe side, we'll parse the whole thing again...
-        state = State()
-        state.flags = flags | SRE_FLAG_VERBOSE
-        state.str = str
-        source.seek(0)
-        p = _parse_sub(source, state, True, 0)
-
+    p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
     p.state.flags = fix_flags(str, p.state.flags)
 
     if source.next is not None:
         assert source.next == ")"
         raise source.error("unbalanced parenthesis")
+
+    for g in p.state.grouprefpos:
+        if g >= p.state.groups:
+            msg = "invalid group reference %d" % g
+            raise error(msg, str, p.state.grouprefpos[g])
 
     if flags & SRE_FLAG_DEBUG:
         p.dump()
@@ -1007,26 +1010,28 @@ def parse_template(source, state):
             # group
             c = this[1]
             if c == "g":
-                name = ""
                 if not s.match("<"):
                     raise s.error("missing <")
                 name = s.getuntil(">", "group name")
-                if name.isidentifier():
+                if not (name.isdecimal() and name.isascii()):
+                    s.checkgroupname(name, 1)
                     try:
                         index = groupindex[name]
                     except KeyError:
-                        raise IndexError("unknown group name %r" % name)
+                        raise IndexError("unknown group name %r" % name) from None
                 else:
-                    try:
-                        index = int(name)
-                        if index < 0:
-                            raise ValueError
-                    except ValueError:
-                        raise s.error("bad character in group name %r" % name,
-                                      len(name) + 1) from None
+                    index = int(name)
                     if index >= MAXGROUPS:
                         raise s.error("invalid group reference %d" % index,
                                       len(name) + 1)
+                    if not (name.isdecimal() and name.isascii()):
+                        import warnings
+                        warnings.warn(
+                            "bad character in group name %s at position %d" %
+                            (repr(name) if s.istext else ascii(name),
+                             s.tell() - len(name) - 1),
+                            DeprecationWarning, stacklevel=5
+                        )
                 addgroup(index, len(name) + 1)
             elif c == "0":
                 if s.next in OCTDIGITS:
@@ -1054,7 +1059,7 @@ def parse_template(source, state):
                     this = chr(ESCAPES[this][1])
                 except KeyError:
                     if c in ASCIILETTERS:
-                        raise s.error('bad escape %s' % this, len(this))
+                        raise s.error('bad escape %s' % this, len(this)) from None
                 lappend(this)
         else:
             lappend(this)
@@ -1075,5 +1080,5 @@ def expand_template(template, match):
         for index, group in groups:
             literals[index] = g(group) or empty
     except IndexError:
-        raise error("invalid group reference %d" % index)
+        raise error("invalid group reference %d" % index) from None
     return empty.join(literals)

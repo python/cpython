@@ -206,7 +206,7 @@ headers.
 
    The ``decoded`` value of the header will have all encoded words decoded to
    unicode.  :class:`~encodings.idna` encoded domain names are also decoded to
-   unicode.  The ``decoded`` value is set by :attr:`~str.join`\ ing the
+   unicode.  The ``decoded`` value is set by :ref:`joining <meth-str-join>` the
    :class:`str` value of the elements of the ``groups`` attribute with ``',
    '``.
 

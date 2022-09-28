@@ -1,1 +1,0 @@
-Allow vendors to override :const:`CTYPES_MAX_ARGCOUNT`.
