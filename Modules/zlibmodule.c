@@ -1571,7 +1571,7 @@ success:
 
 
 static PyObject *
-decompress(ZlibDecompressor *self, PyTypeObject *cls, uint8_t *data, 
+decompress(ZlibDecompressor *self, uint8_t *data, 
            size_t len, Py_ssize_t max_length)
 {
     char input_buffer_in_use;
@@ -1685,7 +1685,6 @@ error:
 /*[clinic input]
 zlib.ZlibDecompressor.decompress
 
-    cls: defining_class
     data: Py_buffer
     max_length: Py_ssize_t=-1
 
@@ -1707,9 +1706,8 @@ the unused_data attribute.
 
 static PyObject *
 zlib_ZlibDecompressor_decompress_impl(ZlibDecompressor *self,
-                                      PyTypeObject *cls, Py_buffer *data,
-                                      Py_ssize_t max_length)
-/*[clinic end generated code: output=62a74845fde185c1 input=e16759033492a273]*/
+                                      Py_buffer *data, Py_ssize_t max_length)
+/*[clinic end generated code: output=990d32787b775f85 input=0b29d99715250b96]*/
 
 {
     PyObject *result = NULL;
@@ -1718,7 +1716,7 @@ zlib_ZlibDecompressor_decompress_impl(ZlibDecompressor *self,
     if (self->eof)
         PyErr_SetString(PyExc_EOFError, "End of stream already reached");
     else
-        result = decompress(self, cls, data->buf, data->len, max_length);
+        result = decompress(self, data->buf, data->len, max_length);
     LEAVE_ZLIB(self);
     return result;
 }

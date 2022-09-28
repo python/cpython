@@ -917,20 +917,19 @@ PyDoc_STRVAR(zlib_ZlibDecompressor_decompress__doc__,
 "the unused_data attribute.");
 
 #define ZLIB_ZLIBDECOMPRESSOR_DECOMPRESS_METHODDEF    \
-    {"decompress", _PyCFunction_CAST(zlib_ZlibDecompressor_decompress), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_ZlibDecompressor_decompress__doc__},
+    {"decompress", _PyCFunction_CAST(zlib_ZlibDecompressor_decompress), METH_FASTCALL|METH_KEYWORDS, zlib_ZlibDecompressor_decompress__doc__},
 
 static PyObject *
 zlib_ZlibDecompressor_decompress_impl(ZlibDecompressor *self,
-                                      PyTypeObject *cls, Py_buffer *data,
-                                      Py_ssize_t max_length);
+                                      Py_buffer *data, Py_ssize_t max_length);
 
 static PyObject *
-zlib_ZlibDecompressor_decompress(ZlibDecompressor *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_ZlibDecompressor_decompress(ZlibDecompressor *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 3
+    #define NUM_KEYWORDS 2
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -985,7 +984,7 @@ zlib_ZlibDecompressor_decompress(ZlibDecompressor *self, PyTypeObject *cls, PyOb
         max_length = ival;
     }
 skip_optional_pos:
-    return_value = zlib_ZlibDecompressor_decompress_impl(self, cls, &data, max_length);
+    return_value = zlib_ZlibDecompressor_decompress_impl(self, &data, max_length);
 
 exit:
     /* Cleanup for data */
@@ -1130,4 +1129,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=3dd7ac714bdbde08 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=57ff7b511ab23132 input=a9049054013a1b77]*/
