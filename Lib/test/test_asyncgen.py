@@ -382,7 +382,8 @@ class AsyncGenTest(unittest.TestCase):
         async def gen():
             yield 123
 
-        with self.assertWarns(DeprecationWarning):
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=DeprecationWarning)
             gen().athrow(GeneratorExit, GeneratorExit(), None)
 
     def test_async_gen_api_01(self):
