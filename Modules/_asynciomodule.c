@@ -18,6 +18,11 @@ module _asyncio
 
 /* State of the _asyncio module */
 typedef struct {
+    PyTypeObject *FutureIterType;
+    PyTypeObject *TaskStepMethWrapper_Type;
+    PyTypeObject *FutureType;
+    PyTypeObject *TaskType;
+    PyTypeObject *PyRunningLoopHolder_Type;
 } asyncio_state;
 
 static asyncio_state global_state;
@@ -28,8 +33,6 @@ get_asyncio_state(PyObject *Py_UNUSED(mod))
     return &global_state;
 }
 
-static PyTypeObject *FutureIterType;
-static PyTypeObject *TaskStepMethWrapper_Type;
 static PyObject *asyncio_mod;
 static PyObject *traceback_extract_stack;
 static PyObject *asyncio_get_event_loop_policy;
@@ -114,16 +117,11 @@ typedef struct {
 } PyRunningLoopHolder;
 
 
-static PyTypeObject *FutureType;
-static PyTypeObject *TaskType;
-static PyTypeObject *PyRunningLoopHolder_Type;
+#define Future_CheckExact(state, obj) Py_IS_TYPE(obj, state->FutureType)
+#define Task_CheckExact(state, obj) Py_IS_TYPE(obj, state->TaskType)
 
-
-#define Future_CheckExact(obj) Py_IS_TYPE(obj, FutureType)
-#define Task_CheckExact(obj) Py_IS_TYPE(obj, TaskType)
-
-#define Future_Check(obj) PyObject_TypeCheck(obj, FutureType)
-#define Task_Check(obj) PyObject_TypeCheck(obj, TaskType)
+#define Future_Check(state, obj) PyObject_TypeCheck(obj, state->FutureType)
+#define Task_Check(state, obj) PyObject_TypeCheck(obj, state->TaskType)
 
 #include "clinic/_asynciomodule.c.h"
 
@@ -211,7 +209,8 @@ get_future_loop(PyObject *fut)
 
     PyObject *getloop;
 
-    if (Future_CheckExact(fut) || Task_CheckExact(fut)) {
+    asyncio_state *state = get_asyncio_state(NULL);
+    if (Future_CheckExact(state, fut) || Task_CheckExact(state, fut)) {
         PyObject *loop = ((FutureObj *)fut)->fut_loop;
         Py_INCREF(loop);
         return loop;
@@ -234,6 +233,7 @@ static int
 get_running_loop(PyObject **loop)
 {
     PyObject *rl;
+    asyncio_state *state = get_asyncio_state(NULL);
 
     PyThreadState *ts = _PyThreadState_GET();
     uint64_t ts_id = PyThreadState_GetID(ts);
@@ -262,7 +262,7 @@ get_running_loop(PyObject **loop)
         cached_running_holder_tsid = ts_id;
     }
 
-    assert(Py_IS_TYPE(rl, PyRunningLoopHolder_Type));
+    assert(Py_IS_TYPE(rl, state->PyRunningLoopHolder_Type));
     PyObject *running_loop = ((PyRunningLoopHolder *)rl)->rl_loop;
 
     if (running_loop == Py_None) {
@@ -418,12 +418,13 @@ future_ensure_alive(FutureObj *fut)
 }
 
 
-#define ENSURE_FUTURE_ALIVE(fut)                                \
-    do {                                                        \
-        assert(Future_Check(fut) || Task_Check(fut));           \
-        if (future_ensure_alive((FutureObj*)fut)) {             \
-            return NULL;                                        \
-        }                                                       \
+#define ENSURE_FUTURE_ALIVE(fut)                                    \
+    do {                                                            \
+        asyncio_state *state = get_asyncio_state(NULL);             \
+        assert(Future_Check(state, fut) || Task_Check(state, fut)); \
+        if (future_ensure_alive((FutureObj*)fut)) {                 \
+            return NULL;                                            \
+        }                                                           \
     } while(0);
 
 
@@ -1538,7 +1539,8 @@ FutureObj_dealloc(PyObject *self)
 {
     FutureObj *fut = (FutureObj *)self;
 
-    if (Future_CheckExact(fut)) {
+    asyncio_state *state = get_asyncio_state(NULL);
+    if (Future_CheckExact(state, fut)) {
         /* When fut is subclass of Future, finalizer is called from
          * subtype_dealloc.
          */
@@ -1783,7 +1785,8 @@ future_new_iter(PyObject *fut)
 {
     futureiterobject *it;
 
-    if (!Future_Check(fut)) {
+    asyncio_state *state = get_asyncio_state(NULL);
+    if (!Future_Check(state, fut)) {
         PyErr_BadInternalCall();
         return NULL;
     }
@@ -1798,7 +1801,8 @@ future_new_iter(PyObject *fut)
         _Py_NewReference((PyObject*) it);
     }
     else {
-        it = PyObject_GC_New(futureiterobject, FutureIterType);
+        asyncio_state *state = get_asyncio_state(NULL);
+        it = PyObject_GC_New(futureiterobject, state->FutureIterType);
         if (it == NULL) {
             return NULL;
         }
@@ -1905,7 +1909,8 @@ static PyObject *
 TaskStepMethWrapper_new(TaskObj *task, PyObject *arg)
 {
     TaskStepMethWrapper *o;
-    o = PyObject_GC_New(TaskStepMethWrapper, TaskStepMethWrapper_Type);
+    asyncio_state *state = get_asyncio_state(NULL);
+    o = PyObject_GC_New(TaskStepMethWrapper, state->TaskStepMethWrapper_Type);
     if (o == NULL) {
         return NULL;
     }
@@ -2589,7 +2594,8 @@ TaskObj_dealloc(PyObject *self)
 {
     TaskObj *task = (TaskObj *)self;
 
-    if (Task_CheckExact(self)) {
+    asyncio_state *state = get_asyncio_state(NULL);
+    if (Task_CheckExact(state, self)) {
         /* When fut is subclass of Task, finalizer is called from
          * subtype_dealloc.
          */
@@ -2822,7 +2828,8 @@ task_step_impl(TaskObj *task, PyObject *exc)
     }
 
     /* Check if `result` is FutureObj or TaskObj (and not a subclass) */
-    if (Future_CheckExact(result) || Task_CheckExact(result)) {
+    asyncio_state *state = get_asyncio_state(NULL);
+    if (Future_CheckExact(state, result) || Task_CheckExact(state, result)) {
         PyObject *wrapper;
         PyObject *tmp;
         FutureObj *fut = (FutureObj*)result;
@@ -3055,7 +3062,8 @@ task_wakeup(TaskObj *task, PyObject *o)
     PyObject *result;
     assert(o);
 
-    if (Future_CheckExact(o) || Task_CheckExact(o)) {
+    asyncio_state *state = get_asyncio_state(NULL);
+    if (Future_CheckExact(state, o) || Task_CheckExact(state, o)) {
         PyObject *fut_result = NULL;
         int res = future_get_result((FutureObj*)o, &fut_result);
 
@@ -3300,8 +3308,9 @@ _asyncio__leave_task_impl(PyObject *module, PyObject *loop, PyObject *task)
 static PyRunningLoopHolder *
 new_running_loop_holder(PyObject *loop)
 {
+    asyncio_state *state = get_asyncio_state(NULL);
     PyRunningLoopHolder *rl = PyObject_GC_New(
-        PyRunningLoopHolder, PyRunningLoopHolder_Type);
+        PyRunningLoopHolder, state->PyRunningLoopHolder_Type);
     if (rl == NULL) {
         return NULL;
     }
@@ -3539,6 +3548,7 @@ PyInit__asyncio(void)
     if (m == NULL) {
         return NULL;
     }
+    asyncio_state *state = get_asyncio_state(m);
 
 #define CREATE_TYPE(m, tp, spec, base)                                  \
     do {                                                                \
@@ -3549,20 +3559,20 @@ PyInit__asyncio(void)
         }                                                               \
     } while (0)
 
-    CREATE_TYPE(m, TaskStepMethWrapper_Type, &TaskStepMethWrapper_spec, NULL);
-    CREATE_TYPE(m, PyRunningLoopHolder_Type, &PyRunningLoopHolder_spec, NULL);
-    CREATE_TYPE(m, FutureIterType, &FutureIter_spec, NULL);
-    CREATE_TYPE(m, FutureType, &Future_spec, NULL);
-    CREATE_TYPE(m, TaskType, &Task_spec, FutureType);
+    CREATE_TYPE(m, state->TaskStepMethWrapper_Type, &TaskStepMethWrapper_spec, NULL);
+    CREATE_TYPE(m, state->PyRunningLoopHolder_Type, &PyRunningLoopHolder_spec, NULL);
+    CREATE_TYPE(m, state->FutureIterType, &FutureIter_spec, NULL);
+    CREATE_TYPE(m, state->FutureType, &Future_spec, NULL);
+    CREATE_TYPE(m, state->TaskType, &Task_spec, state->FutureType);
 
 #undef CREATE_TYPE
 
-    if (PyModule_AddType(m, FutureType) < 0) {
+    if (PyModule_AddType(m, state->FutureType) < 0) {
         Py_DECREF(m);
         return NULL;
     }
 
-    if (PyModule_AddType(m, TaskType) < 0) {
+    if (PyModule_AddType(m, state->TaskType) < 0) {
         Py_DECREF(m);
         return NULL;
     }
