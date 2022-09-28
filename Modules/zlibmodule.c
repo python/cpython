@@ -1763,6 +1763,12 @@ ZlibDecompressor__new__(PyTypeObject *cls,
         Py_CLEAR(self);
         return NULL;
     }
+    self->lock = PyThread_allocate_lock();
+    if (self->lock == NULL) {
+        Py_DECREF(self);
+        PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
+        return NULL;
+    }
     int err = inflateInit2(&(self->zst), wbits);
     switch (err) {
         case Z_OK:
