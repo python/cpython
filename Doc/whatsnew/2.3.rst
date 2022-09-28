@@ -1231,7 +1231,7 @@ complete list of changes, or look through the CVS logs for all the details.
   repeat an array. (Contributed by Jason Orendorff.)
 
 * The :mod:`bsddb` module has been replaced by version 4.1.6 of the `PyBSDDB
-  <http://pybsddb.sourceforge.net>`_ package, providing a more complete interface
+  <https://pybsddb.sourceforge.net>`_ package, providing a more complete interface
   to the transactional features of the BerkeleyDB library.
 
   The old version of the module has been renamed to  :mod:`bsddb185` and is no

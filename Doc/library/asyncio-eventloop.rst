@@ -1,6 +1,8 @@
 .. currentmodule:: asyncio
 
 
+.. _asyncio-event-loop:
+
 ==========
 Event Loop
 ==========
@@ -92,7 +94,7 @@ This documentation page contains the following sections:
   loop APIs.
 
 
-.. _asyncio-event-loop:
+.. _asyncio-event-loop-methods:
 
 Event Loop Methods
 ==================
@@ -1607,6 +1609,7 @@ Do not instantiate the class directly.
 
 
 .. _asyncio-event-loops:
+.. _asyncio-event-loop-implementations:
 
 Event Loop Implementations
 ==========================
@@ -1653,7 +1656,7 @@ on Unix and :class:`ProactorEventLoop` on Windows.
 
    Abstract base class for asyncio-compliant event loops.
 
-   The :ref:`Event Loop Methods <asyncio-event-loop>` section lists all
+   The :ref:`asyncio-event-loop-methods` section lists all
    methods that an alternative implementation of ``AbstractEventLoop``
    should have defined.
 
