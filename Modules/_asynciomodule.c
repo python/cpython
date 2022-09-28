@@ -75,6 +75,31 @@ get_asyncio_state(PyObject *Py_UNUSED(mod))
     return &global_state;
 }
 
+static inline asyncio_state *
+get_asyncio_state_by_cls(PyTypeObject *cls)
+{
+    /*
+    asyncio_state *state = (asyncio_state *)PyType_GetModuleState(cls);
+    assert(state != NULL);
+    return state;
+    */
+    return &global_state;
+}
+
+static struct PyModuleDef _asynciomodule;
+
+static inline asyncio_state *
+get_asyncio_state_by_def(PyObject *self)
+{
+    /*
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject *mod = PyType_GetModuleByDef(tp, &_asynciomodule);
+    assert(mod != NULL);
+    return get_asyncio_state(mod);
+    */
+    return get_asyncio_state(NULL);
+}
+
 typedef enum {
     STATE_PENDING,
     STATE_CANCELLED,
@@ -1995,16 +2020,9 @@ register_task(PyObject *task)
 static int
 unregister_task(PyObject *task)
 {
-<<<<<<< HEAD
-    PyObject *res = PyObject_CallMethodOneArg(all_tasks,
-                                     &_Py_ID(discard), task);
-=======
-    _Py_IDENTIFIER(discard);
-
     asyncio_state *state = get_asyncio_state(NULL);
-    PyObject *res = _PyObject_CallMethodIdOneArg(state->all_tasks,
-                                                 &PyId_discard, task);
->>>>>>> 11da6fbe0b (Put imports into module state)
+    PyObject *res = PyObject_CallMethodOneArg(state->all_tasks,
+                                     &_Py_ID(discard), task);
     if (res == NULL) {
         return -1;
     }
