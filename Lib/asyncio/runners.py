@@ -162,7 +162,7 @@ def run(main, *, debug=None):
 
     This function runs the passed coroutine, taking care of
     managing the asyncio event loop, finalizing asynchronous
-    generators and closing the executor.
+    generators and closing the default executor.
 
     This function cannot be called when another asyncio event loop is
     running in the same thread.
