@@ -1359,7 +1359,6 @@ typedef struct {
     PyObject *zdict;
     PyThread_type_lock lock;
     PyObject *unused_data;
-    PyObject *zdict;
     uint8_t *input_buffer;
     Py_ssize_t input_buffer_size;
     /* zst>avail_in is only 32 bit, so we store the true length
@@ -1372,11 +1371,9 @@ typedef struct {
 } ZlibDecompressor;
 
 /*[clinic input]
-module zlib
-class zlib.Compress "compobject *" "&Comptype"
 class zlib.ZlibDecompressor "ZlibDecompressor *" "&ZlibDecompressorType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=fc826e280aec6432]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=0658178ab94645df]*/
 
 static void
 ZlibDecompressor_dealloc(ZlibDecompressor *self)
@@ -1386,7 +1383,6 @@ ZlibDecompressor_dealloc(ZlibDecompressor *self)
     if (self->is_initialised) {
         inflateEnd(&self->zst);
     }
-    Dealloc(self);
     PyMem_Free(self->input_buffer);
     Py_CLEAR(self->unused_data);
     Py_CLEAR(self->zdict);
@@ -1394,11 +1390,28 @@ ZlibDecompressor_dealloc(ZlibDecompressor *self)
     Py_DECREF(type);
 }
 
-static inline void
-arrange_input_buffer(uint32_t *avail_in, Py_ssize_t *remains)
+static int
+set_inflate_zdict_ZlibDecompressor(zlibstate *state, ZlibDecompressor *self)
 {
-    *avail_in = (uint32_t)Py_MIN((size_t)*remains, UINT32_MAX);
-    *remains -= *avail_in;
+    Py_buffer zdict_buf;
+    if (PyObject_GetBuffer(self->zdict, &zdict_buf, PyBUF_SIMPLE) == -1) {
+        return -1;
+    }
+    if ((size_t)zdict_buf.len > UINT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "zdict length does not fit in an unsigned int");
+        PyBuffer_Release(&zdict_buf);
+        return -1;
+    }
+    int err;
+    err = inflateSetDictionary(&self->zst,
+                               zdict_buf.buf, (unsigned int)zdict_buf.len);
+    PyBuffer_Release(&zdict_buf);
+    if (err != Z_OK) {
+        zlib_error(state, self->zst, err, "while setting zdict");
+        return -1;
+    }
+    return 0;
 }
 
 static Py_ssize_t
@@ -1470,8 +1483,8 @@ decompress_buf(ZlibDecompressor *self, Py_ssize_t max_length)
     Py_ssize_t hard_limit;
     Py_ssize_t obuflen;
     zlibstate *state = PyType_GetModuleState(Py_TYPE(self));
-
-    int err;
+    
+    int err = Z_OK;
 
     /* In Python 3.10 sometimes sys.maxsize is passed by default. In those cases
        we do want to use DEF_BUF_SIZE as start buffer. */
@@ -1492,7 +1505,7 @@ decompress_buf(ZlibDecompressor *self, Py_ssize_t max_length)
     }
 
     do {
-        arrange_input_buffer(&(self->zst.avail_in), &(self->avail_in_real));
+        arrange_input_buffer(&(self->zst), &(self->avail_in_real));
 
         do {
             obuflen = arrange_output_buffer_with_maximum(&(self->zst.avail_out),
@@ -1620,7 +1633,7 @@ decompress(ZlibDecompressor *self, PyTypeObject *cls, uint8_t *data,
 
         if (self->avail_in_real > 0) {
             PyObject *unused_data = PyBytes_FromStringAndSize(
-                self->zst.next_in, self->avail_in_real);
+                (char *)self->zst.next_in, self->avail_in_real);
             if (unused_data == NULL) {
                 goto error;
             }
@@ -1738,7 +1751,6 @@ ZlibDecompressor__new__(PyTypeObject *cls,
         return NULL;
     }
     ZlibDecompressor *self = PyObject_New(ZlibDecompressor, cls); 
-    int err;
     self->eof = 0;
     self->needs_input = 1;
     self->avail_in_real = 0;
@@ -1759,7 +1771,7 @@ ZlibDecompressor__new__(PyTypeObject *cls,
         self->is_initialised = 1;
         if (self->zdict != NULL && wbits < 0) {
 #ifdef AT_LEAST_ZLIB_1_2_2_1
-            if (set_inflate_zdict(state, self) < 0) {
+            if (set_inflate_zdict_ZlibDecompressor(state, self) < 0) {
                 Py_DECREF(self);
                 return NULL;
             }
@@ -1963,7 +1975,7 @@ static PyType_Slot ZlibDecompressor_type_slots[] = {
     {Py_tp_dealloc, ZlibDecompressor_dealloc},
     {Py_tp_members, ZlibDecompressor_members},
     {Py_tp_new, ZlibDecompressor__new__},
-    {Py_tp_doc, ZlibDecompressor__new____doc__},
+    {Py_tp_doc, (char *)ZlibDecompressor__new____doc__},
     {Py_tp_methods, ZlibDecompressor_methods},
     {0, 0},
 };
@@ -2056,7 +2068,7 @@ zlib_exec(PyObject *mod)
     }
     Py_INCREF(state->ZlibDecompressorType);
     if (PyModule_AddObject(mod, "_ZlibDecompressor", 
-                           state->ZlibDecompressorType) < 0) {
+                           (PyObject *)state->ZlibDecompressorType) < 0) {
         Py_DECREF(state->ZlibDecompressorType);
         return -1;
     }
