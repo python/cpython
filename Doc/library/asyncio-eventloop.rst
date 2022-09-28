@@ -189,7 +189,7 @@ Running and stopping the loop
 
    The *timeout* parameter specifies the amount of time the executor will
    be given to finish joining. The default value is ``None``, which means the
-   executor will be given an indefinite amount of time.
+   executor will be given an unlimited amount of time.
 
    If the timeout duration is reached, a warning is emitted and executor is
    terminated without waiting for its threads to finish joining.
