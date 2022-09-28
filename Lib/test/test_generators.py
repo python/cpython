@@ -2113,30 +2113,30 @@ caught ValueError ()
 >>> g.throw(ValueError("xyz"))  # value only
 caught ValueError (xyz)
 
->>> import warnings
->>> warnings.filterwarnings("ignore", category=DeprecationWarning)
-
-# Filter DeprecationWarning: regarding the (type, val, tb) signature of throw().
-# Deprecation warnings are re-enabled below.
-
 >>> g.throw(ValueError, ValueError(1))   # value+matching type
-caught ValueError (1)
+Traceback (most recent call last):
+  ...
+DeprecationWarning: the (type, exc, tb) signature of throw() is deprecated, use the single-arg signature instead.
 
 >>> g.throw(ValueError, TypeError(1))  # mismatched type, rewrapped
-caught ValueError (1)
+Traceback (most recent call last):
+  ...
+DeprecationWarning: the (type, exc, tb) signature of throw() is deprecated, use the single-arg signature instead.
 
 >>> g.throw(ValueError, ValueError(1), None)   # explicit None traceback
-caught ValueError (1)
+Traceback (most recent call last):
+  ...
+DeprecationWarning: the (type, exc, tb) signature of throw() is deprecated, use the single-arg signature instead.
 
 >>> g.throw(ValueError(1), "foo")       # bad args
 Traceback (most recent call last):
   ...
-TypeError: instance exception may not have a separate value
+DeprecationWarning: the (type, exc, tb) signature of throw() is deprecated, use the single-arg signature instead.
 
 >>> g.throw(ValueError, "foo", 23)      # bad args
 Traceback (most recent call last):
   ...
-TypeError: throw() third argument must be a traceback object
+DeprecationWarning: the (type, exc, tb) signature of throw() is deprecated, use the single-arg signature instead.
 
 >>> g.throw("abc")
 Traceback (most recent call last):
@@ -2159,7 +2159,9 @@ TypeError: exceptions must be classes or instances deriving from BaseException, 
 ...     except:
 ...         g.throw(*sys.exc_info())
 >>> throw(g,ValueError) # do it with traceback included
-caught ValueError ()
+Traceback (most recent call last):
+  ...
+DeprecationWarning: the (type, exc, tb) signature of throw() is deprecated, use the single-arg signature instead.
 
 >>> g.send(1)
 1
@@ -2167,31 +2169,17 @@ caught ValueError ()
 >>> throw(g,TypeError)  # terminate the generator
 Traceback (most recent call last):
   ...
-TypeError
-
->>> print(g.gi_frame)
-None
-
->>> g.send(2)
-Traceback (most recent call last):
-  ...
-StopIteration
+DeprecationWarning: the (type, exc, tb) signature of throw() is deprecated, use the single-arg signature instead.
 
 >>> g.throw(ValueError,6)       # throw on closed generator
 Traceback (most recent call last):
   ...
-ValueError: 6
+DeprecationWarning: the (type, exc, tb) signature of throw() is deprecated, use the single-arg signature instead.
 
 >>> f().throw(ValueError,7)     # throw on just-opened generator
 Traceback (most recent call last):
   ...
-ValueError: 7
-
->>> warnings.filters.pop(0)
-('ignore', None, <class 'DeprecationWarning'>, None, 0)
-
-# Re-enable DeprecationWarning: the (type, val, tb) exception representation is deprecated,
-#                               and may be removed in a future version of Python.
+DeprecationWarning: the (type, exc, tb) signature of throw() is deprecated, use the single-arg signature instead.
 
 Plain "raise" inside a generator should preserve the traceback (#13188).
 The traceback should have 3 levels:
