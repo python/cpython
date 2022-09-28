@@ -1052,7 +1052,11 @@ _asyncio_Future_remove_done_callback(FutureObj *self, PyObject *fn)
         return NULL;
     }
 
-    for (i = 0; i < PyList_GET_SIZE(self->fut_callbacks); i++) {
+    // Beware: PyObject_RichCompareBool below may change fut_callbacks.
+    // See GH-97592.
+    for (i = 0;
+         self->fut_callbacks != NULL && i < PyList_GET_SIZE(self->fut_callbacks);
+         i++) {
         int ret;
         PyObject *item = PyList_GET_ITEM(self->fut_callbacks, i);
         Py_INCREF(item);
@@ -1071,7 +1075,8 @@ _asyncio_Future_remove_done_callback(FutureObj *self, PyObject *fn)
         }
     }
 
-    if (j == 0) {
+    // Note: fut_callbacks may have been cleared.
+    if (j == 0 || self->fut_callbacks == NULL) {
         Py_CLEAR(self->fut_callbacks);
         Py_DECREF(newlist);
         return PyLong_FromSsize_t(len + cleared_callback0);
