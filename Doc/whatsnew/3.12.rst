@@ -86,6 +86,12 @@ Other Language Changes
 * :class:`memoryview` now supports the half-float type (the "e" format code).
   (Contributed by Dong-hee Na and Antoine Pitrou in :gh:`90751`.)
 
+* The parser now raises :exc:`SyntaxError` when parsing source code containing
+  null bytes. (Contributed by Pablo Galindo in :gh:`96670`.)
+
+* :func:`ast.parse` now raises :exc:`SyntaxError` instead of :exc:`ValueError`
+  when parsing source code containing null bytes. (Contributed by Pablo Galindo
+  in :gh:`96670`.)
 
 New Modules
 ===========
