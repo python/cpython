@@ -8,7 +8,8 @@ if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
 
-set VIRTUAL_ENV=__VENV_DIR__
+rem Set VIRTUAL_ENV dynamically as parent of this dir so we can move / rename the tree
+for %%I in ("%~dp0..") do set VIRTUAL_ENV=%%~fI
 
 if not defined PROMPT set PROMPT=$P$G
 
