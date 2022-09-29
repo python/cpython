@@ -836,11 +836,17 @@ which incur interpreter overhead.
        return starmap(func, repeat(args, times))
 
    def grouper(iterable, n, *, incomplete='fill', fillvalue=None):
-       "Collect data into non-overlapping fixed-length chunks or blocks"
+       "Collect data into non-overlapping chunks or batches"
        # grouper('ABCDEFG', 3, fillvalue='x') --> ABC DEF Gxx
+       # grouper('ABCDEFG', 3, incomplete='partial') --> ABC DEF G
        # grouper('ABCDEFG', 3, incomplete='strict') --> ABC DEF ValueError
        # grouper('ABCDEFG', 3, incomplete='ignore') --> ABC DEF
-       args = [iter(iterable)] * n
+       it = iter(iterable)
+       if incomplete == 'partial':
+           while t := tuple(islice(it, n)):
+               yield t
+           return
+       args = [it] * n
        if incomplete == 'fill':
            return zip_longest(*args, fillvalue=fillvalue)
        if incomplete == 'strict':
@@ -848,7 +854,7 @@ which incur interpreter overhead.
        if incomplete == 'ignore':
            return zip(*args)
        else:
-           raise ValueError('Expected fill, strict, or ignore')
+           raise ValueError('Expected fill, partial, strict, or ignore')
 
    def triplewise(iterable):
        "Return overlapping triplets from an iterable"
@@ -1198,6 +1204,9 @@ which incur interpreter overhead.
 
     >>> list(grouper('abcdefg', 3, fillvalue='x'))
     [('a', 'b', 'c'), ('d', 'e', 'f'), ('g', 'x', 'x')]
+
+    >>> list(grouper('abcdefg', 3, incomplete='partial'))
+    [('a', 'b', 'c'), ('d', 'e', 'f'), ('g',)]
 
     >>> it = grouper('abcdefg', 3, incomplete='strict')
     >>> next(it)
