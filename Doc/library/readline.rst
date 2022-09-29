@@ -185,6 +185,7 @@ The following functions operate on a global history list:
    .. versionadded:: 3.6
 
    .. impl-detail::
+
       Auto history is enabled by default, and changes to this do not persist
       across multiple sessions.
 

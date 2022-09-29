@@ -240,6 +240,7 @@ SimpleQueue Objects
    for compatibility with :meth:`Queue.put`.
 
    .. impl-detail::
+
       This method has a C implementation which is reentrant.  That is, a
       ``put()`` or ``get()`` call can be interrupted by another ``put()``
       call in the same thread without deadlocking or corrupting internal

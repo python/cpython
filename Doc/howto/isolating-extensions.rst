@@ -265,6 +265,7 @@ or access. To limit the possible issues, static types are immutable at
 the Python level: for example, you can't set ``str.myattribute = 123``.
 
 .. impl-detail::
+
    Sharing truly immutable objects between interpreters is fine,
    as long as they don't provide access to mutable objects.
    However, in CPython, every Python object has a mutable implementation
