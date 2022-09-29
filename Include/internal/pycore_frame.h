@@ -47,7 +47,7 @@ enum _frameowner {
 
 typedef struct _PyInterpreterFrame {
     /* "Specials" section */
-    PyFunctionObject *f_func; /* Strong reference */
+    PyObject *f_funcobj; /* Strong reference */
     PyObject *f_globals; /* Borrowed reference */
     PyObject *f_builtins; /* Borrowed reference */
     PyObject *f_locals; /* Strong reference, may be NULL */
@@ -101,7 +101,7 @@ _PyFrame_InitializeSpecials(
     _PyInterpreterFrame *frame, PyFunctionObject *func,
     PyObject *locals, PyCodeObject *code)
 {
-    frame->f_func = func;
+    frame->f_funcobj = (PyObject *)func;
     frame->f_code = (PyCodeObject *)Py_NewRef(code);
     frame->f_builtins = func->func_builtins;
     frame->f_globals = func->func_globals;
@@ -134,6 +134,21 @@ _PyFrame_SetStackPointer(_PyInterpreterFrame *frame, PyObject **stack_pointer)
     frame->stacktop = (int)(stack_pointer - frame->localsplus);
 }
 
+/* Determine whether a frame is incomplete.
+ * A frame is incomplete if it is part way through
+ * creating cell objects or a generator or coroutine.
+ *
+ * Frames on the frame stack are incomplete until the
+ * first RESUME instruction.
+ * Frames owned by a generator are always complete.
+ */
+static inline bool
+_PyFrame_IsIncomplete(_PyInterpreterFrame *frame)
+{
+    return frame->owner != FRAME_OWNED_BY_GENERATOR &&
+    frame->prev_instr < _PyCode_CODE(frame->f_code) + frame->f_code->_co_firsttraceable;
+}
+
 /* For use by _PyFrame_GetFrameObject
   Do not call directly. */
 PyFrameObject *
@@ -145,6 +160,8 @@ _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame);
 static inline PyFrameObject *
 _PyFrame_GetFrameObject(_PyInterpreterFrame *frame)
 {
+
+    assert(!_PyFrame_IsIncomplete(frame));
     PyFrameObject *res =  frame->frame_obj;
     if (res != NULL) {
         return res;
@@ -173,11 +190,16 @@ _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame);
 void
 _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear);
 
-
 static inline bool
 _PyThreadState_HasStackSpace(PyThreadState *tstate, int size)
 {
-    return tstate->datastack_top + size < tstate->datastack_limit;
+    assert(
+        (tstate->datastack_top == NULL && tstate->datastack_limit == NULL)
+        ||
+        (tstate->datastack_top != NULL && tstate->datastack_limit != NULL)
+    );
+    return tstate->datastack_top != NULL &&
+        size < tstate->datastack_limit - tstate->datastack_top;
 }
 
 extern _PyInterpreterFrame *

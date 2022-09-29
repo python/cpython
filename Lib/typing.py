@@ -250,6 +250,9 @@ def _collect_parameters(args):
     """
     parameters = []
     for t in args:
+        # We don't want __parameters__ descriptor of a bare Python class.
+        if isinstance(t, type):
+            continue
         if hasattr(t, '__typing_subst__'):
             if t not in parameters:
                 parameters.append(t)
@@ -490,7 +493,9 @@ class _AnyMeta(type):
         return super().__instancecheck__(obj)
 
     def __repr__(self):
-        return "typing.Any"
+        if self is Any:
+            return "typing.Any"
+        return super().__repr__()  # respect to subclasses
 
 
 class Any(metaclass=_AnyMeta):
@@ -566,7 +571,7 @@ def Self(self, parameters):
       from typing import Self
 
       class Foo:
-          def returns_self(self) -> Self:
+          def return_self(self) -> Self:
               ...
               return self
 
@@ -954,6 +959,9 @@ class _BoundVarianceMixin:
             prefix = '~'
         return prefix + self.__name__
 
+    def __mro_entries__(self, bases):
+        raise TypeError(f"Cannot subclass an instance of {type(self).__name__}")
+
 
 class TypeVar(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
               _root=True):
@@ -1068,7 +1076,7 @@ class TypeVarTuple(_Final, _Immutable, _PickleUsingNameMixin, _root=True):
     def __typing_prepare_subst__(self, alias, args):
         params = alias.__parameters__
         typevartuple_index = params.index(self)
-        for param in enumerate(params[typevartuple_index + 1:]):
+        for param in params[typevartuple_index + 1:]:
             if isinstance(param, TypeVarTuple):
                 raise TypeError(f"More than one TypeVarTuple parameter in {alias}")
 
@@ -1101,6 +1109,9 @@ class TypeVarTuple(_Final, _Immutable, _PickleUsingNameMixin, _root=True):
             *args[alen - right:],
         )
 
+    def __mro_entries__(self, bases):
+        raise TypeError(f"Cannot subclass an instance of {type(self).__name__}")
+
 
 class ParamSpecArgs(_Final, _Immutable, _root=True):
     """The args for a ParamSpec object.
@@ -1125,6 +1136,9 @@ class ParamSpecArgs(_Final, _Immutable, _root=True):
             return NotImplemented
         return self.__origin__ == other.__origin__
 
+    def __mro_entries__(self, bases):
+        raise TypeError(f"Cannot subclass an instance of {type(self).__name__}")
+
 
 class ParamSpecKwargs(_Final, _Immutable, _root=True):
     """The kwargs for a ParamSpec object.
@@ -1148,6 +1162,9 @@ class ParamSpecKwargs(_Final, _Immutable, _root=True):
         if not isinstance(other, ParamSpecKwargs):
             return NotImplemented
         return self.__origin__ == other.__origin__
+
+    def __mro_entries__(self, bases):
+        raise TypeError(f"Cannot subclass an instance of {type(self).__name__}")
 
 
 class ParamSpec(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
@@ -2084,7 +2101,7 @@ class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):
         if isinstance(origin, _AnnotatedAlias):
             metadata = origin.__metadata__ + metadata
             origin = origin.__origin__
-        super().__init__(origin, origin)
+        super().__init__(origin, origin, name='Annotated')
         self.__metadata__ = metadata
 
     def copy_with(self, params):
@@ -2116,6 +2133,9 @@ class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):
         if attr in {'__name__', '__qualname__'}:
             return 'Annotated'
         return super().__getattr__(attr)
+
+    def __mro_entries__(self, bases):
+        return (self.__origin__,)
 
 
 class Annotated:

@@ -250,6 +250,7 @@ Android and Cygwin, whose cases are handled by the script);
 this change is backward incompatible on purpose.
 (Contributed by Victor Stinner in :issue:`36721`.)
 
+.. _bpo-36817-whatsnew:
 
 f-strings support ``=`` for self-documenting expressions and debugging
 ----------------------------------------------------------------------
@@ -1350,7 +1351,7 @@ unicodedata
 -----------
 
 The :mod:`unicodedata` module has been upgraded to use the `Unicode 12.1.0
-<http://blog.unicode.org/2019/05/unicode-12-1-en.html>`_ release.
+<https://blog.unicode.org/2019/05/unicode-12-1-en.html>`_ release.
 
 New function :func:`~unicodedata.is_normalized` can be used to verify a string
 is in a specific normal form, often much faster than by actually normalizing

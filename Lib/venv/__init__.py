@@ -128,6 +128,11 @@ class EnvBuilder:
         context.prompt = '(%s) ' % prompt
         create_if_needed(env_dir)
         executable = sys._base_executable
+        if not executable:  # see gh-96861
+            raise ValueError('Unable to determine path to the running '
+                             'Python interpreter. Provide an explicit path or '
+                             'check that your PATH environment variable is '
+                             'correctly set.')
         dirname, exename = os.path.split(os.path.abspath(executable))
         context.executable = executable
         context.python_dir = dirname
@@ -138,6 +143,7 @@ class EnvBuilder:
 
         context.inc_path = incpath
         create_if_needed(incpath)
+        context.lib_path = libpath
         create_if_needed(libpath)
         # Issue 21197: create lib64 as a symlink to lib on 64-bit non-OS X POSIX
         if ((sys.maxsize > 2**32) and (os.name == 'posix') and

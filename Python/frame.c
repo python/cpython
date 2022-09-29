@@ -13,7 +13,7 @@ _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
 {
     Py_VISIT(frame->frame_obj);
     Py_VISIT(frame->f_locals);
-    Py_VISIT(frame->f_func);
+    Py_VISIT(frame->f_funcobj);
     Py_VISIT(frame->f_code);
    /* locals */
     PyObject **locals = _PyFrame_GetLocalsArray(frame);
@@ -68,9 +68,13 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     f->f_frame = frame;
     frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
     assert(f->f_back == NULL);
-    if (frame->previous != NULL) {
+    _PyInterpreterFrame *prev = frame->previous;
+    while (prev && _PyFrame_IsIncomplete(prev)) {
+        prev = prev->previous;
+    }
+    if (prev) {
         /* Link PyFrameObjects.f_back and remove link through _PyInterpreterFrame.previous */
-        PyFrameObject *back = _PyFrame_GetFrameObject(frame->previous);
+        PyFrameObject *back = _PyFrame_GetFrameObject(prev);
         if (back == NULL) {
             /* Memory error here. */
             assert(PyErr_ExceptionMatches(PyExc_MemoryError));
@@ -110,7 +114,7 @@ _PyFrame_Clear(_PyInterpreterFrame *frame)
     }
     Py_XDECREF(frame->frame_obj);
     Py_XDECREF(frame->f_locals);
-    Py_DECREF(frame->f_func);
+    Py_DECREF(frame->f_funcobj);
     Py_DECREF(frame->f_code);
 }
 

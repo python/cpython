@@ -135,14 +135,14 @@ PyAPI_FUNC(PyVarObject *) _PyObject_NewVar(PyTypeObject *, Py_ssize_t);
 
 // Alias to PyObject_New(). In Python 3.8, PyObject_NEW() called directly
 // PyObject_MALLOC() with _PyObject_SIZE().
-#define PyObject_NEW(type, typeobj) PyObject_New((type), (typeobj))
+#define PyObject_NEW(type, typeobj) PyObject_New(type, (typeobj))
 
 #define PyObject_NewVar(type, typeobj, n) \
                 ( (type *) _PyObject_NewVar((typeobj), (n)) )
 
 // Alias to PyObject_NewVar(). In Python 3.8, PyObject_NEW_VAR() called
 // directly PyObject_MALLOC() with _PyObject_VAR_SIZE().
-#define PyObject_NEW_VAR(type, typeobj, n) PyObject_NewVar((type), (typeobj), (n))
+#define PyObject_NEW_VAR(type, typeobj, n) PyObject_NewVar(type, (typeobj), (n))
 
 
 /*

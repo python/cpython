@@ -35,7 +35,7 @@ debugging non-PythonWin programs.  PythonWin is available as part of
 as a part of the
 `ActivePython <https://www.activestate.com/products/python/>`_ distribution.
 
-`Eric <http://eric-ide.python-projects.org/>`_ is an IDE built on PyQt
+`Eric <https://eric-ide.python-projects.org/>`_ is an IDE built on PyQt
 and the Scintilla editing component.
 
 `trepan3k <https://github.com/rocky/python3-trepan/>`_ is a gdb-like debugger.
@@ -95,11 +95,11 @@ The following packages can help with the creation of console and GUI
 executables:
 
 * `Nuitka <https://nuitka.net/>`_ (Cross-platform)
-* `PyInstaller <http://www.pyinstaller.org/>`_ (Cross-platform)
+* `PyInstaller <https://pyinstaller.org/>`_ (Cross-platform)
 * `PyOxidizer <https://pyoxidizer.readthedocs.io/en/stable/>`_ (Cross-platform)
 * `cx_Freeze <https://marcelotduarte.github.io/cx_Freeze/>`_ (Cross-platform)
 * `py2app <https://github.com/ronaldoussoren/py2app>`_ (macOS only)
-* `py2exe <http://www.py2exe.org/>`_ (Windows only)
+* `py2exe <https://www.py2exe.org/>`_ (Windows only)
 
 Are there coding standards or a style guide for Python programs?
 ----------------------------------------------------------------
@@ -294,7 +294,7 @@ It's good practice if you import modules in the following order:
 1. standard library modules -- e.g. ``sys``, ``os``, ``getopt``, ``re``
 2. third-party library modules (anything installed in Python's site-packages
    directory) -- e.g. mx.DateTime, ZODB, PIL.Image, etc.
-3. locally-developed modules
+3. locally developed modules
 
 It is sometimes necessary to move imports to a function or class to avoid
 problems with circular imports.  Gordon McMillan says:
@@ -409,8 +409,9 @@ What is the difference between arguments and parameters?
 
 :term:`Parameters <parameter>` are defined by the names that appear in a
 function definition, whereas :term:`arguments <argument>` are the values
-actually passed to a function when calling it.  Parameters define what types of
-arguments a function can accept.  For example, given the function definition::
+actually passed to a function when calling it.  Parameters define what
+:term:`kind of arguments <parameter>` a function can accept.  For
+example, given the function definition::
 
    def func(foo, bar=None, **kwargs):
        pass
@@ -770,7 +771,7 @@ What does the slash(/) in the parameter list of a function mean?
 
 A slash in the argument list of a function denotes that the parameters prior to
 it are positional-only.  Positional-only parameters are the ones without an
-externally-usable name.  Upon calling a function that accepts positional-only
+externally usable name.  Upon calling a function that accepts positional-only
 parameters, arguments are mapped to parameters based solely on their position.
 For example, :func:`divmod` is a function that accepts positional-only
 parameters. Its documentation looks like this::
@@ -1065,7 +1066,7 @@ performance levels:
   detrimental to readability).
 
 If you have reached the limit of what pure Python can allow, there are tools
-to take you further away.  For example, `Cython <http://cython.org>`_ can
+to take you further away.  For example, `Cython <https://cython.org>`_ can
 compile a slightly modified version of Python code into a C extension, and
 can be used on many different platforms.  Cython can take advantage of
 compilation (and optional type annotations) to make your code significantly
@@ -1269,7 +1270,7 @@ use a list comprehension::
    A = [[None] * w for i in range(h)]
 
 Or, you can use an extension that provides a matrix datatype; `NumPy
-<http://www.numpy.org/>`_ is the best known.
+<https://numpy.org/>`_ is the best known.
 
 
 How do I apply a method to a sequence of objects?
@@ -1895,6 +1896,8 @@ The classes can be used like this:
     >>> TitleStr('Blog: Why Python Rocks')
     'blog-why-python-rocks'
 
+
+.. _faq-cache-method-calls:
 
 How do I cache method calls?
 ----------------------------

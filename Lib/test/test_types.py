@@ -1203,6 +1203,16 @@ class MappingProxyTests(unittest.TestCase):
         self.assertDictEqual(mapping, {'a': 0, 'b': 1, 'c': 2})
         self.assertDictEqual(other, {'c': 3, 'p': 0})
 
+    def test_hash(self):
+        class HashableDict(dict):
+            def __hash__(self):
+                return 3844817361
+        view = self.mappingproxy({'a': 1, 'b': 2})
+        self.assertRaises(TypeError, hash, view)
+        mapping = HashableDict({'a': 1, 'b': 2})
+        view = self.mappingproxy(mapping)
+        self.assertEqual(hash(view), hash(mapping))
+
 
 class ClassCreationTests(unittest.TestCase):
 

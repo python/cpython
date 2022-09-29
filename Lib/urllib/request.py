@@ -1990,9 +1990,17 @@ class URLopener:
 
     if _have_ssl:
         def _https_connection(self, host):
-            return http.client.HTTPSConnection(host,
-                                           key_file=self.key_file,
-                                           cert_file=self.cert_file)
+            if self.key_file or self.cert_file:
+                http_version = http.client.HTTPSConnection._http_vsn
+                context = http.client._create_https_context(http_version)
+                context.load_cert_chain(self.cert_file, self.key_file)
+                # cert and key file means the user wants to authenticate.
+                # enable TLS 1.3 PHA implicitly even for custom contexts.
+                if context.post_handshake_auth is not None:
+                    context.post_handshake_auth = True
+            else:
+                context = None
+            return http.client.HTTPSConnection(host, context=context)
 
         def open_https(self, url, data=None):
             """Use HTTPS protocol."""
