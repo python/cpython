@@ -912,6 +912,19 @@ cfg_builder_use_label(cfg_builder *g, jump_target_label lbl)
     return cfg_builder_maybe_start_new_block(g);
 }
 
+static inline int
+basicblock_append_instructions(basicblock *target, basicblock *source)
+{
+    for (int i = 0; i < source->b_iused; i++) {
+        int n = basicblock_next_instr(target);
+        if (n < 0) {
+            return -1;
+        }
+        target->b_instr[n] = source->b_instr[i];
+    }
+    return 0;
+}
+
 static basicblock *
 copy_basicblock(cfg_builder *g, basicblock *block)
 {
@@ -923,12 +936,8 @@ copy_basicblock(cfg_builder *g, basicblock *block)
     if (result == NULL) {
         return NULL;
     }
-    for (int i = 0; i < block->b_iused; i++) {
-        int n = basicblock_next_instr(result);
-        if (n < 0) {
-            return NULL;
-        }
-        result->b_instr[n] = block->b_instr[i];
+    if (basicblock_append_instructions(result, block) < 0) {
+        return NULL;
     }
     return result;
 }
@@ -9268,12 +9277,8 @@ inline_small_exit_blocks(basicblock *bb) {
     basicblock *target = last->i_target;
     if (basicblock_exits_scope(target) && target->b_iused <= MAX_COPY_SIZE) {
         last->i_opcode = NOP;
-        for (int i = 0; i < target->b_iused; i++) {
-            int index = basicblock_next_instr(bb);
-            if (index < 0) {
-                return -1;
-            }
-            bb->b_instr[index] = target->b_instr[i];
+        if (basicblock_append_instructions(bb, target) < 0) {
+            return -1;
         }
         return 1;
     }
