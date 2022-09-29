@@ -28,7 +28,7 @@
 
     <Variable Name="InstallAllUsers" Value="0" bal:Overridable="yes" />
     <?if "$(var.PyTestExt)"="" ?>
-    <Variable Name="InstallLauncherAllUsers" Value="1" bal:Overridable="yes" />
+    <Variable Name="InstallLauncherAllUsers" Value="0" bal:Overridable="yes" />
     <?else ?>
     <Variable Name="InstallLauncherAllUsers" Value="0" />
     <?endif ?>
