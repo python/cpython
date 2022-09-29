@@ -100,8 +100,6 @@ def source_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
 class ImplementationDetail(Directive):
 
     has_content = True
-    required_arguments = 0
-    optional_arguments = 1
     final_argument_whitespace = True
 
     # This text is copied to templates/dummy.html
@@ -112,9 +110,6 @@ class ImplementationDetail(Directive):
         label = translators['sphinx'].gettext(self.label_text)
         content = self.content
         add_text = nodes.strong(label, label)
-        if self.arguments:
-            n, m = self.state.inline_text(self.arguments[0], self.lineno)
-            pnode.append(nodes.paragraph('', '', *(n + m)))
         self.state.nested_parse(content, self.content_offset, pnode)
         if pnode.children and isinstance(pnode[0], nodes.paragraph):
             content = nodes.inline(pnode[0].rawsource, translatable=True)
