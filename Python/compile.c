@@ -7495,6 +7495,9 @@ convert_exception_handlers_to_nops(basicblock *entryblock) {
             }
         }
     }
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        remove_redundant_nops(b);
+    }
 }
 
 static inline void
@@ -8299,7 +8302,7 @@ dump_basicblock(const basicblock *b)
 
 
 static int
-calculate_jump_targets(basicblock *entryblock);
+translate_jump_labels_to_targets(basicblock *entryblock);
 
 static int
 optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache);
@@ -8637,7 +8640,7 @@ assemble(struct compiler *c, int addNone)
     nlocalsplus -= numdropped;
 
     /** Desugaring **/
-    if (calculate_jump_targets(g->g_entryblock)) {
+    if (translate_jump_labels_to_targets(g->g_entryblock)) {
         goto error;
     }
     if (mark_except_handlers(g->g_entryblock) < 0) {
@@ -8655,14 +8658,18 @@ assemble(struct compiler *c, int addNone)
     if (optimize_cfg(g, consts, c->c_const_cache)) {
         goto error;
     }
+
+    /** line numbers (TODO: move this to desugaring stage) */
     if (duplicate_exits_without_lineno(g) < 0) {
-        goto error;
-    }
-    if (push_cold_blocks_to_end(g, code_flags) < 0) {
         goto error;
     }
     propagate_line_numbers(g->g_entryblock);
     guarantee_lineno_for_exits(g->g_entryblock, c->u->u_firstlineno);
+
+    /** Assembly **/
+    if (push_cold_blocks_to_end(g, code_flags) < 0) {
+        goto error;
+    }
 
     int maxdepth = stackdepth(g->g_entryblock, code_flags);
     if (maxdepth < 0) {
@@ -8672,16 +8679,12 @@ assemble(struct compiler *c, int addNone)
 
     convert_exception_handlers_to_nops(g->g_entryblock);
 
-    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        remove_redundant_nops(b);
-    }
-
-    /** Assembly **/
     /* Order of basic blocks must have been determined by now */
     if (normalize_jumps(g) < 0) {
         goto error;
     }
 
+    /* TODO: move this into optimize_cfg */
     if (add_checks_for_loads_of_unknown_variables(g->g_entryblock, c) < 0) {
         goto error;
     }
@@ -8694,6 +8697,8 @@ assemble(struct compiler *c, int addNone)
     if (trim_unused_consts(g->g_entryblock, consts)) {
         goto error;
     }
+
+
 
     /* Create assembler */
     if (!assemble_init(&a, c->u->u_firstlineno))
@@ -9464,7 +9469,7 @@ propagate_line_numbers(basicblock *entryblock) {
 
 /* Calculate the actual jump target from the target_label */
 static int
-calculate_jump_targets(basicblock *entryblock)
+translate_jump_labels_to_targets(basicblock *entryblock)
 {
     int max_label = -1;
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
@@ -9783,7 +9788,7 @@ _PyCompile_OptimizeCfg(PyObject *instructions, PyObject *consts)
     if (const_cache == NULL) {
         goto error;
     }
-    if (calculate_jump_targets(g.g_entryblock)) {
+    if (translate_jump_labels_to_targets(g.g_entryblock)) {
         goto error;
     }
     if (optimize_cfg(&g, consts, const_cache) < 0) {
