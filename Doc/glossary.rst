@@ -144,7 +144,8 @@ Glossary
       It is possible to give an object an attribute whose name is not an
       identifier as defined by :ref:`identifiers`, for example using
       :func:`setattr`, if the object allows it.
-      Such an attribute will not be accessible using a dotted expression.
+      Such an attribute will not be accessible using a dotted expression,
+      and would instead need to be retrieved with :func:`getattr`.
 
    awaitable
       An object that can be used in an :keyword:`await` expression.  Can be
