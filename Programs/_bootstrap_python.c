@@ -65,6 +65,8 @@ main(int argc, char **argv)
 
     PyPreConfig preconfig;
     PyPreConfig_InitIsolatedConfig(&preconfig);
+    // To keep code simple, pre-initialization doesn't parse argv.
+    // It ignores -E, -I and -X dev command line options etc.
     // Force utf8 encoding
     preconfig.utf8_mode = 1;
     status = Py_PreInitialize(&preconfig);
