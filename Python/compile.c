@@ -8658,6 +8658,9 @@ assemble(struct compiler *c, int addNone)
     if (optimize_cfg(g, consts, c->c_const_cache)) {
         goto error;
     }
+    if (add_checks_for_loads_of_unknown_variables(g->g_entryblock, c) < 0) {
+        goto error;
+    }
 
     /** line numbers (TODO: move this to desugaring stage) */
     if (duplicate_exits_without_lineno(g) < 0) {
@@ -8684,11 +8687,6 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
-    /* TODO: move this into optimize_cfg */
-    if (add_checks_for_loads_of_unknown_variables(g->g_entryblock, c) < 0) {
-        goto error;
-    }
-
     assert(no_redundant_jumps(g));
 
     /* Can't modify the bytecode after computing jump offsets. */
@@ -8697,8 +8695,6 @@ assemble(struct compiler *c, int addNone)
     if (trim_unused_consts(g->g_entryblock, consts)) {
         goto error;
     }
-
-
 
     /* Create assembler */
     if (!assemble_init(&a, c->u->u_firstlineno))
