@@ -411,10 +411,11 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12a1 3505 (Specialization/Cache for FOR_ITER)
 #     Python 3.12a1 3506 (Add BINARY_SLICE and STORE_SLICE instructions)
 #     Python 3.12a1 3507 (Set lineno of module's RESUME to 0)
+#     Python 3.12a1 3508 (Add CLEANUP_THROW)
+#     Python 3.12a1 3509 (Conditional jumps only jump forward)
 
 #     Python 3.13 will start with 3550
 
-#
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
 # due to the addition of new opcodes).
@@ -424,7 +425,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3507).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3509).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
@@ -1339,21 +1340,10 @@ class _NamespacePath:
 
 # This class is actually exposed publicly in a namespace package's __loader__
 # attribute, so it should be available through a non-private name.
-# https://bugs.python.org/issue35673
+# https://github.com/python/cpython/issues/92054
 class NamespaceLoader:
     def __init__(self, name, path, path_finder):
         self._path = _NamespacePath(name, path, path_finder)
-
-    @staticmethod
-    def module_repr(module):
-        """Return repr for the module.
-
-        The method is deprecated.  The import machinery does the job itself.
-
-        """
-        _warnings.warn("NamespaceLoader.module_repr() is deprecated and "
-                       "slated for removal in Python 3.12", DeprecationWarning)
-        return '<module {!r} (namespace)>'.format(module.__name__)
 
     def is_package(self, fullname):
         return True

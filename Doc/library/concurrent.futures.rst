@@ -19,6 +19,7 @@ The asynchronous execution can be performed with threads, using
 :class:`ProcessPoolExecutor`.  Both implement the same interface, which is
 defined by the abstract :class:`Executor` class.
 
+.. include:: ../includes/wasm-notavail.rst
 
 Executor Objects
 ----------------

@@ -20,7 +20,7 @@ class AuditTest(unittest.TestCase):
     @support.requires_subprocess()
     def do_test(self, *args):
         with subprocess.Popen(
-            [sys.executable, "-Xutf8", AUDIT_TESTS_PY, *args],
+            [sys.executable, "-X utf8", AUDIT_TESTS_PY, *args],
             encoding="utf-8",
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -35,7 +35,7 @@ class AuditTest(unittest.TestCase):
     def run_python(self, *args):
         events = []
         with subprocess.Popen(
-            [sys.executable, "-Xutf8", AUDIT_TESTS_PY, *args],
+            [sys.executable, "-X utf8", AUDIT_TESTS_PY, *args],
             encoding="utf-8",
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -184,6 +184,21 @@ class AuditTest(unittest.TestCase):
         expected = [("sys._getframe", "test_sys_getframe")]
 
         self.assertEqual(actual, expected)
+
+
+    def test_wmi_exec_query(self):
+        import_helper.import_module("_wmi")
+        returncode, events, stderr = self.run_python("test_wmi_exec_query")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [("_wmi.exec_query", "SELECT * FROM Win32_OperatingSystem")]
+
+        self.assertEqual(actual, expected)
+
 
 if __name__ == "__main__":
     unittest.main()

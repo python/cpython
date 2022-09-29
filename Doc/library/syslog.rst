@@ -15,6 +15,8 @@ This module wraps the system ``syslog`` family of routines.  A pure Python
 library that can speak to a syslog server is available in the
 :mod:`logging.handlers` module as :class:`SysLogHandler`.
 
+.. include:: ../includes/wasm-notavail.rst
+
 The module defines the following functions:
 
 

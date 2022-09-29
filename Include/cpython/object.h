@@ -54,9 +54,6 @@ typedef struct _Py_Identifier {
 typedef int (*getbufferproc)(PyObject *, Py_buffer *, int);
 typedef void (*releasebufferproc)(PyObject *, Py_buffer *);
 
-typedef PyObject *(*vectorcallfunc)(PyObject *callable, PyObject *const *args,
-                                    size_t nargsf, PyObject *kwnames);
-
 
 typedef struct {
     /* Number implementations must check *both*
@@ -217,8 +214,8 @@ struct _typeobject {
     inquiry tp_is_gc; /* For PyObject_IS_GC */
     PyObject *tp_bases;
     PyObject *tp_mro; /* method resolution order */
-    PyObject *tp_cache;
-    PyObject *tp_subclasses;
+    PyObject *tp_cache; /* no longer used */
+    void *tp_subclasses;  /* for static builtin types this is an index */
     PyObject *tp_weaklist; /* not used for static builtin types */
     destructor tp_del;
 
@@ -227,7 +224,6 @@ struct _typeobject {
 
     destructor tp_finalize;
     vectorcallfunc tp_vectorcall;
-    size_t tp_static_builtin_index;  /* 0 means "not initialized" */
 };
 
 /* This struct is used by the specializer
@@ -510,3 +506,7 @@ Py_DEPRECATED(3.11) typedef int UsingDeprecatedTrashcanMacro;
 #define Py_TRASHCAN_SAFE_END(op) \
         Py_TRASHCAN_END; \
     } while(0);
+
+
+PyAPI_FUNC(int) _PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg);
+PyAPI_FUNC(void) _PyObject_ClearManagedDict(PyObject *obj);

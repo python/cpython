@@ -14,6 +14,7 @@ IGNORED = {
     'DUNDER',  # Objects/typeobject.c
     'RDUNDER',  # Objects/typeobject.c
     'SPECIAL',  # Objects/weakrefobject.c
+    'NAME',  # Objects/typeobject.c
 }
 IDENTIFIERS = [
     # from ADD() Python/_warnings.c
@@ -42,11 +43,27 @@ IDENTIFIERS = [
     # from SLOT* in Objects/typeobject.c
     '__abs__',
     '__add__',
+    '__aiter__',
     '__and__',
-    '__divmod__',
+    '__anext__',
+    '__await__',
+    '__bool__',
+    '__call__',
+    '__contains__',
+    '__del__',
+    '__delattr__',
+    '__delete__',
+    '__delitem__',
+    '__eq__',
     '__float__',
     '__floordiv__',
+    '__ge__',
+    '__get__',
+    '__getattr__',
+    '__getattribute__',
     '__getitem__',
+    '__gt__',
+    '__hash__',
     '__iadd__',
     '__iand__',
     '__ifloordiv__',
@@ -54,24 +71,34 @@ IDENTIFIERS = [
     '__imatmul__',
     '__imod__',
     '__imul__',
+    '__index__',
+    '__init__',
     '__int__',
     '__invert__',
     '__ior__',
+    '__ipow__',
     '__irshift__',
     '__isub__',
+    '__iter__',
     '__itruediv__',
     '__ixor__',
+    '__le__',
+    '__len__',
     '__lshift__',
+    '__lt__',
     '__matmul__',
     '__mod__',
     '__mul__',
+    '__ne__',
     '__neg__',
+    '__new__',
+    '__next__',
     '__or__',
     '__pos__',
     '__pow__',
     '__radd__',
     '__rand__',
-    '__rdivmod__',
+    '__repr__',
     '__rfloordiv__',
     '__rlshift__',
     '__rmatmul__',
@@ -84,10 +111,15 @@ IDENTIFIERS = [
     '__rsub__',
     '__rtruediv__',
     '__rxor__',
+    '__set__',
+    '__setattr__',
+    '__setitem__',
     '__str__',
     '__sub__',
     '__truediv__',
     '__xor__',
+    '__divmod__',
+    '__rdivmod__',
 ]
 
 
@@ -287,7 +319,11 @@ def generate_runtime_init(identifiers, strings):
                             immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(strings).ascii[{i}]')
                     with printer.block('.latin1 =', ','):
                         for i in range(128, 256):
-                            printer.write(f'_PyUnicode_LATIN1_INIT("\\x{i:02x}"),')
+                            utf8 = ['"']
+                            for c in chr(i).encode('utf-8'):
+                                utf8.append(f"\\x{c:02x}")
+                            utf8.append('"')
+                            printer.write(f'_PyUnicode_LATIN1_INIT("\\x{i:02x}", {"".join(utf8)}),')
                             immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(strings).latin1[{i} - 128]')
                 printer.write('')
                 with printer.block('.tuple_empty =', ','):
