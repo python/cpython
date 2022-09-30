@@ -1469,10 +1469,12 @@ arrange_output_buffer(uint32_t *avail_out,
     return ret;
 }
 
-/* Decompress data of length d->bzs_avail_in_real in d->state.next_in.  The output
-   buffer is allocated dynamically and returned.  At most max_length bytes are
-   returned, so some of the input may not be consumed. d->state.next_in and
-   d->bzs_avail_in_real are updated to reflect the consumed input. */
+/* Decompress data of length self->avail_in_real in self->state.next_in. The 
+   output buffer is allocated dynamically and returned. If the max_length is 
+   of sufficiently low size, max_length is allocated immediately. At most 
+   max_length bytes are returned, so some of the input may not be consumed. 
+   self->state.next_in and self->avail_in_real are updated to reflect the 
+   consumed input. */
 static PyObject*
 decompress_buf(ZlibDecompressor *self, Py_ssize_t max_length)
 {
@@ -1486,8 +1488,9 @@ decompress_buf(ZlibDecompressor *self, Py_ssize_t max_length)
     
     int err = Z_OK;
 
-    /* In Python 3.10 sometimes sys.maxsize is passed by default. In those cases
-       we do want to use DEF_BUF_SIZE as start buffer. */
+    /* When sys.maxsize is passed as default use DEF_BUF_SIZE as start buffer. 
+       In this particular case the data may not necessarily be very big, so 
+       it is better to grow dynamically.*/
     if ((max_length < 0) || max_length == PY_SSIZE_T_MAX) {
         hard_limit = PY_SSIZE_T_MAX;
         obuflen = DEF_BUF_SIZE;
@@ -1543,13 +1546,14 @@ decompress_buf(ZlibDecompressor *self, Py_ssize_t max_length)
     if (err == Z_STREAM_END) {
         self->eof = 1;
         self->is_initialised = 0;
-        /* Unlike the Decompress object we end here, since there is no 
-           backwards-compatibility issues */
+        /* Unlike the Decompress object we call inflateEnd here as there are no
+           backwards compatibility issues */
         err = inflateEnd(&self->zst);
         if (err != Z_OK) {
             zlib_error(state, self->zst, err, "while finishing decompression");
             goto error;
         }
+        self->is_initialised = 0;
     } else if (err != Z_OK && err != Z_BUF_ERROR) {
         zlib_error(state, self->zst, err, "while decompressing data");
     }
