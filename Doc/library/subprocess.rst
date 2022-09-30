@@ -193,7 +193,10 @@ underlying :class:`Popen` interface can be used directly.
     .. attribute:: output
 
         Output of the child process if it was captured by :func:`run` or
-        :func:`check_output`.  Otherwise, ``None``.
+        :func:`check_output`.  Otherwise, ``None``.  This is always
+        :class:`bytes` when any output was captured regardless of the
+        ``text=True`` setting.  It may be ``None`` when there was no output
+        captured.
 
     .. attribute:: stdout
 
@@ -202,7 +205,9 @@ underlying :class:`Popen` interface can be used directly.
     .. attribute:: stderr
 
         Stderr output of the child process if it was captured by :func:`run`.
-        Otherwise, ``None``.
+        Otherwise, ``None``.  This is always :class:`bytes` when stderr output
+        was captured regardless of the ``text=True`` setting.  It may be
+        ``None`` when there was no stderr output captured.
 
     .. versionadded:: 3.3
 
