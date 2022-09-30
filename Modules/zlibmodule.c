@@ -1863,6 +1863,7 @@ static PyMemberDef ZlibDecompressor_members[] = {
      READONLY, ZlibDecompressor_unused_data__doc__},
     {"needs_input", T_BOOL, offsetof(ZlibDecompressor, needs_input), READONLY,
      ZlibDecompressor_needs_input_doc},
+    {NULL},
 };
 
 
