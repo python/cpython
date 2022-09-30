@@ -342,6 +342,15 @@ class ExceptionTest(unittest.TestCase):
         with self.assertRaises(StopIteration):
             gen.throw(E)
 
+    def test_gen_3_arg_deprecation_warning(self):
+        def g():
+            yield 42
+
+        gen = g()
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(TypeError):
+                gen.throw(TypeError, TypeError(24), None)
+
     def test_stopiteration_error(self):
         # See also PEP 479.
 
@@ -2113,6 +2122,12 @@ caught ValueError ()
 >>> g.throw(ValueError("xyz"))  # value only
 caught ValueError (xyz)
 
+>>> import warnings
+>>> warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+# Filter DeprecationWarning: regarding the (type, val, tb) signature of throw().
+# Deprecation warnings are re-enabled below.
+
 >>> g.throw(ValueError, ValueError(1))   # value+matching type
 caught ValueError (1)
 
@@ -2180,6 +2195,12 @@ ValueError: 6
 Traceback (most recent call last):
   ...
 ValueError: 7
+
+>>> warnings.filters.pop(0)
+('ignore', None, <class 'DeprecationWarning'>, None, 0)
+
+# Re-enable DeprecationWarning: the (type, val, tb) exception representation is deprecated,
+#                               and may be removed in a future version of Python.
 
 Plain "raise" inside a generator should preserve the traceback (#13188).
 The traceback should have 3 levels:
