@@ -236,6 +236,7 @@ class BitFieldTest(unittest.TestCase):
         else:
             self.assertEqual(sizeof(X), sizeof(c_int) * 2)
 
+    @unittest.expectedFailure
     def test_mixed_5(self):
         class X(Structure):
             _fields_ = [
@@ -246,6 +247,7 @@ class BitFieldTest(unittest.TestCase):
         a.B = 1
         self.assertEqual(1, a.B)
 
+    @unittest.expectedFailure
     def test_mixed_6(self):
         class X(Structure):
             _fields_ = [
