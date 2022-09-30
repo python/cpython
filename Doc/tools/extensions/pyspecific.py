@@ -116,10 +116,8 @@ class ImplementationDetail(Directive):
         content.source = pnode[0].source
         content.line = pnode[0].line
         content += pnode[0].children
-        pnode[0].replace_self(
-            nodes.paragraph('', '', content, translatable=False))
-        pnode[0].insert(0, add_text)
-        pnode[0].insert(1, nodes.Text(' '))
+        pnode[0].replace_self(nodes.paragraph(
+            '', '', add_text, nodes.Text(' '), content, translatable=False))
         return [pnode]
 
 
