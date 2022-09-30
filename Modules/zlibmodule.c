@@ -1738,7 +1738,7 @@ ZlibDecompressor__new__(PyTypeObject *cls,
                         PyObject *kwargs)
 {
     static char *keywords[] = {"wbits", "zdict", NULL};
-    static char *format = "|iO:IgzipDecompressor";
+    static char *format = "|iO:ZlibDecompressor";
     int wbits = MAX_WBITS;
     PyObject *zdict = NULL;
     zlibstate *state = PyType_GetModuleState(cls);
@@ -1753,10 +1753,15 @@ ZlibDecompressor__new__(PyTypeObject *cls,
     self->avail_in_real = 0;
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
+    if (zdict != NULL) {
+        Py_INCREF(zdict);
+    }
     self->zdict = zdict;
     self->zst.opaque = NULL;
     self->zst.zalloc = PyZlib_Malloc;
     self->zst.zfree = PyZlib_Free;
+    self->zst.next_in = NULL;
+    self->zst.avail_in = 0;
     self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
     if (self->unused_data == NULL) {
         Py_CLEAR(self);
