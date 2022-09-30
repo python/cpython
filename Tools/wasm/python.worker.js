@@ -19,18 +19,18 @@ class StdinBuffer {
     }
 
     stdin = () => {
-        if (this.numberOfCharacters + 1 === this.readIndex) {
+        while (this.numberOfCharacters + 1 === this.readIndex) {
             if (!this.sentNull) {
                 // Must return null once to indicate we're done for now.
                 this.sentNull = true
                 return null
             }
             this.sentNull = false
+            // Prompt will reset this.readIndex to 1
             this.prompt()
         }
         const char = this.buffer[this.readIndex]
         this.readIndex += 1
-        // How do I send an EOF??
         return char
     }
 }
@@ -71,7 +71,11 @@ var Module = {
 
 onmessage = (event) => {
     if (event.data.type === 'run') {
-        // TODO: Set up files from event.data.files
+        if (event.data.files) {
+            for (const [filename, contents] of Object.entries(event.data.files)) {
+                Module.FS.writeFile(filename, contents)
+            }
+        }
         const ret = callMain(event.data.args)
         postMessage({
             type: 'finished',
