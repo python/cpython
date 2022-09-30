@@ -775,10 +775,7 @@ which incur interpreter overhead.
        return sum(map(pred, iterable))
 
    def pad_none(iterable):
-       """Returns the sequence elements and then returns None indefinitely.
-
-       Useful for emulating the behavior of the built-in map() function.
-       """
+       "Returns the sequence elements and then returns None indefinitely."
        return chain(iterable, repeat(None))
 
    def ncycles(iterable, n):
