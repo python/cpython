@@ -271,8 +271,8 @@ assignments, scope rules, and argument passing), it is only fitting that they
 should be represented by a single C type.  Almost all Python objects live on the
 heap: you never declare an automatic or static variable of type
 :c:type:`PyObject`, only pointer variables of type :c:type:`PyObject*` can  be
-declared.  The sole exception are the type objects; since these must never be
-deallocated, they are typically static :c:type:`PyTypeObject` objects.
+declared.  The sole exception are the type objects; they may be static
+:c:type:`PyTypeObject` objects.
 
 All Python objects (even Python integers) have a :dfn:`type` and a
 :dfn:`reference count`.  An object's type determines what kind of object it is
