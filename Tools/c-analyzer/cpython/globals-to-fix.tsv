@@ -440,9 +440,9 @@ Python/initconfig.c	-	_Py_StandardStreamErrors	-
 # lazy
 Objects/floatobject.c	-	double_format	-
 Objects/floatobject.c	-	float_format	-
-Objects/longobject.c	PyLong_FromString	log_base_BASE	-
-Objects/longobject.c	PyLong_FromString	convwidth_base	-
-Objects/longobject.c	PyLong_FromString	convmultmax_base	-
+Objects/longobject.c	long_from_non_binary_base	log_base_BASE	-
+Objects/longobject.c	long_from_non_binary_base	convwidth_base	-
+Objects/longobject.c	long_from_non_binary_base	convmultmax_base	-
 Objects/perf_trampoline.c	-	perf_map_file	-
 Objects/unicodeobject.c	-	ucnhash_capi	-
 Parser/action_helpers.c	_PyPegen_dummy_name	cache	-
