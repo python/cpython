@@ -28,7 +28,7 @@ Running an asyncio Program
 
    This function runs the passed coroutine, taking care of
    managing the asyncio event loop, *finalizing asynchronous
-   generators*, and closing the threadpool.
+   generators*, and closing the executor.
 
    This function cannot be called when another asyncio event loop is
    running in the same thread.
@@ -40,6 +40,10 @@ Running an asyncio Program
    This function always creates a new event loop and closes it at
    the end.  It should be used as a main entry point for asyncio
    programs, and should ideally only be called once.
+
+   The executor is given a timeout duration of 5 minutes to shutdown.
+   If the executor hasn't finished within that duration, a warning is
+   emitted and the executor is closed.
 
    Example::
 
