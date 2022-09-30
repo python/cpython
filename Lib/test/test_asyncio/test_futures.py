@@ -10,6 +10,7 @@ from unittest import mock
 from types import GenericAlias
 import asyncio
 from asyncio import futures
+import warnings
 from test.test_asyncio import utils as test_utils
 from test import support
 
@@ -619,10 +620,14 @@ class BaseFutureTests:
     def test_future_iter_throw(self):
         fut = self._new_future(loop=self.loop)
         fi = iter(fut)
-        self.assertRaises(TypeError, fi.throw,
-                          Exception, Exception("elephant"), 32)
-        self.assertRaises(TypeError, fi.throw,
-                          Exception("elephant"), Exception("elephant"))
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(Exception, fi.throw, Exception, Exception("zebra"), None)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=DeprecationWarning)
+            self.assertRaises(TypeError, fi.throw,
+                            Exception, Exception("elephant"), 32)
+            self.assertRaises(TypeError, fi.throw,
+                            Exception("elephant"), Exception("elephant"))
         self.assertRaises(TypeError, fi.throw, list)
 
     def test_future_del_collect(self):

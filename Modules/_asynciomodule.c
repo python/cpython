@@ -1668,6 +1668,14 @@ FutureIter_throw(futureiterobject *self, PyObject *const *args, Py_ssize_t nargs
     if (!_PyArg_CheckPositional("throw", nargs, 1, 3)) {
         return NULL;
     }
+    if (nargs > 1) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                            "the (type, exc, tb) signature of throw() is deprecated, "
+                            "use the single-arg signature instead.",
+                            1) < 0) {
+            return NULL;
+        }
+    }
 
     type = args[0];
     if (nargs == 3) {
