@@ -496,7 +496,6 @@ class _GzipReader(_compression.DecompressReader):
                 self._new_member = False
 
             # Read a chunk of data from the file
-            # Read a chunk of data from the file
             if self._decompressor.needs_input:
                 buf = self._fp.read(READ_BUFFER_SIZE)
                 uncompress = self._decompressor.decompress(buf, size)
