@@ -266,9 +266,9 @@ class BitFieldTest(unittest.TestCase):
     def test_mixed_7(self):
         class X(Structure):
             _fields_ = [
-                ("_", c_uint),
-                ('A', c_uint, 20),
-                ('B', c_ulonglong, 24)]
+                ("A", c_uint),
+                ('B', c_uint, 20),
+                ('C', c_ulonglong, 24)]
         self.assertEqual(16, sizeof(X))
 
     def test_anon_bitfields(self):
