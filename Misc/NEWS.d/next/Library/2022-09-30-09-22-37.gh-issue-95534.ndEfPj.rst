@@ -1,0 +1,1 @@
+`gzip.GzipFile` reads files 10% faster.
