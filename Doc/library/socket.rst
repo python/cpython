@@ -16,6 +16,9 @@ all modern Unix systems, Windows, MacOS, and probably additional platforms.
    Some behavior may be platform dependent, since calls are made to the operating
    system socket APIs.
 
+
+.. include:: ../includes/wasm-notavail.rst
+
 .. index:: object: socket
 
 The Python interface is a straightforward transliteration of the Unix system
@@ -125,7 +128,7 @@ created.  Socket addresses are represented as follows:
 
 - A string or a tuple ``(id, unit)`` is used for the :const:`SYSPROTO_CONTROL`
   protocol of the :const:`PF_SYSTEM` family. The string is the name of a
-  kernel control using a dynamically-assigned ID. The tuple can be used if ID
+  kernel control using a dynamically assigned ID. The tuple can be used if ID
   and unit number of the kernel control are known or if a registered ID is
   used.
 
@@ -165,7 +168,9 @@ created.  Socket addresses are represented as follows:
 
   - *feat* and *mask* are unsigned 32bit integers.
 
-  .. availability:: Linux 2.6.38, some algorithm types require more recent Kernels.
+  .. availability:: Linux >= 2.6.38.
+
+     Some algorithm types require more recent Kernels.
 
   .. versionadded:: 3.6
 
@@ -173,7 +178,9 @@ created.  Socket addresses are represented as follows:
   their hosts. The sockets are represented as a ``(CID, port)`` tuple
   where the context ID or CID and port are integers.
 
-  .. availability:: Linux >= 4.8 QEMU >= 2.8 ESX >= 4.0 ESX Workstation >= 6.5.
+  .. availability:: Linux >= 3.9
+
+     See :manpage:`vsock(7)`
 
   .. versionadded:: 3.7
 
@@ -221,9 +228,32 @@ created.  Socket addresses are represented as follows:
   ``socket(AF_INET, SOCK_DGRAM, IPPROTO_UDPLITE)`` for IPv4 or
   ``socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDPLITE)`` for IPv6.
 
-  .. availability:: Linux >= 2.6.20, FreeBSD >= 10.1-RELEASE
+  .. availability:: Linux >= 2.6.20, FreeBSD >= 10.1
 
   .. versionadded:: 3.9
+
+- :const:`AF_HYPERV` is a Windows-only socket based interface for communicating
+  with Hyper-V hosts and guests. The address family is represented as a
+  ``(vm_id, service_id)`` tuple where the ``vm_id`` and ``service_id`` are
+  UUID strings.
+
+  The ``vm_id`` is the virtual machine identifier or a set of known VMID values
+  if the target is not a specific virtual machine. Known VMID constants
+  defined on ``socket`` are:
+
+  - ``HV_GUID_ZERO``
+  - ``HV_GUID_BROADCAST``
+  - ``HV_GUID_WILDCARD`` - Used to bind on itself and accept connections from
+    all partitions.
+  - ``HV_GUID_CHILDREN`` - Used to bind on itself and accept connection from
+    child partitions.
+  - ``HV_GUID_LOOPBACK`` - Used as a target to itself.
+  - ``HV_GUID_PARENT`` - When used as a bind accepts connection from the parent
+    partition. When used as an address target it will connect to the parent partition.
+
+  The ``service_id`` is the service identifier of the registered service.
+
+  .. versionadded:: 3.12
 
 If you use a hostname in the *host* portion of IPv4/v6 socket address, the
 program may show a nondeterministic behavior, as Python uses the first address
@@ -340,7 +370,7 @@ Constants
 
    .. seealso::
 
-      `Secure File Descriptor Handling <http://udrepper.livejournal.com/20407.html>`_
+      `Secure File Descriptor Handling <https://udrepper.livejournal.com/20407.html>`_
       for a more thorough explanation.
 
    .. availability:: Linux >= 2.6.27.
@@ -588,6 +618,25 @@ Constants
   .. versionadded:: 3.11
 
   .. availability:: Linux >= 3.9
+
+.. data:: AF_HYPERV
+          HV_PROTOCOL_RAW
+          HVSOCKET_CONNECT_TIMEOUT
+          HVSOCKET_CONNECT_TIMEOUT_MAX
+          HVSOCKET_CONNECTED_SUSPEND
+          HVSOCKET_ADDRESS_FLAG_PASSTHRU
+          HV_GUID_ZERO
+          HV_GUID_WILDCARD
+          HV_GUID_BROADCAST
+          HV_GUID_CHILDREN
+          HV_GUID_LOOPBACK
+          HV_GUID_LOOPBACK
+
+   Constants for Windows Hyper-V sockets for host/guest communications.
+
+   .. availability:: Windows.
+
+   .. versionadded:: 3.12
 
 Functions
 ^^^^^^^^^
@@ -872,6 +921,8 @@ The :mod:`socket` module also offers various network-related services:
 
    .. audit-event:: socket.gethostbyname hostname socket.gethostbyname
 
+   .. availability:: not WASI.
+
 
 .. function:: gethostbyname_ex(hostname)
 
@@ -886,6 +937,8 @@ The :mod:`socket` module also offers various network-related services:
 
    .. audit-event:: socket.gethostbyname hostname socket.gethostbyname_ex
 
+   .. availability:: not WASI.
+
 
 .. function:: gethostname()
 
@@ -896,6 +949,8 @@ The :mod:`socket` module also offers various network-related services:
 
    Note: :func:`gethostname` doesn't always return the fully qualified domain
    name; use :func:`getfqdn` for that.
+
+   .. availability:: not WASI.
 
 
 .. function:: gethostbyaddr(ip_address)
@@ -910,11 +965,13 @@ The :mod:`socket` module also offers various network-related services:
 
    .. audit-event:: socket.gethostbyaddr ip_address socket.gethostbyaddr
 
+   .. availability:: not WASI.
+
 
 .. function:: getnameinfo(sockaddr, flags)
 
    Translate a socket address *sockaddr* into a 2-tuple ``(host, port)``. Depending
-   on the settings of *flags*, the result can contain a fully-qualified domain name
+   on the settings of *flags*, the result can contain a fully qualified domain name
    or numeric address representation in *host*.  Similarly, *port* can contain a
    string port name or a numeric port number.
 
@@ -925,6 +982,9 @@ The :mod:`socket` module also offers various network-related services:
 
    .. audit-event:: socket.getnameinfo sockaddr socket.getnameinfo
 
+   .. availability:: not WASI.
+
+
 .. function:: getprotobyname(protocolname)
 
    Translate an internet protocol name (for example, ``'icmp'``) to a constant
@@ -932,6 +992,8 @@ The :mod:`socket` module also offers various network-related services:
    function.  This is usually only needed for sockets opened in "raw" mode
    (:const:`SOCK_RAW`); for the normal socket modes, the correct protocol is chosen
    automatically if the protocol is omitted or zero.
+
+   .. availability:: not WASI.
 
 
 .. function:: getservbyname(servicename[, protocolname])
@@ -942,6 +1004,8 @@ The :mod:`socket` module also offers various network-related services:
 
    .. audit-event:: socket.getservbyname servicename,protocolname socket.getservbyname
 
+   .. availability:: not WASI.
+
 
 .. function:: getservbyport(port[, protocolname])
 
@@ -950,6 +1014,8 @@ The :mod:`socket` module also offers various network-related services:
    ``'udp'``, otherwise any protocol will match.
 
    .. audit-event:: socket.getservbyport port,protocolname socket.getservbyport
+
+   .. availability:: not WASI.
 
 
 .. function:: ntohl(x)
@@ -1038,7 +1104,7 @@ The :mod:`socket` module also offers various network-related services:
    both the value of *address_family* and the underlying implementation of
    :c:func:`inet_pton`.
 
-   .. availability:: Unix (maybe not all platforms), Windows.
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.4
       Windows support added
@@ -1058,7 +1124,7 @@ The :mod:`socket` module also offers various network-related services:
    length for the specified address family, :exc:`ValueError` will be raised.
    :exc:`OSError` is raised for errors from the call to :func:`inet_ntop`.
 
-   .. availability:: Unix (maybe not all platforms), Windows.
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.4
       Windows support added
@@ -1084,7 +1150,9 @@ The :mod:`socket` module also offers various network-related services:
    buffer.  Raises :exc:`OverflowError` if *length* is outside the
    permissible range of values.
 
-   .. availability:: most Unix platforms, possibly others.
+   .. availability:: Unix, not Emscripten, not WASI.
+
+      Most Unix platforms.
 
    .. versionadded:: 3.3
 
@@ -1105,7 +1173,9 @@ The :mod:`socket` module also offers various network-related services:
    amount of ancillary data that can be received, since additional
    data may be able to fit into the padding area.
 
-   .. availability:: most Unix platforms, possibly others.
+   .. availability:: Unix, not Emscripten, not WASI.
+
+      most Unix platforms.
 
    .. versionadded:: 3.3
 
@@ -1143,7 +1213,7 @@ The :mod:`socket` module also offers various network-related services:
    (index int, name string) tuples.
    :exc:`OSError` if the system call fails.
 
-   .. availability:: Unix, Windows.
+   .. availability:: Unix, Windows, not Emscripten, not WASI.
 
    .. versionadded:: 3.3
 
@@ -1170,7 +1240,7 @@ The :mod:`socket` module also offers various network-related services:
    interface name.
    :exc:`OSError` if no interface with the given name exists.
 
-   .. availability:: Unix, Windows.
+   .. availability:: Unix, Windows, not Emscripten, not WASI.
 
    .. versionadded:: 3.3
 
@@ -1187,7 +1257,7 @@ The :mod:`socket` module also offers various network-related services:
    interface index number.
    :exc:`OSError` if no interface with the given index exists.
 
-   .. availability:: Unix, Windows.
+   .. availability:: Unix, Windows, not Emscripten, not WASI.
 
    .. versionadded:: 3.3
 
@@ -1204,7 +1274,10 @@ The :mod:`socket` module also offers various network-related services:
    The *fds* parameter is a sequence of file descriptors.
    Consult :meth:`sendmsg` for the documentation of these parameters.
 
-   .. availability:: Unix supporting :meth:`~socket.sendmsg` and :const:`SCM_RIGHTS` mechanism.
+   .. availability:: Unix, Windows, not Emscripten, not WASI.
+
+      Unix platforms supporting :meth:`~socket.sendmsg`
+      and :const:`SCM_RIGHTS` mechanism.
 
    .. versionadded:: 3.9
 
@@ -1215,7 +1288,10 @@ The :mod:`socket` module also offers various network-related services:
    Return ``(msg, list(fds), flags, addr)``.
    Consult :meth:`recvmsg` for the documentation of these parameters.
 
-   .. availability:: Unix supporting :meth:`~socket.recvmsg` and :const:`SCM_RIGHTS` mechanism.
+   .. availability:: Unix, Windows, not Emscripten, not WASI.
+
+      Unix platforms supporting :meth:`~socket.sendmsg`
+      and :const:`SCM_RIGHTS` mechanism.
 
    .. versionadded:: 3.9
 
@@ -1263,6 +1339,9 @@ to sockets.
 
    .. audit-event:: socket.bind self,address socket.socket.bind
 
+   .. availability:: not WASI.
+
+
 .. method:: socket.close()
 
    Mark the socket closed.  The underlying system resource (e.g. a file
@@ -1307,6 +1386,8 @@ to sockets.
       signal, the signal handler doesn't raise an exception and the socket is
       blocking or has a timeout (see the :pep:`475` for the rationale).
 
+   .. availability:: not WASI.
+
 
 .. method:: socket.connect_ex(address)
 
@@ -1318,6 +1399,8 @@ to sockets.
    connects.
 
    .. audit-event:: socket.connect self,address socket.socket.connect_ex
+
+   .. availability:: not WASI.
 
 .. method:: socket.detach()
 
@@ -1336,6 +1419,8 @@ to sockets.
 
    .. versionchanged:: 3.4
       The socket is now non-inheritable.
+
+   .. availability:: not WASI.
 
 
 .. method:: socket.fileno()
@@ -1382,6 +1467,8 @@ to sockets.
    contents of the buffer (see the optional built-in module :mod:`struct` for a way
    to decode C structures encoded as byte strings).
 
+   .. availability:: not WASI.
+
 
 .. method:: socket.getblocking()
 
@@ -1425,8 +1512,11 @@ to sockets.
    unaccepted connections that the system will allow before refusing new
    connections. If not specified, a default reasonable value is chosen.
 
+   .. availability:: not WASI.
+
    .. versionchanged:: 3.5
       The *backlog* parameter is now optional.
+
 
 .. method:: socket.makefile(mode='r', buffering=None, *, encoding=None, \
                             errors=None, newline=None)
@@ -1550,7 +1640,9 @@ to sockets.
                   fds.frombytes(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
           return msg, list(fds)
 
-   .. availability:: most Unix platforms, possibly others.
+   .. availability:: Unix.
+
+      Most Unix platforms.
 
    .. versionadded:: 3.3
 
@@ -1592,7 +1684,9 @@ to sockets.
       >>> [b1, b2, b3]
       [bytearray(b'Mary'), bytearray(b'01 had a 9'), bytearray(b'little lamb---')]
 
-   .. availability:: most Unix platforms, possibly others.
+   .. availability:: Unix.
+
+      Most Unix platforms.
 
    .. versionadded:: 3.3
 
@@ -1698,7 +1792,9 @@ to sockets.
       def send_fds(sock, msg, fds):
           return sock.sendmsg([msg], [(socket.SOL_SOCKET, socket.SCM_RIGHTS, array.array("i", fds))])
 
-   .. availability:: most Unix platforms, possibly others.
+   .. availability:: Unix, not WASI.
+
+      Most Unix platforms.
 
    .. audit-event:: socket.sendmsg self,address socket.socket.sendmsg
 
@@ -1792,12 +1888,13 @@ to sockets.
    *optlen* argument is required. It's equivalent to call :c:func:`setsockopt` C
    function with ``optval=NULL`` and ``optlen=optlen``.
 
-
    .. versionchanged:: 3.5
       Writable :term:`bytes-like object` is now accepted.
 
    .. versionchanged:: 3.6
       setsockopt(level, optname, None, optlen: int) form added.
+
+   .. availability:: not WASI.
 
 
 .. method:: socket.shutdown(how)
@@ -1806,6 +1903,8 @@ to sockets.
    further receives are disallowed.  If *how* is :const:`SHUT_WR`, further sends
    are disallowed.  If *how* is :const:`SHUT_RDWR`, further sends and receives are
    disallowed.
+
+   .. availability:: not WASI.
 
 
 .. method:: socket.share(process_id)
@@ -2033,10 +2132,10 @@ the interface::
    # Include IP headers
    s.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
 
-   # receive all packages
+   # receive all packets
    s.ioctl(socket.SIO_RCVALL, socket.RCVALL_ON)
 
-   # receive a package
+   # receive a packet
    print(s.recvfrom(65565))
 
    # disabled promiscuous mode

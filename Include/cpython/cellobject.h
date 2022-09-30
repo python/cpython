@@ -15,7 +15,7 @@ typedef struct {
 
 PyAPI_DATA(PyTypeObject) PyCell_Type;
 
-#define PyCell_Check(op) Py_IS_TYPE(op, &PyCell_Type)
+#define PyCell_Check(op) Py_IS_TYPE((op), &PyCell_Type)
 
 PyAPI_FUNC(PyObject *) PyCell_New(PyObject *);
 PyAPI_FUNC(PyObject *) PyCell_Get(PyObject *);
@@ -27,9 +27,7 @@ static inline PyObject* PyCell_GET(PyObject *op) {
     cell = _Py_CAST(PyCellObject*, op);
     return cell->ob_ref;
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030c0000
-#  define PyCell_GET(op) PyCell_GET(_PyObject_CAST(op))
-#endif
+#define PyCell_GET(op) PyCell_GET(_PyObject_CAST(op))
 
 static inline void PyCell_SET(PyObject *op, PyObject *value) {
     PyCellObject *cell;
@@ -37,9 +35,7 @@ static inline void PyCell_SET(PyObject *op, PyObject *value) {
     cell = _Py_CAST(PyCellObject*, op);
     cell->ob_ref = value;
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030c0000
-#  define PyCell_SET(op, value) PyCell_SET(_PyObject_CAST(op), (value))
-#endif
+#define PyCell_SET(op, value) PyCell_SET(_PyObject_CAST(op), (value))
 
 #ifdef __cplusplus
 }

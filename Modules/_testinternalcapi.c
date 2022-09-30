@@ -14,6 +14,7 @@
 #include "Python.h"
 #include "pycore_atomic_funcs.h" // _Py_atomic_int_get()
 #include "pycore_bitutils.h"     // _Py_bswap32()
+#include "pycore_compile.h"      // _PyCompile_OptimizeCfg()
 #include "pycore_fileutils.h"    // _Py_normpath
 #include "pycore_frame.h"        // _PyInterpreterFrame
 #include "pycore_gc.h"           // PyGC_Head
@@ -25,7 +26,12 @@
 #include "pycore_pystate.h"      // _PyThreadState_GET()
 #include "osdefs.h"              // MAXPATHLEN
 
+#include "clinic/_testinternalcapi.c.h"
 
+/*[clinic input]
+module _testinternalcapi
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=7bb583d8c9eb9a78]*/
 static PyObject *
 get_configs(PyObject *self, PyObject *Py_UNUSED(args))
 {
@@ -505,7 +511,9 @@ set_eval_frame_default(PyObject *self, PyObject *Py_UNUSED(args))
 static PyObject *
 record_eval(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
 {
-    PyList_Append(record_list, f->f_func->func_name);
+    if (PyFunction_Check(f->f_funcobj)) {
+        PyList_Append(record_list, ((PyFunctionObject *)f->f_funcobj)->func_name);
+    }
     return _PyEval_EvalFrameDefault(tstate, f, exc);
 }
 
@@ -522,6 +530,25 @@ set_eval_frame_record(PyObject *self, PyObject *list)
     record_list = list;
     _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState_Get(), record_eval);
     Py_RETURN_NONE;
+}
+
+
+/*[clinic input]
+
+_testinternalcapi.optimize_cfg -> object
+
+  instructions: object
+  consts: object
+
+Apply compiler optimizations to an instruction list.
+[clinic start generated code]*/
+
+static PyObject *
+_testinternalcapi_optimize_cfg_impl(PyObject *module, PyObject *instructions,
+                                    PyObject *consts)
+/*[clinic end generated code: output=5412aeafca683c8b input=7e8a3de86ebdd0f9]*/
+{
+    return _PyCompile_OptimizeCfg(instructions, consts);
 }
 
 
@@ -543,6 +570,7 @@ static PyMethodDef TestMethods[] = {
     {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
     {"set_eval_frame_default", set_eval_frame_default, METH_NOARGS, NULL},
     {"set_eval_frame_record", set_eval_frame_record, METH_O, NULL},
+    _TESTINTERNALCAPI_OPTIMIZE_CFG_METHODDEF
     {NULL, NULL} /* sentinel */
 };
 

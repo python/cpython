@@ -5,7 +5,6 @@ import unittest
 from collections import namedtuple
 from test.support import requires
 from tkinter import Tk
-from idlelib.idle_test.mock_idle import Func
 
 Editor = editor.EditorWindow
 

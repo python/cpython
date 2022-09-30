@@ -21,8 +21,25 @@ await on multiple things with timeouts.
     * - :func:`run`
       - Create event loop, run a coroutine, close the loop.
 
+    * - :class:`Runner`
+      - A context manager that simplifies multiple async function calls.
+
+    * - :class:`Task`
+      - Task object.
+
+    * - :class:`TaskGroup`
+      - A context manager that holds a group of tasks. Provides
+        a convenient and reliable way to wait for all tasks in the group to
+        finish.
+
     * - :func:`create_task`
-      - Start an asyncio Task.
+      - Start an asyncio Task, then returns it.
+
+    * - :func:`current_task`
+      - Return the current Task.
+
+    * - :func:`all_tasks`
+      - Return all tasks that are not yet finished for an event loop.
 
     * - ``await`` :func:`sleep`
       - Sleep for a number of seconds.
@@ -39,14 +56,8 @@ await on multiple things with timeouts.
     * - ``await`` :func:`wait`
       - Monitor for completion.
 
-    * - :func:`current_task`
-      - Return the current Task.
-
-    * - :func:`all_tasks`
-      - Return all tasks for an event loop.
-
-    * - :class:`Task`
-      - Task object.
+    * - :func:`timeout`
+      - Run with a timeout. Useful in cases when `wait_for` is not suitable.
 
     * - :func:`to_thread`
       - Asynchronously run a function in a separate OS thread.

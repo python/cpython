@@ -134,6 +134,9 @@ uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func)
     if (func->func_version != 0) {
         return func->func_version;
     }
+    if (func->vectorcall != _PyFunction_Vectorcall) {
+        return 0;
+    }
     if (next_func_version == 0) {
         return 0;
     }
@@ -207,6 +210,14 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
     ((PyFunctionObject *)op)->func_version = 0;
     Py_XSETREF(((PyFunctionObject *)op)->func_defaults, defaults);
     return 0;
+}
+
+void
+PyFunction_SetVectorcall(PyFunctionObject *func, vectorcallfunc vectorcall)
+{
+    assert(func != NULL);
+    func->func_version = 0;
+    func->vectorcall = vectorcall;
 }
 
 PyObject *

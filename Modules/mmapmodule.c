@@ -120,18 +120,6 @@ typedef struct {
     access_mode access;
 } mmap_object;
 
-typedef struct {
-    PyTypeObject *mmap_object_type;
-} mmap_state;
-
-static mmap_state *
-get_mmap_state(PyObject *module)
-{
-    mmap_state *state = PyModule_GetState(module);
-    assert(state);
-    return state;
-}
-
 static int
 mmap_object_traverse(mmap_object *m_obj, visitproc visit, void *arg)
 {
@@ -1556,45 +1544,22 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 #endif /* MS_WINDOWS */
 
 static int
-mmap_traverse(PyObject *module, visitproc visit, void *arg)
-{
-    mmap_state *state = get_mmap_state(module);
-    Py_VISIT(state->mmap_object_type);
-    return 0;
-}
-
-static int
-mmap_clear(PyObject *module)
-{
-    mmap_state *state = get_mmap_state(module);
-    Py_CLEAR(state->mmap_object_type);
-    return 0;
-}
-
-static void
-mmap_free(void *module)
-{
-    mmap_clear((PyObject *)module);
-}
-
-static int
 mmap_exec(PyObject *module)
 {
-    mmap_state *state = get_mmap_state(module);
-
     Py_INCREF(PyExc_OSError);
     if (PyModule_AddObject(module, "error", PyExc_OSError) < 0) {
         Py_DECREF(PyExc_OSError);
         return -1;
     }
 
-    state->mmap_object_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
-                                                                       &mmap_object_spec,
-                                                                       NULL);
-    if (state->mmap_object_type == NULL) {
+    PyObject *mmap_object_type = PyType_FromModuleAndSpec(module,
+                                                  &mmap_object_spec, NULL);
+    if (mmap_object_type == NULL) {
         return -1;
     }
-    if (PyModule_AddType(module, state->mmap_object_type) < 0) {
+    int rc = PyModule_AddType(module, (PyTypeObject *)mmap_object_type);
+    Py_DECREF(mmap_object_type);
+    if (rc < 0) {
         return -1;
     }
 
@@ -1744,13 +1709,10 @@ static PyModuleDef_Slot mmap_slots[] = {
 };
 
 static struct PyModuleDef mmapmodule = {
-    PyModuleDef_HEAD_INIT,
+    .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "mmap",
-    .m_size = sizeof(mmap_state),
+    .m_size = 0,
     .m_slots = mmap_slots,
-    .m_traverse = mmap_traverse,
-    .m_clear = mmap_clear,
-    .m_free = mmap_free,
 };
 
 PyMODINIT_FUNC

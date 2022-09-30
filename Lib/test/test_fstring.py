@@ -346,9 +346,38 @@ non-important content
         self.assertEqual(binop.lineno, 4)
         self.assertEqual(binop.left.lineno, 4)
         self.assertEqual(binop.right.lineno, 6)
-        self.assertEqual(binop.col_offset, 4)
-        self.assertEqual(binop.left.col_offset, 4)
+        self.assertEqual(binop.col_offset, 3)
+        self.assertEqual(binop.left.col_offset, 3)
         self.assertEqual(binop.right.col_offset, 7)
+
+        expr = """
+a = f'''
+          {blech}
+    '''
+"""
+        t = ast.parse(expr)
+        self.assertEqual(type(t), ast.Module)
+        self.assertEqual(len(t.body), 1)
+        # Check f'...'
+        self.assertEqual(type(t.body[0]), ast.Assign)
+        self.assertEqual(type(t.body[0].value), ast.JoinedStr)
+        self.assertEqual(len(t.body[0].value.values), 3)
+        self.assertEqual(type(t.body[0].value.values[1]), ast.FormattedValue)
+        self.assertEqual(t.body[0].lineno, 2)
+        self.assertEqual(t.body[0].value.lineno, 2)
+        self.assertEqual(t.body[0].value.values[0].lineno, 2)
+        self.assertEqual(t.body[0].value.values[1].lineno, 2)
+        self.assertEqual(t.body[0].value.values[2].lineno, 2)
+        self.assertEqual(t.body[0].col_offset, 0)
+        self.assertEqual(t.body[0].value.col_offset, 4)
+        self.assertEqual(t.body[0].value.values[0].col_offset, 4)
+        self.assertEqual(t.body[0].value.values[1].col_offset, 4)
+        self.assertEqual(t.body[0].value.values[2].col_offset, 4)
+        # Check {blech}
+        self.assertEqual(t.body[0].value.values[1].value.lineno, 3)
+        self.assertEqual(t.body[0].value.values[1].value.end_lineno, 3)
+        self.assertEqual(t.body[0].value.values[1].value.col_offset, 11)
+        self.assertEqual(t.body[0].value.values[1].value.end_col_offset, 16)
 
     def test_ast_line_numbers_with_parentheses(self):
         expr = """
@@ -590,7 +619,9 @@ x = (
         self.assertEqual(f'{-10:{"-"}#{1}0{"x"}}', '      -0xa')
         self.assertEqual(f'{10:#{3 != {4:5} and width}x}', '       0xa')
 
-        self.assertAllRaise(SyntaxError, "f-string: expecting '}'",
+        self.assertAllRaise(SyntaxError,
+                            """f-string: invalid conversion character 'r{"': """
+                            """expected 's', 'r', or 'a'""",
                             ["""f'{"s"!r{":10"}}'""",
 
                              # This looks like a nested format spec.
@@ -1012,19 +1043,28 @@ x = (
         # Not a conversion, but show that ! is allowed in a format spec.
         self.assertEqual(f'{3.14:!<10.10}', '3.14!!!!!!')
 
-        self.assertAllRaise(SyntaxError, 'f-string: invalid conversion character',
-                            ["f'{3!g}'",
-                             "f'{3!A}'",
-                             "f'{3!3}'",
-                             "f'{3!G}'",
-                             "f'{3!!}'",
-                             "f'{3!:}'",
-                             "f'{3! s}'",  # no space before conversion char
+        self.assertAllRaise(SyntaxError, "f-string: expecting '}'",
+                            ["f'{3!'",
+                             "f'{3!s'",
+                             "f'{3!g'",
                              ])
 
-        self.assertAllRaise(SyntaxError, "f-string: expecting '}'",
-                            ["f'{x!s{y}}'",
-                             "f'{3!ss}'",
+        self.assertAllRaise(SyntaxError, 'f-string: missed conversion character',
+                            ["f'{3!}'",
+                             "f'{3!:'",
+                             "f'{3!:}'",
+                             ])
+
+        for conv in 'g', 'A', '3', 'G', '!', ' s', 's ', ' s ', 'ä', 'ɐ', 'ª':
+            self.assertAllRaise(SyntaxError,
+                                "f-string: invalid conversion character %r: "
+                                "expected 's', 'r', or 'a'" % conv,
+                                ["f'{3!" + conv + "}'"])
+
+        self.assertAllRaise(SyntaxError,
+                            "f-string: invalid conversion character 'ss': "
+                            "expected 's', 'r', or 'a'",
+                            ["f'{3!ss}'",
                              "f'{3!ss:}'",
                              "f'{3!ss:s}'",
                              ])
@@ -1073,6 +1113,7 @@ x = (
                              "f'{'",
                              "f'x{<'",  # See bpo-46762.
                              "f'x{>'",
+                             "f'{i='",  # See gh-93418.
                              ])
 
         # But these are just normal strings.
