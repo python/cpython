@@ -1,12 +1,15 @@
 import socket
 import selectors
-import telnetlib
 import threading
 import contextlib
 
 from test import support
-from test.support import socket_helper
+from test.support import socket_helper, warnings_helper
 import unittest
+
+support.requires_working_socket(module=True)
+
+telnetlib = warnings_helper.import_deprecated('telnetlib')
 
 HOST = socket_helper.HOST
 
@@ -16,7 +19,7 @@ def server(evt, serv):
     try:
         conn, addr = serv.accept()
         conn.close()
-    except socket.timeout:
+    except TimeoutError:
         pass
     finally:
         serv.close()
@@ -29,7 +32,7 @@ class GeneralTests(unittest.TestCase):
         self.sock.settimeout(60)  # Safety net. Look issue 11812
         self.port = socket_helper.bind_port(self.sock)
         self.thread = threading.Thread(target=server, args=(self.evt,self.sock))
-        self.thread.setDaemon(True)
+        self.thread.daemon = True
         self.thread.start()
         self.evt.wait()
 

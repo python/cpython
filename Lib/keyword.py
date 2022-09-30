@@ -6,14 +6,14 @@ To update the symbols in this file, 'cd' to the top directory of
 the python source tree and run:
 
     PYTHONPATH=Tools/peg_generator python3 -m pegen.keywordgen \
-        Grammar/Grammar \
+        Grammar/python.gram \
         Grammar/Tokens \
         Lib/keyword.py
 
 Alternatively, you can run 'make regen-keyword'.
 """
 
-__all__ = ["iskeyword", "kwlist"]
+__all__ = ["iskeyword", "issoftkeyword", "kwlist", "softkwlist"]
 
 kwlist = [
     'False',
@@ -53,4 +53,11 @@ kwlist = [
     'yield'
 ]
 
+softkwlist = [
+    '_',
+    'case',
+    'match'
+]
+
 iskeyword = frozenset(kwlist).__contains__
+issoftkeyword = frozenset(softkwlist).__contains__

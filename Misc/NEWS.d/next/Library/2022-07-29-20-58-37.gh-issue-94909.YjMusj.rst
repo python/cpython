@@ -1,0 +1,2 @@
+Fix incorrect joining of relative Windows paths with drives in
+:class:`pathlib.PurePath` initializer.

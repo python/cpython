@@ -33,7 +33,7 @@ class InstallHeadersTestCase(support.TempdirManager,
         self.assertEqual(len(cmd.get_outputs()), 2)
 
 def test_suite():
-    return unittest.makeSuite(InstallHeadersTestCase)
+    return unittest.TestLoader().loadTestsFromTestCase(InstallHeadersTestCase)
 
 if __name__ == "__main__":
     run_unittest(test_suite())

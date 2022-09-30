@@ -72,6 +72,7 @@ def inner(_it, _timer{init}):
     _t0 = _timer()
     for _i in _it:
         {stmt}
+        pass
     _t1 = _timer()
     return _t1 - _t0
 """

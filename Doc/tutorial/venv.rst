@@ -48,7 +48,7 @@ place it, and run the :mod:`venv` module as a script with the directory path::
 
 This will create the ``tutorial-env`` directory if it doesn't exist,
 and also create directories inside it containing a copy of the Python
-interpreter, the standard library, and various supporting files.
+interpreter and various supporting files.
 
 A common directory location for a virtual environment is ``.venv``.
 This name keeps the directory typically hidden in your shell and thus
@@ -60,7 +60,7 @@ Once you've created a virtual environment, you may activate it.
 
 On Windows, run::
 
-  tutorial-env\Scripts\activate.bat
+  tutorial-env\Scripts\activate
 
 On Unix or MacOS, run::
 
@@ -88,6 +88,11 @@ For example:
   '~/envs/tutorial-env/lib/python3.5/site-packages']
   >>>
 
+To deactivate a virtual environment, type::
+
+    deactivate
+
+into the terminal.
 
 Managing Packages with pip
 ==========================
@@ -95,20 +100,9 @@ Managing Packages with pip
 You can install, upgrade, and remove packages using a program called
 :program:`pip`.  By default ``pip`` will install packages from the Python
 Package Index, <https://pypi.org>.  You can browse the Python
-Package Index by going to it in your web browser, or you can use ``pip``'s
-limited search feature:
+Package Index by going to it in your web browser.
 
-.. code-block:: bash
-
-  (tutorial-env) $ pip search astronomy
-  skyfield               - Elegant astronomy for Python
-  gary                   - Galactic astronomy and gravitational dynamics.
-  novas                  - The United States Naval Observatory NOVAS astronomy library
-  astroobs               - Provides astronomy ephemeris to plan telescope observations
-  PyAstronomy            - A collection of astronomy related tools for Python.
-  ...
-
-``pip`` has a number of subcommands: "search", "install", "uninstall",
+``pip`` has a number of subcommands: "install", "uninstall",
 "freeze", etc.  (Consult the :ref:`installing-index` guide for
 complete documentation for ``pip``.)
 
@@ -136,8 +130,8 @@ package name  followed by ``==`` and the version number:
 
 If you re-run this command, ``pip`` will notice that the requested
 version is already installed and do nothing.  You can supply a
-different version number to get that version, or you can run ``pip
-install --upgrade`` to upgrade the package to the latest version:
+different version number to get that version, or you can run ``python
+-m pip install --upgrade`` to upgrade the package to the latest version:
 
 .. code-block:: bash
 
@@ -149,14 +143,14 @@ install --upgrade`` to upgrade the package to the latest version:
         Successfully uninstalled requests-2.6.0
   Successfully installed requests-2.7.0
 
-``pip uninstall`` followed by one or more package names will remove the
-packages from the virtual environment.
+``python -m pip uninstall`` followed by one or more package names will
+remove the packages from the virtual environment.
 
-``pip show`` will display information about a particular package:
+``python -m pip show`` will display information about a particular package:
 
 .. code-block:: bash
 
-  (tutorial-env) $ pip show requests
+  (tutorial-env) $ python -m pip show requests
   ---
   Metadata-Version: 2.0
   Name: requests
@@ -169,25 +163,25 @@ packages from the virtual environment.
   Location: /Users/akuchling/envs/tutorial-env/lib/python3.4/site-packages
   Requires:
 
-``pip list`` will display all of the packages installed in the virtual
-environment:
+``python -m pip list`` will display all of the packages installed in
+the virtual environment:
 
 .. code-block:: bash
 
-  (tutorial-env) $ pip list
+  (tutorial-env) $ python -m pip list
   novas (3.1.1.3)
   numpy (1.9.2)
   pip (7.0.3)
   requests (2.7.0)
   setuptools (16.0)
 
-``pip freeze`` will produce a similar list of the installed packages,
-but the output uses the format that ``pip install`` expects.
+``python -m pip freeze`` will produce a similar list of the installed packages,
+but the output uses the format that ``python -m pip install`` expects.
 A common convention is to put this list in a ``requirements.txt`` file:
 
 .. code-block:: bash
 
-  (tutorial-env) $ pip freeze > requirements.txt
+  (tutorial-env) $ python -m pip freeze > requirements.txt
   (tutorial-env) $ cat requirements.txt
   novas==3.1.1.3
   numpy==1.9.2

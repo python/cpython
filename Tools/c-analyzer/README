@@ -36,6 +36,10 @@ should be run to ensure that no new globals have been added:
 
   python3 Tools/c-analyzer/check-c-globals.py
 
+You can also use the more generic tool:
+
+  python3 Tools/c-analyzer/c-analyzer.py
+
 If it reports any globals then they should be resolved.  If the globals
 are runtime state then they should be folded into _PyRuntimeState.
 Otherwise they should be added to ignored-globals.txt.

@@ -4,6 +4,7 @@ Dialog for building Tkinter accelerator key bindings
 from tkinter import Toplevel, Listbox, StringVar, TclError
 from tkinter.ttk import Frame, Button, Checkbutton, Entry, Label, Scrollbar
 from tkinter import messagebox
+from tkinter.simpledialog import _setup_dialog
 import string
 import sys
 
@@ -320,6 +321,7 @@ class GetKeysWindow(Toplevel):
         frame_buttons.pack(side='bottom', fill='x')
 
         self.transient(parent)
+        _setup_dialog(self)
         self.grab_set()
         if not _utest:
             self.deiconify()  # Geometry set, unhide.

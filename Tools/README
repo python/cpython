@@ -25,8 +25,6 @@ parser          Un-parsing tool to generate code from an AST.
 
 peg_generator   PEG-based parser generator (pegen) used for new parser.
 
-pynche          A Tkinter-based color editor.
-
 scripts         A number of useful single-file programs, e.g. tabnanny.py
                 by Tim Peters, which checks for inconsistent mixing of
                 tabs and spaces, and 2to3, which converts Python 2 code
@@ -34,8 +32,6 @@ scripts         A number of useful single-file programs, e.g. tabnanny.py
 
 stringbench     A suite of micro-benchmarks for various operations on
                 strings (both 8-bit and unicode). (*)
-
-test2to3        A demonstration of how to use 2to3 transparently in setup.py.
 
 unicode         Tools for generating unicodedata and codecs from unicode.org
                 and other mapping files (by Fredrik Lundh, Marc-Andre Lemburg
@@ -46,3 +42,5 @@ unittestgui     A Tkinter based GUI test runner for unittest, with test
 
 
 (*) A generic benchmark suite is maintained separately at https://github.com/python/performance
+
+Note: The pynche color editor has moved to https://gitlab.com/warsaw/pynche
