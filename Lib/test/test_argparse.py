@@ -4615,6 +4615,49 @@ class TestHelpMetavarTypeFormatter(HelpTestCase):
     version = ''
 
 
+class TestHelpUsageLongSubparserCommand(TestCase):
+    """Test that long command in subparser is displayed correctly in help
+
+    The test was added for https://bugs.python.org/issue42875
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.main_program = os.path.basename(sys.argv[0])
+
+    def test_parent_help(self):
+        parent_parser = argparse.ArgumentParser(
+            add_help=False, formatter_class=lambda prog: argparse.RawTextHelpFormatter(prog, max_help_position=50))
+
+        main_parser = argparse.ArgumentParser(
+            formatter_class=lambda prog: argparse.RawTextHelpFormatter(prog, max_help_position=50))
+        cmd_subparsers = main_parser.add_subparsers(title="commands", metavar='CMD', help='command to use')
+
+        cmd_parser = cmd_subparsers.add_parser("add", help="add something", parents=[parent_parser])
+        cmd_parser.add_subparsers(title="action", dest="action_command")
+
+        cmd_parser2 = cmd_subparsers.add_parser("remove", help="remove something", parents=[parent_parser])
+        cmd_parser2.add_subparsers(title="action", dest="action_command")
+
+        cmd_subparsers.add_parser("a-very-long-command", help="command that does something", parents=[parent_parser])
+
+        parser_help = main_parser.format_help()
+
+        progname = self.main_program
+        self.assertEqual(parser_help, textwrap.dedent('''\
+            usage: {}{}[-h] CMD ...
+
+            options:
+              -h, --help             show this help message and exit
+
+            commands:
+              CMD                    command to use
+                add                  add something
+                remove               remove something
+                a-very-long-command  command that does something
+        '''.format(progname, ' ' if progname else '')))
+
+
 # =====================================
 # Optional/Positional constructor tests
 # =====================================

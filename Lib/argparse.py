@@ -262,13 +262,12 @@ class HelpFormatter(object):
 
             # find all invocations
             get_invocation = self._format_action_invocation
-            invocations = [get_invocation(action)]
+            invocation_lengths = [len(get_invocation(action)) + self._current_indent]
             for subaction in self._iter_indented_subactions(action):
-                invocations.append(get_invocation(subaction))
+                invocation_lengths.append(len(get_invocation(subaction)) + self._current_indent)
 
             # update the maximum item length
-            invocation_length = max(map(len, invocations))
-            action_length = invocation_length + self._current_indent
+            action_length = max(invocation_lengths)
             self._action_max_length = max(self._action_max_length,
                                           action_length)
 
