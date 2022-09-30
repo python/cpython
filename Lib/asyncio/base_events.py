@@ -588,9 +588,11 @@ class BaseEventLoop(events.AbstractEventLoop):
     def _do_shutdown(self, future):
         try:
             self._default_executor.shutdown(wait=True)
-            self.call_soon_threadsafe(future.set_result, None)
+            if not self.is_closed():
+                self.call_soon_threadsafe(future.set_result, None)
         except Exception as ex:
-            self.call_soon_threadsafe(future.set_exception, ex)
+            if not self.is_closed():
+                self.call_soon_threadsafe(future.set_exception, ex)
 
     def _check_running(self):
         if self.is_running():
