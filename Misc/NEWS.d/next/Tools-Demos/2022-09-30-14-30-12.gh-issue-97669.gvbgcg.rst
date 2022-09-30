@@ -1,0 +1,2 @@
+Remove outdated example scripts. Copy them from Python 3.11 if you still
+need them. Patch by Victor Stinner.
