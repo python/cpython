@@ -505,7 +505,6 @@ Modules/_io/stringio.c	-	PyStringIO_Type	-
 Modules/_io/textio.c	-	PyIncrementalNewlineDecoder_Type	-
 Modules/_io/textio.c	-	PyTextIOBase_Type	-
 Modules/_io/textio.c	-	PyTextIOWrapper_Type	-
-# XXX This should have been found by the analyzer but wasn't:
 Modules/_io/winconsoleio.c	-	PyWindowsConsoleIO_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorBase_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorDerived_Type	-
@@ -538,7 +537,6 @@ Modules/itertoolsmodule.c	-	ziplongest_type	-
 
 # statically initializd pointer to static type
 # XXX should be const?
-# XXX This should have been found by the analyzer but wasn't:
 Modules/_io/winconsoleio.c	-	_PyWindowsConsoleIO_Type	-
 
 # initialized once
