@@ -561,8 +561,13 @@ class BaseEventLoop(events.AbstractEventLoop):
                     'asyncgen': agen
                 })
 
-    async def shutdown_default_executor(self):
-        """Schedule the shutdown of the default executor."""
+    async def shutdown_default_executor(self, timeout=None):
+        """Schedule the shutdown of the default executor.
+
+        The timeout parameter specifies the amount of time the executor will
+        be given to finish joining. The default value is None, which means
+        that the executor will be given an unlimited amount of time.
+        """
         self._executor_shutdown_called = True
         if self._default_executor is None:
             return
@@ -572,7 +577,13 @@ class BaseEventLoop(events.AbstractEventLoop):
         try:
             await future
         finally:
-            thread.join()
+            thread.join(timeout)
+
+        if thread.is_alive():
+            warnings.warn("The executor did not finishing joining "
+                             f"its threads within {timeout} seconds.",
+                             RuntimeWarning, stacklevel=2)
+            self._default_executor.shutdown(wait=False)
 
     def _do_shutdown(self, future):
         try:
