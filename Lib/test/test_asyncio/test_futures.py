@@ -837,6 +837,21 @@ class BaseFutureDoneCallbackTests():
 
         fut.remove_done_callback(evil())
 
+    def test_remove_done_callbacks_list_clear(self):
+        # see https://github.com/python/cpython/issues/97592 for details
+
+        fut = self._new_future()
+        fut.add_done_callback(str)
+
+        for _ in range(63):
+            fut.add_done_callback(id)
+
+        class evil:
+            def __eq__(self, other):
+                fut.remove_done_callback(other)
+
+        fut.remove_done_callback(evil())
+
     def test_schedule_callbacks_list_mutation_1(self):
         # see http://bugs.python.org/issue28963 for details
 
