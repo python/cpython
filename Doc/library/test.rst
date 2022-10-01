@@ -1075,7 +1075,7 @@ The :mod:`test.support.socket_helper` module provides support for socket tests.
 
 .. function:: bind_unix_socket(sock, addr)
 
-   Bind a unix socket, raising :exc:`unittest.SkipTest` if
+   Bind a Unix socket, raising :exc:`unittest.SkipTest` if
    :exc:`PermissionError` is raised.
 
 
