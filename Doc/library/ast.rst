@@ -2006,12 +2006,13 @@ and classes for traversing abstract syntax trees:
    execute Python code, unlike the more general :func:`eval`. There is no
    namespace, no name lookups, or ability to call out. But it is not free from
    attack: A relatively small input can lead to memory exhaustion or to C stack
-   exhaustion, crashing the process. Calling it on untrusted input is thus
-   unwise.
+   exhaustion, crashing the process. There is also the possibility for
+   excessive CPU consumption denial of service on some inputs. Calling it on
+   untrusted data is thus not recommended.
 
    .. warning::
-      It is possible to crash the Python interpreter with a complex string due
-      to stack depth limitations in Python's AST compiler.
+      It is possible to crash the Python interpreter due to stack depth
+      limitations in Python's AST compiler.
 
       It can raise :exc:`ValueError`, :exc:`TypeError`, :exc:`SyntaxError`,
       :exc:`MemoryError` and :exc:`RecursionError` depending on the malformed
