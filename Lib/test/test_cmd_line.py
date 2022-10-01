@@ -871,6 +871,8 @@ class CmdLineTest(unittest.TestCase):
         assert_python_failure('-X', 'int_max_str_digits', '-c', code)
         assert_python_failure('-X', 'int_max_str_digits=foo', '-c', code)
         assert_python_failure('-X', 'int_max_str_digits=100', '-c', code)
+        assert_python_failure('-X', 'int_max_str_digits', '-c', code,
+                              PYTHONINTMAXSTRDIGITS='4000')
 
         assert_python_failure('-c', code, PYTHONINTMAXSTRDIGITS='foo')
         assert_python_failure('-c', code, PYTHONINTMAXSTRDIGITS='100')

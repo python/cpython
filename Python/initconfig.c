@@ -1788,10 +1788,10 @@ static PyStatus
 config_init_int_max_str_digits(PyConfig *config)
 {
     int maxdigits;
-    bool valid = 0;
 
     const char *env = config_get_env(config, "PYTHONINTMAXSTRDIGITS");
     if (env) {
+        bool valid = 0;
         if (!_Py_str_to_int(env, &maxdigits)) {
             valid = ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_STR_DIGITS_THRESHOLD));
         }
@@ -1809,6 +1809,7 @@ config_init_int_max_str_digits(PyConfig *config)
     const wchar_t *xoption = config_get_xoption(config, L"int_max_str_digits");
     if (xoption) {
         const wchar_t *sep = wcschr(xoption, L'=');
+        bool valid = 0;
         if (sep) {
             if (!config_wstr_to_int(sep + 1, &maxdigits)) {
                 valid = ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_STR_DIGITS_THRESHOLD));
