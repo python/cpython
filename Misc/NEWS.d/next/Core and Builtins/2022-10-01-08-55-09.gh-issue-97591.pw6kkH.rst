@@ -1,0 +1,1 @@
+Fixed a missing incref/decref pair in Exception.__setstate__()
