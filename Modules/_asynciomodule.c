@@ -631,8 +631,6 @@ create_cancelled_error(FutureObj *fut)
     } else {
         exc = PyObject_CallOneArg(asyncio_CancelledError, msg);
     }
-    PyException_SetContext(exc, fut->fut_cancelled_exc);
-    Py_CLEAR(fut->fut_cancelled_exc);
     return exc;
 }
 
@@ -640,6 +638,9 @@ static void
 future_set_cancelled_error(FutureObj *fut)
 {
     PyObject *exc = create_cancelled_error(fut);
+    if (exc == NULL) {
+        return;
+    }
     PyErr_SetObject(asyncio_CancelledError, exc);
     Py_DECREF(exc);
 }
@@ -1051,7 +1052,11 @@ _asyncio_Future_remove_done_callback(FutureObj *self, PyObject *fn)
         return NULL;
     }
 
-    for (i = 0; i < PyList_GET_SIZE(self->fut_callbacks); i++) {
+    // Beware: PyObject_RichCompareBool below may change fut_callbacks.
+    // See GH-97592.
+    for (i = 0;
+         self->fut_callbacks != NULL && i < PyList_GET_SIZE(self->fut_callbacks);
+         i++) {
         int ret;
         PyObject *item = PyList_GET_ITEM(self->fut_callbacks, i);
         Py_INCREF(item);
@@ -1070,7 +1075,8 @@ _asyncio_Future_remove_done_callback(FutureObj *self, PyObject *fn)
         }
     }
 
-    if (j == 0) {
+    // Note: fut_callbacks may have been cleared.
+    if (j == 0 || self->fut_callbacks == NULL) {
         Py_CLEAR(self->fut_callbacks);
         Py_DECREF(newlist);
         return PyLong_FromSsize_t(len + cleared_callback0);
@@ -1666,6 +1672,14 @@ FutureIter_throw(futureiterobject *self, PyObject *const *args, Py_ssize_t nargs
     PyObject *type, *val = NULL, *tb = NULL;
     if (!_PyArg_CheckPositional("throw", nargs, 1, 3)) {
         return NULL;
+    }
+    if (nargs > 1) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                            "the (type, exc, tb) signature of throw() is deprecated, "
+                            "use the single-arg signature instead.",
+                            1) < 0) {
+            return NULL;
+        }
     }
 
     type = args[0];

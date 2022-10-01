@@ -1226,7 +1226,7 @@ With ongoing development of Python, some platforms that used to be supported
 earlier are no longer supported (due to the lack of users or developers).
 Check :pep:`11` for details on all unsupported platforms.
 
-* `Windows CE <http://pythonce.sourceforge.net/>`_ is
+* `Windows CE <https://pythonce.sourceforge.net/>`_ is
   `no longer supported <https://github.com/python/cpython/issues/71542>`__
   since Python 3 (if it ever was).
 * The `Cygwin <https://cygwin.com/>`_ installer offers to install the

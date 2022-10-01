@@ -4918,8 +4918,10 @@ meth_fastcall_keywords(PyObject* self, PyObject* const* args,
     if (pyargs == NULL) {
         return NULL;
     }
+    assert(args != NULL || nargs == 0);
+    PyObject* const* args_offset = args == NULL ? NULL : args + nargs;
     PyObject *pykwargs = PyObject_Vectorcall((PyObject*)&PyDict_Type,
-                                              args + nargs, 0, kwargs);
+                                              args_offset, 0, kwargs);
     return Py_BuildValue("NNN", _null_to_none(self), pyargs, pykwargs);
 }
 
@@ -6544,15 +6546,21 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_Vectorcall(m) < 0) {
         return NULL;
     }
-    if (_PyTestCapi_Init_VectorcallLimited(m) < 0) {
-        return NULL;
-    }
     if (_PyTestCapi_Init_Heaptype(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Unicode(m) < 0) {
         return NULL;
     }
+
+#ifndef LIMITED_API_AVAILABLE
+    PyModule_AddObjectRef(m, "LIMITED_API_AVAILABLE", Py_False);
+#else
+    PyModule_AddObjectRef(m, "LIMITED_API_AVAILABLE", Py_True);
+    if (_PyTestCapi_Init_VectorcallLimited(m) < 0) {
+        return NULL;
+    }
+#endif
 
     PyState_AddModule(m, &_testcapimodule);
     return m;
