@@ -294,11 +294,13 @@ perform clean-up logic. In case :exc:`asyncio.CancelledError`
 is explicitly caught, it should generally be propagated when
 clean-up is complete. Most code can safely ignore :exc:`asyncio.CancelledError`.
 
-Important asyncio components, like :class:`asyncio.TaskGroup` and the
-:func:`asyncio.timeout` context manager, are implemented using cancellation
-internally and might misbehave if a coroutine swallows
-:exc:`asyncio.CancelledError`.
+The asyncio components that enable structured concurrency, like
+:class:`asyncio.TaskGroup` and :func:`asyncio.timeout`,
+are implemented using cancellation internally and might misbehave if
+a coroutine swallows :exc:`asyncio.CancelledError`. Similarly, user code
+should not call :meth:`uncancel <asyncio.Task.uncancel>`.
 
+.. _taskgroups:
 
 Task Groups
 ===========
@@ -1003,76 +1005,6 @@ Task Object
       Deprecation warning is emitted if *loop* is not specified
       and there is no running event loop.
 
-   .. method:: cancel(msg=None)
-
-      Request the Task to be cancelled.
-
-      This arranges for a :exc:`CancelledError` exception to be thrown
-      into the wrapped coroutine on the next cycle of the event loop.
-
-      The coroutine then has a chance to clean up or even deny the
-      request by suppressing the exception with a :keyword:`try` ...
-      ... ``except CancelledError`` ... :keyword:`finally` block.
-      Therefore, unlike :meth:`Future.cancel`, :meth:`Task.cancel` does
-      not guarantee that the Task will be cancelled, although
-      suppressing cancellation completely is not common and is actively
-      discouraged.
-
-      .. versionchanged:: 3.9
-         Added the *msg* parameter.
-
-      .. deprecated-removed:: 3.11 3.14
-         *msg* parameter is ambiguous when multiple :meth:`cancel`
-         are called with different cancellation messages.
-         The argument will be removed.
-
-      .. _asyncio_example_task_cancel:
-
-      The following example illustrates how coroutines can intercept
-      the cancellation request::
-
-          async def cancel_me():
-              print('cancel_me(): before sleep')
-
-              try:
-                  # Wait for 1 hour
-                  await asyncio.sleep(3600)
-              except asyncio.CancelledError:
-                  print('cancel_me(): cancel sleep')
-                  raise
-              finally:
-                  print('cancel_me(): after sleep')
-
-          async def main():
-              # Create a "cancel_me" Task
-              task = asyncio.create_task(cancel_me())
-
-              # Wait for 1 second
-              await asyncio.sleep(1)
-
-              task.cancel()
-              try:
-                  await task
-              except asyncio.CancelledError:
-                  print("main(): cancel_me is cancelled now")
-
-          asyncio.run(main())
-
-          # Expected output:
-          #
-          #     cancel_me(): before sleep
-          #     cancel_me(): cancel sleep
-          #     cancel_me(): after sleep
-          #     main(): cancel_me is cancelled now
-
-   .. method:: cancelled()
-
-      Return ``True`` if the Task is *cancelled*.
-
-      The Task is *cancelled* when the cancellation was requested with
-      :meth:`cancel` and the wrapped coroutine propagated the
-      :exc:`CancelledError` exception thrown into it.
-
    .. method:: done()
 
       Return ``True`` if the Task is *done*.
@@ -1186,3 +1118,125 @@ Task Object
       in the :func:`repr` output of a task object.
 
       .. versionadded:: 3.8
+
+   .. method:: cancel(msg=None)
+
+      Request the Task to be cancelled.
+
+      This arranges for a :exc:`CancelledError` exception to be thrown
+      into the wrapped coroutine on the next cycle of the event loop.
+
+      The coroutine then has a chance to clean up or even deny the
+      request by suppressing the exception with a :keyword:`try` ...
+      ... ``except CancelledError`` ... :keyword:`finally` block.
+      Therefore, unlike :meth:`Future.cancel`, :meth:`Task.cancel` does
+      not guarantee that the Task will be cancelled, although
+      suppressing cancellation completely is not common and is actively
+      discouraged.
+
+      .. versionchanged:: 3.9
+         Added the *msg* parameter.
+
+      .. deprecated-removed:: 3.11 3.14
+         *msg* parameter is ambiguous when multiple :meth:`cancel`
+         are called with different cancellation messages.
+         The argument will be removed.
+
+      .. _asyncio_example_task_cancel:
+
+      The following example illustrates how coroutines can intercept
+      the cancellation request::
+
+          async def cancel_me():
+              print('cancel_me(): before sleep')
+
+              try:
+                  # Wait for 1 hour
+                  await asyncio.sleep(3600)
+              except asyncio.CancelledError:
+                  print('cancel_me(): cancel sleep')
+                  raise
+              finally:
+                  print('cancel_me(): after sleep')
+
+          async def main():
+              # Create a "cancel_me" Task
+              task = asyncio.create_task(cancel_me())
+
+              # Wait for 1 second
+              await asyncio.sleep(1)
+
+              task.cancel()
+              try:
+                  await task
+              except asyncio.CancelledError:
+                  print("main(): cancel_me is cancelled now")
+
+          asyncio.run(main())
+
+          # Expected output:
+          #
+          #     cancel_me(): before sleep
+          #     cancel_me(): cancel sleep
+          #     cancel_me(): after sleep
+          #     main(): cancel_me is cancelled now
+
+   .. method:: cancelled()
+
+      Return ``True`` if the Task is *cancelled*.
+
+      The Task is *cancelled* when the cancellation was requested with
+      :meth:`cancel` and the wrapped coroutine propagated the
+      :exc:`CancelledError` exception thrown into it.
+
+   .. method:: uncancel()
+
+      Decrement the count of cancellation requests to this Task.
+
+      Returns the remaining number of cancellation requests.
+
+      Note that once execution of a cancelled task completed, further
+      calls to :meth:`uncancel` are ineffective.
+
+      .. versionadded:: 3.11
+
+      This method is used by asyncio's internals and isn't expected to be
+      used by end-user code.  In particular, if a Task gets successfully
+      uncancelled, this allows for elements of structured concurrency like
+      :ref:`taskgroups` and :func:`asyncio.timeout` to continue running,
+      isolating cancellation to the respective structured block.
+      For example::
+
+        async def make_request_with_timeout():
+            try:
+                async with asyncio.timeout(1):
+                    # Structured block affected by the timeout:
+                    await make_request()
+                    await make_another_request()
+            except TimeoutError:
+                log("There was a timeout")
+            # Outer code not affected by the timeout:
+            await unrelated_code()
+
+      While the block with ``make_request()`` and ``make_another_request()``
+      might get cancelled due to the timeout, ``unrelated_code()`` should
+      continue running even in case of the timeout.  This is implemented
+      with :meth:`uncancel`.  :class:`TaskGroup` context managers use
+      :func:`uncancel` in a similar fashion.
+
+   .. method:: cancelling()
+
+      Return the number of pending cancellation requests to this Task, i.e.,
+      the number of calls to :meth:`cancel` less the number of
+      :meth:`uncancel` calls.
+
+      Note that if this number is greater than zero but the Task is
+      still executing, :meth:`cancelled` will still return ``False``.
+      This is because this number can be lowered by calling :meth:`uncancel`,
+      which can lead to the task not being cancelled after all if the
+      cancellation requests go down to zero.
+
+      This method is used by asyncio's internals and isn't expected to be
+      used by end-user code.  See :meth:`uncancel` for more details.
+
+      .. versionadded:: 3.11
