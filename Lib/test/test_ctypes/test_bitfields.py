@@ -3,6 +3,7 @@ from test.test_ctypes import need_symbol
 from test import support
 import unittest
 import os
+import sys
 
 import _ctypes_test
 
@@ -40,8 +41,6 @@ class C_Test(unittest.TestCase):
                 setattr(b, name, i)
                 self.assertEqual(getattr(b, name), func(byref(b), name.encode('ascii')))
 
-    # bpo-46913: _ctypes/cfield.c h_get() has an undefined behavior
-    @support.skip_if_sanitizer(ub=True)
     def test_shorts(self):
         b = BITS()
         name = "M"
@@ -235,6 +234,69 @@ class BitFieldTest(unittest.TestCase):
             self.assertEqual(sizeof(X), sizeof(c_int) * 4)
         else:
             self.assertEqual(sizeof(X), sizeof(c_int) * 2)
+
+    def test_mixed_5(self):
+        class X(Structure):
+            _fields_ = [
+                ('A', c_uint, 1),
+                ('B', c_ushort, 16)]
+        a = X()
+        a.A = 0
+        a.B = 1
+        self.assertEqual(1, a.B)
+
+    def test_mixed_6(self):
+        class X(Structure):
+            _fields_ = [
+                ('A', c_ulonglong, 1),
+                ('B', c_uint, 32)]
+        a = X()
+        a.A = 0
+        a.B = 1
+        self.assertEqual(1, a.B)
+
+    def test_mixed_7(self):
+        class X(Structure):
+            _fields_ = [
+                ("A", c_uint),
+                ('B', c_uint, 20),
+                ('C', c_ulonglong, 24)]
+        self.assertEqual(16, sizeof(X))
+
+    def test_mixed_8(self):
+        class Foo(Structure):
+            _fields_ = [
+                ("A", c_uint),
+                ("B", c_uint, 32),
+                ("C", c_ulonglong, 1),
+                ]
+
+        class Bar(Structure):
+            _fields_ = [
+                ("A", c_uint),
+                ("B", c_uint),
+                ("C", c_ulonglong, 1),
+                ]
+        self.assertEqual(sizeof(Foo), sizeof(Bar))
+
+    @unittest.skipIf(sys.platform == 'win32', "Doesn't work on Windows, yet")
+    def test_mixed_9(self):
+        class X(Structure):
+            _fields_ = [
+                ("A", c_uint8),
+                ("B", c_uint, 1),
+                ]
+        self.assertEqual(4, sizeof(X))
+
+    @unittest.skipIf(sys.platform == 'win32', "Doesn't work on Windows, yet")
+    def test_mixed_10(self):
+        class X(Structure):
+            _fields_ = [
+                ("A", c_uint32, 1),
+                ("B", c_uint64, 1),
+                ]
+        self.assertEqual(8, alignment(X))
+        self.assertEqual(8, sizeof(X))
 
     def test_anon_bitfields(self):
         # anonymous bit-fields gave a strange error message
