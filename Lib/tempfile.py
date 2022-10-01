@@ -437,7 +437,7 @@ class _TemporaryFileCloser:
             finally:
                 # Windows provides delete-on-close as a primitive, in which
                 # case the file was deleted by self.file.close().
-                if self.delete and not (self.delete_on_close and windows):
+                if self.delete and not (windows and self.delete_on_close):
                     try:
                         unlink(self.name)
                     except FileNotFoundError:
