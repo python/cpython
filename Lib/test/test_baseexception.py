@@ -130,7 +130,7 @@ class ExceptionClassTests(unittest.TestCase):
         d[HashThisKeyWillClearTheDict()] = Value()  # refcount of Value() is 1 now
 
         # Exception.__setstate__ should aquire a strong reference of key and
-        # value in the dict. Otherwise, Value()'s refcount would go below 
+        # value in the dict. Otherwise, Value()'s refcount would go below
         # zero in the tp_hash call in PyObject_SetAttr(), and it would cause
         # crash in GC.
         exc.__setstate__(d)  # __hash__() is called again here, clearing the dict.
