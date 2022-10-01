@@ -1,1 +1,0 @@
-Add option to raise all errors from :meth:`~socket.create_connection` in an :exc:`ExceptionGroup` when it fails to create a connection. The default remains to raise only the last error that had occurred when multiple addresses were tried.

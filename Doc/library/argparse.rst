@@ -555,14 +555,14 @@ disallowed.
 fromfile_prefix_chars
 ^^^^^^^^^^^^^^^^^^^^^
 
-Sometimes, when dealing with a particularly long argument lists, it
+Sometimes, when dealing with a particularly long argument list, it
 may make sense to keep the list of arguments in a file rather than typing it out
 at the command line.  If the ``fromfile_prefix_chars=`` argument is given to the
 :class:`ArgumentParser` constructor, then arguments that start with any of the
 specified characters will be treated as files, and will be replaced by the
 arguments they contain.  For example::
 
-   >>> with open('args.txt', 'w') as fp:
+   >>> with open('args.txt', 'w', encoding=sys.getfilesystemencoding()) as fp:
    ...     fp.write('-f\nbar')
    >>> parser = argparse.ArgumentParser(fromfile_prefix_chars='@')
    >>> parser.add_argument('-f')
@@ -575,8 +575,17 @@ were in the same place as the original file referencing argument on the command
 line.  So in the example above, the expression ``['-f', 'foo', '@args.txt']``
 is considered equivalent to the expression ``['-f', 'foo', '-f', 'bar']``.
 
+:class:`ArgumentParser` uses :term:`filesystem encoding and error handler`
+to read the file containing arguments.
+
 The ``fromfile_prefix_chars=`` argument defaults to ``None``, meaning that
 arguments will never be treated as file references.
+
+.. versionchanged:: 3.12
+   :class:`ArgumentParser` changed encoding and errors to read arguments files
+   from default (e.g. :func:`locale.getpreferredencoding(False)` and
+   ``"strict"``) to :term:`filesystem encoding and error handler`.
+   Arguments file should be encoded in UTF-8 instead of ANSI Codepage on Windows.
 
 
 argument_default
@@ -846,8 +855,10 @@ how the command-line arguments should be handled. The supplied actions are:
     Namespace(foo=True, bar=False, baz=True)
 
 * ``'append'`` - This stores a list, and appends each argument value to the
-  list.  This is useful to allow an option to be specified multiple times.
-  Example usage::
+  list. It is useful to allow an option to be specified multiple times.
+  If the default value is non-empty, the default elements will be present
+  in the parsed value for the option, with any values from the
+  command line appended after those default values. Example usage::
 
     >>> parser = argparse.ArgumentParser()
     >>> parser.add_argument('--foo', action='append')
@@ -949,8 +960,8 @@ nargs
 
 ArgumentParser objects usually associate a single command-line argument with a
 single action to be taken.  The ``nargs`` keyword argument associates a
-different number of command-line arguments with a single action.  The supported
-values are:
+different number of command-line arguments with a single action.
+See also :ref:`specifying-ambiguous-arguments`. The supported values are:
 
 * ``N`` (an integer).  ``N`` arguments from the command line will be gathered
   together into a list.  For example::
@@ -1608,6 +1619,9 @@ argument::
    >>> parser.parse_args(['--', '-f'])
    Namespace(foo='-f', one=None)
 
+See also :ref:`the argparse howto on ambiguous arguments <specifying-ambiguous-arguments>`
+for more details.
+
 .. _prefix-matching:
 
 Argument abbreviations (prefix matching)
@@ -1696,7 +1710,7 @@ Sub-commands
 
 .. method:: ArgumentParser.add_subparsers([title], [description], [prog], \
                                           [parser_class], [action], \
-                                          [option_string], [dest], [required], \
+                                          [option_strings], [dest], [required], \
                                           [help], [metavar])
 
    Many programs split up their functionality into a number of sub-commands,
@@ -2017,7 +2031,26 @@ Mutual exclusion
 
    Note that currently mutually exclusive argument groups do not support the
    *title* and *description* arguments of
-   :meth:`~ArgumentParser.add_argument_group`.
+   :meth:`~ArgumentParser.add_argument_group`. However, a mutually exclusive
+   group can be added to an argument group that has a title and description.
+   For example::
+
+     >>> parser = argparse.ArgumentParser(prog='PROG')
+     >>> group = parser.add_argument_group('Group title', 'Group description')
+     >>> exclusive_group = group.add_mutually_exclusive_group(required=True)
+     >>> exclusive_group.add_argument('--foo', help='foo help')
+     >>> exclusive_group.add_argument('--bar', help='bar help')
+     >>> parser.print_help()
+     usage: PROG [-h] (--foo FOO | --bar BAR)
+
+     options:
+       -h, --help  show this help message and exit
+
+     Group title:
+       Group description
+
+       --foo FOO   foo help
+       --bar BAR   bar help
 
    .. versionchanged:: 3.11
     Calling :meth:`add_argument_group` or :meth:`add_mutually_exclusive_group`

@@ -13,15 +13,15 @@ labels: "type-crash"
   For CPython, a "crash" is when Python itself fails, leading to a traceback in the C stack.
 -->
 
-**Crash report**
+# Crash report
 
 Tell us what happened, ideally including a minimal, reproducible example (https://stackoverflow.com/help/minimal-reproducible-example).
 
-**Error messages**
+# Error messages
 
 Enter any relevant error message caused by the crash, including a core dump if there is one.
 
-**Your environment**
+# Your environment
 
 <!-- Include as many relevant details as possible about the environment you experienced the bug in -->
 

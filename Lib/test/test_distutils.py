@@ -23,6 +23,8 @@ def load_tests(*_):
 def tearDownModule():
     support.reap_children()
 
+if support.check_sanitizer(address=True):
+    raise unittest.SkipTest("Exposes ASAN flakiness in GitHub CI")
 
 if __name__ == "__main__":
     unittest.main()

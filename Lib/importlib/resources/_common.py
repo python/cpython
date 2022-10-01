@@ -67,7 +67,10 @@ def from_package(package):
 
 
 @contextlib.contextmanager
-def _tempfile(reader, suffix=''):
+def _tempfile(reader, suffix='',
+              # gh-93353: Keep a reference to call os.remove() in late Python
+              # finalization.
+              *, _os_remove=os.remove):
     # Not using tempfile.NamedTemporaryFile as it leads to deeper 'try'
     # blocks due to the need to close the temporary file to work on Windows
     # properly.
@@ -81,7 +84,7 @@ def _tempfile(reader, suffix=''):
         yield pathlib.Path(raw_path)
     finally:
         try:
-            os.remove(raw_path)
+            _os_remove(raw_path)
         except FileNotFoundError:
             pass
 

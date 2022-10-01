@@ -1,1 +1,0 @@
-:c:func:`PyOS_CheckStack` is now exported in the Stable ABI on Windows.
