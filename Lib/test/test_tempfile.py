@@ -1077,7 +1077,7 @@ class TestNamedTemporaryFile(BaseTestCase):
     def test_del_by_finalizer(self):
         # A NamedTemporaryFile is deleted by fanalizer in case delete = True
         # delete_on_close = False and no context manager is used
-        def my_func(dir)->str:
+        def my_func(dir):
             f = tempfile.NamedTemporaryFile(dir=dir, delete=True,
                                             delete_on_close=False)
             tmp_name = f.name
