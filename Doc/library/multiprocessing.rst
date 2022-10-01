@@ -144,8 +144,8 @@ to start a process.  These *start methods* are
    subprocess. See :issue:`33725`.
 
 .. versionchanged:: 3.4
-   *spawn* added on all unix platforms, and *forkserver* added for
-   some unix platforms.
+   *spawn* added on all Unix platforms, and *forkserver* added for
+   some Unix platforms.
    Child processes no longer inherit all of the parents inheritable
    handles on Windows.
 
