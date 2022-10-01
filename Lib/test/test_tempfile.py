@@ -1043,8 +1043,8 @@ class TestNamedTemporaryFile(BaseTestCase):
             os.rmdir(dir)
 
     def test_context_man_ok_to_delete_manually(self):
-        # A NamedTemporaryFile can be deleted by a user before
-        # context manager comes to it. This will not generate an error
+        # In the case of delete=True, a NamedTemporaryFile can be manually
+        # deleted in a with-statement context without causing an error.
         dir = tempfile.mkdtemp()
         try:
             with tempfile.NamedTemporaryFile(dir=dir,
@@ -1062,8 +1062,7 @@ class TestNamedTemporaryFile(BaseTestCase):
         dir = tempfile.mkdtemp()
         f_name = ""
         try:
-            # setting delete_on_close = True to test, that this does not have
-            # an effect, if delete = False
+            # Test that delete_on_close=True has no effect if delete=False.
             with tempfile.NamedTemporaryFile(dir=dir, delete=False,
                                              delete_on_close=True) as f:
                 f.write(b'blat')
@@ -1075,8 +1074,8 @@ class TestNamedTemporaryFile(BaseTestCase):
             os.rmdir(dir)
 
     def test_del_by_finalizer(self):
-        # A NamedTemporaryFile is deleted by fanalizer in case delete = True
-        # delete_on_close = False and no context manager is used
+        # A NamedTemporaryFile is deleted when finalized in the case of
+        # delete=True, delete_on_close=False, and no with-statement is used.
         def my_func(dir):
             f = tempfile.NamedTemporaryFile(dir=dir, delete=True,
                                             delete_on_close=False)
@@ -1085,7 +1084,7 @@ class TestNamedTemporaryFile(BaseTestCase):
             # Testing extreme case, where the file is not explicitly closed
             # f.close()
             return tmp_name
-        # Making sure that Garbage Collector has finalized the file object
+        # Make sure that the garbage collector has finalized the file object.
         gc.collect()
         dir = tempfile.mkdtemp()
         try:
@@ -1097,9 +1096,9 @@ class TestNamedTemporaryFile(BaseTestCase):
             os.rmdir(dir)
 
     def test_correct_finalizer_work_if_already_deleted(self):
-        # There should be No errors in case delete = True
-        # delete_on_close = False and no context manager is used, but file is
-        # deleted manually
+        # There should be no error in the case of delete=True,
+        # delete_on_close=False, no with-statement is used, and the file is
+        # deleted manually.
         def my_func(dir)->str:
             f = tempfile.NamedTemporaryFile(dir=dir, delete=True,
                                             delete_on_close=False)
@@ -1108,7 +1107,7 @@ class TestNamedTemporaryFile(BaseTestCase):
             f.close()
             os.unlink(tmp_name)
             return tmp_name
-        # Making sure that Garbage Collector has finalized the file object
+        # Make sure that the garbage collector has finalized the file object.
         gc.collect()
 
     def test_bad_mode(self):
