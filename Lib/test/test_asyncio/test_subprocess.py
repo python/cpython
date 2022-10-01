@@ -189,7 +189,7 @@ class SubprocessMixin:
         creationflags = 0
         if sys.platform == 'win32':
             # On windows create a new process group so that killing process
-            # kills the whole process group.
+            # kills the process and all its children.
             creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
         proc = self.loop.run_until_complete(
             asyncio.create_subprocess_shell(blocking_shell_command, stdout=asyncio.subprocess.PIPE,
