@@ -235,7 +235,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
                 int pack, int big_endian)
 {
     #ifndef MS_WIN32
-    if(big_endian || *poffset || *pfield_size)
+    if(big_endian)
     #endif
     {
         // Fall back to old behaviour for cases that I don't understand well
@@ -246,6 +246,10 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
                 psize, poffset, palign,
                 pack, big_endian);
     }
+
+    assert(*pfield_size == 0);
+    *pbitofs += *poffset * 8;
+    *poffset = 0;
 
     // Change:
     // * pbitofs is now relative to the start of the struct, not the start of
