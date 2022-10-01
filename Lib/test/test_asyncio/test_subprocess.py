@@ -183,13 +183,21 @@ class SubprocessMixin:
         else:
             self.assertEqual(-signal.SIGKILL, returncode)
 
-    @unittest.skipUnless(shutil.which('sleep'), 'sleep is not available')
     def test_kill_issue43884(self):
-        blocking_shell_command = 'sleep 10000'
+        import subprocess
+        blocking_shell_command = f'{sys.executable} -c "import time; time.sleep(100000000)"'
+        creationflags = 0
+        if sys.platform == 'win32':
+            # On windows create a new process group so that killing process
+            # kills the whole process group.
+            creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
         proc = self.loop.run_until_complete(
-            asyncio.create_subprocess_shell(blocking_shell_command, stdout=asyncio.subprocess.PIPE)
+            asyncio.create_subprocess_shell(blocking_shell_command, stdout=asyncio.subprocess.PIPE,
+            creationflags=creationflags)
         )
         self.loop.run_until_complete(asyncio.sleep(1))
+        if sys.platform == 'win32':
+            proc.send_signal(signal.CTRL_BREAK_EVENT)
         proc.kill()
         returncode = self.loop.run_until_complete(proc.wait())
         if sys.platform == 'win32':
